@@ -32,18 +32,22 @@
  *
  */
 
+/// @file bdb_file.hpp
+/// BDB File management.
 
 #include <bdb/bdb_types.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+/** @addtogroup BDB_Files
+ *
+ * @{
+ */
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Return codes
-//
+/// BDB Return codes
+///
 
 
 enum EBDB_ErrCode {
@@ -56,10 +60,8 @@ enum EBDB_ErrCode {
 class CBDB_Env;
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Raw file class wraps up basic Berkeley DB operations. 
-//
+/// Raw file class wraps up basic Berkeley DB operations. 
+///
 
 class NCBI_BDB_EXPORT CBDB_RawFile
 {
@@ -69,8 +71,8 @@ public:
     enum EOpenMode {
         eReadWrite,
         eReadOnly,
-        eCreate,         // implies 'eReadWrite' too
-        eReadWriteCreate // read-write, create if it doesn't exist
+        eCreate,         //!< implies 'eReadWrite' too
+        eReadWriteCreate //!< read-write, create if it doesn't exist
     };
 
     enum EReallocMode {
@@ -87,69 +89,69 @@ public:
     CBDB_RawFile(EDuplicateKeys dup_keys=eDuplicatesDisable);
     virtual ~CBDB_RawFile();
 
-    // Associate file with environment. Should be called before 
-    // file opening.
+    /// Associate file with environment. Should be called before 
+    /// file opening.
     void SetEnv(CBDB_Env& env);
 
-    // Open file with specified access mode
+    /// Open file with specified access mode
     void Open(const char* filename, EOpenMode open_mode);
-    // Open file with specified filename and database name.
-    // (Berkeley DB supports having several database tables in one file.) 
+    /// Open file with specified filename and database name.
+    /// (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
               EOpenMode open_mode);
-    // Attach class to external BerkeleyDB file instance.
-    // Note: Should be already open.
+    /// Attach class to external BerkeleyDB file instance.
+    /// Note: Should be already open.
     void Attach(CBDB_RawFile& bdb_file);
-    // Close file
+    /// Close file
     void Close();
-    // Reopen database file. (Should be already open).
+    /// Reopen database file. (Should be already open).
     void Reopen(EOpenMode open_mode);
 
-    // Remove the database specified by the filename and database arguments
+    /// Remove the database specified by the filename and database arguments
     void Remove(const char* filename, const char* database = 0);
-    // Empty the database. Return number of records removed.
+    /// Empty the database. Return number of records removed.
     unsigned int Truncate();
 
     // Set Berkeley DB page size value. By default OS default is used.
     void SetPageSize(unsigned int page_size);
 
-    // Set Berkeley DB memory cache size for the file (default is 256K).
+    /// Set Berkeley DB memory cache size for the file (default is 256K).
     void SetCacheSize(unsigned int cache_size);
 
     const string& FileName() const;
     const string& Database() const;
 
-    // Set comparison function. Default implementation installs bdb_types based
-    // function. Can be overloaded for some specific cases.
+    /// Set comparison function. Default implementation installs bdb_types based
+    /// function. Can be overloaded for some specific cases.
     virtual void SetCmp(DB*) = 0;
 
-    // Return TRUE if the file is open
+    /// Return TRUE if the file is open
     bool IsOpen() const;
 
     // Return TRUE if the file is attached to some other BDB file
     bool IsAttached() const;
 
-    // Return TRUE if the if the underlying database files were created 
-    // on an architecture of the different byte order 
+    /// Return TRUE if the if the underlying database files were created 
+    /// on an architecture of the different byte order 
     bool IsByteSwapped() const { return m_ByteSwapped; }
 
-    // Return TRUE if file can contain duplicate keys
+    /// Return TRUE if file can contain duplicate keys
     bool DuplicatesAllowed() const { return m_DuplicateKeys == eDuplicatesEnable; }
 
-    // Return the key duplicate mode value
+    /// Return the key duplicate mode value
     EDuplicateKeys GetDupKeysMode() const { return m_DuplicateKeys; }
 
-    // Return file name
+    /// Return file name
     const string& GetFileName() const { return m_FileName; }
 
-    // Return the file open mode
+    /// Return the file open mode
     EOpenMode GetOpenMode() const { return m_OpenMode; }
 
-    // Flush any cached information to disk
+    /// Flush any cached information to disk
     void Sync();
 
-    // Compute database statistic, return number of records.
-    // (Can be time consuming)
+    /// Compute database statistic, return number of records.
+    /// (Can be time consuming)
     unsigned CountRecs();
 
 private:
@@ -177,10 +179,10 @@ protected:
     CBDB_Env*         m_Env;
 
 private:
-    bool             m_DB_Attached;  // TRUE if m_DB doesn't belong here
-    bool             m_ByteSwapped;  // TRUE if file created on a diff.arch.
-    string           m_FileName;     // filename
-    string           m_Database;     // db name in file (optional)
+    bool             m_DB_Attached;  //!< TRUE if m_DB doesn't belong here
+    bool             m_ByteSwapped;  //!< TRUE if file created on a diff.arch.
+    string           m_FileName;     //!< filename
+    string           m_Database;     //!< db name in file (optional)
     unsigned         m_PageSize;
     unsigned         m_CacheSize;
     EDuplicateKeys   m_DuplicateKeys;
@@ -192,47 +194,45 @@ private:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Berkeley DB file class. 
-// Implements primary key and fields functionality.
-//
+/// Berkeley DB file class. 
+/// Implements primary key and fields functionality.
+///
 
 class NCBI_BDB_EXPORT CBDB_File : public CBDB_RawFile
 {
 public:
     CBDB_File(EDuplicateKeys dup_keys = eDuplicatesDisable);
 
-    // Open file with specified access mode
+    /// Open file with specified access mode
     void Open(const char* filename, EOpenMode open_mode);
 
-    // Open file with specified filename and database name.
-    // (Berkeley DB supports having several database tables in one file.) 
+    /// Open file with specified filename and database name.
+    /// (Berkeley DB supports having several database tables in one file.) 
     void Open(const char* filename, const char* database,
               EOpenMode open_mode);
-    // Reopen the db file
+    /// Reopen the db file
     void Reopen(EOpenMode open_mode);
 
-    // Attach external Berkeley DB file.
-    // Note: Should be already open.
+    /// Attach external Berkeley DB file.
+    /// Note: Should be already open.
     void Attach(CBDB_File& db_file);
 
-    // Fetches the record corresponding to the current key value.
+    /// Fetches the record corresponding to the current key value.
     EBDB_ErrCode Fetch();
 
     enum EAfterWrite {
-        eKeepData,    // Keep the inserted data for a while
-        eDiscardData  // Invalidate the inserted data immediately after write
+        eKeepData,    //!< Keep the inserted data for a while
+        eDiscardData  //!< Invalidate the inserted data immediately after write
     };
 
-    // Insert new record
+    /// Insert new record
     EBDB_ErrCode Insert(EAfterWrite write_flag = eDiscardData);
 
-    // Delete record corresponding to the current key value.
+    /// Delete record corresponding to the current key value.
     EBDB_ErrCode Delete();
 
-    // Update record corresponding to the current key value. If record does not exist
-    // it will be inserted.
+    /// Update record corresponding to the current key value. If record does not exist
+    /// it will be inserted.
     EBDB_ErrCode UpdateInsert(EAfterWrite write_flag = eDiscardData);
     
     
@@ -245,44 +245,44 @@ public:
                   size_t buf_size = 0, 
                   ENullable is_null = eNullable);
 
-    // Create new copy of m_DBT_Key.
-    // Caller is responsible for proper deletion. See also: DestroyDBT_Clone
+    /// Create new copy of m_DBT_Key.
+    /// Caller is responsible for proper deletion. See also: DestroyDBT_Clone
     DBT* CloneDBT_Key();
 
-    // Free the DBT structure created by CloneDBT_Key.
+    /// Free the DBT structure created by CloneDBT_Key.
     static void DestroyDBT_Clone(DBT* dbt);
 
 protected:
-    // Unpack internal record buffers
+    /// Unpack internal record buffers
     void Discard();
 
-    // Set comparison function. Default implementation installs bdb_types based
-    // function. Can be overloaded for some specific cases.
+    /// Set comparison function. Default implementation installs bdb_types based
+    /// function. Can be overloaded for some specific cases.
     virtual void SetCmp(DB*);
 
-    // Create DB cursor
+    /// Create DB cursor
     DBC* CreateCursor() const;
 
-    // Read DB cursor
+    /// Read DB cursor
     EBDB_ErrCode ReadCursor(DBC* dbc, unsigned int bdb_flag);
 
-    // Check if all NOT NULL fields are assigned. 
-    // Throw an exception if constraint check failed.
+    /// Check if all NOT NULL fields are assigned. 
+    /// Throw an exception if constraint check failed.
     void CheckNullDataConstraint() const;
 
-    // Function disables processing of m_DBT_data. 
-    // This function can be used when creating custom BDB file
-    // data structures (BLOB storage, etc.) Caller takes full
-    // responsibility for filling m_DBT_Data with correct values.
+    /// Function disables processing of m_DBT_data. 
+    /// This function can be used when creating custom BDB file
+    /// data structures (BLOB storage, etc.) Caller takes full
+    /// responsibility for filling m_DBT_Data with correct values.
     void DisableDataBufProcessing() { m_DataBufDisabled = true; }
 
 private:
     CBDB_File(const CBDB_File&);
     CBDB_File& operator= (const CBDB_File&);
 
-    // Record reading prolog function
+    /// Record reading prolog function
     void x_StartRead();
-    // Record reading epilog function
+    /// Record reading epilog function
     void x_EndRead();
 
     EBDB_ErrCode x_Write(unsigned int flags, EAfterWrite write_flag);
@@ -301,11 +301,9 @@ private:
 
 
 
-//////////////////////////////////////////////////////////////////
-//
-// Berkeley DB file class optimized to work with 
-// tables having int as the primary key.
-//
+/// Berkeley DB file class optimized to work with 
+/// tables having int as the primary key.
+///
 
 class NCBI_BDB_EXPORT CBDB_IdFile : public CBDB_File
 {
@@ -317,6 +315,8 @@ public:
     virtual void SetCmp(DB* db);  
 };
 
+
+/* @} */
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -388,6 +388,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/09/26 21:08:30  kuznets
+ * Comments reformatting for doxygen
+ *
  * Revision 1.19  2003/09/17 18:16:21  kuznets
  * Some class functions migrated into the public scope.
  *
