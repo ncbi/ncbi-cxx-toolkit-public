@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/13 19:54:52  vasilche
+* Fixed warnings on 64 bit compiler.
+*
 * Revision 1.4  2000/01/21 20:06:53  pubmed
 * Volodya: support of non-existing documents for Sequences
 *
@@ -76,7 +79,7 @@ inline bool CIDs::ExtractID(int id)
     return false;
 }
 
-inline int CIDs::CountIDs(void) const
+inline size_t CIDs::CountIDs(void) const
 {
     return size();
 }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/10/13 19:54:52  vasilche
+* Fixed warnings on 64 bit compiler.
+*
 * Revision 1.7  2000/01/24 14:21:28  vasilche
 * Fixed missing find() declaration.
 *
@@ -91,7 +94,7 @@ public:
     void AddID(int id);
 
     // return number of ids in list
-    int CountIDs(void) const;
+    size_t CountIDs(void) const;
 
     // decode id list from text representation
     void Decode(const string& str);
