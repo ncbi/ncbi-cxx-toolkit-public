@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/04/19 16:51:37  vasilche
+* Fixed error with member pointers detected by GCC.
+*
 * Revision 1.13  1999/04/15 22:12:14  vakatov
 * Fixed "class TagMapper<>" to "struct ..."
 *
@@ -138,8 +141,8 @@ CPmDocSumPage::CPmDocSumPage()
 {
     m_PageName = "Search Results";
     m_TemplateFile = "template.html";
-    AddTagMap("PAGER", CreateTagMapper(this, &CreatePager));
-    AddTagMap("QUERYBOX", CreateTagMapper(this, &CreateQueryBox));
+    AddTagMap("PAGER", CreateTagMapper(this, &CPmDocSumPage::CreatePager));
+    AddTagMap("QUERYBOX", CreateTagMapper(this, &CPmDocSumPage::CreateQueryBox));
 }
 
 CNCBINode* CPmDocSumPage::CloneSelf(void) const

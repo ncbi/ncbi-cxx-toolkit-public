@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/04/19 16:51:36  vasilche
+* Fixed error with member pointers detected by GCC.
+*
 * Revision 1.10  1999/04/15 22:10:43  vakatov
 * Fixed "class TagMapper<>" to "struct ..."
 *
@@ -132,8 +135,8 @@ void CHTMLPage::Init(void)
 {
     m_PageName = "PubMed";
     m_TemplateFile = "frontpage.html";
-    AddTagMap("TITLE", CreateTagMapper(this, &CreateTitle));
-    AddTagMap("VIEW", CreateTagMapper(this, &CreateView));
+    AddTagMap("TITLE", CreateTagMapper(this, &CHTMLPage::CreateTitle));
+    AddTagMap("VIEW", CreateTagMapper(this, &CHTMLPage::CreateView));
 }
 
 CNCBINode* CHTMLPage::CloneSelf(void) const
