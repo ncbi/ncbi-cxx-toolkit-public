@@ -30,6 +30,8 @@
 */
 
 #include <connect/threaded_server.hpp>
+
+#include <connect/ncbi_socket.hpp>
 #include <util/thread_pool.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -59,27 +61,30 @@ void CThreadedServer::Run(void)
         return;
     }
 
-    EIO_Status        status;
-    LSOCK             lsock = 0;
     CStdPoolOfThreads pool(m_MaxThreads, m_QueueSize, m_SpawnThreshold);
-
     pool.Spawn(m_InitThreads);
-    status = LSOCK_Create(m_Port, 5, &lsock);
-    if ( status != eIO_Success  ||  !lsock ) {
+
+    CListeningSocket lsock(m_Port);
+    if (lsock.GetStatus() != eIO_Success) {
         ERR_POST("CThreadedServer::Run: Unable to create listening socket");
         return;
     }
 
     for (;;) {
-        SOCK sock;
-        status = LSOCK_Accept(lsock, NULL, &sock);
+#if 0 // will double-close sock
+        CSocket    sock;
+        EIO_Status status = lsock.Accept(sock);
+#else
+        SOCK       sock;
+        EIO_Status status = LSOCK_Accept(lsock.GetLSOCK(), 0, &sock);
+#endif
         if (status == eIO_Success) {
             try {
                 pool.AcceptRequest(new CSocketRequest(*this, sock));
                 if (pool.IsFull()  &&  m_TemporarilyStopListening) {
-                    LSOCK_Close(lsock);
+                    lsock.Close();
                     pool.WaitForRoom();
-                    LSOCK_Create(m_Port, 5, &lsock);
+                    lsock.Listen(m_Port);
                 }
             } catch (CBlockingQueueException) {
                 _ASSERT(!m_TemporarilyStopListening);
@@ -89,8 +94,6 @@ void CThreadedServer::Run(void)
             ERR_POST("accept failed: " << IO_StatusStr(status));
         }
     }
-
-    LSOCK_Close(lsock);
 }
 
 
@@ -100,6 +103,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.7  2002/09/13 17:13:27  ucko
+* Use CListeningSocket instead of LSOCK, but stick with SOCK to avoid
+* double closes.
+*
 * Revision 6.6  2002/09/13 15:16:25  ucko
 * Update for new CBlockingQueue exception setup.
 *
