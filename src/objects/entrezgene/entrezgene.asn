@@ -1,4 +1,4 @@
---$Revision: 1.17 $ 
+--$Revision: 1.18 $ 
 --********************************************************************** 
 -- 
 --  NCBI Entrezgene 
@@ -58,8 +58,9 @@ Entrezgene ::= SEQUENCE {
     unique-keys SEQUENCE OF Dbtag OPTIONAL ,              -- see note 3
     xtra-index-terms SEQUENCE OF VisibleString OPTIONAL , -- see note 2
     xtra-properties SEQUENCE OF Xtra-Terms OPTIONAL ,     -- see note 2
-    xtra-iq SEQUENCE OF Xtra-Terms OPTIONAL }             -- see note 2
- 
+    xtra-iq SEQUENCE OF Xtra-Terms OPTIONAL,              -- see note 2
+    non-unique-keys SEQUENCE OF Dbtag OPTIONAL }
+    
 Gene-track ::= SEQUENCE { 
     geneid INTEGER ,     -- required unique document id 
     status INTEGER {
