@@ -1222,7 +1222,7 @@ bool BlockMultipleAlignment::ExtractRows(
 
     if (pairwiseAlignments) {
         TRACE_MESSAGE("creating new pairwise alignments");
-        SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
+        ncbi::EDiagSev oldLevel = SetDiagPostLevel(eDiag_Warning);    // otherwise, info messages take a long time if lots of rows
 
         UngappedAlignedBlockList uaBlocks;
         GetUngappedAlignedBlocks(&uaBlocks);
@@ -1252,7 +1252,7 @@ bool BlockMultipleAlignment::ExtractRows(
 
             pairwiseAlignments->push_back(newAlignment);
         }
-        SetDiagPostLevel(eDiag_Info);
+        SetDiagPostLevel(oldLevel);
     }
 
     // remove sequences
@@ -1647,6 +1647,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/06/22 19:27:54  lanczyck
+* switch diagnostic post level back to oldLevel in ExtractRows()
+*
 * Revision 1.10  2004/06/14 13:49:51  thiessen
 * make BlockMultipleAlignment and Sequence classes public
 *
