@@ -156,7 +156,7 @@ are searched together).   No new   handles are created for the "id".<br>
 map other   seq-ids.  This may result   in obtaining different handles (keys)
  for the   same id or  getting the same   handle for different seq-ids. To
  avoid such   misbehavior  AddHandleReference()    and ReleaseHandleReference()
- methods   of CSeq_id_Mapper  must be used.<br>
+ methods   of CSeq_id_Mapper  are called by CSeq_id_Handle constructor and destructor.<br>
   <br>
   <br>
   <br>
