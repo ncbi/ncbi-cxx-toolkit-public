@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/06/20 14:08:01  hurwitz
+ * fix header problem by getting rid of call to CopyASNObject
+ *
  * Revision 1.4  2002/06/19 20:29:43  hurwitz
  * added more support functions for cdd access
  *
@@ -97,7 +100,7 @@
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-#include <../src/internal/structure/CDTree/cdt_read_write_asn.hpp>
+//#include <../src/internal/structure/CDTree/cdt_read_write_asn.hpp>
 
 // generated classes
 
@@ -914,7 +917,8 @@ void CCdd::ConvertSequences(std::deque< CRef < CSeq_data > >& ConvertedSequences
             }
             // if it's already ncbieaa make a copy of it
             else if ((*i)->GetSeq().GetInst().GetSeq_data().IsNcbieaa()) {
-              ConvertedSeqData = CopyASNObject((*i)->GetSeq().GetInst().GetSeq_data(), &err);
+//              ConvertedSeqData = CopyASNObject((*i)->GetSeq().GetInst().GetSeq_data(), &err);
+              ConvertedSeqData = &((*i)->SetSeq().SetInst().SetSeq_data());
               ConvertedSequences.push_back(ConvertedSeqData);
             }
             else {
