@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.312 2004/08/03 19:27:15 ucko Exp $
+#  $Id: configure.ac,v 1.313 2004/08/04 15:30:41 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -881,24 +881,33 @@ changequote([, ])dnl
 else
    bit64_sfx=
    ARCH_CFLAGS=
-   case "$host_os:$compiler" in
-    solaris*:WorkShop5 )
+   case "$host:$compiler" in
+    *solaris*:WorkShop5 )
       LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
-    solaris*:WorkShop51 )
+    *solaris*:WorkShop51 )
       LIBS="-Bstatic -L$CXX_PATH/../lib -lCstd -lCrun -lm -Bdynamic $LIBS"
       MATH_LIBS=" "
       ;;
+    sparc-sun-solaris*:WorkShop54 )
+      # Using this (still very conservative) non-generic XARCH flavor allows
+      # compiler to use the extended instruction set which reportedly speeds
+      # up the locking of at least some STL classes by allowing them to use
+      # atomic increment instead of mutex;  also seems to fix something that
+      # caused misterios basic_string<> related crashes in the
+      # WorkShop54 -xarch=v8 -mt configuration).
+      ARCH_CFLAGS="-xarch=v8plus"
+      ;;
 changequote(, )dnl
-    solaris*:WorkShop5[234] )
+    *solaris*:WorkShop5[234] )
       # MATH_LIBS=" "
       # Redundant for programs, but necessary for dlopen-able shared libs,
       # at least in the x86 ReleaseMT configuration.
       LIBS="-lCstd $LIBS"
       ;;
 changequote([, ])dnl
-    irix*:MIPSpro73 | irix*:KCC )
+    *irix*:MIPSpro73 | *irix*:KCC )
       ARCH_CFLAGS="-n32"
       ;;
    esac
