@@ -211,7 +211,7 @@ public:
     void UnLease()
     {
         for(Uint4 index = 0; index < m_VolList.size(); index++) {
-            return m_VolList[index].Vol()->UnLease();
+            m_VolList[index].Vol()->UnLease();
         }
     }
     
