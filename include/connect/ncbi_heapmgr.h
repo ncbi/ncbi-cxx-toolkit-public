@@ -33,7 +33,6 @@
  *
  */
 
-#include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
 
 
@@ -190,6 +189,9 @@ extern NCBI_XCONNECT_EXPORT int HEAP_Serial(const HEAP heap);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/09/02 20:45:45  lavr
+ * -<connect/connect_export.h> -- now included from <connect/ncbi_types.h>
+ *
  * Revision 6.17  2003/08/28 21:09:37  lavr
  * Accept (and allocate) additional heap extent in HEAP_CopySerial()
  *
