@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/02/12 20:24:21  dicuccio
+ * Fixed white space anomalies introduced by cvs (trailing return)
+ *
  * Revision 1.1  2005/02/12 19:15:11  dicuccio
  * Initial version - ported from Aleksandr Morgulis's tree in internal/winmask
  *
