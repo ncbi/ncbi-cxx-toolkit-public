@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/27 20:10:02  vakatov
+* Catch the case of missing iostream header(s)
+*
 * Revision 1.1  1998/10/27 19:49:36  vakatov
 * Initial revision
 *
@@ -42,14 +45,21 @@
 
 #include <ncbistl.hpp>
 
+#if !defined(HAVE_IOSTREAM_H)
+#  define NCBI_USE_NEW_IOSTREAM
+#endif
+
+
 #if defined(HAVE_IOSTREAM)  &&  defined(NCBI_USE_NEW_IOSTREAM)
-#include <fstream>
-#include <strstream>
-#define IO_PREFIX std
+#  include <fstream>
+#  include <strstream>
+#  define IO_PREFIX std
+#elif defined(HAVE_IOSTREAM_H)
+#  include <fstream.h>
+#  include <strstream.h>
+#  define IO_PREFIX
 #else
-#include <fstream.h>
-#include <strstream.h>
-#define IO_PREFIX
+#  error "Cannot find neither <iostream> nor <iostream.h>!"
 #endif
 
 
