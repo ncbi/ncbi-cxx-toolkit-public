@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.5 2000/12/26 23:33:18 vakatov Exp $
+	$Id: makelibs.met,v 1.6 2000/12/29 00:38:34 vakatov Exp $
 	
 	Revision History:
 	----------------
@@ -372,7 +372,9 @@ on DoCreateProjects()
 				"ncbi_core", "ncbi_file_connector", "ncbi_heapmgr", "ncbi_http_connector", Â
 				"ncbi_lbsm", "ncbi_misc", "ncbi_priv", Â
 				"ncbi_service", "ncbi_service_dispd", Â
-				"ncbi_socket_", "ncbi_socket_connector", "ncbi_util"}
+				"ncbi_socket_", "ncbi_socket_connector", "ncbi_util", Â
+				"ncbi_connector", "ncbi_service_connector", "ncbi_service_lbsmd_stub" Â
+				"ncbi_server_info"}
 				Add Files {SOURCEFILES & "connect:" & i & ".c"} To Segment 1
 			end repeat
 			
