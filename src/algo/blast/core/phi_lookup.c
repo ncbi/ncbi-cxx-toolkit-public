@@ -45,6 +45,20 @@ static char const rcsid[] =
 #define seedepsilon 0.00001
 #define allone  ((1 << ALPHABET_SIZE) - 1)
 
+typedef struct seedSearchItems {
+    double  charMultiple[ALPHABET_SIZE];
+    double  paramC; /*used in e-value computation*/
+    double  paramLambda; /*used in e-value computation*/
+    double  paramK; /*used in the bit score computation*/
+    Int4         cutoffScore; /*lower bound for what is a hit*/
+    double  standardProb[ALPHABET_SIZE]; /*probability of each letter*/
+    char         order[ASCII_SIZE];
+    char         pchars[ALPHABET_SIZE+1];
+    char         name_space[BUF_SIZE];  /*name of a pattern*/
+    char         pat_space[PATTERN_SPACE_SIZE];  /*string description
+                                                   of pattern*/
+} seedSearchItems;
+
 /*Initialize the order of letters in the alphabet, the score matrix,
 and the row sums of the score matrix. matrixToFill is the
 score matrix, program_flag says which variant of the program is
