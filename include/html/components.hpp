@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/01/20 18:12:42  vasilche
+* Added possibility to change label of buttons.
+*
 * Revision 1.16  1999/01/19 21:17:37  vasilche
 * Added CPager class
 *
@@ -118,6 +121,9 @@ public:
     int m_Width; // in pixels
     string m_BgColor;
 
+    string m_SubmitName;
+    string m_SubmitLabel;
+
     string m_DbName;  // name of the database field
     map<string, string> m_Databases;  // the list of databases
     string m_DefaultDatabase;  // initially selected database
@@ -156,6 +162,7 @@ public:
     CButtonList(void);
 
     string m_SubmitName;
+    string m_SubmitLabel;
     string m_SelectName;  // select tag name
     map<string, string> m_List;
     string m_Selected;

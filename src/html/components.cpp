@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/01/20 18:12:44  vasilche
+* Added possibility to change label of buttons.
+*
 * Revision 1.19  1999/01/19 21:17:41  vasilche
 * Added CPager class
 *
@@ -110,7 +113,7 @@
 BEGIN_NCBI_SCOPE
 
 CQueryBox::CQueryBox(const string& URL)
-    : CParent(URL), m_TermWidth(0)
+    : CParent(URL), m_TermWidth(0), m_SubmitName("Search")
 {
 }
 
@@ -150,7 +153,9 @@ void CQueryBox::CreateSubNodes()
     table->InsertAt(0, 0, term);
 
     table->InsertAt(0, 0, new CHTMLText("&nbsp;"));
-    table->InsertAt(0, 0, new CHTML_submit("Search"));
+    table->InsertAt(0, 0, m_SubmitLabel.empty()?
+                    new CHTML_submit(m_SubmitName):
+                    new CHTML_submit(m_SubmitName, m_SubmitLabel));
     table->InsertAt(0, 0, new CHTML_br);
         
     CHTML_select * selectpage = new CHTML_select(m_DispMax);
@@ -183,7 +188,9 @@ void CButtonList::CreateSubNodes()
     if ( m_List.empty() )
         return; // nothing to display
 
-    AppendChild(new CHTML_submit(m_SubmitName));
+    AppendChild(m_SubmitLabel.empty()?
+                new CHTML_submit(m_SubmitName):
+                new CHTML_submit(m_SubmitName, m_SubmitLabel));
 
     CHTML_select * Select = new CHTML_select(m_SelectName);
     AppendChild(Select);
