@@ -37,6 +37,8 @@
 
 #include <bdb/bdb_types.hpp>
 
+#include <stdio.h>
+
 BEGIN_NCBI_SCOPE
 
 /** @addtogroup BDB
@@ -82,6 +84,11 @@ public:
     /// @param db_home destination directory for the database
     void OpenWithTrans(const char* db_home);
 
+    /// Open error reporting file for the environment
+    ///
+    /// @param 
+    ///    file_name - name of the error file
+    void OpenErrFile(const char* file_name);
 
     /// Join the existing environment
     ///
@@ -113,6 +120,7 @@ private:
 private:
     DB_ENV*  m_Env;
     bool     m_Transactional; ///< TRUE if environment is transactional
+    FILE*    m_ErrFile;
 };
 
 /* @} */
@@ -122,6 +130,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/29 16:15:26  kuznets
+ * +OpenErrFile
+ *
  * Revision 1.9  2003/12/12 14:05:52  kuznets
  * + CBDB_Env::IsTransactional
  *

@@ -36,7 +36,8 @@ BEGIN_NCBI_SCOPE
 
 CBDB_Env::CBDB_Env()
 : m_Env(0),
-  m_Transactional(false)
+  m_Transactional(false),
+  m_ErrFile(0)
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
@@ -44,13 +45,17 @@ CBDB_Env::CBDB_Env()
 
 CBDB_Env::CBDB_Env(DB_ENV* env)
 : m_Env(env),
-  m_Transactional(false)
+  m_Transactional(false),
+  m_ErrFile(0)
 {
 }
 
 CBDB_Env::~CBDB_Env()
 {
     /*int ret = */m_Env->close(m_Env, 0);
+    if (m_ErrFile) {
+        fclose(m_ErrFile);
+    }
 }
 
 void CBDB_Env::SetCacheSize(unsigned int cache_size)
@@ -118,6 +123,17 @@ DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
     return txn;
 }
 
+void CBDB_Env::OpenErrFile(const char* file_name)
+{
+    if (m_ErrFile) {
+        fclose(m_ErrFile);
+        m_ErrFile = 0;
+    }
+    m_ErrFile = fopen(file_name, "a");
+    if (m_ErrFile) {
+        m_Env->set_errfile(m_Env, m_ErrFile);
+    }
+}
 
 
 END_NCBI_SCOPE
@@ -126,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/12/29 16:15:37  kuznets
+ * +OpenErrFile
+ *
  * Revision 1.9  2003/12/29 12:55:35  kuznets
  * Minor tweaking of locking mechanism.
  *
