@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.71  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -281,8 +284,8 @@ void CDataType::PrintDTD(CNcbiOstream& out) const
     m_Comments.PrintDTD(out);
     PrintDTDElement(out);
     out << '\n';
-    PrintDTDExtra(out);
     x_AddSavedName(XmlTagName());
+    PrintDTDExtra(out);
 }
 
 void CDataType::PrintDTD(CNcbiOstream& out,
@@ -301,8 +304,8 @@ void CDataType::PrintDTD(CNcbiOstream& out,
         extra.PrintDTD(out, CComments::eOneLine);
     }
     out << '\n';
-    PrintDTDExtra(out);
     x_AddSavedName(XmlTagName());
+    PrintDTDExtra(out);
 }
 
 void CDataType::PrintDTDExtra(CNcbiOstream& /*out*/) const
@@ -313,22 +316,35 @@ void CDataType::PrintDTDExtra(CNcbiOstream& /*out*/) const
 // Marc Dumontier, Blueprint initiative, dumontier@mshri.on.ca
 void CDataType::PrintXMLSchema(CNcbiOstream& out) const
 {
+    if (m_DataMember && (m_DataMember->Attlist() || m_DataMember->Notag())) {
+        return;
+    }
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
+//    out <<
+//        "<!-- Definition of "<< XmlTagName() <<" -->\n"
+//        "\n";
     m_Comments.PrintDTD(out);
     PrintXMLSchemaElement(out);
     out << '\n';
-    PrintXMLSchemaExtra(out);
     x_AddSavedName(XmlTagName());
+    PrintXMLSchemaExtra(out);
+    out << '\n';
 }
                                                                                                                                                       
 void CDataType::PrintXMLSchema(CNcbiOstream& out,
                          const CComments& extra) const
 {
+    if (m_DataMember && (m_DataMember->Attlist() || m_DataMember->Notag())) {
+        return;
+    }
     if (x_IsSavedName(XmlTagName())) {
         return;
     }
+//    out <<
+//        "<!-- Definition of "<< XmlTagName() <<" -->\n"
+//        "\n";
     m_Comments.PrintDTD(out);
     bool oneLineComment = extra.OneLine();
     if ( oneLineComment ) {
@@ -340,8 +356,9 @@ void CDataType::PrintXMLSchema(CNcbiOstream& out,
     }
     PrintXMLSchemaElement(out);
     out << '\n';
-    PrintXMLSchemaExtra(out);
     x_AddSavedName(XmlTagName());
+    PrintXMLSchemaExtra(out);
+    out << '\n';
 }
 
 void CDataType::PrintXMLSchemaExtra(CNcbiOstream& /*out*/) const

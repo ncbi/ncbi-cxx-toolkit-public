@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.26  2003/05/22 20:10:25  gouriano
 * added UTF8 strings
 *
@@ -178,15 +181,36 @@ void CStaticDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
 void CStaticDataType::PrintXMLSchemaElementWithTag(
     CNcbiOstream& out, const string& tag) const
 {
+    string tagOpen("<xs:element"), tagClose("</xs:element"), use;
+    if (GetEnforcedStdXml() &&
+        GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        const CDataMember* mem = GetDataMember();
+        tagOpen = "        <xs:attribute";
+        tagClose= "        </xs:attribute";
+        if (mem->Optional()) {
+            use = "optional";
+            if (mem->GetDefault()) {
+                use += "\" default=\"" + mem->GetDefault()->GetXmlString();
+            }
+        } else {
+            use = "required";
+        }
+    }
     string type;
     string contents;
     GetXMLSchemaContents(type,contents);
-    out << "<xs:element name=\"" << tag << "\"";
+
+    out << tagOpen << " name=\"" << tag << "\"";
     if (!type.empty()) {
         out << " type=\"" << type << "\"";
     }
+    if (!use.empty()) {
+        out << " use=\"" << use << "\"";
+    }
     if (!contents.empty()) {
-        out << ">\n" << contents << "</xs:element>\n";
+        out << ">\n" << contents << tagClose << ">\n";
     } else {
         out << "/>\n";
     }

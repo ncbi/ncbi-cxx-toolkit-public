@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/06/16 14:40:15  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.10  2003/05/22 20:09:04  gouriano
 * added UTF8 strings
 *
@@ -106,7 +109,7 @@ public:
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
-    void PrintXMLSchemaElementWithTag(CNcbiOstream& out, const string& tag) const;
+    void PrintXMLSchemaElementWithTag(CNcbiOstream& out,const string& tag) const;
 
     TObjectPtr CreateDefault(const CDataValue& value) const;
 

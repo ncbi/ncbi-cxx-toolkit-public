@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/06/16 14:40:15  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.20  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -340,10 +343,11 @@ public:
         return sm_EnforcedStdXml;
     }
 
-private:
+protected:
     static bool x_IsSavedName(const string& name);
     static void x_AddSavedName(const string& name);
 
+private:
     const CDataType* m_ParentType;       // parent type
     const CDataTypeModule* m_Module;
     string m_MemberName;

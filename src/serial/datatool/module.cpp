@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.34  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -240,8 +243,8 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
 {
     out <<
         "<!-- ============================================ -->\n"
-        "<!-- This section mapped from ASN.1 module "<<GetName()<<" -->\n"
-        "\n";
+        "<!-- This section is mapped from module \"" << GetName() << "\"\n"
+        "================================================= -->\n";
 
     m_Comments.PrintDTD(out, CComments::eMultiline);
 
@@ -255,9 +258,7 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
             out << "          " << *i;
         }
 
-        out << " -->\n"
-            "\n"
-            "\n";
+        out << " -->\n\n";
     }
     if ( !m_Imports.empty() ) {
         out <<
@@ -274,13 +275,14 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
             }
             out << " FROM "<< imp->moduleName;
         }
-        out << " -->\n"
-            "\n"
-            "\n";
+        out << " -->\n\n";
     }
 
-    out <<
-        "<!-- ============================================ -->\n";
+    if ( !m_Exports.empty() || !m_Imports.empty() ) {
+        out <<
+            "<!-- ============================================ -->\n";
+    }
+    out << "\n";
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
         out <<
@@ -308,7 +310,7 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
 {
     out <<
         "<!-- ============================================ -->\n"
-        "<!-- This section mapped from module " << GetName() << "\n"
+        "<!-- This section is mapped from module \"" << GetName() << "\"\n"
         "================================================= -->\n";
                                                                                                                                     
     m_Comments.PrintDTD(out, CComments::eMultiline);
@@ -323,9 +325,7 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
             out << "          " << *i;
         }
 
-        out << " -->\n"
-            "\n"
-            "\n";
+        out << " -->\n\n";
     }
     if ( !m_Imports.empty() ) {
         out <<
@@ -342,22 +342,16 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
             }
             out << " FROM "<< imp->moduleName;
         }
-        out << " -->\n"
-            "\n"
-            "\n";
+        out << " -->\n\n";
     }
-
-    out <<
-        "<!-- ============================================ -->\n";
+    if ( !m_Exports.empty() || !m_Imports.empty() ) {
+        out <<
+            "<!-- ============================================ -->\n";
+    }
+    out << "\n";
 
     ITERATE ( TDefinitions, i, m_Definitions ) {
-        out <<
-            "<!-- Definition of "<<i->first<<" -->\n"
-            "\n";
         i->second->PrintXMLSchema(out);
-	out <<
-            "\n"
-            "\n";
     }
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }

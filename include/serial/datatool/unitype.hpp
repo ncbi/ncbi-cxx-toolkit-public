@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/06/16 14:40:15  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.6  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -104,8 +107,18 @@ public:
     AutoPtr<CTypeStrings> GetFullCType(void) const;
     const char* GetASNKeyword(void) const;
 
+    bool IsOptional(void) const
+        {
+            return m_Optional;
+        }
+    void SetOptional(bool optional)
+        {
+            m_Optional = optional;
+        }
+
 private:
     AutoPtr<CDataType> m_ElementType;
+    bool m_Optional;
 };
 
 class CUniSetDataType : public CUniSequenceDataType {

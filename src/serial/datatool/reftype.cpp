@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.27  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -130,6 +133,8 @@
 */
 
 #include <serial/datatool/reftype.hpp>
+#include <serial/datatool/unitype.hpp>
+#include <serial/datatool/statictype.hpp>
 #include <serial/datatool/typestr.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/module.hpp>
@@ -164,13 +169,34 @@ void CReferenceDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
 {
     string tag(XmlTagName());
     string userType(UserTypeXmlTagName());
+    const CUniSequenceDataType* uniType = 
+        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+
+    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
+        const CDataType* realType = Resolve();
+        realType->PrintXMLSchemaElement(out);
+        return;
+    }
+
     out << "<xs:element name=\"" << tag << "\">\n"
-        << "  <xs:complexType>\n"
-        << "    <xs:sequence>\n"
+        << "  <xs:complexType>\n";
+    out << "    <xs:sequence>\n"
         << "      <xs:element ref=\"" << userType << "\"/>\n"
-        << "    </xs:sequence>\n"
-        << "  </xs:complexType>\n"
+        << "    </xs:sequence>\n";
+    out << "  </xs:complexType>\n"
         << "</xs:element>\n";
+}
+
+void CReferenceDataType::PrintXMLSchemaExtra(CNcbiOstream& out) const
+{
+    string tag(XmlTagName());
+    string userType(UserTypeXmlTagName());
+    const CUniSequenceDataType* uniType = 
+        dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+
+    if (tag == userType || (GetEnforcedStdXml() && uniType)) {
+        Resolve()->PrintXMLSchemaExtra(out);
+    }
 }
 
 void CReferenceDataType::FixTypeTree(void) const

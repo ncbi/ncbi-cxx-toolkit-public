@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.46  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -323,50 +326,180 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
 {
     string tag = XmlTagName();
     string asnk = GetASNKeyword();
-    out << "<xs:element name=\"" << tag << "\">\n";
-    out << "  <xs:complexType>\n";
-    if(NStr::CompareCase(asnk,"CHOICE")==0)
-    {
-        out << "    <xs:choice>\n";
-    }
-    else if(NStr::CompareCase(asnk,"SEQUENCE")==0)
-    {
-        out << "    <xs:sequence>\n";
-    }
-    ITERATE ( TMembers, i, m_Members ) {
-        const CDataMember& member = **i;
-        string member_name( member.GetType()->XmlTagName());
-        if (GetEnforcedStdXml()) {
-            const CUniSequenceDataType* type =
-                dynamic_cast<const CUniSequenceDataType*>(member.GetType());
-            if (type) {
-                const CStaticDataType* elemType =
-                    dynamic_cast<const CStaticDataType*>(type->GetElementType());
-                if (elemType) {
-            		out << "      <xs:element ref=\"" << member_name << "\"";
-                        if( (*i)->Optional())
-                            out << " minOccurs=\"0\"";
-                        out << " maxOccurs=\"unbounded\"";
-                	out << "/>\n";
-                    continue;
+    string xsdk;
+    bool hasAttlist= false, isAttlist= false;
+    bool hasNotag= false, isOptional= false, isSeq= false;
+    bool isSimple= false, isSimpleSeq= false;
+    bool parent_hasNotag= false;
+    string openTag, closeTag1, closeTag2, simpleType, simpleContents;
+
+    if (GetEnforcedStdXml()) {
+        ITERATE ( TMembers, i, m_Members ) {
+            if (i->get()->Attlist()) {
+                hasAttlist = true;
+                break;
+            }
+        }
+        if (GetDataMember()) {
+            isAttlist = GetDataMember()->Attlist();
+            hasNotag   = GetDataMember()->Notag();
+            isOptional= GetDataMember()->Optional();
+            isSeq   = (dynamic_cast<const CUniSequenceDataType*>(GetDataMember()->GetType()) != 0);
+        }
+        const CUniSequenceDataType* uniType = 
+            dynamic_cast<const CUniSequenceDataType*>(GetParentType());
+        if (uniType) {
+            tag = GetParentType()->XmlTagName();
+            isSeq = true;
+            if (GetParentType()->GetDataMember()) {
+                isOptional = GetParentType()->GetDataMember()->Optional();
+                parent_hasNotag = GetParentType()->GetDataMember()->Notag();
+            } else {
+                isOptional = uniType->IsOptional();
+            }
+        }
+        if (hasNotag && GetMembers().size()==1) {
+            const CDataMember* member = GetMembers().front().get();
+            isOptional = member->Optional();
+            const CUniSequenceDataType* typeSeq =
+                dynamic_cast<const CUniSequenceDataType*>(member->GetType());
+            isSeq = (typeSeq != 0);
+            if (isSeq) {
+                const CDataMemberContainerType* data =
+                    dynamic_cast<const CDataMemberContainerType*>(typeSeq->GetElementType());
+                if (data) {
+                    asnk = data->GetASNKeyword();
                 }
             }
         }
-        out << "      <xs:element ref=\"" << member_name << "\"";
-        if( (*i)->Optional())
-            out << " minOccurs=\"0\"";
-        out << "/>\n";
+        if (hasAttlist && GetMembers().size()==2) {
+            ITERATE ( TMembers, i, GetMembers() ) {
+                if (i->get()->Attlist()) {
+                    continue;
+                }
+                if (i->get()->SimpleType()) {
+                    isSimple = true;
+                    const CStaticDataType* statType =
+                        dynamic_cast<const CStaticDataType*>(i->get()->GetType());
+                    if (!statType) {
+                        NCBI_THROW(CDatatoolException,eInvalidData,
+                                   string("Wrong element type: ") + tag);
+                    }
+                    statType->GetXMLSchemaContents(simpleType, simpleContents);
+                    break;
+                }
+                isSimpleSeq = (dynamic_cast<const CUniSequenceDataType*>(i->get()->GetType()) != 0);
+                if (isSimpleSeq) {
+                    isSeq = true;
+                    if (i->get()->GetType()->GetDataMember()) {
+                        if (i->get()->GetType()->GetDataMember()->Notag()) {
+                            isOptional = i->get()->GetType()->GetDataMember()->Optional();
+                        } else {
+                            isSeq = isSimpleSeq = false;
+                        }
+                    }
+                }
+                break;
+            }
+        }
     }
-    if(NStr::CompareCase(asnk,"CHOICE")==0)
-    {
-        out << "    </xs:choice>\n";
+
+    x_AddSavedName(tag);
+    if(NStr::CompareCase(asnk,"CHOICE")==0) {
+        xsdk = "choice";
+    } else if(NStr::CompareCase(asnk,"SEQUENCE")==0) {
+        xsdk = "sequence";
     }
-    else if(NStr::CompareCase(asnk,"SEQUENCE")==0)
-    {
-        out << "    </xs:sequence>\n";
+
+    if (isAttlist || parent_hasNotag) {
+        openTag.erase();
+        closeTag1.erase();
+        closeTag2.erase();
+    } else if (isSimple) {
+        openTag   = "<xs:element name=\"" + tag + "\">\n"
+                    "  <xs:complexType>\n";
+        if (!simpleType.empty()) {
+            openTag  +="    <xs:simpleContent>\n"
+                       "      <xs:extension base=\"" + simpleType + "\">\n";
+        }
+        closeTag1.erase();
+        closeTag2.erase();
+        if (!simpleType.empty()) {
+            closeTag2+= "      </xs:extension>\n"
+                        "    </xs:simpleContent>\n";
+        }
+        closeTag2+= "  </xs:complexType>\n"
+                    "</xs:element>\n";
+    } else {
+        openTag.erase();
+        if (!hasNotag) {
+            openTag += "<xs:element name=\"" + tag + "\">\n" +
+                       "  <xs:complexType>\n";
+        }
+        openTag     += "    <xs:"  + xsdk;
+        if (isOptional) {
+            openTag += " minOccurs=\"0\"";
+        }
+        if (isSeq) {
+            openTag += " maxOccurs=\"unbounded\"";
+        }
+        openTag     += ">\n";
+        closeTag1    = "    </xs:" + xsdk + ">\n";
+        closeTag2.erase();
+        if (!hasNotag) {
+            closeTag2+= "  </xs:complexType>\n"
+                        "</xs:element>\n";
+        }
     }
-    out << "  </xs:complexType>\n";
-    out << "</xs:element>\n";
+
+    out << openTag;
+    if (isAttlist) {
+        ITERATE ( TMembers, i, m_Members ) {
+            i->get()->GetType()->PrintXMLSchemaElement(out);
+        }
+    } else if (!isSimple) {
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            string member_name( member.GetType()->XmlTagName());
+            bool uniseq = false;
+            if (GetEnforcedStdXml()) {
+                if (member.Attlist()) {
+                    continue;
+                }
+                const CUniSequenceDataType* type =
+                    dynamic_cast<const CUniSequenceDataType*>(member.GetType());
+                uniseq = (type != 0);
+                if (uniseq) {
+                    if (isSimpleSeq) {
+                        type->PrintXMLSchemaElement(out);
+                        continue;
+                    }
+                }
+                if (member.Notag()) {
+                    member.GetType()->PrintXMLSchemaElement(out);
+                    continue;
+                }
+            }
+            out << "      <xs:element ref=\"" << member_name << "\"";
+            if ( member.Optional()) {
+                out << " minOccurs=\"0\"";
+            }
+            if (uniseq) {
+                out << " maxOccurs=\"unbounded\"";
+            }
+            out << "/>\n";
+        }
+    }
+    out << closeTag1;
+    if (hasAttlist) {
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataMember& member = **i;
+            if (member.Attlist()) {
+                member.GetType()->PrintXMLSchemaElement(out);
+            }
+        }
+    }
+    out << closeTag2;
 }
 
 void CDataMemberContainerType::PrintXMLSchemaExtra(CNcbiOstream& out) const
@@ -377,7 +510,11 @@ void CDataMemberContainerType::PrintXMLSchemaExtra(CNcbiOstream& out) const
     }
     ITERATE ( TMembers, i, m_Members ) {
         const CDataMember& member = **i;
-        member.PrintXMLSchema(out);
+        if (member.Notag()) {
+            member.GetType()->PrintXMLSchemaExtra(out);
+        } else {
+            member.PrintXMLSchema(out);
+        }
     }                                                                                         
     m_LastComments.PrintDTD(out, CComments::eMultiline);
 }

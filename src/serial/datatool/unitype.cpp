@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.25  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -139,6 +142,7 @@ BEGIN_NCBI_SCOPE
 CUniSequenceDataType::CUniSequenceDataType(const AutoPtr<CDataType>& element)
 {
     SetElementType(element);
+    m_Optional = true;
 }
 
 const char* CUniSequenceDataType::GetASNKeyword(void) const
@@ -209,45 +213,56 @@ void CUniSequenceDataType::PrintDTDExtra(CNcbiOstream& out) const
 // modified by Andrei Gourianov, gouriano@ncbi
 void CUniSequenceDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
 {
-    const CDataType* data = GetElementType();
-    const CStaticDataType* elemType = 0;
-    if (GetEnforcedStdXml()) {
-        elemType = dynamic_cast<const CStaticDataType*>(data);
-    }
-    const CReferenceDataType* ref =
-        dynamic_cast<const CReferenceDataType*>(data);
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
     string tag(XmlTagName());
-    if (!ref && elemType) {
-        elemType->PrintXMLSchemaElementWithTag( out, tag);
-    } else {
-        string userType = ref ? ref->UserTypeXmlTagName() : data->XmlTagName();
-        out << "<xs:element name=\""<<tag<<"\">\n"
-            << "  <xs:complexType>\n"
-            << "    <xs:sequence>\n"
-            << "      <xs:element ref=\"" << userType
-            << "\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>\n"
-            << "    </xs:sequence>\n"
-            << "  </xs:complexType>\n"
-            << "</xs:element>";
+    string userType =
+        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        const CStaticDataType* typeStatic =
+            dynamic_cast<const CStaticDataType*>(typeElem);
+        if (typeStatic) {
+            typeStatic->PrintXMLSchemaElementWithTag( out, tag);
+        } else {
+            typeElem->PrintXMLSchemaElement(out);
+        }
+        return;
     }
+
+    out << "<xs:element name=\"" << tag << "\">\n"
+        << "  <xs:complexType>\n"
+        << "    <xs:sequence>\n"
+        << "      <xs:element ref=\"" << userType
+        << "\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>\n"
+        << "    </xs:sequence>\n"
+        << "  </xs:complexType>\n"
+        << "</xs:element>\n";
 }
 
 void CUniSequenceDataType::PrintXMLSchemaExtra(CNcbiOstream& out) const
 {
-    const CDataType* data = GetElementType();
-    const CStaticDataType* elemType = 0;
-    if (GetEnforcedStdXml()) {
-        elemType = dynamic_cast<const CStaticDataType*>(data);
-        if (elemType) {
-            return;
+    const CDataType* typeElem = GetElementType();
+    const CReferenceDataType* typeRef =
+        dynamic_cast<const CReferenceDataType*>(typeElem);
+    string tag(XmlTagName());
+    string userType =
+        typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
+
+    if (tag == userType || (GetEnforcedStdXml() && !typeRef)) {
+        const CStaticDataType* typeStatic =
+            dynamic_cast<const CStaticDataType*>(typeElem);
+        if (!typeStatic) {
+            typeElem->PrintXMLSchemaExtra(out);
         }
+        return;
     }
-    const CReferenceDataType* ref =
-        dynamic_cast<const CReferenceDataType*>(data);
-    if ( !ref ) {
-       if ( GetParentType() == 0 )
+
+    if ( !typeRef ) {
+        if ( GetParentType() == 0 )
             out << '\n';
-        data->PrintXMLSchema(out);
+        typeElem->PrintXMLSchema(out);
     }
 }
 

@@ -707,7 +707,9 @@ CDataType* DTDParser::x_Type(
         }
     }
     if (uniseq) {
-        type = new CUniSequenceDataType(type);
+        CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
+        uniType->SetOptional( occ == DTDElement::eZeroOrMore);
+        type = uniType;
     }
     return type;
 }
@@ -997,6 +999,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.12  2003/06/16 14:41:05  gouriano
+ * added possibility to convert DTD to XML schema
+ *
  * Revision 1.11  2003/03/10 18:55:18  gouriano
  * use new structured exceptions (based on CException)
  *

@@ -236,6 +236,9 @@ bool CDataTool::ProcessModules(void)
     }
 
     if ( const CArgValue& ax = args["fxs"] ) {
+        if (srctype == SourceFile::eDTD) {
+            CDataType::SetEnforcedStdXml(true);
+        }
         generator.GetMainModules().PrintXMLSchema(ax.AsOutputFile());
         ax.CloseFile();
     }
@@ -527,6 +530,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.67  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.66  2003/05/29 17:26:49  gouriano
 * added possibility of generation .cvsignore file
 *

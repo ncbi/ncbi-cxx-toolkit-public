@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/06/16 14:40:15  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.7  2003/05/14 14:42:55  gouriano
 * added generation of XML schema
 *
@@ -86,6 +89,7 @@ public:
     void PrintASN(CNcbiOstream& out, int indent) const;
     void PrintDTDElement(CNcbiOstream& out) const;
     void PrintXMLSchemaElement(CNcbiOstream& out) const;
+    void PrintXMLSchemaExtra(CNcbiOstream& out) const;
 
     void FixTypeTree(void) const;
     bool CheckType(void) const;

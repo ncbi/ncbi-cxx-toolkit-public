@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/06/16 14:40:15  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.3  2000/12/15 15:38:36  vasilche
 * Added support of Int8 and long double.
 * Added support of BigInt ASN.1 extension - mapped to Int8.
@@ -79,6 +82,7 @@ public:
     virtual ~CDataValue(void);
 
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
+    virtual string GetXmlString(void) const = 0;
 
     void Warning(const string& mess) const;
 
@@ -106,6 +110,7 @@ class CNullDataValue : public CDataValue {
 public:
     ~CNullDataValue(void);
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string GetXmlString(void) const;
 };
 
 template<typename Type>
@@ -122,6 +127,7 @@ public:
         }
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string GetXmlString(void) const;
 
     const TValueType& GetValue(void) const
         {
@@ -145,6 +151,7 @@ public:
     ~CBitStringDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string GetXmlString(void) const;
 };
 
 class CIdDataValue : public CStringDataValue {
@@ -156,6 +163,7 @@ public:
     ~CIdDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string GetXmlString(void) const;
 };
 
 class CNamedDataValue : public CDataValue {
@@ -167,6 +175,7 @@ public:
     ~CNamedDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string GetXmlString(void) const;
 
     const string& GetName(void) const
         {
@@ -196,6 +205,7 @@ public:
     ~CBlockDataValue(void);
 
     void PrintASN(CNcbiOstream& out, int indent) const;
+    virtual string GetXmlString(void) const;
 
     TValues& GetValues(void)
         {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.23  2003/05/14 14:42:22  gouriano
 * added generation of XML schema
 *
@@ -121,6 +124,7 @@
 */
 
 #include <serial/datatool/enumtype.hpp>
+#include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/enumstr.hpp>
 #include <serial/datatool/module.hpp>
@@ -217,13 +221,36 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
 void CEnumDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
 {
     string tag(XmlTagName());
-    out << "<xs:element name=\"" << tag << "\">\n";
-    out << "  <xs:complexType>\n";
-    if(IsInteger()) {
-        out << "    <xs:simpleContent>\n"
-            << "      <xs:extension base=\"xs:integer\">\n";
+    string use("required");
+    string value("value");
+    bool inAttlist= false;
+
+    if (GetEnforcedStdXml() &&
+        GetParentType() && 
+        GetParentType()->GetDataMember() &&
+        GetParentType()->GetDataMember()->Attlist()) {
+        const CDataMember* mem = GetDataMember();
+        inAttlist = true;
+        value = tag;
+        if (mem->Optional()) {
+            use = "optional";
+            if (mem->GetDefault()) {
+                use += "\" default=\"" + mem->GetDefault()->GetXmlString();
+            }
+        } else {
+            use = "required";
+        }
     }
-    out << "        <xs:attribute name=\"value\" use=\"required\">\n";
+
+    if (!inAttlist) {
+        out << "<xs:element name=\"" << tag << "\">\n";
+        out << "  <xs:complexType>\n";
+        if(IsInteger()) {
+            out << "    <xs:simpleContent>\n"
+                << "      <xs:extension base=\"xs:integer\">\n";
+        }
+    }
+    out << "        <xs:attribute name=\"" << value << "\" use=\"" << use << "\">\n";
     out << "          <xs:simpleType>\n";
     out << "            <xs:restriction base=\"xs:string\">\n";
 
@@ -247,12 +274,14 @@ void CEnumDataType::PrintXMLSchemaElement(CNcbiOstream& out) const
     out << "            </xs:restriction>\n"
         << "          </xs:simpleType>\n"
         << "        </xs:attribute>\n";
-    if(IsInteger()) {
-        out << "      </xs:extension>\n"
-            << "    </xs:simpleContent>\n";
+    if (!inAttlist) {
+        if(IsInteger()) {
+            out << "      </xs:extension>\n"
+                << "    </xs:simpleContent>\n";
+        }
+        out << "  </xs:complexType>\n";
+        out << "</xs:element>\n";
     }
-    out << "  </xs:complexType>\n";
-    out << "</xs:element>\n";
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/06/16 14:41:05  gouriano
+* added possibility to convert DTD to XML schema
+*
 * Revision 1.18  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -136,16 +139,33 @@ void CNullDataValue::PrintASN(CNcbiOstream& out, int ) const
     out << "NULL";
 }
 
+string CNullDataValue::GetXmlString(void) const
+{
+    return kEmptyStr;
+}
+
 EMPTY_TEMPLATE
 void CDataValueTmpl<bool>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << (GetValue()? "TRUE": "FALSE");
 }
 
+string CDataValueTmpl<bool>::GetXmlString(void) const
+{
+    return (GetValue()? "true": "false");
+}
+
+
 EMPTY_TEMPLATE
 void CDataValueTmpl<Int4>::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
+}
+string CDataValueTmpl<Int4>::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
 }
 
 EMPTY_TEMPLATE
@@ -161,6 +181,12 @@ void CDataValueTmpl<string>::PrintASN(CNcbiOstream& out, int ) const
     }
     out << '"';
 }
+string CDataValueTmpl<string>::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
+}
 
 CBitStringDataValue::~CBitStringDataValue(void)
 {
@@ -170,6 +196,12 @@ void CBitStringDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
 }
+string CBitStringDataValue::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
+}
 
 CIdDataValue::~CIdDataValue(void)
 {
@@ -178,6 +210,12 @@ CIdDataValue::~CIdDataValue(void)
 void CIdDataValue::PrintASN(CNcbiOstream& out, int ) const
 {
     out << GetValue();
+}
+string CIdDataValue::GetXmlString(void) const
+{
+    CNcbiOstrstream buffer;
+    PrintASN( buffer, 0);
+    return CNcbiOstrstreamToString(buffer);
 }
 
 CNamedDataValue::~CNamedDataValue(void)
@@ -196,6 +234,11 @@ void CNamedDataValue::PrintASN(CNcbiOstream& out, int indent) const
     }
     GetValue().PrintASN(out, indent);
 }
+string CNamedDataValue::GetXmlString(void) const
+{
+    return "not implemented";
+}
+
 
 bool CNamedDataValue::IsComplex(void) const
 {
@@ -219,6 +262,10 @@ void CBlockDataValue::PrintASN(CNcbiOstream& out, int indent) const
     }
     PrintASNNewLine(out, indent - 1);
     out << '}';
+}
+string CBlockDataValue::GetXmlString(void) const
+{
+    return "not implemented";
 }
 
 bool CBlockDataValue::IsComplex(void) const
