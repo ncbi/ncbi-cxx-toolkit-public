@@ -362,8 +362,7 @@ void CGenbankFormatter::x_Reference
     } else if ( reftype == CPubdesc::eReftype_no_target ) {
         // do nothing
     } else {
-        const CSeq_loc* loc = (ref.GetLoc() != 0) ? ref.GetLoc() : &ctx.GetLocation();
-        x_FormatRefLocation(ref_line, *loc, " to ", "; ", ctx);
+        x_FormatRefLocation(ref_line, ref.GetLoc(), " to ", "; ", ctx);
     }
     Wrap(l, GetWidth(), "REFERENCE", CNcbiOstrstreamToString(ref_line));
 }
@@ -374,11 +373,14 @@ void CGenbankFormatter::x_Authors
  const CReferenceItem& ref,
  CBioseqContext& ctx) const
 {
-    string auth = CReferenceItem::GetAuthString(ref.GetAuthors());
-    if ( !NStr::EndsWith(auth, ".") ) {
-        auth += ".";
+    string authors;
+    if (ref.IsSetAuthors()) {
+        CReferenceItem::FormatAuthors(ref.GetAuthors(), authors);
     }
-    Wrap(l, "AUTHORS", auth, eSubp);
+    if (!NStr::EndsWith(authors, '.')) {
+        authors += '.';
+    }
+    Wrap(l, "AUTHORS", authors, eSubp);
 }
 
 
@@ -406,14 +408,14 @@ void CGenbankFormatter::x_Journal
  CBioseqContext& ctx) const
 {
     string journal;
-    x_FormatRefJournal(journal, ref);
+    x_FormatRefJournal(ref, journal, ctx.Config());
 
-    if ((ref.GetPrepub() == CImprint::ePrepub_in_press)  ||
+    /*if ((ref.GetPrepub() == CImprint::ePrepub_in_press)  ||
         (ref.GetPubstatus() == 10  &&  NStr::IsBlank(ref.GetPages()))) {
         if (!NStr::EndsWith(journal , "in press", NStr::eNocase)) {
             journal += " In press";
         }
-    }
+    }*/
 
     Wrap(l, "JOURNAL", journal, eSubp);
 }
@@ -738,6 +740,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/01/12 16:46:16  shomrat
+* Changes in reference formatting
+*
 * Revision 1.23  2004/12/13 14:44:27  shomrat
 * Add In Press only if missing
 *

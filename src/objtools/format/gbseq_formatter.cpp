@@ -351,14 +351,15 @@ void CGBSeqFormatter::FormatReference
     CBioseqContext& ctx = *ref.GetContext();
 
     CRef<CGBReference> gbref(new CGBReference);
-    const CSeq_loc* loc = (ref.GetLoc() != 0) ?
-        ref.GetLoc() : &ctx.GetLocation();
+    const CSeq_loc* loc = &ref.GetLoc();
     CNcbiOstrstream refstr;
     refstr << ref.GetSerial() << ' ';
     x_FormatRefLocation(refstr, *loc, " to ", "; ", ctx);
     gbref->SetReference(CNcbiOstrstreamToString(refstr));
     list<string> authors;
-    CReferenceItem::GetAuthNames(authors, ref.GetAuthors());
+    if (ref.IsSetAuthors()) {
+        CReferenceItem::GetAuthNames(ref.GetAuthors(), authors);
+    }
     ITERATE (list<string>, it, authors) {
         CGBAuthor author(*it);
         gbref->SetAuthors().push_back(author);
@@ -376,7 +377,7 @@ void CGBSeqFormatter::FormatReference
         }
     }
     string journal;
-    x_FormatRefJournal(journal, ref);
+    x_FormatRefJournal(ref, journal, ctx.Config());
     NON_CONST_ITERATE (string, it, journal) {
         if ( (*it == '\n')  ||  (*it == '\t')  ||  (*it == '\r') ) {
             *it = ' ';
@@ -597,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/01/12 16:46:09  shomrat
+* Changes in reference formatting
+*
 * Revision 1.7  2004/10/05 18:06:28  shomrat
 * in place TruncateSpaces ->TruncateSpacesInPlace
 *
