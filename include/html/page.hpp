@@ -1,5 +1,5 @@
-#ifndef PAGE__HPP
-#define PAGE__HPP
+#ifndef HTML__PAGE__HPP
+#define HTML__PAGE__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/08/09 21:12:15  ivanov
+* Added stuff to read template from a stream and string
+*
 * Revision 1.22  2002/02/13 20:17:06  ivanov
 * Added support of dynamic popup menus. Changed EnablePopupMenu().
 *
@@ -132,10 +135,10 @@ public:
     int GetStyle(void) const;
     void SetStyle(int style);
 
-    // resolve <@XXX@> tag
+    // Resolve <@XXX@> tag
     virtual CNCBINode* MapTag(const string& name);
 
-    // add tag resolver
+    // Add tag resolver
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
 
@@ -143,22 +146,22 @@ protected:
     CCgiApplication* m_CgiApplication;  // pointer to runtime information
     int m_Style;
 
-    // tag resolvers (as registered by AddTagMap)
+    // Tag resolvers (as registered by AddTagMap)
     TTagMap m_TagMap;
 };
 
 
 ////////////////////////////////////
-//  this is the basic 3 section NCBI page
+//  This is the basic 3 section NCBI page
 
 
 class CHTMLPage : public CHTMLBasicPage
 {
-    // parent class
+    // Parent class
     typedef CHTMLBasicPage CParent;
 
 public:
-    // style flags
+    // Style flags
     enum EFlags {
         fNoTITLE      = 0x1,
         fNoVIEW       = 0x2,
@@ -167,27 +170,39 @@ public:
     typedef int TFlags;  // binary AND of "EFlags"
 
     // 'tors
-    CHTMLPage(const string& title         = NcbiEmptyString,
-              const string& template_file = NcbiEmptyString);
+    CHTMLPage(const string& title = kEmptyStr);
+    CHTMLPage(const string& title, const string&  template_file);
+    CHTMLPage(const string& title, const istream& template_stream);
+    // HINT: use SetTemplateString to read the page from '\0'-terminated string
+    CHTMLPage(const string& title,
+              const void* template_buffer, size_t size);
+
     CHTMLPage(CCgiApplication* app,
               TFlags           style         = 0,
-              const string&    title         = NcbiEmptyString,
-              const string&    template_file = NcbiEmptyString);
+              const string&    title         = kEmptyStr,
+              const string&    template_file = kEmptyStr);
+
     static CHTMLBasicPage* New(void);
 
-    // create the individual sub pages
+    // Create the individual sub pages
     virtual void CreateSubNodes(void);
 
-    // create the static part of the page(here - read it from <m_TemplateFile>)
+    // Create the static part of the page(here - read it from <m_TemplateFile>)
     virtual CNCBINode* CreateTemplate(void);
 
-    // tag substitution callbacks
+    // Tag substitution callbacks
     virtual CNCBINode* CreateTitle(void);  // def for tag "@TITLE@" - <m_Title>
     virtual CNCBINode* CreateView(void);   // def for tag "@VIEW@"  - none
 
-    // to set title or template file outside(after) the constructor
-    void SetTitle       (const string& title);
-    void SetTemplateFile(const string& template_file);
+    // To set title or template outside(after) the constructor
+    void SetTitle(const string&  title);
+    // Set source that contain the template
+    // Each function assign new template source and annihilate any other
+    // installed before.
+    void SetTemplateFile  (const string&  template_file);
+    void SetTemplateStream(const istream& template_stream);
+    void SetTemplateString(const char*    template_string);
+    void SetTemplateBuffer(const void*    template_buffer, size_t size);
 
     // Enable using popup menus, set URL for popup menu library.
     // If "menu_lib_url" is not defined, then using default URL.
@@ -201,17 +216,22 @@ public:
     // In most cases (except if popup menus are defined only in the page
     // template or printed by non-CNCBINode tag mapper), you can omit this
     // function call.
-    void EnablePopupMenu(const string& menu_script_url = kEmptyStr,
-                         bool use_dynamic_menu = false);
+    void EnablePopupMenu(const string& menu_script_url  = kEmptyStr,
+                         bool          use_dynamic_menu = false);
 
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
-    virtual void AddTagMap(const string& name, CNCBINode* node);
+    virtual void AddTagMap(const string& name, CNCBINode*     node);
 
 private:
     void Init(void);
 
-    string m_Title;
-    string m_TemplateFile;
+    string   m_Title;
+
+    // Template sources
+    string      m_TemplateFile;    // file name
+    istream*    m_TemplateStream;  // stream
+    const void* m_TemplateBuffer;      // some buffer...
+    size_t      m_TemplateBufferSize;  // ...and its size
 
     // Popup menu variables
     string m_PopupMenuLibUrl;
@@ -263,10 +283,34 @@ inline void CHTMLPage::SetTitle(const string& title)
 
 inline void CHTMLPage::SetTemplateFile(const string& template_file)
 {
-    m_TemplateFile = template_file;
+    m_TemplateFile   = template_file;
+    m_TemplateStream = 0;
+    m_TemplateBuffer = 0;
 }
 
+inline void CHTMLPage::SetTemplateStream(const istream& template_stream)
+{
+    m_TemplateFile   = kEmptyStr;
+    m_TemplateStream = const_cast<istream*>(&template_stream);
+    m_TemplateBuffer = 0;
+}
+
+inline void CHTMLPage::SetTemplateString(const char* template_string)
+{
+    m_TemplateFile   = kEmptyStr;
+    m_TemplateStream = 0;
+    m_TemplateBuffer = template_string;
+    m_TemplateBufferSize = strlen(template_string);
+}
+
+inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer, size_t size)
+{
+    m_TemplateFile   = kEmptyStr;
+    m_TemplateStream = 0;
+    m_TemplateBuffer = template_buffer;
+    m_TemplateBufferSize = size;
+}
 
 END_NCBI_SCOPE
 
-#endif  /* PAGE__HPP */
+#endif  /* HTML__PAGE__HPP */

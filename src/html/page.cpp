@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/08/09 21:12:02  ivanov
+* Added stuff to read template from a stream and string
+*
 * Revision 1.27  2002/02/23 04:08:25  vakatov
 * Commented out "// template struct TagMapper<CHTMLPage>;" to see if it's
 * still needed for any compiler
@@ -179,24 +182,54 @@ void CHTMLBasicPage::AddTagMap(const string& name, BaseTagMapper* mapper)
 
 // template struct TagMapper<CHTMLPage>;
 
-CHTMLPage::CHTMLPage(const string& title, const string& template_file)
-    : m_Title(title),
-      m_TemplateFile(template_file)
+CHTMLPage::CHTMLPage(const string& title)
+    : m_Title(title)
 {
     Init();
 }
+
+
+CHTMLPage::CHTMLPage(const string& title, const string& template_file)
+    : m_Title(title)
+{
+    Init();
+    SetTemplateFile(template_file);
+}
+
+
+CHTMLPage::CHTMLPage(const string& title, const istream& template_stream)
+    : m_Title(title)
+{
+    Init();
+    SetTemplateStream(template_stream);
+}
+
+
+CHTMLPage::CHTMLPage(const string& title, const void* template_buffer, size_t size)
+{
+    Init();
+    SetTemplateBuffer(template_buffer, size);
+}
+
 
 CHTMLPage::CHTMLPage(CCgiApplication* application, int style,
                      const string& title, const string& template_file)
     : CParent(application, style),
-      m_Title(title),
-      m_TemplateFile(template_file)
+      m_Title(title)
 {
     Init();
+    SetTemplateFile(template_file);
 }
+
 
 void CHTMLPage::Init(void)
 {
+    // Template sources
+    m_TemplateFile       = kEmptyStr;
+    m_TemplateStream     = 0;
+    m_TemplateBuffer     = 0;
+    m_TemplateBufferSize = 0;
+
     // Init popup menu variables
     m_UsePopupMenu = false;
     m_UsePopupMenuDynamic = false;
@@ -206,6 +239,7 @@ void CHTMLPage::Init(void)
     AddTagMap("VIEW",  CreateTagMapper(this, &CHTMLPage::CreateView));
 }
 
+
 void CHTMLPage::CreateSubNodes(void)
 {
     AppendChild(CreateTemplate());
@@ -214,33 +248,46 @@ void CHTMLPage::CreateSubNodes(void)
 
 CNCBINode* CHTMLPage::CreateTemplate(void) 
 {
-    if (m_TemplateFile.compare(kEmptyStr) == 0)
-        return new CHTMLText(kEmptyStr);
+    istream* is = 0;
+    bool can_delete_stream = true;
 
-    string        str;
-    char          buf[1024];
-    CNcbiIfstream ifstr(m_TemplateFile.c_str());
-    if ( !ifstr.good() ) {
+    // Get template stream
+    if ( !m_TemplateFile.empty() ) {
+        is = new CNcbiIfstream(m_TemplateFile.c_str());
+    } else if ( m_TemplateStream ) {
+        is = m_TemplateStream;
+        can_delete_stream = false;
+    } else if ( m_TemplateBuffer ) {
+        is = new CNcbiIstrstream((char*)m_TemplateBuffer, m_TemplateBufferSize);
+    } else {
+        return new CHTMLText(kEmptyStr);
+    }
+    if ( !is )
+        THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  error create stream");
+
+    string str;
+    char   buf[1024];
+
+    if ( !is->good() ) {
 	  // tmp diagnostics to find error //
 	  if( errno > 0 ) { // #include <errno.h>
 		ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror( errno ) );
 	  }
 	  
-	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " 
-                << int(ifstr.rdstate()) );	  
+	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(is->rdstate()) );	  
 	  
-      THROW1_TRACE(runtime_error, "\
-CHTMLPage::CreateTemplate():  failed to open template file " + m_TemplateFile);
+      THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
+failed to open template");
     }
 
-    while ( ifstr ) {
-        ifstr.read(buf, sizeof(buf));
-        str.append(buf, ifstr.gcount());
+    while ( *is ) {
+        is->read(buf, sizeof(buf));
+        str.append(buf, is->gcount());
     }
 
-    if ( !ifstr.eof() ) {
-        THROW1_TRACE(runtime_error, "\
-CHTMLPage::CreateTemplate():  error reading template file" + m_TemplateFile);
+    if ( !is->eof() ) {
+        THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
+error reading template");
     }
 
     // Insert code in end of <HEAD> and <BODY> blocks for support popup menus
