@@ -330,7 +330,7 @@ string CGen_code_table::IndexToCodon(int index)
 {
     if ( index < 0 || index > 63 ) return CNcbiEmptyString::Get();
 
-    static char na[4] = { 'T', 'C', 'G', 'A' };
+    static char na[4] = { 'T', 'C', 'A', 'G' };
     
     string codon;
     codon.resize(3);
@@ -697,6 +697,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.12  2003/04/29 14:35:16  tolstoy
+* *** empty log message ***
+*
 * Revision 6.11  2003/04/28 20:05:22  tolstoy
 * *** empty log message ***
 *
