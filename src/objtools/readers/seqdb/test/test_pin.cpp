@@ -1316,6 +1316,35 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-local]";
         
+        if (s == "-get-seqids") {
+            // get all seqids, given a gi.
+            
+            CSeqDB db(dbname, seqtype);
+            
+            Uint4 gi(129295);
+            Uint4 oid(0);
+            
+            if (! args.empty()) {
+                gi = atoi(args.front().c_str());
+                args.pop_front();
+            }
+            
+            db.GiToOid(gi, oid);
+            
+            list< CRef<CSeq_id> > ids = db.GetSeqIDs(oid);
+            
+            cout << "-----\n-----Seqids for GI " << gi << " (oid=" << oid << ")\n-----" << endl;
+            
+            auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText, cout));
+            
+            ITERATE(list< CRef< CSeq_id > >, iter, ids) {
+                *os << **iter;
+            }
+            cout << "-----" << endl;
+            
+            return 0;
+        } else desc += " [-get-seqids <gi>]";
+        
         if (s == "-seqids") {
             CSeqDB nr(/*dbpath,*/ "nr", 'p');
             
