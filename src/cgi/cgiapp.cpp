@@ -35,6 +35,11 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>
+#endif
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -62,7 +67,10 @@ int CCgiApplication::Run(void)
     // Make sure to restore old diagnostic state after the Run()
     CDiagRestorer diag_restorer;
 
-    // Show value of the specified env.var. in all of the diagnostics as prefix
+    // Compose diagnostics prefix
+#if defined(NCBI_OS_UNIX)
+    PushDiagPostPrefix(NStr::IntToString(getpid()).c_str());
+#endif
     PushDiagPostPrefix(GetEnvironment().Get(m_DiagPrefixEnv).c_str());
 
     // Timing
@@ -259,6 +267,7 @@ CCgiApplication::~CCgiApplication(void)
 
 int CCgiApplication::OnException(exception& e, CNcbiOstream& os)
 {
+    os << "Status: 500 Error processing HTTP request" HTTP_EOL;
     os << "Content-Type: text/html" HTTP_EOL HTTP_EOL;
     os << e.what();
     if ( !os.good() ) {
@@ -280,11 +289,9 @@ void CCgiApplication::RegisterDiagFactory(const string& key,
 CDiagFactory* CCgiApplication::FindDiagFactory(const string& key)
 {
     TDiagFactoryMap::const_iterator it = m_DiagFactories.find(key);
-    if (it != m_DiagFactories.end()) {
-        return it->second;
-    } else {
+    if (it == m_DiagFactories.end())
         return 0;
-    }
+    return it->second;
 }
 
 
@@ -301,11 +308,10 @@ void CCgiApplication::ConfigureDiagDestination(CCgiContext& context)
 {
     const CCgiRequest& request = context.GetRequest();
 
-    bool   is_set = false;
+    bool   is_set;
     string dest   = request.GetEntry("diag-destination", &is_set);
-    if (!is_set) {
+    if ( !is_set )
         return;
-    }
 
     SIZE_TYPE colon = dest.find(':');
     CDiagFactory* factory = FindDiagFactory(dest.substr(0, colon));
@@ -319,11 +325,10 @@ void CCgiApplication::ConfigureDiagThreshold(CCgiContext& context)
 {
     const CCgiRequest& request = context.GetRequest();
 
-    bool   is_set    = false;
+    bool   is_set;
     string threshold = request.GetEntry("diag-threshold", &is_set);
-    if (!is_set) {
+    if ( !is_set )
         return;
-    }
 
     if (threshold == "fatal") {
         SetDiagPostLevel(eDiag_Fatal);
@@ -353,11 +358,11 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
                                | eDPF_ErrCode | eDPF_ErrSubCode);
     TDiagPostFlags new_flags = 0;
 
-    bool   is_set = false;
+    bool   is_set;
     string format = request.GetEntry("diag-format", &is_set);
-    if (!is_set) {
+    if ( !is_set )
         return;
-    }
+
     if (s_FlagMap.empty()) {
         s_FlagMap["file"]        = eDPF_File;
         s_FlagMap["path"]        = eDPF_LongFilename;
@@ -710,10 +715,12 @@ END_NCBI_SCOPE
 
 
 
-
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.48  2003/05/22 21:02:56  vakatov
+* [UNIX]  Show ProcessID in diagnostic messages (as prefix)
+*
 * Revision 1.47  2003/05/21 17:38:34  vakatov
 *    If an exception is thrown while processing the request, then
 * call OnException() and use its return as the CGI exit code (rather
