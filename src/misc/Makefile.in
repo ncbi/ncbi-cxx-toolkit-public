@@ -1,0 +1,12 @@
+#################################
+# $Id$
+# Author:  Vladimir Ivanov (ivanov@ncbi.nlm.nih.gov)
+#################################
+
+# Meta-makefile for misc code
+#################################
+
+EXPENDABLE_SUB_PROJ = cgi_redirect
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
