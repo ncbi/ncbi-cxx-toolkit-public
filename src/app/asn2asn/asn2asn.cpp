@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/11/14 21:40:08  vasilche
+* New NCBIArgs API.
+*
 * Revision 1.31  2000/11/01 20:38:28  vasilche
 * Removed ECanDelete enum and related constructors.
 *
@@ -327,9 +330,9 @@ int CAsn2Asn::Run(void)
 
     string inFile = (*args)["i"].AsString();
     ESerialDataFormat inFormat = eSerial_AsnText;
-    if ( args->Exist("b") )
+    if ( args->IsProvided("b") )
         inFormat = eSerial_AsnBinary;
-    else if ( args->Exist("X") )
+    else if ( args->IsProvided("X") )
         inFormat = eSerial_Xml;
 
     bool haveOutput = args->IsProvided("o");
@@ -337,17 +340,17 @@ int CAsn2Asn::Run(void)
     ESerialDataFormat outFormat = eSerial_AsnText;
     if ( haveOutput ) {
         outFile = (*args)["o"].AsString();
-        if ( args->Exist("s") )
+        if ( args->IsProvided("s") )
             outFormat = eSerial_AsnBinary;
-        else if ( args->Exist("x") )
+        else if ( args->IsProvided("x") )
             outFormat = eSerial_Xml;
     }
 
-    bool inSeqEntry = args->Exist("e");
-    bool skip = args->Exist("S");
-    bool convert = args->Exist("C");
-    bool readHook = args->Exist("ih");
-    bool writeHook = args->Exist("oh");
+    bool inSeqEntry = args->IsProvided("e");
+    bool skip = args->IsProvided("S");
+    bool convert = args->IsProvided("C");
+    bool readHook = args->IsProvided("ih");
+    bool writeHook = args->IsProvided("oh");
 
     size_t count = (*args)["c"].AsInteger();
 
