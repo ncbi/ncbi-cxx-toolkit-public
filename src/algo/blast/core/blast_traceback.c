@@ -669,6 +669,11 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
          we cannot reliably check whether an HSP is contained
          within another */
 
+      /** @todo FIXME Traceback is always performed for rpsblast
+          because the composition-based correction can change an
+          HSP. It is optional for RPStblastn since no corrections
+          are applied there. Such corrections should be added */
+
       if (program_number == eBlastTypeRpsBlast ||
           !s_HSPContainedInHSPCheck(hsp_array, hsp, index, kIsOutOfFrame)) {
 
