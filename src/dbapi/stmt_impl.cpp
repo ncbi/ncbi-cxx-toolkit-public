@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/08 17:38:26  kholodov
+* Moved listener registration to parent objects
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -49,7 +52,6 @@
 CStatement::CStatement(CConnection* conn)
   : m_conn(conn), m_cmd(0), m_rs(0), m_rowCount(-1)
 {
-  AddListener(conn);
 }
 
 CStatement::~CStatement()

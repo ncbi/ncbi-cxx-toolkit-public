@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/02/08 17:38:26  kholodov
+* Moved listener registration to parent objects
+*
 * Revision 1.2  2002/02/06 22:20:09  kholodov
 * Connections are cloned for CallableStatement and Cursor
 *
@@ -58,14 +61,13 @@ BEGIN_NCBI_SCOPE
 CConnection::CConnection(CDataSource* ds)
   : m_ds(ds)
 {
-  AddListener(ds);
+
 }
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
   : m_ds(ds), m_connection(conn)
 {
-  AddListener(ds);
-  ds->AddListener(this);
+
 }
 
 
@@ -142,13 +144,17 @@ void CConnection::Close()
   
 CConnection* CConnection::Clone()
 {
-  return new CConnection(GetConnAux(), m_ds);
+  CConnection *conn = new CConnection(GetConnAux(), m_ds);
+  conn->AddListener(m_ds);
+  m_ds->AddListener(conn);
+  return conn;
 }
 
 IStatement* CConnection::CreateStatement()
 {
   CStatement *stmt = new CStatement(Clone());
   AddListener(stmt);
+  stmt->AddListener(this);
   return stmt;
 }
 
@@ -158,6 +164,7 @@ CConnection::PrepareCall(const string& proc,
 {
   CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, Clone());
   AddListener(cstmt);
+  cstmt->AddListener(this);
   return cstmt;
 }
 
@@ -166,9 +173,10 @@ ICursor* CConnection::CreateCursor(const string& name,
 				   int nofArgs,
 				   int batchSize)
 {
-  CCursor *c = new CCursor(name, sql, nofArgs, batchSize, Clone());
-  AddListener(c);
-  return c;
+  CCursor *cur = new CCursor(name, sql, nofArgs, batchSize, Clone());
+  AddListener(cur);
+  cur->AddListener(this);
+  return cur;
 }
 
 void CConnection::Action(const CDbapiEvent& e) 

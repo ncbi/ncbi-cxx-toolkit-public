@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/02/08 17:38:26  kholodov
+* Moved listener registration to parent objects
+*
 * Revision 1.2  2002/02/06 22:21:57  kholodov
 * Reformatted the source code
 *
@@ -79,9 +82,10 @@ void CDataSource::SetLogStream(CNcbiOstream* out)
 
 IConnection* CDataSource::CreateConnection()
 {
-    CConnection *ci = new CConnection(this);
-    AddListener(ci);
-    return ci;
+    CConnection *conn = new CConnection(this);
+    AddListener(conn);
+    conn->AddListener(this);
+    return conn;
 }
 
 void CDataSource::Action(const CDbapiEvent& e) 
