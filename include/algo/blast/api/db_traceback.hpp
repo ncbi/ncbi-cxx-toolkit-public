@@ -56,6 +56,7 @@ protected:
 private:
     BlastExtensionParameters* mi_pExtParams;
     BlastHitSavingParameters* mi_pHitParams;
+    BlastEffectiveLengthsParameters* mi_pEffLenParams;
     BlastGapAlignStruct* mi_pGapAlign;
 };
 
@@ -71,6 +72,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/03/09 18:41:31  dondosha
+* Added effective lengths parameters member
+*
 * Revision 1.2  2004/02/24 20:38:53  dondosha
 * Removed irrelevant CVS log comments
 *
