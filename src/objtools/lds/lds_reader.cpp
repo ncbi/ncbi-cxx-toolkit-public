@@ -97,6 +97,7 @@ CRef<CSeq_entry> LDS_LoadTSE(SLDS_TablesCollection& db,
     case CFormatGuess::eFasta:
         return ReadFasta(in, fReadFasta_AssumeNuc);
     case CFormatGuess::eTextASN:
+    case CFormatGuess::eXml:
     case CFormatGuess::eBinaryASN:
         {
         in.seekg(offset);
@@ -135,6 +136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/23 18:57:31  kuznets
+ * LDS_LoadTSE corrected to read XML serialization format.
+ *
  * Revision 1.2  2003/06/09 18:06:33  kuznets
  * CSeq_entry reader changed to handle top level CBioseqs.
  *
