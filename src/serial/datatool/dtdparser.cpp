@@ -504,6 +504,9 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
             PopEntityLexer();
             break;
         case T_IDENTIFIER:
+            if (attrib.GetType() == DTDAttribute::eUnknown) {
+                ParseError(attrib.GetName().c_str(), "attribute type");
+            }
             done = true;
             break;
         case T_SYMBOL:
@@ -610,6 +613,10 @@ void DTDParser::GenerateDataTree(CDataTypeModule& module)
 {
     map<string,DTDElement>::iterator i;
     for (i = m_MapElement.begin(); i != m_MapElement.end(); ++i) {
+
+        if (i->second.GetName().empty()) {
+            ParseError(i->first.c_str(),"definition");
+        }
         DTDElement::EType type = i->second.GetType();
 
         if (((type == DTDElement::eSequence) ||
@@ -726,6 +733,9 @@ CDataType* DTDParser::TypesBlock(
     const list<string>& refs = node.GetContent();
     for (list<string>::const_iterator i= refs.begin(); i != refs.end(); ++i) {
         DTDElement& refNode = m_MapElement[*i];
+        if (refNode.GetName().empty()) {
+            ParseError(i->c_str(),"definition");
+        }
         DTDElement::EOccurrence occ = node.GetOccurrence(*i);
         if (refNode.IsEmbedded()) {
             occ = refNode.GetOccurrence();
@@ -999,6 +1009,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.15  2004/01/12 16:51:01  gouriano
+ * Improved diagnostics when parsing a DTD
+ *
  * Revision 1.14  2003/08/13 15:45:54  gouriano
  * implemented generation of code, which uses AnyContent objects
  *
