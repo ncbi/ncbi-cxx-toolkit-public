@@ -241,7 +241,9 @@ public:
     /// Remove from the "path" all redundancy, convert it to the more
     /// simple form, if possible.
     /// Note that the "path" must be for current OS. 
-    static string NormalizePath(const string& path);
+    /// @param follow_links
+    ///    Whether to follow symlinks (shortcuts, aliases)
+    static string NormalizePath(const string& path, bool follow_links = false);
 
 
     //
@@ -903,6 +905,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/09/30 15:08:28  ucko
+ * Reworked CDirEntry::NormalizePath, which now handles .. correctly in
+ * all cases and optionally resolves symlinks (on Unix).
+ *
  * Revision 1.25  2003/09/16 15:18:13  ivanov
  * + CDirEntry::NormalizePath()
  *

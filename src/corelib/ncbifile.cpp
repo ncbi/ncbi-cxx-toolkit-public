@@ -81,7 +81,7 @@ BEGIN_NCBI_SCOPE
 #undef  ALL_OS_SEPARATORS
 
 #define DIR_PARENT  ".."
-#define DIR_CURRENT '.'
+#define DIR_CURRENT "."
 #define ALL_OS_SEPARATORS   ":/\\"
 
 #if defined(NCBI_OS_MSWIN)
@@ -399,7 +399,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
     }
 #endif
 #if defined(DIR_CURRENT)
-    if ( NStr::EndsWith(xpath, string(1,DIR_CURRENT)) )  {
+    if ( NStr::EndsWith(xpath, DIR_CURRENT) )  {
         xpath += DIR_SEPARATOR;
     }
 #endif
@@ -432,20 +432,18 @@ string CDirEntry::ConvertToOSPath(const string& path)
 #else
     // Fix current and parent refs in the path after conversion from MAC path
     // Replace all "::" to "/../"
-#  if defined(DIR_PARENT)
     string xsearch  = string(2,DIR_SEPARATOR);
     string xreplace = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
     size_t pos = 0;
     while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
         xpath.replace(pos, xsearch.length(), xreplace);
     }
-    // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
-    xpath = NormalizePath(xpath);
-#  endif // DIR_PARENT
     // Remove leading ":" in the relative path on non-MAC platforms 
     if ( xpath[0] == DIR_SEPARATOR ) {
         xpath.erase(0,1);
     }
+    // Replace something like "../aaa/../bbb/ccc" with "../bbb/ccc"
+    xpath = NormalizePath(xpath);
 #endif
     return xpath;
 }
@@ -500,72 +498,114 @@ string CDirEntry::ConcatPathEx(const string& first, const string& second)
 }
 
 
-string CDirEntry::NormalizePath(const string& path)
+string CDirEntry::NormalizePath(const string& path, bool follow_links)
 {
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
-
-#  if defined(DIR_SEPARATOR_ALT)
-    // Convert all alternative separators to primary separator type
-    string xpath = NStr::Replace(path, string(1,DIR_SEPARATOR_ALT),
-                                 string(1,DIR_SEPARATOR));
-#  else
-    string xpath = path;
+    static const char kSeps[] = { DIR_SEPARATOR,
+#  ifdef DIR_SEPARATOR_ALT
+                                  DIR_SEPARATOR_ALT,
 #  endif
+                                  '\0' };
 
-    // Remove trailing "/." or "/.."
-    string str = string(1,DIR_SEPARATOR) + DIR_CURRENT;
-    if ( NStr::EndsWith(xpath, str) ) {
-        xpath.erase(xpath.length() - str.length() + 1);
-    } else {
-        str = string(1,DIR_SEPARATOR) + DIR_PARENT;
-        if ( NStr::EndsWith(xpath, str) ) {
-            xpath.erase(xpath.length() - str.length() + 1);
+    list<string> head;              // already resolved to our satisfaction
+    string       current    = path; // to resolve next
+    list<string> tail;              // to resolve afterwards
+    int          link_depth = 0;
+
+    while ( !current.empty()  ||  !tail.empty() ) {
+        list<string> pretail;
+        if ( !current.empty() ) {
+            NStr::Split(current, kSeps, pretail, NStr::eNoMergeDelims);
+            current.erase();
+            if (pretail.front().empty()
+#  ifdef DISK_SEPARATOR
+                ||  pretail.front().find(DISK_SEPARATOR) != NPOS
+#  endif
+                ) {
+                // absolute path
+                head.clear();
+#  ifdef NCBI_OS_MSWIN
+                // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\"
+                static const char* const kUNC[] = { "", "", "?", "UNC" };
+                list<string>::iterator it      = pretail.begin();
+                unsigned int           matched = 0;
+                while (matched < 4  &&  it != pretail.end()
+                       &&  !NStr::CompareNocase(*it, kUNC[matched])) {
+                    ++it;
+                    ++matched;
+                }
+                pretail.erase(pretail.begin(), it);
+                switch (matched) {
+                case 2: case 4: // got a UNC path (\\... or \\?\UNC\...)
+                    head.push_back(kEmptyStr);
+                    // fall through
+                case 1: case 3/*?*/: // normal volume-less absolute path
+                    head.push_back(kEmptyStr);
+                    break;
+                }
+#  endif
+            }
+            tail.splice(tail.begin(), pretail);
         }
-    }
 
-#  if defined(NCBI_OS_MSWIN)
-    // Remove leading "\\?\". Replace leading "\\?\UNC\" with "\\"
-    if ( NStr::StartsWith(xpath, "\\\\?\\") ) {
-        xpath.erase(0, 4);
-    } else if ( NStr::StartsWith(xpath, "\\\\?\\UNC\\") ) {
-        xpath.replace(0, 8, "\\");
-    }
+        string next = tail.front();
+        tail.pop_front();
+        if ( !head.empty() ) { // empty heads should accept anything
+            string& last = head.back();
+            if (last == DIR_CURRENT) {
+                head.pop_back();
+                _ASSERT(head.empty());
+            } else if (next == DIR_CURRENT) {
+                continue; // leave out, since we already have content
+#  ifdef DISK_SEPARATOR
+            } else if (last[last.size()-1] == DISK_SEPARATOR) {
+                // allow almost anything right after a volume specification
 #  endif
-
-    // Replace all "//" with "/"
-    string xsearch  = string(2,DIR_SEPARATOR);
-    string xreplace = string(1,DIR_SEPARATOR);
-#  if defined(NCBI_OS_MSWIN)
-    size_t pos = 1;  // Ignore leading "\\" -- name of the server
-#  else
-    size_t pos = 0;
+            } else if (next.empty()) {
+                continue; // leave out empty components in most cases
+            } else if (next == DIR_PARENT) {
+#  ifdef DISK_SEPARATOR
+                SIZE_TYPE pos;
 #  endif
-    while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
-        xpath.replace(pos, xsearch.length(), xreplace);
-    }
-
-    // Replace something like "/./" with "/"
-    xsearch  = string(1,DIR_SEPARATOR) + DIR_CURRENT + DIR_SEPARATOR;
-    xreplace = string(1,DIR_SEPARATOR);
-    pos = 0;
-    while ((pos = xpath.find(xsearch, pos)) != NPOS ) {
-        xpath.replace(pos, xsearch.length(), xreplace);
-    }
-
-    // Replace something like "../aaa/../bbb" with "../bbb"
-    str = string(1,DIR_SEPARATOR) + DIR_PARENT + DIR_SEPARATOR;
-    size_t start = 0;
-    while ((pos = xpath.find(str, start)) > 0  &&  pos != NPOS) {
-        start = xpath.rfind(DIR_SEPARATOR, pos - 1);
-        if (start != 0  &&  start != NPOS  &&  (pos - start > 1)) {
-            xpath.erase(start, pos + str.length() - 1 - start);
-        } else {
-            break;
+                // back up if possible, assuming existing path to be "physical"
+                if (last.empty()) {
+                    // already at the root; .. is a no-op
+                    continue;
+#  ifdef DISK_SEPARATOR
+                } else if ((pos = last.find(DISK_SEPARATOR) != NPOS)) {
+                    last.erase(pos + 1);
+#  endif
+                } else if (last != DIR_PARENT) {
+                    head.pop_back();
+                    continue;
+                }
+            }
         }
+#  ifdef NCBI_OS_UNIX
+        // Is there a Windows equivalent for readlink?
+        if (follow_links) {
+            string s(head.empty() ? next
+                     : NStr::Join(head, string(1, DIR_SEPARATOR))
+                     + DIR_SEPARATOR + next);
+            char buf[PATH_MAX];
+            int  length = readlink(s.c_str(), buf, sizeof(buf));
+            if (length > 0) {
+                current.assign(buf, length);
+                if (++link_depth >= 1024) {
+                    ERR_POST(Warning << "CDirEntry::NormalizePath: "
+                             "Reached symlink depth limit " << link_depth
+                             << " when resolving " << path);
+                    follow_links = false;
+                }
+                continue;
+            }
+        }
+#  endif
+        // normal case: just append the next element to head
+        head.push_back(next);
     }
-    return xpath;
-
-#else
+    return NStr::Join(head, string(1, DIR_SEPARATOR));
+#else // Not Unix or  Windows
     // NOT implemented!
     return path;
 #endif
@@ -1628,6 +1668,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2003/09/30 15:08:51  ucko
+ * Reworked CDirEntry::NormalizePath, which now handles .. correctly in
+ * all cases and optionally resolves symlinks (on Unix).
+ *
  * Revision 1.56  2003/09/17 20:55:02  ivanov
  * NormalizePath: added more processing for MS Windows paths
  *
