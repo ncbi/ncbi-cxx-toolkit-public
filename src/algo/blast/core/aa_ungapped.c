@@ -38,11 +38,6 @@ static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTable* diag, Int4 query_offset,
 
 static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
 
-/*
- * this is currently somewhat broken since the diagonal array is NULL
- * and the offset arrays are allocated for every subject sequence.  this
- * must be factored out!
- */
 Int4 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                        BLAST_SequenceBlk* query,
                        LookupTableWrap* lut_wrap,
