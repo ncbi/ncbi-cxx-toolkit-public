@@ -83,6 +83,9 @@ public:
 
     CNcbiOstream& WriteChecksumData(CNcbiOstream& out) const;
 
+    // Reset the object to prepare it to the next checksum computation
+    void Reset();
+
 private:
     size_t m_LineCount;
     size_t m_CharCount;
@@ -97,6 +100,8 @@ private:
     static Uint4 UpdateCRC32(Uint4 checksum, const char* str, size_t length);
 
     bool ValidChecksumLineLong(const char* line, size_t length) const;
+
+    void x_Free();
 };
 
 inline
@@ -107,6 +112,10 @@ CNcbiOstream& operator<<(CNcbiOstream& out, const CChecksum& checksum);
 
 CChecksum NCBI_XUTIL_EXPORT ComputeFileChecksum(const string& path,
                                                 CChecksum::EMethod method);
+
+
+NCBI_XUTIL_EXPORT CChecksum& ComputeFileChecksum(const string& path,
+                                                 CChecksum& checksum);
 
 inline Uint4 ComputeFileCRC32(const string& path)
 {
@@ -125,6 +134,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/11 16:45:52  kuznets
+* Added Reset() function to clear the accumulated checksum and reuse the object
+* for consecutive checksum calculations
+*
 * Revision 1.7  2003/07/29 21:29:26  ucko
 * Add MD5 support (cribbed from the C Toolkit)
 *
