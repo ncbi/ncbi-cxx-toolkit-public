@@ -472,6 +472,8 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_FEAT_OnlyGeneXrefs",
     "SEQ_FEAT_UTRdoesNotAbutCDS",
     "SEQ_FEAT_MultipleCdsOnMrna",
+    "SEQ_FEAT_BadConflictFlag",
+    "SEQ_FEAT_ConflictFlagSet",
 
     "SEQ_ALIGN_SeqIdProblem",
     "SEQ_ALIGN_StrandRev",
@@ -1026,6 +1028,12 @@ xrefs are used only to override the inheritance by overlap.",
 "The 5'UTR and 3'UTR features should exactly abut the CDS feature.",
 //  SEQ_FEAT_MultipleCdsOnMrna
 "Only a single Cdregion feature should be annotated on mRNA bioseq.",
+//  SEQ_FEAT_BadConflictFlag
+"The coding region conflict flag is set, but the translated product is the \
+same as the instantiated product Bioseq.",
+//  SEQ_FEAT_ConflictFlagSet
+"The coding region conflict flag is appropriately set, but this record should \
+be brought to the attention of the source database for possible correction.",
 
 /* SEQ_ALIGN */
 
@@ -1143,6 +1151,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/12/16 16:17:43  shomrat
+* Added SEQ_FEAT_BadConflictFlag and SEQ_FEAT_ConflictFlagSet
+*
 * Revision 1.34  2003/11/14 15:55:09  shomrat
 * added SEQ_INST_TpaAssemblyProblem
 *
