@@ -496,8 +496,8 @@ static void s_TestGMT(void)
         cout << "Test GetTimeT" << endl;
 
         time_t timer=time(0);
-        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecissionDefault);
-        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecissionDefault);
+        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
+        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
         cout << "[" << t.AsString() << "] " << endl;
         cout << tg.GetTimeT()/3600 << " - " << tl.GetTimeT()/3600 << " - ";
@@ -572,7 +572,7 @@ static void s_TestGMT(void)
         CTime::SetFormat("M/D/Y h:m:s");
         CTime t("04/01/2001 01:01:00");
         CTime tn;
-        t.SetTimeZonePrecision(CTime::eTZPrecissionDefault);
+        t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
         cout << "init  [" << t.AsString() << "]" << endl;
 
         t.SetTimeZoneFormat(CTime::eGmt);
@@ -778,8 +778,11 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.20  2003/11/25 20:03:56  ivanov
+ * Fixed misspelled eTZPrecisionDefault
+ *
  * Revision 6.19  2003/11/25 19:56:38  ivanov
- * Renamed eDefault to eTZPrecissionDefault.
+ * Renamed eDefault to eTZPrecisionDefault.
  * Some cosmetic changes.
  *
  * Revision 6.18  2003/10/03 18:27:20  ivanov

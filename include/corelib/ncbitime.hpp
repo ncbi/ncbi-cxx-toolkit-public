@@ -202,7 +202,7 @@ public:
         eHour,    ///< Check condition - new hour.
         eDay,     ///< Check condition - new day.
         eMonth,   ///< Check condition - new month.
-        eTZPrecissionDefault = eNone
+        eTZPrecisionDefault = eNone
     };
 
     /// Whether to adjust for daylight saving time.
@@ -223,7 +223,7 @@ public:
     ///   What time zone precision to use.
     CTime(EInitMode          mode = eEmpty,
           ETimeZone          tz   = eLocal,
-          ETimeZonePrecision tzp  = eTZPrecissionDefault);
+          ETimeZonePrecision tzp  = eTZPrecisionDefault);
 
     /// Explicit conversion constructor for time_t representation of time.
     ///
@@ -233,7 +233,7 @@ public:
     ///   Time in the UTC time_t format.
     /// @param tzp
     ///   What time zone precision to use.
-    explicit CTime(time_t t, ETimeZonePrecision tzp = eTZPrecissionDefault);
+    explicit CTime(time_t t, ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Constructor.
     ///
@@ -257,7 +257,7 @@ public:
     CTime(int year, int month, int day,
           int hour = 0, int minute = 0, int second = 0, long nanosecond = 0,
           ETimeZone tz  = eLocal,
-          ETimeZonePrecision tzp = eTZPrecissionDefault);
+          ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Constructor.
     ///
@@ -273,7 +273,7 @@ public:
     ///   What time zone precision to use.
     CTime(int year, int yearDayNumber,
           ETimeZone tz = eLocal,
-          ETimeZonePrecision tzp = eTZPrecissionDefault);
+          ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Explicit conversion constructor for string representation of time.
     ///
@@ -290,7 +290,7 @@ public:
     ///   What time zone precision to use.
     explicit CTime(const string& str, const string& fmt = kEmptyStr,
                    ETimeZone tz = eLocal,
-                   ETimeZonePrecision tzp = eTZPrecissionDefault);
+                   ETimeZonePrecision tzp = eTZPrecisionDefault);
 
     /// Copy constructor.
     CTime(const CTime& t);
@@ -927,7 +927,7 @@ extern int   operator - (const CTime& t1, const CTime& t2);
 NCBI_XNCBI_EXPORT
 extern CTime CurrentTime(
     CTime::ETimeZone          tz  = CTime::eLocal, 
-    CTime::ETimeZonePrecision tzp = CTime::eTZPrecissionDefault
+    CTime::ETimeZonePrecision tzp = CTime::eTZPrecisionDefault
     );
 
 // Truncate the time to days (see CTime::Truncate)
@@ -1200,8 +1200,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/25 20:03:32  ivanov
+ * Fixed misspelled eTZPrecisionDefault
+ *
  * Revision 1.28  2003/11/25 19:53:33  ivanov
- * Renamed eDefault to eTZPrecissionDefault.
+ * Renamed eDefault to eTZPrecisionDefault.
  * Added setters for various components of time -- Set*().
  * Added YearWeekNumber(), MonthWeekNumber().
  * Reimplemented AddYear() as AddMonth(years*12).

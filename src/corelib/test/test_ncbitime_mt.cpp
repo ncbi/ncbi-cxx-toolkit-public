@@ -270,8 +270,8 @@ static void s_TestGMT(int idx)
     // Test GetTimeT
     {{  
         time_t timer=time(0);
-        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecissionDefault);
-        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecissionDefault);
+        CTime tg(CTime::eCurrent, CTime::eGmt, CTime::eTZPrecisionDefault);
+        CTime tl(CTime::eCurrent, CTime::eLocal, CTime::eTZPrecisionDefault);
         CTime t(timer);
         tg.SetTimeT(timer);
         tl.SetTimeT(timer);
@@ -302,7 +302,7 @@ static void s_TestGMT(int idx)
         CTime::SetFormat("M/D/Y h:m:s");
         CTime t("04/01/2001 01:01:00");
         CTime tn;
-        t.SetTimeZonePrecision(CTime::eTZPrecissionDefault);
+        t.SetTimeZonePrecision(CTime::eTZPrecisionDefault);
 
         // GMT
         t.SetTimeZoneFormat(CTime::eGmt);
@@ -443,8 +443,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2003/11/25 20:03:56  ivanov
+ * Fixed misspelled eTZPrecisionDefault
+ *
  * Revision 6.7  2003/11/25 19:56:39  ivanov
- * Renamed eDefault to eTZPrecissionDefault.
+ * Renamed eDefault to eTZPrecisionDefault.
  * Some cosmetic changes.
  *
  * Revision 6.6  2002/10/18 13:25:15  ivanov
