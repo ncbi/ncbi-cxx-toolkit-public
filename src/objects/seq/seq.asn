@@ -1,9 +1,8 @@
---$Revision: 1.7 $
+--$Revision: 1.8 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
 --  by James Ostell, 1990
---  version 0.8
 --
 --**********************************************************************
 
@@ -19,7 +18,9 @@ IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Pub-equiv FROM NCBI-Pub
         Org-ref FROM NCBI-Organism
         Seq-id, Seq-loc FROM NCBI-Seqloc
-        Link-set FROM NCBI-Access;
+        Link-set FROM NCBI-Access
+        EMBL-block FROM EMBL-General
+		SP-block FROM SP-General;
 
 --*** Sequence ********************************
 --*
@@ -49,7 +50,8 @@ Seq-descr ::= SET OF CHOICE {
     region VisibleString ,       -- overall region (globin locus)
     user User-object ,           -- user defined object
 	sp SP-block ,                -- SWISSPROT specific info
-    neighbors Link-set }         -- neighboring information
+    neighbors Link-set ,         -- neighboring information
+    embl EMBL-block }           -- EMBL specific information
 
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     unknown (0) ,
@@ -160,20 +162,6 @@ GB-block ::= SEQUENCE {          -- GenBank specific descriptions
     date VisibleString OPTIONAL ,       -- old form Entry Date
     entry-date Date OPTIONAL ,          -- replaces date
     div VisibleString OPTIONAL }        -- GenBank division
-    
-
-SP-block ::= SEQUENCE {         -- SWISSPROT specific descriptions
-	class ENUMERATED {
-		not-set (0) ,
-		standard (1) ,      -- conforms to all SWISSPROT checks
-		prelim (2) ,        -- only seq and biblio checked
-		other (255) } ,
-	extra-acc SET OF VisibleString OPTIONAL ,  -- old SWISSPROT ids
-	imeth BOOLEAN DEFAULT FALSE ,  -- seq known to start with Met
-	plasnm SET OF VisibleString OPTIONAL,  -- plasmid names carrying gene
-	seqref SET OF Seq-id OPTIONAL,         -- xref to other sequences
-    dbref SET OF Dbtag OPTIONAL ,          -- xref to non-sequence dbases
-	keyterms SET OF VisibleString OPTIONAL } -- keywords
 
 --*** Instances of sequences *******************************
 --*
@@ -333,4 +321,101 @@ Seq-annot ::= SEQUENCE {
 
 END
 
+--*********************************************************************
+--
+--  This block of specifications was developed by Reiner Fuchs of EMBL
+--
+--*********************************************************************
 
+EMBL-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS EMBL-dbname, EMBL-xref, EMBL-block;
+
+IMPORTS Date, Object-id FROM NCBI-General;
+
+EMBL-dbname ::= CHOICE {
+	code ENUMERATED {
+		embl(0),
+		genbank(1),
+		ddbj(2),
+		geninfo(3),
+		medline(4),
+		swissprot(5),
+		pir(6),
+		pdb(7),
+		epd(8),
+		ecd(9),
+		tfd(10),
+		flybase(11),
+		prosite(12),
+		enzyme(13),
+		mim(14),
+		ecoseq(15),
+		hiv(16) },
+	name	VisibleString }
+
+EMBL-xref ::= SEQUENCE {
+	dbname EMBL-dbname,
+	id SEQUENCE OF Object-id }
+
+EMBL-block ::= SEQUENCE {
+	class ENUMERATED {
+		not-set(0),
+		standard(1),
+		unannotated(2),
+		other(255) } DEFAULT standard,
+	div ENUMERATED {
+		fun(0),
+		inv(1),
+		mam(2),
+		org(3),
+		phg(4),
+		pln(5),
+		pri(6),
+		pro(7),
+		rod(8),
+		syn(9),
+		una(10),
+		vrl(11),
+		vrt(12) } OPTIONAL,
+	creation-date Date,
+	update-date Date,
+	extra-acc SEQUENCE OF VisibleString OPTIONAL,
+	keywords SEQUENCE OF VisibleString OPTIONAL,
+	xref SEQUENCE OF EMBL-xref OPTIONAL }
+
+END
+
+--*********************************************************************
+--
+--  This block of specifications was developed by Mark Cavanaugh of
+--		NCBI working with Amos Bairoch of SWISSPROT
+--
+--*********************************************************************
+
+SP-General DEFINITIONS ::=
+BEGIN
+
+EXPORTS SP-block;
+
+IMPORTS Date, Dbtag FROM NCBI-General
+		Seq-id FROM NCBI-SeqLoc;
+
+SP-block ::= SEQUENCE {         -- SWISSPROT specific descriptions
+	class ENUMERATED {
+		not-set (0) ,
+		standard (1) ,      -- conforms to all SWISSPROT checks
+		prelim (2) ,        -- only seq and biblio checked
+		other (255) } ,
+	extra-acc SET OF VisibleString OPTIONAL ,  -- old SWISSPROT ids
+	imeth BOOLEAN DEFAULT FALSE ,  -- seq known to start with Met
+	plasnm SET OF VisibleString OPTIONAL,  -- plasmid names carrying gene
+	seqref SET OF Seq-id OPTIONAL,         -- xref to other sequences
+	dbref SET OF Dbtag OPTIONAL ,          -- xref to non-sequence dbases
+	keywords SET OF VisibleString OPTIONAL , -- keywords
+	created Date OPTIONAL ,			-- creation date
+	sequpd Date OPTIONAL ,			-- sequence update
+	annotupd Date OPTIONAL }		-- annotation update
+
+END

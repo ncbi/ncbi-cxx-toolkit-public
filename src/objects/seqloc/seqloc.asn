@@ -1,9 +1,8 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
 --  by James Ostell, 1990
---  version 0.8
 --
 --**********************************************************************
 
@@ -41,7 +40,8 @@ Patent-seq-id ::= SEQUENCE {
 Textseq-id ::= SEQUENCE {
     name VisibleString OPTIONAL ,
     accession VisibleString OPTIONAL ,
-    release VisibleString OPTIONAL }
+    release VisibleString OPTIONAL ,
+    version INTEGER OPTIONAL }
 
 Giimport-id ::= SEQUENCE {
     id INTEGER ,               -- the id to use here

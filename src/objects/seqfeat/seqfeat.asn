@@ -1,9 +1,8 @@
---$Revision: 1.9 $
+--$Revision: 1.10 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
 --  by James Ostell, 1990
---  version 0.8
 --
 --**********************************************************************
 
@@ -46,7 +45,11 @@ Seq-feat ::= SEQUENCE {
     qual SEQUENCE OF Gb-qual OPTIONAL ,  -- qualifiers
     title VisibleString OPTIONAL ,   -- for user defined label
     ext User-object OPTIONAL ,    -- user defined structure extension
-    cit Pub-set OPTIONAL }        -- citations for this feature
+    cit Pub-set OPTIONAL ,        -- citations for this feature
+    exp-ev ENUMERATED {           -- evidence for existence of feature
+        experimental (1) ,        -- any reasonable experimental check
+        not-experimental (2) } OPTIONAL }   -- by similarity to other seqs,
+                                            -- pattern, etc
     
 
 SeqFeatData ::= CHOICE {
