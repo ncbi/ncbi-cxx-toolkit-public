@@ -214,7 +214,6 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
         m_Mol  = seq.GetInst().GetMol();
     }
     if ( IsSegmented() ) {
-        //m_SegsCount = x_CountSegs(seq);
         m_HasParts = x_HasParts(seq);
     }
     if ( IsDelta() ) {
@@ -233,10 +232,40 @@ CBioseqContext::CBioseqContext(const CBioseq& seq, CFFContext& ctx) :
     m_IsProt = seq.IsAa();
 
     x_SetId(seq);
+
+    m_IsGPS = x_IsGPS();
     
     CRef<CSeq_loc> loc(new CSeq_loc);
     loc->SetWhole(*m_PrimaryId);
     m_Location.Reset(loc);
+}
+
+
+bool CBioseqContext::x_IsGPS(void) const
+{
+    const CSeq_entry& gps = 
+        GetHandle().GetComplexityLevel(CBioseq_set::eClass_gen_prod_set);
+    // make sure the returned entry is indeed gen-prod set
+    if ( gps.IsSet() ) {
+        return gps.GetSet().GetClass() == CBioseq_set::eClass_gen_prod_set;
+    }
+
+    return false;
+}
+
+
+bool CBioseqContext::DoContigStyle(void) const
+{
+    if ( m_Ctx->GetStyle()  == CFlatFileGenerator::eStyle_Contig ) {
+        return true;
+    } else if ( m_Ctx->GetStyle()  == CFlatFileGenerator::eStyle_Normal ) {
+        if ( (IsSegmented()  &&  !HasParts())  ||
+             (IsDelta()  &&  !IsDeltaLitOnly()) ) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 
@@ -439,6 +468,7 @@ void CBioseqContext::x_SetId(const CBioseq& seq)
         // GBB source
         m_ShowGBBSource = m_ShowGBBSource  ||  
                           ((acc_type & CSeq_id::eAcc_gsdb_dirsub) != 0);
+
     }
 }
 
@@ -513,6 +543,7 @@ bool CBioseqContext::x_IsDeltaLitOnly(const CBioseq& seq)
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Flags
@@ -524,9 +555,15 @@ CFFContext::CFlags::CFlags(TMode mode, TFlags flags) :
     m_HideRemImpFeat((flags & CFlatFileGenerator::fHideRemoteImpFeats) != 0),
     m_HideGeneRIFs((flags & CFlatFileGenerator::fHideGeneRIFs) != 0),
     m_OnlyGeneRIFs((flags & CFlatFileGenerator::fOnlyGeneRIFs) != 0),
+    m_HideCDSProdFeats((flags & CFlatFileGenerator::fHideCDSProdFeatures) != 0),
+    m_HideCDDFeats((flags & CFlatFileGenerator::fHideCDDFeats) != 0),
     m_LatestGeneRIFs((flags & CFlatFileGenerator::fLatestGeneRIFs) != 0),
     m_ShowContigFeatures((flags & CFlatFileGenerator::fShowContigFeatures) != 0),
-    m_ShowContigAndSeq((flags & CFlatFileGenerator::fShowContigAndSeq) != 0)
+    m_ShowContigSources((flags & CFlatFileGenerator::fShowContigSources) != 0),
+    m_ShowContigAndSeq((flags & CFlatFileGenerator::fShowContigAndSeq) != 0),
+    m_CopyGeneToCDNA((flags & CFlatFileGenerator::fCopyGeneToCDNA) != 0),
+    m_CopyCDSFromCDNA((flags & CFlatFileGenerator::fCopyCDSFromCDNA) != 0),
+    m_DoHtml((flags & CFlatFileGenerator::fProduceHTML) != 0)
 {
     switch ( mode ) {
     case CFlatFileGenerator::eMode_Release:
@@ -668,6 +705,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/11 16:49:16  shomrat
+* added user customization flags
+*
 * Revision 1.3  2004/01/14 16:09:04  shomrat
 * multiple changes (work in progress)
 *
