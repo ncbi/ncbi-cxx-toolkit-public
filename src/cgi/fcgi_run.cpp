@@ -38,6 +38,11 @@
 
 BEGIN_NCBI_SCOPE
 
+bool CCgiApplication::IsFastCGI(void) const
+{
+    return false;
+}
+
 bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 {
     _TRACE("CCgiApplication::x_RunFastCGI:  "
@@ -62,6 +67,11 @@ bool CCgiApplication::x_RunFastCGI(int* /*result*/, unsigned int /*def_iter*/)
 # endif
 
 BEGIN_NCBI_SCOPE
+
+bool CCgiApplication::IsFastCGI(void) const
+{
+    return true;
+}
 
 static CTime s_GetModTime(const string& filename)
 {
@@ -234,11 +244,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
-    for (unsigned int iteration = 0;  iteration < iterations;  ++iteration) {
+    for (m_Iteration = 1;  m_Iteration <= iterations;  ++m_Iteration) {
 
         CTime start_time(CTime::eCurrent);
 
-        _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
+        _TRACE("CCgiApplication::FastCGI: " << m_Iteration
                << " iteration of " << iterations);
 
 # ifdef NCBI_OS_UNIX
@@ -281,7 +291,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             CNcbiEnvironment  env(penv);
             if (logopt == eLog) {
                 x_LogPost("CCgiApplication::x_RunFastCGI ",
-                          iteration, start_time, &env, fBegin);
+                          m_Iteration, start_time, &env, fBegin);
             }
 
             CCgiObuffer       obuf(pfout, 512);
@@ -304,7 +314,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     "Done";
                 _TRACE("CCgiApplication::x_RunFastCGI: aborting by request");
                 FCGX_Finish();
-                if (iteration == 0) {
+                if (m_Iteration == 1) {
                     *result = 0;
                 }
                 break;
@@ -315,7 +325,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                         CNcbiRegistry::eErrPost);
             if ( is_debug ) {
                 m_Context->PutMsg
-                    ("FastCGI: "      + NStr::IntToString(iteration + 1) +
+                    ("FastCGI: "      + NStr::IntToString(m_Iteration) +
                      " iteration of " + NStr::IntToString(iterations) +
                      ", pid "         + NStr::IntToString(getpid()));
             }
@@ -340,7 +350,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
 
             // Logging
             if (logopt != eNoLog) {
-                x_LogPost(msg.c_str(), iteration, start_time, 0, fBegin|fEnd);
+                x_LogPost(msg.c_str(), m_Iteration, start_time, 0,
+                          fBegin|fEnd);
             } else {
                 ERR_POST(msg);  // Post error notification even if no logging
             }
@@ -367,7 +378,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         // Logging
         if (logopt == eLog) {
             x_LogPost("CCgiApplication::x_RunFastCGI ",
-                      iteration, start_time, 0, fEnd);
+                      m_Iteration, start_time, 0, fEnd);
         }
         if ( is_stat_log ) {
             stat->Reset(start_time, *result);
@@ -400,6 +411,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.27  2003/03/24 16:15:30  ucko
+ * +IsFastCGI; x_RunFastCGI uses m_Iteration (1-based) rather than iteration.
+ *
  * Revision 1.26  2003/02/27 17:59:14  ucko
  * +x_FCGI_ShouldRestart (factored from the end of x_RunFastCGI)
  * Honor new config variable [FastCGI]WatchFile.Timeout, to allow
