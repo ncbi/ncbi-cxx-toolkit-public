@@ -315,7 +315,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
 
 CTDS_RowResult::CTDS_RowResult(DBPROCESS* cmd,
                                unsigned int* res_status, bool need_init)
-    : m_Cmd(cmd), m_CurrItem(0), m_EOR(false),
+    : m_Cmd(cmd), m_CurrItem(-1), m_EOR(false),
       m_ResStatus(res_status), m_Offset(0)
 {
     if (!need_init)
@@ -578,7 +578,7 @@ CTDS_RowResult::~CTDS_RowResult()
 
 
 CTDS_BlobResult::CTDS_BlobResult(DBPROCESS* cmd)
-    : m_Cmd(cmd), m_CurrItem(1), m_EOR(false)
+    : m_Cmd(cmd), m_CurrItem(-1), m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
 
@@ -866,6 +866,7 @@ bool CTDS_ParamResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
+	m_CurrItem= 0;
         return true;
     }
     return false;
@@ -1093,7 +1094,7 @@ bool CTDS_StatusResult::Fetch()
 
 int CTDS_StatusResult::CurrentItemNo() const
 {
-    return 0;
+    return m_1stFetch? -1 : 0;
 }
 
 
@@ -1379,6 +1380,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/01/06 16:59:31  soussov
+ * sets m_CurrItem = -1 for all result types if no fetch was called
+ *
  * Revision 1.9  2003/01/03 21:48:18  soussov
  * set m_CurrItem = -1 if fetch failes
  *

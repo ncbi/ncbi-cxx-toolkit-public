@@ -75,7 +75,7 @@ static EDB_Type s_GetDataType(SQLSMALLINT t, SQLSMALLINT dec_digits,
 
 CODBC_RowResult::CODBC_RowResult(SQLSMALLINT nof_cols, SQLHSTMT cmd, 
                                  CODBC_Reporter& r) :
-    m_Cmd(cmd), m_Reporter(r), m_CurrItem(0), m_EOR(false)
+    m_Cmd(cmd), m_Reporter(r), m_CurrItem(-1), m_EOR(false)
 {
     m_NofCols = nof_cols;
 
@@ -990,6 +990,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/06 16:59:20  soussov
+ * sets m_CurrItem = -1 for all result types if no fetch was called
+ *
  * Revision 1.4  2003/01/03 21:48:37  soussov
  * set m_CurrItem = -1 if fetch failes
  *
