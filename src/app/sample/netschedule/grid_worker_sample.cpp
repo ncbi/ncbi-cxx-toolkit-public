@@ -39,6 +39,10 @@
 #include <vector>
 
 
+#if defined(NCBI_OS_UNIX)
+# include <signal.h>
+#endif
+
 USING_NCBI_SCOPE;
 
     
@@ -146,9 +150,31 @@ public:
     }
 };
 
+/////////////////////////////////////////////////////////////////////////////
+//
+
+#if defined(NCBI_OS_UNIX)
+/// @internal
+extern "C" 
+void GridWorker_SignalHandler( int )
+{
+    CGridWorkerApp* app = 
+        dynamic_cast<CGridWorkerApp*>(CNcbiApplication::Instance());
+    if (app) {
+        app->RequestShutdown();
+    }
+}
+#endif
+
 
 int main(int argc, const char* argv[])
 {
+#if defined(NCBI_OS_UNIX)
+    // attempt to get server gracefully shutdown on signal
+       signal( SIGINT, GridWorker_SignalHandler);
+       signal( SIGTERM, GridWorker_SignalHandler);    
+#endif
+
     CGridWorkerApp app(new CSampleJobFactory);
     return app.AppMain(argc, argv, 0, eDS_Default, "grid_worker_sample.ini");
 }
@@ -156,6 +182,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/28 19:31:03  didenko
+ * Added signals handling
+ *
  * Revision 1.5  2005/03/25 16:28:48  didenko
  * Cosmetics
  *
