@@ -109,11 +109,12 @@ public:
     TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint8  * z, CSeqDBLockHold & locked) const;
     TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, string * z, CSeqDBLockHold & locked) const;
     
-    bool ReadBytes(CSeqDBMemLease & lease,
-                   char           * buf,
-                   TIndx            start,
-                   TIndx            end,
-                   CSeqDBLockHold & locked) const;
+    // Assumes locked.
+    
+    inline bool ReadBytes(CSeqDBMemLease & lease,
+                          char           * buf,
+                          TIndx            start,
+                          TIndx            end) const;
     
 private:
     CSeqDBAtlas    & m_Atlas;
@@ -166,12 +167,13 @@ protected:
         return m_Lease.GetPtr(start);
     }
     
-    void x_ReadBytes(char           * buf,
-                     Uint4            start,
-                     Uint4            end,
-                     CSeqDBLockHold & locked) const
+    // Assumes locked.
+    
+    void x_ReadBytes(char  * buf,
+                     Uint4   start,
+                     Uint4   end) const
     {
-        m_File.ReadBytes(m_Lease, buf, start, end, locked);
+        m_File.ReadBytes(m_Lease, buf, start, end);
     }
     
     template<class T>
@@ -230,13 +232,14 @@ public:
     {
         CSeqDBLockHold locked(m_Atlas);
         
-        m_Atlas.RetRegion((const char *) m_HdrRegion, locked);
-        m_Atlas.RetRegion((const char *) m_SeqRegion, locked);
+        m_Atlas.Lock(locked);
+        m_Atlas.RetRegion((const char *) m_HdrRegion);
+        m_Atlas.RetRegion((const char *) m_SeqRegion);
         
         _ASSERT((m_AmbRegion == 0) == (m_ProtNucl == kSeqTypeProt));
         
         if (m_AmbRegion) {
-            m_Atlas.RetRegion((const char *) m_AmbRegion, locked);
+            m_Atlas.RetRegion((const char *) m_AmbRegion);
         }
     }
     
@@ -361,12 +364,11 @@ public:
     {
     }
     
-    void ReadBytes(char           * buf,
-                   TIndx            start,
-                   TIndx            end,
-                   CSeqDBLockHold & locked) const
+    void ReadBytes(char  * buf,
+                   TIndx   start,
+                   TIndx   end) const
     {
-        x_ReadBytes(buf, start, end, locked);
+        x_ReadBytes(buf, start, end);
     }
     
     const char * GetRegion(TIndx start, TIndx end, bool keep, CSeqDBLockHold & locked) const
@@ -391,12 +393,11 @@ public:
     {
     }
     
-    void ReadBytes(char           * buf,
-                   TIndx            start,
-                   TIndx            end,
-                   CSeqDBLockHold & locked) const
+    void ReadBytes(char  * buf,
+                   TIndx   start,
+                   TIndx   end) const
     {
-        x_ReadBytes(buf, start, end, locked);
+        x_ReadBytes(buf, start, end);
     }
     
     const char * GetRegion(TIndx start, TIndx end, CSeqDBLockHold & locked) const
@@ -405,6 +406,24 @@ public:
     }
 };
 
+
+// Does not modify (or use) internal file offset
+
+// Assumes locked.
+
+bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
+                              char           * buf,
+                              TIndx            start,
+                              TIndx            end) const
+{
+    if (! lease.Contains(start, end)) {
+        m_Atlas.GetRegion(lease, m_FileName, start, end);
+    }
+    
+    memcpy(buf, lease.GetPtr(start), end-start);
+    
+    return true;
+}
 
 END_NCBI_SCOPE
 

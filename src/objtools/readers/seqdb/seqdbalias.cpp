@@ -241,6 +241,8 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
 void CSeqDBAliasNode::x_ReadValues(const string   & fname,
                                    CSeqDBLockHold & locked)
 {
+    m_Atlas.Lock(locked);
+    
     CSeqDBAtlas::TIndx file_length(0);
     
     const char * bp = m_Atlas.GetFile(fname, file_length, locked);
@@ -270,7 +272,7 @@ void CSeqDBAliasNode::x_ReadValues(const string   & fname,
         p = eolp + 1;
     }
     
-    m_Atlas.RetRegion(bp, locked);
+    m_Atlas.RetRegion(bp);
 }
 
 void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,

@@ -292,7 +292,27 @@ public:
     void RetRegion(CSeqDBMemLease & ml);
     
     /// Releases a partial mapping of the file, or returns an allocated block.
-    void RetRegion(const char * datap, CSeqDBLockHold & locked);
+    void RetRegion(const char * datap)
+    {
+        for(Uint4 i = 0; i<eNumRecent; i++) {
+            CRegionMap * rec_map = m_Recent[i];
+            
+            if (! rec_map)
+                break;
+            
+            if (rec_map->InRange(datap)) {
+                rec_map->RetRef();
+                
+                if (i) {
+                    x_AddRecent(rec_map);
+                }
+                
+                return;
+            }
+        }
+        
+        x_RetRegionNonRecent(datap);
+    }
     
     /// Clean up unreferenced objects
     void GarbageCollect(CSeqDBLockHold & locked);
@@ -359,6 +379,9 @@ private:
     // Assumes lock is held
     Uint4 x_LookupFile(const string  & fname,
                        const string ** map_fname_ptr);
+    
+    /// Releases a partial mapping of the file, or returns an allocated block.
+    void x_RetRegionNonRecent(const char * datap);
     
     // Recent region lookup
     

@@ -46,7 +46,8 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
       m_RestrictEnd  (oid_end),
       m_NextChunkOID (0),
       m_NumSeqs      (0),
-      m_TotalLength  (0)
+      m_TotalLength  (0),
+      m_SeqType      (prot_nucl)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -180,8 +181,16 @@ Uint4 CSeqDBImpl::GetSeqLength(Uint4 oid) const
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
-    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqLength(vol_oid, false, locked);
+    if (kSeqTypeProt == m_SeqType) {
+        if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+            return vol->GetSeqLengthProt(vol_oid);
+        }
+    } else {
+        m_Atlas.Lock(locked);
+        
+        if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+            return vol->GetSeqLengthExact(vol_oid);
+        }
     }
     
     NCBI_THROW(CSeqDBException,
@@ -194,8 +203,14 @@ Uint4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
-    if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetSeqLength(vol_oid, true, locked);
+    if (kSeqTypeProt == m_SeqType) {
+        if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+            return vol->GetSeqLengthProt(vol_oid);
+        }
+    } else {
+        if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
+            return vol->GetSeqLengthApprox(vol_oid);
+        }
     }
     
     NCBI_THROW(CSeqDBException,
@@ -225,8 +240,9 @@ void CSeqDBImpl::RetSequence(const char ** buffer) const
     // This can return either an allocated object or a reference to
     // part of a memory mapped region.
     CSeqDBLockHold locked(m_Atlas);
+    m_Atlas.Lock(locked);
     
-    m_Atlas.RetRegion(*buffer, locked);
+    m_Atlas.RetRegion(*buffer);
     *buffer = 0;
 }
 

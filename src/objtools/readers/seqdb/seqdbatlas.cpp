@@ -599,27 +599,8 @@ void CSeqDBAtlas::RetRegion(CSeqDBMemLease & ml)
 }
 
 /// Releases a hold on a partial mapping of the file.
-void CSeqDBAtlas::RetRegion(const char * datap, CSeqDBLockHold & locked)
+void CSeqDBAtlas::x_RetRegionNonRecent(const char * datap)
 {
-    Lock(locked);
-    
-    for(Uint4 i = 0; i<eNumRecent; i++) {
-        CRegionMap * rec_map = m_Recent[i];
-        
-        if (! rec_map)
-            break;
-        
-        if (rec_map->InRange(datap)) {
-            rec_map->RetRef();
-            
-            if (i) {
-                x_AddRecent(rec_map);
-            }
-            
-            return;
-        }
-    }
-    
     CSeqDBAtlas::TAddressTable::iterator iter = m_AddressLookup.upper_bound(datap);
     
     if (iter != m_AddressLookup.begin()) {

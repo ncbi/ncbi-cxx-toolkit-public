@@ -137,25 +137,6 @@ TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
 }
 
 
-// Does not modify (or use) internal file offset
-
-bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
-                              char           * buf,
-                              TIndx            start,
-                              TIndx            end,
-                              CSeqDBLockHold & locked) const
-{
-    m_Atlas.Lock(locked);
-    
-    if (! lease.Contains(start, end)) {
-        m_Atlas.GetRegion(lease, m_FileName, start, end);
-    }
-    
-    memcpy(buf, lease.GetPtr(start), end-start);
-    
-    return true;
-}
-
 CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
                              const string  & dbfilename,
                              char            prot_nucl)

@@ -54,7 +54,7 @@ public:
                Uint4          oid_end,
                bool           use_mmap);
     
-    ~CSeqDBImpl(void);
+    ~CSeqDBImpl();
     
     Uint4 GetSeqLength(Uint4 oid) const;
     
@@ -62,7 +62,7 @@ public:
     
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid) const;
     
-    char GetSeqType(void) const;
+    char GetSeqType() const;
     
     CRef<CBioseq> GetBioseq(Uint4 oid,
                             bool  use_objmgr,
@@ -79,15 +79,15 @@ public:
     
     list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid) const;
     
-    string GetTitle(void) const;
+    string GetTitle() const;
     
-    string GetDate(void) const;
+    string GetDate() const;
     
-    Uint4 GetNumSeqs(void) const;
+    Uint4 GetNumSeqs() const;
     
-    Uint8 GetTotalLength(void) const;
+    Uint8 GetTotalLength() const;
     
-    Uint4 GetMaxLength(void) const;
+    Uint4 GetMaxLength() const;
     
     bool CheckOrFindOID(Uint4 & next_oid) const;
     
@@ -97,14 +97,14 @@ public:
                     vector<TOID> & oid_list,
                     Uint4        * oid_state);
     
-    const string & GetDBNameList(void) const;
+    const string & GetDBNameList() const;
     
 private:
     string x_FixString(const string &) const;
     
-    Uint4 x_GetNumSeqs(void) const;
+    Uint4 x_GetNumSeqs() const;
     
-    Uint8 x_GetTotalLength(void) const;
+    Uint8 x_GetTotalLength() const;
     
     mutable CSeqDBAtlas   m_Atlas;
     string                m_DBNames;
@@ -118,6 +118,7 @@ private:
     
     Uint4                 m_NumSeqs;
     Uint8                 m_TotalLength;
+    char                  m_SeqType;
 };
 
 END_NCBI_SCOPE
