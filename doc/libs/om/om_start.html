@@ -7,7 +7,7 @@
 <h1>Setup the framework for the C++ <i>Object Manager</i> learning task</h1>
 </div>
 
-<h2>Starting point</h2>
+<h2>Starting point (UNIX)</h2>
 <p>
 To jump-start your first project utilizing the new C++
 <var>Object Manager </var> in the C++ Toolkit framework on a UNIX platform,
@@ -51,6 +51,67 @@ into  the code that performs your learning task.
 </li>
 </ol>
 
+
+<h2>Starting point (MS Windows)</h2>
+<p>
+To create a project, which utilizes the C++ <var>Object Manager </var>
+in the C++ Toolkit framework on Microsoft Windows platform, do the following:
+</p>
+<ol>
+  <li>In Microsoft Visual Studio create a new project/workspace:
+  choose "Win32 Console Application", then "Empty project".
+  </li>
+  <li>
+  Copy the source file (<tt>src\app\sample\objmgr\objmgr_sample.cpp</tt>) into
+  the project directory, then add it to the project.
+  </li>
+  <li>
+  Modify the project settings:
+    <ul>
+	  <li>Enable Run-time type information (in <tt>C/C++ - C++ language</tt>)
+	  </li>
+	  <li>Disable using precompiled headers (in <tt>C/C++ - Precompiled headers</tt>)
+	  </li>
+	  <li>Add additional include directory (in <tt>C/C++ - Preprocessor</tt>).
+	  Here, at NCBI, it should be <tt>\\Dizzy\public\cxx\include</tt>,
+      that is, the "root" of all includes.
+	  </li>
+	  <li>Add additional library path (<tt>Link-Input</tt>).
+      Here, at NCBI it may be <tt>\\Dizzy\public\cxx\Debug</tt>. Please note,
+	  this library path is configuration-dependent, that is it must be
+	  different for each configuration you are going to build the project in.
+	  </li>
+	  <li>Remove all "standard" libraries in <tt>Link-Input-Object/library modules</tt>.
+	  </li>
+	  <li>Add socket library there: <tt>wsock32.lib</tt>
+	  </li>
+	  <li>Add NCBI libraries to the project:
+	    <pre>
+    objects_biblio.lib,
+    objects_general.lib,
+    objects_id1.lib,
+    objects_medline.lib,
+    objects_pub.lib,
+    objects_seq.lib,
+    objects_seqalign.lib,
+    objects_seqblock.lib,
+    objects_seqcode.lib,
+    objects_seqfeat.lib,
+    objects_seqloc.lib,
+    objects_seqres.lib,
+    objects_seqset.lib,
+    xncbi.lib,
+    xobjmgr.lib,
+    xconnect.lib,
+    xserial.lib,
+    xutil.lib.
+	    </pre>
+	  </li>
+	</ul>
+  </li>
+  <li>Build the project and run the application.
+  </li>
+</ol>
 
 
 
