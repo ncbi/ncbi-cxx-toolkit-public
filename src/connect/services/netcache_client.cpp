@@ -114,12 +114,8 @@ string CNetCacheClient::PutData(const void*  buf,
         request += NStr::IntToString(time_to_live);
     }
    
-//CStopWatch sw(true);
     WriteStr(request.c_str(), request.length() + 1);
-//cerr << "PUT: " << sw.AsString("S.n") << endl;
-//sw.Restart();    
     s_WaitForServer(*m_Sock);
-//cerr << "Server: " << sw.AsString("S.n") << endl;
 
     // Read BLOB_ID answer from the server
     ReadStr(*m_Sock, &blob_id);
@@ -140,6 +136,37 @@ string CNetCacheClient::PutData(const void*  buf,
     m_Sock->Close();
 
     return blob_id;
+}
+
+bool CNetCacheClient::IsAlive()
+{
+    string version = ServerVersion();
+    return !version.empty();
+}
+
+string CNetCacheClient::ServerVersion()
+{
+    string request;
+    string version;
+    
+    const char* client = 
+        !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
+
+    request = client;
+    request.append("\r\nVERSION");    
+
+    WriteStr(request.c_str(), request.length() + 1);
+    s_WaitForServer(*m_Sock);
+
+    // Read BLOB_ID answer from the server
+    ReadStr(*m_Sock, &version);
+    if (NStr::FindCase(version, "OK:") != 0) {
+        LOG_POST(Error << version);
+        return kEmptyStr;
+    }
+
+    version.erase(0, 3);
+    return version;
 }
 
 
@@ -306,6 +333,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/10/25 14:36:39  kuznets
+ * New methods IsAlive(), ServerVersion()
+ *
  * Revision 1.10  2004/10/21 15:52:56  kuznets
  * removed unused variable
  *

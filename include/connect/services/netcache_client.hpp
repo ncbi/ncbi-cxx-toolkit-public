@@ -111,6 +111,12 @@ public:
     /// Shutdown the server daemon.
     void ShutdownServer();
 
+    /// Connects to server to make sure it is running.
+    bool IsAlive();
+
+    /// Return version string
+    string ServerVersion();
+
 protected:
     bool ReadStr(CSocket& sock, string* str);
     void WriteStr(const char* str, size_t len);
@@ -134,6 +140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/25 14:36:03  kuznets
+ * New methods IsAlive(), ServerVersion()
+ *
  * Revision 1.5  2004/10/22 13:51:01  kuznets
  * Documentation chnages
  *
