@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --************************************************************************
 --
 -- ASN.1 and XML for the components of a GenBank/EMBL/DDBJ sequence record
@@ -7,20 +7,22 @@
 --
 --************************************************************************
 
-INSD-Seq DEFINITIONS ::=
+INSD-INSDSeq DEFINITIONS ::=
 BEGIN
 
 --********
---  INSD-Seq represents the elements in a GenBank/EMBL/DDBJ style report
---    of a sequence with some small additions to structure and support
---    for protein (GenPept) versions of flatfile format as seen in Entrez.
---    While this represents the simplification, reduction of detail, and
---    flattening to a single sequence perspective of the three flatfile
---    formats, it is presented in ASN.1 or XML for automated parsing and
---    processing. It is hoped that this compromise will be useful for
---    those bulk processing at the flatfile format level of detail today.
---    Since itis a compromise, a number of pragmatic decisions have been
---    made.
+--  INSDSeq provides the elements of a sequence as presented in the
+--    GenBank/EMBL/DDBJ-style flatfile formats, with a small amount of
+--    additional structure, plus support for protein flatfile format
+--    (ie, GenPept) as displayed in the Entrez application.
+--    Although this single perspective of the three flatfile formats
+--    provides a useful simplification, it hides to some extent the
+--    details of the actual data underlying those formats. Nevertheless,
+--    the ASN.1 and XML versions of INSD-Seq are being provided with
+--    the hopes that it will prove useful to those who bulk-process
+--    sequence data at the flatfile-format level of detail. Because
+--    INSD-Seq is a compromise, a number of pragmatic decisions have
+--    been made:
 --
 --  In pursuit of simplicity and familiarity a number of fields do not
 --    have full substructure defined here where there is already a
@@ -43,17 +45,19 @@ BEGIN
 --    carries information from the source protein database.
 --
 --  There are also a number of elements that could have been more exactly
---   specified, but in the interest of simplicity have been simply left as
---   optional. For example:
+--    specified, but in the interest of simplicity have been simply left as
+--    optional. For example:
 --
---  accession and accession.version will always appear in a public record
---   they are optional because this format can also be used for non-public
---   sequences, and in that case will have only "other-seqids".
+--  accession and accession.version are always required for publicly
+--    accessible sequence records. However, they are optional in INSDSeq
+--    so that this format can also be used for non-public sequence data,
+--    prior to the assignment of accessions and version numbers. In such
+--    cases, records will have only "other-seqids".
 --
 --  sequences will normally all have "sequence" filled in. But contig records
 --    will have a "join" statement in the "contig" slot, and no "sequence".
 --    We also may consider a retrieval option with no sequence of any kind
---     and no feature table to quickly check minimal values.
+--    and no feature table to quickly check minimal values.
 --
 --  a reference may have an author list, or be from a consortium, or both.
 --
@@ -80,6 +84,13 @@ BEGIN
 --    and with many exceptions and caveats. It does NOT tell you the first
 --    date the public might have seen this record and thus is NOT an accurate
 --    measure for legal issues of precedence.
+--
+--  Four elements are specific to records originating at the EMBL
+--    sequence database: INSDSeq_update-release, INSDSeq_create-release,
+--    INSDSeq_entry-version, and INSDSeq_database-reference.
+--
+--  Two elements are specific to records originating at the GenBank
+--    and DDBJ sequence databases: INSDSeq_keywords, and INSDSeq_segment.
 --
 --********
 
