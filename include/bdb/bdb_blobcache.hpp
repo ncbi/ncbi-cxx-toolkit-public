@@ -125,6 +125,8 @@ private:
     time_t         m_ExpirationTime;
 };
 
+class CPIDGuard;
+
 /// BDB cache implementation.
 ///
 /// Class implements IBLOB_Cache interface using local Berkeley DB
@@ -136,7 +138,13 @@ public:
     CBDB_BLOB_Cache();
     virtual ~CBDB_BLOB_Cache();
 
-    void Open(const char* cache_path);
+    enum ELockMode 
+    {
+        eNoLock,     //!< Do not lock-protect cache instance
+        ePidLock,    //!< Create PID lock on cache (exception if failed) 
+    };
+
+    void Open(const char* cache_path, ELockMode lm = eNoLock);
 
     IIntCache* GetIntCache() { return &m_IntCacheInstance; }
 
@@ -187,6 +195,7 @@ private:
     CBDB_BLOB_Cache& operator=(const CBDB_BLOB_Cache);
 private:
     string                  m_Path;    //!< Path to storage
+    CPIDGuard*              m_PidGuard;//!< Cache lock
 
     CBDB_Env                m_Env;        //!< Common environment for cache DBs
     SBLOB_CacheDB           m_BlobDB;     //!< In database BLOB storage
@@ -205,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/10/24 12:35:28  kuznets
+ * Added cache locking options.
+ *
  * Revision 1.8  2003/10/21 11:56:41  kuznets
  * Fixed bug with non-updated Int cache timestamp.
  *
