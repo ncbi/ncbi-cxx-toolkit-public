@@ -422,7 +422,7 @@ CPsiBlastInputData::x_GetSubjectSequence(const CDense_seg& ds, CScope& scope)
                                            CBioseq_Handle::eCoding_Ncbi);
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         retval = s_ExtractSequenceFromSeqVector(sv);
-    } catch (const CException& e) {
+    } catch (const CException&) {
         subjlen = 0;
         retval = NULL;
         ERR_POST(Warning << "Failed to retrieve sequence " <<
@@ -489,6 +489,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/08/04 21:49:01  camacho
+ * Minor change to avoid compiler warning
+ *
  * Revision 1.5  2004/08/04 21:12:47  camacho
  * Removed dead code, unused variable
  *
