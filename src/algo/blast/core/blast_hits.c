@@ -257,7 +257,6 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject,
    Int4* align_length_ptr)
 {
    Int4 i, num_ident, align_length, q_off, s_off;
-   Int2 context;
    Uint1* q,* s;
    GapEditBlock* gap_info;
    GapEditScript* esp;
@@ -267,7 +266,6 @@ BlastHSPGetNumIdentical(Uint1* query, Uint1* subject,
    if (!gap_info && is_gapped)
       return -1;
 
-   context = hsp->context;
    q_off = hsp->query.offset;
    s_off = hsp->subject.offset;
 

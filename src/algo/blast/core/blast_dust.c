@@ -206,7 +206,6 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    Int4 n;
    Uint1* s2,* s3;
    Int2 c;
-   Boolean flagVD;
    Uint1* seq = &seq_start[icur];
    Uint1 end_byte = NCBI4NA_TO_BLASTNA[NULLB];
    
@@ -232,7 +231,6 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    *s2 |= c;
    
    /* triplet fill loop */
-   flagVD = TRUE;
    while ((c = *seq++) != end_byte && n < max) {
       c &= NCBI_2NA_MASK;
       *s1 <<= 2;

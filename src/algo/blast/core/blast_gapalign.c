@@ -2848,7 +2848,6 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1 program,
 {
     Boolean found_end;
     Int4 score_right, score_left, private_q_length, private_s_length, tmp;
-    Int4 prev;
     Int4* tback,* tback1,* p = NULL,* q;
     Int2 status = 0;
     Int4 pat_length;
@@ -2861,7 +2860,7 @@ Int2 PHIGappedAlignmentWithTraceback(Uint1 program,
     tback = tback1 = (Int4*)
        malloc((subject_length + query_length)*sizeof(Int4));
 
-    score_left = 0; prev = 3;
+    score_left = 0;
         
     score_left = 
        SEMI_G_ALIGN_EX(query, subject, q_start, s_start, tback, 
@@ -3037,12 +3036,11 @@ Int2 PHIGetGappedScore (Uint1 program_number,
         BlastHSPList** hsp_list_ptr)
 
 {
-   Boolean is_prot;
    BlastHSPList* hsp_list;
    BlastInitHSP** init_hsp_array;
    BlastInitHSP* init_hsp;
    Int4 index;
-   Int4 q_start, s_start, q_end, s_end;
+   Int4 q_start, s_start;
    Int2 status = 0;
    BlastHitSavingOptions* hit_options = hit_params->options;
 
@@ -3053,7 +3051,6 @@ Int2 PHIGetGappedScore (Uint1 program_number,
    if (init_hitlist->total == 0)
       return 0;
 
-   is_prot = (program_number != blast_type_blastn);
 
    if (*hsp_list_ptr == NULL)
       *hsp_list_ptr = hsp_list = BlastHSPListNew();
@@ -3071,13 +3068,11 @@ Int2 PHIGetGappedScore (Uint1 program_number,
       init_hsp = init_hsp_array[index];
 
       if (!init_hsp->ungapped_data) {
-         q_start = q_end = init_hsp->q_off;
-         s_start = s_end = init_hsp->s_off;
+         q_start = init_hsp->q_off;
+         s_start = init_hsp->s_off;
       } else {
          q_start = init_hsp->ungapped_data->q_start;
-         q_end = q_start + init_hsp->ungapped_data->length - 1;
          s_start = init_hsp->ungapped_data->s_start;
-         s_end = s_start + init_hsp->ungapped_data->length - 1;
       }
 
       status =  PHIGappedAlignment(program_number, query, 

@@ -1035,7 +1035,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    LookupTable* lookup = (LookupTable*) lookup_wrap->lut;
    Uint1* s_start = subject->sequence;
    Int4 i;
-   Uint1* s,* s_end;
+   Uint1* s;
    Uint1* q_start = query->sequence;
    Int4 query_length = query->length;
    Int4 subject_length = subject->length;
@@ -1044,14 +1044,11 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
    Uint1* q;
    Int4 start_offset, end_offset, next_start;
    Uint1 max_bases_left, max_bases_right;
-   Int4 bases_in_last_byte;
    Boolean variable_wordsize = word_options->variable_wordsize;
    Int4 extended_right;
    Uint1* q_tmp,* s_tmp;
    Uint4 length;
 
-   s_end = subject->sequence + subject_length/COMPRESSION_RATIO;
-   bases_in_last_byte = subject_length % COMPRESSION_RATIO;
 
    reduced_word_length = COMPRESSION_RATIO*lookup->reduced_wordsize;
    min_extra_length = reduced_word_length - COMPRESSION_RATIO;
