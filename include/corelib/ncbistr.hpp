@@ -2110,14 +2110,14 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 #else
     int diff = 0;
     for ( ; ; ++s1, ++s2, --n) {
+        if (n == 0)
+            return 0;
         char c1 = *s1;
         // calculate difference
         diff = tolower(c1) - tolower(*s2);
         // if end of string or different
         if (!c1  ||  diff)
             break; // return difference
-        if (n == 0)
-            return 0;
     }
     return diff;
 #endif
@@ -2456,6 +2456,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.68  2004/10/13 01:05:06  vakatov
+ * NStr::strncasecmp() -- fixed bug in "hand-made" code
+ *
  * Revision 1.67  2004/10/05 16:34:10  shomrat
  * in place TruncateSpaces changed to TruncateSpacesInPlace
  *
