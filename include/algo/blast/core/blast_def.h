@@ -76,6 +76,8 @@ typedef struct BLAST_SequenceBlk {
                                   sequence */
    Boolean sequence_start_allocated; /**< TRUE if memory has been allocated 
                                         for sequence_start */
+   Uint1Ptr oof_sequence; /**< Mixed-frame protein representation of a
+                             nucleotide sequence for out-of-frame alignment */
 } BLAST_SequenceBlk, *BLAST_SequenceBlkPtr;
 
 /** The query related information 
