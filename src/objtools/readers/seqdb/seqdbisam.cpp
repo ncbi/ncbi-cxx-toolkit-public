@@ -1490,51 +1490,32 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         }
     }
     
-    if (m_IdxOption) {
-        // Under what circumstance can this path be taken?
+    bool found = false;
+    
+    string accession(string("gb|") + acc + "|");
+    string locus_str(string("gb||") + acc);
+    
+    EErrorCode err = eNoError;
+    
+    vector<string> keys_out;
+    vector<string> data_out;
+    vector<TIndx>  indices_out;
+    
+    if (! adjusted) {
+        if ((err = x_StringSearch(accession,
+                                  keys_out,
+                                  data_out,
+                                  indices_out,
+                                  locked)) < 0) {
+            return;
+        }
         
-        x_SparseStringToOids(acc, oids, adjusted, locked);
-    } else {
-        bool found = false;
-        
-        string accession(string("gb|") + acc + "|");
-        string locus_str(string("gb||") + acc);
-        
-        EErrorCode err = eNoError;
-        
-        vector<string> keys_out;
-        vector<string> data_out;
-        vector<TIndx>  indices_out;
-        
-        if (! adjusted) {
-            if ((err = x_StringSearch(accession,
-                                      keys_out,
-                                      data_out,
-                                      indices_out,
-                                      locked)) < 0) {
-                return;
-            }
-            
-            if (err == eNoError) {
-                found = true;
-            }
-            
-            if ((! found) &&
-                (err = x_StringSearch(locus_str,
-                                      keys_out,
-                                      data_out,
-                                      indices_out,
-                                      locked)) < 0) {
-                return;
-            }
-            
-            if (err != eNotFound) {
-                found = true;
-            }
+        if (err == eNoError) {
+            found = true;
         }
         
         if ((! found) &&
-            (err = x_StringSearch(acc,
+            (err = x_StringSearch(locus_str,
                                   keys_out,
                                   data_out,
                                   indices_out,
@@ -1545,11 +1526,24 @@ void CSeqDBIsam::StringToOids(const string   & acc,
         if (err != eNotFound) {
             found = true;
         }
-        
-        if (found) {
-            ITERATE(vector<string>, iter, data_out) {
-                oids.push_back(atoi((*iter).c_str()));
-            }
+    }
+    
+    if ((! found) &&
+        (err = x_StringSearch(acc,
+                              keys_out,
+                              data_out,
+                              indices_out,
+                              locked)) < 0) {
+        return;
+    }
+    
+    if (err != eNotFound) {
+        found = true;
+    }
+    
+    if (found) {
+        ITERATE(vector<string>, iter, data_out) {
+            oids.push_back(atoi((*iter).c_str()));
         }
     }
 }
