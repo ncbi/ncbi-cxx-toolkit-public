@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2000/06/11 01:47:34  vakatov
+* IsDiagSet(0) to return TRUE if the diag stream is unset
+*
 * Revision 1.62  2000/06/09 21:22:49  vakatov
 * Added test for IsDiagStream()
 *
@@ -1087,6 +1090,8 @@ int CTestApplication::Run(void)
 CTestApplication::~CTestApplication()
 {
     SetDiagStream(0);
+    _ASSERT( IsDiagStream(0) );
+    _ASSERT( !IsDiagStream(&NcbiCout) );
 }
 
 

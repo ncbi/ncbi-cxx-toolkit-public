@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/06/11 01:47:28  vakatov
+* IsDiagSet(0) to return TRUE if the diag stream is unset
+*
 * Revision 1.19  2000/06/09 21:22:21  vakatov
 * IsDiagStream() -- fixed
 *
@@ -445,10 +448,13 @@ extern bool IsDiagStream(const CNcbiOstream* os)
 {
     bool res;
     //## MUTEX_LOCK(s_Mutex);
-    res =
-        CDiagBuffer::sm_HandlerFunc == s_ToStream_Handler  &&
-        CDiagBuffer::sm_HandlerData  &&
-        ((SToStream_Data*) CDiagBuffer::sm_HandlerData)->os == os;
+    if ( !CDiagBuffer::sm_HandlerData ) {
+        res = (os == 0);
+    } else {
+        res =
+            CDiagBuffer::sm_HandlerFunc == s_ToStream_Handler  &&
+            ((SToStream_Data*) CDiagBuffer::sm_HandlerData)->os == os;
+    }
     //## MUTEX_UNLOCK(s_Mutex);
     return res;
 }
