@@ -64,10 +64,13 @@ void CTest::Init(void)
 // less than 'x' seconds even.
 #define SLEEP(x) SleepMilliSec(x*1000+100)
 
+// Print elapsed time and wait a little to avoid race conditions
 #define ELAPSED \
     e = sw.Elapsed(); \
-    cout << "elapsed: " << setiosflags(ios::fixed) << e << endl
+    cout << "elapsed: " << setiosflags(ios::fixed) << e << endl; \
+    SleepMilliSec(100)
 
+// Start/stop test messages
 #define START(x) \
     cout << "Start test " << x << endl
 #define DONE \
@@ -202,6 +205,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/03 15:03:07  ivanov
+ * Fixed a race conditions on fast machines
+ *
  * Revision 1.3  2005/03/03 12:16:45  ivanov
  * Added diagnostic messages
  *
