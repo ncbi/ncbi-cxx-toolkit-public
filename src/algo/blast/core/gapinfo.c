@@ -28,7 +28,7 @@
  */
 
 /** @file gapinfo.c
- * Initialization and freeing of structures for gapped alignment
+ * Initialization and freeing of structures containing traceback information.
  */
 
 
