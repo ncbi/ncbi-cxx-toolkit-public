@@ -139,13 +139,14 @@ void CNcbi2naRandomizer::RandomizeData(TData data,
                                        TSeqPos pos)
 {
     for (TData stop = data + count; data < stop; ++data, ++pos) {
-        if ( m_RandomTable[*data][0] ) {
+        if ( m_RandomTable[(unsigned char)(*data)][0] ) {
             // Ambiguity, use random value
-            *data = m_RandomTable[*data][(pos & kRandomizerPosMask) + 1];
+            *data = m_RandomTable[(unsigned char)(*data)]
+                [(pos & kRandomizerPosMask) + 1];
         }
         else {
             // Normal base
-            *data = m_RandomTable[*data][1];
+            *data = m_RandomTable[(unsigned char)(*data)][1];
         }
     }
 }
@@ -795,6 +796,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/04/27 14:45:01  grichenk
+* Fixed warnings.
+*
 * Revision 1.31  2004/04/22 18:34:18  grichenk
 * Added optional ambiguity randomizer for ncbi2na coding
 *
