@@ -1663,6 +1663,8 @@ static const string kCFParam_lock_pid_lock  = "pid_lock";
 static const string kCFParam_mem_size       = "mem_size";
 static const string kCFParam_read_only      = "read_only";
 static const string kCFParam_read_update_limit = "read_update_limit";
+static const string kCFParam_write_sync        = "write_sync";
+
 
 ICache* CBDB_CacheReaderCF::CreateInstance(
            const string&                  driver,
@@ -1722,6 +1724,14 @@ ICache* CBDB_CacheReaderCF::CreateInstance(
     const string& read_only =
         GetParam(params, kCFParam_read_only, false, kEmptyStr);
     bool ro = NStr::StringToBool(read_only);
+
+    const string& write_sync =
+        GetParam(params, kCFParam_write_sync, false, kEmptyStr);
+    bool w_sync = NStr::StringToBool(write_sync);
+    drv->SetWriteSync(w_sync ? 
+                      CBDB_Cache::eWriteSync : CBDB_Cache::eWriteNoSync);
+
+
     if (ro) {
         drv->OpenReadOnly(path.c_str(), name.c_str(), mem_size);
     } else {
@@ -1777,6 +1787,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.74  2004/09/03 14:13:48  kuznets
+ * supported write_sync CF parameter
+ *
  * Revision 1.73  2004/09/03 13:35:58  kuznets
  * Added async write option, commented out transaction checkpoints
  *
