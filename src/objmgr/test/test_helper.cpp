@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/04/25 18:15:25  grichenk
+* Adjusted tests to work with the updated CSeqVector
+*
 * Revision 1.6  2002/04/23 15:26:07  gouriano
 * added test_assert.h
 *
@@ -855,7 +858,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
-        CSeqVector seq_vect_rev = handle.GetSeqVector(false);
+        CSeqVector seq_vect_rev = handle.GetSeqVector(false, false);
         string sout_rev = "";
         for (size_t i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/04/25 18:15:26  grichenk
+* Adjusted tests to work with the updated CSeqVector
+*
 * Revision 1.14  2002/04/23 15:26:47  gouriano
 * use test_mt library
 *
@@ -209,8 +212,8 @@ bool CTestObjectManager::Thread_Run(int idx)
         id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id,
             22, 22,
-            "NNNNNNNNNNNNNNNNNNNNNN",
-            "NNNNNNNNNNNNNNNNNNNNNN",
+            "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
+            "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // add more data to the scope - to make references resolvable

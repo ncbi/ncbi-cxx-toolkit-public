@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/04/25 18:15:25  grichenk
+* Adjusted tests to work with the updated CSeqVector
+*
 * Revision 1.21  2002/04/22 20:07:45  grichenk
 * Commented calls to CBioseq::ConstructExcludedSequence()
 *
@@ -252,8 +255,8 @@ int CTestApp::Run(void)
         id.SetGi(21+idx*1000);
         CTestHelper::ProcessBioseq(*pScope2, id,
             22, 22,
-            "NNNNNNNNNNNNNNNNNNNNNN",
-            "NNNNNNNNNNNNNNNNNNNNNN",
+            "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
+            "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
             1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         // add more data to the scope - to make references resolvable
