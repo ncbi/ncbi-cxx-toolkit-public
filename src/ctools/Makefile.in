@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+LIB_PROJ = ctools
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
