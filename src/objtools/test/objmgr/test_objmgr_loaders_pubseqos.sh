@@ -3,9 +3,13 @@
 
 method="PUBSEQOS"
 
-status_dir="../../../../status"
-if test ! -f "$status_dir/Sybase.enabled"; then
+if test ! -f "../../../../status/Sybase.enabled"; then
     echo Sybase is disabled: skipping PUBSEQOS loader test
+    exit 0
+fi
+
+if grep "^signature = GCC_295-.*-linux-gnu" ../../../Makefile.mk > /dev/null 2>&1; then
+    echo "This test is disabled for GCC-2.95 compiler on Linux"
     exit 0
 fi
 
