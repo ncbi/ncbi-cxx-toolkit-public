@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/08 16:14:55  vakatov
+* Fixed a warning
+*
 * Revision 1.6  1999/06/29 20:04:43  pubmed
 * many changes due to query interface changes
 *
@@ -189,7 +192,7 @@ public:
 
     virtual CNcbiCommand* Clone( void ) const = 0;
 
-    virtual CNCBINode* GetLogo( const CCgiContext& ctx ) const { return 0; }
+    virtual CNCBINode* GetLogo( const CCgiContext& ) const { return 0; }
     virtual string GetName( void ) const = 0;
     virtual string GetLink( CCgiContext& ctx ) const = 0;
 
