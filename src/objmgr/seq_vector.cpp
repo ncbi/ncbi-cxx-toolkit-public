@@ -152,11 +152,10 @@ CSeqVector::TResidue CSeqVector::x_GetGapChar(TCoding coding) const
 
 
 DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex2);
-//DEFINE_STATIC_FAST_MUTEX(s_ConvertTableMutex);
-//DEFINE_STATIC_FAST_MUTEX(s_ComplementTableMutex);
-//DEFINE_STATIC_FAST_MUTEX(s_ChainedTableMutex);
 
-const char* CSeqVector::sx_GetConvertTable(TCoding src, TCoding dst, bool reverse)
+const char* CSeqVector::sx_GetConvertTable(TCoding src,
+                                           TCoding dst,
+                                           bool reverse)
 {
     CFastMutexGuard guard(s_ConvertTableMutex2);
     typedef pair<pair<TCoding, TCoding>, bool> TKey;
@@ -175,39 +174,65 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src, TCoding dst, bool revers
         // invalid types
         return 0;
     }
-    pair<unsigned, unsigned> srcIndex = CSeqportUtil::GetCodeIndexFromTo(src);
-    pair<unsigned, unsigned> dstIndex = CSeqportUtil::GetCodeIndexFromTo(dst);
+
     const size_t COUNT = kMax_UChar+1;
-    if ( srcIndex.second >= COUNT || dstIndex.second >= COUNT ) {
+    const unsigned kInvalidCode = kMax_UChar;
+
+    pair<unsigned, unsigned> srcIndex =
+        CSeqportUtil::GetCodeIndexFromTo(src);
+    if ( srcIndex.second >= COUNT ) {
         // too large range
         return 0;
     }
-    try {
-        CSeqportUtil::GetMapToIndex(src, dst, srcIndex.first);
+
+    if ( reverse ) {
+        // check if src needs complement conversion
+        try {
+            CSeqportUtil::GetIndexComplement(src, srcIndex.first);
+        }
+        catch ( runtime_error& /*noComplement*/ ) {
+            reverse = false;
+        }
     }
-    catch ( runtime_error& /*badType*/ ) {
-        // incompatible types
+
+    if ( dst != src ) {
+        pair<unsigned, unsigned> dstIndex =
+            CSeqportUtil::GetCodeIndexFromTo(dst);
+        if ( dstIndex.second >= COUNT ) {
+            // too large range
+            return 0;
+        }
+
+        try {
+            // check for types compatibility
+            CSeqportUtil::GetMapToIndex(src, dst, srcIndex.first);
+        }
+        catch ( runtime_error& /*badType*/ ) {
+            // incompatible types
+            return 0;
+        }
+    }
+    else if ( !reverse ) {
+        // no need to convert at all
         return 0;
     }
+
     char* table = it->second = new char[COUNT];
-    fill(table, table+COUNT, char(255));
+    fill(table, table+COUNT, kInvalidCode);
     for ( unsigned i = srcIndex.first; i <= srcIndex.second; ++i ) {
-        unsigned code = i;
-        if ( reverse ) {
-            try {
+        try {
+            unsigned code = i;
+            if ( reverse ) {
                 code = CSeqportUtil::GetIndexComplement(src, code);
             }
-            catch ( runtime_error& /*noComplement*/ ) {
+            if ( dst != src ) {
+                code = CSeqportUtil::GetMapToIndex(src, dst, code);
             }
+            code = min(kInvalidCode, code);
+            table[i] = char(code);
         }
-        try {
-            code = CSeqportUtil::GetMapToIndex(src, dst, code);
-            code = min(255u, code);
+        catch ( runtime_error& /*noConversion or noComplement*/ ) {
         }
-        catch ( runtime_error& /*noConversion*/ ) {
-            code = 255;
-        }
-        table[i] = char(code);
     }
     return table;
 }
@@ -280,6 +305,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/08/21 17:04:10  vasilche
+* Fixed bug in making conversion tables.
+*
 * Revision 1.58  2003/08/21 13:32:04  vasilche
 * Optimized CSeqVector iteration.
 * Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.

@@ -535,6 +535,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/08/21 17:04:10  vasilche
+* Fixed bug in making conversion tables.
+*
 * Revision 1.22  2003/08/21 13:32:04  vasilche
 * Optimized CSeqVector iteration.
 * Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.
@@ -1371,9 +1374,9 @@ void CSeqVector_CI::x_FillCache(TSeqPos start, TSeqPos count)
         bool reverse = m_Seg.GetRefMinusStrand();
 
         const char* table = 0;
-        if ( cacheCoding != dataCoding ) {
+        if ( cacheCoding != dataCoding || reverse ) {
             table = m_Vector->sx_GetConvertTable(dataCoding, cacheCoding, reverse);
-            if ( !table ) {
+            if ( !table && cacheCoding != dataCoding ) {
                 THROW1_TRACE(runtime_error,
                              "CSeqVector_CI::x_FillCache: "
                              "incompatible codings");
@@ -1580,6 +1583,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/08/21 17:04:10  vasilche
+* Fixed bug in making conversion tables.
+*
 * Revision 1.22  2003/08/21 13:32:04  vasilche
 * Optimized CSeqVector iteration.
 * Set some CSeqVector values (mol type, coding) in constructor instead of detecting them while iteration.
