@@ -39,6 +39,7 @@
 
 #include <map>
 #include <string>
+#include <memory>
 
 #include <corelib/ncbi_tree.hpp>
 
@@ -361,6 +362,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/04/06 20:32:42  ucko
+ * +<memory> for auto_ptr<>
+ *
  * Revision 1.2  2004/04/06 17:59:00  kuznets
  * Work in progress
  *
