@@ -764,15 +764,6 @@ int CNetCacheDApp::Run(void)
         int port = 
             reg.GetInt("server", "port", 9000, CNcbiRegistry::eReturn);
 
-        bool purge_thread = 
-            reg.GetBool("server", "run_purge_thread", true, CNcbiRegistry::eReturn);
-
-        if (purge_thread) {
-            LOG_POST(Info << "Starting cache cleaning thread.");
-            m_PurgeThread.Reset(new CCacheCleanerThread(cache.get(), 30, 5));
-            m_PurgeThread->Run();
-        }
-
         unsigned max_threads =
             reg.GetInt("server", "max_threads", 25, CNcbiRegistry::eReturn);
         unsigned init_threads =
@@ -794,19 +785,6 @@ int CNetCacheDApp::Run(void)
 
         LOG_POST(Info << "Running server on port " << port);
         thr_srv->Run();
-
-        if (!m_PurgeThread.Empty()) {
-            LOG_POST(Info << "Stopping cache cleaning thread...");
-            if (bdb_cache) {
-                bdb_cache->SetBatchSleep(0);
-                bdb_cache->StopPurge();
-            }
-
-            m_PurgeThread->RequestStop();
-            m_PurgeThread->Join();
-            LOG_POST(Info << "Stopped.");
-        }
-        
     }
     catch (CBDB_ErrnoException& ex)
     {
@@ -831,6 +809,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/10/27 17:08:57  kuznets
+ * Purge thread has been delegated to CBDB_Cache
+ *
  * Revision 1.19  2004/10/27 14:18:02  kuznets
  * BLOB key parser moved from netcached
  *
