@@ -71,7 +71,8 @@ function VerifyTask(oTask)
     }
     //Path to C++ Toolkit
     var oFso = new ActiveXObject("Scripting.FileSystemObject");
-    if ( !oFso.FolderExists(oTask.ToolkitPath) ) {
+	if ( !oFso.FolderExists(oTask.ToolkitPath) ||
+ 		 !oFso.FolderExists(oTask.ToolkitPath + "\\bin") ) {
 		WScript.Echo("ERROR: Pre-built NCBI C++ toolkit is not found in:\n\"" + oTask.ToolkitPath + "\"");
 		err = true;
     }
@@ -96,6 +97,7 @@ function Task()
     SetVerbose(oArgs, "-v", false);
 
     this.ProjectName = GetPositionalValue(oArgs, 0);
+    this.ProjectFolder = "imported_projects";
     this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
     if ( this.DllBuild ) {
         this.CopyDlls    = GetFlagValue(oArgs, "-b", false);
@@ -130,9 +132,10 @@ function Task()
 // Diagnostic dump of task object
 function DumpTask(oTask)
 {
-    VerboseEcho("ProjectName    = " + oTask.ProjectName        );
-    VerboseEcho("ToolkitPath    = " + oTask.ToolkitPath        );
-    VerboseEcho("ToolkitSrcPath = " + oTask.ToolkitSrcPath     );
+    VerboseEcho("ProjectName    = " + oTask.ProjectName);
+	VerboseEcho("ProjectFolder  = " + oTask.ProjectFolder);
+    VerboseEcho("ToolkitPath    = " + oTask.ToolkitPath);
+    VerboseEcho("ToolkitSrcPath = " + oTask.ToolkitSrcPath);
     VerboseEcho("DllBuild       = " + oTask.DllBuild.toString());
     VerboseEcho("CopyDlls       = " + oTask.CopyDlls.toString());
     VerboseEcho("CopyRes        = " + oTask.CopyRes.toString());
@@ -143,15 +146,12 @@ function FillTree(oShell, oTree, oTask)
 {
     FillTreeStructure(oShell, oTree);
 
-    var include_dir = "include/" + oTask.ProjectName;
-    var src_dir     = "src/"     + oTask.ProjectName;
+    var include_dir = "include/" + BackSlashes(oTask.ProjectName);
+    var src_dir     = "src/"     + BackSlashes(oTask.ProjectName);
     CheckoutSubDir(oShell, oTree, include_dir);
     CheckoutSubDir(oShell, oTree, src_dir);
 
-    var oFso = new ActiveXObject("Scripting.FileSystemObject");
-    GetFileFromTree(oShell, oTree, oTask,
-        "/" + oFso.GetParentFolderName(src_dir) + "/Makefile.in",
-        oFso.GetParentFolderName(oTree.SrcRootBranch + "\\" + oTask.ProjectName));
+    FillMakefileinTree(oShell, oTree, oTask);
 }
 // Project will require pre-built C++ Toolkit       
 function AdjustProject(oShell, oTree, oTask)
@@ -167,6 +167,7 @@ function AdjustProject(oShell, oTree, oTask)
         makefile.Close();
     } else {
         WScript.Echo("ERROR: " + makefile_path + " not found");
+		WScript.Quit(1);	
     }
 }
 // Generate solution name. Must be the same as we can import more projects
@@ -189,10 +190,15 @@ function RunPtb(oShell, oTree, oTask)
     } else {
 		ptb_command_line = oTask.RemotePtb;
     }
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    if ( !oFso.FileExists(ptb_command_line) ) {
+        WScript.Echo("ERROR: " + ptb_command_line + " not found");
+		WScript.Quit(1);	
+    }
     if ( oTask.DllBuild ) {
         ptb_command_line += " -dll";
     }
-    ptb_command_line += " -logfile out.log";
+    ptb_command_line += " -logfile " + oTree.TreeRoot + "\\" + SolutionName(oTask) + "_log.txt";
     ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
     ptb_command_line += " " + oTree.TreeRoot;
     ptb_command_line += " src\\";
@@ -215,6 +221,84 @@ function LoadSolution(oShell, oTree, oTask)
     sln_path += "\\build\\" + SolutionName(oTask) + ".sln";
 
     execute(oShell, "start " + sln_path);
+}
+
+function FillMakefileinTree(oShell, oTree, oTask)
+{
+    var oFso = new ActiveXObject("Scripting.FileSystemObject");
+    var dir_cvs_start   = "src/"  + ForwardSlashes(oTask.ProjectName);
+    var dir_here_start  = oTree.SrcRootBranch + "\\" + BackSlashes(oTask.ProjectName);
+    var dir_cvs = oFso.GetParentFolderName(dir_cvs_start);
+    var dir_here = oFso.GetParentFolderName(dir_here_start);
+    while (dir_here != oTree.SrcRootBranch) {
+        GetFileFromTree(oShell, oTree, oTask, "/" + dir_cvs + "/Makefile.in", dir_here);
+        AdjustMakefilein(oFso, dir_here);
+        dir_cvs  = oFso.GetParentFolderName(dir_cvs);
+        dir_here = oFso.GetParentFolderName(dir_here);
+    }
+}
+
+function AdjustMakefilein(oFso, dir_here)
+{
+    var dir = oFso.GetFolder(dir_here);
+    var dir_subdir = new Enumerator(dir.SubFolders);
+    var all_subdir = new Array;
+    for( ; !dir_subdir.atEnd(); dir_subdir.moveNext()) {
+        var name = oFso.GetFileName(dir_subdir.item());
+        if (name != "CVS") {
+            all_subdir.push(name);
+        }
+    }
+    var mkfile = dir_here + "\\Makefile.in";
+    var mkfile_old = mkfile + ".old";
+    VerboseEcho("Verifying      " + mkfile);
+
+	oFso.CopyFile(mkfile, mkfile_old);
+	var old_file = oFso.OpenTextFile(mkfile_old, 1);
+	var new_file = oFso.CreateTextFile(mkfile, true);
+	var subproj_started = false;
+	var all_subproj = new Array;
+	while( !old_file.AtEndOfStream ) {
+		var old_line = old_file.ReadLine();
+		if (!subproj_started && old_line.indexOf("SUB_PROJ") == -1) {
+			new_file.WriteLine(old_line);
+			continue;
+		}
+		if (old_line.indexOf("SUB_PROJ") != -1) {
+    		if (old_line.indexOf("SUB_PROJ") == 0) {
+		        subproj_started = true;
+		    } else {
+    			new_file.WriteLine(old_line);
+	    		continue;
+		    }
+		}
+		if (subproj_started) {
+            var subproj = old_line.split(" ");
+            for (var i = 0; i < subproj.length; i++) {
+                all_subproj.push(subproj[i]);
+            }
+		    subproj_started = (old_line.indexOf("\\") != -1);
+		}
+		if (subproj_started) {
+			new_file.WriteLine(old_line);
+			continue;
+		}
+		for (var idir = 0; idir < all_subdir.length; ++idir) {
+		    var found = false;
+		    for (var iprj = 0; !found && iprj < all_subproj.length; ++iprj) {
+		        if (all_subproj[iprj] == all_subdir[idir]) {
+		            found = true;
+		        }
+		    }
+		    if (!found) {
+		        old_line += " " + all_subdir[idir];
+		    }
+		}
+		new_file.WriteLine(old_line);
+	}
+	old_file.Close();
+	new_file.Close();
+	oFso.DeleteFile(mkfile_old, true);
 }
 
 </script>
