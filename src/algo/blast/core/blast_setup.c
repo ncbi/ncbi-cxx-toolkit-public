@@ -502,15 +502,20 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
 
             /* Attach the lower case mask locations to the filter locations 
                and combine them */
-            if (filter_slp && mask_slp) {
-                for (loc = filter_slp; loc->next; loc = loc->next) ;
-                loc->next = mask_slp->loc_list;
+            if (mask_slp) {
+                if (filter_slp) {
+                    for (loc = filter_slp; loc->next; loc = loc->next);
+                    loc->next = mask_slp->loc_list;
+                } else {
+                    filter_slp = mask_slp->loc_list;
+                }
                 /* Set location list to NULL, to allow safe memory deallocation */
                 mask_slp->loc_list = NULL;
             }
 
             filter_slp_combined = NULL;
             CombineMaskLocations(filter_slp, &filter_slp_combined);
+
             filter_slp = BlastSeqLocFree(filter_slp);
 
             /* NB: for translated searches filter locations are returned in 
