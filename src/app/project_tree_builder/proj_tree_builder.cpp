@@ -834,10 +834,6 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
 
     // We have to add more projects to the target tree
     if ( !external_depends.empty()  &&  !filter->PassAll() ) {
-        // Get whole project tree
-        CProjectItemsTree whole_tree;
-        CProjectDummyFilter pass_all_filter;
-        BuildOneProjectTree(&pass_all_filter, root_src_path, &whole_tree);
 
         list<CProjKey> depends_to_resolve = external_depends;
 
@@ -847,9 +843,9 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                 // id of project we have to resolve
                 const CProjKey& prj_id = *p;
                 CProjectItemsTree::TProjects::const_iterator n = 
-                                            whole_tree.m_Projects.find(prj_id);
+                               GetApp().GetWholeTree().m_Projects.find(prj_id);
             
-                if (n != whole_tree.m_Projects.end()) {
+                if (n != GetApp().GetWholeTree().m_Projects.end()) {
                     //insert this project to target_tree
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
@@ -966,11 +962,10 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
 
 
 //analyze modules
-void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
+void s_CollectDatatoolIds(const CProjectItemsTree& tree,
+                          map<string, CProjKey>*   datatool_ids)
 {
-    //datatool src rel path / project ID
-    map<string, CProjKey> datatool_ids;
-    ITERATE(CProjectItemsTree::TProjects, p, tree->m_Projects) {
+    ITERATE(CProjectItemsTree::TProjects, p, tree.m_Projects) {
         const CProjKey&  project_id = p->first;
         const CProjItem& project    = p->second;
         ITERATE(list<CDataToolGeneratedSrc>, n, project.m_DatatoolSources) {
@@ -981,10 +976,56 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
                 CDirEntry::CreateRelativePath
                                  (GetApp().GetProjectTreeInfo().m_Src, 
                                   src_abs_path);
-            datatool_ids[src_rel_path] = project_id;
+            (*datatool_ids)[src_rel_path] = project_id;
         }
     }
-    
+}
+
+
+void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
+{
+    //datatool src rel path / project ID
+
+    // 1. Collect all projects with datatool-generated-sources
+    map<string, CProjKey> whole_datatool_ids;
+    s_CollectDatatoolIds(GetApp().GetWholeTree(), &whole_datatool_ids);
+
+
+
+    // 2. Extent tree to accomodate more ASN projects if necessary
+    bool tree_extented = false;
+    map<string, CProjKey> datatool_ids;
+
+    do {
+        
+        tree_extented = false;
+        s_CollectDatatoolIds(*tree, &datatool_ids);
+
+        NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree->m_Projects) {
+            const CProjKey&  project_id = p->first;
+            CProjItem& project          = p->second;
+            ITERATE(list<CDataToolGeneratedSrc>, n, project.m_DatatoolSources) {
+                const CDataToolGeneratedSrc& src = *n;
+                ITERATE(list<string>, i, src.m_ImportModules) {
+                    const string& module = *i;
+                    map<string, CProjKey>::const_iterator j = 
+                        datatool_ids.find(module);
+                    if (j == datatool_ids.end()) {
+                        j = whole_datatool_ids.find(module);
+                        if (j != whole_datatool_ids.end()) {
+                            const CProjKey& depends_id = j->second;
+                            tree->m_Projects[depends_id] = 
+                                GetApp().GetWholeTree().m_Projects.find(depends_id)->second;
+                            tree_extented = true;
+                        }
+                    }
+                }
+            }
+        }
+    } while( tree_extented );
+
+
+    // 3. Finally - generate depends
     NON_CONST_ITERATE(CProjectItemsTree::TProjects, p, tree->m_Projects) {
         const CProjKey&  project_id = p->first;
         CProjItem& project          = p->second;
@@ -1005,6 +1046,7 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
             }
         }
     }
+
 }
 
 
@@ -1013,6 +1055,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/23 14:41:50  gorelenk
+ * Changed implementations of CProjectTreeBuilder::AddDatatoolSourcesDepends
+ * and CProjectTreeBuilder::BuildProjectTree.
+ *
  * Revision 1.3  2004/03/16 23:53:14  gorelenk
  * Changed implementations of:
  * SAppProjectT::DoCreate and
