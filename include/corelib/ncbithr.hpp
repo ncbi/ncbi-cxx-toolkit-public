@@ -173,7 +173,7 @@ public:
         fRunDetached = 0x01,    // run the thread detached (non-joinable)
 // these two may not be supported (and will be ignored) on some platforms
         fRunBound    = 0x10,    // run thread in a 1:1 thread:LPW mode
-        fRunUnbound  = 0x20,    // run thread in a N:1 thread:LPW mode
+        fRunUnbound  = 0x20     // run thread in a N:1 thread:LPW mode
     };
     typedef int TRunMode;  // binary OR of "ERunMode"
 
@@ -339,6 +339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/09/30 16:57:34  vasilche
+ * Removed extra comma in enum.
+ *
  * Revision 1.13  2002/09/30 16:32:28  vasilche
  * Fixed bug with self referenced CThread.
  * Added bound running flag to CThread.
