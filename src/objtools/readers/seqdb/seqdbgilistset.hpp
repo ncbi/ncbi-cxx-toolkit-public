@@ -96,7 +96,7 @@ public:
     ///   The filename of the GI list file.
     /// @return
     ///   A reference to the specified GI list.
-    TListRef CSeqDBGiListSet::GetNodeGiList(const string    & filename,
+    TListRef GetNodeGiList(const string    & filename,
                                             const CSeqDBVol * volp,
                                             int               vol_start,
                                             int               vol_end,
