@@ -568,7 +568,7 @@ static const SPluginParams::SDefaultValue s_DefaultParams[] = {
     { "mem_size", "20M" },
     { "log_file_max", "20M" },
     { "purge_batch_sleep", "500" }, // .5 sec
-    { "purge_batch_delay", "3600" }, // 1 hour
+    { "purge_thread_delay", "3600" }, // 1 hour
     { "purge_clean_log", "16" },
     { 0, 0 }
 };
