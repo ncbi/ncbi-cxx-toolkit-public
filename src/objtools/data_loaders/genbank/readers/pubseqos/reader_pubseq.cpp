@@ -361,6 +361,7 @@ CT_INT_TYPE CPubseqStreamBuf::underflow()
             os << cl << descr;
 
             memcpy(m_Buffer, os.str(), os.pcount());
+            os.freeze(false);
             setg(m_Buffer, m_Buffer, m_Buffer + os.pcount());
 
             m_Status = eBlob;
@@ -436,8 +437,12 @@ CBlob *CPubseqSeqref::RetrieveBlob(istream &is)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
+
 /*
 * $Log$
+* Revision 1.18  2002/12/30 23:36:22  vakatov
+* CPubseqStreamBuf::underflow() -- strstream::freeze(false) to avoid mem.leak
+*
 * Revision 1.17  2002/12/26 20:53:41  dicuccio
 * Minor tweaks to relieve compiler warnings in MSVC
 *
