@@ -130,8 +130,8 @@ void CLDS_File::x_SyncWithDir(const string& path,
         string ext = (*i)->GetExt();
         (*i)->GetTime(&modification);
         time_t tm = modification.GetTimeT();
-        CFile fl(entry);
-        size_t file_size = fl.GetLength();
+        CFile aFile(entry);
+        size_t file_size = aFile.GetLength();
 
         if (ext == ".db") {
             continue; // Berkeley DB file, no need to index it.
@@ -297,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/20 14:52:25  rsmith
+ * Name fl -> aFile since fl is a macro (?!) on Macs.
+ *
  * Revision 1.6  2003/10/06 20:16:20  kuznets
  * Added support for sub directories and option to disable CRC32 for files
  *

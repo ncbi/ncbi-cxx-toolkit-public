@@ -49,10 +49,10 @@ void CLDS_Management::SyncWithDir(const string& dir_name,
     CLDS_Set files_updated;
     SLDS_TablesCollection& db = m_lds_db.GetTables();
 
-    CLDS_File fl(db);
+    CLDS_File aFile(db);
     bool rec = (recurse == eRecurseSubDirs);
     bool control = (control_sum == eComputeControlSum);
-    fl.SyncWithDir(dir_name, &files_deleted, &files_updated, rec, control);
+    aFile.SyncWithDir(dir_name, &files_deleted, &files_updated, rec, control);
 
     CLDS_Set objects_deleted;
     CLDS_Set annotations_deleted;
@@ -137,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/04/20 14:52:25  rsmith
+ * Name fl -> aFile since fl is a macro (?!) on Macs.
+ *
  * Revision 1.8  2003/10/09 18:12:27  kuznets
  * Some functionality of lds migrated into lds_admin
  *
