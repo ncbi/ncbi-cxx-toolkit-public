@@ -66,7 +66,7 @@ public:
     typedef map< string, list<string> > TContents;
     TContents m_Contents;
 
-    static void LoadFrom(const string& path, CSimpleMakeFileContents* fc);
+    static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
 
     /// Debug dump
     void Dump(CNcbiOfstream& ostr) const;
@@ -107,6 +107,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/01/30 20:39:43  gorelenk
+ * second revision
+ *
  * Revision 1.3  2004/01/22 17:57:08  gorelenk
  * first version
  *
