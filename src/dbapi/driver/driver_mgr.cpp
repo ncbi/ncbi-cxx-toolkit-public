@@ -47,7 +47,7 @@ void C_DriverMgr::RegisterDriver(const string&        driver_name,
             }
         }
         m_Drivers[m_NofDrvs++].drv_func= driver_ctx_func;
-        m_Drivers[m_NofDrvs].drv_name= driver_name;
+        m_Drivers[m_NofDrvs-1].drv_name= driver_name;
     }
     else {
         throw CDB_ClientEx(eDB_Error, 101, "C_DriverMgr::RegisterDriver",
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/04/04 23:59:37  soussov
+ * bug in RegisterDriver fixed
+ *
  * Revision 1.7  2002/04/04 23:57:39  soussov
  * return of error message from dlopen added
  *
