@@ -90,7 +90,7 @@ static bool CreateCacheFolder(void)
 static void ExtractBioseqs(list < CRef < CSeq_entry > >& seqEntries, BioseqRefList *sequences)
 {
     list < CRef < CSeq_entry > >::iterator e, ee = seqEntries.end();
-    for (e=seqEntries.begin(); e!=ee; e++) {
+    for (e=seqEntries.begin(); e!=ee; ++e) {
         if ((*e)->IsSeq())
             sequences->push_back(CRef<CBioseq>(&((*e)->SetSeq())));
         else
@@ -301,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/03/15 18:23:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.13  2004/02/19 17:04:49  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

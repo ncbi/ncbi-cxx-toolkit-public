@@ -65,7 +65,7 @@ StructureBase::StructureBase(StructureBase *parent)
 StructureBase::~StructureBase(void)
 {
     _ChildList::iterator i, e=_children.end();
-    for (i=_children.begin(); i!=e; i++)
+    for (i=_children.begin(); i!=e; ++i)
         delete *i;
 }
 
@@ -75,7 +75,7 @@ bool StructureBase::DrawAll(const AtomSet *atomSet) const
     if (!parentSet->renderer) return false;
     if (!Draw(atomSet)) return true;
     _ChildList::const_iterator i, e=_children.end();
-    for (i=_children.begin(); i!=e; i++)
+    for (i=_children.begin(); i!=e; ++i)
         if (!((*i)->DrawAll(atomSet))) return true;
 	return true;
 }
@@ -88,7 +88,7 @@ void StructureBase::_AddChild(StructureBase *child)
 void StructureBase::_RemoveChild(const StructureBase *child)
 {
     _ChildList::iterator i, ie=_children.end();
-    for (i=_children.begin(); i!=ie; i++) {
+    for (i=_children.begin(); i!=ie; ++i) {
         if (*i == child) {
             _children.erase(i);
             return;
@@ -103,6 +103,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/03/15 18:32:03  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.12  2004/02/19 17:05:14  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

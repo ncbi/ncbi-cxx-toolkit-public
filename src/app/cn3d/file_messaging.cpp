@@ -98,11 +98,11 @@ FileMessenger::~FileMessenger(void)
     CommandOriginators::const_iterator c, ce = commandsSent.end();
     TargetApp2Command::const_iterator a, ae;
     if (commandsSent.size() == repliesReceived.size()) {
-        for (c=commandsSent.begin(); c!=ce; c++) {
+        for (c=commandsSent.begin(); c!=ce; ++c) {
             CommandReplies::const_iterator r = repliesReceived.find(c->first);
             if (r == repliesReceived.end())
                 break;
-            for (a=c->second.begin(), ae=c->second.end(); a!=ae; a++) {
+            for (a=c->second.begin(), ae=c->second.end(); a!=ae; ++a) {
                 if (r->second.find(a->first) == r->second.end())
                     break;
             }
@@ -120,7 +120,7 @@ FileMessenger::~FileMessenger(void)
             do {
                 SleepSec(1);
                 lockStream.reset(CreateLock(lockFile));
-                nTries++;
+                ++nTries;
             } while (lockStream.get() == NULL && nTries <= 30);
         }
         if (lockStream.get() != NULL)
@@ -133,11 +133,11 @@ FileMessenger::~FileMessenger(void)
     okay = false;
     ce = commandsReceived.end();
     if (commandsReceived.size() == repliesSent.size()) {
-        for (c=commandsReceived.begin(); c!=ce; c++) {
+        for (c=commandsReceived.begin(); c!=ce; ++c) {
             CommandReplies::const_iterator r = repliesSent.find(c->first);
             if (r == repliesSent.end())
                 break;
-            for (a=c->second.begin(), ae=c->second.end(); a!=ae; a++) {
+            for (a=c->second.begin(), ae=c->second.end(); a!=ae; ++a) {
                 if (r->second.find(a->first) == r->second.end())
                     break;
             }
@@ -411,7 +411,7 @@ void FileMessenger::SendPendingCommands(void)
     }
 
     CommandList::iterator c, ce = pendingCommands.end();
-    for (c=pendingCommands.begin(); c!=ce; c++) {
+    for (c=pendingCommands.begin(); c!=ce; ++c) {
         // dump the command to the file, noting different syntax for replies
         bool isReply = (c->command == "OKAY" || c->command == "ERROR");
         *outStream
@@ -440,7 +440,7 @@ FileMessagingManager::FileMessagingManager(const std::string& appName):
 FileMessagingManager::~FileMessagingManager(void)
 {
     FileMessengerList::iterator m, me = messengers.end();
-    for (m=messengers.begin(); m!=me; m++)
+    for (m=messengers.begin(); m!=me; ++m)
         delete *m;
 }
 
@@ -459,7 +459,7 @@ FileMessenger * FileMessagingManager::CreateNewFileMessenger(
 void FileMessagingManager::DeleteFileMessenger(FileMessenger *messenger)
 {
     FileMessengerList::iterator f, fe = messengers.end();
-    for (f=messengers.begin(); f!=fe; f++) {
+    for (f=messengers.begin(); f!=fe; ++f) {
         if (*f == messenger) {
             delete *f;
             messengers.erase(f);
@@ -472,7 +472,7 @@ void FileMessagingManager::DeleteFileMessenger(FileMessenger *messenger)
 void FileMessagingManager::PollMessageFiles(void)
 {
     FileMessengerList::iterator f, fe = messengers.end();
-    for (f=messengers.begin(); f!=fe; f++)
+    for (f=messengers.begin(); f!=fe; ++f)
         (*f)->PollMessageFile();
 }
 
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/15 18:25:36  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.9  2004/02/19 17:04:56  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -92,7 +92,7 @@ void SequenceViewer::SaveAlignment(void)
     // current edited BlockMultipleAlignment and display row order
     vector < int > rowOrder;
     const SequenceDisplay *display = GetCurrentDisplay();
-    for (int i=0; i<display->rows.size(); i++) {
+    for (int i=0; i<display->rows.size(); ++i) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
         if (alnRow) rowOrder.push_back(alnRow->row);
     }
@@ -102,7 +102,7 @@ void SequenceViewer::SaveAlignment(void)
 void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 {
     SequenceDisplay *display = new SequenceDisplay(true, viewerWindow);
-    for (int row=0; row<alignment->NRows(); row++)
+    for (int row=0; row<alignment->NRows(); ++row)
         display->AddRowFromAlignment(row, alignment);
 
     // set starting scroll to a few residues left of the first aligned block
@@ -126,7 +126,7 @@ void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 
     // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
-    for (s=sequenceList->begin(); s!=se; s++) {
+    for (s=sequenceList->begin(); s!=se; ++s) {
 
         // only do sequences from structure if this is a single-structure data file
         if (!(*s)->parentSet->IsMultiStructure() &&
@@ -171,7 +171,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     int row;
     bool anyRepeat = false;
 
-    for (row=0; row<alignment->NRows(); row++) {
+    for (row=0; row<alignment->NRows(); ++row) {
         const Sequence *seq = alignment->GetSequenceOfRow(row);
         list < string >& titleList = idMap[seq->identifier];
         CNcbiOstrstream oss;
@@ -235,7 +235,7 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
     char ch;
     Vector color, bgColor;
     bool highlighted, drawBG;
-    for (row=0; row<alignment->NRows(); row++) {
+    for (row=0; row<alignment->NRows(); ++row) {
         const Sequence *seq = alignment->GetSequenceOfRow(rowOrder[row]);
 
         // output title
@@ -255,8 +255,8 @@ static void DumpFASTA(bool isA2M, const BlockMultipleAlignment *alignment,
         }
 
         // split alignment up into "paragraphs", each with nColumns
-        for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
-            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+        for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, ++nParags) {
+            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
                 if (alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, rowOrder[row], justification,
                         &ch, &color, &highlighted, &drawBG, &bgColor)) {
                     if (ch == '~')
@@ -294,7 +294,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     // set up the titles and uids, figure out how much space any seqLoc string will take
     vector < string > titles(alignment->NRows()), uids(doHTML ? alignment->NRows() : 0);
     int alnRow, row, maxTitleLength = 0, maxSeqLocStrLength = 0, leftMargin, decimalLength;
-    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+    for (alnRow=0; alnRow<alignment->NRows(); ++alnRow) {
         row = rowOrder[alnRow]; // translate display row -> data row
         const Sequence *sequence = alignment->GetSequenceOfRow(row);
 
@@ -332,10 +332,10 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     char ch;
     Vector color, bgCol;
     bool highlighted, drawBG;
-    for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+    for (alnRow=0; alnRow<alignment->NRows(); ++alnRow) {
         row = rowOrder[alnRow]; // translate display row -> data row
         lastShownSeqLocs[row] = -1;
-        for (alnLoc=0; alnLoc<firstCol; alnLoc++) {
+        for (alnLoc=0; alnLoc<firstCol; ++alnLoc) {
             if (!alignment->GetCharacterTraitsAt(alnLoc, row, justification,
                     &ch, &color, &highlighted, &drawBG, &bgCol))
                 ch = '~';
@@ -351,7 +351,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
     // split alignment up into "paragraphs", each with nColumns
     if (doHTML) os << "<TABLE>\n";
     int paragraphStart, nParags = 0;
-    for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, nParags++) {
+    for (paragraphStart=0; (firstCol+paragraphStart)<=lastCol; paragraphStart+=nColumns, ++nParags) {
 
         // start table row
         if (doHTML)
@@ -362,21 +362,21 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
         // do ruler
         int nMarkers = 0, width;
         if (doHTML) os << "<font color=" << rulerColor << '>';
-        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
             if ((paragraphStart+i+1)%10 == 0) {
                 if (nMarkers == 0)
                     width = leftMargin + i + 1;
                 else
                     width = 10;
                 os << RIGHT_JUSTIFY << setw(width) << (paragraphStart+i+1);
-                nMarkers++;
+                ++nMarkers;
             }
         }
         if (doHTML) os << "</font>";
         os << '\n';
         if (doHTML) os << "<font color=" << rulerColor << '>';
-        for (i=0; i<leftMargin; i++) os << ' ';
-        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+        for (i=0; i<leftMargin; ++i) os << ' ';
+        for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
             if ((paragraphStart+i+1)%10 == 0)
                 os << '|';
             else if ((paragraphStart+i+1)%5 == 0)
@@ -390,7 +390,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
         int nDisplayedResidues;
 
         // output each alignment row
-        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+        for (alnRow=0; alnRow<alignment->NRows(); ++alnRow) {
             row = rowOrder[alnRow]; // translate display row -> data row
             const Sequence *sequence = alignment->GetSequenceOfRow(row);
 
@@ -398,7 +398,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
             nDisplayedResidues = 0;
             string rowChars;
             vector < string > rowColors;
-            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; i++) {
+            for (i=0; i<nColumns && (firstCol+paragraphStart+i)<=lastCol; ++i) {
                 if (!alignment->GetCharacterTraitsAt(firstCol+paragraphStart+i, row, justification,
                         &ch, &color, &highlighted, &drawBG, &bgCol))
                     ch = '?';
@@ -407,7 +407,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
                 colorStr.Printf("#%02x%02x%02x",
                     (int) (color[0]*255), (int) (color[1]*255), (int) (color[2]*255));
                 rowColors.push_back(colorStr.c_str());
-                if (ch != '~') nDisplayedResidues++;
+                if (ch != '~') ++nDisplayedResidues;
             }
 
             // title
@@ -434,7 +434,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
             // dump sequence, applying color changes only when necessary
             if (doHTML) {
                 string prevColor;
-                for (i=0; i<rowChars.size(); i++) {
+                for (i=0; i<rowChars.size(); ++i) {
                     if (rowColors[i] != prevColor) {
                         os << "</font><font color=" << rowColors[i] << '>';
                         prevColor = rowColors[i];
@@ -468,7 +468,7 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
     // additional sanity check on seqloc markers
     if (firstCol == 0 && lastCol == alignment->AlignmentWidth()-1) {
-        for (alnRow=0; alnRow<alignment->NRows(); alnRow++) {
+        for (alnRow=0; alnRow<alignment->NRows(); ++alnRow) {
             row = rowOrder[alnRow]; // translate display row -> data row
             if (lastShownSeqLocs[row] !=
                     alignment->GetSequenceOfRow(row)->Length()-1) {
@@ -516,7 +516,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
         // map display row order to rows in BlockMultipleAlignment
         vector < int > rowOrder;
         const SequenceDisplay *display = GetCurrentDisplay();
-        for (int i=0; i<display->rows.size(); i++) {
+        for (int i=0; i<display->rows.size(); ++i) {
             DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(display->rows[i]);
             if (alnRow) rowOrder.push_back(alnRow->row);
         }
@@ -540,6 +540,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/03/15 18:32:03  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.65  2004/02/19 17:05:07  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -215,12 +215,12 @@ void AnnotateDialog::OnSelection(wxCommandEvent& event)
 
     // deselect everything in the other box
     int e, o;
-    for (o=0; o<otherBox->GetCount(); o++) otherBox->SetSelection(o, false);
+    for (o=0; o<otherBox->GetCount(); ++o) otherBox->SetSelection(o, false);
 
     // turn on corresponding item in other box
-    for (e=0; e<eventBox->GetCount(); e++) {
+    for (e=0; e<eventBox->GetCount(); ++e) {
         if (eventBox->Selected(e)) {
-            for (o=0; o<otherBox->GetCount(); o++) {
+            for (o=0; o<otherBox->GetCount(); ++o) {
                 if (otherBox->GetClientData(o) == eventBox->GetClientData(e)) {
                     otherBox->SetSelection(o, true);
                     break;
@@ -292,7 +292,7 @@ void AnnotateDialog::ResetListBoxes(void)
     // recreate available list
     available->Clear();
     int i;
-    for (i=0; i<annotations.size(); i++) {
+    for (i=0; i<annotations.size(); ++i) {
         available->Append(annotations[i]->name.c_str(), annotations[i]);
         if (selection == annotations[i])
             available->SetSelection(i, true);
@@ -300,7 +300,7 @@ void AnnotateDialog::ResetListBoxes(void)
 
     // recreate displayed list
     displayed->Clear();
-    for (i=0; i<styleManager->GetUserAnnotationsDisplayed().size(); i++) {
+    for (i=0; i<styleManager->GetUserAnnotationsDisplayed().size(); ++i) {
         displayed->Append(styleManager->GetUserAnnotationsDisplayed()[i]->name.c_str(),
             styleManager->GetUserAnnotationsDisplayed()[i]);
         if (selection == styleManager->GetUserAnnotationsDisplayed()[i])
@@ -699,6 +699,9 @@ wxSizer *SetupAnnotationEditorDialog( wxPanel *parent, bool call_fit, bool set_s
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/03/15 18:16:33  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.13  2004/02/19 17:04:40  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

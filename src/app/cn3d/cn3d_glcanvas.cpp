@@ -154,8 +154,8 @@ bool Cn3DGLCanvas::MeasureText(const string& text, int *width, int *height, int 
 
     // now find extent of actual (red) text pixels; wx coords put (0,0) at upper left
     int x, y, top = image.GetHeight(), left = image.GetWidth(), bottom = -1, right = -1;
-    for (x=0; x<image.GetWidth(); x++) {
-        for (y=0; y<image.GetHeight(); y++) {
+    for (x=0; x<image.GetWidth(); ++x) {
+        for (y=0; y<image.GetHeight(); ++y) {
             if (image.GetRed(x, y) >= 128) { // character pixel here
                 if (y < top) top = y;
                 if (x < left) left = x;
@@ -268,6 +268,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/15 18:23:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.3  2004/02/19 17:04:50  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

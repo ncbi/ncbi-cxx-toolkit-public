@@ -300,7 +300,7 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
     // coordinates are relative to the visible part of the drawing area
     wxRegionIterator upd(GetUpdateRegion());
 
-    for (; upd; upd++) {
+    for (; upd; ++upd) {
 //        TRACEMSG("upd: x=" << upd.GetX() << " y=" << upd.GetY() <<
 //            " w=" << upd.GetW() << " h=" << upd.GetH());
 
@@ -340,8 +340,8 @@ void SequenceViewerWidget_SequenceArea::OnPaint(wxPaintEvent& event)
         // draw cells
 //        TESTMSG("drawing cells " << firstCellX << ',' << firstCellY
 //            << " to " << lastCellX << ',' << lastCellY);
-        for (y=firstCellY; y<=lastCellY; y++) {
-            for (x=firstCellX; x<=lastCellX; x++) {
+        for (y=firstCellY; y<=lastCellY; ++y) {
+            for (x=firstCellX; x<=lastCellX; ++x) {
                 DrawCell(memDC, x, y, vsX, vsY, false);
             }
         }
@@ -416,12 +416,12 @@ void SequenceViewerWidget_SequenceArea::DrawLine(wxDC& dc, int x1, int y1, int x
         if (x1 == x2) { // vertical line
             min_max(y1, y2, &i, &ie);
             ie -= 1;
-            for (; i<=ie; i++)
+            for (; i<=ie; ++i)
                 if (i%4 == 0) dc.DrawLine(x1, i, x1, i + 2);
         } else {        // horizontal line
             min_max(x1, x2, &i, &ie);
             ie -= 1;
-            for (; i<=ie; i++)
+            for (; i<=ie; ++i)
                 if (i%4 == 0) dc.DrawLine(i, y1, i + 2, y1);
         }
     }
@@ -475,7 +475,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
         // erase moving bottom/top side if dragging up/down
         if (toY != prevToY) {
             min_max(fromX, prevToX, &a, &b);
-            for (i=a; i<=b; i++) DrawCell(dc, i, prevToY, vsX, vsY, true);
+            for (i=a; i<=b; ++i) DrawCell(dc, i, prevToY, vsX, vsY, true);
         }
 
         // erase partial top and bottom if dragging left by more than one
@@ -487,7 +487,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
             a = prevToX + 1;
             b = toX - 1;
         }
-        for (i=a; i<=b; i++) {
+        for (i=a; i<=b; ++i) {
             DrawCell(dc, i, fromY, vsX, vsY, true);
             DrawCell(dc, i, prevToY, vsX, vsY, true);
         }
@@ -495,7 +495,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
         // erase moving left/right side
         if (toX != prevToX) {
             min_max(fromY, prevToY, &a, &b);
-            for (i=a; i<=b; i++) DrawCell(dc, prevToX, i, vsX, vsY, true);
+            for (i=a; i<=b; ++i) DrawCell(dc, prevToX, i, vsX, vsY, true);
         }
 
         // erase partial left and right sides if dragging up/down by more than one
@@ -507,7 +507,7 @@ void SequenceViewerWidget_SequenceArea::MoveRubberband(wxDC &dc, int fromX, int 
             a = prevToY + 1;
             b = toY - 1;
         }
-        for (i=a; i<=b; i++) {
+        for (i=a; i<=b; ++i) {
             DrawCell(dc, fromX, i, vsX, vsY, true);
             DrawCell(dc, prevToX, i, vsX, vsY, true);
         }
@@ -524,13 +524,13 @@ void SequenceViewerWidget_SequenceArea::RemoveRubberband(wxDC& dc, int fromX, in
 
     // remove top and bottom
     min_max(fromX, toX, &min, &max);
-    for (i=min; i<=max; i++) {
+    for (i=min; i<=max; ++i) {
         DrawCell(dc, i, fromY, vsX, vsY, true);
         DrawCell(dc, i, toY, vsX, vsY, true);
     }
     // remove left and right
     min_max(fromY, toY, &min, &max);
-    for (i=min+1; i<=max-1; i++) {
+    for (i=min+1; i<=max-1; ++i) {
         DrawCell(dc, fromX, i, vsX, vsY, true);
         DrawCell(dc, toX, i, vsX, vsY, true);
     }
@@ -764,7 +764,7 @@ void SequenceViewerWidget_TitleArea::ShowTitles(ViewableAlignment *newAlignment)
     alignment->GetSize(&i, &nTitles);
     if (nTitles <= 0) return;
     maxTitleWidth = 20;
-    for (i=0; i<nTitles; i++) {
+    for (i=0; i<nTitles; ++i) {
         if (!alignment->GetRowTitle(i, &title, &color)) continue;
         // measure title size
         dc.GetTextExtent(title, &tW, &tH);
@@ -814,7 +814,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
     // coordinates are relative to the visible part of the drawing area
     wxRegionIterator upd(GetUpdateRegion());
 
-    for (; upd; upd++) {
+    for (; upd; ++upd) {
 
 //        if (upd.GetW() == GetClientSize().GetWidth() &&
 //            upd.GetH() == GetClientSize().GetHeight())
@@ -845,7 +845,7 @@ void SequenceViewerWidget_TitleArea::OnPaint(wxPaintEvent& event)
         wxString title;
         wxColor color;
         wxCoord tW, tH;
-        for (row=firstRow; row<=lastRow; row++) {
+        for (row=firstRow; row<=lastRow; ++row) {
 
             if (!alignment->GetRowTitle(row, &title, &color)) continue;
 
@@ -1064,6 +1064,9 @@ void SequenceViewerWidget::Refresh(bool eraseBackground, const wxRect *rect)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/03/15 18:32:03  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.39  2004/02/19 17:05:10  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

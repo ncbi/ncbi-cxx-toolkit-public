@@ -149,7 +149,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     StructureObject *object = const_cast<StructureObject*>(constObject);
 
     // actually do the work of unpacking serial atom data into Atom objects
-    for (int i=0; i<nAtoms; i++) {
+    for (int i=0; i<nAtoms; ++i) {
         AtomCoord *atom = new AtomCoord(this);
 
         atom->site.x = (static_cast<double>(*(i_X++)))/siteScale;
@@ -188,7 +188,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
             *(i_aID++)));
         if (atomMap.find(key) != atomMap.end()) {
             AtomAltList::const_iterator i_atom, e=atomMap[key].end();
-            for (i_atom=atomMap[key].begin(); i_atom!=e; i_atom++) {
+            for (i_atom=atomMap[key].begin(); i_atom!=e; ++i_atom) {
                 if ((*i_atom)->altConfID == atom->altConfID)
                     ERRORMSG("confused by multiple atoms of same pntr+altConfID");
             }
@@ -207,14 +207,13 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
     if (haveAlt && coords.IsSetConf_ensembles()) {
         CAtomic_coordinates::TConf_ensembles::const_iterator i_ensemble,
             e_ensemble = coords.GetConf_ensembles().end();
-        for (i_ensemble=coords.GetConf_ensembles().begin();
-             i_ensemble!=e_ensemble; i_ensemble++) {
+        for (i_ensemble=coords.GetConf_ensembles().begin(); i_ensemble!=e_ensemble; ++i_ensemble) {
             const CConformation_ensemble& ensemble = (*i_ensemble).GetObject();
             string *ensembleStr = new string();
             CConformation_ensemble::TAlt_conf_ids::const_iterator i_altIDs,
                 e_altIDs = ensemble.GetAlt_conf_ids().end();
             for (i_altIDs=ensemble.GetAlt_conf_ids().begin();
-                 i_altIDs!=e_altIDs; i_altIDs++) {
+                 i_altIDs!=e_altIDs; ++i_altIDs) {
                 (*ensembleStr) += i_altIDs->Get()[0];
             }
             ensembles.push_back(ensembleStr);
@@ -226,7 +225,7 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
 AtomSet::~AtomSet(void)
 {
     EnsembleList::iterator i, e=ensembles.end();
-    for (i=ensembles.begin(); i!=e; i++)
+    for (i=ensembles.begin(); i!=e; ++i)
         delete const_cast<string *>(*i);
 }
 
@@ -239,7 +238,7 @@ bool AtomSet::SetActiveEnsemble(const string *ensemble)
     // if not NULL, make sure it's one of this AtomSet's ensembles
     if (ensemble) {
         EnsembleList::const_iterator e, ee=ensembles.end();
-        for (e=ensembles.begin(); e!=ee; e++) {
+        for (e=ensembles.begin(); e!=ee; ++e) {
             if (*e == ensemble) break;
         }
         if (e == ee) {
@@ -268,7 +267,7 @@ const AtomCoord* AtomSet::GetAtom(const AtomPntr& ap,
 
     // otherwise, try to find first atom whose altConfID is in the activeEnsemble
     AtomAltList::const_iterator e = atomConfs->second.end();
-    for (; atom!=e; atom++) {
+    for (; atom!=e; ++atom) {
         if (activeEnsemble->find((*atom)->altConfID) != activeEnsemble->npos)
             return *atom;
     }
@@ -293,6 +292,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/03/15 18:16:33  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.18  2004/02/19 17:04:42  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

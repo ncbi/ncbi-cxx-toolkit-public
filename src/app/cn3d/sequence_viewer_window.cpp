@@ -262,7 +262,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     vector < const Sequence * > slaveSequences;
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveSequences(&slaveSequences);
     wxString *titleStrs = new wxString[slaveSequences.size()];
-    for (int i=0; i<slaveSequences.size(); i++)
+    for (int i=0; i<slaveSequences.size(); ++i)
         titleStrs[i] = slaveSequences[i]->identifier->ToString().c_str();
 
     vector < bool > visibilities;
@@ -283,7 +283,7 @@ bool SequenceViewerWindow::QueryShowAllRows(void)
     sequenceViewer->alignmentManager->GetAlignmentSetSlaveVisibilities(&visibilities);
 
     int i;
-    for (i=0; i<visibilities.size(); i++) if (!visibilities[i]) break;
+    for (i=0; i<visibilities.size(); ++i) if (!visibilities[i]) break;
     if (i == visibilities.size()) return true;  // we're okay if all rows already visible
 
     // if some rows hidden, ask user whether to show all rows, or cancel
@@ -294,7 +294,7 @@ bool SequenceViewerWindow::QueryShowAllRows(void)
     if (query.ShowModal() == wxID_CANCEL) return false;   // user cancelled
 
     // show all rows
-    for (i=0; i<visibilities.size(); i++) visibilities[i] = true;
+    for (i=0; i<visibilities.size(); ++i) visibilities[i] = true;
     sequenceViewer->alignmentManager->ShowHideCallbackFunction(visibilities);
     return true;
 }
@@ -329,7 +329,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     sequenceViewer->GetCurrentDisplay()->GetSequences(alignment, &sequences);
     wxString *titleStrs = new wxString[sequences.size() - 1];
     int i;
-    for (i=1; i<sequences.size(); i++)  // assuming master is first sequence
+    for (i=1; i<sequences.size(); ++i)  // assuming master is first sequence
         titleStrs[i - 1] = sequences[i]->identifier->ToString().c_str();
 
     vector < bool > selectedSlaves(sequences.size() - 1, false);
@@ -345,7 +345,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     // make list of slave rows to be realigned
     vector < int > rowOrder, realignSlaves;
     sequenceViewer->GetCurrentDisplay()->GetRowOrder(alignment, &rowOrder);
-    for (i=0; i<selectedSlaves.size(); i++)
+    for (i=0; i<selectedSlaves.size(); ++i)
         if (selectedSlaves[i])
             realignSlaves.push_back(rowOrder[i + 1]);
 
@@ -485,9 +485,9 @@ void SequenceViewerWindow::OnHighlightBlocks(wxCommandEvent& event)
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks.end();
     const Sequence *seq;
     const Block::Range *range;
-    for (int row=0; row<multiple->NRows(); row++) {
+    for (int row=0; row<multiple->NRows(); ++row) {
         seq = multiple->GetSequenceOfRow(row);
-        for (b = blocks.begin(); b!=be; b++) {
+        for (b = blocks.begin(); b!=be; ++b) {
             range = (*b)->GetRangeOfRow(row);
             GlobalMessenger()->AddHighlights(seq, range->from, range->to);
         }
@@ -500,6 +500,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2004/03/15 18:32:03  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.52  2004/02/19 17:05:10  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -73,7 +73,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     // see if there's already an identifier that matches this molecule
     MoleculeIdentifier *identifier = NULL;
     MoleculeIdentifierList::iterator i, ie = knownIdentifiers.end();
-    for (i=knownIdentifiers.begin(); i!=ie; i++) {
+    for (i=knownIdentifiers.begin(); i!=ie; ++i) {
         if ((object->mmdbID != StructureObject::NO_MMDB_ID && object->mmdbID == i->mmdbID &&
              i->moleculeID != VALUE_NOT_SET && molecule->id == i->moleculeID) ||
             (_pdbID.size() > 0 && _pdbID == i->pdbID &&
@@ -143,7 +143,7 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Sequence *seq
     // see if there's already an identifier that matches this sequence
     MoleculeIdentifier *identifier = NULL;
     MoleculeIdentifierList::iterator i, ie = knownIdentifiers.end();
-    for (i=knownIdentifiers.begin(); i!=ie; i++) {
+    for (i=knownIdentifiers.begin(); i!=ie; ++i) {
         if ((_pdbID.size() > 0 && _pdbID == i->pdbID &&
              _pdbChain != VALUE_NOT_SET && _pdbChain == i->pdbChain) ||
             (_gi != VALUE_NOT_SET && _gi == i->gi) ||
@@ -239,7 +239,7 @@ const MoleculeIdentifier * MoleculeIdentifier::FindIdentifier(int mmdbID, int mo
 {
     const MoleculeIdentifier *identifier = NULL;
     MoleculeIdentifierList::const_iterator i, ie = knownIdentifiers.end();
-    for (i=knownIdentifiers.begin(); i!=ie; i++) {
+    for (i=knownIdentifiers.begin(); i!=ie; ++i) {
         if (mmdbID == i->mmdbID && moleculeID == i->moleculeID) {
             identifier = &(*i);
             break;
@@ -334,6 +334,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/15 18:25:36  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.11  2004/02/19 17:04:59  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

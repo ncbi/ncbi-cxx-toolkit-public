@@ -78,7 +78,7 @@ static void SplitString(const string& inStr, list<string> *outList)
     outList->clear();
 
     int firstPos = 0, size = 0;
-    for (int i=0; i<inStr.size(); i++) {
+    for (int i=0; i<inStr.size(); ++i) {
         if (inStr[i] == '\n') {
             outList->resize(outList->size() + 1);
             outList->back() = inStr.substr(firstPos, size);
@@ -88,7 +88,7 @@ static void SplitString(const string& inStr, list<string> *outList)
         } else if (i == inStr.size() - 1) {
             ERRORMSG("SplitString() - input multi-line string doesn't end with \n!");
         } else {
-            size++;
+            ++size;
         }
     }
 }
@@ -129,7 +129,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
     GlobalMessenger()->RemoveAllHighlights(true);
 
     SPLIT_DATAIN_INTO_LINES;
-    for (l=lines.begin(); l!=le; l++) {
+    for (l=lines.begin(); l!=le; ++l) {
 
         wxStringTokenizer tkz(l->c_str(), ":, \t", wxTOKEN_STRTOK);
         if (tkz.CountTokens() < 3) {
@@ -153,7 +153,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
                 ADD_REPLY_ERROR(string("bad gi: ") + id.c_str());
                 continue;
             }
-            for (; s!=se; s++)
+            for (; s!=se; ++s)
                 if ((*s)->identifier->gi == (int) gi)
                     break;
         }
@@ -163,7 +163,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
             if (id.size() == 4 || (id.size() == 6 && id[4] == '_')) {
                 string pdbID = id.substr(0, 4).c_str();
                 int pdbChain = ((id.size() == 6) ? id[5] : ' ');
-                for (; s!=se; s++)
+                for (; s!=se; ++s)
                     if ((*s)->identifier->pdbID == pdbID && (*s)->identifier->pdbChain == pdbChain)
                         break;
             } else {
@@ -174,7 +174,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
 
         // parse accession
         else if (idType == "acc") {
-            for (; s!=se; s++)
+            for (; s!=se; ++s)
                 if ((*s)->identifier->accession == id.c_str())
                     break;
         }
@@ -254,6 +254,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/15 18:23:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.9  2004/02/19 17:04:53  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

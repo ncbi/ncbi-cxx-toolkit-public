@@ -80,7 +80,7 @@ BEGIN_SCOPE(Cn3D)
 static void UnpackSeqSet(CBioseq_set& bss, SequenceSet *parent, SequenceSet::SequenceList& seqlist)
 {
     CBioseq_set::TSeq_set::iterator q, qe = bss.SetSeq_set().end();
-    for (q=bss.SetSeq_set().begin(); q!=qe; q++) {
+    for (q=bss.SetSeq_set().begin(); q!=qe; ++q) {
         if (q->GetObject().IsSeq()) {
 
             // only store amino acid or nucleotide sequences
@@ -113,7 +113,7 @@ SequenceSet::SequenceSet(StructureBase *parent, SeqEntryList& seqEntries) :
     StructureBase(parent)
 {
     SeqEntryList::iterator s, se = seqEntries.end();
-    for (s=seqEntries.begin(); s!=se; s++)
+    for (s=seqEntries.begin(); s!=se; ++s)
         UnpackSeqEntry(s->GetObject(), this, sequences);
     TRACEMSG("number of sequences: " << sequences.size());
 }
@@ -130,13 +130,13 @@ static void StringFrom4na(const vector< char >& vec, string *str, bool isDNA)
 
     // first, extract 4-bit values
     int i;
-    for (i=0; i<vec.size(); i++) {
+    for (i=0; i<vec.size(); ++i) {
         str->at(2*i) = FIRSTOF2(vec[i]);
         if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
     }
 
     // then convert 4-bit values to ascii characters
-    for (i=0; i<str->size(); i++) {
+    for (i=0; i<str->size(); ++i) {
         switch (str->at(i)) {
             case 1: str->at(i) = 'A'; break;
             case 2: str->at(i) = 'C'; break;
@@ -159,7 +159,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
 
     // first, extract 4-bit values
     int i;
-    for (i=0; i<vec.size(); i++) {
+    for (i=0; i<vec.size(); ++i) {
         str->at(4*i) = FIRSTOF4(vec[i]);
         str->at(4*i + 1) = SECONDOF4(vec[i]);
         str->at(4*i + 2) = THIRDOF4(vec[i]);
@@ -167,7 +167,7 @@ static void StringFrom2na(const vector< char >& vec, string *str, bool isDNA)
     }
 
     // then convert 4-bit values to ascii characters
-    for (i=0; i<str->size(); i++) {
+    for (i=0; i<str->size(); ++i) {
         switch (str->at(i)) {
             case 0: str->at(i) = 'A'; break;
             case 1: str->at(i) = 'C'; break;
@@ -182,7 +182,7 @@ static void StringFromStdaa(const vector < char >& vec, string *str)
     static const char *stdaaMap = "-ABCDEFGHIKLMNPQRSTVWXYZU*";
 
     str->resize(vec.size());
-    for (int i=0; i<vec.size(); i++)
+    for (int i=0; i<vec.size(); ++i)
         str->at(i) = stdaaMap[vec[i]];
 }
 
@@ -195,7 +195,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
 
     // get Seq-id info
     CBioseq::TId::const_iterator s, se = bioseq.GetId().end();
-    for (s=bioseq.GetId().begin(); s!=se; s++) {
+    for (s=bioseq.GetId().begin(); s!=se; ++s) {
         if ((*s)->IsGi()) {
             gi = (*s)->GetGi();
         } else if ((*s)->IsPdb()) {
@@ -233,7 +233,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     if (bioseq.IsSetDescr()) {
         string defline, taxid;
         CSeq_descr::Tdata::const_iterator d, de = bioseq.GetDescr().Get().end();
-        for (d=bioseq.GetDescr().Get().begin(); d!=de; d++) {
+        for (d=bioseq.GetDescr().Get().begin(); d!=de; ++d) {
 
             // get "defline" from title or compound
             if ((*d)->IsTitle()) {              // prefer title over compound
@@ -261,10 +261,10 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
     // get link to MMDB id - mainly for CDD's where Biostrucs have to be loaded separately
     if (bioseq.IsSetAnnot()) {
         CBioseq::TAnnot::const_iterator a, ae = bioseq.GetAnnot().end();
-        for (a=bioseq.GetAnnot().begin(); a!=ae; a++) {
+        for (a=bioseq.GetAnnot().begin(); a!=ae; ++a) {
             if (a->GetObject().GetData().IsIds()) {
                 CSeq_annot::C_Data::TIds::const_iterator i, ie = a->GetObject().GetData().GetIds().end();
-                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; i++) {
+                for (i=a->GetObject().GetData().GetIds().begin(); i!=ie; ++i) {
                     if (i->GetObject().IsGeneral() &&
                         i->GetObject().GetGeneral().GetDb() == "mmdb" &&
                         i->GetObject().GetGeneral().GetTag().IsId()) {
@@ -300,7 +300,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
             sequenceString = bioseq.GetInst().GetSeq_data().GetIupacna().Get();
             // convert 'T' to 'U' for RNA
             if (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
-                for (int i=0; i<sequenceString.size(); i++) {
+                for (int i=0; i<sequenceString.size(); ++i) {
                     if (sequenceString[i] == 'T')
                         sequenceString[i] = 'U';
                 }
@@ -331,7 +331,7 @@ Sequence::Sequence(SequenceSet *parent, ncbi::objects::CBioseq& bioseq) :
         }
 
         // force uppercase
-        for (int i=0; i<sequenceString.length(); i++)
+        for (int i=0; i<sequenceString.length(); ++i)
             sequenceString[i] = toupper(sequenceString[i]);
 
     } else {
@@ -356,7 +356,7 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
     CBioseq::TId::const_iterator i, ie = bioseqASN->GetId().end();
 
     // use pdb id if present
-    for (i=bioseqASN->GetId().begin(); i!=ie; i++) {
+    for (i=bioseqASN->GetId().begin(); i!=ie; ++i) {
         if ((*i)->IsPdb()) {
             sid->Assign(**i);
             return;
@@ -364,7 +364,7 @@ void Sequence::FillOutSeqId(ncbi::objects::CSeq_id *sid) const
     }
 
     // use gi if present
-    for (i=bioseqASN->GetId().begin(); i!=ie; i++) {
+    for (i=bioseqASN->GetId().begin(); i!=ie; ++i) {
         if ((*i)->IsGi()) {
             sid->Assign(**i);
             return;
@@ -454,7 +454,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
         // check allowed characters
         static const string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
         int i;
-        for (i=0; i<prosite.size(); i++)
+        for (i=0; i<prosite.size(); ++i)
             if (allowed.find(toupper(prosite[i])) == string::npos) break;
         if (i != prosite.size()) throw "invalid ProSite character";
         if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
@@ -464,7 +464,7 @@ static bool Prosite2Regex(const string& prosite, string *regex, int *nGroups)
         *nGroups = 0;
 
         bool inGroup = false;
-        for (int i=0; i<prosite.size(); i++) {
+        for (int i=0; i<prosite.size(); ++i) {
 
             // handle grouping and termini
             bool characterHandled = true;
@@ -590,13 +590,13 @@ bool Sequence::HighlightPattern(const string& prositePattern) const
                 result = re_search(patternBuffer, sequenceString.c_str(),
                     stringSize, start, stringSize, registers);
                 if (result >= 0) break;
-                stringSize++;
+                ++stringSize;
             }
 
             // parse the match registers, highlight ranges
 //            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
             int lastMatched = result;
-            for (i=1; i<registers->num_regs; i++) {
+            for (i=1; i<registers->num_regs; ++i) {
                 int from = registers->start[i], to = registers->end[i] - 1;
                 if (from >= 0 && to >= 0) {
                     if (to > lastMatched) lastMatched = to;
@@ -626,6 +626,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2004/03/15 18:27:12  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.65  2004/03/01 22:56:09  thiessen
 * convert 'T' to 'U' for RNA with IUPACna
 *

@@ -127,9 +127,9 @@ ConservationColorer::ConservationColorer(const BlockMultipleAlignment *parent) :
         stdrfp = BlastResFreqNew(sbp);
         if (!stdrfp) goto on_error;
         if (BlastResFreqStdComp(sbp, stdrfp) != 0) goto on_error;
-        for (a=1; a<23; a++) // from 'A' to 'Y'
+        for (a=1; a<23; ++a) // from 'A' to 'Y'
             StandardProbabilities[ncbistdaa2char[a]] = (float) stdrfp->prob[a];
-//        for (a=1; a<23; a++)
+//        for (a=1; a<23; ++a)
 //            TESTMSG("std prob '" << ncbistdaa2char[a] << "' = "
 //                << setprecision(10) << StandardProbabilities[ncbistdaa2char[a]]);
         goto cleanup;
@@ -155,7 +155,7 @@ void ConservationColorer::AddBlock(const UngappedAlignedBlock *block)
     blocks[block].resize(block->width);
 
     // map block column position to profile position
-    for (int i=0; i<block->width; i++) blocks[block][i] = nColumns + i;
+    for (int i=0; i<block->width; ++i) blocks[block][i] = nColumns + i;
     nColumns += block->width;
 
     basicColorsCurrent = fitColorsCurrent = false;
@@ -183,18 +183,18 @@ void ConservationColorer::CalculateBasicConservationColors(void)
     float totalInformationContent = 0.0f;
 
     BlockMap::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
 
-        for (int blockColumn=0; blockColumn<b->first->width; blockColumn++) {
+        for (int blockColumn=0; blockColumn<b->first->width; ++blockColumn) {
             profileColumn = b->second[blockColumn];
             ColumnProfile& profile = alignmentProfile[profileColumn];
 
             // create profile for this column
             profile.clear();
-            for (row=0; row<nRows; row++) {
+            for (row=0; row<nRows; ++row) {
                 char ch = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
                 if ((p=profile.find(ch)) != profile.end())
-                    p->second++;
+                    ++(p->second);
                 else
                     profile[ch] = 1;
             }
@@ -220,11 +220,11 @@ void ConservationColorer::CalculateBasicConservationColors(void)
 
             // weighted variety for this column
             int& weightedVariety = weightedVarieties[profileColumn];
-            for (p=profile.begin(); p!=pe; p++) {
+            for (p=profile.begin(); p!=pe; ++p) {
                 weightedVariety +=
                     (p->second * (p->second - 1) / 2) * GetBLOSUM62Score(p->first, p->first);
                 p2 = p;
-                for (p2++; p2!=pe; p2++)
+                for (++p2; p2!=pe; ++p2)
                     weightedVariety +=
                         p->second * p2->second * GetBLOSUM62Score(p->first, p2->first);
             }
@@ -237,7 +237,7 @@ void ConservationColorer::CalculateBasicConservationColors(void)
 
             // information content (calculated in bits -> logs of base 2) for this column
             float &columnInfo = informationContents[profileColumn];
-            for (p=profile.begin(); p!=pe; p++) {
+            for (p=profile.begin(); p!=pe; ++p) {
                 static const float ln2 = log(2.0f), threshhold = 0.0001f;
                 float residueScore = 0.0f, expFreq = StandardProbabilities[p->first];
                 if (expFreq > threshhold) {
@@ -261,7 +261,7 @@ void ConservationColorer::CalculateBasicConservationColors(void)
     informationContentColors.resize(nColumns);
 
     double scale;
-    for (profileColumn=0; profileColumn<nColumns; profileColumn++) {
+    for (profileColumn=0; profileColumn<nColumns; ++profileColumn) {
 
         // variety
         if (maxVariety == minVariety)
@@ -314,16 +314,16 @@ void ConservationColorer::CalculateFitConservationColors(void)
     float minBlockFit, maxBlockFit, minBlockZFit, maxBlockZFit, minBlockRowFit, maxBlockRowFit;
 
     BlockMap::const_iterator b, be = blocks.end();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         blockFitScores[b->first].resize(nRows, 0.0f);
 
-        for (int blockColumn=0; blockColumn<b->first->width; blockColumn++) {
+        for (int blockColumn=0; blockColumn<b->first->width; ++blockColumn) {
             profileColumn = b->second[blockColumn];
             ColumnProfile& profile = alignmentProfile[profileColumn];
             pe = profile.end();
 
             // fit scores
-            for (p=profile.begin(); p!=pe; p++) {
+            for (p=profile.begin(); p!=pe; ++p) {
                 int& fit = fitScores[profileColumn][p->first];
                 fit = GetPSSMScore(alignment->GetPSSM(),
                     p->first, b->first->GetRangeOfRow(0)->from + blockColumn);
@@ -336,7 +336,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
             }
 
             // add up residue fit scores to get block fit scores
-            for (row=0; row<nRows; row++) {
+            for (row=0; row<nRows; ++row) {
                 char ch = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
                 blockFitScores[b->first][row] += fitScores[profileColumn][ch];
             }
@@ -344,7 +344,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
 
         // find average/min/max block fit
         float average = 0.0f;
-        for (row=0; row<nRows; row++) {
+        for (row=0; row<nRows; ++row) {
             float& score = blockFitScores[b->first][row];
             score /= b->first->width;   // average fit score across the block for this row
             average += score;
@@ -361,7 +361,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
         if (nRows >= 2) {
             // calculate standard deviation of block fit score over all rows of this block
             float stdDev = 0.0f;
-            for (row=0; row<nRows; row++)
+            for (row=0; row<nRows; ++row)
                 stdDev += (blockFitScores[b->first][row] - average) *
                           (blockFitScores[b->first][row] - average);
             stdDev /= nRows - 1;
@@ -369,7 +369,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
             if (stdDev > 1e-10) {
                 // calculate Z scores for each row
                 blockZFitScores[b->first].resize(nRows);
-                for (row=0; row<nRows; row++)
+                for (row=0; row<nRows; ++row)
                     blockZFitScores[b->first][row] = (blockFitScores[b->first][row] - average) / stdDev;
             }
         }
@@ -377,23 +377,23 @@ void ConservationColorer::CalculateFitConservationColors(void)
 
     // calculate row fit scores based on Z-scores for each block across a given row
     if (blocks.size() >= 2) {
-        for (b=blocks.begin(); b!=be; b++)
+        for (b=blocks.begin(); b!=be; ++b)
             blockRowFitScores[b->first].resize(nRows, kMin_Float);
 
         // calculate row average, standard deviation, and Z-scores
-        for (row=0; row<nRows; row++) {
+        for (row=0; row<nRows; ++row) {
             float average = 0.0f;
-            for (b=blocks.begin(); b!=be; b++)
+            for (b=blocks.begin(); b!=be; ++b)
                 average += blockFitScores[b->first][row];
             average /= blocks.size();
             float stdDev = 0.0f;
-            for (b=blocks.begin(); b!=be; b++)
+            for (b=blocks.begin(); b!=be; ++b)
                 stdDev += (blockFitScores[b->first][row] - average) *
                           (blockFitScores[b->first][row] - average);
             stdDev /= blocks.size() - 1;
             stdDev = sqrt(stdDev);
             if (stdDev > 1e-10) {
-                for (b=blocks.begin(); b!=be; b++)
+                for (b=blocks.begin(); b!=be; ++b)
                     blockRowFitScores[b->first][row] = (blockFitScores[b->first][row] - average) / stdDev;
             }
         }
@@ -402,10 +402,10 @@ void ConservationColorer::CalculateFitConservationColors(void)
     // now assign colors
     double scale;
     fitColors.resize(nRows * nColumns);
-    for (profileColumn=0; profileColumn<nColumns; profileColumn++) {
+    for (profileColumn=0; profileColumn<nColumns; ++profileColumn) {
         // fit
         CharIntMap::const_iterator c, ce = fitScores[profileColumn].end();
-        for (c=fitScores[profileColumn].begin(); c!=ce; c++) {
+        for (c=fitScores[profileColumn].begin(); c!=ce; ++c) {
             if (maxFit == minFit)
                 scale = 1.0;
             else
@@ -416,9 +416,9 @@ void ConservationColorer::CalculateFitConservationColors(void)
 
     // block fit
     blockFitColors.clear();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         blockFitColors[b->first].resize(nRows);
-        for (row=0; row<nRows; row++) {
+        for (row=0; row<nRows; ++row) {
             if (maxBlockFit == minBlockFit)
                 scale = 1.0;
             else
@@ -429,10 +429,10 @@ void ConservationColorer::CalculateFitConservationColors(void)
 
     // block Z fit
     blockZFitColors.clear();
-    for (b=blocks.begin(); b!=be; b++) {
+    for (b=blocks.begin(); b!=be; ++b) {
         blockZFitColors[b->first].resize(nRows, Vector(0,0,0));
         if (blockZFitScores.find(b->first) != blockZFitScores.end()) {  // if this column has scores
-            for (row=0; row<nRows; row++) {                             // normalize colors per column
+            for (row=0; row<nRows; ++row) {                             // normalize colors per column
                 float zScore = blockZFitScores[b->first][row];
                 if (row == 0) {
                     minBlockZFit = maxBlockZFit = zScore;
@@ -441,7 +441,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
                     else if (zScore > maxBlockZFit) maxBlockZFit = zScore;
                 }
             }
-            for (row=0; row<nRows; row++) {
+            for (row=0; row<nRows; ++row) {
                 if (maxBlockZFit == minBlockZFit)
                     scale = 1.0;
                 else
@@ -454,12 +454,12 @@ void ConservationColorer::CalculateFitConservationColors(void)
 
     // block row fit
     blockRowFitColors.clear();
-    for (b=blocks.begin(); b!=be; b++)
+    for (b=blocks.begin(); b!=be; ++b)
         blockRowFitColors[b->first].resize(nRows, Vector(0,0,0));
     if (blocks.size() >= 2) {
-        for (row=0; row<nRows; row++) {
+        for (row=0; row<nRows; ++row) {
             if (blockRowFitScores.begin()->second[row] != kMin_Float) { // if this row has fit scores
-                for (b=blocks.begin(); b!=be; b++) {                    // normalize colors per row
+                for (b=blocks.begin(); b!=be; ++b) {                    // normalize colors per row
                     float zScore = blockRowFitScores[b->first][row];
                     if (b == blocks.begin()) {
                         minBlockRowFit = maxBlockRowFit = zScore;
@@ -468,7 +468,7 @@ void ConservationColorer::CalculateFitConservationColors(void)
                         else if (zScore > maxBlockRowFit) maxBlockRowFit = zScore;
                     }
                 }
-                for (b=blocks.begin(); b!=be; b++) {
+                for (b=blocks.begin(); b!=be; ++b) {
                     if (maxBlockRowFit == minBlockRowFit)
                         scale = 1.0;
                     else
@@ -519,6 +519,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/03/15 18:23:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.33  2004/02/19 17:04:53  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

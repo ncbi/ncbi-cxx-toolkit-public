@@ -170,7 +170,7 @@ Residue::Residue(StructureBase *parent,
     // look up appropriate Residue_graph
     const CResidue_graph *residueGraph = NULL;
     ResidueGraphList::const_iterator i, ie=dictionary->end();
-    for (i=dictionary->begin(); i!=ie; i++) {
+    for (i=dictionary->begin(); i!=ie; ++i) {
         if (i->GetObject().GetId().Get() == graphID) {
             residueGraph = i->GetPointer();
             break;
@@ -186,7 +186,7 @@ Residue::Residue(StructureBase *parent,
     // get residue-graph name if present
     if (residueGraph->IsSetDescr()) {
         CResidue_graph::TDescr::const_iterator j, je = residueGraph->GetDescr().end();
-        for (j=residueGraph->GetDescr().begin(); j!=je; j++) {
+        for (j=residueGraph->GetDescr().begin(); j!=je; ++j) {
             if (j->GetObject().IsName()) {
                 nameGraph = j->GetObject().GetName();
                 break;
@@ -208,7 +208,7 @@ Residue::Residue(StructureBase *parent,
     // get atom info
     nAtomsWithAnyCoords = 0;
     CResidue_graph::TAtoms::const_iterator a, ae = residueGraph->GetAtoms().end();
-    for (a=residueGraph->GetAtoms().begin(); a!=ae; a++) {
+    for (a=residueGraph->GetAtoms().begin(); a!=ae; ++a) {
 
         const CAtom& atom = a->GetObject();
         int atomID = atom.GetId().Get();
@@ -217,9 +217,9 @@ Residue::Residue(StructureBase *parent,
 
         // see if this atom is present in any CoordSet
         StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
-        for (c=object->coordSets.begin(); c!=ce; c++) {
+        for (c=object->coordSets.begin(); c!=ce; ++c) {
             if (((*c)->atomSet->GetAtom(ap, true, true))) {
-                nAtomsWithAnyCoords++;
+                ++nAtomsWithAnyCoords;
                 break;
             }
         }
@@ -255,7 +255,7 @@ Residue::Residue(StructureBase *parent,
 
     // get bonds
     CResidue_graph::TBonds::const_iterator b, be = residueGraph->GetBonds().end();
-    for (b=residueGraph->GetBonds().begin(); b!=be; b++) {
+    for (b=residueGraph->GetBonds().begin(); b!=be; ++b) {
         int order = b->GetObject().IsSetBond_order() ?
                 b->GetObject().GetBond_order() : Bond::eUnknown;
         const Bond *bond = MakeBond(this,
@@ -269,7 +269,7 @@ Residue::Residue(StructureBase *parent,
 Residue::~Residue(void)
 {
     AtomInfoMap::iterator a, ae = atomInfos.end();
-    for (a=atomInfos.begin(); a!=ae; a++) delete a->second;
+    for (a=atomInfos.begin(); a!=ae; ++a) delete a->second;
 }
 
 // draw atom spheres and residue labels here
@@ -309,7 +309,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
 
     // iterate atoms; key is atomID
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
-    for (a=atomInfos.begin(); a!=ae; a++) {
+    for (a=atomInfos.begin(); a!=ae; ++a) {
 
         // get AtomCoord* for appropriate altConf
         AtomPntr ap(molecule->id, id, a->first);
@@ -394,7 +394,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
             if (settings.proteinLabels.type == StyleSettings::eOneLetter) {
                 oss << code;
             } else if (settings.proteinLabels.type == StyleSettings::eThreeLetter) {
-                for (int i=0; i<nameGraph.size() && i<3; i++)
+                for (int i=0; i<nameGraph.size() && i<3; ++i)
                     oss << ((i == 0) ? (char) toupper(nameGraph[0]) : (char) tolower(nameGraph[i]));
             }
             // add number if necessary
@@ -419,7 +419,7 @@ bool Residue::Draw(const AtomSet *atomSet) const
             if (settings.nucleotideLabels.type == StyleSettings::eOneLetter) {
                 oss << code;
             } else if (settings.nucleotideLabels.type == StyleSettings::eThreeLetter) {
-                for (int i=0; i<3; i++)
+                for (int i=0; i<3; ++i)
                     if (nameGraph.size() > i && nameGraph[i] != ' ')
                         oss << nameGraph[i];
             }
@@ -455,6 +455,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/03/15 18:27:12  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.32  2004/02/19 17:05:05  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -207,14 +207,14 @@ void CDDAnnotateDialog::GetCurrentHighlightedIntervals(IntervalList *intervals)
         // find first highlighted residue
         while (first < master->Length() &&
                !(GlobalMessenger()->IsHighlighted(master, first) &&
-                 alignment->IsAligned(0, first))) first++;
+                 alignment->IsAligned(0, first))) ++first;
         if (first >= master->Length()) break;
 
         // find last in contiguous stretch of highlighted residues
         last = first;
         while (last + 1 < master->Length() &&
                GlobalMessenger()->IsHighlighted(master, last + 1) &&
-               alignment->IsAligned(0, last + 1)) last++;
+               alignment->IsAligned(0, last + 1)) ++last;
 
         // create Seq-interval
         CRef < CSeq_interval > interval(new CSeq_interval());
@@ -304,7 +304,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     annots->Clear();
     CAlign_annot *selectedAnnot = NULL;
     CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
-    for (a=annotSet->Set().begin(); a!=ae; a++) {
+    for (a=annotSet->Set().begin(); a!=ae; ++a) {
         if ((*a)->IsSetDescription())
             annots->Append((*a)->GetDescription().c_str(), a->GetPointer());
         else
@@ -322,7 +322,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     CFeature_evidence *selectedEvid = NULL;
     if (selectedAnnot && selectedAnnot->IsSetEvidence()) {
         CAlign_annot::TEvidence::iterator e, ee = selectedAnnot->SetEvidence().end();
-        for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
+        for (e=selectedAnnot->SetEvidence().begin(); e!=ee; ++e) {
             // get evidence "title" depending on type
             wxString evidTitle;
             if ((*e)->IsComment())
@@ -415,7 +415,7 @@ void CDDAnnotateDialog::DeleteAnnotation(void)
 
     // actually delete the annotation
     CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end();
-    for (a=annotSet->Set().begin(); a!=ae; a++) {
+    for (a=annotSet->Set().begin(); a!=ae; ++a) {
         if (*a == selectedAnnot) {
             annotSet->Set().erase(a);
             structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
@@ -512,7 +512,7 @@ void CDDAnnotateDialog::HighlightAnnotation(void)
     } else if (selectedAnnot->GetLocation().IsPacked_int()) {
         CPacked_seqint::Tdata::iterator s,
             se = selectedAnnot->SetLocation().SetPacked_int().Set().end();
-        for (s=selectedAnnot->SetLocation().SetPacked_int().Set().begin(); s!=se; s++) {
+        for (s=selectedAnnot->SetLocation().SetPacked_int().Set().begin(); s!=se; ++s) {
             if (!HighlightInterval(**s))
                 okay = false;
         }
@@ -538,7 +538,7 @@ void CDDAnnotateDialog::MoveAnnotation(bool moveUp)
 
     CAlign_annot_set::Tdata::iterator a, ae = annotSet->Set().end(), aPrev = ae, aSwap = ae;
     CRef < CAlign_annot > tmp;
-    for (a=annotSet->Set().begin(); a!=ae; a++) {
+    for (a=annotSet->Set().begin(); a!=ae; ++a) {
 
         if (*a == selectedAnnot) {
             // figure out which (prev or next) annot field to swap with
@@ -625,7 +625,7 @@ void CDDAnnotateDialog::DeleteEvidence(void)
 
     // delete evidence from annotation's list
     CAlign_annot::TEvidence::iterator e, ee = selectedAnnot->SetEvidence().end();
-    for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
+    for (e=selectedAnnot->SetEvidence().begin(); e!=ee; ++e) {
         if (*e == selectedEvidence) {
             selectedAnnot->SetEvidence().erase(e);
             structureSet->SetDataChanged(StructureSet::eUserAnnotationData);
@@ -691,7 +691,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
         BlockMultipleAlignment::UngappedAlignedBlockList alignedBlocks;
         alignment->GetUngappedAlignedBlocks(&alignedBlocks);
         if (alignedBlocks.size() == 0) throw "no aligned blocks";
-        for (int row=0; row<alignment->NRows(); row++) {
+        for (int row=0; row<alignment->NRows(); ++row) {
             const StructureObject *object;
             const Sequence *seq = alignment->GetSequenceOfRow(row);
             if (!seq->molecule || seq->molecule->identifier->mmdbID != mmdbID ||
@@ -726,10 +726,10 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                 annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
                     GetSubgraph().GetResidues().GetInterval().end();
             for (i=annot.GetFeatures().front()->GetFeatures().front()->GetLocation().
-                    GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++)
+                    GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; ++i)
             {
                 // for each object
-                for (o=annotObjects.begin(); o!=oe; o++) {
+                for (o=annotObjects.begin(); o!=oe; ++o) {
 
                     // find molecule with annotation's moleculeID
                     ChemicalGraph::MoleculeMap::const_iterator
@@ -737,7 +737,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
                     if (m == o->first->graph->molecules.end())
                         throw "molecule with annotation's specified molecule ID not found in object";
 
-                    for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); r++) {
+                    for (int r=(*i)->GetFrom().Get(); r<=(*i)->GetTo().Get(); ++r) {
                         // highlight residues in interval
                         if (o == annotObjects.begin()) {
                             if (r >= 1 && r <= m->second->NResidues())
@@ -756,7 +756,7 @@ static const StructureObject * HighlightResidues(const StructureSet *set, const 
 
             // return object with most hits of annotation to aligned chain region
             const StructureObject *bestObject = NULL;
-            for (o=annotObjects.begin(); o!=oe; o++)
+            for (o=annotObjects.begin(); o!=oe; ++o)
                 if (!bestObject || o->second.hits > annotObjects[bestObject].hits)
                     bestObject = o->first;
             return bestObject;
@@ -799,7 +799,7 @@ void CDDAnnotateDialog::ShowEvidence(void)
             // first, set show/hide to make only objects of this mmdb id visible
             structureSet->showHideManager->MakeAllVisible();
             StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
-            for (o=structureSet->objects.begin(); o!=oe; o++)
+            for (o=structureSet->objects.begin(); o!=oe; ++o)
                 if ((*o)->mmdbID != bestObject->mmdbID)
                     structureSet->showHideManager->Show(*o, false);
             // now force redrawing of structures, so the frames that contains
@@ -808,9 +808,9 @@ void CDDAnnotateDialog::ShowEvidence(void)
 
             // now show the frame containing the "best" object (get display list from first molecule)
             unsigned int displayList = bestObject->graph->molecules.find(1)->second->displayLists.front();
-            for (int frame=0; frame<structureSet->frameMap.size(); frame++) {
+            for (int frame=0; frame<structureSet->frameMap.size(); ++frame) {
                 StructureSet::DisplayLists::const_iterator d, de = structureSet->frameMap[frame].end();
-                for (d=structureSet->frameMap[frame].begin(); d!=de; d++) {
+                for (d=structureSet->frameMap[frame].begin(); d!=de; ++d) {
                     if (*d == displayList) { // is display list in this frame?
                         structureSet->renderer->ShowFrameNumber(frame);
                         frame = structureSet->frameMap.size(); // to exit out of next-up loop
@@ -859,7 +859,7 @@ void CDDAnnotateDialog::MoveEvidence(bool moveUp)
 
     CAlign_annot::TEvidence::iterator e, ee = selectedAnnot->SetEvidence().end(), ePrev = ee, eSwap = ee;
     CRef < CFeature_evidence > tmp;
-    for (e=selectedAnnot->SetEvidence().begin(); e!=ee; e++) {
+    for (e=selectedAnnot->SetEvidence().begin(); e!=ee; ++e) {
 
         if (*e == selectedEvidence) {
             // figure out which (prev or next) evidence field to swap with
@@ -1226,6 +1226,9 @@ wxSizer *SetupEvidenceDialog( wxPanel *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2004/03/15 18:16:33  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.36  2004/02/19 17:04:45  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

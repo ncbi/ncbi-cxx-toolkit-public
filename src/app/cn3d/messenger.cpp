@@ -108,7 +108,7 @@ void Messenger::UnPostRedrawSequenceViewer(ViewerBase *viewer)
 {
     if (redrawAllSequenceViewers) {
         SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-        for (q=sequenceViewers.begin(); q!=qe; q++) redrawSequenceViewers[*q] = true;
+        for (q=sequenceViewers.begin(); q!=qe; ++q) redrawSequenceViewers[*q] = true;
         redrawAllSequenceViewers = false;
     }
     RedrawSequenceViewerList::iterator f = redrawSequenceViewers.find(viewer);
@@ -125,12 +125,12 @@ void Messenger::ProcessRedraws(void)
 {
     if (redrawAllSequenceViewers) {
         SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-        for (q=sequenceViewers.begin(); q!=qe; q++) (*q)->Refresh();
+        for (q=sequenceViewers.begin(); q!=qe; ++q) (*q)->Refresh();
         redrawAllSequenceViewers = false;
     }
     else if (redrawSequenceViewers.size() > 0) {
         RedrawSequenceViewerList::const_iterator q, qe = redrawSequenceViewers.end();
-        for (q=redrawSequenceViewers.begin(); q!=qe; q++) q->first->Refresh();
+        for (q=redrawSequenceViewers.begin(); q!=qe; ++q) q->first->Refresh();
         redrawSequenceViewers.clear();
     }
 
@@ -146,7 +146,7 @@ void Messenger::ProcessRedraws(void)
     else if (redrawMolecules.size() > 0) {
         map < const StructureObject * , bool > hetsRedrawn;
         RedrawMoleculeList::const_iterator m, me = redrawMolecules.end();
-        for (m=redrawMolecules.begin(); m!=me; m++) {
+        for (m=redrawMolecules.begin(); m!=me; ++m) {
             const StructureObject *object;
             if (!m->first->GetParentOfType(&object)) continue;
 
@@ -175,7 +175,7 @@ void Messenger::RemoveStructureWindow(const StructureWindow *window)
 void Messenger::RemoveSequenceViewer(const ViewerBase *sequenceViewer)
 {
     SequenceViewerList::iterator t, te = sequenceViewers.end();
-    for (t=sequenceViewers.begin(); t!=te; t++) {
+    for (t=sequenceViewers.begin(); t!=te; ++t) {
         if (*t == sequenceViewer) sequenceViewers.erase(t);
         break;
     }
@@ -184,14 +184,14 @@ void Messenger::RemoveSequenceViewer(const ViewerBase *sequenceViewer)
 void Messenger::SequenceWindowsSave(bool prompt)
 {
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
+    for (q=sequenceViewers.begin(); q!=qe; ++q)
         (*q)->SaveDialog(prompt);
 }
 
 void Messenger::NewSequenceViewerFont(void)
 {
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
+    for (q=sequenceViewers.begin(); q!=qe; ++q)
         (*q)->NewFont();
 }
 
@@ -234,8 +234,8 @@ void Messenger::RedrawMoleculesWithIdentifier(const MoleculeIdentifier *identifi
 {
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
     ChemicalGraph::MoleculeMap::const_iterator m, me;
-    for (o=set->objects.begin(); o!=oe; o++) {
-        for (m=(*o)->graph->molecules.begin(), me=(*o)->graph->molecules.end(); m!=me; m++) {
+    for (o=set->objects.begin(); o!=oe; ++o) {
+        for (m=(*o)->graph->molecules.begin(), me=(*o)->graph->molecules.end(); m!=me; ++m) {
             if (m->second->identifier == identifier)
                 PostRedrawMolecule(m->second);
         }
@@ -257,7 +257,7 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
         h = highlights.find(sequence->identifier);
     }
 
-    for (int i=seqIndexFrom; i<=seqIndexTo; i++) h->second[i] = true;
+    for (int i=seqIndexFrom; i<=seqIndexTo; ++i) h->second[i] = true;
 
     PostRedrawAllSequenceViewers();
     RedrawMoleculesWithIdentifier(sequence->identifier, sequence->parentSet);
@@ -269,7 +269,7 @@ void Messenger::HighlightAndShowSequence(const Sequence *sequence)
     AddHighlights(sequence, 0, sequence->Length() - 1);
 
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
+    for (q=sequenceViewers.begin(); q!=qe; ++q)
         (*q)->MakeSequenceVisible(sequence->identifier);
 }
 
@@ -285,10 +285,10 @@ void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int
     MoleculeHighlightMap::iterator h = highlights.find(sequence->identifier);
     if (h != highlights.end()) {
         int i;
-        for (i=seqIndexFrom; i<=seqIndexTo; i++) h->second[i] = false;
+        for (i=seqIndexFrom; i<=seqIndexTo; ++i) h->second[i] = false;
 
         // remove sequence from store if no highlights left
-        for (i=0; i<sequence->Length(); i++)
+        for (i=0; i<sequence->Length(); ++i)
             if (h->second[i] == true) break;
         if (i == sequence->Length())
             highlights.erase(h);
@@ -314,10 +314,10 @@ void Messenger::ToggleHighlights(const MoleculeIdentifier *identifier, int index
     }
 
     int i;
-    for (i=indexFrom; i<=indexTo; i++) h->second[i] = !h->second[i];
+    for (i=indexFrom; i<=indexTo; ++i) h->second[i] = !h->second[i];
 
     // remove sequence from store if no highlights left
-    for (i=0; i<h->second.size(); i++)
+    for (i=0; i<h->second.size(); ++i)
         if (h->second[i] == true) break;
     if (i == h->second.size())
         highlights.erase(h);
@@ -339,7 +339,7 @@ void Messenger::ToggleHighlight(const Molecule *molecule, int residueID, bool sc
     if (scrollViewersTo) {
         // make selected residue visible in sequence viewers if residue is in displayed sequence
         SequenceViewerList::iterator t, te = sequenceViewers.end();
-        for (t=sequenceViewers.begin(); t!=te; t++)
+        for (t=sequenceViewers.begin(); t!=te; ++t)
             (*t)->MakeResidueVisible(molecule, residueID - 1);
     }
 }
@@ -353,7 +353,7 @@ bool Messenger::RemoveAllHighlights(bool postRedraws)
 
         if (structureWindow) {
             MoleculeHighlightMap::const_iterator h, he = highlights.end();
-            for (h=highlights.begin(); h!=he; h++)
+            for (h=highlights.begin(); h!=he; ++h)
                 RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
         }
     }
@@ -371,7 +371,7 @@ void Messenger::SetHighlights(const MoleculeHighlightMap& newHighlights)
     PostRedrawAllSequenceViewers();
     if (structureWindow) {
         MoleculeHighlightMap::const_iterator h, he = highlights.end();
-        for (h=highlights.begin(); h!=he; h++)
+        for (h=highlights.begin(); h!=he; ++h)
             RedrawMoleculesWithIdentifier(h->first, structureWindow->glCanvas->structureSet);
     }
 }
@@ -393,7 +393,7 @@ bool Messenger::GetHighlightedResiduesWithStructure(MoleculeHighlightMap *residu
     if (!IsAnythingHighlighted()) return false;
 
     MoleculeHighlightMap::const_iterator h, he = highlights.end();
-    for (h=highlights.begin(); h!=he; h++) {
+    for (h=highlights.begin(); h!=he; ++h) {
         if (h->first->HasStructure())
             (*residues)[h->first] = h->second;
     }
@@ -411,7 +411,7 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     // check to see that all highlights are on a single structure object
     int mmdbID;
     MoleculeHighlightMap::const_iterator h, he = highlights.end();
-    for (h=highlights.begin(); h!=he; h++) {
+    for (h=highlights.begin(); h!=he; ++h) {
         if (h == highlights.begin()) mmdbID = h->first->mmdbID;
         if (h->first->mmdbID == MoleculeIdentifier::VALUE_NOT_SET || h->first->mmdbID != mmdbID) {
             ERRORMSG("All highlights must be on a single PDB structure");
@@ -445,16 +445,16 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     cgp->SetResidues(*rp);
 
     // add all residue intervals
-    for (h=highlights.begin(); h!=he; h++) {
+    for (h=highlights.begin(); h!=he; ++h) {
         int first = 0, last = 0;
         while (first < h->second.size()) {
 
             // find first highlighted residue
-            while (first < h->second.size() && !h->second[first]) first++;
+            while (first < h->second.size() && !h->second[first]) ++first;
             if (first >= h->second.size()) break;
             // find last in contiguous stretch of highlighted residues
             last = first;
-            while (last + 1 < h->second.size() && h->second[last + 1]) last++;
+            while (last + 1 < h->second.size() && h->second[last + 1]) ++last;
 
             // add new interval to list
             CRef < CResidue_interval_pntr > rip(new CResidue_interval_pntr());
@@ -478,7 +478,7 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
     CNcbiOstrstream oss;
 
     MoleculeHighlightMap::const_iterator h, he = highlights.end();
-    for (h=highlights.begin(); h!=he; h++) {
+    for (h=highlights.begin(); h!=he; ++h) {
 
         // add identifier
         if (h->first->pdbID.size() > 0) {
@@ -499,12 +499,12 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
         while (first < h->second.size()) {
 
             // find first highlighted residue
-            while (first < h->second.size() && !h->second[first]) first++;
+            while (first < h->second.size() && !h->second[first]) ++first;
             if (first >= h->second.size()) break;
 
             // find last in contiguous stretch of highlighted residues
             last = first;
-            while (last + 1 < h->second.size() && h->second[last + 1]) last++;
+            while (last + 1 < h->second.size() && h->second[last + 1]) ++last;
 
             // add new interval to list
             oss << ' ' << first;
@@ -526,7 +526,7 @@ bool Messenger::GetHighlightsForSelectionMessage(string *data) const
 void Messenger::SetAllWindowTitles(void) const
 {
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
-    for (q=sequenceViewers.begin(); q!=qe; q++)
+    for (q=sequenceViewers.begin(); q!=qe; ++q)
         (*q)->SetWindowTitle();
     if (structureWindow) structureWindow->SetWindowTitle();
 }
@@ -548,6 +548,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/03/15 18:25:36  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.40  2004/02/19 17:04:56  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

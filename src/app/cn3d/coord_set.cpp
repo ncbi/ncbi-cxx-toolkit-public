@@ -61,7 +61,7 @@ CoordSet::CoordSet(StructureBase *parent,
 {
     // iterate SEQUENCE OF Model-coordinate-set
     CBiostruc_model::TModel_coordinates::const_iterator j, je=modelCoords.end();
-    for (j=modelCoords.begin(); j!=je; j++) {
+    for (j=modelCoords.begin(); j!=je; ++j) {
         const CModel_coordinate_set::C_Coordinates&
             coordSet = j->GetObject().GetCoordinates();
         if (coordSet.IsLiteral()) {
@@ -118,6 +118,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/03/15 18:23:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.13  2004/02/19 17:04:54  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

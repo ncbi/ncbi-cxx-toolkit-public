@@ -116,7 +116,7 @@ public:
     bool IsVisible(const ShowHideManager *shm) const
     {
         bool isVisible = false;
-        for (int i=0; i<molecule->NResidues(); i++) {
+        for (int i=0; i<molecule->NResidues(); ++i) {
             if (molecule->residueDomains[i] == domainID &&
                 shm->IsVisible(molecule->residues.find(i+1)->second)) {
                 isVisible = true;   // return true if any residue from this domain is visible
@@ -127,7 +127,7 @@ public:
     }
     void Show(ShowHideManager *shm, bool isShown) const
     {
-        for (int i=0; i<molecule->NResidues(); i++)
+        for (int i=0; i<molecule->NResidues(); ++i)
             if (molecule->residueDomains[i] == domainID)
                 shm->Show(molecule->residues.find(i+1)->second, isShown);
     }
@@ -138,7 +138,7 @@ public:
 
 ShowHideManager::~ShowHideManager()
 {
-    for (int i=0; i<structureInfo.size(); i++) delete structureInfo[i];
+    for (int i=0; i<structureInfo.size(); ++i) delete structureInfo[i];
 }
 
 static void PostRedrawEntity(const StructureObject *object, const Molecule *molecule, const Residue *residue)
@@ -156,7 +156,7 @@ static void PostRedrawEntity(const StructureObject *object, const Molecule *mole
     else if (object) {
         // redraw all prot/nuc molecules
         ChemicalGraph::MoleculeMap::const_iterator m, me = object->graph->molecules.end();
-        for (m=object->graph->molecules.begin(); m!=me; m++) {
+        for (m=object->graph->molecules.begin(); m!=me; ++m) {
             if (m->second->IsProtein() || m->second->IsNucleotide())
                 GlobalMessenger()->PostRedrawMolecule(m->second);
         }
@@ -224,10 +224,10 @@ void ShowHideManager::UnHideEntityAndChildren(const StructureBase *entity)
             (molecule && hMol == molecule))     // unhide children of a Molecule
         {
             EntitiesHidden::iterator d(h);
-            h++;
+            ++h;
             entitiesHidden.erase(d);
         } else {
-            h++;
+            ++h;
         }
     }
     PostRedrawEntity(object, molecule, residue);
@@ -272,14 +272,14 @@ void ShowHideManager::ConstructShowHideArray(const StructureSet *structureSet)
     int objectIndex, moleculeIndex;
 
     StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
-    for (o=structureSet->objects.begin(); o!=oe; o++) {
+    for (o=structureSet->objects.begin(); o!=oe; ++o) {
 
         objectIndex = structureInfo.size();
         structureInfo.push_back(new ShowHideObject(*o));
 
         // list interesting (prot/nuc) chains
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
             int nDom = 1; // # domains in this chain
 
             if (m->second->IsProtein() || m->second->IsNucleotide()) {
@@ -291,9 +291,9 @@ void ShowHideManager::ConstructShowHideArray(const StructureSet *structureSet)
                 // if there at least one domain, enumerate them
                 if (m->second->nDomains >= 1) {
                     StructureObject::DomainMap::const_iterator d, de = (*o)->domainMap.end();
-                    for (d=(*o)->domainMap.begin(); d!=de; d++) {
+                    for (d=(*o)->domainMap.begin(); d!=de; ++d) {
                         if (d->second == m->second) {
-                            info = new ShowHideDomain(m->second, d->first, nDom++);
+                            info = new ShowHideDomain(m->second, d->first, ++nDom);
                             info->parentIndexes.push_back(objectIndex);
                             info->parentIndexes.push_back(moleculeIndex);
                             structureInfo.push_back(info);
@@ -310,7 +310,7 @@ void ShowHideManager::GetShowHideInfo(
 {
     names->resize(structureInfo.size());
     visibilities->resize(structureInfo.size());
-    for (int i=0; i<structureInfo.size(); i++) {
+    for (int i=0; i<structureInfo.size(); ++i) {
         structureInfo[i]->GetLabel(&((*names)[i]));
         (*visibilities)[i] = structureInfo[i]->IsVisible(this);
     }
@@ -323,7 +323,7 @@ void ShowHideManager::ShowHideCallbackFunction(const vector < bool >& itemsEnabl
         return;
     }
 
-    for (int i=0; i<itemsEnabled.size(); i++)
+    for (int i=0; i<itemsEnabled.size(); ++i)
         structureInfo[i]->Show(this, itemsEnabled[i]);
     TRACEMSG("entities hidden: " << entitiesHidden.size());
 }
@@ -333,13 +333,13 @@ bool ShowHideManager::SelectionChangedCallback(
 {
     // count number of changes
     int i, nChanges = 0, itemChanged, nEnabled = 0, itemEnabled;
-    for (i=0; i<itemsEnabled.size(); i++) {
+    for (i=0; i<itemsEnabled.size(); ++i) {
         if (itemsEnabled[i] != original[i]) {
-            nChanges++;
+            ++nChanges;
             itemChanged = i;
         }
         if (itemsEnabled[i]) {
-            nEnabled++;
+            ++nEnabled;
             itemEnabled = i;
         }
     }
@@ -348,8 +348,8 @@ bool ShowHideManager::SelectionChangedCallback(
     bool anyChange = false;
     if (nChanges == 1 || nEnabled == 1) {
         int item = (nChanges == 1) ? itemChanged : itemEnabled;
-        for (i=item+1; i<structureInfo.size(); i++) {
-            for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
+        for (i=item+1; i<structureInfo.size(); ++i) {
+            for (int j=0; j<structureInfo[i]->parentIndexes.size(); ++j) {
                 if (structureInfo[i]->parentIndexes[j] == item) {
                     if (itemsEnabled[i] != itemsEnabled[item]) {
                         itemsEnabled[i] = itemsEnabled[item];
@@ -361,9 +361,9 @@ bool ShowHideManager::SelectionChangedCallback(
     }
 
     // check all items to make sure that when an object is on, its parents are also on
-    for (i=0; i<itemsEnabled.size(); i++) {
+    for (i=0; i<itemsEnabled.size(); ++i) {
         if (itemsEnabled[i]) {
-            for (int j=0; j<structureInfo[i]->parentIndexes.size(); j++) {
+            for (int j=0; j<structureInfo[i]->parentIndexes.size(); ++j) {
                 if (!itemsEnabled[structureInfo[i]->parentIndexes[j]]) {
                     itemsEnabled[structureInfo[i]->parentIndexes[j]] = true;
                     anyChange = true;
@@ -384,9 +384,9 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
 {
     MakeAllVisible();
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
-    for (o=set->objects.begin(); o!=oe; o++) {
+    for (o=set->objects.begin(); o!=oe; ++o) {
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
 
             if (m->second->IsNucleotide()) {        // hide all nucleotides
                 Show(m->second, false);
@@ -403,12 +403,12 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
             // first pass determines which domains have any aligned residues
-            for (r=m->second->residues.begin(); r!=re; r++)
+            for (r=m->second->residues.begin(); r!=re; ++r)
                 if (set->alignmentManager->IsAligned(m->second->sequence, r->first - 1))
                     domains[m->second->residueDomains[r->first - 1]] = true;
 
             // second pass does hides domains not represented
-            for (r=m->second->residues.begin(); r!=re; r++)
+            for (r=m->second->residues.begin(); r!=re; ++r)
                 if (domains.find(m->second->residueDomains[r->first - 1]) == domains.end())
                     Show(r->second, false);
         }
@@ -419,9 +419,9 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
 void ShowHideManager::PrivateShowResidues(const StructureSet *set, bool showAligned)
 {
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
-    for (o=set->objects.begin(); o!=oe; o++) {
+    for (o=set->objects.begin(); o!=oe; ++o) {
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
 
             if (m->second->IsNucleotide()) {        // hide all nucleotides
                 Show(m->second, false);
@@ -435,7 +435,7 @@ void ShowHideManager::PrivateShowResidues(const StructureSet *set, bool showAlig
             }
 
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
-            for (r=m->second->residues.begin(); r!=re; r++) {
+            for (r=m->second->residues.begin(); r!=re; ++r) {
                 bool aligned = set->alignmentManager->IsAligned(m->second->sequence, r->first - 1);
                 if ((showAligned && !aligned) || (!showAligned && aligned))
                     Show(r->second, false);
@@ -462,26 +462,26 @@ void ShowHideManager::ShowSelectedResidues(const StructureSet *set)
     if (!GlobalMessenger()->IsAnythingHighlighted()) return;
 
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
-    for (o=set->objects.begin(); o!=oe; o++) {
+    for (o=set->objects.begin(); o!=oe; ++o) {
         bool anyResidueInObjectVisible = false;
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
             bool anyResidueInMoleculeVisible = false;
-            for (r=m->second->residues.begin(); r!=re; r++) {
+            for (r=m->second->residues.begin(); r!=re; ++r) {
                 if (!GlobalMessenger()->IsHighlighted(m->second, r->first))
                     Show(r->second, false);
                 else
                     anyResidueInMoleculeVisible = anyResidueInObjectVisible = true;
             }
             if (!anyResidueInMoleculeVisible) {
-                for (r=m->second->residues.begin(); r!=re; r++)
+                for (r=m->second->residues.begin(); r!=re; ++r)
                     Show(r->second, true);  // un-flag individual residues
                 Show(m->second, false);     // flag whole molecule as hidden
             }
         }
         if (!anyResidueInObjectVisible) {
-            for (m=(*o)->graph->molecules.begin(); m!=me; m++)
+            for (m=(*o)->graph->molecules.begin(); m!=me; ++m)
                 Show(m->second, true);      // un-flag individual molecules
             Show(*o, false);                // flag whole object as hidden
         }
@@ -497,15 +497,15 @@ void ShowHideManager::ShowDomainsWithHighlights(const StructureSet *set)
 
     // then, also show all domains that contain highlighted residues
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
-    for (o=set->objects.begin(); o!=oe; o++) {
+    for (o=set->objects.begin(); o!=oe; ++o) {
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
             Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
             // find domains in this molecule that have highlights
             map < int , bool > domains;
             int domain;
-            for (r=m->second->residues.begin(); r!=re; r++) {
+            for (r=m->second->residues.begin(); r!=re; ++r) {
                 if (GlobalMessenger()->IsHighlighted(m->second, r->first)) {
                     domain = m->second->residueDomains[r->first - 1];
                     if (domain != Molecule::NO_DOMAIN_SET)
@@ -514,7 +514,7 @@ void ShowHideManager::ShowDomainsWithHighlights(const StructureSet *set)
             }
 
             // now show all residues in these domains
-            for (r=m->second->residues.begin(); r!=re; r++) {
+            for (r=m->second->residues.begin(); r!=re; ++r) {
                 domain = m->second->residueDomains[r->first - 1];
                 if (domain != Molecule::NO_DOMAIN_SET && domains.find(domain) != domains.end())
                     Show(r->second, true);
@@ -528,6 +528,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/03/15 18:32:03  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.21  2004/02/19 17:05:13  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

@@ -122,19 +122,19 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
         AtomSet *atomSet = object->coordSets.front()->atomSet;
         AtomSet::EnsembleList::iterator e, ee=atomSet->ensembles.end();
-        for (e=atomSet->ensembles.begin(); e!=ee; e++) {
+        for (e=atomSet->ensembles.begin(); e!=ee; ++e) {
             atomSetList.push_back(make_pair(atomSet, *e));
-            nAlts++;
+            ++nAlts;
         }
 
     // otherwise, use all CoordSets using default altConf ensemble for single
     // structure; for multiple structure StructureSet, use only first CoordSet
     } else {
         StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
-        for (c=object->coordSets.begin(); c!=ce; c++) {
+        for (c=object->coordSets.begin(); c!=ce; ++c) {
             atomSetList.push_back(make_pair((*c)->atomSet,
                 reinterpret_cast<const string *>(NULL)));   // VC++ requires this cast for some reason...
-            nAlts++;
+            ++nAlts;
             if (parentSet->IsMultiStructure()) break;
         }
     }
@@ -149,7 +149,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
     // load molecules from SEQUENCE OF Molecule-graph
     CBiostruc_graph::TMolecule_graphs::const_iterator i, ie=graph.GetMolecule_graphs().end();
-    for (i=graph.GetMolecule_graphs().begin(); i!=ie; i++) {
+    for (i=graph.GetMolecule_graphs().begin(); i!=ie; ++i) {
         Molecule *molecule = new Molecule(this,
             i->GetObject(),
             standardDictionary->GetResidue_graphs(),
@@ -163,7 +163,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
         // gets its own display list (one display list for each molecule for
         // each set of coordinates), while everything else - hets, solvents,
         // inter-molecule bonds - goes in a single list.
-        for (int n=0; n<nAlts; n++) {
+        for (int n=0; n<nAlts; ++n) {
 
             if (molecule->IsProtein() || molecule->IsNucleotide()) {
 
@@ -184,7 +184,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     // load connections from SEQUENCE OF Inter-residue-bond OPTIONAL
     if (graph.IsSetInter_molecule_bonds()) {
         CBiostruc_graph::TInter_molecule_bonds::const_iterator j, je=graph.GetInter_molecule_bonds().end();
-        for (j=graph.GetInter_molecule_bonds().begin(); j!=je; j++) {
+        for (j=graph.GetInter_molecule_bonds().begin(); j!=je; ++j) {
 
             int order = j->GetObject().IsSetBond_order() ?
                 j->GetObject().GetBond_order() : Bond::eUnknown;
@@ -209,7 +209,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
     // if hets/solvent/i-m bonds present, add display lists to frames
     if (displayListOtherStart != OpenGLRenderer::NO_LIST) {
-        for (int n=0; n<nAlts; n++) {
+        for (int n=0; n<nAlts; ++n) {
             parentSet->frameMap[firstNewFrame + n].push_back(displayListOtherStart + n);
             parentSet->transformMap[displayListOtherStart + n] = &(object->transformToMaster);
         }
@@ -217,12 +217,12 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
     // fill out secondary structure and domain maps from NCBI assigments (in feature block)
     FeatureList::const_iterator l, le = features.end();
-    for (l=features.begin(); l!=le; l++) {
+    for (l=features.begin(); l!=le; ++l) {
         if (l->GetObject().IsSetDescr()) {
 
             // find and unpack NCBI sec. struc. or domain features
             CBiostruc_feature_set::TDescr::const_iterator d, de = l->GetObject().GetDescr().end();
-            for (d=l->GetObject().GetDescr().begin(); d!=de; d++) {
+            for (d=l->GetObject().GetDescr().begin(); d!=de; ++d) {
                 if (d->GetObject().IsName()) {
                     if (d->GetObject().GetName() == "NCBI assigned secondary structure")
                         UnpackSecondaryStructureFeatures(l->GetObject());
@@ -239,23 +239,23 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     // of a single domain.
     list < int > moleculeIDs;
     MoleculeMap::iterator m, me = molecules.end();
-    for (m=molecules.begin(); m!=me; m++) {
+    for (m=molecules.begin(); m!=me; ++m) {
         if (m->second->IsProtein() || m->second->IsNucleotide())
             moleculeIDs.push_back(m->first);
     }
     moleculeIDs.sort();    // assign in order of ID
     list < int >::const_iterator id, ide = moleculeIDs.end();
-    for (id=moleculeIDs.begin(); id!=ide; id++) {
+    for (id=moleculeIDs.begin(); id!=ide; ++id) {
         int r;
         Molecule *molecule = const_cast<Molecule*>(molecules[*id]);
-        for (r=0; r<molecule->residues.size(); r++)
+        for (r=0; r<molecule->residues.size(); ++r)
             if (molecule->residueDomains[r] != Molecule::NO_DOMAIN_SET) break;
         if (r == molecule->residues.size()) {
             int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
-            molecule->nDomains++;
+            ++(molecule->nDomains);
             (const_cast<StructureObject*>(object))->domainMap[domainID] = molecule;
             (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] = -1;
-            for (r=0; r<molecule->residues.size(); r++)
+            for (r=0; r<molecule->residues.size(); ++r)
                 molecule->residueDomains[r] = domainID;
         }
     }
@@ -265,7 +265,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
 {
     TRACEMSG("unpacking NCBI domain features");
     CBiostruc_feature_set::TFeatures::const_iterator f, fe = featureSet.GetFeatures().end();
-    for (f=featureSet.GetFeatures().begin(); f!=fe; f++) {
+    for (f=featureSet.GetFeatures().begin(); f!=fe; ++f) {
         if (f->GetObject().GetType() == CBiostruc_feature::eType_subgraph &&
             f->GetObject().IsSetLocation() &&
             f->GetObject().GetLocation().IsSubgraph() &&
@@ -279,7 +279,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
             Molecule *molecule = NULL;
             CResidue_pntrs::TInterval::const_iterator i,
                 ie = f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().end();
-            for (i=f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; i++) {
+            for (i=f->GetObject().GetLocation().GetSubgraph().GetResidues().GetInterval().begin(); i!=ie; ++i) {
                 MoleculeMap::const_iterator m = molecules.find(i->GetObject().GetMolecule_id().Get());
                 if (m == molecules.end() ||
                     m->second->id !=    // check to make sure all intervals are on same molecule
@@ -289,7 +289,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                     continue;
                 }
                 molecule = const_cast<Molecule*>(m->second);
-                for (int r=i->GetObject().GetFrom().Get()-1; r<=i->GetObject().GetTo().Get()-1; r++) {
+                for (int r=i->GetObject().GetFrom().Get()-1; r<=i->GetObject().GetTo().Get()-1; ++r) {
                     if (r < 0 || r >= molecule->residues.size()) {
                         ERRORMSG("Bad residue range in domain feature for moleculeID "
                             << molecule->id << " residueID " << r+1);
@@ -310,7 +310,7 @@ void ChemicalGraph::UnpackDomainFeatures(const CBiostruc_feature_set& featureSet
                 (const_cast<StructureObject*>(object))->domainMap[domainID] = molecule;
                 (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] =
                     f->GetObject().GetId().Get();
-                molecule->nDomains++;
+                ++(molecule->nDomains);
             }
         }
     }
@@ -320,7 +320,7 @@ void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set
 {
     TRACEMSG("unpacking NCBI sec. struc. features");
     CBiostruc_feature_set::TFeatures::const_iterator f, fe = featureSet.GetFeatures().end();
-    for (f=featureSet.GetFeatures().begin(); f!=fe; f++) {
+    for (f=featureSet.GetFeatures().begin(); f!=fe; ++f) {
         if ((f->GetObject().GetType() == CBiostruc_feature::eType_helix ||
                 f->GetObject().GetType() == CBiostruc_feature::eType_strand) &&
             f->GetObject().IsSetLocation() &&
@@ -341,7 +341,7 @@ void ChemicalGraph::UnpackSecondaryStructureFeatures(const CBiostruc_feature_set
                 continue;
             }
             Molecule *molecule = const_cast<Molecule*>(m->second);
-            for (int r=interval.GetFrom().Get()-1; r<=interval.GetTo().Get()-1; r++) {
+            for (int r=interval.GetFrom().Get()-1; r<=interval.GetTo().Get()-1; ++r) {
                 if (r < 0 || r >= molecule->residues.size()) {
                     ERRORMSG("Bad residue range in sec. struc. feature for moleculeID "
                         << molecule->id << " residueID " << r+1);
@@ -384,12 +384,12 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     bool continueDraw;
     AtomSetList::const_iterator a, ae=atomSetList.end();
     MoleculeMap::const_iterator m, me=molecules.end();
-    for (m=molecules.begin(); m!=me; m++) {
+    for (m=molecules.begin(); m!=me; ++m) {
         if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
         if (moleculeToRedraw >= 0 && m->second->id != moleculeToRedraw) continue;
 
         Molecule::DisplayListList::const_iterator md=m->second->displayLists.begin();
-        for (a=atomSetList.begin(); a!=ae; a++, md++) {
+        for (a=atomSetList.begin(); a!=ae; ++a, ++md) {
 
             // start new display list
             //TESTMSG("drawing molecule #" << m->second->id << " + its objects in display list " << *md
@@ -407,7 +407,7 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
                     CoordSet::Object3DMap::const_iterator objList = coordSet->objectMap.find(m->second->id);
                     if (objList != coordSet->objectMap.end()) {
                         CoordSet::Object3DList::const_iterator o, oe=objList->second.end();
-                        for (o=objList->second.begin(); o!=oe; o++) {
+                        for (o=objList->second.begin(); o!=oe; ++o) {
                             if (!(continueDraw = (*o)->Draw(a->first))) break;
                         }
                     }
@@ -432,19 +432,19 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     // that way connections can show/hide in cases where a particular residue
     // changes its display
     int n = 0;
-    for (a=atomSetList.begin(); a!=ae; a++, n++) {
+    for (a=atomSetList.begin(); a!=ae; ++a, ++n) {
 
         a->first->SetActiveEnsemble(a->second);
         parentSet->renderer->StartDisplayList(displayListOtherStart + n);
 
-        for (m=molecules.begin(); m!=me; m++) {
+        for (m=molecules.begin(); m!=me; ++m) {
             if (m->second->IsProtein() || m->second->IsNucleotide()) continue;
             if (!(continueDraw = m->second->DrawAll(a->first))) break;
         }
 
         if (continueDraw) {
             BondList::const_iterator b, be=interMoleculeBonds.end();
-            for (b=interMoleculeBonds.begin(); b!=be; b++) {
+            for (b=interMoleculeBonds.begin(); b!=be; ++b) {
                 if (!(continueDraw = (*b)->Draw(a->first))) break;
             }
         }
@@ -528,6 +528,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2004/03/15 18:19:23  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.38  2004/02/19 17:04:46  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

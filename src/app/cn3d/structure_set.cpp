@@ -138,11 +138,11 @@ void StructureSet::LoadSequencesForSingleStructure(void)
     // look for biopolymer molecules
     ChemicalGraph::MoleculeMap::const_iterator m, me = objects.front()->graph->molecules.end();
     SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
-    for (m=objects.front()->graph->molecules.begin(); m!=me; m++) {
+    for (m=objects.front()->graph->molecules.begin(); m!=me; ++m) {
         if (!m->second->IsProtein() && !m->second->IsNucleotide()) continue;
 
         // find matching sequence for each biopolymer
-        for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+        for (s=sequenceSet->sequences.begin(); s!=se; ++s) {
             if ((*s)->molecule != NULL) continue; // skip already-matched sequences
 
             if (m->second->identifier == (*s)->identifier) {
@@ -179,7 +179,7 @@ bool StructureSet::LoadMaster(int masterMMDBID)
             ERRORMSG("StructureSet::LoadMaster() - mismatched master MMDB ID");
     } else if (masterMMDBID != MoleculeIdentifier::VALUE_NOT_SET && dataManager->GetStructureList()) {
         ASNDataManager::BiostrucList::const_iterator b, be = dataManager->GetStructureList()->end();
-        for (b=dataManager->GetStructureList()->begin(); b!=be; b++) {
+        for (b=dataManager->GetStructureList()->begin(); b!=be; ++b) {
             if ((*b)->GetId().front()->IsMmdb_id() &&
                 (*b)->GetId().front()->GetMmdb_id().Get() == masterMMDBID) {
                 objects.push_back(new StructureObject(this, **b, true));
@@ -202,7 +202,7 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
     const StructureObject *obj, const Sequence **seqHandle)
 {
     ChemicalGraph::MoleculeMap::const_iterator m, me = obj->graph->molecules.end();
-    for (m=obj->graph->molecules.begin(); m!=me; m++) {
+    for (m=obj->graph->molecules.begin(); m!=me; ++m) {
         if (!(m->second->IsProtein() || m->second->IsNucleotide())) continue;
 
         if (m->second->identifier == seq->identifier) {
@@ -254,7 +254,7 @@ static void SetStructureRowFlags(const AlignmentSet *alignmentSet, int *structur
     // find slave rows with associated structure
     AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
     int row;
-    for (l=alignmentSet->alignments.begin(), row=0; l!=le; l++, row++) {
+    for (l=alignmentSet->alignments.begin(), row=0; l!=le; ++l, ++row) {
         if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET) {
             titles.push_back((*l)->slave->identifier->ToString());
             rows.push_back(row);
@@ -266,7 +266,7 @@ static void SetStructureRowFlags(const AlignmentSet *alignmentSet, int *structur
     // let user select which slaves to load
     wxString *items = new wxString[titles.size()];
     vector < bool > itemsOn(titles.size(), false);
-    for (row=0; row<titles.size(); row++) {
+    for (row=0; row<titles.size(); ++row) {
         items[row] = titles[row].c_str();
         if (row < *structureLimit - 1)      // by default, first N-1 are selected
             itemsOn[row] = true;
@@ -276,7 +276,7 @@ static void SetStructureRowFlags(const AlignmentSet *alignmentSet, int *structur
     if (dialog.ShowModal() == wxOK) {
         // figure out which rows the user selected, and adjust structureLimit accordingly
         *structureLimit = 1;     // master always visible
-        for (row=0; row<itemsOn.size(); row++) {
+        for (row=0; row<itemsOn.size(); ++row) {
             if (itemsOn[row])
                 (*structureLimit)++;                        // structure should be loaded
             else
@@ -325,7 +325,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
         seqAligns.front()->GetSegs().GetDendiag().front()->GetIds().back().GetObject() :
         seqAligns.front()->GetSegs().GetDenseg().GetIds().back().GetObject();
     SequenceSet::SequenceList::const_iterator s, se = sequenceSet->sequences.end();
-    for (s=sequenceSet->sequences.begin(); s!=se; s++) {
+    for (s=sequenceSet->sequences.begin(); s!=se; ++s) {
         if ((*s)->identifier->MatchesSeqId(frontSid)) seq1 = *s;
         if ((*s)->identifier->MatchesSeqId(backSid)) seq2 = *s;
         if (seq1 && seq2) break;
@@ -337,7 +337,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 
     // now, make sure one of these sequences is present in all the other pairwise alignments
     SeqAlignList::const_iterator a = seqAligns.begin(), ae = seqAligns.end();
-    for (a++; a!=ae; a++) {
+    for (++a; a!=ae; ++a) {
         const CSeq_id& frontSid2 = (*a)->GetSegs().IsDendiag() ?
             (*a)->GetSegs().GetDendiag().front()->GetIds().front().GetObject() :
             (*a)->GetSegs().GetDenseg().GetIds().front().GetObject();
@@ -432,7 +432,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
         // sequence that matches it (and that doesn't already have structure)
         AlignmentSet::AlignmentList::const_iterator l, le = alignmentSet->alignments.end();
         if (dataManager->GetStructureList()) {
-            for (b=dataManager->GetStructureList()->begin(); b!=be && objects.size()<structureLimit; b++) {
+            for (b=dataManager->GetStructureList()->begin(); b!=be && objects.size()<structureLimit; ++b) {
 
                 // load structure
                 if (usedStructures.find(b->GetPointer()) != usedStructures.end()) continue;
@@ -444,7 +444,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
                 usedStructures[b->GetPointer()] = true;
 
                 // find matching unstructured slave sequence
-                for (l=alignmentSet->alignments.begin(), row=0; l!=le; l++, row++) {
+                for (l=alignmentSet->alignments.begin(), row=0; l!=le; ++l, ++row) {
                     if (loadedStructureForSlaveRow[row]) continue;
                     if (MatchSequenceToMoleculeInObject((*l)->slave, object,
                             &((const_cast<MasterSlaveAlignment*>(*l))->slave))) {
@@ -466,7 +466,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
             if (dataManager->IsCDD())
                 SetStructureRowFlags(alignmentSet, &structureLimit, &loadedStructureForSlaveRow);
 
-            for (l=alignmentSet->alignments.begin(), row=0; l!=le && objects.size()<structureLimit; l++, row++) {
+            for (l=alignmentSet->alignments.begin(), row=0; l!=le && objects.size()<structureLimit; ++l, ++row) {
 
                 if ((*l)->slave->identifier->mmdbID != MoleculeIdentifier::VALUE_NOT_SET &&
                     !loadedStructureForSlaveRow[row]) {
@@ -474,7 +474,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
                     // first check the biostruc list to see if this structure is present already
                     CRef < CBiostruc > biostruc;
                     if (dataManager->GetStructureList()) {
-                        for (b=dataManager->GetStructureList()->begin(); b!=be ; b++) {
+                        for (b=dataManager->GetStructureList()->begin(); b!=be ; ++b) {
                             if ((*b)->GetId().front()->IsMmdb_id() &&
                                 (*b)->GetId().front()->GetMmdb_id().Get() == (*l)->slave->identifier->mmdbID) {
                                 biostruc = *b;
@@ -603,7 +603,7 @@ StructureSet::~StructureSet(void)
     MoleculeIdentifier::ClearIdentifiers();
 
     BioseqMap::iterator i, ie = bioseqs.end();
-    for (i=bioseqs.begin(); i!=ie; i++) BioseqFree(i->second);
+    for (i=bioseqs.begin(); i!=ie; ++i) BioseqFree(i->second);
 }
 
 BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
@@ -637,7 +637,7 @@ BioseqPtr StructureSet::GetOrCreateBioseq(const Sequence *sequence)
 
 void StructureSet::CreateAllBioseqs(const BlockMultipleAlignment *multiple)
 {
-    for (int row=0; row<multiple->NRows(); row++)
+    for (int row=0; row<multiple->NRows(); ++row)
         GetOrCreateBioseq(multiple->GetSequenceOfRow(row));
 }
 
@@ -701,9 +701,9 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
     // check to see if this slave domain already has an alignment; if so, increment alignment #
     CBiostruc_feature_set::TFeatures::const_iterator
         f, fe = structureAlignments->GetFeatures().front().GetObject().GetFeatures().end();
-    for (f=structureAlignments->GetFeatures().front().GetObject().GetFeatures().begin(); f!=fe; f++) {
+    for (f=structureAlignments->GetFeatures().front().GetObject().GetFeatures().begin(); f!=fe; ++f) {
         if ((f->GetObject().GetId().Get() / 10) == (slaveDomainID / 10))
-            slaveDomainID++;
+            ++slaveDomainID;
     }
     CBiostruc_feature_id id(slaveDomainID);
     feature->SetId(id);
@@ -743,7 +743,7 @@ void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
     seqAnnots->resize(alignmentSet->newAsnAlignmentData->size());
     ASNDataManager::SeqAnnotList::iterator o = seqAnnots->begin();
     ASNDataManager::SeqAnnotList::iterator n, ne = alignmentSet->newAsnAlignmentData->end();
-    for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
+    for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; ++n, ++o)
         o->Reset(n->GetPointer());   // copy each Seq-annot CRef
 
     // don't set data PSSM/row order flags here; done by AlignmentManager::SavePairwiseFromMultiple()
@@ -802,11 +802,11 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary, unsigned int
 // in the map. Also, make sure that total # display lists in all frames adds up.
 void StructureSet::VerifyFrameMap(void) const
 {
-    for (unsigned int l=OpenGLRenderer::FIRST_LIST; l<=lastDisplayList; l++) {
+    for (unsigned int l=OpenGLRenderer::FIRST_LIST; l<=lastDisplayList; ++l) {
         bool found = false;
-        for (unsigned int f=0; f<frameMap.size(); f++) {
+        for (unsigned int f=0; f<frameMap.size(); ++f) {
             DisplayLists::const_iterator d, de=frameMap[f].end();
-            for (d=frameMap[f].begin(); d!=de; d++) {
+            for (d=frameMap[f].begin(); d!=de; ++d) {
                 if (*d == l) {
                     if (!found)
                         found = true;
@@ -820,9 +820,9 @@ void StructureSet::VerifyFrameMap(void) const
     }
 
     unsigned int nLists = 0;
-    for (unsigned int f=0; f<frameMap.size(); f++) {
+    for (unsigned int f=0; f<frameMap.size(); ++f) {
         DisplayLists::const_iterator d, de=frameMap[f].end();
-        for (d=frameMap[f].begin(); d!=de; d++) nLists++;
+        for (d=frameMap[f].begin(); d!=de; ++d) ++nLists;
     }
     if (nLists != lastDisplayList)
         ERRORMSG("frameMap has too many display lists");
@@ -840,20 +840,20 @@ void StructureSet::SetCenter(const Vector *given)
 
     // loop trough all atoms twice - once to get average center, then once to
     // find max distance from this center
-    for (int i=0; i<2; i++) {
+    for (int i=0; i<2; ++i) {
         if (given && i==0) continue; // skip center calculation if given one
         ObjectList::const_iterator o, oe=objects.end();
-        for (o=objects.begin(); o!=oe; o++) {
+        for (o=objects.begin(); o!=oe; ++o) {
             StructureObject::CoordSetList::const_iterator c, ce=(*o)->coordSets.end();
-            for (c=(*o)->coordSets.begin(); c!=ce; c++) {
+            for (c=(*o)->coordSets.begin(); c!=ce; ++c) {
                 AtomSet::AtomMap::const_iterator a, ae=(*c)->atomSet->atomMap.end();
-                for (a=(*c)->atomSet->atomMap.begin(); a!=ae; a++) {
+                for (a=(*c)->atomSet->atomMap.begin(); a!=ae; ++a) {
                     Vector site(a->second.front()->site);
                     if ((*o)->IsSlave() && (*o)->transformToMaster)
                         ApplyTransformation(&site, *((*o)->transformToMaster));
                     if (i==0) {
                         siteSum += site;
-                        nAtoms++;
+                        ++nAtoms;
                     } else {
                         dist = (site - center).length();
                         if (dist > maxDistFromCenter)
@@ -887,7 +887,7 @@ void StructureSet::CenterViewOnAlignedResidues(void)
     // get coords of all aligned c-alphas
     deque < Vector > coords;
     Molecule::ResidueMap::const_iterator r, re = masterMolecule->residues.end();
-    for (r=masterMolecule->residues.begin(); r!=re; r++) {
+    for (r=masterMolecule->residues.begin(); r!=re; ++r) {
         if (!alignment->IsAligned(0, r->first - 1)) continue;
         if (r->second->alphaID == Residue::NO_ALPHA_ID) continue;
         AtomPntr ap(masterMolecule->id, r->first, r->second->alphaID);
@@ -898,12 +898,12 @@ void StructureSet::CenterViewOnAlignedResidues(void)
     // calculate center
     int i;
     Vector alignedCenter;
-    for (i=0; i<coords.size(); i++) alignedCenter += coords[i];
+    for (i=0; i<coords.size(); ++i) alignedCenter += coords[i];
     alignedCenter /= coords.size();
 
     // find radius
     double radius = 0.0, d;
-    for (i=0; i<coords.size(); i++) {
+    for (i=0; i<coords.size(); ++i) {
         d = (coords[i] - alignedCenter).length();
         if (d > radius) radius = d;
     }
@@ -921,7 +921,7 @@ bool StructureSet::Draw(const AtomSet *atomSet) const
 
 unsigned int StructureSet::CreateName(const Residue *residue, int atomID)
 {
-    lastAtomName++;
+    ++lastAtomName;
     nameMap[lastAtomName] = make_pair(residue, atomID);
     return lastAtomName;
 }
@@ -994,12 +994,12 @@ void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly, bool ot
 
     // add residues to highlight to master list, based on proximities within objects
     ObjectList::const_iterator o, oe = objects.end();
-    for (o=objects.begin(); o!=oe; o++)
+    for (o=objects.begin(); o!=oe; ++o)
         (*o)->SelectByDistance(cutoff, biopolymersOnly, otherMoleculesOnly, &residuesToHighlight);
 
     // now actually add highlights for new selected residues
     StructureObject::ResidueMap::const_iterator r, re = residuesToHighlight.end();
-    for (r=residuesToHighlight.begin(); r!=re; r++)
+    for (r=residuesToHighlight.begin(); r!=re; ++r)
         if (!GlobalMessenger()->IsHighlighted(r->second, r->first->id))
             GlobalMessenger()->ToggleHighlight(r->second, r->first->id, false);
 }
@@ -1060,10 +1060,10 @@ void StructureSet::ShowRejects(void) const
 
     INFOMSG("Rejects:");
     RejectList::const_iterator r, re = rejects->end();
-    for (r=rejects->begin(); r!=re; r++) {
+    for (r=rejects->begin(); r!=re; ++r) {
         string idstr;
         CReject_id::TIds::const_iterator i, ie = (*r)->GetIds().end();
-        for (i=(*r)->GetIds().begin(); i!=ie; i++)
+        for (i=(*r)->GetIds().begin(); i!=ie; ++i)
             idstr += (*i)->AsFastaString() + ", ";
         INFOMSG(idstr << "Reason: " <<
             (((*r)->IsSetDescription() && (*r)->GetDescription().front()->IsComment()) ?
@@ -1101,7 +1101,7 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
 
     // get MMDB id
     CBiostruc::TId::const_iterator j, je=biostruc.GetId().end();
-    for (j=biostruc.GetId().begin(); j!=je; j++) {
+    for (j=biostruc.GetId().begin(); j!=je; ++j) {
         if (j->GetObject().IsMmdb_id()) {
             mmdbID = j->GetObject().GetMmdb_id().Get();
             break;
@@ -1112,7 +1112,7 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     // get PDB id
     if (biostruc.IsSetDescr()) {
         CBiostruc::TDescr::const_iterator k, ke=biostruc.GetDescr().end();
-        for (k=biostruc.GetDescr().begin(); k!=ke; k++) {
+        for (k=biostruc.GetDescr().begin(); k!=ke; ++k) {
             if (k->GetObject().IsName()) {
                 pdbID = k->GetObject().GetName();
                 break;
@@ -1125,7 +1125,7 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     if (biostruc.IsSetModel()) {
         // iterate SEQUENCE OF Biostruc-model
         CBiostruc::TModel::const_iterator i, ie=biostruc.GetModel().end();
-        for (i=biostruc.GetModel().begin(); i!=ie; i++) {
+        for (i=biostruc.GetModel().begin(); i!=ie; ++i) {
 
             // don't know how to deal with these...
             if (i->GetObject().GetType() == eModel_type_ncbi_vector ||
@@ -1159,9 +1159,9 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
 bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID)
 {
     CBiostruc_annot_set::TFeatures::const_iterator f1, f1e=annot.GetFeatures().end();
-    for (f1=annot.GetFeatures().begin(); f1!=f1e; f1++) {
+    for (f1=annot.GetFeatures().begin(); f1!=f1e; ++f1) {
         CBiostruc_feature_set::TFeatures::const_iterator f2, f2e=f1->GetObject().GetFeatures().end();
-        for (f2=f1->GetObject().GetFeatures().begin(); f2!=f2e; f2++) {
+        for (f2=f1->GetObject().GetFeatures().begin(); f2!=f2e; ++f2) {
 
             // skip if already used
             if (f2->GetObject().IsSetId() &&
@@ -1197,7 +1197,7 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
                     transformToMaster = new Matrix();
                     CTransform::TMoves::const_iterator
                         m, me=graphAlign.GetTransform().front().GetObject().GetMoves().end();
-                    for (m=graphAlign.GetTransform().front().GetObject().GetMoves().begin(); m!=me; m++) {
+                    for (m=graphAlign.GetTransform().front().GetObject().GetMoves().begin(); m!=me; ++m) {
                         Matrix xmat;
                         double scale;
                         if (m->GetObject().IsTranslate()) {
@@ -1233,7 +1233,7 @@ static void AddDomain(int *domain, const Molecule *molecule, const Block::Range 
 {
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return;
-    for (int l=range->from; l<=range->to; l++) {
+    for (int l=range->from; l<=range->to; ++l) {
         if (molecule->residueDomains[l] != Molecule::NO_DOMAIN_SET) {
             if (*domain == NO_DOMAIN)
                 *domain = object->domainID2MMDB.find(molecule->residueDomains[l])->second;
@@ -1267,13 +1267,13 @@ void StructureObject::RealignStructure(int nCoords,
     Vector x;
     double rmsd = 0.0, d;
     int n = 0;
-    for (int c=0; c<nCoords; c++) {
+    for (int c=0; c<nCoords; ++c) {
         if (!slaveCoords[c] || !masterCoords[c]) continue;
         x = *(slaveCoords[c]);
         ApplyTransformation(&x, *transformToMaster);
         d = (*(masterCoords[c]) - x).length();
         rmsd += d * d;
-        n++;
+        ++n;
     }
     rmsd = sqrt(rmsd / n);
     INFOMSG("RMSD of aligned alpha coordinates between master structure and " << pdbID << ": "
@@ -1328,7 +1328,7 @@ void StructureObject::RealignStructure(int nCoords,
         CResidue_pntrs::TInterval::iterator
             mi = masterRPs->SetInterval().begin(),
             si = slaveRPs->SetInterval().begin();
-        for (b=blocks.begin(); b!=be; b++, mi++, si++) {
+        for (b=blocks.begin(); b!=be; ++b, ++mi, ++si) {
             CResidue_interval_pntr
                 *masterRIP = new CResidue_interval_pntr(),
                 *slaveRIP = new CResidue_interval_pntr();
@@ -1357,7 +1357,7 @@ void StructureObject::RealignStructure(int nCoords,
     xform->SetId(1);
     xform->SetMoves().resize(3);
     CTransform::TMoves::iterator m = xform->SetMoves().begin();
-    for (int i=0; i<3; i++, m++) {
+    for (int i=0; i<3; ++i, ++m) {
         CMove *move = new CMove();
         m->Reset(move);
         static const int scaleFactor = 100000;
@@ -1423,14 +1423,14 @@ void StructureObject::SelectByDistance(double cutoff, bool biopolymersOnly, bool
     MoleculeList moleculesWithHighlights;
 
     ChemicalGraph::MoleculeMap::const_iterator m, me = graph->molecules.end();
-    for (m=graph->molecules.begin(); m!=me; m++) {
+    for (m=graph->molecules.begin(); m!=me; ++m) {
         Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
-        for (r=m->second->residues.begin(); r!=re; r++) {
+        for (r=m->second->residues.begin(); r!=re; ++r) {
 
             if (GlobalMessenger()->IsHighlighted(m->second, r->second->id)) {
                 const Residue::AtomInfoMap& atomInfos = r->second->GetAtomInfos();
                 Residue::AtomInfoMap::const_iterator a, ae = atomInfos.end();
-                for (a=atomInfos.begin(); a!=ae; a++) {
+                for (a=atomInfos.begin(); a!=ae; ++a) {
                     const AtomCoord *atomCoord = coordSets.front()->atomSet->
                         GetAtom(AtomPntr(m->second->id, r->second->id, a->first), true, true);
                     if (atomCoord) highlightedAtoms.push_back(atomCoord);
@@ -1445,14 +1445,14 @@ void StructureObject::SelectByDistance(double cutoff, bool biopolymersOnly, bool
     typedef vector < const Residue * > ResidueList;
     ResidueList unhighlightedResidues;
 
-    for (m=graph->molecules.begin(); m!=me; m++) {
+    for (m=graph->molecules.begin(); m!=me; ++m) {
         Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
 
         if (otherMoleculesOnly &&
                 moleculesWithHighlights.find(m->second) != moleculesWithHighlights.end())
             continue;
 
-        for (r=m->second->residues.begin(); r!=re; r++) {
+        for (r=m->second->residues.begin(); r!=re; ++r) {
 
             if (!GlobalMessenger()->IsHighlighted(m->second, r->second->id) &&
                     (!biopolymersOnly || m->second->IsProtein() || m->second->IsNucleotide()))
@@ -1465,19 +1465,19 @@ void StructureObject::SelectByDistance(double cutoff, bool biopolymersOnly, bool
     // of any highlighted atoms; if so, add to residue selection list
     CoordList::const_iterator h, he = highlightedAtoms.end();
     ResidueList::const_iterator u, ue = unhighlightedResidues.end();
-    for (u=unhighlightedResidues.begin(); u!=ue; u++) {
+    for (u=unhighlightedResidues.begin(); u!=ue; ++u) {
         const Molecule *molecule;
         if (!(*u)->GetParentOfType(&molecule)) continue;
 
         const Residue::AtomInfoMap& atomInfos = (*u)->GetAtomInfos();
         Residue::AtomInfoMap::const_iterator a, ae = atomInfos.end();
-        for (a=atomInfos.begin(); a!=ae; a++) {
+        for (a=atomInfos.begin(); a!=ae; ++a) {
             const AtomCoord *uAtomCoord = coordSets.front()->atomSet->
                 GetAtom(AtomPntr(molecule->id, (*u)->id, a->first), true, true);
             if (!uAtomCoord) continue;
 
             // for each unhighlighted atom, check for proximity to a highlighted atom
-            for (h=highlightedAtoms.begin(); h!=he; h++) {
+            for (h=highlightedAtoms.begin(); h!=he; ++h) {
                 if ((uAtomCoord->site - (*h)->site).length() <= cutoff)
                     break;
             }
@@ -1496,6 +1496,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.139  2004/03/15 18:32:04  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.138  2004/02/19 17:05:14  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

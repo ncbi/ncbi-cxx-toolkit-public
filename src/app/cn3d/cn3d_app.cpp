@@ -353,7 +353,7 @@ static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel
     // remove all but desired model coordinates
     CRef < CBiostruc_model > desiredModel;
     CBiostruc::TModel::const_iterator m, me = biostruc->GetModel().end();
-    for (m=biostruc->GetModel().begin(); m!=me; m++) {
+    for (m=biostruc->GetModel().begin(); m!=me; ++m) {
         if ((*m)->GetType() == model) {
             desiredModel = *m;
             break;
@@ -376,7 +376,7 @@ static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel
     vector < int > gis;
     CBiostruc_graph::TMolecule_graphs::const_iterator g,
         ge = biostruc->GetChemical_graph().GetMolecule_graphs().end();
-    for (g=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); g!=ge; g++) {
+    for (g=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); g!=ge; ++g) {
         if ((*g)->IsSetSeq_id() && (*g)->GetSeq_id().IsGi())
             gis.push_back((*g)->GetSeq_id().GetGi());
     }
@@ -390,7 +390,7 @@ static CNcbi_mime_asn1 * CreateMimeFromBiostruc(const wxString& filename, EModel
     strucseq->SetSequences().push_back(seqs);
     CRef < CBioseq_set > seqset(new CBioseq_set());
     seqs->SetSet(*seqset);
-    for (int i=0; i<gis.size(); i++) {
+    for (int i=0; i<gis.size(); ++i) {
         wxString id;
         id.Printf("%i", gis[i]);
         CRef < CBioseq > bioseq = FetchSequenceViaHTTP(id.c_str());
@@ -632,6 +632,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/03/15 18:19:23  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.17  2004/03/10 23:15:51  thiessen
 * add ability to turn off/on error dialogs; group block aligner errors in message log
 *

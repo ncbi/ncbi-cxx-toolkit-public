@@ -110,9 +110,9 @@ static void FreezeBlocks(const BlockMultipleAlignment *multiple,
         m, me = multipleABlocks.end(), p, pe = pairwiseABlocks.end();
     const Block::Range *multipleRangeMaster, *pairwiseRangeMaster, *pairwiseRangeSlave;
     int i;
-    for (i=0, m=multipleABlocks.begin(); m!=me; i++, m++) {
+    for (i=0, m=multipleABlocks.begin(); m!=me; ++i, ++m) {
         multipleRangeMaster = (*m)->GetRangeOfRow(0);
-        for (p=pairwiseABlocks.begin(); p!=pe; p++) {
+        for (p=pairwiseABlocks.begin(); p!=pe; ++p) {
             pairwiseRangeMaster = (*p)->GetRangeOfRow(0);
             if (pairwiseRangeMaster->from <= multipleRangeMaster->from &&
                     pairwiseRangeMaster->to >= multipleRangeMaster->to) {
@@ -147,7 +147,7 @@ int dpScoreFunction(unsigned int block, unsigned int queryPos)
     }
 
     int i, masterPos = dpBlocks->blockPositions[block], score = 0;
-    for (i=0; i<dpBlocks->blockSizes[block]; i++)
+    for (i=0; i<dpBlocks->blockSizes[block]; ++i)
         score += dpPSSM->matrix[masterPos + i]
             [LookupBLASTResidueNumberFromCharacter(dpQuery->sequenceString[queryPos + i])];
 
@@ -165,7 +165,7 @@ static BlockMultipleAlignment * UnpackDPResult(DP_BlockInfo *blocks, DP_Alignmen
         bma(new BlockMultipleAlignment(seqs, master->parentSet->alignmentManager));
 
     // unpack result blocks
-    for (unsigned int b=0; b<result->nBlocks; b++) {
+    for (unsigned int b=0; b<result->nBlocks; ++b) {
         UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(bma.get());
         newBlock->width = blocks->blockSizes[b + result->firstBlock];
         newBlock->SetRangeOfRow(0,
@@ -219,7 +219,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     unsigned int *loopLengths = new unsigned int[multiple->NRows()];
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator n;
     const Block::Range *range, *nextRange;
-    for (i=0, b=blocks.begin(); b!=be; i++, b++) {
+    for (i=0, b=blocks.begin(); b!=be; ++i, ++b) {
         range = (*b)->GetRangeOfRow(0);
         dpBlocks->blockPositions[i] = range->from;
         dpBlocks->blockSizes[i] = range->to - range->from + 1;
@@ -227,8 +227,8 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
         // calculate max loop lengths
         if (i < blocks.size() - 1) {
             n = b;
-            n++;
-            for (int r=0; r<multiple->NRows(); r++) {
+            ++n;
+            for (int r=0; r<multiple->NRows(); ++r) {
                 range = (*b)->GetRangeOfRow(r);
                 nextRange = (*n)->GetRangeOfRow(r);
                 loopLengths[r] = nextRange->from - range->to - 1;
@@ -246,7 +246,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
     bool errorsEncountered = false;
 
     AlignmentList::const_iterator s, se = toRealign.end();
-    for (s=toRealign.begin(); s!=se; s++) {
+    for (s=toRealign.begin(); s!=se; ++s) {
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
             ERRORMSG("master sequence mismatch");
 
@@ -262,7 +262,7 @@ bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlig
 
         // set frozen blocks
         if (!currentOptions.keepExistingBlocks) {
-            for (i=0; i<blocks.size(); i++)
+            for (i=0; i<blocks.size(); ++i)
                 dpBlocks->freezeBlocks[i] = DP_UNFROZEN_BLOCK;
         } else {
             FreezeBlocks(multiple, *s, dpBlocks);
@@ -501,6 +501,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/03/15 18:19:23  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.31  2004/03/10 23:15:51  thiessen
 * add ability to turn off/on error dialogs; group block aligner errors in message log
 *

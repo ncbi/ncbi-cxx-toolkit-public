@@ -132,7 +132,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     const string& cddDescr = structureSet->GetCDDDescription();
     if (cddDescr.size() > 0) {
         int i, j;
-        for (i=j=0; i<cddDescr.size(); i++, j++) {
+        for (i=j=0; i<cddDescr.size(); ++i, ++j) {
             if (j > 60 && cddDescr[i] == ' ') {
                 *tDescr << '\n';
                 j = 0;
@@ -147,12 +147,12 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     if (annots && annots->Get().size() > 0) {
         *tDescr << "Annotation summary:\n\n";
         CAlign_annot_set::Tdata::const_iterator a, ae = annots->Get().end();
-        for (a=annots->Get().begin(); a!=ae; a++) {
+        for (a=annots->Get().begin(); a!=ae; ++a) {
             *tDescr << ((*a)->IsSetDescription() ? (*a)->GetDescription() : string("")).c_str()
                 << "; evidence:\n";
             if ((*a)->IsSetEvidence()) {
                 CAlign_annot::TEvidence::const_iterator e, ee = (*a)->GetEvidence().end();
-                for (e=(*a)->GetEvidence().begin(); e!=ee; e++) {
+                for (e=(*a)->GetEvidence().begin(); e!=ee; ++e) {
                     if ((*e)->IsComment())
                         *tDescr << "  comment: " << (*e)->GetComment().c_str() << '\n';
                     else if ((*e)->IsReference() && (*e)->GetReference().IsPmid())
@@ -168,7 +168,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                         if ((*e)->GetBsannot().IsSetId() && (*e)->GetBsannot().GetId().front()->IsMmdb_id()) {
                             int mmdbID = (*e)->GetBsannot().GetId().front()->GetMmdb_id().Get();
                             StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
-                            for (o=structureSet->objects.begin(); o!=oe; o++) {
+                            for (o=structureSet->objects.begin(); o!=oe; ++o) {
                                 if ((*o)->mmdbID == mmdbID) {
                                     *tDescr << " (" << (*o)->pdbID.c_str() << ')';
                                     break;
@@ -187,7 +187,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
     if (structureSet->objects.size() > 0) {
         *tDescr << "Structure summary:\n";
         StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
-        for (o=structureSet->objects.begin(); o!=oe; o++) {
+        for (o=structureSet->objects.begin(); o!=oe; ++o) {
             *tDescr << "\nPDB " << (*o)->pdbID.c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
 
             // make lists of biopolymer chains and heterogens
@@ -196,12 +196,12 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
             typedef map < string , int > HetList;
             HetList hetList;
             ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
-            for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+            for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
                 if (m->second->IsProtein() || m->second->IsNucleotide()) {
                     wxString descr;
                     SequenceSet::SequenceList::const_iterator
                         s, se = structureSet->sequenceSet->sequences.end();
-                    for (s=structureSet->sequenceSet->sequences.begin(); s!=se; s++) {
+                    for (s=structureSet->sequenceSet->sequences.begin(); s!=se; ++s) {
                         if ((*s)->identifier == m->second->identifier) {
                             descr.Printf("%s: gi %i (%s)", m->second->identifier->ToString().c_str(),
                                 (*s)->identifier->gi, (*s)->description.c_str());
@@ -219,21 +219,21 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                     if (n == hetList.end())
                         hetList[name] = 1;
                     else
-                        n->second++;
+                        ++(n->second);
                 }
             }
             chainList.sort();
 
             // print chains
             ChainList::const_iterator c, ce = chainList.end();
-            for (c=chainList.begin(); c!=ce; c++)
+            for (c=chainList.begin(); c!=ce; ++c)
                 *tDescr << "    " << c->c_str() << '\n';
 
             // print hets
             if (hetList.size() > 0) {
                 *tDescr << "Heterogens: ";
                 HetList::const_iterator h, he = hetList.end();
-                for (h=hetList.begin(); h!=he; h++) {
+                for (h=hetList.begin(); h!=he; ++h) {
                     if (h != hetList.begin())
                         *tDescr << ", ";
                     wxString descr;
@@ -250,7 +250,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
 
     const CCdd_descr_set *cddRefs = structureSet->GetCDDDescrSet();
     CCdd_descr_set::Tdata::const_iterator d, de = cddRefs->Get().end();
-    for (d=cddRefs->Get().begin(); d!=de; d++) {
+    for (d=cddRefs->Get().begin(); d!=de; ++d) {
         if ((*d)->IsReference() && (*d)->GetReference().IsPmid())
             break;
     }
@@ -351,6 +351,9 @@ wxSizer *SetupCDDSplashDialog( wxWindow *parent, bool call_fit, bool set_sizer )
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/15 18:16:33  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.10  2004/02/19 17:04:45  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

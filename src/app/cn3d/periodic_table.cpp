@@ -179,7 +179,7 @@ PeriodicTableClass::PeriodicTableClass(void)
 PeriodicTableClass::~PeriodicTableClass(void)
 {
     ZMapType::const_iterator i, ie = ZMap.end();
-    for (i=ZMap.begin(); i!=ie; i++)
+    for (i=ZMap.begin(); i!=ie; ++i)
         if ((*i).second) delete const_cast<Element*>((*i).second);
 }
 
@@ -188,6 +188,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/15 18:27:12  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.4  2004/02/19 17:05:01  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

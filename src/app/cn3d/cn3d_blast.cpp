@@ -85,7 +85,7 @@ int LookupBLASTResidueNumberFromCharacter(char r)
     static Char2Int charMap;
 
     if (charMap.size() == 0) {
-        for (int i=0; i<BLASTer::BLASTResidues.size(); i++)
+        for (int i=0; i<BLASTer::BLASTResidues.size(); ++i)
             charMap[BLASTer::BLASTResidues[i]] = i;
     }
 
@@ -170,7 +170,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
     string err;
     AlignmentList::const_iterator s, se = toRealign.end();
-    for (s=toRealign.begin(); s!=se; s++) {
+    for (s=toRealign.begin(); s!=se; ++s) {
         if (multiple && (*s)->GetMaster() != multiple->GetMaster())
             ERRORMSG("master sequence mismatch");
 
@@ -271,7 +271,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 #ifdef _DEBUG
             int raw_pssm = 0, raw_bl62 = 0;
 #endif
-            for (int i=0; i<sa.GetSegs().GetDenseg().GetNumseg(); i++) {
+            for (int i=0; i<sa.GetSegs().GetDenseg().GetNumseg(); ++i) {
                 int masterStart = *(iStart++), slaveStart = *(iStart++), len = *(iLen++);
                 if (masterStart >= 0 && slaveStart >= 0 && len > 0) {
                     UngappedAlignedBlock *newBlock = new UngappedAlignedBlock(newAlignment);
@@ -282,7 +282,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
 
 #ifdef _DEBUG
                     // calculate score manually, to compare with that returned by BLAST
-                    for (int j=0; j<len; j++) {
+                    for (int j=0; j<len; ++j) {
                         if (usePSSM)
                             raw_pssm += BLASTmatrix->matrix
                                 [masterStart + j]
@@ -315,7 +315,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
                     slaveSeq->identifier->ToString().c_str());
 
                 CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
-                for (sc=sa.GetScore().begin(); sc!=sce; sc++) {
+                for (sc=sa.GetScore().begin(); sc!=sce; ++sc) {
                     if ((*sc)->IsSetId() && (*sc)->GetId().IsStr()) {
 
                         // E-value (put in status line and double values)
@@ -414,7 +414,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
 
     string err;
     int row;
-    for (row=0; row<multiple->NRows(); row++) {
+    for (row=0; row<multiple->NRows(); ++row) {
 
         // get C Bioseq for each slave
         const Sequence *slaveSeq = multiple->GetSequenceOfRow(row);
@@ -465,7 +465,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
             // get score
             if (sa.IsSetScore()) {
                 CSeq_align::TScore::const_iterator sc, sce = sa.GetScore().end();
-                for (sc=sa.GetScore().begin(); sc!=sce; sc++) {
+                for (sc=sa.GetScore().begin(); sc!=sce; ++sc) {
                     if ((*sc)->GetValue().IsReal() && (*sc)->IsSetId() &&
                         (*sc)->GetId().IsStr() && (*sc)->GetId().GetStr() == "e_value") {
                         score = (*sc)->GetValue().GetReal();
@@ -490,9 +490,9 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     // print out overall self-hit rate
     int nSelfHits = 0;
     static const double threshold = 0.01;
-    for (row=0; row<multiple->NRows(); row++) {
+    for (row=0; row<multiple->NRows(); ++row) {
         if (multiple->GetRowDouble(row) >= 0.0 && multiple->GetRowDouble(row) <= threshold)
-            nSelfHits++;
+            ++nSelfHits;
     }
     INFOMSG("Self hits with E-value <= " << setprecision(3) << threshold << ": "
         << (100.0*nSelfHits/multiple->NRows()) << "% ("
@@ -512,6 +512,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/03/15 18:19:23  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.32  2004/02/19 17:04:49  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

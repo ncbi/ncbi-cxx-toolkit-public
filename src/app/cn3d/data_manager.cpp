@@ -146,7 +146,7 @@ void ASNDataManager::Load(void)
                     SeqAnnotList::iterator i,
                         ie = mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports().end();
                     for (i=mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports().begin();
-                         i!= ie; i++) {
+                         i!= ie; ++i) {
                         CRef < CUpdate_align > update(new CUpdate_align());
                         update->SetSeqannot(**i);
                         update->SetType(CUpdate_align::eType_other);
@@ -212,7 +212,7 @@ void ASNDataManager::Load(void)
     if (sequenceAlignments) {
         list < CRef < CSeq_align > > validAlignments;
         SeqAnnotList::const_iterator n, ne = sequenceAlignments->end();
-        for (n=sequenceAlignments->begin(); n!=ne; n++) {
+        for (n=sequenceAlignments->begin(); n!=ne; ++n) {
 
             if (!n->GetObject().GetData().IsAlign()) {
                 ERRORMSG("Warning - confused by seqannot data format");
@@ -222,7 +222,7 @@ void ASNDataManager::Load(void)
 
             CSeq_annot::C_Data::TAlign::const_iterator
                 a, ae = n->GetObject().GetData().GetAlign().end();
-            for (a=n->GetObject().GetData().GetAlign().begin(); a!=ae; a++) {
+            for (a=n->GetObject().GetData().GetAlign().begin(); a!=ae; ++a) {
 
                 // verify this is a type of alignment we can deal with
                 if (!(a->GetObject().GetType() != CSeq_align::eType_partial ||
@@ -470,7 +470,7 @@ void ASNDataManager::ReplaceUpdates(UpdateAlignList& newUpdates)
             bundleImports = &(mimeData->SetGeneral().SetSeq_align_data().SetBundle().SetImports());
             bundleImports->clear();
             UpdateAlignList::iterator u, ue = newUpdates.end();
-            for (u=newUpdates.begin(); u!=ue; u++)
+            for (u=newUpdates.begin(); u!=ue; ++u)
                 if ((*u)->IsSetSeqannot())
                     bundleImports->push_back(CRef < CSeq_annot > (&((*u)->SetSeqannot())));
         }
@@ -511,14 +511,14 @@ void ASNDataManager::RemoveUnusedSequences(const AlignmentSet *alignmentSet,
     CONDITIONAL_ADD_SEQENTRY(alignmentSet->master);
     // add from alignmentSet slaves
     AlignmentSet::AlignmentList::const_iterator a, ae = alignmentSet->alignments.end();
-    for (a=alignmentSet->alignments.begin(); a!=ae; a++) {
+    for (a=alignmentSet->alignments.begin(); a!=ae; ++a) {
         CONDITIONAL_ADD_SEQENTRY((*a)->slave);
-        if ((*a)->slave->molecule) nStructuredSlaves++;
+        if ((*a)->slave->molecule) ++nStructuredSlaves;
     }
 
     // add from updates
     SequenceList::const_iterator s, se = updateSequences.end();
-    for (s=updateSequences.begin(); s!=se; s++)
+    for (s=updateSequences.begin(); s!=se; ++s)
         CONDITIONAL_ADD_SEQENTRY((*s));
 
     SetDataChanged(StructureSet::eSequenceData);
@@ -598,7 +598,7 @@ const string& ASNDataManager::GetCDDDescription(void) const
     // find first 'comment' in Cdd-descr-set, assume this is the "long description"
     if (!cdd->IsSetDescription() || cdd->GetDescription().Get().size() == 0) return empty;
     CCdd_descr_set::Tdata::const_iterator d, de = cdd->GetDescription().Get().end();
-    for (d=cdd->GetDescription().Get().begin(); d!=de; d++)
+    for (d=cdd->GetDescription().Get().begin(); d!=de; ++d)
         if ((*d)->IsComment())
             return (*d)->GetComment();
 
@@ -613,7 +613,7 @@ bool ASNDataManager::SetCDDDescription(const string& descr)
     if (cdd->IsSetDescription() && cdd->GetDescription().Get().size() >= 0) {
         // find first 'comment' in Cdd-descr-set, assume this is the "long description"
         CCdd_descr_set::Tdata::iterator d, de = cdd->SetDescription().Set().end();
-        for (d=cdd->SetDescription().Set().begin(); d!=de; d++) {
+        for (d=cdd->SetDescription().Set().begin(); d!=de; ++d) {
             if ((*d)->IsComment()) {
                 if ((*d)->GetComment() != descr) {
                     (*d)->SetComment(descr);
@@ -643,14 +643,14 @@ bool ASNDataManager::GetCDDNotes(TextLines *lines) const
 
     // find scrapbook item
     CCdd_descr_set::Tdata::const_iterator d, de = cdd->GetDescription().Get().end();
-    for (d=cdd->GetDescription().Get().begin(); d!=de; d++) {
+    for (d=cdd->GetDescription().Get().begin(); d!=de; ++d) {
         if ((*d)->IsScrapbook()) {
 
             // fill out lines from scrapbook string list
             lines->resize((*d)->GetScrapbook().size());
             CCdd_descr::TScrapbook::const_iterator l, le = (*d)->GetScrapbook().end();
             int i = 0;
-            for (l=(*d)->GetScrapbook().begin(); l!=le; l++)
+            for (l=(*d)->GetScrapbook().begin(); l!=le; ++l)
                 (*lines)[i++] = *l;
             return true;
         }
@@ -668,7 +668,7 @@ bool ASNDataManager::SetCDDNotes(const TextLines& lines)
     // find an existing scrapbook item
     if (cdd->IsSetDescription()) {
         CCdd_descr_set::Tdata::iterator d, de = cdd->SetDescription().Set().end();
-        for (d=cdd->SetDescription().Set().begin(); d!=de; d++) {
+        for (d=cdd->SetDescription().Set().begin(); d!=de; ++d) {
             if ((*d)->IsScrapbook()) {
                 if (lines.size() == 0) {
                     cdd->SetDescription().Set().erase(d);   // if empty, remove scrapbook item
@@ -691,7 +691,7 @@ bool ASNDataManager::SetCDDNotes(const TextLines& lines)
 
     // fill out scrapbook lines
     scrapbook->clear();
-    for (int i=0; i<lines.size(); i++)
+    for (int i=0; i<lines.size(); ++i)
         scrapbook->push_back(lines[i]);
     SetDataChanged(StructureSet::eCDDData);
 
@@ -757,6 +757,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/03/15 18:25:36  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.20  2004/02/19 17:04:55  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

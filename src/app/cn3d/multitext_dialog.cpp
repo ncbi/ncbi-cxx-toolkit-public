@@ -78,7 +78,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
     // set initial text - if single line, break up into smaller lines, otherwise leave as-is
     if (initialText.size() == 1) {
         int i, j;
-        for (i=j=0; i<initialText[0].size(); i++, j++) {
+        for (i=j=0; i<initialText[0].size(); ++i, ++j) {
             if (j > 60 && initialText[0][i] == ' ') {
                 *textCtrl << '\n';
                 j = 0;
@@ -86,7 +86,7 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
                 *textCtrl << initialText[0][i];
         }
     } else {
-        for (int i=0; i<initialText.size(); i++)
+        for (int i=0; i<initialText.size(); ++i)
             *textCtrl << initialText[i].c_str() << '\n';
     }
 
@@ -137,7 +137,7 @@ bool MultiTextDialog::GetLines(TextLines *lines) const
 {
     if (!lines) return false;
     lines->clear();
-    for (int i=0; i<textCtrl->GetNumberOfLines(); i++)
+    for (int i=0; i<textCtrl->GetNumberOfLines(); ++i)
         // don't append empty last line
         if (i < textCtrl->GetNumberOfLines() - 1 || textCtrl->GetLineText(i).size() > 0)
             lines->push_back(textCtrl->GetLineText(i).c_str());
@@ -147,7 +147,7 @@ bool MultiTextDialog::GetLines(TextLines *lines) const
 bool MultiTextDialog::GetLine(string *singleString) const
 {
     singleString->erase();
-    for (int i=0; i<textCtrl->GetNumberOfLines(); i++) {
+    for (int i=0; i<textCtrl->GetNumberOfLines(); ++i) {
         // don't append empty last line
         if (i < textCtrl->GetNumberOfLines() - 1 || textCtrl->GetLineText(i).size() > 0) {
             if (i > 0) singleString->append(1, ' ');
@@ -163,6 +163,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/15 18:25:36  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.10  2004/02/19 17:04:59  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
