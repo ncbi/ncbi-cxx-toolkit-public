@@ -88,13 +88,16 @@ inline Uint4 CChecksum::GetChecksum() const
 inline void CChecksum::GetMD5Digest(unsigned char digest[16]) const
 {
     _ASSERT(GetMethod() == eMD5);
-    return m_Checksum.m_MD5->Finalize(digest);
+    m_Checksum.m_MD5->Finalize(digest);
 }
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/07/29 22:11:42  vakatov
+* Typo fixed (extra return op)
+*
 * Revision 1.4  2003/07/29 21:29:26  ucko
 * Add MD5 support (cribbed from the C Toolkit)
 *
