@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/09/18 13:53:00  vasilche
+* Fixed '.files' extension.
+*
 * Revision 1.37  2000/09/01 13:16:27  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -363,7 +366,7 @@ int main(int argc, const char*argv[])
                     {
                         string fileName = FileOutArgument(argv[++i]);
                         generator.SetCombiningFileName(fileName);
-                        generator.SetFileListFileName(fileName+".def");
+                        generator.SetFileListFileName(fileName+".files");
                     }
                     break;
                 case 'p':
