@@ -34,17 +34,23 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/01/19 00:04:00  vakatov
+ * Do not force #_DEBUG on MSVC -- or it fails to link some functions which
+ * defined in the debug C run-time lib only (such as _CrtDbgReport)
+ *
  * Revision 6.1  2002/01/16 21:19:26  vakatov
  * Initial revision
  *
  * ===========================================================================
  */
 
+#include <ncbiconf.h>
+
 #if defined(NDEBUG)
 #  undef  NDEBUG
 #endif 
 
-#if !defined(_DEBUG)
+#if !defined(_DEBUG)  &&  !defined(NCBI_OS_MSWIN)
 #  define _DEBUG
 #endif 
 
