@@ -143,7 +143,7 @@ void CFlattishFeature::x_AddQuals(void) const
         x_AddQual(eFQ_pseudo, new CFlatBoolQV(m_Feat->GetPseudo()));
     }
     if (m_Feat->IsSetExcept_text()) {
-        x_AddQual(eFQ_exception, new CFlatStringQV(m_Feat->GetTitle()));
+        x_AddQual(eFQ_exception, new CFlatStringQV(m_Feat->GetExcept_text()));
     }
     switch (data.Which()) {
     case CSeqFeatData::e_Gene:      x_AddQuals(data.GetGene());      break;
@@ -756,6 +756,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/10/16 20:21:53  ucko
+* Fix a copy-and-paste error in CFlattishFeature::x_AddQuals
+*
 * Revision 1.8  2003/10/08 21:11:12  ucko
 * Add a couple of accessors to IFlattishFeature for the GFF/GTF formatter.
 *
