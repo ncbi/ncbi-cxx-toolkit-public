@@ -329,8 +329,8 @@ void CRegionMap::x_Roundup(TIndx       & begin,
     // allow memory-usage tuning.
     
     const Uint4 block_size  = 1024 * 512;
-    Uint4 large_slice = atlas->GetLargeSliceSize();
-    Uint4 small_slice = large_slice / 16;
+    Uint4 large_slice = (Uint4)atlas->GetLargeSliceSize();
+    Uint4 small_slice = (Uint4)large_slice / 16;
     
     if (small_slice < block_size) {
         small_slice = block_size;
