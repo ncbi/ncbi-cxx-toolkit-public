@@ -134,9 +134,9 @@ test "$install_dir" = "$build_dir"  &&  \
    Usage "Cannot install to itself"
 
 # Directories to install
-install_dirs="inc lib status"
-all_install_dirs="$install_dirs bin"
-test with_bin != "no"  &&  install_dirs="bin $install_dirs"
+install_dirs="lib status"
+all_install_dirs="$install_dirs bin build"
+test "$with_bin" != "no"  &&  install_dirs="bin $install_dirs"
 
 # Prepare an empty dir for the installation
 if test -d $install_dir ; then
@@ -158,8 +158,13 @@ for d in $install_dirs ; do
    test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
 done
 
-test with_bin != "no"  ||  mkdir $install_dir/bin  ||  \
-   Usage "Failed to create an empty dir:  $install_dir/bin"
+# Copy the configuration file -- only if it differs from the existing one
+test -d "$install_dir/inc"  ||  mkdir "$install_dir/inc"  ||  \
+   Usage "Failed to create $install_dir/inc"
+i_cfg="$install_dir/inc/ncbiconf.h"
+b_cfg="$build_dir/inc/ncbiconf.h"
+diff "$b_cfg" "$i_cfg"  ||  \
+   cp -p "$b_cfg" "$i_cfg"  ||  Usage "Failed copy to:  $i_cfg"
 
 # Remove various unneeded files
 files="\
