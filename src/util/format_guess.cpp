@@ -199,7 +199,7 @@ CFormatGuess::EFormat CFormatGuess::Format(const string& path)
         }
     }
 
-    if (a_content < 0.80) {
+    if (a_content < 0.87) {
         return eBinaryASN;
     }
 
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/11/26 14:34:16  kuznets
+ * Fine tuned ascii content coefficient to better recognize binary asns
+ *
  * Revision 1.8  2003/11/07 17:16:23  ivanov
  * Fixed  warnings on 64-bit Workshop compiler
  *
