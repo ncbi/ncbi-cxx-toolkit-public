@@ -239,14 +239,14 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             if (plus) {
                 seg = -1;
                 while (++seg < m_NumSegs) {
-                    if (m_Starts[seg * x_NumRows + row] >= 0) {
+                    if (m_Starts[seg * m_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
             } else {
                 seg = m_NumSegs;
                 while (seg--) {
-                    if (m_Starts[seg * x_NumRows + row] >= 0) {
+                    if (m_Starts[seg * m_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
@@ -262,14 +262,14 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
             if (plus) {
                 seg = m_NumSegs;
                 while (seg--) {
-                    if (m_Starts[seg * x_NumRows + row] >= 0) {
+                    if (m_Starts[seg * m_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
             } else {
                 seg = -1;
                 while (++seg < m_NumSegs) {
-                    if (m_Starts[seg * x_NumRows + row] >= 0) {
+                    if (m_Starts[seg * m_NumRows + row] >= 0) {
                         return seg;
                     }
                 }
@@ -283,7 +283,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
 
         while (cur <= top
                &&  (start = m_Starts[(plus ? cur : last - cur) 
-                                             * x_NumRows + row]) < 0) {
+                                             * m_NumRows + row]) < 0) {
             ++cur;
         }
         if (cur <= top && start >= 0) {
@@ -303,7 +303,7 @@ CAlnMap::GetRawSeg(TNumrow row, TSeqPos seq_pos,
         cur = mid-1;
         while (cur >= btm &&
                (start = m_Starts[(plus ? cur : last - cur)
-                                         * x_NumRows + row]) < 0) {
+                                         * m_NumRows + row]) < 0) {
             --cur;
         }
         if (cur >= btm && start >= 0) {
@@ -343,7 +343,7 @@ TSignedSeqPos CAlnMap::GetAlnPosFromSeqPos(TNumrow row, TSeqPos seq_pos,
         return -1;
     }
 
-    TSeqPos start = m_Starts[raw_seg * x_NumRows + row];
+    TSeqPos start = m_Starts[raw_seg * m_NumRows + row];
     TSeqPos len   = m_Lens[raw_seg];
     TSeqPos stop  = start + len -1;
     bool    plus  = IsPositiveStrand(row);
@@ -493,14 +493,14 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
     if (IsPositiveStrand(row)) {
         seg = -1;
         while (++seg < m_NumSegs) {
-            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
+            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
                 return start;
             }
         }
     } else {
         seg = m_NumSegs;
         while (seg--) {
-            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
+            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
                 return start;
             }
         }
@@ -517,14 +517,14 @@ TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
     if (IsPositiveStrand(row)) {
         seg = m_NumSegs;
         while (seg--) {
-            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
+            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
                 return start + m_Lens[seg] - 1;
             }
         }
     } else {
         seg = -1;
         while (++seg < m_NumSegs) {
-            if ((start = m_Starts[seg * x_NumRows + row]) >= 0) {
+            if ((start = m_Starts[seg * m_NumRows + row]) >= 0) {
                 return start + m_Lens[seg] - 1;
             }
         }
@@ -869,6 +869,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2003/06/05 21:14:15  todorov
+* Type fixed
+*
 * Revision 1.31  2003/06/05 19:59:33  todorov
 * Fixed a few inefficiencies
 *
