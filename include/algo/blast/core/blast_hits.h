@@ -118,6 +118,15 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfoPtr query_info,
 Int2 BLAST_ReapHitlistByEvalue(BlastHSPListPtr hsp_list, 
                                BlastHitSavingOptionsPtr hit_options);
 
+/** Cleans out the NULLed out HSP's from the HSP array,
+ *	moving the BLAST_HSPPtr's up to fill in the gaps.
+ * @param hsp_array Array of pointers to HSP structures [in]
+ * @param hspcnt Size of the array [in]
+ * @return Number of remaining HSPs.
+*/
+Int4
+BlastHSPArrayPurge (BlastHSPPtr PNTR hsp_array, Int4 hspcnt);
+
 /** Adjust the query offsets in a list of HSPs. The original offsets are in
  * the concatenated query coordinates. The adjusted offsets are in 
  * individual query coordinates; the context is saved for each HSP to 

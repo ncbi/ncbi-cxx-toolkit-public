@@ -47,10 +47,6 @@ static char const rcsid[] = "$Id$";
 #include <blast_hits.h>
 #include <blast_util.h>
 
-extern Int4 
-HspArrayPurge (BlastHSPPtr PNTR hsp_array, Int4 hspcnt, 
-                     Boolean clear_num);
-
 void 
 BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list, 
    BlastQueryInfoPtr query_info, Boolean is_ooframe)
@@ -194,6 +190,40 @@ Int2 BLAST_ReapHitlistByEvalue(BlastHSPListPtr hsp_list,
    hsp_list->hspcnt = hsp_cnt;
 
    return 0;
+}
+
+/** Cleans out the NULLed out HSP's from the HSP array,
+ *	moving the BLAST_HSPPtr's up to fill in the gaps.
+ *	returns the number of valid HSP's.
+*/
+
+Int4
+BlastHSPArrayPurge (BlastHSPPtr PNTR hsp_array, Int4 hspcnt)
+
+{
+	Int4 index, index1;
+
+	if (hspcnt == 0 || hsp_array == NULL)
+		return 0;
+
+	index1 = 0;
+	for (index=0; index<hspcnt; index++)
+	{
+		if (hsp_array[index] != NULL)
+		{
+			hsp_array[index1] = hsp_array[index];
+			index1++;
+		}
+	}
+
+	for (index=index1; index<hspcnt; index++)
+	{
+		hsp_array[index] = NULL;
+	}
+
+	hspcnt = index1;
+
+	return index1;
 }
 
 /** Calculate number of identities in an HSP.
@@ -626,7 +656,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    }
     
    if (purge) {
-      index = HspArrayPurge(hsp_array, hspcnt, TRUE);
+      index = BlastHSPArrayPurge(hsp_array, hspcnt);
       hsp_list->hspcnt = index;	
    }
    
