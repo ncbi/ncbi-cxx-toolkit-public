@@ -65,20 +65,20 @@ ASN.1 data file of a given type from binary to text format. <a href="asntrans_cp
 asntrans.cpp </i> </a>, reads an ASN.1 Biostruc file in binary format and writes it out in
 text format.<p>
 
-The program begins by initializing the <i> diagnostic stream </i> to write errors to a
+The program begins by initializing the diagnostic stream to write errors to a
 local file called <i> errs.asntran</i>. First, the file is opened with the definition of
 <i> diag </i> as an instance of <i> CNcbiOfstream</i>. The subsequent call to
 <i>SetDiagStream</i> then establishes this stream as the one to log messages to.
 Exception handling, program tracing, and error logging are described in the
-<a href="../libs/err_msg.html">
+<a href="diag.html">
 Diagnostic Streams </a> section.<p>
 
 The next two blocks of code define the ASN.1 binary input and text output streams.
-The two streams are referenced in the program via <i> smart pointers</i>, with the
+The two streams are referenced in the program via <a href="cref.html"> auto_ptrs</a>, with the
 implementation sequence:
 
 <ol> 
- <li> <i>Instantiate</i> the smart pointer template with the type of stream it will reference;
+ <li> <i>Instantiate</i> the auto_ptr template with the type of stream it will reference;
  <li> <i>Declare</i> a pointer variable to that stream type;
  <li> <i>Instantiate</i> that stream pointer with a call to <i>new</i>;
  <li> <i>Associate</i> the referenced variable with the pointer using a call to <i> reset</i>
@@ -87,12 +87,12 @@ implementation sequence:
 The streams now need to have <i> CObjectStreams</i> associated with them to provide
 buffering of the data. These objects are also specialized to accomodate binary versus text
 formats as well as ASN, XML, and other specialized data formats. Accordingly, the program
-defines smart pointers for the appropriate object types, and associates them with their
+defines atuo_ptr for the appropriate object types, and associates them with their
 respective streams using the <i>reset</i> function.  <p>
 
-Note that in this case the objects stored in the smart pointers are "anonymous".  That is,
-they do not have independent variable names that can be accessed outside of the smart
-pointers, as these are not needed in this context.  Conversely, the stream objects
+Note that in this case the objects stored in the auto_ptrs are "anonymous".  That is,
+they do not have independent variable names that can be accessed outside of the auto_pts, 
+as these are not needed in this context.  Conversely, the stream objects
 <i>were</i> explicitly declared as they serve as arguments to the <i> CObjectStream</i>
 constructors.<p>
 
