@@ -8,7 +8,7 @@
 
 APP = demo_nwa
 SRC = nwa starter
-LIB = xncbi xalgo
+LIB = xalgo xncbi
 
-CXXFLAGS = $(ORIG_CXXFLAGS) $(FAST_CXXFLAGS)
-LDFLAGS  = $(ORIG_LDFLAGS) $(FAST_LDFLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS)
+LDFLAGS  = $(FAST_LDFLAGS)
