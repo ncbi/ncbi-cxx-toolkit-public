@@ -211,6 +211,10 @@ CUsrFeatDataLoader::GetRecords(const CSeq_id_Handle& idh,
                                EChoice choice)
 {
     TTSE_LockSet locks;
+    if ( choice < eOrphanAnnot ) {
+        // only orphan annotations are available - no Bioseqs in this DB
+        return locks;
+    }
     //
     // find out if we've already loaded annotations for this seq-id
     //
@@ -466,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/10/25 16:53:53  vasilche
+ * User features are orphan, not external.
+ *
  * Revision 1.9  2004/08/10 16:56:11  grichenk
  * Fixed dll export declarations, moved entry points to cpp.
  *
