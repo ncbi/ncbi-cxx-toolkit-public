@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.164  2002/10/18 17:15:33  thiessen
+* use wxNativeEncodingInfo to store fonts in registry
+*
 * Revision 1.163  2002/10/11 17:21:38  thiessen
 * initial Mac OSX build
 *
@@ -611,6 +614,7 @@
 #include <wx/confbase.h>
 #include <wx/fileconf.h>
 #include <wx/filename.h>
+#include <wx/fontutil.h>
 
 #include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_main_wxwin.hpp"
@@ -846,32 +850,38 @@ void Cn3DApp::InitRegistry(void)
     RegistrySetString(REG_QUALITY_SECTION, REG_PROJECTION_TYPE, "Perspective");
 
     // default font for OpenGL (structure window)
+    wxFont *font = wxFont::New(
 #if defined(__WXMSW__)
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 12);
+        12,
 #elif defined(__WXGTK__)
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
+        14,
 #elif defined(__WXMAC__)
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, 14);
+        14,
 #endif
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, wxSWISS);
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
-    RegistrySetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, wxBOLD);
-    RegistrySetBoolean(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, false);
-    RegistrySetString(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
+        wxSWISS, wxNORMAL, wxBOLD, false);
+    if (font && font->Ok())
+        RegistrySetString(REG_OPENGL_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO,
+			font->GetNativeFontInfoDesc().c_str());
+    else
+        ERR_POST(Error << "Can't create default structure window font");
+    if (font) delete font;
 
     // default font for sequence viewers
+    font = wxFont::New(
 #if defined(__WXMSW__)
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 10);
+        10,
 #elif defined(__WXGTK__)
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 14);
+        14,
 #elif defined(__WXMAC__)
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, 12);
+        12,
 #endif
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, wxROMAN);
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
-    RegistrySetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, wxNORMAL);
-    RegistrySetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
-    RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
+        wxROMAN, wxNORMAL, wxNORMAL, false);
+    if (font && font->Ok())
+        RegistrySetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO,
+			font->GetNativeFontInfoDesc().c_str());
+    else
+        ERR_POST(Error << "Can't create default sequence window font");
+    if (font) delete font;
 
     // default cache settings
     RegistrySetBoolean(REG_CACHE_SECTION, REG_CACHE_ENABLED, true);
@@ -1573,22 +1583,16 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
         return;
 
     // get initial font info from registry, and create wxFont
-    int size, family, style, weight;
-    bool underlined;
-    if (!RegistryGetInteger(section, REG_FONT_SIZE, &size) ||
-        !RegistryGetInteger(section, REG_FONT_FAMILY, &family) ||
-        !RegistryGetInteger(section, REG_FONT_STYLE, &style) ||
-        !RegistryGetInteger(section, REG_FONT_WEIGHT, &weight) ||
-        !RegistryGetBoolean(section, REG_FONT_UNDERLINED, &underlined) ||
-        !RegistryGetString(section, REG_FONT_FACENAME, &faceName))
+    std::string nativeFont;
+    RegistryGetString(section, REG_FONT_NATIVE_FONT_INFO, &nativeFont);
+    auto_ptr<wxFont> initialFont(wxFont::New(wxString(nativeFont.c_str())));
+    if (!initialFont.get() || !initialFont->Ok())
     {
         ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting up initial font");
         return;
     }
-    wxFont initialFont(size, family, style, weight, underlined,
-        (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str());
     wxFontData initialFontData;
-    initialFontData.SetInitialFont(initialFont);
+    initialFontData.SetInitialFont(*initialFont);
 
     // bring up font chooser dialog
 #if wxVERSION >= 2303
@@ -1604,13 +1608,7 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
         // set registry values appropriately
         wxFontData& fontData = dialog.GetFontData();
         wxFont font = fontData.GetChosenFont();
-        if (!RegistrySetInteger(section, REG_FONT_SIZE, font.GetPointSize()) ||
-            !RegistrySetInteger(section, REG_FONT_FAMILY, font.GetFamily()) ||
-            !RegistrySetInteger(section, REG_FONT_STYLE, font.GetStyle()) ||
-            !RegistrySetInteger(section, REG_FONT_WEIGHT, font.GetWeight()) ||
-            !RegistrySetBoolean(section, REG_FONT_UNDERLINED, font.GetUnderlined(), true) ||
-            !RegistrySetString(section, REG_FONT_FACENAME,
-                (font.GetFaceName().size() > 0) ? font.GetFaceName().c_str() : FONT_FACENAME_UNKNOWN.c_str()))
+        if (!RegistrySetString(section, REG_FONT_NATIVE_FONT_INFO, font.GetNativeFontInfoDesc().c_str()))
         {
             ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting registry data");
             return;
@@ -2275,25 +2273,27 @@ void Cn3DGLCanvas::SuspendRendering(bool suspend)
 void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
 {
     // get font info from registry, and create wxFont
-    int size, family, style, weight;
-    bool underlined;
-    std::string faceName;
-    if (!RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, &size) ||
-        !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, &family) ||
-        !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, &style) ||
-        !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
-        !RegistryGetBoolean(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
-        !RegistryGetString(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, &faceName))
+    std::string nativeFont;
+    if (!RegistryGetString(REG_OPENGL_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, &nativeFont))
     {
         ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - error getting font info from registry");
         return;
     }
 
     // create new font - assignment uses object reference to copy
-    if (fontScale != 1.0 && fontScale > 0.0) size *= fontScale;
-    wxFont newFont(size, family, style, weight, underlined,
-            (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str());
-    font = newFont;
+    wxNativeFontInfo fontInfo;
+    if (!fontInfo.FromString(nativeFont.c_str())) {
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - can't set wxNativeFontInfo");
+        return;
+    }
+    if (fontScale != 1.0 && fontScale > 0.0)
+        fontInfo.SetPointSize(fontScale * fontInfo.GetPointSize());
+    auto_ptr<wxFont> newFont(wxFont::New(fontInfo));
+    if (!newFont.get() || !newFont->Ok()) {
+        ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - can't get font from wxNativeFontInfo");
+        return;
+    }
+    font = *newFont;    // copy font
 
     // set up font display lists in dc and renderer
     if (!memoryDC.Ok()) {

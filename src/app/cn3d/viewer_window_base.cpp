@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/10/18 17:15:33  thiessen
+* use wxNativeEncodingInfo to store fonts in registry
+*
 * Revision 1.38  2002/10/15 22:04:09  thiessen
 * fix geom vltns bug
 *
@@ -247,23 +250,15 @@ ViewerWindowBase::~ViewerWindowBase(void)
 void ViewerWindowBase::SetupFontFromRegistry(void)
 {
     // get font info from registry, and create wxFont
-    int size, family, style, weight;
-    bool underlined;
-    std::string faceName;
-    wxFont *font;
-    if (!RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, &size) ||
-        !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, &family) ||
-        !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, &style) ||
-        !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
-        !RegistryGetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
-        !RegistryGetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, &faceName) ||
-        !(font = new wxFont(size, family, style, weight, underlined,
-            (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str())))
+    std::string nativeFont;
+    RegistryGetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_NATIVE_FONT_INFO, &nativeFont);
+    auto_ptr<wxFont> font(wxFont::New(wxString(nativeFont.c_str())));
+    if (!font.get() || !font->Ok())
     {
         ERR_POST(Error << "ViewerWindowBase::SetupFontFromRegistry() - error setting up font");
         return;
     }
-    viewerWidget->SetCharacterFont(font);
+    viewerWidget->SetCharacterFont(font.release());
 }
 
 void ViewerWindowBase::EnableBaseEditorMenuItems(bool enabled)

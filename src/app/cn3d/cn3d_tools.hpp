@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/10/18 17:15:33  thiessen
+* use wxNativeEncodingInfo to store fonts in registry
+*
 * Revision 1.22  2002/10/13 22:58:08  thiessen
 * add redo ability to editor
 *
@@ -197,13 +200,14 @@ static const std::string
     // font settings
     REG_OPENGL_FONT_SECTION = "Cn3D-4-Font-OpenGL",
     REG_SEQUENCE_FONT_SECTION = "Cn3D-4-Font-Sequence",
-    REG_FONT_SIZE = "FontPointSize",
-    REG_FONT_FAMILY = "FontFamily",
-    REG_FONT_STYLE = "FontStyle",
-    REG_FONT_WEIGHT = "FontWeight",
-    REG_FONT_UNDERLINED = "FontUnderlined",
-    REG_FONT_FACENAME = "FontFaceName",
-    FONT_FACENAME_UNKNOWN = "unknown",
+//    REG_FONT_SIZE = "FontPointSize",
+//    REG_FONT_FAMILY = "FontFamily",
+//    REG_FONT_STYLE = "FontStyle",
+//    REG_FONT_WEIGHT = "FontWeight",
+//    REG_FONT_UNDERLINED = "FontUnderlined",
+//    REG_FONT_FACENAME = "FontFaceName",
+//    FONT_FACENAME_UNKNOWN = "unknown",
+    REG_FONT_NATIVE_FONT_INFO = "NativeFontInfo",
     // cache settings
     REG_CACHE_SECTION = "Cn3D-4-Cache",
     REG_CACHE_ENABLED = "CacheEnabled",
