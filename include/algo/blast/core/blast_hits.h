@@ -198,7 +198,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
  * @param query_start Pointer to the start of the query sequence [in]
  * @param subject_start Pointer to the start of the subject sequence [in]
  * @param hit_options Hit saving options with e-value cut-off [in]
- * @param score_options Scoring options [in]
+ * @param score_params Scoring parameters [in]
  * @param query_info Query information structure, containing effective search
  *                   space(s) [in]
  * @param sbp Score block with Karlin-Altschul parameters [in]
@@ -207,7 +207,7 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
 Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingOptions* hit_options, 
-           const BlastScoringOptions* score_options, 
+           const BlastScoringParameters* score_params, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp);
 
 /** Calculate number of identities in an HSP.
@@ -316,7 +316,7 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
  * @param hit_options The options related to saving hits [in]
  * @param query_info Auxiliary query information [in]
  * @param sbp The statistical information [in]
- * @param score_options The scoring options [in]
+ * @param score_params Parameters related to scoring [in]
  * @param seq_src The BLAST database structure (for retrieving uncompressed
  *             sequence) [in]
  */
@@ -324,7 +324,7 @@ Int2
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
-   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src);
 
 /** Append one HSP list to the other. Discard lower scoring HSPs if there is

@@ -99,8 +99,8 @@ typedef struct BlastGapAlignStruct {
 } BlastGapAlignStruct;
 
 /** Initializes the BlastGapAlignStruct structure 
- * @param score_options Options related to scoring alignments [in]
- * @param ext_params Options and parameters related to gapped extension [in]
+ * @param score_params Parameters related to scoring alignments [in]
+ * @param ext_params parameters related to gapped extension [in]
  * @param max_subject_length Maximum length of any subject sequence (needed 
  *        for greedy extension allocation only) [in]
  * @param query_length The length of the query sequence [in]
@@ -108,7 +108,7 @@ typedef struct BlastGapAlignStruct {
  * @param gap_align_ptr The BlastGapAlignStruct structure [out]
 */
 Int2
-BLAST_GapAlignStructNew(const BlastScoringOptions* score_options, 
+BLAST_GapAlignStructNew(const BlastScoringParameters* score_params, 
    const BlastExtensionParameters* ext_params, 
    Uint4 max_subject_length, Int4 query_length, 
    BlastScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr);
@@ -132,7 +132,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStruct* gap_align);
  * @param subject The subject sequence [in]
  * @param gap_align A placeholder for gapped alignment information and 
  *        score block. [in] [out]
- * @param score_options Options related to scoring alignments [in]
+ * @param score_params Options related to scoring alignments [in]
  * @param ext_params Options related to alignment extension [in]
  * @param hit_params Options related to saving HSPs [in]
  * @param init_hitlist Contains all the initial hits [in]
@@ -142,7 +142,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
              BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 			    BLAST_SequenceBlk* subject,
 			    BlastGapAlignStruct* gap_align,
-			    const BlastScoringOptions* score_options, 
+			    const BlastScoringParameters* score_params, 
 			    const BlastExtensionParameters* ext_params,
 			    const BlastHitSavingParameters* hit_params,
 			    BlastInitHitList* init_hitlist,
@@ -162,7 +162,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  *                   the concatenated sequence [in]
  * @param subject The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_options Options related to scoring [in]
+ * @param score_params Options related to scoring [in]
  * @param ext_params Options and parameters related to extensions [in]
  * @param hit_params Options related to saving hits [in]
  * @param init_hitlist List of initial HSPs (offset pairs with additional 
@@ -173,7 +173,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
             BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
 		      BLAST_SequenceBlk* subject,
 		      BlastGapAlignStruct* gap_align,
-		      const BlastScoringOptions* score_options, 
+		      const BlastScoringParameters* score_parameters, 
 		      const BlastExtensionParameters* ext_params,
 		      const BlastHitSavingParameters* hit_params,
 		      BlastInitHitList* init_hitlist,
@@ -184,7 +184,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param gap_align The gapped alignment structure [in] [out]
- * @param score_options Scoring parameters [in]
+ * @param score_params Scoring parameters [in]
  * @param q_start Offset in query where to start alignment [in]
  * @param s_start Offset in subject where to start alignment [in]
  * @param query_length Maximal allowed extension in query [in]
@@ -193,7 +193,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
 Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, 
         Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
-        const BlastScoringOptions* score_options,
+        const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
 /** Greedy gapped alignment, with or without traceback.
@@ -206,7 +206,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
  * @param subject_length The subject sequence length [in]
  * @param gap_align The structure holding various information and memory 
  *        needed for gapped alignment [in] [out]
- * @param score_options Options related to scoring alignments [in]
+ * @param score_params Parameters related to scoring alignments [in]
  * @param q_off Starting offset in query [in]
  * @param s_off Starting offset in subject [in]
  * @param compressed_subject Is subject sequence compressed? [in]
@@ -215,7 +215,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program,
 Int2 
 BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject, 
    Int4 query_length, Int4 subject_length, BlastGapAlignStruct* gap_align,
-   const BlastScoringOptions* score_options, 
+   const BlastScoringParameters* score_params, 
    Int4 q_off, Int4 s_off, Boolean compressed_subject, Boolean do_traceback);
 
 /** Perform a gapped alignment with traceback for PHI BLAST
@@ -223,7 +223,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
  * @param query The query sequence [in]
  * @param subject The subject sequence [in]
  * @param gap_align The gapped alignment structure [in] [out]
- * @param score_options Scoring parameters [in]
+ * @param score_params Scoring parameters [in]
  * @param q_start Offset in query where to start alignment [in]
  * @param s_start Offset in subject where to start alignment [in]
  * @param query_length Maximal allowed extension in query [in]
@@ -232,7 +232,7 @@ BLAST_GreedyGappedAlignment(Uint1* query, Uint1* subject,
 Int2 PHIGappedAlignmentWithTraceback(Uint1 program, 
         Uint1* query, Uint1* subject, 
         BlastGapAlignStruct* gap_align, 
-        const BlastScoringOptions* score_options,
+        const BlastScoringParameters* score_params,
         Int4 q_start, Int4 s_start, Int4 query_length, Int4 subject_length);
 
 /** Convert initial HSP list to an HSP list: to be used in ungapped search.
@@ -258,7 +258,7 @@ Int2 BLAST_GetUngappedHSPList(BlastInitHitList* init_hitlist,
  *                   the concatenated sequence [in]
  * @param subject The subject sequence block [in]
  * @param gap_align The auxiliary structure for gapped alignment [in]
- * @param score_options Options related to scoring [in]
+ * @param score_params Options related to scoring [in]
  * @param ext_params Options and parameters related to extensions [in]
  * @param hit_params Options related to saving hits [in]
  * @param init_hitlist List of initial HSPs, including offset pairs and
@@ -269,7 +269,7 @@ Int2 PHIGetGappedScore (Uint1 program_number,
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
         BLAST_SequenceBlk* subject, 
         BlastGapAlignStruct* gap_align,
-        const BlastScoringOptions* score_options,
+        const BlastScoringParameters* score_params,
         const BlastExtensionParameters* ext_params,
         const BlastHitSavingParameters* hit_params,
         BlastInitHitList* init_hitlist,

@@ -65,6 +65,8 @@ int CDbBlastTraceback::SetupSearch()
     EProgram x_eProgram = GetOptionsHandle().GetOptions().GetProgram();
     
     if ( !m_ibQuerySetUpDone ) {
+        double scale_factor;
+
         x_ResetQueryDs();
         
         SetupQueryInfo(GetQueries(), GetOptionsHandle().GetOptions(), 
@@ -74,20 +76,25 @@ int CDbBlastTraceback::SetupSearch()
 
         m_ipScoreBlock = 0;
         
+        if (x_eProgram == eRPSBlast || x_eProgram == eRPSTblastn)
+            scale_factor = GetRPSInfo()->aux_info.scale_factor;
+        else
+            scale_factor = 1.0;
+
         Blast_Message* blast_message = NULL;
         
         /* Pass NULL lookup segments and output filtering locations pointers
            in the next call, to indicate that we don't need them here. */
         BLAST_MainSetUp(x_eProgram, GetQueryOpts(), GetScoringOpts(),
-            GetHitSaveOpts(), m_iclsQueries, m_iclsQueryInfo, NULL, NULL,
-            &m_ipScoreBlock, &blast_message);
+            GetHitSaveOpts(), m_iclsQueries, m_iclsQueryInfo, scale_factor,
+            NULL, NULL, &m_ipScoreBlock, &blast_message);
 
         if (blast_message)
             GetErrorMessage().push_back(blast_message);
 
         BLAST_GapAlignSetUp(x_eProgram, GetSeqSrc(), 
             GetScoringOpts(), GetEffLenOpts(), GetExtnOpts(), GetHitSaveOpts(),
-            m_iclsQueryInfo, m_ipScoreBlock,
+            m_iclsQueryInfo, m_ipScoreBlock, &m_ipScoringParams,
             &m_ipExtParams, &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
 
     }
@@ -102,8 +109,8 @@ CDbBlastTraceback::RunSearchEngine()
     status = 
         BLAST_ComputeTraceback(GetOptionsHandle().GetOptions().GetProgram(), 
             m_ipResults, m_iclsQueries, m_iclsQueryInfo,
-            GetSeqSrc(), m_ipGapAlign, GetScoringOpts(), m_ipExtParams, 
-            m_ipHitParams, m_ipEffLenParams, GetDbOpts(), GetProtOpts());
+            GetSeqSrc(), m_ipGapAlign, m_ipScoringParams, m_ipExtParams, 
+            m_ipHitParams, m_ipEffLenParams, GetDbOpts());
 }
 
 /// Resets query data structures; does only part of the work in the base 
@@ -132,6 +139,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/05/07 15:30:09  papadopo
+ * use BlastScoringParameters instead of BlastScoringOptions
+ *
  * Revision 1.6  2004/05/05 15:28:56  dondosha
  * Renamed functions in blast_hits.h accordance with new convention Blast_[StructName][Task]
  *
