@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/08/31 16:05:08  clausen
+ * Removed upper casing, changed output for vertical bars and lower case in chain.
+ *
  * Revision 6.8  2001/06/01 15:37:16  clausen
  * Changed CPDB_seq_id::Match() to use PCase instead of PNocase
  *
@@ -59,41 +62,50 @@
  * Revision 6.1  2000/11/30 18:39:26  ostell
  * added Textseq_id.Match
  *
- *
  * ===========================================================================
  */
 
-// standard includes
-
-// generated includes
 #include <objects/seqloc/PDB_seq_id.hpp>
 
-// generated classes
-
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 // destructor
 CPDB_seq_id::~CPDB_seq_id(void)
 {
+    return;
 }
+
 
 // comparison function
 bool CPDB_seq_id::Match(const CPDB_seq_id& psip2) const
 {
-    return GetChain() == psip2.GetChain() &&
+    return
+        GetChain() == psip2.GetChain()  &&
         PCase().Equals(GetMol(), psip2.GetMol());
 }
 
-    // format a FASTA style string
+
+// format a FASTA style string
 ostream& CPDB_seq_id::AsFastaString(ostream& s) const
 {
-	return s << Upcase((const string&) GetMol()) << '|' << char(GetChain());
+    // no Upcase per Ostell - Karl 7/2001 
+    // Output "VB" when chain id is ASCII 124 ('|').
+    // Output double upper case letter when chain is a lower case character.
+    char chain = (char) GetChain();
+
+    if (chain == '|') {
+        return s << GetMol().Get() << "|VB";
+    } else if ( islower(chain) != 0 ) {
+        return s << GetMol().Get() << '|'
+                 << (char) toupper(chain) << (char) toupper(chain);
+    } else if ( chain == '\0' ) {
+        return s << GetMol().Get() << "| ";
+    } 
+    return s << GetMol().Get() << '|' << chain; 
 }
 
+
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 61, chars: 1889, CRC32: b43cf5e3 */
