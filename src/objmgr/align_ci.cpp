@@ -70,8 +70,9 @@ const CSeq_align& CAlign_CI::operator* (void) const
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
     if (!m_MappedAlign) {
-        if ( annot.IsMapped() ) {
-            m_MappedAlign.Reset(&annot.GetMappedSeq_align());
+        if ( annot.GetMappingInfo().IsMapped() ) {
+            m_MappedAlign.Reset(&annot.GetMappingInfo().GetMappedSeq_align(
+                annot.GetAlign()));
         }
         else {
             m_MappedAlign.Reset(&annot.GetAlign());
@@ -86,8 +87,9 @@ const CSeq_align* CAlign_CI::operator-> (void) const
     const CAnnotObject_Ref& annot = Get();
     _ASSERT(annot.IsAlign());
     if (!m_MappedAlign) {
-        if ( annot.IsMapped() ) {
-            m_MappedAlign.Reset(&annot.GetMappedSeq_align());
+        if ( annot.GetMappingInfo().IsMapped() ) {
+            m_MappedAlign.Reset(&annot.GetMappingInfo().GetMappedSeq_align(
+                annot.GetAlign()));
         }
         else {
             m_MappedAlign.Reset(&annot.GetAlign());
@@ -118,6 +120,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.30  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

@@ -165,11 +165,10 @@ CMappedFeat::CMappedFeat(const CMappedFeat& feat)
 CMappedFeat& CMappedFeat::operator=(const CMappedFeat& feat)
 {
     if ( this != &feat ) {
-        m_Collector = feat.m_Collector;
-        m_FeatRef = feat.m_FeatRef;
-        m_OriginalSeq_feat = feat.m_OriginalSeq_feat;
-        m_MappedSeq_feat = feat.m_MappedSeq_feat;
-        m_MappedSeq_loc = feat.m_MappedSeq_loc;
+        m_OriginalFeat = feat.m_OriginalFeat;
+        m_MappingInfo = feat.m_MappingInfo;
+        m_MappedFeat = feat.m_MappedFeat;
+        m_OriginalSeq_feat_Lock.Reset();
     }
     return *this;
 }
@@ -182,50 +181,50 @@ CMappedFeat::~CMappedFeat(void)
 
 CSeq_feat_Handle CMappedFeat::GetSeq_feat_Handle(void) const
 {
-    return CSeq_feat_Handle(GetAnnot(),
-                            m_FeatRef->IsSNPFeat()?
-                            CSeq_feat_Handle::eType_Seq_annot_SNP_Info:
-                            CSeq_feat_Handle::eType_Seq_annot_Info,
-                            m_FeatRef->GetAnnotObjectIndex());
+    return m_OriginalFeat;
 }
 
 
 CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 {
-    return m_Collector->GetAnnot(*m_FeatRef);
+    return m_OriginalFeat.GetAnnot();
 }
 
 
 void CMappedFeat::Reset(void)
 {
-    m_Collector.Reset();
-    m_OriginalSeq_feat.Reset();
-    m_MappedSeq_feat.Reset();
-    m_MappedSeq_loc.Reset();
+    m_OriginalFeat = CSeq_feat_Handle();
+    m_MappingInfo.Reset();
+    m_MappedFeat.ResetRefs();
+    m_OriginalSeq_feat_Lock.Reset();
 }
 
 
 CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
                               const TIterator& annot)
 {
-    m_Collector.Reset(&collector);
-    _ASSERT(annot->IsFeat());
-    m_FeatRef = annot;
-    m_OriginalSeq_feat.Reset();
-    m_MappedSeq_feat.Reset();
-    m_MappedSeq_loc.Reset();
+    m_OriginalSeq_feat_Lock.Reset();
+
+    CAnnotObject_Ref feat_ref = *annot;
+    _ASSERT(feat_ref.IsFeat());
+    m_OriginalFeat = CSeq_feat_Handle(collector.GetAnnot(feat_ref),
+        feat_ref.IsSNPFeat() ?
+        CSeq_feat_Handle::eType_Seq_annot_SNP_Info :
+        CSeq_feat_Handle::eType_Seq_annot_Info,
+        feat_ref.GetAnnotObjectIndex(),
+        *collector.m_CreatedOriginal);
+    m_MappingInfo = feat_ref.GetMappingInfo();
+    m_MappedFeat.ResetRefs();
     return *this;
 }
 
 
-const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
+const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
 {
-    CSeq_feat& src = const_cast<CSeq_feat&>(GetOriginalFeature());
-    CSeq_loc& mapped_location = const_cast<CSeq_loc&>(GetLocation());
-    m_MappedSeq_feat = m_Collector->MakeMappedFeature(*m_FeatRef,
-                                                      src,
-                                                      mapped_location);
-    return *m_MappedSeq_feat;
+    CRef<CSeq_loc> mapped_location(&const_cast<CSeq_loc&>(GetLocation()));
+    return *m_MappedFeat.MakeMappedFeature(m_OriginalFeat,
+                                           m_MappingInfo,
+                                           *mapped_location);
 }
 
 
@@ -235,6 +234,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.38  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

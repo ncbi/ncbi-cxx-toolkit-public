@@ -140,8 +140,10 @@ public:
 
 private:
     friend class CMappedFeat;
+    friend class CCreatedFeat_Ref;
 
     const SSNP_Info& x_GetSNP_Info(void) const;
+    const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
     const CSeq_feat& x_GetSeq_feat(void) const;
 
     enum EAnnotInfoType {
@@ -152,11 +154,13 @@ private:
 
     CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                      EAnnotInfoType type,
-                     size_t index);
+                     size_t index,
+                     CCreatedFeat_Ref& created_ref);
 
-    CSeq_annot_Handle          m_Annot;
-    EAnnotInfoType             m_AnnotInfoType;
-    size_t                     m_Index;
+    CSeq_annot_Handle              m_Annot;
+    EAnnotInfoType                 m_AnnotInfoType;
+    size_t                         m_Index;
+    mutable CRef<CCreatedFeat_Ref> m_CreatedFeat;
 };
 
 
@@ -449,6 +453,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.9  2005/02/23 20:02:55  grichenk
 * Added operators ==, != and <. Bool GetXXXX also check IsSetXXXX.
 *

@@ -678,7 +678,8 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
     const CCdregion::TCode_break& src_cb = src_cd.GetCode_break();
     mapped_feat.Reset(new CSeq_feat);
     // Initialize mapped feature
-    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    ref.GetMappingInfo().InitializeMappedSeq_feat(*obj.GetFeatFast(),
+                                                  *mapped_feat);
     
     // Copy Cd-region, do not change the original one
     CRef<CSeqFeatData> new_data(new CSeqFeatData);
@@ -764,7 +765,8 @@ void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
     const CSeq_loc& src_anticodon = src_ext.GetTRNA().GetAnticodon();
     mapped_feat.Reset(new CSeq_feat);
     // Initialize mapped feature
-    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    ref.GetMappingInfo().InitializeMappedSeq_feat(*obj.GetFeatFast(),
+                                                  *mapped_feat);
     
     // Copy RNA-ext, do not change the original one
     CRef<CRNA_ref::TExt> new_ext(new CRNA_ref::TExt);
@@ -829,6 +831,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
 {
     Reset();
     CRef<CSeq_feat> mapped_feat;
+    CAnnotMapping_Info& map_info = ref.GetMappingInfo();
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
@@ -843,14 +846,14 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
             src_loc = &obj.GetFeatFast()->GetProduct();
         }
         Convert(*src_loc, &mapped_loc);
-        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Graph:
     {
         CRef<CSeq_loc> mapped_loc;
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
-        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     default:
@@ -860,7 +863,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
     SetMappedLocation(ref, loctype);
     if ( mapped_feat ) {
         // This will also set location and partial of the mapped feature
-        ref.SetMappedSeq_feat(*mapped_feat);
+        map_info.SetMappedSeq_feat(*mapped_feat);
     }
 }
 
@@ -868,33 +871,35 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
 void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
                                             ELocationType loctype)
 {
-    ref.SetProduct(loctype == eProduct);
-    ref.SetPartial(m_Partial || ref.IsPartial());
-    ref.SetTotalRange(m_TotalRange);
+    CAnnotMapping_Info& map_info = ref.GetMappingInfo();
+    map_info.SetProduct(loctype == eProduct);
+    map_info.SetPartial(m_Partial || map_info.IsPartial());
+    map_info.SetTotalRange(m_TotalRange);
     if ( IsSpecialLoc() ) {
         if ( m_DstFuzz_from || m_DstFuzz_to ) {
             CRef<CSeq_loc> mapped_loc;
             SetDstLoc(&mapped_loc);
-            ref.SetMappedSeq_loc(mapped_loc);
+            map_info.SetMappedSeq_loc(mapped_loc);
         }
         else {
             // special interval or point
-            ref.SetMappedSeq_id(GetDstId(),
-                                m_LastType == eMappedObjType_Seq_point);
-            ref.SetMappedStrand(m_LastStrand);
+            map_info.SetMappedSeq_id(GetDstId(),
+                m_LastType == eMappedObjType_Seq_point);
+            map_info.SetMappedStrand(m_LastStrand);
             if ( m_PartialFlag & fPartial_from ) {
-                ref.SetMappedPartial_from();
+                map_info.SetMappedPartial_from();
             }
             if ( m_PartialFlag & fPartial_to ) {
-                ref.SetMappedPartial_to();
+                map_info.SetMappedPartial_to();
             }
         }
         m_LastType = eMappedObjType_not_set;
     }
-    else if ( ref.GetMappedObjectType() == ref.eMappedObjType_not_set ) {
+    else if ( map_info.GetMappedObjectType() ==
+        CAnnotMapping_Info::eMappedObjType_not_set ) {
         if ( m_Partial ) {
             // set empty location
-            ref.SetMappedSeq_loc(m_Dst_loc_Empty);
+            map_info.SetMappedSeq_loc(m_Dst_loc_Empty);
         }
     }
 }
@@ -971,7 +976,8 @@ void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
     const CCdregion::TCode_break& src_cb = src_cd.GetCode_break();
     mapped_feat.Reset(new CSeq_feat);
     // Initialize mapped feature
-    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    ref.GetMappingInfo().InitializeMappedSeq_feat(*obj.GetFeatFast(),
+                                                  *mapped_feat);
     
     // Copy Cd-region, do not change the original one
     CRef<CSeqFeatData> new_data(new CSeqFeatData);
@@ -1049,7 +1055,8 @@ void CSeq_loc_Conversion_Set::ConvertRna(CAnnotObject_Ref& ref,
     const CSeq_loc& src_anticodon = src_ext.GetTRNA().GetAnticodon();
     mapped_feat.Reset(new CSeq_feat);
     // Initialize mapped feature
-    ref.InitializeMappedSeq_feat(*obj.GetFeatFast(), *mapped_feat);
+    ref.GetMappingInfo().InitializeMappedSeq_feat(*obj.GetFeatFast(),
+                                                  *mapped_feat);
     
     // Copy RNA-ext, do not change the original one
     CRef<CRNA_ref::TExt> new_ext(new CRNA_ref::TExt);
@@ -1120,6 +1127,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
         return;
     }
     CRef<CSeq_feat> mapped_feat;
+    CAnnotMapping_Info& map_info = ref.GetMappingInfo();
     const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
     switch ( obj.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
@@ -1136,31 +1144,31 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
             loc_index = 1;
         }
         Convert(*src_loc, &mapped_loc, loc_index);
-        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Graph:
     {
         CRef<CSeq_loc> mapped_loc;
         Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc, 0);
-        ref.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
+        map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
     case CSeq_annot::C_Data::e_Align:
     {
-        ref.SetMappedSeq_align_Cvts(*this);
+        map_info.SetMappedSeq_align_Cvts(*this);
         break;
     }
     default:
         _ASSERT(0);
         break;
     }
-    ref.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
-    ref.SetPartial(m_Partial || ref.IsPartial());
-    ref.SetTotalRange(m_TotalRange);
+    map_info.SetProduct(loctype == CSeq_loc_Conversion::eProduct);
+    map_info.SetPartial(m_Partial || map_info.IsPartial());
+    map_info.SetTotalRange(m_TotalRange);
     if ( mapped_feat ) {
         // This will also set location and partial of the mapped feature
-        ref.SetMappedSeq_feat(*mapped_feat);
+        map_info.SetMappedSeq_feat(*mapped_feat);
     }
 }
 
@@ -1586,6 +1594,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.51  2005/02/18 15:04:12  shomrat
 * IsPartialLeft changed to IsPartialStart
 *

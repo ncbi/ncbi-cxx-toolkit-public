@@ -59,24 +59,12 @@ struct SSNP_Info;
 struct SIdAnnotObjs;
 class CSeq_loc_Conversion;
 class CSeq_loc_Conversion_Set;
-// class CSeq_align_Mapper;
+class CSeq_feat_Handle;
 
-class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
+
+class NCBI_XOBJMGR_EXPORT CAnnotMapping_Info
 {
 public:
-    typedef CRange<TSeqPos> TRange;
-
-    CAnnotObject_Ref(void);
-    CAnnotObject_Ref(const CAnnotObject_Info& object);
-    CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_info, TSeqPos index);
-    ~CAnnotObject_Ref(void);
-
-    enum EObjectType {
-        eType_null,
-        eType_Seq_annot_Info,
-        eType_Seq_annot_SNP_Info
-    };
-
     enum FMappedFlags {
         fMapped_Partial      = 1<<0,
         fMapped_Product      = 1<<1,
@@ -94,6 +82,87 @@ public:
         eMappedObjType_Seq_loc_Conv_Set
     };
 
+    CAnnotMapping_Info(void);
+    CAnnotMapping_Info(Int1 mapped_flags, Int1 mapped_type, Int1 mapped_strand);
+
+    void Reset(void);
+
+    Int1 GetMappedFlags(void) const;
+    bool IsMapped(void) const;
+    bool IsPartial(void) const;
+    bool IsProduct(void) const;
+    EMappedObjectType GetMappedObjectType(void) const;
+
+    void SetPartial(bool value);
+    void SetProduct(bool product);
+
+    bool IsMappedLocation(void) const;
+    bool IsMappedProduct(void) const;
+    bool IsMappedPoint(void) const;
+
+    typedef CRange<TSeqPos> TRange;
+
+    TSeqPos GetFrom(void) const;
+    TSeqPos GetToOpen(void) const;
+    const TRange& GetTotalRange(void) const;
+    void SetTotalRange(const TRange& range);
+
+    ENa_strand GetMappedStrand(void) const;
+    void SetMappedStrand(ENa_strand strand);
+
+    const CSeq_loc& GetMappedSeq_loc(void) const;
+    const CSeq_id& GetMappedSeq_id(void) const;
+    const CSeq_feat& GetMappedSeq_feat(void) const;
+    const CSeq_align& GetMappedSeq_align(const CSeq_align& orig) const;
+
+    void SetMappedSeq_loc(CSeq_loc& loc);
+    void SetMappedSeq_loc(CSeq_loc* loc);
+    void SetMappedSeq_id(CSeq_id& id);
+    void SetMappedPoint(bool point);
+    void SetMappedPartial_from(void);
+    void SetMappedPartial_to(void);
+    void SetMappedSeq_id(CSeq_id& id, bool point);
+    void SetMappedSeq_feat(CSeq_feat& feat);
+    void SetMappedSeq_align(CSeq_align* align);
+    void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
+
+    bool MappedSeq_locNeedsUpdate(void) const;
+    void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
+    void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
+                             CRef<CSeq_point>&    pnt_ref,
+                             CRef<CSeq_interval>& int_ref) const;
+
+    // Copy non-modified members from original feature
+    // (all except partial flag and location/product, depending on mode.
+    void InitializeMappedSeq_feat(const CSeq_feat& src, CSeq_feat& dst) const;
+
+    void SetAnnotObjectRange(const TRange& range, bool product);
+
+private:
+    CRef<CObject>           m_MappedObject; // master sequence coordinates
+    TRange                  m_TotalRange;
+    Int1                    m_MappedFlags; // partial, product
+    Int1                    m_MappedObjectType;
+    Int1                    m_MappedStrand;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
+{
+public:
+    typedef CRange<TSeqPos> TRange;
+
+    CAnnotObject_Ref(void);
+    CAnnotObject_Ref(const CAnnotObject_Info& object);
+    CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_info, TSeqPos index);
+    ~CAnnotObject_Ref(void);
+
+    enum EObjectType {
+        eType_null,
+        eType_Seq_annot_Info,
+        eType_Seq_annot_SNP_Info
+    };
+
     EObjectType GetObjectType(void) const;
 
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
@@ -101,19 +170,6 @@ public:
 
     const CAnnotObject_Info& GetAnnotObject_Info(void) const;
     const SSNP_Info& GetSNP_Info(void) const;
-
-    EMappedObjectType GetMappedObjectType(void) const;
-
-    TSeqPos GetFrom(void) const;
-    TSeqPos GetToOpen(void) const;
-    const TRange& GetTotalRange(void) const;
-
-    bool IsPartial(void) const;
-    bool IsProduct(void) const;
-    bool IsMappedPoint(void) const;
-    void SetProduct(bool product);
-
-    ENa_strand GetMappedStrand(void) const;
 
     bool IsFeat(void) const;
     bool IsSNPFeat(void) const;
@@ -123,42 +179,11 @@ public:
     const CSeq_graph& GetGraph(void) const;
     const CSeq_align& GetAlign(void) const;
 
-    bool IsMapped(void) const;
-    bool IsMappedLocation(void) const;
-    bool IsMappedProduct(void) const;
-
-    bool MappedSeq_locNeedsUpdate(void) const;
-
-    const CSeq_loc& GetMappedSeq_loc(void) const;
-    const CSeq_id& GetMappedSeq_id(void) const;
-    const CSeq_feat& GetMappedSeq_feat(void) const;
-    const CSeq_align& GetMappedSeq_align(void) const;
-
     unsigned int GetAnnotObjectIndex(void) const;
 
-    void UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const;
-    void UpdateMappedSeq_loc(CRef<CSeq_loc>&      loc,
-                             CRef<CSeq_point>&    pnt_ref,
-                             CRef<CSeq_interval>& int_ref) const;
-    void SetAnnotObjectRange(const TRange& range, bool product);
-    void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
+    CAnnotMapping_Info& GetMappingInfo(void) const;
 
-    void SetPartial(bool value);
-    void SetMappedSeq_loc(CSeq_loc& loc);
-    void SetMappedSeq_loc(CSeq_loc* loc);
-    void SetMappedSeq_id(CSeq_id& id);
-    void SetMappedPoint(bool point);
-    void SetMappedPartial_from(void);
-    void SetMappedPartial_to(void);
-    void SetMappedSeq_id(CSeq_id& id, bool point);
-    void SetMappedSeq_align(CSeq_align* align);
-    void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
-    void SetTotalRange(const TRange& range);
-    void SetMappedStrand(ENa_strand strand);
-    void SetMappedSeq_feat(CSeq_feat& feat);
-    // Copy non-modified members from original feature
-    // (all except partial flag and location/product, depending on mode.
-    void InitializeMappedSeq_feat(const CSeq_feat& src, CSeq_feat& dst) const;
+    void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
 
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
@@ -166,14 +191,39 @@ public:
     bool operator!=(const CAnnotObject_Ref& ref) const; // sort by object
 
 private:
-    CConstRef<CObject>      m_Object;
-    CRef<CObject>           m_MappedObject; // master sequence coordinates
-    TRange                  m_TotalRange;
-    unsigned int            m_AnnotObject_Index;
-    Int1                    m_ObjectType; // EObjectType
-    Int1                    m_MappedFlags; // partial, product
-    Int1                    m_MappedObjectType;
-    Int1                    m_MappedStrand;
+    CConstRef<CObject>         m_Object;
+    unsigned int               m_AnnotObject_Index;
+    Int1                       m_ObjectType; // EObjectType
+    mutable CAnnotMapping_Info m_MappingInfo;
+};
+
+
+class CCreatedFeat_Ref : public CObject
+{
+public:
+    CCreatedFeat_Ref(void);
+    ~CCreatedFeat_Ref(void);
+
+    void ResetRefs(void);
+    void ReleaseRefsTo(CRef<CSeq_feat>*     feat,
+                       CRef<CSeq_loc>*      loc,
+                       CRef<CSeq_point>*    point,
+                       CRef<CSeq_interval>* interval);
+    void ResetRefsFrom(CRef<CSeq_feat>*     feat,
+                       CRef<CSeq_loc>*      loc,
+                       CRef<CSeq_point>*    point,
+                       CRef<CSeq_interval>* interval);
+
+    CConstRef<CSeq_feat> MakeOriginalFeature(const CSeq_feat_Handle& feat_h);
+    CConstRef<CSeq_loc>  MakeMappedLocation(const CAnnotMapping_Info& map_info);
+    CConstRef<CSeq_feat> MakeMappedFeature(const CSeq_feat_Handle& orig_feat,
+                                           const CAnnotMapping_Info& map_info,
+                                           CSeq_loc& mapped_location);
+private:
+    CRef<CSeq_feat>      m_CreatedSeq_feat;
+    CRef<CSeq_loc>       m_CreatedSeq_loc;
+    CRef<CSeq_point>     m_CreatedSeq_point;
+    CRef<CSeq_interval>  m_CreatedSeq_interval;
 };
 
 
@@ -207,12 +257,6 @@ private:
     SAnnotSelector& GetSelector(void);
     CScope::EGetBioseqFlag GetGetFlag(void) const;
     bool CanResolveId(const CSeq_id_Handle& idh, CBioseq_Handle& bh);
-
-    CConstRef<CSeq_feat> MakeOriginalFeature(const CAnnotObject_Ref& feat_ref);
-    CConstRef<CSeq_loc> MakeMappedLocation(const CAnnotObject_Ref& feat_ref);
-    CConstRef<CSeq_feat> MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
-                                           CSeq_feat& original_feat,
-                                           CSeq_loc& mapped_location);
 
     void x_Clear(void);
     void x_Initialize(const CBioseq_Handle& bioseq);
@@ -284,13 +328,8 @@ private:
     TAnnotSet                        m_AnnotSet;
 
     // Temporary objects to be re-used by iterators
-    CRef<CSeq_feat>      m_CreatedOriginalSeq_feat;
-    CRef<CSeq_point>     m_CreatedOriginalSeq_point;
-    CRef<CSeq_interval>  m_CreatedOriginalSeq_interval;
-    CRef<CSeq_feat>      m_CreatedMappedSeq_feat;
-    CRef<CSeq_loc>       m_CreatedMappedSeq_loc;
-    CRef<CSeq_point>     m_CreatedMappedSeq_point;
-    CRef<CSeq_interval>  m_CreatedMappedSeq_interval;
+    CRef<CCreatedFeat_Ref>  m_CreatedOriginal;
+    CRef<CCreatedFeat_Ref>  m_CreatedMapped;
     auto_ptr<TAnnotLocsSet> m_AnnotLocsSet;
 
     friend class CAnnotTypes_CI;
@@ -300,16 +339,276 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
+// CAnnotMapping_Info
+/////////////////////////////////////////////////////////////////////////////
+
+
+inline
+CAnnotMapping_Info::CAnnotMapping_Info(void)
+    : m_MappedFlags(0),
+      m_MappedObjectType(eMappedObjType_not_set),
+      m_MappedStrand(eNa_strand_unknown)
+{
+}
+
+
+inline
+CAnnotMapping_Info::CAnnotMapping_Info(Int1 mapped_flags,
+                                       Int1 mapped_type,
+                                       Int1 mapped_strand)
+    : m_MappedFlags(mapped_flags),
+      m_MappedObjectType(mapped_type),
+      m_MappedStrand(mapped_strand)
+{
+}
+
+
+inline
+TSeqPos CAnnotMapping_Info::GetFrom(void) const
+{
+    return m_TotalRange.GetFrom();
+}
+
+
+inline
+TSeqPos CAnnotMapping_Info::GetToOpen(void) const
+{
+    return m_TotalRange.GetToOpen();
+}
+
+
+inline
+const CAnnotMapping_Info::TRange&
+CAnnotMapping_Info::GetTotalRange(void) const
+{
+    return m_TotalRange;
+}
+
+
+inline
+void CAnnotMapping_Info::SetTotalRange(const TRange& range)
+{
+    m_TotalRange = range;
+}
+
+
+inline
+bool CAnnotMapping_Info::IsPartial(void) const
+{
+    return (m_MappedFlags & fMapped_Partial) != 0;
+}
+
+
+inline
+bool CAnnotMapping_Info::IsProduct(void) const
+{
+    return (m_MappedFlags & fMapped_Product) != 0;
+}
+
+
+inline
+ENa_strand CAnnotMapping_Info::GetMappedStrand(void) const
+{
+    return ENa_strand(m_MappedStrand);
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedStrand(ENa_strand strand)
+{
+    _ASSERT(IsMapped());
+    m_MappedStrand = strand;
+}
+
+
+inline
+Int1 CAnnotMapping_Info::GetMappedFlags(void) const
+{
+    return m_MappedFlags;
+}
+
+
+inline
+CAnnotMapping_Info::EMappedObjectType
+CAnnotMapping_Info::GetMappedObjectType(void) const
+{
+    return EMappedObjectType(m_MappedObjectType);
+}
+
+
+inline
+bool CAnnotMapping_Info::IsMapped(void) const
+{
+    _ASSERT((GetMappedObjectType() == eMappedObjType_not_set) ==
+            !m_MappedObject);
+    return GetMappedObjectType() != eMappedObjType_not_set;
+}
+
+
+inline
+bool CAnnotMapping_Info::MappedSeq_locNeedsUpdate(void) const
+{
+    return GetMappedObjectType() == eMappedObjType_Seq_id;
+}
+
+
+inline
+bool CAnnotMapping_Info::IsMappedLocation(void) const
+{
+    return IsMapped() && !IsProduct();
+}
+
+
+inline
+bool CAnnotMapping_Info::IsMappedProduct(void) const
+{
+    return IsMapped() && IsProduct();
+}
+
+
+inline
+const CSeq_loc& CAnnotMapping_Info::GetMappedSeq_loc(void) const
+{
+    if (GetMappedObjectType() == eMappedObjType_Seq_feat) {
+        return IsProduct() ? GetMappedSeq_feat().GetProduct()
+            : GetMappedSeq_feat().GetLocation();
+    }
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc);
+    return static_cast<const CSeq_loc&>(*m_MappedObject);
+}
+
+
+inline
+const CSeq_id& CAnnotMapping_Info::GetMappedSeq_id(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    return static_cast<const CSeq_id&>(*m_MappedObject);
+}
+
+
+inline
+const CSeq_feat& CAnnotMapping_Info::GetMappedSeq_feat(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_feat);
+    return static_cast<const CSeq_feat&>(*m_MappedObject);
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedSeq_loc(CSeq_loc* loc)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(loc);
+    m_MappedObjectType = loc ?
+        eMappedObjType_Seq_loc : eMappedObjType_not_set;
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedSeq_loc(CSeq_loc& loc)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&loc);
+    m_MappedObjectType = eMappedObjType_Seq_loc;
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedSeq_id(CSeq_id& id)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&id);
+    m_MappedObjectType = eMappedObjType_Seq_id;
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedPoint(bool point)
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    if ( point ) {
+        m_MappedFlags |= fMapped_Seq_point;
+    }
+    else {
+        m_MappedFlags &= ~fMapped_Seq_point;
+    }
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedPartial_from(void)
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    m_MappedFlags |= fMapped_Partial_from;
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedPartial_to(void)
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    m_MappedFlags |= fMapped_Partial_to;
+}
+
+
+inline
+bool CAnnotMapping_Info::IsMappedPoint(void) const
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    return (m_MappedFlags & fMapped_Seq_point) != 0;
+}
+
+
+inline
+void CAnnotMapping_Info::SetMappedSeq_id(CSeq_id& id, bool point)
+{
+    SetMappedSeq_id(id);
+    SetMappedPoint(point);
+}
+
+
+inline
+void CAnnotMapping_Info::SetPartial(bool partial)
+{
+    if ( partial ) {
+        m_MappedFlags |= fMapped_Partial;
+    }
+    else {
+        m_MappedFlags &= ~fMapped_Partial;
+    }
+}
+
+
+inline
+void CAnnotMapping_Info::SetProduct(bool product)
+{
+    if ( product ) {
+        m_MappedFlags |= fMapped_Product;
+    }
+    else {
+        m_MappedFlags &= ~fMapped_Product;
+    }
+}
+
+
+inline
+void CAnnotMapping_Info::SetAnnotObjectRange(const TRange& range, bool product)
+{
+    m_TotalRange = range;
+    SetProduct(product);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 // CAnnotObject_Ref
 /////////////////////////////////////////////////////////////////////////////
+
 
 inline
 CAnnotObject_Ref::CAnnotObject_Ref(void)
     : m_AnnotObject_Index(0),
       m_ObjectType(eType_null),
-      m_MappedFlags(0),
-      m_MappedObjectType(CSeq_loc::e_not_set),
-      m_MappedStrand(eNa_strand_unknown)
+      m_MappingInfo(0, CSeq_loc::e_not_set, eNa_strand_unknown)
 {
 }
 
@@ -324,34 +623,6 @@ inline
 CAnnotObject_Ref::EObjectType CAnnotObject_Ref::GetObjectType(void) const
 {
     return EObjectType(m_ObjectType);
-}
-
-
-inline
-TSeqPos CAnnotObject_Ref::GetFrom(void) const
-{
-    return m_TotalRange.GetFrom();
-}
-
-
-inline
-TSeqPos CAnnotObject_Ref::GetToOpen(void) const
-{
-    return m_TotalRange.GetToOpen();
-}
-
-
-inline
-const CAnnotObject_Ref::TRange& CAnnotObject_Ref::GetTotalRange(void) const
-{
-    return m_TotalRange;
-}
-
-
-inline
-void CAnnotObject_Ref::SetTotalRange(const TRange& range)
-{
-    m_TotalRange = range;
 }
 
 
@@ -379,208 +650,9 @@ const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 
 
 inline
-bool CAnnotObject_Ref::IsPartial(void) const
-{
-    return (m_MappedFlags & fMapped_Partial) != 0;
-}
-
-
-inline
-bool CAnnotObject_Ref::IsProduct(void) const
-{
-    return (m_MappedFlags & fMapped_Product) != 0;
-}
-
-
-inline
-ENa_strand CAnnotObject_Ref::GetMappedStrand(void) const
-{
-    return ENa_strand(m_MappedStrand);
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedStrand(ENa_strand strand)
-{
-    _ASSERT(IsMapped());
-    m_MappedStrand = strand;
-}
-
-
-inline
-CAnnotObject_Ref::EMappedObjectType
-CAnnotObject_Ref::GetMappedObjectType(void) const
-{
-    return EMappedObjectType(m_MappedObjectType);
-}
-
-
-inline
-bool CAnnotObject_Ref::IsMapped(void) const
-{
-    _ASSERT((GetMappedObjectType() == eMappedObjType_not_set) ==
-            !m_MappedObject);
-    return GetMappedObjectType() != eMappedObjType_not_set;
-}
-
-
-inline
-bool CAnnotObject_Ref::MappedSeq_locNeedsUpdate(void) const
-{
-    return GetMappedObjectType() == eMappedObjType_Seq_id;
-}
-
-
-inline
-bool CAnnotObject_Ref::IsMappedLocation(void) const
-{
-    return IsMapped() && !IsProduct();
-}
-
-
-inline
-bool CAnnotObject_Ref::IsMappedProduct(void) const
-{
-    return IsMapped() && IsProduct();
-}
-
-
-inline
-const CSeq_loc& CAnnotObject_Ref::GetMappedSeq_loc(void) const
-{
-    if (GetMappedObjectType() == eMappedObjType_Seq_feat) {
-        return IsProduct() ? GetMappedSeq_feat().GetProduct()
-            : GetMappedSeq_feat().GetLocation();
-    }
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_loc);
-    return static_cast<const CSeq_loc&>(*m_MappedObject);
-}
-
-
-inline
-const CSeq_id& CAnnotObject_Ref::GetMappedSeq_id(void) const
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
-    return static_cast<const CSeq_id&>(*m_MappedObject);
-}
-
-
-inline
-const CSeq_feat& CAnnotObject_Ref::GetMappedSeq_feat(void) const
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_feat);
-    return static_cast<const CSeq_feat&>(*m_MappedObject);
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedSeq_loc(CSeq_loc* loc)
-{
-    _ASSERT(!IsMapped());
-    m_MappedObject.Reset(loc);
-    m_MappedObjectType = loc? eMappedObjType_Seq_loc: eMappedObjType_not_set;
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedSeq_loc(CSeq_loc& loc)
-{
-    _ASSERT(!IsMapped());
-    m_MappedObject.Reset(&loc);
-    m_MappedObjectType = eMappedObjType_Seq_loc;
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id)
-{
-    _ASSERT(!IsMapped());
-    m_MappedObject.Reset(&id);
-    m_MappedObjectType = eMappedObjType_Seq_id;
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedPoint(bool point)
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
-    if ( point ) {
-        m_MappedFlags |= fMapped_Seq_point;
-    }
-    else {
-        m_MappedFlags &= ~fMapped_Seq_point;
-    }
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedPartial_from(void)
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
-    m_MappedFlags |= fMapped_Partial_from;
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedPartial_to(void)
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
-    m_MappedFlags |= fMapped_Partial_to;
-}
-
-
-inline
-bool CAnnotObject_Ref::IsMappedPoint(void) const
-{
-    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
-    return (m_MappedFlags & fMapped_Seq_point) != 0;
-}
-
-
-inline
-void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id, bool point)
-{
-    SetMappedSeq_id(id);
-    SetMappedPoint(point);
-}
-
-
-inline
 bool CAnnotObject_Ref::IsSNPFeat(void) const
 {
     return GetObjectType() == eType_Seq_annot_SNP_Info;
-}
-
-
-inline
-void CAnnotObject_Ref::SetPartial(bool partial)
-{
-    if ( partial ) {
-        m_MappedFlags |= fMapped_Partial;
-    }
-    else {
-        m_MappedFlags &= ~fMapped_Partial;
-    }
-}
-
-
-inline
-void CAnnotObject_Ref::SetProduct(bool product)
-{
-    if ( product ) {
-        m_MappedFlags |= fMapped_Product;
-    }
-    else {
-        m_MappedFlags &= ~fMapped_Product;
-    }
-}
-
-
-inline
-void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range, bool product)
-{
-    m_TotalRange = range;
-    SetProduct(product);
 }
 
 
@@ -607,6 +679,13 @@ bool CAnnotObject_Ref::operator!=(const CAnnotObject_Ref& ref) const
 {
     return ( m_Object != ref.m_Object  ||
         GetAnnotObjectIndex() != ref.GetAnnotObjectIndex() );
+}
+
+
+inline
+CAnnotMapping_Info& CAnnotObject_Ref::GetMappingInfo(void) const
+{
+    return m_MappingInfo;
 }
 
 
@@ -656,6 +735,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.23  2005/02/16 18:51:30  vasilche
 * Fixed feature iteration by location in fresh new scope.
 *

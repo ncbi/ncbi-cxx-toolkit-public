@@ -37,6 +37,7 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_feat_handle.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -79,56 +80,34 @@ BEGIN_SCOPE(objects)
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CAnnotObject_Ref
+// CAnnotMapping_Info
 /////////////////////////////////////////////////////////////////////////////
 
 
-CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
-    : m_Object(&object.GetSeq_annot_Info()),
-      m_AnnotObject_Index(object.GetSeq_annot_Info()
-                          .GetAnnotObjectIndex(object)),
-      m_ObjectType(eType_Seq_annot_Info),
-      m_MappedFlags(0),
-      m_MappedObjectType(eMappedObjType_not_set),
-      m_MappedStrand(eNa_strand_unknown)
-{
-    if ( object.IsFeat() ) {
-        const CSeq_feat& feat = *object.GetFeatFast();
-        if ( feat.IsSetPartial() ) {
-            SetPartial(feat.GetPartial());
-        }
-    }
-}
-
-
-CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
-                                   TSeqPos index)
-    : m_Object(&snp_annot),
-      m_AnnotObject_Index(index),
-      m_ObjectType(eType_Seq_annot_SNP_Info),
-      m_MappedFlags(0),
-      m_MappedObjectType(eMappedObjType_not_set),
-      m_MappedStrand(eNa_strand_unknown)
-{
-}
-
-
-void CAnnotObject_Ref::ResetLocation(void)
+void CAnnotMapping_Info::Reset(void)
 {
     m_TotalRange = TRange::GetEmpty();
     m_MappedObject.Reset();
     m_MappedObjectType = eMappedObjType_not_set;
     m_MappedStrand = eNa_strand_unknown;
     m_MappedFlags = 0;
-    if ( !IsSNPFeat() ) {
-        const CAnnotObject_Info& object = GetAnnotObject_Info();
-        if ( object.IsFeat() ) {
-            const CSeq_feat& feat = *object.GetFeatFast();
-            if ( feat.IsSetPartial() ) {
-                SetPartial(feat.GetPartial());
-            }
-        }
-    }
+}
+
+
+void CAnnotMapping_Info::SetMappedSeq_align(CSeq_align* align)
+{
+    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_loc_Conv_Set);
+    m_MappedObject.Reset(align);
+    m_MappedObjectType =
+        align? eMappedObjType_Seq_align: eMappedObjType_not_set;
+}
+
+
+void CAnnotMapping_Info::SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts)
+{
+    _ASSERT(!IsMapped());
+    m_MappedObject.Reset(&cvts);
+    m_MappedObjectType = eMappedObjType_Seq_loc_Conv_Set;
 }
 
 
@@ -144,78 +123,8 @@ const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
 }
 
 
-bool CAnnotObject_Ref::IsFeat(void) const
-{
-    return GetObjectType() == eType_Seq_annot_SNP_Info ||
-        (GetObjectType() == eType_Seq_annot_Info &&
-         GetAnnotObject_Info().IsFeat());
-}
-
-
-bool CAnnotObject_Ref::IsGraph(void) const
-{
-    return GetObjectType() == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsGraph();
-}
-
-
-bool CAnnotObject_Ref::IsAlign(void) const
-{
-    return GetObjectType() == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsAlign();
-}
-
-
-const CSeq_feat& CAnnotObject_Ref::GetFeat(void) const
-{
-    return GetAnnotObject_Info().GetFeat();
-}
-
-
-const CSeq_graph& CAnnotObject_Ref::GetGraph(void) const
-{
-    return GetAnnotObject_Info().GetGraph();
-}
-
-
-const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
-{
-    return GetAnnotObject_Info().GetAlign();
-}
-
-
-inline
-void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
-                                    CSeq_loc_Conversion* cvt)
-{
-    _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
-    TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
-    ENa_strand src_strand =
-        snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
-    if ( !cvt ) {
-        SetTotalRange(TRange(src_from, src_to));
-        SetMappedSeq_id(const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().
-                                             GetSeq_id()),
-                        src_from == src_to);
-        SetMappedStrand(src_strand);
-        return;
-    }
-
-    cvt->Reset();
-    if ( src_from == src_to ) {
-        // point
-        _VERIFY(cvt->ConvertPoint(src_from, src_strand));
-    }
-    else {
-        // interval
-        _VERIFY(cvt->ConvertInterval(src_from, src_to, src_strand));
-    }
-    cvt->SetMappedLocation(*this, CSeq_loc_Conversion::eLocation);
-}
-
-
 const CSeq_align&
-CAnnotObject_Ref::GetMappedSeq_align(void) const
+CAnnotMapping_Info::GetMappedSeq_align(const CSeq_align& orig) const
 {
     if (m_MappedObjectType == eMappedObjType_Seq_loc_Conv_Set) {
         // Map the alignment, replace conv-set with the mapped align
@@ -224,8 +133,8 @@ CAnnotObject_Ref::GetMappedSeq_align(void) const
             *CTypeConverter<CSeq_loc_Conversion_Set>::
             SafeCast(m_MappedObject.GetPointer()));
         CRef<CSeq_align> dst;
-        cvts.Convert(GetAlign(), &dst);
-        const_cast<CAnnotObject_Ref&>(*this).
+        cvts.Convert(orig, &dst);
+        const_cast<CAnnotMapping_Info&>(*this).
             SetMappedSeq_align(dst.GetPointerOrNull());
     }
     _ASSERT(m_MappedObjectType == eMappedObjType_Seq_align);
@@ -234,24 +143,7 @@ CAnnotObject_Ref::GetMappedSeq_align(void) const
 }
 
 
-void CAnnotObject_Ref::SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts)
-{
-    _ASSERT(!IsMapped());
-    m_MappedObject.Reset(&cvts);
-    m_MappedObjectType = eMappedObjType_Seq_loc_Conv_Set;
-}
-
-
-void CAnnotObject_Ref::SetMappedSeq_align(CSeq_align* align)
-{
-    _ASSERT(m_MappedObjectType == eMappedObjType_Seq_loc_Conv_Set);
-    m_MappedObject.Reset(align);
-    m_MappedObjectType =
-        align? eMappedObjType_Seq_align: eMappedObjType_not_set;
-}
-
-
-void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
+void CAnnotMapping_Info::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
 {
     _ASSERT(MappedSeq_locNeedsUpdate());
     
@@ -265,7 +157,7 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
     if ( IsMappedPoint() ) {
         CSeq_point& point = loc->SetPnt();
         point.SetId(id);
-        point.SetPoint(m_TotalRange.GetFrom());
+        point.SetPoint(GetFrom());
         if ( GetMappedStrand() != eNa_strand_unknown )
             point.SetStrand(GetMappedStrand());
         else
@@ -280,8 +172,8 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
     else {
         CSeq_interval& interval = loc->SetInt();
         interval.SetId(id);
-        interval.SetFrom(GetTotalRange().GetFrom());
-        interval.SetTo(GetTotalRange().GetTo());
+        interval.SetFrom(m_TotalRange.GetFrom());
+        interval.SetTo(m_TotalRange.GetTo());
         if ( GetMappedStrand() != eNa_strand_unknown )
             interval.SetStrand(GetMappedStrand());
         else
@@ -302,9 +194,9 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
 }
 
 
-void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
-                                           CRef<CSeq_point>& pnt_ref,
-                                           CRef<CSeq_interval>& int_ref) const
+void CAnnotMapping_Info::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
+                                             CRef<CSeq_point>& pnt_ref,
+                                             CRef<CSeq_interval>& int_ref) const
 {
     _ASSERT(MappedSeq_locNeedsUpdate());
 
@@ -364,6 +256,235 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
 }
 
 
+void CAnnotMapping_Info::SetMappedSeq_feat(CSeq_feat& feat)
+{
+    _ASSERT( IsMapped() );
+    _ASSERT(GetMappedObjectType() != eMappedObjType_Seq_feat);
+
+    // Fill mapped location and product in the mapped feature
+    CRef<CSeq_loc> mapped_loc;
+    if ( MappedSeq_locNeedsUpdate() ) {
+        mapped_loc.Reset(new CSeq_loc);
+        UpdateMappedSeq_loc(mapped_loc);
+    }
+    else {
+        mapped_loc.Reset(&const_cast<CSeq_loc&>(GetMappedSeq_loc()));
+    }
+    if ( IsMappedLocation() ) {
+        feat.SetLocation(*mapped_loc);
+    }
+    else if ( IsMappedProduct() ) {
+        feat.SetProduct(*mapped_loc);
+    }
+    if ( IsPartial() ) {
+        feat.SetPartial(true);
+    }
+    else {
+        feat.ResetPartial();
+    }
+
+    m_MappedObject.Reset(&feat);
+    m_MappedObjectType = eMappedObjType_Seq_feat;
+}
+
+
+void CAnnotMapping_Info::InitializeMappedSeq_feat(const CSeq_feat& src,
+                                                  CSeq_feat& dst) const
+{
+    CSeq_feat& src_nc = const_cast<CSeq_feat&>(src);
+    if ( src_nc.IsSetId() )
+        dst.SetId(src_nc.SetId());
+    else
+        dst.ResetId();
+
+    dst.SetData(src_nc.SetData());
+
+    if ( src_nc.IsSetExcept() )
+        dst.SetExcept(src_nc.GetExcept());
+    else
+        dst.ResetExcept();
+    
+    if ( src_nc.IsSetComment() )
+        dst.SetComment(src_nc.GetComment());
+    else
+        dst.ResetComment();
+
+    if ( src_nc.IsSetQual() )
+        dst.SetQual() = src_nc.GetQual();
+    else
+        dst.ResetQual();
+
+    if ( src_nc.IsSetTitle() )
+        dst.SetTitle(src_nc.GetTitle());
+    else
+        dst.ResetTitle();
+
+    if ( src_nc.IsSetExt() )
+        dst.SetExt(src_nc.SetExt());
+    else
+        dst.ResetExt();
+
+    if ( src_nc.IsSetCit() )
+        dst.SetCit(src_nc.SetCit());
+    else
+        dst.ResetCit();
+
+    if ( src_nc.IsSetExp_ev() )
+        dst.SetExp_ev(src_nc.GetExp_ev());
+    else
+        dst.ResetExp_ev();
+
+    if ( src_nc.IsSetXref() )
+        dst.SetXref() = src_nc.SetXref();
+    else
+        dst.ResetXref();
+
+    if ( src_nc.IsSetDbxref() )
+        dst.SetDbxref() = src_nc.SetDbxref();
+    else
+        dst.ResetDbxref();
+
+    if ( src_nc.IsSetPseudo() )
+        dst.SetPseudo(src_nc.GetPseudo());
+    else
+        dst.ResetPseudo();
+
+    if ( src_nc.IsSetExcept_text() )
+        dst.SetExcept_text(src_nc.GetExcept_text());
+    else
+        dst.ResetExcept_text();
+
+    if ( IsProduct() ) {
+        // Safe to re-use location
+        dst.SetLocation(src_nc.SetLocation());
+    }
+    else {
+        // Safe to re-use product
+        if ( src_nc.IsSetProduct() ) {
+            dst.SetProduct(src_nc.SetProduct());
+        }
+        else {
+            dst.ResetProduct();
+        }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CAnnotObject_Ref
+/////////////////////////////////////////////////////////////////////////////
+
+
+CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
+    : m_Object(&object.GetSeq_annot_Info()),
+      m_AnnotObject_Index(object.GetSeq_annot_Info()
+                          .GetAnnotObjectIndex(object)),
+      m_ObjectType(eType_Seq_annot_Info)
+{
+    if ( object.IsFeat() ) {
+        const CSeq_feat& feat = *object.GetFeatFast();
+        if ( feat.IsSetPartial() ) {
+            m_MappingInfo.SetPartial(feat.GetPartial());
+        }
+    }
+}
+
+
+CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
+                                   TSeqPos index)
+    : m_Object(&snp_annot),
+      m_AnnotObject_Index(index),
+      m_ObjectType(eType_Seq_annot_SNP_Info)
+{
+}
+
+
+void CAnnotObject_Ref::ResetLocation(void)
+{
+    m_MappingInfo.Reset();
+    if ( !IsSNPFeat() ) {
+        const CAnnotObject_Info& object = GetAnnotObject_Info();
+        if ( object.IsFeat() ) {
+            const CSeq_feat& feat = *object.GetFeatFast();
+            if ( feat.IsSetPartial() ) {
+                m_MappingInfo.SetPartial(feat.GetPartial());
+            }
+        }
+    }
+}
+
+
+bool CAnnotObject_Ref::IsFeat(void) const
+{
+    return GetObjectType() == eType_Seq_annot_SNP_Info ||
+        (GetObjectType() == eType_Seq_annot_Info &&
+         GetAnnotObject_Info().IsFeat());
+}
+
+
+bool CAnnotObject_Ref::IsGraph(void) const
+{
+    return GetObjectType() == eType_Seq_annot_Info &&
+        GetAnnotObject_Info().IsGraph();
+}
+
+
+bool CAnnotObject_Ref::IsAlign(void) const
+{
+    return GetObjectType() == eType_Seq_annot_Info &&
+        GetAnnotObject_Info().IsAlign();
+}
+
+
+const CSeq_feat& CAnnotObject_Ref::GetFeat(void) const
+{
+    return GetAnnotObject_Info().GetFeat();
+}
+
+
+const CSeq_graph& CAnnotObject_Ref::GetGraph(void) const
+{
+    return GetAnnotObject_Info().GetGraph();
+}
+
+
+const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
+{
+    return GetAnnotObject_Info().GetAlign();
+}
+
+
+inline
+void CAnnotObject_Ref::SetSNP_Point(const SSNP_Info& snp,
+                                    CSeq_loc_Conversion* cvt)
+{
+    _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
+    TSeqPos src_from = snp.GetFrom(), src_to = snp.GetTo();
+    ENa_strand src_strand =
+        snp.MinusStrand()? eNa_strand_minus: eNa_strand_plus;
+    if ( !cvt ) {
+        m_MappingInfo.SetTotalRange(TRange(src_from, src_to));
+        m_MappingInfo.SetMappedSeq_id(
+            const_cast<CSeq_id&>(GetSeq_annot_SNP_Info().
+            GetSeq_id()),
+            src_from == src_to);
+        m_MappingInfo.SetMappedStrand(src_strand);
+        return;
+    }
+
+    cvt->Reset();
+    if ( src_from == src_to ) {
+        // point
+        _VERIFY(cvt->ConvertPoint(src_from, src_strand));
+    }
+    else {
+        // interval
+        _VERIFY(cvt->ConvertInterval(src_from, src_to, src_strand));
+    }
+    cvt->SetMappedLocation(*this, CSeq_loc_Conversion::eLocation);
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CAnnotObject_Ref comparision
 /////////////////////////////////////////////////////////////////////////////
@@ -381,9 +502,11 @@ struct CAnnotObjectType_Less
 const CSeq_loc& CAnnotObjectType_Less::GetLocation(const CAnnotObject_Ref& ref,
                                                    const CSeq_feat& feat)
 {
-    if ( ref.GetMappedObjectType() == ref.eMappedObjType_Seq_loc &&
-         !ref.IsProduct() ) {
-        return ref.GetMappedSeq_loc();
+    CAnnotMapping_Info& map_info = ref.GetMappingInfo();
+    if ( map_info.GetMappedObjectType() ==
+        CAnnotMapping_Info::eMappedObjType_Seq_loc &&
+        !map_info.IsProduct() ) {
+        return map_info.GetMappedSeq_loc();
     }
     else {
         return feat.GetLocation();
@@ -493,16 +616,16 @@ struct CAnnotObject_Less
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
         {
-            TSeqPos x_from = x.GetFrom();
-            TSeqPos y_from = y.GetFrom();
-            TSeqPos x_to = x.GetToOpen();
-            TSeqPos y_to = y.GetToOpen();
+            TSeqPos x_from = x.GetMappingInfo().GetFrom();
+            TSeqPos y_from = y.GetMappingInfo().GetFrom();
+            TSeqPos x_to = x.GetMappingInfo().GetToOpen();
+            TSeqPos y_to = y.GetMappingInfo().GetToOpen();
             // from > to = circular location.
             // Any circular location is less than non-circular one.
             // If both are circular, compare in normal way.
             if ( (x_from > x_to || y_from > y_to)  &&
                     (x_from > x_to) != (y_from > y_to) ) {
-                return x.GetTotalRange().Empty();
+                return x.GetMappingInfo().GetTotalRange().Empty();
             }
             // smallest left extreme first
             if ( x_from != y_from ) {
@@ -526,16 +649,16 @@ struct CAnnotObject_LessReverse
         {
             {
                 // largest right extreme first
-                TSeqPos x_to = x.GetToOpen();
-                TSeqPos y_to = y.GetToOpen();
+                TSeqPos x_to = x.GetMappingInfo().GetToOpen();
+                TSeqPos y_to = y.GetMappingInfo().GetToOpen();
                 if ( x_to != y_to ) {
                     return x_to > y_to;
                 }
             }
             {
                 // longest feature first
-                TSeqPos x_from = x.GetFrom();
-                TSeqPos y_from = y.GetFrom();
+                TSeqPos x_from = x.GetMappingInfo().GetFrom();
+                TSeqPos y_from = y.GetMappingInfo().GetFrom();
                 if ( x_from != y_from ) {
                     return x_from < y_from;
                 }
@@ -544,6 +667,179 @@ struct CAnnotObject_LessReverse
         }
     CAnnotObjectType_Less type_less;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CCreatedFeat_Ref
+/////////////////////////////////////////////////////////////////////////////
+
+
+CCreatedFeat_Ref::CCreatedFeat_Ref(void)
+{
+}
+
+
+CCreatedFeat_Ref::~CCreatedFeat_Ref(void)
+{
+}
+
+
+void CCreatedFeat_Ref::ResetRefs(void)
+{
+    m_CreatedSeq_feat.Reset();
+    m_CreatedSeq_loc.Reset();
+    m_CreatedSeq_point.Reset();
+    m_CreatedSeq_interval.Reset();
+}
+
+
+void CCreatedFeat_Ref::ReleaseRefsTo(CRef<CSeq_feat>*     feat,
+                                     CRef<CSeq_loc>*      loc,
+                                     CRef<CSeq_point>*    point,
+                                     CRef<CSeq_interval>* interval)
+{
+    if (feat) {
+        m_CreatedSeq_feat.AtomicReleaseTo(*feat);
+    }
+    if (loc) {
+        m_CreatedSeq_loc.AtomicReleaseTo(*loc);
+    }
+    if (point) {
+        m_CreatedSeq_point.AtomicReleaseTo(*point);
+    }
+    if (interval) {
+        m_CreatedSeq_interval.AtomicReleaseTo(*interval);
+    }
+}
+
+
+void CCreatedFeat_Ref::ResetRefsFrom(CRef<CSeq_feat>*     feat,
+                                     CRef<CSeq_loc>*      loc,
+                                     CRef<CSeq_point>*    point,
+                                     CRef<CSeq_interval>* interval)
+{
+    if (feat) {
+        m_CreatedSeq_feat.AtomicResetFrom(*feat);
+    }
+    if (loc) {
+        m_CreatedSeq_loc.AtomicResetFrom(*loc);
+    }
+    if (point) {
+        m_CreatedSeq_point.AtomicResetFrom(*point);
+    }
+    if (interval) {
+        m_CreatedSeq_interval.AtomicResetFrom(*interval);
+    }
+}
+
+
+CConstRef<CSeq_feat>
+CCreatedFeat_Ref::MakeOriginalFeature(const CSeq_feat_Handle& feat_h)
+{
+    CConstRef<CSeq_feat> ret;
+    if ( feat_h.IsTableSNP() ) {
+        const CSeq_annot_SNP_Info snp_annot = feat_h.x_GetSNP_annot_Info();
+        const SSNP_Info& snp_info = feat_h.x_GetSNP_Info();
+        CRef<CSeq_feat> orig_feat;
+        CRef<CSeq_point> created_point;
+        CRef<CSeq_interval> created_interval;
+        ReleaseRefsTo(&orig_feat, 0, &created_point, &created_interval);
+        snp_info.UpdateSeq_feat(orig_feat,
+                                created_point,
+                                created_interval,
+                                snp_annot);
+        ret = orig_feat;
+        ResetRefsFrom(&orig_feat, 0, &created_point, &created_interval);
+    }
+    else {
+        ret = feat_h.GetSeq_feat();
+    }
+    return ret;
+}
+
+
+CConstRef<CSeq_loc>
+CCreatedFeat_Ref::MakeMappedLocation(const CAnnotMapping_Info& map_info)
+{
+    CConstRef<CSeq_loc> ret;
+    if ( map_info.MappedSeq_locNeedsUpdate() ) {
+        // need to covert Seq_id to Seq_loc
+        // clear references to mapped location from mapped feature
+        // Can not use m_MappedSeq_feat since it's a const-ref
+        CRef<CSeq_feat> mapped_feat;
+        m_CreatedSeq_feat.AtomicReleaseTo(mapped_feat);
+        if ( mapped_feat ) {
+            if ( !mapped_feat->ReferencedOnlyOnce() ) {
+                mapped_feat.Reset();
+            }
+            else {
+                // hack with null pointer as ResetLocation doesn't reset CRef<>
+                CSeq_loc* loc = 0;
+                mapped_feat->SetLocation(*loc);
+                mapped_feat->ResetProduct();
+            }
+        }
+        m_CreatedSeq_feat.AtomicResetFrom(mapped_feat);
+
+        CRef<CSeq_loc> mapped_loc;
+        CRef<CSeq_point> created_point;
+        CRef<CSeq_interval> created_interval;
+        ReleaseRefsTo(0, &mapped_loc, &created_point, &created_interval);
+        map_info.UpdateMappedSeq_loc(mapped_loc,
+                                     created_point,
+                                     created_interval);
+        ret = mapped_loc;
+        ResetRefsFrom(0, &mapped_loc, &created_point, &created_interval);
+    }
+    else if ( map_info.IsMapped() ) {
+        ret = &map_info.GetMappedSeq_loc();
+    }
+    return ret;
+}
+
+
+CConstRef<CSeq_feat>
+CCreatedFeat_Ref::MakeMappedFeature(const CSeq_feat_Handle& orig_feat,
+                                    const CAnnotMapping_Info& map_info,
+                                    CSeq_loc& mapped_location)
+{
+    CConstRef<CSeq_feat> ret;
+    if ( map_info.IsMapped() ) {
+        if (map_info.GetMappedObjectType() ==
+            CAnnotMapping_Info::eMappedObjType_Seq_feat) {
+            ret = &map_info.GetMappedSeq_feat();
+            return ret;
+        }
+        // some Seq-loc object is mapped
+        CRef<CSeq_feat> mapped_feat;
+        m_CreatedSeq_feat.AtomicReleaseTo(mapped_feat);
+        if ( !mapped_feat || !mapped_feat->ReferencedOnlyOnce() ) {
+            mapped_feat.Reset(new CSeq_feat);
+        }
+        CConstRef<CSeq_feat> orig_seq_feat = orig_feat.GetSeq_feat();
+        map_info.InitializeMappedSeq_feat(*orig_seq_feat, *mapped_feat);
+
+        if ( map_info.IsMappedLocation() ) {
+            mapped_feat->SetLocation(mapped_location);
+        }
+        else if ( map_info.IsMappedProduct() ) {
+            mapped_feat->SetProduct(mapped_location);
+        }
+        if ( map_info.IsPartial() ) {
+            mapped_feat->SetPartial(true);
+        }
+        else {
+            mapped_feat->ResetPartial();
+        }
+
+        ret = mapped_feat;
+        m_CreatedSeq_feat.AtomicResetFrom(mapped_feat);
+    }
+    else {
+         ret = orig_feat.GetSeq_feat();
+    }
+    return ret;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -565,7 +861,9 @@ CAnnot_Collector::CAnnot_Collector(TAnnotType& type,
                                    CScope&     scope)
     : m_Selector(type),
       m_Scope(scope),
-      m_MappingCollector(new CAnnotMappingCollector)
+      m_MappingCollector(new CAnnotMappingCollector),
+      m_CreatedOriginal(new CCreatedFeat_Ref),
+      m_CreatedMapped(new CCreatedFeat_Ref)
 {
     return;
 }
@@ -574,7 +872,9 @@ CAnnot_Collector::CAnnot_Collector(const SAnnotSelector& selector,
                                    CScope&               scope)
     : m_Selector(selector),
       m_Scope(scope),
-      m_MappingCollector(new CAnnotMappingCollector)
+      m_MappingCollector(new CAnnotMappingCollector),
+      m_CreatedOriginal(new CCreatedFeat_Ref),
+      m_CreatedMapped(new CCreatedFeat_Ref)
 {
     return;
 }
@@ -1316,7 +1616,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                                 GetData().GetRight();
                             ref_rg = CHandleRange::TRange(from, to);
                         }
-                        annot_ref.SetAnnotObjectRange(ref_rg,
+                        annot_ref.GetMappingInfo().SetAnnotObjectRange(ref_rg,
                             m_Selector.m_FeatProduct);
                     }
                     if ( x_AddObject(annot_ref, cvt,
@@ -1558,244 +1858,15 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
 }
 
 
-void CAnnotObject_Ref::InitializeMappedSeq_feat(const CSeq_feat& src,
-                                                CSeq_feat& dst) const
-{
-    CSeq_feat& src_nc = const_cast<CSeq_feat&>(src);
-    if ( src_nc.IsSetId() )
-        dst.SetId(src_nc.SetId());
-    else
-        dst.ResetId();
-
-    dst.SetData(src_nc.SetData());
-
-    if ( src_nc.IsSetExcept() )
-        dst.SetExcept(src_nc.GetExcept());
-    else
-        dst.ResetExcept();
-    
-    if ( src_nc.IsSetComment() )
-        dst.SetComment(src_nc.GetComment());
-    else
-        dst.ResetComment();
-
-    if ( src_nc.IsSetQual() )
-        dst.SetQual() = src_nc.SetQual();
-    else
-        dst.ResetQual();
-
-    if ( src_nc.IsSetTitle() )
-        dst.SetTitle(src_nc.GetTitle());
-    else
-        dst.ResetTitle();
-
-    if ( src_nc.IsSetExt() )
-        dst.SetExt(src_nc.SetExt());
-    else
-        dst.ResetExt();
-
-    if ( src_nc.IsSetCit() )
-        dst.SetCit(src_nc.SetCit());
-    else
-        dst.ResetCit();
-
-    if ( src_nc.IsSetExp_ev() )
-        dst.SetExp_ev(src_nc.GetExp_ev());
-    else
-        dst.ResetExp_ev();
-
-    if ( src_nc.IsSetXref() )
-        dst.SetXref() = src_nc.SetXref();
-    else
-        dst.ResetXref();
-
-    if ( src_nc.IsSetDbxref() )
-        dst.SetDbxref() = src_nc.SetDbxref();
-    else
-        dst.ResetDbxref();
-
-    if ( src_nc.IsSetPseudo() )
-        dst.SetPseudo(src_nc.GetPseudo());
-    else
-        dst.ResetPseudo();
-
-    if ( src_nc.IsSetExcept_text() )
-        dst.SetExcept_text(src_nc.GetExcept_text());
-    else
-        dst.ResetExcept_text();
-
-    if ( IsProduct() ) {
-        // Safe to re-use location
-        dst.SetLocation(src_nc.SetLocation());
-    }
-    else {
-        // Safe to re-use product
-        if ( src_nc.IsSetProduct() ) {
-            dst.SetProduct(src_nc.SetProduct());
-        }
-        else {
-            dst.ResetProduct();
-        }
-    }
-}
-
-
-void CAnnotObject_Ref::SetMappedSeq_feat(CSeq_feat& feat)
-{
-    _ASSERT( IsMapped() );
-    _ASSERT(GetMappedObjectType() != eMappedObjType_Seq_feat);
-
-    // Fill mapped location and product in the mapped feature
-    CRef<CSeq_loc> mapped_loc;
-    if ( MappedSeq_locNeedsUpdate() ) {
-        mapped_loc.Reset(new CSeq_loc);
-        UpdateMappedSeq_loc(mapped_loc);
-    }
-    else {
-        mapped_loc.Reset(&const_cast<CSeq_loc&>(GetMappedSeq_loc()));
-    }
-    if ( IsMappedLocation() ) {
-        feat.SetLocation(*mapped_loc);
-    }
-    else if ( IsMappedProduct() ) {
-        feat.SetProduct(*mapped_loc);
-    }
-    if ( IsPartial() ) {
-        feat.SetPartial(true);
-    }
-    else {
-        feat.ResetPartial();
-    }
-
-    m_MappedObject.Reset(&feat);
-    m_MappedObjectType = eMappedObjType_Seq_feat;
-}
-
-
-CConstRef<CSeq_feat>
-CAnnot_Collector::MakeOriginalFeature(const CAnnotObject_Ref& feat_ref)
-{
-    CConstRef<CSeq_feat> ret;
-    if ( feat_ref.IsSNPFeat() ) {
-        const CSeq_annot_SNP_Info& snp_annot =
-            feat_ref.GetSeq_annot_SNP_Info();
-        const SSNP_Info& snp_info =
-            snp_annot.GetSNP_Info(feat_ref.GetAnnotObjectIndex());
-        CRef<CSeq_feat> orig_feat;
-        m_CreatedOriginalSeq_feat.AtomicReleaseTo(orig_feat);
-        CRef<CSeq_point> created_point;
-        m_CreatedOriginalSeq_point.AtomicReleaseTo(created_point);
-        CRef<CSeq_interval> created_interval;
-        m_CreatedOriginalSeq_interval.AtomicReleaseTo(created_interval);
-        snp_info.UpdateSeq_feat(orig_feat,
-                                created_point,
-                                created_interval,
-                                snp_annot);
-        ret = orig_feat;
-        m_CreatedOriginalSeq_feat.AtomicResetFrom(orig_feat);
-        m_CreatedOriginalSeq_point.AtomicResetFrom(created_point);
-        m_CreatedOriginalSeq_interval.AtomicResetFrom(created_interval);
-    }
-    else {
-        ret = &feat_ref.GetFeat();
-    }
-    return ret;
-}
-
-
-CConstRef<CSeq_loc>
-CAnnot_Collector::MakeMappedLocation(const CAnnotObject_Ref& feat_ref)
-{
-    CConstRef<CSeq_loc> ret;
-    if ( feat_ref.MappedSeq_locNeedsUpdate() ) {
-        // need to covert Seq_id to Seq_loc
-        // clear references to mapped location from mapped feature
-        // Can not use m_MappedSeq_feat since it's a const-ref
-        CRef<CSeq_feat> mapped_feat;
-        m_CreatedMappedSeq_feat.AtomicReleaseTo(mapped_feat);
-        if ( mapped_feat ) {
-            if ( !mapped_feat->ReferencedOnlyOnce() ) {
-                mapped_feat.Reset();
-            }
-            else {
-                // hack with null pointer as ResetLocation doesn't reset CRef<>
-                CSeq_loc* loc = 0;
-                mapped_feat->SetLocation(*loc);
-                mapped_feat->ResetProduct();
-            }
-        }
-        m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
-
-        CRef<CSeq_loc> mapped_loc;
-        m_CreatedMappedSeq_loc.AtomicReleaseTo(mapped_loc);
-        CRef<CSeq_point> created_point;
-        m_CreatedMappedSeq_point.AtomicReleaseTo(created_point);
-        CRef<CSeq_interval> created_interval;
-        m_CreatedMappedSeq_interval.AtomicReleaseTo(created_interval);
-        feat_ref.UpdateMappedSeq_loc(mapped_loc,
-                                     created_point,
-                                     created_interval);
-        ret = mapped_loc;
-        m_CreatedMappedSeq_loc.AtomicResetFrom(mapped_loc);
-        m_CreatedMappedSeq_point.AtomicResetFrom(created_point);
-        m_CreatedMappedSeq_interval.AtomicResetFrom(created_interval);
-    }
-    else if ( feat_ref.IsMapped() ) {
-        ret = &feat_ref.GetMappedSeq_loc();
-    }
-    return ret;
-}
-
-
-CConstRef<CSeq_feat>
-CAnnot_Collector::MakeMappedFeature(const CAnnotObject_Ref& feat_ref,
-                                    CSeq_feat& original_feat,
-                                    CSeq_loc& mapped_location)
-{
-    CConstRef<CSeq_feat> ret;
-    if ( feat_ref.IsMapped() ) {
-        if (feat_ref.GetMappedObjectType() ==
-            CAnnotObject_Ref::eMappedObjType_Seq_feat) {
-            ret = &feat_ref.GetMappedSeq_feat();
-            return ret;
-        }
-        // some Seq-loc object is mapped
-        CRef<CSeq_feat> mapped_feat;
-        m_CreatedMappedSeq_feat.AtomicReleaseTo(mapped_feat);
-        if ( !mapped_feat || !mapped_feat->ReferencedOnlyOnce() ) {
-            mapped_feat.Reset(new CSeq_feat);
-        }
-        feat_ref.InitializeMappedSeq_feat(original_feat, *mapped_feat);
-
-        if ( feat_ref.IsMappedLocation() ) {
-            mapped_feat->SetLocation(mapped_location);
-        }
-        else if ( feat_ref.IsMappedProduct() ) {
-            mapped_feat->SetProduct(mapped_location);
-        }
-        if ( feat_ref.IsPartial() ) {
-            mapped_feat->SetPartial(true);
-        }
-        else {
-            mapped_feat->ResetPartial();
-        }
-
-        ret = mapped_feat;
-        m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
-    }
-    else {
-         ret = &original_feat;
-    }
-    return ret;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.48  2005/02/16 18:51:30  vasilche
 * Fixed feature iteration by location in fresh new scope.
 *

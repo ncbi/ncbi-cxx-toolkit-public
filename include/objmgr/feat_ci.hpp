@@ -73,7 +73,7 @@ public:
 
     /// Fast way to check if mapped feature is different from the original one
     bool IsMapped(void) const
-        { return m_FeatRef->IsMapped(); }
+        { return m_MappingInfo.IsMapped(); }
 
     /// Feature mapped to the master sequence.
     /// WARNING! The function is rather slow and should be used with care.
@@ -88,9 +88,9 @@ public:
         { return GetOriginalFeature().GetData(); }
 
     bool IsSetPartial(void) const
-        { return m_FeatRef->IsPartial(); }
+        { return m_MappingInfo.IsPartial(); }
     bool GetPartial(void) const
-        { return m_FeatRef->IsPartial(); }
+        { return m_MappingInfo.IsPartial(); }
 
     bool IsSetExcept(void) const
         { return GetOriginalFeature().IsSetExcept(); }
@@ -106,13 +106,13 @@ public:
         { return GetOriginalFeature().IsSetProduct(); }
     const CSeq_loc& GetProduct(void) const
         {
-            return m_FeatRef->IsMappedProduct()?
+            return m_MappingInfo.IsMappedProduct()?
                 GetMappedLocation(): GetOriginalFeature().GetProduct();
         }
 
     const CSeq_loc& GetLocation(void) const
         {
-            return m_FeatRef->IsMappedLocation()?
+            return m_MappingInfo.IsMappedLocation()?
                 GetMappedLocation(): GetOriginalFeature().GetLocation();
         }
 
@@ -174,16 +174,14 @@ private:
                      const TIterator& annot);
     void Reset(void);
 
-    const CSeq_feat& x_MakeMappedFeature(void) const;
-
     const CSeq_loc& GetMappedLocation(void) const;
 
-    mutable CRef<CAnnot_Collector> m_Collector;
-    TIterator                      m_FeatRef;
-
-    mutable CConstRef<CSeq_feat> m_OriginalSeq_feat;
-    mutable CConstRef<CSeq_feat> m_MappedSeq_feat;
-    mutable CConstRef<CSeq_loc>  m_MappedSeq_loc;
+    CSeq_feat_Handle             m_OriginalFeat;
+    CAnnotMapping_Info           m_MappingInfo;
+    // CMappedFeat does not re-use objects
+    mutable CCreatedFeat_Ref     m_MappedFeat;
+    // Original feature is not locked by handle, lock here.
+    mutable CConstRef<CSeq_feat> m_OriginalSeq_feat_Lock;
 };
 
 
@@ -328,28 +326,17 @@ const CMappedFeat* CFeat_CI::operator-> (void) const
 inline
 const CSeq_feat& CMappedFeat::GetOriginalFeature(void) const
 {
-    if ( !m_OriginalSeq_feat ) {
-        m_OriginalSeq_feat = m_Collector->MakeOriginalFeature(*m_FeatRef);
+    if ( !m_OriginalSeq_feat_Lock ) {
+        m_OriginalSeq_feat_Lock = m_OriginalFeat.GetSeq_feat();
     }
-    return *m_OriginalSeq_feat;
-}
-
-
-inline
-const CSeq_feat& CMappedFeat::GetMappedFeature(void) const
-{
-    return m_MappedSeq_feat? *m_MappedSeq_feat: x_MakeMappedFeature();
+    return *m_OriginalSeq_feat_Lock;
 }
 
 
 inline
 const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
 {
-    if ( !m_MappedSeq_loc ) {
-        _ASSERT(!m_MappedSeq_feat);
-        m_MappedSeq_loc = m_Collector->MakeMappedLocation(*m_FeatRef);
-    }
-    return *m_MappedSeq_loc;
+    return *m_MappedFeat.MakeMappedLocation(m_MappingInfo);
 }
 
 
@@ -362,6 +349,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.49  2005/01/24 17:09:36  vasilche
 * Safe boolean operators.
 *

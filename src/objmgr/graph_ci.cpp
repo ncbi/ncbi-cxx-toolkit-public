@@ -50,17 +50,17 @@ void CMappedGraph::Set(CAnnot_Collector& collector, const TIterator& annot)
 
 void CMappedGraph::MakeMappedLoc(void) const
 {
-    if ( m_GraphRef->MappedSeq_locNeedsUpdate() ) {
+    if ( m_GraphRef->GetMappingInfo().MappedSeq_locNeedsUpdate() ) {
         m_MappedGraph.Reset();
         m_MappedLoc.Reset();
         CRef<CSeq_loc> created_loc;
-        m_Collector->m_CreatedMappedSeq_loc.AtomicReleaseTo(created_loc);
-        m_GraphRef->UpdateMappedSeq_loc(created_loc);
+        m_Collector->m_CreatedMapped->ReleaseRefsTo(0, &created_loc, 0, 0);
+        m_GraphRef->GetMappingInfo().UpdateMappedSeq_loc(created_loc);
         m_MappedLoc = created_loc;
-        m_Collector->m_CreatedMappedSeq_loc.AtomicResetFrom(created_loc);
+        m_Collector->m_CreatedMapped->ResetRefsFrom(0, &created_loc, 0, 0);
     }
-    else if ( m_GraphRef->IsMapped() ) {
-        m_MappedLoc.Reset(&m_GraphRef->GetMappedSeq_loc());
+    else if ( m_GraphRef->GetMappingInfo().IsMapped() ) {
+        m_MappedLoc.Reset(&m_GraphRef->GetMappingInfo().GetMappedSeq_loc());
     }
     else {
         m_MappedLoc.Reset(&GetOriginalGraph().GetLoc());
@@ -82,7 +82,7 @@ CSeq_annot_Handle CMappedGraph::GetAnnot(void) const
 
 void CMappedGraph::MakeMappedGraph(void) const
 {
-    if ( m_GraphRef->IsMapped() ) {
+    if ( m_GraphRef->GetMappingInfo().IsMapped() ) {
         CSeq_loc& loc = const_cast<CSeq_loc&>(GetLoc());
         CSeq_graph* tmp;
         m_MappedGraph.Reset(tmp = new CSeq_graph);
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/02/24 19:13:34  grichenk
+* Redesigned CMappedFeat not to hold the whole annot collector.
+*
 * Revision 1.31  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *

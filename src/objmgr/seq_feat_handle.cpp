@@ -36,6 +36,8 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
+#include <objmgr/impl/annot_collector.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -50,10 +52,12 @@ CSeq_feat_Handle::CSeq_feat_Handle(void)
 
 CSeq_feat_Handle::CSeq_feat_Handle(const CSeq_annot_Handle& annot,
                                    EAnnotInfoType type,
-                                   size_t index)
+                                   size_t index,
+                                   CCreatedFeat_Ref& created_ref)
     : m_Annot(annot),
       m_AnnotInfoType(type),
-      m_Index(index)
+      m_Index(index),
+      m_CreatedFeat(&created_ref)
 {
 }
 
@@ -66,7 +70,13 @@ CSeq_feat_Handle::~CSeq_feat_Handle(void)
 const SSNP_Info& CSeq_feat_Handle::x_GetSNP_Info(void) const
 {
     _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
-    return m_Annot.x_GetInfo().x_GetSNP_annot_Info().GetSNP_Info(m_Index);
+    return x_GetSNP_annot_Info().GetSNP_Info(m_Index);
+}
+
+
+const CSeq_annot_SNP_Info& CSeq_feat_Handle::x_GetSNP_annot_Info(void) const
+{
+    return m_Annot.x_GetInfo().x_GetSNP_annot_Info();
 }
 
 
@@ -86,8 +96,8 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
         }
     case eType_Seq_annot_SNP_Info:
         {
-            return x_GetSNP_Info().
-                CreateSeq_feat(m_Annot.x_GetInfo().x_GetSNP_annot_Info());
+            // return x_GetSNP_Info().CreateSeq_feat(x_GetSNP_annot_Info());
+            return m_CreatedFeat->MakeOriginalFeature(*this);
         }
     default:
         {
@@ -132,7 +142,7 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetRange(void) const
 CSeq_id::TGi CSeq_feat_Handle::GetGi(void) const
 {
     _ASSERT(m_AnnotInfoType == eType_Seq_annot_SNP_Info);
-    return m_Annot.x_GetInfo().x_GetSNP_annot_Info().GetGi();
+    return x_GetSNP_annot_Info().GetGi();
 }
 
 
@@ -154,7 +164,7 @@ string CSeq_feat_Handle::GetAllele(size_t index) const
     _ASSERT(index < SSNP_Info::kMax_AllelesCount);
     const SSNP_Info& snp = x_GetSNP_Info();
     _ASSERT(snp.m_AllelesIndices[index] != SSNP_Info::kNo_AlleleIndex);
-    return m_Annot.x_GetInfo().x_GetSNP_annot_Info().
+    return x_GetSNP_annot_Info().
         x_GetAllele(snp.m_AllelesIndices[index]);
 }
 
@@ -165,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/24 19:13:34  grichenk
+ * Redesigned CMappedFeat not to hold the whole annot collector.
+ *
  * Revision 1.6  2004/12/28 18:40:30  vasilche
  * Added GetScope() method.
  *
