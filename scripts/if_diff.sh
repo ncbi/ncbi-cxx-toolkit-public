@@ -10,6 +10,11 @@ script_args="$*"
 action="$1"
 shift 1
 
+case "`basename \"$action\"`" in
+  cp | cp\ * | ln | ln\ * ) rm="rm -f" ;;
+  * ) rm=: ;;
+esac
+
 if test "$1" = "-q" ; then
   quiet="yes"
   shift 1
@@ -43,7 +48,7 @@ ExecAction()
   dest_file="$2"
   cmd="$action $src_file $dest_file"
   cmp -s "$src_file" "$dest_file"  ||
-  ( test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
+  ( $rm "$dest_file" ;  test "$quiet" = yes || echo "$cmd" ;  $cmd )  ||
   Usage "\"$cmd\" failed"
 }
 
