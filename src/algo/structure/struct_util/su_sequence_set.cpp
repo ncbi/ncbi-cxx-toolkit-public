@@ -62,7 +62,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
-#include "su_sequence_set.hpp"
+#include <algo/structure/struct_util/su_sequence_set.hpp>
 #include "su_private.hpp"
 
 // borrow Cn3D's asn conversion functions
@@ -371,6 +371,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/06/14 13:49:51  thiessen
+* make BlockMultipleAlignment and Sequence classes public
+*
 * Revision 1.3  2004/05/28 09:46:57  thiessen
 * restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
 *

@@ -41,8 +41,8 @@
 #include <memory>
 
 #include "su_alignment_set.hpp"
-#include "su_sequence_set.hpp"
-#include "su_block_multiple_alignment.hpp"
+#include <algo/structure/struct_util/su_sequence_set.hpp>
+#include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
 #include "su_private.hpp"
 
 USING_NCBI_SCOPE;
@@ -327,6 +327,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/14 13:49:51  thiessen
+* make BlockMultipleAlignment and Sequence classes public
+*
 * Revision 1.6  2004/05/26 14:45:11  gorelenk
 * UNALIGNED->eUnaligned
 *

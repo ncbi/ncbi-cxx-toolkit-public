@@ -364,6 +364,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.1  2004/06/14 13:49:16  thiessen
+* make BlockMultipleAlignment and Sequence classes public
+*
 * Revision 1.7  2004/05/28 09:46:57  thiessen
 * restructure C-toolkit header usage ; move C Bioseq storage into su_sequence_set
 *

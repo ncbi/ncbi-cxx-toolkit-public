@@ -38,8 +38,8 @@
 
 #include <objects/seqalign/Dense_diag.hpp>
 
-#include "su_block_multiple_alignment.hpp"
-#include "su_sequence_set.hpp"
+#include <algo/structure/struct_util/su_block_multiple_alignment.hpp>
+#include <algo/structure/struct_util/su_sequence_set.hpp>
 #include "su_private.hpp"
 
 // C-toolkit stuff for PSSM calculation
@@ -1647,6 +1647,9 @@ END_SCOPE(struct_util)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/14 13:49:51  thiessen
+* make BlockMultipleAlignment and Sequence classes public
+*
 * Revision 1.9  2004/05/28 10:07:39  thiessen
 * fix GCC warning
 *
