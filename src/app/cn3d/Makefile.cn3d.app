@@ -68,19 +68,13 @@ WX_CONFIG = $(HOME)/Programs/wxGTK-2.2.7/install/bin/wxgtk-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
 WX_LIBS = $(shell $(WX_CONFIG) --libs)
 
-GTK_CONFIG = $(HOME)/Programs/GTK-1.2/install/bin/gtk-config
-GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
-GTK_LIBS = $(shell $(GTK_CONFIG) --libs)
-
 CPPFLAGS = $(ORIG_CPPFLAGS) \
 	-I$(includedir)/gui_ctools \
 	$(WX_CPPFLAGS) \
-	$(GTK_CFLAGS) \
 	$(NCBI_C_INCLUDE)
 
 LIBS = $(ORIG_LIBS) \
 	$(WX_LIBS) \
-	$(GTK_LIBS) \
         -lwx_gtk_gl -lGL -lGLU \
 	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
