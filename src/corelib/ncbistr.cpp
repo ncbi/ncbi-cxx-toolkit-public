@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/05/01 19:02:25  vasilche
+* Force argument in NStr::StringToInt() etc to be full number.
+* This check will be in DEBUG version for month.
+*
 * Revision 1.28  2000/04/19 18:36:04  vakatov
 * Fixed for non-zero "pos" in s_Compare()
 *
@@ -288,6 +292,16 @@ string& NStr::ToUpper(string& str) {
     return str;
 }
 
+#ifdef _DEBUG
+# define CHECK_ENDPTR() \
+    if ( *endptr != '\0' ) { \
+        THROW1_TRACE(runtime_error, "no symbols should be after number"); \
+    }
+#else
+# define CHECK_ENDPTR()
+#endif
+
+
 
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
@@ -297,6 +311,7 @@ int NStr::StringToInt(const string& str, int base /* = 10 */ )
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value < kMin_Int || value > kMax_Int)
         throw runtime_error("NStr::StringToInt():  cannot convert");
+    CHECK_ENDPTR();
     return value;
 }
 
@@ -308,6 +323,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
         value > kMax_UInt)
         throw runtime_error("NStr::StringToUInt():  cannot convert");
+    CHECK_ENDPTR();
     return value;
 }
 
@@ -318,6 +334,7 @@ long NStr::StringToLong(const string& str, int base /* = 10 */ )
     long value = ::strtol(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
         throw runtime_error("NStr::StringToLong():  cannot convert");
+    CHECK_ENDPTR();
     return value;
 }
 
@@ -328,6 +345,7 @@ unsigned long NStr::StringToULong(const string& str, int base /* = 10 */ )
     unsigned long value = ::strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
         throw runtime_error("NStr::StringToULong():  cannot convert");
+    CHECK_ENDPTR();
     return value;
 }
 
@@ -338,6 +356,9 @@ double NStr::StringToDouble(const string& str)
     double value = ::strtod(str.c_str(), &endptr);
     if (errno  ||  !endptr  ||  endptr == str.c_str())
         throw runtime_error("NStr::StringToDouble():  cannot convert");
+    if ( *endptr == '.' )
+        endptr++;
+    CHECK_ENDPTR();
     return value;
 }
 
