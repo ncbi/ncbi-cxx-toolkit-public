@@ -62,7 +62,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     if ((oid_begin == 0) && (oid_end == 0)) {
         m_RestrictEnd = m_VolSet.GetNumOIDs();
     } else {
-        if (m_RestrictEnd > m_VolSet.GetNumOIDs()) {
+        if ((oid_end == 0) || (m_RestrictEnd > m_VolSet.GetNumOIDs())) {
             m_RestrictEnd = m_VolSet.GetNumOIDs();
         }
         if (m_RestrictBegin > m_RestrictEnd) {
