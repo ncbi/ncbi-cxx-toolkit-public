@@ -9040,9 +9040,9 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6
    esac
 
    # quick-patch for the bad "tli" lib (Solaris8/Intel specific)
-   if test "$host_os:$host_vendor" = "solaris2.8:pc" ; then
-      : ${sybase_sol8pc_patch:="yes"}
-   fi
+   case "$host_os:$host_vendor" in
+      solaris*:pc )  : ${sybase_sol8pc_patch:="yes"} ;;
+   esac
    if test "$sybase_sol8pc_patch" = "yes" ; then
       sybtli="-ltli_orig$syb_sfx -ltli$syb_sfx"
       SYBASE_NETWORK_LIBS="-ltli$syb_sfx $NETWORK_LIBS"

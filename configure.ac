@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.110 2002/07/26 00:10:04 vakatov Exp $
+#  $Id: configure.ac,v 1.111 2002/07/26 04:29:29 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1647,9 +1647,9 @@ if test "$with_sybase" != "no" ; then
    esac
 
    # quick-patch for the bad "tli" lib (Solaris8/Intel specific)
-   if test "$host_os:$host_vendor" = "solaris2.8:pc" ; then
-      : ${sybase_sol8pc_patch:="yes"}
-   fi
+   case "$host_os:$host_vendor" in
+      solaris*:pc )  : ${sybase_sol8pc_patch:="yes"} ;;
+   esac
    if test "$sybase_sol8pc_patch" = "yes" ; then
       sybtli="-ltli_orig$syb_sfx -ltli$syb_sfx"
       SYBASE_NETWORK_LIBS="-ltli$syb_sfx $NETWORK_LIBS"
