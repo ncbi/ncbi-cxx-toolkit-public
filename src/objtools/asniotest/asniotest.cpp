@@ -41,6 +41,9 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <util/random_gen.hpp>
+#include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
 
 #include <memory>
 
@@ -52,6 +55,10 @@
 #include <objects/cdd/Cdd.hpp>
 #include <objects/cdd/Global_id.hpp>
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#include <objects/ncbimime/Biostruc_seq.hpp>
+#include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb1/Biostruc_id.hpp>
+#include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb1/Atom.hpp>
 #include <objects/mmdb1/Atom_id.hpp>
 #include <objects/mmdb2/Model_space_points.hpp>
@@ -530,6 +537,57 @@ BEGIN_TEST_FUNCTION(UnsignedInt)
 END_TEST_FUNCTION
 
 
+// template for loading ASN data via HTTP connection (borrowed from Cn3D)
+template < class ASNClass >
+bool GetAsnDataViaHTTP(
+    const string& host, const string& path, const string& args,
+    ASNClass *asnObject, string *err, bool binaryData = true, unsigned short port = 80)
+{
+    err->erase();
+    bool okay = false;
+
+    // set up registry field to set GET connection method for HTTP
+    CNcbiRegistry* reg = new CNcbiRegistry;
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
+    CORE_SetREG(REG_cxx2c(reg, true));
+
+    try {
+        // load data from stream using given URL params
+        CConn_HttpStream httpStream(host, path, args, kEmptyStr, port);
+        auto_ptr<CObjectIStream> inObject;
+        if (binaryData)
+            inObject.reset(new CObjectIStreamAsnBinary(httpStream));
+        else
+            inObject.reset(new CObjectIStreamAsn(httpStream));
+        *inObject >> *asnObject;
+        okay = true;
+
+    } catch (exception& e) {
+        *err = string("Network connection failed or data is not in expected format; error: ") + e.what();
+    }
+
+    CORE_SetREG(NULL);
+    return okay;
+}
+
+// test to make sure that HTTP object load works
+BEGIN_TEST_FUNCTION(HTTPLoad)
+
+    // get protein structure 1AL1 (mmdb ID 220) from mmdbsrv
+    CNcbi_mime_asn1 mime;
+    if (!GetAsnDataViaHTTP("www.ncbi.nlm.nih.gov", "/Structure/mmdb/mmdbsrv.cgi",
+            "uid=%1AL1&form=6&db=t&save=Save&dopt=j&Complexity=Cn3D%20Subset", &mime, &err, true))
+        ADD_ERR_RETURN("HTTP asn data load failed: " << err);
+
+    if (!mime.IsStrucseq() || mime.GetStrucseq().GetStructure().GetId().size() == 0 ||
+            !mime.GetStrucseq().GetStructure().GetId().front()->IsMmdb_id() ||
+            mime.GetStrucseq().GetStructure().GetId().front()->GetMmdb_id().Get() != 220)
+        ADD_ERR_RETURN("structure returned is not what was expected");
+
+END_TEST_FUNCTION
+
+
 // to call test functions, counting errors
 #define RUN_TEST(func) \
     do { \
@@ -560,8 +618,9 @@ int ASNIOTestApp::Run(void)
         RUN_TEST(OptionalField);
         RUN_TEST(DefaultField);
         RUN_TEST(ZeroReal);
-        RUN_TEST(FullBlobs);
         RUN_TEST(UnsignedInt);
+        RUN_TEST(HTTPLoad);
+        RUN_TEST(FullBlobs);
 
     } catch (exception& e) {
         ERRORMSG("uncaught exception: " << e.what());
@@ -611,6 +670,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/09/22 13:12:47  thiessen
+* add HTTP asn load test
+*
 * Revision 1.16  2004/09/10 16:44:53  vasilche
 * Exclude external annotations from blobs loaded from ID1.
 *
