@@ -658,7 +658,7 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
             x_GetTSE_Info();
         }
 
-        bool found = x_SearchLoc(master_loc, 0, CTSE_Handle());
+        bool found = x_SearchLoc(master_loc, 0, CTSE_Handle(), true);
         bool deeper = !(found && m_Selector.m_AdaptiveDepth) &&
             m_Selector.m_ResolveMethod != SAnnotSelector::eResolve_None  &&
             m_Selector.m_ResolveDepth > 0;
@@ -1338,7 +1338,8 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
 bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
                                    CSeq_loc_Conversion*   cvt,
-                                   const CTSE_Handle&     using_tse)
+                                   const CTSE_Handle&     using_tse,
+                                   bool top_level)
 {
     bool found = false;
     ITERATE ( CHandleRangeMap, idit, loc ) {
@@ -1348,8 +1349,9 @@ bool CAnnot_Collector::x_SearchLoc(const CHandleRangeMap& loc,
         if ( m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_None ) {
             // any data source
             CTSE_Handle tse;
-            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first,
-                                                         GetGetFlag());
+            CScope::EGetBioseqFlag flag =
+                top_level? CScope::eGetBioseq_All: GetGetFlag();
+            CBioseq_Handle bh = m_Scope->GetBioseqHandle(idit->first, flag);
             if ( !bh ) {
                 if ( m_Selector.m_UnresolvedFlag ==
                      m_Selector.eFailUnresolved ) {
@@ -1794,6 +1796,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2005/02/16 18:51:30  vasilche
+* Fixed feature iteration by location in fresh new scope.
+*
 * Revision 1.47  2005/02/01 19:15:15  vasilche
 * Skip SeqMap lookup for unresolved Seq-ids.
 *

@@ -225,7 +225,8 @@ private:
                         const CHandleRange&   master_hr);
     bool x_SearchLoc(const CHandleRangeMap& loc,
                      CSeq_loc_Conversion*   cvt,
-                     const CTSE_Handle&     using_tse);
+                     const CTSE_Handle&     using_tse,
+                     bool top_level = false);
     bool x_SearchTSE(const CTSE_Handle&    tse,
                      const CSeq_id_Handle& id,
                      const CHandleRange&   hr,
@@ -655,6 +656,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2005/02/16 18:51:30  vasilche
+* Fixed feature iteration by location in fresh new scope.
+*
 * Revision 1.22  2005/01/06 16:41:31  grichenk
 * Removed deprecated methods
 *
