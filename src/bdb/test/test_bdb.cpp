@@ -755,7 +755,7 @@ static void s_TEST_BDB_BLOB_File(void)
     CBDB_BLobStream* bstream = blob.CreateStream();
 
     char ch;
-    unsigned bytes_read = 0;
+    size_t bytes_read = 0;
 
     size_t pending = bstream->PendingCount();
     
@@ -1258,6 +1258,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2003/11/14 04:31:10  ucko
+ * bytes_read should be size_t, not unsigned.
+ *
  * Revision 1.25  2003/10/27 14:21:15  kuznets
  * + DBD dumper test
  *
