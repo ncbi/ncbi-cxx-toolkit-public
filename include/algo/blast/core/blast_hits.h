@@ -83,7 +83,7 @@ typedef struct BlastResults {
 Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query, 
         BLAST_SequenceBlk* subject, BlastResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
-        BlastQueryInfo* query_info, BLAST_ScoreBlk* sbp, 
+        BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
         const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
         BlastThrInfo* thr_info);
 
@@ -109,7 +109,7 @@ Int2 BLAST_SortResults(BlastResults* results);
  */
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, BlastHitSavingOptions* hit_options, 
-        BLAST_ScoreBlk* sbp);
+        BlastScoreBlk* sbp);
 
 /** Discard the HSPs above the e-value threshold from the HSP list 
  * @param hsp_list List of HSPs for one subject sequence [in] [out]

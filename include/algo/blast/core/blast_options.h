@@ -433,7 +433,7 @@ Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
    const BlastInitialWordOptions* word_options, 
    BlastHitSavingParameters* hit_params, 
-   BlastExtensionParameters* ext_params, BLAST_ScoreBlk* sbp, 
+   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    const BlastEffectiveLengthsOptions* eff_len_options, 
    BlastInitialWordParameters* *parameters);
@@ -484,7 +484,7 @@ Int2 BlastExtensionOptionsValidate(Uint1 program_number,
  */
 Int2 BlastExtensionParametersNew(Uint1 blast_program, 
         const BlastExtensionOptions* options, 
-        BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info, 
+        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastExtensionParameters* *parameters);
 
 /** Deallocate memory for BlastExtensionParameters. 
@@ -646,7 +646,7 @@ Int2 BlastHitSavingParametersNew(Uint1 program_number,
         const BlastHitSavingOptions* options, 
         int (*handle_results)(void*, void*, void*, void*, void*, 
                            void*, void*), 
-        BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info, 
+        BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastHitSavingParameters* *parameters);
 
 /** Initialize default options for PSI BLAST */

@@ -135,7 +135,7 @@ typedef struct BlastGapAlignStruct {
                               programming extension */
    GreedyAlignMem* greedy_align_mem;/**< Preallocated memory for the greedy 
                                          gapped extension */
-   BLAST_ScoreBlk* sbp; /**< Pointer to the scoring information block */
+   BlastScoreBlk* sbp; /**< Pointer to the scoring information block */
    Int4 gap_x_dropoff; /**< X-dropoff parameter to use */
    Int4 query_start, query_stop;/**< Return values: query offsets */
    Int4 subject_start, subject_stop;/**< Return values: subject offsets */
@@ -157,7 +157,7 @@ Int2
 BLAST_GapAlignStructNew(const BlastScoringOptions* score_options, 
    BlastExtensionParameters* ext_params, 
    Uint4 max_subject_length, Int4 query_length, 
-   BLAST_ScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr);
+   BlastScoreBlk* sbp, BlastGapAlignStruct** gap_align_ptr);
 
 /** Deallocates memory in the BlastGapAlignStruct structure */
 BlastGapAlignStruct* 

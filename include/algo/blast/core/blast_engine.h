@@ -72,7 +72,7 @@ extern "C" {
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrcNewInfo* bssn_info, BLAST_ScoreBlk* sbp, 
+   const BlastSeqSrcNewInfo* bssn_info, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap, 
    const BlastInitialWordOptions* word_options, 
@@ -106,7 +106,7 @@ Int4
 BLAST_TwoSequencesEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
    BLAST_SequenceBlk* subject, 
-   BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap, 
    const BlastInitialWordOptions* word_options, 
    const BlastExtensionOptions* ext_options, 
@@ -126,7 +126,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
  */
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
-        ListNode* lookup_segments, BLAST_ScoreBlk* sbp, 
+        ListNode* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr);
 
 /** Function to calculate effective query length and db length as well as
@@ -141,7 +141,7 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlk* query,
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsOptions* eff_len_options, 
-   const BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info);
+   const BlastScoreBlk* sbp, BlastQueryInfo* query_info);
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 

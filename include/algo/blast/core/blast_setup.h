@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.21  2003/08/01 17:20:39  dondosha
+* Renamed BLAST_ScoreBlk to BlastScoreBlk
+*
 * Revision 1.20  2003/07/31 14:31:37  camacho
 * Replaced Char for char
 *
@@ -190,7 +193,7 @@ extern "C" {
  *
 */
 Int2
-BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp,
+BlastScoreBlkGappedFill(BlastScoreBlk* sbp,
 const BlastScoringOptions* scoring_options, Uint1 program_number);
 
 
@@ -217,7 +220,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         BLAST_SequenceBlk* query_blk,
         BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
         BlastMask* *filter_slp_out,
-        BLAST_ScoreBlk* *sbpp, Blast_Message* *blast_message);
+        BlastScoreBlk* *sbpp, Blast_Message* *blast_message);
 
 #ifdef __cplusplus
 }
