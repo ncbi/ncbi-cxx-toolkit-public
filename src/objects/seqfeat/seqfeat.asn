@@ -1,4 +1,4 @@
---$Revision: 1.12 $
+--$Revision: 1.13 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -125,16 +125,18 @@ Cdregion ::= SEQUENCE {
 Genetic-code ::= SET OF CHOICE {
     name VisibleString ,               -- name of a code
     id INTEGER ,                       -- id in dbase
-    iupac VisibleString ,              -- indexed to IUPAC aas
-    iupace VisibleString ,             -- indexed to IUPAC extended
-    ncbi8 OCTET STRING }               -- indexed to NCBI8aa
+    iupacaa VisibleString ,            -- indexed to IUPAC aas
+    ncbieaa VisibleString ,            -- indexed to IUPAC extended
+    ncbi8aa OCTET STRING ,             -- indexed to NCBI8aa
+	ncbistdaa OCTET STRING }           -- indexed to NCBIstdaa
 
 Code-break ::= SEQUENCE {              -- specific codon exceptions
     loc Seq-loc ,                      -- location of exception
     aa CHOICE {                        -- the amino acid
-        iupac INTEGER ,                -- ASCII value of iupac code
-        iupace INTEGER ,               -- ASCII value of iupace code
-        ncbi8 INTEGER }}               -- NCBI8aa code
+        iupacaa INTEGER ,              -- ASCII value of iupacaa code
+        ncbieaa INTEGER ,              -- ASCII value of NCBIeaa code
+        ncbi8aa INTEGER ,              -- NCBI8aa code
+		ncbistdaa INTEGER }}           -- NCBIstdaa code
 
 Code-table ::= SET OF Genetic-code     -- table of genetic codes
 
