@@ -96,6 +96,9 @@
 /* Define to 1 if pthread_setconcurrency exists. */
 #undef HAVE_PTHREAD_SETCONCURRENCY
 
+/* Define to 1 if PUBSEQ service is available. */
+#undef HAVE_PUBSEQ_OS
+
 /* Define to 1 if union semun exists. */
 #undef HAVE_SEMUN
 
@@ -128,6 +131,9 @@
 
 /* Define to 1 if you have the <strstrea.h> header file. */
 #undef HAVE_STRSTREA_H
+
+/* Define to 1 if SYBASE has reentrant libraries. */
+#undef HAVE_SYBASE_REENTRANT
 
 /* Define to 1 if Linux-like 1-arg sysinfo exists. */
 #undef HAVE_SYSINFO_1

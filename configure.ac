@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.71 2002/05/08 19:29:20 ucko Exp $
+#  $Id: configure.ac,v 1.72 2002/05/09 20:01:07 kimelman Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1516,6 +1516,7 @@ NCBI_CHECK_LIBS(DL, -ldl,
 
 
 ## SYBASE libraries
+
 AC_MSG_CHECKING(if SYBASE libraries are available)
 if test -z "$with_sybase_local" ; then
    with_sybase_local="no"
@@ -1529,18 +1530,32 @@ if test "$with_sybase" != "no" ; then
       else
          SYBASE_PATH=$with_sybase_local
       fi
-   elif test "$with_sybase_new" = "yes" ; then
-      sybase_lib=lib
-      if test -n "$bit64_sfx"; then
-         : ${SYBASE_PATH="/netopt/Sybase/clients/12.5.64-EBF9728"}
-         : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5.64"}
-      else
-         : ${SYBASE_PATH="/netopt/Sybase/clients/12.5-EBF9723"}
-         : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5"}
-      fi
    else
+    if test "$with_sybase_new" = "yes" ; then
+      if test -n "$bit64_sfx" ; then
+         if test -d /netopt/Sybase/clients/12.5.64-EBF9728 ; then 
+           sybase_lib=lib
+           : ${SYBASE_PATH="/netopt/Sybase/clients/12.5.64-EBF9728"}
+           : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5.64"}
+         else
+           with_sybase_new=no
+           extra_sybase_warning="New Sybase client not found - using regular one"
+         fi
+      else
+         if test -d /netopt/Sybase/clients/12.5-EBF9723 ; then
+           sybase_lib=lib
+           : ${SYBASE_PATH="/netopt/Sybase/clients/12.5-EBF9723"}
+           : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5"}
+         else
+           with_sybase_new=no
+           extra_sybase_warning="New Sybase client not found - using regular one"
+         fi
+      fi
+    fi
+    if test "$with_sybase_new" != "yes" ; then
       SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
       SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
+    fi
    fi
 
    # compose a list of commonly used Sybase libraries
@@ -1614,6 +1629,16 @@ else
    fi
    if test "$with_mt" = "yes"  -a  "$sybase_r" = "no" ; then
        AC_MSG_WARN(["Using non-reentrant Sybase libraries"])
+   else
+       AC_DEFINE(HAVE_SYBASE_REENTRANT,1,[Define to 1 if SYBASE has reentrant libraries.])
+   fi
+   if test -n "$extra_sybase_warning" ; then 
+      AC_MSG_WARN([$extra_sybase_warning])
+   fi 
+   if test `grep -w PUBSEQ_OS $SYBASE_PATH/interfaces | wc -l` -gt 0 ; then 
+       AC_DEFINE(HAVE_PUBSEQ_OS,1,[Define to 1 if PUBSEQ service is available.]) 
+   else
+       AC_MSG_WARN(["PubSeq service is not avalable"])
    fi
 fi
 

@@ -6960,6 +6960,7 @@ esac
 
 
 ## SYBASE libraries
+
 echo "$as_me:$LINENO: checking if SYBASE libraries are available" >&5
 echo $ECHO_N "checking if SYBASE libraries are available... $ECHO_C" >&6
 if test -z "$with_sybase_local" ; then
@@ -6974,18 +6975,32 @@ if test "$with_sybase" != "no" ; then
       else
          SYBASE_PATH=$with_sybase_local
       fi
-   elif test "$with_sybase_new" = "yes" ; then
-      sybase_lib=lib
-      if test -n "$bit64_sfx"; then
-         : ${SYBASE_PATH="/netopt/Sybase/clients/12.5.64-EBF9728"}
-         : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5.64"}
-      else
-         : ${SYBASE_PATH="/netopt/Sybase/clients/12.5-EBF9723"}
-         : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5"}
-      fi
    else
+    if test "$with_sybase_new" = "yes" ; then
+      if test -n "$bit64_sfx" ; then
+         if test -d /netopt/Sybase/clients/12.5.64-EBF9728 ; then
+           sybase_lib=lib
+           : ${SYBASE_PATH="/netopt/Sybase/clients/12.5.64-EBF9728"}
+           : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5.64"}
+         else
+           with_sybase_new=no
+           extra_sybase_warning="New Sybase client not found - using regular one"
+         fi
+      else
+         if test -d /netopt/Sybase/clients/12.5-EBF9723 ; then
+           sybase_lib=lib
+           : ${SYBASE_PATH="/netopt/Sybase/clients/12.5-EBF9723"}
+           : ${SYBASE_LCL_PATH="/export/home/sybase/clients/12.5"}
+         else
+           with_sybase_new=no
+           extra_sybase_warning="New Sybase client not found - using regular one"
+         fi
+      fi
+    fi
+    if test "$with_sybase_new" != "yes" ; then
       SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
       SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
+    fi
    fi
 
    # compose a list of commonly used Sybase libraries
@@ -7096,6 +7111,26 @@ echo "${ECHO_T}$SYBASE_LCL_PATH:$SYBASE_PATH" >&6
    if test "$with_mt" = "yes"  -a  "$sybase_r" = "no" ; then
        { echo "$as_me:$LINENO: WARNING: \"Using non-reentrant Sybase libraries\"" >&5
 echo "$as_me: WARNING: \"Using non-reentrant Sybase libraries\"" >&2;}
+   else
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SYBASE_REENTRANT 1
+_ACEOF
+
+   fi
+   if test -n "$extra_sybase_warning" ; then
+      { echo "$as_me:$LINENO: WARNING: $extra_sybase_warning" >&5
+echo "$as_me: WARNING: $extra_sybase_warning" >&2;}
+   fi
+   if test `grep -w PUBSEQ_OS $SYBASE_PATH/interfaces | wc -l` -gt 0 ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PUBSEQ_OS 1
+_ACEOF
+
+   else
+       { echo "$as_me:$LINENO: WARNING: \"PubSeq service is not avalable\"" >&5
+echo "$as_me: WARNING: \"PubSeq service is not avalable\"" >&2;}
    fi
 fi
 
