@@ -1,7 +1,7 @@
 MODULES = general biblio medline medlars pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd ncbimime access featdef objprt seqcode
 
-new_module = $(NCBI)/c++/scripts/new_module.sh
-#new_module = ../../../scripts/new_module.sh
+#new_module = $(NCBI)/c++/scripts/new_module.sh
+new_module = ../../../scripts/new_module.sh
 
 all all_files sources makefiles directories purge_sources purge_all_sources purge_all_files:
 	for i in $(MODULES); do \
