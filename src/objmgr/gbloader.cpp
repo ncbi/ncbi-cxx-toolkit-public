@@ -522,7 +522,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
           m_SlowTraverseMode--;
           if(new_tse)
             {
-              STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+              STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
               m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
               STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
             }
@@ -531,7 +531,7 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
         }
       if(new_tse)
         {
-          STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
+          STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,0,m_Tse2TseInfo.size());
           m_Tse2TseInfo[tse->m_upload.m_tse]=tse;
           STSEinfo::check(m_UseListHead,m_UseListTail,m_TseCount,tse,m_Tse2TseInfo.size());
         }
@@ -721,6 +721,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/04/02 17:27:00  gouriano
+* bugfix: skip test for yet unregistered data
+*
 * Revision 1.20  2002/04/02 16:27:20  gouriano
 * memory leak
 *
