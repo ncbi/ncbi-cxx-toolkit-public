@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.5  2001/07/04 19:39:17  thiessen
 * finish user annotation system
 *
@@ -424,7 +427,7 @@ bool StyleDialog::SetControls(const StyleSettings& settings)
 }
 
 // same as hitting done button
-void StyleDialog::OnCloseWindow(wxCommandEvent& event)
+void StyleDialog::OnCloseWindow(wxCloseEvent& event)
 {
     StyleSettings dummy;
     if (GetValues(&dummy)) {

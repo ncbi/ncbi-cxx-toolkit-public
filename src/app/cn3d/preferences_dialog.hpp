@@ -26,28 +26,21 @@
 * Authors:  Paul Thiessen
 *
 * File Description:
-*      dialog for user annotations
+*      dialogs for editing program preferences
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  2001/08/06 20:22:48  thiessen
+* Revision 1.1  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
-*
-* Revision 1.2  2001/07/04 19:38:55  thiessen
-* finish user annotation system
-*
-* Revision 1.1  2001/06/29 18:12:52  thiessen
-* initial (incomplete) user annotation system
 *
 * ===========================================================================
 */
 
-#ifndef CN3D_ANNOTATE_DIALOG__HPP
-#define CN3D_ANNOTATE_DIALOG__HPP
+#ifndef CN3D_PREFERENCES_DIALOG__HPP
+#define CN3D_PREFERENCES_DIALOG__HPP
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbistl.hpp>
 
 #if defined(__WXMSW__)
 #include <wx/msw/winundef.h>
@@ -55,68 +48,29 @@
 
 #include <wx/wx.h>
 
-#include <map>
-#include <vector>
-
-#include "cn3d/style_manager.hpp"
-
 
 BEGIN_SCOPE(Cn3D)
 
-class StructureSet;
-class MoleculeIdentifier;
+class IntegerSpinCtrl;
 
-class AnnotateDialog : public wxDialog
+class PreferencesDialog : public wxDialog
 {
 public:
-    AnnotateDialog(wxWindow *parent, StyleManager *manager, const StructureSet *set);
+    PreferencesDialog(wxWindow *parent);
 
 private:
-
-    StyleManager *styleManager;
-    const StructureSet *structureSet;
-
-    typedef std::map < const MoleculeIdentifier * , std::vector < bool > > ResidueMap;
-    ResidueMap highlightedResidues;
-    bool HighlightsPresent(void) const { return (highlightedResidues.size() > 0); }
-
     // event callbacks
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
-    void OnSelection(wxCommandEvent& event);
 
-    // GUI functions
-    void ResetListBoxes(void);
-    void SetButtonStates(void);
+    // utility functions
 
-    // action functions
-    void NewAnnotation(void);
-    void EditAnnotation(void);
-    void MoveAnnotation(void);
-    void DeleteAnnotation(void);
-
-    DECLARE_EVENT_TABLE()
-};
-
-class AnnotationEditorDialog : public wxDialog
-{
-public:
-    AnnotationEditorDialog(wxWindow *parent,
-        StyleSettings *settings, const StructureSet *set,
-        const StyleManager::UserAnnotation& initialText);
-
-private:
-
-    StyleSettings *styleSettings;
-    const StructureSet *structureSet;
-
-    // event callbacks
-    void OnCloseWindow(wxCloseEvent& event);
-    void OnButton(wxCommandEvent& event);
+    // GUI elements
+    IntegerSpinCtrl *iWormSegments, *iWormSides, *iBondSides, *iHelixSides, *iAtomSlices, *iAtomStacks;
 
     DECLARE_EVENT_TABLE()
 };
 
 END_SCOPE(Cn3D)
 
-#endif // CN3D_ANNOTATE_DIALOG__HPP
+#endif // CN3D_PREFERENCES_DIALOG__HPP

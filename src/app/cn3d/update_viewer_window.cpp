@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.18  2001/06/01 21:48:26  thiessen
 * add terminal cutoff to threading
 *
@@ -386,7 +389,7 @@ bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)
     );
 }
 
-void ThreaderOptionsDialog::OnCloseWindow(wxCommandEvent& event)
+void ThreaderOptionsDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxCANCEL);
 }

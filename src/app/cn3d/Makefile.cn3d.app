@@ -27,6 +27,7 @@ OBJ = \
 	object_3d \
 	opengl_renderer \
 	periodic_table \
+	preferences_dialog \
 	residue \
 	sequence_display \
 	sequence_set \

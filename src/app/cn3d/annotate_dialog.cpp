@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.3  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -140,7 +143,7 @@ AnnotateDialog::AnnotateDialog(wxWindow *parent, StyleManager *manager, const St
 }
 
 // same as hitting done button
-void AnnotateDialog::OnCloseWindow(wxCommandEvent& event)
+void AnnotateDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxOK);
 }
@@ -465,7 +468,7 @@ AnnotationEditorDialog::AnnotationEditorDialog(wxWindow *parent,
 }
 
 // same as hitting cancel button
-void AnnotationEditorDialog::OnCloseWindow(wxCommandEvent& event)
+void AnnotationEditorDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxCANCEL);
 }

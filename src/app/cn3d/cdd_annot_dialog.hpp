@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.2  2001/07/19 19:12:46  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -97,7 +100,7 @@ private:
     void LaunchEvidence(void);
 
     // event callbacks
-    void OnCloseWindow(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnSelection(wxCommandEvent& event);
 
@@ -117,7 +120,7 @@ private:
     bool changed;
 
     // event callbacks
-    void OnCloseWindow(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnChange(wxCommandEvent& event);
 

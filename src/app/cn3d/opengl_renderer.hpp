@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.28  2001/06/15 14:52:30  thiessen
 * fix minor syntax errors
 *
@@ -139,7 +142,16 @@
 
 BEGIN_SCOPE(Cn3D)
 
-// the OpenGLRenderer class
+// Quality settings registry names
+static const std::string
+    REG_QUALITY_SECTION = "Cn3D-4-Quality",
+    REG_QUALITY_ATOM_SLICES = "AtomSlices",
+    REG_QUALITY_ATOM_STACKS = "AtomStacks",
+    REG_QUALITY_BOND_SIDES = "BondSides",
+    REG_QUALITY_WORM_SIDES = "WormSides",
+    REG_QUALITY_WORM_SEGMENTS = "WormSegments",
+    REG_QUALITY_HELIX_SIDES = "HelixSides";
+
 
 class StructureSet;
 class AtomStyle;
@@ -222,16 +234,11 @@ public:
     // font methods (some platform-specific, until glCanvas can do fonts...)
     void Label(const std::string& text, const Vector& center, const Vector& color);
 
-    // quality settings
-    void SetLowQuality(void);
-    void SetMediumQuality(void);
-    void SetHighQuality(void);
-
     // set font used by OpenGL (should be part of wxGLCanvas...)
 #if defined(__WXMSW__)
     // must be same as return type (WXHFONT) of wxFont::GetHFONT()
     bool SetFont_Windows(unsigned long newFontHandle);
-    
+
 #elif defined(__WXGTK__)
     bool SetFont_GTK(GdkFont *newFont);
 
@@ -265,12 +272,6 @@ private:
     unsigned int currentFrame;
     std::vector < bool > displayListEmpty;
     bool IsFrameEmpty(unsigned int frame) const;
-
-    // Quality settings - will eventually be stored in program registry
-    int atomSlices, atomStacks;     // for atom spheres
-    int bondSides;                  // for bonds
-    int wormSides, wormSegments;    // for worm bonds
-    int helixSides;                 // for helix objects
 
     // stuff for storing transparent spheres (done during Construct())
     unsigned int currentDisplayList;

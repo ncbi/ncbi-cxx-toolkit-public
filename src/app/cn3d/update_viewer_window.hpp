@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/08/06 20:22:49  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.13  2001/06/21 02:01:07  thiessen
 * major update to molecule identification and highlighting ; add toggle highlight (via alt)
 *
@@ -178,7 +181,7 @@ private:
     IntegerSpinCtrl *iStarts, *iResults, *iCutoff;
     wxCheckBox *bMerge, *bFreeze;
 
-    void OnCloseWindow(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()

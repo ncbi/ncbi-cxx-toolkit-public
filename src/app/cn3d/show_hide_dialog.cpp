@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.6  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -206,7 +209,7 @@ void ShowHideDialog::OnButton(wxCommandEvent& event)
     }
 }
 
-void ShowHideDialog::OnCloseWindow(wxCommandEvent& event)
+void ShowHideDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxOK);
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/08/06 20:22:01  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.5  2001/06/08 14:47:06  thiessen
 * fully functional (modal) render settings panel
 *
@@ -94,10 +97,11 @@ void IntegerTextCtrl::OnChange(wxCommandEvent& event)
     SEND_CHANGED_EVENT;
 }
 
-void IntegerTextCtrl::SetAllowedRange(int min, int max)
+void IntegerTextCtrl::SetAllowedRange(int min, int max, int incr)
 {
     minVal = min;
     maxVal = max;
+    incrVal = incr;
 }
 
 bool IntegerTextCtrl::IsValidInteger(void) const
@@ -106,7 +110,7 @@ bool IntegerTextCtrl::IsValidInteger(void) const
     int intVal;
     if (!GetValue().ToLong(&longVal)) return false;
     intVal = (int) longVal;
-    return (intVal >= minVal && intVal <= maxVal);
+    return (intVal >= minVal && intVal <= maxVal && (intVal - minVal)%incrVal == 0);
 }
 
 
@@ -126,7 +130,7 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
         minVal(min), maxVal(max), incrVal(increment)
 {
     iTextCtrl = new IntegerTextCtrl(parent, -1, "", textCtrlPos, textCtrlSize, textCtrlStyle);
-    iTextCtrl->SetAllowedRange(min, max);
+    iTextCtrl->SetAllowedRange(min, max, increment);
 
     spinButton = new wxSpinButton(parent, -1, spinCtrlPos, spinCtrlSize, wxSP_VERTICAL | wxSP_ARROW_KEYS);
     spinButton->PushEventHandler(this);
@@ -137,8 +141,9 @@ IntegerSpinCtrl::IntegerSpinCtrl(wxWindow* parent,
 
 bool IntegerSpinCtrl::SetInteger(int value)
 {
-    // check allowed range
-    if (value < minVal || value > maxVal) return false;
+    // check for allowed value
+    if (value < minVal || value > maxVal || (value - minVal)%incrVal != 0)
+        return false;
 
     wxString strVal;
     strVal.Printf("%i", value);
@@ -342,7 +347,7 @@ void GetFloatingPointDialog::OnButton(wxCommandEvent& event)
     }
 }
 
-void GetFloatingPointDialog::OnCloseWindow(wxCommandEvent& event)
+void GetFloatingPointDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxCANCEL);
 }

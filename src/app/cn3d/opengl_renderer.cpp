@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.41  2001/07/10 21:50:45  thiessen
 * fix ambient/specular coloring
 *
@@ -156,6 +159,8 @@
 * ===========================================================================
 */
 
+#include <wx/string.h> // kludge for now to fix weird namespace conflict
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
 #if defined(__WXMSW__)
@@ -211,6 +216,9 @@ static const GLfloat Color_On[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 static const GLfloat Color_Specular[4] = { 0.5f, 0.5f, 0.5f, 1.0f };
 static const GLint Shininess = 40;
 
+// to cache registry values
+static int atomSlices, atomStacks, bondSides, wormSides, wormSegments, helixSides;
+
 // matrix conversion utility functions
 
 // convert from Matrix to GL-matrix ordering
@@ -247,39 +255,6 @@ OpenGLRenderer::OpenGLRenderer(void) :
         gluQuadricNormals(qobj, GLU_SMOOTH);
         gluQuadricOrientation(qobj, GLU_OUTSIDE);
     }
-
-    SetLowQuality();
-}
-
-// will eventually load these from registry...
-void OpenGLRenderer::SetLowQuality(void)
-{
-    atomSlices = 6;
-    atomStacks = 4;
-    bondSides = 5;
-    wormSides = 4;
-    wormSegments = 2;
-    helixSides = 10;
-}
-
-void OpenGLRenderer::SetMediumQuality(void)
-{
-    atomSlices = 10;
-    atomStacks = 8;
-    bondSides = 6;
-    wormSides = 6;
-    wormSegments = 6;
-    helixSides = 12;
-}
-
-void OpenGLRenderer::SetHighQuality(void)
-{
-    atomSlices = 16;
-    atomStacks = 10;
-    bondSides = 16;
-    wormSides = 20;
-    wormSegments = 10;
-    helixSides = 30;
 }
 
 void OpenGLRenderer::Init(void) const
@@ -661,13 +636,37 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     currentFrame = ALL_FRAMES;
 }
 
+#define GET_REGISTRY_VALUE(name, var, defval) \
+    do { \
+        regStr = GlobalRegistry()->Get(REG_QUALITY_SECTION, (name)).c_str(); \
+        if (regStr.size() > 0 && regStr.ToULong(&value)) { \
+            (var) = (int) value; \
+        } else { \
+            ERR_POST(Warning << "OpenGLRenderer::Construct() - can't get value for " << (name)); \
+            (var) = (defval); \
+        } \
+    } while (0)
+
 void OpenGLRenderer::Construct(void)
 {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     if (structureSet) {
+
+        // get quality values from registry
+        unsigned long value;
+        wxString regStr;
+        GET_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, atomSlices, 10);
+        GET_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, atomStacks, 8);
+        GET_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, bondSides, 6);
+        GET_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, wormSides, 6);
+        GET_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, wormSegments, 6);
+        GET_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, helixSides, 12);
+
+        // do the drawing
         structureSet->DrawAll();
+
     } else {
         SetColor(GL_NONE);
         ConstructLogo();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.60  2001/08/03 13:41:33  thiessen
 * add registry and style favorites
 *
@@ -298,6 +301,7 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/multitext_dialog.hpp"
 #include "cn3d/cdd_annot_dialog.hpp"
+#include "cn3d/preferences_dialog.hpp"
 
 #include <wx/file.h>
 
@@ -338,6 +342,7 @@ static CNcbiRegistry registry;
 CNcbiRegistry * GlobalRegistry(void) { return &registry; }
 static std::string registryFile;
 static bool registryChanged = false;
+void GlobalRegistryChanged(void) { registryChanged = true; }
 
 // stuff for style favorites
 static const std::string REG_FAVORITES_NAME = "Favorites";
@@ -429,7 +434,7 @@ static wxString GetFavoritesFile(bool forRead)
             if (!GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file.c_str(),
                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate))
                 ERR_POST(Error << "Error setting favorites file in registry");
-            registryChanged = true;
+            GlobalRegistryChanged();
         }
     }
 
@@ -451,7 +456,7 @@ static bool LoadFavorites(void)
         } else {
             ERR_POST(Warning << "Favorites file does not exist: " << favoritesFile);
             GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
-            registryChanged = true;
+            GlobalRegistryChanged();
         }
     }
     return false;
@@ -484,6 +489,16 @@ Cn3DApp::Cn3DApp() : wxApp()
     // try to force all windows to use best (TrueColor) visuals
     SetUseBestVisual(true);
 }
+
+#define SET_DEFAULT_REGISTRY_VALUE(name, defval) \
+    do { \
+        regStr = GlobalRegistry()->Get(REG_QUALITY_SECTION, (name)).c_str(); \
+        if (regStr.size() == 0 || !regStr.ToULong(&value)) { \
+            regStr.Printf("%i", (defval)); \
+            GlobalRegistry()->Set(REG_QUALITY_SECTION, (name), regStr.c_str(), CNcbiRegistry::ePersistent); \
+            GlobalRegistryChanged(); \
+        } \
+    } while (0)
 
 bool Cn3DApp::OnInit(void)
 {
@@ -523,6 +538,16 @@ bool Cn3DApp::OnInit(void)
 
     // favorite styles
     LoadFavorites();
+
+    // initial quality settings if not already present in registry
+    unsigned long value;
+    wxString regStr;
+    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, 10);
+    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, 8);
+    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, 6);
+    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, 6);
+    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, 6);
+    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, 12);
 
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
@@ -586,11 +611,11 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
-    EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,  Cn3DMainFrame::OnEditFavorite)
+    EVT_MENU_RANGE(MID_ADD_FAVORITE, MID_FAVORITES_FILE,    Cn3DMainFrame::OnEditFavorite)
     EVT_MENU_RANGE(MID_FAVORITES_BEGIN, MID_FAVORITES_END,  Cn3DMainFrame::OnSelectFavorite)
-    EVT_MENU_RANGE(MID_QLOW,       MID_QHIGH,               Cn3DMainFrame::OnSetQuality)
     EVT_MENU_RANGE(MID_SHOW_LOG,   MID_SHOW_SEQ_V,          Cn3DMainFrame::OnShowWindow)
     EVT_MENU_RANGE(MID_EDIT_CDD_DESCR, MID_ANNOT_CDD,       Cn3DMainFrame::OnCDD)
+    EVT_MENU      (MID_PREFERENCES,                         Cn3DMainFrame::OnPreferences)
 END_EVENT_TABLE()
 
 static void SetupFavoritesMenu(wxMenu *favoritesMenu)
@@ -630,6 +655,8 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_ZOOM_IN, "Zoom &In");
     menu->Append(MID_ZOOM_OUT, "Zoom &Out");
     menu->Append(MID_RESET, "&Reset");
+    menu->AppendSeparator();
+    menu->Append(MID_PREFERENCES, "&Preferences...");
     menuBar->Append(menu, "&View");
 
     // Show-Hide menu
@@ -671,13 +698,6 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->AppendSeparator();
     menu->Append(MID_ANNOTATE, "A&nnotate");
     menuBar->Append(menu, "&Style");
-
-    // Quality menu
-    menu = new wxMenu;
-    menu->Append(MID_QLOW, "&Low");
-    menu->Append(MID_QMED, "&Medium");
-    menu->Append(MID_QHIGH, "&High");
-    menuBar->Append(menu, "&Quality");
 
     // Window menu
     menu = new wxMenu;
@@ -793,7 +813,7 @@ void Cn3DMainFrame::OnEditFavorite(wxCommandEvent& event)
         SaveFavorites();
         favoriteStyles.Reset();
         GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
-        registryChanged = true;
+        GlobalRegistryChanged();
         wxString newFavorites = GetFavoritesFile(true);
         if (newFavorites.size() > 0 && wxFile::Exists(newFavorites.c_str())) {
             if (!LoadFavorites())
@@ -847,6 +867,12 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
     SaveDialog(false);                              // give structure window a chance to save data
     SaveFavorites();
     Destroy();
+}
+
+void Cn3DMainFrame::OnPreferences(wxCommandEvent& event)
+{
+    PreferencesDialog dialog(this);
+    int result = dialog.ShowModal();
 }
 
 bool Cn3DMainFrame::SaveDialog(bool canCancel)
@@ -1142,17 +1168,6 @@ void Cn3DMainFrame::OnLimit(wxCommandEvent& event)
         structureLimit = (int) newLimit;
     else
         structureLimit = UNLIMITED_STRUCTURES;
-}
-
-void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)
-{
-    switch (event.GetId()) {
-        case MID_QLOW: glCanvas->renderer->SetLowQuality(); break;
-        case MID_QMED: glCanvas->renderer->SetMediumQuality(); break;
-        case MID_QHIGH: glCanvas->renderer->SetHighQuality(); break;
-        default: ;
-    }
-    GlobalMessenger()->PostRedrawAllStructures();
 }
 
 

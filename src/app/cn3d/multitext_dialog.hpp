@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.1  2001/07/10 16:39:33  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -72,7 +75,7 @@ private:
     wxButton *bOK, *bCancel;
 
     // event callbacks
-    void OnCloseWindow(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()

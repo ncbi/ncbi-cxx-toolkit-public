@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.1  2001/07/10 16:39:54  thiessen
 * change selection control keys; add CDD name/notes dialogs
 *
@@ -91,7 +94,7 @@ MultiTextDialog::MultiTextDialog(const TextLines& initialText,
 }
 
 // same as hitting cancel
-void MultiTextDialog::OnCloseWindow(wxCommandEvent& event)
+void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxCANCEL);
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/08/06 20:22:00  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.2  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -176,7 +179,7 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, StructureSet *set) :
 }
 
 // same as hitting done button
-void CDDAnnotateDialog::OnCloseWindow(wxCommandEvent& event)
+void CDDAnnotateDialog::OnCloseWindow(wxCloseEvent& event)
 {
     // set data in structureSet if changed
     if (changed)
@@ -189,9 +192,11 @@ void CDDAnnotateDialog::OnCloseWindow(wxCommandEvent& event)
 void CDDAnnotateDialog::OnButton(wxCommandEvent& event)
 {
     switch (event.GetId()) {
-        case ID_B_DONE:
-            OnCloseWindow(event);   // handle on-exit stuff there
+        case ID_B_DONE: {
+            wxCloseEvent fake;
+            OnCloseWindow(fake);   // handle on-exit stuff there
             break;
+        }
         case ID_B_CANCEL:
             EndModal(wxCANCEL);
             break;
@@ -640,7 +645,7 @@ CDDEvidenceDialog::CDDEvidenceDialog(wxWindow *parent, const ncbi::objects::CFea
 }
 
 // same as hitting cancel button
-void CDDEvidenceDialog::OnCloseWindow(wxCommandEvent& event)
+void CDDEvidenceDialog::OnCloseWindow(wxCloseEvent& event)
 {
     EndModal(wxCANCEL);
 }

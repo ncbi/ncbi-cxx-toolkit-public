@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.4  2001/08/03 13:41:24  thiessen
 * add registry and style favorites
 *
@@ -62,10 +65,10 @@ class wxFrame;
 BEGIN_SCOPE(Cn3D)
 
 // strings for various directories (implemented in cn3d_main_wxwin.cpp)
-const std::string& GetWorkingDir(void); // current working directory
-const std::string& GetUserDir(void);    // directory of latest user-selected file
-const std::string& GetProgramDir(void); // directory where Cn3D executable lives
-const std::string& GetDataDir(void);    // 'data' directory with external data files
+extern const std::string& GetWorkingDir(void); // current working directory
+extern const std::string& GetUserDir(void);    // directory of latest user-selected file
+extern const std::string& GetProgramDir(void); // directory where Cn3D executable lives
+extern const std::string& GetDataDir(void);    // 'data' directory with external data files
 
 // bring the log window forward (implemented in cn3d_main_wxwin.cpp)
 extern void RaiseLogWindow(void);
@@ -74,7 +77,8 @@ extern void RaiseLogWindow(void);
 extern void LaunchWebPage(const char *url);
 
 // global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
-ncbi::CNcbiRegistry * GlobalRegistry(void);
+extern ncbi::CNcbiRegistry * GlobalRegistry(void);
+extern void GlobalRegistryChanged(void);
 static const std::string REG_CONFIG_SECTION = "Cn3D-4-Config";
 
 // top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/08/06 20:22:49  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.5  2001/06/08 14:46:47  thiessen
 * fully functional (modal) render settings panel
 *
@@ -47,6 +50,9 @@
 *
 * ===========================================================================
 */
+
+#ifndef CN3D_WX_TOOLS__HPP
+#define CN3D_WX_TOOLS__HPP
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
 #include <corelib/ncbistd.hpp>
@@ -82,11 +88,11 @@ public:
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = 0,
         const wxValidator& validator = wxDefaultValidator, const wxString& name = wxTextCtrlNameStr);
 
-    void SetAllowedRange(int min, int max);
+    void SetAllowedRange(int min, int max, int incr);
     bool IsValidInteger(void) const;
 
 private:
-    int minVal, maxVal;
+    int minVal, maxVal, incrVal;
 
     void Validate(wxCommandEvent& event);
     void OnChange(wxCommandEvent& event);
@@ -195,10 +201,12 @@ private:
     wxButton *buttonOK;
     FloatingPointSpinCtrl *fpSpinCtrl;
 
-    void OnCloseWindow(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 };
 
 END_SCOPE(Cn3D)
+
+#endif // CN3D_WX_TOOLS__HPP

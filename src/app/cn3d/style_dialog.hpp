@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.3  2001/06/08 14:46:47  thiessen
 * fully functional (modal) render settings panel
 *
@@ -141,7 +144,7 @@ private:
     bool SetGeneralStyle(const StyleSettings::GeneralStyle& gStyle,
         int showID, int renderID, int colorID, int userID);
 
-    void OnCloseWindow(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnChange(wxCommandEvent& event);
 

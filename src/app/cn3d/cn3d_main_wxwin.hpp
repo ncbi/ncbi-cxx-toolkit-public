@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/08/06 20:22:48  thiessen
+* add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
+*
 * Revision 1.32  2001/08/03 13:41:24  thiessen
 * add registry and style favorites
 *
@@ -231,6 +234,7 @@ public:
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
+            MID_PREFERENCES,
         // Show/Hide menu
             MID_SHOW_HIDE,
             MID_SHOW_ALL,
@@ -255,10 +259,6 @@ public:
                 MID_ADD_FAVORITE,
                 MID_REMOVE_FAVORITE,
                 MID_FAVORITES_FILE,
-        // Quality menu
-            MID_QLOW,
-            MID_QMED,
-            MID_QHIGH,
         // Window menu
             MID_SHOW_LOG,
             MID_SHOW_SEQ_V,
@@ -286,8 +286,8 @@ public:
     void OnSetStyle(wxCommandEvent& event);
     void OnEditFavorite(wxCommandEvent& event);
     void OnSelectFavorite(wxCommandEvent& event);
-    void OnSetQuality(wxCommandEvent& event);
     void OnCDD(wxCommandEvent& event);
+    void OnPreferences(wxCommandEvent& event);
 
 private:
 
