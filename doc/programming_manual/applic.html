@@ -165,8 +165,83 @@ files on
 </i>systems. The convention for all platforms now is to
 name such files
 <i>*.ini</i> (where * is by default the application name).
-</p>
 
+<p>
+The name of configuration file is specified by argument <i>conf</i> of
+<a href="../lxr/ident?i=CNcbiApplication&d=C">CNcbiApplication::AppMain()</a>.
+
+<table BORDER WIDTH="100%" NOSAVE>
+<tr NOSAVE>
+<th NOSAVE><i>conf</i></th>
+<th NOSAVE>Where to look for the config file</th>
+</tr>
+
+<tr>
+<td>
+<i>empty</i><br>[default]
+</td>
+<td>
+Compose config file name from the base application name
+plus <i>.ini</i>. Also try to strip file extensions, e.g. for the
+application named <i>my_app.cgi.exe</i> try subsequently:
+<i>my_app.cgi.exe.ini</i>, <i>my_app.cgi.ini</i>, <i>my_app.ini</i>.<br>
+Using these names, search in directories as described in
+the <a href="#REG_Otherwise">"Otherwise"</a> case for non-empty
+<i>conf</i> (below).
+</td>
+</tr>
+
+<tr>
+<td>
+<i>NULL</i>
+</td>
+<td>
+Do not even try to load registry at all
+</td>
+</tr>
+
+<tr>
+<td>
+<i>non-empty</i>
+</td>
+<td>
+<ul>
+<li>
+If <i>conf</i> contains a path, then try to load from the 
+config file named <i>conf</i> (only and exactly!)
+</li>
+<li>
+If the path is not fully qualified, and it starts from <i>../</i> or <i>./</i>,
+then look for the config file starting from the current working dir
+</li>
+<li>
+<a name="REG_Otherwise"></a>
+<u>Otherwise</u> (only a basename, without path), the config file
+will be searched for in the following places (in the order of preference):
+<ol>
+<li>current work directory</li>
+<li>directory defined by environment variable <i><b>NCBI</b></i></li>
+<li>user home directory</li>
+<li>program directory</li>
+</ol>
+</li>
+</ul>
+</td>
+</tr>
+
+</table>
+
+<p>
+On success, you can access the loaded configuration (registry) using
+method 
+<a href="../lxr/ident?i=CNcbiApplication&d=C">CNcbiApplication::GetConfig()</a>
+.
+<br>
+Application will throw an exception if the config.file is found, it is
+not empty, and either cannot be opened or contains invalid entries.
+<br>
+If <i>conf</i> is not <i>NULL</i>, and the config file cannot not
+be found, then a warning will be posted to the application diagnostic.
 
 
 
@@ -379,7 +454,7 @@ defaults. The remaining four arguments specify:
     (#4) how to setup a diagnostic stream for message posting</li>
   <li>
     (#5) the name of a <i>.ini</i> configuration
-    file (will use program name with suffix <i>.ini</i> by default)</li>
+    file (see <a href="#CNcbiRegistry">above</a> for its default location)</li>
   <li>
     (#6) a program name (to be used in lieu of <i>argv[0]</i>)</li>
 </ul>
