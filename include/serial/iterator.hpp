@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/05/05 17:59:02  vasilche
+* Unfortunately MSVC doesn't support explicit instantiation of template methods.
+*
 * Revision 1.7  2000/05/05 16:26:51  vasilche
 * Simplified iterator templates.
 *
@@ -140,22 +143,19 @@ private:
     bool m_DetectLoops;
 };
 
-template<class BeginInfo>
-class CTreeIteratorBase
+class CTreeIterator
 {
-    typedef CTreeIteratorBase<BeginInfo> TThis;
 public:
-    typedef BeginInfo TBeginInfo;
-    typedef typename TBeginInfo::TChildrenIterator TChildrenIterator;
-    typedef typename TChildrenIterator::TObjectInfo TObjectInfo;
+    typedef CBeginInfo TBeginInfo;
+    typedef TBeginInfo::TChildrenIterator TChildrenIterator;
+    typedef TChildrenIterator::TObjectInfo TObjectInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
 
-    CTreeIteratorBase(void)
+    CTreeIterator(void)
         : m_Valid(false), m_SkipSubTree(false), m_Stack(0), m_StackDepth(0)
         {
         }
-
-    virtual ~CTreeIteratorBase(void);
+    virtual ~CTreeIterator(void);
 
 
     TObjectInfo& Get(void)
@@ -200,7 +200,7 @@ public:
         {
             return !End();
         }
-    CTreeIteratorBase<BeginInfo>& operator++(void)
+    CTreeIterator& operator++(void)
         {
             Next();
             return *this;
@@ -225,13 +225,7 @@ public:
     };
 
     void Begin(const TBeginInfo& beginInfo);
-    void Erase(void)
-        {
-            PrepareErase();
-            m_Stack->Erase();
-            m_Valid = false;
-            m_SkipSubTree = true;
-        }
+    void Erase(void);
 
 protected:
     // post condition: Valid() || End()
@@ -241,11 +235,9 @@ protected:
 protected:
     // have to make these methods protected instead of private due to
     // bug in GCC
-    CTreeIteratorBase(const CTreeIteratorBase<BeginInfo>&);
-    CTreeIteratorBase<BeginInfo>& operator=(const CTreeIteratorBase<BeginInfo>&);
+    CTreeIterator(const CTreeIterator&);
+    CTreeIterator& operator=(const CTreeIterator&);
 private:
-    void PrepareErase(void);
-
     bool m_Valid;
     bool m_SkipSubTree;
     // stack of tree level iterators
@@ -256,10 +248,114 @@ private:
     auto_ptr<TVisitedObjects> m_VisitedObjects;
 };
 
-template<class BeginInfo>
-class CTypeIteratorBase : public CTreeIteratorBase<BeginInfo>
+class CTreeConstIterator
 {
-    typedef CTreeIteratorBase<BeginInfo> CParent;
+public:
+    typedef CConstBeginInfo TBeginInfo;
+    typedef TBeginInfo::TChildrenIterator TChildrenIterator;
+    typedef TChildrenIterator::TObjectInfo TObjectInfo;
+    typedef set<TConstObjectPtr> TVisitedObjects;
+
+    CTreeConstIterator(void)
+        : m_Valid(false), m_SkipSubTree(false), m_Stack(0), m_StackDepth(0)
+        {
+        }
+    virtual ~CTreeConstIterator(void);
+
+
+    TObjectInfo& Get(void)
+        {
+            _ASSERT(Valid());
+            return m_CurrentObject;
+        }
+    const TObjectInfo& Get(void) const
+        {
+            _ASSERT(Valid());
+            return m_CurrentObject;
+        }
+    TTypeInfo GetCurrentTypeInfo(void) const
+        {
+            return Get().GetTypeInfo();
+        }
+
+    // reset iterator to initial state (!Valid() && End())
+    void Reset(void);
+
+    // points to a valid object
+    bool Valid(void) const
+        {
+            return m_Valid;
+        }
+    // end of tree (also Valid() == false)
+    bool End(void) const
+        {
+            return !Valid() && m_Stack == 0;
+        }
+    // post condition: Valid() || End()
+    void Next(void);
+
+    // precondition: Valid()
+    // postcondition: Valid(); will skip on the next Next()
+    void SkipSubTree(void)
+        {
+            m_SkipSubTree = true;
+        }
+
+    operator bool(void)
+        {
+            return !End();
+        }
+    CTreeConstIterator& operator++(void)
+        {
+            Next();
+            return *this;
+        }
+
+    class CTreeLevel : public TChildrenIterator {
+    public:
+        CTreeLevel(const TObjectInfo& owner, CTreeLevel* previousLevel)
+            : TChildrenIterator(owner), m_PreviousLevel(previousLevel)
+            {
+            }
+
+        CTreeLevel* Pop(void)
+            {
+                CTreeLevel* previousLevel = m_PreviousLevel;
+                delete this;
+                return previousLevel;
+            }
+
+    private:
+        CTreeLevel* m_PreviousLevel;
+    };
+
+    void Begin(const TBeginInfo& beginInfo);
+
+protected:
+    // post condition: Valid() || End()
+    virtual bool CanSelectCurrentObject(void);
+    virtual bool CanEnterCurrentObject(void);
+
+protected:
+    // have to make these methods protected instead of private due to
+    // bug in GCC
+    CTreeConstIterator(const CTreeConstIterator&);
+    CTreeConstIterator& operator=(const CTreeConstIterator&);
+private:
+    bool m_Valid;
+    bool m_SkipSubTree;
+    // stack of tree level iterators
+    CTreeLevel* m_Stack;
+    size_t m_StackDepth;
+    // currently selected object
+    TObjectInfo m_CurrentObject;
+    auto_ptr<TVisitedObjects> m_VisitedObjects;
+};
+
+template<class Parent>
+class CTypeIteratorBase : public Parent
+{
+    typedef Parent CParent;
 protected:
     typedef typename CParent::TBeginInfo TBeginInfo;
 
@@ -280,10 +376,79 @@ private:
     TTypeInfo m_NeedType;
 };
 
-template<class C, class TypeGetter = C>
-class CTypeIterator : public CTypeIteratorBase<CBeginInfo>
+template<class Parent>
+class CTypesIteratorBase : public Parent
 {
-    typedef CTypeIteratorBase<CBeginInfo> CParent;
+    typedef Parent CParent;
+public:
+    typedef typename CParent::TBeginInfo TBeginInfo;
+    typedef list<TTypeInfo> TTypeList;
+
+    CTypesIteratorBase(void)
+        {
+        }
+    CTypesIteratorBase(TTypeInfo type)
+        {
+            m_TypeList.push_back(type);
+        }
+    CTypesIteratorBase(TTypeInfo type1, TTypeInfo type2)
+        {
+            m_TypeList.push_back(type1);
+            m_TypeList.push_back(type2);
+        }
+    CTypesIteratorBase(const TTypeList& typeList)
+        : m_TypeList(typeList)
+        {
+        }
+    CTypesIteratorBase(const TTypeList& typeList, const TBeginInfo& beginInfo)
+        : m_TypeList(typeList)
+        {
+            Begin(beginInfo);
+        }
+
+    const TTypeList& GetTypeList(void) const
+        {
+            return m_TypeList;
+        }
+
+    CTypesIteratorBase<Parent>& AddType(TTypeInfo type)
+        {
+            m_TypeList.push_back(type);
+            return *this;
+        }
+
+    CTypesIteratorBase<Parent>& operator=(const TBeginInfo& beginInfo)
+        {
+            Begin(beginInfo);
+            return *this;
+        }
+
+    typename CParent::TObjectInfo::TObjectPtr GetFoundPtr(void) const
+        {
+            return Get().GetObjectPtr();
+        }
+    TTypeInfo GetFoundType(void) const
+        {
+            return Get().GetTypeInfo();
+        }
+    TTypeInfo GetMatchType(void) const
+        {
+            return m_MatchType;
+        }
+
+protected:
+    virtual bool CanSelectCurrentObject(void);
+    virtual bool CanEnterCurrentObject(void);
+
+private:
+    TTypeList m_TypeList;
+    TTypeInfo m_MatchType;
+};
+
+template<class C, class TypeGetter = C>
+class CTypeIterator : public CTypeIteratorBase<CTreeIterator>
+{
+    typedef CTypeIteratorBase<CTreeIterator> CParent;
 public:
     typedef typename CParent::TBeginInfo TBeginInfo;
 
@@ -313,9 +478,9 @@ public:
 };
 
 template<class C, class TypeGetter = C>
-class CTypeConstIterator : public CTypeIteratorBase<CConstBeginInfo>
+class CTypeConstIterator : public CTypeIteratorBase<CTreeConstIterator>
 {
-    typedef CTypeIteratorBase<CConstBeginInfo> CParent;
+    typedef CTypeIteratorBase<CTreeConstIterator> CParent;
 public:
     typedef typename CParent::TBeginInfo TBeginInfo;
 
@@ -387,77 +552,8 @@ public:
 typedef CTypeIterator<CObject> CObjectsIterator;
 typedef CTypeConstIterator<CObject> CObjectsConstIterator;
 
-template<class BeginInfo>
-class CTypesIteratorBase : public CTreeIteratorBase<BeginInfo>
-{
-    typedef CTreeIteratorBase<BeginInfo> CParent;
-public:
-    typedef typename CParent::TBeginInfo TBeginInfo;
-    typedef list<TTypeInfo> TTypeList;
-
-    CTypesIteratorBase(void)
-        {
-        }
-    CTypesIteratorBase(TTypeInfo type)
-        {
-            m_TypeList.push_back(type);
-        }
-    CTypesIteratorBase(TTypeInfo type1, TTypeInfo type2)
-        {
-            m_TypeList.push_back(type1);
-            m_TypeList.push_back(type2);
-        }
-    CTypesIteratorBase(const TTypeList& typeList)
-        : m_TypeList(typeList)
-        {
-        }
-    CTypesIteratorBase(const TTypeList& typeList, const TBeginInfo& beginInfo)
-        : m_TypeList(typeList)
-        {
-            Begin(beginInfo);
-        }
-
-    const TTypeList& GetTypeList(void) const
-        {
-            return m_TypeList;
-        }
-
-    CTypesIteratorBase<BeginInfo>& AddType(TTypeInfo type)
-        {
-            m_TypeList.push_back(type);
-            return *this;
-        }
-
-    CTypesIteratorBase<BeginInfo>& operator=(const TBeginInfo& beginInfo)
-        {
-            Begin(beginInfo);
-            return *this;
-        }
-
-    typename CParent::TObjectInfo::TObjectPtr GetFoundPtr(void) const
-        {
-            return Get().GetObjectPtr();
-        }
-    TTypeInfo GetFoundType(void) const
-        {
-            return Get().GetTypeInfo();
-        }
-    TTypeInfo GetMatchType(void) const
-        {
-            return m_MatchType;
-        }
-
-protected:
-    virtual bool CanSelectCurrentObject(void);
-    virtual bool CanEnterCurrentObject(void);
-
-private:
-    TTypeList m_TypeList;
-    TTypeInfo m_MatchType;
-};
-
-typedef CTypesIteratorBase<CBeginInfo> CTypesIterator;
-typedef CTypesIteratorBase<CConstBeginInfo> CTypesConstIterator;
+typedef CTypesIteratorBase<CTreeIterator> CTypesIterator;
+typedef CTypesIteratorBase<CTreeConstIterator> CTypesConstIterator;
 
 enum EDetectLoops {
     eDetectLoops
