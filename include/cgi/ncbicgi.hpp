@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  1998/12/09 19:25:32  vakatov
+* Made CCgiRequest::GetRandomProperty() look "const"
+*
 * Revision 1.26  1998/12/04 23:38:34  vakatov
 * Workaround SunPro's "buggy const"(see "BW_01")
 * Renamed "CCgiCookies::Erase()" method to "...Clear()"
@@ -294,7 +297,7 @@ public:
     // Get value of a "standard" property(empty string if not specified)
     const string& GetProperty(ECgiProp prop) const;
     // Get value of a random client propertiy("$HTTP_<key>")
-    const string& GetRandomProperty(const string& key);
+    const string& GetRandomProperty(const string& key) const;
     // Auxiliaries(to convert from the "string" representation)
     Uint2  GetServerPort(void) const;
     // Uint4  GetRemoteAddr(void) const;  // (in the network byte order)
