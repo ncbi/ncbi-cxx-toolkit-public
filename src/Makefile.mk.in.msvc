@@ -13,7 +13,7 @@ CompileAs=0
 Detect64BitPortabilityProblems=FALSE
 IgnoreStandardIncludePath=FALSE
 StringPooling=FALSE
-MinimalRebuild=FALSE
+MinimalRebuild=TRUE
 ExceptionHandling=TRUE
 BufferSecurityCheck=TRUE
 RuntimeTypeInfo=TRUE
@@ -22,14 +22,14 @@ UndefinePreprocessorDefinitions=
 AdditionalOptions=
 
 [Compiler.debug]
-DebugInformationFormat=1
+DebugInformationFormat=3
 Optimization=0
 GlobalOptimizations=FALSE
 InlineFunctionExpansion=0
 FavorSizeOrSpeed=0
 OmitFramePointers=FALSE
 BasicRuntimeChecks=3
-BrowseInformation=1
+BrowseInformation=0
 EnableFunctionLevelLinking=FALSE
 
 [Compiler.release]
