@@ -917,7 +917,7 @@ void CGBDataLoader::AllocateConn(CGBReaderRequestResult& result)
     else {
         TThreadSystemID thread_id = 0;
         CThread::GetSystemID(&thread_id);
-        conn = TConn(thread_id % m_ConnMutexes.GetSize());
+        conn = TConn((size_t)thread_id % m_ConnMutexes.GetSize());
     }
     //ERR_POST("AllocateConn() thread: "<<thread_id<<" conn: "<<conn);
     m_ConnMutexes[conn].Lock();
