@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/01/28 20:28:28  lavr
+ * Changed io_bounce.cgi -> bounce.cgi
+ *
  * Revision 6.14  2002/01/16 21:23:15  vakatov
  * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
  *
@@ -101,7 +104,7 @@ static CNcbiRegistry* s_CreateRegistry(void)
     // Compose a test registry
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_HOST,           "ray");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,   "/Service/io_bounce.cgi");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_PATH,      "/Service/bounce.cgi");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_ARGS,           "arg1+arg2+arg3");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "POST");
     reg->Set(DEF_CONN_REG_SECTION, REG_CONN_TIMEOUT,        "5.0");
