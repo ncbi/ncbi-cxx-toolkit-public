@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2001/04/24 21:37:26  lavr
+ * New code for: SERV_MapperName() and SERV_Penalize().
+ *
  * Revision 6.18  2001/03/21 21:23:30  lavr
  * Explicit type converion size_t -> unsigned in printf
  *
@@ -155,10 +158,11 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
     strcpy((char *)iter->service, service);
     iter->type = type;
     iter->preferred_host =
-        preferred_host == SERV_LOCALHOST ?
-        SOCK_gethostbyname(0) : preferred_host;
+        preferred_host == SERV_LOCALHOST
+        ? SOCK_gethostbyname(0) : preferred_host;
     iter->n_skip = iter->n_max_skip = 0;
     iter->skip = 0;
+    iter->last = 0;
     iter->op = 0;
     iter->data = 0;
 
@@ -235,7 +239,22 @@ const SSERV_Info* SERV_GetNextInfo(SERV_ITER iter)
         free(info);
         info = 0;
     }
+    iter->last = iter->skip[iter->n_skip - 1];
     return info;
+}
+
+
+const char* SERV_MapperName(SERV_ITER iter)
+{
+    return iter && iter->op ? iter->op->name : 0;
+}
+
+
+int/*bool*/ SERV_Penalize(SERV_ITER iter, double penalty)
+{
+    if (!iter || !iter->op || !iter->op->Penalize || !iter->last)
+        return 0;
+    return (*iter->op->Penalize)(iter, penalty);
 }
 
 
