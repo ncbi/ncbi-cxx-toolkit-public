@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2004/07/28 17:00:10  rsmith
+* make header independent by adding declaration of CConnection.
+*
 * Revision 1.9  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *
@@ -79,6 +82,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CConnection;
+
 class CCursor : public CActiveObject, 
                 public ICursor
 {
@@ -100,7 +105,7 @@ public:
                             EAllowLog log_it,
                             size_t buf_size);
 
-    virtual IWriter* CCursor::GetBlobWriter(unsigned int col,
+    virtual IWriter* GetBlobWriter(unsigned int col,
                                             size_t blob_size, 
                                             EAllowLog log_it);
 
