@@ -829,6 +829,69 @@ FindMatrixPath(const char* matrix_name, bool is_prot)
     return retval;
 }
 
+/// Checks if a BLAST database exists at a given file path: looks for 
+/// an alias file first, then for an index file
+static bool BlastDbFileExists(string& path, bool is_prot)
+{
+    // Check for alias file first
+    string full_path = path + (is_prot ? ".pal" : ".nal");
+    if (CFile(full_path).Exists())
+        return true;
+    // Check for an index file
+    full_path = path + (is_prot ? ".pin" : ".nin");
+    if (CFile(full_path).Exists())
+        return true;
+    return false;
+}
+
+string
+FindBlastDbPath(const char* dbname, bool is_prot)
+{
+    string retval;
+    string full_path;       // full path to matrix file
+
+    if (!dbname)
+        return retval;
+
+    string database(dbname);
+
+    // Look for matrix file in local directory
+    full_path = database;
+    if (BlastDbFileExists(full_path, is_prot)) {
+        return retval;
+    }
+
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        const string& blastdb_env = app->GetEnvironment().Get("BLASTDB");
+        if (CFile(blastdb_env).Exists()) {
+            full_path = blastdb_env;
+            full_path += CFile::AddTrailingPathSeparator(full_path);
+            full_path += database;
+            if (BlastDbFileExists(full_path, is_prot)) {
+                retval = full_path;
+                retval.erase(retval.size() - database.size());
+                return retval;
+            }
+        }
+    }
+
+    // Obtain the matrix path from the ncbi configuration file
+    CMetaRegistry::SEntry sentry;
+    sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    string path = 
+        sentry.registry ? sentry.registry->Get("BLAST", "BLASTDB") : "";
+
+    full_path = CFile::MakePath(path, database);
+    if (BlastDbFileExists(full_path, is_prot)) {
+        retval = full_path;
+        retval.erase(retval.size() - database.size());
+        return retval;
+    }
+
+    return retval;
+}
+
 unsigned int
 GetNumberOfFrames(EProgram p)
 {
@@ -862,6 +925,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2004/04/06 20:45:28  dondosha
+* Added function FindBlastDbPath: should be moved to seqdb library
+*
 * Revision 1.63  2004/03/24 19:14:48  dondosha
 * Fixed memory leaks
 *

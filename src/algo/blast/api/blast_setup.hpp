@@ -148,6 +148,14 @@ FindGeneticCode(int genetic_code);
 string
 FindMatrixPath(const char* matrix_name, bool is_prot);
 
+/** Returns the path (including a trailing path separator) to the location
+ * where the BLAST database can be found.
+ * @param dbname Database to search for
+ * @param is_prot true if this is a protein matrix
+ */
+string
+FindBlastDbPath(const char* dbname, bool is_prot);
+
 /** Returns the number of frames for a given BLAST program
  * @param p program 
  */
@@ -161,6 +169,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/04/06 20:45:28  dondosha
+* Added function FindBlastDbPath: should be moved to seqdb library
+*
 * Revision 1.19  2004/03/15 19:57:52  dondosha
 * SetupSubjects takes just program argument instead of CBlastOptions*
 *
