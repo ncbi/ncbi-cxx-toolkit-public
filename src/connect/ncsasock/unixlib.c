@@ -352,17 +352,17 @@ long int getuid()
 
 struct passwd *getpwent()
 {
-	return (NULL/*not found*/);
+	return (NULL /*not found*/);
 }
 
 struct passwd *getpwuid()
 {
-	return (NULL/*not found*/);
+	return (NULL /*not found*/);
 }
 
 struct passwd *getpwnam()
 {
-	return (NULL/*not found*/);
+	return (NULL /*not found*/);
 }
 
 #ifdef JAE
