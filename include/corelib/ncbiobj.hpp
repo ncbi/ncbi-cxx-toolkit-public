@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/03/13 22:43:48  vakatov
+* Made "CObject" MT-safe
+* + CObject::DoDeleteThisObject()
+*
 * Revision 1.20  2001/03/05 22:14:18  vakatov
 * Added "operator<" for CRef:: and CConstRef:: to make them useable
 * as keys in the stnadard C++ associative containers (set, map, ...)
@@ -110,8 +114,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbimtx.hpp>
 
 BEGIN_NCBI_SCOPE
+
 
 class CNullPointerError : public exception
 {
@@ -121,6 +127,7 @@ public:
 
     const char* what() const THROWS_NONE;
 };
+
 
 
 class CObject
@@ -150,6 +157,8 @@ public:
 
     // mark this object as not allocated in heap
     virtual void DoNotDeleteThisObject(void);
+    // mark this object as allocated in heap
+    virtual void DoDeleteThisObject(void);
 
     // operators new/delete for additional checking in debug mode
     void* operator new(size_t size);
@@ -196,11 +205,14 @@ private:
 
     // report different kinds of error
     void InvalidObject(void) const; // using of deleted object
-    void AddReferenceOverflow(void) const; // counter overflow (or deleted)
+    void AddReferenceOverflow(TCounter counter) const; // counter overflow/bad
 
-    // counter data
-    mutable TCounter m_Counter;
+
+    mutable TCounter  m_Counter;  // reference counter
+    static CFastMutex sm_Mutex;   // reference counter's protective mutex
 };
+
+
 
 template<class C>
 class CRefBase
@@ -224,6 +236,7 @@ public:
             object->ReleaseReference();
         }
 };
+
 
 template<class C>
 class CRef {
@@ -600,6 +613,7 @@ public:
 private:
     T m_Data;
 };
+
 
 #include <corelib/ncbiobj.inl>
 

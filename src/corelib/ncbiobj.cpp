@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/03/13 22:43:50  vakatov
+* Made "CObject" MT-safe
+* + CObject::DoDeleteThisObject()
+*
 * Revision 1.12  2000/12/26 22:00:19  vasilche
 * Fixed error check for case CObject constructor never called.
 *
@@ -80,7 +84,15 @@
 
 #define STACK_THRESHOLD (16*1024)
 
+
 BEGIN_NCBI_SCOPE
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CNullPointerError::
+//
+
 
 CNullPointerError::CNullPointerError(void)
     THROWS_NONE
@@ -98,6 +110,16 @@ const char* CNullPointerError::what() const
     return "null pointer error";
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CObject::
+//
+
+
+CFastMutex CObject::sm_Mutex;
+
+
 // CObject local new operator to mark allocation in heap
 void* CObject::operator new(size_t size)
 {
@@ -107,6 +129,7 @@ void* CObject::operator new(size_t size)
     static_cast<CObject*>(ptr)->m_Counter = eCounterNew;
     return ptr;
 }
+
 
 void* CObject::operator new[](size_t size)
 {
@@ -119,6 +142,7 @@ void* CObject::operator new[](size_t size)
     return ptr;
 }
 
+
 #ifdef _DEBUG
 void CObject::operator delete(void* ptr)
 {
@@ -130,13 +154,14 @@ void CObject::operator delete(void* ptr)
 
 void CObject::operator delete[](void* ptr)
 {
-#ifdef HAVE_WINDOWS_H
+#  ifdef HAVE_WINDOWS_H
     ::operator delete(ptr);
-#else
+#  else
     ::operator delete[](ptr);
-#endif
+#  endif
 }
-#endif
+#endif  /* _DEBUG */
+
 
 // initialization in debug mode
 void CObject::InitCounter(void)
@@ -161,15 +186,18 @@ void CObject::InitCounter(void)
     }
 }
 
+
 CObject::CObject(void)
 {
     InitCounter();
 }
 
+
 CObject::CObject(const CObject& /*src*/)
 {
     InitCounter();
 }
+
 
 CObject::~CObject(void)
 {
@@ -198,9 +226,9 @@ CObject::~CObject(void)
     m_Counter = TCounter(eCounterDeleted);
 }
 
-void CObject::AddReferenceOverflow(void) const
+
+void CObject::AddReferenceOverflow(TCounter counter) const
 {
-    TCounter counter = m_Counter;
     if ( ObjectStateValid(counter) ) {
         // counter overflow
         THROW1_TRACE(runtime_error,
@@ -212,6 +240,7 @@ void CObject::AddReferenceOverflow(void) const
                      "AddReference of invalid CObject");
     }
 }
+
 
 void CObject::RemoveLastReference(void) const
 {
@@ -233,37 +262,66 @@ void CObject::RemoveLastReference(void) const
     }
 }
 
+
 void CObject::ReleaseReference(void) const
 {
-    TCounter counter = m_Counter;
-    if ( ObjectStateReferenced(counter) ) {
-        // release reference to object in heap
-        m_Counter = TCounter(counter - eCounterStep);
-    }
-    else if ( !ObjectStateValid(counter) ) {
+    TCounter counter;
+    {{
+        CFastMutexGuard LOCK(sm_Mutex);
+        counter = m_Counter;
+        if ( ObjectStateReferenced(counter) ) {
+            // release reference to object in heap
+            m_Counter = TCounter(counter - eCounterStep);
+            return;
+        }
+    }}
+
+    // error
+    if ( !ObjectStateValid(counter) ) {
         THROW1_TRACE(runtime_error,
                      "ReleaseReference of corrupted CObject");
-    }
-    else {
+    } else {
         THROW1_TRACE(runtime_error,
                      "ReleaseReference of unreferenced CObject");
     }
 }
 
+
 void CObject::DoNotDeleteThisObject(void)
 {
-    TCounter counter = m_Counter;
-    if ( !ObjectStateValid(counter) ) {
+    bool is_valid;
+    {{
+        CFastMutexGuard LOCK(sm_Mutex);
+        is_valid = ObjectStateValid(m_Counter);
+        if (is_valid  &&  !ObjectStateReferenced(m_Counter)) {
+            m_Counter = eCounterNotInHeap;
+            return;
+        }
+    }}
+    
+
+    if ( is_valid ) {
+        THROW1_TRACE(runtime_error,
+                     "DoNotDeleteThisObject of referenced CObject");
+    } else {
         THROW1_TRACE(runtime_error,
                      "DoNotDeleteThisObject of corrupted CObject");
     }
-    else if ( ObjectStateReferenced(counter) ) {
-        THROW1_TRACE(runtime_error,
-                     "DoNotDeleteThisObject of referenced CObject");
-    }
-    else {
-        m_Counter = eCounterNotInHeap;
-    }
+}
+
+
+void CObject::DoDeleteThisObject(void)
+{
+    {{
+        CFastMutexGuard LOCK(sm_Mutex);
+        if ( ObjectStateValid(m_Counter) ) {
+            m_Counter |= eStateBitsInHeap;
+            return;
+        }
+    }}
+
+    THROW1_TRACE(runtime_error,
+                 "DoDeleteThisObject of corrupted CObject");
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/03/13 22:43:49  vakatov
+* Made "CObject" MT-safe
+* + CObject::DoDeleteThisObject()
+*
 * Revision 1.3  2000/11/01 21:20:34  vasilche
 * Fixed missing new[] and delete[] on MSVC.
 *
@@ -46,6 +50,7 @@
 * ===========================================================================
 */
 
+
 #ifndef _DEBUG
 inline
 void CObject::operator delete(void* ptr)
@@ -56,13 +61,14 @@ void CObject::operator delete(void* ptr)
 inline
 void CObject::operator delete[](void* ptr)
 {
-#ifdef HAVE_WINDOWS_H
+# ifdef HAVE_WINDOWS_H
     ::operator delete(ptr);
-#else
+# else
     ::operator delete[](ptr);
-#endif
+# endif
 }
-#endif
+#endif  /* _DEBUG */
+
 
 inline
 bool CObject::ObjectStateCanBeDeleted(TCounter counter)
@@ -70,11 +76,13 @@ bool CObject::ObjectStateCanBeDeleted(TCounter counter)
     return (counter & eStateBitsInHeap) != 0;
 }
 
+
 inline
 bool CObject::ObjectStateValid(TCounter counter)
 {
     return counter >= TCounter(eCounterValid);
 }
+
 
 inline
 bool CObject::ObjectStateReferenced(TCounter counter)
@@ -82,11 +90,13 @@ bool CObject::ObjectStateReferenced(TCounter counter)
     return counter >= TCounter(eCounterValid + eCounterStep);
 }
 
+
 inline
 bool CObject::ObjectStateDoubleReferenced(TCounter counter)
 {
     return counter >= TCounter(eCounterValid + eCounterStep * 2);
 }
+
 
 inline
 bool CObject::ObjectStateReferencedOnlyOnce(TCounter counter)
@@ -95,11 +105,13 @@ bool CObject::ObjectStateReferencedOnlyOnce(TCounter counter)
         !ObjectStateDoubleReferenced(counter);
 }
 
+
 inline
 bool CObject::CanBeDeleted(void) const THROWS_NONE
 {
     return ObjectStateCanBeDeleted(m_Counter);
 }
+
 
 inline
 bool CObject::Referenced(void) const THROWS_NONE
@@ -107,11 +119,13 @@ bool CObject::Referenced(void) const THROWS_NONE
     return ObjectStateReferenced(m_Counter);
 }
 
+
 inline
 bool CObject::ReferencedOnlyOnce(void) const THROWS_NONE
 {
     return ObjectStateReferencedOnlyOnce(m_Counter);
 }
+
 
 inline
 CObject& CObject::operator=(const CObject& ) THROWS_NONE
@@ -119,24 +133,39 @@ CObject& CObject::operator=(const CObject& ) THROWS_NONE
     return *this;
 }
 
+
 inline
 void CObject::AddReference(void) const
 {
-    TCounter newCounter = m_Counter + TCounter(eCounterStep);
-    if ( ObjectStateReferenced(newCounter) )
-        m_Counter = newCounter;
-    else
-        AddReferenceOverflow();
+    TCounter oldCounter;
+
+    {{
+        CFastMutexGuard LOCK(sm_Mutex);
+        oldCounter = m_Counter;
+
+        TCounter newCounter = oldCounter + TCounter(eCounterStep);
+        if ( ObjectStateReferenced(newCounter) ) {
+            m_Counter = newCounter;
+            return;
+        }
+    }}
+    
+    AddReferenceOverflow(oldCounter);
 }
+
 
 inline
 void CObject::RemoveReference(void) const
 {
-    TCounter oldCounter = m_Counter;
-    if ( ObjectStateDoubleReferenced(oldCounter) )
-        m_Counter = oldCounter - eCounterStep;
-    else
-        RemoveLastReference();
+    {{
+        CFastMutexGuard LOCK(sm_Mutex);
+        if ( ObjectStateDoubleReferenced(m_Counter) ) {
+            m_Counter -= eCounterStep;
+            return;
+        }
+    }}
+
+    RemoveLastReference();
 }
 
 #endif /* def NCBIOBJ__HPP  &&  ndef NCBIOBJ__INL */
