@@ -2464,8 +2464,8 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
    else 
       hsp_list = *hsp_list_ptr;
 
-   tree = Blast_IntervalTreeInit(0, query->length,
-                                 0, subject->length);
+   tree = Blast_IntervalTreeInit(0, query->length + 1,
+                                 0, subject->length + 1);
 
    for (index=0; index<init_hitlist->total; index++) {
       BlastHSP tmp_hsp;
@@ -3289,8 +3289,24 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    init_hsp_array = init_hitlist->init_hsp_array;
 
-   tree = Blast_IntervalTreeInit(0, query->length,
-                                 0, subject->length);
+   /* Initialize the interval tree with the maximum possible
+      query and subject offsets. For query sequences this is always
+      query->length, and for subject sequences it is subject->length
+      except for out-of-frame tblastn. In that case, subject->length
+      is the length of one strand of the subject sequence, but the
+      subject offsets of each ungapped alignment are wrt all six subject
+      frames concatenated together. Finally, add 1 to the maximum, 
+      to account for HSPs that include the end of a sequence */
+
+   if (program_number == eBlastTypeTblastn &&
+       score_params->options->is_ooframe) {
+      tree = Blast_IntervalTreeInit(0, query->length+1,
+                                    0, 2*(subject->length + CODON_LENGTH)+1);
+   }
+   else {
+      tree = Blast_IntervalTreeInit(0, query->length+1,
+                                    0, subject->length+1);
+   }
 
    for (index=0; index<init_hitlist->total; index++)
    {
