@@ -197,6 +197,11 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
                            "Cannot connect to server");
     }
 
+#ifdef NCBI_OS_MSWIN
+    dbsetopt(dbcon, DBTEXTLIMIT, "0" ); // No limit
+    dbsetopt(dbcon, DBTEXTSIZE , "2147483647" ); // 0x7FFFFFFF
+#endif
+
     t_con = new CDBL_Connection(this, dbcon, reusable, pool_name);
     t_con->m_MsgHandlers = m_ConnHandlers;
     t_con->m_Server      = srv_name;
@@ -442,7 +447,7 @@ extern "C" {
     {
 	return (void*)DBAPI_RegisterDriver_DBLIB;
     }
-} 
+}
 
 END_NCBI_SCOPE
 
@@ -451,6 +456,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/02/26 17:53:25  sapojnik
+ * Removed blob size limits for MS SQL
+ *
  * Revision 1.9  2002/01/17 22:12:47  soussov
  * changes driver registration
  *
