@@ -193,7 +193,12 @@ static void s_TEST_Tree()
     assert(parent_node);
     assert(parent_node->GetValue() == 3);
 
-    delete tr;
+    typedef string (*IntConvType)(long, bool sign = false);
+
+
+    TreePrint(cout, *str, (IntConvType) NStr::IntToString);
+
+    delete str;
 }
 
 
@@ -313,6 +318,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.9  2004/04/08 18:35:50  kuznets
+ * + tree print test
+ *
  * Revision 1.8  2004/04/08 11:48:22  kuznets
  * + TreeTraceToRoot test
  *
