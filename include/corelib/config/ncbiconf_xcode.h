@@ -95,7 +95,7 @@
 /* #undef HAVE_LIBOSMESA */
 
 /* Define to 1 if libpcre is available. */
-#define HAVE_LIBPCRE 1
+/* #undef HAVE_LIBPCRE */
 
 /* Define to 1 if NCBI PubMed libraries are available. */
 /* #undef HAVE_LIBPUBMED */
