@@ -180,7 +180,7 @@ private:
 };
 
 
-static const int s_WriterBufferSize = 256 * 1024;
+static const unsigned int s_WriterBufferSize = 256 * 1024;
 //static const int s_WriterBufferSize = 1 * (1024 * 1024);
 
 class CBDB_BLOB_CacheIWriter : public IWriter
@@ -338,8 +338,9 @@ private:
 
 
 CBDB_BLOB_Cache::CBDB_BLOB_Cache()
-: m_IntCacheInstance(m_IntCacheDB),
-  m_PidGuard(0)
+: 
+  m_PidGuard(0),
+  m_IntCacheInstance(m_IntCacheDB)
 {
 }
 
@@ -843,7 +844,7 @@ bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
                   << ts);
 */
 
-    if (ts + m_ExpirationTime <  curr) {
+    if ((unsigned)(ts + m_ExpirationTime) <  unsigned(curr)) {
     
         LOG_POST(Info << "Int cache item expired:" 
                       << ts << " curr=" << curr 
@@ -923,6 +924,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/11/06 14:20:38  kuznets
+ * Warnings cleaned up
+ *
  * Revision 1.26  2003/10/24 13:54:03  vasilche
  * Rolled back incorrect fix of PendingCount().
  *
