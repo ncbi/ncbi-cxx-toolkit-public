@@ -83,7 +83,7 @@ void CSampleObjmgrApplication::Init(void)
     arg_desc->AddKey("gi", "SeqEntryID", "GI id of the Seq-Entry to fetch",
                      CArgDescriptions::eInteger);
     arg_desc->SetConstraint
-        ("gi", new CArgAllow_Integers(2, 20000000));
+        ("gi", new CArgAllow_Integers(2, 40000000));
 
     // Program description
     string prog_description = "Example of the C++ Object Manager usage\n";
@@ -251,6 +251,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2002/05/10 16:57:10  kimelman
+ * upper gi bound increased twice
+ *
  * Revision 1.1  2002/05/08 14:33:53  ucko
  * Added sample object manager application from stock objmgr_lab code.
  *
