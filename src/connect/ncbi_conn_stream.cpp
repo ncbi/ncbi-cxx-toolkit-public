@@ -35,13 +35,18 @@
 #include <ncbi_pch.hpp>
 #include "ncbi_ansi_ext.h"
 #include "ncbi_conn_streambuf.hpp"
+#include "ncbi_core_cxxp.hpp"
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <corelib/ncbithr.hpp>
-#include <memory>
+#include <corelib/ncbimisc.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+
+CConn_IOStreamBase::CConn_IOStreamBase()
+{
+    CONNECT_InitInternal();
+}
 
 
 CConn_IOStream::CConn_IOStream(CONNECTOR connector, const STimeout* timeout,
@@ -292,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2004/09/09 16:44:22  lavr
+ * Introduce virtual helper base CConn_IOStreamBase for implicit CONNECT_Init()
+ *
  * Revision 6.32  2004/06/22 17:00:12  lavr
  * Handle empty user_header as no-op
  *

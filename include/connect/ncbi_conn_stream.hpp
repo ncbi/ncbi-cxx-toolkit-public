@@ -88,6 +88,18 @@ const streamsize kConn_DefaultBufSize = 4096;
 
 
 /*
+ * Helper hook-up class that installs default logging/registry/locking
+ * (if have not yet installed explicitly).
+ */
+
+class NCBI_XCONNECT_EXPORT CConn_IOStreamBase
+{
+protected:
+    CConn_IOStreamBase();
+};
+
+
+/*
  * Base class, derived from "std::iostream", does both input
  * and output, using the specified CONNECTOR. Input operations
  * can be tied to the output ones by setting 'do_tie' to 'true'
@@ -98,7 +110,8 @@ const streamsize kConn_DefaultBufSize = 4096;
  * further buffering, if needed).
  */
 
-class NCBI_XCONNECT_EXPORT CConn_IOStream : public CNcbiIostream
+class NCBI_XCONNECT_EXPORT CConn_IOStream : virtual public CConn_IOStreamBase,
+                                            public CNcbiIostream
 {
 public:
     CConn_IOStream
@@ -336,6 +349,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.28  2004/09/09 16:43:47  lavr
+ * Introduce virtual helper base CConn_IOStreamBase for implicit CONNECT_Init()
+ *
  * Revision 6.27  2004/06/22 16:51:22  lavr
  * Note handling of user_header in HTTP stream ctor's
  *
