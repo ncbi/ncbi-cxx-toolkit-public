@@ -156,24 +156,7 @@ protected:
     bool LoadData(const string& key, const char* suffix,
                   int version, CID2_Reply_Data& data);
 
-    enum ECompression
-    {
-        eCompression_none,
-        eCompression_nlm_zip,
-        eCompression_gzip
-    };
-
-    enum EDataType
-    {
-        eDataType_MainBlob = 0,
-        eDataType_SplitInfo = 1,
-        eDataType_Chunk = 2
-    };
-
-    CRef<CByteSourceReader> GetReader(CID2_Reply_Data& data,
-                                      EDataType data_type);
-    AutoPtr<CObjectIStream> OpenData(CID2_Reply_Data& data,
-                                     CByteSourceReader& reader);
+    CObjectIStream* OpenData(CID2_Reply_Data& data);
 
 private:
 
@@ -194,6 +177,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.17  2004/06/29 14:27:21  vasilche
+* Fixed enum values in ID2-Reply-Data (compression/type/format).
+* Added recognition of old & incorrect values.
+*
 * Revision 1.16  2004/04/28 17:06:25  vasilche
 * Load split blobs from new ICache.
 *
