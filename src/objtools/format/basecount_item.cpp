@@ -37,7 +37,7 @@
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/basecount_item.hpp>
-#include "context.hpp"
+#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:43:31  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 20:18:05  shomrat
 * Initial Revision (adapted from flat lib)
 *

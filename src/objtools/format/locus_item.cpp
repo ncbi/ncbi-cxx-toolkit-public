@@ -55,7 +55,7 @@
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/locus_item.hpp>
-#include "context.hpp"
+#include <objtools/format/context.hpp>
 #include "utils.hpp"
 
 
@@ -524,6 +524,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:43:35  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 20:23:35  shomrat
 * Initial Revision (adapted from flat lib)
 *

@@ -59,7 +59,7 @@
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/gather_items.hpp>
 #include <objtools/format/genbank_gather.hpp>
-#include "context.hpp"
+#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:43:34  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 20:22:21  shomrat
 * Initial Revision (adapted from flat lib)
 *

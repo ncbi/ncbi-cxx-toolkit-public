@@ -37,13 +37,13 @@
 #include <serial/serialbase.hpp>
 
 #include <objtools/format/items/item.hpp>
+#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CDate;
-class CFFContext;
 class CFlatItemFormatter;
 
 
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:42:18  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 19:48:27  shomrat
 * Initial revision (adapted from flat lib)
 *

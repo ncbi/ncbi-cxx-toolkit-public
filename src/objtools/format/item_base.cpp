@@ -38,7 +38,7 @@
 
 #include <objtools/format/items/item.hpp>
 #include <objtools/format/items/item_base.hpp>
-#include "context.hpp"
+#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -75,8 +75,6 @@ bool CFlatItem::Skip(void) const
 
 CFlatItem::~CFlatItem(void)
 {
-    m_Object.Reset();
-    m_Context.Reset();
 }
 
 
@@ -117,6 +115,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:43:35  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 20:22:46  shomrat
 * Initial Revision (adapted from flat lib)
 *

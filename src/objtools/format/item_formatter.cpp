@@ -42,7 +42,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/embl_formatter.hpp>
-#include "context.hpp"
+#include <objtools/format/context.hpp>
 #include "utils.hpp"
 
 
@@ -223,6 +223,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:43:35  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 20:23:02  shomrat
 * Initial Revision (adapted from flat lib)
 *

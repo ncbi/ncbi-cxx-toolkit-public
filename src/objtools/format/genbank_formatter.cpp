@@ -57,8 +57,9 @@
 #include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_item.hpp>
+#include <objtools/format/context.hpp>
 #include "utils.hpp"
-#include "context.hpp"
+
 
 
 BEGIN_NCBI_SCOPE
@@ -725,6 +726,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/18 17:43:34  shomrat
+* context.hpp moved
+*
 * Revision 1.1  2003/12/17 20:22:12  shomrat
 * Initial Revision (adapted from flat lib)
 *
