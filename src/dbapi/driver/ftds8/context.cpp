@@ -74,7 +74,6 @@ CTDSContext* CTDSContext::m_pTDSContext = 0;
 CTDSContext::CTDSContext(DBINT version) :
     m_AppName("TDSDriver"), m_HostName(""), m_PacketSize(0)
 {
-    // mutex guarding access to our images
     DEFINE_STATIC_FAST_MUTEX(xMutex);
     CFastMutexGuard mg(xMutex);
 
@@ -470,6 +469,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/03/24 13:54:05  friedman
+ * Fixed mutex comment
+ *
  * Revision 1.24  2004/03/23 19:33:14  friedman
  * Replaced 'static CFastMutex' with DEFINE_STATIC_FAST_MUTEX
  *
