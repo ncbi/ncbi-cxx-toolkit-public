@@ -892,23 +892,51 @@ AC_MSG_RESULT()
 
 
 ### Check for some library functions.
+
+## gethostbyname_r() -- 2 different variants
+
 AC_MSG_CHECKING(for gethostbyname_r)
+x_gethostbyname_r="no"
 AC_TRY_COMPILE(
    [#include <netdb.h>],
    [
-     void* dummy = (void*) &gethostbyname_r;
-     struct hostent x_hp;
-     char   x_buf[1024];
-     int    x_err;
-     struct hostent *hp =
-         gethostbyname_r("localhost", &x_hp, x_buf, sizeof(x_buf), &x_err);
+     void*           dummy = (void*) &gethostbyname_r;
+     char            buf[1024];
+     int             err;
+     struct hostent* hp = 0;
+     hp = gethostbyname_r("", hp, buf, sizeof(buf), &err);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, 1)
+   [
+     x_gethostbyname_r="5"
+   ]
 )
-AC_MSG_RESULT()
+if test "$x_gethostbyname_r" = "no" ; then
+AC_TRY_COMPILE(
+   [#include <netdb.h>],
+   [
+     void*           dummy = (void*) &gethostbyname_r;
+     char            buf[1024];
+     int             err;
+     struct hostent* hp = 0;
+     err = gethostbyname_r("", hp, buf, sizeof(buf), &hp, &err);
+   ],
+   [
+     x_gethostbyname_r="6"
+   ]
+)
+fi
 
+if test "$x_gethostbyname_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $x_gethostbyname_r)
+fi
+AC_MSG_RESULT("$x_gethostbyname_r")
+
+
+
+## gethostbyaddr_r() -- 2 different variants
 
 AC_MSG_CHECKING(for gethostbyaddr_r)
+x_gethostbyaddr_r="no"
 AC_TRY_COMPILE(
    [
      #include <netdb.h>
@@ -917,17 +945,43 @@ AC_TRY_COMPILE(
    ],
    [
      void* dummy = (void*) &gethostbyaddr_r;
-     struct hostent  x_hp;
-     char            x_buf[1024];
-     int             x_err;
-     unsigned int    x_host;
-     struct hostent* hp =
-         gethostbyaddr_r((char *) &x_host, sizeof(x_host), AF_INET,
-                         &x_hp, x_buf, sizeof(x_buf), &x_err);
+     char            buf[1024];
+     int             err;
+     unsigned int    host;
+     struct hostent* hp = 0;
+     hp = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                          hp, buf, sizeof(buf), &err);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, 1)
+   [
+     x_gethostbyaddr_r="7"
+   ]
 )
-AC_MSG_RESULT()
+if test "$x_gethostbyaddr_r" = "no" ; then
+AC_TRY_COMPILE(
+   [
+     #include <netdb.h>
+     #include <sys/types.h>
+     #include <sys/socket.h>
+   ],
+   [
+     void* dummy = (void*) &gethostbyaddr_r;
+     char            buf[1024];
+     int             err;
+     unsigned int    host;
+     struct hostent* hp = 0;
+     int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                               hp, buf, sizeof(buf), &hp, &err);
+   ],
+   [
+     x_gethostbyaddr_r="8"
+   ]
+)
+fi
+
+if test "$x_gethostbyaddr_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $x_gethostbyaddr_r)
+fi
+AC_MSG_RESULT("$x_gethostbyaddr_r")
 
 
 AC_MSG_CHECKING(for pthread_setconcurrency)
