@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/10/31 15:30:19  golikov
+* warning removed
+*
 * Revision 1.25  2001/10/17 14:18:04  ucko
 * Add CCgiApplication::SetCgiDiagHandler for the benefit of derived
 * classes that overload ConfigureDiagDestination.
@@ -136,7 +139,7 @@ class CCgiDiagHandler
 {
 public:
     virtual ~CCgiDiagHandler() {}
-    virtual void SetDiagNode(CNCBINode* node) {}
+    virtual void SetDiagNode(CNCBINode* /* node */) {}
     virtual void operator <<(const SDiagMessage& mess) = 0;
     virtual void Flush(void) {}
 };
