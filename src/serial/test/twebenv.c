@@ -1,3 +1,5 @@
+#include <ncbiconf.h>
+#if HAVE_NCBI_C
 #include <asn.h>
 
 #define NLM_GENERATED_CODE_PROTO
@@ -3399,4 +3401,5 @@ erret:
    AsnUnlinkType(orig);       /* unlink local tree */
    return retval;
 }
+#endif
 

@@ -1,3 +1,5 @@
+#include <ncbiconf.h>
+#if HAVE_NCBI_C
 #include "cppwebenv.hpp"
 #include <serial/serial.hpp>
 #include <serial/asntypes.hpp>
@@ -90,3 +92,4 @@ BEGIN_STRUCT_INFO2("Item-Set", Item_Set)
 END_STRUCT_INFO
 
 END_NCBI_SCOPE
+#endif

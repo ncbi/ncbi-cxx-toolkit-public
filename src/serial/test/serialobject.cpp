@@ -42,9 +42,9 @@ CSerialObject::~CSerialObject(void)
 
 string Ptr(const void* p)
 {
-    char b[128];
-    sprintf(b, "%p", p);
-    return b;
+    CNcbiOstrstream b;
+    b << hex << long(p);
+    return string(b.str(), b.pcount());
 }
 
 void CSerialObject::Dump(ostream& out) const

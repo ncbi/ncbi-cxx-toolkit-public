@@ -9,8 +9,10 @@
 #include <serial/objostrasn.hpp>
 #include "cppwebenv.hpp"
 
-#include <asn.h>
-#include <twebenv.h>
+#if HAVE_NCBI_C
+# include <asn.h>
+# include <twebenv.h>
+#endif
 
 int main(int argc, char** argv)
 {
@@ -23,7 +25,7 @@ int CTestSerial::Run(void)
     CNcbiOfstream diag("test.log");
     SetDiagStream(&diag);
     try {
-#ifdef HAVE_NCBI_C
+#if HAVE_NCBI_C
         WebEnv* env = 0;
         {
             {
@@ -80,7 +82,7 @@ int CTestSerial::Run(void)
         write.m_Names[2] = "two";
         write.m_Names[3] = "three";
         write.m_Names[10] = "ten";
-#ifdef HAVE_NCBI_C
+#if HAVE_NCBI_C
         write.m_WebEnv = env;
 #endif
 
@@ -89,7 +91,9 @@ int CTestSerial::Run(void)
         write1.m_Size = 0x7fff;
         write1.m_Attributes.push_back("write1");
         write1.m_Next = &write1;
+#if HAVE_NCBI_C
         write1.m_WebEnv = 0;
+#endif
         write1.m_Name2 = "name2";
 
         {
