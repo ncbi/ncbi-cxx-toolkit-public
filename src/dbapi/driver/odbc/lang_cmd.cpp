@@ -456,7 +456,8 @@ bool CODBC_LangCmd::x_AssignParams(string& cmd, CMemPot& bind_guard, SQLINTEGER*
                 ts->hour= t.Hour();
                 ts->minute= t.Minute();
                 ts->second= t.Second();
-                ts->fraction= t.NanoSecond();
+                ts->fraction= t.NanoSecond()/1000000;
+				ts->fraction*= 1000000; /* MSSQL has a bug - it can not handle fraction of msecs */
                 indicator[n]= sizeof(SQL_TIMESTAMP_STRUCT);
             }
             rc_from_bind= SQLBindParameter(m_Cmd, n+1, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, 
@@ -516,6 +517,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/07 17:14:20  soussov
+ * work around the odbc bug. It can not handle properly the fractions of msecs
+ *
  * Revision 1.6  2003/11/06 20:33:32  soussov
  * fixed bug in DateTime bindings
  *
