@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/06/24 14:44:56  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.9  1999/06/16 20:35:32  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -64,7 +67,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrb.hpp>
 #include <serial/objstrb.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -544,7 +547,7 @@ bool CObjectIStreamBinary::VNext(const Block& )
     }
 }
 
-CTypeInfo::TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
+TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStreamBinary::ReadPointer(" << declaredType->GetName() << ")");
     switch ( ReadByte() ) {

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/24 14:44:47  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.6  1999/06/15 16:20:09  vasilche
 * Added ASN.1 object output stream.
 *
@@ -55,6 +58,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -76,10 +80,6 @@ public:
 class CTypeInfo
 {
 public:
-    typedef const CTypeInfo* TTypeInfo;
-    typedef void* TObjectPtr;
-    typedef const void* TConstObjectPtr;
-
     string GetName(void) const
         { return m_Name; }
 
@@ -94,14 +94,6 @@ public:
 
     virtual size_t GetSize(void) const = 0;
 
-    static TObjectPtr Add(TObjectPtr object, size_t offset)
-        { return static_cast<char*>(object) + offset; }
-    static TConstObjectPtr Add(TConstObjectPtr object, size_t offset)
-        { return static_cast<const char*>(object) + offset; }
-    static size_t Sub(TConstObjectPtr first, TConstObjectPtr second)
-        { return static_cast<const char*>(first) -
-              static_cast<const char*>(second); }
-
     TObjectPtr EndOf(TObjectPtr object) const
         { return Add(object, GetSize()); }
     TConstObjectPtr EndOf(TConstObjectPtr object) const
@@ -110,7 +102,10 @@ public:
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const = 0;
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual TConstObjectPtr GetDefault(void) const = 0;
+
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const = 0;
 
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const
         {

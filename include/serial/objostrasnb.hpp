@@ -1,5 +1,5 @@
-#ifndef OBJOSTRASN__HPP
-#define OBJOSTRASN__HPP
+#ifndef OBJOSTRASNB__HPP
+#define OBJOSTRASNB__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,24 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1999/06/24 14:44:41  vasilche
+* Revision 1.1  1999/06/24 14:44:42  vasilche
 * Added binary ASN.1 output.
 *
-* Revision 1.3  1999/06/17 20:42:02  vasilche
-* Fixed storing/loading of pointers.
-*
-* Revision 1.2  1999/06/16 20:35:24  vasilche
-* Cleaned processing of blocks of data.
-* Added input from ASN.1 text format.
-*
-* Revision 1.1  1999/06/15 16:20:04  vasilche
-* Added ASN.1 object output stream.
-*
-* Revision 1.2  1999/06/10 21:06:40  vasilche
-* Working binary output and almost working binary input.
-*
-* Revision 1.1  1999/06/07 19:30:18  vasilche
-* More bug fixes
 *
 * ===========================================================================
 */
@@ -60,17 +45,16 @@
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamAsn : public CObjectOStream
+class CObjectOStreamAsnBinary : public CObjectOStream
 {
 public:
     typedef unsigned char TByte;
-    typedef map<string, TIndex> TStrings;
+    typedef int TTag;
 
-    CObjectOStreamAsn(CNcbiOstream& out);
-    virtual ~CObjectOStreamAsn(void);
+    CObjectOStreamAsnBinary(CNcbiOstream& out);
+    virtual ~CObjectOStreamAsnBinary(void);
 
-    virtual void Write(TConstObjectPtr object, TTypeInfo typeInfo);
-
+    virtual void WriteStd(const bool& data);
     virtual void WriteStd(const char& data);
     virtual void WriteStd(const unsigned char& data);
     virtual void WriteStd(const signed char& data);
@@ -86,35 +70,82 @@ public:
     virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
-    virtual void WriteMember(const CMemberInfo& member);
+    void WriteNull(void);
+    void WriteByte(TByte byte);
+    void WriteBytes(const char* bytes, size_t size);
+
+    enum EClass {
+        eUniversal,
+        eApplication,
+        eContextSpecific,
+        ePrivate
+    };
+
+    enum ETag {
+        eNone = 0,
+        eBoolean = 1,
+        eInteger = 2,
+        eBitString = 3,
+        eOctetString = 4,
+        eNull = 5,
+        eObjectIdentifier = 6,
+        eObjectDescriptor = 7,
+        eExternal = 8,
+        eReal = 9,
+        eEnumerated = 10,
+
+        eSequence = 16,
+        eSequenceOf = eSequence,
+        eSet = 17,
+        eSetOf = eSet,
+        eNumericString = 18,
+        ePrintableString = 19,
+        eTeletextString = 20,
+        eT61String = 20,
+        eVideotextString = 21,
+        eIA5String = 22,
+
+        eUTCTime = 23,
+        eGeneralizedTime = 24,
+
+        eGraphicString = 25,
+        eVisibleString = 26,
+        eISO646String = 26,
+        eGeneralString = 27
+    };
+
+    void WriteTag(EClass c, bool constructed, TTag index);
+    void WriteShortTag(EClass c, bool constructed, TTag index);
+    void WriteSysTag(ETag index);
+    void WriteClassTag(TTypeInfo typeInfo);
+
+    void WriteLength(size_t length);
+    void WriteShortLength(size_t length);
+    void WriteIndefiniteLength(void);
+
+    void WriteEndOfContent(void);
 
 protected:
 
-    virtual void WriteMemberSuffix(COObjectInfo& info);
+    virtual void WriteMember(const CMemberInfo& member);
+    virtual void WriteMemberPrefix(COObjectInfo& info);
     virtual void WriteNullPointer(void);
     virtual void WriteObjectReference(TIndex index);
+    virtual void WriteThisTypeReference(TTypeInfo typeInfo);
     virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
-    virtual void WriteString(const string& str);
-    virtual void WriteId(const string& str);
-
-    void WriteNull(void);
-    void WriteIndex(TIndex index);
-    void WriteEscapedChar(char c);
 
     virtual void VBegin(Block& block);
     virtual void VNext(const Block& block);
     virtual void VEnd(const Block& block);
 
-    void WriteNewLine(void);
+    virtual void WriteString(const string& s);
 
 private:
     CNcbiOstream& m_Output;
-
-    int m_Ident;
 };
 
-//#include <serial/objostrasn.inl>
+//#include <serial/objostrasnb.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* OBJOSTRASN__HPP */
+#endif  /* OBJOSTRASNB__HPP */

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/24 14:44:40  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.2  1999/06/10 21:06:39  vasilche
 * Working binary output and almost working binary input.
 *
@@ -43,9 +46,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/serialdef.hpp>
 #include <map>
+#include <list>
 #include <functional>
 
 BEGIN_NCBI_SCOPE
@@ -56,8 +59,6 @@ class COObjectList;
 class CORootObjectInfo {
 public:
     typedef unsigned TIndex;
-    typedef CTypeInfo::TConstObjectPtr TConstObjectPtr;
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
 
     CORootObjectInfo(TTypeInfo typeInfo = 0)
         : m_TypeInfo(typeInfo), m_Index(-1)
@@ -83,8 +84,6 @@ class COObjectInfo
 {
 public:
     typedef unsigned TIndex;
-    typedef CTypeInfo::TConstObjectPtr TConstObjectPtr;
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
 
     COObjectInfo(void)
         : m_RootObject(0)
@@ -98,7 +97,9 @@ public:
         { return m_RootObject->second; }
 
     bool IsMember(void) const
-        { return !m_Members.empty(); }
+        {
+            return !m_Members.empty();
+        }
     const CMemberInfo& GetMemberInfo(void) const
         {
             return *m_Members.back();
@@ -120,8 +121,6 @@ class COObjectList
 {
 public:
     typedef unsigned TIndex;
-    typedef CTypeInfo::TConstObjectPtr TConstObjectPtr;
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
 
     COObjectList(void);
     ~COObjectList(void);

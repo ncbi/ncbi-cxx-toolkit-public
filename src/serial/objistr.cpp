@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:44:54  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/16 20:35:30  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -114,13 +117,29 @@ void CObjectIStream::VEnd(const Block& )
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in)
-    : m_In(in), m_Fixed(false), m_Finished(false), m_NextIndex(0), m_Size(0)
+    : m_In(in), m_Fixed(false), m_Sequence(false),
+      m_Finished(false), m_NextIndex(0), m_Size(0)
 {
     in.VBegin(*this);
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, EFixed )
-    : m_In(in), m_Fixed(true), m_Finished(false), m_NextIndex(0), m_Size(0)
+    : m_In(in), m_Fixed(true), m_Sequence(false),
+      m_Finished(false), m_NextIndex(0), m_Size(0)
+{
+    in.FBegin(*this);
+}
+
+CObjectIStream::Block::Block(CObjectIStream& in, ESequence )
+    : m_In(in), m_Fixed(false), m_Sequence(true),
+      m_Finished(false), m_NextIndex(0), m_Size(0)
+{
+    in.VBegin(*this);
+}
+
+CObjectIStream::Block::Block(CObjectIStream& in, ESequence , EFixed )
+    : m_In(in), m_Fixed(true), m_Sequence(true),
+      m_Finished(false), m_NextIndex(0), m_Size(0)
 {
     in.FBegin(*this);
 }

@@ -1,5 +1,5 @@
-#ifndef TYPEREF__HPP
-#define TYPEREF__HPP
+#if defined(SERIALDEF__HPP)  &&  !defined(SERIALDEF__INL)
+#define SERIALDEF__INL
 
 /*  $Id$
 * ===========================================================================
@@ -33,42 +33,28 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/06/24 14:44:47  vasilche
+* Revision 1.1  1999/06/24 14:44:44  vasilche
 * Added binary ASN.1 output.
-*
-* Revision 1.2  1999/06/09 18:39:01  vasilche
-* Modified templates to work on Sun.
-*
-* Revision 1.1  1999/06/04 20:51:41  vasilche
-* First compilable version of serialization.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CTypeRef
+inline
+TObjectPtr Add(TObjectPtr object, int offset)
 {
-public:
-    CTypeRef(void);
-    CTypeRef(const type_info& id, TTypeInfo (*getter)(void));
-    CTypeRef(TTypeInfo typeInfo);
+    return static_cast<char*>(object) + offset;
+}
 
-    TTypeInfo Get(void) const;
+inline
+TConstObjectPtr Add(TConstObjectPtr object, int offset)
+{
+    return static_cast<const char*>(object) + offset;
+}
 
-private:
+inline
+int Sub(TConstObjectPtr first, TConstObjectPtr second)
+{
+    return static_cast<const char*>(first) - static_cast<const char*>(second);
+}
 
-    const type_info* m_Id;
-    TTypeInfo (*m_Getter)(void);
-
-    mutable TTypeInfo m_TypeInfo;
-};
-
-#include <serial/typeref.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* TYPEREF__HPP */
+#endif /* def SERIALDEF__HPP  &&  ndef SERIALDEF__INL */

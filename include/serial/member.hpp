@@ -1,5 +1,5 @@
-#ifndef TYPEREF__HPP
-#define TYPEREF__HPP
+#ifndef MEMBER__HPP
+#define MEMBER__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,42 +33,67 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/06/24 14:44:47  vasilche
+* Revision 1.1  1999/06/24 14:44:38  vasilche
 * Added binary ASN.1 output.
-*
-* Revision 1.2  1999/06/09 18:39:01  vasilche
-* Modified templates to work on Sun.
-*
-* Revision 1.1  1999/06/04 20:51:41  vasilche
-* First compilable version of serialization.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/typeref.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CTypeRef
-{
-public:
-    CTypeRef(void);
-    CTypeRef(const type_info& id, TTypeInfo (*getter)(void));
-    CTypeRef(TTypeInfo typeInfo);
+class CClassInfoTmpl;
 
-    TTypeInfo Get(void) const;
+class CMemberInfo {
+public:
+    typedef int TTag;
+
+    // default constructor for using in map
+    CMemberInfo(void);
+
+    // superclass member
+    CMemberInfo(size_t offset, const CTypeRef& type);
+    
+    // common member
+    CMemberInfo(const string& name, size_t offset, const CTypeRef& type);
+
+    const string& GetName(void) const;
+
+    size_t GetOffset(void) const;
+
+    TTag GetTag(void) const;
+    CMemberInfo* SetTag(TTag tag);
+
+    bool Optional(void) const;
+    TConstObjectPtr GetDefault(void) const;
+    CMemberInfo* SetDefault(TConstObjectPtr def);
+
+    TTypeInfo GetTypeInfo(void) const;
+
+    size_t GetSize(void) const;
+
+    TObjectPtr GetMember(TObjectPtr object) const;
+    TConstObjectPtr GetMember(TConstObjectPtr object) const;
+    TObjectPtr GetContainer(TObjectPtr object) const;
+    TConstObjectPtr GetContainer(TConstObjectPtr object) const;
+
+    size_t GetEndOffset(void) const;
 
 private:
+    string m_Name;
+    size_t m_Offset;
+    TTag m_Tag;
+    TConstObjectPtr m_Default;
+    CTypeRef m_Type;
 
-    const type_info* m_Id;
-    TTypeInfo (*m_Getter)(void);
-
-    mutable TTypeInfo m_TypeInfo;
+    friend class CClassInfoTmpl;
 };
 
-#include <serial/typeref.inl>
+#include <serial/member.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* TYPEREF__HPP */
+#endif  /* MEMBER__HPP */

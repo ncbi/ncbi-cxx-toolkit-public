@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/24 14:44:57  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.5  1999/06/16 20:35:33  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -51,7 +54,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objlist.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/typeinfo.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
 

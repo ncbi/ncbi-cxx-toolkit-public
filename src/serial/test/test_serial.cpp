@@ -3,6 +3,7 @@
 #include <serial/serial.hpp>
 #include <serial/objostrb.hpp>
 #include <serial/objistrb.hpp>
+#include <serial/objostrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objistrasn.hpp>
 #include <fstream>
@@ -44,17 +45,19 @@ int CTestSerial::Run(void)
                 CObjectIStreamBinary(ifstream("test.bin")) >> read;
             }
             read.Dump(NcbiCerr);
+            read.m_Next->Dump(NcbiCerr);
         }
 
         {
             {
-                CObjectOStreamAsn(ofstream("test.asn")) << write;
+                CObjectOStreamAsnBinary(ofstream("test.asnb")) << write;
             }
             CSerialObject read;
             {
                 CObjectIStreamAsn(ifstream("test.asn")) >> read;
             }
             read.Dump(NcbiCerr);
+            read.m_Next->Dump(NcbiCerr);
         }
     }
     catch (exception& e) {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/06/24 14:44:53  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.9  1999/06/17 18:38:52  vasilche
 * Fixed order of members in class.
 * Added checks for overlapped members.
@@ -65,6 +68,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/classinfo.hpp>
+#include <serial/member.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
@@ -97,7 +101,7 @@ size_t CClassInfoTmpl::GetSize(void) const
     return m_Size;
 }
 
-CTypeInfo::TObjectPtr CClassInfoTmpl::Create(void) const
+TObjectPtr CClassInfoTmpl::Create(void) const
 {
     return m_Creator();
 }
@@ -154,6 +158,7 @@ CClassInfoTmpl* CClassInfoTmpl::AddMember(CMemberInfo* member)
             }
         }
     }
+    member->SetTag(m_Members.size());
     m_Members.push_back(member);
     m_MembersByName[name] = member;
     m_MembersByOffset[member->GetOffset()] = member;
@@ -178,12 +183,13 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
     CObjectOStream::Block block(out);
     for ( TMembers::const_iterator i = m_Members.begin();
           i != m_Members.end(); ++i ) {
-        const CMemberInfo* memberInfo = *i;
-        TTypeInfo memberTypeInfo = memberInfo->GetTypeInfo();
-        TConstObjectPtr member = memberInfo->GetMember(object);
-        if ( !memberTypeInfo->IsDefault(member) ) {
+        const CMemberInfo& memberInfo = **i;
+        TTypeInfo memberTypeInfo = memberInfo.GetTypeInfo();
+        TConstObjectPtr member = memberInfo.GetMember(object);
+        TConstObjectPtr def = memberInfo.GetDefault();
+        if ( !def || !memberTypeInfo->Equals(member, def) ) {
             block.Next();
-            out.WriteMemberName(memberInfo->GetName());
+            out.WriteMember(memberInfo);
             memberTypeInfo->WriteData(out, member);
         }
     }
@@ -241,6 +247,41 @@ const CMemberInfo* CClassInfoTmpl::LocateMember(TConstObjectPtr object,
         return before;
     }
     return 0;
+}
+
+TConstObjectPtr CClassInfoTmpl::GetDefault(void) const
+{
+    static TConstObjectPtr def = Create();
+    return def;
+}
+
+bool CClassInfoTmpl::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+{
+    for ( TMembers::const_iterator i = m_Members.begin();
+          i != m_Members.end(); ++i ) {
+        const CMemberInfo& member = **i;
+        if ( !member.GetTypeInfo()->Equals(member.GetMember(object1),
+                                           member.GetMember(object2)) )
+            return false;
+    }
+    return true;
+}
+
+size_t CMemberInfo::GetSize(void) const
+{
+    return GetTypeInfo()->GetSize();
+}
+
+CMemberInfo* CMemberInfo::SetTag(TTag tag)
+{
+    m_Tag = tag;
+    return this;
+}
+
+CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
+{
+    m_Default = def;
+    return this;
 }
 
 END_NCBI_SCOPE

@@ -1,3 +1,6 @@
+#if defined(MEMBER__HPP)  &&  !defined(MEMBER__INL)
+#define MEMBER__INL
+
 /*  $Id$
 * ===========================================================================
 *
@@ -30,76 +33,94 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/06/24 14:45:01  vasilche
+* Revision 1.1  1999/06/24 14:44:39  vasilche
 * Added binary ASN.1 output.
-*
-* Revision 1.2  1999/06/04 20:51:49  vasilche
-* First compilable version of serialization.
-*
-* Revision 1.1  1999/05/19 19:56:57  vasilche
-* Commit just in case.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <serial/stdtypes.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-
-BEGIN_NCBI_SCOPE
-
-size_t CStdTypeInfo<void>::GetSize(void) const
+inline
+CMemberInfo::CMemberInfo(void)
+    : m_Offset(0), m_Tag(-1), m_Default(0)
 {
-    return 0;
 }
 
-TObjectPtr CStdTypeInfo<void>::Create(void) const
+inline
+CMemberInfo::CMemberInfo(size_t offset, const CTypeRef& type)
+    : m_Offset(offset), m_Tag(-1), m_Default(0), m_Type(type)
 {
-    throw runtime_error("void cannot be created");
-}
-    
-TTypeInfo CStdTypeInfo<void>::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStdTypeInfo;
-    return typeInfo;
 }
 
-TConstObjectPtr CStdTypeInfo<void>::GetDefault(void) const
+inline
+CMemberInfo::CMemberInfo(const string& name, size_t offset, const CTypeRef& type)
+    : m_Name(name), m_Offset(offset), m_Tag(-1), m_Default(0), m_Type(type)
 {
-    throw runtime_error("void does not have default");
 }
 
-bool CStdTypeInfo<void>::Equals(TConstObjectPtr , TConstObjectPtr ) const
+inline
+const string& CMemberInfo::GetName(void) const
 {
-    throw runtime_error("void cannot compare");
+    return m_Name;
 }
 
-void CStdTypeInfo<void>::ReadData(CObjectIStream& , TObjectPtr ) const
+inline
+size_t CMemberInfo::GetOffset(void) const
 {
-    throw runtime_error("void cannot be read");
-}
-    
-void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
-{
-    throw runtime_error("void cannot be written");
+    return m_Offset;
 }
 
-TObjectPtr CStdTypeInfo<string>::Create(void) const
+inline
+CMemberInfo::TTag CMemberInfo::GetTag(void) const
 {
-    return new TObjectType();
+    return m_Tag;
 }
 
-TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
+inline
+TConstObjectPtr CMemberInfo::GetDefault(void) const
 {
-    static TTypeInfo typeInfo = new CStdTypeInfo;
-    return typeInfo;
+    return m_Default;
 }
 
-TConstObjectPtr CStdTypeInfo<string>::GetDefault(void) const
+inline
+bool CMemberInfo::Optional(void) const
 {
-    static string def;
-    return &def;
+    return GetDefault() != 0;
 }
 
-END_NCBI_SCOPE
+inline
+TTypeInfo CMemberInfo::GetTypeInfo(void) const
+{
+    return m_Type.Get();
+}
+
+inline
+TObjectPtr CMemberInfo::GetMember(TObjectPtr object) const
+{
+    return Add(object, m_Offset);
+}
+
+inline
+TConstObjectPtr CMemberInfo::GetMember(TConstObjectPtr object) const
+{
+    return Add(object, m_Offset);
+}
+
+inline
+TObjectPtr CMemberInfo::GetContainer(TObjectPtr object) const
+{
+    return Add(object, -m_Offset);
+}
+
+inline
+TConstObjectPtr CMemberInfo::GetContainer(TConstObjectPtr object) const
+{
+    return Add(object, -m_Offset);
+}
+
+inline
+size_t CMemberInfo::GetEndOffset(void) const
+{
+    return GetOffset() + GetSize();
+}
+
+#endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */

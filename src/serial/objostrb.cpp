@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:45:00  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/16 20:35:35  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -58,7 +61,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrb.hpp>
 #include <serial/objstrb.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -69,6 +72,24 @@ CObjectOStreamBinary::CObjectOStreamBinary(CNcbiOstream& out)
 
 CObjectOStreamBinary::~CObjectOStreamBinary(void)
 {
+}
+
+inline
+void CObjectOStreamBinary::WriteByte(TByte byte)
+{
+    m_Output.put(byte);
+}
+
+inline
+void CObjectOStreamBinary::WriteBytes(const char* bytes, size_t size)
+{
+    m_Output.write(bytes, size);
+}
+
+inline
+void CObjectOStreamBinary::WriteNull(void)
+{
+    WriteByte(CObjectStreamBinaryDefs::eNull);
 }
 
 template<class TYPE>
@@ -266,11 +287,6 @@ void CObjectOStreamBinary::WriteStd(const char* const& data)
     }
 }
 
-void CObjectOStreamBinary::WriteNull(void)
-{
-    WriteByte(CObjectStreamBinaryDefs::eNull);
-}
-
 void CObjectOStreamBinary::WriteIndex(TIndex index)
 {
     WriteNumber(this, index);
@@ -326,16 +342,6 @@ void CObjectOStreamBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
 {
     WriteByte(CObjectStreamBinaryDefs::eOtherClass);
     WriteId(typeInfo->GetName());
-}
-
-void CObjectOStreamBinary::WriteByte(TByte byte)
-{
-    m_Output.put(byte);
-}
-
-void CObjectOStreamBinary::WriteBytes(const char* bytes, size_t size)
-{
-    m_Output.write(bytes, size);
 }
 
 void CObjectOStreamBinary::FBegin(Block& block)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/06/24 14:44:42  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.2  1999/06/15 16:20:05  vasilche
 * Added ASN.1 object output stream.
 *
@@ -71,7 +74,9 @@ public:
 
     virtual TObjectPtr Create(void) const;
 
-    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual TConstObjectPtr GetDefault(void) const;
+
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
 protected:
     virtual void CollectExternalObjects(COObjectList& list,

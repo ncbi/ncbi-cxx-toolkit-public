@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/24 14:45:02  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.6  1999/06/15 16:19:53  vasilche
 * Added ASN.1 object output stream.
 *
@@ -112,7 +115,7 @@ CTypeInfo::~CTypeInfo(void)
     }
 }
 
-CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoByName(const string& name)
+TTypeInfo CTypeInfo::GetTypeInfoByName(const string& name)
 {
     TTypesByName& types = TypesByName();
     TTypesByName::iterator i = types.find(name);
@@ -122,7 +125,7 @@ CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoByName(const string& name)
     return i->second;
 }
 
-CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoById(const type_info& id)
+TTypeInfo CTypeInfo::GetTypeInfoById(const type_info& id)
 {
     TTypesById& types = TypesById();
     TTypesById::iterator i = types.find(&id);
@@ -132,7 +135,7 @@ CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoById(const type_info& id)
     return i->second;
 }
 
-CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoBy(const type_info& id,
+TTypeInfo CTypeInfo::GetTypeInfoBy(const type_info& id,
                                               void (*creator)(void))
 {
     TTypesById& types = TypesById();
@@ -144,7 +147,7 @@ CTypeInfo::TTypeInfo CTypeInfo::GetTypeInfoBy(const type_info& id,
     return GetTypeInfoById(id);
 }
 
-CTypeInfo::TTypeInfo CTypeInfo::GetPointerTypeInfo(const type_info& id,
+TTypeInfo CTypeInfo::GetPointerTypeInfo(const type_info& id,
                                                    const CTypeRef& typeRef)
 {
     TTypesById& types = TypesById();
@@ -166,11 +169,6 @@ void CTypeInfo::CollectObjects(COObjectList& objectList,
 void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
 {
     // there is no members by default
-}
-
-bool CTypeInfo::IsDefault(TConstObjectPtr ) const
-{
-    return false;
 }
 
 const CMemberInfo* CTypeInfo::FindMember(const string& ) const

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:44:39  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/17 20:42:00  vasilche
 * Fixed storing/loading of pointers.
 *
@@ -59,6 +62,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <vector>
 
@@ -69,9 +73,6 @@ class CClassInfoTmpl;
 class CIObjectInfo
 {
 public:
-    typedef CTypeInfo::TObjectPtr TObjectPtr;
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
-
     CIObjectInfo(void)
         : m_Object(0), m_TypeInfo(0)
         {
@@ -95,9 +96,6 @@ private:
 class CObjectIStream
 {
 public:
-    typedef void* TObjectPtr;
-    typedef const void* TConstObjectPtr;
-    typedef const CTypeInfo* TTypeInfo;
     typedef unsigned TIndex;
 
     // root reader
@@ -130,11 +128,16 @@ public:
     enum EFixed {
         eFixed
     };
+    enum ESequence {
+        eSequence
+    };
     class Block
     {
     public:
         Block(CObjectIStream& in);
         Block(CObjectIStream& in, EFixed eFixed);
+        Block(CObjectIStream& in, ESequence sequence);
+        Block(CObjectIStream& in, ESequence sequence, EFixed eFixed);
         ~Block(void);
 
         bool Next(void);
@@ -143,20 +146,29 @@ public:
             {
                 return m_Fixed;
             }
+        bool Sequence(void) const
+            {
+                return m_Sequence;
+            }
 
         bool Finished(void) const
             {
                 return m_Finished;
             }
 
-        unsigned GetIndex(void) const
-            {
-                return m_NextIndex - 1;
-            }
-
         unsigned GetNextIndex(void) const
             {
                 return m_NextIndex;
+            }
+
+        unsigned GetIndex(void) const
+            {
+                return GetNextIndex() - 1;
+            }
+
+        bool First(void) const
+            {
+                return GetNextIndex() == 0;
             }
 
         unsigned GetSize(void) const
@@ -181,6 +193,7 @@ public:
         friend class CObjectIStream;
 
         bool m_Fixed;
+        bool m_Sequence;
         bool m_Finished;
         unsigned m_Size;
         unsigned m_NextIndex;

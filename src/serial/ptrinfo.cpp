@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/24 14:45:01  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.3  1999/06/15 16:19:52  vasilche
 * Added ASN.1 object output stream.
 *
@@ -54,14 +57,32 @@ size_t CPointerTypeInfo::GetSize(void) const
     return sizeof(void*);
 }
 
-CTypeInfo::TObjectPtr CPointerTypeInfo::Create(void) const
+TObjectPtr CPointerTypeInfo::Create(void) const
 {
     return new(void*);
 }
 
-bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
+TConstObjectPtr CPointerTypeInfo::GetDefault(void) const
 {
-    return GetObject(object) == 0;
+    static const void* def = 0;
+    return &def;
+}
+
+bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
+                              TConstObjectPtr object2) const
+{
+    if ( GetObject(object1) == 0 ) {
+        return GetObject(object2) == 0;
+    }
+    else {
+        if ( GetObject(object2) == 0 )
+            return false;
+        TTypeInfo dataTypeInfo = GetDataTypeInfo();
+        TTypeInfo typeInfo1 = dataTypeInfo->GetRealTypeInfo(object1);
+        TTypeInfo typeInfo2 = dataTypeInfo->GetRealTypeInfo(object2);
+        return typeInfo1 == typeInfo2 &&
+            typeInfo1->Equals(object1, object2);
+    }
 }
 
 void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,

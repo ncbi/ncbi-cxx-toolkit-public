@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/24 14:44:45  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.3  1999/06/09 18:39:00  vasilche
 * Modified templates to work on Sun.
 *
@@ -75,6 +78,11 @@ public:
             return sizeof(TObjectType);
         }
 
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+        {
+            return Get(object1) == Get(object2);
+        }
+
 protected:
     CStdTypeInfoTmpl()
         : CTypeInfo(typeid(TObjectType))
@@ -106,9 +114,10 @@ public:
             return typeInfo;
         }
 
-    virtual bool IsDefault(TConstObjectPtr object) const
+    virtual TConstObjectPtr GetDefault(void) const
         {
-            return Get(object) == TObjectType(0);
+            static TYPE def = 0;
+            return &def;
         }
 };
 
@@ -116,24 +125,19 @@ template<>
 class CStdTypeInfo<void> : public CTypeInfo
 {
 public:
-    virtual size_t GetSize(void) const
-        { return 0; }
+    virtual size_t GetSize(void) const;
 
-    virtual TObjectPtr Create(void) const
-        { throw runtime_error("void cannot be created"); }
+    virtual TObjectPtr Create(void) const;
     
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStdTypeInfo;
-            return typeInfo;
-        }
+    static TTypeInfo GetTypeInfo(void);
+
+    virtual TConstObjectPtr GetDefault(void) const;
+
+    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
 
 protected:
-    virtual void ReadData(CObjectIStream& , TObjectPtr ) const
-        { throw runtime_error("void cannot be read"); }
-    
-    virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const
-        { throw runtime_error("void cannot be written"); }
+    virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
+    virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
 
 private:
     CStdTypeInfo(void)
@@ -146,21 +150,11 @@ template<>
 class CStdTypeInfo<string> : public CStdTypeInfoTmpl<string>
 {
 public:
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType();
-        }
+    virtual TObjectPtr Create(void) const;
 
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStdTypeInfo;
-            return typeInfo;
-        }
+    static TTypeInfo GetTypeInfo(void);
 
-    virtual bool IsDefault(TConstObjectPtr object) const
-        {
-            return Get(object).empty();
-        }
+    virtual TConstObjectPtr GetDefault(void) const;
 };
 
 #include <serial/stdtypes.inl>

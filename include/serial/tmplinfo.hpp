@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/24 14:44:46  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.1  1999/06/04 20:51:40  vasilche
 * First compilable version of serialization.
 *
@@ -40,6 +43,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <map>
 #include <vector>
 
@@ -53,7 +57,6 @@ class CTemplateResolver
 {
     typedef map<string, const CTemplateResolver*> TResolvers;
 public:
-    typedef const CTypeInfo* TTypeInfo;
 
     CTemplateResolver(const string& name);
 

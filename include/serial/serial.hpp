@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/06/24 14:44:43  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.11  1999/06/17 18:38:49  vasilche
 * Fixed order of members in class.
 * Added checks for overlapped members.
@@ -71,7 +74,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/member.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/ptrinfo.hpp>
@@ -80,6 +85,7 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
+class CMemberInfo;
 
 // define type info getter for standard classes
 template<typename T>
@@ -215,14 +221,14 @@ CStlClassInfoList<Data>::CStlClassInfoList(void)
 }
 
 inline
-CTypeInfo::TTypeInfo GetTypeInfo(void)
+TTypeInfo GetTypeInfo(void)
 {
     return GetTypeRef(static_cast<const void*>(0)).Get();
 }
 
 template<typename CLASS>
 inline
-CTypeInfo::TTypeInfo GetTypeInfo(const CLASS& object)
+TTypeInfo GetTypeInfo(const CLASS& object)
 {
     return GetTypeRef(&object).Get();
 }

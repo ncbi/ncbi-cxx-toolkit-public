@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/24 14:45:02  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.4  1999/06/16 20:35:36  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -75,13 +78,13 @@ const CTemplateResolver* CTemplateResolver::GetResolver(const string& name)
     return i->second;
 }
 
-CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg) const
+TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg) const
 {
     THROW1_TRACE(runtime_error,
                  "undefined " + GetName() + "<" + arg->GetName() + "> template");
 }
 
-CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg1,
+TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg1,
                                                     TTypeInfo arg2) const
 {
     THROW1_TRACE(runtime_error,
@@ -89,7 +92,7 @@ CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(TTypeInfo arg1,
                         arg2->GetName() + "> template");
 }
 
-CTypeInfo::TTypeInfo CTemplateResolver::GetTemplate(const vector<TTypeInfo>& args) const
+TTypeInfo CTemplateResolver::GetTemplate(const vector<TTypeInfo>& args) const
 {
     switch ( args.size() ) {
     case 1:
@@ -122,7 +125,7 @@ void CTemplateResolver1::Write(CObjectOStream& ,
     //    out.WriteTemplateInfo(GetName(), tmpl, arg);
 }
 
-CTypeInfo::TTypeInfo CTemplateResolver1::GetTemplate(TTypeInfo arg) const
+TTypeInfo CTemplateResolver1::GetTemplate(TTypeInfo arg) const
 {
     TTMap::const_iterator i = m_Templates.find(arg);
     if ( i == m_Templates.end() ) {
@@ -156,7 +159,7 @@ void CTemplateResolver2::Write(CObjectOStream& , TTypeInfo ,
     //    out.WriteTemplateInfo(GetName(), tmpl, arg1, arg2);
 }
 
-CTypeInfo::TTypeInfo CTemplateResolver2::GetTemplate(TTypeInfo arg1,
+TTypeInfo CTemplateResolver2::GetTemplate(TTypeInfo arg1,
                                                      TTypeInfo arg2) const
 {
     TTMap::const_iterator i = m_Templates.find(arg1);

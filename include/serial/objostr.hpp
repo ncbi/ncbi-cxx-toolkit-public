@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:44:40  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/17 20:42:02  vasilche
 * Fixed storing/loading of pointers.
 *
@@ -59,6 +62,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/objlist.hpp>
 #include <map>
@@ -68,9 +72,6 @@ BEGIN_NCBI_SCOPE
 class CObjectOStream
 {
 public:
-    typedef void* TObjectPtr;
-    typedef const void* TConstObjectPtr;
-    typedef const CTypeInfo* TTypeInfo;
     typedef unsigned TIndex;
 
     virtual ~CObjectOStream(void);
@@ -99,14 +100,19 @@ public:
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
     // write member name
-    virtual void WriteMemberName(const string& name);
+    virtual void WriteMember(const CMemberInfo& member);
 
+    enum ESequence {
+        eSequence
+    };
     // block interface
     class Block
     {
     public:
         Block(CObjectOStream& out);
         Block(CObjectOStream& out, unsigned size);
+        Block(CObjectOStream& out, ESequence sequence);
+        Block(CObjectOStream& out, ESequence sequence, unsigned size);
         ~Block(void);
 
         void Next(void);
@@ -115,15 +121,24 @@ public:
             {
                 return m_Fixed;
             }
-
-        unsigned GetIndex(void) const
+        bool Sequence(void) const
             {
-                return m_NextIndex - 1;
+                return m_Sequence;
             }
 
         unsigned GetNextIndex(void) const
             {
                 return m_NextIndex;
+            }
+
+        unsigned GetIndex(void) const
+            {
+                return GetNextIndex() - 1;
+            }
+
+        bool First(void) const
+            {
+                return GetNextIndex() == 0;
             }
 
         unsigned GetSize(void) const
@@ -148,6 +163,7 @@ public:
         friend class CObjectOStream;
 
         bool m_Fixed;
+        bool m_Sequence;
         unsigned m_NextIndex;
         unsigned m_Size;
     };

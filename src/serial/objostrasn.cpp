@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/24 14:44:58  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.4  1999/06/18 16:26:49  vasilche
 * Fixed bug with unget() in MSVS
 *
@@ -63,6 +66,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -226,9 +230,9 @@ void CObjectOStreamAsn::WriteId(const string& str)
 	}
 }
 
-void CObjectOStreamAsn::WriteMemberName(const string& str)
+void CObjectOStreamAsn::WriteMember(const CMemberInfo& member)
 {
-    m_Output << str << ' ';
+    m_Output << member.GetName() << ' ';
 }
 
 void CObjectOStreamAsn::WriteMemberSuffix(COObjectInfo& info)
@@ -273,7 +277,7 @@ void CObjectOStreamAsn::VBegin(Block& )
 
 void CObjectOStreamAsn::VNext(const Block& block)
 {
-    if ( block.GetNextIndex() != 0 ) {
+    if ( !block.First() ) {
         m_Output << " ,";
         WriteNewLine();
     }

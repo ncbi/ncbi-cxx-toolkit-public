@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/24 14:44:55  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.5  1999/06/18 16:26:49  vasilche
 * Fixed bug with unget() in MSVS
 *
@@ -72,7 +75,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrasn.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/member.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -94,7 +97,8 @@ CObjectIStreamAsn::CObjectIStreamAsn(CNcbiIstream& in)
 {
 }
 
-inline char CObjectIStreamAsn::GetChar(void)
+inline
+char CObjectIStreamAsn::GetChar(void)
 {
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
@@ -112,7 +116,8 @@ inline char CObjectIStreamAsn::GetChar(void)
 	}
 }
 
-inline char CObjectIStreamAsn::GetChar0(void)
+inline
+char CObjectIStreamAsn::GetChar0(void)
 {
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
@@ -125,7 +130,8 @@ inline char CObjectIStreamAsn::GetChar0(void)
 	}
 }
 
-inline void CObjectIStreamAsn::UngetChar(void)
+inline
+void CObjectIStreamAsn::UngetChar(void)
 {
     if ( m_UngetChar >= 0 || m_GetChar < 0 ) {
         throw runtime_error("cannot unget");
@@ -134,7 +140,8 @@ inline void CObjectIStreamAsn::UngetChar(void)
 	m_GetChar = -1;
 }
 
-inline char CObjectIStreamAsn::GetChar(bool skipWhiteSpace)
+inline
+char CObjectIStreamAsn::GetChar(bool skipWhiteSpace)
 {
     if ( skipWhiteSpace ) {
         SkipWhiteSpace();
@@ -145,7 +152,8 @@ inline char CObjectIStreamAsn::GetChar(bool skipWhiteSpace)
 	}
 }
 
-inline bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
+inline
+bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 {
 	if ( skipWhiteSpace ) {
 		if ( SkipWhiteSpace() == expect ) {
@@ -161,14 +169,16 @@ inline bool CObjectIStreamAsn::GetChar(char expect, bool skipWhiteSpace)
 	return false;
 }
 
-inline void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
+inline
+void CObjectIStreamAsn::Expect(char expect, bool skipWhiteSpace)
 {
     if ( !GetChar(expect, skipWhiteSpace) ) {
         THROW1_TRACE(runtime_error, string("'") + expect + "' expected");
     }
 }
 
-inline bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
+inline
+bool CObjectIStreamAsn::Expect(char choiceTrue, char choiceFalse,
                                       bool skipWhiteSpace)
 {
 	if ( skipWhiteSpace ) {
@@ -429,7 +439,7 @@ void CObjectIStreamAsn::VBegin(Block& )
 
 bool CObjectIStreamAsn::VNext(const Block& block)
 {
-    if ( block.GetNextIndex() == 0 ) {
+    if ( block.First() ) {
         return !GetChar('}', true);
     }
     else {
@@ -437,7 +447,7 @@ bool CObjectIStreamAsn::VNext(const Block& block)
     }
 }
 
-CTypeInfo::TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
+TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStreamAsn::ReadPointer(" << declaredType->GetName() << ")");
     char c = GetChar(true);

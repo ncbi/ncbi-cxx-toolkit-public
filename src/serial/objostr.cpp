@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:44:57  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/17 20:42:06  vasilche
 * Fixed storing/loading of pointers.
 *
@@ -58,6 +61,8 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objlist.hpp>
+#include <serial/member.hpp>
+#include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -173,9 +178,9 @@ void CObjectOStream::WriteId(const string& id)
     WriteString(id);
 }
 
-void CObjectOStream::WriteMemberName(const string& name)
+void CObjectOStream::WriteMember(const CMemberInfo& member)
 {
-    WriteId(name);
+    WriteId(member.GetName());
 }
 
 void CObjectOStream::FBegin(Block& block)
@@ -205,13 +210,29 @@ void CObjectOStream::VEnd(const Block& )
 }
 
 CObjectOStream::Block::Block(CObjectOStream& out)
-    : m_Out(out), m_Fixed(false), m_NextIndex(0), m_Size(0)
+    : m_Out(out), m_Fixed(false), m_Sequence(false),
+      m_NextIndex(0), m_Size(0)
 {
     out.VBegin(*this);
 }
 
 CObjectOStream::Block::Block(CObjectOStream& out, unsigned size)
-    : m_Out(out), m_Fixed(true), m_NextIndex(0), m_Size(size)
+    : m_Out(out), m_Fixed(true), m_Sequence(false),
+      m_NextIndex(0), m_Size(size)
+{
+    out.FBegin(*this);
+}
+
+CObjectOStream::Block::Block(CObjectOStream& out, ESequence )
+    : m_Out(out), m_Fixed(false), m_Sequence(true),
+      m_NextIndex(0), m_Size(0)
+{
+    out.VBegin(*this);
+}
+
+CObjectOStream::Block::Block(CObjectOStream& out, ESequence , unsigned size)
+    : m_Out(out), m_Fixed(true), m_Sequence(true),
+      m_NextIndex(0), m_Size(size)
 {
     out.FBegin(*this);
 }

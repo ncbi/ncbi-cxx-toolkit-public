@@ -1,5 +1,5 @@
-#ifndef TYPEREF__HPP
-#define TYPEREF__HPP
+#if defined(TYPEREF__HPP)  &&  !defined(TYPEREF__INL)
+#define TYPEREF__INL
 
 /*  $Id$
 * ===========================================================================
@@ -33,42 +33,37 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1999/06/24 14:44:47  vasilche
+* Revision 1.1  1999/06/24 14:44:48  vasilche
 * Added binary ASN.1 output.
-*
-* Revision 1.2  1999/06/09 18:39:01  vasilche
-* Modified templates to work on Sun.
-*
-* Revision 1.1  1999/06/04 20:51:41  vasilche
-* First compilable version of serialization.
 *
 * ===========================================================================
 */
 
-#include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
-
-BEGIN_NCBI_SCOPE
-
-class CTypeRef
+inline
+CTypeRef::CTypeRef(void)
+    : m_Id(0), m_Getter(0), m_TypeInfo(0)
 {
-public:
-    CTypeRef(void);
-    CTypeRef(const type_info& id, TTypeInfo (*getter)(void));
-    CTypeRef(TTypeInfo typeInfo);
+}
 
-    TTypeInfo Get(void) const;
+inline
+CTypeRef::CTypeRef(const type_info& id, TTypeInfo (*getter)(void))
+    : m_Id(&id), m_Getter(getter), m_TypeInfo(0)
+{
+}
 
-private:
+inline
+CTypeRef::CTypeRef(TTypeInfo typeInfo)
+    : m_Id(0), m_Getter(0), m_TypeInfo(typeInfo)
+{
+}
 
-    const type_info* m_Id;
-    TTypeInfo (*m_Getter)(void);
+inline
+TTypeInfo CTypeRef::Get(void) const
+{
+    TTypeInfo typeInfo = m_TypeInfo;
+    if ( !typeInfo )
+        typeInfo = m_TypeInfo = (*m_Getter)();
+    return typeInfo;
+}
 
-    mutable TTypeInfo m_TypeInfo;
-};
-
-#include <serial/typeref.inl>
-
-END_NCBI_SCOPE
-
-#endif  /* TYPEREF__HPP */
+#endif /* def TYPEREF__HPP  &&  ndef TYPEREF__INL */

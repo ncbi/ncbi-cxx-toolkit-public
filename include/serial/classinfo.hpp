@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:44:37  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/17 18:38:48  vasilche
 * Fixed order of members in class.
 * Added checks for overlapped members.
@@ -60,7 +63,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/typeref.hpp>
 #include <list>
 #include <map>
 
@@ -69,59 +71,7 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 class CObjectOStream;
 class COObjectList;
-class CTypeInfo;
 class CMemberInfo;
-
-class CMemberInfo {
-public:
-    typedef CTypeInfo::TObjectPtr TObjectPtr;
-    typedef CTypeInfo::TConstObjectPtr TConstObjectPtr;
-    typedef CTypeInfo::TTypeInfo TTypeInfo;
-
-    // default constructor for using in map
-    CMemberInfo(void)
-        : m_Offset(0)
-        { }
-
-    // superclass member
-    CMemberInfo(size_t offset, const CTypeRef& type)
-        : m_Offset(offset), m_Type(type)
-        { }
-    
-    // common member
-    CMemberInfo(const string& name, size_t offset, const CTypeRef& type)
-        : m_Name(name), m_Offset(offset), m_Type(type)
-        { }
-
-    const string& GetName(void) const
-        { return m_Name; }
-
-    size_t GetOffset(void) const
-        { return m_Offset; }
-
-    TTypeInfo GetTypeInfo(void) const
-        { return m_Type.Get(); }
-
-    size_t GetSize(void) const
-        { return GetTypeInfo()->GetSize(); }
-
-    TObjectPtr GetMember(TObjectPtr object) const
-        { return CTypeInfo::Add(object, m_Offset); }
-    TConstObjectPtr GetMember(TConstObjectPtr object) const
-        { return CTypeInfo::Add(object, m_Offset); }
-    TObjectPtr GetContainer(TObjectPtr object) const
-        { return CTypeInfo::Add(object, -m_Offset); }
-    TConstObjectPtr GetContainer(TConstObjectPtr object) const
-        { return CTypeInfo::Add(object, -m_Offset); }
-
-    size_t GetEndOffset(void) const
-        { return GetOffset() + GetSize(); }
-
-private:
-    string m_Name;
-    size_t m_Offset;
-    CTypeRef m_Type;
-};
 
 class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
@@ -138,6 +88,9 @@ public:
     virtual size_t GetSize(void) const;
 
     virtual TObjectPtr Create(void) const;
+
+    virtual TConstObjectPtr GetDefault(void) const;
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
     // AddMember will take ownership of member
     CClassInfoTmpl* AddMember(CMemberInfo* member);

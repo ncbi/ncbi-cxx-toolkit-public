@@ -1,0 +1,375 @@
+/*  $Id$
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Author: Eugene Vasilchenko
+*
+* File Description:
+*   !!! PUT YOUR DESCRIPTION HERE !!!
+*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.1  1999/06/24 14:44:59  vasilche
+* Added binary ASN.1 output.
+*
+* ===========================================================================
+*/
+
+#include <corelib/ncbistd.hpp>
+#include <serial/objostrasnb.hpp>
+#include <serial/member.hpp>
+
+BEGIN_NCBI_SCOPE
+
+CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out)
+    : m_Output(out)
+{
+}
+
+CObjectOStreamAsnBinary::~CObjectOStreamAsnBinary(void)
+{
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteByte(TByte byte)
+{
+    m_Output.put(byte);
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
+{
+    m_Output.write(bytes, size);
+}
+
+template<typename T>
+inline
+void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value)
+{
+    for ( size_t shift = (sizeof(value) - 1) * 8; shift != 0; shift -= 8 ) {
+        out.WriteByte(value >> shift);
+    }
+    out.WriteByte(value);
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteShortTag(EClass c, bool constructed, TTag tag)
+{
+    WriteByte((c << 6) | (constructed << 5) | tag);
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteSysTag(ETag tag)
+{
+    WriteShortTag(eUniversal, false, tag);
+}
+
+void CObjectOStreamAsnBinary::WriteTag(EClass c, bool constructed, TTag tag)
+{
+    if ( tag < 0 )
+        THROW1_TRACE(runtime_error, "negative tag number");
+
+    if ( tag < 31 ) {
+        // short form
+        WriteShortTag(c, constructed, tag);
+    }
+    else {
+        // long form
+        WriteShortTag(c, constructed, 31);
+        bool write = false;
+        size_t shift;
+        for ( shift = (sizeof(TTag) * 8 - 1) / 7 * 7; shift != 0; shift -= 7 ) {
+            TByte bits = tag >> shift;
+            if ( !write ) {
+                if ( bits & 0x7f == 0 )
+                    continue;
+                write = true;
+            }
+            WriteByte(bits | 0x80);
+        }
+        WriteByte(tag & 0x7f);
+    }
+}
+
+void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
+{
+    const string& tag = typeInfo->GetName();
+    if ( tag.empty() )
+        THROW1_TRACE(runtime_error, "empty tag string");
+
+    if ( tag[0] <= 31 )
+        THROW1_TRACE(runtime_error, "bad tag string start");
+
+    // long form
+    WriteShortTag(eApplication, true, 31);
+    SIZE_TYPE last = tag.size() - 1;
+    for ( SIZE_TYPE i = 0; i < last; ++i ) {
+        char c = tag[i];
+        if ( (c & 0x80) != 0 )
+            THROW1_TRACE(runtime_error, "bad tag string char");
+        WriteByte(c);
+    }
+    char c = tag[last];
+    if ( (c & 0x80) != 0 )
+        THROW1_TRACE(runtime_error, "bad tag string char");
+    WriteByte(c | 0x80);
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteIndefiniteLength(void)
+{
+    WriteByte(0x80);
+}
+
+inline
+void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
+{
+    WriteByte(length);
+}
+
+void CObjectOStreamAsnBinary::WriteLength(size_t length)
+{
+    if ( length < 0 )
+        THROW1_TRACE(runtime_error, "negative length");
+
+    if ( length <= 127 ) {
+        // short form
+        WriteShortLength(length);
+    }
+    else if ( length <= 0xff ) {
+        // long form 1 byte
+        WriteByte(0x81);
+        WriteByte(length);
+    }
+    else if ( length <= 0xffff ) {
+        WriteByte(0x82);
+        WriteByte(length >> 8);
+        WriteByte(length);
+    }
+    else {
+        WriteByte(0x80 | sizeof(length));
+        WriteBytesOf(*this, length);
+    }
+}
+
+void CObjectOStreamAsnBinary::WriteEndOfContent(void)
+{
+    WriteSysTag(eNone);
+    WriteShortLength(0);
+}
+
+void CObjectOStreamAsnBinary::WriteNull(void)
+{
+    WriteSysTag(eNull);
+    WriteShortLength(0);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const bool& data)
+{
+    WriteSysTag(eBoolean);
+    WriteShortLength(1);
+    WriteByte(data);
+}
+
+template<typename T>
+static inline
+void WriteStdNumber(CObjectOStreamAsnBinary& out, const T& data)
+{
+    out.WriteSysTag(CObjectOStreamAsnBinary::eInteger);
+    if ( data >= -0x80 && data < 0x80 ) {
+        // one byte
+        out.WriteShortLength(1);
+        out.WriteByte(data);
+    }
+    else if ( data >= -0x8000 && data < 0x8000 ) {
+        // two bytes
+        out.WriteShortLength(2);
+        out.WriteByte(data >> 8);
+        out.WriteByte(data);
+    }
+    else if ( T(-1) >= 0 && (data & (1 << (sizeof(T) * 8 - 1))) != 0 ) {
+        // full length unsigned - and doesn't fit in signed place
+        out.WriteShortLength(sizeof(data) + 1);
+        out.WriteByte(0);
+        WriteBytesOf(out, data);
+    }
+    else {
+        // full length signed
+        out.WriteShortLength(sizeof(data));
+        WriteBytesOf(out, data);
+    }
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const char& data)
+{
+    WriteSysTag(eGeneralString);
+    WriteShortLength(1);
+    WriteByte(data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const signed char& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const unsigned char& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const short& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const unsigned short& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const int& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const unsigned& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const long& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const unsigned long& data)
+{
+    WriteStdNumber(*this, data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const float& data)
+{
+    WriteSysTag(eReal);
+    char buffer[128];
+    sprintf(buffer, "%.7g", data);
+    size_t length = strlen(buffer);
+    WriteShortLength(length + 1);
+    WriteByte(0); // decimal
+    WriteBytes(buffer, length);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const double& data)
+{
+    WriteSysTag(eReal);
+    char buffer[128];
+    sprintf(buffer, "%.15g", data);
+    size_t length = strlen(buffer);
+    WriteShortLength(length + 1);
+    WriteByte(0); // decimal
+    WriteBytes(buffer, length);
+}
+
+void CObjectOStreamAsnBinary::WriteString(const string& data)
+{
+    WriteSysTag(eVisibleString);
+    size_t length = data.size();
+    WriteLength(length);
+    WriteBytes(data.data(), length);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const string& data)
+{
+    WriteString(data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(const char* const& data)
+{
+    WriteString(data);
+}
+
+void CObjectOStreamAsnBinary::WriteStd(char* const& data)
+{
+    WriteString(data);
+}
+
+void CObjectOStreamAsnBinary::WriteMember(const CMemberInfo& member)
+{
+    WriteTag(eContextSpecific, true, member.GetTag());
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)
+{
+    if ( info.IsMember() ) {
+        WriteSysTag(eObjectIdentifier);
+        WriteIndefiniteLength();
+        WriteString(info.GetMemberInfo().GetName());
+        info.ToContainerObject();
+        WriteMemberPrefix(info);
+        WriteEndOfContent();
+    }
+}
+
+void CObjectOStreamAsnBinary::WriteObjectReference(TIndex index)
+{
+    WriteSysTag(eObjectIdentifier);
+    WriteBytesOf(*this, index);
+}
+
+void CObjectOStreamAsnBinary::WriteNullPointer(void)
+{
+    WriteSysTag(eNull);
+    WriteShortLength(0);
+}
+
+void CObjectOStreamAsnBinary::WriteThisTypeReference(TTypeInfo typeInfo)
+{
+    WriteClassTag(typeInfo);
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
+{
+    WriteClassTag(typeInfo);
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::VBegin(Block& block)
+{
+    WriteTag(eUniversal, true, block.Sequence()? eSequence: eSet);
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::VNext(const Block& block)
+{
+    if ( !block.First() )
+        WriteEndOfContent();
+}
+
+void CObjectOStreamAsnBinary::VEnd(const Block& )
+{
+    WriteEndOfContent();
+}
+
+END_NCBI_SCOPE

@@ -31,6 +31,7 @@ string Ptr(const void* p)
 
 void CSerialObject::Dump(ostream& out) const
 {
+    out << '{' << endl;
     out << "m_Name: \"" << m_Name << "\" (*" << Ptr(&m_Name) << ")" << endl;
     out << "m_NamePtr: ";
     if ( m_NamePtr )

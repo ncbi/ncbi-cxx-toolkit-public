@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/24 14:44:46  vasilche
+* Added binary ASN.1 output.
+*
 * Revision 1.7  1999/06/16 20:35:25  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -59,7 +62,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/classinfo.hpp>
+#include <serial/serialdef.hpp>
+#include <serial/typeref.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <map>
@@ -126,9 +130,25 @@ public:
             return typeInfo;
         }
 
-    virtual bool IsDefault(TConstObjectPtr object) const
+    virtual TConstObjectPtr GetDefault(void) const
         {
-            return Get(object).empty();
+            static TObjectType def;
+            return &def;
+        }
+
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+        {
+            const TObjectType& l1 = Get(object1);
+            const TObjectType& l2 = Get(object2);
+            if ( l1.size() != l2.size() )
+                return false;
+            TTypeInfo dataTypeInfo = GetDataTypeInfo();
+            for ( TObjectType::const_iterator i1 = l1.begin(), i2 = l2.begin();
+                  i1 != l1.end(); ++i1, ++i2 ) {
+                if ( !dataTypeInfo->Equals(&*i1, &*i2) )
+                    return false;
+            }
+            return true;
         }
 
 protected:
@@ -147,7 +167,8 @@ protected:
         {
             const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::Block block(out, l.size());
+            CObjectOStream::Block block(out, CObjectOStream::eSequence,
+                                        l.size());
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
                 block.Next();
@@ -159,7 +180,8 @@ protected:
         {
             TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            CObjectIStream::Block block(in, CObjectIStream::eSequence,
+                                        CObjectIStream::eFixed);
             while ( block.Next() ) {
                 l.push_back(Data());
                 in.ReadExternalObject(&l.back(), dataTypeInfo);
