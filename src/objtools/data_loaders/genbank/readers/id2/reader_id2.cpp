@@ -860,6 +860,8 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 {
     if ( errors & fError_no_data ) {
         // no Seq-ids
+        ids->SetState(CBioseq_Handle::fState_other_error|
+                      CBioseq_Handle::fState_no_data);
         ids.SetLoaded();
         return;
     }
@@ -992,6 +994,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
     if ( !reply.IsSetData() || reply.GetData().GetData().empty() ) {
         ERR_POST("CId2Reader: ID2-Reply-Get-Blob: "
                  "no data in reply: "<<blob_id.ToString());
+        blob->SetBlobState(CBioseq_Handle::fState_no_data);
         blob.SetLoaded();
         return;
     }
