@@ -37,6 +37,7 @@
 #include <corelib/ncbistl.hpp>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 #include <string>
 #include <list>
 
@@ -168,6 +169,10 @@ public:
     static int strcasecmp  (const char* s1, const char* s2);
     static int strncasecmp (const char* s1, const char* s2, size_t n);
 
+    // Wrapper for the function strftime() that correct handling %D and %T 
+    // time formats on MS Windows
+    static size_t strftime (char *s, size_t maxsize, const char *format, 
+                            const struct tm *timeptr);
 
     /// The following 4 methods change the passed string, then return it
     static string& ToLower(string& str);
@@ -366,6 +371,20 @@ int NStr::strncasecmp(const char* s1, const char* s2, size_t n)
 }
 
 inline
+size_t NStr::strftime (char *s, size_t maxsize, const char *format, 
+                       const struct tm *timeptr)
+{
+#if defined NCBI_OS_MSWIN
+    string x_format;
+    x_format = Replace(format,   "%T", "%H:%M:%S");
+    x_format = Replace(x_format, "%D", "%m/%d/%y");
+    return ::strftime(s, maxsize, x_format.c_str(), timeptr);
+#elif defined NCBI_OS_UNIX
+    return ::strftime(s, maxsize, format, timeptr);
+#endif
+}
+
+inline
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
@@ -511,6 +530,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2002/06/18 15:19:36  ivanov
+ * Added NStr::strftime() -- correct handling %D and %T time formats on MS Windows
+ *
  * Revision 1.15  2002/05/02 15:38:02  ivanov
  * Fixed comments for String-to-X functions
  *
