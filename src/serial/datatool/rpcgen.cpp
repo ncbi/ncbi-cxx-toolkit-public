@@ -39,6 +39,7 @@
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/generate.hpp>
 #include <serial/datatool/srcutil.hpp>
+#include <serial/datatool/statictype.hpp>
 #include <serial/datatool/stdstr.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -319,23 +320,25 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
     ITERATE (TChoices, it, choices) {
         const string& name = (*it)->GetName();
         if (name == "init") {
-            CNcbiOstrstream oss;
-            (*it)->GetType()->PrintASN(oss, 0);
-            string type = CNcbiOstrstreamToString(oss);
-            if (type == "NULL") {
+            if (dynamic_cast<const CNullDataType*>((*it)->GetType())) {
                 has_init = true;
             } else {
+                CNcbiOstrstream oss;
+                (*it)->GetType()->PrintASN(oss, 0);
+                string type = CNcbiOstrstreamToString(oss);
+                _ASSERT(type != "NULL");
                 ERR_POST(Warning << "Ignoring non-null init (type " << type
                          << ") in " << m_Source.m_RequestChoiceType);
             }
         } else if (name == "fini") {
-            CNcbiOstrstream oss;
-            (*it)->GetType()->PrintASN(oss, 0);
-            string type = CNcbiOstrstreamToString(oss);
-            if (type == "NULL") {
+            if (dynamic_cast<const CNullDataType*>((*it)->GetType())) {
                 has_fini = true;
             } else {
-                ERR_POST(Warning << "Ignoring non-null init (type " << type
+                CNcbiOstrstream oss;
+                (*it)->GetType()->PrintASN(oss, 0);
+                string type = CNcbiOstrstreamToString(oss);
+                _ASSERT(type != "NULL");
+                ERR_POST(Warning << "Ignoring non-null fini (type " << type
                          << ") in " << m_Source.m_RequestChoiceType);
             }
         }
@@ -355,7 +358,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             << "void " << class_base << "::x_Connect(void)\n"
             << "{\n"
             << "    Tparent::x_Connect();\n"
-            << "    AskInit(true);\n"
+            << "    AskInit();\n"
             << "}\n\n";
     }
     if (has_fini) {
@@ -364,7 +367,7 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         code.MethodStart(false)
             << "void " << class_base << "::x_Disconnect(void)\n"
             << "{\n"
-            << "    AskFini(true);\n" // ignore/downgrade errors?
+            << "    AskFini();\n" // ignore/downgrade errors?
             << "    Tparent::x_Disconnect();\n"
             << "}\n\n";
     }
@@ -413,7 +416,11 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         string           method   = "Ask" + Identifier(name);
         const CDataType* req_type = (*it)->GetType()->Resolve();
         string           req_class;
-        if ( !req_type->GetParentType() ) {
+        bool             null_req = false;
+        if (dynamic_cast<const CNullDataType*>(req_type)) {
+            req_class = "void";
+            null_req  = true;
+        } else if ( !req_type->GetParentType() ) {
             req_class = req_type->ClassName();
         } else {
             TTypeStr typestr = req_type->GetFullCType();
@@ -424,7 +431,11 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
         const CDataType* rep_type = rm->second->GetType()->Resolve();
         string           rep_class;
         bool             use_cref = false;
-        if ( !rep_type->GetParentType()  &&  !rep_type->IsStdType() ) {
+        bool             null_rep = false;
+        if (dynamic_cast<const CNullDataType*>(rep_type)) {
+            rep_class = "void";
+            null_rep  = true;
+        } else if ( !rep_type->GetParentType()  &&  !rep_type->IsStdType() ) {
             rep_class = "CRef<" + rep_type->ClassName() + '>';
             use_cref  = true;
             code.CPPIncludes().insert(rep_type->FileName());
@@ -434,23 +445,42 @@ void CClientPseudoTypeStrings::GenerateClassCode(CClassCode& code,
             rep_class = typestr->GetCType(code.GetNamespace());
         }
         code.ClassPublic()
-            << "    virtual " << rep_class << ' ' << method << "\n"
-            << "        (const " << req_class
+            << "    virtual " << rep_class << ' ' << method << "\n";
+        if (null_req) {
+            code.ClassPublic() << "        (TReply* reply = 0);\n\n";
+        } else {
+            code.ClassPublic() << "        (const " << req_class
             << "& req, TReply* reply = 0);\n\n";
+        }
         code.MethodStart(false)
-            << rep_class << ' ' << class_base << "::" << method
-            << "(const " << req_class << "& req, " << trep << "* reply)\n"
+            << rep_class << ' ' << class_base << "::" << method;
+        if (null_req) {
+            code.Methods(false) << '(' << trep << "* reply)\n";
+        } else {
+            code.Methods(false)
+                << "(const " << req_class << "& req, " << trep << "* reply)\n";
+        }
+        code.Methods(false)
             << "{\n"
             << "    TRequestChoice request;\n"
-            << "    TReply         reply0;\n"
-            << "    request.Set" << Identifier(name) << "(const_cast<"
-            << req_class << "&>(req));\n"
+            << "    TReply         reply0;\n";
+        if (null_req) {
+            code.Methods(false)
+                << "    request.Set" << Identifier(name) << "();\n";
+        } else {
+            code.Methods(false)
+                << "    request.Set" << Identifier(name) << "(const_cast<"
+                << req_class << "&>(req));\n";
+        }
+        code.Methods(false)
             << "    if ( !reply ) {\n"
             << "        reply = &reply0;\n"
             << "    }\n"
             << "    Ask(request, *reply, TReplyChoice::e_" << Identifier(reply)
             << ");\n";
-        if (use_cref) {
+        if (null_rep) {
+            code.Methods(false) << "}\n\n";
+        } else if (use_cref) {
             code.Methods(false)
                 << "    return " << rep_class << "(&x_Choice(*reply).Set"
                 << Identifier(reply) << "());\n"
@@ -471,6 +501,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/11/20 15:40:53  ucko
+* Update for new (saner) treatment of ASN.1 NULLs.
+*
 * Revision 1.9  2003/10/21 13:48:51  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit

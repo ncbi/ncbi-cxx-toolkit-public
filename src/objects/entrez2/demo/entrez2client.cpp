@@ -207,7 +207,7 @@ int CEntrez2ClientApp::Run(void)
 //
 void CEntrez2ClientApp::x_GetInfo(CEntrez2Client& client)
 {
-    CRef<CEntrez2_info> info = client.AskGet_info(true);
+    CRef<CEntrez2_info> info = client.AskGet_info();
     *m_ObjOstream << *info;
 }
 
@@ -425,6 +425,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/11/20 15:41:17  ucko
+ * Update for new (saner) treatment of ASN.1 NULLs.
+ *
  * Revision 1.2  2003/07/31 18:12:26  dicuccio
  * Code clean-up.  Added limits for docsum retrieval (start pos / max number of
  * records)

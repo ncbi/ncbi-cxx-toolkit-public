@@ -139,7 +139,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
         pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
         pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
 
-        req.SetInit( true );
+        req.SetInit();
 	
         m_pServer = pServer.release();
         m_pIn = pIn.release();
@@ -179,7 +179,7 @@ CTaxon1::Fini(void)
         CTaxon1_req req;
         CTaxon1_resp resp;
 	
-        req.SetFini( true );
+        req.SetFini();
 	
         if( SendRequest( req, resp ) ) {
             if( !resp.IsFini() ) {
@@ -993,7 +993,7 @@ CTaxon1::GetGCName(short gc_id, string& gc_name_out )
         CTaxon1_req  req;
         CTaxon1_resp resp;
 
-        req.SetGetgcs( true );
+        req.SetGetgcs();
 
         if( SendRequest( req, resp ) ) {
             if( resp.IsGetgcs() ) {
@@ -1791,6 +1791,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.21  2003/11/20 15:42:19  ucko
+ * Update for new (saner) treatment of ASN.1 NULLs.
+ *
  * Revision 6.20  2003/11/18 17:50:51  dicuccio
  * Rearranged #include statements to avoid warning on MSVC
  *

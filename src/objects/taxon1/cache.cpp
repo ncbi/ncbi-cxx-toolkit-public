@@ -50,7 +50,7 @@ COrgRefCache::Init( unsigned nCapacity )
     CTaxon1_req  req;
     CTaxon1_resp resp;
 
-    req.SetMaxtaxid( true );
+    req.SetMaxtaxid();
 
     if( m_host.SendRequest( req, resp ) ) {
         if( resp.IsMaxtaxid() ) {
@@ -865,7 +865,7 @@ COrgRefCache::InitRanks()
         CTaxon1_req  req;
         CTaxon1_resp resp;
 
-        req.SetGetranks( true );
+        req.SetGetranks();
 
         if( m_host.SendRequest( req, resp ) ) {
             if( resp.IsGetranks() ) {
@@ -969,7 +969,7 @@ COrgRefCache::InitNameClasses()
         CTaxon1_req  req;
         CTaxon1_resp resp;
 
-        req.SetGetcde( true );
+        req.SetGetcde();
 
         if( m_host.SendRequest( req, resp ) ) {
             if( resp.IsGetcde() ) {
@@ -1067,7 +1067,7 @@ COrgRefCache::InitDivisions()
         CTaxon1_req  req;
         CTaxon1_resp resp;
 
-        req.SetGetdivs( true );
+        req.SetGetdivs();
 
         if( m_host.SendRequest( req, resp ) ) {
             if( resp.IsGetdivs() ) {
@@ -1118,6 +1118,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.19  2003/11/20 15:42:19  ucko
+ * Update for new (saner) treatment of ASN.1 NULLs.
+ *
  * Revision 6.18  2003/06/23 20:42:08  domrach
  * New treatment of subspecies names introduced
  *
