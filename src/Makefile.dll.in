@@ -53,10 +53,10 @@ XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XLIB)
 	$(LINK_DLL) $(XLIB) $(XLIBOBJ) $(XLOBJ) $(XDLL_LIB) $(LIBS)
-	$(TOUCH) -r $(XLIB) $(XLIBDEP)
+	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-	echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
-	$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
+	@echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 
 
 ### Standard targets

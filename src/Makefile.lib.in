@@ -41,10 +41,10 @@ $(XLIB): $(XLIBOBJ)
 	-$(RM) $(XLIB)
 	$(AR) @f_outlib@$(XLIB) `@LORDER@ $(XLIBOBJ) $(XLOBJ) | @TSORT@`
 	@$(RANLIB) $(XLIB)
-	$(TOUCH) -r $(XLIB) $(XLIBDEP)
+	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-	echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
-	$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
+	@echo $(srcdir) `pwd` $(TMPL) > $(libdir)/$(XLIBDEP)
+	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 
 
 ### Standard targets
