@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anatoliy Kuznetsov
  *
  * File Description:
  *   Plain example of a CGI application.
@@ -71,11 +71,46 @@ void CSampleCgiApplication::Init()
     RegisterDiagFactory("comments", new CCommentDiagFactory);
     //   E-mail -- using CGI arg "&diag-destination=email:user@host"
     RegisterDiagFactory("email",    new CEmailDiagFactory);
+
+
+    // Create CGI argument descriptions class
+    //  (For CGI applications only keys can be used)
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "CGI sample application");
+        
+    arg_desc->AddOptionalKey("message",
+                             "message",
+                             "Message passed to CGI application",
+                             CArgDescriptions::eString);
+
+
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+
 }
 
 
 int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 {
+     // you can catch CArgException& here to process argument errors
+     // or handle it in OnException
+     CArgs args = GetArgs();
+
+     // args now contains both command line arguments and arguments 
+     // passed throught the CGI call
+
+     if (args["message"]) {
+        const string& m = args["message"].AsString();
+        // do something with the message
+     } else {
+         // no message
+     }
+
+
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     const CCgiRequest& request  = ctx.GetRequest();
@@ -147,6 +182,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/12/01 14:10:37  kuznets
+ * Example corrected to show how to use app arguments for CGI parameters
+ *
  * Revision 1.7  2004/11/19 22:51:56  vakatov
  * Rely on the default mechanism for searching config.file (so plain CGI should
  * not find any).
