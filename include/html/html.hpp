@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/09 23:02:55  lewisg
+* update to new cgiapp class
+*
 * Revision 1.6  1998/12/08 00:34:55  lewisg
 * cleanup
 *
@@ -65,6 +68,7 @@ class CHTMLHelper
 {
 public:
     static string & HTMLEncode(string &);  // HTML encodes a string. E.g. &lt;
+    static string IntToString(int);
 };
 
 

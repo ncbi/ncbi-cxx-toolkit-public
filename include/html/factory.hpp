@@ -56,7 +56,7 @@ struct SFactoryList {
 template <class Type>
 class CFactory {
 public:
-    int CgiFactory( TCgiEntries & Cgi, SFactoryList < Type > * List);
+    int CgiFactory(TCgiEntries & Cgi, SFactoryList < Type > * List);
 };
 
 

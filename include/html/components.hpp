@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/09 23:02:55  lewisg
+* update to new cgiapp class
+*
 * Revision 1.3  1998/12/08 00:34:54  lewisg
 * cleanup
 *
@@ -51,7 +54,8 @@
 BEGIN_NCBI_SCOPE
 
 
-class CQueryBox: public CHTMLBasicPage {
+class CQueryBox: public CHTMLBasicPage 
+{
 public:
 
     virtual void InitMembers(int);
@@ -63,11 +67,11 @@ public:
     static const int kNoCOMMENTS = 0x2;
     static const int kNoLIST = 0x1;
 
-    string m_Width; // in pixels
+    int m_Width; // in pixels
     string m_BgColor;
     string m_DbName;  // name of the database field
-    map < string, string, less<string> > m_Databases;  // the list of databases
-    map < string, string, less<string> > m_HiddenValues;
+    map < string, string > m_Databases;  // the list of databases
+    map < string, string > m_HiddenValues;
     string m_TermName;
     string m_DispMax;  // name of dispmax field
     string m_DefaultDispMax;
@@ -82,8 +86,48 @@ public:
     //////// 'tors
 
     CQueryBox();
-    ~CQueryBox();
- 
+};
+
+
+// makes a button followed by a drop down
+
+class CButtonList: public CHTMLBasicPage
+{
+public:
+    string m_Name;  // button name
+    string m_Select;  // select tag name
+    map < string, string > m_List;
+    virtual void Finish(int);
+};
+
+
+// makes a set of pagination links
+
+class CPageList: public CHTMLBasicPage
+{
+public:
+    map < int, string > m_Pages; // number, href
+    string m_Forward; // forward url
+    string m_Backward; // backward url
+    virtual void Finish(int);
+
+};
+
+
+class CPagerBox: public CHTMLBasicPage
+{
+    int m_Width; // in pixels
+    CButtonList * m_TopButton;  // display button
+    CButtonList * m_LeftButton; // save button
+    CButtonList * m_RightButton; // order button
+    CPageList * m_PageList;  // the pager
+    int m_NumResults;  // the number of results to display
+
+    virtual void InitMembers(int);
+    virtual void InitSubPages(int);
+    virtual void Finish(int);
+
+    CPagerBox();
 };
 
 END_NCBI_SCOPE

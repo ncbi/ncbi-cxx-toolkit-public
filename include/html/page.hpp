@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/09 23:02:56  lewisg
+* update to new cgiapp class
+*
 * Revision 1.4  1998/12/09 17:27:44  sandomir
 * tool should be changed to work with the new CCgiApplication
 *
@@ -70,7 +73,7 @@ public:
     virtual CCgiApplication * GetApplication(void) { return m_CgiApplication; }
     virtual void SetApplication(CCgiApplication * App) { m_CgiApplication = App; }
 
-private:
+protected:
     CCgiApplication * m_CgiApplication;  // pointer to runtime information  
 };
 
