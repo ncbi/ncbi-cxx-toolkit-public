@@ -32,9 +32,9 @@
 
 
 #include <ncbi_pch.hpp>
-#include "splign_compartment_finder.hpp"
 #include "splign_util.hpp"
 
+#include <algo/align/splign/splign_compartment_finder.hpp>
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/splign/splign.hpp>
 #include <algo/align/nw_formatter.hpp>
@@ -1370,11 +1370,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/09/27 17:12:38  kapustin
+ * Move splign_compartment_finder.hpp to /include/algo/align/splign. SetIntronLimits() => SetMaxIntron()
+ *
  * Revision 1.21  2004/09/21 16:39:47  kapustin
- * Use separate constants to specify min term exon length and the min non-covered query space
+ * Use separate constants to specify min term exon length and the min
+ * non-covered query space
  *
  * Revision 1.20  2004/09/09 21:23:41  kapustin
- * Adjust min term exon sizeto use with fixed genomic extent
+ * Adjust min term exon size to use with fixed genomic extent
  *
  * Revision 1.19  2004/07/19 13:38:07  kapustin
  * Remove unused conditional code
