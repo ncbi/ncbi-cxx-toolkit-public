@@ -6,6 +6,8 @@
 #  Filter out redundant warnings issued by WorkShop 5.0 C++ compiler.
 #  Simplify the output.
 
+tempfile="tmp$$"
+
 egrep -v -e '
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./ios", line 148:
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./ostream", line 73:
@@ -20,6 +22,7 @@ egrep -v -e '
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./fstream", line 319:
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./fstream", line 362: 
 ^"/netopt/SUNWspro6/SC5\.0/include/CC/\./sstream", line 203:
+^"/netopt/SUNWspro6/SC5\.0/include/CC/\./sstream", line 161:
 ^"/netopt/ncbi_tools/include/..*\.h", line [0-9]*: Warning \(Anachronism\): Attempt to redefine .* without using #undef\.$
 ^"/netopt/Sybase/clients/current/include/sybdb\.h", line [0-9]*: Warning: There are two consecutive underbars in "db__
 : Warning: Could not find source for std::is[a-z][a-z]*\(int\)
@@ -38,4 +41,14 @@ s/std::\([a-z_]*\)<\([^,<>]*\), std::less<\2>, std::allocator<\2>>/std::\1<\2>/g
 s/std::\([a-z_]*\)<\([^,<>]*\), \([^,<>]*\), std::less<\2>, std::allocator<std::pair<const \2, \3>>>/std::\1<\2, \3>/g
 s/std::\([a-z_]*\)<\([^,<>]*<[^<>]*>\), std::allocator<\2>>/std::\1<\2>/g
 s/std::\([a-z_]*\)<\([^,<>]*\), \([^,<>]*<[^<>]*>\), std::less<\2>, std::allocator<std::pair<const \2, \3>>>/std::\1<\2, \3>/g
-'
+' | tee $tempfile
+
+grep '^[0-9][0-9]* Error(s) and [0-9][0-9]* Warning(s) detected\.' $tempfile > /dev/null
+
+if test $? -eq 0 ;  then
+  rm $tempfile
+  exit 1
+else
+  rm $tempfile
+  exit 0
+fi
