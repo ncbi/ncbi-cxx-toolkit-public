@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Vladimir Ivanov
+* Authors:  Vladimir Ivanov, Denis Vakatov
 *
 * File Description:
 *
@@ -33,6 +33,10 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/07/05 05:27:49  vakatov
+* Get rid of the redundant <ncbireg.hpp>.
+* Added workarounds for the capricious IRIX MIPSpro 7.3 compiler.
+*
 * Revision 1.4  2001/07/04 20:03:37  vakatov
 * Added missing header <unistd.h>.
 * Check for the exit code of the signal() function calls.
@@ -53,12 +57,11 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbireg.hpp>
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbitime.hpp>
 
 
-// Define HEAP_LIMIT and CPU_LIMIT (UNIX only)
 #ifdef NCBI_OS_UNIX
 #  include <sys/resource.h>
 #  include <sys/times.h>
@@ -74,6 +77,21 @@
 
 
 BEGIN_NCBI_SCOPE
+
+//---------------------------------------------------------------------------
+
+// MIPSpro 7.3 workarounds:
+//   1) it declares set_new_handler() in both global and std:: namespaces;
+//   2) it apparently gets totally confused by `extern "C"' inside a namespace.
+#  if defined(NCBI_COMPILER_MIPSPRO)
+#    define set_new_handler std::set_new_handler
+#  else
+extern "C" {
+    static void s_ExitHandler(void);
+    static void s_SignalHandler(int sig);
+}
+#  endif  /* NCBI_COMPILER_MIPSPRO */
+
 
 
 //---------------------------------------------------------------------------
@@ -95,13 +113,6 @@ static CTime      s_TimeSet;
 static size_t     s_HeapLimit        = 0;
 static size_t     s_CpuTimeLimit     = 0;
 static char*      s_ReserveMemory    = 0;
-
-
-extern "C" {
-    static void s_ExitHandler(void);
-    static void s_SignalHandler(int sig);
-}
-
 
 
 /* Routine to be called at the exit from application
@@ -189,9 +200,8 @@ static bool s_SetExitHandler()
 
 #ifdef USE_SETHEAPLIMIT
 
-/* Handler for operator new.
- */
-static void s_NewHandler()
+// Handler for operator new
+static void s_NewHandler(void)
 {
     s_ExitCode = eEC_Memory;
     exit(-1);
