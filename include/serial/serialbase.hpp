@@ -347,10 +347,13 @@ NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyNo(CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyYes(CNcbiIos& io);
 NCBI_XSERIAL_EXPORT CNcbiIos& MSerial_VerifyDefValue(CNcbiIos& io);
 
+class CConstObjectInfo;
+class CObjectInfo;
 // Input/output
 NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CSerialObject& obj);
 NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, CSerialObject& obj);
-
+NCBI_XSERIAL_EXPORT CNcbiOstream& operator<< (CNcbiOstream& str, const CConstObjectInfo& obj);
+NCBI_XSERIAL_EXPORT CNcbiIstream& operator>> (CNcbiIstream& str, const CObjectInfo& obj);
 
 
 END_NCBI_SCOPE
@@ -436,6 +439,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/07/29 19:57:08  vasilche
+* Added operators to read/write CObjectInfo.
+*
 * Revision 1.32  2004/05/22 20:19:17  jcherry
 * Made CAliasBase::TThis typedef public
 *

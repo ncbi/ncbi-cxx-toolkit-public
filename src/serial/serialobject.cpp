@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/07/29 19:57:08  vasilche
+* Added operators to read/write CObjectInfo.
+*
 * Revision 1.25  2004/06/09 19:17:52  gouriano
 * Allow assignment of alias types
 *
@@ -563,6 +566,22 @@ CNcbiIstream& operator>> (CNcbiIstream& is, CSerialObject& obj)
     auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_SerFormat(is), is) );
     istr->SetVerifyData(s_SerVerify(is));
     istr->Read(&obj,obj.GetThisTypeInfo());
+    return is;
+}
+
+CNcbiOstream& operator<< (CNcbiOstream& os, const CConstObjectInfo& obj)
+{
+    auto_ptr<CObjectOStream> ostr( CObjectOStream::Open(s_SerFormat(os), os) );
+    ostr->SetVerifyData(s_SerVerify(os));
+    ostr->Write(obj);
+    return os;
+}
+
+CNcbiIstream& operator>> (CNcbiIstream& is, const CObjectInfo& obj)
+{
+    auto_ptr<CObjectIStream> istr( CObjectIStream::Open(s_SerFormat(is), is) );
+    istr->SetVerifyData(s_SerVerify(is));
+    istr->Read(obj);
     return is;
 }
 
