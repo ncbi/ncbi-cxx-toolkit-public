@@ -575,7 +575,8 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
         case CS_END_ITEM:
         case CS_END_DATA: {
             if ( item_buf ) {
-                if (outlen == 0) {
+                if (outlen < 3) { /* it used to be == 0 but ctlib on windows
+				     returns 2 even for NULL numeric */
                     item_buf->AssignNULL();
                 }
                 else {
@@ -948,6 +949,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/11/27 17:09:50  soussov
+ * patch to fix NULL numeric related bug in ctlib for Windows
+ *
  * Revision 1.13  2002/03/26 15:34:38  soussov
  * new image/text operations added
  *
