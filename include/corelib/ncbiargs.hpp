@@ -45,6 +45,13 @@
 #include <list>
 #include <vector>
 
+
+/** @addtogroup Args
+ *
+ * @{
+ */
+
+
 BEGIN_NCBI_SCOPE
 
 
@@ -662,9 +669,15 @@ private:
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/03/31 13:36:39  siyan
+ * Added doxygen support
+ *
  * Revision 1.27  2003/02/10 18:06:15  kuznets
  * Fixed problem with mandatory extra args
  *
