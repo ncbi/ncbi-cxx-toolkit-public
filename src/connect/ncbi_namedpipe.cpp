@@ -580,21 +580,24 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         // Create a UNIX socket
         if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-            throw "UNIX socket() failed";
+            throw string("UNIX socket() failed: ")
+                + strerror(errno);
         }
 
         // Set buffer size
         if ( m_PipeSize != CNamedPipe::kDefaultPipeSize) {
             if ( !x_SetSocketBufSize(sock, m_PipeSize, SO_SNDBUF)  ||
                  !x_SetSocketBufSize(sock, m_PipeSize, SO_RCVBUF) ) {
-                throw "UNIX socket set buffer size failed";
+                throw string("UNIX socket set buffer size failed: ")
+                    + strerror(errno);
             }
         }
 
         // Set non-blocking mode
         if (fcntl(sock, F_SETFL,
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-            throw "UNIX socket set to non-blocking failed";
+            throw string("UNIX socket set to non-blocking failed: ")
+                + strerror(errno);
         }
         
         // Connect to server
@@ -625,7 +628,8 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                 if (x_errno == EINTR) {
                     status = eIO_Interrupt;
                 }
-                throw "UNIX socket connect() failed";
+                throw string("UNIX socket connect() failed: ")
+                    + strerror(errno);
             }
 
             if (!timeout  ||  timeout->sec  ||  timeout->usec) {
@@ -662,14 +666,16 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
                     if (n < 0  &&  errno == EINTR) {
                         continue;
                     }
-                    throw "UNIX socket select() failed";
+                    throw string("UNIX socket select() failed: ")
+                        + strerror(errno);
                 }
                 // Check connection
                 x_errno = 0;
                 socklen_t x_len = (socklen_t) sizeof(x_errno);
                 if ((getsockopt(sock, SOL_SOCKET, SO_ERROR, &x_errno, 
                                 &x_len) != 0  ||  x_errno != 0)) {
-                    throw "UNIX socket getsockopt() failed";
+                    throw string("UNIX socket getsockopt() failed: ")
+                        + strerror(x_errno ? x_errno : errno);
                 }
                 if (x_errno == ECONNREFUSED) {
                     status = eIO_Closed;
@@ -679,8 +685,7 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         }
 
         // Create I/O socket
-        if (SOCK_CreateOnTop(&sock, sizeof(sock), &m_IoSocket) !=
-            eIO_Success) {
+        if (SOCK_CreateOnTop(&sock, sizeof(sock), &m_IoSocket) != eIO_Success){
             throw "UNIX socket cannot convert to SOCK";
         }
     }
@@ -714,11 +719,13 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 
         // Create a UNIX socket
         if ((m_LSocket = socket(PF_UNIX, SOCK_STREAM, 0)) < 0) {
-            throw "UNIX socket() failed";
+            throw string("UNIX socket() failed: ")
+                + strerror(errno);
         }
         // Remove any pre-existing socket (or other file)
         if (unlink(pipename.c_str()) != 0  &&  errno != ENOENT) {
-            throw "UNIX socket unlink(\"" + pipename + "\") failed";
+            throw "UNIX socket unlink(\"" + pipename + "\") failed: "
+                + strerror(errno);
         }
 
         // Bind socket
@@ -731,7 +738,8 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
         mode_t u = umask(0);
         if (bind(m_LSocket, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
             umask(u);
-            throw "UNIX socket bind(\"" + pipename + "\") failed";
+            throw "UNIX socket bind(\"" + pipename + "\") failed: "
+                + strerror(errno);
         }
         umask(u);
 #ifndef NCBI_OS_IRIX
@@ -739,11 +747,13 @@ EIO_Status CNamedPipeHandle::Create(const string& pipename,
 #endif
         // Listen for connections on a socket
         if (listen(m_LSocket, kListenQueueSize) != 0) {
-            throw "UNIX socket listen() failed";
+            throw string("UNIX socket listen() failed: ")
+                + strerror(errno);
         }
         if (fcntl(m_LSocket, F_SETFL,
                   fcntl(m_LSocket, F_GETFL, 0) | O_NONBLOCK) == -1) {
-            throw "UNIX socket set to non-blocking failed";
+            throw string("UNIX socket set to non-blocking failed: ")
+                + strerror(errno);
         }
     }
     catch (const char* what) {
@@ -797,7 +807,8 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             if (n < 0  &&  errno == EINTR) {
                 continue;
             }
-            throw "UNIX socket select() failed";
+            throw string("UNIX socket select() failed: ")
+                + strerror(errno);
         }
 
         // Can accept next connection from the list of waiting ones
@@ -808,13 +819,15 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
         addr.sun_len = sizeof(addr);
 #  endif
         if ((sock = accept(m_LSocket, (struct sockaddr*)&addr, &addrlen)) < 0){
-            throw "UNIX socket accept() failed";
+            throw string("UNIX socket accept() failed: ")
+                + strerror(errno);
         }
         // Set buffer size
         if ( m_PipeSize != CNamedPipe::kDefaultPipeSize) {
             if ( !x_SetSocketBufSize(sock, m_PipeSize, SO_SNDBUF)  ||
                  !x_SetSocketBufSize(sock, m_PipeSize, SO_RCVBUF) ) {
-                throw "UNIX socket set buffer size failed";
+                throw string("UNIX socket set buffer size failed: ")
+                    + strerror(errno);
             }
         }
         // Create new I/O socket
@@ -854,8 +867,9 @@ EIO_Status CNamedPipeHandle::Close(void)
     // Close listening socket
     if (m_LSocket >= 0) {
         if ( !x_CloseSocket(m_LSocket) ) {
-            ERR_POST(s_FormatErrorMessage("Close",
-                                          "UNIX socket close() failed"));
+            ERR_POST(s_FormatErrorMessage
+                     ("Close", string("UNIX socket close() failed: ") +
+                      strerror(errno)));
         }
         m_LSocket = -1;
     }
@@ -1205,6 +1219,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2003/11/03 17:34:31  lavr
+ * Print strerror() along with most  syscall-related errors
+ *
  * Revision 1.18  2003/10/24 16:52:38  lavr
  * Check RW bits before E bits in select()
  *
