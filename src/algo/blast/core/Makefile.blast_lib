@@ -39,6 +39,7 @@ blast_traceback \
 blast_util \
 blast_seqsrc \
 gapinfo \
+greedy_align \
 mb_lookup \
 na_lookup \
 util
