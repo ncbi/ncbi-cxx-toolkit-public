@@ -507,7 +507,8 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     // Check that proteins in nuc_prot set have a CdRegion
     if ( seq.IsAa()  &&  CdError(seq) ) {
         PostErr(eDiag_Error, eErr_SEQ_PKG_NoCdRegionPtr,
-            "No CdRegion in nuc-prot set points to this protein", seq);
+            "No CdRegion in nuc-prot set points to this protein", 
+            seq);
     }
 
     // Check that gene on non-segmented sequence does not have
@@ -747,15 +748,14 @@ bool CValidError_bioseq::CdError(const CBioseq& seq)
                          CSeqFeatData::e_Cdregion,
                          CAnnot_CI::eOverlap_Intervals,
                          CFeat_CI::eResolve_TSE,
-                         CFeat_CI::e_Product,
-                         nps);  // restrict search to the nuc-prot set.
-            if ( cds ) {
-                return false;
+                         CFeat_CI::e_Product);
+            if ( !cds ) {
+                return true;
             }
         }
     }
 
-    return true;
+    return false;
 }
 
 
@@ -1665,7 +1665,6 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
     
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
         CSeq_loc_CI si(fi->GetLocation());
-
         if ( !(++si) ) {  // if only a single interval
             continue;
         }
@@ -1935,10 +1934,10 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                       prev_subtype == CSeqFeatData::eSubtype_sig_peptide_aa       ||
                       prev_subtype == CSeqFeatData::eSubtype_transit_peptide_aa) ) {
                     if ( sequence::Compare(*curr_location,
-					   *prev_location,
-					   m_Scope) == eOverlap &&
-			 NotPeptideException(curr, prev) ) {
-		        EDiagSev overlapPepSev = 
+                                           *prev_location,
+                                           m_Scope) == eOverlap &&
+                         NotPeptideException(curr, prev) ) {
+                        EDiagSev overlapPepSev = 
                             m_Imp.IsOvlPepErr()? eDiag_Error :eDiag_Warning;
                         PostErr( overlapPepSev,
                             eErr_SEQ_FEAT_OverlappingPeptideFeat,
@@ -1997,7 +1996,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 class CNoCaseCompare
 {
 public:
-    bool operator ()(const string& s1, const string& s2) const
+    bool operator()(const string& s1, const string& s2) const
     {
         return NStr::CompareNocase(s1, s2) < 0;
     }
@@ -2067,6 +2066,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/01/31 18:41:51  shomrat
+* Bug fix in CdError
+*
 * Revision 1.11  2003/01/30 20:26:01  shomrat
 * Explicitly call sequence::Compare
 *
