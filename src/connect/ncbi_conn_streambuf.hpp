@@ -59,8 +59,8 @@ class CConn_Streambuf : public CConn_StreambufBase
 public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                     streamsize buf_size, bool tie);
+    virtual ~CConn_Streambuf();
     CONN    GetCONN(void) const { return m_Conn; };
-    virtual ~CConn_Streambuf(void);
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2003/11/12 17:45:38  lavr
+ * Minor rearrangement
+ *
  * Revision 6.24  2003/10/22 18:15:34  lavr
  * CConn_Streambuf base class changed into CNcbiStreambuf
  *
