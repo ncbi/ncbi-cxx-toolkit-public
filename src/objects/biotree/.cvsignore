@@ -1,12 +1,12 @@
 .cvsignore
-BioTree_.cpp
+BioTreeContainer_.cpp
 FeatureDescr_.cpp
 FeatureDictSet_.cpp
 Node_.cpp
 NodeFeature_.cpp
 NodeFeatureSet_.cpp
 NodeSet_.cpp
-BioTree.cpp
+BioTreeContainer.cpp
 FeatureDescr.cpp
 FeatureDictSet.cpp
 Node.cpp
