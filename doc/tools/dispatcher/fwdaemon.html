@@ -27,6 +27,7 @@ FD addresses (on front-end NCBI machines):
 <blockquote><pre class="ncbi_code">
 130.14.22.31, port 5812
 130.14.22.32, port 5811
+130.14.29.112, ports 5860..5870
 </pre>
 </blockquote>
 
@@ -60,10 +61,17 @@ The mapping on your non-transparent firewall server should look like this:
 <!-- CONN_PROXY_HOST:5840    --&gt;    130.14.22.8:5840  SERVER RETIRED -->
 <!-- CONN_PROXY_HOST:5810    --&gt;    130.14.22.30:5810 SERVER RETIRED -->
 <blockquote><pre class="ncbi_code">
-CONN_PROXY_HOST:5812    --&gt;    130.14.22.31:5812
-CONN_PROXY_HOST:5811    --&gt;    130.14.22.32:5811
+CONN_PROXY_HOST:5812          --&gt;    130.14.22.31:5812
+CONN_PROXY_HOST:5811          --&gt;    130.14.22.32:5811
+CONN_PROXY_HOST:5850..5860    --&gt;    130.14.29.112:5850..5860
 </pre>
 </blockquote>
+<p>
+Please not that there is a port range that might not be presently
+used by any clients and servers, but is reserved for future extensions.
+Nevertheless, we recommend that you have this range configured on firewalls
+already now to allow the applications to function seamlessly in the future.
+
 
 <p><br>
 <h2>Troubleshooting</h2>
