@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.285 2004/04/05 20:06:47 ucko Exp $
+#  $Id: configure.ac,v 1.286 2004/04/06 02:34:36 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2218,7 +2218,7 @@ if test -z "$BZ2_LIBS"; then
    BZ2_PATH="<$bzlocal>"
    BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
    # BZ2_LIBS="-lbz2"
-   BZ2_LIB="bz"
+   BZ2_LIB="bz2"
    AC_DEFINE(USE_LOCAL_BZLIB, 1, [Define to 1 if using a local copy of bzlib.])
    WithPackages="$WithPackages BZ2 LocalBZ2"
 fi

@@ -14714,7 +14714,7 @@ echo "$as_me: using local copy in $bzlocal" >&6;}
    BZ2_PATH="<$bzlocal>"
    BZ2_INCLUDE="-I\$(includedir)/$bzlocal -I\$(includedir0)/$bzlocal"
    # BZ2_LIBS="-lbz2"
-   BZ2_LIB="bz"
+   BZ2_LIB="bz2"
 
 cat >>confdefs.h <<\_ACEOF
 #define USE_LOCAL_BZLIB 1
