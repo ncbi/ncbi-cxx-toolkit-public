@@ -240,6 +240,92 @@ CAlnMixSequences::x_IdentifyAlnMixSeq(CRef<CAlnMixSeq>& aln_seq, const CSeq_id& 
 }
 
 
+void
+CAlnMixSequences::BuildRows()
+{
+    m_Rows.clear();
+
+    int count = 0;
+    NON_CONST_ITERATE (TSeqs, i, m_Seqs) {
+        CRef<CAlnMixSeq>& seq = *i;
+        m_Rows.push_back(seq);
+        seq->m_RowIdx = count++;
+        while ((seq = seq->m_ExtraRow) != NULL ) {
+            seq->m_RowIdx = count++;
+            m_Rows.push_back(seq);
+        }
+    }
+}
+
+
+void
+CAlnMixSequences::InitRowsStartIts()
+{
+    NON_CONST_ITERATE (TSeqs, row_i, m_Rows) {
+        CAlnMixSeq * row = *row_i;
+        if ( !row->m_Starts.empty() ) {
+            if (row->m_PositiveStrand) {
+                row->m_StartIt = row->m_Starts.begin();
+            } else {
+                row->m_StartIt = row->m_Starts.end();
+                row->m_StartIt--;
+            }
+        } else {
+            row->m_StartIt = row->m_Starts.end();
+#if _DEBUG
+            string errstr =
+                string("CAlnMixSequences::InitRowsStartIts():") +
+                " Internal error: no starts for row " +
+                NStr::IntToString(row->m_RowIdx) +
+                " (seq " +
+                NStr::IntToString(row->m_SeqIdx) + ").";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+#endif
+        }
+    }
+}
+
+
+void
+CAlnMixSequences::InitExtraRowsStartIts()
+{
+    NON_CONST_ITERATE (list<CRef<CAlnMixSeq> >, row_i, m_ExtraRows) {
+        CAlnMixSeq * row = *row_i;
+        if ( !row->m_Starts.empty() ) {
+            if (row->m_PositiveStrand) {
+                row->m_StartIt = row->m_Starts.begin();
+            } else {
+                row->m_StartIt = row->m_Starts.end();
+                row->m_StartIt--;
+            }
+        } else {
+            row->m_StartIt = row->m_Starts.end();
+#if _DEBUG
+            string errstr =
+                string("CAlnMixSequences::InitExtraRowStartIts():") +
+                " Internal error: no starts for row " +
+                NStr::IntToString(row->m_RowIdx) + ".";
+            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+#endif
+        }
+    }
+}
+
+
+void
+CAlnMixSequences::RowsStartItsContsistencyCheck(size_t match_idx)
+{
+    ITERATE (TSeqs, row_i, m_Rows) {
+        ITERATE (CAlnMixSeq::TStarts, st_i, (*row_i)->m_Starts) {
+            st_i->second->
+                StartItsConsistencyCheck(**row_i,
+                                         st_i->first,
+                                         match_idx);
+        }
+    }       
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
@@ -247,6 +333,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/03/10 19:33:00  todorov
+* Moved a few routines out of the merger to their corresponding classes
+*
 * Revision 1.2  2005/03/01 21:30:57  ucko
 * Remember to include <algorithm> for stable_sort
 *

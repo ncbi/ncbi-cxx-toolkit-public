@@ -34,8 +34,8 @@
 */
 
 
-//#include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiobj.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -47,18 +47,43 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 class CAlnMixSeq;
+class CAlnMixSequences;
 class CAlnMixSegment;
-
 
 
 class CAlnMixSegments : public CObject
 {
 public:
     
+    typedef int (*TCalcScoreMethod)(const string& s1,
+                                    const string& s2,
+                                    bool s1_is_prot,
+                                    bool s2_is_prot);
+
+    // Constructor
+    CAlnMixSegments(CRef<CAlnMixSequences>&  aln_mix_sequences,
+                    TCalcScoreMethod calc_score = 0);
+
+
+    typedef list<CRef<CAlnMixSegment> > TSegmentsContainer;
     typedef list<CAlnMixSegment*>       TSegments;
 
+    void Build               (bool gap_join = false,
+                              bool min_gap = false);
+    void FillUnalignedRegions(void);
+
 private:
+    friend class CAlnMixMerger;
+
+    void x_ConsolidateGaps(TSegmentsContainer& gapped_segs);
+    void x_MinimizeGaps   (TSegmentsContainer& gapped_segs);
+
     TSegments                   m_Segments;
+
+    CRef<CAlnMixSequences>      m_AlnMixSequences;
+    vector<CRef<CAlnMixSeq> >&  m_Rows;
+    list<CRef<CAlnMixSeq> >&    m_ExtraRows;
+    TCalcScoreMethod            x_CalculateScore;
 };
 
 
@@ -71,6 +96,10 @@ public:
     typedef map<TSeqPos, CRef<CAlnMixSegment> > TStarts;
     typedef map<CAlnMixSeq*, TStarts::iterator> TStartIterators;
         
+    void StartItsConsistencyCheck(const CAlnMixSeq& seq,
+                                  const TSeqPos&    start,
+                                  size_t            match_idx) const;
+
     TSeqPos         m_Len;
     TStartIterators m_StartIts;
     int             m_DsIdx; // used by the truncate algorithm
@@ -87,6 +116,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/10 19:33:00  todorov
+* Moved a few routines out of the merger to their corresponding classes
+*
 * Revision 1.1  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *

@@ -47,6 +47,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CAlnMixSeq;
 class CAlnMixSegment;
 class CAlnMixMatch;
+class CAlnMixMerger;
 class CBioseq_Handle;
 class CScope;
 class CDense_seg;
@@ -84,11 +85,16 @@ public:
 
     void         Add        (const CDense_seg& ds, TAddFlags flags = 0);
 
-
+    void         BuildRows();
+    void         InitRowsStartIts();
+    void         InitExtraRowsStartIts();
+    void         RowsStartItsContsistencyCheck(size_t match_idx);
 
 private:
     friend class CAlnMix;
     friend class CAlnMixMatches;
+    friend class CAlnMixSegments;
+    friend class CAlnMixMerger;
 
     typedef map<CBioseq_Handle, CRef<CAlnMixSeq> >        TBioseqHandleMap;
 
@@ -116,6 +122,8 @@ private:
     TBioseqHandleMap                m_BioseqHandles;
     bool                            m_ContainsAA;
     bool                            m_ContainsNA;
+    vector<CRef<CAlnMixSeq> >       m_Rows;
+    list<CRef<CAlnMixSeq> >         m_ExtraRows;
 };
 
 
@@ -182,6 +190,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/10 19:33:00  todorov
+* Moved a few routines out of the merger to their corresponding classes
+*
 * Revision 1.1  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *

@@ -46,7 +46,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CAlnMixMatches;
 class CAlnMixMatch;
-class CAlnMixSegment;
+class CAlnMixSegments;
+class CAlnMixSequences;
 class CAlnMixSeq;
 
 
@@ -92,15 +93,9 @@ public:
 
 private:
 
-    typedef list<CRef<CAlnMixSegment> > TSegmentsContainer;
-
     void x_Reset               (void);
     void x_Merge               (void);
-    void x_CreateRowsVector    (void);
-    void x_CreateSegmentsVector(void);
     void x_CreateDenseg        (void);
-    void x_ConsolidateGaps     (TSegmentsContainer& gapped_segs);
-    void x_MinimizeGaps        (TSegmentsContainer& gapped_segs);
     void x_SetSeqFrame         (CAlnMixMatch* match, CAlnMixSeq*& seq);
 
     enum ESecondRowFits {
@@ -120,14 +115,8 @@ private:
     TSecondRowFits x_SecondRowFits(CAlnMixMatch * match) const;
 
 
-    void x_SegmentStartItsConsistencyCheck(const CAlnMixSegment& seg,
-                                           const CAlnMixSeq&     seq,
-                                           const TSeqPos&        start);
-
-
     typedef vector<CRef<CAlnMixMatch> > TMatches;
     typedef vector<CRef<CAlnMixSeq> >   TSeqs;
-    typedef list<CAlnMixSegment*>       TSegments;
 
     const size_t&               m_DsCnt;
 
@@ -138,12 +127,13 @@ private:
 
     CRef<CAlnMixMatches>        m_AlnMixMatches;
     TMatches&                   m_Matches;
+
+    CRef<CAlnMixSequences>      m_AlnMixSequences;
     TSeqs&                      m_Seqs;
+    vector<CRef<CAlnMixSeq> >&  m_Rows;
+    list<CRef<CAlnMixSeq> >&    m_ExtraRows;
 
-    vector<CRef<CAlnMixSeq> >   m_Rows;
-    list<CRef<CAlnMixSeq> >     m_ExtraRows;
-
-    TSegments                   m_Segments;
+    CRef<CAlnMixSegments>       m_AlnMixSegments;
 
     size_t                      m_MatchIdx;
 
@@ -198,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/03/10 19:33:00  todorov
+* Moved a few routines out of the merger to their corresponding classes
+*
 * Revision 1.1  2005/03/01 17:28:49  todorov
 * Rearranged CAlnMix classes
 *
