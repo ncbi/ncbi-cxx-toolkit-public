@@ -18,6 +18,8 @@
 
 
 build_dir=$1
+top_srcdir=$2
+shift
 shift
 cmd=$*
 script_dir=`dirname $0`
@@ -55,7 +57,7 @@ fi
 
 # Build script on base of check-list
 echo "Building check script..."
-$make_check_script "$CHECK_RUN_LIST" "$build_dir" "" "$CHECK_RUN_FILE"
+$make_check_script "$CHECK_RUN_LIST" "$build_dir" "$top_srcdir" "" "$CHECK_RUN_FILE"
 
 # Check script build result
 if test $? -ne 0 -o \

@@ -16,6 +16,9 @@
 #    build_dir       - path to UNIX build tree like".../build/..."
 #                      (default: will try determine path from current work
 #                      directory -- root of build tree ) 
+#    top_srcdir      - path to the root src directory
+#                      (default: will try determine path from current work
+#                      directory -- root of build tree ) 
 #    target_dir      - path where the check script and logs will be created
 #                      (default: current dir) 
 #    check_script    - name of the check script (without path).
@@ -42,8 +45,10 @@ x_tmp="/var/tmp"
 
 x_list=$1
 x_build_dir=$2
-x_target_dir=$3
-x_out=$4
+x_top_srcdir=$3
+x_target_dir=$4
+x_out=$5
+
 
 # Check for build dir
 if [ ! -z "$x_build_dir" ]; then
@@ -60,8 +65,20 @@ else
    fi
 fi
 
-# Bin dir
+x_conf_dir=`dirname "$x_build_dir"`
 x_bin_dir=`(cd "$x_build_dir/../bin"; pwd | sed -e 's/\/$//g')`
+
+# Check for top_srcdir
+if [ ! -z "$x_top_srcdir" ]; then
+   if [ ! -d "$x_top_srcdir" ]; then
+      echo "Top source directory \"$x_top_srcdir\" don't exist."
+      exit 1 
+   fi
+   x_root_dir=`(cd "$x_top_srcdir"; pwd | sed -e 's/\/$//g')`
+else
+   # Get top src dir name from the build directory
+   x_root_dir=`dirname "$x_conf_dir"`
+fi
 
 # Check for target dir
 if [ ! -z "$x_target_dir" ]; then
@@ -73,9 +90,6 @@ if [ ! -z "$x_target_dir" ]; then
 else
    x_target_dir=`pwd`
 fi
-
-x_conf_dir=`dirname "$x_build_dir"`
-x_root_dir=`dirname "$x_conf_dir"`
 
 # Check for a imported project or intree project
 res=`pwd | grep "/internal/c++/src/"`
@@ -110,7 +124,6 @@ for f in $x_conf_dir/status/*.enabled; do
    x_features=`echo "$x_features $f"`
 done
 x_features=`echo "$x_features" | sed 's|^ *||g'`
-
 
 #echo ----------------------------------------------------------------------
 #echo "Imported project  :" $x_import_prj
