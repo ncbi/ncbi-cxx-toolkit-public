@@ -97,12 +97,6 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
-        ("binout", "out_file_name",
-         "Binary output",
-         CArgDescriptions::eOutputFile, "/dev/null",
-         CArgDescriptions::fPreOpen);
-
-    arg_desc->AddDefaultKey
         ("asnout", "asn_out_file_name",
          "ASN output",
          CArgDescriptions::eOutputFile, "-",
@@ -242,14 +236,9 @@ void CAlnMrgApp::LoadInputAlignments(void)
     CTypesIterator i;
     CType<CSeq_align>::AddTo(i);
 
-    CNcbiOstream& os = args["binout"].AsOutputFile();
-    auto_ptr<CObjectOStream> binout
-        (CObjectOStream::Open(eSerial_AsnBinary, os));
-
     if (asn_type == "Seq-entry") {
         CRef<CSeq_entry> se(new CSeq_entry);
         in->Read(Begin(*se), CObjectIStream::eNoFileHeader);
-        *binout << *se;
         GetScope().AddTopLevelSeqEntry(*se);
         for (i = Begin(*se); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
@@ -259,7 +248,6 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-submit") {
         CRef<CSeq_submit> ss(new CSeq_submit);
         in->Read(Begin(*ss), CObjectIStream::eNoFileHeader);
-        *binout << *ss;
         CType<CSeq_entry>::AddTo(i);
         int tse_cnt = 0;
         for (i = Begin(*ss); i; ++i) {
@@ -275,8 +263,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-align") {
         CRef<CSeq_align> sa(new CSeq_align);
         in->Read(Begin(*sa), CObjectIStream::eNoFileHeader);
-        *binout << *sa;
-       for (i = Begin(*sa); i; ++i) {
+        for (i = Begin(*sa); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
             }
@@ -284,7 +271,6 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-align-set") {
         CRef<CSeq_align_set> sas(new CSeq_align_set);
         in->Read(Begin(*sas), CObjectIStream::eNoFileHeader);
-        *binout << *sas;
         for (i = Begin(*sas); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
@@ -293,7 +279,6 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Seq-annot") {
         CRef<CSeq_annot> san(new CSeq_annot);
         in->Read(Begin(*san), CObjectIStream::eNoFileHeader);
-        *binout << *san;
         for (i = Begin(*san); i; ++i) {
             if (CType<CSeq_align>::Match(i)) {
                 m_Mix->Add(*(CType<CSeq_align>::Get(i)), m_AddFlags);
@@ -302,7 +287,6 @@ void CAlnMrgApp::LoadInputAlignments(void)
     } else if (asn_type == "Dense-seg") {
         CRef<CDense_seg> ds(new CDense_seg);
         in->Read(Begin(*ds), CObjectIStream::eNoFileHeader);
-        *binout << *ds;
         m_Mix->Add(*ds, m_AddFlags);
     } else {
         cerr << "Cannot read: " << asn_type;
@@ -462,6 +446,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/09/16 19:04:55  todorov
+* rm binout
+*
 * Revision 1.22  2004/09/16 18:44:46  todorov
 * +Viewers, mostly to be able to view translated Dense_segs (DS + m_Widths)
 *
