@@ -1,4 +1,5 @@
 
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -46,7 +47,7 @@ property pStationeryName : "LibraryStationery"
 property pPluginStationeryName : "PluginStationery"
 property pDylibStationeryName : "DLLStationery"
 
-property pTargetKeyWords : {"MSL", "BSD", "Debug", "Final"}
+property pTargetKeyWords : {"BSD", "MSL", "Final", "Debug"}
 property pDefaultTargets : {"BSD", "Debug"}
 
 --
@@ -251,15 +252,6 @@ end EndsWith
 
 on SetProjectData()
 	
-	if pCreateSocketLibs then
-		-- Not needed or wanted under Mach-O
-		-- my HideFolder(gSourceDir & "connect:mitsock")
-		
-		AddSimpleProjectExceptFiles("xconnect", {}, "connect", Â
-			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"})
-		AddSimpleProjectListFiles("xthrserv", {}, "connect", {"threaded_server.cpp"})
-	end if
-	
 	if pCreateCoreLibs then
 		AddSimpleProjectExceptFiles("xncbi", {"libdl"}, "corelib", {"test_mt.cpp", "ncbi_os_mac.cpp"})
 		AddSimpleProjectExceptFiles("xcgi", {}, "cgi", {"fcgi_run.cpp", "fcgibuf.cpp"})
@@ -319,8 +311,15 @@ on SetProjectData()
 			mkFileData(gBdbRootFolder & "txn"), Â
 			mkFileData(gBdbRootFolder & "xa")}
 		AddProject(ProjectData("libdb", {"bdblib"}, libdbFiles))
+	end if
+	
+	if pCreateSocketLibs then
+		-- Not needed or wanted under Mach-O
+		-- my HideFolder(gSourceDir & "connect:mitsock")
 		
-		
+		AddSimpleProjectExceptFiles("xconnect", {}, "connect", Â
+			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"})
+		AddSimpleProjectListFiles("xthrserv", {}, "connect", {"threaded_server.cpp"})
 	end if
 	
 	if pCreateObjectLibs then
@@ -384,6 +383,7 @@ on SetProjectData()
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
+		AddSimpleProject("xformat", {}, "objtools:format")
 		
 		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
 		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
@@ -419,17 +419,17 @@ on SetProjectData()
 		AddProject(ProjectData("w_aln_multi", {"fltk"}, Â
 			{GuiFileDataExcept("widgets:aln_multiple", {"alnmulti_base_pane.cpp", "alnmulti_edit_pane.cpp"})}))
 		AddGuiProject("w_aln_data", {}, "widgets:aln_data")
-		
-		
 		AddGuiProject("w_aln_text", {}, "widgets:aln_textaln")
-		AddGuiProject("w_flek", {}, "widgets:Flek")
-		-- AddGuiProject("w_seq", {}, "widgets:seq") -- empty
+		AddGuiProject("w_flu", {}, "widgets:FLU")
 		AddGuiProject("w_seq_graphic", {}, "widgets:seq_graphic")
-		--AddGuiProject("w_seq_icon", {}, "widgets:seq_icon") -- empty
-		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
-		AddGuiProject("w_table", {}, "widgets:table")
 		AddGuiProject("w_toplevel", {}, "widgets:toplevel")
 		AddGuiProject("w_fltable", {}, "widgets:Fl_Table")
+		AddGuiProject("w_hit_matrix", {}, "widgets:hit_matrix")
+		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
+		-- AddGuiProject("w_seq", {}, "widgets:seq") -- empty
+		--AddGuiProject("w_seq_icon", {}, "widgets:seq_icon") -- empty
+		--AddGuiProject("w_seq_info", {}, "widgets:seq_info") -- empty
+		-- AddGuiProject("w_table", {}, "widgets:table") -- merged into w_fltk
 		
 		-- FLTK library.
 		set saveCppExt to pCPlusPlusExt
@@ -462,20 +462,20 @@ on SetProjectData()
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			mkFileDataListFiles(gSourceDir & "gui:plugin", {"plugin__", "plugin___"}), Â
-			GuiFileData("gui:core")}
+			GuiFileDataList("gui:plugin", {"plugin__.cpp", "plugin___.cpp"}), Â
+			GuiFileDataExcept("gui:core", {"plugin_thread.cpp"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_dlg_entry_form", "gui_utils", "gui_config", "gui_opengl", "ximage", "submit", "w_toplevel", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"w_fltable", "w_table", "xflat", "ncbi_xloader_lds", "gbseq"})
+			{"xflat", "ncbi_xloader_lds", "gbseq"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"ncbi_xloader_lds"})
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
-			{"xalgoseq", "gui_multi_col_dlg", "w_fltable", "w_table", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
+			{"xalgoseq", "gui_multi_col_dlg", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
 		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "scoremat", "xblast", "xnetblast", "xnetblastcli", "gui_dlg_progress"})
@@ -486,7 +486,7 @@ on SetProjectData()
 				mkFileDataListFiles(gSourceDir & "gui:plugins:algo:basic", {"output_dlg.cpp"})}), Â
 			{"xalgoseq", "xcgi"}, {"gui_core"}))
 		AddPlugin("gui_algo_gnomon", {}, "plugins:algo:gnomon", Â
-			{"xalgognomon", "gui_multi_col_dlg", "w_fltable", "w_table"})
+			{"xalgognomon", "gui_multi_col_dlg"})
 		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
 		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
@@ -498,15 +498,15 @@ on SetProjectData()
 		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table", "w_gl"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			{"gui_dlg_feature", "w_flek", "w_seq_graphic", "w_fltable", "w_gl"})
+			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
 		
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
-			{"w_flek", "w_table", "w_fltable"})
+			{})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
-			{"gbseq", "xflat"})
+			{"gbseq", "xflat", "xformat"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
 		
 	end if
@@ -942,6 +942,11 @@ on SetupTarget(proj, targetIndex)
 				-- NOTE: if the following line is within a tell "Codewarrior" block then
 				--  the following Add Files command will fail.
 				copy alias (projPath & i) to end of filesToAdd
+				-- Set the file's type so CW will have less problems with it.
+				tell application "Finder"
+					set file type of file (projPath & i) to "TEXT"
+					set creator type of file (projPath & i) to "CWIE"
+				end tell
 			end try
 		end repeat
 		
