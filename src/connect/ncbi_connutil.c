@@ -553,7 +553,7 @@ extern void ConnNetInfo_DeleteArg(SConnNetInfo* info,
     size_t arglen;
     char*  a;
 
-    if (!arg || !(argnamelen = strcspn(arg, "=")))
+    if (!arg || !(argnamelen = strcspn(arg, "=&")))
         return;
     for (a = info->args; *a; a += arglen) {
         if (*a == '&')
@@ -1416,6 +1416,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.43  2002/11/13 19:54:13  lavr
+ * ConnNetInfo_DeleteArg(): fix initial argument calculation size
+ *
  * Revision 6.42  2002/11/12 05:50:33  lavr
  * Modify client host name discovery
  *
