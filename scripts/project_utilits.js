@@ -170,5 +170,113 @@
 				target_path += "\\" + conf;
 				execute(oShell, "copy /Y " + oTask.ToolkitPath + "\\bin\\datatool.exe " + target_path);
 			}
-		}				
+		}
+		// Collect files names with particular extension
+		function CollectFileNames(dir_path, ext)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			var dir_folder = oFso.GetFolder(dir_path);
+			var dir_folder_contents = new Enumerator(dir_folder.files);
+			var file_names = new Array;
+			var names_i = 0;
+			for( ; !dir_folder_contents.atEnd(); dir_folder_contents.moveNext()) {
+				var file_path = dir_folder_contents.item();
+				if (oFso.GetExtensionName(file_path) == ext) {
+					file_names[names_i] = oFso.GetBaseName(file_path);
+					names_i++;
+				}
+			}
+			return file_names;
+		}
+		function CollectDllLibs(oTask, dll_names)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			var dll_lib_names = new Array;
+			var dll_lib_i = 0;
+			for(var dll_i = 0; dll_i < dll_names.length; dll_i++) {
+				var dll_base_name = dll_names[dll_i];
+				var dll_lib_path = oTask.ToolkitPath + "\\DebugDLL\\" + dll_base_name + ".lib";
+				if ( oFso.FileExists(dll_lib_path) ) {
+					dll_lib_names[dll_lib_i] = dll_base_name;
+					dll_lib_i++;
+				}
+			}
+			return dll_lib_names;
+		}
+		// Local site should contain C++ Toolkit information as a third-party library
+		// this one is for dll build
+		function AdjustLocalSiteDll(oShell, oTree, oTask)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			// open for appending
+			var file = oFso.OpenTextFile(oTree.CompilersBranch + "\\project_tree_builder.ini", 8)
+			file.WriteLine("[CXX_Toolkit]");
+			file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
+			file.WriteLine("LIBPATH = ");
+
+			file.WriteLine("LIB     = \\");
+			var dll_names = CollectFileNames(oTask.ToolkitPath + "\\DebugDLL", "dll");
+			// we'll add only dll libraries for these .lib is available
+			var dll_libs = CollectDllLibs(oTask, dll_names);
+			for(var lib_i = 0; lib_i < dll_libs.length; lib_i++) {
+				var lib_base_name = dll_libs[lib_i];
+				if (lib_i != dll_libs.length-1) {
+					file.WriteLine("        " + lib_base_name + ".lib \\");            
+				} else {
+					// the last line
+					file.WriteLine("        " + lib_base_name + ".lib");            
+				}
+			}
+
+			file.WriteLine("CONFS   = DebugDLL ReleaseDLL");
+			file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
+			file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\ReleaseDLL"));
+
+			file.Close();		
+		}
+		// for static build
+		function AdjustLocalSiteStatic(oShell, oTree, oTask)
+		{
+			var oFso = new ActiveXObject("Scripting.FileSystemObject");
+			// open for appending
+			var file = oFso.OpenTextFile(oTree.CompilersBranch + "\\project_tree_builder.ini", 8)
+			file.WriteLine("[CXX_Toolkit]");
+			file.WriteLine("INCLUDE = " + EscapeBackSlashes(oTask.ToolkitPath + "\\include"));
+			file.WriteLine("LIBPATH = ");
+			
+			file.WriteLine("LIB     = \\");
+			var static_libs = CollectFileNames(oTask.ToolkitPath + "\\Debug", "lib");
+			for(var lib_i = 0; lib_i < static_libs.length; lib_i++) {
+				var lib_base_name = static_libs[lib_i];
+				if (lib_i != static_libs.length-1) {
+					file.WriteLine("        " + lib_base_name + ".lib \\");            
+				} else {
+					// the last line
+					file.WriteLine("        " + lib_base_name + ".lib");            
+				}
+			}
+			
+			file.WriteLine("CONFS   = Debug DebugDLL Release ReleaseDLL");
+			file.WriteLine("[CXX_Toolkit.debug.Debug]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Debug"));
+			file.WriteLine("[CXX_Toolkit.debug.DebugDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\DebugDLL"));
+			file.WriteLine("[CXX_Toolkit.release.Release]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\Release"));
+			file.WriteLine("[CXX_Toolkit.release.ReleaseDLL]");
+			file.WriteLine("LIBPATH = " + EscapeBackSlashes(oTask.ToolkitPath + "\\ReleaseDLL"));
+
+			file.Close();		
+		}
+		// Add C++ Toolkit to local site
+		function AdjustLocalSite(oShell, oTree, oTask)
+		{
+			if ( oTask.DllBuild ) {
+				AdjustLocalSiteDll(oShell, oTree, oTask);
+			} else {
+				AdjustLocalSiteStatic(oShell, oTree, oTask);
+			}
+		}						
 		
