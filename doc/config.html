@@ -363,17 +363,10 @@ the following platforms:
 		</li>
 
   <li> <a href="http://www.sun.com/workshop/visual/">
-       <b>Sun WorkShop 5.0</b></a>
+       <b>Sun WorkShop 5.0, 5.1 and 5.2</b></a>
     <ul>
-      <li> 32-bit: Solaris 2.6, 2.7 --- <i>SUN-Sparc</i> and <i>PC-Intel</i> </li>
-      <li> 64-bit: Solaris 2.7 --- <i>SUN-Sparc</i> </li>
-    </ul>
-  </li>
-
-  <li> <a href="http://www.sun.com/workshop/visual/">
-       <b>Sun WorkShop 5.1 (Forte)</b></a>
-    <ul>
-      <li> 32/64-bit: Solaris 2.7 --- <i>SUN-Sparc</i> </li>
+      <li> <i>All configurations listed in the <a href="#ref_Compilers">List of supported compilers</a>
+				(see below)</i> </li>
     </ul>
   </li>
 
@@ -1046,11 +1039,13 @@ compiler-specific pre-initialization for the used
 <b><i>configure</i></b>.
 <br>
 These wrapper scripts are located in the <i><b>compilers/</b></i>
-directory, and now we have such wrappers for WorkShop 5.0,
-Forte (WorkShop 5.1), MIPSpro 7.30, GCC/Cygwin-NT, KCC, and MSVC++ compilers:
+directory, and now we have such wrappers for SUN WorkShop (5.0, 5.1 and 5.2)
+MIPSpro 7.30, GCC/Cygwin-NT, KCC, and MSVC++ compilers:
   <ul>
+    <li> <i><b>WorkShop.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>WorkShop5.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>WorkShop6.sh</b></i> {32|64} [build_dir] [--configure-flags]
+    <li> <i><b>WorkShop52.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>MIPSpro73.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>KCC.sh</b></i> {32|64} [build_dir] [--configure-flags]
     <li> <i><b>gcc_nt.bash</b></i> [--configure-flags]
@@ -1226,8 +1221,9 @@ libraries and tools:
   <li> <a href="http://www.sun.com/workshop/visual/">
        <b>Sun WorkShop 5.1 (Forte)</b></a>
     <ul>
-      <li> 32/64-bit: Solaris 2.7, 2.8 --- <i>SUN-Sparc</i> and <i>PC-Intel</i> <br>
+      <li> 32/64-bit: Solaris 2.7, 2.8 --- <i>SUN-Sparc</i> <br>
 				<i>(Note:  <b>ld</b> crashes on huge ~30M static executables in 64-bit Debug mode)</i> </li>
+      <li> 32-bit: Solaris 2.7 --- <i>PC-Intel</i> </li>
     </ul>
   </li>
 
