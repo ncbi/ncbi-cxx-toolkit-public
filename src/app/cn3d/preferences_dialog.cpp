@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.1  2001/08/06 20:22:01  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -45,6 +48,10 @@
 #include "cn3d/opengl_renderer.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/messenger.hpp"
+
+#if defined(__WXMSW__)
+#include <wx/msw/winundef.h>
+#endif
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,9 +77,10 @@ wxSizer *SetupPreferencesNotebook( wxPanel *parent, bool call_fit = TRUE, bool s
 #define ID_TEXT 10003
 #define ID_TEXTCTRL 10004
 #define ID_SPINBUTTON 10005
-#define ID_B_Q_LOW 10006
-#define ID_B_Q_MED 10007
-#define ID_B_Q_HIGH 10008
+#define ID_C_HIGHLIGHT 10006
+#define ID_B_Q_LOW 10007
+#define ID_B_Q_MED 10008
+#define ID_B_Q_HIGH 10009
 wxSizer *SetupQualityPage( wxPanel *parent, bool call_fit = TRUE, bool set_sizer = TRUE );
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,15 +106,21 @@ BEGIN_EVENT_TABLE(PreferencesDialog, wxDialog)
     EVT_BUTTON      (-1,    PreferencesDialog::OnButton)
 END_EVENT_TABLE()
 
-#define SET_FROM_REGISTRY_VALUE(name, iSpinCtrl, defval) \
+#define SET_SPINCRTL_FROM_REGISTRY_VALUE(name, iSpinCtrl) \
     do { \
-        regStr = GlobalRegistry()->Get(REG_QUALITY_SECTION, (name)).c_str(); \
-        if (regStr.size() == 0 || !regStr.ToULong(&value)) { \
-            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - can't get value for " << (name)); \
-            value = (unsigned long) (defval); \
-        } \
-        if (!(iSpinCtrl)->SetInteger((int) value)) \
-            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - can't set value " << value); \
+        int value; \
+        if (!RegistryGetInteger(REG_QUALITY_SECTION, (name), &value) || !((iSpinCtrl)->SetInteger(value))) \
+            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+    } while (0)
+
+#define SET_CHECKBOX_FROM_REGISTRY_VALUE(name, id) \
+    do { \
+        bool on; \
+        wxCheckBox *box = wxDynamicCast(FindWindow(id), wxCheckBox); \
+        if (!box || !RegistryGetBoolean(REG_QUALITY_SECTION, (name), &on)) \
+            ERR_POST(Warning << "PreferencesDialog::PreferencesDialog() - error with " << (name)); \
+        else \
+            box->SetValue(on); \
     } while (0)
 
 PreferencesDialog::PreferencesDialog(wxWindow *parent) :
@@ -125,30 +139,41 @@ PreferencesDialog::PreferencesDialog(wxWindow *parent) :
     iAtomStacks = giAtomStacks;
 
     // set initial values
-    unsigned long value;
-    wxString regStr;
-    SET_FROM_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, iAtomSlices, 10);
-    SET_FROM_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, iAtomStacks, 8);
-    SET_FROM_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, iBondSides, 6);
-    SET_FROM_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, iWormSides, 6);
-    SET_FROM_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, iWormSegments, 6);
-    SET_FROM_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, iHelixSides, 12);
+    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, iAtomSlices);
+    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, iAtomStacks);
+    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, iBondSides);
+    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, iWormSides);
+    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, iWormSegments);
+    SET_SPINCRTL_FROM_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, iHelixSides);
+    SET_CHECKBOX_FROM_REGISTRY_VALUE(REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
 
     // call sizer stuff
     topSizer->Fit(this);
     topSizer->SetSizeHints(this);
 }
 
-#define SET_REGISTRY_VALUE_IF_DIFFERENT(name, iSpinCtrl) \
+#define SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(name, iSpinCtrl) \
     do { \
-        oldStr = GlobalRegistry()->Get(REG_QUALITY_SECTION, (name)).c_str(); \
-        if (!(iSpinCtrl)->GetInteger(&value)) throw "GetInteger() failed"; \
-        newStr.Printf("%i", value); \
-        if (oldStr != newStr) { \
-            if (!GlobalRegistry()-> \
-                    Set(REG_QUALITY_SECTION, (name), newStr.c_str(), CNcbiRegistry::ePersistent)) \
-                throw "registry Set() failed"; \
-            GlobalRegistryChanged(); \
+        int oldValue, newValue; \
+        if (!RegistryGetInteger(REG_QUALITY_SECTION, (name), &oldValue)) throw "RegistryGetInteger() failed"; \
+        if (!((iSpinCtrl)->GetInteger(&newValue))) throw "GetInteger() failed"; \
+        if (newValue != oldValue) { \
+            if (!RegistrySetInteger(REG_QUALITY_SECTION, (name), newValue)) \
+                throw "RegistrySetInteger() failed"; \
+            qualityChanged = true; \
+        } \
+    } while (0)
+
+#define SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(name, id) \
+    do { \
+        bool oldValue, newValue; \
+        if (!RegistryGetBoolean(REG_QUALITY_SECTION, (name), &oldValue)) throw "RegistryGetBoolean() failed"; \
+        wxCheckBox *box = wxDynamicCast(FindWindow(id), wxCheckBox); \
+        if (!box) throw "Can't get wxCheckBox*"; \
+        newValue = box->GetValue(); \
+        if (newValue != oldValue) { \
+            if (!RegistrySetBoolean(REG_QUALITY_SECTION, (name), newValue, true)) \
+                throw "RegistrySetBoolean() failed"; \
             qualityChanged = true; \
         } \
     } while (0)
@@ -159,15 +184,14 @@ void PreferencesDialog::OnCloseWindow(wxCloseEvent& event)
     bool okay = true, qualityChanged = false;
 
     // set values if changed
-    int value;
-    wxString oldStr, newStr;
     try {
-        SET_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_ATOM_SLICES, iAtomSlices);
-        SET_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_ATOM_STACKS, iAtomStacks);
-        SET_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_BOND_SIDES, iBondSides);
-        SET_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_WORM_SIDES, iWormSides);
-        SET_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_WORM_SEGMENTS, iWormSegments);
-        SET_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_HELIX_SIDES, iHelixSides);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_ATOM_SLICES, iAtomSlices);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_ATOM_STACKS, iAtomStacks);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_BOND_SIDES, iBondSides);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_WORM_SIDES, iWormSides);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_WORM_SEGMENTS, iWormSegments);
+        SET_INTEGER_REGISTRY_VALUE_IF_DIFFERENT(REG_QUALITY_HELIX_SIDES, iHelixSides);
+        SET_BOOL_REGISTRY_VALUE_IF_DIFFERENT(REG_HIGHLIGHTS_ON, ID_C_HIGHLIGHT);
     } catch (const char *err) {
         ERR_POST(Error << "Error setting registry values - " << err);
         okay = false;
@@ -343,6 +367,12 @@ wxSizer *SetupQualityPage(wxPanel *parent, bool call_fit, bool set_sizer)
     item3->Add(giAtomStacks->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item3->Add(giAtomStacks->GetSpinButton(), 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
+    wxStaticText *item222 = new wxStaticText( parent, ID_TEXT, "Highlights:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item222, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    wxCheckBox *item233 = new wxCheckBox( parent, ID_C_HIGHLIGHT, "", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item233, 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5 );
+
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
     item1->Add(item3, 0, wxALIGN_CENTRE|wxALL, 5);
     item0->Add(item1, 0, wxGROW|wxALIGN_CENTER_HORIZONTAL|wxALL, 5);
 

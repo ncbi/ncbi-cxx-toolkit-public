@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2001/08/13 22:30:52  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.30  2001/08/09 19:07:19  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -145,17 +148,6 @@
 
 BEGIN_SCOPE(Cn3D)
 
-// Quality settings registry names
-static const std::string
-    REG_QUALITY_SECTION = "Cn3D-4-Quality",
-    REG_QUALITY_ATOM_SLICES = "AtomSlices",
-    REG_QUALITY_ATOM_STACKS = "AtomStacks",
-    REG_QUALITY_BOND_SIDES = "BondSides",
-    REG_QUALITY_WORM_SIDES = "WormSides",
-    REG_QUALITY_WORM_SEGMENTS = "WormSegments",
-    REG_QUALITY_HELIX_SIDES = "HelixSides";
-
-
 class StructureSet;
 class AtomStyle;
 class BondStyle;
@@ -193,6 +185,7 @@ public:
         eXYRotateHV,        // rotate about X,Y axes according to horiz. & vert. movement
         eZRotateH,          // rotate in plane (about Z) according to horiz. movement
         eXYTranslateHV,     // translate in X,Y according to horiz. & vert. movement
+        eZoomH,             // zoom in/out with horiz. movement
         eZoomHHVV,          // zoom according to (H1,V1),(H2,V2) box
         eZoomIn,            // zoom in
         eZoomOut,           // zoom out

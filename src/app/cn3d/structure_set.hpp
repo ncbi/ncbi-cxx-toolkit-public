@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/08/13 22:30:52  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.51  2001/07/12 17:34:23  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -288,8 +291,9 @@ public:
     unsigned int CreateName(const Residue *residue, int atomID);
     bool GetAtomFromName(unsigned int name, const Residue **residue, int *atomID);
 
-    // called when an atom is selected in the GL window
-    void SelectedAtom(unsigned int name);
+    // called when an atom is selected in the GL window. If setCenter == true, then
+    // the atom's location is used as the global rotation center
+    void SelectedAtom(unsigned int name, bool setCenter);
 
     // writes data to a file; returns true on success
     bool SaveASNData(const char *filename, bool doBinary);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2001/08/13 22:30:58  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.64  2001/08/10 15:01:57  thiessen
 * fill out shortcuts; add update show/hide menu
 *
@@ -348,13 +351,10 @@ wxFrame * GlobalTopWindow(void) { return topWindow; }
 
 // global program registry
 static CNcbiRegistry registry;
-CNcbiRegistry * GlobalRegistry(void) { return &registry; }
 static std::string registryFile;
 static bool registryChanged = false;
-void GlobalRegistryChanged(void) { registryChanged = true; }
 
 // stuff for style favorites
-static const std::string REG_FAVORITES_NAME = "Favorites";
 static CCn3d_style_settings_set favoriteStyles;
 static bool favoriteStylesChanged = false;
 
@@ -431,7 +431,7 @@ void RaiseLogWindow(void)
 static wxString GetFavoritesFile(bool forRead)
 {
     // try to get value from registry
-    wxString file = GlobalRegistry()->Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME).c_str();
+    wxString file = registry.Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME).c_str();
 
     // if not set, ask user for a folder, then set in registry
     if (file.size() == 0) {
@@ -440,10 +440,10 @@ static wxString GetFavoritesFile(bool forRead)
             forRead ? wxOPEN : wxSAVE | wxOVERWRITE_PROMPT);
 
         if (file.size() > 0) {
-            if (!GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file.c_str(),
+            if (!registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, file.c_str(),
                     CNcbiRegistry::ePersistent | CNcbiRegistry::eTruncate))
                 ERR_POST(Error << "Error setting favorites file in registry");
-            GlobalRegistryChanged();
+            registryChanged = true;
         }
     }
 
@@ -452,7 +452,7 @@ static wxString GetFavoritesFile(bool forRead)
 
 static bool LoadFavorites(void)
 {
-    std::string favoritesFile = GlobalRegistry()->Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME);
+    std::string favoritesFile = registry.Get(REG_CONFIG_SECTION, REG_FAVORITES_NAME);
     if (favoritesFile.size() > 0) {
         favoriteStyles.Reset();
         if (wxFile::Exists(favoritesFile.c_str())) {
@@ -464,8 +464,8 @@ static bool LoadFavorites(void)
             }
         } else {
             ERR_POST(Warning << "Favorites file does not exist: " << favoritesFile);
-            GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
-            GlobalRegistryChanged();
+            registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
+            registryChanged = true;
         }
     }
     return false;
@@ -499,15 +499,13 @@ Cn3DApp::Cn3DApp() : wxApp()
     SetUseBestVisual(true);
 }
 
-#define SET_DEFAULT_REGISTRY_VALUE(name, defval) \
-    do { \
-        regStr = GlobalRegistry()->Get(REG_QUALITY_SECTION, (name)).c_str(); \
-        if (regStr.size() == 0 || !regStr.ToULong(&value)) { \
-            regStr.Printf("%i", (defval)); \
-            GlobalRegistry()->Set(REG_QUALITY_SECTION, (name), regStr.c_str(), CNcbiRegistry::ePersistent); \
-            GlobalRegistryChanged(); \
-        } \
-    } while (0)
+#define SET_DEFAULT_LONG_REGISTRY_VALUE(name, defval) \
+    if (!RegistryIsValidInteger(REG_QUALITY_SECTION, (name))) \
+        RegistrySetInteger(REG_QUALITY_SECTION, (name), (defval));
+
+#define SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(name, defval) \
+    if (!RegistryIsValidBoolean(REG_QUALITY_SECTION, (name))) \
+        RegistrySetBoolean(REG_QUALITY_SECTION, (name), (defval), true);
 
 bool Cn3DApp::OnInit(void)
 {
@@ -542,21 +540,20 @@ bool Cn3DApp::OnInit(void)
     auto_ptr<CNcbiIfstream> iniIn(new CNcbiIfstream(registryFile.c_str(), IOS_BASE::in));
     if (*iniIn) {
         TESTMSG("loading program registry " << registryFile);
-        GlobalRegistry()->Read(*iniIn);
+        registry.Read(*iniIn);
     }
 
     // favorite styles
     LoadFavorites();
 
     // initial quality settings if not already present in registry
-    unsigned long value;
-    wxString regStr;
-    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, 10);
-    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, 8);
-    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, 6);
-    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, 6);
-    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, 6);
-    SET_DEFAULT_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, 12);
+    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, 10);
+    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, 8);
+    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, 6);
+    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, 6);
+    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, 6);
+    SET_DEFAULT_LONG_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, 12);
+    SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_HIGHLIGHTS_ON, true);
 
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
@@ -587,7 +584,7 @@ int Cn3DApp::OnExit(void)
         auto_ptr<CNcbiOfstream> iniOut(new CNcbiOfstream(registryFile.c_str(), IOS_BASE::out));
         if (*iniOut) {
             TESTMSG("saving program registry " << registryFile);
-            GlobalRegistry()->Write(*iniOut);
+            registry.Write(*iniOut);
         }
     }
 
@@ -858,8 +855,8 @@ void Cn3DMainFrame::OnEditFavorite(wxCommandEvent& event)
     else if (event.GetId() == MID_FAVORITES_FILE) {
         SaveFavorites();
         favoriteStyles.Reset();
-        GlobalRegistry()->Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
-        GlobalRegistryChanged();
+        registry.Set(REG_CONFIG_SECTION, REG_FAVORITES_NAME, "", CNcbiRegistry::ePersistent);
+        registryChanged = true;
         wxString newFavorites = GetFavoritesFile(true);
         if (newFavorites.size() > 0 && wxFile::Exists(newFavorites.c_str())) {
             if (!LoadFavorites())
@@ -1286,8 +1283,14 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         if (!dragging) {
             dragging = true;
         } else {
-            renderer->ChangeView(OpenGLRenderer::eXYRotateHV,
-                event.GetX()-last_x, event.GetY()-last_y);
+            OpenGLRenderer::eViewAdjust action;
+            if (event.ShiftDown())
+                action = OpenGLRenderer::eXYTranslateHV;    // shift-drag = translate
+            else if (event.ControlDown())
+                action = OpenGLRenderer::eZoomH;            // ctrl-drag = zoom
+            else
+                action = OpenGLRenderer::eXYRotateHV;       // normal rotate
+            renderer->ChangeView(action, event.GetX() - last_x, event.GetY() - last_y);
             Refresh(false);
         }
         last_x = event.GetX();
@@ -1296,16 +1299,86 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         dragging = false;
     }
 
-    if (event.RightDown()) {
+    if (event.LeftDClick()) {   // double-click = select, +ctrl = set center
         unsigned int name;
         if (structureSet && renderer->GetSelected(event.GetX(), event.GetY(), &name))
-            structureSet->SelectedAtom(name);
+            structureSet->SelectedAtom(name, event.ControlDown());
     }
 }
 
 void Cn3DGLCanvas::OnEraseBackground(wxEraseEvent& event)
 {
     // Do nothing, to avoid flashing.
+}
+
+
+///// misc stuff /////
+
+bool RegistryIsValidInteger(const std::string& section, const std::string& name)
+{
+    long value;
+    wxString regStr = registry.Get(section, name).c_str();
+    return (regStr.size() > 0 && regStr.ToLong(&value));
+}
+
+bool RegistryIsValidBoolean(const std::string& section, const std::string& name)
+{
+    std::string regStr = registry.Get(section, name);
+    return (regStr.size() > 0 && (
+        toupper(regStr[0]) == 'T' || toupper(regStr[0]) == 'F' ||
+        toupper(regStr[0]) == 'Y' || toupper(regStr[0]) == 'N'));
+}
+
+bool RegistryGetInteger(const std::string& section, const std::string& name, int *value)
+{
+    wxString regStr = registry.Get(section, name).c_str();
+    long l;
+    if (regStr.size() == 0 || !regStr.ToLong(&l)) {
+        ERR_POST(Warning << "Can't get long from registry: " << section << ", " << name);
+        return false;
+    }
+    *value = (int) l;
+    return true;
+}
+
+bool RegistryGetBoolean(const std::string& section, const std::string& name, bool *value)
+{
+    std::string regStr = registry.Get(section, name);
+    if (regStr.size() == 0 || !(
+            toupper(regStr[0]) == 'T' || toupper(regStr[0]) == 'F' ||
+            toupper(regStr[0]) == 'Y' || toupper(regStr[0]) == 'N')) {
+        ERR_POST(Warning << "Can't get boolean from registry: " << section << ", " << name);
+        return false;
+    }
+    *value = (toupper(regStr[0]) == 'T' || toupper(regStr[0]) == 'Y');
+    return true;
+}
+
+bool RegistrySetInteger(const std::string& section, const std::string& name, int value)
+{
+    wxString regStr;
+    regStr.Printf("%i", value);
+    bool okay = registry.Set(section, name, regStr.c_str(), CNcbiRegistry::ePersistent);
+    if (!okay)
+        ERR_POST(Error << "registry Set() failed");
+    else
+        registryChanged = true;
+    return okay;
+}
+
+bool RegistrySetBoolean(const std::string& section, const std::string& name, bool value, bool useYesOrNo)
+{
+    std::string regStr;
+    if (useYesOrNo)
+        regStr = value ? "yes" : "no";
+    else
+        regStr = value ? "true" : "false";
+    bool okay = registry.Set(section, name, regStr, CNcbiRegistry::ePersistent);
+    if (!okay)
+        ERR_POST(Error << "registry Set() failed");
+    else
+        registryChanged = true;
+    return okay;
 }
 
 END_SCOPE(Cn3D)

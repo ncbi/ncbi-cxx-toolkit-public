@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.49  2001/08/10 15:01:58  thiessen
 * fill out shortcuts; add update show/hide menu
 *
@@ -215,6 +218,7 @@
 #include "cn3d/annotate_dialog.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/atom_set.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -720,8 +724,8 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         case StyleSettings::eWire:
         case StyleSettings::eWireWorm:
         case StyleSettings::eTubeWorm:
-            // don't do ATOM_NOT_DISPLAYED, because bonds still may need
-            // style info about this atom
+            // no atom, but don't do ATOM_NOT_DISPLAYED, because bonds to this atom
+            // still may be displayed and need style info about this atom
             atomStyle->radius = 0.0;
             break;
         case StyleSettings::eTubes:
@@ -997,32 +1001,34 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         }
 
         // special case for bonds between side chain and residue - make whole bond
-        // same style/color as side chain side
+        // same style/color as side chain side, and add endCap if atom is of lesser radius
         if (info2->classification == Residue::eSideChainAtom &&
             (info1->classification == Residue::eAlphaBackboneAtom ||
              info1->classification == Residue::ePartialBackboneAtom ||
              info1->classification == Residue::eCompleteBackboneAtom)
-            ) {
+           ) {
             bondStyle->end1.style = bondStyle->end2.style;
             bondStyle->end1.color = bondStyle->end2.color;
             bondStyle->end1.radius = bondStyle->end2.radius;
-        } else if (info1->classification == Residue::eSideChainAtom &&
-                   (info2->classification == Residue::eAlphaBackboneAtom ||
-                    info2->classification == Residue::ePartialBackboneAtom ||
-                    info2->classification == Residue::eCompleteBackboneAtom)) {
+            if (atomStyle1.radius < bondStyle->end1.radius)
+                bondStyle->end1.atomCap = true;
+        }
+        else if (info1->classification == Residue::eSideChainAtom &&
+                 (info2->classification == Residue::eAlphaBackboneAtom ||
+                  info2->classification == Residue::ePartialBackboneAtom ||
+                  info2->classification == Residue::eCompleteBackboneAtom)
+                ) {
             bondStyle->end2.style = bondStyle->end1.style;
             bondStyle->end2.color = bondStyle->end1.color;
             bondStyle->end2.radius = bondStyle->end1.radius;
+            if (atomStyle2.radius < bondStyle->end2.radius)
+                bondStyle->end2.atomCap = true;
         }
 
         // add midCap if style or radius for two sides of bond is different;
         if (bondStyle->end1.style != bondStyle->end2.style ||
             bondStyle->end1.radius != bondStyle->end2.radius)
             bondStyle->midCap = true;
-
-        // for residue-backbone junctions: add endCap if atom is of lesser radius
-        if (atomStyle1.radius < bondStyle->end1.radius) bondStyle->end1.atomCap = true;
-        if (atomStyle2.radius < bondStyle->end2.radius) bondStyle->end2.atomCap = true;
 
         // atomCaps needed at ends of thick worms when at end of chain, or if
         // internal residues are hidden or of a different style

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.75  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.74  2001/08/10 15:01:57  thiessen
 * fill out shortcuts; add update show/hide menu
 *
@@ -1039,7 +1042,7 @@ bool StructureSet::GetAtomFromName(unsigned int name, const Residue **residue, i
 	return true;
 }
 
-void StructureSet::SelectedAtom(unsigned int name)
+void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
 {
     const Residue *residue;
     int atomID;
@@ -1049,23 +1052,23 @@ void StructureSet::SelectedAtom(unsigned int name)
         return;
     }
 
-    // for now, if an atom is selected then use it as rotation center; use coordinate
-    // from first CoordSet, default altConf
+    // add highlight
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return;
-    const StructureObject *object;
-    if (!molecule->GetParentOfType(&object)) return;
-
-    // add highlight
     GlobalMessenger()->ToggleHighlight(molecule, residue->id);
 
-    TESTMSG("rotating about " << object->pdbID
-        << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
-    object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);
-    rotationCenter = object->coordSets.front()->atomSet->
-        GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
-    if (object->IsSlave())
-        ApplyTransformation(&rotationCenter, *(object->transformToMaster));
+    // if indicate, use atom site as rotation center; use coordinate from first CoordSet, default altConf
+    if (setCenter) {
+        const StructureObject *object;
+        if (!molecule->GetParentOfType(&object)) return;
+        TESTMSG("rotating about " << object->pdbID
+            << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
+        object->coordSets.front()->atomSet->SetActiveEnsemble(NULL);
+        rotationCenter = object->coordSets.front()->atomSet->
+            GetAtom(AtomPntr(molecule->id, residue->id, atomID)) ->site;
+        if (object->IsSlave())
+            ApplyTransformation(&rotationCenter, *(object->transformToMaster));
+    }
 }
 
 const std::string& StructureSet::GetCDDDescription(void) const

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.15  2001/06/04 14:58:00  thiessen
 * add proximity sort; highlight sequence on browser launch
 *
@@ -86,7 +89,6 @@
 
 #include "cn3d/conservation_colorer.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
-#include "cn3d/structure_base.hpp"
 #include "cn3d/cn3d_tools.hpp"
 
 USING_NCBI_SCOPE;

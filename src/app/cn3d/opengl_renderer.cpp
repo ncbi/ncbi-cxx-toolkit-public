@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2001/08/13 22:30:59  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.44  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -224,6 +227,7 @@ static const GLint Shininess = 40;
 
 // to cache registry values
 static int atomSlices, atomStacks, bondSides, wormSides, wormSegments, helixSides;
+static bool highlightsOn;
 
 // matrix conversion utility functions
 
@@ -382,40 +386,45 @@ void OpenGLRenderer::ChangeView(eViewAdjust control, int dX, int dY, int X2, int
     if (doTranslation) glTranslated(rotCenter.x, rotCenter.y, rotCenter.z);
 
     switch (control) {
-    case eXYRotateHV:
-        glRotated(rotateSpeed*dY, 1.0, 0.0, 0.0);
-        glRotated(rotateSpeed*dX, 0.0, 1.0, 0.0);
-        break;
+        case eXYRotateHV:
+            glRotated(rotateSpeed*dY, 1.0, 0.0, 0.0);
+            glRotated(rotateSpeed*dX, 0.0, 1.0, 0.0);
+            break;
 
-    case eZRotateH:
-        glRotated(rotateSpeed*dX, 0.0, 0.0, 1.0);
-        break;
+        case eZRotateH:
+            glRotated(rotateSpeed*dX, 0.0, 0.0, 1.0);
+            break;
 
-    case eXYTranslateHV:
-        glGetIntegerv(GL_VIEWPORT, viewport);
-        pixelSize = tan(cameraAngleRad / 2.0) * 2.0 * cameraDistance / viewport[3];
-        cameraLookAtX -= dX * pixelSize;
-        cameraLookAtY -= dY * pixelSize;
-        NewView();
-        break;
+        case eXYTranslateHV:
+            glGetIntegerv(GL_VIEWPORT, viewport);
+            pixelSize = tan(cameraAngleRad / 2.0) * 2.0 * cameraDistance / viewport[3];
+            cameraLookAtX -= dX * pixelSize;
+            cameraLookAtY += dY * pixelSize;
+            NewView();
+            break;
 
-    case eZoomHHVV:
-        break;
+        case eZoomH:
+            cameraAngleRad *= 1.0 - 0.01 * dX;
+            NewView();
+            break;
 
-    case eZoomOut:
-        cameraAngleRad *= 1.5;
-        NewView();
-        break;
+        case eZoomHHVV:
+            break;
 
-    case eZoomIn:
-        cameraAngleRad /= 1.5;
-        NewView();
-        break;
+        case eZoomOut:
+            cameraAngleRad *= 1.5;
+            NewView();
+            break;
 
-    case eCenterCamera:
-        cameraLookAtX = cameraLookAtY = 0.0;
-        NewView();
-        break;
+        case eZoomIn:
+            cameraAngleRad /= 1.5;
+            NewView();
+            break;
+
+        case eCenterCamera:
+            cameraLookAtX = cameraLookAtY = 0.0;
+            NewView();
+            break;
     }
 
     if (doTranslation) glTranslated(-rotCenter.x, -rotCenter.y, -rotCenter.z);
@@ -642,17 +651,6 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
     currentFrame = ALL_FRAMES;
 }
 
-#define GET_REGISTRY_VALUE(name, var, defval) \
-    do { \
-        regStr = GlobalRegistry()->Get(REG_QUALITY_SECTION, (name)).c_str(); \
-        if (regStr.size() > 0 && regStr.ToULong(&value)) { \
-            (var) = (int) value; \
-        } else { \
-            ERR_POST(Warning << "OpenGLRenderer::Construct() - can't get value for " << (name)); \
-            (var) = (defval); \
-        } \
-    } while (0)
-
 void OpenGLRenderer::Construct(void)
 {
     glMatrixMode(GL_MODELVIEW);
@@ -660,15 +658,15 @@ void OpenGLRenderer::Construct(void)
 
     if (structureSet) {
 
-        // get quality values from registry
-        unsigned long value;
-        wxString regStr;
-        GET_REGISTRY_VALUE(REG_QUALITY_ATOM_SLICES, atomSlices, 10);
-        GET_REGISTRY_VALUE(REG_QUALITY_ATOM_STACKS, atomStacks, 8);
-        GET_REGISTRY_VALUE(REG_QUALITY_BOND_SIDES, bondSides, 6);
-        GET_REGISTRY_VALUE(REG_QUALITY_WORM_SIDES, wormSides, 6);
-        GET_REGISTRY_VALUE(REG_QUALITY_WORM_SEGMENTS, wormSegments, 6);
-        GET_REGISTRY_VALUE(REG_QUALITY_HELIX_SIDES, helixSides, 12);
+        // get quality values from registry - assumes some values have been set already!
+        if (!RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_SLICES, &atomSlices) ||
+            !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_ATOM_STACKS, &atomStacks) ||
+            !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_BOND_SIDES, &bondSides) ||
+            !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SIDES, &wormSides) ||
+            !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_WORM_SEGMENTS, &wormSegments) ||
+            !RegistryGetInteger(REG_QUALITY_SECTION, REG_QUALITY_HELIX_SIDES, &helixSides) ||
+            !RegistryGetBoolean(REG_QUALITY_SECTION, REG_HIGHLIGHTS_ON, &highlightsOn))
+            ERR_POST(Error << "OpenGLRenderer::Construct() - error getting quality setting from registry");
 
         // do the drawing
         structureSet->DrawAll();
@@ -703,7 +701,8 @@ void OpenGLRenderer::SetColor(int type, double red, double green, double blue, d
         if (type != pt) {
             if (type == GL_DIFFUSE) {
                 glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, Color_MostlyOff);
-                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Specular);
+                glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
+                    highlightsOn ? Color_Specular : Color_Off);
             } else if (type == GL_AMBIENT) {
                 glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, Color_Off);
                 glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, Color_Off); // no specular for ambient coloring
@@ -939,7 +938,7 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
 static void DrawHalfWorm(const Vector *p0, const Vector& p1,
     const Vector& p2, const Vector *p3,
     double radius, bool cap1, bool cap2,
-    double tension, int sides, int segments)
+    double tension)
 {
     int i, j, k, m, offset;
     Vector R1, R2, Qt, p, dQt, H, V;
@@ -970,11 +969,11 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         c = 0,                  /* continuity (should be 0) */
         b = 0;                  /* bias       (should be 0) */
 
-    if (sides % 2) {
+    if (wormSides % 2) {
         ERR_POST(Warning << "worm sides must be an even number");
-        sides++;
+        wormSides++;
     }
-    GLdouble *fblock = new GLdouble[12 * sides];
+    GLdouble *fblock = new GLdouble[12 * wormSides];
 
     /* First, calculate the coordinate points of the center of the worm,
      * using the Kochanek-Bartels variant of the Hermite curve.
@@ -992,11 +991,11 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
         MG[i][2] = Mh[i][0] * p1.z + Mh[i][1] * p2.z + Mh[i][2] * R1.z + Mh[i][3] * R2.z;
     }
 
-    for (i = 0; i <= segments; i++) {
+    for (i = 0; i <= wormSegments; i++) {
 
         /* t goes from [0,1] from P(1) to P(2) (and we want to go halfway only),
            and the function Q(t) defines the curve of this segment. */
-        t = (0.5 / segments) * i;
+        t = (0.5 / wormSegments) * i;
         /*
            * Q(t)=T.(Mh.Gh), where T = [ t^3 t^2 t 1 ]
          */
@@ -1026,17 +1025,17 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             /* allocate single block of storage for two circles of points */
             if (!Nx) {
                 Nx = fblock;
-                Ny = &Nx[sides];
-                Nz = &Nx[sides * 2];
-                Cx = &Nx[sides * 3];
-                Cy = &Nx[sides * 4];
-                Cz = &Nx[sides * 5];
-                pNx = &Nx[sides * 6];
-                pNy = &Nx[sides * 7];
-                pNz = &Nx[sides * 8];
-                pCx = &Nx[sides * 9];
-                pCy = &Nx[sides * 10];
-                pCz = &Nx[sides * 11];
+                Ny = &Nx[wormSides];
+                Nz = &Nx[wormSides * 2];
+                Cx = &Nx[wormSides * 3];
+                Cy = &Nx[wormSides * 4];
+                Cz = &Nx[wormSides * 5];
+                pNx = &Nx[wormSides * 6];
+                pNy = &Nx[wormSides * 7];
+                pNz = &Nx[wormSides * 8];
+                pCx = &Nx[wormSides * 9];
+                pCy = &Nx[wormSides * 10];
+                pCz = &Nx[wormSides * 11];
             }
 
             /*
@@ -1063,9 +1062,9 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
 
             /* finally, the worm circumference points (C) and normals (N) are
                simple trigonometric combinations of H and V */
-            for (j = 0; j < sides; j++) {
-                cosj = cos(2 * PI * j / sides);
-                sinj = sin(2 * PI * j / sides);
+            for (j = 0; j < wormSides; j++) {
+                cosj = cos(2 * PI * j / wormSides);
+                sinj = sin(2 * PI * j / wormSides);
                 Nx[j] = H.x * cosj + V.x * sinj;
                 Ny[j] = H.y * cosj + V.y * sinj;
                 Nz[j] = H.z * cosj + V.z * sinj;
@@ -1077,12 +1076,12 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             /* figure out which points on the previous circle "match" best
                with these, to minimize envelope twisting */
             if (i > 0) {
-                for (m = 0; m < sides; m++) {
+                for (m = 0; m < wormSides; m++) {
                     len = 0.0;
-                    for (j = 0; j < sides; j++) {
+                    for (j = 0; j < wormSides; j++) {
                         k = j + m;
-                        if (k >= sides)
-                            k -= sides;
+                        if (k >= wormSides)
+                            k -= wormSides;
                         len += (Cx[k] - pCx[j]) * (Cx[k] - pCx[j]) +
                                (Cy[k] - pCy[j]) * (Cy[k] - pCy[j]) +
                                (Cz[k] - pCz[j]) * (Cz[k] - pCz[j]);
@@ -1097,9 +1096,9 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
             /* create triangles from points along this and previous circle */
             if (i > 0) {
                 glBegin(GL_TRIANGLE_STRIP);
-                for (j = 0; j < sides; j++) {
+                for (j = 0; j < wormSides; j++) {
                     k = j + offset;
-                    if (k >= sides) k -= sides;
+                    if (k >= wormSides) k -= wormSides;
                     glNormal3d(Nx[k], Ny[k], Nz[k]);
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
                     glNormal3d(pNx[j], pNy[j], pNz[j]);
@@ -1117,18 +1116,18 @@ static void DrawHalfWorm(const Vector *p0, const Vector& p1,
                 glBegin(GL_POLYGON);
                 dQt.normalize();
                 glNormal3d(-dQt.x, -dQt.y, -dQt.z);
-                for (j = sides - 1; j >= 0; j--) {
+                for (j = wormSides - 1; j >= 0; j--) {
                     glVertex3d(Cx[j], Cy[j], Cz[j]);
                 }
                 glEnd();
             }
-            else if (cap2 && i == segments) {
+            else if (cap2 && i == wormSegments) {
                 glBegin(GL_POLYGON);
                 dQt.normalize();
                 glNormal3d(dQt.x, dQt.y, dQt.z);
-                for (j = 0; j < sides; j++) {
+                for (j = 0; j < wormSides; j++) {
                     k = j + offset;
-                    if (k >= sides) k -= sides;
+                    if (k >= wormSides) k -= wormSides;
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
                 }
                 glEnd();
@@ -1166,7 +1165,7 @@ static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, doubl
 
 static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
     StyleManager::eDisplayStyle style, double radius,
-    bool cap1, bool cap2, int bondSides)
+    bool cap1, bool cap2)
 {
     // straight line bond
     if (style == StyleManager::eLineBond || (style == StyleManager::eCylinderBond && radius <= 0.0)) {
@@ -1179,7 +1178,7 @@ static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
     // cylinder bond
     else if (style == StyleManager::eCylinderBond) {
         double length = (site1 - midpoint).length();
-        if (length <= 0.000001 || bondSides <= 0) return;
+        if (length <= 0.000001 || bondSides <= 1) return;
         glPushMatrix();
         DoCylinderPlacementTransform(site1, midpoint, length);
         gluCylinder(qobj, radius, radius, length, bondSides, 1);
@@ -1218,11 +1217,11 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             DrawHalfWorm(site0, site1, site2, site3,
                 (style.end1.style == StyleManager::eThickWormBond) ? style.end1.radius : 0.0,
                 style.end1.atomCap, style.midCap,
-                style.tension, wormSides, wormSegments);
+                style.tension);
         else
             DrawHalfBond(site1, midpoint,
                 style.end1.style, style.end1.radius,
-                style.end1.atomCap, style.midCap, bondSides);
+                style.end1.atomCap, style.midCap);
         displayListEmpty[currentDisplayList] = false;
     }
 
@@ -1239,11 +1238,11 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
             DrawHalfWorm(site3, site2, site1, site0,
                 (style.end2.style == StyleManager::eThickWormBond) ? style.end2.radius : 0.0,
                 style.end2.atomCap, style.midCap,
-                style.tension, wormSides, wormSegments);
+                style.tension);
         else
             DrawHalfBond(midpoint, site2,
                 style.end2.style, style.end2.radius,
-                style.midCap, style.end2.atomCap, bondSides);
+                style.midCap, style.end2.atomCap);
         displayListEmpty[currentDisplayList] = false;
     }
 }
@@ -1259,9 +1258,9 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     // transformation for whole helix
     glPushMatrix();
     DoCylinderPlacementTransform(Nterm, Cterm, wholeLength);
-    
+
     // helix body
-    double shaftLength = 
+    double shaftLength =
         (style.style == StyleManager::eObjectWithArrow && style.arrowLength < wholeLength) ?
             wholeLength - style.arrowLength : wholeLength;
     gluCylinder(qobj, style.radius, style.radius, shaftLength, helixSides, 1);
@@ -1271,7 +1270,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     glRotated(180.0, 0.0, 1.0, 0.0);
     gluDisk(qobj, 0.0, style.radius, helixSides, 1);
     glPopMatrix();
-        
+
     // Cterm Arrow
     if (style.style == StyleManager::eObjectWithArrow && style.arrowLength < wholeLength) {
         // arrow base
@@ -1296,7 +1295,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
             glPopMatrix();
         }
     }
-    
+
     // Cterm cap
     else {
         glPushMatrix();
@@ -1304,7 +1303,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
         gluDisk(qobj, 0.0, style.radius, helixSides, 1);
         glPopMatrix();
     }
-                
+
     glPopMatrix();
     displayListEmpty[currentDisplayList] = false;
 }

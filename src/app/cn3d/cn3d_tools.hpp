@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/08/13 22:30:51  thiessen
+* add structure window mouse drag/zoom; add highlight option to render settings
+*
 * Revision 1.5  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -76,11 +79,6 @@ extern void RaiseLogWindow(void);
 // launch web browser on given URL (implemented in sequence_set.cpp)
 extern void LaunchWebPage(const char *url);
 
-// global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
-extern ncbi::CNcbiRegistry * GlobalRegistry(void);
-extern void GlobalRegistryChanged(void);
-static const std::string REG_CONFIG_SECTION = "Cn3D-4-Config";
-
 // top-level window (the main structure window) (implemented in cn3d_main_wxwin.cpp)
 extern wxFrame * GlobalTopWindow(void);
 
@@ -91,6 +89,30 @@ extern wxFrame * GlobalTopWindow(void);
 // test for match between Sequence and Seq-id (implemented in alignment_set.cpp)
 class Sequence;
 extern bool IsAMatch(const Sequence *seq, const ncbi::objects::CSeq_id& sid);
+
+// global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
+extern bool RegistryIsValidInteger(const std::string& section, const std::string& name);
+extern bool RegistryIsValidBoolean(const std::string& section, const std::string& name);
+extern bool RegistryGetInteger(const std::string& section, const std::string& name, int *value);
+extern bool RegistryGetBoolean(const std::string& section, const std::string& name, bool *value);
+extern bool RegistrySetInteger(const std::string& section, const std::string& name, int value);
+extern bool RegistrySetBoolean(const std::string& section, const std::string& name, bool value,
+    bool useYesOrNo = false);
+
+// registry section/entry names
+static const std::string
+    // configuration
+    REG_CONFIG_SECTION = "Cn3D-4-Config",
+    REG_FAVORITES_NAME = "Favorites",
+    // quality settings
+    REG_QUALITY_SECTION = "Cn3D-4-Quality",
+    REG_QUALITY_ATOM_SLICES = "AtomSlices",
+    REG_QUALITY_ATOM_STACKS = "AtomStacks",
+    REG_QUALITY_BOND_SIDES = "BondSides",
+    REG_QUALITY_WORM_SIDES = "WormSides",
+    REG_QUALITY_WORM_SEGMENTS = "WormSegments",
+    REG_QUALITY_HELIX_SIDES = "HelixSides",
+    REG_HIGHLIGHTS_ON = "HighlightsOn";
 
 END_SCOPE(Cn3D)
 
