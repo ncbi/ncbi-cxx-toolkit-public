@@ -66,7 +66,7 @@
 USING_NCBI_SCOPE;
 
 
-#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.8"
+#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=0.9"
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -120,7 +120,7 @@ struct SJS_Request
 };
 
 
-const unsigned kMaxMessageSize = 2048;
+const unsigned kMaxMessageSize = kNetScheduleMaxErrSize * 4;
 
 /// Thread specific data for threaded server
 ///
@@ -198,12 +198,6 @@ protected:
         ERR_POST("ProcessOverflow!");
     }
 private:
-
-    /// TRUE return means we have EOF in the socket (no more data is coming)
-    bool ReadBuffer(CSocket& sock, 
-                    char*    buf, 
-                    size_t   buf_size,
-                    size_t*  read_length);
 
     void ParseRequest(const string& reqstr, SJS_Request* req);
 
@@ -1019,49 +1013,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
     req->err_msg = "Unknown request";
 }
 
-bool CNetScheduleServer::ReadBuffer(CSocket& sock, 
-                                    char*    buf, 
-                                    size_t   buf_size,
-                                    size_t*  read_length)
-{
-    *read_length = 0;
-    size_t nn_read = 0;
 
-    bool ret_flag = true;
-
-    while (ret_flag) {
-        if (!s_WaitForReadSocket(sock, m_InactivityTimeout)) {
-            break;
-        }
-
-        EIO_Status io_st = sock.Read(buf, buf_size, &nn_read);
-        *read_length += nn_read;
-        switch (io_st) 
-        {
-        case eIO_Success:
-            break;
-        case eIO_Timeout:
-            if (*read_length == 0) {
-                NCBI_THROW(CNetServiceException, eTimeout, kEmptyStr);
-            }
-            break;
-        case eIO_Closed:
-            ret_flag = false;
-            break;
-        default: // invalid socket or request
-            NCBI_THROW(CNetServiceException, eCommunicationError, kEmptyStr);
-        };
-        buf_size -= nn_read;
-
-        if (buf_size <= 10) {  // buffer too small to read again
-            break;
-        }
-        buf += nn_read;
-    }
-
-    return ret_flag;  // false means we hit "eIO_Closed"
-
-}
 
 void CNetScheduleServer::WriteMsg(CSocket&       sock, 
                                   const char*    prefix, 
@@ -1165,6 +1117,7 @@ public:
 void CNetScheduleDApp::Init(void)
 {
     SetDiagPostLevel(eDiag_Info);
+    SetDiagPostAllFlags(eDPF_Default | eDPF_DateTime);
 
     // Setup command line arguments and parameters
         
@@ -1381,6 +1334,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/03/29 16:48:54  kuznets
+ * Removed dead code
+ *
  * Revision 1.20  2005/03/24 16:42:25  kuznets
  * Fixed bug in command parser
  *
