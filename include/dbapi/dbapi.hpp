@@ -388,18 +388,42 @@ public:
     // Check if the connection is alive
     virtual bool IsAlive() = 0;
 
+    // NEW INTERFACE: no additional connections created
+    // while using the next four methods.
+    // Objects obtained with these methods can't be used
+    // simultaneously (like opening cursor while a stored
+    // procedure is running on the same connection)
+
+    // Get statement object for regular SQL queries
+    virtual IStatement* GetStatement() = 0;
+  
+    // Get callable statement object for stored procedures
+    virtual ICallableStatement* GetCallableStatement(const string& proc, 
+                                                     int nofArgs = 0) = 0;
+
+    // Get cursor object
+    virtual ICursor* GetCursor(const string& name, 
+                               const string& sql,
+                               int nofArgs = 0,
+                               int batchSize = 1) = 0;
+
+    // Create bulk insert object
+    virtual IBulkInsert* GetBulkInsert(const string& table_name,
+                                       unsigned int nof_cols) = 0;
+    // END OF NEW INTERFACE
+
     // Get statement object for regular SQL queries
     virtual IStatement* CreateStatement() = 0;
   
     // Get callable statement object for stored procedures
     virtual ICallableStatement* PrepareCall(const string& proc, 
-					    int nofArgs = 0) = 0;
+                                            int nofArgs = 0) = 0;
 
     // Get cursor object
     virtual ICursor* CreateCursor(const string& name, 
-				  const string& sql,
-				  int nofArgs = 0,
-				  int batchSize = 1) = 0;
+                                  const string& sql,
+                                  int nofArgs = 0,
+                                  int batchSize = 1) = 0;
 
     // Create bulk insert object
     virtual IBulkInsert* CreateBulkInsert(const string& table_name,
@@ -468,6 +492,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/03/09 20:37:37  kholodov
+ * Added: four new public methods
+ *
  * Revision 1.26  2003/12/15 20:05:40  ivanov
  * Added export specifier for building DLLs in MS Windows.
  *

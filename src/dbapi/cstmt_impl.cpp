@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2004/03/09 20:37:15  kholodov
+* Added: four new public methods
+*
 * Revision 1.9  2004/02/26 18:52:34  kholodov
 * Added: more trace messages
 *
@@ -88,7 +91,7 @@ CCallableStatement::CCallableStatement(const string& proc,
 
 CCallableStatement::~CCallableStatement()
 {
-    //Close();
+    Notify(CDbapiClosedEvent(this));
 }
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd() 
