@@ -1,4 +1,4 @@
---$Id: blastdb.asn,v 6.2 2001/03/29 19:03:40 madden Exp $
+--$Id: blastdb.asn,v 6.3 2001/04/02 15:08:53 madden Exp $
 --
 -- Notes:
 --
@@ -21,9 +21,12 @@
 -- indicate a link that could be established based upon the gi of the 
 -- database sequence.
 --
--- $Revision: 6.2 $
+-- $Revision: 6.3 $
 --
 -- $Log: blastdb.asn,v $
+-- Revision 6.3  2001/04/02 15:08:53  madden
+-- Add other-info SEQUENCE OF INTEGER for future use
+--
 -- Revision 6.2  2001/03/29 19:03:40  madden
 -- Minor change for consistency
 --
@@ -45,7 +48,8 @@ Blast-def-line ::= SEQUENCE {
 	seqid SEQUENCE OF Seq-id,                 -- Regular NCBI Seq-Id
 	taxid  INTEGER ,                          -- taxonomy id
 	memberships SEQUENCE OF INTEGER OPTIONAL, -- bit arrays
-	links SEQUENCE OF INTEGER OPTIONAL        -- bit arrays
+	links SEQUENCE OF INTEGER OPTIONAL,       -- bit arrays
+	other-info SEQUENCE OF INTEGER OPTIONAL   -- for future use (probably genomic sequences)
 }
 
 END
