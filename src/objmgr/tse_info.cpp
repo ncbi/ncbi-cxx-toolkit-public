@@ -221,6 +221,18 @@ void CTSE_Info::SetName(const CAnnotName& name)
 }
 
 
+bool CTSE_Info::IsDead(void) const
+{
+    return GetSuppressionLevel() >= eSuppression_dead;
+}
+
+
+bool CTSE_Info::IsUnavailable(void) const
+{
+    return GetSuppressionLevel() >= eSuppression_private;
+}
+
+
 void CTSE_Info::SetSeq_entry(CSeq_entry& entry)
 {
     entry.Parentize();

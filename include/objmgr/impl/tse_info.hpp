@@ -122,7 +122,8 @@ public:
         eSuppression_permanent,
         eSuppression_dead,
         eSuppression_private,
-        eSuppression_withdrawn
+        eSuppression_withdrawn,
+        eSuppression_no_data
     };
     typedef CConstRef<CObject> TBlobId;
     typedef int                TBlobVersion;
@@ -160,6 +161,7 @@ public:
     ESuppression_Level GetSuppressionLevel(void) const;
     void SetSuppressionLevel(ESuppression_Level level);
     bool IsDead(void) const;
+    bool IsUnavailable(void) const;
 
     const CAnnotName& GetName(void) const;
     void SetName(const CAnnotName& name);
@@ -438,13 +440,6 @@ inline
 void CTSE_Info::SetSuppressionLevel(ESuppression_Level level)
 {
     m_SuppressionLevel = level;
-}
-
-
-inline
-bool CTSE_Info::IsDead(void) const
-{
-    return GetSuppressionLevel() >= eSuppression_dead;
 }
 
 
