@@ -71,14 +71,26 @@ void CEntrez2Client::GetNeighbors(int query_uid, const string& db,
                                   const string& link_type,
                                   vector<int>& neighbor_uids)
 {
+    vector<int> uids;
+    uids.push_back(query_uid);
+    GetNeighbors(uids, db, link_type, neighbor_uids);
+}
+
+
+/// This form just yields a vector of UIDs
+void CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
+                                  const string& db,
+                                  const string& link_type,
+                                  vector<int>& neighbor_uids)
+{
     // first retrieve the link_set
     CRef<CEntrez2_link_set> link_set;
-    link_set = GetNeighbors(query_uid, db, link_type);
+    link_set = GetNeighbors(query_uids, db, link_type);
     
     // then extract the UIDs
-    for (CEntrez2_id_list::TConstUidIterator it
-             = link_set->GetIds().GetConstUidIterator();  
-         !it.AtEnd();  ++it) {
+    CEntrez2_id_list::TConstUidIterator it
+        = link_set->GetIds().GetConstUidIterator();
+    for ( ;  !it.AtEnd();  ++it) {
         neighbor_uids.push_back(*it);
     }
 }
@@ -90,16 +102,26 @@ CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(int query_uid,
                                                      const string& db,
                                                      const string& link_type)
 {
+    vector<int> uids;
+    uids.push_back(query_uid);
+    return GetNeighbors(uids, db, link_type);
+}
+
+
+/// This form returns the entire CEntrez2_link_set object,
+/// which includes scores.
+CRef<CEntrez2_link_set>
+CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
+                             const string& db,
+                             const string& link_type)
+{
     CEntrez2_id_list uids;
     uids.SetDb() = CEntrez2_db_id(db);
-    uids.SetNum(1);
-    uids.SetUids().resize(uids.sm_UidSize);
-    CEntrez2_id_list::TUidIterator it = uids.GetUidIterator();
-    *it = query_uid;
+    uids.AssignUids(query_uids);
     
     CEntrez2_get_links gl;
     gl.SetUids(uids);
-    gl.SetLinktype().Set(link_type);
+    gl.SetLinktype().Set(db + "_" + link_type);
 
     CRef<CEntrez2_link_set> link_set = AskGet_links(gl);
     return link_set;
@@ -159,13 +181,15 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
         return;
     }
 
-    string whole_query = '(' + query_string + ')' + " AND " + '(';
+    string uids;
     ITERATE (vector<int>, uid, query_uids) {
-        if (uid != query_uids.begin()) {
-            whole_query += " OR ";
+        if ( !uids.empty() ) {
+            uids += " OR ";
         }
-        whole_query += NStr::IntToString(*uid) + "[UID]";
+        uids += NStr::IntToString(*uid) + "[UID]";
     }
+
+    string whole_query = "(" + query_string + ") AND (" + uids + ")";
     Query(whole_query, db, result_uids);
 }
 
@@ -179,6 +203,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/11 17:29:07  dicuccio
+* Added APIs for retrieving neighbors for multiple UIDs.  Changed how link type
+* is interpreted - both link and db are databases
+*
 * Revision 1.7  2004/01/20 05:36:56  jcherry
 * Added missing '&' on argument to FilterIds (pass by reference)
 *
