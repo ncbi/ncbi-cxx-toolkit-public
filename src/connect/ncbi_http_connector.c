@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2002/07/25 20:20:43  lavr
+ * Do not report header read error on {0, 0} timeout
+ *
  * Revision 6.29  2002/07/25 13:59:35  lavr
  * More diagnostic messages added
  *
@@ -242,7 +245,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu)
 {
     assert(!uuu->sock);
     if (uuu->can_connect == eCC_None) {
-        CORE_LOG(eLOG_Error, "[HTTP]  Connector is not longer usable");
+        CORE_LOG(eLOG_Error, "[HTTP]  Connector is no longer usable");
         return eIO_Closed;
     }
 
@@ -361,7 +364,9 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
     for (;;) {
         status = SOCK_StripToPattern(uuu->sock, "\r\n", 2, &uuu->http, 0);
         if (status != eIO_Success) {
-            CORE_LOG(eLOG_Error, "[HTTP]  Error reading header");
+            const STimeout* tmo = SOCK_GetTimeout(uuu->sock, eIO_Read);
+            if (tmo->sec || tmo->usec)
+                CORE_LOG(eLOG_Error, "[HTTP]  Error reading header");
             return status;
         }
 
