@@ -40,7 +40,6 @@ static char const rcsid[] =
 #include "blast_setup.hpp"
 
 // Object includes
-#include <objects/general/Object_id.hpp>
 #include <objects/scoremat/Score_matrix.hpp>
 #include <objects/scoremat/Score_matrix_parameters.hpp>
 
@@ -254,7 +253,9 @@ s_MatrixName2EFreq_Ratios(const string& matrix_name)
         return CScore_matrix::eFreq_Ratios_pam250;
     }
 
-    return CScore_matrix::eFreq_Ratios_other;
+    ostringstream os;
+    os << "No underlying score matrix frequency ratios for " << matrix_name;
+    NCBI_THROW(CBlastException, eNotSupported, os.str());
 }
 
 CRef<CScore_matrix_parameters>
@@ -270,13 +271,8 @@ CPssmEngine::x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
     retval->SetKappa(pssm->kappa);
     retval->SetH(pssm->h);
 
-    // FIXME: this field should be made optional
-    CRef<CObject_id> pssm_id(new CObject_id);
-    pssm_id->SetId(-1);     // FIXME: needs final decision on what goes here
-
     CScore_matrix& score_mat = retval->SetMatrix();
     score_mat.SetIs_protein(true);
-    score_mat.SetIdentifier(*pssm_id);
     score_mat.SetNcolumns(pssm->ncols);
     score_mat.SetNrows(pssm->nrows);
     score_mat.SetByrow(false);
@@ -344,6 +340,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/08/05 18:55:09  camacho
+ * Changes to use the most recent scoremat.asn specification
+ *
  * Revision 1.9  2004/08/04 20:27:04  camacho
  * 1. Use of CPSIMatrix and CPSIDiagnosticsResponse classes instead of bare
  *    pointers to C structures.
