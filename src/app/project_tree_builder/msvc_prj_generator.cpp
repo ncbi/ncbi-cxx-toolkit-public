@@ -590,8 +590,9 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
     }
     ITERATE(list<string>, p, src.m_GeneratedHpp) {
         const string& src_hpp = *p;
-        string src_hpp_abs = CDirEntry::ConcatPath(context.IncludeDirsRoot(), 
-                                                   src_hpp);
+        string src_hpp_abs = 
+            CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, 
+                                  src_hpp);
         string src_hpp_rel = 
             CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, src_hpp_abs);
 
@@ -834,6 +835,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/03/05 18:07:22  gorelenk
+ * Changed implementation of s_CreateDatatoolCustomBuildInfo .
+ *
  * Revision 1.22  2004/02/25 20:19:36  gorelenk
  * Changed implementation of function s_IsInsideDatatoolSourceDir.
  *
