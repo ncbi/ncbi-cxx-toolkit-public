@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/06/01 16:01:58  vakatov
+ * MIME_ParseContentTypeEx() -- extended description
+ *
  * Revision 6.14  2001/05/29 21:15:42  vakatov
  * + eMIME_Plain
  *
@@ -493,6 +496,13 @@ extern char* MIME_ComposeContentType
  * can be in the following two formats:
  *   Content-Type: <type>/x-<subtype>-<encoding>
  *   <type>/x-<subtype>-<encoding>
+ *
+ * NOTE:  all leading spaces and all trailing spaces (and any trailing symbols,
+ *        if they separated from the content type by at least one space) will
+ *        be ignored, e.g. these are valid content type strings:
+ *           "   Content-Type: text/plain  foobar"
+ *           "  text/html \r\n  barfoo coocoo ....\n boooo"
+ *
  * If it does not match any of NCBI MIME type/subtypes/encodings, then
  * return TRUE, eMIME_T_Unknown, eMIME_Unknown or eENCOD_None, respectively.
  * If the passed "str" has an invalid (non-HTTP ContentType) format
