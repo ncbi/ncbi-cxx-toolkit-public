@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  1999/01/07 20:06:03  vakatov
+* + URL_DecodeString()
+* + URL_EncodeString()
+*
 * Revision 1.29  1998/12/28 17:56:25  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -359,6 +363,13 @@ private:
     CCgiRequest& operator=(const CCgiRequest&) { _TROUBLE;  return *this; }
 };  // CCgiRequest
 
+
+// Decode URL-encoded string "url_str" into a regular string "str"
+// Return 0 on success;  return 1-based failed position in "url_str" on error
+extern SIZE_TYPE URL_DecodeString(const string& url_str, string& str);
+
+// URL-encode regular string "str" to "url_str"
+extern void URL_EncodeString(const string& str, string& url_str);
 
 
 ///////////////////////////////////////////////////////

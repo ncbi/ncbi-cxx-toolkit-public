@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  1999/01/07 20:06:06  vakatov
+* + URL_DecodeString()
+* + URL_EncodeString()
+*
 * Revision 1.30  1999/01/04 22:41:44  vakatov
 * Do not use so-called "hardware-exceptions" as these are not supported
 * (on the signal level) by UNIX
@@ -618,6 +622,23 @@ static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0,
         PrintIndexes(indexes);
 }
 
+static void TestCgiMisc(void)
+{
+    const string str("_ _%_;_\n_:_\\_\"_");
+    string url = "qwerty";
+    URL_EncodeString(str, url);
+    _ASSERT( url.compare("_+_%25_%3B_%0A_%3A_%5C_%22_") == 0 );
+
+    string str1;
+    _ASSERT( URL_DecodeString(url, str1) == 0 );
+    _ASSERT( str1 == str );
+
+    string url1;
+    URL_EncodeString(str1, url1);
+    _ASSERT( url1 == url );
+}
+
+
 static void TestCgi(int argc, char* argv[])
 {
     TestCgi_Cookies();
@@ -721,7 +742,10 @@ static void TestCgi(int argc, char* argv[])
         _ASSERT( !putenv("QUERY_STRING=MUST NOT BE USED HERE!!!") );
         TestCgi_Request_Full(&NcbiCin/* dummy */, argc, argv);
     } STD_CATCH("TestCgi(CMD.-LINE ARGS)");
+
+    TestCgiMisc();
 }
+
 
 void TestCgiResponse(int argc, char** argv)
 {
