@@ -172,8 +172,7 @@ static bool s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher)
     // Check if the file we're watching (if any) has changed
     // (based on contents, not timestamp!)
     if (watcher  &&  watcher->HasChanged()) {
-        _TRACE("CCgiApplication::x_RunFastCGI:  "
-               "the watch file has changed");
+        _TRACE("CCgiApplication::x_RunFastCGI: the watch file has changed");
         return true;
     }
     return false;
@@ -201,10 +200,17 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
         }}
         if ( !path.empty() ) {
             close(0);
+# ifdef HAVE_FCGX_ACCEPT_R
+            // FCGX_OpenSocket() started to appear in the Fast-CGI API
+            // simultaneously with FCGX_Accept_r()
             if (FCGX_OpenSocket(path.c_str(), 10/*max backlog*/) == -1) {
                 ERR_POST("CCgiApplication::x_RunFastCGI:  cannot run as a "
-                         "standalone server at: " << path << "'"); 
+                         "standalone server at: '" << path << "'"); 
             }
+# else
+            ERR_POST("CCgiApplication::x_RunFastCGI:  cannot run as a "
+                     "standalone server (not supported in this version)");
+# endif
         }
     }}
 
@@ -281,7 +287,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
     // Diag.prefix related preparations
     const string prefix_pid(NStr::IntToString(getpid()) + "-");
 
+# ifdef HAVE_FCGX_ACCEPT_R
+    // FCGX_Init() started to appear in the Fast-CGI API
+    // simultaneously with FCGX_Accept_r()
     FCGX_Init();
+# endif
 
     // Main Fast-CGI loop
     CTime mtime = s_GetModTime(GetArguments().GetProgramName());
@@ -504,6 +514,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.33  2003/05/22 19:12:59  vakatov
+ * Conditional call to FCGX_Init() and FCGX_OpenSocket() -- these are missing
+ * in the earlier versions of Fast-CGI API (such as 2.1).
+ *
  * Revision 1.32  2003/05/21 17:38:54  vakatov
  *    CCgiApplication::x_RunFastCGI():  to return the number of HTTP requests
  * which failed to process properly -- rather than the exit code of last
