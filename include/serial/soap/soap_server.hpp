@@ -46,9 +46,6 @@ BEGIN_NCBI_SCOPE
 #  endif
 #endif
 
-
-class CSoapServerApplication;
-
 class CSoapServerApplication : public CCgiApplication
 {
 public:
@@ -77,7 +74,6 @@ public:
 #else
     typedef vector<TWebMethod> TListeners;
 #endif
-
 
     CSoapServerApplication(const string& wsdl_filename,
                            const string& namespace_name);
