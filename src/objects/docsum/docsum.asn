@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.17 2001/05/01 14:23:44 sherry Exp $
+-- $Id: docsum.asn,v 1.18 2001/05/02 15:11:19 kholodov Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.18  2001/05/02 15:11:19  kholodov
+-- Fixed: NSE-ss::orient: refersed -> reversed.
+--
 -- Revision 1.17  2001/05/01 14:23:44  sherry
 -- added seq-ss-exemplar and NSE-ss.orient to report orientation of cluster members to NSE-rs and its exemplar sequence, NSE-rs.seq-ss-exemplar.
 --
@@ -296,7 +299,7 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 		no-variation (6) }, 		--   submission reports invariant region in surveyed sequence
 	orient ENUMERATED {			-- orientation of refsnp cluster members to refsnp cluster sequence
 		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
-		refersed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
+		reversed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
 						-- by seq-ss-exemplar. 
 				
 
