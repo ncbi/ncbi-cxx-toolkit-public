@@ -98,8 +98,8 @@ int main(int argc, char* argv[])
         if (status != eIO_Success) {
             if (status == eIO_Closed)
                 break;
-            if (time(0) - t > (net_info->timeout->sec +
-                               (net_info->timeout->usec + 500000)/1000000)) {
+            if ((unsigned long)(time(0) - t) > net_info->timeout->sec +
+                (net_info->timeout->usec + 500000)/1000000) {
                 CORE_LOG(eLOG_Fatal, "Timed out");
             }
 #ifdef NCBI_OS_UNIX
@@ -133,6 +133,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2003/05/20 23:52:01  lavr
+ * Explicit cast "time_t"->"unsigned" to avoid GCC warning
+ *
  * Revision 6.9  2003/05/19 16:58:37  lavr
  * Modified to use {0,0} timeouts in CONN_Wait() and use app timeout handling
  *
