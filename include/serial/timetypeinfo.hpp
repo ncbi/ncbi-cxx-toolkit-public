@@ -114,13 +114,13 @@ public:
         {
             string s;
             in.ReadStd(s);
-            CTime data(s, kSerialTimeFormat);
+            CTime(s, kSerialTimeFormat);
         }
     static void Copy(CObjectStreamCopier& copier, TTypeInfo )
         {
             string s;
             copier.In().ReadStd(s);
-            CTime data(s, kSerialTimeFormat);
+            CTime(s, kSerialTimeFormat);
             copier.Out().WriteStd(s);
         }
 };
@@ -201,7 +201,7 @@ CTypeInfo* CStdTypeInfo<CTime>::CreateTypeInfo(void)
 
 
 inline
-TTypeInfoGetter GetTypeInfoGetter<CTime>(const CTime* )
+TTypeInfoGetter GetStdTypeInfoGetter(const CTime* )
 {
     return &CStdTypeInfo<CTime>::GetTypeInfo;
 }
@@ -215,6 +215,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/09/29 21:22:43  golikov
+* fix GetStdTypeInfoGetter to actually work, remove unused vars warnings
+*
 * Revision 1.3  2003/04/15 16:19:05  siyan
 * Added doxygen support
 *
