@@ -31,12 +31,6 @@
 * File Description:
 *   !!! PUT YOUR DESCRIPTION HERE !!!
 *
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.5  2001/05/17 14:43:42  lavr
-* Typos corrected
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -54,13 +48,26 @@ BEGIN_NCBI_SCOPE
 //  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
-///////////////////////////////////////////////////////
-// All inline function implementations and internal data
-// types, etc. are in this file
-#include <framewrk.inl>
+
+
+
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//  !!! FINALLY, IMPLEMENT YOUR INLINE FUNCTIONS HERE !!!
+//  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 // (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+*
+* $Log$
+* Revision 1.6  2002/04/08 21:47:29  lanczyck
+* remove .inl include; move CVS Log to end
+*
+*
+* ===========================================================================
+*/
 
 #endif  /* FRAMEWRK__HPP */
