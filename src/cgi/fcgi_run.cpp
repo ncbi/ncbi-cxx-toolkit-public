@@ -70,7 +70,7 @@ BEGIN_NCBI_SCOPE
 
 bool CCgiApplication::IsFastCGI(void) const
 {
-    return true;
+    return !FCGX_IsCGI();
 }
 
 static CTime s_GetModTime(const string& filename)
@@ -411,6 +411,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.28  2003/03/26 20:56:16  ucko
+ * CCgiApplication::IsFastCGI: check dynamically (via FCGX_IsCGI).
+ *
  * Revision 1.27  2003/03/24 16:15:30  ucko
  * +IsFastCGI; x_RunFastCGI uses m_Iteration (1-based) rather than iteration.
  *
