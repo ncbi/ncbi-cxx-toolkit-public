@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/01/06 20:25:45  gouriano
+* Added GetLocation method - for better diagnostics
+*
 * Revision 1.18  2004/05/17 21:03:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -104,14 +107,19 @@ AbstractParser::~AbstractParser(void)
 {
 }
 
+string AbstractParser::GetLocation(void)
+{
+    return kEmptyStr;
+}
+
 void AbstractParser::ParseError(const char* error, const char* expected,
                                 const AbstractToken& token)
 {
     NCBI_THROW(CDatatoolException,eWrongInput,
-                 "LINE " + NStr::IntToString(token.GetLine())+
-                 ", TOKEN " + token.GetText() +
-                 " -- parse error: " + error +
-                 (error != "" ? ": " : "") + expected + " expected");
+               GetLocation() +
+               "LINE " + NStr::IntToString(token.GetLine()) +
+               ", TOKEN \"" + token.GetText() + "\": " + error +
+               (string(error).empty() ? "" : ": ") + expected + " expected");
 }
 
 string AbstractParser::Location(void) const

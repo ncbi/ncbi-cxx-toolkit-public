@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2005/01/06 20:24:51  gouriano
+* Added GetLocation method - for better diagnostics
+*
 * Revision 1.8  2002/10/18 14:32:17  gouriano
 * added possibility to replace lexer "on the fly"
 *
@@ -86,6 +89,7 @@ public:
     AbstractParser(AbstractLexer& lexer);
     virtual ~AbstractParser(void);
 
+    virtual string GetLocation(void);
     virtual void ParseError(const char* error, const char* expected,
                             const AbstractToken& token);
     void ParseError(const char* error, const char* expected)
