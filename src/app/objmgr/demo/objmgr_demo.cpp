@@ -101,7 +101,10 @@ void CDemoApp::Init(void)
                              "Seq-id of the Seq-Entry to fetch",
                              CArgDescriptions::eString);
     arg_desc->AddOptionalKey("file", "SeqEntryFile",
-                             "file with Seq-Entry to load",
+                             "file with Seq-Entry to load (text ASN.1)",
+                             CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("bfile", "SeqEntryFile",
+                             "file with Seq-Entry to load (binary ASN.1)",
                              CArgDescriptions::eInputFile);
     arg_desc->AddDefaultKey("count", "RepeatCount",
                             "repeat test work RepeatCount times",
@@ -137,7 +140,16 @@ void CDemoApp::Init(void)
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
     arg_desc->AddFlag("adaptive", "Use adaptive depth of segments");
-    arg_desc->AddFlag("nosnp", "exclude snp features");
+    arg_desc->AddFlag("nosnp",
+                      "exclude snp features - only unnamed Seq-annots");
+    arg_desc->AddFlag("unnamed",
+                      "include features from unnamed Seq-annots");
+    arg_desc->AddFlag("allnamed",
+                      "include features from all named Seq-annots");
+    arg_desc->AddOptionalKey("named", "NamedAnnots",
+                             "include features from named Seq-annots "
+                             "(comma separated list)",
+                             CArgDescriptions::eString);
     arg_desc->AddDefaultKey("feat_type", "FeatType",
                             "Type of features to select",
                             CArgDescriptions::eInteger, "-1");
@@ -673,6 +685,18 @@ int CDemoApp::Run(void)
     int feat_type = args["feat_type"].AsInteger();
     int feat_subtype = args["feat_subtype"].AsInteger();
     bool nosnp = args["nosnp"];
+    bool include_unnamed = args["unnamed"];
+    bool include_allnamed = args["allnamed"];
+    set<string> include_named;
+    if ( args["named"] ) {
+        string names = args["named"].AsString();
+        size_t comma_pos;
+        while ( (comma_pos = names.find(',')) != NPOS ) {
+            include_named.insert(names.substr(0, comma_pos));
+            names.erase(0, comma_pos+1);
+        }
+        include_named.insert(names);
+    }
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -694,6 +718,14 @@ int CDemoApp::Run(void)
         auto_ptr<CObjectIStream> in
             (CObjectIStream::Open(eSerial_AsnText,
                                   args["file"].AsInputFile()));
+        *in >> *entry;
+        scope.AddTopLevelSeqEntry(*entry);
+    }
+    if ( args["bfile"] ) {
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        auto_ptr<CObjectIStream> in
+            (CObjectIStream::Open(eSerial_AsnBinary,
+                                  args["bfile"].AsInputFile()));
         *in >> *entry;
         scope.AddTopLevelSeqEntry(*entry);
     }
@@ -805,6 +837,15 @@ int CDemoApp::Run(void)
             .SetMaxSize(max_feat)
             .SetResolveDepth(depth)
             .SetAdaptiveDepth(adaptive);
+        if ( include_unnamed ) {
+            base_sel.AddUnnamedAnnots();
+        }
+        if ( include_allnamed ) {
+            base_sel.AddAllNamedAnnots();
+        }
+        ITERATE ( set<string>, it, include_named ) {
+            base_sel.AddNamedAnnots(*it);
+        }
         if ( nosnp ) {
             base_sel.SetDataSource("");
         }
@@ -981,6 +1022,15 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.39  2003/09/30 20:13:38  vasilche
 * Print original feature location if requested.
 *

@@ -31,15 +31,20 @@
 */
 
 
+#include <corelib/ncbimtx.hpp>
+
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -49,9 +54,11 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry)
     : m_Seq_annot(&annot),
       m_Seq_entry_Info(0),
       m_TSE_Info(0),
+      m_Chunk_Info(0),
       m_DirtyAnnotIndex(true)
 {
     x_Seq_entryAttach(entry);
+    x_UpdateName();
 }
 
 
@@ -60,6 +67,18 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
       m_Seq_entry_Info(0),
       m_TSE_Info(0),
       m_SNP_Info(&snp_annot),
+      m_Chunk_Info(0),
+      m_DirtyAnnotIndex(true)
+{
+    x_UpdateName();
+}
+
+
+CSeq_annot_Info::CSeq_annot_Info(CTSE_Chunk_Info& chunk_info)
+    : m_Seq_annot(0),
+      m_Seq_entry_Info(0),
+      m_TSE_Info(&chunk_info.GetTSE_Info()),
+      m_Chunk_Info(&chunk_info),
       m_DirtyAnnotIndex(true)
 {
 }
@@ -73,9 +92,10 @@ CSeq_annot_Info::~CSeq_annot_Info(void)
 size_t CSeq_annot_Info::GetAnnotObjectIndex(const CAnnotObject_Info& info) const
 {
     _ASSERT(&info.GetSeq_annot_Info() == this);
-    _ASSERT(!m_ObjectInfos.empty());
-    _ASSERT(&info >= &m_ObjectInfos.front() && &info <= &m_ObjectInfos.back());
-    return &info - &m_ObjectInfos.front();
+    _ASSERT(!m_ObjectInfos.m_Infos.empty());
+    _ASSERT(&info >= &m_ObjectInfos.m_Infos.front() &&
+            &info <= &m_ObjectInfos.m_Infos.back());
+    return &info - &m_ObjectInfos.m_Infos.front();
 }
 
 
@@ -94,6 +114,32 @@ const CSeq_entry& CSeq_annot_Info::GetTSE(void) const
 const CSeq_entry& CSeq_annot_Info::GetSeq_entry(void) const
 {
     return GetSeq_entry_Info().GetSeq_entry();
+}
+
+
+const CAnnotName& CSeq_annot_Info::GetName(void) const
+{
+    return m_Name.IsNamed()? m_Name: GetTSE_Info().GetName();
+}
+
+
+void CSeq_annot_Info::x_UpdateName(void)
+{
+    if ( GetSeq_annot().IsSetDesc() ) {
+        string name;
+        ITERATE ( CSeq_annot::TDesc::Tdata, it,
+                  GetSeq_annot().GetDesc().Get() ) {
+            const CAnnotdesc& desc = **it;
+            if ( desc.Which() == CAnnotdesc::e_Name ) {
+                name = desc.GetName();
+                break;
+            }
+        }
+        m_Name.SetNamed(name);
+    }
+    else {
+        m_Name.SetUnnamed();
+    }
 }
 
 
@@ -151,6 +197,8 @@ void CSeq_annot_Info::x_UpdateAnnotIndex(void)
 
 void CSeq_annot_Info::x_UpdateAnnotIndexThis(void)
 {
+    m_ObjectInfos.m_Name = GetName();
+
     CSeq_annot::C_Data& data = GetSeq_annot().SetData();
     switch ( data.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
@@ -167,46 +215,47 @@ void CSeq_annot_Info::x_UpdateAnnotIndexThis(void)
         CSeq_id id;
         id.SetGi(m_SNP_Info->GetGi());
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
-        GetTSE_Info().x_MapSNP_Table(idh, m_SNP_Info);
+        GetTSE_Info().x_MapSNP_Table(GetName(), idh, m_SNP_Info);
     }
 }
 
 
 void CSeq_annot_Info::x_TSEDetach(void)
 {
-    x_UnmapAnnotObjects();
     if ( m_SNP_Info ) {
         CSeq_id id;
         id.SetGi(m_SNP_Info->GetGi());
         CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
-        GetTSE_Info().x_UnmapSNP_Table(idh, m_SNP_Info);
+        GetTSE_Info().x_UnmapSNP_Table(GetName(), idh, m_SNP_Info);
     }
+    x_UnmapAnnotObjects();
     m_DirtyAnnotIndex = true;
 }
 
 
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 {
-    _ASSERT(m_ObjectKeys.empty());
+    _ASSERT(m_ObjectInfos.m_Keys.empty());
 
     size_t objCount = objs.size();
 
-    m_ObjectKeys.reserve(size_t(1.1*objCount));
-    m_ObjectInfos.reserve(objCount);
+    m_ObjectInfos.m_Keys.reserve(size_t(1.1*objCount));
+    m_ObjectInfos.m_Infos.reserve(objCount);
 
     CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
 
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
     NON_CONST_ITERATE ( CSeq_annot::C_Data::TFtable, fit, objs ) {
         CSeq_feat& feat = **fit;
-        m_ObjectInfos.push_back(CAnnotObject_Info(feat, *this));
-        CAnnotObject_Info& info = m_ObjectInfos.back();
 
-        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
+        CAnnotObject_Info* info =
+            m_ObjectInfos.AddInfo(CAnnotObject_Info(feat, *this));
+        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
 
-        info.GetMaps(hrmaps);
+        info->GetMaps(hrmaps);
         annotRef.m_AnnotLocationIndex = 0;
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
@@ -220,8 +269,8 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
                 else {
                     annotRef.m_HandleRange.Reset();
                 }
-                m_ObjectKeys.push_back(key);
-                tse_info.x_MapAnnotObject(key, annotRef);
+                
+                tse_info.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -231,26 +280,27 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 {
-    _ASSERT(m_ObjectKeys.empty());
+    _ASSERT(m_ObjectInfos.m_Keys.empty());
 
     size_t objCount = objs.size();
 
-    m_ObjectKeys.reserve(objCount);
-    m_ObjectInfos.reserve(objCount);
+    m_ObjectInfos.m_Keys.reserve(objCount);
+    m_ObjectInfos.m_Infos.reserve(objCount);
 
     CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
 
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
     NON_CONST_ITERATE ( CSeq_annot::C_Data::TGraph, git, objs ) {
         CSeq_graph& graph = **git;
-        m_ObjectInfos.push_back(CAnnotObject_Info(graph, *this));
-        CAnnotObject_Info& info = m_ObjectInfos.back();
 
-        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
+        CAnnotObject_Info* info =
+            m_ObjectInfos.AddInfo(CAnnotObject_Info(graph, *this));
+        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
 
-        info.GetMaps(hrmaps);
+        info->GetMaps(hrmaps);
         annotRef.m_AnnotLocationIndex = 0;
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
@@ -264,8 +314,8 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
                 else {
                     annotRef.m_HandleRange.Reset();
                 }
-                m_ObjectKeys.push_back(key);
-                tse_info.x_MapAnnotObject(key, annotRef);
+
+                tse_info.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -275,26 +325,27 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 
 void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
 {
-    _ASSERT(m_ObjectKeys.empty());
+    _ASSERT(m_ObjectInfos.m_Keys.empty());
 
     size_t objCount = objs.size();
 
-    m_ObjectKeys.reserve(objCount);
-    m_ObjectInfos.reserve(objCount);
+    m_ObjectInfos.m_Keys.reserve(objCount);
+    m_ObjectInfos.m_Infos.reserve(objCount);
 
     CTSE_Info& tse_info = GetTSE_Info();
+    CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
 
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
     NON_CONST_ITERATE ( CSeq_annot::C_Data::TAlign, ait, objs ) {
         CSeq_align& align = **ait;
-        m_ObjectInfos.push_back(CAnnotObject_Info(align, *this));
-        CAnnotObject_Info& info = m_ObjectInfos.back();
 
-        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = &info;
+        CAnnotObject_Info* info =
+            m_ObjectInfos.AddInfo(CAnnotObject_Info(align, *this));
+        key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
 
-        info.GetMaps(hrmaps);
+        info->GetMaps(hrmaps);
         annotRef.m_AnnotLocationIndex = 0;
         ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
             ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
@@ -308,8 +359,8 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
                 else {
                     annotRef.m_HandleRange.Reset();
                 }
-                m_ObjectKeys.push_back(key);
-                tse_info.x_MapAnnotObject(key, annotRef);
+
+                tse_info.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -319,20 +370,13 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
 
 void CSeq_annot_Info::x_UnmapAnnotObjects(void)
 {
-    CTSE_Info& tse_info = GetTSE_Info();
-
-    ITERATE( TObjectKeys, it, m_ObjectKeys ) {
-        tse_info.x_UnmapAnnotObject(*it);
-    }
-    m_ObjectKeys.clear();
-
-    x_DropAnnotObjects();
+    GetTSE_Info().x_UnmapAnnotObjects(m_ObjectInfos);
 }
 
 
 void CSeq_annot_Info::x_DropAnnotObjects(void)
 {
-    m_ObjectInfos.clear();
+    m_ObjectInfos.Clear();
 }
 
 
@@ -342,6 +386,15 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/10/07 13:43:23  vasilche
+ * Added proper handling of named Seq-annots.
+ * Added feature search from named Seq-annots.
+ * Added configurable adaptive annotation search (default: gene, cds, mrna).
+ * Fixed selection of blobs for loading from GenBank.
+ * Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+ * Fixed leaked split chunks annotation stubs.
+ * Moved some classes definitions in separate *.cpp files.
+ *
  * Revision 1.8  2003/09/30 16:22:03  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

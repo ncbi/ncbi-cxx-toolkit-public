@@ -113,6 +113,108 @@ CSeq_id_Handle CSeq_id_Handle::GetHandle(const CSeq_id& id)
 }
 
 
+#ifdef _DEBUG
+static int s_GetDebugSeqIds(void)
+{
+    const char* env = getenv("NCBI_OBJMGR_DEBUG_SEQID");
+    if ( !env || !*env ) return 0;
+    if ( *env >= '0' && *env <= '9' ) return *env - '0';
+    return 1;
+}
+
+static int s_DebugSeqIds(void)
+{
+    static int debug = s_GetDebugSeqIds();
+    return debug;
+}
+
+static int s_GetDebugSeqIdsCounter(void)
+{
+    const char* env = getenv("NCBI_OBJMGR_DEBUG_SEQID_COUNTER");
+    if ( !env || !*env ) return 0;
+    try {
+        return NStr::StringToInt(env);
+    }
+    catch ( ... ) {
+        return 0;
+    }
+}
+
+static int s_DebugSeqIdsCounter(void)
+{
+    static int debug = s_GetDebugSeqIdsCounter();
+    return debug;
+}
+
+DEFINE_STATIC_FAST_MUTEX(s_RegisterMutex);
+typedef map<const CSeq_id_Handle*, int> TRegisterSet;
+static TRegisterSet* s_RegisterSet = 0;
+static int s_Counter = 0;
+#endif
+
+void CSeq_id_Handle::x_Register(void)
+{
+#ifdef _DEBUG
+    int debug = s_DebugSeqIds();
+    if ( debug ) {
+        CFastMutexGuard guard(s_RegisterMutex);
+        if ( debug >= 5 ) {
+            ERR_POST(Warning << "Register of CSeq_id_Handle: "<<this);
+        }
+        if ( ++s_Counter == s_DebugSeqIdsCounter() ) {
+            _ASSERT("CSeq_id_Handle counter" && 0);
+        }
+        if ( !s_RegisterSet ) s_RegisterSet = new TRegisterSet;
+        pair<TRegisterSet::iterator, bool> ins = 
+            s_RegisterSet->insert(TRegisterSet::value_type(this, s_Counter));
+        if ( !ins.second ) {
+            ERR_POST("Double register of CSeq_id_Handle: "<<this<<
+                     " index: "<<s_Counter<<
+                     ", first index: " << ins.first->second);
+        }
+    }
+#endif
+}
+
+
+void CSeq_id_Handle::x_Deregister(void)
+{
+#ifdef _DEBUG
+    int debug = s_DebugSeqIds();
+    if ( debug ) {
+        CFastMutexGuard guard(s_RegisterMutex);
+        if ( debug >= 5 ) {
+            ERR_POST(Warning << "Deregister of CSeq_id_Handle: "<<this);
+        }
+        if ( !s_RegisterSet || !s_RegisterSet->erase(this) ) {
+            ERR_POST("Deregister of non-registered CSeq_id_Handle: "<<this);
+        }
+        if ( s_RegisterSet && s_RegisterSet->empty() ) {
+            delete s_RegisterSet;
+            s_RegisterSet = 0;
+        }
+    }
+#endif
+}
+
+
+void CSeq_id_Handle::x_DumpRegister(const char* _DEBUG_ARG(msg))
+{
+#ifdef _DEBUG
+    if ( s_DebugSeqIds() ) {
+        CFastMutexGuard guard(s_RegisterMutex);
+        if ( s_RegisterSet && !s_RegisterSet->empty() ) {
+            ERR_POST("CSeq_id_Handle::x_DumpRegister: " << msg);
+            ITERATE ( TRegisterSet, it, *s_RegisterSet ) {
+                ERR_POST("    CSeq_id_Handle: "<<it->first<<
+                         " was registered at index: "<<it->second);
+            }
+        }
+    }
+#endif
+}
+
+
 void CSeq_id_Handle::x_RemoveLastReference(void)
 {
     CSeq_id_Mapper::GetSeq_id_Mapper().x_RemoveLastReference(m_Info);
@@ -167,6 +269,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.14  2003/09/30 16:22:03  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

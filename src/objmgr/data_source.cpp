@@ -796,6 +796,18 @@ void CDataSource::x_SetDirtyAnnotIndex(void)
 }
 
 
+void CDataSource::UpdateAnnotIndex(void)
+{
+    TMainWriteLockGuard guard(m_DSMainLock);
+    if ( m_TSE_annot_is_dirty ) {
+        ITERATE ( TTSE_InfoMap, iter, m_TSE_InfoMap ) {
+            iter->second->UpdateAnnotIndex();
+        }
+    }
+    m_TSE_annot_is_dirty = false;
+}
+
+
 void CDataSource::UpdateAnnotIndex(const CSeq_entry_Info& entry_info)
 {
     TMainWriteLockGuard guard(m_DSMainLock);
@@ -811,49 +823,19 @@ void CDataSource::UpdateAnnotIndex(const CSeq_annot_Info& annot_info)
 
 
 void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                      const SAnnotTypeSelector& sel,
-                                      TTSE_LockSet& with_ref,
-                                      const string* source_name)
+                                      TTSE_LockSet& with_ref)
 {
     // load all relevant TSEs
-    if ( source_name ) {
-        if ( m_Loader ) {
-            m_Loader->GetNamedAnnotRecords(idh, *source_name);
-        }
-    }
-    else {
-        if ( m_Loader ) {
-            m_Loader->GetAllAnnotRecords(idh);
-        }
+    if ( m_Loader ) {
+        m_Loader->GetRecords(idh, CDataLoader::eAnnot);
     }
 
-    if ( m_TSE_annot_is_dirty ) {
-        // update annot index
-        TMainReadLockGuard guard(m_DSMainLock);
-        //TAnnotWriteLockGuard guard2(m_DSAnnotLock);
-        
-        // Index all annotations if not indexed yet
-        bool dirty = false;
-        NON_CONST_ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
-            if ( source_name &&
-                 it->second->GetDataSourceName() != *source_name ) {
-                dirty = true;
-            }
-            else {
-                it->second->UpdateAnnotIndex();
-            }
-        }
-        m_TSE_annot_is_dirty = dirty;
-    }
+    UpdateAnnotIndex();
 
     // collect all relevant TSEs
     TTSEMap::const_iterator rtse_it = m_TSE_annot.find(idh);
     if ( rtse_it != m_TSE_annot.end() ) {
         ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
-            if ( source_name && (*tse)->GetDataSourceName() != *source_name ) {
-                // wrong data source name
-                continue;
-            }
             if ( (*tse)->ContainsSeqid(idh) ) {
                 // skip TSE containing sequence
                 continue;
@@ -919,7 +901,7 @@ void CDataSource::x_IndexTSE(TTSEMap& tse_map,
         it = tse_map.insert(it, TTSEMap::value_type(id, CTSE_LockingSet()));
     }
     _ASSERT(it != tse_map.end() && it->first == id);
-    _VERIFY(it->second.insert(tse_info));
+    it->second.insert(tse_info);
 }
 
 
@@ -976,8 +958,10 @@ void CDataSource::x_IndexAnnotTSEs(CTSE_Info* tse_info)
 {
     TAnnotWriteLockGuard guard(m_DSAnnotLock);
     _TRACE("x_IndexAnnotTSEs("<<&tse_info->GetTSE()<<")");
-    ITERATE ( CTSE_Info::TAnnotObjs, it, tse_info->m_AnnotObjs ) {
-        x_IndexTSE(m_TSE_annot, it->first, tse_info);
+    ITERATE ( CTSE_Info::TNamedAnnotObjs, nit, tse_info->m_NamedAnnotObjs ) {
+        ITERATE ( CTSE_Info::TAnnotObjs, it, nit->second ) {
+            x_IndexTSE(m_TSE_annot, it->first, tse_info);
+        }
     }
     if ( tse_info->m_DirtyAnnotIndex ) {
         m_TSE_annot_is_dirty = true;
@@ -989,8 +973,10 @@ void CDataSource::x_UnindexAnnotTSEs(CTSE_Info* tse_info)
 {
     TAnnotWriteLockGuard guard(m_DSAnnotLock);
     _TRACE("x_UnindexAnnotTSEs("<<&tse_info->GetTSE()<<")");
-    ITERATE ( CTSE_Info::TAnnotObjs, it, tse_info->m_AnnotObjs ) {
-        x_UnindexTSE(m_TSE_annot, it->first, tse_info);
+    ITERATE ( CTSE_Info::TNamedAnnotObjs, nit, tse_info->m_NamedAnnotObjs ) {
+        ITERATE ( CTSE_Info::TAnnotObjs, it, nit->second ) {
+            x_UnindexTSE(m_TSE_annot, it->first, tse_info);
+        }
     }
 }
 
@@ -1171,6 +1157,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.121  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.120  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

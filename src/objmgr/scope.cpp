@@ -236,7 +236,6 @@ void CScope_Impl::x_ClearCacheOnNewData(void)
             it->second.m_Bioseq_Info.Reset();
         }
         it->second.m_AllAnnotRef_Info.Reset();
-        it->second.m_NamedAnnotRef_Info.clear();
     }
 }
 
@@ -246,7 +245,6 @@ void CScope_Impl::x_ClearAnnotCache(void)
     // Clear annot cache
     NON_CONST_ITERATE ( TSeq_idMap, it, m_Seq_idMap ) {
         it->second.m_AllAnnotRef_Info.Reset();
-        it->second.m_NamedAnnotRef_Info.clear();
     }
 }
 
@@ -793,8 +791,7 @@ void CScope_Impl::UpdateAnnotIndex(const CSeq_annot& annot)
 
 
 CConstRef<CScope_Impl::TAnnotRefSet>
-CScope_Impl::GetTSESetWithAllAnnots(const CSeq_id_Handle& idh,
-                                    const SAnnotTypeSelector& sel)
+CScope_Impl::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     TSeq_idMapValue& info = x_GetSeq_id_Info(idh);
@@ -815,7 +812,7 @@ CScope_Impl::GetTSESetWithAllAnnots(const CSeq_id_Handle& idh,
 
             TTSE_LockSet with_ref;
             for (CPriority_I it(m_setDataSrc); it; ++it) {
-                it->GetDataSource().GetTSESetWithAnnots(idh, sel, with_ref, 0);
+                it->GetDataSource().GetTSESetWithAnnots(idh, with_ref);
                 CFastMutexGuard guard(it->GetMutex());
                 const TTSE_LockSet& tse_cache = it->GetTSESet();
                 ITERATE(TTSE_LockSet, ref_it, with_ref) {
@@ -838,8 +835,7 @@ CScope_Impl::GetTSESetWithAllAnnots(const CSeq_id_Handle& idh,
 
 
 CConstRef<CScope_Impl::TAnnotRefSet>
-CScope_Impl::GetTSESetWithAllAnnots(const CBioseq_Handle& bh,
-                                    const SAnnotTypeSelector& sel)
+CScope_Impl::GetTSESetWithAnnots(const CBioseq_Handle& bh)
 {
     TReadLockGuard rguard(m_Scope_Conf_RWLock);
     TSeq_idMapValue& info = *bh.m_Bioseq_Info->m_ScopeInfo;
@@ -859,8 +855,7 @@ CScope_Impl::GetTSESetWithAllAnnots(const CBioseq_Handle& bh,
 
             TTSE_LockSet with_ref;
             for (CPriority_I it(m_setDataSrc); it; ++it) {
-                it->GetDataSource().GetTSESetWithAnnots(info.first,
-                                                        sel, with_ref, 0);
+                it->GetDataSource().GetTSESetWithAnnots(info.first, with_ref);
                 CFastMutexGuard guard(it->GetMutex());
                 const TTSE_LockSet& tse_cache = it->GetTSESet();
                 ITERATE(TTSE_LockSet, ref_it, with_ref) {
@@ -877,116 +872,6 @@ CScope_Impl::GetTSESetWithAllAnnots(const CBioseq_Handle& bh,
         }
     }}
     return info.second.m_AllAnnotRef_Info;
-}
-
-
-CConstRef<CScope_Impl::TAnnotRefSet>
-CScope_Impl::GetTSESetWithNamedAnnots(const CSeq_id_Handle& idh,
-                                      const SAnnotTypeSelector& sel,
-                                      const string& source_name)
-{
-    TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    TSeq_idMapValue& info = x_GetSeq_id_Info(idh);
-    CRef<CBioseq_ScopeInfo> binfo = x_InitBioseq_Info(info);
-    SSeq_id_ScopeInfo::TAnnotRefInfo* ref_info;
-    {{
-        CFastMutexGuard guard(m_NamedAnnotRef_Lock);
-        ref_info = &info.second.m_NamedAnnotRef_Info[source_name];
-    }}
-
-    CInitGuard init(*ref_info, m_MutexPool);
-    if ( init ) {
-        CRef<TAnnotRefSet> ref_set(new TAnnotRefSet);
-        TTSE_LockSet& tse_set = *ref_set;
-
-        if ( binfo->HasBioseq() ) {
-            _TRACE("GetTSESetWithAnnots: "<<idh.AsString()
-                   <<" main TSE: " <<&binfo->GetBioseq_Info().GetTSE());
-            TTSE_Lock tse(&binfo->GetTSE_Info());
-            if ( tse->GetDataSourceName() == source_name ) {
-                tse_set.insert(tse);
-            }
-        }
-
-        TTSE_LockSet with_ref;
-        for (CPriority_I it(m_setDataSrc); it; ++it) {
-            it->GetDataSource().GetTSESetWithAnnots(idh, sel, with_ref,
-                                                    &source_name);
-            CFastMutexGuard guard(it->GetMutex());
-            const TTSE_LockSet& tse_cache = it->GetTSESet();
-            ITERATE(TTSE_LockSet, ref_it, with_ref) {
-                if ( (*ref_it)->IsDead() &&
-                     tse_cache.find(*ref_it) == tse_cache.end() ) {
-                    continue;
-                }
-
-                if ( (*ref_it)->GetDataSourceName() != source_name ) {
-                    continue;
-                }
-
-                _TRACE("GetTSESetWithNamedAnnots: "<<idh.AsString()
-                       <<" ref TSE: " <<&(*ref_it)->GetTSE());
-                tse_set.insert(*ref_it);
-            }
-            with_ref.clear();
-        }
-        *ref_info = ref_set;
-    }
-    return *ref_info;
-}
-
-
-CConstRef<CScope_Impl::TAnnotRefSet>
-CScope_Impl::GetTSESetWithNamedAnnots(const CBioseq_Handle& bh,
-                                      const SAnnotTypeSelector& sel,
-                                      const string& source_name)
-{
-    TReadLockGuard rguard(m_Scope_Conf_RWLock);
-    TSeq_idMapValue& info = *bh.m_Bioseq_Info->m_ScopeInfo;
-    _ASSERT(info.second.m_Bioseq_Info);
-    CRef<CBioseq_ScopeInfo> binfo = info.second.m_Bioseq_Info;
-    SSeq_id_ScopeInfo::TAnnotRefInfo* ref_info;
-    {{
-        CFastMutexGuard guard(m_NamedAnnotRef_Lock);
-        ref_info = &info.second.m_NamedAnnotRef_Info[source_name];
-    }}
-
-    CInitGuard init(*ref_info, m_MutexPool);
-    if ( init ) {
-        CRef<TAnnotRefSet> ref_set(new TAnnotRefSet);
-        TTSE_LockSet& tse_set = *ref_set;
-
-        if ( binfo->HasBioseq() ) {
-            TTSE_Lock tse(&binfo->GetTSE_Info());
-            if ( tse->GetDataSourceName() == source_name ) {
-                tse_set.insert(tse);
-            }
-        }
-
-        TTSE_LockSet with_ref;
-        for (CPriority_I it(m_setDataSrc); it; ++it) {
-            it->GetDataSource().GetTSESetWithAnnots(info.first,
-                                                    sel, with_ref,
-                                                    &source_name);
-            CFastMutexGuard guard(it->GetMutex());
-            const TTSE_LockSet& tse_cache = it->GetTSESet();
-            ITERATE(TTSE_LockSet, ref_it, with_ref) {
-                if ( (*ref_it)->IsDead() &&
-                     tse_cache.find(*ref_it) == tse_cache.end() ) {
-                    continue;
-                }
-
-                if ( (*ref_it)->GetDataSourceName() != source_name ) {
-                    continue;
-                }
-
-                tse_set.insert(*ref_it);
-            }
-            with_ref.clear();
-        }
-        *ref_info = ref_set;
-    }
-    return *ref_info;
 }
 
 
@@ -1132,6 +1017,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.82  2003/09/30 16:22:03  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

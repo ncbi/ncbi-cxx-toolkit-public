@@ -49,6 +49,7 @@ BEGIN_SCOPE(objects)
 
 class CDataSource;
 class CHandleRangeMap;
+struct SAnnotTypeSelector;
 class CSeq_align;
 class CSeq_graph;
 class CSeq_feat;
@@ -75,13 +76,8 @@ public:
     CAnnotObject_Info(CSeq_graph& graph,
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
-                      TAnnotType annot_type,
-                      TFeatType feat_type,
-                      TFeatSubtype feat_subtype);
+                      const SAnnotTypeSelector& sel);
     ~CAnnotObject_Info(void);
-
-    CAnnotObject_Info(const CAnnotObject_Info&);
-    const CAnnotObject_Info& operator=(const CAnnotObject_Info&);
 
     // Get Seq-annot, containing the element
     const CSeq_annot& GetSeq_annot(void) const;
@@ -105,7 +101,7 @@ public:
     TFeatType GetFeatType(void) const;
     TFeatSubtype GetFeatSubtype(void) const;
 
-    const CRef<CObject>& GetObject(void) const;
+    CRef<CObject> GetObject(void) const;
     const CObject* GetObjectPointer(void) const;
 
     bool IsFeat(void) const;
@@ -133,12 +129,11 @@ private:
 
     void x_ProcessAlign(CHandleRangeMap& hrmap, const CSeq_align& align) const;
 
-    CSeq_annot_Info*             m_Seq_annot_Info; // parent annot
+    CSeq_annot_Info*             m_Seq_annot_Info; // container Seq-annot
     CRef<CObject>                m_Object;         // annot object itself
-    Uint1                        m_AnnotType;      // annot object type
+    Uint2                        m_FeatSubtype;    // feature subtype
     Uint1                        m_FeatType;       // feature type or e_not_set
-    Uint1                        m_FeatSubtype;    // feature subtype
-    bool                         m_ChunkStub;      // reference to split chunk
+    Uint1                        m_AnnotType;      // annot object type
 };
 
 
@@ -180,12 +175,12 @@ CAnnotObject_Info::TFeatSubtype CAnnotObject_Info::GetFeatSubtype(void) const
 inline
 bool CAnnotObject_Info::IsChunkStub(void) const
 {
-    return m_ChunkStub;
+    return !m_Object;
 }
 
 
 inline
-const CRef<CObject>& CAnnotObject_Info::GetObject(void) const
+CRef<CObject> CAnnotObject_Info::GetObject(void) const
 {
     return m_Object;
 }
@@ -223,7 +218,7 @@ inline
 const CSeq_feat* CAnnotObject_Info::GetFeatFast(void) const
 {
     _ASSERT(IsFeat() && !IsChunkStub());
-    return static_cast<const CSeq_feat*>(m_Object.GetPointerOrNull());
+    return static_cast<const CSeq_feat*>(m_Object.GetPointer());
 }
 
 
@@ -231,7 +226,7 @@ inline
 const CSeq_graph* CAnnotObject_Info::GetGraphFast(void) const
 {
     _ASSERT(IsGraph() && !IsChunkStub());
-    return static_cast<const CSeq_graph*>(m_Object.GetPointerOrNull());
+    return static_cast<const CSeq_graph*>(m_Object.GetPointer());
 }
 
 
@@ -239,7 +234,7 @@ inline
 const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
 {
     _ASSERT(IsAlign() && !IsChunkStub());
-    return static_cast<const CSeq_align*>(m_Object.GetPointerOrNull());
+    return static_cast<const CSeq_align*>(m_Object.GetPointer());
 }
 
 
@@ -263,6 +258,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.12  2003/09/30 16:22:00  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

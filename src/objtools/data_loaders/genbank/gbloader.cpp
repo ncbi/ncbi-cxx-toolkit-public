@@ -186,6 +186,7 @@ static const char* const s_ChoiceName[] = {
     "eGraph",
     "eAlign",
     "eAll",
+    "eAnnot",
     "???"
 };
 
@@ -204,27 +205,6 @@ void CGBDataLoader::GetRecords(const CSeq_id_Handle& idh,
 void CGBDataLoader::GetChunk(CTSE_Chunk_Info& chunk_info)
 {
     x_GetChunk(GetTSEinfo(chunk_info.GetTSE_Info()), chunk_info);
-}
-
-
-void CGBDataLoader::GetAllAnnotRecords(const CSeq_id_Handle& idh)
-{
-    TMask sr_mask = CSeqref::fHasAll;
-    x_GetRecords("eAllAnnots", idh, sr_mask);
-}
-
-
-void CGBDataLoader::GetNamedAnnotRecords(const CSeq_id_Handle& idh,
-                                         const string& source_name)
-{
-    TMask sr_mask = 0;
-    if ( source_name.empty() ) {
-        sr_mask |= CSeqref::fHasAllLocal;
-    }
-    else if ( source_name == "SNP" ) {
-        sr_mask |= CSeqref::fHasExternal;
-    }
-    x_GetRecords("eNamedAnnots", idh, sr_mask);
 }
 
 
@@ -600,6 +580,10 @@ CGBDataLoader::TMask CGBDataLoader::x_Request2SeqrefMask(const EChoice choice)
     case eAlign:
         // SeqGraph
         return CSeqref::fHasAlign;
+    case eAnnot:
+        // all annotations
+        return CSeqref::fHasAlign | CSeqref::fHasGraph |
+            CSeqref::fHasFeatures | CSeqref::fHasExternal;
     default:
         return 0;
     }
@@ -998,6 +982,15 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.85  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

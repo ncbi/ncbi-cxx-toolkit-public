@@ -140,7 +140,6 @@ struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
     typedef set<TTSE_Lock>                           TTSE_LockSet;
     typedef CObjectFor<TTSE_LockSet>                 TAnnotRefSet;
     typedef CInitMutex<TAnnotRefSet>                 TAnnotRefInfo;
-    typedef map<string, TAnnotRefInfo>               TNamedAnnotRefInfo;
 
     // owner scope
     CScope*                       m_Scope;
@@ -150,7 +149,6 @@ struct NCBI_XOBJMGR_EXPORT SSeq_id_ScopeInfo
 
     // caches and locks other (not main) TSEs with annotations on this Seq-id
     TAnnotRefInfo                 m_AllAnnotRef_Info;
-    TNamedAnnotRefInfo            m_NamedAnnotRef_Info;
 };
 
 
@@ -250,6 +248,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.5  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

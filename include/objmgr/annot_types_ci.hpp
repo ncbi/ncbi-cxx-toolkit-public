@@ -45,6 +45,9 @@
 #include <vector>
 
 BEGIN_NCBI_SCOPE
+
+class CReadLockGuard;
+
 BEGIN_SCOPE(objects)
 
 class CScope;
@@ -62,7 +65,9 @@ class CHandleRange;
 struct SAnnotObject_Index;
 class CSeq_annot_SNP_Info;
 struct SSNP_Info;
+struct SIdAnnotObjs;
 class CSeq_loc_Conversion;
+class CAnnotName;
 
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
@@ -226,6 +231,13 @@ private:
                   const CSeq_id_Handle& id,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
+    bool x_Search(const CTSE_Info& tse_info,
+                  const SIdAnnotObjs* objs,
+                  CReadLockGuard& guard,
+                  const CAnnotName& name,
+                  const CSeq_id_Handle& id,
+                  const CHandleRange& hr,
+                  CSeq_loc_Conversion* cvt);
     void x_SearchAll(void);
     void x_SearchAll(const CSeq_entry_Info& entry_info);
     void x_SearchAll(const CSeq_annot_Info& annot_info);
@@ -236,11 +248,16 @@ private:
 
     bool x_NeedSNPs(void) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
-    bool x_MatchDataSource(const CTSE_Info& tse_info) const;
     bool x_MatchType(const CAnnotObject_Info& annot_info) const;
     bool x_MatchRange(const CHandleRange& hr,
                       const CRange<TSeqPos>& range,
                       const SAnnotObject_Index& index) const;
+
+    bool x_HaveSubtype(const CTSE_Info& tse,
+                       const SIdAnnotObjs& objs,
+                       CSeqFeatData::ESubtype subtype) const;
+    bool x_HaveSNPSubtype(const CTSE_Info& tse,
+                       const SIdAnnotObjs& objs) const;
 
     // Set of all the annotations found
     TAnnotSet                    m_AnnotSet;
@@ -480,6 +497,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.53  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

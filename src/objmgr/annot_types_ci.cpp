@@ -34,7 +34,7 @@
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -641,7 +641,7 @@ void CAnnotTypes_CI::x_Sort(void)
 {
     switch ( m_SortOrder ) {
     case eSortOrder_Normal:
-        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+        if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
             sort(m_AnnotSet.begin(), m_AnnotSet.end(),
                  CAnnotObject_Ref_Less<CFeat_Less>());
         }
@@ -651,7 +651,7 @@ void CAnnotTypes_CI::x_Sort(void)
         }
         break;
     case eSortOrder_Reverse:
-        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+        if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
             sort(m_AnnotSet.begin(), m_AnnotSet.end(),
                  CAnnotObject_Ref_Reverse_Less<CFeat_Less>());
         }
@@ -687,34 +687,36 @@ CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 
 
 inline
-bool
-CAnnotTypes_CI::x_MatchDataSource(const CTSE_Info& tse_info) const
-{
-    _ASSERT(IsSetDataSources());
-    return HasDataSource(tse_info.GetDataSourceName());
-}
-
-
-inline
 bool CAnnotTypes_CI::x_MatchType(const CAnnotObject_Info& annot_info) const
 {
-    if ( m_AnnotChoice != CSeq_annot::C_Data::e_not_set ) {
-        if ( m_AnnotChoice != annot_info.GetAnnotType() ) {
-LOG_POST("invalid annot-choice: " << annot_info.GetAnnotType() << " != " << m_AnnotChoice);
+    if ( GetAnnotChoice() != CSeq_annot::C_Data::e_not_set ) {
+#ifdef _DEBUG
+        if ( GetAnnotChoice() != annot_info.GetAnnotType() ) {
+            LOG_POST("invalid annot-choice: " <<
+                     annot_info.GetAnnotType() << " != " << GetAnnotChoice());
             return false;
         }
-        if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-            if ( m_FeatSubtype != CSeqFeatData::eSubtype_any ) {
-                if ( m_FeatSubtype != annot_info.GetFeatSubtype() ) {
-LOG_POST("invalid feat-subtype: " << annot_info.GetFeatSubtype() << " != " << m_FeatSubtype);
+#endif
+        if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
+            if ( GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
+#ifdef _DEBUG
+                if ( GetFeatSubtype() != annot_info.GetFeatSubtype() ) {
+                    LOG_POST("invalid feat-subtype: " <<
+                             annot_info.GetFeatSubtype() << " != " <<
+                             GetFeatSubtype());
                     return false;
                 }
+#endif
             }
-            else if ( m_FeatChoice != CSeqFeatData::e_not_set ) {
-                if ( m_FeatChoice != annot_info.GetFeatType() ) {
-LOG_POST("invalid feat-choice: " << annot_info.GetFeatType() << " != " << m_FeatChoice);
+            else if ( GetFeatChoice() != CSeqFeatData::e_not_set ) {
+#ifdef _DEBUG
+                if ( GetFeatChoice() != annot_info.GetFeatType() ) {
+                    LOG_POST("invalid feat-choice: " <<
+                             annot_info.GetFeatType() << " != " <<
+                             GetFeatChoice());
                     return false;
                 }
+#endif
             }
         }
     }
@@ -725,17 +727,17 @@ LOG_POST("invalid feat-choice: " << annot_info.GetFeatType() << " != " << m_Feat
 inline
 bool CAnnotTypes_CI::x_NeedSNPs(void) const
 {
-    if ( m_AnnotChoice != CSeq_annot::C_Data::e_not_set ) {
-        if ( m_AnnotChoice != CSeq_annot::C_Data::e_Ftable ) {
+    if ( GetAnnotChoice() != CSeq_annot::C_Data::e_not_set ) {
+        if ( GetAnnotChoice() != CSeq_annot::C_Data::e_Ftable ) {
             return false;
         }
-        if ( m_FeatSubtype != CSeqFeatData::eSubtype_any ) {
-            if ( m_FeatSubtype != CSeqFeatData::eSubtype_variation ) {
+        if ( GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
+            if ( GetFeatSubtype() != CSeqFeatData::eSubtype_variation ) {
                 return false;
             }
         }
-        else if ( m_FeatChoice != CSeqFeatData::e_not_set ) {
-            if ( m_FeatChoice != CSeqFeatData::e_Imp ) {
+        else if ( GetFeatChoice() != CSeqFeatData::e_not_set ) {
+            if ( GetFeatChoice() != CSeqFeatData::e_Imp ) {
                 return false;
             }
         }
@@ -822,10 +824,10 @@ void CAnnotTypes_CI::x_GetTSE_Info(void)
     }
     _ASSERT(m_LimitObjectInfo);
     _ASSERT(tse_info);
-    if ( !IsSetDataSources() || x_MatchDataSource(*tse_info) ) {
-        tse_info->GetDataSource().UpdateAnnotIndex(*tse_info);
+    tse_info->UpdateAnnotIndex();
+    //if ( !IsSetAnnotsNames() || x_MatchAnnotName(*tse_info) ) {
         m_TSE_LockSet.insert(tse_info);
-    }
+    //}
 }
 
 
@@ -839,35 +841,16 @@ bool CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 
     bool found = false;
     if ( m_LimitObjectType == eLimit_None ) {
-        if ( IsSetDataSources() ) {
-            ITERATE ( SSources, it, *m_Sources ) {
-                // specific data source
-                CConstRef<CScope_Impl::TAnnotRefSet> tse_set;
-                if ( bh ) {
-                    tse_set = m_Scope->GetTSESetWithNamedAnnots(bh, *this,
-                                                                *it);
-                }
-                else {
-                    tse_set = m_Scope->GetTSESetWithNamedAnnots(id, *this,
-                                                                *it);
-                }
-                if ( tse_set ) {
-                    found = x_Search(*tse_set, id, hr, cvt) || found;
-                }
-            }
+        // any data source
+        CConstRef<CScope_Impl::TAnnotRefSet> tse_set;
+        if ( bh ) {
+            tse_set = m_Scope->GetTSESetWithAnnots(bh);
         }
         else {
-            // any data source
-            CConstRef<CScope_Impl::TAnnotRefSet> tse_set;
-            if ( bh ) {
-                tse_set = m_Scope->GetTSESetWithAllAnnots(bh, *this);
-            }
-            else {
-                tse_set = m_Scope->GetTSESetWithAllAnnots(id, *this);
-            }
-            if ( tse_set ) {
-                found = x_Search(*tse_set, id, hr, cvt) || found;
-            }
+            tse_set = m_Scope->GetTSESetWithAnnots(id);
+        }
+        if ( tse_set ) {
+            found = x_Search(*tse_set, id, hr, cvt) || found;
         }
     }
     else {
@@ -882,136 +865,212 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
                               const CHandleRange& hr,
                               CSeq_loc_Conversion* cvt)
 {
-    CHandleRange::TRange range = hr.GetOverlappingRange();
-
     bool found = false;
     ITERATE ( TTSE_LockSet, tse_it, tse_set ) {
-        const CTSE_Info& tse_info = **tse_it;
-        // for checking ContainsSeqid() for each tse only once:
-        bool checked_id = false;
+        const CTSE_Info& tse = **tse_it;
 
-        CTSE_Info::TAnnotReadLockGuard guard(tse_info.m_AnnotObjsLock);
-
-        const CTSE_Info::SIdAnnotObjs* objs = tse_info.x_GetIdObjects(id);
-        if ( !objs ) {
-            continue;
-        }
-
-        pair<size_t, size_t> idxs =
-            CTSE_Info::x_GetIndexRange(GetAnnotChoice(),
-                                       GetFeatChoice(),
-                                       GetFeatSubtype());
-        idxs.second = min(idxs.second, objs->m_AnnotSet.size());
-        if ( idxs.first < idxs.second ) {
-            m_TSE_LockSet.insert(*tse_it);
-        }
-        for ( size_t index = idxs.first; index < idxs.second; ++index ) {
-            size_t start_size = m_AnnotSet.size(); // for rollback
-
-            const CTSE_Info::TRangeMap& rmap = objs->m_AnnotSet[index];
-            if ( rmap.empty() ) {
-                continue;
+        CTSE_Info::TAnnotReadLockGuard guard(tse.m_AnnotObjsLock);
+        if ( !m_AllNamedAnnots && IsSetAnnotsNames() ) {
+            // only selected annots
+            ITERATE ( TAnnotsNames, iter, m_AnnotsNames ) {
+                const SIdAnnotObjs* objs = tse.x_GetIdObjects(*iter, id);
+                if ( !objs ) {
+                    continue;
+                }
+                found = x_Search(tse, objs, guard, *iter,
+                                 id, hr, cvt) || found;
             }
-
-            // Found at least one annotation in the sequence TSE regardless of
-            // its range.
-            if ( !found && !checked_id ) {
-                // check ContainsSeqid() for each tse only once:
-                found = tse_info.ContainsSeqid(id);
-                checked_id = true;
+        }
+        else {
+            // all annots, maybe without unnamed
+            CTSE_Info::TNamedAnnotObjs::const_iterator iter =
+                tse.m_NamedAnnotObjs.begin();
+            if ( m_AllNamedAnnots && iter != tse.m_NamedAnnotObjs.end() &&
+                 !iter->first.IsNamed() && !HasAnnotName(iter->first) ) {
+                // skip unnamed annots
+                ++iter;
             }
+            for ( ; iter != tse.m_NamedAnnotObjs.end(); ++iter ) {
+                const SIdAnnotObjs* objs =
+                    tse.x_GetIdObjects(iter->second, id);
+                if ( !objs ) {
+                    continue;
+                }
+                found = x_Search(tse, objs, guard, iter->first,
+                                 id, hr, cvt) || found;
+            }
+        }
+    }
+    return found;
+}
 
-            for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
-                  aoit; ++aoit ) {
-                const CAnnotObject_Info& annot_info =
-                    *aoit->second.m_AnnotObject_Info;
 
-                _ASSERT(x_MatchType(annot_info));
+inline
+bool CAnnotTypes_CI::x_HaveSubtype(const CTSE_Info& tse,
+                                   const SIdAnnotObjs& objs,
+                                   CSeqFeatData::ESubtype subtype) const
+{
+    return size_t(subtype) < objs.m_AnnotSet.size() &&
+        !objs.m_AnnotSet[subtype].empty();
+}
 
-                if ( annot_info.IsChunkStub() ) {
-                    const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
-                    if ( chunk.NotLoaded() ) {
-                        // New annot objects are to be loaded,
-                        // so we'll need to restart scan of current range.
 
-                        // Forget already found object
-                        // as they will be found again:
-                        m_AnnotSet.resize(start_size);
+inline
+bool CAnnotTypes_CI::x_HaveSNPSubtype(const CTSE_Info& tse,
+                                      const SIdAnnotObjs& objs) const
+{
+    return !objs.m_SNPSet.empty();
+}
 
-                        // Release lock for tse update:
-                        guard.Release();
-                        
-                        // Load the stub:
-                        const_cast<CTSE_Chunk_Info&>(chunk).Load();
 
-                        // Acquire the lock again:
-                        guard.Guard(tse_info.m_AnnotObjsLock);
+bool CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
+                              const SIdAnnotObjs* objs,
+                              CReadLockGuard& guard,
+                              const CAnnotName& annot_name,
+                              const CSeq_id_Handle& id,
+                              const CHandleRange& hr,
+                              CSeq_loc_Conversion* cvt)
+{
+    _ASSERT(objs);
 
-                        // Reget range map pointer as it may change:
-                        objs = tse_info.x_GetIdObjects(id);
-                        _ASSERT(objs);
-
-                        // Restart this index again:
-                        --index;
+    bool found = false;
+    if ( m_AdaptiveDepth && tse.ContainsSeqid(id) ) {
+        if ( m_AdaptiveTriggers.empty() ) {
+            if ( x_HaveSubtype(tse, *objs, CSeqFeatData::eSubtype_gene) ||
+                 x_HaveSubtype(tse, *objs, CSeqFeatData::eSubtype_cdregion) ||
+                 x_HaveSubtype(tse, *objs, CSeqFeatData::eSubtype_mRNA) ) {
+                found = true;
+            }
+        }
+        else {
+            ITERATE ( TAdaptiveTriggers, it, m_AdaptiveTriggers ) {
+                pair<size_t, size_t> idxs = CTSE_Info::x_GetIndexRange(*it,
+                                                                       *objs);
+                for ( size_t i = idxs.first; i < idxs.second; ++i ) {
+                    if ( x_HaveSubtype(tse, *objs,
+                                       CSeqFeatData::ESubtype(i)) ) {
+                        found = true;
                         break;
                     }
-                    else {
-                        // Skip chunk stub
-                        continue;
-                    }
-                }
-
-                if ( !x_MatchLimitObject(annot_info) ) {
-                    continue;
-                }
-                
-                if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
-                    continue;
-                }
-                
-                CAnnotObject_Ref annot_ref(annot_info);
-                if ( cvt ) {
-                    cvt->Convert(annot_ref, m_FeatProduct);
-                }
-                else {
-                    annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct);
-                }
-                m_AnnotSet.push_back(annot_ref);
-
-                // Limit number of annotations to m_MaxSize
-                if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
-                    return found;
-            }
-        }
-
-        if ( x_NeedSNPs() ) {
-            ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
-                const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
-                CSeq_annot_SNP_Info::const_iterator snp_it =
-                    snp_annot.FirstIn(range);
-                if ( snp_it != snp_annot.end() ) {
-                    m_TSE_LockSet.insert(*tse_it);
-                    TSeqPos index = snp_it - snp_annot.begin() - 1;
-                    do {
-                        ++index;
-                        const SSNP_Info& snp = *snp_it;
-                        if ( snp.NoMore(range) ) {
+                    if ( i == CSeqFeatData::eSubtype_variation ) {
+                        if ( x_HaveSNPSubtype(tse, *objs) ) {
+                            found = true;
                             break;
                         }
-                        if ( snp.NotThis(range) ) {
-                            continue;
-                        }
-
-                        found = true;
-
-                        CAnnotObject_Ref annot_ref(snp_annot, index);
-                        annot_ref.SetSNP_Point(snp, cvt);
-                        m_AnnotSet.push_back(annot_ref);
-                    } while ( ++snp_it != snp_annot.end() );
+                    }
                 }
             }
         }
     }
+
+    CHandleRange::TRange range = hr.GetOverlappingRange();
+
+    pair<size_t, size_t> idxs = CTSE_Info::x_GetIndexRange(*this, *objs);
+    if ( idxs.first < idxs.second ) {
+        m_TSE_LockSet.insert(ConstRef(&tse));
+    }
+
+    for ( size_t index = idxs.first; index < idxs.second; ++index ) {
+        size_t start_size = m_AnnotSet.size(); // for rollback
+        
+        const CTSE_Info::TRangeMap& rmap = objs->m_AnnotSet[index];
+        if ( rmap.empty() ) {
+            continue;
+        }
+
+        for ( CTSE_Info::TRangeMap::const_iterator aoit(rmap.begin(range));
+              aoit; ++aoit ) {
+            const CAnnotObject_Info& annot_info =
+                *aoit->second.m_AnnotObject_Info;
+
+            _ASSERT(x_MatchType(annot_info));
+
+            if ( annot_info.IsChunkStub() ) {
+                const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
+                if ( chunk.NotLoaded() ) {
+                    // New annot objects are to be loaded,
+                    // so we'll need to restart scan of current range.
+
+                    // Forget already found object
+                    // as they will be found again:
+                    m_AnnotSet.resize(start_size);
+
+                    CAnnotName name(annot_name);
+
+                    // Release lock for tse update:
+                    guard.Release();
+                        
+                    // Load the stub:
+                    const_cast<CTSE_Chunk_Info&>(chunk).Load();
+
+                    // Acquire the lock again:
+                    guard.Guard(tse.m_AnnotObjsLock);
+
+                    // Reget range map pointer as it may change:
+                    objs = tse.x_GetIdObjects(name, id);
+                    _ASSERT(objs);
+
+                    // Restart this index again:
+                    --index;
+                    break;
+                }
+                else {
+                    // Skip chunk stub
+                    continue;
+                }
+            }
+
+            if ( !x_MatchLimitObject(annot_info) ) {
+                continue;
+            }
+                
+            if ( !x_MatchRange(hr, aoit->first, aoit->second) ) {
+                continue;
+            }
+                
+            CAnnotObject_Ref annot_ref(annot_info);
+            if ( cvt ) {
+                cvt->Convert(annot_ref, m_FeatProduct);
+            }
+            else {
+                annot_ref.SetAnnotObjectRange(aoit->first, m_FeatProduct);
+            }
+            m_AnnotSet.push_back(annot_ref);
+
+            // Limit number of annotations to m_MaxSize
+            if ( m_AnnotSet.size() >= m_MaxSize )
+                return found;
+        }
+    }
+
+    if ( x_NeedSNPs() ) {
+        ITERATE ( CTSE_Info::TSNPSet, snp_annot_it, objs->m_SNPSet ) {
+            const CSeq_annot_SNP_Info& snp_annot = **snp_annot_it;
+            CSeq_annot_SNP_Info::const_iterator snp_it =
+                snp_annot.FirstIn(range);
+            if ( snp_it != snp_annot.end() ) {
+                m_TSE_LockSet.insert(ConstRef(&tse));
+                TSeqPos index = snp_it - snp_annot.begin() - 1;
+                do {
+                    ++index;
+                    const SSNP_Info& snp = *snp_it;
+                    if ( snp.NoMore(range) ) {
+                        break;
+                    }
+                    if ( snp.NotThis(range) ) {
+                        continue;
+                    }
+
+                    CAnnotObject_Ref annot_ref(snp_annot, index);
+                    annot_ref.SetSNP_Point(snp, cvt);
+                    m_AnnotSet.push_back(annot_ref);
+                    if ( m_AnnotSet.size() >= m_MaxSize )
+                        return found;
+                } while ( ++snp_it != snp_annot.end() );
+            }
+        }
+    }
+
     return found;
 }
 
@@ -1080,13 +1139,13 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_entry_Info& entry_info)
     // Collect all annotations from the entry
     ITERATE( CSeq_entry_Info::TAnnots, ait, entry_info.m_Annots ) {
         x_SearchAll(**ait);
-        if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+        if ( m_AnnotSet.size() >= m_MaxSize )
             return;
     }
     // Collect annotations from all children
     ITERATE( CSeq_entry_Info::TEntries, cit, entry_info.m_Entries ) {
         x_SearchAll(**cit);
-        if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+        if ( m_AnnotSet.size() >= m_MaxSize )
             return;
     }
 }
@@ -1095,7 +1154,8 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_entry_Info& entry_info)
 void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
 {
     // Collect all annotations from the annot
-    ITERATE( CSeq_annot_Info::TObjectInfos, aoit, annot_info.m_ObjectInfos ) {
+    ITERATE ( SAnnotObjects_Info::TObjectInfos, aoit,
+              annot_info.m_ObjectInfos.m_Infos ) {
         if ( !x_MatchType(*aoit) ) {
             continue;
         }
@@ -1103,7 +1163,7 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
         // annot_ref.m_TotalRange;
         m_AnnotSet.push_back(annot_ref);
         // Limit number of annotations to m_MaxSize
-        if ( m_MaxSize  &&  m_AnnotSet.size() >= size_t(m_MaxSize) )
+        if ( m_AnnotSet.size() >= m_MaxSize )
             return;
     }
 
@@ -1116,6 +1176,8 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
             CAnnotObject_Ref annot_ref(snp_annot, index);
             annot_ref.SetSNP_Point(snp, 0);
             m_AnnotSet.push_back(annot_ref);
+            if ( m_AnnotSet.size() >= m_MaxSize )
+                return;
             ++index;
         }
     }
@@ -1180,6 +1242,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.92  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

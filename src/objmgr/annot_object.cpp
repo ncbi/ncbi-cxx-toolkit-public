@@ -57,63 +57,6 @@ BEGIN_SCOPE(objects)
 
 ////////////////////////////////////////////////////////////////////
 //
-//  SAnnotSelector
-//
-
-SAnnotSelector& SAnnotSelector::SetLimitNone(void)
-{
-    m_LimitObjectType = eLimit_None;
-    m_LimitObject.Reset();
-    return *this;
-}
-
-
-SAnnotSelector& SAnnotSelector::SetLimitTSE(const CSeq_entry* tse)
-{
-    m_LimitObjectType = tse ? eLimit_TSE : eLimit_None;
-    m_LimitObject.Reset(tse);
-    return *this;
-}
-
-
-SAnnotSelector& SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* entry)
-{
-    m_LimitObjectType = entry ? eLimit_Entry : eLimit_None;
-    m_LimitObject.Reset(entry);
-    return *this;
-}
-
-
-SAnnotSelector& SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* annot)
-{
-    m_LimitObjectType = annot ? eLimit_Annot : eLimit_None;
-    m_LimitObject.Reset(annot);
-    return *this;
-}
-
-
-SAnnotSelector::SSources::SSources(void)
-{
-}
-
-
-SAnnotSelector::SSources::~SSources(void)
-{
-}
-
-
-SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
-{
-    if ( !m_Sources ) {
-        m_Sources.Reset(new SSources);
-    }
-    m_Sources->m_Sources.insert(source);
-    return *this;
-}
-
-
-////////////////////////////////////////////////////////////////////
-//
 //  CAnnotObject_Info::
 //
 
@@ -121,35 +64,11 @@ SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
 CAnnotObject_Info::CAnnotObject_Info(void)
     : m_Seq_annot_Info(0),
       m_Object(0),
-      m_AnnotType(CSeq_annot::C_Data::e_not_set),
+      m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
-      m_ChunkStub(false)
+      m_AnnotType(CSeq_annot::C_Data::e_not_set)
 {
-}
-
-
-CAnnotObject_Info::CAnnotObject_Info(const CAnnotObject_Info& info)
-    : m_Seq_annot_Info(info.m_Seq_annot_Info),
-      m_Object(info.m_Object),
-      m_AnnotType(info.m_AnnotType),
-      m_FeatType(info.m_FeatType),
-      m_FeatSubtype(info.m_FeatSubtype),
-      m_ChunkStub(info.m_ChunkStub)
-{
-}
-
-
-const CAnnotObject_Info&
-CAnnotObject_Info::operator=(const CAnnotObject_Info& info)
-{
-    m_Seq_annot_Info = info.m_Seq_annot_Info;
-    m_Object = info.m_Object;
-    m_AnnotType = info.m_AnnotType;
-    m_FeatType = info.m_FeatType;
-    m_FeatSubtype = info.m_FeatSubtype;
-    m_ChunkStub = info.m_ChunkStub;
-    return *this;
+    _ASSERT(!IsChunkStub());
 }
 
 
@@ -157,11 +76,11 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
     : m_Seq_annot_Info(&annot),
       m_Object(&feat),
-      m_AnnotType(CSeq_annot::C_Data::e_Ftable),
-      m_FeatType(feat.GetData().Which()),
       m_FeatSubtype(feat.GetData().GetSubtype()),
-      m_ChunkStub(false)
+      m_FeatType(feat.GetData().Which()),
+      m_AnnotType(CSeq_annot::C_Data::e_Ftable)
 {
+    _ASSERT(!IsChunkStub());
 }
 
 
@@ -169,11 +88,11 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
                                      CSeq_annot_Info& annot)
     : m_Seq_annot_Info(&annot),
       m_Object(&align),
-      m_AnnotType(CSeq_annot::C_Data::e_Align),
+      m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
-      m_ChunkStub(false)
+      m_AnnotType(CSeq_annot::C_Data::e_Align)
 {
+    _ASSERT(!IsChunkStub());
 }
 
 
@@ -181,25 +100,23 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
     : m_Seq_annot_Info(&annot),
       m_Object(&graph),
-      m_AnnotType(CSeq_annot::C_Data::e_Graph),
+      m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
-      m_FeatSubtype(CSeqFeatData::eSubtype_bad),
-      m_ChunkStub(false)
+      m_AnnotType(CSeq_annot::C_Data::e_Graph)
 {
+    _ASSERT(!IsChunkStub());
 }
 
 
 CAnnotObject_Info::CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
-                                     TAnnotType annot_type,
-                                     TFeatType feat_type,
-                                     TFeatSubtype feat_subtype)
-    : m_Seq_annot_Info(0),
-      m_Object(&chunk_info),
-      m_AnnotType(annot_type),
-      m_FeatType(feat_type),
-      m_FeatSubtype(feat_subtype),
-      m_ChunkStub(true)
+                                     const SAnnotTypeSelector& sel)
+    : m_Seq_annot_Info(&chunk_info.GetStubSeq_annot_Info()),
+      m_Object(0),
+      m_FeatSubtype(sel.GetFeatSubtype()),
+      m_FeatType(sel.GetFeatChoice()),
+      m_AnnotType(sel.GetAnnotChoice())
 {
+    _ASSERT(IsChunkStub());
 }
 
 
@@ -288,31 +205,29 @@ CDataSource& CAnnotObject_Info::GetDataSource(void) const
 
 const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
 {
-#if defined(NCBI_COMPILER_ICC)
+    _ASSERT(!IsChunkStub() && IsFeat());
     return *dynamic_cast<const CSeq_feat*>(m_Object.GetPointer());
-#else
-    return dynamic_cast<const CSeq_feat&>(*m_Object);
-#endif
 }
 
 
 const CSeq_align& CAnnotObject_Info::GetAlign(void) const
 {
-#if defined(NCBI_COMPILER_ICC)
+    _ASSERT(!IsChunkStub() && IsAlign());
     return *dynamic_cast<const CSeq_align*>(m_Object.GetPointer());
-#else
-    return dynamic_cast<const CSeq_align&>(*m_Object);
-#endif
 }
 
 
 const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 {
-#if defined(NCBI_COMPILER_ICC)
+    _ASSERT(!IsChunkStub() && IsGraph());
     return *dynamic_cast<const CSeq_graph*>(m_Object.GetPointer());
-#else
-    return dynamic_cast<const CSeq_graph&>(*m_Object);
-#endif
+}
+
+
+const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
+{
+    _ASSERT(IsChunkStub());
+    return m_Seq_annot_Info->GetTSE_Chunk_Info();
 }
 
 
@@ -503,21 +418,21 @@ void CAnnotObject_Info::x_ProcessAlign(CHandleRangeMap& hrmap,
 }
 
 
-const CTSE_Chunk_Info& CAnnotObject_Info::GetChunk_Info(void) const
-{
-    _ASSERT(IsChunkStub());
-    const CObject* obj = &*m_Object;
-    const CTSE_Chunk_Info& info = dynamic_cast<const CTSE_Chunk_Info&>(*obj);
-    return info;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/10/07 13:43:23  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.27  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

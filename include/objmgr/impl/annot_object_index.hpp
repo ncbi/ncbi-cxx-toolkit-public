@@ -36,9 +36,13 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objmgr/seq_id_handle.hpp>
+#include <objmgr/impl/handle_range.hpp>
 
 #include <util/rangemap.hpp>
+
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -56,24 +60,54 @@ class CAnnotObject_Info;
 
 // forward declaration
 
-struct NCBI_XOBJMGR_EXPORT SAnnotObject_Key
+struct SAnnotObject_Key
 {
+    SAnnotObject_Key(void)
+        : m_AnnotObject_Info(0)
+        {
+        }
+
     CAnnotObject_Info*      m_AnnotObject_Info;
     CSeq_id_Handle          m_Handle;
     CRange<TSeqPos>         m_Range;
 };
 
-struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index
+struct SAnnotObject_Index
 {
-    SAnnotObject_Index(void);
-    ~SAnnotObject_Index(void);
-    SAnnotObject_Index(const SAnnotObject_Index&);
-    SAnnotObject_Index& operator=(const SAnnotObject_Index&);
+    SAnnotObject_Index(void)
+        : m_AnnotObject_Info(0),
+          m_AnnotLocationIndex(0)
+        {
+        }
 
     CAnnotObject_Info*                  m_AnnotObject_Info;
     int                                 m_AnnotLocationIndex;
     CRef< CObjectFor<CHandleRange> >    m_HandleRange;
 };
+
+
+struct NCBI_XOBJMGR_EXPORT SAnnotObjects_Info
+{
+    SAnnotObjects_Info(void);
+    SAnnotObjects_Info(const SAnnotObjects_Info&);
+    ~SAnnotObjects_Info(void);
+
+    typedef vector<SAnnotObject_Key>           TObjectKeys;
+    typedef vector<CAnnotObject_Info>          TObjectInfos;
+
+    void SetAnnotName(const CAnnotName& name);
+
+    void Clear(void);
+    CAnnotObject_Info* AddInfo(const CAnnotObject_Info& info);
+    
+    CAnnotName      m_Name;
+    TObjectKeys     m_Keys;
+    TObjectInfos    m_Infos;
+
+private:
+    SAnnotObjects_Info& operator=(const SAnnotObjects_Info&);
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -81,6 +115,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.1  2003/09/30 16:22:00  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

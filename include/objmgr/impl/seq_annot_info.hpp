@@ -40,6 +40,7 @@
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/annot_object_index.hpp>
 
 #include <vector>
 
@@ -61,6 +62,7 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
 public:
     CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry);
     CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
+    CSeq_annot_Info(CTSE_Chunk_Info& chunk_info);
     ~CSeq_annot_Info(void);
 
     CDataSource& GetDataSource(void) const;
@@ -68,6 +70,7 @@ public:
     const CSeq_entry& GetTSE(void) const;
     const CTSE_Info& GetTSE_Info(void) const;
     CTSE_Info& GetTSE_Info(void);
+    CTSE_Chunk_Info& GetTSE_Chunk_Info(void) const;
 
     const CSeq_entry& GetSeq_entry(void) const;
     const CSeq_entry_Info& GetSeq_entry_Info(void) const;
@@ -76,9 +79,7 @@ public:
     const CSeq_annot& GetSeq_annot(void) const;
     CSeq_annot& GetSeq_annot(void);
 
-    // CRef on CAnnotObject_Info is held by CDataSource::m_AnnotObject_InfoMap
-    typedef vector<SAnnotObject_Key>  TObjectKeys;
-    typedef vector<CAnnotObject_Info> TObjectInfos;
+    const CAnnotName& GetName(void) const;
 
     const CAnnotObject_Info& GetAnnotObject_Info(size_t index) const;
     size_t GetAnnotObjectIndex(const CAnnotObject_Info& info) const;
@@ -108,6 +109,7 @@ private:
     void x_TSEDetach(void);
 
     void x_UpdateAnnotIndexThis(void);
+    void x_UpdateName(void);
 
     void x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs);
     void x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs);
@@ -125,14 +127,19 @@ private:
     CSeq_entry_Info*       m_Seq_entry_Info;
 
     // top level Seq-entry info
-    CTSE_Info*               m_TSE_Info;
+    CTSE_Info*             m_TSE_Info;
+
+    // name of Seq-annot
+    CAnnotName             m_Name;
 
     // Annotations indexes
-    TObjectKeys            m_ObjectKeys;
-    TObjectInfos           m_ObjectInfos;
+    SAnnotObjects_Info     m_ObjectInfos;
 
     // SNP annotation table
     CRef<CSeq_annot_SNP_Info>   m_SNP_Info;
+
+    // Split Chunk info
+    CTSE_Chunk_Info*       m_Chunk_Info;
 
     bool m_DirtyAnnotIndex;
 };
@@ -188,6 +195,13 @@ CTSE_Info& CSeq_annot_Info::GetTSE_Info(void)
 
 
 inline
+CTSE_Chunk_Info& CSeq_annot_Info::GetTSE_Chunk_Info(void) const
+{
+    return *m_Chunk_Info;
+}
+
+
+inline
 void CSeq_annot_Info::x_DSAttach(void)
 {
     x_DSAttachThis();
@@ -204,8 +218,8 @@ void CSeq_annot_Info::x_DSDetach(void)
 inline
 const CAnnotObject_Info& CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 {
-    _ASSERT(index < m_ObjectInfos.size());
-    return m_ObjectInfos[index];
+    _ASSERT(index < m_ObjectInfos.m_Infos.size());
+    return m_ObjectInfos.m_Infos[index];
 }
 
 
@@ -229,6 +243,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.7  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

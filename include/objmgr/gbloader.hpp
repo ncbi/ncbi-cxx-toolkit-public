@@ -160,9 +160,6 @@ public:
     virtual void GetRecords(const CSeq_id_Handle& idh,
                             const EChoice choice);
     virtual void GetChunk(CTSE_Chunk_Info& chunk_info);
-    virtual void GetAllAnnotRecords(const CSeq_id_Handle& idh);
-    virtual void GetNamedAnnotRecords(const CSeq_id_Handle& idh,
-                                      const string& source_name);
   
     virtual CConstRef<CTSE_Info> ResolveConflict(const CSeq_id_Handle& handle,
                                                  const TTSE_LockSet& tse_set);
@@ -267,6 +264,15 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.41  2003/10/07 13:43:22  vasilche
+ * Added proper handling of named Seq-annots.
+ * Added feature search from named Seq-annots.
+ * Added configurable adaptive annotation search (default: gene, cds, mrna).
+ * Fixed selection of blobs for loading from GenBank.
+ * Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+ * Fixed leaked split chunks annotation stubs.
+ * Moved some classes definitions in separate *.cpp files.
+ *
  * Revision 1.40  2003/09/30 16:21:59  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

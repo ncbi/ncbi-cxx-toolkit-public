@@ -196,19 +196,9 @@ private:
     void UpdateAnnotIndex(const CSeq_annot& limit_annot);
 
     CConstRef<TAnnotRefSet>
-    GetTSESetWithAllAnnots(const CSeq_id_Handle& idh,
-                           const SAnnotTypeSelector& annot_type);
+    GetTSESetWithAnnots(const CSeq_id_Handle& idh_type);
     CConstRef<TAnnotRefSet>
-    GetTSESetWithNamedAnnots(const CSeq_id_Handle& idh,
-                             const SAnnotTypeSelector& annot_type,
-                             const string& name);
-    CConstRef<TAnnotRefSet>
-    GetTSESetWithAllAnnots(const CBioseq_Handle& bh,
-                           const SAnnotTypeSelector& annot_type);
-    CConstRef<TAnnotRefSet>
-    GetTSESetWithNamedAnnots(const CBioseq_Handle& bh,
-                             const SAnnotTypeSelector& annot_type,
-                             const string& name);
+    GetTSESetWithAnnots(const CBioseq_Handle& bh);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
@@ -297,8 +287,6 @@ private:
     mutable TRWLock m_Seq_idMapLock;
     TBioseqMap      m_BioseqMap;
     mutable TRWLock m_BioseqMapLock;
-
-    CFastMutex      m_NamedAnnotRef_Lock;
 
     friend class CScope;
     friend class CHeapScope;
@@ -594,6 +582,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.61  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

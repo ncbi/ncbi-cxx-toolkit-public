@@ -276,14 +276,13 @@ public:
     typedef map<const CObject*, CAnnotObject_Info* > TAnnotObject_InfoMap;
     typedef CPriorityNode::TPriority                 TPriority;
 
+    void UpdateAnnotIndex(void);
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             const SAnnotTypeSelector& sel,
-                             TTSE_LockSet& with_ref,
-                             const string* source_name);
+                             TTSE_LockSet& with_ref);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -450,8 +449,8 @@ private:
     TSeq_annot_InfoMap    m_Seq_annot_InfoMap; // All known Seq-annots
     TBioseq_InfoMap       m_Bioseq_InfoMap;    // All known Bioseqs
 
-    TTSEMap               m_TSE_seq;           // id -> TSEs with bioseq
-    TTSEMap               m_TSE_annot;         // id -> TSEs with annots
+    TTSEMap               m_TSE_seq;           // id -> TSE with bioseq
+    TTSEMap               m_TSE_annot;         // id -> TSE with annots
     // > 0 if annotations need to be indexed.
     bool                  m_TSE_annot_is_dirty;
 
@@ -506,6 +505,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.66  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

@@ -30,6 +30,7 @@
 #include <objmgr/reader.hpp>
 
 #include <serial/pack_string.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
@@ -255,7 +256,7 @@ CRef<CTSE_Info> CReader::MakeSNPBlob(const CSeqref& seqref)
     }}
     // create CTSE_Info
     CRef<CTSE_Info> ret(new CTSE_Info(*seq_entry));
-    ret->SetDataSourceName("SNP");
+    ret->SetName("SNP");
 
     // make ID2S-Split-Info
     CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
@@ -268,6 +269,7 @@ CRef<CTSE_Info> CReader::MakeSNPBlob(const CSeqref& seqref)
             "      id "<<kSNP_ChunkId<<",\n"
             "      content {\n"
             "        seq-annot {\n"
+            "          name \"SNP\",\n"
             "          feat {\n"
             "            {\n"
             "              type "<<CSeqFeatData::e_Imp<<",\n"
@@ -309,6 +311,15 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.23  2003/10/07 13:43:23  vasilche
+ * Added proper handling of named Seq-annots.
+ * Added feature search from named Seq-annots.
+ * Added configurable adaptive annotation search (default: gene, cds, mrna).
+ * Fixed selection of blobs for loading from GenBank.
+ * Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+ * Fixed leaked split chunks annotation stubs.
+ * Moved some classes definitions in separate *.cpp files.
+ *
  * Revision 1.22  2003/09/30 16:22:02  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

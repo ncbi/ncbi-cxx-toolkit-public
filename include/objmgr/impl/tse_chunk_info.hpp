@@ -60,17 +60,16 @@ class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 public:
     typedef int TChunkId;
 
-    CTSE_Chunk_Info(CTSE_Info* tse_info, TChunkId chunk_id);
     CTSE_Chunk_Info(CTSE_Info* tse_info, const CID2S_Chunk_Info& info);
     virtual ~CTSE_Chunk_Info(void);
 
     CTSE_Info& GetTSE_Info(void);
+    CSeq_annot_Info& GetStubSeq_annot_Info(void);
+
     TChunkId GetChunkId(void) const;
 
-    typedef vector< CConstRef<CID2_Seq_loc> > TLocation;
-    typedef map<SAnnotTypeSelector, TLocation> TAnnotTypes;
-    typedef vector<SAnnotObject_Key>  TObjectKeys;
-    typedef vector<CAnnotObject_Info> TObjectInfos;
+    typedef SAnnotObjects_Info                     TObjectInfos;
+    typedef map<CAnnotName, TObjectInfos>          TNamedObjectInfos;
 
     bool NotLoaded(void) const;
     void Load(void);
@@ -85,9 +84,18 @@ protected:
 
     void x_UpdateAnnotIndex(void);
     void x_UpdateAnnotIndexThis(void);
+    void x_UnmapAnnotObjects(void);
+    void x_DropAnnotObjects(void);
 
     void x_AttachContent(const CID2S_Chunk_Content& content);
-    void x_AttachAnnot(const CID2S_Seq_annot_Info& info);
+
+    void x_MapAnnotStub(const SAnnotTypeSelector& sel,
+                        const CID2_Seq_loc& loc,
+                        TObjectInfos& infos);
+    void x_MapAnnotStub(CAnnotObject_Info* info,
+                        TObjectInfos& infos,
+                        int gi,
+                        const CRange<TSeqPos>& range);
 
 private:
     friend class CTSE_Info;
@@ -96,16 +104,17 @@ private:
     CTSE_Chunk_Info& operator=(const CTSE_Chunk_Info&);
 
     CTSE_Info*      m_TSE_Info;
-    TChunkId        m_ChunkId;
 
-    TAnnotTypes     m_AnnotTypes;
+    CConstRef<CID2S_Chunk_Info> m_ChunkInfo;
+
+    CRef<CSeq_annot_Info>       m_StubAnnotInfo;
+
     bool            m_DirtyAnnotIndex;
 
     bool            m_NotLoaded;
     CFastMutex      m_LoadLock;
 
-    TObjectKeys     m_ObjectKeys;
-    TObjectInfos    m_ObjectInfos;
+    TNamedObjectInfos  m_NamedObjectInfos;
 };
 
 
@@ -117,16 +126,16 @@ CTSE_Info& CTSE_Chunk_Info::GetTSE_Info(void)
 
 
 inline
-CTSE_Chunk_Info::TChunkId CTSE_Chunk_Info::GetChunkId(void) const
+bool CTSE_Chunk_Info::NotLoaded(void) const
 {
-    return m_ChunkId;
+    return m_NotLoaded;
 }
 
 
 inline
-bool CTSE_Chunk_Info::NotLoaded(void) const
+CSeq_annot_Info& CTSE_Chunk_Info::GetStubSeq_annot_Info(void)
 {
-    return m_NotLoaded;
+    return *m_StubAnnotInfo;
 }
 
 
@@ -136,6 +145,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.1  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

@@ -35,6 +35,7 @@
 
 
 #include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/annot_selector.hpp>
 #include <objmgr/seq_id_handle.hpp>
 
 #include <util/rangemap.hpp>
@@ -70,6 +71,26 @@ class CSeq_entry;
 //
 
 
+struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
+{
+    SIdAnnotObjs(void);
+    ~SIdAnnotObjs(void);
+    SIdAnnotObjs(const SIdAnnotObjs& objs);
+    
+    typedef CRange<TSeqPos>                                  TRange;
+    typedef CRangeMultimap<SAnnotObject_Index,
+                           TRange::position_type>            TRangeMap;
+    typedef vector<TRangeMap>                                TAnnotSet;
+    typedef vector<CRef<CSeq_annot_SNP_Info> >               TSNPSet;
+
+    TAnnotSet m_AnnotSet;
+    TSNPSet   m_SNPSet;
+
+private:
+    const SIdAnnotObjs& operator=(const SIdAnnotObjs& objs);
+};
+
+
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
 public:
@@ -90,34 +111,27 @@ public:
     void SetDead(bool dead);
     bool Locked(void) const;
 
+    const CAnnotName& GetName(void) const;
+    void SetName(const CAnnotName& name);
+
+    bool HasAnnot(const CAnnotName& name) const;
+    bool HasUnnamedAnnot(void) const;
+    bool HasNamedAnnot(const string& name) const;
+
     const CConstRef<CObject>& GetBlobId(void) const;
     void SetBlobId(const CObject* blob_id);
-
-    const string& GetDataSourceName(void) const;
-    void SetDataSourceName(const string& name);
 
     // indexes types
     typedef map<int, CSeq_entry_Info*>                       TBioseq_sets;
     typedef map<CSeq_id_Handle, CBioseq_Info*>               TBioseqs;
 
-    typedef CRange<TSeqPos>                                  TRange;
-    typedef CRangeMultimap<SAnnotObject_Index,
-                           TRange::position_type>            TRangeMap;
-    typedef vector<TRangeMap>                                TAnnotSet;
-    typedef vector<CRef<CSeq_annot_SNP_Info> >               TSNPSet;
-
-    struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
-    {
-        SIdAnnotObjs(void);
-        ~SIdAnnotObjs(void);
-        SIdAnnotObjs(const SIdAnnotObjs& objs);
-        const SIdAnnotObjs& operator=(const SIdAnnotObjs& objs);
-
-        TAnnotSet m_AnnotSet;
-        TSNPSet   m_SNPSet;
-    };
+    typedef SIdAnnotObjs::TRange                             TRange;
+    typedef SIdAnnotObjs::TRangeMap                          TRangeMap;
+    typedef SIdAnnotObjs::TAnnotSet                          TAnnotSet;
+    typedef SIdAnnotObjs::TSNPSet                            TSNPSet;
 
     typedef map<CSeq_id_Handle, SIdAnnotObjs>                TAnnotObjs;
+    typedef map<CAnnotName, TAnnotObjs>                      TNamedAnnotObjs;
 
     typedef int                                              TChunkId;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
@@ -164,30 +178,30 @@ private:
 
     static void x_InitIndexTables(void);
 
-    static TIndexRange x_GetIndexRange(int annot_type,
-                                       int feat_type,
-                                       int feat_subtype);
-    static size_t x_GetTypeIndex(int annot_type,
-                                 int feat_type,
-                                 int feat_subtype);
+    static TIndexRange x_GetIndexRange(const SAnnotTypeSelector& sel);
+    static TIndexRange x_GetIndexRange(const SAnnotTypeSelector& sel,
+                                       const SIdAnnotObjs& objs);
+    static size_t x_GetTypeIndex(const CAnnotObject_Info& info);
     static size_t x_GetTypeIndex(const SAnnotObject_Key& key);
 
     // index access methods
-    const SIdAnnotObjs* x_GetIdObjects(const CSeq_id_Handle& id) const;
-    SIdAnnotObjs& x_SetIdObjects(const CSeq_id_Handle& idh);
+    TAnnotObjs& x_SetAnnotObjs(const CAnnotName& name);
+    const TAnnotObjs* x_GetAnnotObjs(const CAnnotName& name) const;
+    void x_RemoveAnnotObjs(const CAnnotName& name);
+    const SIdAnnotObjs* x_GetIdObjects(const TAnnotObjs& objs,
+                                       const CSeq_id_Handle& idh) const;
+    const SIdAnnotObjs* x_GetIdObjects(const CAnnotName& name,
+                                       const CSeq_id_Handle& id) const;
+    SIdAnnotObjs& x_SetIdObjects(TAnnotObjs& objs,
+                                 const CSeq_id_Handle& id);
+    SIdAnnotObjs& x_SetIdObjects(const CAnnotName& name,
+                                 const CSeq_id_Handle& idh);
 
-    const TRangeMap* x_GetRangeMap(const SIdAnnotObjs& objs,
-                                   size_t index) const;
-    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
-                                   size_t index) const;
-    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
-                                   int annot_type,
-                                   int feat_type,
-                                   int feat_subtype) const;
-
-    void x_MapSNP_Table(const CSeq_id_Handle& key,
+    void x_MapSNP_Table(const CAnnotName& name,
+                        const CSeq_id_Handle& key,
                         const CRef<CSeq_annot_SNP_Info>& snp_info);
-    void x_UnmapSNP_Table(const CSeq_id_Handle& key,
+    void x_UnmapSNP_Table(const CAnnotName& name,
+                          const CSeq_id_Handle& key,
                           const CRef<CSeq_annot_SNP_Info>& snp_info);
 
     void x_MapAnnotObject(TRangeMap& rangeMap,
@@ -200,9 +214,20 @@ private:
                           const SAnnotObject_Index& annotRef);
     bool x_UnmapAnnotObject(SIdAnnotObjs& objs,
                             const SAnnotObject_Key& key);
-    void x_MapAnnotObject(const SAnnotObject_Key& key,
+    void x_MapAnnotObject(TAnnotObjs& objs,
+                          const SAnnotObject_Key& key,
                           const SAnnotObject_Index& annotRef);
-    void x_UnmapAnnotObject(const SAnnotObject_Key& key);
+    void x_MapAnnotObject(TAnnotObjs& index,
+                          const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& annotRef,
+                          SAnnotObjects_Info& infos);
+    void x_MapAnnotObject(const SAnnotObject_Key& key,
+                          const SAnnotObject_Index& annotRef,
+                          SAnnotObjects_Info& infos);
+
+    bool x_UnmapAnnotObject(TAnnotObjs& objs,
+                            const SAnnotObject_Key& key);
+    void x_UnmapAnnotObjects(SAnnotObjects_Info& infos);
 
     void x_DSAttachThis(void);
     void x_DSDetachThis(void);
@@ -218,11 +243,12 @@ private:
     // Dead seq-entry flag
     bool                   m_Dead;
 
+    // TSE has name
+    CAnnotName             m_Name;
+
     // May be used by data loaders to store blob-id
     typedef CConstRef<CObject> TBlob_ID;
     TBlob_ID               m_Blob_ID;
-
-    string                 m_DataSourceName; // SNP etc.
 
     typedef CRWLock        TAnnotObjsLock;
     typedef TAnnotObjsLock::TReadLockGuard  TAnnotReadLockGuard;
@@ -233,7 +259,7 @@ private:
     TBioseqs               m_Bioseqs;
 
     // ID to annot-selector-map
-    TAnnotObjs             m_AnnotObjs;
+    TNamedAnnotObjs        m_NamedAnnotObjs;
     mutable TAnnotObjsLock m_AnnotObjsLock;
 
     TChunks                m_Chunks;
@@ -317,6 +343,13 @@ bool CTSE_Info::Locked(void) const
 
 
 inline
+const CAnnotName& CTSE_Info::GetName(void) const
+{
+    return m_Name;
+}
+
+
+inline
 const CConstRef<CObject>& CTSE_Info::GetBlobId(void) const
 {
     return m_Blob_ID;
@@ -324,37 +357,13 @@ const CConstRef<CObject>& CTSE_Info::GetBlobId(void) const
 
 
 inline
-const string& CTSE_Info::GetDataSourceName(void) const
+CTSE_Info::TIndexRange
+CTSE_Info::x_GetIndexRange(const SAnnotTypeSelector& sel,
+                           const SIdAnnotObjs& objs)
 {
-    return m_DataSourceName;
-}
-
-
-inline
-const CTSE_Info::TRangeMap*
-CTSE_Info::x_GetRangeMap(const SIdAnnotObjs& objs, size_t index) const
-{
-    return index >= objs.m_AnnotSet.size()? 0: &objs.m_AnnotSet[index];
-}
-
-
-inline
-const CTSE_Info::TRangeMap*
-CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
-                         int annot_type,
-                         int feat_type,
-                         int feat_subtype) const
-{
-    return x_GetRangeMap(id, x_GetTypeIndex(
-        annot_type, feat_type, feat_subtype));
-}
-
-
-inline
-void CTSE_Info::x_MapAnnotObject(const SAnnotObject_Key& key,
-                                 const SAnnotObject_Index& annotRef)
-{
-    x_MapAnnotObject(x_SetIdObjects(key.m_Handle), key, annotRef);
+    TIndexRange r = x_GetIndexRange(sel);
+    r.second = min(r.second, objs.m_AnnotSet.size());
+    return r;
 }
 
 
@@ -364,6 +373,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.39  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

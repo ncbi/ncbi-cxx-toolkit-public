@@ -114,6 +114,10 @@ public:
     CConstRef<CSeq_id> GetSeqIdOrNull(void) const;
 
 private:
+    void x_Register(void);
+    void x_Deregister(void);
+    static void x_DumpRegister(const char* msg);
+
     void x_AddReference(void);
     void x_AddReferenceIfSet(void);
     void x_RemoveLastReference(void);
@@ -186,12 +190,18 @@ inline
 void CSeq_id_Handle::x_AddReference(void)
 {
     m_Info->m_Counter.Add(1);
+#ifdef _DEBUG
+    x_Register();
+#endif
 }
 
 
 inline
 void CSeq_id_Handle::x_RemoveReference(void)
 {
+#ifdef _DEBUG
+    x_Deregister();
+#endif
     if ( m_Info->m_Counter.Add(-1) == 0 ) {
         x_RemoveLastReference();
     }
@@ -292,6 +302,15 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/10/07 13:43:22  vasilche
+* Added proper handling of named Seq-annots.
+* Added feature search from named Seq-annots.
+* Added configurable adaptive annotation search (default: gene, cds, mrna).
+* Fixed selection of blobs for loading from GenBank.
+* Added debug checks to CSeq_id_Mapper for easier finding lost CSeq_id_Handles.
+* Fixed leaked split chunks annotation stubs.
+* Moved some classes definitions in separate *.cpp files.
+*
 * Revision 1.17  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
