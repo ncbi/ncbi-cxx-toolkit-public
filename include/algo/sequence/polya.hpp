@@ -44,26 +44,228 @@ enum EPolyTail {
 
 
 ///////////////////////////////////////////////////////////////////////////////
-/// PRE : null-terminated string containing sequence; possible cleavage site
+/// PRE : two random access iterators pointing to sequence data [begin,
+/// end)
 /// POST: poly-A tail cleavage site, if any (-1 if not)
-TSignedSeqPos NCBI_XALGOSEQ_EXPORT
-FindPolyA(const char* seq, TSignedSeqPos possCleavageSite = -1);
+template <typename Iterator>
+TSignedSeqPos
+FindPolyA(Iterator begin, Iterator end);
 
 ///////////////////////////////////////////////////////////////////////////////
-/// PRE : null-terminated string containing sequence; possible 3' cleavage
-/// site, possible 5' cleavage site (if submitted reversed)
+/// PRE : two random access iterators pointing to sequence data [begin,
+/// end)
 /// POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
 /// head, or neither
-EPolyTail NCBI_XALGOSEQ_EXPORT
-FindPolyTail(const char* seq, TSignedSeqPos &cleavageSite,
-             TSignedSeqPos possCleavageSite3p = -1,
-             TSignedSeqPos possCleavageSite5p = -1);
+template <typename Iterator>
+EPolyTail
+FindPolyTail(Iterator begin, Iterator end, TSignedSeqPos &cleavageSite);
+
+
+///////////////////////////////////////////////////////////////////////////////
+/// Implementation [in header because of templates]
+
+template<typename Iterator>
+class CRevComp_It {
+public:
+    CRevComp_It(void) {}
+    CRevComp_It(const Iterator &it) {
+        m_Base = it;
+    }
+
+    char operator*(void) const {
+        switch (*m_Base) {
+        case 'A': return 'T';
+        case 'T': return 'A';
+        case 'C': return 'G';
+        case 'G': return 'C';
+        default: return *m_Base;
+        }
+    }
+    CRevComp_It& operator++(void) {
+        --m_Base;
+        return *this;
+    }
+    CRevComp_It operator++(int) {
+        CRevComp_It it = m_Base;
+        --m_Base;
+        return it;
+    }
+    CRevComp_It& operator+=(int i) {
+        m_Base -= i;
+        return *this;
+    }
+    CRevComp_It& operator-=(int i) {
+        m_Base += i;
+        return *this;
+    }
+    CRevComp_It operator+ (int i) const {
+        CRevComp_It it(m_Base);
+        it += i;
+        return it;
+    }
+    CRevComp_It operator- (int i) const {
+        CRevComp_It it(m_Base);
+        it -= i;
+        return it;
+    }
+    int operator- (const CRevComp_It &it) const {
+        return it.m_Base - m_Base;
+    }
+    
+    //booleans
+    bool operator>= (const CRevComp_It &it) const {
+        return m_Base <= it.m_Base;
+    }
+    bool operator>  (const CRevComp_It &it) const {
+        return m_Base < it.m_Base;
+    }
+    bool operator<= (const CRevComp_It &it) const {
+        return m_Base >= it.m_Base;
+    }
+    bool operator<  (const CRevComp_It &it) const {
+        return m_Base > it.m_Base;
+    }
+    bool operator== (const CRevComp_It &it) const {
+        return m_Base == it.m_Base;
+    }
+    bool operator!= (const CRevComp_It &it) const {
+        return m_Base != it.m_Base;
+    }
+private:
+    Iterator m_Base;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+// PRE : same conditions as STL 'search', but iterators must have ptrdiff_t
+// difference type
+// POST: same as STL 'search'
+template <typename ForwardIterator1, typename ForwardIterator2>
+ForwardIterator1 ItrSearch(ForwardIterator1 first1, ForwardIterator1 last1,
+                           ForwardIterator2 first2, ForwardIterator2 last2)
+{
+    ptrdiff_t d1 = last1 - first1;
+    ptrdiff_t d2 = last2 - first2;
+    if (d1 < d2) {
+        return last1;
+    }
+
+    ForwardIterator1 current1 = first1;
+    ForwardIterator2 current2 = first2;
+
+    while (current2 != last2) {
+        if (!(*current1 == *current2)) {
+            if (d1-- == d2) {
+                return last1;
+            } else {
+                current1 = ++first1;
+                current2 = first2;
+            }
+        } else {
+            ++current1;
+            ++current2;
+        }
+    }
+    return (current2 == last2) ? first1 : last1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PRE : two random access iterators pointing to sequence data [begin,
+// end)
+// POST: poly-A tail cleavage site, if any (-1 if not)
+template <typename Iterator>
+TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
+{
+    string motif1("AATAAA");
+    string motif2("ATTAAA");
+
+    Iterator pos = max(begin, end-250);
+
+    Iterator uStrmMotif = pos;
+    while (uStrmMotif != end) {
+        pos = uStrmMotif;
+        uStrmMotif = ItrSearch(pos, end, motif1.begin(), motif1.end());
+        if (uStrmMotif == end) {
+            uStrmMotif = ItrSearch(pos, end, motif2.begin(), motif2.end());
+        }
+
+        if (uStrmMotif != end) {
+            uStrmMotif += 6; // skip over upstream motif
+            pos = uStrmMotif;
+
+            Iterator maxCleavage = min(pos + 30, end);
+            unsigned int aRun = 0;
+            for (pos += 10;  pos < maxCleavage  &&  aRun < 3;  ++pos) {
+                if (*pos == 'A') {
+                    ++aRun;
+                } else {
+                    aRun = 0;
+                }
+            }
+            
+            if (aRun) {
+                pos -= aRun;
+            }
+            TSignedSeqPos cleavageSite = pos - begin;
+
+            //now let's look for poly-adenylated tail..
+            unsigned int numA = 0, numOther = 0;
+            while (pos != end) {
+                if (*pos == 'A') {
+                    ++numA;
+                } else {
+                    ++numOther;
+                }
+                ++pos;
+            }
+
+            if (numOther + numA > 0  &&
+                ((double) numA / (numA+numOther)) > 0.95) {
+                return cleavageSite;
+            }
+        }
+    }
+
+    return -1;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// PRE : two random access iterators pointing to sequence data [begin,
+// end)
+// POST: cleavageSite (if any) and whether we found a poly-A tail, a poly-T
+// head, or neither
+template<typename Iterator>
+EPolyTail FindPolyTail(Iterator begin, Iterator end,
+                       TSignedSeqPos &cleavageSite)
+{
+    cleavageSite = FindPolyA(begin, end);
+    if (cleavageSite >= 0) {
+        return ePolyTail_A3;
+    } else {
+        int seqLen = end - begin;
+        
+        cleavageSite = FindPolyA(CRevComp_It<Iterator>(end - 1),
+                                 CRevComp_It<Iterator>(begin - 1));
+
+        if (cleavageSite >= 0) {
+            cleavageSite = seqLen - cleavageSite - 1;
+            return ePolyTail_T5;
+        }
+    }
+
+    return ePolyTail_None;
+}
 
 END_NCBI_SCOPE
+
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2004/04/28 15:19:46  johnson
+* Uses templated iterators; no longer accepts user suggestion for cleavage
+* site
+*
 * Revision 1.3  2003/12/31 20:41:39  johnson
 * FindPolySite takes cleavage prompt for both 3' poly-A and 5' poly-T
 *
