@@ -265,7 +265,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
         if (status == eIO_Success) {
             assert(uuu->w_len == 0);
             if (!uuu->shut_down) {
-                SOCK_Shutdown(uuu->sock, eIO_Write);
+                /* 10/7/03: While this call here is perfectly legal, it could
+                 * cause connection severed by a buggy CISCO load-balancer.*/
+                /*SOCK_Shutdown(uuu->sock, eIO_Write);*/
                 uuu->shut_down = 1;
             }
             break;
@@ -962,6 +964,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.57  2003/10/07 20:00:10  lavr
+ * Remove SOCK_Shutdown() after sending the HTTP header and request body
+ *
  * Revision 6.56  2003/09/30 19:44:08  lavr
  * Fix typos in error messages
  *
