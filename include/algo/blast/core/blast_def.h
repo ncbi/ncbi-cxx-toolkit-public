@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-/* Belongs to a higher level header */
+/** Safe free a pointer: belongs to a higher level header. */
 #ifndef sfree
 #define sfree(x) __sfree((void**)&(x))
 #endif
@@ -48,7 +48,7 @@ void __sfree(void** x); /* implemented in lib/util.c */
 
 /******************** Preprocessor definitions ******************************/
 
-/** Program type: defines the engine's notion of the different                  
+/** Program type: defines the engine's notion of the different
  * applications of the BLAST algorithm */
 typedef enum {
     eBlastTypeBlastn,
