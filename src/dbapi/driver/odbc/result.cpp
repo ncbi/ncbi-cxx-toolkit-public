@@ -137,6 +137,7 @@ EDB_Type CODBC_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CODBC_RowResult::Fetch()
 {
+    m_CurrItem= -1;
     if (!m_EOR) {
         switch (SQLFetch(m_Cmd)) {
         case SQL_SUCCESS_WITH_INFO:
@@ -989,6 +990,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/03 21:48:37  soussov
+ * set m_CurrItem = -1 if fetch failes
+ *
  * Revision 1.3  2003/01/02 21:05:35  soussov
  * SQL_BIGINT added in CODBC_RowResult::xLoadItem
  *

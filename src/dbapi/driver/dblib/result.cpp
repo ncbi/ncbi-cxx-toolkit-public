@@ -380,6 +380,7 @@ EDB_Type CDBL_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CDBL_RowResult::Fetch()
 {
+    m_CurrItem = -1;
     if (!m_EOR) {
         switch (dbnextrow(m_Cmd)) {
         case REG_ROW:
@@ -1481,6 +1482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/01/03 21:48:08  soussov
+ * set m_CurrItem = -1 if fetch failes
+ *
  * Revision 1.15  2002/07/18 14:59:10  soussov
  * fixes bug in blob result
  *

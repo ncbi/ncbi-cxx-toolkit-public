@@ -133,11 +133,11 @@ EDB_Type CTL_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CTL_RowResult::Fetch()
 {
+    m_CurrItem = -1;
     if ( m_EOR ) {
         return false;
     }
 
-    m_CurrItem = -1;
     switch ( ct_fetch(m_Cmd, CS_UNUSED, CS_UNUSED, CS_UNUSED, 0) ) {
     case CS_SUCCEED:
         m_CurrItem = 0;
@@ -949,6 +949,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/01/03 21:47:42  soussov
+ * set m_CurrItem = -1 if fetch failes
+ *
  * Revision 1.14  2002/11/27 17:09:50  soussov
  * patch to fix NULL numeric related bug in ctlib for Windows
  *

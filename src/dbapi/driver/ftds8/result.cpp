@@ -367,6 +367,7 @@ EDB_Type CTDS_RowResult::ItemDataType(unsigned int item_num) const
 
 bool CTDS_RowResult::Fetch()
 {
+    m_CurrItem = -1;
     if ( m_EOR )
         return false;
 
@@ -1378,6 +1379,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/01/03 21:48:18  soussov
+ * set m_CurrItem = -1 if fetch failes
+ *
  * Revision 1.8  2002/07/18 14:59:31  soussov
  * fixes bug in blob result
  *
