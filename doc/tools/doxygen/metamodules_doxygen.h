@@ -206,6 +206,10 @@
  *  @ingroup BDB
  */
 
+/** @defgroup BDB_Util  BDB library utilities
+ *  @ingroup BDB
+ */
+
 /** @defgroup BDB_Query  BDB library queries
  *  @ingroup BDB
  */
