@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2002/03/11 22:01:47  lavr
+ * Threshold for choosing a local server explained better
+ *
  * Revision 6.34  2001/12/04 15:57:05  lavr
  * Change log correction
  *
@@ -400,9 +403,9 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
         data->s_node[i].status = total;
     }
 
-    /* We will take pre-chosen local server only if its status is not less
-       than p% of the average rest status; otherwise, we ignore the server,
-       and apply the general procedure by seeding a random point. */
+    /* We take pre-chosen local server only if its status is not less than
+       p% of the average remaining status; otherwise, we ignore the server,
+       and apply the generic procedure by seeding a random point. */
     if (point < 0.0 || access*(data->n_node - 1) < p*0.01*(total - access))
         point = (total * rand()) / (double) RAND_MAX;
     for (i = 0; i < data->n_node; i++) {
