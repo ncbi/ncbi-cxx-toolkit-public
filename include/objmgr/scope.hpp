@@ -121,10 +121,19 @@ public:
                        CPriorityNode::TPriority priority = kPriority_NotSet);
     // Add seq_entry, default priority is higher than for defaults or loaders
     void AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                             CPriorityNode::TPriority priority = kPriority_NotSet);
+                             CPriorityNode::TPriority priority =
+                             kPriority_NotSet);
 
     // Add the scope's datasources as a single group with the given priority
-    void AddScope(CScope& scope, CPriorityNode::TPriority priority = kPriority_NotSet);
+    void AddScope(CScope& scope,
+                  CPriorityNode::TPriority priority = kPriority_NotSet);
+
+    // Add bioseq, return bioseq handle. Try to use unresolved seq-id
+    // from the bioseq, fail if all ids are already resolved to
+    // other sequences.
+    CBioseq_Handle AddBioseq(CBioseq& bioseq,
+                             CPriorityNode::TPriority priority =
+                             kPriority_NotSet);
 
     // Add annotations to a seq-entry (seq or set)
     bool AttachAnnot(CSeq_entry& entry, CSeq_annot& annot);
@@ -295,6 +304,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/09/05 20:50:24  grichenk
+* +AddBioseq(CBioseq&)
+*
 * Revision 1.59  2003/09/03 19:59:59  grichenk
 * Added sequence filtering by level (mains/parts/all)
 *

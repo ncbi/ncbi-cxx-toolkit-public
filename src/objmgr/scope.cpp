@@ -54,6 +54,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -153,6 +154,16 @@ void CScope::AddScope(CScope& scope, CPriorityTree::TPriority priority)
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     m_setDataSrc.Insert(tree, priority);
     x_ClearCacheOnNewData();
+}
+
+
+CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq,
+                                 CPriorityNode::TPriority priority)
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq(bioseq);
+    AddTopLevelSeqEntry(*entry, priority);
+    return GetBioseqHandle(bioseq);
 }
 
 
@@ -804,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.81  2003/09/05 20:50:26  grichenk
+* +AddBioseq(CBioseq&)
+*
 * Revision 1.80  2003/09/05 17:29:40  grichenk
 * Structurized Object Manager exceptions
 *
