@@ -72,6 +72,12 @@ protected:
     void BuildDocumentTree(void);
     void SkipConditionalSection(void);
 
+    virtual string GetLocation(void);
+
+    TToken GetNextToken(void);
+    string GetNextTokenText(void);
+    void   ConsumeToken(void);
+
     void BeginElementContent(void);
     void ParseElementContent(const string& name, bool embedded);
     void ConsumeElementContent(DTDElement& node);
@@ -120,6 +126,7 @@ protected:
     stack<AbstractLexer*>  m_StackLexer;
     stack<string>          m_StackPath;
     list<string>           m_StackLexerName;
+    string                 m_IdentifierText;
 };
 
 END_NCBI_SCOPE
@@ -130,6 +137,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2005/01/06 20:29:34  gouriano
+ * Process compound identifier names
+ *
  * Revision 1.7  2005/01/03 16:51:34  gouriano
  * Added parsing of conditional sections
  *
