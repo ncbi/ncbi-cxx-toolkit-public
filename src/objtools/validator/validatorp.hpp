@@ -226,6 +226,7 @@ enum EErrType {
     eErr_SEQ_FEAT_FeatContentDup,
     eErr_SEQ_FEAT_BadProductSeqId,
     eErr_SEQ_FEAT_RnaProductMismatch,
+    eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -329,7 +330,8 @@ public:
     void ValidatePubdesc(const CPubdesc& pub, const CSerialObject& obj);
     void ValidateBioSource(const CBioSource& bsrc, const CSerialObject& obj);
     void ValidateSeqLoc(const CSeq_loc& loc, const CBioseq& seq,
-        const string& prefix);
+        const string& prefix, const CSerialObject& obj);
+    void ValidateSeqLocIds(const CSeq_loc& loc, const CSerialObject& obj);
     void ValidateDbxref(const CDbtag& xref, const CSerialObject& obj);
     void ValidateDbxref(TDbtags xref_list, const CSerialObject& obj);
 
@@ -781,6 +783,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/04/07 14:56:09  shomrat
+* Added Seq-loc ids validation
+*
 * Revision 1.22  2003/04/04 18:39:17  shomrat
 * Added Internal Exception error and tests for the availabilty of the sequence
 *

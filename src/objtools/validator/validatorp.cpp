@@ -1140,7 +1140,8 @@ void CValidError_imp::ValidateBioSource
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
  const CBioseq&  seq,
- const string&   prefix)
+ const string&   prefix,
+ const CSerialObject& obj)
 {
     bool circular = false;
     if ( seq.GetInst().IsSetTopology() ) {
@@ -1244,7 +1245,7 @@ void CValidError_imp::ValidateSeqLoc
                             }
                         }
                     }
-                }
+                }                
                 strand_prv = strand_cur;
                 id_prv = id_cur;
             }
@@ -1253,14 +1254,19 @@ void CValidError_imp::ValidateSeqLoc
             lit->GetLabel(&label);
             PostErr(eDiag_Error, eErr_Internal_Exception,  
                 "Exception caught while validating location " +
-                label + ". Exception: " + e.what(), seq);
+                label + ". Exception: " + e.what(), obj);
                 
             strand_cur = eNa_strand_other;
             id_cur = 0;
             int_prv = 0;
         }
+        
     }
 
+    // Warn if different parts of a seq-loc refer to the smae bioseq using 
+    // differnt id types (i.e. gi and accession)
+    ValidateSeqLocIds(loc, obj);
+    
     string loc_lbl;
     if (adjacent) {
         loc.GetLabel(&loc_lbl);
@@ -1313,6 +1319,9 @@ void CValidError_imp::ValidateSeqLoc
             loc_lbl + "]", seq);
     }
 }
+
+
+
 
 
 CValidError_imp::TFeatAnnotMap CValidError_imp::GetFeatAnnotMap(void)
@@ -1913,6 +1922,27 @@ bool CValidError_imp::IsCuratedRefSeq(void) const {
 }
 
 
+void CValidError_imp::ValidateSeqLocIds
+(const CSeq_loc& loc,
+ const CSerialObject& obj)
+{
+    for ( CSeq_loc_CI lit(loc); lit; ++lit ) {
+        const CSeq_id& id1 = lit.GetSeq_id();
+        CSeq_loc_CI  lit2 = lit;
+        for ( ++lit2; lit2; ++lit2 ) {
+            const CSeq_id& id2 = lit2.GetSeq_id();
+            if ( IsSameBioseq(id1, id2, m_Scope)  &&  !id1.Match(id2) ) {
+                PostErr(eDiag_Warning,
+                    eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
+                    "Two ids refer to the same bioseq but are of "
+                    "differnt type", obj);
+            }
+        }
+    } 
+}
+
+
+
 // =============================================================================
 //                         CValidError_base Implementation
 // =============================================================================
@@ -2040,6 +2070,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2003/04/07 14:56:33  shomrat
+* Added Seq-loc ids validation
+*
 * Revision 1.28  2003/04/04 18:40:50  shomrat
 * Increased robustness in face of exceptions.
 *
