@@ -451,7 +451,8 @@ void CBDB_RawFile::x_Create(const char* filename, const char* database)
 }
 
 
-DBC* CBDB_RawFile::CreateCursor(CBDB_Transaction* trans) const
+DBC* CBDB_RawFile::CreateCursor(CBDB_Transaction* trans, 
+                                unsigned int      flags) const
 {
     DBC* cursor;
 
@@ -467,7 +468,7 @@ DBC* CBDB_RawFile::CreateCursor(CBDB_Transaction* trans) const
     int ret = m_DB->cursor(m_DB,
                            txn,
                            &cursor,
-                           0);
+                           flags);
     BDB_CHECK(ret, FileName().c_str());
     return cursor;
 }
@@ -490,7 +491,8 @@ CBDB_File::CBDB_File(EDuplicateKeys dup_keys)
       m_BufsCreated(false),
       m_DataBufDisabled(false),
       m_LegacyString(false),
-      m_OwnFields(false)
+      m_OwnFields(false),
+      m_DisabledNull(false)
 {
 }
 
@@ -514,7 +516,9 @@ void CBDB_File::x_ConstructKeyBuf()
 void CBDB_File::x_ConstructDataBuf()
 {
 	m_DataBuf.reset(new CBDB_BufferManager);
-    m_DataBuf->SetNullable();
+    if (!m_DisabledNull) {
+        m_DataBuf->SetNullable();
+    }
     m_DataBuf->SetLegacyStringsCheck(m_LegacyString);
     m_DataBuf->SetFieldOwnership(m_OwnFields);
 }		
@@ -549,10 +553,12 @@ void CBDB_File::BindData(const char* field_name,
     }
 
     m_DataBuf->Bind(data_field);
-    if ( buf_size )
+    if ( buf_size > 0) {
         data_field->SetBufferSize(buf_size);
-    if (is_nullable == eNullable)
+    }
+    if (is_nullable == eNullable && !m_DisabledNull) {
         data_field->SetNullable();
+    }
 }
 
 
@@ -996,6 +1002,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/11/08 16:00:11  kuznets
+ * Added option to disable NULL values for data fileds (performance optimization)
+ *
  * Revision 1.43  2004/08/12 20:13:15  ucko
  * Avoid possible interference from macros named verify.
  *

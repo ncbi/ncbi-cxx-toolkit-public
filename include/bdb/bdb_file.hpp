@@ -168,6 +168,9 @@ public:
     /// Set current transaction
     void SetTransaction(CBDB_Transaction* trans);
 
+    /// Get current transaction
+    CBDB_Transaction* GetTransaction() { return m_Trans; }
+
 private:
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
@@ -192,7 +195,8 @@ protected:
     DB_TXN* GetTxn();
 
     /// Create DB cursor
-    DBC* CreateCursor(CBDB_Transaction* trans = 0) const;
+    DBC* CreateCursor(CBDB_Transaction* trans = 0, 
+                      unsigned int      flags = 0) const;
 
 	/// Set byte order swapping. Can be overloaded on derived classes
 	/// @note When overloading DO call parent::x_SetByteSwapped
@@ -371,6 +375,10 @@ protected:
     /// responsibility for filling m_DBT_Data with correct values.
     void DisableDataBufProcessing() { m_DataBufDisabled = true; }
 
+    /// Disable NULL/not NULL in data fields
+    /// (Performance tweak)
+    void DisableNull() { m_DisabledNull = true; }
+
     /// Wrapper around get operation.    
     EBDB_ErrCode x_Fetch(unsigned int flags);    
 
@@ -401,6 +409,7 @@ private:
     bool                           m_DataBufDisabled;
     bool                           m_LegacyString;
 	bool                           m_OwnFields;
+    bool                           m_DisabledNull;
 
     friend class CBDB_FileCursor;
 };
@@ -499,7 +508,7 @@ void CBDB_File::Open(const char* filename, EOpenMode open_mode)
 inline 
 void CBDB_File::CheckNullDataConstraint() const
 {
-    if ( m_DataBuf.get() )
+    if ( !m_DisabledNull && m_DataBuf.get() )
         m_DataBuf->CheckNullConstraint();
 }
 
@@ -517,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/11/08 16:00:06  kuznets
+ * Added option to disable NULL values for data fileds (performance optimization)
+ *
  * Revision 1.35  2004/08/12 20:17:42  ucko
  * #include <stdio.h> so we can use FILE.
  *
