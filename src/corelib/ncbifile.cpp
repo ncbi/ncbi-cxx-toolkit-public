@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2001/11/19 18:10:13  juran
+ * Whitespace.
+ *
  * Revision 1.6  2001/11/15 16:34:12  ivanov
  * Moved from util to corelib
  *
@@ -61,6 +64,7 @@
 #  include <sys/types.h>
 #  include <sys/stat.h>
 #endif
+
 #include <stdio.h>
 
 #if defined NCBI_OS_MSWIN 
@@ -70,6 +74,7 @@
 #  include <unistd.h>
 #  include <dirent.h>
 #elif defined NCBI_OS_MAC
+#  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
 #  include "FSpCompat.h"
 #  include "MoreFilesExtras.h"
@@ -86,19 +91,19 @@ static const FSSpec sNullFSS = {0, 0, "\p"};
 
 class PStr {
 public:
-	PStr(const unsigned char* str) { PstrPcpy(m_Str, str); }
-	friend bool operator==(const PStr& one, const PStr& other) {
-		return memcmp(one.m_Str, other.m_Str, one.m_Str[0]) == 0;
-	}
+    PStr(const unsigned char* str) { PstrPcpy(m_Str, str); }
+    friend bool operator==(const PStr& one, const PStr& other) {
+        return memcmp(one.m_Str, other.m_Str, one.m_Str[0]) == 0;
+    }
 private:
-	Str255 m_Str;
+    Str255 m_Str;
 };
 
 static bool operator==(const FSSpec &one, const FSSpec &other)
 {
-	return one.vRefNum == other.vRefNum
-		&& one.parID   == other.parID
-		&& PStr(one.name) == PStr(other.name);
+    return one.vRefNum == other.vRefNum
+        && one.parID   == other.parID
+        && PStr(one.name) == PStr(other.name);
 }
 #endif
 
@@ -111,11 +116,11 @@ static bool operator==(const FSSpec &one, const FSSpec &other)
 // Construct real entry mode from parts. Parameters can not have "fDefault" 
 // value.
 static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode, 
-                                 CDirEntry::TMode group_mode, 
-                                 CDirEntry::TMode other_mode)
+                                        CDirEntry::TMode group_mode, 
+                                        CDirEntry::TMode other_mode)
 {
     CDirEntry::TMode mode = 0;
-    mode |= (user_mode << 6);
+    mode |= (user_mode  << 6);
     mode |= (group_mode << 3);
     mode |= other_mode;
     return mode;
@@ -130,7 +135,7 @@ static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode,
 
 CDirEntry::CDirEntry()
 #ifdef NCBI_OS_MAC
-: m_FSS(sNullFSS)
+    : m_FSS(sNullFSS)
 #endif
 {
 }
@@ -154,17 +159,18 @@ CDirEntry::CDirEntry(const string& name)
 
 #ifdef NCBI_OS_MAC
 bool
-CDirEntry::operator==(const CDirEntry& other) const
+CDirEntry::operator== (const CDirEntry& other) const
 {
-	return m_FSS == other.m_FSS;
+    return m_FSS == other.m_FSS;
 }
 
 const FSSpec&
 CDirEntry::FSS() const
 {
-	return m_FSS;
+    return m_FSS;
 }
 #endif
+
 
 char CDirEntry::GetPathSeparator()
 {
@@ -203,7 +209,7 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
       CDirEntry::fDefaultOther },
     // eCharSpecial
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
+      CDirEntry::fDefaultOther }
 };
 
 
@@ -211,10 +217,10 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 #ifdef NCBI_OS_MAC
 void CDirEntry::Reset(const string& path)
 {
-	OSErr err = MacPathname2FSSpec(path.c_str(), &m_FSS);
-	if (err != noErr && err != fnfErr) {
-		m_FSS = sNullFSS;
-	}
+    OSErr err = MacPathname2FSSpec(path.c_str(), &m_FSS);
+    if (err != noErr && err != fnfErr) {
+        m_FSS = sNullFSS;
+    }
 }
 
 string CDirEntry::GetPath(void) const
@@ -223,7 +229,7 @@ string CDirEntry::GetPath(void) const
     char *path;
     err = MacFSSpec2FullPathname(&FSS(), &path);
     if (err != noErr) {
-    	return "";
+        return "";
     }
     return string(path);
 }
@@ -257,7 +263,7 @@ void CDirEntry::SplitPath(const string& path, string* dir,
 
 
 string CDirEntry::MakePath(const string& dir, const string& base, 
-                         const string& ext)
+                           const string& ext)
 {
     string path;   // Result string
 
@@ -282,30 +288,70 @@ string CDirEntry::MakePath(const string& dir, const string& base,
 }
 
 
-bool CDirEntry::Exists(void) const
+/*  Match "name" against the filename "mask", returning TRUE if
+    it matches, FALSE if not.  
+*/
+bool CDirEntry::MatchesMask(const char *name, const char *mask) 
 {
-#if 0
-    struct stat buf;
-    return stat(GetPath().c_str(), &buf) == 0;
-#endif
-    return GetType() != eUnknown;
+    char c;
+
+    for (;;) {
+        // Analyze symbol in mask
+		switch ( c = *mask++ ) {
+        
+        case '\0':
+			return *name == '\0';
+
+        case '?':
+            if ( *name == '\0' ) {
+				return false;
+            }
+			++name;
+			break;
+		
+        case '*':
+			c = *mask;
+			// Collapse multiple stars
+            while ( c == '*' ) {
+				c = *++mask;
+            }
+            if (c == '\0') {
+    			return true;
+			}
+			// General case, use recursion
+			while ( char ctmp = *name ) {
+                if ( MatchesMask(name, mask) ) {
+					return true;
+                }
+				++name;
+			}
+			return false;
+		
+        default:
+            // Compare nonpattern character in mask and name
+            if ( c != *name++ ) {
+				return false;
+            }
+			break;
+		}
+    }
+    return false;
 }
 
 
-
 bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
-const
+    const
 {
 #ifdef NCBI_OS_MAC
-	FSSpec fss = FSS();
-	OSErr err = FSpCheckObjectLock(&fss);
-	if (err != noErr && err != fLckdErr) {
-		return false;
-	}
-	bool locked = (err == fLckdErr);
-	*user_mode = fRead | (locked ? 0 : fWrite);
-	*group_mode = *other_mode = *user_mode;
-	return true;
+    FSSpec fss = FSS();
+    OSErr err = FSpCheckObjectLock(&fss);
+    if (err != noErr  &&  err != fLckdErr) {
+        return false;
+    }
+    bool locked = (err == fLckdErr);
+    *user_mode = fRead | (locked ? 0 : fWrite);
+    *group_mode = *other_mode = *user_mode;
+    return true;
 #else
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
@@ -331,27 +377,27 @@ const
 
 
 bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
-const
+    const
 {
     if (user_mode == fDefault) {
         user_mode = m_DefaultMode[eUser];
     }
 #ifdef NCBI_OS_MAC
-	bool wantLocked = (user_mode & fWrite) == 0;
-	FSSpec fss = FSS();
-	OSErr err = FSpCheckObjectLock(&fss);
-	if (err != noErr && err != fLckdErr) {
-		return false;
-	}
-	bool locked = (err == fLckdErr);
-	if (locked == wantLocked) {
-		return true;
-	}
-	err = wantLocked 
-		? ::FSpSetFLockCompat(&fss) 
-		: ::FSpRstFLockCompat(&fss);
+    bool wantLocked = (user_mode & fWrite) == 0;
+    FSSpec fss = FSS();
+    OSErr  err = FSpCheckObjectLock(&fss);
+    if (err != noErr  &&  err != fLckdErr) {
+        return false;
+    }
+    bool locked = (err == fLckdErr);
+    if (locked == wantLocked) {
+        return true;
+    }
+    err = wantLocked 
+        ? ::FSpSetFLockCompat(&fss) 
+        : ::FSpRstFLockCompat(&fss);
 	
-	return err == noErr;
+    return err == noErr;
 #else
     if (group_mode == fDefault) {
         group_mode = m_DefaultMode[eGroup];
@@ -449,13 +495,14 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 
 CDirEntry::EType CDirEntry::GetType(void) const
 {
-#ifdef NCBI_OS_MAC
-	OSErr err;
-	long dirID;
-	Boolean isDir;
-	err = ::FSpGetDirectoryID(&FSS(), &dirID, &isDir);
-	if (err) return eUnknown;
-	return isDir ? eDir : eFile;
+#if defined(NCBI_OS_MAC)
+    OSErr   err;
+    long    dirID;
+    Boolean isDir;
+    err = ::FSpGetDirectoryID(&FSS(), &dirID, &isDir);
+    if ( err )
+        return eUnknown;
+    return isDir ? eDir : eFile;
 #else
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
@@ -471,12 +518,12 @@ CDirEntry::EType CDirEntry::GetType(void) const
         return eCharSpecial;
     }
 
-#if defined NCBI_OS_MSWIN
+#  if defined(NCBI_OS_MSWIN)
     if ( (st.st_mode & _S_IFIFO) == _S_IFIFO ) {
         return ePipe;
     }
 
-#elif defined NCBI_OS_UNIX
+#  elif defined(NCBI_OS_UNIX)
     if ( (st.st_mode & S_IFIFO)  == S_IFIFO ) {
         return ePipe;
     }
@@ -486,16 +533,16 @@ CDirEntry::EType CDirEntry::GetType(void) const
     if ( (st.st_mode & S_IFSOCK) == S_IFSOCK ) {
         return eSocket;
     }
-#ifdef S_IFDOOR /* only Solaris seems to have this */
+#    ifdef S_IFDOOR /* only Solaris seems to have this */
     if ( (st.st_mode & S_IFDOOR) == S_IFDOOR ) {
         return eDoor;
     }
-#endif
+#    endif
     if ( (st.st_mode & S_IFBLK)  == S_IFBLK ) {
         return eBlockSpecial;
     }
 
-#endif
+#  endif
 
     return eUnknown;
 #endif
@@ -505,12 +552,12 @@ CDirEntry::EType CDirEntry::GetType(void) const
 bool CDirEntry::Rename(const string& newname)
 {
 #ifdef NCBI_OS_MAC
-	const int maxFilenameLength = 31;
-	if (newname.length() > maxFilenameLength) return false;
-	Str31 newNameStr;
-	Pstrcpy(newNameStr, newname.c_str());
-	OSErr err = FSpRenameCompat(&FSS(), newNameStr);
-	if (err != noErr) return false;
+    const int maxFilenameLength = 31;
+    if (newname.length() > maxFilenameLength) return false;
+    Str31 newNameStr;
+    Pstrcpy(newNameStr, newname.c_str());
+    OSErr err = FSpRenameCompat(&FSS(), newNameStr);
+    if (err != noErr) return false;
 #else
     if (rename(GetPath().c_str(), newname.c_str()) != 0) {
         return false;
@@ -524,8 +571,8 @@ bool CDirEntry::Rename(const string& newname)
 bool CDirEntry::Remove(void) const
 {
 #ifdef NCBI_OS_MAC
-	OSErr err = ::FSpDelete(&FSS());
-	return err == noErr;
+    OSErr err = ::FSpDelete(&FSS());
+    return err == noErr;
 #else
     if ( IsDir() ) {
         return rmdir(GetPath().c_str()) == 0;
@@ -551,19 +598,20 @@ CFile::CFile(const string& filename) : CParent(filename)
 
 CFile::~CFile(void)
 { 
+    return;
 }
 
 
 Int8 CFile::GetLength(void) const
 {
 #ifdef NCBI_OS_MAC
-	long dataSize, rsrcSize;
-	OSErr err = ::FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
-	if (err != noErr) {
-		return -1;
-	} else {
-		return dataSize;
-	}
+    long dataSize, rsrcSize;
+    OSErr err = ::FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
+    if (err != noErr) {
+        return -1;
+    } else {
+        return dataSize;
+    }
 #else
     struct stat buf;
     if ( stat(GetPath().c_str(), &buf) != 0 ) {
@@ -576,26 +624,27 @@ Int8 CFile::GetLength(void) const
 
 string CFile::GetTmpName(void)
 {
-    char *filename;
-    if ( (filename = tmpnam(NULL)) == NULL) {
+    char* filename = tmpnam(0);
+    if ( !filename ) {
         return kEmptyStr;
     }
-    return string(filename);
+    return filename;
 }
 
-#ifdef NCBI_OS_MAC
-#define tempnam(dir, prefix) (NULL)
-#endif
 
 string CFile::GetTmpNameExt(const string& dir, const string& prefix)
 {
-    char *filename;
-    if ( (filename = tempnam(dir.c_str(), prefix.c_str())) == NULL) {
+#if defined(NCBI_OS_MAC)
+    return kEmptyStr;
+#else
+    char* filename = tempnam(dir.c_str(), prefix.c_str());
+    if ( !filename ) {
         return kEmptyStr;
     }
     string res(filename);
     free(filename);
     return res;   
+#endif
 }
 
 
@@ -647,9 +696,11 @@ fstream* CFile::CreateTmpFileExt(const string& dir, const string& prefix,
 
 CDir::CDir(void)
 {
+    return;
 }
 
-#ifdef NCBI_OS_MAC
+
+#if defined(NCBI_OS_MAC)
 CDir::CDir(const FSSpec& fss) : CParent(fss)
 {
     // Set default mode
@@ -657,79 +708,88 @@ CDir::CDir(const FSSpec& fss) : CParent(fss)
 }
 #endif
 
+
 CDir::CDir(const string& dirname) : CParent(dirname)
 {
     // Set default mode
     SetDefaultMode(eDir, fDefault, fDefault, fDefault);
 }
 
+
 CDir::~CDir(void)
 {
+    return;
 }
 
-#if defined NCBI_OS_MAC
+
+#if defined(NCBI_OS_MAC)
 static const CDirEntry& MacGetIndexedItem(const CDir& container, SInt16 index)
 {
-	FSSpec dir = container.FSS();
-	FSSpec fss;  // FSSpec of item gotten.
-	SInt16 actual;  // Actual number of items gotten.  Should be one or zero.
-	SInt16 itemIndex = index;
-	OSErr err = GetDirItems(dir.vRefNum, dir.parID, dir.name, true, true, 
-		&fss, 1, &actual, &itemIndex);
-	if (err != noErr) {
-		throw err;
-	}
-	return CDirEntry(fss);
+    FSSpec dir = container.FSS();
+    FSSpec fss;  // FSSpec of item gotten.
+    SInt16 actual;  // Actual number of items gotten.  Should be one or zero.
+    SInt16 itemIndex = index;
+    OSErr err = GetDirItems(dir.vRefNum, dir.parID, dir.name, true, true, 
+                            &fss, 1, &actual, &itemIndex);
+    if (err != noErr) {
+        throw err;
+    }
+    return CDirEntry(fss);
 }
 #endif
 
 
-vector<CDirEntry> CDir::Contents() const
+CDir::TEntries CDir::GetEntries(const string& mask) const
 {
-	vector<CDirEntry> contents;
+    TEntries contents;
+    string x_mask = mask.empty() ? "*" : mask;
 
 #if defined NCBI_OS_MSWIN
     // Append to the "path" mask for all files in directory
-    string mask = GetPath();
-    if ( mask[mask.size()-1] != GetPathSeparator() ) {
-        mask += GetPathSeparator();
+    string pattern = GetPath();
+    if ( pattern[pattern.size()-1] != GetPathSeparator() ) {
+        pattern += GetPathSeparator();
     }
-    mask += "*";
+    pattern += x_mask;
+
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
-    // Get first entry's name
-    long desc = _findfirst(mask.c_str(), &entry);
+    long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
     if (desc != -1) {
-        contents.push_back(CDirEntry(entry.name));
-	    while ( _findnext(desc, &entry) != -1 ) {
-	        contents.push_back(CDirEntry(entry.name));
-	    }
-	}
-	_findclose(desc);
+        contents.push_back(new CDirEntry(entry.name));
+        while ( _findnext(desc, &entry) != -1 ) {
+            contents.push_back(new CDirEntry(entry.name));
+        }
+    }
+    _findclose(desc);
 
 #elif defined NCBI_OS_UNIX
-	DIR *dir = opendir(GetPath().c_str());
-	if (dir != NULL) {
-		while (struct dirent *entry = readdir(dir)) {
-			contents.push_back(CDirEntry(entry->d_name));
-	    }
-	}
-	closedir(dir);
+    DIR* dir = opendir(GetPath().c_str());
+    if ( dir ) {
+        while (struct dirent* entry = readdir(dir)) {
+            if ( MatchesMask(entry->d_name, x_mask.c_str()) ) {
+                contents.push_back(new CDirEntry(entry->d_name));
+            }
+        }
+    }
+    closedir(dir);
 
 #elif defined NCBI_OS_MAC
-	try {
-		for (int index = 1; ; index++) {
-			CDirEntry item = MacGetIndexedItem(*this, index);
-			contents.push_back(item);
-		}
-	} catch (OSErr err) {
-		if (err != fnfErr) {
-			// Report error?
-			return vector<CDirEntry>();
-		}
-	}
+    try {
+        for (int index = 1;  ;  index++) {
+            CDirEntry entry = MacGetIndexedItem(*this, index);
+            if ( MatchesMask(entry.GetName().c_str(), x_mask.c_str()) ) {
+                contents.push_back(new CDirEntry(entry));
+            }
+        }
+    } catch (OSErr& err) {
+        if (err != fnfErr) {
+            throw COSErrException_Mac(err, "CDir::GetEntries() ");
+        }
+    }
 #endif
-	return contents;
+
+    return contents;
 }
 
 
@@ -751,10 +811,10 @@ bool CDir::Create(void) const
     return mkdir(GetPath().c_str(), mode) == 0;
 
 #elif defined NCBI_OS_MAC
-	OSErr err;
-	long dirID;
+    OSErr err;
+    long dirID;
 	
-	err = ::FSpDirCreate(&FSS(), smRoman, &dirID);
+    err = ::FSpDirCreate(&FSS(), smRoman, &dirID);
     return err == noErr;
 
 #endif
@@ -774,16 +834,16 @@ bool CDir::Remove(EDirRemoveMode mode) const
     list<CDir> dirlist;
 
     // Read and remove all entry in derectory
-    vector<CDirEntry> contents = dir.Contents();
-    iterate(vector<CDirEntry>, entry, contents) {
+    TEntries contents = dir.GetEntries();
+    iterate(TEntries, entry, contents) {
 #ifndef NCBI_OS_MAC
-        if ( entry->GetName() == "."  ||  entry->GetName() == ".."  ||  
-             entry->GetName() == string(1,GetPathSeparator()) ) {
+        if ( (*entry)->GetName() == "."  ||  (*entry)->GetName() == ".."  ||  
+             (*entry)->GetName() == string(1, GetPathSeparator()) ) {
             continue;
         }
 #endif
 #ifdef NCBI_OS_MAC
-        CDirEntry item = *entry;
+        CDirEntry& item = **entry;
         // Is it directory ?
         if ( item.IsDir() ) {
             if ( mode == eRecursive ) {
@@ -796,7 +856,7 @@ bool CDir::Remove(EDirRemoveMode mode) const
             }
         }
 #else
-        string path = GetPath() + GetPathSeparator() + entry->GetName();
+        string path = GetPath() + GetPathSeparator() + (*entry)->GetName();
         CDirEntry item(path);
         if ( item.IsDir() ) {
             if ( mode == eRecursive ) {
