@@ -1,205 +1,241 @@
-/* config.h.in.  Generated automatically from configure.ac by autoheader.  */
-/* These two come from standard macros, but are no longer automatic. (!) */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to empty if the keyword does not work.  */
-#undef const
+/* Define to 1 if you have the <fstream> header file. */
+#undef HAVE_FSTREAM
 
-/* Define if your system has its own `getloadavg' function.  */
+/* Define to 1 if you have the <fstream.h> header file. */
+#undef HAVE_FSTREAM_H
+
+/* If gethostbyaddr_r exists, define to the number of arguments it takes
+   (normally 7 or 8). */
+#undef HAVE_GETHOSTBYADDR_R
+
+/* If gethostbyname_r exists, define to the number of arguments it takes
+   (normally 5 or 6). */
+#undef HAVE_GETHOSTBYNAME_R
+
+/* Define to 1 if getloadavg exists. */
 #undef HAVE_GETLOADAVG
 
-/* It is the NCBI C++ Toolkit */
-#undef NCBI_CXX_TOOLKIT
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
 
-/* Host info */
+/* Define to 1 if you have the <iostream> header file. */
+#undef HAVE_IOSTREAM
+
+/* Define to 1 if you have the <iostream.h> header file. */
+#undef HAVE_IOSTREAM_H
+
+/* Define to 1 if CRYPT is available, either in its own library or as part of
+   the standard libraries. */
+#undef HAVE_LIBCRYPT
+
+/* Define to 1 if DL is available, either in its own library or as part of the
+   standard libraries. */
+#undef HAVE_LIBDL
+
+/* Define to 1 if FastCGI libraries are available. */
+#undef HAVE_LIBFASTCGI
+
+/* Define to 1 if FreeTDS libraries are available. */
+#undef HAVE_LIBFTDS
+
+/* Define to 1 if NCBI GEO DB library is available. */
+#undef HAVE_LIBGEODB
+
+/* Define to 1 if KSTAT is available, either in its own library or as part of
+   the standard libraries. */
+#undef HAVE_LIBKSTAT
+
+/* Define to 1 if NCBI PubMed libraries are available. */
+#undef HAVE_LIBPUBMED
+
+/* Define to 1 if RPCSVC is available, either in its own library or as part of
+   the standard libraries. */
+#undef HAVE_LIBRPCSVC
+
+/* Define to 1 if SP library is available. */
+#undef HAVE_LIBSP
+
+/* Define to 1 if NCBI SSS DB library is available. */
+#undef HAVE_LIBSSSDB
+
+/* Define to 1 if NCBI SSS UTILS library is available. */
+#undef HAVE_LIBSSSUTILS
+
+/* Define to 1 if SYBASE libraries are available. */
+#undef HAVE_LIBSYBASE
+
+/* Define to 1 if SYBASE DBLib is available. */
+#undef HAVE_LIBSYBDB
+
+/* Define to 1 if localtime_r exists. */
+#undef HAVE_LOCALTIME_R
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if the NCBI C toolkit is available. */
+#undef HAVE_NCBI_C
+
+/* Define to 1 if auto_ptr<> is poor or not implemented. */
+#undef HAVE_NO_AUTO_PTR
+
+/* Define to 1 if std::char_traits is missing. */
+#undef HAVE_NO_CHAR_TRAITS
+
+/* Define to 1 if new C++ streams lack ios_base::. */
+#undef HAVE_NO_IOS_BASE
+
+/* Define to 1 if min/max templates are not implemented. */
+#undef HAVE_NO_MINMAX_TEMPLATE
+
+/* Define to 1 if ORBacus CORBA package is available. */
+#undef HAVE_ORBACUS
+
+/* Define to 1 if pthread_setconcurrency exists. */
+#undef HAVE_PTHREAD_SETCONCURRENCY
+
+/* Define to 1 if union semun exists. */
+#undef HAVE_SEMUN
+
+/* Define to 1 if the system has the type `socklen_t'. */
+#undef HAVE_SOCKLEN_T
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if strcasecmp exists. */
+#undef HAVE_STRCASECMP
+
+/* Define to 1 if strdup exists. */
+#undef HAVE_STRDUP
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <strstream> header file. */
+#undef HAVE_STRSTREAM
+
+/* Define to 1 if you have the <strstream.h> header file. */
+#undef HAVE_STRSTREAM_H
+
+/* Define to 1 if you have the <strstrea.h> header file. */
+#undef HAVE_STRSTREA_H
+
+/* Define to 1 if Linux-like 1-arg sysinfo exists. */
+#undef HAVE_SYSINFO_1
+
+/* Define to 1 if sysmp exists. */
+#undef HAVE_SYSMP
+
+/* Define to 1 if you have the <sys/sockio.h> header file. */
+#undef HAVE_SYS_SOCKIO_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <windows.h> header file. */
+#undef HAVE_WINDOWS_H
+
+/* Define to 1 if wxWindows is available. */
+#undef HAVE_WXWINDOWS
+
+/* Full GNU-style system type */
 #undef HOST
+
+/* CPU type only */
 #undef HOST_CPU
-#undef HOST_VENDOR
+
+/* System OS only */
 #undef HOST_OS
 
-/* Platform info */
-#undef NCBI_OS
-#undef NCBI_OS_UNIX
-#undef NCBI_OS_MSWIN
-#undef NCBI_OS_MAC
-
-/* Detailed platform info */
-#undef NCBI_OS_IRIX
+/* System vendor only */
+#undef HOST_VENDOR
 
 /* Compiler name */
 #undef NCBI_COMPILER_GCC
-#undef NCBI_COMPILER_KCC
+
+/* Compiler name */
 #undef NCBI_COMPILER_ICC
-#undef NCBI_COMPILER_WORKSHOP
+
+/* Compiler name */
+#undef NCBI_COMPILER_KCC
+
+/* Compiler name */
 #undef NCBI_COMPILER_MIPSPRO
-#undef NCBI_COMPILER_VISUALAGE
+
+/* Compiler name */
 #undef NCBI_COMPILER_MSVC
+
+/* Compiler name */
 #undef NCBI_COMPILER_UNKNOWN
 
-/* Compiler version */
+/* Compiler version as three-digit integer */
 #undef NCBI_COMPILER_VERSION
 
-/* <sys/sockio.h> */
-#undef HAVE_SYS_SOCKIO_H
+/* Compiler name */
+#undef NCBI_COMPILER_VISUALAGE
 
-/* typedef socklen_t */
-#undef HAVE_SOCKLEN_T
+/* Compiler name */
+#undef NCBI_COMPILER_WORKSHOP
 
-/* gethostbyname_r() */
-#undef HAVE_GETHOSTBYNAME_R
+/* This is the NCBI C++ Toolkit. */
+#undef NCBI_CXX_TOOLKIT
 
-/* gethostbyaddr_r() */
-#undef HAVE_GETHOSTBYADDR_R
-
-/* localtime_r() */
-#undef HAVE_LOCALTIME_R
-
-/* pthread_setconcurrency() */
-#undef HAVE_PTHREAD_SETCONCURRENCY
-
-/* strdup() */
-#undef HAVE_STRDUP
-
-/* sysinfo() -- Linux-like, with 1 arg */
-#undef HAVE_SYSINFO_1
-
-/* sysmp() */
-#undef HAVE_SYSMP
-
-/* strcasecmp() */
-#undef HAVE_STRCASECMP
-
-/* Microsoft C++ specific */
-#undef SIZEOF___INT64
-
-/* Does not give enough support to the in-class template functions */
-#undef NO_INCLASS_TMPL
-
-/* Can use exception specifications("throw(...)" after func. proto) */
-#undef NCBI_USE_THROW_SPEC
-
-/* Non-standard basic_string::compare() -- most probably, from <bastring> */
+/* Define to 1 if basic_string::compare is non-standard. */
 #undef NCBI_OBSOLETE_STR_COMPARE
 
-/* "auto_ptr" template class is not implemented in <memory> */
-#undef HAVE_NO_AUTO_PTR
+/* Operating system name */
+#undef NCBI_OS
 
-/* "min"/"max" templates are not implemented in <algorithm> */
-#undef HAVE_NO_MINMAX_TEMPLATE
+/* Define to 1 on IRIX. */
+#undef NCBI_OS_IRIX
 
-/* Stack direction */
-#undef STACK_GROWS_UP
-#undef STACK_GROWS_DOWN
+/* Define to 1 on MacOS. */
+#undef NCBI_OS_MAC
 
-/* SYBASE libraries are available */
-#undef HAVE_LIBSYBASE
+/* Define to 1 on Windows. */
+#undef NCBI_OS_MSWIN
 
-/* SYBASE DBLib is available */
-#undef HAVE_LIBSYBDB
+/* Define to 1 on Unix. */
+#undef NCBI_OS_UNIX
 
-/* FreeTDS libraries are available */
-#undef HAVE_LIBFTDS
-
-/* KSTAT library is available */
-#undef HAVE_LIBKSTAT
-
-/* RPCSVC library is available */
-#undef HAVE_LIBRPCSVC
-
-/* CRYPT library is available */
-#undef HAVE_LIBCRYPT
-
-/* DL library is available */
-#undef HAVE_LIBDL
-
-/* NCBI C Toolkit libs are available */
-#undef HAVE_NCBI_C
-
-/* NCBI C Toolkit libs are available */
-#undef HAVE_WXWINDOWS
-
-/* Fast-CGI library is available */
-#undef HAVE_LIBFASTCGI
-
-/* NCBI SSS DB library is available */
-#undef HAVE_LIBSSSDB
-
-/* NCBI SSS UTILS library is available */
-#undef HAVE_LIBSSSUTILS
-
-/* NCBI GEO DB library is available */
-#undef HAVE_LIBGEODB
-
-/* SP library is available */
-#undef HAVE_LIBSP
-
-/* NCBI PubMed libraries are available */
-#undef HAVE_LIBPUBMED
-
-/* ORBacus CORBA package is available */
-#undef HAVE_ORBACUS
-
-/* New C++ streams do not have ios_base:: */
-#undef HAVE_NO_IOS_BASE
-
-/* Have union semun */
-#undef HAVE_SEMUN
-
-/* There is no "std::char_traits" type defined */
-#undef HAVE_NO_CHAR_TRAITS
-
-/* Architecture size */
+/* Define to the architecture size. */
 #undef NCBI_PLATFORM_BITS
 
-/* Define if you have the <fstream> header file. */
-#undef HAVE_FSTREAM
+/* Define to 1 if prototypes can use exception specifications. */
+#undef NCBI_USE_THROW_SPEC
 
-/* Define if you have the <fstream.h> header file. */
-#undef HAVE_FSTREAM_H
+/* Define to 1 if in-class template functions are NOT supported. */
+#undef NO_INCLASS_TMPL
 
-/* Define if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
 
-/* Define if you have the <iostream> header file. */
-#undef HAVE_IOSTREAM
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
 
-/* Define if you have the <iostream.h> header file. */
-#undef HAVE_IOSTREAM_H
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
 
-/* Define if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
 
-/* Define if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
-
-/* Define if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
-
-/* Define if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
-
-/* Define if you have the <string.h> header file. */
-#undef HAVE_STRING_H
-
-/* Define if you have the <strstream> header file. */
-#undef HAVE_STRSTREAM
-
-/* Define if you have the <strstream.h> header file. */
-#undef HAVE_STRSTREAM_H
-
-/* Define if you have the <strstrea.h> header file. */
-#undef HAVE_STRSTREA_H
-
-/* Define if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
-
-/* Define if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
-
-/* Define if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
-
-/* Define if you have the <windows.h> header file. */
-#undef HAVE_WINDOWS_H
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
 
 /* The size of a `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
@@ -231,17 +267,26 @@
 /* The size of a `__int64', as computed by sizeof. */
 #undef SIZEOF___INT64
 
-/* Define if you have the ANSI C header files. */
+/* Define to 1 if the stack grows down. */
+#undef STACK_GROWS_DOWN
+
+/* Define to 1 if the stack grows up. */
+#undef STACK_GROWS_UP
+
+/* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define if your processor stores words with the most significant byte first
-   (like Motorola and SPARC, unlike Intel and VAX). */
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
 
-/* Define if type `char' is unsigned and you are not using gcc.  */
+/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
 #ifndef __CHAR_UNSIGNED__
 # undef __CHAR_UNSIGNED__
 #endif
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
 
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t

@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.38 2002/03/13 03:52:38 vakatov Exp $
+#  $Id: configure.ac,v 1.39 2002/03/15 14:42:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -231,15 +231,15 @@ fi
 
 
 #### Always define this
-AC_DEFINE_UNQUOTED(NCBI_CXX_TOOLKIT, 1)
+AC_DEFINE(NCBI_CXX_TOOLKIT, 1, [This is the NCBI C++ Toolkit.])
 
 
 #### Get the running host's properties
 AC_CANONICAL_HOST
-AC_DEFINE_UNQUOTED(HOST,        "$host")
-AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu")
-AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor")
-AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os")
+AC_DEFINE_UNQUOTED(HOST,        "$host",        [Full GNU-style system type])
+AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu",    [CPU type only])
+AC_DEFINE_UNQUOTED(HOST_VENDOR, "$host_vendor", [System vendor only])
+AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os",     [System OS only])
 
 
 #### C and C++ compilers
@@ -356,8 +356,21 @@ ncbi_compiler_ver="`echo $ncbi_compiler_ver | sed 's%\([0-9]\)\.\([0-9][0-9]*\).
 compiler_version=$ncbi_compiler_ver
 changequote([, ])dnl
 
-AC_DEFINE_UNQUOTED(NCBI_COMPILER_$ncbi_compiler, 1)
-AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
+# Possible values of NCBI_COMPILER_$ncbi_compiler, since acconfig.h is obsolete
+if false; then
+   AC_DEFINE(NCBI_COMPILER_GCC,       1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_KCC,       1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_ICC,       1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_WORKSHOP,  1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_MIPSPRO,   1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_VISUALAGE, 1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_MSVC,      1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_UNKNOWN,   1, [Compiler name])
+fi
+
+AC_DEFINE_UNQUOTED(NCBI_COMPILER_$ncbi_compiler, 1, [Compiler name])
+AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver,
+                   [Compiler version as three-digit integer])
 
 
 #### Additional check for pre-defined compilers
@@ -1075,47 +1088,26 @@ AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
 AC_CHECK_HEADERS(windows.h, x_have_windows="yes")
 
 if test "$x_have_windows" = "yes" ; then
-   AC_DEFINE_UNQUOTED(NCBI_OS_MSWIN, 1)
-   AC_DEFINE_UNQUOTED(NCBI_OS, "MSWIN")
+   AC_DEFINE(NCBI_OS_MSWIN, 1, [Define to 1 on Windows.])
+   AC_DEFINE(NCBI_OS, "MSWIN", [Operating system name])
 elif test "$x_have_unistd" = "yes" ; then
-   AC_DEFINE_UNQUOTED(NCBI_OS_UNIX, 1)
-   AC_DEFINE_UNQUOTED(NCBI_OS, "UNIX")
+   AC_DEFINE(NCBI_OS_UNIX, 1,  [Define to 1 on Unix.])
+   AC_DEFINE(NCBI_OS, "UNIX",  [Operating system name])
 
    UNIX_SRC='$(UNIX_SRC)'
    UNIX_USR_PROJ='$(UNIX_USR_PROJ)'
    WithFeatures="$WithFeatures unix"
 
    if test "$OSTYPE" = "irix" ; then
-      AC_DEFINE_UNQUOTED(NCBI_OS_IRIX, 1)
+      AC_DEFINE(NCBI_OS_IRIX, 1, [Define to 1 on IRIX.])
    fi
 else
-   AC_DEFINE_UNQUOTED(NCBI_OS_MAC, 1)
-   AC_DEFINE_UNQUOTED(NCBI_OS, "MAC")
+   AC_DEFINE(NCBI_OS_MAC, 1, [Define to 1 on MacOS.])
+   AC_DEFINE(NCBI_OS, "MAC", [Operating system name])
 fi
 
-
-### typedef socklen_t
-AC_MSG_CHECKING(for type socklen_t)
-AC_TRY_COMPILE(
-   [#include <sys/socket.h>],
-   [
-     socklen_t addrlen = 0;
-     (void) accept(0, (struct sockaddr*) 0, &addrlen);
-   ],
-   AC_DEFINE_UNQUOTED(HAVE_SOCKLEN_T, 1)
-)
-AC_MSG_RESULT()
-
-
-### <sys/sockio.h>
-AC_MSG_CHECKING(for sys/sockio.h)
-AC_TRY_COMPILE(
-   [#include <sys/sockio.h>],
-   ,
-   AC_DEFINE_UNQUOTED(HAVE_SYS_SOCKIO_H, 1)
-)
-AC_MSG_RESULT()
-
+AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
+AC_CHECK_HEADERS(sys/sockio.h)
 
 ### Check for some reentrant library functions (only needed in MT mode)
 
@@ -1155,7 +1147,9 @@ AC_TRY_COMPILE(
 fi
 
 if test "$x_gethostbyname_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $x_gethostbyname_r)
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $x_gethostbyname_r,
+                      [If gethostbyname_r exists, define to the number of
+                       arguments it takes (normally 5 or 6).])
 fi
 AC_MSG_RESULT($x_gethostbyname_r)
 
@@ -1207,7 +1201,9 @@ AC_TRY_COMPILE(
 fi
 
 if test "$x_gethostbyaddr_r" != "no" ; then
-   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $x_gethostbyaddr_r)
+   AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $x_gethostbyaddr_r,
+                      [If gethostbyaddr_r exists, define to the number of
+                       arguments it takes (normally 7 or 8).])
 fi
 AC_MSG_RESULT($x_gethostbyaddr_r)
 
@@ -1221,7 +1217,7 @@ AC_TRY_COMPILE(
      struct tm result;
      (void) localtime_r(&timer, &result);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_LOCALTIME_R, 1)
+   AC_DEFINE(HAVE_LOCALTIME_R, 1, [Define to 1 if localtime_r exists.])
 )
 AC_MSG_RESULT()
 
@@ -1233,7 +1229,8 @@ AC_TRY_COMPILE(
      void* dummy = (void*) &pthread_setconcurrency;
      int ret_value = pthread_setconcurrency(5);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_PTHREAD_SETCONCURRENCY, 1)
+   AC_DEFINE(HAVE_PTHREAD_SETCONCURRENCY, 1,
+             [Define to 1 if pthread_setconcurrency exists.])
 )
 AC_MSG_RESULT()
 
@@ -1251,7 +1248,7 @@ AC_TRY_COMPILE(
      const char s[] = "abc";
      char* s1 = strdup(s);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_STRDUP, 1)
+   AC_DEFINE(HAVE_STRDUP, 1, [Define to 1 if strdup exists.])
 )
 AC_MSG_RESULT()
 
@@ -1264,7 +1261,8 @@ AC_TRY_COMPILE(
      struct sysinfo* info = 0;
      int retval = sysinfo(info);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_SYSINFO_1, 1)
+   AC_DEFINE(HAVE_SYSINFO_1, 1,
+             [Define to 1 if Linux-like 1-arg sysinfo exists.])
 )
 AC_MSG_RESULT()
 
@@ -1277,7 +1275,7 @@ AC_TRY_COMPILE(
      double loadavg[3];
      int i = getloadavg(loadavg, 3);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_GETLOADAVG, 1)
+   AC_DEFINE(HAVE_GETLOADAVG, 1, [Define to 1 if getloadavg exists.])
 )
 AC_MSG_RESULT()
 
@@ -1293,7 +1291,7 @@ AC_TRY_COMPILE(
      struct sysinfo si;
      sysmp(MP_SAGET, MPSA_SINFO, &si, sizeof(si));
    ],
-   AC_DEFINE_UNQUOTED(HAVE_SYSMP, 1)
+   AC_DEFINE(HAVE_SYSMP, 1, [Define to 1 if sysmp exists.])
 )
 AC_MSG_RESULT()
 
@@ -1307,13 +1305,13 @@ AC_TRY_COMPILE(
      const char* s2 = 0;
      int i = strcasecmp(s1, s2);
    ],
-   AC_DEFINE_UNQUOTED(HAVE_STRCASECMP, 1)
+   AC_DEFINE(HAVE_STRCASECMP, 1, [Define to 1 if strcasecmp exists.])
 )
 AC_MSG_RESULT()
 
 
 ### Check for typedefs, structures, and compiler features.
-AC_CXX_CONST
+AC_C_CONST
 AC_TYPE_SIZE_T
 
 AC_MSG_CHECKING(if in-class template functions are supported)
@@ -1321,7 +1319,8 @@ AC_TRY_COMPILE(
    [class C { template<class T> void operator<<(const T& t) {} };],
    ,
    ,
-   AC_DEFINE_UNQUOTED(NO_INCLASS_TMPL, 1)
+   AC_DEFINE(NO_INCLASS_TMPL, 1,
+             [Define to 1 if in-class template functions are NOT supported.])
 )
 AC_MSG_RESULT()
 
@@ -1334,7 +1333,8 @@ AC_TRY_RUN(
    int main(void) {
       return test_throw_spec(123);
    }],
-   AC_DEFINE_UNQUOTED(NCBI_USE_THROW_SPEC, 1)
+   AC_DEFINE(NCBI_USE_THROW_SPEC, 1,
+             [Define to 1 if prototypes can use exception specifications.])
 )
 AC_MSG_RESULT()
 
@@ -1343,7 +1343,8 @@ AC_MSG_CHECKING(if have an obsolete basic_string::compare())
 AC_TRY_COMPILE(
    [#include <string>],
    [std::string s;  int i = 0;  i = s.compare("aaa", 0, 2); ],
-   AC_DEFINE_UNQUOTED(NCBI_OBSOLETE_STR_COMPARE, 1)
+   AC_DEFINE(NCBI_OBSOLETE_STR_COMPARE, 1,
+             [Define to 1 if basic_string::compare is non-standard.])
 )
 AC_MSG_RESULT()
 
@@ -1353,7 +1354,8 @@ AC_TRY_COMPILE(
    [#include <memory>],
    [int *ip = 0;  std::auto_ptr<int> ap(ip);  *ip = *ap;  ap.reset(ip); ],
    ,
-   AC_DEFINE_UNQUOTED(HAVE_NO_AUTO_PTR, 1)
+   AC_DEFINE(HAVE_NO_AUTO_PTR, 1,
+             [Define to 1 if auto_ptr<> is poor or not implemented.])
 )
 AC_MSG_RESULT()
 
@@ -1370,7 +1372,8 @@ AC_TRY_COMPILE(
    ],
    [int a=0, b=1;  a = std::min(a, b);  b = std::max(a, b); ],
    ,
-   AC_DEFINE_UNQUOTED(HAVE_NO_MINMAX_TEMPLATE, 1)
+   AC_DEFINE(HAVE_NO_MINMAX_TEMPLATE, 1,
+             [Define to 1 if min/max templates are not implemented.])
 )
 AC_MSG_RESULT()
 
@@ -1380,7 +1383,8 @@ AC_TRY_COMPILE(
    [#include <iostream>],
    [(void)(std::ios_base::out != std::ios_base::beg); ],
    ,
-   AC_DEFINE_UNQUOTED(HAVE_NO_IOS_BASE, 1)
+   AC_DEFINE(HAVE_NO_IOS_BASE, 1,
+             [Define to 1 if new C++ streams lack ios_base::.])
 )
 AC_MSG_RESULT()
 
@@ -1396,7 +1400,8 @@ AC_TRY_COMPILE(
    char_traits<char>::off_type  o = 1;
    ],
    ,
-   AC_DEFINE_UNQUOTED(HAVE_NO_CHAR_TRAITS, 1)
+   AC_DEFINE(HAVE_NO_CHAR_TRAITS, 1,
+             [Define to 1 if std::char_traits is missing.])
 )
 AC_MSG_RESULT()
 
@@ -1407,7 +1412,7 @@ AC_TRY_COMPILE(
    union semun { double a;  void* b; };],
    ,
    ,
-   AC_DEFINE_UNQUOTED(HAVE_SEMUN, 1)
+   AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if union semun exists.])
 )
 AC_MSG_RESULT()
 
@@ -1426,10 +1431,10 @@ AC_TRY_RUN(
          return f(&p);
      }
     ],
-    [AC_DEFINE(STACK_GROWS_UP)
+    [AC_DEFINE(STACK_GROWS_UP,   1, [Define to 1 if the stack grows up.])
       stack_dir=up
     ],
-    [AC_DEFINE(STACK_GROWS_DOWN)
+    [AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.])
      stack_dir=down],
     [stack_dir="unknown (cross-compiling)"])
 AC_MSG_RESULT($stack_dir)
@@ -1546,7 +1551,8 @@ if test "$with_sybase" != "no" ; then
    AC_TRY_LINK(
       [#include <ctpublic.h>],
       [CS_RETCODE i = ct_init(0,0);  i = cs_ctx_global(0,0); ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBSYBASE, 1)],
+      [AC_DEFINE(HAVE_LIBSYBASE, 1,
+                 [Define to 1 if SYBASE libraries are available.])],
       [with_sybase="no"]
    )
 fi
@@ -1590,7 +1596,8 @@ if test -n "$SYBASE_DBLIBS" ; then
        LOGINREC*  x_login     = 0;
        DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
       ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBSYBDB, 1)],
+      [AC_DEFINE(HAVE_LIBSYBDB, 1,
+                 [Define to 1 if SYBASE DBLib is available.])],
       [SYBASE_DBLIBS=]
    )
    if test -n "$SYBASE_DBLIBS" ; then
@@ -1624,7 +1631,8 @@ if test "$with_ftds" != "no" ; then
        TDSLOGIN*  x_tds_login = 0;
        TDSSOCKET* x_sock      = tds_connect(x_tds_login);
       ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBFTDS, 1)],
+      [AC_DEFINE(HAVE_LIBFTDS, 1,
+                 [Define to 1 if FreeTDS libraries are available.])],
       [with_ftds="no"]
    )
 fi
@@ -1659,7 +1667,8 @@ if test "$with_ncbi_c" != "no" ; then
    AC_TRY_LINK(
       [#include <ncbi.h>],
       [ Nlm_Boolean b = Nlm_GetArgs("fake", -1, 0); ],
-      [AC_DEFINE_UNQUOTED(HAVE_NCBI_C, 1)],
+      [AC_DEFINE(HAVE_NCBI_C, 1,
+                 [Define to 1 if the NCBI C toolkit is available.])],
       [with_ncbi_c="no"]
    )
 fi
@@ -1714,7 +1723,8 @@ if test "$with_wxwin" != "no" ; then
       AC_TRY_LINK(
          [#include <wx/wx.h>],
          [ wxExit(); ],
-         [AC_DEFINE_UNQUOTED(HAVE_WXWINDOWS, 1)],
+         [AC_DEFINE(HAVE_WXWINDOWS, 1,
+                    [Define to 1 if wxWindows is available.])],
          [with_wxwin="no"]
       )
    else
@@ -1749,7 +1759,8 @@ if test "$with_fastcgi" != "no" ; then
    AC_TRY_LINK(
       [#include <fcgiapp.h>],
       [ (void) FCGX_IsCGI(); ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBFASTCGI, 1)],
+      [AC_DEFINE(HAVE_LIBFASTCGI, 1,
+                 [Define to 1 if FastCGI libraries are available.])],
       [with_fastcgi="no"]
    )
 fi
@@ -1820,7 +1831,8 @@ else
          [#include <hashtab.hpp>],
          [ (new C_HashTab(123))->Clear(); ],
          [
-           AC_DEFINE_UNQUOTED(HAVE_LIBSSSUTILS, 1)
+           AC_DEFINE(HAVE_LIBSSSUTILS, 1,
+                     [Define to 1 if NCBI SSS UTILS library is available.])
            WithPackages="$WithPackages SSSUTILS"
          ],
          [
@@ -1842,7 +1854,8 @@ else
          [#include <cslink.hpp>],
          [ (new CSLink)->connect2server("srv", "user", "pwd", "db"); ],
          [
-           AC_DEFINE_UNQUOTED(HAVE_LIBSSSDB, 1)
+           AC_DEFINE(HAVE_LIBSSSDB, 1,
+                     [Define to 1 if NCBI SSS DB library is available.])
            WithPackages="$WithPackages SSSDB"
          ],
          [
@@ -1886,7 +1899,9 @@ else
    LIBGEODB="-lgeodb"
 
    AC_MSG_CHECKING(if NCBI GEO DB library is available)
-   AC_DEFINE_UNQUOTED(HAVE_LIBGEODB, 1)
+   AC_DEFINE(HAVE_LIBGEODB, 1,
+             [Define to 1 if NCBI GEO DB library is available.])
+
 #     Cannot check it -- because GEO headers include C++ Toolkit headers!
 #
 #     CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE $orig_CPPFLAGS"
@@ -1894,7 +1909,7 @@ else
 #     AC_TRY_LINK(
 #        [#include <geo_api.hpp>],
 #        [ (void) GEO_API::Submitter::contributors(); ],
-#        [AC_DEFINE_UNQUOTED(HAVE_LIBGEODB, 1)],
+#        [AC_DEFINE(HAVE_LIBGEODB, 1)],
 #        [with_geo="no" ; LIBGEODB="" ]
 #     )
    AC_MSG_RESULT([$with_geo])
@@ -1941,7 +1956,7 @@ if test "$with_sp" != "no" ; then
    AC_TRY_LINK(
       [#include <SGMLApplication.h>],
       [ SP_API::SGMLApplication app; ],
-      [AC_DEFINE_UNQUOTED(HAVE_LIBSP, 1)],
+      [AC_DEFINE(HAVE_LIBSP, 1, [Define to 1 if SP library is available.])],
       [with_sp="no"]
    )
    AC_MSG_RESULT([$with_sp])
@@ -1973,7 +1988,8 @@ if test "$with_pubmed" != "no" ; then
       AC_TRY_LINK(
          [#include <ncbistr.hpp>],
          [ CNcbiString("abc"); ],
-         [AC_DEFINE_UNQUOTED(HAVE_LIBPUBMED, 1)],
+         [AC_DEFINE(HAVE_LIBPUBMED, 1,
+                    [Define to 1 if NCBI PubMed libraries are available.])],
          [with_pubmed="no"]
       )
    fi
@@ -2022,7 +2038,8 @@ if test "$with_orbacus" != no; then
         CORBA::ORB_var orb = CORBA::ORB_init(c, v);
         if (!CORBA::is_nil(orb)) orb->destroy();
       ],
-      [AC_DEFINE(HAVE_ORBACUS)],
+      [AC_DEFINE(HAVE_ORBACUS, 1,
+                 [Define to 1 if ORBacus CORBA package is available.])],
       [with_orbacus="no"])
 fi
 if test "$with_orbacus" = no; then
@@ -2294,7 +2311,8 @@ AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(size_t)
 bits=`expr 8 \* $ac_cv_sizeof_size_t`
-AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $bits)
+AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $bits,
+                   [Define to the architecture size.])
 
 
 
@@ -2348,7 +2366,7 @@ if test -z "$configurables" ; then
 fi
 
 eval ncbi_runpath=`echo $pure_runpath`
-dnl AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath")
+dnl AC_DEFINE_UNQUOTED(NCBI_RUNPATH, "$ncbi_runpath", [NCBI runpath])
 
 ### Template substitutions
 AC_SUBST(signature)
@@ -2516,14 +2534,6 @@ WithProjects="$SAVE_WithProjects"
 WithoutProjects="$SAVE_WithoutProjects"
 with_extra_action="$SAVE_with_extra_action"
 with_projects="$SAVE_with_projects"
-
-dnl adjust "/$builddir" to "/src"
-echo "Please wait while the makefiles are being adjusted..."
-echo "$x_configurables" | while read x_file ; do
-   mv "$x_file" "$x_file.tmp"
-   cat "$x_file.tmp" | sed "s%/$builddir%/src%g" > "$x_file"
-   rm "$x_file.tmp"
-done
 
 dnl make all shell scripts *.sh be executable
 find "$build_root/." -name '*.sh' -print | while read x_file ; do

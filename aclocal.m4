@@ -1,195 +1,46 @@
-dnl ----------------------------------------------
-dnl -----------------  find lib  -----------------
-dnl ----------------------------------------------
+# autoconf 2.53's version of this breaks our (unorthodox) usage of
+# CONFIG_FILES and certain substvars; substitute a tame version.
+m4_define([_AC_SRCPATHS],
+[#ac_builddir=. # Useless!
 
-AC_DEFUN(AC_FIND_LIB,[
-   if eval "test \"`echo '$''{ac_cv_func_'$1'+set}'`\" = set"; then
-     eval "unset '$''{'ac_cv_func_$1'}'"
-   fi
-   AC_CHECK_FUNCS($1)
-   if eval "test \"`echo '$''{ac_cv_func_'$1'}'`\" = no"; then
-     for lib in $2 ; do 
-       AC_CHECK_LIB(${lib}, $1)
-       ### break, if function is found in library
-       eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = no" || break
-     done
-     eval "unset '$''{'ac_cv_func_$1'}'"
-   fi
-])
-
-dnl ----------------------------------------------
-dnl ----------------  prototypes  ----------------
-dnl ----------------------------------------------
-
-AC_DEFUN(AM_C_PROTOTYPES,
-[AC_REQUIRE([AM_PROG_CC_STDC])
-AC_BEFORE([$0], [AC_C_INLINE])
-AC_MSG_CHECKING([for function prototypes])
-if test "$am_cv_prog_cc_stdc" != no; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(PROTOTYPES)
-  U= ANSI2KNR=
+dnl Base source directories on path to *input* file.
+if test -n "$ac_file_in"; then
+   ac_dir_in=`AS_DIRNAME(["$ac_file_in"])`
 else
-  AC_MSG_RESULT(no)
-  U=_ ANSI2KNR=./ansi2knr
-  # Ensure some checks needed by ansi2knr itself.
-  AC_HEADER_STDC
-  AC_CHECK_HEADERS(string.h)
+   ac_dir_in=$1
 fi
-])
 
+if test $ac_dir_in != .; then
+  ac_dir_suffix=/`echo $ac_dir_in | sed 's,^\.[[\\/]],,'`
+  # A "../" for each directory in $ac_dir_suffix.
+  ac_top_builddir=`echo "$ac_dir_suffix" | sed 's,/[[^\\/]]*,../,g'`
+else
+  ac_dir_suffix= ac_top_builddir=
+fi
 
-# serial 1
-
-# @defmac AC_PROG_CC_STDC
-# @maindex PROG_CC_STDC
-# @ovindex CC
-# If the C compiler in not in ANSI C mode by default, try to add an option
-# to output variable @code{CC} to make it so.  This macro tries various
-# options that select ANSI C on some system or another.  It considers the
-# compiler to be in ANSI C mode if it defines @code{__STDC__} to 1 and
-# handles function prototypes correctly.
-#
-# If you use this macro, you should check after calling it whether the C
-# compiler has been set to accept ANSI C; if not, the shell variable
-# @code{am_cv_prog_cc_stdc} is set to @samp{no}.  If you wrote your source
-# code in ANSI C, you can make an un-ANSIfied copy of it by using the
-# program @code{ansi2knr}, which comes with Ghostscript.
-# @end defmac
-
-AC_DEFUN(AM_PROG_CC_STDC,
-[AC_REQUIRE([AC_PROG_CC])
-AC_MSG_CHECKING(for ${CC-cc} option to accept ANSI C)
-AC_CACHE_VAL(am_cv_prog_cc_stdc,
-[am_cv_prog_cc_stdc=no
-ac_save_CC="$CC"
-# Don't try gcc -ansi; that turns off useful extensions and
-# breaks some systems' header files.
-# AIX			-qlanglvl=ansi
-# Ultrix and OSF/1	-std1
-# HP-UX			-Aa -D_HPUX_SOURCE
-# SVR4			-Xc -D__EXTENSIONS__
-for ac_arg in "" -qlanglvl=ansi -std1 "-Aa -D_HPUX_SOURCE" "-Xc -D__EXTENSIONS__"
-do
-  CC="$ac_save_CC $ac_arg"
-  AC_TRY_COMPILE(
-[#if !defined(__STDC__) || __STDC__ != 1
-choke me
-#endif
-/* DYNIX/ptx V4.1.3 can't compile sys/stat.h with -Xc -D__EXTENSIONS__. */
-#ifdef _SEQUENT_
-# include <sys/types.h>
-# include <sys/stat.h>
-#endif
-], [
-int test (int i, double x);
-struct s1 {int (*f) (int a);};
-struct s2 {int (*f) (double a);};],
-[am_cv_prog_cc_stdc="$ac_arg"; break])
-done
-CC="$ac_save_CC"
-])
-AC_MSG_RESULT($am_cv_prog_cc_stdc)
-case "x$am_cv_prog_cc_stdc" in
-  x|xno) ;;
-  *) CC="$CC $am_cv_prog_cc_stdc" ;;
+case $srcdir in
+  .)  # No --srcdir option.  We are building in place.
+    ac_srcdir=.
+    if test -z "$ac_top_builddir"; then
+       ac_top_srcdir=.
+    else
+       ac_top_srcdir=`echo $ac_top_builddir | sed 's,/$,,'`
+    fi ;;
+  [[\\/]]* | ?:[[\\/]]* )  # Absolute path.
+    ac_srcdir=$srcdir$ac_dir_suffix;
+    ac_top_srcdir=$srcdir ;;
+  *) # Relative path.
+    ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
+    ac_top_srcdir=$ac_top_builddir$srcdir ;;
 esac
-])
-
-AC_DEFUN(AM_STRUCT_UTIMBUF,
-[AC_MSG_CHECKING(for struct utimbuf)
-if test x"$ac_cv_header_utime_h" = xyes; then
-  AC_EGREP_CPP([struct +utimbuf],
-    [#include <utime.h>],
-    [AC_DEFINE(HAVE_STRUCT_UTIMBUF)
-      AC_MSG_RESULT(yes)],
-    AC_MSG_RESULT(no))
-else
-  AC_MSG_RESULT(no)
-fi])
-
-
-# Added a fix for C++ (see the "const charset x;" tests)
-#
-#
-# By Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-
-AC_DEFUN(AC_CXX_CONST,
-[dnl This message is consistent in form with the other checking messages,
-dnl and with the result message.
-AC_CACHE_CHECK([for working const], ac_cv_c_const,
-[AC_TRY_COMPILE(,
-changequote(<<, >>)dnl
-<<
-{ /* Ultrix mips cc rejects this.  */
-  /* ...and maybe he is right(Denis Vakatov) :-) */
-  typedef int charset[2];
-#ifdef __cplusplus
-  extern const charset x1;
-  const charset x2 = {1,2};
-  int xx2 = 0;
-  xx2 = x2[0];
-#else
-  const charset x;
-  int xx = 0;
-  xx = x[0];
-#endif
-}
-{ /* SunOS 4.1.1 cc rejects this.  */
-  char const *const *ccp;
-  char **p;
-
-  /* NEC SVR4.0.2 mips cc rejects this.  */
-  struct point {int x, y;};
-  static struct point const zero = {0,0};
-
-  /* AIX XL C 1.02.0.0 rejects this.
-   It does not let you subtract one const X* pointer from another in an arm
-   of an if-expression whose if-part is not a constant expression */
-  const char *g = "string";
-  ccp = &g + (g ? g-g : 0);
-
-  /* HPUX 7.0 cc rejects these. */
-  ++ccp;
-  p = (char**) ccp;
-  ccp = (char const *const *) p;
-}
-{ /* SCO 3.2v4 cc rejects this.  */
-  char *t = 0;
-  char const *s = 0 ? (char *) 0 : (char const *) 0;
-  char c = '\0';
-  c = *s;
-  *t++ = 0;
-}
-{ /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
-  int x[] = {25, 17};
-  const int *foo = &x[0];
-  const int *bar = 0;
-  bar = foo;
-  ++foo;
-}
-{ /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
-  typedef const int *iptr;
-  iptr p = 0;
-  ++p;
-}
-{ /* AIX XL C 1.02.0.0 rejects this saying
-     "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
-  struct s { int j; const int *ap[3]; };
-  struct s *b = 0; b->j = 5;
-}
-{ /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
-  const int foo = 10;
-  int bar = 0;
-  bar = foo;
-}
->>,
-changequote([, ])dnl
-ac_cv_c_const=yes, ac_cv_c_const=no)])
-if test $ac_cv_c_const = no; then
-  AC_DEFINE(const, )
-fi
-])
+# Don't blindly perform a `cd $1/$ac_foo && pwd` since $ac_foo can be
+# absolute.
+ac_abs_builddir=`cd $1 && pwd`
+ac_abs_top_builddir=`cd $1 && cd $ac_top_builddir && pwd`
+ac_builddir=$ac_abs_top_builddir/build # Much more useful than "."!
+ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && pwd`
+ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && pwd`
+])# _AC_SRCPATHS
 
 
 # Arguments:
@@ -214,10 +65,12 @@ case "$found" in
     if test -n "$libs"; then
        AC_MSG_RESULT($libs)
     else
-       AC_MSG_RESULT(in system libraries)
+       AC_MSG_RESULT(in standard libraries)
     fi
     $1_LIBS=$libs
-    AC_DEFINE(HAVE_LIB$1)
+    AC_DEFINE(HAVE_LIB$1, 1,
+              [Define to 1 if $1 is available, either in its own library
+               or as part of the standard libraries.])
     ;;
 esac
 ])
