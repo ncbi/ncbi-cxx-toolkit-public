@@ -429,11 +429,14 @@ void CFlatSeqLoc::x_AddID
         idp = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::Score);
     } else {
         if ( id.IsGi() ) {
-            // !!! use CID1_client to get accession from server
-            // idp = ???
+            // NB: temporary !!!
+            bh = ctx.GetScope().GetBioseqHandle(id);
+            if (bh) {
+                idp = FindBestChoice(bh.GetBioseqCore()->GetId(), CSeq_id::Score);
+            }
         }
     }
-    if ( idp == 0 ) {
+    if (idp == 0) {
         idp = &id;
     }
 
@@ -455,6 +458,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/08/30 13:39:13  shomrat
+* get accession for GI
+*
 * Revision 1.11  2004/08/19 16:30:24  shomrat
 * Fixed formatting
 *
