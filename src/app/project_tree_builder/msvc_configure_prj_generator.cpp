@@ -53,6 +53,28 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
  m_FilesSubdir   ("UtilityProjectsFiles")
 {
     m_CustomBuildCommand = "@echo on\n";
+
+    // Macrodefines PTB_PATH  path to project_tree_builder app
+    //              TREE_ROOT path to project tree root
+    //              SLN_PATH  path to solution to buil
+    string ptb_path_par = "$(ProjectDir)" + 
+                           CDirEntry::AddTrailingPathSeparator
+                                 (CDirEntry::CreateRelativePath(m_ProjectDir, 
+                                                                m_OutputDir))+ 
+                          "$(ConfigurationName)";
+
+    string tree_root_par = "$(ProjectDir)" + 
+                           CDirEntry::AddTrailingPathSeparator
+                                 (CDirEntry::CreateRelativePath(m_ProjectDir, 
+                                                                tree_root));
+    string sln_path_par  = "$(SolutionPath)";
+
+    m_CustomBuildCommand += "set PTB_PATH="  + ptb_path_par + "\n";
+    m_CustomBuildCommand += "set TREE_ROOT=" + tree_root_par + "\n";
+    m_CustomBuildCommand += "set SLN_PATH="  + sln_path_par + "\n";
+    //
+
+    // Rebuild command for project_tree_builder.sln
     m_CustomBuildCommand += 
         "devenv /rebuild $(ConfigurationName) /project project_tree_builder ";
 
@@ -78,7 +100,7 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
     
     m_CustomBuildCommand += project_tree_builder_sln_path + "\n";
 
-    m_CustomBuildCommand += "set _THE_PATH=" + m_OutputDir + "$(ConfigurationName)\n";
+    //m_CustomBuildCommand += "set _THE_PATH=" + m_OutputDir + "$(ConfigurationName)\n";
     m_CustomBuildCommand += "cd $(InputDir)\n";
     m_CustomBuildCommand += "copy /Y $(InputFileName) $(InputName).bat\n";
     m_CustomBuildCommand += "call $(InputName).bat\n";
@@ -165,10 +187,10 @@ void CMsvcConfigureProjectGenerator::CreateProjectFileItem(void) const
     if ( !ofs )
         NCBI_THROW(CProjBulderAppException, eFileCreation, file_path);
 
-    ofs << "%_THE_PATH%\\project_tree_builder.exe"
+    ofs << "%PTB_PATH%\\project_tree_builder.exe"
         << " -logfile out.log"
-        << " -conffile %_THE_PATH%\\..\\..\\project_tree_builder.ini "
-        << m_TreeRoot << " " << m_SubtreeToBuild << " " << m_SolutionToBuild ;
+        << " -conffile %PTB_PATH%\\..\\..\\project_tree_builder.ini "
+        << "%TREE_ROOT%" << " " << m_SubtreeToBuild << " " << "%SLN_PATH%" ;
 
 }
 
@@ -180,6 +202,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/13 17:09:16  gorelenk
+ * Changed custom build command generation.
+ *
  * Revision 1.3  2004/02/12 23:15:28  gorelenk
  * Implemented utility projects creation and configure re-build of the app.
  *
