@@ -117,6 +117,46 @@ protected:
                               params, param_name, mandatory, default_value);
     }
 
+    /// Utility function to get an integer of parameter tree
+    /// Throws an exception when mandatory parameter is missing
+    /// (or returns the deafult value)
+    int GetParamInt(const TPluginManagerParamTree* params,
+                    const string&                  param_name, 
+                    bool                           mandatory,
+                    int                            default_value) const
+    {
+        const string& param = 
+            TParent::GetParam(m_DriverName, 
+                              params, param_name, mandatory, kEmptyStr);
+        if (param.empty()) {
+            if (mandatory) {
+                string msg = 
+                    "Cannot init " + m_DriverName 
+                                    + ", empty parameter:" + param_name;
+                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
+            } else {
+                return default_value;
+            }
+        }
+        int value;
+        try {
+            value = NStr::StringToInt(param);
+        }
+        catch (exception&)
+        {
+            if (mandatory) {
+                string msg = 
+                    "Cannot init " + m_DriverName 
+                                   + ", incorrect parameter format:" 
+                                   + param_name  + " : " + param;
+                NCBI_THROW(CPluginManagerException, eParameterMissing, msg);
+            } else {
+                return default_value;
+            }
+        }
+        return value;
+    }
+
 protected:
     CVersionInfo  m_DriverVersionInfo;
     string        m_DriverName;
@@ -211,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/09/21 14:01:58  kuznets
+ * +CSimpleClassFactoryImpl::GetParamInt
+ *
  * Revision 1.5  2004/07/26 16:09:13  kuznets
  * GetName implementation moved to IClassFactory
  *
