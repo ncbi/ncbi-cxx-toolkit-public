@@ -39,6 +39,7 @@
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/annot_selector.hpp>
+#include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <vector>
@@ -155,6 +156,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/08/27 14:49:19  vasilche
+* Added necessary include.
+*
 * Revision 1.5  2003/08/27 14:28:51  vasilche
 * Reduce amount of object allocations in feature iteration.
 *
