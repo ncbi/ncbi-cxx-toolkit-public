@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/12/03 21:42:13  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.22  1999/12/01 17:36:27  vasilche
 * Fixed CHOICE processing.
 *
@@ -150,7 +153,8 @@ public:
 
     virtual void GenerateCode(CClassCode& code) const;
 
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
+    virtual void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
+    virtual void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
     virtual const CDataType* Resolve(void) const;

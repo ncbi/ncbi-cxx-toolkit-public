@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/12/03 21:42:13  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.32  1999/12/01 17:36:27  vasilche
 * Fixed CHOICE processing.
 *
@@ -54,7 +57,7 @@
 #include "exceptions.hpp"
 #include "reftype.hpp"
 #include "unitype.hpp"
-#include "blocktype.hpp"
+#include "choicetype.hpp"
 
 TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 {
@@ -368,10 +371,10 @@ void CDataType::GenerateCode(CClassCode& code) const
     code.TypeInfoBody() <<
         "    info->SetImplicit();" << NcbiEndl;
     CTypeStrings tType;
-    GetCType(tType, code);
+    GetFullCType(tType, code);
     tType.AddMember(code, memberName);
     code.TypeInfoBody() << ';' << NcbiEndl;
-    code.ClassPublic() <<
+    code.ClassPublic() << NcbiEndl <<
         "    typedef "<<tType.GetCType()<<' '<<typeDefName<<';'<<NcbiEndl<<
         "    operator "<<typeDefName<<"&(void)"<<NcbiEndl<<
         "    {"<<NcbiEndl<<
@@ -384,7 +387,16 @@ void CDataType::GenerateCode(CClassCode& code) const
         NcbiEndl;
 }
 
-void CDataType::GetCType(CTypeStrings& , CClassCode& ) const
+void CDataType::GetRefCType(CTypeStrings& tType, CClassCode& code) const
+{
+    code.AddHPPInclude(FileName());
+    string className = ClassName();
+    string ns = Namespace();
+    code.AddForwardDeclaration(className, ns);
+    tType.SetClass(ns + "::" + ClassName());
+}
+
+void CDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
 {
     THROW1_TRACE(runtime_error, LocationString() + ": C++ type undefined");
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/03 21:42:13  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.5  1999/12/01 17:36:26  vasilche
 * Fixed CHOICE processing.
 *
@@ -59,7 +62,7 @@ void CStaticDataType::PrintASN(CNcbiOstream& out, int ) const
     out << GetASNKeyword();
 }
 
-void CStaticDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
+void CStaticDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
 {
     string type = GetVar("_type");
     if ( type.empty() )
@@ -225,7 +228,7 @@ TTypeInfo CStringDataType::GetTypeInfo(void)
         CStdTypeInfo<string>::GetTypeInfo());
 }
 
-void CStringDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
+void CStringDataType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
 {
     string type = GetVar("_type");
     if ( type.empty() ) {
@@ -273,7 +276,8 @@ TObjectPtr COctetStringDataType::CreateDefault(const CDataValue& ) const
     THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
 }
 
-void COctetStringDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
+void COctetStringDataType::GetFullCType(CTypeStrings& tType,
+                                        CClassCode& ) const
 {
     string charType = GetVar("_char");
     if ( charType.empty() )

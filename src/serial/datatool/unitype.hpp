@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/03 21:42:14  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.2  1999/11/15 19:36:21  vasilche
 * Fixed warnings on GCC
 *
@@ -65,9 +68,8 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
     
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
-
-    virtual const char* GetASNKeyword(void) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    const char* GetASNKeyword(void) const;
 
 private:
     AutoPtr<CDataType> m_ElementType;
@@ -80,9 +82,8 @@ public:
 
     CTypeInfo* CreateTypeInfo(void);
     
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
-
-    virtual const char* GetASNKeyword(void) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    const char* GetASNKeyword(void) const;
 };
 
 #endif

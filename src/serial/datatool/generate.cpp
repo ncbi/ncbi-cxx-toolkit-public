@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.18  1999/12/01 17:36:25  vasilche
 * Fixed CHOICE processing.
 *
@@ -50,6 +53,7 @@
 #include "unitype.hpp"
 #include "enumtype.hpp"
 #include "blocktype.hpp"
+#include "choicetype.hpp"
 #include "filecode.hpp"
 #include "generate.hpp"
 #include "exceptions.hpp"
@@ -306,7 +310,8 @@ void CCodeGenerator::CollectTypes(const CDataType* type, EContext context)
         }
         if ( context == eChoice ) {
             // in choice
-            if ( resolved->InheritFromType() != user->GetParentType() ) {
+            if ( resolved->InheritFromType() != user->GetParentType() ||
+                 dynamic_cast<const CEnumDataType*>(resolved) != 0 ) {
                 // add intermediate class
                 AddType(user);
             }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.5  1999/12/01 17:36:26  vasilche
 * Fixed CHOICE processing.
 *
@@ -50,7 +53,6 @@
 #include "value.hpp"
 #include "module.hpp"
 #include "exceptions.hpp"
-#include "blocktype.hpp"
 
 CReferenceDataType::CReferenceDataType(const string& n)
     : m_UserTypeName(n)
@@ -111,9 +113,39 @@ void CReferenceDataType::GenerateCode(CClassCode& code) const
     CParent::GenerateCode(code);
 }
 
+/*
 void CReferenceDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
 {
-    ResolveOrThrow()->GetCType(tType, code);
+    const CDataType* resolved = ResolveOrThrow();
+    if ( dynamic_cast<const CChoiceDataType*>(resolved) ) {
+        // choice will process itself
+        resolved->GetCType(tType, code);
+    }
+    else if ( dynamic_cast<const CEnumDataType*>(resolved) ) {
+        CEnumDataType::SEnumCInfo enumInfo =
+            dynamic_cast<const CEnumDataType*>(resolved)->GetEnumCInfo();
+        tType.AddHPPInclude(resolved->FileName());
+        tType.SetEnum(enumInfo.cType, enumInfo.enumName);
+    }
+    else {
+        // generate class reference
+        tType.AddHPPInclude(resolved->FileName());
+        string className = resolved->ClassName();
+        string ns = resolved->Namespace();
+        tType.AddForwardDeclaration(className, ns);
+        tType.SetClass(ns + "::" + className);
+    }
+}
+*/
+
+void CReferenceDataType::GetFullCType(CTypeStrings& tType,
+                                      CClassCode& code) const
+{
+    const CDataType* resolved = ResolveOrThrow();
+    if ( resolved->Skipped() )
+        resolved->GetFullCType(tType, code);
+    else
+        resolved->GetRefCType(tType, code);
 }
 
 CDataType* CReferenceDataType::ResolveOrNull(void) const

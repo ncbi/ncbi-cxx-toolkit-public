@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/12/03 21:42:11  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.3  1999/12/01 17:36:25  vasilche
 * Fixed CHOICE processing.
 *
@@ -187,9 +190,26 @@ CEnumDataType::SEnumCInfo CEnumDataType::GetEnumCInfo(void) const
     return SEnumCInfo(enumName, typeName, prefix);
 }
 
-void CEnumDataType::GetCType(CTypeStrings& tType, CClassCode& code) const
+void CEnumDataType::GetRefCType(CTypeStrings& tType, CClassCode& code) const
+{
+    code.AddHPPInclude(FileName());
+    SEnumCInfo enumInfo = GetEnumCInfo();
+    tType.SetEnum(enumInfo.cType, enumInfo.enumName);
+}
+
+void CEnumDataType::GetFullCType(CTypeStrings& tType, CClassCode& code) const
 {
     GenerateCode(code, &tType);
+/*
+    if ( code.GetType() == this ) {
+        // generate enum definition && reference name
+        GenerateCode(code, &tType);
+    }
+    else {
+        // only generate reference name
+        GetRefCType(tType, code);
+    }
+*/
 }
 
 void CEnumDataType::GenerateCode(CClassCode& code) const
@@ -205,7 +225,6 @@ void CEnumDataType::GenerateCode(CClassCode& code) const
 void CEnumDataType::GenerateCode(CClassCode& code,
                                  CTypeStrings* tType) const
 {
-    code.AddForwardDeclaration("CEnumeratedTypeValues", "NCBI_NS_NCBI");
     SEnumCInfo enumInfo = GetEnumCInfo();
     string tab;
     string method;

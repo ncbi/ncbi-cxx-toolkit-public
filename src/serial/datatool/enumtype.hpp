@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.2  1999/11/15 19:36:14  vasilche
 * Fixed warnings on GCC
 *
@@ -70,13 +73,13 @@ public:
     TObjectPtr CreateDefault(const CDataValue& value) const;
     virtual string GetDefaultString(const CDataValue& value) const;
 
-private:
     struct SEnumCInfo {
         string enumName;
         string cType;
         string valuePrefix;
         
-        SEnumCInfo(const string& name, const string& type, const string& prefix)
+        SEnumCInfo(const string& name, const string& type,
+                   const string& prefix)
             : enumName(name), cType(type), valuePrefix(prefix)
             {
             }
@@ -90,8 +93,9 @@ public:
                       CTypeStrings* tType) const;
 
     CTypeInfo* CreateTypeInfo(void);
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
-    virtual void GenerateCode(CClassCode& code) const;
+    void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    void GenerateCode(CClassCode& code) const;
 
 private:
     TValues m_Values;

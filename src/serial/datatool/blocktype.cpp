@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/12/03 21:42:10  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.6  1999/12/01 17:36:24  vasilche
 * Fixed CHOICE processing.
 *
@@ -53,10 +56,8 @@
 
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
-#include <serial/choice.hpp>
 #include <serial/autoptrinfo.hpp>
 #include "blocktype.hpp"
-#include "statictype.hpp"
 #include "code.hpp"
 #include "typestr.hpp"
 #include "value.hpp"
@@ -166,7 +167,7 @@ void CDataContainerType::GenerateCode(CClassCode& code) const
             continue;
         
         CTypeStrings tType;
-        m->GetType()->GetCType(tType, code);
+        m->GetType()->GetFullCType(tType, code);
 
         string memberType = GetVar(m->GetName() + "._pointer_type");
         if ( !memberType.empty() ) {
@@ -195,12 +196,13 @@ void CDataContainerType::GenerateCode(CClassCode& code) const
     }
 }
 
-void CDataContainerType::GetCType(CTypeStrings& tType, CClassCode& ) const
+void CDataContainerType::GetFullCType(CTypeStrings& tType, CClassCode& ) const
 {
     string className = ClassName();
-    tType.SetClass(className);
+    string ns = Namespace();
+    tType.SetClass(ns + "::" + className);
     tType.AddHPPInclude(FileName());
-    tType.AddForwardDeclaration(className, Namespace());
+    tType.AddForwardDeclaration(className, ns);
 }
 
 const char* CDataSetType::GetASNKeyword(void) const
@@ -307,111 +309,6 @@ bool CDataSequenceType::CheckValue(const CDataValue& value) const
         }
     }
     return true;
-}
-
-const char* CChoiceDataType::GetASNKeyword(void) const
-{
-    return "CHOICE";
-}
-
-void CChoiceDataType::FixTypeTree(void) const
-{
-    CParent::FixTypeTree();
-    iterate ( TMembers, m, GetMembers() ) {
-        (*m)->GetType()->SetInChoice(this);
-    }
-}
-
-bool CChoiceDataType::CheckValue(const CDataValue& value) const
-{
-    const CNamedDataValue* choice =
-        dynamic_cast<const CNamedDataValue*>(&value);
-    if ( !choice ) {
-        value.Warning("CHOICE value expected");
-        return false;
-    }
-    for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end(); ++i ) {
-        if ( (*i)->GetName() == choice->GetName() )
-            return (*i)->GetType()->CheckValue(choice->GetValue());
-    }
-    return false;
-}
-
-CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
-{
-    auto_ptr<CChoiceTypeInfoBase> typeInfo(
-        new CChoiceTypeInfoTmpl<AnyType>(IdName()));
-    for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end(); ++i ) {
-        CDataMember* member = i->get();
-        typeInfo->AddVariant(member->GetName(),
-                             new CAnyTypeSource(member->GetType()));
-    }
-    return new CAutoPointerTypeInfo(typeInfo.release());
-}
-
-void CChoiceDataType::GenerateCode(CClassCode& code) const
-{
-    code.SetClassType(code.eAbstract);
-    string className = ClassName();
-    for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end();
-          ++i ) {
-        const CDataMember* m = i->get();
-        string fieldName = Identifier(m->GetName());
-        if ( fieldName.empty() ) {
-            continue;
-        }
-        const CDataType* variant = m->GetType();
-        const CDataType* variantResolved = variant->Resolve();
-        if ( variantResolved->InheritFromType() == this ) {
-            // named choice AND variant appears only in this choice
-            variant = variantResolved;
-        }
-        string variantName = Identifier(m->GetName());
-        if ( dynamic_cast<const CNullDataType*>(variant) != 0 ) {
-            // NULL variant
-            code.ClassPublic() <<
-                "    bool Is"<<variantName<<"(void) const"<<NcbiEndl<<
-                "        { return this == 0; }"<<NcbiEndl<<
-                NcbiEndl;
-            continue;
-        }
-        string variantClass = variant->ClassName();
-        code.AddCPPInclude(variant->FileName());
-        code.AddForwardDeclaration(variantClass, variant->Namespace());
-        code.TypeInfoBody() <<
-            "    ADD_SUB_CLASS2(\"" << m->GetName() << "\", " << variantClass <<
-                   ");" << NcbiEndl;
-        code.ClassPublic() << NcbiEndl <<
-            "    bool Is"<<variantName<<"(void) const;" << NcbiEndl <<
-            "    "<<variantClass<<"* Get"<<variantName<<"(void);" << NcbiEndl <<
-            "    const "<<variantClass<<"* Get"<<variantName<<"(void) const;" << NcbiEndl;
-        code.Methods() <<
-            "bool "<<className<<"_Base::Is"<<variantName<<"(void) const" << NcbiEndl <<
-            '{' << NcbiEndl <<
-            "    return dynamic_cast<const "<<variantClass<<"*>(this) != 0;" << NcbiEndl <<
-            '}' << NcbiEndl <<
-            variantClass<<"* "<<className<<"_Base::Get"<<variantName<<"(void)" << NcbiEndl <<
-            '{' << NcbiEndl <<
-            "    return dynamic_cast<"<<variantClass<<"*>(this);" << NcbiEndl <<
-            '}' << NcbiEndl <<
-            "const "<<variantClass<<"* "<<className<<"_Base::Get"<<variantName<<"(void) const" << NcbiEndl <<
-            '{' << NcbiEndl <<
-            "    return dynamic_cast<const "<<variantClass<<"*>(this);" << NcbiEndl <<
-            '}' << NcbiEndl;
-    }
-}
-
-void CChoiceDataType::GetCType(CTypeStrings& tType, CClassCode& ) const
-{
-    string className = ClassName();
-    tType.SetClass(className);
-    tType.AddHPPInclude(FileName());
-    tType.AddForwardDeclaration(className, Namespace());
-    tType.ToPointer();
-    tType.SetChoice();
 }
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/03 21:42:11  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.4  1999/12/01 17:36:25  vasilche
 * Fixed CHOICE processing.
 *
@@ -124,8 +127,8 @@ class CDataContainerType : public CDataMemberContainerType {
 public:
     CTypeInfo* CreateTypeInfo(void);
     
-    virtual void GenerateCode(CClassCode& code) const;
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
+    void GenerateCode(CClassCode& code) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
 
 protected:
     virtual CClassInfoTmpl* CreateClassInfo(void);
@@ -147,18 +150,6 @@ class CDataSequenceType : public CDataContainerType {
 public:
     bool CheckValue(const CDataValue& value) const;
 
-    virtual const char* GetASNKeyword(void) const;
-};
-
-class CChoiceDataType : public CDataMemberContainerType {
-    typedef CDataMemberContainerType CParent;
-public:
-    void FixTypeTree(void) const;
-    bool CheckValue(const CDataValue& value) const;
-
-    CTypeInfo* CreateTypeInfo(void);
-    virtual void GenerateCode(CClassCode& code) const;
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
     virtual const char* GetASNKeyword(void) const;
 };
 

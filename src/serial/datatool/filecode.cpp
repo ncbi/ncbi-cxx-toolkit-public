@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.4  1999/12/01 17:36:25  vasilche
 * Fixed CHOICE processing.
 *
@@ -45,6 +48,7 @@
 #include "filecode.hpp"
 #include "code.hpp"
 #include "type.hpp"
+#include <typeinfo>
 
 CFileCode::CFileCode(const string& baseName, const string& headerPrefix)
     : m_BaseName(baseName), m_HeaderPrefix(headerPrefix)
@@ -350,6 +354,7 @@ bool CFileCode::AddType(const CDataType* type)
         return false;
     }
 
+    _TRACE("AddType: " << type->IdName() << ": " << typeid(*type).name());
     cls = new CClassCode(*this, type->IdName(), type);
     return true;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/12/03 21:42:12  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.15  1999/11/19 15:48:10  vasilche
 * Modified AutoPtr template to allow its use in STL containers (map, vector etc.)
 *
@@ -49,6 +52,7 @@
 #include "reftype.hpp"
 #include "unitype.hpp"
 #include "blocktype.hpp"
+#include "choicetype.hpp"
 #include "value.hpp"
 
 AutoPtr<CModuleSet> ASNParser::Modules(const string& fileName)

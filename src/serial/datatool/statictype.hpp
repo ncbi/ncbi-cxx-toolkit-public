@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/12/03 21:42:13  vasilche
+* Fixed conflict of enums in choices.
+*
 * Revision 1.4  1999/12/01 17:36:27  vasilche
 * Fixed CHOICE processing.
 *
@@ -53,7 +56,7 @@ class CStaticDataType : public CDataType {
 public:
     void PrintASN(CNcbiOstream& out, int indent) const;
 
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
     virtual string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const = 0;
 };
@@ -102,7 +105,7 @@ public:
     virtual string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetTypeInfo(void);
-    void GetCType(CTypeStrings& tType, CClassCode& code) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
     string GetDefaultCType(void) const;
     virtual const char* GetASNKeyword(void) const;
 
@@ -123,8 +126,8 @@ class COctetStringDataType : public CStaticDataType {
 public:
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
-    virtual void GetCType(CTypeStrings& tType, CClassCode& code) const;
-    virtual const char* GetASNKeyword(void) const;
+    void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
+    const char* GetASNKeyword(void) const;
 };
 
 class CIntDataType : public CStaticDataType {

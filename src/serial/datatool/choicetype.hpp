@@ -1,5 +1,5 @@
-#ifndef REFTYPE_HPP
-#define REFTYPE_HPP
+#ifndef CHOICETYPE_HPP
+#define CHOICETYPE_HPP
 
 /*  $Id$
 * ===========================================================================
@@ -29,55 +29,31 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Type reference definition
+*   Type description of CHOICE type
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  1999/12/03 21:42:13  vasilche
+* Revision 1.1  1999/12/03 21:42:11  vasilche
 * Fixed conflict of enums in choices.
-*
-* Revision 1.3  1999/12/01 17:36:26  vasilche
-* Fixed CHOICE processing.
-*
-* Revision 1.2  1999/11/15 19:36:18  vasilche
-* Fixed warnings on GCC
 *
 * ===========================================================================
 */
 
-#include "type.hpp"
+#include "blocktype.hpp"
+#include <serial/choice.hpp>
+#include "statictype.hpp"
 
-class CReferenceDataType : public CDataType {
-    typedef CDataType CParent;
+class CChoiceDataType : public CDataMemberContainerType {
+    typedef CDataMemberContainerType CParent;
 public:
-    CReferenceDataType(const string& n);
-
-    void PrintASN(CNcbiOstream& out, int indent) const;
-
     void FixTypeTree(void) const;
-    bool CheckType(void) const;
     bool CheckValue(const CDataValue& value) const;
-    TObjectPtr CreateDefault(const CDataValue& value) const;
 
-    const CTypeInfo* GetTypeInfo(void);
-
+    CTypeInfo* CreateTypeInfo(void);
     void GenerateCode(CClassCode& code) const;
+    void GetRefCType(CTypeStrings& tType, CClassCode& code) const;
     void GetFullCType(CTypeStrings& tType, CClassCode& code) const;
-
-    virtual const CDataType* Resolve(void) const; // resolve or this
-    virtual CDataType* Resolve(void); // resolve or this
-
-    const string& GetUserTypeName(void) const
-        {
-            return m_UserTypeName;
-        }
-
-protected:
-    CDataType* ResolveOrNull(void) const;
-    CDataType* ResolveOrThrow(void) const;
-
-private:
-    string m_UserTypeName;
+    const char* GetASNKeyword(void) const;
 };
 
 #endif
