@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.60  2004/04/23 19:06:33  camacho
+ * Do NOT use lowercase names for #defines
+ *
  * Revision 1.59  2004/04/23 13:49:20  madden
  * Cleaned up ifndef in BlastKarlinLHtoK
  *
@@ -1792,7 +1795,7 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, Blast_ResFreq* rfp1
 #define DIMOFP0_MAX (BLAST_KARLIN_K_ITER_MAX*BLAST_SCORE_RANGE_MAX+1)
 
 
-#define smallLambdaThreshold 20 /*defines special case in K computation*/
+#define SMALL_LAMBDA_THRESHOLD 20 /*defines special case in K computation*/
                                 /*threshold is on exp(-Lambda)*/
 
 /*The following procedure computes K. The input includes Lambda, H,
@@ -1990,7 +1993,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double lambda, double H)
     }
 #endif
 
-    if (expMinusLambda <  smallLambdaThreshold ) {
+    if (expMinusLambda <  SMALL_LAMBDA_THRESHOLD ) {
         K = -exp((double)-2.0*outerSum) /
             (firstTermClosedForm*(expMinusLambda - 1.0));
     } else {
