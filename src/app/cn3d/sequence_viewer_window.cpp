@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/05/08 21:15:44  thiessen
+* add PSSM weight dialog for sorting
+*
 * Revision 1.11  2001/04/04 00:27:15  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -334,8 +337,18 @@ void SequenceViewerWindow::OnSort(wxCommandEvent& event)
             sequenceViewer->GetCurrentDisplay()->SortRowsByIdentifier();
             break;
         case MID_SORT_THREADER:
-            sequenceViewer->GetCurrentDisplay()->SortRowsByThreadingScore(0.5);
+        {
+            GetFloatingPointDialog fpDialog(NULL,
+                "Weighting of PSSM/Contact score? ([0..1], 1 = PSSM only)", "Enter PSSM Weight",
+                0.0, 1.0, 0.05, 0.5);
+            if (fpDialog.Activate()) {
+                double weightPSSM = fpDialog.GetValue();
+                SetCursor(*wxHOURGLASS_CURSOR);
+                sequenceViewer->GetCurrentDisplay()->SortRowsByThreadingScore(weightPSSM);
+                SetCursor(wxNullCursor);
+            }
             break;
+        }
     }
     SetCursor(wxNullCursor);
 }
