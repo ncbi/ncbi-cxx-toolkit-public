@@ -69,6 +69,10 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
     mi_pResults = NULL;
     mi_pReturnStats = NULL;
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
+    // Set the database length and number of sequences here
+    m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(bssp));
+    m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
+    
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, 
@@ -83,6 +87,10 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries,
     mi_pResults = NULL;
     mi_pReturnStats = NULL;
     m_OptsHandle.Reset(&opts);    
+    // Set the database length and number of sequences here, since 
+    // these are calculated, and might not be filled in the passed argument
+    m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(bssp));
+    m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
 }
 
 CDbBlast::~CDbBlast()
@@ -223,6 +231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2003/12/15 23:42:46  dondosha
+ * Set database length and number of sequences options in constructor
+ *
  * Revision 1.6  2003/12/15 15:56:42  dondosha
  * Added constructor with options handle argument
  *
