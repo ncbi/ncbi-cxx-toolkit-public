@@ -476,7 +476,7 @@ public:
     }
 };
 
-void NCBI_PubseqReaderEntryPoint(
+void NCBI_Pubseq_ReaderEntryPoint(
      CPluginManager<objects::CReader>::TDriverInfoList&   info_list,
      CPluginManager<objects::CReader>::EEntryPointRequest method)
 {
@@ -489,6 +489,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.44  2003/12/03 16:15:29  ucko
+* Correct spelling of NCBI_Pubseq_ReaderEntryPoint.
+*
 * Revision 1.43  2003/12/03 14:30:03  kuznets
 * Code clean up.
 * Made use of driver name constant instead of immediate in-place string.
