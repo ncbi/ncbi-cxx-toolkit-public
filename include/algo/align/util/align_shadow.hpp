@@ -60,55 +60,55 @@ public:
     CAlignShadow(const objects::CSeq_align& seq_align);
 
     // getters / setters
-    inline const TId& GetId(unsigned char where) const;
-    inline const TId& GetQueryId(void) const;
-    inline const TId& GetSubjId(void) const;
+    const TId& GetId(unsigned char where) const;
+    const TId& GetQueryId(void) const;
+    const TId& GetSubjId(void) const;
 
-    inline void  SetId(unsigned char where, const TId& id);
-    inline void  SetQueryId(const TId& id);
-    inline void  SetSubjId(const TId& id);
+    void  SetId(unsigned char where, const TId& id);
+    void  SetQueryId(const TId& id);
+    void  SetSubjId(const TId& id);
 
-    inline bool  GetStrand(unsigned char where) const;
-    inline bool  GetQueryStrand(void) const;
-    inline bool  GetSubjStrand(void) const;
+    bool  GetStrand(unsigned char where) const;
+    bool  GetQueryStrand(void) const;
+    bool  GetSubjStrand(void) const;
 
-    inline void  SetStrand(unsigned char where, bool strand);
-    inline void  SetQueryStrand(bool strand);
-    inline void  SetSubjStrand(bool strand);
+    void  SetStrand(unsigned char where, bool strand);
+    void  SetQueryStrand(bool strand);
+    void  SetSubjStrand(bool strand);
 
-    inline const Uint4* GetBox(void) const;
-    inline Uint4 GetMin(unsigned char where) const;
-    inline Uint4 GetMax(unsigned char where) const;
-    inline Uint4 GetQueryMin(void) const;
-    inline Uint4 GetQueryMax(void) const;
-    inline Uint4 GetSubjMin(void) const;
-    inline Uint4 GetSubjMax(void) const;
+    const Uint4* GetBox(void) const;
+    Uint4 GetMin(unsigned char where) const;
+    Uint4 GetMax(unsigned char where) const;
+    Uint4 GetQueryMin(void) const;
+    Uint4 GetQueryMax(void) const;
+    Uint4 GetSubjMin(void) const;
+    Uint4 GetSubjMax(void) const;
 
-    inline void SetBox(const Uint4 box [4]);
-    inline void SetMax(unsigned char where, Uint4 val);
-    inline void SetMin(unsigned char where, Uint4 val);
-    inline void SetQueryMin(Uint4 val);
-    inline void SetQueryMax(Uint4 val);
-    inline void SetSubjMin(Uint4 val);
-    inline void SetSubjMax(Uint4 val);
+    void SetBox(const Uint4 box [4]);
+    void SetMax(unsigned char where, Uint4 val);
+    void SetMin(unsigned char where, Uint4 val);
+    void SetQueryMin(Uint4 val);
+    void SetQueryMax(Uint4 val);
+    void SetSubjMin(Uint4 val);
+    void SetSubjMax(Uint4 val);
 
-    inline void  SetLength(Uint4 length);
-    inline Uint4 GetLength(void) const;
+    void  SetLength(Uint4 length);
+    Uint4 GetLength(void) const;
 
-    inline void  SetMismatches(Uint4 mismatches);
-    inline Uint4 GetMismatches(void) const;
+    void  SetMismatches(Uint4 mismatches);
+    Uint4 GetMismatches(void) const;
 
-    inline void  SetGaps(Uint4 gaps);
-    inline Uint4 GetGaps(void) const;
+    void  SetGaps(Uint4 gaps);
+    Uint4 GetGaps(void) const;
 
-    inline void   SetEValue(double evalue);
-    inline double GetEValue(void) const;
+    void   SetEValue(double evalue);
+    double GetEValue(void) const;
 
-    inline void  SetIdentity(float identity);
-    inline float GetIdentity(void) const;
+    void  SetIdentity(float identity);
+    float GetIdentity(void) const;
 
-    inline void  SetScore(float evalue);
-    inline float GetScore(void) const;
+    void  SetScore(float evalue);
+    float GetScore(void) const;
 
     // serialization
     template<class T>
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/03 19:33:19  ucko
+ * Drop empty "inline" promises from member declarations.
+ *
  * Revision 1.3  2004/12/22 21:25:15  kapustin
  * Move friend template definition to the header. Declare explicit specialization.
  *
