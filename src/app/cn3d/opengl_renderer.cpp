@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/09/14 18:14:31  thiessen
+* fix trigonometry error
+*
 * Revision 1.62  2002/09/14 17:03:07  thiessen
 * center initial view on aligned residues
 *
@@ -534,7 +537,7 @@ void OpenGLRenderer::CenterView(const Vector& viewCenter, double radius)
     cameraLookAtX = lookAt.x;
     cameraLookAtY = lookAt.y;
 
-    cameraAngleRad = 2.0 * asin(radius / (cameraLocation - centerWRTcamera).length());
+    cameraAngleRad = 2.0 * atan(radius / (cameraLocation - centerWRTcamera).length());
 
     NewView();
     TESTMSG("looking at " << lookAt << " angle " << RadToDegrees(cameraAngleRad));
