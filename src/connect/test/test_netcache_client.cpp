@@ -281,13 +281,16 @@ int CTestNetCacheClient::Run(void)
         CNetCacheClient nc_client(&sock);
 
         char dataBuf[1024];
-        IReader* reader = nc_client.GetData(key);
+        size_t blob_size;
+        IReader* reader = nc_client.GetData(key, &blob_size);
         assert(reader);
         reader->Read(dataBuf, 1024);
         delete reader;
 
         int res = strcmp(dataBuf, test_data);
         assert(res == 0);
+
+        assert(blob_size == sizeof(test_data));
     }}
 
     {{
@@ -397,6 +400,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/01 16:02:44  kuznets
+ * Test for BLOB size" test_netcache_client.cpp
+ *
  * Revision 1.10  2004/11/01 14:50:05  kuznets
  * test BLOB update
  *
