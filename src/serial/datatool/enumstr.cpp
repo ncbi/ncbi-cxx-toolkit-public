@@ -27,9 +27,183 @@
 *
 * File Description:
 *   Type info for class generation: includes, used classes, C code etc.
+*/
+
+#include <serial/datatool/enumstr.hpp>
+#include <serial/datatool/classctx.hpp>
+#include <serial/datatool/srcutil.hpp>
+#include <serial/datatool/enumtype.hpp>
+#include <serial/datatool/code.hpp>
+#include <corelib/ncbiutil.hpp>
+
+BEGIN_NCBI_SCOPE
+
+CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
+                                   const string& enumName,
+                                   const string& cType, bool isInteger,
+                                   const TValues& values,
+                                   const string& valuePrefix)
+    : m_ExternalName(externalName), m_EnumName(enumName),
+      m_CType(cType), m_IsInteger(isInteger),
+      m_Values(values), m_ValuesPrefix(valuePrefix)
+{
+}
+
+CTypeStrings::EKind CEnumTypeStrings::GetKind(void) const
+{
+    return eKindEnum;
+}
+
+const string& CEnumTypeStrings::GetEnumName(void) const
+{
+    return m_EnumName;
+}
+
+string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
+{
+    return m_CType;
+}
+
+string CEnumTypeStrings::GetRef(const CNamespace& /*ns*/) const
+{
+    return "ENUM, ("+m_CType+", "+m_EnumName+')';
+}
+
+string CEnumTypeStrings::GetInitializer(void) const
+{
+    return m_EnumName+"(0)";
+}
+
+void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+{
+    string methodPrefix = ctx.GetMethodPrefix();
+    bool inClass = !methodPrefix.empty();
+    {
+        // generated enum
+        CNcbiOstrstream hpp;
+        hpp <<
+            "enum "<<m_EnumName<<" {";
+        ITERATE ( TValues, i, m_Values ) {
+            if ( i != m_Values.begin() )
+                hpp << ',';
+            string id = Identifier(i->GetName(), false);
+            hpp << "\n"
+                "    "<<m_ValuesPrefix<<id<<" = "<<i->GetValue();
+        }
+        hpp << "\n"
+            "};\n"
+            "\n";
+        // prototype of GetTypeInfo_enum_* function
+        if ( inClass )
+            hpp << "DECLARE_INTERNAL_ENUM_INFO";
+        else
+            hpp << CClassCode::GetExportSpecifier() << " DECLARE_ENUM_INFO";
+        hpp << '('<<m_EnumName<<");\n"
+            "\n";
+        ctx.AddHPPCode(hpp);
+    }
+    {
+        // definition of GetTypeInfo_enum_ function
+        CNcbiOstrstream cpp;
+        if ( methodPrefix.empty() ) {
+            cpp <<
+                "BEGIN_NAMED_ENUM_INFO(\""<<GetExternalName()<<'\"';
+        }
+        else {
+            cpp <<
+                "BEGIN_NAMED_ENUM_IN_INFO(\""<<GetExternalName()<<"\", "<<
+                methodPrefix;
+        }
+        cpp <<", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
+            "{\n";
+        if ( !GetModuleName().empty() ) {
+            cpp <<
+                "    SET_ENUM_MODULE(\""<<GetModuleName()<<"\");\n";
+        }
+        ITERATE ( TValues, i, m_Values ) {
+            string id = Identifier(i->GetName(), false);
+            cpp <<
+                "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";
+        }
+        cpp <<
+            "}\n"
+            "END_ENUM_INFO\n"
+            "\n";
+        ctx.AddCPPCode(cpp);
+    }
+}
+
+CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
+                                         const string& cType,
+                                         const CNamespace& ns,
+                                         const string& fileName)
+    : m_EnumName(enumName),
+      m_CType(cType), m_Namespace(ns),
+      m_FileName(fileName)
+{
+}
+
+CTypeStrings::EKind CEnumRefTypeStrings::GetKind(void) const
+{
+    return eKindEnum;
+}
+
+const CNamespace& CEnumRefTypeStrings::GetNamespace(void) const
+{
+    return m_Namespace;
+}
+
+const string& CEnumRefTypeStrings::GetEnumName(void) const
+{
+    return m_EnumName;
+}
+
+string CEnumRefTypeStrings::GetCType(const CNamespace& ns) const
+{
+    if ( !m_CType.empty() && m_CType != m_EnumName )
+        return m_CType;
+
+    return ns.GetNamespaceRef(m_Namespace)+m_EnumName;
+}
+
+string CEnumRefTypeStrings::GetRef(const CNamespace& ns) const
+{
+    string ref = "ENUM";
+    bool haveNamespace = !m_Namespace.IsEmpty() && m_Namespace != ns;
+    if ( haveNamespace )
+        ref += "_IN";
+    ref += ", (";
+    if ( m_CType.empty() )
+        ref += m_EnumName;
+    else
+        ref += m_CType;
+    if ( haveNamespace ) {
+        ref += ", ";
+        ref += m_Namespace.ToString();
+    }
+    return ref+", "+m_EnumName+')';
+}
+
+string CEnumRefTypeStrings::GetInitializer(void) const
+{
+    return GetCType(CNamespace::KEmptyNamespace) + "(0)";
+}
+
+void CEnumRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
+{
+    ctx.HPPIncludes().insert(m_FileName);
+}
+
+END_NCBI_SCOPE
+
+/*
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/04/10 18:13:29  ucko
+* Add export specifiers to (external) DECLARE_ENUM_INFO calls.
+* Move CVS log to end.
+*
 * Revision 1.16  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -130,169 +304,3 @@
 *
 * ===========================================================================
 */
-
-#include <serial/datatool/enumstr.hpp>
-#include <serial/datatool/classctx.hpp>
-#include <serial/datatool/srcutil.hpp>
-#include <serial/datatool/enumtype.hpp>
-#include <corelib/ncbiutil.hpp>
-
-BEGIN_NCBI_SCOPE
-
-CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
-                                   const string& enumName,
-                                   const string& cType, bool isInteger,
-                                   const TValues& values,
-                                   const string& valuePrefix)
-    : m_ExternalName(externalName), m_EnumName(enumName),
-      m_CType(cType), m_IsInteger(isInteger),
-      m_Values(values), m_ValuesPrefix(valuePrefix)
-{
-}
-
-CTypeStrings::EKind CEnumTypeStrings::GetKind(void) const
-{
-    return eKindEnum;
-}
-
-const string& CEnumTypeStrings::GetEnumName(void) const
-{
-    return m_EnumName;
-}
-
-string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
-{
-    return m_CType;
-}
-
-string CEnumTypeStrings::GetRef(const CNamespace& /*ns*/) const
-{
-    return "ENUM, ("+m_CType+", "+m_EnumName+')';
-}
-
-string CEnumTypeStrings::GetInitializer(void) const
-{
-    return m_EnumName+"(0)";
-}
-
-void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
-{
-    string methodPrefix = ctx.GetMethodPrefix();
-    bool inClass = !methodPrefix.empty();
-    {
-        // generated enum
-        CNcbiOstrstream hpp;
-        hpp <<
-            "enum "<<m_EnumName<<" {";
-        ITERATE ( TValues, i, m_Values ) {
-            if ( i != m_Values.begin() )
-                hpp << ',';
-            string id = Identifier(i->GetName(), false);
-            hpp << "\n"
-                "    "<<m_ValuesPrefix<<id<<" = "<<i->GetValue();
-        }
-        hpp << "\n"
-            "};\n"
-            "\n";
-        // prototype of GetTypeInfo_enum_* function
-        if ( inClass )
-            hpp << "DECLARE_INTERNAL_ENUM_INFO";
-        else
-            hpp << "DECLARE_ENUM_INFO";
-        hpp << '('<<m_EnumName<<");\n"
-            "\n";
-        ctx.AddHPPCode(hpp);
-    }
-    {
-        // definition of GetTypeInfo_enum_ function
-        CNcbiOstrstream cpp;
-        if ( methodPrefix.empty() ) {
-            cpp <<
-                "BEGIN_NAMED_ENUM_INFO(\""<<GetExternalName()<<'\"';
-        }
-        else {
-            cpp <<
-                "BEGIN_NAMED_ENUM_IN_INFO(\""<<GetExternalName()<<"\", "<<
-                methodPrefix;
-        }
-        cpp <<", "<<m_EnumName<<", "<<(m_IsInteger?"true":"false")<<")\n"
-            "{\n";
-        if ( !GetModuleName().empty() ) {
-            cpp <<
-                "    SET_ENUM_MODULE(\""<<GetModuleName()<<"\");\n";
-        }
-        ITERATE ( TValues, i, m_Values ) {
-            string id = Identifier(i->GetName(), false);
-            cpp <<
-                "    ADD_ENUM_VALUE(\""<<i->GetName()<<"\", "<<m_ValuesPrefix<<id<<");\n";
-        }
-        cpp <<
-            "}\n"
-            "END_ENUM_INFO\n"
-            "\n";
-        ctx.AddCPPCode(cpp);
-    }
-}
-
-CEnumRefTypeStrings::CEnumRefTypeStrings(const string& enumName,
-                                         const string& cType,
-                                         const CNamespace& ns,
-                                         const string& fileName)
-    : m_EnumName(enumName),
-      m_CType(cType), m_Namespace(ns),
-      m_FileName(fileName)
-{
-}
-
-CTypeStrings::EKind CEnumRefTypeStrings::GetKind(void) const
-{
-    return eKindEnum;
-}
-
-const CNamespace& CEnumRefTypeStrings::GetNamespace(void) const
-{
-    return m_Namespace;
-}
-
-const string& CEnumRefTypeStrings::GetEnumName(void) const
-{
-    return m_EnumName;
-}
-
-string CEnumRefTypeStrings::GetCType(const CNamespace& ns) const
-{
-    if ( !m_CType.empty() && m_CType != m_EnumName )
-        return m_CType;
-
-    return ns.GetNamespaceRef(m_Namespace)+m_EnumName;
-}
-
-string CEnumRefTypeStrings::GetRef(const CNamespace& ns) const
-{
-    string ref = "ENUM";
-    bool haveNamespace = !m_Namespace.IsEmpty() && m_Namespace != ns;
-    if ( haveNamespace )
-        ref += "_IN";
-    ref += ", (";
-    if ( m_CType.empty() )
-        ref += m_EnumName;
-    else
-        ref += m_CType;
-    if ( haveNamespace ) {
-        ref += ", ";
-        ref += m_Namespace.ToString();
-    }
-    return ref+", "+m_EnumName+')';
-}
-
-string CEnumRefTypeStrings::GetInitializer(void) const
-{
-    return GetCType(CNamespace::KEmptyNamespace) + "(0)";
-}
-
-void CEnumRefTypeStrings::GenerateTypeCode(CClassContext& ctx) const
-{
-    ctx.HPPIncludes().insert(m_FileName);
-}
-
-END_NCBI_SCOPE
