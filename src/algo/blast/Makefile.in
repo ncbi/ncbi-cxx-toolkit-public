@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile("BLAST" project)
+#################################
+
+SUB_PROJ = core api
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
