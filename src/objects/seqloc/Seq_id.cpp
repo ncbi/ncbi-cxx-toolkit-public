@@ -1301,14 +1301,14 @@ CSeq_id::x_Init
             CPDB_mol_id& pdb_mol = pdb.SetMol();
             pdb_mol.Set(acc);
 
-            if (name.size() == 1) {
-                pdb.SetChain(static_cast<unsigned char> (name.c_str()[0]));
+            if (name.empty()) {
+                pdb.SetChain(' ');
+            } else if (name.size() == 1) {
+                pdb.SetChain(static_cast<unsigned char> (name[0]));
             } else if ( name.compare("VB") == 0) {
                 pdb.SetChain('|');
-            } else if (name.size() == 2  &&
-                       name.c_str()[0] ==  name.c_str()[1]) {
-                pdb.SetChain( Locase(static_cast<unsigned char>
-                                     (name.c_str()[0])) );
+            } else if (name.size() == 2  &&  name[0] ==  name[1]) {
+                pdb.SetChain( Locase(static_cast<unsigned char> (name[0])) );
             } else {
                 s_InitThrow("Unexpected PDB chain id.",
                             string(s_TextId[the_type]), acc_in, name_in,
@@ -1340,6 +1340,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.55  2003/05/09 14:22:56  ucko
+ * CSeq_id::x_Init: treat missing (chain) names as spaces (reported by
+ * Michel Dumontier) and get rid of some unnecessary calls to c_str().
+ *
  * Revision 6.54  2003/04/30 14:41:01  ucko
  * CSeq_id::IdentifyAccession: CDnnnnnn -> eAcc_gb_est
  *
