@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/02/14 22:03:09  lavr
+ * 0x... constants explicitly made unsigned
+ *
  * Revision 6.5  2001/01/12 23:51:39  lavr
  * Message logging modified for use LOG facility only
  *
@@ -143,8 +146,8 @@ struct SHEAP_tag {
 
 
 #define HEAP_ALIGN(a, b)        (((unsigned long)(a) + (b) - 1) & ~((b) - 1))
-#define HEAP_LAST               0x80000000L
-#define HEAP_USED               0x0DEADF00L
+#define HEAP_LAST               0x80000000UL
+#define HEAP_USED               0x0DEAD2F0UL
 #define HEAP_FREE               0
 #define HEAP_ISFREE(b)          (((b)->flag & ~HEAP_LAST) == HEAP_FREE)
 #define HEAP_ISUSED(b)          (((b)->flag & ~HEAP_LAST) == HEAP_USED)
