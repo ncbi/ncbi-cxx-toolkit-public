@@ -226,13 +226,19 @@ IStatement* CConnection::GetStatement()
 {
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetStatement(): Connection taken, cannot use this method");
-
+/*
     if( m_stmt == 0 ) {
         m_stmt = new CStatement(this);
         AddListener(m_stmt);
         m_stmt->AddListener(this);
     }
     return m_stmt;
+*/
+    CStatement *stmt = new CStatement(this);
+    AddListener(stmt);
+    stmt->AddListener(this);
+    
+    return stmt;
 }
 
 ICallableStatement*
@@ -241,7 +247,7 @@ CConnection::GetCallableStatement(const string& proc,
 {
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetCallableStatement(): Connection taken, cannot use this method");
-
+/*
     if( m_cstmt != 0 ) {
         //m_cstmt->PurgeResults();
         delete m_cstmt;
@@ -250,6 +256,11 @@ CConnection::GetCallableStatement(const string& proc,
     AddListener(m_cstmt);
     m_cstmt->AddListener(this);
     return m_cstmt;
+*/
+    CCallableStatement *cstmt = new CCallableStatement(proc, nofArgs, this);
+    AddListener(cstmt);
+    cstmt->AddListener(this);
+    return cstmt;
 }
 
 ICursor* CConnection::GetCursor(const string& name,
@@ -259,7 +270,7 @@ ICursor* CConnection::GetCursor(const string& name,
 {
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetCursor(): Connection taken, cannot use this method");
-
+/*
     if( m_cursor != 0 ) {
         delete m_cursor;
     }
@@ -267,6 +278,11 @@ ICursor* CConnection::GetCursor(const string& name,
     AddListener(m_cursor);
     m_cursor->AddListener(this);
     return m_cursor;
+*/
+    CCursor *cursor = new CCursor(name, sql, nofArgs, batchSize, this);
+    AddListener(cursor);
+    cursor->AddListener(this);
+    return cursor;
 }
 
 IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
@@ -274,7 +290,7 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
 {
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
-
+/*
     if( m_bulkInsert != 0 ) {
         delete m_bulkInsert;
     }
@@ -282,6 +298,11 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
     AddListener(m_bulkInsert);
     m_bulkInsert->AddListener(this);
     return m_bulkInsert;
+*/
+    CBulkInsert *bulkInsert = new CBulkInsert(table_name, nof_cols, this);
+    AddListener(bulkInsert);
+    bulkInsert->AddListener(this);
+    return bulkInsert;
 }
 // New part end
 
@@ -342,7 +363,7 @@ void CConnection::Action(const CDbapiEvent& e)
         << "' received from " << e.GetSource()->GetIdent() << " " << (void*)e.GetSource());
 
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-
+/*
         CStatement *stmt;
         CCallableStatement *cstmt;
         CCursor *cursor;
@@ -371,7 +392,7 @@ void CConnection::Action(const CDbapiEvent& e)
                 m_bulkInsert = 0;
             }
         }
-
+*/
         if( m_connCounter == 1 )
             m_connUsed = false;
     }
@@ -481,6 +502,9 @@ END_NCBI_SCOPE
 /*
 *
 * $Log$
+* Revision 1.34  2004/11/03 20:02:10  kholodov
+* Modified: amount of objects created with Cet..() methods is now unrestricted
+*
 * Revision 1.33  2004/11/01 22:58:01  kholodov
 * Modified: CDBMultiEx object is replace instead of whole handler
 *
