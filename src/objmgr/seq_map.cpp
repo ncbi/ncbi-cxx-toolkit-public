@@ -599,7 +599,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
         ret.Reset(new CSeqMap(TSeqPos(0)));
     }
     const_cast<CSeqMap&>(*ret).m_Mol = inst.GetMol();
-    if ( inst.GetLength() ) {
+    if ( inst.IsSetLength() ) {
         const_cast<CSeqMap&>(*ret).m_SeqLength = inst.GetLength();
     }
     return ret;
@@ -837,6 +837,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/06/30 18:39:18  vasilche
+* Fixed access to uninitialized member.
+*
 * Revision 1.42  2003/06/27 19:09:02  grichenk
 * Fixed problem with unset sequence length.
 *
