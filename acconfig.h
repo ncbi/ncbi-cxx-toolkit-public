@@ -27,6 +27,9 @@
 /* gethostbyaddr_r() */
 #undef HAVE_GETHOSTBYADDR_R
 
+/* pthread_setconcurrency() */
+#undef HAVE_PTHREAD_SETCONCURRENCY
+
 /* strdup() */
 #undef HAVE_STRDUP
 

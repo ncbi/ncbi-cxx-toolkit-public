@@ -790,6 +790,16 @@ AC_TRY_COMPILE(
 AC_MSG_RESULT()
 
 
+AC_MSG_CHECKING(for pthread_setconcurrency)
+AC_TRY_COMPILE(
+   [#include <pthread.h>
+   ],
+   [ int ret_value = pthread_setconcurrency(5); ],
+   AC_DEFINE_UNQUOTED(HAVE_PTHREAD_SETCONCURRENCY, 1)
+)
+AC_MSG_RESULT()
+
+
 AC_MSG_CHECKING(for strdup)
 AC_TRY_COMPILE(
    [#include <string.h>],
