@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/07/31 15:07:58  lavr
+ * Added paranoia log message: freeing a block in a NULL heap
+ *
  * Revision 6.12  2001/07/13 20:09:27  lavr
  * If remaining space in a block is equal to block header,
  * do not leave this space as a padding of the block been allocated,
@@ -403,8 +406,11 @@ void HEAP_Free(HEAP heap, SHEAP_Block* ptr)
 {
     SHEAP_Block* b, *p = 0;
 
-    if (!heap || !ptr)
+    if (!heap || !ptr) {
+        if (ptr)
+            CORE_LOG(eLOG_Warning, "Heap Free: Cannot free in NULL heap");
         return;
+    }
 
     if (!heap->chunk) {
         CORE_LOG(eLOG_Warning, "Heap Free: Heap is read-only");
