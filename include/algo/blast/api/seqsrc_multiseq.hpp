@@ -49,10 +49,10 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Encapsulates the arguments needed to initialize multi-sequence source.
-typedef struct {
+struct SMultiSeqSrcNewArgs {
     TSeqLocVector seq_vector;
     EProgram program;
-} SMultiSeqSrcNewArgs;
+};
 
 /// Contains information about all sequences in a set.
 class CMultiSeqInfo : public CObject 
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/25 17:18:28  camacho
+ * typedef not needed for C++ structs
+ *
  * Revision 1.5  2004/03/23 14:14:12  camacho
  * Moved comment from source file to header
  *
