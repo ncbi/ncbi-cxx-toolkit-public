@@ -28,7 +28,7 @@
 * ===========================================================================
 */
 
-/// @file: blast_tabular.hpp
+/// @file: blast_tabular.cpp
 /// C++ implementation of the on-the-fly tabular formatting of BLAST results. 
 
 static char const rcsid[] = "$Id$";
@@ -55,35 +55,35 @@ USING_SCOPE(objects);
 //BEGIN_SCOPE(blast)
 USING_SCOPE(blast);
 
-CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast& blaster,
+CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
    const TSeqLocVector& query_v, CNcbiOstream& ostream)
     : m_QueryVec(query_v), m_OutStream(&ostream)
 {
-    m_Program = blaster.GetOptions().GetProgram();
-    m_pHspStream = blaster.GetHSPStream();
-    m_pQuery = blaster.GetQueryBlk();
+    m_Program = blaster->GetOptions().GetProgramType();
+    m_pHspStream = blaster->GetHSPStream();
+    m_pQuery = blaster->GetQueryBlk();
 
     m_ibPerformTraceback = 
-        (blaster.GetOptions().GetGappedMode() && 
-         blaster.GetOptions().GetGapTracebackAlgorithm() != eSkipTbck);
+        (blaster->GetOptions().GetGappedMode() && 
+         blaster->GetOptions().GetGapTracebackAlgorithm() != eSkipTbck);
 
     m_iGenCodeString = 
-        FindGeneticCode(blaster.GetOptions().GetQueryGeneticCode());
+        FindGeneticCode(blaster->GetOptions().GetQueryGeneticCode());
     /* Sequence source must be copied, to guarantee multi-thread safety. */
-    m_ipSeqSrc = BlastSeqSrcCopy(blaster.GetSeqSrc());
+    m_ipSeqSrc = BlastSeqSrcCopy(blaster->GetSeqSrc());
     /* Effective lengths must be duplicated in query info structure, because
        they might be changing in the preliminary search. */
-    m_ipQueryInfo = BlastQueryInfoDup(blaster.GetQueryInfo());
+    m_ipQueryInfo = BlastQueryInfoDup(blaster->GetQueryInfo());
 
     /* If traceback will have to be performed before tabular output, 
        do the preparation for it here. */
     if (m_ibPerformTraceback) {
         BLAST_GapAlignSetUp(m_Program, m_ipSeqSrc, 
-            blaster.GetOptions().GetScoringOpts(), 
-            blaster.GetOptions().GetEffLenOpts(), 
-            blaster.GetOptions().GetExtnOpts(), 
-            blaster.GetOptions().GetHitSaveOpts(), blaster.GetQueryInfo(), 
-            blaster.GetScoreBlk(), &m_ipScoreParams, &m_ipExtParams, 
+            blaster->GetOptions().GetScoringOpts(), 
+            blaster->GetOptions().GetEffLenOpts(), 
+            blaster->GetOptions().GetExtnOpts(), 
+            blaster->GetOptions().GetHitSaveOpts(), blaster->GetQueryInfo(), 
+            blaster->GetScoreBlk(), &m_ipScoreParams, &m_ipExtParams, 
             &m_ipHitParams, &m_ipEffLenParams, &m_ipGapAlign);
     } else {
         m_ipScoreParams = NULL;
@@ -150,7 +150,8 @@ void* CBlastTabularFormatThread::Main(void)
 
    if (m_ibPerformTraceback) {
       memset((void*) &seq_arg, 0, sizeof(seq_arg));
-      seq_arg.encoding = Blast_TracebackGetEncoding(m_Program);
+      seq_arg.encoding = 
+          Blast_TracebackGetEncoding(m_Program);
    }
 
    vector<CSeq_id*> query_id_v;
@@ -260,6 +261,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/07/06 15:55:27  dondosha
+* Changed CDbBlast argument in constructor to const pointer
+*
 * Revision 1.2  2004/06/15 20:24:35  dondosha
 * Corrected path to blast_setup.hpp header
 *
