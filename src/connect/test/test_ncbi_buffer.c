@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  1999/11/22 16:12:54  vakatov
+ * Allow to #include ncbi_buffer.h as a local
+ *
  * Revision 6.2  1999/11/12 17:31:51  vakatov
  * Cosmetics -- get rid of an extra warning in Release build
  *
@@ -40,7 +43,7 @@
  */
 
 
-#include <ncbi_buffer.h>
+#include "ncbi_buffer.h"
 
 #if defined(NDEBUG)
 #  undef NDEBUG
