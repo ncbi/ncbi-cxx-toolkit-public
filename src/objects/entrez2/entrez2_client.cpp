@@ -216,13 +216,13 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
         // Break query_uids into chunks <= kMaxIdsInQueryString
         vector<int> subset_query_uids;
         subset_query_uids.reserve(kMaxIdsInQueryString);
-        for (unsigned int start = 0;  start < query_uids.size();
+        for (size_t start = 0;  start < query_uids.size();
              start += kMaxIdsInQueryString) {
             subset_query_uids.clear();
             // end is one past the last index of interest
-            unsigned int end =
+            size_t end =
                 min(start + kMaxIdsInQueryString, query_uids.size());
-            for (unsigned int i = start;  i < end;  ++i) {
+            for (size_t i = start;  i < end;  ++i) {
                 subset_query_uids.push_back(query_uids[i]);
             }
             // This relies on the fact that FilterIds appends to result
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/09/09 20:22:59  ucko
+* Don't intermix unsigned int and size_t.
+*
 * Revision 1.12  2004/09/09 20:00:58  jcherry
 * Changed CEntrez2Client::FilterIds to handle large sets of query uids
 * more intelligently.
