@@ -383,12 +383,12 @@ bool CTL_BCPInCmd::CompleteBCP()
     CS_INT outrow = 0;
 
     switch( blk_done(m_Cmd, CS_BLK_ALL, &outrow) ) {
-    case CS_SUCCEED: return (outrow > 0);
+    case CS_SUCCEED: m_WasSent= false; return (outrow > 0);
     case CS_FAIL:
         m_HasFailed = true;
         throw CDB_ClientEx(eDB_Fatal, 123020,
                            "CTL_BCPInCmd::CompleteBCP", "blk_done failed");
-    default: return false;
+    default: m_WasSent= false; return false;
     }
 }
 
@@ -397,7 +397,9 @@ void CTL_BCPInCmd::Release()
 {
     m_BR = 0;
     if (m_WasSent) {
-        Cancel();
+        try {
+            Cancel();
+        } catch (CDB_Exception& e) {}
         m_WasSent = false;
     }
     m_Connect->DropCmd(*this);
@@ -412,7 +414,9 @@ CTL_BCPInCmd::~CTL_BCPInCmd()
     }
 
     if ( m_WasSent ) {
-        Cancel();
+        try {
+            Cancel();
+        } catch (CDB_Exception& e) {}
     }
 
     delete[] m_Bind;
@@ -428,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/09/16 16:34:16  soussov
+ * add try catch when canceling in Release method
+ *
  * Revision 1.5  2002/09/16 15:13:12  soussov
  * throw exceptions in CompleteBCP, CompleteBatch, Cancel if blk_done fails
  *

@@ -541,12 +541,14 @@ CTL_CursorCmd::~CTL_CursorCmd()
         case CS_SUCCEED:
             break;
         case CS_FAIL:
-            m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Fatal, 122050, "::~CTL_CursorCmd",
-                               "ct_cursor(dealloc) failed");
+            // m_HasFailed = true;
+            //throw CDB_ClientEx(eDB_Fatal, 122050, "::~CTL_CursorCmd",
+            //                   "ct_cursor(dealloc) failed");
         case CS_BUSY:
-            throw CDB_ClientEx(eDB_Error, 122051, "::~CTL_CursorCmd",
-                               "the connection is busy");
+            //throw CDB_ClientEx(eDB_Error, 122051, "::~CTL_CursorCmd",
+            //                   "the connection is busy");
+            ct_cmd_drop(m_Cmd);
+            return;
         }
 
         // send this command
@@ -554,16 +556,18 @@ CTL_CursorCmd::~CTL_CursorCmd()
         case CS_SUCCEED:
             break;
         case CS_FAIL:
-            m_HasFailed = true;
-            throw CDB_ClientEx(eDB_Error, 122052, "::~CTL_CursorCmd",
-                               "ct_send failed");
+            // m_HasFailed = true;
+            // throw CDB_ClientEx(eDB_Error, 122052, "::~CTL_CursorCmd",
+            //                   "ct_send failed");
         case CS_CANCELED:
-            throw CDB_ClientEx(eDB_Error, 122053, "::~CTL_CursorCmd",
-                               "command was canceled");
+            // throw CDB_ClientEx(eDB_Error, 122053, "::~CTL_CursorCmd",
+            //                   "command was canceled");
         case CS_BUSY:
         case CS_PENDING:
-            throw CDB_ClientEx(eDB_Error, 122054, "::~CTL_CursorCmd",
-                               "connection has another request pending");
+            // throw CDB_ClientEx(eDB_Error, 122054, "::~CTL_CursorCmd",
+            //                   "connection has another request pending");
+            ct_cmd_drop(m_Cmd);
+            return;
         }
 
         // process the results
@@ -577,18 +581,20 @@ CTL_CursorCmd::~CTL_CursorCmd()
                 need_cont = false;
                 continue;
             case CS_FAIL:
-                m_HasFailed = true;
-                throw CDB_ClientEx(eDB_Error, 122055, "::~CTL_CursorCmd",
-                                   "ct_result failed");
+                // m_HasFailed = true;
+                //throw CDB_ClientEx(eDB_Error, 122055, "::~CTL_CursorCmd",
+                //                   "ct_result failed");
             case CS_CANCELED:                          
-                throw CDB_ClientEx(eDB_Error, 122056, "::~CTL_CursorCmd",
-                                   "your command has been canceled");
+                // throw CDB_ClientEx(eDB_Error, 122056, "::~CTL_CursorCmd",
+                //                   "your command has been canceled");
             case CS_BUSY:                              
-                throw CDB_ClientEx(eDB_Error, 122057, "::~CTL_CursorCmd",
-                                   "connection has another request pending");
+                // throw CDB_ClientEx(eDB_Error, 122057, "::~CTL_CursorCmd",
+                //                   "connection has another request pending");
             default:                                   
-                throw CDB_ClientEx(eDB_Error, 122058, "::~CTL_CursorCmd",
-                                   "your request is pending");
+                //throw CDB_ClientEx(eDB_Error, 122058, "::~CTL_CursorCmd",
+                //                   "your request is pending");
+                need_cont = false;
+                continue;
             }
 
             switch ( res_type ) {
@@ -596,21 +602,26 @@ CTL_CursorCmd::~CTL_CursorCmd()
             case CS_CMD_DONE: // done with this command
                 continue;
             case CS_CMD_FAIL: // the command has failed
-                m_HasFailed = true;
+                // m_HasFailed = true;
                 while (ct_results(m_Cmd, &res_type) == CS_SUCCEED);
-                throw CDB_ClientEx(eDB_Warning, 122059, "::~CTL_CursorCmd",
-                                   "The server encountered an error while "
-                                   "executing a command");
+                // throw CDB_ClientEx(eDB_Warning, 122059, "::~CTL_CursorCmd",
+                //                   "The server encountered an error while "
+                //                   "executing a command");
+                need_cont = false;
             default:
                 continue;
             }
         }
     }
 
+#if 0
     if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Fatal, 122060, "::~CTL_CursorCmd",
-                           "ct_cmd_drop failed");
+        // throw CDB_ClientEx(eDB_Fatal, 122060, "::~CTL_CursorCmd",
+        //                   "ct_cmd_drop failed");
     }
+#else
+    ct_cmd_drop(m_Cmd);
+#endif
 }
 
 
@@ -644,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/09/16 16:34:16  soussov
+ * add try catch when canceling in Release method
+ *
  * Revision 1.5  2002/05/16 21:35:22  soussov
  * fixes the memory leak in text/image processing
  *

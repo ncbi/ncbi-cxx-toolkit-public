@@ -282,7 +282,9 @@ void CTL_LangCmd::Release()
 {
     m_BR = 0;
     if ( m_WasSent ) {
-        Cancel();
+        try {
+            Cancel();
+        }catch (CDB_Exception& e) {}
         m_WasSent = false;
     }
     m_Connect->DropCmd(*this);
@@ -297,8 +299,12 @@ CTL_LangCmd::~CTL_LangCmd()
     }
 
     if ( m_WasSent ) {
-        Cancel();
+        try {
+            Cancel();
+        } catch (CDB_Exception& e) {
+        }
     }
+
 
     if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
         throw CDB_ClientEx(eDB_Fatal, 120021, "CTL_LangCmd::~CTL_LangCmd",
@@ -337,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/09/16 16:34:16  soussov
+ * add try catch when canceling in Release method
+ *
  * Revision 1.2  2001/11/06 17:59:55  lavr
  * Formatted uniformly as the rest of the library
  *
