@@ -30,20 +30,24 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/10/20 17:34:39  lavr
+ * Partially working service connector (service mapping works)
+ * Checkin for backup purposes
+ *
  * Revision 6.1  2000/10/07 22:14:07  lavr
  * Initial revision, placeholder mostly
  *
  * ==========================================================================
  */
 
-#include <connect/ncbi_service.h>
+#include "ncbi_servicep.h"
 #include <connect/ncbi_service_connector.h>
 #include <stdlib.h>
 
 typedef struct SServiceConnectorTag {
     SERV_ITER           iter;
     EClientMode         mode;
-    SConnNetInfo        *info;
+    SConnNetInfo       *info;
 } SServiceConnector;
 
 /*
@@ -79,7 +83,6 @@ extern "C" {
                                   const STimeout* timeout);
 } /* extern "C" */
 #endif /* __cplusplus */
-
 
 
 static const char* s_VT_GetType
@@ -183,13 +186,12 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     
     ccc = (SConnector*) malloc(sizeof(SConnector));
     xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector));
-    xxx->iter = 0;
     xxx->mode = mode;
     xxx->info = info ? ConnNetInfo_Clone(info) : ConnNetInfo_Create(service);
-    
+
     /* initialize handle */
     ccc->handle = xxx;
-    
+
     /* initialize virtual table */ 
     ccc->vtable.get_type   = s_VT_GetType;
     ccc->vtable.connect    = s_VT_Connect;
@@ -198,6 +200,16 @@ extern CONNECTOR SERVICE_CreateConnectorEx
     ccc->vtable.flush      = s_VT_Flush;
     ccc->vtable.read       = s_VT_Read;
     ccc->vtable.close      = s_VT_Close;
+
+#if 0
+    /* Now make a probing dispatching */
+    if (!(xxx->iter = SERV_OpenEx(service, 0, 0, info, 0, 0))) {
+        s_VT_Close(ccc, 0);
+        return 0;
+    }
+#else
+    xxx->iter = 0;
+#endif
 
     /* done */
     return ccc;
