@@ -234,7 +234,7 @@ public:                                        \
     }                                          \
                                                \
     template<class ValT, class OptsT>          \
-    void Set(OptsT & opts, ValT & V)           \
+    void Set(OptsT &, ValT &)             \
     {                                          \
         /*cerr << "In ["              */       \
         /*     << __PRETTY_FUNCTION__ */       \
@@ -552,6 +552,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/04/16 14:30:03  bealer
+ * - Fix compiler warnings.
+ *
  * Revision 1.4  2004/04/15 21:18:56  bealer
  * - Remove semi-colons so that solaris compiler will not choke.
  *
