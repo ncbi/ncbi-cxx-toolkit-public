@@ -4,7 +4,7 @@
 # Build application "struct_util_demo"
 #################################
 
-REQUIRES = objects ctools
+REQUIRES = objects ctools C-Toolkit
 
 APP = struct_util_demo
 
@@ -31,5 +31,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
 
 NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
 
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(ORIG_LIBS)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 

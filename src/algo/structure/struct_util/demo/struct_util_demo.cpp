@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
+#include <ctools/ctools.h>
 
 #include <algo/structure/struct_util/struct_util.hpp>
 
@@ -178,9 +179,9 @@ USING_SCOPE(struct_util);
 
 int main(int argc, const char* argv[])
 {
-    SetDiagStream(&NcbiCerr); // send all diagnostic messages to cerr
+    SetDiagStream(&NcbiCerr);       // send all diagnostic messages to cerr
     SetDiagPostLevel(eDiag_Info);   // show all messages
-//    SetupCToolkitErrPost(); // reroute C-toolkit err messages to C++ err streams
+    SetupCToolkitErrPost();         // reroute C-toolkit err messages to C++ err streams
 
     SetDiagTrace(eDT_Default);      // trace messages only when DIAG_TRACE env. var. is set
 #ifdef _DEBUG
@@ -203,6 +204,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/27 22:22:12  thiessen
+* add ctools/C-Toolkit stuff
+*
 * Revision 1.3  2004/05/26 02:40:24  thiessen
 * progress towards LOO - all but PSSM and row ordering
 *
