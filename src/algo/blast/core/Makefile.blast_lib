@@ -38,13 +38,14 @@ blast_setup \
 blast_traceback \
 blast_util \
 blast_seqsrc \
+gapinfo \
 mb_lookup \
 na_lookup \
 util
 
 # OBJ =
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I../include
+CPPFLAGS = $(ORIG_CPPFLAGS) -I../include $(NCBI_C_INCLUDE)
 # CFLAGS   = $(ORIG_CFLAGS)
 # CXXFLAGS = $(ORIG_CXXFLAGS)
 #
