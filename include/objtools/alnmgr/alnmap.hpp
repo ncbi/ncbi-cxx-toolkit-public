@@ -345,14 +345,14 @@ protected:
 inline
 CAlnMap::CAlnMap(const CDense_seg& ds) 
     : m_DS(&ds),
-      m_NumRows(m_DS->GetDim()),
-      m_NumSegs(m_DS->GetNumseg()),
-      m_Ids(m_DS->GetIds()),
-      m_Starts(m_DS->GetStarts()),
-      m_Lens(m_DS->GetLens()),
-      m_Strands(m_DS->GetStrands()),
-      m_Scores(m_DS->GetScores()),
-      m_Widths(m_DS->GetWidths()),
+      m_NumRows(ds.GetDim()),
+      m_NumSegs(ds.GetNumseg()),
+      m_Ids(ds.GetIds()),
+      m_Starts(ds.GetStarts()),
+      m_Lens(ds.GetLens()),
+      m_Strands(ds.GetStrands()),
+      m_Scores(ds.GetScores()),
+      m_Widths(ds.GetWidths()),
       m_Anchor(-1),
       m_RawSegTypes(0)
 {
@@ -364,14 +364,14 @@ CAlnMap::CAlnMap(const CDense_seg& ds)
 inline
 CAlnMap::CAlnMap(const CDense_seg& ds, TNumrow anchor)
     : m_DS(&ds),
-      m_NumRows(m_DS->GetDim()),
-      m_NumSegs(m_DS->GetNumseg()),
-      m_Ids(m_DS->GetIds()),
-      m_Starts(m_DS->GetStarts()),
-      m_Lens(m_DS->GetLens()),
-      m_Strands(m_DS->GetStrands()),
-      m_Scores(m_DS->GetScores()),
-      m_Widths(m_DS->GetWidths()),
+      m_NumRows(ds.GetDim()),
+      m_NumSegs(ds.GetNumseg()),
+      m_Ids(ds.GetIds()),
+      m_Starts(ds.GetStarts()),
+      m_Lens(ds.GetLens()),
+      m_Strands(ds.GetStrands()),
+      m_Scores(ds.GetScores()),
+      m_Widths(ds.GetWidths()),
       m_Anchor(-1),
       m_RawSegTypes(0)
 {
@@ -631,6 +631,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/08/29 18:17:17  dicuccio
+* Minor change in specification of default parameters - rely only on prameters,
+* not on member variables
+*
 * Revision 1.26  2003/08/25 16:35:06  todorov
 * exposed GetWidth
 *
