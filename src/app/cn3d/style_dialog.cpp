@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/11/21 16:59:39  thiessen
+* error on invalid style parameter
+*
 * Revision 1.21  2002/08/15 22:13:17  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -428,7 +431,7 @@ bool StyleDialog::GetValues(StyleSettings *settings)
         (checkbox = wxDynamicCast(FindWindow(ID_K_ION), wxCheckBox)) != NULL &&
         GetChecked(checkbox, &(settings->ionLabelsOn))
     );
-    if (!okay) ERR_POST(Warning << "StyleDialog::GetValues() - control/parameter mismatch");
+    if (!okay) ERR_POST(Error << "StyleDialog::GetValues() - control/parameter mismatch: invalid style?");
     return okay;
 }
 
@@ -581,7 +584,7 @@ bool StyleDialog::SetControls(const StyleSettings& settings)
         (checkbox = wxDynamicCast(FindWindow(ID_K_ION), wxCheckBox)) != NULL &&
         SetChecked(checkbox, settings.ionLabelsOn)
     );
-    if (!okay) ERR_POST(Warning << "StyleDialog::SetControls() - control/parameter mismatch");
+    if (!okay) ERR_POST(Error << "StyleDialog::SetControls() - control/parameter mismatch: invalid style?");
     return okay;
 }
 
