@@ -425,7 +425,6 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
             //cerr << "A warning should be issued here" << e.what() << endl;
             NCBI_THROW(CBlastException, eBadParameter, 
                        "Sequence not found: wrong query type provided");
-            throw;
         }
         
     }
@@ -980,6 +979,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2004/12/28 17:08:26  camacho
+* fix compiler warning
+*
 * Revision 1.28  2004/12/28 16:47:43  camacho
 * 1. Use typedefs to AutoPtr consistently
 * 2. Remove exception specification from blast::SetupQueries
