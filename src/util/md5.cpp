@@ -277,6 +277,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/07/29 23:58:43  ucko
+* Fix log for last revision, sigh.
+*
 * Revision 1.2  2003/07/29 23:57:33  ucko
 * CMD5::GetHexSum: go up to 16 rather than sizeof(digest), as the latter
 * is really just sizeof(unsigned char*) in this context.
