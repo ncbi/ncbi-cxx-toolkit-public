@@ -625,26 +625,32 @@ bool CDBL_BlobResult::Fetch()
 {
     if (m_EOR)
         return false;
-    if (m_CurrItem) {
-        m_CurrItem = 0;
-        return true;
-    }
 
     STATUS s;
-    while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
-        ;
-    switch (s) {
-    case 0:
-        m_CurrItem = 0;
-        return true;
-    case NO_MORE_ROWS:
-        m_EOR = true;
-        break;
-    default:
+    if (m_CurrItem == 0) {
+        while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
+            ;
+        switch (s) {
+        case 0:
+            break;
+        case NO_MORE_ROWS:
+            m_EOR = true;
+            return false;
+        default:
+            throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::Fetch",
+                               "error in fetching row");
+        }
+    }
+    else m_CurrItem = 0;
+    s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff));
+    if(s == NO_MORE_ROWS) return false;
+    if(s < 0) {
         throw CDB_ClientEx(eDB_Error, 280003, "CDBL_BlobResult::Fetch",
                            "error in fetching row");
     }
-    return false;
+    m_BytesInBuffer= s;
+    m_ReadedBytes= 0;
+    return true;
 }
 
 
@@ -673,6 +679,17 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
 
     CDB_Text* val = (CDB_Text*) item_buff;
 
+    // check if we do have something in buffer
+    if(m_ReadedBytes < m_BytesInBuffer) {
+        val->Append(m_Buff + m_ReadedBytes, m_BytesInBuffer - m_ReadedBytes);
+        m_ReadedBytes= m_BytesInBuffer;
+    }
+
+    if(m_BytesInBuffer == 0) {
+        return item_buff;
+    }
+        
+
     STATUS s;
     while ((s = dbreadtext(m_Cmd, m_Buff, (DBINT) sizeof(m_Buff))) > 0)
         val->Append(m_Buff, sizeof(m_Buff));
@@ -695,19 +712,34 @@ CDB_Object* CDBL_BlobResult::GetItem(CDB_Object* item_buff)
 size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
                                  bool* is_null)
 {
+    if(m_BytesInBuffer == 0) 
+        m_CurrItem= 1;
+
     if (m_CurrItem != 0) {
         if (is_null)
             *is_null = true;
         return 0;
     }
 
-    STATUS s = dbreadtext(m_Cmd, buffer, (DBINT) buffer_size);
+    size_t l= 0;
+    // check if we do have something in buffer
+    if(m_ReadedBytes < m_BytesInBuffer) {
+        l= m_BytesInBuffer - m_ReadedBytes;
+        if(l >= buffer_size) {
+            memcpy(buffer, m_Buff + m_ReadedBytes, buffer_size);
+            m_ReadedBytes+= buffer_size;
+            if (is_null)
+                *is_null = false;
+            return buffer_size;
+        }
+        memcpy(buffer, m_Buff + m_ReadedBytes, l);
+    }
+        
+    STATUS s = dbreadtext(m_Cmd, (void*)((char*)buffer + l), (DBINT)(buffer_size-l));
     switch (s) {
     case NO_MORE_ROWS:
         m_EOR = true;
     case 0:
-        if (is_null)
-            *is_null = true;
         m_CurrItem = 1;
         break;
     case -1:
@@ -717,7 +749,8 @@ size_t CDBL_BlobResult::ReadItem(void* buffer, size_t buffer_size,
         break;
     }
 
-    return (size_t) s;
+    if(is_null) *is_null= (m_BytesInBuffer == 0 && s <= 0);
+    return (size_t) s + l;
 }
 
 
@@ -725,12 +758,6 @@ I_ITDescriptor* CDBL_BlobResult::GetImageOrTextDescriptor()
 {
     if (m_CurrItem != 0)
         return 0;
-    STATUS s = dbreadtext(m_Cmd, m_Buff, 1);  // TMP: shpould be 0
-    if (s == -1) {
-        throw CDB_ClientEx(eDB_Error, 280003,
-                           "CDBL_BlobResult::GetImageOrTextDescriptor",
-                           "dbreadtext failed");
-    }
     return new CDBL_ITDescriptor(m_Cmd, 1);
 }
 
@@ -1445,6 +1472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/05/29 22:04:58  soussov
+ * Makes BlobResult read ahead
+ *
  * Revision 1.12  2002/03/26 15:37:52  soussov
  * new image/text operations added
  *

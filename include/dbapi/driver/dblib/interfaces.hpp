@@ -508,6 +508,8 @@ protected:
     int           m_CmdNum;
     char          m_Buff[2048];
     SDBL_ColDescr m_ColFmt;
+    int           m_BytesInBuffer;
+    int           m_ReadedBytes;
 };
 
 
@@ -662,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/05/29 22:04:43  soussov
+ * Makes BlobResult read ahead
+ *
  * Revision 1.9  2002/03/28 00:39:49  vakatov
  * CDBL_CursorCmd::  use CDBL_CursorResult rather than I_Result (to fix access)
  *
