@@ -39,8 +39,7 @@ EM      { font-style:normal; font-weight:bold;}
                   font-size: 100%; }
 
 /* program name */
-.ncbi_app       { font-family: monospace; font-style: italic;
-                  font-size: 100%;}
+.ncbi_app       { font-family: monospace; font-size: 100%;}
 
 /* program argument*/
 .ncbi_app_a     { font-style: italic; }
@@ -82,8 +81,7 @@ EM      { font-style:normal; font-weight:bold;}
 ***********************************/
 
 /* script name */
-.ncbi_script    { font-family: Courier,monospace; font-weight: bold;
-                  font-style: italic; font-size: 100%; }
+.ncbi_script    { font-weight: bold; font-style: italic; font-size: 100%; }
 
 /* script argument */
 .ncbi_script_a  { font-style: italic; }
@@ -160,8 +158,7 @@ EM      { font-style:normal; font-weight:bold;}
 .ncbi_macro     { font-family: monospace; font-size: 100%; }
 
 /* source code (short inline chunk) */
-.ncbi_ccode     { font-family: monospace; font-style: italic;
-                  font-size: 100%; }
+.ncbi_ccode     { font-style: italic; font-size: 100%; }
 
 
 
