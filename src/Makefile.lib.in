@@ -31,7 +31,7 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS)   $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 SOURCES      = $(LIBOBJ)
-include @builddir@/Makefile.$(Rules)
+include $(builddir)/Makefile.$(Rules)
 
 
 ### The library build rule

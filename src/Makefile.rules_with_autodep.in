@@ -9,7 +9,7 @@
 
 
 ###  C/C++ compilation
-include @builddir@/Makefile.rules
+include $(builddir)/Makefile.rules
 
 
 ### Dependencies (GNU make only)

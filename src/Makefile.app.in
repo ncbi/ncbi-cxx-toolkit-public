@@ -24,7 +24,7 @@
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 SOURCES      = $(OBJ)
-include @builddir@/Makefile.$(Rules)
+include $(builddir)/Makefile.$(Rules)
 
 
 ### Library dependencies
