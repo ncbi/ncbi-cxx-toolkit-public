@@ -833,6 +833,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 TSeqPos seq_len,
                                 string seq_str, string seq_str_compl,
                                 int seq_desc_cnt,
+                                int seq_feat_ra_cnt, // resolve-all method
                                 int seq_feat_cnt, int seq_featrg_cnt,
                                 int seq_align_cnt, int seq_alignrg_cnt,
                                 size_t feat_annots_cnt, size_t featrg_annots_cnt,
@@ -970,6 +971,33 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }
     _ASSERT(count == seq_desc_cnt);
     CHECK_END_ALWAYS("count CSeq_descr");
+
+    CHECK_WRAP();
+    // Test CSeq_feat iterator, resolve-all method
+    CSeq_loc loc;
+    loc.SetWhole(id);
+    count = 0;
+    if ( !tse_feat_test ) {
+        if ( sm_DumpFeatures ) {
+            NcbiCout << "-------------------- CFeat_CI resolve-all over "<<
+                id.AsFastaString()<<" --------------------\n";
+        }
+        for (CFeat_CI feat_it(scope, loc,
+                              CSeqFeatData::e_not_set,
+                              CAnnot_CI::eOverlap_Intervals,
+                              CAnnotTypes_CI::eResolve_All);
+             feat_it;  ++feat_it) {
+            count++;
+            if ( sm_DumpFeatures ) {
+                auto_ptr<CObjectOStream>
+                    out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
+                *out << feat_it->GetMappedFeature();
+            }
+            //### _ASSERT(feat_it->
+        }
+        _ASSERT(count == seq_feat_ra_cnt);
+    }
+    CHECK_END("get annot set");
 
     CHECK_WRAP();
     // Test CSeq_feat iterator
@@ -1138,33 +1166,33 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
     ProcessBioseq(scope, id, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 4+delta, 2+delta, 1, 0, 2+delta, 2+delta, 1, 0);
+        2, 4+delta, 4+delta, 2+delta, 1, 0, 2+delta, 2+delta, 1, 0);
     // iterate through the specific sequence only
     ProcessBioseq(scope, id, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 2+delta, 1+delta, 1, 0, 1+delta, 1+delta, 1, 0, true);
+        2, -1, 2+delta, 1+delta, 1, 0, 1+delta, 1+delta, 1, 0, true);
     // find seq. by GI
     id.SetGi(12+idx*1000);
     ProcessBioseq(scope, id, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-        1, 3, 1, 1, 1, 2, 1, 1, 1); //1, 3, 2, 1, 1, 2, 2, 1, 1);
+        1, 2, 3, 1, 1, 1, 2, 1, 1, 1); //1, 3, 2, 1, 1, 2, 2, 1, 1);
     // segmented sequence
     id.SetGi(21+idx*1000);
     ProcessBioseq(scope, id, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 9, 1, 0, 0, 1, 1, 0, 0);
+        1, 21+delta*2, 9, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+idx*1000);
     ProcessBioseq(scope, id, 20, "QGCGEQTMTLLAPTLAASRY", "",
-        0, 0, 0, 0, 0, 0, 0, 0, 0);
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     // another seq.data format
     id.SetGi(23+idx*1000);
     ProcessBioseq(scope, id, 13,
         "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-        0, 0, 0, 0, 0, 0, 0, 0, 0);
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 END_SCOPE(objects)
@@ -1174,6 +1202,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/03/04 16:43:53  grichenk
+* +Test CFeat_CI with eResolve_All flag
+*
 * Revision 1.26  2003/02/28 16:37:47  vasilche
 * Fixed expected feature count.
 * Added optional flags to testobjmgr to dump generated data and found features.

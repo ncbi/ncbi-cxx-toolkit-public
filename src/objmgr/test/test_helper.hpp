@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/03/04 16:43:53  grichenk
+* +Test CFeat_CI with eResolve_All flag
+*
 * Revision 1.8  2003/02/28 16:37:47  vasilche
 * Fixed expected feature count.
 * Added optional flags to testobjmgr to dump generated data and found features.
@@ -96,6 +99,7 @@ public:
                               TSeqPos seq_len,
                               string seq_str, string seq_str_compl,
                               int seq_desc_cnt,
+                              int seq_feat_ra_cnt,
                               int seq_feat_cnt, int seq_featrg_cnt,
                               int seq_align_cnt, int seq_alignrg_cnt,
                               size_t feat_annots_cnt, size_t featrg_annots_cnt,

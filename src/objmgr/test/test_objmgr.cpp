@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/03/04 16:43:53  grichenk
+* +Test CFeat_CI with eResolve_All flag
+*
 * Revision 1.27  2003/02/28 16:37:47  vasilche
 * Fixed expected feature count.
 * Added optional flags to testobjmgr to dump generated data and found features.
@@ -249,7 +252,7 @@ int CTestApp::Run(void)
             id.SetLocal().SetStr("constructed1");
             CTestHelper::ProcessBioseq(Scope, id, 27,
                 "GCGGTACAATAACCTCAGCAGCAACAA", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                0, 3, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
         {{
             CRef<CSeq_entry> constr_entry
@@ -259,7 +262,7 @@ int CTestApp::Run(void)
             id.SetLocal().SetStr("constructed2");
             CTestHelper::ProcessBioseq(Scope, id, 27,
                 "TACCGCCAATAACCTCAGCAGCAACAA", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                0, 3, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
     }
 
@@ -278,7 +281,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 22,
             "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
             "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
-            1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
+            1, -1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
 
         // add more data to the scope - to make references resolvable
         CRef<CSeq_entry> entry1a(&CDataGenerator::CreateTestEntry1a(idx));
@@ -288,7 +291,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 9, 1, 0, 0, 1, 1, 0, 0);
+            1, 9, 9, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
@@ -298,7 +301,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 40,
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-            0, 2, 1, 0, 0, 1, 1, 0, 0);
+            0, 2, 2, 1, 0, 0, 1, 1, 0, 0);
     }
 
     NcbiCout << " Passed" << NcbiEndl << NcbiEndl;

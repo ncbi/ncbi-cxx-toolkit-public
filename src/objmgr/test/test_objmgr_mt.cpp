@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/04 16:43:53  grichenk
+* +Test CFeat_CI with eResolve_All flag
+*
 * Revision 1.19  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
@@ -177,7 +180,7 @@ bool CTestObjectManager::Thread_Run(int idx)
             id.SetLocal().SetStr("constructed1");
             CTestHelper::ProcessBioseq(scope, id, 27,
                 "GCGGTACAATAACCTCAGCAGCAACAA", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0);
+                0, 5, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
         {{
             CRef<CSeq_entry> constr_entry
@@ -186,7 +189,7 @@ bool CTestObjectManager::Thread_Run(int idx)
             id.SetLocal().SetStr("constructed2");
             CTestHelper::ProcessBioseq(scope, id, 27,
                 "TACCGCCAATAACCTCAGCAGCAACAA", "",
-                0, 0, 0, 0, 0, 0, 0, 0, 0);
+                0, 5, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
     }
 
@@ -205,7 +208,7 @@ bool CTestObjectManager::Thread_Run(int idx)
         CTestHelper::ProcessBioseq(*pScope2, id, 22,
           "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
           "\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0\\0",
-          1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
+          1, -1, 1, 1, 0, 0, 1, 1, 0, 0, false, true);
 
         // add more data to the scope - to make references resolvable
         CRef<CSeq_entry> entry1a(&CDataGenerator::CreateTestEntry1a(idx));
@@ -215,7 +218,7 @@ bool CTestObjectManager::Thread_Run(int idx)
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 1, 1, 0, 0, 1, 1, 0, 0);
+            1, 9, 9, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
@@ -225,7 +228,7 @@ bool CTestObjectManager::Thread_Run(int idx)
         CTestHelper::ProcessBioseq(*pScope2, id, 40,
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-            0, 2, 1, 0, 0, 1, 1, 0, 0);
+            0, 2, 2, 1, 0, 0, 1, 1, 0, 0);
     }
     return true;
 }
