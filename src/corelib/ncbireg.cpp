@@ -105,9 +105,7 @@ static const string s_ConvertComment(const string& comment,
             x_comment += c_comment;
         }
         x_comment.append(comment, beg, endl_pos - beg);
-        if (is_file_comment  ||  endl_pos != comment.length()) {
-            x_comment += '\n';
-        }
+        x_comment += '\n';
     }
     return x_comment;
 }
@@ -835,7 +833,7 @@ void CNcbiRegistry::x_SetValue(TRegEntry& entry, const string& value,
     }
 
     if ( !comment.empty() ) {
-        entry.comment = comment;
+        entry.comment = s_ConvertComment(comment);
     }
 
     string* to = persistent ? &entry.persistent : &entry.transient;
@@ -874,6 +872,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/06/25 20:05:57  rsmith
+ * Fix small bugs setting comments
+ *
  * Revision 1.35  2003/05/08 13:47:16  ivanov
  * Fixed Read() for right handle entry names with leading spaces
  *
