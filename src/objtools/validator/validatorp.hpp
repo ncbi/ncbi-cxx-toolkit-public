@@ -1,6 +1,3 @@
-#ifndef VALIDATOR___VALIDATORP__HPP
-#define VALIDATOR___VALIDATORP__HPP
-
 /*  $Id:
  * ===========================================================================
  *
@@ -33,10 +30,14 @@
  *   .......
  *
  */
+
+#ifndef VALIDATOR___VALIDATORP__HPP
+#define VALIDATOR___VALIDATORP__HPP
+
 #include <corelib/ncbistd.hpp>
 
 #include <objects/objmgr/scope.hpp>
-
+#include <objects/seqset/Bioseq_set.hpp>
 #include <util/strsearch.hpp>
 
 #include <objects/validator/validator.hpp>
@@ -48,7 +49,6 @@ class CSeq_entry;
 class CCit_sub;
 class CSeq_feat;
 class CBioseq;
-class CBioseq_set;
 class CSeqdesc;
 class CSeq_annot;
 class CTrna_ext;
@@ -207,6 +207,7 @@ enum EErrType {
     eErr_SEQ_FEAT_CollidingGeneNames,
     eErr_SEQ_FEAT_MultiIntervalGene,
     eErr_SEQ_FEAT_FeatContentDup,
+    eErr_SEQ_FEAT_BadProductSeqId,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -346,6 +347,8 @@ public:
     void ReportProtWithoutFullRef(void);
 
     bool IsFarLocation(const CSeq_loc& loc) const;
+    const CSeq_feat* GetCDSGivenProduct(const CBioseq& seq);
+    const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -473,7 +476,7 @@ private:
     void ValidatePopSet(const CBioseq_set& seqset);
     void ValidateGenProdSet(const CBioseq_set& seqset);
 
-    bool MrnaProductInGPS(const CBioseq& seq); 
+    bool IsMrnaProductInGPS(const CBioseq& seq); 
 };
 
 
@@ -524,10 +527,7 @@ private:
     bool IsDifferentDbxrefs(const list< CRef< CDbtag > >& dbxref1,
         const list< CRef< CDbtag > >& dbxref2);
 
-    const CSeq_feat* GetCDSForProduct(const CBioseq& seq);
-    void GetGeneLabel(const CBioseq& seq, string* lbl);
-    void GetSeqLabel(const CBioseq& seq, string* lbl,
-        const char*  default_label = "prot?");
+    const CBioseq* GetNucGivenProt(const CBioseq& prot);
 };
 
 
@@ -561,9 +561,13 @@ private:
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
-    
+    void ValidateMrnaTrans(const CSeq_feat& feat);
+    void ValidateCommonMRNAProduct(const CSeq_feat& feat);
+
     void ValidateImp(const CImp_feat& imp, const CSeq_feat& feat);
     void ValidateImpGbquals(const CImp_feat& imp, const CSeq_feat& feat);
+    void ValidatePeptideOnCodonBoundry(const CSeq_feat& feat, 
+        const string& key);
 
     void ValidateFeatPartialness(const CSeq_feat& feat);
     void ValidateExcept(const CSeq_feat& feat);
@@ -578,6 +582,10 @@ private:
     bool SuppressCheck(const string& except_text);
     string MapToNTCoords(const CSeq_feat& feat, const CSeq_loc& product,
         TSeqPos pos);
+
+    void ValidateGeneXRef(const CSeq_feat& feat);
+    
+    bool IsPartialAtSpliceSite(const CSeq_loc& loc, unsigned int errtype);
 };
 
 
@@ -663,6 +671,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/02 21:57:21  shomrat
+* Add eErr_SEQ_FEAT_BadProductSeqId error; Chenges in (mostly private) interfaces of validation classes
+*
 * Revision 1.3  2002/12/24 16:52:15  shomrat
 * Changes to include directives
 *
