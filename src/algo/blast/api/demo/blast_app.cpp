@@ -48,11 +48,9 @@ Contents: C++ driver for running BLAST
 
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/api/db_blast.hpp>
-// #include <blast_setup.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include "blast_input.hpp"
 #include <algo/blast/api/seqsrc_readdb.h>
-// #include <blast_seqalign.hpp>
 #include <objtools/alnmgr/util/blast_format.hpp>
 
 #ifndef NCBI_C_TOOLKIT
