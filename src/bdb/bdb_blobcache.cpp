@@ -1382,9 +1382,9 @@ void CBDB_Cache::Purge(time_t           access_timeout,
     vector<SCacheDescr> cache_entries;
     cache_entries.reserve(1000);
 
-    CTime time_stamp(CTime::eCurrent);
-    time_t curr = (int)time_stamp.GetTimeT();
-    int timeout = GetTimeout();
+//    CTime time_stamp(CTime::eCurrent);
+//    time_t curr = (int)time_stamp.GetTimeT();
+//    int timeout = GetTimeout();
 
     // Search the database for obsolete cache entries
     string first_key, last_key;
@@ -1557,7 +1557,7 @@ void CBDB_Cache::Purge(const string&    key,
         db_time_stamp = max(db_time_stamp, mem_time_stamp);
 */
         unsigned ttl = m_CacheAttrDB->ttl;
-        unsigned to;
+        unsigned to = timeout;
 
         if (ttl) {  // individual timeout
             if (m_MaxTimeout && ttl > m_MaxTimeout) {
@@ -2188,6 +2188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2004/11/08 18:42:11  kuznets
+ * Removed unused variables
+ *
  * Revision 1.91  2004/11/08 16:00:49  kuznets
  * Implemented individual timeouts
  *
