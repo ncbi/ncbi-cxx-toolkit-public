@@ -168,11 +168,13 @@ public:
     CDatagramSocket(unsigned short  port,  // always in host byte order
                     ESwitch         do_log = eDefault);
 
+    // EIO_Status Open(unsigned short port = 0, ESwitch do_log = eDefault);
+
     EIO_Status Connect(const string& host, unsigned short port);
 
     EIO_Status Wait(const STimeout* timeout = 0);
 
-    EIO_Status Send(const string&   host    = kEmptyStr,
+    EIO_Status Send(const string&   host    = string(),
                     unsigned short  port    = 0,
                     const void*     data    = 0,
                     size_t          datalen = 0);
@@ -528,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/01/28 19:29:07  lavr
+ * DSOCK: Remove reference to kEmptyStr and thus to xncbi
+ *
  * Revision 6.17  2003/01/26 04:28:37  lavr
  * Quick fix CDatagramSocket ctor ambiguity
  *
