@@ -848,6 +848,8 @@ private:
     ///   The name of the volume.
     /// @param pn
     ///   The sequence type.
+    /// @param locked
+    ///   The lock holder object for this thread.
     void x_AddVolume(CSeqDBAtlas    & atlas,
                      const string   & nm,
                      char             pn,

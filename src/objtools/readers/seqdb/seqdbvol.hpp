@@ -76,6 +76,8 @@ public:
     ///   The base name of the volumes files
     /// @param prot_nucl
     ///   The sequence type, kSeqTypeProt, or kSeqTypeNucl
+    /// @param locked
+    ///   The lock holder object for this thread.
     CSeqDBVol(CSeqDBAtlas    & atlas,
               const string   & name,
               char             prot_nucl,

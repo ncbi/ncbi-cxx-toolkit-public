@@ -86,9 +86,11 @@ public:
     /// length of a file.
     ///
     /// @param name
-    ///     The filename to open.
+    ///   The filename to open.
     /// @return
-    ///     true if the file was opened successfully.
+    ///   true if the file was opened successfully.
+    /// @param locked
+    ///   The lock holder object for this thread.
     bool Open(const string & name, CSeqDBLockHold & locked)
     {
         bool success = m_Atlas.GetFileSize(name, m_Length, locked);
@@ -302,6 +304,8 @@ public:
     ///   The name of the managed file.
     /// @param prot_nucl
     ///   The sequence data type.
+    /// @param locked
+    ///   The lock holder object for this thread.
     CSeqDBExtFile(CSeqDBAtlas    & atlas,
                   const string   & dbfilename,
                   char             prot_nucl,
@@ -480,6 +484,8 @@ public:
     ///   The name of the database volume.
     /// @param prot_nucl
     ///   The sequence data type.
+    /// @param locked
+    ///   The lock holder object for this thread.
     CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
                   char             prot_nucl,
@@ -732,6 +738,8 @@ public:
     ///   The name of the database volume.
     /// @param prot_nucl
     ///   The sequence data type.
+    /// @param locked
+    ///   The lock holder object for this thread.
     CSeqDBSeqFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
                   char             prot_nucl,
@@ -817,6 +825,8 @@ public:
     ///   The name of the database volume.
     /// @param prot_nucl
     ///   The sequence data type.
+    /// @param locked
+    ///   The lock holder object for this thread.
     CSeqDBHdrFile(CSeqDBAtlas    & atlas,
                   const string   & dbname,
                   char             prot_nucl,
