@@ -53,7 +53,8 @@ static MyTZDLS MyReadLocation()
 	MachineLocation loc;
 	ReadLocation(&loc);
 	long tz = loc.u.gmtDelta & 0x00ffffff;
-   	/** Propogate sign bit from bit 23 to bit 31 if West of UTC. (Sign-extend the GMT correction) **/
+   	// Propogate sign bit from bit 23 to bit 31 if West of UTC.
+    // (Sign-extend the GMT correction)
 	if ((tz & 0x00800000) != 0) tz |= 0xFF000000;
 	bool dls = (loc.u.dlsDelta != 0);
 	MyTZDLS tzdls = {tz, dls};
@@ -97,9 +98,20 @@ static void s_TlsFormatCleanup(string* fmt, void* /* data */)
 // Day's count in months
 static int s_DaysInMonth[] = {31, 0, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
+// Month names
+static const char* s_MonthNamesAbbr[12] = {
+    "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec" };
+static const char* s_MonthNamesFull[12] = {
+    "January","February","March","April","May","June","July","August",
+    "September","October","November","December"};
+
 // Default value for time format
 //const string kDefaultFormat = "M/D/Y h:m:s";
 #define kDefaultFormat "M/D/Y h:m:s"
+
+// Set of the checked format symbols (w,W not included)
+#define kFormatSymbols "YyMbBDhmsSZ"
+
 
 // Get number of days in "date"
 static unsigned s_Date2Number(const CTime& date)
@@ -203,7 +215,7 @@ void CTime::x_VerifyFormat(const string& fmt)
         count[i] = 0;
     }
     for (string::const_iterator j = fmt.begin();  j != fmt.end();  ++j) {
-        if (strchr("YyMDhmsSZ", *j) != 0  &&  ++count[(unsigned int) *j] > 1) {
+        if (strchr(kFormatSymbols, *j) != 0  &&  ++count[(unsigned int) *j] > 1) {
             NCBI_THROW(CTimeException,eFormat,"CTime's format is incorrect");
         }
     }
@@ -220,12 +232,32 @@ void CTime::x_Init(const string& str, const string& fmt)
     for ( fff = fmt.c_str();  *fff != '\0';  fff++ ) {
 
         // Process non-format symbols
-        if (strchr("YyMDhmsSZ", *fff) == 0) {
+        if (strchr(kFormatSymbols, *fff) == 0) {
             if ( *fff == *sss ) {
                 sss++;
                 continue;  // skip matching non-format symbols
             }
             break;  // error: non-matching non-format symbols
+        }
+
+        // Process month name format symbol
+        if ( *fff == 'b' || *fff == 'B' ) {
+            const char** name;
+            if (*fff == 'b') {
+                name = &s_MonthNamesAbbr[0];
+            } else {
+                name = &s_MonthNamesFull[0];
+            }
+            for (unsigned char i=0; i<12; i++) {
+                size_t namelen = strlen(*name);
+                if ( strncmp(sss, *name, namelen) == 0 ) {
+                    sss += namelen;
+                    m_Month = i+1;
+                    break;
+                }
+                name++;
+            }
+            continue;
         }
 
         // Process timezone format symbol
@@ -239,7 +271,7 @@ void CTime::x_Init(const string& str, const string& fmt)
             continue;
         }
 
-        // Process format symbols ("YyMDhmsS") - read the next data ingredient
+        // Process format symbols - read the next data ingredient
         char value_str[10];
         char* s = value_str;
         for ( size_t len = (*fff == 'Y') ? 4 : ((*fff == 'S') ? 9 : 2 );
@@ -421,11 +453,13 @@ string CTime::AsString(const string& fmt) const
         static const char* s_DaysOfWeekLong [7] = {
             "Sunday","Monday","Tuesday","Wednesday",
                 "Thursday","Friday","Saturday" };
-
+ 
         switch ( *it ) {
         case 'Y':  s_AddZeroPadInt(str, Year(), 4);       break;
         case 'y':  s_AddZeroPadInt(str, Year() % 100);    break;
         case 'M':  s_AddZeroPadInt(str, Month());         break;
+        case 'b':  str += s_MonthNamesAbbr[Month()-1];    break;
+        case 'B':  str += s_MonthNamesFull[Month()-1];    break;
         case 'D':  s_AddZeroPadInt(str, Day());           break;
         case 'h':  s_AddZeroPadInt(str, Hour());          break;
         case 'm':  s_AddZeroPadInt(str, Minute());        break;
@@ -1163,6 +1197,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2002/10/17 16:55:30  ivanov
+ * Added new time format symbols - 'b' and 'B' (month abbreviated and full name)
+ *
  * Revision 1.26  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *

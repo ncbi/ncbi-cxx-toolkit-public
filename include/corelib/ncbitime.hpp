@@ -210,13 +210,19 @@ public:
     CTime& Truncate(void);
 
     // Change current format (the default one is: "M/D/Y h:m:s").
-    //   "Y" - 4 digit year  "y" - 2 digit year
-    //   "M" - month         "D" - day
-    //   "h" - hour          "m" - minute
-    //   "s" - second        "S" - nanosecond
-    //   "Z" - timezone format (GMT or none) 
-    //   "w" - day of week (short format - 3 first letters)
-    //   "W" - day of week (long format  - full name)
+    //   Y - year with century
+    //   y - year without century (00-99)
+    //   M - month as decimal number (01-12)
+    //   B - full month name
+    //   b - abbeviated month name
+    //   D - day as decimal number (00-59)
+    //   h - hour in 24-hour format (00-23)
+    //   m - minute as decimal number (00-59)
+    //   s - second as decimal number (00-59)
+    //   S - nanosecond as decimal number (000000000-999999999)
+    //   Z - timezone format (GMT or none) 
+    //   W - full weekday name
+    //   w - abbreviated weekday name
     static void SetFormat(const string& fmt);
     static string GetFormat(void);
 
@@ -614,6 +620,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2002/10/17 16:55:01  ivanov
+ * Added new time format symbols - 'b' and 'B' (month abbreviated and full name)
+ *
  * Revision 1.15  2002/07/23 19:53:34  lebedev
  * NCBI_OS_MAC: Note about Daylight flag handling added
  *
