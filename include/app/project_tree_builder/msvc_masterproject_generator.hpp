@@ -85,23 +85,14 @@ private:
 
     string m_CustomBuildCommand;
 
-    /// Project source base dir / Filter
-    typedef map<string, CRef<CFilter> > TFiltersCache;
-    TFiltersCache m_FiltersCache;
-    CRef<CFilter> FindOrCreateFilter(const string&  project_id,
-                                     CSerialObject* parent);
-    set<string> m_ProcessedIds;
-    bool IsAlreadyProcessed(const string& project_id);
     
    
     void AddProjectToFilter(CRef<CFilter>& filter, const string& project_id);
 
-
-    void ProcessProjectBranch(const string&  project_id, 
-                              CSerialObject* parent);
-
     void CreateProjectFileItem(const CProjItem& project);
 
+    void ProcessTreeFolder(const SProjectTreeFolder&  folder, 
+                           CSerialObject*             parent);
 
     /// Prohibited to:
     CMsvcMasterProjectGenerator(void);
@@ -117,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/30 20:40:41  gorelenk
+ * changed procedure of folders creation
+ *
  * Revision 1.4  2004/01/28 17:55:05  gorelenk
  * += For msvc makefile support of :
  *                 Requires tag, ExcludeProject tag,
