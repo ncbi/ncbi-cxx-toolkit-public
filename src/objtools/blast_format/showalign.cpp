@@ -87,6 +87,8 @@
 #include <objects/blastdb/defline_extra.hpp>
 
 #include <stdio.h>
+#include <util/tables/raw_scoremat.h>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
@@ -117,31 +119,6 @@ const int CDisplaySeqalign::m_NumColor;
 const string CDisplaySeqalign::color[m_NumColor]={"#000000", "#808080", "#FF0000"};
 const int CDisplaySeqalign::m_PMatrixSize;
 const char CDisplaySeqalign::m_PSymbol[m_PMatrixSize+1] = "ARNDCQEGHILKMFPSTWYVBZX";
-const int CDisplaySeqalign::m_Blosum62[m_PMatrixSize][m_PMatrixSize] = {
-  { 4,-1,-2,-2, 0,-1,-1, 0,-2,-1,-1,-1,-1,-2,-1, 1, 0,-3,-2, 0,-2,-1, 0 },
-   {-1, 5, 0,-2,-3, 1, 0,-2, 0,-3,-2, 2,-1,-3,-2,-1,-1,-3,-2,-3,-1, 0,-1 },
-   {-2, 0, 6, 1,-3, 0, 0, 0, 1,-3,-3, 0,-2,-3,-2, 1, 0,-4,-2,-3, 3, 0,-1 },
-   {-2,-2, 1, 6,-3, 0, 2,-1,-1,-3,-4,-1,-3,-3,-1, 0,-1,-4,-3,-3, 4, 1,-1 },
-   { 0,-3,-3,-3, 9,-3,-4,-3,-3,-1,-1,-3,-1,-2,-3,-1,-1,-2,-2,-1,-3,-3,-2 },
-   {-1, 1, 0, 0,-3, 5, 2,-2, 0,-3,-2, 1, 0,-3,-1, 0,-1,-2,-1,-2, 0, 3,-1 },
-   {-1, 0, 0, 2,-4, 2, 5,-2, 0,-3,-3, 1,-2,-3,-1, 0,-1,-3,-2,-2, 1, 4,-1 },
-   { 0,-2, 0,-1,-3,-2,-2, 6,-2,-4,-4,-2,-3,-3,-2, 0,-2,-2,-3,-3,-1,-2,-1 },
-   {-2, 0, 1,-1,-3, 0, 0,-2, 8,-3,-3,-1,-2,-1,-2,-1,-2,-2, 2,-3, 0, 0,-1 },
-   {-1,-3,-3,-3,-1,-3,-3,-4,-3, 4, 2,-3, 1, 0,-3,-2,-1,-3,-1, 3,-3,-3,-1 },
-   {-1,-2,-3,-4,-1,-2,-3,-4,-3, 2, 4,-2, 2, 0,-3,-2,-1,-2,-1, 1,-4,-3,-1 },
-   {-1, 2, 0,-1,-3, 1, 1,-2,-1,-3,-2, 5,-1,-3,-1, 0,-1,-3,-2,-2, 0, 1,-1 },
-   {-1,-1,-2,-3,-1, 0,-2,-3,-2, 1, 2,-1, 5, 0,-2,-1,-1,-1,-1, 1,-3,-1,-1 },
-   {-2,-3,-3,-3,-2,-3,-3,-3,-1, 0, 0,-3, 0, 6,-4,-2,-2, 1, 3,-1,-3,-3,-1 },
-   {-1,-2,-2,-1,-3,-1,-1,-2,-2,-3,-3,-1,-2,-4, 7,-1,-1,-4,-3,-2,-2,-1,-2 },
-   { 1,-1, 1, 0,-1, 0, 0, 0,-1,-2,-2, 0,-1,-2,-1, 4, 1,-3,-2,-2, 0, 0, 0 },
-   { 0,-1, 0,-1,-1,-1,-1,-2,-2,-1,-1,-1,-1,-2,-1, 1, 5,-2,-2, 0,-1,-1, 0 },
-   {-3,-3,-4,-4,-2,-2,-3,-2,-2,-3,-2,-3,-1, 1,-4,-3,-2,11, 2,-3,-4,-3,-2 },
-   {-2,-2,-2,-3,-2,-1,-2,-3, 2,-1,-1,-2,-1, 3,-3,-2,-2, 2, 7,-1,-3,-2,-1 },
-   { 0,-3,-3,-3,-1,-2,-2,-3,-3, 3, 1,-2, 1,-1,-2,-2, 0,-3,-1, 4,-3,-2,-1 },
-   {-2,-1, 3, 4,-3, 0, 1,-1, 0,-3,-4, 0,-3,-3,-2, 0,-1,-4,-3,-3, 4, 1,-1 },
-   {-1, 0, 0, 1,-3, 3, 4,-2, 0,-3,-3, 1,-1,-3,-1, 0,-1,-3,-2,-2, 1, 4,-1 },
-   { 0,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-2, 0, 0,-2,-1,-1,-1,-1,-1 },
-  };
 
 //Constructor
 CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>& maskSeqloc, list <FeatureInfo*>& externalFeature, const int matrix[][m_PMatrixSize], CScope& scope) : m_SeqalignSetRef(&seqalign), m_Seqloc(maskSeqloc), m_QueryFeature(externalFeature), m_Scope(scope) {
@@ -165,12 +142,9 @@ CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>&
   m_BlastType = NcbiEmptyString;
   m_MidLineStyle = eBar;
 
-  const int (*matrixToUse)[m_PMatrixSize];
-  if(!matrix){
-    matrixToUse = m_Blosum62;
-  } else {
-    matrixToUse = matrix;
-  }
+  SNCBIFullScoreMatrix blosumMatrix;
+  NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
+ 
   int** temp = new int*[m_NumAsciiChar];
   for(int i = 0; i<m_NumAsciiChar; ++i) {
     temp[i] = new int[m_NumAsciiChar];
@@ -182,7 +156,11 @@ CDisplaySeqalign::CDisplaySeqalign(CSeq_align_set& seqalign, list <SeqlocInfo*>&
   }
   for(int i = 0; i < m_PMatrixSize; ++i){
     for(int j = 0; j < m_PMatrixSize; ++j){
-      temp[m_PSymbol[i]][m_PSymbol[j]] = matrixToUse[i][j];
+      if(matrix){
+	temp[m_PSymbol[i]][m_PSymbol[j]] = matrix[i][j];
+      } else {
+	temp[m_PSymbol[i]][m_PSymbol[j]] = blosumMatrix.s[m_PSymbol[i]][m_PSymbol[j]];
+      }
      
     }
   }
@@ -1055,6 +1033,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
     }
     
     for(int i = 0; i < (int)alnVector.size(); i ++){
+      bool hasAln = false;
       for(CTypeConstIterator<CSeq_align> alnRef = ConstBegin(*alnVector[i]); alnRef; ++alnRef){
 	CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
 	try{
@@ -1062,12 +1041,14 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
 	} catch (CException& e){
 	  continue;
 	}
+	 hasAln = true;
       }
-      //   *out2<<*sa_it;
+      if(hasAln){
+	//	*out2<<*alnVector[i];
+	mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
       
-      mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
-      
-      //  *out2<<mix.GetDenseg();
+	//	*out2<<mix[i]->GetDenseg();
+      }
     }
     
     int numDistinctFrames = 0;
@@ -1939,6 +1920,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.22  2003/12/11 22:27:18  jianye
+*Use toolkit blosum matrix
+*
 *Revision 1.21  2003/12/09 19:40:24  ucko
 *+<stdio.h> for sprintf
 *
