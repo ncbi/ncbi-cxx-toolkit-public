@@ -28,7 +28,7 @@
  */
 
 /** @file blast_engine.h
- * High level BLAST functions
+ * High level BLAST functions.
  */
 
 #ifndef __BLAST_ENGINE__
@@ -62,12 +62,13 @@ extern "C" {
  * @param psi_options Options specific to PSI-BLAST [in]
  * @param db_options Options for handling BLAST database [in]
  * @param hsp_stream Structure for streaming results [in] [out]
+ * @param rps_info RPS BLAST auxiliary data structure [in]
  * @param diagnostics Return statistics containing numbers of hits on 
  *                    different stages of the search [out]
  * @param results Results of the BLAST search [out]
  */
 Int4 
-BLAST_SearchEngine(EBlastProgramType program_number, 
+Blast_RunFullSearch(EBlastProgramType program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
    const BlastSeqSrc* seq_src, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options, 
@@ -78,8 +79,8 @@ BLAST_SearchEngine(EBlastProgramType program_number,
    const BlastEffectiveLengthsOptions* eff_len_options,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
-   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics,
-   BlastHSPResults** results);
+   BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
+   BlastDiagnostics* diagnostics, BlastHSPResults** results);
 
 /** The high level function performing an RPS BLAST search 
  * @param program_number Type of BLAST program [in]
@@ -146,6 +147,38 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    const PSIBlastOptions* psi_options, 
    const BlastDatabaseOptions* db_options,
    BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics);
+
+/** The high level function performing the BLAST search against a BLAST 
+ * database after all the setup has been done.
+ * @param program_number Type of BLAST program [in]
+ * @param query The query sequence [in]
+ * @param query_info Additional query information [in]
+ * @param seq_src Structure containing BLAST database [in]
+ * @param score_options Hit scoring options [in]
+ * @param sbp Scoring and statistical parameters [in]
+ * @param lookup_wrap The lookup table, constructed earlier [in] 
+ * @param word_options Options for processing initial word hits [in]
+ * @param ext_options Options and parameters for the gapped extension [in]
+ * @param hit_options Options for saving the HSPs [in]
+ * @param eff_len_options Options for setting effective lengths [in]
+ * @param psi_options Options specific to PSI-BLAST [in]
+ * @param db_options Options for handling BLAST database [in]
+ * @param hsp_stream Structure for streaming results [in] [out]
+ * @param diagnostics Return statistics containing numbers of hits on 
+ *                    different stages of the search [out]
+ */
+Int2 
+Blast_RunPreliminarySearch(EBlastProgramType program, 
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, const BlastScoringOptions* score_options,
+   BlastScoreBlk* sbp, LookupTableWrap* lookup_wrap,
+   const BlastInitialWordOptions* word_options, 
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const PSIBlastOptions* psi_options, const BlastDatabaseOptions* db_options, 
+   BlastHSPStream* hsp_stream, BlastDiagnostics* diagnostics);
+
 
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
