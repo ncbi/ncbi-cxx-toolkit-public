@@ -40,7 +40,7 @@ int main()
     try {
         CMSDBLibContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
 
         CDB_LangCmd* lcmd =
             con->LangCmd("select name, crdate from sysdatabases");
@@ -86,6 +86,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/05 19:23:42  vakatov
+ * MSSQL2 --> MS_DEV1
+ *
  * Revision 1.7  2002/07/02 16:20:55  lavr
  * MS-DBLib patched samples
  *

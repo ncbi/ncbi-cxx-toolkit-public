@@ -41,7 +41,7 @@ int main()
         CDBLibContext my_context;
 
 #ifdef NCBI_OS_MSWIN
-        CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
 #else
         CDB_Connection* con = my_context.Connect("MOZART", "anyone", "allowed", 0);
 #endif
@@ -94,6 +94,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/08/05 19:23:43  vakatov
+ * MSSQL2 --> MS_DEV1
+ *
  * Revision 1.8  2002/04/25 20:43:25  soussov
  * removes needless include
  *

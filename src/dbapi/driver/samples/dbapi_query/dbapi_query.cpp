@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi language call
 * $Log$
+* Revision 1.4  2003/08/05 19:23:58  vakatov
+* MSSQL2 --> MS_DEV1
+*
 * Revision 1.3  2002/12/09 16:25:22  starchen
 * remove the text files from samples
 *
@@ -70,7 +73,7 @@ int main(int argc, char* argv[])
     if ( p == NULL) {
        cout << endl << "usage: for Sybase dblib: -S STRAUSS -d dblib" << endl 
             << "for Sybase ctlib: -S STRAUSS -d ctlib" << endl
-            << "for MSSQL: -S MSSQL2 -d ftds" << endl << endl;
+            << "for MSSQL: -S MS_DEV1 -d ftds" << endl << endl;
     }
     
     //    Driver Manager allowes you to change a type of SQL server

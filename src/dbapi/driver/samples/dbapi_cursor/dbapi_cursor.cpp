@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     if ( p == NULL) {
        cout << endl << "usage: for Sybase dblib: -S STRAUSS -d dblib" << endl 
             << "for Sybase ctlib: -S STRAUSS -d ctlib" << endl
-            << "for MSSQL: -S MSSQL2 -d ftds" << endl << endl;
+            << "for MSSQL: -S MS_DEV1 -d ftds" << endl << endl;
     }
 
     //    Driver Manager allowes you to change a type of SQL server

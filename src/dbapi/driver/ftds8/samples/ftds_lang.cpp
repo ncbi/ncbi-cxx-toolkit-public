@@ -40,7 +40,7 @@ int main()
     try {
         CTDSContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
 
         CDB_LangCmd* lcmd =
             con->LangCmd("select name, crdate from sysdatabases");
@@ -85,6 +85,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/05 19:23:45  vakatov
+ * MSSQL2 --> MS_DEV1
+ *
  * Revision 1.2  2003/04/30 18:22:10  soussov
  * changing datatype for dbname to CDB_LongChar
  *

@@ -40,7 +40,7 @@ int main()
     try {
         CODBCContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
 
         CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
         rcmd->Send();
@@ -90,6 +90,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/08/05 19:23:47  vakatov
+ * MSSQL2 --> MS_DEV1
+ *
  * Revision 1.2  2003/05/08 21:25:08  soussov
  * adopting to unix based odbc
  *

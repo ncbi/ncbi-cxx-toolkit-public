@@ -40,7 +40,7 @@ int main()
     try {
         CMSDBLibContext my_context;
 
-        CDB_Connection* con = my_context.Connect("MSSQL2", "anyone", "allowed", 0);
+        CDB_Connection* con = my_context.Connect("MS_DEV1", "anyone", "allowed", 0);
 
         CDB_RPCCmd* rcmd = con->RPC("sp_who", 0);
         rcmd->Send();
@@ -90,6 +90,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/08/05 19:23:42  vakatov
+ * MSSQL2 --> MS_DEV1
+ *
  * Revision 1.9  2002/07/02 16:20:55  lavr
  * MS-DBLib patched samples
  *
