@@ -123,6 +123,7 @@ public:
         eType,
         eIdxSearch,
         eInvalidValue,
+        eInvalidOperation,
         eNull
     };
 
@@ -133,6 +134,7 @@ public:
         case eType:              return "eType";
         case eIdxSearch:         return "eIdxSearch";
         case eInvalidValue:      return "eInvalidValue";
+        case eInvalidOperation:  return "eInvalidOperation";
         case eNull:              return "eNull";
         default:                 return  CException::GetErrCodeString();
         }
@@ -176,6 +178,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/22 19:20:29  kuznets
+ * Added new error code: InvalidOperation.
+ *
  * Revision 1.5  2003/06/27 18:57:16  dicuccio
  * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
  *
