@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2002/04/22 19:28:13  lavr
+ * Shuffle things around again to get asserts defined in both Debug and Release
+ *
  * Revision 1.4  2002/04/22 15:26:28  ivanov
  * IRIX MIPSpro compiler fix -- assert.h was included above
  *
@@ -77,6 +80,14 @@
 
 #include <ncbiconf.h>
 
+#ifdef   NDEBUG
+#  undef NDEBUG
+#endif
+#ifdef   assert
+#  undef assert
+#endif
+
+
 #ifdef NCBI_OS_MSWIN
 #  ifdef   _ASSERT
 #    undef _ASSERT
@@ -114,7 +125,7 @@ static void _SuppressDiagPopupMessages(void)
 }
 
 /* Put this function at startup init level 'V', far enough not to mess up with
- * base initialization, which happens at preceding levels in alphabetical order.
+ * base RTL init, which happens at preceding levels in alphabetical order.
  */
 #  pragma data_seg(".CRT$XIV")
 
@@ -123,13 +134,6 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #  pragma data_seg()
 #endif
 
-
-#ifdef   NDEBUG
-#  undef NDEBUG
-#endif
-#ifdef   assert
-#  undef assert
-#endif
 
 /* IRIX MIPSpro compiler fix: assert.h already included above */ 
 #ifdef   NCBI_COMPILER_MIPSPRO
