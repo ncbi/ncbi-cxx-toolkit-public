@@ -123,7 +123,7 @@ void CObject::AddReference(void) const
     TCount newCount = m_Counter.Add(eCounterStep);
     if ( !ObjectStateReferenced(newCount) ) {
         m_Counter.Add(-eCounterStep); // undo
-        AddReferenceOverflow(newCount - eCounterStep);
+        CheckReferenceOverflow(newCount - eCounterStep);
     }
 }
 
@@ -141,6 +141,10 @@ void CObject::RemoveReference(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/12 12:04:49  siyan
+ * Changed reference to AddReferenceOverflow() to its new name of
+ * CheckReferenceOverflow().
+ *
  * Revision 1.7  2002/05/23 22:24:21  ucko
  * Use low-level atomic operations for reference counts
  *
