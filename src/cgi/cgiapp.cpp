@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/06/13 21:04:37  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
 * Revision 1.23  2001/01/12 21:58:43  golikov
 * cgicontext available from cgiapp
 *
@@ -127,67 +130,73 @@ CCgiApplication* CCgiApplication::Instance(void)
     return dynamic_cast<CCgiApplication*>(CParent::Instance());
 }
 
+
 int CCgiApplication::Run(void)
 {
+    int result;
+
     // try to run as a Fast-CGI loop
-    if ( RunFastCGI() )
-        return 0;
+    if ( RunFastCGI(&result) ) {
+        return result;
+    }
 
     // run as a plain CGI application
     _TRACE("CCgiApplication::Run: calling ProcessRequest");
-    m_ctx.reset( CreateContext() );
-    int result = ProcessRequest(*m_ctx.get());
+    m_Context.reset( CreateContext() );
+    result = ProcessRequest(*m_Context);
     _TRACE("CCgiApplication::Run: flushing");
-    m_ctx->GetResponse().Flush();
+    m_Context->GetResponse().Flush();
     _TRACE("CCgiApplication::Run: return " << result);
     return result;
 }
 
+
 CCgiContext& CCgiApplication::x_GetContext( void ) const
 { 
-    if ( !m_ctx.get() ) {
+    if ( !m_Context.get() ) {
         ERR_POST("CCgiApplication::GetContext: no context set");
         throw runtime_error("no context set");
     }
-    return *m_ctx;
+    return *m_Context;
 }
+
 
 CNcbiResource& CCgiApplication::x_GetResource( void ) const
 { 
-    if ( !m_resource.get() ) {
+    if ( !m_Resource.get() ) {
         ERR_POST("CCgiApplication::GetResource: no resource set");
         throw runtime_error("no resource set");
     }
-    return *m_resource;
+    return *m_Resource;
 }
+
 
 void CCgiApplication::Init(void)
 {
     CParent::Init();       
-    m_resource.reset(LoadResource());
+    m_Resource.reset(LoadResource());
 }
+
 
 void CCgiApplication::Exit(void)
 {
-    m_resource.reset(0);    
+    m_Resource.reset(0);    
     CParent::Exit();
 }
+
 
 CNcbiResource* CCgiApplication::LoadResource(void)
 {
     return 0;
 }
 
-CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext&)
+
+CCgiServerContext* CCgiApplication::LoadServerContext(CCgiContext& /*context*/)
 {
     return 0;
 }
- 
-bool CCgiApplication::SetupDiag_AppSpecific(void)
-{
-    return SetupDiag(eDS_User);
-}
 
+ 
 CCgiContext* CCgiApplication::CreateContext
 (CNcbiArguments*   args,
  CNcbiEnvironment* env,

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/06/13 21:04:37  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
 * Revision 1.20  2000/12/23 23:54:01  vakatov
 * TLMsg container to use AutoPtr instead of regular pointer
 *
@@ -101,35 +104,54 @@
 #include <cgi/cgictx.hpp>
 #include <cgi/cgiapp.hpp>
 
-#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiServerContext::
+//
+
+CCgiServerContext::~CCgiServerContext(void)
+{
+    return;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCtxMsg::
+//
+
+CCtxMsg::~CCtxMsg(void)
+{
+    return;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCtxMsgString::
+//
+
 string CCtxMsgString::sm_nl = "\n";
 
 
-CCgiServerContext::~CCgiServerContext(void) {
+CCtxMsgString::~CCtxMsgString(void)
+{
     return;
 }
 
 
-CCtxMsg::~CCtxMsg(void) {
-    return;
+CNcbiOstream& CCtxMsgString::Write(CNcbiOstream& os) const
+{
+    return os << m_Message << sm_nl;
 }
 
 
-CCtxMsgString::~CCtxMsgString(void) {
-    return;
-}
 
-CNcbiOstream& CCtxMsgString::Write(CNcbiOstream& os) const {
-    return os << m_s << sm_nl;
-}
-
-
-//
-// class CCgiContext
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiContext::
 //
 
 CCgiContext::CCgiContext(CCgiApplication&        app,
@@ -137,70 +159,79 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
                          const CNcbiEnvironment* env,
                          CNcbiIstream*           inp,
                          CNcbiOstream*           out)
-: m_app(app),
-  m_request(0),
-  m_response(out)
+    : m_App(app),
+      m_Request(0),
+      m_Response(out)
 {
     try {
-        if ( !args )
-            args = &app.GetArguments();
-        if ( !env )
-            env = &app.GetEnvironment();
-
-        m_request.reset(new CCgiRequest(args, env, inp));
-    } catch (exception& _DEBUG_ARG(e)) {
+        m_Request.reset(new CCgiRequest(args ? args : &app.GetArguments(),
+                                        env  ? env  : &app.GetEnvironment(),
+                                        inp));
+    }
+    catch (exception& _DEBUG_ARG(e)) {
         _TRACE("CCgiContext::CCgiContext: " << e.what());
         PutMsg("Bad request");
 
         char buf[1];
         CNcbiIstrstream dummy(buf, 0);
-        m_request.reset(new CCgiRequest
+        m_Request.reset(new CCgiRequest
                         (args, env, &dummy, CCgiRequest::fIgnoreQueryString));
     }
 }
 
 
-CCgiContext::~CCgiContext( void )
+CCgiContext::~CCgiContext(void)
 {
     return;
 }
 
+
 const CNcbiRegistry& CCgiContext::GetConfig(void) const
 {
-    return m_app.GetConfig();
+    return m_App.GetConfig();
 }
+
 
 CNcbiRegistry& CCgiContext::GetConfig(void)
 {
-    return m_app.GetConfig();
+    return m_App.GetConfig();
 }
 
-CNcbiResource& CCgiContext::x_GetResource(void) const
+
+const CNcbiResource& CCgiContext::GetResource(void) const
 {
-    return m_app.x_GetResource();
+    return m_App.GetResource();
 }
 
-CCgiServerContext& CCgiContext::x_GetServCtx( void ) const
+
+CNcbiResource& CCgiContext::GetResource(void)
+{
+    return m_App.GetResource();
+}
+
+
+CCgiServerContext& CCgiContext::x_GetServerContext(void) const
 { 
-    CCgiServerContext* context = m_srvCtx.get();
+    CCgiServerContext* context = m_ServerContext.get();
     if ( !context ) {
-        context = m_app.LoadServerContext(const_cast<CCgiContext&>(*this));
+        context = m_App.LoadServerContext(const_cast<CCgiContext&>(*this));
         if ( !context ) {
-            ERR_POST("CCgiContext::GetServCtx: no server context set");
+            ERR_POST("CCgiContext::GetServerContext: no server context set");
             throw runtime_error("no server context set");
         }
-        const_cast<CCgiContext&>(*this).m_srvCtx.reset(context);
+        const_cast<CCgiContext&>(*this).m_ServerContext.reset(context);
     }
     return *context;
 }
 
+
 string CCgiContext::GetRequestValue(const string& name) const
 {
-    TCgiEntries& entries = const_cast<TCgiEntries&>  // (workaround WS5.0 bug)
-        (GetRequest().GetEntries() );
-    pair<TCgiEntriesI, TCgiEntriesI> range = entries.equal_range(name);
+    pair<TCgiEntriesCI, TCgiEntriesCI> range =
+        GetRequest().GetEntries().equal_range(name);
+
     if (range.second == range.first)
-        return NcbiEmptyString;
+        return kEmptyStr;
 
     const string& value = range.first->second;
     while (++range.first != range.second) {
@@ -213,47 +244,42 @@ string CCgiContext::GetRequestValue(const string& name) const
     return value;
 }
 
+
 void CCgiContext::RemoveRequestValues(const string& name)
 {
-    const_cast<TCgiEntries&>(GetRequest().GetEntries()).erase(name);
+    GetRequest().GetEntries().erase(name);
 }
+
 
 void CCgiContext::AddRequestValue(const string& name, const string& value)
 {
-    const_cast<TCgiEntries&>( GetRequest().GetEntries()).insert(
-                                     TCgiEntries::value_type(name, value));
+    GetRequest().GetEntries().insert(TCgiEntries::value_type(name, value));
 }
 
-void CCgiContext::ReplaceRequestValue(const string& name, 
-                                      const string& value)
+
+void CCgiContext::ReplaceRequestValue(const string& name, const string& value)
 {
     RemoveRequestValues(name);
     AddRequestValue(name, value);
 }
 
+
 const string& CCgiContext::GetSelfURL(void) const
 {
-    if( m_selfURL.empty() ) {
-        m_selfURL = "http://";
-        m_selfURL += GetRequest().GetProperty(eCgi_ServerName);
-        m_selfURL += ':';
-        m_selfURL += GetRequest().GetProperty(eCgi_ServerPort);
+    if ( !m_SelfURL.empty() )
+        return m_SelfURL;
+
+    // Compose self URL
+    m_SelfURL = "http://";
+    m_SelfURL += GetRequest().GetProperty(eCgi_ServerName);
+    m_SelfURL += ':';
+    m_SelfURL += GetRequest().GetProperty(eCgi_ServerPort);
         
-        // bug in www.ncbi proxy - replace adjacent '//'
-        string script( GetRequest().GetProperty(eCgi_ScriptName) );
-        string::iterator b = script.begin(), it;
-        
-        while( ( it = adjacent_find( b, script.end() ) ) != script.end() ) {
-            if( *it == '/' ) {
-                b = script.erase( it );
-            } else {
-                b = it + 2;
-            }
-        } // while
-        
-        m_selfURL += script;
-    }
-    return m_selfURL;
+    // (workaround a bug in the "www.ncbi" proxy -- replace adjacent '//')
+    m_SelfURL += NStr::Replace
+        (GetRequest().GetProperty(eCgi_ScriptName), "//", "/");
+
+    return m_SelfURL;
 }
 
 END_NCBI_SCOPE

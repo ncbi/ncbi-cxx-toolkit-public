@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/06/13 21:04:37  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
 * Revision 1.47  2001/05/17 15:01:49  lavr
 * Typos corrected
 *
@@ -209,13 +212,12 @@
 #include <time.h>
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
 
 ///////////////////////////////////////////////////////
-//  CCgiCookie
+//  CCgiCookie::
 //
 
 // auxiliary zero "tm" struct
@@ -278,7 +280,7 @@ void CCgiCookie::CopyAttributes(const CCgiCookie& cookie)
 string CCgiCookie::GetExpDate(void) const
 {
     if ( s_ZeroTime(m_Expires) )
-        return NcbiEmptyString;
+        return kEmptyStr;
 
     char str[30];
     if ( !::strftime(str, sizeof(str),
@@ -325,8 +327,9 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
 // Check if the cookie field is valid
 void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
 {
-    if (banned_symbols  &&  str.find_first_of(banned_symbols) != NPOS)
+    if (banned_symbols  &&  str.find_first_of(banned_symbols) != NPOS) {
         throw invalid_argument("CCgiCookie::CheckValidCookieField() [1]");
+    }
 
     for (const char* s = str.c_str();  *s;  s++) {
         if ( !isprint(*s) )
@@ -368,7 +371,7 @@ const
 
 
 ///////////////////////////////////////////////////////
-// Set of CGI send-cookies
+//  CCgiCookies::
 //
 
 CCgiCookie* CCgiCookies::Add(const string& name,    const string& value,
@@ -420,11 +423,11 @@ void CCgiCookies::Add(const string& str)
 
         SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
         if (pos_mid == NPOS) {
-            Add(str.substr(pos_beg), NcbiEmptyString);
+            Add(str.substr(pos_beg), kEmptyStr);
             return; // done
         }
         if (str[pos_mid] != '=') {
-            Add(str.substr(pos_beg, pos_mid-pos_beg), NcbiEmptyString);
+            Add(str.substr(pos_beg, pos_mid-pos_beg), kEmptyStr);
             if (str[pos_mid] != ';'  ||  ++pos_mid == str.length()) 
                 return; // done
             pos = pos_mid;
@@ -483,6 +486,7 @@ CCgiCookie* CCgiCookies::Find
     return 0;
 }
 
+
 const CCgiCookie* CCgiCookies::Find
 (const string& name, const string& domain, const string& path)
 const
@@ -516,6 +520,7 @@ CCgiCookie* CCgiCookies::Find(const string& name, TRange* range)
     return (beg == end) ? 0 : *beg;
 }
 
+
 const CCgiCookie* CCgiCookies::Find(const string& name, TCRange* range)
 const
 {
@@ -532,6 +537,16 @@ const
 }
 
 
+bool CCgiCookies::Remove(CCgiCookie* cookie, bool destroy)
+{
+    if (!cookie  ||  m_Cookies.erase(cookie) == 0)
+        return false;
+    if ( destroy )
+        delete cookie;
+    return true;
+}
+
+
 size_t CCgiCookies::Remove(TRange& range, bool destroy)
 {
     size_t count = 0;
@@ -544,7 +559,8 @@ size_t CCgiCookies::Remove(TRange& range, bool destroy)
 }
 
 
-void CCgiCookies::Clear(void) {
+void CCgiCookies::Clear(void)
+{
     for (TCIter iter = m_Cookies.begin();  iter != m_Cookies.end();  iter++) {
         delete *iter;
     }
@@ -692,7 +708,7 @@ static SIZE_TYPE s_ParseIsIndex(const string& str,
         if ( indexes ) {
             indexes->push_back(name);
         } else {
-            pair<const string, string> entry(name, NcbiEmptyString);
+            pair<const string, string> entry(name, kEmptyStr);
             entries->insert(entry);
         }
 
@@ -761,7 +777,7 @@ static void s_ParseMultipartEntries(const string& boundary,
             }
 
             partStart = NPOS;
-            name = NcbiEmptyString;
+            name = kEmptyStr;
         }
         else if ( eol == pos + boundary.size() + 2 &&
                   NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
@@ -967,7 +983,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
                      (flags & fIndexesNotEntries) == 0);
     }
 
-    if ( m_Entries.find(NcbiEmptyString) != m_Entries.end() ) {
+    if ( m_Entries.find(kEmptyStr) != m_Entries.end() ) {
         // there is already empty name key
         ERR_POST("empty key name: we'll not check for IMAGE names");
         return;
@@ -999,7 +1015,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
             }
         }
     }
-    m_Entries.insert(TCgiEntries::value_type(NcbiEmptyString, imageName));
+    m_Entries.insert(TCgiEntries::value_type(kEmptyStr, imageName));
 }
 
 
@@ -1106,11 +1122,6 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
 SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 {
     return s_ParseIsIndex(str, &indexes, 0);
-}
-
-
-CCgiRequest::CCgiRequest(const CCgiRequest&) {
-    _TROUBLE;
 }
 
 

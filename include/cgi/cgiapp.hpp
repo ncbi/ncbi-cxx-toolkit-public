@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/06/13 21:04:35  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
 * Revision 1.21  2001/01/12 21:58:25  golikov
 * cgicontext available from cgiapp
 *
@@ -107,76 +110,62 @@
 #include <cgi/ncbicgir.hpp>
 #include <cgi/ncbires.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
-class CCgiContext;
 class CCgiServerContext;
-class CCgiApplication;
 
-//
-// class CCgiApplication
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiApplication::
 //
 
 class CCgiApplication : public CNcbiApplication
 {
-    friend class CCgiContext;
     typedef CNcbiApplication CParent;
 
 public:
     static CCgiApplication* Instance(void); // Singleton method    
 
-    // these methods will throw exception if no server context set
-    const CCgiContext& GetContext(void) const;
-    CCgiContext& GetContext(void);
+    // These methods will throw exception if no server context set
+    const CCgiContext& GetContext(void) const  { return x_GetContext(); }
+    CCgiContext&       GetContext(void)        { return x_GetContext(); }
     
-    // these methods will throw exception if no server context set
-    const CNcbiResource& GetResource(void) const;
-    CNcbiResource& GetResource(void);
+    // These methods will throw exception if no resource is set
+    const CNcbiResource& GetResource(void) const { return x_GetResource(); }
+    CNcbiResource&       GetResource(void)       { return x_GetResource(); }
 
-    virtual void Init(void); // initialization
-    virtual void Exit(void); // cleanup
+    virtual void Init(void);  // initialization
+    virtual void Exit(void);  // cleanup
 
     virtual int Run(void);
     virtual int ProcessRequest(CCgiContext& context) = 0;
     
-    virtual CNcbiResource* LoadResource(void);
+    virtual CNcbiResource*     LoadResource(void);
     virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
 
-    // If FastCGI-capable, and run as a Fast-CGI then iterate through
-    // the FastCGI loop -- doing initialization and running ProcessRequest()
-    // time after time; then return TRUE.
-    // Return FALSE overwise.
-    bool RunFastCGI(unsigned def_iter=3);
-
 protected:
-    // Overrides the one from CNcbiApplication
-    // Default:  eDS_User
-    /////
-    // Note for the future development -- to customize it to:
-    //   - at first, store diag. in memory (eDS_ToMemory)
-    //   - after configuration is complete, dump the stored diag. to
-    //     a specified stream, and then continue to write to this stream
-    //   - maybe, try to make a really smart guess of whether it's running
-    //     in a debug mode, and in this case, write to std.err. from the very
-    //     start of the application execution.
-    virtual bool SetupDiag_AppSpecific(void);
-
-    // Factory method for Context object construction
+    // Factory method for the Context object construction
     virtual CCgiContext* CreateContext(CNcbiArguments*   args = 0,
                                        CNcbiEnvironment* env  = 0,
                                        CNcbiIstream*     inp  = 0, 
                                        CNcbiOstream*     out  = 0);
 
 private:
-    CCgiContext& x_GetContext(void) const;
+    // If FastCGI-capable, and run as a Fast-CGI then iterate through
+    // the FastCGI loop -- doing initialization and running ProcessRequest()
+    // time after time; then return TRUE.
+    // Return FALSE overwise.
+    // In the "result", return exit code of the last CGI iteration run.
+    bool RunFastCGI(int* result, unsigned def_iter = 3);
+
+    CCgiContext&   x_GetContext (void) const;
     CNcbiResource& x_GetResource(void) const;
 
-    auto_ptr<CNcbiResource> m_resource;
-    auto_ptr<CCgiContext> m_ctx;
+    auto_ptr<CNcbiResource> m_Resource;
+    auto_ptr<CCgiContext>   m_Context;
 };
 
-
-#include <cgi/cgiapp.inl>
 
 END_NCBI_SCOPE
 

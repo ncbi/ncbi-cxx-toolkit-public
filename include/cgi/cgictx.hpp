@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/06/13 21:04:35  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
 * Revision 1.16  2001/05/17 14:49:01  lavr
 * Typos corrected
 *
@@ -121,14 +124,14 @@
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
 
+
 BEGIN_NCBI_SCOPE
 
-class CNcbiEnvironment;
-class CNcbiRegistry;
-class CNcbiResource;
-class CCgiContext;
-class CCgiApplication;
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CCgiServerContext::
+//
 
 class CCgiServerContext
 {
@@ -137,6 +140,12 @@ public:
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CCtxMsg::
+//
+
 class CCtxMsg
 {
 public:
@@ -144,34 +153,51 @@ public:
     virtual CNcbiOstream& Write(CNcbiOstream& os) const = 0;
 };
 
-inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCtxMsg& msg) {
-    return msg.Write(os);
+
+inline
+CNcbiOstream& operator<< (CNcbiOstream& os, const CCtxMsg& ctx_msg)
+{
+    return ctx_msg.Write(os);
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CCtxMsgString::
+//
 
 class CCtxMsgString : public CCtxMsg
 {
 public:
-    CCtxMsgString(const string& str) : m_s(str) {}
+    CCtxMsgString(const string& msg) : m_Message(msg) {}
     virtual ~CCtxMsgString(void);
     virtual CNcbiOstream& Write(CNcbiOstream& os) const;
 
     static string sm_nl;
 private:
-    string m_s;
+    string m_Message;
 };
 
 
 
+/////////////////////////////////////////////////////////////////////////////
 //
-// class CCgiContext
+//  CCgiContext::
 //
 // CCgiContext is a wrapper for request, response, server context.
-// In addition, it contains list of messages as html nodes.
-// Having non-const reference, CCgiContext's user has access to its 
-// all internal data
+// In addition, it contains list of messages (as HTML nodes).
+// Having non-const reference, CCgiContext's user has access to all its 
+// internal data.
 // Context will try to create request from given data or default request
 // on any request creation error
+//
+
+class CNcbiEnvironment;
+class CNcbiRegistry;
+class CNcbiResource;
+class CCgiApplication;
+
 
 class CCgiContext
 {
@@ -197,13 +223,13 @@ public:
     CCgiRequest& GetRequest(void);
     
     const CCgiResponse& GetResponse(void) const;
-    CCgiResponse& GetResponse( void );
+    CCgiResponse& GetResponse(void);
     
     // these methods will throw exception if no server context set
     const CCgiServerContext& GetServCtx(void) const;
     CCgiServerContext& GetServCtx(void);
 
-    //message buffer functions
+    // message buffer functions
     CNcbiOstream& PrintMsg(CNcbiOstream& os);
 
     void PutMsg(const string& msg);
@@ -214,9 +240,9 @@ public:
 
     // request access wrappers
 
-    // returns entry from request
-    // returns empty string if no such entry
-    // throws runtime_error if there are several entries with the same name
+    // return entry from request
+    // return empty string if no such entry
+    // throw runtime_error if there are several entries with the same name
     string GetRequestValue(const string& name) const;
 
     void AddRequestValue(const string& name, const string& value);
@@ -224,30 +250,126 @@ public:
     void ReplaceRequestValue(const string& name, const string& value);
 
     // program name access
-    const string& GetSelfURL( void ) const;
+    const string& GetSelfURL(void) const;
 
 private:
-    CNcbiResource& x_GetResource(void) const;
-    CCgiServerContext& x_GetServCtx(void) const;
+    CCgiServerContext& x_GetServerContext(void) const;
 
-    CCgiApplication& m_app;
-    
-    auto_ptr<CCgiRequest> m_request; // CGI request information
-    CCgiResponse m_response; // CGI response information
+    CCgiApplication&      m_App;
+    auto_ptr<CCgiRequest> m_Request;  // CGI request  information
+    CCgiResponse          m_Response; // CGI response information
 
-    //message buffer
-    typedef list< AutoPtr<CCtxMsg> > TLMsg;
-    TLMsg m_lmsg;
+    // message buffer
+    typedef list< AutoPtr<CCtxMsg> > TMessages;
+    TMessages m_Messages;
 
     // server context will be obtained from CCgiApp::LoadServerContext()
-    auto_ptr<CCgiServerContext> m_srvCtx; // application defined context
+    auto_ptr<CCgiServerContext> m_ServerContext; // application defined context
 
-    mutable string m_selfURL;
-
-    friend class CCgiApplication;
+    mutable string m_SelfURL;
 }; 
 
-#include <cgi/cgictx.inl>
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  CCgiContext::
+//
+
+inline
+const CCgiApplication& CCgiContext::GetApp(void) const
+{ 
+    return m_App;
+}
+    
+
+inline
+const CCgiRequest& CCgiContext::GetRequest(void) const
+{
+    return *m_Request;
+}
+
+
+inline
+CCgiRequest& CCgiContext::GetRequest(void)
+{
+    return *m_Request;
+}
+
+    
+inline
+const CCgiResponse& CCgiContext::GetResponse(void) const
+{
+    return m_Response;
+}
+
+
+inline
+CCgiResponse& CCgiContext::GetResponse(void)
+{
+    return m_Response;
+}
+
+
+inline
+const CCgiServerContext& CCgiContext::GetServCtx(void) const
+{
+    return x_GetServerContext();
+}
+
+
+inline
+CCgiServerContext& CCgiContext::GetServCtx(void)
+{
+    return x_GetServerContext();
+}
+
+
+inline
+CNcbiOstream& CCgiContext::PrintMsg(CNcbiOstream& os)
+{
+    iterate ( TMessages, it, m_Messages ) {
+        os << **it;
+    }
+    return os;
+}
+
+
+inline
+void CCgiContext::PutMsg(const string& msg)
+{
+    m_Messages.push_back( new CCtxMsgString( msg ) );
+}
+
+
+inline
+void CCgiContext::PutMsg(CCtxMsg* msg)
+{
+    m_Messages.push_back( msg );
+}
+
+
+inline
+bool CCgiContext::EmptyMsg(void)
+{
+    return m_Messages.empty();
+}
+
+
+inline
+void CCgiContext::ClearMsg(void)
+{
+    m_Messages.clear();
+}
+
 
 END_NCBI_SCOPE
 

@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/13 21:04:36  vakatov
+ * Formal improvements and general beautifications of the CGI lib sources.
+ *
  * Revision 1.1  1999/12/17 03:55:03  vakatov
  * Initial revision
  *
@@ -42,7 +45,7 @@
 
 BEGIN_NCBI_SCOPE
 
-bool CCgiApplication::RunFastCGI(unsigned)
+bool CCgiApplication::RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
 {
     return false;
 }

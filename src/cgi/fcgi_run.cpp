@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2001/06/13 21:04:37  vakatov
+ * Formal improvements and general beautifications of the CGI lib sources.
+ *
  * Revision 1.5  2001/01/12 21:58:44  golikov
  * cgicontext available from cgiapp
  *
@@ -51,7 +54,7 @@
 
 BEGIN_NCBI_SCOPE
 
-bool CCgiApplication::RunFastCGI(unsigned)
+bool CCgiApplication::RunFastCGI(int* /*result*/, unsigned /*def_iter*/)
 {
     _TRACE("CCgiApplication::RunFastCGI:  return (FastCGI is not supported)");
     return false;
@@ -82,8 +85,10 @@ static time_t s_GetModTime(const char* filename)
 }
 
 
-bool CCgiApplication::RunFastCGI(unsigned def_iter)
+bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
 {
+    *result = -100;
+
     // Is it run as a Fast-CGI or as a plain CGI?
     if ( FCGX_IsCGI() ) {
         _TRACE("CCgiApplication::RunFastCGI:  return (run as a plain CGI)");
@@ -124,40 +129,49 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
         }
 
         // default exit status (error)
+        *result = -1;
         FCGX_SetExitStatus(-1, pfout);
 
         // process the request
         try {
             // initialize CGI context with the new request data
-            CNcbiEnvironment env(penv);
-            CCgiObuffer obuf(pfout, 512);              
-            CNcbiOstream ostr(&obuf);
-            CCgiIbuffer ibuf(pfin);
-            CNcbiIstream istr(&ibuf);
-            CNcbiArguments args(0, 0);  // no cmd.-line ars
+            CNcbiEnvironment  env(penv);
+            CCgiObuffer       obuf(pfout, 512);
+            CNcbiOstream      ostr(&obuf);
+            CCgiIbuffer       ibuf(pfin);
+            CNcbiIstream      istr(&ibuf);
+            CNcbiArguments    args(0, 0);  // no cmd.-line ars
 
-            m_ctx.reset(CreateContext(&args, &env, &istr, &ostr));
+            m_Context.reset(CreateContext(&args, &env, &istr, &ostr));
 
             // checking for exit request
-            if (m_ctx->GetRequest().GetEntries().find("exitfastcgi") !=
-                m_ctx->GetRequest().GetEntries().end()) {
+            if (m_Context->GetRequest().GetEntries().find("exitfastcgi") !=
+                m_Context->GetRequest().GetEntries().end()) {
                 ostr <<
                     "Content-Type: text/html" HTTP_EOL
                     HTTP_EOL
                     "Done";
                 _TRACE("CCgiApplication::RunFastCGI: aborting by request");
                 FCGX_Finish();
+                if (iteration == 0) {
+                    *result = 0;
+                }
                 break;
             }
 
             if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
-                m_ctx->PutMsg("FastCGI: " + NStr::IntToString(iteration + 1) +
-                              " iteration of " + NStr::IntToString(iterations));
+                m_Context->PutMsg
+                    ("FastCGI: " + NStr::IntToString(iteration + 1) +
+                     " iteration of " + NStr::IntToString(iterations));
             }
 
             // call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
-            FCGX_SetExitStatus(ProcessRequest(*m_ctx.get()), pfout);
+            *result = ProcessRequest(*m_Context);
+            _TRACE("CCgiApplication::Run: flushing");
+            m_Context->GetResponse().Flush();
+            _TRACE("CCgiApplication::Run: done, status: " << *result);
+            FCGX_SetExitStatus(*result, pfout);
         }
         catch (exception& e) {
             ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());
@@ -179,7 +193,7 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
     } // Main Fast-CGI loop
 
     // done
-    _TRACE("CCgiApplication::RunFastCGI:  return(FastCGI loop finished)");
+    _TRACE("CCgiApplication::RunFastCGI:  return (FastCGI loop finished)");
     return true;
 }
 

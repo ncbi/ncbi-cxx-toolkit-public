@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/06/13 21:04:35  vakatov
+* Formal improvements and general beautifications of the CGI lib sources.
+*
 * Revision 1.48  2001/05/17 14:49:25  lavr
 * Typos corrected
 *
@@ -184,15 +187,18 @@
 #define HTTP_EOL "\r\n"
 
 
-// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
 
 ///////////////////////////////////////////////////////
+//
+//  CCgiCookie::
+//
 // The CGI send-cookie class
 //
 
-class CCgiCookie {
+class CCgiCookie
+{
 public:
     // Copy constructor
     CCgiCookie(const CCgiCookie& cookie);
@@ -241,10 +247,10 @@ public:
     bool GetExpDate(tm* exp_date) const;
     bool GetSecure(void)          const;
 
-    // compare two cookies
-    bool operator<(const CCgiCookie& cookie) const;
+    // Compare two cookies
+    bool operator< (const CCgiCookie& cookie) const;
 
-    // predicate
+    // Predicate for the cookie comparison
     typedef const CCgiCookie* TCPtr;
     struct PLessCPtr {
         bool operator() (const TCPtr& c1, const TCPtr& c2) const {
@@ -263,17 +269,21 @@ private:
     static void x_CheckField(const string& str, const char* banned_symbols);
     static bool x_GetString(string* str, const string& val);
     // prohibit default assignment
-    CCgiCookie& operator=(const CCgiCookie&) { _TROUBLE;  return *this; }
+    CCgiCookie& operator= (const CCgiCookie&);
 };  // CCgiCookie
 
 
-inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCgiCookie& cookie) {
+inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookie& cookie)
+{
     return cookie.Write(os);
 }
 
 
 
 ///////////////////////////////////////////////////////
+//
+//  CCgiCookies::
+//
 // Set of CGI send-cookies
 //
 //  The cookie is uniquely identified by {name, domain, path}.
@@ -281,7 +291,8 @@ inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCgiCookie& cookie) {
 //  "name" and "domain" are not case-sensitive;  "path" is case-sensitive.
 //
 
-class CCgiCookies {
+class CCgiCookies
+{
 public:
     typedef set<CCgiCookie*, CCgiCookie::PLessCPtr>  TSet;
     typedef TSet::iterator         TIter;
@@ -347,18 +358,22 @@ private:
     TSet m_Cookies;
 
     // prohibit default initialization and assignment
-    CCgiCookies(const CCgiCookies&) { _TROUBLE; }
-    CCgiCookies& operator=(const CCgiCookies&) { _TROUBLE;  return *this; }
+    CCgiCookies(const CCgiCookies&);
+    CCgiCookies& operator= (const CCgiCookies&);
 };  // CCgiCookies
 
 
-inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCgiCookies& cookies) {
+inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookies& cookies)
+{
     return cookies.Write(os);
 }
 
 
 
 ///////////////////////////////////////////////////////
+//
+//  CCgiRequest::
+//
 // The CGI request class
 //
 
@@ -416,11 +431,14 @@ typedef list<string>                 TCgiIndexes;
 class CNcbiArguments;
 class CNcbiEnvironment;
 
-// constant returned by GetContentLength() when Content-Length header is missing
+// Constant returned by GetContentLength() when Content-Length: header
+// is missing
 static const size_t kContentLengthUnknown = size_t(-1);
 
+
 //
-class CCgiRequest {
+class CCgiRequest
+{
 public:
     // Startup initialization:
     //   retrieve request's properties and cookies from environment
@@ -473,11 +491,13 @@ public:
 
     // Retrieve the request cookies
     const CCgiCookies& GetCookies(void) const;
+    CCgiCookies& GetCookies(void);
 
     // Get a set of entries(decoded) received from the client.
     // Also includes "indexes" if "indexes_as_entries" in the
     // constructor was "true"(default).
     const TCgiEntries& GetEntries(void) const;
+    TCgiEntries& GetEntries(void);
 
     // Get entry value by name
     // NOTE:  There can be more than one entry with the same name;
@@ -489,6 +509,7 @@ public:
     // It will always be empty if "indexes_as_entries" in the constructor
     // was "true"(default).
     const TCgiIndexes& GetIndexes(void) const;
+    TCgiIndexes& GetIndexes(void);
 
     // Decode the URL-encoded(FORM or ISINDEX) string "str" into a set of
     // entries <"name", "value"> and add them to the "entries" set.
@@ -526,25 +547,140 @@ private:
     const string& x_GetPropertyByName(const string& name) const;
 
     // prohibit default initialization and assignment
-    CCgiRequest(const CCgiRequest&);  // { _TROUBLE; }
-    CCgiRequest& operator=(const CCgiRequest&) { _TROUBLE;  return *this; }
+    CCgiRequest(const CCgiRequest&);
+    CCgiRequest& operator= (const CCgiRequest&);
 };  // CCgiRequest
+
 
 
 // Decode the URL-encoded string "str";  return the result of decoding
 // If "str" format is invalid then throw CParseException
 extern string URL_DecodeString(const string& str);
 
+
 // URL-encode regular string "str";  return the result of encoding
 extern string URL_EncodeString(const string& str);
 
 
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////////////////////////
+//  IMPLEMENTATION of INLINE functions
+/////////////////////////////////////////////////////////////////////////////
+
+
+
 ///////////////////////////////////////////////////////
-// All inline function implementations are in this file
-#include <cgi/ncbicgi.inl>
+//  CCgiCookie::
+//
 
 
-// (END_NCBI_SCOPE must be preceded by BEGIN_NCBI_SCOPE)
+// CCgiCookie::SetXXX()
+
+inline void CCgiCookie::SetValue(const string& str) {
+    x_CheckField(str, " ;");
+    m_Value = str;
+}
+inline void CCgiCookie::SetDomain(const string& str) {
+    x_CheckField(str, " ;");
+    m_Domain = str;
+}
+inline void CCgiCookie::SetPath(const string& str) {
+    x_CheckField(str, ";,");
+    m_Path = str;
+}
+inline void CCgiCookie::SetExpDate(const tm& exp_date) {
+    m_Expires = exp_date;
+}
+inline void CCgiCookie::SetSecure(bool secure) {
+    m_Secure = secure;
+}
+
+// CCgiCookie::GetXXX()
+
+inline const string& CCgiCookie::GetName(void) const {
+    return m_Name;
+}
+inline const string& CCgiCookie::GetValue(void) const {
+    return m_Value;
+}
+inline const string& CCgiCookie::GetDomain(void) const {
+    return m_Domain;
+}
+inline const string& CCgiCookie::GetPath(void) const {
+    return m_Path;
+}
+inline bool CCgiCookie::GetSecure(void) const {
+    return m_Secure;
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CCgiCookies::
+//
+
+inline CCgiCookies::CCgiCookies(void)
+    : m_Cookies()
+{
+    return;
+}
+
+inline CCgiCookies::CCgiCookies(const string& str)
+    : m_Cookies()
+{
+    Add(str);
+}
+
+inline bool CCgiCookies::Empty(void) const
+{
+    return m_Cookies.empty();
+}
+
+inline size_t CCgiCookies::Remove(const string& name, bool destroy)
+{
+    TRange range;
+    return Find(name, &range) ? Remove(range, destroy) : 0;
+}
+
+inline CCgiCookies::~CCgiCookies(void)
+{
+    Clear();
+}
+
+
+
+///////////////////////////////////////////////////////
+//  CCgiRequest::
+//
+
+inline const CCgiCookies& CCgiRequest::GetCookies(void) const {
+    return m_Cookies;
+}
+inline CCgiCookies& CCgiRequest::GetCookies(void) {
+    return m_Cookies;
+}
+
+
+inline const TCgiEntries& CCgiRequest::GetEntries(void) const {
+    return m_Entries;
+}
+inline TCgiEntries& CCgiRequest::GetEntries(void) {
+    return m_Entries;
+}
+
+
+inline TCgiIndexes& CCgiRequest::GetIndexes(void) {
+    return m_Indexes;
+}
+inline const TCgiIndexes& CCgiRequest::GetIndexes(void) const {
+    return m_Indexes;
+}
+
+
 END_NCBI_SCOPE
 
 #endif  /* NCBICGI__HPP */
