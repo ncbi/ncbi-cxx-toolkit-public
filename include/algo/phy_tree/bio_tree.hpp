@@ -258,7 +258,7 @@ public:
             return 0;
         }
 
-        TTreeType* DetachNode(TNodeList_I it)
+        TTreeType* DetachNode(typename TParent::TNodeList_I it)
         {
             typename TParent::TTreeType* ptn = TParent::DetachNode(it);
             if (ptn) {
@@ -299,7 +299,7 @@ public:
             if (fid == 0) 
                 return kEmptyStr;
 
-            const TBioNode& value = GetValue();
+            const TBioNode& value = TParent::GetValue();
             return value.features[fid];
         }
 
@@ -322,7 +322,6 @@ public:
 
     /// Biotree node (forms the tree hierarchy)
     typedef CBioNode TBioTreeNode;
-    //typedef CTreeNode<TBioNode> TBioTreeNode;
     typedef CBioNode            TBioTreeNode;
     typedef TBioNode            TBioNodeType;
 
@@ -587,6 +586,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/08/18 12:48:09  kuznets
+ * compilation fix (GCC)
+ *
  * Revision 1.15  2004/08/18 12:13:54  kuznets
  * Usability improvements (new node design)
  *
