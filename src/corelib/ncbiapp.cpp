@@ -510,7 +510,12 @@ int CNcbiApplication::AppMain
         NCBI_REPORT_EXCEPTION("", e);
         exit_code = -1;
     }
-    catch (...) { // ... this catch guaranties objects destruction
+    catch (...) {
+        // MSVC++ 6.0 in Debug mode does not call destructors when
+        // unwinding the stack unless the exception is caught at least
+        // somewhere.
+        ERR_POST(Warning <<
+                 "Application has thrown an exception of unknown type");
         throw;
     }
 
@@ -751,7 +756,7 @@ string CNcbiApplication::FindProgramExecutablePath
 #  if defined (NCBI_OS_MSWIN)
     // MS Windows: Try more accurate method of detection
     try {
-        // Load PSAPI dynamic library -- it should exists on MS Windows NT/2000/XP
+        // Load PSAPI dynamic library -- it should exists on MS-Win NT/2000/XP
         CDll dll_psapi("psapi.dll", CDll::eLoadNow, CDll::eAutoUnload);
 
         // Get function entry-point from DLL
@@ -763,7 +768,8 @@ string CNcbiApplication::FindProgramExecutablePath
                  ) = NULL;
 
         dllEnumProcessModules =
-            dll_psapi.GetEntryPoint_Func("EnumProcessModules", &dllEnumProcessModules);
+            dll_psapi.GetEntryPoint_Func("EnumProcessModules",
+                                         &dllEnumProcessModules);
         if ( !dllEnumProcessModules ) {
             NCBI_THROW(CException, eUnknown, kEmptyStr);
         }
@@ -774,7 +780,8 @@ string CNcbiApplication::FindProgramExecutablePath
         DWORD   needed  = 0;
 
         // Get first module of current process (it should be .exe file)
-        if ( dllEnumProcessModules(process, &module, sizeof(HMODULE), &needed) ) {
+        if ( dllEnumProcessModules(process,
+                                   &module, sizeof(HMODULE), &needed) ) {
             if ( needed  &&  module ) {
                 char buf[MAX_PATH + 1];
                 DWORD ncount = GetModuleFileName(module, buf, MAX_PATH);
@@ -896,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2003/11/21 21:03:37  vakatov
+ * Cosmetics
+ *
  * Revision 1.79  2003/11/21 20:12:20  kuznets
  * Minor clean-up
  *
