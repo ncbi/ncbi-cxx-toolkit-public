@@ -456,6 +456,7 @@ int CSplignApp::Run()
   splign.SetMinQueryCoverage(args["min_query_cov"].AsDouble());
   splign.SetStrand(args["strand"].AsString() == "plus");
   splign.SetEndGapDetection(!(args["noendgaps"]));
+  splign.SetMaxGenomicExtension(75000);
 
   splign.SetAligner(aligner);
   splign.SetSeqAccessor(seq_loader);
@@ -594,6 +595,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/06/03 19:30:22  kapustin
+ * Specify max genomic extension ta the app level
+ *
  * Revision 1.24  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
