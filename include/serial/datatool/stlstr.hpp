@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/02/02 16:23:41  vasilche
+* Added missing namespace macros to generated files.
+*
 * Revision 1.1  2000/02/01 21:46:23  vasilche
 * Added CGeneratedChoiceTypeInfo for generated choice classes.
 * Removed CMemberInfo subclasses.
@@ -95,8 +98,10 @@ public:
     void GenerateTypeCode(CClassContext& ctx) const;
 
 protected:
-    virtual string GetRefTemplate(void) const;
     void AddTemplateInclude(TIncludes& hpp) const;
+
+    virtual string GetRefTemplate(void) const;
+    virtual string GetTemplateNamespace(void) const;
 
 private:
     string m_TemplateName;
