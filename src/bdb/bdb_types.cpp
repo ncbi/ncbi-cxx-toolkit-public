@@ -329,6 +329,17 @@ void CBDB_BufferManager::Bind(CBDB_Field* field, ENullable is_nullable)
         field->SetNullable();
 }
 
+int CBDB_BufferManager::GetFieldIndex(const string& name) const
+{
+    for (size_t i = 0;  i < m_Fields.size();  ++i) {
+        const CBDB_Field& field = *m_Fields[i];
+        const string& fname = field.GetName();
+        if (NStr::CompareNocase(name, fname) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
 
 size_t CBDB_BufferManager::ComputeBufferSize() const
 {
@@ -548,6 +559,7 @@ void CBDB_BufferManager::DuplicateStructureFrom(const CBDB_BufferManager& buf_mg
     }
     m_LegacyString = buf_mgr.IsLegacyStrings();
 }
+
 
 
 
@@ -834,6 +846,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/02/12 19:54:39  kuznets
+ * CBDB_BufferManager::GetFieldIndex()
+ *
  * Revision 1.17  2004/02/04 17:03:39  kuznets
  * Fixed bug in LString manipulation.
  *
