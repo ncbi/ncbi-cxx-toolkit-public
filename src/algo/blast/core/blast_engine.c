@@ -755,21 +755,22 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
 	    }
 
          }
-         /* Calculate and fill the bit scores, but only if final scores are
-            already available, i.e. either traceback has already been done,
-            or this is an ungapped search. */
          if (prelim_traceback || !gapped_calculation) {
-            Blast_HSPListGetBitScores(hsp_list, 
-                                      gapped_calculation, sbp);
-         }
+             /* Calculate and fill the bit scores, but only if final scores are
+                already available, i.e. either traceback has already been done,
+                or this is an ungapped search. */
+             Blast_HSPListGetBitScores(hsp_list, 
+                                       gapped_calculation, sbp);
+         } 
 
-	 if (hsp_list->hspcnt > 1) {
-	    /* Sort the HSPs by e-value/score. E-value has a priority here, 
-	       because lower scoring HSPs in linked sets might have lower 
-	       e-values, and must be moved higher in the list. */
-	    qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-		  Blast_HSPEvalueCompareCallback);
-	 }
+         /* Sort HSPs with e-values as first priority and scores as 
+          * tie-breakers. This will guarantee that HSP lists will be ordered
+          * by best e-value after preliminary stage. The HSPs will then have to
+          * be sorted by score at the beginning of traceback stage.
+          * Note that for RPS BLAST e-values are not available at this stage,
+          * so the HSPs will be sorted by score here.
+          */
+         Blast_HSPListSortByEvalue(hsp_list);
 	 /* Save the results. */
 	 BlastHSPStreamWrite(hsp_stream, &hsp_list);
       }
