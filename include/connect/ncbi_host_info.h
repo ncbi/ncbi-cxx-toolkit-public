@@ -1,0 +1,109 @@
+#ifndef CONNECT___NCBI_HOST_INFO__H
+#define CONNECT___NCBI_HOST_INFO__H
+
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Anton Lavrentiev
+ *
+ * File Description:
+ *   NCBI host info getters
+ *
+ *   Host information handle becomes available from SERV_Get[Next]InfoEx()
+ *   calls of the service mapper (ncbi_service.c) and remains valid until
+ *   destructed by passing into free().
+ *
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+struct SHostInfoTag;
+typedef struct SHostInfoTag* HOST_INFO;
+
+
+/* Return CPU count or -1 if error occurred.
+ */
+int HINFO_CpuCount(HOST_INFO host_info);
+
+
+/* Return task count or -1 if error occurred.
+ */
+int HINFO_TaskCount(HOST_INFO host_info);
+
+
+/* Return non-zero on success and store load averages in the
+ * provided array "lavg", with the standard load average for last
+ * minute stored at the index [0], and instant load average
+ * (aka BLAST) stored at index [1]. Return 0 on error.
+ */
+int/*bool*/ HINFO_LoadAverage(HOST_INFO host_info, double lavg[2]);
+
+
+/* Return non-zero on success and store host status coefficients in
+ * the provided array "status", with status based on the standard
+ * load average stored at index [0], and that based on instant load
+ * average stored at index [1]. Status may return as 0 if the host
+ * does not provide such information. Return 0 on error.
+ */
+int/*bool*/ HINFO_Status(HOST_INFO host_info, double status[2]);
+
+
+/* Return non-zero on success and store BLAST counters in the
+ * provided array "blast", with first five entries (indices [0..4])
+ * containing task counters, and last 3 entries (indices [5..7])
+ * containing queue sizes. Return 0 on error.
+ */
+int/*bool*/ HINFO_BLASTParams(HOST_INFO host_info, unsigned int blast[8]);
+
+
+/* Obtain and return host environment. The host environment is the
+ * sequence of lines (separated by \n), all having the form "name=value",
+ * which are provided to load-balancing service mapping daemon (LBSMD)
+ * in the configuration file on that host. Return 0 if the host
+ * environment cannot be obtained. If completed successfully, the
+ * host environment remains valid until the handle 'host_info' deleted
+ * in the application program.
+ */
+const char* HINFO_Environment(HOST_INFO host_info);
+
+
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.1  2002/10/28 20:12:02  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */
+
+#endif /* CONNECT___NCBI_HOST_INFO__H */
