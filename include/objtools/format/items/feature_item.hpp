@@ -73,7 +73,7 @@ public:
     CFlatFeature(const string& key, const CFlatSeqLoc& loc, const CSeq_feat& feat)
         : m_Key(key), m_Loc(&loc), m_Feat(&feat) { }
 
-    typedef vector<CRef<CFlatQual> > TQuals;
+    typedef vector<CRef<CFormatQual> > TQuals;
 
     const string&      GetKey  (void) const { return m_Key;   }
     const CFlatSeqLoc& GetLoc  (void) const { return *m_Loc;  }
@@ -93,20 +93,19 @@ private:
 class CFeatureItemBase : public CFlatItem
 {
 public:
-    CRef<CFlatFeature> Format(void) const;
-    void Format(IFormatter& formatter,
-        IFlatTextOStream& text_os) const {
+    CConstRef<CFlatFeature> Format(void) const;
+    void Format(IFormatter& formatter, IFlatTextOStream& text_os) const {
         formatter.FormatFeature(*this, text_os);
     }
-    bool operator<(const CFeatureItemBase& f2) const 
-        { return m_Feat->Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; }
-
-    const CSeq_feat& GetFeat(void)  const { return *m_Feat; }
-    const CSeq_loc&  GetLoc(void)   const { 
-        return m_Loc ? *m_Loc : m_Feat->GetLocation();
+    bool operator<(const CFeatureItemBase& f2) const {
+        return m_Feat->Compare(*f2.m_Feat, GetLoc(), f2.GetLoc()) < 0; 
     }
-    virtual string GetKey(void) const
-        { return m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank); }
+    const CSeq_feat& GetFeat(void)  const { return *m_Feat; }
+    const CSeq_loc&  GetLoc(void)   const { return *m_Loc; }
+
+    virtual string GetKey(void) const { 
+        return m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+    }
 
 protected:
 
@@ -115,12 +114,10 @@ protected:
                      const CSeq_loc* loc = 0);
 
     virtual void x_AddQuals(CBioseqContext& ctx) = 0;
-    virtual void x_FormatQuals(void) const = 0;
+    virtual void x_FormatQuals(CFlatFeature& ff) const = 0;
 
     CConstRef<CSeq_feat>    m_Feat;
     CConstRef<CSeq_loc>     m_Loc;
-
-    mutable CRef<CFlatFeature>  m_FF; ///< populated on demand then cached here
 };
 
 
@@ -137,21 +134,14 @@ public:
 
     // constructors
     CFeatureItem(const CSeq_feat& feat, CBioseqContext& ctx,
-                 const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped)
-        : CFeatureItemBase(feat, ctx, loc), m_Mapped(mapped)
-    {
-        x_GatherInfo(ctx);
-    }
-    CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
-                 const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped)
-        : CFeatureItemBase(feat.GetOriginalFeature(), ctx,
-                           loc ? loc : &feat.GetLocation()),
-          m_Mapped(mapped)
-    {
-        x_GatherInfo(ctx);
-    }
+        const CSeq_loc* loc, EMapped mapped = eMapped_not_mapped);
+    //CFeatureItem(const CMappedFeat& feat, CBioseqContext& ctx,
+    //    const CSeq_loc* loc = 0, EMapped mapped = eMapped_not_mapped);
+
+    // fetaure key (name)
     string GetKey(void) const;
 
+    // mapping
     bool IsMapped           (void) const { return m_Mapped != eMapped_not_mapped;   }
     bool IsMappedFromGenomic(void) const { return m_Mapped == eMapped_from_genomic; }
     bool IsMappedFromCDNA   (void) const { return m_Mapped == eMapped_from_cdna;    }
@@ -159,6 +149,7 @@ public:
 
 private:
     void x_GatherInfo(CBioseqContext& ctx);
+    //void x_FixLocation(CBioseqContext& ctx);
 
     // qualifier collection
     void x_AddQuals(CBioseqContext& ctx);
@@ -181,7 +172,7 @@ private:
     void x_ImportQuals(const CSeq_feat::TQual& quals) const;
     void x_CleanQuals(void) const;
     // feature table quals
-    typedef vector< CRef<CFlatQual> > TQualVec;
+    typedef vector< CRef<CFormatQual> > TQualVec;
     void x_AddFTableQuals(CBioseqContext& ctx) const;
     bool x_AddFTableGeneQuals(const CSeqFeatData::TGene& gene) const;
     void x_AddFTableRnaQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
@@ -196,10 +187,9 @@ private:
     void x_AddFTableDbxref(const CSeq_feat::TDbxref& dbxref) const;
     void x_AddFTableExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddFTableQual(const string& name, const string& val = kEmptyStr) const {
-        CFlatQual::EStyle style = val.empty() ? CFlatQual::eEmpty : CFlatQual::eQuoted;
-        m_FTableQuals.push_back(CRef<CFlatQual>(new CFlatQual(name, val, style)));
+        CFormatQual::EStyle style = val.empty() ? CFormatQual::eEmpty : CFormatQual::eQuoted;
+        m_FTableQuals.push_back(CRef<CFormatQual>(new CFormatQual(name, val, style)));
     }
-    
     
     // typdef
     typedef CQualContainer<EFeatureQualifier> TQuals;
@@ -222,8 +212,8 @@ private:
     }
     
     // format
-    void x_FormatQuals(void) const;
-    void x_FormatNoteQuals(void) const;
+    void x_FormatQuals(CFlatFeature& ff) const;
+    void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(EFeatureQualifier slot, const string& name,
         CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
     void x_FormatNoteQual(EFeatureQualifier slot, const string& name, 
@@ -279,14 +269,21 @@ private:
         m_Quals.AddQual(slot, value); 
     }
 
-    void x_FormatQuals   (void) const;
-    void x_FormatGBNoteQuals(void) const;
-    void x_FormatNoteQuals(void) const;
+    void x_FormatQuals(CFlatFeature& ff) const;
+    void x_FormatGBNoteQuals(CFlatFeature& ff) const;
+    void x_FormatNoteQuals(CFlatFeature& ff) const;
     void x_FormatQual(ESourceQualifier slot, const string& name,
-        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
+        CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const {
+            bool add_period = false;
+            x_FormatQual(slot, name, qvec, add_period, flags);
+    }
+    void x_FormatQual(ESourceQualifier slot, const string& name,
+        CFlatFeature::TQuals& qvec, bool& add_period,
+        IFlatQVal::TFlags flags = 0) const;
     void x_FormatNoteQual(ESourceQualifier slot, const string& name,
-            CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const {
-        x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote); 
+            CFlatFeature::TQuals& qvec, bool& add_period,
+            IFlatQVal::TFlags flags = 0) const {
+        x_FormatQual(slot, name, qvec, add_period, flags | IFlatQVal::fIsNote); 
     }
 
     typedef CQualContainer<ESourceQualifier> TQuals;
@@ -304,6 +301,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/05/06 17:41:38  shomrat
+* Fixes to feature formatting
+*
 * Revision 1.13  2004/04/22 15:36:00  shomrat
 * Changes in context
 *
