@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2002/10/25 15:15:45  vasilche
+* Fixed check for NCBI C toolkit.
+*
 * Revision 1.56  2002/10/25 14:49:27  vasilche
 * NCBI C Toolkit compatibility code extracted to libxcser library.
 * Serial streams flags names were renamed to fXxx.
@@ -260,6 +263,7 @@
 #include <corelib/ncbistd.hpp>
 
 #if HAVE_NCBI_C
+
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/autoptrinfo.hpp>

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/10/25 15:15:54  vasilche
+* Fixed check for NCBI C toolkit.
+*
 * Revision 1.4  2002/10/25 15:05:44  vasilche
 * Moved more code to libxcser library.
 *
@@ -56,6 +59,8 @@
 *
 * ===========================================================================
 */
+
+#include <corelib/ncbistd.hpp>
 
 #if HAVE_NCBI_C
 
