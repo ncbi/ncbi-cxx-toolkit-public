@@ -86,7 +86,7 @@ public:
     // Get bioseq handle without loading new data
     enum EGetBioseqFlag {
         eGetBioseq_Resolved, // Search only in already resolved ids
-        eGetBioseq_Loaded,   // Search in all loaded bioseqs
+        eGetBioseq_Loaded,   // Search in all loaded TSEs in the scope
         eGetBioseq_All       // Search bioseq, load if not loaded yet
     };
     CBioseq_Handle GetBioseqHandle(const CSeq_id& id,
@@ -207,6 +207,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.77  2004/04/13 16:39:36  grichenk
+* Corrected comments
+*
 * Revision 1.76  2004/04/13 15:59:35  grichenk
 * Added CScope::GetBioseqHandle() with id resolving flag.
 *
