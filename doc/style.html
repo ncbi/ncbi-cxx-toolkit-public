@@ -31,7 +31,9 @@
 	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
 	 <li> <a href="#ref_Class">Class declaration</a>
 	 <li> <a href="#ref_FunctionDecl">Function declaration</a>
-	 <li> <a href="#ref_FunctionDef">Function definition</a> </ul>
+	 <li> <a href="#ref_FunctionDef">Function definition</a>
+	 <li> <a href="#ref_Whitespace">Use of whitespace</a>
+     </ul>
 
 
 	 <br><br>
@@ -230,7 +232,11 @@ else {
     .....;
 }
 
-for|while (...) {
+for (...;  ...;  ...) {
+    .....;
+}
+
+while (...) {
     .....;
 }
 
@@ -345,6 +351,27 @@ static long s_MyFunc3(void)
 }
 	 </pre>
 
+
+	 <a name="ref_Whitespace"></a>
+    <h2>Use of whitespace</h2>
+    As the above examples do not make all of our policies on
+    whitespace clear, here are some explicit guidelines:
+    <ul>
+      <li> When reasonably possible, use spaces to align corresponding
+           elements vertically.  (This overrides most of the rules
+           below.) 
+      <li> Leave one space on either side of most binary operators,
+           and two spaces on either side of boolean <tt>&amp;&amp</tt>
+           and <tt>||</tt>.
+      <li> Put one space between the names of flow-control keywords
+           and macros and their arguments, but no space after the
+           names of functions except when necessary for alignment.
+      <li> Leave two spaces after the semicolons in
+           <tt>for(...;&nbsp;&nbsp;...;&nbsp;&nbsp;...)</tt>.
+      <li> Leave whitespace around negated conditions so that the
+           <tt>!</tt> stands out better.
+      <li> Leave two blank lines between function definitions.
+    </ul>
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
