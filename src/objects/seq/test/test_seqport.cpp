@@ -49,7 +49,6 @@
 #include <objects/seq/NCBIstdaa.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
-#include <objects/seq/gencode.hpp>
 #include <objects/seq/seqport_util.hpp>
 
 
@@ -79,10 +78,6 @@ public:
               CSeq_data::E_Choice  to_code,
               TSeqPos              uBeginIdx,
               TSeqPos              uLength);
-    void TranslateTest(const CSeq_data&     in_seq,
-              CSeq_data*           out_seq,
-              TSeqPos              uBeginIdx,
-              TSeqPos              uLength); 
     void ConvertTest(const CSeq_data&     in_seq,
               CSeq_data*           out_seq,
               CSeq_data::E_Choice  to_code,
@@ -755,20 +750,19 @@ void CSeqportTestApp::SeqDataTest()
         cout << "Enter test to run:" << endl
              << "0)  Quit" << endl
              << "1)  GetAmbigsTest" << endl
-             << "2)  TranslateTest" << endl
-             << "3)  ConvertTest" << endl
-             << "4)  AppendTest" << endl
-             << "5)  InPlaceReverseComplementTest" << endl
-             << "6)  InCopyReverseComplementTest" << endl
-             << "7)  InPlaceReverseTest" << endl
-             << "8)  InCopyReverseTest" << endl
-             << "9)  InPlaceComplementTest" << endl
-             << "10) InCopyComplementTest" << endl
-             << "11) FastValidateTest" << endl
-             << "12) ValidateTest" << endl
-             << "13) GetCopyTest" << endl
-             << "14) KeepTest" << endl
-             << "15) PackTest" << endl; 
+             << "2)  ConvertTest" << endl
+             << "3)  AppendTest" << endl
+             << "4)  InPlaceReverseComplementTest" << endl
+             << "5)  InCopyReverseComplementTest" << endl
+             << "6)  InPlaceReverseTest" << endl
+             << "7)  InCopyReverseTest" << endl
+             << "8)  InPlaceComplementTest" << endl
+             << "9) InCopyComplementTest" << endl
+             << "10) FastValidateTest" << endl
+             << "11) ValidateTest" << endl
+             << "12) GetCopyTest" << endl
+             << "13) KeepTest" << endl
+             << "14) PackTest" << endl; 
         cin >> nResponse;   
          
         switch (nResponse) {
@@ -779,54 +773,50 @@ void CSeqportTestApp::SeqDataTest()
                 (*in_seq, out_seq, to_code, uBeginIdx, uLength);
             break;
         case 2:
-            TranslateTest
-                (*in_seq, out_seq, uBeginIdx, uLength);
-            break;
-        case 3:
             ConvertTest(*in_seq, out_seq, to_code, uBeginIdx, uLength, bAmbig);
             break;
-        case 4:
+        case 3:
             AppendTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 5:
+        case 4:
             InPlaceReverseComplementTest
                 (*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 6:
+        case 5:
             InCopyReverseComplementTest
                 (*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 7:
+        case 6:
             InPlaceReverseTest
                 (*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 8:
+        case 7:
             InCopyReverseTest
                 (*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 9:
+        case 8:
             InPlaceComplementTest
                 (*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 10:
+        case 9:
             InCopyComplementTest
                 (*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 11:
+        case 10:
             FastValidateTest
                 (*in_seq, uBeginIdx, uLength);
             break;
-        case 12:
+        case 11:
             ValidateTest
                 (*in_seq, uBeginIdx, uLength);
             break;
-        case 13:
+        case 12:
             GetCopyTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 14:
+        case 13:
             KeepTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
-        case 15:
+        case 14:
             PackTest(*in_seq, out_seq, uBeginIdx, uLength);
             break;
         default:
@@ -891,157 +881,6 @@ void CSeqportTestApp::GetAmbigsTest(const CSeq_data&     in_seq,
         }
         out_indices.clear();
         out_seq->Reset();	  
-    }
-    STD_CATCH("");
-}
-
-void CSeqportTestApp::TranslateTest(const CSeq_data&     in_seq,
-              CSeq_data*           out_seq,
-              TSeqPos              uBeginIdx,
-              TSeqPos              uLength) 
-{
-    int nResponse;
-
-    try{
-        bool bCheck_first = false;
-        cout << "Check first codon (1-Yes, 0-No)? ";
-        cin >> nResponse;
-        bCheck_first = (nResponse == 1);
-      
-        cout << "Is the start codon possibly missing? (1-Yes, 0-No)? ";
-        cin >> nResponse;
-        bool bPartial_start = (nResponse == 1);
-
-        cout << "Strand (0-Unknown, 1-plus, 2-minus, 3-both,"
-            " 4-both_rev, 5-other)? ";
-        cin >> nResponse;
-        ENa_strand strand;
-        switch(nResponse){
-        case 0:
-            strand = eNa_strand_unknown;
-            break;
-        case 1:
-            strand = eNa_strand_plus;
-            break;
-        case 2:
-            strand = eNa_strand_minus;
-            break;
-        case 3:
-            strand = eNa_strand_both;
-            break;
-        case 4:
-            strand = eNa_strand_both_rev;
-            break;
-        default:
-            strand = eNa_strand_other;
-            break;
-        }
-      
-        cout << "Stop translation at first stop codon (1-Yes, 0-No)? ";
-        cin >> nResponse;
-        bool stop = (nResponse == 1);
-        
-        cout << "Remove trainling Xs (1-Yes, 0-No)? ";
-        cin >> nResponse;
-        bool bRemove_trailing_x = (nResponse == 1);
-        
-        //Enter genetic code and start codon string
-        CGenetic_code gencode;
-        CGenetic_code::C_E* ce;
-        nResponse = 1;
-        CRef<CGenetic_code::C_E> rce;
-        while (nResponse > 0) {
-            cout<< "Enter (0-done, 1-Id, 2-Name, 3-Ncbieaa, 4-Sncbieaa): ";
-            cin >> nResponse;
-            switch(nResponse){
-            case 0:
-                break;
-            case 1:
-                {
-                    cout << "Ener Id: ";
-                    int nId; cin >> nId;
-                    ce = new CGenetic_code::C_E;
-                    ce->SetId() = nId;
-                    rce.Reset(ce);
-                    gencode.Set().push_back(rce);
-                    break;
-                }
-            case 2:
-                {
-                    cout << "Enter Name: ";
-                    string name; cin >> name;
-                    ce = new CGenetic_code::C_E;
-                    ce->SetName() = name;
-                    rce.Reset(ce);
-                    gencode.Set().push_back(rce);
-                    break;
-                }
-            case 3:
-                {
-                    cout << "Enter Ncbieaa string: " << endl;
-                    string ncbieaa; cin >> ncbieaa;
-                    ce = new CGenetic_code::C_E;
-                    ce->SetNcbieaa() = ncbieaa;
-                    rce.Reset(ce);
-                    gencode.Set().push_back(rce);
-                    break;
-                }
-            case 4:
-                {
-                    cout << "Enter Sncbieaa string: " << endl;
-                    string sncbieaa; cin >> sncbieaa;
-                    ce = new CGenetic_code::C_E;
-                    ce->SetSncbieaa() = sncbieaa;
-                    rce.Reset(ce);
-                    gencode.Set().push_back(rce);
-                    break;
-                }
-            default:
-                cout << "Please enter a choice betwee 0 and 4." << endl;
-            }
-        }
-        CRef<CGenetic_code> genetic_code(&gencode);
-
-        CGencode::TCodeBreaks code_breaks;
-        nResponse =1;
-        while(nResponse >= 1) {
-            cout << "Enter a code break index (-1 to quit): ";
-            cin >> nResponse;
-            if(nResponse >= 0) {
-                cout << "Enter an aa: ";
-                char aa;
-                cin >> aa;
-                code_breaks.push_back
-                    (make_pair(static_cast<TSeqPos>(nResponse), aa));
-            }
-        }       
-      
-
-        CGencode::Translate
-            (in_seq,
-             out_seq,
-             *genetic_code,
-             code_breaks,
-             uBeginIdx, 
-             uLength,
-             bCheck_first,
-             bPartial_start,
-             strand,
-             stop,
-             bRemove_trailing_x); 
-
-
-        cout << endl << "Translate Results" << endl;
-        cout << "uLength = " << uLength  << endl;
-  
-        //Print the out sequence
-        cout << "(uBeginIdx, uLength) = (" << uBeginIdx
-             << ", " << uLength << ")" << endl;
-        cout << "out_seq is: " << endl;
-        DisplaySeq(*out_seq, MAX_DISPLAY);
-        
-        out_seq->Reset();
-        code_breaks.clear();
     }
     STD_CATCH("");
 }
@@ -1527,6 +1366,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2004/01/30 17:21:24  shomrat
+ * Removed TranslateTest due to deprecated translation code
+ *
  * Revision 1.11  2003/11/06 16:13:59  shomrat
  * changed call to Pack due to change in its signature
  *
