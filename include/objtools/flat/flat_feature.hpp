@@ -123,7 +123,8 @@ public:
         { return m_Feat->Compare(*f2.m_Feat, *m_Loc, *f2.m_Loc) < 0; }
     string GetKey(void) const
         { return m_Feat->GetData().GetKey(CSeqFeatData::eVocabulary_genbank); }
-    const CSeq_loc& GetLoc(void) const { return *m_Loc; }
+    const CSeq_loc&  GetLoc(void)  const { return *m_Loc; }
+    const CSeq_feat& GetFeat(void) const { return *m_Feat; }
 
 protected:
     IFlattishFeature(const CSeq_feat& feat, CFlatContext& ctx,
@@ -285,6 +286,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/10/17 20:57:53  ucko
+* IFlattishFeature: also expose the underlying Seq-feat to permit
+* additional filtering prior to actual formatting.
+*
 * Revision 1.5  2003/10/08 21:10:47  ucko
 * Add a couple of accessors to IFlattishFeature for the GFF/GTF formatter.
 *
