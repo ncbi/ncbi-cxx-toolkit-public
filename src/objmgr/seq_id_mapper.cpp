@@ -115,8 +115,8 @@ protected:
 };
 
 
-bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& h1,
-                                         const CSeq_id_Handle& h2) const
+bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& /*h1*/,
+                                         const CSeq_id_Handle& /*h2*/) const
 {
     return false; // No id version by default
 }
@@ -1725,6 +1725,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/05/09 14:18:55  grichenk
+* Fixed "unused variable" warnings
+*
 * Revision 1.14  2002/05/03 13:18:44  grichenk
 * OM_THROW_TRACE -> THROW1_TRACE
 *

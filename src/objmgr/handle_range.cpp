@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/09 14:18:55  grichenk
+* Fixed "unused variable" warnings
+*
 * Revision 1.5  2002/04/22 20:05:35  grichenk
 * +MergeRange()
 *
@@ -108,7 +111,7 @@ void CHandleRange::AddRange(TRange range, ENa_strand strand)
 }
 
 
-void CHandleRange::MergeRange(TRange range, ENa_strand strand)
+void CHandleRange::MergeRange(TRange range, ENa_strand /*strand*/)
 {
     TRange mrg = range;
     non_const_iterate ( TRanges, it, m_Ranges ) {
