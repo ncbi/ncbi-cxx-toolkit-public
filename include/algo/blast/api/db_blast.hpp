@@ -105,7 +105,7 @@ protected:
     BlastHitSavingOptions * GetHitSaveOpts() const;
     QuerySetUpOptions * GetQueryOpts() const;
     BlastDatabaseOptions * GetDbOpts() const;
-    PSIBlastOptions * CDbBlast::GetProtOpts() const;    
+    PSIBlastOptions * GetProtOpts() const;    
 
     /// Internal data structures used in this and all derived classes 
     bool                mi_bQuerySetUpDone;
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/02/27 15:42:18  rsmith
+* No class specifiers inside that class's declaration
+*
 * Revision 1.11  2004/02/25 15:44:47  dondosha
 * Corrected prototype for GetErrorMessage to eliminate warning on Sun compiler
 *
