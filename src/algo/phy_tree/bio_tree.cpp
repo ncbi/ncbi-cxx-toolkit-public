@@ -36,9 +36,10 @@
 
 BEGIN_NCBI_SCOPE
 
+/*
 IBioTreeNode::~IBioTreeNode()
 {}
-
+*/
 
 
 CBioTreeFeatureList::CBioTreeFeatureList()
@@ -112,8 +113,7 @@ CBioTreeFeatureDictionary::CBioTreeFeatureDictionary(
 CBioTreeFeatureDictionary& 
 CBioTreeFeatureDictionary::operator=(const CBioTreeFeatureDictionary& btr)
 {
-    m_IdCounter = m_IdCounter;
-    m_Dict.clear();
+    Clear();
 
     ITERATE(TFeatureDict, it, btr.m_Dict) {
         m_Dict.insert(*it);
@@ -124,6 +124,13 @@ CBioTreeFeatureDictionary::operator=(const CBioTreeFeatureDictionary& btr)
     }
 
     return *this;
+}
+
+void CBioTreeFeatureDictionary::Clear()
+{
+    m_Dict.clear();
+    m_Name2Id.clear();
+    m_IdCounter = 0;
 }
 
 bool 
@@ -168,6 +175,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/19 12:45:18  kuznets
+ * + CBioTreeFeatureDictionary::Clear()
+ *
  * Revision 1.2  2004/05/10 15:46:35  kuznets
  * Minor changes.
  *
