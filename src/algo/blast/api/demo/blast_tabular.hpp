@@ -49,6 +49,7 @@
 #include <algo/blast/core/blast_gapalign.h>
 
 #include <algo/blast/api/db_blast.hpp>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -66,8 +67,9 @@ USING_SCOPE(blast);
 class CBlastTabularFormatThread : public CThread 
 {
 public:
-    CBlastTabularFormatThread(const CDbBlast* blaster, 
-        const TSeqLocVector& query_v, CNcbiOstream& ostream);
+    CBlastTabularFormatThread(const CDbBlast* blaster,
+                              CNcbiOstream& ostream, 
+                              IBlastSeqInfoSrc* seqinfo_src);
     ~CBlastTabularFormatThread();
 protected:
     virtual void* Main(void);
@@ -89,6 +91,8 @@ private:
     BlastGapAlignStruct* m_ipGapAlign;
     bool m_ibPerformTraceback; /**< Must gapped extension with traceback be
                                performed before formatting? */
+    IBlastSeqInfoSrc* m_pSeqInfoSrc; /**< Instance of an interface for retrieving
+                                         subject sequence identifiers. */
 };
 
 //END_SCOPE(blast)
@@ -100,6 +104,9 @@ private:
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/10/06 14:58:49  dondosha
+* Use IBlastSeqInfoSrc interface for Seq-ids and lengths retrieval in tabular formatting thread
+*
 * Revision 1.3  2004/08/11 11:38:13  ivanov
 * Removed export specifier from private class declaration
 *

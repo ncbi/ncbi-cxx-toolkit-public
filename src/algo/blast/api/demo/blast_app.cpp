@@ -52,19 +52,17 @@ Contents: C++ driver for running BLAST
 #include <algo/blast/api/db_blast.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/hspstream_queue.hpp>
+#include <algo/blast/api/seqinfosrc_seqdb.hpp>
 
-#ifndef USE_READDB
-
-#include <algo/blast/api/seqsrc_seqdb.hpp>
-
-#else
-
-#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 #ifndef NCBI_C_TOOLKIT
 #define NCBI_C_TOOLKIT
 #endif
-#include <algo/blast/api/seqsrc_readdb.h>
+#include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
+#ifndef USE_READDB
+#include <algo/blast/api/seqsrc_seqdb.hpp>
+#else
+#include <algo/blast/api/seqsrc_readdb.h>
 #endif
 
 #include "blast_input.hpp" // From working directory
@@ -99,7 +97,6 @@ private:
     void ProcessCommandLineArgs(CBlastOptionsHandle* opt, 
                                 BlastSeqSrc* seq_src, RPSInfo *rps_info);
     int BlastSearch(void);
-    void RegisterBlastDbLoader(char* dbname, bool is_na);
     void FormatResults(const CDbBlast* blaster, TSeqAlignVector& seqalignv);
     CRef<CObjectManager> m_ObjMgr;
     CRef<CScope>         m_Scope;
@@ -282,20 +279,6 @@ CBlastApplication::InitScope(void)
         _TRACE("BlastApp: Initializing scope");
     }
 }
-
-#ifdef USE_READDB
-void 
-CBlastApplication::RegisterBlastDbLoader(char *dbname, bool db_is_na)
-{
-    m_ObjMgr = CObjectManager::GetInstance();
-    CBlastDbDataLoader::RegisterInObjectManager(
-        *m_ObjMgr,
-        dbname,
-        db_is_na ? CBlastDbDataLoader::eNucleotide :
-                   CBlastDbDataLoader::eProtein,
-        CObjectManager::eDefault);
-}
-#endif
 
 void
 CBlastApplication::ProcessCommandLineArgs(CBlastOptionsHandle* opts_handle, 
@@ -536,8 +519,6 @@ Context2TranslatedFrame(int context)
     }
 }
 
-#define NUM_FRAMES 6
-
 static TSeqLocInfoVector
 BlastMaskLoc2CSeqLoc(const BlastMaskLoc* mask, const TSeqLocVector& slp,
     EProgram program)
@@ -613,12 +594,6 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
     if (args["out"]) {
         EProgram program = blaster->GetOptions().GetProgram();
 
-#ifdef USE_READDB
-        char* dbname = const_cast<char*>(args["db"].AsString().c_str());
-        bool db_is_na = (program == eBlastn || program == eTblastn || 
-                         program == eTblastx);
-#endif
-
         /* Revert RPS program names to their conventional
            counterparts, to avoid confusing the C toolkit
            formatter */
@@ -628,42 +603,38 @@ void CBlastApplication::FormatResults(const CDbBlast* blaster,
         if (program == eRPSTblastn)
             program = eTblastn;
 
-        CBlastFormatOptions* format_options = 
-            new CBlastFormatOptions(program, args["out"].AsOutputFile());
+        CBlastFormatOptions format_options(program, args["out"].AsOutputFile());
         
-        format_options->SetAlignments(args["align"].AsInteger());
-        format_options->SetDescriptions(args["descr"].AsInteger());
-        format_options->SetAlignView(args["format"].AsInteger());
-        format_options->SetHtml(args["html"].AsBoolean());
+        format_options.SetAlignments(args["align"].AsInteger());
+        format_options.SetDescriptions(args["descr"].AsInteger());
+        format_options.SetAlignView(args["format"].AsInteger());
+        format_options.SetHtml(args["html"].AsBoolean());
         
-#ifdef C_FORMATTING
-        if (dbname) {
-            BLAST_PrintOutputHeader(format_options, 
-                args["greedy"].AsBoolean(), dbname, db_is_na);
-        }
-#endif
-        
-#ifdef USE_READDB
-        RegisterBlastDbLoader(dbname, db_is_na);
-#endif
+        bool db_is_na = (program == eBlastn || program == eTblastn || 
+                         program == eTblastx);
+
+        /// @todo Print output header here
+
+        CBlastDbDataLoader::RegisterInObjectManager(*m_ObjMgr,
+            args["db"].AsString(),
+            db_is_na ? CBlastDbDataLoader::eNucleotide :
+                       CBlastDbDataLoader::eProtein,
+            CObjectManager::eDefault);
+
         /* Format the results */
         TSeqLocInfoVector maskv =
             BlastMaskLoc2CSeqLoc(blaster->GetFilteredQueryRegions(), 
                               blaster->GetQueries(), program);
         
         if (BLAST_FormatResults(seqalignv, program, blaster->GetQueries(), 
-                maskv, format_options, blaster->GetOptions().GetOutOfFrameMode())) {
+                maskv, &format_options, 
+                blaster->GetOptions().GetOutOfFrameMode())) {
             ERR_POST_EX(CBlastException::eInternal, 2,
                        "Error in formatting results");
             exit(CBlastException::eInternal);
         }
         
-#ifdef C_FORMATTING
-        PrintOutputFooter(program, format_options, score_options, 
-            m_sbp, lookup_options, word_options, ext_options, hit_options, 
-            blaster->GetQueryInfo(), dbname, blaster->GetDiagnostics());
-#endif
-        
+        /// @todo Print output footer here
     }
 }
 
@@ -797,17 +768,18 @@ int CBlastApplication::Run(void)
         sfree(range_str);
     }
     
-    bool db_is_na = (program == eBlastn || program == eTblastn || 
-                     program == eTblastx);
+    bool db_is_aa = (program == eBlastp || program == eBlastx || 
+                     program == eRPSBlast || program == eRPSTblastn);
 
 #ifndef USE_READDB
     BlastSeqSrc* seq_src = 
-        SeqDbSrcInit(args["db"].AsString().c_str(), !db_is_na,
+        SeqDbSrcInit(args["db"].AsString().c_str(), db_is_aa,
                      first_oid, last_oid, NULL);
 #else
     BlastSeqSrc* seq_src =
-        ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), !db_is_na,
-                     first_oid, last_oid, NULL);
+        ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
+                              (db_is_aa ? TRUE : FALSE),
+                              first_oid, last_oid, NULL);
 #endif
 
     /* If megablast lookup table is used, change default program to 
@@ -859,25 +831,28 @@ int CBlastApplication::Run(void)
     try {
 
        if (!tabular_output) {
-	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
-				       rps_info, hsp_stream, num_threads));
-	  seqalignv = blaster->Run();
-	  FormatResults(blaster, seqalignv);
+	  CDbBlast blaster(query_loc, seq_src, *opts, 
+                           rps_info, hsp_stream, num_threads);
+	  seqalignv = blaster.Run();
+	  FormatResults(&blaster, seqalignv);
        } else {
 	  hsp_stream = Blast_HSPListCQueueInit();
 	  
-	  CRef<CDbBlast> blaster(new CDbBlast(query_loc, seq_src, *opts, 
-                                       rps_info, hsp_stream, num_threads));
-	  blaster->SetupSearch();
+	  CDbBlast blaster(query_loc, seq_src, *opts, 
+                           rps_info, hsp_stream, num_threads);
+	  blaster.SetupSearch();
 	  
+          CSeqDbSeqInfoSrc seqinfo_src(args["db"].AsString(), db_is_aa);
+
 	  // Start the on-the-fly formatting thread
-     CBlastTabularFormatThread* tab_thread =  
-         new CBlastTabularFormatThread(blaster, query_loc, 
-                 args["out"] ? args["out"].AsOutputFile() : cout);
+          CBlastTabularFormatThread* tab_thread = 
+              new CBlastTabularFormatThread(&blaster,
+                      (args["out"] ? args["out"].AsOutputFile() : cout),
+                      &seqinfo_src);
 
 	  tab_thread->Run();
 	  
-	  blaster->RunPreliminarySearch();
+	  blaster.RunPreliminarySearch();
 	  // Close the HSP stream for writing, allowing the formatting thread
 	  // to exit.
 	  BlastHSPStreamClose(hsp_stream);

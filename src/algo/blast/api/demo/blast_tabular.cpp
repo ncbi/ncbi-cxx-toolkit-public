@@ -42,6 +42,7 @@ static char const rcsid[] = "$Id$";
 #include <objects/seqloc/Seq_id.hpp>
 #include <objmgr/util/sequence.hpp>
 #include "blast_tabular.hpp"
+#include <algo/blast/api/blast_seqinfosrc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -55,9 +56,12 @@ USING_SCOPE(objects);
 USING_SCOPE(blast);
 
 CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
-   const TSeqLocVector& query_v, CNcbiOstream& ostream)
-    : m_QueryVec(query_v), m_OutStream(&ostream)
+                                                     CNcbiOstream& ostream,
+                                                     IBlastSeqInfoSrc* seqinfo_src)
+    : m_OutStream(&ostream), m_pSeqInfoSrc(seqinfo_src)
 {
+
+    m_QueryVec = blaster->GetQueries(); 
     m_Program = blaster->GetOptions().GetProgramType();
     m_pHspStream = blaster->GetHSPStream();
     m_pQuery = blaster->GetQueryBlk();
@@ -68,14 +72,14 @@ CBlastTabularFormatThread::CBlastTabularFormatThread(const CDbBlast* blaster,
 
     m_iGenCodeString = 
         FindGeneticCode(blaster->GetOptions().GetQueryGeneticCode());
-    /* Sequence source must be copied, to guarantee multi-thread safety. */
+    // Sequence source must be copied, to guarantee multi-thread safety.
     m_ipSeqSrc = BlastSeqSrcCopy(blaster->GetSeqSrc());
-    /* Effective lengths must be duplicated in query info structure, because
-       they might be changing in the preliminary search. */
+    // Effective lengths must be duplicated in query info structure, because
+    // they might be changing in the preliminary search.
     m_ipQueryInfo = BlastQueryInfoDup(blaster->GetQueryInfo());
 
-    /* If traceback will have to be performed before tabular output, 
-       do the preparation for it here. */
+    // If traceback will have to be performed before tabular output, 
+    // do the preparation for it here.
     if (m_ibPerformTraceback) {
         BLAST_GapAlignSetUp(m_Program, m_ipSeqSrc, 
             blaster->GetOptions().GetScoringOpts(), 
@@ -202,8 +206,10 @@ void* CBlastTabularFormatThread::Main(void)
                m_ipScoreParams->options->gapped_calculation, m_ipGapAlign->sbp);
        }
 
+       list < CRef<CSeq_id> > subject_id_list = m_pSeqInfoSrc->GetId(hsp_list->oid);
+
        char* subject_buffer = 
-           BLASTSeqSrcGetSeqIdStr(m_ipSeqSrc, (void*) &hsp_list->oid); 
+           strdup(subject_id_list.front()->GetSeqIdString().c_str());
 
        int index;
        char bit_score_buff[10], eval_buff[10];
@@ -224,8 +230,12 @@ void* CBlastTabularFormatThread::Main(void)
            Int4 num_gaps = 0, num_gap_opens = 0;
            Blast_HSPCalcLengthAndGaps(hsp, &align_length, &num_gaps, 
                                       &num_gap_opens);
+#if 0
            double perc_ident = ((double)hsp->num_ident)/align_length * 100;
-
+#else // Try to guarantee proper precision
+           double perc_ident = 
+               ((double)BLAST_Nint((double)(hsp->num_ident * 10000)/align_length)) / 100;
+#endif
            Int4 num_mismatches = align_length - hsp->num_ident - num_gaps;
          
            Int4 q_start=0, q_end=0, s_start=0, s_end=0;
@@ -261,6 +271,9 @@ void CBlastTabularFormatThread::OnExit(void)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/10/06 14:58:49  dondosha
+* Use IBlastSeqInfoSrc interface for Seq-ids and lengths retrieval in tabular formatting thread
+*
 * Revision 1.7  2004/10/04 18:12:40  dondosha
 * Removed call to deleted Blast_HSPListCheckIfSorted function
 *
