@@ -50,6 +50,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/01/28 20:17:43  lavr
+ * +Forward declaration of CConn_Streambuf and a private member pointer
+ * of this type (for clean destruction of a streambuf sub-object)
+ *
  * Revision 6.10  2001/12/10 19:41:16  vakatov
  * + CConn_SocketStream::CConn_SocketStream(SOCK sock, ....)
  *
@@ -91,9 +95,11 @@
 
 BEGIN_NCBI_SCOPE
 
+// Forward declaration
+class CConn_Streambuf;
+
 
 const streamsize kConn_DefBufSize = 4096;
-
 
 /*
  * Base class, derived from "std::iostream", does both input
@@ -116,8 +122,10 @@ public:
      bool            do_tie   = true);
     virtual ~CConn_IOStream(void);
 
-    // Throws exception if the underlying stream buffer is not CONN-based.
     CONN GetCONN() const;
+
+private:
+    CConn_Streambuf* m_CSb;
 };
 
 
