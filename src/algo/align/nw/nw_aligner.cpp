@@ -463,12 +463,11 @@ void CNWAligner::GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2) const
 
 
 // Return transcript as a readable string
-void CNWAligner::GetTranscriptString(vector<char>* out) const
+string CNWAligner::GetTranscriptString(void) const
 {
     const size_t dim = m_Transcript.size();   
-    const size_t line_size = 100;
-    const size_t lines_est = dim / line_size + 1;
-    out->resize(dim + lines_est);
+    string s;
+    s.resize(dim);
     size_t i1 = 0, i2 = 0, i = 0;
 
     for (int k = dim - 1; k >= 0;  --k) {
@@ -509,17 +508,12 @@ void CNWAligner::GetTranscriptString(vector<char>* out) const
 	  
         }
 
-        (*out)[i++] = c;
-        if((dim - k) % line_size == 0) {
-            (*out)[i++] = '\n';
-        }
+        s[i++] = c;
     }
-    if((*out)[i-1] != '\n') {
-        (*out)[i] = '\n';
+    if(i < s.size()) {
+        s.resize(i + 1);
     }
-    if(i < out->size()) {
-        out->resize(i + 1);
-    }
+    return s;
 }
 
 
@@ -598,7 +592,7 @@ bool CNWAligner::x_CheckMemoryLimit()
     const size_t gdim = m_guides.size();
     if(gdim) {
         size_t dim1 = m_guides[0], dim2 = m_guides[2];
-	const size_t elem_size = x_GetElemSize();
+	const size_t elem_size = GetElemSize();
         if(double(dim1)*dim2*elem_size >= kMax_UInt) {
             return false;
         }
@@ -998,6 +992,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2003/12/29 13:03:48  kapustin
+ * Return string from GetTranscriptString().
+ *
  * Revision 1.41  2003/10/31 19:40:13  kapustin
  * Get rid of some WS and GCC complains
  *
