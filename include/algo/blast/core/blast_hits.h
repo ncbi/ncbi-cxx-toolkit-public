@@ -288,6 +288,24 @@ BlastHSPList* BlastHSPListFree(BlastHSPList* hsp_list);
 /** Deallocate memory for BLAST results */
 BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
 
+/** Convert a prelimiary list of HSPs, that are the result of
+  * an RPS blast search, to a format compatible with the rest
+  * of the blast engine. RPS blast takes a single query and the
+  * concatenation of all DB sequences; the DB sequences are the
+  * query input to the engine, and the single query is treated as
+  * a single subject sequence.
+  *
+  *   BEFORE THIS CALL      AFTER THIS CALL
+  *  - many HSP lists       - one HSP list
+  *  - each list has the    - each HSP has its own
+  *    same subject OID       subject OID
+  *  - each list has a      - the list has one context
+  *    different context
+  *
+  * @param init_results The input result list [in]
+  * @param results The modified results (in new format) [out]
+  */
+
 void RPSUpdateResults(BlastHSPResults *results,
                       BlastHSPResults *init_results);
 
