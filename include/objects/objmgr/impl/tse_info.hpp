@@ -35,6 +35,7 @@
 
 
 #include <objects/objmgr/bioseq_info.hpp>
+#include <objects/objmgr/annot_ci.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -58,9 +59,6 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CBioseq;
 class CAnnotObject;
-
-struct SAnnotSelector;
-
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CObject, public CMutableAtomicCounter
 {
@@ -188,6 +186,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/01/29 22:02:22  grichenk
+* Fixed includes for SAnnotSelector
+*
 * Revision 1.14  2003/01/29 17:45:05  vasilche
 * Annotaions index is split by annotation/feature type.
 *
