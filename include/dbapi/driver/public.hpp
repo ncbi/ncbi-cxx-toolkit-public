@@ -455,7 +455,7 @@ protected:
 
 
 
-class NCBI_DBAPIDRIVER_EXPORT CDB_ResultProcessor
+class NCBI_DBAPIDRIVER_EXPORT CDB_ResultProcessor : public CDB_BaseEnt
 {
 public:
     CDB_ResultProcessor(CDB_Connection* c);
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/06/08 18:13:01  soussov
+ * adds CDB_BaseEnt as a base class for CDB_ResultProcessor to allow crossreferences between processors
+ *
  * Revision 1.9  2003/06/20 19:11:23  vakatov
  * CDB_ResultProcessor::
  *  - added MS-Win DLL export macro
