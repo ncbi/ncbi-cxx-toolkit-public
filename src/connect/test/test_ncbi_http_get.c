@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
         if (status != eIO_Success && status != eIO_Closed)
             CORE_LOGF(eLOG_Fatal, ("Read error: %s", IO_StatusStr(status)));
         if (n) {
-            printf("%.*s", (int) n, blob);
+            fwrite(blob, 1, n, stdout);
             fflush(stdout);
         } else if (status == eIO_Closed) {
             break;
@@ -107,6 +107,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/08/14 14:42:46  lavr
+ * Use fwrite() instead of printf() when printing out the data fetched
+ *
  * Revision 6.5  2002/08/07 16:38:08  lavr
  * EIO_ReadMethod enums changed accordingly; log moved to end
  *
