@@ -277,7 +277,7 @@ bool SetHeapLimit(size_t max_heap_size,
 
 #ifdef USE_SETCPULIMIT
 
-static void s_SignalHandler(int sig)
+static void s_SignalHandler(int _DEBUG_ARG(sig))
 {
     _ASSERT(sig == SIGXCPU);
 
@@ -419,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/05/19 21:07:51  vakatov
+ * s_SignalHandler() -- get rid of "unused func arg" compilation warning
+ *
  * Revision 1.29  2003/04/04 16:02:37  lavr
  * Lines wrapped at 79th column; some minor reformatting
  *
