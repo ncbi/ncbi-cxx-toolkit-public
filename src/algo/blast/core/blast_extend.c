@@ -176,7 +176,7 @@ BlastDiagTableNew (Int4 qlen, Boolean multiple_hits, Int4 window_size)
 
 /* Description in blast_extend.h */
 Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
-   const BlastInitialWordOptions* word_options,
+   const BlastInitialWordParameters* word_params,
    Uint4 subject_length, Blast_ExtendWord** ewp_ptr)
 {
    Blast_ExtendWord* ewp;
@@ -188,7 +188,7 @@ Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
       return -1;
    }
 
-   if (word_options->container_type == eWordStacks) {
+   if (word_params->container_type == eWordStacks) {
       double search_space;
       Int4 stack_size, num_stacks;
       BLAST_StackTable* stack_table;
@@ -203,7 +203,7 @@ Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
       stack_table->stack_index = (Int4*) calloc(num_stacks, sizeof(Int4));
       stack_table->stack_size = (Int4*) malloc(num_stacks*sizeof(Int4));
 
-      if (word_options->extension_method == eUpdateDiag) {
+      if (word_params->extension_method == eUpdateDiag) {
          stack_table->mb_stack_array = 
             (MB_Stack**) malloc(num_stacks*sizeof(MB_Stack*));
          for (index=0; index<num_stacks; index++) {
@@ -222,14 +222,14 @@ Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
       }
       stack_table->num_stacks = num_stacks;
    } else /* container_type == eDiagArray */ {
-      Boolean multiple_hits = (word_options->window_size > 0);
+      Boolean multiple_hits = (word_params->options->window_size > 0);
       BLAST_DiagTable* diag_table;
 
       ewp->diag_table = diag_table = 
          BlastDiagTableNew(query_length, multiple_hits, 
-                            word_options->window_size);
+                            word_params->options->window_size);
       /* Allocate the buffer to be used for diagonal array. */
-      if (!is_na || word_options->extension_method == eUpdateDiag) {
+      if (!is_na || word_params->extension_method == eUpdateDiag) {
          diag_table->hit_level_array = (DiagStruct*)
             calloc(diag_table->diag_array_length, sizeof(DiagStruct));
          if (!diag_table->hit_level_array)	{
@@ -431,7 +431,11 @@ s_MbDiagTableExtendHit(BLAST_SequenceBlk* query,
    window = word_options->window_size;
    word_extra_length = 
       mb_lt->word_length - COMPRESSION_RATIO*mb_lt->compressed_wordsize;
-   scan_step = mb_lt->scan_step;
+   /* FIXME, it's not clear scan_step is needed at all here. */
+   if (mb_lt->template_length > 0 && mb_lt->full_byte_scan)
+       scan_step = COMPRESSION_RATIO;
+   else
+       scan_step = mb_lt->scan_step;
    two_hits = (window > 0);
    do_ungapped_extension = word_options->ungapped_extension;
 
@@ -543,7 +547,11 @@ s_MbStacksExtendInitialHit(BLAST_SequenceBlk* query,
 
    word_extra_length = 
       mb_lt->word_length - COMPRESSION_RATIO*mb_lt->compressed_wordsize;
-   scan_step = mb_lt->scan_step;
+   /* FIXME, it's not clear scan_step is needed at all here. */
+   if (mb_lt->template_length > 0 && mb_lt->full_byte_scan)
+       scan_step = COMPRESSION_RATIO;
+   else
+       scan_step = mb_lt->scan_step;
    two_hits = (window > 0);
    do_ungapped_extension = word_options->ungapped_extension;
 
@@ -680,14 +688,13 @@ MB_ExtendInitialHit(BLAST_SequenceBlk* query,
    Int4** matrix, Blast_ExtendWord* ewp, Int4 q_off, Int4 s_off,
    BlastInitHitList* init_hitlist) 
 {
-   const BlastInitialWordOptions* word_options = word_params->options;
 
-   if (word_options->container_type == eDiagArray) {
+   if (word_params->container_type == eDiagArray) {
       return 
          s_MbDiagTableExtendHit(query, subject, lookup, word_params, 
                                matrix, ewp->diag_table, q_off, s_off,
                                init_hitlist);
-   } else if (word_options->container_type == eWordStacks) {
+   } else if (word_params->container_type == eWordStacks) {
       return 
          s_MbStacksExtendInitialHit(query, subject, lookup, word_params, 
                                    matrix, ewp->stack_table, q_off, s_off, 
@@ -1015,10 +1022,9 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
    Uint4 word_length, compressed_wordsize, compressed_word_length;
    Uint4 reduced_word_length, reduced_wordsize;
    Uint4 extra_bytes_needed;
-   Uint2 extra_bases, left, right;
+   Uint4 extra_bases, left, right;
    Int4 hits_extended = 0;
-   Uint1 max_bases;
-   Boolean extend_partial_byte = !word_params->options->variable_wordsize;
+   Boolean extend_partial_byte = FALSE;
 
    if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
       BlastMBLookupTable* mb_lt = (BlastMBLookupTable*)lookup_wrap->lut;
@@ -1026,11 +1032,13 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
       reduced_wordsize = 
          (word_length - COMPRESSION_RATIO + 1)/COMPRESSION_RATIO;
       compressed_wordsize = mb_lt->compressed_wordsize;
+      extend_partial_byte = !mb_lt->variable_wordsize;
    } else {
       BlastLookupTable* lookup = (BlastLookupTable*)lookup_wrap->lut;
       word_length = lookup->word_length;
       reduced_wordsize = lookup->wordsize;
       compressed_wordsize = lookup->reduced_wordsize;
+      extend_partial_byte = !lookup->variable_wordsize;
    }
 
    extra_bytes_needed = reduced_wordsize - compressed_wordsize;
@@ -1060,8 +1068,7 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
 
       if (extend_partial_byte) {
          /* mini extension to the left */
-         max_bases = 
-            MIN(COMPRESSION_RATIO, MIN(q_offsets[i], s_offsets[i]));
+         Uint4 max_bases = MIN(COMPRESSION_RATIO, MIN(q_offsets[i], s_offsets[i]));
          left = BlastNaMiniExtendLeft(q, s-1, max_bases);
          
          /* mini extension to the right */
@@ -1084,7 +1091,7 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
       if (left + right >= extra_bases) {
          Boolean hit_ready = FALSE;
          /* Check if this diagonal has already been explored. */
-         if (word_params->options->container_type == eWordStacks) {
+         if (word_params->container_type == eWordStacks) {
             hit_ready = 
                s_BlastnStacksExtendInitialHit(query, subject, 0, 
                   word_params, matrix, ewp->stack_table, q_offsets[i], 
@@ -1247,8 +1254,7 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
    Uint1* q, *s;
    Uint4 min_step = 0;
    Boolean do_ungapped_extension = word_params->options->ungapped_extension;
-   Boolean variable_wordsize = 
-      (Boolean) word_params->options->variable_wordsize;
+   Boolean variable_wordsize = FALSE;
    Int4 hits_extended = 0;
 
    if (lookup_wrap->lut_type == MB_LOOKUP_TABLE) {
@@ -1256,9 +1262,11 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
       word_length = lut->word_length;
       if(!do_ungapped_extension && !lut->discontiguous)
          min_step = lut->scan_step;
+      variable_wordsize = lut->variable_wordsize;
    } else {
       BlastLookupTable* lut = (BlastLookupTable*)lookup_wrap->lut;
       word_length = lut->word_length;
+      variable_wordsize = lut->variable_wordsize;
    }
 
    for (index = 0; index < num_hits; ++index) {
@@ -1284,7 +1292,7 @@ BlastNaExtendRightAndLeft(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
             the hit if needed. */
          Boolean hit_ready = FALSE;
          /* Check if this diagonal has already been explored. */
-         if (word_params->options->container_type == eWordStacks) {
+         if (word_params->container_type == eWordStacks) {
             hit_ready = 
                s_BlastnStacksExtendInitialHit(query, subject, min_step, 
                   word_params, matrix, ewp->stack_table, q_offsets[index], 
@@ -1317,7 +1325,6 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   BlastInitHitList* init_hitlist, 
          BlastUngappedStats* ungapped_stats)
 {
-   const BlastInitialWordOptions* word_options = word_params->options;
    /* Pointer to the beginning of the first word of the subject sequence */
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup_wrap->lut;
    Int4 hitsfound=0;
@@ -1332,7 +1339,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
       last_end = last_start + mb_lt->word_length;
    } else {
       last_end = subject_length;
-      switch (word_options->extension_method) {
+      switch (word_params->extension_method) {
       case eRightAndLeft: case eUpdateDiag:
          /* Look for matches all the way to the end of the sequence. */
          last_start = 
@@ -1341,7 +1348,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
       case eRight:
          /* Need to leave word_length to the end of the sequence for extension
             to the right. */
-         if (word_params->options->variable_wordsize)
+         if (mb_lt->variable_wordsize)
             last_end -= last_end%COMPRESSION_RATIO;
          last_start = last_end - mb_lt->word_length;
          last_end = last_start + mb_lt->compressed_wordsize*COMPRESSION_RATIO;
@@ -1358,7 +1365,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
       if (mb_lt->discontiguous) {
          hitsfound = MB_DiscWordScanSubject(lookup_wrap, subject, start_offset,
                         q_offsets, s_offsets, max_hits, &next_start);
-      } else if (word_options->extension_method == eRightAndLeft) {
+      } else if (word_params->extension_method == eRightAndLeft) {
          hitsfound = MB_AG_ScanSubject(lookup_wrap, subject, start_offset, 
                         q_offsets, s_offsets, max_hits, &next_start);
       } else {
@@ -1366,7 +1373,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
 	                     q_offsets, s_offsets, max_hits, &next_start);
       }
 
-      switch (word_options->extension_method) {
+      switch (word_params->extension_method) {
       case eRightAndLeft:
          hits_extended += 
             BlastNaExtendRightAndLeft(q_offsets, s_offsets, hitsfound, 
@@ -1400,7 +1407,7 @@ Int2 MB_WordFinder(BLAST_SequenceBlk* subject,
    Blast_UngappedStatsUpdate(ungapped_stats, total_hits, hits_extended, 
                              init_hitlist->total);
 
-   if (word_options->ungapped_extension)
+   if (word_params->options->ungapped_extension)
        Blast_InitHitListSortByScore(init_hitlist);
 
 

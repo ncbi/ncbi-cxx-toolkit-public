@@ -507,7 +507,7 @@ s_FillReturnCutoffsInfo(BlastRawCutoffs* return_cutoffs,
 static Int2 
 s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    LookupTableWrap* lookup_wrap,	
-   const BlastInitialWordOptions* word_options,
+   const BlastInitialWordParameters* word_params,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingOptions* hit_options,
    BLAST_SequenceBlk* query, BlastCoreAuxStruct** aux_struct_ptr)
@@ -519,7 +519,6 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
    Boolean mb_lookup = (lookup_wrap->lut_type == MB_LOOKUP_TABLE);
    Boolean phi_lookup = (lookup_wrap->lut_type == PHI_AA_LOOKUP ||
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
-   Boolean ag_blast = (word_options->extension_method == eRightAndLeft);
    Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
    Uint4 avg_subj_length;
    Boolean is_na = mb_lookup || (lookup_wrap->lut_type == NA_LOOKUP_TABLE);
@@ -531,7 +530,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
 
    avg_subj_length = BLASTSeqSrcGetAvgSeqLen(seq_src);
      
-   if ((status = BlastExtendWordNew(is_na, query->length, word_options, 
+   if ((status = BlastExtendWordNew(is_na, query->length, word_params, 
                     avg_subj_length, &aux_struct->ewp)) != 0)
       return status;
 
@@ -541,7 +540,7 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
       aux_struct->WordFinder = PHIBlastWordFinder;
    } else if (blastp) {
       aux_struct->WordFinder = BlastAaWordFinder;
-   } else if (ag_blast) {
+   } else if (word_params->extension_method == eRightAndLeft) { /* Used AG word finding. */
       aux_struct->WordFinder = BlastNaWordFinder_AG;
    } else {
       aux_struct->WordFinder = BlastNaWordFinder;
@@ -642,7 +641,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
    BlastExtendWordFree(aux_struct->ewp);
    /* First argument in BlastExtendWordNew is false because RPS search is 
       never a blastn search. */
-   BlastExtendWordNew(FALSE, concat_db.length, word_params->options, 
+   BlastExtendWordNew(FALSE, concat_db.length, word_params, 
                       avg_subj_length, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned
@@ -723,14 +722,14 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
    BlastScoreBlk* sbp = gap_align->sbp;
    BlastSeqSrcIterator* itr;
 
+   BlastInitialWordParametersNew(program_number, word_options, 
+      hit_params, lookup_wrap, sbp, query_info, 
+      BLASTSeqSrcGetAvgSeqLen(seq_src), &word_params);
+
    if ((status = 
-       s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_options, 
+       s_BlastSetUpAuxStructures(seq_src, lookup_wrap, word_params, 
           ext_options, hit_options, query, &aux_struct)) != 0)
       return status;
-
-   BlastInitialWordParametersNew(program_number, word_options, 
-      hit_params, sbp, query_info, BLASTSeqSrcGetAvgSeqLen(seq_src), 
-      &word_params);
 
    /* For RPS BLAST, there is no loop over subject sequences, so the preliminary
       search engine is done in a separate function. */
