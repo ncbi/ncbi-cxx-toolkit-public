@@ -8,10 +8,12 @@
   <li>
     You can have a pre-installed CVS executable on your PC,
     for example in <span class="ncbi_util">C:\WINNT\System32\cvs.exe</span>.
-    If not, then download it from <span class="ncbi_util">\\Basie\IEB\cvs.exe</span>
-    (you also can find it at
-    <a href="http://www.cyclic.com/" class="ncbi_url">http://www.cyclic.com/</a>)
-    and copy to <span class="ncbi_file">C:\WINNT\System32\cvs.exe</span>.
+    If not, you can get it from
+    <span class="ncbi_util">\\DIZZY\coremake\public\bin\cvs.exe</span> or
+    <span class="ncbi_util">\\Basie\IEB\cvs.exe</span>.
+    You also can find its latest version at
+    <a href="http://www.cyclic.com/" class="ncbi_url">http://www.cyclic.com/</a>.
+    Just copy it to <span class="ncbi_file">C:\WINNT\System32\cvs.exe</span>.
     <p>
 
     <li>
@@ -49,6 +51,10 @@
   </ul>
   <li> Make sure you have your "home" directory set up -- i.e. pointed by
        the environment variable <span class="ncbi_env">HOMEPATH</span>.
+       In NCBI, <span class="ncbi_env">HOMEPATH</span> is usually
+       set to <span class="ncbi_dir">/</span>, which usually means
+       <span class="ncbi_dir">U:\</span> or to something like
+       <span class="ncbi_dir">C:\Users\YourLoginName</span>.
     <p>
   <li> Create an empty file <span class="ncbi_file">.cvspass</span> in your
        "home" directory.
@@ -60,6 +66,10 @@
     This command will record your login info in the
     <span class="ncbi_file">.cvspass</span> file
     (so you would not have to login into CVS in the future, ever).
+    <br>
+    <span class="ncbi_note">
+    If you get an authorization error here please contact one of
+    the persons listed below.</span>
     <p>
   <li>
   Now you are all set and can use all usual CVS commands.
