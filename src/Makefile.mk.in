@@ -66,6 +66,7 @@ CONF_STRIP  = @STRIP@
 CONF_CFLAGS   = @CFLAGS@
 CONF_CXXFLAGS = @CXXFLAGS@
 CONF_CPPFLAGS = @CPPFLAGS@ $(STD_INCLUDE)
+CONF_DEPFLAGS = @DEPFLAGS@
 CONF_LDFLAGS  = @LDFLAGS@
 CONF_LIBS     = @LIBS@
 
@@ -87,6 +88,7 @@ ORIG_STRIP  = $(CONF_STRIP)
 ORIG_CFLAGS   = $(CONF_CFLAGS)
 ORIG_CXXFLAGS = $(CONF_CXXFLAGS)
 ORIG_CPPFLAGS = $(CONF_CPPFLAGS)
+ORIG_DEPFLAGS = $(CONF_DEPFLAGS)
 ORIG_LDFLAGS  = $(CONF_LDFLAGS)
 ORIG_LIBS     = $(CONF_LIBS)
 
@@ -108,6 +110,7 @@ STRIP  = $(CONF_STRIP)
 CFLAGS   = $(CONF_CFLAGS)
 CXXFLAGS = $(CONF_CXXFLAGS)
 CPPFLAGS = $(CONF_CPPFLAGS)
+DEPFLAGS = $(CONF_DEPFLAGS)
 LDFLAGS  = $(CONF_LDFLAGS)
 LIBS     = $(CONF_LIBS)
 PRE_LIBS =
@@ -118,6 +121,8 @@ PRE_LIBS =
 
 ### Use automatic auto-dependencies (SunOS make, .KEEP_STATE:)
 @KeepStateTarget@
+### "rules"/"rules_with_autodep" (whether to build auto-deps for GNU make)
+Rules=@Rules@
 ### Kludge module to workaround an RTTI bug (Sun WorkShop only)
 serial_ws50_rtti_kludge=@serial_ws50_rtti_kludge@
 
