@@ -71,6 +71,10 @@ static void s_TEST_SplitPath(void)
     assert( f.GetBase() == "file" );
     assert( f.GetExt()  == ".ext" );
 
+    assert( CFile::AddTrailingPathSeparator("dir")   == "dir\\");
+    assert( CFile::AddTrailingPathSeparator("dir\\") == "dir\\");
+    assert( CFile::DeleteTrailingPathSeparator("dir\\path\\/")=="dir\\path");
+
 #elif defined(NCBI_OS_UNIX)
 
     CFile::SplitPath("/usr/lib/any.other.lib", &dir, &title, &ext);
@@ -87,6 +91,10 @@ static void s_TEST_SplitPath(void)
     assert( f.GetBase() == "any.other" );
     assert( f.GetExt()  == ".lib" );
 
+    assert( CFile::AddTrailingPathSeparator("dir")  == "dir/");
+    assert( CFile::AddTrailingPathSeparator("dir/") == "dir/");
+    assert( CFile::DeleteTrailingPathSeparator("dir/path////")=="dir/path");
+
 #elif defined(NCBI_OS_MAC)
 	CFile::SplitPath("Hard Disk:Folder:1984.mov", &dir, &title, &ext);
     assert( dir  == "Hard Disk:Folder:" );
@@ -97,6 +105,11 @@ static void s_TEST_SplitPath(void)
     assert( path == "Hard Disk:Folder:file.ext" );
     path = CFile::MakePath("Hard Disk:Folder",   "file", "ext");
     assert( path == "Hard Disk:Folder:file.ext" );
+
+    assert( CFile::AddTrailingPathSeparator("dir")  == "dir:");
+    assert( CFile::AddTrailingPathSeparator("dir:") == "dir:");
+    assert( CFile::DeleteTrailingPathSeparator("dir:path:::") == "dir:path");
+
 #endif
 
     CFile::SplitPath("name", &dir, &title, &ext);
@@ -638,6 +651,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/10/08 15:45:53  ivanov
+ * Added tests for [Add|Delete]TrailingPathSeparator()
+ *
  * Revision 1.26  2003/09/30 15:09:05  ucko
  * Reworked CDirEntry::NormalizePath, which now handles .. correctly in
  * all cases and optionally resolves symlinks (on Unix).
