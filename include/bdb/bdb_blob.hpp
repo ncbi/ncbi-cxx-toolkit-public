@@ -184,6 +184,9 @@ public:
     /// Throw an exception if buffer size 'size' is less than LOB size. 
     EBDB_ErrCode GetData(void* buf, size_t size);
 
+    /// Comparison function for unsigned int key
+    virtual void SetCmp(DB*);
+
 private:
     unsigned int  m_LobKey;  
 };
@@ -216,6 +219,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/29 16:43:40  kuznets
+ * Returned back CBDB_LobFile::SetCmp function
+ * (was removed before out of good intentions)
+ *
  * Revision 1.10  2003/09/26 20:54:37  kuznets
  * Documentaion change
  *
