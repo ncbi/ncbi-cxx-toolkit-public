@@ -44,6 +44,9 @@
       <li> <a href="#ref_OutsideCreate">
            <b><i>new_project.sh</i></b> -- project only using the NCBI C++ tree
            </a>
+      <li> <a href="#ref_OutsideHello">
+           <b><i>hello.sh</i></b> -- a simple demo CGI application HELLO
+           </a>
     </ul>
   <li> <a href="mkfiles.html">
     A real-life example of the NCBI C++ makefile hierarchy
@@ -815,9 +818,29 @@ you can just go to the created working directory
 <br>
 You can easily change the active version of NCBI C++ toolkit
 by manually setting variable <b>$(builddir)</b> in
-<b><i>Makefile.foo_lib</i></b>to the desired toolkit path, e.g.:
+<b><i>Makefile.foo_lib</i></b> to the desired toolkit path, e.g.:
 <br> &nbsp;&nbsp;&nbsp;
 <b><i>builddir = $(NCBI)/ver0.0/c++/GCC-Release/build</i></b>
+
+
+<p>
+<br>
+<a name="ref_OutsideHello"></a>
+<h3><b><i>scripts/hello.sh</i></b> </h3>
+
+<p>
+This script to:
+<ul>
+  <li> retrieve the demo CGI application project HELLO
+  <li> create a standalone makefile to build it
+  <li> build HELLO application using this makefile
+  <li> run HELLO application
+</ul>
+It will produce file <b><i>hello.html</i></b> containing a model
+HTTP response. For more info on the HELLO CGI project see
+in section
+<i><a href="tools.html">NCBI C++ tools and applications</a> /
+<a href="tools/hello/hello.html">HELLO.CGI -- a demo CGI application (NCBI C++)</a></i>.
 
 
 <br></br>
