@@ -196,6 +196,17 @@ typedef int TP2SFlags; // binary OR of ES2PFlags
 CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
                                TP2SFlags flags = 0, CScope* scope = 0);
 
+enum EOverlapType {
+    eOverlap_Simple,          // any overlap of extremes
+    eOverlap_Contained,       // contained within extremes
+    eOverlap_Subset,          // is a subset of ranges
+    eOverlap_CheckIntervals,  // is a subset with matching boundaries
+    eOverlap_Interval         // at least one pair of intervals must overlap
+};
+
+// Check if the two locations have ovarlap of a given type
+int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type);
+
 END_SCOPE(sequence)
 
 // FASTA-format output; see also ReadFasta in <objects/seqset/Seq_entry.hpp>
@@ -417,6 +428,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2002/11/25 21:24:45  grichenk
+* Added TestForOverlap() function.
+*
 * Revision 1.13  2002/11/18 19:58:40  shomrat
 * Add CSeqSearch - a nucleotide search utility
 *

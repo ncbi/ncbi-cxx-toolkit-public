@@ -1606,6 +1606,87 @@ CRef<CSeq_loc> ProductToSource(const CSeq_feat& feat, const CSeq_loc& prod_loc,
 }
 
 
+int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type)
+{
+    CRange<TSeqPos> rg1 = loc1.GetTotalRange();
+    CRange<TSeqPos> rg2 = loc2.GetTotalRange();
+    switch (type) {
+    case eOverlap_Simple:
+        {
+            if ( rg1.GetTo() >= rg2.GetFrom()  &&
+                rg1.GetFrom() <= rg2.GetTo() ) {
+                return abs(int(rg2.GetFrom() - rg1.GetFrom())) +
+                    abs(int(rg1.GetTo() - rg2.GetTo()));
+            }
+            return -1;
+        }
+    case eOverlap_Contained:
+        {
+            if ( rg1.GetFrom() <= rg2.GetFrom()  &&
+                rg1.GetTo() >= rg2.GetTo() ) {
+                return (rg2.GetFrom() - rg1.GetFrom()) +
+                    (rg1.GetTo() - rg2.GetTo());
+            }
+            return -1;
+        }
+    case eOverlap_Subset:
+        {
+            // loc1 should contain loc2
+            if ( Compare(loc1, loc2) != eContains ) {
+                return -1;
+            }
+            return GetLength(loc1) - GetLength(loc2);
+        }
+    case eOverlap_CheckIntervals:
+        {
+            if ( rg1.GetFrom() > rg2.GetTo()  ||
+                rg1.GetTo() < rg2.GetTo() ) {
+                return -1;
+            }
+            // Check intervals' boundaries
+            CSeq_loc_CI it1(loc1);
+            CSeq_loc_CI it2(loc2);
+            if (!it1  ||  !it2) {
+                break;
+            }
+            TSeqPos loc2start = it2.GetRange().GetFrom();
+            // Find the first interval in loc1 intersecting with loc2
+            for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; it1++);
+            // Check intervals one by one
+            while ( it1  &&  it2 ) {
+                if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
+                    // The last interval from loc2 may be shorter than the
+                    // current interval from loc1
+                    if (it1.GetRange().GetTo() < it2.GetRange().GetTo()  ||
+                        it2++) {
+                        return -1;
+                    }
+                    break;
+                }
+                // Go to the next interval start
+                if ( !(it2++) ) {
+                    break;
+                }
+                if ( !(it1++) ) {
+                    return -1; // loc1 has not enough intervals
+                }
+                if (it1.GetRange().GetFrom() != it2.GetRange().GetFrom()) {
+                    return -1;
+                }
+            }
+            return GetLength(loc1) - GetLength(loc2);
+        }
+    case eOverlap_Interval:
+        {
+            return (Compare(loc1, loc2) == eNoOverlap) ? -1
+                : abs(int(rg2.GetFrom() - rg1.GetFrom())) +
+                abs(int(rg1.GetTo() - rg2.GetTo()));
+        }
+    }
+    return -1;
+}
+
+
 END_SCOPE(sequence)
 
 
@@ -2483,6 +2564,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2002/11/25 21:24:46  grichenk
+* Added TestForOverlap() function.
+*
 * Revision 1.17  2002/11/18 19:59:23  shomrat
 * Add CSeqSearch - a nucleotide search utility
 *
