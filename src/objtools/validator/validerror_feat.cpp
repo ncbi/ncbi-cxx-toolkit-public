@@ -291,9 +291,8 @@ bool CValidError_feat::IsOverlappingGenePseudo(const CSeq_feat& feat)
     if ( grp  ) {
         return grp->GetPseudo();
     }
-
-    // check overlapping gene
     
+    // check overlapping gene
     CConstRef<CSeq_feat> overlap = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
@@ -545,7 +544,7 @@ void CValidError_feat::ValidateCdregion (
 
     iterate( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
         ECompare comp = sequence::Compare((**codebreak).GetLoc (),
-					  feat.GetLocation (), m_Scope );
+            feat.GetLocation (), m_Scope );
         if ( (comp != eContained) && (comp != eSame))
             PostErr (eDiag_Error, eErr_SEQ_FEAT_Range, 
                 "Code-break location not in coding region", feat);
@@ -764,8 +763,8 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
 	 rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.IsSetAnticodon () ) {
-            ECompare comp = sequence::Compare(trna.GetAnticodon(),
-					      feat.GetLocation());
+            ECompare comp = sequence::Compare(trna.GetAnticodon(), 
+                                              feat.GetLocation());
             if ( comp != eContained  &&  comp != eSame ) {
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_Range,
                     "Anticodon location not in tRNA", feat);
@@ -1428,31 +1427,23 @@ void CValidError_feat::ValidateBadGeneOverlap(const CSeq_feat& feat)
         return;
     }
 
-    // look for overlapping gene
+    // look for intersecting gene
     CConstRef<CSeq_feat> gene = GetBestOverlappingFeat(
         feat.GetLocation(),
         CSeqFeatData::e_Gene,
         eOverlap_Simple,
         *m_Scope);
-    // !!! temporary implementation. should use eOverlap_Contains in GetBest...
-    // this however is not yet supported.
+    if ( gene == 0 ) {
+        return;
+    }
+
+    // Make sure the gene overlap and not just intersect
     int i = TestForOverlap(gene->GetLocation(), feat.GetLocation(), eOverlap_Contained);
     if ( i >= 0 ) {
         return;
     }
 
-    // look for intersecting gene
-    gene = GetBestOverlappingFeat(
-        feat.GetLocation(),
-        CSeqFeatData::e_Gene,
-        eOverlap_Simple,
-        *m_Scope);
-    if ( !gene ) {
-        return;
-    }
-
     // found an intersecting (but not overlapping) gene
-
     EDiagSev sev = eDiag_Error;
     if ( m_Imp.IsNC()  ||  m_Imp.IsNT() ) {
         sev = eDiag_Warning;
@@ -2077,6 +2068,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/01/31 18:28:03  shomrat
+* Re-implementation of ValidateBadGeneOverlap
+*
 * Revision 1.10  2003/01/30 20:26:17  shomrat
 * Explicitly call sequence::Compare
 *
