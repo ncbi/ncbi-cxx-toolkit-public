@@ -72,28 +72,42 @@ void CThreadedServer::Run(void)
                    + string(strerror(errno)));
     }
 
-    for (;;) {
+    while ( !ShutdownRequested() ) {
         CSocket    sock;
-        EIO_Status status = lsock.Accept(sock);
-        sock.SetOwnership(eNoOwnership); // Process[Overflow] will close it
+        EIO_Status status = lsock.GetStatus();
+        if (status != eIO_Success) {
+            if (m_AcceptTimeout != kDefaultTimeout
+                &&  m_AcceptTimeout != kInfiniteTimeout) {
+                pool.WaitForRoom(m_AcceptTimeout->sec,
+                                 m_AcceptTimeout->usec * 1000);
+            } else {
+                pool.WaitForRoom();
+            }
+            lsock.Listen(m_Port);
+            continue;
+        }
+        status = lsock.Accept(sock, m_AcceptTimeout);
         if (status == eIO_Success) {
+            sock.SetOwnership(eNoOwnership); // Process[Overflow] will close it
             try {
                 pool.AcceptRequest
                     (CRef<ncbi::CStdRequest>
                      (new CSocketRequest(*this, sock.GetSOCK())));
                 if (pool.IsFull()  &&  m_TemporarilyStopListening) {
                     lsock.Close();
-                    pool.WaitForRoom();
-                    lsock.Listen(m_Port);
                 }
             } catch (CBlockingQueueException) {
                 _ASSERT(!m_TemporarilyStopListening);
                 ProcessOverflow(sock.GetSOCK());
-            }            
+            }
+        } else if (status == eIO_Timeout) {
+            ProcessTimeout();
         } else {
             ERR_POST("accept failed: " << IO_StatusStr(status));
         }
     }
+
+    pool.KillAllThreads(true);
 }
 
 
@@ -103,6 +117,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.12  2004/07/15 18:58:15  ucko
+* Make more versatile, per discussion with Peter Meric:
+* - Periodically check whether to keep going or gracefully bail out,
+*   based on a new callback method (ShutdownRequested).
+* - Add a timeout for accept, and corresponding callback (ProcessTimeout).
+*
 * Revision 6.11  2004/05/17 20:58:13  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *

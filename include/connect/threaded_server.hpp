@@ -82,7 +82,8 @@ class NCBI_XCONNECT_EXPORT CThreadedServer
 public:
     CThreadedServer(unsigned int port) :
         m_InitThreads(5), m_MaxThreads(10), m_QueueSize(20),
-        m_SpawnThreshold(1), m_TemporarilyStopListening(false), m_Port(port)
+        m_SpawnThreshold(1), m_AcceptTimeout(kInfiniteTimeout),
+        m_TemporarilyStopListening(false), m_Port(port)
         {}
 
     void Run(void);
@@ -96,20 +97,27 @@ protected:
     // Implementor must take care of closing socket when done
     virtual void ProcessOverflow(SOCK sock) { SOCK_Close(sock); }
 
+    // Runs synchronously when accept has timed out
+    virtual void ProcessTimeout(void) {}
+
+    // Runs synchronously between iterations
+    virtual bool ShutdownRequested(void) { return false; }
+
     // Called at the beginning of Run, before creating thread pool
     virtual void SetParams() {}
 
     // Settings for thread pool
-    unsigned int m_InitThreads;     // Number of initial threads
-    unsigned int m_MaxThreads;      // Maximum simultaneous threads
-    unsigned int m_QueueSize;       // Maximum size of request queue
-    unsigned int m_SpawnThreshold;  // Controls when to spawn more threads
+    unsigned int    m_InitThreads;     // Number of initial threads
+    unsigned int    m_MaxThreads;      // Maximum simultaneous threads
+    unsigned int    m_QueueSize;       // Maximum size of request queue
+    unsigned int    m_SpawnThreshold;  // Controls when to spawn more threads
+    const STimeout* m_AcceptTimeout;   // Maximum time between exit checks
 
     // Temporarily close listener when queue fills?
-    bool         m_TemporarilyStopListening;
+    bool            m_TemporarilyStopListening;
 
 private:
-    unsigned int m_Port; // TCP port to listen on
+    unsigned int    m_Port; // TCP port to listen on
 };
 
 
@@ -122,6 +130,12 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2004/07/15 18:58:10  ucko
+ * Make more versatile, per discussion with Peter Meric:
+ * - Periodically check whether to keep going or gracefully bail out,
+ *   based on a new callback method (ShutdownRequested).
+ * - Add a timeout for accept, and corresponding callback (ProcessTimeout).
+ *
  * Revision 6.8  2003/08/12 19:27:52  ucko
  * +CThreadedServerException
  *
