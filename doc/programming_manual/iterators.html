@@ -13,10 +13,11 @@ The NCBI C++ Toolkit Iterators</h1>
 <ul>
  <li><a href="#generic">  <i> STL</i> generic iterators</a></li>
  <li><a href="#typeIt">   <i> CTypeIterator</i> and <i>CTypeConstIterator</i></a></li>
+ <li><a href="#hier">         Class hierarchies, embedded objects, and the NCBI C++ type iterators </a>
  <li><a href="#cobjType"> <i> CObjectIterator</i> and <i>CObjectConstIterator</i></a></li>
  <li><a href="#stdType">  <i> CStdTypeIterator</i> and <i>CStdTypeConstIterator</i></a></li>
  <li><a href="#typesIt">  <i> CTypesIterator</a></i></li>
- <li><a href="#hier">         Class hierarchies and type iterators </a>
+ <li><a href="#appendix">  <i> Appendix</a></i></li>
 </ul>
 <a NAME="generic"></a>
 <h3>
@@ -27,8 +28,8 @@ generic algorithm must account for this. This is depicted graphically below, for
 <i>list</i> and <i>vector</i> containers and the <i>sort, find,</i> and <i>merge</i>
 algorithms.<p>
 
-<center><img SRC="iters.gif"> </center><p>
-
+<center><img SRC="iters.gif"> </center>
+<center>Figure 1 </center><p>
 <p>The <i>vector</i> class allows <i>input, output, bidirectional,</i> and <i>random
 access</i> iterators. In contrast, the <i>list</i> container class does <i>not</i> allow
 random access to its elements. This is depicted graphically by one less strand in the
@@ -93,61 +94,99 @@ Lets compare the syntax of this new iterator class to the standard iterators:
   ContainerType&lt;T&gt; x;
   for (ContainerType&lt;T&gt;::IteratorType i = x.begin(); i != x.end(); ++i) 
 
-  for (CTypeIterator&lt;ObjectType&gt; i = Begin(ObjectName); i; ++i)
+  for (CTypeIterator&lt;T&gt; i = Begin(ObjectName); i; ++i)
 </pre><font color = black>
 
 The standard iterator begins by pointing to the first item in the container
-(<i>x.begin()</i>), and with each iteration, visits subsequent items until the <i>end</i>
-of the container (<i>x.end()</i>) is reached. Similarly, the <i>CTypeIterator</i> begins
+<i>x.begin()</i>, and with each iteration, visits subsequent items until the end
+of the container <i>x.end()</i> is reached. Similarly, the <i>CTypeIterator</i> begins
 by pointing to the first data member of <i>ObjectName</i> that is of type
-<i>ObjectType</i>, and with each iteration, visits subsequent data members <i>of the
-specified type</i> until the end of the object is reached.  Two important differences are:
-(1) all items in the STL container must be of the same type <i>T</i>, and (2) the STL
-iterator will visit <i>all</i> items in the container.  In contrast, the
-<i>CTypeIterator</i> (1) operates on a class object containing heterogeneous types, and
-(2) skips over all data members that are not of the specified type. <p>
+<i>T</i>, and with each iteration, visits subsequent data members of 
+type <i>T</i> until the end of the object is reached.   <p>
 
 How is a generic iterator such as this implemented? The 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=Begin">
-<i>Begin()</i></a> expression returns an "object iterator" that is actually an STL <i>pair</i>
-consisting of a pointer to the object itself and a data structure containing type
-information about the object. On each iteration, a new pair is created consisting of the
-current object and in turn, its type information. This allows the iterator to recursively
-visit all data members of the specified type at all levels of nesting.
-<p>
-<i>Begin()</i> is implemented as a template function whose sole argument is an an instance
-of a class with a <i>GetTypeInfo()</i> member function. Thus, in order to apply a
-<i>CTypeIterator</i> to a newly defined class, you will need to implement
-<i>GetTypeInfo()</i> for that class. Two macros are provided to support
-this,
+<i>Begin()</i></a> expression returns an object containing a pointer to the 
+input object <i>ObjectName</i>, as well as a pointer to a data structure
+containing type information about that object. In order for <i>Begin()</i> to obtain this
+type information however, the input object's class must have a static
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=GetTypeInfo">
+<i>GetTypeInfo()</i></a> member function.  On each iteration, the <i>++</i> operator
+examines the current type information to find the next data member
+which is of type <i>T</i>.  The iterator is then re-instantiated with a pointer to the
+next object found, and in turn, a pointer to <i>its</i> type information. Accordingly, each data
+member of type <i>T</i> (or derived from type <i>T</i>) must also have the
+<i>GetTypeInfo()</i> member function implemented. This allows the iterator to recursively
+visit all data members of the specified type at all levels of nesting.<p>
+
+Each object visited must be capable of generating its own type information; hence, the
+<i>CTypeIterator</i> <b> cannot</b> be applied to standard types such as <i>int, float,
+double</i> or the STL type <i> string</i> (but see <a href="#stdType"><i>CStdTypeIterator</i></a>). 
+Two macros are provided to help you implement <i>GetTypeInfo()</i> for
+user-defined classes:
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_CLASS_INFO">
 <i>BEGIN_CLASS_INFO</i></a> and
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=END_CLASS_INFO">
-<i>END_CLASS_INFO</i></a>. For the CPerson example above, the only
-code required to implement the <i>GetTypeInfo()</i> member function is:
+<i>END_CLASS_INFO</i></a> (see <a href="#macros"> Appendix</a> for more details on using these
+and other macros).  For the
+example above, the only code required to implement <i>CPerson::GetTypeInfo()</i> is:
 
 <font color = "#000080"> <pre>
 BEGIN_CLASS_INFO(CPerson)
 {
     ADD_STD_M(m_name);
     ADD_STD_M(m_addr);
-    ADD_M(m_next_door, POINTER, (CLASS, (CPerson)))->SetOptional();
+    ADD_M(m_next_door, POINTER, (CLASS, (CPerson)));
 }
 END_CLASS_INFO
 </pre><font color = black>
 
-In addition, the class definition must include the static class member function
+In addition, the class definition must include a declaration of the static class member function
 <i>GetTypeInfo()</i> in the class's public section (see the <i>CPerson</i> class
 definition <a href="#CPerson"> above</a>). <p>
 
-In this example the data members visited by the iterator were of the same type as
-the object itself, as <i>neighbor</i> is an instance of <i>CPerson</i>. Thus the
+In this example, the data members visited by the iterator were of the same type as
+the object itself, as <i>neighbor</i> is an instance of <i>CPerson</i>. Thus, the
 first "member" visited is the object itself (<i>*this</i>). This is not
 necessary however, as the aggregate object's type information is derived from the
 <i>Begin(ObjectName)</i> expresssion, while the type to be visited is defined by
-<i>ObjectType</i>. The <i>CTypeConstIterator</i>
-parallels the <i>CTypeIterator</i>, and is intended for use with <i>const</i> objects (i.e.
-when you want to prohibit modifications to the objects you are iterating over). <p>
+the template argument <i>T</i>. <p>
+
+The <i>CTypeConstIterator</i> parallels the <i>CTypeIterator</i>, and is intended for use
+with <i>const</i> objects (i.e. when you want to prohibit modifications to the objects
+you are iterating over).<p>
+
+<a name="hier"></a>
+<h3>Class hierarchies, embedded objects, and the NCBI C++ type iterators </h3>
+
+As emphasized above, all of the objects visited by an iterator must have the
+<i>GetTypeInfo()</i> member function defined in order for the iterators to work properly.
+The type information provided by <i>GetTypeInfo()</i> is used to identify:
+<ul> 
+  <li> data members of type <i>T</i>
+  <li> data members <i>containing</i> members of type <i>T</i>
+  <li> data members derived from type <i>T</i>
+  <li> data members <i>containing</i> members derived from type <i>T</i>
+</ul>
+
+The <a href="#appendix"> Appendix</a> details a simple example of this feature,
+and describes an additional pair of macros, 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_DERIVED_CLASS_INFO">
+<i>BEGIN_DERIVED_CLASS_INFO</i></a> and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=END_DERIVED_CLASS_INFO">
+<i>END_DERIVED_CLASS_INFO</i></a>, which allow the user to include class hierarchy
+information in the object's type information.  The <i>BEGIN_DERIVED_CLASS_INFO</i> macro
+requires the type name of the child class followed by the parent class. The only data members
+which need be specified for the child are those not inherited from the parent.<p>
+
+Knowledge of the NCBI C++ Toolkit type hierarchy is implicit to all of the type iterators
+described here, and no additional code is required to use them on the pre-built types.
+This feature of the iterators allows the user to deploy a type iterator over a single
+specified type which may in practice include a set of types via class inheritance. A further
+generalization of this idea is implemented by the <a href="#typesIt"><i>CTypesIterator</i></a>
+described below.
+
+<p>
 
 <a NAME="cobjType"></a>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectIterator.html">
@@ -155,25 +194,26 @@ when you want to prohibit modifications to the objects you are iterating over). 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CObjectConstIterator.html">
 <i>CObjectConstIterator</i></h3></a>
 
-All <i>CObject</i>s defined in the NCBI C++
-Toolkit have a <i>GetTypeInfo()</i> member function that can be used by
-<i>Begin(ObjectName)</i>. In particular, all of the generated serializable objects (in 
+All <i>CObject</i>s in the NCBI C++
+Toolkit have a defined <i>GetTypeInfo()</i> member function.
+In particular, all of the generated serializable objects (in 
 <i>include/objects</i>) are derived from <i>CObject</i> and thus, can be iterated over.
-No additional code is required to apply a type iterator to a C++ Toolkit object. 
-In addition, a special iterator is defined which can automatically distinguish <i>CObject</i>s 
+
+Because the <i>CObject</i> class is so central to the Toolkit,
+a special iterator is also defined which can automatically distinguish <i>CObject</i>s 
 from other class types. The syntax of a <i>CObjectIterator</i> is:
 <font color = "#000080"> <pre>
 <center> for (CObjectIterator i = Begin(ObjectName); i; ++i) </center></font></pre>
 
 Note that there is no need to specify the object type to iterate over, as the type
 <i>CObject</i> is built into the iterator itself. This iterator will recursively visit all
-<i>CObject</i>s contained in <i>ObjectName</i> The <i>CObjectConstIterator</i> is
+<i>CObject</i>s contained or referenced in <i>ObjectName</i> The <i>CObjectConstIterator</i> is
 identical to the <i>CObjectIterator</i> but is designed to operate on <i>const</i>
 elements.<p>
 
 User-defined classes that are derived from <i>CObject</i>s can also be iterated over.
 In order to do so however, you must have implemented the <i>GetTypeInfo()</i> function 
-exactly as described above for general objects.
+using the <i>BEGIN_DERIVED_CLASS_INFO</i> macro.
 
 <a NAME="stdType"></a>
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CStdTypeIterator.html">
@@ -215,17 +255,17 @@ all of <i>seq</i>'s data members (recursively), stopping only at references to g
 organism citations:
 
 <font color = "#000080"> <pre>
-     CTypesIterator i;			
-     Type&lt;CGene_ref>::AddTo(i);		// define the types to stop at
+     CTypesIterator i;                  
+     Type&lt;CGene_ref>::AddTo(i);              // define the types to stop at
      Type&lt;COrg_ref>::AddTo(i);
          
      for (i = Begin(seq); i; ++i) {
  
-	 if (Type&lt;CGene_ref>::Match(i)) {
+         if (Type&lt;CGene_ref>::Match(i)) {
              CGene_ref* geneRef = Type&lt;CGene_ref>::Get(i);
              ...
          } 
-	 else if (Type&lt;COrg_ref>::Match(i) {
+         else if (Type&lt;COrg_ref>::Match(i) {
              COrg_ref* orgRef = Type&lt;COrg_ref>::Get(i);
              ...
          }
@@ -248,25 +288,203 @@ and type casts it to the specified type <i>TypeName</i>
 The <i>Begin(ObjectName)</i> expression is as described for the above
 <i>CTypeIterator</i> and <i>CTypeConstIterator</i> classes. 
 <p>
-<a name="hier"></a>
-<h3>Class hierarchies and type iterators </h3>
+<a name = "appendix"> <h3> Appendix</h3>
 
-All of the iterators described in this section are designed to operate on aggregate
-objects, stopping only at those data members which are of the specified type. By 
-definition, if the aggregate object is itself of the specified type, <i>*this</i> 
-will be included in the iteration. Knowledge of the type hierarchy is implicit to
-these iterators. Thus if object type <i>B</i> is derived from object type <i>A</i>,
-then <i>CTypeIterator&lt;A></i> will visit objects of type <i>B</i> as well as <i>A</i>, 
-since <i>B IS-A A</i>. For example, consider the <i>CObjectIterator</i>:
+The following example demonstrates how the class hierarchy determines which data
+members will be included in a type iterator:
 
-<center><img SRC="iter_hier.gif"> </center><p>
+<font color = "#000080"> <pre>
+  class CA;
+  class CB;
+  class CC;
+  class CD;
 
-Class <i>A</i> is derived from <i>CObject</i> and contains a <i>CBiostruc (B)</i> 
-as well as a simple <i>CObject (C)</i>. By definition, a <i>CObjectIterator</i> will
-visit <i>A, B,</i> and <i>C</i>, as well as all of the <i>CObjects</i> contained in
-<i>B</i>. In contrast, a <i>CTypeIterator</i> that visits <i>CBiostruc</i>s 
-will visit <i>B</i> only.
+  class CA
+  {
+  public:
+      CA(){};
+      static const CTypeInfo* GetTypeInfo(void);      
+
+      auto_ptr&lt;CA> m_a;     // data member of type CA
+      CB *m_b;              // data member containing type CA
+      CC  m_c;              // data member derived from type CA
+      CRef&lt;CD> m_d;         // data member containing type derived from type CA
+  };
+
+  class CB 
+  {
+  public:
+      CB(){};
+      static const CTypeInfo* GetTypeInfo(void);
+
+      auto_ptr&lt;CA> m_a;
+  };      
+
+  class CC : public CA
+  {
+  public:
+      CC(){};
+      static const CTypeInfo* GetTypeInfo(void);
+  };
+
+  class CD : public CObject
+  {
+  public:
+      CD(){};
+      static const CTypeInfo* GetTypeInfo(void);
+
+      auto_ptr&lt;CC> m_c;
+  };
+
+  CA a;
+  CB b;
+  CC c;
+  CD d;
+
+  b.m_a = new CA();
+  d.m_c = new CC();
+
+  a.m_a = new CA();
+  a.m_b = &b;
+  a.m_c = c;
+  a.m_d = d;
+</pre></font>
+
+Given the following <i>GetTypeInfo()</i> implementations: 
+<font color = "#000080"> <pre>
+BEGIN_CLASS_INFO(CA)
+{
+    ADD_M(m_a, STL_auto_ptr, (CLASS, (CA)));
+    ADD_M(m_b, POINTER,      (CLASS, (CB)));
+    ADD_M(m_c, CLASS,        (CC));
+    ADD_M(m_d, CRef,         (CLASS, (CD)));
+    ADD_SUB_CLASS(CC);
+}
+END_CLASS_INFO
+
+BEGIN_CLASS_INFO(CB)
+{
+    ADD_M(m_a, POINTER, (CLASS, (CA)));
+}
+END_CLASS_INFO
+</pre><font color = green><pre>
+BEGIN_DERIVED_CLASS_INFO(CC, CA)
+{
+}
+END_DERIVED_CLASS_INFO
+</pre><font color = "#000080"> <pre>
+BEGIN_CLASS_INFO(CD)
+{
+    ADD_M(m_a, POINTER, (CLASS, (CC)));
+}
+END_CLASS_INFO
+</pre><font color = black>
+
+
+Figure 2 illustrates
+the paths traversed by a <i>CTypeIterator&lt;CA></i> and a <i>CTypeIterator&lt;CC></i>,
+where both iterators are initialized with <i>Begin(a)</i>. The data members visited by
+the iterator are indicated by enclosing boxes. 
+
+<center><img SRC="typeiter.gif"> </center><p>
+<center>Figure 2 </center><p>
+
+<a name="macros">
+<h4> Macros for implementing the <i>GetTypeInfo()</i> member function</h4>
+
+We have already seen two <i>BEGIN/END</i> pairs of pre-processor macros used for
+implementing the <i>GetTypeInfo()</i> member functions. A more complete list is:
+<ul>
+<li> BEGIN_CLASS_INFO(Class)
+<li> BEGIN_DERIVED_CLASS_INFO(Class, BaseClass)
+<li> BEGIN_STRUCT_INFO(class)
+<li> BEGIN_ABSTRACT_CLASS_INFO(Class) 
+<li> BEGIN_CHOICE_INFO(Class)
+<li> BEGIN_ENUM_INFO(Method, Enum, IsInteger) 
+</ul>
+All of these macros are <i>#defined</i>'d in 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialimpl.hpp"> 
+<i>serialimpl.hpp</i></a>, and each has a corresponding END_*_INFO macro. The ABSTRACT_CLASS macros 
+can be used for iterating over all classes derived from a given base class. For example, suppose the 
+classes <i>CA, CB,</i> and <i>CD</i> had all been derived from class <i>CEve</i>. In order to
+capture the implied inheritance in the class type information structures, we will now need to add:
+<font color = "#000080"> <pre>
+BEGIN_ABSTRACT_CLASS_INFO(CEve)
+{
+  ADD_SUB_CLASS (CA);
+  ADD_SUB_CLASS (CB);
+  ADD_SUB_CLASS (CD);
+}
+END_ABSTRACT_CLASS_INFO
+</pre></font>
+Note that we do <i>not</i> include class <i>CC</i> here, as that class is derived from <i>CA</i>.
+In addition, each of the classes derived from <i>CEve</i> will need to use the DERIVED_CLASS macros
+now, with <i>CEve</i> as the base class. Given these definitions, the expression:
+
+<center><pre>   for (CTypeIterator<CEve> i = Begin(a); i; ++i) </pre></center>
+
+will now include all instances of <i>CA, CB, CC,</i> and <i>CD</i> in the iteration. Failure 
+to define these hierarchical relations in the <i>GetTypeInfo()</i> macros will not lead to
+compile-time errors, but the iterator will <i>not</i> recognize these objects as instances of
+<i>CEve</i>.
 <p>
+
+...Add discussion of the STRUCT, CHOICE, and ENUM INFOs. 
+<p>
+
+The code inside these macros uses additional macros to add type information
+about the individual data members:
+<ul>
+<li> ADD_STD_M(Name) 
+<li> ADD_M(Name, Type, Args)
+<li> ADD_ENUM_M(Name, Type) 
+</ul>
+Usage of the ADD_STD_M macro is straightforward; <i>Name</i> is simply the identifier name
+of the data member in the class definition.  The ADD_M macro is more open-ended, allowing
+for more complex specifications. Again, <i>Name</i> is the data member's identifier in the
+class definition.  The value of <i>Args</i> depends on the value of the <i>Type</i>
+argument, where <i>Type</i> is one of the following:<p>
+
+<table border=1 width=600 cellspacing=1>
+  <caption></caption>
+  <tr>
+	 <th>Type</th>
+	 <th>Args </th>
+  </tr>
+
+  <tr>	 <td> CLASS </td>	 <td> (Name) </td>  </tr>
+  <tr>	 <td> STD   </td>        <td> (Name) </td>  </tr>
+  <tr>	 <td> StringStore </td>  <td> ()     </td>  </tr>
+   <tr>	 <td> null </td>         <td> ()     </td>  </tr>
+  <tr>	 <td> ENUM </td>         <td> (Type, Name) </td>  </tr> 
+  <tr>	 <td> POINTER </td>      <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_multiset </td> <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_set </td>      <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_multimap </td> <td> (KeyType,KeyArgs,ValueType,ValueArgs) </td>  </tr> 
+  <tr>	 <td> STL_map </td>      <td> (KeyType,KeyArgs,ValueType,ValueArgs) </td>  </tr> 
+  <tr>	 <td> STL_list </td>     <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_list_set </td> <td> (Type,Args) </td>  </tr>
+  <tr>	 <td> STL_vector </td>   <td> (Type,Args) </td>  </tr>
+  <tr>	 <td> STL_CHAR_vector </td> <td> (Type) </td>  </tr>
+  <tr>	 <td> STL_auto_ptr </td>   <td> (Type,Args)</td>  </tr>
+  <tr>	 <td> CHOICE </td>         <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> CHOICE_POINTER </td> <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> CHOICE_STL_auto_ptr </td> <td> (Type,Args) </td>  </tr> 
+
+</table>
+<p>
+
+Some examples of using the ADD_M macros:
+<font color = "#000080"> <pre>
+   ADD_M(m_a, STL_auto_ptr, (CLASS, (CA)));
+   ADD_M(m_x, STL_CHAR_vector, (char))
+   ADD_M(m_x, STL_vector, (STD, (char))
+   ADD_M(m_x, STL_list, (CLASS, (name))
+   ADD_M(m_x, STL_list, (POINTER, (CLASS, (name)))
+   ADD_M(m_x, STL_map, (STD, (long), STD, (string)));
+</pre></font>
+<p>
+...Add discussion of ADD_ENUM_M. 
 
 <a href="cref.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp;
 <i><a href="../index.html">up&nbsp;</a></i>
