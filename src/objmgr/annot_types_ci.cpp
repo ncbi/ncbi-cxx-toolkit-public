@@ -646,7 +646,12 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
         }
     }
     if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
-        sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Less());
+        if ( m_SortOrder == eSortOrder_Normal ) {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Less());
+        }
+        else {
+            sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Reverse_Less());
+        }
     }
     else {
         sort(m_AnnotSet.begin(), m_AnnotSet.end(), CAnnotObject_Less());
@@ -827,6 +832,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/03/26 17:11:19  vasilche
+* Added reverse feature traversal.
+*
 * Revision 1.59  2003/03/21 19:22:51  grichenk
 * Redesigned TSE locking, replaced CTSE_Lock with CRef<CTSE_Info>.
 *
