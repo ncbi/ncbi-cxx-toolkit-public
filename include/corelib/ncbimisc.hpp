@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/04/13 02:52:34  vakatov
+* Rollback to R1.50.  It is premature to check for #HAVE_NCBI_C until
+* we can configure it on MS-Windows...
+*
 * Revision 1.51  2001/04/12 22:53:00  vakatov
 * Apply fix R1.50 only #if HAVE_NCBI_C
 *
@@ -429,7 +433,7 @@ extern char* strdup(const char* str);
 // Avoid a silly name clash between MS-Win and C Toolkit headers
 //
 
-#if defined(HAVE_NCBI_C)  &&  defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
+#if defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
 #  define Beep Beep
 #endif
 
