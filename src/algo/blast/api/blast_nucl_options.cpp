@@ -161,6 +161,7 @@ void
 CBlastNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
 {
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
+    SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
     SetGapExtnAlgorithm(EXTEND_GREEDY);
 }
@@ -243,6 +244,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/22 20:15:26  dondosha
+ * Set final x-dropoff for MB extension defaults
+ *
  * Revision 1.7  2004/03/19 15:13:34  camacho
  * Move to doxygen group AlgoBlast
  *
