@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile(tests for object utilities)
+#################################
+
+APP_PROJ = test_title
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
