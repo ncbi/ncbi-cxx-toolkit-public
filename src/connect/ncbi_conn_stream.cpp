@@ -257,8 +257,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2003/05/20 16:57:56  lavr
+ * Fix typo in log
+ *
  * Revision 6.21  2003/05/20 16:47:19  lavr
- * GetCONN() to check for NULL; contructor to init(0) if connection is bad
+ * GetCONN() to check for NULL; constructor to init(0) if connection is bad
  *
  * Revision 6.20  2003/05/12 18:32:27  lavr
  * Modified not to throw exceptions from stream buffer; few more improvements
