@@ -38,6 +38,7 @@
 
 #include <bdb/bdb_cursor.hpp>
 
+#include <objtools/readers/fasta.hpp>
 #include <objtools/lds/lds_object.hpp>
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
@@ -454,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/06 20:03:54  kuznets
+ * Reflecting new location of fasta reader
+ *
  * Revision 1.2  2003/06/04 16:38:45  kuznets
  * Implemented OM-based bioseq title extraction (should work better than
  * CBioseq::GetTitle())
