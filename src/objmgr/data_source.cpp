@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/02/20 20:23:27  gouriano
+* corrected FilterSeqid()
+*
 * Revision 1.12  2002/02/15 20:35:38  gouriano
 * changed implementation of HandleRangeMap
 *
@@ -203,13 +206,9 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
     // for each handle
     TSeq_id_HandleSet::iterator itHandle;
     for( itHandle = setSource.begin(); itHandle != setSource.end(); ) {
+        _ASSERT(&setResult != &setSource);
         // if it is in my map
-/*
-//### Redesign for the new index
-        if (m_BioseqMap.find(*itHandle) != m_BioseqMap.end()) {
-            // insert seq_id in the set
-            setSeqId.insert( &(GetIdMapper().GetSeq_id(*itHandle)));
-        }
+        if (m_TSE_seq.find(*itHandle) != m_TSE_seq.end()) {
             // move it from source to result
             setResult.insert( *itHandle);
             itHandle = setSource.erase(itHandle);
@@ -217,7 +216,6 @@ void CDataSource::FilterSeqid(TSeq_id_HandleSet& setResult,
         else {
             ++itHandle;
         }
-*/
     }
 }
 
