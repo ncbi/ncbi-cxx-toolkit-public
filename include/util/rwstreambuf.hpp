@@ -97,8 +97,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/01/20 20:33:21  lavr
+ * Fix typo in the log
+ *
  * Revision 1.5  2004/01/15 20:04:39  lavr
- * kDefaultBufferSize removed from class delcaration
+ * kDefaultBufferSize removed from class declaration
  *
  * Revision 1.4  2004/01/09 17:38:36  lavr
  * Define internal 1-byte buffer used for unbuffered streams
