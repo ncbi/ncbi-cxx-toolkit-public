@@ -98,6 +98,22 @@ public:
     CBDB_Cache();
     virtual ~CBDB_Cache();
 
+    /// Hint to CBDB_Cache about size of cache entry
+    /// Large BLOBs work faster with large pages
+    enum EPageSize
+    {
+        eSmall, 
+        eLarge
+    };
+
+    /// Suggest page size. Should be called before Open.
+    /// Does not have any effect if cache is already created.
+    void SetPageSize(EPageSize page_size)
+    {
+        m_PageSizeHint = page_size;
+    }
+
+    /// Locking modes to protect cache instance
     enum ELockMode 
     {
         eNoLock,     ///< Do not lock-protect cache instance
@@ -354,6 +370,7 @@ private:
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 
     CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attributes
+    EPageSize               m_PageSizeHint; ///< Suggested page size
 };
 
 
@@ -415,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/08/24 15:04:19  kuznets
+ * + SetPageSize() to fine control IO performance
+ *
  * Revision 1.30  2004/08/24 14:06:53  kuznets
  * +x_PidLock
  *
