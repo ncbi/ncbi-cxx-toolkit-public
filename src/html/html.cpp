@@ -1071,7 +1071,7 @@ void CHTML_tc::ResetTableCache(void)
 void CHTML_tc_Cache::SetUsed()
 {
     if ( IsUsed() ) {
-        NCBI_THROW(CHTMLException, eTableCellUse, "Overlapped table cells");
+        NCBI_THROW(CHTMLException, eTableCellUse, "overlapped table cells");
     }
     m_Used = true;
 }
@@ -2314,6 +2314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.101  2004/03/10 20:11:35  ivanov
+ * Changed message text
+ *
  * Revision 1.100  2004/02/04 17:20:10  ivanov
  * Added s_GenerateNodeInternalName() function.
  * Use it insteed dummy names in the meta-tags node classes.
