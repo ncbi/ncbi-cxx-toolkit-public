@@ -119,7 +119,7 @@ IMPLEMENT_COMMAND_FUNCTION(Highlight)
             se = structureWindow->glCanvas->structureSet->sequenceSet->sequences.end();
 
         // get identifier
-        wxString
+        const wxString
             idType = tkz.GetNextToken(),
             id = tkz.GetNextToken();
 
@@ -200,6 +200,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/20 20:45:45  thiessen
+* fix wxString overload ambiguity
+*
 * Revision 1.2  2003/03/20 20:33:51  thiessen
 * implement Highlight command
 *
