@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/10/29 15:16:11  ucko
+* Preserve default CGI diagnostic settings, even if customized by app.
+*
 * Revision 1.31  2001/10/16 23:44:04  vakatov
 * + SetDiagPostAllFlags()
 *
@@ -407,6 +410,32 @@ extern void SetDiagStream
 // Return TRUE if "os" is the current diag. stream
 extern bool IsDiagStream(const CNcbiOstream* os);
 
+
+// Auxiliary class to limit the duration of changes to diagnostic settings.
+class CDiagRestorer
+{
+public:
+    CDiagRestorer (void); // captures current settings
+    ~CDiagRestorer(void); // restores captured settings
+private:
+    // Prohibit dynamic allocation; there's no good reason to allow it,
+    // and out-of-order destruction is problematic,
+    void* operator new(size_t size);
+    void* operator new[](size_t size);
+    void operator delete(void* ptr);
+    void operator delete[](void* ptr);
+
+    string         m_PostPrefix;
+    list<string>   m_PrefixList;
+    TDiagPostFlags m_PostFlags;
+    EDiagSev       m_PostSeverity;
+    EDiagSev       m_DieSeverity;
+    EDiagTrace     m_TraceDefault;
+    bool           m_TraceEnabled;
+    FDiagHandler   m_HandlerFunc;
+    void*          m_HandlerData;
+    FDiagCleanup   m_HandlerCleanup;
+};
 
 
 ///////////////////////////////////////////////////////

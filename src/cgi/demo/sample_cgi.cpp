@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/10/29 15:16:13  ucko
+ * Preserve default CGI diagnostic settings, even if customized by app.
+ *
  * Revision 1.1  2001/10/04 18:17:54  ucko
  * Accept additional query parameters for more flexible diagnostics.
  * Support checking the readiness of CGI input and output streams.
@@ -105,6 +108,7 @@ int CSampleCgi::ProcessRequest(CCgiContext& ctx)
         page->AddTagMap("MESSAGE", text);
     } catch (exception& e) {
         ERR_POST("Failed to populate Sample CGI HTML page: " << e.what());
+        SetDiagNode(NULL);
         return 3;
     }
 
@@ -115,9 +119,11 @@ int CSampleCgi::ProcessRequest(CCgiContext& ctx)
         page->Print(response.out(), CNCBINode::eHTML);
     } catch (exception& e) {
         ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
+        SetDiagNode(NULL);
         return 4;
     }
 
+    SetDiagNode(NULL);
     return 0;
 }
 
@@ -129,5 +135,7 @@ int CSampleCgi::ProcessRequest(CCgiContext& ctx)
 
 int main(int argc, const char* argv[])
 {
-    return CSampleCgi().AppMain(argc, argv, 0, eDS_Default, 0);
+    int result = CSampleCgi().AppMain(argc, argv, 0, eDS_Default, 0);
+    _TRACE("back to normal diags");
+    return result;
 }

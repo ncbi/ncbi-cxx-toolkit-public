@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2001/10/29 15:16:12  ucko
+ * Preserve default CGI diagnostic settings, even if customized by app.
+ *
  * Revision 1.12  2001/10/04 18:41:38  ucko
  * Temporarily revert changes requiring libfcgi 2.2.
  *
@@ -200,6 +203,9 @@ bool CCgiApplication::RunFastCGI(int* result, unsigned def_iter)
                      " iteration of " + NStr::IntToString(iterations) +
                      ", pid " + NStr::IntToString(getpid()));
             }
+
+            // Restore old diagnostic state when done.
+            CDiagRestorer     diag_restorer;
 
             ConfigureDiagnostics(*m_Context);
 

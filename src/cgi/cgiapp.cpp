@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/10/29 15:16:12  ucko
+* Preserve default CGI diagnostic settings, even if customized by app.
+*
 * Revision 1.28  2001/10/17 15:59:55  ucko
 * Don't crash if m_DiagHandler is null.
 *
@@ -157,6 +160,8 @@ int CCgiApplication::Run(void)
     // run as a plain CGI application
     _TRACE("CCgiApplication::Run: calling ProcessRequest");
     m_Context.reset( CreateContext() );
+    // Restore old diagnostic state when done.
+    CDiagRestorer diag_restorer;
     ConfigureDiagnostics(*m_Context);
     result = ProcessRequest(*m_Context);
     _TRACE("CCgiApplication::Run: flushing");
@@ -304,15 +309,14 @@ void CCgiApplication::ConfigureDiagDestination(CCgiContext& context)
     bool   is_set = false;
     string dest   = request.GetEntry("diag-destination", &is_set);
     if (!is_set) {
-        // Explicitly set to default to avoid leakage in Fast-CGI case
-        dest = "stderr";
+        return;
     }
+
     SIZE_TYPE colon = dest.find(':');
     FCgiDiagHandlerFactory factory = FindCgiDiagHandler(dest.substr(0, colon));
-    if (factory == NULL) {
-        factory = s_StderrDiagHandlerFactory;
+    if (factory != NULL) {
+        SetCgiDiagHandler(factory(dest.substr(colon + 1), context));
     }
-    SetCgiDiagHandler(factory(dest.substr(colon + 1), context));
 }
 
 
@@ -322,31 +326,23 @@ void CCgiApplication::ConfigureDiagThreshold(CCgiContext& context)
 
     bool   is_set    = false;
     string threshold = request.GetEntry("diag-threshold", &is_set);
-    SetDiagTrace(eDT_Default);
-    if (is_set) {
-        if (threshold == "fatal") {
-            SetDiagPostLevel(eDiag_Fatal);
-        } else if (threshold == "critical") {
-            SetDiagPostLevel(eDiag_Critical);
-        } else if (threshold == "error") {
-            SetDiagPostLevel(eDiag_Error);
-        } else if (threshold == "warning") {
-            SetDiagPostLevel(eDiag_Warning);
-        } else if (threshold == "info") {
-            SetDiagPostLevel(eDiag_Info);
-        } else if (threshold == "trace") {
-            SetDiagPostLevel(eDiag_Info);
-            SetDiagTrace(eDT_Enable);
-        } else {
-            SetDiagPostLevel(eDiag_Warning);
-        }
-    } else {
-        // Explicitly set to default to avoid leakage in Fast-CGI case
-#ifdef NDEBUG
+    if (!is_set) {
+        return;
+    }
+
+    if (threshold == "fatal") {
+        SetDiagPostLevel(eDiag_Fatal);
+    } else if (threshold == "critical") {
+        SetDiagPostLevel(eDiag_Critical);
+    } else if (threshold == "error") {
         SetDiagPostLevel(eDiag_Error);
-#else
+    } else if (threshold == "warning") {
         SetDiagPostLevel(eDiag_Warning);
-#endif
+    } else if (threshold == "info") {
+        SetDiagPostLevel(eDiag_Info);
+    } else if (threshold == "trace") {
+        SetDiagPostLevel(eDiag_Info);
+        SetDiagTrace(eDT_Enable);
     }
 }
 
@@ -355,48 +351,47 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
 {
     const CCgiRequest& request = context.GetRequest();
 
-    typedef map<string,EDiagPostFlag> TFlagMap;
+    typedef map<string, TDiagPostFlags> TFlagMap;
     static TFlagMap s_FlagMap;
 
-    EDiagPostFlag defaults = (EDiagPostFlag)(eDPF_Prefix | eDPF_Severity
-                                             | eDPF_ErrCode | eDPF_ErrSubCode);
+    TDiagPostFlags defaults = (eDPF_Prefix | eDPF_Severity
+                               | eDPF_ErrCode | eDPF_ErrSubCode);
+    TDiagPostFlags new_flags = 0;
 
     bool   is_set = false;
     string format = request.GetEntry("diag-format", &is_set);
-    UnsetDiagPostFlag(eDPF_All);
-    if (is_set) {
-        if (s_FlagMap.empty()) {
-            s_FlagMap["file"]        = eDPF_File;
-            s_FlagMap["path"]        = eDPF_LongFilename;
-            s_FlagMap["line"]        = eDPF_Line;
-            s_FlagMap["prefix"]      = eDPF_Prefix;
-            s_FlagMap["severity"]    = eDPF_Severity;
-            s_FlagMap["code"]        = eDPF_ErrCode;
-            s_FlagMap["subcode"]     = eDPF_ErrSubCode;
-            s_FlagMap["time"]        = eDPF_DateTime;
-            s_FlagMap["omitinfosev"] = eDPF_OmitInfoSev;
-            s_FlagMap["all"]         = eDPF_All;
-            s_FlagMap["trace"]       = eDPF_Trace;
-            s_FlagMap["log"]         = eDPF_Log;
-        }
-        list<string> flags;
-        NStr::Split(format, " ", flags);
-        iterate(list<string>, flag, flags) {
-            TFlagMap::const_iterator it;
-            if ((it = s_FlagMap.find(*flag)) != s_FlagMap.end()) {
-                SetDiagPostFlag(it->second);
-            } else if ((*flag)[0] == '!'
-                       &&  ((it = s_FlagMap.find(flag->substr(1)))
-                            != s_FlagMap.end())) {
-                UnsetDiagPostFlag(it->second);
-            } else if (*flag == "default") {
-                SetDiagPostFlag(defaults);
-            }
-        }
-    } else {
-        // Explicitly set to default to avoid leakage in Fast-CGI case
-        SetDiagPostFlag(defaults);
+    if (!is_set) {
+        return;
     }
+    if (s_FlagMap.empty()) {
+        s_FlagMap["file"]        = eDPF_File;
+        s_FlagMap["path"]        = eDPF_LongFilename;
+        s_FlagMap["line"]        = eDPF_Line;
+        s_FlagMap["prefix"]      = eDPF_Prefix;
+        s_FlagMap["severity"]    = eDPF_Severity;
+        s_FlagMap["code"]        = eDPF_ErrCode;
+        s_FlagMap["subcode"]     = eDPF_ErrSubCode;
+        s_FlagMap["time"]        = eDPF_DateTime;
+        s_FlagMap["omitinfosev"] = eDPF_OmitInfoSev;
+        s_FlagMap["all"]         = eDPF_All;
+        s_FlagMap["trace"]       = eDPF_Trace;
+        s_FlagMap["log"]         = eDPF_Log;
+    }
+    list<string> flags;
+    NStr::Split(format, " ", flags);
+    iterate(list<string>, flag, flags) {
+        TFlagMap::const_iterator it;
+        if ((it = s_FlagMap.find(*flag)) != s_FlagMap.end()) {
+            new_flags |= it->second;
+        } else if ((*flag)[0] == '!'
+                   &&  ((it = s_FlagMap.find(flag->substr(1)))
+                        != s_FlagMap.end())) {
+            new_flags &= ~(it->second);
+        } else if (*flag == "default") {
+            new_flags |= defaults;
+        }
+    }
+    SetDiagPostAllFlags(new_flags);
 }
 
 

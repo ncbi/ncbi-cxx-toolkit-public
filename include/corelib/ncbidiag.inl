@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/10/29 15:16:11  ucko
+* Preserve default CGI diagnostic settings, even if customized by app.
+*
 * Revision 1.23  2001/10/16 23:44:05  vakatov
 * + SetDiagPostAllFlags()
 *
@@ -122,7 +125,8 @@
 
 //////////////////////////////////////////////////////////////////
 // CDiagBuffer
-// (can be accessed only by "CNcbiDiag" and created only by GetDiagBuffer())
+// (can be accessed only by "CNcbiDiag" and "CDiagRestorer"
+// and created only by GetDiagBuffer())
 //
 
 class CDiagBuffer
@@ -154,6 +158,7 @@ private:
 #else
 public:
 #endif
+    friend class CDiagRestorer;
 
     const CNcbiDiag* m_Diag;    // present user
     CNcbiOstream*    m_Stream;  // storage for the diagnostic message

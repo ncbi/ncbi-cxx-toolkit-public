@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/10/29 15:16:13  ucko
+* Preserve default CGI diagnostic settings, even if customized by app.
+*
 * Revision 1.37  2001/10/16 23:44:07  vakatov
 * + SetDiagPostAllFlags()
 *
@@ -665,5 +668,41 @@ CNcbiDiag& CNcbiDiag::SetFile(const char* file)
     return *this;
 }
 
+
+///////////////////////////////////////////////////////
+//  CDiagRestorer::
+
+CDiagRestorer::CDiagRestorer(void)
+{
+    CMutexGuard LOCK(s_DiagMutex);
+    const CDiagBuffer& buf = GetDiagBuffer();
+    m_PostPrefix     = buf.m_PostPrefix;
+    m_PrefixList     = buf.m_PrefixList;
+    m_PostFlags      = buf.sm_PostFlags;
+    m_PostSeverity   = buf.sm_PostSeverity;
+    m_DieSeverity    = buf.sm_DieSeverity;
+    m_TraceDefault   = buf.sm_TraceDefault;
+    m_TraceEnabled   = buf.sm_TraceEnabled;
+    m_HandlerFunc    = buf.sm_HandlerFunc;
+    m_HandlerData    = buf.sm_HandlerData;
+    m_HandlerCleanup = buf.sm_HandlerCleanup;
+    buf.sm_HandlerCleanup = NULL; // avoid premature cleanup
+}
+
+CDiagRestorer::~CDiagRestorer(void)
+{
+    {{
+        CMutexGuard LOCK(s_DiagMutex);
+        CDiagBuffer& buf = GetDiagBuffer();
+        buf.m_PostPrefix      = m_PostPrefix;
+        buf.m_PrefixList      = m_PrefixList;
+        buf.sm_PostFlags      = m_PostFlags;
+        buf.sm_PostSeverity   = m_PostSeverity;
+        buf.sm_DieSeverity    = m_DieSeverity;
+        buf.sm_TraceDefault   = m_TraceDefault;
+        buf.sm_TraceEnabled   = m_TraceEnabled;
+    }}
+    SetDiagHandler(m_HandlerFunc, m_HandlerData, m_HandlerCleanup);
+}
 
 END_NCBI_SCOPE
