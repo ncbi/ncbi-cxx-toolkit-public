@@ -109,7 +109,7 @@ fi
 
 CHECK_BRA = \
 +if test -f "$(check_run)"; then \
-  $(check_run) $(MAKE) $(MFLAGS)
+  $(check_run) $(MAKE) $(MFLAGS) IS_CHECK=Y
 CHECK_KET = ||  exit 7 ; \
 fi
 
@@ -160,6 +160,9 @@ SUB_BRA = \
     expendable=false ; \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
+	    if test "x$(IS_CHECK)" = "xY"  -a  "x$$i" = "xcheck" ; then \
+		    continue ; \
+		fi ; \
         ( if test -d $$i ; then \
           cd $$i  &&  if $(MAKE) $(MFLAGS) -q requirements ; then \
             $(RWL) $(MAKE) $(MFLAGS)
