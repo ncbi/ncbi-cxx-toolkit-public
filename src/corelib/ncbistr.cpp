@@ -737,6 +737,9 @@ SIZE_TYPE NStr::FindNoCase(const string& str, const string& pattern,
         SIZE_TYPE pos = str.find_last_of(pat, end);
         while (pos != NPOS  &&  pos >= start
                &&  CompareNocase(str, pos, l, pattern) != 0) {
+            if (pos == 0) {
+                return NPOS;
+            }
             pos = str.find_last_of(pat, pos - 1);
         }
         return pos < start ? NPOS : pos;
@@ -1483,6 +1486,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.109  2004/05/26 19:21:25  ucko
+ * FindNoCase: avoid looping in eLastMode when there aren't any full
+ * matches but the first character of the string matches the first
+ * character of the pattern.
+ *
  * Revision 1.108  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *
