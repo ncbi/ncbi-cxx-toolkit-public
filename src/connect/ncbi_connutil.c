@@ -275,27 +275,27 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
         info->http_proxy_adjusted = 0/*false*/;
     }
 
-    /* host & port first */
+    /* host & port first [both optional] */
     if ((s = strstr(url, "://")) != 0) {
         const char* h = s + 3; /* host starts here */
-        const char* p;         /* host ends here   */
 
         if (strncasecmp(url, "http://", 7) != 0)
             return 0/*failure*/;
         if (!(s = strchr(h, '/')))
             s = h + strlen(h);
-        if ((p = strchr(h, ':')) != 0 && p < s) {
+        /* host ends at "a" */
+        if ((a = strchr(h, ':')) != 0 && a < s) {
             unsigned short port;
             int n;
 
-            if (sscanf(p, ":%hu%n", &port, &n) < 1 || p + n != s)
+            if (sscanf(a, ":%hu%n", &port, &n) < 1 || a + n != s)
                 return 0/*failure*/;
             info->port = port;
         } else
-            p = s;
-        if ((size_t)(p - h) < sizeof(info->host)) {
-            memcpy(info->host, h, (size_t)(p - h));
-            info->host[(size_t)(p - h)] = '\0';
+            a = s;
+        if ((size_t)(a - h) < sizeof(info->host)) {
+            memcpy(info->host, h, (size_t)(a - h));
+            info->host[(size_t)(a - h)] = '\0';
         } else {
             memcpy(info->host, h, sizeof(info->host) - 1);
             info->host[sizeof(info->host) - 1] = '\0';
@@ -1476,6 +1476,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.54  2003/04/30 17:02:11  lavr
+ * Name collision resolved in ConnNetInfo_ParseURL()
+ *
  * Revision 6.53  2003/03/06 21:55:31  lavr
  * s_ModifyUserHeader(): Heed uninitted usage warning
  * HostPortToString():   Do not append :0 (for zero port) if host is not empty
