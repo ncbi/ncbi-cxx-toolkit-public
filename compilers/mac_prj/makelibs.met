@@ -193,12 +193,15 @@ on SetProjectData()
 		
 		if gCDistribPresent then
 			set myFiles to {"ctools.cpp", "asn_connection"}
-			
 			AddProject(DataPlusSysPaths(SimpleProjectData("xctools", {"C"}, "ctools", myFiles), ¬
-				{CToolkitRoot() & "include:", CToolkitRoot() & "ctools:"}))
+				{CToolkitRoot() & "include:", CToolkitRoot() & "ctools:", ¬
+					CToolkitRoot() & "corelib:", CToolkitRoot() & "asnlib:"}))
 		end if
 		
-		AddSimpleProject("xasn", {"C++"}, "ctools:asn", {"asnio", "asnwrite"})
+		set myFiles to {"asnio", "asnwrite"}
+		AddProject(DataPlusSysPaths(SimpleProjectData("xasn", {"C++"}, "ctools:asn", myFiles), ¬
+			{CToolkitRoot() & "include:", CToolkitRoot() & "ctools:", ¬
+				CToolkitRoot() & "corelib:", CToolkitRoot() & "asnlib:"}))
 		
 	end if
 	
@@ -618,11 +621,6 @@ on SetPaths2()
 		if not pUsingCPlusPlus then
 			copy {name:gDistribRoot & "link:macmet:", recursive:true, origin:absolute} to end of pathsToAdd
 		end if
-		if pUsingCPlusPlus then
-			if gCDistribPresent then
-				copy {name:gCDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
-			end if
-		end if
 		Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		
 		set pathsToAdd to {{name:gIncludeDir, recursive:true, origin:absolute}}
@@ -746,6 +744,13 @@ on SetupTarget(proj, flags)
 		end repeat
 		if (count pathsToAdd) > 0 then ¬
 			Set Preferences of panel "Access Paths" to {System Paths:pathsToAdd}
+		
+		-- Now add C toolkit for headers, not for sources.
+		if pUsingCPlusPlus then
+			if gCDistribPresent then
+				copy {name:gCDistribRoot, recursive:true, origin:absolute} to end of pathsToAdd
+			end if
+		end if
 		
 		-- Set the appropriate prefix file.
 		set prefixFile to Prefix File of projSettings
