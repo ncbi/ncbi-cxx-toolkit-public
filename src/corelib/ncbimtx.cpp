@@ -606,7 +606,8 @@ void CRWLock::Unlock(void)
 		}
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
-        assert(count(m_Readers.begin(), m_Readers.end(), self_id) == 0);
+        assert(find(m_Readers.begin(), m_Readers.end(), self_id)
+               == m_Readers.end());
 #endif
     }
     else {
@@ -914,6 +915,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/09/19 20:24:08  vasilche
+ * Replace missing std::count() by std::find()
+ *
  * Revision 1.5  2002/09/19 20:05:42  vasilche
  * Safe initialization of static mutexes
  *
