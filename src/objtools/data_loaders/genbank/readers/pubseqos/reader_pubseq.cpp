@@ -159,8 +159,10 @@ CDB_Connection *CPubseqReader::NewConn()
           }
 #endif
       }
-
-    m_Context.reset((*createContextFunc)(0));
+    map<string,string> args;
+    args["packet"]="3584"; // 7*512
+    m_Context.reset((*createContextFunc)(&args));
+    //m_Context.reset((*createContextFunc)(0));
   }
   return m_Context->Connect(m_Server, m_User, m_Password, 0);
 }
@@ -434,6 +436,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.22  2003/04/02 03:57:09  kimelman
+* packet size tuning
+*
 * Revision 1.21  2003/03/03 20:34:51  vasilche
 * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
 * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
