@@ -880,6 +880,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
 
     vector<SCacheDescr> cache_entries;
 
+    {{
     CBDB_FileCursor cur(*m_CacheAttrDB);
     cur.SetCondition(CBDB_FileCursor::eFirst);
 
@@ -901,6 +902,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
         }
 
     } // while
+    }}
 
     CBDB_Transaction trans(*m_Env);
     m_CacheDB->SetTransaction(&trans);
@@ -1975,6 +1977,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/12/29 12:57:15  kuznets
+ * Changes in Purge() method to make cursor loop lock independent
+ * from the record delete function
+ *
  * Revision 1.32  2003/12/16 13:45:11  kuznets
  * ICache implementation made transaction protected
  *
