@@ -39,6 +39,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objmgr/data_loader.hpp>
 
+#include <objmgr/impl/mutex_pool.hpp>
+
 #include <corelib/ncbimtx.hpp>
 
 //#define DEBUG_MAPS
@@ -208,7 +210,6 @@ public:
                         TLockFlags = 0);
     CTSE_LoadLock GetTSE_LoadLock(const TBlobId& blob_id);
     bool IsLoaded(const CTSE_Info& tse) const;
-    bool IsLocked(const CTSE_Info& tse) const;
     void SetLoaded(CTSE_LoadLock& lock);
 
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
@@ -273,6 +274,7 @@ private:
 
     // attach, detach, index & unindex methods
     // TSE
+    void x_ForgetTSE(CRef<CTSE_Info> info);
     void x_DropTSE(CRef<CTSE_Info> info);
 
     void x_Map(CConstRef<CSeq_entry> obj, CTSE_Info* info);
@@ -363,6 +365,9 @@ private:
     // Prefetching thread and lock, used when initializing the thread
     CRef<CPrefetchThread> m_PrefetchThread;
     CFastMutex            m_PrefetchLock;
+
+    // mutex pool
+    CInitMutexPool  m_MutexPool;
 
     // hide copy constructor
     CDataSource(const CDataSource&);
