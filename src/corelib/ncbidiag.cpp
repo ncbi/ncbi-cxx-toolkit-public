@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/06/22 22:09:10  vakatov
+* Fixed:  GetTraceEnabledFirstTime(), sm_TraceDefault
+*
 * Revision 1.20  2000/06/11 01:47:28  vakatov
 * IsDiagSet(0) to return TRUE if the diag stream is unset
 *
@@ -125,7 +128,7 @@ EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
 char*        CDiagBuffer::sm_PostPrefix     = 0;
 EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
 
-EDiagTrace   CDiagBuffer::sm_TraceDefault   = eDT_Disable;
+EDiagTrace   CDiagBuffer::sm_TraceDefault   = eDT_Default;
 bool         CDiagBuffer::sm_TraceEnabled;  // to be set on first request
 
 
@@ -213,6 +216,8 @@ bool CDiagBuffer::GetTraceEnabledFirstTime(void)
     const char* str = ::getenv(DIAG_TRACE);
     if (str  &&  *str) {
         sm_TraceDefault = eDT_Enable;
+    } else {
+        sm_TraceDefault = eDT_Disable;
     }
     sm_TraceEnabled = (sm_TraceDefault == eDT_Enable);
     //## MUTEX_UNLOCK(s_Mutex);
