@@ -2,13 +2,13 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "Users:rsmith:fltk-1.1.5rc3" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
 -- do test/demo applications
-property pBuildDemos : false
+property pBuildDemos : true
 
 property pSaveContinueOnErrors : false
 -- true if we want to save compilation errors in a file and continue.
@@ -305,9 +305,9 @@ on SetProjectData()
 	if pBuildDemos then
 		---- DEMO ---
 		
-		AddAppProjectList("demo_win_manager", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_win_manager.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
+		AddAppProjectList("demo_win_manager", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_win_manager.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
-		AddAppProjectList("demo_workspace", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_workspace.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & CompressLibs, {})
+		AddAppProjectList("demo_workspace", {"fltk", "images"}, "gui:widgets:workspace:demo", {"demo_workspace.cpp"}, {"w_workspace", "w_fltk", "w_flu", "gui_opengl", "gui_print", "gui_utils", "ximage", "xconnect", "xutil", "xncbi", "fltk"} & commonObjLibs & CompressLibs, {})
 		
 		AddAppProject("bdbtest", {"bdb"}, "bdb:test", {"bdb", "libdb", "xncbi", "xutil"}, {})
 		

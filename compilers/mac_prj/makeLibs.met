@@ -3,7 +3,7 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "Users:rsmith:fltk-1.1.5rc3" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
@@ -404,6 +404,7 @@ on SetProjectData()
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProjectExceptFiles("id2_split", {}, "objmgr:split", {"split_cache.cpp"})
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
+		AddSimpleProject("xalnutil", {}, "objtools:alnmgr:util")
 		AddSimpleProject("xalntool", {}, "objtools:align")
 		AddSimpleProject("xobjedit", {}, "objtools:edit")
 		AddSimpleProject("xobjwrite", {}, "objtools:writers")
@@ -434,7 +435,7 @@ on SetProjectData()
 	-- GUI libs.
 	if pCreateGuiLibs then
 		-- GuiProject's automatically have 'fltk' feature.
-		(*		
+		
 		AddGuiProject("gui_utils", {}, "utils")
 		AddGuiProject("gui_objutils", {}, "objutils")
 		-- AddGuiProject("gui_config", {}, "config")
@@ -445,14 +446,8 @@ on SetProjectData()
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
 		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
-		-- AddGuiProject("gui_dlg_seq_feat_edit", {}, "dialogs:edit:feature")
 		AddProject(ProjectData("gui_dlg_seq_feat_edit", {"fltk"}, Â
 			{GuiFileDataList("dialogs:edit:feature", {"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"})}))
-		-- AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
-		-- AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
-		--AddGuiProject("gui_dlg_progress", {}, "dialogs:progress")
-		-- AddGuiProject("gui_dlg_feature", {}, "dialogs:feature") -- empty
-		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
 		AddGuiProject("gui_graph", {}, "graph")
 		AddGuiProject("gui_print", {}, "print")
@@ -478,8 +473,9 @@ on SetProjectData()
 		AddGuiProject("w_aln_table", {}, "widgets:aln_table")
 		AddGuiProject("w_workspace", {}, "widgets:workspace")
 		AddGuiProject("w_serial_browse", {}, "widgets:serial_browse")
-*)
 		AddGuiProject("w_feat_compare", {}, "widgets:feat_compare")
+		AddGuiProject("w_phylo_tree", {}, "widgets:phylo_tree")
+		AddGuiProject("w_feat_table", {}, "widgets:feat_table")
 		
 		-- AddGuiProject("w_dock", {}, "widgets:dock") -- not ready yet.
 		-- AddGuiProject("w_flek", {}, "widgets:Flek") -- use w_fltk instead.
@@ -564,7 +560,7 @@ on SetProjectData()
 			{"gui_dlg_feature", "w_seq_graphic", "w_gl"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
-		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table", "w_feat_compare"})
+		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table", "w_feat_compare", "w_feat_table"})
 		AddPlugin("gui_view_text", {}, "plugins:view:text", Â
 			{"gbseq", "xflat", "xformat", "taxon1", "w_taxtree", "w_seq", "w_serial_browse"})
 		AddPlugin("gui_view_validator", {}, "plugins:view:validator", {"gbseq", "xvalidate"})
@@ -1249,7 +1245,6 @@ on UpdateTarget(proj, targetIndex)
 			Add Files filesToAdd
 			-- set targetFileList to my GetTargetFiles(targetIndex)
 		end if
-		
 		Reset File Paths
 		
 	end tell
