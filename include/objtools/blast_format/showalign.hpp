@@ -39,6 +39,7 @@
 #include <objtools/alnmgr/alnvec.hpp>
 #include <objects/blastdb/Blast_def_line_set.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objtools/readers/getfeature.hpp>
 
 BEGIN_NCBI_SCOPE BEGIN_SCOPE(objects)
 
@@ -114,7 +115,8 @@ class NCBI_XALNUTIL_EXPORT CDisplaySeqalign {
                                                 // subject seq
         eTranslateNucToNucAlignment = (1 << 15), //Show nuecleotide to nucleotide
                                                 //alignment as translated
-        eShowBl2seqLink = (1 << 16)     // Show web link to bl2seq
+        eShowBl2seqLink = (1 << 16),    // Show web link to bl2seq
+        eDynamicFeature = (1 << 17)     //show dynamic feature line
     };
 
     // Need to set eShowMiddleLine to get this
@@ -298,6 +300,7 @@ private:
     int m_QueryNumber;
     CNcbiIfstream *m_ConfigFile;
     CNcbiRegistry *m_Reg;
+    CGetFeature* m_DynamicFeature;
     map < string, string > m_Segs;
     CRef < CObjectManager > m_FeatObj;      // used for fetching feature
     CRef < CScope > m_featScope;    // used for fetching feature
@@ -344,7 +347,7 @@ private:
                     CAlnMap::TSeqPosList & insertSeqStart,
                     CAlnMap::TSeqPosList & insertLength, int lineAlnStop);
     void x_DisplayAlnvecList(CNcbiOstream & out, list < alnInfo * >&avList);
-
+    void x_PrintDynamicFeatures(CNcbiOstream& out);
 };
 
 
@@ -356,6 +359,9 @@ END_NCBI_SCOPE
 /* 
 *===========================================
 *$Log$
+*Revision 1.21  2004/08/05 16:58:54  jianye
+*Added dynamic features
+*
 *Revision 1.20  2004/07/22 15:43:20  jianye
 *Added eShowBl2seqLink
 *

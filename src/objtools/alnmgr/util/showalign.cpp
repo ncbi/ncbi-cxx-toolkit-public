@@ -88,7 +88,7 @@
 
 #include <stdio.h>
 #include <util/tables/raw_scoremat.h>
-
+#include <objtools/readers/getfeature.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE (objects)
@@ -99,6 +99,7 @@ static const int k_NumFrame = 6;
 static const string k_FrameConversion[k_NumFrame] = {"+1", "+2", "+3", "-1", "-2", "-3"};
 static const int k_GetSubseqThreshhold = 10000;
 static const int k_ColorMismatchIdentity = 0;  /*threshhold to color mismatch.  98 means 98% */
+static const int k_GetDynamicFeatureSeqLength = 200000;
 static const string k_DumpGnlUrl = "/blast/dumpgnl.cgi";
 static const int k_FeatureIdLen = 16;
 static const int k_NumAsciiChar = 128;
@@ -146,6 +147,7 @@ CDisplaySeqalign::CDisplaySeqalign(const CSeq_align_set& seqalign, list <SeqlocI
   m_MidLineStyle = eBar;
   m_ConfigFile = NULL;
   m_Reg = NULL;
+  m_DynamicFeature = NULL;
 
   SNCBIFullScoreMatrix blosumMatrix;
   NCBISM_Unpack(&NCBISM_Blosum62, &blosumMatrix);
@@ -190,7 +192,10 @@ CDisplaySeqalign::~CDisplaySeqalign(){
   if (m_Reg) {
     delete m_Reg;
   }
-
+ 
+  if(m_DynamicFeature){
+      delete m_DynamicFeature;
+  }
 }
 
 static void AddSpace(CNcbiOstream& out, int number);
@@ -962,17 +967,20 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   }	
  
   setDbGi(); //for whether to add get sequence feature
-  if(m_AlignOption & eHtml){
+  if(m_AlignOption & eHtml || m_AlignOption & eDynamicFeature){
     //set config file
     m_ConfigFile = new CNcbiIfstream(".ncbirc");
     m_Reg = new CNcbiRegistry(*m_ConfigFile);
+    m_DynamicFeature = new CGetFeature( m_Reg->Get("FEATURE_INFO", "FEATURE_FILE"), m_Reg->Get("FEATURE_INFO", "FEATURE_FILE_INDEX"));
+  }
+  if(m_AlignOption & eHtml){  
     out<<"<script src=\"blastResult.js\"></script>";
   }
    //get sequence 
   if(m_AlignOption&eSequenceRetrieval && m_AlignOption&eHtml && m_IsDbGi){ 
-        out<<GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber);
-        out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
-      }
+      out<<GetSeqForm((char*)"submitterTop", m_IsDbNa, m_QueryNumber);
+      out<<"<form name=\"getSeqAlignment"<<m_QueryNumber<<"\">\n";
+  }
 
   //begin to display
   int num_align = 0;
@@ -982,6 +990,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   }
   auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
   //*out2 << *m_SeqalignSetRef;
+  
   if(!(m_AlignOption&eMultiAlign)){/*pairwise alignment. Note we can't just show each alnment as we go because we will need seg information form all hsp's with the same id for genome url link.  As a result we show hsp's with the same id as a group*/
     list<alnInfo*> avList;        
     CConstRef<CSeq_id> previousId, subid;
@@ -2024,6 +2033,12 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
       out << endl;
     }
 
+    //output dynamic feature lines
+    if(m_AlignOption&eShowBlastInfo && !(m_AlignOption&eMultiAlign) && (m_AlignOption&eDynamicFeature) && m_AV->GetBioseqHandle(1).GetBioseqLength() >= k_GetDynamicFeatureSeqLength){ 
+        if(m_Reg->Get("FEATURE_INFO", "FEATURE_FILE") != NcbiEmptyString && m_Reg->Get("FEATURE_INFO", "FEATURE_FILE_INDEX") != NcbiEmptyString){
+            x_PrintDynamicFeatures(out);
+        } 
+    }
     if (m_AlignOption&eShowBlastInfo) {
         out<<" Score = "<<(*iterAv)->bits<<" ";
         out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
@@ -2037,12 +2052,51 @@ void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& av
   
 }
 
+void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) {
+
+    const CSeq_id& subject_seqid = m_AV->GetSeqId(1);
+    const CRange<TSeqPos>& range = m_AV->GetSeqRange(1);
+    CRange<TSeqPos> actual_range = range;
+    if(range.GetFrom() > range.GetTo()){
+        actual_range.Set(range.GetTo(), range.GetFrom());
+    }
+    string id_str;
+    subject_seqid.GetLabel(&id_str, CSeq_id::eBoth);
+    
+    SFeatInfo* feat5 = NULL;
+    SFeatInfo* feat3 = NULL;
+    vector<SFeatInfo*>& feat_list =  m_DynamicFeature->GetFeatInfo(id_str, actual_range, feat5, feat3, 2);
+   
+    if(feat_list.size() > 0) { //has feature in this range
+        out << " Features in this part of subject sequence:" << endl;
+        ITERATE(vector<SFeatInfo*>, iter, feat_list){
+            out << "   " << (*iter)->feat_str << endl;
+        }
+    } else {  //show flank features
+        if(feat5 || feat3){   
+        out << " Features flanking this part of subject sequence:" << endl;
+        }
+        if(feat5){
+            out << "   " << actual_range.GetFrom() - feat5->range.GetTo() << " bp at 5' side: " << feat5->feat_str << endl;
+        }
+        if(feat3){
+            out << "   " << feat3->range.GetFrom() - actual_range.GetTo() << " bp at 3' side: " << feat3->feat_str << endl;
+        }
+    }
+    if(feat_list.size() > 0 || feat5 || feat3 ){
+        out << endl;
+    }
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* 
 *============================================================
 *$Log$
+*Revision 1.40  2004/08/05 16:58:10  jianye
+*Added dynamic features
+*
 *Revision 1.39  2004/07/22 15:45:26  jianye
 *Added Bl2seq link
 *
