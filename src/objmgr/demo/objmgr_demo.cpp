@@ -142,7 +142,6 @@ void CDemoApp::Init(void)
     arg_desc->AddFlag("get_mapped_feature", "get mapped feature");
     arg_desc->AddFlag("reverse", "reverse order of features");
     arg_desc->AddFlag("no_sort", "do not sort features");
-    arg_desc->AddFlag("split", "split record");
     arg_desc->AddDefaultKey("max_feat", "MaxFeat",
                             "Max number of features to iterate",
                             CArgDescriptions::eInteger, "0");
@@ -189,468 +188,6 @@ void CDemoApp::Init(void)
 }
 
 
-class CSplit : public CWriteObjectHook
-{
-public:
-    CSplit(const CSeq_entry& entry);
-    ~CSplit();
-    
-    void Save(const string& prefix);
-    
-    string suffix;
-    
-    CObjectOStream* Open(const string& prefix,
-                         const char* contents_name) const;
-    void Save(CConstRef<CSeq_entry> entry,
-              const string& prefix,
-              const char* contents_name) const;
-    
-    static CRef<CSeq_entry> NewSeqEntry(void);
-    
-    CConstRef<CSeq_entry> entry;
-
-    typedef set< CConstRef<CBioseq> > TSet;
-    TSet inst;
-    TSet ftable;
-    TSet align;
-    TSet graph;
-    TSet snp;
-
-    void WriteObject(CObjectOStream& out,
-                     const CConstObjectInfo& object);
-    bool skip;
-};
-
-
-class CWSkipMember : public CWriteClassMemberHook
-{
-public:
-    CWSkipMember(const bool& skip)
-        : skip(skip)
-        {
-        }
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            if ( !skip ) {
-                DefaultWrite(out, member);
-            }
-        }
-    const bool& skip;
-};
-
-#if 0
-class CWAnnot : public CWriteClassMemberHook
-{
-public:
-    CWAnnot(CSplit& split)
-        : split(split)
-        {
-        }
-        
-    CSplit& split;
-        
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            const CBioseq& seq =
-                *CType<CBioseq>::Get(member.GetClassObject());
-            if ( !seq.GetId().empty() ) {
-                ITERATE ( CBioseq::TAnnot, it, seq.GetAnnot() ) {
-                    const CSeq_annot& annot = **it;
-                    switch ( annot.GetData().Which() ) {
-                    case CSeq_annot::C_Data::e_Ftable:
-                    {
-                        CTypeConstIterator<CSeq_feat> fi(annot);
-                        if ( fi &&
-                             fi->GetData().GetSubtype() ==
-                             CSeqFeatData::eSubtype_variation ) {
-                            split.snp.insert(CConstRef<CBioseq>(&seq));
-                        }
-                        else {
-                            split.ftable.insert(CConstRef<CBioseq>(&seq));
-                        }
-                        break;
-                    }
-                    case CSeq_annot::C_Data::e_Graph:
-                        split.graph.insert(CConstRef<CBioseq>(&seq));
-                        break;
-                    case CSeq_annot::C_Data::e_Align:
-                        split.align.insert(CConstRef<CBioseq>(&seq));
-                        break;
-                    }
-                }
-            }
-            else {
-                DefaultWrite(out, member);
-            }
-        }
-};
-
-
-class CWAnnot_set : public CWAnnot
-{
-public:
-    CWAnnot_set(CSplit& split)
-        : CWAnnot(split)
-        {
-        }
-};
-
-
-class CWAnnot_seq : public CWAnnot
-{
-public:
-    CWAnnot_seq(CSplit& split)
-        : CWAnnot(split)
-        {
-        }
-};
-
-
-class CWSeq_data : public CWriteClassMemberHook
-{
-public:
-    CWSeq_data(CSplit& split)
-        : split(split)
-        {
-        }
-
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            const CBioseq& seq =
-                *CType<CBioseq>::Get(member.GetClassObject());
-            if ( !seq.GetId().empty() ) {
-                split.inst.insert(CConstRef<CBioseq>(&seq));
-            }
-            else {
-                DefaultWrite(out, member);
-            }
-        }
-
-    CSplit& split;
-};
-
-
-class CWSeq_ext : public CWriteClassMemberHook
-{
-public:
-    CWSeq_ext(CSplit& split)
-        : split(split)
-        {
-        }
-
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            const CBioseq& seq =
-                *CType<CBioseq>::Get(member.GetClassObject());
-            if ( !seq.GetId().empty() ) {
-                split.inst.insert(CConstRef<CBioseq>(&seq));
-            }
-            else {
-                DefaultWrite(out, member);
-            }
-        }
-
-    CSplit& split;
-};
-#endif
-
-class CWSeq_set : public CWriteClassMemberHook
-{
-public:
-    CWSeq_set(const CSplit& split)
-        : split(split), dummy_entry_seq(new CSeq_entry)
-        {
-            dummy_entry_seq->
-                SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_not_set);
-            dummy_entry_seq->
-                SetSeq().SetInst().SetMol(CSeq_inst::eMol_not_set);
-        }
-
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            COStreamClassMember m(out, member);
-    
-            COStreamContainer o(out, member);
-    
-            ITERATE ( CSplit::TSet, i, split.inst ) {
-                seq = *i;
-                o << *dummy_entry_seq;
-                seq.Reset();
-            }
-        }
-
-    const CSplit& split;
-    CRef<CSeq_entry> dummy_entry_seq;
-    CConstRef<CBioseq> seq;
-};
-
-
-class CWSeq_id : public CWriteClassMemberHook
-{
-public:
-    CWSeq_id(const CWSeq_set& seq)
-        : seq(seq), gb_id(new CSeq_id)
-        {
-        }
-
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            if ( seq.seq ) {
-                COStreamClassMember m(out, member);
-                
-                COStreamContainer o(out, member);
-            
-                ITERATE ( CBioseq::TId, i, seq.seq->GetId() ) {
-                    if ( (*i)->IsGi() ) {
-                        gb_id->SetGi((*i)->GetGi());
-                        o << *gb_id;
-                        return;
-                    }
-                }
-
-                o << **seq.seq->GetId().begin();
-            }
-        }
-
-    const CWSeq_set& seq;
-    CRef<CSeq_id> gb_id;
-};
-
-
-class CWSeq_data : public CWriteClassMemberHook
-{
-public:
-    CWSeq_data(const CWSeq_set& seq)
-        : seq(seq)
-        {
-        }
-
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            if ( bool(seq.seq) && seq.seq->GetInst().IsSetSeq_data() ) {
-                COStreamClassMember m(out, member);
-                out.WriteObject(&seq.seq->GetInst().GetSeq_data(),
-                                CType<CSeq_data>::GetTypeInfo());
-            }
-        }
-
-    const CWSeq_set& seq;
-};
-
-
-class CWSeq_ext : public CWriteClassMemberHook
-{
-public:
-    CWSeq_ext(const CWSeq_set& seq)
-        : seq(seq)
-        {
-        }
-
-    void WriteClassMember(CObjectOStream& out,
-                          const CConstObjectInfo::CMemberIterator& member)
-        {
-            if ( bool(seq.seq) && seq.seq->GetInst().IsSetExt() ) {
-                COStreamClassMember m(out, member);
-                out.WriteObject(&seq.seq->GetInst().GetExt(),
-                                CType<CSeq_ext>::GetTypeInfo());
-            }
-        }
-
-    const CWSeq_set& seq;
-};
-
-
-CSplit::CSplit(const CSeq_entry& entry)
-    : entry(&entry)
-{
-}
-
-
-CSplit::~CSplit(void)
-{
-}
-
-
-void CSplit::WriteObject(CObjectOStream& out,
-                         const CConstObjectInfo& object)
-{
-    CConstRef<CBioseq> seq(CType<CBioseq>::Get(object));
-    skip = !seq->GetId().empty();
-    if ( skip ) {
-        ITERATE ( CBioseq::TAnnot, it, seq->GetAnnot() ) {
-            const CSeq_annot& annot = **it;
-            switch ( annot.GetData().Which() ) {
-            case CSeq_annot::C_Data::e_Ftable:
-            {
-                CTypeConstIterator<CSeq_feat> fi(annot);
-                if ( fi &&
-                     fi->GetData().GetSubtype() ==
-                     CSeqFeatData::eSubtype_variation ) {
-                    snp.insert(seq);
-                }
-                else {
-                    ftable.insert(seq);
-                }
-                break;
-            }
-            case CSeq_annot::C_Data::e_Graph:
-                graph.insert(seq);
-                break;
-            case CSeq_annot::C_Data::e_Align:
-                align.insert(seq);
-                break;
-            }
-        }
-        if ( seq->GetInst().IsSetSeq_data() || seq->GetInst().IsSetExt() ) {
-            inst.insert(seq);
-        }
-    }
-    DefaultWrite(out, object);
-    skip = false;
-}
-
-CObjectOStream* CSplit::Open(const string& prefix,
-                             const char* contents_name) const
-{
-    return CObjectOStream::Open(eSerial_AsnText,
-                                prefix+contents_name+".asn");
-}
-
-
-void CSplit::Save(CConstRef<CSeq_entry> entry,
-                  const string& prefix,
-                  const char* contents_name) const
-{
-    if ( entry ) {
-        auto_ptr<CObjectOStream> out(Open(prefix, contents_name));
-        *out << *entry;
-    }
-}
-
-
-void CSplit::Save(const string& prefix)
-{
-    {{
-        auto_ptr<CObjectOStream> out(Open(prefix, "core"));
-        
-        CObjectTypeInfo type;
-        type = CType<CBioseq>();
-        type.SetLocalWriteHook(*out, this);
-        
-        CRef<CWSkipMember> wSkip(new CWSkipMember(skip));
-        type.FindMember("annot").SetLocalWriteHook(*out, &*wSkip);
-        type = CType<CSeq_inst>();
-        type.FindMember("seq-data").SetLocalWriteHook(*out, &*wSkip);
-        type.FindMember("ext").SetLocalWriteHook(*out, &*wSkip);
-
-        *out << *entry;
-    }}
-
-    if ( !inst.empty() ) {
-        auto_ptr<CObjectOStream> out(Open(prefix, "seq"));
-
-        CRef<CSeq_entry> dummy_entry(new CSeq_entry);
-        dummy_entry->SetSet();
-
-        CRef<CWSeq_set> wSeq_set(new CWSeq_set(*this));
-        CRef<CWSeq_id> wSeq_id(new CWSeq_id(*wSeq_set));
-        CRef<CWSeq_data> wSeq_data(new CWSeq_data(*wSeq_set));
-        CRef<CWSeq_ext> wSeq_ext(new CWSeq_ext(*wSeq_set));
-        
-        CObjectTypeInfo type = CType<CBioseq_set>();
-        type.FindMember("seq-set").SetLocalWriteHook(*out, &*wSeq_set);
-        type = CType<CBioseq>();
-        type.FindMember("id").SetLocalWriteHook(*out, &*wSeq_id);
-        type = CType<CSeq_inst>();
-        type.FindMember("seq-data").SetLocalWriteHook(*out, &*wSeq_data);
-        type.FindMember("ext").SetLocalWriteHook(*out, &*wSeq_ext);
-
-        *out << *dummy_entry;
-    }
-#if 0
-        CNcbiOstrstream s;
-        s << base_name;
-        switch ( annot.GetData().Which() ) {
-        case CSeq_annot::C_Data::e_Ftable:
-        {
-            CTypeConstIterator<CSeq_feat> fi(annot);
-            if ( fi &&
-                 fi->GetData().GetSubtype() ==
-                 CSeqFeatData::eSubtype_variation ) {
-                s << "snp." << ++cnt[3];
-            }
-            else {
-                s << "ftable." << ++cnt[0];
-            }
-            break;
-        }
-        case CSeq_annot::C_Data::e_Graph:
-            s << "graph." << ++cnt[1];
-            break;
-        case CSeq_annot::C_Data::e_Align:
-            s << "align." << ++cnt[2];
-            break;
-        }
-        s << ".asn";
-        string file_name = CNcbiOstrstreamToString(s);
-        auto_ptr<CObjectOStream>
-            out(CObjectOStream::Open(eSerial_AsnText, file_name));
-        *out << annot;
-    }
-
-    for ( CTypeConstIterator<CSeq_annot> i(entry); i; ++i ) {
-        const CSeq_annot& annot = *i;
-        CNcbiOstrstream s;
-        s << base_name;
-        switch ( annot.GetData().Which() ) {
-        case CSeq_annot::C_Data::e_Ftable:
-        {
-            CTypeConstIterator<CSeq_feat> fi(annot);
-            if ( fi &&
-                 fi->GetData().GetSubtype() ==
-                 CSeqFeatData::eSubtype_variation ) {
-                s << "snp." << ++cnt[3];
-            }
-            else {
-                s << "ftable." << ++cnt[0];
-            }
-            break;
-        }
-        case CSeq_annot::C_Data::e_Graph:
-            s << "graph." << ++cnt[1];
-            break;
-        case CSeq_annot::C_Data::e_Align:
-            s << "align." << ++cnt[2];
-            break;
-        }
-        s << ".asn";
-        string file_name = CNcbiOstrstreamToString(s);
-        auto_ptr<CObjectOStream>
-            out(CObjectOStream::Open(eSerial_AsnText, file_name));
-        *out << annot;
-    
-
-    Save(inst, prefix, "seq");
-    Save(ftable, prefix, "ftable");
-    Save(align, prefix, "align");
-    Save(graph, prefix, "graph");
-    for ( size_t i = 0; i < snp.size(); ++i ) {
-        CNcbiOstrstream name_out;
-        name_out << "snp."<<(i+1);
-        string name = CNcbiOstrstreamToString(name_out);
-        auto_ptr<CObjectOStream> out(Open(prefix, name.c_str()));
-        *out << *snp[i];
-    }
-#endif
-}
-
 extern CAtomicCounter newCObjects;
 
 int CDemoApp::Run(void)
@@ -660,15 +197,13 @@ int CDemoApp::Run(void)
 
     // Create seq-id, set it to GI specified on the command line
     CRef<CSeq_id> id;
-    int gi;
     if ( args["gi"] ) {
-        gi = args["gi"].AsInteger();
+        int gi = args["gi"].AsInteger();
         id.Reset(new CSeq_id);
         id->SetGi(gi);
     }
     else if ( args["id"] ) {
         id.Reset(new CSeq_id(args["id"].AsString()));
-        gi = -1;
     }
     else if ( args["asn_id"] ) {
         id.Reset(new CSeq_id);
@@ -679,10 +214,9 @@ int CDemoApp::Run(void)
         CNcbiIstrstream ss(text.c_str());
         AutoPtr<CObjectIStream> os(CObjectIStream::Open(eSerial_AsnText, ss));
         *os >> *id;
-        gi = -1;
     }
     else {
-        ERR_POST(Fatal << "Either -gi or -id argument is required");
+        ERR_POST(Fatal << "One of -gi, -id or -asn_id arguments is required");
     }
 
     CFeat_CI::EResolveMethod resolve = CFeat_CI::eResolve_TSE;
@@ -704,7 +238,6 @@ int CDemoApp::Run(void)
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
     bool get_mapped_feature = args["get_mapped_feature"];
-    bool split = args["split"];
     SAnnotSelector::ESortOrder order =
         args["reverse"] ?
         SAnnotSelector::eSortOrder_Reverse : SAnnotSelector::eSortOrder_Normal;
@@ -815,14 +348,14 @@ int CDemoApp::Run(void)
     }
     else
 #endif
-    {
-        // Create genbank data loader and register it with the OM.
-        // The last argument "eDefault" informs the OM that the loader
-        // must be included in scopes during the CScope::AddDefaults() call.
-        pOm->RegisterDataLoader(
-            *new CGBDataLoader("ID", 0, 2),
-            CObjectManager::eDefault);
-    }
+        {
+            // Create genbank data loader and register it with the OM.
+            // The last argument "eDefault" informs the OM that the loader
+            // must be included in scopes during the CScope::AddDefaults() call.
+            pOm->RegisterDataLoader(
+                *new CGBDataLoader("ID", 0, 2),
+                CObjectManager::eDefault);
+        }
 
     // Create a new scope.
     CScope scope(*pOm);
@@ -852,13 +385,13 @@ int CDemoApp::Run(void)
     if ( !handle ) {
         ERR_POST(Fatal << "Bioseq not found");
     }
-    if ( gi < 0 ) {
+    if ( !id->IsGi() ) {
         CConstRef<CSynonymsSet> syns = scope.GetSynonyms(handle);
         ITERATE ( CSynonymsSet, it, *syns ) {
             CConstRef<CSeq_id> seq_id =
                 CSynonymsSet::GetSeq_id_Handle(it).GetSeqId();
             if ( seq_id->IsGi() ) {
-                gi = seq_id->GetGi();
+                int gi = seq_id->GetGi();
                 NcbiCout << "Sequence gi is "<<gi<<NcbiEndl;
                 break;
             }
@@ -871,13 +404,6 @@ int CDemoApp::Run(void)
         }
         string sout;
         int count;
-        if ( c == 0 && split ) {
-            CSplit s(handle.GetTopLevelSeqEntry());
-            CNcbiOstrstream name;
-            name << gi << '.';
-            s.Save(CNcbiOstrstreamToString(name));
-            break;
-        }
         if ( !only_features ) {
             // List other sequences in the same TSE
             NcbiCout << "TSE sequences:" << NcbiEndl;
@@ -943,7 +469,7 @@ int CDemoApp::Run(void)
         // Construct seq-loc to get features for.
         CSeq_loc loc;
         // No region restrictions -- the whole bioseq is used:
-        loc.SetWhole().SetGi(gi);
+        loc.SetWhole(*id);
         count = 0;
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
@@ -1063,7 +589,7 @@ int CDemoApp::Run(void)
 
         // Region set to interval 0..9 on the bioseq. Any feature
         // intersecting with the region should be selected.
-        loc.SetInt().SetId().SetGi(gi);
+        loc.SetInt().SetId(*id);
         loc.SetInt().SetFrom(0);
         loc.SetInt().SetTo(9);
         count = 0;
@@ -1093,7 +619,7 @@ int CDemoApp::Run(void)
         // The same way may be used to iterate aligns and graphs,
         // except that there is no type filter for both of them.
         // No region restrictions -- the whole bioseq is used:
-        loc.SetWhole().SetGi(gi);
+        loc.SetWhole(*id);
         count = 0;
         for (CGraph_CI it(scope, loc,
                           SAnnotSelector()
@@ -1142,6 +668,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2003/12/19 19:50:22  vasilche
+* Removed obsolete split code.
+* Do not use intemediate gi.
+*
 * Revision 1.47  2003/12/02 23:20:22  vasilche
 * Allow to specify any Seq-id via ASN.1 text.
 *
