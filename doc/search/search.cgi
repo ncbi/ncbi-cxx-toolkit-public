@@ -26,32 +26,17 @@ $fmsearch = "./search.cgi";
 ## This is the url location of SSI filter
 ##$ssifilter = "./perlssi.pl";
 
-## What directories on your server/hosting account would you like to search
+## What directories on your server/hosting account would you like to
+## ignore by search.
 ## If there is more than one directory, seperate them with a comma
 
-@searchdirs = (
-               "",
-##               "docxx",
-               "libs",
-               "libs/gui",
-               "libs/om",
-               "lxr",
-               "programming_manual",
-               "programming_manual/CARdemo",
-               "tools",
-               "tools/datatool",
-               "tools/dispatcher",
-               "tools/hello",
-               "tools/id1_fetch"
-              );
+@ignorelist = ( "c++", "docxx", "search", "ssi");
 
 ## If there is more than one directory, seperate them with a comma
 
 if ($ENV{'SCRIPT_FILENAME'} =~ m"/private/htdocs") {
     $webbase    = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/CPP_DOC";
     $searchbase = "/web/private/htdocs/intranet/ieb/ToolBox/CPP_DOC";
-    @searchdirs_private = ("internal", "internal/idx");
-    push(@searchdirs, @searchdirs_private);
 } else {
     $webbase    = "http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC";
     $searchbase = "/web/public/htdocs/IEB/ToolBox/CPP_DOC";
@@ -59,7 +44,7 @@ if ($ENV{'SCRIPT_FILENAME'} =~ m"/private/htdocs") {
 
 ## What is the extensions of the files to be searched
 ## If you want to use more than one extension seperate them via comma
-@searchext = (".html", ".htm");
+@searchext = (".html", ".htm", ".txt");
 
 ## How many items to list per page
 $listperpage = "20";
@@ -103,39 +88,14 @@ if ($x_keywords eq "") {
 
 ### GET FILES
 
-$itec = 0;
+@allfiles = ();
+$allfilescount = 0;
 
-foreach $item (@searchdirs) {
-    $itempath = "$searchbase/$item";
-    if (-e "$itempath") {
-       opendir(DIR, "$itempath");
-       @files = readdir(DIR);
-       closedir(DIR);
-       $fnc = 0;
-       @sfiles = ();
-       foreach $fn (@files) {
+&get_files($searchbase);
 
-          ### SORT FILES
-
-          foreach $ext (@searchext) {
-             if ($ext eq substr($fn,length($fn)-length($ext),length($ext))) {
-                if ($item eq "") {
-                   $sfiles[$fnc] = "$fn";
-                } else {
-                   $sfiles[$fnc] = "$item/$fn";
-                }
-                $fnc++;
-             }
-          }
-       }
-    } else {
-###       print "Error - $item does not exist.";
-    }
-    
-    $itec++;
-    $tmpc = push(@allfiles, @sfiles);
-}
-
+#foreach $fn (@allfiles) {
+#  printf "$fn\n";
+#}
 
 ### PREPARE KEYWORDS
 
@@ -336,6 +296,42 @@ print $mainlayout;
 #foreach (keys %ENV) {
 #  print "$_  =  ".$ENV{$_}."<br>";
 #}
+
+
+##########################################################################
+
+sub get_files
+{
+   my $dir = shift;
+   my @files = ();
+   my $fn, $i, $ext, $path;
+
+   opendir(DIR, "$dir");
+   @files = readdir(DIR);
+M1:
+   foreach $fn (@files) {
+      next M1 if $fn =~ /^\./; 
+
+      $path = "$dir/$fn";
+
+      foreach $i (@ignorelist) {
+         next M1 if "$dir/$fn" eq "$searchbase/$i"; 
+      }
+
+      if (-d "$path") {
+         &get_files($path);
+      } else {
+         foreach $ext (@searchext) {
+            if ($ext eq substr($fn,length($fn)-length($ext),length($ext))) {
+               $path =~ s/^$searchbase\///;
+               $allfiles[$allfilescount] = $path;
+               $allfilescount++;
+            }
+         }
+      }
+   }
+   closedir(DIR);
+}
 
 
 ##########################################################################
