@@ -506,7 +506,7 @@ static Int2 MB_ExtendWordExit(BLAST_ExtendWordPtr ewp, Int4 subject_length)
  * @param extra_bytes Number of compressed bytes to compare [in]
  * @return TRUE if sequences are identical, FALSE if mismatch is found.
  */
-static inline Boolean BlastNaCompareExtraBytes(Uint1Ptr q, Uint1Ptr s, 
+static NCBI_INLINE Boolean BlastNaCompareExtraBytes(Uint1Ptr q, Uint1Ptr s, 
                                                Int4 extra_bytes)
 {
    Int4 index;
@@ -526,7 +526,7 @@ static inline Boolean BlastNaCompareExtraBytes(Uint1Ptr q, Uint1Ptr s,
  * @param max_left Maximal number of bits to compare [in]
  * @return Number of matched bases
 */
-static inline Uint1 
+static NCBI_INLINE Uint1 
 BlastNaMiniExtendLeft(Uint1Ptr q, Uint1Ptr s, Uint1 max_left)
 {
    Uint1 left = 0;
@@ -547,7 +547,7 @@ BlastNaMiniExtendLeft(Uint1Ptr q, Uint1Ptr s, Uint1 max_left)
  * @param max_right Maximal number of bits to compare [in]
  * @return Number of matched bases
 */
-static inline Uint1 
+static NCBI_INLINE Uint1 
 BlastNaMiniExtendRight(Uint1Ptr q, Uint1Ptr s, Uint1 max_right)
 {
    Uint1 right;

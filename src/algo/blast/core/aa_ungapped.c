@@ -30,13 +30,13 @@ static char const rcsid[] = "$Id$";
 
 #include <aa_ungapped.h>
 
-static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
+static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
 
-static inline Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension);
+static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension);
 
-static inline Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
+static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
 
-static inline Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
+static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
 
 static void BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start, Int4 q_off, Int4 s_off, Int4 len, Int4 score);
 
@@ -270,7 +270,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlkPtr subject,
  * @return the subject offset of the previous hit
  */
 
-static inline Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
+static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
 
@@ -290,7 +290,7 @@ static inline Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, In
  * @return Zero.
  */
 
-static inline Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
+static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
   
@@ -314,7 +314,7 @@ static inline Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, In
  */
 
 
-static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
+static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset)
 {
   Int4 diag_coord;
   Int4 level;
@@ -503,7 +503,7 @@ Int4 BlastAaExtendTwoHit(const BLAST_DiagTablePtr diag,
  * @return Zero.
  */
 
-static inline Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension)
+static NCBI_INLINE Int4 DiagUpdateLevel(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset, Int4 subject_extension)
 {
   Int4 diag_coord;
 

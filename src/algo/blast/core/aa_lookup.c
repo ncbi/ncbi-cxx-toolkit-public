@@ -35,19 +35,19 @@
 
 static char const rcsid[] = "$Id$";
 
-static inline Int4 ComputeWordScore(Int4 ** matrix,
+static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
 				    Int4 wordsize,
 				    const Uint1Ptr w1,
 				    const Uint1Ptr w2,
 				    Boolean *exact);
 
-static inline void  _ComputeIndex(Int4 wordsize,
+static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
 				  Int4 mask,
 				  const Uint1Ptr word,
 				  Int4Ptr index);
 
-static inline void  _ComputeIndexIncremental(Int4 wordsize,
+static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
 					     Int4 charsize,
 					     Int4 mask,
 					     const Uint1Ptr word,
@@ -245,7 +245,7 @@ for(i=0;i<lookup->backbone_size;i++)
  * @param index the computed index value [out] 
  */
 
-static inline void  _ComputeIndex(Int4 wordsize,
+static NCBI_INLINE void  _ComputeIndex(Int4 wordsize,
 				  Int4 charsize,
 				  Int4 mask,
 				  const Uint1Ptr word,
@@ -269,7 +269,7 @@ static inline void  _ComputeIndex(Int4 wordsize,
  * @param index the computed index value [in/out]
  */
 
-static inline void  _ComputeIndexIncremental(Int4 wordsize,
+static NCBI_INLINE void  _ComputeIndexIncremental(Int4 wordsize,
 					     Int4 charsize,
 					     Int4 mask,
 					     const Uint1Ptr word,
@@ -493,7 +493,7 @@ Int4 AddNeighboringWords(LookupTablePtr lookup, Int4 ** matrix, BLAST_SequenceBl
  * @param exact a pointer to a boolean which specifies whether or not this was an exact match or not.
  * @return The score of the pair of words.
  */
-static inline Int4 ComputeWordScore(Int4 ** matrix,
+static NCBI_INLINE Int4 ComputeWordScore(Int4 ** matrix,
 				    Int4 wordsize,
 				    const Uint1Ptr w1, /* the first word */
 				    const Uint1Ptr w2, /* the second word */

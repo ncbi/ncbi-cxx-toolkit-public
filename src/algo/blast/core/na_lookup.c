@@ -52,7 +52,7 @@ static char const rcsid[] = "$Id$";
  * @param index Lookup table index [out]
  * @return Pointer to the next byte after the end of the word
  */
-static inline Uint1Ptr BlastNaLookupInitIndex(Int4 length,
+static NCBI_INLINE Uint1Ptr BlastNaLookupInitIndex(Int4 length,
 		          const Uint1Ptr word, Int4Ptr index)
 {
    Int4 i;
@@ -71,7 +71,7 @@ static inline Uint1Ptr BlastNaLookupInitIndex(Int4 length,
  * @param index The lookup index value for the previous word [in]
  * @return The value of the lookup index for the next word 
  */
-static inline Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
+static NCBI_INLINE Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask, 
 		      const Uint1Ptr word, Int4 index)
 {
    return (((index)<<scan_shift) & mask) | *(word);  
@@ -87,7 +87,7 @@ static inline Int4 BlastNaLookupComputeIndex(Int4 scan_shift, Int4 mask,
  *        recomputation
  * @return The adjusted value of the lookup index
  */
-static inline Int4 BlastNaLookupAdjustIndex(Uint1Ptr s, Int4 index, 
+static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1Ptr s, Int4 index, 
                       Int4 mask, Uint1 bit)
 {
    return (((index)<<bit) & mask) | ((*s)>>(FULL_BYTE_SHIFT-bit));
@@ -433,7 +433,7 @@ LookupTableWrapPtr BlastLookupTableDestruct(LookupTableWrapPtr lookup)
  * @param index The lookup index [out]
  */
 #define BLAST2NA_MASK 0xfc
-static inline Int2
+static NCBI_INLINE Int2
 Na_LookupComputeIndex(LookupTablePtr lookup, Uint1Ptr word, Int4Ptr index)
 {
    Int4 i;
@@ -550,7 +550,7 @@ Int4 BlastNaLookupIndexQuery(LookupTablePtr lookup, BLAST_SequenceBlkPtr query,
  *        those for the first template by setting a special bit. [in]
  * @return The lookup table index of the discontiguous word [out]
  */
-static inline Int4 ComputeDiscontiguousIndex(Uint1Ptr subject, Int4 word,
+static NCBI_INLINE Int4 ComputeDiscontiguousIndex(Uint1Ptr subject, Int4 word,
                   Uint1 template_type, Int4 second_template_bit)
 {
    Int4 index;
@@ -631,7 +631,7 @@ static inline Int4 ComputeDiscontiguousIndex(Uint1Ptr subject, Int4 word,
  *        template [in]
  * @return The lookup index for the discontiguous word.
 */
-static inline Int4 ComputeDiscontiguousIndex_1b(const Uint1Ptr word_start, 
+static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1Ptr word_start, 
                       Int4 word, Uint1 sequence_bit, Uint1 template_type,
                       Int4 second_template_bit)
 {
