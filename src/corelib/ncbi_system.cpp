@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Vladimir Ivanov, Denis Vakatov
+ * Authors:  Vladimir Ivanov, Denis Vakatov, Anton Lavrentiev
  *
  * File Description:  System functions
  *
@@ -42,6 +42,9 @@
 #  include <sys/times.h>
 #  include <limits.h>
 #  include <unistd.h>
+#  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
+#    include <sys/sysctl.h>
+#  endif
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
 #endif
@@ -136,7 +139,7 @@ static void s_ExitHandler(void)
     case eLEC_Memory:
         {
             ERR_POST("Memory heap limit exceeded in allocating memory " \
-                     "with operator new (" << s_HeapLimit << " bytes)");
+                     "by operator new (" << s_HeapLimit << " bytes)");
             break;
         }
         
@@ -145,7 +148,7 @@ static void s_ExitHandler(void)
             ERR_POST("CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
             tms buffer;
             if (times(&buffer) == (clock_t)(-1)) {
-                ERR_POST("Error in getting CPU time consumed with program");
+                ERR_POST("Error in getting CPU time consumed by program");
                 break;
             }
             LOG_POST("\tuser CPU time   : " << 
@@ -341,7 +344,8 @@ unsigned int GetCpuCount(void)
     mach_msg_type_number_t hinfo_count = HOST_BASIC_INFO_COUNT;
     kern_return_t rc;
 
-    rc = host_info(mach_host_self(), HOST_BASIC_INFO, (host_info_t)&hinfo, &hinfo_count);
+    rc = host_info(mach_host_self(), HOST_BASIC_INFO,
+                   (host_info_t)&hinfo, &hinfo_count);
 
     if (rc != KERN_SUCCESS) {
         return -1;
@@ -350,15 +354,22 @@ unsigned int GetCpuCount(void)
 
 #elif defined(NCBI_OS_UNIX)
     long nproc = 0;
-#   if defined(_SC_NPROC_ONLN)
+# if defined(_SC_NPROC_ONLN)
     nproc = sysconf(_SC_NPROC_ONLN);
-#   elif defined(_SC_NPROCESSORS_ONLN)
+# elif defined(_SC_NPROCESSORS_ONLN)
     nproc = sysconf(_SC_NPROCESSORS_ONLN);
-#   endif
+# elif defined(NCBI_OS_BSD) || defined(NCBI_OS_DAWRIN)
+    size_t len = sizeof(nrproc);
+    int mib[2];
+    mib[0] = CTL_HW;
+    mib[1] = HW_NCPU;
+    if (sysctl(mib, 2, &nrproc, &len, 0, 0) < 0 || len != sizeof(nrproc))
+        nrproc = -1;
+# endif /*UNIX_FLAVOR*/
     return nproc <= 0 ? 1 : (unsigned int) nproc;
 #else
     return 1;
-#endif
+#endif /*OS_TYPE*/
 }
 
 
@@ -405,6 +416,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/02/11 13:36:14  lavr
+ * Added code for figuring out CPU count on *BSD/Darwin
+ *
  * Revision 1.34  2003/11/10 17:13:52  vakatov
  * - #include <connect/ncbi_core.h>
  *
