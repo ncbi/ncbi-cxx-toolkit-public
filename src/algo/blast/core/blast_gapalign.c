@@ -41,6 +41,7 @@ static char const rcsid[] = "$Id$";
 #include <blast_def.h>
 #include <blast_gapalign.h>
 #include <blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <blast_setup.h>
 #include <greedy_align.h>
 
 static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query, 
@@ -2487,11 +2488,9 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
    BlastGapAlignStructPtr gap_align,
    BlastScoringOptionsPtr score_options, BlastInitHSPPtr init_hsp)
 {
-   Int4 tmpval;
    Boolean found_start, found_end;
    Int4 q_length=0, s_length=0, score_right, score_left;
    Int4 private_q_start, private_s_start;
-   Uint1Ptr q_left=NULL, s_left=NULL;
    Uint1Ptr query, subject;
    Boolean switch_seq = FALSE;
     
@@ -2689,7 +2688,7 @@ BLAST_OOFTracebackToGapEditBlock(Int4Ptr S, Int4 q_length,
     GapEditBlockPtr edit_block;
     
     if (S == NULL)
-        return NULL;
+        return -1;
     
     number = 0;
     index1 = 0;

@@ -438,7 +438,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
    BlastHSPPtr PNTR hsp_array, hsp;
    Uint1Ptr query, subject, query_start, subject_start = NULL;
    Uint1Ptr new_q_start, new_s_start, new_q_end, new_s_end;
-   Int4 index, context, hspcnt, buf_len=0, i;
+   Int4 index, context, hspcnt, i;
    Int2 factor = 1;
    Uint1 mask = 0x0f;
    GapEditScriptPtr esp, last_esp, prev_esp, first_esp;
