@@ -3,6 +3,8 @@
 # Miscellaneous objmgr applications
 #################################
 
+REQUIRES = objects dbapi
+
 SUB_PROJ = demo
 
 srcdir = @srcdir@
