@@ -107,6 +107,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length,
    Int4 offset, char* instructions, Boolean *mask_at_hash, 
    BlastSeqLoc* *seqloc_retval, Boolean no_lookup);
 
+
 #ifdef __cplusplus
 }
 #endif
