@@ -40,7 +40,7 @@ BEGIN_SCOPE(objects)
 
 // --- Flat File configuration class
 
-class CFlatFileConfig
+class NCBI_FORMAT_EXPORT CFlatFileConfig
 {
 public:
     
@@ -345,6 +345,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/23 14:13:48  gorelenk
+* Added missed export prefix to declaration of class CFlatFileConfig.
+*
 * Revision 1.1  2004/04/22 15:48:36  shomrat
 * Initial Revision (adapted from context.hpp)
 *
