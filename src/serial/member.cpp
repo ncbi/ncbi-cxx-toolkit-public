@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/04/03 21:47:23  gouriano
+* verify initialization of data members
+*
 * Revision 1.24  2002/11/14 20:57:22  gouriano
 * modified constructor to use CClassTypeInfoBase,
 * added Attlist and Notag flags
@@ -345,6 +348,38 @@ void CMemberInfo::SetParentClass(void)
     m_SkipMissingFunction = &TFunc::SkipMissingParentClass;
 }
 
+bool CMemberInfo::VerifyAssigned(CObjectOStream& out,
+                                 TConstObjectPtr classPtr) const
+{
+    const CClassTypeInfo* classinfo =
+        dynamic_cast<const CClassTypeInfo*>(GetClassType());
+    if (classinfo) {
+        bool set = classinfo->VerifyAssigned(classPtr,GetIndex());
+        if (Optional()) {
+            return set;
+        } else {
+            if (!set && out.GetVerifyData()) {
+                out.SetFailFlagsNoError(CObjectOStream::fFail);
+                NCBI_THROW(CUnassignedMember,eFail,
+                    string("Unassigned member: ")+GetId().GetName());
+            }
+        }
+    }
+    return true;
+}
+
+void CMemberInfo::SetAssigned(CObjectIStream& in,
+                              TConstObjectPtr classPtr) const
+{
+    if (m_SetFlagOffset == eSetCallback) {
+        const CClassTypeInfo* classinfo =
+            dynamic_cast<const CClassTypeInfo*>(GetClassType());
+        if (classinfo) {
+            classinfo->SetAssigned(classPtr,GetIndex());
+        }
+    }
+}
+
 CMemberInfo* CMemberInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
     m_DelayOffset = TPointerOffsetType(buffer);
@@ -389,6 +424,13 @@ CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 {
     _ASSERT(Optional());
     m_SetFlagOffset = TPointerOffsetType(setFlag);
+    UpdateFunctions();
+    return this;
+}
+
+CMemberInfo* CMemberInfo::SetCallback(void)
+{
+    m_SetFlagOffset = eSetCallback;
     UpdateFunctions();
     return this;
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/04/03 21:47:26  gouriano
+* verify initialization of data members
+*
 * Revision 1.23  2003/03/06 21:48:41  grichenk
 * Removed type-info cleanup code
 *
@@ -473,9 +476,12 @@ CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
                                       const CObject* cObject,
                                       TCreateFunction createFunc,
                                       const type_info& id,
-                                      TGetTypeIdFunction idFunc)
+                                      TGetTypeIdFunction idFunc,
+                                      TVerifyAssigned verifyFunc,
+                                      TSetAssigned setFunc)
 {
-    return new CClassTypeInfo(size, name, cObject, createFunc, id, idFunc);
+    return new CClassTypeInfo(size, name, cObject, createFunc, id, idFunc,
+                              verifyFunc, setFunc);
 }
 
 void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction func)

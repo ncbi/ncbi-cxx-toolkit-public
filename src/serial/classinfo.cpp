@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/04/03 21:47:23  gouriano
+* verify initialization of data members
+*
 * Revision 1.64  2003/03/10 18:54:24  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -307,16 +310,17 @@ CClassTypeInfo::CClassTypeInfo(size_t size, const char* name,
                                const void* nonCObject, TTypeCreate createFunc,
                                const type_info& ti, TGetTypeIdFunction idFunc)
     : CParent(eTypeFamilyClass, size, name, nonCObject, createFunc, ti),
-      m_GetTypeIdFunction(idFunc)
+      m_GetTypeIdFunction(idFunc), m_VerifyFunc(0), m_SetFunc(0)
 {
     InitClassTypeInfo();
 }
 
 CClassTypeInfo::CClassTypeInfo(size_t size, const char* name,
                                const CObject* cObject, TTypeCreate createFunc,
-                               const type_info& ti, TGetTypeIdFunction idFunc)
+                               const type_info& ti, TGetTypeIdFunction idFunc,
+                               TVerifyAssigned verifyFunc, TSetAssigned setFunc)
     : CParent(eTypeFamilyClass, size, name, cObject, createFunc, ti),
-      m_GetTypeIdFunction(idFunc)
+      m_GetTypeIdFunction(idFunc), m_VerifyFunc(verifyFunc), m_SetFunc(setFunc)
 {
     InitClassTypeInfo();
 }
@@ -325,16 +329,17 @@ CClassTypeInfo::CClassTypeInfo(size_t size, const string& name,
                                const void* nonCObject, TTypeCreate createFunc,
                                const type_info& ti, TGetTypeIdFunction idFunc)
     : CParent(eTypeFamilyClass, size, name, nonCObject, createFunc, ti),
-      m_GetTypeIdFunction(idFunc)
+      m_GetTypeIdFunction(idFunc), m_VerifyFunc(0), m_SetFunc(0)
 {
     InitClassTypeInfo();
 }
 
 CClassTypeInfo::CClassTypeInfo(size_t size, const string& name,
                                const CObject* cObject, TTypeCreate createFunc,
-                               const type_info& ti, TGetTypeIdFunction idFunc)
+                               const type_info& ti, TGetTypeIdFunction idFunc,
+                               TVerifyAssigned verifyFunc, TSetAssigned setFunc)
     : CParent(eTypeFamilyClass, size, name, cObject, createFunc, ti),
-      m_GetTypeIdFunction(idFunc)
+      m_GetTypeIdFunction(idFunc), m_VerifyFunc(verifyFunc), m_SetFunc(setFunc)
 {
     InitClassTypeInfo();
 }
@@ -474,6 +479,20 @@ void AssignMemberDefault2(TObjectPtr object, const CMemberInfo* info)
     // update 'set' flag
     if ( haveSetFlag )
         info->GetSetFlag(object) = false;
+}
+
+bool CClassTypeInfo::VerifyAssigned(TConstObjectPtr object,
+                                    TMemberIndex index) const
+{
+    return m_VerifyFunc ? m_VerifyFunc(object,index) : true;
+}
+
+void CClassTypeInfo::SetAssigned(TConstObjectPtr object,
+                                 TMemberIndex index) const
+{
+    if (m_SetFunc) {
+        m_SetFunc(object,index);
+    }
 }
 
 void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,

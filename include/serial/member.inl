@@ -53,7 +53,7 @@ TConstObjectPtr CMemberInfo::GetDefault(void) const
 inline
 bool CMemberInfo::HaveSetFlag(void) const
 {
-    return m_SetFlagOffset != eNoOffset;
+    return m_SetFlagOffset != eNoOffset && m_SetFlagOffset != eSetCallback;
 }
 
 inline
@@ -111,6 +111,7 @@ void CMemberInfo::ReadMember(CObjectIStream& stream,
                              TObjectPtr classPtr) const
 {
     m_ReadHookData.GetCurrentFunction().m_Main(stream, this, classPtr);
+    SetAssigned(stream,classPtr);
 }
 
 inline
@@ -124,7 +125,9 @@ inline
 void CMemberInfo::WriteMember(CObjectOStream& stream,
                               TConstObjectPtr classPtr) const
 {
-    m_WriteHookData.GetCurrentFunction()(stream, this, classPtr);
+    if (VerifyAssigned(stream,classPtr)) {
+        m_WriteHookData.GetCurrentFunction()(stream, this, classPtr);
+    }
 }
 
 inline
@@ -168,6 +171,7 @@ void CMemberInfo::DefaultReadMember(CObjectIStream& stream,
                                     TObjectPtr classPtr) const
 {
     m_ReadHookData.GetDefaultFunction().m_Main(stream, this, classPtr);
+    SetAssigned(stream,classPtr);
 }
 
 inline
@@ -181,7 +185,9 @@ inline
 void CMemberInfo::DefaultWriteMember(CObjectOStream& stream,
                                      TConstObjectPtr classPtr) const
 {
-    m_WriteHookData.GetDefaultFunction()(stream, this, classPtr);
+    if (VerifyAssigned(stream,classPtr)) {
+        m_WriteHookData.GetDefaultFunction()(stream, this, classPtr);
+    }
 }
 
 inline
@@ -214,6 +220,9 @@ void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/03 21:46:09  gouriano
+* verify initialization of data members
+*
 * Revision 1.14  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

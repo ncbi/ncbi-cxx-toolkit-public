@@ -68,6 +68,23 @@ public:
     NCBI_EXCEPTION_DEFAULT(CSerialException,CException);
 };
 
+class NCBI_XSERIAL_EXPORT CUnassignedMember : public CSerialException
+{
+public:
+    enum EErrCode {
+        eFail,
+        eUnknownMember
+    };
+    virtual const char* GetErrCodeString(void) const {
+        switch ( GetErrCode() ) {
+        case eFail:           return "eFail";
+        case eUnknownMember:  return "eUnknownMember";
+        default:              return CException::GetErrCodeString();
+        }
+    }
+    NCBI_EXCEPTION_DEFAULT(CUnassignedMember,CSerialException);
+};
+
 class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public CSerialException
 {
 public:
@@ -105,6 +122,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/04/03 21:46:09  gouriano
+* verify initialization of data members
+*
 * Revision 1.10  2003/03/11 18:00:08  gouriano
 * reimplement CInvalidChoiceSelection exception
 *

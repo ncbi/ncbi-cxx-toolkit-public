@@ -120,7 +120,7 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
     }
     else {
         valueName = mName;
-        haveFlag = optional && type->NeedSetFlag();
+        haveFlag = /*optional &&*/ type->NeedSetFlag();
     }
     if ( haveDefault ) // cannot detect DEFAULT value
         haveFlag = true;
@@ -335,12 +335,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "    // setters\n";
         ITERATE ( TMembers, i, m_Members ) {
             // generate IsSet... method
-            if ( i->optional ) {
+            const char* set_name = "Set";
+//          if ( i->optional )
+            {
                 code.ClassPublic() <<
-                    "    bool IsSet"<<i->cName<<"(void) const;\n";
+                    "    bool Is" << set_name << i->cName<<"(void) const;\n";
                 inlineMethods <<
                     "inline\n"
-                    "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void) const\n"
+                    "bool "<<methodPrefix<<"Is"<<set_name<<i->cName<<"(void) const\n"
                     "{\n";
                 if ( i->haveFlag ) {
                     // use special boolean flag
@@ -453,6 +455,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             if ( i->delayed ) {
                 code.Methods(inl) <<
                     "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+            }
+            if (i->defaultValue.empty() && !i->attlist) {
+                code.Methods(inl) <<
+                    "    if (!Is" << set_name << i->cName <<"()) {\n"
+                    "        ThrowUnassigned(\"" << i->mName << "\");\n"
+                    "    }\n";
             }
             code.Methods(inl) <<
                 "    return "<<i->valueName<<";\n"
@@ -649,7 +657,12 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 	        ITERATE ( TMembers, i, m_Members ) {
 		        if ( i->haveFlag ) {
 			        code.ClassPrivate() <<
-				        "    bool "SET_PREFIX<<i->cName<<";\n";
+// one bit flag is more space-efficient sometimes
+// modern compilers have sizeof(bool)==1 in which case "bool" is not so bad
+// while old compilers may have sizeof(bool)==4
+// speed is practically not affected
+				        "    unsigned "SET_PREFIX<<i->cName<<" : 1;\n";
+//				        "    bool "SET_PREFIX<<i->cName<<";\n";
 				}
 			}
         }
@@ -715,8 +728,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         if ( HaveUserClass() )
             code.ClassPublic() << "virtual ";
         code.ClassPublic() <<
-            "void Reset(void);\n"
-            "\n";
+            "void Reset(void);\n\n";
         methods <<
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
@@ -727,6 +739,87 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "}\n"
             "\n";
+    }
+    code.ClassPublic() << "\n";
+
+
+    code.ClassPublic() <<
+        "    // handle attempt to access an uninitialized member\n"
+        "    ";
+    if ( HaveUserClass() )
+        code.ClassPublic() << "virtual ";
+    code.ClassPublic() <<
+        "void ThrowUnassigned(const char* name) const;\n"
+        "    bool VerifyAssigned(size_t index) const;\n"
+        "    void SetAssigned(size_t index);\n"
+        "\n";
+    methods
+        <<"void "<<methodPrefix<<"ThrowUnassigned(const char* name) const\n"
+        <<"{\n"
+        << "    NCBI_THROW(ncbi::CUnassignedMember,eFail,"
+        << "std::string(\"Uninitialized member: \")+name);\n"
+        <<"}\n"
+        "\n";
+    methods
+        <<"bool "<<methodPrefix<<"VerifyAssigned(size_t index) const\n"
+        <<"{\n";
+    {
+        int index=0;
+        bool writeDef = false;
+        ITERATE ( TMembers, i, m_Members ) {
+            const char* set_name = "Set";
+            if (!writeDef) {
+                writeDef = true;
+                methods <<"    switch(index) {\n"
+                        <<"    default:\n"
+                        <<"        NCBI_THROW(ncbi::CUnassignedMember,eUnknownMember,"
+                        <<"\"Unknown member\");\n";
+            }
+            ++index;
+            methods << "    case "<<index<<":\n"
+                    << "        return Is"<<set_name<<i->cName<<"();\n";
+        }
+        if (writeDef) {
+            methods <<"    }\n";
+        }
+    }
+    methods <<"    return false;\n";
+    methods <<
+        "}\n"
+        "\n";
+
+    {
+        int index=0;
+        bool needBody = false;
+        ITERATE ( TMembers, i, m_Members ) {
+            if (i->haveFlag) {
+                needBody = true;
+                break;
+            }
+        }
+        if (needBody) {
+            methods <<
+                "void "<<methodPrefix<<"SetAssigned(size_t index)\n"
+                "{\n"
+                "    switch(index) {\n"
+                "    default:\n"
+                "        return;\n";
+            ITERATE ( TMembers, i, m_Members ) {
+                ++index;
+                if (i->haveFlag) {
+                    methods << "    case "<<index<<":\n";
+                    methods << "        "<<SET_PREFIX<<i->cName<< " = true;\n";
+                    methods << "        return;\n";
+                }
+            }
+            methods <<
+                "    }\n"
+                "}\n"
+                "\n";
+        } else {
+            methods <<
+                "void "<<methodPrefix<<"SetAssigned(size_t)\n{\n}\n\n";
+        }
     }
 
     if ( generateDoNotDeleteThisObject ) {
@@ -866,13 +959,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << ')';
                 if ( i->haveFlag )
                     methods <<
-                        "->SetSetFlag(MEMBER_PTR("SET_PREFIX<<i->cName<<"))";
+//                        "->SetSetFlag(MEMBER_PTR("SET_PREFIX<<i->cName<<"))";
+                        "->SetCallback()";
             }
             else if ( i->optional ) {
-                methods << "->SetOptional(";
-                if ( i->haveFlag )
-                    methods << "MEMBER_PTR("SET_PREFIX<<i->cName<<')';
-                methods << ")";
+//                methods << "->SetOptional(";
+                methods << "->SetOptional()";
+                if (i->haveFlag) {
+//                    methods << "MEMBER_PTR("SET_PREFIX<<i->cName<<')';
+                    methods << "->SetCallback()";
+                }
+//                methods << ")";
+            }
+            else if (i->haveFlag) {
+                methods << "->SetCallback()";
             }
             if ( i->delayed ) {
                 methods <<
@@ -1104,6 +1204,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2003/04/03 21:48:45  gouriano
+* verify initialization of data members
+*
 * Revision 1.48  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *

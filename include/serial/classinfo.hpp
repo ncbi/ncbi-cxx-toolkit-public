@@ -51,6 +51,10 @@ class NCBI_XSERIAL_EXPORT CClassTypeInfo : public CClassTypeInfoBase
     typedef CClassTypeInfoBase CParent;
 protected:
     typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
+    typedef bool (*TVerifyAssigned)(TConstObjectPtr object,
+                                    TMemberIndex index);
+    typedef void (*TSetAssigned)(TConstObjectPtr object,
+                                 TMemberIndex index);
 
     enum EClassType {
         eSequential,
@@ -65,13 +69,15 @@ protected:
                    const type_info& ti, TGetTypeIdFunction idFunc);
     CClassTypeInfo(size_t size, const char* name,
                    const CObject* cObject, TTypeCreate createFunc,
-                   const type_info& ti, TGetTypeIdFunction idFunc);
+                   const type_info& ti, TGetTypeIdFunction idFunc,
+                   TVerifyAssigned verifyFunc, TSetAssigned setFunc);
     CClassTypeInfo(size_t size, const string& name,
                    const void* nonCObject, TTypeCreate createFunc,
                    const type_info& ti, TGetTypeIdFunction idFunc);
     CClassTypeInfo(size_t size, const string& name,
                    const CObject* cObject, TTypeCreate createFunc,
-                   const type_info& ti, TGetTypeIdFunction idFunc);
+                   const type_info& ti, TGetTypeIdFunction idFunc,
+                   TVerifyAssigned verifyFunc, TSetAssigned setFunc);
 
 public:
     typedef list<pair<CMemberId, CTypeRef> > TSubClasses;
@@ -107,6 +113,9 @@ public:
     // iterators interface
     const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
 
+    bool VerifyAssigned(TConstObjectPtr object, TMemberIndex index) const;
+    void SetAssigned(   TConstObjectPtr object, TMemberIndex index) const;
+
 protected:
     void AssignMemberDefault(TObjectPtr object, TMemberIndex index) const;
     
@@ -126,6 +135,8 @@ private:
     auto_ptr<TSubClasses> m_SubClasses;
 
     TGetTypeIdFunction m_GetTypeIdFunction;
+    TVerifyAssigned m_VerifyFunc;
+    TSetAssigned    m_SetFunc;
 
     const CMemberInfo* GetImplicitMember(void) const;
 
@@ -174,6 +185,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/04/03 21:46:09  gouriano
+* verify initialization of data members
+*
 * Revision 1.39  2002/12/26 19:33:06  gouriano
 * changed XML I/O streams to properly handle object copying
 *

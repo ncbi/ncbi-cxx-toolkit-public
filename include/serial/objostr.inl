@@ -336,6 +336,18 @@ void CObjectOStream::SetAutoSeparator(bool value)
     m_AutoSeparator = value;
 }
 
+inline
+void CObjectOStream::SetVerifyData(bool verify)
+{
+    m_VerifyData = verify;
+}
+
+inline
+bool CObjectOStream::GetVerifyData(void) const
+{
+    return m_VerifyData;
+}
+
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */
 
@@ -343,6 +355,9 @@ void CObjectOStream::SetAutoSeparator(bool value)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/04/03 21:46:09  gouriano
+* verify initialization of data members
+*
 * Revision 1.17  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -46,8 +46,9 @@ class NCBI_XSERIAL_EXPORT CItemInfo
 {
 public:
     enum {
-        eNoOffset = -1
-    };
+        eSetCallback = -2,
+		eNoOffset = -1
+	};
 
     CItemInfo(const CMemberId& id, TPointerOffsetType offset,
               TTypeInfo type);
@@ -97,6 +98,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/04/03 21:46:09  gouriano
+* verify initialization of data members
+*
 * Revision 1.5  2003/03/26 16:13:32  vasilche
 * Removed TAB symbols. Some formatting.
 *

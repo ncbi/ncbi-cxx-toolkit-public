@@ -86,6 +86,11 @@ public:
     bool DetectLoops(void) const;
     void DetectLoops(bool detectLoops);
 
+    // when enabled (which is default), stream verifies data on output
+    // and throws CUnassignedMember exception
+    void SetVerifyData(bool verify);
+    bool GetVerifyData(void) const;
+
     // constructors
 protected:
     CObjectOStream(CNcbiOstream& out, bool deleteOut = false);
@@ -451,6 +456,7 @@ protected:
     virtual void WriteSeparator(void);
     string m_Separator;
     bool   m_AutoSeparator;
+    bool   m_VerifyData;
 
 public:
     // hook support
@@ -469,6 +475,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/04/03 21:46:09  gouriano
+* verify initialization of data members
+*
 * Revision 1.69  2003/03/10 18:52:37  gouriano
 * use new structured exceptions (based on CException)
 *
