@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.3  1995/05/23 15:31:16  kans
-* new CodeWarrior 6 errors and warnings fixed
+* Revision 1.4  1995/06/02 16:29:03  kans
+* *** empty log message ***
 *
+ * Revision 1.3  1995/05/23  15:31:16  kans
+ * new CodeWarrior 6 errors and warnings fixed
+ *
  * Revision 1.2  1995/05/17  17:58:06  epstein
  * add RCS log revision history
  *
@@ -143,6 +146,10 @@
 
 #include "sock_ext.h"
 
+int s_recvfrom(Int4 s, void *buffer, Int4 buflen, Int4 flags, struct sockaddr *from, int *fromlen);
+int s_really_send(Int4 s, void *buffer, Int4 count, Int4 flags, struct sockaddr_in *to);
+void bzero(char *sp, int len);
+
 
 /*
  *   GET YOUR GLOBALS HERE!
@@ -242,8 +249,8 @@ int s_socket(
 	sp = sockets+s;
 	sp->fd = s;
 	sp->protocol = protocol;
-	bzero(&sp->sa, sizeof(struct sockaddr_in));
-	bzero(&sp->peer, sizeof(struct sockaddr_in));
+	bzero((char *) &sp->sa, sizeof(struct sockaddr_in));
+	bzero((char *) &sp->peer, sizeof(struct sockaddr_in));
 	sp->sa.sin_family		= AF_INET;
 	sp->sa.sin_len			= sizeof(struct sockaddr_in);
 	sp->status				= SOCK_STATUS_USED;
@@ -733,11 +740,11 @@ int s_recv(
 
 int s_recvfrom(
 	Int4 s,
-	char *buffer,
+	void *buffer,
 	Int4 buflen,
 	Int4 flags,
 	struct sockaddr *sa_from,
-	Int4 *fromlen)
+	int *fromlen)
 {
 	SocketPtr sp;
 	struct sockaddr_in *from=(struct sockaddr_in *)sa_from;
@@ -752,7 +759,7 @@ int s_recvfrom(
 	if (! is_used (sp))
 		return (sock_err (EBADF));
 		
-	if (!goodptr(buffer))
+	if (!goodptr((char *)buffer))
 		return (sock_err (EFAULT));
 		
 	if (buflen <= 0)
@@ -773,10 +780,10 @@ int s_recvfrom(
 	switch(sp->protocol) 
 	{
 		case IPPROTO_UDP:
-			return(sock_udp_recv(sp, buffer, buflen, flags, from, (int *)fromlen));
+			return(sock_udp_recv(sp, (char *)buffer, buflen, flags, from, (int *)fromlen));
 
 		case IPPROTO_TCP:
-			return(sock_tcp_recv(sp, buffer, buflen, flags));
+			return(sock_tcp_recv(sp, (char *)buffer, buflen, flags));
 	}
 	return(0);
 }
@@ -956,7 +963,7 @@ int s_sendmsg(Int4 s,struct msghdr *msg,Int4 flags) {
 
 int s_really_send(
 	Int4 s,
-	char *buffer,
+	void *buffer,
 	Int4 count,
 	Int4 flags,
 	struct sockaddr_in *to)
@@ -988,7 +995,7 @@ int s_really_send(
 		case IPPROTO_UDP:
 			if (to == NULL && sp->sstate != SOCK_STATE_CONNECTED) 
 				return(sock_err(ENOTCONN));
-			return(sock_udp_send(sp, to, buffer, count, flags));
+			return(sock_udp_send(sp, to, (char *)buffer, count, flags));
 			break;
 			
 		case IPPROTO_TCP:
@@ -996,7 +1003,7 @@ int s_really_send(
 				return(sock_err(EOPNOTSUPP));
 			if (sp->sstate != SOCK_STATE_CONNECTED) 
 				return(sock_err(ENOTCONN));
-			return ( sock_tcp_send(sp, buffer, count,0 ));
+			return ( sock_tcp_send(sp, (char *)buffer, count,0 ));
 			break;
 		}
 	return(0);
@@ -1498,7 +1505,7 @@ int s_ioctl(
 	 * Zero the buffer on the stack so the user gets back something deterministic.
 	 */
 	if ((request & IOC_OUT) && size)
-		bzero((Ptr)argp, size);
+		bzero((char *) argp, size);
 
 	ifr =(struct ifreq *)argp;
 	switch(request) 
@@ -1587,7 +1594,7 @@ int s_ioctl(
 			addr->sin_addr.s_addr = xIPAddr() | ~xNetMask();
 			return(0);
 		}
-#endif IOCTL_LATER	
+#endif /* IOCTL_LATER	 */
 		default :
 			return(sock_err(EOPNOTSUPP));
 	}

@@ -14,7 +14,10 @@
  *
  * RCS Modification History:
  * $Log$
- * Revision 1.4  1995/05/18 08:23:19  epstein
+ * Revision 1.5  1995/06/02 16:29:03  kans
+ * *** empty log message ***
+ *
+ * Revision 1.4  1995/05/18  08:23:19  epstein
  * add RCS modification history (after PowerPC port)
  *
  */
@@ -24,6 +27,9 @@
  * There is duplication between socket.ext.h and socket.int.h, but
  * there are too many complications in combining them.
  */
+
+#ifndef __socket_int__
+#define __socket_int__
 
 #ifdef __MWERKS__
 #include <MacTCP.h>
@@ -136,3 +142,6 @@ void sock_print(char *title, SocketPtr sp);
 StreamHashEntPtr sock_find_shep(StreamPtr);
 StreamHashEntPtr sock_new_shep(StreamPtr);
 void *sock_fetch_pb(SocketPtr);
+
+#endif  /*__socket_int__ */
+

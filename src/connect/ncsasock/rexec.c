@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:57:03  epstein
-* add RCS log revision history
+* Revision 1.3  1995/06/02 16:29:03  kans
+* *** empty log message ***
 *
+ * Revision 1.2  1995/05/17  17:57:03  epstein
+ * add RCS log revision history
+ *
  */
 
 /*
@@ -54,6 +57,7 @@
 
 extern	int	errno;
 
+
 int rexec(
 	char **ahost,
 	Int4 inport,
@@ -86,11 +90,11 @@ int rexec(
 		else
 			{
 			herlen = (a<<24) | ( b<<16) | (c<<8) | (d);
-			bcopy(&herlen,&sa.sin_addr,4);
+			bcopy((char *) &herlen,(char *) &sa.sin_addr,4);
 			}
 		}
 	else
-		bcopy(hp->h_addr,&sa.sin_addr,hp->h_length);
+		bcopy((char *) hp->h_addr,(char *) &sa.sin_addr,hp->h_length);
 
 	
 	sa.sin_port=htons(inport);

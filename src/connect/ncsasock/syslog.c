@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:58:10  epstein
-* add RCS log revision history
+* Revision 1.3  1995/06/02 16:29:03  kans
+* *** empty log message ***
 *
+ * Revision 1.2  1995/05/17  17:58:10  epstein
+ * add RCS log revision history
+ *
  */
  
 /*
@@ -28,6 +31,7 @@
 
 #include <syslog.h>
 #include <StdArg.h>
+#include <stdio.h>
 
 extern int errno;
 extern int sys_nerr;
@@ -52,10 +56,12 @@ openlog(char *ident, int logstat)
 		
 	if (ident)
 		strcpy(LogTag,ident);
+	return 0;
 }
 
 closelog()
 {
+	return 0;
 }
 
 syslog(int pri,char *fmt,...)
@@ -68,7 +74,7 @@ syslog(int pri,char *fmt,...)
 	va_start(nextArg,fmt);
 	
 	if (pri > LogMask)
-		return;
+		return 0;
 
 	b = buf;
 	while ((c = *f++) != '\0' && b < buf + MAXLINE) 
@@ -97,5 +103,6 @@ syslog(int pri,char *fmt,...)
 	vsprintf(oline, buf, nextArg);
 
 	dprintf("%s: %s\n", LogTag,oline);
+	return 0;
 }
 

@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 1.2  1995/05/17 17:57:56  epstein
-* add RCS log revision history
+* Revision 1.3  1995/06/02 16:29:03  kans
+* *** empty log message ***
 *
+ * Revision 1.2  1995/05/17  17:57:56  epstein
+ * add RCS log revision history
+ *
  */
 
 /*
@@ -125,6 +128,8 @@
 #endif
 
 #include <StdArg.h>
+
+static int stdio_write( SocketPtr sp, char *buffer, unsigned long buflen);
 
 extern SocketPtr sockets;
 extern SpinFn spinroutine;
