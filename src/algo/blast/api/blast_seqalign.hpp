@@ -80,8 +80,8 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
  * @param query All query sequences [in]
- * @param seq_src handle to BLAST Sequence Source ADT [in]
- * @param index Index of the desired subject in the sequence source [in]
+ * @param subject One subject sequence location [in]
+ * @param subject_index Index of this subject sequence in a set [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
@@ -90,7 +90,7 @@ TSeqAlignVector
 BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
                           EProgram prog,
                           TSeqLocVector &query, 
-                          const BlastSeqSrc* seq_src, Int4 index,
+                          SSeqLoc& subject, Uint4 subject_index,
                           bool is_gapped=true, bool is_ooframe=false);
 
 END_SCOPE(blast)
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/07/19 13:56:02  dondosha
+* Pass subject SSeqLoc directly to BLAST_OneSubjectResults2CSeqAlign instead of BlastSeqSrc
+*
 * Revision 1.22  2004/06/07 21:34:55  dondosha
 * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
 *

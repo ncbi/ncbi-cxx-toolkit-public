@@ -291,13 +291,14 @@ CBl2Seq::x_Results2SeqAlign()
 
     bool gappedMode = m_OptsHandle->GetOptions().GetGappedMode();
     bool outOfFrameMode = m_OptsHandle->GetOptions().GetOutOfFrameMode();
+    Uint4 index;
 
-    for (unsigned int index = 0; index < m_tSubjects.size(); ++index)
+    for (index = 0; index < m_tSubjects.size(); ++index)
     {
         TSeqAlignVector seqalign =
             BLAST_OneSubjectResults2CSeqAlign(mi_pResults,
                  m_OptsHandle->GetOptions().GetProgram(),
-                 m_tQueries, mi_pSeqSrc, index,
+                 m_tQueries, m_tSubjects[index], index, 
                  gappedMode, outOfFrameMode);
 
         /* Merge the new vector with the current. Assume that both vectors
@@ -338,6 +339,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.60  2004/07/19 13:56:12  dondosha
+ * Pass subject SSeqLoc directly to BLAST_OneSubjectResults2CSeqAlign instead of BlastSeqSrc
+ *
  * Revision 1.59  2004/07/06 15:48:40  dondosha
  * Use EBlastProgramType enumeration type instead of EProgram when calling C code
  *

@@ -845,13 +845,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
                 BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
                     subject_id, query_length, subj_length);
         }
-        ListNode* subject_loc_wrap =
-            BLASTSeqSrcGetSeqLoc(seq_src, (void*)&hsp_list->oid);
-        SSeqLoc* subject_loc = NULL;
-        if (subject_loc_wrap &&
-            subject_loc_wrap->choice == BLAST_SEQSRC_CPP_SEQLOC)
-            subject_loc = (SSeqLoc*) subject_loc_wrap->ptr;
-        x_RemapAlignmentCoordinates(hit_align, &query, subject_loc);
+        x_RemapAlignmentCoordinates(hit_align, &query);
         seq_aligns->Set().push_back(hit_align);
     }
     return seq_aligns;
@@ -889,14 +883,10 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
 
 TSeqAlignVector
 BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
-        EProgram prog,
-        TSeqLocVector &query,
-        const BlastSeqSrc* seq_src,
-        Int4 subject_index,
-        bool is_gapped, bool is_ooframe)
+        EProgram prog, TSeqLocVector &query, SSeqLoc& subject,
+        Uint4 subject_index, bool is_gapped, bool is_ooframe)
 {
     ASSERT(results->num_queries == (int)query.size());
-    ASSERT(seq_src);
 
     TSeqAlignVector retval;
     CConstRef<CSeq_id> subject_id;
@@ -905,8 +895,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
     TSeqPos query_length = 0;
 
     // Subject is the same for all queries, so retrieve its id right away
-    x_GetSequenceLengthAndId(NULL, seq_src, subject_index,
-                             subject_id, &subj_length);
+    x_GetSequenceLengthAndId(&subject, NULL, 0, subject_id, &subj_length);
 
     // Process each query's hit list
     for (int index = 0; index < results->num_queries; index++) {
@@ -921,7 +910,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
             for (result_index = 0; result_index < hit_list->hsplist_count;
                  ++result_index) {
                 hsp_list = hit_list->hsplist_array[result_index];
-                if (hsp_list->oid == subject_index)
+                if (hsp_list->oid == (Int4)subject_index)
                     break;
             }
         }
@@ -937,15 +926,7 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                     BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
                         subject_id, query_length, subj_length);
             }
-            ListNode* subject_loc_wrap =
-                BLASTSeqSrcGetSeqLoc(seq_src, (void*)&hsp_list->oid);
-            SSeqLoc* subject_loc = NULL;
-            if (subject_loc_wrap &&
-                subject_loc_wrap->choice == BLAST_SEQSRC_CPP_SEQLOC)
-                subject_loc = (SSeqLoc*) subject_loc_wrap->ptr;
-            x_RemapAlignmentCoordinates(hit_align, &query[index],
-                                        subject_loc);
-            ListNodeFree(subject_loc_wrap);
+            x_RemapAlignmentCoordinates(hit_align, &query[index], &subject);
             seq_aligns.Reset(new CSeq_align_set());
             seq_aligns->Set().push_back(hit_align);
         } else {
@@ -966,6 +947,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/07/19 13:56:02  dondosha
+* Pass subject SSeqLoc directly to BLAST_OneSubjectResults2CSeqAlign instead of BlastSeqSrc
+*
 * Revision 1.10  2004/07/15 14:50:09  madden
 * removed commented out ASSERT
 *
