@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2001/04/25 20:41:53  vakatov
+* <limits.h>, <float.h>  --->  <corelib/ncbi_limits.h>
+*
 * Revision 1.24  2001/04/13 14:57:15  kholodov
 * Added: SetDTDFileName function to set DTD module name in XML header
 *
@@ -140,6 +143,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
+
 #include <serial/objostrxml.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
@@ -155,12 +160,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <limits.h>
-#if HAVE_WINDOWS_H || defined(__FreeBSD__)
-// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
-// FreeBSD needs this to find FLT_DIG and DBL_DIG
-# include <float.h>
-#endif
 
 BEGIN_NCBI_SCOPE
 

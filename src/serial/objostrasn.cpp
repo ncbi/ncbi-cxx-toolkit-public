@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/04/25 20:41:53  vakatov
+* <limits.h>, <float.h>  --->  <corelib/ncbi_limits.h>
+*
 * Revision 1.61  2001/01/03 15:22:27  vasilche
 * Fixed limited buffer size for REAL data in ASN.1 binary format.
 * Fixed processing non ASCII symbols in ASN.1 text format.
@@ -285,6 +288,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
+
 #include <serial/objostrasn.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
@@ -299,12 +304,6 @@
 
 #include <stdio.h>
 #include <math.h>
-#include <limits.h>
-#if HAVE_WINDOWS_H || defined(__FreeBSD__)
-// FreeBSD needs this to find FLT_DIG and DBL_DIG
-// In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
-# include <float.h>
-#endif
 
 #if HAVE_NCBI_C
 # include <asn.h>
