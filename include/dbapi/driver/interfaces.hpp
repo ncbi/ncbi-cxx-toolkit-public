@@ -524,7 +524,7 @@ public:
 };
 
 
-typedef I_DriverContext* FDBAPI_CreateContext(map<string,string>* attr = 0);
+typedef I_DriverContext* (*FDBAPI_CreateContext)(map<string,string>* attr = 0);
 
 class I_DriverMgr
 {
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/01/11 20:48:58  soussov
+ * changes typedef for FDBAPI_CreateContext
+ *
  * Revision 1.7  2002/01/11 20:22:41  soussov
  * driver manager support added
  *
