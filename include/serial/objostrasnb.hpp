@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/12/15 21:28:48  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.32  2000/12/15 15:38:01  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -178,7 +183,6 @@ class CObjectIStreamAsnBinary;
 class CObjectOStreamAsnBinary : public CObjectOStream
 {
 public:
-    typedef CObjectStreamAsnBinaryDefs::TByte TByte;
     typedef CObjectStreamAsnBinaryDefs::TTag TTag;
     typedef CObjectStreamAsnBinaryDefs::ETag ETag;
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
@@ -197,7 +201,7 @@ public:
                           CObjectIStream& in);
 
     void WriteNull(void);
-    void WriteByte(TByte byte);
+    void WriteByte(Uint1 byte);
     void WriteBytes(const char* bytes, size_t size);
 
     void WriteTag(EClass c, bool constructed, TTag index);
@@ -295,13 +299,13 @@ private:
     };
     ETagState m_CurrentTagState;
     size_t m_CurrentTagPosition;
-    TByte m_CurrentTagCode;
+    Uint1 m_CurrentTagCode;
     size_t m_CurrentTagLengthSize;
     size_t m_CurrentTagLength;
     size_t m_CurrentTagLimit;
     stack<size_t> m_Limits;
 
-    void StartTag(TByte code);
+    void StartTag(Uint1 code);
     void EndTag(void);
     void SetTagLength(size_t length);
 #endif

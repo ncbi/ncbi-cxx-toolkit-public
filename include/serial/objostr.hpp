@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.54  2000/12/15 15:38:00  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -290,10 +295,7 @@ public:
                                 const string& fileName,
                                 unsigned openFlags = 0);
     static CObjectOStream* Open(const string& fileName,
-                                ESerialDataFormat format)
-        {
-            return Open(format, fileName);
-        }
+                                ESerialDataFormat format);
     static CObjectOStream* Open(ESerialDataFormat format,
                                 CNcbiOstream& outStream,
                                 bool deleteOutStream = false);
@@ -437,25 +439,22 @@ public:
         eFail          = 1 << 6,
         eNotOpen       = 1 << 7
     };
-    bool fail(void) const
-        {
-            return m_Fail != 0;
-        }
-    unsigned GetFailFlags(void) const
-        {
-            return m_Fail;
-        }
+    bool fail(void) const;
+    unsigned GetFailFlags(void) const;
     unsigned SetFailFlagsNoError(unsigned flags);
     unsigned SetFailFlags(unsigned flags, const char* message);
-    unsigned ClearFailFlags(unsigned flags)
-        {
-            unsigned old = m_Fail;
-            m_Fail &= ~flags;
-            return old;
-        }
+    unsigned ClearFailFlags(unsigned flags);
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
+
+    enum EFlags {
+        eFlagNone                = 0,
+        eFlagAllowNonAsciiChars  = 1 << 0
+    };
+    unsigned GetFlags(void) const;
+    unsigned SetFlags(unsigned flags);
+    unsigned ClearFlags(unsigned flags);
 
     void ThrowError1(EFailFlags fail, const char* message);
     void ThrowError1(EFailFlags fail, const string& message);
@@ -627,6 +626,7 @@ protected:
     COStreamBuffer m_Output;
 
     unsigned m_Fail;
+    unsigned m_Flags;
 
     AutoPtr<CWriteObjectList> m_Objects;
 

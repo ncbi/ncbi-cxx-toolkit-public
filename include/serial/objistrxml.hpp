@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.11  2000/12/15 15:38:00  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -104,8 +109,6 @@ class CItemsInfo;
 class CObjectIStreamXml : public CObjectIStream
 {
 public:
-    typedef unsigned char TByte;
-
     CObjectIStreamXml(void);
     ~CObjectIStreamXml(void);
 

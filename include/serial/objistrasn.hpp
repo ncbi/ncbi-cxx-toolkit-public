@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.45  2000/12/15 15:38:00  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -243,8 +248,6 @@ BEGIN_NCBI_SCOPE
 class CObjectIStreamAsn : public CObjectIStream
 {
 public:
-    typedef unsigned char TByte;
-
     CObjectIStreamAsn(void);
     CObjectIStreamAsn(CNcbiIstream& in);
     CObjectIStreamAsn(CNcbiIstream& in, bool deleteIn);
@@ -258,8 +261,8 @@ public:
 
     virtual void ReadNull(void);
 
-    TByte ReadByte(void);
-    void ReadBytes(TByte* bytes, unsigned size);
+    Uint1 ReadByte(void);
+    void ReadBytes(Uint1* bytes, unsigned size);
 
 protected:
     TObjectIndex ReadIndex(void);

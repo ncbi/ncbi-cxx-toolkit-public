@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.32  2000/12/15 15:38:00  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -176,7 +181,6 @@ class CObjectOStreamAsnBinary;
 class CObjectIStreamAsnBinary : public CObjectIStream
 {
 public:
-    typedef CObjectStreamAsnBinaryDefs::TByte TByte;
     typedef CObjectStreamAsnBinaryDefs::TTag TTag;
     typedef CObjectStreamAsnBinaryDefs::ETag ETag;
     typedef CObjectStreamAsnBinaryDefs::EClass EClass;
@@ -301,15 +305,15 @@ private:
 
     // low level interface
 private:
-    TByte PeekTagByte(size_t index = 0);
-    TByte StartTag(void);
+    Uint1 PeekTagByte(size_t index = 0);
+    Uint1 StartTag(void);
     TTag PeekTag(void);
     TTag PeekTag(EClass c, bool constructed);
     string PeekClassTag(void);
-    TByte PeekAnyTag(void);
+    Uint1 PeekAnyTag(void);
     void ExpectSysTag(EClass c, bool constructed, ETag tag);
     void ExpectSysTag(ETag tag);
-    TByte FlushTag(void);
+    Uint1 FlushTag(void);
     void ExpectIndefiniteLength(void);
     bool PeekIndefiniteLength(void);
 public:
@@ -321,9 +325,9 @@ private:
     void ExpectEndOfContent(void);
 public:
     void EndOfTag(void);
-    TByte ReadByte(void);
-    signed char ReadSByte(void);
-    void ExpectByte(TByte byte);
+    Uint1 ReadByte(void);
+    Int1 ReadSByte(void);
+    void ExpectByte(Uint1 byte);
 private:
     void ReadBytes(char* buffer, size_t count);
     void SkipBytes(size_t count);
@@ -333,7 +337,7 @@ private:
     bool HaveMoreElements(void);
     void UnexpectedMember(TTag tag);
     void UnexpectedTag(TTag tag);
-    void UnexpectedByte(TByte byte);
+    void UnexpectedByte(Uint1 byte);
 
     friend class CObjectOStreamAsnBinary;
 };

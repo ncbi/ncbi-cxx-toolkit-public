@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/12/15 21:28:49  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.6  2000/09/18 20:00:08  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -76,8 +81,7 @@ BEGIN_NCBI_SCOPE
 
 namespace CObjectStreamAsnBinaryDefs
 {
-    typedef unsigned char TByte;
-    typedef int TTag;
+    typedef Int4 TTag;
 
     enum EClass {
         eUniversal,
@@ -135,11 +139,11 @@ namespace CObjectStreamAsnBinaryDefs
     };
 
 
-    inline TByte MakeTagByte(EClass c, bool constructed, ETag tag);
-    inline TByte MakeTagByte(EClass c, bool constructed);
-    inline ETag ExtractTag(TByte byte);
-    inline bool ExtractConstructed(TByte byte);
-    inline TByte ExtractClassAndConstructed(TByte byte);
+    inline Uint1 MakeTagByte(EClass c, bool constructed, ETag tag);
+    inline Uint1 MakeTagByte(EClass c, bool constructed);
+    inline ETag ExtractTag(Uint1 byte);
+    inline bool ExtractConstructed(Uint1 byte);
+    inline Uint1 ExtractClassAndConstructed(Uint1 byte);
 
 #include <serial/objstrasnb.inl>
 

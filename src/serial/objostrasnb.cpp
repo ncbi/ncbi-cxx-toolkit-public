@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/12/15 21:29:03  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.53  2000/12/15 15:38:45  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -320,7 +325,7 @@ string CObjectOStreamAsnBinary::GetPosition(void) const
 
 #if CHECK_STREAM_INTEGRITY
 inline
-void CObjectOStreamAsnBinary::StartTag(TByte code)
+void CObjectOStreamAsnBinary::StartTag(Uint1 code)
 {
     m_Limits.push(m_CurrentTagLimit);
     m_CurrentTagCode = code;
@@ -358,7 +363,7 @@ void CObjectOStreamAsnBinary::SetTagLength(size_t length)
 #if !CHECK_STREAM_INTEGRITY
 inline
 #endif
-void CObjectOStreamAsnBinary::WriteByte(TByte byte)
+void CObjectOStreamAsnBinary::WriteByte(Uint1 byte)
 {
 #if CHECK_STREAM_INTEGRITY
     //_TRACE("WriteByte: " << NStr::PtrToString(byte));
@@ -445,9 +450,9 @@ template<typename T>
 void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
 {
     for ( size_t shift = (count - 1) * 8; shift > 0; shift -= 8 ) {
-        out.WriteByte(TByte(value >> shift));
+        out.WriteByte(Uint1(value >> shift));
     }
-    out.WriteByte(TByte(value));
+    out.WriteByte(Uint1(value));
 }
 
 inline
@@ -473,7 +478,7 @@ void CObjectOStreamAsnBinary::WriteLongTag(EClass c, bool constructed,
     WriteShortTag(c, constructed, eLongTag);
     // calculate largest shift enough for TTag to fit
     size_t shift = (sizeof(TTag) * 8 - 1) / 7 * 7;
-    TByte bits;
+    Uint1 bits;
     // find first non zero 7bits
     while ( (bits = (tag >> shift) & 0x7f) == 0 ) {
         shift -= 7;
@@ -526,7 +531,7 @@ void CObjectOStreamAsnBinary::WriteIndefiniteLength(void)
 inline
 void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
 {
-    WriteByte(TByte(length));
+    WriteByte(Uint1(length));
 }
 
 void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
@@ -544,12 +549,12 @@ void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
         if ( sizeof(length) > 4 ) {
             for ( size_t shift = (count-1)*8;
                   count > 0; --count, shift -= 8 ) {
-                if ( TByte(length >> shift) != 0 )
+                if ( Uint1(length >> shift) != 0 )
                     break;
             }
         }
     }
-    WriteByte(TByte(0x80 + count));
+    WriteByte(Uint1(0x80 + count));
     WriteBytesOf(*this, length, count);
 }
 

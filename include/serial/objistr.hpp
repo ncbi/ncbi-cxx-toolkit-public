@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2000/12/15 21:28:46  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.58  2000/12/15 15:37:59  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -315,10 +320,7 @@ public:
                                 const string& fileName,
                                 unsigned openFlags = 0);
     static CObjectIStream* Open(const string& fileName,
-                                ESerialDataFormat format)
-        {
-            return Open(format, fileName);
-        }
+                                ESerialDataFormat format);
 
     bool DetectLoops(void) const;
     void DetectLoops(bool detectLoops);
@@ -514,21 +516,10 @@ public:
         eFail          = 1 << 6,
         eNotOpen       = 1 << 7
     };
-    bool fail(void) const
-        {
-            return m_Fail != 0;
-        }
-    unsigned GetFailFlags(void) const
-        {
-            return m_Fail;
-        }
+    bool fail(void) const;
+    unsigned GetFailFlags(void) const;
     unsigned SetFailFlags(unsigned flags, const char* message);
-    unsigned ClearFailFlags(unsigned flags)
-        {
-            unsigned old = m_Fail;
-            m_Fail &= ~flags;
-            return old;
-        }
+    unsigned ClearFailFlags(unsigned flags);
     bool InGoodState(void);
     virtual string GetStackTrace(void) const;
     virtual string GetPosition(void) const = 0;
@@ -550,6 +541,14 @@ public:
 # define ThrowIOError(in) ThrowIOError1(FILE_LINE in)
 # define CheckIOError(in) CheckIOError1(FILE_LINE in)
 #endif
+
+    enum EFlags {
+        eFlagNone                = 0,
+        eFlagAllowNonAsciiChars  = 1 << 0
+    };
+    unsigned GetFlags(void) const;
+    unsigned SetFlags(unsigned flags);
+    unsigned ClearFlags(unsigned flags);
 
 	class ByteBlock
     {
@@ -715,6 +714,7 @@ private:
     AutoPtr<CReadObjectList> m_Objects;
 
     unsigned m_Fail;
+    unsigned m_Flags;
 
 public:
     // hook support

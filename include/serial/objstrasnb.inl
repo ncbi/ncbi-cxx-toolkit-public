@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 21:28:49  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.1  2000/09/18 20:00:08  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -43,31 +48,31 @@
 */
 
 inline
-TByte MakeTagByte(EClass c, bool constructed, ETag tag)
+Uint1 MakeTagByte(EClass c, bool constructed, ETag tag)
 {
     return (c << 6) | (constructed? 0x20: 0) | tag;
 }
     
 inline
-TByte MakeTagByte(EClass c, bool constructed)
+Uint1 MakeTagByte(EClass c, bool constructed)
 {
     return MakeTagByte(c, constructed, eNone);
 }
 
 inline
-ETag ExtractTag(TByte byte)
+ETag ExtractTag(Uint1 byte)
 {
     return ETag(byte & 0x1f);
 }
 
 inline
-bool ExtractConstructed(TByte byte)
+bool ExtractConstructed(Uint1 byte)
 {
     return (byte & 0x20) != 0;
 }
 
 inline
-TByte ExtractClassAndConstructed(TByte byte)
+Uint1 ExtractClassAndConstructed(Uint1 byte)
 {
     return byte & 0xE0;
 }

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 21:28:47  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.1  2000/09/18 20:00:05  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -44,21 +49,21 @@
 
 #if !CHECK_STREAM_INTEGRITY
 inline
-CObjectIStreamAsnBinary::TByte
+Uint1
 CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
     return m_Input.PeekChar(index);
 }
 
 inline
-CObjectIStreamAsnBinary::TByte
+Uint1
 CObjectIStreamAsnBinary::StartTag(void)
 {
     return PeekTagByte();
 }
 
 inline
-CObjectIStreamAsnBinary::TByte CObjectIStreamAsnBinary::FlushTag(void)
+Uint1 CObjectIStreamAsnBinary::FlushTag(void)
 {
     m_Input.SkipChars(m_CurrentTagLength);
     return m_Input.GetChar();
@@ -67,7 +72,7 @@ CObjectIStreamAsnBinary::TByte CObjectIStreamAsnBinary::FlushTag(void)
 inline
 bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
 {
-    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+    return Uint1(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
 }
 
 inline
@@ -120,20 +125,20 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 }
 
 inline
-CObjectIStreamAsnBinary::TByte CObjectIStreamAsnBinary::ReadByte(void)
+Uint1 CObjectIStreamAsnBinary::ReadByte(void)
 {
     return m_Input.GetChar();
 }
 #endif
 
 inline
-signed char CObjectIStreamAsnBinary::ReadSByte(void)
+Int1 CObjectIStreamAsnBinary::ReadSByte(void)
 {
     return ReadByte();
 }
 
 inline
-void CObjectIStreamAsnBinary::ExpectByte(TByte byte)
+void CObjectIStreamAsnBinary::ExpectByte(Uint1 byte)
 {
     if ( ReadByte() != byte )
         UnexpectedByte(byte);

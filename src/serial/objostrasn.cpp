@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2000/12/15 21:29:02  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.58  2000/12/15 15:38:45  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -465,8 +470,9 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     while ( length > 0 ) {
         char c = *ptr++;
         --length;
-        if ( c < ' ' || c > '~' ) {
-            ERR_POST("bad char in string: " << int(c));
+        if ( c < ' ' ||
+             c > '~' && (GetFlags() & eFlagAllowNonAsciiChars) == 0 ) {
+            ERR_POST("bad char in string: " << (c & 0xff));
             c = '#';
         }
         m_Output.WrapAt(78, true);

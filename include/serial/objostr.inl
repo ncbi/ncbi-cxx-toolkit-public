@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/12/15 21:28:48  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.9  2000/12/15 15:38:01  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -81,6 +86,13 @@
 */
 
 inline
+CObjectOStream* CObjectOStream::Open(const string& fileName,
+                                     ESerialDataFormat format)
+{
+    return Open(format, fileName);
+}
+
+inline
 void CObjectOStream::FlushBuffer(void)
 {
     m_Output.FlushBuffer();
@@ -90,6 +102,48 @@ inline
 void CObjectOStream::Flush(void)
 {
     m_Output.Flush();
+}
+
+inline
+unsigned CObjectOStream::GetFailFlags(void) const
+{
+    return m_Fail;
+}
+
+inline
+bool CObjectOStream::fail(void) const
+{
+    return GetFailFlags() != 0;
+}
+
+inline
+unsigned CObjectOStream::ClearFailFlags(unsigned flags)
+{
+    unsigned old = GetFailFlags();
+    m_Fail &= ~flags;
+    return old;
+}
+
+inline
+unsigned CObjectOStream::GetFlags(void) const
+{
+    return m_Flags;
+}
+
+inline
+unsigned CObjectOStream::SetFlags(unsigned flags)
+{
+    unsigned old = GetFlags();
+    m_Flags |= flags;
+    return old;
+}
+
+inline
+unsigned CObjectOStream::ClearFlags(unsigned flags)
+{
+    unsigned old = GetFlags();
+    m_Flags &= ~flags;
+    return old;
 }
 
 inline

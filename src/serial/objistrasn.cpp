@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2000/12/15 21:29:01  vasilche
+* Moved some typedefs/enums from corelib/ncbistd.hpp.
+* Added flags to CObjectIStream/CObjectOStream: eFlagAllowNonAsciiChars.
+* TByte typedef replaced by Uint1.
+*
 * Revision 1.61  2000/12/15 15:38:44  vasilche
 * Added support of Int8 and long double.
 * Enum values now have type Int4 instead of long.
@@ -749,16 +754,17 @@ void CObjectIStreamAsn::ReadString(string& s)
                 }
                 break;
             default:
-                if ( c < ' ' && c > '~' )
+                if ( c < ' ' )
                     BadStringChar(startLine, c);
-                else {
-                    ++i;
-                    if ( i == 128 ) {
-                        // too long string -> flush it
-                        s.append(m_Input.GetCurrentPos(), i);
-                        m_Input.SkipChars(i);
-                        i = 0;
-                    }
+                if ( c > '~' && (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
+                    BadStringChar(startLine, c);
+
+                // ok: append char
+                if ( ++i == 128 ) {
+                    // too long string -> flush it
+                    s.append(m_Input.GetCurrentPos(), i);
+                    m_Input.SkipChars(i);
+                    i = 0;
                 }
                 break;
             }
@@ -894,15 +900,16 @@ void CObjectIStreamAsn::SkipString(void)
                 }
                 break;
             default:
-                if ( c < ' ' && c > '~' )
+                if ( c < ' ' )
                     BadStringChar(startLine, c);
-                else {
-                    ++i;
-                    if ( i == 128 ) {
-                        // too long string -> flush it
-                        m_Input.SkipChars(i);
-                        i = 0;
-                    }
+                if ( c > '~' && (GetFlags() & eFlagAllowNonAsciiChars) == 0 )
+                    BadStringChar(startLine, c);
+
+                // ok: skip char
+                if ( ++i == 128 ) {
+                    // too long string -> flush it
+                    m_Input.SkipChars(i);
+                    i = 0;
                 }
                 break;
             }
