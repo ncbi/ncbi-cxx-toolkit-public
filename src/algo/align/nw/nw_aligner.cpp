@@ -98,20 +98,29 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
                    "Zero length specified for sequence(s)");
 
     size_t iErrPos1 = x_CheckSequence(seq1, len1);
-    if(iErrPos1 < len1)
+    if(iErrPos1 < len1) {
+        ostrstream oss;
+        oss << "The first sequence is inconsistent with the current "
+            << "scoring matrix type. Symbol " << seq1[iErrPos1] << " at "
+            << iErrPos1;
+        string message = CNcbiOstrstreamToString(oss);
         NCBI_THROW(
                    CNWAlignerException,
                    eInvalidCharacter,
-                   "The first sequence is inconsistent with the current "
-                   "scoring matrix type");
-
+                   message );
+    }
     size_t iErrPos2 = x_CheckSequence(seq2, len2);
-    if(iErrPos2 < len2)
+    if(iErrPos2 < len2) {
+        ostrstream oss;
+        oss << "The second sequence is inconsistent with the current "
+            << "scoring matrix type. Symbol " << seq2[iErrPos2] << " at "
+            << iErrPos1;
+        string message = CNcbiOstrstreamToString(oss);
         NCBI_THROW(
                    CNWAlignerException,
                    eInvalidCharacter,
-                   "The second sequence is inconsistent with the current "
-                   "scoring matrix type");
+                   message );
+    }
 }
 
 
@@ -124,13 +133,14 @@ CNWAligner::CNWAligner(const char* seq1, size_t len1,
 // Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
 //
 
-const unsigned char kMaskFc  = 1;
-const unsigned char kMaskEc  = kMaskFc << 1;
-const unsigned char kMaskE   = kMaskFc << 2;
-const unsigned char kMaskD   = kMaskFc << 3;
+const unsigned char kMaskFc  = 0x0001;
+const unsigned char kMaskEc  = 0x0002;
+const unsigned char kMaskE   = 0x0004;
+const unsigned char kMaskD   = 0x0008;
+
 int CNWAligner::Run()
 {
-    x_LoadMatrix();
+    x_LoadScoringMatrix();
 
     const int N1 = m_SeqLen1 + 1;
     const int N2 = m_SeqLen2 + 1;
@@ -151,7 +161,7 @@ int CNWAligner::Run()
     int k;
     for (k = 1; k < N2; k++) {
         rowV[k] = pV[k] + m_Ws;
-        rowF[k] = kMin_Int;
+        rowF[k] = kInfMinus;
         backtrace_matrix[k] = kMaskE | kMaskEc;
     }
     rowV[0] = 0;
@@ -166,7 +176,7 @@ int CNWAligner::Run()
     for(i = 1;  i < N1;  ++i) {
         
         V = V0 += m_Ws;
-        E = kMin_Int;
+        E = kInfMinus;
         backtrace_matrix[k++] = kMaskFc;
         char ci = seq1[i];
 
@@ -244,7 +254,7 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace)
     while (k != 0) {
         unsigned char Key = backtrace[k];
         if (Key & kMaskD) {
-            m_Transcript.push_back(eMatch);  // or eReplace
+            m_Transcript.push_back( eMatch );
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
@@ -377,12 +387,13 @@ string CNWAligner::GetTranscript() const
         }
         s += c;
     }
+    reverse(s.begin(), s.end());
     return s;
 }
 
 
 // Load pairwise scoring matrix
-void CNWAligner::x_LoadMatrix()
+void CNWAligner::x_LoadScoringMatrix()
 {
     switch(m_MatrixType) {
 
@@ -461,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/01/21 12:41:37  kapustin
+ * Use class neg infinity constant to specify least possible score
+ *
  * Revision 1.5  2003/01/08 15:42:59  kapustin
  * Fix initialization for the first column of the backtrace matrix
  *

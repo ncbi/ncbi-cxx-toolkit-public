@@ -67,7 +67,7 @@ const unsigned char kMaskDnr   = 0x20;
 
 int CNWAlignerMrna2Dna::Run()
 {
-    x_LoadMatrix();
+    x_LoadScoringMatrix();
 
     const int N1 = m_SeqLen1 + 1;
     const int N2 = m_SeqLen2 + 1;
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/21 12:41:38  kapustin
+ * Use class neg infinity constant to specify least possible score
+ *
  * Revision 1.4  2003/01/08 15:42:59  kapustin
  * Fix initialization for the first column of the backtrace matrix
  *
