@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/12/17 04:06:20  vakatov
+* Added CCgiApplication::RunFastCGI()
+*
 * Revision 1.18  1999/11/15 15:53:19  sandomir
 * Registry support moved from CCgiApplication to CNcbiApplication
 *
@@ -126,14 +129,18 @@ public:
     virtual CNcbiResource* LoadResource(void);
     virtual CCgiServerContext* LoadServerContext(CCgiContext& context);
 
-protected:
+    // If FastCGI-capable, and run as a Fast-CGI then iterate through
+    // the FastCGI loop -- doing initialization and running ProcessRequest()
+    // time after time; then return TRUE.
+    // Return FALSE overwise.
+    bool RunFastCGI(unsigned def_iter=3);
 
+protected:
     // factory method for Context object construction
-    virtual CCgiContext* CreateContext( CNcbiEnvironment* env = 0,
-                                        CNcbiIstream* in = 0, 
-                                        CNcbiOstream* out = 0,
-                                        int argc = 0, char** argv = 0
-                                        );
+    virtual CCgiContext* CreateContext(CNcbiEnvironment* env = 0,
+                                       CNcbiIstream* in = 0, 
+                                       CNcbiOstream* out = 0,
+                                       int argc = 0, char** argv = 0);
 
 private:
     CNcbiResource& x_GetResource(void) const;
