@@ -69,6 +69,7 @@
 
 #include <objtools/readers/readfeat.hpp>
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
