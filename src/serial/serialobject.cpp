@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/10/06 18:05:02  vasilche
+* Thread-safe initialization in s_SerFlags().
+*
 * Revision 1.26  2004/07/29 19:57:08  vasilche
 * Added operators to read/write CObjectInfo.
 *
@@ -115,6 +118,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
 
@@ -477,14 +481,17 @@ static
 long& s_SerFlags(CNcbiIos& io)
 {
     static int s_SerIndex;
+    static bool s_HaveIndex = false;
 
-    {{  // Make sure to get a unique IOS index
-        static bool s_HaveIndex = false;
+    if ( !s_HaveIndex ) {
+        // Make sure to get a unique IOS index
+        DEFINE_STATIC_FAST_MUTEX(s_IndexMutex);
+        CFastMutexGuard guard(s_IndexMutex);
         if ( !s_HaveIndex ) {
             s_SerIndex = CNcbiIos::xalloc();
             s_HaveIndex = true;
         }
-    }}
+    }
 
     return io.iword(s_SerIndex);
 }
