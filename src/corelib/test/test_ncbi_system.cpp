@@ -30,6 +30,13 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.2  2001/07/02 21:33:09  vakatov
+* Fixed against SIGXCPU during the signal handling.
+* Increase the amount of reserved memory for the memory limit handler
+* to 10K (to fix for the 64-bit WorkShop compiler).
+* Use standard C++ arg.processing (ncbiargs) in the test suite.
+* Cleaned up the code. Get rid of the "Ncbi_" prefix.
+*
 * Revision 6.1  2001/07/02 16:43:43  ivanov
 * Initialization
 *
@@ -38,7 +45,10 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
+
+#include <memory>
 
 
 USING_NCBI_SCOPE;
@@ -54,16 +64,11 @@ static void Test_MemLimit(void)
 
     const size_t kHeapLimit = 100000;
 
-    if ( !Ncbi_SetHeapLimit(kHeapLimit) ) {
-        ERR_POST("Error set heap limit");
-        return;
-    }
+    _VERIFY( SetHeapLimit(kHeapLimit) );
     
-    for (size_t i = 0;  i <= kHeapLimit/10; i++) {
-        int *pi = new int[10];
-        if ( !pi ) {
-            ERR_POST("Not memory!");
-        }
+    for (size_t i = 0;  i <= kHeapLimit/10;  i++) {
+        int* pi = new int[10];
+        _ASSERT(pi);
     }
 }
 
@@ -76,12 +81,13 @@ static void Test_CpuLimit(void)
 {
     LOG_POST("\nCPU time limit test\n");
 
-    if ( !Ncbi_SetCpuTimeLimit(2) ) {
-        ERR_POST("Error set CPU time limit");
-        return;
+    _VERIFY( SetCpuTimeLimit(2) );
+
+    for (;;) {
+        continue;
     }
-    while (1);
 }
+
 
 /////////////////////////////////
 // Test application
@@ -90,41 +96,56 @@ static void Test_CpuLimit(void)
 class CTestApplication : public CNcbiApplication
 {
 public:
-    virtual ~CTestApplication(void);
-    virtual int Run(void);
+    virtual void Init(void);
+    virtual int  Run (void);
 };
+
+
+void CTestApplication::Init(void)
+{
+    // Set error posting and tracing on maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
+
+    // Create command-line argument descriptions class
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "Test some system-specific functions");
+
+    // Describe the expected command-line arguments
+    arg_desc->AddPositional
+        ("feature",
+         "Platform-specific feature to test",
+         CArgDescriptions::eString);
+    arg_desc->SetConstraint
+        ("feature", &(*new CArgAllow_Strings, "mem", "cpu"));
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+}
 
 
 int CTestApplication::Run(void)
 {
-    SetDiagStream(&NcbiCout);
+    // Get arguments
+    CArgs args = GetArgs();
 
-    bool none_param = false;
-    for ( size_t i = 1;  i < GetArguments().Size();  ++i ) {
-        if ( GetArguments()[i] == "-mem" )
-            Test_MemLimit();
-        else if ( GetArguments()[i] == "-cpu" )
-            Test_CpuLimit();
-        else {
-            none_param = true;
-        }
+    if (args["feature"].AsString() == "mem") {
+        Test_MemLimit();
     }
-    if ( none_param )
-        LOG_POST("None parameters (-mem, -cpu). Test not running.");
+    else if (args["feature"].AsString() == "cpu") {
+        Test_CpuLimit();
+    }
     else {
-        // test normal exit with booked handler
-        Ncbi_SetHeapLimit(100000);
-        LOG_POST("\nTEST execution completed successfully!\n");
-        return 0;
+        _TROUBLE;
     }
+
     return 0;
 }
 
-CTestApplication::~CTestApplication()
-{
-    SetDiagStream(0);
-    _ASSERT( IsDiagStream(0) );
-}
 
 
   
@@ -138,5 +159,5 @@ static CTestApplication theTestApplication;
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return theTestApplication.AppMain(argc, argv);
+    return theTestApplication.AppMain(argc, argv, 0, eDS_Default, 0);
 }

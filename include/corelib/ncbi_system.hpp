@@ -29,10 +29,20 @@
 * Author:  Vladimir Ivanov
 *
 * File Description:
-*      System functions
+*
+*   System functions:
+*      SetHeapLimit()
+*      SetCpuTimeLimit()
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/07/02 21:33:05  vakatov
+* Fixed against SIGXCPU during the signal handling.
+* Increase the amount of reserved memory for the memory limit handler
+* to 10K (to fix for the 64-bit WorkShop compiler).
+* Use standard C++ arg.processing (ncbiargs) in the test suite.
+* Cleaned up the code. Get rid of the "Ncbi_" prefix.
+*
 * Revision 1.1  2001/07/02 16:47:25  ivanov
 * Initialization
 *
@@ -53,7 +63,7 @@ BEGIN_NCBI_SCOPE
  *
  * NOTE:  "max_heap_size" == 0 will lift off the heap restrictions.
  */
-extern bool Ncbi_SetHeapLimit(size_t max_heap_size);
+extern bool SetHeapLimit(size_t max_heap_size);
 
 
 /* [UNIX only] 
@@ -65,7 +75,7 @@ extern bool Ncbi_SetHeapLimit(size_t max_heap_size);
  *
  * NOTE:  "max_cpu_time" == 0 will lift off the CPU time restrictions.
  */
-extern bool Ncbi_SetCpuTimeLimit(size_t max_cpu_time);
+extern bool SetCpuTimeLimit(size_t max_cpu_time);
 
 
 END_NCBI_SCOPE

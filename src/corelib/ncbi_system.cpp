@@ -26,10 +26,20 @@
 * Author:  Vladimir Ivanov
 *
 * File Description:
-*      System control functions
+*
+*   System functions:
+*      SetHeapLimit()
+*      SetCpuTimeLimit()
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/07/02 21:33:07  vakatov
+* Fixed against SIGXCPU during the signal handling.
+* Increase the amount of reserved memory for the memory limit handler
+* to 10K (to fix for the 64-bit WorkShop compiler).
+* Use standard C++ arg.processing (ncbiargs) in the test suite.
+* Cleaned up the code. Get rid of the "Ncbi_" prefix.
+*
 * Revision 1.2  2001/07/02 18:45:14  ivanov
 * Added #include <sys/resource.h> and extern "C" to handlers
 *
@@ -46,15 +56,15 @@
 
 // Define HEAP_LIMIT and CPU_LIMIT (UNIX only)
 #ifdef NCBI_OS_UNIX
-#define USE_SETHEAPLIMIT
-#define USE_SETCPULIMIT
-#include <sys/resource.h>
-#include <sys/times.h>
-#include <limits.h>
+#  include <sys/resource.h>
+#  include <sys/times.h>
+#  include <limits.h>
+#  define USE_SETHEAPLIMIT
+#  define USE_SETCPULIMIT
 #endif
 
 #ifdef USE_SETCPULIMIT
-#include <signal.h>
+#  include <signal.h>
 #endif
 
 
@@ -79,37 +89,44 @@ static EExitCode  s_ExitCode         = eEC_None;
 static CTime      s_TimeSet;
 static size_t     s_HeapLimit        = 0;
 static size_t     s_CpuTimeLimit     = 0;
-static void*      s_ReserveMemory    = 0;
+static char*      s_ReserveMemory    = 0;
+
+
+extern "C" {
+    static void s_ExitHandler(void);
+    static void s_SignalHandler(int sig);
+}
 
 
 
 /* Routine to be called at the exit from application
  */
 
-extern "C" static void s_ExitHandler()
+static void s_ExitHandler(void)
 {
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
 
     // Free reserved memory
     if ( s_ReserveMemory ) {
-        free(s_ReserveMemory);
+        delete[] s_ReserveMemory;
+        s_ReserveMemory = 0;
     }
 
     switch(s_ExitCode) {
 
     case eEC_Memory:
         {
-            ERR_POST("Memory heap limit attained in allocating memory " \
+            ERR_POST("Memory heap limit exceeded in allocating memory " \
                      "with operator new (" << s_HeapLimit << " bytes)");
             break;
         }
 
     case eEC_Cpu: 
         {
-            ERR_POST("CPU time limit attained (" << s_CpuTimeLimit << " sec)");
+            ERR_POST("CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
             tms buffer;
             if ( times(&buffer) == (clock_t)(-1) ) {
-                ERR_POST("Error get CPU time consumed with program");
+                ERR_POST("Error in getting CPU time consumed with program");
                 break;
             }
             LOG_POST("\tuser CPU time   : " << 
@@ -127,8 +144,8 @@ extern "C" static void s_ExitHandler()
     
     // Write program's time
     CTime ct(CTime::eCurrent);
-    CTime et(2000,1,1);
-    et.AddSecond( ct.GetTimeT() - s_TimeSet.GetTimeT() );
+    CTime et(2000, 1, 1);
+    et.AddSecond((int) (ct.GetTimeT() - s_TimeSet.GetTimeT()));
     LOG_POST("Program's time: " << Endm <<
              "\tstart limit - " << s_TimeSet.AsString() << Endm <<
              "\ttermination - " << ct.AsString() << Endm);
@@ -148,8 +165,8 @@ static bool s_SetExitHandler()
             return false;
         s_ExitHandlerIsSet = true;
         s_TimeSet.SetCurrent();
-        // Reserve some memory (4Kb)
-        s_ReserveMemory = malloc(4096);
+        // Reserve some memory (10Kb)
+        s_ReserveMemory = new char[10000];
     }
     return true;
 }
@@ -160,7 +177,7 @@ static bool s_SetExitHandler()
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Ncbi_SetHeapLimit
+//  SetHeapLimit
 //
 
 
@@ -175,7 +192,7 @@ static void s_NewHandler()
 }
 
 
-bool Ncbi_SetHeapLimit(size_t max_heap_size)
+bool SetHeapLimit(size_t max_heap_size)
 {
     if (s_HeapLimit == max_heap_size) 
         return true;
@@ -205,7 +222,8 @@ bool Ncbi_SetHeapLimit(size_t max_heap_size)
 
 #else
 
-bool Ncbi_SetHeapLimit(size_t max_heap_size) {
+bool SetHeapLimit(size_t max_heap_size)
+{
   return false;
 }
 
@@ -215,22 +233,24 @@ bool Ncbi_SetHeapLimit(size_t max_heap_size) {
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Ncbi_SetCpuTimeLimit
+//  SetCpuTimeLimit
 //
 
 
 #ifdef USE_SETCPULIMIT
 
-extern "C" static void s_SignalHandler(int sig)
+static void s_SignalHandler(int sig)
 {
-    if ( sig == SIGXCPU ) {
-        s_ExitCode = eEC_Cpu;
-        exit(-1);
-    }
+    _ASSERT(sig == SIGXCPU);
+
+    signal(SIGXCPU, SIG_IGN);
+
+    s_ExitCode = eEC_Cpu;
+    exit(-1);
 }
 
 
-bool Ncbi_SetCpuTimeLimit(size_t max_cpu_time)
+bool SetCpuTimeLimit(size_t max_cpu_time)
 {
     if (s_CpuTimeLimit == max_cpu_time) 
         return true;
@@ -240,6 +260,7 @@ bool Ncbi_SetCpuTimeLimit(size_t max_cpu_time)
     
     // Set new CPU time limit
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
+
     struct rlimit rl;
     if ( max_cpu_time ) {
         rl.rlim_cur = rl.rlim_max = max_cpu_time;
@@ -248,19 +269,21 @@ bool Ncbi_SetCpuTimeLimit(size_t max_cpu_time)
         // Set off CPU time limit
         rl.rlim_cur = rl.rlim_max = RLIM_INFINITY;
     }
-    if (setrlimit(RLIMIT_CPU, &rl) != 0) 
+
+    if (setrlimit(RLIMIT_CPU, &rl) != 0) {
         return false;
+    }
     s_CpuTimeLimit = max_cpu_time;
-    
+
     // Set signal handler for SIGXCPU
     signal(SIGXCPU, s_SignalHandler);
-    
+
     return true;
 }
 
 #else
 
-bool Ncbi_SetCpuTimeLimit(size_t max_cpu_time)
+bool SetCpuTimeLimit(size_t max_cpu_time)
 {
     return false;
 }
