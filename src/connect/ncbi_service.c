@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/12/06 22:20:30  lavr
+ * Skip info list is not maintained forever; instead the entries get
+ * deleted in accordance with their expiration period
+ *
  * Revision 6.6  2000/10/20 17:19:04  lavr
  * SConnNetInfo made 'const' as a parameter to 'SERV_Open*'
  * 'SERV_Update' added as a private interface
@@ -124,6 +128,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
             return 0;
         }
         memcpy(info, skip[i], infolen);
+        info->time = (time_t)(-1);
         if (!s_AddSkipInfo(iter, info)) {
             free(info);
             SERV_Close(iter);
@@ -152,8 +157,26 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
 const SSERV_Info *SERV_GetNextInfo(SERV_ITER iter)
 {
     SSERV_Info *info = 0;
+    size_t i;
+    time_t t;
 
-    if (iter && iter->op && iter->op->GetNextInfo &&
+    if (!iter)
+        return 0;
+    /* First, remove all outdated entries from our skip list */
+    t = time(0);
+    i = 0;
+    while (i < iter->n_skip) {
+        SSERV_Info *info = iter->skip[i];
+        if (info->time < t) {
+            iter->n_skip--;
+            memmove(iter->skip + i, iter->skip + i + 1,
+                    sizeof(*iter->skip)*(iter->n_skip - i));
+            free(info);
+        } else
+            i++;
+    }
+    /* Next, obtain a fresh entry from the actual mapper */
+    if (iter->op && iter->op->GetNextInfo &&
         (info = (*iter->op->GetNextInfo)(iter)) != 0 &&
         !s_AddSkipInfo(iter, info)) {
         free(info);
@@ -186,4 +209,10 @@ int/*bool*/ SERV_Update(SERV_ITER iter, const char *text)
     if (!iter->op->Update)
         return 1/*no update provision, success*/;
     return (*iter->op->Update)(iter, text);
+}
+
+
+char* SERV_Print(SERV_ITER iter)
+{
+    return 0;
 }
