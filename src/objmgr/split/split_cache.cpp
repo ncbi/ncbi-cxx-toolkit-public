@@ -162,8 +162,8 @@ private:
 };
 
 
-#define LINE CLog(this)
 #define WAIT_LINE CLog line(this); line
+#define LINE(Msg) do { WAIT_LINE << Msg; } while(0)
 
 
 CSplitCacheApp::CSplitCacheApp(void)
@@ -271,7 +271,7 @@ void CSplitCacheApp::SetupCache(void)
         if ( cache_dir.empty() ) {
             ERR_POST(Fatal << "empty cache directory name");
         }
-        LINE << "cache directory is \"" << cache_dir << "\"";
+        LINE("cache directory is \"" << cache_dir << "\"");
         {{
             // make sure our cache directory exists first
             CDir dir(cache_dir);
@@ -391,14 +391,14 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
         m_Scope->ResetHistory();
     }
 
-    LINE << "Processing: " << id.AsFastaString();
+    LINE("Processing: " << id.AsFastaString());
     CLevelGuard level(m_RecursionLevel);
     
     //m_Loader->GetRecords(CSeq_id_Handle::GetHandle(id), CDataLoader::eAll);
     CReader::TSeqrefs srs;
     m_Reader->ResolveSeq_id(srs, id, 0);
     if ( srs.empty() ) {
-        LINE << "Skipping: no blobs";
+        LINE("Skipping: no blobs");
         return;
     }
     ITERATE ( CReader::TSeqrefs, it, srs ) {
@@ -533,16 +533,16 @@ void CSplitCacheApp::StoreToCache(const C& obj, EDataType data_type,
 
 void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 {
-    LINE << "Processing blob "<< seqref.printTSE();
+    LINE("Processing blob "<< seqref.printTSE());
     CLevelGuard level(m_RecursionLevel);
 
     int version = m_Reader->GetVersion(seqref, 0);
     if ( version > 1 ) {
         CTime time(time_t(version*60));
-        LINE << "Blob version: " << version << " - " << time.AsString();
+        LINE("Blob version: " << version << " - " << time.AsString());
     }
     else {
-        LINE << "Blob version: " << version;
+        LINE("Blob version: " << version);
     }
 
     string blob_key = m_Reader->GetBlobKey(seqref);
@@ -564,13 +564,13 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
             }
         }
         else {
-            LINE << "Already splitted: skipping";
+            LINE("Already splitted: skipping");
             return;
         }
     }
 
     if ( m_Reader->IsSNPSeqref(seqref) ) {
-        LINE << "Skipping SNP blob: not implemented";
+        LINE("Skipping SNP blob: not implemented");
         return;
     }
 
@@ -582,7 +582,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         bh = m_Scope->GetBioseqHandle(seq_id);
     }}
     if ( !bh ) {
-        LINE << "Skipping: no bioseq???";
+        LINE("Skipping: no bioseq???");
         return;
     }
 
@@ -592,7 +592,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
         seq_entry.Reset(&bh.GetTopLevelSeqEntry());
     }
     else {
-        LINE << "Skipping SNP blob: not implemented";
+        LINE("Skipping SNP blob: not implemented");
         return;
         /*
           SAnnotSelector sel;
@@ -600,7 +600,7 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
           sel.SetFeatSubtype(CSeqFeatData::eSubtype_variation);
           CFeat_CI it(bh, 0, 0, sel);
           if ( !it ) {
-          LINE << "Skipping SNP blob: empty";
+          LINE("Skipping SNP blob: empty");
           return;
           }
           const CSeq_annot& seq_annot = it.GetSeq_annot();
@@ -619,18 +619,18 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 
     size_t blob_size = m_Cache->GetSize(m_Reader->GetBlobKey(seqref), version);
     if ( blob_size == 0 ) {
-        LINE << "Skipping: blob is not in cache";
+        LINE("Skipping: blob is not in cache");
         return;
     }
     if ( blob_size <= m_SplitterParams.m_MaxChunkSize ) {
-        LINE << "Skipping: blob is small enough: " << blob_size;
+        LINE("Skipping: blob is small enough: " << blob_size);
         return;
     }
-    LINE << "Blob size: " << blob_size;
+    LINE("Blob size: " << blob_size);
 
     CBlobSplitter splitter(m_SplitterParams);
     if ( !splitter.Split(*seq_entry) ) {
-        LINE << "Skipping: no chunks after splitting";
+        LINE("Skipping: no chunks after splitting");
         return;
     }
 
@@ -694,6 +694,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/11/28 20:27:44  vasilche
+* Correctly print log lines in LINE macro.
+*
 * Revision 1.3  2003/11/26 23:05:00  vasilche
 * Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
 *
