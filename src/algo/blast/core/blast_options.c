@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.70  2003/11/04 23:22:47  dondosha
+ * Do not calculate hit saving cutoff score for PHI BLAST
+ *
  * Revision 1.69  2003/10/30 19:34:01  dondosha
  * Removed gapped_calculation from BlastHitSavingOptions structure
  *
@@ -1161,10 +1164,12 @@ BlastHitSavingParametersNew(Uint1 program_number,
 
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
-   } else {
+   } else if (!options->phi_align) {
       BLAST_Cutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
          (double)query_info->eff_searchsp_array[query_info->first_context], 
          FALSE);
+   } else {
+      params->cutoff_score = 0;
    }
    
    if (program_number == blast_type_blastn || !gapped_calculation) {
