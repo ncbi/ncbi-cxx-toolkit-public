@@ -77,12 +77,6 @@ public:
         m_Opts->SetLookupTableType(type); 
     }
 
-    /// Returns ScanStep
-    unsigned char GetScanStep() const { return m_Opts->GetScanStep(); }
-    /// Sets ScanStep
-    /// @param step ScanStep [in]
-    void SetScanStep(unsigned char step) { m_Opts->SetScanStep(step); }
-
     /// Returns WordSize
     int GetWordSize() const { return m_Opts->GetWordSize(); }
     /// Sets WordSize
@@ -93,12 +87,6 @@ public:
             if (GetLookupTableType() == MB_LOOKUP_TABLE && 
                 ws % COMPRESSION_RATIO != 0)
                 SetVariableWordSize(false);
-            
-            unsigned int s = CalculateBestStride(ws,
-                                                 GetVariableWordSize(), 
-                                                 GetLookupTableType());
-
-            SetScanStep(s);
         }
         m_Opts->SetWordSize(ws); 
     }
@@ -120,47 +108,6 @@ public:
     /// Sets WindowSize
     /// @param ws WindowSize [in]
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
-
-    /// Returns ESeedContainerType
-    ESeedContainerType GetSeedContainerType() const {
-        return m_Opts->GetSeedContainerType();
-    }
-    /// Sets ESeedContainerType
-    /// @param sct ESeedContainerType [in]
-    void SetSeedContainerType(ESeedContainerType sct) {
-        m_Opts->SetSeedContainerType(sct);
-    }
-
-    /// Returns ESeedExtensionMethod
-    ESeedExtensionMethod GetSeedExtensionMethod() const {
-        return m_Opts->GetSeedExtensionMethod();
-    }
-    /// Sets ESeedExtensionMethod
-    /// Note that the scan step (or stride) is changed as a side effect of
-    /// calling this method. This is because the scan step is best
-    /// calculated for the eRightAndLeft seed extension method, and a fixed
-    /// value is used for the eRight seed extension method.
-    /// @param sem ESeedExtensionMethod [in]
-    void SetSeedExtensionMethod(ESeedExtensionMethod sem) {
-        if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
-            switch (sem) {
-            case eRight: case eUpdateDiag:
-                SetScanStep(COMPRESSION_RATIO);
-                break;
-            case eRightAndLeft:
-            {
-                unsigned int s = CalculateBestStride(GetWordSize(), 
-                                                     GetVariableWordSize(), 
-                                                     GetLookupTableType());
-                SetScanStep(s);
-                break;
-            }
-            default:
-                abort();
-            }
-        }
-        m_Opts->SetSeedExtensionMethod(sem);
-    }
 
     /// Returns VariableWordSize
     bool GetVariableWordSize() const { return m_Opts->GetVariableWordSize(); }
@@ -337,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/01/10 13:30:47  madden
+ * Changes associated with removal of options for ScanStep, ContainerType, and ExtensionMethod as well as call to CalculateBestStride
+ *
  * Revision 1.20  2004/12/28 13:36:17  madden
  * [GS]etWordSize is now an int rather than a short
  *
