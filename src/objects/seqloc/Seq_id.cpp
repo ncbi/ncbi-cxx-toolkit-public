@@ -544,7 +544,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 
         case 'C':
             switch (pfx[1]) {
-            case 'A': case 'B': case 'D': case 'F': return eAcc_gb_est;
+            case 'A': case 'B': case 'D': case 'F':
+            case 'K':                               return eAcc_gb_est;
             case 'C': case 'E': case 'G':           return eAcc_gb_gss;
             case 'H':                               return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
@@ -1349,6 +1350,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.64  2003/11/10 15:05:42  ucko
+ * +CK to eAcc_gb_est
+ *
  * Revision 6.63  2003/10/31 20:16:07  ucko
  * CSeq_id::IdentifyAccession: CI and CJ are both DDBJ EST.
  *
