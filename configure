@@ -1491,7 +1491,7 @@ if test "$with_mt" = "yes" ; then
    esac
    CPPFLAGS="$CPPFLAGS -D_MT -D_REENTRANT"
    case "$host_os" in
-     solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread"} ;;
+     solaris* )  THREAD_LIBS=${THREAD_LIBS:="-lthread -lpthread -lposix4"} ;;
      *        )  THREAD_LIBS=${THREAD_LIBS:="-lpthread"} ;;
    esac
    LIBS="$LIBS $THREAD_LIBS"
