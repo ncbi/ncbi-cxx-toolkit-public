@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/06/05 17:25:47  thiessen
+* change 'update' to 'import' in GUI
+*
 * Revision 1.42  2002/06/05 14:28:41  thiessen
 * reorganize handling of window titles
 *
@@ -266,7 +269,7 @@ void UpdateViewerWindow::OnCloseWindow(wxCloseEvent& event)
 
 void UpdateViewerWindow::SetWindowTitle(void)
 {
-    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Update Viewer");
+    SetTitle(wxString(GetWorkingTitle().c_str()) + " - Import Viewer");
 }
 
 void UpdateViewerWindow::EnableDerivedEditorMenuItems(bool enabled)

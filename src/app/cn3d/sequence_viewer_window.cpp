@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/06/05 17:25:47  thiessen
+* change 'update' to 'import' in GUI
+*
 * Revision 1.31  2002/06/05 14:28:40  thiessen
 * reorganize handling of window titles
 *
@@ -193,14 +196,14 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     mouseModeMenu->Append(MID_MOVE_ROW, "&Move Row", "", true);
 
     updateMenu = new wxMenu;
-    updateMenu->Append(MID_SHOW_UPDATES, "&Show Updates");
+    updateMenu->Append(MID_SHOW_UPDATES, "&Show Imports");
     updateMenu->AppendSeparator();
     updateMenu->Append(MID_REALIGN_ROW, "Realign &Individual Rows", "", true);
     updateMenu->Append(MID_REALIGN_ROWS, "Realign Rows from &List");
     updateMenu->AppendSeparator();
     updateMenu->Append(MID_MARK_BLOCK, "Mark &Block", "", true);
     updateMenu->Append(MID_CLEAR_MARKS, "&Clear Marks");
-    menuBar->Append(updateMenu, "&Update");
+    menuBar->Append(updateMenu, "&Imports");
 
     EnableDerivedEditorMenuItems(false);
 }
