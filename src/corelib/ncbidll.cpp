@@ -177,18 +177,22 @@ void* CDll::x_GetEntryPoint(const string& name, size_t pointer_size)
     if (pointer_size != sizeof(void*)) {
         throw CException("CDll: GetEntryPoint():  incorrect entry ptr size");
     }
-
     // If DLL is not yet loaded
     if ( !m_Handle ) {
         Load();
     }
-
+    // Add leading underscore on Darwin platform
+#if defined(NCBI_OS_DARWIN)
+    const string entry_name = "_" + name;
+#else
+    const string entry_name = name;
+#endif
     // Return address of function
 #if defined(NCBI_OS_MSWIN)
-    return GetProcAddress(m_Handle->handle, name.c_str());
+    return GetProcAddress(m_Handle->handle, entry_name.c_str());
 #elif defined(NCBI_OS_UNIX)
 #  ifdef HAVE_DLFCN_H
-    return dlsym(m_Handle->handle, name.c_str());
+    return dlsym(m_Handle->handle, entry_name.c_str());
 #  else
     return 0;
 #  endif
@@ -230,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/01 16:44:14  ivanov
+ * Added Darwin specific: use leading underscores in entry names
+ *
  * Revision 1.6  2002/05/28 20:01:20  vakatov
  * Typo fixed
  *
