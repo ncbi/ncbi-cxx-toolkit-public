@@ -526,9 +526,9 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
                                            feat_iter->GetOriginalFeature(),
                                            ctx->GetScope(), false);
 
-    unsigned int ident_count = 0;
-    for (unsigned int i = 0;
-         i < min(prod_vec.size(), translation.size());  ++i) {
+    TSeqPos ident_count = 0;
+    for (TSeqPos i = 0;
+         i < min(prod_vec.size(), (TSeqPos)translation.size());  ++i) {
         if (prod_vec[i] == translation[i]) {
             ++ident_count;
         }
@@ -537,7 +537,7 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
     result.SetOutput_data()
         .AddField("fraction_identity",
                   double(ident_count)
-                  / max(prod_vec.size(), translation.size()));
+                  / max(prod_vec.size(), (TSeqPos)translation.size()));
 }
 
 
@@ -633,6 +633,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/07 13:38:56  ucko
+ * s_CompareProtProdToTrans: make sure to use TSeqPos uniformly.
+ *
  * Revision 1.2  2004/10/06 21:49:05  jcherry
  * Use "adaptive depth" (apparently will be necessary for use
  * of "fake" transcripts representing genomic annotation)
