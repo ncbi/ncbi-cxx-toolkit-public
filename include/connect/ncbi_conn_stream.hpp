@@ -171,6 +171,13 @@ public:
      );
 
     CConn_HttpStream
+    (const string&   url,
+     THCC_Flags      flags       = fHCC_AutoReconnect,
+     const STimeout* timeout     = CONN_DEFAULT_TIMEOUT,
+     streamsize      buf_size    = kConn_DefBufSize
+     );
+
+    CConn_HttpStream
     (const SConnNetInfo* net_info    = 0,
      const string&       user_header = kEmptyStr,
      THCC_Flags          flags       = fHCC_AutoReconnect,
@@ -233,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2003/04/29 19:58:04  lavr
+ * Constructor taking a URL added in CConn_HttpStream
+ *
  * Revision 6.19  2003/04/11 17:55:30  lavr
  * Proper indentation of some fragments
  *

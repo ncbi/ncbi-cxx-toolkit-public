@@ -98,6 +98,7 @@ CConn_SocketStream::CConn_SocketStream(SOCK            sock,
 
 
 static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
+                                        const char*         url,
                                         const char*         host,
                                         unsigned short      port,
                                         const char*         path,
@@ -109,6 +110,8 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
     SConnNetInfo* net_info = net_info_in ?
         ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(0);
     if (!net_info)
+        return 0;
+    if (url && !ConnNetInfo_ParseURL(net_info, url))
         return 0;
     if (host) {
         strncpy0(net_info->host, host, sizeof(net_info->host) - 1);
@@ -138,11 +141,31 @@ CConn_HttpStream::CConn_HttpStream(const string&   host,
                                    const STimeout* timeout,
                                    streamsize      buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            0,
                                             host.c_str(),
                                             port,
                                             path.c_str(),
                                             args.c_str(),
                                             user_header.c_str(),
+                                            flags,
+                                            timeout),
+                     timeout, buf_size)
+{
+    return;
+}
+
+
+CConn_HttpStream::CConn_HttpStream(const string&       url,
+                                   THCC_Flags          flags,
+                                   const STimeout*     timeout,
+                                   streamsize          buf_size)
+    : CConn_IOStream(s_HttpConnectorBuilder(0,
+                                            url.c_str(),
+                                            0,
+                                            0,
+                                            0,
+                                            0,
+                                            0,
                                             flags,
                                             timeout),
                      timeout, buf_size)
@@ -157,6 +180,7 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
                                    const STimeout*     timeout,
                                    streamsize          buf_size)
     : CConn_IOStream(s_HttpConnectorBuilder(net_info,
+                                            0,
                                             0,
                                             0,
                                             0,
@@ -225,6 +249,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/04/29 19:58:24  lavr
+ * Constructor taking a URL added in CConn_HttpStream
+ *
  * Revision 6.18  2003/04/14 21:08:15  lavr
  * Take advantage of HAVE_BUGGY_IOS_CALLBACKS
  *
