@@ -34,6 +34,9 @@
 #include "seq_loader.hpp"
 
 #include <corelib/ncbistd.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/serial.hpp>
+
 #include <algo/align/nw_spliced_aligner16.hpp>
 #include <algo/align/nw_spliced_aligner32.hpp>
 #include <algo/align/splign.hpp>
@@ -44,6 +47,7 @@
 
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 void CSplignApp::Init()
 {
@@ -51,7 +55,7 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.03");
+  string program_name ("Splign v.1.04");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -75,11 +79,16 @@ void CSplignApp::Init()
     ("log", "log", "Splign log file",
      CArgDescriptions::eString, "splign.log");
 
+  argdescr->AddOptionalKey
+    ("asn", "asn", "ASN.1 output file name", CArgDescriptions::eString);
+
   argdescr->AddDefaultKey
-    ("quality", "quality", "Genomic sequence quality.", CArgDescriptions::eString, "high");
+    ("quality", "quality", "Genomic sequence quality.",
+     CArgDescriptions::eString, "high");
   
   argdescr->AddDefaultKey
-    ("strand", "strand", "Spliced sequence's strand.", CArgDescriptions::eString, "plus");
+    ("strand", "strand", "Spliced sequence's strand.",
+     CArgDescriptions::eString, "plus");
 
   argdescr->AddFlag ("noendgaps",
 		     "Skip detection of unaligning regions at the ends.",
@@ -264,8 +273,19 @@ int CSplignApp::Run()
   const CArgs& args = GetArgs();    
 
   // open log stream
-
   m_logstream.open( args["log"].AsString().c_str() );
+
+  // open asn output stream, if any
+  auto_ptr<ofstream> asn_ofs (0);
+  if(args["asn"]) {
+      const string filename = args["asn"].AsString();
+      asn_ofs.reset(new ofstream (filename.c_str()));
+      if(!*asn_ofs) {
+          NCBI_THROW(CSplignAppException,
+                     eCannotOpenFile,
+                     "Cannot open output asn file." );
+      }
+  }
 
   // prepare input hit stream
 
@@ -327,9 +347,18 @@ int CSplignApp::Run()
     const string query (hits[0].m_Query);
     const string subj (hits[0].m_Subj);
 
+
     splign.Run(&hits);
 
+    formatter.SetSeqIds(query, subj);
     cout << formatter.AsText();
+
+    if(asn_ofs.get()) {
+        CRef<CSeq_align_set> sa_set = formatter.AsSeqAlignSet();
+        auto_ptr<CObjectOStream> os(CObjectOStream::Open(eSerial_AsnText,
+                                                         *asn_ofs));
+        *os << *sa_set;
+    }
 
     ITERATE(vector<CSplign::SAlignedCompartment>, ii, splign.GetResult()) {
       x_LogStatus(ii->m_id, query, subj, ii->m_error, ii->m_msg);
@@ -423,6 +452,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/04/30 15:00:47  kapustin
+ * Support ASN formatting
+ *
  * Revision 1.19  2004/04/26 19:26:22  kapustin
  * Count models from one
  *

@@ -399,8 +399,6 @@ void CSplign::Run( vector<CHit>* phits )
       try {
         SAlignedCompartment ac = x_RunOnCompartment(&comp_hits, smin, smax);
         ac.m_id = ++m_model_id;
-        ac.m_query = query;
-        ac.m_subj = subj;
         ac.m_segments = m_segments;
         ac.m_error = false;
         ac.m_msg = "Ok";
@@ -1146,6 +1144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/04/30 15:00:47  kapustin
+ * Support ASN formatting
+ *
  * Revision 1.6  2004/04/26 15:38:45  kapustin
  * Add model_id as a CSplign member
  *

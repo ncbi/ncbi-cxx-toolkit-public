@@ -33,7 +33,7 @@
 */
 
 #include <algo/align/splign.hpp>
-#include <objects/seq/Seq_annot.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 
 
@@ -45,17 +45,26 @@ public:
 
     CSplignFormatter(const CSplign& splign);
 
+    // setters
+    void SetSeqIds(const string& id1, const string& id2) {
+        m_QueryId = id1;
+        m_SubjId = id2;
+    }
+
     string AsText(void) const;
-    vector<CRef<objects::CSeq_annot> > AsSeqAnnotVector(void) const;
+    CRef<objects::CSeq_align_set> AsSeqAlignSet(void) const;
 
 private:
 
     const CSplign*    m_splign;
+    string            m_QueryId, m_SubjId;
 
-    CRef<objects::CSeq_align> x_Compartment2SeqAlign(const vector<size_t>& boxes,
-                                                     const vector<string>& transcripts,
-                                                     const vector<CNWAligner::TScore>& scores) const;
-    void x_Exon2DS( const size_t* box, const string& trans, objects::CDense_seg& ds) const;
+    CRef<objects::CSeq_align> x_Compartment2SeqAlign(
+                               const vector<size_t>& boxes,
+                               const vector<string>& transcripts,
+                               const vector<CNWAligner::TScore>& scores) const;
+    void x_Exon2DS(const size_t* box, const string& trans,
+                   objects::CDense_seg* pds) const;
 };
 
 
@@ -66,6 +75,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/04/30 15:00:32  kapustin
+ * Support ASN formatting
+ *
  * Revision 1.5  2004/04/23 14:36:24  kapustin
  * Initial revision
  *

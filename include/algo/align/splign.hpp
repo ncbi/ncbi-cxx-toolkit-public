@@ -119,7 +119,6 @@ public:
             m_id(id), m_error(err), m_msg(msg) {}
     
         size_t           m_id;
-        string           m_query, m_subj;
         vector<SSegment> m_segments;
         size_t           m_mrnasize;
         bool             m_QueryStrand, m_SubjStrand;
@@ -195,6 +194,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/04/30 15:00:32  kapustin
+ * Support ASN formatting
+ *
  * Revision 1.7  2004/04/27 17:19:43  kapustin
  * Valuble comments added
  *
