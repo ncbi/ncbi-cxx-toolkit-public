@@ -504,6 +504,28 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
             } else { // above species
                 SetPartialName( node, on );
             }
+	    // Add some genbank names as organism modifiers
+	    if( org.IsSetOrgname() ) { // OrgName is not empty
+		COrgName::TMod& lMods = on.SetMod();
+		for( i = lLin.begin(); i != lLin.end(); ++i ) {
+		    int cde = (*i)->GetCde();
+		    COrgMod::ESubtype stype = (COrgMod::ESubtype)0;
+		    if( cde == GetGBAcronymNameClass() ) {
+			stype = COrgMod::eSubtype_gb_acronym;
+		    } else if( cde == GetGBSynonymNameClass() ) {
+			stype = COrgMod::eSubtype_gb_synonym;
+		    } else if( cde == GetGBAnamorphNameClass() ) {
+			stype = COrgMod::eSubtype_gb_anamorph;
+		    }
+		    if( stype ) {
+			CRef<COrgMod> pMod( new COrgMod );
+			pMod->SetSubname().swap( (*i)->SetOname() );
+			pMod->SetSubtype( stype );
+			lMods.push_back( pMod );
+		    }
+		}
+	    }
+
         } else {
             m_host.SetLastError
                 ("Unable to get orgref: Response is not Getorgnames");
@@ -775,9 +797,9 @@ COrgRefCache::InitNameClasses()
             }
         }
 
-        m_ncPrefCommon = FindNameClassByName( "preferred common name" );
+        m_ncPrefCommon = FindNameClassByName( "genbank common name" );
         if( m_ncPrefCommon < 0 ) {
-            m_host.SetLastError( "Preferred common name class was not found" );
+            m_host.SetLastError( "Genbank common name class was not found" );
             return false;
         }
         m_ncCommon = FindNameClassByName( "common name" );
@@ -788,6 +810,22 @@ COrgRefCache::InitNameClasses()
         m_ncSynonym = FindNameClassByName( "synonym" );
         if( m_ncSynonym < 0 ) {
             m_host.SetLastError( "Synonym name class was not found" );
+            return false;
+        }
+
+	m_ncGBAcronym= FindNameClassByName("genbank acronym");
+        if( m_ncGBAcronym < 0 ) {
+            m_host.SetLastError( "Genbank acrony name class was not found" );
+            return false;
+        }
+	m_ncGBSynonym= FindNameClassByName("genbank synonym");
+        if( m_ncGBSynonym < 0 ) {
+            m_host.SetLastError( "Genbank synonym name class was not found" );
+            return false;
+        }
+	m_ncGBAnamorph= FindNameClassByName("genbank anamorph");
+        if( m_ncGBAnamorph < 0 ) {
+            m_host.SetLastError( "Genbank anamorph name class was not found" );
             return false;
         }
     }
@@ -877,6 +915,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.8  2002/08/06 15:09:45  domrach
+ * Introducing new genbank name classes
+ *
  * Revision 6.7  2002/07/25 15:01:56  grichenk
  * Replaced non-const GetXXX() with SetXXX()
  *

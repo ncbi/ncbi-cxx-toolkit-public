@@ -80,6 +80,9 @@ public:
     short GetPreferredCommonNameClass() const { return m_ncPrefCommon; }
     short GetCommonNameClass() const { return m_ncCommon; }
     short GetSynonymNameClass() const { return m_ncSynonym; }
+    short GetGBAcronymNameClass() const { return m_ncGBAcronym; }
+    short GetGBSynonymNameClass() const { return m_ncGBSynonym; }
+    short GetGBAnamorphNameClass() const { return m_ncGBAnamorph; }
 
     const char* GetDivisionName( short div_id ) const;
     const char* GetDivisionCode( short div_id ) const;
@@ -87,6 +90,7 @@ public:
     short GetPhagesDivision() const { return m_divPhages; }
 
     CTreeCont& GetTree() { return m_tPartTree; }
+    const CTreeCont& GetTree() const { return m_tPartTree; }
 
     void  SetIndexEntry( int id, CTaxon1Node* pNode );
 
@@ -144,9 +148,12 @@ private:
     int      FindRankByName( const char* pchName ) const;
 
     // Name classes stuff
-    short m_ncPrefCommon;
+    short m_ncPrefCommon; // now called "genbank common name"
     short m_ncCommon;
     short m_ncSynonym;
+    short m_ncGBAcronym;
+    short m_ncGBSynonym;
+    short m_ncGBAnamorph;
 
     typedef map<short, string> TNameClassMap;
     typedef TNameClassMap::const_iterator TNameClassMapCI;
@@ -210,6 +217,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.4  2002/08/06 15:09:46  domrach
+ * Introducing new genbank name classes
+ *
  * Revision 6.3  2002/02/14 22:44:50  vakatov
  * Use STimeout instead of time_t.
  * Get rid of warnings and extraneous #include's, shuffled code a little.
