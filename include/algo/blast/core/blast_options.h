@@ -338,8 +338,6 @@ typedef struct BlastHitSavingParameters {
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */
    Boolean do_sum_stats; /**< Is sum statistics used to combine HSPs? */
-   Int4 single_hsp_score; /**< The score cut-off for a single HSP when sum
-                             statistics is used */
    double gap_prob;       /**< Probability of decay for linking HSPs */
    double gap_decay_rate; /**< Decay rate for linking HSPs */
    Int4 gap_size;          /**< Small gap size for linking HSPs */
