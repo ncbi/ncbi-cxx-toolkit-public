@@ -104,6 +104,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
     if (options->ignore_consensus) {
         _PSIPurgeAlignedRegion(msa, kQueryIndex, 0,
                                msa->dimensions->query_length);
+        ASSERT(msa->use_sequence[kQueryIndex] == FALSE);
     }
 
     /*** Run the engine's stages ***/
