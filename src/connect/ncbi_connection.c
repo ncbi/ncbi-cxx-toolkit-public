@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2002/03/22 22:17:01  lavr
+ * Better check when formally timed out but technically polled in CONN_Wait()
+ *
  * Revision 6.20  2002/02/05 22:04:12  lavr
  * Included header files rearranged
  *
@@ -171,16 +174,16 @@ typedef struct SConnectionTag {
 
     /* "[c|r|w|l]_timeout" is either 0 (means infinite), CONN_DEFAULT_TIMEOUT
        (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
-    const STimeout* c_timeout;         /* timeout on connect                 */
-    const STimeout* r_timeout;         /* timeout on reading                 */
-    const STimeout* w_timeout;         /* timeout on writing                 */
-    const STimeout* l_timeout;         /* timeout on close                   */
-    STimeout        cc_timeout;        /* storage for "c_timeout"            */
-    STimeout        rr_timeout;        /* storage for "r_timeout"            */
-    STimeout        ww_timeout;        /* storage for "w_timeout"            */
-    STimeout        ll_timeout;        /* storage for "l_timeout"            */
+    const STimeout*        c_timeout;  /* timeout on connect                 */
+    const STimeout*        r_timeout;  /* timeout on reading                 */
+    const STimeout*        w_timeout;  /* timeout on writing                 */
+    const STimeout*        l_timeout;  /* timeout on close                   */
+    STimeout               cc_timeout; /* storage for "c_timeout"            */
+    STimeout               rr_timeout; /* storage for "r_timeout"            */
+    STimeout               ww_timeout; /* storage for "w_timeout"            */
+    STimeout               ll_timeout; /* storage for "l_timeout"            */
 
-    SCONN_Callback  callback[CONN_N_CALLBACKS];
+    SCONN_Callback         callback[CONN_N_CALLBACKS];
 } SConnection;
 
 
@@ -195,7 +198,7 @@ extern EIO_Status CONN_Create
 {
     CONN conn = (SConnection*) calloc(1, sizeof(SConnection));
     EIO_Status status = eIO_Unknown;
-    
+
     if ( conn ) {
         int i;
         conn->state = eCONN_Unusable;
@@ -406,7 +409,7 @@ extern EIO_Status CONN_Wait
     if (conn->state == eCONN_Unusable ||
         (event != eIO_Read && event != eIO_Write))
         return eIO_InvalidArg;
-    
+
     /* check if there is a PEEK'ed data in the input */
     if (event == eIO_Read && BUF_Size(conn->buf))
         return eIO_Success;
@@ -419,18 +422,18 @@ extern EIO_Status CONN_Wait
     status = conn->meta.wait ?
         (*conn->meta.wait)(conn->meta.c_wait, event, timeout) :
         eIO_NotSupported;
-    
+
     if (status != eIO_Success) {
         if (status == eIO_Timeout) {
-            ELOG_Level level = (timeout && timeout != CONN_DEFAULT_TIMEOUT &&
-                                !timeout->sec && !timeout->usec)
+            ELOG_Level level = (timeout  &&  timeout != CONN_DEFAULT_TIMEOUT
+                                &&  timeout->sec == 0  &&  timeout->usec == 0)
                 ? eLOG_Trace : eLOG_Warning;
             CONN_LOG(level, "[CONN_Wait]  I/O timed out");
         } else {
             CONN_LOG(eLOG_Error, "[CONN_Wait]  Error waiting on I/O");
         }
     }
-    
+
     return status;
 }
 
@@ -442,7 +445,7 @@ extern EIO_Status CONN_Write
  size_t*     n_written)
 {
     EIO_Status status;
-    
+
     CONN_NOT_NULL("Write");
 
     if (conn->state == eCONN_Unusable || !n_written)
@@ -453,7 +456,7 @@ extern EIO_Status CONN_Write
     /* open connection, if not yet opened */
     if (conn->state != eCONN_Open && (status = s_Open(conn)) != eIO_Success)
         return status;
-    
+
     /* call current connector's "WRITE" method */
     status = conn->meta.write ?
         (*conn->meta.write)(conn->meta.c_write, buf, size, n_written,
@@ -461,7 +464,7 @@ extern EIO_Status CONN_Write
 
     if (status != eIO_Success)
         CONN_LOG(eLOG_Error, "[CONN_Write]  Write error");
-    
+
     return status;
 }
 
@@ -661,7 +664,7 @@ extern EIO_Status CONN_SetCallback
         return eIO_InvalidArg;
 
     CONN_NOT_NULL("SetCallback");
-    
+
     if ( old_cb )
         *old_cb = conn->callback[i];
     if ( new_cb )
