@@ -240,9 +240,11 @@ SYBASE_DBLIBS  = @SYBASE_DBLIBS@
 
 # FreeTDS -- protocol v8, default (v7 was obsolete and has been removed)
 FTDS8_LIBS    = @FTDS8_LIBS@
+FTDS8_LIB     = @FTDS8_LIB@
 FTDS8_INCLUDE = @FTDS8_INCLUDE@
 
 FTDS_LIBS    = @FTDS_LIBS@
+FTDS_LIB     = @FTDS_LIB@
 FTDS_INCLUDE = @FTDS_INCLUDE@
 
 # MySQL: headers and libs

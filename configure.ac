@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.213 2003/09/03 23:30:45 ucko Exp $
+#  $Id: configure.ac,v 1.214 2003/09/04 19:08:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2188,7 +2188,7 @@ if test "$with_ftds" != "no" ; then
    if test "$with_ftds" = 8 ; then
       FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
       if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
-         FTDS8_LIBS="-lsybdb_ftds${STATIC} -ltds_ftds${STATIC}"
+         FTDS8_LIB="sybdb_ftds${STATIC} tds_ftds${STATIC}"
          FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
          FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
       fi
@@ -2197,7 +2197,7 @@ if test "$with_ftds" != "no" ; then
       FTDS_PATH="$with_ftds"
    fi
    if test -n "$freetds" ; then
-      FTDS_LIBS="\$(FTDS${with_ftds}_LIBS)"
+      FTDS_LIB="\$(FTDS${with_ftds}_LIB)"
       FTDS_INCLUDE="\$(FTDS${with_ftds}_INCLUDE)"
       AC_MSG_NOTICE([Using bundled FreeTDS (protocol v$with_ftds) from $FTDS_PATH])
    else
@@ -2234,8 +2234,10 @@ if test "$with_ftds" = "no" ; then
    FTDS_PATH=
    FTDS_INCLUDE=
    FTDS_LIBS=
+   FTDS_LIB=
    FTDS8_INCLUDE=
    FTDS8_LIBS=
+   FTDS8_LIB=
    freetds=
    WithoutPackages="$WithoutPackages FreeTDS"
 else
@@ -2245,8 +2247,10 @@ else
 fi
 AC_SUBST(FTDS8_INCLUDE)
 AC_SUBST(FTDS8_LIBS)
+AC_SUBST(FTDS8_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
+AC_SUBST(FTDS_LIB)
 AC_SUBST(freetds)
 
 
