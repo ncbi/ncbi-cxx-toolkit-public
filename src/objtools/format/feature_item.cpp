@@ -1035,7 +1035,7 @@ void CFeatureItem::x_AddCdregionQuals
             }
 
             // translation
-            if (!pseudo) {
+            if (!pseudo  &&  !cfg.NeverTranslateCDS()) {
                 string translation;
 
                 if ((!prot  &&  cfg.TranslateIfNoProduct())  ||  cfg.AlwaysTranslateCDS()) {
@@ -3540,6 +3540,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.46  2005/03/02 16:28:01  shomrat
+* Suppress /translation if flag is set
+*
 * Revision 1.45  2005/02/18 15:08:23  shomrat
 * CSeq_loc interface changes
 *
