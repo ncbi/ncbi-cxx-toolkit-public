@@ -288,7 +288,7 @@ public:
         {
             string loc;
             TIteratorContext stk_info = GetContextData();
-            TIteratorContext::const_iterator i;
+            typename TIteratorContext::const_iterator i;
             for (i = stk_info.begin(); i != stk_info.end(); ++i) {
                 TTypeInfo tt = i->first.GetTypeInfo();
                 const CItemInfo* ii = i->second;
@@ -924,6 +924,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/07/28 17:03:29  gouriano
+* Minor tune-up for GCC34
+*
 * Revision 1.32  2004/07/28 16:55:57  gouriano
 * Changed definition of TIteratorContext to add more info
 *
