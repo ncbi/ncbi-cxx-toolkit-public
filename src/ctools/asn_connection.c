@@ -46,7 +46,7 @@ extern "C" {
 
 static Int2 LIBCALLBACK s_AsnRead(Pointer p, CharPtr buff, Uint2 len)
 {
-    size_t n_read = 0;
+    size_t n_read;
     CONN_Read((CONN) p, buff, len, &n_read, eIO_ReadPlain);
     return (Int2) n_read;
 }
@@ -54,7 +54,7 @@ static Int2 LIBCALLBACK s_AsnRead(Pointer p, CharPtr buff, Uint2 len)
 
 static Int2 LIBCALLBACK s_AsnWrite(Pointer p, CharPtr buff, Uint2 len)
 {
-    size_t n_written = 0;
+    size_t n_written;
     CONN_Write((CONN) p, buff, len, &n_written, eIO_WritePersist);
     return (Int2) n_written;
 }
@@ -171,6 +171,9 @@ CONN CreateAsnConn_Service(const char*     service,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2004/03/23 02:29:19  lavr
+ * Remove redundant inits in I/O callbacks
+ *
  * Revision 1.6  2004/02/23 15:23:50  lavr
  * New (last) parameter "how" added in CONN_Write() API call
  *
