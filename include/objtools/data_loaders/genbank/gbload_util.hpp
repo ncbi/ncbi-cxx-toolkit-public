@@ -39,6 +39,9 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbitime.hpp>
 
+#include <map>
+#include <list>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -65,6 +68,7 @@ private:
 };
 
 
+#if 0
 class NCBI_XLOADER_GENBANK_EXPORT CRefresher
 {
 public:
@@ -211,6 +215,142 @@ private:
     void Switch(EState /* newstate */, unsigned /* key */) {}
 #endif
 };
+#endif
+
+//#define LOAD_INFO_MAP_CHECK 1
+//#define LOAD_INFO_MAP_ALWAYS_CLEAR 1
+//#define LOAD_INFO_MAP_NO_SPLICE 1
+
+template<class Key, class Info>
+class CLoadInfoMap
+{
+public:
+    enum {
+        kDefaultMaxSize = 2048
+    };
+
+    CLoadInfoMap(size_t max_size = 0)
+        : m_MaxSize(max_size? max_size: kDefaultMaxSize)
+    {
+    }
+
+    size_t GetMaxSize(void) const
+    {
+        return m_MaxSize;
+    }
+
+    void SetMaxSize(size_t max_size)
+    {
+        TWriteLockGuard guard(m_Lock);
+#ifdef LOAD_INFO_MAP_CHECK
+        _ASSERT(m_Index.size() <= m_MaxSize);
+        _ASSERT(m_Queue.size() == m_Index.size());
+#endif
+        m_MaxSize = max_size? max_size: kDefaultMaxSize;
+        x_GC();
+#ifdef LOAD_INFO_MAP_CHECK
+        _ASSERT(m_Index.size() <= m_MaxSize);
+        _ASSERT(m_Queue.size() == m_Index.size());
+#endif
+    }
+    
+    CRef<Info> Get(const Key& key)
+    {
+        TWriteLockGuard guard(m_Lock);
+#ifdef LOAD_INFO_MAP_CHECK
+        _ASSERT(m_Index.size() <= m_MaxSize);
+        _ASSERT(m_Queue.size() == m_Index.size());
+#endif
+#ifdef LOAD_INFO_MAP_ALWAYS_CLEAR
+        if ( !m_Queue.empty() && m_Queue.begin()->first != key ) {
+            m_Queue.clear();
+            m_Index.clear();
+        }
+        if ( m_Queue.empty() ) {
+            m_Queue.push_front(TQueueValue(key, Ref(new Info(key))));
+            m_Index.insert(TIndexValue(key, m_Queue.begin()));
+        }
+#else
+        pair<TIndexIter, bool> ins =
+            m_Index.insert(TIndexValue(key, TQueueIter()));
+        _ASSERT(ins.first->first == key);
+        if ( ins.second ) {
+            // new slot
+#ifdef LOAD_INFO_MAP_CHECK
+            _ASSERT(m_Index.size() == m_Queue.size() + 1);
+#endif
+            m_Queue.push_front(TQueueValue(key, Ref(new Info(key))));
+            x_GC();
+        }
+        else {
+            // old slot
+            _ASSERT(ins.first->second->first == key);
+            // move old slot to the back of queue
+#ifdef LOAD_INFO_MAP_NO_SPLICE
+            CRef<Info> info = ins.first->second->second;
+            m_Queue.erase(ins.first->second);
+            m_Queue.push_front(TQueueValue(key, info));
+#else
+            m_Queue.splice(m_Queue.begin(), m_Queue, ins.first->second);
+#endif
+        }
+        // update for new position in queue
+        _ASSERT(m_Queue.begin()->first == key);
+        ins.first->second = m_Queue.begin();
+#endif
+#ifdef LOAD_INFO_MAP_CHECK
+        _ASSERT(!m_Index.empty() && m_Index.size() <= m_MaxSize);
+        _ASSERT(m_Queue.size() == m_Index.size());
+#endif
+        return m_Queue.begin()->second;
+    }
+
+    void GC(void)
+    {
+        TWriteLockGuard guard(m_Lock);
+        x_GC();
+    }
+
+    void Clear(void)
+    {
+        TWriteLockGuard guard(m_Lock);
+        m_Queue.clear();
+        m_Index.clear();
+    }
+
+protected:
+    typedef CFastMutex                  TLock;
+    typedef TLock::TReadLockGuard       TReadLockGuard;
+    typedef TLock::TWriteLockGuard      TWriteLockGuard;
+    
+    TLock  m_Lock;
+
+    void x_GC(void)
+    {
+        while ( m_Index.size() > m_MaxSize ) {
+            m_Index.erase(m_Queue.back().first);
+            m_Queue.pop_back();
+        }
+    }
+
+private:
+    typedef pair<Key, CRef<Info> >      TQueueValue;
+    typedef list<TQueueValue>           TQueue;
+    typedef typename TQueue::iterator   TQueueIter;
+    typedef map<Key, TQueueIter>        TIndex;
+    typedef typename TIndex::value_type TIndexValue;
+    typedef typename TIndex::iterator   TIndexIter;
+
+    size_t m_MaxSize;
+    TQueue m_Queue;
+    TIndex m_Index;
+
+private:
+    // prevent copying
+    CLoadInfoMap(const CLoadInfoMap<Key, Info>&);
+    void operator=(const CLoadInfoMap<Key, Info>&);
+};
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -220,6 +360,10 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.6  2005/03/28 19:26:02  vasilche
+ * Added auto cleaning maps for id resolution information.
+ * Commented out obsolete classes CRefresher, CMutexPool, and CGBLGuard.
+ *
  * Revision 1.5  2005/03/28 18:28:31  jcherry
  * Added export specifiers
  *

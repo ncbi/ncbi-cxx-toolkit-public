@@ -109,6 +109,7 @@ bool CTimer::NeedCalibration(void)
 }
 
 
+#if 0
 void CRefresher::Reset(CTimer &timer)
 {
     m_RefreshTime = timer.RetryTime();
@@ -328,11 +329,17 @@ void CGBLGuard::Switch(EState newstate)
 }
 #endif // if(NCBI_THREADS)
 
+#endif
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2005/03/28 19:26:02  vasilche
+* Added auto cleaning maps for id resolution information.
+* Commented out obsolete classes CRefresher, CMutexPool, and CGBLGuard.
+*
 * Revision 1.26  2004/08/04 14:55:18  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.
