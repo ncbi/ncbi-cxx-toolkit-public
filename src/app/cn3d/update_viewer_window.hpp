@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/04/12 18:09:40  thiessen
+* add block freezing
+*
 * Revision 1.4  2001/04/04 00:27:22  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -107,7 +110,7 @@ private:
     wxButton *bOK, *bCancel;
     FloatingPointSpinCtrl *fpWeight, *fpLoops;
     IntegerSpinCtrl *iStarts, *iResults;
-    wxCheckBox *bMerge;
+    wxCheckBox *bMerge, *bFreeze;
 
     bool dialogActive;
     bool returnOK;

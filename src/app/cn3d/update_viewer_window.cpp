@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/04/12 18:10:00  thiessen
+* add block freezing
+*
 * Revision 1.6  2001/04/04 00:27:15  thiessen
 * major update - add merging, threader GUI controls
 *
@@ -174,7 +177,8 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
         *tLoops = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
         *tStarts = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
         *tResults = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
-        *tMerge = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
+        *tMerge = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT),
+        *tFreeze = new wxStaticText(box, -1, "", wxDefaultPosition, wxDefaultSize, wxALIGN_RIGHT);
 
     tWeight->SetLabel("Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only");
     if (tWeight->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tWeight->GetBestSize().GetWidth();
@@ -200,6 +204,12 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     if (tMerge->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tMerge->GetBestSize().GetWidth();
     bMerge = new wxCheckBox(box, -1, wxEmptyString);
     bMerge->SetValue(true);
+    boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
+
+    tFreeze->SetLabel("Freeze isolated blocks?");
+    if (tFreeze->GetBestSize().GetWidth() > maxTextWidth) maxTextWidth = tFreeze->GetBestSize().GetWidth();
+    bFreeze = new wxCheckBox(box, -1, wxEmptyString);
+    bFreeze->SetValue(true);
     boxClientHeight += iResults->GetBestSize().GetHeight() + margin;
 
     // do layout
@@ -302,6 +312,20 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     c->width.AsIs           ();
     bMerge->SetConstraints(c);
 
+    // freeze blocks?
+    c = new wxLayoutConstraints();
+    c->top.SameAs           (tMerge,    wxBottom,   margin);
+    c->height.SameAs        (bFreeze,   wxHeight);
+    c->left.SameAs          (box,       wxLeft,     margin);
+    c->width.PercentOf      (box,       wxWidth,    textProportion);
+    tFreeze->SetConstraints(c);
+    c = new wxLayoutConstraints();
+    c->top.SameAs           (tMerge,    wxBottom,   margin);
+    c->height.SameAs        (tMerge,    wxHeight);
+    c->centreX.SameAs       (iResults->GetTextCtrl(), wxCentreX);
+    c->width.AsIs           ();
+    bFreeze->SetConstraints(c);
+
     box->SetAutoLayout(true);
 
     // then layout box and bottom buttons
@@ -358,6 +382,7 @@ bool ThreaderOptionsDialog::Activate(void)
 bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)
 {
     options->mergeAfterEachSequence = bMerge->GetValue();
+    options->freezeIsolatedBlocks = bFreeze->GetValue();
     return (
         fpWeight->GetDouble(&options->weightPSSM) &&
         fpLoops->GetDouble(&options->loopLengthMultiplier) &&

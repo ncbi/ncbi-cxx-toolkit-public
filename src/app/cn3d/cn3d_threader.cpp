@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/04/12 18:10:00  thiessen
+* add block freezing
+*
 * Revision 1.10  2001/04/05 22:55:35  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -357,8 +360,9 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         const BlockMultipleAlignment *pairwise)
 {
     const Sequence *slaveSeq = pairwise->GetSequenceOfRow(1);
-    BlockMultipleAlignment::UngappedAlignedBlockList *multipleABlocks = multiple->GetUngappedAlignedBlocks();
-    BlockMultipleAlignment::UngappedAlignedBlockList *pairwiseABlocks = pairwise->GetUngappedAlignedBlocks();
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+        multipleABlocks(multiple->GetUngappedAlignedBlocks()),
+        pairwiseABlocks(pairwise->GetUngappedAlignedBlocks());
 
     // query has # constraints = # blocks in multiple alignment
     Qry_Seq *qrySeq = NewQrySeq(slaveSeq->sequenceString.size(), multipleABlocks->size());
@@ -389,8 +393,6 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
         }
     }
 
-    delete multipleABlocks;
-    delete pairwiseABlocks;
     return qrySeq;
 }
 
@@ -884,6 +886,43 @@ static BlockMultipleAlignment * CreateAlignmentFromThdTbl(const Thd_Tbl *thdTbl,
     return newAlignment;
 }
 
+static bool FreezeIsolatedBlocks(Cor_Def *corDef, const Cor_Def *masterCorDef, const Qry_Seq *qrySeq)
+{
+    if (!corDef || !masterCorDef || !qrySeq ||
+        corDef->sll.n != masterCorDef->sll.n || corDef->sll.n != qrySeq->sac.n) {
+        ERR_POST(Error << "FreezeIsolatedBlocks() - bad parameters");
+        return false;
+    }
+
+    TESTMSG("freezing blocks...");
+    for (int i=0; i<corDef->sll.n; i++) {
+
+        // default: blocks allowed to grow
+        corDef->sll.nomx[i] = masterCorDef->sll.nomx[i];
+        corDef->sll.comx[i] = masterCorDef->sll.comx[i];
+
+        // new blocks always allowed to grow
+        if (qrySeq->sac.mn[i] < 0 || qrySeq->sac.mx[i] < 0) continue;
+
+        // if an existing block is adjacent to any new (to-be-realigned) block, then allow block's
+        // boundaries to grow on that side; otherwise, freeze (isolated) existing block boundaries
+        bool adjacentLeft = (i > 0 && (qrySeq->sac.mn[i - 1] < 0 || qrySeq->sac.mx[i - 1] < 0));
+        bool adjacentRight = (i < corDef->sll.n - 1 &&
+            (qrySeq->sac.mn[i + 1] < 0 || qrySeq->sac.mx[i + 1] < 0));
+
+        if (!adjacentLeft) {
+            corDef->sll.nomx[i] = corDef->sll.nomn[i];
+            TESTMSG("block " << i << " fixed N-terminus");
+        }
+        if (!adjacentRight) {
+            corDef->sll.comx[i] = corDef->sll.comn[i];
+            TESTMSG("block " << i << " fixed C-terminus");
+        }
+    }
+
+    return true;
+}
+
 bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *masterMultiple,
     const AlignmentList *originalAlignments,
     int *nRowsAddedToMultiple, AlignmentList *newAlignments)
@@ -896,7 +935,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
     static const int zscs = 0;
 
     Seq_Mtf *seqMtf = NULL;
-    Cor_Def *corDef = NULL;
+    Cor_Def *corDef = NULL, *masterCorDef = NULL;
     Rcx_Ptl *rcxPtl = NULL;
     Gib_Scd *gibScd = NULL;
     Fld_Mtf *fldMtf = NULL;
@@ -937,6 +976,8 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
     PrintCorDef(corDef, pFile);
     fclose(pFile);
 #endif
+    if (options.freezeIsolatedBlocks)   // make a copy to used as an original "master"
+        if (!(masterCorDef = CreateCorDef(masterMultiple, options.loopLengthMultiplier))) goto cleanup;
 
 #ifdef DEBUG_THREADER
     pFile = fopen("Fld_Mtf.debug.txt", "w");
@@ -962,6 +1003,10 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
         PrintQrySeq(qrySeq, pFile);
         fclose(pFile);
 #endif
+
+        // freeze block sizes if opted (changes corDef but not masterCorDef or qrySeq)
+        if (options.freezeIsolatedBlocks)
+            FreezeIsolatedBlocks(corDef, masterCorDef, qrySeq);
 
         // create results storage structure
         thdTbl = NewThdTbl(options.nResultAlignments, corDef->sll.n);
@@ -1045,6 +1090,7 @@ cleanup2:
 cleanup:
     if (seqMtf) FreeSeqMtf(seqMtf);
     if (corDef) FreeCorDef(corDef);
+    if (masterCorDef) FreeCorDef(masterCorDef);
     if (rcxPtl) FreeRcxPtl(rcxPtl);
     if (gibScd) FreeGibScd(gibScd);
     if (trajectory) delete trajectory;

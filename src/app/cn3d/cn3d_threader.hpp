@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/04/12 18:09:40  thiessen
+* add block freezing
+*
 * Revision 1.7  2001/04/05 22:54:50  thiessen
 * change bg color handling ; show geometry violations
 *
@@ -89,6 +92,7 @@ class ThreaderOptions
 {
 public:
     bool mergeAfterEachSequence;
+    bool freezeIsolatedBlocks;
     double weightPSSM;
     double loopLengthMultiplier;
     int nRandomStarts;
