@@ -30,6 +30,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1998/11/30 21:23:20  vakatov
+* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
+* + CCgiRequest::ParseIndexesAsEntries()
+* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
+*
 * Revision 1.17  1998/11/27 20:55:23  vakatov
 * CCgiRequest::  made the input stream arg. be optional(std.input by default)
 *
@@ -362,7 +367,9 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestEntries(entries, "&zz=qq") );
     _ASSERT( !TestEntries(entries, "tt=qq=pp") );
     _ASSERT( !TestEntries(entries, "=ggg&ppp=PPP") );
-    _ASSERT( !TestEntries(entries, "a=d&eee") );
+    _ASSERT(  TestEntries(entries, "a=d&eee") );
+    _ASSERT(  TestEntries(entries, "xxx&eee") );
+    _ASSERT( !TestEntries(entries, "a=d&&eee") );
     _ASSERT(  TestEntries(entries, "a%21%2f%25aa=%2Fd%2c&eee=%3f") );
 
     // Test CCgiRequest::ParseIndexes()
@@ -378,14 +385,15 @@ static void TestCgi_Request_Static(void)
     _ASSERT( !TestIndexes(indexes, "+1") );
     _ASSERT( !TestIndexes(indexes, "aa+") );
     _ASSERT( !TestIndexes(indexes, "aa+bb  ") );
-    _ASSERT( !TestIndexes(indexes, "+") );
-    _ASSERT( !TestIndexes(indexes, "+ ") );
+    _ASSERT( !TestIndexes(indexes, "c++b") );
+    _ASSERT( !TestIndexes(indexes, "ff++ ") );
     _ASSERT( !TestIndexes(indexes, "++") );
 }
 
-static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0)
+static void TestCgi_Request_Full(CNcbiIstream* istr, int argc=0, char** argv=0,
+                                 bool indexes_as_entries=true)
 {
-    CCgiRequest CCR(argc, argv, istr);
+    CCgiRequest CCR(argc, argv, istr, indexes_as_entries);
 
     NcbiCout << "\n\nCCgiRequest::\n";
 
@@ -495,8 +503,14 @@ static void TestCgi(int argc, char* argv[])
         CNcbiIstrstream istr(inp_str);
         _ASSERT( !putenv("QUERY_STRING=get_isidx1+get_isidx2+get_isidx3") );
         _ASSERT( !putenv("HTTP_COOKIE=cook1=val1; cook2=val2;") );
-        TestCgi_Request_Full(&istr);
+        TestCgi_Request_Full(&istr, 0, 0, false);
     } STD_CATCH("TestCgi(GET ISINDEX + COOKIES)");
+
+    try { // GET REGULAR, NO '='
+        CNcbiIstrstream istr(inp_str);
+        _ASSERT( !putenv("QUERY_STRING=get_query1_empty&get_query2_empty") );
+        TestCgi_Request_Full(&istr);
+    } STD_CATCH("TestCgi(GET REGULAR, NO '=' )");
 
     try { // GET REGULAR + COOKIES
         CNcbiIstrstream istr(inp_str);
@@ -516,7 +530,7 @@ static void TestCgi(int argc, char* argv[])
         _ASSERT( !putenv("QUERY_STRING=u_query1=uq1") );
         _ASSERT( !putenv("HTTP_COOKIE=u_cook1=u_val1; u_cook2=u_val2") );
         _ASSERT( !putenv("REQUEST_METHOD=POST") );
-        NcbiCout << "Enter the length of CGI posted data now: ";
+        NcbiCout << "Enter the length of CGI posted data now: " << NcbiFlush;
         long l = 0;
         if (!(NcbiCin >> l)  ||  len < 0) {
             NcbiCin.clear();
@@ -525,7 +539,7 @@ static void TestCgi(int argc, char* argv[])
         char cs[32];
         _ASSERT( sprintf(cs, "CONTENT_LENGTH=%ld", (long)l) );
         _ASSERT( !putenv(cs) );
-        NcbiCout << "Enter the CGI posted data now(no spaces): ";
+        NcbiCout << "Enter the CGI posted data now(no spaces): " << NcbiFlush;
         NcbiCin >> NcbiWs;
         TestCgi_Request_Full(0);
         NcbiCin.clear();

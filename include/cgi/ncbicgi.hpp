@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1998/11/30 21:23:17  vakatov
+* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
+* + CCgiRequest::ParseIndexesAsEntries()
+* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
+*
 * Revision 1.22  1998/11/27 20:55:18  vakatov
 * CCgiRequest::  made the input stream arg. be optional(std.input by default)
 *
@@ -261,11 +266,15 @@ public:
     //   retrieve request's properties and cookies from environment
     //   retrieve request's entries from environment and/or stream "istr"
     // By default(when "istr" is null) use standard input stream("NcbiCin")
-    CCgiRequest(CNcbiIstream* istr=0);
+    // If "indexes_as_entries" is "true" then interprete indexes as regular
+    // form entries(with empty value)
+    CCgiRequest(CNcbiIstream* istr=0, bool indexes_as_entries=true);
     // (Mostly for the debugging) If "$REQUEST_METHOD" is undefined then
     // try to retrieve request's entries from the 1st cmd.-line argument, and
     // do not use "$QUERY_STRING" and "istr" at all
-    CCgiRequest(int argc, char* argv[], CNcbiIstream* istr=0);
+    // See above for description of "istr" and "indexes_as_entries"
+    CCgiRequest(int argc, char* argv[], CNcbiIstream* istr=0,
+                bool indexes_as_entries=true);
     // Destructor
     ~CCgiRequest(void);
 
@@ -284,37 +293,47 @@ public:
     const CCgiCookies& GetCookies(void) const;
 
     // Get a set of entries(decoded) received from the client
+    // Also includes "indexes" if "indexes_as_entries" in the
+    // constructor was "true"(default)
     const TCgiEntries& GetEntries(void) const;
 
-    // Get a set of entries(decoded) received from the client
+    // Get a set of indexes(decoded) received from the client
+    // It will always be empty if "indexes_as_entries" in the constructor
+    // was "true"(default)
     const TCgiIndexes& GetIndexes(void) const;
 
-    // Decode the URL-encoded string "str" into a set of entries
+    // Decode the URL-encoded string "str" into a set of FORM-like entries
     // (<name, value>) and add them to the "entries" set
     // The new entries are added without overriding the original ones, even
     // if they have the same names
     // On success, return zero, otherwise return location(1-based) of error
-    // "name1=value1&name2=value2&....."
+    // Valid format:  "name1=value1&name2=value2&.....", 
+    // where '=' and 'value' are optional
     static SIZE_TYPE ParseEntries(const string& str, TCgiEntries& entries);
 
     // Decode the URL-encoded string "str" into a set of ISINDEX-like entries
     // and add them to the "indexes" set
     // On success, return zero, otherwise return location(1-based) of error
     // "val1+val2+val3+....."
-    static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& entries);
+    static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& indexes);
+    // Just like "ParseIndexes()" but put the ISINDEX entries into the
+    // "entries" multimap(with empty entry values)
+    static SIZE_TYPE ParseIndexesAsEntries(const string& str,
+                                           TCgiEntries& entries);
 
 private:
     // set of the request properties(already retrieved; cached)
     TCgiProperties m_Properties;
-    // set of the request entries(already retrieved; cached)
+    // set of the request FORM-like entries(already retrieved; cached)
     TCgiEntries m_Entries;
-    // set of the request indexes(already retrieved; cached)
+    // set of the request ISINDEX-like indexes(already retrieved; cached)
     TCgiIndexes m_Indexes;
     // set of the request cookies(already retrieved; cached)
     CCgiCookies m_Cookies;
 
     // the real constructor code
-    void x_Init(CNcbiIstream* istr, int argc, char** argv);
+    void x_Init(CNcbiIstream* istr, int argc, char** argv,
+                bool indexes_as_entries);
     // retrieve(and cache) a property of given name
     const string& x_GetPropertyByName(const string& name);
 

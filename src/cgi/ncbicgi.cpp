@@ -30,6 +30,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1998/11/30 21:23:19  vakatov
+* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
+* + CCgiRequest::ParseIndexesAsEntries()
+* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
+*
 * Revision 1.13  1998/11/27 20:55:21  vakatov
 * CCgiRequest::  made the input stream arg. be optional(std.input by default)
 *
@@ -347,7 +352,33 @@ const string& CCgiRequest::GetPropertyName(ECgiProp prop)
 }
 
 
-void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv)
+// Guess if "str" is ISINDEX- or FORM-like, then fill out
+// "entries" XOR "indexes";  if "indexes_as_entries" is "true" then
+// interprete indexes as FORM-like entries(with empty value) and so
+// put them to "entries"
+static void s_ParseQuery(const string& str,
+                         TCgiEntries&  entries,
+                         TCgiIndexes&  indexes,
+                         bool          indexes_as_entries)
+{
+    if (str.find_first_of("=&") == NPOS) { // ISINDEX
+        SIZE_TYPE err_pos = indexes_as_entries ?
+            CCgiRequest::ParseIndexesAsEntries(str, entries) :
+            CCgiRequest::ParseIndexes(str, indexes);
+        if (err_pos != 0)
+            throw CParseException("Init CCgiRequest::ParseIndexes(\"" +
+                                  str + "\"", err_pos);
+    } else {  // regular(FORM) entries
+        SIZE_TYPE err_pos = CCgiRequest::ParseEntries(str, entries);
+        if (err_pos != 0)
+            throw CParseException("Init CCgiRequest::ParseEntries(\"" +
+                                  str + "\")", err_pos);
+    }
+}
+
+
+void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
+                         bool indexes_as_entries)
 {
     // cache "standard" properties
     for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
@@ -369,17 +400,8 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv)
     else // regular case -- read from "$QUERY_STRING"
         query_string = &GetProperty(eCgi_QueryString);
 
-    if (query_string->find_first_of('=') == NPOS) { // ISINDEX
-        SIZE_TYPE err_pos = ParseIndexes(*query_string, m_Indexes);
-        if (err_pos != 0)
-            throw CParseException("Init CCgiRequest::ParseIndexes(\"" +
-                                  *query_string + "\"", err_pos);
-    } else {  // regular(non-ISINDEX) entries
-        SIZE_TYPE err_pos = ParseEntries(*query_string, m_Entries);
-        if (err_pos != 0)
-            throw CParseException("Init(ENV) CCgiRequest::ParseEntries(\"" +
-                                  *query_string + "\")", err_pos);
-    }
+    // parse "$QUERY_STRING"(or cmd.-line arg)
+    s_ParseQuery(*query_string, m_Entries, m_Indexes, indexes_as_entries);
 
     // POST method?
     if (GetProperty(eCgi_RequestMethod).compare("POST") == 0) {
@@ -392,10 +414,8 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv)
             throw CParseException("Init CCgiRequest::CCgiRequest -- error "
                                   "in reading POST content", istr->gcount());
 
-        SIZE_TYPE err_pos = ParseEntries(str, m_Entries);
-        if (err_pos != 0)
-            throw CParseException("Init(STDIN) CCgiRequest::ParseEntries(\"" +
-                                  str + "\")", err_pos);
+        // parse query from the POST content
+        s_ParseQuery(str, m_Entries, m_Indexes, indexes_as_entries);
     }
 }
 
@@ -521,7 +541,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
         return 0;
 
     // At least one '=' must present in the parsed string
-    if (str.find_first_of('=') == NPOS)
+    if (str.find_first_of("&=") == NPOS)
         return len;
 
     // No spaces must present in the parsed string
@@ -532,30 +552,78 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     // Parse into entries
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
         // parse and URL-decode name
-        SIZE_TYPE mid = str.find_first_of(" =&", beg);
-        if (mid == beg  ||  mid == NPOS  ||  str[mid] != '=')
-            return ((mid == NPOS) ? len : mid) + 1;  // error
+        SIZE_TYPE mid = str.find_first_of(" \t\r\n=&", beg);
+        if (mid == beg  ||  (str[mid] == '&'  &&  mid == len-1)  ||
+            (mid != NPOS  &&  str[mid] != '&'  &&  str[mid] != '='))
+            return mid + 1;  // error
+        if (mid == NPOS)
+            mid = len;
 
         string name = str.substr(beg, mid - beg);
         if ((err_pos = s_URL_Decode(name)) != 0)
             return beg + err_pos + 1;  // error
 
-        // parse and URL-decode value
-        mid++;
-        SIZE_TYPE end = str.find_first_of(" =&", mid);
-        if (end != NPOS  &&  (str[end] != '&'  ||  end == len-1))
-            return end + 1;  // error
+        // parse and URL-decode value(if any)
+        string value;
+        if (str[mid] == '=') { // has a value 
+            mid++;
+            SIZE_TYPE end = str.find_first_of(" =&", mid);
+            if (end != NPOS  &&  (str[end] != '&'  ||  end == len-1))
+                return end + 1;  // error
+            if (end == NPOS)
+                end = len;
 
+            value = str.substr(mid, end - mid);
+            if ((err_pos = s_URL_Decode(value)) != 0)
+                return mid + err_pos + 1;  // error
+
+            beg = end + 1;
+        } else {  // has no value
+            beg = mid + 1;
+        }
+
+        // compose & store the name-value pair
+        pair<const string, string> entry(name, value);
+        entries.insert(entry);
+    }
+    return 0;
+}
+
+
+static SIZE_TYPE s_ParseIndexes(const string& str,
+                                TCgiIndexes* indexes, TCgiEntries* entries)
+{
+    _ASSERT( !indexes != !entries );
+
+    SIZE_TYPE len = str.length();
+    if ( !len )
+        return 0;
+
+    // No '=' and spaces must present in the parsed string
+    SIZE_TYPE err_pos = str.find_first_of("=& \t\r\n");
+    if (err_pos != NPOS)
+        return err_pos + 1;
+
+    // Parse into indexes
+    for (SIZE_TYPE beg = 0;  beg < len;  ) {
+        // parse and URL-decode ISINDEX name
+        SIZE_TYPE end = str.find_first_of('+', beg);
+        if (end == beg  ||  end == len-1)
+            return end + 1;  // error
         if (end == NPOS)
             end = len;
 
-        string value = str.substr(mid, end - mid);
-        if ((err_pos = s_URL_Decode(value)) != 0)
-            return mid + err_pos + 1;  // error
+        string name = str.substr(beg, end - beg);
+        if ((err_pos = s_URL_Decode(name)) != 0)
+            return beg + err_pos + 1;  // error
 
-        // compose & store the name-value pair
-        pair<const string, string> entry(name,value);
-        entries.insert(entry);
+        // store
+        if ( indexes ) {
+            indexes->push_back(name);
+        } else {
+            pair<const string, string> entry(name, "");
+            entries->insert(entry);
+        }
 
         // continue
         beg = end + 1;
@@ -563,39 +631,15 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
     return 0;
 }
 
-
 SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 {
-    SIZE_TYPE len = str.length();
-    if ( !len )
-        return 0;
+    return s_ParseIndexes(str, &indexes, 0);
+}
 
-    // No '=' and spaces must present in the parsed string
-    SIZE_TYPE err_pos = str.find_first_of("= \t\r\n");
-    if (err_pos != NPOS)
-        return err_pos + 1;
-
-    // Parse into indexes
-    for (SIZE_TYPE beg = 0;  beg < len;  ) {
-        // parse and URL-decode value
-        SIZE_TYPE end = str.find_first_of('+', beg);
-        if (end == beg  ||  end == len-1)
-            return end + 1;  // error
-
-        if (end == NPOS)
-            end = len;
-
-        string value = str.substr(beg, end - beg);
-        if ((err_pos = s_URL_Decode(value)) != 0)
-            return beg + err_pos + 1;  // error
-
-        // store
-        indexes.push_back(value);
-
-        // continue
-        beg = end + 1;
-    }
-    return 0;
+SIZE_TYPE CCgiRequest::ParseIndexesAsEntries(const string& str,
+                                             TCgiEntries& entries)
+{
+    return s_ParseIndexes(str, 0, &entries);
 }
 
 
