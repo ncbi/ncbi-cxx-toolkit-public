@@ -8,9 +8,8 @@ REQUIRES = objects
 
 APP = test_biotree
 SRC = test_biotree
-LIB = $(OBJMGR_LIBS)
-
-LIBS = $(ORIG_LIBS) taxon1
+LIB = taxon1 seq seqset seqcode pub biblio pubmed \
+      medline general biotree xalgophytree xser xutil xconnect xncbi
 
 #CHECK_CMD = test_biotree
 #CHECK_TIMEOUT = 500
