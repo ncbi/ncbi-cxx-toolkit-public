@@ -61,6 +61,7 @@
  *       URL_Encode()
  *
  *    4.Compose or parse NCBI-specific Content-Type's:
+ *       EMIME_Type
  *       EMIME_SubType
  *       EMIME_Encoding
  *       MIME_ComposeContentType()
@@ -642,6 +643,9 @@ extern NCBI_XCONNECT_EXPORT size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2004/09/16 16:19:16  lavr
+ * Mention [in opening comment summary] that EMIME_Type is defined here
+ *
  * Revision 6.35  2004/01/14 18:51:41  lavr
  * +eMIME_XmlSoap
  *
