@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2001/09/21 22:38:59  ucko
+ * Cope with new Entrez interface; fix MSVC build.
+ *
  * Revision 1.10  2001/09/05 16:25:56  ucko
  * Adapted to latest revision of object manager interface.
  *
@@ -119,7 +122,7 @@
 #include "util.hpp"
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+USING_SCOPE(NCBI_NS_NCBI::objects); // MSVC requires qualification (!)
 
 static CRef<CSeq_id> s_ParseFastaSeqID(const string& s);
 static CRef<CSeq_id> s_ParseFlatSeqID(const string& s);
@@ -239,7 +242,7 @@ void CId1FetchApp::Init(void)
          "Flattened SeqID; format can be\n"
          "\t'type([name][,[accession][,[release][,version]]])'"
          " [e.g., '5(HUMHBB)'],\n"
-         "\ttype=accession, or type:number",
+         "\ttype=accession[.version], or type:number",
          CArgDescriptions::eString);
     
     // FASTA-style SeqID
@@ -556,12 +559,18 @@ bool CId1FetchApp::LookUpGI(int gi)
 
         const CEntrez2_docsum& docsum
             = *e2_reply.GetReply().GetGet_docsum().GetList().front();
+#if 0 // old interface
         *m_OutputFile << '>';
         if (docsum.IsSetCaption())
             *m_OutputFile << docsum.GetCaption();
         *m_OutputFile << ' ';
         if (docsum.IsSetTitle())
             *m_OutputFile << docsum.GetTitle();
+#else // dump as ASN.1 text for now
+        auto_ptr<CObjectOStream> docsum_output
+            (CObjectOStream::Open(eSerial_AsnText, *m_OutputFile));
+        *docsum_output << docsum;
+#endif
     } else if (fmt == "fasta"  &&  lt == "ids") {
         WriteFastaIDs(id1_reply.GetIds());
     } else if (fmt == "fasta"  &&  lt == "entry") {
