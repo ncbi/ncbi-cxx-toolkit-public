@@ -2410,7 +2410,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     TSOCK_Handle       xx_sock;
     BUF                w_buf = 0;
     unsigned int       x_id = ++s_ID_Counter * 1000;
-    SOCK_socklen_t     peerlen = (SOCK_socklen_t) sizeof(peer);
+    SOCK_socklen_t     peerlen;
     size_t             socklen;
 
     *sock = 0;
@@ -2430,20 +2430,37 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
     /* get peer's address */
+    errno = 0;
+    peerlen = (SOCK_socklen_t) sizeof(peer);
+    memset(&peer, 0, peerlen);
+#ifdef HAVE_SIN_LEN
+    peer.sa.sa_len = peerlen;
+#endif
     if (getpeername(xx_sock, &peer.sa, &peerlen) < 0)
         return eIO_Closed;
 #ifdef NCBI_OS_UNIX
     if (peer.sa.sa_family != AF_INET  &&  peer.sa.sa_family != AF_UNIX)
-        return eIO_InvalidArg;
+#  ifdef NCBI_OS_BSD
+        if (peer.sa.sa_family != AF_UNSPEC/*0*/)
+#  endif
+            return eIO_InvalidArg;
 #else
     if (peer.sa.sa_family != AF_INET)
         return eIO_InvalidArg;
 #endif /*NCBI_OS_UNIX*/
-
+    
 #ifdef NCBI_OS_UNIX
-    if (peer.sa.sa_family == AF_UNIX) {
+    if (
+#  ifdef NCBI_OS_BSD
+        peer.sa.sa_family == AF_UNSPEC/*0*/  ||
+#  endif
+        peer.sa.sa_family == AF_UNIX) {
         if (!peer.un.sun_path[0]) {
-            peerlen = sizeof(peer);
+            peerlen = (SOCK_socklen_t) sizeof(peer);
+            memset(&peer, 0, peerlen);
+#  ifdef HAVE_SIN_LEN
+            peer.sa.sa_len = peerlen;
+#  endif
             if (getsockname(xx_sock, &peer.sa, &peerlen) < 0)
                 return eIO_Closed;
             assert(peer.sa.sa_family == AF_UNIX);
@@ -2459,7 +2476,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     } else
 #endif /*NCBI_OS_UNIX*/
         socklen = 0;
-
+    
     /* store initial data */
     if (datalen  &&  (!BUF_SetChunkSize(&w_buf, datalen)  ||
                       !BUF_Write(&w_buf, data, datalen))) {
@@ -2470,7 +2487,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         BUF_Destroy(w_buf);
         return eIO_Unknown;
     }
-
+    
     /* create and fill socket handle */
     if (!(x_sock = (SOCK) calloc(1, sizeof(*x_sock) + socklen))) {
         BUF_Destroy(w_buf);
@@ -2502,7 +2519,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf    = w_buf;
     x_sock->w_len    = datalen;
-
+    
     /* set to non-blocking mode */
     if ( !s_SetNonblock(xx_sock, 1/*true*/) ) {
         char _id[32];
@@ -2513,11 +2530,11 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         SOCK_Close(x_sock);
         return eIO_Unknown;
     }
-
+    
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn))
         s_DoLog(x_sock, eIO_Open, &peer, 0, &peer.sa);
-
+    
     /* success */
     *sock = x_sock;
     return eIO_Success;
@@ -3841,6 +3858,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.124  2003/08/19 19:45:54  ivanov
+ * SOCK_CreateOnTopEx(): Workaround for unnamed peer's UNIX sockets on BSD
+ *
  * Revision 6.123  2003/08/18 20:01:13  lavr
  * Retry 'connect()' syscall if interrupted and allowed to restart
  *
