@@ -911,7 +911,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     }
 
     if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
-        sbp->mat_dim2 = a2cnt;
+        sbp->mat_dim2 = sbp->alphabet_size;
     }
     while (fgets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
@@ -972,7 +972,7 @@ BlastScoreBlkMatRead(BlastScoreBlk* sbp, FILE *fp)
     }
     
     if (sbp->alphabet_code != BLASTNA_SEQ_CODE) {
-        sbp->mat_dim1 = a1cnt;
+        sbp->mat_dim1 = sbp->alphabet_size;
     }
     
     return 0;
@@ -1074,7 +1074,6 @@ BLAST_ScoreBlkMatFill(BlastScoreBlk* sbp, char* matrix_path)
     Int2 status = 0;
     
     if (sbp->read_in_matrix) {
-        
         if (matrix_path && *matrix_path != NULLB) {
 
             FILE *fp = NULL;
@@ -3518,6 +3517,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.78  2004/06/07 14:20:41  dondosha
+ * Set matrix dimensions to 26 when matrix is read from a file, to make it the same as when matrix is loaded from a library
+ *
  * Revision 1.77  2004/05/24 15:09:40  camacho
  * Fixed conflict
  *
