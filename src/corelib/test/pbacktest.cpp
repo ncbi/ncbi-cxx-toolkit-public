@@ -38,9 +38,8 @@
 
 #include <test/test_assert.h>  /* This header must go last */
 
-#define _GLUE2(a, b) a ## b
-#define _GLUE1(a, b) _GLUE2(#a, b)
-#define   GLUE(a, b) _GLUE1( a, b)
+#define _STR(a)
+#define  STR(a) _STR(a)
 
 
 BEGIN_NCBI_SCOPE
@@ -143,7 +142,7 @@ extern int TEST_StreamPushback(iostream&    ios,
 
         if (rewind && rand() % 7 == 0 && buflen < kBufferSize) {
             LOG_POST(Info << "Testing seekg(" << buflen <<
-                     ", " << GLUE(IOS_BASE, "::beg)"));
+                     ", " << STR(IOS_BASE) "::beg)");
             ios.seekg(buflen, IOS_BASE::beg);
             if (!ios.good()) {
                 ERR_POST("Error in stream re-positioning");
@@ -217,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/07/16 15:08:34  lavr
+ * Use ANSI-compliant stringizing
+ *
  * Revision 1.6  2002/04/16 18:52:15  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
