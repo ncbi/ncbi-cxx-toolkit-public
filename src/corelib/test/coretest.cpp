@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  1999/05/11 14:47:38  vakatov
+* Added missing <algorithm> header (for MSVC++)
+*
 * Revision 1.44  1999/05/11 02:53:52  vakatov
 * Moved CGI API from "corelib/" to "cgi/"
 *
@@ -184,7 +187,7 @@
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbireg.hpp>
-
+#include <algorithm>
 
 // This is to use the ANSI C++ standard templates without the "std::" prefix
 // and to use NCBI C++ entities without the "ncbi::" prefix
