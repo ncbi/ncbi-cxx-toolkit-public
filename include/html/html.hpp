@@ -303,21 +303,33 @@ class NCBI_XHTML_EXPORT CHTMLText : public CNCBINode
 
 public:
     /// Which conversions make before printout a stored text
+    ///
+    /// NOTE: fDisableBuffering flag can slightly improve output speed,
+    /// but it disable some functionality. In this mode tag mapping
+    /// don't works in ePlainText mode, also tag stripping works incorrect
+    /// if other HTML/XML or similar tags presents inside HTML tags.
+    /// By default this flag is temporary enabled for compatibility with
+    /// old code using CHTMLText class. In the future it will be disabled
+    /// by default.
     enum EFlags {
-        fStripHtmlMode  = 1 << 1,   //< Strip text in html mode
-        fStripTextMode  = 1 << 2,   //< Strip text in text mode
-        fStrip          = fStripHtmlMode  | fStripTextMode,
-        fNoStrip        = 0,
-        fEncodeHtmlMode = 1 << 3,   //< Encode text in html mode
-        fEncodeTextMode = 1 << 4,   //< Encode text in text mode
-        fEncode         = fEncodeHtmlMode | fEncodeTextMode,
-        fNoEncode       = 0,
+        fStripHtmlMode    = 1 << 1,   //< Strip text in html mode
+        fStripTextMode    = 1 << 2,   //< Strip text in plain text mode
+        fStrip            = fStripHtmlMode  | fStripTextMode,
+        fNoStrip          = 0,
+        fEncodeHtmlMode   = 1 << 3,   //< Encode text in html mode
+        fEncodeTextMode   = 1 << 4,   //< Encode text in plain text mode
+        fEncode           = fEncodeHtmlMode | fEncodeTextMode,
+        fNoEncode         = 0,
+        fEnableBuffering  = 0,        //< Enable printout buffering
+        fDisableBuffering = 1 << 5,   //< Disable printout buffering
+
         // Presets
-        fCode           = fStripTextMode  | fNoEncode,
-        fExample        = fNoStrip        | fEncodeHtmlMode,
-        fDefault        = fCode     //< Default value
+        fCode             = fStripTextMode  | fNoEncode,
+        fCodeCompatible   = fStripTextMode  | fNoEncode  |  fDisableBuffering,
+        fExample          = fNoStrip        | fEncodeHtmlMode,
+        fDefault          = fCodeCompatible  //< Default value
     };
-    typedef int TFlags;             //<  Bitwise OR of "EFlags"
+    typedef int TFlags;               //< Bitwise OR of "EFlags"
 
     CHTMLText(const char*   text, TFlags flags = fDefault);
     CHTMLText(const string& text, TFlags flags = fDefault);
@@ -1519,6 +1531,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.80  2004/10/27 18:25:17  ivanov
+ * CHTMLText : Added flag fDisableBuffering to disable internal buffering
+ * at the cost of loss some functionality relative to tag mapping.
+ * By default buffering is disabled now. But default can be changed
+ * in the future.
+ *
  * Revision 1.79  2004/10/21 17:43:32  ivanov
  * CHTMLText: added EFlag type and flag parameter to constructors
  *

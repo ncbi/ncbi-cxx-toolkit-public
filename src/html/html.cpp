@@ -456,6 +456,13 @@ CNcbiOstream& CHTMLText::x_PrintBegin(CNcbiOstream& out, TMode mode,
 }
 
 
+#define PRINT_TMP_STR \
+    if ( enable_buffering ) { \
+        pstr->write(tmp.data(), tmp.size()); \
+    } else { \
+        x_PrintBegin(out, mode, tmp); \
+    }
+
 CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     const string& text = GetText();
@@ -467,10 +474,18 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     SIZE_TYPE tag_start_size = strlen(kTagStart);
     SIZE_TYPE tag_end_size   = strlen(kTagEnd);
 
-    // Output string to save data after mapping
-    CNcbiOstrstream strout;
+    // Check flag to enabe output buffering
+    bool enable_buffering = !(m_Flags & fDisableBuffering);
+    CNcbiOstrstream *pstr = 0;
+    if ( enable_buffering ) {
+        pstr = new CNcbiOstrstream;
+    }
 
-    strout << text.substr(0, tagStart);
+    // Printout string before the first start mapping tag
+    string tmp = text.substr(0, tagStart);
+    PRINT_TMP_STR;
+
+    // Map all tags
     SIZE_TYPE last = tagStart;
     do {
         SIZE_TYPE tagNameStart = tagStart + tag_start_size;
@@ -482,14 +497,19 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
         else {
             // tag found
             if ( last != tagStart ) {
-                strout << text.substr(last, tagStart - last);
+                tmp = text.substr(last, tagStart - last);
+                PRINT_TMP_STR;
             }
             string name = text.substr(tagNameStart,tagNameEnd-tagNameStart);
             // Resolve and repeat tag
             for (;;) {
                 CNodeRef tag = MapTagAll(name, mode);
                 if ( tag ) {
-                    tag->Print(strout, mode);
+                    if ( enable_buffering ) {
+                        tag->Print(*pstr, mode);
+                    } else {
+                        tag->Print(out, mode);
+                    }
                     if ( tag->NeedRepeatTag() ) {
                         RepeatTag(false);
                         continue;
@@ -503,9 +523,13 @@ CNcbiOstream& CHTMLText::PrintBegin(CNcbiOstream& out, TMode mode)
     } while ( tagStart != NPOS );
 
     if ( last != text.size() ) {
-        strout << text.substr(last);
+        tmp = text.substr(last);
+        PRINT_TMP_STR;
     }
-    x_PrintBegin(out, mode, CNcbiOstrstreamToString(strout));
+    if ( enable_buffering ) {
+        x_PrintBegin(out, mode, CNcbiOstrstreamToString(*pstr));
+        delete pstr;
+    }
     return out;
 }
 
@@ -2254,6 +2278,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.111  2004/10/27 18:25:00  ivanov
+ * CHTMLText : Added flag fDisableBuffering to disable internal buffering
+ * at the cost of loss some functionality relative to tag mapping.
+ * By default buffering is disabled now. But default can be changed
+ * in the future.
+ *
  * Revision 1.110  2004/10/27 14:40:25  ivanov
  * CHTML_tr::GetTextLength() - use pcount() to determine ostrstream data size
  *
