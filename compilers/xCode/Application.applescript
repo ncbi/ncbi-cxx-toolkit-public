@@ -290,11 +290,11 @@ end GetSourceFiles
 
 
 
-(* Returns a content of a foder, with *.c and *.cpp files, excluding "excfileList"  and full path *)
+(* Returns a content of a foder, with *.c *.c.in and *.cpp files, excluding "excfileList"  and full path *)
 on x_GetFolderContent(folderName, excfileList)
 	set fileList to list folder (folderName as POSIX file) without invisibles
 	set fileList to my ExcludeFiles(fileList, excfileList)
-	set fileList to EndsWith(fileList, ".c") & EndsWith(fileList, ".cpp")
+	set fileList to EndsWith(fileList, ".c") & EndsWith(fileList, ".cpp") & EndsWith(fileList, ".c.in")
 	
 	set filesWithPath to {}
 	repeat with f in fileList
@@ -420,6 +420,9 @@ end x_ShowAlert
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/06 15:26:59  lebedev
+ * Handle ncbicfg.c.in correctly
+ *
  * Revision 1.4  2004/07/06 15:30:25  lebedev
  * Use POSIX paths instead of old Mac standard
  *

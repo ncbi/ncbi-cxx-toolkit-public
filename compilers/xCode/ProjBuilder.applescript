@@ -164,10 +164,10 @@ script ProjBuilder
 			
 			set filePath to f --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
 			set fileName to x_FileNameFromPath(f)
-			if fileName ends with ".c" then
-				set fileType to "sourcecode.c.c"
-			else
+			if fileName ends with ".cpp" then
 				set fileType to "sourcecode.cpp.cpp"
+			else
+				set fileType to "sourcecode.c.c"
 			end if
 			
 			set fileRef to {isa:"PBXFileReference", |lastKnownFileType|:fileType, |name|:fileName, |path|:filePath, |sourceTree|:"<absolute>"}
@@ -524,6 +524,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/08/06 15:26:59  lebedev
+ * Handle ncbicfg.c.in correctly
+ *
  * Revision 1.8  2004/07/29 13:16:04  lebedev
  * demo for cross alignment added
  *
