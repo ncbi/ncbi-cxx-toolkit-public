@@ -68,24 +68,51 @@ void CBDB_Env::SetCacheSize(unsigned int cache_size)
 
 void CBDB_Env::Open(const char* db_home, int flags)
 {
-    int ret = m_Env->open(m_Env, db_home, flags, 0664);
+    int ret = x_Open(db_home, flags);
     BDB_CHECK(ret, "DB_ENV");
 }
 
+int CBDB_Env::x_Open(const char* db_home, int flags)
+{
+    int ret = m_Env->open(m_Env, db_home, flags, 0664);
+    return ret;
+}
 
 void CBDB_Env::OpenWithLocks(const char* db_home)
 {
     Open(db_home, DB_CREATE/*|DB_RECOVER*/|DB_INIT_LOCK|DB_INIT_MPOOL);
 }
 
-void CBDB_Env::OpenWithTrans(const char* db_home)
+void CBDB_Env::OpenWithTrans(const char* db_home, TEnvOpenFlags opt)
 {
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
     BDB_CHECK(ret, "DB_ENV");
+    
+    int flag =  DB_INIT_TXN | /* DB_RECOVER | */
+                DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL;
+    
+    if (opt & eThreaded) {
+        flag |= DB_THREAD;
+    }
+    
+    // Run recovery procedure, reinitialize the environment
+    
+    if (opt & eRunRecovery) {
+        // use private environment as prescribed by "db_recover" utility
+        int recover_flag = flag | DB_RECOVER | DB_CREATE | DB_PRIVATE;
+        
+        ret = x_Open(db_home, recover_flag);
+        BDB_CHECK(ret, "DB_ENV");
+        
+        ret = m_Env->close(m_Env, 0);
+        BDB_CHECK(ret, "DB_ENV");
+        
+        ret = db_env_create(&m_Env, 0);
+        BDB_CHECK(ret, "DB_ENV");
+    }
+    
 
-    Open(db_home, 
-         DB_INIT_TXN | DB_RECOVER |
-         DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL | DB_THREAD);
+    Open(db_home,  flag);
     m_Transactional = true;
 }
 
@@ -93,20 +120,21 @@ void CBDB_Env::OpenConcurrentDB(const char* db_home)
 {
     int ret = 
       m_Env->set_flags(m_Env, 
-                       DB_CDB_ALLDB|DB_DIRECT_DB, 1);
+                       DB_CDB_ALLDB | DB_DIRECT_DB, 1);
     BDB_CHECK(ret, "DB_ENV::set_flags");
 
-    Open(db_home, DB_INIT_CDB|DB_INIT_MPOOL);
+    Open(db_home, DB_INIT_CDB | DB_INIT_MPOOL);
 }
 
-void CBDB_Env::JoinEnv(const char* db_home, unsigned int opt)
+void CBDB_Env::JoinEnv(const char* db_home, TEnvOpenFlags opt)
 {
     int flag = DB_JOINENV;
     if (opt & eThreaded) {
         flag |= DB_THREAD;
     }
+    
     Open(db_home, flag);
-
+    
     // Check if we joined the transactional environment
     // Try to create a fake transaction to test the environment
     DB_TXN* txn = 0;
@@ -188,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/06/21 15:05:22  kuznets
+ * Added support of recovery open for environment
+ *
  * Revision 1.20  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

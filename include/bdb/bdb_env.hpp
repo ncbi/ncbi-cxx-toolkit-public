@@ -54,8 +54,13 @@ class NCBI_BDB_EXPORT CBDB_Env
 {
 public:
     enum EEnvOptions {
-        eThreaded = (1 << 0)  ///< corresponds to DB_THREAD 
+        eThreaded = (1 << 0),     ///< corresponds to DB_THREAD 
+        eRunRecovery = (1 << 1),  ///< Run DB recovery first
     };
+    
+    /// OR-ed combination of EEnvOptions    
+    typedef unsigned int  TEnvOpenFlags;
+    
 public:
     CBDB_Env();
 
@@ -85,8 +90,11 @@ public:
 
     /// Open environment using transaction
     ///
-    /// @param db_home destination directory for the database
-    void OpenWithTrans(const char* db_home);
+    /// @param db_home 
+    ///    destination directory for the database
+    /// @param flags
+    
+    void OpenWithTrans(const char* db_home, TEnvOpenFlags opt = 0);
 
     /// Open error reporting file for the environment
     ///
@@ -101,7 +109,7 @@ public:
     /// @param 
     ///    opt environment options (see EEnvOptions)
     /// @sa EEnvOptions
-    void JoinEnv(const char* db_home, unsigned int opt = 0);
+    void JoinEnv(const char* db_home, TEnvOpenFlags opt = 0);
 
     /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
@@ -130,7 +138,12 @@ public:
 
     /// Turn off buffering of log files (DB_DIRECT_LOG)
     void SetDirectLog(bool on_off);
-
+    
+private:
+    /// Opens BDB environment returns error code
+    /// Throws no exceptions.
+    int x_Open(const char* db_home, int flags);
+    
 private:
     CBDB_Env(const CBDB_Env&);
     CBDB_Env& operator=(const CBDB_Env&);
@@ -147,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/06/21 15:04:44  kuznets
+ * Added support of recovery open for environment
+ *
  * Revision 1.12  2004/03/26 14:04:21  kuznets
  * + environment functions to fine tune buffering and force
  * transaction checkpoints
