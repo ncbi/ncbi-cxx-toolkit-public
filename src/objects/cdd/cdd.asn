@@ -1,4 +1,4 @@
---$Revision: 1.20 $
+--$Revision: 1.21 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -22,7 +22,7 @@ NCBI-Cdd DEFINITIONS ::=
 
 BEGIN
 
-EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set, Cdd-pref-nodes;
+EXPORTS  Cdd-id, Cdd-id-set, Cdd, Cdd-set, Cdd-tree, Cdd-tree-set, Cdd-pref-nodes, Cdd-Project;
 
 IMPORTS  Date                    FROM NCBI-General
          Pub                     FROM NCBI-Pub
@@ -412,5 +412,59 @@ Cdd ::= SEQUENCE {
 }
 
 Cdd-set ::= SET OF Cdd
+
+
+-- Cdd projects store a set of CDs, typically related to each other
+-- relationships would be specified using the ancestors fields in the
+-- individual CD objects. For use with CD-Tree, a program to visualize
+-- curated CD hierarchies and evidence for hierarchical family structures.
+
+Cdd-Viewer-Rect ::= SEQUENCE {
+  top           INTEGER,           -- top coordinate
+  left          INTEGER,           -- left  coordinate
+  width         INTEGER,           -- width 
+  height        INTEGER            -- height
+}
+
+Cdd-Viewer ::= SEQUENCE {
+  ctrl          INTEGER {                   -- viewer type
+                  unassigned          (0),
+		  cd-info             (1),
+		  align-annot         (2),
+		  seq-list            (3),
+		  seq-tree            (4),
+		  merge-preview       (5),
+		  cross-hits          (6),
+		  notes               (7),
+		  tax-tree            (8),
+		  dart                (9),
+		  dart-selected-rows (10),
+		  other (255)
+                },
+  rect          Cdd-Viewer-Rect OPTIONAL,  -- viewer rectangle
+  accessions    SEQUENCE OF VisibleString  -- list of accessions associated with a viewer
+}
+
+Cdd-Script ::= SEQUENCE {
+  type          INTEGER {
+                  unassigned (0),
+                  user-recorded (1),
+		  server-generated (2),
+                  other (255)
+                } OPTIONAL,
+  name          VisibleString OPTIONAL,   -- user assigned name/description
+  commands      VisibleString             -- actual script commands
+}
+
+
+-- cd colors are as:  0000FF for red, 00FF00 for green, FF0000 for blue
+
+Cdd-Project ::= SEQUENCE {
+  cds           SEQUENCE OF Cdd ,         -- cds
+  cdcolor       SEQUENCE OF INTEGER,      -- colors  
+  viewers       SEQUENCE OF Cdd-Viewer,   -- Sequence viewers
+  log           VisibleString,            -- log
+  scripts       SEQUENCE OF Cdd-Script    -- command scripts
+}
 
 END
