@@ -132,6 +132,10 @@ changequote([, ])dnl
 
 
 for x_arg in "$@" ; do
+   if test -z "$x_arg" ; then
+      continue
+   fi
+
    x_okay=
    for x_desc in $x_with_list ; do
       if test "$x_arg" = "$x_desc" ; then
@@ -244,10 +248,13 @@ case "$compiler" in
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
        echo "better use a special shell script located in \"compilers/*.sh\"!"
        echo
+changequote(, )dnl
        echo "Do you still want to proceed (at your own risk)? [n/y]"
+changequote([, ])dnl
        read answer
+       echo
        case "$answer" in
-         y )  AC_MSG_WARN([Proceeding at your own risk...]) ;;
+         y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
          * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
        esac
        echo
@@ -361,7 +368,23 @@ esac
 
 #### Check if the compiler matches one of supported compilers on this platform
 if test -z "$compiler" ; then
-  AC_MSG_ERROR(["Compiler $CXX $compiler_ver is not supported. Consult doc/config.html#ref_Compilers for the list of supported platforms/compilers"])
+changequote(, )dnl
+   cat <<EOF
+
+  Compiler $CXX $compiler_ver is not fully supported.
+  Consult doc/config.html#ref_Compilers for the list of
+  fully supported platforms/compilers.
+
+  Do you still want to proceed (at your own risk)? [n/y]
+EOF
+changequote([, ])dnl
+   read answer
+   echo
+   case "$answer" in
+      y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
+      * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
+   esac
+   compiler="UNKNOWN"
 fi
 
 
