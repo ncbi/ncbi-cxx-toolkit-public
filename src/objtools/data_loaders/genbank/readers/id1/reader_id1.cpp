@@ -749,13 +749,12 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
                               const TSNP_InfoMap& snps)
 {
     CRef<CSeq_entry> seq_entry;
-    CTSE_Info::ESuppression_Level suppression = CTSE_Info::eSuppression_none;
     switch ( id1_reply.Which() ) {
     case CID1server_back::e_Gotseqentry:
         seq_entry.Reset(&id1_reply.SetGotseqentry());
         break;
     case CID1server_back::e_Gotdeadseqentry:
-        suppression = CTSE_Info::eSuppression_dead;
+        tse_info.SetBlobState(CTSE_Info::fState_dead);
         seq_entry.Reset(&id1_reply.SetGotdeadseqentry());
         break;
     case CID1server_back::e_Gotsewithinfo:
@@ -763,20 +762,20 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
         const CID1blob_info& info =
             id1_reply.GetGotsewithinfo().GetBlob_info();
         if ( info.GetBlob_state() < 0 ) {
-            suppression = CTSE_Info::eSuppression_dead;
+            tse_info.SetBlobState(CTSE_Info::fState_dead);
         }
         if ( id1_reply.GetGotsewithinfo().IsSetBlob() ) {
             seq_entry.Reset(&id1_reply.SetGotsewithinfo().SetBlob());
         }
         else {
             // no Seq-entry in reply, probably private data
-            suppression = CTSE_Info::eSuppression_no_data;
-            if ( info.GetWithdrawn() ) {
-                suppression = CTSE_Info::eSuppression_withdrawn;
-            }
-            if ( info.GetConfidential() ) {
-                suppression = CTSE_Info::eSuppression_private;
-            }
+            tse_info.SetBlobState(CTSE_Info::fState_no_data);
+        }
+        if ( info.GetWithdrawn() ) {
+            tse_info.SetBlobState(CTSE_Info::fState_withdrawn);
+        }
+        if ( info.GetConfidential() ) {
+            tse_info.SetBlobState(CTSE_Info::fState_private);
         }
         break;
     }}
@@ -785,13 +784,15 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
         int error = id1_reply.GetError();
         switch ( error ) {
         case 1:
-            suppression = CTSE_Info::eSuppression_withdrawn;
+            tse_info.SetBlobState(CTSE_Info::fState_withdrawn|
+                                  CTSE_Info::fState_no_data);
             break;
         case 2:
-            suppression = CTSE_Info::eSuppression_private;
+            tse_info.SetBlobState(CTSE_Info::fState_private|
+                                  CTSE_Info::fState_no_data);
             break;
         case 10:
-            suppression = CTSE_Info::eSuppression_no_data;
+            tse_info.SetBlobState(CTSE_Info::fState_no_data);
             break;
         default:
             ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<error);
@@ -811,7 +812,6 @@ void CId1Reader::SetSeq_entry(CTSE_Info& tse_info,
             tse_info.SetBlobVersion(version);
         }
     }
-    tse_info.SetSuppressionLevel(suppression);
 }
 
 
@@ -833,7 +833,8 @@ CReader::TBlobVersion CId1Reader::x_GetVersion(const CID1server_back& reply)
 void CId1Reader::x_SetBlobRequest(CID1server_request& request,
                                   const CBlob_id& blob_id)
 {
-    x_SetParams(request.SetGetsefromgi(), blob_id);
+    x_SetParams(request.SetGetsewithinfo(), blob_id);
+    //x_SetParams(request.SetGetsefromgi(), blob_id);
 }
 
 
