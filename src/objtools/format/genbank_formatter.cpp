@@ -360,7 +360,11 @@ void CGenbankFormatter::x_Authors
  const CReferenceItem& ref,
  CFFContext& ctx) const
 {
-    Wrap(l, "AUTHORS", CReferenceItem::GetAuthString(ref.GetAuthors()), eSubp);
+    string auth = CReferenceItem::GetAuthString(ref.GetAuthors());
+    if ( !NStr::EndsWith(auth, ".") ) {
+        auth += ".";
+    }
+    Wrap(l, "AUTHORS", auth, eSubp);
 }
 
 
@@ -416,8 +420,8 @@ void CGenbankFormatter::x_Journal
     string journal;
     if ( ref.GetBook() == 0 ) {  // not from a book
         
-        
-        if ( ref.GetCategory() == CReferenceItem::eSubmission ) {
+        switch ( ref.GetCategory() ) {
+        case CReferenceItem::eSubmission:
             journal = "Submitted ";
             if ( ref.GetDate() != 0 ) {
                 journal += '(';
@@ -425,7 +429,11 @@ void CGenbankFormatter::x_Journal
                 journal += ") ";
             }
             journal += ref.GetJournal();
-        } else {
+            break;
+        case CReferenceItem::eUnpublished:
+            journal = ref.GetJournal();
+            break;
+        case CReferenceItem::ePublished:
             journal = ref.GetJournal();
             if ( !ref.GetVolume().empty() ) {
                 journal += " " + ref.GetVolume();
@@ -439,13 +447,14 @@ void CGenbankFormatter::x_Journal
             if ( ref.GetDate() != 0 ) {
                 ref.GetDate()->GetDate(&journal, " (%Y)");
             }
+            break;
+        default:
+            break;
         }
         
         if ( journal.empty() ) {
             journal = "Unpublished";
         }
-        
-        
     } else {
         while ( true ) {
             const CCit_book& book = *ref.GetBook();
@@ -564,11 +573,13 @@ void CGenbankFormatter::FormatComment
         Wrap(l, "COMMENT", comment.GetComment());
     }
 
+    /*
     if ( !l.empty() ) {
         if ( !NStr::EndsWith(l.back(), ".") ) {
             l.back() += ".";
         }
     }
+    */
 
     text_os.AddParagraph(l);
 }
@@ -807,6 +818,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/26 17:25:36  shomrat
+* fixes to reference formatting
+*
 * Revision 1.9  2004/03/18 15:40:28  shomrat
 * Fixes to COMMENT formatting
 *
