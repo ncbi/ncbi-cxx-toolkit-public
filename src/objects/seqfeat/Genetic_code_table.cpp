@@ -376,7 +376,7 @@ int CGen_code_table::CodonToIndex(const string& codon)
 {
     if ( !s_ValidCodon(codon) ) return -1;
     
-    int weight;
+    int weight = 0;
     int index = 0;
     int mul = 16;
     for ( int i = 0; i < 3; ++i ) {
@@ -467,7 +467,7 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     _ASSERT(id >= 0);
 
     // look for already created translation table
-    if (id < m_TransTablesById.size ()) {
+    if ( size_t(id) < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
         	// already in list, already initialized, so return
@@ -480,7 +480,7 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
     CFastMutexGuard   LOCK (mtx);
 
     // test again within mutex lock to see if another thread was just adding it
-    if (id < m_TransTablesById.size ()) {
+    if ( size_t(id) < m_TransTablesById.size ()) {
         CRef< CTrans_table> tbl = m_TransTablesById [id];
         if (tbl != 0) {
         	// already in list, already initialized, so return
@@ -497,7 +497,7 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (int id)
         	    CRef< CTrans_table> tbl(new CTrans_table (**gcl));
 
         	    // extend size of translation table list, if necessary
-        	    if (id >= m_TransTablesById.size ()) {
+        	    if ( size_t(id) >= m_TransTablesById.size ()) {
         	        m_TransTablesById.resize (id + 1);
         	    }
 
@@ -697,6 +697,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.9  2003/02/24 18:52:57  vasilche
+* Added optional mapped locations arguments to feature comparison.
+*
 * Revision 6.8  2002/11/26 18:50:31  shomrat
 * Add GetGenCode
 *

@@ -50,74 +50,45 @@ CSeq_feat::~CSeq_feat(void)
 {
 }
 
+static int s_SeqFeatTypeOrder[] = {
+    3, // e_not_set = 0,
+    0, // e_Gene,
+    3, // e_Org,
+    2, // e_Cdregion,
+    3, // e_Prot,
+    1, // e_Rna,
+    3  // e_Pub, and the rest
+};
+
 // Corresponds to SortFeatItemListByPos from the C toolkit
-int CSeq_feat::Compare(const CSeq_feat& f2,
-                       const CSeq_loc* mapped1, const CSeq_loc* mapped2) const
+int CSeq_feat::x_CompareLong(const CSeq_feat& f2,
+                             const CSeq_loc& loc1, const CSeq_loc& loc2) const
 {
-    const CSeq_loc& loc1 = mapped1 ? *mapped1 : GetLocation();
-    const CSeq_loc& loc2 = mapped2 ? *mapped2 : f2.GetLocation();
-    CSeq_loc::TRange range1 = loc1.GetTotalRange();
-    CSeq_loc::TRange range2 = loc2.GetTotalRange();
-    
-    // smallest left extreme first
-    if (range1.GetFrom() < range2.GetFrom()) {
-        return -1;
-    } else if (range1.GetFrom() > range2.GetFrom()) {
-        return 1;
-    }
-
-    // longest feature first
-    if (range1.GetTo() < range2.GetTo()) {
-        return 1;
-    } else if (range1.GetTo() > range2.GetTo()) {
-        return -1;
-    }
-
     CSeqFeatData::E_Choice type1 = GetData().Which();
     CSeqFeatData::E_Choice type2 = f2.GetData().Which();
-   
-    // genes first
-    if (type1 == CSeqFeatData::e_Gene  &&  type2 != CSeqFeatData::e_Gene) {
-        return -1;
-    } else if (type1 != CSeqFeatData::e_Gene
-               &&  type2 == CSeqFeatData::e_Gene) {
-        return 1;
-    }
 
-    // RNA next
-    if (type1 == CSeqFeatData::e_Rna  &&  type2 != CSeqFeatData::e_Rna) {
-        return -1;
-    } else if (type1 != CSeqFeatData::e_Rna &&  type2 == CSeqFeatData::e_Rna) {
-        return 1;
-    }
-
-    // coding regions next
-    if (type1 == CSeqFeatData::e_Cdregion
-        &&  type2 != CSeqFeatData::e_Cdregion) {
-        return -1;
-    } else if (type1 != CSeqFeatData::e_Cdregion
-               &&  type2 == CSeqFeatData::e_Cdregion) {
-        return 1;
-    }
+    {{ // order by feature type
+        const size_t MAX_TYPE =
+            sizeof(s_SeqFeatTypeOrder)/sizeof(s_SeqFeatTypeOrder[0]);
+        int order1 = size_t(type1) < MAX_TYPE?
+            s_SeqFeatTypeOrder[type1]: s_SeqFeatTypeOrder[MAX_TYPE-1];
+        int order2 = size_t(type2) < MAX_TYPE?
+            s_SeqFeatTypeOrder[type2]: s_SeqFeatTypeOrder[MAX_TYPE-1];
+        int diff = order1 - order2;
+        if ( diff != 0 )
+            return diff;
+    }}
 
     // compare internal intervals
-    if (loc1.IsMix()  &&  loc2.IsMix()) {
+    if ( loc1.IsMix()  &&  loc2.IsMix() ) {
         const CSeq_loc_mix::Tdata& ivals1 = loc1.GetMix().Get();
         const CSeq_loc_mix::Tdata& ivals2 = loc2.GetMix().Get();
-        for (CSeq_loc_mix::Tdata::const_iterator
-                 it1 = ivals1.begin(), it2 = ivals2.begin();
-             it1 != ivals1.end()  &&  it2 != ivals2.end();  it1++, it2++) {
-            CSeq_loc::TRange subrange1 = (*it1)->GetTotalRange();
-            CSeq_loc::TRange subrange2 = (*it2)->GetTotalRange();
-            if (subrange1.GetFrom() < subrange2.GetFrom()) {
-                return -1;
-            } else if (subrange1.GetFrom() > subrange2.GetFrom()) {
-                return 1;
-            } if (subrange1.GetTo() < subrange2.GetTo()) {
-                return 1;
-            } else if (subrange1.GetTo() > subrange2.GetTo()) {
-                return -1;
-            }
+        for ( CSeq_loc_mix::Tdata::const_iterator
+                  it1 = ivals1.begin(), it2 = ivals2.begin();
+              it1 != ivals1.end()  &&  it2 != ivals2.end();  it1++, it2++) {
+            int diff = CompareLocations(**it1, **it2);
+            if ( diff != 0 )
+                return diff;
         }
     }
 
@@ -128,22 +99,19 @@ int CSeq_feat::Compare(const CSeq_feat& f2,
         CCdregion::EFrame frame2 = f2.GetData().GetCdregion().GetFrame();
         if (frame1 > CCdregion::eFrame_one
             ||  frame2 > CCdregion::eFrame_one) {
-            if (frame1 < frame2) {
-                return -1;
-            } else if (frame1 > frame2) {
-                return 1;
-            }
+            int diff = frame1 - frame2;
+            if ( diff != 0 )
+                return diff;
         }
     }
 
-    // compare subtypes
-    CSeqFeatData::ESubtype subtype1 = GetData().GetSubtype();
-    CSeqFeatData::ESubtype subtype2 = f2.GetData().GetSubtype();
-    if (subtype1 < subtype2) {
-        return -1;
-    } else if (subtype1 > subtype2) {
-        return 1;
-    }
+    {{ // compare subtypes
+        CSeqFeatData::ESubtype subtype1 = GetData().GetSubtype();
+        CSeqFeatData::ESubtype subtype2 = f2.GetData().GetSubtype();
+        int diff = subtype1 - subtype2;
+        if ( diff != 0 )
+            return diff;
+    }}
 
     // XXX - should compare feature content labels and parent seq-annots
 
@@ -181,6 +149,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.11  2003/02/24 18:52:57  vasilche
+ * Added optional mapped locations arguments to feature comparison.
+ *
  * Revision 6.10  2003/02/10 15:52:08  grichenk
  * CSeq_feat::Compare() takes optional seq-locs for remapped features
  *
