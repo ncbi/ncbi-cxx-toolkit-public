@@ -38,13 +38,13 @@ XLIBDEP = $(LIB:%=$(libdir)/.%.dep)
 ASK_REBUILD = \
     base=`echo $$l | sed -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \
     if (cd "$$builddir" && $(MAKE) $(MFLAGS) -q \
-	-f "$(builddir)/Makefile.lib.tmpl" \
+        -f "$(builddir)/Makefile.lib.tmpl" \
         srcdir="$$srcdir" TMPL="$$tmpl" all) ; then \
         true ; \
     else \
         echo "Rebuild $$tmpl (lib$$base.*) for $(XAPP)?" ; \
-	read result ; \
-	expr "$$result" : "^[Nn]" > /dev/null ; \
+        read result ; \
+        expr "$$result" : "^[Nn]" > /dev/null ; \
     fi
 
 SKIP_REBUILD = true
@@ -53,7 +53,7 @@ SKIP_REBUILD = true
 # The parens in the above line work around lossage with Solaris's native make.
 
 $(XAPP)::
-	@for l in $(XLIBDEP) ; do \
+	@for l in $(XLIBDEP) /dev/null ; do \
 	   read srcdir builddir tmpl < "$$l" ; \
 	   test -z "$$builddir" || $(SKIP_REBUILD) || \
 	   (cd "$$builddir" && $(MAKE) $(MFLAGS) libs srcdir="$$srcdir") ; \
