@@ -231,10 +231,13 @@ public:
     {
         CFastMutexGuard guard(m_Mutex);
 
-        set<TClassFactory*>::const_iterator it = m_Factories.begin();
-        set<TClassFactory*>::const_iterator it_end = m_Factories.end();
+        typename 
+           set<TClassFactory*>::const_iterator it = m_Factories.begin();
+        typename 
+           set<TClassFactory*>::const_iterator it_end = m_Factories.end();
 
-        set<TClassFactory*>::const_iterator it1 = FindVersion(it, it_end);
+        typename 
+            set<TClassFactory*>::const_iterator it1 = FindVersion(it, it_end);
         if (it1 != it_end) {
             return *it1;
         }
@@ -341,7 +344,7 @@ bool CPluginManager<TClass>::UnregisterFactory(TClassFactory& factory)
 {
     CFastMutexGuard guard(m_Mutex);
 
-    set<TClassFactory*>::iterator it = m_Factories.find(&factory);
+    typename set<TClassFactory*>::iterator it = m_Factories.find(&factory);
     if (it != m_Factories.end()) {
         TClassFactory* f = *it;
         m_Factories.erase(it);
@@ -359,7 +362,9 @@ void CPluginManager<TClass>::RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entr
     if (!drv_list.empty()) {
         plugin_entry_point(&drv_list, eInstantiateFactory);
 
-        NON_CONST_ITERATE(TDriverInfoList, it, drv_list) {
+        typename TDriverInfoList::iterator it = drv_list.begin();
+        typename TDriverInfoList::iterator it_end = drv_list.end();
+        for (; it != it_end; ++it) {
             if (it->factory) {
                 RegisterFactory(*(it->factory));
             }
@@ -370,7 +375,9 @@ void CPluginManager<TClass>::RegisterWithEntryPoint(FNCBI_EntryPoint plugin_entr
 template <class TClass>
 CPluginManager<TClass>::~CPluginManager()
 {
-    NON_CONST_ITERATE(set<TClassFactory*>, it, m_Factories) {
+    typename set<TClassFactory*>::iterator it = m_Factories.begin();
+    typename set<TClassFactory*>::iterator it_end = m_Factories.end();
+    for (; it != it_end; ++it) {
         TClassFactory* f = *it;
         delete f;
     }
@@ -381,24 +388,32 @@ CPluginManager<TClass>::~CPluginManager()
 ///
 template<class TClassFactory> struct CHostEntryPointImpl
 {
-    static
-    NCBI_EntryPointImpl(CPluginManager<TClassFactory::TInterface>::TDriverInfoList& info_list,
-                        CPluginManager<TClassFactory::TInterface>::EEntryPointRequest method)
+    typedef typename TClassFactory::TInterface                TInterface;
+    typedef CPluginManager<TInterface>                        TPluginManager;
+    typedef typename CPluginManager<TInterface>::SDriverInfo  TDriverInfo;
+    
+    typedef typename 
+      CPluginManager<TInterface>::TDriverInfoList             TDriverInfoList;
+    typedef typename 
+      CPluginManager<TInterface>::EEntryPointRequest        EEntryPointRequest;
+    typedef typename TClassFactory::SDriverInfo             TCFDriverInfo;
+      
+    static void NCBI_EntryPointImpl(TDriverInfoList& info_list,
+                                    EEntryPointRequest method)
     {
-        typedef typename TClassFactory::TInterface          TInterface;
-        typedef CPluginManager<TInterface>                  TPluginManager;
-        typedef CPluginManager<TInterface>::SDriverInfo     TDriverInfo;
-        typedef CPluginManager<TInterface>::TDriverInfoList TDriverInfoList;
-
-        CLDS_DataLoaderCF cf;
-        list<TClassFactory::SDriverInfo> cf_info_list;
+        TClassFactory cf;
+        list<TCFDriverInfo> cf_info_list;
         cf.GetDriverVersions(cf_info_list);
 
         switch (method)
         { 
         case TPluginManager::eGetFactoryInfo:
             {
-            ITERATE(list<TClassFactory::SDriverInfo>, it, cf_info_list) {
+            typename list<TCFDriverInfo>::const_iterator it =
+                                                         cf_info_list.begin();
+            typename list<TCFDriverInfo>::const_iterator it_end =
+                                                         cf_info_list.end();
+            for (; it != it_end; ++it) {
                 info_list.push_back(TDriverInfo(it->name, it->version));
             }
 
@@ -406,11 +421,17 @@ template<class TClassFactory> struct CHostEntryPointImpl
             break;
         case TPluginManager::eInstantiateFactory:
             {
-            NON_CONST_ITERATE(TDriverInfoList, it1, info_list) {
+            typename TDriverInfoList::iterator it1 = info_list.begin();
+            typename TDriverInfoList::iterator it1_end = info_list.end();
+            for(; it1 != it1_end; ++it1) {
                 if (it1->factory) {    // already instantiated
                     continue;
                 }
-                ITERATE(list<TClassFactory::SDriverInfo>, it2, cf_info_list){
+                typename list<TCFDriverInfo>::iterator it2 = 
+                                                    cf_info_list.begin();
+                typename list<TCFDriverInfo>::iterator it2_end = 
+                                                    cf_info_list.end();
+                for (; it2 != it2_end; ++it2) {
                     if (it1->name == it2->name) {
                         if (it1->version.Match(it2->version) != 
                                                  CVersionInfo::eNonCompatible)
@@ -420,9 +441,9 @@ template<class TClassFactory> struct CHostEntryPointImpl
                             it1->factory = icf;
                         }
                     }
-                } // ITERATE
+                } // for
 
-            } // NON_CONST_ITERATE
+            } // for
 
             }
             break;
@@ -589,6 +610,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/03 16:32:58  kuznets
+ * Cleaning the code to be compatible with GCC, WorkShop 53 and MSVC at the
+ * same time...
+ *
  * Revision 1.6  2003/10/31 19:53:52  kuznets
  * +CHostEntryPointImpl
  *
