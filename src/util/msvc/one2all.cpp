@@ -59,9 +59,11 @@ const char* kEOL = "\n";
 const char* kTemplate = "@@@";
 
 /// Single/Multiline PCRE compilation flags.
-const CRegexp::TCompile kSL = PCRE_DOTALL + PCRE_UNGREEDY;
-const CRegexp::TCompile kML = PCRE_MULTILINE + PCRE_UNGREEDY;
-const CRegexp::TCompile kDF = 0;
+const CRegexp::TCompile kSL = CRegexp::eCompile_dotall |
+                              CRegexp::eCompile_ungreedy;
+const CRegexp::TCompile kML = CRegexp::eCompile_newline | 
+                              CRegexp::eCompile_ungreedy;
+const CRegexp::TCompile kDF = CRegexp::eCompile_default;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -167,7 +169,7 @@ void CMainApplication::Init(void)
 {
     // Set error posting and tracing on maximum.
     SetDiagTrace(eDT_Enable);
-    SetDiagPostFlag(eDPF_Default);
+    SetDiagPostFlag(eDPF_All);
     SetDiagPostLevel(eDiag_Info);
 
     // Describe the expected command-line arguments.
@@ -709,7 +711,7 @@ string CMainApplication::Configure(const string& cfg_template,
         subst_size = sizeof(ksOptRelease)/sizeof(subst[0]);
     }
     re.SetRange("^# ADD .*CPP ");
-    for (int i = 0; i < subst_size; i++) {
+    for (unsigned int i = 0; i < subst_size; i++) {
         re.ReplaceRange(string(" +") + subst[i].from, subst[i].to, 
                         kDF, kDF, CRegexpUtil::eInside, subst[i].count);
     }
@@ -950,6 +952,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/22 16:49:21  ivanov
+ * Use CRegexp:: eCompile_* and eMatch_* flags instead of PCRE_*.
+ *
  * Revision 1.11  2004/10/01 16:17:04  ivanov
  * ProcessFile():: Fixed buffer overrun
  *
