@@ -29,7 +29,7 @@
  *
  */
 
-#include "aln_reader.hpp"
+#include <objtools/readers/aln_reader.hpp>
 #include <util/creaders/alnread.h>
 #include <util/format_guess.hpp>
 
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/20 16:40:57  ucko
+ * Fix path to aln_reader.hpp again
+ *
  * Revision 1.4  2004/02/20 16:21:09  todorov
  * Better seq id; Try to id the mol type; Packed seq data;
  * Fixed a couple of bugs in GetSeqAlign
