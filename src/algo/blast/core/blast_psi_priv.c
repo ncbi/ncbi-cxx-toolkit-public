@@ -55,6 +55,8 @@ const double kPSIIdentical = 1.0;
 const unsigned int kQueryIndex = 0;
 const double kEpsilon = 0.0001;
 const int kPSIScaleFactor = 200;
+const double kPositScalingPercent = 0.05;
+const Uint4 kPositScalingNumIterations = 10;
 
 /****************************************************************************/
 
@@ -95,22 +97,29 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols)
     return NULL;
 }
 
-void
-_PSICopyIntMatrix(int** dest, int** src, 
-                  unsigned int ncols, unsigned int nrows)
-{
-    unsigned int i = 0;
-    unsigned int j = 0;
+/** Implements the generic copy matrix functions. Prototypes must be defined
+ * in the header file manually following the naming convention for 
+ * _PSICopyMatrix_int
+ */
+#define DEFINE_COPY_MATRIX_FUNCTION(type)                           \
+void _PSICopyMatrix_##type(type** dest, type** src,                 \
+                          unsigned int ncols, unsigned int nrows)   \
+{                                                                   \
+    unsigned int i = 0;                                             \
+    unsigned int j = 0;                                             \
+                                                                    \
+    ASSERT(dest);                                                   \
+    ASSERT(src);                                                    \
+                                                                    \
+    for (i = 0; i < ncols; i++) {                                   \
+        for (j = 0; j < nrows; j++) {                               \
+            dest[i][j] = src[i][j];                                 \
+        }                                                           \
+    }                                                               \
+}                                                                   \
 
-    ASSERT(dest);
-    ASSERT(src);
-
-    for (i = 0; i < ncols; i++) {
-        for (j = 0; j < nrows; j++) {
-            dest[i][j] = src[i][j];
-        }
-    }
-}
+DEFINE_COPY_MATRIX_FUNCTION(int)
+DEFINE_COPY_MATRIX_FUNCTION(double)
 
 /****************************************************************************/
 
@@ -1980,8 +1989,6 @@ _PSIScaleMatrix(const Uint1* query,
     double new_lambda = 0.0;        /* Karlin-Altschul parameter calculated 
                                        from scaled matrix*/
 
-    const double kPositPercent = 0.05;
-    const Uint4 kPositNumIterations = 10;
     Uint4 query_length = 0;
     Boolean too_high = TRUE;
 
@@ -2028,7 +2035,7 @@ _PSIScaleMatrix(const Uint1* query,
 
         if (new_lambda > ideal_lambda) {
             if (first_time) {
-                factor_high = 1.0 + kPositPercent;
+                factor_high = 1.0 + kPositScalingPercent;
                 factor = factor_high;
                 too_high = TRUE;
                 first_time = FALSE;
@@ -2042,7 +2049,7 @@ _PSIScaleMatrix(const Uint1* query,
         } else if (new_lambda > 0) {
             if (first_time) {
                 factor_high = 1.0;
-                factor_low = 1.0 - kPositPercent;
+                factor_low = 1.0 - kPositScalingPercent;
                 factor = factor_low;
                 too_high = FALSE;
                 first_time = FALSE;
@@ -2058,8 +2065,8 @@ _PSIScaleMatrix(const Uint1* query,
         }
     }
 
-    /* Binary search for kPositNumIterations times */
-    for (index = 0; index < kPositNumIterations; index++) {
+    /* Binary search for kPositScalingNumIterations times */
+    for (index = 0; index < kPositScalingNumIterations; index++) {
         Uint4 i = 0;
         Uint4 j = 0;
 
@@ -2371,6 +2378,10 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2005/01/31 16:50:21  camacho
+ * 1. Moved constants to private header.
+ * 2. Changed signature of functions to copy matrices.
+ *
  * Revision 1.45  2004/12/15 16:19:27  camacho
  * Remove compiler warning
  *

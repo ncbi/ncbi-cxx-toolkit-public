@@ -79,6 +79,10 @@ extern const double kDefaultEvalueForPosition; */
 /** Successor to POSIT_SCALE_FACTOR  */
 extern const int kPSIScaleFactor;
 
+/** Constant used in scaling PSSM routines: Successor to POSIT_PERCENT */
+extern const double kPositScalingPercent;
+/** Constant used in scaling PSSM routines: Successor to POSIT_NUM_ITERATIONS */
+extern const Uint4 kPositScalingNumIterations;
 
 /****************************************************************************/
 /* Matrix utility functions */
@@ -113,8 +117,19 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
  * @param nrows Number of rows to copy      [in]
  */
 void
-_PSICopyIntMatrix(int** dest, int** src,
-                  unsigned int ncols, unsigned int nrows);
+_PSICopyMatrix_int(int** dest, int** src,
+                   unsigned int ncols, unsigned int nrows);
+
+/** Copies src matrix into dest matrix, both of which must be double matrices 
+ * with dimensions ncols by nrows
+ * @param dest Destination matrix           [out]
+ * @param src Source matrix                 [in]
+ * @param ncols Number of columns to copy   [in]
+ * @param ncows Number of rows to copy      [in]
+ */
+void
+_PSICopyMatrix_double(double** dest, double** src,
+                      unsigned int ncols, unsigned int nrows);
 
 /****************************************************************************/
 /* Structure declarations */
@@ -541,6 +556,10 @@ __printMsa(const char* filename, const _PSIMsa* msa);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2005/01/31 16:50:21  camacho
+ * 1. Moved constants to private header.
+ * 2. Changed signature of functions to copy matrices.
+ *
  * Revision 1.21  2004/12/13 22:26:59  camacho
  * Consolidated structure group customizations in option: nsg_compatibility_mode
  *
