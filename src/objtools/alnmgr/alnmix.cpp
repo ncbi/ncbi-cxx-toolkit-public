@@ -1213,6 +1213,57 @@ void CAlnMix::x_CreateSegmentsVector()
             }
         }
     }
+
+    if (m_MergeFlags & fFillUnalignedRegions) {
+        vector<TSignedSeqPos> starts;
+        starts.resize(m_Rows.size(), -1);
+
+        TSeqPos len = 0, prev_len = 0;
+
+        TSegments::iterator seg_i = m_Segments.begin();
+        while (seg_i != m_Segments.end()) {
+            CAlnMap::TNumrow numrow = 0;
+            prev_len = len;
+            len = (*seg_i)->m_Len;
+            ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
+                     (*seg_i)->m_StartIts) {
+                CAlnMixSeq * row = start_its_i->first;
+                TSignedSeqPos& prev_start = starts[numrow];
+                TSeqPos start = start_its_i->second->first;
+                if (prev_start >= 0) {
+                    if (row->m_PositiveStrand  &&  
+                        prev_start + prev_len < start  ||
+                        !row->m_PositiveStrand  &&
+                        start + len < prev_start) {
+                        // create a new seg
+                        CRef<CAlnMixSegment> seg (new CAlnMixSegment);
+                        TSeqPos new_start;
+                        if (row->m_PositiveStrand) {
+                            new_start = prev_start + prev_len;
+                            seg->m_Len = start - new_start;
+                        } else {
+                            new_start = start + len;
+                            seg->m_Len = prev_start - new_start;
+                        }                            
+                        row->m_Starts[new_start] = seg;
+                        CAlnMixSeq::TStarts::iterator start_i =
+                            start_its_i->second;
+                        seg->m_StartIts[row] = 
+                            row->m_PositiveStrand ?
+                            --start_i :
+                            ++start_i;
+                            
+                        seg_i = m_Segments.insert(seg_i, seg);
+                        seg_i++;
+                    }
+                } else {
+                    prev_start = start;
+                }
+                numrow++;
+            }
+            seg_i++;
+        }
+    }
 }
 
 
@@ -1542,6 +1593,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2003/06/26 21:35:48  todorov
+* + fFillUnalignedRegions
+*
 * Revision 1.59  2003/06/25 15:17:31  todorov
 * truncation consistent for the whole segment now
 *

@@ -77,15 +77,16 @@ public:
     void Add(const CSeq_align& aln, TAddFlags flags = 0);
 
     enum EMergeFlags {
-        fGen2EST              = 0x01, // otherwise Nucl2Nucl
-        fTruncateOverlaps     = 0x02, // otherwise put on separate rows
-        fNegativeStrand       = 0x04,
-        fTryOtherMethodOnFail = 0x08,
-        fGapJoin              = 0x10, // join equal len segs gapped on refseq
-        fMinGap               = 0x20, // minimize segs gapped on refseq
-        fSortSeqsByScore      = 0x40, // Seqs with better scoring aligns on top
-        fQuerySeqMergeOnly    = 0x80  // Only put the query seq on same row, 
-                                      // other seqs from diff densegs go to diff rows
+        fGen2EST              = 0x0001, // otherwise Nucl2Nucl
+        fTruncateOverlaps     = 0x0002, // otherwise put on separate rows
+        fNegativeStrand       = 0x0004,
+        fTryOtherMethodOnFail = 0x0008,
+        fGapJoin              = 0x0010, // join equal len segs gapped on refseq
+        fMinGap               = 0x0020, // minimize segs gapped on refseq
+        fSortSeqsByScore      = 0x0040, // Seqs with better scoring aligns on top
+        fQuerySeqMergeOnly    = 0x0080, // Only put the query seq on same row, 
+                                        // other seqs from diff densegs go to diff rows
+        fFillUnalignedRegions = 0x0100
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
 
@@ -323,6 +324,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/06/26 21:35:53  todorov
+* + fFillUnalignedRegions
+*
 * Revision 1.27  2003/06/25 15:17:26  todorov
 * truncation consistent for the whole segment now
 *
