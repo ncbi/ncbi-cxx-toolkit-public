@@ -475,7 +475,9 @@ void CSeq_annot_Info::x_InitLocs(const CSeq_annot& annot)
 
     _ASSERT(annot.GetData().IsLocs());
     // Only one referenced location per annot is allowed
-    _ASSERT(annot.GetData().GetLocs().size() == 1);
+    if (annot.GetData().GetLocs().size() != 1) {
+        return;
+    }
     const CSeq_loc& loc = *annot.GetData().GetLocs().front();
 
     m_ObjectIndex.AddInfo(CAnnotObject_Info(loc, *this));
@@ -533,6 +535,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/02/16 15:18:58  grichenk
+ * Ignore e_Locs annotations with unknown format
+ *
  * Revision 1.26  2004/12/22 15:56:27  vasilche
  * Use SAnnotObjectsIndex.
  *

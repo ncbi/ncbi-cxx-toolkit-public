@@ -201,7 +201,9 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
     {
         // Index by location in region descriptor, not by referenced one
         const CSeq_annot& annot = *GetSeq_annot_Info().GetCompleteSeq_annot();
-        _ASSERT(annot.IsSetDesc());
+        if ( !annot.IsSetDesc() ) {
+            break;
+        }
         CConstRef<CSeq_loc> region;
         ITERATE(CSeq_annot::TDesc::Tdata, desc_it, annot.GetDesc().Get()) {
             if ( (*desc_it)->IsRegion() ) {
@@ -209,10 +211,11 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
                 break;
             }
         }
-        _ASSERT(region);
-        hrmaps.resize(1);
-        hrmaps[0].clear();
-        hrmaps[0].AddLocation(*region);
+        if ( region ) {
+            hrmaps.resize(1);
+            hrmaps[0].clear();
+            hrmaps[0].AddLocation(*region);
+        }
         break;
     }
     default:
@@ -535,6 +538,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/02/16 15:18:58  grichenk
+* Ignore e_Locs annotations with unknown format
+*
 * Revision 1.41  2004/06/23 19:51:56  vasilche
 * Fixed duplication of discontiguous alignments.
 *
