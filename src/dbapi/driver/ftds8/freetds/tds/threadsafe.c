@@ -78,48 +78,51 @@ struct hostent   *
 tds_gethostbyname_r(const char *servername, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
 #ifndef _REENTRANT
-	return gethostbyname(servername);
+        return gethostbyname(servername);
 
 #else
 
 #if defined(HAVE_FUNC_GETHOSTBYNAME_R_6)
-	struct hostent result_buf;
-	gethostbyname_r(servername, &result_buf, buffer, buflen, &result, h_errnop);
+        struct hostent result_buf;
+        gethostbyname_r(servername, &result_buf, buffer, buflen, &result, h_errnop);
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_5)
-	gethostbyname_r(servername, result, buffer, buflen, h_errnop);
+        gethostbyname_r(servername, result, buffer, buflen, h_errnop);
 #elif defined(HAVE_FUNC_GETHOSTBYNAME_R_3)
-	struct hostent_data data;
-	gethostbyname_r(servername, result, &data);
-#elif defined(_REENTRANT)
+        struct hostent_data data;
+        gethostbyname_r(servername, result, &data);
+#elif defined(HAVE_FUNC_GETHOSTBYNAME_R)  ||  defined(HAVE_GETHOSTBYNAME_R)
 #error gethostbyname_r style unknown
+#else
+        result = gethostbyname(servername);
 #endif
 
+        return result;
 #endif
-	return result;
 }
 
 struct hostent   *
 tds_gethostbyaddr_r(const char *addr, int len, int type, struct hostent *result, char *buffer, int buflen, int *h_errnop)
 {
-
 #ifndef _REENTRANT
-	return gethostbyaddr(addr, len, type);
+        return gethostbyaddr(addr, len, type);
 
 #else
 
 #if defined(HAVE_FUNC_GETHOSTBYADDR_R_8)
-	struct hostent result_buf;
-	gethostbyaddr_r(addr, len, type, &result_buf, buffer, buflen, &result, h_errnop);
+        struct hostent result_buf;
+        gethostbyaddr_r(addr, len, type, &result_buf, buffer, buflen, &result, h_errnop);
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_7)
-	gethostbyaddr_r(addr, len, type, result, buffer, buflen, h_errnop);
+        gethostbyaddr_r(addr, len, type, result, buffer, buflen, h_errnop);
 #elif defined(HAVE_FUNC_GETHOSTBYADDR_R_5)
-	struct hostent_data data;
-	gethostbyaddr_r(addr, len, type, result, &data);
-#else
+        struct hostent_data data;
+        gethostbyaddr_r(addr, len, type, result, &data);
+#elif defined(HAVE_FUNC_GETHOSTBYADDR_R)  ||  defined(HAVE_GETHOSTBYADDR_R)
 #error gethostbyaddr_r style unknown
+#else
+        result = gethostbyaddr(addr, len, type);
 #endif
 
-	return result;
+        return result;
 #endif
 }
 
@@ -128,26 +131,28 @@ tds_getservbyname_r(const char *name, char *proto, struct servent *result, char 
 {
 
 #ifndef _REENTRANT
-	return getservbyname(name, proto);
+        return getservbyname(name, proto);
 
 #else
 
 #if defined(HAVE_FUNC_GETSERVBYNAME_R_6)
-	struct servent result_buf;
-	getservbyname_r(name, proto, &result_buf, buffer, buflen, &result);
+        struct servent result_buf;
+        getservbyname_r(name, proto, &result_buf, buffer, buflen, &result);
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_5)
-	getservbyname_r(name, proto, result, buffer, buflen);
+        getservbyname_r(name, proto, result, buffer, buflen);
 #elif defined(HAVE_FUNC_GETSERVBYNAME_R_4)
-	struct servent_data data;
-	getservbyname_r(name, proto, result, &data);
-#else
+        struct servent_data data;
+        getservbyname_r(name, proto, result, &data);
+#elif defined(HAVE_FUNC_GETSERVBYNAME_R)  ||  defined(HAVE_GETSERVBYNAME_R)
 #error getservbyname_r style unknown
+#else
+        result = getservbyname(name, proto);
 #endif
 
-	return result;
-
+        return result;
 #endif
 }
+
 
 char *
 tds_strtok_r(char *s, const char *delim, char **ptrptr)
