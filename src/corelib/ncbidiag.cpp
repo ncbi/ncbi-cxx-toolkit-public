@@ -56,8 +56,10 @@ BEGIN_NCBI_SCOPE
 static CMutex s_DiagMutex;
 
 #ifdef NCBI_POSIX_THREADS
-static void s_NcbiDiagPreFork(void)  { s_DiagMutex.Lock();   }
-static void s_NcbiDiagPostFork(void) { s_DiagMutex.Unlock(); }
+extern "C" {
+    static void s_NcbiDiagPreFork(void)  { s_DiagMutex.Lock();   }
+    static void s_NcbiDiagPostFork(void) { s_DiagMutex.Unlock(); }
+}
 #endif
 
 
@@ -662,6 +664,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.51  2002/04/25 21:49:05  ucko
+ * Made pthread_atfork callbacks extern "C".
+ *
  * Revision 1.50  2002/04/25 21:29:39  ucko
  * At Yan Raytselis's suggestion, use pthread_atfork to avoid
  * inadvertently holding s_DiagMutex across fork.
