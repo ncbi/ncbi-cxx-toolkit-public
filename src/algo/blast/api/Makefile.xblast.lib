@@ -13,6 +13,7 @@ blast_prot_options \
 blastx_options \
 tblastx_options \
 tblastn_options \
+rpstblastn_options \
 blast_nucl_options \
 disc_nucl_options \
 blast_rps_options \
