@@ -61,7 +61,6 @@ class NCBI_XOBJMGR_EXPORT CTSE_Handle
 public:
     /// Default constructor/destructor and assignment
     CTSE_Handle(void);
-    ~CTSE_Handle(void);
     CTSE_Handle& operator=(const CTSE_Handle& tse);
 
     /// Returns scope
@@ -128,6 +127,12 @@ public: // non-public section
 /////////////////////////////////////////////////////////////////////////////
 // CTSE_Handle inline methods
 /////////////////////////////////////////////////////////////////////////////
+
+
+inline
+CTSE_Handle::CTSE_Handle(void)
+{
+}
 
 
 inline

@@ -41,19 +41,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CTSE_Handle::CTSE_Handle(void)
-{
-}
-
-
 CTSE_Handle::CTSE_Handle(TObject& object)
     : m_Scope(object.GetScopeImpl().GetScope()),
       m_TSE(object)
-{
-}
-
-
-CTSE_Handle::~CTSE_Handle(void)
 {
 }
 
