@@ -1709,20 +1709,20 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope)
 {
-    CAnnot_CI::EOverlapType annot_overlap_type;
+    SAnnotSelector::EOverlapType annot_overlap_type;
     switch (overlap_type) {
     case eOverlap_Simple:
     case eOverlap_Contained:
     case eOverlap_Contains:
         // Require total range overlap
-        annot_overlap_type = CAnnot_CI::eOverlap_TotalRange;
+        annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
         break;
     case eOverlap_Subset:
     case eOverlap_CheckIntervals:
     case eOverlap_Interval:
     default:
         // Require intervals overlap
-        annot_overlap_type = CAnnot_CI::eOverlap_Intervals;
+        annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
         break;
     }
 
@@ -1767,20 +1767,20 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope)
 {
-    CAnnot_CI::EOverlapType annot_overlap_type;
+    SAnnotSelector::EOverlapType annot_overlap_type;
     switch (overlap_type) {
     case eOverlap_Simple:
     case eOverlap_Contained:
     case eOverlap_Contains:
         // Require total range overlap
-        annot_overlap_type = CAnnot_CI::eOverlap_TotalRange;
+        annot_overlap_type = SAnnotSelector::eOverlap_TotalRange;
         break;
     case eOverlap_Subset:
     case eOverlap_CheckIntervals:
     case eOverlap_Interval:
     default:
         // Require intervals overlap
-        annot_overlap_type = CAnnot_CI::eOverlap_Intervals;
+        annot_overlap_type = SAnnotSelector::eOverlap_Intervals;
         break;
     }
 
@@ -2846,6 +2846,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.41  2003/03/18 21:48:35  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.40  2003/03/11 16:00:58  kuznets
 * iterate -> ITERATE
 *

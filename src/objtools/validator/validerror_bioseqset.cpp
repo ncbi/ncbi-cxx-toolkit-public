@@ -141,7 +141,7 @@ bool CValidError_bioseqset::IsMrnaProductInGPS(const CBioseq& seq)
             m_Scope->GetBioseqHandle(seq), 
             0, 0,
             CSeqFeatData::e_Rna,
-            CAnnot_CI::eOverlap_Intervals,
+            SAnnotSelector::eOverlap_Intervals,
             CFeat_CI::eResolve_TSE,
             CFeat_CI::e_Product);
         return (bool)mrna;
@@ -418,6 +418,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/03/18 21:48:37  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.8  2003/03/11 16:04:09  kuznets
 * iterate -> ITERATE
 *

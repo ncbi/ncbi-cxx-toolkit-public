@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/18 21:48:33  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.4  2002/12/06 15:36:03  grichenk
 * Added overlap type for annot-iterators
 *
@@ -164,7 +167,7 @@ bool CTestOM::Thread_Run(int idx)
             if ( idx%2 == 0 ) {
                 for (CFeat_CI feat_it(scope, loc,
                                       CSeqFeatData::e_not_set,
-                                      CAnnot_CI::eOverlap_Intervals,
+                                      SAnnotSelector::eOverlap_Intervals,
                                       CAnnotTypes_CI::eResolve_All);
                     feat_it;  ++feat_it) {
                     count++;

@@ -1295,7 +1295,7 @@ void CValidError_feat::ValidateCommonMRNAProduct(const CSeq_feat& feat)
             bsh, 
             0, 0,
             CSeqFeatData::e_Rna,
-            CAnnot_CI::eOverlap_TotalRange,
+            SAnnotSelector::eOverlap_TotalRange,
             CFeat_CI::eResolve_None,
             CFeat_CI::e_Product);
         while ( mrna ) {
@@ -2156,6 +2156,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/03/18 21:48:37  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.18  2003/03/11 16:04:09  kuznets
 * iterate -> ITERATE
 *

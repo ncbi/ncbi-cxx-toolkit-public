@@ -623,7 +623,7 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
 {
     CConstRef<CSeq_feat> result;
     TSeqPos best_length = 0;
-    CFeat_CI it(scope, location, type, CAnnot_CI::eOverlap_Intervals,
+    CFeat_CI it(scope, location, type, SAnnotSelector::eOverlap_Intervals,
                 CFeat_CI::eResolve_TSE, lt);
     for (;  it;  ++it) {
         if (it->GetLocation().IsWhole()) {
@@ -815,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2003/03/18 21:48:35  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.17  2003/03/11 16:00:58  kuznets
 * iterate -> ITERATE
 *

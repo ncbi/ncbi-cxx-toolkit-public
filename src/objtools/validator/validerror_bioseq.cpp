@@ -766,7 +766,7 @@ bool CValidError_bioseq::CdError(const CBioseq& seq)
             CFeat_CI cds(bsh, 
                          0, 0,
                          CSeqFeatData::e_Cdregion,
-                         CAnnot_CI::eOverlap_Intervals,
+                         SAnnotSelector::eOverlap_Intervals,
                          CFeat_CI::eResolve_TSE,
                          CFeat_CI::e_Product);
             if ( !cds ) {
@@ -2398,6 +2398,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/03/18 21:48:37  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.21  2003/03/11 16:04:09  kuznets
 * iterate -> ITERATE
 *

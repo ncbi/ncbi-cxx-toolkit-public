@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/03/18 21:48:33  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.25  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *
@@ -201,7 +204,7 @@ int CTestApplication::Run()
           {{ // Creating a block to destroy the iterator after using it
               CFeat_CI feat_it2(scope, *loc,
                                 CSeqFeatData::e_Cdregion,
-                                CAnnot_CI::eOverlap_Intervals,
+                                SAnnotSelector::eOverlap_Intervals,
                                 CFeat_CI::eResolve_All);
               LOG_POST("Iterating CDS features, resolving references");
               for ( ; feat_it2;  ++feat_it2) {

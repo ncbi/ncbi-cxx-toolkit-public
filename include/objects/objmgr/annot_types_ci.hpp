@@ -34,7 +34,6 @@
 */
 
 #include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/annot_ci.hpp>
 #include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -354,6 +353,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/03/18 21:48:27  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.34  2003/03/05 20:56:42  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/18 21:48:33  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.2  2003/01/29 17:34:18  vasilche
 * Added test code for negative strand CSeqVector.
 *
@@ -224,7 +227,7 @@ bool CTestOM::Thread_Run(int idx)
             if ( idx%2 == 0 ) {
                 for (CFeat_CI feat_it(scope, loc,
                                       CSeqFeatData::e_not_set,
-                                      CAnnot_CI::eOverlap_Intervals,
+                                      SAnnotSelector::eOverlap_Intervals,
                                       CAnnotTypes_CI::eResolve_All);
                      feat_it;  ++feat_it) {
                     count++;

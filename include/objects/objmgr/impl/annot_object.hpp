@@ -69,7 +69,7 @@ private:
 };
 
 
-// General Seq-annot object used by CAnnot_CI to store data
+// General Seq-annot object
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Info : public CObject
 {
 public:
@@ -366,6 +366,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/03/18 21:48:28  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.3  2003/02/25 14:48:07  vasilche
 * Added Win32 export modifier to object manager classes.
 *

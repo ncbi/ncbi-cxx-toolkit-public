@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/03/18 21:48:31  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.16  2003/03/10 16:33:44  vasilche
 * Added dump of features if errors were detected.
 *
@@ -269,7 +272,7 @@ int CDemoApp::Run(void)
         // Create CFeat_CI using the current scope and location.
         // No feature type restrictions.
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-                              CAnnot_CI::eOverlap_Intervals, resolve);
+                              SAnnotSelector::eOverlap_Intervals, resolve);
              feat_it;  ++feat_it) {
             count++;
             // Get seq-annot containing the feature
@@ -291,7 +294,7 @@ int CDemoApp::Run(void)
         // segmented (constructed), search for features on the referenced
         // sequences in the same top level seq-entry, ignore far pointers.
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Cdregion,
-                              CAnnot_CI::eOverlap_Intervals, resolve);
+                              SAnnotSelector::eOverlap_Intervals, resolve);
              feat_it;  ++feat_it) {
             count++;
             // Get seq vector filtered with the current feature location.
@@ -326,7 +329,7 @@ int CDemoApp::Run(void)
         count = 0;
         // Iterate features. No feature type restrictions.
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set,
-                              CAnnot_CI::eOverlap_Intervals, resolve);
+                              SAnnotSelector::eOverlap_Intervals, resolve);
              feat_it;  ++feat_it) {
             count++;
         }
@@ -339,7 +342,7 @@ int CDemoApp::Run(void)
         // whole bioseq is used. The last parameter may be used for type filtering.
         count = 0;
         for (CFeat_CI feat_it(handle, 0, 999, CSeqFeatData::e_not_set,
-                              CAnnot_CI::eOverlap_Intervals, resolve);
+                              SAnnotSelector::eOverlap_Intervals, resolve);
              feat_it;  ++feat_it) {
             count++;
         }
@@ -350,7 +353,7 @@ int CDemoApp::Run(void)
         // No region restrictions -- the whole bioseq is used:
         loc.SetWhole().SetGi(gi);
         count = 0;
-        // Create CAnnot_CI using the current scope and location.
+        // Create CAlign_CI using the current scope and location.
         for (CAlign_CI align_it(scope, loc); align_it;  ++align_it) {
             count++;
         }

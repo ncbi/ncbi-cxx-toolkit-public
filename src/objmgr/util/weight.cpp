@@ -117,7 +117,7 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
     // Look for explicit markers: ideally cleavage products (mature
     // peptides), but possibly just signal peptides
     for (CFeat_CI feat(handle, 0, 0, CSeqFeatData::e_not_set,
-                       CAnnot_CI::eOverlap_Intervals, CFeat_CI::eResolve_TSE);
+                       SAnnotSelector::eOverlap_Intervals, CFeat_CI::eResolve_TSE);
          feat;  ++feat) {
         bool is_mature = false, is_signal = false;
         const CSeqFeatData& data = feat->GetData();
@@ -190,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2003/03/18 21:48:35  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.20  2003/03/11 16:00:58  kuznets
 * iterate -> ITERATE
 *

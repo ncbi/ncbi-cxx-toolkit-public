@@ -274,7 +274,6 @@ private:
     // map feature/align/graph to CAnnotObject_Info (need for faster dropping)
     TAnnotObjects         m_AnnotObjects;
 
-    friend class CAnnot_CI;
     friend class CAnnotTypes_CI; // using mutex etc.
     friend class CBioseq_Handle; // using mutex
     friend class CGBDataLoader;  //
@@ -311,6 +310,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/03/18 21:48:28  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.45  2003/03/18 14:52:57  grichenk
 * Removed obsolete methods, replaced seq-id with seq-id handle
 * where possible. Added argument to limit annotations update to

@@ -1569,7 +1569,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle) const
         v.push_back(CConstRef<CSeq_feat>(&feat->GetMappedFeature()));
     }
     for (CFeat_CI feat(m_Scope,everywhere, CSeqFeatData::e_not_set,
-                       CAnnot_CI::eOverlap_Intervals,
+                       SAnnotSelector::eOverlap_Intervals,
                        CFeat_CI::eResolve_TSE, CFeat_CI::e_Product);
          feat;  ++feat) {
         if ((feat->GetData().Which() == CSeqFeatData::e_Prot
@@ -2850,6 +2850,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.36  2003/03/18 21:48:35  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.35  2003/03/11 16:00:58  kuznets
 * iterate -> ITERATE
 *

@@ -53,7 +53,7 @@ CMappedGraph& CMappedGraph::Set(const CAnnotObject_Ref& annot)
 
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
-                     CAnnot_CI::EOverlapType overlap_type,
+                     SAnnotSelector::EOverlapType overlap_type,
                      EResolveMethod resolve,
                      const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
@@ -65,7 +65,7 @@ CGraph_CI::CGraph_CI(CScope& scope,
 
 
 CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-                     CAnnot_CI::EOverlapType overlap_type,
+                     SAnnotSelector::EOverlapType overlap_type,
                      EResolveMethod resolve,
                      const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
@@ -100,6 +100,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/03/18 21:48:30  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.16  2003/02/24 18:57:22  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

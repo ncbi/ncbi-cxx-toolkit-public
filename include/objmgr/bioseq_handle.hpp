@@ -160,7 +160,6 @@ private:
     friend class CHandleRangeMap;
     friend class CDataSource;
     friend class CScope;
-    friend class CAnnot_CI;
     friend class CAnnotTypes_CI;
 };
 
@@ -263,6 +262,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/03/18 21:48:27  grichenk
+* Removed obsolete class CAnnot_CI
+*
 * Revision 1.33  2003/03/18 14:46:35  grichenk
 * Set limit object type to "none" if the object is null.
 *
