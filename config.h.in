@@ -169,6 +169,9 @@
 #undef HOST_VENDOR
 
 /* Compiler name */
+#undef NCBI_COMPILER_COMPAQ
+
+/* Compiler name */
 #undef NCBI_COMPILER_GCC
 
 /* Compiler name */

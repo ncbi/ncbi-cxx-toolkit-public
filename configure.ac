@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.66 2002/05/01 18:56:18 ucko Exp $
+#  $Id: configure.ac,v 1.67 2002/05/02 15:28:06 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -280,6 +280,16 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
 fi
 
 
+#### Detect Compaq compiler
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
+  -a  "$VAC" != "yes"; then
+   ccc_ver="`$CXX -V 2>&1 | grep '^Compaq C++ V'`"
+   case "$ccc_ver" in 
+      *Compaq* ) CCC="yes" ;; 
+   esac
+fi
+
+
 #### Detect supported compilers
 changequote(, )dnl
 compiler=
@@ -310,6 +320,11 @@ elif test "$VAC" = "yes" ; then
    compiler="VisualAge"
    ncbi_compiler="VISUALAGE"
    ncbi_compiler_ver="`echo $vac_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+elif test "$CCC" = "yes" ; then
+   compiler_ver="$ccc_ver"
+   compiler=Compaq
+   ncbi_compiler="COMPAQ"
+   ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[+][+] V\([0-9.]*\).*%\1%'`"
 else
    case "$host_os" in
     solaris* )
@@ -364,6 +379,7 @@ if false; then
    AC_DEFINE(NCBI_COMPILER_WORKSHOP,  1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_MIPSPRO,   1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_VISUALAGE, 1, [Compiler name])
+   AC_DEFINE(NCBI_COMPILER_COMPAQ,    1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_MSVC,      1, [Compiler name])
    AC_DEFINE(NCBI_COMPILER_UNKNOWN,   1, [Compiler name])
 fi
@@ -556,6 +572,11 @@ case "$host_os:$compiler" in
    DEPFLAGS="-E -M"
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
    ;;
+
+ *:Compaq)
+   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
+   CXXFLAGS="-tweak -nocompress $CXXFLAGS"
+   ;;
 esac
 
 
@@ -675,6 +696,9 @@ if test -z "$DEF_FAST_FLAGS"  -o  -z "$FAST_CXXFLAGS" ; then
       MIPSpro* )
         DEF_FAST_FLAGS="-O3 -Ofast"
         ;;
+      Compaq )
+        DEF_FAST_FLAGS="-fast"
+        ;;
       * )
         DEF_FAST_FLAGS="-O"
         ;;
@@ -787,7 +811,7 @@ AC_SUBST(STATIC)
 
 # Linker command-line to build DLL
 case "$compiler" in
- GCC | MIPSpro73 | ICC )
+ GCC | MIPSpro73 | ICC | Compaq )
    case "$host_os" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html

@@ -2885,6 +2885,16 @@ if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
 fi
 
 
+#### Detect Compaq compiler
+if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
+  -a  "$VAC" != "yes"; then
+   ccc_ver="`$CXX -V 2>&1 | grep '^Compaq C++ V'`"
+   case "$ccc_ver" in
+      *Compaq* ) CCC="yes" ;;
+   esac
+fi
+
+
 #### Detect supported compilers
 compiler=
 compiler_ver=
@@ -2914,6 +2924,11 @@ elif test "$VAC" = "yes" ; then
    compiler="VisualAge"
    ncbi_compiler="VISUALAGE"
    ncbi_compiler_ver="`echo $vac_ver | sed 's%.*Version \([0-9.]*\).*%\1%'`"
+elif test "$CCC" = "yes" ; then
+   compiler_ver="$ccc_ver"
+   compiler=Compaq
+   ncbi_compiler="COMPAQ"
+   ncbi_compiler_ver="`echo $ccc_ver | sed 's%.*C[+][+] V\([0-9.]*\).*%\1%'`"
 else
    case "$host_os" in
     solaris* )
@@ -2989,6 +3004,11 @@ _ACEOF
 
 cat >>confdefs.h <<\_ACEOF
 #define NCBI_COMPILER_VISUALAGE 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define NCBI_COMPILER_COMPAQ 1
 _ACEOF
 
 
@@ -3197,6 +3217,11 @@ case "$host_os:$compiler" in
    CXXFLAGS="-qrtti=all $CXXFLAGS"
    DEPFLAGS="-E -M"
    DEPFLAGS_POST='>/dev/null 2>&1; (cat $*.u; rm -f $*.u)'
+   ;;
+
+ *:Compaq)
+   CPPFLAGS="-D__USE_STD_IOSTREAM $CPPFLAGS"
+   CXXFLAGS="-nocompress $CXXFLAGS" # for compatibility with GNU nm
    ;;
 esac
 
@@ -3426,7 +3451,7 @@ fi
 
 # Linker command-line to build DLL
 case "$compiler" in
- GCC | MIPSpro73 | ICC )
+ GCC | MIPSpro73 | ICC | Compaq )
    case "$host_os" in
       solaris* )
         # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
