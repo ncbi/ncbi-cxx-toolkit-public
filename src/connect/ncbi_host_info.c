@@ -36,6 +36,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifndef M_PI
+/* Not defined on MacOS.9 :-( */
+#  define M_PI 3.14159265358979323846
+#endif
+
 
 typedef struct SHostInfoTag {
     const char*  env;
@@ -116,6 +121,9 @@ const char* HINFO_Environment(HOST_INFO host_info)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/10/28 20:49:04  lavr
+ * Conditionally define M_PI if it is not already defined by <math.h>
+ *
  * Revision 6.1  2002/10/28 20:13:45  lavr
  * Initial revision
  *
