@@ -70,6 +70,8 @@
 #include <objects/util/feature.hpp>
 #include <objects/util/sequence.hpp>
 
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/seq_vector.hpp>
 #include <objects/objmgr/scope.hpp>
 
 #include <objects/pub/Pub.hpp>
@@ -933,9 +935,50 @@ bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const
 }
 
 
+const CSeq_feat* CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
+{
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh ) {
+        CFeat_CI fi(bsh, 
+                    0, 0,
+                    CSeqFeatData::e_Cdregion,
+                    CAnnot_CI::eOverlap_Intervals,
+                    CFeat_CI::eResolve_TSE,
+                    CFeat_CI::e_Product);
+        if ( fi ) {
+            // return the first one (should be the one packaged on the
+            // nuc-prot set).
+            return &(*fi);
+        }
+    }
+
+    return 0;
+}
+
+
+const CSeq_entry* CValidError_imp::GetAncestor
+(const CBioseq& seq,
+ CBioseq_set::EClass clss)
+{
+    const CSeq_entry* parent = 0;
+    for ( parent = seq.GetParentEntry(); 
+          parent != 0;
+          parent = parent->GetParentEntry() ) {
+        if ( parent->IsSet() ) {
+            const CBioseq_set& set = parent->GetSet();
+            if ( set.IsSetClass()  &&  set.GetClass() == clss ) {
+                break;
+            }
+        }
+    }
+    return parent;
+}
+
+
 // =============================================================================
 //                                  Private
 // =============================================================================
+
 
 bool CValidError_imp::IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc)
 {
@@ -1274,6 +1317,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/02 22:01:20  shomrat
+* Added GetCDSGivenProduct and GetAncestor
+*
 * Revision 1.3  2002/12/26 16:35:11  shomrat
 * Typo
 *
