@@ -622,14 +622,15 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
 }
 
 
-//  Match "name" against the filename "mask", returning TRUE if
-//   it matches, FALSE if not.  
+// Match "name" against the filename "mask", returning TRUE if
+// it matches, FALSE if not.  
 //
 bool CDirEntry::MatchesMask(const char* name, const char* mask) 
 {
     char c;
+    bool infinite = true;
 
-    for (;;) {
+    while (infinite) {
         // Analyze symbol in mask
         switch ( c = *mask++ ) {
         
@@ -669,7 +670,6 @@ bool CDirEntry::MatchesMask(const char* name, const char* mask)
             break;
         }
     }
-    /*NOTREACHED*/
     return false;
 }
 
@@ -1000,25 +1000,39 @@ Int8 CFile::GetLength(void) const
 
 string CFile::GetTmpName(void)
 {
+#if defined(NCBI_OS_UNIX)
+#  if defined(P_tmpdir)
+    const string kDefaultTmpDir = P_tmpdir;
+#  else
+    const string kDefaultTmpDir = kEmptyStr;
+#  endif
+    char* tmpdir = getenv("TMPDIR");
+    return GetTmpNameEx(tmpdir ? tmpdir : kDefaultTmpDir);
+#else
     char* filename = tempnam(0,0);
     if ( !filename ) {
         return kEmptyStr;
     }
     string res(filename);
     free(filename);
-    return res;   
+    return res;
+#endif
 }
 
 
 string CFile::GetTmpNameEx(const string& dir, const string& prefix)
 {
-#if defined(NCBI_COMPILER_MW_MSL)
-    string filenamstr = AddTrailingPathSeparator(dir) + prefix + "XXXXXXXX";
-    // we need our filename in memory that mktemp can write into.
-    auto_ptr<char> filename(strdup(filenamstr.c_str()));
-    mktemp(filename.get());
+#if defined(NCBI_OS_UNIX)
+    string pattern;
+	if ( !dir.empty() ) {
+        pattern = AddTrailingPathSeparator(dir);
+	}
+    pattern += prefix + "XXXXXX";
+    auto_ptr<char> filename(strdup(pattern.c_str()));
+    int fd = mkstemp(filename.get());
+	close(fd);
+    remove(filename.get());
     string res(filename.get());
-    return res;
 #else
     char* filename = tempnam(dir.c_str(), prefix.c_str());
     if ( !filename ) {
@@ -1026,8 +1040,8 @@ string CFile::GetTmpNameEx(const string& dir, const string& prefix)
     }
     string res(filename);
     free(filename);
-    return res;   
 #endif
+    return res;
 }
 
 
@@ -1075,7 +1089,9 @@ fstream* CFile::CreateTmpFileEx(const string& dir, const string& prefix,
 
 
 //////////////////////////////////////////////////////////////////////////////
+//
 // CDir
+//
 
 
 CDir::CDir(void)
@@ -1402,7 +1418,9 @@ bool CDir::Remove(EDirRemoveMode mode) const
 
 
 //////////////////////////////////////////////////////////////////////////////
+//
 // CMemoryFile
+//
 
 
 // Platform-dependent memory file handle definition
@@ -1678,6 +1696,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2003/10/22 13:25:47  ivanov
+ * GetTmpName[Ex]:  replaced tempnam() with mkstemp() for UNIX
+ *
  * Revision 1.59  2003/10/08 15:45:09  ivanov
  * Added CDirEntry::DeleteTrailingPathSeparator()
  *
