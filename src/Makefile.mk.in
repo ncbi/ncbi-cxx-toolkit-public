@@ -52,7 +52,7 @@ CONF_CFLAGS   = @CFLAGS@
 CONF_CXXFLAGS = @CXXFLAGS@
 CONF_CPPFLAGS = @CPPFLAGS@ $(STD_INCLUDE)
 CONF_LDFLAGS  = @LDFLAGS@
-CONF_LIBS     = @LIBS@ 
+CONF_LIBS     = @LIBS@
 
 
 ### Configurable compiler/librarian/linker binaries and options
@@ -69,9 +69,9 @@ ORIG_LINK   = $(CONF_CXX)
 
 ORIG_CFLAGS   = $(CONF_CFLAGS)
 ORIG_CXXFLAGS = $(CONF_CXXFLAGS)
-ORIG_CPPFLAGS = $(CONF_CPPFLAGS) $(STD_INCLUDE)
+ORIG_CPPFLAGS = $(CONF_CPPFLAGS)
 ORIG_LDFLAGS  = $(CONF_LDFLAGS)
-ORIG_LIBS     = $(CONF_LIBS) 
+ORIG_LIBS     = $(CONF_LIBS)
 
 
 ### Configurable compiler/librarian/linker binaries and options
@@ -88,9 +88,9 @@ LINK   = $(CONF_CXX)
 
 CFLAGS   = $(CONF_CFLAGS)
 CXXFLAGS = $(CONF_CXXFLAGS)
-CPPFLAGS = $(CONF_CPPFLAGS) $(STD_INCLUDE)
+CPPFLAGS = $(CONF_CPPFLAGS)
 LDFLAGS  = $(CONF_LDFLAGS)
-LIBS     = $(CONF_LIBS) 
+LIBS     = $(CONF_LIBS)
 
 
 ### Do not use any default suffix rules
