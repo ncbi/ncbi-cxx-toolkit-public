@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/29 19:23:38  thiessen
+* save row order
+*
 * Revision 1.11  2000/12/26 16:47:36  thiessen
 * preserve block boundaries
 *
@@ -71,6 +74,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/general/Object_id.hpp>
+
+#include <map>
 
 #include "cn3d/alignment_set.hpp"
 #include "cn3d/sequence_set.hpp"
@@ -235,8 +240,17 @@ AlignmentSet::~AlignmentSet(void)
     if (newAsnAlignmentData) delete newAsnAlignmentData;
 }
 
-AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent, const BlockMultipleAlignment *multiple)
+AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent,
+    const BlockMultipleAlignment *multiple, const std::vector < int >& rowOrder)
 {
+    // sanity check on the row order map
+    std::map < int, int > rowCheck;
+    for (int i=0; i<rowOrder.size(); i++) rowCheck[rowOrder[i]] = i;
+    if (rowOrder.size() != multiple->NRows() || rowCheck.size() != multiple->NRows() || rowOrder[0] != 0) {
+        ERR_POST(Error << "AlignmentSet::CreateFromMultiple() - bad row order vector");
+        return NULL;
+    }
+
     // create a single Seq-annot, with 'align' data that holds one Seq-align per slave
     SeqAnnotList *newAsnAlignmentData = new SeqAnnotList(1);
     CSeq_annot *seqAnnot = new CSeq_annot();
@@ -253,7 +267,9 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent, const Blo
     }
 
     // create Seq-aligns, using dendiag storage for BlockMultipleAlignment that uses UngappedAlignedBlock
+    int newRow;
     for (int row=1; row<multiple->NRows(); row++, sa++) {
+        newRow = rowOrder[row];
         CSeq_align *seqAlign = new CSeq_align();
         sa->Reset(seqAlign);
 
@@ -273,13 +289,13 @@ AlignmentSet * AlignmentSet::CreateFromMultiple(StructureBase *parent, const Blo
             denDiag->SetIds().resize(2);
 
             // master row
-            denDiag->SetIds().front().Reset(multiple->sequences->at(0)->CreateSeqId());
+            denDiag->SetIds().front().Reset(multiple->GetSequenceOfRow(0)->CreateSeqId());
             const Block::Range *range = (*b)->GetRangeOfRow(0);
             denDiag->SetStarts().push_back(range->from);
 
             // slave row
-            denDiag->SetIds().back().Reset(multiple->sequences->at(row)->CreateSeqId());
-            range = (*b)->GetRangeOfRow(row);
+            denDiag->SetIds().back().Reset(multiple->GetSequenceOfRow(newRow)->CreateSeqId());
+            range = (*b)->GetRangeOfRow(newRow);
             denDiag->SetStarts().push_back(range->from);
 
             denDiag->SetLen((*b)->width);

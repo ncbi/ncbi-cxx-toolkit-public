@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/12/29 19:23:39  thiessen
+* save row order
+*
 * Revision 1.5  2000/12/19 16:39:09  thiessen
 * tweaks to show/hide
 *
@@ -57,7 +60,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/opengl_renderer.hpp"
 
-#include <ostream>
+#include <corelib/ncbistre.hpp>
 #include <vector>
 
 USING_NCBI_SCOPE;
@@ -117,7 +120,7 @@ private:
 public:
     ShowHideDomain(const Molecule *m, int d, int labelNum) : molecule(m), domainID(d)
     {
-        ostrstream oss;
+        CNcbiOstrstream oss;
         oss << indent << indent << m->pdbID;
         if (m->pdbChain != ' ') oss << '_' << (char) m->pdbChain;
         oss << " d" << labelNum << '\0';

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/12/29 19:23:38  thiessen
+* save row order
+*
 * Revision 1.20  2000/12/22 19:26:40  thiessen
 * write cdd output files
 *
@@ -404,13 +407,35 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 {
     GlobalMessenger()->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
+    SaveDialog(false);                          // give structure window a change to save data
     Destroy();
 }
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
     GlobalMessenger()->SequenceWindowsSave();
+    SaveDialog(false);
     Destroy();
+}
+
+bool Cn3DMainFrame::SaveDialog(bool canCancel)
+{
+    // check for whether save is necessary
+    if (!glCanvas->structureSet || !glCanvas->structureSet->HasDataChanged())
+        return true;
+
+    int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
+    if (canCancel) option |= wxCANCEL;
+
+    wxMessageDialog dialog(NULL, "Do you want to save your work to a file?", "", option);
+    option = dialog.ShowModal();
+
+    if (option == wxID_CANCEL) return false; // user cancelled this operation
+
+    if (option == wxID_YES)
+        OnSave(wxCommandEvent());    // save data
+
+    return true;
 }
 
 void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
@@ -617,9 +642,13 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 {
     if (!glCanvas->structureSet) return;
 
-    wxString outputFilename = wxFileSelector("Choose a filename for output", dataDir, "", ".prt", "*.prt", wxSAVE);
+    wxString outputFilename = wxFileSelector(
+        "Choose a filename for output", dataDir, "",
+        ".val", "ASCII ASN (*.prt)|*.prt|Binary ASN (*.val)|*.val",
+        wxSAVE | wxOVERWRITE_PROMPT);
+    TESTMSG("save file: '" << outputFilename.c_str() << "'");
     if (!outputFilename.IsEmpty())
-        glCanvas->structureSet->SaveASNData(outputFilename.c_str());
+        glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
 }
 
 void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/12/29 19:23:49  thiessen
+* save row order
+*
 * Revision 1.9  2000/12/26 16:47:39  thiessen
 * preserve block boundaries
 *
@@ -90,7 +93,8 @@ public:
     ~AlignmentSet(void);
 
     // constructs a new AlignmentSet from a multiple alignment
-    static AlignmentSet * CreateFromMultiple(StructureBase *parent, const BlockMultipleAlignment *multiple);
+    static AlignmentSet * CreateFromMultiple(StructureBase *parent,
+        const BlockMultipleAlignment *multiple, const std::vector < int >& rowOrder);
 
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
     AlignmentList alignments;

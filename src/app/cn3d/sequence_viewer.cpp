@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/12/29 19:23:39  thiessen
+* save row order
+*
 * Revision 1.30  2000/12/21 23:42:16  thiessen
 * load structures from cdd's
 *
@@ -294,6 +297,7 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
         case MID_UNDO:
             TESTMSG("undoing...");
             viewer->PopAlignment();
+            if (AlwaysSyncStructures()) SyncStructures();
             break;
 
         case MID_SPLIT_BLOCK:
@@ -360,6 +364,7 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
     }
     menuBar->Enable(MID_UNDO, false);
     menuBar->Enable(MID_SHOW_HIDE_ROWS, !enabled);  // can't show/hide when editor is on
+    menuBar->Enable(MID_MOVE_ROW, enabled);         // can only move row when editor is on
 }
 
 void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
@@ -838,21 +843,33 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
         return;
     }
 
-    // only allow reordering of alignment rows
-//    DisplayRowFromAlignment *row;
-//    if (dynamic_cast<DisplayRowFromAlignment*>(rows[rowTo]) == NULL) return;
-//    if ((row = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom])) == NULL) return;
-    DisplayRow *row = rows[rowFrom];
-
-    // use vertical drag to reorder row; move row so that it ends up in the 'rowTo' row
-    RowVector::iterator r = rows.begin();
+    // use vertical drag to reorder row; move rowFrom so that it ends up in the 'rowTo' row
+    RowVector newRows(rows);
+    DisplayRow *row = newRows[rowFrom];
+    RowVector::iterator r = newRows.begin();
     int i;
     for (i=0; i<rowFrom; i++) r++; // get iterator for position rowFrom
-    rows.erase(r);
-    for (r=rows.begin(), i=0; i<rowTo; i++) r++; // get iterator for position rowTo
-    rows.insert(r, row);
+    newRows.erase(r);
+    for (r=newRows.begin(), i=0; i<rowTo; i++) r++; // get iterator for position rowTo
+    newRows.insert(r, row);
 
-    GlobalMessenger()->PostRedrawSequenceViewers();
+    // make sure that the master row of an alignment is still first
+    bool masterOK = true;
+    for (i=0; i<newRows.size(); i++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(newRows[i]);
+        if (alnRow) {
+            if (alnRow->row != 0) {
+                ERR_POST(Warning << "The first alignment row must always be the master sequence");
+                masterOK = false;
+            }
+            break;
+        }
+    }
+    if (masterOK) {
+        rows = newRows;
+        (*viewerWindow)->viewer->PushAlignment();   // make this an undoable operation
+        GlobalMessenger()->PostRedrawSequenceViewers();
+    }
 }
 
 
@@ -933,7 +950,6 @@ void SequenceViewer::PopAlignment(void)
     PushAlignment();
     if (!FindBlockBoundaryRow()) AddBlockBoundaryRow();
     if (displayStack.size() == 2) viewerWindow->EnableUndo(false);
-    if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
 }
 
 void SequenceViewer::ClearStacks(void)
@@ -985,8 +1001,13 @@ void SequenceViewer::SaveAlignment(void)
     KeepOnlyStackTop();
 
     // go back into the original pairwise alignment data and save according to the
-    // current edited BlockMultipleAlignment
-    alignmentManager->SavePairwiseFromMultiple(alignmentStack.back());
+    // current edited BlockMultipleAlignment and display row order
+    std::vector < int > rowOrder;
+    for (int i=0; i<GetCurrentDisplay()->rows.size(); i++) {
+        DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(GetCurrentDisplay()->rows[i]);
+        if (alnRow) rowOrder.push_back(alnRow->row);
+    }
+    alignmentManager->SavePairwiseFromMultiple(alignmentStack.back(), rowOrder);
 }
 
 void SequenceViewer::NewDisplay(SequenceDisplay *display)

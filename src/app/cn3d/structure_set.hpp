@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/12/29 19:23:50  thiessen
+* save row order
+*
 * Revision 1.35  2000/12/22 19:25:47  thiessen
 * write cdd output files
 *
@@ -239,7 +242,7 @@ public:
     void SelectedAtom(unsigned int name);
 
     // writes data to a file; returns true on success
-    bool SaveASNData(const char *filename) const;
+    bool SaveASNData(const char *filename, bool doBinary);
 
 private:
     ncbi::objects::CNcbi_mime_asn1 *mimeData;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/12/29 19:23:49  thiessen
+* save row order
+*
 * Revision 1.24  2000/12/15 15:52:07  thiessen
 * show/hide system installed
 *
@@ -144,8 +147,9 @@ public:
     // get the working alignment
     const BlockMultipleAlignment * GetCurrentMultipleAlignment(void) const;
 
-    // change the underlying pairwise alignments to match the given multiple
-    void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple);
+    // change the underlying pairwise alignments to match the given multiple and row order
+    void SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
+        const std::vector < int >& rowOrder);
 
     // recomputes structure alignments for all slave structures in the current
     // sequence alignment

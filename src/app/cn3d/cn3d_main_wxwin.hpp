@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/12/29 19:23:49  thiessen
+* save row order
+*
 * Revision 1.14  2000/12/22 19:25:46  thiessen
 * write cdd output files
 *
@@ -158,6 +161,7 @@ public:
 
     // public methods
     void LoadFile(const char *filename);
+    bool SaveDialog(bool canCancel);
 
     // menu-associated methods
     enum {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/12/29 19:23:40  thiessen
+* save row order
+*
 * Revision 1.41  2000/12/22 19:26:40  thiessen
 * write cdd output files
 *
@@ -174,7 +177,7 @@
 #include <objects/mmdb3/Trans_matrix.hpp>
 #include <objects/mmdb3/Rot_matrix.hpp>
 
-#include <strstream>
+#include <corelib/ncbistre.hpp>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
@@ -413,7 +416,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
             // load Biostrucs from external files
             std::string err;
             CBiostruc biostruc;
-            ostrstream biostrucFile;
+            CNcbiOstrstream biostrucFile;
             biostrucFile << dataDir << mmdbIDs[m] << ".val" << '\0';
             TESTMSG("trying to read ncbi-backbone model from Biostruc in '" << biostrucFile.str() << "'");
             if (ReadASNFromFile(biostrucFile.str(), biostruc, true, err)) {
@@ -483,15 +486,17 @@ void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
     }
 }
 
-bool StructureSet::SaveASNData(const char *filename) const
+bool StructureSet::SaveASNData(const char *filename, bool doBinary)
 {
     std::string err;
     bool writeOK = false;
     if (mimeData)
-        writeOK = WriteASNToFile(filename, *mimeData, false, err);
+        writeOK = WriteASNToFile(filename, *mimeData, doBinary, err);
     else if (cddData)
-        writeOK = WriteASNToFile(filename, *cddData, false, err);
-    if (!writeOK) {
+        writeOK = WriteASNToFile(filename, *cddData, doBinary, err);
+    if (writeOK) {
+        dataChanged = 0;
+    } else {
         ERR_POST(Error << "Write failed: " << err);
         return false;
     }

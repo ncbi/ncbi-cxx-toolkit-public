@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/12/29 19:23:39  thiessen
+* save row order
+*
 * Revision 1.13  2000/12/28 20:43:09  vakatov
 * Do not use "set" as identifier.
 * Do not include <strstream>. Use "CNcbiOstrstream" instead of "ostrstream".
@@ -88,6 +91,8 @@
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/general/Dbtag.hpp>
+
+#include <corelib/ncbistre.hpp>
 
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule.hpp"

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/12/29 19:23:38  thiessen
+* save row order
+*
 * Revision 1.31  2000/12/26 16:47:36  thiessen
 * preserve block boundaries
 *
@@ -178,15 +181,17 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
     NewMultipleWithRows(slavesVisible);
 }
 
-void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple)
+void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
+    const std::vector < int >& rowOrder)
 {
     // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
-    AlignmentSet *newAlignmentSet = AlignmentSet::CreateFromMultiple(alignmentSet->parentSet, multiple);
+    AlignmentSet *newAlignmentSet =
+        AlignmentSet::CreateFromMultiple(alignmentSet->parentSet, multiple, rowOrder);
     if (newAlignmentSet) {
         alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
         alignmentSet = newAlignmentSet;
     } else {
-        ERR_POST(Warning << "Couldn't create pairwise alignments from the current multiple!\n"
+        ERR_POST(Error << "Couldn't create pairwise alignments from the current multiple!\n"
             << "Alignment data in output file will be left unchanged.");
     }
 }
