@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2002/01/20 06:13:34  vakatov
+ * Fixed warning;  formatted the source code
+ *
  * Revision 1.12  2002/01/10 16:46:36  ivanov
  * Added CDir::GetHome() and some CDirEntry:: path processing functions
  *
@@ -37,9 +40,11 @@
  * Conditionalize deletion of m_FSS on NCBI_OS_MAC.
  *
  * Revision 1.10  2001/12/26 20:58:22  juran
- * Use an FSSpec* member instead of an FSSpec, so a forward declaration can be used.
+ * Use an FSSpec* member instead of an FSSpec, so a forward declaration can
+ * be used.
  * Add copy constructor and assignment operator for CDirEntry on Mac OS,
- * thus avoiding memberwise copy which would blow up upon deleting the pointer twice.
+ * thus avoiding memberwise copy which would blow up upon deleting the
+ * pointer twice.
  *
  * Revision 1.9  2001/12/18 21:36:38  juran
  * Remove unneeded Mac headers.
@@ -80,21 +85,21 @@
 
 #include <corelib/ncbifile.hpp>
 
-#if !defined NCBI_OS_MAC
+#if !defined(NCBI_OS_MAC)
 #  include <sys/types.h>
 #  include <sys/stat.h>
 #endif
 
 #include <stdio.h>
 
-#if defined NCBI_OS_MSWIN 
+#if defined(NCBI_OS_MSWIN )
 #  include <io.h>
 #  include <direct.h>
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
 #  include <dirent.h>
 #  include <pwd.h>
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
 #  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
 #endif
@@ -113,17 +118,17 @@ BEGIN_NCBI_SCOPE
 #define DIR_PARENT  ".."
 #define DIR_CURRENT '.'
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
 #  define DIR_SEPARATOR     '\\'
 #  define DIR_SEPARATOR_ALT '/'
 #  define DISK_SEPARATOR    ':'
 #  define ALL_SEPARATORS    ":/\\"
 
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 #  define DIR_SEPARATOR     '/'
 #  define ALL_SEPARATORS    "/"
 
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
 #  define DIR_SEPARATOR     ':'
 #  define ALL_SEPARATORS    ":"
 #  undef  DIR_PARENT
@@ -132,18 +137,16 @@ BEGIN_NCBI_SCOPE
 
 
 
-#if defined NCBI_OS_MAC
-
+#if defined(NCBI_OS_MAC)
 static const FSSpec sNullFSS = {0, 0, "\p"};
 
-static bool operator==(const FSSpec &one, const FSSpec &other)
+static bool operator== (const FSSpec &one, const FSSpec &other)
 {
     return one.vRefNum == other.vRefNum
         && one.parID   == other.parID
         && PString(one.name) == PString(other.name);
 }
-
-#endif
+#endif  /* NCBI_OS_MAC */
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -172,13 +175,13 @@ static CDirEntry::TMode s_ConstructMode(CDirEntry::TMode user_mode,
 
 
 CDirEntry::CDirEntry()
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     : m_FSS(new FSSpec(sNullFSS))
 #endif
 {
 }
 
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 CDirEntry::CDirEntry(const CDirEntry& other) : m_FSS(new FSSpec(*other.m_FSS))
 {
     m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
@@ -186,15 +189,17 @@ CDirEntry::CDirEntry(const CDirEntry& other) : m_FSS(new FSSpec(*other.m_FSS))
     m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
 }
 
+
 CDirEntry&
-CDirEntry::operator=(const CDirEntry& other)
+CDirEntry::operator= (const CDirEntry& other)
 {
-	*m_FSS = *other.m_FSS;
+    *m_FSS = *other.m_FSS;
     m_DefaultMode[eUser]  = other.m_DefaultMode[eUser];
     m_DefaultMode[eGroup] = other.m_DefaultMode[eGroup];
     m_DefaultMode[eOther] = other.m_DefaultMode[eOther];
     return *this;
 }
+
 
 CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(new FSSpec(fss))
 {
@@ -204,8 +209,9 @@ CDirEntry::CDirEntry(const FSSpec& fss) : m_FSS(new FSSpec(fss))
 }
 #endif
 
+
 CDirEntry::CDirEntry(const string& name)
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     : m_FSS(new FSSpec(sNullFSS))
 #endif
 {
@@ -216,7 +222,7 @@ CDirEntry::CDirEntry(const string& name)
 }
 
 
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 bool CDirEntry::operator== (const CDirEntry& other) const
 {
     return *m_FSS == *other.m_FSS;
@@ -234,37 +240,37 @@ CDirEntry::TMode CDirEntry::m_DefaultModeGlobal[eUnknown][3] =
 {
     // eFile
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther },
     // eDir
     { CDirEntry::fDefaultDirUser, CDirEntry::fDefaultDirGroup, 
-      CDirEntry::fDefaultDirOther },
+          CDirEntry::fDefaultDirOther },
     // ePipe
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther },
     // eLink
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther },
     // eSocket
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther },
     // eDoor
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
+          CDirEntry::fDefaultOther },
     // eBlockSpecial
     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther },
-    // eCharSpecial
-    { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
-      CDirEntry::fDefaultOther }
+          CDirEntry::fDefaultOther },
+     // eCharSpecial
+     { CDirEntry::fDefaultUser, CDirEntry::fDefaultGroup, 
+           CDirEntry::fDefaultOther }
 };
 
 
 
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 void CDirEntry::Reset(const string& path)
 {
     OSErr err = MacPathname2FSSpec(path.c_str(), m_FSS);
-    if (err != noErr && err != fnfErr) {
+    if (err != noErr  &&  err != fnfErr) {
         *m_FSS = sNullFSS;
     }
 }
@@ -284,8 +290,8 @@ string CDirEntry::GetPath(void) const
 
 CDirEntry::~CDirEntry(void)
 {
-#if defined NCBI_OS_MAC
-	delete m_FSS;
+#if defined(NCBI_OS_MAC)
+    delete m_FSS;
 #endif
 }
 
@@ -337,12 +343,12 @@ char CDirEntry::GetPathSeparator(void)
 
 bool CDirEntry::IsPathSeparator(const char c)
 {
-#if defined DISK_SEPARATOR
+#if defined(DISK_SEPARATOR)
     if ( c == DISK_SEPARATOR ) {
         return true;
     }
 #endif
-#if defined DIR_SEPARATOR_ALT
+#if defined(DIR_SEPARATOR_ALT)
     if ( c == DIR_SEPARATOR_ALT ) {
         return true;
     }
@@ -354,7 +360,7 @@ bool CDirEntry::IsPathSeparator(const char c)
 string CDirEntry::AddTrailingPathSeparator(const string& path)
 {
     size_t pos = path.length();
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     if ( !pos ) {
         return string(1, GetPathSeparator());
     }
@@ -372,14 +378,14 @@ bool CDirEntry::IsAbsolutePath(const string& path)
         return false;
     char first = path[0];
 
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     if ( path.find(DIR_SEPARATOR) != NPOS  &&  first != DIR_SEPARATOR )
         return true;
 #else
     if ( IsPathSeparator(first) )
         return true;
 #endif
-#if defined DISK_SEPARATOR
+#if defined(DISK_SEPARATOR)
     if ( path.find(DISK_SEPARATOR) != NPOS )
         return true;
 #endif
@@ -419,12 +425,12 @@ string CDirEntry::ConvertToOSPath(const string& path)
     // Now we have relative "path"
     string xpath = path;
     // Add trailing separator if path ends with DIR_PARENT or DIR_CURRENT
-#if defined DIR_PARENT
+#if defined(DIR_PARENT)
     if ( NStr::EndsWith(xpath, DIR_PARENT) )  {
         xpath += DIR_SEPARATOR;
     }
 #endif
-#if defined DIR_CURRENT
+#if defined(DIR_CURRENT)
     if ( NStr::EndsWith(xpath, string(1,DIR_CURRENT)) )  {
         xpath += DIR_SEPARATOR;
     }
@@ -436,17 +442,17 @@ string CDirEntry::ConvertToOSPath(const string& path)
             xpath[i] = DIR_SEPARATOR;
         }
     }
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     // Fix current and parent refs in the path for MAC
     string search= "..:";
     size_t pos = 0;
     while ((pos = xpath.find(search)) != NPOS) {
         xpath.replace(pos, search.length(), ":");
         if ( xpath.substr(pos + 1, 2) == ".:" )  {
-           xpath.erase(pos + 1, 2);
+            xpath.erase(pos + 1, 2);
         } else {
             if ( xpath.substr(pos + 1, search.length()) != search )  {
-               xpath.insert(pos,":");
+                xpath.insert(pos,":");
             }
         }
     }
@@ -458,7 +464,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
 #else
     // Fix current and parent refs in the path after conversion from MAC path
     // Replace all "::" to "/../"
-#if defined DIR_PARENT
+#if defined(DIR_PARENT)
     string sep1 = string(1,DIR_SEPARATOR);
     string sep2 = string(2,DIR_SEPARATOR);
     string sep = sep1 + DIR_PARENT + sep1;
@@ -490,62 +496,61 @@ string CDirEntry::ConcatPath(const string& first, const string& second)
 }
 
 
-/*  Match "name" against the filename "mask", returning TRUE if
-    it matches, FALSE if not.  
-*/
-bool CDirEntry::MatchesMask(const char *name, const char *mask) 
+//  Match "name" against the filename "mask", returning TRUE if
+//   it matches, FALSE if not.  
+//
+bool CDirEntry::MatchesMask(const char* name, const char* mask) 
 {
     char c;
 
     for (;;) {
         // Analyze symbol in mask
-		switch ( c = *mask++ ) {
+        switch ( c = *mask++ ) {
         
         case '\0':
-			return *name == '\0';
+            return *name == '\0';
 
         case '?':
             if ( *name == '\0' ) {
-				return false;
+                return false;
             }
-			++name;
-			break;
+            ++name;
+            break;
 		
         case '*':
-			c = *mask;
-			// Collapse multiple stars
+            c = *mask;
+            // Collapse multiple stars
             while ( c == '*' ) {
-				c = *++mask;
+                c = *++mask;
             }
             if (c == '\0') {
-    			return true;
-			}
-			// General case, use recursion
-			while ( char ctmp = *name ) {
+                return true;
+            }
+            // General case, use recursion
+            while ( *name ) {
                 if ( MatchesMask(name, mask) ) {
-					return true;
+                    return true;
                 }
-				++name;
-			}
-			return false;
+                ++name;
+            }
+            return false;
 		
         default:
             // Compare nonpattern character in mask and name
             if ( c != *name++ ) {
-				return false;
+                return false;
             }
-			break;
-		}
+            break;
+        }
     }
     return false;
 }
 
 
-
 bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
     const
 {
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     FSSpec fss = FSS();
     OSErr err = FSpCheckObjectLock(&fss);
     if (err != noErr  &&  err != fLckdErr) {
@@ -585,7 +590,7 @@ bool CDirEntry::SetMode(TMode user_mode, TMode group_mode, TMode other_mode)
     if (user_mode == fDefault) {
         user_mode = m_DefaultMode[eUser];
     }
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     bool wantLocked = (user_mode & fWrite) == 0;
     FSSpec fss = FSS();
     OSErr  err = FSpCheckObjectLock(&fss);
@@ -754,7 +759,7 @@ CDirEntry::EType CDirEntry::GetType(void) const
 
 bool CDirEntry::Rename(const string& newname)
 {
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     const int maxFilenameLength = 31;
     if (newname.length() > maxFilenameLength) return false;
     Str31 newNameStr;
@@ -773,7 +778,7 @@ bool CDirEntry::Rename(const string& newname)
 
 bool CDirEntry::Remove(void) const
 {
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     OSErr err = ::FSpDelete(&FSS());
     return err == noErr;
 #else
@@ -807,7 +812,7 @@ CFile::~CFile(void)
 
 Int8 CFile::GetLength(void) const
 {
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
     long dataSize, rsrcSize;
     OSErr err = FSpGetFileSize(&FSS(), &dataSize, &rsrcSize);
     if (err != noErr) {
@@ -919,7 +924,7 @@ CDir::CDir(const string& dirname) : CParent(dirname)
 }
 
 
-#if defined NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
 
 static bool s_GetHomeByUID(string& home)
 {
@@ -960,7 +965,7 @@ string CDir::GetHome(void)
     char *ptr;
     string home;
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     // Get home dir from environment variables
     // like - C:\Documents and Settings\user\Application Data
     if ( ptr = getenv("APPDATA") ) {
@@ -972,7 +977,7 @@ string CDir::GetHome(void)
         }
     }
    
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
     // Try get home dir from environment variable
     if ( (ptr = getenv("HOME")) != NULL ) {
         home = ptr;
@@ -984,7 +989,7 @@ string CDir::GetHome(void)
         }
     }
    
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
     // FIX ME 
     home = kEmptyStr;
     
@@ -1023,7 +1028,7 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
     TEntries contents;
     string x_mask = mask.empty() ? string("*") : mask;
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     // Append to the "path" mask for all files in directory
     string pattern = GetPath();
     if ( pattern[pattern.size()-1] != GetPathSeparator() ) {
@@ -1042,7 +1047,7 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
     }
     _findclose(desc);
 
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
     DIR* dir = opendir(GetPath().c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
@@ -1053,7 +1058,7 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
     }
     closedir(dir);
 
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
     try {
         for (int index = 1;  ;  index++) {
             CDirEntry entry = MacGetIndexedItem(*this, index);
@@ -1079,17 +1084,17 @@ bool CDir::Create(void) const
     GetDefaultMode(&user_mode, &group_mode, &other_mode);
     TMode mode = s_ConstructMode(user_mode, group_mode, other_mode);
 
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_OS_MSWIN)
     if ( mkdir(GetPath().c_str()) != 0 ) {
         return false;
     }
     return chmod(GetPath().c_str(), mode) == 0;
 
-#elif defined NCBI_OS_UNIX
+#elif defined(NCBI_OS_UNIX)
 
     return mkdir(GetPath().c_str(), mode) == 0;
 
-#elif defined NCBI_OS_MAC
+#elif defined(NCBI_OS_MAC)
     OSErr err;
     long dirID;
 	
@@ -1115,13 +1120,13 @@ bool CDir::Remove(EDirRemoveMode mode) const
     // Read and remove all entry in derectory
     TEntries contents = dir.GetEntries();
     iterate(TEntries, entry, contents) {
-#if !defined NCBI_OS_MAC
+#if !defined(NCBI_OS_MAC)
         if ( (*entry)->GetName() == "."  ||  (*entry)->GetName() == ".."  ||  
              (*entry)->GetName() == string(1, GetPathSeparator()) ) {
             continue;
         }
 #endif
-#if defined NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
         CDirEntry& item = **entry;
         // Is it directory ?
         if ( item.IsDir() ) {
