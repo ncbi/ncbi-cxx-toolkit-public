@@ -17,4 +17,4 @@ LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_seqvector_ci
 CHECK_TIMEOUT = 250
-LINK = quantify $(ORIG_LINK)
+# LINK = quantify $(ORIG_LINK)
