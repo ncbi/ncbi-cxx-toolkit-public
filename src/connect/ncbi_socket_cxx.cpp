@@ -77,14 +77,14 @@ CSocket::CSocket(const string&   host,
 CSocket::~CSocket(void)
 {
     if (m_Socket  &&  m_IsOwned != eNoOwnership)
-        SOCK_CloseEx(m_Socket, 1);
+        SOCK_Close(m_Socket);
 }
 
 
 void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 {
     if (m_Socket  &&  m_IsOwned != eNoOwnership)
-        SOCK_CloseEx(m_Socket, 1);
+        SOCK_Close(m_Socket);
     m_Socket  = sock;
     m_IsOwned = if_to_own;
     if ( sock ) {
@@ -122,8 +122,11 @@ EIO_Status CSocket::Connect(const string&   host,
                             const STimeout* timeout,
                             ESwitch         log)
 {
-    if ( m_Socket )
-        return eIO_Unknown;
+    if ( m_Socket ) {
+        if (SOCK_Status(m_Socket, eIO_Open) != eIO_Closed)
+            return eIO_Unknown;
+        SOCK_Close(m_Socket);
+    }
 
     const char* x_host = host.c_str();
     if (timeout != kDefaultTimeout) {
@@ -527,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2003/11/25 15:09:47  lavr
+ * Allow CSocket::Connect() after closing with CSocket::Close()
+ *
  * Revision 6.22  2003/11/12 17:47:58  lavr
  * Few fixes of return status; take advantage of SOCK_CloseEx()
  *
