@@ -176,9 +176,11 @@ Blast_HSPInit(Int4 query_start, Int4 query_end,
 NCBI_XBLAST_EXPORT
 void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
 
-/** Reevaluate the HSP's score, e-value and percent identity after taking
+/** Reevaluate the HSP's score and percent identity after taking
  * into account the ambiguity information. Used only for blastn after a greedy
- * gapped extension.
+ * gapped extension with traceback. This function can remove part of the 
+ * alignment at either end, if its score becomes negative after reevaluation.
+ * Traceback is also adjusted in that case.
  * @param hsp The HSP structure [in] [out]
  * @param query_start Pointer to the start of the query sequence [in]
  * @param subject_start Pointer to the start of the subject sequence [in]
@@ -193,8 +195,8 @@ Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, Uint1* query_start,
    Uint1* subject_start, const BlastHitSavingParameters* hit_params, 
    const BlastScoringParameters* score_params, BlastScoreBlk* sbp);
 
-/** Reevaluate the HSP's score, e-value and percent identity after taking
- * into account the ambiguity information. Used for ungapped searches with 
+/** Reevaluate the HSP's score and percent identity after taking into
+ * account the ambiguity information. Used for ungapped searches with 
  * nucleotide database (blastn, tblastn, tblastx).
  * @param hsp The HSP structure [in] [out]
  * @param query_start Pointer to the start of the query sequence [in]
