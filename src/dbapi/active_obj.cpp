@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/09/18 18:47:30  kholodov
+* Modified: CActiveObject inherits directly from IEventListener
+* Added: Additional trace output
+*
 * Revision 1.3  2002/09/09 20:48:56  kholodov
 * Added: Additional trace output about object life cycle
 * Added: CStatement::Failed() method to check command status
@@ -54,22 +58,29 @@ BEGIN_NCBI_SCOPE
 
 CActiveObject::CActiveObject() 
 {
+    SetIdent("ActiveObject");
 }
 
 CActiveObject::~CActiveObject() 
 {
 }
 
-void CActiveObject::AddListener(IEventListener* obj)
+void CActiveObject::AddListener(CActiveObject* obj)
 {
   m_listenerList.insert(obj);
+  _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
+         << " inserted into "
+         << GetIdent() << " " << (void*)this << " listener list");
 }
 
-void CActiveObject::RemoveListener(IEventListener* obj)
+void CActiveObject::RemoveListener(CActiveObject* obj)
 {
   TLList::iterator i = m_listenerList.find(obj);
   if( i != m_listenerList.end() ) {
     m_listenerList.erase(i);
+    _TRACE("Object " << obj->GetIdent() << " " << (void*)obj
+           << " removed from "
+           << GetIdent() << " " << (void*)this << " listener list");
   }
 }
 
@@ -77,8 +88,15 @@ void CActiveObject::Notify(const CDbapiEvent& e)
 {
   TLList::iterator i = m_listenerList.begin();
   for( ; i != m_listenerList.end(); ++i ) {
+      _TRACE("Object " << GetIdent() << " " << (void*)this
+             << " notifies " << (*i)->GetIdent() << " " << (void*)(*i));
     (*i)->Action(e);
   }
+}
+
+void CActiveObject::Action(const CDbapiEvent& e)
+{
+
 }
   
 string CActiveObject::GetIdent() const

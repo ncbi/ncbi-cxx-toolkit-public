@@ -35,6 +35,10 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/09/18 18:47:30  kholodov
+* Modified: CActiveObject inherits directly from IEventListener
+* Added: Additional trace output
+*
 * Revision 1.4  2002/09/09 20:48:56  kholodov
 * Added: Additional trace output about object life cycle
 * Added: CStatement::Failed() method to check command status
@@ -101,23 +105,26 @@ public:
 class IEventListener
 {
 public:
-    virtual void Action(const CDbapiEvent& ev) = 0;
+    virtual void Action(const CDbapiEvent& e) = 0;
 
 protected:
     IEventListener() {}
 };
 
 //=================================================================
-class CActiveObject : public CObject 
+class CActiveObject : public CObject,
+                      public IEventListener
 {
 public:
     CActiveObject();
     virtual ~CActiveObject();
 
-    void AddListener(IEventListener* obj);
-    void RemoveListener(IEventListener* obj);
+    void AddListener(CActiveObject* obj);
+    void RemoveListener(CActiveObject* obj);
     void Notify(const CDbapiEvent& e);
 
+    // Do nothing by default
+    virtual void Action(const CDbapiEvent& e);
 
     string GetIdent() const;
 
@@ -125,7 +132,7 @@ protected:
     void SetIdent(const string& name);
 
 private:
-    typedef set<IEventListener*> TLList;
+    typedef set<CActiveObject*> TLList;
 
     TLList m_listenerList;
     string m_ident;  // Object identificator
