@@ -24,11 +24,12 @@ LIBS='gui_doc gui_view gui_algo xgbplugin'
 Usage()
 {
     cat <<EOF 1>&2
-USAGE: $script_name [--copy] sourcedir targetdir
+USAGE: $script_name [--copy|--hardlink] sourcedir targetdir
 SYNOPSIS:
    Create Genome Workbench installation from the standard Toolkit build.
 ARGUMENTS:
    --copy     -- use Unix 'cp' command instead of 'ln -s'.
+   --hardlink -- use Unix 'ln' command instead of 'ln -s'.
    sourcedir  -- path to pre-built NCBI Toolkit.
    targetdir  -- target installation directory.
 
@@ -197,6 +198,11 @@ copy_all="no"
 if [ $1 = "--copy" ]; then
     copy_all="yes"
     BINCOPY="cp -pf"
+    src_dir=$2
+    target_dir=$3
+elif [ $1 = "--hardlink" ]; then
+    copy_all="yes"
+    BINCOPY="ln -f"
     src_dir=$2
     target_dir=$3
 else
