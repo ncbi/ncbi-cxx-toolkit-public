@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/08/02 20:13:53  gouriano
+* disable arg descriptions by default
+*
 * Revision 1.31  2001/12/06 15:06:04  ucko
 * Remove name of unused argument to CAsBodyDiagFactory::New.
 *
@@ -268,6 +271,7 @@ private:
 
 CCgiApplication::CCgiApplication(void)
 {
+    DisableArgDescriptions();
     RegisterDiagFactory("stderr", new CStderrDiagFactory);
     RegisterDiagFactory("asbody", new CAsBodyDiagFactory(this));
 }
