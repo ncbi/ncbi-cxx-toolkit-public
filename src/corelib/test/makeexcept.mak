@@ -6,11 +6,11 @@ et: netest.o ncbiexcp.o
 
 netest.o: netest.cpp
 	$(CC) -c netest.cpp -mt -g \
-	-DUNIX  -I.
+	-DUNIX  -I. -I../include
 
-ncbiexcp.o: ncbiexcp.cpp
-	$(CC) -c ncbiexcp.cpp -mt -g \
-	-DUNIX -I.
+ncbiexcp.o: ../src/ncbiexcp.cpp
+	$(CC) -c ../src/ncbiexcp.cpp -mt -g \
+	-DUNIX -I. -I../include
 clean: 
 	rm *.o
 
