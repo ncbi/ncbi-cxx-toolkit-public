@@ -33,13 +33,15 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/10/27 23:08:15  vakatov
+* Finished with a draft redesign(from 1.1)
+*
 * Revision 1.1  1998/10/24 00:25:43  vakatov
 * Initial revision(incomplete transition from "ncbimsg.inl")
 *
 * ==========================================================================
 */
 
-#include <sstream>
 
 /////////////////////////////////////////////////////////////////////////////
 // WARNING -- all the beneath is for INTERNAL "ncbidiag" use only,
@@ -58,9 +60,13 @@
 class CDiagBuffer {
     friend class CDiag;
     friend CDiagBuffer& GetDiagBuffer(void);
+    friend EDiagSev SetDiagPostSeverity(EDiagSev post_sev);
+    friend EDiagSev SetDiagDieSeverity(EDiagSev die_sev);
+    friend void SetDiagHandler(FDiagHandler func, void* data,
+                               FDiagCleanup cleanup);
 private:
-    const CDiag*   m_Diag;    // present user
-    ostringstream  m_Stream;  // storage for the diagnostic message
+    const CDiag*    m_Diag;    // present user
+    CNcbiOstrstream m_Stream;  // storage for the diagnostic message
 
     CDiagBuffer(void);
     ~CDiagBuffer(void);
@@ -87,7 +93,12 @@ private:
                             size_t      message_len);
 
     // Symbolic name for the severity levels(used by CDiag::SeverityName)
-    static const char* sm_SeverityName[eM_Fatal+1];
+    static const char* SeverityName[eDiag_Trace+1];
+
+    // Application-wide diagnostic handler & Co.
+    static FDiagHandler sm_HandlerFunc;
+    static void*        sm_HandlerData;
+    static FDiagCleanup sm_HandlerCleanup;
 };
 
 
@@ -133,30 +144,35 @@ inline CDiag& Reset(CDiag& diag)  {
     return diag;
 }
 
-inline CDiag& EndMess(CDiag& diag)  {
+inline CDiag& Endm(CDiag& diag)  {
     diag.m_Buffer.EndMess(diag);
     return diag;
 }
 
 inline CDiag& Info(CDiag& diag)  {
-    diag.m_Severity = eM_Info;
-    return diag << EndMess;
+    diag << Endm;
+    diag.m_Severity = eDiag_Info;
+    return diag;
 }
 inline CDiag& Warning(CDiag& diag)  {
-    diag.m_Severity = eM_Warning;
-    return diag << EndMess;
+    diag << Endm;
+    diag.m_Severity = eDiag_Warning;
+    return diag;
 }
 inline CDiag& Error(CDiag& diag)  {
-    diag.m_Severity = eM_Error;
-    return diag << EndMess;
+    diag << Endm;
+    diag.m_Severity = eDiag_Error;
+    return diag;
 }
 inline CDiag& Fatal(CDiag& diag)  {
-    diag.m_Severity = eM_Fatal;
-    return diag << EndMess;
+    diag << Endm;
+    diag.m_Severity = eDiag_Fatal;
+    return diag;
 }
 inline CDiag& Trace(CDiag& diag)  {
-    diag.m_Severity = eM_Trace;
-    return diag << EndMess;
+    diag << Endm;
+    diag.m_Severity = eDiag_Trace;
+    return diag;
 }
 
 
@@ -178,7 +194,8 @@ template<class X> void CDiagBuffer::Put(const CDiag& diag, X& x) {
         return;
 
     if (m_Diag != &diag) {
-        Flush();
+        if ( m_Stream.pcount() )
+            Flush();
         m_Diag = &diag;
     }
     m_Stream << x;
@@ -195,7 +212,7 @@ inline void CDiagBuffer::Flush(void) {
         DiagHandler(sev, message, m_Stream.pcount());
         Reset(m_Diag);
     }
-    if (sev == sm_DieSeverity)
+    if (sev >= sm_DieSeverity  &&  sev != eDiag_Trace)
         abort();
 }
 
