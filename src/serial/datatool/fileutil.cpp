@@ -31,6 +31,7 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbifile.hpp>
 #include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/srcutil.hpp>
 #include <set>
@@ -75,8 +76,23 @@ SourceFile::~SourceFile(void)
     }
 }
 
+
+SourceFile::EType SourceFile::GetType(void) const
+{
+    CDirEntry entry(m_Name);
+    string ext(entry.GetExt());
+    if (NStr::CompareNocase(ext,".asn") == 0) {
+        return eASN;
+    } else if (NStr::CompareNocase(ext,".dtd") == 0) {
+        return eDTD;
+    }
+    return eUnknown;
+}
+
+
 bool SourceFile::x_Open(const string& name, bool binary)
 {
+    m_Name = name;
     m_StreamPtr = new CNcbiIfstream(name.c_str(),
                                     binary?
                                         IOS_BASE::in | IOS_BASE::binary:
@@ -529,6 +545,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/10/15 13:54:58  gouriano
+* addded "GetType" method - module file type by extension
+*
 * Revision 1.24  2002/08/06 17:03:49  ucko
 * Let -opm take a comma-delimited list; move relevant CVS logs to end.
 *
