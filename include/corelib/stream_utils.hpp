@@ -29,7 +29,9 @@
  * Authors:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
- *   Push an arbitrary block of data back to C++ input stream.
+ *   Stream utilities:
+ *   1. Push an arbitrary block of data back to C++ input stream.
+ *   2. Non-blocking read from a stream.
  *
  */
 
@@ -68,7 +70,7 @@ struct CStreamUtils {
                                streamsize          buf_size);
 
 
-// Read at most "buf_size" bytes from the stream "is" into buffer pointed
+// Read at most "buf_size" bytes from the stream "is" into a buffer pointed
 // to by "buf". This call tries its best to be non-blocking.
 // Return the number of bytes actually read (or 0 if nothing was read, in
 // case of either an error or no data currently available).
@@ -85,6 +87,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/11/28 03:27:19  lavr
+ * File description updated
+ *
  * Revision 1.6  2002/11/27 21:07:19  lavr
  * Rename "stream_pushback" -> "stream_utils" and enclose utils in a class
  *
