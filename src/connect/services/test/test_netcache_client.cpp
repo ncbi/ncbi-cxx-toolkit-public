@@ -39,6 +39,7 @@
 
 #include <connect/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
+#include <connect/ncbi_types.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -134,6 +135,8 @@ string s_PutBlob(const string&             host,
 
     CStopWatch sw(true);
     CNetCacheClient nc_client(host, port);
+    STimeout to = {90, 0};
+    nc_client.SetCommunicationTimeout(to);
 
     info.connection_time = sw.Elapsed();
     sw.Restart();
@@ -173,7 +176,8 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     avg_tran = sum_tran / double(log.size());
 
 
-    double slow_median = (avg + max_time) / 2.0;
+    double slow_median = avg + (avg / 2.0);
+        //avg + ((max_time - avg) / 4.0);
     unsigned slow_cnt = 0;
     ITERATE(vector<STransactionInfo>, it, log) {
         double t = it->connection_time + it->transaction_time;
@@ -517,7 +521,6 @@ int CTestNetCacheClient::Run(void)
     s_ReportStatistics(log_read);
     NcbiCout << NcbiEndl;
 
-
     s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
     NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
     s_ReportStatistics(log);
@@ -556,6 +559,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/27 19:54:43  kuznets
+ * Improved statistics reporting
+ *
  * Revision 1.20  2004/12/27 17:47:50  kuznets
  * Improved statistics
  *
