@@ -105,6 +105,20 @@ public:
     ///   Version Info to compare with
     EMatch Match(const CVersionInfo& version_info) const;
 
+    /// Check if version is all zero (major, minor, patch)
+    /// Convention is that all-zero version used in requests as 
+    /// "get me anything". 
+    /// @sa kAny
+    bool IsAny() const 
+       { return (!m_Major && !m_Minor && !m_PatchLevel); }
+
+    /// Check if version is all -1 (major, minor, patch)
+    /// Convention is that -1 version used in requests as 
+    /// "get me the latest version". 
+    /// @sa kLatest
+    bool IsLatest() const 
+       { return (m_Major == -1 && m_Minor == -1 && m_PatchLevel == -1); }
+
 protected:
     int           m_Major;       ///< Major number
     int           m_Minor;       ///< Minor number
@@ -194,6 +208,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/07 16:29:15  kuznets
+ * Added CVersionInfo::IsAny(), IsLatest()
+ *
  * Revision 1.6  2003/10/30 19:24:44  kuznets
  * Merged together version of CVersionInfo mastered by Denis with my
  * version of CVersionInfo...Best of both versions.
