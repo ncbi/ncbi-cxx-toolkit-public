@@ -41,6 +41,8 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seqtest/Seq_test_result.hpp>
+#include <objects/seq/Seq_hist.hpp>
+#include <objects/seq/Seq_hist_rec.hpp>
 #include <serial/iterator.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
@@ -546,12 +548,29 @@ CTestTranscript_PrematureStopCodon::RunTest(const CSerialObject& obj,
 }
 
 
+// Walk the replace history to find the latest revision of a sequence
+static const CSeq_id& s_FindLatest(const CSeq_id& id, CScope& scope)
+{
+    CBioseq_Handle hand = scope.GetBioseqHandle(id);
+    if (hand.IsSetInst() && hand.GetInst().IsSetHist()
+        && hand.GetInst().GetHist().IsSetReplaced_by()) {
+        // This assumes there's just one id in Replaced-by;
+        // what to do if there are more?
+        return s_FindLatest(*hand.GetInst().GetHist().GetReplaced_by()
+                            .GetIds().front(), scope);
+    } else {
+        return id;
+    }
+}
+
+
 static void s_CompareProtProdToTrans(const CSeq_id& id,
                                      const CSeqTestContext* ctx,
                                      CFeat_CI feat_iter,
                                      CSeq_test_result& result)
 {
     const CSeq_loc& prod_loc = feat_iter->GetOriginalFeature().GetProduct();
+    const CSeq_id& prod_id = sequence::GetId(prod_loc);
     CSeqVector prod_vec(prod_loc, ctx->GetScope());
     prod_vec.SetIupacCoding();
 
@@ -577,6 +596,38 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
         .AddField("fraction_identity",
                   double(ident_count)
                   / max(prod_vec.size(), (TSeqPos)translation.size()));
+
+    const CSeq_id& updated_id = s_FindLatest(prod_id, ctx->GetScope());
+    if (updated_id.Equals(prod_id)) {
+        result.SetOutput_data()
+            .AddField("fraction_identity_updated_prot_prod",
+                      double(ident_count)
+                      / max(prod_vec.size(), (TSeqPos)translation.size()));
+        result.SetOutput_data().AddField("length_updated_prot_prod",
+                                         int(prod_vec.size()));
+    } else {
+        CBioseq_Handle updated_prod_hand
+            = ctx->GetScope().GetBioseqHandle(updated_id);
+        CSeqVector updated_prod_vec = updated_prod_hand.GetSeqVector();
+        updated_prod_vec.SetIupacCoding();
+        TSeqPos ident_count = 0;
+        for (TSeqPos i = 0;
+             i < min(updated_prod_vec.size(), (TSeqPos)translation.size());
+             ++i) {
+            if (updated_prod_vec[i] == translation[i]) {
+                ++ident_count;
+            }
+        }
+        result.SetOutput_data()
+            .AddField("fraction_identity_updated_prot_prod",
+                      double(ident_count)
+                      / max(updated_prod_vec.size(),
+                            (TSeqPos)translation.size()));
+        result.SetOutput_data().AddField("length_updated_prot_prod",
+                                         int(updated_prod_vec.size()));
+    }
+    result.SetOutput_data()
+        .AddField("prot_prod_updated", !updated_id.Equals(prod_id));
 }
 
 
@@ -696,6 +747,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/25 16:47:17  jcherry
+ * Added comparison of translation to updated protein product
+ *
  * Revision 1.8  2004/10/21 21:02:03  jcherry
  * Added test for code-breaks in CDS feature and recording of
  * lengths of protein product and translation.
