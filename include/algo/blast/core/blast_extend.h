@@ -70,6 +70,11 @@ typedef struct BlastInitHitList {
    Boolean do_not_reallocate; /**< Can the init_hsp_array be reallocated? */
 } BlastInitHitList;
 
+typedef enum {
+   eDiagStructArray = 0,
+   eUint4Array
+} EDiagArrayType;
+
 /** Structure for keeping last hit information for a diagonal */
 typedef struct DiagStruct {
    Int4 last_hit; /**< Offset of the last hit */
@@ -88,7 +93,14 @@ typedef struct MB_Stack {
  * contexts there are.
 */
 typedef struct BLAST_DiagTable {
-   DiagStruct* diag_array;/**< Array to hold latest hits for all diagonals */
+   EDiagArrayType array_type;
+   union {
+      DiagStruct* hit_level_array;/**< Array to hold latest hits and their 
+                                     lengths for all diagonals */
+      Uint4* last_hit_array; /**< Array of latest hits on all diagonals, with 
+                                top byte indicating whether hit has been 
+                                saved. */
+   } diag_array;
    Int4 diag_array_length; /**< Smallest power of 2 longer than query length */
    Int4 diag_mask; /**< Used to mask off everything above
                           min_diag_length (mask = min_diag_length-1). */
