@@ -7,221 +7,135 @@
 <H1>Setup the framework for the C++ <i>Object Manager</i> learning task</H1>
 </div>
 
+<h2>Starting point</h2>
 <p>
 To help jump-start your first project utilizing the new C++
 <var>Object Manager </var> in the C++ Toolkit framework, we have created
-a special CVS folder <tt>c++/src/internal/objmgr_lab</tt>.
-There is already a sub-folder <tt>sample</tt> containing
-a working sample project (makefiles and a source file).
-</p>
-<p>
-In case you have no access to the C++ Toolkit CVS tree
-(that is you are not in the <i>coreprog</i> UNIX group), please
-<a href="#nocvs">click here</a>.
-</p>
-<p>
-We suggest creating your own folder under
-<tt>c++/src/internal/objmgr_lab</tt>,
-and using <tt>sample</tt> as a start-up template for your learning project:
+a sample project (makefile and a source file), which could be used
+as a starting point. In order to do so, you have to create a folder for your
+new project, generate a makefile, copy sample source and compile it:
 </p>
 
-<ul>
-<li>extract the the sample project from the C++ tree</li>
-<li>create your own project folder</li>
-<li>copy sample project files into your folder</li>
-<li>generate a makefile</li>
-<li>build the project</li>
-<li>now all you have to do is change the sample code into a real one</li>
-</ul>
-
-
-
-
-
-
-
-
-
-<p>
-The detailed step-by-step instructions:
-</p>
-
-<hr>
 <ol>
 <li>
-Create a working folder, let's call it <i>omlab</i> in your home dir, and
-extract the <VAR>Object Manager</VAR> learning task folder
-(including the sample project) from the C++ tree
-<pre>
-mkdir ~/<i>omlab</i>
-cd ~/<i>omlab</i>
-$NCBI/c++/scripts/import_project.sh internal/objmgr_lab/sample
-</pre>
-</li>
-
-
-<li>
-Make sure the sample project builds and works fine
-<pre>
-cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab/sample
-make
-./omtask1 -gi 333
-</pre>
-<a name="ref_SampleOutput"></a>
-The output should look like this:
-<pre>
-First ID:  emb|CAA23443.1|
-Sequence:  length=263,  data=MARFLGLCTW
-# of descriptions:  2
-# of features:
-   [whole]           Any:    2
-   [whole]           Genes:  0
-   [0..9]            Any:    2
-   [0..9, TSE-only]  Any:    2
-# of alignments:
-   [whole]           Any:    0
-Done
-</pre>
-</li>
-
-
-<li>
-Create your own project folder (we suggest using your user name, so let us call it <i>userid</i>),
-and add it to the CVS tree
-<pre>
-cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab
-mkdir <i>userid</i>
-cvs add <i>userid</i>
-</pre>
-</li>
-
-
-<li>
-Copy files from the sample project, and commit them to the CVS tree as well
-<pre>
-cp -p sample/Makefile.in sample/Makefile.task.app sample/task.cpp <i>userid</i>
-cd <i>userid</i>
-cvs add    -m 'C++ Object Manager learning task' *.*
-cvs commit -m 'Initial revision (a copy of the sample application)'
-</pre>
-</li>
-
-
-<li>
-Generate local makefiles for your project using <i>import_project.sh</i>
-shell script
-<pre>
-cd ~/omlab
-$NCBI/c++/scripts/import_project.sh internal/objmgr_lab/<i>userid</i>
-</pre>
-</li>
-
-
-<li>
-Build your project
-<pre>
-cd ~/<i>omlab</i>/internal/c++/src/internal/objmgr_lab/<i>userid</i>
-make
-</pre>
-</li>
-
-
-<li>
-Run your application
-<pre>
-./omtask1 -gi 333
-</pre>
-It must yield the same output as the
-sample application (see <a href="#ref_SampleOutput">above</a>)
-</li>
-</ol>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<hr>
-<a name="nocvs"></a>
-<p>
-If you are <b>not</b> in the <i>coreprog</i> UNIX group and
-have no access to the C++ Toolkit CVS tree, please do the following
-(<i>userid</i> stands here for your name, or whatever you want to call your project folder):
-<ol>
-<li>
-  Create a new project called <i>app</i> using <tt>new_project.sh</tt> shell script:
+  Create a new project called <i>app</i> in the folder <i>task</i>
+  using <tt>new_project.sh</tt> shell script:
   <pre>
-$NCBI/c++/scripts/new_project.sh <i>userid</i> <i>app</i>
-cd <i>userid</i>
-cp -p $NCBI/c++/src/internal/objmgr_lab/sample/task.cpp .
+  $NCBI/c++/scripts/new_project.sh <i>task</i> <i>app</i>
+  cd <i>task</i>
+  cp -p $NCBI/c++/src/internal/objmgr_lab/sample/task.cpp .
   </pre>
 </li>
 <li>
-  In your model makefile <tt>Makefile.<i>userid_app</i></tt>, replace the whole
+  In your model makefile <tt>Makefile.<i>task_app</i></tt>, replace the whole
   <tt>settings</tt> section, exactly this way:
   <pre>
-#############################################################################
-###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
-APP = omtask1
-SRC = task
-LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      xser xutil xconnect xncbi
+  #############################################################################
+  ###  EDIT SETTINGS FOR THE DEFAULT (APPLICATION) TARGET HERE              ### 
+  APP = omtask1
+  SRC = task
+  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+        xser xutil xconnect xncbi
 
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
-####################################################################
+  LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
+  # CPPFLAGS =  $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
+  ####################################################################
   </pre>
 </li>
 <li>
   Build the sample project and run the application:
   <pre>
-make -f Makefile.<i>userid_app</i>
-./omtask1 -gi 333
+  make -f Makefile.<i>task_app</i>
+  ./omtask1 -gi 333
   </pre>
+The output should look like this:
+<pre>
+  First ID:  emb|CAA23443.1|
+  Sequence:  length=263,  data=MARFLGLCTW
+  # of descriptions:  2
+  # of features:
+     [whole]           Any:    2
+     [whole]           Genes:  0
+     [0..9]            Any:    2
+     [0..9, TSE-only]  Any:    2
+  # of alignments:
+     [whole]           Any:    0
+  Done
+</pre>
+</li>
+<li>
+Now you can go ahead and convert the sample code in the <tt>task.cpp</tt>
+into  the code that performs your learning task.
 </li>
 </ol>
-</p>
 
 
 
-<hr>
+
+
+
+<h2>How to convert the test application into CGI one?</h2>
 <p>
-<i>CONGRATULATIONS!</i>
-<br>
-You are done with setting up the framework. -- Now you can go ahead and
-just convert the sample code in the <tt>task.cpp</tt> into 
-the code that performs your learning task.
-<br>
-<b>
-To avoid tempting other participants to go the easy way (i.e. copycat)
-please do NOT commit your own code back into CVS until the very end of
-the learning cycle!
-</b>
---
-<i>Thank you for your understanding.</i>
+It is a good idea to create another application, based on your original test.
+In order to do this:
 </p>
+<ol>
+  <li>
+  Create copy of the source (<i>task.cpp</i>) and makefile (<i>Makefile.task_app</i>)
+  <pre>
+  cp task.cpp <b>task_cgi.cpp</b>
+  cp Makefile.task_app <b>Makefile.task_cgiapp</b>
+  </pre>
+  </li>
+  <li>
+  Edit the makefile for the CGI application (<i>Makefile.task_cgiapp</i>):
+  change application name, name of the source file,  add <tt>cgi</tt> libraries:
+  <pre>
+  APP = <b>omtask1.cgi</b>
+  SRC = <b>task_cgi</b>
+  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+      xser <b>xhtml xcgi</b> xutil xconnect xncbi
+  LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) <b>$(FASTCGI_LIBS)</b> $(NETWORK_LIBS) $(ORIG_LIBS)
+  </pre>
+  </li>
+  <li>
+  Build the project (at this time it is not a CGI application yet):
+  <pre>
+  make -f Makefile.<i>task_cgiapp</i>
+  </pre>
+  </li>
+  <li>
+  Convert <i>task_cgi.cpp</i> into a CGI application.
+  </li>
+</ol>
 
 
-<hr>
-<table border=0 width="100%" cellspacing=0>
-<tr>
-<td align=left>
-  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">
-				  Andrei Gourianov, Denis Vakatov
-				</a></address>
-</td>
-<!-- <td align=center><i>$Revision$</i></td> -->
-<td align=right><i>$Date$</i></td>
-</tr>
-</table>
+
+
+
+
+<h2>How to convert CGI application into FCGI one?</h2>
+<p>
+Edit the CGI project makefile - <i>Makefile.task_cgiapp</i>:
+</p>
+<ol>
+  <li>
+Replace <tt>xcgi</tt> library by <tt>xfcgi</tt> one in the <tt>LIB=...</tt> section.
+  <pre>
+  LIB = xobjmgr1 id1 seqset $(SEQ_LIBS) pub medline biblio general \
+      xser xhtml <b>xfcgi</b> xutil xconnect xncbi
+  </pre>
+  </li>
+  <li>
+Add the path to Fast-CGI header files to compilation flags: 
+<pre>
+CPPFLAGS =  <b>$(FASTCGI_INCLUDE)</b>
+</pre>
+  </li>
+</ol>
+
+
+
+
 
 <!--#include virtual="../../ssi/footer.shtml" -->
