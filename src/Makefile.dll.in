@@ -48,7 +48,7 @@ XOBJ        = $(OBJ:=@obj_ext@)
 XLIB        = $(LIB:%=@lib_pre@%@dll_ext@)
 XLIBDEP     = .$(LIB).dep
 XDLL_LIB    = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
-XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
+XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
 
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XLIB)

@@ -85,7 +85,7 @@ XDLLOBJ     = $(XLIBOBJ) $(XOBJ)
 XDLL        = $(LIB:%=@lib_pre@%@dll_ext@)
 XDLLDEP     = .$(LIB).dep
 XDLL_LIB    = $(runpath) @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
-XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
+XDLL_LIBDEP = $(DLL_LIB:%=$(status_dir)/.%.dep)
 
 $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL)
