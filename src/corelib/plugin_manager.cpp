@@ -40,7 +40,6 @@ BEGIN_NCBI_SCOPE
 //  CPluginManager_DllResolver::
 //
 
-
 CPluginManager_DllResolver::CPluginManager_DllResolver(void)
  : m_DllNamePrefix("ncbi_plugin"),
    m_EntryPointPrefix("NCBI_EntryPoint"),
@@ -261,11 +260,15 @@ CDllResolver* CPluginManager_DllResolver::GetCreateDllResolver()
     return m_DllResolver;
 }
 
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/18 15:26:48  kuznets
+ * Minor cosmetic changes
+ *
  * Revision 1.3  2003/11/17 17:04:22  kuznets
  * Cosmetic fixes
  *
