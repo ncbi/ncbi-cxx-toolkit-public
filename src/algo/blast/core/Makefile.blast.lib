@@ -1,0 +1,15 @@
+# $Id$
+
+SRC_C = aa_lookup aa_ungapped blast_dust blast_engine blast_extend \
+    blast_filter blast_gapalign blast_hits blast_message blast_options \
+    blast_seg blast_seqsrc blast_setup blast_traceback blast_util \
+    blastkar gapinfo greedy_align link_hsps mb_lookup na_lookup ncbi_std \
+    ncbimath util
+
+SRC   = $(SRC_C)
+
+LIB = blast
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FAST_CPPFLAGS) -I$(top_srcdir)/include/algo/blast/core
+CFLAGS   = $(ORIG_CFLAGS) $(FAST_CFLAGS) -I$(top_srcdir)/include/algo/blast/core
+LDFLAGS  = $(ORIG_LDFLAGS) $(FAST_LDFLAGS)
