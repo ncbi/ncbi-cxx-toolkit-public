@@ -6,7 +6,9 @@
 # Meta-makefile for misc code
 #################################
 
+SUB_PROJ            = third_party third_party_static
 EXPENDABLE_SUB_PROJ = cgi_redirect
+
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
