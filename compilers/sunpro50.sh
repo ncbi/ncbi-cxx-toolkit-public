@@ -23,4 +23,4 @@ PM_LIB_PATH=""
 NCBI_C_INCLUDE="/netopt/ncbi_tools/ver0.0/ncbi/include"
 NCBI_C_LIB_PATH="/netopt/ncbi_tools/ver0.0/ncbi/altlib"
 
-sh -xv configure --exec_prefix=.
+sh configure --exec_prefix=.
