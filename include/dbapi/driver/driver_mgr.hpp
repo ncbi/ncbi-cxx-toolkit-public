@@ -28,7 +28,7 @@
  *
  * Author:  Vladimir Soussov
  *
- * File Description:  Driver 
+ * File Description:  Driver manager
  *
  */
 
@@ -37,30 +37,33 @@
 
 BEGIN_NCBI_SCOPE
 
+
 class C_DriverMgr : public I_DriverMgr
 {
 public:
     FDBAPI_CreateContext GetDriver(const string& driver_name);
 
-    virtual void RegisterDriver(const string& driver_name,
-				FDBAPI_CreateContext driver_ctx_func);
+    virtual void RegisterDriver(const string&        driver_name,
+                                FDBAPI_CreateContext driver_ctx_func);
+    virtual ~C_DriverMgr(void);
 
 protected:
     bool LoadDriverDll(const string& driver_name);
 
 private:
-    typedef void* (*FDllEntryPoint)(void);
-    typedef void (*FDriverRegister)(I_DriverMgr& mgr);
+    typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
+    typedef FDriverRegister (*FDllEntryPoint)  (void);
+
 #ifndef NCBI_COMPILER_GCC
     typedef map<string, FDBAPI_CreateContext> TDrivers;
 #else
     typedef map<string, void*> TDrivers;
 #endif
+    TDrivers   m_Drivers;
 
     CFastMutex m_Mutex;
-
-    TDrivers m_Drivers;
 };
+
 
 END_NCBI_SCOPE
 
@@ -69,12 +72,17 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/01/20 07:26:57  vakatov
+ * Fool-proofed to compile func_ptr/void_ptr type casts on all compilers.
+ * Added virtual destructor.
+ * Temporarily get rid of the MT-safety features -- they need to be
+ * implemented here more carefully (in the nearest future).
+ *
  * Revision 1.2  2002/01/17 23:18:58  soussov
  * makes gcc happy
  *
  * Revision 1.1  2002/01/17 22:05:56  soussov
  * adds driver manager
- *
  *
  * ===========================================================================
  */

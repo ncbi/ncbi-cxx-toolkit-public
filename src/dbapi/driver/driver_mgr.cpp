@@ -35,27 +35,48 @@
 BEGIN_NCBI_SCOPE
 
 
-void C_DriverMgr::RegisterDriver(const string& driver_name,
+// This is actually not GCC per se, but a GCC with SUN's "ar" only -- the
+// latter apparently cannot handle too long symbol names.
+// This #ifdef should be elaborated for this particular case only, using
+// C++ Toolkit configurator -- later...
+//
+#ifdef NCBI_COMPILER_GCC
+union UFuncToVoid {
+    FDBAPI_CreateContext func_ptr;
+    void*                void_ptr;
+};
+#endif
+
+
+void C_DriverMgr::RegisterDriver(const string&        driver_name,
                                  FDBAPI_CreateContext driver_ctx_func)
 {
-    m_Drivers[driver_name]= driver_ctx_func;
+#ifndef NCBI_COMPILER_GCC
+    m_Drivers[driver_name] = driver_ctx_func;
+#else
+    UFuncToVoid x;
+    x.func_ptr = driver_ctx_func;
+    m_Drivers[driver_name] = x.void_ptr;
+#endif
 }
 
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name)
 {
-    m_Mutex.Lock();
     TDrivers::iterator drv = m_Drivers.find(driver_name);
-
     if (drv == m_Drivers.end()) {
-        if (!LoadDriverDll(driver_name)) {
-            m_Mutex.Unlock();
+        if ( !LoadDriverDll(driver_name) ) {
             return 0;
         }
     }
 
-    m_Mutex.Unlock();
-    return (FDBAPI_CreateContext)(m_Drivers[driver_name]);
+#ifndef NCBI_COMPILER_GCC
+    return m_Drivers[driver_name];
+#else
+    UFuncToVoid x;
+    x.void_ptr = m_Drivers[driver_name];
+    return x.func_ptr;
+#endif
 }
 
 
@@ -80,7 +101,7 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name)
     DriverDllName(dll_name, driver_name);
 
     try {
-        CDll drvDll(dll_name);
+        CDll   drvDll(dll_name);
         string entry_point_name;
         DriverEntryPointName(entry_point_name, driver_name);
 
@@ -89,13 +110,19 @@ bool C_DriverMgr::LoadDriverDll(const string& driver_name)
             drvDll.Unload();
             return false;
         }
-        FDriverRegister reg= (FDriverRegister)(entry_point());
-        (*reg)(*this);
+        FDriverRegister driver_register = entry_point();
+        driver_register(*this);
         return true;
     }
     catch (exception&) {
         return false;
     }
+}
+
+
+C_DriverMgr::~C_DriverMgr(void)
+{
+    return;
 }
 
 
@@ -106,6 +133,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/01/20 07:26:58  vakatov
+ * Fool-proofed to compile func_ptr/void_ptr type casts on all compilers.
+ * Added virtual destructor.
+ * Temporarily get rid of the MT-safety features -- they need to be
+ * implemented here more carefully (in the nearest future).
+ *
  * Revision 1.3  2002/01/20 05:24:42  vakatov
  * identation
  *
