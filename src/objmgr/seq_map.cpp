@@ -36,7 +36,6 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_map_ext.hpp>
-#include <objects/seq/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
@@ -158,16 +157,20 @@ CSeqMap::CSegment& CSeqMap::x_SetSegment(size_t index)
 }
 
 
-CBioseq_Handle CSeqMap::x_GetBioseqHandle(const CSegment& seg, CScope* scope) const
+CBioseq_Handle CSeqMap::x_GetBioseqHandle(const CSegment& seg,
+                                          CScope* scope) const
 {
+    const CSeq_id& seq_id = x_GetRefSeqid(seg);
     if ( !scope ) {
         NCBI_THROW(CSeqMapException, eNullPointer,
-                   "Null scope pointer");
+                   "Cannot resolve "+
+                   seq_id.AsFastaString()+": null scope pointer");
     }
-    CBioseq_Handle bh = scope->GetBioseqHandle(x_GetRefSeqid(seg));
+    CBioseq_Handle bh = scope->GetBioseqHandle(seq_id);
     if ( !bh ) {
         NCBI_THROW(CSeqMapException, eFail,
-                   "Cannot resolve reference");
+                   "Cannot resolve "+
+                   seq_id.AsFastaString()+": unknown");
     }
     return bh;
 }
@@ -385,28 +388,20 @@ bool CSeqMap::x_GetRefMinusStrand(const CSegment& seg) const
 
 CSeqMap_CI CSeqMap::Begin(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector(),
-                      0);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, SSeqMapSelector());
 }
 
 
 CSeqMap_CI CSeqMap::End(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector(),
-                      GetLength(scope));
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, SSeqMapSelector(),
+                      kMax_UInt);
 }
 
 
 CSeqMap_CI CSeqMap::FindSegment(TSeqPos pos, CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector(),
-                      pos);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, SSeqMapSelector(), pos);
 }
 
 
@@ -423,36 +418,32 @@ CSeqMap::const_iterator CSeqMap::end(CScope* scope) const
 
 
 CSeqMap_CI CSeqMap::BeginResolved(CScope*                scope,
-                                  const SSeqMapSelector& selector) const
+                                  const SSeqMapSelector& sel) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, selector);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel);
 }
 
 
 CSeqMap_CI CSeqMap::BeginResolved(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector().SetResolveCount(size_t(-1)));
+    SSeqMapSelector sel;
+    sel.SetResolveCount(kMax_UInt);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel);
 }
 
 
 CSeqMap_CI CSeqMap::EndResolved(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector().SetResolveCount(size_t(-1)),
-                      GetLength(scope));
+    SSeqMapSelector sel;
+    sel.SetResolveCount(kMax_UInt);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel, kMax_UInt);
 }
 
 
 CSeqMap_CI CSeqMap::EndResolved(CScope*                scope,
-                                const SSeqMapSelector& selector) const
+                                const SSeqMapSelector& sel) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      selector,
-                      GetLength(scope));
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel, kMax_UInt);
 }
 
 
@@ -464,61 +455,45 @@ CSeqMap_CI CSeqMap::FindResolved(CScope*                scope,
 }
 
 
-CSeqMap_CI
-CSeqMap::ResolvedRangeIterator(CScope* scope,
-                               TSeqPos from,
-                               TSeqPos length,
-                               ENa_strand strand,
-                               size_t maxResolveCount,
-                               TFlags flags) const
+CSeqMap_CI CSeqMap::ResolvedRangeIterator(CScope* scope,
+                                          TSeqPos from,
+                                          TSeqPos length,
+                                          ENa_strand strand,
+                                          size_t maxResolveCount,
+                                          TFlags flags) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
-                      SSeqMapSelector()
-                      .SetRange(from, length)
-                      .SetStrand(strand)
-                      .SetResolveCount(maxResolveCount)
-                      .SetFlags(flags));
+    SSeqMapSelector sel;
+    sel.SetFlags(flags).SetResolveCount(maxResolveCount);
+    sel.SetRange(from, length).SetStrand(strand);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel);
 }
 
 
 bool CSeqMap::CanResolveRange(CScope* scope,
                               TSeqPos from,
                               TSeqPos length,
-                              ENa_strand strand) const
+                              ENa_strand strand,
+                              size_t depth,
+                              TFlags flags) const
+{
+    SSeqMapSelector sel;
+    sel.SetFlags(flags).SetResolveCount(depth);
+    sel.SetRange(from, length).SetStrand(strand);
+    return CanResolveRange(scope, sel);
+}
+
+
+bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
 {
     try {
-        CSeqMap_CI seg(CConstRef<CSeqMap>(this), scope,
-                       SSeqMapSelector()
-                       .SetRange(from, length)
-                       .SetStrand(strand)
-                       .SetResolveCount(size_t(-1))
-                       .SetFlags(fDefaultFlags));
-        for ( ; seg; ++seg);
+        for(CSeqMap_CI seg(CConstRef<CSeqMap>(this), scope, sel); seg; ++seg) {
+            // do nothing, just scan
+        }
     }
     catch (exception) {
         return false;
     }
     return true;
-}
-
-
-void CSeqMap::DebugDump(CDebugDumpContext /*ddc*/,
-                        unsigned int /*depth*/) const
-{
-#if 0
-    ddc.SetFrame("CSeqMap");
-    CObject::DebugDump( ddc, depth);
-
-    DebugDumpValue(ddc, "m_FirstUnresolvedPos", m_FirstUnresolvedPos);
-    if (depth == 0) {
-        DebugDumpValue(ddc, "m_Data.size()", m_Data.size());
-    } else {
-        DebugDumpValue(ddc, "m_Data.type",
-            "vector<CRef<CSegment>>");
-        DebugDumpRangeCRef(ddc, "m_Data",
-            m_Data.begin(), m_Data.end(), depth);
-    }
-#endif
 }
 
 
@@ -588,9 +563,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
 {
     CConstRef<CSeqMap> ret(new CSeqMap(loc));
     if ( scope ) {
-        SSeqMapSelector sel;
-        sel.SetFlags(fFindData).SetResolveCount(kMax_UInt);
-        CSeqMap::const_iterator i(ret->BeginResolved(scope, sel));
+        CSeqMap_CI i(ret, scope, SSeqMapSelector(fFindData, kMax_UInt));
         for ( ; i; ++i ) {
             _ASSERT(i.GetType() == eSeqData);
             switch ( i.GetRefData().Which() ) {
@@ -869,11 +842,9 @@ CSeqMap_CI CSeqMap::BeginResolved(CScope* scope,
         "CSeqMap_CI CSeqMap::BeginResolved(CScope* scope,\n"
         "                                size_t maxResolveCount,\n"
         "                                TFlags flags) const\n");
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector()
-                      .SetResolveCount(maxResolveCount)
-                      .SetFlags(flags));
+    SSeqMapSelector sel;
+    sel.SetFlags(flags).SetResolveCount(maxResolveCount);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel);
 }
 
 
@@ -886,23 +857,20 @@ CSeqMap_CI CSeqMap::EndResolved(CScope* scope,
         "CSeqMap_CI CSeqMap::EndResolved(CScope* scope,\n"
         "                                size_t maxResolveCount,\n"
         "                                TFlags flags) const\n");
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector()
-                      .SetResolveCount(maxResolveCount)
-                      .SetFlags(flags),
-                      GetLength(scope));
+    SSeqMapSelector sel;
+    sel.SetFlags(flags).SetResolveCount(maxResolveCount);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel, kMax_UInt);
 }
 
 
 CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
-                                 const SSeqMapSelector& selector) const
+                                 const SSeqMapSelector& sel) const
 {
     ERR_POST_ONCE(Warning<<
-        "Deprecated method:\n"
-        "CSeqMap_CI CSeqMap::FindResolved(CScope* scope,\n"
-        "                                const SSeqMapSelector& selector) const\n");
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, selector);
+      "Deprecated method:\n"
+      "CSeqMap_CI CSeqMap::FindResolved(CScope* scope,\n"
+     "                                 const SSeqMapSelector& sel) const\n");
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel);
 }
 
 
@@ -917,12 +885,9 @@ CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
         "                                CScope* scope,\n"
         "                                size_t maxResolveCount,\n"
         "                                TFlags flags) const\n");
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector()
-                      .SetResolveCount(maxResolveCount)
-                      .SetFlags(flags),
-                      pos);
+    SSeqMapSelector sel;
+    sel.SetFlags(flags).SetResolveCount(maxResolveCount);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel, pos);
 }
 
 
@@ -939,13 +904,9 @@ CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
         "                                ENa_strand strand,\n"
         "                                size_t maxResolveCount,\n"
         "                                TFlags flags) const\n");
-    return CSeqMap_CI(CConstRef<CSeqMap>(this),
-                      scope,
-                      SSeqMapSelector()
-                      .SetResolveCount(maxResolveCount)
-                      .SetFlags(flags)
-                      .SetStrand(strand),
-                      pos);
+    SSeqMapSelector sel;
+    sel.SetFlags(flags).SetResolveCount(maxResolveCount).SetStrand(strand);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, sel, pos);
 }
 
 #endif // REMOVE_OBJMGR_DEPRECATED_METHODS
@@ -953,248 +914,3 @@ CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-
-/*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.64  2004/12/21 18:11:35  vasilche
-* Fixed initialization of MolType in CreateSeqMapForSeq_loc().
-*
-* Revision 1.63  2004/12/14 17:41:03  grichenk
-* Reduced number of CSeqMap::FindResolved() methods, simplified
-* BeginResolved and EndResolved. Marked old methods as deprecated.
-*
-* Revision 1.62  2004/11/22 16:04:47  grichenk
-* Added IsUnknownLength()
-*
-* Revision 1.61  2004/09/30 15:03:41  grichenk
-* Fixed segments resolving
-*
-* Revision 1.60  2004/09/27 14:29:20  grichenk
-* Added FindResolved() with selector
-*
-* Revision 1.59  2004/08/25 15:03:56  grichenk
-* Removed duplicate methods from CSeqMap
-*
-* Revision 1.58  2004/08/04 14:53:26  vasilche
-* Revamped object manager:
-* 1. Changed TSE locking scheme
-* 2. TSE cache is maintained by CDataSource.
-* 3. CObjectManager::GetInstance() doesn't hold CRef<> on the object manager.
-* 4. Fixed processing of split data.
-*
-* Revision 1.57  2004/07/12 16:53:28  vasilche
-* Fixed loading of split Seq-data when sequence is not delta.
-*
-* Revision 1.56  2004/07/12 15:05:32  grichenk
-* Moved seq-id mapper from xobjmgr to seq library
-*
-* Revision 1.55  2004/06/15 14:51:27  grichenk
-* Fixed CRef to bool conversion
-*
-* Revision 1.54  2004/06/15 14:06:49  vasilche
-* Added support to load split sequences.
-*
-* Revision 1.53  2004/05/21 21:42:13  gorelenk
-* Added PCH ncbi_pch.hpp
-*
-* Revision 1.52  2004/03/16 15:47:28  vasilche
-* Added CBioseq_set_Handle and set of EditHandles
-*
-* Revision 1.51  2004/02/19 17:19:10  vasilche
-* Removed 'unused argument' warning.
-*
-* Revision 1.50  2003/11/19 22:18:04  grichenk
-* All exceptions are now CException-derived. Catch "exception" rather
-* than "runtime_error".
-*
-* Revision 1.49  2003/11/12 16:53:17  grichenk
-* Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
-*
-* Revision 1.48  2003/09/30 16:22:04  vasilche
-* Updated internal object manager classes to be able to load ID2 data.
-* SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
-* Scope caches results of requests for data to data loaders.
-* Optimized CSeq_id_Handle for gis.
-* Optimized bioseq lookup in scope.
-* Reduced object allocations in annotation iterators.
-* CScope is allowed to be destroyed before other objects using this scope are
-* deleted (feature iterators, bioseq handles etc).
-* Optimized lookup for matching Seq-ids in CSeq_id_Mapper.
-* Added 'adaptive' option to objmgr_demo application.
-*
-* Revision 1.47  2003/09/05 17:29:40  grichenk
-* Structurized Object Manager exceptions
-*
-* Revision 1.46  2003/08/27 14:27:19  vasilche
-* Use Reverse(ENa_strand) function.
-*
-* Revision 1.45  2003/07/17 19:10:28  grichenk
-* Added methods for seq-map and seq-vector validation,
-* updated demo.
-*
-* Revision 1.44  2003/07/14 21:13:26  grichenk
-* Added possibility to resolve seq-map iterator withing a single TSE
-* and to skip intermediate references during this resolving.
-*
-* Revision 1.43  2003/06/30 18:39:18  vasilche
-* Fixed access to uninitialized member.
-*
-* Revision 1.42  2003/06/27 19:09:02  grichenk
-* Fixed problem with unset sequence length.
-*
-* Revision 1.41  2003/06/26 19:47:27  grichenk
-* Added sequence length cache
-*
-* Revision 1.40  2003/06/24 14:22:46  vasilche
-* Fixed CSeqMap constructor from CSeq_loc.
-*
-* Revision 1.39  2003/06/12 17:04:55  vasilche
-* Fixed creation of CSeqMap for sequences with repr == not_set.
-*
-* Revision 1.38  2003/06/11 19:32:55  grichenk
-* Added molecule type caching to CSeqMap, simplified
-* coding and sequence type calculations in CSeqVector.
-*
-* Revision 1.37  2003/06/02 16:06:38  dicuccio
-* Rearranged src/objects/ subtree.  This includes the following shifts:
-*     - src/objects/asn2asn --> arc/app/asn2asn
-*     - src/objects/testmedline --> src/objects/ncbimime/test
-*     - src/objects/objmgr --> src/objmgr
-*     - src/objects/util --> src/objmgr/util
-*     - src/objects/alnmgr --> src/objtools/alnmgr
-*     - src/objects/flat --> src/objtools/flat
-*     - src/objects/validator --> src/objtools/validator
-*     - src/objects/cddalignview --> src/objtools/cddalignview
-* In addition, libseq now includes six of the objects/seq... libs, and libmmdb
-* replaces the three libmmdb? libs.
-*
-* Revision 1.36  2003/05/21 16:03:08  vasilche
-* Fixed access to uninitialized optional members.
-* Added initialization of mandatory members.
-*
-* Revision 1.35  2003/05/20 20:36:14  vasilche
-* Added FindResolved() with strand argument.
-*
-* Revision 1.34  2003/05/20 15:44:38  vasilche
-* Fixed interaction of CDataSource and CDataLoader in multithreaded app.
-* Fixed some warnings on WorkShop.
-* Added workaround for memory leak on WorkShop.
-*
-* Revision 1.33  2003/04/24 16:12:38  vasilche
-* Object manager internal structures are splitted more straightforward.
-* Removed excessive header dependencies.
-*
-* Revision 1.32  2003/02/24 18:57:22  vasilche
-* Make feature gathering in one linear pass using CSeqMap iterator.
-* Do not use feture index by sub locations.
-* Sort features at the end of gathering in one vector.
-* Extracted some internal structures and classes in separate header.
-* Delay creation of mapped features.
-*
-* Revision 1.31  2003/02/05 17:59:17  dicuccio
-* Moved formerly private headers into include/objects/objmgr/impl
-*
-* Revision 1.30  2003/02/05 15:55:26  vasilche
-* Added eSeqEnd segment at the beginning of seq map.
-* Added flags to CSeqMap_CI to stop on data, gap, or references.
-*
-* Revision 1.29  2003/01/28 17:16:06  vasilche
-* Added CSeqMap::ResolvedRangeIterator with strand coordinate translation.
-*
-* Revision 1.28  2003/01/22 20:11:54  vasilche
-* Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
-* CSeqMap_CI now supports resolution and iteration over sequence range.
-* Added several caches to CScope.
-* Optimized CSeqVector().
-* Added serveral variants of CBioseqHandle::GetSeqVector().
-* Tried to optimize annotations iterator (not much success).
-* Rewritten CHandleRange and CHandleRangeMap classes to avoid sorting of list.
-*
-* Revision 1.27  2002/12/26 20:55:18  dicuccio
-* Moved seq_id_mapper.hpp, tse_info.hpp, and bioseq_info.hpp -> include/ tree
-*
-* Revision 1.26  2002/12/26 20:35:14  ucko
-* #include <algorithm> for upper_bound<>
-*
-* Revision 1.25  2002/12/26 16:39:24  vasilche
-* Object manager class CSeqMap rewritten.
-*
-* Revision 1.24  2002/11/04 21:29:12  grichenk
-* Fixed usage of const CRef<> and CRef<> constructor
-*
-* Revision 1.23  2002/10/18 19:12:40  grichenk
-* Removed mutex pools, converted most static mutexes to non-static.
-* Protected CSeqMap::x_Resolve() with mutex. Modified code to prevent
-* dead-locks.
-*
-* Revision 1.22  2002/07/08 20:51:02  grichenk
-* Moved log to the end of file
-* Replaced static mutex (in CScope, CDataSource) with the mutex
-* pool. Redesigned CDataSource data locking.
-*
-* Revision 1.21  2002/05/29 21:21:13  gouriano
-* added debug dump
-*
-* Revision 1.20  2002/05/06 17:43:06  ivanov
-* ssize_t changed to long
-*
-* Revision 1.19  2002/05/06 17:03:49  ivanov
-* Sorry. Rollback to R1.17
-*
-* Revision 1.18  2002/05/06 16:56:23  ivanov
-* Fixed typo ssize_t -> size_t
-*
-* Revision 1.17  2002/05/06 03:28:47  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.16  2002/05/03 21:28:10  ucko
-* Introduce T(Signed)SeqPos.
-*
-* Revision 1.15  2002/05/02 20:42:38  grichenk
-* throw -> THROW1_TRACE
-*
-* Revision 1.14  2002/04/30 18:55:41  gouriano
-* added GetRefSeqid function
-*
-* Revision 1.13  2002/04/11 12:07:30  grichenk
-* Redesigned CAnnotTypes_CI to resolve segmented sequences correctly.
-*
-* Revision 1.12  2002/04/04 21:33:55  grichenk
-* Fixed x_FindSegment() for sequences with unresolved segments
-*
-* Revision 1.11  2002/04/03 18:06:48  grichenk
-* Fixed segmented sequence bugs (invalid positioning of literals
-* and gaps). Improved CSeqVector performance.
-*
-* Revision 1.9  2002/03/08 21:36:21  gouriano
-* *** empty log message ***
-*
-* Revision 1.8  2002/03/08 21:24:35  gouriano
-* fixed errors with unresolvable references
-*
-* Revision 1.7  2002/02/25 21:05:29  grichenk
-* Removed seq-data references caching. Increased MT-safety. Fixed typos.
-*
-* Revision 1.6  2002/02/21 19:27:06  grichenk
-* Rearranged includes. Added scope history. Added searching for the
-* best seq-id match in data sources and scopes. Updated tests.
-*
-* Revision 1.5  2002/02/01 21:49:38  gouriano
-* minor changes to make it compilable and run on Solaris Workshop
-*
-* Revision 1.4  2002/01/30 22:09:28  gouriano
-* changed CSeqMap interface
-*
-* Revision 1.3  2002/01/23 21:59:32  grichenk
-* Redesigned seq-id handles and mapper
-*
-* Revision 1.2  2002/01/16 16:25:56  gouriano
-* restructured objmgr
-*
-* Revision 1.1  2002/01/11 19:06:24  gouriano
-* restructured objmgr
-*
-*
-* ===========================================================================
-*/
