@@ -47,6 +47,9 @@
 #include <algorithm>
 #include <memory>
 #include <assert.h>
+#ifdef NCBI_POSIX_THREADS
+#  include <sys/time.h> // for gettimeofday()
+#endif
 
 #include "ncbidbg_p.hpp"
 
@@ -1336,6 +1339,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2002/09/13 17:00:11  ucko
+ * When using POSIX threads, #include <sys/time.h> for gettimeofday().
+ *
  * Revision 1.18  2002/09/13 15:14:49  ucko
  * Give CSemaphore::TryWait an optional timeout (defaulting to 0)
  *
