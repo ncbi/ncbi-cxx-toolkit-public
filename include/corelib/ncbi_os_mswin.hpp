@@ -40,6 +40,10 @@
 #  error "ncbi_os_mswin.hpp must be used on MS Windows platforms only"
 #endif
 
+// Exclude some old stuff from <windows.h>. 
+#if defined(_MSC_VER)  &&  (_MSC_VER > 1200)
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 
 // GetObject
