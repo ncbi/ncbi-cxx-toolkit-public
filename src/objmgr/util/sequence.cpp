@@ -238,19 +238,17 @@ static ENa_strand s_GetStrand(const CSeq_loc& loc)
             loc.GetPacked_pnt().GetStrand() : eNa_strand_unknown;
     case CSeq_loc::e_Packed_int:
     {
-        CTypeConstIterator<CSeq_interval> i = ConstBegin(loc);
-        ENa_strand strand = i->IsSetStrand() ? i->GetStrand() :
-            eNa_strand_unknown;
-        for (++i; i; ++i) {
-            ENa_strand cstrand = i->IsSetStrand() ? i->GetStrand() :
+        ENa_strand strand = eNa_strand_unknown;
+        ITERATE(CPacked_seqint::Tdata, i, loc.GetPacked_int().Get()) {
+            ENa_strand istrand = (*i)->IsSetStrand() ? (*i)->GetStrand() :
                 eNa_strand_unknown;
-            if (strand == eNa_strand_unknown  &&  cstrand == eNa_strand_plus) {
+            if (strand == eNa_strand_unknown  &&  istrand == eNa_strand_plus) {
                 strand = eNa_strand_plus;
             } else if (strand == eNa_strand_plus  &&
-                cstrand == eNa_strand_unknown) {
-                cstrand = eNa_strand_plus;
+                istrand == eNa_strand_unknown) {
+                istrand = eNa_strand_plus;
             }
-            if (cstrand != strand) {
+            if (istrand != strand) {
                 return eNa_strand_other;
             }
         }
@@ -1626,6 +1624,57 @@ bool TestForStrands(ENa_strand strand1, ENa_strand strand2)
 }
 
 
+bool TestForIntervals(CSeq_loc_CI it1, CSeq_loc_CI it2, bool minus_strand)
+{
+    // Check intervals one by one
+    while ( it1  &&  it2 ) {
+        if ( !TestForStrands(it1.GetStrand(), it2.GetStrand()) ) {
+            return false;
+        }
+        if ( minus_strand ) {
+            if (it1.GetRange().GetFrom()  !=  it2.GetRange().GetFrom() ) {
+                // The last interval from loc2 may be shorter than the
+                // current interval from loc1
+                if (it1.GetRange().GetFrom() < it2.GetRange().GetFrom()  ||
+                    ++it2) {
+                    return false;
+                }
+                break;
+            }
+        }
+        else {
+            if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
+                // The last interval from loc2 may be shorter than the
+                // current interval from loc1
+                if (it1.GetRange().GetTo() < it2.GetRange().GetTo()  ||
+                    ++it2) {
+                    return false;
+                }
+                break;
+            }
+        }
+        // Go to the next interval start
+        if ( !(++it2) ) {
+            break;
+        }
+        if ( !(++it1) ) {
+            return false; // loc1 has not enough intervals
+        }
+        if ( minus_strand ) {
+            if (it1.GetRange().GetTo() != it2.GetRange().GetTo()) {
+                return false;
+            }
+        }
+        else {
+            if (it1.GetRange().GetFrom() != it2.GetRange().GetFrom()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
 int TestForOverlap(const CSeq_loc& loc1,
                    const CSeq_loc& loc2,
                    EOverlapType type)
@@ -1685,32 +1734,27 @@ int TestForOverlap(const CSeq_loc& loc1,
             if (!it1  ||  !it2) {
                 break;
             }
-            TSeqPos loc2start = it2.GetRange().GetFrom();
-            // Find the first interval in loc1 intersecting with loc2
-            for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; ++it1) {};
-            // Check intervals one by one
-            while ( it1  &&  it2 ) {
-                if ( !TestForStrands(it1.GetStrand(), it2.GetStrand()) ) {
-                    return -1;
+            // check case when strand is minus
+            if (it2.GetStrand() == eNa_strand_minus) {
+                // The first interval should be treated as the last one
+                // for minuns strands.
+                TSeqPos loc2end = it2.GetRange().GetTo();
+                TSeqPos loc2start = it2.GetRange().GetFrom();
+                // Find the first interval in loc1 intersecting with loc2
+                for ( ; it1  &&  it1.GetRange().GetFrom() != loc2start  &&
+                    it1.GetRange().GetTo() >= loc2end; ++it1) {
+                    if (TestForIntervals(it1, it2, true))
+                        break;
                 }
-                if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
-                    // The last interval from loc2 may be shorter than the
-                    // current interval from loc1
-                    if (it1.GetRange().GetTo() < it2.GetRange().GetTo()  ||
-                        ++it2) {
-                        return -1;
-                    }
-                    break;
-                }
-                // Go to the next interval start
-                if ( !(++it2) ) {
-                    break;
-                }
-                if ( !(++it1) ) {
-                    return -1; // loc1 has not enough intervals
-                }
-                if (it1.GetRange().GetFrom() != it2.GetRange().GetFrom()) {
-                    return -1;
+            }
+            else {
+                TSeqPos loc2start = it2.GetRange().GetFrom();
+                TSeqPos loc2end = it2.GetRange().GetTo();
+                // Find the first interval in loc1 intersecting with loc2
+                for ( ; it1  &&  it1.GetRange().GetTo() != loc2end  &&
+                    it1.GetRange().GetFrom() <= loc2end; ++it1) {
+                    if (TestForIntervals(it1, it2, false))
+                        break;
                 }
             }
             return GetLength(loc1) - GetLength(loc2);
@@ -2862,6 +2906,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.45  2003/04/15 20:11:21  grichenk
+* Fixed strands problem in TestForOverlap(), replaced type
+* iterator with container iterator in s_GetStrand().
+*
 * Revision 1.44  2003/04/03 19:03:17  grichenk
 * Two more cases to revert locations in GetBestOverlappingFeat()
 *
