@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 
 #ifdef NCBI_COMPILER_MIPSPRO
 
-class CMIPSPRO_ReadsomeTolerantStreambuf : public streambuf
+class CMIPSPRO_ReadsomeTolerantStreambuf : public CNcbiStreambuf
 {
 public:
     // Do not use these two ugly, weird, ad-hoc methods, ever!!!
@@ -109,7 +109,7 @@ struct NCBI_XUTIL_EXPORT CStreamUtils {
 //          relative to current position (ios::cur); only direct-access
 //          (ios::beg, ios::end) seeks are okay (if permitted by "is").
 // NOTE 5:  stream re-positioning made after pushback clears all pushback data.
-    static void       Pushback(istream&            is,
+    static void       Pushback(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size,
                                void*               del_ptr);
@@ -117,7 +117,7 @@ struct NCBI_XUTIL_EXPORT CStreamUtils {
 // Acts just like its counterpart with 4 args (above), but this variant always
 // copies the "pushback data" into internal buffer, so you can do whatever you
 // want to with the [buf, buf+buf_size) area after calling this function.
-    static void       Pushback(istream&            is,
+    static void       Pushback(CNcbiIstream&       is,
                                const CT_CHAR_TYPE* buf,
                                streamsize          buf_size);
 
@@ -126,7 +126,7 @@ struct NCBI_XUTIL_EXPORT CStreamUtils {
 // to by "buf". This call tries its best to be non-blocking.
 // Return the number of bytes actually read (or 0 if nothing was read, in
 // case of either an error or no data currently available).
-    static streamsize Readsome(istream&            is,
+    static streamsize Readsome(CNcbiIstream&       is,
                                CT_CHAR_TYPE*       buf,
                                streamsize          buf_size);
 
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2003/10/22 18:14:16  lavr
+ * Change base class of CPushback_Streambuf into CNcbiStreambuf
+ *
  * Revision 1.12  2003/09/22 20:26:56  lavr
  * Undef HAVE_BUGGY_IOS_CALLBACKS before defining
  *

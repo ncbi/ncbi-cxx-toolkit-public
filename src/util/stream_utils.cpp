@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
  *  the original one in the stream, when the data are pushed back.
  */
 
-class CPushback_Streambuf : public streambuf
+class CPushback_Streambuf : public CNcbiStreambuf
 {
     friend struct CStreamUtils;
 
@@ -320,7 +320,7 @@ void CPushback_Streambuf::x_DropBuffer()
  */
 
 
-void CStreamUtils::Pushback(istream&      is,
+void CStreamUtils::Pushback(CNcbiIstream& is,
                             CT_CHAR_TYPE* buf,
                             streamsize    buf_size,
                             void*         del_ptr)
@@ -355,7 +355,7 @@ void CStreamUtils::Pushback(istream&      is,
 }
 
 
-void CStreamUtils::Pushback(istream&            is,
+void CStreamUtils::Pushback(CNcbiIstream&       is,
                             const CT_CHAR_TYPE* buf,
                             streamsize          buf_size)
 {
@@ -365,7 +365,7 @@ void CStreamUtils::Pushback(istream&            is,
 }
 
 
-streamsize CStreamUtils::Readsome(istream&      is,
+streamsize CStreamUtils::Readsome(CNcbiIstream& is,
                                   CT_CHAR_TYPE* buf,
                                   streamsize    buf_size)
 {
@@ -426,6 +426,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.27  2003/10/22 18:11:24  lavr
+ * Change base class of CPushback_Streambuf into CNcbiStreambuf
+ *
  * Revision 1.26  2003/10/16 19:37:36  lavr
  * Add comments and indentation of conditionals in Readsome()
  *
