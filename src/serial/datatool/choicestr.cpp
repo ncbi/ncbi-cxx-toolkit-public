@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/10/06 18:40:15  grichenk
+* Added e_MaxChoice enum
+*
 * Revision 1.44  2003/05/08 16:59:08  gouriano
 * added comment about the meaning of typedef for each class member
 *
@@ -390,6 +393,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
         }
         code.ClassPublic() << "\n"
+            "    };\n";
+        code.ClassPublic() <<
+            "    enum E_ChoiceStopper {\n"
+            "        e_MaxChoice = " << currIndex+1 << " // == "
+                << m_Variants.rbegin()->cName << "+1\n"
             "    };\n"
             "\n";
     }
