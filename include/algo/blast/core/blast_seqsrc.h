@@ -212,6 +212,8 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetNumSeqs(bssp))(GetDataStructure(bssp), NULL)
 #define BLASTSeqSrcGetMaxSeqLen(bssp) \
     (*GetGetMaxSeqLen(bssp))(GetDataStructure(bssp), NULL)
+#define BLASTSeqSrcGetAvgSeqLen(bssp) \
+    (*GetGetAvgSeqLen(bssp))(GetDataStructure(bssp), NULL)
 #define BLASTSeqSrcGetTotLen(bssp) \
     (*GetGetTotLen(bssp))(GetDataStructure(bssp), NULL)
 #define BLASTSeqSrcGetName(bssp) \
@@ -249,6 +251,7 @@ DECLARE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetAvgSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetName, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDefinition, BlastSeqSrc*);
