@@ -53,6 +53,7 @@ USRP_KET = || $(NOTK_BRA) exit 1 $(NOTK_KET) ; \
    done ; \
 fi
 
+MAKE_LIB = $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_BRA = \
 if test ! -z "$(LIB_PROJ)"  -o  ! -z "$(EXPENDABLE_LIB_PROJ)" ; then \
    x_project="$(LIB_PROJ) - $(EXPENDABLE_LIB_PROJ)" ; \
@@ -60,7 +61,7 @@ if test ! -z "$(LIB_PROJ)"  -o  ! -z "$(EXPENDABLE_LIB_PROJ)" ; then \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if $(MAKE) -q -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS) requirements ; then \
-        $(RWL) -base "make_$$i" $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
+        $(RWL) -base "make_$$i" $(MAKE_LIB)
 LIBP_KET = || $(NOTK_BRA) exit 2 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
@@ -68,6 +69,7 @@ LIBP_KET = || $(NOTK_BRA) exit 2 $(NOTK_KET) ; \
    done ; \
 fi
 
+MAKE_APP = $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 @APP_NOBUILD@
 APPP_BRA = \
 if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
@@ -76,7 +78,7 @@ if test ! -z "$(APP_PROJ)"  -o  ! -z "$(EXPENDABLE_APP_PROJ)" ; then \
    for i in $$x_project ; do \
      if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
      if $(MAKE) -q -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS) requirements ; then \
-        $(RWL) -base "make_$$i" $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
+        $(RWL) -base "make_$$i" $(MAKE_APP)
 APPP_KET = || $(NOTK_BRA) exit 3 $(NOTK_KET) ; \
      else \
        echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
