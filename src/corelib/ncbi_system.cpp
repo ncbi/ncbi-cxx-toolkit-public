@@ -33,6 +33,9 @@
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/07/24 13:19:14  ivanov
+* Remove semicolon after functions header (for NCBI_OS_WIN)
+*
 * Revision 1.8  2001/07/23 16:09:26  ivanov
 * Added possibility using user defined dump print handler (fix comment)
 *
@@ -275,7 +278,7 @@ bool SetHeapLimit(size_t max_heap_size,
 
 bool SetHeapLimit(size_t max_heap_size, 
                   TLimitsPrintHandler handler, 
-                  TLimitsPrintParameter parameter);
+                  TLimitsPrintParameter parameter)
 {
   return false;
 }
@@ -342,7 +345,7 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 
 bool SetCpuTimeLimit(size_t max_cpu_time,
                   TLimitsPrintHandler handler, 
-                  TLimitsPrintParameter parameter);
+                  TLimitsPrintParameter parameter)
 
 {
     return false;
