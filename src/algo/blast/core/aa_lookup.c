@@ -385,7 +385,7 @@ Int4 BlastAaLookupIndexQueries(LookupTablePtr lookup,
     }
 
   /* free neighbor array*/
-  Free(lookup->neighbors);
+  MemFree(lookup->neighbors);
   lookup->neighbors=NULL;
 
   return 0;
