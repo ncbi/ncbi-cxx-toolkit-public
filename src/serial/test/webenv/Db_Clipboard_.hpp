@@ -211,7 +211,7 @@ int& CDb_Clipboard_Base::SetCount(void)
 inline
 bool CDb_Clipboard_Base::IsSetItems(void) const
 {
-    return m_Items;
+    return m_Items.NotEmpty();
 }
 
 inline

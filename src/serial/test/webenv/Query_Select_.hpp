@@ -153,7 +153,7 @@ std::string& CQuery_Select_Base::SetDb(void)
 inline
 bool CQuery_Select_Base::IsSetItems(void) const
 {
-    return m_Items;
+    return m_Items.NotEmpty();
 }
 
 inline

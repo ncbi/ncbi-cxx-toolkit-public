@@ -266,7 +266,7 @@ void CQuery_Related_Base::C_Items::SetItemCount(const int& value)
 inline
 bool CQuery_Related_Base::IsSetBase(void) const
 {
-    return m_Base;
+    return m_Base.NotEmpty();
 }
 
 inline
@@ -373,7 +373,7 @@ std::string& CQuery_Related_Base::SetDb(void)
 inline
 bool CQuery_Related_Base::IsSetItems(void) const
 {
-    return m_Items;
+    return m_Items.NotEmpty();
 }
 
 inline

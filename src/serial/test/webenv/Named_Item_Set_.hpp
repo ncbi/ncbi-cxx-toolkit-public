@@ -125,7 +125,7 @@ private:
 inline
 bool CNamed_Item_Set_Base::IsSetName(void) const
 {
-    return m_Name;
+    return m_Name.NotEmpty();
 }
 
 inline
@@ -192,7 +192,7 @@ std::string& CNamed_Item_Set_Base::SetDb(void)
 inline
 bool CNamed_Item_Set_Base::IsSetItem_Set(void) const
 {
-    return m_Item_Set;
+    return m_Item_Set.NotEmpty();
 }
 
 inline

@@ -122,7 +122,7 @@ private:
 inline
 bool CNamed_Query_Base::IsSetName(void) const
 {
-    return m_Name;
+    return m_Name.NotEmpty();
 }
 
 inline
@@ -149,7 +149,7 @@ CName& CNamed_Query_Base::SetName(void)
 inline
 bool CNamed_Query_Base::IsSetTime(void) const
 {
-    return m_Time;
+    return m_Time.NotEmpty();
 }
 
 inline
@@ -176,7 +176,7 @@ CTime& CNamed_Query_Base::SetTime(void)
 inline
 bool CNamed_Query_Base::IsSetCommand(void) const
 {
-    return m_Command;
+    return m_Command.NotEmpty();
 }
 
 inline

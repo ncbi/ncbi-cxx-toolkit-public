@@ -223,7 +223,7 @@ int& CQuery_History_Base::SetSeqNumber(void)
 inline
 bool CQuery_History_Base::IsSetTime(void) const
 {
-    return m_Time;
+    return m_Time.NotEmpty();
 }
 
 inline
@@ -250,7 +250,7 @@ CTime& CQuery_History_Base::SetTime(void)
 inline
 bool CQuery_History_Base::IsSetCommand(void) const
 {
-    return m_Command;
+    return m_Command.NotEmpty();
 }
 
 inline
