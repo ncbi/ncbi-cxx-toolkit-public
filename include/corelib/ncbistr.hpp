@@ -98,14 +98,11 @@ public:
 //    String-processing utilities
 //
 
-// A maximal double precision used in the double to string conversion
-#define MAX_DOUBLE_PRECISION  200
-
 class NCBI_XNCBI_EXPORT NStr
 {
 public:
-    /// convert "str" to a (non-negative) "int" value.
-    /// return "-1" if "str" contains any symbols other than [0-9], or
+    /// Convert "str" to a (non-negative) "int" value.
+    /// Return "-1" if "str" contains any symbols other than [0-9], or
     /// if it represents a number that does not fit into "int".
     static int StringToNumeric(const string& str);
 
@@ -132,14 +129,19 @@ public:
     static Uint8         StringToUInt8(const string& str);
 
     /// X-to-String conversion functions
-    static string IntToString(long value, bool sign = false);
-    static string UIntToString(unsigned long value);
-    static string Int8ToString(Int8 value, bool sign = false);
-    static string UInt8ToString(Uint8 value);
-    static string DoubleToString(double value);
-    // NOTE: if precission is more that MAX_DOUBLE_PRECISION,
-    //       then it will be set to MAX_DOUBLE_PRECISION
-    static string DoubleToString(double value, unsigned int precision);
+    static string    IntToString(long value, bool sign = false);
+    static string    UIntToString(unsigned long value);
+    static string    Int8ToString(Int8 value, bool sign = false);
+    static string    UInt8ToString(Uint8 value);
+    static string    DoubleToString(double value);
+    /// Note: If precission is more that maximum for current platform,
+    //        then it will be truncated to this maximum.
+    static string    DoubleToString(double value, unsigned int precision);
+    /// Put result of the conversion into buffer "buf" size of "buf_size".
+    /// Return the number of bytes stored in "buf", not counting the
+    /// terminating '\0'.
+    static SIZE_TYPE DoubleToString(double value, unsigned int precision,
+                                    char* buf, SIZE_TYPE buf_size);
     static string PtrToString(const void* ptr);
 
     /// Return one of: 'true, 'false'
@@ -714,6 +716,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.33  2003/01/21 20:08:28  ivanov
+ * Added function NStr::DoubleToString(value, precision, buf, buf_size)
+ *
  * Revision 1.32  2003/01/14 21:16:12  kuznets
  * +NStr::Tokenize
  *

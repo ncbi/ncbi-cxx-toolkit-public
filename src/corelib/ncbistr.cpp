@@ -446,16 +446,38 @@ string NStr::DoubleToString(double value)
 }
 
 
+// A maximal double precision used in the double to string conversion
+#if defined(NCBI_OS_MSWIN)
+    const SIZE_TYPE kMaxDoublePrecision = 200;
+#else
+    const SIZE_TYPE kMaxDoublePrecision = 308;
+#endif
+// A maximal size of a double value in a string form.
+// Exponent size + sign + dot + ending '\0' + max.precision
+const SIZE_TYPE kMaxDoubleStringSize = 308 + 3 + kMaxDoublePrecision;
+
+
 string NStr::DoubleToString(double value, unsigned int precision)
 {
-    // Exponent size + sign + dot + ending '\0' + max.precision
-    char buffer[308 + 3 + MAX_DOUBLE_PRECISION];
-    if ( precision > MAX_DOUBLE_PRECISION ) {
-        precision = MAX_DOUBLE_PRECISION;
-    }
-    ::sprintf(buffer, "%.*f", precision, value);
+    char buffer[kMaxDoubleStringSize];
+    SIZE_TYPE n = DoubleToString(value, precision, buffer,
+                                 kMaxDoubleStringSize);
+    buffer[n] = '\0';
     return buffer;
+}
 
+
+SIZE_TYPE NStr::DoubleToString(double value, unsigned int precision,
+                               char* buf, SIZE_TYPE buf_size)
+{
+    char buffer[kMaxDoubleStringSize];
+    if ( precision > kMaxDoublePrecision ) {
+        precision = kMaxDoublePrecision;
+    }
+    SIZE_TYPE n = ::sprintf(buffer, "%.*f", precision, value);
+    SIZE_TYPE n_copy = min(n, buf_size);
+    memcpy(buf, buffer, n_copy);
+    return n_copy;
 }
 
 
@@ -569,8 +591,6 @@ vector<string> NStr::Tokenize(const string& str, const string& delim,
     }
     
     size_t pos, prev_pos, len;
-
-    const char* pc = str.c_str();
 
     // Count number of tokens to determine the array size
     size_t tokens = 0;
@@ -892,6 +912,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.66  2003/01/21 20:08:01  ivanov
+ * Added function NStr::DoubleToString(value, precision, buf, buf_size)
+ *
  * Revision 1.65  2003/01/14 22:13:56  kuznets
  * Overflow check reimplemented for NStr::StringToInt
  *
