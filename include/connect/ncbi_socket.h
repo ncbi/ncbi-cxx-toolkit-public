@@ -77,6 +77,7 @@
  *  SOCK_SetInterruptOnSignal
  *  SOCK_SetReuseAddressAPI
  *  SOCK_SetReuseAddress
+ *  SOCK_DisableOSSendDelay
  *
  * Datagram Socket:
  *
@@ -755,6 +756,19 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetReadOnWrite
  );
 
 
+/* Control OS-defined send strategy by disabling/enabling TCP
+ * Nagle algorithm that packs multiple requests into a single
+ * frame and thus transferring data in fewer transactions,
+ * miminizing the network traffic.  Some applications may find
+ * it useful to disable this default behavior for the sake
+ * of their performance increase.
+ */
+extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
+(SOCK        sock,
+ int/*bool*/ on_off
+ );
+
+
 
 /******************************************************************************
  *  Connectionless (datagram) sockets
@@ -966,6 +980,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.51  2004/10/19 18:05:07  lavr
+ * +SOCK_DisableOSSendDelay
+ *
  * Revision 6.50  2004/07/23 19:04:38  lavr
  * LSOCK_CreateEx(): last parameter to become flags (bitmask)
  *
