@@ -310,6 +310,8 @@ public:
         enum {ePosition = N};
     };
 
+    template <size_t N> friend class CClass;
+
     static void Declare(const char* name, const char* descr = 0)
     {
         CExtType& type = GetType();
@@ -367,12 +369,11 @@ private:
 
 private:
     typedef vector<TMethodVarArgsFunc> TMethodList;
+    static TMethodList sm_MethodList;
 
     static TMethodList& GetMethodList(void)
     {
-        static TMethodList m_MethodList;
-
-        return m_MethodList;
+        return sm_MethodList;
     }
 };
 
@@ -482,6 +483,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.2  2005/01/18 21:31:05  ucko
+* Tweak to fix build errors with GCC 2.95.
+*
 * Revision 1.1  2005/01/18 19:26:07  ssikorsk
 * Initial version of a Python DBAPI module
 *
