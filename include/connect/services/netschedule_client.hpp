@@ -94,6 +94,28 @@ public:
 
     virtual ~CNetScheduleClient();
 
+    /// Enable or disable rerust rate control (on by default)
+    ///
+    /// On some systems if we start sending too many requests at a time
+    /// we will be running out of TCP/IP ports. Request control rate
+    /// automatically introduce delays if client start sending too many
+    /// requests
+    ///
+    /// Important!
+    /// Rate control unit is shared between different instances of
+    /// CNetScheduleClient and NOT thread syncronized. Disable it if
+    /// you need competing threads all use CNetScheduleClient 
+    /// (even separate instances).
+    ///
+    void SetRequestRateControl(bool on_off);
+
+    /// Return TRUE if request rate control is ON
+    bool RequestRateControl() const { return m_RequestRateControl; }
+
+
+
+    // -----------------------------------------------------------------
+
     /// Job status codes
     ///
     enum EJobStatus
@@ -127,12 +149,22 @@ public:
     ///    Job identification string
     void CancelJob(const string& job_key);
 
-    /// Get a pending job. Job receives running status.
+
+
+    /// Get a pending job. 
+    /// When function returns TRUE and job_key job receives running status,
+    /// client(worker node) becomes responsible for execution or returning 
+    /// the job. If there are no jobs in the queue function returns FALSE 
+    /// immediately and you have to repeat the call (after a delay).
+    /// Consider WaitJob method as an alternative.
     ///
     /// @param job_key
     ///     Job key
     /// @param input
     ///     Job input data (NetCache key). 
+    /// @param udp_port
+    ///     Used to instruct server that specified client does NOT
+    ///     listen to notifications (opposed to WaitJob)
     /// @return
     ///     TRUE if job has been returned from the queue.
     ///     FALSE means queue is empty or for some reason scheduler
@@ -140,9 +172,46 @@ public:
     ///     In this case worker node should pause and come again later
     ///     for a new job.
     ///
-    bool GetJob(string* job_key, string* input);
+    /// @sa WaitJob
+    ///
+    bool GetJob(string* job_key, 
+                string* input, 
+                unsigned short udp_port = 0);
 
-    /// Put job result (job should be received by GetJob())
+    /// Wait for a job to come. 
+    /// Variant of GetJob method. The difference is that if there no 
+    /// pending jobs, method waits for a notification from the server.
+    /// 
+    /// NetSchedule server sends UDP packets with queue notification 
+    /// information. This is unreliable protocol, some notification may be
+    /// lost. WaitJob internally makes an attempt to connect the server using
+    /// reliable statefull TCP/IP, so even if some UDP notifications are
+    /// lost jobs will be still delivered (with a delay).
+    /// 
+    /// When new job arrives to the queue server may not send the notification
+    /// to all clients immediately, it depends on specific queue notification 
+    /// timeout
+    ///
+    /// @param wait_time
+    ///    Time in seconds function waits for new jobs to come.
+    ///    If there are no jobs in the period of time, function retuns FALSE
+    ///    Do not choose too long waiting time because it increases chances of
+    ///    UDP notification loss. (60-320 seconds should be a reasonable value)
+    ///
+    /// @param udp_port
+    ///    UDP port to listen for queue notifications. Try to avoid many 
+    ///    client programs (or threads) listening on the same port. Message
+    ///    is going to be delivered to just only one listener.
+    ///
+    /// @sa GetJob
+    ///
+    bool WaitJob(string*        job_key, 
+                 string*        input, 
+                 unsigned       wait_time,
+                 unsigned short udp_port);
+
+
+    /// Put job result (job should be received by GetJob() or WaitJob())
     /// 
     /// @param job_key
     ///     Job key
@@ -164,7 +233,7 @@ public:
                          string*       output);
 
     /// Transfer job to the "Returned" status. It will be
-    /// re-exucuted after a while. 
+    /// re-executed after a while. 
     ///
     /// Node may decide to return the job if it cannot process it right
     /// now (does not have resources, being asked to shutdown, etc.)
@@ -205,12 +274,21 @@ protected:
                          const string& job_key,
                          string*       answer);
 
+    void ParseGetJobResponse(string*        job_key, 
+                             string*        input, 
+                             const string&  response);
+
+    void WaitJobNotification(unsigned       wait_time,
+                             unsigned short udp_port);
+
+
 private:
     CNetScheduleClient(const CNetScheduleClient&);
     CNetScheduleClient& operator=(const CNetScheduleClient&);
 
 protected:
     string         m_Queue;
+    bool           m_RequestRateControl;
 
 private:
     string         m_Tmp; ///< Temporary string
@@ -298,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/03/04 12:04:31  kuznets
+ * Implemented WaitJob() method
+ *
  * Revision 1.6  2005/02/28 18:39:33  kuznets
  * +ReturnJob()
  *

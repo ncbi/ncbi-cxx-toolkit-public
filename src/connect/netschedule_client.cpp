@@ -36,6 +36,7 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <connect/netschedule_client.hpp>
+#include <util/request_control.hpp>
 #include <memory>
 
 
@@ -43,6 +44,14 @@ BEGIN_NCBI_SCOPE
 
 
 const string kNetSchedule_KeyPrefix = "JSID";
+
+/// Request rate controller (one for all client instances)
+/// Default limitation is 20000 requests per minute
+///
+/// @internal
+///
+static CRequestRateControl s_Throttler(20000, CTimeSpan(60,0));
+
 
 
 unsigned CNetSchedule_GetJobId(const string&  key_str)
@@ -146,8 +155,6 @@ void CNetSchedule_GenerateJobKey(string*        key,
 
 
 
-
-
 CNetScheduleClient::CNetScheduleClient(const string& client_name,
                                        const string& queue_name)
     : CNetServiceClient(client_name),
@@ -168,7 +175,8 @@ CNetScheduleClient::CNetScheduleClient(CSocket*      sock,
                                        const string& client_name,
                                        const string& queue_name)
     : CNetServiceClient(sock, client_name),
-      m_Queue(queue_name)
+      m_Queue(queue_name),
+      m_RequestRateControl(true)
 {
     if (m_Sock) {
         m_Sock->DisableOSSendDelay();
@@ -180,12 +188,19 @@ CNetScheduleClient::~CNetScheduleClient()
 {
 }
 
+void CNetScheduleClient::SetRequestRateControl(bool on_off)
+{
+    m_RequestRateControl = on_off;
+}
 
 string CNetScheduleClient::SubmitJob(const string& input)
 {
     if (input.length() > kNetScheduleMaxDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong, 
             "Input data too long.");
+    }
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
     }
 
     CheckConnect(kEmptyStr);
@@ -213,6 +228,10 @@ string CNetScheduleClient::SubmitJob(const string& input)
 
 void CNetScheduleClient::CancelJob(const string& job_key)
 {
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
     CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
 
@@ -226,6 +245,10 @@ CNetScheduleClient::GetStatus(const string& job_key,
                               int*          ret_code,
                               string*       output)
 {
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
     EJobStatus status;
 
     CheckConnect(job_key);
@@ -276,12 +299,34 @@ CNetScheduleClient::GetStatus(const string& job_key,
     return status;
 }
 
-bool CNetScheduleClient::GetJob(string* job_key, string* input)
+bool CNetScheduleClient::GetJob(string*        job_key, 
+                                string*        input,
+                                unsigned short udp_port)
 {
+    _ASSERT(job_key);
+    _ASSERT(input);
+
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
     CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
 
-    CommandInitiate("GET ", kEmptyStr, &m_Tmp);
+    if (udp_port == 0) {
+        CommandInitiate("GET ", kEmptyStr, &m_Tmp);
+    } else {
+        MakeCommandPacket(&m_Tmp, "GET ");
+        m_Tmp.append(NStr::IntToString(udp_port));
+
+        WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+        WaitForServer();
+
+        if (!ReadStr(*m_Sock, &m_Tmp)) {
+            NCBI_THROW(CNetServiceException, eCommunicationError, 
+                    "Communication error");
+        }
+    }
 
     TrimPrefix(&m_Tmp);
 
@@ -289,11 +334,154 @@ bool CNetScheduleClient::GetJob(string* job_key, string* input)
         return false;
     }
 
+    ParseGetJobResponse(job_key, input, m_Tmp);
+
+    _ASSERT(!job_key->empty());
+    _ASSERT(!input->empty());
+
+    return true;
+}
+
+
+
+bool CNetScheduleClient::WaitJob(string*    job_key, 
+                                 string*    input, 
+                                 unsigned   wait_time,
+                                 unsigned short udp_port)
+{
+    _ASSERT(job_key);
+    _ASSERT(input);
+
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
+    {{
+    CheckConnect(kEmptyStr);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "WGET ");
+    m_Tmp.append(NStr::IntToString(udp_port));
+    m_Tmp.append(" ");
+    m_Tmp.append(NStr::IntToString(wait_time));
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+
+    }}
+
+    TrimPrefix(&m_Tmp);
+    if (!m_Tmp.empty()) {
+        ParseGetJobResponse(job_key, input, m_Tmp);
+
+        _ASSERT(!job_key->empty());
+        _ASSERT(!input->empty());
+
+        return true;
+    }
+
+    WaitJobNotification(wait_time, udp_port);
+
+    // no matter is WaitResult we re-try the request
+    // using reliable comm.level and notify server that
+    // we no longer on the UDP socket
+
+    return GetJob(job_key, input, udp_port);
+}
+
+
+void CNetScheduleClient::WaitJobNotification(unsigned       wait_time,
+                                             unsigned short udp_port)
+{
+    _ASSERT(wait_time);
+
+    EIO_Status status;
+    int    sig_buf[4];
+    const char* sig = "NCBI_JSQ_";
+    memcpy(sig_buf, sig, 8);
+
+    int    buf[1024/sizeof(int)];
+    char*  chr_buf = (char*) buf;
+
+    STimeout to;
+    to.sec = wait_time;
+    to.usec = 0;
+
+
+    CDatagramSocket  udp_socket;
+    udp_socket.SetReuseAddress(eOn);
+    status = udp_socket.Bind(udp_port);
+    if (eIO_Success != status) {
+        return;
+    }
+
+    time_t curr_time, start_time, end_time;
+
+    start_time = time(0);
+    end_time = start_time + wait_time;
+
+    // minilal length is prefix "NCBI_JSQ_" + queue length
+    size_t min_msg_len = m_Queue.length() + 9;
+
+    for (;true;) {
+
+        curr_time = time(0);
+        to.sec = end_time - curr_time;  // remaining
+        if (to.sec <= 0) {
+            break;
+        }
+
+        status = udp_socket.Wait(&to);
+        if (eIO_Success != status) {
+            continue;
+        }
+
+        size_t msg_len;
+        status = udp_socket.Recv(buf, sizeof(buf), &msg_len, &m_Tmp);
+        if (eIO_Success == status) {
+
+            // Analyse the message content
+            //
+            // this is a performance critical code, if this is not
+            // our message we need to get back to the datagram wait ASAP
+            // (int arithmetic XOR-OR comparison here...)
+            if ((msg_len < min_msg_len) ||
+                ((buf[0] ^ sig_buf[0]) | (buf[1] ^ sig_buf[1]))
+                ) {
+                continue;
+            }
+
+            const char* queue = chr_buf + 9;
+
+            if (strncmp(m_Queue.c_str(), queue, m_Queue.length()) == 0) {
+
+                return;
+            }
+
+        } // if Recv
+
+
+    } // for
+
+}
+
+
+
+void CNetScheduleClient::ParseGetJobResponse(string*        job_key, 
+                                             string*        input, 
+                                             const string&  response)
+{
+    _ASSERT(!response.empty());
+
     input->erase();
     job_key->erase();
 
-    const char* str = m_Tmp.c_str();
-
+    const char* str = response.c_str();
     while (*str && isspace(*str))
         ++str;
 
@@ -309,17 +497,21 @@ bool CNetScheduleClient::GetJob(string* job_key, string* input)
     for (;*str && *str != '"'; ++str) {
         input->push_back(*str);
     }
-
-    _ASSERT(!job_key->empty());
-    _ASSERT(!input->empty());
-
-    return true;
 }
+
+
+
+
+
 
 void CNetScheduleClient::PutResult(const string& job_key, 
                                    int           ret_code, 
                                    const string& output)
 {
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
     CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
 
@@ -343,6 +535,10 @@ void CNetScheduleClient::PutResult(const string& job_key,
 
 void CNetScheduleClient::ReturnJob(const string& job_key)
 {
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
     CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
 
@@ -370,6 +566,10 @@ void CNetScheduleClient::ShutdownServer()
 
 string CNetScheduleClient::ServerVersion()
 {
+    if (m_RequestRateControl) {
+        s_Throttler.Approve(CRequestRateControl::eSleep);
+    }
+
     CheckConnect(kEmptyStr);
     CSockGuard sg(*m_Sock);
 
@@ -504,6 +704,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/04 12:05:46  kuznets
+ * Implemented WaitJob() method
+ *
  * Revision 1.5  2005/02/28 18:39:43  kuznets
  * +ReturnJob()
  *
