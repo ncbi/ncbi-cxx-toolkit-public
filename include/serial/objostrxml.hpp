@@ -91,6 +91,8 @@ public:
     };
     ERealValueFormat GetRealValueFormat(void) const;
     void SetRealValueFormat(ERealValueFormat fmt);
+    void SetEnforcedStdXml(bool set = true);
+    bool GetEnforcedStdXml(void)     {return m_EnforcedStdXml;}
 
 protected:
     virtual void WriteBool(bool data);
@@ -170,6 +172,7 @@ protected:
 
     void CheckStdXml(const CClassTypeInfoBase* classType);
     ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
+    ETypeFamily GetContainerElementTypeFamily(TTypeInfo typeInfo);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
@@ -218,6 +221,7 @@ private:
     void PrintTagName(size_t level);
     bool WillHaveName(TTypeInfo elementType);
     string GetModuleName(TTypeInfo type);
+    bool x_IsStdXml(void) {return m_StdXml || m_EnforcedStdXml;}
 
     enum ETagAction {
         eTagOpen,
@@ -237,6 +241,7 @@ private:
     static string sm_DefaultDTDFilePrefix;
     bool m_Attlist;
     bool m_StdXml;
+    bool m_EnforcedStdXml;
     ERealValueFormat m_RealFmt;
 };
 
@@ -250,6 +255,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/02/05 17:08:51  gouriano
+* added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
+*
 * Revision 1.27  2003/01/22 20:51:10  gouriano
 * more control on how a float value is to be written
 *

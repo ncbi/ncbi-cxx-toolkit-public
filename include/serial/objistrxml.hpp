@@ -52,6 +52,9 @@ public:
 
     virtual string ReadFileHeader(void);
 
+    void SetEnforcedStdXml(bool set = true);
+    bool GetEnforcedStdXml(void)     {return m_EnforcedStdXml;}
+
 protected:
     EPointerType ReadPointerType(void);
     TObjectIndex ReadObjectPointer(void);
@@ -132,6 +135,7 @@ protected:
 
     void CheckStdXml(const CClassTypeInfoBase* classType);
     ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
+    ETypeFamily GetContainerElementTypeFamily(TTypeInfo typeInfo);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
@@ -191,6 +195,7 @@ private:
     char SkipWSAndComments(void);
 
     void UnexpectedMember(const CLightString& id, const CItemsInfo& items);
+    bool x_IsStdXml(void) {return m_StdXml || m_EnforcedStdXml;}
 
     enum ETagState {
         eTagOutside,
@@ -203,6 +208,7 @@ private:
     string m_RejectedTag;
     bool m_Attlist;
     bool m_StdXml;
+    bool m_EnforcedStdXml;
     string m_LastPrimitive;
 };
 
@@ -216,6 +222,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/02/05 17:08:51  gouriano
+* added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
+*
 * Revision 1.22  2003/01/21 19:28:44  gouriano
 * corrected reading containers of primitive types
 *

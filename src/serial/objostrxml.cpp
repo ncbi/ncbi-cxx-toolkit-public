@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/02/05 17:08:00  gouriano
+* added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
+*
 * Revision 1.49  2003/02/04 17:06:25  gouriano
 * added check for NaN in WriteDouble
 *
@@ -254,7 +257,7 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_LastTagAction(eTagClose), m_EndTag(true),
       m_UseDefaultDTDFilePrefix(true),
       m_UsePublicId(true),
-      m_Attlist(false), m_StdXml(false),
+      m_Attlist(false), m_StdXml(false), m_EnforcedStdXml(false),
       m_RealFmt(eRealScientificFormat)
 {
     m_Output.SetBackLimit(1);
@@ -278,6 +281,13 @@ void CObjectOStreamXml::SetRealValueFormat(
     CObjectOStreamXml::ERealValueFormat fmt)
 {
     m_RealFmt = fmt;
+}
+void CObjectOStreamXml::SetEnforcedStdXml(bool set)
+{
+    m_EnforcedStdXml = set;
+    if (m_EnforcedStdXml) {
+        m_StdXml = false;
+    }
 }
 
 
@@ -687,7 +697,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
     case TFrame::eFrameClassMember:
     case TFrame::eFrameChoiceVariant:
         {
-            if (!frame.GetMemberId().HaveNoPrefix()) {
+            if (!x_IsStdXml()) {
                 PrintTagName(level + 1);
                 m_Output.PutChar('_');
             }
@@ -701,7 +711,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
         {
             const TFrame& frame1 = FetchFrameFromTop(level+1);
             PrintTagName(level + 1);
-            if (!m_StdXml) {
+            if (!x_IsStdXml()) {
                 m_Output.PutString("_E");
             }
             return;
@@ -732,14 +742,14 @@ void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
 
 void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
-    if (!m_StdXml) {
+    if (!x_IsStdXml()) {
         OpenTagIfNamed(containerType);
     }
 }
 
 void CObjectOStreamXml::EndContainer(void)
 {
-    if (!m_StdXml) {
+    if (!x_IsStdXml()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
 }
@@ -789,7 +799,7 @@ void CObjectOStreamXml::WriteContainer(const CContainerTypeInfo* cType,
 }
 void CObjectOStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
-    if (m_StdXml && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
+    if (x_IsStdXml() && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
         TopFrame().SetNotag();
     } else {
         OpenStackTag(0);
@@ -888,6 +898,10 @@ void CObjectOStreamXml::CopyNamedType(TTypeInfo namedTypeInfo,
 
 void CObjectOStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
 {
+    if (m_EnforcedStdXml) {
+        m_StdXml = false;
+        return;
+    }
     TMemberIndex first = classType->GetItems().FirstIndex();
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
 }
@@ -903,6 +917,22 @@ ETypeFamily CObjectOStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
         }
     }
     return type;
+}
+
+ETypeFamily CObjectOStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
+{
+    if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* ptr =
+            dynamic_cast<const CPointerTypeInfo*>(typeInfo);
+        if (ptr) {
+            typeInfo = ptr->GetPointedType();
+        }
+    }
+    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
+    const CContainerTypeInfo* ptr =
+        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
+    typeInfo = ptr->GetElementType();
+    return typeInfo->GetTypeFamily();
 }
 
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
@@ -930,7 +960,7 @@ void CObjectOStreamXml::BeginClassMember(const CMemberId& id)
 void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
                                          const CMemberId& id)
 {
-    if (m_StdXml) {
+    if (x_IsStdXml()) {
         if(id.IsAttlist()) {
             if(m_LastTagAction == eTagClose) {
                 OpenTagEndBack();
@@ -939,7 +969,16 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
             TopFrame().SetNotag();
         } else {
             ETypeFamily type = GetRealTypeFamily(memberType);
-            if (type == eTypeFamilyPrimitive && !id.HasNotag()) {
+            bool needTag = true;
+            if (GetEnforcedStdXml()) {
+                if (type == eTypeFamilyContainer) {
+                    needTag = (GetContainerElementTypeFamily(memberType) !=
+                               eTypeFamilyPrimitive);
+                }
+            } else {
+                needTag = (type == eTypeFamilyPrimitive && !id.HasNotag());
+            }
+            if (needTag) {
                 OpenStackTag(0);
             } else {
                 TopFrame().SetNotag();
@@ -1030,10 +1069,19 @@ void CObjectOStreamXml::EndChoice(void)
 void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                            const CMemberId& id)
 {
-    if (m_StdXml) {
+    if (x_IsStdXml()) {
         const CVariantInfo* var_info = choiceType->GetVariantInfo(id.GetName());
         ETypeFamily type = GetRealTypeFamily(var_info->GetTypeInfo());
-        if (type == eTypeFamilyPrimitive && !id.HasNotag()) {
+        bool needTag = true;
+        if (GetEnforcedStdXml()) {
+            if (type == eTypeFamilyContainer) {
+                needTag = (GetContainerElementTypeFamily(
+                    var_info->GetTypeInfo()) != eTypeFamilyPrimitive);
+            }
+        } else {
+            needTag = (type == eTypeFamilyPrimitive && !id.HasNotag());
+        }
+        if (needTag) {
             OpenStackTag(0);
         } else {
             TopFrame().SetNotag();

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/02/05 17:08:01  gouriano
+* added possibility to read/write objects generated from an ASN.1 spec as "standard" XML - without scope prefixes
+*
 * Revision 1.35  2003/01/21 19:32:27  gouriano
 * corrected reading containers of primitive types
 *
@@ -190,7 +193,8 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 }
 
 CObjectIStreamXml::CObjectIStreamXml(void)
-    : m_TagState(eTagOutside), m_Attlist(false), m_StdXml(false)
+    : m_TagState(eTagOutside), m_Attlist(false),
+      m_StdXml(false), m_EnforcedStdXml(false)
 {
 }
 
@@ -206,6 +210,14 @@ ESerialDataFormat CObjectIStreamXml::GetDataFormat(void) const
 string CObjectIStreamXml::GetPosition(void) const
 {
     return "line "+NStr::UIntToString(m_Input.GetLine());
+}
+
+void CObjectIStreamXml::SetEnforcedStdXml(bool set)
+{
+    m_EnforcedStdXml = set;
+    if (m_EnforcedStdXml) {
+        m_StdXml = false;
+    }
 }
 
 static inline
@@ -908,7 +920,7 @@ void CObjectIStreamXml::OpenStackTag(size_t level)
     CLightString tagName;
     if (m_RejectedTag.empty()) {
         tagName = ReadName(BeginOpeningTag());
-        if (!m_StdXml) {
+        if (!x_IsStdXml()) {
             CLightString rest = SkipStackTagName(tagName, level);
             if ( !rest.Empty() )
                 ThrowError(fFormatError, "unexpected tag");
@@ -928,7 +940,7 @@ void CObjectIStreamXml::CloseStackTag(size_t level)
             m_TagState = eTagInsideClosing;
         } else {
             CLightString tagName = ReadName(BeginClosingTag());
-            if (!m_StdXml) {
+            if (!x_IsStdXml()) {
                 CLightString rest = SkipStackTagName(tagName, level);
                 if ( !rest.Empty() )
                     ThrowError(fFormatError, "unexpected tag");
@@ -987,14 +999,14 @@ bool CObjectIStreamXml::NextTagIsClosing(void)
 
 void CObjectIStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
-    if (!m_StdXml) {
+    if (!x_IsStdXml()) {
         OpenTagIfNamed(containerType);
     }
 }
 
 void CObjectIStreamXml::EndContainer(void)
 {
-    if (!m_StdXml) {
+    if (!x_IsStdXml()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
 }
@@ -1058,7 +1070,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
         m_LastPrimitive.erase();
         return false;
     }
-    if (m_StdXml) {
+    if (x_IsStdXml()) {
         CLightString tagName;
         TTypeInfo type = elementType;
         // this is to handle STL containers of primitive types
@@ -1101,7 +1113,7 @@ bool CObjectIStreamXml::HasMoreElements(TTypeInfo elementType)
 
 void CObjectIStreamXml::BeginArrayElement(TTypeInfo elementType)
 {
-    if (m_StdXml && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
+    if (x_IsStdXml() && GetRealTypeFamily(elementType) != eTypeFamilyPrimitive) {
         TopFrame().SetNotag();
     } else {
         OpenStackTag(0);
@@ -1190,6 +1202,10 @@ void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
 
 void CObjectIStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
 {
+    if (m_EnforcedStdXml) {
+        m_StdXml = false;
+        return;
+    }
     TMemberIndex first = classType->GetItems().FirstIndex();
     m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
 }
@@ -1207,11 +1223,27 @@ ETypeFamily CObjectIStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
     return type;
 }
 
+ETypeFamily CObjectIStreamXml::GetContainerElementTypeFamily(TTypeInfo typeInfo)
+{
+    if (typeInfo->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* ptr =
+            dynamic_cast<const CPointerTypeInfo*>(typeInfo);
+        if (ptr) {
+            typeInfo = ptr->GetPointedType();
+        }
+    }
+    _ASSERT(typeInfo->GetTypeFamily() == eTypeFamilyContainer);
+    const CContainerTypeInfo* ptr =
+        dynamic_cast<const CContainerTypeInfo*>(typeInfo);
+    typeInfo = ptr->GetElementType();
+    return typeInfo->GetTypeFamily();
+}
+
 
 void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
     CheckStdXml(classInfo);
-    if (m_StdXml) {
+    if (x_IsStdXml()) {
         if (m_Attlist || HasAttlist()) {
             TopFrame().SetNotag();
         } else {
@@ -1263,7 +1295,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
     }
     TMemberIndex ind = classType->GetMembers().Find(tagName);
     if ( ind != kInvalidMember ) {
-        if (m_StdXml) {
+        if (x_IsStdXml()) {
             return ind;
         }
     }
@@ -1338,16 +1370,25 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
         }
     } else {
         const CMemberInfo *mem_info = classType->GetMemberInfo(ind);
-        if (m_StdXml) {
+        if (x_IsStdXml()) {
             ETypeFamily type = GetRealTypeFamily(mem_info->GetTypeInfo());
-            if (type != eTypeFamilyPrimitive) {
+            bool needUndo = false;
+            if (GetEnforcedStdXml()) {
+                if (type == eTypeFamilyContainer) {
+                    needUndo = (GetContainerElementTypeFamily(
+                        mem_info->GetTypeInfo()) == eTypeFamilyPrimitive);
+                }
+            } else {
+                needUndo = (type != eTypeFamilyPrimitive);
+            }
+            if (needUndo) {
                 TopFrame().SetNotag();
                 UndoClassMember();
             }
             return ind;
         }
     }
-    if (m_StdXml) {
+    if (x_IsStdXml()) {
         UndoClassMember();
         return kInvalidMember;
     }
@@ -1420,16 +1461,25 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
         }
     } else {
         const CVariantInfo *var_info = choiceType->GetVariantInfo(ind);
-        if (m_StdXml) {
+        if (x_IsStdXml()) {
             ETypeFamily type = GetRealTypeFamily(var_info->GetTypeInfo());
-            if (type != eTypeFamilyPrimitive) {
+            bool needUndo = false;
+            if (GetEnforcedStdXml()) {
+                if (type == eTypeFamilyContainer) {
+                    needUndo = (GetContainerElementTypeFamily(
+                        var_info->GetTypeInfo()) == eTypeFamilyPrimitive);
+                }
+            } else {
+                needUndo = (type != eTypeFamilyPrimitive);
+            }
+            if (needUndo) {
                 TopFrame().SetNotag();
                 UndoClassMember();
             }
             return ind;
         }
     }
-    if (m_StdXml) {
+    if (x_IsStdXml()) {
         UndoClassMember();
         return kInvalidMember;
     }
