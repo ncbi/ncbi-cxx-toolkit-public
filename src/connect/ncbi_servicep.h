@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2000/12/29 18:12:51  lavr
+ * SERV_Print added to private interface
+ *
  * Revision 6.5  2000/12/06 22:21:27  lavr
  * SERV_Print added to private interface
  *
@@ -93,8 +96,9 @@ int/*bool*/ SERV_Update(SERV_ITER iter,
 
 
 /* Private interface: print and return the HTTP-compliant header portion
- * (<CR><LF> separated lines) out of the information contained in the iterator;
- * to be used in mapping requests to DISPD. Return value must be 'free'd.
+ * (<CR><LF> separated lines, including the last line) out of the information
+ * contained in the iterator; to be used in mapping requests to DISPD.
+ * Return value must be 'free'd.
  */
 char* SERV_Print(SERV_ITER iter);
 
