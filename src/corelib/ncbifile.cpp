@@ -1116,6 +1116,8 @@ string CFile::GetTmpName(ETmpFileCreationMode mode)
 }
 
 
+#if !defined(NCBI_OS_UNIX)
+
 static string s_StdGetTmpName(const char* dir, const char* prefix)
 {
     char* filename = tempnam(dir, prefix);
@@ -1126,6 +1128,8 @@ static string s_StdGetTmpName(const char* dir, const char* prefix)
     free(filename);
     return str;
 }
+
+#endif
 
 
 string CFile::GetTmpNameEx(const string&        dir, 
@@ -1965,6 +1969,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.73  2004/04/21 11:24:53  ivanov
+ * Define s_StdGetTmpName() for all platforms except NCBI_OS_UNIX
+ *
  * Revision 1.72  2004/03/17 15:39:54  ivanov
  * CFile:: Fixed possible race condition concerned with temporary file name
  * generation. Added ETmpFileCreationMode enum. Fixed GetTmpName[Ex] and
