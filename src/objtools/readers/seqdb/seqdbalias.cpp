@@ -137,9 +137,11 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
     m_Values[name] = value;
 }
 
-void CSeqDBAliasNode::x_ReadValues(const string & fn, bool use_mmap)
+void CSeqDBAliasNode::x_ReadValues(const string  & fn,
+                                   bool            use_mmap)
 {
-    CSeqDBRawFile af(use_mmap);
+    CSeqDBMemPool mempool;
+    CSeqDBRawFile af(mempool, use_mmap);
     af.Open(fn);
     
     Uint4 file_length = af.GetFileLength();

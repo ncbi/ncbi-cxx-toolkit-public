@@ -60,11 +60,15 @@ using namespace ncbi::objects;
 
 class CSeqDBVol : public CObject {
 public:
-    CSeqDBVol(const string & name, char prot_nucl, bool use_mmap)
-        : m_VolName(name),
-          m_Idx(name, prot_nucl, use_mmap),
-          m_Seq(name, prot_nucl, use_mmap),
-          m_Hdr(name, prot_nucl, use_mmap)
+    CSeqDBVol(CSeqDBMemPool & mempool,
+              const string  & name,
+              char            prot_nucl,
+              bool            use_mmap)
+        : m_MemPool(mempool),
+          m_VolName(name),
+          m_Idx(mempool, name, prot_nucl, use_mmap),
+          m_Seq(mempool, name, prot_nucl, use_mmap),
+          m_Hdr(mempool, name, prot_nucl, use_mmap)
     {
     }
     
@@ -73,8 +77,6 @@ public:
     Int4 GetSeqLengthApprox(Uint4 oid);
     
     CRef<CBlast_def_line_set> GetHdr(Uint4 oid);
-    
-    bool RetSequence(const char ** buffer);
     
     char GetSeqType(void);
     
@@ -103,17 +105,17 @@ public:
     
 private:
     CRef<CBlast_def_line_set> x_GetHdr(Uint4 oid);
-    bool x_RetSequence(const char ** buffer);
     char x_GetSeqType(void);
     bool x_GetAmbChar(Uint4 oid, vector<Int4> ambchars);
     Int4 x_GetSequence(Int4 oid, const char ** buffer);
     Int4 x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code);
     
-    string        m_VolName;
-    CFastMutex    m_Lock;
-    CSeqDBIdxFile m_Idx;
-    CSeqDBSeqFile m_Seq;
-    CSeqDBHdrFile m_Hdr;
+    CSeqDBMemPool & m_MemPool;
+    string          m_VolName;
+    CFastMutex      m_Lock;
+    CSeqDBIdxFile   m_Idx;
+    CSeqDBSeqFile   m_Seq;
+    CSeqDBHdrFile   m_Hdr;
 };
 
 END_NCBI_SCOPE

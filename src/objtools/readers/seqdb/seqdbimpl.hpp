@@ -36,6 +36,7 @@
 /// is seperated from that class so that various implementation
 /// details of CSeqDB are kept from the public interface.
 
+#include "seqdbmempool.hpp"
 #include "seqdbvolset.hpp"
 #include "seqdbalias.hpp"
 #include "seqdboidlist.hpp"
@@ -82,6 +83,7 @@ public:
     bool   CheckOrFindOID(Uint4 & next_oid);
     
 private:
+    CSeqDBMemPool       m_MemPool;
     CSeqDBAliasFile     m_Aliases;
     CSeqDBVolSet        m_VolSet;
     CRef<CSeqDBOIDList> m_OIDList;

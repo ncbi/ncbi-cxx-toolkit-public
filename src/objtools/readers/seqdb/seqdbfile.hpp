@@ -35,11 +35,13 @@
 /// These objects define access to the various database component
 /// files, such as name.pin, name.phr, name.psq, and so on.
 
+#include "seqdbmempool.hpp"
+
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
-#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <objtools/readers/seqdb/seqdbcommon.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -52,14 +54,15 @@ BEGIN_NCBI_SCOPE
 
 class CSeqDBRawFile : public CObject {
 public:
-    CSeqDBRawFile(bool use_mmap)
-        : m_UseMMap(use_mmap),
+    CSeqDBRawFile(CSeqDBMemPool & mempool, bool use_mmap)
+        : m_MemPool(mempool),
+          m_UseMMap(use_mmap),
           m_Mapped (0),
           m_Opened (false),
           m_Offset (0)
     {
     }
-
+    
     ~CSeqDBRawFile()
     {
         Clear();
@@ -76,11 +79,6 @@ public:
     }
     
     const char * GetRegion(Uint4 start, Uint4 end);
-    
-    bool RetRegion(const char * buffer)
-    {
-        return x_DelRegionHandle(buffer);
-    }
     
     void SetFileOffset(Uint4 offset)
     {
@@ -113,54 +111,15 @@ private:
     
     bool x_ReadFileRegion(char * region, Uint4 start, Uint4 end);
     
-    void x_AddRegionHandle(char * region)
-    {
-        if (! m_Mapped) {
-            _ASSERT(m_Regions.end() == m_Regions.find((Uint4*)region));
-            ifdebug_rh << "RH insert region [" << (void*)(region) << "]" << endl;
-            m_Regions.insert((Uint4*) region);
-        }
-    }
-    
-    bool x_DelRegionHandle(const char * region)
-    {
-        if (! m_Mapped) {
-            if (m_Regions.end() == m_Regions.find((Uint4*)region)) {
-                return false;
-            }
-            
-            ifdebug_rh << "RH delete region [" << (void*)(region) << "]" << endl;
-            delete [] region;
-            m_Regions.erase((Uint4*) region);
-        }
-        
-        return true;
-    }
-    
-    void x_ClearRegionHandles(void)
-    {
-        for(TRHIter i = m_Regions.begin(); i != m_Regions.end(); i++) {
-            Uint4 * rh = *i;
-            ifdebug_rh << "RH delete(clear) [" << (void*)(rh) << "]" << endl;
-            delete [] rh;
-        }
-        
-        ifdebug_rhsum << "RH deletion count=" << m_Regions.size() << endl;
-        m_Regions.clear();
-    }
-    
     // Data
     
-    typedef set<Uint4*>      TRHSet;
-    typedef TRHSet::iterator TRHIter;
-    
+    CSeqDBMemPool  & m_MemPool;
     string           m_Name;
     bool             m_UseMMap;
     CMemoryFile    * m_Mapped;
     bool             m_Opened;
     CNcbiIfstream    m_Stream;
     Uint4            m_Offset;
-    TRHSet           m_Regions;
 };
 
 inline Uint8 CSeqDBRawFile::Swap8(const char * input)
@@ -195,9 +154,12 @@ inline Uint8 CSeqDBRawFile::Swap8(const char * input)
 
 class CSeqDBExtFile : public CObject {
 public:
-    CSeqDBExtFile(const string & dbfilename, char prot_nucl, bool use_mmap)
+    CSeqDBExtFile(CSeqDBMemPool & mempool,
+                  const string  & dbfilename,
+                  char            prot_nucl,
+                  bool            use_mmap)
         : m_FileName(dbfilename),
-          m_File    (use_mmap)
+          m_File    (mempool, use_mmap)
     {
         x_SetFileType(prot_nucl);
     }
@@ -210,11 +172,6 @@ protected:
     const char * x_GetRegion(Uint4 start, Uint4 end)
     {
         return m_File.GetRegion(start, end);
-    }
-    
-    bool x_RetRegion(const char * region)
-    {
-        return m_File.RetRegion(region);
     }
     
     Uint4 x_GetFileOffset(void)
@@ -277,8 +234,11 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 
 class CSeqDBIdxFile : public CSeqDBExtFile {
 public:
-    CSeqDBIdxFile(const string & dbname, char prot_nucl, bool use_mmap)
-        : CSeqDBExtFile(dbname + ".-in", prot_nucl, use_mmap),
+    CSeqDBIdxFile(CSeqDBMemPool & mempool,
+                  const string  & dbname,
+                  char            prot_nucl,
+                  bool            use_mmap)
+        : CSeqDBExtFile(mempool, dbname + ".-in", prot_nucl, use_mmap),
           m_Valid         (false),
           m_NumSeqs       (0),
           m_TotLen        (0),
@@ -440,8 +400,11 @@ char inline CSeqDBIdxFile::GetSeqType(void)
 
 class CSeqDBSeqFile : public CSeqDBExtFile {
 public:
-    CSeqDBSeqFile(const string & dbname, char prot_nucl, bool use_mmap)
-        : CSeqDBExtFile(dbname + ".-sq", prot_nucl, use_mmap),
+    CSeqDBSeqFile(CSeqDBMemPool & mempool,
+                  const string  & dbname,
+                  char            prot_nucl,
+                  bool            use_mmap)
+        : CSeqDBExtFile(mempool, dbname + ".-sq", prot_nucl, use_mmap),
           m_Valid      (false)
     {
     }
@@ -468,16 +431,6 @@ public:
         return x_GetRegion(start, end);
     }
     
-    bool RetRegion(const char * buffer)
-    {
-        // Should never happen in this case..
-        if (! x_NeedSeqFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [sequence data] file.");
-        }
-        
-        return x_RetRegion(buffer);
-    }
-    
 private:
     bool x_NeedSeqFile(void);
     
@@ -501,8 +454,11 @@ bool inline CSeqDBSeqFile::x_NeedSeqFile(void)
 
 class CSeqDBHdrFile : public CSeqDBExtFile {
 public:
-    CSeqDBHdrFile(const string & dbname, char prot_nucl, bool use_mmap)
-        : CSeqDBExtFile(dbname + ".-hr", prot_nucl, use_mmap),
+    CSeqDBHdrFile(CSeqDBMemPool & mempool,
+                  const string  & dbname,
+                  char            prot_nucl,
+                  bool            use_mmap)
+        : CSeqDBExtFile(mempool, dbname + ".-hr", prot_nucl, use_mmap),
           m_Valid      (false)
     {
     }
@@ -527,16 +483,6 @@ public:
         }
         
         return x_GetRegion(start, end);
-    }
-    
-    bool RetRegion(const char * buffer)
-    {
-        // Should never happen in this case..
-        if (! x_NeedHdrFile()) {
-            NCBI_THROW(CSeqDBException, eFileErr, "Could not open [sequence data] file.");
-        }
-        
-        return x_RetRegion(buffer);
     }
     
 private:

@@ -28,12 +28,13 @@
  */
 
 #include "seqdbimpl.hpp"
+#include <iostream>
 
 BEGIN_NCBI_SCOPE
 
 CSeqDBImpl::CSeqDBImpl(const string & dbpath, const string & db_name_list, char prot_nucl, bool use_mmap)
-    : m_Aliases (dbpath, db_name_list,               prot_nucl, use_mmap),
-      m_VolSet  (dbpath, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
+    : m_Aliases (dbpath, db_name_list, prot_nucl, use_mmap),
+      m_VolSet  (m_MemPool, dbpath, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -93,18 +94,7 @@ CSeqDBImpl::GetBioseq(Int4 oid,
 
 void CSeqDBImpl::RetSequence(const char ** buffer)
 {
-    if (CSeqDBVol * vol = m_VolSet.GetRecentVol()) {
-        if (vol->RetSequence(buffer)) {
-            return;
-        }
-    }
-    
-    for(Uint4 i = 0; i < m_VolSet.GetNumVols(); i++) {
-        if (m_VolSet.GetVol(i)->RetSequence(buffer)) {
-            m_VolSet.SetRecentVol(i);
-            return;
-        }
-    }
+    m_MemPool.Free((void*) *buffer);
 }
 
 Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)

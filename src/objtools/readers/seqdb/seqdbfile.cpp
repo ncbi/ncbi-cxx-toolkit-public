@@ -88,7 +88,13 @@ void CSeqDBRawFile::Clear(void)
         m_Mapped = 0;
     }
     
-    x_ClearRegionHandles();
+    // It might be good to keep a handle to a mempool and clear out
+    // the parts of the mempool that relate to this file, by
+    // range... if and only if the design was changed so that volumes
+    // could expire, or be cleaned up in some way, before the final
+    // destruction of CSeqDB.  There are several reasons this might be
+    // done, which should be obvious to the reader (like the proof to
+    // Fermat's last theorem.)
 }
 
 Int4 CSeqDBRawFile::x_GetOpenedLength(void)
@@ -127,21 +133,19 @@ const char * CSeqDBRawFile::GetRegion(Uint4 start, Uint4 end)
         //  "open file" size of the equation, because there may
         //  simply not be enough memory to do everything we want,
         //  regardless.
-            
-        char * region = new char[end - start];
-            
+        
+        char * region = (char*) m_MemPool.Alloc(end-start);
+        
         if (region) {
             if (! x_ReadFileRegion(region, start, end)) {
-                delete [] region;
+                m_MemPool.Free((void*)region);
                 region = 0;
             } else {
-                x_AddRegionHandle(region);
+                retval = region;
             }
-                
-            retval = region;
         }
     }
-        
+    
     return retval;
 }
 

@@ -36,8 +36,7 @@ BEGIN_NCBI_SCOPE
 CSeqDBOIDList::CSeqDBOIDList(CSeqDBVolSet & volset, bool use_mmap)
     : m_NumOIDs (0),
       m_Bits    (0),
-      m_BitEnd  (0),
-      m_HeldData(0)
+      m_BitEnd  (0)
 {
     assert( volset.HasMask() );
     
@@ -50,14 +49,12 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBVolSet & volset, bool use_mmap)
 
 CSeqDBOIDList::~CSeqDBOIDList()
 {
-    if (m_HeldData) {
-        delete [] m_HeldData;
-    }
 }
 
-void CSeqDBOIDList::x_Setup(const string & filename, bool use_mmap)
+void CSeqDBOIDList::x_Setup(const string  & filename,
+                            bool            use_mmap)
 {
-    m_RawFile.Reset( new CSeqDBRawFile(use_mmap) );
+    m_RawFile.Reset( new CSeqDBRawFile(m_MemPool, use_mmap) );
     
     m_RawFile->Open(filename);
     m_RawFile->ReadSwapped(& m_NumOIDs);
@@ -82,8 +79,8 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
     Uint4 num_oids = volset.GetNumSeqs();
     Uint4 byte_length = ((num_oids + 31) / 32) * 4;
     
-    m_HeldData = m_Bits = new TUC[byte_length];
-    m_BitEnd   = m_Bits + byte_length;
+    m_Bits   = (TUC*) m_MemPool.Alloc(byte_length);
+    m_BitEnd = m_Bits + byte_length;
     
     memset((void*) m_Bits, 0, byte_length);
     
@@ -165,7 +162,8 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
     TCUC* bitmap = 0;
     TCUC* bitend = 0;
     
-    CSeqDBRawFile volmask(use_mmap);
+    CSeqDBMemPool mempool;
+    CSeqDBRawFile volmask(mempool, use_mmap);
     
     {
         Uint4 num_oids = 0;

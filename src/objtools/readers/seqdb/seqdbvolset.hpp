@@ -43,7 +43,8 @@ using namespace ncbi::objects;
 
 class CSeqDBVolSet : public CObject {
 public:
-    CSeqDBVolSet(const string         & dbpath,
+    CSeqDBVolSet(CSeqDBMemPool        & mempool,
+                 const string         & dbpath,
                  const vector<string> & vol_names,
                  char                   prot_nucl,
                  bool                   use_mmap);
@@ -270,9 +271,12 @@ private:
         return m_VolList.back().OIDEnd();
     }
     
-    void x_AddVolume(const string & nm, char pn, bool use_mm)
+    void x_AddVolume(CSeqDBMemPool & mempool,
+                     const string  & nm,
+                     char            pn,
+                     bool            use_mm)
     {
-        CVolEntry new_vol( new CSeqDBVol(nm, pn, use_mm) );
+        CVolEntry new_vol( new CSeqDBVol(mempool, nm, pn, use_mm) );
         new_vol.SetStartEnd( x_GetNumSeqs() );
         m_VolList.push_back( new_vol );
     }

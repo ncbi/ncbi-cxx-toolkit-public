@@ -74,12 +74,12 @@ private:
     
     // Data
     
+    CSeqDBMemPool         m_MemPool;
     CRef<CSeqDBRawFile>   m_RawFile;
     Uint4                 m_NumOIDs;
     
     TUC                 * m_Bits;
     TUC                 * m_BitEnd;
-    TUC                 * m_HeldData;
 };
 
 

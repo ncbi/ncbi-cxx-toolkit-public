@@ -500,8 +500,7 @@ CSeqDBVol::GetBioseq(Int4 oid,
     }
     
     if (seq_buffer) {
-        x_RetSequence(& seq_buffer);
-        
+        m_MemPool.Free((void*) seq_buffer);
         seq_buffer = 0;
     }
     
@@ -544,23 +543,6 @@ CSeqDBVol::GetBioseq(Int4 oid,
     // Everything seems eerily quiet so far, so...
     
     return bioseq;
-}
-
-bool CSeqDBVol::RetSequence(const char ** buffer)
-{
-    CFastMutexGuard guard(m_Lock);
-    return x_RetSequence(buffer);
-}
-
-bool CSeqDBVol::x_RetSequence(const char ** buffer)
-{
-    bool found = m_Seq.RetRegion(*buffer);
-    
-    if (found) {
-        *buffer = 0;
-    }
-    
-    return found;
 }
 
 Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer)
@@ -617,7 +599,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
             
             // Return probably-mmapped sequence
             
-            x_RetSequence(& seq_buffer);
+            m_MemPool.Free((void*) seq_buffer);
         }
         
         // NOTE:!! This is a memory leak; this is known, and I am
@@ -625,7 +607,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
         // I don't want to bundle any more in this checkin. (kmb)
         
         int bytelen = buffer_4na.size();
-        char * uncomp_buf = new char[bytelen];
+        char * uncomp_buf = (char*) m_MemPool.Alloc(bytelen);
         
         for(int i = 0; i < bytelen; i++) {
             uncomp_buf[i] = buffer_4na[i];
@@ -713,7 +695,7 @@ CRef<CBlast_def_line_set> CSeqDBVol::x_GetHdr(Uint4 oid)
     
     istringstream asndata( string(asn_region, asn_region + (hdr_end - hdr_start)) );
     
-    m_Hdr.RetRegion(asn_region);
+    m_MemPool.Free((void*) asn_region);
     
     auto_ptr<CObjectIStream> inpstr(CObjectIStream::Open(eSerial_AsnBinary, asndata));
     
@@ -754,6 +736,8 @@ bool CSeqDBVol::x_GetAmbChar(Uint4 oid, vector<Int4> ambchars)
 	//ambchars[i] = CByteSwap::GetInt4((const unsigned char *)(& buffer[i]));
 	ambchars[i] = SeqDB_GetStdOrd((const unsigned char *)(& buffer[i]));
     }
+    
+    m_MemPool.Free((void*) buffer);
     
     return true;
 }
