@@ -151,6 +151,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_SegmentSelect(eSegmentSelect_All),
           m_SortOrder(eSortOrder_Normal),
           m_CombineMethod(eCombine_None),
+          m_LimitObjectType(eLimit_None),
           m_IdResolving(eIgnoreUnresolved)
     {
     }
@@ -165,6 +166,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
           m_SegmentSelect(eSegmentSelect_All),
           m_SortOrder(eSortOrder_Normal),
           m_CombineMethod(eCombine_None),
+          m_LimitObjectType(eLimit_None),
           m_IdResolving(eIgnoreUnresolved)
     {
     }
@@ -304,6 +306,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/28 14:59:58  vasilche
+* Added missing initialization.
+*
 * Revision 1.9  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
