@@ -27,7 +27,7 @@ USRP_BRA = \
 if test ! -z "$(USR_PROJ)" ; then \
    x_project="$(USR_PROJ)" ; \
    for i in $$x_project ; do \
-		$(MAKE) -f "Makefile.$$i" $(MFLAGS)
+		$(MAKE) -f "Makefile.$$i" builddir="@builddir@" srcdir="$(srcdir)" $(MFLAGS)
 USRP_KET = ; \
    done ; \
 fi
