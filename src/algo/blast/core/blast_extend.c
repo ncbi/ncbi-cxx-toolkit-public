@@ -526,6 +526,8 @@ BlastnWordUngappedExtend(BLAST_SequenceBlkPtr query,
            return FALSE;
 
 	if (ungapped_data) {
+           *ungapped_data = (BlastUngappedDataPtr) 
+              Malloc(sizeof(BlastUngappedData));
 	   (*ungapped_data)->q_start = q_beg - query->sequence;
 	   (*ungapped_data)->s_start = 
 	      s_off - (q_off - (*ungapped_data)->q_start);
@@ -619,8 +621,6 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
 
    if (hit_ready) {
       if (word_options->extend_word_method & EXTEND_WORD_UNGAPPED) {
-         ungapped_data = (BlastUngappedDataPtr) 
-            Malloc(sizeof(BlastUngappedData));
          /* Perform ungapped extension */
          BlastnWordUngappedExtend(query, subject, matrix, q_off, s_off, 
             word_params->cutoff_score, -word_params->x_dropoff, 
