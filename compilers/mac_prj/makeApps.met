@@ -814,10 +814,35 @@ on UpdateTarget(proj, targetIndex)
 			Remove Files fileNotList
 		end tell
 	end repeat
-
-		tell application "CodeWarrior IDE"
+	
+	-- Update libraries
+	set filesToAdd to {}
+	repeat with i in projLibs
+		set i to gLibsDir & i & fileNameSuffix & pStaticLibExt
+		set found to targetFileList contains i
+		if (not found) and (exists file (i) of application "Finder") then
+			copy (i) to end of filesToAdd
+		end if
+	end repeat
+	
+	repeat with i in dynaLibs
+		set i to gLibsDir & i & fileNameSuffix & pDynaLibExt
+		set found to targetFileList contains i
+		if (not found) and (exists file (i) of application "Finder") then
+			copy (i) to end of filesToAdd
+		end if
+	end repeat
+	
+	
+	tell application "CodeWarrior IDE"
+		if ((count of filesToAdd) is not 0) then
+			Add Files filesToAdd
+			-- set targetFileList to my GetTargetFiles(targetIndex)
+		end if
+		
 		Reset File Paths
-end	
+		
+	end tell
 end UpdateTarget
 
 on CreateFolder(folderPath)
