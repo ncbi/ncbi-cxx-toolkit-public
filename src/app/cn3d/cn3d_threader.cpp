@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/05/24 21:38:41  thiessen
+* fix threader options initial values
+*
 * Revision 1.17  2001/05/15 23:48:36  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -124,11 +127,12 @@ static const std::string ThreaderResidues = "ARNDCQEGHILKMFPSTWYV";
 
 // default threading options
 ThreaderOptions::ThreaderOptions(void) :
-    mergeAfterEachSequence(false),
     weightPSSM(0.5),
     loopLengthMultiplier(1.5),
     nRandomStarts(1),
-    nResultAlignments(10)
+    nResultAlignments(1),
+    mergeAfterEachSequence(true),
+    freezeIsolatedBlocks(true)
 {
 }
 

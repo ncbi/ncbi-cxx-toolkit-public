@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/24 21:38:41  thiessen
+* fix threader options initial values
+*
 * Revision 1.15  2001/05/24 13:32:32  thiessen
 * further tweaks for GTK
 *
@@ -244,7 +247,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     // the following code is modified (heavily) from wxDesigner C++ output from threader_dialog.wdr
     wxBoxSizer *item0 = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *item1 = new wxBoxSizer(wxVERTICAL);
-    wxStaticBox *item3 = new wxStaticBox(this, -1, "Available Threader Options");
+    wxStaticBox *item3 = new wxStaticBox(this, -1, "Threader Options");
     wxStaticBoxSizer *item2 = new wxStaticBoxSizer(item3, wxHORIZONTAL);
     wxFlexGridSizer *grid = new wxFlexGridSizer(3, 5, 0);
 
@@ -252,7 +255,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxStaticText *item5 = new wxStaticText(this, -1, "Weighting of PSSM/Contact score? [0 .. 1], 1 = PSSM only", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item5, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     fpWeight = new FloatingPointSpinCtrl(this,
-        0.0, 1.0, 0.05, 0.5,
+        0.0, 1.0, 0.05, initialOptions.weightPSSM,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(fpWeight->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -262,7 +265,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxStaticText *item8 = new wxStaticText(this, -1, "Loop length multiplier? [0.1 .. 10]", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item8, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     fpLoops = new FloatingPointSpinCtrl(this,
-        0.1, 10.0, 0.25, 1.5,
+        0.1, 10.0, 0.25, initialOptions.loopLengthMultiplier,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(fpLoops->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -272,7 +275,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxStaticText *item11 = new wxStaticText(this, -1, "Number of random starts? [1 .. 100]", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item11, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     iStarts = new IntegerSpinCtrl(this,
-        1, 100, 5, 1,
+        1, 100, 5, initialOptions.nRandomStarts,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(iStarts->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -282,7 +285,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxStaticText *item14 = new wxStaticText(this, -1, "Number of result alignments per row? [1 .. 20]", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item14, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     iResults = new IntegerSpinCtrl(this,
-        1, 20, 1, 1,
+        1, 20, 1, initialOptions.nResultAlignments,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     grid->Add(iResults->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -292,7 +295,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxStaticText *item17 = new wxStaticText(this, -1, "Merge results after each row is threaded?", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item17, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     bMerge = new wxCheckBox(this, -1, "", wxDefaultPosition, wxDefaultSize, 0);
-    bMerge->SetValue(true);
+    bMerge->SetValue(initialOptions.mergeAfterEachSequence);
     grid->Add(bMerge, 0, wxALIGN_CENTRE|wxALL, 5);
     grid->Add(20, SPIN_CTRL_HEIGHT, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
@@ -300,7 +303,7 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     wxStaticText *item19 = new wxStaticText(this, -1, "Freeze isolated blocks?", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item19, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
     bFreeze = new wxCheckBox(this, -1, "", wxDefaultPosition, wxDefaultSize, 0);
-    bFreeze->SetValue(true);
+    bFreeze->SetValue(initialOptions.freezeIsolatedBlocks);
     grid->Add(bFreeze, 0, wxALIGN_CENTRE|wxALL, 5);
     grid->Add(20, SPIN_CTRL_HEIGHT, 0, wxALIGN_CENTRE|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
