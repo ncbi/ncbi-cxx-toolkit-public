@@ -41,6 +41,8 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 #include <objects/validator/validator.hpp>
 
 // Object Manager includes
@@ -88,30 +90,38 @@ void CTest_validatorApplication::Init(void)
 
     // Create
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
+    
     arg_desc->AddDefaultKey
-                     ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
-                      CArgDescriptions::eString, "current.prt");
-                     
+        ("i", "ASNFile", "Seq-entry/Seq_submit ASN.1 text file",
+        CArgDescriptions::eString, "current.prt");
+    
     arg_desc->AddDefaultKey(
-            "o", "UseID", "If true, registers ID loader",
-            CArgDescriptions::eBoolean, "false");
-
+        "o", "UseID", "If true, registers ID loader",
+        CArgDescriptions::eBoolean, "false");
+    
     arg_desc->AddDefaultKey(
-            "a", "CheckAlign", "Validate Alignments",
-            CArgDescriptions::eBoolean, "false");
-
+        "a", "CheckAlign", "Validate Alignments",
+        CArgDescriptions::eBoolean, "false");
+    
     arg_desc->AddDefaultKey(
-            "n", "NonAsciiError", "Report Non Ascii Error",
-            CArgDescriptions::eBoolean, "false");
-
+        "n", "NonAsciiError", "Report Non Ascii Error",
+        CArgDescriptions::eBoolean, "false");
+    
     arg_desc->AddDefaultKey(
-            "s", "SpliceAsError", "Splice error as error, else warning",
-            CArgDescriptions::eBoolean, "false");
-
+        "s", "SpliceAsError", "Splice error as error, else warning",
+        CArgDescriptions::eBoolean, "false");
+    
     arg_desc->AddDefaultKey(
-            "c", "SuppressContext", "Suppress context in error msgs",
-            CArgDescriptions::eBoolean, "false");
+        "c", "SuppressContext", "Suppress context in error msgs",
+        CArgDescriptions::eBoolean, "false");
+    
+    arg_desc->AddDefaultKey
+        ("e", "SeqEntry", "Input is Seq-entry [T/F]",
+        CArgDescriptions::eString, "false");
+    
+    arg_desc->AddDefaultKey
+        ("b", "SeqSubmit", "Input is Seq-submit [T/F]",
+        CArgDescriptions::eString, "false");
 
     // Program description
     string prog_description = "Test driver for Validate()\n";
@@ -122,13 +132,6 @@ void CTest_validatorApplication::Init(void)
     //
 
     SetupArgDescriptions(arg_desc.release());
-}
-
-static void s_GetSeq_entry(CSeq_entry* se, string fname)
-{
-    AutoPtr<CObjectIStream> is =
-        CObjectIStream::Open(fname, eSerial_AsnText);
-    *is >> *se;
 }
 
 
@@ -157,12 +160,6 @@ int CTest_validatorApplication::Run(void)
             CObjectManager::eDefault);
     }
 
-    // Create CSeq_entry to be validated from file
-    CRef<CSeq_entry> ser(new CSeq_entry);
-
-    // Get seq-entry to validate
-    s_GetSeq_entry(ser, fname);
-
     // Set validator options
     unsigned int options = 0;
     options |= args["n"].AsBoolean() ? CValidError::eVal_non_ascii : 0;
@@ -170,14 +167,37 @@ int CTest_validatorApplication::Run(void)
     options |= args["a"].AsBoolean() ? CValidError::eVal_val_align : 0;
     options |= args["c"].AsBoolean() ? CValidError::eVal_no_context : 0;
 
-    // Validate seq-entry
-    CValidError eval(*obj_mgr, *ser);
+    auto_ptr<CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
+    auto_ptr<CValidError> eval;
 
+    if ( args["e"] ) {
+        // Create CSeq_entry to be validated from file
+        CRef<CSeq_entry> se(new CSeq_entry);
+        
+        // Get seq-entry to validate
+        in->Read(ObjectInfo(*se));
+        
+        // Validae Seq-entry
+        eval.reset(new CValidError(*obj_mgr, *se, options));
+    } else if ( args["s"] ) {
+        
+        // Create CSeq_submit to be validated from file
+        CRef<CSeq_submit> ss(new CSeq_submit);
+        
+        // Get seq-entry to validate
+        in->Read(ObjectInfo(*ss));
+        
+        // Validae Seq-entry
+        eval.reset(new CValidError(*obj_mgr, *ss, options));
+    }
+    
     // Display error messages
-    for (CValidError_CI vit(eval); vit; ++vit) {
-        cout << "Error code: " << vit->GetErrCode() << endl << endl;
-        cout << "Message: " << vit->GetMsg() << endl << endl;
-        cout << "Verbose: " << vit->GetVerbose() << endl << endl;
+    if ( eval.get() != 0 ) {
+        for (CValidError_CI vit(*eval); vit; ++vit) {
+            cout << "Error code: " << vit->GetErrCode() << endl << endl;
+            cout << "Message: " << vit->GetMsg() << endl << endl;
+            cout << "Verbose: " << vit->GetVerbose() << endl << endl;
+        }
     }
 
     return 0;
@@ -201,6 +221,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2003/01/24 22:04:33  shomrat
+ * Added flags to specify input format (Seq-entry or Seq-submit)
+ *
  * Revision 1.3  2003/01/07 20:04:26  shomrat
  * GetMessage changed to GetMsg
  *
