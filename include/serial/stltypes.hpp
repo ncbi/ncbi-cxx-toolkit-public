@@ -575,6 +575,14 @@ public:
             SetFunctions(info);
             return info;
         }
+    static CTypeInfo* CreateSetTypeInfo(TTypeInfo elementType, const string& name)
+        {
+            CStlOneArgTemplate* info =
+                new CStlOneArgTemplate(sizeof(TObjectType), elementType,
+                                       true, name);
+            SetFunctions(info);
+            return info;
+        }
 
     static void SetFunctions(CStlOneArgTemplate* info)
         {
@@ -764,6 +772,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2005/02/09 14:22:57  gouriano
+* Added CreateSetTypeInfo() with name argument - to fix serialization
+*
 * Revision 1.73  2005/02/01 21:44:06  grichenk
 * Fixed warnings
 *
