@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects);
 /// this class defines functions for calculating various
 /// properties of nucleotide sequences
 
-class CNucProp
+class NCBI_XALGO_EXPORT CNucProp
 {
 public:
     /// Tally the occurrences of each non-ambiguous n-mer.
@@ -74,6 +74,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/01 17:31:25  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.1  2003/07/01 15:11:24  jcherry
  * Initial versions of nuc_prop and prot_prop
  *

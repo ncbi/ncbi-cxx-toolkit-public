@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects);
 
 /// This class defines functions for calculating
 /// properties of amino acid sequences.
-class CProtProp
+class NCBI_XALGO_EXPORT CProtProp
 {
 public:
     /// Counts the numbers of occurrences of each residue type.
@@ -71,6 +71,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/01 17:31:25  dicuccio
+ * Added Win32 export specifiers
+ *
  * Revision 1.1  2003/07/01 15:11:24  jcherry
  * Initial versions of nuc_prop and prot_prop
  *
