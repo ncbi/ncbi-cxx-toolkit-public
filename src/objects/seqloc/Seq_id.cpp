@@ -607,6 +607,8 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'F': case 'G': case 'H': case 'I': 
             case 'J': case 'K': case 'L': case 'M': return eAcc_ddbj_other_nuc;
             case 'N':                               return eAcc_gb_est;
+            case 'P':                               return eAcc_gb_htgs;
+            case 'Q':                               return eAcc_gb_dirsub;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1546,6 +1548,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.101  2005/03/22 20:12:24  ucko
+ * +DP (eAcc_gb_htgs), DQ (eAcc_gb_dirsub)
+ *
  * Revision 6.100  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
