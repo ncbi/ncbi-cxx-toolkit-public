@@ -117,8 +117,8 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
  * @param concat_db The concatentation of all RPS DB sequences. 
  *                  The sequence data itself is not needed, 
  *                  only its size [in]
- * @param concat_db_info Used for the list of context offsets 
- *                       for concat_db [in]
+ * @param seq_src Source of RPS database consensus sequences; needed only
+ *                to calculate number of identities in alignments [in]
  * @param query The original query sequence [in]
  * @param query_info Information associated with the original query. 
  *                   Only used for the search space [in]
@@ -137,7 +137,7 @@ Int2 BLAST_ComputeTraceback(EBlastProgramType program_number, BlastHSPStream* hs
 NCBI_XBLAST_EXPORT
 Int2 BLAST_RPSTraceback(EBlastProgramType program_number,
         BlastHSPStream* hsp_stream, 
-        BLAST_SequenceBlk* concat_db,
+        const BlastSeqSrc* seq_src,
         BlastQueryInfo* concat_db_info,
         BLAST_SequenceBlk* query,
         BlastQueryInfo* query_info,
