@@ -1,16 +1,22 @@
-//#define Struct1 Ncbi_mime_asn1
-//#define Module1 ncbimime
+#define Ncbi_mime_asn11 1
+
+#if Ncbi_mime_asn11
+#include <objects/ncbimime/Ncbi_mime_asn1.hpp>
+#define Struct1 Ncbi_mime_asn1
+#define Module1 ncbimime
+#define File1 "ncbimime"
+#endif
+#if Medline1
+#include <objects/medline/Medline_entry.hpp>
 #define Struct1 Medline_entry
 #define Module1 medline
 #define File1 "medline"
+#endif
+#include <objects/seqseq/Seq_entry.hpp>
 #define Struct2 Medlars_entry
 #define Module2 medlars
 #define File2 "medlars"
 
-#define INC(Module, Struct) <objects/Module/Struct.hpp>
-
-#include INC(Module1,Struct1)
-#include INC(Module2,Struct2)
 #include <corelib/ncbistre.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
