@@ -23,7 +23,7 @@ inside NCBI users at:
 	<li> <a href="#ref_HTTPConnector">HTTP Connector</a>
 	<li> <a href="#ref_ServiceConnector">Service Connector</a>
     </ul>
-    <li> <a href="#ref_Debugging">Debugging Tools</a>
+    <li> <a href="#ref_Debugging">Debugging Tools and Troubleshooting</a>
     <li> <a href="#ref_CxxConnectionStreams">C++ Connection Streams</a> built on top of connection objects.
     <li> <a href="#ref_ServiceAPI">Service mapping API</a>: description of service name resolution API.
 </ul>
@@ -747,7 +747,7 @@ firewall mode regardless of the network parameters, loaded via <b><i>SConnNetInf
 <hr>
 
 
-<a name="ref_Debugging"></a><h2>Debugging Tools</h2>
+<a name="ref_Debugging"></a><h2>Debugging Tools and Troubleshooting</h2>
 
 Each connector (except for <tt>FILE</tt> connector) provides means to view data flow
 in the connection. In case of <a href="#ref_SocketConnector"><tt>SOCKET</tt></a> connector debugging information can be
@@ -803,12 +803,23 @@ to exclude certain URLs from proxying and caching, and are subject for discussio
 with a local network administrator.
 
 <p>
+There is another tip: Make sure that all custom HTTP header tags (as
+passed, for example, in
+<a href="#ref_HttpUserHeader">SConnNetInfo::user_header</a> field)
+do have '\r\n' as tag separators (including the last tag).
+Many proxy servers (including transparent proxies, which usually
+the user is not even aware of) are known to be sensitive that each
+and every HTTP tag is closed by '\r\n' (and <i>not</i> by a single
+'\n' character). Otherwise the HTTP packet is treated as lame and gets
+discarded.
+
+<p>
 <hr>
 
 
 <a name="ref_CxxConnectionStreams"></a><h2>C++ Connection Streams</h2>
 
-Using connections and connectors (in its most entirely procedural approach)
+Using connections and connectors (via the entirely procedural approach)
 in C++ programs overkills the power of the language.
 Therefore, we provide C++ users with the stream classes, all
 derived from standard <tt>iostream</tt> class, and as a result, which can be used with
