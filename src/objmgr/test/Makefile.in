@@ -3,7 +3,7 @@
 # Meta-makefile("CACHE" project)
 #################################
 
-APP_PROJ = test_basic test test_mt test_gbloader reader_id1_test reader_pubseq_test
+APP_PROJ = test_basic test test_mt test_gbloader test_gbloader_mt reader_id1_test reader_pubseq_test
 SUB_PROJ = 
 
 srcdir = @srcdir@
