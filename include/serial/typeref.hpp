@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/08/13 13:56:04  grichenk
+* Improved MT-safety in CTypeInfo and CTypeRef
+*
 * Revision 1.9  2000/09/26 17:38:08  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -66,6 +69,7 @@
 */
 
 #include <serial/serialdef.hpp>
+#include <corelib/ncbicntr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,7 +84,7 @@ public:
     virtual TTypeInfo GetTypeInfo(void) = 0;
 
 protected:
-    int m_RefCount;
+    CAtomicCounter m_RefCount;
     friend class CTypeRef;
 
 private:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/08/13 13:56:06  grichenk
+* Improved MT-safety in CTypeInfo and CTypeRef
+*
 * Revision 1.32  2001/12/09 07:38:13  vakatov
 * Got rid of a minor GCC warning (fixed member's order of initialization)
 *
@@ -167,6 +170,7 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbithr.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/typeinfoimpl.hpp>
 #include <serial/objectinfo.hpp>
@@ -175,6 +179,13 @@
 #include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
+
+CMutex& GetTypeInfoMutex(void)
+{
+    static CMutex s_TypeInfoMutex;
+    return s_TypeInfoMutex;
+}
+
 
 class CTypeInfoFunctions
 {

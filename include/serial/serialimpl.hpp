@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbithr.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
@@ -227,6 +228,8 @@ TTypeInfo EnumTypeInfo(const T* member, const CEnumeratedTypeValues* enumInfo)
     return CreateEnumeratedTypeInfo(*member, enumInfo);
 }
 
+CMutex& GetTypeInfoMutex(void);
+
 // internal macros for implementing BEGIN_*_INFO and ADD_*_MEMBER
 #define DECLARE_BASE_OBJECT(ClassName) ClassName* base = 0
 #define BASE_OBJECT() static_cast<const CClass_Base*>(base)
@@ -240,9 +243,8 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 	typedef BaseClassName CClass_Base; \
     static InfoType* info = 0; \
     volatile static bool info_ready = false; \
-    static CFastMutex lock; \
     if ( !info_ready ) { \
-        CFastMutexGuard GUARD(lock); \
+        CMutexGuard GUARD(GetTypeInfoMutex()); \
         if ( info_ready ) { \
             return info; \
         } \
@@ -437,11 +439,16 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define BEGIN_ENUM_INFO_METHOD(MethodName, EnumAlias, EnumName, IsInteger) \
 const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 {   static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0; \
-    if ( !enumInfo ) { \
-    enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
-    NCBI_NS_NCBI::RegisterEnumTypeValuesObject(enumInfo); \
-    EnumName enumValue;
-#define END_ENUM_INFO_METHOD } return enumInfo; }
+    volatile static bool info_ready = false; \
+    if ( !info_ready ) { \
+        CMutexGuard GUARD(GetTypeInfoMutex()); \
+        if ( info_ready ) { \
+            return enumInfo; \
+        } \
+        enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
+        NCBI_NS_NCBI::RegisterEnumTypeValuesObject(enumInfo); \
+        EnumName enumValue;
+#define END_ENUM_INFO_METHOD info_ready = true; } return enumInfo; }
 
 #define BEGIN_NAMED_ENUM_IN_INFO(EnumAlias, CppContext, EnumName, IsInteger) \
     BEGIN_ENUM_INFO_METHOD(CppContext ENUM_METHOD_NAME(EnumName), EnumAlias, EnumName, IsInteger)

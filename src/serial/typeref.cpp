@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/08/13 13:56:06  grichenk
+* Improved MT-safety in CTypeInfo and CTypeRef
+*
 * Revision 1.5  2000/09/26 17:38:23  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -52,8 +55,13 @@
 
 #include <serial/typeref.hpp>
 #include <serial/typeinfo.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
+
+
+static CMutex s_TypeRefMutex;
+
 
 CTypeRef::CTypeRef(CTypeInfoSource* source)
     : m_Getter(sx_Abort)
@@ -99,9 +107,10 @@ CTypeRef& CTypeRef::operator=(const CTypeRef& typeRef)
 
 void CTypeRef::Unref(void)
 {
+    CMutexGuard guard(s_TypeRefMutex);
     if ( m_Getter == sx_Resolve ) {
         m_Getter = sx_Abort;
-        if ( --m_Resolve->m_RefCount <= 0 ) {
+        if ( m_Resolve->m_RefCount.Add(-1) <= 0 ) {
             delete m_Resolve;
         }
     }
@@ -112,6 +121,7 @@ void CTypeRef::Unref(void)
 
 void CTypeRef::Assign(const CTypeRef& typeRef)
 {
+    CMutexGuard guard(s_TypeRefMutex);
     if ( typeRef.m_Getter == sx_Return ) {
         m_Return = typeRef.m_Return;
         m_Getter = sx_Return;
@@ -121,12 +131,12 @@ void CTypeRef::Assign(const CTypeRef& typeRef)
         m_Getter = sx_GetProc;
     }
     else if ( typeRef.m_Getter == sx_Resolve ) {
-        ++(m_Resolve = typeRef.m_Resolve)->m_RefCount;
+        (m_Resolve = typeRef.m_Resolve)->m_RefCount.Add(1);
         m_Getter = sx_Resolve;
     }
 }
 
-TTypeInfo CTypeRef::sx_Abort(const CTypeRef& )
+TTypeInfo CTypeRef::sx_Abort(const CTypeRef& typeRef)
 {
     THROW1_TRACE(runtime_error, "uninitialized type ref");
 }
@@ -138,6 +148,9 @@ TTypeInfo CTypeRef::sx_Return(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 {
+    CMutexGuard guard(s_TypeRefMutex);
+    if (typeRef.m_Getter != sx_GetProc)
+        return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_GetProc();
     if ( !typeInfo )
         THROW1_TRACE(runtime_error, "cannot resolve type ref");
@@ -148,6 +161,9 @@ TTypeInfo CTypeRef::sx_GetProc(const CTypeRef& typeRef)
 
 TTypeInfo CTypeRef::sx_Resolve(const CTypeRef& typeRef)
 {
+    CMutexGuard guard(s_TypeRefMutex);
+    if (typeRef.m_Getter != sx_Resolve)
+        return typeRef.m_Getter(typeRef);
     TTypeInfo typeInfo = typeRef.m_Resolve->GetTypeInfo();
     if ( !typeInfo )
         THROW1_TRACE(runtime_error, "cannot resolve type ref");
@@ -158,13 +174,13 @@ TTypeInfo CTypeRef::sx_Resolve(const CTypeRef& typeRef)
 }
 
 CTypeInfoSource::CTypeInfoSource(void)
-    : m_RefCount(1)
 {
+    m_RefCount.Set(1);
 }
 
 CTypeInfoSource::~CTypeInfoSource(void)
 {
-    _ASSERT(m_RefCount == 0);
+    _ASSERT(m_RefCount.Get() == 0);
 }
 
 CGet1TypeInfoSource::CGet1TypeInfoSource(CTypeRef::TGet1Proc getter,
