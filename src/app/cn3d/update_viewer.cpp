@@ -465,16 +465,18 @@ void UpdateViewer::GetVASTAlignments(const SequenceList& newSequences,
     int masterFrom, int masterTo) const
 {
     if (master->identifier->pdbID.size() == 0) {
-        ERRORMSG("UpdateViewer::GetVASTAlignments() - "
-            "can't be called with non-structured master" << master->identifier->ToString());
+        WARNINGMSG("UpdateViewer::GetVASTAlignments() - "
+            "can't be called with non-MMDB master " << master->identifier->ToString());
         return;
     }
 
     SequenceList::const_iterator s, se = newSequences.end();
     for (s=newSequences.begin(); s!=se; s++) {
         if ((*s)->identifier->pdbID.size() == 0) {
-            ERRORMSG("UpdateViewer::GetVASTAlignments() - "
-                "can't be called with non-structured slave" << (*s)->identifier->ToString());
+            WARNINGMSG("UpdateViewer::GetVASTAlignments() - "
+                "can't be called with non-MMDB slave " << (*s)->identifier->ToString());
+            BlockMultipleAlignment *newAlignment = MakeEmptyAlignment(master, *s);
+            if (newAlignment) newAlignments->push_back(newAlignment);
             continue;
         }
 
@@ -681,14 +683,14 @@ void UpdateViewer::ImportStructure(void)
     }
 
     // make list of protein chains in this structure
-    vector < pair < int , char > > chains;    // holds gi and chain name
-    map < int , int > moleculeIDs;                 // maps gi -> molecule ID within MMDB object
+    vector < pair < const CSeq_id * , char > > chains;  // holds Seq-id and chain name
+    map < const CSeq_id * , int > moleculeIDs;          // maps Seq-id -> molecule ID within MMDB object
     CBiostruc_graph::TDescr::const_iterator d, de;
     CBiostruc_graph::TMolecule_graphs::const_iterator
         m, me = biostruc->GetChemical_graph().GetMolecule_graphs().end();
     for (m=biostruc->GetChemical_graph().GetMolecule_graphs().begin(); m!=me; m++) {
         bool isProtein = false;
-        int gi = -1;
+        const CSeq_id *sid = NULL;
         char name = 0;
 
         // check descr for chain name/type
@@ -703,14 +705,13 @@ void UpdateViewer::ImportStructure(void)
         }
 
         // get gi
-        if ((*m)->IsSetSeq_id() && (*m)->GetSeq_id().IsGi())
-            gi = (*m)->GetSeq_id().GetGi();
-
+        if ((*m)->IsSetSeq_id())
+            sid = &((*m)->GetSeq_id());
 
         // add protein to list
-        if (isProtein && name && gi > 0) {
-            moleculeIDs[gi] = (*m)->GetId().Get();
-            chains.push_back(make_pair(gi, name));
+        if (isProtein && name && sid != NULL) {
+            moleculeIDs[sid] = (*m)->GetId().Get();
+            chains.push_back(make_pair(sid, name));
         }
     }
     if (chains.size() == 0) {
@@ -729,32 +730,34 @@ void UpdateViewer::ImportStructure(void)
     }
 
     // which chains to align?
-    vector < int > gis;
+    vector < const CSeq_id * > sids;
     if (chains.size() == 1) {
-        gis.push_back(chains[0].first);
+        sids.push_back(chains[0].first);
     } else {
         wxString *choices = new wxString[chains.size()];
         int choice;
         for (choice=0; choice<chains.size(); choice++)
-            choices[choice].Printf("%s_%c gi %i",
-                pdbID.c_str(), chains[choice].second, chains[choice].first);
+            choices[choice].Printf("%s_%c %s",
+                pdbID.c_str(), chains[choice].second, chains[choice].first->GetSeqIdString().c_str());
         wxArrayInt selections;
         int nsel = wxGetMultipleChoices(selections, "Which chain do you want to align?",
             "Select Chain", chains.size(), choices, *viewerWindow);
         if (nsel == 0) return;
         for (choice=0; choice<nsel; choice++)
-            gis.push_back(chains[selections[choice]].first);
+            sids.push_back(chains[selections[choice]].first);
     }
 
     SequenceList newSequences;
     SequenceSet::SequenceList::const_iterator s, se = master->parentSet->sequenceSet->sequences.end();
-    for (int j=0; j<gis.size(); j++) {
+    map < const Sequence * , const CSeq_id * > seq2id;
+    for (int j=0; j<sids.size(); j++) {
 
         // first check to see if this sequence is already present
         for (s=master->parentSet->sequenceSet->sequences.begin(); s!=se; s++) {
-            if ((*s)->identifier->gi == gis[j]) {
+            if ((*s)->identifier->MatchesSeqId(*(sids[j]))) {
+                TRACEMSG("using existing sequence for " << sids[j]->GetSeqIdString());
                 newSequences.push_back(*s);
-                TRACEMSG("using existing sequence for gi " << gis[j]);
+                seq2id[*s] = sids[j];
                 break;
             }
         }
@@ -765,17 +768,18 @@ void UpdateViewer::ImportStructure(void)
             for (b=bioseqs.begin(); b!=be; b++) {
                 CBioseq::TId::const_iterator i, ie = (*b)->GetId().end();
                 for (i=(*b)->GetId().begin(); i!=ie; i++) {
-                    if ((*i)->IsGi() && (*i)->GetGi() == gis[j])
+                    if ((*i)->Match(*(sids[j])))
                         break;
                 }
                 if (i != ie) {
-                    TRACEMSG("found Bioseq for gi " << gis[j]);
+                    TRACEMSG("found Bioseq for " << sids[j]->GetSeqIdString());
                     newSequences.push_back(master->parentSet->CreateNewSequence(**b));
+                    seq2id[newSequences.back()] = sids[j];
                     break;
                 }
             }
             if (b == be) {
-                ERRORMSG("ImportStructure() - can't find gi " << gis[j] << " in bioseq list!");
+                ERRORMSG("ImportStructure() - can't find " << sids[j]->GetSeqIdString() << " in bioseq list!");
 //                return;
             }
         }
@@ -821,21 +825,20 @@ void UpdateViewer::ImportStructure(void)
                 ERRORMSG("MMDB ID mismatch in sequence " << (*w)->identifier->ToString()
                     << "; " << (*w)->identifier->mmdbID << " vs " << mmdbID);
         }
-        if (moleculeIDs.find((*w)->identifier->gi) != moleculeIDs.end()) {
+        if (moleculeIDs.find(seq2id[*w]) != moleculeIDs.end()) {
             if ((*w)->identifier->moleculeID == MoleculeIdentifier::VALUE_NOT_SET) {
                 (const_cast<MoleculeIdentifier*>((*w)->identifier))->moleculeID =
-                    moleculeIDs[(*w)->identifier->gi];
+                    moleculeIDs[seq2id[*w]];
             } else {
-                if ((*w)->identifier->moleculeID != moleculeIDs[(*w)->identifier->gi])
+                if ((*w)->identifier->moleculeID != moleculeIDs[seq2id[*w]])
                     ERRORMSG("Molecule ID mismatch in sequence " << (*w)->identifier->ToString());
             }
         } else
-            ERRORMSG("No matching gi for MMDB sequence " << (*w)->identifier->ToString());
+            ERRORMSG("No matching id for MMDB sequence " << (*w)->identifier->ToString());
     }
 
     // create null-alignment
     AlignmentList newAlignments;
-//    MakeEmptyAlignments(newSequences, master, &newAlignments);
     int masterFrom = -1, masterTo = -1;
     const BlockMultipleAlignment *multiple = alignmentManager->GetCurrentMultipleAlignment();
     if (multiple) {
@@ -1178,6 +1181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/09/25 14:11:43  thiessen
+* don't assume gi Seq-id's for imported structure's sequences
+*
 * Revision 1.65  2003/08/21 18:27:40  thiessen
 * change header order for Mac compilation
 *
