@@ -40,7 +40,7 @@ void copy_8bit(DstIter dst, size_t count,
                const SrcCont& srcCont, size_t srcPos)
 {
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos;
-    for ( DstIter dst_end(dst + count); dst != dst_end; ++src, ++dst ) {
+    for ( DstIter end(dst + count); dst != end; ++src, ++dst ) {
         *dst = *src;
     }
 }
@@ -53,7 +53,7 @@ void copy_8bit_table(DstIter dst, size_t count,
                      const char* table)
 {
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos;
-    for ( DstIter dst_end(dst + count); dst != dst_end; ++src, ++dst ) {
+    for ( DstIter end(dst + count); dst != end; ++src, ++dst ) {
         *dst = table[static_cast<unsigned char>(*src)];
     }
 }
@@ -66,7 +66,7 @@ void copy_8bit_reverse(DstIter dst, size_t count,
 {
     srcPos += (count - 1);
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos;
-    for ( DstIter dst_end(dst + count); dst != dst_end; --src, ++dst ) {
+    for ( DstIter end(dst + count); dst != end; --src, ++dst ) {
         *dst = *src;
     }
 }
@@ -141,7 +141,7 @@ void copy_4bit_reverse(DstIter dst, size_t count,
 {
     srcPos += (count - 1);
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 2;
-    if ( srcPos % 2 ) {
+    if ( srcPos % 2 == 0 ) {
         // odd char first
         char c = *src--;
         *(dst++) = (c >> 4) & 0x0f;
@@ -167,7 +167,7 @@ void copy_4bit_table_reverse(DstIter dst, size_t count,
 {
     srcPos += (count - 1);
     typename SrcCont::const_iterator src = srcCont.begin() + srcPos / 2;
-    if ( srcPos % 2 ) {
+    if ( srcPos % 2 == 0 ) {
         // odd char first
         char c = *src--;
         *(dst++) = table[(c >> 4) & 0x0f];
