@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.29 2002/01/22 16:27:16 kholodov Exp $
+-- $Id: docsum.asn,v 1.30 2002/03/15 16:39:58 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.30  2002/03/15 16:39:58  sherry
+-- added subsnp method-class and dbSNP-build-id
+--
 -- Revision 1.29  2002/01/22 16:27:16  kholodov
 -- Fixed syntax bug
 --
@@ -346,6 +349,17 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
 		reversed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
 						-- by seq-ss-exemplar. 
+	build-id INTEGER,			-- dbSNP build number when ss# was added to a refSNP (rs#) cluster
+	method-class ENUMERATED {	-- class of method used to assay for the variation
+		dhplc        (1),		-- Denaturing High Pressure Liquid Chromatography used to detect SNP
+		hybridize    (2),		-- a hybridization method (e.g. chip) was used to assay for variation
+		computed     (3),		-- variation was mined from sequence alignment with software
+		sscp         (5),		-- single stranded conformational polymorphism used to detect variation
+		other  		 (6), 		-- other method used to detect variation
+		unknown		 (7), 		-- unknown method used to detect variation (not reported)
+		rflp		 (8),		-- variation in enzyme restriction site used to detect variation
+		sequence	 (9)} OPTIONAL,	-- samples were sequenced and resulting alignment used to define variation
+
 				
 
 						-- #######################################################
