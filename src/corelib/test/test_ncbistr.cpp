@@ -243,6 +243,25 @@ int CTestApplication::Run(void)
         catch (CException& e) {
             NCBI_REPORT_EXCEPTION("TestStrings",e);
         }
+        
+        try {
+            Int8 value = NStr::StringToInt8(str);
+            NcbiCout << "Int8 value: " << value << ", toString: '"
+                     << NStr::Int8ToString(value) << "'" << NcbiEndl;
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        }
+
+        try {
+            Uint8 value = NStr::StringToUInt8(str);
+            NcbiCout << "Uint8 value: " << value << ", toString: '"
+                     << NStr::UInt8ToString(value) << "'" << NcbiEndl;
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        }
+        
     }
 
     NcbiCout << NcbiEndl << "NStr::Replace() tests...";
@@ -490,6 +509,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2003/01/10 22:17:39  kuznets
+ * Implemented test for NStr::String2Int8
+ *
  * Revision 6.9  2003/01/10 00:08:28  vakatov
  * + Int8ToString(),  UInt8ToString()
  *
