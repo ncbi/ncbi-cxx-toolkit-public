@@ -78,6 +78,10 @@ typedef struct BlastHSPList {
    Int4 allocated; /**< The allocated size of the hsp_array */
    Int4 hsp_max; /**< The maximal number of HSPs allowed to be saved */
    Boolean do_not_reallocate; /**< Is reallocation of the hsp_array allowed? */
+   double best_evalue; /**< Smallest e-value for HSPs in this list. Filled after 
+                          e-values are calculated. Necessary because HSPs are
+                          sorted by score, but highest scoring HSP may not have
+                          the lowest e-value if sum statistics is used. */
 } BlastHSPList;
 
 /** The structure to contain all BLAST results for one query sequence */
@@ -408,9 +412,17 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListUniqSort(BlastHSPList* hsp_list);
 
-/** Sort the HSPs in an HSP list by score. This type of sorting is done
- * at the beginning of the traceback stage, and is needed to eliminate the effects
- * of wrong score order because of application of sum statistics. 
+/** Check if HSP list is sorted by score.
+ * @param hsp_list The list to check [in]
+ * @return TRUE if sorted, FALSE if not.
+ */
+NCBI_XBLAST_EXPORT
+Boolean Blast_HSPListIsSortedByScore(const BlastHSPList* hsp_list);
+
+/** Sort the HSPs in an HSP list by score. This type of sorting is done before
+ * the e-values are calcaulted, and also at the beginning of the traceback stage, 
+ * where it is needed to eliminate the effects of wrong score order because of 
+ * application of sum statistics. 
  * Checks if the HSP array is already sorted before proceeding with quicksort.
  * @param hsp_list Structure containing array of HSPs to be sorted. [in] [out]
  */
