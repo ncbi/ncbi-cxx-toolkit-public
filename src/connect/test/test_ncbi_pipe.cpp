@@ -58,8 +58,16 @@ USING_NCBI_SCOPE;
 static string s_ReadPipe(CPipe& pipe) 
 {
     char buf[BUFFER_SIZE];
-    size_t cnt = pipe.Read(buf, BUFFER_SIZE-1);
-    buf[cnt] = 0;
+    size_t read = 0;
+    size_t size = BUFFER_SIZE-1;
+    for (;;) {
+        size_t cnt = pipe.Read(buf+read, size);
+        read += cnt;
+        size -= cnt;
+        if (size == 0  ||  cnt == 0 )
+            break;
+    }
+    buf[read] = 0;
     string str = buf;
     cerr << "Read from pipe: " << str << endl;
     return str;
@@ -99,7 +107,7 @@ static string s_ReadStream(istream& ios)
     size_t read = 0;
     size_t size = BUFFER_SIZE-1;
     for (;;) {
-        ios.read(buf, size);
+        ios.read(buf+read, size);
         size_t cnt = ios.gcount();
         read += cnt;
         size -= cnt;
@@ -267,6 +275,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.6  2002/06/24 21:44:36  ivanov
+ * Fixed s_ReadFile(), c_ReadStream()
+ *
  * Revision 6.5  2002/06/12 14:01:38  ivanov
  * Increased size of read buffer. Fixed s_ReadStream().
  *
