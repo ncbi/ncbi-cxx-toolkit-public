@@ -451,7 +451,7 @@ CGBDataLoader::GC(void)
 #endif
     }
     if(m_InvokeGC) { // nothing has been cleaned up
-      assert(m_TseGC_Threshhold<=m_TseCount); // GC entrance condition
+      //assert(m_TseGC_Threshhold<=m_TseCount); // GC entrance condition
       m_TseGC_Threshhold = m_TseCount+2; // do not even try until next load
     } else if(m_TseCount < 0.5*m_TseGC_Threshhold) {
       m_TseGC_Threshhold = (m_TseCount + m_TseGC_Threshhold)/2;
@@ -839,6 +839,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/03/05 20:54:41  vasilche
+* Commented out wrong assert().
+*
 * Revision 1.52  2003/03/03 20:34:51  vasilche
 * Added NCBI_THREADS macro - it's opposite to NCBI_NO_THREADS.
 * Avoid using _REENTRANT macro - use NCBI_THREADS instead.
