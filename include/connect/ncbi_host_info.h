@@ -33,7 +33,9 @@
  *
  *   Host information handle becomes available from SERV_Get[Next]InfoEx()
  *   calls of the service mapper (ncbi_service.c) and remains valid until
- *   destructed by passing into free().
+ *   destructed by passing into free(). All API functions declared below
+ *   accept NULL as 'host_info' parameter, and as the result return a failure
+ *   status as described individually for each API call.
  *
  */
 
@@ -100,6 +102,9 @@ const char* HINFO_Environment(HOST_INFO host_info);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2002/11/08 17:16:11  lavr
+ * NULL parameter acceptance explicitly stated
+ *
  * Revision 6.1  2002/10/28 20:12:02  lavr
  * Initial revision
  *
