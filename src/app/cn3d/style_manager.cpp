@@ -578,18 +578,16 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
         return false;
     }
     atomStyle->isHighlighted = false; // queried sometimes even if atom not displayed
+
     const Molecule *molecule;
     if (!residue->GetParentOfType(&molecule)) return false;
 
     const StructureObject *object;
     if (!molecule->GetParentOfType(&object)) return false;
 
-    if (object->parentSet->showHideManager->IsHidden(residue))
-        ATOM_NOT_DISPLAYED;
-
     const StyleSettings& settings = GetStyleForResidue(object, atom.mID, atom.rID);
     const Residue::AtomInfo *info = residue->GetAtomInfo(atom.aID);
-    if (!info || (info->atomicNumber == 1 && !settings.hydrogensOn))
+    if (!info)
         ATOM_NOT_DISPLAYED;
 
     // set up some pointers for more convenient access to style settings
@@ -619,7 +617,6 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
             return false;
         }
     }
-
     if ((!backboneStyle && !generalStyle) || (backboneStyle && generalStyle)) {
         ERRORMSG("StyleManager::GetAtomStyle() - confused about style settings");
         return false;
@@ -627,7 +624,13 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     if (saveBackboneStyle) *saveBackboneStyle = backboneStyle;
     if (saveGeneralStyle) *saveGeneralStyle = generalStyle;
 
-    // first check whether this atom is visible, based on backbone and sidechain settings
+    // first check whether this atom is visible, based on show/hide and backbone and sidechain settings
+    if (object->parentSet->showHideManager->IsHidden(residue))
+        ATOM_NOT_DISPLAYED;
+
+    if (info->atomicNumber == 1 && !settings.hydrogensOn)
+        ATOM_NOT_DISPLAYED;
+
     if (info->classification == Residue::eSideChainAtom && !generalStyle->isOn)
        ATOM_NOT_DISPLAYED;
 
@@ -871,7 +874,7 @@ static bool SetBondStyleFromResidueStyle(StyleSettings::eDrawingStyle style,
 }
 
 #define BOND_NOT_DISPLAYED do { \
-    bondStyle->end1.style = bondStyle->end2.style = StyleManager::eNotDisplayed; \
+    bondStyle->end1.style = bondStyle->end2.style = eNotDisplayed; \
     return true; } while (0)
 
 // Bond style is set by the residue style of the atoms at each end; the color
@@ -898,47 +901,59 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         !GetAtomStyle(info2->residue, atom2, coord2, &atomStyle2, &backboneStyle2, &generalStyle2))
         return false;
 
-    bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
+    // if both atoms are hidden, or either one doesn't have coordinates, don't show the bond
+    if ((atomStyle1.style == eNotDisplayed && atomStyle2.style == eNotDisplayed) || (!coord1 || !coord2))
+        BOND_NOT_DISPLAYED;
 
-    // if either atom is hidden, don't display bond, except special case of PRO CD-N bond
+     // defaults
+    bondStyle->end1.atomCap = bondStyle->end2.atomCap = false;
+    bondStyle->end1.name = info1->glName;
+    bondStyle->end2.name = info2->glName;
+    bondStyle->midCap = false;
+
+    // if one atom is hidden, check for special cases to see if bond is visible at all
     if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed) {
-        // is residue PRO?
+        bool isSpecial = false;
+
+        // is residue PRO, and bond is between CD and N?
         if (info1->residue->IsAminoAcid() && info1->residue->nameGraph == "PRO" &&
-                atom1.mID == atom2.mID && atom1.rID == atom2.rID) {
+            atom1.mID == atom2.mID && atom1.rID == atom2.rID)
+        {
             const Molecule *molecule;
             if (!info1->residue->GetParentOfType(&molecule))
                 return false;
             // atom1 is CD and is visible, switch N (atom2) to side chain style
-            if (info1->code == " CD " && info2->code == " N  " && atomStyle1.style != eNotDisplayed && coord2)
+            if (info1->code == " CD " && atomStyle1.style != eNotDisplayed && info2->code == " N  ")
             {
                 generalStyle2 = generalStyle1;
                 backboneStyle2 = NULL;
                 atomStyle2.isHighlighted = GlobalMessenger()->IsHighlighted(molecule, info1->residue->id);
                 bondStyle->end2.atomCap = true;
+                isSpecial = true;
             }
             // atom2 is CD and is visible
-            else if (info2->code == " CD " && info1->code == " N  " && atomStyle2.style != eNotDisplayed && coord1)
+            else if (info2->code == " CD " && atomStyle2.style != eNotDisplayed && info1->code == " N  ")
             {
                 generalStyle1 = generalStyle2;
                 backboneStyle1 = NULL;
                 atomStyle1.isHighlighted = GlobalMessenger()->IsHighlighted(molecule, info1->residue->id);
                 bondStyle->end1.atomCap = true;
+                isSpecial = true;
             }
-            else {
-                BOND_NOT_DISPLAYED;
-            }
-        } else {
-            BOND_NOT_DISPLAYED;
         }
+
+        // will show half-bonds in trace backbones
+        if (bond->order == Bond::eVirtual) {
+            isSpecial = true;   // will set up style stuff later
+        }
+
+        // otherwise, don't show the bond at all when one atom is hidden
+        if (!isSpecial)
+            BOND_NOT_DISPLAYED;
     }
 
-    bondStyle->end1.name = info1->glName;
-    bondStyle->end2.name = info2->glName;
-    bondStyle->midCap = false;
-
     // use connection style if bond is between molecules
-    if (atom1.mID != atom2.mID &&
-        bond->order != Bond::eRealDisulfide && bond->order != Bond::eVirtualDisulfide) {
+    if (atom1.mID != atom2.mID && bond->order != Bond::eRealDisulfide && bond->order != Bond::eVirtualDisulfide) {
         if (globalStyle.connections.isOn == false)
             BOND_NOT_DISPLAYED;
         bondStyle->end1.color = bondStyle->end2.color = globalStyle.connections.userColor;
@@ -957,16 +972,14 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     // otherwise, need to query atom style to figure bond style parameters
     else {
 
-        // if this is a virtual bond, but style isn't eTrace, don't display
-        if ((bond->order == Bond::eVirtual || bond->order == Bond::eVirtualDisulfide) &&
-            (backboneStyle1->type != StyleSettings::eTrace ||
-             backboneStyle2->type != StyleSettings::eTrace))
-            BOND_NOT_DISPLAYED;
-
-        if (bond->order == Bond::eVirtualDisulfide && !globalStyle.virtualDisulfidesOn)
-            BOND_NOT_DISPLAYED;
-
+        // virtual disulfide special rules
         if (bond->order == Bond::eVirtualDisulfide) {
+
+            if (backboneStyle1->type != StyleSettings::eTrace ||
+                    backboneStyle2->type != StyleSettings::eTrace ||
+                    !globalStyle.virtualDisulfidesOn)
+                BOND_NOT_DISPLAYED;
+
             bondStyle->end1.color = bondStyle->end2.color = globalStyle.virtualDisulfideColor;
         } else {
             bondStyle->end1.color = atomStyle1.color;
@@ -992,6 +1005,23 @@ bool StyleManager::GetBondStyle(const Bond *bond,
             style2 = generalStyle2->style;
         if (!SetBondStyleFromResidueStyle(style2, settings2, &(bondStyle->end2)))
             return false;
+
+        // if this is an alpha virtual bond, turn off each half that's not in trace mode
+        if (bond->order == Bond::eVirtual) {
+            if (backboneStyle1->type != StyleSettings::eTrace)
+                bondStyle->end1.style = eNotDisplayed;
+            if (backboneStyle2->type != StyleSettings::eTrace)
+                bondStyle->end2.style = eNotDisplayed;
+        }
+
+        // special case: show half-bonds when one of two virtual atoms is hidden
+        if (atomStyle1.style == eNotDisplayed || atomStyle2.style == eNotDisplayed) {
+            bondStyle->midCap = true;
+            if (atomStyle1.style == eNotDisplayed)
+                bondStyle->end1.style = eNotDisplayed;
+            else
+                bondStyle->end2.style = eNotDisplayed;
+        }
 
         // special case for disulfides - no worms
         if (bond->order == Bond::eVirtualDisulfide) {
@@ -1027,14 +1057,12 @@ bool StyleManager::GetBondStyle(const Bond *bond,
         }
 
         // add midCap if style or radius for two sides of bond is different;
-        if (bondStyle->end1.style != bondStyle->end2.style ||
-            bondStyle->end1.radius != bondStyle->end2.radius)
+        if (bondStyle->end1.style != bondStyle->end2.style || bondStyle->end1.radius != bondStyle->end2.radius)
             bondStyle->midCap = true;
 
         // atomCaps needed at ends of thick worms when at end of chain, or if internal residues
         // are hidden or of a different style, or when missing coords of prev/next bond
-        if (bondStyle->end1.style == StyleManager::eThickWormBond ||
-            bondStyle->end2.style == StyleManager::eThickWormBond) {
+        if (bondStyle->end1.style == eThickWormBond || bondStyle->end2.style == eThickWormBond) {
 
             const Residue::AtomInfo *infoV;
             AtomStyle atomStyleV;
@@ -1045,24 +1073,24 @@ bool StyleManager::GetBondStyle(const Bond *bond,
                 return false;
             bool overlayConfs = atomSet->parentSet->showHideManager->OverlayConfEnsembles();
 
-            if (bondStyle->end1.style == StyleManager::eThickWormBond &&
+            if (bondStyle->end1.style == eThickWormBond &&
                     (!bond->previousVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
                     !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
-                    atomStyleV.style == StyleManager::eNotDisplayed ||
+                    atomStyleV.style == eNotDisplayed ||
                     backboneStyleV->style != style1 ||
                     !atomSet->GetAtom(bond->previousVirtual->atom1, overlayConfs, true)))
                 bondStyle->end1.atomCap = true;
 //            if (bondStyle->end1.atomCap)
 //                TRACEMSG("bondStyle->end1.atomCap true at rID " << atom1.rID);
 
-            if (bondStyle->end2.style == StyleManager::eThickWormBond &&
+            if (bondStyle->end2.style == eThickWormBond &&
                     (!bond->nextVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
                     !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
-                    atomStyleV.style == StyleManager::eNotDisplayed ||
+                    atomStyleV.style == eNotDisplayed ||
                     backboneStyleV->style != style2 ||
                     !atomSet->GetAtom(bond->nextVirtual->atom2, overlayConfs, true)))
                 bondStyle->end2.atomCap = true;
@@ -1082,11 +1110,11 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     // if atom is larger than half bond length, don't show that half of the bond
     bondLength /= 2;
     if (atomStyle1.radius > bondLength) {
-        bondStyle->end1.style = StyleManager::eNotDisplayed;
+        bondStyle->end1.style = eNotDisplayed;
         bondStyle->midCap = true;
     }
     if (atomStyle2.radius > bondLength) {
-        bondStyle->end2.style = StyleManager::eNotDisplayed;
+        bondStyle->end2.style = eNotDisplayed;
         bondStyle->midCap = true;
     }
 
@@ -1110,15 +1138,15 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
         }
     }
     if (!anyResidueVisible) {
-        objectStyle->style = StyleManager::eNotDisplayed;
+        objectStyle->style = eNotDisplayed;
         return true;
     }
 
     // set drawing style
     if (generalStyle.style == StyleSettings::eWithArrows) {
-        objectStyle->style = StyleManager::eObjectWithArrow;
+        objectStyle->style = eObjectWithArrow;
     } else if (generalStyle.style == StyleSettings::eWithoutArrows) {
-        objectStyle->style = StyleManager::eObjectWithoutArrow;
+        objectStyle->style = eObjectWithoutArrow;
     } else {
         WARNINGMSG("StyleManager::GetObjectStyle() - invalid 3d-object style");
         return false;
@@ -1163,7 +1191,7 @@ bool StyleManager::GetHelixStyle(const StructureObject *object,
         settings = GetStyleForResidue(object, helix.moleculeID, helix.fromResidueID);
 
     if (!settings.helixObjects.isOn) {
-        helixStyle->style = StyleManager::eNotDisplayed;
+        helixStyle->style = eNotDisplayed;
         return true;
     }
 
@@ -1191,7 +1219,7 @@ bool StyleManager::GetStrandStyle(const StructureObject *object,
         settings = GetStyleForResidue(object, strand.moleculeID, strand.fromResidueID);
 
     if (!settings.strandObjects.isOn) {
-        strandStyle->style = StyleManager::eNotDisplayed;
+        strandStyle->style = eNotDisplayed;
         return true;
     }
 
@@ -1639,6 +1667,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2004/05/26 22:18:42  thiessen
+* fix display of single residues with trace backbone
+*
 * Revision 1.81  2004/05/21 21:41:40  gorelenk
 * Added PCH ncbi_pch.hpp
 *
