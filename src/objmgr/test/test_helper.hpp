@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/04/22 20:07:45  grichenk
+* Commented calls to CBioseq::ConstructExcludedSequence()
+*
 * Revision 1.2  2002/03/18 21:47:15  grichenk
 * Moved most includes to test_helper.cpp
 * Added test for CBioseq::ConstructExcludedSequence()
@@ -64,7 +67,7 @@ public:
     static CSeq_entry& CreateTestEntry2(int index);
     static CSeq_entry& CreateTestEntry1a(int index);
     static CSeq_entry& CreateConstructedEntry(int idx, int index);
-    static CSeq_entry& CreateConstructedExclusionEntry(int idx, int index);
+    // static CSeq_entry& CreateConstructedExclusionEntry(int idx, int index);
     static CSeq_annot& CreateAnnotation1(int index);
 };
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/04/22 20:07:45  grichenk
+* Commented calls to CBioseq::ConstructExcludedSequence()
+*
 * Revision 1.12  2002/04/21 05:16:59  vakatov
 * Decreased the # of threads from 40 to 34 to avoid triggering guard-bomb
 * on SCHROEDER
@@ -190,6 +193,7 @@ void* CTestThread::Main(void)
             CTestHelper::ProcessBioseq(scope, id,
                 27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            /*
             CRef<CSeq_entry> constr_ex_entry =
                 &CDataGenerator::CreateConstructedExclusionEntry( m_Idx, 1);
             scope.AddTopLevelSeqEntry(*constr_ex_entry);
@@ -198,6 +202,7 @@ void* CTestThread::Main(void)
             CTestHelper::ProcessBioseq(scope, id,
                 22, 22, "GCGTAGACATCCCAGAGCGGTG", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            */
         }}
         {{
             CRef<CSeq_entry> constr_entry =
@@ -207,6 +212,7 @@ void* CTestThread::Main(void)
             CTestHelper::ProcessBioseq(scope, id,
                 27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            /*
             CRef<CSeq_entry> constr_ex_entry =
                 &CDataGenerator::CreateConstructedExclusionEntry( m_Idx, 2);
             scope.AddTopLevelSeqEntry(*constr_ex_entry);
@@ -215,6 +221,7 @@ void* CTestThread::Main(void)
             CTestHelper::ProcessBioseq(scope, id,
                 22, 22, "GCGTAGACATCCCAGAGCGGTG", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            */
         }}
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/04/22 20:07:45  grichenk
+* Commented calls to CBioseq::ConstructExcludedSequence()
+*
 * Revision 1.20  2002/03/18 21:47:16  grichenk
 * Moved most includes to test_helper.cpp
 * Added test for CBioseq::ConstructExcludedSequence()
@@ -202,6 +205,7 @@ int CTestApp::Run(void)
             CTestHelper::ProcessBioseq(Scope, id,
                 27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            /*
             CRef<CSeq_entry> constr_ex_entry =
                 &CDataGenerator::CreateConstructedExclusionEntry( idx, 1);
             Scope.AddTopLevelSeqEntry(*constr_ex_entry);
@@ -210,6 +214,7 @@ int CTestApp::Run(void)
             CTestHelper::ProcessBioseq(Scope, id,
                 22, 22, "GCGTAGACATCCCAGAGCGGTG", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            */
         }}
         {{
             CRef<CSeq_entry> constr_entry =
@@ -220,6 +225,7 @@ int CTestApp::Run(void)
             CTestHelper::ProcessBioseq(Scope, id,
                 27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            /*
             CRef<CSeq_entry> constr_ex_entry =
                 &CDataGenerator::CreateConstructedExclusionEntry( idx, 2);
             Scope.AddTopLevelSeqEntry(*constr_ex_entry);
@@ -228,6 +234,7 @@ int CTestApp::Run(void)
             CTestHelper::ProcessBioseq(Scope, id,
                 22, 22, "GCGTAGACATCCCAGAGCGGTG", "",
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            */
         }}
     }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/04/22 20:07:45  grichenk
+* Commented calls to CBioseq::ConstructExcludedSequence()
+*
 * Revision 1.4  2002/04/22 18:33:48  gouriano
 * corrected feature counts
 *
@@ -694,6 +697,7 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
     TSE
         Construct bioseq by excluding the seq-loc
 ************************************************************************/
+/*
 CSeq_entry& CDataGenerator::CreateConstructedExclusionEntry(int idx, int index)
 {
     CSeq_loc loc;
@@ -751,6 +755,7 @@ CSeq_entry& CDataGenerator::CreateConstructedExclusionEntry(int idx, int index)
     constr_ex_entry->SetSeq(*constr_ex_seq);
     return *constr_ex_entry.Release();
 }
+*/
 
 
 CSeq_annot& CDataGenerator::CreateAnnotation1(int index)
