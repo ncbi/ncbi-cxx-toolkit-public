@@ -37,8 +37,7 @@
 #include <objects/seq/Seq_data_.hpp>
 #include <objmgr/seq_vector.hpp>
 
-#include <algo/blast/api/blast_aux.hpp>
-#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_types.hpp>
 #include <algo/blast/api/blast_setup.hpp>
 #include <algo/blast/api/blast_seq.hpp>
 /* From core BLAST library: for encodings definitions */
