@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.31 2002/02/08 00:08:25 vakatov Exp $
+#  $Id: configure.ac,v 1.32 2002/02/08 00:13:59 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2066,10 +2066,6 @@ if test ! -f ${srcdir}/src/objects/Makefile.in  -o  \
       AC_MSG_ERROR(["--with-objects:  OBJECTS sources are missing"])
    fi
    with_objects="no"
-fi
-
-if test "$with_objects" != "no"  -a  "$with_app" = "yes" ; then
-   with_objects="yes"
 fi
 
 if test "$with_objects" = "yes"  -a  -n "$serial" ; then
