@@ -300,7 +300,7 @@ BlastOOFGetNumIdentical(Uint1* query_seq, Uint1* subject_seq,
    BlastHSP* hsp, Uint1 program, 
    Int4* num_ident_ptr, Int4* align_length_ptr)
 {
-   Int4 i, num_ident, align_length, q_off, s_off;
+   Int4 i, num_ident, align_length;
    Int2 context;
    Uint1* q,* s;
    GapEditScript* esp;
@@ -311,15 +311,11 @@ BlastOOFGetNumIdentical(Uint1* query_seq, Uint1* subject_seq,
    context = hsp->context;
 
    if (program == blast_type_tblastn) {
-       q_off = hsp->query.offset;
-       s_off = hsp->subject.offset;
-       q = &query_seq[q_off];
-       s = &subject_seq[s_off];
+       q = &query_seq[hsp->query.offset];
+       s = &subject_seq[hsp->subject.offset];
    } else {
-       s_off = hsp->query.offset;
-       q_off = hsp->subject.offset;
-       s = &query_seq[q_off];
-       q = &subject_seq[s_off];
+       s = &query_seq[hsp->query.offset];
+       q = &subject_seq[hsp->subject.offset];
    }
    num_ident = 0;
    align_length = 0;
