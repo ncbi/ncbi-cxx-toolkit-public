@@ -1329,6 +1329,7 @@ bool CNcbiRegistry::x_Set(const string& section, const string& name,
         flags |= fTransient;
     }
     bool was_empty = Get(section, name, flags).empty();
+    _TRACE('[' << section << ']' << name << " = " << value << ':' << flags);
     if ((flags & fNoOverride)  &&  !was_empty) {
         return false;
     }
@@ -1362,7 +1363,9 @@ void CNcbiRegistry::x_Read(CNcbiIstream& is, TFlags flags)
     if (m_MainRegistry->Empty()  &&  m_FileRegistry->Empty()) {
         m_FileRegistry->Read(is, flags);
     } else {
-        m_MainRegistry->Read(is, flags);
+        // This will only affect the main registry, but still needs to
+        // go through CNcbiRegistry::x_Set.
+        IRWRegistry::x_Read(is, flags);
     }
 }
 
@@ -1374,6 +1377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/03/17 00:01:52  ucko
+ * CNcbiRegistry::x_Read: don't overoptimize the standard case.
+ *
  * Revision 1.47  2005/03/16 22:54:22  ucko
  * CNcbiRegistry::x_Set: fix behavior in fNoOverride case, sometimes
  * mishandled in previous revision.
