@@ -76,6 +76,7 @@ enum EConversionStatus {
 // NOTE:  If the UTF-8 symbol has no ASCII-7 equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
+NCBI_XUTIL_EXPORT
 extern char StringToChar(const string&      src,
                          size_t*            seq_len     = 0,
                          bool               ascii_table = true,
@@ -85,6 +86,7 @@ extern char StringToChar(const string&      src,
 // graphically similar characters -- using StringToChar().
 // Return resulting ASCII-7 string.
 //
+NCBI_XUTIL_EXPORT
 extern string StringToAscii(const string& src,
                             bool          ascii_table = true);
 
@@ -96,6 +98,7 @@ extern string StringToAscii(const string& src,
 // NOTE:  If the UTF-8 symbol has no Unicode equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
+NCBI_XUTIL_EXPORT
 extern long StringToCode(const string&      src,
                          size_t*            seq_len = 0,
                          EConversionStatus* status  = 0);
@@ -104,6 +107,7 @@ extern long StringToCode(const string&      src,
 // using StringToCode().
 // Return resulting vector.
 //
+NCBI_XUTIL_EXPORT
 extern vector<long> StringToVector(const string& src);
 
 
@@ -113,6 +117,7 @@ extern vector<long> StringToVector(const string& src);
 // NOTE:  If the Unicode symbol has no ASCII-7 equivalent, then return
 //        kOutrangeChar or hSkipChar.
 //
+NCBI_XUTIL_EXPORT
 extern char CodeToChar(const long src, EConversionStatus* status = 0); 
 
 
@@ -126,6 +131,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/11 22:55:43  gorelenk
+ * Added export prefixes NCBI_XUTIL_EXPORT to functions.
+ *
  * Revision 1.4  2003/04/17 17:50:39  siyan
  * Added doxygen support
  *
