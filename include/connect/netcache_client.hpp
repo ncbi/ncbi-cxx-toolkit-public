@@ -63,12 +63,12 @@ public:
     /// Construct the client without linking it to any particular
     /// server. Actual server (host and port) will be extracted from the
     /// BLOB key 
-    CNetCacheClient(const string&  client_name = kEmptyStr);
+    CNetCacheClient(const string&  client_name);
 
     /// Construct client, working with the specified server (host and port)
     CNetCacheClient(const string&  host,
                     unsigned short port,
-                    const string&  client_name = kEmptyStr);
+                    const string&  client_name);
 
     /// Construction.
     /// @param sock
@@ -78,7 +78,7 @@ public:
     /// @param client_name
     ///    Identification name of the connecting client
     CNetCacheClient(CSocket*      sock,
-                    const string& client_name = kEmptyStr);
+                    const string& client_name);
 
     ~CNetCacheClient();
 
@@ -291,6 +291,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/01/05 17:45:34  kuznets
+ * Removed default client name
+ *
  * Revision 1.17  2004/12/27 16:30:30  kuznets
  * + logging control function
  *
