@@ -402,11 +402,18 @@ public:
     /// Find the sequence closest to the given offset into the database.
     /// 
     /// The database volumes can be viewed as a single array of
-    /// residues, partitioned into sequences in OID order.  The length
-    /// of this array is given by GetTotalLength().  This method
-    /// returns the OID of the sequence at the given offset into the
-    /// array.  It is used to split the database into sections which
-    /// are approximately equal in number of residues.
+    /// residues, partitioned into sequences by OID order.  The length
+    /// of this array is given by GetTotalLength().  Given an offset
+    /// between 0 and this length, this method returns the OID of the
+    /// sequence at the given offset into the array.  It is normally
+    /// used to split the database into sections with approximately
+    /// equal numbers of residues.
+    /// @param first_seq
+    ///   First oid to consider (will always return this or higher).
+    /// @param residue
+    ///   The approximate number residues offset to search for.
+    /// @return
+    ///   An OID near the specified residue offset.
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
     
 private:
