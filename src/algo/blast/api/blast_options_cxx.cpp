@@ -176,6 +176,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam("WordThreshold", v);
         return;
         
+    case eBlastOpt_PseudoCount:
+        x_SetParam("PseudoCountWeight", v);
+        return;
+        
     default:
         break;
     }
@@ -606,6 +610,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.54  2004/10/04 18:24:46  bealer
+* - Add Pseudo Count constant to remote blast switches.
+*
 * Revision 1.53  2004/09/08 18:32:31  camacho
 * Doxygen fixes
 *
