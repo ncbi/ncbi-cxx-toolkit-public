@@ -48,6 +48,7 @@ public:
     typedef TValue                     TValueType;
     typedef CTreeNWay<TValue>          TTreeType;
     typedef list<TTreeType*>           TNodeList;
+    typedef list<const TTreeType*>     TConstNodeList;
     typedef typename TNodeList::iterator        TNodeList_I;
     typedef typename TNodeList::const_iterator  TNodeList_CI;
 
@@ -164,6 +165,8 @@ protected:
     void CopyFrom(const TTreeType& tree);
     void SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
 
+    const TNodeList& GetSubNodes() const { return m_Nodes; }
+
 protected:
     TTreeType*         m_Parent; ///< Pointer on the parent node
     TNodeList          m_Nodes;  ///< List of dependent nodes
@@ -191,12 +194,42 @@ template <class TId, class TValue> class CTreePairNWay
 public:
     typedef CTreeNWay<CTreePair<TId, TValue> >   TParent;
     typedef CTreePair<TId, TValue>               TTreePair;
+    typedef CTreePairNWay<TId, TValue>           TPairTreeType;
+    typedef list<TPairTreeType*>                 TPairTreeNodeList;
+    typedef list<const TPairTreeType*>           TConstPairTreeNodeList;
 
 public:
 
     CTreePairNWay(const TId& id = TId(), const TValue& value = V());
     CTreePairNWay(const CTreePairNWay<TId, TValue>& tr);
     CTreePairNWay<TId, TValue>& operator=(const CTreePairNWay<TId, TValue>& tr);
+
+
+    /// Add new subnode whose value is (a copy of) val
+    ///
+    /// @param 
+    ///    val value reference
+    ///
+    /// @return pointer to new subtree
+    CTreePairNWay<TId, TValue>* AddNode(const TId& id, const TValue& value);
+
+    const TValue& GetValue() const { return m_Value.value; }
+
+    /// Find tree nodes corresponding to the path from the top
+    ///
+    /// @param node_path
+    ///    hierachy of node ids to search for
+    /// @param res
+    ///    list of discovered found nodes
+    void FindNodes(const list<TId>& node_path, TPairTreeNodeList* res);
+
+    /// Find tree nodes corresponding to the path from the top
+    ///
+    /// @param node_path
+    ///    hierachy of node ids to search for
+    /// @param res
+    ///    list of discovered found nodes (const pointers)
+    void FindNodes(const list<TId>& node_path, TConstPairTreeNodeList* res) const;
 };
 
 
@@ -331,7 +364,8 @@ void CTreeNWay<TValue>::InsertNode(TNodeList_I it,
 
 template<class TId, class TValue>
 CTreePairNWay<TId, TValue>::CTreePairNWay(const TId& id, const TValue& value)
-: CTreePairNWay<TId, TValue>::TParent(TTreePair(id, value))
+: //CTreePairNWay<TId, TValue>::TParent(TTreePair(id, value))
+  TParent(TTreePair(id, value))
 {}
 
 
@@ -348,6 +382,81 @@ CTreePairNWay<TId, TValue>::operator=(const CTreePairNWay<TId, TValue>& tr)
     TParent::operator=(tr);
 }
 
+template<class TId, class TValue>
+CTreePairNWay<TId, TValue>*
+CTreePairNWay<TId, TValue>::AddNode(const TId& id, const TValue& value)
+{
+    return (CTreePairNWay<TId, TValue>*)TParent::AddNode(TTreePair(id, value));
+}
+
+template<class TId, class TValue>
+void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>& node_path, 
+                                           TPairTreeNodeList*       res)
+{
+    TTreeType* tr = this;
+
+    ITERATE(list<TId>, sit, node_path) {
+        const TId& search_id = *sit;
+        bool sub_level_found = false;
+
+        typename TParent::TNodeList_I it = tr->SubNodeBegin();
+        typename TParent::TNodeList_I it_end = tr->SubNodeEnd();
+
+        for (; it != it_end; ++it) {
+            TParent* node = *it;
+            const TTreePair& node_pair = node->GetValue();
+
+            if (node_pair.id == search_id) {  // value found
+                tr = node;
+                sub_level_found = true;
+                break;
+            }
+        } // for it
+
+        if (!sub_level_found) {
+            break;
+        }
+        sub_level_found = false;
+
+    } // ITERATE
+
+    res.push_back(tr);
+}
+
+
+template<class TId, class TValue>
+void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>&         node_path, 
+                                           TConstPairTreeNodeList*  res) const
+{
+    const TTreeType* tr = this;
+
+    ITERATE(list<TId>, sit, node_path) {
+        const TId& search_id = *sit;
+        bool sub_level_found = false;
+
+        typename TParent::TNodeList_CI it = tr->SubNodeBegin();
+        typename TParent::TNodeList_CI it_end = tr->SubNodeEnd();
+
+        for (; it != it_end; ++it) {
+            const TParent* node = *it;
+            const TTreePair& node_pair = node->GetValue();
+
+            if (node_pair.id == search_id) {  // value found
+                tr = node;
+                sub_level_found = true;
+                break;
+            }
+        } // for it
+
+        if (!sub_level_found) {
+            break;
+        }
+        sub_level_found = false;
+
+    } // ITERATE
+
+    res->push_back((TPairTreeType*)tr);
+}
 
 
 END_NCBI_SCOPE
@@ -356,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/01/12 15:01:58  kuznets
+ * +CTreePairNWay::FindNodes
+ *
  * Revision 1.7  2004/01/09 19:01:39  kuznets
  * Fixed compilation for GCC
  *
