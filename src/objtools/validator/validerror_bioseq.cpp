@@ -32,6 +32,7 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include "validatorp.hpp"
 #include "utilities.hpp"
@@ -126,6 +127,8 @@ void CValidError_bioseq::ValidateSeqIds
         return;
     }
 
+    CSeq_inst::ERepr repr = seq.GetInst().GetRepr();
+
     // Loop thru CSeq_ids for this CBioseq. Determine if seq has
     // gi, NT, or NC. Check that the same CSeq_id not included more
     // than once.
@@ -210,7 +213,7 @@ void CValidError_bioseq::ValidateSeqIds
                 } else if (num_letters == 2 && num_digits == 6 && seq.IsNa()) {
                 } else if (num_letters == 3 && num_digits == 5 && seq.IsAa()) {
                 } else if (num_letters == 2 && num_digits == 6 && seq.IsAa() &&
-                    seq.GetInst().GetRepr() == CSeq_inst:: eRepr_seg) {
+                    repr == CSeq_inst::eRepr_seg) {
                 } else if (num_letters == 4  &&  num_digits == 8  &&
                     ((**k).IsGenbank()  ||  (**k).IsEmbl()  ||
                     (**k).IsDdbj())) {
@@ -289,7 +292,13 @@ void CValidError_bioseq::ValidateSeqIds
                 }
 
                 if ( has_gi && !tsid->IsSetAccession() && tsid->IsSetName() ) {
-                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
+                    EDiagSev sev = eDiag_Critical;
+                    // Report ddbj segmented sequence missing accesions as 
+                    // warning, not critical.
+                    if ( (*k)->IsDdbj()  &&  repr == CSeq_inst::eRepr_seg ) {
+                        sev = eDiag_Warning;
+                    }
+                    PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat,
                         "Missing accession for " + tsid->GetName(), seq);
                 }
             }
@@ -300,10 +309,10 @@ void CValidError_bioseq::ValidateSeqIds
             if ( tsid ) {
                 if ( seq.IsNa()  &&  
                      (!tsid->IsSetAccession() || tsid->GetAccession().empty())) {
-                    if ( seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg  ||
+                    if ( repr != CSeq_inst::eRepr_seg  ||
                         m_Imp.IsGI()) {
                         if (!(**k).IsDdbj()  ||
-                            seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
+                            repr != CSeq_inst::eRepr_seg) {
                             CNcbiOstrstream os;
                             os << "Missing accession for " << (**k).DumpAsFasta();
                             PostErr(eDiag_Error,
@@ -339,7 +348,7 @@ void CValidError_bioseq::ValidateSeqIds
 
     // Check that a sequence with a gi number has exactly one accession
     if ( gi_count > 0  &&  accn_count == 0  &&  !m_Imp.IsPDB()  &&  
-         seq.GetInst().GetRepr() != CSeq_inst::eRepr_virtual ) {
+         repr != CSeq_inst::eRepr_virtual ) {
         PostErr(eDiag_Error, eErr_SEQ_INST_GiWithoutAccession,
             "No accession on sequence with gi number", seq);
     }
@@ -458,12 +467,12 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
         // Validate part of segmented sequence
         ValidateSeqParts(seq);
     }
-
+    
     if ( seq.IsAa() ) {
         // Validate protein title (amino acids only)
         ValidateProteinTitle(seq);
     }
-
+    
     if ( seq.IsNa() ) {
         // check for N bases at start or stop of sequence
         ValidateNs(seq);
@@ -529,7 +538,9 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     // Check for colliding gene names
     ValidateCollidingGeneNames(seq);
 
-    ValidateSeqDescContext(seq);
+    if ( seq.IsSetDescr() ) {
+        ValidateSeqDescContext(seq);
+    }
 
     // make sure that there is a pub on this bioseq
     if ( !m_Imp.IsNoPubs() ) {  
@@ -823,8 +834,8 @@ bool CValidError_bioseq::NotPeptideException
 (const CFeat_CI& curr,
  const CFeat_CI& prev)
 {
-    string  alternative = "alternative processing",
-            alternate   = "alternate processing";
+    static string  alternative = "alternative processing",
+                   alternate   = "alternate processing";
     
     if ( curr->GetExcept() ) {
         if ( NStr::FindNoCase(curr->GetExcept_text(), alternative) != string::npos ||
@@ -848,8 +859,8 @@ bool CValidError_bioseq::IsSameSeqAnnot
 {
     CValidError_imp::TFeatAnnotMap fa_map = m_Imp.GetFeatAnnotMap();
 
-    return fa_map[&fi1->GetOriginalFeature()] ==
-        fa_map[&fi2->GetOriginalFeature()];
+    return fa_map[CConstRef<CSeq_feat>(&(fi1->GetOriginalFeature()))] ==
+        fa_map[CConstRef<CSeq_feat>(&(fi2->GetOriginalFeature()))];
 }
 
 
@@ -857,9 +868,12 @@ bool CValidError_bioseq::IsSameSeqAnnotDesc
 (const CFeat_CI& fi1,
  const CFeat_CI& fi2)
 {
+    const CSeq_feat* f1 = &(fi1->GetOriginalFeature());
+    const CSeq_feat* f2 = &(fi2->GetOriginalFeature());
     CValidError_imp::TFeatAnnotMap fa_map = m_Imp.GetFeatAnnotMap();
-    const CSeq_annot* annot1 = fa_map[&fi1->GetOriginalFeature()];
-    const CSeq_annot* annot2 = fa_map[&fi2->GetOriginalFeature()];
+
+    const CSeq_annot* annot1 = fa_map[f1];
+    const CSeq_annot* annot2 = fa_map[f2];
 
     if ( !(annot1->IsSetDesc())  ||  !(annot2->IsSetDesc()) ) {
         return true;
@@ -895,7 +909,6 @@ bool CValidError_bioseq::IsSameSeqAnnotDesc
 
 void CValidError_bioseq::ValidateSeqLen(const CBioseq& seq)
 {
-
     const CSeq_inst& inst = seq.GetInst();
 
     TSeqPos len = inst.IsSetLength() ? inst.GetLength() : 0;
@@ -1080,10 +1093,11 @@ void CValidError_bioseq::ValidateProteinTitle(const CBioseq& seq)
     CBioseq_Handle hnd = m_Scope->GetBioseqHandle(*id);
     string title_no_recon = GetTitle(hnd);
     string title_recon = GetTitle(hnd, fGetTitle_Reconstruct);
-    if (title_no_recon != title_recon) {
+    if ( title_no_recon != title_recon ) {
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
             "Instantiated protein title does not match automatically "
-            "generated title", seq);
+            "generated title. Instantiated: " + title_no_recon + 
+            " Generated: " + title_recon, seq);
     }
 }
 
@@ -1758,6 +1772,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
         
         CSeqFeatData::E_Choice ftype = fi->GetData().Which();
+        CSeqFeatData::ESubtype stype = fi->GetData().GetSubtype();
         
         if ( seq.IsAa() ) {                // protein
             switch ( ftype ) {
@@ -1850,7 +1865,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
 
-        if ( m_Imp.IsFarLocation(fi->GetLocation())  &&  !m_Imp.IsNC() ) {
+        if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(fi->GetLocation()) ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
                 "Feature has 'far' location - accession not packaged in record",
                 fi->GetMappedFeature());
@@ -1916,8 +1931,8 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                  curr_strand == eNa_strand_unknown  ||
                  prev_strand == eNa_strand_unknown  ) {
 
-                if ( IsSameSeqAnnot(curr, prev)  ||
-                     IsSameSeqAnnotDesc(curr, prev) ) {
+                if ( IsSameSeqAnnotDesc(curr, prev)  ||
+                     IsSameSeqAnnot(curr, prev) ) {
                     severity = eDiag_Error;
 
                     // compare labels and comments
@@ -2026,41 +2041,263 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
 }
 
 
+// Validate CSeqdesc within the context of a bioseq. 
+// See: CValidError_desc for validation of standalone CSeqdesc,
+// and CValidError_descr for validation of descriptors in the context
+// of descriptor list.
 void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 {
-    // !!! is everything done?
-    bool prf_found = false;
-    const CDate* create_date_prev = 0;
-    
-    for (CTypeConstIterator<CSeqdesc> dt(ConstBegin(seq)); dt; ++dt) {
-        switch (dt->Which()) {
-        case CSeqdesc::e_Prf:
-            if (prf_found) {
-                PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
-                    "Multiple PRF blocks", *dt);
-            } else {
-                prf_found = true;
+    size_t  num_gb   = 0,
+            num_embl = 0,
+            num_pir  = 0,
+            num_pdb  = 0,
+            num_prf  = 0,
+            num_sp   = 0;
+    CConstRef<CSeqdesc> last_gb, 
+                        last_embl,
+                        last_pir,
+                        last_pdb,
+                        last_prf,
+                        last_sp;
+    CConstRef<CDate> create_date, update_date;
+    string create_str;
+    int biomol = -1;
+    CConstRef<COrg_ref> org;
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    for ( CSeqdesc_CI di(bsh); di; ++ di ) {
+    //iterate ( CSeq_descr::Tdata, dt, seq.GetDescr().Get() ) {
+        const CSeqdesc& desc = *di;
+
+        switch ( desc.Which() ) {
+
+        case CSeqdesc::e_Org:
+            if ( !org ) {
+                org = &(desc.GetOrg());
             }
+            ValidateOrgContext(desc.GetOrg(), *org, seq, desc);
             break;
+
+        case CSeqdesc::e_Pir:
+            num_pir++;
+            last_pir = &desc;
+            break;
+
+        case CSeqdesc::e_Genbank:
+            num_gb++;
+            last_gb = &desc;
+            break;
+
+        case CSeqdesc::e_Sp:
+            num_sp++;
+            last_sp = &desc;
+            break;
+
+        case CSeqdesc::e_Embl:
+            num_embl++;
+            last_embl = &desc;
+            break;
+
         case CSeqdesc::e_Create_date:
-            if (create_date_prev) {
-                if (create_date_prev->Compare(dt->GetCreate_date()) !=
-                    CDate::eCompare_same) {
-                    string str_date_prev;
-                    string str_date;
-                    create_date_prev->GetDate(&str_date_prev);
-                    dt->GetCreate_date().GetDate(&str_date);
+            {
+            const CDate& current = desc.GetCreate_date();
+            if ( create_date ) {
+                if ( create_date->Compare(current) != CDate::eCompare_same ) {
+                    string current_str;
+                    current.GetDate(&current_str);
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
-                        "Inconsistent create_dates " + str_date +
-                        " and " + str_date_prev, *dt);
+                        "Inconsistent create_date [" + create_str +
+                        "] and update_date [" + current_str + "]", seq, desc);
                 }
             } else {
-                create_date_prev = &dt->GetCreate_date();
+                create_date = &(desc.GetCreate_date());
+                create_date->GetDate(&create_str);
             }
 
+            if ( update_date ) {
+                ValidateUpdateDateContext(*update_date, current, seq, desc);
+            }
+            }
+           break;
+
+        case CSeqdesc::e_Update_date:
+            if ( create_date ) {
+                ValidateUpdateDateContext(desc.GetUpdate_date(), *create_date, 
+                    seq, desc);
+            } else {
+                update_date = &(desc.GetUpdate_date());
+            }
+            break;
+
+        case CSeqdesc::e_Prf:
+            num_prf++;
+            last_prf = &desc;
+            break;
+
+        case CSeqdesc::e_Pdb:
+            num_pdb++;
+            last_pdb = &desc;
+            break;
+
+        case CSeqdesc::e_Source:
+            if ( !org ) {
+                org = &(desc.GetSource().GetOrg());
+            }
+            ValidateOrgContext(desc.GetSource().GetOrg(), *org, seq, desc);
+            break;
+
+        case CSeqdesc::e_Molinfo:
+            ValidateMolInfoContext(desc.GetMolinfo(), biomol, seq, desc);
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    if ( num_gb > 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Multiple GenBank blocks", seq, *last_gb);
+    }
+
+    if ( num_embl > 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Multiple EMBL blocks", seq, *last_embl);
+    }
+
+    if ( num_pir > 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Multiple PIR blocks", seq, *last_pir);
+    }
+
+    if ( num_pdb > 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Multiple PDB blocks", seq, *last_pdb);
+    }
+
+    if ( num_prf > 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Multiple PRF blocks", seq, *last_prf);
+    }
+
+    if ( num_sp > 1 ) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+            "Multiple SWISS-PROT blocks", seq, *last_sp);
+    }
+}
+
+
+void CValidError_bioseq::ValidateMolInfoContext
+(const CMolInfo& minfo,
+ int& seq_biomol,
+ const CBioseq& seq,
+ const CSeqdesc& desc)
+{
+    if ( minfo.IsSetBiomol() ) {
+        int biomol = minfo.GetBiomol();
+        if ( seq_biomol < 0 ) {
+            seq_biomol = biomol;
+        }
+        
+        switch ( biomol ) {
+        case CMolInfo::eBiomol_peptide:
+            if ( seq.IsNa() ) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                    "Nuclic acid with Molinfo-biomol = peptide", seq, desc);
+            }
+            break;
+            
+        case CMolInfo::eBiomol_unknown:
+        case CMolInfo::eBiomol_other:
+            break;
+            
+        default:  // the rest are nucleic acid
+            if ( seq.IsAa() ) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                    "Molinfo-biomol [" + NStr::IntToString(biomol) +
+                    "] used on protein", seq, desc);
+            } else {
+                if ( biomol != seq_biomol ) {
+                    PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                        "Inconsistent Molinfo-biomol [" + 
+                        NStr::IntToString(seq_biomol) + "] and [" +
+                        NStr::IntToString(biomol) + "]", seq, desc);
+                }
+            }
+        }
+    }
+
+    if ( !minfo.IsSetTech() ) {
+        return;
+    }
+
+    int tech = minfo.GetTech();
+
+    if ( seq.IsNa() ) {
+        switch ( tech ) {
+        case CMolInfo::eTech_concept_trans:
+        case CMolInfo::eTech_seq_pept:
+        case CMolInfo::eTech_both:
+        case CMolInfo::eTech_seq_pept_overlap:
+        case CMolInfo::eTech_seq_pept_homol:
+        case CMolInfo::eTech_concept_trans_a:
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "Nucleic acid with protein sequence method", seq, desc);
             break;
         default:
             break;
+        }
+    } else {
+        switch ( tech ) {
+        case CMolInfo::eTech_est:
+        case CMolInfo::eTech_sts:
+        case CMolInfo::eTech_genemap:
+        case CMolInfo::eTech_physmap:
+        case CMolInfo::eTech_htgs_1:
+        case CMolInfo::eTech_htgs_2:
+        case CMolInfo::eTech_htgs_3:
+        case CMolInfo::eTech_fli_cdna:
+        case CMolInfo::eTech_htgs_0:
+        case CMolInfo::eTech_htc:
+        case CMolInfo::eTech_wgs:
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_InvalidForType,
+                "Protein with nucleic acid sequence method", seq, desc);
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+
+void CValidError_bioseq::ValidateUpdateDateContext
+(const CDate& update,
+ const CDate& create,
+ const CBioseq& seq,
+ const CSeqdesc& desc)
+{
+    if ( update.Compare(create) == CDate::eCompare_before ) {
+        string create_str, update_str;
+        update.GetDate(&update_str);
+        create.GetDate(&create_str);
+        PostErr(eDiag_Warning, eErr_SEQ_DESCR_Inconsistent,
+            "Inconsistent create_date [" + create_str + 
+            "] and update_date [" + update_str + "]", seq, desc);
+    }
+}
+
+
+void CValidError_bioseq::ValidateOrgContext
+(const COrg_ref& this_org,
+ const COrg_ref& org,
+ const CBioseq& seq,
+ const CSeqdesc& desc)
+{
+    if ( this_org.IsSetTaxname()  &&  org.IsSetTaxname() ) {
+        if ( this_org.GetTaxname() != org.GetTaxname() ) {
+            PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
+                "Inconsistent taxnames [" + this_org.GetTaxname() + 
+                "] and [" + org.GetTaxname() + "]", seq, desc);
         }
     }
 }
@@ -2140,6 +2377,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/02/12 18:01:07  shomrat
+* Implemented ValidateSeqDescContext; and a few bug fixes
+*
 * Revision 1.15  2003/02/10 15:54:02  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *
