@@ -101,19 +101,11 @@ void CDll::x_Init(const string& path, const string& name, ELoad when_to_load,
     // Process DLL name
     if (treate_as == eBasename  &&  
         name.find_first_of(":/\\") == NPOS &&
-#if defined(NCBI_OS_MSWIN)
-        !CDirEntry::MatchesMask(name.c_str(),"*.dll")
-#elif defined(NCBI_OS_UNIX)
-        !CDirEntry::MatchesMask(name.c_str(),"lib*.so") &&
-        !CDirEntry::MatchesMask(name.c_str(),"lib*.so.*")
-#endif
+        !CDirEntry::MatchesMask(name.c_str(),
+                                NCBI_PLUGIN_PREFIX "*" NCBI_PLUGIN_SUFFIX "*")
         ) {
         // "name" is basename
-#if defined(NCBI_OS_MSWIN)
-        x_name = x_name + ".dll";
-#elif defined(NCBI_OS_UNIX)
-        x_name = "lib" + x_name + ".so";
-#endif
+        x_name = NCBI_PLUGIN_PREFIX + x_name + NCBI_PLUGIN_SUFFIX;
     }
     m_Name = CDirEntry::ConcatPath(path, x_name);  
     // Load DLL now if indicated
@@ -311,6 +303,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/06/23 17:13:56  ucko
+ * Centralize plugin naming in ncbidll.hpp.
+ *
  * Revision 1.20  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *

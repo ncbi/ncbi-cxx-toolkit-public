@@ -117,7 +117,7 @@ CPluginManager_DllResolver::GetDllName(const string&       interface_name,
 
 #elif defined(NCBI_OS_UNIX)
         string delimiter = ".";
-        name.append(".so");
+        name.append(NCBI_PLUGIN_SUFFIX);
 #endif
 
         name.append(delimiter);
@@ -157,9 +157,9 @@ CPluginManager_DllResolver::GetDllNameMask(
 
     if (version.IsAny()) {
 #if defined(NCBI_OS_MSWIN)
-        name.append("*.dll");
+        name.append("*" NCBI_PLUGIN_SUFFIX);
 #elif defined(NCBI_OS_UNIX)
-        name.append(".so*");
+        name.append(NCBI_PLUGIN_SUFFIX "*");
 #endif
     } else {
         
@@ -168,7 +168,7 @@ CPluginManager_DllResolver::GetDllNameMask(
 
 #elif defined(NCBI_OS_UNIX)
         string delimiter = ".";
-        name.append(".so");
+        name.append(NCBI_PLUGIN_SUFFIX);
 #endif
 
         name.append(delimiter);
@@ -301,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/23 17:13:56  ucko
+ * Centralize plugin naming in ncbidll.hpp.
+ *
  * Revision 1.6  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *

@@ -51,6 +51,20 @@ BEGIN_NCBI_SCOPE
 struct SDllHandle;
 
 
+#ifndef NCBI_PLUGIN_SUFFIX
+#  ifdef NCBI_OS_MSWIN
+#    define NCBI_PLUGIN_PREFIX ""
+#    define NCBI_PLUGIN_SUFFIX ".dll"
+#  elif defined(NCBI_XCODE_BUILD)
+#    define NCBI_PLUGIN_PREFIX "lib"
+#    define NCBI_PLUGIN_SUFFIX ".dylib"
+#  else
+#    define NCBI_PLUGIN_PREFIX "lib"
+#    define NCBI_PLUGIN_SUFFIX ".so"
+#  endif
+#endif
+
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CDll --
@@ -59,11 +73,10 @@ struct SDllHandle;
 ///
 /// The DLL name is considered the basename if it does not contain embedded
 /// '/', '\', or ':' symbols. Also, in this case, if the DLL name does not
-/// match pattern "lib*.so", "lib*.so.*", or "*.dll" (and if eExactName flag
-/// not passed to the constructor), then it will be automagically transformed
-/// according to the following rules:
-/// - UNIX:        <name>  --->  lib<name>.so
-/// - MS Windows:  <name>  --->  <name>.dll
+/// start with NCBI_PLUGIN_PREFIX and contain NCBI_PLUGIN_SUFFIX (and if
+/// eExactName flag not passed to the constructor), then it will be
+/// automagically transformed according to the following rule:
+///   <name>  --->  NCBI_PLUGIN_PREFIX + <name> + NCBI_PLUGIN_SUFFIX
 ///
 ///  If the DLL is specified by its basename, then it will be searched
 ///  (after the transformation described above) in the following locations:
@@ -103,8 +116,7 @@ public:
     ///
     /// Transformation is done according to the following:
     ///
-    ///   UNIX:        <name>  --->  lib<name>.so
-    ///   MS Windows:  <name>  --->  <name>.dll
+    ///   <name>  --->  NCBI_PLUGIN_PREFIX + <name> + NCBI_PLUGIN_SUFFIX
     enum EBasename {
         eBasename,  ///< Treat as basename (if it looks like one)
         eExactName  ///< Use the name "as is" (no prefix/suffix adding)
@@ -133,8 +145,9 @@ public:
     ///
     /// The absolute file path to the DLL will be formed using the "path"
     /// and "name" parameters in the following way:
-    /// - UNIX:   <path>/lib<name>.so ; <path>/<name> if "name" is not basename
-    /// - MS-Win: <path>\<name>.dll   ; <path>\<name> if "name" is not basename
+    /// - UNIX:   <path>/PFX<name>SFX ; <path>/<name> if "name" is not basename
+    /// - MS-Win: <path>\PFX<name>SFX ; <path>\<name> if "name" is not basename
+    /// where PFX is NCBI_PLUGIN_PREFIX and SFX is NCBI_PLUGIN_SUFFIX.
     ///
     /// @param path
     ///   Path to DLL.
@@ -415,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/06/23 17:13:56  ucko
+ * Centralize plugin naming in ncbidll.hpp.
+ *
  * Revision 1.21  2003/12/01 16:39:00  kuznets
  * CDllResolver changed to try all entry points
  * (prev. version stoped on first successfull).
