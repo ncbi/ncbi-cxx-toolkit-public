@@ -138,8 +138,8 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
 
     for (unsigned int i = 0; esp && i < nsegs; esp = esp->next, i++) {
         switch (esp->op_type) {
-        case GAPALIGN_DECLINE:
-        case GAPALIGN_SUB:
+        case eGapAlignDecline:
+        case eGapAlignSub:
             m_start = x_GetAlignmentStart(start1, esp, m_strand,
                     edit_block->translate1 != 0, edit_block->length1,
                     edit_block->original_length1, edit_block->frame1);
@@ -162,7 +162,7 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
             break;
 
         // Insertion on the master sequence (gap on slave)
-        case GAPALIGN_INS:
+        case eGapAlignIns:
             m_start = x_GetAlignmentStart(start1, esp, m_strand,
                     edit_block->translate1 != 0, edit_block->length1,
                     edit_block->original_length1, edit_block->frame1);
@@ -183,7 +183,7 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
             break;
 
         // Deletion on master sequence (gap; insertion on slave)
-        case GAPALIGN_DEL:
+        case eGapAlignDel:
             m_start = GAP_VALUE;
 
             s_start = x_GetAlignmentStart(start2, esp, s_strand,
@@ -322,8 +322,8 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
 }
 
 /// Clone of GXECorrectUASequence (tools/gapxdrop.c)
-/// Assumes GAPALIGN_DECLINE regions are to the right of GAPALIGN_{INS,DEL}.
-/// This function swaps them (GAPALIGN_DECLINE ends to the right of the gap)
+/// Assumes eGapAlignDecline regions are to the right of eGapAlign{Ins,Del}.
+/// This function swaps them (eGapAlignDecline ends to the right of the gap)
 static void 
 x_CorrectUASequence(GapEditBlock* edit_block)
 {
@@ -335,7 +335,7 @@ x_CorrectUASequence(GapEditBlock* edit_block)
     for (curr = edit_block->esp; curr; curr = curr->next) {
 
         // if GAPALIGN_DECLINE immediately follows an insertion or deletion
-        if (curr->op_type == GAPALIGN_DECLINE && last_indel) {
+        if (curr->op_type == eGapAlignDecline && last_indel) {
             /* This is invalid condition and regions should be
                exchanged */
 
@@ -352,7 +352,7 @@ x_CorrectUASequence(GapEditBlock* edit_block)
 
         last_indel = false;
 
-        if (curr->op_type == GAPALIGN_INS || curr->op_type == GAPALIGN_DEL) {
+        if (curr->op_type == eGapAlignIns || curr->op_type == eGapAlignDel) {
             last_indel = true;
             indel_prev = curr_last;
         }
@@ -400,7 +400,7 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
     int nsegs = 0;      // number of segments in edit_block->esp
 
     for (GapEditScript* t = edit_block->esp; t; t = t->next, nsegs++) {
-        if (t->op_type == GAPALIGN_DECLINE)
+        if (t->op_type == eGapAlignDecline)
             is_disc_align = true;
     }
 
@@ -423,11 +423,11 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
             skip_region = false;
 
             for (nsegs = 0, curr = curr_head; curr; curr = curr->next, nsegs++){
-                if (curr->op_type == GAPALIGN_DECLINE) {
+                if (curr->op_type == eGapAlignDecline) {
                     if (nsegs != 0) { // end of aligned region
                         break;
                     } else {
-                        while (curr && curr->op_type == GAPALIGN_DECLINE) {
+                        while (curr && curr->op_type == eGapAlignDecline) {
                             nsegs++;
                             curr = curr->next;
                         }
@@ -550,7 +550,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
         slp2.Reset(new CSeq_loc());
         
         switch (curr->op_type) {
-        case 0: /* deletion of three nucleotides. */
+        case eGapAlignDel: /* deletion of three nucleotides. */
             
             first_shift = false;
 
@@ -570,7 +570,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             
             break;
 
-        case 6: /* insertion of three nucleotides. */
+        case eGapAlignIns: /* insertion of three nucleotides. */
             /* If gap is followed after frameshift - we have to
                add this element for the alignment to be correct */
             
@@ -652,7 +652,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             
             break;
 
-        case 3: /* Substitution. */
+        case eGapAlignSub: /* Substitution. */
 
             first_shift = false;
 
@@ -661,7 +661,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             to1 = MIN(start1, original_length1) - 1;
             /* Adjusting last segment and new start point in
                nucleotide coordinates */
-            from2 = get_current_pos(&start2, curr->num*curr->op_type);
+            from2 = get_current_pos(&start2, curr->num*((Uint1)curr->op_type));
             to2 = start2 - 1;
             /* Chop off three bases and one residue at a time.
                Why does this happen, seems like a bug?
@@ -694,10 +694,10 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             seq_int2_last.Reset(&slp2->SetInt()); /* Will be used to adjust "to" value */
             
             break;
-        case 1:	/* gap of two nucleotides. */
-        case 2: /* Gap of one nucleotide. */
-        case 4: /* Insertion of one nucleotide. */
-        case 5: /* Insertion of two nucleotides. */
+        case eGapAlignDel2:	/* gap of two nucleotides. */
+        case eGapAlignDel1: /* Gap of one nucleotide. */
+        case eGapAlignIns1: /* Insertion of one nucleotide. */
+        case eGapAlignIns2: /* Insertion of two nucleotides. */
 
             if(first_shift) { /* Second frameshift in a row */
                 /* Protein coordinates */
@@ -705,7 +705,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                 to1 = MIN(start1,original_length1) - 1;
 
                 /* Nucleotide scale shifted by op_type */
-                from2 = get_current_pos(&start2, curr->op_type);
+                from2 = get_current_pos(&start2, (Uint1)curr->op_type);
                 to2 = start2 - 1;
                 if (to2 >= original_length2) {
                     to2 = original_length2 -1;
@@ -743,7 +743,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                old one */
 
             if(seq_int2_last) {
-                get_current_pos(&start2, curr->num*(curr->op_type-3));
+                get_current_pos(&start2, curr->num*((Uint1)curr->op_type-3));
                 if(strand2 != eNa_strand_minus) {
                     seq_int2_last->SetTo(start2 - 1);
                 } else {
@@ -766,13 +766,13 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                         seq_int1_last->SetTo(seq_int1_last->GetTo() + 1);
                 }
 
-            } else if (curr->op_type > 3) {
+            } else if ((Uint1)curr->op_type > 3) {
                 /* Protein piece is empty */
                 tmp.Reset(new CSeq_id(id1->AsFastaString()));
                 slp1->SetEmpty(*tmp);
                 /* Simulating insertion of nucleotides */
                 from2 = get_current_pos(&start2, 
-                                        curr->num*(curr->op_type-3));
+                                        curr->num*((Uint1)curr->op_type-3));
                 to2 = MIN(start2,original_length2) - 1;
 
                 /* Transfer to DNA minus strand coordinates */
@@ -1408,6 +1408,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2004/05/19 15:26:04  dondosha
+* Edit script operations changed from macros to an enum
+*
 * Revision 1.40  2004/05/05 14:42:25  dondosha
 * Correction in x_RemapAlignmentCoordinates for whole vs. interval Seq-locs
 *

@@ -804,7 +804,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
     return 0;
 }
 
-static Uint1 GetTracebackEncoding(Uint1 program_number) 
+static Uint1 Blast_TracebackGetEncoding(Uint1 program_number) 
 {
    Uint1 encoding;
 
@@ -885,7 +885,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastHSPResults* results,
 
    sbp = gap_align->sbp;
    
-   encoding = GetTracebackEncoding(program_number);
+   encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
    for (query_index = 0; query_index < results->num_queries; ++query_index) {
@@ -961,10 +961,10 @@ RPSUpdateTraceback(BlastHSP *hsp)
 
    esp = gap_info->esp;
    while (esp != NULL) {
-      if (esp->op_type == GAPALIGN_INS)
-          esp->op_type = GAPALIGN_DEL;
-      else if (esp->op_type == GAPALIGN_DEL)
-          esp->op_type = GAPALIGN_INS;
+      if (esp->op_type == eGapAlignIns)
+          esp->op_type = eGapAlignDel;
+      else if (esp->op_type == eGapAlignDel)
+          esp->op_type = eGapAlignIns;
 
       esp = esp->next;
    }

@@ -218,16 +218,16 @@ Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp,
       last_esp_num = 0;
       
       while (esp) {
-         if (esp->op_type == GAPALIGN_SUB) {
+         if (esp->op_type == eGapAlignSub) {
             sum += factor*matrix[*query & mask][*subject];
             query++;
             subject++;
             index++;
-         } else if (esp->op_type == GAPALIGN_DEL) {
+         } else if (esp->op_type == eGapAlignDel) {
             sum -= gap_open + gap_extend * esp->num;
             subject += esp->num;
             index += esp->num;
-         } else if (esp->op_type == GAPALIGN_INS) {
+         } else if (esp->op_type == eGapAlignIns) {
             sum -= gap_open + gap_extend * esp->num;
             query += esp->num;
             index += esp->num;
@@ -356,16 +356,16 @@ Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject,
       for (esp = gap_info->esp; esp; esp = esp->next) {
          align_length += esp->num;
          switch (esp->op_type) {
-         case GAPALIGN_SUB:
+         case eGapAlignSub:
             for (i=0; i<esp->num; i++) {
                if (*q++ == *s++)
                   num_ident++;
             }
             break;
-         case GAPALIGN_DEL:
+         case eGapAlignDel:
             s += esp->num;
             break;
-         case GAPALIGN_INS:
+         case eGapAlignIns:
             q += esp->num;
             break;
          default: 
@@ -407,7 +407,7 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
 
    for (esp = hsp->gap_info->esp; esp; esp = esp->next) {
       switch (esp->op_type) {
-      case 3: /* Substitution */
+      case eGapAlignSub: /* Substitution */
          align_length += esp->num;
          for (i=0; i<esp->num; i++) {
             if (*q == *s)
@@ -416,24 +416,24 @@ Blast_HSPGetOOFNumIdentities(Uint1* query, Uint1* subject,
             s += CODON_LENGTH;
          }
          break;
-      case 6: /* Insertion */
+      case eGapAlignIns: /* Insertion */
          align_length += esp->num;
          s += esp->num * CODON_LENGTH;
          break;
-      case 0: /* Deletion */
+      case eGapAlignDel: /* Deletion */
          align_length += esp->num;
          q += esp->num;
          break;
-      case 1: /* Gap of two nucleotides. */
+      case eGapAlignDel2: /* Gap of two nucleotides. */
          s -= 2;
          break;
-      case 2: /* Gap of one nucleotide. */
+      case eGapAlignDel1: /* Gap of one nucleotide. */
          s -= 1;
          break;
-      case 4: /* Insertion of one nucleotide. */
+      case eGapAlignIns1: /* Insertion of one nucleotide. */
          s += 1;
          break;
-      case 5: /* Insertion of two nucleotides. */
+      case eGapAlignIns2: /* Insertion of two nucleotides. */
          s += 2;
          break;
       default: 
@@ -646,7 +646,7 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    Int4 diag1_start, diag1_end, diag2_start, diag2_end;
    Int4 index;
    Uint1 intersection_found;
-   Uint1 op_type = 0;
+   EGapAlignOpType op_type = eGapAlignSub;
 
    if (!hsp1->gap_info || !hsp2->gap_info) {
       /* Assume that this is an ungapped alignment, hence simply compare 
@@ -670,13 +670,13 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    segments1->q_start = hsp1->query.offset;
    segments1->s_start = hsp1->subject.offset;
    while (segments1->s_start < start) {
-      if (esp1->op_type == GAPALIGN_INS)
+      if (esp1->op_type == eGapAlignIns)
          segments1->q_start += esp1->num;
       else if (segments1->s_start + esp1->num < start) {
-         if (esp1->op_type == GAPALIGN_SUB) { 
+         if (esp1->op_type == eGapAlignSub) { 
             segments1->s_start += esp1->num;
             segments1->q_start += esp1->num;
-         } else if (esp1->op_type == GAPALIGN_DEL)
+         } else if (esp1->op_type == eGapAlignDel)
             segments1->s_start += esp1->num;
       } else 
          break;
@@ -684,7 +684,7 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
    }
    /* Current esp is the first segment within the overlap region */
    segments1->s_end = segments1->s_start + esp1->num - 1;
-   if (esp1->op_type == GAPALIGN_SUB)
+   if (esp1->op_type == eGapAlignSub)
       segments1->q_end = segments1->q_start + esp1->num - 1;
    else
       segments1->q_end = segments1->q_start;
@@ -697,10 +697,10 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
       new_segment1->next->q_start = new_segment1->q_end + 1;
       new_segment1->next->s_start = new_segment1->s_end + 1;
       new_segment1 = new_segment1->next;
-      if (esp->op_type == GAPALIGN_SUB) {
+      if (esp->op_type == eGapAlignSub) {
          new_segment1->q_end += esp->num - 1;
          new_segment1->s_end += esp->num - 1;
-      } else if (esp->op_type == GAPALIGN_INS) {
+      } else if (esp->op_type == eGapAlignIns) {
          new_segment1->q_end += esp->num - 1;
          new_segment1->s_end = new_segment1->s_start;
       } else {
@@ -726,13 +726,13 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
       new_segment2->next->q_start = new_segment2->q_end + 1;
       new_segment2->next->s_start = new_segment2->s_end + 1;
       new_segment2 = new_segment2->next;
-      if (esp->op_type == GAPALIGN_INS) {
+      if (esp->op_type == eGapAlignIns) {
          new_segment2->s_end = new_segment2->s_start;
          new_segment2->q_end = new_segment2->q_start + esp->num - 1;
-      } else if (esp->op_type == GAPALIGN_DEL) {
+      } else if (esp->op_type == eGapAlignDel) {
          new_segment2->s_end = new_segment2->s_start + esp->num - 1;
          new_segment2->q_end = new_segment2->q_start;
-      } else if (esp->op_type == GAPALIGN_SUB) {
+      } else if (esp->op_type == eGapAlignSub) {
          new_segment2->s_end = new_segment2->s_start + esp->num - 1;
          new_segment2->q_end = new_segment2->q_start + esp->num - 1;
       }
@@ -770,12 +770,12 @@ Blast_HSPsMerge(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
          /* Both segments gaps - must intersect */
          intersection_found = 3;
 
+         op_type = eGapAlignIns;
          dist = new_segment2->s_end - new_segment1->s_start + 1;
-         op_type = GAPALIGN_INS;
          next_dist = new_segment2->q_end - new_segment1->q_start - dist + 1;
          if (new_segment2->q_end - new_segment1->q_start < dist) {
             dist = new_segment2->q_end - new_segment1->q_start + 1;
-            op_type = GAPALIGN_DEL;
+            op_type = eGapAlignDel;
             next_dist = new_segment2->s_end - new_segment1->s_start - dist + 1;
          }
          break;
@@ -1876,10 +1876,10 @@ Int2 Blast_HSPResultsSaveHitList(Uint1 program, BlastHSPResults* results,
       return 0;
 
    if (program == blast_type_blastn) {
-      context_factor = 2;
+      context_factor = NUM_STRANDS;
    } else if (program == blast_type_blastx || 
               program == blast_type_tblastx) {
-      context_factor = 6;
+      context_factor = NUM_FRAMES;
    } else {
       context_factor = 1;
    }
