@@ -760,7 +760,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     }
 
     if ( rna.IsSetExt()  &&
-	 rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
+         rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
         if ( trna.IsSetAnticodon () ) {
             ECompare comp = sequence::Compare(trna.GetAnticodon(), 
@@ -786,7 +786,8 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
         }
         /* tRNA with string extension */
-        if ( rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
+        if ( rna.IsSetExt()  &&  
+             rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
             PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                 "Unparsed product qualifier in tRNA", feat);
         }
@@ -1206,35 +1207,35 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         }
     }
 
-    CBioseq_Handle mr = m_Scope->GetBioseqHandle(feat.GetLocation());
-    CBioseq_Handle pr = m_Scope->GetBioseqHandle(feat.GetProduct());
-    if ( !mr  ||  !pr ) {
+    CBioseq_Handle nuc = m_Scope->GetBioseqHandle(feat.GetLocation());
+    CBioseq_Handle rna = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if ( !nuc  ||  !rna ) {
         return;
     }
 
-    CSeqVector mrvec = mr.GetSequenceView(feat.GetLocation(),
-        CBioseq_Handle::eViewMerged,
-        CBioseq_Handle::eCoding_Ncbi);
-    CSeqVector prvec = pr.GetSequenceView(feat.GetProduct(),
-        CBioseq_Handle::eViewMerged,
-        CBioseq_Handle::eCoding_Ncbi);
+    CSeqVector nuc_vec = nuc.GetSequenceView(feat.GetLocation(),
+        CBioseq_Handle::eViewConstructed,
+        CBioseq_Handle::eCoding_Iupac);
+    CSeqVector rna_vec = rna.GetSequenceView(feat.GetProduct(),
+        CBioseq_Handle::eViewConstructed,
+        CBioseq_Handle::eCoding_Iupac);
 
-    if ( mrvec.size() != prvec.size() ) {
+    if ( nuc_vec.size() != rna_vec.size() ) {
         PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
-            "Transcript length [" + NStr::IntToString(mrvec.size()) + "] " +
-            "does not match product length [" + NStr::IntToString(prvec.size()) +
-            "]", feat);
-    } else if ( mrvec.size() > 0 ) {
+            "Transcript length [" + NStr::IntToString(nuc_vec.size()) + "] " +
+            "does not match product length [" + 
+            NStr::IntToString(rna_vec.size()) + "]", feat);
+    } else if ( nuc_vec.size() > 0 ) {
         size_t mismatches = 0;
-        for ( size_t i = 0; i < mrvec.size(); ++i ) {
-            if ( mrvec[i] != prvec[i] ) {
+        for ( size_t i = 0; i < nuc_vec.size(); ++i ) {
+            if ( nuc_vec[i] != rna_vec[i] ) {
                 ++mismatches;
             }
         }
         if ( mismatches > 0 ) {
             PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptMismatches,
                 "There are " + NStr::IntToString(mismatches) + 
-                " mismatches out of " + NStr::IntToString(mrvec.size()) +
+                " mismatches out of " + NStr::IntToString(nuc_vec.size()) +
                 " bases between the transcript and product sequence", feat);
         }
     }
@@ -2068,6 +2069,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/02/03 18:03:22  shomrat
+* Change in use of GetSequenceView and style improvments
+*
 * Revision 1.11  2003/01/31 18:28:03  shomrat
 * Re-implementation of ValidateBadGeneOverlap
 *
