@@ -162,6 +162,7 @@ private:
     CSeqDBAliasFile       m_Aliases;
     CSeqDBVolSet          m_VolSet;
     CRef<CSeqDBOIDList>   m_OIDList;
+    CRef<CSeqDBTaxInfo>   m_TaxInfo;
     Uint4                 m_RestrictBegin;
     Uint4                 m_RestrictEnd;
     CFastMutex            m_OIDLock;

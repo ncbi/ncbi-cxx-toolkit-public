@@ -73,8 +73,15 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     m_NumSeqs     = x_GetNumSeqs();
     m_TotalLength = x_GetTotalLength();
     
+    try {
+        m_TaxInfo = new CSeqDBTaxInfo(m_Atlas);
+    }
+    catch(CSeqDBException &) {
+    }
+    
     // Don't setup the flush callback until the implementation data
-    // structures are fully populated.
+    // structures are fully populated (otherwise flushing may try to
+    // flush unconstructed memory leases).
     
     m_FlushCB.SetImpl(this);
 }
@@ -87,6 +94,8 @@ CSeqDBImpl::~CSeqDBImpl(void)
     // Prevent GC from flushing volumes after they are torn down.
     
     m_FlushCB.SetImpl(0);
+    
+    m_TaxInfo.Reset();
     
     m_VolSet.UnLease();
     
@@ -239,8 +248,17 @@ CSeqDBImpl::GetBioseq(Uint4 oid,
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
     
+    bool have_oidlist = m_OIDList.NotEmpty();
+    Uint4 memb_bit = m_Aliases.GetMembBit(m_VolSet);
+    Uint4 pref_gi = 0;
+    
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
-        return vol->GetBioseq(vol_oid, use_objmgr, insert_ctrlA, locked);
+        return vol->GetBioseq(vol_oid,
+                              have_oidlist,
+                              memb_bit,
+                              pref_gi,
+                              m_TaxInfo,
+                              locked);
     }
     
     NCBI_THROW(CSeqDBException,
