@@ -275,11 +275,11 @@ string CCdd::GetSpecies(int SeqIndex) {
                 // if there's an organism identifier
                 if ((*j)->IsSource()) {
                   // retrieve common or formal name
-                  if ((*j)->GetSource().GetOrg().IsSetCommon()) {
-                    return((*j)->GetSource().GetOrg().GetCommon());
-                  }
                   if ((*j)->GetSource().GetOrg().IsSetTaxname()) {
                     return((*j)->GetSource().GetOrg().GetTaxname());
+                  }
+                  if ((*j)->GetSource().GetOrg().IsSetCommon()) {
+                    return((*j)->GetSource().GetOrg().GetCommon());
                   }
                 }
               }
@@ -1255,6 +1255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/08/23 14:33:05  hurwitz
+ * prefer formal name over common name for taxonomy
+ *
  * Revision 1.10  2002/08/02 18:57:19  hurwitz
  * fix STL inconsistencies
  *
