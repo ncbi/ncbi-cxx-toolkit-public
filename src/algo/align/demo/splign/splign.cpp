@@ -31,12 +31,13 @@
 */
 
 
-#include "splign.hpp"
-#include "splign_app_exception.hpp"
+
+#include <deque>
 
 #include <algo/align/nw_formatter.hpp>
 
-#include <deque>
+#include "splign.hpp"
+#include "splign_app_exception.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -48,6 +49,7 @@ CSplign::CSplign(CSplicedAligner* aligner)
   m_endgaps = false;
   m_Seq1 = m_Seq2 = 0;
   m_SeqLen1 = m_SeqLen2 = 0;
+  m_maxtestmem = 1024*1024*(1024 + 900);
 }
 
 
@@ -73,7 +75,7 @@ void CSplign::EnforceEndGapsDetection(bool enforce)
 }
 
 
-void CSplign::SetPattern(const vector<size_t>& pattern)
+void CSplign::SetPattern(const vector<size_t>& pattern0)
 {
   if(!m_Seq1 || !m_Seq2) {
     NCBI_THROW(
@@ -82,24 +84,24 @@ void CSplign::SetPattern(const vector<size_t>& pattern)
 	       "Sequences must be set before pattern");
   }
 
-  size_t dim = pattern.size();
+  size_t dim = pattern0.size();
   const char* err = 0;
   if(dim % 4 == 0) {
     for(size_t i = 0; i < dim; i += 4) {
       
-      if( pattern[i] > pattern[i+1] || pattern[i+2] > pattern[i+3] ) {
+      if( pattern0[i] > pattern0[i+1] || pattern0[i+2] > pattern0[i+3] ) {
 	err = "Pattern hits must be specified in plus strand";
 	break;
       }
       
       if(i > 4) {
-	if(pattern[i] <= pattern[i-3] || pattern[i+2] <= pattern[i-2]){
+	if(pattern0[i] <= pattern0[i-3] || pattern0[i+2] <= pattern0[i-2]){
 	  err = "Pattern hits coordinates must be sorted";
 	  break;
 	}
       }
             
-      if(pattern[i+1] >= m_SeqLen1 || pattern[i+3] >= m_SeqLen2) {
+      if(pattern0[i+1] >= m_SeqLen1 || pattern0[i+3] >= m_SeqLen2) {
 	err = "One or several pattern hits are out of range";
 	break;
       }
@@ -116,6 +118,37 @@ void CSplign::SetPattern(const vector<size_t>& pattern)
     m_alnmap.clear();
     m_pattern.clear();
 
+    // copy from pattern0 to pattern so that each hit is not too large
+    const size_t max_len = 500;
+    vector<size_t> pattern;
+    for(size_t i = 0; i < dim; i += 4) {
+      size_t lenq = 1 + pattern0[i+1] - pattern0[i];
+      if(lenq <= max_len) {
+	copy(pattern0.begin() + i,
+	     pattern0.begin() + i + 4,
+	     back_inserter(pattern));
+      }
+      else {
+	const size_t d = (lenq-1) / max_len + 1;
+	const size_t inc = lenq / d + 1;
+	for(size_t a = pattern0[i], b = a , c = pattern0[i+2], d = c;
+	    a < pattern0[i+1]; (a = b + 1), (c = d + 1) ) {
+	  b = a + inc - 1;
+	  d = c + inc - 1;
+	  if(b > pattern0[i+1] || d > pattern0[i+3]) {
+	    b = pattern0[i+1];
+	    d = pattern0[i+3];
+	  }
+	  pattern.push_back(a);
+	  pattern.push_back(b);
+	  pattern.push_back(c);
+	  pattern.push_back(d);
+	}
+      }
+    }
+
+    dim = pattern.size();
+
     SAlnMapElem map_elem;
     map_elem.m_box[0] = map_elem.m_box[2] = 0;
     map_elem.m_pattern_start = map_elem.m_pattern_end = -1;
@@ -128,7 +161,8 @@ void CSplign::SetPattern(const vector<size_t>& pattern)
 	if(dist > 10) {
 	  const size_t q0 = map_elem.m_box[1], q1 = pattern[i];
 	  const size_t s0 = map_elem.m_box[3], s1 = pattern[i+2];
-	  if(x_EvalMinExonIdty(q0, q1, s0, s1) < m_minidty) {
+	  double minidty = x_EvalMinExonIdty(q0, q1, s0, s1);
+	  if(minidty < m_minidty) {
 	    m_alnmap.push_back(map_elem);
 	    map_elem.m_box[0] = pattern[i];
 	    map_elem.m_box[2] = pattern[i+2];
@@ -204,13 +238,15 @@ double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
 {
   // first estimate whether we want to evaluate it
   const size_t dimq = 1 + q1 - q0, dims = 1 + s1 - s0;
-  if(double(dimq)*dims > 100000000) {
+  if(m_aligner->GetElemSize()*double(dimq)*dims > m_maxtestmem) {
     return -1;
   }
+
+  return 1; // turns this off
   
   // pre-align the regions
   m_aligner->SetSequences(m_Seq1 + q0, dimq, m_Seq2 + s0, dims, false);
-  m_aligner->SetEndSpaceFree(true, true, true, true);
+  m_aligner->SetEndSpaceFree(false, false, false, false);
   m_aligner->Run();
   CNWFormatter formatter(*m_aligner);
   string exons;
@@ -235,19 +271,22 @@ double CSplign::x_EvalMinExonIdty(size_t q0, size_t q1, size_t s0, size_t s1)
 
 const vector<CSplign::SSegment>* CSplign::Run(void)
 {
+
     if(!m_Seq1 || !m_Seq2) {
-    NCBI_THROW( CSplignException,
-        eNotInitialized,
-        "One or both sequences not set" );
+      NCBI_THROW( CSplignException,
+		  eNotInitialized,
+		  "One or both sequences not set" );
     }
     if(!m_aligner) {
-    NCBI_THROW( CSplignException,
-        eNotInitialized,
-        "Spliced aligner object not set" );
+      NCBI_THROW( CSplignException,
+		  eNotInitialized,
+		  "Spliced aligner object not set" );
     }
 
     m_out.clear();
+
     deque<SSegment> segments;
+
     for(size_t i = 0, map_dim = m_alnmap.size(); i < map_dim; ++i) {
 
         const SAlnMapElem& zone = m_alnmap[i];
@@ -267,6 +306,13 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
             m_pattern.begin() + zone.m_pattern_end + 1,
             back_inserter(pattern));
             for(size_t j = 0, pt_dim = pattern.size(); j < pt_dim; j += 4) {
+
+
+// #define DBG_DUMP_PATTERN
+#ifdef  DBG_DUMP_PATTERN
+	      cerr << pattern[j] << '\t' << pattern[j+1] << '\t'
+		   << pattern[j+2] << '\t' << pattern[j+3] << endl;
+#endif
                 pattern[j]   -= zone.m_box[0];
                 pattern[j+1] -= zone.m_box[0];
                 pattern[j+2] -= zone.m_box[2];
@@ -275,10 +321,10 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
             if(pattern.size()) {
                 m_aligner->SetPattern(pattern);
             }
-          
+
             // setup esf
             m_aligner->SetEndSpaceFree(true, true, true, true);
-    
+
             // align
             m_aligner->Run();
     
@@ -303,7 +349,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
                 size_t q0, q1, s0, s1, size;
                 double idty;
                 iss_exons >> id1 >> id2 >> idty >> size
-                >> q0 >> q1 >> s0 >> s1 >> txt >> repr;
+			  >> q0 >> q1 >> s0 >> s1 >> txt >> repr;
                 if(!iss_exons) break;
                 q0 += zone.m_box[0];
                 q1 += zone.m_box[0];
@@ -337,23 +383,21 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
         }
     } // zone iterations end
 
-    // Do some post-processing:
-    // walk through exons and maybe turn some of
-    // them into gaps.
+    // some post-processing at the segment level
 
     size_t seg_dim = segments.size();
     if(seg_dim == 0) {
         return &m_out;
     }
 
-    // First go from the ends end see if we
+    // First go from the ends and see if we
     // can improve boundary exons
     size_t k0 = 0;
     while(k0 < seg_dim) {
         SSegment& s = segments[k0];
         if(s.m_exon) {
             if(s.m_idty < m_minidty || m_endgaps) {
-                s.ImproveFromLeft(m_aligner, m_Seq1, m_Seq2);
+                s.ImproveFromLeft(m_Seq1, m_Seq2);
             }
             if(s.m_idty >= m_minidty) {
                 break;
@@ -361,6 +405,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
         }
         ++k0;
     }
+
 
     // fill the left-hand gap, if any
     if(segments[0].m_exon && segments[0].m_box[0] > 0) {
@@ -384,7 +429,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
         SSegment& s = segments[k1];
         if(s.m_exon) {
             if(s.m_idty < m_minidty || m_endgaps) {
-	            s.ImproveFromRight(m_aligner, m_Seq1, m_Seq2);
+	            s.ImproveFromRight(m_Seq1, m_Seq2);
             }
             if(s.m_idty >= m_minidty) {
 	            break;
@@ -419,8 +464,35 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
             s.m_len = s.m_box[1] - s.m_box[0] + 1;
             s.m_annot = "<GAP>";
             s.m_details.resize(0);
-            s.m_details.append(m_Seq1 + s.m_box[0], s.m_box[1] + 1 - s.m_box[0]);
+            s.m_details.append(m_Seq1 + s.m_box[0],
+			       s.m_box[1] + 1 - s.m_box[0]);
         }
+    }
+
+    // turn to gaps extra-short exons preceeded/followed by gaps
+    bool gap_prev = false;
+    for(size_t k = 0; k < seg_dim; ++k) {
+        SSegment& s = segments[k];
+	if(s.m_exon == false) {
+	  gap_prev = true;
+	}
+	else {
+	  size_t length = s.m_box[1] - s.m_box[0] + 1;
+	  bool gap_next = false;
+	  if(k + 1 < seg_dim) {
+	    gap_next = !segments[k+1].m_exon;
+	  }
+	  if(length <= 5 && (gap_prev || gap_next)) {
+            s.m_exon = false;
+            s.m_idty = 0;
+            s.m_len = s.m_box[1] - s.m_box[0] + 1;
+            s.m_annot = "<GAP>";
+            s.m_details.resize(0);
+            s.m_details.append(m_Seq1 + s.m_box[0],
+			       s.m_box[1] + 1 - s.m_box[0]);
+	  }
+	  gap_prev = false;
+	}
     }
 
     // now merge all adjacent gaps
@@ -447,7 +519,8 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
                g.m_box[3] = s.m_box[2] - 1;
                g.m_len = g.m_box[1] - g.m_box[0] + 1;
                g.m_details.resize(0);
-               g.m_details.append(m_Seq1 + g.m_box[0], g.m_box[1] + 1 - g.m_box[0]);
+               g.m_details.append(m_Seq1 + g.m_box[0],
+				  g.m_box[1] + 1 - g.m_box[0]);
                m_out.push_back(g);
                gap_start_idx = -1;
            }
@@ -469,8 +542,7 @@ const vector<CSplign::SSegment>* CSplign::Run(void)
 
 
 // try improving the segment by cutting it from the left
-void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
-					const char* seq1,const char* seq2)
+void CSplign::SSegment::ImproveFromLeft(const char* seq1, const char* seq2)
 {
   const size_t min_query_size = 4;
 
@@ -484,10 +556,10 @@ void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
   
   CNWAligner::TScore score_max = 0, s = 0;
   
-  const CNWAligner::TScore wm =  aligner->GetWm();
-  const CNWAligner::TScore wms = aligner->GetWms();
-  const CNWAligner::TScore wg =  aligner->GetWg();
-  const CNWAligner::TScore ws =  aligner->GetWs();
+  const CNWAligner::TScore wm =  1;
+  const CNWAligner::TScore wms = -1;
+  const CNWAligner::TScore wg =  0;
+  const CNWAligner::TScore ws =  -1;
   
   string::reverse_iterator irs0 = m_details.rbegin(),
     irs1 = m_details.rend(), irs = irs0, irs_max = irs0;
@@ -572,8 +644,7 @@ void CSplign::SSegment::ImproveFromLeft(const CNWAligner* aligner,
 
 
 // try improving the segment by cutting it from the right
-void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
-					 const char* seq1, const char* seq2)
+void CSplign::SSegment::ImproveFromRight(const char* seq1, const char* seq2)
 {
   const size_t min_query_size = 4;
 
@@ -587,10 +658,10 @@ void CSplign::SSegment::ImproveFromRight(const CNWAligner* aligner,
 
   CNWAligner::TScore score_max = 0, s = 0;
 
-  const CNWAligner::TScore wm =  aligner->GetWm();
-  const CNWAligner::TScore wms = aligner->GetWms();
-  const CNWAligner::TScore wg =  aligner->GetWg();
-  const CNWAligner::TScore ws =  aligner->GetWs();
+  const CNWAligner::TScore wm =  1; 
+  const CNWAligner::TScore wms = -1;
+  const CNWAligner::TScore wg =  0; 
+  const CNWAligner::TScore ws =  -1;
 
   string::iterator irs0 = m_details.begin(),
     irs1 = m_details.end(), irs = irs0, irs_max = irs0;
@@ -694,6 +765,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/01/05 15:43:45  kapustin
+ * Modify boundary exon ends improvement procedure's parameters and other changes
+ *
  * Revision 1.8  2003/12/23 16:50:25  kapustin
  * Reorder includes to activate msvc pragmas
  *

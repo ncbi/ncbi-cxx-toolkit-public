@@ -60,10 +60,8 @@ public:
     string m_annot; // short description like AG<exon>GT
     string m_details; // transcript for exons, sequence for gaps
 
-    void ImproveFromLeft(const CNWAligner* aligner,
-			 const char* seq1, const char* seq2);
-    void ImproveFromRight(const CNWAligner* aligner,
-			  const char* seq1, const char* seq2);
+    void ImproveFromLeft( const char* seq1, const char* seq2 );
+    void ImproveFromRight( const char* seq1, const char* seq2 );
     void RestoreIdentity();
   };
 
@@ -89,6 +87,9 @@ protected:
   // mandatory end gap detection flag
   bool                m_endgaps;
 
+  // max space for min idty evaluation
+  size_t m_maxtestmem;
+
   // output
   vector<SSegment>    m_out;
 
@@ -109,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/05 15:43:45  kapustin
+ * Modify boundary exon ends improvement procedure's parameters and other changes
+ *
  * Revision 1.2  2003/10/31 19:41:31  kapustin
  * Add CSplign::SSegment::RestoreIdentity()
  *
