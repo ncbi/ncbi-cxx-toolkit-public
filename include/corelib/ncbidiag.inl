@@ -125,8 +125,8 @@ private:
     }
 
     NCBI_XNCBI_EXPORT void Flush  (void);
-    NCBI_XNCBI_EXPORT void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
-    NCBI_XNCBI_EXPORT void EndMess(const CNcbiDiag& diag);   // output current diag. message
+                      void Reset  (const CNcbiDiag& diag);   // reset content of the diag.message
+                      void EndMess(const CNcbiDiag& diag);   // output current diag. message
     NCBI_XNCBI_EXPORT bool SetDiag(const CNcbiDiag& diag);
 
     // flush & detach the current user
@@ -430,6 +430,9 @@ bool CDiagErrCodeInfo::HaveDescription(const ErrCode& err_code) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/03/10 19:54:12  gorelenk
+ * Changed NCBI_XNCBI_EXPORT prefixes for class CDiagBuffer members.
+ *
  * Revision 1.38  2003/11/12 20:30:25  ucko
  * Make extra flags for severity-trace messages tunable.
  *
