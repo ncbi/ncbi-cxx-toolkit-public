@@ -35,12 +35,7 @@
  */
 
 #include <util/compress/stream.hpp>
-#ifdef NCBI_COMPILER_MSVC
-#  include <util/compress/bzip2/bzlib.h>
-#else
-#  include <bzlib.h>
-#endif
-
+#include <bzlib.h>
 
 /** @addtogroup Compression
  *
@@ -328,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/11/15 13:17:12  ivanov
+ * Use #include <bzlib.h> for MSVC compiler also
+ *
  * Revision 1.7  2004/04/05 16:55:40  ucko
  * Include the internal bzlib.h when using MSVC until its build system
  * catches up.
