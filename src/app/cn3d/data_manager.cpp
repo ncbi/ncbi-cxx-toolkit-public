@@ -45,11 +45,11 @@
 #include <objects/cdd/Cdd_descr_set.hpp>
 #include <objects/cdd/Cdd_descr.hpp>
 
+#include "cn3d/asn_reader.hpp"
 #include "cn3d/data_manager.hpp"
 #include "cn3d/structure_set.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
-#include "cn3d/asn_reader.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/asn_converter.hpp"
 
@@ -753,6 +753,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/08/21 18:02:01  thiessen
+* change header order for Mac compilation
+*
 * Revision 1.18  2003/02/03 19:20:03  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
