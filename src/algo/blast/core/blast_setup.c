@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.16  2003/05/08 18:20:47  dondosha
+* Corrected order of query frames
+*
 * Revision 1.15  2003/05/06 21:27:31  dondosha
 * Moved auxiliary functions from blast_driver.c to relevant modules
 *
@@ -430,7 +433,7 @@ Int2 BLAST_GetTranslatedSeqLoc(SeqLocPtr query_slp,
    Uint1Ptr buffer, buffer_var, sequence;
    Int2 status;
    ValNodePtr vnp;
-   Int4 frame_array[6] = { 1, 2, 3, -3, -2, -1 };
+   Int4 frame_array[6] = { 1, 2, 3, -1, -2, -3 };
    Int4Ptr frame_info;
    SeqIdPtr seqid;
    
