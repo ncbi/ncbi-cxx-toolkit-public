@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.63  2004/04/29 20:32:38  papadopo
+ * remove RPS_SCORE_MIN, since it turned out to be a workaround for a bug that has since been fixed
+ *
  * Revision 1.62  2004/04/29 19:58:03  camacho
  * Use generic matrix allocator/deallocator from blast_psi_priv.h
  *
@@ -3426,7 +3429,6 @@ BLAST_LargeGapSumE(
 
 #define PRO_K_MULTIPLIER 1.2
 #define MAX_SCORE_RANGE 10000
-#define RPS_SCORE_MIN -32767  /* inconsistent with BLAST_SCORE_MIN */
 
 static double
 RPSfindUngappedLambda(Char *matrixName)
@@ -3482,7 +3484,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
         for (j = 0 ; j < PSI_ALPHABET_SIZE; j++) {
             if (j == AMINOACID_TO_NCBISTDAA['X'])
                 continue;
-            if ((matrix[i][j] > RPS_SCORE_MIN) && 
+            if ((matrix[i][j] > BLAST_SCORE_MIN) && 
                 (matrix[i][j] < minScore))
                 minScore = matrix[i][j];
             if (matrix[i][j] > maxScore)
@@ -3619,7 +3621,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
     for (index = 0; index < db_seq_length+1; index++) {
         for (inner_index = 0; inner_index < PSI_ALPHABET_SIZE; inner_index++) {
-            if (posMatrix[index][inner_index] <= RPS_SCORE_MIN || 
+            if (posMatrix[index][inner_index] <= BLAST_SCORE_MIN || 
                 inner_index == AMINOACID_TO_NCBISTDAA['X']) {
                 returnMatrix[index][inner_index] = 
                     posMatrix[index][inner_index];
