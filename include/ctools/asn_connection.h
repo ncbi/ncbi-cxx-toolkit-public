@@ -34,6 +34,7 @@
  */
 
 #include <connect/ncbi_connection.h>
+#include <connect/ncbi_service_connector.h>
 #include <asn.h>
 
 
@@ -123,6 +124,9 @@ CONN CreateAsnConn_Service
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/23 16:14:25  lavr
+ * +<connect/ncbi_service_connector.h>
+ *
  * Revision 1.8  2003/11/13 15:58:47  lavr
  * Guard macro changed
  *
