@@ -34,7 +34,7 @@
  *  Private interface for Position Iterated BLAST API.
  */
 
-#include <algo/blast/core/blast_psi.h>
+/*#include <algo/blast/core/blast_psi.h>*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +73,9 @@ _PSIDeallocateMatrix(void** matrix, unsigned int ncols);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2004/04/07 21:43:47  camacho
+ * Removed unneeded #include directive
+ *
  * Revision 1.1  2004/04/07 19:11:17  camacho
  * Initial revision
  *
