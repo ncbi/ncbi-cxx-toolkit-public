@@ -146,7 +146,7 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
 }
 
 void
-CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+CBlastDbDataLoader::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     //LOG_POST("CBlastDbDataLoader::DebugDump\n");
     ddc.SetFrame("CGBLoader");
@@ -239,6 +239,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.14  2004/10/21 22:47:21  bealer
+ * - Fix compile warning (unused var).
+ *
  * Revision 1.13  2004/10/05 16:37:58  jianye
  * Use CSeqDB
  *
