@@ -98,7 +98,7 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
    if (hsp_list == NULL)
       return 1;
    
-   if (score_options->gapped_calculation && program != blast_type_blastn)
+   if (score_options->gapped_calculation)
       kbp = sbp->kbp_gap_std;
    else
       kbp = sbp->kbp_std;

@@ -53,46 +53,37 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
                         Uint1 program, BlastQueryInfo * query_info)
 {
-    Int2 status;
+    Int2 tmp_index;
 
     if (sbp == NULL || scoring_options == NULL)
         return 1;
 
+    /* At this stage query sequences are nucleotide only for blastn */
+
     if (program == blast_type_blastn) {
 
-        BLAST_ScoreSetAmbigRes(sbp, 'N');
-        sbp->penalty = scoring_options->penalty;
-        sbp->reward = scoring_options->reward;
-        if (scoring_options->matrix_path &&
-            *scoring_options->matrix_path != NULLB &&
-            scoring_options->matrix && *scoring_options->matrix != NULLB) {
+        /* for blastn, duplicate the ungapped Karlin 
+           structures for use in gapped alignments */
 
-            sbp->read_in_matrix = TRUE;
-            sbp->name = strdup(scoring_options->matrix);
+        for (tmp_index = query_info->first_context;
+             tmp_index <= query_info->last_context; tmp_index++) {
+            if (sbp->kbp_std[tmp_index] != NULL) {
+                BLAST_KarlinBlk *kbp_gap;
+                BLAST_KarlinBlk *kbp;
+ 
+                sbp->kbp_gap_std[tmp_index] = BLAST_KarlinBlkCreate();
+                kbp_gap = sbp->kbp_gap_std[tmp_index];
+                kbp     = sbp->kbp_std[tmp_index];
 
-        } else {
-            char buffer[50];
-            sbp->read_in_matrix = FALSE;
-            sprintf(buffer, "blastn matrix:%ld %ld",
-                    (long) sbp->reward, (long) sbp->penalty);
-            sbp->name = strdup(buffer);
+                kbp_gap->Lambda = kbp->Lambda;
+                kbp_gap->K      = kbp->K;
+                kbp_gap->logK   = kbp->logK;
+                kbp_gap->H      = kbp->H;
+                kbp_gap->paramC = kbp->paramC;
+            }
         }
-        status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
 
     } else {
-        Int2 tmp_index;         /* loop variable. */
-        char* p = NULL;
-
-        sbp->read_in_matrix = TRUE;
-        BLAST_ScoreSetAmbigRes(sbp, 'X');
-        sbp->name = strdup(scoring_options->matrix);
-        /* protein matrices are in all caps by convention */
-        for (p = sbp->name; *p != NULLB; p++)
-            *p = toupper(*p);
-        status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
-        if (status)
-            return status;
-
         for (tmp_index = query_info->first_context;
              tmp_index <= query_info->last_context; tmp_index++) {
             sbp->kbp_gap_std[tmp_index] = BLAST_KarlinBlkCreate();
@@ -102,10 +93,9 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                                       scoring_options->decline_align,
                                       sbp->name, NULL);
         }
-
-        sbp->kbp_gap = sbp->kbp_gap_std;
     }
 
+    sbp->kbp_gap = sbp->kbp_gap_std;
     return 0;
 }
 
@@ -387,46 +377,49 @@ BlastSetUp_MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
     return status;
 }
 
-static Int2
-BlastScoreBlkInit(Uint1 program_number, 
+Int2
+BlastScoreBlkMatrixInit(Uint1 program_number, 
                   const BlastScoringOptions* scoring_options,
-                  const BlastHitSavingOptions* hit_options,
-                  BlastQueryInfo* query_info, BlastScoreBlk** sbpp, 
-                  Blast_Message** blast_message)
+                  BlastScoreBlk* sbp)
 {
-   BlastScoreBlk* sbp = *sbpp;
    Int2 status = 0;
-   Boolean is_na;
-   Int4 total_num_contexts;
 
-   if (sbp) {
-      /* Scoring block has already been created */
-      return 0;
+   if (!sbp || !scoring_options)
+      return 1;
+
+   if (program_number == blast_type_blastn) {
+
+      BLAST_ScoreSetAmbigRes(sbp, 'N');
+      sbp->penalty = scoring_options->penalty;
+      sbp->reward = scoring_options->reward;
+      if (scoring_options->matrix_path &&
+          *scoring_options->matrix_path != NULLB &&
+          scoring_options->matrix && *scoring_options->matrix != NULLB) {
+
+          sbp->read_in_matrix = TRUE;
+          sbp->name = strdup(scoring_options->matrix);
+
+       } else {
+          char buffer[50];
+          sbp->read_in_matrix = FALSE;
+          sprintf(buffer, "blastn matrix:%ld %ld",
+                  (long) sbp->reward, (long) sbp->penalty);
+          sbp->name = strdup(buffer);
+       }
+       status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
+
+    } else {
+       char* p = NULL;
+
+       sbp->read_in_matrix = TRUE;
+       BLAST_ScoreSetAmbigRes(sbp, 'X');
+       sbp->name = strdup(scoring_options->matrix);
+       /* protein matrices are in all caps by convention */
+       for (p = sbp->name; *p != NULLB; p++)
+          *p = toupper(*p);
+       status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
    }
 
-   /* At this stage query sequences are nucleotide only for blastn */
-   is_na = (program_number == blast_type_blastn);
-   total_num_contexts = query_info->last_context + 1;
-
-   if (is_na)
-      sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
-   else
-      sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
-
-   /* Fills in block for gapped blast. */
-   if (hit_options->phi_align) {
-      PHIScoreBlkFill(sbp, scoring_options, blast_message);
-   } else {
-      status = BlastScoreBlkGappedFill(sbp, scoring_options, 
-                                       program_number, query_info);
-      if (status) {
-         Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
-                            "Unable to initialize scoring block");
-         return status;
-      }
-   }
-   
-   *sbpp = sbp;
    return 0;
 }
 
@@ -463,14 +456,21 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     if (!sbpp)
        return -1;
 
-    if ((status = BlastScoreBlkInit(program_number, scoring_options, 
-                     hit_options, query_info, &sbp, blast_message)) != 0)
-       return status;
-    else
-       *sbpp = sbp;
-
     /* At this stage query sequences are nucleotide only for blastn */
+
     is_na = (program_number == blast_type_blastn);
+    if (is_na)
+       sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, query_info->last_context + 1);
+    else
+       sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, query_info->last_context + 1);
+
+    *sbpp = sbp;
+    if (!sbp)
+       return 1;
+
+    status = BlastScoreBlkMatrixInit(program_number, scoring_options, sbp);
+    if (status != 0)
+       return status;
 
     next_mask_slp = query_blk->lcase_mask;
     mask_slp = NULL;
@@ -595,6 +595,19 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         *filter_out = BlastMaskLocFree(*filter_out);
     }
 
+    /* Fills in block for gapped blast. */
+    if (hit_options->phi_align) {
+       PHIScoreBlkFill(sbp, scoring_options, blast_message);
+    } else {
+       status = BlastScoreBlkGappedFill(sbp, scoring_options, 
+                                        program_number, query_info);
+       if (status) {
+          Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
+                             "Unable to initialize scoring block");
+          return status;
+       }
+    }
+   
     /* Get "ideal" values if the calculated Karlin-Altschul params bad. */
     if (program_number == blast_type_blastx ||
         program_number == blast_type_tblastx) {
@@ -642,7 +655,7 @@ Int8 ComputeEffectiveSearchSpace(BLAST_KarlinBlk* kbp, /* [in] */
 
     for (i=0; i<5; i++) {
 
-        if (program_number != blast_type_blastn && 
+        if (program_number != blast_type_blastn &&
             scoring_options->gapped_calculation) {
 
             length_adjustment = BLAST_Nint((((kbp->logK)+log((double)(query_length-last_length_adjustment)*(double)MAX(db_num_seqs, db_length-db_num_seqs*last_length_adjustment)))*alpha/kbp->Lambda) + beta);
@@ -707,8 +720,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
       }
    }
    
-   if (scoring_options->gapped_calculation && 
-       program_number != blast_type_blastn) 
+   if (scoring_options->gapped_calculation) 
       kbp_ptr = sbp->kbp_gap_std;
    else
       kbp_ptr = sbp->kbp_std; 

@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.29  2004/02/27 15:56:35  papadopo
+* Mike Gertz' modifications to unify handling of gapped Karlin blocks for protein and nucleotide searches. Also modified BLAST_MainSetUp to allocate gapped Karlin blocks last
+*
 * Revision 1.28  2004/02/24 17:59:03  dondosha
 * Moved BLAST_CalcEffLengths from blast_engine.h; Added BLAST_GapAlignSetUp to set up only gapped alignment related structures
 *
@@ -282,6 +285,20 @@ BLAST_GapAlignSetUp(Uint1 program_number,
    BlastExtensionParameters** ext_params,
    BlastHitSavingParameters** hit_params,
    BlastGapAlignStruct** gap_align);
+
+/** BlastScoreBlkMatrixInit, fills score matrix parameters in the ScoreBlkPtr
+ *      Should be moved to blastkar.c (or it's successor) in the future.
+ * @param program_number Used to set fields on sbp [in]
+ * @param scoring_options Scoring_options [in]
+ * @param sbp Contains fields to be set, should not be NULL. [out]
+ *
+*/
+
+Int2
+BlastScoreBlkMatrixInit(Uint1 program_number, 
+   const BlastScoringOptions* scoring_options,
+   BlastScoreBlk* sbp);
+
 
 #ifdef __cplusplus
 }

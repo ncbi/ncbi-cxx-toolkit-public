@@ -443,8 +443,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
    lh_helper = (LinkHelpStruct *) 
       calloc(lh_helper_size, sizeof(LinkHelpStruct));
 
-	if (gapped_calculation && 
-       program_number != blast_type_blastn)
+	if (gapped_calculation) 
 		kbp = sbp->kbp_gap;
 	else
 		kbp = sbp->kbp;

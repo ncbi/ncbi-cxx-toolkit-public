@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.84  2004/02/27 15:56:33  papadopo
+ * Mike Gertz' modifications to unify handling of gapped Karlin blocks for protein and nucleotide searches. Also modified BLAST_MainSetUp to allocate gapped Karlin blocks last
+ *
  * Revision 1.83  2004/02/24 17:57:14  dondosha
  * Added function to combine all options validation functions for the C engine
  *
@@ -543,7 +546,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    (*parameters)->x_dropoff = (Int4)
       ceil(word_options->x_dropoff*NCBIMATH_LN2/sbp->kbp_std[context]->Lambda);
 
-   if (program_number != blast_type_blastn && gapped_calculation)
+   if (gapped_calculation)
       kbp = sbp->kbp_gap[context];
    else
       kbp = sbp->kbp_std[context];
@@ -682,7 +685,7 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
       return -1;
    }
 
-   if ((program_number != blast_type_blastn) && sbp->kbp_gap) {
+   if (sbp->kbp_gap) {
       kbp_gap = sbp->kbp_gap[query_info->first_context];
    } else {
       kbp_gap = kbp;
