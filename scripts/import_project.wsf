@@ -13,7 +13,7 @@
 			var usage_str;
 			//usage_str  = "Usage:\n";
 			//usage_str += "cscript import_project.wsf <project-name> <path-to-pre-built-toolkit> [-dll]";
-			usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> <builddir> [-dll]\n";
+			usage_str  = "USAGE: cscript import_project.wsf <cvs_tree_path> [builddir] [-dll]\n";
 			usage_str += "SYNOPSIS:\n";
 			usage_str += "    Retrieve project (with all sub-projects) located in the NCBI C++ toolkit\n";
 			usage_str += "    CVS tree at:\n";
@@ -26,22 +26,23 @@
 			usage_str += "    Open created solution in MSVC7.1 IDE.\n";
 			usage_str += "ARGUMENTS:\n";
 			usage_str += "    <cvs_tree_path>  -- starting path for import\n";
-			usage_str += "    <builddir>       -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
+			usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
 			usage_str += "    [-dll]           -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+			usage_str += "EXAMPLES:\n";
+			usage_str += "    cscript import_project.wsf objmgr/test\n";
+			usage_str += "    cscript import_project.wsf objmgr/test -dll\n";
+			usage_str += "    cscript import_project.wsf objmgr/test cxx.potluck -dll\n";
+			usage_str += "    cscript import_project.wsf objmgr/test \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
 			
 			return usage_str;
 		}
 		// Verify command line arguments
 		function VerifyArguments(oArgs)
 		{
-			if (oArgs.Length < 2) {
+			if (oArgs.Length < 1) {
 				return false;
-			}
-			if (oArgs.Length == 3) {
-				var build_mode = oArgs.Item(2);
-				if (build_mode != "-dll" && build_mode != "-static") {
-					return false;
-				}
 			}
 			if (oArgs.Length > 3) {
 				return false;
@@ -79,12 +80,25 @@
 				WScript.Echo(Usage());
 				WScript.Quit(1);
 			}
-			this.ProjectName     = WScript.Arguments.Item(0);
-			this.ToolkitPath     = WScript.Arguments.Item(1);
-			if (WScript.Arguments.Length == 2) {
-				this.DllBuild    = false; // default is static build
+			
+			//this.ProjectName     = WScript.Arguments.Item(0);
+			//this.ToolkitPath     = WScript.Arguments.Item(1);
+			//if (WScript.Arguments.Length == 2) {
+			//	this.DllBuild    = false; // default is static build
+			//} else {
+			//	this.DllBuild    = WScript.Arguments.Item(2).toLowerCase() == "-dll";
+			//}
+			this.ProjectName = GetPositionalValue(oArgs, 0);
+			this.DllBuild    = GetFlagValue(oArgs, "-dll", false);
+			var toolkit_path = GetOptionalPositionalValue(oArgs, 
+			                                              1, 
+			                                              GetDefaultCXX_ToolkitFolder() +
+			                                                     "\\" +
+			                                                     GetDefaultCXX_ToolkitSubFolder());
+			if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
+				this.ToolkitPath = toolkit_path;
 			} else {
-				this.DllBuild    = WScript.Arguments.Item(2).toLowerCase() == "-dll";
+				this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path;	
 			}
 		}
 		// Diagnostic dump of task object
@@ -201,8 +215,8 @@
 		var oShell = WScript.CreateObject("WScript.shell");
 		
 		var oTask  = new Task();
+		DumpTask(oTask);
 		VerifyTask(oTask);
-		//DumpTask(oTask);
 		
 		var oTree  = new Tree(oShell, oTask);
 		//DumpTree(oTree);

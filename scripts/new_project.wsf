@@ -10,14 +10,8 @@
 		// Verify command line arguments
 		function VerifyArguments(oArgs)
 		{
-			if (oArgs.Length < 3) {
+			if (oArgs.Length < 2) {
 				return false;
-			}
-			if (oArgs.Length == 4) {
-				var build_mode = oArgs.Item(3);
-				if (build_mode != "-dll" && build_mode != "-static") {
-					return false;
-				}
 			}
 			if (oArgs.Length > 4) {
 				return false;
@@ -90,8 +84,15 @@
 			usage_str += "                   app/gui     for FLTK application\n";
 			usage_str += "                   app/objects for application using ASN.1 objects\n";
 			usage_str += "                   app/objmgr  for application using object manager.\n";
-			usage_str += "    <builddir>  -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "    [builddir]       -- path to the pre-built NCBI C++ toolkit\n";
+			usage_str += "                        default path is: " + GetDefaultCXX_ToolkitFolder() + "\\" + GetDefaultCXX_ToolkitSubFolder() + "\n";
+			usage_str += "                        you can only specify a subfolder of " + GetDefaultCXX_ToolkitFolder() + "\n";
 			usage_str += "    [-dll]      -- use NCBI C++ toolkit DLLs' instead of static libraries\n";
+			usage_str += "EXAMPLES:\n";
+			usage_str += "    cscript new_project.wsf my_app app/basic\n";
+			usage_str += "    cscript new_project.wsf my_app app/basic -dll\n";
+			usage_str += "    cscript new_project.wsf my_app app/basic cxx.potluck -dll\n";
+			usage_str += "    cscript new_project.wsf my_app app/basic \\\\Snowman\\win-coremake\\Lib\\Ncbi\\CXX_Toolkit\\msvc71\\cxx.current -dll\n";
 			
 			return usage_str;
 		}
@@ -103,14 +104,20 @@
 				WScript.Echo(Usage());
 				WScript.Quit(1);
 			}
-			this.ProjectName     = WScript.Arguments.Item(0);
-			this.ProjectTemplate = WScript.Arguments.Item(1).replace("/", "/sample/");
-			this.ToolkitPath     = WScript.Arguments.Item(2);
-			if (WScript.Arguments.Length == 3) {
-				this.DllBuild    = false; // default is static build
+			this.ProjectName     = GetPositionalValue(oArgs, 0);
+			this.ProjectTemplate = GetPositionalValue(oArgs, 1).replace("/", "/sample/");
+			this.DllBuild        = GetFlagValue(oArgs, "-dll", false);
+			var toolkit_path     = GetOptionalPositionalValue(oArgs, 
+			                                              2, 
+			                                              GetDefaultCXX_ToolkitFolder() +
+			                                                     "\\" +
+			                                                     GetDefaultCXX_ToolkitSubFolder());
+			if (toolkit_path.indexOf("\\\\") == 0 || toolkit_path.indexOf(":\\") == 1) {
+				this.ToolkitPath = toolkit_path;
 			} else {
-				this.DllBuild    = WScript.Arguments.Item(3).toLowerCase() == "-dll";
+				this.ToolkitPath = GetDefaultCXX_ToolkitFolder() + "\\" + toolkit_path;	
 			}
+
 		}
 		// Diagnostic dump of task object
 		function DumpTask(oTask)
