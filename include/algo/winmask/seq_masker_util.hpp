@@ -59,6 +59,16 @@ public:
      **
      **/
     static Uint1 BitCount( Uint4 mask, Uint1 bit_value = 1 );
+
+    /**
+     **\brief Reverse complement of a unit.
+     **
+     **\param seq the unit
+     **\param size the unit length
+     **\return the reverse complement of seq
+     **
+     **/
+    static Uint4 reverse_complement( Uint4 seq, Uint1 size );
 };
 
 END_NCBI_SCOPE
@@ -66,6 +76,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/17 20:21:22  morgulis
+ * Only store half of the units in unit counts file.
+ *
  * Revision 1.2  2005/02/12 19:58:03  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

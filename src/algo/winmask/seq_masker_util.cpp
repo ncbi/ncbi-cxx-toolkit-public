@@ -50,12 +50,28 @@ Uint1 CSeqMaskerUtil::BitCount( Uint4 mask, Uint1 bit_value )
     }
 }
 
+//-------------------------------------------------------------------------
+Uint4 CSeqMaskerUtil::reverse_complement( Uint4 seq, Uint1 size )
+{
+    Uint4 result( 0 );
+
+    for( Uint1 i( 0 ); i < size; ++i )
+    {
+        Uint4 letter( ~(((seq>>(2*i))&0x3)|(~0x3)) );
+        result = (result<<2)|letter;
+    }
+
+    return result;
+}
 
 END_NCBI_SCOPE
 
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/17 20:21:22  morgulis
+ * Only store half of the units in unit counts file.
+ *
  * Revision 1.2  2005/02/12 19:58:04  dicuccio
  * Corrected file type issues introduced by CVS (trailing return).  Updated
  * typedef names to match C++ coding standard.

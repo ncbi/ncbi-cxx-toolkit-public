@@ -41,6 +41,8 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/IUPACna.hpp>
 
+#include "algo/winmask/seq_masker_util.hpp"
+
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_gen_counts.hpp"
 #include "win_mask_dup_table.hpp"
@@ -108,17 +110,7 @@ Uint8 fastalen( const string & fname )
 
 //------------------------------------------------------------------------------
 static Uint4 reverse_complement( Uint4 seq, Uint1 size )
-{
-    Uint4 result( 0 );
-
-    for( Uint1 i( 0 ); i < size; ++i )
-    {
-        Uint4 letter( ~(((seq>>(2*i))&0x3)|(~0x3)) );
-        result = (result<<2)|letter;
-    }
-
-    return result;
-}
+{ return CSeqMaskerUtil::reverse_complement( seq, size ); }
 
 //------------------------------------------------------------------------------
 CWinMaskCountsGenerator::CWinMaskCountsGenerator( const string & arg_input,
@@ -365,10 +357,10 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
                     {
                         Uint4 runit( reverse_complement( unit, unit_size ) );
 
-                        if( (unit&prefix_mask) == prefix )
+                        if( unit <= runit && (unit&prefix_mask) == prefix )
                             ++counts[unit&suffix_mask];
 
-                        if( (runit&prefix_mask) == prefix )
+                        if( runit <= unit && (runit&prefix_mask) == prefix )
                             ++counts[runit&suffix_mask];
                     }
 
@@ -381,14 +373,26 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
     for( Uint4 i( 0 ); i < vector_size; ++i )
     {
+        Uint4 ri; reverse_complement( i, unit_size );
+
         if( counts[i] > 0 )
-            ++total_ecodes;
+        {
+            ri = reverse_complement( i, unit_size );
+            
+            if( i == ri )
+                ++total_ecodes; 
+            else total_ecodes += 2;
+        }
 
         if( counts[i] >= min_count )
         {
             if( counts[i] >= max_count )
-                ++score_counts[max_count - 1];
-            else ++score_counts[counts[i] - 1];
+                if( i == ri )
+                    ++score_counts[max_count - 1];
+                else score_counts[max_count - 1] += 2;
+            else if( i == ri )
+                ++score_counts[counts[i] - 1];
+            else score_counts[counts[i] - 1] += 2;
 
             if( do_output )
                 *out_stream << hex << prefix + i << " " 
@@ -403,6 +407,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/17 20:21:22  morgulis
+ * Only store half of the units in unit counts file.
+ *
  * Revision 1.2  2005/03/08 17:02:30  morgulis
  * Changed unit counts file to include precomputed threshold values.
  * Changed masking code to pick up threshold values from the units counts file.

@@ -506,6 +506,11 @@ CSeqMasker::LStat::LStat(   const string & name,
 //----------------------------------------------------------------------------
 Uint4 CSeqMasker::LStat::operator[]( Uint4 target ) const
 {
+    Uint4 rtarget = CSeqMaskerUtil::reverse_complement( target, unit_size );
+
+    if( target > rtarget )
+      target = rtarget;
+
     vector< Uint4 >::const_iterator res = lower_bound( units.begin(), 
                                                        units.end(),
                                                        target );
@@ -641,6 +646,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.9  2005/03/17 20:21:22  morgulis
+ * Only store half of the units in unit counts file.
+ *
  * Revision 1.8  2005/03/11 15:08:22  morgulis
  * 1. Made -window parameter optional and be default equal to unit_size + 4;
  * 2. Changed the name of -lstat parameter to -ustat.
