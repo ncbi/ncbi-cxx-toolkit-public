@@ -70,7 +70,7 @@ public:
     /// Calculate pairwise fractions of non-identity
     static double Divergence(const string& seq1, const string& seq2);
     static void Divergence(const objects::CAlnVec& avec_in, TMatrix& result);
-    static void Divergence(const CAlignmentFile& aln, TMatrix& result);
+    static void Divergence(const CAlignment& aln, TMatrix& result);
 
     /// Compute a tree by neighbor joining; 
     /// as per Hillis et al. (Ed.), Molecular Systematics, pg. 488-489.
@@ -93,8 +93,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2004/02/18 22:57:33  jcherry
- * Reflect change to util/creaders/alignment_file.[ch]pp
+ * Revision 1.4  2004/02/19 13:21:58  dicuccio
+ * Roll back to version 1.2
  *
  * Revision 1.2  2004/02/10 17:02:28  dicuccio
  * Formatting changes.  Added export specifiers
