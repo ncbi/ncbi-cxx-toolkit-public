@@ -35,7 +35,7 @@
 
 #include <algo/blast/api/blast_prot_options.hpp>
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -96,6 +96,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/19 14:53:24  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.6  2004/01/20 15:19:25  camacho
  * Provide missing default parameters to default ctor
  *

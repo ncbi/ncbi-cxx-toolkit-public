@@ -35,7 +35,7 @@
 
 #include <algo/blast/api/blast_nucl_options.hpp>
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/19 14:53:24  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.5  2004/03/17 21:48:30  dondosha
  * Added custom SetMBInitialWordOptionsDefaults and SetMBGappedExtensionDefaults methods
  *

@@ -36,7 +36,7 @@
 
 #include <algo/blast/api/blast_options_handle.hpp>
 
-/** @addtogroup Miscellaneous
+/** @addtogroup AlgoBlast
  *
  * @{
  */
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/19 14:53:24  camacho
+ * Move to doxygen group AlgoBlast
+ *
  * Revision 1.5  2004/03/10 14:55:02  madden
  * Added methods for get/set matrix, matrix-path, gap-opening, gap-extension
  *
