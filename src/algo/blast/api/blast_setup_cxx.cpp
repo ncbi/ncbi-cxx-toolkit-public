@@ -474,11 +474,58 @@ SetupSubjects(const TSeqLocVector& subjects,
     options->SetDbLength(dblength);
 }
 
+static
+TSeqPos CalculateSeqBufferLength(TSeqPos sequence_length, Uint1 coding,
+                                 ENa_strand strand = eNa_strand_unknown, 
+                                 bool add_sentinels = true)
+{
+    TSeqPos retval = 0;
+
+    switch (coding) {
+    // Strand and sentinels are irrelevant in this encoding.
+    // Strand is always plus and sentinels cannot be represented
+    case NCBI2NA_ENCODING:
+        ASSERT(add_sentinels == false);
+        ASSERT(strand == eNa_strand_plus);
+        retval = sequence_length / COMPRESSION_RATIO + 1;
+        break;
+
+    case NCBI4NA_ENCODING:
+        if (add_sentinels) {
+            if (strand == eNa_strand_both) {
+                retval = sequence_length * 2;
+                retval += 3;
+            } else {
+                retval = sequence_length + 2;
+            }
+        } else {
+            if (strand == eNa_strand_both) {
+                retval = sequence_length * 2;
+            } else {
+                retval = sequence_length;
+            }
+        }
+        break;
+
+    case BLASTP_ENCODING:
+        ASSERT(add_sentinels == true);
+        ASSERT(strand == eNa_strand_unknown);
+        retval = sequence_length + 2;
+        break;
+
+    default:
+        abort();
+    }
+
+    return retval;
+}
+
 #define LAST2BITS 0x03
 
 // Compresses sequence data on vector to buffer, which should have been
 // allocated and have the right size.
-static void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
+static 
+void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 {
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
@@ -503,7 +550,8 @@ static void CompressDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
             }
             buffer[ci] |= ((vec[i] & LAST2BITS)<<bit_shift);
     }
-    buffer[ci] |= vec.size()%COMPRESSION_RATIO;    // Number of bases in the last byte.
+    // Set the number of bases in the last byte.
+    buffer[ci] |= vec.size()%COMPRESSION_RATIO;
 }
 
 //pair<Uint1*, TSeqPos>
@@ -521,14 +569,14 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
     // Retrieves the correct strand (plus or minus), but not both
     CSeqVector sv =
         handle.GetSequenceView(sl, CBioseq_Handle::eViewConstructed,
-                               CBioseq_Handle::eCoding_Ncbi, strand);
+                               CBioseq_Handle::eCoding_Ncbi);
 
     switch (encoding) {
     // Protein sequences (query & subject) always have sentinels around sequence
     case BLASTP_ENCODING:
         sentinel = NULLB;
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
-        buflen = sv.size()+2;
+        buflen = CalculateSeqBufferLength(sv.size(), BLASTP_ENCODING);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         *buf_var++ = sentinel;
         for (i = 0; i < sv.size(); i++)
@@ -540,10 +588,8 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
     case BLASTNA_ENCODING: // Used for nucleotide blastn queries
         sv.SetCoding(CSeq_data::e_Ncbi4na);
         sentinel = 0xF;
-        buflen = add_nucl_sentinel ? sv.size() + 2 : sv.size();
-        if (strand == eNa_strand_both)
-            buflen = add_nucl_sentinel ? buflen * 2 - 1 : buflen * 2;
-
+        buflen = CalculateSeqBufferLength(sv.size(), NCBI4NA_ENCODING,
+                                          strand, add_nucl_sentinel);
         buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
         if (add_nucl_sentinel)
             *buf_var++ = sentinel;
@@ -579,19 +625,21 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope, TSeqPos* len,
                 *buf_var++ = sentinel;
             }
         }
+
         break;
 
     /* Used only in Blast2Sequences for the subject sequence. 
      * No sentinels are required. As in readdb, remainder 
-     * (sv.size()%4 != 0) goes in the last 2 bits of the last byte.
+     * (sv.size()%COMPRESSION_RATIO != 0) goes in the last 2 bits of the 
+     * last byte.
      */
     case NCBI2NA_ENCODING:
         ASSERT(add_nucl_sentinel == false);
         sv.SetCoding(CSeq_data::e_Ncbi2na);
-        buflen = (sv.size()/COMPRESSION_RATIO) + 1;
-
-        buf = buf_var = (Uint1*) malloc(sizeof(Uint1)*buflen);
-        CompressDNA(sv, buf_var, buflen);
+        buflen = CalculateSeqBufferLength(sv.size(), sv.GetCoding(),
+                                          eNa_strand_plus, add_nucl_sentinel);
+        buf = (Uint1*) malloc(sizeof(Uint1)*buflen);
+        CompressDNA(sv, buf, buflen);
         break;
 
     default:
@@ -795,6 +843,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/10/27 21:27:36  camacho
+* Remove extra argument to GetSequenceView, minor refactorings
+*
 * Revision 1.42  2003/10/22 14:21:55  camacho
 * Added sanity checking assertions
 *
