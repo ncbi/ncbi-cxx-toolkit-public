@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/11/28 14:16:13  thiessen
+* add 'show' to comment + structure name evidence
+*
 * Revision 1.15  2001/11/27 16:26:07  thiessen
 * major update to data management system
 *
@@ -387,7 +390,7 @@ void CDDAnnotateDialog::SetupGUIControls(int selectAnnot, int selectEvidence)
     bEditEvid->Enable(selectedEvid != NULL);
     bShow->Enable(selectedEvid != NULL &&
         ((selectedEvid->IsReference() && selectedEvid->GetReference().IsPmid()) ||
-         IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvid)));
+         IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvid) || selectedEvid->IsComment()));
     bEvidUp->Enable(evids->GetSelection() > 0);
     bEvidDown->Enable(evids->GetSelection() < evids->GetCount() - 1);
 }
@@ -740,6 +743,13 @@ void CDDAnnotateDialog::ShowEvidence(void)
     // highlight residues if structure evidence
     else if (IS_STRUCTURE_EVIDENCE_BSANNOT(*selectedEvidence)) {
         HighlightResidues(structureSet, selectedEvidence->GetBsannot());
+        wxMessageBox(
+            selectedEvidence->GetBsannot().GetFeatures().front()->GetDescr().front()->GetName().c_str(),
+            "Structure Evidence", wxOK | wxCENTRE, this);
+    }
+
+    else if (selectedEvidence->IsComment()) {
+        wxMessageBox(selectedEvidence->GetComment().c_str(), "Comment", wxOK | wxCENTRE, this);
     }
 
     else {
