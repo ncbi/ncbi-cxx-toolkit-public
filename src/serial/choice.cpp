@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/07/25 19:13:04  grichenk
+* Check if the object is CObject-derived before dynamic cast
+*
 * Revision 1.27  2001/07/16 16:22:51  grichenk
 * Added CSerialUserOp class to create Assign() and Equals() methods for
 * user-defind classes.
@@ -280,15 +283,17 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
                                  TConstObjectPtr object2) const
 {
     // User defined comparison
-    const CSerialUserOp* op1 =
-        dynamic_cast<const CSerialUserOp*>
-        (static_cast<const CObject*>(object1));
-    const CSerialUserOp* op2 =
-        dynamic_cast<const CSerialUserOp*>
-        (static_cast<const CObject*>(object2));
-    if ( op1  &&  op2 ) {
-        if ( !op1->Equals(*op2) )
-            return false;
+    if ( IsCObject() ) {
+        const CSerialUserOp* op1 =
+            dynamic_cast<const CSerialUserOp*>
+            (static_cast<const CObject*>(object1));
+        const CSerialUserOp* op2 =
+            dynamic_cast<const CSerialUserOp*>
+            (static_cast<const CObject*>(object2));
+        if ( op1  &&  op2 ) {
+            if ( !op1->Equals(*op2) )
+                return false;
+        }
     }
 
     // Default comparison
@@ -321,14 +326,16 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 
     // User defined assignment
-    const CSerialUserOp* opsrc =
-        dynamic_cast<const CSerialUserOp*>
-        (static_cast<const CObject*>(src));
-    CSerialUserOp* opdst =
-        dynamic_cast<CSerialUserOp*>
-        (static_cast<CObject*>(dst));
-    if ( opdst  &&  opsrc ) {
-        opdst->Assign(*opsrc);
+    if ( IsCObject() ) {
+        const CSerialUserOp* opsrc =
+            dynamic_cast<const CSerialUserOp*>
+            (static_cast<const CObject*>(src));
+        CSerialUserOp* opdst =
+            dynamic_cast<CSerialUserOp*>
+            (static_cast<CObject*>(dst));
+        if ( opdst  &&  opsrc ) {
+            opdst->Assign(*opsrc);
+        }
     }
 }
 
