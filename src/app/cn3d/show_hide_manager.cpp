@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/10/28 21:36:01  thiessen
+* add show domains with highlights
+*
 * Revision 1.17  2002/06/21 14:40:15  thiessen
 * fix show/hide of nucleotides
 *
@@ -503,6 +506,41 @@ void ShowHideManager::ShowSelectedResidues(const StructureSet *set)
             for (r=m->second->residues.begin(); r!=re; r++) {
                 if (!GlobalMessenger()->IsHighlighted(m->second, r->first))
                     Show(r->second, false);
+            }
+        }
+    }
+}
+
+void ShowHideManager::ShowDomainsWithHighlights(const StructureSet *set)
+{
+    // first, show all highlighted stuff
+    MakeAllVisible();
+    if (!GlobalMessenger()->IsAnythingHighlighted()) return;
+    ShowSelectedResidues(set);
+
+    // then, also show all domains that contain highlighted residues
+    StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
+    for (o=set->objects.begin(); o!=oe; o++) {
+        ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+        for (m=(*o)->graph->molecules.begin(); m!=me; m++) {
+            Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+
+            // find domains in this molecule that have highlights
+            std::map < int , bool > domains;
+            int domain;
+            for (r=m->second->residues.begin(); r!=re; r++) {
+                if (GlobalMessenger()->IsHighlighted(m->second, r->first)) {
+                    domain = m->second->residueDomains[r->first - 1];
+                    if (domain != Molecule::NO_DOMAIN_SET)
+                        domains[domain] = true;
+                }
+            }
+
+            // now show all residues in these domains
+            for (r=m->second->residues.begin(); r!=re; r++) {
+                domain = m->second->residueDomains[r->first - 1];
+                if (domain != Molecule::NO_DOMAIN_SET && domains.find(domain) != domains.end())
+                    Show(r->second, true);
             }
         }
     }

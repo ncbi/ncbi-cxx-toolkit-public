@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/10/28 21:36:01  thiessen
+* add show domains with highlights
+*
 * Revision 1.10  2002/08/15 22:13:11  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -70,6 +73,7 @@
 #include "cn3d/style_manager.hpp"
 #include "cn3d/style_dialog.hpp"
 #include "cn3d/structure_set.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,7 +102,7 @@
 #define ID_ST_NAME 10008
 #define ID_B_NEW 10009
 #define ID_ST_DESCR 10010
-#define ID_B_HIGH 10011
+#define ID_B_SHOW 10011
 #define ID_B_EDIT 10012
 #define ID_B_MOVE 10013
 #define ID_B_DELETE 10014
@@ -182,12 +186,13 @@ void AnnotateDialog::OnButton(wxCommandEvent& event)
         case ID_B_DELETE:
             DeleteAnnotation();
             break;
-        case ID_B_HIGH: {
+        case ID_B_SHOW: {
             DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(available, ID_L_AVAILABLE, wxListBox)
             if (available->GetSelection() >= 0) {
                 StyleManager::UserAnnotation *annotation = ANNOT_FROM_CLIENT_DATA(available);
                 if (annotation) {
                     GlobalMessenger()->SetHighlights(annotation->residues);
+                    structureSet->showHideManager->ShowDomainsWithHighlights(structureSet);
                     highlightedResidues = annotation->residues;
                 } else
                     ERR_POST(Error << "AnnotateDialog::OnButton() - error highlighting annotation #"
@@ -270,7 +275,7 @@ void AnnotateDialog::SetButtonStates(void)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bEdit, ID_B_EDIT, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bMove, ID_B_MOVE, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bDelete, ID_B_DELETE, wxButton)
-    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bHigh, ID_B_HIGH, wxButton)
+    DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(bShow, ID_B_SHOW, wxButton)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tName, ID_ST_NAME, wxStaticText)
     DECLARE_AND_FIND_WINDOW_RETURN_ON_ERR(tDescr, ID_ST_DESCR, wxStaticText)
 
@@ -286,7 +291,7 @@ void AnnotateDialog::SetButtonStates(void)
     bMove->Enable(availableSelected && HighlightsPresent());
     bDelete->Enable(availableSelected);
 
-    bHigh->Enable(availableSelected);
+    bShow->Enable(availableSelected);
     const StyleManager::UserAnnotation *annotation = NULL;
     if (availableSelected) {
         annotation = ANNOT_FROM_CLIENT_DATA(available);
@@ -615,7 +620,7 @@ wxSizer *SetupAnnotationControlDialog( wxPanel *parent, bool call_fit, bool set_
 
     wxBoxSizer *item22 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxButton *item23 = new wxButton( parent, ID_B_HIGH, "Highlight", wxDefaultPosition, wxDefaultSize, 0 );
+    wxButton *item23 = new wxButton( parent, ID_B_SHOW, "Show", wxDefaultPosition, wxDefaultSize, 0 );
     item22->Add( item23, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxButton *item24 = new wxButton( parent, ID_B_EDIT, "Edit", wxDefaultPosition, wxDefaultSize, 0 );

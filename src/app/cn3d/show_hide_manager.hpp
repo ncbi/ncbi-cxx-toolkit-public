@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/10/28 21:36:01  thiessen
+* add show domains with highlights
+*
 * Revision 1.9  2001/10/08 14:18:56  thiessen
 * fix show/hide dialog under wxGTK
 *
@@ -111,6 +114,7 @@ public:
     void ShowResidues(const StructureSet *set, bool showAligned);
     void ShowUnalignedResiduesInAlignedDomains(const StructureSet *set);
     void ShowSelectedResidues(const StructureSet *set);
+    void ShowDomainsWithHighlights(const StructureSet *set);
 
 private:
     typedef std::map < const StructureBase *, bool > EntitiesHidden;
