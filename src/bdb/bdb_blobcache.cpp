@@ -1273,7 +1273,7 @@ public:
             _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
             m_BlobDB.Sync();
-            delete m_Buffer;
+            delete[] m_Buffer;
         }
         delete m_BlobStream;
 
@@ -1317,7 +1317,7 @@ public:
                     if (m_BytesInBuffer) {
                         m_OverflowFile->write((char*)m_Buffer, 
                                               m_BytesInBuffer);
-                        delete m_Buffer;
+                        delete[] m_Buffer;
                         m_Buffer = 0;
                         m_BytesInBuffer = 0;
                     }
@@ -1342,7 +1342,7 @@ public:
         if (m_Buffer) {
             _TRACE("LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
             m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
-            delete m_Buffer;
+            delete[] m_Buffer;
             m_Buffer = 0;
             m_BytesInBuffer = 0;
         }
@@ -2010,6 +2010,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/02/06 16:16:40  vasilche
+ * Fixed delete m_Buffer -> delete[] m_Buffer.
+ *
  * Revision 1.41  2004/02/02 21:24:29  vasilche
  * Fixed buffering of overflow file streams - open file in constructor.
  * Fixed processing of timestamps when fTimeStampOnRead flag is not set.
