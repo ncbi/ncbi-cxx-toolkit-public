@@ -184,7 +184,11 @@ void CEntrez2Client::Query(const string& query, const string& db,
 
 
 /// Given some uids, a database, and an entrez query string,
-/// determine which of these uids match the query string
+/// determine which of these uids match the query string.
+///
+/// Note: If a uid appears more than once in query_uids and
+/// matches the query string, it may or may not appear more
+/// more than once in the result.
 void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
                                const string& query_string,
                                vector<int>& result_uids)
@@ -209,20 +213,21 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
         string whole_query = "(" + query_string + ") AND (" + uids + ")";
         Query(whole_query, db, result_uids);
     } else {
-        // Query with the query_string passed in, and
-        // do the intersection with query_uids locally
-
-        vector<int> all_matching_uids;
-        Query(query_string, db, all_matching_uids);
-
-        // set_intersection needs sorted arrays
-        vector<int> sorted_query_uids(query_uids);
-        sort(sorted_query_uids.begin(), sorted_query_uids.end());
-        sort(all_matching_uids.begin(), all_matching_uids.end());
-
-        set_intersection(sorted_query_uids.begin(), sorted_query_uids.end(),
-                         all_matching_uids.begin(), all_matching_uids.end(),
-                         back_inserter(result_uids));
+        // Break query_uids into chunks <= kMaxIdsInQueryString
+        vector<int> subset_query_uids;
+        subset_query_uids.reserve(kMaxIdsInQueryString);
+        for (unsigned int start = 0;  start < query_uids.size();
+             start += kMaxIdsInQueryString) {
+            subset_query_uids.clear();
+            // end is one past the last index of interest
+            unsigned int end =
+                min(start + kMaxIdsInQueryString, query_uids.size());
+            for (unsigned int i = start;  i < end;  ++i) {
+                subset_query_uids.push_back(query_uids[i]);
+            }
+            // This relies on the fact that FilterIds appends to result
+            FilterIds(subset_query_uids, db, query_string, result_uids);
+        }
     }
 }
 
@@ -236,6 +241,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/09/09 20:00:58  jcherry
+* Changed CEntrez2Client::FilterIds to handle large sets of query uids
+* more intelligently.
+*
 * Revision 1.11  2004/07/27 20:28:54  jcherry
 * Changed CEntre2Client::FilterIds to do intersection locally
 * if handed a large number of uids

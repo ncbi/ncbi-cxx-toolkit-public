@@ -100,7 +100,11 @@ public:
                size_t start_offs = 0, size_t count = 0);
 
     /// Given some uids, a database, and an entrez query string,
-    /// determine which of these uids match the query string
+    /// determine which of these uids match the query string.
+    /// 
+    /// Note: If a uid appears more than once in query_uids and
+    /// matches the query string, it may or may not appear more
+    /// more than once in the result.
     void FilterIds(const vector<int>& query_uids, const string& db,
                    const string& query_string,
                    vector<int>& result_uids);
@@ -138,6 +142,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/09/09 20:00:58  jcherry
+* Changed CEntrez2Client::FilterIds to handle large sets of query uids
+* more intelligently.
+*
 * Revision 1.7  2004/06/16 11:55:52  dicuccio
 * Altered Query() API - added default arguments for starting offset and length of
 * UID list to retrieve
