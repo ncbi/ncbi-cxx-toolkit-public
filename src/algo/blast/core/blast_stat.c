@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.34  2003/09/09 14:21:39  coulouri
+ * change blastkar.h to blast_stat.h
+ *
  * Revision 1.33  2003/09/02 21:12:07  camacho
  * Fix small memory leak
  *
@@ -154,7 +157,7 @@ Detailed Contents:
  * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
  *
  * */
-#include <algo/blast/core/blastkar.h>
+#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_util.h>
 #include <util/tables/raw_scoremat.h>
 

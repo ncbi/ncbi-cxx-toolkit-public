@@ -54,7 +54,7 @@
 
 // NewBlast includes
 #include <algo/blast/core/blast_util.h>
-#include <algo/blast/core/blastkar.h>
+#include <algo/blast/core/blast_stat.h>
 
 #include <algorithm>
 
@@ -692,6 +692,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/09/09 14:21:39  coulouri
+* change blastkar.h to blast_stat.h
+*
 * Revision 1.21  2003/09/09 12:57:15  camacho
 * + internal setup functions, use smart pointers to handle memory mgmt
 *

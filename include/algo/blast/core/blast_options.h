@@ -44,7 +44,7 @@ Detailed Contents:
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_message.h>
-#include <algo/blast/core/blastkar.h>
+#include <algo/blast/core/blast_stat.h>
 
 
 #ifdef __cplusplus

@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.24  2003/09/09 14:21:14  coulouri
+* change blastkar.h to blast_stat.h
+*
 * Revision 1.23  2003/08/11 14:57:16  dondosha
 * Added algo/blast/core path to all #included headers
 *
@@ -184,7 +187,7 @@ extern "C" {
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_options.h>
-#include <algo/blast/core/blastkar.h>
+#include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/mb_lookup.h>
 #include <algo/blast/core/aa_lookup.h>
 #include <algo/blast/core/na_lookup.h>
