@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/11/13 20:53:36  grichenk
+* Fixed comments reading
+*
 * Revision 1.20  2001/10/17 20:41:24  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -281,6 +284,7 @@ char CObjectIStreamXml::SkipWSAndComments(void)
                     }
                     
                 }
+                continue; // skip the next WS or comment
             }
             return '<';
         default:
