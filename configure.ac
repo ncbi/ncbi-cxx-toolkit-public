@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.266 2004/02/04 00:36:00 ucko Exp $
+#  $Id: configure.ac,v 1.267 2004/02/04 01:29:01 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1596,7 +1596,7 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
-AC_CHECK_HEADERS(dlfcn.h sys/poll.h sys/sockio.h sys/sysinfo.h)
+AC_CHECK_HEADERS(dlfcn.h poll.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.60
 AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
 
