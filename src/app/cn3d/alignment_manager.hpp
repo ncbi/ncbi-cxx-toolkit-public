@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/01/29 01:41:05  thiessen
+* add merge neighbor instead of merge near highlight
+*
 * Revision 1.44  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -255,7 +258,7 @@ public:
 
     // merge functions
     typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;
-    void MergeUpdates(const UpdateMap& updates);
+    void MergeUpdates(const UpdateMap& updates, bool mergeToNeighbor);
 
     // calculates row scores using the threader
     void CalculateRowScoresWithThreader(double weightPSSM);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/01/29 01:41:06  thiessen
+* add merge neighbor instead of merge near highlight
+*
 * Revision 1.32  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -174,6 +177,7 @@ private:
         MID_BLOCKALIGN_ALL,
         MID_SET_REGION,
         MID_MERGE_ONE,
+        MID_MERGE_NEIGHBOR,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
         MID_DELETE_ALL
@@ -224,6 +228,11 @@ private:
         menuBar->Check(MID_MERGE_ONE, false);
         SetCursor(wxNullCursor);
     }
+    void MergeNeighborOff(void)
+    {
+        menuBar->Check(MID_MERGE_NEIGHBOR, false);
+        SetCursor(wxNullCursor);
+    }
     void DeleteSingleOff(void)
     {
         menuBar->Check(MID_DELETE_ONE, false);
@@ -245,6 +254,7 @@ public:
     bool DoBlockAlignSingle(void) const { return menuBar->IsChecked(MID_BLOCKALIGN_ONE); }
     bool DoSetRegion(void) const { return menuBar->IsChecked(MID_SET_REGION); }
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
+    bool DoMergeNeighbor(void) const { return menuBar->IsChecked(MID_MERGE_NEIGHBOR); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
     void CancelDerivedSpecialModesExcept(int id)
@@ -256,6 +266,7 @@ public:
         if (id != MID_BLOCKALIGN_ONE && DoBlockAlignSingle()) BlockAlignSingleOff();
         if (id != MID_SET_REGION && DoSetRegion()) SetRegionOff();
         if (id != MID_MERGE_ONE && DoMergeSingle()) MergeSingleOff();
+        if (id != MID_MERGE_NEIGHBOR && DoMergeNeighbor()) MergeNeighborOff();
         if (id != MID_DELETE_ONE && DoDeleteSingle()) DeleteSingleOff();
     }
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2003/01/29 01:41:05  thiessen
+* add merge neighbor instead of merge near highlight
+*
 * Revision 1.81  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -852,7 +855,7 @@ void AlignmentManager::ThreadAllUpdates(const ThreaderOptions& options)
     }
 }
 
-void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesToMerge)
+void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesToMerge, bool mergeToNeighbor)
 {
     if (updatesToMerge.size() == 0) return;
     const ViewerBase::AlignmentList& currentUpdates = updateViewer->GetCurrentAlignments();
@@ -929,8 +932,37 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
     }
 
     updateViewer->ReplaceAlignments(updatesToKeep);
-    if (nSuccessfulMerges > 0)
-        sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple);
+    if (nSuccessfulMerges > 0) {
+        int where = -1;
+
+        // if necessary, find nearest neighbor to merged sequence, and add new row after it
+        if (mergeToNeighbor && nSuccessfulMerges == 1) {
+            auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+                blocks(multiple->GetUngappedAlignedBlocks());
+            BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+            int col, row, rowScore, bestScore, lastRow = multiple->NRows() - 1;
+            const Sequence *mergeSeq = multiple->GetSequenceOfRow(lastRow);
+            for (row=0; row<lastRow; row++) {
+                const Sequence *otherSeq = multiple->GetSequenceOfRow(row);
+                rowScore = 0;
+                for (b=blocks->begin(); b!=be; b++) {
+                    for (col=0; col<(*b)->width; col++) {
+                        rowScore += GetBLOSUM62Score(
+                            mergeSeq->sequenceString[(*b)->GetRangeOfRow(lastRow)->from + col],
+                            otherSeq->sequenceString[(*b)->GetRangeOfRow(row)->from + col]);
+                    }
+                }
+                if (row == 0 || rowScore > bestScore) {
+                    where = row;
+                    bestScore = rowScore;
+                }
+            }
+            TESTMSG("Closest row is #" << (where+1) << ", "
+                << multiple->GetSequenceOfRow(where)->identifier->ToString());
+        }
+
+        sequenceViewer->GetCurrentDisplay()->RowsAdded(nSuccessfulMerges, multiple, where);
+    }
 
     // add pending imported structures to asn data
     updateViewer->SavePendingStructures();

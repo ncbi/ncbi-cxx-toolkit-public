@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2003/01/29 01:41:06  thiessen
+* add merge neighbor instead of merge near highlight
+*
 * Revision 1.54  2003/01/23 20:03:05  thiessen
 * add BLAST Neighbor algorithm
 *
@@ -253,15 +256,15 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
 
     // Algorithms menu
     wxMenu *menu = new wxMenu;
-    menu->Append(MID_THREAD_ONE, "Thread &Single", "", true);
-    menu->Append(MID_THREAD_ALL, "Thread &All");
+    menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
+    menu->Append(MID_BLOCKALIGN_ALL, "Bloc&k Align All");
     menu->AppendSeparator();
     menu->Append(MID_BLAST_ONE, "&BLAST Single", "", true);
     menu->Append(MID_BLAST_PSSM_ONE, "BLAST/&PSSM Single", "", true);
     menu->Append(MID_BLAST_NEIGHBOR, "BLAST &Neighbor", "", true);
     menu->AppendSeparator();
-    menu->Append(MID_BLOCKALIGN_ONE, "B&lock Align Single", "", true);
-    menu->Append(MID_BLOCKALIGN_ALL, "Bloc&k Align All");
+    menu->Append(MID_THREAD_ONE, "Thread &Single", "", true);
+    menu->Append(MID_THREAD_ALL, "Thread &All");
     menu->AppendSeparator();
     menu->Append(MID_SET_REGION, "Set &Region", "", true);
     menuBar->Append(menu, "Al&gorithms");
@@ -269,6 +272,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     // Alignments menu
     menu = new wxMenu;
     menu->Append(MID_MERGE_ONE, "&Merge Single", "", true);
+    menu->Append(MID_MERGE_NEIGHBOR, "Merge to &Neighbor", "", true);
     menu->Append(MID_MERGE_ALL, "Merge &All");
     menu->AppendSeparator();
     menu->Append(MID_DELETE_ONE, "&Delete Single", "", true);
@@ -364,6 +368,13 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
             else
                 MergeSingleOff();
             break;
+        case MID_MERGE_NEIGHBOR:
+            CancelAllSpecialModesExcept(MID_MERGE_NEIGHBOR);
+            if (DoMergeNeighbor())
+                SetCursor(*wxCROSS_CURSOR);
+            else
+                MergeNeighborOff();
+            break;
         case MID_MERGE_ALL:
         {
             AlignmentManager::UpdateMap all;    // construct map/list of all updates
@@ -371,7 +382,7 @@ void UpdateViewerWindow::OnMerge(wxCommandEvent& event)
             if (currentUpdates.size() > 0) {
                 ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates.end();
                 for (u=currentUpdates.begin(); u!=ue; u++) all[*u] = true;
-                updateViewer->alignmentManager->MergeUpdates(all);
+                updateViewer->alignmentManager->MergeUpdates(all, false);
             }
             break;
         }

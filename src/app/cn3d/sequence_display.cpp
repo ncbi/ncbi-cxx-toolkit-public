@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/01/29 01:41:05  thiessen
+* add merge neighbor instead of merge near highlight
+*
 * Revision 1.64  2003/01/28 21:07:56  thiessen
 * add block fit coloring algorithm; tweak row dragging; fix style bug
 *
@@ -796,8 +799,17 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
             if (updateWindow->DoMergeSingle()) {
                 AlignmentManager::UpdateMap single;
                 single[alignment] = true;
-                updateWindow->updateViewer->alignmentManager->MergeUpdates(single);
+                updateWindow->updateViewer->alignmentManager->MergeUpdates(single, false);
                 if (!controlDown) updateWindow->MergeSingleOff();
+                return false;
+            }
+
+            // merge neighbor
+            if (updateWindow->DoMergeNeighbor()) {
+                AlignmentManager::UpdateMap single;
+                single[alignment] = true;
+                updateWindow->updateViewer->alignmentManager->MergeUpdates(single, true);
+                if (!controlDown) updateWindow->MergeNeighborOff();
                 return false;
             }
 
@@ -1306,12 +1318,12 @@ bool SequenceDisplay::CalculateRowScoresWithThreader(double weightPSSM)
     return false;
 }
 
-void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple)
+void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int alnWhere)
 {
     if (nRowsAddedToMultiple <= 0) return;
 
     // find the last row that's from this multiple
-    int r, nRows = 0, lastAlnRowIndex, firstHighlightedRow = -1;
+    int r, nRows = 0, lastAlnRowIndex, displayWhere = -1;
     DisplayRowFromAlignment *lastAlnRow = NULL;
     for (r=0; r<rows.size(); r++) {
         DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[r]);
@@ -1319,24 +1331,16 @@ void SequenceDisplay::RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment
             lastAlnRow = alnRow;
             lastAlnRowIndex = r;
             nRows++;
-
-            // look for first completely highlighted row - if found, insert after that instead
-            if (firstHighlightedRow < 0) {
-                const Sequence *seq = multiple->GetSequenceOfRow(alnRow->row);
-                int i;
-                for (i=0; i<seq->Length(); i++)
-                    if (!GlobalMessenger()->IsHighlighted(seq, i))
-                        break;
-                if (i == seq->Length())
-                    firstHighlightedRow = r;
-            }
+            if (alnWhere >= 0 && alnRow->row == alnWhere)
+                displayWhere = r;  // convert 'where' from alignment row to display row
         }
     }
     if (!lastAlnRow || multiple->NRows() != nRows + nRowsAddedToMultiple) {
         ERR_POST(Error << "SequenceDisplay::RowsAdded() - inconsistent parameters");
         return;
     }
-    int rowToMergeAfter = (firstHighlightedRow >= 0) ? firstHighlightedRow : lastAlnRowIndex;
+    int rowToMergeAfter = (displayWhere >= 0) ? displayWhere : lastAlnRowIndex;
+    TESTMSG("adding new after display row #" << (rowToMergeAfter+1));
 
     // move higher rows up to leave space for new rows
     int nRowsToMove = rows.size() - 1 - rowToMergeAfter;

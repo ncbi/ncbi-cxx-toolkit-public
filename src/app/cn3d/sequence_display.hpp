@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/01/29 01:41:06  thiessen
+* add merge neighbor instead of merge near highlight
+*
 * Revision 1.24  2002/09/05 18:38:57  thiessen
 * add sort by highlights
 *
@@ -283,7 +286,7 @@ public:
     void GetRowOrder(const BlockMultipleAlignment *forAlignment, std::vector < int > *slaveRowOrder) const;
 
     // to inform the display that new rows have been added to or removed from the multiple
-    void RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple);
+    void RowsAdded(int nRowsAddedToMultiple, BlockMultipleAlignment *multiple, int where = -1);
     void RowsRemoved(const std::vector < int >& rowsRemoved, const BlockMultipleAlignment *multiple);
 
     // row scoring and sorting functions - only for single-alignment displays!
