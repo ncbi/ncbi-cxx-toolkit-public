@@ -524,7 +524,7 @@ public:
         return "MEMB_BIT";
     }
     
-    virtual void Accumulate(const CSeqDBVol & vol)
+    virtual void Accumulate(const CSeqDBVol &)
     {
         // Volumes don't have this data, only alias files.
     }

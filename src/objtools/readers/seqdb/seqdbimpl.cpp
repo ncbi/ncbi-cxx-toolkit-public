@@ -242,8 +242,8 @@ Uint4 CSeqDBImpl::GetSeqLengthApprox(Uint4 oid) const
 
 CRef<CBioseq>
 CSeqDBImpl::GetBioseq(Uint4 oid,
-                      bool  use_objmgr,
-                      bool  insert_ctrlA) const
+                      bool  /*use_objmgr  */,
+                      bool  /*insert_ctrlA*/) const
 {
     CSeqDBLockHold locked(m_Atlas);
     Uint4 vol_oid = 0;
