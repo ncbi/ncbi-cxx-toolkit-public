@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/02/05 19:37:04  lavr
+ * List of included header files revised
+ *
  * Revision 1.2  2002/02/04 20:20:28  lavr
  * Notes about stream repositioning added
  *
@@ -42,7 +45,7 @@
  * ===========================================================================
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 
 
 BEGIN_NCBI_SCOPE
