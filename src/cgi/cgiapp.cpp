@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/12/17 04:08:04  vakatov
+* cgiapp.cpp
+*
 * Revision 1.19  1999/11/17 22:48:51  vakatov
 * Moved "GetModTime()"-related code and headers to under #if HAVE_LIBFASTCGI
 *
@@ -101,18 +104,24 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
-#if defined(HAVE_LIBFASTCGI)
+
+#if defined(USE_FASTCGI)  &&  !defined(HAVE_LIBFASTCGI)
+#  undef USE_LIBFASTCGI
+#endif
+
+
+#if defined(USE_FASTCGI)
 # include <fcgiapp.h>
 # include "fcgibuf.hpp"
 # include <sys/stat.h>
 # include <errno.h>
-#endif /* HAVE_LIBFASTCGI */
+#endif /* USE_FASTCGI */
 
 
 BEGIN_NCBI_SCOPE
 
 
-#if defined(HAVE_LIBFASTCGI)
+#if defined(USE_FASTCGI)
 static time_t s_GetModTime(const char* const* argv)
 {
     _ASSERT(argv  &&  argv[0]);
@@ -123,7 +132,7 @@ static time_t s_GetModTime(const char* const* argv)
     }
     return st.st_mtime;
 }
-#endif /* HAVE_LIBFASTCGI */
+#endif /* USE_FASTCGI */
 
 
 
@@ -138,102 +147,16 @@ CCgiApplication* CCgiApplication::Instance(void)
 
 int CCgiApplication::Run(void)
 {
-#if defined(HAVE_LIBFASTCGI)
-    if ( !FCGX_IsCGI() ) {
-
-        time_t mtime = s_GetModTime( m_Argv );        
-        
-        int iterations;
-        {
-            string param = GetConfig().Get("FastCGI", "Iterations");
-            if ( param.empty() ) {
-                iterations = 2;
-            }
-            else {
-                try {
-                    iterations = NStr::StringToInt(param);
-                }
-                catch ( exception& e ) {
-                    ERR_POST("\
-CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
-                    iterations = 2;
-                }
-            }
-        }
-
-        _TRACE("CCgiApplication::Run: FastCGI limited to "
-               << iterations << " iterations");
-        for ( int iteration = 0; iteration < iterations; ++iteration ) {
-            _TRACE("CCgiApplication::FastCGI: " << (iteration + 1)
-                   << " iteration of " << iterations);
-            // obtaining request data
-            FCGX_Stream *pfin, *pfout, *pferr;
-            FCGX_ParamArray penv;
-            if ( FCGX_Accept(&pfin, &pfout, &pferr, &penv) != 0 ) {
-                _TRACE("CCgiApplication::Run: no more requests");
-                break;
-            }
-
-            // default exit status (error)
-            FCGX_SetExitStatus(-1, pfout);
-
-            try {
-                CNcbiEnvironment env(penv);
-                CCgiObuffer obuf(pfout,512);              
-                CNcbiOstream ostr(&obuf);
-                CCgiIbuffer ibuf(pfin);
-                CNcbiIstream istr(&ibuf);
-                auto_ptr<CCgiContext> ctx( CreateContext(&env, &istr, &ostr) );
-
-                // checking for exit request
-                if ( ctx->GetRequest().GetEntries().find("exitfastcgi") !=
-                     ctx->GetRequest().GetEntries().end() ) {
-                    ostr << "Content-Type: text/html\r\n\r\nDone";
-                    _TRACE("CCgiApplication::Run: aborting by request");
-                    FCGX_Finish();
-                    break;
-                }
-
-                if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
-                    ctx->PutMsg("FastCGI: " +
-                               NStr::IntToString(iteration + 1) +
-                               " iteration of " +
-                               NStr::IntToString(iterations));
-                }
-
-                _TRACE("CCgiApplication::Run: calling ProcessRequest");
-                FCGX_SetExitStatus(ProcessRequest(*ctx), pfout);
-            }
-            catch (exception& e) {
-                ERR_POST("CCgiApplication::ProcessCGIRequest() failed: "
-                         << e.what());
-                // ignore for next iteration
-            }
-            
-            _TRACE("CCgiApplication::Run: FINISHING");
-            FCGX_Finish();
-
-            time_t mtimeNew = s_GetModTime( m_Argv );    
-            if( mtimeNew != mtime ) {
-                _TRACE("CCgiApplication::Run: program modification date changed");
-                break;
-            }
-        }        
-        
-        _TRACE("CCgiApplication::Run: return");
+    if ( RunFastCGI() )
         return 0;
-    }
-    else
-#endif /* HAVE_LIBFASTCGI */
-        {
-            _TRACE("CCgiApplication::Run: calling ProcessRequest");
-            auto_ptr<CCgiContext> ctx(CreateContext(0, 0, 0, m_Argc, m_Argv));
-            int result = ProcessRequest(*ctx);
-            _TRACE("CCgiApplication::Run: flushing");
-            ctx->GetResponse().Flush();
-            _TRACE("CCgiApplication::Run: return " << result);
-            return result;
-        }
+
+    _TRACE("CCgiApplication::Run: calling ProcessRequest");
+    auto_ptr<CCgiContext> ctx(CreateContext(0, 0, 0, m_Argc, m_Argv));
+    int result = ProcessRequest(*ctx);
+    _TRACE("CCgiApplication::Run: flushing");
+    ctx->GetResponse().Flush();
+    _TRACE("CCgiApplication::Run: return " << result);
+    return result;
 }
 
 CNcbiResource& CCgiApplication::x_GetResource( void ) const
