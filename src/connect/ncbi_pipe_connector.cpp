@@ -186,7 +186,7 @@ static EIO_Status s_VT_Close
         status = xxx->pipe->Close(&exitcode);
         xxx->is_open = false;
     }
-    return status;
+    return status == eIO_Closed ? eIO_Success : status;
 }
 
 
@@ -282,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2003/11/12 16:41:36  ivanov
+ * Close: return eIO_Success if pipe is already closed
+ *
  * Revision 1.4  2003/09/23 21:09:26  lavr
  * Allow to create on top of (unowned) CPipe object
  *
