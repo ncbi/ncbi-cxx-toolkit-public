@@ -6,77 +6,406 @@
     <title>CObject[IO]Streams</title>
   </head>
   <body bgcolor = white>
+<center>
+<a href="iterators.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="objects.html"> <i> next</i> </a></center>
+<!--hr-->
+<p>
     <h1><i> CObject[IO]Streams</i></h1>
 
   	      <ul>
-	        <li><a href="#introduction"> Introduction</a> 
-	        <li>The <a href="#cobjostr"> <i>CObjectIStream</i></a> class
-	        <li>The <a href="#cobjistr"> <i>CObjectOStream</i></a> classes
-	        <li> <a href="#readhooks"> The <i>read</i> hook classes </a>
-	        <li> <a href="#writehooks"> The <i>write</i> hook classes </a>
+	        <li> <a href="#intro"> Format Specific Streams: The <i>CObject[IO]Stream</i> classes</a>
+	        <li> <a href="#objistr"> The <i>CObjectIStream</i></a> classes
+	        <li> <a href="#objostr"> The <i>CObjectOStream</i></a> classes
+	        <li> <a href="#objcopy"> The <i>CObjectStreamCopier</i></a> classes
+	        <li> <a href="#cback"> Type-specific IO routines</a>
+	        <li> <a href="#readhooks"> The <i>Read</i> hook classes </a>
+	        <li> <a href="#writehooks"> The <i>Write</i> hook classes </a>
+	        <li> <a href="#copyhooks"> The <i>Copy</i> hook classes </a>
 	      </ul>
 
-<a name ="introduction"> <h3>Introduction</h3>
+<a name ="intro"> <h3>Format Specific Streams: The <i>CObject[IO]Stream</i> classes</h3>
 
-<a name="objstrs"> <h3> The 
-<a href="../docxx/CObjectIStream"> <i>CObjectIStream</i></a> and
-<a href="../docxx/CObjectOStream"> <i>CObjectOStream</i></a> classes</h3>
+The reading and writing of serialized data objects entails satisfying two independent sets of
+constraints and specifications: (1) <i>format</i>-specifc parsing and encoding schemes, and (2)
+<i>object</i>-specific internal structures and rules of composition. The NCBI C++ Toolkit implements serial
+IO processes by combining a set of <i>object stream</i> classes with an independently defined set of
+<i>data object</i> classes. These classes are implemented in the <i>serial</i> and <i>objects</i>
+directories respectively.<p>
 
-The reading and writing of serializable data objects is also discussed in the chapter on <a
-href="asn.html#example1"> <i>Processing serial data</i></a>, where the program <a
-href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> demonstrates the usage of both <i>CObjectIStream</i>
-and <i>CObjectOStream</i>. Here, we review these objects briefly with respect to how type
-information can be used in combination with I/O streams to handle serialized data.<p>
+The base classes for the object stream classes are <a href="../docxx/CObjectIStream.html">
+<i>CObjectIStream</i></a> and <a href="../docxx/CObjectOStream.html">
+<i>CObjectOStream</i></a>. Each of these base classes has derived subclasses which specialize in
+different formats, including XML, binary ASN.1, and text ASN.1.  A simple example program, <a
+href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a>, described in the chapter on <a
+href="asn.html#example1"> <i>Processing serial data</i></a>, uses these object stream classes in
+conjunction with a <i>CBiostruct</i> object to translate a file from XML encoding to ASN.1
+formats. In this chapter, we consider in more detail the class definitions for object streams, and
+how the <a href="typeinfo.html#ctypeinfo"> type information</a> associated with the data is
+used to implement serial input and output.<p>
 
-Each of the <i>Open()</i> statements in <a href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> specifies a filename and an 
+Each object stream specializes in a serial data format and a direction (in/out).  It is not until
+the input and output operators are applied to these streams, in conjunction with a specified serializable
+object, that the object-specific type information comes into play. For example, if <i>instr</i> is a
+<i>CObjectIStream</i>, the statement: <i>instr >> myObject</i> invokes a <i>Read()</i> method
+associated with the input stream, whose sole argument is a <a href="typeinfo.html#cobjinfo">
+<i>CObjectInfo</i></a> for <i>myObject</i>. <p>
+
+Similarly, the output operators, when applied to a <i>CObjectOstream</i> in conjunction with a
+serializable object, will invoke a <i>Write()</i> method on the output stream which accesses the
+object's type information.  The object's type information defines what tag names and value types
+should be encountered on the stream, while the <i>CObject[IO]Stream</i> subclasses specialize the
+data serialization format.<p>
+
+
+<a name="objistr"><h3> The <a href="../docxx/CObjectIStream.html"><i>CObjectIStream</i></a> classes</h3>
+<i>CObjectIStream</i> is a virtual base class for the <a href="../docxx/CObjectIStreamXml.html">
+<i>CObjectIStreamXml</i></a>, <a href="../docxx/CObjectIStreamAsn.html"><i>CObjectIStreamAsn</i></a>,
+and <a href="../docxx/CObjectIStreamAsnBinary.html"><i>CObjectIStreamAsnBinary</i></a> classes.
+As such, it has no public constructors, and its user interface includes the following methods:
+
+<ul>
+<li><i> <a href="#open">Open()</a></i>
+<li><i> <a href="#close">Close()</a></i>
+<li><i> <a href="#getdata">GetDataFormat()</a></i>
+<li><i> <a href="#readheader">ReadFileHeader()</a></i>
+<li><i> <a href="#read">Read()</a></i>
+<li><i> <a href="#readobj">ReadObject()</a></i>
+<li><i> <a href="#readsep">ReadSeparateObject()</a></i>
+<li><i> <a href="#skip">Skip()</a></i>
+<li><i> <a href="#skipobj">SkipObject()</a></i>
+</ul>
+<a name="open">
+There are several <i>Open()</i> methods; most of these are static class methods that return a
+pointer to a newly created <i>CobjectIstream</i>. Typically, these methods are used with an
+<i>auto_ptr</i>, as in:<p>
+
+<center><i>auto_ptr&lt;CObjectIStream> xml_in(CObjectIStream::Open(filename, eSerial_Xml));
+</i></center><p>
+
+Here, an XML format is specified by the enumerated value <i>eSerial_Xml</i>, defined in
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ESerialDataFormat">
-<i>ESerialDataFormat</i></a>, e.g.:
+<i>ESerialDataFormat</i></a>. Because these methods are static, they can be used to create a new
+instance of a <i>CObjectIStream</i> subclass, <i>and</i> open it with one statement. In this
+example, a <a href="../docxx/CObjectIStreamXml.html"><i>CObjectIStreamXml</i></a> is created and
+opened on the file <i>filename</i>.<p>
 
-<font color = "#000080"><pre>
-  auto_ptr&lt;CObjectIStream> xml_in(CObjectIStream::Open("1001.xml", eSerial_Xml));
-</pre></font>
+An additional non-static <i>Open()</i> method is provided, which can only be invoked as a member
+function of a previously instantiated object stream (whose format type is of course, implicit to its
+class). This method takes a <i>CNcbiIstream</i> and a Boolean argument, specifying whether or not the
+<i>CNcbiIstream</i> should also be closed when the object stream is closed:<p>
 
-This statement causes a <a href="../docxx/CObjectIStreamXml.html"> <i>CObjectIStreamXml</i></a>
-object (a subclass of <i>CObjectIStream</i>) to be opened on the file named "1001.xml". No
-information is yet provided as to what <i>type</i> of object(s) may be encoded in the file - only
-the format of the data is currently specified. Similarly, the two statements in <a
-href="xml2asn_cpp.html"><i>xml2asn.cpp</i></a> that create output streams specify only that the
-output formats will be ASN.1 text and ASN.1 binary. <p>
+<center><i>void Open(CNcbiIstream& inStream, bool deleteInStream = false);</i></center><p>
 
-It is not until the input and output operators are applied to these streams, in conjunction with the 
-<i>CBiostruc bs</i>, that the object-specific type information comes into play. The statement
-<i>*xml_in >> bs </i> indirectly invokes the <i>Read()</i> template function, which is defined as:
-<font color = "#000080"><pre>
-template&lt;typename T> CObjectIStream& Read(CObjectIStream& in, T& object)
-{
-    Read(in, &object, GetTypeRef(&object));
-    return in;
-}
-</pre></font>
-This, in turn, accesses the class type information associated with the object, <i>bs</i>. Here,
-<i>GetTypeRef()</i> is ensured to return the correct type information. Similarly, the output
-operators, when applied to the <i>CObjectOstream</i> object in conjunction with the <i>CBiostruc
-bs</i>, will invoke the <i>Write()</i> template function:
+<a name="close">
+<a name="getdata">
+<a name="readheader">
+The next three methods have the following definitions. <i>Close()</i> closes
+the stream. <i>GetDataFormat()</i> returns the enumerated <i>ESerialDataFormat</i> for the
+stream. <i>ReadFileHeader()</i> reads the first line from the file, and returns it in a
+string. This might be used for example, in the following context:
 
-<font color = "#000080"><pre>
-template&lt;typename T> CObjectOStream& Write(CObjectOStream& out, T& object)
-{
-    Write(out, &object, GetTypeRef(&object));
-    return out;
-}
-</pre></font>
+<font color="#008080"><pre>
+   auto_ptr&lt;CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
+   string type = in.ReadFileHeader();
+ 
+   if (type.compare("Seq-entry") == 0) {
+       CSeq_entry seqent;
+       in->Read(ObjectInfo(seqent), eNoFileHeader);
+       // ...
+   }
+ 
+   else if (type.compare("Bioseq-set") == 0) {
+       CBioseq_set seqset;
+       in->Read(ObjectInfo(seqset), eNoFileHeader);
+        // ...
+   }
+   // ...</pre></font>
+The <i>ReadFileHeader()</i> method for the base <i>CObjectIStream</i> class returns an empty
+string. Only those stream classes which specialize in ASN.1 text or XML formats have actual
+implementations for this method. <p>
 
-The type information defines what tag names and value types should be encountered on the stream,
-while the <i>CObject[IO]Stream</i> subclasses specialize the data serialization format.<p>
+<a name="read">
 
+Several <i>Read*()</i> methods are provided for usage in different contexts.
+<i>CObjectIStream::Read()</i> should be used for reading a top-level "root" object from a data
+file. For convenience, the input operator <i>>></i>, as described above, indirectly invokes this
+method on the input stream, using a <a href="typeinfo.html#cobjinfo"><i>CObjectTypeInfo</i></a>
+object derived from <i>myObject</i>.  By default, the <i>Read()</i> method first calls
+<i>ReadFileHeader()</i>, and then calls <i>ReadObject()</i>. Accordingly, calls to <i>Read()</i>
+which follow the usage of <i>ReadFileHeader()</i> <strong> must</strong> include the optional
+<i>eNoFileHeader</i> argument.<p>
+
+<a name="readobj">
+<a name="readsep">
+Most data objects also contain embedded objects, and the default behavior of <i>Read()</i> is to load
+the top-level object, along with all of its contained subobjects into memory. In some cases this may
+require significant memory allocation, and it may be only the top-level object which is needed by
+the application. The next two methods, 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ReadObject"> <i>ReadObject()</a></i>
+and <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ReadSeparateObject">
+<i>ReadSeparateObject()</a></i>, can be used to load subobjects as either persistent data members of
+the root object or as temporary local objects. In contrast to <i>Read()</i>, these methods assume
+that there is <i>not</i> a file header on the stream.<p>
+
+As a result of executing <i>ReadObject(member)</i>, the newly created subobject will be instantiated
+as a member of its parent object.  In contrast, <i>ReadSeparateObject(local)</i>, instantiates the
+subobject in the local temporary variable only, and the corresponding data member in the parent
+object is set to an appropriate <i>null</i> representation for that data type. In this case, an
+attempt to reference that subobject after exiting the scope where it was created generates an
+error.<p>
+
+<a name="skip">
+<a name="skipobj">
+The <i>Skip()</i> and <i>SkipObject()</i> methods allow entire top-level objects and subobjects to be
+"skipped". In this case the input is still read from the stream and validated, but no object
+representation for that data is generated. Instead, the data is stored in a <i>delay</i> buffer
+associated with the object input stream, where it can be accessed as needed. <i>Skip()</i> should
+only be applied to top-level objects. As with the <i>Read()</i> method, the optional
+<i>ENoFileHeader</i> argument can be included if the file header has already been extracted from the
+data stream.  <i>SkipObject(member)</i> may be applied to subobjects of the root object.
 <p>
 
+All of the <i>Read</i> and <i>Skip</i> methods are like wrapper functions, which define what
+activities take place immediately before and after the data is actually read. How and when the data
+is then loaded into memory is determined by the object itself. Each of the above methods
+ultimately calls <i>objTypeInfo->ReadData()</i> or <i>objTypeInfo->SkipData()</i>, where
+<i>objTypeInto</i> is the static type information object associated with the data object. This
+scheme allows the user to install type-specific read, write, and copy hooks, which are described below. For
+example, the default behavior of loading all subobjects of the top-level object can be modified by
+installing appropriate read hooks which use the <i>ReadSeparateObject()</i> and <i>SkipObject()</i>
+methods where needed.
+
+<a name="objostr"><h3> The <a href="../docxx/CObjectOStream.html"><i>CObjectOStream</i></a> classes</h3>
+The output object stream classes mirror the <i>CObjectIStream</i> classes. The 
+<i>CObjectOStream</i> base class is used to derive the <a href="../docxx/CObjectOStreamXml.html">
+<i>CObjectOStreamXml</i></a>, <a href="../docxx/CObjectOStreamAsn.html"><i>CObjectOStreamAsn</i></a>,
+and <a href="../docxx/CObjectOStreamAsnBinary.html"><i>CObjectOStreamAsnBinary</i></a> classes.
+There are no public constructors, and the  user interface includes the following methods:
+
+<ul>
+<li><i> Open()</i>
+<li><i> Close()</i>
+<li><i> GetDataFormat()</i>
+<li><i> WriteFileHeader()</i>
+<li><i> Write()</a></i>
+<li><i> WriteObject()</i>
+<li><i> WriteSeparateObject()</i>
+<li><i> Flush()</i>
+<li><i> FlushBuffer()</i>
+</ul>
+
+Again, there are several <i>Open()</i> methods, which are static class methods that return a
+pointer to a newly created <i>CobjectOstream</i>:
+<font color="#008080"><pre>
+ static CObjectOStream* Open(const string& fileName, ESerialDataFormat format);
+ static CObjectOStream* Open(ESerialDataFormat format, 
+			     const string& fileName, unsigned openFlags = 0);
+ static CObjectOStream* Open(ESerialDataFormat format, 
+			     CNcbiOstream& os, bool deleteOutStream = false);
+</pre></font>
+
+The <i>Write*()</i> methods correspond to the <i>Read*()</i> methods defined for the input
+streams. <i>Write()</i> first calls <i>WriteFileHeader()</i>, and then calls <i>WriteObject()</i>.
+<i>WriteSeparateObject()</i> can be used to write a temporary object (and all of its children) to
+the output stream. It is also possible to install type-specific <i>write</i> hooks. Like the
+<i>Read()</i> methods, these <i>Write()</i> methods serve as wrapper functions that define what
+occurs immediately before and after the data is actually written.<p>
+
+<a name="objcopy"> <h3>The <a href="../docxx/CObjectStreamCopier.html"><i>CObjectStreamCopier</i></a> classes</h3>
+The <i>CObjectStreamCopier</i></a> class is neither an input nor an output stream class,
+but a helper class, which allows one to "pass data through" without storing the intermediate
+objects in memory. Its sole constructor is: 
+
+<p><center><i>CObjectStreamCopier(CObjectIStream& in, CObjectOStream& out);</i></center><p>
+
+and its most important method is the <i>Copy(CObjectTypeInfo&)</i> method, which, given an object's
+description, reads that object from the input stream and writes it to the output stream. The serial
+formats of both the input and output object streams are implicit, and thus the translation between
+two different formats is performed automatically.<p>
+
+In keeping with the <i>Read</i> and <i>Write</i> methods of the <i>CObjectIStream</i> and
+<i>CObjectOStream</i> classes, the <i>Copy</i> method takes an optional <i>ENoFileHeader</i>
+argument, to indicate that the file header is not available in the input and should not be generated
+on the output. The <i>CopyObject()</i> method corresponds to the <i>ReadObject()</i> and
+<i>WriteObject()</i> methods.<p>
+
+It is also possible to install type-specific <i>Copy</i> hooks. Like the <i>Read</i> and
+<i>Write()</i> methods, the <i>Copy</i> methods serve as wrapper functions that define what occurs
+immediately before and after the data is actually copied.<p>
+
+<a name="cback"> <h3>Type-specific I/O routines </h3>
+
+Much of the functionality needed to read and write serializable objects may be type-specific
+yet application-driven. Because the specializations may vary with the application, it does not
+make sense to implement fixed methods, yet we would like to achieve a similar kind of 
+object-specific behavior.<p>
+
+To address these needs, the C++ Toolkit provides hook mechanisms, whereby the needed functionality
+can be installed with the object's static class <a href="typeinfo.html#ctypeinfo"> type
+information</a> object. Such hooks can be installed <i>globally</i>, where they will be applied on
+<i>all</i> streams where these events occur, or <i>locally</i>, where they will only be applied to a
+selected stream.
+<p>
+
+For any given object and specific stream, at most one read hook and one write hook is "active".
+If <i>myObject</i> has a locally installed read hook as well as a global read hook, then
+the locally installed hook will override the global hook when a read occurs on the "local" stream. 
+Read events on all of the other "non-local" streams will of course, trigger the globally installed hook.
+Designating multiple read/write hooks (both local and global) for a selected object does not 
+generate an error. Older or less specific hooks are simply overridden by the more specific
+or most recently installed hook.
+<p>
+
+<a name="readhooks"> <h3>The <i>Read</i> hook classes </h3>
+
+All of the different contexts in which an object might be encountered on an input stream can be
+reduced to four cases: 
+<ol>
+<li> as a stand-alone object
+<li> as a data member of a containing object
+<li> as a variant of a <i>choice</i> object
+<li> as an element of a container
+</ol>
+
+Hooks can be installed for each of the first three of these contexts, depending on the desired level
+of specificity. Corresponding to these contexts, three abstract base classes provide the foundations
+for deriving new <i>Read</i> hooks:
+<ul>
+<li><i> CReadObjectHook</i>
+<li><i> CReadClassMemberHook</i>
+<li><i> CReadChoiceVariantHook</i>
+</ul>
+The mechanisms for installing read hooks for container elements impose very different 
+requirements on the implementation, and are described in another section. <p>
+
+Each of these base hook classes exists only to define a pure virtual <i>Read</i> method, which can
+then be implemented (in a derived subclass) to install the desired type of read hook.  If the goal
+is to apply the new <i>Read</i> method in <i>all</i> contexts, then the new hook
+should be derived from the <i>CReadObjectHook</i> class, and registered with the object's
+static type information object. For example, to install a new <i>CReadObjectHook</i> for a
+<i>CBioseq</i>, one might use:
+
+<font color="#008080"><pre>
+	CBioseq::GetTypeInfo()->SetGlobalReadObjectHook(myReadBioseqHook);
+</pre></font>
+
+Alternatively, if the desired behavior is to trigger the specialized <i>Read</i> method
+only when the object occurs as a data member of a particular containing class, then
+the new hook should be derived from the <i>CReadClassMemberHook</i>, and registered with
+that member's type information object:
+
+<font color="#008080"><pre>
+	CBioseq::GetTypeInfo()->FindMember("Seq-inst")
+		->SetGlobalReadClassMemberHook(myReadSeqinstHook);
+</pre></font>
+
+Similarly, one can install a read hook that will only be triggered when the object occurs as a
+choice variant:
+
+<font color="#008080"><pre>
+	CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
+		->SetGlobalReadChoiceVariantHook(myReadBioseqHook);
+</pre></font>
+
+The new hook classes for these examples should be derived from <i>CReadObjectHook</i>,
+<i>CReadClassMemberHook</i>, and <i>CReadChoiceVariantHook</i>, respectively. In the first
+case, all occurrences of <i>CBioseq</i> on any input stream will trigger the new <i>Read</i>
+method. In contrast, the last case installs this new <i>Read</i> method to be triggered
+only when the <i>CBioseq</i> occurs as a choice variant in a <i>CSeq_entry</i> object. <p>
+
+All of the virtual <i>Read</i> methods take two arguments: a <i>CObjectIStream</i> and a reference
+to a <a href="typeinfo.html#objinfo"><i>CObjectInfo</i></a>.  For example, the <i>CReadObjectHook</i>
+class declares the <i>ReadObject()</i> method as:
+
+<font color="#008080"><pre>
+     virtual void ReadObject(CObjectIStream& in, 
+			     const CObjectInfo& object) = 0;
+</pre></font>
+
+The <i>ReadClassMember</i> and <i>ReadChoiceVariant</i> hooks differ from the <i>ReadObject</i> hook
+class, in that the second argument to the virtual <i>Read</i> method is an iterator, pointing to the
+object type information for a data member or choice variant respectively.<p>
+
+In summary, to install a read hook for an object type:
+<ol>
+<li> derive a new class from the appropriate hook class:
+     <ul>
+     <li> if the target object occurs in any context, use the <i>CReadObjectHook</i> class.
+     <li> if the target object occurs as a data member, use the <i>CReadClassMemberHook</i> class.
+     <li> if the target object occurs as a choice variant, use the <i>CReadChoiceVariant Hook</i> class.
+     </ul>
+<li> implement the virtual <i>Read</i> method for the new class. <p>
+
+<li> install the hook, using the <i>SetGlobalReadHook()</i> or <i>SetLocalReadHook()</i> method defined in
+     <ul>
+     <li><i>CObjectTypeInfo</i> for a <i>CReadObjectHook</i>
+     <li><i>CMemberInfo</i> for a <i>CReadClassMemberHook</i>
+     <li><i>CVariantInfo</i> for a <i>CReadChoiceVariantHook</i>
+     </ul>
+</ol>
+
+<a name="writehooks"> <h3>The <i>Write</i> hook classes </h3>
+The <i>Write</i> hook classes parallel the <i>Read</i> hook classes, and again,
+we have three base classes:
+<ul>
+<li><i> CWriteObjectHook</i>
+<li><i> CWriteClassMemberHook</i>
+<li><i> CWriteChoiceVariantHook</i>
+</ul>
+These classes define the pure virtual methods:
+<font color="#008080"><pre>
+CWriteObjectHook::WriteObject(CObjectOStream&,
+                              const CConstObjectInfo& object) = 0;
+
+CWriteClassMemberHook::WriteClassMember(CObjectOStream&,
+	                                const CConstObjectInfoMI& member) = 0;
+
+CWriteChoiceVariantHook::WriteChoiceVariant(CObjectOStream&,
+                                            const CConstObjectInfoCV& variant) = 0;
+</pre></font>
+
+Like the read hooks, your derived write hooks can be installed by invoking the
+<i>SetGlobalWriteObjectHook()</i> or <i>SetLocalWriteObjectHook()</i> methods
+for the appropriate type information objects. Corresponding to the examples 
+for read hooks then, we would have:
+
+<font color="#008080"><pre>
+	CBioseq::GetTypeInfo()->SetGlobalWriteObjectHook(myWriteBioseqHook);
+
+	CBioseq::GetTypeInfo()->FindMember("Seq-inst")
+		->SetGlobalWriteClassMemberHook(myWriteSeqinstHook);
+
+	CSeq_entry::GetTypeInfo()->FindVariant("Bioseq")
+		->SetGlobalWriteChoiceVariantHook(myWriteBioseqHook);
+</pre></font>
+
+<a name="copyhooks"> <h3>The <i>Copy</i> hook classes </h3>
+As with the <i>Read</i> and <i>Write</i> hook classes, there are three base classes
+which define the following <i>Copy</i> methods:
+<font color="#008080"><pre>
+CCopyObjectHook::CopyObject(CObjectStreamCopier&,
+                            const CConstObjectInfo& object) = 0;
+
+CCopyClassMemberHook::CopyClassMember(CObjectStreamCopier&,
+	                              const CConstObjectInfoMI& member) = 0;
+
+CCopyChoiceVariantHook::CopyChoiceVariant(CObjectStreamCopier&,
+                                          const CConstObjectInfoCV& variant) = 0;
+</pre></font>
+
+Newly derived copy hooks can be installed by invoking the <i>SetGlobalCopyObjectHook()</i> or
+<i>SetLocalCopyObjectHook()</i> methods for the appropriate type information objects.
+<p>
    </body>
 <a href="iterators.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
 <a href="../index.html"> <i> up </i> </a>
 &nbsp;&nbsp;&nbsp;
-<!--a href=".html"> <i> next</i> </a-->
+<a href="objects.html"> <i> next</i> </a>
 </html>
 
 	 <hr>
@@ -86,3 +415,11 @@ while the <i>CObject[IO]Stream</i> subclasses specialize the data serialization 
 		  <!-- <td align=center><i>$Revision$</i></td> -->
 		  <td align=right><i>$Date$</i></td>
 	 </table>
+
+<!-- NOTES:
+
+- Skip(TTypeInfo)
+- CopyObject(TTypeInfo, CObjectStreamCopier&);
+
+- omitted versions of Read*, Skip* that use TTypeInfo args in the descrip
+-->
