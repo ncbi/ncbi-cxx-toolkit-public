@@ -24,7 +24,7 @@ property pAlwaysCreateProjects : false
 property pCreateProfiledTargets : false
 
 -- Whether to compile anything.
-property pShouldBuild : true
+property pShouldBuild : false
 
 property pStationeryName : "ApplicationStationery"
 
@@ -344,10 +344,14 @@ on FindSpecialFolder(default, pattern)
 	if aSpecialFolder is "" then
 		-- look next to the C++ toolkit directory.
 		set aSpecialFolder to IsSpecialFolder(pRootFolderPath, true, pattern)
-		if aSpecialFolder is "" then
-			-- look in our home directory.
-			set aSpecialFolder to IsSpecialFolder(gHomeDir, true, pattern)
-		end if
+	end if
+	if aSpecialFolder is "" then
+		-- look IN the C++ toolkit directory.
+		set aSpecialFolder to IsSpecialFolder(gDistribRoot, true, pattern)
+	end if
+	if aSpecialFolder is "" then
+		-- look in our home directory.
+		set aSpecialFolder to IsSpecialFolder(gHomeDir, true, pattern)
 	end if
 	return aSpecialFolder
 end FindSpecialFolder
@@ -450,7 +454,7 @@ on CopyHeaders()
 		set confFolder to folder "compilers" of folder (my ModuleRoot())
 		set prefixFolder to folder "mac_prj" of confFolder
 		
-		my UpdateRenameHeader("ncbiconf.mac", confFolder, "ncbiconf.h", "")
+		-- my UpdateRenameHeader("ncbiconf.mac", confFolder, "ncbiconf.h", "")
 		if gFLTKRootFolder is not "" then
 			my UpdateRenameHeader("fltk-config.h", prefixFolder, "config.h", folder gFLTKRootFolder)
 		end if
@@ -715,8 +719,6 @@ on SetupTarget(proj, targetIndex)
 			copy gRsrcsDir & "ncbi.icns" to end of filesToAdd
 		end if
 		Add Files filesToAdd
-		
-		Reset File Paths
 		
 	end tell
 end SetupTarget
