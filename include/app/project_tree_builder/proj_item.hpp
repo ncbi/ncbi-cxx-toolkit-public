@@ -214,7 +214,17 @@ private:
     void SetFrom(const CProjectItemsTree& projects);
 };
 
-// Traits classes - creation helpers for CProjectTreeBuilder
+
+
+// Traits classes - creation helpers for CProjectTreeBuilder:
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SMakeProjectT --
+///
+/// Base traits and policies.
+///
+/// Common traits and policies for all project types.
 
 struct SMakeProjectT
 {
@@ -284,6 +294,15 @@ struct SMakeProjectT
 };
 
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SAppProjectT --
+///
+/// APP_PROJ traits and policies.
+///
+/// Traits and policies specific for APP_PROJ.
+
 struct SAppProjectT : public SMakeProjectT
 {
     static void CreateNcbiCToolkitLibs(const string& applib_mfilepath,
@@ -297,6 +316,15 @@ struct SAppProjectT : public SMakeProjectT
                              CProjectItemsTree* tree);
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SAppProjectT --
+///
+/// LIB_PROJ traits and policies.
+///
+/// Traits and policies specific for LIB_PROJ.
+
 struct SLibProjectT : public SMakeProjectT
 {
     static CProjKey DoCreate(const string& source_base_dir,
@@ -305,6 +333,16 @@ struct SLibProjectT : public SMakeProjectT
                              const TFiles& makeapp, 
                              CProjectItemsTree* tree);
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SAsnProjectT --
+///
+/// Base traits and policies for project with datatool-generated source files.
+///
+/// Common traits and policies for projects with datatool-generated sources.
 
 struct SAsnProjectT : public SMakeProjectT
 {
@@ -329,6 +367,14 @@ struct SAsnProjectT : public SMakeProjectT
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SAsnProjectSingleT --
+///
+/// Traits and policies for project one ASN/DTD file.
+///
+/// Traits and policies specific for project with one ASN/DTD file.
+
 struct SAsnProjectSingleT : public SAsnProjectT
 {
     static CProjKey DoCreate(const string& source_base_dir,
@@ -339,6 +385,15 @@ struct SAsnProjectSingleT : public SAsnProjectT
                              CProjectItemsTree* tree);
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SAsnProjectMultipleT --
+///
+/// Traits and policies for project multiple ASN/DTD files.
+///
+/// Traits and policies specific for project with several ASN/DTD files.
+
 struct SAsnProjectMultipleT : public SAsnProjectT
 {
     static CProjKey DoCreate(const string& source_base_dir,
@@ -348,6 +403,7 @@ struct SAsnProjectMultipleT : public SAsnProjectT
                              const TFiles& makelib, 
                              CProjectItemsTree* tree);
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -404,6 +460,54 @@ private:
 
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CCyclicDepends --
+///
+/// Analyzer of cyclic dependencies in project tree.
+///
+/// Looks for dependencies cycles and report them.
+
+class CCyclicDepends
+{
+public:
+    typedef CProjectItemsTree::TProjects TProjects;
+
+    typedef list<CProjKey>               TDependsChain;
+    typedef list<TDependsChain>          TDependsChains;
+    typedef set <TDependsChain>          TDependsCycles;
+    
+    static void FindCycles(const TProjects& tree,
+                           TDependsCycles*  cycles);
+
+private:
+    static bool IsInAnyCycle(const CProjKey&       proj_id,
+                             const TDependsCycles& cycles);
+
+    static void AnalyzeProjItem(const CProjKey&  proj_id,
+                                const TProjects& tree,
+                                TDependsCycles*  cycles);
+
+    static bool ExtendChains(const CProjKey&  proj_id, 
+                             const TProjects& tree,
+                             TDependsChains*  chains,
+                             TDependsChain*   cycle_found);
+
+    static bool IsCyclic(const CProjKey&       proj_id, 
+                         const TDependsChains& chains,
+                         TDependsChain*        cycle_found);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// SProjectTreeFolder --
+///
+/// Abstraction of a folder in project tree.
+///
+/// One project tree folder.
+
 struct  SProjectTreeFolder
 {
     SProjectTreeFolder()
@@ -433,6 +537,14 @@ struct  SProjectTreeFolder
     }
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CProjectTreeFolders --
+///
+/// Abstraction of project tree structure.
+///
+/// Creates project tree structure as a tree of SProjectTreeFolder(s).
 
 class CProjectTreeFolders
 {
@@ -465,6 +577,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/01 17:58:32  gorelenk
+ * Added declaration of CCyclicDepends class.
+ *
  * Revision 1.12  2004/02/26 21:24:03  gorelenk
  * Declaration member-functions of class CProjectTreeBuilder:
  * BuildProjectTree, BuildOneProjectTree and ProcessDir changed to use
