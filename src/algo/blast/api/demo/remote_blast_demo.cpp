@@ -37,8 +37,9 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <corelib/ncbiapp.hpp>
 
-//  Remote Blast Demo App
+// Remote Blast Demo App
 
+/// Namespace inclusion
 USING_NCBI_SCOPE;
 
 /// Application demonstrating use of CRemoteBlast class.
@@ -139,16 +140,17 @@ void CRemote_blastApplication::Init(void)
     SetupArgDescriptions(m_ArgDesc.release());
 }
 
-
-// If the service type is "plain", this adjusts the service.  It
-// should be expanded in the future to deal with PSI blast, RPS
-// (possibly), and other useful bits and pieces.
-// 
-// 1. If phi_query is specified, service = "phi".
-// 2. If megablast is specified, service = "megablast".
+/// Adjust service field based on search options
+///
+/// If the service type is "plain", this adjusts the service based on
+/// other arguments which may be present.  It may be expanded in the
+/// future to deal with other cases.
 
 void s_SetService(string & service, string & /*program*/, const CArgs & args)
 {
+    // 1. If phi_query is specified, service = "phi".
+    // 2. If megablast is specified, service = "megablast".
+    
     int phi_supported = 0;
     
     if (service == "plain") {
@@ -232,7 +234,7 @@ int CRemote_blastApplication::Run(void)
                         get_RID);
 }
 
-
+/// Simple, wrapper style, main function for app framework.
 int main(int argc, const char* argv[])
 {
     return CRemote_blastApplication().AppMain(argc, argv, 0, eDS_Default, 0);
@@ -242,6 +244,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/09 17:43:20  bealer
+ * - Add documentation.
+ *
  * Revision 1.3  2004/06/09 16:07:04  bealer
  * - Document application class.
  *
