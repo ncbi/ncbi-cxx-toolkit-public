@@ -69,7 +69,7 @@ CNcbiIstream& CWorkerNodeJobContext::GetIStream()
     }
     NCBI_THROW(CNetScheduleStorageException,
                eReader, "Reader is not set.");
-    return *(CNcbiIstream*)NULL;
+    //    return *(CNcbiIstream*)NULL;
 }
 CNcbiOstream& CWorkerNodeJobContext::GetOStream()
 {
@@ -78,7 +78,7 @@ CNcbiOstream& CWorkerNodeJobContext::GetOStream()
     }
     NCBI_THROW(CNetScheduleStorageException,
                eWriter, "Writer is not set.");
-    return *(CNcbiOstream*)NULL;
+    //    return *(CNcbiOstream*)NULL;
 }
 
 void CWorkerNodeJobContext::Reset()
@@ -331,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 20:45:13  didenko
+ * Got ride from warning on ICC
+ *
  * Revision 1.1  2005/03/22 20:18:25  didenko
  * Initial version
  *

@@ -67,7 +67,7 @@ CNcbiIstream& CNetCacheNSStorage::GetIStream(const string& key,
     if (!reader.get()) {
         NCBI_THROW(CNetCacheNSStorageException,
                    eBlobNotFound, "Requested blob is not found.");
-        return *(CNcbiIstream*)NULL;
+        //return *(CNcbiIstream*)NULL;
     }
 
     m_IStream.reset(new CRStream(reader.release(), 0,0, 
@@ -96,7 +96,7 @@ CNcbiOstream& CNetCacheNSStorage::CreateOStream(string& key)
     if (!writer.get()) {
         NCBI_THROW(CNetScheduleStorageException,
                    eWriter, "Writer couldn't be created.");
-        return *(CNcbiOstream*)NULL;
+        //return *(CNcbiOstream*)NULL;
     }
     m_OStream.reset( new CWStream(writer.release(), 0,0, 
                                   CRWStreambuf::fOwnWriter));
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/22 20:45:13  didenko
+ * Got ride from warning on ICC
+ *
  * Revision 1.1  2005/03/22 20:18:25  didenko
  * Initial version
  *
