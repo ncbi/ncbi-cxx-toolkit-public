@@ -197,6 +197,9 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags)
     string                 line;
 
     while ( !in.eof() ) {
+        if ((flags & fReadFasta_OneSeq)  &&  seq  &&  (in.peek() == '>')) {
+            break;
+        }
         NcbiGetlineEOL(in, line);
         if (in.eof()  &&  line.empty()) {
             break;
@@ -333,6 +336,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.6  2002/10/29 22:09:36  ucko
+ * +fReadFasta_OneSeq
+ *
  * Revision 6.5  2002/10/23 19:23:15  ucko
  * Move the FASTA reader from objects/util/sequence.?pp to
  * objects/seqset/Seq_entry.?pp because it doesn't need the OM.

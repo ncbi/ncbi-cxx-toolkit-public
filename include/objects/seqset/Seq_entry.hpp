@@ -79,11 +79,13 @@ enum EReadFastaFlags {
     fReadFasta_AssumeProt = 0x2,
     fReadFasta_ForceType  = 0x4,  // force type regardless of accession
     fReadFasta_NoParseID  = 0x8,  // treat name as local ID regardless of |s
-    fReadFasta_ParseGaps  = 0x10  // make a delta sequence if gaps found
+    fReadFasta_ParseGaps  = 0x10, // make a delta sequence if gaps found
+    fReadFasta_OneSeq     = 0x20  // just read the first sequence found
 };
 typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 
-// keeps going until EOF or parse error (-> CParseException)
+// keeps going until EOF or parse error (-> CParseException) unless
+// fReadFasta_OneSeq is set
 // see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0);
 
@@ -122,6 +124,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2002/10/29 22:08:55  ucko
+ * +fReadFasta_OneSeq
+ *
  * Revision 1.7  2002/10/23 19:23:08  ucko
  * Move the FASTA reader from objects/util/sequence.?pp to
  * objects/seqset/Seq_entry.?pp because it doesn't need the OM.
