@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.2  2003/07/24 15:50:49  dondosha
+ * Commented out mutex operations
+ *
  * Revision 1.1  2003/07/24 15:18:09  dondosha
  * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
  *
@@ -1748,10 +1751,11 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     Nlm_FloatHi	xscore;
     register int	index1, index2, total;
     Int2 status;
+#if THREADS_IMPLEMENTED
     static TNlmMutex read_matrix_mutex;
-
     NlmMutexInit(&read_matrix_mutex);
     NlmMutexLock(read_matrix_mutex);
+#endif
     
     matrix = sbp->matrix;	
     
@@ -1764,7 +1768,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         status=BlastScoreBlkMatCreate(sbp); 
         if(status != 0)
 	{
+#if THREADS_IMPLEMENTED
         	NlmMutexUnlock(read_matrix_mutex); 
+#endif
         	return status;
 	}
     }
@@ -1773,7 +1779,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     while (Nlm_FileGets(buf, sizeof(buf), fp) != NULL) {
         ++lineno;
         if (Nlm_StrChr(buf, '\n') == NULL) {
+#if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
+#endif
             return 2;
         }
 
@@ -1804,7 +1812,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     }
     
     if (a2cnt <= 1) { 
+#if THREADS_IMPLEMENTED
         NlmMutexUnlock(read_matrix_mutex); 
+#endif
         return 2;
     }
 
@@ -1814,7 +1824,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     while (Nlm_FileGets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
         if ((cp = Nlm_StrChr(buf, '\n')) == NULL) {
+#if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
+#endif
             return 2;
         }
         if ((cp = Nlm_StrChr(buf, COMMENT_CHR)) != NULL)
@@ -1824,11 +1836,15 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         ch = *lp;
         cp = (CharPtr) lp;
         if ((cp = Nlm_StrTok(NULL, TOKSTR)) == NULL) {
+#if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
+#endif
             return 2;
         }
         if (a1cnt >= DIM(a1chars)) {
+#if THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
+#endif
             return 2;
         }
 
@@ -1844,7 +1860,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         index2 = 0;
         while (cp != NULL) {
             if (index2 >= a2cnt) {
+#if THREADS_IMPLEMENTED
                 NlmMutexUnlock(read_matrix_mutex); 
+#endif
                 return 2;
             }
             Nlm_StrCpy(temp, cp);
@@ -1853,12 +1871,16 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
                 score = BLAST_SCORE_1MIN;
             } else  {
                 if (sscanf(temp, "%lg", &xscore) != 1) {
+#if THREADS_IMPLEMENTED
                     NlmMutexUnlock(read_matrix_mutex); 
+#endif
                     return 2;
                 }
 				/*xscore = MAX(xscore, BLAST_SCORE_1MIN);*/
                 if (xscore > BLAST_SCORE_1MAX || xscore < BLAST_SCORE_1MIN) {
+#if THREADS_IMPLEMENTED
                     NlmMutexUnlock(read_matrix_mutex); 
+#endif
                     return 2;
                 }
                 xscore += (xscore >= 0. ? 0.5 : -0.5);
@@ -1872,7 +1894,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     }
     
     if (a1cnt <= 1) {
+#if THREADS_IMPLEMENTED
         NlmMutexUnlock(read_matrix_mutex); 
+#endif
         return 2;
     }
     
@@ -1880,7 +1904,9 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         sbp->mat_dim1 = a1cnt;
     }
     
+#if THREADS_IMPLEMENTED
     NlmMutexUnlock(read_matrix_mutex); 
+#endif
     return 0;
 }
 

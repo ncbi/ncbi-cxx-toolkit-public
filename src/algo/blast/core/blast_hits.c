@@ -792,11 +792,12 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
                                 BlastHSPListPtr hsp_list, 
                                 BlastThrInfoPtr thr_info)
 {
+#if THREADS_IMPLEMENTED
    /* For MP BLAST we check that no other thread is attempting to insert 
       results. */
    if (thr_info && thr_info->results_mutex)
       NlmMutexLock(thr_info->results_mutex);
-
+#endif
    if (hit_list->hsplist_count < hit_list->hsplist_max) {
       /* If the array of HSP lists for this query is not yet allocated, 
          do it here */
@@ -820,8 +821,10 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
       InsertBlastHSPListInHeap(hit_list, hsp_list);
    }
 
+#if THREADS_IMPLEMENTED
    if (thr_info && thr_info->results_mutex)
       NlmMutexUnlock(thr_info->results_mutex);
+#endif
 
    return 0;
 }

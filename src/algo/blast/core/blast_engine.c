@@ -514,7 +514,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    return status;
 }
 
-#if 0
+#if THREADS_IMPLEMENTED
 static Boolean 
 BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
    Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info)
@@ -644,11 +644,11 @@ static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
 {
     if (thr_info == NULL)
 	return;
-
+#if THREADS_IMPLEMENTED
     NlmMutexDestroy(thr_info->db_mutex);
     NlmMutexDestroy(thr_info->results_mutex);
     NlmMutexDestroy(thr_info->callback_mutex);
-
+#endif
     MemFree(thr_info);
     
     return;
@@ -696,7 +696,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    /*thr_info = BLAST_ThrInfoNew(eff_len_options->dbseq_num);*/
    stop = eff_len_options->dbseq_num;
 
-#if 0
+#if THREADS_IMPLEMENTED
    while (!BLAST_GetDbChunk(rdfp, &start, &stop, oid_list, 
                             &oid_list_length, thr_info)) {
       use_oid_list = (oid_list && (oid_list_length > 0));
@@ -728,7 +728,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       }
          /*BlastSequenceBlkClean(subject);*/
    }
-#if 0
+#if THREADS_IMPLEMENTED
    }    /* end while!(BLAST_GetDbChunk...) */
 #endif
 
