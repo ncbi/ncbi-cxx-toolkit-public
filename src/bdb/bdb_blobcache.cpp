@@ -423,7 +423,7 @@ CBDB_Cache::CBDB_Cache()
   m_CacheDB(0),
   m_CacheAttrDB(0),
   m_VersionFlag(eDropOlder),
-  m_PageSizeHint(eLargePage)
+  m_PageSizeHint(eLarge)
 {
     m_TimeStampFlag = fTimeStampOnRead | 
                       fExpireLeastFrequentlyUsed |
@@ -1751,6 +1751,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2004/08/24 15:14:09  kuznets
+ * Misprint fixed
+ *
  * Revision 1.71  2004/08/24 15:13:07  kuznets
  * + page_size parameter to the BDB class factory
  *
