@@ -104,8 +104,8 @@ CPluginManager_DllResolver::GetDllName(const string&       interface_name,
                                        const string&       driver_name,
                                        const CVersionInfo& version) const
 {
-    string prefix = GetDllNamePrefix();
-    string name = prefix;
+    string name = GetDllNamePrefix();
+
     if (!interface_name.empty()) {
         name.append("_");
         name.append(interface_name);
@@ -145,8 +145,7 @@ CPluginManager_DllResolver::GetDllNameMask(
         const string&       driver_name,
         const CVersionInfo& version) const
 {
-    string prefix = GetDllNamePrefix();
-    string name = prefix;
+    string name = GetDllNamePrefix();
 
     if ( !name.empty() ) {
         name.append("_");
@@ -209,8 +208,8 @@ CPluginManager_DllResolver::GetEntryPointName(
                       const string&       interface_name,
                       const string&       driver_name) const
 {
-    string prefix = GetEntryPointPrefix();
-    string name = prefix;
+    string name = GetEntryPointPrefix();
+
     if (!interface_name.empty()) {
         name.append("_");
         name.append(interface_name);
@@ -232,7 +231,7 @@ string CPluginManager_DllResolver::GetEntryPointPrefix() const
 
 string CPluginManager_DllResolver::GetDllNamePrefix() const 
 { 
-    return m_DllNamePrefix; 
+    return NCBI_PLUGIN_PREFIX + m_DllNamePrefix; 
 }
 
 void CPluginManager_DllResolver::SetDllNamePrefix(const string& prefix)
@@ -312,6 +311,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/01/24 17:53:09  grichenk
+ * Add lib prefix to dll name mask
+ *
  * Revision 1.16  2004/12/22 19:23:36  grichenk
  * Do not add extra leading _ in the mask
  *
