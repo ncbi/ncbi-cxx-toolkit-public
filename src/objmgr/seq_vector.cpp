@@ -514,12 +514,14 @@ void CSeqVector::SetIupacCoding(void)
     case CSeq_data::e_Ncbi4na:
     case CSeq_data::e_Ncbi8na:
     case CSeq_data::e_Ncbipna:
+    case CSeq_data::e_Iupacna:
         SetCoding(CSeq_data::e_Iupacna);
         break;
     case CSeq_data::e_Ncbi8aa:
     case CSeq_data::e_Ncbieaa:
     case CSeq_data::e_Ncbipaa:
     case CSeq_data::e_Ncbistdaa:
+    case CSeq_data::e_Iupacaa:
         SetCoding(CSeq_data::e_Iupacaa);
         break;
     default:
@@ -533,6 +535,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/09/16 20:13:01  grichenk
+* Fixed Iupac coding setter
+*
 * Revision 1.31  2002/09/16 13:52:49  dicuccio
 * Fixed bug in calculating total range of cached interval to retrieve -
 * must clamp the cached range to the desired range.
