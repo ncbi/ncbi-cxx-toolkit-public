@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/07/03 18:42:41  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.42  2000/06/16 20:01:25  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -241,10 +245,6 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name, TTypeInfo type)
 	Init();
 }
 
-CSequenceOfTypeInfo::~CSequenceOfTypeInfo(void)
-{
-}
-
 void CSequenceOfTypeInfo::Init(void)
 {
 	TTypeInfo type = m_DataType;
@@ -317,6 +317,91 @@ void CSequenceOfTypeInfo::SetValNodeNext(void)
     m_DataOffset = offsetof(valnode, data);
 }
 
+TTypeInfo CSequenceOfTypeInfo::GetElementType(void) const
+{
+    return GetDataTypeInfo();
+}
+
+class CConstSequenceElementIterator : public CConstContainerElementIterator
+{
+public:
+    CConstSequenceElementIterator(const CSequenceOfTypeInfo* seqInfo,
+                                  TConstObjectPtr objectPtr)
+        : CConstContainerElementIterator(seqInfo->GetElementType()),
+          m_SequenceInfo(seqInfo),
+          m_NodePtr(seqInfo->FirstNode(objectPtr))
+        {
+        }
+    CConstContainerElementIterator* Clone(void) const
+        {
+            return new CConstSequenceElementIterator(*this);
+        }
+
+    bool Valid(void) const
+        {
+            return m_NodePtr != 0;
+        }
+    void Next(void)
+        {
+            m_NodePtr = m_SequenceInfo->NextNode(m_NodePtr);
+        }
+    TConstObjectPtr GetElementPtr(void) const
+        {
+            return m_SequenceInfo->Data(m_NodePtr);
+        }
+private:
+    const CSequenceOfTypeInfo* m_SequenceInfo;
+    TConstObjectPtr m_NodePtr;
+};
+
+class CSequenceElementIterator : public CContainerElementIterator
+{
+public:
+    CSequenceElementIterator(const CSequenceOfTypeInfo* seqInfo,
+                             TObjectPtr objectPtr)
+        : CContainerElementIterator(seqInfo->GetElementType()),
+          m_SequenceInfo(seqInfo),
+          m_NodePtrPtr(&seqInfo->FirstNode(objectPtr))
+        {
+        }
+    CContainerElementIterator* Clone(void) const
+        {
+            return new CSequenceElementIterator(*this);
+        }
+
+    bool Valid(void) const
+        {
+            return *m_NodePtrPtr != 0;
+        }
+    void Next(void)
+        {
+            m_NodePtrPtr = &m_SequenceInfo->NextNode(*m_NodePtrPtr);
+        }
+    TObjectPtr GetElementPtr(void) const
+        {
+            return m_SequenceInfo->Data(*m_NodePtrPtr);
+        }
+    void Erase(void)
+        {
+            THROW1_TRACE(runtime_error, "unimplemented");
+        }
+private:
+    const CSequenceOfTypeInfo* m_SequenceInfo;
+    TObjectPtr* m_NodePtrPtr;
+};
+
+CConstContainerElementIterator*
+CSequenceOfTypeInfo::Elements(TConstObjectPtr object) const
+{
+    return new CConstSequenceElementIterator(this, object);
+}
+
+CContainerElementIterator*
+CSequenceOfTypeInfo::Elements(TObjectPtr object) const
+{
+    return new CSequenceElementIterator(this, object);
+}
+
 bool CSequenceOfTypeInfo::RandomOrder(void) const
 {
     return false;
@@ -324,7 +409,7 @@ bool CSequenceOfTypeInfo::RandomOrder(void) const
 
 size_t CSequenceOfTypeInfo::GetSize(void) const
 {
-    return TType::GetSize();
+    return CType<TObjectPtr>::GetSize();
 }
 
 TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
@@ -508,70 +593,19 @@ CSetOfTypeInfo::CSetOfTypeInfo(const char* name, TTypeInfo type)
 {
 }
 
-CSetOfTypeInfo::~CSetOfTypeInfo(void)
-{
-}
-
 bool CSetOfTypeInfo::RandomOrder(void) const
 {
     return true;
 }
 
-#if 0
-CChoiceTypeInfo::CChoiceTypeInfo(const string& name)
-    : CParent(name)
+CPrimitiveTypeInfo::EValueType COctetStringTypeInfo::GetValueType(void) const
 {
-}
-
-CChoiceTypeInfo::CChoiceTypeInfo(const char* name)
-    : CParent(name)
-{
-}
-
-CChoiceTypeInfo::~CChoiceTypeInfo(void)
-{
-}
-
-size_t CChoiceTypeInfo::GetSize(void) const
-{
-    return sizeof(TObjectType);
-}
-
-TObjectPtr CChoiceTypeInfo::Create(void) const
-{
-    return Alloc(sizeof(TObjectType));
-}
-
-typedef CChoiceTypeInfo::TMemberIndex TMemberIndex;
-
-TMemberIndex CChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
-{
-    return Get(object).choice - 1;
-}
-
-void CChoiceTypeInfo::SetIndex(TObjectPtr object, TMemberIndex index) const
-{
-    Get(object).choice = index + 1;
-}
-
-TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object, TMemberIndex ) const
-{
-    return &Get(object).data;
-}
-#endif
-
-COctetStringTypeInfo::COctetStringTypeInfo(void)
-    : CParent("OCTET STRING")
-{
-}
-
-COctetStringTypeInfo::~COctetStringTypeInfo(void)
-{
+    return eOctetString;
 }
 
 size_t COctetStringTypeInfo::GetSize(void) const
 {
-    return TType::GetSize();
+    return CType<TObjectType>::GetSize();
 }
 
 bool COctetStringTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -660,6 +694,26 @@ void COctetStringTypeInfo::SkipData(CObjectIStream& in) const
     in.SkipByteBlock();
 }
 
+void COctetStringTypeInfo::GetValueOctetString(TConstObjectPtr objectPtr,
+                                               vector<char>& value) const
+{
+	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
+	if ( bs == 0 )
+		THROW1_TRACE(runtime_error, "null bytestore pointer");
+	Int4 len = BSLen(bs);
+    value.resize(len);
+	BSSeek(bs, 0, SEEK_SET);
+    BSRead(bs, &value.front(), len);
+}
+
+void COctetStringTypeInfo::SetValueOctetString(TObjectPtr objectPtr,
+                                               const vector<char>& value) const
+{
+    size_t count = value.size();
+    bytestore* bs = Get(objectPtr) = BSNew(count);
+    BSWrite(bs, const_cast<char*>(&value.front()), count);
+}
+
 TTypeInfo COctetStringTypeInfo::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = 0;
@@ -688,10 +742,6 @@ COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
 {
 }
 
-COldAsnTypeInfo::~COldAsnTypeInfo(void)
-{
-}
-
 /*
 TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
                                        TReadProc readProc, TWriteProc writeProc)
@@ -709,9 +759,14 @@ TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
 }
 */
 
+CPrimitiveTypeInfo::EValueType COldAsnTypeInfo::GetValueType(void) const
+{
+    return eSpecial;
+}
+
 size_t COldAsnTypeInfo::GetSize(void) const
 {
-    return TType::GetSize();
+    return CType<TObjectType>::GetSize();
 }
 
 bool COldAsnTypeInfo::IsDefault(TConstObjectPtr object) const

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/07/03 18:42:32  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.31  2000/06/16 16:31:04  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -174,15 +178,14 @@ class CClassTypeInfo : public CClassTypeInfoBase {
     typedef CClassTypeInfoBase CParent;
 protected:
     typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
-    enum {
-        eIteratorIndexParentClass = -1
-    };
 
     friend class CClassInfoHelperBase;
 
     CClassTypeInfo(const type_info& ti, size_t size);
     CClassTypeInfo(const string& name, const type_info& ti, size_t size);
     CClassTypeInfo(const char* name, const type_info& ti, size_t size);
+
+    virtual ETypeFamily GetTypeFamily(void) const;
 
 public:
 
@@ -221,32 +224,20 @@ public:
             return m_SubClasses.get();
         }
 
-    TTypeInfo GetParentTypeInfo(void) const;
+    const CClassTypeInfo* GetParentClassInfo(void) const;
     void SetParentClass(TTypeInfo parentClass);
     void SetGetTypeIdFunction(TGetTypeIdFunction func);
 
 public:
 
     // iterators interface
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-
-    virtual bool HaveChildren(TConstObjectPtr object) const;
-    virtual void Begin(CConstChildrenIterator& cc) const;
-    virtual void Begin(CChildrenIterator& cc) const;
-    virtual bool Valid(const CConstChildrenIterator& cc) const;
-    virtual bool Valid(const CChildrenIterator& cc) const;
-    virtual void GetChild(const CConstChildrenIterator& cc,
-                          CConstObjectInfo& child) const;
-    virtual void GetChild(const CChildrenIterator& cc,
-                          CObjectInfo& child) const;
-    virtual void Next(CConstChildrenIterator& cc) const;
-    virtual void Next(CChildrenIterator& cc) const;
-    virtual void Erase(CChildrenIterator& cc) const;
-
     const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
 
 protected:
+    friend class CClassInfoClassWriter;
+    friend class CClassInfoClassReader;
+    friend class CClassInfoClassSkipper;
+
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
     virtual void SkipData(CObjectIStream& in) const;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/03 18:42:34  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.2  2000/06/01 20:43:53  vasilche
 * cstring header is missing on IRIX.
 *
@@ -51,7 +55,7 @@ class CLightString
 {
 public:
     CLightString(void)
-        : m_String(0), m_Length(0)
+        : m_String(""), m_Length(0)
         {
         }
     CLightString(const char* str)
@@ -78,10 +82,6 @@ public:
             return m_Length;
         }
 
-    bool IsNull(void) const
-        {
-            return m_String == 0;
-        }
     bool Empty(void) const
         {
             return m_Length == 0;
@@ -102,20 +102,27 @@ public:
                 return len < cmpLen;
         }
 
+    bool EqualTo(const CLightString& cmp) const
+        {
+            size_t l = cmp.GetLength();
+            return GetLength() == l &&
+                memcmp(GetString(), cmp.GetString(), l) == 0;
+        }
     bool EqualTo(const string& cmp) const
         {
-            size_t len = GetLength();
-            return len == cmp.size() &&
-                memcmp(GetString(), cmp.data(), len) == 0;
+            size_t l = cmp.size();
+            return GetLength() == l &&
+                memcmp(GetString(), cmp.data(), l) == 0;
         }
     bool EqualTo(const char* s, size_t l) const
         {
-            return GetLength() == l && memcmp(GetString(), s, l) == 0;
+            return GetLength() == l &&
+                memcmp(GetString(), s, l) == 0;
         }
 
     bool operator==(const CLightString& cmp) const
         {
-            return EqualTo(cmp.GetString(), cmp.GetLength());
+            return EqualTo(cmp);
         }
     bool operator==(const string& cmp) const
         {
@@ -127,7 +134,7 @@ public:
         }
     bool operator!=(const CLightString& cmp) const
         {
-            return !EqualTo(cmp.GetString(), cmp.GetLength());
+            return !EqualTo(cmp);
         }
     bool operator!=(const string& cmp) const
         {

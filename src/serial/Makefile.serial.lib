@@ -4,7 +4,7 @@
 #################################
 
 LIBOBJ = \
-  classinfob \
+  classinfob continfo \
   object iterator typeref typeinfo stdtypes ptrinfo autoptrinfo choiceptr \
   member memberid memberlist classinfo \
   stltypes enumerated choice asntypes \

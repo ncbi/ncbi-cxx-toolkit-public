@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/03 18:42:33  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.3  2000/04/28 16:58:01  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -91,6 +95,18 @@ class CSerialEofException : public CSerialIOException
 public:
     CSerialEofException(void) THROWS_NONE;
     ~CSerialEofException(void) THROWS_NONE;
+};
+
+class CInvalidChoiceSelection : public runtime_error
+{
+public:
+    CInvalidChoiceSelection(const string& current, const string& mustBe) THROWS_NONE;
+    CInvalidChoiceSelection(size_t currentIndex, size_t mustBeIndex,
+                            const char* const names[], size_t namesCount) THROWS_NONE;
+    ~CInvalidChoiceSelection(void) THROWS_NONE;
+
+    static const char* GetName(size_t index,
+                               const char* const names[], size_t namesCount);
 };
 
 END_NCBI_SCOPE

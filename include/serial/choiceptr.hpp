@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/07/03 18:42:32  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.16  2000/06/16 16:31:03  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -189,9 +193,9 @@ public:
         }
 };
 
-class CNullTypeInfo : public CStdTypeInfo<void>
+class CNullTypeInfo : public CVoidTypeInfo
 {
-    typedef CStdTypeInfo<void> CParent;
+    typedef CVoidTypeInfo CParent;
 public:
     CNullTypeInfo(void);
     ~CNullTypeInfo(void);

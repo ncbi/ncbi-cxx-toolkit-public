@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.9  2000/06/07 19:45:58  vasilche
 * Some code cleaning.
 * Macros renaming in more clear way.
@@ -45,6 +49,8 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/enumerated.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -137,19 +143,120 @@ void CEnumeratedTypeValues::AddValue(const char* name, long value)
     AddValue(string(name), value);
 }
 
-TTypeInfo CEnumeratedTypeValues::GetTypeInfoForSize(size_t size,
-                                                    long /* dummy */) const
+CEnumeratedTypeInfo::CEnumeratedTypeInfo(const CEnumeratedTypeValues* values,
+                                         size_t size)
+    : CParent(values->GetName()),
+      m_ValueType(CPrimitiveTypeInfo::GetIntegerTypeInfo(size)),
+      m_Values(*values)
 {
-    if ( size == sizeof(int) )
-        return new CEnumeratedTypeInfoTmpl<int>(this);
-    if ( size == sizeof(short) )
-        return new CEnumeratedTypeInfoTmpl<short>(this);
-    if ( size == sizeof(signed char) )
-        return new CEnumeratedTypeInfoTmpl<signed char>(this);
-    if ( size == sizeof(long) )
-        return new CEnumeratedTypeInfoTmpl<long>(this);
-    THROW1_TRACE(runtime_error,
-                 "Illegal enum size: " + NStr::UIntToString(size));
+    _ASSERT(m_ValueType->GetValueType() == eInteger);
+}
+
+CEnumeratedTypeInfo::EValueType CEnumeratedTypeInfo::GetValueType(void) const
+{
+    return eEnum;
+}
+
+size_t CEnumeratedTypeInfo::GetSize(void) const
+{
+    return m_ValueType->GetSize();
+}
+
+TObjectPtr CEnumeratedTypeInfo::Create(void) const
+{
+    return m_ValueType->Create();
+}
+    
+bool CEnumeratedTypeInfo::IsDefault(TConstObjectPtr object) const
+{
+    return m_ValueType->IsDefault(object);
+}
+
+bool CEnumeratedTypeInfo::Equals(TConstObjectPtr object1,
+                                 TConstObjectPtr object2) const
+{
+    return m_ValueType->Equals(object1, object2);
+}
+
+void CEnumeratedTypeInfo::SetDefault(TObjectPtr dst) const
+{
+    m_ValueType->SetDefault(dst);
+}
+
+void CEnumeratedTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+{
+    m_ValueType->Assign(dst, src);
+}
+
+bool CEnumeratedTypeInfo::IsSigned(void) const
+{
+    return m_ValueType->IsSigned();
+}
+
+long CEnumeratedTypeInfo::GetValueLong(TConstObjectPtr objectPtr) const
+{
+    return m_ValueType->GetValueLong(objectPtr);
+}
+
+unsigned long CEnumeratedTypeInfo::GetValueULong(TConstObjectPtr objectPtr) const
+{
+    return m_ValueType->GetValueULong(objectPtr);
+}
+
+void CEnumeratedTypeInfo::SetValueLong(TObjectPtr objectPtr, long value) const
+{
+    Values().FindName(value, Values().IsInteger());
+    m_ValueType->SetValueLong(objectPtr, value);
+}
+
+void CEnumeratedTypeInfo::SetValueULong(TObjectPtr objectPtr,
+                                        unsigned long value) const
+{
+    if ( long(value) < 0 )
+        THROW1_TRACE(runtime_error, "overflow error");
+    Values().FindName(value, Values().IsInteger());
+    m_ValueType->SetValueULong(objectPtr, value);
+}
+
+void CEnumeratedTypeInfo::GetValueString(TConstObjectPtr objectPtr,
+                                         string& value) const
+{
+    value = Values().FindName(m_ValueType->GetValueLong(objectPtr), false);
+}
+
+void CEnumeratedTypeInfo::SetValueString(TObjectPtr objectPtr,
+                                         const string& value) const
+{
+    m_ValueType->SetValueLong(objectPtr, Values().FindValue(value));
+}
+
+void CEnumeratedTypeInfo::SkipData(CObjectIStream& in) const
+{
+    if ( !in.ReadEnum(Values()).second ) {
+        // plain integer
+        m_ValueType->SkipData(in);
+    }
+}
+
+void CEnumeratedTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+    pair<long, bool> value = in.ReadEnum(Values());
+    if ( value.second ) {
+        // value already read
+        m_ValueType->SetValueLong(object, value.first);
+    }
+    else {
+        // plain integer
+        m_ValueType->ReadData(in, object);
+    }
+}
+
+void CEnumeratedTypeInfo::WriteData(CObjectOStream& out, TConstObjectPtr object) const
+{
+    if ( !out.WriteEnum(Values(), m_ValueType->GetValueLong(object)) ) {
+        // plain integer
+        m_ValueType->WriteData(out, object);
+    }
 }
 
 END_NCBI_SCOPE

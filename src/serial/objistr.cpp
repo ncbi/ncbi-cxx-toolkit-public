@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/07/03 18:42:44  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.56  2000/06/16 20:01:26  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -241,7 +245,7 @@
 #include <serial/objistr.hpp>
 #include <serial/typeref.hpp>
 #include <serial/member.hpp>
-#include <serial/classinfob.hpp>
+#include <serial/classinfo.hpp>
 #include <serial/typemapper.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
@@ -687,8 +691,8 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
                 TTypeInfo typeInfo = MapType(className);
                 CObjectStackNamedFrame m(*this, typeInfo);
                 TObjectPtr object = typeInfo->Create();
-                RegisterObject(object, declaredType);
-                ReadData(object, declaredType);
+                RegisterObject(object, typeInfo);
+                ReadData(object, typeInfo);
                 m.End();
                 ReadOtherPointerEnd();
                 info = make_pair(object, typeInfo);
@@ -700,9 +704,15 @@ TObjectPtr CObjectIStream::ReadPointer(TTypeInfo declaredType)
         }
         while ( info.second != declaredType ) {
             // try to check parent class pointer
-            TTypeInfo parentType = info.second->GetParentTypeInfo();
-            if ( parentType ) {
-                info.second = parentType;
+            if ( info.second->GetTypeFamily() != CTypeInfo::eTypeClass ) {
+                SetFailFlags(eFormatError);
+                THROW1_TRACE(runtime_error, "incompatible member type");
+            }
+            _ASSERT(dynamic_cast<const CClassTypeInfo*>(info.second));
+            const CClassTypeInfo* parentClass =
+                static_cast<const CClassTypeInfo*>(info.second)->GetParentClassInfo();
+            if ( parentClass ) {
+                info.second = parentClass;
             }
             else {
                 SetFailFlags(eFormatError);
@@ -911,16 +921,12 @@ void CObjectIStream::DuplicatedMember(const CMembersInfo& members, int index)
 }
 
 void CObjectIStream::ReadClassRandom(CObjectClassReader& reader,
-                                     TTypeInfo classInfo,
+                                     const CClassTypeInfo* classInfo,
                                      const CMembersInfo& members)
 {
     CObjectStackClass cls(*this, classInfo, true);
     BeginClass(cls);
 
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        reader.ReadParentClass(*this, parentClassInfo);
-    
     vector<bool> read(members.GetMembersCount());
     for ( ;; ) {
         CObjectStackClassMember m(cls);
@@ -947,15 +953,11 @@ void CObjectIStream::ReadClassRandom(CObjectClassReader& reader,
 }
 
 void CObjectIStream::ReadClassSequential(CObjectClassReader& reader,
-                                         TTypeInfo classInfo,
+                                         const CClassTypeInfo* classInfo,
                                          const CMembersInfo& members)
 {
     CObjectStackClass cls(*this, classInfo, false);
     BeginClass(cls);
-    
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        reader.ReadParentClass(*this, parentClassInfo);
     
     CClassMemberPosition pos;
     for ( ;; ) {
@@ -980,26 +982,6 @@ void CObjectIStream::ReadClassSequential(CObjectClassReader& reader,
     }
     EndClass(cls);
 }
-
-#if 0
-void CObjectIStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
-{
-    v.End();
-    _ASSERT(v.GetPrevous());
-    v.GetPrevous()->End();
-}
-
-void CObjectIStream::ReadChoice(CObjectChoiceReader& reader,
-                                TTypeInfo choiceInfo,
-                                const CMembersInfo& members)
-{
-    CObjectStackChoice choice(*this, choiceInfo);
-    CObjectStackChoiceVariant v(choice);
-    TMemberIndex index = BeginChoiceVariant(v, members);
-    reader.ReadChoiceVariant(*this, members, index);
-    EndChoiceVariant(v);
-}
-#endif
 
 CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
     : m_Stream(in), m_KnownLength(false), m_Ended(false), m_Length(1)
@@ -1258,14 +1240,6 @@ void CObjectArraySkipper::ReadElement(CObjectIStream& in)
 
 CObjectClassReader::~CObjectClassReader(void)
 {
-}
-
-void CObjectClassReader::ReadParentClass(CObjectIStream& in,
-                                         TTypeInfo parentClassInfo)
-{
-    in.ThrowError(CObjectIStream::eFormatError,
-                  "parent class "+parentClassInfo->GetName()+
-                  " data expected");
 }
 
 void CObjectClassReader::AssignMemberDefault(CObjectIStream& in,

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/07/03 18:42:35  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.45  2000/06/16 20:01:20  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -242,8 +246,6 @@ class CObjectClassReader
 public:
     virtual ~CObjectClassReader(void);
 
-    virtual void ReadParentClass(CObjectIStream& in,
-                                 TTypeInfo parentClassInfo);
     virtual void ReadMember(CObjectIStream& in,
                             const CMembersInfo& members, int index) = 0;
     virtual void AssignMemberDefault(CObjectIStream& in,
@@ -640,12 +642,12 @@ public:
 
     void DuplicatedMember(const CMembersInfo& members, int index);
     virtual void ReadClassRandom(CObjectClassReader& reader,
-                                 TTypeInfo classType,
+                                 const CClassTypeInfo* classType,
                                  const CMembersInfo& members);
     virtual void ReadClassSequential(CObjectClassReader& reader,
-                                     TTypeInfo classType,
+                                     const CClassTypeInfo* classType,
                                      const CMembersInfo& members);
-    void ReadClass(CObjectClassReader& reader, TTypeInfo classType,
+    void ReadClass(CObjectClassReader& reader, const CClassTypeInfo* classType,
                    const CMembersInfo& members, bool randomOrder)
         {
             if ( randomOrder )
@@ -655,11 +657,6 @@ public:
         }
 
     // choice interface
-#if 0
-    virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
-                                            const CMembers& variants) = 0;
-    virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
-#endif
     virtual void ReadChoice(CObjectChoiceReader& reader,
                             TTypeInfo classType,
                             const CMembersInfo& variants) = 0;

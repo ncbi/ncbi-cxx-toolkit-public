@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/07/03 18:42:47  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.25  2000/06/16 16:31:22  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -149,8 +153,9 @@ CStlOneArgTemplate::CStlOneArgTemplate(const CTypeRef& type)
 {
 }
 
-CStlOneArgTemplate::~CStlOneArgTemplate(void)
+TTypeInfo CStlOneArgTemplate::GetElementType(void) const
 {
+    return GetDataTypeInfo();
 }
 
 void CStlOneArgTemplate::SetDataId(const CMemberId& id)
@@ -158,51 +163,15 @@ void CStlOneArgTemplate::SetDataId(const CMemberId& id)
     m_DataId = id;
 }
 
-bool CStlOneArgTemplate::MayContainType(TTypeInfo typeInfo) const
-{
-    return GetDataTypeInfo()->IsOrMayContainType(typeInfo);
-}
-
-bool CStlOneArgTemplate::HaveChildren(TConstObjectPtr object) const
-{
-    return !IsDefault(object);
-}
-
-void CStlOneArgTemplate::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-bool CStlOneArgTemplate::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return cc.GetIndex().m_Index == 0;
-}
-
-TTypeInfo CStlOneArgTemplate::GetChildType(const CChildrenTypesIterator& /*cc*/) const
-{
-    return GetDataTypeInfo();
-}
-
-void CStlOneArgTemplate::NextType(CChildrenTypesIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(TTypeInfo keyType,
                                          TTypeInfo dataType)
-    : m_KeyId(1), m_ValueId(2),
-      m_KeyType(keyType), m_ValueType(dataType)
+    : m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(const CTypeRef& keyType,
                                          const CTypeRef& dataType)
-    : m_KeyId(1), m_ValueId(2),
-      m_KeyType(keyType), m_ValueType(dataType)
-{
-}
-
-CStlTwoArgsTemplate::~CStlTwoArgsTemplate(void)
+    : m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
@@ -216,89 +185,50 @@ void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
     m_ValueId = id;
 }
 
-bool CStlTwoArgsTemplate::MayContainType(TTypeInfo typeInfo) const
-{
-    return
-        GetKeyTypeInfo()->IsOrMayContainType(typeInfo) ||
-        GetValueTypeInfo()->IsOrMayContainType(typeInfo);
-}
-
-bool CStlTwoArgsTemplate::HaveChildren(TConstObjectPtr object) const
-{
-    return !IsDefault(object);
-}
-
-void CStlTwoArgsTemplate::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-bool CStlTwoArgsTemplate::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return cc.GetIndex().m_Index < 2;
-}
-
-TTypeInfo CStlTwoArgsTemplate::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    return cc.GetIndex().m_Index == 0? GetKeyTypeInfo(): GetValueTypeInfo();
-}
-
-void CStlTwoArgsTemplate::NextType(CChildrenTypesIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
 CStlClassInfoMapImpl::CStlClassInfoMapImpl(TTypeInfo keyType,
-                                           TTypeInfo valueType)
-    : CParent(keyType, valueType)
+                                           TConstObjectPtr keyOffset,
+                                           TTypeInfo valueType,
+                                           TConstObjectPtr valueOffset)
+    : CParent(keyType, valueType),
+      m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
 {
 }
 
 CStlClassInfoMapImpl::CStlClassInfoMapImpl(const CTypeRef& keyType,
-                                           const CTypeRef& valueType)
-    : CParent(keyType, valueType)
+                                           TConstObjectPtr keyOffset,
+                                           const CTypeRef& valueType,
+                                           TConstObjectPtr valueOffset)
+    : CParent(keyType, valueType),
+      m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
 {
 }
 
-CStlClassInfoMapImpl::~CStlClassInfoMapImpl(void)
+TTypeInfo CStlClassInfoMapImpl::GetElementType(void) const
 {
+    return GetElementClassType();
 }
 
-bool CStlClassInfoMapImpl::EqualsKeyValuePair(TConstObjectPtr key1,
-                                              TConstObjectPtr key2,
-                                              TConstObjectPtr value1,
-                                              TConstObjectPtr value2) const
-{
-    return GetKeyTypeInfo()->Equals(key1, key2) &&
-        GetValueTypeInfo()->Equals(value1, value2);
-}
-
-const CClassTypeInfo* CStlClassInfoMapImpl::GetElementType(void) const
+const CClassTypeInfo* CStlClassInfoMapImpl::GetElementClassType(void) const
 {
     if ( !m_ElementType ) {
         CClassTypeInfo* classInfo =
             CClassInfoHelper<bool>::CreateAbstractClassInfo("");
         m_ElementType.reset(classInfo);
-        classInfo->GetMembers().AddMember(GetKeyId(), 0);
-        classInfo->GetMembers().AddMember(GetValueId(), 0);
+        classInfo->SetRandomOrder(false);
+        classInfo->GetMembers().AddMember(GetKeyId(), m_KeyOffset,
+                                          GetKeyTypeInfo());
+        classInfo->GetMembers().AddMember(GetValueId(), m_ValueOffset,
+                                          GetValueTypeInfo());
     }
     return m_ElementType.get();
 }
 
 void CMapArrayReaderBase::ReadElement(CObjectIStream& in)
 {
-    CObjectStackClass cls(in, m_MapTypeInfo->GetElementType(), false);
+    CObjectStackClass cls(in, m_MapTypeInfo->GetElementClassType(), false);
     in.BeginClass(cls);
     ReadClassElement(in, cls);
     in.EndClass(cls);
-}
-
-void CMapArrayWriterBase::WriteElement(CObjectOStream& out)
-{
-    CObjectStackClass cls(out, m_MapTypeInfo->GetElementType(), false);
-    out.BeginClass(cls);
-    WriteClassElement(out, cls);
-    out.EndClass(cls);
 }
 
 void CStlClassInfoMapImpl::ReadKey(CObjectIStream& in,
@@ -306,12 +236,15 @@ void CStlClassInfoMapImpl::ReadKey(CObjectIStream& in,
                                    TObjectPtr keyPtr) const
 {
     CObjectStackClassMember m(cls);
-    if ( in.BeginClassMember(m, GetElementType()->GetMembers()) != 0 ) {
+    CObjectIStream::CClassMemberPosition pos;
+    if ( in.BeginClassMember(m, GetElementClassType()->GetMembers(),
+                             pos) != 0 ) {
         in.EndClass(cls);
         in.ThrowError(CObjectIStream::eFormatError, "map key expected");
     }
     GetKeyTypeInfo()->ReadData(in, keyPtr);
     in.EndClassMember(m);
+    _ASSERT(pos.GetLastIndex() == 0);
 }
 
 void CStlClassInfoMapImpl::ReadValue(CObjectIStream& in,
@@ -319,56 +252,20 @@ void CStlClassInfoMapImpl::ReadValue(CObjectIStream& in,
                                      TObjectPtr valuePtr) const
 {
     CObjectStackClassMember m(cls);
-    if ( in.BeginClassMember(m, GetElementType()->GetMembers()) != 1 ) {
+    CObjectIStream::CClassMemberPosition pos;
+    pos.SetLastIndex(0);
+    if ( in.BeginClassMember(m, GetElementClassType()->GetMembers(),
+                             pos) != 1 ) {
         in.EndClass(cls);
         in.ThrowError(CObjectIStream::eFormatError, "map value expected");
     }
     GetValueTypeInfo()->ReadData(in, valuePtr);
     in.EndClassMember(m);
-}
-
-void CStlClassInfoMapImpl::WriteKeyAndValue(CObjectOStream& out,
-                                            CObjectStackClass& cls,
-                                            TConstObjectPtr keyPtr,
-                                            TConstObjectPtr valuePtr) const
-{
-    {
-        CObjectStackClassMember m(cls, GetKeyId());
-        out.BeginClassMember(m, GetKeyId());
-        
-        GetKeyTypeInfo()->WriteData(out, keyPtr);
-        
-        out.EndClassMember(m);
+    _ASSERT(pos.GetLastIndex() == 1);
+    if ( in.BeginClassMember(m, GetElementClassType()->GetMembers(),
+                             pos) >=0 ) {
+        in.ThrowError(CObjectIStream::eFormatError, "end of map entry expected");
     }
-    {
-        CObjectStackClassMember m(cls, GetValueId());
-        out.BeginClassMember(m, GetValueId());
-
-        GetValueTypeInfo()->WriteData(out, valuePtr);
-
-        out.EndClassMember(m);
-    }
-}
-
-template<>
-TTypeInfo CStlClassInfoChar_vector<char>::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStlClassInfoChar_vector<TChar>;
-    return typeInfo;
-}
-
-template<>
-TTypeInfo CStlClassInfoChar_vector<signed char>::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStlClassInfoChar_vector<TChar>;
-    return typeInfo;
-}
-
-template<>
-TTypeInfo CStlClassInfoChar_vector<unsigned char>::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStlClassInfoChar_vector<TChar>;
-    return typeInfo;
 }
 
 END_NCBI_SCOPE

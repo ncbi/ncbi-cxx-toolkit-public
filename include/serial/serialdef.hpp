@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/03 18:42:37  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.9  2000/06/01 19:06:58  vasilche
 * Added parsing of XML data.
 *
@@ -107,7 +111,7 @@ enum ESerialDataFormat {
     eSerial_None         = 0,
     eSerial_AsnText      = 1,      // open ASN.1 text format
     eSerial_AsnBinary    = 2,      // open ASN.1 binary format
-    eSerial_Xml          = 3       // open XML format (not supported yet)
+    eSerial_Xml          = 3       // open XML format
 };
 
 enum ESerialOpenFlags {

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/03 18:42:45  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.4  2000/06/16 19:24:22  vasilche
 * Updated MSVC project.
 * Fixed error on MSVC with static const class member.
@@ -970,41 +974,6 @@ void CObjectIStreamXml::EndClassMember(CObjectStackClassMember& m)
     CloseTag(m);
     m.End();
 }
-
-#if 0
-CObjectIStreamXml::TMemberIndex
-CObjectIStreamXml::BeginChoiceVariant(CObjectStackChoiceVariant& v,
-                                      const CMembers& members)
-{
-    _ASSERT(v.GetPrevous() &&
-            v.GetPrevous()->GetFrameType() == v.eFrameChoice &&
-            v.GetPrevous()->GetNameType() == v.eNameTypeInfo);
-    const string& choiceName = v.GetPrevous()->GetNameTypeInfo()->GetName();
-    if ( !choiceName.empty() )
-        OpenTag(choiceName);
-
-    CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id = SkipTagName(SkipTagName(tagName, v), '_');
-    TMemberIndex index = members.FindMember(id);
-    if ( index < 0 )
-        UnexpectedMember(id, members);
-    v.SetName(members.GetMemberId(index));
-    return index;
-}
-
-void CObjectIStreamXml::EndChoiceVariant(CObjectStackChoiceVariant& v)
-{
-    CloseTag(v);
-    v.End();
-    _ASSERT(v.GetPrevous() &&
-            v.GetPrevous()->GetFrameType() == v.eFrameChoice &&
-            v.GetPrevous()->GetNameType() == v.eNameTypeInfo);
-    const string& choiceName = v.GetPrevous()->GetNameTypeInfo()->GetName();
-    if ( !choiceName.empty() )
-        CloseTag(choiceName);
-    v.GetPrevous()->End();
-}
-#endif
 
 void CObjectIStreamXml::ReadChoice(CObjectChoiceReader& reader,
                                    TTypeInfo choiceInfo,

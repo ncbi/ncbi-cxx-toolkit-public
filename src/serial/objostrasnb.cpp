@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/07/03 18:42:46  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.38  2000/06/16 16:31:21  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -177,6 +181,7 @@
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/classinfo.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -723,7 +728,7 @@ void CObjectOStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
 }
 
 void CObjectOStreamAsnBinary::WriteClass(CObjectClassWriter& writer,
-                                         TTypeInfo classInfo,
+                                         const CClassTypeInfo* /*classInfo*/,
                                          const CMembersInfo& members,
                                          bool randomOrder)
 {
@@ -733,10 +738,6 @@ void CObjectOStreamAsnBinary::WriteClass(CObjectClassWriter& writer,
         WriteShortTag(eUniversal, true, eSequence);
     WriteIndefiniteLength();
     
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        writer.WriteParentClass(*this, parentClassInfo);
-
     writer.WriteMembers(*this, members);
     
     WriteEndOfContent();
@@ -773,23 +774,6 @@ void CObjectOStreamAsnBinary::WriteDelayedClassMember(CObjectClassWriter& ,
     WriteEndOfContent();
     m.End();
 }
-
-#if 0
-void CObjectOStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& ,
-                                                 const CMemberId& id)
-{
-    WriteTag(eContextSpecific, true, id.GetTag());
-    WriteIndefiniteLength();
-}
-
-void CObjectOStreamAsnBinary::EndChoiceVariant(CObjectStackChoiceVariant& v)
-{
-    WriteEndOfContent();
-    v.End();
-    _ASSERT(v.GetPrevous());
-    v.GetPrevous()->End();
-}
-#endif
 
 void CObjectOStreamAsnBinary::WriteChoice(TTypeInfo /*choiceType*/,
                                           const CMemberId& id,

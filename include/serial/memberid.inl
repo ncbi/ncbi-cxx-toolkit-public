@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/07/03 18:42:34  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.6  2000/06/16 16:31:05  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -53,18 +57,6 @@
 *
 * ===========================================================================
 */
-
-inline
-CMemberId::CMemberId(void)
-    : m_MemberList(0), m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
-{
-}
-
-inline
-CMemberId::CMemberId(TTag tag)
-    : m_MemberList(0), m_ExplicitTag(tag), m_Tag(tag)
-{
-}
 
 inline
 const string& CMemberId::GetName(void) const

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2000/07/03 18:42:38  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.43  2000/06/16 20:01:21  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -196,6 +200,7 @@
 */
 
 #include <serial/typeinfo.hpp>
+#include <serial/continfo.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeref.hpp>
 #include <serial/objstack.hpp>
@@ -203,7 +208,6 @@
 #include <serial/objostr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/choiceptr.hpp>
-#include <serial/iteratorbase.hpp>
 #include <set>
 #include <map>
 #include <list>
@@ -214,14 +218,124 @@ BEGIN_NCBI_SCOPE
 
 class CClassTypeInfo;
 
-class CStlOneArgTemplate : public CTypeInfo
+template<class Container>
+class CConstStlElementIterator : public CConstContainerElementIterator
 {
-    typedef CTypeInfo CParent;
+public:
+    CConstStlElementIterator(TTypeInfo elementTypeInfo,
+                             const Container& container)
+        : CConstContainerElementIterator(elementTypeInfo),
+          m_Container(container),
+          m_Iterator(container.begin())
+        {
+        }
+    CConstContainerElementIterator* Clone(void) const
+        {
+            return new CConstStlElementIterator<Container>(*this);
+        }
+
+    bool Valid(void) const
+        {
+            return m_Iterator != m_Container.end();
+        }
+    void Next(void)
+        {
+            ++m_Iterator;
+        }
+    TConstObjectPtr GetElementPtr(void) const
+        {
+            return &*m_Iterator;
+        }
+
+private:
+    const Container& m_Container;
+    typename Container::const_iterator m_Iterator;
+};
+
+template<class Container>
+class CStlElementIterator : public CContainerElementIterator
+{
+public:
+    CStlElementIterator(TTypeInfo elementTypeInfo,
+                        Container& container)
+        : CContainerElementIterator(elementTypeInfo),
+          m_Container(container),
+          m_Iterator(container.begin())
+        {
+        }
+    CContainerElementIterator* Clone(void) const
+        {
+            return new CStlElementIterator<Container>(*this);
+        }
+
+    bool Valid(void) const
+        {
+            return m_Iterator != m_Container.end();
+        }
+    void Next(void)
+        {
+            ++m_Iterator;
+        }
+    TObjectPtr GetElementPtr(void) const
+        {
+            return &*m_Iterator;
+        }
+    void Erase(void)
+        {
+            m_Iterator = m_Container.erase(m_Iterator);
+        }
+
+private:
+    Container& m_Container;
+    typename Container::iterator m_Iterator;
+};
+
+template<class Container>
+class CStlElementIterator_set : public CContainerElementIterator
+{
+public:
+    CStlElementIterator_set(TTypeInfo elementTypeInfo,
+                        Container& container)
+        : CContainerElementIterator(elementTypeInfo),
+          m_Container(container),
+          m_Iterator(container.begin())
+        {
+        }
+    CContainerElementIterator* Clone(void) const
+        {
+            return new CStlElementIterator_set<Container>(*this);
+        }
+
+    bool Valid(void) const
+        {
+            return m_Iterator != m_Container.end();
+        }
+    void Next(void)
+        {
+            ++m_Iterator;
+        }
+    TObjectPtr GetElementPtr(void) const
+        {
+            return const_cast<TObjectPtr>(TConstObjectPtr(&*m_Iterator));
+        }
+    void Erase(void)
+        {
+            typename Container::iterator eraseIterator = m_Iterator++;
+            m_Container.erase(eraseIterator);
+        }
+
+private:
+    Container& m_Container;
+    typename Container::iterator m_Iterator;
+};
+
+class CStlOneArgTemplate : public CContainerTypeInfo
+{
+    typedef CContainerTypeInfo CParent;
 public:
 
     CStlOneArgTemplate(TTypeInfo dataType);
     CStlOneArgTemplate(const CTypeRef& dataType);
-    ~CStlOneArgTemplate(void);
 
     const CMemberId& GetDataId(void) const
         {
@@ -229,31 +343,25 @@ public:
         }
     void SetDataId(const CMemberId& id);
 
+    virtual TTypeInfo GetElementType(void) const;
+
     TTypeInfo GetDataTypeInfo(void) const
         {
             return m_DataType.Get();
         }
-
-    virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool HaveChildren(TConstObjectPtr object) const;
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
 
 private:
     CMemberId m_DataId;
     CTypeRef m_DataType;
 };
 
-class CStlTwoArgsTemplate : public CTypeInfo
+class CStlTwoArgsTemplate : public CContainerTypeInfo
 {
-    typedef CTypeInfo CParent;
+    typedef CContainerTypeInfo CParent;
 public:
 
     CStlTwoArgsTemplate(TTypeInfo keyType, TTypeInfo valueType);
     CStlTwoArgsTemplate(const CTypeRef& keyType, const CTypeRef& valueType);
-    ~CStlTwoArgsTemplate(void);
 
     const CMemberId& GetKeyId(void) const
         {
@@ -274,13 +382,6 @@ public:
         {
             return m_ValueType.Get();
         }
-
-    virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool HaveChildren(TConstObjectPtr object) const;
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
 
 private:
     CMemberId m_KeyId;
@@ -423,6 +524,8 @@ template<typename List>
 class CListArrayReader : public CObjectArrayReader
 {
 public:
+    typedef typename List::value_type value_type;
+
     CListArrayReader(TTypeInfo dataTypeInfo, List& object)
         : m_DataTypeInfo(dataTypeInfo), m_Object(object)
         {
@@ -430,8 +533,7 @@ public:
 
     virtual void ReadElement(CObjectIStream& in)
         {
-			typename List::value_type value;
-            m_Object.push_back(value);
+            m_Object.push_back(value_type());
             m_DataTypeInfo->ReadData(in, &m_Object.back());
         }
 
@@ -444,6 +546,8 @@ template<typename Set>
 class CSetArrayReader : public CObjectArrayReader
 {
 public:
+    typedef typename Set::value_type value_type;
+
     CSetArrayReader(TTypeInfo dataTypeInfo, Set& object)
         : m_DataTypeInfo(dataTypeInfo), m_Object(object)
         {
@@ -451,7 +555,7 @@ public:
 
     virtual void ReadElement(CObjectIStream& in)
         {
-            typename Set::value_type data;
+            value_type data;
             m_DataTypeInfo->ReadData(in, &data);
             m_Object.insert(data);
         }
@@ -491,33 +595,9 @@ public:
         {
             return *static_cast<const TObjectType*>(object);
         }
-    static TObjectType& Get(const CChildrenIterator& object)
-        {
-            return Get(object.GetParentPtr());
-        }
-    static const TObjectType& Get(const CConstChildrenIterator& object)
-        {
-            return Get(object.GetParentPtr());
-        }
 
     typedef typename TObjectType::const_iterator CConstIterator;
     typedef typename TObjectType::iterator CIterator;
-    static const CConstIterator& Iterator(const CConstChildrenIterator& cc)
-        {
-            return static_cast<const CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static CConstIterator& Iterator(CConstChildrenIterator& cc)
-        {
-            return static_cast<CObjectFor<CConstIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static const CIterator& Iterator(const CChildrenIterator& cc)
-        {
-            return static_cast<const CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static CIterator& Iterator(CChildrenIterator& cc)
-        {
-            return static_cast<CObjectFor<CIterator>*>(cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
 
     virtual TObjectPtr Create(void) const
         {
@@ -560,50 +640,6 @@ public:
             size_t index = 0;
             for ( TConstIterator i = from.begin(); i != from.end(); ++i ) {
                 dataTypeInfo->Assign(AddEmpty(dst, index++), &*i);
-            }
-        }
-
-    void Begin(CConstChildrenIterator& cc) const
-        {
-            cc.GetIndex().m_AnyIterator = CObjectFor<CConstIterator>::New();
-            Iterator(cc) = Get(cc).begin();
-        }
-    void Begin(CChildrenIterator& cc) const
-        {
-            cc.GetIndex().m_AnyIterator = CObjectFor<CIterator>::New();
-            Iterator(cc) = Get(cc).begin();
-            cc.GetIndex().m_Index = 0; // valid
-        }
-    bool Valid(const CConstChildrenIterator& cc) const
-        {
-            return Iterator(cc) != Get(cc).end();
-        }
-    bool Valid(const CChildrenIterator& cc) const
-        {
-            return cc.GetIndex().m_Index == 0 && Iterator(cc) != Get(cc).end();
-        }
-    void GetChild(const CConstChildrenIterator& cc,
-                  CConstObjectInfo& child) const
-        {
-            child.Set(&*Iterator(cc), GetDataTypeInfo());
-        }
-    void GetChild(const CChildrenIterator& cc,
-                  CObjectInfo& child) const
-        {
-            child.Set(const_cast<TObjectPtr>(static_cast<TConstObjectPtr>(&*Iterator(cc))), GetDataTypeInfo());
-        }
-    void Next(CConstChildrenIterator& cc) const
-        {
-            ++Iterator(cc);
-        }
-    void Next(CChildrenIterator& cc) const
-        {
-            if ( cc.GetIndex().m_Index == 1 ) {
-                // already set after Erase
-                cc.GetIndex().m_Index = 0;
-            }
-            else {
-                ++Iterator(cc);
             }
         }
 
@@ -651,10 +687,15 @@ public:
             return new CStlClassInfo_list<Data>(info, true);
         }
 
-    void Erase(CChildrenIterator& cc) const
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const
         {
-            Iterator(cc) = Get(cc).erase(Iterator(cc));
-            cc.GetIndex().m_Index = 1;
+            return new CConstStlElementIterator<list<Data> >(GetDataTypeInfo(),
+                                                             Get(object));
+        }
+    CContainerElementIterator* Elements(TObjectPtr object) const
+        {
+            return new CStlElementIterator<list<Data> >(GetDataTypeInfo(),
+                                                        Get(object));
         }
 
 protected:
@@ -697,10 +738,15 @@ public:
             return new CStlClassInfo_vector<Data>(info);
         }
 
-    void Erase(CChildrenIterator& cc) const
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const
         {
-            Iterator(cc) = Get(cc).erase(Iterator(cc));
-            cc.GetIndex().m_Index = 1;
+            return new CConstStlElementIterator<vector<Data> >(GetDataTypeInfo(),
+                                                               Get(object));
+        }
+    CContainerElementIterator* Elements(TObjectPtr object) const
+        {
+            return new CStlElementIterator<vector<Data> >(GetDataTypeInfo(),
+                                                          Get(object));
         }
 
 protected:
@@ -741,14 +787,6 @@ public:
         {
         }
 
-    void Erase(CChildrenIterator& cc) const
-        {
-            CIterator erase = Iterator(cc);
-            ++Iterator(cc);
-            cc.GetIndex().m_Index = 1;
-            Get(cc).erase(erase);
-        }
-
 protected:
     virtual void Reserve(TObjectPtr object, size_t ) const
         {
@@ -783,6 +821,17 @@ public:
         {
         }
 
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const
+        {
+            return new CConstStlElementIterator<set<Data> >(GetDataTypeInfo(),
+                                                            Get(object));
+        }
+    CContainerElementIterator* Elements(TObjectPtr object) const
+        {
+            return new CStlElementIterator_set<set<Data> >(GetDataTypeInfo(),
+                                                           Get(object));
+        }
+
     static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
             return new CStlClassInfo_set<Data>(info);
@@ -808,6 +857,17 @@ public:
         {
             return new CStlClassInfo_multiset<Data>(info);
         }
+
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const
+        {
+            return new CConstStlElementIterator<multiset<Data> >(GetDataTypeInfo(),
+                                                                 Get(object));
+        }
+    CContainerElementIterator* Elements(TObjectPtr object) const
+        {
+            return new CStlElementIterator_set<multiset<Data> >(GetDataTypeInfo(),
+                                                                Get(object));
+        }
 };
 
 class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
@@ -815,64 +875,32 @@ class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
     typedef CStlTwoArgsTemplate CParent;
 public:
 
-    CStlClassInfoMapImpl(TTypeInfo keyType, TTypeInfo valueType);
-    CStlClassInfoMapImpl(const CTypeRef& keyType, const CTypeRef& valueType);
-    ~CStlClassInfoMapImpl(void);
+    CStlClassInfoMapImpl(TTypeInfo keyType,
+                         TConstObjectPtr keyOffset,
+                         TTypeInfo valueType,
+                         TConstObjectPtr valueOffset);
+    CStlClassInfoMapImpl(const CTypeRef& keyType,
+                         TConstObjectPtr keyOffset,
+                         const CTypeRef& valueType,
+                         TConstObjectPtr valueOffset);
 
-    const CClassTypeInfo* GetElementType(void) const;
+    virtual TTypeInfo GetElementType(void) const;
 
-    void WriteKeyAndValue(CObjectOStream& out, CObjectStackClass& cls,
-                          TConstObjectPtr key, TConstObjectPtr value) const;
+    const CClassTypeInfo* GetElementClassType(void) const;
+
     void ReadKey(CObjectIStream& in, CObjectStackClass& cls,
                  TObjectPtr keyPtr) const;
     void ReadValue(CObjectIStream& in, CObjectStackClass& cls,
                    TObjectPtr valuePtr) const;
-    bool EqualsKeyValuePair(TConstObjectPtr key1, TConstObjectPtr key2,
-                            TConstObjectPtr value1, TConstObjectPtr value2) const;
-
+    bool EqualElements(TConstObjectPtr element1,
+                       TConstObjectPtr element2) const
+        {
+            return GetElementType()->Equals(element1, element2);
+        }
+    
 private:
     mutable AutoPtr<const CClassTypeInfo> m_ElementType;
-};
-
-class CMapArrayWriterBase : public CObjectArrayWriter
-{
-public:
-    CMapArrayWriterBase(const CStlClassInfoMapImpl* mapTypeInfo, bool empty)
-        : CObjectArrayWriter(empty), m_MapTypeInfo(mapTypeInfo)
-        {
-        }
-
-    virtual void WriteElement(CObjectOStream& out);
-
-protected:
-    virtual void WriteClassElement(CObjectOStream& out,
-                                   CObjectStackClass& cls) = 0;
-
-    const CStlClassInfoMapImpl* m_MapTypeInfo;
-};
-
-template<typename Map>
-class CMapArrayWriter : public CMapArrayWriterBase
-{
-public:
-    CMapArrayWriter(const CStlClassInfoMapImpl* mapTypeInfo, const Map& object)
-        : CMapArrayWriterBase(mapTypeInfo, object.empty()),
-          m_Iterator(object.begin()), m_End(object.end())
-        {
-        }
-
-protected:
-    virtual void WriteClassElement(CObjectOStream& out, CObjectStackClass& cls)
-        {
-            m_MapTypeInfo->WriteKeyAndValue(out, cls,
-                                            &m_Iterator->first,
-                                            &m_Iterator->second);
-            m_NoMoreElements = ++m_Iterator == m_End;
-        }
-
-private:
-    typename Map::const_iterator m_Iterator;
-    typename Map::const_iterator m_End;
+    TConstObjectPtr m_KeyOffset, m_ValueOffset;
 };
 
 class CMapArrayReaderBase : public CObjectArrayReader
@@ -948,14 +976,17 @@ public:
     typedef Key TKeyType;
     typedef Value TValueType;
     typedef Map TObjectType;
+    typedef typename TObjectType::value_type TElement;
     typedef typename TObjectType::const_iterator TConstIterator;
 
     CStlClassInfoMapBase(TTypeInfo keyType, TTypeInfo dataType)
-        : CParent(keyType, dataType)
+        : CParent(keyType, &static_cast<const TElement*>(0)->first,
+                  dataType, &static_cast<const TElement*>(0)->second)
         {
         }
     CStlClassInfoMapBase(const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent(keyType, dataType)
+        : CParent(keyType, &static_cast<const TElement*>(0)->first,
+                  dataType, &static_cast<const TElement*>(0)->second)
         {
         }
 
@@ -967,53 +998,9 @@ public:
         {
             return *static_cast<TObjectType*>(object);
         }
-    static TObjectType& Get(const CChildrenIterator& object)
-        {
-            return Get(object.GetParentPtr());
-        }
-    static const TObjectType& Get(const CConstChildrenIterator& object)
-        {
-            return Get(object.GetParentPtr());
-        }
 
     typedef typename TObjectType::const_iterator CConstIterator;
     typedef typename TObjectType::iterator CIterator;
-    static const CConstIterator& Iterator(const CConstChildrenIterator& cc)
-        {
-            return static_cast<const CObjectFor<CConstIterator>*>
-                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static CConstIterator& Iterator(CConstChildrenIterator& cc)
-        {
-            return static_cast<CObjectFor<CConstIterator>*>
-                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static const CIterator& Iterator(const CChildrenIterator& cc)
-        {
-            return static_cast<const CObjectFor<CIterator>*>
-                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static CIterator& Iterator(CChildrenIterator& cc)
-        {
-            return static_cast<CObjectFor<CIterator>*>
-                (cc.GetIndex().m_AnyIterator.GetPointer())->GetData();
-        }
-    static int Index(const CConstChildrenIterator& cc)
-        {
-            return cc.GetIndex().m_Index;
-        }
-    static int& Index(CConstChildrenIterator& cc)
-        {
-            return cc.GetIndex().m_Index;
-        }
-    static int Index(const CChildrenIterator& cc)
-        {
-            return cc.GetIndex().m_Index;
-        }
-    static int& Index(CChildrenIterator& cc)
-        {
-            return cc.GetIndex().m_Index;
-        }
 
     virtual size_t GetSize(void) const
         {
@@ -1037,8 +1024,7 @@ public:
                 return false;
             for ( TConstIterator i1 = o1.begin(), i2 = o2.begin();
                   i1 != o1.end(); ++i1, ++i2 ) {
-                if ( !EqualsKeyValuePair(&i1->first, &i2->first,
-                                         &i1->second, &i2->second) )
+                if ( !EqualElements(&*i1, &*i2) )
                     return false;
             }
             return true;
@@ -1058,77 +1044,12 @@ public:
             }
         }
 
-    void Begin(CConstChildrenIterator& cc) const
-        {
-            cc.GetIndex().m_AnyIterator = CObjectFor<CConstIterator>::New();
-            Iterator(cc) = Get(cc).begin();
-            Index(cc) = 0;
-        }
-    void Begin(CChildrenIterator& cc) const
-        {
-            cc.GetIndex().m_AnyIterator = CObjectFor<CIterator>::New();
-            Iterator(cc) = Get(cc).begin();
-            Index(cc) = 0;
-        }
-    bool Valid(const CConstChildrenIterator& cc) const
-        {
-            return Iterator(cc) != Get(cc).end();
-        }
-    bool Valid(const CChildrenIterator& cc) const
-        {
-            return Iterator(cc) != Get(cc).end();
-        }
-    void GetChild(const CConstChildrenIterator& cc,
-                  CConstObjectInfo& child) const
-        {
-            if ( Index(cc) == 0 )
-                child.Set(&Iterator(cc)->first, GetKeyTypeInfo());
-            else
-                child.Set(&Iterator(cc)->second, GetValueTypeInfo());
-        }
-    void GetChild(const CChildrenIterator& cc,
-                  CObjectInfo& child) const
-        {
-            if ( Index(cc) == 0 )
-                child.Set(const_cast<Key*>(&Iterator(cc)->first),
-                          GetKeyTypeInfo());
-            else
-                child.Set(&Iterator(cc)->second, GetValueTypeInfo());
-        }
-    void Next(CConstChildrenIterator& cc) const
-        {
-            if ( ++Index(cc) > 1 ) {
-                ++Iterator(cc);
-                Index(cc) = 0;
-            }
-        }
-    void Next(CChildrenIterator& cc) const
-        {
-            if ( ++Index(cc) > 1 ) {
-                ++Iterator(cc);
-                Index(cc) = 0;
-            }
-        }
-    void Erase(CChildrenIterator& cc) const
-        {
-            if ( Index(cc) == 0 ) {
-                // erase whole entry
-                CIterator erase = Iterator(cc);
-                ++Iterator(cc);
-                Index(cc) = -1;
-                Get(cc).erase(erase);
-            }
-            else {
-                // cannot erase value
-                CParent::Erase(cc);
-            }
-        }
-
 protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
         {
-            CMapArrayWriter<Map> writer(this, Get(object));
-            out.WriteArray(writer, this, true, GetElementType());
+            TTypeInfo dataTypeInfo = GetElementClassType();
+            CStlArrayWriter<Map> writer(dataTypeInfo, Get(object));
+            out.WriteArray(writer, this, true, dataTypeInfo);
         }
 
     virtual void SkipData(CObjectIStream& in) const
@@ -1158,6 +1079,16 @@ public:
             return new CStlClassInfo_map<Key, Value>(keyInfo, dataInfo);
         }
 
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const
+        {
+            return new CConstStlElementIterator<map<Key, Value> >(GetElementClassType(),
+                                                            Get(object));
+        }
+    CContainerElementIterator* Elements(TObjectPtr object) const
+        {
+            return new CStlElementIterator_set<map<Key, Value> >(GetElementClassType(),
+                                                        Get(object));
+        }
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
@@ -1187,106 +1118,21 @@ public:
             return new CStlClassInfo_multimap<Key, Value>(keyInfo, dataInfo);
         }
 
+    CConstContainerElementIterator* Elements(TConstObjectPtr object) const
+        {
+            return new CConstStlElementIterator<multimap<Key, Value> >(GetElementClassType(),
+                                                                 Get(object));
+        }
+    CContainerElementIterator* Elements(TObjectPtr object) const
+        {
+            return new CStlElementIterator_set<multimap<Key, Value> >(GetElementClassType(),
+                                                        Get(object));
+        }
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
         {
             CArrayReader_multimap<Key, Value> reader(this, Get(object));
             in.ReadArray(reader, this, true, GetElementType());
-        }
-};
-
-template<typename Char>
-class CStlClassInfoChar_vector : public CTypeInfo {
-    typedef CTypeInfo CParent;
-    typedef vector<Char> TObjectType;
-    typedef CType<TObjectType> TType;
-public:
-    typedef Char TChar;
-
-    CStlClassInfoChar_vector<Char>(void)
-        {
-        }
-
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return TType::GetSize();
-        }
-
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType;
-        }
-
-    virtual bool IsDefault(TConstObjectPtr object) const
-        {
-            return Get(object).empty();
-        }
-
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
-        {
-            return Get(object1) == Get(object2);
-        }
-
-    virtual void SetDefault(TObjectPtr dst) const
-        {
-            Get(dst).clear();
-        }
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
-        {
-            Get(dst) = Get(src);
-        }
-
-    static TTypeInfo GetTypeInfo(void);
-
-private:
-    static char* ToChar(Char* p)
-        { return reinterpret_cast<char*>(p); }
-    static const char* ToChar(const Char* p)
-        { return reinterpret_cast<const char*>(p); }
-
-protected:
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            const TObjectType& o = Get(object);
-            size_t length = o.size();
-            CObjectOStream::ByteBlock block(out, length);
-            if ( length > 0 )
-                block.Write(ToChar(&o.front()), length);
-        }
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            TObjectType& o = Get(object);
-            CObjectIStream::ByteBlock block(in);
-            if ( block.KnownLength() ) {
-                size_t length = block.GetExpectedLength();
-                o.resize(length);
-                block.Read(ToChar(&o.front()), length, true);
-            }
-            else {
-                // length is known -> copy via buffer
-                Char buffer[4096];
-                size_t count;
-                o.clear();
-                while ( (count = block.Read(ToChar(buffer),
-                                            sizeof(buffer))) != 0 ) {
-                    o.insert(o.end(), buffer, buffer + count);
-                }
-            }
-            block.End();
-        }
-    virtual void SkipData(CObjectIStream& in) const
-        {
-            in.SkipByteBlock();
         }
 };
 

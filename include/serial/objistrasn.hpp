@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2000/07/03 18:42:35  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.35  2000/06/16 16:31:06  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -216,8 +220,11 @@ protected:
     // action: read ID into local buffer
     // return: ID pointer and length
     // note: it is not zero ended
-    CLightString ReadId(char firstChar);
-    CLightString ReadNonEmptyId(char firstChar);
+    CLightString ScanEndOfId(bool isId);
+    CLightString ReadTypeId(char firstChar);
+    CLightString ReadMemberId(char firstChar);
+    CLightString ReadUCaseId(char firstChar);
+    CLightString ReadLCaseId(char firstChar);
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
@@ -256,16 +263,12 @@ protected:
                                           const CMembers& members,
                                           CClassMemberPosition& pos);
     virtual void ReadClassRandom(CObjectClassReader& reader,
-                                 TTypeInfo classType,
+                                 const CClassTypeInfo* classType,
                                  const CMembersInfo& members);
     virtual void ReadClassSequential(CObjectClassReader& reader,
-                                     TTypeInfo classType,
+                                     const CClassTypeInfo* classType,
                                      const CMembersInfo& members);
 
-#if 0
-    virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
-                                            const CMembers& members);
-#endif
     virtual void ReadChoice(CObjectChoiceReader& reader,
                             TTypeInfo classType,
                             const CMembersInfo& variants);

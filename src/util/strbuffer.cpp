@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/07/03 18:42:47  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.15  2000/06/16 20:01:26  vasilche
 * Avoid use of unexpected_exception() which is unimplemented on Mac.
 *
@@ -102,6 +106,7 @@
 #include <serial/bytesrc.hpp>
 #include <limits.h>
 #include <ctype.h>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/07/03 18:42:44  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.15  2000/06/16 16:31:19  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -96,7 +100,6 @@
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
-#include <serial/iteratorbase.hpp>
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -150,9 +153,11 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
             if ( t < 0 ) {
                 if ( i == 0 && m_Members[i].GetName().empty() ) {
                     // parent class - skip it
-                    continue;
+                    t = CMemberId::eParentTag;
                 }
-                t = currentTag + 1;
+                else {
+                    t = currentTag + 1;
+                }
             }
             if ( !members->insert(TMembersByTag::
                       value_type(t, i)).second ) {
@@ -173,11 +178,12 @@ void CMembers::UpdateMemberTags(void)
         TTag t = i->GetExplicitTag();
         if ( t < 0 ) {
             if ( i == m_Members.begin() && i->GetName().empty() ) {
-                // parent class - skip it
-                i->m_Tag = CMemberId::eNoExplicitTag;
-                continue;
+                // parent class
+                t = CMemberId::eParentTag;
             }
-            t = currentTag + 1;
+            else {
+                t = currentTag + 1;
+            }
         }
         i->m_Tag = t;
         currentTag = t;

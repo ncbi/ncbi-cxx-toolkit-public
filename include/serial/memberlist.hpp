@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/07/03 18:42:34  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.13  2000/06/16 16:31:05  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -100,9 +104,6 @@ BEGIN_NCBI_SCOPE
 
 class CMemberId;
 class CMemberInfo;
-class CChildrenTypesIterator;
-class CConstChildrenIterator;
-class CChildrenIterator;
 class CConstObjectInfo;
 class CObjectInfo;
 

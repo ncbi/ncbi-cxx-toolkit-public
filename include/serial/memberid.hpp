@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/03 18:42:34  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.9  2000/06/16 16:31:05  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -83,7 +87,8 @@ class CMemberId {
 public:
     typedef int TTag;
     enum {
-        eNoExplicitTag = -1
+        eNoExplicitTag = -1,
+        eParentTag = 0
     };
 
     CMemberId(void);
@@ -92,6 +97,9 @@ public:
     CMemberId(const string& name, TTag tag);
     CMemberId(const char* name);
     CMemberId(const char* name, TTag tag);
+    CMemberId(const CMemberId& id);
+    CMemberId& operator=(const CMemberId& id);
+    ~CMemberId(void);
 
     const string& GetName(void) const;       // ASN.1 tag name
     TTag GetExplicitTag(void) const;         // ASN.1 explicit binary tag value

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.1  2000/06/16 16:31:18  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -262,26 +266,6 @@ bool CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
 bool CClassTypeInfoBase::IsOrMayContainType(TTypeInfo typeInfo) const
 {
     return IsType(typeInfo) || MayContainType(typeInfo);
-}
-
-void CClassTypeInfoBase::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-bool CClassTypeInfoBase::ValidTypes(const CChildrenTypesIterator& cc) const
-{
-    return TMemberIndex(cc.GetIndex().m_Index) < GetMembersCount();
-}
-
-TTypeInfo CClassTypeInfoBase::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    return GetMemberTypeInfo(cc.GetIndex().m_Index);
-}
-
-void CClassTypeInfoBase::NextType(CChildrenTypesIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
 }
 
 END_NCBI_SCOPE

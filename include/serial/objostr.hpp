@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/07/03 18:42:36  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.41  2000/06/16 16:31:07  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -228,8 +232,6 @@ public:
         }
     virtual ~CObjectClassWriter(void);
 
-    virtual void WriteParentClass(CObjectOStream& out,
-                                  TTypeInfo parentClassInfo) = 0;
     // returns amount of members written
     virtual void WriteMembers(CObjectOStream& out,
                               const CMembersInfo& members) = 0;
@@ -426,7 +428,7 @@ public:
                                   const CMemberId& id) = 0;
     virtual void EndClassMember(CObjectStackClassMember& member);
     virtual void WriteClass(CObjectClassWriter& writer,
-                            TTypeInfo classInfo, 
+                            const CClassTypeInfo* classInfo, 
                             const CMembersInfo& members,
                             bool randomOrder);
     virtual void WriteClassMember(CObjectClassWriter& writer,
@@ -438,11 +440,6 @@ public:
                                          const CDelayBuffer& buffer);
 
     // choice interface
-#if 0
-    virtual void BeginChoiceVariant(CObjectStackChoiceVariant& variant,
-                                    const CMemberId& id) = 0;
-    virtual void EndChoiceVariant(CObjectStackChoiceVariant& variant);
-#endif
     virtual void WriteChoice(TTypeInfo choiceType,
                              const CMemberId& id,
                              TTypeInfo memberInfo,

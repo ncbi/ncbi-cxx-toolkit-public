@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/07/03 18:42:47  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.17  2000/05/24 20:08:49  vasilche
 * Implemented XML dump.
 *
@@ -101,162 +105,321 @@
 * ===========================================================================
 */
 
-#include <serial/stdtypes.hpp>
+#include <serial/stdtypesimpl.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-#define INIT_TYPE_INFO(T) \
-template<> \
-TTypeInfo CStdTypeInfo<T>::GetTypeInfo(void) \
-{ \
-    static const TTypeInfo typeInfo = new CStdTypeInfo<T>; \
-    return typeInfo; \
+CTypeInfo::ETypeFamily CPrimitiveTypeInfo::GetTypeFamily(void) const
+{
+    return eTypePrimitive;
 }
 
-INIT_TYPE_INFO(bool)
-INIT_TYPE_INFO(char)
-INIT_TYPE_INFO(signed char)
-INIT_TYPE_INFO(unsigned char)
-INIT_TYPE_INFO(char*)
-INIT_TYPE_INFO(const char*)
-INIT_TYPE_INFO(short)
-INIT_TYPE_INFO(unsigned short)
-INIT_TYPE_INFO(int)
-INIT_TYPE_INFO(unsigned)
-INIT_TYPE_INFO(long)
-INIT_TYPE_INFO(unsigned long)
-INIT_TYPE_INFO(float)
-INIT_TYPE_INFO(double)
-
-
-CStdTypeInfo<void>::CStdTypeInfo(void)
+bool CPrimitiveTypeInfo::GetValueBool(TConstObjectPtr /*objectPtr*/) const
 {
+    ThrowIncompatibleValue();
+    return false;
 }
 
-CStdTypeInfo<void>::~CStdTypeInfo(void)
+void CPrimitiveTypeInfo::SetValueBool(TObjectPtr /*objectPtr*/, bool /*value*/) const
 {
+    ThrowIncompatibleValue();
 }
 
-size_t CStdTypeInfo<void>::GetSize(void) const
+char CPrimitiveTypeInfo::GetValueChar(TConstObjectPtr /*objectPtr*/) const
 {
+    ThrowIncompatibleValue();
     return 0;
 }
 
-TTypeInfo CStdTypeInfo<void>::GetTypeInfo(void)
+void CPrimitiveTypeInfo::SetValueChar(TObjectPtr /*objectPtr*/, char /*value*/) const
 {
-    static TTypeInfo typeInfo = new CStdTypeInfo;
-    return typeInfo;
+    ThrowIncompatibleValue();
 }
 
-bool CStdTypeInfo<void>::IsDefault(TConstObjectPtr ) const
+bool CPrimitiveTypeInfo::IsSigned(void) const
 {
     return true;
 }
 
-bool CStdTypeInfo<void>::Equals(TConstObjectPtr , TConstObjectPtr ) const
+long CPrimitiveTypeInfo::GetValueLong(TConstObjectPtr /*objectPtr*/) const
 {
-    throw runtime_error("void cannot be compared");
+    ThrowIncompatibleValue();
+    return 0;
 }
 
-void CStdTypeInfo<void>::SetDefault(TObjectPtr ) const
+void CPrimitiveTypeInfo::SetValueLong(TObjectPtr /*objectPtr*/, long /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+unsigned long CPrimitiveTypeInfo::GetValueULong(TConstObjectPtr /*objectPtr*/) const
+{
+    ThrowIncompatibleValue();
+    return 0;
+}
+
+void CPrimitiveTypeInfo::SetValueULong(TObjectPtr /*objectPtr*/,
+                                       unsigned long /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+double CPrimitiveTypeInfo::GetValueDouble(TConstObjectPtr /*objectPtr*/) const
+{
+    ThrowIncompatibleValue();
+    return 0;
+}
+
+void CPrimitiveTypeInfo::SetValueDouble(TObjectPtr /*objectPtr*/,
+                                        double /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::GetValueString(TConstObjectPtr /*objectPtr*/,
+                                        string& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::SetValueString(TObjectPtr /*objectPtr*/,
+                                        const string& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::GetValueOctetString(TConstObjectPtr /*objectPtr*/,
+                                             vector<char>& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+void CPrimitiveTypeInfo::SetValueOctetString(TObjectPtr /*objectPtr*/,
+                                             const vector<char>& /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size)
+{
+    TTypeInfo info;
+    if ( size == sizeof(int) )
+        info = CStdTypeInfo<int>::GetTypeInfo();
+    else if ( size == sizeof(short) )
+        info = CStdTypeInfo<short>::GetTypeInfo();
+    else if ( size == sizeof(signed char) )
+        info = CStdTypeInfo<signed char>::GetTypeInfo();
+    else if ( size == sizeof(long) )
+        info = CStdTypeInfo<long>::GetTypeInfo();
+    else
+        THROW1_TRACE(runtime_error, "Illegal enum size: "+NStr::UIntToString(size));
+    _ASSERT(info->GetSize() == size);
+    _ASSERT(info->GetTypeFamily() == eTypePrimitive);
+    _ASSERT(dynamic_cast<const CPrimitiveTypeInfo*>(info));
+    _ASSERT(static_cast<const CPrimitiveTypeInfo*>(info)->GetValueType() == eInteger);
+    return static_cast<const CPrimitiveTypeInfo*>(info);
+}
+
+
+TTypeInfo CStdTypeInfo<bool>::GetTypeInfo(void)
+{
+    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoBool();
+    return info;
+}
+
+TTypeInfo CStdTypeInfo<char>::GetTypeInfo(void)
+{
+    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoChar();
+    return info;
+}
+
+#define SERIAL_ENUMERATE_STD_TYPE(Type, Suffix) \
+TTypeInfo CStdTypeInfo<Type>::GetTypeInfo(void) \
+{ \
+    static const CPrimitiveTypeInfo* info =  new CPrimitiveTypeInfoLong<Type>(); \
+    return info; \
+}
+SERIAL_ENUMERATE_STD_TYPE(signed char,schar)
+SERIAL_ENUMERATE_STD_TYPE(unsigned char,uchar)
+SERIAL_ENUMERATE_ALL_INTEGRAL_TYPES
+#undef SERIAL_ENUMERATE_STD_TYPE
+
+#define SERIAL_ENUMERATE_STD_TYPE(Type, Suffix) \
+TTypeInfo CStdTypeInfo<Type>::GetTypeInfo(void) \
+{ \
+    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoDouble<Type>(); \
+    return info; \
+}
+SERIAL_ENUMERATE_ALL_FLOAT_TYPES
+#undef SERIAL_ENUMERATE_STD_TYPE
+
+TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
+{
+    static const CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoString();
+    return info;
+}
+
+TTypeInfo GetStdTypeInfo_char_ptr(void)
+{
+    static const CPrimitiveTypeInfo* info =
+        new CPrimitiveTypeInfoCharPtr<char*>();
+    return info;
+}
+
+TTypeInfo GetStdTypeInfo_const_char_ptr(void)
+{
+    static const CPrimitiveTypeInfo* info =
+        new CPrimitiveTypeInfoCharPtr<const char*>();
+    return info;
+}
+
+CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoBool::GetValueType(void) const
+{
+    return eBool;
+}
+
+bool CPrimitiveTypeInfoBool::GetValueBool(TConstObjectPtr object) const
+{
+    return Get(object);
+}
+
+void CPrimitiveTypeInfoBool::SetValueBool(TObjectPtr object, bool value) const
+{
+    Get(object) = value;
+}
+
+CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoChar::GetValueType(void) const
+{
+    return eChar;
+}
+
+char CPrimitiveTypeInfoChar::GetValueChar(TConstObjectPtr object) const
+{
+    return Get(object);
+}
+
+void CPrimitiveTypeInfoChar::SetValueChar(TObjectPtr object, char value) const
+{
+    Get(object) = value;
+}
+
+CPrimitiveTypeInfo::EValueType CVoidTypeInfo::GetValueType(void) const
+{
+    return eSpecial;
+}
+
+size_t CVoidTypeInfo::GetSize(void) const
+{
+    return 0;
+}
+
+bool CVoidTypeInfo::IsDefault(TConstObjectPtr ) const
+{
+    return true;
+}
+
+bool CVoidTypeInfo::Equals(TConstObjectPtr , TConstObjectPtr ) const
+{
+    ThrowIllegalCall();
+    return false;
+}
+
+void CVoidTypeInfo::SetDefault(TObjectPtr ) const
 {
 }
 
-void CStdTypeInfo<void>::Assign(TObjectPtr , TConstObjectPtr ) const
+void CVoidTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
 {
-    throw runtime_error("void cannot be assigned");
+    ThrowIllegalCall();
 }
 
-void CStdTypeInfo<void>::ReadData(CObjectIStream& , TObjectPtr ) const
+void CVoidTypeInfo::ReadData(CObjectIStream& , TObjectPtr ) const
 {
-    throw runtime_error("void cannot be read");
+    ThrowIllegalCall();
 }
 
-void CStdTypeInfo<void>::SkipData(CObjectIStream& ) const
+void CVoidTypeInfo::SkipData(CObjectIStream& ) const
 {
-    throw runtime_error("void cannot be skipped");
+    ThrowIllegalCall();
 }
     
-void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
+void CVoidTypeInfo::WriteData(CObjectOStream& , TConstObjectPtr ) const
 {
-    throw runtime_error("void cannot be written");
+    ThrowIllegalCall();
 }
 
-CStdTypeInfo<string>::CStdTypeInfo(void)
+CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoString::GetValueType(void) const
 {
+    return eString;
 }
 
-CStdTypeInfo<string>::~CStdTypeInfo(void)
+size_t CPrimitiveTypeInfoString::GetSize(void) const
 {
+    return sizeof(TObjectType);
 }
 
-size_t CStdTypeInfo<string>::GetSize(void) const
-{
-    return TType::GetSize();
-}
-
-TObjectPtr CStdTypeInfo<string>::Create(void) const
+TObjectPtr CPrimitiveTypeInfoString::Create(void) const
 {
     return new TObjectType();
 }
 
-bool CStdTypeInfo<string>::IsDefault(TConstObjectPtr object) const
+bool CPrimitiveTypeInfoString::IsDefault(TConstObjectPtr object) const
 {
     return Get(object).empty();
 }
 
-bool CStdTypeInfo<string>::Equals(TConstObjectPtr object1,
-                                  TConstObjectPtr object2) const
+bool CPrimitiveTypeInfoString::Equals(TConstObjectPtr object1,
+                                      TConstObjectPtr object2) const
 {
     return Get(object1) == Get(object2);
 }
 
-void CStdTypeInfo<string>::SetDefault(TObjectPtr object) const
+void CPrimitiveTypeInfoString::SetDefault(TObjectPtr object) const
 {
     Get(object).erase();
 }
 
-void CStdTypeInfo<string>::Assign(TObjectPtr dst,
-                                  TConstObjectPtr src) const
+void CPrimitiveTypeInfoString::Assign(TObjectPtr dst,
+                                      TConstObjectPtr src) const
 {
     Get(dst) = Get(src);
 }
 
-TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)
+TTypeInfo GetStdTypeInfo_string(void)
 {
-    static TTypeInfo typeInfo = new CStdTypeInfo<string>;
+    static TTypeInfo typeInfo = new CPrimitiveTypeInfoString;
     return typeInfo;
 }
 
-void CStdTypeInfo<string>::ReadData(CObjectIStream& in, TObjectPtr object) const
+void CPrimitiveTypeInfoString::ReadData(CObjectIStream& in,
+                                        TObjectPtr object) const
 {
 	in.ReadStd(Get(object));
 }
 
-void CStdTypeInfo<string>::SkipData(CObjectIStream& in) const
+void CPrimitiveTypeInfoString::SkipData(CObjectIStream& in) const
 {
 	in.SkipString();
 }
 
-void CStdTypeInfo<string>::WriteData(CObjectOStream& out, TConstObjectPtr object) const
+void CPrimitiveTypeInfoString::WriteData(CObjectOStream& out,
+                                         TConstObjectPtr object) const
 {
 	out.WriteStd(Get(object));
 }
 
-CStringStoreTypeInfo::CStringStoreTypeInfo(void)
+void CPrimitiveTypeInfoString::GetValueString(TConstObjectPtr object,
+                                              string& value) const
 {
+    value = Get(object);
 }
 
-CStringStoreTypeInfo::~CStringStoreTypeInfo(void)
+void CPrimitiveTypeInfoString::SetValueString(TObjectPtr object,
+                                              const string& value) const
 {
-}
-
-TTypeInfo CStringStoreTypeInfo::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CStringStoreTypeInfo;
-    return typeInfo;
+    Get(object) = value;
 }
 
 void CStringStoreTypeInfo::ReadData(CObjectIStream& in,
@@ -274,20 +437,6 @@ void CStringStoreTypeInfo::WriteData(CObjectOStream& out,
                                      TConstObjectPtr object) const
 {
 	out.WriteStringStore(Get(object));
-}
-
-CNullBoolTypeInfo::CNullBoolTypeInfo(void)
-{
-}
-
-CNullBoolTypeInfo::~CNullBoolTypeInfo(void)
-{
-}
-
-TTypeInfo CNullBoolTypeInfo::GetTypeInfo(void)
-{
-    static TTypeInfo typeInfo = new CNullBoolTypeInfo;
-    return typeInfo;
 }
 
 void CNullBoolTypeInfo::ReadData(CObjectIStream& in,
@@ -308,6 +457,51 @@ void CNullBoolTypeInfo::WriteData(CObjectOStream& out,
     if ( !Get(object) )
         THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
 	out.WriteNull();
+}
+
+TTypeInfo CCharVectorTypeInfo<char>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCharVectorTypeInfoImpl<char>;
+    return typeInfo;
+}
+
+TTypeInfo CCharVectorTypeInfo<signed char>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCharVectorTypeInfoImpl<signed char>;
+    return typeInfo;
+}
+
+TTypeInfo CCharVectorTypeInfo<unsigned char>::GetTypeInfo(void)
+{
+    static TTypeInfo typeInfo = new CCharVectorTypeInfoImpl<unsigned char>;
+    return typeInfo;
+}
+
+TTypeInfo GetTypeInfoNullBool(void)
+{
+    static TTypeInfo typeInfo = new CNullBoolTypeInfo;
+    return typeInfo;
+}
+
+TTypeInfo GetTypeInfoStringStore(void)
+{
+    static TTypeInfo typeInfo = new CStringStoreTypeInfo;
+    return typeInfo;
+}
+
+void ThrowIncompatibleValue(void)
+{
+    THROW1_TRACE(runtime_error, "incompatible value");
+}
+
+void ThrowIllegalCall(void)
+{
+    THROW1_TRACE(runtime_error, "illegal call");
+}
+
+void ThrowIntegerOverflow(void)
+{
+    THROW1_TRACE(runtime_error, "integer overflow");
 }
 
 END_NCBI_SCOPE

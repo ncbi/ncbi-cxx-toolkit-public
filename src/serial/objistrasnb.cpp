@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/07/03 18:42:45  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.37  2000/06/16 16:31:20  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -177,6 +181,7 @@
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
+#include <serial/classinfo.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -945,15 +950,11 @@ void CObjectIStreamAsnBinary::EndClassMember(CObjectStackClassMember& m)
 }
 
 void CObjectIStreamAsnBinary::ReadClassRandom(CObjectClassReader& reader,
-                                              TTypeInfo classInfo,
+                                              const CClassTypeInfo*/*clsInfo*/,
                                               const CMembersInfo& members)
 {
     ExpectSysTag(eUniversal, true, eSet);
     ExpectIndefiniteLength();
-
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        reader.ReadParentClass(*this, parentClassInfo);
 
     size_t memberCount = members.GetMembersCount();
 
@@ -996,16 +997,12 @@ void CObjectIStreamAsnBinary::ReadClassRandom(CObjectClassReader& reader,
 }
 
 void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
-                                                  TTypeInfo classInfo,
+                                                  const CClassTypeInfo*,
                                                   const CMembersInfo& members)
 {
     ExpectSysTag(eUniversal, true, eSequence);
     ExpectIndefiniteLength();
 
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        reader.ReadParentClass(*this, parentClassInfo);
-    
     TMemberIndex pos = -1;
     if ( HaveMoreElements() ) {
         CObjectStackClassMember m(*this, false);
@@ -1041,29 +1038,6 @@ void CObjectIStreamAsnBinary::ReadClassSequential(CObjectClassReader& reader,
 
     ExpectEndOfContent();
 }
-
-#if 0
-CObjectIStreamAsnBinary::TMemberIndex
-CObjectIStreamAsnBinary::BeginChoiceVariant(CObjectStackChoiceVariant& v,
-                                            const CMembers& variants)
-{
-    TTag tag = PeekTag(eContextSpecific, true);
-    ExpectIndefiniteLength();
-    TMemberIndex index = variants.FindMember(tag);
-    if ( index < 0 )
-        UnexpectedMember(tag);
-    v.SetName(variants.GetMemberId(index));
-    return index;
-}
-
-void CObjectIStreamAsnBinary::EndChoiceVariant(CObjectStackChoiceVariant& v)
-{
-    ExpectEndOfContent();
-    v.End();
-    _ASSERT(v.GetPrevous());
-    v.GetPrevous()->End();
-}
-#endif
 
 void CObjectIStreamAsnBinary::ReadChoice(CObjectChoiceReader& reader,
                                          TTypeInfo /*choiceInfo*/,

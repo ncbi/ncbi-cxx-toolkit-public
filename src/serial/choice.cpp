@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/07/03 18:42:42  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.17  2000/06/16 16:31:17  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -115,7 +119,6 @@
 #include <serial/objistr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
-#include <serial/iteratorbase.hpp>
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 
@@ -151,6 +154,11 @@ CChoiceTypeInfo::CChoiceTypeInfo(const string& name,
       m_SelectDelayFunction(0)
 {
     SetCreateFunction(createFunc);
+}
+
+CTypeInfo::ETypeFamily CChoiceTypeInfo::GetTypeFamily(void) const
+{
+    return eTypeChoice;
 }
 
 bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -327,70 +335,6 @@ TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object,
         _ASSERT(memberPtr != 0 );
     }
     return memberPtr;
-}
-
-bool CChoiceTypeInfo::HaveChildren(TConstObjectPtr object) const
-{
-    TTypeInfo parentClass = GetParentTypeInfo();
-    if ( parentClass && parentClass->HaveChildren(object) )
-        return true;
-    return GetIndex(object) >= 0;
-}
-
-void CChoiceTypeInfo::Begin(CConstChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-void CChoiceTypeInfo::Begin(CChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = 0;
-}
-
-bool CChoiceTypeInfo::Valid(const CConstChildrenIterator& cc) const
-{
-    int index = cc.GetIndex().m_Index;
-    return index == 0 && GetIndex(cc.GetParentPtr()) >= 0; // variant
-}
-
-bool CChoiceTypeInfo::Valid(const CChildrenIterator& cc) const
-{
-    int index = cc.GetIndex().m_Index;
-    return index == 0 && GetIndex(cc.GetParentPtr()) >= 0; // variant
-}
-
-void CChoiceTypeInfo::GetChild(const CConstChildrenIterator& cc,
-                               CConstObjectInfo& child) const
-{
-    _ASSERT(cc.GetIndex().m_Index == 0);
-    TMemberIndex variant = GetIndex(cc.GetParentPtr());
-    _ASSERT(variant >= 0 && variant < GetMembersCount());
-    child.Set(GetData(cc.GetParentPtr(), variant), GetMemberTypeInfo(variant));
-}
-
-void CChoiceTypeInfo::GetChild(const CChildrenIterator& cc,
-                                CObjectInfo& child) const
-{
-    _ASSERT(cc.GetIndex().m_Index == 0);
-    TMemberIndex variant = GetIndex(cc.GetParentPtr());
-    _ASSERT(variant >= 0 && variant < GetMembersCount());
-    child.Set(GetData(cc.GetParentPtr(), variant), GetMemberTypeInfo(variant));
-}
-
-void CChoiceTypeInfo::Next(CConstChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CChoiceTypeInfo::Next(CChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CChoiceTypeInfo::Erase(CChildrenIterator& cc) const
-{
-    _ASSERT(cc.GetIndex().m_Index == 0);
-    ResetIndex(cc.GetParentPtr());
 }
 
 END_NCBI_SCOPE

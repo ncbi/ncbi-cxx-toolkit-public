@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/03 18:42:44  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.8  2000/06/16 16:31:19  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -68,6 +72,16 @@
 
 BEGIN_NCBI_SCOPE
 
+CMemberId::CMemberId(void)
+    : m_MemberList(0), m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
+{
+}
+
+CMemberId::CMemberId(TTag tag)
+    : m_MemberList(0), m_ExplicitTag(tag), m_Tag(tag)
+{
+}
+
 CMemberId::CMemberId(const string& name)
     : m_MemberList(0), m_Name(name),
       m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
@@ -83,10 +97,32 @@ CMemberId::CMemberId(const char* name)
     : m_MemberList(0), m_Name(name), 
       m_ExplicitTag(eNoExplicitTag), m_Tag(eNoExplicitTag)
 {
+    _ASSERT(name);
 }
 
 CMemberId::CMemberId(const char* name, TTag tag)
     : m_MemberList(0), m_Name(name), m_ExplicitTag(tag), m_Tag(tag)
+{
+    _ASSERT(name);
+}
+
+CMemberId::CMemberId(const CMemberId& id)
+    : m_MemberList(id.m_MemberList), m_Name(id.m_Name),
+      m_ExplicitTag(id.m_ExplicitTag), m_Tag(eNoExplicitTag)
+{
+}
+
+CMemberId& CMemberId::operator=(const CMemberId& id)
+{
+    m_MemberList = id.m_MemberList;
+    m_Name = id.m_Name;
+    m_XmlName.reset(0);
+    m_ExplicitTag = id.m_ExplicitTag;
+    m_Tag = eNoExplicitTag;
+    return *this;
+}
+
+CMemberId::~CMemberId(void)
 {
 }
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/07/03 18:42:46  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.5  2000/06/16 19:24:22  vasilche
 * Updated MSVC project.
 * Fixed error on MSVC with static const class member.
@@ -57,6 +61,7 @@
 #include <serial/memberlist.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/classinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -435,8 +440,16 @@ void CObjectOStreamXml::EndClassMember(CObjectStackClassMember& m)
     m.End();
 }
 
+inline
+void CObjectOStreamXml::WriteClassContents(CObjectClassWriter& writer,
+                                           const CClassTypeInfo* /*classInfo*/,
+                                           const CMembersInfo& members)
+{
+    writer.WriteMembers(*this, members);
+}
+
 void CObjectOStreamXml::WriteClass(CObjectClassWriter& writer,
-                                   TTypeInfo classInfo,
+                                   const CClassTypeInfo* classInfo,
                                    const CMembersInfo& members,
                                    bool randomOrder)
 {
@@ -453,17 +466,6 @@ void CObjectOStreamXml::WriteClass(CObjectClassWriter& writer,
         CloseTag(className, true);
         cls.End();
     }
-}
-
-void CObjectOStreamXml::WriteClassContents(CObjectClassWriter& writer,
-                                           TTypeInfo classInfo,
-                                           const CMembersInfo& members)
-{
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        writer.WriteParentClass(*this, parentClassInfo);
-    
-    writer.WriteMembers(*this, members);
 }
 
 void CObjectOStreamXml::WriteClassMember(CObjectClassWriter& ,
@@ -493,33 +495,6 @@ void CObjectOStreamXml::WriteDelayedClassMember(CObjectClassWriter& ,
     CloseTag(m);
     m.End();
 }
-
-#if 0
-void CObjectOStreamXml::BeginChoiceVariant(CObjectStackChoiceVariant& v,
-                                           const CMemberId& /*id*/)
-{
-    _ASSERT(v.GetPrevous() &&
-            v.GetPrevous()->GetFrameType() == v.eFrameChoice &&
-            v.GetPrevous()->GetNameType() == v.eNameTypeInfo);
-    const string& choiceName = v.GetPrevous()->GetNameTypeInfo()->GetName();
-    if ( !choiceName.empty() )
-        OpenTag(choiceName);
-    OpenTag(v);
-}
-
-void CObjectOStreamXml::EndChoiceVariant(CObjectStackChoiceVariant& v)
-{
-    CloseTag(v);
-    v.End();
-    _ASSERT(v.GetPrevous() &&
-            v.GetPrevous()->GetFrameType() == v.eFrameChoice &&
-            v.GetPrevous()->GetNameType() == v.eNameTypeInfo);
-    const string& choiceName = v.GetPrevous()->GetNameTypeInfo()->GetName();
-    if ( !choiceName.empty() )
-        CloseTag(choiceName);
-    v.GetPrevous()->End();
-}
-#endif
 
 void CObjectOStreamXml::WriteChoice(TTypeInfo choiceType,
                                     const CMemberId& id,

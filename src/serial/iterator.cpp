@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.8  2000/06/01 19:07:02  vasilche
 * Added parsing of XML data.
 *
@@ -65,224 +69,297 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/iterator.hpp>
+#include <serial/ptrinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTreeIterator::~CTreeIterator(void)
+class CTreeLevelIteratorOne : public CTreeLevelIterator
+{
+public:
+    CTreeLevelIteratorOne(const CObjectInfo& object)
+        : m_Object(object)
+        {
+        }
+
+    bool Valid(void) const
+        {
+            return m_Object;
+        }
+    void Next(void)
+        {
+            m_Object.Reset();
+        }
+    CObjectInfo Get(void) const
+        {
+            return m_Object;
+        }
+private:
+    CObjectInfo m_Object;
+};
+
+class CConstTreeLevelIteratorOne : public CConstTreeLevelIterator
+{
+public:
+    CConstTreeLevelIteratorOne(const CConstObjectInfo& object)
+        : m_Object(object)
+        {
+        }
+
+    bool Valid(void) const
+        {
+            return m_Object;
+        }
+    void Next(void)
+        {
+            m_Object.Reset();
+        }
+    CConstObjectInfo Get(void) const
+        {
+            return m_Object;
+        }
+private:
+    CConstObjectInfo m_Object;
+};
+
+template<class ChildIterator>
+class CTreeLevelIteratorMany : public CTreeLevelIterator
+{
+public:
+    CTreeLevelIteratorMany(const CObjectInfo& object)
+        : m_Iterator(object)
+        {
+        }
+
+    bool Valid(void) const
+        {
+            return m_Iterator;
+        }
+    void Next(void)
+        {
+            m_Iterator.Next();
+        }
+    CObjectInfo Get(void) const
+        {
+            return *m_Iterator;
+        }
+    void Erase(void)
+        {
+            m_Iterator.Erase();
+        }
+private:
+    ChildIterator m_Iterator;
+};
+
+template<class ChildIterator>
+class CConstTreeLevelIteratorMany : public CConstTreeLevelIterator
+{
+public:
+    CConstTreeLevelIteratorMany(const CConstObjectInfo& object)
+        : m_Iterator(object)
+        {
+        }
+
+    bool Valid(void) const
+        {
+            return m_Iterator;
+        }
+    void Next(void)
+        {
+            m_Iterator.Next();
+        }
+    CConstObjectInfo Get(void) const
+        {
+            return *m_Iterator;
+        }
+private:
+    ChildIterator m_Iterator;
+};
+
+
+CConstTreeLevelIterator::~CConstTreeLevelIterator(void)
+{
+}
+
+CConstTreeLevelIterator*
+CConstTreeLevelIterator::CreateOne(const CConstObjectInfo& object)
+{
+    return new CConstTreeLevelIteratorOne(object);
+}
+
+CConstTreeLevelIterator*
+CConstTreeLevelIterator::Create(const CConstObjectInfo& obj)
+{
+    switch ( obj.GetTypeFamily() ) {
+    case CTypeInfo::eTypeClass:
+        return new CConstTreeLevelIteratorMany<CConstObjectInfo::CMemberIterator>(obj);
+    case CTypeInfo::eTypeContainer:
+        return new CConstTreeLevelIteratorMany<CConstObjectInfo::CElementIterator>(obj);
+    case CTypeInfo::eTypePointer:
+        return CreateOne(obj.GetPointedObject());
+    case CTypeInfo::eTypeChoice:
+        if ( obj.WhichChoice() >= 0 )
+            return CreateOne(obj.GetCurrentChoiceVariant());
+        else
+            return 0;
+    default:
+        return 0;
+    }
+}
+
+bool CConstTreeLevelIterator::HaveChildren(const CConstObjectInfo& object)
+{
+    if ( !object )
+        return false;
+    switch ( object.GetTypeFamily() ) {
+    case CTypeInfo::eTypeClass:
+    case CTypeInfo::eTypeChoice:
+    case CTypeInfo::eTypePointer:
+    case CTypeInfo::eTypeContainer:
+        return true;
+    default:
+        return false;
+    }
+}
+
+CTreeLevelIterator::~CTreeLevelIterator(void)
+{
+}
+
+CTreeLevelIterator*
+CTreeLevelIterator::CreateOne(const CObjectInfo& object)
+{
+    return new CTreeLevelIteratorOne(object);
+}
+
+CTreeLevelIterator*
+CTreeLevelIterator::Create(const CObjectInfo& obj)
+{
+    switch ( obj.GetTypeFamily() ) {
+    case CTypeInfo::eTypeClass:
+        return new CTreeLevelIteratorMany<CObjectInfo::CMemberIterator>(obj);
+    case CTypeInfo::eTypeContainer:
+        return new CTreeLevelIteratorMany<CObjectInfo::CElementIterator>(obj);
+    case CTypeInfo::eTypePointer:
+        return CreateOne(obj.GetPointedObject());
+    case CTypeInfo::eTypeChoice:
+        if ( obj.WhichChoice() >= 0 )
+            return CreateOne(obj.GetCurrentChoiceVariant());
+        else
+            return 0;
+    default:
+        return 0;
+    }
+}
+
+void CTreeLevelIterator::Erase(void)
+{
+    THROW1_TRACE(runtime_error, "cannot erase");
+}
+
+/////////////////
+
+template<class LevelIterator>
+CTreeIteratorTmpl<LevelIterator>::~CTreeIteratorTmpl(void)
 {
     Reset();
 }
 
-void CTreeIterator::Reset(void)
+template<class LevelIterator>
+void CTreeIteratorTmpl<LevelIterator>::Reset(void)
 {
     m_CurrentObject.Reset();
     m_VisitedObjects.reset(0);
-    m_Valid = false;
-    m_SkipSubTree = false;
-    while ( m_Stack ) {
-        m_Stack = m_Stack->Pop();
-        --m_StackDepth;
-    }
-    _ASSERT(m_StackDepth == 0);
-    _ASSERT(End());
+    _DEBUG_ARG(m_LastCall = eNone);
+    while ( !m_Stack.empty() )
+        m_Stack.pop();
+    _ASSERT(!*this);
 }
 
-void CTreeIterator::Begin(const TBeginInfo& beginInfo)
+template<class LevelIterator>
+void CTreeIteratorTmpl<LevelIterator>::Init(const TBeginInfo& beginInfo)
 {
     Reset();
-    if ( !beginInfo.GetObjectPtr() )
+    if ( !beginInfo.first || !beginInfo.second )
         return;
-    m_CurrentObject.Set(beginInfo.GetObjectPtr(), beginInfo.GetTypeInfo());
-    if ( beginInfo.DetectLoops() )
+    if ( beginInfo.m_DetectLoops )
         m_VisitedObjects.reset(new TVisitedObjects);
-    if ( CanSelectCurrentObject() ) {
-        m_Valid = true;
-    }
-    else {
-        m_Valid = true;
-        Next();
-    }
+    m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(beginInfo)));
+    Walk();
 }
 
-void CTreeIterator::Next(void)
+template<class LevelIterator>
+void CTreeIteratorTmpl<LevelIterator>::Next(void)
 {
-    // cache object/type
-    if ( End() )
-        return;
-    m_Valid = false;
-    // traverse through tree
-    for (;;) {
-        if ( CanEnterCurrentObject() ) {
-            // go to child
-            _TRACE("Children of "<<m_CurrentObject.GetTypeInfo()->GetName());
-            m_Stack = new CTreeLevel(m_CurrentObject, m_Stack);
-            ++m_StackDepth;
-            // go to fetching object
-        }
-        else {
-            m_SkipSubTree = false;
-            // skip all finished iterators
-            while ( m_Stack ) {
-                m_Stack->Next();
-                if ( *m_Stack ) {
-                    // next child on this level
-                    break;
-                }
-                _TRACE("End of children of "<<m_Stack->GetParent().GetTypeInfo()->GetName());
-                // end of children on this level
-                m_Stack = m_Stack->Pop();
-                --m_StackDepth;
-            }
+    _ASSERT(CheckValid());
+    m_CurrentObject.Reset();
 
-            if ( !m_Stack ) {
-                // end
-                _TRACE("End of tree");
-                _ASSERT(m_StackDepth == 0);
-                m_CurrentObject.Reset();
-                return;
-            }
-        }
-        m_Stack->GetChild(m_CurrentObject);
-        _TRACE("Next child: "<<m_CurrentObject.GetTypeInfo()->GetName());
-        while ( m_CurrentObject &&
-                m_CurrentObject.GetTypeInfo()->IsPointer() ) {
-            m_CurrentObject.GetTypeInfo()->GetPointedObject(m_CurrentObject);
-            _TRACE("Ptr: "<<m_CurrentObject.GetTypeInfo()->GetName());
-        }
-        if ( m_CurrentObject && CanSelectCurrentObject() ) {
-            m_Valid = true;
-            _TRACE("Good!");
-            return;
-        }
-    }
-}
-
-bool CTreeIterator::CanSelectCurrentObject(void)
-{
-    TVisitedObjects* visitedObjects = m_VisitedObjects.get();
-    if ( visitedObjects ) {
-        TConstObjectPtr object = m_CurrentObject.GetObjectPtr();
-        if ( !visitedObjects->insert(object).second ) {
-            // already visited
-            return false;
-        }
-    }
-	return true;
-}
-
-bool CTreeIterator::CanEnterCurrentObject(void)
-{
-    return !m_SkipSubTree && m_CurrentObject &&
-        m_CurrentObject.GetTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
+    _ASSERT(!m_Stack.empty());
+    if ( Step(m_Stack.top()->Get()) )
+        Walk();
 }
 
 void CTreeIterator::Erase(void)
 {
-    if ( !Valid() )
-        THROW1_TRACE(runtime_error, "cannot erase nonvalid iterator");
-    if ( !m_Stack )
-        THROW1_TRACE(runtime_error, "cannot erase root object of iterator");
+    _ASSERT(CheckValid());
     m_CurrentObject.Reset();
-    m_Stack->Erase();
-    m_Valid = false;
-    m_SkipSubTree = true;
+
+    _ASSERT(!m_Stack.empty());
+    m_Stack.top()->Erase();
+    Walk();
 }
 
-CTreeConstIterator::~CTreeConstIterator(void)
+template<class LevelIterator>
+void CTreeIteratorTmpl<LevelIterator>::SkipSubTree(void)
 {
-    Reset();
+    _ASSERT(CheckValid());
+    m_Stack.push(AutoPtr<LevelIterator>(LevelIterator::CreateOne(TObjectInfo())));
 }
 
-void CTreeConstIterator::Reset(void)
+template<class LevelIterator>
+void CTreeIteratorTmpl<LevelIterator>::Walk(void)
 {
-    m_CurrentObject.Reset();
-    m_VisitedObjects.reset(0);
-    m_Valid = false;
-    m_SkipSubTree = false;
-    while ( m_Stack ) {
-        m_Stack = m_Stack->Pop();
-        --m_StackDepth;
-    }
-    _ASSERT(m_StackDepth == 0);
-    _ASSERT(End());
-}
-
-void CTreeConstIterator::Begin(const TBeginInfo& beginInfo)
-{
-    Reset();
-    if ( !beginInfo.GetObjectPtr() )
-        return;
-    m_CurrentObject.Set(beginInfo.GetObjectPtr(), beginInfo.GetTypeInfo());
-    if ( beginInfo.DetectLoops() )
-        m_VisitedObjects.reset(new TVisitedObjects);
-    if ( CanSelectCurrentObject() ) {
-        m_Valid = true;
-    }
-    else {
-        m_Valid = true;
-        Next();
-    }
-}
-
-void CTreeConstIterator::Next(void)
-{
-    // cache object/type
-    if ( End() )
-        return;
-    m_Valid = false;
-    // traverse through tree
-    for (;;) {
-        if ( CanEnterCurrentObject() ) {
-            // go to child
-            _TRACE("Children of "<<m_CurrentObject.GetTypeInfo()->GetName());
-            m_Stack = new CTreeLevel(m_CurrentObject, m_Stack);
-            ++m_StackDepth;
-            // go to fetching object
-        }
-        else {
-            m_SkipSubTree = false;
-            // skip all finished iterators
-            while ( m_Stack ) {
-                m_Stack->Next();
-                if ( *m_Stack ) {
-                    // next child on this level
-                    break;
-                }
-                _TRACE("End of children of "<<m_Stack->GetParent().GetTypeInfo()->GetName());
-                // end of children on this level
-                m_Stack = m_Stack->Pop();
-                --m_StackDepth;
-            }
-
-            if ( !m_Stack ) {
-                // end
-                _TRACE("End of tree");
-                _ASSERT(m_StackDepth == 0);
-                m_CurrentObject.Reset();
-                return;
-            }
-        }
-        m_Stack->GetChild(m_CurrentObject);
-        _TRACE("Next child: "<<m_CurrentObject.GetTypeInfo()->GetName());
-        while ( m_CurrentObject &&
-                m_CurrentObject.GetTypeInfo()->IsPointer() ) {
-            m_CurrentObject.GetTypeInfo()->GetPointedObject(m_CurrentObject);
-            _TRACE("Ptr: "<<m_CurrentObject.GetTypeInfo()->GetName());
-        }
-        if ( m_CurrentObject && CanSelectCurrentObject() ) {
-            m_Valid = true;
-            _TRACE("Good!");
+    _ASSERT(!m_Stack.empty());
+    TObjectInfo current;
+    do {
+        current = m_Stack.top()->Get();
+        if ( CanSelect(current) ) {
+            m_CurrentObject = current;
             return;
         }
-    }
+    } while ( Step(current) );
 }
 
-bool CTreeConstIterator::CanSelectCurrentObject(void)
+template<class LevelIterator>
+bool CTreeIteratorTmpl<LevelIterator>::Step(const TObjectInfo& current)
 {
+    if ( CanEnter(current) ) {
+        AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
+        if ( nextLevel ) {
+            m_Stack.push(nextLevel);
+            return true;
+        }
+    }
+    // skip all finished iterators
+    _ASSERT(!m_Stack.empty());
+    do {
+        m_Stack.top()->Next();
+        if ( m_Stack.top()->Valid() ) {
+            // next child on this level
+            return true;
+        }
+        m_Stack.pop();
+    } while ( !m_Stack.empty() );
+    return false;
+}
+
+template<class LevelIterator>
+bool CTreeIteratorTmpl<LevelIterator>::CanSelect(const CConstObjectInfo& obj)
+{
+    if ( !obj )
+        return false;
     TVisitedObjects* visitedObjects = m_VisitedObjects.get();
     if ( visitedObjects ) {
-        TConstObjectPtr object = m_CurrentObject.GetObjectPtr();
-        if ( !visitedObjects->insert(object).second ) {
+        if ( !visitedObjects->insert(obj.GetObjectPtr()).second ) {
             // already visited
             return false;
         }
@@ -290,34 +367,33 @@ bool CTreeConstIterator::CanSelectCurrentObject(void)
 	return true;
 }
 
-bool CTreeConstIterator::CanEnterCurrentObject(void)
+template<class LevelIterator>
+bool CTreeIteratorTmpl<LevelIterator>::CanEnter(const CConstObjectInfo& object)
 {
-    return !m_SkipSubTree && m_CurrentObject &&
-        m_CurrentObject.GetTypeInfo()->HaveChildren(m_CurrentObject.GetObjectPtr());
-}
-
-
-template<class Parent>
-bool CTypeIteratorBase<Parent>::CanSelectCurrentObject(void)
-{
-    return CParent::CanSelectCurrentObject() &&
-        m_CurrentObject.GetTypeInfo()->IsType(m_NeedType);
+    return CConstTreeLevelIterator::HaveChildren(object);
 }
 
 template<class Parent>
-bool CTypeIteratorBase<Parent>::CanEnterCurrentObject(void)
+bool CTypeIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
 {
-    return CParent::CanEnterCurrentObject() &&
-        m_CurrentObject.GetTypeInfo()->MayContainType(m_NeedType);
+    return CParent::CanSelect(object) &&
+        object.GetTypeInfo()->IsType(m_NeedType);
 }
 
 template<class Parent>
-bool CTypesIteratorBase<Parent>::CanSelectCurrentObject(void)
+bool CTypeIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
 {
-    if ( !CParent::CanSelectCurrentObject() )
+    return CParent::CanEnter(object) &&
+        object.GetTypeInfo()->MayContainType(m_NeedType);
+}
+
+template<class Parent>
+bool CTypesIteratorBase<Parent>::CanSelect(const CConstObjectInfo& object)
+{
+    if ( !CParent::CanSelect(object) )
         return false;
     m_MatchType = 0;
-    TTypeInfo type = m_CurrentObject.GetTypeInfo();
+    TTypeInfo type = object.GetTypeInfo();
     iterate ( TTypeList, i, GetTypeList() ) {
         if ( type->IsType(*i) ) {
             m_MatchType = *i;
@@ -328,11 +404,11 @@ bool CTypesIteratorBase<Parent>::CanSelectCurrentObject(void)
 }
 
 template<class Parent>
-bool CTypesIteratorBase<Parent>::CanEnterCurrentObject(void)
+bool CTypesIteratorBase<Parent>::CanEnter(const CConstObjectInfo& object)
 {
-    if ( !CParent::CanEnterCurrentObject() )
+    if ( !CParent::CanEnter(object) )
         return false;
-    TTypeInfo type = m_CurrentObject.GetTypeInfo();
+    TTypeInfo type = object.GetTypeInfo();
     iterate ( TTypeList, i, GetTypeList() ) {
         if ( type->MayContainType(*i) )
             return true;
@@ -340,6 +416,8 @@ bool CTypesIteratorBase<Parent>::CanEnterCurrentObject(void)
     return false;
 }
 
+template class CTreeIteratorTmpl<CTreeLevelIterator>;
+template class CTreeIteratorTmpl<CConstTreeLevelIterator>;
 template class CTypeIteratorBase<CTreeIterator>;
 template class CTypeIteratorBase<CTreeConstIterator>;
 template class CTypesIteratorBase<CTreeIterator>;

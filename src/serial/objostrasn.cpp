@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/07/03 18:42:46  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.41  2000/06/16 16:31:21  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -196,6 +200,7 @@
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/classinfo.hpp>
 #include <math.h>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
@@ -460,17 +465,13 @@ void CObjectOStreamAsn::BeginClassMember(CObjectStackClassMember& m,
 }
 
 void CObjectOStreamAsn::WriteClass(CObjectClassWriter& writer,
-                                   TTypeInfo classInfo,
+                                   const CClassTypeInfo* /*classInfo*/,
                                    const CMembersInfo& members,
                                    bool /*randomOrder*/)
 {
     m_Output.PutChar('{');
     m_Output.IncIndentLevel();
     
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        writer.WriteParentClass(*this, parentClassInfo);
-
     writer.WriteMembers(*this, members);
     
     m_Output.DecIndentLevel();
@@ -490,8 +491,10 @@ void CObjectOStreamAsn::WriteClassMember(CObjectClassWriter& writer,
     
     CObjectStackClassMember m(*this, id);
     m_Output.PutEol();
-    m_Output.PutString(id.GetName());
-    m_Output.PutChar(' ');
+    if ( !id.GetName().empty() ) {
+        m_Output.PutString(id.GetName());
+        m_Output.PutChar(' ');
+    }
 
     memberTypeInfo->WriteData(*this, memberPtr);
     
@@ -509,23 +512,16 @@ void CObjectOStreamAsn::WriteDelayedClassMember(CObjectClassWriter& writer,
     
     CObjectStackClassMember m(*this, id);
     m_Output.PutEol();
-    m_Output.PutString(id.GetName());
-    m_Output.PutChar(' ');
+    if ( !id.GetName().empty() ) {
+        m_Output.PutString(id.GetName());
+        m_Output.PutChar(' ');
+    }
 
     if ( !buffer.Write(*this) )
         THROW1_TRACE(runtime_error, "internal error");
     
     m.End();
 }
-
-#if 0
-void CObjectOStreamAsn::BeginChoiceVariant(CObjectStackChoiceVariant& /*v*/,
-                                           const CMemberId& id)
-{
-    m_Output.PutString(id.GetName());
-    m_Output.PutChar(' ');
-}
-#endif
 
 void CObjectOStreamAsn::WriteChoice(TTypeInfo /*choiceType*/,
                                     const CMemberId& id,
@@ -562,7 +558,7 @@ void CObjectOStreamAsn::BeginBytes(const ByteBlock& )
 	m_Output.PutChar('\'');
 }
 
-static const char* const HEX = "0123456789ABCDEF";
+static const char HEX[] = "0123456789ABCDEF";
 
 void CObjectOStreamAsn::WriteBytes(const ByteBlock& ,
                                    const char* bytes, size_t length)

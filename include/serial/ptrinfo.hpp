@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/07/03 18:42:37  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.19  2000/05/24 20:08:15  vasilche
 * Implemented XML dump.
 *
@@ -130,6 +134,8 @@ public:
 #endif
     ~CPointerTypeInfo(void);
 
+    virtual ETypeFamily GetTypeFamily(void) const;
+
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     TTypeInfo GetDataTypeInfo(void) const
@@ -159,26 +165,8 @@ public:
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     virtual TTypeInfo GetPointedTypeInfo(void) const;
-    virtual void GetPointedObject(CConstObjectInfo& object) const;
-    virtual void GetPointedObject(CObjectInfo& object) const;
-
-    virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool HaveChildren(TConstObjectPtr object) const;
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
-    virtual void Begin(CConstChildrenIterator& cc) const;
-    virtual void Begin(CChildrenIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
-    virtual bool Valid(const CConstChildrenIterator& cc) const;
-    virtual bool Valid(const CChildrenIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-    virtual void GetChild(const CConstChildrenIterator& cc,
-                          CConstObjectInfo& child) const;
-    virtual void GetChild(const CChildrenIterator& cc,
-                          CObjectInfo& child) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
-    virtual void Next(CConstChildrenIterator& cc) const;
-    virtual void Next(CChildrenIterator& cc) const;
-    virtual void Erase(CChildrenIterator& cc) const;
+    virtual CConstObjectInfo GetPointedObject(const CConstObjectInfo& object) const;
+    virtual CObjectInfo GetPointedObject(const CObjectInfo& object) const;
 
 protected:
     virtual TConstObjectPtr x_GetObjectPointer(TConstObjectPtr obj) const;

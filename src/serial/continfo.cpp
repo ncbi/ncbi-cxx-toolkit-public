@@ -1,6 +1,3 @@
-#ifndef ITERATORBASE__HPP
-#define ITERATORBASE__HPP
-
 /*  $Id$
 * ===========================================================================
 *
@@ -33,30 +30,29 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2000/07/03 18:42:34  vasilche
+* Revision 1.1  2000/07/03 18:42:43  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
-*
-* Revision 1.3  2000/06/16 16:31:04  vasilche
-* Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
-*
-* Revision 1.2  2000/05/04 16:23:09  vasilche
-* Updated CTypesIterator and CTypesConstInterator interface.
-*
-* Revision 1.1  2000/04/10 21:01:38  vasilche
-* Fixed Erase for map/set.
-* Added iteratorbase.hpp header for basic internal classes.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/object.hpp>
+#include <serial/continfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
-#include <serial/iteratorbase.inl>
+CTypeInfo::ETypeFamily CContainerTypeInfo::GetTypeFamily(void) const
+{
+    return eTypeContainer;
+}
+
+CConstContainerElementIterator::~CConstContainerElementIterator(void)
+{
+}
+
+CContainerElementIterator::~CContainerElementIterator(void)
+{
+}
 
 END_NCBI_SCOPE
-
-#endif  /* ITERATORBASE__HPP */

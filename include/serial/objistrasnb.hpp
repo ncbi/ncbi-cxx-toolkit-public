@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/07/03 18:42:35  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.26  2000/06/16 16:31:06  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -198,17 +202,12 @@ protected:
                                           CClassMemberPosition& pos);
     virtual void EndClassMember(CObjectStackClassMember& m);
     virtual void ReadClassRandom(CObjectClassReader& reader,
-                                 TTypeInfo classType,
+                                 const CClassTypeInfo* classType,
                                  const CMembersInfo& members);
     virtual void ReadClassSequential(CObjectClassReader& reader,
-                                     TTypeInfo classType,
+                                     const CClassTypeInfo* classType,
                                      const CMembersInfo& members);
 
-#if 0
-    virtual TMemberIndex BeginChoiceVariant(CObjectStackChoiceVariant& v,
-                                            const CMembers& variants);
-    virtual void EndChoiceVariant(CObjectStackChoiceVariant& v);
-#endif
     virtual void ReadChoice(CObjectChoiceReader& reader,
                             TTypeInfo classType,
                             const CMembersInfo& variants);

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/07/03 18:42:35  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.2  2000/06/16 16:31:06  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -47,80 +51,18 @@
 */
 
 inline
-CObject* CObjectInfo::GetCObjectPtr(TObjectPtr objectPtr, TTypeInfo typeInfo)
-{
-    if ( !typeInfo->IsCObject() )
-        return 0;
-#if 1
-    return static_cast<CObject*>(objectPtr);
-#else
-    CObject* object = static_cast<CObject*>(objectPtr);
-    if ( object->ReferenceCount() == 0 ) {
-        ERR_POST("CObjectInfo() with non referenced object");
-        return 0;
-    }
-    return object;
-#endif
-}
-
-inline
-CObjectInfo::CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo)
-    : CObjectTypeInfo(typeInfo), m_ObjectPtr(objectPtr),
-      m_Ref(GetCObjectPtr(objectPtr, typeInfo))
-{
-}
-
-inline
-CObjectInfo::CObjectInfo(pair<TObjectPtr, TTypeInfo> object)
-    : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
-      m_Ref(GetCObjectPtr(object.first, object.second))
-{
-}
-
-inline
-void CObjectInfo::Reset(void)
-{
-    m_ObjectPtr = 0;
-    ResetTypeInfo();
-    m_Ref.Reset();
-}
-
-inline
-void CObjectInfo::Set(TObjectPtr objectPtr, TTypeInfo typeInfo)
-{
-    m_ObjectPtr = objectPtr;
-    SetTypeInfo(typeInfo);
-    m_Ref.Reset(GetCObjectPtr(objectPtr, typeInfo));
-}
-
-inline
-void CObjectInfo::Set(pair<TObjectPtr, TTypeInfo> object)
-{
-    Set(object.first, object.second);
-}
-
-inline
-void CObjectInfo::Set(const CObjectInfo& object)
-{
-    *this = object;
-}
-
-inline
 const CObject* CConstObjectInfo::GetCObjectPtr(TConstObjectPtr objectPtr,
                                                TTypeInfo typeInfo)
 {
     if ( !typeInfo->IsCObject() )
         return 0;
-#if 1
     return static_cast<const CObject*>(objectPtr);
-#else
-    const CObject* object = static_cast<const CObject*>(objectPtr);
-    if ( object->ReferenceCount() == 0 ) {
-        ERR_POST("CObjectInfo() with non referenced object");
-        return 0;
-    }
-    return object;
-#endif
+}
+
+inline
+CConstObjectInfo::CConstObjectInfo(void)
+    : m_ObjectPtr(0)
+{
 }
 
 inline
@@ -139,16 +81,9 @@ CConstObjectInfo::CConstObjectInfo(pair<TConstObjectPtr, TTypeInfo> object)
 }
 
 inline
-CConstObjectInfo::CConstObjectInfo(pair<NCBI_NS_NCBI::TObjectPtr, TTypeInfo> object)
+CConstObjectInfo::CConstObjectInfo(pair<TObjectPtr, TTypeInfo> object)
     : CObjectTypeInfo(object.second), m_ObjectPtr(object.first),
       m_Ref(GetCObjectPtr(object.first, object.second))
-{
-}
-
-inline
-CConstObjectInfo::CConstObjectInfo(const CObjectInfo& object)
-    : CObjectTypeInfo(object), m_ObjectPtr(object.GetObjectPtr()),
-      m_Ref(object.GetObjectRef())
 {
 }
 
@@ -161,7 +96,7 @@ void CConstObjectInfo::Reset(void)
 }
 
 inline
-void CConstObjectInfo::Set(TObjectPtr objectPtr, TTypeInfo typeInfo)
+void CConstObjectInfo::Set(TConstObjectPtr objectPtr, TTypeInfo typeInfo)
 {
     m_ObjectPtr = objectPtr;
     SetTypeInfo(typeInfo);
@@ -169,37 +104,50 @@ void CConstObjectInfo::Set(TObjectPtr objectPtr, TTypeInfo typeInfo)
 }
 
 inline
-void CConstObjectInfo::Set(NCBI_NS_NCBI::TObjectPtr objectPtr, TTypeInfo typeInfo)
-{
-    m_ObjectPtr = objectPtr;
-    SetTypeInfo(typeInfo);
-    m_Ref.Reset(GetCObjectPtr(objectPtr, typeInfo));
-}
-
-inline
-void CConstObjectInfo::Set(pair<TObjectPtr, TTypeInfo> object)
+CConstObjectInfo&
+CConstObjectInfo::operator=(pair<TConstObjectPtr, TTypeInfo> object)
 {
     Set(object.first, object.second);
+    return *this;
 }
 
 inline
-void CConstObjectInfo::Set(pair<NCBI_NS_NCBI::TObjectPtr, TTypeInfo> object)
+CConstObjectInfo&
+CConstObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 {
     Set(object.first, object.second);
+    return *this;
 }
 
 inline
-void CConstObjectInfo::Set(const CConstObjectInfo& object)
+CObjectInfo::CObjectInfo(void)
 {
-    *this = object;
 }
 
 inline
-void CConstObjectInfo::Set(const CObjectInfo& object)
+CObjectInfo::CObjectInfo(TTypeInfo typeInfo)
+    : CConstObjectInfo(typeInfo->Create(), typeInfo)
 {
-    m_ObjectPtr = object.GetObjectPtr();
-    SetTypeInfo(object.GetTypeInfo());
-    m_Ref = object.GetObjectRef();
+}
+
+inline
+CObjectInfo::CObjectInfo(TObjectPtr objectPtr, TTypeInfo typeInfo)
+    : CConstObjectInfo(objectPtr, typeInfo)
+{
+}
+
+inline
+CObjectInfo::CObjectInfo(pair<TObjectPtr, TTypeInfo> object)
+    : CConstObjectInfo(object)
+{
+}
+
+inline
+CObjectInfo&
+CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
+{
+    Set(object.first, object.second);
+    return *this;
 }
 
 #endif /* def OBJECT__HPP  &&  ndef OBJECT__INL */

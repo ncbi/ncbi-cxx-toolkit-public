@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2000/07/03 18:42:42  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.47  2000/06/16 16:31:18  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -221,7 +225,6 @@
 #include <serial/member.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <serial/iteratorbase.hpp>
 #include <serial/delaybuf.hpp>
 #include <serial/stdtypes.hpp>
 
@@ -243,6 +246,11 @@ CClassTypeInfo::CClassTypeInfo(const char* name, const type_info& ti, size_t siz
     : CParent(name, ti, size), m_RandomOrder(false), m_Implicit(false),
       m_ParentClassInfo(0), m_GetTypeIdFunction(0)
 {
+}
+
+CTypeInfo::ETypeFamily CClassTypeInfo::GetTypeFamily(void) const
+{
+    return eTypeClass;
 }
 
 void CClassTypeInfo::AddSubClass(const CMemberId& id,
@@ -269,7 +277,7 @@ void CClassTypeInfo::AddSubClassNull(const char* id)
     AddSubClassNull(CMemberId(id));
 }
 
-TTypeInfo CClassTypeInfo::GetParentTypeInfo(void) const
+const CClassTypeInfo* CClassTypeInfo::GetParentClassInfo(void) const
 {
     return m_ParentClassInfo;
 }
@@ -282,6 +290,8 @@ void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
     _ASSERT(IsCObject() == parentClass->IsCObject());
     _ASSERT(!m_ParentClassInfo);
     m_ParentClassInfo = parentClass;
+    _ASSERT(GetMembersCount() == 0);
+    GetMembers().AddMember(CMemberId(), 0, parentType);
 }
 
 void CClassTypeInfo::SetGetTypeIdFunction(TGetTypeIdFunction func)
@@ -397,11 +407,6 @@ public:
         {
         }
 
-    virtual void WriteParentClass(CObjectOStream& out, TTypeInfo parentClass)
-        {
-            parentClass->WriteData(out, m_Object);
-        }
-
     virtual void WriteMembers(CObjectOStream& out,
                               const CMembersInfo& members)
         {
@@ -458,10 +463,6 @@ public:
         : m_Object(object)
         {
         }
-    virtual void ReadParentClass(CObjectIStream& in, TTypeInfo parentClassInfo)
-        {
-            parentClassInfo->ReadData(in, m_Object);
-        }
     virtual void ReadMember(CObjectIStream& in,
                             const CMembersInfo& members, int index)
         {
@@ -515,10 +516,6 @@ private:
 class CClassInfoClassSkipper : public CObjectClassReader
 {
 public:
-    virtual void ReadParentClass(CObjectIStream& in, TTypeInfo parentClassInfo)
-        {
-            parentClassInfo->SkipData(in);
-        }
     virtual void ReadMember(CObjectIStream& in,
                             const CMembersInfo& members, int index)
         {
@@ -630,24 +627,6 @@ bool CClassTypeInfo::IsParentClassOf(const CClassTypeInfo* typeInfo) const
     return false;
 }
 
-void CClassTypeInfo::BeginTypes(CChildrenTypesIterator& cc) const
-{
-    if ( m_ParentClassInfo )
-        cc.GetIndex().m_Index = eIteratorIndexParentClass;
-    else
-        CParent::BeginTypes(cc);
-}
-
-TTypeInfo CClassTypeInfo::GetChildType(const CChildrenTypesIterator& cc) const
-{
-    if ( cc.GetIndex().m_Index == eIteratorIndexParentClass ) {
-        _ASSERT(m_ParentClassInfo);
-        return m_ParentClassInfo;
-    }
-    else
-        return CParent::GetChildType(cc);
-}
-
 bool CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
 {
     const CClassTypeInfoBase* parentClass = m_ParentClassInfo;
@@ -655,86 +634,7 @@ bool CClassTypeInfo::CalcMayContainType(TTypeInfo typeInfo) const
         CParent::CalcMayContainType(typeInfo);
 }
 
-bool CClassTypeInfo::HaveChildren(TConstObjectPtr object) const
-{
-    TTypeInfo parentClassInfo = GetParentTypeInfo();
-    if ( parentClassInfo && parentClassInfo->HaveChildren(object) )
-        return true;
-    return !GetMembers().Empty();
-}
-
-void CClassTypeInfo::Begin(CConstChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = m_ParentClassInfo? eIteratorIndexParentClass: 0;
-}
-
-void CClassTypeInfo::Begin(CChildrenIterator& cc) const
-{
-    cc.GetIndex().m_Index = m_ParentClassInfo? eIteratorIndexParentClass: 0;
-}
-
-bool CClassTypeInfo::Valid(const CConstChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index < GetMembersCount();
-}
-
-bool CClassTypeInfo::Valid(const CChildrenIterator& cc) const
-{
-    return cc.GetIndex().m_Index < GetMembersCount();
-}
-
-void CClassTypeInfo::GetChild(const CConstChildrenIterator& cc,
-                              CConstObjectInfo& child) const
-{
-    int index = cc.GetIndex().m_Index;
-    if ( index == eIteratorIndexParentClass ) {
-        _ASSERT(GetParentTypeInfo());
-        child.Set(cc.GetParentPtr(), GetParentTypeInfo());
-    }
-    else {
-        const CMemberInfo* member = GetMemberInfo(index);
-        child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
-    }
-}
-
-void CClassTypeInfo::GetChild(const CChildrenIterator& cc,
-                              CObjectInfo& child) const
-{
-    int index = cc.GetIndex().m_Index;
-    if ( index == eIteratorIndexParentClass ) {
-        _ASSERT(GetParentTypeInfo());
-        child.Set(cc.GetParentPtr(), GetParentTypeInfo());
-    }
-    else {
-        const CMemberInfo* member = GetMemberInfo(index);
-        child.Set(member->GetMember(cc.GetParentPtr()), member->GetTypeInfo());
-    }
-}
-
-void CClassTypeInfo::Next(CConstChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CClassTypeInfo::Next(CChildrenIterator& cc) const
-{
-    ++cc.GetIndex().m_Index;
-}
-
-void CClassTypeInfo::Erase(CChildrenIterator& cc) const
-{
-    int index = cc.GetIndex().m_Index;
-    if ( index == eIteratorIndexParentClass )
-        THROW1_TRACE(runtime_error, "cannot erase parent class");
-
-    const CMemberInfo* info = GetMemberInfo(cc.GetIndex().m_Index);
-    if ( info->GetDefault() )
-        THROW1_TRACE(runtime_error, "cannot erase member with default value");
-
-    AssignMemberDefault(cc.GetParentPtr(), info);
-}
-
-class CCObjectClassInfo : public CStdTypeInfo<void>
+class CCObjectClassInfo : public CVoidTypeInfo
 {
     typedef CTypeInfo CParent;
 public:

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/03 18:42:33  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.1  2000/06/16 16:31:04  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -45,7 +49,6 @@
 #include <serial/typeinfo.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
-#include <serial/iteratorbase.hpp>
 #include <map>
 #include <set>
 #include <vector>
@@ -157,10 +160,6 @@ public:
     // iterators interface
     virtual bool MayContainType(TTypeInfo type) const;
     virtual bool IsOrMayContainType(TTypeInfo type) const;
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
 
 protected:
     virtual bool CalcMayContainType(TTypeInfo typeInfo) const;

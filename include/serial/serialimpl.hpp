@@ -66,9 +66,6 @@ TTypeInfoGetter GetStdTypeInfoGetter(const T* )
 // (char* const*) and (const char* const*) in template
 // so we'll add explicit implemetations:
 
-TTypeInfo GetStdTypeInfo_char_ptr(void);
-TTypeInfo GetStdTypeInfo_const_char_ptr(void);
-
 inline
 TTypeInfoGetter GetStdTypeInfoGetter(char* const* )
 {
@@ -94,11 +91,11 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 
 #define SERIAL_TYPE_StringStore() NCBI_NS_STD::string
 #define SERIAL_REF_StringStore() \
-    &NCBI_NS_NCBI::CStringStoreTypeInfo::GetTypeInfo
+    &NCBI_NS_NCBI::GetTypeInfoStringStore
 
 #define SERIAL_TYPE_null() bool
 #define SERIAL_REF_null() \
-    &NCBI_NS_NCBI::CNullBoolTypeInfo::GetTypeInfo
+    &NCBI_NS_NCBI::GetTypeInfoNullBool
 
 #define SERIAL_TYPE_ENUM(Type, Name) Type
 #define SERIAL_REF_ENUM(Type, Name) \
@@ -156,7 +153,7 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 
 #define SERIAL_TYPE_STL_CHAR_vector(Type) NCBI_NS_STD::vector<Type>
 #define SERIAL_REF_STL_CHAR_vector(Type) \
-    &NCBI_NS_NCBI::CStlClassInfoChar_vector<Type>::GetTypeInfo
+    &NCBI_NS_NCBI::CCharVectorTypeInfo<Type>::GetTypeInfo
 
 #define SERIAL_TYPE_STL_auto_ptr(Type,Args) \
     NCBI_NS_STD::auto_ptr<SERIAL_TYPE(Type)Args >

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/07/03 18:42:43  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.1  2000/02/17 20:02:43  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -67,6 +71,38 @@ CSerialEofException::CSerialEofException(void) THROWS_NONE
 }
 
 CSerialEofException::~CSerialEofException(void) THROWS_NONE
+{
+}
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(const string& current,
+                                                 const string& mustBe) THROWS_NONE
+    : runtime_error("Invalid choice selection: "+current+". "
+                    "Expected: "+mustBe)
+{
+}
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(unsigned currentIndex,
+                                                 unsigned mustBeIndex,
+                                                 const char* const names[],
+                                                 unsigned namesCount) THROWS_NONE
+    : runtime_error(string("Invalid choice selection: ")+
+                    GetName(currentIndex, names, namesCount)+". "
+                    "Expected: "+
+                    GetName(mustBeIndex, names, namesCount))
+{
+}
+
+const char* CInvalidChoiceSelection::GetName(unsigned index,
+                                             const char* const names[],
+                                             unsigned namesCount)
+{
+    if ( index < 0 || index > namesCount )
+        return "?unknown?";
+    return names[index];
+    
+}
+
+CInvalidChoiceSelection::~CInvalidChoiceSelection(void) THROWS_NONE
 {
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/07/03 18:42:32  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.3  2000/05/03 14:38:05  vasilche
 * SERIAL: added support for delayed reading to generated classes.
 * DATATOOL: added code generation for delayed reading.
@@ -50,7 +54,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <vector>
 
 BEGIN_NCBI_SCOPE
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/07/03 18:42:42  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.4  2000/06/22 16:13:48  thiessen
 * change IFStreamFlags to macro
 *
@@ -49,6 +53,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/bytesrc.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/07/03 18:42:37  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.18  2000/05/24 20:08:15  vasilche
 * Implemented XML dump.
 *
@@ -106,94 +110,74 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/typeinfo.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectIStream;
-class CObjectOStream;
-
-// template to standard C types with default value 0 (int, double, char* etc.)
-template<typename T>
-class CStdTypeInfo : public CTypeInfo
+class CPrimitiveTypeInfo : public CTypeInfo
 {
     typedef CTypeInfo CParent;
-    typedef T TObjectType;
-    typedef CType<TObjectType> TType;
 public:
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return TType::GetSize();
-        }
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType(0);
-        }
-
-    virtual bool IsDefault(TConstObjectPtr object) const
-        {
-            return Get(object) == 0;
-        }
-
-    virtual void SetDefault(TObjectPtr dst) const
-        {
-            Get(dst) = 0;
-        }
-
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
-        {
-            return Get(object1) == Get(object2);
-        }
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
-        {
-            Get(dst) = Get(src);
-        }
-
-    static TTypeInfo GetTypeInfo(void);
-
-protected:
-    CStdTypeInfo(void)
+    CPrimitiveTypeInfo(void)
         {
         }
-    CStdTypeInfo(const string& name)
+    CPrimitiveTypeInfo(const string& name)
         : CParent(name)
         {
         }
 
-    virtual void SkipData(CObjectIStream& in) const
-        {
-            in.SkipStd(TObjectType(0));
-        }
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            in.ReadStd(Get(object));
-        }
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            out.WriteStd(Get(object));
-        }
+    virtual ETypeFamily GetTypeFamily(void) const;
+
+    enum EValueType {
+        eSpecial,        // null, void
+        eBool,           // bool: GetBool
+        eChar,           // char: GetChar, GetString
+        eInteger,        // (signed|unsigned) (char|short|int|long): 
+                         //     IsSigned, GetLong, GetULong
+        eReal,           // float|double: GetDouble
+        eString,         // string|char*|const char*: GetString
+        eEnum,           // enum: GetLong GetString
+        eOctetString     // vector<(signed|unsigned)? char>
+    };
+    virtual EValueType GetValueType(void) const = 0;
+
+    virtual bool GetValueBool(TConstObjectPtr objectPtr) const;
+    virtual void SetValueBool(TObjectPtr objectPtr, bool value) const;
+
+    virtual char GetValueChar(TConstObjectPtr objectPtr) const;
+    virtual void SetValueChar(TObjectPtr objectPtr, char value) const;
+
+    virtual bool IsSigned(void) const;
+    virtual long GetValueLong(TConstObjectPtr objectPtr) const;
+    virtual void SetValueLong(TObjectPtr objectPtr, long value) const;
+    virtual unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
+    virtual void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
+
+    virtual double GetValueDouble(TConstObjectPtr objectPtr) const;
+    virtual void SetValueDouble(TObjectPtr objectPtr, double value) const;
+
+    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const;
+    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const;
+
+    virtual void GetValueOctetString(TConstObjectPtr objectPtr,
+                                     vector<char>& value) const;
+    virtual void SetValueOctetString(TObjectPtr objectPtr,
+                                     const vector<char>& value) const;
+
+    static const CPrimitiveTypeInfo* GetIntegerTypeInfo(size_t size);
+
+protected:
+    friend class CObjectInfo;
+    friend class CConstObjectInfo;
+
 };
 
-// CTypeInfo for C type void
-template<>
-class CStdTypeInfo<void> : public CTypeInfo
+class CVoidTypeInfo : public CPrimitiveTypeInfo
 {
-    typedef CTypeInfo CParent;
 public:
-    virtual size_t GetSize(void) const;
+    virtual EValueType GetValueType(void) const;
 
-    static TTypeInfo GetTypeInfo(void);
+    virtual size_t GetSize(void) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
@@ -204,75 +188,171 @@ protected:
     virtual void SkipData(CObjectIStream& ) const;
     virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
     virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
-
-    CStdTypeInfo(void);
-    ~CStdTypeInfo(void);
 };
 
-// CTypeInfo for C++ STL type string
+// template for getting type info of standard types
+template<typename T>
+class CStdTypeInfo
+{
+};
+
 template<>
-class CStdTypeInfo<string> : public CTypeInfo
+class CStdTypeInfo<bool>
 {
-    typedef CTypeInfo CParent;
-    typedef string TObjectType;
-    typedef CType<TObjectType> TType;
 public:
-    CStdTypeInfo(void);
-    ~CStdTypeInfo(void);
-
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return TType::Get(object);
-        }
-
-    virtual size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
-    
-    virtual bool IsDefault(TConstObjectPtr object) const;
-    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
-    virtual void SetDefault(TObjectPtr dst) const;
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
     static TTypeInfo GetTypeInfo(void);
-
-protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
 
-class CStringStoreTypeInfo : public CStdTypeInfo<string>
+template<>
+class CStdTypeInfo<char>
 {
-    typedef CStdTypeInfo<string> CParent;
 public:
-    CStringStoreTypeInfo(void);
-    ~CStringStoreTypeInfo(void);
-
     static TTypeInfo GetTypeInfo(void);
-
-protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 };
 
-class CNullBoolTypeInfo : public CStdTypeInfo<bool>
+template<>
+class CStdTypeInfo<signed char>
 {
-    typedef CStdTypeInfo<bool> CParent;
 public:
-    CNullBoolTypeInfo(void);
-    ~CNullBoolTypeInfo(void);
-
     static TTypeInfo GetTypeInfo(void);
+};
 
-protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+template<>
+class CStdTypeInfo<unsigned char>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<short>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<unsigned short>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<int>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<unsigned>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<long>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<unsigned long>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+#if HAVE_LONG_LONG
+template<>
+class CStdTypeInfo<long long>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<unsigned long long>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+#endif
+
+template<>
+class CStdTypeInfo<float>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<double>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<string>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+TTypeInfo GetStdTypeInfo_char_ptr(void);
+TTypeInfo GetStdTypeInfo_const_char_ptr(void);
+
+template<>
+class CStdTypeInfo<char*>
+{
+public:
+    static TTypeInfo GetTypeInfo(void)
+        {
+            return GetStdTypeInfo_char_ptr();
+        }
+};
+
+template<>
+class CStdTypeInfo<const char*>
+{
+public:
+    static TTypeInfo GetTypeInfo(void)
+        {
+            return GetStdTypeInfo_const_char_ptr();
+        }
+};
+
+TTypeInfo GetTypeInfoNullBool(void);
+TTypeInfo GetTypeInfoStringStore(void);
+
+template<typename Char>
+class CCharVectorTypeInfo
+{
+};
+
+template<>
+class CCharVectorTypeInfo<char>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CCharVectorTypeInfo<signed char>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+};
+
+template<>
+class CCharVectorTypeInfo<unsigned char>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
 };
 
 //#include <serial/stdtypes.inl>

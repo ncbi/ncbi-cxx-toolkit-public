@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/07/03 18:42:38  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.27  2000/06/16 16:31:08  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -140,6 +144,7 @@
 #include <serial/serialdef.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <typeinfo>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -152,9 +157,6 @@ class CMemberId;
 class CMemberInfo;
 class CConstObjectInfo;
 class CObjectInfo;
-class CChildrenTypesIterator;
-class CConstChildrenIterator;
-class CChildrenIterator;
 
 // this structure is used for sorting C++ standard type_info class by pointer
 struct CLessTypeInfo
@@ -189,6 +191,16 @@ protected:
     CTypeInfo(const char* name);
 public:
     virtual ~CTypeInfo(void);
+
+    // type family
+    enum ETypeFamily {
+        eTypePrimitive, // see CPrimitiveTypeInfo
+        eTypeClass,     // see CClassTypeInfo
+        eTypeChoice,    // see CChoiceTypeInfo
+        eTypeContainer, // see CContainerTypeInfo
+        eTypePointer    // see CPointerTypeInfo
+    };
+    virtual ETypeFamily GetTypeFamily(void) const = 0;
 
     // name of this type
     const string& GetName(void) const
@@ -227,9 +239,6 @@ public:
     // return true CTypeInfo of object (redefined in polimorfic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
-    // return parent class info if any
-    virtual TTypeInfo GetParentTypeInfo(void) const;
-
     // I/O interface:
     // read object
     virtual void ReadData(CObjectIStream& in,
@@ -239,39 +248,10 @@ public:
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
 
-    virtual TTypeInfo GetPointedTypeInfo(void) const;
-    bool IsPointer(void) const
-        {
-            return GetPointedTypeInfo() != 0;
-        }
-    virtual void GetPointedObject(CConstObjectInfo& object) const;
-    virtual void GetPointedObject(CObjectInfo& object) const;
-
     virtual bool IsType(TTypeInfo type) const;
     virtual bool MayContainType(TTypeInfo type) const;
     virtual bool IsOrMayContainType(TTypeInfo type) const;
     virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
-    virtual bool HaveChildren(TConstObjectPtr obj) const;
-
-protected:
-    friend class CChildrenTypesIterator;
-    friend class CConstChildrenIterator;
-    friend class CChildrenIterator;
-    virtual void BeginTypes(CChildrenTypesIterator& cc) const;
-    virtual void Begin(CConstChildrenIterator& cc) const;
-    virtual void Begin(CChildrenIterator& cc) const;
-    virtual bool ValidTypes(const CChildrenTypesIterator& cc) const;
-    virtual bool Valid(const CConstChildrenIterator& cc) const;
-    virtual bool Valid(const CChildrenIterator& cc) const;
-    virtual TTypeInfo GetChildType(const CChildrenTypesIterator& cc) const;
-    virtual void GetChild(const CConstChildrenIterator& cc,
-                          CConstObjectInfo& child) const;
-    virtual void GetChild(const CChildrenIterator& cc,
-                          CObjectInfo& child) const;
-    virtual void NextType(CChildrenTypesIterator& cc) const;
-    virtual void Next(CConstChildrenIterator& cc) const;
-    virtual void Next(CChildrenIterator& cc) const;
-    virtual void Erase(CChildrenIterator& cc) const;
 
 private:
     friend class CObjectOStream;

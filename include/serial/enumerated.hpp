@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/03 18:42:33  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.8  2000/05/24 20:08:11  vasilche
 * Implemented XML dump.
 *
@@ -72,71 +76,60 @@
 * ===========================================================================
 */
 
+#include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/enumvalues.hpp>
 
 BEGIN_NCBI_SCOPE
 
-template<typename T>
-class CEnumeratedTypeInfoTmpl : public CStdTypeInfo<T>
+class CEnumeratedTypeInfo : public CPrimitiveTypeInfo
 {
-    typedef CStdTypeInfo<T> CParent;
+    typedef CPrimitiveTypeInfo CParent;
 public:
-
     // values should exist for all live time of our instance
-    CEnumeratedTypeInfoTmpl(const CEnumeratedTypeValues* values)
-        : CParent(values->GetName()), m_Values(*values)
-        {
-        }
+    CEnumeratedTypeInfo(const CEnumeratedTypeValues* values,
+                        size_t size = sizeof(int));
+
+    virtual EValueType GetValueType(void) const;
 
     const CEnumeratedTypeValues& Values(void) const
         {
             return m_Values;
         }
 
-protected:
-    void SkipData(CObjectIStream& in) const
-        {
-            if ( !in.ReadEnum(Values()).second ) {
-                // plain integer
-                CParent::SkipData(in);
-            }
-        }
+    virtual size_t GetSize(void) const;
+    virtual TObjectPtr Create(void) const;
+    
+    virtual bool IsDefault(TConstObjectPtr object) const;
+    virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
+    virtual void SetDefault(TObjectPtr dst) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            pair<long, bool> value = in.ReadEnum(Values());
-            if ( value.second ) {
-                // value already read
-                Get(object) = T(value.first);
-            }
-            else {
-                // plain integer
-                CParent::ReadData(in, object);
-            }
-        }
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            if ( !out.WriteEnum(Values(), Get(object)) ) {
-                // plain integer
-                CParent::WriteData(out, object);
-            }
-        }
+    virtual bool IsSigned(void) const;
+    virtual long GetValueLong(TConstObjectPtr objectPtr) const;
+    virtual unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
+    virtual void SetValueLong(TObjectPtr objectPtr, long value) const;
+    virtual void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
+    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const;
+    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const;
+
+protected:
+    virtual void SkipData(CObjectIStream& in) const;
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
 private:
+    const CPrimitiveTypeInfo* m_ValueType;
     const CEnumeratedTypeValues& m_Values;
 };
 
 template<typename T>
 inline
-TTypeInfo CreateEnumeratedTypeInfo(const T& ,
-                                   const CEnumeratedTypeValues* info)
+CEnumeratedTypeInfo* CreateEnumeratedTypeInfo(const T& ,
+                                              const CEnumeratedTypeValues* values)
 {
-    return info->GetTypeInfoForSize(sizeof(T), T(0));
+    return new CEnumeratedTypeInfo(values, sizeof(T));
 }
-
-// standard template for plain enums
-typedef CEnumeratedTypeInfoTmpl<int> CEnumeratedTypeInfo;
 
 END_NCBI_SCOPE
 

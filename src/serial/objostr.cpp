@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/07/03 18:42:45  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.42  2000/06/16 16:31:21  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -196,6 +200,7 @@
 #include <serial/memberlist.hpp>
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/classinfo.hpp>
 #if HAVE_NCBI_C
 # include <asn.h>
 #endif
@@ -460,17 +465,13 @@ void CObjectOStream::EndClassMember(CObjectStackClassMember& m)
 }
 
 void CObjectOStream::WriteClass(CObjectClassWriter& writer,
-                                TTypeInfo classInfo,
+                                const CClassTypeInfo* classInfo,
                                 const CMembersInfo& members,
                                 bool randomOrder)
 {
     CObjectStackClass cls(*this, classInfo, randomOrder);
     BeginClass(cls);
     
-    TTypeInfo parentClassInfo = classInfo->GetParentTypeInfo();
-    if ( parentClassInfo )
-        writer.WriteParentClass(*this, parentClassInfo);
-
     writer.WriteMembers(*this, members);
     
     EndClass(cls);
@@ -501,43 +502,6 @@ void CObjectOStream::WriteDelayedClassMember(CObjectClassWriter& ,
     
     EndClassMember(m);
 }
-
-#if 0
-void CObjectOStream::EndChoiceVariant(CObjectStackChoiceVariant& v)
-{
-    v.End();
-    _ASSERT(v.GetPrevous());
-    v.GetPrevous()->End();
-}
-
-void CObjectOStream::WriteChoice(TTypeInfo choiceType,
-                                 const CMemberId& id,
-                                 TTypeInfo memberInfo,
-                                 TConstObjectPtr memberPtr)
-{
-    CObjectStackChoice choice(*this, choiceType);
-    CObjectStackChoiceVariant v(*this, id);
-    BeginChoiceVariant(v, id);
-    
-    memberInfo->WriteData(*this, memberPtr);
-    
-    EndChoiceVariant(v);
-}
-
-void CObjectOStream::WriteDelayedChoice(TTypeInfo choiceType,
-                                        const CMemberId& id,
-                                        const CDelayBuffer& buffer)
-{
-    CObjectStackChoice choice(*this, choiceType);
-    CObjectStackChoiceVariant v(*this, id);
-    BeginChoiceVariant(v, id);
-    
-    if ( !buffer.Write(*this) )
-        THROW1_TRACE(runtime_error, "internal error");
-
-    EndChoiceVariant(v);
-}
-#endif
 
 void CObjectOStream::BeginBytes(const ByteBlock& )
 {

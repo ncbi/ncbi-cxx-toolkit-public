@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/07/03 18:42:47  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.8  2000/06/16 16:31:22  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -75,16 +79,6 @@
 #endif
 
 BEGIN_NCBI_SCOPE
-
-TTypeInfo GetStdTypeInfo_char_ptr(void)
-{
-    return CStdTypeInfo<char*>::GetTypeInfo();
-}
-
-TTypeInfo GetStdTypeInfo_const_char_ptr(void)
-{
-    return CStdTypeInfo<const char*>::GetTypeInfo();
-}
 
 class CGet2TypeInfoSource : public CTypeInfoSource
 {
@@ -219,26 +213,29 @@ AddMember(CMembersInfo& info, const char* name, const void* member,
     return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
 }
 
-CChoiceTypeInfo* CClassInfoHelperBase::CreateChoiceInfo(const char* name, size_t size,
-                                                        const type_info& ti,
-                                                        TCreateFunction createFunc,
-                                                        TWhichFunction whichFunc,
-                                                        TSelectFunction selectFunc,
-                                                        TResetFunction resetFunc)
+CChoiceTypeInfo*
+CClassInfoHelperBase::CreateChoiceInfo(const char* name, size_t size,
+                                       const type_info& ti,
+                                       TCreateFunction createFunc,
+                                       TWhichFunction whichFunc,
+                                       TSelectFunction selectFunc,
+                                       TResetFunction resetFunc)
 {
     return new CChoiceTypeInfo(name, size, ti, createFunc,
                                whichFunc, selectFunc, resetFunc);
 }
 
-CClassTypeInfo* CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
-                                                      const type_info& id)
+CClassTypeInfo*
+CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
+                                      const type_info& id)
 {
     return new CClassTypeInfo(name, id, size);
 }
 
-CClassTypeInfo* CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
-                                                      const type_info& id,
-                                                      TGetTypeIdFunction func)
+CClassTypeInfo*
+CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
+                                      const type_info& id,
+                                      TGetTypeIdFunction func)
 {
     CClassTypeInfo* info = new CClassTypeInfo(name, id, size);
     info->SetGetTypeIdFunction(func);
@@ -277,7 +274,8 @@ static void SelectAsn(TObjectPtr object, int index)
 
 CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
 {
-    return CreateChoiceInfo(name, sizeof(valnode), typeid(valnode), &CreateAsnStruct,
+    return CreateChoiceInfo(name, sizeof(valnode), typeid(void),
+                            &CreateAsnStruct,
                             &WhichAsn, &SelectAsn);
 }
 #endif

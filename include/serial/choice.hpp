@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/07/03 18:42:32  vasilche
+* Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
+* Reduced header dependency.
+*
 * Revision 1.12  2000/06/16 16:31:03  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -108,7 +112,8 @@ public:
     typedef TChoiceIndex (*TWhichFunction)(TConstObjectPtr object);
     typedef void (*TResetFunction)(TObjectPtr object);
     typedef void (*TSelectFunction)(TObjectPtr object, TChoiceIndex index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object, TChoiceIndex index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object,
+                                         TChoiceIndex index);
 
     CChoiceTypeInfo(const string& name,
                     size_t size,
@@ -125,6 +130,8 @@ public:
                     TSelectFunction selectFunc,
                     TResetFunction resetFunc = 0);
 
+    virtual ETypeFamily GetTypeFamily(void) const;
+
 protected:
     friend class CClassInfoHelperBase;
 
@@ -135,19 +142,6 @@ public:
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     // iterators interface
-    virtual bool HaveChildren(TConstObjectPtr object) const;
-    virtual void Begin(CConstChildrenIterator& cc) const;
-    virtual void Begin(CChildrenIterator& cc) const;
-    virtual bool Valid(const CConstChildrenIterator& cc) const;
-    virtual bool Valid(const CChildrenIterator& cc) const;
-    virtual void GetChild(const CConstChildrenIterator& cc,
-                          CConstObjectInfo& child) const;
-    virtual void GetChild(const CChildrenIterator& cc,
-                          CObjectInfo& child) const;
-    virtual void Next(CConstChildrenIterator& cc) const;
-    virtual void Next(CChildrenIterator& cc) const;
-    virtual void Erase(CChildrenIterator& cc) const;
-
     TMemberIndex GetIndex(TConstObjectPtr object) const;
     void ResetIndex(TObjectPtr object) const;
     void SetIndex(TObjectPtr object, TMemberIndex index) const;
