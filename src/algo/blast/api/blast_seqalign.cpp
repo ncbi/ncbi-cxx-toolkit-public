@@ -32,7 +32,7 @@
 * ===========================================================================
 */
 
-#include <BlastSeqalign.hpp>
+#include <algo/blast/api/blast_seqalign.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/general/Object_id.hpp>
 
@@ -635,6 +635,10 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/08 19:43:07  dicuccio
+* Compilation fixes: #include file rearrangement; fixed use of 'list' and
+* 'vector' as variable names; fixed missing ostrea<< for __int64
+*
 * Revision 1.7  2003/08/01 17:40:56  dondosha
 * Use renamed functions and structures from local blastkar.h
 *

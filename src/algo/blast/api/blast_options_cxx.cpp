@@ -31,8 +31,8 @@
 * ===========================================================================
 */
 
-#include <BlastOption.hpp>
-#include <BlastSetup.hpp>
+#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_setup.hpp>
 
 // NewBlast includes
 #include <blast_extend.h>
@@ -484,6 +484,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/08/08 19:43:07  dicuccio
+* Compilation fixes: #include file rearrangement; fixed use of 'list' and
+* 'vector' as variable names; fixed missing ostrea<< for __int64
+*
 * Revision 1.7  2003/08/01 22:34:11  camacho
 * Added accessors/mutators/defaults for matrix_path
 *

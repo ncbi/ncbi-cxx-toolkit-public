@@ -34,10 +34,10 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 
-#include <BlastOption.hpp>
-#include <BlastSetup.hpp>
-#include <Bl2Seq.hpp>
-#include <BlastSeqalign.hpp>
+#include <algo/blast/api/blast_option.hpp>
+#include <algo/blast/api/blast_setup.hpp>
+#include <algo/blast/api/bl2seq.hpp>
+#include <algo/blast/api/blast_seqalign.hpp>
 
 // NewBlast includes
 #include <blast_def.h>
@@ -481,6 +481,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/08/08 19:43:07  dicuccio
+* Compilation fixes: #include file rearrangement; fixed use of 'list' and
+* 'vector' as variable names; fixed missing ostrea<< for __int64
+*
 * Revision 1.10  2003/08/01 17:40:56  dondosha
 * Use renamed functions and structures from local blastkar.h
 *

@@ -45,12 +45,14 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
-#include <BlastSetup.hpp>
-#include <BlastException.hpp>
+#include <algo/blast/api/blast_setup.hpp>
+#include <algo/blast/api/blast_exception.hpp>
 
 // NewBlast includes
 #include <blast_util.h>
 #include <blastkar.h>
+
+#include <algorithm>
 
 USING_SCOPE(objects);
 
@@ -60,38 +62,38 @@ BEGIN_NCBI_SCOPE
 
 // Compresses sequence data on vector to buffer, which should have been
 // allocated and have the right size.
-static void PackDNA(const CSeqVector& vector, Uint1* buffer, const int buflen)
+static void PackDNA(const CSeqVector& vec, Uint1* buffer, const int buflen)
 {
     TSeqPos i;                  // loop index of original sequence
     TSeqPos ci;                 // loop index for compressed sequence
     TSeqPos remainder;          // number of bases packed in ncbi2na format in
                                 // last byte of buffer
 
-    _ASSERT(vector.GetCoding() == CSeq_data::e_Ncbi2na);
+    _ASSERT(vec.GetCoding() == CSeq_data::e_Ncbi2na);
 
     for (ci = 0, i = 0; ci < (TSeqPos) buflen-1; ci++, i += COMPRESSION_RATIO) {
-        buffer[ci] = ((vector[i+0] & LAST2BITS)<<6) |
-                     ((vector[i+1] & LAST2BITS)<<4) |
-                     ((vector[i+2] & LAST2BITS)<<2) |
-                     ((vector[i+3] & LAST2BITS)<<0);
+        buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
+                     ((vec[i+1] & LAST2BITS)<<4) |
+                     ((vec[i+2] & LAST2BITS)<<2) |
+                     ((vec[i+3] & LAST2BITS)<<0);
     }
-    if ( (remainder = vector.size()%COMPRESSION_RATIO) == 0) {
-        buffer[ci] = ((vector[i+0] & LAST2BITS)<<6) |
-                     ((vector[i+1] & LAST2BITS)<<4) |
-                     ((vector[i+2] & LAST2BITS)<<2) |
-                     ((vector[i+3] & LAST2BITS)<<0);
+    if ( (remainder = vec.size()%COMPRESSION_RATIO) == 0) {
+        buffer[ci] = ((vec[i+0] & LAST2BITS)<<6) |
+                     ((vec[i+1] & LAST2BITS)<<4) |
+                     ((vec[i+2] & LAST2BITS)<<2) |
+                     ((vec[i+3] & LAST2BITS)<<0);
     } else {
         Uint1 bit_shift = 0;
 
         buffer[ci] = 0;
-        for (; i < vector.size(); i++) {
+        for (; i < vec.size(); i++) {
             switch (i%COMPRESSION_RATIO) {
             case 0: bit_shift = 6; break;
             case 1: bit_shift = 4; break;
             case 2: bit_shift = 2; break;
             default: abort();   // should never happen
             }
-            buffer[ci] |= ((vector[i] & LAST2BITS)<<bit_shift);
+            buffer[ci] |= ((vec[i] & LAST2BITS)<<bit_shift);
         }
         buffer[ci] |= remainder;
     }
@@ -353,6 +355,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/08 19:43:07  dicuccio
+* Compilation fixes: #include file rearrangement; fixed use of 'list' and
+* 'vector' as variable names; fixed missing ostrea<< for __int64
+*
 * Revision 1.9  2003/08/04 15:18:23  camacho
 * Minor fixes
 *

@@ -30,7 +30,7 @@
 *
 */
 
-#include <BlastAux.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
 
@@ -38,6 +38,19 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 BEGIN_NCBI_SCOPE
+
+#ifdef NCBI_OS_MSWIN
+
+ostream&
+operator<<(ostream& os, __int64 val)
+{
+    os << NStr::Int8ToString(val);
+    return os;
+}
+
+#endif
+
+
 
 void
 CQuerySetUpOptionsPtr::DebugDump(CDebugDumpContext ddc, unsigned int depth)
