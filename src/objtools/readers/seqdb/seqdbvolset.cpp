@@ -45,17 +45,20 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
     try {
         for(int i = 0; i < (int) vol_names.size(); i++) {
             x_AddVolume(atlas, vol_names[i], prot_nucl, locked);
-        
+            
             if (prot_nucl == kSeqTypeUnkn) {
                 // Once one volume picks a prot/nucl type, enforce that
                 // for the rest of the volumes.  This should happen at
                 // most once.
-            
+                
                 prot_nucl = m_VolList.back().Vol()->GetSeqType();
             }
         }
     }
     catch(CSeqDBException&) {
+        // The volume destructor will assume the lock is not held.
+        atlas.Unlock(locked);
+        
         // For SeqDB's own exceptions, we'll keep the error message.
         
         for(int i = 0; i < (int) m_VolList.size(); i++) {
@@ -64,6 +67,9 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
         throw;
     }
     catch(...) {
+        // The volume destructor will assume the lock is not held.
+        atlas.Unlock(locked);
+        
         // For other exceptions, we'll provide a message.
         
         for(int i = 0; i < (int) m_VolList.size(); i++) {
