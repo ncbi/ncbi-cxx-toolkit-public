@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.6  2003/04/09 18:44:14  dondosha
+* Advance buffer pointer for masking residues for all programs
+*
 * Revision 1.5  2003/04/09 18:01:52  dondosha
 * Fixed creation of double integer location list for reverse strands for mask-at-hash case.
 *
@@ -1730,9 +1733,8 @@ Blast_MessagePtr *blast_message
 
 		buffer_var = buffer;
 	
-		/* For blastn the first byte is sentinel */
-		if (!StrCmp(program, "blastn"))
-	   		++buffer_var;
+                /* First byte is sentinel */
+                ++buffer_var;
 	}
 
         next_mask_slp = qsup_options->lcase_mask;
