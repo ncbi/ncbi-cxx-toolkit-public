@@ -190,9 +190,9 @@ the same   Scope. It may not access other Scopes.
     TResidue operator[] (int pos);
     // Target sequence coding.
     TCoding GetCoding(void);
-	// Set target coding. In case this function was never called
-	// SeqVector does not perform any conversion, returning the data
-	// in the original format (in which it receives it from the database)
+    // Set target coding. In case this function was never called
+    // SeqVector does not perform any conversion, returning the data
+    // in the original format (in which it receives it from the database)
     void SetCoding(TCoding coding);
     // Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
