@@ -1,4 +1,4 @@
---$Revision: 1.4 $
+--$Revision: 1.5 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -98,9 +98,9 @@ Cdregion ::= SEQUENCE {
     conflict BOOLEAN OPTIONAL ,        -- conflict
     gaps INTEGER OPTIONAL ,            -- number of gaps on conflict/except
     mismatch INTEGER OPTIONAL ,        -- number of mismatches on above
-    stops INTEGER OPTIONAL ,           -- number of stop codons on above
     code Genetic-code OPTIONAL ,       -- genetic code used
-    code-break SEQUENCE OF Code-break OPTIONAL}   -- individual exceptions
+    code-break SEQUENCE OF Code-break OPTIONAL ,   -- individual exceptions
+    stops INTEGER OPTIONAL }           -- number of stop codons on above
 
                     -- each code is 64 cells long, in the order where
                     -- A=0,G=1,C=2,T=3, AAA=0, AAG=1, AGA=4, etc
