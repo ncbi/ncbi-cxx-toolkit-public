@@ -83,14 +83,15 @@ public:
         CConstIterator(void);
         ~CConstIterator(void);
 
+        typedef NCBI_NS_NCBI::TConstObjectPtr TObjectPtr;
+
         const CContainerTypeInfo* GetContainerType(void) const;
+        TObjectPtr GetContainerPtr(void) const;
         void Reset(void);
 
-    private:
-        friend class CContainerTypeInfo;
-
         const CContainerTypeInfo* m_ContainerType;
-        void* m_IteratorData;
+        TObjectPtr                m_ContainerPtr;
+        void*                     m_IteratorData;
     };
     
     class CIterator
@@ -99,14 +100,15 @@ public:
         CIterator(void);
         ~CIterator(void);
 
+        typedef NCBI_NS_NCBI::TObjectPtr TObjectPtr;
+
         const CContainerTypeInfo* GetContainerType(void) const;
+        TObjectPtr GetContainerPtr(void) const;
         void Reset(void);
 
-    private:
-        friend class CContainerTypeInfo;
-
         const CContainerTypeInfo* m_ContainerType;
-        void* m_IteratorData;
+        TObjectPtr                m_ContainerPtr;
+        void*                     m_IteratorData;
     };
 
     bool InitIterator(CConstIterator& it, TConstObjectPtr containerPtr) const;
@@ -121,27 +123,24 @@ public:
     bool NextElement(CIterator& it) const;
     TObjectPtr GetElementPtr(const CIterator& it) const;
     bool EraseElement(CIterator& it) const;
+    void EraseAllElements(CIterator& it) const;
 
     void AddElement(TObjectPtr containerPtr, TConstObjectPtr elementPtr) const;
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const;
 
-    typedef void* TIteratorDataPtr;
-    typedef pair<TIteratorDataPtr, bool> TNewIteratorResult;
+    typedef bool (*TInitIteratorConst)(CConstIterator&);
+    typedef void (*TReleaseIteratorConst)(CConstIterator&);
+    typedef void (*TCopyIteratorConst)(CConstIterator&, const CConstIterator&);
+    typedef bool (*TNextElementConst)(CConstIterator&);
+    typedef TConstObjectPtr (*TGetElementPtrConst)(const CConstIterator&);
 
-    typedef TNewIteratorResult (*TInitIteratorConst)(const CContainerTypeInfo*,
-                                                     TConstObjectPtr);
-    typedef void (*TReleaseIteratorConst)(TIteratorDataPtr);
-    typedef TIteratorDataPtr (*TCopyIteratorConst)(TIteratorDataPtr);
-    typedef TNewIteratorResult (*TNextElementConst)(TIteratorDataPtr);
-    typedef TConstObjectPtr (*TGetElementPtrConst)(TIteratorDataPtr);
-
-    typedef TNewIteratorResult (*TInitIterator)(const CContainerTypeInfo*,
-                                                TObjectPtr);
-    typedef void (*TReleaseIterator)(TIteratorDataPtr);
-    typedef TIteratorDataPtr (*TCopyIterator)(TIteratorDataPtr);
-    typedef TNewIteratorResult (*TNextElement)(TIteratorDataPtr);
-    typedef TObjectPtr (*TGetElementPtr)(TIteratorDataPtr);
-    typedef TNewIteratorResult (*TEraseElement)(TIteratorDataPtr);
+    typedef bool (*TInitIterator)(CIterator&);
+    typedef void (*TReleaseIterator)(CIterator&);
+    typedef void (*TCopyIterator)(CIterator&, const CIterator&);
+    typedef bool (*TNextElement)(CIterator&);
+    typedef TObjectPtr (*TGetElementPtr)(const CIterator&);
+    typedef bool (*TEraseElement)(CIterator&);
+    typedef void (*TEraseAllElements)(CIterator&);
 
     typedef void (*TAddElement)(const CContainerTypeInfo* cType,
                                 TObjectPtr cPtr, TConstObjectPtr ePtr);
@@ -153,7 +152,8 @@ public:
                                    TGetElementPtrConst);
     void SetIteratorFunctions(TInitIterator, TReleaseIterator,
                               TCopyIterator, TNextElement,
-                              TGetElementPtr, TEraseElement);
+                              TGetElementPtr,
+                              TEraseElement, TEraseAllElements);
     void SetAddElementFunctions(TAddElement, TAddElementIn);
 
 protected:
@@ -188,6 +188,7 @@ private:
     TNextElement m_NextElement;
     TGetElementPtr m_GetElementPtr;
     TEraseElement m_EraseElement;
+    TEraseAllElements m_EraseAllElements;
 
     TAddElement m_AddElement;
     TAddElementIn m_AddElementIn;
@@ -240,6 +241,7 @@ public:
     bool Valid(void) const;
     void Next(void);
     void Erase(void);
+    void EraseAll(void);
 
     pair<TObjectPtr, TTypeInfo> Get(void) const;
 
@@ -263,6 +265,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/14 20:03:57  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.8  2003/04/15 14:15:06  siyan
 * Added doxygen support
 *

@@ -331,54 +331,82 @@ public:
         }
 };
 
-template<class Container, class Iterator,
-    typename ContainerPtr, typename ElementRef, typename ObjectPtr>
+template<class Container, class StlIterator,
+    typename ContainerPtr, typename ElementRef,
+    class TypeInfoIterator>
 class CStlClassInfoFunctionsIBase :
     public CStlClassInfoFunctions<Container>
 {
 public:
-    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
-    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
+    typedef StlIterator TStlIterator;
+    typedef TypeInfoIterator TTypeInfoIterator;
+    typedef typename TTypeInfoIterator::TObjectPtr TObjectPtr;
 
-    typedef pair<Iterator, ContainerPtr> TIterator;
-    static TIterator* It(TIteratorDataPtr data)
+    static TStlIterator& It(TTypeInfoIterator& iter)
         {
-            return static_cast<TIterator*>(data);
+            if ( sizeof(TStlIterator) <= sizeof(iter.m_IteratorData) ) {
+                void* data = &iter.m_IteratorData;
+                return *static_cast<TStlIterator*>(data);
+            }
+            else {
+                void* data = iter.m_IteratorData;
+                return *static_cast<TStlIterator*>(data);
+            }
+        }
+    static const TStlIterator& It(const TTypeInfoIterator& iter)
+        {
+            if ( sizeof(TStlIterator) <= sizeof(iter.m_IteratorData) ) {
+                const void* data = &iter.m_IteratorData;
+                return *static_cast<const TStlIterator*>(data);
+            }
+            else {
+                const void* data = iter.m_IteratorData;
+                return *static_cast<const TStlIterator*>(data);
+            }
+        }
+    static bool InitIterator(TTypeInfoIterator& iter)
+        {
+            TStlIterator stl_iter = Get(iter.GetContainerPtr()).begin();
+            if ( sizeof(TStlIterator) <= sizeof(iter.m_IteratorData) ) {
+                void* data = &iter.m_IteratorData;
+                new (data) TStlIterator(stl_iter);
+            }
+            else {
+                iter.m_IteratorData = new TStlIterator(stl_iter);
+            }
+            return stl_iter != Get(iter.GetContainerPtr()).end();
+        }
+    static void ReleaseIterator(TTypeInfoIterator& iter)
+        {
+            if ( sizeof(TStlIterator) <= sizeof(iter.m_IteratorData) ) {
+                void* data = &iter.m_IteratorData;
+                static_cast<TStlIterator*>(data)->~StlIterator();
+            }
+            else {
+                void* data = iter.m_IteratorData;
+                delete static_cast<TStlIterator*>(data);
+            }
+        }
+    static void CopyIterator(TTypeInfoIterator& dst,
+                             const TTypeInfoIterator& src)
+        {
+            It(dst) = It(src);
         }
 
-    static TNewIteratorResult
-    InitIterator(const CContainerTypeInfo* /*containerType*/,
-                 ObjectPtr containerPtr)
+    static bool NextElement(TTypeInfoIterator& iter)
         {
-            TIterator* data =
-                new TIterator(Get(containerPtr).begin(),
-                              &Get(containerPtr));
-            return TNewIteratorResult(data,
-                                      data->first != Get(containerPtr).end());
+            return ++It(iter) != Get(iter.GetContainerPtr()).end();
         }
-    static void ReleaseIterator(TIteratorDataPtr data)
+    static TObjectPtr GetElementPtr(const TTypeInfoIterator& iter)
         {
-            delete It(data);
-        }
-    static TIteratorDataPtr CopyIterator(TIteratorDataPtr data)
-        {
-            return new TIterator(*It(data));
-        }
-    static TNewIteratorResult NextElement(TIteratorDataPtr data)
-        {
-            TIterator* it = It(data);
-            return TNewIteratorResult(it, ++it->first != it->second->end());
-        }
-    static ObjectPtr GetElementPtr(TIteratorDataPtr data)
-        {
-            ElementRef e= *It(data)->first;
+            ElementRef e= *It(iter);
             return &e;
         }
 };
 
 template<class Container>
 class CStlClassInfoFunctionsCI :
-    public CStlClassInfoFunctionsIBase<Container, typename Container::const_iterator, const Container*, const typename Container::value_type&, TConstObjectPtr>
+    public CStlClassInfoFunctionsIBase<Container, typename Container::const_iterator, const Container*, const typename Container::value_type&, CContainerTypeInfo::CConstIterator>
 {
 public:
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
@@ -391,59 +419,71 @@ public:
 
 template<class Container>
 class CStlClassInfoFunctionsI :
-    public CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, TObjectPtr>
+    public CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, CContainerTypeInfo::CIterator>
 {
-    typedef CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, TObjectPtr> CParent;
+    typedef CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, CContainerTypeInfo::CIterator> CParent;
 public:
-    typedef typename CParent::TIterator TIterator;
-    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
-    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
+    typedef typename CParent::TStlIterator TStlIterator;
+    typedef typename CParent::TTypeInfoIterator TTypeInfoIterator;
+    typedef typename CParent::TObjectPtr TObjectPtr;
     
-    static TNewIteratorResult EraseElement(TIteratorDataPtr data)
+    static bool EraseElement(TTypeInfoIterator& iter)
         {
-            TIterator* it = It(data);
-            Container* c = it->second;
-            return TNewIteratorResult(it,
-                                      (it->first = c->erase(it->first)) != c->end());
+            TStlIterator& it = It(iter);
+            Container* c = static_cast<Container*>(iter.GetContainerPtr());
+            it = c->erase(it);
+            return it != c->end();
+        }
+    static void EraseAllElements(TTypeInfoIterator& iter)
+        {
+            Container* c = static_cast<Container*>(iter.GetContainerPtr());
+            c->erase(It(iter), c->end());
         }
 
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
         {
             info->SetIteratorFunctions(&InitIterator, &ReleaseIterator,
                                        &CopyIterator, &NextElement,
-                                       &GetElementPtr, &EraseElement);
+                                       &GetElementPtr,
+                                       &EraseElement, &EraseAllElements);
         }
 };
 
 template<class Container>
 class CStlClassInfoFunctionsI_set :
-    public CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, TObjectPtr>
+    public CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, CContainerTypeInfo::CIterator>
 {
-    typedef CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, TObjectPtr> CParent;
+    typedef CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, CContainerTypeInfo::CIterator> CParent;
 public:
-    typedef typename CParent::TIterator TIterator;
-    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
-    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
+    typedef typename CParent::TStlIterator TStlIterator;
+    typedef typename CParent::TTypeInfoIterator TTypeInfoIterator;
+    typedef typename CParent::TObjectPtr TObjectPtr;
     
-    static TObjectPtr GetElementPtr(TIteratorDataPtr /*data*/)
+    static TObjectPtr GetElementPtr(const TTypeInfoIterator& /*data*/)
         {
             CStlClassInfoUtil::CannotGetElementOfSet();
             return 0;
         }
-    static TNewIteratorResult EraseElement(TIteratorDataPtr data)
+    static bool EraseElement(TTypeInfoIterator& iter)
         {
-            TIterator* it = It(data);
-            Container* c = it->second;
-            typename TObjectType::iterator erase = it->first++;
+            TStlIterator& it = It(iter);
+            Container* c = static_cast<Container*>(iter.GetContainerPtr());
+            TStlIterator erase = it++;
             c->erase(erase);
-            return TNewIteratorResult(it, it->first != c->end());
+            return it != c->end();
+        }
+    static void EraseAllElements(TTypeInfoIterator& iter)
+        {
+            Container* c = static_cast<Container*>(iter.GetContainerPtr());
+            c->erase(It(iter), c->end());
         }
 
     static void SetIteratorFunctions(CStlOneArgTemplate* info)
         {
             info->SetIteratorFunctions(&InitIterator, &ReleaseIterator,
                                        &CopyIterator, &NextElement,
-                                       &GetElementPtr, &EraseElement);
+                                       &GetElementPtr,
+                                       &EraseElement, &EraseAllElements);
         }
 };
 
@@ -662,6 +702,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/08/14 20:03:57  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.64  2003/07/22 21:47:04  vasilche
 * Added SET OF implemented as vector<>.
 *

@@ -97,7 +97,7 @@ private:
     bool CheckValid(void) const;
 
     void ReportNonValid(void) const;
-    
+
     CContainerElementIterator m_Iterator;
 #if _DEBUG
     mutable enum { eNone, eValid, eNext, eErase } m_LastCall;
@@ -431,6 +431,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/08/14 20:03:57  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.7  2003/08/11 15:25:50  grichenk
 * Added possibility to reset an object member from
 * a read hook (including non-optional members).

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.8  2003/03/10 18:54:25  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -134,23 +138,19 @@ CContainerTypeInfo::CContainerTypeInfo(size_t size, const string& name,
 class CContainerTypeInfoFunctions
 {
 public:
-    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
-
     static void Throw(const char* message)
         {
             NCBI_THROW(CSerialException,eFail, message);
         }
-    static TNewIteratorResult InitIteratorConst(const CContainerTypeInfo* ,
-                                                TConstObjectPtr )
+    static bool InitIteratorConst(CContainerTypeInfo::CConstIterator&)
         {
             Throw("cannot create iterator");
-            return TNewIteratorResult(0, false);
+            return false;
         }
-    static TNewIteratorResult InitIterator(const CContainerTypeInfo* ,
-                                           TObjectPtr )
+    static bool InitIterator(CContainerTypeInfo::CIterator&)
         {
             Throw("cannot create iterator");
-            return TNewIteratorResult(0, false);
+            return false;
         }
     static void AddElement(const CContainerTypeInfo* /*containerType*/,
                            TObjectPtr /*containerPtr*/,
@@ -204,7 +204,8 @@ void CContainerTypeInfo::SetIteratorFunctions(TInitIterator init,
                                               TCopyIterator copy,
                                               TNextElement next,
                                               TGetElementPtr get,
-                                              TEraseElement erase)
+                                              TEraseElement erase,
+                                              TEraseAllElements erase_all)
 {
     m_InitIterator = init;
     m_ReleaseIterator = release;
@@ -212,6 +213,7 @@ void CContainerTypeInfo::SetIteratorFunctions(TInitIterator init,
     m_NextElement = next;
     m_GetElementPtr = get;
     m_EraseElement = erase;
+    m_EraseAllElements = erase_all;
 }
 
 bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
@@ -222,7 +224,7 @@ bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
 void CContainerTypeInfo::Assign(TObjectPtr dst,
                                 TConstObjectPtr src) const
 {
-    SetDefault(dst); // clear destination container
+    //SetDefault(dst); // clear destination container
     CConstIterator i;
     if ( InitIterator(i, src) ) {
         do {

@@ -182,12 +182,114 @@ void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
     m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
 }
 
+inline
+CMemberInfo::ESetFlag CMemberInfo::GetSetFlag(TConstObjectPtr object) const
+{
+    if (m_BitSetFlag) {
+        const Uint4* bits =
+            CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+        TMemberIndex pos = (GetIndex()-1) << 1;
+        size_t index =  pos >> 5;
+        size_t offset = pos & 31;
+        size_t res = (*(bits+index) >> offset) & 0x03;
+        return ESetFlag(res);
+    } else {
+        return CTypeConverter<bool>::Get(Add(object,
+            m_SetFlagOffset)) ? eSetYes : eSetNo;
+    }
+}
+
+inline
+bool CMemberInfo::GetSetFlagNo(TConstObjectPtr object) const
+{
+    if (m_BitSetFlag) {
+        const Uint4* bits =
+            CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+        TMemberIndex pos = (GetIndex()-1) << 1;
+        size_t index =  pos >> 5;
+        size_t offset = pos & 31;
+        Uint4 mask = 0x03 << offset;
+        return (*(bits+index) & mask) == 0;
+    } else {
+        return !CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
+    }
+}
+
+inline
+void CMemberInfo::UpdateSetFlag(TObjectPtr object, ESetFlag value) const
+{
+    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != eNoOffset ) {
+        if (m_BitSetFlag) {
+            Uint4* bits =
+                CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+            TMemberIndex pos = (GetIndex()-1) << 1;
+            size_t index =  pos >> 5;
+            size_t offset = pos % 31;
+            Uint4 mask = 0x03 << offset;
+            *(bits+index) = (*(bits+index) & ~mask) | (value << offset);
+        } else {
+            CTypeConverter<bool>::Get(Add(object, setFlagOffset)) = value != eSetNo;
+        }
+    }
+}
+
+inline
+void CMemberInfo::UpdateSetFlagYes(TObjectPtr object) const
+{
+    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != eNoOffset ) {
+        if (m_BitSetFlag) {
+            Uint4* bits =
+                CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+            TMemberIndex pos = (GetIndex()-1) << 1;
+            size_t index =  pos >> 5;
+            size_t offset = pos % 31;
+            Uint4 mask = 0x03 << offset;
+            *(bits+index) |= mask;
+        } else {
+            CTypeConverter<bool>::Get(Add(object, setFlagOffset))= true;
+        }
+    }
+}
+
+inline
+bool CMemberInfo::UpdateSetFlagNo(TObjectPtr object) const
+{
+    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != eNoOffset ) {
+        if (m_BitSetFlag) {
+            Uint4* bits =
+                CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+            TMemberIndex pos = (GetIndex()-1) << 1;
+            size_t index =  pos >> 5;
+            size_t offset = pos % 31;
+            Uint4 mask = 0x03 << offset;
+            if ( *(bits+index) & mask ) {
+                *(bits+index) &= ~mask;
+                return true;
+            }
+        } else {
+            bool& flag = CTypeConverter<bool>::Get(Add(object, setFlagOffset));
+            if ( flag ) {
+                flag = false;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */
 
 
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/08/14 20:03:57  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.19  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

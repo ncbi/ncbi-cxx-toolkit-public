@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.8  2003/08/11 15:25:52  grichenk
 * Added possibility to reset an object member from
 * a read hook (including non-optional members).
@@ -92,7 +96,8 @@ CConstObjectInfoEI::CConstObjectInfoEI(const CConstObjectInfo& object)
     _DEBUG_ARG(m_LastCall = eNone);
 }
 
-CConstObjectInfoEI& CConstObjectInfoEI::operator=(const CConstObjectInfo& object)
+CConstObjectInfoEI&
+CConstObjectInfoEI::operator=(const CConstObjectInfo& object)
 {
     m_Iterator.Init(object.GetObjectPtr(), object.GetContainerTypeInfo());
     _DEBUG_ARG(m_LastCall = eNone);
@@ -105,7 +110,8 @@ CObjectInfoEI::CObjectInfoEI(const CObjectInfo& object)
     _DEBUG_ARG(m_LastCall = eNone);
 }
 
-CObjectInfoEI& CObjectInfoEI::operator=(const CObjectInfo& object)
+CObjectInfoEI&
+CObjectInfoEI::operator=(const CObjectInfo& object)
 {
     m_Iterator.Init(object.GetObjectPtr(), object.GetContainerTypeInfo());
     _DEBUG_ARG(m_LastCall = eNone);

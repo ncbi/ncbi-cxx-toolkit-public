@@ -859,8 +859,20 @@ void CObjectIStreamAsn::ReadContainer(const CContainerTypeInfo* contType,
     
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
 
+    CContainerTypeInfo::CIterator iter;
+    bool old_element = contType->InitIterator(iter, contPtr);
+    TTypeInfo elementType = contType->GetElementType();
     while ( NextElement() ) {
-        contType->AddElement(contPtr, *this);
+        if ( old_element ) {
+            elementType->ReadData(*this, contType->GetElementPtr(iter));
+            old_element = contType->NextElement(iter);
+        }
+        else {
+            contType->AddElement(contPtr, *this);
+        }
+    }
+    if ( old_element ) {
+        contType->EraseAllElements(iter);
     }
 
     END_OBJECT_FRAME();
@@ -1019,7 +1031,15 @@ void CObjectIStreamAsn::SkipClassSequential(const CClassTypeInfo* classType)
 
 TMemberIndex CObjectIStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
-    return GetChoiceIndex(choiceType, ReadMemberId(SkipWhiteSpace()));
+    CLightString id = ReadMemberId(SkipWhiteSpace());
+    if ( id.Empty() )
+        ThrowError(fFormatError, "choice variant id expected");
+
+    TMemberIndex index = GetChoiceIndex(choiceType, id);
+    if ( index == kInvalidMember )
+        UnexpectedMember(id, choiceType->GetVariants());
+
+    return index;
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -1218,6 +1238,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.84  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.83  2003/08/13 15:47:44  gouriano
 * implemented serialization of AnyContent objects
 *

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.25  2003/04/10 20:13:39  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...
@@ -151,7 +155,7 @@ void Write(CObjectOStream& out, TConstObjectPtr object, const CTypeRef& type)
 
 void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 {
-    type.Get()->SetDefault(object);
+    //type.Get()->SetDefault(object);
     in.Read(object, type.Get());
 }
 

@@ -106,7 +106,10 @@ public:
         eSetYes   = 3
     };
     ESetFlag GetSetFlag(TConstObjectPtr object) const;
+    bool GetSetFlagNo(TConstObjectPtr object) const;
     void UpdateSetFlag(TObjectPtr object, ESetFlag value) const;
+    void UpdateSetFlagYes(TObjectPtr object) const;
+    bool UpdateSetFlagNo(TObjectPtr object) const;
     bool CompareSetFlags(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
     bool CanBeDelayed(void) const;
@@ -217,6 +220,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/08/14 20:03:57  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.29  2003/07/29 18:47:46  vasilche
 * Fixed thread safeness of object stream hooks.
 *

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.31  2003/03/20 20:42:36  vasilche
 * Reuse old object in CRef<> reader.
 *
@@ -307,7 +311,7 @@ void CPointerTypeInfo::ReadPointer(CObjectIStream& in,
     TTypeInfo pointedType = pointerType->GetPointedType();
     TObjectPtr pointedPtr = pointerType->GetObjectPointer(objectPtr);
     if ( pointedPtr ) {
-        pointedType->SetDefault(pointedPtr);
+        //pointedType->SetDefault(pointedPtr);
         in.ReadObject(pointedPtr, pointedType);
     }
     else {

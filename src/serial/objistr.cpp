@@ -694,9 +694,20 @@ void CObjectIStream::ReadContainer(const CContainerTypeInfo* containerType,
     TTypeInfo elementType = containerType->GetElementType();
     BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
+    CContainerTypeInfo::CIterator iter;
+    bool old_element = containerType->InitIterator(iter, containerPtr);
     while ( BeginContainerElement(elementType) ) {
-        containerType->AddElement(containerPtr, *this);
+        if ( old_element ) {
+            elementType->ReadData(*this, containerType->GetElementPtr(iter));
+            old_element = containerType->NextElement(iter);
+        }
+        else {
+            containerType->AddElement(containerPtr, *this);
+        }
         EndContainerElement();
+    }
+    if ( old_element ) {
+        containerType->EraseAllElements(iter);
     }
 
     END_OBJECT_FRAME();
@@ -1181,6 +1192,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.109  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.108  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

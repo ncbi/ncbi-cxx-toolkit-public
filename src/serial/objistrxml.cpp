@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.45  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -1276,21 +1280,43 @@ void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
     if ( !WillHaveName(elementType) ) {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
+        CContainerTypeInfo::CIterator iter;
+        bool old_element = cType->InitIterator(iter, containerPtr);
         while ( HasMoreElements(elementType) ) {
             BeginArrayElement(elementType);
             do {
-                cType->AddElement(containerPtr, *this);
+                if ( old_element ) {
+                    elementType->ReadData(*this, cType->GetElementPtr(iter));
+                    old_element = cType->NextElement(iter);
+                }
+                else {
+                    cType->AddElement(containerPtr, *this);
+                }
             } while (!m_RejectedTag.empty());
             EndArrayElement();
             ++count;
+        }
+        if ( old_element ) {
+            cType->EraseAllElements(iter);
         }
 
         END_OBJECT_FRAME();
     }
     else {
+        CContainerTypeInfo::CIterator iter;
+        bool old_element = cType->InitIterator(iter, containerPtr);
         while ( HasMoreElements(elementType) ) {
-            cType->AddElement(containerPtr, *this);
+            if ( old_element ) {
+                elementType->ReadData(*this, cType->GetElementPtr(iter));
+                old_element = cType->NextElement(iter);
+            }
+            else {
+                cType->AddElement(containerPtr, *this);
+            }
             ++count;
+        }
+        if ( old_element ) {
+            cType->EraseAllElements(iter);
         }
     }
     if (count == 0) {
@@ -1657,10 +1683,14 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
     }
     if (x_IsStdXml()) {
         UndoClassMember();
-        return kInvalidMember;
+        UnexpectedMember(tagName, choiceType->GetVariants());
     }
     CLightString id = SkipStackTagName(tagName, 1, '_');
-    return choiceType->GetVariants().Find(id);
+    ind = choiceType->GetVariants().Find(id);
+    if ( ind == kInvalidMember ) {
+        UnexpectedMember(tagName, choiceType->GetVariants());
+    }
+    return ind;
 }
 
 void CObjectIStreamXml::EndChoiceVariant(void)

@@ -79,6 +79,9 @@ public:
     static void ReadMissingSimpleMember(CObjectIStream& in,
                                         const CMemberInfo* memberInfo,
                                         TObjectPtr classPtr);
+    static void ReadMissingWithSetFlagMember(CObjectIStream& in,
+                                             const CMemberInfo* memberInfo,
+                                             TObjectPtr classPtr);
     static void ReadMissingOptionalMember(CObjectIStream& in,
                                             const CMemberInfo* memberInfo,
                                             TObjectPtr classPtr);
@@ -324,45 +327,6 @@ CMemberInfo* CMemberInfo::SetSetFlag(const Uint4* setFlag)
     return this;
 }
 
-CMemberInfo::ESetFlag CMemberInfo::GetSetFlag(TConstObjectPtr object) const
-{
-    if (m_BitSetFlag) {
-        const Uint4* bits =
-            CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
-        TMemberIndex pos = GetIndex();
-        --pos;
-        pos *= 2;
-        size_t index =  pos/(8*sizeof(Uint4));
-        size_t offset = pos%(8*sizeof(Uint4));
-        size_t res = (*(bits+index) >> offset) & 0x03;
-        return res != 0 ? (res > 1 ? eSetYes : eSetMaybe) : eSetNo;
-    } else {
-        return CTypeConverter<bool>::Get(Add(object,
-            m_SetFlagOffset)) ? eSetYes : eSetNo;
-    }
-}
-
-void CMemberInfo::UpdateSetFlag(TObjectPtr object, ESetFlag value) const
-{
-    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
-    if ( setFlagOffset != eNoOffset ) {
-        if (m_BitSetFlag) {
-            Uint4* bits =
-                CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
-            TMemberIndex pos = GetIndex();
-            --pos;
-            pos *= 2;
-            size_t index =  pos/(8*sizeof(Uint4));
-            size_t offset = pos%(8*sizeof(Uint4));
-            *(bits+index) = (value != 0) ?
-                (*(bits+index) | (value << offset)) :
-                (*(bits+index) & ~(0x03 << offset));
-        } else {
-            CTypeConverter<bool>::Get(Add(object, setFlagOffset))= (value != eSetNo);
-        }
-    }
-}
-
 bool CMemberInfo::CompareSetFlags(TConstObjectPtr object1, TConstObjectPtr object2) const
 {
     ESetFlag set1 = GetSetFlag(object1);
@@ -419,7 +383,12 @@ void CMemberInfo::UpdateFunctions(void)
 
     // readmissing/copymissing/skipmissing
     if ( Optional() ) {
-        readFuncs.m_Missing = &TFunc::ReadMissingOptionalMember;
+        if ( HaveSetFlag() ) {
+            readFuncs.m_Missing = &TFunc::ReadMissingWithSetFlagMember;
+        }
+        else {
+            readFuncs.m_Missing = &TFunc::ReadMissingOptionalMember;
+        }
         copyFuncs.m_Missing = &TFunc::CopyMissingOptionalMember;
         skipFuncs.m_Missing = &TFunc::SkipMissingOptionalMember;
     }
@@ -637,7 +606,7 @@ TObjectPtr CMemberInfoFunctions::GetDelayedMember(const CMemberInfo* memberInfo,
 {
     _ASSERT(memberInfo->CanBeDelayed());
     memberInfo->GetDelayBuffer(classPtr).Update();
-    memberInfo->UpdateSetFlag(classPtr, CMemberInfo::eSetYes);
+    memberInfo->UpdateSetFlagYes(classPtr);
     return memberInfo->GetItemPtr(classPtr);
 }
 
@@ -659,7 +628,7 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     _ASSERT(memberInfo->HaveSetFlag());
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    memberInfo->UpdateSetFlag(classPtr,CMemberInfo::eSetYes);
+    memberInfo->UpdateSetFlagYes(classPtr);
 }
 
 void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
@@ -673,7 +642,7 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
             memberInfo->GetTypeInfo()->SkipData(in);
             in.EndDelayBuffer(buffer, memberInfo, classPtr);
             // update 'set' flag
-            memberInfo->UpdateSetFlag(classPtr, CMemberInfo::eSetYes);
+            memberInfo->UpdateSetFlagYes(classPtr);
             return;
         }
         buffer.Update();
@@ -681,7 +650,7 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
     
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    memberInfo->UpdateSetFlag(classPtr, CMemberInfo::eSetYes);
+    memberInfo->UpdateSetFlagYes(classPtr);
 }
 
 void CMemberInfoFunctions::ReadMissingSimpleMember(CObjectIStream& in,
@@ -692,11 +661,25 @@ void CMemberInfoFunctions::ReadMissingSimpleMember(CObjectIStream& in,
     in.ExpectedMember(memberInfo);
 }
 
-void CMemberInfoFunctions::ReadMissingOptionalMember(CObjectIStream& /*in*/,
-                                                     const CMemberInfo* _DEBUG_ARG(memberInfo),
-                                                     TObjectPtr /*classPtr*/)
+void
+CMemberInfoFunctions::ReadMissingOptionalMember(CObjectIStream& /*in*/,
+                                                const CMemberInfo* memberInfo,
+                                                TObjectPtr classPtr)
 {
     _ASSERT(memberInfo->Optional());
+    memberInfo->GetTypeInfo()->SetDefault(memberInfo->GetItemPtr(classPtr));
+}
+
+void
+CMemberInfoFunctions::ReadMissingWithSetFlagMember(CObjectIStream& /*in*/,
+                                                   const CMemberInfo* memberInfo,
+                                                   TObjectPtr classPtr)
+{
+    _ASSERT(!memberInfo->CanBeDelayed());
+    _ASSERT(memberInfo->HaveSetFlag());
+    if ( memberInfo->UpdateSetFlagNo(classPtr) ) {
+        memberInfo->GetTypeInfo()->SetDefault(memberInfo->GetItemPtr(classPtr));
+    }
 }
 
 void CMemberInfoFunctions::WriteSimpleMember(CObjectOStream& out,
@@ -744,7 +727,7 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
-    if ( memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetNo ) {
+    if ( memberInfo->GetSetFlagNo(classPtr) ) {
         if (memberInfo->Optional()) {
             return;
         }
@@ -788,7 +771,7 @@ void CMemberInfoFunctions::WriteLongMember(CObjectOStream& out,
                                            TConstObjectPtr classPtr)
 {
     bool haveSetFlag = memberInfo->HaveSetFlag();
-    if ( haveSetFlag && memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetNo ) {
+    if ( haveSetFlag && memberInfo->GetSetFlagNo(classPtr) ) {
         // not set -> skip this member
         return;
     }
@@ -883,6 +866,8 @@ void CMemberInfoFunctions::ReadMissingHookedMember(CObjectIStream& stream,
     CReadClassMemberHook* hook =
         memberInfo->m_ReadHookData.GetHook(stream.m_ClassMemberHookKey);
     if ( hook ) {
+        memberInfo->GetTypeInfo()->
+            SetDefault(memberInfo->GetItemPtr(classPtr));
         CObjectInfo object(classPtr, memberInfo->GetClassType());
         TMemberIndex index = memberInfo->GetIndex();
         CObjectInfo::CMemberIterator member(object, index);
@@ -1034,6 +1019,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.31  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.30  2003/07/29 18:47:47  vasilche
 * Fixed thread safeness of object stream hooks.
 *

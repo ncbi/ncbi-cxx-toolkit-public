@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.61  2003/05/16 18:02:17  gouriano
 * revised exception error messages
 *
@@ -350,111 +354,96 @@ size_t GetFirstItemOffset(const CItemsInfo& items)
 class CSequenceOfTypeInfoFunctionsCI
 {
 public:
-    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
-    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
+    typedef CContainerTypeInfo::CConstIterator TIterator; 
 
-    struct SData
-    {
-        const CSequenceOfTypeInfo* m_Type;
-        TObjectPtr m_NodePtr;
-        SData(const CSequenceOfTypeInfo* type, TObjectPtr nodePtr)
-            : m_Type(type), m_NodePtr(nodePtr)
-            {
-            }
-    };
-
-    static SData& Get(void* data)
+    static const CSequenceOfTypeInfo* GetType(const TIterator& iter)
         {
-            return *static_cast<SData*>(data);
+            return CTypeConverter<CSequenceOfTypeInfo>::SafeCast(iter.GetContainerType());
         }
-
-    static TNewIteratorResult InitIterator(const CContainerTypeInfo* cType,
-                                           TConstObjectPtr containerPtr)
-        {
-            const CSequenceOfTypeInfo* seqType =
-                CTypeConverter<CSequenceOfTypeInfo>::SafeCast(cType);
-            TObjectPtr nodePtr = seqType->FirstNode(containerPtr);
-            return TNewIteratorResult(new SData(seqType, nodePtr),
-                                      nodePtr != 0);
-        }
-    static void ReleaseIterator(TIteratorDataPtr data)
-        {
-            delete &Get(data);
-        }
-    static TIteratorDataPtr CopyIterator(TIteratorDataPtr data)
-        {
-            return new SData(Get(data));
-        }
-    static TNewIteratorResult NextElement(TIteratorDataPtr data)
+    static bool InitIterator(TIterator& iter)
         {
             TObjectPtr nodePtr =
-                Get(data).m_Type->NextNode(Get(data).m_NodePtr);
-            Get(data).m_NodePtr = nodePtr;
-            return TNewIteratorResult(data, nodePtr != 0);
+                GetType(iter)->FirstNode(iter.GetContainerPtr());
+            iter.m_IteratorData = nodePtr;
+            return nodePtr != 0;
         }
-    static TConstObjectPtr GetElementPtr(TIteratorDataPtr data)
+    static void ReleaseIterator(TIterator& )
         {
-            return Get(data).m_Type->Data(Get(data).m_NodePtr);
+        }
+    static void CopyIterator(TIterator& dst,
+                             const TIterator& src)
+        {
+            dst.m_IteratorData = src.m_IteratorData;
+        }
+    static bool NextElement(TIterator& iter)
+        {
+            TObjectPtr nodePtr = GetType(iter)->NextNode(iter.m_IteratorData);
+            iter.m_IteratorData = nodePtr;
+            return nodePtr != 0;
+        }
+    static TConstObjectPtr GetElementPtr(const TIterator& iter)
+        {
+            return GetType(iter)->Data(iter.m_IteratorData);
         }
 };
 
 class CSequenceOfTypeInfoFunctionsI
 {
 public:
-    typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
-    typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
+    typedef CContainerTypeInfo::CIterator TIterator; 
 
-    struct SData
-    {
-        const CSequenceOfTypeInfo* m_Type;
-        TObjectPtr* m_NodePtrPtr;
-        SData(const CSequenceOfTypeInfo* type, TObjectPtr* nodePtrPtr)
-            : m_Type(type), m_NodePtrPtr(nodePtrPtr)
-            {
-            }
-    };
-
-    static SData& Get(void* data)
+    static const CSequenceOfTypeInfo* GetType(const TIterator& iter)
         {
-            return *static_cast<SData*>(data);
+            return CTypeConverter<CSequenceOfTypeInfo>::SafeCast(iter.GetContainerType());
         }
-
-    static TNewIteratorResult InitIterator(const CContainerTypeInfo* cType,
-                                           TObjectPtr containerPtr)
-        {
-            const CSequenceOfTypeInfo* seqType =
-                CTypeConverter<CSequenceOfTypeInfo>::SafeCast(cType);
-            TObjectPtr* nodePtrPtr = &seqType->FirstNode(containerPtr);
-            return TNewIteratorResult(new SData(seqType, nodePtrPtr),
-                                      *nodePtrPtr != 0);
-        }
-    static void ReleaseIterator(TIteratorDataPtr data)
-        {
-            delete &Get(data);
-        }
-    static TIteratorDataPtr CopyIterator(TIteratorDataPtr data)
-        {
-            return new SData(Get(data));
-        }
-    static TNewIteratorResult NextElement(TIteratorDataPtr data)
+    static bool InitIterator(TIterator& iter)
         {
             TObjectPtr* nodePtrPtr =
-                &Get(data).m_Type->NextNode(*Get(data).m_NodePtrPtr);
-            Get(data).m_NodePtrPtr = nodePtrPtr;
-            return TNewIteratorResult(data, *nodePtrPtr != 0);
+                &GetType(iter)->FirstNode(iter.GetContainerPtr());
+            iter.m_IteratorData = nodePtrPtr;
+            return *nodePtrPtr != 0;
         }
-    static TObjectPtr GetElementPtr(TIteratorDataPtr data)
+    static void ReleaseIterator(TIterator& )
         {
-            return Get(data).m_Type->Data(*Get(data).m_NodePtrPtr);
         }
-    static TNewIteratorResult EraseElement(TIteratorDataPtr data)
+    static void CopyIterator(TIterator& dst, const TIterator& src)
         {
-            TObjectPtr* nodePtrPtr = Get(data).m_NodePtrPtr;
+            dst.m_IteratorData = src.m_IteratorData;
+        }
+    static bool NextElement(TIterator& iter)
+        {
+            TObjectPtr* nodePtrPtr =
+                &GetType(iter)->NextNode(*(TObjectPtr*)iter.m_IteratorData);
+            iter.m_IteratorData = nodePtrPtr;
+            return *nodePtrPtr != 0;
+        }
+    static TObjectPtr GetElementPtr(const TIterator& iter)
+        {
+            return GetType(iter)->Data(*(TObjectPtr*)iter.m_IteratorData);
+        }
+    static bool EraseElement(TIterator& iter)
+        {
+            const CSequenceOfTypeInfo* type = GetType(iter);
+
+            TObjectPtr* nodePtrPtr = (TObjectPtr*)iter.m_IteratorData;
             TObjectPtr nodePtr = *nodePtrPtr;
-            TObjectPtr nextNodePtr = Get(data).m_Type->NextNode(nodePtr);
+            TObjectPtr nextNodePtr = type->NextNode(nodePtr);
             *nodePtrPtr = nextNodePtr;
-            Get(data).m_Type->DeleteNode(nodePtr);
-            return TNewIteratorResult(data, nextNodePtr != 0);
+            type->DeleteNode(nodePtr);
+            return nextNodePtr != 0;
+        }
+    static void EraseAllElements(TIterator& iter)
+        {
+            const CSequenceOfTypeInfo* type = GetType(iter);
+
+            TObjectPtr* nodePtrPtr = (TObjectPtr*)iter.m_IteratorData;
+            TObjectPtr nodePtr = *nodePtrPtr;
+            *nodePtrPtr = 0;
+            while ( nodePtr ) {
+                TObjectPtr nextNodePtr = type->NextNode(nodePtr);
+                type->DeleteNode(nodePtr);
+                nodePtr = nextNodePtr;
+            }
         }
 };
 
@@ -571,7 +560,8 @@ void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
         typedef CSequenceOfTypeInfoFunctionsI TFunc;
         SetIteratorFunctions(&TFunc::InitIterator, &TFunc::ReleaseIterator,
                              &TFunc::CopyIterator, &TFunc::NextElement,
-                             &TFunc::GetElementPtr, &TFunc::EraseElement);
+                             &TFunc::GetElementPtr,
+                             &TFunc::EraseElement, &TFunc::EraseAllElements);
     }
 }
 

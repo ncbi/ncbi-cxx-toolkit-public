@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/08/14 20:03:58  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.62  2003/08/13 15:47:45  gouriano
 * implemented serialization of AnyContent objects
 *
@@ -860,8 +864,20 @@ void CObjectIStreamAsnBinary::ReadContainer(const CContainerTypeInfo* cType,
 
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
 
+    CContainerTypeInfo::CIterator iter;
+    bool old_element = cType->InitIterator(iter, containerPtr);
+    TTypeInfo elementType = cType->GetElementType();
     while ( HaveMoreElements() ) {
-        cType->AddElement(containerPtr, *this);
+        if ( old_element ) {
+            elementType->ReadData(*this, cType->GetElementPtr(iter));
+            old_element = cType->NextElement(iter);
+        }
+        else {
+            cType->AddElement(containerPtr, *this);
+        }
+    }
+    if ( old_element ) {
+        cType->EraseAllElements(iter);
     }
 
     END_OBJECT_FRAME();
@@ -1048,7 +1064,10 @@ TMemberIndex CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* 
 {
     TTag tag = PeekTag(eContextSpecific, true);
     ExpectIndefiniteLength();
-    return choiceType->GetVariants().Find(tag);
+    TMemberIndex index = choiceType->GetVariants().Find(tag);
+    if ( index == kInvalidMember )
+        UnexpectedMember(tag);
+    return index;
 }
 
 void CObjectIStreamAsnBinary::EndChoiceVariant(void)

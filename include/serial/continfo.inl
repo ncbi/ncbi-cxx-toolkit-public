@@ -46,7 +46,7 @@ bool CContainerTypeInfo::RandomElementsOrder(void) const
 
 inline
 CContainerTypeInfo::CConstIterator::CConstIterator(void)
-    : m_ContainerType(0), m_IteratorData(0)
+    : m_ContainerType(0), m_ContainerPtr(0), m_IteratorData(0)
 {
 }
 
@@ -59,9 +59,17 @@ CContainerTypeInfo::CConstIterator::~CConstIterator(void)
 }
 
 inline
-const CContainerTypeInfo* CContainerTypeInfo::CConstIterator::GetContainerType(void) const
+const CContainerTypeInfo*
+CContainerTypeInfo::CConstIterator::GetContainerType(void) const
 {
     return m_ContainerType;
+}
+
+inline
+CContainerTypeInfo::CConstIterator::TObjectPtr
+CContainerTypeInfo::CConstIterator::GetContainerPtr(void) const
+{
+    return m_ContainerPtr;
 }
 
 inline
@@ -71,13 +79,14 @@ void CContainerTypeInfo::CConstIterator::Reset(void)
     if ( containerType ) {
         containerType->ReleaseIterator(*this);
         m_ContainerType = 0;
+        m_ContainerPtr = 0;
         m_IteratorData = 0;
     }
 }
 
 inline
 CContainerTypeInfo::CIterator::CIterator(void)
-    : m_ContainerType(0), m_IteratorData(0)
+    : m_ContainerType(0), m_ContainerPtr(0), m_IteratorData(0)
 {
 }
 
@@ -90,9 +99,17 @@ CContainerTypeInfo::CIterator::~CIterator(void)
 }
 
 inline
-const CContainerTypeInfo* CContainerTypeInfo::CIterator::GetContainerType(void) const
+const CContainerTypeInfo*
+CContainerTypeInfo::CIterator::GetContainerType(void) const
 {
     return m_ContainerType;
+}
+
+inline
+CContainerTypeInfo::CIterator::TObjectPtr
+CContainerTypeInfo::CIterator::GetContainerPtr(void) const
+{
+    return m_ContainerPtr;
 }
 
 inline
@@ -102,6 +119,7 @@ void CContainerTypeInfo::CIterator::Reset(void)
     if ( containerType ) {
         containerType->ReleaseIterator(*this);
         m_ContainerType = 0;
+        m_ContainerPtr = 0;
         m_IteratorData = 0;
     }
 }
@@ -111,45 +129,42 @@ bool CContainerTypeInfo::InitIterator(CConstIterator& it,
                                       TConstObjectPtr obj) const
 {
     it.Reset();
-    TNewIteratorResult data = m_InitIteratorConst(this, obj);
     it.m_ContainerType = this;
-    it.m_IteratorData = data.first;
-    return data.second;
+    it.m_ContainerPtr = obj;
+    return m_InitIteratorConst(it);
 }
 
 inline
 void CContainerTypeInfo::ReleaseIterator(CConstIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    m_ReleaseIteratorConst(it.m_IteratorData);
-    it.m_ContainerType = 0;
-    it.m_IteratorData = 0;
+    m_ReleaseIteratorConst(it);
 }
 
 inline
 void CContainerTypeInfo::CopyIterator(CConstIterator& dst,
                                       const CConstIterator& src) const
 {
-    dst.Reset();
     _ASSERT(src.m_ContainerType == this);
-    dst.m_IteratorData = m_CopyIteratorConst(src.m_IteratorData);
+    dst.Reset();
     dst.m_ContainerType = this;
+    dst.m_ContainerPtr = src.m_ContainerPtr;
+    m_CopyIteratorConst(dst, src);
 }
 
 inline
 bool CContainerTypeInfo::NextElement(CConstIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    TNewIteratorResult data = m_NextElementConst(it.m_IteratorData);
-    it.m_IteratorData = data.first;
-    return data.second;
+    return m_NextElementConst(it);
 }
 
 inline
-TConstObjectPtr CContainerTypeInfo::GetElementPtr(const CConstIterator& it) const
+TConstObjectPtr
+CContainerTypeInfo::GetElementPtr(const CConstIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    return m_GetElementPtrConst(it.m_IteratorData);
+    return m_GetElementPtrConst(it);
 }
 
 inline
@@ -157,54 +172,54 @@ bool CContainerTypeInfo::InitIterator(CIterator& it,
                                       TObjectPtr obj) const
 {
     it.Reset();
-    TNewIteratorResult data = m_InitIterator(this, obj);
     it.m_ContainerType = this;
-    it.m_IteratorData = data.first;
-    return data.second;
+    it.m_ContainerPtr = obj;
+    return m_InitIterator(it);
 }
 
 inline
 void CContainerTypeInfo::ReleaseIterator(CIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    m_ReleaseIterator(it.m_IteratorData);
-    it.m_ContainerType = 0;
-    it.m_IteratorData = 0;
+    m_ReleaseIterator(it);
 }
 
 inline
 void CContainerTypeInfo::CopyIterator(CIterator& dst,
                                       const CIterator& src) const
 {
-    dst.Reset();
     _ASSERT(src.m_ContainerType == this);
-    dst.m_IteratorData = m_CopyIterator(src.m_IteratorData);
+    dst.Reset();
     dst.m_ContainerType = this;
+    m_CopyIterator(dst, src);
 }
 
 inline
 bool CContainerTypeInfo::NextElement(CIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    TNewIteratorResult data = m_NextElement(it.m_IteratorData);
-    it.m_IteratorData = data.first;
-    return data.second;
+    return m_NextElement(it);
 }
 
 inline
 TObjectPtr CContainerTypeInfo::GetElementPtr(const CIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    return m_GetElementPtr(it.m_IteratorData);
+    return m_GetElementPtr(it);
 }
 
 inline
 bool CContainerTypeInfo::EraseElement(CIterator& it) const
 {
     _ASSERT(it.m_ContainerType == this);
-    TNewIteratorResult data = m_EraseElement(it.m_IteratorData);
-    it.m_IteratorData = data.first;
-    return data.second;
+    return m_EraseElement(it);
+}
+
+inline
+void CContainerTypeInfo::EraseAllElements(CIterator& it) const
+{
+    _ASSERT(it.m_ContainerType == this);
+    m_EraseAllElements(it);
 }
 
 inline
@@ -294,6 +309,15 @@ void CContainerElementIterator::Erase(void)
 {
     _ASSERT(m_Valid);
     m_Valid = m_Iterator.GetContainerType()->EraseElement(m_Iterator);
+}
+
+inline
+void CContainerElementIterator::EraseAll(void)
+{
+    if ( m_Valid ) {
+        m_Iterator.GetContainerType()->EraseAllElements(m_Iterator);
+        m_Valid = false;
+    }
 }
 
 inline
@@ -387,6 +411,10 @@ pair<TConstObjectPtr, TTypeInfo> CConstContainerElementIterator::Get(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/08/14 20:03:57  vasilche
+* Avoid memory reallocation when reading over preallocated object.
+* Simplified CContainerTypeInfo iterators interface.
+*
 * Revision 1.3  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
