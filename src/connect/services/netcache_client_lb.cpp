@@ -399,7 +399,7 @@ void CNetCacheClient_LB::CheckConnect(const string& key)
         ) {
         m_LastRebalanceTime = curr;
         m_Requests = m_RWBytes = 0;
-        NetCache_ConfigureWithLB(this, m_LB_ServiceName);
+        NetCache_ConfigureWithLB(this, m_LB_ServiceName, m_ServiceBackup);
         return;
     }
 
@@ -412,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/04 16:45:08  kuznets
+ * Minor bug fix
+ *
  * Revision 1.12  2005/04/04 16:42:10  kuznets
  * Backup service (when LB unavailable) location made optional
  *
