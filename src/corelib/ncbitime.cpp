@@ -1690,6 +1690,15 @@ string CTimeSpan::AsString(const string& fmt) const
 }
 
 
+struct SSmartStringItem {
+    SSmartStringItem(void) : value(0), str(kEmptyStr), str0(kEmptyStr) {};
+    SSmartStringItem(long v, const string& s, const string& s0)
+        : value(v), str(s), str0(s0) {};
+    long    value;
+    string  str;
+    string  str0;
+};
+
 string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                                 ERound                rounding,
                                 ESmartStringZeroMode  zero_mode) const
@@ -1779,15 +1788,7 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
 
 
     // Prepare data
-    struct SItem {
-        SItem(void) : value(0), str(kEmptyStr), str0(kEmptyStr) {};
-        SItem(long v, const string& s, const string& s0)
-            : value(v), str(s), str0(s0) {};
-        long    value;
-        string  str;
-        string  str0;
-    };
-
+    typedef SSmartStringItem SItem;
     const int max_count = 7;
     SItem span[max_count];
     long days = diff.GetCompleteDays();
@@ -1956,6 +1957,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2004/09/27 17:12:06  ucko
+ * Tweak to avoid defining struct SItem within AsSmartString, which
+ * MIPSpro can't handle.
+ *
  * Revision 1.54  2004/09/27 13:53:34  ivanov
  * + CTimeSpan::AsSmartString()
  *
