@@ -140,7 +140,6 @@ CPsiBlastInputData::Process()
 
     x_CopyQueryToMsa();
     x_ExtractAlignmentData();
-    //x_ExtractAlignmentDataUseBestAlign();
 }
 
 unsigned int
@@ -301,8 +300,7 @@ CPsiBlastInputData::x_ExtractAlignmentData()
             // ... below the e-value inclusion threshold
             if (evalue < m_Opts.inclusion_ethresh) {
                 ASSERT(msa_index < GetNumAlignedSequences() + 1);
-                x_ProcessDenseg((*hsp_itr)->GetSegs().GetDenseg(), msa_index,
-                                evalue);
+                x_ProcessDenseg((*hsp_itr)->GetSegs().GetDenseg(), msa_index);
             }
         }
         msa_index++;
@@ -311,46 +309,9 @@ CPsiBlastInputData::x_ExtractAlignmentData()
     ASSERT(seq_index == m_ProcessHit.size());
 }
 
-#if DEBUG
-static Char getRes(Char input)
-{
-    switch(input) 
-      {
-      case 0: return('-');
-      case 1: return('A');
-      case 2: return('B');
-      case 3: return('C');
-      case 4: return('D');
-      case 5: return('E');
-      case 6: return('F');
-      case 7: return('G');
-      case 8: return('H');
-      case 9: return('I');
-      case 10: return('K');
-      case 11: return('L');
-      case 12: return('M');
-      case 13: return('N');
-      case 14: return('P');
-      case 15: return('Q');
-      case 16: return('R');
-      case 17: return('S');
-      case 18: return('T');
-      case 19: return('V');
-      case 20: return('W');
-      case 21: return('X');
-      case 22: return('Y');
-      case 23: return('Z');
-      case 24: return('U');
-      case 25: return('*');
-      default: return('?');
-    }
-}
-#endif
-
 void
 CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg, 
-                                    unsigned int msa_index, 
-                                    double e_value)
+                                    unsigned int msa_index)
 {
     ASSERT(denseg.GetDim() == 2);
 
@@ -375,33 +336,12 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
         // FIXME: this needs to withdraw the sequence!
         return;
     }
-    /*
-{
-    CNcbiDiag log;
-    log << "Denseg " << (int)denseg.GetNumseg() 
-        << " sgmts" << Endm;
-}
-*/
 
     // Iterate over all segments
     for (int segmt_idx = 0; segmt_idx < denseg.GetNumseg(); segmt_idx++) {
 
         TSeqPos query_offset = starts[query_index];
         TSeqPos subject_offset = starts[subj_index];
-        /*
-{
-    CNcbiDiag log;
-    if (denseg.GetNumseg() == 29) 
-    log << "Sgmt=" << (int)segmt_idx 
-        << " Q=" << (int)query_offset << " S=" << (int)subject_offset
-        << " (arrayoffset=" 
-        << (int)( (((int)subject_offset)==-1)? -1 : subj_seq_idx) 
-        << ")"
-        << " L=" << (int)lengths[segmt_idx] 
-        << " eval=" << (double)e_value
-        << Endm;
-}
-*/
 
         // advance the query and subject indices for next iteration
         query_index += denseg.GetDim();
@@ -433,24 +373,6 @@ CPsiBlastInputData::x_ProcessDenseg(const CDense_seg& denseg,
                 if ( !msa_cell.is_aligned ) {
                     msa_cell.letter = seq.first.get()[subj_seq_idx];
                     msa_cell.is_aligned = true;
-    /*
-if (msa_index == 1 && (query_offset-1) == 7320) {
-    CNcbiDiag log;
-    log << "Assigning " 
-        << getRes((char) seq.first.get()[subj_seq_idx] )
-        << " query_idx " << query_offset-1
-        << " subj_idx " <<
-        subj_seq_idx << " evalue " << pos_desc.e_value << Endm;
-    for(unsigned int in = 0; in < lengths[segmt_idx]; in++) {
-        log << getRes((char)m_Msa->desc_matrix[0][(query_offset-1+in)].letter);
-    }
-    log << Endm;
-    for(unsigned int in = 0; in < lengths[segmt_idx]; in++) {
-        log << getRes((char)seq.first.get()[subj_seq_idx-1+in]);
-    }
-    log << Endm;
-}
-    */
                 }
             }
         }
@@ -500,17 +422,6 @@ CPsiBlastInputData::x_GetSubjectSequence(const CDense_seg& ds, CScope& scope)
                                            CBioseq_Handle::eCoding_Ncbi);
         sv.SetCoding(CSeq_data::e_Ncbistdaa);
         retval = s_ExtractSequenceFromSeqVector(sv);
-        /*
-        {
-            CNcbiDiag log;
-            log << seqloc.GetInt().GetId().AsFastaString()
-                << " " << subj_start << "-" << subj_start+subjlen-1
-                << Endm;
-            for (unsigned int i = 0; i < subjlen; i++) {
-                log << getRes((char)retval[i]);
-            }
-        }
-        */
     } catch (const CException& e) {
         subjlen = 0;
         retval = NULL;
@@ -578,6 +489,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/08/04 21:12:47  camacho
+ * Removed dead code, unused variable
+ *
  * Revision 1.4  2004/08/04 20:24:53  camacho
  * Renaming of core PSSM structures and removal of unneeded fields.
  *
