@@ -57,6 +57,7 @@ extern "C" {
  * @param ext_params Gapped extension parameters [in]
  * @param hit_params Parameters for saving hits [in]
  * @param db_options Options containing database genetic code string [in]
+ * @param psi_options Options specific to PSI BLAST [in]
  */
 Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results, 
         BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
@@ -64,7 +65,8 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
         const BlastScoringOptions* score_options,
         const BlastExtensionParameters* ext_params,
         BlastHitSavingParameters* hit_params,
-        const BlastDatabaseOptions* db_options);
+        const BlastDatabaseOptions* db_options,
+        const PSIBlastOptions* psi_options);
 
 /** Given the preliminary alignment results from a two sequences search
  * (possibly with multiple query sequences), redo the gapped alignment

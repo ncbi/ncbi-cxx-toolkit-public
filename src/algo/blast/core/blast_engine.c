@@ -803,7 +803,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
             bssp, gap_align, score_options, ext_params, hit_params,
-            db_options);
+            db_options, psi_options);
    }
 
    /* Do not destruct score block here */
