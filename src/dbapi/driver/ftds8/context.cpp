@@ -83,6 +83,12 @@ CTDSContext::CTDSContext(DBINT version) :
                            "concurrently");
     }
 
+	char hostname[256];
+	if(gethostname(hostname, 256) == 0) {
+	    hostname[255]= '\0';
+	    m_HostName= hostname;
+	}
+
     if (dbinit() != SUCCEED) {
         throw CDB_ClientEx(eDB_Fatal, 200001, "CTDSContext::CTDSContext",
                            "dbinit failed");
@@ -466,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/03/17 15:29:38  soussov
+ * sets the default host name using gethostname()
+ *
  * Revision 1.14  2002/12/20 18:01:38  soussov
  * renames the members of ECapability enum
  *

@@ -557,11 +557,20 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
     if (ct_con_alloc(m_Context, &con) != CS_SUCCEED)
         return 0;
 
+	char hostname[256];
+	if(gethostname(hostname, 256)) {
+	  strcpy(hostname, "UNKNOWN");
+	}
+	else hostname[255]= '\0';
+	
+
     if (ct_con_props(con, CS_SET, CS_USERNAME, (void*) user_name.c_str(),
                      CS_NULLTERM, NULL) != CS_SUCCEED  ||
         ct_con_props(con, CS_SET, CS_PASSWORD, (void*) passwd.c_str(),
                      CS_NULLTERM, NULL) != CS_SUCCEED  ||
         ct_con_props(con, CS_SET, CS_APPNAME, (void*) m_AppName.c_str(),
+                     CS_NULLTERM, NULL) != CS_SUCCEED ||
+        ct_con_props(con, CS_SET, CS_HOSTNAME, (void*) hostname,
                      CS_NULLTERM, NULL) != CS_SUCCEED) {
         ct_con_drop(con);
         return 0;
@@ -828,6 +837,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/03/17 15:29:02  soussov
+ * sets the default host name using gethostname()
+ *
  * Revision 1.16  2002/12/20 17:53:56  soussov
  * renames the members of ECapability enum
  *
