@@ -63,6 +63,11 @@ rm Makefile.*
 
 
 #################################
-# Build
+# Build & Run
 
 make
+mv hello hello.cgi
+./hello.cgi > hello.html
+
+echo DONE.
+echo See the result in:  `pwd`/hello.html
