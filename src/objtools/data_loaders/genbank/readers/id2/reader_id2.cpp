@@ -76,8 +76,16 @@ BEGIN_SCOPE(objects)
 
 static int GetDebugLevel(void)
 {
-    static int var = GetConfigInt("GENBANK", "ID2_DEBUG");
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigInt("GENBANK", "ID2_DEBUG");
+        if ( value < 0 ) {
+            value = 0;
+        }
+        s_Value = value;
+    }
+    return value;
 }
 
 
@@ -190,15 +198,13 @@ CConn_IOStream* CId2Reader::x_NewConnection(void)
     bool is_service = false;
     string dst;
     if ( dst.empty() ) {
-        static string cgi = GetConfigString("GENBANK",
-                                            "ID2_CGI_NAME");
+        string cgi = GetConfigString("GENBANK", "ID2_CGI_NAME");
         dst = cgi;
         is_service = false;
     }
     if ( dst.empty() ) {
-        static string srv = GetConfigString("GENBANK",
-                                            "ID2_SERVICE_NAME",
-                                            DEFAULT_ID2_SERVICE_NAME);
+        string srv = GetConfigString("GENBANK", "ID2_SERVICE_NAME",
+                                     DEFAULT_ID2_SERVICE_NAME);
         dst = srv;
         is_service = true;
     }
@@ -332,8 +338,8 @@ void CId2Reader::x_SetResolve(CID2_Request_Get_Blob_Id& get_blob_id,
 }
 
 
-void CId2Reader::x_SetDetails(CID2_Get_Blob_Details& details,
-                              TContentsMask mask)
+void CId2Reader::x_SetDetails(CID2_Get_Blob_Details& /*details*/,
+                              TContentsMask /*mask*/)
 {
 }
 
@@ -590,7 +596,7 @@ void CId2Reader::x_ProcessPacket(CReaderRequestResult& result,
             (*it)->SetSerial_number(cur_serial_num++);
         }
     }}
-    vector<bool> done(request_count);
+    vector<char> done(request_count);
     vector<SId2LoadedSet> loaded_sets(request_count);
 
     CConn conn(this);
@@ -758,7 +764,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 
 
 CId2Reader::TErrorFlags
-CId2Reader::x_ProcessError(CReaderRequestResult& result,
+CId2Reader::x_ProcessError(CReaderRequestResult& /*result*/,
                            const CID2_Error& error)
 {
     TErrorFlags error_flags = 0;
@@ -1209,8 +1215,8 @@ class CId2ReaderCF :
     public CSimpleClassFactoryImpl<objects::CReader, objects::CId2Reader>
 {
 public:
-    typedef 
-      CSimpleClassFactoryImpl<objects::CReader, objects::CId2Reader> TParent;
+    typedef CSimpleClassFactoryImpl<objects::CReader,
+                                    objects::CId2Reader> TParent;
 public:
     CId2ReaderCF()
         : TParent(NCBI_GBLOADER_READER_ID2_DRIVER_NAME, 0) {}

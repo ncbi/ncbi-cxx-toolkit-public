@@ -84,8 +84,16 @@ static STimeSizeStatistics snp_parse;
 int CId1Reader::CollectStatistics(void)
 {
 #ifdef ID1_COLLECT_STATS
-    static int var = GetConfigInt("GENBANK", "ID1_STATS");
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigInt("GENBANK", "ID1_STATS");
+        if ( value < 0 ) {
+            value = 0;
+        }
+        s_Value = value;
+    }
+    return value;
 #else
     return 0;
 #endif
@@ -94,8 +102,16 @@ int CId1Reader::CollectStatistics(void)
 
 static int GetDebugLevel(void)
 {
-    static int var = GetConfigInt("GENBANK", "ID1_DEBUG");
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigInt("GENBANK", "ID1_DEBUG");
+        if ( value < 0 ) {
+            value = 0;
+        }
+        s_Value = value;
+    }
+    return value;
 }
 
 
@@ -302,7 +318,7 @@ CConn_ServiceStream* CId1Reader::x_GetConnection(TConn conn)
 
 CConn_ServiceStream* CId1Reader::x_NewConnection(TConn conn)
 {
-    static string id1_svc = GetConfigString("NCBI", "SERVICE_NAME_ID1", "ID1");
+    string id1_svc = GetConfigString("NCBI", "SERVICE_NAME_ID1", "ID1");
 
     STimeout tmout;
     tmout.sec = 20;
@@ -471,7 +487,7 @@ void CId1Reader::GetSeq_idBlob_ids(CReaderRequestResult& result,
 }
 
 
-void CId1Reader::GetGiSeq_ids(CReaderRequestResult& result,
+void CId1Reader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
                               const CSeq_id_Handle& seq_id,
                               CLoadLockSeq_ids& ids)
 {
@@ -850,7 +866,6 @@ void CId1Reader::x_ReceiveReply(TConn conn,
     }
 }
 
-
 END_SCOPE(objects)
 
 void GenBankReaders_Register_Id1(void)
@@ -867,8 +882,8 @@ class CId1ReaderCF :
     public CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader>
 {
 public:
-    typedef 
-      CSimpleClassFactoryImpl<objects::CReader, objects::CId1Reader> TParent;
+    typedef CSimpleClassFactoryImpl<objects::CReader,
+                                    objects::CId1Reader> TParent;
 public:
     CId1ReaderCF()
         : TParent(NCBI_GBLOADER_READER_ID1_DRIVER_NAME, 0) {}

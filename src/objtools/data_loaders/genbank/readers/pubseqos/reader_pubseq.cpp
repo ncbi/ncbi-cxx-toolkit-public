@@ -68,8 +68,16 @@ static CAtomicCounter s_pubseq_readers;
 #ifdef _DEBUG
 static int GetDebugLevel(void)
 {
-    static int var = GetConfigInt("GENBANK", "PUBSEQOS_DEBUG");
-    return var;
+    static int s_Value = -1;
+    int value = s_Value;
+    if ( value < 0 ) {
+        value = GetConfigInt("GENBANK", "PUBSEQOS_DEBUG");
+        if ( value < 0 ) {
+            value = 0;
+        }
+        s_Value = value;
+    }
+    return value;
 }
 #else
 # define GetDebugLevel() (0)
@@ -92,7 +100,7 @@ CPubseqReader::CPubseqReader(int max_connections,
                    "without MT-safe DB library");
     }
 #endif
-    SetMaximumConnections(GetMaximumConnectionsLimit());
+    SetMaximumConnections(max_connections);
 }
 
 
@@ -331,7 +339,7 @@ namespace {
                 }
                 return ret? eRW_Success: eRW_Eof;
             }
-        ERW_Result PendingCount(size_t* count)
+        ERW_Result PendingCount(size_t* /*count*/)
             {
                 return eRW_NotImplemented;
             }
@@ -342,7 +350,7 @@ namespace {
 }
 
 
-void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& result,
+void CPubseqReader::GetGiSeq_ids(CReaderRequestResult& /*result*/,
                                  const CSeq_id_Handle& seq_id,
                                  CLoadLockSeq_ids& ids)
 {
@@ -736,7 +744,6 @@ CDB_Result* CPubseqReader::x_ReceiveData(CReaderRequestResult& result,
     return ret.release();
 }
 
-
 END_SCOPE(objects)
 
 void GenBankReaders_Register_Pubseq(void)
@@ -750,13 +757,13 @@ void GenBankReaders_Register_Pubseq(void)
 /// @internal
 ///
 class CPubseqReaderCF : 
-    public CSimpleClassFactoryImpl<objects::CReader, objects::CPubseqReader>
+    public CSimpleClassFactoryImpl<objects::CReader,
+                                   objects::CPubseqReader>
 {
 public:
-    typedef CSimpleClassFactoryImpl<objects::CReader, 
+    typedef CSimpleClassFactoryImpl<objects::CReader,
                                     objects::CPubseqReader> TParent;
 public:
-
     CPubseqReaderCF()
         : TParent(NCBI_GBLOADER_READER_PUBSEQ_DRIVER_NAME, 0) {}
 
