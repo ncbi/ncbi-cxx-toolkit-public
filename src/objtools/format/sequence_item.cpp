@@ -104,7 +104,7 @@ void CSequenceItem::x_GatherInfo(CBioseqContext& ctx)
     TSeqPos offset = loc.GetStart(kInvalidSeqPos); 
     TSeqPos len = sequence::GetLength(loc, &ctx.GetScope());
     TSeqPos start = m_From + offset;
-    TSeqPos end   = min(m_To + offset, len);
+    TSeqPos end   = min(m_To + offset, ctx.GetHandle().GetInst_Length() - 1);
     
     CSeq_loc region;
     CSeq_loc::TInt& ival = region.SetInt();
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/27 15:14:36  shomrat
+* Bug fix
+*
 * Revision 1.4  2004/04/22 15:56:17  shomrat
 * Support partial region
 *
