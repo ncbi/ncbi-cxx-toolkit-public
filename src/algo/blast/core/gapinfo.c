@@ -139,7 +139,7 @@ s_GapPrelimEditBlockRealloc(GapPrelimEditBlock *edit_block, Int4 total_ops)
 
 /** Add an edit operation to an edit script
 
-  @param script The edit script to update [in/modified]
+  @param edit_block The edit script to update [in/modified]
   @param op_type The edit operation to add [in]
   @param num_ops The number of operations of the specified type [in]
   @return 0 on success, nonzero otherwise

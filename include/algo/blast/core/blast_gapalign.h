@@ -65,8 +65,10 @@ typedef struct BlastGapAlignStruct {
                                          gapped extension */
    BlastScoreBlk* sbp; /**< Pointer to the scoring information block */
    Int4 gap_x_dropoff; /**< X-dropoff parameter to use */
-   Int4 query_start, query_stop;/**< Return values: query offsets */
-   Int4 subject_start, subject_stop;/**< Return values: subject offsets */
+   Int4 query_start; /**< query start offset of current alignment */
+   Int4 query_stop; /**< query end offseet of current alignment */
+   Int4 subject_start;  /**< subject start offset current alignment */
+   Int4 subject_stop; /**< subject end offset of current alignment */
    Int4 score;   /**< Return value: alignment score */
    double percent_identity;/**< Return value: percent identity - filled only 
                                by the greedy non-affine alignment algorithm */

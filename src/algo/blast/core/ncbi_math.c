@@ -91,8 +91,8 @@ double BLAST_Log1p(double x)
 /** evaluate a specified-order derivative of ln(f(x))
  * @param order The order of derivative to evaluate (0...LOGDERIV_ORDER_MAX).
  *              Derivative order 0 just computes ln(f(x))
- * @param The numerical value of f(x) and its derivatives, evaluated
- *          at some x, to be used within the computations 
+ * @param u A list of numerical values of f(x) and its derivatives, all at
+ *          the same point x, to be used within the computations 
  * @return 'order'-th derivative of ln(f(x)) or HUGE_VAL if 
  *          order is out of range or u[0] is zero
  */
@@ -298,7 +298,7 @@ s_LnGamma(double x)
 {
    return s_PolyGamma(x, 0);
 }
-
+/** Tabulated values of the first few factorials */
 static const double kPrecomputedFactorial[] = {
        1., 1., 2., 6., 24., 120., 720., 5040., 40320., 362880., 3628800.,
        39916800., 479001600., 6227020800., 87178291200., 1307674368000.,
@@ -498,6 +498,9 @@ double BLAST_LnFactorial (double x) {
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2005/03/10 16:10:58  papadopo
+ * doxygen fixes
+ *
  * Revision 1.14  2005/03/08 18:28:55  papadopo
  * do not use a const int to declare the dimension of an array
  *

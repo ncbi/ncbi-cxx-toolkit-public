@@ -129,7 +129,7 @@ Int4 BLAST_Gdb3(Int4* a, Int4* b, Int4* c);
 NCBI_XBLAST_EXPORT 
 long BLAST_Nint (double x);
 
-/* Integral power of x 
+/** Integral power of x 
  * @param x floating-point base of the exponential
  * @param n (integer) exponent
  * @return x multiplied by itself n times
@@ -160,6 +160,9 @@ double BLAST_Powi (double x, Int4 n);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/03/10 16:12:59  papadopo
+ * doxygen fixes
+ *
  * Revision 1.10  2004/11/18 21:22:10  dondosha
  * Added BLAST_Gdb3, used in greedy alignment; removed extern and added NCBI_XBLAST_EXPORT to all prototypes
  *

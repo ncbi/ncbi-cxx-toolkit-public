@@ -149,7 +149,7 @@ GapPrelimEditBlockNew(void);
 /** Add a new operation to a preliminary edit block, possibly combining
  *  it with the last operation if the two operations are identical
  *
- *  @param script The edit script to update [in/modified]
+ *  @param edit_block The script to update [in/modified]
  *  @param op_type The operation type to add [in]
  *  @param num_ops The number of the specified type of operation to add [in]
  */

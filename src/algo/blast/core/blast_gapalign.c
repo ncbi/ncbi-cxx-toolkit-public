@@ -1857,7 +1857,7 @@ s_OutOfFrameAlignWithTraceback(Uint1* A, Uint1* B, Int4 M, Int4 N,
  * @param a_offset Resulting starting offset in query [out]
  * @param b_offset Resulting starting offset in subject [out]
  * @param score_only Only find the score, without saving traceback [in]
- * @param Structure to hold generated traceback [out]
+ * @param edit_block Structure to hold generated traceback [out]
  * @param gap_align Structure holding various information and allocated 
  *        memory for the gapped alignment [in]
  * @param score_params Parameters related to scoring [in]
@@ -3025,7 +3025,6 @@ BlastGetStartForGappedAlignment (Uint1* query, Uint1* subject,
  * @param subject Subject sequence [in]
  * @param gap_align Gapped alignment structure [in]
  * @param score_params Scoring parameters [in]
- * @param ext_params Gapped extension parameters [in]
  * @param hit_params Hit saving parameters [in]
  * @param init_hitlist Initial hit list obtained by ungapped alignment [in]
  * @param gapped_stats Gapped extension stats [in]
@@ -3842,7 +3841,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program, Uint1* query,
 
 /** Returns length of a pattern in a PHI BLAST search, saved in the gapped
  * alignment structure.
- * @param The gapped alignment structure [in]
+ * @param gap_align The gapped alignment structure [in]
  * @return Pattern length
  */
 static Int4 
