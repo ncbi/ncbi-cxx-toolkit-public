@@ -102,7 +102,18 @@ tags (and text) arranged into a tree-like structure.&nbsp;</td>
 <td>Generic library to provide data serialization in different formats.
 See also <a href="tools/datatool/datatool.html">datatool</a>.&nbsp;</td>
 </tr>
+<tr>
+<td><i><a href="#ref_TableDBAPI_DRIVER">dbapi_driver</a></i></td>
+
+<td ALIGN=CENTER><b><a href="lxr/source/include/dbapi/driver">dbapi</a></b></td>
+
+<td><a href="libs/dbapi_driver.html">Driver API</a>
+for the NCBI database connectivity project.
+</td>
+</tr>
 </table>
+
+<!-- ------------------------------------------------------- --> 
 
 <p><a NAME="ref_TableXNCBI"></a>
 <table BORDER CELLSPACING=0 >
@@ -315,6 +326,10 @@ retrieval.</td>
 </tr>
 </table>
 
+
+<!-- ------------------------------------------------------- --> 
+
+
 <p><a NAME="ref_TableXHTML"></a>
 <table BORDER CELLSPACING=0 >
 <caption>Library <b><i><a href="#ref_TableLibs">xhtml</a></i></b> ( project
@@ -361,6 +376,114 @@ retrieval.</td>
 </tr>
 </table>
 
+
+
+<!-- ------------------------------------------------------- -->
+
+<a NAME="ref_TableDBAPI_DRIVER"></a>
+<p>
+<table BORDER CELLSPACING=0 >
+<caption>Library <b><i><a href="#ref_TableLibs">dbapi_driver</a></i></b> (part of the DB API project
+)&nbsp;</caption>
+
+<tr>
+<th><i><a href="#ref_ModuleNote">Module</a></i></th>
+
+<th>Content</th>
+
+<th>Synopsis</th>
+</tr>
+
+<tr>
+<td></td>
+
+<td ALIGN=CENTER></td>
+
+<td></td>
+</tr>
+
+<!-- ---- -->
+
+<tr>
+<td><i><a href="lxr/source/include/dbapi/driver/public.hpp">public</a></i></td>
+
+<td ALIGN=CENTER>
+<a href="lxr/ident?i=I_DriverContext&d=C">I_DriverContext</a></br>
+<a href="lxr/ident?i=CDB_Connection&d=C">CDB_Connection</a></br>
+<a href="lxr/ident?i=CDB_Result&d=C">CDB_Result</a></br>
+<a href="lxr/ident?i=CDB_LangCmd&d=C">CDB_LangCmd</a></br>
+<a href="lxr/ident?i=CDB_RPCCmd&d=C">CDB_RPCCmd</a></br>
+<a href="lxr/ident?i=CDB_BCPInCmd&d=C">CDB_BCPInCmd</a></br>
+<a href="lxr/ident?i=CDB_CursorCmd&d=C">CDB_CursorCmd</a></br>
+<a href="lxr/ident?i=CDB_SendDataCmd&d=C">CDB_SendDataCmd</a></br>
+</td>
+
+<td>
+<a href="libs/dbapi_driver.html">Context, connection, command and result classes</a>
+</td>
+</tr>
+
+<!-- ---- -->
+
+<tr>
+<td><i><a href="lxr/source/include/dbapi/driver/types.hpp">types</a></i></td>
+
+<td ALIGN=CENTER>
+<a href="lxr/ident?i=CDB_Object&d=C"><i>CDB_Object</i></a></br>
+<a href="lxr/ident?i=CDB_Int&d=C">CDB_Int</a></br>
+<a href="lxr/ident?i=CDB_SmallInt&d=C">CDB_SmallInt</a></br>
+<a href="lxr/ident?i=CDB_TinyInt&d=C">CDB_TinyInt</a></br>
+<a href="lxr/ident?i=CDB_BigInt&d=C">CDB_BigInt</a></br>
+<a href="lxr/ident?i=CDB_VarChar&d=C">CDB_VarChar</a></br>
+<a href="lxr/ident?i=CDB_Char&d=C">CDB_Char</a></br>
+<a href="lxr/ident?i=CDB_VarBinary&d=C">CDB_VarBinary</a></br>
+<a href="lxr/ident?i=CDB_Binary&d=C">CDB_Binary</a></br>
+<a href="lxr/ident?i=CDB_Float&d=C">CDB_Float</a></br>
+<a href="lxr/ident?i=CDB_Double&d=C">CDB_Double</a></br>
+<a href="lxr/ident?i=CDB_Stream&d=C">CDB_Stream</a></br>
+<a href="lxr/ident?i=CDB_Image&d=C">CDB_Image</a></br>
+<a href="lxr/ident?i=CDB_Text&d=C">CDB_Text</a></br>
+<a href="lxr/ident?i=CDB_SmallDateTime&d=C">CDB_SmallDateTime</a></br>
+<a href="lxr/ident?i=CDB_DateTime&d=C">CDB_DateTime</a></br>
+<a href="lxr/ident?i=CDB_Bit&d=C">CDB_Bit</a></br>
+<a href="lxr/ident?i=CDB_Numeric&d=C">CDB_Numeric</a></br>
+</td>
+
+<td>
+<a href="libs/dbapi_driver.html#ref_TextImage">Database data types</a>
+</td>
+</tr>
+
+<!-- ---- -->
+
+<tr>
+<td><i><a href="lxr/source/include/dbapi/driver/exception.hpp">exception</a></i></td>
+
+<td ALIGN=CENTER>
+<a href="lxr/ident?i=CDB_Exception&d=C"><i>CDB_Exception</i></a></br>
+<a href="lxr/ident?i=CDB_DSEx&d=C">CDB_DSEx</a></br>
+<a href="lxr/ident?i=CDB_RPCEx&d=C">CDB_RPCEx</a></br>
+<a href="lxr/ident?i=CDB_SQLEx&d=C">CDB_SQLEx</a></br>
+<a href="lxr/ident?i=CDB_DeadlockEx&d=C">CDB_DeadlockEx</a></br>
+<a href="lxr/ident?i=CDB_TimeoutEx&d=C">CDB_TimeoutEx</a></br>
+<a href="lxr/ident?i=CDB_ClientEx&d=C">CDB_ClientEx</a></br>
+<a href="lxr/ident?i=CDB_MultiEx&d=C">CDB_MultiEx</a></br>
+<a href="lxr/ident?i=CDB_UserHandler&d=C">CDB_UserHandler</a></br>
+<a href="lxr/ident?i=CDB_UserHandler_Stream&d=C">CDB_UserHandler_Stream</a></br>
+</td>
+
+<td>
+<a href="libs/dbapi_driver.html#ref_Errors">Exceptions and error handling</a>
+</td>
+</tr>
+
+
+</table>
+
+
+<!-- ------------------------------------------------------- -->
+
+
 <p><a NAME="ref_ModuleNote"></a>NOTE: In the tables above, the module's
 header and source code are located in the project directory of the containing
 library:
@@ -375,7 +498,7 @@ c++/src/<b>corelib</b>/ncbidbg.cpp</i>.
 <tr>
 <td ALIGN=LEFT>
 <address>
-<a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+<a href="mailto:cpp@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
 </td>
 
 <td><!-- <td align=center><i>$Revision$</i></td> --></td>
