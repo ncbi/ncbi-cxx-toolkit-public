@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/05/29 21:18:43  gouriano
+* added debug dump
+*
 * Revision 1.12  2002/05/22 14:03:37  grichenk
 * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
 *
@@ -127,6 +130,7 @@ public:
     virtual const CTypeInfo* GetThisTypeInfo(void) const = 0;
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 };
 
 

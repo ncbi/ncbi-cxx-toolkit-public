@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.20  2002/05/06 17:43:06  ivanov
 * ssize_t changed to long
 *
@@ -250,6 +253,46 @@ const CSeq_id& CSeqMap::CSegmentInfo::GetRefSeqid(void) const
     _ASSERT(m_SegType == eSeqRef);
     _ASSERT((bool)m_RefSeq);
     return CSeq_id_Mapper::GetSeq_id(m_RefSeq);
+}
+
+void CSeqMap::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSeqMap");
+    CObject::DebugDump( ddc, depth);
+
+    DebugDumpValue(ddc, "m_FirstUnresolvedPos", m_FirstUnresolvedPos);
+    if (depth == 0) {
+        DebugDumpValue(ddc, "m_Data.size()", m_Data.size());
+    } else {
+        DebugDumpValue(ddc, "m_Data.type",
+            "vector<CRef<CSegmentInfo>>");
+        DebugDumpRangeCRef(ddc, "m_Data",
+            m_Data.begin(), m_Data.end(), depth);
+    }
+}
+
+void CSeqMap::CSegmentInfo::DebugDump(CDebugDumpContext ddc,
+    unsigned int depth) const
+{
+    ddc.SetFrame("CSeqMap::CSegmentInfo");
+    CObject::DebugDump( ddc, depth);
+
+    string value;
+    switch (m_SegType) {
+    default:       value ="unknown"; break;
+    case eSeqData: value ="data"; break;
+    case eSeqRef:  value ="ref";  break;
+    case eSeqGap:  value ="gap";  break;
+    case eSeqEnd:  value ="end";  break;
+    }
+    ddc.Log("m_SegType", value);
+    DebugDumpValue(ddc, "m_Position", m_Position);
+    DebugDumpValue(ddc, "m_Length", m_Length);
+    ddc.Log("m_RefSeq", m_RefSeq.AsString());
+    ddc.Log("m_RefData", m_RefData.GetPointer(), depth);
+    DebugDumpValue(ddc, "m_RefPos", m_RefPos);
+    ddc.Log("m_MinusStrand", m_MinusStrand);
+    ddc.Log("m_Resolved", m_Resolved);
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/05/29 21:19:17  gouriano
+* added debug dump
+*
 * Revision 1.1  2002/05/15 20:20:38  grichenk
 * Initial revision
 *
@@ -39,6 +42,9 @@
 
 #include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
+
+#include <serial/objostr.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -62,6 +68,20 @@ bool CSerialObject::Equals(const CSerialObject& object) const
             typeid(*this).name() << " == " << typeid(object).name());
     }
     return GetThisTypeInfo()->Equals(this, &object);
+}
+
+void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CSerialObject");
+    CObject::DebugDump( ddc, depth);
+// this is not good, but better than nothing
+    ostrstream ostr;
+    ostr << endl << "****** begin ASN dump ******" << endl;
+    CObjectOStream& oos = *(CObjectOStream::Open(eSerial_AsnText, ostr));
+    oos.Write(this, GetThisTypeInfo());
+    ostr << endl << "****** end   ASN dump ******" << endl;
+    ostr << '\0';
+    ddc.Log( "Serial_AsnText", string(ostr.str()));
 }
 
 

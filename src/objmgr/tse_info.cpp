@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.3  2002/03/14 18:39:13  gouriano
 * added mutex for MT protection
 *
@@ -74,6 +77,73 @@ CTSE_Info::~CTSE_Info(void)
 {
 }
 
+void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CTSE_Info");
+    CObject::DebugDump( ddc, depth);
+
+    ddc.Log("m_TSE", m_TSE.GetPointer(),0);
+    ddc.Log("m_Dead", m_Dead);
+    if (depth == 0) {
+        DebugDumpValue(ddc, "m_BioseqMap.size()", m_BioseqMap.size());
+        DebugDumpValue(ddc, "m_AnnotMap.size()",  m_AnnotMap.size());
+    } else {
+        unsigned int depth2 = depth-1;
+        { //--- m_BioseqMap
+            DebugDumpValue(ddc, "m_BioseqMap.type",
+                "map<CSeq_id_Handle, CRef<CBioseq_Info>>");
+            CDebugDumpContext ddc2(ddc,"m_BioseqMap");
+            TBioseqMap::const_iterator it;
+            for (it=m_BioseqMap.begin(); it!=m_BioseqMap.end(); ++it) {
+                string member_name = "m_BioseqMap[ " +
+                    (it->first).AsString() +" ]";
+                ddc2.Log(member_name, (it->second).GetPointer(),depth2);
+            }
+        }
+        { //--- m_AnnotMap
+            unsigned int depth3 = depth2-1;
+            DebugDumpValue(ddc, "m_AnnotMap.type",
+                "map<CSeq_id_Handle, CRangeMultimap<CRef<CAnnotObject>,"
+                "CRange<TSeqPos>::position_type>>");
+
+            CDebugDumpContext ddc2(ddc,"m_AnnotMap");
+            TAnnotMap::const_iterator it;
+            for (it=m_AnnotMap.begin(); it!=m_AnnotMap.end(); ++it) {
+                string member_name = "m_AnnotMap[ " +
+                    (it->first).AsString() +" ]";
+                if (depth2 == 0) {
+                    member_name += "size()";
+                    DebugDumpValue(ddc2, member_name, (it->second).size());
+                } else {
+                    // CRangeMultimap
+                    CDebugDumpContext ddc3(ddc2, member_name);
+                    TRangeMap::const_iterator itrm;
+                    for (itrm=(it->second).begin();
+                        itrm!=(it->second).end(); ++itrm) {
+                        // CRange as string
+                        string rg;
+                        if ((itrm->first).Regular()) {
+                            rg =    NStr::UIntToString( (itrm->first).GetFrom()) +
+                            "..." + NStr::UIntToString( (itrm->first).GetTo());
+                        } else if ((itrm->first).Empty()) {
+                            rg = "null";
+                        } else if ((itrm->first).HaveInfiniteBound()) {
+                            rg = "whole";
+                        } else if ((itrm->first).HaveEmptyBound()) {
+                            rg = "empty";
+                        } else {
+                            rg = "unknown";
+                        }
+                        string rm_name = member_name + "[ " + rg + " ]";
+                        // CAnnotObject
+                        ddc3.Log(rm_name, itrm->second, depth2-1);
+                    }
+                }
+            }
+        }
+    }
+    DebugDumpValue(ddc, "m_LockCount", m_LockCount);
+}
 
 
 END_SCOPE(objects)

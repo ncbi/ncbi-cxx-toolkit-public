@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.7  2002/05/24 14:57:12  grichenk
 * SerialAssign<>() -> CSerialObject::Assign()
 *
@@ -199,6 +202,77 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                 x_ProcessAlign(**it);
             }
             break;
+        }
+    }
+}
+
+void CAnnotObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CAnnotObject");
+    CObject::DebugDump( ddc, depth);
+
+    string choice;
+    switch (m_Choice) {
+    default:                            choice="unknown";   break;
+    case CSeq_annot::C_Data::e_not_set: choice="notset";    break;
+    case CSeq_annot::C_Data::e_Ftable:  choice="feature";   break;
+    case CSeq_annot::C_Data::e_Align:   choice="alignment"; break;
+    case CSeq_annot::C_Data::e_Graph:   choice="graph";     break;
+    case CSeq_annot::C_Data::e_Ids:     choice="ids";       break;
+    case CSeq_annot::C_Data::e_Locs:    choice="locs";      break;
+    }
+    ddc.Log("m_Choice", choice);
+    ddc.Log("m_DataSource", m_DataSource,0);
+    ddc.Log("m_Object", m_Object.GetPointer(),0);
+    ddc.Log("m_Annot", m_Annot.GetPointer(),0);
+    // m_RangeMap is not dumpable
+    if (m_RangeMap.get()) {
+        CDebugDumpContext ddc2(ddc,"m_RangeMap");
+        const CHandleRangeMap::TLocMap& rm = m_RangeMap->GetMap();
+        if (depth == 0) {
+            DebugDumpValue(ddc2, "m_LocMap.size()", rm.size());
+        } else {
+            DebugDumpValue(ddc2, "m_LocMap.type",
+                "map<CSeq_id_Handle, CHandleRange>");
+            CDebugDumpContext ddc3(ddc2,"m_LocMap");
+            CHandleRangeMap::TLocMap::const_iterator it;
+            for (it=rm.begin(); it!=rm.end(); ++it) {
+                string member_name = "m_LocMap[ " +
+                    (it->first).AsString() + " ]";
+                CDebugDumpContext ddc4(ddc3,member_name);
+                DebugDumpValue(ddc4, "m_Ranges.type",
+                    "list<pair<CRange<TSeqPos>, ENa_strand>>");
+                const CHandleRange::TRanges& rg = (it->second).GetRanges();
+                CHandleRange::TRanges::const_iterator itrg;
+                int n;
+                for (n=0, itrg=rg.begin(); itrg!=rg.end(); ++itrg, ++n) {
+                    member_name = "m_Ranges[ " + NStr::IntToString(n) + " ]";
+                    string value;
+                    if ((itrg->first).Regular()) {
+                        value +=    NStr::UIntToString( (itrg->first).GetFrom()) +
+                            "..." + NStr::UIntToString( (itrg->first).GetTo());
+                    } else if ((itrg->first).Empty()) {
+                        value += "null";
+                    } else if ((itrg->first).HaveInfiniteBound()) {
+                        value += "whole";
+                    } else if ((itrg->first).HaveEmptyBound()) {
+                        value += "empty";
+                    } else {
+                        value += "unknown";
+                    }
+                    value += ", ";
+                    switch (itrg->second) {
+                    default:                  value +="notset";   break;
+                    case eNa_strand_unknown:  value +="unknown";  break;
+                    case eNa_strand_plus:     value +="plus";     break;
+                    case eNa_strand_minus:    value +="minus";    break;
+                    case eNa_strand_both:     value +="both";     break;
+                    case eNa_strand_both_rev: value +="both_rev"; break;
+                    case eNa_strand_other:    value +="other";    break;
+                    }
+                    ddc4.Log(member_name, value);
+                }
+            }
         }
     }
 }

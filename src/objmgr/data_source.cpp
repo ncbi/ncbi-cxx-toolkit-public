@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.47  2002/05/28 18:00:43  gouriano
 * DebugDump added
 *
@@ -1867,11 +1870,8 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             CDebugDumpContext ddc2(ddc,"m_TSE_seq");
             TTSEMap::const_iterator it;
             for ( it = m_TSE_seq.begin(); it != m_TSE_seq.end(); ++it) {
-                ostrstream os;
-                // seqid_handle -> seq_id -> asfasta
-                (GetIdMapper().GetSeq_id( it->first)).WriteAsFasta(os);
-                os << '\0';
-                string member_name = "m_TSE_seq[ " + string(os.str()) +" ]";
+                string member_name = "m_TSE_seq[ " +
+                    (it->first).AsString() +" ]";
                 if (depth2 == 0) {
                     member_name += ".size()";
                     DebugDumpValue(ddc2, member_name, (it->second).size());
@@ -1889,11 +1889,8 @@ void CDataSource::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             CDebugDumpContext ddc2(ddc,"m_TSE_ref");
             TTSEMap::const_iterator it;
             for ( it = m_TSE_ref.begin(); it != m_TSE_ref.end(); ++it) {
-                ostrstream os;
-                // seqid_handle -> seq_id -> asfasta
-                (GetIdMapper().GetSeq_id( it->first)).WriteAsFasta(os);
-                os << '\0';
-                string member_name = "m_TSE_ref[ " + string(os.str()) +" ]";
+                string member_name = "m_TSE_ref[ " +
+                    (it->first).AsString() +" ]";
                 if (depth2 == 0) {
                     member_name += ".size()";
                     DebugDumpValue(ddc2, member_name, (it->second).size());

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.5  2002/05/06 03:28:47  vakatov
 * OM/OM1 renaming
 *
@@ -138,6 +141,19 @@ const CSeq_id* CSeq_id_Handle::x_GetSeqId(void) const
 {
     return m_Mapper ? m_Mapper->x_GetSeq_id(m_Value) : 0;
 };
+
+string CSeq_id_Handle::AsString() const
+{
+    ostrstream os;
+    const CSeq_id* seqid = x_GetSeqId();
+    if (seqid) {
+        seqid->WriteAsFasta(os);
+    } else {
+        os << "unknown";
+    }
+    os << '\0';
+    return os.str();
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/29 21:19:57  gouriano
+* added debug dump
+*
 * Revision 1.7  2002/05/02 20:42:35  grichenk
 * throw -> THROW1_TRACE
 *
@@ -103,6 +106,8 @@ public:
 
     // True if "this" is a better bioseq than "h".
     bool IsBetter(const CSeq_id_Handle& h) const;
+
+    string AsString() const;
 
 private:
     // This constructor should be used by mappers only

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.2  2002/02/21 19:27:05  grichenk
 * Rearranged includes. Added scope history. Added searching for the
 * best seq-id match in data sources and scopes. Updated tests.
@@ -98,6 +101,28 @@ CBioseq_Info& CBioseq_Info::operator= (const CBioseq_Info& info)
         m_Synonyms.insert(*it);
     }
     return *this;
+}
+
+void CBioseq_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+{
+    ddc.SetFrame("CBioseq_Info");
+    CObject::DebugDump( ddc, depth);
+
+    ddc.Log("m_Entry", m_Entry.GetPointer(),0);
+    if (depth == 0) {
+        DebugDumpValue(ddc, "m_Synonyms.size()", m_Synonyms.size());
+    } else {
+        DebugDumpValue(ddc, "m_Synonyms.type",
+            "set<CSeq_id_Handle>");
+        CDebugDumpContext ddc2(ddc,"m_Synonyms");
+        TSynonyms::const_iterator it;
+        int n;
+        for (n=0, it=m_Synonyms.begin(); it!=m_Synonyms.end(); ++n, ++it) {
+            string member_name = "m_Synonyms[ " +
+                NStr::IntToString(n) +" ]";
+            ddc2.Log(member_name, (*it).AsString());
+        }
+    }
 }
 
 

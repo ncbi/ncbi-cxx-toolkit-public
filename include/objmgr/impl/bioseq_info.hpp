@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.3  2002/05/06 03:28:46  vakatov
 * OM/OM1 renaming
 *
@@ -85,6 +88,8 @@ public:
     bool operator== (const CBioseq_Info& info);
     bool operator!= (const CBioseq_Info& info);
     bool operator<  (const CBioseq_Info& info);
+
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
     CRef<CSeq_entry> m_Entry;
     TSynonyms        m_Synonyms;

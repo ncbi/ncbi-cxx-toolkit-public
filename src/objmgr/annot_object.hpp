@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.6  2002/04/05 21:26:19  grichenk
 * Enabled iteration over annotations defined on segments of a
 * delta-sequence.
@@ -100,6 +103,7 @@ public:
     // Get Seq-annot, containing the element
     const CSeq_annot& GetSeq_annot(void) const;
 
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 private:
     // Constructors used by CAnnotTypes_CI only to create fake annotations
     // for sequence segments. The annot object points to the seq-annot

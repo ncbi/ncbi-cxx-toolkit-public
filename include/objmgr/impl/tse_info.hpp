@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/05/29 21:21:13  gouriano
+* added debug dump
+*
 * Revision 1.5  2002/05/03 21:28:11  ucko
 * Introduce T(Signed)SeqPos.
 *
@@ -92,6 +95,7 @@ public:
 
     bool operator< (const CTSE_Info& info) const;
     bool operator== (const CTSE_Info& info) const;
+
     typedef map<CSeq_id_Handle, CRef<CBioseq_Info> >                 TBioseqMap;
     typedef CRange<TSeqPos>                                          TRange;
     typedef CRangeMultimap<CRef<CAnnotObject>,TRange::position_type> TRangeMap;
@@ -104,6 +108,7 @@ public:
     TBioseqMap m_BioseqMap;
     TAnnotMap  m_AnnotMap;
 
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 private:
     // Hide copy methods
     CTSE_Info(const CTSE_Info& info);

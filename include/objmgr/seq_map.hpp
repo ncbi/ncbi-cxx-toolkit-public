@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/05/29 21:19:57  gouriano
+* added debug dump
+*
 * Revision 1.17  2002/05/21 18:40:15  grichenk
 * Prohibited copy constructor and operator =()
 *
@@ -160,6 +163,7 @@ public:
         // when the segment is a reference to another seq.
         const CSeq_id& GetRefSeqid(void) const;
 
+        virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
     private:
         // Type of map segment
         ESegmentType         m_SegType;
@@ -191,6 +195,7 @@ public:
     // Get all intervals
     const CSegmentInfo& operator[](size_t seg_idx) const;
 
+    virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 private:
     // Add interval to the map.
     // Throw an exception if there is an "equal" interval.
