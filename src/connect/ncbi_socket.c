@@ -255,24 +255,13 @@ typedef int TSOCK_Handle;
 
 
 #ifdef HAVE_SOCKLEN_T
-typedef socklen_t  SOCK_socklen_t;
+typedef socklen_t SOCK_socklen_t;
 #else
-typedef int        SOCK_socklen_t;
+typedef int       SOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T*/
 
 
-/* Listening socket
- */
-typedef struct LSOCK_tag {
-    TSOCK_Handle    sock;       /* OS-specific socket handle                 */
-    unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
-
-    unsigned int    n_accept;   /* total number of accepted clients          */
-    ESwitch         log;
-} LSOCK_struct;
-
-
-/* Type of socket (except listening)
+/* Type of connecting socket (except listening)
  */
 typedef enum {
     eSOCK_Datagram = 0,
@@ -293,9 +282,34 @@ typedef unsigned   EBSockType;
 #endif
 
 
-/* Socket
+#define SET_LISTENING(s) ((s)->r_on_w =  (unsigned) eDefault + 1)
+#define IS_LISTENING(s)  ((s)->r_on_w == (unsigned) eDefault + 1)
+
+
+/* Listening socket
  */
-typedef struct SOCK_tag {
+struct LSOCK_tag {
+    TSOCK_Handle    sock;       /* OS-specific socket handle                 */
+    unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
+
+    unsigned int    n_accept;   /* total number of accepted clients          */
+    unsigned short  port;       /* port on which the socket is listening     */
+
+    /* type, status, EOF, log, read-on-write etc bit-field indicators */
+    EBSwitch             log:2; /* how to log events and data for this socket*/
+    EBSockType          type:2; /* MBZ (NB: eSOCK_Datagram)                  */
+    EBSwitch          r_on_w:2; /* 3 [=(int)eDefault + 1]                    */
+    EBSwitch        i_on_sig:2; /* eDefault                                  */
+    EBIO_Status     r_status:3; /* MBZ (NB: eIO_Success)                     */
+    unsigned/*bool*/     eof:1; /* 0                                         */
+    EBIO_Status     w_status:3; /* MBZ (NB: eIO_Success)                     */
+    unsigned/*bool*/ pending:1; /* 0                                         */
+};
+
+
+/* Socket [it must be in one-2-one correspondence with LSOCK above]
+ */
+struct SOCK_tag {
     TSOCK_Handle    sock;       /* OS-specific socket handle                 */
     unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
 
@@ -338,9 +352,10 @@ typedef struct SOCK_tag {
 
 #ifdef NCBI_OS_UNIX
     /* filename for UNIX socket */
-    char            file[1];
+    char            file[1];    /* must go last                              */
 #endif /*NCBI_OS_UNIX*/
-} SOCK_struct;
+};
+
 
 
 /*
@@ -578,7 +593,7 @@ static const char* s_ID(const SOCK sock, char* buf)
 
     if ( !sock )
         return "";
-    sname = sock->id < 1000 ? "LSOCK" : "SOCK";
+    sname = IS_LISTENING(sock) ? "LSOCK" : "SOCK";
     if (sock->sock == SOCK_INVALID)
         sprintf(buf, "%s#%u[?]: ",  sname, sock->id);
     else
@@ -1014,27 +1029,30 @@ static EIO_Status s_Select(size_t                n,
             if (polls[i].event  &&
                 (EIO_Event)(polls[i].event | eIO_ReadWrite) == eIO_ReadWrite) {
                 if (polls[i].sock->sock != SOCK_INVALID) {
-                    if (n != 1  &&  polls[i].sock->type == eSOCK_Datagram)
+                    int/*bool*/ ls = IS_LISTENING(polls[i].sock);
+                    if (!ls && n != 1 && polls[i].sock->type == eSOCK_Datagram)
                         continue;
                     if (ready  ||  bad)
                         continue;
                     switch (polls[i].event) {
                     case eIO_Write:
                     case eIO_ReadWrite:
-                        if (polls[i].sock->type == eSOCK_Datagram  ||
-                            polls[i].sock->w_status != eIO_Closed) {
-                            read_only = 0;
-                            FD_SET(polls[i].sock->sock, &w_fds);
+                        if (!ls) {
                             if (polls[i].sock->type == eSOCK_Datagram  ||
-                                polls[i].sock->pending)
+                                polls[i].sock->w_status != eIO_Closed) {
+                                read_only = 0;
+                                FD_SET(polls[i].sock->sock, &w_fds);
+                                if (polls[i].sock->type == eSOCK_Datagram  ||
+                                    polls[i].sock->pending)
+                                    break;
+                                if (polls[i].event == eIO_Write  &&
+                                    (polls[i].sock->r_on_w == eOff
+                                     ||  (polls[i].sock->r_on_w == eDefault
+                                          &&  s_ReadOnWrite != eOn)))
+                                    break;
+                            } else if (polls[i].event == eIO_Write)
                                 break;
-                            if (polls[i].event == eIO_Write  &&
-                                (polls[i].sock->r_on_w == eOff
-                                 ||  (polls[i].sock->r_on_w == eDefault
-                                      &&  s_ReadOnWrite != eOn)))
-                                break;
-                        } else if (polls[i].event == eIO_Write)
-                            break;
+                        }
                         /*FALLTHRU*/
                     case eIO_Read:
                         if (polls[i].sock->type != eSOCK_Datagram
@@ -1221,9 +1239,11 @@ extern EIO_Status LSOCK_CreateEx(unsigned short port,
     /* allocate memory for the internal socket structure */
     if ( !(*lsock = (LSOCK) calloc(1, sizeof(**lsock))) )
         return eIO_Unknown;
-    (*lsock)->sock = x_lsock;
-    (*lsock)->id   = x_id;
-    (*lsock)->log  = log;
+    (*lsock)->sock     = x_lsock;
+    (*lsock)->id       = x_id;
+    (*lsock)->log      = log;
+    (*lsock)->i_on_sig = eDefault;
+    SET_LISTENING(*lsock);
 
     /* statistics & logging */
     if (log == eOn  ||  (log == eDefault  &&  s_Log == eOn)) {
@@ -1254,13 +1274,9 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
         EIO_Status     status;
         SSOCK_Poll     poll;
         struct timeval tv;
-        SOCK_struct    s;
 
-        memset(&s, 0, sizeof(s));
-        s.sock      = lsock->sock;
-        s.id        = lsock->id;
-        s.i_on_sig  = eDefault;
-        poll.sock   = &s;
+        assert(IS_LISTENING(lsock));
+        poll.sock   = (SOCK) lsock;
         poll.event  = eIO_Read;
         poll.revent = eIO_Open;
         if ((status = s_Select(1, &poll, s_to2tv(timeout,&tv))) != eIO_Success)
@@ -1273,6 +1289,10 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     x_id = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
     {{ /* accept next connection */
         SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
+        memset(&addr, 0, sizeof(addr));
+#ifdef HAVE_SIN_LEN
+        addr.sin_len = sizeof(addr);
+#endif
         if ((x_sock = accept(lsock->sock, (struct sockaddr*) &addr, &addrlen))
             == SOCK_INVALID) {
             int x_errno = SOCK_ERRNO;
@@ -1353,8 +1373,9 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
 
     /* statistics & logging */
     if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_Log == eOn)) {
-        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Closing (%u accept%s total)",
-                               lsock->id, (unsigned int) lsock->sock,
+        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u]: Closing on port :%hu "
+                               "(%u accept%s total)", lsock->id,
+                               (unsigned int) lsock->sock, lsock->port,
                                lsock->n_accept, lsock->n_accept == 1? "":"s"));
     }
 
@@ -2245,7 +2266,7 @@ static EIO_Status s_Close(SOCK sock)
     s_WipeRBuf(sock);
     if (sock->type == eSOCK_Datagram) {
         s_WipeWBuf(sock);
-    } else if ( sock->type != eSOCK_ServerSideKeep ) {
+    } else if (sock->type != eSOCK_ServerSideKeep) {
         /* set the close()'s linger period be equal to the close timeout */
 #if (defined(NCBI_OS_UNIX) && !defined(NCBI_OS_BEOS)) || defined(NCBI_OS_MSWIN)
         /* setsockopt() is not implemented for MAC (MIT socket emulation lib)*/
@@ -2298,7 +2319,7 @@ static EIO_Status s_Close(SOCK sock)
         s_DoLog(sock, eIO_Close, 0, 0, 0);
 
     status = eIO_Success;
-    if ( sock->type != eSOCK_ServerSideKeep ) {
+    if (sock->type != eSOCK_ServerSideKeep) {
         for (;;) { /* close persistently - retry if interrupted by a signal */
             if (SOCK_CLOSE(sock->sock) == 0)
                 break;
@@ -2430,11 +2451,10 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
 
     /* get peer's address */
-    errno = 0;
     peerlen = (SOCK_socklen_t) sizeof(peer);
     memset(&peer, 0, peerlen);
 #ifdef HAVE_SIN_LEN
-    peer.sa.sa_len = peerlen;
+    peer.sa.sa_len = sizeof(peer);
 #endif
     if (getpeername(xx_sock, &peer.sa, &peerlen) < 0)
         return eIO_Closed;
@@ -2457,9 +2477,9 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
         peer.sa.sa_family == AF_UNIX) {
         if (!peer.un.sun_path[0]) {
             peerlen = (SOCK_socklen_t) sizeof(peer);
-            memset(&peer, 0, peerlen);
+            memset(&peer, 0, sizeof(peer));
 #  ifdef HAVE_SIN_LEN
-            peer.sa.sa_len = peerlen;
+            peer.sa.sa_len = sizeof(peer);
 #  endif
             if (getsockname(xx_sock, &peer.sa, &peerlen) < 0)
                 return eIO_Closed;
@@ -2730,7 +2750,8 @@ extern EIO_Status SOCK_Poll(size_t          n,
     }
 
     for (x_n = 0; x_n < n; x_n++) {
-        if (polls[x_n].sock                        &&
+        if (!IS_LISTENING(polls[x_n].sock)         &&
+            polls[x_n].sock                        &&
             polls[x_n].sock->sock != SOCK_INVALID  &&
             (polls[x_n].event == eIO_Read  ||
              polls[x_n].event == eIO_ReadWrite)    &&
@@ -2760,6 +2781,43 @@ extern EIO_Status SOCK_Poll(size_t          n,
         polls[0].revent = xx_polls[0].revent;
 
     return status;
+}
+
+
+extern EIO_Status POLLABLE_Poll(size_t          n,
+                                SPOLLABLE_Poll  polls[],
+                                const STimeout* timeout,
+                                size_t*         n_ready)
+{
+    return SOCK_Poll(n, (SSOCK_Poll *const) polls, timeout, n_ready);
+}
+
+
+extern POLLABLE POLLABLE_FromSOCK(SOCK sock)
+{
+    assert(!sock  ||  !IS_LISTENING(sock));
+    return (POLLABLE) sock;
+}
+
+
+extern POLLABLE POLLABLE_FromLSOCK(LSOCK lsock)
+{
+    assert(!lsock  ||  IS_LISTENING(lsock));
+    return (POLLABLE) lsock;
+}
+
+
+extern SOCK  POLLABLE_ToSOCK(POLLABLE poll)
+{
+    SOCK sock = (SOCK) poll;
+    return !sock  ||  IS_LISTENING(sock) ? 0 : sock;
+}
+
+
+extern LSOCK POLLABLE_ToLSOCK(POLLABLE poll)
+{
+    LSOCK lsock = (LSOCK) poll;
+    return !lsock  ||  IS_LISTENING(lsock) ? lsock : 0;
 }
 
 
@@ -3151,7 +3209,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 #ifdef HAVE_SIN_LEN
     addr.sin_len         = sizeof(addr);
 #endif /*HAVE_SIN_LEN*/
-    if (bind(sock->sock, (struct sockaddr*)&addr, sizeof(struct sockaddr))!=0){
+    if (bind(sock->sock, (struct sockaddr*) &addr, sizeof(addr)) !=0 ) {
         int x_errno = SOCK_ERRNO;
         CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                            ("%s[DSOCK::Bind]  Failed bind()", s_ID(sock,_id)));
@@ -3396,6 +3454,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
 
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
         int                x_errno;
+        int                x_read;
         struct sockaddr_in addr;
 #if defined(HAVE_SOCKLEN_T)
         typedef socklen_t  SOCK_socklen_t;
@@ -3405,8 +3464,11 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
         typedef int        SOCK_socklen_t;
 #endif /*HAVE_SOCKLEN_T*/
         SOCK_socklen_t     addrlen = (SOCK_socklen_t) sizeof(addr);
-        int                x_read = recvfrom(sock->sock, x_msg, x_msgsize, 0,
-                                             (struct sockaddr*)&addr,&addrlen);
+#ifdef HAVE_SIN_LEN
+        addr.sin_len = addrlen;
+#endif
+        x_read = recvfrom(sock->sock, x_msg, x_msgsize, 0,
+                          (struct sockaddr*) &addr, &addrlen);
         if (x_read >= 0) {
             /* got a message */
             sock->r_status = status = eIO_Success;
@@ -3771,7 +3833,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
         struct sockaddr_in addr;
 
         memset(&addr, 0, sizeof(addr));
-        addr.sin_family = AF_INET; /* currently, we only handle IPv4 */
+        addr.sin_family      = AF_INET; /* currently, we only handle IPv4 */
         addr.sin_addr.s_addr = host;
 #  ifdef HAVE_SIN_LEN
         addr.sin_len = sizeof(addr);
@@ -3858,6 +3920,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.125  2003/08/25 14:40:05  lavr
+ * Sync listetning sockets with their SOCK conterparts and implement uniform
+ * polling mechanism on sockets of different nature [listening vs connecting]
+ *
  * Revision 6.124  2003/08/19 19:45:54  ivanov
  * SOCK_CreateOnTopEx(): Workaround for unnamed peer's UNIX sockets on BSD
  *
