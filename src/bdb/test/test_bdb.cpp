@@ -197,6 +197,14 @@ static void s_TEST_BDB_IdTable_Fill(void)
         assert(dbf1.idata.IsNull());
     }
 
+    // Trying to put duplicate record
+
+    dbf1.IdKey = 1;
+    dbf1.idata = 400 + 1;
+    dbf1.str = "test";
+    EBDB_ErrCode err = dbf1.Insert();
+    assert(err == eBDB_KeyDup);
+
     cout << "Table " << s_TestFileName 
          << " loaded ok. Checking consistency." 
          << endl;
@@ -590,6 +598,21 @@ static void s_TEST_BDB_IdTable_DeleteInsert(void)
     err = dbf1.Fetch();
     assert(err == eBDB_Ok);
 
+    // Test UpdateInsert
+
+    dbf1.Reopen(CBDB_File::eReadWrite);
+    dbf1.IdKey = 2;
+    dbf1.idata = 250;
+    dbf1.str = "test";
+    err = dbf1.UpdateInsert();
+    assert(err == eBDB_Ok);
+
+    dbf1.IdKey = 2;
+    dbf1.idata = 0;
+    err = dbf1.Fetch();
+    assert(err == eBDB_Ok);
+    int idata = dbf1.idata;
+    assert(idata == 250);
 
     dbf1.Close();
 
@@ -734,6 +757,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/02 14:10:57  kuznets
+ * Added test for UpdateInsert
+ *
  * Revision 1.3  2003/04/29 20:50:22  kuznets
  * Code cleanup
  *
