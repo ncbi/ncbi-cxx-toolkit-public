@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.148 2002/12/02 20:43:37 ucko Exp $
+#  $Id: configure.ac,v 1.149 2002/12/03 21:46:00 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1321,12 +1321,15 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/socket.h>])
 AC_CHECK_HEADERS(dlfcn.h sys/sockio.h sys/sysinfo.h)
+# for FreeTDS 0.60
+AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
 
 ### Check for some reentrant library functions (only needed in MT mode)
 
 if test "$with_mt" = "yes" ; then
 
-## gethostbyname_r() -- 2 different variants
+## gethostbyname_r() -- 3 different variants: 5-arg (Solaris), 6-arg (Linux),
+## 3-arg (OSF/1 cruft)
 
 AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
    [ncbi_cv_func_gethostbyname_r="no"
@@ -1357,17 +1360,32 @@ AC_CACHE_CHECK([for gethostbyname_r], ncbi_cv_func_gethostbyname_r,
          ncbi_cv_func_gethostbyname_r="6"
        ]
     )
+    fi
+    if test "$ncbi_cv_func_gethostbyname_r" = "no" ; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[
+         void*                dummy = (void*) &gethostbyname_r;
+         int                  err;
+         struct hostent*      hp = 0;
+	 struct hostent_data* hdp = 0;
+         err = gethostbyname_r("", hp, hdp);
+       ]])],
+       [
+         ncbi_cv_func_gethostbyname_r="3"
+       ]
+    )
     fi])
 
 if test "$ncbi_cv_func_gethostbyname_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYNAME_R, $ncbi_cv_func_gethostbyname_r,
     [If you have the `gethostbyname_r' function, define to the number of
-     arguments it takes (normally 5 or 6).])
+     arguments it takes (normally 3, 5 or 6).])
 fi
 
 
-
-## gethostbyaddr_r() -- 2 different variants
+## gethostbyaddr_r() -- 3 different variants: 7-arg (Solaris), 8-arg (Linux),
+## 5-arg (OSF/1 cruft)
 
 AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
    [ncbi_cv_func_gethostbyaddr_r="no"
@@ -1410,12 +1428,89 @@ AC_CACHE_CHECK([for gethostbyaddr_r], ncbi_cv_func_gethostbyaddr_r,
          ncbi_cv_func_gethostbyaddr_r="8"
        ]
     )
+    fi
+    if test "$ncbi_cv_func_gethostbyaddr_r" = "no" ; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[
+         #include <netdb.h>
+         #include <sys/types.h>
+         #include <sys/socket.h>
+       ]],
+       [[
+         void* dummy = (void*) &gethostbyaddr_r;
+         int                  err;
+         unsigned int         host;
+         struct hostent*      hp = 0;
+	 struct hostent_data* hdp = 0;
+         int res = gethostbyaddr_r((char *) &host, sizeof(host), AF_INET,
+                                   hp, hdp);
+       ]])],
+       [
+         ncbi_cv_func_gethostbyaddr_r="5"
+       ]
+    )
     fi])
 
 if test "$ncbi_cv_func_gethostbyaddr_r" != "no" ; then
    AC_DEFINE_UNQUOTED(HAVE_GETHOSTBYADDR_R, $ncbi_cv_func_gethostbyaddr_r,
     [If you have the `gethostbyaddr_r' function, define to the number of
-     arguments it takes (normally 5 or 6).])
+     arguments it takes (normally 5, 7 or 8).])
+fi
+
+
+## getservbyname_r() -- 3 different variants: 5-arg (Solaris), 6-arg (Linux),
+## 4-arg (OSF/1 cruft)
+
+AC_CACHE_CHECK([for getservbyname_r], ncbi_cv_func_getservbyname_r,
+   [ncbi_cv_func_getservbyname_r="no"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[
+         void*           dummy = (void*) &getservbyname_r;
+         char            buf[1024];
+         int             err;
+         struct servent* sp = 0;
+         sp = getservbyname_r("", "", sp, buf, sizeof(buf));
+       ]])],
+       [
+         ncbi_cv_func_getservbyname_r="5"
+       ]
+    )
+    if test "$ncbi_cv_func_getservbyname_r" = "no" ; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[
+         void*           dummy = (void*) &getservbyname_r;
+         char            buf[1024];
+         int             err;
+         struct servent* sp = 0;
+         err = getservbyname_r("", "", sp, buf, sizeof(buf), &hp);
+       ]])],
+       [
+         ncbi_cv_func_getservbyname_r="6"
+       ]
+    )
+    fi
+    if test "$ncbi_cv_func_getservbyname_r" = "no" ; then
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <netdb.h>]],
+       [[
+         void*                dummy = (void*) &getservbyname_r;
+         int                  err;
+         struct servent*      sp = 0;
+	 struct servent_data* sdp = 0;
+         err = getservbyname_r("", "", sp, sdp);
+       ]])],
+       [
+         ncbi_cv_func_getservbyname_r="4"
+       ]
+    )
+    fi])
+
+if test "$ncbi_cv_func_getservbyname_r" != "no" ; then
+   AC_DEFINE_UNQUOTED(HAVE_GETSERVBYNAME_R, $ncbi_cv_func_getservbyname_r,
+    [If you have the `getservbyname_r' function, define to the number of
+     arguments it takes (normally 4, 5 or 6).])
 fi
 
 
@@ -1432,7 +1527,10 @@ fi
 
 ### Check for other standard library functions
 
-AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm)
+AC_LANG_PUSH(C)
+# some of these can lose in C++ due to the way autoconf works
+AC_CHECK_FUNCS(strcasecmp strdup sysmp timegm atoll vasprintf)
+AC_LANG_POP(C)
 
 AC_CACHE_CHECK([for Linux-like sysinfo with 1 arg], ncbi_cv_func_sysinfo_1,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
@@ -1566,6 +1664,47 @@ case "$ncbi_cv_sys_stack_dir" in
  down) AC_DEFINE(STACK_GROWS_DOWN, 1, [Define to 1 if the stack grows down.]);;
 esac
 
+# for FreeTDS
+AC_CACHE_CHECK([whether FIONBIO requires BSD_COMP to be defined],
+   ncbi_cv_decl_fionbio_needs_bsd_comp,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[ #include <sys/ioctl.h> ]],
+       [[ int request = FIONBIO; ]])],
+       [ncbi_cv_decl_fionbio_needs_bsd_comp=no],
+       [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+           [[ #define BSD_COMP 1
+              #include <sys/ioctl.h> ]],
+           [[ int request = FIONBIO; ]])],
+           [ncbi_cv_decl_fionbio_needs_bsd_comp=yes],
+           [ncbi_cv_decl_fionbio_needs_bsd_comp="never defined at all"])])])
+if test "$ncbi_cv_decl_fionbio_needs_bsd_comp" = yes; then
+   AC_DEFINE(BSD_COMP, 1,
+             [Define to 1 if necessary to get FIONBIO (e.g., on Solaris)])
+fi
+
+AC_CACHE_CHECK([whether INADDR_NONE is defined], ncbi_cv_decl_inaddr_none,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[
+         #ifdef HAVE_SYS_TYPES_H
+         #include <sys/types.h>
+         #endif
+         #ifdef HAVE_SYS_SOCKET_H
+         #include <sys/socket.h>
+         #endif
+         #ifdef HAVE_NETINET_IN_H
+         #include <netinet/in.h>
+         #endif
+         #ifdef HAVE_ARPA_INET_H
+         #include <arpa/inet.h>
+         #endif
+       ]],
+       [[ unsigned long addr = INADDR_NONE; ]])],
+       [ncbi_cv_decl_inaddr_none=yes], [ncbi_cv_decl_inaddr_none=no])])
+if test "$ncbi_cv_decl_inaddr_none" != yes; then
+   AC_DEFINE(INADDR_NONE, 0xffffffff,
+             [Define to 0xffffffff if your operating system doesn't.])
+fi
+
 ### Check for the availability of other packages
 ### --------------------------------------------
 
@@ -1609,6 +1748,8 @@ NCBI_CHECK_LIBS(CRYPT, crypt crypt_i, setkey)
 AC_LANG_POP(C)
 NCBI_CHECK_LIBS(DL, dl, dlopen)
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
+# For FreeTDS, which normally uses a somewhat more elaborate test
+NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 
 
 ## SYBASE libraries
@@ -1833,7 +1974,8 @@ if test "$with_ftds" != "no" ; then
              LOGINREC*  x_login     = 0;
              DBPROCESS* x_dbproc    = dbopen(x_login, (char*) "SRV_NAME");
              TDSLOGIN*  x_tds_login = 0;
-             TDSSOCKET* x_sock      = tds_connect(x_tds_login);
+             /* TDSSOCKET* x_sock      = tds_connect(x_tds_login); */
+             tds_set_timeouts(x_tds_login, 0, 0, 0);
             ]])],
             [ncbi_cv_lib_freetds=yes], [ncbi_cv_lib_freetds=no])])
       if test "$ncbi_cv_lib_freetds" = "no"; then
@@ -2710,6 +2852,7 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(long long)
 AC_CHECK_SIZEOF(__int64)
+AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
 AC_CHECK_SIZEOF(size_t)

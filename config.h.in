@@ -1,5 +1,14 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
+#undef BSD_COMP
+
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
+
+/* Define to 1 if you have the `atoll' function. */
+#undef HAVE_ATOLL
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -16,11 +25,11 @@
 #undef HAVE_GETADDRINFO
 
 /* If you have the `gethostbyaddr_r' function, define to the number of
-   arguments it takes (normally 5 or 6). */
+   arguments it takes (normally 5, 7 or 8). */
 #undef HAVE_GETHOSTBYADDR_R
 
 /* If you have the `gethostbyname_r' function, define to the number of
-   arguments it takes (normally 5 or 6). */
+   arguments it takes (normally 3, 5 or 6). */
 #undef HAVE_GETHOSTBYNAME_R
 
 /* Define to 1 if you have the `getloadavg' function. */
@@ -28,6 +37,10 @@
 
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
+
+/* If you have the `getservbyname_r' function, define to the number of
+   arguments it takes (normally 4, 5 or 6). */
+#undef HAVE_GETSERVBYNAME_R
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -54,6 +67,10 @@
 
 /* Define to 1 if NCBI GEO DB library is available. */
 #undef HAVE_LIBGEODB
+
+/* Define to 1 if ICONV is available, either in its own library or as part of
+   the standard libraries. */
+#undef HAVE_LIBICONV
 
 /* Define to 1 if KSTAT is available, either in its own library or as part of
    the standard libraries. */
@@ -91,11 +108,17 @@
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
 /* Define to 1 if the NCBI C toolkit is available. */
 #undef HAVE_NCBI_C
+
+/* Define to 1 if you have the <netinet/in.h> header file. */
+#undef HAVE_NETINET_IN_H
 
 /* Define to 1 if `auto_ptr<T>' is missing or broken. */
 #undef HAVE_NO_AUTO_PTR
@@ -172,6 +195,9 @@
 /* Define to 1 if you have the `sysmp' function. */
 #undef HAVE_SYSMP
 
+/* Define to 1 if you have the <sys/socket.h> header file. */
+#undef HAVE_SYS_SOCKET_H
+
 /* Define to 1 if you have the <sys/sockio.h> header file. */
 #undef HAVE_SYS_SOCKIO_H
 
@@ -190,6 +216,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `vasprintf' function. */
+#undef HAVE_VASPRINTF
+
 /* Define to 1 if you have the <windows.h> header file. */
 #undef HAVE_WINDOWS_H
 
@@ -207,6 +236,9 @@
 
 /* System vendor only */
 #undef HOST_VENDOR
+
+/* Define to 0xffffffff if your operating system doesn't. */
+#undef INADDR_NONE
 
 /* Compiler name */
 #undef NCBI_COMPILER_COMPAQ
@@ -306,6 +338,9 @@
 
 /* The size of a `double', as computed by sizeof. */
 #undef SIZEOF_DOUBLE
+
+/* The size of a `float', as computed by sizeof. */
+#undef SIZEOF_FLOAT
 
 /* The size of a `int', as computed by sizeof. */
 #undef SIZEOF_INT
