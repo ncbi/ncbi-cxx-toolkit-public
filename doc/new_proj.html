@@ -33,6 +33,8 @@
         User-defined makefile to build... whatever</a>
       <li> <a href="#ref_MakeProjTarget">
         Standard build targets(<b>all, clean, purge</b>) in makefiles</a>
+      <li> <a href="#ref_Packages">
+        Current optional packages and projects</a>
     </ul>
   </ul>
   <li> <a href="#ref_Outside">
@@ -594,8 +596,9 @@ CXXFLAGS = $(ORIG_CXXFLAGS) -xyz
 CPPFLAGS = $(ORIG_CPPFLAGS) -UFOO -DP1_PROJECT -I$(NCBI_C_INCLUDE)</pre>
 
 <ul>
-  <li> Skip building this library if xrequirement (an optional package
-       or project) is disabled or unavailable
+  <li> Skip building this library if xrequirement
+       (<a href="#ref_Packages">an optional package or project</a>)
+       is disabled or unavailable
   <li> Compile <i><b>xmy_src1.cpp</b></i> using the C++ compiler
        <b>$(CXX)</b> with the flags <b>$(CXXFLAGS) $(CPPFLAGS)</b>
        (which are the original C++ and preprocessor flags,
@@ -664,8 +667,9 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_SSSDB_INCLUDE)
 LIBS     = $(NCBI_SSSDB_LIBS) $(SYBASE_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)</pre>
 
 <ul>
-  <li> Skip building this library if xrequirement (an optional package
-       or project) is disabled or unavailable
+  <li> Skip building this library if xrequirement
+       (<a href="#ref_Packages">an optional package or project</a>)
+       is disabled or unavailable
   <li> Compile <i><b>my_main.cpp</b></i> and <i><b>my_src1.cpp</b></i>
     using the C++ compiler <b>$(CXX)</b> with the flags <b>$(CPPFLAGS)</b>
     (<a href="#ref_Note1">*</a>)
@@ -812,6 +816,137 @@ non-recursive (<b>all, clean, purge</b>) targets -- because the
 recursion and multiple build is entirely up to the <a
 href="#ref_MakeMeta"><i>meta-makefiles</i></a>.
 
+
+<p>
+<br>
+<a name="ref_Packages"></a>
+<h2>Current optional packages and projects</h2>
+Here are the keywords you can list in REQUIRES in a customized
+application or library makefile, along with the corresponding
+<a href="config.html#ref_ProhibitPackage">configure options</a>:
+
+<br>
+
+<table border=1 cellspacing=0>
+ <tr>
+  <th>Keyword</th>
+  <th>Optional package</th>
+  <th>Configure option(s)</th>
+ </tr>
+
+ <tr>
+  <td><b>Sybase</b></td>
+  <td>Sybase libraries</td>
+  <td><i>--without-sybase, --with-sybase-local(=DIR)</i></td>
+ </tr>
+
+ <tr>
+  <td><b>Fast-CGI</b></td>
+  <td>Fast-CGI library</td>
+  <td><i>--without-fastcgi</i></td>
+ </tr>
+
+ <tr>
+  <td><b>wxWindows</b></td>
+  <td>wxWindows</td>
+  <td><i>--without-wxwin</i></td>
+ </tr>
+
+ <tr>
+  <td><b>C-Toolkit</b></td>
+  <td>NCBI C Toolkit</td>
+  <td><i>--without-ncbi-c</i></td>
+ </tr>
+
+
+ <tr>
+  <td><b>SSSDB</b></td>
+  <td>NCBI SSS DB library</td>
+  <td><i>--without-sssdb, --without-sss</i></td>
+ </tr>
+
+ <tr>
+  <td><b>SSSUTILS</b></td>
+  <td>NCBI SSS UTILS library</td>
+  <td><i>--without-sssutils, --without-sss</i></td>
+ </tr>
+
+ <tr>
+  <td><b>GEO</b></td>
+  <td>NCBI GEO libraries</td>
+  <td><i>--without-geo</i></td>
+ <tr>
+
+ <tr>
+  <td><b>SP</b></td>
+  <td>NCBI SP libraries</td>
+  <td><i>--without-sp</i></td>
+ <tr>
+
+ <tr>
+  <td><b>PubMed</b></td>
+  <td>NCBI PubMed library</td>
+  <td><i>--without-pubmed</i></td>
+ <tr>
+</table>
+
+<br>
+
+<table border=1 cellspacing=0>
+ <tr>
+  <th>Keyword</th>
+  <th>Optional project(s)</th>
+  <th>Configure option(s)</th>
+ </tr>
+
+ <tr>
+  <td><b>serial</b></td>
+  <td>ASN.1/XML serialization library and datatool</td>
+  <td><i>--without-serial</i></td>
+ </tr>
+
+ <tr>
+  <td><b>ctools</b></td>
+  <td>projects based on the NCBI C toolkit</td>
+  <td><i>--without-ctools</i></td>
+ </tr>
+
+ <tr>
+  <td><b>gui</b></td>
+  <td>projects that use the wxWindows GUI package</td>
+  <td><i>--without-gui</i></td>
+ </tr>
+
+ <tr>
+  <td><b>gui_ctools</b></td>
+  <td>projects that use both wxWindows and the C toolkit</td>
+  <td><i>--without-gui, --without-ctools</i></td>
+ </tr>
+
+ <tr>
+  <td><b>objects</b></td>
+  <td>libraries to serialize ASN.1/XML objects</td>
+  <td><i>--with-objects</i></td>
+ </tr>
+
+ <tr>
+  <td><b>app</b></td>
+  <td>standalone applications like ID1_FETCH</td>
+  <td><i>--with-app</i></td>
+ </tr>
+
+ <tr>
+  <td><b>internal</b></td>
+  <td>all internal projects</td>
+  <td><i>--with-internal</i></td>
+ </tr>
+
+ <tr>
+  <td><b>local_lbsm</b></td>
+  <td>IPC with locally running LBSMD</td>
+  <td><i>--without-local-lbsm</i></td>
+ </tr>
+</table>
 
 <p>
 <br>
