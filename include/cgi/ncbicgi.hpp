@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/03/08 22:42:49  vakatov
+* Added "string CCgiCookie::GetValue(void)"
+*
 * Revision 1.32  1999/01/14 21:25:14  vasilche
 * Changed CPageList to work via form image input elements.
 *
@@ -160,10 +163,11 @@ public:
     void SetExpDate   (const tm& exp_date); // infinite by default
     void SetSecure    (bool secure);        // "false" by default
 
-    // All GetXXX() methods beneath:
+    // All "bool GetXXX(...)" methods beneath:
     //  - return "true"  and copy the property to the "str" if the prop. is set
     //  - return "false" and empty the "str" if the property is not set
     //  - throw the "invalid_argument" exception if argument is a zero pointer
+    string GetValue   (void)         const;  // if not set, return empty string
     bool GetValue     (string*  str) const;
     bool GetDomain    (string*  str) const;
     bool GetValidPath (string*  str) const;
