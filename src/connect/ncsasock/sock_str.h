@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 4.0  1995/07/26 13:56:09  ostell
-* force revision to 4.0
+* Revision 4.1  1997/01/29 00:12:00  kans
+* include <MacTCP.h> instead of obsolete <MacTCPCommonTypes.h>
 *
+ * Revision 4.0  1995/07/26  13:56:09  ostell
+ * force revision to 4.0
+ *
  * Revision 1.3  1995/05/23  15:31:16  kans
  * new CodeWarrior 6 errors and warnings fixed
  *
@@ -31,7 +34,7 @@
  */
 
 #ifndef ipBadLapErr
-#include <MacTCPCommonTypes.h>
+#include <MacTCP.h>
 #endif
 #ifdef ParamBlockHeader
 #undef ParamBlockHeader

@@ -30,7 +30,7 @@
 #endif  /*_TYPES_ */
 
 #ifndef ipBadLapErr
-#include <MacTCPCommonTypes.h>
+#include <MacTCP.h>
 #endif
 
 

@@ -14,9 +14,12 @@
 *
 * RCS Modification History:
 * $Log$
-* Revision 4.0  1995/07/26 13:56:09  ostell
-* force revision to 4.0
+* Revision 4.1  1997/01/29 00:12:00  kans
+* include <MacTCP.h> instead of obsolete <MacTCPCommonTypes.h>
 *
+ * Revision 4.0  1995/07/26  13:56:09  ostell
+ * force revision to 4.0
+ *
  * Revision 1.3  1995/06/02  16:29:03  kans
  * *** empty log message ***
  *
@@ -44,7 +47,7 @@
 # include <neterrno.h>
 # include <string.h>
 
-# include <MacTCPCommonTypes.h>
+# include <MacTCP.h>
 
 #include "rexec.h"
 #include "sock_ext.h"		/* uses only high level calls */
