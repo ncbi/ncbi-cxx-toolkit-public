@@ -192,7 +192,7 @@ int DPApp::Run(void)
                 blockSize = blocks->blockSizes[block + alignment->firstBlock];
             INFO_MESSAGE(
                 "Block " << (block + alignment->firstBlock + 1) << ", score " 
-                << ScoreByBlosum62(block + alignment->firstBlock, alignment->blockPositions[block]) << ":\n"
+                << ScoreByBlosum62(block + alignment->firstBlock, queryStart) << ":\n"
                 << "S: " << subject.substr(subjectStart, blockSize)
                 << ' ' << (subjectStart + 1) << '-' << (subjectStart + blockSize) << '\n'
                 << "Q: " << query.substr(queryStart, blockSize)
@@ -233,6 +233,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/06/18 22:25:37  thiessen
+* simplify alignment printout code, yet again... ;)
+*
 * Revision 1.5  2003/06/18 22:11:00  thiessen
 * simplify alignment printout code, again... ;)
 *
