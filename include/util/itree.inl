@@ -58,10 +58,10 @@ bool CIntervalTreeTraits::IsNormal(const interval_type& interval)
 
 template<typename Traits>
 inline
-CIntervalTreeIterator<Traits>::CIntervalTreeIterator(coordinate_type search_x = 0,
-                                                     coordinate_type searchLimit = 0,
-                                                     TMapValueP currentMapValue = 0,
-                                                     TTreeNodeP nextNode = 0)
+CIntervalTreeIterator<Traits>::CIntervalTreeIterator(coordinate_type search_x,
+                                                     coordinate_type searchLimit,
+                                                     TMapValueP currentMapValue,
+                                                     TTreeNodeP nextNode)
     : m_SearchX(search_x),
       m_SearchLimit(searchLimit),
       m_CurrentMapValue(currentMapValue),
@@ -241,129 +241,6 @@ bool SIntervalTreeNodeIntervals<Traits>::Delete(const interval_type& interval,
     return Empty();
 }
 
-/*
-inline
-void CIntervalTree::Add(interval_type interval, const mapped_type& value)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    pair<TIntervalMapI, bool> ins =
-        m_ByX.insert(TIntervalMap::value_type(interval, value));
-    if ( !ins.second ) {
-        THROW1_TRACE(runtime_error,
-                     "CIntervalTree::Add: interval already exists");
-    }
-    else {
-        // insert new value
-        DoInsert(interval, value);
-    }
-}
-
-inline
-void CIntervalTree::Replace(interval_type interval, const mapped_type& value)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    pair<TIntervalMapI, bool> ins =
-        m_ByX.insert(TIntervalMap::value_type(interval, value));
-    if ( !ins.second ) {
-        // replace old value
-        ins.first->second = value;
-        DoReplace(&m_Root, interval, value);
-    }
-    else {
-        THROW1_TRACE(runtime_error,
-                     "CIntervalTree::Replace: interval doesn't exist");
-    }
-}
-
-inline
-bool CIntervalTree::Add(interval_type interval,
-                        const mapped_type& value,
-                        const nothrow_t&)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    pair<TIntervalMapI, bool> ins =
-        m_ByX.insert(TIntervalMap::value_type(interval, value));
-    if ( !ins.second ) {
-        return false;
-    }
-    else {
-        // insert new value
-        DoInsert(interval, value);
-        return true;
-    }
-}
-
-inline
-bool CIntervalTree::Replace(interval_type interval,
-                            const mapped_type& value,
-                            const nothrow_t&)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    pair<TIntervalMapI, bool> ins =
-        m_ByX.insert(TIntervalMap::value_type(interval, value));
-    if ( !ins.second ) {
-        // replace old value
-        ins.first->second = value;
-        DoReplace(&m_Root, interval, value);
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-inline
-bool CIntervalTree::Set(interval_type interval, const mapped_type& value)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    pair<TIntervalMapI, bool> ins =
-        m_ByX.insert(TIntervalMap::value_type(interval, value));
-    if ( !ins.second ) {
-        // replace old value
-        ins.first->second = value;
-        DoReplace(&m_Root, interval, value);
-        return false;
-    }
-    else {
-        // insert new value
-        DoInsert(interval, value);
-        return true;
-    }
-}
-
-inline
-void CIntervalTree::Delete(interval_type interval)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    if ( !m_ByX.erase(interval) ) {
-        THROW1_TRACE(runtime_error,
-                     "CIntervalTree::Delete: interval doesn't exist");
-    }
-    else {
-        DoDelete(&m_Root, interval);
-    }
-}
-
-inline
-bool CIntervalTree::Delete(interval_type interval,
-                           const nothrow_t&)
-{
-    _ASSERT(!traits::IsLimit(interval));
-    if ( !m_ByX.erase(interval) ) {
-        return false;
-    }
-    else {
-        DoDelete(&m_Root, interval);
-        return true;
-    }
-}
-
-inline
-bool CIntervalTree::Reset(interval_type interval)
-{
-    return Delete(interval, nothrow);
-}
-*/
 
 inline
 bool CIntervalTree::Empty(void) const
@@ -495,6 +372,9 @@ void CIntervalTree::Assign(iterator& dst, const iterator& src)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/02/07 17:37:40  vasilche
+* Removed parameters' default values from method definition.
+*
 * Revision 1.5  2003/02/07 16:54:01  vasilche
 * Pass all structures with size > sizeof int by reference.
 * Move cvs log to the end of files.
