@@ -51,7 +51,8 @@ public:
 
 // Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 // Glx as Glu; throws CBadResidueException on anything else.
-double GetProteinWeight(CBioseq_Handle& handle, const CSeq_loc* location = 0)
+double GetProteinWeight(const CBioseq_Handle& handle,
+                        const CSeq_loc* location = 0)
     THROWS((CBadResidueException));
 
 
@@ -61,7 +62,7 @@ typedef map<CConstRef<CSeq_loc>, double> TWeights;
 // - Annotated cleavage products (mature peptides)
 // - What's left after removing the first signal peptide found
 // - The entire sequence (skipping a leading methionine if present)
-void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights);
+void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights);
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -69,6 +70,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/12/24 16:11:54  ucko
+* Make handle const per recent changes to CFeat_CI.
+*
 * Revision 1.5  2002/06/07 18:19:59  ucko
 * Reworked to take advantage of CBioseq_Handle::GetSequenceView.
 *

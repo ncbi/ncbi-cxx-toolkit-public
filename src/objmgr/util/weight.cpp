@@ -68,7 +68,7 @@ static const int kNumSe[] =
 static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 
 
-double GetProteinWeight(CBioseq_Handle& handle, const CSeq_loc* location)
+double GetProteinWeight(const CBioseq_Handle& handle, const CSeq_loc* location)
     THROWS((CBadResidueException))
 {
     CSeqVector v = (location
@@ -100,7 +100,7 @@ double GetProteinWeight(CBioseq_Handle& handle, const CSeq_loc* location)
 }
 
 
-void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
+void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 {
     CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
     if (core->GetInst().GetMol() != CSeq_inst::eMol_aa) {
@@ -189,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.17  2002/12/24 16:12:00  ucko
+* Make handle const per recent changes to CFeat_CI.
+*
 * Revision 1.16  2002/12/06 15:36:05  grichenk
 * Added overlap type for annot-iterators
 *
