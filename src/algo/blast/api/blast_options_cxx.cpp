@@ -248,7 +248,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const TSeqLocVector & v)
     x_Throwx(string("err:") + errbuf);
 }
 
-void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedContainerType & v)
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedContainerType & v)
 {
     char errbuf[1024];
     
@@ -258,7 +258,7 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedContainerType & v
     x_Throwx(string("err:") + errbuf);
 }
 
-void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const SeedExtensionMethod & v)
+void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const ESeedExtensionMethod & v)
 {
     char errbuf[1024];
     
@@ -602,6 +602,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/08/30 16:53:43  dondosha
+* Added E in front of enum names ESeedExtensionMethod and ESeedContainerType
+*
 * Revision 1.51  2004/08/26 20:54:10  dondosha
 * Removed printouts; throw exception when setting of unavailable option is attempted for remote handle
 *

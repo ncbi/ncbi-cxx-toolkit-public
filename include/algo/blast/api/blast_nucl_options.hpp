@@ -121,27 +121,27 @@ public:
     /// @param ws WindowSize [in]
     void SetWindowSize(int ws) { m_Opts->SetWindowSize(ws); }
 
-    /// Returns SeedContainerType
-    SeedContainerType GetSeedContainerType() const {
+    /// Returns ESeedContainerType
+    ESeedContainerType GetSeedContainerType() const {
         return m_Opts->GetSeedContainerType();
     }
-    /// Sets SeedContainerType
-    /// @param sct SeedContainerType [in]
-    void SetSeedContainerType(SeedContainerType sct) {
+    /// Sets ESeedContainerType
+    /// @param sct ESeedContainerType [in]
+    void SetSeedContainerType(ESeedContainerType sct) {
         m_Opts->SetSeedContainerType(sct);
     }
 
-    /// Returns SeedExtensionMethod
-    SeedExtensionMethod GetSeedExtensionMethod() const {
+    /// Returns ESeedExtensionMethod
+    ESeedExtensionMethod GetSeedExtensionMethod() const {
         return m_Opts->GetSeedExtensionMethod();
     }
-    /// Sets SeedExtensionMethod
+    /// Sets ESeedExtensionMethod
     /// Note that the scan step (or stride) is changed as a side effect of
     /// calling this method. This is because the scan step is best
     /// calculated for the eRightAndLeft seed extension method, and a fixed
     /// value is used for the eRight seed extension method.
-    /// @param sem SeedExtensionMethod [in]
-    void SetSeedExtensionMethod(SeedExtensionMethod sem) {
+    /// @param sem ESeedExtensionMethod [in]
+    void SetSeedExtensionMethod(ESeedExtensionMethod sem) {
         if (m_Opts->GetLocality() == CBlastOptions::eLocal) {
             switch (sem) {
             case eRight: case eUpdateDiag:
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/08/30 16:53:23  dondosha
+ * Added E in front of enum names ESeedExtensionMethod and ESeedContainerType
+ *
  * Revision 1.18  2004/08/26 20:55:16  dondosha
  * Allow options dependency logic for local options, but not for remote
  *

@@ -200,31 +200,31 @@ typedef struct QuerySetUpOptions {
 /** specifies the data structures used for bookkeeping
  *  during computation of ungapped extensions 
  */
-typedef enum SeedContainerType {
+typedef enum ESeedContainerType {
     eDiagArray,         /**< use diagonal structures with array of last hits
                            and levels. */
     eWordStacks,          /**< use stacks (megablast only) */
     eMaxContainerType   /**< maximum value for this enumeration */
-} SeedContainerType;
+} ESeedContainerType;
 
 /** when performing mini-extensions on hits from the
  *  blastn or megablast lookup table, this determines
  *  the direction in which the mini-extension is attempted 
  */
-typedef enum SeedExtensionMethod {
+typedef enum ESeedExtensionMethod {
     eRight,             /**< extend only to the right */
     eRightAndLeft,      /**< extend to left and right (used with AG method) */
     eUpdateDiag,        /**< update match info on corresponding diagonal record*/
     eMaxSeedExtensionMethod   /**< maximum value for this enumeration */
-} SeedExtensionMethod;
+} ESeedExtensionMethod;
 
 /** Options needed for initial word finding and processing */
 typedef struct BlastInitialWordOptions {
    Int4 window_size; /**< Maximal allowed distance between 2 hits in case 2 
                         hits are required to trigger the extension */
-   SeedContainerType container_type; /**< How to store offset pairs for initial
+   ESeedContainerType container_type; /**< How to store offset pairs for initial
                                         seeds? */
-   SeedExtensionMethod extension_method; /**< How should exact matches be 
+   ESeedExtensionMethod extension_method; /**< How should exact matches be 
                                             extended? */
    Boolean variable_wordsize; /**< Should the partial bytes be examined for 
                              determining whether exact match is long enough? */

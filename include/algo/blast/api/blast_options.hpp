@@ -183,11 +183,11 @@ public:
     int GetWindowSize() const;
     void SetWindowSize(int w);
 
-    SeedContainerType GetSeedContainerType() const;
-    void SetSeedContainerType(SeedContainerType type);
+    ESeedContainerType GetSeedContainerType() const;
+    void SetSeedContainerType(ESeedContainerType type);
 
-    SeedExtensionMethod GetSeedExtensionMethod() const;
-    void SetSeedExtensionMethod(SeedExtensionMethod method);
+    ESeedExtensionMethod GetSeedExtensionMethod() const;
+    void SetSeedExtensionMethod(ESeedExtensionMethod method);
 
     bool GetVariableWordSize() const;
     void SetVariableWordSize(bool val = true);
@@ -466,8 +466,8 @@ public:
     void SetValue(EBlastOptIdx opt, const double              & x);
     void SetValue(EBlastOptIdx opt, const char                * x);
     void SetValue(EBlastOptIdx opt, const TSeqLocVector       & x);
-    void SetValue(EBlastOptIdx opt, const SeedContainerType   & x);
-    void SetValue(EBlastOptIdx opt, const SeedExtensionMethod & x);
+    void SetValue(EBlastOptIdx opt, const ESeedContainerType   & x);
+    void SetValue(EBlastOptIdx opt, const ESeedExtensionMethod & x);
     void SetValue(EBlastOptIdx opt, const bool                & x);
     void SetValue(EBlastOptIdx opt, const Int8                & x);
     
@@ -877,14 +877,14 @@ public:
         }
     }
 
-    SeedContainerType GetSeedContainerType() const
+    ESeedContainerType GetSeedContainerType() const
     {
         if (! m_Local) {
             x_Throwx("Error: GetSeedContainerType() not available.");
         }
         return m_Local->GetSeedContainerType();
     }
-    void SetSeedContainerType(SeedContainerType type)
+    void SetSeedContainerType(ESeedContainerType type)
     {
         if (m_Local) {
             m_Local->SetSeedContainerType(type);
@@ -894,14 +894,14 @@ public:
         }
     }
 
-    SeedExtensionMethod GetSeedExtensionMethod() const
+    ESeedExtensionMethod GetSeedExtensionMethod() const
     {
         if (! m_Local) {
             x_Throwx("Error: GetSeedExtensionMethod() not available.");
         }
         return m_Local->GetSeedExtensionMethod();
     }
-    void SetSeedExtensionMethod(SeedExtensionMethod method)
+    void SetSeedExtensionMethod(ESeedExtensionMethod method)
     {
         if (m_Local) {
             m_Local->SetSeedExtensionMethod(method);
@@ -1938,27 +1938,27 @@ CBlastOptionsLocal::SetWindowSize(int s)
     m_InitWordOpts->window_size = s;
 }
 
-inline SeedContainerType
+inline ESeedContainerType
 CBlastOptionsLocal::GetSeedContainerType() const
 {
     return m_InitWordOpts->container_type;
 }
 
 inline void 
-CBlastOptionsLocal::SetSeedContainerType(SeedContainerType type)
+CBlastOptionsLocal::SetSeedContainerType(ESeedContainerType type)
 {
     ASSERT(type < eMaxContainerType);
     m_InitWordOpts->container_type = type;
 }
 
-inline SeedExtensionMethod
+inline ESeedExtensionMethod
 CBlastOptionsLocal::GetSeedExtensionMethod() const
 {
     return m_InitWordOpts->extension_method;
 }
 
 inline void 
-CBlastOptionsLocal::SetSeedExtensionMethod(SeedExtensionMethod method)
+CBlastOptionsLocal::SetSeedExtensionMethod(ESeedExtensionMethod method)
 {
     ASSERT(method < eMaxSeedExtensionMethod);
     m_InitWordOpts->extension_method = method;
@@ -2432,6 +2432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.73  2004/08/30 16:53:23  dondosha
+* Added E in front of enum names ESeedExtensionMethod and ESeedContainerType
+*
 * Revision 1.72  2004/08/26 20:54:56  dondosha
 * Removed a debugging printout in x_Throwx method
 *
