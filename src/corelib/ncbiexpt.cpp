@@ -258,6 +258,7 @@ void CException::x_ReportToDebugger(void) const
     os << endl << '\0';
     OutputDebugString(((string)CNcbiOstrstreamToString(os)).c_str());
 #endif
+    DoThrowTraceAbort();
 }
 
 
@@ -267,7 +268,6 @@ bool CException::EnableBackgroundReporting(bool enable)
     sm_BkgrEnabled = enable;
     return prev;
 }
-
 
 const CException* CException::x_Clone(void) const
 {
@@ -573,6 +573,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/02/20 17:55:19  gouriano
+ * added the possibility to abort a program on an attempt to throw CException
+ *
  * Revision 1.29  2003/01/13 20:42:50  gouriano
  * corrected the problem with ostrstream::str(): replaced such calls with
  * CNcbiOstrstreamToString(os)
