@@ -260,6 +260,10 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
 /** Deallocate memory for the word extension structure */
 BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp);
 
+void 
+BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
+                 Int4 q_off, Int4 s_off, Int4 len, Int4 score);
+
 #ifdef __cplusplus
 }
 #endif
