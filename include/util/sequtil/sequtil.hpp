@@ -41,6 +41,7 @@ class CSeqUtil
 {
 public:
     enum ECoding {
+        e_not_set = 0,
 
         // NA coding
         e_Iupacna,
@@ -81,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/11/06 16:10:09  shomrat
+* added e_not_set as a coding option
+*
 * Revision 1.1  2003/10/08 13:28:41  shomrat
 * Initial version.
 *
