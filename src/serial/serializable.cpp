@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/01/16 22:10:44  ucko
+* Tweak to use a proxy class to avoid clashing with new support for
+* feeding CSerialObject to streams.
+*
 * Revision 1.4  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -92,27 +96,28 @@ void CSerializable::WriteAsString(ostream& /*out*/)
 }
 
 
-ostream& operator << (ostream& out, const CSerializable& src) 
+ostream& operator << (ostream& out, const CSerializable::CProxy& src) 
 {
     switch ( src.m_OutputType ) {
     case CSerializable::eAsFasta:
-        src.WriteAsFasta(out);
+        src.m_Obj.WriteAsFasta(out);
         break;
     case CSerializable::eAsAsnText:
-        src.WriteAsAsnText(out);
+        src.m_Obj.WriteAsAsnText(out);
         break;
     case CSerializable::eAsAsnBinary:
-        src.WriteAsAsnBinary(out);
+        src.m_Obj.WriteAsAsnBinary(out);
         break;
     case CSerializable::eAsXML:
-        src.WriteAsXML(out);
+        src.m_Obj.WriteAsXML(out);
         break;
     case CSerializable::eAsString:
-        src.WriteAsString(out);
+        src.m_Obj.WriteAsString(out);
         break;
     default:
         NCBI_THROW(CSerialException,eFail,
-                   "operator<<(ostream&,CSerializable&): wrong output type");
+                   "operator<<(ostream&,CSerializable::CProxy&):"
+                   " wrong output type");
     }
 
     return out;

@@ -46,7 +46,7 @@ BEGIN_NCBI_SCOPE
 
 class NCBI_XSERIAL_EXPORT CSerializable
 {
-protected:
+public:
     enum EOutputType {
         eAsFasta, 
         eAsAsnText, 
@@ -55,34 +55,42 @@ protected:
         eAsString
     };
 
+    class CProxy {
+    public:
+        CProxy(const CSerializable& obj, EOutputType output_type)
+            : m_Obj(obj), m_OutputType(output_type) { }
+
+    private:
+        const CSerializable& m_Obj;
+        EOutputType          m_OutputType;
+        friend CNcbiOstream& operator << (CNcbiOstream& out,
+                                          const CProxy& src);
+    };
+
+    CProxy Dump(EOutputType output_type) const;
+
+protected:
     virtual void WriteAsFasta     (CNcbiOstream& out) const;
     virtual void WriteAsAsnText   (CNcbiOstream& out) const;
     virtual void WriteAsAsnBinary (CNcbiOstream& out) const;
     virtual void WriteAsXML       (CNcbiOstream& out) const;
     virtual void WriteAsString    (CNcbiOstream& out) const;
 
-    const CSerializable& Dump(EOutputType output_type) const;
-
-private:
-    mutable EOutputType m_OutputType;
-
-    NCBI_XSERIAL_EXPORT
-    friend CNcbiOstream& operator << (CNcbiOstream& out, const CSerializable& src);
+    friend CNcbiOstream& operator << (CNcbiOstream& out, const CProxy& src);
 };
 
 
-
 inline
-const CSerializable& CSerializable::Dump(EOutputType output_type)
+CSerializable::CProxy CSerializable::Dump(EOutputType output_type)
     const
 {
-    m_OutputType = output_type;
-    return *this;
+    return CProxy(*this, output_type);
 }
 
 
 NCBI_XSERIAL_EXPORT
-CNcbiOstream& operator << (CNcbiOstream& out, const CSerializable& src);
+CNcbiOstream& operator << (CNcbiOstream& out,
+                           const CSerializable::CProxy& src);
 
 
 END_NCBI_SCOPE
@@ -95,6 +103,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/01/16 22:10:40  ucko
+* Tweak to use a proxy class to avoid clashing with new support for
+* feeding CSerialObject to streams.
+*
 * Revision 1.6  2003/04/15 16:18:53  siyan
 * Added doxygen support
 *
