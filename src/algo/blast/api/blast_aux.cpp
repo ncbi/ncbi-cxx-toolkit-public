@@ -31,6 +31,7 @@
 */
 
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/Seq_point.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <algo/blast/api/blast_aux.hpp>
 
@@ -250,7 +251,7 @@ CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
     if (slp.IsNull())
         return NULL;
 
-    _ASSERT(slp.IsInt() || slp.IsPacked_int());
+    _ASSERT(slp.IsInt() || slp.IsPacked_int() || slp.IsMix());
 
     BlastSeqLoc* bsl = NULL,* curr = NULL,* tail = NULL;
     BlastMask* mask = NULL;
@@ -262,6 +263,23 @@ CSeqLoc2BlastMask(const CSeq_loc &slp, int index)
         ITERATE(list< CRef<CSeq_interval> >, itr, 
                 slp.GetPacked_int().Get()) {
             curr = BlastSeqLocNew((*itr)->GetFrom(), (*itr)->GetTo());
+            if (!bsl) {
+                bsl = tail = curr;
+            } else {
+                tail->next = curr;
+                tail = tail->next;
+            }
+        }
+    } else if (slp.IsMix()) {
+        ITERATE(CSeq_loc_mix::Tdata, itr, slp.GetMix().Get()) {
+            if ((*itr)->IsInt()) {
+                curr = BlastSeqLocNew((*itr)->GetInt().GetFrom(), 
+                                      (*itr)->GetInt().GetTo());
+            } else if ((*itr)->IsPnt()) {
+                curr = BlastSeqLocNew((*itr)->GetPnt().GetPoint(), 
+                                      (*itr)->GetPnt().GetPoint());
+            }
+
             if (!bsl) {
                 bsl = tail = curr;
             } else {
