@@ -227,6 +227,10 @@ typedef int TSOCK_Handle;
  */
 typedef struct LSOCK_tag {
     TSOCK_Handle    sock;       /* OS-specific socket handle                 */
+
+    unsigned int    n_accept;   /* total number of accepted clients          */
+    unsigned int    id;         /* the internal ID (see also "s_ID_Counter") */
+    ESwitch         log;
 } LSOCK_struct;
 
 
@@ -270,6 +274,8 @@ typedef struct SOCK_tag {
     ESwitch         log_data;
     size_t          n_read;
     size_t          n_written;
+    size_t          n_in;
+    size_t          n_out;
 
     ESockType       type;       /* socket type: client- or server-side, dgram*/
 } SOCK_struct;
@@ -475,8 +481,8 @@ static void s_DoLogData
 (SOCK sock, EIO_Event event, const void* data, size_t size,
  const struct sockaddr_in* sin)
 {
-    char message[256];
-    char host[64];
+    char head[128];
+    char tail[128];
 
     if ( !CORE_GetLOG() )
         return;
@@ -485,53 +491,69 @@ static void s_DoLogData
     case eIO_Open:
         if (sock->type == eSOCK_Datagram) {
             if (sin  &&  sin->sin_port)
-                sprintf(message, " (bound to port %hu)", ntohs(sin->sin_port));
+                sprintf(head, " (bound to port :%hu)", ntohs(sin->sin_port));
             else
-                *message = 0;
-            CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- open datagram socket%s",
-                                   (unsigned int) sock->id,
-                                   (unsigned int) size,
-                                   message));
+                *head = 0;
+            CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- datagram socket%s opened",
+                                   sock->id, (unsigned int) size, head));
             break;
         } else {
-            if (SOCK_ntoa(sin->sin_addr.s_addr, host, sizeof(host)) != 0)
-                strcpy(host, "<unknown>");
+            if (SOCK_ntoa(sin->sin_addr.s_addr, head, sizeof(head)) != 0)
+                strcpy(head, "<unknown>");
             CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- %s %s:%hu",
-                                   (unsigned int) sock->id,
-                                   (unsigned int) size,
+                                   sock->id, (unsigned int) size,
                                    sock->type == eSOCK_ClientSide
                                    ? "connecting to" : "accepted from",
-                                   host, ntohs(sin->sin_port)));
+                                   head, ntohs(sin->sin_port)));
         }
         break;
     case eIO_Read:
     case eIO_Write:
         if (sock->type == eSOCK_Datagram) {
             assert(sin);
-            if (SOCK_ntoa(sin->sin_addr.s_addr, host, sizeof(host)) != 0)
-                strcpy(host, "<unknown>");
-            sprintf(host + strlen(host), ":%hu", ntohs(sin->sin_port));
+            if (SOCK_ntoa(sin->sin_addr.s_addr, tail, sizeof(tail)) != 0)
+                strcpy(tail, "<unknown>");
+            sprintf(tail + strlen(tail), ":%hu, msg# %u", ntohs(sin->sin_port),
+                    event == eIO_Read ? sock->n_in : sock->n_out);
         } else {
             assert(!sin);
-            *host = 0;
+            *tail = 0;
         }
-        sprintf(message, "SOCK#%u[%u] -- %s at offset %lu%s%s",
-                (unsigned int) sock->id, (unsigned int) sock->sock,
+        sprintf(head, "SOCK#%u[%u] -- %s at offset %lu%s%s",
+                sock->id, (unsigned int) sock->sock,
                 event == eIO_Read ? "read" : "written",
                 (unsigned long) (event == eIO_Read ?
                                  sock->n_read : sock->n_written),
-                sin ? (event == eIO_Read ? " from " : " to ") : "", host);
-        CORE_DATA(data, size, message);
+                sin ? (event == eIO_Read ? " from " : " to ") : "", tail);
+        CORE_DATA(data, size, head);
         break;
     case eIO_Close:
-        CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- closing "
-                               "(%lu byte%s out, %lu byte%s in)",
-                               (unsigned int) sock->id,
-                               (unsigned int) sock->sock,
-                               (unsigned long) sock->n_written,
-                               sock->n_written == 1 ? "" : "s",
-                               (unsigned long) sock->n_read,
-                               sock->n_read == 1 ? "" : "s"));
+        {{
+            int n = sprintf(head, "%lu byte%s",
+                            (unsigned long) sock->n_written,
+                            sock->n_written == 1 ? "" : "s");
+            if (sock->type == eSOCK_Datagram  ||
+                sock->n_out != sock->n_written) {
+                sprintf(head + n, "/%lu %s%s",
+                        (unsigned long) sock->n_out,
+                        sock->type == eSOCK_Datagram ? "msg" : "total byte",
+                        sock->n_out == 1 ? "" : "s");
+            }
+        }}
+        {{
+            int n = sprintf(tail, "%lu byte%s",
+                            (unsigned long) sock->n_read,
+                            sock->n_read == 1 ? "" : "s");
+            if (sock->type == eSOCK_Datagram  ||
+                sock->n_in != sock->n_read) {
+                sprintf(tail + n, "/%lu %s%s",
+                        (unsigned long) sock->n_out,
+                        sock->type == eSOCK_Datagram ? "msg" : "total byte",
+                        sock->n_out == 1 ? "" : "s");
+            }
+        }}
+        CORE_LOGF(eLOG_Trace, ("SOCK#%u[%u] -- closing (out: %s, in: %s)",
+                               sock->id, (unsigned int)sock->sock, head,tail));
         break;
     default:
         CORE_LOG(eLOG_Error, "[SOCK::s_DoLogData]  Invalid event");
@@ -830,13 +852,21 @@ static EIO_Status s_Select(size_t                n,
  *  LISTENING SOCKET
  */
 
-
 extern EIO_Status LSOCK_Create(unsigned short port,
                                unsigned short backlog,
                                LSOCK*         lsock)
 {
-    TSOCK_Handle       x_lsock;
+    return LSOCK_CreateEx(port, backlog, lsock, eDefault);
+}
+
+
+extern EIO_Status LSOCK_CreateEx(unsigned short port,
+                                 unsigned short backlog,
+                                 LSOCK*         lsock,
+                                 ESwitch        log)
+{
     struct sockaddr_in addr;
+    TSOCK_Handle       x_lsock;
 
     /* initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
@@ -883,7 +913,7 @@ extern EIO_Status LSOCK_Create(unsigned short port,
 #ifdef HAVE_SIN_LEN
     addr.sin_len         = sizeof(addr);
 #endif /*HAVE_SIN_LEN*/
-    if (bind(x_lsock, (struct sockaddr*)&addr, sizeof(struct sockaddr)) != 0) {
+    if (bind(x_lsock, (struct sockaddr*) &addr, sizeof(addr)) != 0) {
         int x_errno = SOCK_ERRNO;
         CORE_LOG_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
                           "[LSOCK::Create]  Failed bind()");
@@ -914,6 +944,15 @@ extern EIO_Status LSOCK_Create(unsigned short port,
     }
     /* success... */
     (*lsock)->sock = x_lsock;
+    (*lsock)->id   = ++s_ID_Counter;
+    (*lsock)->log  = log;
+
+    /* statistics & logging */
+    if (log == eOn  ||  (log == eDefault  &&  s_LogData == eOn)) {
+        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u] -- listening on port :%hu",
+                               (*lsock)->id, (unsigned int) x_lsock, port));
+    }
+
     return eIO_Success;
 }
 
@@ -934,18 +973,22 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     }
 
     {{ /* wait for the connection request to come (up to timeout) */
-        EIO_Status status;
+        EIO_Status     status;
+        SSOCK_Poll     poll;
+        SOCK_struct    sock;
         struct timeval tv;
-        SSOCK_Poll poll[2];
-        poll[0].sock   = (SOCK)lsock;/*HACK:we'd actually use 1st field only */
-        poll[0].event  = eIO_Read;   /* ... due to READ-only operation       */
-        poll[0].revent = eIO_Open;   /* (must have this cleared for check)   */
-        poll[1].sock   = 0;          /*HACK:[1] to avoid use of i_on_s in [0]*/
-        if ((status = s_Select(2, poll, s_to2tv(timeout, &tv))) != eIO_Success)
+
+        memset(&sock, 0, sizeof(sock));
+        sock.sock   = lsock->sock;
+        poll.sock   = &sock;
+        poll.event  = eIO_Read;   /* ... due to READ-only operation       */
+        poll.revent = eIO_Open;   /* (must have this cleared for check)   */
+        status = s_Select(1, &poll, s_to2tv(timeout, &tv));
+        if (status != eIO_Success)
             return status;
-        if (poll[0].revent == eIO_Close)
+        if (poll.revent == eIO_Close)
             return eIO_Unknown;
-        assert(poll[0].event == eIO_Read  &&  poll[0].revent == eIO_Read);
+        assert(poll.event == eIO_Read  &&  poll.revent == eIO_Read);
     }}
 
     {{ /* accept next connection */
@@ -990,12 +1033,13 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->is_eof   = 0/*false*/;
     (*sock)->r_status = eIO_Success;
     (*sock)->w_status = eIO_Success;
-    (*sock)->id       = ++s_ID_Counter * 1000;
-    (*sock)->log_data = eDefault;
+    (*sock)->id       = (lsock->id * 1000 + ++s_ID_Counter) * 1000;
+    (*sock)->log_data = lsock->log;
     (*sock)->type     = eSOCK_ServerSide;
 
     /* statistics & logging */
-    if (s_LogData == eOn)
+    lsock->n_accept++;
+    if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_LogData == eOn))
         s_DoLogData(*sock, eIO_Open, 0, x_sock, &addr);
 
     return eIO_Success;
@@ -1022,6 +1066,13 @@ extern EIO_Status LSOCK_Close(LSOCK lsock)
                               "[LSOCK::Close]  Failed close()");
             return eIO_Unknown;
         }
+    }
+
+    /* statistics & logging */
+    if (lsock->log == eOn  ||  (lsock->log == eDefault  &&  s_LogData == eOn)){
+        CORE_LOGF(eLOG_Trace, ("LSOCK#%u[%u] -- closing (%u accept%s total)",
+                               lsock->id, (unsigned int) lsock->sock,
+                               lsock->n_accept, lsock->n_accept == 1? "":"s"));
     }
 
     /* success:  cleanup & return */
@@ -1132,8 +1183,8 @@ static EIO_Status s_Connect(SOCK            sock,
             int               x_errno = 0;
             EIO_Status        status;
             SSOCK_Poll        poll;
+            SOCK_struct       sock;
             struct timeval    tv;
-            SOCK_struct       s;
 #ifdef NCBI_OS_UNIX
 #  ifdef HAVE_SOCKLEN_T
             typedef socklen_t SOCK_socklen_t;
@@ -1143,12 +1194,9 @@ static EIO_Status s_Connect(SOCK            sock,
             SOCK_socklen_t    x_len = (SOCK_socklen_t) sizeof(x_errno);
 #endif /*NCBI_OS_UNIX*/
 
-            memset(&s, 0, sizeof(s)); /* make it temporary and fill partially*/
-            s.type      = eSOCK_ClientSide;
-            s.sock      = x_sock;
-            s.r_on_w    = eOff;       /* to prevent upread inquiry           */
-            s.i_on_sig  = eOff;       /* uninterruptible                     */
-            poll.sock   = &s;
+            memset(&sock, 0, sizeof(sock));
+            sock.sock   = x_sock;
+            poll.sock   = &sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
             status = s_Select(1, &poll, s_to2tv(timeout, &tv));
@@ -1175,13 +1223,16 @@ static EIO_Status s_Connect(SOCK            sock,
 
     /* success */
     /* NOTE:  it does not change the timeouts and the data buffer content */
-    sock->sock     = x_sock;
-    sock->host     = x_host;
-    sock->port     = x_port;
-    sock->is_eof   = 0/*false*/;
-    sock->r_status = eIO_Success;
-    sock->w_status = eIO_Success;
-
+    sock->sock      = x_sock;
+    sock->host      = x_host;
+    sock->port      = x_port;
+    sock->is_eof    = 0/*false*/;
+    sock->r_status  = eIO_Success;
+    sock->w_status  = eIO_Success;
+    sock->n_in     += sock->n_read;
+    sock->n_read    = 0;
+    sock->n_out    += sock->n_written;
+    sock->n_written = 0;
     return eIO_Success;
 }
 
@@ -1437,6 +1488,7 @@ static EIO_Status s_Read(SOCK        sock,
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
             EIO_Status status;
             SSOCK_Poll poll;
+
             poll.sock   = sock;
             poll.event  = eIO_Read;
             poll.revent = eIO_Open;
@@ -1510,6 +1562,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                          && s_ReadOnWrite == eOn)));
                 /* try upread as mush as possible data into internal buffer */
                 s_Recv(polls[i].sock, 0, 0/*infinite*/, 1/*peek*/);
+
                 /* then poll about write-only w/o upread */
                 save_r_on_w = polls[i].sock->r_on_w;
                 polls[i].sock->r_on_w = eOff;
@@ -1518,7 +1571,6 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                 poll.revent = eIO_Open;
                 status = s_Select(1, &poll, timeout);
                 polls[i].sock->r_on_w = save_r_on_w;
-
                 if (status == eIO_Success  &&  poll.revent == eIO_Write) {
                     polls[i].revent = eIO_Write/*poll.revent*/;
                     break; /*can write now!*/
@@ -1593,11 +1645,12 @@ static EIO_Status s_Send(SOCK        sock,
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->w_status = eIO_Unknown;
 
-        /* blocked -- retry if unblocked before the timeout is expired */
+        /* blocked -- retry if unblocked before the timeout expires */
         /* (use stall protection if specified) */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
             EIO_Status status;
             SSOCK_Poll poll;
+
             poll.sock   = sock;
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
@@ -1729,9 +1782,8 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
     }
 
     /* close the socket if necessary */
-    if (sock->sock != SOCK_INVALID) {
+    if (sock->sock != SOCK_INVALID)
         s_Close(sock);
-    }
 
     /* special treatment for server-side socket */
     if (sock->type == eSOCK_ServerSide) {
@@ -1806,15 +1858,8 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 
 extern EIO_Status SOCK_Close(SOCK sock)
 {
-    EIO_Status status;
+    EIO_Status status = sock->sock==SOCK_INVALID ? eIO_Success : s_Close(sock);
 
-    if (sock->sock == SOCK_INVALID) {
-        CORE_LOG(eLOG_Error, "[SOCK::Close]  Invalid socket");
-        assert(0);
-        return eIO_Unknown;
-    }
-
-    status = s_Close(sock);
     assert(sock->sock == SOCK_INVALID);
     BUF_Destroy(sock->r_buf);
     BUF_Destroy(sock->w_buf);
@@ -1893,9 +1938,10 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
     assert(sock->type != eSOCK_Datagram);
     /* do wait */
     {{
-        EIO_Status status;
+        EIO_Status     status;
+        SSOCK_Poll     poll;
         struct timeval tv;
-        SSOCK_Poll poll;
+
         poll.sock   = sock;
         poll.event  = event;
         poll.revent = eIO_Open;
@@ -2359,6 +2405,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
                 s_DoLogData(sock, eIO_Write, x_msg, (size_t) x_written, &addr);
             }
             sock->n_written += x_written;
+            sock->n_out++;
             if ((size_t) x_written != x_msgsize) {
                 status = sock->w_status = eIO_Closed;
                 CORE_LOG(eLOG_Error,"[DSOCK::SendMsg]  Partial datagram sent");
@@ -2372,7 +2419,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
         status = sock->w_status = eIO_Unknown;
         x_errno = SOCK_ERRNO;
 
-        /* blocked -- retry if unblocked before the timeout is expired */
+        /* blocked -- retry if unblocked before the timeout expires */
         /* (use stall protection if specified) */
         if (x_errno == SOCK_EWOULDBLOCK  ||  x_errno == SOCK_EAGAIN) {
             SSOCK_Poll poll;
@@ -2380,8 +2427,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
             poll.event  = eIO_Write;
             poll.revent = eIO_Open;
             /* stall protection:  try pull incoming data from the socket */
-            status = s_Select(1, &poll, sock->w_timeout);
-            if (status != eIO_Success)
+            if ((status = s_Select(1, &poll, sock->w_timeout)) != eIO_Success)
                 break;
             if (poll.revent == eIO_Close) {
                 status = eIO_Unknown;
@@ -2485,6 +2531,7 @@ extern EIO_Status DSOCK_RecvMsg(SOCK            sock,
                 s_DoLogData(sock, eIO_Read, x_msg, (size_t) x_read, &addr);
             }
             sock->n_read += x_read;
+            sock->n_in++;
             break;
         }
 
@@ -2546,12 +2593,10 @@ extern EIO_Status DSOCK_WaitMsg(SOCK sock, const STimeout* timeout)
     poll.sock   = sock;
     poll.event  = eIO_Read;
     poll.revent = eIO_Open;
-
     if ((status = s_Select(1, &poll, s_to2tv(timeout, &tv))) != eIO_Success  ||
         poll.revent == eIO_Read) {
         return status;
     }
-
     assert(poll.revent == eIO_Close);
     return eIO_Closed;
 }
@@ -2902,6 +2947,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.79  2003/01/17 01:23:31  lavr
+ * Better tracing and message counting
+ *
  * Revision 6.78  2003/01/16 19:45:18  lavr
  * Minor patching and cleaning
  *
