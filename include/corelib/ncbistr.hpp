@@ -583,7 +583,7 @@ public:
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                        const string& pattern, ECase use_case = eCase);
 
-    /// Case-sensitive compare of two strings -- char* version.
+    /// Compare two strings -- char* version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -601,7 +601,7 @@ public:
     static int Compare(const char* s1, const char* s2,
                        ECase use_case = eCase);
 
-    /// Case-sensitive compare of two strings -- string&, char* version.
+    /// Compare two strings -- string&, char* version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -619,7 +619,7 @@ public:
     static int Compare(const string& s1, const char* s2,
                        ECase use_case = eCase);
 
-    /// Case-sensitive compare of two strings -- char*, string& version.
+    /// Compare two strings -- char*, string& version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -637,7 +637,7 @@ public:
     static int Compare(const char* s1, const string& s2,
                        ECase use_case = eCase);
 
-    /// Case-sensitive compare of two strings -- string& version.
+    /// Compare two strings -- string& version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -653,6 +653,248 @@ public:
     /// @sa
     ///   CompareNocase(), Compare() versions with similar argument types.
     static int Compare(const string& s1, const string& s2,
+                       ECase use_case = eCase);
+
+    /// Case-sensitive equality of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (char*) to be compared with substring.
+    /// @return
+    ///   - true, if str[pos:pos+n) equals pattern.   
+    ///   - false, otherwise
+    /// @sa
+    ///   Other forms of overloaded EqualCase() with differences in argument
+    ///   types: char* vs. string&
+    static bool EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                           const char* pattern);
+
+    /// Case-sensitive equality of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (string&) to be compared with substring.
+    /// @return
+    ///   - true, if str[pos:pos+n) equals pattern.   
+    ///   - false, otherwise
+    /// @sa
+    ///   Other forms of overloaded EqualCase() with differences in argument
+    ///   types: char* vs. string&
+    static bool EqualCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                           const string& pattern);
+
+    /// Case-sensitive equality of two strings -- char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - true, if s1 equals s2
+    ///   - false, otherwise
+    /// @sa
+    ///   EqualCase(), Equal() versions with same argument types.
+    static bool EqualCase(const char* s1, const char* s2);
+
+    /// Case-sensitive equality of two strings -- string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - true, if s1 equals s2
+    ///   - false, otherwise
+    /// @sa
+    ///   EqualCase(), Equal() versions with same argument types.
+    static bool EqualCase(const string& s1, const string& s2);
+
+    /// Case-insensitive equality of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (char*) to be compared with substring.
+    /// @return
+    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).   
+    ///   - false, otherwise.
+    /// @sa
+    ///   Other forms of overloaded EqualNocase() with differences in
+    ///   argument types: char* vs. string&
+    static bool EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                             const char* pattern);
+
+    /// Case-insensitive equality of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (string&) to be compared with substring.
+    /// @return
+    ///   - true, if str[pos:pos+n) equals pattern (case-insensitive compare).   
+    ///   - false, otherwise.
+    /// @sa
+    ///   Other forms of overloaded EqualNocase() with differences in
+    ///   argument types: char* vs. string&
+    static bool EqualNocase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                             const string& pattern);
+
+    /// Case-insensitive equality of two strings -- char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - true, if s1 equals s2 (case-insensitive compare).      
+    ///   - false, otherwise.
+    /// @sa
+    ///   EqualCase(), Equal() versions with same argument types.
+    static bool EqualNocase(const char* s1, const char* s2);
+
+    /// Case-insensitive equality of two strings -- string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @return
+    ///   - true, if s1 equals s2 (case-insensitive compare).      
+    ///   - false, otherwise.
+    /// @sa
+    ///   EqualCase(), Equal() versions with same argument types.
+    static bool EqualNocase(const string& s1, const string& s2);
+
+    /// Test for equality of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (char*) to be compared with substring.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(eCase -- default), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - true, if str[pos:pos+n) equals pattern.   
+    ///   - false, otherwise.
+    /// @sa
+    ///   Other forms of overloaded Equal() with differences in argument
+    ///   types: char* vs. string&
+    static bool Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const char* pattern, ECase use_case = eCase);
+
+    /// Test for equality of a substring with a pattern.
+    ///
+    /// @param str
+    ///   String containing the substring to be compared.
+    /// @param pos
+    ///   Start position of substring to be compared.
+    /// @param n
+    ///   Number of characters in substring to be compared.
+    /// @param pattern
+    ///   String pattern (string&) to be compared with substring.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if str[pos:pos+n) == pattern.   
+    ///   - Negative integer, if str[pos:pos+n) <  pattern.   
+    ///   - Positive integer, if str[pos:pos+n) >  pattern.   
+    /// @sa
+    ///   Other forms of overloaded Equal() with differences in argument
+    ///   types: char* vs. string&
+    static bool Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const string& pattern, ECase use_case = eCase);
+
+    /// Test for equality of two strings -- char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - 0, if s1 == s2.   
+    ///   - Negative integer, if s1 < s2.   
+    ///   - Positive integer, if s1 > s2.   
+    /// @sa
+    ///   EqualNocase(), Equal() versions with similar argument types.
+    static bool Equal(const char* s1, const char* s2,
+                       ECase use_case = eCase);
+
+    /// Test for equality of two strings -- string&, char* version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - true, if s1 equals s2.   
+    ///   - false, otherwise.
+    /// @sa
+    ///   EqualNocase(), Equal() versions with similar argument types.
+    static bool Equal(const string& s1, const char* s2,
+                       ECase use_case = eCase);
+
+    /// Test for equality of two strings -- char*, string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - true, if s1 equals s2.   
+    ///   - false, otherwise.
+    /// @sa
+    ///   EqualNocase(), Equal() versions with similar argument types.
+    static bool Equal(const char* s1, const string& s2,
+                       ECase use_case = eCase);
+
+    /// Test for equality of two strings -- string& version.
+    ///
+    /// @param s1
+    ///   String to be compared -- operand 1.
+    /// @param s2
+    ///   String to be compared -- operand 2.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   case-insensitive compare (eNocase).
+    /// @return
+    ///   - true, if s1 equals s2.   
+    ///   - false, otherwise.
+    /// @sa
+    ///   EqualNocase(), Equal() versions with similar argument types.
+    static bool Equal(const string& s1, const string& s2,
                        ECase use_case = eCase);
 
     // NOTE.  On some platforms, "strn[case]cmp()" can work faster than their
@@ -1742,6 +1984,70 @@ int NStr::CompareNocase(const string& s1, const string& s2)
 }
 
 inline
+bool NStr::Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const char* pattern, ECase use_case)
+{
+    return (use_case == eCase ?
+        EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern)) == 0;
+}
+
+inline
+bool NStr::Equal(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const string& pattern, ECase use_case)
+{
+    return use_case == eCase ?
+        EqualCase(str, pos, n, pattern): EqualNocase(str, pos, n, pattern);
+}
+
+inline
+bool NStr::EqualCase(const char* s1, const char* s2)
+{
+    return NStr::strcmp(s1, s2) == 0;
+}
+
+inline
+bool NStr::EqualNocase(const char* s1, const char* s2)
+{
+    return NStr::strcasecmp(s1, s2) == 0;
+}
+
+inline
+bool NStr::Equal(const char* s1, const char* s2, ECase use_case)
+{
+    return (use_case == eCase ? EqualCase(s1, s2): EqualNocase(s1, s2)) == 0;
+}
+
+inline
+bool NStr::Equal(const string& s1, const char* s2, ECase use_case)
+{
+    return Equal(s1.c_str(), s2, use_case) == 0;
+}
+
+inline
+bool NStr::Equal(const char* s1, const string& s2, ECase use_case)
+{
+    return Equal(s1, s2.c_str(), use_case) == 0;
+}
+
+inline
+bool NStr::Equal(const string& s1, const string& s2, ECase use_case)
+{
+    return Equal(s1.c_str(), s2.c_str(), use_case) == 0;
+}
+
+inline
+bool NStr::EqualCase(const string& s1, const string& s2)
+{
+    return EqualCase(s1.c_str(), s2.c_str()) == 0;
+}
+
+inline
+bool NStr::EqualNocase(const string& s1, const string& s2)
+{
+    return EqualNocase(s1.c_str(), s2.c_str()) == 0;
+}
+
+inline
 bool NStr::StartsWith(const string& str, const string& start, ECase use_case)
 {
     return str.size() >= start.size()  &&
@@ -1885,6 +2191,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.50  2004/03/04 20:45:21  shomrat
+ * Added equality checks
+ *
  * Revision 1.49  2004/03/04 13:38:39  kuznets
  * + set of ToString conversion functions taking outout string as a parameter,
  * not a return value (should give a performance advantage in some cases)
