@@ -75,14 +75,14 @@
 #  define NDEBUG
 #endif
 #include <assert.h>
-/* The following 2 headers are actually only required for Codewarrior
- * on Mac to prototype printf() and abort() respectively :-/
- */
-#include <stdio.h>
-#include <stdlib.h>
 #if defined(NDEBUG)
 #  define verify(expr)  (void)(expr)
 #else
+/* The following 2 headers are actually only required for Codewarrior
+ * on Mac to prototype printf() and abort() respectively :-/
+ */
+#  include <stdio.h>
+#  include <stdlib.h>
 #  define verify(expr)  assert(expr)
 #endif
 
@@ -471,6 +471,9 @@ extern NCBI_XCONNECT_EXPORT void REG_Set
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.22  2003/03/06 19:42:47  lavr
+ * Isolate special inclusion of <stdio.h>, <stdlib.h> in DEBUG branch only
+ *
  * Revision 6.21  2003/03/06 01:42:14  lavr
  * Include <stdio.h> and <stdlib.h> required by <assert.h> under Codewarrior
  *
