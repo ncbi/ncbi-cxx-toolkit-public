@@ -209,6 +209,7 @@ struct PhyNodeId
     {}
 
     unsigned GetId() const { return id; }
+    void SetId(unsigned x_id) { id = x_id; }
 
     unsigned  id;
     int       distance;
@@ -219,6 +220,7 @@ struct PhyNodeId
 typedef CTreeNode<PhyNodeId> CPhyTreeNode;
 
 
+/// Sample converter from tree node to dynamic tree node
 class IdNodeConvert
 {
 public:
@@ -238,6 +240,17 @@ public:
 private:
     CBioTreeDynamic*   m_DynamicTree;
     string             m_TmpStr;
+};
+
+struct IdNodeConvertToTree
+{
+    void operator()(CPhyTreeNode&  dst_node,
+                    const CBioTreeDynamic::TBioTreeNode& src)
+    {
+        const string& dist = src.GetFeature("distance");
+        dst_node.GetValue().distance = atoi(dist.c_str());
+        dst_node.GetValue().label = src.GetFeature("label");
+    }
 };
 
 
@@ -277,6 +290,12 @@ void TestTreeConvert()
 
     TreePrint(cout, *(dtr.GetTreeNode()), s_Node2String);
 	cout << endl << endl;
+
+    delete n0;
+
+    IdNodeConvertToTree func2;
+
+    DynamicConvert2Tree(dtr, func2, n0);
 
     delete n0;
 }
@@ -387,6 +406,9 @@ int main(int argc, char** argv)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/11/17 17:54:15  kuznets
+ * New test
+ *
  * Revision 1.4  2004/11/10 19:26:50  kuznets
  * New test
  *
