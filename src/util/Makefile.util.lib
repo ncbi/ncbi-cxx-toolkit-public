@@ -2,6 +2,6 @@
 
 SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
       stream_utils thread_pool ddump_viewer strsearch logrotate \
-      format_guess
+      format_guess regexp
 
 LIB = xutil
