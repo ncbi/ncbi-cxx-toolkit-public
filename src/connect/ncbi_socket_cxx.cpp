@@ -406,6 +406,18 @@ EIO_Status CDatagramSocket::Connect(const string&  host,
 }
 
 
+EIO_Status CDatagramSocket::Connect(unsigned int host,
+                                    unsigned short port)
+{
+    char addr[32];
+    if (host  &&  SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+        return eIO_Unknown;
+    return m_Socket
+        ? DSOCK_Connect(m_Socket, host ? addr : 0, port)
+        : eIO_Closed;
+}
+
+
 EIO_Status CDatagramSocket::Send(const void*     data,
                                  size_t          datalen,
                                  const string&   host,
@@ -413,6 +425,20 @@ EIO_Status CDatagramSocket::Send(const void*     data,
 {
     return m_Socket
         ? DSOCK_SendMsg(m_Socket, host.c_str(), port, data, datalen)
+        : eIO_Closed;
+}
+
+
+EIO_Status CDatagramSocket::Send(const void*    data,
+                                 size_t         datalen,
+                                 unsigned int   host,
+                                 unsigned short port)
+{
+    char addr[32];
+    if (host  &&  SOCK_ntoa(host, addr, sizeof(addr)) != 0)
+        return eIO_Unknown;
+    return m_Socket
+        ? DSOCK_SendMsg(m_Socket, host ? addr : 0, port, data, datalen)
         : eIO_Closed;
 }
 
@@ -649,6 +675,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2005/03/02 16:12:11  lavr
+ * Extend CDatagramSocket::Connect and Send with addtl signatures
+ *
  * Revision 6.29  2004/11/09 21:26:38  lavr
  * CSocket::ReadLine(): Use string::append() instead of operator+()
  *

@@ -231,16 +231,22 @@ public:
 
     EIO_Status Bind(unsigned short port);
 
-    // NOTE:  unlike system's connect() this method only specifies the default
-    // destination, and does not restrict the source of the incoming messages.
+    // "port" is in host byte order
     EIO_Status Connect(const string& host, unsigned short port);
+    // "host" is accepted in network byte order; "port" is in host one
+    EIO_Status Connect(unsigned int host, unsigned short port);
 
     EIO_Status Wait(const STimeout* timeout = kInfiniteTimeout);
 
     EIO_Status Send(const void*     data    = 0,
                     size_t          datalen = 0,
                     const string&   host    = string(),
-                    unsigned short  port    = 0);
+                    unsigned short  port    = 0);  // host byte order
+
+    EIO_Status Send(const void*     data    = 0,
+                    size_t          datalen = 0,
+                    unsigned int    host    = 0,   // network byte order
+                    unsigned short  port    = 0);  // host byte order
 
     EIO_Status Recv(void*           buf         = 0,
                     size_t          buflen      = 0,
@@ -639,6 +645,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2005/03/02 16:11:46  lavr
+ * Extend CDatagramSocket::Connect and Send with addtl signatures
+ *
  * Revision 6.40  2004/11/09 21:13:00  lavr
  * +ReadLine
  *
