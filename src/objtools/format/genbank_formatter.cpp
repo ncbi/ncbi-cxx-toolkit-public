@@ -57,6 +57,7 @@
 #include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_item.hpp>
+#include <objtools/format/items/origin_item.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -171,7 +172,7 @@ void CGenbankFormatter::FormatDefline
  IFlatTextOStream& text_os)
 {
     list<string> l;
-    Wrap(l, "DEFLINE", defline.GetDefline());
+    Wrap(l, "DEFINITION", defline.GetDefline());
     text_os.AddParagraph(l);
 }
 
@@ -584,9 +585,6 @@ void CGenbankFormatter::FormatSequence
         seq_line << '\n';
     }
 
-    if ( seq.IsFirst() ) {
-        l.push_back("ORIGIN      ");
-    }
     NStr::Split(CNcbiOstrstreamToString(seq_line), "\n", l);
     text_os.AddParagraph(l);
 }
@@ -675,6 +673,7 @@ void CGenbankFormatter::FormatGenome
     // !!!
 }
 
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // CONTIG
@@ -683,8 +682,31 @@ void CGenbankFormatter::FormatContig
 (const CContigItem& contig,
  IFlatTextOStream& text_os)
 {
-    // !!!
+    list<string> l;
+    string assembly = CFlatSeqLoc(contig.GetLoc(), contig.GetContext(), 
+        CFlatSeqLoc::eType_assembly).GetString();
+    Wrap(l, "CONTIG", assembly);
+    text_os.AddParagraph(l);
 }
+
+
+///////////////////////////////////////////////////////////////////////////
+//
+// ORIGIN
+
+void CGenbankFormatter::FormatOrigin
+(const COriginItem& origin,
+ IFlatTextOStream& text_os)
+{
+    list<string> l;
+    if ( origin.GetOrigin().empty() ) {
+        l.push_back("ORIGIN      ");
+    } else {
+        Wrap(l, "ORIGIN", origin.GetOrigin());
+    }
+    text_os.AddParagraph(l);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -694,6 +716,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/02/19 18:13:12  shomrat
+* Added formatting of Contig and Origin
+*
 * Revision 1.5  2004/01/14 16:16:39  shomrat
 * removed const; using ctrl_items
 *
