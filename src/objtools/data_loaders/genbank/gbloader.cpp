@@ -609,6 +609,17 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
   return global_mutex_was_released;
 }
 
+
+class CTimerGuard
+{
+    CTimer *t;
+    bool    calibrating;
+public:
+    CTimerGuard(CTimer& x) : t(&x) { calibrating=t->NeedCalibration(); if(calibrating) t->Start(); }
+    ~CTimerGuard() { if(calibrating) t->Stop(); }
+};
+
+
 bool
 CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
 {
@@ -631,14 +642,6 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   int try_cnt=2;
   while(try_cnt-->0)
     {
-      class CTimerGuard
-      {
-        CTimer *t;
-        bool    calibrating;
-      public:
-        CTimerGuard(CTimer& x) : t(&x) { calibrating=t->NeedCalibration(); if(calibrating) t->Start(); }
-        ~CTimerGuard() { if(calibrating) t->Stop(); }
-      };
       CTimerGuard tg(m_Timer);
       try
         {
@@ -817,6 +820,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2002/07/24 20:30:27  ucko
+* Move CTimerGuard out to file scope to fix a MIPSpro compiler core dump.
+*
 * Revision 1.39  2002/07/22 22:53:24  kimelman
 * exception handling fixed: 2level mutexing moved to Guard class + added
 * handling of confidential data.
