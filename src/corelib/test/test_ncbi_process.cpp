@@ -53,7 +53,6 @@ static void Test_Process(void)
 
     string app = CNcbiApplication::Instance()->GetArguments().GetProgramName();
     TPid pid;
-
     {{
         LOG_POST("CMD = " << app << " -sleep 3");
         pid = CExec::SpawnL(CExec::eNoWait, app.c_str(), "-sleep", "3", 0);
@@ -62,8 +61,6 @@ static void Test_Process(void)
         assert(process.IsAlive());
         assert(process.Wait() == 88);
         assert(!process.IsAlive());
-        assert(process.Wait(2000) == -1);
-        assert(process.Kill());
     }}
     {{
         LOG_POST("CMD = " << app << " -sleep 10");
@@ -71,7 +68,7 @@ static void Test_Process(void)
         LOG_POST("PID = " << pid);
         CProcess process(pid, CProcess::eHandle);
         assert(process.IsAlive());
-        assert(process.Wait(2000) == -1);
+        assert( process.Wait(2000) == -1);
         assert(process.Kill());
         assert(!process.IsAlive());
         int exitcode = process.Wait();
@@ -89,11 +86,13 @@ static void Test_Process(void)
 
 static void Test_PIDGuardChild(int ppid, string lockfile)
 {
-    CNcbiOstrstream oss;
-    oss << CNcbiApplication::Instance()->GetArguments().GetProgramName()
-        << " -parent " << ppid << " -lockfile " << lockfile << '\0';
-    assert( !CExec::System(oss.str()) );
-    oss.freeze(false);
+	string s_app =
+        CNcbiApplication::Instance()->GetArguments().GetProgramName();
+	string s_pid = NStr::IntToString(ppid);
+    int ret_code = CExec::SpawnL(CExec::eWait, s_app.c_str(),
+                                 "-parent", s_pid.c_str() ,
+                                 "-lockfile", lockfile.c_str(), 0); 
+	assert( !ret_code );
 }
 
 static void Test_PIDGuard(int ppid, string lockfile)
@@ -103,6 +102,7 @@ static void Test_PIDGuard(int ppid, string lockfile)
         // want independent tests to step on each other....
         lockfile = CFile::GetTmpName();
     }
+    CFile lf(lockfile);
     TPid my_pid = CProcess::GetCurrentPid();
     assert(my_pid > 0);
     LOG_POST("\nTest_PIDGuard starting:\nmy_pid = " << my_pid
@@ -111,21 +111,34 @@ static void Test_PIDGuard(int ppid, string lockfile)
     // Parent
     if (ppid == 0) {
         CPIDGuard guard(lockfile);
-        try {
-            LOG_POST("Expect an exception now.");
+        {
             CPIDGuard guard2(lockfile);
-            ERR_POST("Should have been locked (by myself)");
-            _TROUBLE;
-        } catch (CPIDGuardException& e) {
-            LOG_POST(e.what());
-            assert(e.GetErrCode() == CPIDGuardException::eStillRunning);
-            assert(e.GetPID() == my_pid);
         }
+        assert(lf.Exists());
         Test_PIDGuardChild(my_pid, lockfile);
+        assert(lf.Exists());
         guard.Release();
+        assert(!lf.Exists());
         Test_PIDGuardChild(-1, lockfile);
+        assert(lf.Exists());
+#if defined(NCBI_OS_MSWIN)
+        // Additional check on stuck child process.
+        //
+        // On some Windows machines OS report that child process is still
+        // running even if we already have its exit code.
+        CNcbiIfstream in(lockfile.c_str());
+        if (in.good()) {
+            int child_pid = 0;
+            in >> child_pid;
+            if ( child_pid > 0 ) {
+				CProcess child(child_pid, CProcess::ePid);
+				child.Wait();
+            }
+        }
+        in.close();
+#endif
         Test_PIDGuardChild(-2, lockfile);
-        CFile(lockfile).Remove();
+        assert(!lf.Exists());
     }
     // Child run with parent lock open
     else if (ppid > 0) {
@@ -237,6 +250,11 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/18 17:05:31  ivanov
+ * CPIDGuard tests:
+ *     Use CExec::SpawnL() instead System() to run child process.
+ *     Added some new asserts.
+ *
  * Revision 1.2  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
