@@ -500,7 +500,7 @@ GetSequence(const CSeq_loc& sl, Uint1 encoding, CScope* scope,
         NCBI_THROW(CBlastException, eBadParameter, "Invalid encoding");
     }
 
-    return make_pair(buf, buflen);
+    return make_pair((AutoPtr<Uint1,CDeleter<Uint1> >)(buf), (int)buflen);
 }
 
 #if 0
@@ -692,6 +692,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2003/09/09 22:15:02  dondosha
+* Added cast in return statement in GetSequence method, fixing compiler error
+*
 * Revision 1.23  2003/09/09 15:57:23  camacho
 * Fix indentation
 *
