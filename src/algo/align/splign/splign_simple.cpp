@@ -88,7 +88,8 @@ public:
                        string(g_msg_SequenceNotFound) + " for " + id);
         }
 
-        if (finish == kMax_UInt) { //flag to return everything
+        if (finish == kMax_UInt  ||  finish >= sv->size()) {
+            //flag to return everything
             finish = sv->size() - 1;
         }
 
@@ -213,6 +214,10 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.13  2005/01/07 19:28:05  dicuccio
+* Bug fix: don't try to retrieve sequence from CSeqvector beyond CSeqVector's
+* length.
+*
 * Revision 1.12  2005/01/03 22:47:35  kapustin
 * Implement seq-ids with CSeq_id instead of generic strings
 *
