@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.8 2000/12/19 22:19:48 sherry Exp $
+-- $Id: docsum.asn,v 1.9 2000/12/19 22:32:11 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.9  2000/12/19 22:32:11  sherry
+-- added orientation/hit quality to contig hits, added source database to genbank hits
+--
 -- Revision 1.8  2000/12/19 22:19:48  sherry
 -- added subsnp frequency data and refsnp function via contig annotation
 --
@@ -298,6 +301,12 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 		range (1),			-- asn-from < asn-to  write as "asn-from..asn-to"		
 		exact (2),			-- asn-from = asn-to write as "asn-from"
 		between (3) },			-- asn-to = asn-from+1 write as "asn-from^asn-to"		
+	hit-quality ENUMERATED {
+		high (1),			-- if SNPContigLoc.proc_status = 0
+		loose (2) } OPTIONAL,		-- if SNPContigLoc.proc_status = 1
+	orient ENUMERATED {
+		forward (1),			-- if SNPContigLoc.orientation = 0
+		reverse (2) } OPTIONAL,		-- if SNPContigLoc.orientation = 1
 	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
 	physmap-int INTEGER OPTIONAL,		-- chromosome position as integer for sorting			SNPContigLoc.phys_pos_from
 	fxn-set SET OF NSE-FxnSet		-- functional relationship of SNP (and possibly alleles) to genes at contig location
@@ -337,6 +346,14 @@ NSE-SeqLoc ::= SEQUENCE {
 		range 	(1),			-- asn-from < asn-to: write as "asn-from..asn-to"
 		exact	(2),			-- asn-from = asn-to: write as "asn-from"
 		between	(3) 			-- asn-from = asn-to - 1: write as "asn-from^asn-to"
+	} OPTIONAL,
+	source-db ENUMERATED {
+		ref-mrna (1),			-- NCBI RefSeq mRNA
+		gb-mrna (4),			-- Genbank mrna
+		gb-small (6),			-- Genbank genomic < 30kb in length
+		hgs-finish (10),		-- genome sequence, finished
+		hgs-draft (11),			-- genome sequence, draft
+		bes (12) 			-- BAC-end sequence
 	} OPTIONAL
 }
 
