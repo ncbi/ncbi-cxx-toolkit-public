@@ -212,9 +212,9 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("align", "alignments", 
         "How many matching sequence alignments to show?",
         CArgDescriptions::eInteger, "250");
-    arg_desc->AddOptionalKey("out", "outfile", 
+    arg_desc->AddDefaultKey("out", "outfile", 
         "File name for writing output",
-        CArgDescriptions::eOutputFile);
+        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
     arg_desc->AddDefaultKey("format", "format", 
         "How to format the results?",
         CArgDescriptions::eInteger, "0");
