@@ -650,6 +650,7 @@
 
 #  define NCBI_ACCESS_EXPORT
 #  define NCBI_BIBLIO_EXPORT
+#  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
@@ -660,6 +661,7 @@
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
+#  define NCBI_ENTREZGENE_EXPORT
 #  define NCBI_FEATDEF_EXPORT
 #  define NCBI_GBSEQ_EXPORT
 #  define NCBI_GENERAL_EXPORT
@@ -711,6 +713,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.17  2003/04/09 16:12:05  ivanov
+ * Fix for the previous commit
+ *
  * Revision 1.16  2003/04/08 20:07:05  ivanov
  * Added export specifiers NCBI_BLAST_EXPORT and NCBI_ENTREZGENE_EXPORT
  *
