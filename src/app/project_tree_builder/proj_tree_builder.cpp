@@ -315,6 +315,11 @@ void SMakeProjectT::AnalyzeMakeIn
 
         info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second)); 
     }
+    p = makein_contents.m_Contents.find("DTD_PROJ");
+    if (p != makein_contents.m_Contents.end()) {
+
+        info->push_back(SMakeInInfo(SMakeInInfo::eAsn, p->second)); 
+    }
 
     p = makein_contents.m_Contents.find("MSVC_PROJ");
     if (p != makein_contents.m_Contents.end()) {
@@ -1163,7 +1168,7 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 }
             }
         }
-        string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ","ASN_PROJ",""};
+        string libproj[] = {"LIB_PROJ","EXPENDABLE_LIB_PROJ","POTENTIAL_LIB_PROJ","ASN_PROJ","DTD_PROJ",""};
         for (j=0; !libproj[j].empty(); ++j) {
             k = makefile.m_Contents.find(libproj[j]);
             if (k != makefile.m_Contents.end()) {
@@ -1417,6 +1422,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/11/17 19:53:24  gouriano
+ * Corrected to take into account DTD_PROJ
+ *
  * Revision 1.17  2004/10/04 15:31:57  gouriano
  * Take into account LIB_OR_DLL Makefile parameter
  *

@@ -135,11 +135,12 @@ static bool s_IsProducedByDatatool(const string&    src_path_abs,
         return false;
     }
     string asn_name = asn_base + ".asn";
+    string dtd_name = asn_base + ".dtd";
 
     //try to find this name in datatool generated sources container
     ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
         const CDataToolGeneratedSrc& asn = *p;
-        if (asn.m_SourceFile == asn_name)
+        if ((asn.m_SourceFile == asn_name) || (asn.m_SourceFile == dtd_name))
             return true;
     }
     return false;
@@ -375,6 +376,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/17 19:52:14  gouriano
+ * Corrected to take into account DTD_PROJ
+ *
  * Revision 1.9  2004/10/21 14:48:06  gouriano
  * Sort project files alphabetically
  *
