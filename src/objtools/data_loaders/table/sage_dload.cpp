@@ -43,10 +43,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include <objmgr/scope.hpp>
+#include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/impl/data_source.hpp>
-#include <objmgr/impl/synonyms.hpp>
-#include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 
@@ -183,9 +181,15 @@ CSageDataLoader::CSageDataLoader(const string& loader_name,
 
 // Request from a datasource using handles and ranges instead of seq-loc
 // The TSEs loaded in this call will be added to the tse_set.
-void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                 EChoice choice)
+CDataLoader::TTSE_LockSet
+CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
+                            EChoice choice)
 {
+    TTSE_LockSet locks;
+    if ( choice < eExtFeatures ) {
+        // external annotations only
+        return locks;
+    }
     string acc_col = "col" + NStr::IntToString(m_ColIdx[eAccession]);
 
     //
@@ -193,7 +197,14 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
     //
     TEntries::iterator iter = m_Entries.find(idh);
     if (iter != m_Entries.end()) {
-        return;
+        CConstRef<CObject> blob_id(&*iter->second);
+        CTSE_LoadLock load_lock =
+            GetDataSource()->GetTSE_LoadLock(blob_id);
+        if ( !load_lock.IsLoaded() ) {
+            locks.insert(GetDataSource()->AddTSE(*iter->second));
+            load_lock.SetLoaded();
+        }
+        return locks;
     }
 
     //
@@ -201,7 +212,7 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
     //
     pair<TIdMap::iterator, TIdMap::iterator> id_iter = m_Ids.equal_range(idh);
     if (id_iter.first == id_iter.second) {
-        return;
+        return locks;
     }
 
     //
@@ -247,7 +258,7 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
         bool neg_strand = false;
         TSeqPos from = 0;
         TSeqPos len  = 0;
-        for (int i = 0;  i < data.size();  ++i) {
+        for (size_t i = 0;  i < data.size();  ++i) {
             switch (m_ColAssign[i]) {
             case eAccession:
                 // already handled as ID...
@@ -303,7 +314,12 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
         entry.Reset(new CSeq_entry());
         entry->SetSet().SetSeq_set();
         entry->SetSet().SetAnnot().push_back(annot);
-        GetDataSource()->AddTSE(*entry);
+
+        CConstRef<CObject> blob_id(&*entry);
+        CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+        _ASSERT(!load_lock.IsLoaded());
+        locks.insert(GetDataSource()->AddTSE(*entry));
+        load_lock.SetLoaded();
 
         _TRACE("CSageDataLoader(): loaded "
             << annot->GetData().GetFtable().size()
@@ -314,6 +330,7 @@ void CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
     // we have no information about this sequence, but we at
     // least don't need to repeat an expensive search
     m_Entries[idh] = entry;
+    return locks;
 }
 
 
@@ -386,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/08/04 14:56:35  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.9  2004/08/02 17:34:44  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.

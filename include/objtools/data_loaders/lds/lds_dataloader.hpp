@@ -83,8 +83,8 @@ public:
 
     virtual ~CLDS_DataLoader(void);
 
-    virtual void GetRecords(const CSeq_id_Handle& idh,
-                            EChoice choice);
+    virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
+                                    EChoice choice);
     
     virtual void DropTSE(const CTSE_Info& tse_info);
 
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/08/04 14:56:34  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.13  2004/08/02 17:34:43  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.

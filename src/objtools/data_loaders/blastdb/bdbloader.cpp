@@ -96,10 +96,11 @@ CBlastDbDataLoader::~CBlastDbDataLoader(void)
 
 // TODO Note that the ranges are ignored for right now
 // How to handle other choices?
-void
+CDataLoader::TTSE_LockSet
 CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh, 
         const EChoice choice)
 {
+    TTSE_LockSet locks;
     //LOG_POST("***CBlastDbDataLoader::GetRecords***");
     // only eBioseq and eBioseqCore are supported
     switch (choice) {
@@ -111,7 +112,7 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
         case eAll:
         default:
             LOG_POST("Invalid choice: " + NStr::IntToString(choice));
-            return;
+            return locks;
         case eBioseq:
         case eBioseqCore:
             break;
@@ -142,14 +143,14 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
         CConstRef<CSeq_id> seq_id = idh.GetSeqId();
         if ( !(sip = sic.ToC(*seq_id)) )
-            return;
+            return locks;
 
         if ( (oid = SeqId2OrdinalId(m_rdfp, sip)) < 0)
-            return;
+            return locks;
 
         // If we've already retrieved this particular ordinal id, ignore it
         if ( (found = m_cache.find(oid)) != m_cache.end())
-            return;
+            return locks;
 
         {{  // protect access to the blast database
             CFastMutexGuard mtx(*m_mutex);
@@ -179,12 +180,13 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
         ser->Select(CSeq_entry::e_Seq);
         ser->SetSeq(*bsr);
 
-        GetDataSource()->AddTSE(*ser);
+        locks.insert(GetDataSource()->AddTSE(*ser));
         m_cache[oid] = bsr;
 
         bsp = BioseqFree(bsp);
         sip = SeqIdFree(sip);
     }}
+    return locks;
 }
 
 void
@@ -278,6 +280,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.11  2004/08/04 14:56:35  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.10  2004/08/02 21:33:07  ucko
  * Preemptively include <util/rangemap.hpp> before anything can define
  * stat() as a macro.

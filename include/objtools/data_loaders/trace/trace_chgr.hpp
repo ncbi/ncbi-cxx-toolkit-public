@@ -57,7 +57,7 @@ public:
 
     ~CTraceChromatogramLoader();
 
-    void GetRecords(const CSeq_id_Handle& idh, EChoice choice);
+    TTSE_LockSet GetRecords(const CSeq_id_Handle& idh, EChoice choice);
 
 private:
     typedef CSimpleLoaderMaker<CTraceChromatogramLoader> TMaker;
@@ -116,6 +116,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/08/04 14:56:35  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.5  2004/08/02 17:34:43  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.

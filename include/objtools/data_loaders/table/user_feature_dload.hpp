@@ -107,8 +107,8 @@ public:
 
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
-    virtual void GetRecords(const objects::CSeq_id_Handle& handle,
-                            EChoice choice);
+    virtual TTSE_LockSet GetRecords(const objects::CSeq_id_Handle& handle,
+                                    EChoice choice);
     // Request an annot by CSeq_id_Handle
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id_Handle& idh);
 private:
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/04 14:56:34  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.6  2004/08/02 17:34:43  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.

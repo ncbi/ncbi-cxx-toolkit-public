@@ -38,6 +38,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 
@@ -77,12 +78,14 @@ CCddDataLoader::CCddDataLoader(const string& loader_name)
 /*---------------------------------------------------------------------------*/
 // PRE : ??
 // POST: ??
-void CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                EChoice choice)
+CDataLoader::TTSE_LockSet
+CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
+                           EChoice choice)
 {
+    TTSE_LockSet locks;
     CConstRef<CSeq_id> id = idh.GetSeqId();
     if ( !id  ||  !id->IsGeneral()  ||  id->GetGeneral().GetDb() != "CDD") {
-        return;
+        return locks;
     }
 
     CMutexGuard LOCK(m_Mutex);
@@ -91,7 +94,14 @@ void CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
     TCddEntries::iterator iter = m_Entries.find(cdd_id);
     if (iter != m_Entries.end()) {
         // found, already added
-        return;
+        CConstRef<CObject> blob_id(&*iter->second);
+        CTSE_LoadLock load_lock =
+            GetDataSource()->GetTSE_LoadLock(blob_id);
+        if ( !load_lock.IsLoaded() ) {
+            locks.insert(GetDataSource()->AddTSE(*iter->second));
+            load_lock.SetLoaded();
+        }
+        return locks;
     }
 
     // retrieve the seq-entry, if possible
@@ -118,7 +128,12 @@ void CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
     // save our entry in all relevant places
     m_Entries[cdd_id] = entry;
-    GetDataSource()->AddTSE(*entry);
+    CConstRef<CObject> blob_id(&*entry);
+    CTSE_LoadLock load_lock = GetDataSource()->GetTSE_LoadLock(blob_id);
+    _ASSERT(!load_lock.IsLoaded());
+    locks.insert(GetDataSource()->AddTSE(*entry));
+    load_lock.SetLoaded();
+    return locks;
 }
 
 
@@ -179,6 +194,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/04 14:56:35  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.7  2004/08/02 17:34:43  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.

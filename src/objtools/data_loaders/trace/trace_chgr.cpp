@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/data_source.hpp>
+#include <objmgr/impl/tse_loadlock.hpp>
 #include <objmgr/data_loader_factory.hpp>
 #include <objtools/data_loaders/trace/trace_chgr.hpp>
 #include <objects/id1/id1_client.hpp>
@@ -83,9 +84,11 @@ CTraceChromatogramLoader::~CTraceChromatogramLoader()
 }
 
 
-void CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
-                                          EChoice choice)
+CDataLoader::TTSE_LockSet
+CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
+                                     EChoice choice)
 {
+    TTSE_LockSet locks;
     // we only handle a particular subset of seq-ids
     // we look for IDs for ids of the form 'gnl|ti|###' or 'gnl|TRACE|###'
     const CSeq_id* id = idh.GetSeqId();
@@ -94,14 +97,21 @@ void CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
          (id->GetGeneral().GetDb() != "ti"  &&
           id->GetGeneral().GetDb() != "TRACE")  ||
           !id->GetGeneral().GetTag().IsId()) {
-        return;
+        return locks;
     }
 
     int ti = id->GetGeneral().GetTag().GetId();
     CMutexGuard LOCK(m_Mutex);
-    TTraceEntries::const_iterator iter = m_Entries.find(ti);
+    TTraceEntries::iterator iter = m_Entries.find(ti);
     if (iter != m_Entries.end()) {
-        return;
+        CConstRef<CObject> blob_id(&*iter->second);
+        CTSE_LoadLock load_lock =
+            GetDataSource()->GetTSE_LoadLock(blob_id);
+        if ( !load_lock.IsLoaded() ) {
+            locks.insert(GetDataSource()->AddTSE(*iter->second));
+            load_lock.SetLoaded();
+        }
+        return locks;
     }
 
     CID1server_maxcomplex maxplex;
@@ -117,8 +127,14 @@ void CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
     }
     m_Entries[ti] = entry;
     if (entry) {
-        GetDataSource()->AddTSE(*entry);
+        CConstRef<CObject> blob_id(&*entry);
+        CTSE_LoadLock load_lock =
+            GetDataSource()->GetTSE_LoadLock(blob_id);
+        _ASSERT(!load_lock.IsLoaded());
+        locks.insert(GetDataSource()->AddTSE(*entry));
+        load_lock.SetLoaded();
     }
+    return locks;
 }
 
 
@@ -191,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/08/04 14:56:35  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.6  2004/08/02 17:34:44  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.

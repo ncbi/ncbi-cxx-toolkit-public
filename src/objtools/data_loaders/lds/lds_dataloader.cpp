@@ -274,9 +274,11 @@ void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
 }
 
 
-void CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
-                                 EChoice choice)
+CDataLoader::TTSE_LockSet
+CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
+                            EChoice choice)
 {
+    TTSE_LockSet locks;
     CHandleRangeMap hrmap;
     hrmap.AddRange(idh, CRange<TSeqPos>::GetWhole(), eNa_strand_unknown);
     CLDS_FindSeqIdFunc search_func(m_LDS_db->GetTables(), hrmap);
@@ -303,13 +305,14 @@ void CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
             LDS_LoadTSE(db, m_LDS_db->GetObjTypeMap(), object_id);
 
         if (seq_entry) {
-            CRef<CTSE_Info> tse_info = 
-                data_source->AddTSE(*seq_entry,
-                                    false,
-                                    new CLDS_BlobId(object_id));
+            CConstRef<CObject> blob_id(new CLDS_BlobId(object_id));
+            CRef<CTSE_Info> tse_info(new CTSE_Info(blob_id));
+            tse_info->SetSeq_entry(*seq_entry);
+            locks.insert(data_source->AddTSE(tse_info));
             m_LoadedObjects.insert(object_id);
         }
     }
+    return locks;
 }
 
 void CLDS_DataLoader::DropTSE(const CTSE_Info& tse_info)
@@ -411,6 +414,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/08/04 14:56:35  vasilche
+ * Updated to changes in TSE locking scheme.
+ *
  * Revision 1.19  2004/08/02 17:34:44  grichenk
  * Added data_loader_factory.cpp.
  * Renamed xloader_cdd to ncbi_xloader_cdd.
