@@ -871,6 +871,9 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
           !HSPContainedInHSPCheck(hsp_array, hsp, index, k_is_ooframe)) {
 
          Int4 start_shift = 0;
+         Int4 adjusted_s_length;
+         Uint1* adjusted_subject;
+
          if (kTranslateSubject) {
             if (!k_is_ooframe && !partial_translation) {
                Int4 context = FrameToContext(hsp->subject.frame);
@@ -910,39 +913,51 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
             }
          }
          
-         /* Perform the gapped extension with traceback */
+         adjusted_s_length = subject_length;
+         adjusted_subject = subject;
+
+        /* Perform the gapped extension with traceback */
          if (hit_options->phi_align) {
             Int4 pat_length = GetPatternLengthFromBlastHSP(hsp);
             SavePatternLengthInGapAlignStruct(pat_length, gap_align);
             PHIGappedAlignmentWithTraceback(program_number, query, subject,
                gap_align, score_options, q_start, s_start, query_length, 
                subject_length);
-         } else if (kGreedyTraceback) {
-            BLAST_GreedyGappedAlignment(query, subject, 
-                 query_length, subject_length, gap_align, 
-                 score_options, q_start, s_start, FALSE, TRUE);
          } else {
-            BLAST_GappedAlignmentWithTraceback(program_number, query, subject, 
-               gap_align, score_options, q_start, s_start, 
-               query_length, subject_length);
+            if (!kTranslateSubject) {
+               AdjustSubjectRange(&s_start, &adjusted_s_length, q_start, 
+                                  query_length, &start_shift);
+               adjusted_subject = subject + start_shift;
+            }
+            if (kGreedyTraceback) {
+               BLAST_GreedyGappedAlignment(query, adjusted_subject, 
+                  query_length, adjusted_s_length, gap_align, 
+                  score_options, q_start, s_start, FALSE, TRUE);
+            } else {
+               BLAST_GappedAlignmentWithTraceback(program_number, query, 
+                  adjusted_subject, gap_align, score_options, q_start, s_start, 
+                  query_length, adjusted_s_length);
+            }
          }
 
          if (gap_align->score >= hit_params->cutoff_score) {
             Boolean keep=FALSE;
             FillHSPFromGapAlign(hsp, gap_align, query_length_orig, 
                                 subject_blk->length, program_number);
+
             if (kGreedyTraceback) {
                /* Low level greedy algorithm ignores ambiguities, so the score
                   needs to be reevaluated. */
-               ReevaluateHSPWithAmbiguities(hsp, query, subject, hit_options,
-                                            score_options, query_info, sbp);
+               ReevaluateHSPWithAmbiguities(hsp, query, adjusted_subject, 
+                  hit_options, score_options, query_info, sbp);
             }
             
-            keep = HSPSetScores(query_info, query, subject, hsp, program_number, 
-                sbp, psi_options, score_options, hit_options);
+            keep = HSPSetScores(query_info, query, adjusted_subject, hsp, 
+                                program_number, sbp, psi_options, 
+                                score_options, hit_options);
 
-            HSPAdjustSubjectOffset(hsp, subject_blk, k_is_ooframe, start_shift);
-
+            HSPAdjustSubjectOffset(hsp, subject_blk, k_is_ooframe, 
+                                   start_shift);
             if (keep)
                 keep = HSPCheckForDegenerateAlignments(hsp_array, hsp, index);
 
