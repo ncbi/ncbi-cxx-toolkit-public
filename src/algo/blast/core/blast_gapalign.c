@@ -512,10 +512,6 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
    Int2 status = 0;
    BlastGapAlignStruct* gap_align;
 
-   /* If pointer to output structure is NULL, just don't do anything */ 
-   if (!gap_align_ptr)
-      return 0;
-
    if (!gap_align_ptr || !sbp || !score_params || !ext_params)
       return -1;
 
