@@ -1168,6 +1168,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    *psi_options = options;
    options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
    options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
+   options->use_best_alignment = TRUE;
    
    return 0;
 }
@@ -1350,6 +1351,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.114  2004/06/09 14:11:34  camacho
+ * Set default for use_best_alignment
+ *
  * Revision 1.113  2004/06/08 15:12:51  dondosha
  * Removed skip_traceback option; added eSkipTbck type to traceback extension types enum
  *
