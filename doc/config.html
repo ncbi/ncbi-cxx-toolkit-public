@@ -366,7 +366,7 @@ environment variables for the <b><i>configure</i></b> script.
   </tr>
 
   <tr>
-	 <td><b>CPP</b></td>
+	 <td><b>CPPFLAGS</b></td>
 	 <td><i>-D_DEBUG</i>
     <a href="#ref_DebugVsRelease">or/and/nor</a>
     <i>-DNDEBUG</i></td>
@@ -394,19 +394,20 @@ environment variables for the <b><i>configure</i></b> script.
 </table>
 
 <p>
+<a href="new_proj.html#ref_MakeProjMk">Later</a>, these tools and flags will
+be engaged in the makefiles:
 <a name="ref_StdBuildRules"></a>
-E.g. these tools and flags are used in the following contexts:
 <ul>
   <li> To compile C sources:
-    <br> <b><i>$CC -c $CFLAGS $CPPFLAGS .....</i></b>
+    <br> <b><i>$(CC) -c $(CFLAGS) $(CPPFLAGS) .....</i></b>
   <li> To compile C++ sources:
-    <br> <b><i>$CXX -c $CXXFLAGS $CPPFLAGS .....</i></b>
+    <br> <b><i>$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) .....</i></b>
   <li> To compose a library:
-    <br> <b><i> $AR     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i> 
-	 <br> <b><i> $RANLIB </i></b> <i>libXXX.a</i>
+    <br> <b><i> $(AR)     </i></b> <i>libXXX.a xxx1.o xxx2.o xxx3.o .....</i> 
+	 <br> <b><i> $(RANLIB) </i></b> <i>libXXX.a</i>
 </i></b>
   <li> To link an executable:
-    <br> <b><i>$CXX $LDFLAGS ..... $LIBS</i></b>
+    <br> <b><i>$(LINK) $(LDFLAGS) ..... $(LIBS)</i></b>
 </ul>
 
 For more info on these and other variables see in the
