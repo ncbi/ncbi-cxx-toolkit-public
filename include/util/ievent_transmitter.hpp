@@ -39,11 +39,16 @@ BEGIN_NCBI_SCOPE
 
 class CEvent;
 
+
 class IEventTransmitter
 {
 protected:
     IEventTransmitter * m_pHost;
+
 public:
+    IEventTransmitter()
+        : m_pHost(NULL) { }
+
     virtual void SetHost(IEventTransmitter * host) = 0;
     virtual void FireEvent(const CEvent * evt) = 0;
     virtual ~IEventTransmitter(void){}
@@ -72,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/04/06 18:25:20  dicuccio
+ * Cosmetic changes.  Initialize internal pointer to NULL in ctor.
+ *
  * Revision 1.1  2004/03/26 20:41:37  tereshko
  * Initial Revision
  *
