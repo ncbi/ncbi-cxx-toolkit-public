@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/09/06 20:43:32  ucko
+ * Fix iterator types (caught by gcc 3.0.1).
+ *
  * Revision 6.1  2001/08/24 00:34:23  vakatov
  * Initial revision
  *
@@ -1683,7 +1686,7 @@ unsigned int CSeqportUtil::MapIupacnaToNcbi2na
     vector<char>::iterator i_out_end = i_out_begin + uLength/4;
 
     // Determine begin of in_seq_data
-    vector<char>::const_iterator i_in = in_seq_data.begin() + uBeginIdx;
+    string::const_iterator i_in = in_seq_data.begin() + uBeginIdx;
 
     if(bAmbig)
         {
@@ -1839,7 +1842,7 @@ unsigned int CSeqportUtil::MapIupacnaToNcbi4na
     vector<char>::iterator i_out_end = i_out_begin + uLength/2;
 
     // Determine begin of in_seq_data offset by 1
-    vector<char>::const_iterator i_in = in_seq_data.begin() + uBeginIdx;
+    string::const_iterator i_in = in_seq_data.begin() + uBeginIdx;
 
     // Pack uLength input characters into out_seq_data
     for(i_out = i_out_begin; i_out != i_out_end; ++i_out) {
@@ -2339,9 +2342,9 @@ bool CSeqportUtil::FastValidateNcbistdaa
     Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
 
     // Declare in iterator on in_seq and determine begin and end
-    string::const_iterator itor;
-    string::const_iterator b_itor = in_seq_data.begin() + uBeginIdx;
-    string::const_iterator e_itor = b_itor + uLength;
+    vector<char>::const_iterator itor;
+    vector<char>::const_iterator b_itor = in_seq_data.begin() + uBeginIdx;
+    vector<char>::const_iterator e_itor = b_itor + uLength;
 
     // Perform Fast Validation
     unsigned char ch = '\x00';
