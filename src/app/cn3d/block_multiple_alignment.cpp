@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/03/22 19:11:09  thiessen
+* don't allow drag of gaps
+*
 * Revision 1.9  2001/03/22 00:33:16  thiessen
 * initial threading working (PSSM only); free color storage in undo stack
 *
@@ -701,6 +704,8 @@ bool BlockMultipleAlignment::ShiftRow(int row, int fromAlignmentIndex, int toAli
     int fromSeqIndex, toSeqIndex;
     GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, NULL, &fromSeqIndex, NULL);
     GetSequenceAndIndexAt(toAlignmentIndex, row, justification, NULL, &toSeqIndex, NULL);
+    if (fromSeqIndex < 0 || toSeqIndex < 0) return false;
+
     int requestedShift = toSeqIndex - fromSeqIndex, actualShift = 0, width = 0;
 
     const Block::Range *prevRange = NULL, *nextRange = NULL,
