@@ -1393,7 +1393,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
     // Validate extension data -- wrap in CSeq_loc_mix for convenience
     CSeq_loc loc;
     if ( GetLocFromSeq(seq, &loc) ) {
-        m_Imp.ValidateSeqLoc(loc, seq, "Segmented Bioseq");
+        m_Imp.ValidateSeqLoc(loc, seq, "Segmented Bioseq", seq);
     }
 
     // Validate Length
@@ -2651,8 +2651,8 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
     }
 
     if ( validate_values ) {
-        for ( CGraph_CI grp(bsh, 0, 0); grp; ++grp ) {
-            ValidateGraphValues(grp->GetOriginalGraph(), seq);
+        for ( CGraph_CI g(bsh, 0, 0); g; ++g ) {
+            ValidateGraphValues(g->GetOriginalGraph(), seq);
         }
     }
 }
@@ -2677,7 +2677,7 @@ void CValidError_bioseq::ValidateByteGraphOnBioseq
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphByteLen,
             "SeqGraph (" + NStr::IntToString(numval) + ") " + 
             "and ByteStore (" + NStr::IntToString(bg.GetValues().size()) +
-            ") length mismatch", graph);
+            ") length mismatch", seq, graph);
     }
 }
 
@@ -2776,31 +2776,31 @@ void CValidError_bioseq::ValidateGraphValues
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphACGTScore, 
             NStr::IntToString(ACGTs_without_score) + 
             " ACGT bases have zero score value - first one at position " +
-            NStr::IntToString(first_ACGT), graph);
+            NStr::IntToString(first_ACGT), seq, graph);
     }
     if ( Ns_with_score > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphNScore,
             NStr::IntToString(Ns_with_score) +
             " N bases have positive score value - first one at position " + 
-            NStr::IntToString(first_N), graph);
+            NStr::IntToString(first_N), seq, graph);
     }
     if ( gaps_with_score > 0 ) {
         PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphGapScore,
             NStr::IntToString(gaps_with_score) + 
             " gap bases have positive score value", 
-            graph);
+            seq, graph);
     }
     if ( vals_below_min > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphBelow,
             NStr::IntToString(vals_below_min) + 
             " quality scores have values below the reported minimum", 
-            graph);
+            seq, graph);
     }
     if ( vals_above_max > 0 ) {
         PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphAbove,
             NStr::IntToString(vals_above_max) + 
             " quality scores have values above the reported maximum", 
-            graph);
+            seq, graph);
     }
 }
 
@@ -2986,6 +2986,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/04/07 14:58:16  shomrat
+* Added information to error postings
+*
 * Revision 1.29  2003/04/04 18:43:16  shomrat
 * Increased robustness in face of exceptions
 *

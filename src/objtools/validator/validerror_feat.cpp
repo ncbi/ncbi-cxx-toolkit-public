@@ -103,7 +103,8 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     CBioseq_Handle bsh;
     bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
     if ( bsh ) {
-        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh.GetBioseq(), "Location");
+        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh.GetBioseq(), "Location", 
+            feat);
     }
     
     if ( feat.IsSetProduct() ) {
@@ -230,7 +231,8 @@ void CValidError_feat::ValidateSeqFeatProduct
     CBioseq_Handle bsh;
     bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
     if ( bsh ) {
-        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");    
+        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product",
+            feat);
     }
     
     if ( IsOneBioseq(prod, m_Scope) ) {
@@ -2186,6 +2188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.25  2003/04/07 14:58:36  shomrat
+* Added information to error postings
+*
 * Revision 1.24  2003/04/04 18:42:22  shomrat
 * Increased robustness in face of exceptions and minor bug fixes
 *
