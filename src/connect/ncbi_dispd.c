@@ -258,7 +258,7 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
-    double total = 0.0, point = -1.0, access = 0.0, p = 0.0, status;
+    double total = 0.0, point = 0.0, access = 0.0, p = 0.0, status;
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
     SSERV_Info* info;
     size_t i;
@@ -276,12 +276,14 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         assert(status != 0.0);
 
         if (info->host == iter->preferred_host) {
-            if (info->coef <= 0.0) {
+            if (info->coef <= 0.0 || iter->preference) {
                 status *= SERV_DISPD_LOCAL_SVC_BONUS;
-                if (info->coef < 0.0 && access < status) {
+                if (access < status &&
+                    (iter->preference || info->coef < 0.0)) {
                     access =  status;
                     point  =  total + status; /* Latch this local server */
                     p      = -info->coef;
+                    assert(point > 0.0);
                 }
             } else
                 status *= info->coef;
@@ -290,10 +292,25 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
         data->s_node[i].status = total;
     }
 
+    if (point > 0.0 && iter->preference) {
+        if (total != access) {
+            p = SERV_Preference(iter->preference,
+                                access/total, total/data->n_node);
+            status = total*p;
+            p = total*(1.0 - p)/(total - access);
+            assert(access);
+            for (i = 0; i < data->n_node; i++) {
+                data->s_node[i].status *= p;
+                if (p*point <= data->s_node[i].status)
+                    data->s_node[i].status += status - p*access;
+            }
+        }
+        point = -1.0;
+    }
     /* We take pre-chosen local server only if its status is not less than
        p% of the average remaining status; otherwise, we ignore the server,
        and apply the generic procedure by seeding a random point. */
-    if (point < 0.0 || access*(data->n_node - 1) < p*0.01*(total - access))
+    if (point <= 0.0 || access*(data->n_node - 1) < p*0.01*(total - access))
         point = (total * rand()) / (double) RAND_MAX;
     for (i = 0; i < data->n_node; i++) {
         if (point <= data->s_node[i].status)
@@ -382,6 +399,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2003/01/31 21:17:37  lavr
+ * Implementation of perference for preferred host
+ *
  * Revision 6.51  2002/12/10 22:11:50  lavr
  * Stamp HTTP packets with "User-Agent:" header tag and DISP_PROTOCOL_VERSION
  *
