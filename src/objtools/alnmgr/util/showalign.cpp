@@ -570,8 +570,17 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     alnSeqlocInfo* alnloc = new alnSeqlocInfo;    
    
     for (int i=0; i<rowNum; i++){
+     
       if((*iter)->seqloc->GetInt().GetId().Match(m_AV->GetSeqId(i))){
-        alnloc->alnRange.Set(m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetFrom()), m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetTo()));      
+	int actualAlnStart = 0, actualAlnStop = 0;
+	if(m_AV->IsPositiveStrand(i)){
+	  actualAlnStart = m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetFrom());
+	  actualAlnStop = m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetTo());
+	} else {
+	  actualAlnStart = m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetTo());
+	  actualAlnStop = m_AV->GetAlnPosFromSeqPos(i, (*iter)->seqloc->GetInt().GetFrom());
+	}
+        alnloc->alnRange.Set(actualAlnStart, actualAlnStop);      
 	break;
       }
     }
@@ -714,7 +723,7 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
     out<<endl;
   }
   //output rows
-  for(int j=0; j<aln_stop; j+=m_LineLen){
+  for(int j=0; j<=aln_stop; j+=m_LineLen){
     //output according to aln coordinates
     if(aln_stop-j+1<m_LineLen) {
       actualLineLen=aln_stop-j+1;
@@ -905,6 +914,8 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   if(m_AlignOption & eHtml){
     toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");
   }
+  auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
+
   if(!(m_AlignOption&eMultiAlign)){/*pairwise alignment. Note we can't just show each alnment as we go because we will need seg information form all hsp's with the same id for genome url link.  As a result we show hsp's with the same id as a group*/
     list<alnInfo*> avList;        
     string previousId = NcbiEmptyString, subid = NcbiEmptyString;
@@ -913,19 +924,45 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       
       //make alnvector
       CRef<CAlnVec> avRef;
+      CRef<CSeq_align> finalAln;
       if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
-	const CTypeIterator<CDense_seg> ds = Begin(*((*iter)->CreateDensegFromStdseg()));
-	avRef = new CAlnVec(*ds, m_Scope);
+	CRef<CSeq_align> densegAln = (*iter)->CreateDensegFromStdseg();
+	if (m_AlignOption & eTranslateNucToNucAlignment) { 
+	  finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
+	} else {
+	  finalAln = densegAln;
+	}
+
       } else if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
-	const CTypeConstIterator<CDense_seg> ds = ConstBegin(**iter);
-	avRef = new CAlnVec(*ds, m_Scope);
+	if (m_AlignOption & eTranslateNucToNucAlignment) { 
+	  finalAln = (*iter)->CreateTranslatedDensegFromNADenseg();
+	} else {
+	  finalAln = (*iter);
+	}
+
       } else if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
-	const CTypeIterator<CDense_seg> ds = Begin(*(CreateDensegFromDendiag(**iter)));
-	avRef = new CAlnVec(*ds, m_Scope);
+	CRef<CSeq_align> densegAln = CreateDensegFromDendiag(**iter);
+	if (m_AlignOption & eTranslateNucToNucAlignment) { 
+	  finalAln = densegAln->CreateTranslatedDensegFromNADenseg();
+	} else {
+	  finalAln = densegAln;
+	}
+
       } else {
 	NCBI_THROW(CException, eUnknown, "Seq-align should be Denseg, Stdseg or Dendiag!");
       }
-      
+      CRef<CDense_seg> finalDenseg(new CDense_seg);
+      const CTypeIterator<CDense_seg> ds = Begin(*finalAln);
+      if(ds->CanGetStrands()&&ds->GetStrands().front()==eNa_strand_minus){
+
+	memcpy(&*finalDenseg, &(*ds), sizeof(CDense_seg));
+	finalDenseg->Reverse();
+	avRef = new CAlnVec(*finalDenseg, m_Scope);
+	
+      } else {
+	avRef = new CAlnVec(*ds, m_Scope);
+      }
+    
       if(!(avRef.Empty())){
 	try{
 	  const CBioseq_Handle& handle = avRef->GetBioseqHandle(1);	
@@ -979,7 +1016,6 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   	     
   } else if(m_AlignOption&eMultiAlign){ //multiple alignment
        
-    auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
     CRef<CAlnMix>* mix = new CRef<CAlnMix>[k_NumFrame]; //each for one frame for translated alignment
     for(int i = 0; i < k_NumFrame; i++){
       mix[i] = new CAlnMix(m_Scope);
@@ -995,7 +1031,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       if((*alnIter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std) {
 	CTypeConstIterator<CStd_seg> ss = ConstBegin(**alnIter); 
 	CRef<CSeq_align> convertedDs = (*alnIter)->CreateDensegFromStdseg();
-	if(convertedDs->GetSegs().GetDenseg().CanGetWidths() && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3){//only do this for translated alignment
+	if((convertedDs->GetSegs().GetDenseg().CanGetWidths() && convertedDs->GetSegs().GetDenseg().GetWidths()[0] == 3) || m_AlignOption & eTranslateNucToNucAlignment){//only do this for translated master
 	  int frame = s_GetStdsegMasterFrame(*ss, m_Scope);
 	  switch(frame){
 	  case 1:
@@ -1036,8 +1072,13 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       bool hasAln = false;
       for(CTypeConstIterator<CSeq_align> alnRef = ConstBegin(*alnVector[i]); alnRef; ++alnRef){
 	CTypeConstIterator<CDense_seg> ds = ConstBegin(*alnRef);
+	//	*out2 << *ds;
 	try{
-	  mix[i]->Add(*ds);
+	  if (m_AlignOption & eTranslateNucToNucAlignment) {	 
+	    mix[i]->Add(*ds, CAlnMix::fForceTranslation);
+	  } else {
+	    mix[i]->Add(*ds);
+	  }
 	} catch (CException& e){
 	  continue;
 	}
@@ -1045,8 +1086,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
       }
       if(hasAln){
 	//	*out2<<*alnVector[i];
-	mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
-      
+	  mix[i]->Merge(CAlnMix::fGen2EST| CAlnMix::fMinGap | CAlnMix::fQuerySeqMergeOnly | CAlnMix::fFillUnalignedRegions);  
 	//	*out2<<mix[i]->GetDenseg();
       }
     }
@@ -1237,7 +1277,7 @@ const void CDisplaySeqalign::OutputSeq(string& sequence, const CSeq_id& id, int 
 
   if(actualSeqloc.empty()){//no need to add font tag
     if((m_AlignOption & eColorDifferentBases) && (m_AlignOption & eHtml) && colorMismatch){
-      //color the mismatches
+      //color the mismatches. Only for rows without mask.  Otherwise it may confilicts with mask font tag.
       x_ColorDifferentBases(actualSeq, k_IdentityChar, out);
     } else {
       out<<actualSeq;
@@ -1920,6 +1960,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.25  2003/12/29 18:36:32  jianye
+*Added nuc to nuc translation, show minus master as plus strand, etc
+*
 *Revision 1.24  2003/12/22 21:13:59  camacho
 *Fix Seq-align-set type qualifier.
 *Indenting left as-is.
