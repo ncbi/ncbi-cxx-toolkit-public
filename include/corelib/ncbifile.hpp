@@ -42,7 +42,6 @@
 #include <corelib/ncbitime.hpp>
 #include <vector>
 
-
 #if defined(NCBI_OS_MAC)
 struct FSSpec;
 #endif
@@ -251,7 +250,7 @@ public:
     /// simple form, if possible.
     /// Note that the "path" must be for current OS. 
     /// @param follow_links
-    ///    Whether to follow symlinks (shortcuts, aliases)
+    ///   Whether to follow symlinks (shortcuts, aliases)
     static string NormalizePath(const string& path,
                                 EFollowLinks follow_links = eIgnoreLinks);
 
@@ -319,11 +318,29 @@ public:
     ///
     /// The "creation" time under MS windows is actual creation time of the
     /// entry. Under UNIX "creation" time is the time of last entry status
-    /// change.
+    /// change. 
     /// @return
     ///   TRUE if time was acquired or FALSE otherwise.
+    /// @sa
+    ///   SetTime()
     bool GetTime(CTime *modification, CTime *creation = 0, 
                  CTime *last_access = 0) const;
+
+    /// Set time stamp on directory entry.
+    ///
+    /// The process must be the owner of the file or have write permissions
+    /// in order to change the time. If value of parameters modification or
+    /// last access time is zero that current time will be used.
+    /// @param modification
+    ///   New file modification time.
+    /// @param last_access
+    ///   New last file access time. It cannot be less than the file
+    ///   creation time. In last case it will be set equal to creation time.
+    /// @return
+    ///   TRUE if time was changed or FALSE otherwise.
+    /// @sa
+    ///   GetTime()
+    bool SetTime(CTime *modification = 0 , CTime *last_access = 0) const;
 
     //
     // Access permissions.
@@ -359,6 +376,8 @@ public:
     /// "group_mode" and "other_mode" settings will be ignored.
     /// @return
     ///   TRUE if successful return of permission settings; FALSE, otherwise.
+    /// @sa
+    ///   SetMode()
     bool GetMode(TMode* user_mode,
                  TMode* group_mode = 0,
                  TMode* other_mode = 0) const;
@@ -369,10 +388,10 @@ public:
     /// group_mode and other_mode. The default value for group_mode and
     /// other mode is "fDefault". Setting to "fDefault" will set the mode to
     /// its default permission settings.
-    /// @sa
-    ///   SetDefaultMode(), SetDefaultModeGlobal()
     /// @return
     ///   TRUE if permission successfully set;  FALSE, otherwise.
+    /// @sa
+    ///   SetDefaultMode(), SetDefaultModeGlobal(), GetMode()
     bool SetMode(TMode user_mode,  // e.g. fDefault
                  TMode group_mode = fDefault,
                  TMode other_mode = fDefault) const;
@@ -969,6 +988,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/11/28 16:23:03  ivanov
+ * + CDirEntry::SetTime()
+ *
  * Revision 1.32  2003/11/05 16:27:18  kuznets
  * +FindFile template algorithm
  *

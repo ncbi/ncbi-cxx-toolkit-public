@@ -44,6 +44,7 @@
 #  include <corelib/ncbi_os_mswin.hpp>
 #  include <io.h>
 #  include <direct.h>
+#  include <sys/utime.h>
 
 #elif defined(NCBI_OS_UNIX)
 #  include <unistd.h>
@@ -51,6 +52,7 @@
 #  include <pwd.h>
 #  include <fcntl.h>
 #  include <sys/mman.h>
+#  include <utime.h>
 #  if !defined(MAP_FAILED)
 #    define MAP_FAILED ((void *) -1)
 #  endif
@@ -857,6 +859,20 @@ bool CDirEntry::GetTime(CTime *modification,
     }
 
     return true;
+}
+
+
+bool CDirEntry::SetTime(CTime *modification, CTime *last_access) const
+{
+    struct utimbuf times;
+
+    if (modification) {
+        times.modtime = modification->GetTimeT();
+    }
+    if (last_access) {
+        times.actime = last_access->GetTimeT();
+    }
+    return utime(GetPath().c_str(), &times) == 0;
 }
 
  
@@ -1791,6 +1807,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2003/11/28 16:22:42  ivanov
+ * + CDirEntry::SetTime()
+ *
  * Revision 1.62  2003/11/05 15:36:23  kuznets
  * Implemented new variant of CDir::GetEntries()
  *
