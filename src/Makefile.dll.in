@@ -46,29 +46,28 @@ include $(builddir)/Makefile.$(Rules)
 XLIBOBJ     = $(LIBOBJ:=@obj_ext@)
 XLOBJ       = $(LOBJ:=@obj_ext@)
 XLIB        = $(LIB:%=@lib_pre@%@dll_ext@)
-XLIBDEP     = $(libdir)/.$(LIB).dep
+XLIBDEP     = .$(LIB).dep
 XDLL_LIB    = @f_libpath@$(libdir) $(DLL_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP = $(DLL_LIB:%=$(libdir)/.%.dep)
 
 $(XLIB): $(XLIBOBJ) $(XDLL_LIBDEP)
 	$(LINK_DLL) $(XLIB) $(XLIBOBJ) $(XLOBJ) $(DLL_LIB) $(LIBS)
+	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-
-$(XLIBDEP): $(libdir)/$(XLIB)
-	$(BINTOUCH) -r $(libdir)/$(XLIB) $(XLIBDEP)
+	$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 
 
 ### Standard targets
 
-all: $(XLIB) .WAIT $(XLIBDEP)
+all: $(XLIB)
 
 clean:
 	-$(RMDIR) SunWS_cache
 	-$(RMDIR) ii_files
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
-	-$(RM) $(XLIB)
+	-$(RM) $(XLIB) $(XLIBDEP)
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
-	-$(RM) $(libdir)/$(XLIB) $(XLIBDEP)
+	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)

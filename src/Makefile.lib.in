@@ -35,28 +35,27 @@ include $(builddir)/Makefile.$(Rules)
 XLIBOBJ = $(LIBOBJ:=@obj_ext@)
 XLOBJ   = $(LOBJ:=@obj_ext@)
 XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
-XLIBDEP = $(libdir)/.$(LIB).dep
+XLIBDEP = .$(LIB).dep
 
 $(XLIB): $(XLIBOBJ)
 	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ) $(XLOBJ)
 	@$(RANLIB) $(XLIB)
+	$(TOUCH) -r $(XLIB) $(XLIBDEP)
 	$(BINCOPY) $(XLIB) $(libdir)
-
-$(XLIBDEP): $(libdir)/$(XLIB)
-	$(BINTOUCH) -r $(libdir)/$(XLIB) $(XLIBDEP)
+	$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
 
 
 ### Standard targets
 
-all: $(XLIB) .WAIT $(XLIBDEP)
+all: $(XLIB)
 
 clean:
 	-$(RMDIR) SunWS_cache
 	-$(RMDIR) ii_files
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
-	-$(RM) $(XLIB)
+	-$(RM) $(XLIB) $(XLIBDEP)
 	-$(RM) $(SOURCES:=.d)
 
 purge: clean
-	-$(RM) $(libdir)/$(XLIB) $(XLIBDEP)
+	-$(RM) $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
