@@ -35,7 +35,6 @@
 /// Miscellaneous common-use basic types and functionality
 
 
-#include <ncbiconf.h>
 #include <corelib/ncbistl.hpp>
 #ifdef NCBI_OS_UNIX
 #  include <sys/types.h>
@@ -440,6 +439,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2004/01/20 17:10:08  ivanov
+ * Rollback previous commit
+ *
  * Revision 1.70  2004/01/20 17:06:42  ivanov
  * Added #include <ncbiconf.h>
  *
