@@ -3,7 +3,7 @@
 # Meta-makefile
 #################################
 
-SUB_PROJ = basic cgi objects objmgr
+APP_PROJ = objmgr_sample
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
