@@ -162,6 +162,8 @@ private:
 
     // Scope for id resolution:
     CHeapScope     m_Scope;
+
+    friend class CSeq_loc_Conversion_Set;
 };
 
 
@@ -242,6 +244,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/11/04 16:21:36  grichenk
+* Updated CAnnotTypes_CI to map whole features instead of splitting
+* them by sequence segments.
+*
 * Revision 1.5  2003/10/27 20:07:10  vasilche
 * Started implementation of full annotations' mapping.
 *

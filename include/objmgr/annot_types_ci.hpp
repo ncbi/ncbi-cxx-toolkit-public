@@ -130,6 +130,7 @@ public:
 
 private:
     friend class CSeq_loc_Conversion;
+    friend class CSeq_loc_Conversion_Set;
 
     CConstRef<CObject>      m_Object;
     CRef<CSeq_loc>          m_MappedLocation; // master sequence coordinates
@@ -144,6 +145,38 @@ private:
 
 
 class CSeq_annot_Handle;
+
+
+class CSeq_loc_Conversion_Set
+{
+public:
+    CSeq_loc_Conversion_Set(void);
+
+    typedef vector< CRef<CSeq_loc_Conversion> > TMappingSet;
+    typedef TMappingSet::iterator iterator;
+    typedef TMappingSet::const_iterator const_iterator;
+    typedef CRange<TSeqPos> TRange;
+
+    TMappingSet& Get(void) { return m_MappingSet; }
+    void Convert(CAnnotObject_Ref& obj, int index);
+    void SetScope(CHeapScope& scope)
+        {
+            m_Scope = scope;
+        }
+
+private:
+    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+    bool ConvertPoint(const CSeq_point& src, CRef<CSeq_loc>& dst);
+    bool ConvertInterval(const CSeq_interval& src, CRef<CSeq_loc>& dst);
+
+    TMappingSet    m_MappingSet;
+    bool           m_Partial;
+    TRange         m_TotalRange;
+    CHeapScope     m_Scope;
+};
+
+
+class CAnnotDataCollector;
 
 
 // Base class for specific annotation iterators
@@ -214,8 +247,6 @@ protected:
 
 private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
-    typedef vector< CRef<CSeq_loc_Conversion> > TMappingSet;
-    typedef map<CAnnotObject_Ref, TMappingSet> TAnnotMappingSet;
 
     void x_Clear(void);
     void x_Initialize(const CBioseq_Handle& bioseq,
@@ -263,20 +294,16 @@ private:
     bool x_MatchRange(const CHandleRange& hr,
                       const CRange<TSeqPos>& range,
                       const SAnnotObject_Index& index) const;
+    size_t x_GetAnnotCount(void) const;
 
-    // Count of all found annot objects
-    size_t                       m_AnnotCount;
     // Set of all the annotations found
-    TAnnotSet                    m_AnnotSet;
-    // Set of annotations for complex remapping
-    TAnnotMappingSet             m_AnnotMappingSet;
+    TAnnotSet                     m_AnnotSet;
     // Current annotation
-    TAnnotSet::const_iterator    m_CurAnnot;
-    // info of limit object
-    CConstRef<CObject>           m_LimitObjectInfo;
+    TAnnotSet::const_iterator     m_CurAnnot;
     // TSE set to keep all the TSEs locked
-    TTSE_LockSet                 m_TSE_LockSet;
-    CHeapScope                   m_Scope;
+    TTSE_LockSet                  m_TSE_LockSet;
+    CHeapScope                    m_Scope;
+    auto_ptr<CAnnotDataCollector> m_DataCollector;
 };
 
 
@@ -516,6 +543,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2003/11/04 16:21:36  grichenk
+* Updated CAnnotTypes_CI to map whole features instead of splitting
+* them by sequence segments.
+*
 * Revision 1.56  2003/10/27 20:07:10  vasilche
 * Started implementation of full annotations' mapping.
 *

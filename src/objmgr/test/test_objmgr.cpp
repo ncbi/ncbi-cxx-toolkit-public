@@ -217,7 +217,7 @@ int CTestApp::Run(void)
         CTestHelper::ProcessBioseq(*pScope2, id, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 9, 9, 1, 0, 0, 1, 1, 0, 0);
+            1, 2, 2, 1, 0, 0, 1, 1, 0, 0);
 
         // 1.2.8. Test scope history
         CRef<CSeq_entry> entry1b(&CDataGenerator::CreateTestEntry1(idx));
@@ -255,6 +255,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/11/04 16:21:37  grichenk
+* Updated CAnnotTypes_CI to map whole features instead of splitting
+* them by sequence segments.
+*
 * Revision 1.36  2003/10/09 14:00:56  vasilche
 * Added test for multiple instances of datasource.
 *

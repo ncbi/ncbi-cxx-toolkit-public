@@ -54,6 +54,8 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/seqloc/Seq_bond.hpp>
 
 #include <serial/typeinfo.hpp>
 #include <serial/objostr.hpp>
@@ -437,8 +439,19 @@ bool CAnnotObject_Less::x_less(const CAnnotObject_Ref& x,
 /////////////////////////////////////////////////////////////////////////////
 
 
+class CAnnotDataCollector
+{
+public:
+    typedef map<CAnnotObject_Ref, CSeq_loc_Conversion_Set> TAnnotMappingSet;
+    // Set of annotations for complex remapping
+    TAnnotMappingSet              m_AnnotMappingSet;
+    // info of limit object
+    CConstRef<CObject>            m_LimitObjectInfo;
+};
+
+
 CAnnotTypes_CI::CAnnotTypes_CI(void)
-    : m_AnnotCount(0)
+    : m_DataCollector(0)
 {
 }
 
@@ -447,12 +460,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_AnnotCount(0),
-      m_Scope(scope)
+      m_Scope(scope),
+      m_DataCollector(new CAnnotDataCollector)
 {
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
     x_Initialize(master_loc);
+    m_DataCollector.reset();
 }
 
 
@@ -460,22 +474,24 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_AnnotCount(0),
-      m_Scope(bioseq.GetScope())
+      m_Scope(bioseq.GetScope()),
+      m_DataCollector(new CAnnotDataCollector)
 {
     x_Initialize(bioseq, start, stop);
+    m_DataCollector.reset();
 }
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CSeq_annot_Handle& annot,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_AnnotCount(0),
-      m_Scope(annot.GetScope())
+      m_Scope(annot.GetScope()),
+      m_DataCollector(new CAnnotDataCollector)
 {
     SetResolveNone(); // nothing to resolve
     SetLimitSeqAnnot(&annot.GetSeq_annot());
     x_Initialize();
+    m_DataCollector.reset();
 }
 
 
@@ -483,13 +499,14 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_entry& entry,
                                const SAnnotSelector& params)
     : SAnnotSelector(params),
-      m_AnnotCount(0),
-      m_Scope(scope)
+      m_Scope(scope),
+      m_DataCollector(new CAnnotDataCollector)
 {
     SetResolveNone(); // nothing to resolve
     SetSortOrder(eSortOrder_None);
     SetLimitSeqEntry(&entry);
     x_Initialize();
+    m_DataCollector.reset();
 }
 
 
@@ -503,12 +520,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
-      m_AnnotCount(0),
-      m_Scope(scope)
+      m_Scope(scope),
+      m_DataCollector(new CAnnotDataCollector)
 {
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
     x_Initialize(master_loc);
+    m_DataCollector.reset();
 }
 
 
@@ -522,10 +540,19 @@ CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve_method)
                      .SetLimitSeqEntry(entry)),
-      m_AnnotCount(0),
-      m_Scope(bioseq.GetScope())
+      m_Scope(bioseq.GetScope()),
+      m_DataCollector(new CAnnotDataCollector)
 {
     x_Initialize(bioseq, start, stop);
+    m_DataCollector.reset();
+}
+
+
+inline
+size_t CAnnotTypes_CI::x_GetAnnotCount(void) const
+{
+    return m_AnnotSet.size() +
+        (m_DataCollector.get() ? m_DataCollector->m_AnnotMappingSet.size() : 0);
 }
 
 
@@ -544,7 +571,6 @@ void CAnnotTypes_CI::x_Initialize(const CBioseq_Handle& bioseq,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
-    : m_AnnotCount(0)
 {
     *this = it;
 }
@@ -559,26 +585,25 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 void CAnnotTypes_CI::x_Clear(void)
 {
     m_AnnotSet.clear();
-    m_AnnotMappingSet.clear();
-    m_AnnotCount = 0;
+    if ( m_DataCollector.get() ) {
+        m_DataCollector->m_AnnotMappingSet.clear();
+    }
     m_CurAnnot = m_AnnotSet.begin();
 }
 
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
-    _ASSERT(it.m_AnnotMappingSet.empty());
-    _ASSERT(it.m_AnnotCount == it.m_AnnotSet.size());
+    _ASSERT( !it.m_DataCollector.get() );
     if ( this != &it ) {
         x_Clear();
         // Copy TSE list, set TSE locks
         m_TSE_LockSet = it.m_TSE_LockSet;
         static_cast<SAnnotSelector&>(*this) = it;
-        m_AnnotCount = it.m_AnnotCount;
         m_AnnotSet = it.m_AnnotSet;
-        m_AnnotMappingSet.clear();
+        m_DataCollector.reset();
         size_t index = it.m_CurAnnot - it.m_AnnotSet.begin();
-        _ASSERT(index < m_AnnotCount);
+        _ASSERT(index < x_GetAnnotCount());
         m_CurAnnot = m_AnnotSet.begin()+index;
     }
     return *this;
@@ -637,6 +662,13 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
                 }
             }
         }
+        NON_CONST_ITERATE(CAnnotDataCollector::TAnnotMappingSet, amit,
+            m_DataCollector->m_AnnotMappingSet) {
+            CAnnotObject_Ref annot_ref = amit->first;
+            amit->second.Convert(annot_ref, m_FeatProduct);
+            m_AnnotSet.push_back(annot_ref);
+        }
+        m_DataCollector->m_AnnotMappingSet.clear();
         x_Sort();
         Rewind();
     }
@@ -669,8 +701,7 @@ void CAnnotTypes_CI::x_Initialize(void)
 
 void CAnnotTypes_CI::x_Sort(void)
 {
-    _ASSERT(m_AnnotMappingSet.empty());
-    _ASSERT(m_AnnotCount == m_AnnotSet.size());
+    _ASSERT(m_DataCollector->m_AnnotMappingSet.empty());
     switch ( m_SortOrder ) {
     case eSortOrder_Normal:
         if ( GetAnnotChoice() == CSeq_annot::C_Data::e_Ftable ) {
@@ -702,9 +733,9 @@ CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
 {
     if ( m_LimitObjectType == eLimit_Entry ) {
         const CSeq_entry_Info* entry = &annot_info.GetSeq_entry_Info();
-        _ASSERT(m_LimitObjectInfo);
+        _ASSERT(m_DataCollector->m_LimitObjectInfo);
         while ( entry ) {
-            if ( entry == &*m_LimitObjectInfo ) {
+            if ( entry == &*m_DataCollector->m_LimitObjectInfo ) {
                 return true;
             }
             entry = entry->GetParentSeq_entry_Info();
@@ -712,7 +743,8 @@ CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& annot_info) const
         return false;
     }
     else if ( m_LimitObjectType == eLimit_Annot ) {
-        return &annot_info.GetSeq_annot_Info() == &*m_LimitObjectInfo;
+        return &annot_info.GetSeq_annot_Info() ==
+            &*m_DataCollector->m_LimitObjectInfo;
     }
     return true;
 }
@@ -822,7 +854,7 @@ void CAnnotTypes_CI::x_GetTSE_Info(void)
                        "unknown top level Seq-entry");
         }
         tse_info = info;
-        m_LimitObjectInfo.Reset(info.GetPointer());
+        m_DataCollector->m_LimitObjectInfo.Reset(info.GetPointer());
         break;
     }
     case eLimit_Entry:
@@ -836,7 +868,7 @@ void CAnnotTypes_CI::x_GetTSE_Info(void)
                        "unknown Seq-entry");
         }
         tse_info.Reset(&info->GetTSE_Info());
-        m_LimitObjectInfo.Reset(info.GetPointer());
+        m_DataCollector->m_LimitObjectInfo.Reset(info.GetPointer());
         break;
     }
     case eLimit_Annot:
@@ -850,11 +882,11 @@ void CAnnotTypes_CI::x_GetTSE_Info(void)
                        "unknown Seq-annot");
         }
         tse_info.Reset(&info->GetTSE_Info());
-        m_LimitObjectInfo.Reset(info.GetPointer());
+        m_DataCollector->m_LimitObjectInfo.Reset(info.GetPointer());
         break;
     }
     }
-    _ASSERT(m_LimitObjectInfo);
+    _ASSERT(m_DataCollector->m_LimitObjectInfo);
     _ASSERT(tse_info);
     tse_info->UpdateAnnotIndex();
     //if ( !IsSetAnnotsNames() || x_MatchAnnotName(*tse_info) ) {
@@ -984,17 +1016,14 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
 bool CAnnotTypes_CI::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
                                         CSeq_loc_Conversion* cvt)
 {
-    m_AnnotSet.push_back(object_ref);
-    return ++m_AnnotCount >= m_MaxSize;
-    /*
+    _ASSERT( cvt->IsPartial() );
     object_ref.ResetLocation();
-    TMappingSet& mapping_set = m_AnnotMappingSet[object_ref];
-    if ( mapping_set.empty() ) {
-        ++m_AnnotCount;
-    }
-    mapping_set.push_back(Ref(cvt));
-    return m_AnnotCount >= m_MaxSize;
-    */
+    CSeq_loc_Conversion_Set& mapping_set =
+        m_DataCollector->m_AnnotMappingSet[object_ref];
+    mapping_set.SetScope(m_Scope);
+    CRef<CSeq_loc_Conversion> cvt_copy(new CSeq_loc_Conversion(*cvt));
+    mapping_set.Get().push_back(cvt_copy);
+    return x_GetAnnotCount() >= m_MaxSize;
 }
 
 
@@ -1002,7 +1031,7 @@ inline
 bool CAnnotTypes_CI::x_AddObject(CAnnotObject_Ref& object_ref)
 {
     m_AnnotSet.push_back(object_ref);
-    return ++m_AnnotCount >= m_MaxSize;
+    return x_GetAnnotCount() >= m_MaxSize;
 }
 
 
@@ -1173,20 +1202,23 @@ void CAnnotTypes_CI::x_SearchAll(void)
 {
     _ASSERT(m_LimitObjectType != eLimit_None);
     _ASSERT(m_LimitObject);
-    _ASSERT(m_LimitObjectInfo);
+    _ASSERT(m_DataCollector->m_LimitObjectInfo);
     if ( m_TSE_LockSet.empty() ) {
         // data source name not matched
         return;
     }
     switch ( m_LimitObjectType ) {
     case eLimit_TSE:
-        x_SearchAll(dynamic_cast<const CTSE_Info&>(*m_LimitObjectInfo));
+        x_SearchAll(dynamic_cast<const CTSE_Info&>(
+            *m_DataCollector->m_LimitObjectInfo));
         break;
     case eLimit_Entry:
-        x_SearchAll(dynamic_cast<const CSeq_entry_Info&>(*m_LimitObjectInfo));
+        x_SearchAll(dynamic_cast<const CSeq_entry_Info&>(
+            *m_DataCollector->m_LimitObjectInfo));
         break;
     case eLimit_Annot:
-        x_SearchAll(dynamic_cast<const CSeq_annot_Info&>(*m_LimitObjectInfo));
+        x_SearchAll(dynamic_cast<const CSeq_annot_Info&>(
+            *m_DataCollector->m_LimitObjectInfo));
         break;
     }
 }
@@ -1197,13 +1229,13 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_entry_Info& entry_info)
     // Collect all annotations from the entry
     ITERATE( CSeq_entry_Info::TAnnots, ait, entry_info.m_Annots ) {
         x_SearchAll(**ait);
-        if ( m_AnnotCount >= m_MaxSize )
+        if ( x_GetAnnotCount() >= m_MaxSize )
             return;
     }
     // Collect annotations from all children
     ITERATE( CSeq_entry_Info::TEntries, cit, entry_info.m_Entries ) {
         x_SearchAll(**cit);
-        if ( m_AnnotCount >= m_MaxSize )
+        if ( x_GetAnnotCount() >= m_MaxSize )
             return;
     }
 }
@@ -1295,12 +1327,293 @@ bool CAnnotTypes_CI::x_SearchMapped(const CSeqMap_CI& seg,
 }
 
 
+CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(void)
+: m_Partial(false), m_TotalRange(TRange::GetEmpty())
+{
+}
+
+
+void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref, int index)
+{
+    if (m_MappingSet.size() == 1) {
+        // No multiple mappings
+        m_MappingSet[0]->Convert(ref, index);
+        return;
+    }
+    const CAnnotObject_Info& obj = ref.GetAnnotObject_Info();
+    switch ( obj.Which() ) {
+    case CSeq_annot::C_Data::e_Ftable:
+        if ( index == 0 ) {
+            Convert(obj.GetFeatFast()->GetLocation(), ref.m_MappedLocation);
+        }
+        else {
+            Convert(obj.GetFeatFast()->GetProduct(), ref.m_MappedLocation);
+        }
+        break;
+    case CSeq_annot::C_Data::e_Graph:
+        Convert(obj.GetGraphFast()->GetLoc(), ref.m_MappedLocation);
+        break;
+    case CSeq_annot::C_Data::e_Align:
+        // TODO: map align
+        break;
+    }
+    ref.m_MappedIndex = index;
+    ref.m_Partial = m_Partial;
+    ref.m_TotalRange = m_TotalRange;
+    ref.m_MappedType = CSeq_loc::e_not_set;
+}
+
+
+bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
+                                           CRef<CSeq_loc>& dst)
+{
+    _ASSERT(dst);
+    bool res = false;
+    NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
+        (*mit)->Reset();
+        if ((*mit)->ConvertPoint(src)) {
+            dst->SetPnt(*(*mit)->GetDstPoint());
+            m_TotalRange += (*mit)->GetTotalRange();
+            res = true;
+            break;
+        }
+    }
+    m_Partial |= !res;
+    return res;
+}
+
+
+bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
+                                              CRef<CSeq_loc>& dst)
+{
+    _ASSERT(dst);
+    CRef<CSeq_loc> tmp(new CSeq_loc);
+    CPacked_seqint::Tdata& ints = tmp->SetPacked_int().Set();
+    TRange total_range(TRange::GetEmpty());
+    bool revert_order = (src.IsSetStrand()
+        && src.GetStrand() == eNa_strand_minus);
+    bool res = false;
+    NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
+        (*mit)->Reset();
+        if ((*mit)->ConvertInterval(src)) {
+            if (revert_order) {
+                ints.push_front((*mit)->GetDstInterval());
+            }
+            else {
+                ints.push_back((*mit)->GetDstInterval());
+            }
+            total_range += (*mit)->GetTotalRange();
+            res = true;
+        }
+    }
+    if (ints.size() > 1) {
+        dst.Reset(tmp);
+    }
+    else if (ints.size() == 1) {
+        dst->SetInt(**ints.begin());
+    }
+    m_TotalRange += total_range;
+    // does not guarantee the whole interval is mapped, but should work
+    // in normal situations
+    m_Partial |= (!res  || src.GetLength() > total_range.GetLength());
+    return res;
+}
+
+
+bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst)
+{
+    dst.Reset(new CSeq_loc);
+    bool res = false;
+    switch ( src.Which() ) {
+    case CSeq_loc::e_not_set:
+    case CSeq_loc::e_Feat:
+        // Nothing to do, although this should never happen --
+        // the seq_loc is intersecting with the conv. loc.
+        _ASSERT("this cannot happen" && 0);
+        break;
+    case CSeq_loc::e_Null:
+    {
+        dst->SetNull();
+        res = true;
+        break;
+    }
+    case CSeq_loc::e_Empty:
+    {
+        NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
+            (*mit)->Reset();
+            if ( (*mit)->GoodSrcId(src.GetEmpty()) ) {
+                dst->SetEmpty((*mit)->GetDstId());
+                res = true;
+                break;
+            }
+        }
+        break;
+    }
+    case CSeq_loc::e_Whole:
+    {
+        const CSeq_id& src_id = src.GetWhole();
+        // Convert to the allowed master seq interval
+        CSeq_interval whole_int;
+        whole_int.SetId().Assign(src_id);
+        whole_int.SetFrom(0);
+        CBioseq_Handle bh = m_Scope->GetBioseqHandle(src_id);
+        whole_int.SetTo(bh.GetBioseqLength());
+        res = ConvertInterval(whole_int, dst);
+        break;
+    }
+    case CSeq_loc::e_Int:
+    {
+        res = ConvertInterval(src.GetInt(), dst);
+        break;
+    }
+    case CSeq_loc::e_Pnt:
+    {
+        res = ConvertPoint(src.GetPnt(), dst);
+        break;
+    }
+    case CSeq_loc::e_Packed_int:
+    {
+        const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
+        CPacked_seqint::Tdata& dst_ints = dst->SetPacked_int().Set();
+        ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
+            CRef<CSeq_loc> dst_int(new CSeq_loc);
+            bool mapped = ConvertInterval(**i, dst_int);
+            if (mapped) {
+                if ( dst_int->IsInt() ) {
+                    dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
+                }
+                else if ( dst_int->IsPacked_int() ) {
+                    CPacked_seqint::Tdata& splitted = dst_int->SetPacked_int().Set();
+                    dst_ints.merge(splitted);
+                }
+                else {
+                    _ASSERT("this cannot happen" || 0);
+                }
+            }
+            m_Partial |= !mapped;
+            res |= mapped;
+        }
+        break;
+    }
+    case CSeq_loc::e_Packed_pnt:
+    {
+        const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
+        const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
+        CRef<CSeq_loc> tmp(new CSeq_loc);
+        // using mix, not point, since mappings may have
+        // different strand, fuzz etc.
+        CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
+        ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
+            bool mapped = false;
+            NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
+                (*mit)->Reset();
+                if ( !(*mit)->GoodSrcId(src_pack_pnts.GetId()) ) {
+                    continue;
+                }
+                TSeqPos dst_pos = (*mit)->ConvertPos(*i);
+                if ( dst_pos != kInvalidSeqPos ) {
+                    CRef<CSeq_loc> pnt(new CSeq_loc);
+                    pnt->SetPnt(*(*mit)->GetDstPoint());
+                    locs.push_back(pnt);
+                    m_TotalRange += (*mit)->GetTotalRange();
+                    mapped = true;
+                    break;
+                }
+            }
+            m_Partial |= !mapped;
+            res |= mapped;
+        }
+        break;
+    }
+    case CSeq_loc::e_Mix:
+    {
+        const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
+        CRef<CSeq_loc> dst_loc;
+        CSeq_loc_mix::Tdata& dst_mix = dst->SetMix().Set();
+        ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
+            dst_loc.Reset(new CSeq_loc);
+            if ( Convert(**i, dst_loc) ) {
+                dst_mix.push_back(dst_loc);
+                res = true;
+            }
+        }
+        m_Partial |= !res;
+        break;
+    }
+    case CSeq_loc::e_Equiv:
+    {
+        const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
+        CRef<CSeq_loc> dst_loc;
+        CSeq_loc_equiv::Tdata& dst_equiv = dst->SetEquiv().Set();
+        ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
+            if ( Convert(**i, dst_loc) ) {
+                dst_equiv.push_back(dst_loc);
+                res = true;
+            }
+        }
+        m_Partial |= !res;
+        break;
+    }
+    case CSeq_loc::e_Bond:
+    {
+        const CSeq_bond& src_bond = src.GetBond();
+        // using mix, not bond, since mappings may have
+        // different strand, fuzz etc.
+        dst->SetBond();
+        CRef<CSeq_point> pntA(0);
+        CRef<CSeq_point> pntB(0);
+        NON_CONST_ITERATE(TMappingSet, mit, m_MappingSet) {
+            (*mit)->Reset();
+            if (!bool(pntA)  &&  (*mit)->ConvertPoint(src_bond.GetA())) {
+                pntA.Reset((*mit)->GetDstPoint());
+                m_TotalRange += (*mit)->GetTotalRange();
+                res = true;
+            }
+            if ( src_bond.IsSetB() ) {
+                if (!bool(pntB)  &&  (*mit)->ConvertPoint(src_bond.GetB())) {
+                    pntB.Reset((*mit)->GetDstPoint());
+                    m_TotalRange += (*mit)->GetTotalRange();
+                    res = true;
+                }
+            }
+            m_TotalRange += (*mit)->GetTotalRange();
+        }
+        CSeq_bond& dst_bond = dst->SetBond();
+        if ( bool(pntA)  ||  bool(pntB) ) {
+            if ( bool(pntA) ) {
+                dst_bond.SetA(*pntA);
+            }
+            else {
+                dst_bond.SetA().Assign(src_bond.GetA());
+            }
+            if ( bool(pntB) ) {
+                dst_bond.SetB(*pntB);
+            }
+            else if ( src_bond.IsSetB() ) {
+                dst_bond.SetB().Assign(src_bond.GetB());
+            }
+        }
+        m_Partial |= (!bool(pntA)  ||  !bool(pntB));
+        break;
+    }
+    default:
+        NCBI_THROW(CAnnotException, eBadLocation,
+                   "Unsupported location type");
+    }
+    return res;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2003/11/04 16:21:37  grichenk
+* Updated CAnnotTypes_CI to map whole features instead of splitting
+* them by sequence segments.
+*
 * Revision 1.97  2003/10/28 14:46:29  vasilche
 * Fixed wrong _ASSERT().
 *

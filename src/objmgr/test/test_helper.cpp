@@ -1364,7 +1364,7 @@ void CTestHelper::TestDataRetrieval(CScope& scope, int idx,
     ProcessBioseq(scope, id, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 21+delta*2, 9, 1, 0, 0, 1, 1, 0, 0);
+        1, 6+delta, 2, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+idx*1000);
     ProcessBioseq(scope, id, 20, "QGCGEQTMTLLAPTLAASRY", "",
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -1383,6 +1383,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.45  2003/11/04 16:21:37  grichenk
+* Updated CAnnotTypes_CI to map whole features instead of splitting
+* them by sequence segments.
+*
 * Revision 1.44  2003/09/30 16:22:05  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

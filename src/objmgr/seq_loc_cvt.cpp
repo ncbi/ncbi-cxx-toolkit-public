@@ -234,13 +234,25 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
     _ASSERT(!IsSpecialLoc());
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
-    case CSeq_loc::e_Null:
-    case CSeq_loc::e_Empty:
     case CSeq_loc::e_Feat:
         // Nothing to do, although this should never happen --
         // the seq_loc is intersecting with the conv. loc.
-        _ASSERT("this cannot happen" || 0);
+        _ASSERT("this cannot happen" && 0);
         break;
+    case CSeq_loc::e_Null:
+    {
+        dst.Reset(new CSeq_loc);
+        dst->SetNull();
+        break;
+    }
+    case CSeq_loc::e_Empty:
+    {
+        if ( GoodSrcId(src.GetEmpty()) ) {
+            dst.Reset(new CSeq_loc);
+            dst->SetEmpty(GetDstId());
+        }
+        break;
+    }
     case CSeq_loc::e_Whole:
     {
         const CSeq_id& src_id = src.GetWhole();
@@ -414,6 +426,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/11/04 16:21:37  grichenk
+* Updated CAnnotTypes_CI to map whole features instead of splitting
+* them by sequence segments.
+*
 * Revision 1.6  2003/10/29 19:55:47  vasilche
 * Avoid making 'whole' features on 'whole' segment partial (by Aleksey Grichenko)
 *
