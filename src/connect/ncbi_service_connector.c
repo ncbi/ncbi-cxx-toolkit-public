@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.39  2002/06/10 19:51:43  lavr
+ * Wrong assertion removed from FIREWALL open case
+ *
  * Revision 6.38  2002/05/07 15:31:47  lavr
  * +#include <stdio.h>: noticed by J.Kans
  *
@@ -562,7 +565,6 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
     } else {
         /* Firewall, connection to dispatcher, special tags */
-        assert(net_info->firewall);
         user_header = net_info->stateless
             ? "Client-Mode: STATELESS_ONLY\r\n" /*default*/
             : "Client-Mode: STATEFUL_CAPABLE\r\n";
