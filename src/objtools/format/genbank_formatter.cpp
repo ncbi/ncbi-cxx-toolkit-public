@@ -58,6 +58,7 @@
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_item.hpp>
 #include <objtools/format/items/origin_item.hpp>
+#include <objtools/format/items/gap_item.hpp>
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
@@ -509,9 +510,8 @@ void CGenbankFormatter::FormatFeature
         }
         // Call NStr::Wrap directly to avoid unwanted line breaks right
         // before the start of the value (in /translation, e.g.)
-        NStr::Wrap(value, GetWidth(), l,
-                   /*DoHTML() ? NStr::fWrap_HTMLPre : */0, GetFeatIndent(),
-                   GetFeatIndent() + qual);
+        NStr::Wrap(value, GetWidth(), l, NStr::fWrap_FlatFile, GetFeatIndent(),
+            GetFeatIndent() + qual);
     }
     NON_CONST_ITERATE (list<string>, it, l) {
         NStr::TruncateSpacesInPlace(*it, NStr::eTrunc_End);
@@ -700,6 +700,34 @@ void CGenbankFormatter::FormatOrigin
 }
 
 
+///////////////////////////////////////////////////////////////////////////
+//
+// GAP
+
+void CGenbankFormatter::FormatGap(const CGapItem& gap, IFlatTextOStream& text_os)
+{
+    list<string> l;
+
+    // format location
+    string loc = NStr::UIntToString(gap.GetFrom());
+    loc += "..";
+    loc += NStr::UIntToString(gap.GetTo());
+
+    Wrap(l, "gap", loc, eFeat);
+
+    // format mandtory /estimated_length qualifier
+    string estimated_length;
+    if (gap.HasEstimatedLength()) {
+        estimated_length = NStr::UIntToString(gap.GetEstimatedLength());
+    } else {
+        estimated_length = "unknown";
+    }
+    NStr::Wrap(estimated_length, GetWidth(), l, NStr::fWrap_FlatFile,
+        GetFeatIndent(), GetFeatIndent() + "/estimated_length=");
+
+    text_os.AddParagraph(l);
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -708,6 +736,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2004/11/24 16:51:11  shomrat
+* Format gaps
+*
 * Revision 1.21  2004/11/15 20:10:17  shomrat
 * Handle electronic publications
 *
