@@ -60,6 +60,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+const string IFlatQVal::kSemicolon = "; ";
+const string IFlatQVal::kComma     = ", ";
+const string IFlatQVal::kEOL       = "\n";
+
+
 // in Ncbistdaa order
 static const char* kAANames[] = {
     "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
@@ -80,7 +85,7 @@ static const char* s_AAName(unsigned char aa, bool is_ascii)
 
 
 inline
-static bool s_IsNote(CFFContext& ctx, IFlatQVal::TFlags flags)
+static bool s_IsNote(IFlatQVal::TFlags flags)
 {
     return (flags & IFlatQVal::fIsNote);
 }
@@ -154,13 +159,21 @@ static string s_GetGOText(const CUser_field& field)
 //
 // CFlatStringQVal {
 
+CFlatStringQVal::CFlatStringQVal(const string& value, TStyle style)
+    :  IFlatQVal(&kEmptyStr, &kSemicolon),
+       m_Value(NStr::TruncateSpaces(value)), m_Style(style)
+{
+}
+
+
 CFlatStringQVal::CFlatStringQVal
 (const string& value,
- const string& suffix,
- CFlatQual::EStyle style)
-     : m_Value(NStr::TruncateSpaces(value)),
-       m_Suffix(suffix),
-       m_Style(style)
+ const string& pfx,
+ const string& sfx,
+ TStyle style)
+    :   IFlatQVal(&pfx, &sfx),
+        m_Value(NStr::TruncateSpaces(value)),
+        m_Style(style)
 {
 }
 
@@ -168,30 +181,35 @@ CFlatStringQVal::CFlatStringQVal
 void CFlatStringQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
-    string sfx = m_Suffix;
-    if ( sfx.empty()  &&  s_IsNote(ctx, flags) ) {
-        sfx = "\n";
-    }
+    const string* sfx = m_Suffix;
+    //if ( sfx->empty()  &&  s_IsNote(ctx, flags) ) {
+    //    sfx = "\n";
+    //}
 
-    if ( s_IsNote(ctx, flags) ) {
-        x_AddFQ(q, "note", m_Value, sfx, m_Style);
-    } else {
-        x_AddFQ(q, name, m_Value, sfx, m_Style);
-    }
+    x_AddFQ(q, (s_IsNote(flags) ? "note" : name), m_Value, m_Style);
 }
 
 // }
 
 
+////////////////////////////////////////////////////////////////////////////
+//
+// CFlatStringListQVal {
+
 void CFlatStringListQVal::Format(TFlatQuals& q, const string& name,
                            CFFContext& ctx, IFlatQVal::TFlags flags) const
 {
-    if ( s_IsNote(ctx, flags) ) {
-        x_AddFQ(q, "note", JoinNoRedund(m_Value, "; "), "; ", m_Style);
-    } else {
-        x_AddFQ(q, name, JoinNoRedund(m_Value, "; "), m_Style);
+    if ( s_IsNote(flags) ) {
+        m_Suffix = &kSemicolon;
     }
+
+    x_AddFQ(q, 
+            (s_IsNote(flags) ? "note" : name),
+            JoinNoRedund(m_Value, "; "),
+            m_Style);
 }
+
+// }
 
 
 void CFlatCodeBreakQVal::Format(TFlatQuals& q, const string& name,
@@ -329,15 +347,9 @@ void CFlatOrgModQVal::Format(TFlatQuals& q, const string& name,
         return;
     }
 
-    if ( s_IsNote(ctx, flags) ) {
-        string delim;
-        if ( m_Value->GetSubtype() == COrgMod::eSubtype_other ) {
-            delim = "\n";
-        } else {
-            delim = "; ";
-        }
-
-        x_AddFQ(q, "note", name + ": " + subname, delim);
+    if ( s_IsNote(flags) ) {
+        m_Suffix = (m_Value->GetSubtype() == COrgMod::eSubtype_other ? &kEOL : &kSemicolon);
+        x_AddFQ(q, "note", name + ": " + subname);
     } else {
         x_AddFQ(q, name, subname);
     }
@@ -432,17 +444,16 @@ void CFlatSubSourceQVal::Format(TFlatQuals& q, const string& name,
         subname = kEmptyStr;
     }
 
-    if ( s_IsNote(ctx, flags) ) {
-        string delim;
+    if ( s_IsNote(flags) ) {
         bool note = false;
         if ( m_Value->GetSubtype() == CSubSource::eSubtype_other ) {
-            delim = "\n";
+            m_Suffix = &kEOL;
             note = true;
         } else {
-            delim = "; ";
+            m_Suffix = &kSemicolon;
         }
 
-        x_AddFQ(q, "note", note ? subname : name + ": " + subname, delim);
+        x_AddFQ(q, "note", note ? subname : name + ": " + subname);
     } else {
         CSubSource::TSubtype subtype = m_Value->GetSubtype();
         if ( subtype == CSubSource::eSubtype_germline            ||
@@ -526,7 +537,14 @@ void CFlatGoQVal::Format
  IFlatQVal::TFlags flags) const
 {
     _ASSERT(m_Value->GetData().IsFields());
-    x_AddFQ(q, name, s_GetGOText(*m_Value));
+    if ( s_IsNote(flags) ) {
+        static const string sfx = ";";
+        m_Prefix = &kEOL;
+        m_Suffix = &sfx;
+        x_AddFQ(q, "note", name + ": " + s_GetGOText(*m_Value));
+    } else {
+        x_AddFQ(q, name, s_GetGOText(*m_Value));
+    }
 }
 
 
@@ -559,6 +577,20 @@ void CFlatTrnaCodonsQVal::Format
 }
 
 
+void CFlatProductQVal::Format
+(TFlatQuals& q,
+ const string& n,
+ CFFContext& ctx,
+ TFlags) const
+{
+    // !!!
+    /*
+    if ( ctx.DropIllegalQuals() ) {
+        if ( !s_LegalQualForFeature(eFQ_product, m_Subtype)
+    */
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -566,6 +598,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/18 15:43:27  shomrat
+* Fixes to quals formatting
+*
 * Revision 1.7  2004/03/08 21:01:44  shomrat
 * GI prefix flag for Seq-id quals
 *
