@@ -62,6 +62,8 @@ public:
     virtual ~CFlatGatherer(void);
 
 protected:
+    typedef CRange<TSeqPos> TRange;
+
     CFlatGatherer(void) {}
 
     CFlatItemOStream& ItemOS     (void) const { return *m_ItemOS;  }
@@ -90,12 +92,13 @@ protected:
     typedef deque<TSFItem>              TSourceFeatSet;
     void x_GatherSourceFeatures(void) const;
     void x_CollectBioSources(TSourceFeatSet& srcs) const;
-    void x_CollectBioSourcesOnBioseq(CBioseq_Handle bh, CRange<TSeqPos> range,
-        CBioseqContext& ctx, TSourceFeatSet& srcs) const;
-    void x_CollectSourceDescriptors(CBioseq_Handle& bh, const CRange<TSeqPos>& range,
-        CBioseqContext& ctx, TSourceFeatSet& srcs) const;
-    void x_CollectSourceFeatures(CBioseq_Handle& bh, const CRange<TSeqPos>& range,
-        CBioseqContext& ctx, TSourceFeatSet& srcs) const;
+    void x_CollectBioSourcesOnBioseq(const CBioseq_Handle& bh,
+        const TRange& range, CBioseqContext& ctx, TSourceFeatSet& srcs) const;
+    void x_CollectSourceDescriptors(const CBioseq_Handle& bh, CBioseqContext& ctx,
+        TSourceFeatSet& srcs) const;
+    void x_CollectSourceFeatures(const CBioseq_Handle& bh,
+        const TRange& range, CBioseqContext& ctx,
+        TSourceFeatSet& srcs) const;
     void x_MergeEqualBioSources(TSourceFeatSet& srcs) const;
     void x_SubtractFromFocus(TSourceFeatSet& srcs) const;
 
@@ -142,6 +145,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/04/27 15:10:30  shomrat
+* use TRange instead of CRange<TSeqPos>
+*
 * Revision 1.10  2004/04/22 15:44:29  shomrat
 * Changes in context
 *
