@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/03/07 21:42:06  grichenk
+* +Test for GetSeq_annot()
+*
 * Revision 1.8  2002/03/05 16:08:16  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -160,6 +163,8 @@ private:
         int seq_desc_cnt,
         int seq_feat_cnt, int seq_featrg_cnt,
         int seq_align_cnt, int seq_alignrg_cnt,
+        int feat_annots_cnt, int featrg_annots_cnt,
+        int align_annots_cnt, int alignrg_annots_cnt,
         bool tse_feat_test = false);
 
     int m_Idx;
@@ -199,32 +204,33 @@ void* CTestThread::Main(void)
         40, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 4, 2, 1, 0);
+        2, 4, 2, 1, 0, 2, 2, 1, 0);
     ProcessBioseq(*m_Scope, id,
         40, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 1, 0, 0, 0, true);
+        2, 1, 0, 0, 0, 1, 0, 0, 0, true);
     id.SetGi(12);
     ProcessBioseq(*m_Scope, id,
         40, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-        1, 3, 2, 1, 1);
+        1, 3, 2, 1, 1, 2, 2, 1, 1);
     id.SetGi(21);
     ProcessBioseq(*m_Scope, id,
         0, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 1, 1, 0, 0);
+        1, 1, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22);
-    ProcessBioseq(*m_Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "", 0, 0, 0, 0, 0);
+    ProcessBioseq(*m_Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
     id.SetGi(23);
     ProcessBioseq(*m_Scope, id,
         13, 13,
         "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-        0, 0, 0, 0, 0);
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     CRef<CSeq_entry> entry1 = CreateTestEntry1(m_Idx);
     CRef<CSeq_entry> entry2 = CreateTestEntry2(m_Idx);
@@ -236,27 +242,28 @@ void* CTestThread::Main(void)
         40, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 4, 2, 1, 0);
+        2, 4, 2, 1, 0, 2, 2, 1, 0);
     id.SetGi(12+m_Idx*1000);
     ProcessBioseq(*m_Scope, id,
         40, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-        1, 3, 2, 1, 1);
+        1, 3, 2, 1, 1, 2, 2, 1, 1);
     id.SetGi(21+m_Idx*1000);
     ProcessBioseq(*m_Scope, id,
         22, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 1, 1, 0, 0);
+        1, 1, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+m_Idx*1000);
-    ProcessBioseq(*m_Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "", 0, 0, 0, 0, 0);
+    ProcessBioseq(*m_Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
     id.SetGi(23+m_Idx*1000);
     ProcessBioseq(*m_Scope, id,
         13, 13,
         "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-        0, 0, 0, 0, 0);
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     {
         set< CRef<const CSeq_id> > setId;
@@ -293,27 +300,28 @@ void* CTestThread::Main(void)
         40, 40,
         "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
         "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-        2, 5, 3, 1, 0);
+        2, 5, 3, 1, 0, 3, 3, 1, 0);
     id.SetGi(12+m_Idx*1000);
     ProcessBioseq(scope, id,
         40, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-        1, 3, 2, 1, 1);
+        1, 3, 2, 1, 1, 2, 2, 1, 1);
     id.SetGi(21+m_Idx*1000);
     ProcessBioseq(scope, id,
         62, 62,
         "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
         "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-        1, 1, 1, 0, 0);
+        1, 1, 1, 0, 0, 1, 1, 0, 0);
     id.SetGi(22+m_Idx*1000);
-    ProcessBioseq(scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "", 0, 0, 0, 0, 0);
+    ProcessBioseq(scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
     id.SetGi(23+m_Idx*1000);
     ProcessBioseq(scope, id,
         13, 13,
         "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-        0, 0, 0, 0, 0);
+        0, 0, 0, 0, 0, 0, 0, 0, 0);
 
     // Constructed bioseqs
     {{
@@ -338,7 +346,8 @@ void* CTestThread::Main(void)
         scope.AddTopLevelSeqEntry(*constr_entry);
         id.SetLocal().SetStr("constructed1");
         ProcessBioseq(scope, id,
-            27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
+            27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "",
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
         //scope.DropTopLevelSeqEntry(*constr_entry);
     }}
     {{
@@ -364,7 +373,8 @@ void* CTestThread::Main(void)
         scope.AddTopLevelSeqEntry(*constr_entry);
         id.SetLocal().SetStr("constructed2");
         ProcessBioseq(scope, id,
-            27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
+            27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "",
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
         //scope.DropTopLevelSeqEntry(*constr_entry);
     }}
 
@@ -377,7 +387,7 @@ void* CTestThread::Main(void)
         62, 62,
         "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
         "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
-        1, 1, 1, 0, 0);
+        1, 1, 1, 0, 0, 1, 1, 0, 0);
 
     // Testing one seq-entry in multiple scopes
     CRef<CSeq_entry> entry1a = CreateTestEntry1a(m_Idx);
@@ -387,7 +397,7 @@ void* CTestThread::Main(void)
         62, 62,
         "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
         "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-        1, 1, 1, 0, 0);
+        1, 1, 1, 0, 0, 1, 1, 0, 0);
     // Test scope history
     CRef<CSeq_entry> entry1b = CreateTestEntry1(m_Idx);
     scope2->AddTopLevelSeqEntry(*entry1b);
@@ -397,7 +407,7 @@ void* CTestThread::Main(void)
         40, 40,
         "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-        0, 4, 2, 1, 0);
+        0, 4, 2, 1, 0, 2, 2, 1, 0);
 
     return 0;
 }
@@ -846,6 +856,8 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
                                 int seq_desc_cnt,
                                 int seq_feat_cnt, int seq_featrg_cnt,
                                 int seq_align_cnt, int seq_alignrg_cnt,
+                                int feat_annots_cnt, int featrg_annots_cnt,
+                                int align_annots_cnt, int alignrg_annots_cnt,
                                 bool tse_feat_test)
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
@@ -946,10 +958,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(id);
     count = 0;
+    set<const CSeq_annot*> annot_set;
     if ( !tse_feat_test ) {
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
@@ -957,10 +971,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
     _ASSERT(count == seq_feat_cnt);
+    _ASSERT(annot_set.size() == feat_annots_cnt);
 
     // Test CSeq_feat iterator for the specified range
     // Copy location seq-id
@@ -968,10 +984,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
+    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
@@ -979,18 +997,22 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CFeat_CI feat_it(handle, 0, 10, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
     _ASSERT(count == seq_featrg_cnt);
+    _ASSERT(annot_set.size() == featrg_annots_cnt);
 
     // Test CSeq_align iterator
     loc.SetWhole(id);
     count = 0;
+    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
@@ -998,10 +1020,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CAlign_CI align_it(handle, 0, 0);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
     _ASSERT(count == seq_align_cnt);
+    _ASSERT(annot_set.size() == align_annots_cnt);
 
     // Test CSeq_align iterator for the specified range
     // Copy location seq-id
@@ -1009,10 +1033,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;
+    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
@@ -1020,10 +1046,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CAlign_CI align_it(handle, 10, 20);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
     _ASSERT(count == seq_alignrg_cnt);
+    _ASSERT(annot_set.size() == alignrg_annots_cnt);
 }
 
 

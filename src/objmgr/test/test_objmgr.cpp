@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/03/07 21:42:06  grichenk
+* +Test for GetSeq_annot()
+*
 * Revision 1.16  2002/03/05 16:08:16  grichenk
 * Moved TSE-restriction to new constructors
 *
@@ -173,6 +176,8 @@ private:
         int seq_desc_cnt,
         int seq_feat_cnt, int seq_featrg_cnt,
         int seq_align_cnt, int seq_alignrg_cnt,
+        int feat_annots_cnt, int featrg_annots_cnt,
+        int align_annots_cnt, int alignrg_annots_cnt,
         bool tse_feat_test = false);
 
     CRef<CObjectManager> m_ObjMgr;
@@ -622,6 +627,8 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
                              int seq_desc_cnt,
                              int seq_feat_cnt, int seq_featrg_cnt,
                              int seq_align_cnt, int seq_alignrg_cnt,
+                             int feat_annots_cnt, int featrg_annots_cnt,
+                             int align_annots_cnt, int alignrg_annots_cnt,
                              bool tse_feat_test)
 {
     CBioseq_Handle handle = scope.GetBioseqHandle(id);
@@ -722,10 +729,12 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(id);
     count = 0;
+    set<const CSeq_annot*> annot_set;
     if ( !tse_feat_test ) {
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
@@ -733,10 +742,12 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
     _ASSERT(count == seq_feat_cnt);
+    _ASSERT(annot_set.size() == feat_annots_cnt);
 
     // Test CSeq_feat iterator for the specified range
     // Copy location seq-id
@@ -744,10 +755,12 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
+    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
@@ -755,18 +768,22 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CFeat_CI feat_it(handle, 0, 10, CSeqFeatData::e_not_set);
             feat_it;  ++feat_it) {
             count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
     _ASSERT(count == seq_featrg_cnt);
+    _ASSERT(annot_set.size() == featrg_annots_cnt);
 
     // Test CSeq_align iterator
     loc.SetWhole(id);
     count = 0;
+    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
@@ -774,10 +791,12 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CAlign_CI align_it(handle, 0, 0);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
     _ASSERT(count == seq_align_cnt);
+    _ASSERT(annot_set.size() == align_annots_cnt);
 
     // Test CSeq_align iterator for the specified range
     // Copy location seq-id
@@ -785,10 +804,12 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;
+    annot_set.clear();
     if ( !tse_feat_test ) {
         for (CAlign_CI align_it(scope, loc);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
@@ -796,10 +817,12 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         for (CAlign_CI align_it(handle, 10, 20);
             align_it;  ++align_it) {
             count++;
+            annot_set.insert(&align_it.GetSeq_annot());
             //### _ASSERT(align_it->
         }
     }
     _ASSERT(count == seq_alignrg_cnt);
+    _ASSERT(annot_set.size() == alignrg_annots_cnt);
 }
 
 
@@ -822,32 +845,33 @@ int CTestApp::Run(void)
             40, 40,
             "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
             "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 4, 2, 1, 0);
+            2, 4, 2, 1, 0, 2, 2, 1, 0);
         ProcessBioseq(Scope, id,
             40, 40,
             "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
             "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 1, 0, 0, 0, true);
+            2, 1, 0, 0, 0, 1, 0, 0, 0, true);
         id.SetGi(12);
         ProcessBioseq(Scope, id,
             40, 40,
             "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
             "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-            1, 3, 2, 1, 1);
+            1, 3, 2, 1, 1, 2, 2, 1, 1);
         id.SetGi(21);
         ProcessBioseq(Scope, id,
             22, 62,
             "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
             "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-            1, 1, 1, 0, 0);
+            1, 1, 1, 0, 0, 1, 1, 0, 0);
         id.SetGi(22);
-        ProcessBioseq(Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "", 0, 0, 0, 0, 0);
+        ProcessBioseq(Scope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
         id.SetGi(23);
         ProcessBioseq(Scope, id,
             13, 13,
             "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
             "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-            0, 0, 0, 0, 0);
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Find seq_id
         {
@@ -868,27 +892,28 @@ int CTestApp::Run(void)
             40, 40,
             "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
             "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 4, 2, 1, 0);
+            2, 4, 2, 1, 0, 2, 2, 1, 0);
         id.SetGi(12+idx*1000);
         ProcessBioseq(*pScope, id,
             40, 40,
             "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
             "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-            1, 3, 2, 1, 1);
+            1, 3, 2, 1, 1, 2, 2, 1, 1);
         id.SetGi(21+idx*1000);
         ProcessBioseq(*pScope, id,
             22, 62,
             "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
             "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-            1, 1, 1, 0, 0);
+            1, 1, 1, 0, 0, 1, 1, 0, 0);
         id.SetGi(22+idx*1000);
-        ProcessBioseq(*pScope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "", 0, 0, 0, 0, 0);
+        ProcessBioseq(*pScope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "",
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
         id.SetGi(23+idx*1000);
         ProcessBioseq(*pScope, id,
             13, 13,
             "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
             "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-            0, 0, 0, 0, 0);
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         CRef<CSeq_annot> annot(new CSeq_annot);
         list< CRef<CSeq_feat> >& ftable = annot->SetData().SetFtable();
@@ -913,27 +938,29 @@ int CTestApp::Run(void)
             40, 40,
             "CAGCAGCGGTACAGGAGGGTGAGACATCCCAGAGCGGTGC",
             "GTCGTCGCCATGTCCTCCCACTCTGTAGGGTCTCGCCACG",
-            2, 5, 3, 1, 0);
+            2, 5, 3, 1, 0, 3, 3, 1, 0);
         id.SetGi(12+idx*1000);
         ProcessBioseq(*pScope, id,
             40, 40,
             "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
             "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-            1, 3, 2, 1, 1);
+            1, 3, 2, 1, 1, 2, 2, 1, 1);
         id.SetGi(21+idx*1000);
         ProcessBioseq(*pScope, id,
             62, 62,
             "CAGCACAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCCCAGCACAATAAAAAAAA",
             "GTCGTGTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGGGTCGTGTTATTTTTTTT",
-            1, 1, 1, 0, 0);
+            1, 1, 1, 0, 0, 1, 1, 0, 0);
         id.SetGi(22+idx*1000);
-        ProcessBioseq(*pScope, id, 20, 20, "QGCGEQTMTLLAPTLAASRY", "", 0, 0, 0, 0, 0);
+        ProcessBioseq(*pScope, id, 20, 20,
+            "QGCGEQTMTLLAPTLAASRY", "",
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
         id.SetGi(23+idx*1000);
         ProcessBioseq(*pScope, id,
             13, 13,
             "\\0\\x03\\x02\\x01\\0\\x02\\x01\\x03\\x02\\x03\\0\\x01\\x02",
             "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
-            0, 0, 0, 0, 0);
+            0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         // Constructed bioseqs
         {{
@@ -958,7 +985,8 @@ int CTestApp::Run(void)
             pScope->AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed1");
             ProcessBioseq(*pScope, id,
-                27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
+                27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "",
+                0, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
         {{
             CSeq_loc constr_loc;
@@ -983,7 +1011,8 @@ int CTestApp::Run(void)
             pScope->AddTopLevelSeqEntry(*constr_entry);
             id.SetLocal().SetStr("constructed2");
             ProcessBioseq(*pScope, id,
-                27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
+                27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "",
+                0, 0, 0, 0, 0, 0, 0, 0, 0);
         }}
 
         CRef<CScope> pScope2 = new CScope(*m_ObjMgr);
@@ -994,7 +1023,7 @@ int CTestApp::Run(void)
             62, 62,
             "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
             "NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN",
-            1, 1, 1, 0, 0);
+            1, 1, 1, 0, 0, 1, 1, 0, 0);
 
         CRef<CSeq_entry> entry1a = CreateTestEntry1a(idx);
         pScope2->AddTopLevelSeqEntry(*entry1a);
@@ -1004,7 +1033,7 @@ int CTestApp::Run(void)
             62, 62,
             "AAAAATTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTAAAAATTTTTTTTTTTT",
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
-            1, 1, 1, 0, 0);
+            1, 1, 1, 0, 0, 1, 1, 0, 0);
         // Test scope history
         CRef<CSeq_entry> entry1b = CreateTestEntry1(idx);
         pScope2->AddTopLevelSeqEntry(*entry1b);
@@ -1014,7 +1043,7 @@ int CTestApp::Run(void)
             40, 40,
             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
             "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-            0, 4, 2, 1, 0);
+            0, 4, 2, 1, 0, 2, 2, 1, 0);
     }
 
     NcbiCout << " Passed" << NcbiEndl << NcbiEndl;
