@@ -2410,10 +2410,10 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
                 prange.Set(prange.GetFrom(),
                            sequence::GetLength(pit.GetSeq_id(), scope));
             }
-            TRange intersection;
-            intersection.SetFrom(max(prange.GetFrom(), crange.GetFrom()));
-            intersection.SetTo  (min(prange.GetTo(),   crange.GetTo()));
-            if (intersection.GetFrom() >= intersection.GetTo()) {
+            CRef<TRange> intersection(new TRange);
+            intersection->SetFrom(max(prange.GetFrom(), crange.GetFrom()));
+            intersection->SetTo  (min(prange.GetTo(),   crange.GetTo()));
+            if (intersection->GetFrom() >= intersection->GetTo()) {
                 if ( !SameOrientation(cstrand, pit.GetStrand()) ) {
                     ERR_POST(Warning
                              << "SRelLoc::SRelLoc:"
@@ -2421,22 +2421,22 @@ SRelLoc::SRelLoc(const CSeq_loc& parent, const CSeq_loc& child, CScope* scope,
                 }
                 if (IsReverse(cstrand)) { // both strands reverse
                     TSeqPos sigma = pos + prange.GetTo();
-                    TSeqPos from0 = intersection.GetFrom();
-                    intersection.SetFrom(sigma - intersection.GetTo());
-                    intersection.SetTo  (sigma - from0);
+                    TSeqPos from0 = intersection->GetFrom();
+                    intersection->SetFrom(sigma - intersection->GetTo());
+                    intersection->SetTo  (sigma - from0);
                 } else { // both strands forward
                     TSignedSeqPos delta = pos - prange.GetFrom();
-                    intersection.SetFrom(intersection.GetFrom() + delta);
-                    intersection.SetTo  (intersection.GetTo()   + delta);
+                    intersection->SetFrom(intersection->GetFrom() + delta);
+                    intersection->SetTo  (intersection->GetTo()   + delta);
                 }
                 // add to m_Ranges, combining with the previous
                 // interval if possible
                 if ( !(flags & fNoMerge)  &&  !m_Ranges.empty()
-                    &&  m_Ranges.back()->GetTo() == intersection.GetFrom() - 1)
+                    && m_Ranges.back()->GetTo() == intersection->GetFrom() - 1)
                 {
-                    m_Ranges.back()->SetTo(intersection.GetTo());
+                    m_Ranges.back()->SetTo(intersection->GetTo());
                 } else {
-                    m_Ranges.push_back(CRef<TRange>(&intersection));
+                    m_Ranges.push_back(intersection);
                 }
             }
             pos += prange.GetLength();
@@ -2814,6 +2814,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2003/01/22 18:17:09  ucko
+* SRelLoc::SRelLoc: change intersection to a CRef, so we don't have to
+* worry about it going out of scope while still referenced (by m_Ranges).
+*
 * Revision 1.30  2003/01/08 20:43:10  ucko
 * Adjust SRelLoc to use (ID-less) Seq-intervals for ranges, so that it
 * will be possible to add support for fuzz and strandedness/orientation.
