@@ -20,11 +20,12 @@ tblastn_options \
 rpstblastn_options \
 blast_psi_cxx \
 remote_blast \
+seqinfosrc_seqvec \
+seqinfosrc_seqdb \
 seqsrc_multiseq \
 seqsrc_seqdb \
 bl2seq \
 db_blast \
-db_traceback \
 blast_objmgr_tools \
 hspstream_queue \
 repeats_filter_cxx \
