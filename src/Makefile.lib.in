@@ -55,6 +55,7 @@ all: $(XLIB)
 
 clean:
 	-$(RMDIR) SunWS_cache
+	-$(RMDIR) ii_files
 	-$(RM) .make.state
 	-$(RM) $(XLIBOBJ)
 	-$(RM) $(XLIB)

@@ -58,6 +58,7 @@ all: $(XAPP)
 
 clean:
 	-$(RMDIR) SunWS_cache
+	-$(RMDIR) ii_files
 	-$(RM) .make.state
 	-$(RM) *@obj_ext@
 	-$(RM) $(XAPP)
