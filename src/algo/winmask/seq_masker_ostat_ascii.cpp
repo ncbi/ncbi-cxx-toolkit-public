@@ -32,9 +32,9 @@
 
 #include <ncbi_pch.hpp>
 
-#include <sstream>
+#include <corelib/ncbistd.hpp>
 
-#include "algo/winmask/seq_masker_ostat_ascii.hpp"
+#include <algo/winmask/seq_masker_ostat_ascii.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -52,7 +52,7 @@ CSeqMaskerOstatAscii::CSeqMaskerOstatAsciiException::GetErrCodeString() const
 //------------------------------------------------------------------------------
 CSeqMaskerOstatAscii::CSeqMaskerOstatAscii( const string & name )
     : CSeqMaskerOstat( name.empty() ? static_cast<CNcbiOstream&>(NcbiCout)
-                                  : *new CNcbiOfstream( name.c_str() ) )
+                                  : static_cast<CNcbiOstream&>(*new CNcbiOfstream( name.c_str() )) )
 {}
 
 //------------------------------------------------------------------------------
@@ -73,10 +73,11 @@ void CSeqMaskerOstatAscii::doSetUnitCount( Uint4 unit, Uint4 count )
 
     if( unit != 0 && unit <= punit )
     {
-        ostringstream s;
-        s << "current unit " << hex << unit << "; "
+        CNcbiOstrstream ostr;
+        ostr << "current unit " << hex << unit << "; "
           << "previous unit " << hex << punit;
-        NCBI_THROW( CSeqMaskerOstatAsciiException, eBadOrder, s.str() );
+        string s = CNcbiOstrstreamToString(ostr);
+        NCBI_THROW( CSeqMaskerOstatAsciiException, eBadOrder, s );
     }
 
     out_stream << hex << unit << " " << dec << count << "\n"; 
@@ -99,6 +100,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/29 13:30:17  dicuccio
+ * Use <> for includes.  Use CNcbiOstrstream instead of bare ostrstream.
+ * Compilation fox for Win32: cast CNcbiOfstream to CNcbiOstream in ctor
+ *
  * Revision 1.2  2005/03/29 01:37:53  ucko
  * Tweak constructor to avoid confusing GCC 2.95.
  *
