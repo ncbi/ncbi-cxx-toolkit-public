@@ -33,6 +33,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2000/10/11 21:03:49  vakatov
+ * Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+ * (reported by Forte6 Patch 109490-01)
+ *
  * Revision 1.11  2000/10/06 21:56:45  butanaev
  * Added Allow() function. Added classes CArgAllowValue, CArgAllowIntInterval.
  *
@@ -983,8 +987,8 @@ struct CArgContext {
 void CArgDescriptions::x_PreCheck(void) const
 {
     bool     has_extra     = (m_Args.find(NcbiEmptyString) != m_Args.end());
-    unsigned n_policy_args = m_ConstrArgs ? m_ConstrArgs : m_PlainArgs.size();
-
+    unsigned n_policy_args = m_ConstrArgs ?
+        m_ConstrArgs : (unsigned) m_PlainArgs.size();
     const char* err_msg = 0;
     switch ( m_Constraint ) {
     case eAny:
@@ -1089,21 +1093,20 @@ bool CArgDescriptions::x_CreateArg
     }
 
     // Check whether the value is allowed
-    {
-      TAllow::const_iterator it = m_Allow.find(tag);
-      if(it != m_Allow.end())
-      {
+    TAllow::const_iterator it1 = m_Allow.find(tag);
+    if (it1 != m_Allow.end()) {
         bool allowed = false;
-        const TArgAllowList &l = it->second;
-        for(TArgAllowList::const_iterator lit = l.begin(); lit != l.end(); ++lit)
-          if((*lit)->Allow(*value))
-          {
-            allowed = true;
-            break;
-          }
-        if(! allowed)
-          ARG_THROW(tag + " : value not allowed", *value);
-      }
+        const TArgAllowList& l = it1->second;
+        for (TArgAllowList::const_iterator lit = l.begin();
+             lit != l.end();  ++lit) {
+            if ((*lit)->Allow(*value)) {
+                allowed = true;
+                break;
+            }
+        }
+        if ( !allowed ) {
+            ARG_THROW(tag + " : value not allowed", *value);
+        }
     }
 
     // Process argument value and add it to the "args"
@@ -1115,7 +1118,8 @@ bool CArgDescriptions::x_CreateArg
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
     // Check if all mandatory position arguments are passed in
-    unsigned n_policy_args = m_ConstrArgs ? m_ConstrArgs : m_PlainArgs.size();
+    unsigned n_policy_args = m_ConstrArgs ?
+        m_ConstrArgs : (unsigned) m_PlainArgs.size();
     switch ( m_Constraint ) {
     case eAny:
         break;
@@ -1379,7 +1383,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
         if (it != m_Args.end()) {
             args.push_back(CArgUsage
                            (it->first, *it->second,
-                            s_IsOptionalPlain(m_PlainArgs.size(),
+                            s_IsOptionalPlain((unsigned) m_PlainArgs.size(),
                                               m_Constraint, m_ConstrArgs)));
         }
     }}
@@ -1479,8 +1483,8 @@ CArgAllowIntInterval::CArgAllowIntInterval(int a, int b) : m_a(a), m_b(b)
 
 bool CArgAllowIntInterval::Allow(const string &value)
 {
-  int v = NStr::StringToLong(value);
-  return m_a <= v && v <= m_b;
+    int v = NStr::StringToInt(value);
+    return m_a <= v && v <= m_b;
 }
 
 CArgAllowValue::CArgAllowValue(const string &value) : m_value(value)
@@ -1488,7 +1492,7 @@ CArgAllowValue::CArgAllowValue(const string &value) : m_value(value)
 
 bool CArgAllowValue::Allow(const string &value)
 {
-  return m_value == value;
+    return m_value == value;
 }
 
 void CArgDescriptions::Allow(const string &name, CArgAllow *allow)

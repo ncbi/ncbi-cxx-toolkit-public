@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2000/10/11 21:03:50  vakatov
+* Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+* (reported by Forte6 Patch 109490-01)
+*
 * Revision 1.66  2000/08/03 20:21:35  golikov
 * Added predicate PCase for AStrEquiv
 * PNocase, PCase goes through NStr::Compare now
@@ -860,9 +864,9 @@ static void TestUtilities(void)
 
     NcbiCout << "TestUtilities:" << NcbiEndl;
 
-    const int count = sizeof(s_Strings) / sizeof(s_Strings[0]);
+    const size_t count = sizeof(s_Strings) / sizeof(s_Strings[0]);
 
-    for ( int i = 0; i < count; ++i ) {
+    for (size_t i = 0;  i < count;  ++i) {
         const string& str = s_Strings[i];
         NcbiCout << "Checking string: '" << str << "':" << NcbiEndl;
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/10/11 21:03:49  vakatov
+* Cleanup to avoid 64-bit to 32-bit values truncation, etc.
+* (reported by Forte6 Patch 109490-01)
+*
 * Revision 1.32  2000/08/03 20:21:29  golikov
 * Added predicate PCase for AStrEquiv
 * PNocase, PCase goes through NStr::Compare now
@@ -317,7 +321,7 @@ int NStr::StringToInt(const string& str, int base /* = 10 */ )
         value < kMin_Int || value > kMax_Int)
         throw runtime_error("NStr::StringToInt():  cannot convert");
     CHECK_ENDPTR();
-    return value;
+    return (int) value;
 }
 
 unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
@@ -329,7 +333,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
         value > kMax_UInt)
         throw runtime_error("NStr::StringToUInt():  cannot convert");
     CHECK_ENDPTR();
-    return value;
+    return (unsigned int) value;
 }
 
 long NStr::StringToLong(const string& str, int base /* = 10 */ )
