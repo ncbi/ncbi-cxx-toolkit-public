@@ -51,7 +51,7 @@
 #include <objtools/format/items/comment_item.hpp>
 #include <objtools/format/items/basecount_item.hpp>
 #include <objtools/format/items/sequence_item.hpp>
-#include <objtools/format/items/endsection_item.hpp>
+#include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/items/primary_item.hpp>
 #include <objtools/format/items/wgs_item.hpp>
@@ -103,6 +103,8 @@ void CGenbankGatherer::x_DoSingleSection
         return;
     }
 
+    ItemOS() << new CStartSectionItem(ctx);
+
     ItemOS() << new CLocusItem(ctx);
     ItemOS() << new CDeflineItem(ctx);
     ItemOS() << new CAccessionItem(ctx);
@@ -122,11 +124,11 @@ void CGenbankGatherer::x_DoSingleSection
     x_GatherSourceFeatures();
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
         x_GatherWGS(ctx);
-    } else if ( ctx.IsNS() ) {
+    } else if ( ctx.IsRSGenome() ) {
         ItemOS() << new CGenomeItem(ctx);
     } else if ( ctx.GetStyle() == CFlatFileGenerator::eStyle_Contig ) {
         if ( ctx.ShowContigFeatures() ) {
-            x_GatherFeatures();
+            x_GatherFeatures(false);
         }
         ItemOS() << new CContigItem(ctx);
         if ( ctx.ShowContigAndSeq() ) {
@@ -136,7 +138,7 @@ void CGenbankGatherer::x_DoSingleSection
         }
         x_GatherSequence();
     } else {
-        x_GatherFeatures();
+        x_GatherFeatures(false);
         if ( ctx.ShowContigAndSeq()  &&  s_ShowContig(ctx) ) {
             ItemOS() << new CContigItem(ctx);
         }
@@ -204,6 +206,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/01/14 16:15:57  shomrat
+* removed const; using ctrl_items
+*
 * Revision 1.2  2003/12/18 17:43:34  shomrat
 * context.hpp moved
 *

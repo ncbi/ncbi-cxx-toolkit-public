@@ -75,6 +75,18 @@ CGenbankFormatter::CGenbankFormatter(void)
 
 ///////////////////////////////////////////////////////////////////////////
 //
+// END SECTION
+
+void CGenbankFormatter::EndSection(IFlatTextOStream& text_os)
+{
+    list<string> l;
+    l.push_back("//");
+    text_os.AddParagraph(l);
+}
+
+
+///////////////////////////////////////////////////////////////////////////
+//
 // Locus
 //
 // NB: The old locus line format is no longer supported for GenBank.
@@ -106,7 +118,7 @@ CGenbankFormatter::CGenbankFormatter(void)
 
 void CGenbankFormatter::FormatLocus
 (const CLocusItem& locus, 
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     static const string strands[]  = { "   ", "ss-", "ds-", "ms-" };
 
@@ -117,7 +129,7 @@ void CGenbankFormatter::FormatLocus
 
     string units = "bp";
     if ( !ctx.IsProt() ) {
-        if ( ctx.IsWGSMaster()  &&  ctx.IsNZ() ) {
+        if ( ctx.IsWGSMaster()  &&  ctx.IsRSWGSNuc() ) {
             units = "rc";
         }
     } else {
@@ -156,7 +168,7 @@ void CGenbankFormatter::FormatLocus
 
 void CGenbankFormatter::FormatDefline
 (const CDeflineItem& defline,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     Wrap(l, "DEFLINE", defline.GetDefline());
@@ -169,7 +181,7 @@ void CGenbankFormatter::FormatDefline
 
 void CGenbankFormatter::FormatAccession
 (const CAccessionItem& acc, 
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     string acc_line = x_FormatAccession(acc, ';');
     
@@ -187,7 +199,7 @@ void CGenbankFormatter::FormatAccession
 
 void CGenbankFormatter::FormatVersion
 (const CVersionItem& version,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     CNcbiOstrstream version_line;
@@ -208,7 +220,7 @@ void CGenbankFormatter::FormatVersion
 
 void CGenbankFormatter::FormatKeywords
 (const CKeywordsItem& keys,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     x_GetKeywords(keys, "KEYWORDS", l);
@@ -222,7 +234,7 @@ void CGenbankFormatter::FormatKeywords
 
 void CGenbankFormatter::FormatSegment
 (const CSegmentItem& seg,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     CNcbiOstrstream segment_line;
@@ -242,7 +254,7 @@ void CGenbankFormatter::FormatSegment
 
 void CGenbankFormatter::FormatSource
 (const CSourceItem& source,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     x_FormatSourceLine(l, source);
@@ -287,7 +299,7 @@ void CGenbankFormatter::x_FormatOrganismLine
 
 void CGenbankFormatter::FormatReference
 (const CReferenceItem& ref,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     CFFContext& ctx = const_cast<CFFContext&>(ref.GetContext()); // !!!
 
@@ -463,7 +475,7 @@ void CGenbankFormatter::x_Remark
 
 void CGenbankFormatter::FormatComment
 (const CCommentItem& comment,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
 
@@ -485,7 +497,7 @@ void CGenbankFormatter::FormatComment
 
 void CGenbankFormatter::FormatFeatHeader
 (const CFeatHeaderItem& fh,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
 
@@ -497,7 +509,7 @@ void CGenbankFormatter::FormatFeatHeader
 
 void CGenbankFormatter::FormatFeature
 (const CFeatureItemBase& f,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 { 
     const CFlatFeature& feat = *f.Format();
     list<string>        l;
@@ -516,41 +528,6 @@ void CGenbankFormatter::FormatFeature
                    GetFeatIndent() + qual);
     }
     text_os.AddParagraph(l);
-    //m_Stream->AddParagraph(l, &f, &feat.GetFeat());
-    /*
-    list<string>        l;
-    Wrap(l, feat.GetKey(), feat.GetLoc().GetString(), eFeat);
-
-    string qual, value;
-    ITERATE ( TQuals, it, feat.GetQuals() ) {
-        const CFlatQual& q = *it;
-
-        qual  = '/' + q.GetName();
-        value = q.GetValue();
-
-        switch ( q.GetStyle() ) {
-        case CFlatQual::eEmpty:
-            value.erase();
-            break;
-        case CFlatQual::eQuoted:
-            qual += "=\"";
-            value += '"';
-            break;
-        case CFlatQual::eUnquoted: 
-            qual += '=';
-            break;
-        }
-
-        // Call NStr::Wrap directly to avoid unwanted line breaks right
-        // before the start of the value (in /translation, e.g.)
-        NStr::Wrap(value, GetWidth(), l, 0, m_FeatIndent, m_FeatIndent + qual);
-
-        qual.erase();
-        value.erase();
-    }
-
-    text_os.AddParagraph(l);
-    */
 }
 
 
@@ -560,7 +537,7 @@ void CGenbankFormatter::FormatFeature
 
 void CGenbankFormatter::FormatBasecount
 (const CBaseCountItem& bc,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
 
@@ -586,7 +563,7 @@ void CGenbankFormatter::FormatBasecount
 
 void CGenbankFormatter::FormatSequence
 (const CSequenceItem& seq,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
     CNcbiOstrstream seq_line;
@@ -617,25 +594,11 @@ void CGenbankFormatter::FormatSequence
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// END SECTION
-
-void CGenbankFormatter::FormatEndSection
-(const CEndSectionItem& end,
- IFlatTextOStream& text_os) const
-{
-    list<string> l;
-    l.push_back("//");
-    text_os.AddParagraph(l);
-}
-
-
-///////////////////////////////////////////////////////////////////////////
-//
 // DBSOURCE
 
 void CGenbankFormatter::FormatDBSource
 (const CDBSourceItem& dbs,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     list<string> l;
 
@@ -658,7 +621,7 @@ void CGenbankFormatter::FormatDBSource
 
 void CGenbankFormatter::FormatWGS
 (const CWGSItem& wgs,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     string tag;
 
@@ -695,7 +658,7 @@ void CGenbankFormatter::FormatWGS
 
 void CGenbankFormatter::FormatPrimary
 (const CPrimaryItem& prim,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     // !!!
 }
@@ -707,7 +670,7 @@ void CGenbankFormatter::FormatPrimary
 
 void CGenbankFormatter::FormatGenome
 (const CGenomeItem& genome,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     // !!!
 }
@@ -718,7 +681,7 @@ void CGenbankFormatter::FormatGenome
 
 void CGenbankFormatter::FormatContig
 (const CContigItem& contig,
- IFlatTextOStream& text_os) const
+ IFlatTextOStream& text_os)
 {
     // !!!
 }
@@ -731,6 +694,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/01/14 16:16:39  shomrat
+* removed const; using ctrl_items
+*
 * Revision 1.4  2003/12/19 00:14:44  ucko
 * Eliminate remaining uses of LEFT and RIGHT manipulators.
 *
