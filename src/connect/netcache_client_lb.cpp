@@ -79,7 +79,7 @@ void NetCache_ConfigureWithLB(CNetCacheClient* nc_client,
     }}
 err:
     // cannot connect
-    NCBI_THROW(CNetCacheException, eCommunicationError, 
+    NCBI_THROW(CNetServiceException, eCommunicationError, 
                "Cannot connect to service using load balancer.");
 }
 
@@ -111,9 +111,10 @@ CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
   m_StickToHost(false)
 {
     if (lb_service_name.empty()) {
-        NCBI_THROW(CNetCacheException, eCommunicationError,
+        NCBI_THROW(CNetServiceException, eCommunicationError,
                    "Missing service name for load balancer.");
     }
+    SetClientNameComment(lb_service_name);
 }
 
 string CNetCacheClient_LB::PutData(const void*   buf,
@@ -317,6 +318,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/07 13:01:48  kuznets
+ * Part of functionality moved to netservice_client.hpp(cpp)
+ *
  * Revision 1.5  2005/01/28 14:47:14  kuznets
  * Fixed connection bug
  *

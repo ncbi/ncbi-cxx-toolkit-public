@@ -39,6 +39,7 @@
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_types.h>
+#include <connect/netservice_client.hpp>
 #include <connect/ncbi_conn_reader_writer.hpp>
 #include <corelib/ncbistd.hpp>
 #include <util/reader_writer.hpp>
@@ -55,7 +56,6 @@ class CSocket;
  * @{
  */
 
-
 /// Client API for NetCache server
 ///
 /// After any Put, Get transactions connection socket
@@ -63,7 +63,7 @@ class CSocket;
 ///
 /// @sa NetCache_ConfigureWithLB, CNetCacheClient_LB
 ///
-class NCBI_XCONNECT_EXPORT CNetCacheClient
+class NCBI_XCONNECT_EXPORT CNetCacheClient : public CNetServiceClient
 {
 public:
     /// Construct the client without linking it to any particular
@@ -88,29 +88,6 @@ public:
 
     virtual ~CNetCacheClient();
 
-
-    /// Set communication timeout default for all new connections
-    static
-    void SetDefaultCommunicationTimeout(const STimeout& to);
-
-    /// Set communication timeout (ReadWrite)
-    void SetCommunicationTimeout(const STimeout& to);
-    STimeout& SetCommunicationTimeout();
-    STimeout  GetCommunicationTimeout() const;
-
-    /// Set socket (connected to the server)
-    ///
-    /// @param sock
-    ///    Connected socket to the server. 
-    ///    Communication timeouts of the socket won't be changed
-    /// @param own
-    ///    Socket ownership
-    ///
-    void SetSocket(CSocket* sock, EOwnership own = eTakeOwnership);
-
-    /// Detach and return current socket.
-    /// Caller is responsible for deletion.
-    CSocket* DetachSocket();
 
 
     /// Put BLOB to server
@@ -217,24 +194,20 @@ protected:
     void Logging(bool on_off);
 
 protected:
-    bool ReadStr(CSocket& sock, string* str);
-    void WriteStr(const char* str, size_t len);
 
     bool IsError(const char* str);
 
     void SendClientName();
 
-    void CreateSocket(const string& hostname,
-                      unsigned      port);
+    /// Makes string including authentication info(client name) and
+    /// command
+    void MakeCommandPacket(string* out_str, const string& cmd_str);
 
     /// If client is not already connected to the primary server it 
     /// tries to connect to the server specified in the BLOB key
     /// (all infomation is encoded in there)
     virtual 
     void CheckConnect(const string& key);
-
-    /// Extract host/port info from connected socket
-    void RestoreHostPort();
 
     /// @return netcache key
     void PutInitiate(string*       key,
@@ -243,14 +216,8 @@ protected:
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
-
 protected:
-    CSocket*       m_Sock;
-    string         m_Host;
-    unsigned short m_Port;
-    EOwnership     m_OwnSocket;
-    string         m_ClientName;
-    STimeout       m_Timeout;
+    string   m_Tmp;
 };
 
 
@@ -360,28 +327,28 @@ private:
 
 /// NetCache internal exception
 ///
-class CNetCacheException : public CException
+class CNetCacheException : public CNetServiceException
 {
 public:
+    typedef CNetServiceException TParent;
     enum EErrCode {
-        eTimeout,
-        eCommunicationError,
-        eKeyFormatError
+        eAuthenticationError,
+        eKeyFormatError,
+        eServerError
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode())
         {
-        case eTimeout:            return "eTimeout";
-        case eCommunicationError: return "eCommunicationError";
-        case eKeyFormatError:     return "eKeyFormatError";
-        default:                  return CException::GetErrCodeString();
+        case eAuthenticationError: return "eAuthenticationError";
+        case eKeyFormatError:      return "eKeyFormatError";
+        case eServerError:         return "eServerError";
+        default:                   return CException::GetErrCodeString();
         }
     }
 
-
-    NCBI_EXCEPTION_DEFAULT(CNetCacheException, CException);
+    NCBI_EXCEPTION_DEFAULT(CNetCacheException, CNetServiceException);
 };
 
 /// Meaningful information encoded in the NetCache key
@@ -439,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/02/07 13:00:41  kuznets
+ * Part of functionality moved to netservice_client.hpp(cpp)
+ *
  * Revision 1.22  2005/01/28 19:25:16  kuznets
  * Exception method inlined
  *
