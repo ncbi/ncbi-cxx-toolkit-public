@@ -110,6 +110,8 @@ public:
     /// @return
     ///   TRUE  - if the process is still running.
     ///   FALSE - if the process did not exist or was already terminated.
+    /// @sa
+    ///   Wait(), WaitForAlive(), WaitForTerminate()
     bool IsAlive(void) const;
 
     /// Terminate process.
@@ -128,12 +130,14 @@ public:
     /// Wait until process terminates.
     ///
     /// Wait until the process has terminates or timeout expired.
-    //  Return immediately if specifed process has already terminated.
+    /// Return immediately if specifed process has already terminated.
     /// @param timeout
-    ///   Time-out interval. By default it is infinite.
+    ///   Time-out interval in milliceconds. By default it is infinite.
     /// @return
     ///   - Exit code of the process, if no errors.
     ///   - (-1), if error has occurred.
+    /// @sa
+    ///   IsAlive(), WaitForAlive(), WaitForTerminate()
     int Wait(unsigned long timeout = kMax_ULong) const;
 
 private:
@@ -154,14 +158,14 @@ class NCBI_XNCBI_EXPORT CPIDGuardException
 public:
     enum EErrCode {
         eStillRunning, ///< The process listed in the file is still around.
-        eCouldntOpen   ///< Unable to open the PID file for writing.
+        eWrite         ///< Unable to write into the PID file.
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
         case eStillRunning: return "eStillRunning";
-        case eCouldntOpen:  return "eCouldntOpen";
+        case eWrite:        return "eWrite";
         default:            return CException::GetErrCodeString();
         }
     }
@@ -210,14 +214,27 @@ public:
     /// throws CPIDGuardException.
     CPIDGuard(const string& filename, const string& dir = kEmptyStr);
 
-    ~CPIDGuard(void) { Release(); }
+    /// Destructor.
+    ///
+    /// Just calls Release();
+    ~CPIDGuard(void);
 
     /// Returns non-zero if there was a stale file.
     TPid GetOldPID(void) { return m_OldPID; }
 
-    /// Removes the file.
+    /// Release PID.
+    ///
+    /// Decrease reference counter for current PID and remove the file
+    /// if it is not used more (reference counter is 0).
     void Release(void);
 
+    /// Remove the file.
+    ///
+    /// Remove PID file forcibly, ignoring any reference counter.
+    void Remove(void);
+
+    /// Update PID in the file.
+    ///
     /// @param pid
     ///   The new process ID to store (defaults to the current PID);
     ///   useful when the real work occurs in a child process that outlives
@@ -225,8 +242,9 @@ public:
     void UpdatePID(TPid pid = 0);
 
 private:
-    string  m_Path;
-    TPid    m_OldPID;
+    string  m_Path;     //< File path to store PID.
+    TPid    m_OldPID;   //< Old PID read from file.
+    TPid    m_NewPID;   //< New PID wroted to file.
 };
 
 
@@ -239,6 +257,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/18 16:59:09  ivanov
+ * CProcess::
+ *     + WaitForAlive(), WaitForTerminate().
+ * CPIDGuard::
+ *     Fixed CPIDGuard to use reference counters in PID file.
+ *     Added CPIDGuard::Remove().
+ *
  * Revision 1.6  2004/04/01 14:14:01  lavr
  * Spell "occurred", "occurrence", and "occurring"
  *
