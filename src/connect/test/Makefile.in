@@ -16,7 +16,7 @@ APP_PROJ = test_ncbi_buffer test_ncbi_core test_ncbi_socket test_ncbi_dsock \
            test_ncbi_conn_stream test_conn_stream_pushback \
            test_threaded_server test_threaded_client \
            test_fw test_ncbi_namedpipe test_ncbi_namedpipe_connector \
-           test_ncbi_pipe test_ncbi_pipe_connector test_netcache_client
+           test_ncbi_pipe test_ncbi_pipe_connector 
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
