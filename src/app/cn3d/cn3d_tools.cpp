@@ -56,6 +56,8 @@
 
 #include "cn3d/cn3d_tools.hpp"
 
+#include <memory>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -286,6 +288,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/16 02:16:49  ucko
+* +<memory> for auto_ptr<>
+*
 * Revision 1.4  2003/11/15 16:08:35  thiessen
 * add stereo
 *
