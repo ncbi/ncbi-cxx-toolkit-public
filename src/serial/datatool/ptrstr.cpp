@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.7  2000/08/25 15:59:23  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -90,6 +93,12 @@ string CPointerTypeStrings::GetCType(const CNamespace& ns) const
     return GetDataType()->GetCType(ns)+'*';
 }
 
+string CPointerTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                             const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
+}
+
 string CPointerTypeStrings::GetRef(const CNamespace& ns) const
 {
     return "POINTER, ("+GetDataType()->GetRef(ns)+')';
@@ -146,6 +155,13 @@ CTypeStrings::EKind CRefTypeStrings::GetKind(void) const
 string CRefTypeStrings::GetCType(const CNamespace& ns) const
 {
     return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "+GetDataType()->GetCType(ns)+" >";
+}
+
+string CRefTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                         const string& methodPrefix) const
+{
+    return ns.GetNamespaceRef(CNamespace::KNCBINamespace)+"CRef< "
+        + GetDataType()->GetPrefixedCType(ns,methodPrefix)+" >";
 }
 
 string CRefTypeStrings::GetRef(const CNamespace& ns) const

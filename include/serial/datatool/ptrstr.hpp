@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/04/29 18:29:34  gouriano
+* object data member initialization verification
+*
 * Revision 1.6  2000/08/25 15:58:47  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -82,6 +85,8 @@ public:
     EKind GetKind(void) const;
 
     string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
     string GetRef(const CNamespace& ns) const;
 
     string GetInitializer(void) const;
@@ -104,6 +109,8 @@ public:
     EKind GetKind(void) const;
 
     string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
     string GetRef(const CNamespace& ns) const;
 
     string GetInitializer(void) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2003/04/29 18:30:36  gouriano
+* object data member initialization verification
+*
 * Revision 1.66  2003/04/10 20:13:39  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...
@@ -456,12 +459,12 @@ TConstObjectPtr GetMember(const CMemberInfo* memberInfo,
     return memberInfo->GetItemPtr(object);
 }
 
-static
-void AssignMemberDefault2(TObjectPtr object, const CMemberInfo* info)
+void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
+                                         const CMemberInfo* info) const
 {
     // check 'set' flag
     bool haveSetFlag = info->HaveSetFlag();
-    if ( haveSetFlag && !info->GetSetFlag(object) )
+    if ( haveSetFlag && (info->GetSetFlag(object)==CMemberInfo::eSetNo) )
         return; // member not set
     
     TObjectPtr member = GetMember(info, object);
@@ -477,13 +480,13 @@ void AssignMemberDefault2(TObjectPtr object, const CMemberInfo* info)
     }
     // update 'set' flag
     if ( haveSetFlag )
-        info->GetSetFlag(object) = false;
+        info->UpdateSetFlag(object,CMemberInfo::eSetNo);
 }
 
 void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
                                          TMemberIndex index) const
 {
-    AssignMemberDefault2(object, GetMemberInfo(index));
+    AssignMemberDefault(object, GetMemberInfo(index));
 }
 
 inline
@@ -664,7 +667,7 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1,
                                           GetMember(info, object2)) )
             return false;
         if ( info->HaveSetFlag() ) {
-            if ( info->GetSetFlag(object1) != info->GetSetFlag(object2) )
+            if ( !info->CompareSetFlags(object1,object2) )
                 return false;
         }
     }
@@ -694,7 +697,7 @@ void CClassTypeInfo::Assign(TObjectPtr dst,
         info->GetTypeInfo()->Assign(GetMember(info, dst),
                                     GetMember(info, src));
         if ( info->HaveSetFlag() ) {
-            info->GetSetFlag(dst) = info->GetSetFlag(src);
+            info->UpdateSetFlag(dst,info->GetSetFlag(src));
         }
     }
 

@@ -107,6 +107,8 @@ public:
         }
 
     string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
     string GetRef(const CNamespace& ns) const;
 
     EKind GetKind(void) const;
@@ -169,6 +171,8 @@ public:
                          const string& fileName);
 
     string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
     string GetRef(const CNamespace& ns) const;
 
     EKind GetKind(void) const;
@@ -193,6 +197,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2003/04/29 18:29:33  gouriano
+* object data member initialization verification
+*
 * Revision 1.18  2002/11/19 19:47:49  gouriano
 * added support of XML attributes of choice variants
 *

@@ -57,26 +57,6 @@ bool CMemberInfo::HaveSetFlag(void) const
 }
 
 inline
-bool CMemberInfo::GetSetFlag(TConstObjectPtr object) const
-{
-    return CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
-}
-
-inline
-bool& CMemberInfo::GetSetFlag(TObjectPtr object) const
-{
-    return CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
-}
-
-inline
-void CMemberInfo::UpdateSetFlag(TObjectPtr object, bool value) const
-{
-    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
-    if ( setFlagOffset != eNoOffset )
-        CTypeConverter<bool>::Get(Add(object, setFlagOffset)) = value;
-}
-
-inline
 bool CMemberInfo::CanBeDelayed(void) const
 {
     return m_DelayOffset != eNoOffset;
@@ -214,6 +194,9 @@ void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.16  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.20  2003/03/10 18:55:19  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -194,7 +197,7 @@ bool CTypeStrings::NeedSetFlag(void) const
     switch ( GetKind() ) {
     case eKindPointer:
     case eKindRef:
-    case eKindContainer:
+//    case eKindContainer:
         return false;
     default:
         return true;

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/04/29 18:29:34  gouriano
+* object data member initialization verification
+*
 * Revision 1.8  2001/05/17 15:00:42  lavr
 * Typos corrected
 *
@@ -121,7 +124,7 @@ public:
             return m_Errors;
         }
 
-    const string& GetVar(const string& section, const string& value) const;
+    const string GetVar(const string& section, const string& value) const;
     string GetFileNamePrefix(void) const;
     
     void AddDefinition(const string& name, const AutoPtr<CDataType>& type);

@@ -93,6 +93,17 @@ public:
     bool DetectLoops(void) const;
     void DetectLoops(bool detectLoops);
 
+    // when enabled, stream verifies data on output
+    // and throws CUnassignedMember exception
+
+    // for this particular stream
+    void SetVerifyData(bool do_verify);
+    bool GetVerifyData(void) const;
+    // for streams created by the current thread
+    static  void SetVerifyData(ESerialVerifyData verify);
+    // for streams created by the current process
+    static  void SetVerifyDataGlobal(ESerialVerifyData verify);
+
     // constructors
 protected:
     CObjectOStream(CNcbiOstream& out, bool deleteOut = false);
@@ -239,7 +250,8 @@ public:
         fInvalidData   = 1 << 4,        eInvalidData = fInvalidData,
         fIllegalCall   = 1 << 5,        eIllegalCall = fIllegalCall,
         fFail          = 1 << 6,        eFail        = fFail,
-        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen
+        fNotOpen       = 1 << 7,        eNotOpen     = fNotOpen,
+        fUnassigned    = 1 << 8,        eUnassigned  = fUnassigned
     };
     typedef int TFailFlags;
     bool fail(void) const;
@@ -458,6 +470,11 @@ protected:
     virtual void WriteSeparator(void);
     string m_Separator;
     bool   m_AutoSeparator;
+    bool   m_VerifyData;
+    static ESerialVerifyData ms_VerifyDataDefault;
+
+private:
+    static bool x_GetVerifyDataDefault(void);
 
 public:
     // hook support
@@ -480,6 +497,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.72  2003/04/15 16:18:28  siyan
 * Added doxygen support
 *

@@ -79,12 +79,14 @@ class NCBI_XSERIAL_EXPORT CUnassignedMember : public CSerialException
 {
 public:
     enum EErrCode {
-        eFail,
+        eGet,
+        eWrite,
         eUnknownMember
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
-        case eFail:           return "eFail";
+        case eGet:            return "eGet";
+        case eWrite:          return "eWrite";
         case eUnknownMember:  return "eUnknownMember";
         default:              return CException::GetErrCodeString();
         }
@@ -131,6 +133,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.12  2003/04/15 14:15:12  siyan
 * Added doxygen support
 *

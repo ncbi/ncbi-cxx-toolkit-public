@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/29 18:29:34  gouriano
+* object data member initialization verification
+*
 * Revision 1.9  2000/11/07 17:25:31  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 *
@@ -125,6 +128,8 @@ public:
     virtual EKind GetKind(void) const = 0;
 
     virtual string GetCType(const CNamespace& ns) const = 0;
+    virtual string GetPrefixedCType(const CNamespace& ns,
+                                    const string& methodPrefix) const = 0;
     virtual bool HaveSpecialRef(void) const;
     virtual string GetRef(const CNamespace& ns) const = 0;
 

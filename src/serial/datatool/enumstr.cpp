@@ -64,6 +64,16 @@ string CEnumTypeStrings::GetCType(const CNamespace& /*ns*/) const
     return m_CType;
 }
 
+string CEnumTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                          const string& methodPrefix) const
+{
+    string s;
+    if (!m_IsInteger) {
+        s += methodPrefix;
+    }
+    return  s + GetCType(ns);
+}
+
 string CEnumTypeStrings::GetRef(const CNamespace& /*ns*/) const
 {
     return "ENUM, ("+m_CType+", "+m_EnumName+')';
@@ -166,6 +176,12 @@ string CEnumRefTypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(m_Namespace)+m_EnumName;
 }
 
+string CEnumRefTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                             const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
+}
+
 string CEnumRefTypeStrings::GetRef(const CNamespace& ns) const
 {
     string ref = "ENUM";
@@ -200,6 +216,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.17  2003/04/10 18:13:29  ucko
 * Add export specifiers to (external) DECLARE_ENUM_INFO calls.
 * Move CVS log to end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.14  2003/03/10 18:55:19  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -151,6 +154,13 @@ string CTemplate1TypeStrings::GetCType(const CNamespace& ns) const
     return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+" >";
 }
 
+string CTemplate1TypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                               const string& methodPrefix) const
+{
+    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "
+        + GetArg1Type()->GetPrefixedCType(ns,methodPrefix)+" >";
+}
+
 string CTemplate1TypeStrings::GetRef(const CNamespace& ns) const
 {
     return "STL_"+GetRefTemplate()+", ("+GetArg1Type()->GetRef(ns)+')';
@@ -207,6 +217,14 @@ CTemplate2TypeStrings::~CTemplate2TypeStrings(void)
 string CTemplate2TypeStrings::GetCType(const CNamespace& ns) const
 {
     return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "+GetArg1Type()->GetCType(ns)+", "+GetArg2Type()->GetCType(ns)+" >";
+}
+
+string CTemplate2TypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                               const string& methodPrefix) const
+{
+    return ns.GetNamespaceRef(GetTemplateNamespace())+GetTemplateName()+"< "
+        + GetArg1Type()->GetPrefixedCType(ns,methodPrefix)+", "
+        + GetArg2Type()->GetPrefixedCType(ns,methodPrefix)+" >";
 }
 
 string CTemplate2TypeStrings::GetRef(const CNamespace& ns) const
@@ -386,6 +404,12 @@ void CVectorTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 string CVectorTypeStrings::GetCType(const CNamespace& ns) const
 {
     return ns.GetNamespaceRef(CNamespace::KSTDNamespace)+"vector< " + m_CharType + " >";
+}
+
+string CVectorTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                            const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
 }
 
 string CVectorTypeStrings::GetRef(const CNamespace& /*ns*/) const

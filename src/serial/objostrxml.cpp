@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/04/29 18:30:37  gouriano
+* object data member initialization verification
+*
 * Revision 1.52  2003/03/26 16:14:23  vasilche
 * Removed TAB symbols. Some formatting.
 *
@@ -715,7 +718,6 @@ void CObjectOStreamXml::PrintTagName(size_t level)
         }
     case TFrame::eFrameArrayElement:
         {
-            const TFrame& frame1 = FetchFrameFromTop(level+1);
             PrintTagName(level + 1);
             if (!x_IsStdXml()) {
                 m_Output.PutString("_E");

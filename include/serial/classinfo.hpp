@@ -115,6 +115,7 @@ public:
     const type_info* GetCPlusPlusTypeInfo(TConstObjectPtr object) const;
 
 protected:
+    void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info) const;
     void AssignMemberDefault(TObjectPtr object, TMemberIndex index) const;
     
     virtual bool IsType(TTypeInfo typeInfo) const;
@@ -185,6 +186,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.42  2003/04/15 14:14:57  siyan
 * Added doxygen support
 *

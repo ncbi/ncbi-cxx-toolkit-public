@@ -336,6 +336,18 @@ void CObjectOStream::SetAutoSeparator(bool value)
     m_AutoSeparator = value;
 }
 
+inline
+void CObjectOStream::SetVerifyData(bool do_verify)
+{
+    m_VerifyData = do_verify;
+}
+
+inline
+bool CObjectOStream::GetVerifyData(void) const
+{
+    return m_VerifyData;
+}
+
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */
 
@@ -343,6 +355,9 @@ void CObjectOStream::SetAutoSeparator(bool value)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.19  2003/04/10 20:13:37  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...

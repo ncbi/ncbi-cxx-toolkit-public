@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.11  2002/01/15 21:38:27  grichenk
 * Fixed NULL type initialization/reading/writing
 *
@@ -139,6 +142,12 @@ string CStdTypeStrings::GetCType(const CNamespace& ns) const
         return m_CType;
 }
 
+string CStdTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                         const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
+}
+
 string CStdTypeStrings::GetRef(const CNamespace& ns) const
 {
     return "STD, ("+GetCType(ns)+')';
@@ -162,6 +171,12 @@ bool CNullTypeStrings::HaveSpecialRef(void) const
 string CNullTypeStrings::GetCType(const CNamespace& /*ns*/) const
 {
     return "bool";
+}
+
+string CNullTypeStrings::GetPrefixedCType(const CNamespace& ns,
+                                          const string& /*methodPrefix*/) const
+{
+    return GetCType(ns);
 }
 
 string CNullTypeStrings::GetRef(const CNamespace& /*ns*/) const

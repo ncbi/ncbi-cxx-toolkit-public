@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.32  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -452,7 +455,7 @@ string CDataTypeModule::GetFileNamePrefix(void) const
     return GetModuleContainer().GetFileNamePrefix();
 }
 
-const string& CDataTypeModule::GetVar(const string& typeName,
+const string CDataTypeModule::GetVar(const string& typeName,
                                       const string& varName) const
 {
     _ASSERT(!typeName.empty());

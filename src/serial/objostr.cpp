@@ -30,9 +30,15 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2003/04/29 18:30:37  gouriano
+* object data member initialization verification
+*
 * Revision 1.77  2003/04/10 20:13:39  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...
+*
+* Revision 1.75  2003/04/03 21:47:24  gouriano
+* verify initialization of data members
 *
 * Revision 1.74  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
@@ -322,6 +328,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
@@ -346,6 +353,7 @@
 #define _TRACE(arg) ((void)0)
 
 BEGIN_NCBI_SCOPE
+
 
 CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                                      const string& fileName,
@@ -401,9 +409,72 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
                "CObjectOStream::Open: unsupported format");
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// data verification setup
+
+ESerialVerifyData CObjectOStream::ms_VerifyDataDefault = eSerialVerifyData_Default;
+static CSafeStaticRef< CTls<int> > s_VerifyTLS;
+
+
+void CObjectOStream::SetVerifyData(ESerialVerifyData verify)
+{
+    ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+    if (tls_verify != eSerialVerifyData_Never &&
+        tls_verify != eSerialVerifyData_Always) {
+        s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
+    }
+}
+
+void CObjectOStream::SetVerifyDataGlobal(ESerialVerifyData verify)
+{
+    if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
+        ms_VerifyDataDefault != eSerialVerifyData_Always) {
+        ms_VerifyDataDefault = verify;
+    }
+}
+
+bool CObjectOStream::x_GetVerifyDataDefault(void)
+{
+    ESerialVerifyData verify;
+    if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
+        ms_VerifyDataDefault == eSerialVerifyData_Always) {
+        verify = ms_VerifyDataDefault;
+    } else {
+        verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+        if (verify == eSerialVerifyData_Default) {
+            if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
+
+                // change the default here, if you wish
+                //ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                ms_VerifyDataDefault = eSerialVerifyData_No;
+
+                const char* str = getenv(SERIAL_VERIFY_DATA_WRITE);
+                if (str) {
+                    if (NStr::CompareNocase(str,"YES") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                    } else if (NStr::CompareNocase(str,"NO") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_No;
+                    } else if (NStr::CompareNocase(str,"NEVER") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Never;
+                    } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Always;
+                    }
+                }
+                verify = ms_VerifyDataDefault;
+            }
+        }
+    }
+    return verify == eSerialVerifyData_Yes ||
+           verify == eSerialVerifyData_Always;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
     : m_Output(out, deleteOut), m_Fail(fNoError), m_Flags(fFlagNone),
-      m_Separator(""), m_AutoSeparator(false)
+      m_Separator(""), m_AutoSeparator(false),
+      m_VerifyData(x_GetVerifyDataDefault())
 {
 }
 
@@ -502,6 +573,9 @@ void CObjectOStream::ThrowError1(const char* file, int line,
     case fIllegalCall: err = CSerialException::eIllegalCall; break;
     case fFail:        err = CSerialException::eFail;        break;
     case fNotOpen:     err = CSerialException::eNotOpen;     break;
+    case fUnassigned:
+        throw CUnassignedMember(file,line,0,CUnassignedMember::eWrite,
+                                GetPosition()+": "+message);
     }
     throw CSerialException(file,line,0,err,GetPosition()+": "+message);
 }

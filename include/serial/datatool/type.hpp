@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/04/29 18:29:34  gouriano
+* object data member initialization verification
+*
 * Revision 1.18  2003/02/12 21:41:26  gouriano
 * added check for "primitive" data type (int, bool, etc)
 *
@@ -202,7 +205,7 @@ public:
     const CNamespace& Namespace(void) const;
     string InheritFromClass(void) const;
     const CDataType* InheritFromType(void) const;
-    const string& GetVar(const string& value) const;
+    const string GetVar(const string& value) const;
 
     bool InChoice(void) const;
 

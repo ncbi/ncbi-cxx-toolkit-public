@@ -74,6 +74,18 @@ enum ESerialDataFormat {
     eSerial_Xml          = 3       // open XML format
 };
 
+
+#define SERIAL_VERIFY_DATA_GET    "SERIAL_VERIFY_DATA_GET"
+#define SERIAL_VERIFY_DATA_WRITE  "SERIAL_VERIFY_DATA_WRITE"
+
+enum ESerialVerifyData {
+    eSerialVerifyData_Default = 0, // use current default
+    eSerialVerifyData_No,          // do not verify
+    eSerialVerifyData_Never,       // never verify (even if set to verify later on)
+    eSerialVerifyData_Yes,         // do verify
+    eSerialVerifyData_Always       // always verify (even if set not to later on)
+};
+
 enum ESerialOpenFlags {
     eSerial_StdWhenEmpty = 1 << 0, // use std stream when filename is empty
     eSerial_StdWhenDash  = 1 << 1, // use std stream when filename is "-"
@@ -162,6 +174,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.21  2003/04/15 16:18:51  siyan
 * Added doxygen support
 *

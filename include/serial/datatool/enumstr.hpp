@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2003/04/29 18:29:33  gouriano
+* object data member initialization verification
+*
 * Revision 1.9  2000/11/15 20:34:41  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -121,6 +124,8 @@ public:
     const string& GetEnumName(void) const;
 
     string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
     string GetRef(const CNamespace& ns) const;
     string GetInitializer(void) const;
 
@@ -149,6 +154,8 @@ public:
     const string& GetEnumName(void) const;
 
     string GetCType(const CNamespace& ns) const;
+    string GetPrefixedCType(const CNamespace& ns,
+                            const string& methodPrefix) const;
     string GetRef(const CNamespace& ns) const;
     string GetInitializer(void) const;
 

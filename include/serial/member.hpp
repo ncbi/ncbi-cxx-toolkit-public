@@ -93,11 +93,17 @@ public:
 
     bool HaveSetFlag(void) const;
     CMemberInfo* SetSetFlag(const bool* setFlag);
+    CMemberInfo* SetSetFlag(const Uint4* setFlag);
     CMemberInfo* SetOptional(const bool* setFlag);
 
-    bool GetSetFlag(TConstObjectPtr object) const;
-    bool& GetSetFlag(TObjectPtr object) const;
-    void UpdateSetFlag(TObjectPtr object, bool value) const;
+    enum ESetFlag {
+        eSetNo    = 0,
+        eSetMaybe = 1,
+        eSetYes   = 3
+    };
+    ESetFlag GetSetFlag(TConstObjectPtr object) const;
+    void UpdateSetFlag(TObjectPtr object, ESetFlag value) const;
+    bool CompareSetFlags(TConstObjectPtr object1, TConstObjectPtr object2) const;
 
     bool CanBeDelayed(void) const;
     CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer);
@@ -162,6 +168,7 @@ private:
     TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object
     TPointerOffsetType m_SetFlagOffset;
+    bool m_BitSetFlag;
     // offset of delay buffer inside object
     TPointerOffsetType m_DelayOffset;
 
@@ -201,6 +208,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.26  2003/04/15 14:15:23  siyan
 * Added doxygen support
 *

@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/exception.hpp>
+#include <serial/serialdef.hpp>
 #include <typeinfo>
 
 
@@ -86,7 +87,6 @@ public:
         }
 };
 
-
 // Base class for all serializable objects
 class NCBI_XSERIAL_EXPORT CSerialObject : public CObject
 {
@@ -95,6 +95,18 @@ public:
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
+
+    void ThrowUnassigned(TMemberIndex index) const;
+    // for all GetX() methods called in the current thread
+    static  void SetVerifyData(ESerialVerifyData verify);
+    // for all GetX() methods called in the current process
+    static  void SetVerifyDataGlobal(ESerialVerifyData verify);
+
+    static const char* ms_UnassignedStr;
+    static const char  ms_UnassignedByte;
+private:
+    static bool  x_GetVerifyData(void);
+    static ESerialVerifyData ms_VerifyDataDefault;
 };
 
 
@@ -225,6 +237,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/04/29 18:29:06  gouriano
+* object data member initialization verification
+*
 * Revision 1.18  2003/04/15 16:18:48  siyan
 * Added doxygen support
 *

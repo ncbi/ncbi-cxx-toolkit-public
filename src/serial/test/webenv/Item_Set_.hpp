@@ -76,9 +76,6 @@ public:
     // reset whole object
     virtual void Reset(void);
 
-    bool VerifyAssigned(size_t ) const {return true;}
-    void SetAssigned(size_t ) {}
-
 private:
     // Prohibit copy constructor and assignment operator
     CItem_Set_Base(const CItem_Set_Base&);

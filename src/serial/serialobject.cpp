@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/04/29 18:30:37  gouriano
+* object data member initialization verification
+*
 * Revision 1.6  2003/01/22 18:54:09  gouriano
 * added unfreezing of the string stream
 *
@@ -52,10 +55,13 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbi_safe_static.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
 
 #include <serial/objostr.hpp>
+
+#include <serial/classinfob.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -98,5 +104,85 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ostr.freeze(false);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// data verification setup
+
+const char* CSerialObject::ms_UnassignedStr = "unassigned";
+const char  CSerialObject::ms_UnassignedByte = char(0xcd);
+
+ESerialVerifyData CSerialObject::ms_VerifyDataDefault = eSerialVerifyData_Default;
+static CSafeStaticRef< CTls<int> > s_VerifyTLS;
+
+
+void CSerialObject::SetVerifyData(ESerialVerifyData verify)
+{
+    ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+    if (tls_verify != eSerialVerifyData_Never &&
+        tls_verify != eSerialVerifyData_Always) {
+        s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
+    }
+}
+
+void CSerialObject::SetVerifyDataGlobal(ESerialVerifyData verify)
+{
+    if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
+        ms_VerifyDataDefault != eSerialVerifyData_Always) {
+        ms_VerifyDataDefault = verify;
+    }
+}
+
+bool CSerialObject::x_GetVerifyData(void)
+{
+    ESerialVerifyData verify;
+    if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
+        ms_VerifyDataDefault == eSerialVerifyData_Always) {
+        verify = ms_VerifyDataDefault;
+    } else {
+        verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+        if (verify == eSerialVerifyData_Default) {
+            if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
+
+                // change the default here, if you wish
+                //ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                ms_VerifyDataDefault = eSerialVerifyData_No;
+
+                const char* str = getenv(SERIAL_VERIFY_DATA_GET);
+                if (str) {
+                    if (NStr::CompareNocase(str,"YES") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                    } else if (NStr::CompareNocase(str,"NO") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_No;
+                    } else if (NStr::CompareNocase(str,"NEVER") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Never;
+                    } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Always;
+                    }
+                }
+                verify = ms_VerifyDataDefault;
+            }
+        }
+    }
+    return verify == eSerialVerifyData_Yes ||
+           verify == eSerialVerifyData_Always;
+}
+
+void CSerialObject::ThrowUnassigned(TMemberIndex index) const
+{
+    if (x_GetVerifyData()) {
+        const CTypeInfo* type = GetThisTypeInfo();
+        string message = type->GetModuleName()+"::"+type->GetName()+".";
+        const CClassTypeInfoBase* classtype =
+            dynamic_cast<const CClassTypeInfoBase*>(type);
+        if (classtype) {
+            message +=
+                classtype->GetItems().GetItemInfo(index)->GetId().GetName();
+        } else {
+            message += NStr::UIntToString(index);
+        }
+        NCBI_THROW(CUnassignedMember,eGet,message);
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 END_NCBI_SCOPE

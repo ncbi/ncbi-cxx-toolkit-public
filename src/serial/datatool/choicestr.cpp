@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.42  2003/03/11 20:06:47  kuznets
 * iterate -> ITERATE
 *
@@ -782,6 +785,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    // setters\n";
         ITERATE ( TVariants, i, m_Variants ) {
             string cType = i->type->GetCType(code.GetNamespace());
+            string tType = "T" + i->cName;
+            string rType = i->type->GetPrefixedCType(code.GetNamespace(),methodPrefix);
+
             if (i->attlist) {
                 code.ClassPublic() <<
                     "    void Reset"<<i->cName<<"(void);\n";
@@ -791,28 +797,28 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if (i->dataType && i->dataType->IsPrimitive()) {
                 code.ClassPublic() <<
-                    "    "<<cType<<" Get"<<i->cName<<"(void) const;"
+                    "    "<<tType<<" Get"<<i->cName<<"(void) const;"
                     "\n";
             } else {
                 code.ClassPublic() <<
-                    "    const "<<cType<<"& Get"<<i->cName<<"(void) const;"
+                    "    const "<<tType<<"& Get"<<i->cName<<"(void) const;"
                     "\n";
             }
             setters <<
-                "    "<<cType<<"& Set"<<i->cName<<"(void);\n";
+                "    "<<tType<<"& Set"<<i->cName<<"(void);\n";
             if ( i->memberType == eSimpleMember ||
                 i->memberType == eStringMember ) {
                 if (i->attlist) {
                     setters <<
-                        "    void Set"<<i->cName<<"("<<cType<<"& value);\n";
+                        "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
                 } else {
                     setters <<
-                        "    void Set"<<i->cName<<"(const "<<cType<<"& value);\n";
+                        "    void Set"<<i->cName<<"(const "<<tType<<"& value);\n";
                 }
             }
             if ( i->memberType == eObjectPointerMember ) {
                 setters <<
-                    "    void Set"<<i->cName<<"("<<cType<<"& value);\n";
+                    "    void Set"<<i->cName<<"("<<tType<<"& value);\n";
             }
             string memberRef;
             string constMemberRef;
@@ -848,11 +854,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 if (i->dataType && i->dataType->IsPrimitive()) {
-                    code.MethodStart(inl) <<
-                        methodPrefix<<"T"<<i->cName;
+                    code.MethodStart(inl) << rType;
                 } else {
-                    code.MethodStart(inl) <<
-                        "const "<<methodPrefix<<"T"<<i->cName<<"&";
+                    code.MethodStart(inl) << "const "<<rType<<"&";
                 }
                 code.Methods(inl) <<
                     " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
@@ -862,14 +866,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 code.MethodStart(inl) <<
-                    methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                    rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                     "{\n";
                 code.Methods(inl) <<
                     "    return (*m_"<<i->cName<<");\n"
                     "}\n"
                     "\n";
                 code.MethodStart(inl) <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(T"<<i->cName<<"& value)\n"
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
                     "{\n";
                 code.Methods(inl) <<
                     "    m_"<<i->cName<<".Reset(&value);\n"
@@ -884,11 +888,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 if (i->dataType && i->dataType->IsPrimitive()) {
-                    code.MethodStart(inl) <<
-                        methodPrefix<<"T"<<i->cName;
+                    code.MethodStart(inl) << rType;
                 } else {
-                    code.MethodStart(inl) <<
-                        "const "<<methodPrefix<<"T"<<i->cName<<"&";
+                    code.MethodStart(inl) << "const "<<rType<<"&";
                 }
                 code.Methods(inl) <<
                     " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
@@ -903,7 +905,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "}\n"
                     "\n";
                 code.MethodStart(inl) <<
-                    methodPrefix<<"T"<<i->cName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                    rType<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                     "{\n"
                     "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                 if ( i->delayed ) {
@@ -919,7 +921,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     inlineMethods <<
                         "inline\n"
                         "void "<<methodPrefix<<"Set"<<i->cName<<"(";
-                    inlineMethods << "const T" << i->cName << "&";
+                    inlineMethods << "const " << rType << "&";
                     inlineMethods <<
                         " value)\n"
                         "{\n"
@@ -935,7 +937,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->memberType == eObjectPointerMember ) {
                     methods <<
-                        "void "<<methodPrefix<<"Set"<<i->cName<<"(T"<<i->cName<<"& value)\n"
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"("<<rType<<"& value)\n"
                         "{\n"
                         "    T"<<i->cName<<"* ptr = &value;\n";
                     if ( i->delayed ) {

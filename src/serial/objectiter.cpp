@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/04/29 18:30:37  gouriano
+* object data member initialization verification
+*
 * Revision 1.3  2003/03/10 18:54:26  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -101,7 +104,7 @@ bool CObjectTypeInfoMI::IsSet(const CConstObjectInfo& object) const
 {
     const CMemberInfo* memberInfo = GetMemberInfo();
     if ( memberInfo->HaveSetFlag() )
-        return memberInfo->GetSetFlag(object.GetObjectPtr());
+        return memberInfo->GetSetFlag(object.GetObjectPtr()) != CMemberInfo::eSetNo;
     
     if ( memberInfo->CanBeDelayed() &&
          memberInfo->GetDelayBuffer(object.GetObjectPtr()).Delayed() )
@@ -210,7 +213,7 @@ void CObjectInfoMI::Erase(void)
     TObjectPtr objectPtr = m_Object.GetObjectPtr();
     // check 'set' flag
     bool haveSetFlag = mInfo->HaveSetFlag();
-    if ( haveSetFlag && !mInfo->GetSetFlag(objectPtr) ) {
+    if ( haveSetFlag && mInfo->GetSetFlag(objectPtr) == CMemberInfo::eSetNo ) {
         // member not set
         return;
     }
@@ -220,7 +223,7 @@ void CObjectInfoMI::Erase(void)
 
     // update 'set' flag
     if ( haveSetFlag )
-        mInfo->GetSetFlag(objectPtr) = false;
+        mInfo->UpdateSetFlag(objectPtr,CMemberInfo::eSetNo);
 }
 
 // choice iterators

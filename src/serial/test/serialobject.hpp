@@ -30,10 +30,6 @@ public:
 
     DECLARE_INTERNAL_TYPE_INFO();
 
-//    virtual void ThrowUnassigned(const char* name) const {}
-    bool VerifyAssigned(size_t ) const {return true;}
-    void SetAssigned(size_t ) {}
-
     string m_Name;
     bool m_HaveName;
     string* m_NamePtr;

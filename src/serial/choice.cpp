@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/04/29 18:30:36  gouriano
+* object data member initialization verification
+*
 * Revision 1.33  2002/12/26 19:32:32  gouriano
 * changed XML I/O streams to properly handle object copying
 *
@@ -297,6 +300,24 @@ bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
     return GetIndex(object) == kEmptyChoice;
 }
 
+
+static inline
+TObjectPtr GetMember(const CMemberInfo* memberInfo, TObjectPtr object)
+{
+    if ( memberInfo->CanBeDelayed() )
+        memberInfo->GetDelayBuffer(object).Update();
+    return memberInfo->GetItemPtr(object);
+}
+
+static inline
+TConstObjectPtr GetMember(const CMemberInfo* memberInfo,
+                          TConstObjectPtr object)
+{
+    if ( memberInfo->CanBeDelayed() )
+        const_cast<CDelayBuffer&>(memberInfo->GetDelayBuffer(object)).Update();
+    return memberInfo->GetItemPtr(object);
+}
+
 bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
                                  TConstObjectPtr object2) const
 {
@@ -314,8 +335,21 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
         }
     }
 
+    TMemberIndex index;
+
+    index = GetVariants().FirstIndex();
+    const CVariantInfo* variantInfo = GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* info =
+            dynamic_cast<const CMemberInfo*>(GetVariants().GetItemInfo(index));
+        if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
+                                          GetMember(info, object2)) ) {
+            return false;
+        }
+    }
+
     // Default comparison
-    TMemberIndex index = GetIndex(object1);
+    index = GetIndex(object1);
     if ( index != GetIndex(object2) )
         return false;
     if ( index == kEmptyChoice )
@@ -332,7 +366,18 @@ void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
 
 void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    TMemberIndex index = GetIndex(src);
+    TMemberIndex index;
+
+    index = GetVariants().FirstIndex();
+    const CVariantInfo* variantInfo = GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* info =
+            dynamic_cast<const CMemberInfo*>(GetVariants().GetItemInfo(index));
+        info->GetTypeInfo()->Assign(GetMember(info, dst),
+                                    GetMember(info, src));
+    }
+
+    index = GetIndex(src);
     if ( index == kEmptyChoice )
         ResetIndex(dst);
     else {

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2003/04/29 18:30:36  gouriano
+* object data member initialization verification
+*
 * Revision 1.26  2003/04/10 20:13:39  vakatov
 * Rollback the "uninitialized member" verification -- it still needs to
 * be worked upon...
@@ -150,6 +153,9 @@
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/delaybuf.hpp>
+#ifdef _DEBUG
+#include <serial/serialbase.hpp>
+#endif
 #include <memory>
 
 BEGIN_NCBI_SCOPE
@@ -252,7 +258,8 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CTypeRef& type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
+      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -274,7 +281,8 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          TTypeInfo type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
+      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -296,7 +304,8 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          const CTypeRef& type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
+      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -318,7 +327,8 @@ CMemberInfo::CMemberInfo(const CClassTypeInfoBase* classType,
                          TTypeInfo type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
+      m_SetFlagOffset(eNoOffset), m_BitSetFlag(false),
+      m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -393,8 +403,63 @@ CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 {
     _ASSERT(Optional());
     m_SetFlagOffset = TPointerOffsetType(setFlag);
+    m_BitSetFlag = false;
     UpdateFunctions();
     return this;
+}
+
+CMemberInfo* CMemberInfo::SetSetFlag(const Uint4* setFlag)
+{
+    m_SetFlagOffset = TPointerOffsetType(setFlag);
+    m_BitSetFlag = true;
+    UpdateFunctions();
+    return this;
+}
+
+CMemberInfo::ESetFlag CMemberInfo::GetSetFlag(TConstObjectPtr object) const
+{
+    if (m_BitSetFlag) {
+        const Uint4* bits =
+            CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+        TMemberIndex pos = GetIndex();
+        --pos;
+        pos *= 2;
+        size_t index =  pos/(8*sizeof(Uint4));
+        size_t offset = pos%(8*sizeof(Uint4));
+        size_t res = (*(bits+index) >> offset) & 0x03;
+        return res != 0 ? (res > 1 ? eSetYes : eSetMaybe) : eSetNo;
+    } else {
+        return CTypeConverter<bool>::Get(Add(object,
+            m_SetFlagOffset)) ? eSetYes : eSetNo;
+    }
+}
+
+void CMemberInfo::UpdateSetFlag(TObjectPtr object, ESetFlag value) const
+{
+    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != eNoOffset ) {
+        if (m_BitSetFlag) {
+            Uint4* bits =
+                CTypeConverter<Uint4>::SafeCast(Add(object, m_SetFlagOffset));
+            TMemberIndex pos = GetIndex();
+            --pos;
+            pos *= 2;
+            size_t index =  pos/(8*sizeof(Uint4));
+            size_t offset = pos%(8*sizeof(Uint4));
+            *(bits+index) = (value != 0) ?
+                (*(bits+index) | (value << offset)) :
+                (*(bits+index) & ~(0x03 << offset));
+        } else {
+            CTypeConverter<bool>::Get(Add(object, setFlagOffset))= (value != eSetNo);
+        }
+    }
+}
+
+bool CMemberInfo::CompareSetFlags(TConstObjectPtr object1, TConstObjectPtr object2) const
+{
+    ESetFlag set1 = GetSetFlag(object1);
+    ESetFlag set2 = GetSetFlag(object2);
+    return (set1 == set2) || ((set1 != eSetNo) && (set2 != eSetNo));
 }
 
 CMemberInfo* CMemberInfo::SetOptional(const bool* setFlag)
@@ -604,7 +669,7 @@ TObjectPtr CMemberInfoFunctions::GetDelayedMember(const CMemberInfo* memberInfo,
 {
     _ASSERT(memberInfo->CanBeDelayed());
     memberInfo->GetDelayBuffer(classPtr).Update();
-    memberInfo->UpdateSetFlag(classPtr, true);
+    memberInfo->UpdateSetFlag(classPtr, CMemberInfo::eSetYes);
     return memberInfo->GetItemPtr(classPtr);
 }
 
@@ -626,7 +691,7 @@ void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
     _ASSERT(memberInfo->HaveSetFlag());
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    memberInfo->GetSetFlag(classPtr) = true;
+    memberInfo->UpdateSetFlag(classPtr,CMemberInfo::eSetYes);
 }
 
 void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
@@ -640,7 +705,7 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
             memberInfo->GetTypeInfo()->SkipData(in);
             in.EndDelayBuffer(buffer, memberInfo, classPtr);
             // update 'set' flag
-            memberInfo->UpdateSetFlag(classPtr, true);
+            memberInfo->UpdateSetFlag(classPtr, CMemberInfo::eSetYes);
             return;
         }
         buffer.Update();
@@ -648,7 +713,7 @@ void CMemberInfoFunctions::ReadLongMember(CObjectIStream& in,
     
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
-    memberInfo->UpdateSetFlag(classPtr, true);
+    memberInfo->UpdateSetFlag(classPtr, CMemberInfo::eSetYes);
 }
 
 void CMemberInfoFunctions::ReadMissingSimpleMember(CObjectIStream& in,
@@ -711,9 +776,38 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
-    if ( !memberInfo->GetSetFlag(classPtr) )
+    if ( memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetNo ) {
+        if (!memberInfo->Optional() && out.GetVerifyData()) {
+            out.ThrowError(CObjectOStream::fUnassigned,
+                string("Unassigned member: ")+memberInfo->GetId().GetName());
+        }
         return;
-
+    }
+#ifdef _DEBUG
+    if (memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetMaybe &&
+        memberInfo->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
+        bool do_err_post = false;
+        CConstObjectInfo objinfo(memberInfo->GetItemPtr(classPtr),
+                                 memberInfo->GetTypeInfo());
+        if (objinfo.GetPrimitiveValueType() == ePrimitiveValueString) {
+            string tmp;
+            objinfo.GetPrimitiveValueString(tmp);
+            do_err_post = (tmp == CSerialObject::ms_UnassignedStr);
+        } else {
+            size_t size = memberInfo->GetTypeInfo()->GetSize();
+            const char* tmp = static_cast<const char*>(
+                memberInfo->GetItemPtr(classPtr));
+            for (; size != 0 && *tmp == CSerialObject::ms_UnassignedByte; --size, ++tmp)
+                ;
+            do_err_post = (size == 0);
+        }
+        if (do_err_post) {
+            ERR_POST(Error << "CObjectOStream: at "<< out.GetPosition()<<
+                     ": Member \""<< memberInfo->GetId().GetName()<<
+                     "\" seems to be unassigned");
+        }
+    }
+#endif
     out.WriteClassMember(memberInfo->GetId(),
                          memberInfo->GetTypeInfo(),
                          memberInfo->GetItemPtr(classPtr));
@@ -724,7 +818,7 @@ void CMemberInfoFunctions::WriteLongMember(CObjectOStream& out,
                                            TConstObjectPtr classPtr)
 {
     bool haveSetFlag = memberInfo->HaveSetFlag();
-    if ( haveSetFlag && !memberInfo->GetSetFlag(classPtr) ) {
+    if ( haveSetFlag && memberInfo->GetSetFlag(classPtr) == CMemberInfo::eSetNo ) {
         // not set -> skip this member
         return;
     }

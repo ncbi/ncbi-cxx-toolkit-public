@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2003/04/29 18:31:09  gouriano
+* object data member initialization verification
+*
 * Revision 1.69  2003/03/10 18:55:19  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -362,7 +365,7 @@ bool CDataType::CheckType(void) const
     return true;
 }
 
-const string& CDataType::GetVar(const string& varName) const
+const string CDataType::GetVar(const string& varName) const
 {
     const CDataType* parent = GetParentType();
     if ( !parent ) {

@@ -85,9 +85,6 @@ public:
     // reset whole object
     virtual void Reset(void);
 
-    bool VerifyAssigned(size_t ) const {return true;}
-    void SetAssigned(size_t ) {}
-
 private:
     // Prohibit copy constructor and assignment operator
     CNamed_Query_Base(const CNamed_Query_Base&);
