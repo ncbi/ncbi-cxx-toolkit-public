@@ -50,7 +50,7 @@ if test ! -f "$CHECK_RUN_LIST"; then
 fi
 
 # Build script on base of check-list
-echo "Build check script..."
+echo "Building check script..."
 $make_check_script $CHECK_RUN_LIST $CHECK_RUN_FILE
 
 # Check script build result
