@@ -221,7 +221,7 @@ public:
     //   M - month as decimal number (01-12)
     //   B - full month name
     //   b - abbeviated month name
-    //   D - day as decimal number (00-59)
+    //   D - day as decimal number (01-31)
     //   h - hour in 24-hour format (00-23)
     //   m - minute as decimal number (00-59)
     //   s - second as decimal number (00-59)
@@ -690,6 +690,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/07/15 19:34:28  vakatov
+ * Comment typo fix
+ *
  * Revision 1.22  2003/04/16 20:28:26  ivanov
  * Added class CStopWatch
  *
