@@ -1,0 +1,356 @@
+<!--#set var="TITLE" value="NCBI C++ Toolkit -- Debugging" -->
+<!--#set var="DOCROOT" value="." -->
+<!--#include virtual="./ssi/header.shtml" -->
+
+<h2>Debugging.</h2>
+
+<ul>
+  <li><a href="#command_line">Command line parameters.</a></li>
+  <li><a href="#more_tracing">Getting more trace data.</a>
+    <ul>
+	  <li><a href="#tracing">Tracing.</a></li>
+	  <li><a href="#diagnostics">Diagnostic messages.</a></li>
+	</ul>
+  </li>
+  <li><a href="#connection">Tracing in connection library.</a></li>
+  <li><a href="#cppdiag">NCBI C++ toolkit diagnostics.</a></li>
+  <li><a href="#debugdump">Object state dump.</a></li>
+  <li><a href="#exceptions">Exceptions.</a></li>
+</ul>
+
+
+
+<p>
+This document summarizes debugging mechanisms available in NCBI C++ toolkit.
+<br />
+There are two approaches to get more information about an application, which
+does not behave correctly:
+<ul>
+  <li>
+to investigate the application's log without recompiling the program,
+  </li>
+  <li>
+to add more diagnostics and recompile the program.
+  </li>
+</ul>
+Of course, there is always a possibility to run the program under debugger,
+but this is out of scope of this document.
+</p>
+
+
+
+
+<a name="command_line"></a>
+<h3>Command line parameters.</h3>
+
+<p>
+There are several command line parameters, which are applicable to any program
+which utilizes NCBI C++ toolkit, namely
+<a href ="programming_manual/applic.html">CNcbiApplication</a> class.
+They provide with the possibility
+<ul>
+  <li>
+to obtain a general description of the program as well as description
+of all available command line parameters (<tt>-h</tt> flag),
+  </li>
+  <li>
+to redirect the program's
+<a href="programming_manual/diag.html">diagnostic messages</a>
+into a specified file (<tt>-logfile</tt> key),
+  </li>
+  <li>
+to read the program's
+<a href="programming_manual/registry.html">configuration data</a>
+from a specified file (<tt>-conffile</tt> key).
+  </li>
+</ul>
+<table border=1 cellpadding=5>
+<tr>
+  <th>Flag</th><th>Description</th><th>Example</th>
+</tr>
+<tr>
+  <td>-h</td>
+  <td>Print description of the application's command line parameters.</td>
+  <td>theapp -h</td>
+</tr>
+<tr>
+  <td>-logfile</td>
+  <td>Redirect program's log into the specified file</td>
+  <td>theapp -logfile theapp_log</td>
+</tr>
+<tr>
+  <td>-conffile</td>
+  <td>Read the program's configuration data from the specified file</td>
+  <td>theapp -conffile theapp_cfg</td>
+</tr>
+</table>
+</p>
+
+
+<a name="more_tracing"></a>
+<h3>Getting more trace data.</h3>
+
+<p>
+All NCBI C++ toolkit libraries produce a good deal of diagnostic messages.
+Still, many of them remain "invisible" - as long as the tracing is disabled.
+Some tracing data is only available in debug builds - see
+<a href="programming_manual/diag.html#trace"><tt>_TRACE</tt></a>
+macro for example. Other - e.g., the one produced by
+<a href="programming_manual/diag.html#errpost"><tt>ERR_POST</tt></a>
+or <tt>LOG_POST</tt> macros - could be disabled.
+<br />
+There are three ways to manipulate these settings, that is enable or disable tracing,
+or set the severity level of messages to print:
+<ul>
+  <li>
+from the application itself,
+  </li>
+  <li>
+from the application's configuration file,
+  </li>
+  <li>
+with the help of environment variables.
+  </li>
+</ul>
+</p>
+
+
+
+<a name="tracing"></a>
+<h4>Tracing.</h4>
+<p>
+There are two ways to post trace messages: using
+<a href="programming_manual/diag.html#trace"><tt>_TRACE</tt></a> or
+<a href="programming_manual/diag.html#errpost"><tt>ERR_POST</tt></a> macro
+Trace messages produced with the help of
+<tt>_TRACE</tt> macro
+are only available in debug mode, while those posted by
+<tt>ERR_POST</tt>
+are available in both release and debug builds. By default, tracing is disabled.
+To enable it, you can do the following:
+<table border=1 cellpadding=5>
+<tr>
+  <th>C++ toolkit API</th><th>Configuration file</th><th>Environment</th>
+</tr>
+<tr>
+  <td>
+    call
+    <pre>
+SetDiagTrace(eDT_Enable);
+    </pre>
+  </td>
+  <td>
+    define <tt>DIAG_TRACE</tt> entry in the <tt>DEBUG</tt> section:
+    <pre>
+[DEBUG]
+DIAG_TRACE=1
+    </pre>
+  </td>
+  <td>
+    define <tt>DIAG_TRACE</tt> environment variable:
+    <pre>
+set DIAG_TRACE=1
+    </pre>
+  </td>
+</tr>
+</table>
+Please note, when enabling trace from a configuration file, some trace messages
+could be lost: before configuration file is found and read the application
+may assume that the trace was disabled. The only way to enable tracing
+from the very beginning is by setting the environment variable.
+</p>
+
+
+<a name="diagnostics"></a>
+<h4>Diagnostic messages.</h4>
+<p>
+Diagnostic messages produced by
+<a href="programming_manual/diag.html#errpost"><tt>ERR_POST</tt></a>
+macro are available both in debug and release builds.
+Such messages have a
+<a href="programming_manual/diag.html#severity">severity level</a>, which
+defines whether the message will be actually printed or not,
+and whether the program will be aborted or not.
+To change the severity level threshold for posting diagnostic messages,
+use the following:
+<table border=1 cellpadding=5>
+<tr>
+  <th>C++ toolkit API</th><th>Configuration file</th><th>Environment</th>
+</tr>
+<tr>
+  <td>
+    call
+    <pre>
+SetDiagPostLevel(EDiagSev postSev);
+    </pre>
+Valid arguments are<br />
+<tt>eDiag_Info</tt>, <tt>eDiag_Warning</tt>, <tt>eDiag_Error</tt>,
+<tt>eDiag_Critical</tt>, <tt>eDiag_Fatal</tt>.
+  </td>
+  <td>
+    define <tt>DIAG_POST_LEVEL</tt> entry in the <tt>DEBUG</tt> section:
+    <pre>
+[DEBUG]
+DIAG_POST_LEVEL=Info
+    </pre>
+Valid values are<br />
+<tt>Info</tt>, <tt>Warning</tt>, <tt>Error</tt>,
+<tt>Critical</tt>, <tt>Fatal</tt>.
+  </td>
+  <td>
+    define <tt>DIAG_POST_LEVEL</tt> environment variable:
+    <pre>
+set DIAG_TRACE=Info
+    </pre>
+Valid values are<br />
+<tt>Info</tt>, <tt>Warning</tt>, <tt>Error</tt>,
+<tt>Critical</tt>, <tt>Fatal</tt>.
+  </td>
+</tr>
+</table>
+Only those messages, which severity is equal or exceeds the threshold will be
+posted.
+<br />
+By default, messages posted with <tt>Fatal</tt> severity level also abort
+execution of the program. This can be changed by
+<tt>SetDiagDieLevel(EDiagSev dieSev)</tt> API function.
+</p>
+
+
+
+
+<a name="connection"></a>
+<h3>Tracing in connection library.</h3>
+<p>
+The <a href="libs/conn.html">connection library</a>
+has its own
+<a href="libs/conn.html#ref_Debugging">tracing options</a>.
+It is possible to print the connection parameters
+each time the link is established, and even log all data transmitted through
+the socket during the life of the connection:
+
+<table border=1 cellpadding=5>
+<tr>
+  <th>&nbsp;</th><th>Configuration file</th><th>Environment</th>
+</tr>
+<tr>
+  <th>
+Connection parameters:
+  </th>
+  <td>
+define <tt>DEBUG_PRINTOUT</tt> entry in the <tt>CONN</tt> section:
+    <pre>
+[CONN]
+DEBUG_PRINTOUT=TRUE
+    </pre>
+Valid values are<br />
+<tt>TRUE</tt>, or <tt>YES</tt>, or <tt>SOME</tt>.
+  </td>
+  <td>
+define <tt>CONN_DEBUG_PRINTOUT</tt> environment variable:
+    <pre>
+set CONN_DEBUG_PRINTOUT=TRUE
+    </pre>
+Valid values are<br />
+<tt>TRUE</tt>, or <tt>YES</tt>, or <tt>SOME</tt>.
+  </td>
+</tr>
+<tr>
+  <th>
+All data:
+  </th>
+  <td>
+define <tt>DEBUG_PRINTOUT</tt> entry in the <tt>CONN</tt> section:
+    <pre>
+[CONN]
+DEBUG_PRINTOUT=ALL
+    </pre>
+Valid values are<br />
+<tt>ALL</tt>, or <tt>DATA</tt>.
+  </td>
+  <td>
+define <tt>CONN_DEBUG_PRINTOUT</tt> environment variable:
+    <pre>
+set CONN_DEBUG_PRINTOUT=ALL
+    </pre>
+Valid values are<br />
+<tt>ALL</tt>, or <tt>DATA</tt>.
+  </td>
+</tr>
+</table>
+</p>
+
+
+
+<a name="cppdiag"></a>
+<h3>NCBI C++ toolkit diagnostics.</h3>
+<p>
+NCBI C++ toolkit provides with a sophisticated
+<a href="libs/err_msg.html#ref_Message">diagnostic mechanism</a>.
+Diagnostic messages could be redirected to different output channels.
+It is possible to set up what
+<a href="programming_manual/diag.html#PostFlags">additional information</a>
+should be printed  with a message, for example date/time stamp,
+file name, line number etc.
+<br />
+Some macros are defined only in debug mode: <tt>_TRACE</tt>,
+<tt>_ASSERT</tt>, <tt>_TROUBLE</tt>. Others are also defined
+in release mode as well: <tt>_VERIFY</tt>, <tt>THROW*_TRACE</tt>.
+</p>
+
+
+
+<a name="debugdump"></a>
+<h3>Object state dump.</h3>
+<p>
+Potentially useful technique in case of trouble is to use
+<a href="libs/debug_dump.html">object state dump API</a>.
+In order to use it, the object's class must be derived from
+<a href="libs/debug_dump.html#CDebugDumpable">CDebugDumpable</a> class,
+and implementation of the class should supply meaningful
+dump data in its <tt>DebugDump</tt> function.
+Debug dump gives an object's state snapshot, which can help in
+identifying the cause of problem at run time.
+</p>
+
+
+
+<a name="exceptions"></a>
+<h3>Exceptions.</h3>
+<p>
+NCBI C++ toolkit defines its own type of
+<a href="programming_manual/exceptions.html">C++ exceptions</a>.
+Unlike standard ones, this class
+<ul>
+  <li>
+makes it possible to
+define error codes (specific to each exception class), which could
+be analyzed from a program,
+ </li>
+  <li>
+provides with more information about
+where a particular exception has been thrown from (file name and line number),
+  </li>
+  <li>
+gives the possibility to
+create a stack of exceptions to accumulate a backlog of events
+(unfinished jobs) which caused the problem,
+  </li>
+  <li>
+has elaborated, customizable reporting mechanism,
+  </li>
+  <li>
+supports using standard
+<a href="programming_manual/diag.html">diagnostic mechanism</a>
+with all the configuration options it provides.
+  </li>
+</ul>
+</p>
+
+
+
+<!--#include virtual="../ssi/navlinks.shtml" -->
+
+<!-- Begin footer content -->
+
+<!--#include virtual="../ssi/footer.shtml" -->
