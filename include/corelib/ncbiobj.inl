@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/01 20:35:02  vasilche
+* Fixed detection of heap objects.
+* Removed ECanDelete enum and related constructors.
+*
 * Revision 1.1  2000/10/13 16:39:16  vasilche
 * Forgot to add file.
 *
@@ -40,64 +44,18 @@
 */
 
 #ifndef _DEBUG
-// inline initialization without additional check only in release mode
 inline
-void CObject::InitInStack(void)
+void CObject::operator delete(void* ptr)
 {
-    m_Counter = eObjectInStackUnsure;
+    ::operator delete(ptr);
 }
 
 inline
-void CObject::InitInHeap(void)
+void CObject::operator delete[](void* ptr)
 {
-    m_Counter = eObjectInHeapUnsure;
+    ::operator delete[](ptr);
 }
 #endif
-
-inline
-void CObject::SetCanDelete(void)
-{
-    if ( m_Counter == TCounter(eObjectInStackUnsure) )
-        m_Counter = eObjectInHeap;
-    else
-        SetCanDeleteLong();
-}
-
-inline
-CObject::CObject(void)
-{
-    InitInStack();
-}
-
-inline
-CObject::CObject(ECanDelete)
-{
-    InitInHeap();
-}
-
-inline
-CObject::CObject(const CObject& /*src*/)
-{
-    InitInStack();
-}
-
-inline
-CObject::CObject(ECanDelete, const CObject& /*src*/)
-{
-    InitInHeap();
-}
-
-inline
-bool CObject::ObjectStateIsValid(TCounter counter)
-{
-    return counter >= TCounter(eMinimumValidCounter);
-}
-
-inline
-bool CObject::ObjectStateIsInvalid(TCounter counter)
-{
-    return counter < TCounter(eMinimumValidCounter);
-}
 
 inline
 bool CObject::ObjectStateCanBeDeleted(TCounter counter)
@@ -106,21 +64,21 @@ bool CObject::ObjectStateCanBeDeleted(TCounter counter)
 }
 
 inline
-bool CObject::ObjectStateUnsure(TCounter counter)
+bool CObject::ObjectStateValid(TCounter counter)
 {
-    return (counter & eStateBitsUnsure) != 0;
+    return counter >= TCounter(eCounterValid);
 }
 
 inline
 bool CObject::ObjectStateReferenced(TCounter counter)
 {
-    return counter >= TCounter(eMinimumValidCounter + eCounterStep);
+    return counter >= TCounter(eCounterValid + eCounterStep);
 }
 
 inline
 bool CObject::ObjectStateDoubleReferenced(TCounter counter)
 {
-    return counter >= TCounter(eMinimumValidCounter + eCounterStep * 2);
+    return counter >= TCounter(eCounterValid + eCounterStep * 2);
 }
 
 inline
@@ -149,11 +107,8 @@ bool CObject::ReferencedOnlyOnce(void) const THROWS_NONE
 }
 
 inline
-CObject& CObject::operator=(const CObject& src) THROWS_NONE
+CObject& CObject::operator=(const CObject& ) THROWS_NONE
 {
-    if ( ObjectStateIsInvalid(m_Counter) ||
-         ObjectStateIsInvalid(src.m_Counter) )
-        InvalidObject();
     return *this;
 }
 
