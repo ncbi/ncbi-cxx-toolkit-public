@@ -159,6 +159,11 @@ struct SSystemFastMutex
     };
     volatile EMagic m_Magic;
 
+#if defined(NCBI_NO_THREADS)
+    // initialize for Win32 no threads
+    SSystemFastMutex(void) : m_Handle(0), m_Magic(eMutexInitialized) {}
+#endif
+
 protected:
     // check if mutex is initialized
     bool IsInitialized(void) const;
@@ -219,6 +224,11 @@ struct SSystemMutex
     SSystemFastMutex m_Mutex;
     CThreadSystemID  m_Owner;  // platform-dependent thread ID
     int              m_Count;  // # of recursive (in the same thread) locks
+
+#if defined(NCBI_NO_THREADS)
+    // initialize for Win32 no threads
+    SSystemMutex(void) : m_Count(0) {}
+#endif
 
 protected:
     // check if mutex is initialized
@@ -799,6 +809,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/09/20 19:28:21  vasilche
+ * Fixed missing initialization with NCBI_NO_THREADS
+ *
  * Revision 1.14  2002/09/20 19:13:58  vasilche
  * Fixed single-threaded mode on Win32
  *
