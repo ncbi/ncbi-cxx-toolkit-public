@@ -29,6 +29,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/04/03 20:06:25  ucko
+* Always return >= 1 from showmanyc() to avoid spurious "EOF"s.
+* Pass status messages to _TRACE rather than writing them to cout.
+* #if out buggy code in destructor.
+*
 * Revision 1.2  2002/02/14 00:59:40  vakatov
 * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
 *
@@ -61,8 +66,10 @@ CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
 
 CByteStreamBuf::~CByteStreamBuf()
 {
+#if 0 // misbehaves
     if( m_rs != 0 && m_len > 0 )
         m_rs->SkipItem();
+#endif
 
     delete[] m_buf;
     delete m_cmd;
@@ -98,7 +105,7 @@ CT_INT_TYPE CByteStreamBuf::underflow()
     m_len = m_rs->ReadItem(getGBuf(), m_size);
     total += m_len;
     if( m_len == 0 ) {
-        NcbiCout << "Total read from readItem: " << total << endl;
+        _TRACE("Total read from readItem: " << total);
         return CT_EOF;
     }
     else {
@@ -127,7 +134,7 @@ CT_INT_TYPE CByteStreamBuf::overflow(CT_INT_TYPE c)
         return c;
     }
     else {
-        NcbiCout << "Total sent: " << total << endl;
+        _TRACE("Total sent: " << total);
         return CT_EOF;
     }
     
@@ -149,6 +156,6 @@ CByteStreamBuf::setbuf(CT_CHAR_TYPE* /*p*/, streamsize /*n*/)
 streamsize CByteStreamBuf::showmanyc() 
 {
     streamsize left = egptr() - gptr();
-    return left > 1 ? left : -1;
+    return min(left, (streamsize)1);
 }
 //======================================================
