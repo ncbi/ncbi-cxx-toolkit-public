@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2002/01/10 18:20:48  clausen
+ * Added IsOneBioseq, GetStart, and GetId
+ *
  * Revision 1.5  2001/10/22 11:39:49  clausen
  * Added Compare()
  *
@@ -109,6 +112,20 @@ public:
 
     typedef CRange<int> TRange;
     TRange GetTotalRange(void) const;
+    
+    // Returns true if all CSeq_ids contained in this CSeq_loc represent the
+    // same CBioseq within scope. CSeq_id::Compare used if scope == 0.
+    bool IsOneBioseq(CScope* scope = 0) const;
+    
+    // Returns lowest residue position in this CSeq_loc if this represents
+    // one CBioseq, else -1. Also returns -1 for e_not_set, e_Null, 
+    // e_Feat, and e_Empty. For a bond, returns the lowest residue position of
+    // the A member of the bond
+    int GetStart(CScope* scope = 0) const;
+    
+    // Returns a pointer to the first CSeq_id found in this CSeq_loc
+    // if exactly one CBioseq is represented, else returns a null pointer
+    const CSeq_id* GetId(CScope* scope = 0) const;
 
 private:
     // Prohibit copy constructor & assignment operator

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/01/10 18:21:26  clausen
+ * Added IsOneBioseq, GetStart, and GetId
+ *
  * Revision 6.5  2001/10/22 11:40:32  clausen
  * Added Compare() implementation
  *
@@ -54,6 +57,7 @@
  *
  * ===========================================================================
  */
+#include <serial/iterator.hpp>
 
 #include <objects/objmgr/scopes.hpp>
 
@@ -190,7 +194,7 @@ int s_RetB[5][5] = {
 };
 
 
-// Determines if two CSeq_locs are from same CBioseq
+// Determines if two CSeq_ids are from same CBioseq
 inline bool s_IsSameBioseq
 (const CSeq_id& id1,
  const CSeq_id& id2,
@@ -1234,6 +1238,108 @@ CSeq_loc::ECompare CSeq_loc::Compare
 {
     return s_Compare(*this, seqloc, scope);
 }
+
+// Returns true if all embedded CSeq_ids represent the same CBioseq, else false
+bool CSeq_loc::IsOneBioseq(CScope* scope) const
+{
+    if( GetId(scope) ) {
+        return true;
+    }
+    return false;
+}
+
+// If only one CBioseq is represented, return the lowest residue posisiton
+// represented by this CSeq_loc. scope, if not null, is used to determine if
+// two CSeq_ids represenet the same CBioseq
+int CSeq_loc::GetStart(CScope* scope) const
+{
+    switch( Which() ) {
+    case e_not_set:
+    case e_Null:
+    case e_Empty:
+    case e_Feat:
+        return -1;
+    case e_Whole:
+        return 0;
+    case e_Int:
+        return GetInt().GetFrom();
+    case e_Pnt:
+        return GetPnt().GetPoint();
+    case e_Bond:
+        return GetBond().GetA().GetPoint();
+    case e_Packed_pnt:
+    {
+        // Loop through the points and return the minimum position
+        int min = GetPacked_pnt().GetPoints().front();
+        iterate(list<int>, it, GetPacked_pnt().GetPoints()) {
+            min = min < *it ? min : *it;
+        }
+        return min;
+    }
+    case e_Packed_int:
+    {
+        // Loop through intervals, doing a pairwise check between
+        // adjacent intervals to ensure they are from the same
+        // CBioseq. If two adjacent intervals are from different 
+        // CBioseqs, return -1, else return the minimum from value
+        // found
+        CTypeConstIterator<CSeq_interval> prv = ConstBegin(*this);
+        CTypeConstIterator<CSeq_interval> cur = ConstBegin(*this);
+        int min = prv->GetFrom();
+        for( ++cur; cur; ++cur, ++prv ) {
+            if( !s_IsSameBioseq(prv->GetId(), cur->GetId(), scope) ) {
+                return -1;
+            }
+            min = min < cur->GetFrom() ? min : cur->GetFrom();
+        }
+        return min;
+    }
+    case e_Mix:
+    case e_Equiv:
+    {
+        if( !IsOneBioseq(scope) ) {
+            return -1;
+        }
+        
+        // Loop  through embedded CSeq_locs looking for CSeq_locs that are
+        // neither e_Mix nor e_Equiv and determine the minimum residue
+        // position
+        int min = kMax_Int, n;
+        for( CTypeConstIterator<CSeq_loc> it = ConstBegin(*this); it; ++it ) {
+            if( it->Which() == e_Mix || it->Which() == e_Equiv ) {
+                continue;
+            }
+            min = min < (n = it->GetStart()) ? min : n;
+        }
+        return min < kMax_Int ? min : -1;
+    }
+    default:
+        return -1;
+    }
+}
+
+
+// If all embedded CSeq_ids represent the same CBioseq, return the
+// first CSeq_id found, else return 0.       
+const CSeq_id* CSeq_loc::GetId(CScope* scope) const
+{
+    CTypeConstIterator<CSeq_id> cur = ConstBegin(*this);
+    CTypeConstIterator<CSeq_id> prv = ConstBegin(*this);
+    
+    // The CSeq_id to return if only one CBioseq represented
+    const CSeq_id *rtn_id = &(*cur);
+
+    // Loop through embedded CSeq_ids, checking that adjacent CSeq_ids
+    // represent the same CBioseq, returning 0 if all don't
+    for( ++cur; cur; ++cur, ++prv ) {
+        if( !s_IsSameBioseq(*cur, *prv, scope) ) {
+            return 0;
+        }
+    }
+    return rtn_id;    
+}            
+            
+    
 
 
 END_objects_SCOPE // namespace ncbi::objects::
