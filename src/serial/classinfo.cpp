@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/07 19:59:03  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.14  1999/07/02 21:31:52  vasilche
 * Implemented reading from ASN.1 binary format.
 *
@@ -356,6 +360,11 @@ void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
         member.GetTypeInfo()->Assign(member.GetMember(dst),
                                      member.GetMember(src));
     }
+}
+
+TObjectPtr CStructInfoTmpl::Create(void) const
+{
+    return calloc(GetSize(), 1);
 }
 
 END_NCBI_SCOPE

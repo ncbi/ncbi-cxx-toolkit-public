@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/07 19:59:08  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.4  1999/06/30 16:05:05  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -57,11 +61,6 @@ size_t CStdTypeInfo<void>::GetSize(void) const
     return 0;
 }
 
-TObjectPtr CStdTypeInfo<void>::Create(void) const
-{
-    throw runtime_error("void cannot be created");
-}
-    
 TTypeInfo CStdTypeInfo<void>::GetTypeInfo(void)
 {
     static TTypeInfo typeInfo = new CStdTypeInfo;
@@ -91,6 +90,11 @@ void CStdTypeInfo<void>::WriteData(CObjectOStream& , TConstObjectPtr ) const
 TObjectPtr CStdTypeInfo<string>::Create(void) const
 {
     return new TObjectType();
+}
+
+TConstObjectPtr CStdTypeInfo<string>::GetDefault(void) const
+{
+    return &NcbiEmptyString;
 }
 
 TTypeInfo CStdTypeInfo<string>::GetTypeInfo(void)

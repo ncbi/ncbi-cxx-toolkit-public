@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/07 19:58:44  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.11  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -197,33 +201,32 @@ private:
     TAliasesByName m_AliasesByName;
 };
 
-template<class CLASS>
-class CStructInfo : public CClassInfoTmpl
+class CStructInfoTmpl : public CClassInfoTmpl
 {
 public:
     enum ERandomOrder {
         eRandomOrder
     };
 
+    CStructInfoTmpl(size_t size, bool randomOrder)
+        : CClassInfoTmpl(typeid(void), size, 0, randomOrder)
+        {
+        }
+
+    virtual TObjectPtr Create(void) const;
+};
+
+template<class CLASS>
+class CStructInfo : public CStructInfoTmpl
+{
+public:
     CStructInfo(void)
-        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create)
+        : CStructInfoTmpl(sizeof(CLASS), false)
         {
         }
     CStructInfo(ERandomOrder)
-        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create, true)
+        : CStructInfoTmpl(sizeof(CLASS), true)
         {
-        }
-    
-	virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const
-        {
-            return this;
-        }
-
-protected:
-
-    static TObjectPtr sx_Create(void)
-        {
-            return calloc(sizeof(CLASS), 1);
         }
 };
 

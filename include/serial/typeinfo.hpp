@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/07 19:58:47  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.11  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -121,14 +125,14 @@ public:
         { return Add(object, GetSize()); }
 
     // creates object of this type in heap (can be deleted by operator delete)
-    virtual TObjectPtr Create(void) const = 0;
+    virtual TObjectPtr Create(void) const;
+    // gets default object (by default will call Create and use returned value)
+    virtual TConstObjectPtr GetDefault(void) const;
 
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const = 0;
-
-    TConstObjectPtr GetDefault(void) const;
 
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr ) const;
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/07 19:58:45  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.7  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -137,6 +141,10 @@ private:
     bool ReadEscapedChar(char& out, char terminator);
 
     char SkipWhiteSpace(void);
+
+public:
+    CNcbiIstream& SkipWhiteSpace0(void);
+private:
 
     CNcbiIstream& m_Input;
 #if !USE_UNGET

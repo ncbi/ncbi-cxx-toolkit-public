@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/07 19:59:05  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.10  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -158,6 +162,28 @@ char CObjectIStreamAsn::GetChar0(void)
 		throw runtime_error("bad GetChar0 call");
 	}
 #endif
+}
+
+inline
+CNcbiIstream& CObjectIStreamAsn::SkipWhiteSpace0(void)
+{
+    switch ( m_UngetChar ) {
+    case -1:
+        break;
+    case ' ':
+    case '\n':
+    case '\r':
+    case '\t':
+    case '\v':
+        _TRACE("SkipWhiteSpace0: '" << char(m_UngetChar) << "'");
+        m_UngetChar = -1;
+        break;
+    default:
+        _TRACE("SkipWhiteSpace0: '" << char(m_UngetChar) << "'");
+        throw runtime_error("bad SkipWhiteSpace0 call");
+    }
+    m_GetChar = -1;
+    return m_Input;
 }
 
 inline
@@ -335,90 +361,69 @@ void CObjectIStreamAsn::ReadStd(char& data)
         THROW1_TRACE(runtime_error, "empty char");
 }
 
+template<typename T>
+void ReadStdNumber(CObjectIStreamAsn& in, T& data)
+{
+    if ( !(in.SkipWhiteSpace0() >> data) )
+        THROW1_TRACE(runtime_error, "number read error");
+}
+
 void CObjectIStreamAsn::ReadStd(signed char& data)
 {
-    SkipWhiteSpace();
-    int i;
-    m_Input >> i;
-    if ( i < -128 || i > 127 ) {
-        THROW1_TRACE(runtime_error, "overflow error");
-    }
+    short i;
+    ReadStdNumber(*this, i);
+    if ( i < -128 || i > 127 )
+        THROW1_TRACE(runtime_error, "signed char overflow error");
     data = i;
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned char& data)
 {
-    SkipWhiteSpace();
-    unsigned i;
-    m_Input >> i;
-    if ( i > 255 ) {
-        THROW1_TRACE(runtime_error, "overflow error");
-    }
+    unsigned short i;
+    ReadStdNumber(*this, i);
+    if ( i > 255 )
+        THROW1_TRACE(runtime_error, "unsigned char overflow error");
     data = i;
 }
 
 void CObjectIStreamAsn::ReadStd(short& data)
 {
-    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned short& data)
 {
-    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(int& data)
 {
-//    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned int& data)
 {
-    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(long& data)
 {
-    //    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(unsigned long& data)
 {
-    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(float& data)
 {
-    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(double& data)
 {
-    SkipWhiteSpace();
-    m_Input >> data;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "overflow error");
+    ReadStdNumber(*this, data);
 }
 
 void CObjectIStreamAsn::ReadStd(string& data)
@@ -434,9 +439,7 @@ void CObjectIStreamAsn::ReadStd(char*& data)
 CObjectIStreamAsn::TIndex CObjectIStreamAsn::ReadIndex(void)
 {
     TIndex index;
-    m_Input >> index;
-    if ( !m_Input )
-        THROW1_TRACE(runtime_error, "cannot read index");
+    ReadStdNumber(*this, index);
     return index;
 }
 

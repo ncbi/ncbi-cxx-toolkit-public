@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/07 19:59:03  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.5  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -66,11 +70,11 @@ size_t CSequenceTypeInfo::GetSize(void) const
     return sizeof(void*);
 }
 
-TObjectPtr CSequenceTypeInfo::Create(void) const
+static const TConstObjectPtr zeroPointer = 0;
+
+TConstObjectPtr CSequenceTypeInfo::GetDefault(void) const
 {
-    TObjectPtr object = calloc(sizeof(TObjectPtr), 1);
-    Get(object) = GetDataTypeInfo()->Create();
-    return object;
+    return &zeroPointer;
 }
 
 bool CSequenceTypeInfo::Equals(TConstObjectPtr object1,
@@ -142,9 +146,9 @@ bool CSequenceOfTypeInfo::RandomOrder(void) const
     return false;
 }
 
-TObjectPtr CSequenceOfTypeInfo::Create(void) const
+TConstObjectPtr CSequenceOfTypeInfo::GetDefault(void) const
 {
-    return calloc(sizeof(TObjectPtr), 1);
+    return &zeroPointer;
 }
 
 bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
@@ -230,9 +234,9 @@ size_t CChoiceTypeInfo::GetSize(void) const
     return sizeof(valnode*);
 }
 
-TObjectPtr CChoiceTypeInfo::Create(void) const
+TConstObjectPtr CChoiceTypeInfo::GetDefault(void) const
 {
-    return calloc(sizeof(valnode*), 1);
+    return &zeroPointer;
 }
 
 bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/07 19:59:09  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.10  1999/07/07 18:18:32  vasilche
 * Fixed some bugs found by MS VC++
 *
@@ -102,11 +106,14 @@ CTypeInfo::CTypeInfo(void)
 CTypeInfo::CTypeInfo(const type_info& id)
     : m_Id(id), m_Name(id.name()), m_Default(0)
 {
-    if ( !TypesById().insert(TTypesById::value_type(&id, this)).second ) {
-        THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
-    }
-    if ( !TypesByName().insert(TTypesByName::value_type(GetName(), this)).second ) {
-        THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
+    if ( id != typeid(void) ) {
+        if ( !TypesById().insert(TTypesById::value_type(&id, this)).second ) {
+            THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
+        }
+        if ( !TypesByName().insert(TTypesByName::value_type(GetName(),
+                                                            this)).second ) {
+            THROW1_TRACE(runtime_error, "duplicated types: " + GetName());
+        }
     }
 }
 
@@ -178,6 +185,11 @@ void CTypeInfo::CollectObjects(COObjectList& objectList,
 void CTypeInfo::CollectExternalObjects(COObjectList& , TConstObjectPtr ) const
 {
     // there is no members by default
+}
+
+TObjectPtr CTypeInfo::Create(void) const
+{
+    THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
 }
 
 TConstObjectPtr CTypeInfo::GetDefault(void) const

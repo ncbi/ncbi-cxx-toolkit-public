@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/07 19:59:08  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.5  1999/06/30 16:05:04  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -60,9 +64,11 @@ size_t CPointerTypeInfo::GetSize(void) const
     return sizeof(void*);
 }
 
-TObjectPtr CPointerTypeInfo::Create(void) const
+static const TConstObjectPtr zeroPointer = 0;
+
+TConstObjectPtr CPointerTypeInfo::GetDefault(void) const
 {
-    return new(void*);
+    return &zeroPointer;
 }
 
 bool CPointerTypeInfo::Equals(TConstObjectPtr object1,

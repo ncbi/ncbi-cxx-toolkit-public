@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/07 19:58:46  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.4  1999/06/30 16:04:34  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -75,7 +79,7 @@ public:
 
     virtual size_t GetSize(void) const;
 
-    virtual TObjectPtr Create(void) const;
+    virtual TConstObjectPtr GetDefault(void) const;
 
     virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/07/07 19:58:43  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.3  1999/07/01 17:55:16  vasilche
 * Implemented ASN.1 binary write.
 *
@@ -91,7 +95,7 @@ public:
 
     virtual size_t GetSize(void) const;
 
-    virtual TObjectPtr Create(void) const;
+    virtual TConstObjectPtr GetDefault(void) const;
 
     TTypeInfo GetDataTypeInfo(void) const
         {
@@ -130,7 +134,7 @@ public:
 
     virtual bool RandomOrder(void) const;
 
-    virtual TObjectPtr Create(void) const;
+    virtual TConstObjectPtr GetDefault(void) const;
 
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const;
@@ -173,7 +177,7 @@ public:
 
     virtual size_t GetSize(void) const;
 
-    virtual TObjectPtr Create(void) const;
+    virtual TConstObjectPtr GetDefault(void) const;
 
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 

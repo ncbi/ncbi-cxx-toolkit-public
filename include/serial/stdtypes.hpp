@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/07 19:58:46  vasilche
+* Reduced amount of data allocated on heap
+* Cleaned ASN.1 structures info
+*
 * Revision 1.5  1999/06/30 16:04:37  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -116,6 +120,12 @@ public:
             return new TObjectType(0);
         }
 
+    virtual TConstObjectPtr GetDefault(void) const
+        {
+            static TYPE def = 0;
+            return &def;
+        }
+
     static TTypeInfo GetTypeInfo(void)
         {
             static TTypeInfo typeInfo = new CStdTypeInfo;
@@ -129,8 +139,6 @@ class CStdTypeInfo<void> : public CTypeInfo
 public:
     virtual size_t GetSize(void) const;
 
-    virtual TObjectPtr Create(void) const;
-    
     static TTypeInfo GetTypeInfo(void);
 
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
@@ -153,6 +161,8 @@ class CStdTypeInfo<string> : public CStdTypeInfoTmpl<string>
 {
 public:
     virtual TObjectPtr Create(void) const;
+    
+    virtual TConstObjectPtr GetDefault(void) const;
 
     static TTypeInfo GetTypeInfo(void);
 };
