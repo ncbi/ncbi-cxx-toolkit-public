@@ -140,14 +140,18 @@ void CDemoApp::Init(void)
                             "Max depth of segments to iterate",
                             CArgDescriptions::eInteger, "100");
     arg_desc->AddFlag("adaptive", "Use adaptive depth of segments");
-    arg_desc->AddFlag("nosnp",
-                      "exclude snp features - only unnamed Seq-annots");
     arg_desc->AddFlag("unnamed",
                       "include features from unnamed Seq-annots");
-    arg_desc->AddFlag("allnamed",
-                      "include features from all named Seq-annots");
     arg_desc->AddOptionalKey("named", "NamedAnnots",
                              "include features from named Seq-annots "
+                             "(comma separated list)",
+                             CArgDescriptions::eString);
+    arg_desc->AddFlag("allnamed",
+                      "include features from all named Seq-annots");
+    arg_desc->AddFlag("nosnp",
+                      "exclude snp features - only unnamed Seq-annots");
+    arg_desc->AddOptionalKey("exclude_named", "ExcludeNamedAnnots",
+                             "exclude features from named Seq-annots"
                              "(comma separated list)",
                              CArgDescriptions::eString);
     arg_desc->AddDefaultKey("feat_type", "FeatType",
@@ -697,6 +701,16 @@ int CDemoApp::Run(void)
         }
         include_named.insert(names);
     }
+    set<string> exclude_named;
+    if ( args["exclude_named"] ) {
+        string names = args["exclude_named"].AsString();
+        size_t comma_pos;
+        while ( (comma_pos = names.find(',')) != NPOS ) {
+            exclude_named.insert(names.substr(0, comma_pos));
+            names.erase(0, comma_pos+1);
+        }
+        exclude_named.insert(names);
+    }
 
     // Create object manager. Use CRef<> to delete the OM on exit.
     CRef<CObjectManager> pOm(new CObjectManager);
@@ -848,7 +862,10 @@ int CDemoApp::Run(void)
             base_sel.AddNamedAnnots(*it);
         }
         if ( nosnp ) {
-            base_sel.SetDataSource("");
+            base_sel.ExcludeNamedAnnots("SNP");
+        }
+        ITERATE ( set<string>, it, exclude_named ) {
+            base_sel.ExcludeNamedAnnots(*it);
         }
 
         {{
@@ -1023,6 +1040,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/10/14 18:29:05  vasilche
+* Added -exclude_named option.
+*
 * Revision 1.42  2003/10/09 20:20:58  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.
