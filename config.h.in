@@ -30,6 +30,14 @@
 #undef NCBI_OS_MSWIN
 #undef NCBI_OS_MAC
 
+/* Compiler name and version */
+#undef NCBI_COMPILER_GCC
+#undef NCBI_COMPILER_WORKSHOP
+#undef NCBI_COMPILER_MIPSPRO
+#undef NCBI_COMPILER_MSVC
+#undef NCBI_COMPILER_UNKNOWN
+#undef NCBI_COMPILER_VERSION
+
 /* There is gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
 
