@@ -1,8 +1,8 @@
-# $Id: ignore.lst,v 1.5 2002/07/06 23:45:32 vakatov Exp $
+# $Id: ignore.lst,v 1.6 2002/07/08 14:32:08 ivanov Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
-#    test      - the path in form <src_dir/test_name>
+#    test      - the path in form <src_dir/test_app_name>
 #    signature - OS/compiler signature without machine name (from Makefile.mk)
 #
 ###########################################################################
