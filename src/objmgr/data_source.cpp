@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/05/21 18:40:50  grichenk
+* Fixed annotations droppping
+*
 * Revision 1.43  2002/05/14 20:06:25  grichenk
 * Improved CTSE_Info locking by CDataSource and CDataLoader
 *
@@ -1776,7 +1779,7 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
                 CSeqMap::CSegmentInfo* new_seg = new CSeqMap::CSegmentInfo(
                     CSeqMap::eSeqRef, dpos, rlength, rmap[rseg].m_MinusStrand);
                 new_seg->m_RefPos = rstart;
-                new_seg->m_RefSeq = rmap[rseg].m_RefSeq;
+                new_seg->m_RefSeq = rh; //rmap[rseg].m_RefSeq;
                 dmap.Add(*new_seg);
                 dpos += rlength;
                 break;
