@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2002/09/06 13:06:31  thiessen
+* fix menu accelerator conflicts
+*
 * Revision 1.34  2002/08/15 22:13:18  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -181,7 +184,7 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer, const wxPoint& pos,
 
     menuBar = new wxMenuBar;
     viewMenu = new wxMenu;
-    viewMenu->Append(MID_SHOW_TITLES, "Show Tit&les");
+    viewMenu->Append(MID_SHOW_TITLES, "Show &Titles");
     //menu->Append(MID_HIDE_TITLES, "&Hide Titles");
     viewMenu->Append(MID_SHOW_GEOM_VLTNS, "Show &Geometry Violations");
     viewMenu->Append(MID_FIND_PATTERN, "Find &Pattern");

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/09/06 13:06:31  thiessen
+* fix menu accelerator conflicts
+*
 * Revision 1.37  2002/09/05 18:38:57  thiessen
 * add sort by highlights
 *
@@ -207,7 +210,7 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parentSequenceViewer)
     subMenu->Append(MID_SORT_IDENT, "By &Identifier");
     subMenu->Append(MID_SORT_THREADER, "By &Score");
     subMenu->Append(MID_FLOAT_PDBS, "Float &PDBs");
-    subMenu->Append(MID_FLOAT_HIGHLIGHTS, "Float H&ighlights");
+    subMenu->Append(MID_FLOAT_HIGHLIGHTS, "Float Hi&ghlights");
     subMenu->Append(MID_SORT_SELF_HIT, "By Self-&Hit");
     subMenu->Append(MID_PROXIMITY_SORT, "&Proximity Sort", "", true);
     editMenu->Append(MID_SORT_ROWS, "Sort &Rows...", subMenu);

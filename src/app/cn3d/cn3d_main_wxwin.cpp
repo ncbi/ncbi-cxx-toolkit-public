@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.154  2002/09/06 13:06:31  thiessen
+* fix menu accelerator conflicts
+*
 * Revision 1.153  2002/08/18 03:14:11  thiessen
 * another fix for wx versions
 *
@@ -1228,7 +1231,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu = new wxMenu;
     subMenu->Append(MID_DIST_SELECT_RESIDUES, "&Residues Only");
     subMenu->Append(MID_DIST_SELECT_ALL, "&All Molecules");
-    menu->Append(MID_DIST_SELECT, "Select by &Distance...", subMenu);
+    menu->Append(MID_DIST_SELECT, "Select by Dis&tance...", subMenu);
     menuBar->Append(menu, "Show/&Hide");
 
     // Style menu
@@ -1268,7 +1271,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     subMenu->Append(MID_MOLECULE, "&Molecule");
     subMenu->Append(MID_RAINBOW, "&Rainbow");
     subMenu->Append(MID_HYDROPHOB, "&Hydrophobicity");
-    subMenu->Append(MID_CHARGE, "&Charge");
+    subMenu->Append(MID_CHARGE, "Char&ge");
     subMenu->Append(MID_TEMP, "&Temperature");
     subMenu->Append(MID_ELEMENT, "&Element");
     menu->Append(MID_COLORS, "&Coloring Shortcuts", subMenu);
@@ -1299,7 +1302,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Enable(MID_EDIT_CDD_NAME, !readOnly);
     menu->Append(MID_EDIT_CDD_DESCR, "Edit &Description");
     menu->Enable(MID_EDIT_CDD_DESCR, !readOnly);
-    menu->Append(MID_EDIT_CDD_NOTES, "Edit N&otes");
+    menu->Append(MID_EDIT_CDD_NOTES, "Edit No&tes");
     menu->Enable(MID_EDIT_CDD_NOTES, !readOnly);
     menu->Append(MID_EDIT_CDD_REFERENCES, "Edit &References");
     menu->Enable(MID_EDIT_CDD_REFERENCES, !readOnly);
