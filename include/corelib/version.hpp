@@ -171,7 +171,7 @@ It FindVersion(It first, It last, const CVersionInfo& info)
     for ( ;first != last; ++first) {
         const CVersionInfo& vinfo = *first;
 
-        if (IsBetterVersion(info, cinfo, 
+        if (IsBetterVersion(vinfo, info, 
                             best_major, best_minor, best_patch_level))
         {
             best_version = first;
@@ -211,6 +211,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/04/26 14:47:25  ucko
+ * Fix a typo in FindVersion.
+ *
  * Revision 1.11  2004/01/21 16:29:33  siyan
  * Changed order of addtogroup relative to begin name scope.
  *
