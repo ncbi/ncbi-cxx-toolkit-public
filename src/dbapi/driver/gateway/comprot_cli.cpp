@@ -155,3 +155,21 @@ void comprot_void( const char *procName, int object )
   pGate->send_data();
 }
 
+char* comprot_chars( const char *procName, int object, char* buf, int len )
+{
+  IGate* pGate = conn->getProtocol();
+  pGate->set_RPC_call(procName);
+  pGate->set_output_arg( "object", &object );
+
+  // cerr << "chars1 " << procName << " object=" << object << "\n";
+  pGate->send_data();
+
+  if (pGate->get_input_arg("result", buf, len) != IGate::eGood) {
+    comprot_errmsg();
+    return 0;
+  }
+
+  // cerr << "  result=" << buf << "\n";
+
+  return buf;
+}
