@@ -67,6 +67,14 @@ void CSplignFormatter::x_Init(void)
 }
 
 
+void CSplignFormatter::SetSeqIds(CConstRef<objects::CSeq_id> id1,
+                                 CConstRef<objects::CSeq_id> id2)
+{
+    m_QueryId = id1;
+    m_SubjId = id2;
+}
+
+
 string CSplignFormatter::AsText(const CSplign::TResults* results) const
 {
     if(results == 0) {
@@ -247,6 +255,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.14  2005/01/04 15:48:41  kapustin
+ * Move SetSeqIds() implementation to the cpp file
+ *
  * Revision 1.13  2005/01/03 22:47:35  kapustin
  * Implement seq-ids with CSeq_id instead of generic strings
  *

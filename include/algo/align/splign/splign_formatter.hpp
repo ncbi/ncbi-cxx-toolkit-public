@@ -53,12 +53,9 @@ public:
 
     // setters
     void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
-                   CConstRef<objects::CSeq_id> id2) {
+                   CConstRef<objects::CSeq_id> id2);
 
-        m_QueryId = id1;
-        m_SubjId = id2;
-    }
-
+    // formatters
     string AsText(const CSplign::TResults* results = 0) const;
     CRef<objects::CSeq_align_set> AsSeqAlignSet(const CSplign::TResults*
                                                 results = 0) const;
@@ -88,6 +85,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2005/01/04 15:48:30  kapustin
+ * Move SetSeqIds() implementation to the cpp file
+ *
  * Revision 1.10  2005/01/03 22:47:20  kapustin
  * Implement seq-ids with CSeq_id instead of generic strings
  *
