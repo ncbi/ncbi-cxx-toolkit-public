@@ -29,6 +29,8 @@
  *
  */
 
+#ifndef GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
+#define GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -45,10 +47,14 @@ public:
 
 END_NCBI_SCOPE
 
+#endif   // GUI_CORE_ALGO_BASIC___FIND_PATTERN__HPP
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/08/04 20:07:13  jcherry
+ * Added standard #ifndef wrapper
+ *
  * Revision 1.3  2003/07/03 19:14:12  jcherry
  * Initial version
  *
