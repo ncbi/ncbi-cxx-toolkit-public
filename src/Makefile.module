@@ -33,7 +33,7 @@ purge_all_files:
 	-rm $(FILES) *.cpp $(INCLUDEDIR)/*.hpp Makefile.$(MODULE).lib
 
 .NO_PARALLEL:
-$(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL)
+$(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%) $(DATATOOL) $(MODULE).def
 	$(DATATOOL) -oR $(top_srcdir) -m $(ASNFILE) -M "$(IMPFILES)" -oA -oc $(MODULE) -or $(MODULE_PATH) -odi -od $(MODULE).def
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
