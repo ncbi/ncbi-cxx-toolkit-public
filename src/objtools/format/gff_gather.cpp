@@ -62,6 +62,9 @@ void CGFFGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         x_GatherSourceFeatures();
     }
     x_GatherFeatures();
+    if ( ctx.Config().IsFormatGFF3() ) {
+        x_GatherAlignments();
+    }
     ItemOS() << new CBaseCountItem(ctx);
     x_GatherSequence();
 
@@ -78,6 +81,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/06/21 18:54:21  ucko
+* Gather alignments for GFF 3.
+*
 * Revision 1.8  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
