@@ -121,6 +121,7 @@ void ASNLexer::LookupString(void)
                 return;
             }
             LexerWarning("illagal character in string: \\0");
+            AddValueChar(c);
             AddChar();
             break;
         case '\"':
@@ -133,6 +134,9 @@ void ASNLexer::LookupString(void)
         default:
             if ( c < ' ' && c > '\0' ) {
                 LexerWarning("illegal character in string: \\...");
+            }
+            else {
+                AddValueChar(c);
             }
             AddChar();
             break;

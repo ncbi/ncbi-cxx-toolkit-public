@@ -166,14 +166,22 @@ int main(int argc, const char*argv[])
 void LoadDefinition(CModuleSet& types,
                     const string& fileName, EFileType fileType)
 {
-    ifstream in(fileName.c_str());
-    if ( !in )
-        Error("cannot open file " + fileName);
+    ifstream fileIn;
+    CNcbiIstream* in;
+    if ( fileName == "stdin" || fileName == "-" ) {
+        in = &NcbiCin;
+    }
+    else {
+        fileIn.open(fileName.c_str());
+        if ( !fileIn )
+            Error("cannot open file " + fileName);
+        in = &fileIn;
+    }
     
     if ( fileType != eASNText )
         Error("data definition format not supported");
 
-    ASNLexer lexer(in);
+    ASNLexer lexer(*in);
     ASNParser parser(lexer);
     try {
         parser.Modules(types);
@@ -189,34 +197,50 @@ void LoadDefinition(CModuleSet& types,
 void StoreDefinition(const CModuleSet& types,
                      const string& fileName, EFileType fileType)
 {
-    ofstream out(fileName.c_str());
-    if ( !out )
-        Error("cannot open file " + fileName);
+    ofstream fileOut;
+    CNcbiOstream* out;
+    if ( fileName == "stdout" || fileName == "-" ) {
+        out = &NcbiCout;
+    }
+    else {
+        fileOut.open(fileName.c_str());
+        if ( !fileOut )
+            Error("cannot open file " + fileName);
+        out = &fileOut;
+    }
 
     if ( fileType != eASNText )
         Error("data definition format not supported");
     
     for ( CModuleSet::TModules::const_iterator i = types.modules.begin();
           i != types.modules.end(); ++i ) {
-        (*i)->Print(out);
+        (*i)->Print(*out);
     }
 }
 
 pair<TObjectPtr, TTypeInfo> LoadValue(CModuleSet& types, const string& typeName,
                                       const string& fileName, EFileType fileType)
 {
-    ifstream in(fileName.c_str(),
-                fileType == eASNBinary? ios::in | ios::binary: ios::in);
-    if ( !in )
-        Error("cannot open file " + fileName);
+    ifstream fileIn;
+    CNcbiIstream* in;
+    if ( fileName == "stdin" || fileName == "-" ) {
+        in = &NcbiCin;
+    }
+    else {
+        fileIn.open(fileName.c_str(),
+                    fileType == eASNBinary? ios::in | ios::binary: ios::in);
+        if ( !fileIn )
+            Error("cannot open file " + fileName);
+        in = &fileIn;
+    }
     
     auto_ptr<CObjectIStream> objIn;
     switch ( fileType ) {
     case eASNText:
-        objIn.reset(new CObjectIStreamAsn(in));
+        objIn.reset(new CObjectIStreamAsn(*in));
         break;
     case eASNBinary:
-        objIn.reset(new CObjectIStreamAsnBinary(in));
+        objIn.reset(new CObjectIStreamAsnBinary(*in));
         break;
     default:
         Error("value format not supported");
@@ -240,18 +264,26 @@ pair<TObjectPtr, TTypeInfo> LoadValue(CModuleSet& types, const string& typeName,
 void StoreValue(const pair<TObjectPtr, TTypeInfo>& object,
                 const string& fileName, EFileType fileType)
 {
-    ofstream out(fileName.c_str(),
-                 fileType == eASNBinary? ios::out | ios::binary: ios::out);
-    if ( !out )
-        Error("cannot open file " + fileName);
-    
+    ofstream fileOut;
+    CNcbiOstream* out;
+    if ( fileName == "stdout" || fileName == "-" ) {
+        out = &NcbiCout;
+    }
+    else {
+        fileOut.open(fileName.c_str(),
+                     fileType == eASNBinary? ios::out | ios::binary: ios::out);
+        if ( !fileOut )
+            Error("cannot open file " + fileName);
+        out = &fileOut;
+    }
+
     auto_ptr<CObjectOStream> objOut;
     switch ( fileType ) {
     case eASNText:
-        objOut.reset(new CObjectOStreamAsn(out));
+        objOut.reset(new CObjectOStreamAsn(*out));
         break;
     case eASNBinary:
-        objOut.reset(new CObjectOStreamAsnBinary(out));
+        objOut.reset(new CObjectOStreamAsnBinary(*out));
         break;
     default:
         Error("value format not supported");

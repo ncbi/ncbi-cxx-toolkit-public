@@ -55,7 +55,16 @@ ASNStringValue::ASNStringValue(const string& v)
 
 ostream& ASNStringValue::Print(ostream& out, int )
 {
-    return out << value;
+    out << '"';
+    for ( string::const_iterator i = value.begin(), end = value.end();
+          i != end; ++i ) {
+        char c = *i;
+        if ( c == '"' )
+            out << "\"\"";
+        else
+            out << c;
+    }
+    return out << '"';
 }
 
 ASNBitStringValue::ASNBitStringValue(const string& v)

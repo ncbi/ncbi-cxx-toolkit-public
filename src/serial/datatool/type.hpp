@@ -19,6 +19,8 @@ class ASNModule;
 
 class ASNType {
 public:
+    typedef void* TObjectPtr;
+
     ASNType(ASNModule& module);
     ASNType(ASNModule& module, const string& name);
     virtual ~ASNType();
@@ -32,6 +34,7 @@ public:
 
     virtual bool Check(void);
     virtual bool CheckValue(const ASNValue& value) = 0;
+    virtual TObjectPtr CreateDefault(const ASNValue& value) = 0;
 
     virtual const CTypeInfo* GetTypeInfo(void);
 
@@ -65,6 +68,7 @@ public:
     ASNNullType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
 };
@@ -74,6 +78,7 @@ public:
     ASNBooleanType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
 };
@@ -83,6 +88,7 @@ public:
     ASNRealType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
 };
@@ -90,19 +96,17 @@ public:
 class ASNVisibleStringType : public ASNFixedType {
 public:
     ASNVisibleStringType(ASNModule& module);
+    ASNVisibleStringType(ASNModule& module, const string& kw);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
 };
 
-class ASNStringStoreType : public ASNFixedType {
+class ASNStringStoreType : public ASNVisibleStringType {
 public:
     ASNStringStoreType(ASNModule& module);
-
-    bool CheckValue(const ASNValue& value);
-
-    const CTypeInfo* GetTypeInfo(void);
 };
 
 class ASNBitStringType : public ASNFixedType {
@@ -110,6 +114,7 @@ public:
     ASNBitStringType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 };
 
 class ASNOctetStringType : public ASNFixedType {
@@ -117,6 +122,7 @@ public:
     ASNOctetStringType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 };
 
 class ASNEnumeratedType : public ASNType {
@@ -142,6 +148,7 @@ public:
     ostream& Print(ostream& out, int indent) const;
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
 
@@ -157,6 +164,7 @@ public:
     ASNIntegerType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
 };
@@ -169,10 +177,13 @@ public:
 
     bool Check(void);
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     const CTypeInfo* GetTypeInfo(void);
 
     string userTypeName;
+
+    ASNType* Resolve(void);
 };
 
 class ASNOfType : public ASNType {
@@ -183,6 +194,7 @@ public:
 
     bool Check(void);
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     AutoPtr<ASNType> type;
 
@@ -249,6 +261,7 @@ public:
     ASNSetType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 };
 
 class ASNSequenceType : public ASNContainerType {
@@ -256,6 +269,7 @@ public:
     ASNSequenceType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 };
 
 class ASNChoiceType : public ASNContainerType {
@@ -263,6 +277,7 @@ public:
     ASNChoiceType(ASNModule& module);
 
     bool CheckValue(const ASNValue& value);
+    TObjectPtr CreateDefault(const ASNValue& value);
 
     CTypeInfo* CreateTypeInfo(void);
 };

@@ -290,7 +290,10 @@ long ASNParser::Number(void)
 
 string ASNParser::String(void)
 {
-    return ValueOf(T_STRING, "string");
+    Expect(T_STRING, "string");
+    const string& ret = Lexer().CurrentTokenValue();
+    Consume();
+    return ret;
 }
 
 string ASNParser::Identifier(void)

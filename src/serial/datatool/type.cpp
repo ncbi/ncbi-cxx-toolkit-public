@@ -107,6 +107,11 @@ bool ASNNullType::CheckValue(const ASNValue& value)
     return true;
 }
 
+TObjectPtr ASNNullType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "NULL type not implemented");
+}
+
 TTypeInfo ASNNullType::GetTypeInfo(void)
 {
     THROW1_TRACE(runtime_error, "NULL type not implemented");
@@ -121,6 +126,11 @@ bool ASNBooleanType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNBoolValue, "BOOLEAN");
     return true;
+}
+
+TObjectPtr ASNBooleanType::CreateDefault(const ASNValue& value)
+{
+    return new bool(dynamic_cast<const ASNBoolValue&>(value).value);
 }
 
 TTypeInfo ASNBooleanType::GetTypeInfo(void)
@@ -151,6 +161,11 @@ bool ASNRealType::CheckValue(const ASNValue& value)
     return true;
 }
 
+TObjectPtr ASNRealType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "REAL default not implemented");
+}
+
 TTypeInfo ASNRealType::GetTypeInfo(void)
 {
     return CStdTypeInfo<double>::GetTypeInfo();
@@ -161,10 +176,20 @@ ASNVisibleStringType::ASNVisibleStringType(ASNModule& module)
 {
 }
 
+ASNVisibleStringType::ASNVisibleStringType(ASNModule& module, const string& kw)
+    : ASNFixedType(module, kw)
+{
+}
+
 bool ASNVisibleStringType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNStringValue, "string");
     return true;
+}
+
+TObjectPtr ASNVisibleStringType::CreateDefault(const ASNValue& value)
+{
+    return new string(dynamic_cast<const ASNStringValue&>(value).value);
 }
 
 TTypeInfo ASNVisibleStringType::GetTypeInfo(void)
@@ -174,20 +199,8 @@ TTypeInfo ASNVisibleStringType::GetTypeInfo(void)
 }
 
 ASNStringStoreType::ASNStringStoreType(ASNModule& module)
-    : ASNFixedType(module, "StringStore")
+    : ASNVisibleStringType(module, "StringStore")
 {
-}
-
-bool ASNStringStoreType::CheckValue(const ASNValue& value)
-{
-    CheckValueType(value, ASNStringValue, "string");
-    return true;
-}
-
-TTypeInfo ASNStringStoreType::GetTypeInfo(void)
-{
-    return CAutoPointerTypeInfo::GetTypeInfo(
-        CStdTypeInfo<string>::GetTypeInfo());
 }
 
 ASNBitStringType::ASNBitStringType(ASNModule& module)
@@ -201,6 +214,11 @@ bool ASNBitStringType::CheckValue(const ASNValue& value)
     return true;
 }
 
+TObjectPtr ASNBitStringType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "BIT STRING default not implemented");
+}
+
 ASNOctetStringType::ASNOctetStringType(ASNModule& module)
     : ASNFixedType(module, "OCTET STRING")
 {
@@ -210,6 +228,11 @@ bool ASNOctetStringType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNBitStringValue, "OCTET STRING");
     return true;
+}
+
+TObjectPtr ASNOctetStringType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "OCTET STRING default not implemented");
 }
 
 ASNEnumeratedType::ASNEnumeratedType(ASNModule& module, const string& kw)
@@ -252,6 +275,21 @@ bool ASNEnumeratedType::CheckValue(const ASNValue& value)
     return false;
 }
 
+TObjectPtr ASNEnumeratedType::CreateDefault(const ASNValue& value)
+{
+    const ASNIdValue* id = dynamic_cast<const ASNIdValue*>(&value);
+    if ( id == 0 ) {
+        return new int(dynamic_cast<const ASNIntegerValue&>(value).value);
+    }
+    for ( TValues::const_iterator i = values.begin();
+          i != values.end(); ++i ) {
+        if ( i->id == id->id )
+            return new int(i->value);
+    }
+    value.Warning("illegal ENUMERATED value: " + id->id);
+    return 0;
+}
+
 CTypeInfo* ASNEnumeratedType::CreateTypeInfo(void)
 {
     AutoPtr<CEnumeratedTypeInfo> info(new CEnumeratedTypeInfo(name));
@@ -271,6 +309,11 @@ bool ASNIntegerType::CheckValue(const ASNValue& value)
 {
     CheckValueType(value, ASNIntegerValue, "INTEGER");
     return true;
+}
+
+TObjectPtr ASNIntegerType::CreateDefault(const ASNValue& value)
+{
+    return new long(dynamic_cast<const ASNIntegerValue&>(value).value);
 }
 
 TTypeInfo ASNIntegerType::GetTypeInfo(void)
@@ -310,18 +353,28 @@ bool ASNUserType::CheckValue(const ASNValue& value)
 
 TTypeInfo ASNUserType::GetTypeInfo(void)
 {
+    return Resolve()->GetTypeInfo();
+}
+
+TObjectPtr ASNUserType::CreateDefault(const ASNValue& value)
+{
+    return Resolve()->CreateDefault(value);
+}
+
+ASNType* ASNUserType::Resolve(void)
+{
     const ASNModule::TypeInfo* typeInfo =  GetModule().FindType(userTypeName);
     if ( !typeInfo )
         THROW1_TRACE(runtime_error, "type " + userTypeName + " undefined");
     
     if ( typeInfo->type )
-        return typeInfo->type->GetTypeInfo();
+        return typeInfo->type;
 
     typeInfo = GetModule().moduleSet->FindType(typeInfo);
     if ( !typeInfo->type )
         THROW1_TRACE(runtime_error, "type " + userTypeName + " undefined");
 
-    return typeInfo->type->GetTypeInfo();
+    return typeInfo->type;
 }
 
 ASNOfType::ASNOfType(const string& kw, const AutoPtr<ASNType>& t)
@@ -354,6 +407,11 @@ bool ASNOfType::CheckValue(const ASNValue& value)
             ok = false;
     }
     return ok;
+}
+
+TObjectPtr ASNOfType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "SET/SEQUENCE OF default not implemented");
 }
 
 ASNSetOfType::ASNSetOfType(const AutoPtr<ASNType>& type)
@@ -414,15 +472,15 @@ CTypeInfo* ASNContainerType::CreateTypeInfo(void)
     for ( TMembers::const_iterator i = members.begin();
           i != members.end(); ++i, ++index ) {
         ASNMember* member = i->get();
+        ASNType* type = member->type.get();
         CMemberInfo* memberInfo =
             typeInfo->AddMember(member->name,
-                   new CRealMemberInfo(index*sizeof(dataval),
-                                       new CTypeSource(member->type.get())));
+                                new CRealMemberInfo(index*sizeof(dataval),
+                                                    new CTypeSource(type)));
         if ( member->Optional() )
             memberInfo->SetOptional();
-        else if ( member->defaultValue ) {
-            _TRACE("skipped DEFAULT value: not implemented");
-        }
+        else if ( member->defaultValue )
+            memberInfo->SetDefault(type->CreateDefault(*member->defaultValue));
     }
     return new CAutoPointerTypeInfo(typeInfo.release());
 }
@@ -476,6 +534,11 @@ bool ASNSetType::CheckValue(const ASNValue& value)
     return true;
 }
 
+TObjectPtr ASNSetType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "SET default not implemented");
+}
+
 ASNSequenceType::ASNSequenceType(ASNModule& module)
     : ASNContainerType(module, "SEQUENCE")
 {
@@ -525,6 +588,11 @@ bool ASNSequenceType::CheckValue(const ASNValue& value)
     return true;
 }
 
+TObjectPtr ASNSequenceType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "SEQUENCE default not implemented");
+}
+
 ASNChoiceType::ASNChoiceType(ASNModule& module)
     : ASNContainerType(module, "CHOICE")
 {
@@ -543,6 +611,11 @@ bool ASNChoiceType::CheckValue(const ASNValue& value)
             return (*i)->type->CheckValue(*choice->value);
     }
     return false;
+}
+
+TObjectPtr ASNChoiceType::CreateDefault(const ASNValue& value)
+{
+    THROW1_TRACE(runtime_error, "CHOICE default not implemented");
 }
 
 CTypeInfo* ASNChoiceType::CreateTypeInfo(void)

@@ -35,6 +35,11 @@ public:
             _ASSERT(TokenStarted());
             return string(CurrentTokenStart(), CurrentTokenEnd());
         }
+    const string& CurrentTokenValue(void) const
+        {
+            _ASSERT(TokenStarted());
+            return m_TokenValue;
+        }
 
     virtual void LexerError(const char* error);
     virtual void LexerWarning(const char* error);
@@ -51,6 +56,7 @@ protected:
             _ASSERT(!TokenStarted());
             m_TokenStart = m_Position;
             m_NextToken.line = m_Line;
+            m_TokenValue.erase();
         }
     void AddChars(int count)
         {
@@ -61,6 +67,10 @@ protected:
     void AddChar(void)
         {
             AddChars(1);
+        }
+    void AddValueChar(char c)
+        {
+            m_TokenValue += c;
         }
     void SkipChars(int count)
         {
@@ -117,6 +127,7 @@ private:
     char* m_DataEnd; // end of read data in buffer
     char* m_TokenStart; // token start in buffer (0: not parsed yet)
     AbstractToken m_NextToken;
+    string m_TokenValue;
 };
 
 #endif
