@@ -736,10 +736,9 @@ string CGFFReader::x_FeatureID(const SRecord& record)
             }
         }
         return kEmptyStr;
-    } else { // probably an intron or single site
+    } else if (x_GetFlags() & fMergeOnyCdsMrna) {
         return kEmptyStr;
     }
-    _TRACE("id = " << id);
     return id;
 }
 
@@ -1035,6 +1034,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2005/01/18 17:56:17  dicuccio
+* Added additional flags: permit merging of intervals in non-CDS and non-mRNA
+* features.  Added enum for default options.
+*
 * Revision 1.11  2005/01/13 15:28:26  dicuccio
 * Handle merged ranges, strands, and frames when the ranges arrive out-of-order.
 * FIxed setting of line number

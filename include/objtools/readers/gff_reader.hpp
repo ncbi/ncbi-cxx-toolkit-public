@@ -69,15 +69,25 @@ class NCBI_XOBJREAD_EXPORT CGFFReader
 {
 public:
     enum EFlags {
-        fNoGTF      = 0x1, // don't honor/recognize GTF conventions
-        fGBQuals    = 0x2, // attribute tags are GenBank qualifiers
-        fMergeExons = 0x4  // merge exons with the same transcript_id
+        ///< don't honor/recognize GTF conventions
+        fNoGTF      = 0x1,
+
+        ///< attribute tags are GenBank qualifiers
+        fGBQuals    = 0x2,
+
+        ///< merge exons with the same transcript_id
+        fMergeExons = 0x4,
+
+        ///< restrict merging to just CDS and mRNA features
+        fMergeOnyCdsMrna = 0x8,
+
+        fDefaults = 0
     };
     typedef int TFlags;
 
     virtual ~CGFFReader() { }
 
-    CRef<CSeq_entry> Read(CNcbiIstream& in, TFlags flags = 0);
+    CRef<CSeq_entry> Read(CNcbiIstream& in, TFlags flags = fDefaults);
 
     struct SRecord : public CObject
     {
@@ -208,6 +218,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/01/18 17:56:17  dicuccio
+ * Added additional flags: permit merging of intervals in non-CDS and non-mRNA
+ * features.  Added enum for default options.
+ *
  * Revision 1.6  2005/01/13 15:30:33  dicuccio
  * Adjusted internal struct to track out-of-order ranges
  *
