@@ -72,7 +72,7 @@
 			var usage_str;
 			//usage_str  = "Usage:\n";
 			//usage_str += "cscript new_project.wsf <project-name> <project-template> <path-to-pre-built-toolkit> [-dll]";
-			usage_str += "USAGE: cscript new_project.wsf <name> <type> <builddir> [-dll]\n";
+			usage_str  = "USAGE: cscript new_project.wsf <name> <type> <builddir> [-dll]\n";
 			usage_str += "SYNOPSIS:\n";
 			usage_str += "    Create new MSVC7.1 application project from sample template:\n";
 			usage_str += "      Create local build tree structure. Fill-in local tree.\n";
