@@ -420,25 +420,51 @@ OPT_HANDLER_END()
 
 // CBlastOptions based handlers
 
+/// All search types can specify GapOpeningCost.
 OPT_HANDLER_SUPPORT_ALL(GapOpeningCost);
+
+/// All search types can specify GapExtensionCost.
 OPT_HANDLER_SUPPORT_ALL(GapExtensionCost);
+
+/// All search types can specify the WordSize.
 OPT_HANDLER_SUPPORT_ALL(WordSize);
+
+/// All search types can specify the matrix name.
 OPT_HANDLER_EXPR_ALL   (MatrixName, V.c_str());
+
+/// Searches with query translation can specify the query genetic code.
 OPT_HANDLER_SUPPORT_TRQ(QueryGeneticCode);
+
+/// Searches with database translation can specify the database genetic code.
 OPT_HANDLER_SUPPORT_TRD(DbGeneticCode);
+
+/// All search types can specify the size of the effective search space.
 OPT_HANDLER_EXPR_ALL   (EffectiveSearchSpace, (long long) V);
+
+/// All search types can specify filtering options.
 OPT_HANDLER_EXPR_ALL   (FilterString, V.c_str());
+
+/// All search types can specify whether a search is gapped.
 OPT_HANDLER_SUPPORT_ALL(GappedMode);
+
+/// All search types can specify the size of the hit list.
 OPT_HANDLER_SUPPORT_ALL(HitlistSize);
+
+/// All search types can specify an E-value threshold.
 OPT_HANDLER_SUPPORT_ALL(EvalueThreshold);
 
 // Nucleotide only
+
+/// Nucleotide searches can specify a mismatch penalty.
 OPT_HANDLER_SUPPORT_NUCL(MismatchPenalty);
+
+/// Nucleotide searches can specify a match reward.
 OPT_HANDLER_SUPPORT_NUCL(MatchReward);
 
 
 // CBlast4Options based handlers
 
+/// The Entrez Query is applied to the Remote Blast API object.
 OPT_HANDLER_RB_EXPR(EntrezQuery, V.c_str());
 
 
@@ -737,6 +763,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/11/01 19:39:51  bealer
+ * - More doxygen.
+ *
  * Revision 1.6  2004/11/01 19:22:26  bealer
  * - Doxyg. docs for search_opts.hpp.
  *
