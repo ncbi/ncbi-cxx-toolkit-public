@@ -364,7 +364,6 @@ extern char* MessagePlusErrno
  char*        buf,
  size_t       buf_size)
 {
-    int/*bool*/ has_errno = (x_errno != 0);
     char* beg;
     char* end;
 
@@ -405,7 +404,7 @@ extern char* MessagePlusErrno
         return buf;
 
     /* <x_errno> */
-    {{
+    if ( x_errno ) {
         int/*bool*/ neg;
         /* calculate length */
         size_t len;
@@ -425,7 +424,7 @@ extern char* MessagePlusErrno
 
         /* ? not enough space */
         if (beg + len >= end) {
-            s_SafeCopy("....", &beg, end);
+            s_SafeCopy("...", &beg, end);
             return buf;
         }
 
@@ -441,11 +440,12 @@ extern char* MessagePlusErrno
             *beg++ = s_Num[x_errno / mod];
             x_errno %= mod;
         }
-    }}
+        /* "," before "<descr>" */
+        if (descr  &&  *descr  &&  beg != end)
+            *beg++ = ',';
+    }
 
-    /* ",<descr>" */
-    if (has_errno  &&  descr  &&  *descr  &&  beg != end)
-        *beg++ = ',';
+    /* "<descr>" */
     if ( s_SafeCopy(descr, &beg, end) )
         return buf;
 
@@ -499,6 +499,9 @@ extern const char* CORE_GetPlatform(void)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/01/17 15:55:13  lavr
+ * Fix errno reporting (comma was missing if errno == 0)
+ *
  * Revision 6.25  2003/01/17 01:23:07  lavr
  * Always print full message for TRACE log in Debug mode
  *
