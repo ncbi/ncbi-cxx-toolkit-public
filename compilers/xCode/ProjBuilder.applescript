@@ -162,7 +162,7 @@ script ProjBuilder
 			set nameRef to "FILE" & srcFileCount
 			set nameBuild to "REF_FILE" & srcFileCount
 			
-			set filePath to "/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
+			set filePath to f --"/" & x_Replace(f, ":", "/") -- f will contain something like "users:vlad:c++:src:corelib:ncbicore.cpp"
 			set fileName to x_FileNameFromPath(f)
 			set fileRef to {isa:"PBXFileReference", |name|:fileName, |path|:filePath, |sourceTree|:"<absolute>"}
 			set fileBuild to {isa:"PBXBuildFile", |fileRef|:nameRef}
@@ -415,7 +415,7 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 	(* Get file name and extension from the full file path *)
 	on x_FileNameFromPath(fileNameWithPath)
 		set OldDelims to AppleScript's text item delimiters
-		set AppleScript's text item delimiters to ":"
+		set AppleScript's text item delimiters to "/"
 		set partsList to text items of fileNameWithPath
 		set AppleScript's text item delimiters to OldDelims
 		return the last item of partsList as string
@@ -473,6 +473,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			set theScript to theScript & "  " & TheOUTPath & "/bin/datatool -oR " & TheNCBIPath
 			if asnName is "gui_project" then
 				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/core\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
+			else if asnName is "plugin" then
+				set theScript to theScript & " -opm " & TheNCBIPath & "/src  -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"gui/plugin\" -oc \"$m\" -oex '' -ocvs -odi -od \"$m.def\"" & ret
 			else
 				set theScript to theScript & " -m \"$m.asn\" -M \"$M\" -oA -of \"$m.files\" -or \"objects/$m\" -oc \"$m\" -odi -od \"$m.def\"" & ret
 			end if
@@ -514,6 +516,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/07/06 15:31:36  lebedev
+ * Datatool script build phase fixed for gui/plugin
+ *
  * Revision 1.3  2004/06/25 15:11:52  lebedev
  * DEPLOYMENT_POSTPROCESSING set to YES in Deployment build. Missing space before -opm datatool flag added
  *
