@@ -32,9 +32,7 @@
  *
  */
 
-#include <stdexcept>
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbistr.hpp>
+#include <corelib/ncbistd.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -302,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/11 18:19:19  ucko
+ * Simplify #includes down to <corelib/ncbistd.hpp>.
+ *
  * Revision 1.8  2001/11/06 17:58:03  lavr
  * Formatted uniformly as the rest of the library
  *
