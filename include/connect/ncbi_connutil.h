@@ -60,6 +60,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/01/11 23:05:13  lavr
+ * ConnNetInfo_Create() fully documented
+ *
  * Revision 6.7  2001/01/08 23:46:10  lavr
  * REQUEST_METHOD -> REQ_METHOD to be consistent with SConnNetInfo
  *
@@ -199,10 +202,17 @@ typedef struct {
  *   client_mode        CLIENT_MODE
  *   lb_disable         LB_DISABLE
  *
+ * A value of the field NAME is first looked for in the environment variable
+ * of the form service_CONN_NAME; then in the current corelib registry,
+ * in the section 'service' by using key CONN_NAME; then in the environment
+ * variable again, but using the name CONN_NAME; and finally in the default
+ * registry section (DEF_CONN_REG_SECTION), using just NAME. If service
+ * is NULL or empty then the first 2 steps in the above lookup are skipped.
+ *
  * For default values see right above, in macros DEF_CONN_<NAME>.
  */
 extern SConnNetInfo* ConnNetInfo_Create
-(const char* reg_section  /* if NULL/empty then DEF_CONN_REG_SECTION */
+(const char* service
  );
 
 
