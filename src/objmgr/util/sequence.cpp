@@ -1646,7 +1646,7 @@ int TestForOverlap(const CSeq_loc& loc1, const CSeq_loc& loc2, EOverlapType type
             }
             TSeqPos loc2start = it2.GetRange().GetFrom();
             // Find the first interval in loc1 intersecting with loc2
-            for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; ++it1);
+            for ( ; it1  &&  it1.GetRange().GetTo() < loc2start; ++it1) {};
             // Check intervals one by one
             while ( it1  &&  it2 ) {
                 if (it1.GetRange().GetTo()  !=  it2.GetRange().GetTo() ) {
@@ -2035,8 +2035,19 @@ void CCdregion_translate::TranslateCdregion (string& prot,
 
     // code break substitution
     if (cdr.IsSetCode_break ()) {
+        SIZE_TYPE protlen = prot.size ();
         iterate (CCdregion::TCode_break, code_break, cdr.GetCode_break ()) {
-            // ...
+            const CRef <CCode_break> brk = *code_break;
+            const CSeq_loc& cbk_loc = brk->GetLoc ();
+            TSeqPos seq_pos = sequence::LocationOffset (loc, cbk_loc, sequence::eOffset_FromStart, &bsh.GetScope ());
+            seq_pos -= offset;
+            i = seq_pos / 3;
+            if (i >= 0 && i < protlen) {
+              const CCode_break::C_Aa& c_aa = brk->GetAa ();
+              if (c_aa.IsNcbieaa ()) {
+                prot [i] = c_aa.GetNcbieaa ();
+              }
+            }
         }
     }
 
@@ -2494,6 +2505,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.23  2002/12/10 16:34:45  kans
+* implement code break processing in TranslateCdregion
+*
 * Revision 1.22  2002/12/09 20:38:41  ucko
 * +sequence::LocationOffset
 *
