@@ -183,7 +183,7 @@ case "$host:$compiler" in
  *:MIPSpro73 )
    COMMON_FLAGS="-fullwarn -signed -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
    CFLAGS="$COMMON_FLAGS -ansi"
-   CXXFLAGS="$COMMON_FLAGS -ansiW -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
+   CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    LDFLAGS="-LANG:std $LDFLAGS"
    AR=${AR:="$CXX -ar -WR,-v -o"}
@@ -814,6 +814,12 @@ else
    serial="serial"
 fi
 
+if test "$with_objects" = "yes"  &&  test -n "$serial" ; then
+   objects="objects"
+else
+   objects=
+fi
+
 
 ### Check for C standard types an sizes
 ### ---------------------------------
@@ -877,6 +883,7 @@ AC_SUBST(LIBS)
 
 AC_SUBST(internal)
 AC_SUBST(serial)
+AC_SUBST(objects)
 
 AC_SUBST(script_shell)
 AC_SUBST(make_shell)
