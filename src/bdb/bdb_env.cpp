@@ -323,6 +323,12 @@ DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
     return txn;
 }
 
+void CBDB_Env::SetLogFileMax(unsigned int lg_max)
+{
+    int ret = m_Env->set_lg_max(m_Env, lg_max);
+    BDB_CHECK(ret, "DB_ENV::set_lg_max");
+}
+
 void CBDB_Env::OpenErrFile(const char* file_name)
 {
     if (m_ErrFile) {
@@ -406,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/10/18 15:37:10  kuznets
+ * +SetLogFileMax
+ *
  * Revision 1.28  2004/10/15 14:03:59  kuznets
  * Fixed BDB flags incompatibility and added some debug info
  *

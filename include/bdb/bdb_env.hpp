@@ -142,6 +142,9 @@ public:
     /// Turn off buffering of log files (DB_DIRECT_LOG)
     void SetDirectLog(bool on_off);
 
+    /// Set maximum size of LOG files
+    void SetLogFileMax(unsigned int lg_max);
+
     /// Remove all non-active log files
     void CleanLog();
 
@@ -190,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/10/18 15:36:47  kuznets
+ * +SetLogFileMax
+ *
  * Revision 1.18  2004/08/24 14:06:13  kuznets
  * Added CBDB_ENv::CheckRemove()
  *
