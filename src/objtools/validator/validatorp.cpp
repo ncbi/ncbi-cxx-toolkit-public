@@ -55,7 +55,7 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Pubdesc.hpp>
-
+#include <objects/seq/MolInfo.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
@@ -73,6 +73,7 @@
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
 
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -1458,6 +1459,39 @@ bool CValidError_imp::IsTransgenic(const CBioSource& bsrc)
 }
 
 
+static bool s_IsRefSeqInSep(const CSeq_entry& se, CScope& scope)
+{
+    for (CBioseq_CI it(scope, se); it; ++it) {
+        ITERATE (CBioseq_Handle::TId, id, it->GetId()) {
+            if (bool(id->GetSeqId()) &&  id->GetSeqId()->IsOther()) {
+                const CTextseq_id* tsip = id->GetSeqId()->GetTextseq_Id();
+                if (tsip != NULL  &&  tsip->IsSetAccession()) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+static bool s_IsHtgInSep(const CSeq_entry& se, CScope& scope)
+{
+    for (CTypeConstIterator<CSeqdesc> it(se); it; ++it) {
+        if (!it->IsMolinfo()) {
+            continue;
+        }
+        CMolInfo::TTech tech = it->GetMolinfo().GetTech();
+        if (tech == CMolInfo::eTech_htgs_0  ||
+            tech == CMolInfo::eTech_htgs_1  ||
+            tech == CMolInfo::eTech_htgs_2  ||
+            tech == CMolInfo::eTech_htgs_3) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 void CValidError_imp::ValidateCitSub
 (const CCit_sub& cs,
@@ -1538,7 +1572,9 @@ void CValidError_imp::ValidateCitSub
             "Submission citation has no author names", obj);
     }
     if ( !has_affil ) {
-        EDiagSev sev = IsRefSeq() ? eDiag_Warning : eDiag_Error;
+        EDiagSev sev = 
+            s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE(), *m_Scope) ?
+                eDiag_Warning : eDiag_Error;
         PostErr(sev, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no affiliation", obj);
     }
@@ -2558,6 +2594,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.61  2004/09/22 13:52:25  shomrat
+* Added eErr_SEQ_INST_BadHTGSeq
+*
 * Revision 1.60  2004/09/21 18:36:30  shomrat
 * initialization for m_LocusTagGeneralMatch
 *

@@ -1403,6 +1403,22 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
                  "Invalid Bioseq length [" + len + "]", seq);
     }
 
+    if (inst.GetRepr() == CSeq_inst::eRepr_raw) {
+        const CMolInfo* mi = 0;
+        CSeqdesc_CI mi_desc(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_Molinfo);
+        if ( mi_desc ) {
+            mi = &(mi_desc->GetMolinfo());
+        }
+        CMolInfo::TTech tech = 
+            mi != 0 ? mi->GetTech() : CMolInfo::eTech_unknown;
+        if (tech == CMolInfo::eTech_htgs_2  &&
+            !GraphsOnBioseq(seq)  &&
+            !x_IsActiveFin(seq)) {
+            PostErr(eDiag_Warning, eErr_SEQ_INST_BadHTGSeq,
+                "HTGS 2 raw seq has no gaps and no graphs", seq);
+        }
+    }
+
     CSeq_data::E_Choice seqtyp = inst.IsSetSeq_data() ?
         inst.GetSeq_data().Which() : CSeq_data::e_not_set;
     switch (seqtyp) {
@@ -1918,7 +1934,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         if ( tech == CMolInfo::eTech_htgs_2  &&
              !GraphsOnBioseq(seq)  &&
              !x_IsActiveFin(seq) ) {
-            PostErr(eDiag_Warning, eErr_SEQ_INST_BadDeltaSeq,
+            PostErr(eDiag_Warning, eErr_SEQ_INST_BadHTGSeq,
                 "HTGS 2 delta seq has no gaps and no graphs", seq);
         }
     }
@@ -3885,6 +3901,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.88  2004/09/22 13:53:10  shomrat
+* Added eErr_SEQ_INST_BadHTGSeq
+*
 * Revision 1.87  2004/09/21 18:37:02  shomrat
 * Added ValidateLocusTagGeneral, reports eErr_SEQ_FEAT_LocusTagProductMismatch
 *
