@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/06/30 03:24:52  vakatov
+ * Get rid of warnings caused by constless char* initialization
+ *
  * Revision 6.2  2002/01/12 07:33:28  vakatov
  * Get rid of unused variables (in CATCH())
  *
@@ -161,7 +164,7 @@ void CPub::GetLabel
  ELabelType type,
  bool       unique) const
 {
-    static char* pubtypes[14] = {
+    static const char* s_PubTypes[14] = {
         "Unknown",
         "Generic",
         "Submit",
@@ -182,19 +185,19 @@ void CPub::GetLabel
         return;
     }
     
-    // Get the index into the pubtypes array corresponding to pub type
+    // Get the index into the s_PubTypes array corresponding to pub type
     int idx = static_cast<int>(Which());
     idx = idx >= 0 && idx < 14 ? idx : 0;
     
     if (type == eType) {
         // Append pub type to label and return
-        *label += pubtypes[idx];
+        *label += s_PubTypes[idx];
         return;
     }
     
     if (type == eBoth) {
         // Append pub type to label
-        *label += string(pubtypes[idx]) + ": ";
+        *label += string(s_PubTypes[idx]) + ": ";
     }
 
     const string* titleunique = 0;

@@ -63,7 +63,7 @@ void CTestUtf8::Init(void)
 
 int CTestUtf8::Run(void)
 {
-    char* sTest[]={
+    const char* sTest[]={
           "Archiv für Gynäkologie",
           "Phillip Journal für restaurative Zahnmedizin.",
           "Revista odontológica.",
@@ -134,6 +134,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/06/30 03:24:08  vakatov
+ * Get rid of warnings caused by constless char* initialization
+ *
  * Revision 1.4  2002/04/16 18:52:16  ivanov
  * Centralize threatment of assert() in tests.
  * Added #include <test/test_assert.h>. CVS log moved to end of file.
