@@ -40,7 +40,7 @@
 
 int main(int argc, const char* argv[])
 {
-    static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
+    static char obuf[8192 + 2] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     const char* service = argc > 1 && *argv[1] ? argv[1] : "bounce";
     const char* host = argc > 2 && *argv[2] ? argv[2] : "www.ncbi.nlm.nih.gov";
     SConnNetInfo *net_info;
@@ -77,11 +77,28 @@ int main(int argc, const char* argv[])
 
     CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
 
-    if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success ||
-        n != strlen(obuf)) {
+#if 0
+    for (n = 0; n < 10; n++) {
+        int m;
+        for (m = 0; m < sizeof(obuf) - 2; m++)
+            obuf[m] = "01234567890\n"[rand() % 12];
+        obuf[m++] = '\n';
+        obuf[m]   = '\0';
+
+        if (CONN_Write(conn, obuf, strlen(obuf), &m) != eIO_Success) {
+            if (!n && m != strlen(obuf)) {
+                CONN_Close(conn);
+                CORE_LOG(eLOG_Fatal, "Error writing to connection");
+            } else
+                break;
+        }
+    }
+#else
+    if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success || !n) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error writing to connection");
     }
+#endif
 
     for (;;) {
         if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
@@ -143,6 +160,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2003/07/24 16:38:59  lavr
+ * Add conditional check for early connection drops (#if 0'd)
+ *
  * Revision 6.26  2003/05/29 18:03:49  lavr
  * Extend read error message with a reason (if any)
  *
