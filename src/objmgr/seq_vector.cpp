@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/04/25 18:14:47  grichenk
+* e_not_set coding gap symbol set to 0
+*
 * Revision 1.14  2002/04/25 16:37:21  grichenk
 * Fixed gap coding, added GetGapChar() function
 *
@@ -233,8 +236,8 @@ CSeqVector::TResidue CSeqVector::GetGapChar(void)
     case CSeq_data::e_Ncbi8aa:
     case CSeq_data::e_Ncbistdaa: return 21;
 
+    case CSeq_data::e_not_set:   return 0;     // It's not good to throw an exception here
     // Codings without gap symbols
-    case CSeq_data::e_not_set:
     case CSeq_data::e_Ncbi2na:
     case CSeq_data::e_Ncbipaa:                 //### Not sure about this
     case CSeq_data::e_Ncbipna:                 //### Not sure about this
