@@ -96,11 +96,11 @@ bool CProcess::IsAlive(void) const
     return true;
 
 #elif defined(NCBI_OS_MSWIN)
-    HANDLE hProcess;
+    HANDLE hProcess = 0;
     if (m_Type == ePid) {
         hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_Process);
-        if (!hProcess   &&  GetLastError() == ERROR_ACCESS_DENIED) {
-            return true;
+        if (!hProcess) {
+            return GetLastError() == ERROR_ACCESS_DENIED;
         }
     } else {
         hProcess = (HANDLE)m_Process;
@@ -108,7 +108,7 @@ bool CProcess::IsAlive(void) const
     DWORD status = 0;
     _ASSERT(STILL_ACTIVE != 0);
     GetExitCodeProcess(hProcess, &status);
-    if (m_Type == ePid ) {
+    if (m_Type == ePid) {
         CloseHandle(hProcess);
     }
     return status == STILL_ACTIVE;
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/03/04 19:08:36  ivanov
+ * Fixed CProcess::IsAlive()
+ *
  * Revision 1.5  2003/12/04 18:45:35  ivanov
  * Added helper constructor for MS Windows to avoid cast from HANDLE to long
  *
