@@ -101,7 +101,7 @@ CBioseq_Handle& CBioseq_Handle::operator=(const CBioseq_Handle& bh)
 
 bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
 {
-    if ( m_Scope != m_Scope ) {
+    if ( m_Scope != h.m_Scope ) {
         return false;
     }
     if ( *this && h )
@@ -815,6 +815,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2004/09/27 20:12:51  kononenk
+* Fixed CBioseq_Handle::operator==()
+*
 * Revision 1.71  2004/09/03 21:18:46  ucko
 * +<algorithm> for sort()
 *
