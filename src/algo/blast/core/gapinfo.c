@@ -119,7 +119,7 @@ GapEditBlockDelete(GapEditBlock* edit_block)
  *  @param total_ops Number of operations the script must support [in]
  *  @return 0 if successful, nonzero otherwise
  */
-Int2 
+static Int2 
 s_GapPrelimEditBlockRealloc(GapPrelimEditBlock *edit_block, Int4 total_ops)
 {
     if (edit_block->num_ops_allocated <= total_ops) {
