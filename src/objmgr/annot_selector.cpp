@@ -140,7 +140,7 @@ SAnnotSelector::SAnnotSelector(const SAnnotSelector& sel)
 SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
 {
     if ( this != &sel ) {
-        SAnnotTypeSelector::operator=(sel);
+        static_cast<SAnnotTypeSelector&>(*this) = sel;
         m_FeatProduct = sel.m_FeatProduct;
         m_ResolveDepth = sel.m_ResolveDepth;
         m_OverlapType = sel.m_OverlapType;
@@ -590,6 +590,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/17 16:04:26  vasilche
+* IRIX CC doesn't allow explicit call of implicit operator=()
+*
 * Revision 1.10  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
