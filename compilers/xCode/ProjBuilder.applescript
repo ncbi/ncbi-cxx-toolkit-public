@@ -511,8 +511,8 @@ $TOOL -m /Users/lebedev/tmp/access.asn -M "" -oA -of /Users/lebedev/tmp/access.f
 			set theScript to theScript & "  m=\"" & asnName & "\"" & ret
 			
 			set theScript to theScript & "  echo Running Datatool" & ret
-			if asnName is "gui_project" then -- Should use sed properly here (but how?)
-				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\([/a-z0-9]*\\)/\\1.asn/g')\"" & ret
+			if asnName is "gui_project" or asnName is "plugin" then -- Should use sed properly here (but how?)
+				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\([/a-z0-9_]*\\)/\\1.asn/g')\"" & ret
 			else
 				set theScript to theScript & "  M=\"$(grep ^MODULE_IMPORT $m.module | sed 's/^.*= *//' | sed 's/\\(objects[/a-z0-9]*\\)/\\1.asn/g')\"" & ret
 			end if
@@ -582,6 +582,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/11/04 12:37:37  lebedev
+ * Datatool phase twicked: ignore underscopes in asn files names
+ *
  * Revision 1.16  2004/09/30 17:42:53  lebedev
  * _DEBUG flag added for Development build
  *
