@@ -107,7 +107,7 @@ int CTestSerial::Run(void)
         CTypesIterator n1; n1 = Begin(write);
         CTypesConstIterator n2; n2 = ConstBegin(write);
         CTypesConstIterator n3; n3 = ConstBegin(cwrite);
-        CTypesConstIterator n4; n4 = Begin(cwrite);
+        //CTypesConstIterator n4; n4 = Begin(cwrite);
 
         {
             for ( CTypeIterator<CSerialObject> oi = Begin(write); oi; ++oi ) {
