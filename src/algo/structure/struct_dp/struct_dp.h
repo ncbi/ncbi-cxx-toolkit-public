@@ -83,6 +83,9 @@ typedef struct {
     unsigned int *blockPositions;   /* positions of blocks on query (zero-numbered) */
 } DP_AlignmentResult;
 
+/* for destroying alignment result; do not use free (MemFree) */
+extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
+
 /* main alignment routine */
 extern int                              /* returns an above STRUCT_DP_ error code */
 DP_GlobalBlockAlign(
@@ -93,9 +96,6 @@ DP_GlobalBlockAlign(
     DP_AlignmentResult **alignment      /* alignment, if one found; caller should destroy */
 );
 
-/* for destroying alignment result; do not use free (MemFree) */
-extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
-
 #ifdef __cplusplus
 }
 #endif
@@ -105,6 +105,9 @@ extern void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment);
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/06/19 13:48:23  thiessen
+* cosmetic/typo fixes
+*
 * Revision 1.4  2003/06/18 21:46:09  thiessen
 * add traceback, alignment return structure
 *

@@ -74,7 +74,7 @@ public:
     const ResidueRow& operator [] (unsigned int block) const { return grid[block]; }
 };
 
-// checks to make sure frozen block positions are legal
+// checks to make sure frozen block positions are legal (borrowing my own code from blockalign.c)
 int ValidateFrozenBlockPositions(const DP_BlockInfo *blocks, unsigned int queryFrom, unsigned int queryTo)
 {
     static const unsigned int NONE = kMax_UInt;
@@ -193,7 +193,7 @@ int CalculateGlobalMatrix(Matrix& matrix,
                 if (residue < prevResidue + blocks->blockSizes[block-1])     
                     break;
 
-                // cut off at max loop length from previous block, but only if neither block is frozen
+                // cut off at max loop length from previous block, but not if both blocks are frozen
                 if (residue > prevResidue + blocks->blockSizes[block-1] + blocks->maxLoops[block-1] &&
                         (blocks->freezeBlocks[block] == UNFROZEN_BLOCK || 
                          blocks->freezeBlocks[block-1] == UNFROZEN_BLOCK))
@@ -350,6 +350,9 @@ void DP_DestroyAlignmentResult(DP_AlignmentResult *alignment)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/06/19 13:48:23  thiessen
+* cosmetic/typo fixes
+*
 * Revision 1.4  2003/06/18 21:55:15  thiessen
 * remove unused params
 *
