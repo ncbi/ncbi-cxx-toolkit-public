@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/08/08 18:35:55  grichenk
+* CIStreamBuffer::FindChar() -- fixed bug with buffer pointers
+*
 * Revision 1.28  2001/06/20 17:36:19  grichenk
 * Updated FillBuffer() to work with GCC 3.0
 *
@@ -293,7 +296,7 @@ void CIStreamBuffer::FindChar(char c)
         // point m_CurrentPos to end of buffer
         m_CurrentPos = end;
         // fill next portion
-        pos = FillBuffer(pos);
+        pos = FillBuffer(end);
         // cache m_DataEndPos
         end = m_DataEndPos;
     }
