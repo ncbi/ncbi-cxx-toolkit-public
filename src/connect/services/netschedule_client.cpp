@@ -213,7 +213,7 @@ string CNetScheduleClient::SubmitJob(const string& input)
 
 void CNetScheduleClient::CancelJob(const string& job_key)
 {
-    CheckConnect(kEmptyStr);
+    CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
 
     CommandInitiate("CANCEL ", job_key, &m_Tmp);
@@ -228,7 +228,7 @@ CNetScheduleClient::GetStatus(const string& job_key,
 {
     EJobStatus status;
 
-    CheckConnect(kEmptyStr);
+    CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
 
     CommandInitiate("STATUS ", job_key, &m_Tmp);
@@ -320,7 +320,7 @@ void CNetScheduleClient::PutResult(const string& job_key,
                                    int           ret_code, 
                                    const string& output)
 {
-    CheckConnect(kEmptyStr);
+    CheckConnect(job_key);
     CSockGuard sg(*m_Sock);
 
     MakeCommandPacket(&m_Tmp, "PUT ");
@@ -331,6 +331,23 @@ void CNetScheduleClient::PutResult(const string& job_key,
     m_Tmp.append(" \"");
     m_Tmp.append(output);
     m_Tmp.append("\"");
+
+    WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
+    WaitForServer();
+    if (!ReadStr(*m_Sock, &m_Tmp)) {
+        NCBI_THROW(CNetServiceException, eCommunicationError, 
+                   "Communication error");
+    }
+    CheckOK(&m_Tmp);
+}
+
+void CNetScheduleClient::ReturnJob(const string& job_key)
+{
+    CheckConnect(job_key);
+    CSockGuard sg(*m_Sock);
+
+    MakeCommandPacket(&m_Tmp, "RETURN ");
+    m_Tmp.append(job_key);
 
     WriteStr(m_Tmp.c_str(), m_Tmp.length() + 1);
     WaitForServer();
@@ -487,6 +504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/28 18:39:43  kuznets
+ * +ReturnJob()
+ *
  * Revision 1.4  2005/02/28 12:19:40  kuznets
  * +DropQueue()
  *

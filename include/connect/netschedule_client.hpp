@@ -163,6 +163,14 @@ public:
                          int*          ret_code,
                          string*       output);
 
+    /// Transfer job to the "Returned" status. It will be
+    /// re-exucuted after a while. 
+    ///
+    /// Node may decide to return the job if it cannot process it right
+    /// now (does not have resources, being asked to shutdown, etc.)
+    ///
+    void ReturnJob(const string& job_key);
+
     /// Return version string
     string ServerVersion();
 
@@ -290,6 +298,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/28 18:39:33  kuznets
+ * +ReturnJob()
+ *
  * Revision 1.5  2005/02/28 12:17:58  kuznets
  * Added new job status (Returned), + DropQueue()
  *
