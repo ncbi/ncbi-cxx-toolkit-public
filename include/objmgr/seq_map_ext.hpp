@@ -34,8 +34,10 @@
 *   i.e. location and type only, without providing real data
 *
 */
-#include <objects/seq/Delta_ext.hpp>
 #include <objmgr/seq_map.hpp>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seqloc/Packed_seqint.hpp>
+#include <objects/seqloc/Packed_seqpnt.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -217,6 +219,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.8  2004/01/22 22:11:59  shomrat
 * using typedefs instead of concrete types
 *

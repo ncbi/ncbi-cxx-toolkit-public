@@ -35,6 +35,7 @@
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -49,33 +50,36 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_entry_Info::CSeq_entry_Info(void)
-    : m_Parent(0),
-      m_TSE_Info(0),
-      m_Bioseq_set_Id(-1),
-      m_DirtyAnnotIndex(false)
+    : m_Which(CSeq_entry::e_not_set),
+      m_Modified(0)
 {
 }
 
 
-CSeq_entry_Info::CSeq_entry_Info(CSeq_entry& entry, CSeq_entry_Info& parent)
-    : m_Parent(&parent),
-      m_TSE_Info(&parent.GetTSE_Info()),
-      m_Bioseq_set_Id(-1),
-      m_DirtyAnnotIndex(false)
+CSeq_entry_Info::CSeq_entry_Info(const CSeq_entry& entry)
+    : m_Which(CSeq_entry::e_not_set),
+      m_Modified(0)
 {
-    _ASSERT(!parent.m_Bioseq);
-    {{
-        parent.m_Entries.push_back(Ref(this));
-    }}
-    try {
-        x_SetSeq_entry(entry);
+    x_SetObject(entry);
+}
+
+
+CSeq_entry_Info::CSeq_entry_Info(const CSeq_entry_Info& info)
+    : m_Object(info.m_Object),
+      m_Which(info.m_Which),
+      m_Modified(info.m_Modified)
+{
+    switch ( Which() ) {
+    case CSeq_entry::e_Set:
+        m_Contents.Reset(new CBioseq_set_Info(info.GetSet()));
+        break;
+    case CSeq_entry::e_Seq:
+        m_Contents.Reset(new CBioseq_Info(info.GetSeq()));
+        break;
+    default:
+        break;
     }
-    catch ( exception& ) {
-        _ASSERT(parent.m_Entries.back().GetPointer() == this);
-        parent.m_Entries.back().Release();
-        parent.m_Entries.pop_back();
-        throw;
-    }
+    x_AttachContents();
 }
 
 
@@ -84,229 +88,245 @@ CSeq_entry_Info::~CSeq_entry_Info(void)
 }
 
 
-void CSeq_entry_Info::x_DSAttachThis(void)
+const CBioseq_set_Info& CSeq_entry_Info::GetParentBioseq_set_Info(void) const
 {
-    GetDataSource().x_MapSeq_entry(*this);
+    return static_cast<const CBioseq_set_Info&>(GetBaseParent_Info());
 }
 
 
-void CSeq_entry_Info::x_DSDetachThis(void)
+CBioseq_set_Info& CSeq_entry_Info::GetParentBioseq_set_Info(void)
 {
-    GetDataSource().x_UnmapSeq_entry(*this);
+    return static_cast<CBioseq_set_Info&>(GetBaseParent_Info());
 }
 
 
-void CSeq_entry_Info::x_DSAttach(void)
+const CSeq_entry_Info& CSeq_entry_Info::GetParentSeq_entry_Info(void) const
 {
-    x_DSAttachThis();
-    try {
-        x_DSAttachContents();
+    return GetParentBioseq_set_Info().GetParentSeq_entry_Info();
+}
+
+
+CSeq_entry_Info& CSeq_entry_Info::GetParentSeq_entry_Info(void)
+{
+    return GetParentBioseq_set_Info().GetParentSeq_entry_Info();
+}
+
+
+void CSeq_entry_Info::x_CheckWhich(E_Choice which) const
+{
+    if ( Which() != which ) {
+        NCBI_THROW(CUnassignedMember,eGet,
+                   which == CSeq_entry::e_Set?
+                   "Seq_entry.set": "Seq_entry.seq");
     }
-    catch ( ... ) {
-        x_DSDetachThis();
-        throw;
+}
+
+
+const CBioseq_Info& CSeq_entry_Info::GetSeq(void) const
+{
+    x_CheckWhich(CSeq_entry::e_Seq);
+    const CBioseq_Base_Info& base = *m_Contents;
+    return dynamic_cast<const CBioseq_Info&>(base);
+}
+
+
+CBioseq_Info& CSeq_entry_Info::SetSeq(void)
+{
+    x_CheckWhich(CSeq_entry::e_Seq);
+    CBioseq_Base_Info& base = *m_Contents;
+    return dynamic_cast<CBioseq_Info&>(base);
+}
+
+
+const CBioseq_set_Info& CSeq_entry_Info::GetSet(void) const
+{
+    x_CheckWhich(CSeq_entry::e_Set);
+    const CBioseq_Base_Info& base = *m_Contents;
+    return dynamic_cast<const CBioseq_set_Info&>(base);
+}
+
+
+CBioseq_set_Info& CSeq_entry_Info::SetSet(void)
+{
+    x_CheckWhich(CSeq_entry::e_Set);
+    CBioseq_Base_Info& base = *m_Contents;
+    return dynamic_cast<CBioseq_set_Info&>(base);
+}
+
+
+inline
+void CSeq_entry_Info::x_UpdateObject(CConstRef<TObject> obj)
+{
+    m_Object = obj;
+    if ( HaveDataSource() ) {
+        x_DSMapObject(obj, GetDataSource());
+    }
+    x_ResetModified();
+}
+
+
+inline
+void CSeq_entry_Info::x_UpdateModifiedObject(void) const
+{
+    if ( x_IsModified() ) {
+        const_cast<CSeq_entry_Info*>(this)->x_UpdateObject(x_CreateObject());
     }
 }
 
 
-template<class Iterator>
-void x_DSDetachObjects(const Iterator& begin, const Iterator& end)
+CConstRef<CSeq_entry> CSeq_entry_Info::GetCompleteSeq_entry(void) const
 {
-    for ( Iterator iter = begin; iter != end; ++iter ) {
-        (*iter)->x_DSDetach();
+    x_UpdateModifiedObject();
+    _ASSERT(!x_IsModified());
+    return m_Object;
+}
+
+
+CConstRef<CSeq_entry> CSeq_entry_Info::GetSeq_entryCore(void) const
+{
+    x_UpdateModifiedObject();
+    _ASSERT(!x_IsModified());
+    return m_Object;
+}
+
+
+void CSeq_entry_Info::x_ParentAttach(CBioseq_set_Info& parent)
+{
+    x_BaseParentAttach(parent);
+}
+
+
+void CSeq_entry_Info::x_ParentDetach(CBioseq_set_Info& parent)
+{
+    x_BaseParentDetach(parent);
+}
+
+
+void CSeq_entry_Info::x_TSEAttachContents(CTSE_Info& tse)
+{
+    TParent::x_TSEAttachContents(tse);
+    if ( m_Contents ) {
+        m_Contents->x_TSEAttach(tse);
     }
 }
 
 
-template<class Iterator>
-void x_DSAttachObjects(const Iterator& begin, const Iterator& end)
+void CSeq_entry_Info::x_TSEDetachContents(CTSE_Info& tse)
 {
-    for ( Iterator iter = begin; iter != end; ++iter ) {
-        try {
-            (*iter)->x_DSAttach();
+    if ( m_Contents ) {
+        m_Contents->x_TSEDetach(tse);
+    }
+    TParent::x_TSEDetachContents(tse);
+}
+
+
+void CSeq_entry_Info::x_DSAttachContents(CDataSource& ds)
+{
+    TParent::x_DSAttachContents(ds);
+    x_DSMapObject(m_Object, ds);
+    if ( m_Contents ) {
+        m_Contents->x_DSAttach(ds);
+    }
+}
+
+
+void CSeq_entry_Info::x_DSDetachContents(CDataSource& ds)
+{
+    if ( m_Contents ) {
+        m_Contents->x_DSDetach(ds);
+    }
+    ITERATE ( TDSMappedObjects, it, m_DSMappedObjects ) {
+        x_DSUnmapObject(*it, ds);
+    }
+    m_DSMappedObjects.clear();
+    TParent::x_DSDetachContents(ds);
+}
+
+
+void CSeq_entry_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    m_DSMappedObjects.push_back(obj);
+    ds.x_Map(obj, this);
+}
+
+
+void CSeq_entry_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    ds.x_Unmap(obj, this);
+}
+
+
+void CSeq_entry_Info::x_SetModifiedContents(void)
+{
+    if ( !x_IsModified() ) {
+        m_Modified = true;
+        if ( HaveParent_Info() ) {
+            GetParentBioseq_set_Info().x_SetModifiedSeq_set();
         }
-        catch ( ... ) {
-            // rollback
-            x_DSDetachObjects(begin, iter);
-            throw;
-        }
     }
 }
 
 
-template<class Container>
-void x_DSAttachObjects(Container& container)
+void CSeq_entry_Info::x_ResetModified(void)
 {
-    x_DSAttachObjects(container.begin(), container.end());
+    m_Modified = false;
 }
 
 
-template<class Container>
-void x_DSDetachObjects(Container& container)
+void CSeq_entry_Info::x_SetObject(const TObject& obj)
 {
-    x_DSDetachObjects(container.begin(), container.end());
-}
+    x_CheckWhich(CSeq_entry::e_not_set);
+    _ASSERT(!m_Object);
+    _ASSERT(!m_Contents);
 
-
-void CSeq_entry_Info::x_DSAttachContents(void)
-{
-    x_DSAttachObjects(m_Annots);
-    try {
-        if ( m_Bioseq ) {
-            _ASSERT(m_Entries.empty());
-            m_Bioseq->x_DSAttach();
-        }
-        else {
-            x_DSAttachObjects(m_Entries);
-        }
-    }
-    catch ( ... ) {
-        x_DSDetachObjects(m_Annots);
-        throw;
-    }
-}
-
-
-void CSeq_entry_Info::x_DSDetachContents(void)
-{
-    if ( m_Bioseq ) {
-        _ASSERT(m_Entries.empty());
-        m_Bioseq->x_DSDetach();
-    }
-    else {
-        x_DSDetachObjects(m_Entries);
-    }
-    x_DSDetachObjects(m_Annots);
-}
-
-
-void CSeq_entry_Info::x_SetSeq_entry(CSeq_entry& entry)
-{
-    _ASSERT(!m_Seq_entry);
-    m_Seq_entry.Reset(&entry);
-    x_TSEAttach();
-}
-
-
-void CSeq_entry_Info::x_TSEAttach(void)
-{
-    CSeq_entry& entry = GetSeq_entry();
-    switch ( entry.Which() ) {
+    m_Object.Reset(&obj);
+    switch ( (m_Which = obj.Which()) ) {
     case CSeq_entry::e_Seq:
-        new CBioseq_Info(entry.SetSeq(), *this);
+        m_Contents.Reset(new CBioseq_Info(obj.GetSeq()));
         break;
     case CSeq_entry::e_Set:
-        x_TSEAttachBioseq_set(entry.SetSet());
+        m_Contents.Reset(new CBioseq_set_Info(obj.GetSet()));
         break;
     default:
         break;
     }
+    x_AttachContents();
 }
 
 
-void CSeq_entry_Info::x_TSEDetach(void)
-{
-    x_TSEDetachContents();
-    x_TSEDetachThis();
+CRef<CSeq_entry> CSeq_entry_Info::x_CreateObject(void) const
+{        
+    CRef<TObject> obj(new TObject);
+    switch ( Which() ) {
+    case CSeq_entry::e_Set:
+        obj->SetSet(const_cast<CBioseq_set&>
+                    (*GetSet().GetCompleteBioseq_set()));
+        break;
+    case CSeq_entry::e_Seq:
+        obj->SetSeq(const_cast<CBioseq&>
+                    (*GetSeq().GetCompleteBioseq()));
+        break;
+    default:
+        break;
+    }
+    return obj;
 }
 
 
-void CSeq_entry_Info::x_TSEAttachBioseq_set(CBioseq_set& seq_set)
+void CSeq_entry_Info::x_AttachContents(void)
 {
-    x_TSEAttachBioseq_set_Id(seq_set);
-    try {
-        NON_CONST_ITERATE ( CBioseq_set::TSeq_set, it, seq_set.SetSeq_set() ) {
-            new CSeq_entry_Info(**it, *this);
-        }
-        if ( seq_set.IsSetAnnot() ) {
-            x_TSEAttachSeq_annots(seq_set.SetAnnot());
-        }
-    }
-    catch ( exception& ) {
-        x_TSEDetachThis();
-        throw;
-    }
-}
-
-
-void CSeq_entry_Info::x_TSEDetachContents(void)
-{
-    if ( m_Bioseq ) {
-        m_Bioseq->x_TSEDetach();
-    }
-    NON_CONST_ITERATE ( TEntries, it, m_Entries ) {
-        (*it)->x_TSEDetach();
-    }
-    NON_CONST_ITERATE ( TAnnots, it, m_Annots ) {
-        (*it)->x_TSEDetach();
+    if ( m_Contents ) {
+        m_Contents->x_ParentAttach(*this);
+        x_AttachObject(*m_Contents);
     }
 }
 
 
-void CSeq_entry_Info::x_TSEDetachThis(void)
+void CSeq_entry_Info::x_DetachContents(void)
 {
-    x_TSEDetachBioseq_set_Id();
-}
-
-
-void CSeq_entry_Info::x_TSEAttachBioseq_set_Id(const CBioseq_set& seq_set)
-{
-    _ASSERT(m_Bioseq_set_Id < 0);
-    if ( seq_set.IsSetId() ) {
-        const CObject_id& object_id = seq_set.GetId();
-        if ( object_id.Which() != object_id.e_Id ) {
-            return;
-        }
-        int id = object_id.GetId();
-        if ( id < 0 ) {
-            return;
-        }
-        GetTSE_Info().x_SetBioseq_setId(id, this);
-        m_Bioseq_set_Id = id;
-    }
-}
-
-
-void CSeq_entry_Info::x_TSEDetachBioseq_set_Id(void)
-{
-    if ( m_Bioseq_set_Id >= 0 ) {
-        GetTSE_Info().x_ResetBioseq_setId(m_Bioseq_set_Id, this);
-        m_Bioseq_set_Id = -1;
-    }
-}
-
-
-void CSeq_entry_Info::x_TSEAttachSeq_annots(TSeq_annots& annots)
-{
-    NON_CONST_ITERATE( TSeq_annots, it, annots ) {
-        new CSeq_annot_Info(**it, *this);
-    }
-}
-
-
-void CSeq_entry_Info::x_SetDirtyAnnotIndex(void)
-{
-    if ( !x_DirtyAnnotIndex() ) {
-        m_DirtyAnnotIndex = true;
-        if ( m_Parent ) {
-            m_Parent->x_SetDirtyAnnotIndex();
-        }
-        else if ( HaveDataSource() ) {
-            _ASSERT(m_TSE_Info == this);
-            GetDataSource().x_SetDirtyAnnotIndex(m_TSE_Info);
-        }
-    }
-}
-
-
-void CSeq_entry_Info::x_ResetDirtyAnnotIndex(void)
-{
-    if ( x_DirtyAnnotIndex() ) {
-        m_DirtyAnnotIndex = false;
-        if ( !m_Parent && HaveDataSource() ) {
-            _ASSERT(m_TSE_Info == this);
-            GetDataSource().x_ResetDirtyAnnotIndex(m_TSE_Info);
-        }
+    if ( m_Contents ) {
+        x_DetachObject(*m_Contents);
+        m_Contents->x_ParentDetach(*this);
     }
 }
 
@@ -320,152 +340,62 @@ void CSeq_entry_Info::UpdateAnnotIndex(void) const
 }
 
 
-void CSeq_entry_Info::x_UpdateAnnotIndex(void)
+void CSeq_entry_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
-    if ( x_DirtyAnnotIndex() ) {
-        x_UpdateAnnotIndexContents();
-        x_ResetDirtyAnnotIndex();
-    }
+    m_Contents->x_UpdateAnnotIndex(tse);
+    TParent::x_UpdateAnnotIndexContents(tse);
 }
 
 
-void CSeq_entry_Info::x_UpdateAnnotIndexContents(void)
+bool CSeq_entry_Info::IsSetDescr(void) const
 {
-    NON_CONST_ITERATE ( TAnnots, it, m_Annots ) {
-        (*it)->x_UpdateAnnotIndex();
-    }
-    NON_CONST_ITERATE ( TEntries, it, m_Entries ) {
-        (*it)->x_UpdateAnnotIndex();
-    }
+    return bool(m_Contents) && m_Contents->IsSetDescr();
 }
 
 
-bool CSeq_entry_Info::HaveDataSource(void) const
+const CSeq_descr& CSeq_entry_Info::GetDescr(void) const
 {
-    return GetTSE_Info().HaveDataSource();
+    return m_Contents->GetDescr();
 }
 
 
-CDataSource& CSeq_entry_Info::GetDataSource(void) const
+CRef<CSeq_annot_Info> CSeq_entry_Info::x_AddAnnot(const CSeq_annot& annot)
 {
-    return GetTSE_Info().GetDataSource();
+    return m_Contents->x_AddAnnot(annot);
 }
 
 
-const CSeq_entry& CSeq_entry_Info::GetTSE(void) const
+void CSeq_entry_Info::x_AddAnnot(CRef<CSeq_annot_Info> annot)
 {
-    return GetTSE_Info().GetTSE();
+    m_Contents->x_AddAnnot(annot);
 }
 
 
-CSeq_entry& CSeq_entry_Info::GetTSE(void)
+void CSeq_entry_Info::x_RemoveAnnot(CRef<CSeq_annot_Info> annot)
 {
-    return GetTSE_Info().GetTSE();
+    m_Contents->x_RemoveAnnot(annot);
 }
 
 
-void CSeq_entry_Info::x_AddAnnot(CSeq_annot& annot)
+CRef<CSeq_entry_Info> CSeq_entry_Info::x_AddEntry(const CSeq_entry& entry,
+                                                  int index)
 {
-    CSeq_entry& entry = GetSeq_entry();
-    switch ( entry.Which() ) {
-    case CSeq_entry::e_Set:
-        entry.SetSet().SetAnnot().push_back(Ref(&annot));
-        break;
-    case CSeq_entry::e_Seq:
-        entry.SetSeq().SetAnnot().push_back(Ref(&annot));
-        break;
-    default:
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "CSeq_entry_Info::x_AddAnnot: "
-                   "entry is not initializated");
-    }
-
-    CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(annot, *this));
-    if ( HaveDataSource() ) {
-        annot_info->x_DSAttach();
-    }
+    x_CheckWhich(CSeq_entry::e_Set);
+    return SetSet().x_AddEntry(entry, index);
 }
 
 
-void CSeq_entry_Info::x_RemoveAnnot(CSeq_annot_Info& annot_info)
+void CSeq_entry_Info::x_AddEntry(CRef<CSeq_entry_Info> entry, int index)
 {
-    CSeq_entry& entry = GetSeq_entry();
-    CSeq_annot& annot = annot_info.GetSeq_annot();
-    switch ( entry.Which() ) {
-    case CSeq_entry::e_Set:
-        entry.SetSet().SetAnnot().remove(Ref(&annot));
-        if ( entry.GetSet().GetAnnot().empty() ) {
-            entry.SetSet().ResetAnnot();
-        }
-        break;
-    case CSeq_entry::e_Seq:
-        entry.SetSeq().SetAnnot().remove(Ref(&annot));
-        if ( entry.GetSeq().GetAnnot().empty() ) {
-            entry.SetSeq().ResetAnnot();
-        }
-        break;
-    default:
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CSeq_entry_Info::x_RemoveAnnot: "
-                   "entry is not initializated");
-    }
-
-    annot_info.x_TSEDetach();
-    if ( HaveDataSource() ) {
-        annot_info.x_DSDetach();
-    }
-
-    NON_CONST_ITERATE ( TAnnots, it, m_Annots ) {
-        if ( *it == &annot_info ) {
-            m_Annots.erase(it);
-            break;
-        }
-    }
+    x_CheckWhich(CSeq_entry::e_Set);
+    SetSet().x_AddEntry(entry, index);
 }
 
 
-void CSeq_entry_Info::x_AddEntry(CSeq_entry& child_entry)
+void CSeq_entry_Info::x_RemoveEntry(CRef<CSeq_entry_Info> entry)
 {
-    CSeq_entry& parent_entry = GetSeq_entry();
-    if ( parent_entry.Which() != CSeq_entry::e_Set ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "CSeq_entry_Info::x_AddEntry: "
-                   "invalid entry type");
-    }
-
-    parent_entry.SetSet().SetSeq_set().push_back(Ref(&child_entry));
-    parent_entry.Parentize();
-
-    CRef<CSeq_entry_Info> child_info(new CSeq_entry_Info(child_entry, *this));
-    if ( HaveDataSource() ) {
-        child_info->x_DSAttach();
-    }
-}
-
-
-void CSeq_entry_Info::x_RemoveEntry(CSeq_entry_Info& child_info)
-{
-    CSeq_entry& parent_entry = GetSeq_entry();
-    CSeq_entry& child_entry = child_info.GetSeq_entry();
-    if ( parent_entry.Which() != CSeq_entry::e_Set ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "CSeq_entry_Info::x_AddEntry: "
-                   "invalid entry type");
-    }
-    parent_entry.SetSet().SetSeq_set().remove(Ref(&child_entry));
-    child_entry.ResetParentEntry();
-
-    child_info.x_TSEDetach();
-    if ( HaveDataSource() ) {
-        child_info.x_DSDetach();
-    }
-
-    NON_CONST_ITERATE ( TEntries, it, m_Entries ) {
-        if ( *it == &child_info ) {
-            m_Entries.erase(it);
-            break;
-        }
-    }
+    x_CheckWhich(CSeq_entry::e_Set);
+    SetSet().x_RemoveEntry(entry);
 }
 
 
@@ -475,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/03/16 15:47:28  vasilche
+ * Added CBioseq_set_Handle and set of EditHandles
+ *
  * Revision 1.10  2004/02/03 19:02:18  vasilche
  * Fixed broken 'dirty annot index' state after RemoveEntry().
  *

@@ -31,7 +31,12 @@
 
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/annot_type_index.hpp>
+
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -126,6 +131,44 @@ SAnnotSelector::SAnnotSelector(TFeatType feat,
 }
 
 
+SAnnotSelector::SAnnotSelector(const SAnnotSelector& sel)
+{
+    *this = sel;
+}
+
+
+SAnnotSelector& SAnnotSelector::operator=(const SAnnotSelector& sel)
+{
+    if ( this != &sel ) {
+        SAnnotTypeSelector::operator=(sel);
+        m_FeatProduct = sel.m_FeatProduct;
+        m_ResolveDepth = sel.m_ResolveDepth;
+        m_OverlapType = sel.m_OverlapType;
+        m_ResolveMethod = sel.m_ResolveMethod;
+        m_SegmentSelect = sel.m_SegmentSelect;
+        m_SortOrder = sel.m_SortOrder;
+        m_CombineMethod = sel.m_CombineMethod;
+        m_LimitObjectType = sel.m_LimitObjectType;
+        m_IdResolving = sel.m_IdResolving;
+        m_LimitObject = sel.m_LimitObject;
+        m_MaxSize = sel.m_MaxSize;
+        m_IncludeAnnotsNames = sel.m_IncludeAnnotsNames;
+        m_ExcludeAnnotsNames = sel.m_ExcludeAnnotsNames;
+        m_NoMapping = sel.m_NoMapping;
+        m_AdaptiveDepth = sel.m_AdaptiveDepth;
+        m_AdaptiveTriggers = sel.m_AdaptiveTriggers;
+        m_ExcludedTSE = sel.m_ExcludedTSE;
+        m_AnnotTypesSet = sel.m_AnnotTypesSet;
+    }
+    return *this;
+}
+
+
+SAnnotSelector::~SAnnotSelector(void)
+{
+}
+
+
 SAnnotSelector& SAnnotSelector::SetLimitNone(void)
 {
     m_LimitObjectType = eLimit_None;
@@ -134,26 +177,77 @@ SAnnotSelector& SAnnotSelector::SetLimitNone(void)
 }
 
 
-SAnnotSelector& SAnnotSelector::SetLimitTSE(const CSeq_entry* tse)
+SAnnotSelector&
+SAnnotSelector::SetLimitTSE(const CSeq_entry_Handle& limit)
 {
-    m_LimitObjectType = tse ? eLimit_TSE : eLimit_None;
-    m_LimitObject.Reset(tse);
+    if ( !limit )
+        return SetLimitNone();
+    
+    const CTSE_Info& info = limit.x_GetInfo().GetTSE_Info();
+    m_LimitObjectType = eLimit_TSE_Info;
+    m_LimitObject.Reset(&info);
     return *this;
 }
 
 
-SAnnotSelector& SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* entry)
+SAnnotSelector&
+SAnnotSelector::SetLimitSeqEntry(const CSeq_entry_Handle& limit)
 {
-    m_LimitObjectType = entry ? eLimit_Entry : eLimit_None;
-    m_LimitObject.Reset(entry);
+    if ( !limit )
+        return SetLimitNone();
+    
+    const CSeq_entry_Info& info = limit.x_GetInfo();
+    m_LimitObjectType = eLimit_Seq_entry_Info;
+    m_LimitObject.Reset(&info);
     return *this;
 }
 
 
-SAnnotSelector& SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* annot)
+SAnnotSelector&
+SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot_Handle& limit)
 {
-    m_LimitObjectType = annot ? eLimit_Annot : eLimit_None;
-    m_LimitObject.Reset(annot);
+    if ( !limit )
+        return SetLimitNone();
+    
+    const CSeq_annot_Info& info = limit.x_GetInfo();
+    m_LimitObjectType = eLimit_Seq_annot_Info;
+    m_LimitObject.Reset(&info);
+    return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::SetLimitTSE(const CSeq_entry* limit)
+{
+    if ( !limit )
+        return SetLimitNone();
+    
+    m_LimitObjectType = eLimit_TSE;
+    m_LimitObject.Reset(limit);
+    return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::SetLimitSeqEntry(const CSeq_entry* limit)
+{
+    if ( !limit )
+        return SetLimitNone();
+    
+    m_LimitObjectType = eLimit_Seq_entry;
+    m_LimitObject.Reset(limit);
+    return *this;
+}
+
+
+SAnnotSelector&
+SAnnotSelector::SetLimitSeqAnnot(const CSeq_annot* limit)
+{
+    if ( !limit )
+        return SetLimitNone();
+    
+    m_LimitObjectType = eLimit_Seq_annot;
+    m_LimitObject.Reset(limit);
     return *this;
 }
 
@@ -274,10 +368,10 @@ SAnnotSelector::SetAdaptiveTrigger(const SAnnotTypeSelector& sel)
 
 
 SAnnotSelector&
-SAnnotSelector::ExcludeTSE(const CSeq_entry& tse)
+SAnnotSelector::ExcludeTSE(const CSeq_entry_Handle& tse)
 {
     if ( !ExcludedTSE(tse) ) {
-        m_ExcludedTSE.push_back(&tse);
+        m_ExcludedTSE.push_back(tse);
     }
     return *this;
 }
@@ -291,10 +385,16 @@ SAnnotSelector::ResetExcludedTSE(void)
 }
 
 
-bool SAnnotSelector::ExcludedTSE(const CSeq_entry& tse) const
+bool SAnnotSelector::ExcludedTSE(const CSeq_entry_Handle& tse) const
 {
-    return find(m_ExcludedTSE.begin(), m_ExcludedTSE.end(), &tse)
+    return find(m_ExcludedTSE.begin(), m_ExcludedTSE.end(), tse)
         != m_ExcludedTSE.end();
+}
+
+
+void SAnnotSelector::x_ClearAnnotTypesSet(void)
+{
+    m_AnnotTypesSet.clear();
 }
 
 
@@ -490,6 +590,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.9  2004/02/26 14:41:40  grichenk
 * Fixed types excluding in SAnnotSelector and multiple types search
 * in CAnnotTypes_CI.

@@ -31,16 +31,16 @@
 */
 
 
-#include <corelib/ncbimtx.hpp>
-
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/bioseq_base_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Annotdesc.hpp>
@@ -50,55 +50,139 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry)
-    : m_Seq_annot(&annot),
-      m_Seq_entry_Info(0),
-      m_TSE_Info(0),
-      m_Chunk_Info(0),
-      m_DirtyAnnotIndex(true)
+CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot& annot)
+    : m_Chunk_Info(0)
 {
-    x_Seq_entryAttach(entry);
-    x_UpdateName();
-}
-
-
-CSeq_annot_Info::CSeq_annot_Info(CSeq_annot& annot)
-    : m_Seq_annot(&annot),
-      m_Seq_entry_Info(0),
-      m_TSE_Info(0),
-      m_Chunk_Info(0),
-      m_DirtyAnnotIndex(true)
-{
+    x_SetObject(annot);
     x_UpdateName();
 }
 
 
 CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
-    : m_Seq_annot(&const_cast<CSeq_annot&>(snp_annot.GetSeq_annot())),
-      m_Seq_entry_Info(0),
-      m_TSE_Info(0),
-      m_SNP_Info(&snp_annot),
-      m_Chunk_Info(0),
-      m_DirtyAnnotIndex(true)
+    : m_Chunk_Info(0)
 {
+    x_SetSNP_annot_Info(snp_annot);
     x_UpdateName();
 }
 
 
 CSeq_annot_Info::CSeq_annot_Info(CTSE_Chunk_Info& chunk_info,
                                  const CAnnotName& name)
-    : m_Seq_annot(0),
-      m_Seq_entry_Info(0),
-      m_TSE_Info(&chunk_info.GetTSE_Info()),
-      m_Name(name),
-      m_Chunk_Info(&chunk_info),
-      m_DirtyAnnotIndex(true)
+    : m_Name(name),
+      m_Chunk_Info(&chunk_info)      
+{
+    x_TSEAttach(chunk_info.GetTSE_Info());
+}
+
+
+CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info)
+    : m_Object(info.m_Object),
+      m_Name(info.m_Name),
+      m_SNP_Info(info.m_SNP_Info),
+      m_Chunk_Info(0)
 {
 }
 
 
 CSeq_annot_Info::~CSeq_annot_Info(void)
 {
+}
+
+
+const CBioseq_Base_Info& CSeq_annot_Info::GetParentBioseq_Base_Info(void) const
+{
+    return static_cast<const CBioseq_Base_Info&>(GetBaseParent_Info());
+}
+
+
+CBioseq_Base_Info& CSeq_annot_Info::GetParentBioseq_Base_Info(void)
+{
+    return static_cast<CBioseq_Base_Info&>(GetBaseParent_Info());
+}
+
+
+const CSeq_entry_Info& CSeq_annot_Info::GetParentSeq_entry_Info(void) const
+{
+    return GetParentBioseq_Base_Info().GetParentSeq_entry_Info();
+}
+
+
+CSeq_entry_Info& CSeq_annot_Info::GetParentSeq_entry_Info(void)
+{
+    return GetParentBioseq_Base_Info().GetParentSeq_entry_Info();
+}
+
+
+void CSeq_annot_Info::x_ParentAttach(CBioseq_Base_Info& parent)
+{
+    x_BaseParentAttach(parent);
+}
+
+
+void CSeq_annot_Info::x_ParentDetach(CBioseq_Base_Info& parent)
+{
+    x_BaseParentDetach(parent);
+}
+
+
+CTSE_Chunk_Info& CSeq_annot_Info::GetTSE_Chunk_Info(void) const
+{
+    return *m_Chunk_Info;
+}
+
+
+void CSeq_annot_Info::x_DSAttachContents(CDataSource& ds)
+{
+    TParent::x_DSAttachContents(ds);
+    x_DSMapObject(m_Object, ds);
+    if ( m_SNP_Info ) {
+        m_SNP_Info->x_DSAttach(ds);
+    }
+}
+
+
+void CSeq_annot_Info::x_DSDetachContents(CDataSource& ds)
+{
+    if ( m_SNP_Info ) {
+        m_SNP_Info->x_DSDetach(ds);
+    }
+    ITERATE ( TDSMappedObjects, it, m_DSMappedObjects ) {
+        x_DSUnmapObject(*it, ds);
+    }
+    m_DSMappedObjects.clear();
+    TParent::x_DSDetachContents(ds);
+}
+
+
+void CSeq_annot_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    m_DSMappedObjects.push_back(obj);
+    ds.x_Map(obj, this);
+}
+
+
+void CSeq_annot_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    ds.x_Unmap(obj, this);
+}
+
+
+void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
+{
+    TParent::x_TSEAttachContents(tse);
+    if ( m_SNP_Info ) {
+        m_SNP_Info->x_TSEAttach(tse);
+    }
+}
+
+
+void CSeq_annot_Info::x_TSEDetachContents(CTSE_Info& tse)
+{
+    if ( m_SNP_Info ) {
+        m_SNP_Info->x_TSEDetach(tse);
+    }
+    x_UnmapAnnotObjects(tse);
+    TParent::x_TSEDetachContents(tse);
 }
 
 
@@ -110,24 +194,6 @@ CSeq_annot_Info::GetAnnotObjectIndex(const CAnnotObject_Info& info) const
 }
 
 
-CDataSource& CSeq_annot_Info::GetDataSource(void) const
-{
-    return GetSeq_entry_Info().GetDataSource();
-}
-
-
-const CSeq_entry& CSeq_annot_Info::GetTSE(void) const
-{
-    return GetSeq_entry_Info().GetTSE();
-}
-
-
-const CSeq_entry& CSeq_annot_Info::GetSeq_entry(void) const
-{
-    return GetSeq_entry_Info().GetSeq_entry();
-}
-
-
 const CAnnotName& CSeq_annot_Info::GetName(void) const
 {
     return m_Name.IsNamed()? m_Name: GetTSE_Info().GetName();
@@ -136,10 +202,9 @@ const CAnnotName& CSeq_annot_Info::GetName(void) const
 
 void CSeq_annot_Info::x_UpdateName(void)
 {
-    if ( GetSeq_annot().IsSetDesc() ) {
+    if ( m_Object->IsSetDesc() ) {
         string name;
-        ITERATE ( CSeq_annot::TDesc::Tdata, it,
-                  GetSeq_annot().GetDesc().Get() ) {
+        ITERATE( CSeq_annot::TDesc::Tdata, it, m_Object->GetDesc().Get() ) {
             const CAnnotdesc& desc = **it;
             if ( desc.Which() == CAnnotdesc::e_Name ) {
                 name = desc.GetName();
@@ -154,106 +219,83 @@ void CSeq_annot_Info::x_UpdateName(void)
 }
 
 
-void CSeq_annot_Info::x_Seq_entryAttach(CSeq_entry_Info& entry)
+CConstRef<CSeq_annot> CSeq_annot_Info::GetCompleteSeq_annot(void) const
 {
-    _ASSERT(!m_Seq_entry_Info);
-    _ASSERT(!m_TSE_Info);
-    _ASSERT(m_DirtyAnnotIndex);
-    m_Seq_entry_Info = &entry;
-    m_TSE_Info = &entry.GetTSE_Info();
-    entry.m_Annots.push_back(Ref(this));
-    entry.x_SetDirtyAnnotIndex();
+    return m_Object;
 }
 
 
-void CSeq_annot_Info::x_DSAttachThis(void)
+CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotCore(void) const
 {
-    GetDataSource().x_MapSeq_annot(*this);
+    return m_Object;
 }
 
 
-void CSeq_annot_Info::x_DSDetachThis(void)
+void CSeq_annot_Info::x_SetObject(const TObject& obj)
 {
-    GetDataSource().x_UnmapSeq_annot(*this);
+    _ASSERT(!m_SNP_Info && !m_Object);
+    m_Object.Reset(&obj);
 }
 
-
+      
 void CSeq_annot_Info::x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info)
 {
-    if ( m_SNP_Info ) {
-        NCBI_THROW(CAnnotException, eOtherError,
-                   "CSeq_annot_Info::SetSNP_annot_Info: already set");
-    }
+    _ASSERT(!m_SNP_Info && !m_Object && !snp_info.HaveParent_Info());
+    x_SetObject(snp_info.GetRemainingSeq_annot());
     m_SNP_Info.Reset(&snp_info);
+    snp_info.x_ParentAttach(*this);
+    _ASSERT(&snp_info.GetParentSeq_annot_Info() == this);
+    x_AttachObject(snp_info);
 }
 
 
 void CSeq_annot_Info::UpdateAnnotIndex(void) const
 {
-    if ( m_DirtyAnnotIndex ) {
+    if ( x_DirtyAnnotIndex() ) {
         GetTSE_Info().UpdateAnnotIndex(*this);
-        _ASSERT(!m_DirtyAnnotIndex);
+        _ASSERT(!x_DirtyAnnotIndex());
     }
 }
 
 
-void CSeq_annot_Info::x_UpdateAnnotIndex(void)
-{
-    if ( m_DirtyAnnotIndex ) {
-        x_UpdateAnnotIndexThis();
-        m_DirtyAnnotIndex = false;
-    }
-}
-
-
-void CSeq_annot_Info::x_UpdateAnnotIndexThis(void)
+void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     m_ObjectInfos.SetName(GetName());
 
-    CSeq_annot::C_Data& data = GetSeq_annot().SetData();
+    const CSeq_annot::C_Data& data = m_Object->GetData();
     switch ( data.Which() ) {
     case CSeq_annot::C_Data::e_Ftable:
-        x_MapAnnotObjects(data.SetFtable());
+        x_MapAnnotObjects(tse, data.GetFtable());
         break;
     case CSeq_annot::C_Data::e_Align:
-        x_MapAnnotObjects(data.SetAlign());
+        x_MapAnnotObjects(tse, data.GetAlign());
         break;
     case CSeq_annot::C_Data::e_Graph:
-        x_MapAnnotObjects(data.SetGraph());
+        x_MapAnnotObjects(tse, data.GetGraph());
         break;
     default:
         break;
     }
     if ( m_SNP_Info ) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(m_SNP_Info->GetGi());
-        GetTSE_Info().x_MapSNP_Table(GetName(), idh, m_SNP_Info);
+        m_SNP_Info->x_UpdateAnnotIndex(tse);
     }
+    TParent::x_UpdateAnnotIndexContents(tse);
 }
 
 
-void CSeq_annot_Info::x_TSEDetach(void)
-{
-    if ( m_SNP_Info ) {
-        CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(m_SNP_Info->GetGi());
-        GetTSE_Info().x_UnmapSNP_Table(GetName(), idh, m_SNP_Info);
-    }
-    x_UnmapAnnotObjects();
-    m_DirtyAnnotIndex = true;
-}
-
-
-void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
+void
+CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
+                                   const CSeq_annot::C_Data::TFtable& objs)
 {
     m_ObjectInfos.Reserve(objs.size(), 1.1);
 
-    CTSE_Info& tse_info = GetTSE_Info();
-    CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
+    CTSE_Info::TAnnotObjs& index = tse.x_SetAnnotObjs(GetName());
 
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
-    NON_CONST_ITERATE ( CSeq_annot::C_Data::TFtable, fit, objs ) {
-        CSeq_feat& feat = **fit;
+    ITERATE ( CSeq_annot::C_Data::TFtable, fit, objs ) {
+        const CSeq_feat& feat = **fit;
 
         CAnnotObject_Info* info =
             m_ObjectInfos.AddInfo(CAnnotObject_Info(feat, *this));
@@ -274,7 +316,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
                     annotRef.m_HandleRange.Reset();
                 }
                 
-                tse_info.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
+                tse.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -282,18 +324,18 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs)
 }
 
 
-void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
+void CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
+                                        const CSeq_annot::C_Data::TGraph& objs)
 {
     m_ObjectInfos.Reserve(objs.size());
 
-    CTSE_Info& tse_info = GetTSE_Info();
-    CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
+    CTSE_Info::TAnnotObjs& index = tse.x_SetAnnotObjs(GetName());
 
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
-    NON_CONST_ITERATE ( CSeq_annot::C_Data::TGraph, git, objs ) {
-        CSeq_graph& graph = **git;
+    ITERATE ( CSeq_annot::C_Data::TGraph, git, objs ) {
+        const CSeq_graph& graph = **git;
 
         CAnnotObject_Info* info =
             m_ObjectInfos.AddInfo(CAnnotObject_Info(graph, *this));
@@ -314,7 +356,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
                     annotRef.m_HandleRange.Reset();
                 }
 
-                tse_info.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
+                tse.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -322,18 +364,18 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs)
 }
 
 
-void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
+void CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
+                                        const CSeq_annot::C_Data::TAlign& objs)
 {
     m_ObjectInfos.Reserve(objs.size());
 
-    CTSE_Info& tse_info = GetTSE_Info();
-    CTSE_Info::TAnnotObjs& index = tse_info.x_SetAnnotObjs(GetName());
+    CTSE_Info::TAnnotObjs& index = tse.x_SetAnnotObjs(GetName());
 
     SAnnotObject_Key key;
     SAnnotObject_Index annotRef;
     vector<CHandleRangeMap> hrmaps;
-    NON_CONST_ITERATE ( CSeq_annot::C_Data::TAlign, ait, objs ) {
-        CSeq_align& align = **ait;
+    ITERATE ( CSeq_annot::C_Data::TAlign, ait, objs ) {
+        const CSeq_align& align = **ait;
 
         CAnnotObject_Info* info =
             m_ObjectInfos.AddInfo(CAnnotObject_Info(align, *this));
@@ -354,7 +396,7 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
                     annotRef.m_HandleRange.Reset();
                 }
 
-                tse_info.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
+                tse.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
             }
             ++annotRef.m_AnnotLocationIndex;
         }
@@ -362,14 +404,20 @@ void CSeq_annot_Info::x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs)
 }
 
 
-void CSeq_annot_Info::x_UnmapAnnotObjects(void)
+void CSeq_annot_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
 {
-    GetTSE_Info().x_UnmapAnnotObjects(m_ObjectInfos);
+    if ( m_SNP_Info ) {
+        m_SNP_Info->x_UnmapAnnotObjects(tse);
+    }
+    tse.x_UnmapAnnotObjects(m_ObjectInfos);
 }
 
 
-void CSeq_annot_Info::x_DropAnnotObjects(void)
+void CSeq_annot_Info::x_DropAnnotObjects(CTSE_Info& tse)
 {
+    if ( m_SNP_Info ) {
+        m_SNP_Info->x_DropAnnotObjects(tse);
+    }
     m_ObjectInfos.Clear();
 }
 
@@ -380,6 +428,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/16 15:47:28  vasilche
+ * Added CBioseq_set_Handle and set of EditHandles
+ *
  * Revision 1.12  2004/01/22 20:10:40  vasilche
  * 1. Splitted ID2 specs to two parts.
  * ID2 now specifies only protocol.

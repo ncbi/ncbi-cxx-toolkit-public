@@ -268,7 +268,7 @@ void CReader::GetSNPChunk(const CSeqref& seqref,
     CRef<CSeq_annot_SNP_Info> snp_annot = GetSNPAnnot(seqref, conn);
     CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(*snp_annot));
     CTSE_Chunk_Info::TPlace place(CTSE_Chunk_Info::eBioseq_set, kSNP_EntryId);
-    chunk.x_LoadAnnot(place, *annot_info);
+    chunk.x_LoadAnnot(place, annot_info);
 }
 
 
@@ -278,6 +278,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.32  2004/03/16 15:47:29  vasilche
+ * Added CBioseq_set_Handle and set of EditHandles
+ *
  * Revision 1.31  2004/02/18 14:01:25  dicuccio
  * Added new satellites for TRACE_ASSM, TR_ASSM_CH.  Added support for overloading
  * the ID1 named service

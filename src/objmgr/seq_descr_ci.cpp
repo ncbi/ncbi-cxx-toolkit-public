@@ -38,17 +38,14 @@ BEGIN_SCOPE(objects)
 
 
 CSeq_descr_CI::CSeq_descr_CI(void)
-    : m_DescrType(CSeqdesc::e_not_set)
 {
     return;
 }
 
 
 CSeq_descr_CI::CSeq_descr_CI(const CBioseq_Handle& handle,
-                             CSeqdesc::E_Choice choice,
                              size_t search_depth)
-    : m_NextEntry(handle.GetSeq_entry_Handle()),
-      m_DescrType(choice),
+    : m_NextEntry(handle.GetParentEntry()),
       m_MaxCount(search_depth)
 {
     x_Next(); // Skip entries without descriptions
@@ -56,10 +53,8 @@ CSeq_descr_CI::CSeq_descr_CI(const CBioseq_Handle& handle,
 
 
 CSeq_descr_CI::CSeq_descr_CI(const CSeq_entry_Handle& entry,
-                             CSeqdesc::E_Choice choice,
                              size_t search_depth)
     : m_NextEntry(entry),
-      m_DescrType(choice),
       m_MaxCount(search_depth)
 {
     x_Next(); // Skip entries without descriptions
@@ -69,7 +64,6 @@ CSeq_descr_CI::CSeq_descr_CI(const CSeq_entry_Handle& entry,
 CSeq_descr_CI::CSeq_descr_CI(const CSeq_descr_CI& iter)
     : m_NextEntry(iter.m_NextEntry),
       m_CurrentEntry(iter.m_CurrentEntry),
-      m_DescrType(iter.m_DescrType),
       m_MaxCount(iter.m_MaxCount)
 {
     return;
@@ -87,7 +81,6 @@ CSeq_descr_CI& CSeq_descr_CI::operator= (const CSeq_descr_CI& iter)
     if (this != &iter) {
         m_NextEntry = iter.m_NextEntry;
         m_CurrentEntry = iter.m_CurrentEntry;
-        m_DescrType = iter.m_DescrType;
         m_MaxCount = iter.m_MaxCount;
     }
     return *this;
@@ -119,12 +112,49 @@ void CSeq_descr_CI::x_Next(void)
     }
 }
 
+
+CSeq_descr_CI& CSeq_descr_CI::operator++(void)
+{
+    x_Next();
+    return *this;
+}
+
+
+CSeq_descr_CI::operator bool (void) const
+{
+    return m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr();
+}
+
+
+const CSeq_descr& CSeq_descr_CI::operator* (void) const
+{
+    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
+    return m_CurrentEntry.GetDescr();
+}
+
+
+const CSeq_descr* CSeq_descr_CI::operator-> (void) const
+{
+    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
+    return &m_CurrentEntry.GetDescr();
+}
+
+
+CSeq_entry_Handle CSeq_descr_CI::GetSeq_entry_Handle(void) const
+{
+    return m_CurrentEntry;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.11  2004/02/09 19:18:54  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

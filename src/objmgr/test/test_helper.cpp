@@ -1339,6 +1339,10 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     CHECK_END("get align set");
     if ( sm_TestRemoveEntry ) {
         CHECK_WRAP();
+        CRef<CSeq_entry> tse
+            (const_cast<CSeq_entry*>(&handle.GetTopLevelSeqEntry()));
+        tse->Parentize();
+        
         CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
                                    handle.GetBioseq().GetParentEntry()));
         CSeq_entry* parent = entry->GetParentEntry();
@@ -1407,6 +1411,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.51  2004/02/09 19:18:55  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

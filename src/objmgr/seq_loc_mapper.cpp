@@ -32,6 +32,7 @@
 
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
@@ -859,6 +860,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.3  2004/03/11 18:48:02  shomrat
 * skip if empty
 *

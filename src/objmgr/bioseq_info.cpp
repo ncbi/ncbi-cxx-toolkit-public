@@ -44,6 +44,8 @@
 #include <objects/seq/Bioseq.hpp>
 
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_data.hpp>
+#include <objects/seq/Seq_hist.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -57,6 +59,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
 #include <objects/seqloc/Seq_loc_equiv.hpp>
+#include <objects/general/Int_fuzz.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -72,26 +75,28 @@ BEGIN_SCOPE(objects)
 //
 
 
-CBioseq_Info::CBioseq_Info(CBioseq& seq, CSeq_entry_Info& entry_info)
-    : m_Bioseq(&seq),
-      m_Seq_entry_Info(&entry_info),
-      m_TSE_Info(&entry_info.GetTSE_Info())
+CBioseq_Info::CBioseq_Info(const CBioseq& seq)
 {
-    _ASSERT(entry_info.m_Entries.empty());
-    _ASSERT(!entry_info.m_Bioseq);
-    entry_info.m_Bioseq.Reset(this);
-    try {
-        x_InitBioseqInfo();
-        x_TSEAttach();
-        
-        if ( seq.IsSetAnnot() ) {
-            entry_info.x_TSEAttachSeq_annots(seq.SetAnnot());
-        }
-    }
-    catch ( exception& ) {
-        entry_info.m_Bioseq.Release();
-        throw;
-    }
+    x_SetObject(seq);
+}
+
+
+CBioseq_Info::CBioseq_Info(const CBioseq_Info& info)
+    : TParent(info),
+      m_Object(info.m_Object),
+      m_Id(info.m_Id),
+      m_Inst(info.m_Inst),
+      m_Inst_Repr(info.m_Inst_Repr),
+      m_Inst_Mol(info.m_Inst_Mol),
+      m_Inst_Length(info.m_Inst_Length),
+      m_Inst_Fuzz(info.m_Inst_Fuzz),
+      m_Inst_Topology(info.m_Inst_Topology),
+      m_Inst_Strand(info.m_Inst_Strand),
+      m_Inst_Seq_data(info.m_Inst_Seq_data),
+      m_Inst_Ext(info.m_Inst_Ext),
+      m_Inst_Hist(info.m_Inst_Hist),
+      m_SeqMap(info.m_SeqMap)
+{
 }
 
 
@@ -100,54 +105,250 @@ CBioseq_Info::~CBioseq_Info(void)
 }
 
 
-void CBioseq_Info::x_TSEAttach(void)
+const char* CBioseq_Info::x_GetTypeName(void) const
 {
-    CTSE_Info& tse_info = GetTSE_Info();
-    CBioseq& seq = GetBioseq();
-    try {
-        ITERATE ( CBioseq::TId, id, seq.GetId() ) {
-            // Find the bioseq index
-            CSeq_id_Handle key = CSeq_id_Handle::GetHandle(**id);
-            tse_info.x_SetBioseqId(key, this);
-            // Add new seq-id synonym
-            m_Synonyms.push_back(key);
+    return "Bioseq";
+}
+
+
+const char* CBioseq_Info::x_GetMemberName(TMembers member) const
+{
+    if ( member & fMember_id ) {
+        return "id";
+    }
+    if ( member & fMember_inst ) {
+        return "inst";
+    }
+    return TParent::x_GetMemberName(member);
+}
+
+
+inline
+void CBioseq_Info::x_UpdateObject(CConstRef<TObject> obj)
+{
+    m_Object = obj;
+    if ( HaveDataSource() ) {
+        x_DSMapObject(obj, GetDataSource());
+    }
+    x_ResetModifiedMembers();
+}
+
+
+inline
+void CBioseq_Info::x_UpdateModifiedObject(void) const
+{
+    if ( x_IsModified() ) {
+        const_cast<CBioseq_Info*>(this)->x_UpdateObject(x_CreateObject());
+    }
+}
+
+
+CConstRef<CBioseq> CBioseq_Info::GetCompleteBioseq(void) const
+{
+    x_UpdateModifiedObject();
+    _ASSERT(!x_IsModified());
+    return m_Object;
+}
+
+
+CConstRef<CBioseq> CBioseq_Info::GetBioseqCore(void) const
+{
+    x_UpdateModifiedObject();
+    _ASSERT(!x_IsModified());
+    return m_Object;
+}
+
+
+void CBioseq_Info::x_DSAttachContents(CDataSource& ds)
+{
+    TParent::x_DSAttachContents(ds);
+    x_DSMapObject(m_Object, ds);
+}
+
+
+void CBioseq_Info::x_DSDetachContents(CDataSource& ds)
+{
+    ITERATE ( TDSMappedObjects, it, m_DSMappedObjects ) {
+        x_DSUnmapObject(*it, ds);
+    }
+    m_DSMappedObjects.clear();
+    TParent::x_DSDetachContents(ds);
+}
+
+
+void CBioseq_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    m_DSMappedObjects.push_back(obj);
+    ds.x_Map(obj, this);
+}
+
+
+void CBioseq_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
+{
+    ds.x_Unmap(obj, this);
+}
+
+
+void CBioseq_Info::x_TSEAttachContents(CTSE_Info& tse)
+{
+    TParent::x_TSEAttachContents(tse);
+    ITERATE ( TId, it, m_Id ) {
+        tse.x_SetBioseqId(*it, this);
+    }
+}
+
+
+void CBioseq_Info::x_TSEDetachContents(CTSE_Info& tse)
+{
+    ITERATE ( TId, it, m_Id ) {
+        tse.x_ResetBioseqId(*it, this);
+    }
+    TParent::x_TSEDetachContents(tse);
+}
+
+
+void CBioseq_Info::x_SetObject(const TObject& obj)
+{
+    _ASSERT(!m_Object);
+    m_Object.Reset(&obj);
+
+    if ( obj.IsSetId() ) {
+        ITERATE ( TObject::TId, it, obj.GetId() ) {
+            m_Id.push_back(CSeq_id_Handle::GetHandle(**it));
+        }
+        x_SetSetMembers(fMember_id);
+    }
+    if ( obj.IsSetDescr() ) {
+        x_SetDescr(obj.GetDescr());
+    }
+    if ( obj.IsSetInst() ) {
+        const TInst& inst = obj.GetInst();
+        if ( inst.IsSetRepr() ) {
+            m_Inst_Repr = inst.GetRepr();
+            x_SetSetMembers(fMember_inst_repr);
+        }
+        if ( inst.IsSetMol() ) {
+            m_Inst_Mol = inst.GetMol();
+            x_SetSetMembers(fMember_inst_mol);
+        }
+        if ( inst.IsSetLength() ) {
+            m_Inst_Length = inst.GetLength();
+            x_SetSetMembers(fMember_inst_length);
+        }
+        else {
+            m_Inst_Length = kInvalidSeqPos;
+            LOG_POST(Warning << "CBioseq_Info::x_InitBioseqInfo: "
+                     "Seq-inst.length is not set");
+        }
+        if ( inst.IsSetFuzz() ) {
+            m_Inst_Fuzz.Reset(&inst.GetFuzz());
+            x_SetSetMembers(fMember_inst_fuzz);
+        }
+        if ( inst.IsSetTopology() ) {
+            m_Inst_Topology = inst.GetTopology();
+            x_SetSetMembers(fMember_inst_topology);
+        }
+        if ( inst.IsSetStrand() ) {
+            m_Inst_Strand = inst.GetStrand();
+            x_SetSetMembers(fMember_inst_strand);
+        }
+        if ( inst.IsSetSeq_data() ) {
+            m_Inst_Seq_data.Reset(&inst.GetSeq_data());
+            x_SetSetMembers(fMember_inst_seq_data);
+        }
+        if ( inst.IsSetExt() ) {
+            m_Inst_Ext.Reset(&inst.GetExt());
+            x_SetSetMembers(fMember_inst_ext);
+        }
+        if ( inst.IsSetHist() ) {
+            m_Inst_Hist.Reset(&inst.GetHist());
+            x_SetSetMembers(fMember_inst_hist);
+        }
+        x_SetSetMembers(fMember_inst);
+    }
+    if ( obj.IsSetAnnot() ) {
+        x_SetAnnot(obj.GetAnnot());
+    }
+}
+
+
+CRef<CBioseq> CBioseq_Info::x_CreateObject(void) const
+{        
+    CRef<TObject> obj(new TObject);
+    if ( IsSetId() ) {
+        TObject::TId& id = obj->SetId();
+        if ( x_IsModifiedMember(fMember_id) ) {
+            ITERATE ( TId, it, GetId() ) {
+                CConstRef<CSeq_id> seq_id = it->GetSeqId();
+                id.push_back(Ref(const_cast<CSeq_id*>(&*seq_id)));
+            }
+        }
+        else {
+            id = m_Object->GetId();
         }
     }
-    catch ( exception& ) {
-        x_TSEDetach();
-        throw;
+    if ( IsSetDescr() ) {
+        obj->SetDescr(const_cast<TDescr&>(GetDescr()));
     }
+    if ( IsSetInst() ) {
+        if ( x_IsModifiedMember(fMember_inst_all) ) {
+            CRef<TInst> inst = x_CreateInst();
+            obj->SetInst(*inst);
+        }
+        else {
+            obj->SetInst(const_cast<TInst&>(GetInst()));
+        }
+    }
+    if ( IsSetAnnot() ) {
+        TObject::TAnnot& annot = obj->SetAnnot();
+        if ( x_IsModifiedMember(fMember_annot) ) {
+            x_FillAnnot(annot);
+        }
+        else {
+            annot = m_Object->GetAnnot();
+        }
+    }
+    return obj;
 }
 
 
-void CBioseq_Info::x_TSEDetach(void)
+CRef<CSeq_inst> CBioseq_Info::x_CreateInst(void) const
 {
-    CTSE_Info& tse_info = GetTSE_Info();
-    ITERATE ( TSynonyms, syn, m_Synonyms ) {
-        tse_info.x_ResetBioseqId(*syn, this);
+    CRef<TInst> obj(new TInst);
+    if ( IsSetInst_Repr() ) {
+        obj->SetRepr(GetInst_Repr());
     }
-    m_Synonyms.clear();
-}
-
-
-void CBioseq_Info::x_InitBioseqInfo(void)
-{
-    CBioseq& seq = GetBioseq();
-    try {
-        m_BioseqLength = seq.GetInst().GetLength();
+    if ( IsSetInst_Mol() ) {
+        obj->SetMol(GetInst_Mol());
     }
-    catch ( exception& /*exc*/ ) {
-        LOG_POST(Warning <<
-                 "CBioseq_Info::x_InitBioseqInfo: Seq-inst.length is not set");
-        m_BioseqLength = kInvalidSeqPos;
+    if ( IsSetInst_Length() ) {
+        obj->SetLength(GetInst_Length());
     }
-    m_BioseqMolType = seq.GetInst().GetMol();
+    if ( IsSetInst_Fuzz() ) {
+        obj->SetFuzz(const_cast<TInst_Fuzz&>(GetInst_Fuzz()));
+    }
+    if ( IsSetInst_Topology() ) {
+        obj->SetTopology(GetInst_Topology());
+    }
+    if ( IsSetInst_Strand() ) {
+        obj->SetStrand(GetInst_Strand());
+    }
+    if ( IsSetInst_Seq_data() ) {
+        obj->SetSeq_data(const_cast<TInst_Seq_data&>(GetInst_Seq_data()));
+    }
+    if ( IsSetInst_Ext() ) {
+        obj->SetExt(const_cast<TInst_Ext&>(GetInst_Ext()));
+    }
+    if ( IsSetInst_Hist() ) {
+        obj->SetHist(const_cast<TInst_Hist&>(GetInst_Hist()));
+    }
+    return obj;
 }
 
 
 TSeqPos CBioseq_Info::x_CalcBioseqLength(void) const
 {
-    return x_CalcBioseqLength(GetBioseq().GetInst());
+    return x_CalcBioseqLength(GetInst());
 }
 
 
@@ -280,49 +481,15 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CDelta_seq& delta_seq) const
 }
 
 
-string CBioseq_Info::IdsString(void) const
+string CBioseq_Info::IdString(void) const
 {
     CNcbiOstrstream os;
-    ITERATE ( CBioseq::TId, it, GetBioseq().GetId() ) {
-        os << (*it)->DumpAsFasta() << " | ";
+    ITERATE ( TId, it, m_Id ) {
+        if ( it != m_Id.begin() )
+            os << " | ";
+        os << it->AsString();
     }
     return CNcbiOstrstreamToString(os);
-}
-
-
-CDataSource& CBioseq_Info::GetDataSource(void) const
-{
-    return m_Seq_entry_Info->GetDataSource();
-}
-
-
-const CSeq_entry& CBioseq_Info::GetTSE(void) const
-{
-    return m_Seq_entry_Info->GetTSE();
-}
-
-
-const CSeq_entry& CBioseq_Info::GetSeq_entry(void) const
-{
-    return m_Seq_entry_Info->GetSeq_entry();
-}
-
-
-CSeq_entry& CBioseq_Info::GetSeq_entry(void)
-{
-    return m_Seq_entry_Info->GetSeq_entry();
-}
-
-
-void CBioseq_Info::x_DSAttachThis(void)
-{
-    GetDataSource().x_MapBioseq(*this);
-}
-
-
-void CBioseq_Info::x_DSDetachThis(void)
-{
-    GetDataSource().x_UnmapBioseq(*this);
 }
 
 
@@ -344,35 +511,12 @@ const CSeqMap& CBioseq_Info::GetSeqMap(void) const
         CFastMutexGuard guard(m_SeqMap_Mtx);
         ret = m_SeqMap.GetPointer();
         if ( !ret ) {
-            m_SeqMap = CSeqMap::CreateSeqMapForBioseq(GetBioseq());
+            m_SeqMap = CSeqMap::CreateSeqMapForBioseq(*m_Object);
             ret = m_SeqMap.GetPointer();
             _ASSERT(ret);
         }
     }
     return *ret;
-}
-
-
-void CBioseq_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
-{
-    ddc.SetFrame("CBioseq_Info");
-    CObject::DebugDump( ddc, depth);
-
-    ddc.Log("m_Bioseq", m_Bioseq.GetPointer(),0);
-    if (depth == 0) {
-        DebugDumpValue(ddc, "m_Synonyms.size()", m_Synonyms.size());
-    } else {
-        DebugDumpValue(ddc, "m_Synonyms.type",
-            "vector<CSeq_id_Handle>");
-        CDebugDumpContext ddc2(ddc,"m_Synonyms");
-        TSynonyms::const_iterator it;
-        int n;
-        for (n=0, it=m_Synonyms.begin(); it!=m_Synonyms.end(); ++n, ++it) {
-            string member_name = "m_Synonyms[ " +
-                NStr::IntToString(n) +" ]";
-            ddc2.Log(member_name, (*it).AsString());
-        }
-    }
 }
 
 
@@ -382,6 +526,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.15  2003/12/11 17:02:50  grichenk
 * Fixed CRef resetting in constructors.
 *

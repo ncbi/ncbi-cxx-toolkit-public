@@ -35,6 +35,7 @@
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -79,6 +80,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.13  2003/06/02 16:06:38  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

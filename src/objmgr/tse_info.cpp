@@ -41,6 +41,7 @@
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/handle_range.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -71,16 +72,25 @@ SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& _DEBUG_ARG(objs))
 //
 
 
-CTSE_Info::CTSE_Info(CSeq_entry& entry,
+CTSE_Info::CTSE_Info(const CSeq_entry& entry,
                      bool dead,
                      const CObject* blob_id)
     : m_DataSource(0),
       m_Dead(dead),
       m_Blob_ID(blob_id)
 {
-    m_TSE_Info = this;
-    entry.Parentize();
-    x_SetSeq_entry(entry);
+    x_SetObject(entry);
+    x_TSEAttach(*this);
+}
+
+
+CTSE_Info::CTSE_Info(const CTSE_Info& info)
+    : TParent(info),
+      m_DataSource(0),
+      m_Dead(false),
+      m_Name(info.m_Name)
+{
+    x_TSEAttach(*this);
 }
 
 
@@ -120,79 +130,55 @@ bool CTSE_Info::HasUnnamedAnnot(void) const
 }
 
 
-void CTSE_Info::x_DSAttach(CDataSource* data_source)
+CConstRef<CSeq_entry> CTSE_Info::GetCompleteTSE(void) const
 {
-    if ( m_DataSource ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "CTSE_Info::x_DSAttach: already attached");
-    }
-    m_DataSource = data_source;
-    try {
-        x_DSAttach();
-        try {
-            ITERATE ( TBioseqs, it, m_Bioseqs ) {
-                data_source->x_IndexSeqTSE(it->first, this);
-            }
-            data_source->x_IndexAnnotTSEs(this);
-        }
-        catch ( exception& ) {
-            x_DSDetach();
-            throw;
-        }
-    }
-    catch ( exception& ) {
-        m_DataSource = 0;
-        throw;
-    }
+    return GetCompleteSeq_entry();
 }
 
 
-void CTSE_Info::x_DSDetach(CDataSource* data_source)
+CConstRef<CSeq_entry> CTSE_Info::GetTSECore(void) const
 {
-    if ( m_DataSource != data_source ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CTSE_Info::x_DSDetach: not attached");
-    }
+    return GetSeq_entryCore();
+}
+
+
+void CTSE_Info::x_DSAttachContents(CDataSource& ds)
+{
+    _ASSERT(!m_DataSource);
+
+    m_DataSource = &ds;
+    TParent::x_DSAttachContents(ds);
     ITERATE ( TBioseqs, it, m_Bioseqs ) {
-        data_source->x_UnindexSeqTSE(it->first, this);
+        ds.x_IndexSeqTSE(it->first, this);
     }
-    data_source->x_UnindexAnnotTSEs(this);
-    x_DSDetach();
+    ds.x_IndexAnnotTSEs(this);
+}
+
+
+void CTSE_Info::x_DSDetachContents(CDataSource& ds)
+{
+    _ASSERT(m_DataSource == &ds);
+
+    ITERATE ( TBioseqs, it, m_Bioseqs ) {
+        ds.x_UnindexSeqTSE(it->first, this);
+    }
+    ds.x_UnindexAnnotTSEs(this);
+    TParent::x_DSDetachContents(ds);
     m_DataSource = 0;
 }
 
 
-inline
-void CTSE_Info::x_DSAttachThis(void)
+void CTSE_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
 {
-    GetDataSource().x_MapTSE(*this);
+    ds.x_Map(obj, this);
+    TParent::x_DSMapObject(obj, ds);
 }
 
 
-inline
-void CTSE_Info::x_DSDetachThis(void)
+void CTSE_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 {
-    GetDataSource().x_UnmapTSE(*this);
-}
-
-
-void CTSE_Info::x_DSAttach(void)
-{
-    x_DSAttachThis();
-    try {
-        CSeq_entry_Info::x_DSAttach();
-    }
-    catch ( ... ) {
-        x_DSDetachThis();
-        throw;
-    }
-}
-
-
-void CTSE_Info::x_DSDetach(void)
-{
-    CSeq_entry_Info::x_DSDetach();
-    x_DSDetachThis();
+    ds.x_Unmap(obj, this);
+    TParent::x_DSUnmapObject(obj, ds);
 }
 
 
@@ -277,8 +263,8 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& key,
         // No duplicate bioseqs in the same TSE
         NCBI_THROW(CObjMgrException, eAddDataError,
                    " duplicate Bioseq id '"+key.AsString()+"' present in"+
-                   "\n  seq1: " + ins.first->second->IdsString() +
-                   "\n  seq2: " + info->IdsString());
+                   "\n  seq1: " + ins.first->second->IdString() +
+                   "\n  seq2: " + info->IdString());
     }
 }
 
@@ -297,7 +283,7 @@ void CTSE_Info::x_ResetBioseqId(const CSeq_id_Handle& key,
 
 
 void CTSE_Info::x_SetBioseq_setId(int key,
-                                  CSeq_entry_Info* info)
+                                  CBioseq_set_Info* info)
 {
     //CFastMutexGuard guard(m_BioseqsLock);
     pair<TBioseq_sets::iterator, bool> ins =
@@ -314,13 +300,29 @@ void CTSE_Info::x_SetBioseq_setId(int key,
 
 
 void CTSE_Info::x_ResetBioseq_setId(int key,
-                                    CSeq_entry_Info* _DEBUG_ARG(info))
+                                    CBioseq_set_Info* _DEBUG_ARG(info))
 {
     //CFastMutexGuard guard(m_BioseqsLock);
     TBioseq_sets::iterator iter = m_Bioseq_sets.lower_bound(key);
     if ( iter != m_Bioseq_sets.end() && iter->first == key ) {
         _ASSERT(iter->second == info);
         m_Bioseq_sets.erase(iter);
+    }
+}
+
+
+void CTSE_Info::x_SetDirtyAnnotIndexNoParent(void)
+{
+    if ( HaveDataSource() ) {
+        GetDataSource().x_SetDirtyAnnotIndex(*this);
+    }
+}
+
+
+void CTSE_Info::x_ResetDirtyAnnotIndexNoParent(void)
+{
+    if ( HaveDataSource() ) {
+        GetDataSource().x_ResetDirtyAnnotIndex(*this);
     }
 }
 
@@ -332,19 +334,11 @@ void CTSE_Info::UpdateAnnotIndex(void) const
 }
 
 
-void CTSE_Info::UpdateAnnotIndex(const CSeq_entry_Info& entry_info) const
+void CTSE_Info::UpdateAnnotIndex(const CTSE_Info_Object& object) const
 {
     const_cast<CTSE_Info*>(this)->
-        UpdateAnnotIndex(const_cast<CSeq_entry_Info&>(entry_info));
-    _ASSERT(!entry_info.x_DirtyAnnotIndex());
-}
-
-
-void CTSE_Info::UpdateAnnotIndex(const CSeq_annot_Info& annot_info) const
-{
-    const_cast<CTSE_Info*>(this)->
-        UpdateAnnotIndex(const_cast<CSeq_annot_Info&>(annot_info));
-    _ASSERT(!annot_info.m_DirtyAnnotIndex);
+        UpdateAnnotIndex(const_cast<CTSE_Info_Object&>(object));
+    _ASSERT(!object.x_DirtyAnnotIndex());
 }
 
 
@@ -354,27 +348,15 @@ void CTSE_Info::UpdateAnnotIndex(void)
 }
 
 
-void CTSE_Info::UpdateAnnotIndex(CSeq_entry_Info& entry_info)
+void CTSE_Info::UpdateAnnotIndex(CTSE_Info_Object& object)
 {
-    _ASSERT(&entry_info.GetTSE_Info() == this);
+    _ASSERT(&object.GetTSE_Info() == this);
     CTSE_Info::TAnnotWriteLockGuard guard(m_AnnotObjsLock);
     NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        it->second->x_UpdateAnnotIndex();
+        it->second->x_UpdateAnnotIndex(*this);
     }
-    entry_info.x_UpdateAnnotIndex();
-    _ASSERT(!entry_info.x_DirtyAnnotIndex());
-}
-
-
-void CTSE_Info::UpdateAnnotIndex(CSeq_annot_Info& annot_info)
-{
-    _ASSERT(&annot_info.GetTSE_Info() == this);
-    CTSE_Info::TAnnotWriteLockGuard guard(m_AnnotObjsLock);
-    NON_CONST_ITERATE ( TChunks, it, m_Chunks ) {
-        it->second->x_UpdateAnnotIndex();
-    }
-    annot_info.x_UpdateAnnotIndex();
-    _ASSERT(!annot_info.m_DirtyAnnotIndex);
+    object.x_UpdateAnnotIndex(*this);
+    _ASSERT(!object.x_DirtyAnnotIndex());
 }
 
 
@@ -573,21 +555,21 @@ bool CTSE_Info::x_UnmapAnnotObject(TAnnotObjs& objs,
 
 void CTSE_Info::x_MapSNP_Table(const CAnnotName& name,
                                const CSeq_id_Handle& key,
-                               const CRef<CSeq_annot_SNP_Info>& snp_info)
+                               const CSeq_annot_SNP_Info& snp_info)
 {
     SIdAnnotObjs& objs = x_SetIdObjects(name, key);
-    objs.m_SNPSet.push_back(snp_info);
+    objs.m_SNPSet.push_back(ConstRef(&snp_info));
 }
 
 
 void CTSE_Info::x_UnmapSNP_Table(const CAnnotName& name,
                                  const CSeq_id_Handle& key,
-                                 const CRef<CSeq_annot_SNP_Info>& snp_info)
+                                 const CSeq_annot_SNP_Info& snp_info)
 {
     SIdAnnotObjs& objs = x_SetIdObjects(name, key);
     TSNPSet::iterator iter = find(objs.m_SNPSet.begin(),
                                   objs.m_SNPSet.end(),
-                                  snp_info);
+                                  ConstRef(&snp_info));
     if ( iter != objs.m_SNPSet.end() ) {
         objs.m_SNPSet.erase(iter);
     }
@@ -629,7 +611,7 @@ void CTSE_Info::x_UnmapAnnotObjects(SAnnotObjects_Info& infos)
 }
 
 
-CSeq_entry_Info& CTSE_Info::GetBioseq_set(int id)
+CBioseq_set_Info& CTSE_Info::GetBioseq_set(int id)
 {
     TBioseq_sets::iterator iter = m_Bioseq_sets.find(id);
     if ( iter == m_Bioseq_sets.end() ) {
@@ -729,6 +711,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.40  2004/02/19 17:13:42  vasilche
 * Removed 'unused argument' warnings.
 *

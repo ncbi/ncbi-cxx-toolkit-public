@@ -34,7 +34,9 @@
 */
 
 
-#include <corelib/ncbiobj.hpp>
+#include <objmgr/impl/tse_info_object.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <vector>
 #include <list>
 
@@ -51,8 +53,11 @@ class CSeq_annot;
 class CDataSource;
 class CTSE_Info;
 class CSeq_entry_Info;
+class CBioseq_Base_Info;
+class CBioseq_set_Info;
 class CBioseq_Info;
 class CSeq_annot_Info;
+class CSeq_descr;
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -62,52 +67,76 @@ class CSeq_annot_Info;
 //
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_entry_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_entry_Info : public CTSE_Info_Object
 {
+    typedef CTSE_Info_Object TParent;
 public:
     // 'ctors
-    CSeq_entry_Info(CSeq_entry& entry, CSeq_entry_Info& parent);
+    CSeq_entry_Info(void);
+    explicit CSeq_entry_Info(const CSeq_entry_Info& info);
+    explicit CSeq_entry_Info(const CSeq_entry& entry);
     virtual ~CSeq_entry_Info(void);
 
-    bool HaveDataSource(void) const;
-    CDataSource& GetDataSource(void) const;
+    const CBioseq_set_Info& GetParentBioseq_set_Info(void) const;
+    CBioseq_set_Info& GetParentBioseq_set_Info(void);
 
-    const CSeq_entry& GetTSE(void) const;
-    CSeq_entry& GetTSE(void);
+    const CSeq_entry_Info& GetParentSeq_entry_Info(void) const;
+    CSeq_entry_Info& GetParentSeq_entry_Info(void);
 
-    const CTSE_Info& GetTSE_Info(void) const;
-    CTSE_Info& GetTSE_Info(void);
 
-    const CSeq_entry_Info* GetParentSeq_entry_Info(void) const;
+    typedef CSeq_entry TObject;
 
-    bool NullSeq_entry(void) const;
-    const CSeq_entry& GetSeq_entry(void) const;
-    CSeq_entry& GetSeq_entry(void);
+    CConstRef<TObject> GetCompleteSeq_entry(void) const;
+    CConstRef<TObject> GetSeq_entryCore(void) const;
 
-    const CBioseq_Info& GetBioseq_Info(void) const;
-    CBioseq_Info& GetBioseq_Info(void);
+    // Seq-entry access
+    typedef TObject::E_Choice E_Choice;
+    E_Choice Which(void) const;
+    void x_CheckWhich(E_Choice which) const;
 
-    typedef vector< CRef<CSeq_entry_Info> > TEntries;
-    typedef vector< CRef<CSeq_annot_Info> > TAnnots;
+    typedef CBioseq_set_Info TSet;
+    bool IsSet(void) const;
+    const TSet& GetSet(void) const;
+    TSet& SetSet(void);
+
+    typedef CBioseq_Info TSeq;
+    bool IsSeq(void) const;
+    const TSeq& GetSeq(void) const;
+    TSeq& SetSeq(void);
+
+    typedef CSeq_descr TDescr;
+    // Bioseq-set access
+    bool IsSetDescr(void) const;
+    const TDescr& GetDescr(void) const;
+
+    // tree initialization
+    void x_Attach(CRef<CSeq_entry_Info> sub_entry, int index = -1);
+    void x_Attach(CRef<CBioseq_Info> bioseq);
+
+    void x_ParentAttach(CBioseq_set_Info& parent);
+    void x_ParentDetach(CBioseq_set_Info& parent);
 
     // attaching/detaching to CDataSource (it's in CTSE_Info)
-    void x_DSAttach(void);
-    void x_DSDetach(void);
+    virtual void x_DSAttachContents(CDataSource& ds);
+    virtual void x_DSDetachContents(CDataSource& ds);
 
     // attaching/detaching to CTSE_Info
-    void x_TSEAttach(CTSE_Info* tse_info);
-    void x_TSEDetach(CTSE_Info* tse_info);
+    virtual void x_TSEAttachContents(CTSE_Info& tse_info);
+    virtual void x_TSEDetachContents(CTSE_Info& tse_info);
 
-    void x_TSEAttach(void);
-    void x_TSEDetach(void);
-    
     void UpdateAnnotIndex(void) const;
 
-    void x_AddAnnot(CSeq_annot& annot);
-    void x_RemoveAnnot(CSeq_annot_Info& annot_info);
+    CRef<CSeq_annot_Info> x_AddAnnot(const CSeq_annot& annot);
+    void x_AddAnnot(CRef<CSeq_annot_Info> annot);
+    void x_RemoveAnnot(CRef<CSeq_annot_Info> annot);
 
-    void x_AddEntry(CSeq_entry& entry);
-    void x_RemoveEntry(CSeq_entry_Info& entry_info);
+    CRef<CSeq_entry_Info> x_AddEntry(const CSeq_entry& entry, int index = -1);
+    void x_AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
+    void x_RemoveEntry(CRef<CSeq_entry_Info> entry);
+
+    bool x_IsModified(void) const;
+    void x_SetModifiedContents(void);
+    void x_ResetModified(void);
 
 protected:
     friend class CDataSource;
@@ -116,57 +145,36 @@ protected:
     friend class CTSE_Info;
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
-    friend class CSeq_entry_CI;
     friend class CScope_Impl;
 
-    CSeq_entry_Info(void);
+    void x_AttachContents(void);
+    void x_DetachContents(void);
 
-    void x_DSAttachThis(void);
-    void x_DSDetachThis(void);
-    void x_DSAttachContents(void);
-    void x_DSDetachContents(void);
+    CRef<TObject> x_CreateObject(void) const;
 
-    void x_SetSeq_entry(CSeq_entry& entry);
+    void x_SetObject(const TObject& obj);
+    void x_UpdateModifiedObject(void) const;
+    void x_UpdateObject(CConstRef<TObject> obj);
 
-    void x_TSEDetachThis(void);
-    void x_TSEDetachContents(void);
-    void x_TSEAttachBioseq_set(CBioseq_set& seq_set);
+    typedef vector< CConstRef<TObject> > TDSMappedObjects;
+    virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    void x_TSEAttachBioseq_set_Id(const CBioseq_set& seq_set);
-    void x_TSEDetachBioseq_set_Id(void);
-
-    typedef list<CRef<CSeq_annot> > TSeq_annots;
-    void x_TSEAttachSeq_annots(TSeq_annots& annots);
-
-    void x_UpdateAnnotIndex(void);
-    void x_UpdateAnnotIndexContents(void);
-
-    bool x_DirtyAnnotIndex(void) const;
-    void x_SetDirtyAnnotIndex(void);
-    void x_ResetDirtyAnnotIndex(void);
+    void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
     // Seq-entry pointer
-    CRef<CSeq_entry>      m_Seq_entry;
+    CConstRef<TObject>      m_Object;
+    TDSMappedObjects        m_DSMappedObjects;
 
-    // parent Seq-entry info
-    CSeq_entry_Info*      m_Parent;
+    // Bioseq/Bioseq_set info
+    E_Choice                m_Which;
+    CRef<CBioseq_Base_Info> m_Contents;
 
-    // top level Seq-entry info
-    CTSE_Info*            m_TSE_Info;
-
-    // children Seq-entry objects if Which() == e_Set
-    TEntries              m_Entries;
-    // children Bioseq object if Which() == e_Seq
-    CRef<CBioseq_Info>    m_Bioseq;
-    // Seq-annot objects
-    TAnnots               m_Annots;
-
-    int                   m_Bioseq_set_Id;
-
-    bool                  m_DirtyAnnotIndex;
+    // flags of modified elements
+    typedef bool TModified;
+    TModified               m_Modified;
 
     // Hide copy methods
-    CSeq_entry_Info(const CSeq_entry_Info&);
     CSeq_entry_Info& operator= (const CSeq_entry_Info&);
 };
 
@@ -180,73 +188,30 @@ protected:
 
 
 inline
-const CTSE_Info& CSeq_entry_Info::GetTSE_Info(void) const
+bool CSeq_entry_Info::x_IsModified(void) const
 {
-    return *m_TSE_Info;
+    return m_Modified;
 }
 
 
 inline
-CTSE_Info& CSeq_entry_Info::GetTSE_Info(void)
+CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
 {
-    return *m_TSE_Info;
+    return m_Which;
 }
 
 
 inline
-const CSeq_entry_Info* CSeq_entry_Info::GetParentSeq_entry_Info(void) const
+bool CSeq_entry_Info::IsSet(void) const
 {
-    return m_Parent;
+    return Which() == CSeq_entry::e_Set;
 }
 
 
 inline
-bool CSeq_entry_Info::NullSeq_entry(void) const
+bool CSeq_entry_Info::IsSeq(void) const
 {
-    return m_Seq_entry;
-}
-
-
-inline
-const CSeq_entry& CSeq_entry_Info::GetSeq_entry(void) const
-{
-    return *m_Seq_entry;
-}
-
-
-inline
-CSeq_entry& CSeq_entry_Info::GetSeq_entry(void)
-{
-    return *m_Seq_entry;
-}
-
-
-inline
-const CBioseq_Info& CSeq_entry_Info::GetBioseq_Info(void) const
-{
-    return *m_Bioseq;
-}
-
-
-inline
-CBioseq_Info& CSeq_entry_Info::GetBioseq_Info(void)
-{
-    return *m_Bioseq;
-}
-
-
-inline
-void CSeq_entry_Info::x_DSDetach(void)
-{
-    x_DSDetachContents();
-    x_DSDetachThis();
-}
-
-
-inline
-bool CSeq_entry_Info::x_DirtyAnnotIndex(void) const
-{
-    return m_DirtyAnnotIndex;
+    return Which() == CSeq_entry::e_Seq;
 }
 
 
@@ -256,6 +221,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.8  2004/02/03 19:02:16  vasilche
 * Fixed broken 'dirty annot index' state after RemoveEntry().
 *

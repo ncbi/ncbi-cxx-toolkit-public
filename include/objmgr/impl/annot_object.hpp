@@ -69,27 +69,24 @@ public:
     typedef CSeqFeatData::ESubtype       TFeatSubtype;
 
     CAnnotObject_Info(void);
-    CAnnotObject_Info(CSeq_feat& feat,
+    CAnnotObject_Info(const CSeq_feat& feat,
                       CSeq_annot_Info& annot);
-    CAnnotObject_Info(CSeq_align& align,
+    CAnnotObject_Info(const CSeq_align& align,
                       CSeq_annot_Info& annot);
-    CAnnotObject_Info(CSeq_graph& graph,
+    CAnnotObject_Info(const CSeq_graph& graph,
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                       const SAnnotTypeSelector& sel);
     ~CAnnotObject_Info(void);
 
     // Get Seq-annot, containing the element
-    const CSeq_annot& GetSeq_annot(void) const;
     const CSeq_annot_Info& GetSeq_annot_Info(void) const;
     CSeq_annot_Info& GetSeq_annot_Info(void);
 
     // Get Seq-entry, containing the annotation
-    const CSeq_entry& GetSeq_entry(void) const;
     const CSeq_entry_Info& GetSeq_entry_Info(void) const;
 
     // Get top level Seq-entry, containing the annotation
-    const CSeq_entry& GetTSE(void) const;
     const CTSE_Info& GetTSE_Info(void) const;
     CTSE_Info& GetTSE_Info(void);
 
@@ -101,7 +98,7 @@ public:
     TFeatType GetFeatType(void) const;
     TFeatSubtype GetFeatSubtype(void) const;
 
-    CRef<CObject> GetObject(void) const;
+    CConstRef<CObject> GetObject(void) const;
     const CObject* GetObjectPointer(void) const;
 
     bool IsFeat(void) const;
@@ -133,7 +130,7 @@ private:
         CSeq_annot_Info*         m_Annot_Info;
         CTSE_Chunk_Info*         m_Chunk_Info;
     };
-    CRef<CObject>                m_Object;         // annot object itself
+    CConstRef<CObject>           m_Object;         // annot object itself
     Uint2                        m_FeatSubtype;    // feature subtype
     Uint1                        m_FeatType;       // feature type or e_not_set
     Uint1                        m_AnnotType;      // annot object type
@@ -183,7 +180,7 @@ bool CAnnotObject_Info::IsChunkStub(void) const
 
 
 inline
-CRef<CObject> CAnnotObject_Info::GetObject(void) const
+CConstRef<CObject> CAnnotObject_Info::GetObject(void) const
 {
     return m_Object;
 }
@@ -271,6 +268,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.14  2003/11/26 17:55:54  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

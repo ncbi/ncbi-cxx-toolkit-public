@@ -34,10 +34,37 @@
 
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_map.hpp>
-#include <objmgr/impl/data_source.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
+
+
+/////////////////////////////////////////////////////////////////////////////
+// SSeqMapSelector
+/////////////////////////////////////////////////////////////////////////////
+
+SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry* tse)
+{
+    m_TSE.Reset(tse);
+    m_TSE_Info.Reset();
+    return *this;
+}
+
+SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry_Handle& tse)
+{
+    if ( tse ) {
+        m_TSE_Info = tse.GetTSE_Info();
+        m_TSE = tse.GetSeq_entryCore();
+    }
+    else {
+        m_TSE_Info.Reset();
+        m_TSE.Reset();
+    }
+    return *this;
+}
+
 
 ////////////////////////////////////////////////////////////////////
 // CSeqMap_CI_SegmentInfo
@@ -281,12 +308,19 @@ bool CSeqMap_CI::x_RefTSEMatch(const CSeqMap::CSegment& seg) const
     _ASSERT(CSeqMap::ESegmentType(seg.m_SegType) == CSeqMap::eSeqRef);
     CSeq_id_Handle id = CSeq_id_Mapper::GetSeq_id_Mapper().
         GetHandle(x_GetSeqMap().x_GetRefSeqid(seg));
-    CConstRef<CTSE_Info> tse_info = m_TSE_Info;
-    if ( !tse_info ) {
-        tse_info = m_Scope->GetTSEInfo(m_Selector.m_TSE);
-        _ASSERT(tse_info);
+    CSeq_entry_Handle tse_info;
+    if ( m_Selector.m_TSE_Info ) {
+        tse_info =
+            CSeq_entry_Handle(*m_Scope,
+                              static_cast<const CTSE_Info&>
+                              (*m_Selector.m_TSE_Info));
     }
-    return m_Scope->x_GetBioseqHandleFromTSE(id, *tse_info);
+    else {
+        tse_info = m_Scope->GetSeq_entryHandle(*m_Selector.m_TSE);
+        const_cast<SSeqMapSelector&>(m_Selector).m_TSE_Info =
+            tse_info.GetTSE_Info();
+    }
+    return m_Scope->GetBioseqHandleFromTSE(id, tse_info);
 }
 
 
@@ -308,7 +342,7 @@ bool CSeqMap_CI::x_Push(TSeqPos pos, bool resolveExternal)
         return false;
     }
     // Check TSE limit
-    if ( m_Selector.m_TSE  &&  !x_RefTSEMatch(seg) ) {
+    if ( bool(m_Selector.m_TSE)  &&  !x_RefTSEMatch(seg) ) {
         return false;
     }
     x_Push(info.m_SeqMap->x_GetSubSeqMap(seg, GetScope(), resolveExternal),
@@ -507,6 +541,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.20  2003/11/10 18:12:09  grichenk
 * Removed extra EFlags declaration from seq_map_ci.hpp
 *

@@ -38,7 +38,6 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_id_handle.hpp>
-#include <objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -97,7 +96,6 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
     SSeqMapSelector()
         : m_Position(0), m_Length(kInvalidSeqPos),
           m_MaxResolveCount(0),
-          m_TSE(0),
           m_Flags(CSeqMap::fDefaultFlags)
         {
         }
@@ -121,11 +119,8 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
-    SSeqMapSelector& SetLimitTSE(const CSeq_entry* tse)
-        {
-            m_TSE = tse;
-            return *this;
-        }
+    SSeqMapSelector& SetLimitTSE(const CSeq_entry* tse);
+    SSeqMapSelector& SetLimitTSE(const CSeq_entry_Handle& tse);
 
     SSeqMapSelector& SetFlags(TFlags flags)
         {
@@ -159,7 +154,8 @@ private:
     // maximum resolution level
     size_t              m_MaxResolveCount;
     // limit search to single TSE
-    const CSeq_entry*   m_TSE;
+    CConstRef<CSeq_entry> m_TSE;
+    CConstRef<CObject>  m_TSE_Info;
     // return all intermediate resolved sequences
     TFlags              m_Flags;
 };
@@ -284,9 +280,6 @@ private:
     CHeapScope           m_Scope;
     // iterator parameters
     SSeqMapSelector      m_Selector;
-
-    // cached limiting TSE_Info object
-    CConstRef<CTSE_Info> m_TSE_Info;
 };
 
 
@@ -298,6 +291,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.12  2004/01/27 17:11:13  ucko
 * Remove redundant forward declaration of CTSE_Info
 *

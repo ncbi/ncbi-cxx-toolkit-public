@@ -9,17 +9,17 @@ ASN_DEP  = seq general biblio
 
 SRC = snp_annot_info annot_types_ci seq_loc_cvt annot_selector \
       seq_descr_ci feat_ci graph_ci annot_object annot_object_index annot_ci \
-      tse_info seq_entry_info bioseq_info seq_annot_info seqmatch_info \
-      data_source bioseq_handle scope scope_info mutex_pool priority \
-      seq_map seq_map_ext seq_map_ci seq_entry_handle \
+      tse_info tse_info_object seq_entry_info seq_annot_info \
+      bioseq_base_info bioseq_set_info bioseq_info \
+      seqmatch_info data_source mutex_pool priority \
+      scope heap_scope scope_impl scope_info \
+      seq_map seq_map_ext seq_map_ci seq_entry_ci seq_annot_ci \
+      seq_entry_handle bioseq_set_handle bioseq_handle seq_annot_handle \
       align_ci data_loader handle_range objmgr_exception \
       handle_range_map object_manager seq_id_tree \
       seq_vector seq_vector_ci seqdesc_ci seq_id_handle seq_id_mapper \
-      seq_annot_ci tse_chunk_info seq_annot_handle bioseq_ci annot_type_index \
+      tse_chunk_info bioseq_ci annot_type_index \
       seq_loc_mapper
-#      reader reader_snp
-#      gbloader gbload_util reader reader_zlib \
-#      reader_id1 reader_id1_cache reader_pubseq 
 
 LIB    = xobjmgr
 

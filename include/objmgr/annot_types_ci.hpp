@@ -36,9 +36,9 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/annot_selector.hpp>
-#include <objmgr/impl/annot_object.hpp>
-#include <objmgr/impl/seq_annot_info.hpp>
-#include <objmgr/impl/snp_annot_info.hpp>
+//#include <objmgr/impl/annot_object.hpp>
+//#include <objmgr/impl/seq_annot_info.hpp>
+//#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -89,9 +89,9 @@ public:
     };
 
     enum FMappedFlags {
-        fMapped_Partial = 1,
-        fMapped_Product = 2,
-        fMapped_Seq_point = 4
+        fMapped_Partial   = 1<<0,
+        fMapped_Product   = 1<<1,
+        fMapped_Seq_point = 1<<2
     };
 
     enum EMappedObjectType {
@@ -122,7 +122,6 @@ public:
 
     ENa_strand GetMappedStrand(void) const;
 
-    const CSeq_annot& GetSeq_annot(void) const;
     bool IsFeat(void) const;
     bool IsSNPFeat(void) const;
     bool IsGraph(void) const;
@@ -191,38 +190,47 @@ public:
     CAnnotTypes_CI(void);
 
     // short methods
-    CAnnotTypes_CI(CScope& scope,
+    CAnnotTypes_CI(TAnnotType type,
+                   CScope& scope,
                    const CSeq_loc& loc,
                    const SAnnotSelector& params);
-    CAnnotTypes_CI(const CBioseq_Handle& bioseq,
+    CAnnotTypes_CI(TAnnotType type,
+                   const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    const SAnnotSelector& params);
     // Iterate everything from the seq-annot
-    CAnnotTypes_CI(const CSeq_annot_Handle& annot,
+    CAnnotTypes_CI(TAnnotType type,
+                   const CSeq_annot_Handle& annot);
+    // Iterate everything from the seq-annot
+    CAnnotTypes_CI(TAnnotType type,
+                   const CSeq_annot_Handle& annot,
                    const SAnnotSelector& params);
     // Iterate everything from the seq-entry
-    CAnnotTypes_CI(CScope& scope,
-                   const CSeq_entry& entry,
+    CAnnotTypes_CI(TAnnotType type,
+                   const CSeq_entry_Handle& entry);
+    // Iterate everything from the seq-entry
+    CAnnotTypes_CI(TAnnotType type,
+                   const CSeq_entry_Handle& entry,
                    const SAnnotSelector& params);
 
     // Search all TSEs in all datasources, by default get annotations defined
     // on segments in the same TSE (eResolve_TSE method).
-    CAnnotTypes_CI(CScope& scope,
+    CAnnotTypes_CI(TAnnotType type,
+                   CScope& scope,
                    const CSeq_loc& loc,
-                   SAnnotSelector selector,
+                   //const SAnnotSelector& selector,
                    EOverlapType overlap_type,
-                   EResolveMethod resolve,
-                   const CSeq_entry* entry = 0);
+                   EResolveMethod resolve);
     // Search only in TSE, containing the bioseq, by default get annotations
     // defined on segments in the same TSE (eResolve_TSE method).
     // If "entry" is set, search only annotations from the seq-entry specified
     // (but no its sub-entries or parent entry).
-    CAnnotTypes_CI(const CBioseq_Handle& bioseq,
+    CAnnotTypes_CI(TAnnotType type,
+                   const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
-                   SAnnotSelector selector,
+                   //const SAnnotSelector& selector,
                    EOverlapType overlap_type,
-                   EResolveMethod resolve,
-                   const CSeq_entry* entry = 0);
+                   EResolveMethod resolve);
     CAnnotTypes_CI(const CAnnotTypes_CI& it);
     virtual ~CAnnotTypes_CI(void);
 
@@ -235,6 +243,7 @@ public:
     typedef CConstRef<CTSE_Info> TTSE_Lock;
     typedef set<TTSE_Lock>       TTSE_LockSet;
 
+    CSeq_annot_Handle GetAnnot(void) const;
     const CSeq_annot& GetSeq_annot(void) const;
 
     // Get number of annotations
@@ -386,7 +395,7 @@ inline
 const CSeq_annot_Info& CAnnotObject_Ref::GetSeq_annot_Info(void) const
 {
     _ASSERT(GetObjectType() == eType_Seq_annot_Info);
-    return static_cast<const CSeq_annot_Info&>(*m_Object);
+    return reinterpret_cast<const CSeq_annot_Info&>(*m_Object);
 }
 
 
@@ -394,21 +403,7 @@ inline
 const CSeq_annot_SNP_Info& CAnnotObject_Ref::GetSeq_annot_SNP_Info(void) const
 {
     _ASSERT(GetObjectType() == eType_Seq_annot_SNP_Info);
-    return static_cast<const CSeq_annot_SNP_Info&>(*m_Object);
-}
-
-
-inline
-const CAnnotObject_Info& CAnnotObject_Ref::GetAnnotObject_Info(void) const
-{
-    return GetSeq_annot_Info().GetAnnotObject_Info(GetAnnotObjectIndex());
-}
-
-
-inline
-const SSNP_Info& CAnnotObject_Ref::GetSNP_Info(void) const
-{
-    return GetSeq_annot_SNP_Info().GetSNP_Info(GetAnnotObjectIndex());
+    return reinterpret_cast<const CSeq_annot_SNP_Info&>(*m_Object);
 }
 
 
@@ -554,55 +549,9 @@ void CAnnotObject_Ref::SetMappedSeq_id(CSeq_id& id, bool point)
 
 
 inline
-bool CAnnotObject_Ref::IsFeat(void) const
-{
-    return GetObjectType() == eType_Seq_annot_SNP_Info ||
-        (GetObjectType() == eType_Seq_annot_Info &&
-         GetAnnotObject_Info().IsFeat());
-}
-
-
-inline
 bool CAnnotObject_Ref::IsSNPFeat(void) const
 {
     return GetObjectType() == eType_Seq_annot_SNP_Info;
-}
-
-
-inline
-bool CAnnotObject_Ref::IsGraph(void) const
-{
-    return GetObjectType() == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsGraph();
-}
-
-
-inline
-bool CAnnotObject_Ref::IsAlign(void) const
-{
-    return GetObjectType() == eType_Seq_annot_Info &&
-        GetAnnotObject_Info().IsAlign();
-}
-
-
-inline
-const CSeq_feat& CAnnotObject_Ref::GetFeat(void) const
-{
-    return GetAnnotObject_Info().GetFeat();
-}
-
-
-inline
-const CSeq_graph& CAnnotObject_Ref::GetGraph(void) const
-{
-    return GetAnnotObject_Info().GetGraph();
-}
-
-
-inline
-const CSeq_align& CAnnotObject_Ref::GetAlign(void) const
-{
-    return GetAnnotObject_Info().GetAlign();
 }
 
 
@@ -690,13 +639,6 @@ const CAnnotObject_Ref& CAnnotTypes_CI::Get(void) const
 
 
 inline
-const CSeq_annot& CAnnotTypes_CI::GetSeq_annot(void) const
-{
-    return Get().GetSeq_annot();
-}
-
-
-inline
 size_t CAnnotTypes_CI::GetSize(void) const
 {
     return m_AnnotSet.size();
@@ -715,6 +657,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.67  2004/03/16 15:47:25  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.66  2004/02/19 19:25:08  vasilche
 * Hidded implementation of CAnnotObject_Ref.
 * Added necessary access methods.

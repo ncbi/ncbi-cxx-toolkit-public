@@ -34,6 +34,7 @@
 
 #include <objmgr/seq_map_ci.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/annot_types_ci.hpp>
 #include <objmgr/objmgr_exception.hpp>
@@ -566,15 +567,15 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
 
     ITERATE ( CSeq_align::C_Segs::TStd, it, sseg ) {
         const CStd_seg& stdseg = **it;
-        int dim = stdseg.GetDim();
+        size_t dim = stdseg.GetDim();
         if (dim != stdseg.GetLoc().size()) {
             ERR_POST(Warning << "Invalid 'loc' size in std-seg");
-            dim = min(dim, (int)stdseg.GetLoc().size());
+            dim = min(dim, stdseg.GetLoc().size());
         }
         if (stdseg.IsSetIds()
             && dim != stdseg.GetIds().size()) {
             ERR_POST(Warning << "Invalid 'ids' size in std-seg");
-            dim = min(dim, (int)stdseg.GetIds().size());
+            dim = min(dim, stdseg.GetIds().size());
         }
         SAlignment_Segment seg(0); // length is unknown yet
         int seg_len = 0;
@@ -622,7 +623,7 @@ void CSeq_align_Mapper::x_Init(const TStd& sseg)
         if ( multi_width ) {
             // Adjust each segment width. Do not check if sequence always
             // has the same width.
-            for (int i = 0; i < seg.m_Rows.size(); ++i) {
+            for (size_t i = 0; i < seg.m_Rows.size(); ++i) {
                 if (seglens[seg.m_Rows[i].m_Id] != seg_len) {
                     seg.m_Rows[i].m_Width = 3;
                 }
@@ -676,7 +677,7 @@ void CSeq_align_Mapper::x_Init(const CPacked_seg& pseg)
                 strand = *strand_it;
                 ++strand_it;
             }
-            alnseg.AddRow(**id_it, (*pr_it ? *start_it : -1),
+            alnseg.AddRow(**id_it, (*pr_it ? *start_it : kInvalidSeqPos),
                 m_HaveStrands, strand, 0);
         }
         m_SrcSegs.push_back(alnseg);
@@ -705,16 +706,16 @@ bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments)
         return false; // empty alignment is not valid
     }
     SAlignment_Segment seg0 = segments[0];
-    for (int nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
+    for (size_t nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
         wid.push_back(seg0.m_Rows[nrow].m_Width);
     }
-    for (int nseg = 1; nseg < segments.size(); ++nseg) {
+    for (size_t nseg = 1; nseg < segments.size(); ++nseg) {
         // skip for dendiags
         if (segments[nseg].m_Rows.size() != seg0.m_Rows.size()) {
             return false;
         }
 
-        for (int nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
+        for (size_t nrow = 0; nrow < seg0.m_Rows.size(); ++nrow) {
             // skip for dendiags
             if (seg0.m_Rows[nrow].m_Id != segments[nseg].m_Rows[nrow].m_Id) {
                 return false;
@@ -734,20 +735,20 @@ bool CSeq_align_Mapper::x_IsValidAlign(TSegments segments)
 
 
 void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
-                                     int row_idx,
+                                     size_t row_idx,
                                      CSeq_loc_Conversion& cvt)
 {
     // start and stop on the original sequence
-    int start = sseg.m_Rows[row_idx].m_Start;
-    int stop = start + sseg.m_Len;
+    TSeqPos start = sseg.m_Rows[row_idx].m_Start;
+    TSeqPos stop = start + sseg.m_Len;
     if ( start >= 0
         &&  cvt.ConvertInterval(start, stop, sseg.m_Rows[row_idx].m_Strand) ) {
         // At least part of the interval was converted. Calculate
         // trimming coords, trim each row.
-        int dl = cvt.m_Src_from <= start ? 0 : cvt.m_Src_from - start;
-        int dr = cvt.m_Src_to >= stop ? 0 : cvt.m_Src_to - stop;
+        TSeqPos dl = cvt.m_Src_from <= start ? 0 : cvt.m_Src_from - start;
+        TSeqPos dr = cvt.m_Src_to >= stop ? 0 : cvt.m_Src_to - stop;
         SAlignment_Segment dseg(sseg.m_Len - dl + dr);
-        for (int i = 0; i < sseg.m_Rows.size(); ++i) {
+        for (size_t i = 0; i < sseg.m_Rows.size(); ++i) {
             if (i == row_idx) {
                 // translate id and coords
                 dseg.AddRow(cvt.GetDstId(),
@@ -758,7 +759,7 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
                     .SetMapped();
             }
             else {
-                int dst_start = sseg.m_Rows[i].m_Start < 0 ? -1
+                TSeqPos dst_start = sseg.m_Rows[i].m_Start < 0 ? kInvalidSeqPos
                     : sseg.m_Rows[i].m_Start + dl;
                 dseg.AddRow(*sseg.m_Rows[i].m_Id.GetSeqId(),
                     dst_start,
@@ -774,7 +775,7 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
         SAlignment_Segment dseg = sseg;
         dseg.m_Rows[row_idx].m_Id =
             CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(cvt.GetDstId());
-        dseg.m_Rows[row_idx].m_Start = -1;
+        dseg.m_Rows[row_idx].m_Start = kInvalidSeqPos;
         sseg.m_Mappings.push_back(dseg);
     }
 }
@@ -796,7 +797,7 @@ bool CSeq_align_Mapper::x_ConvertSegments(TSegments& segs,
         }
         // Check the original segment - some IDs may be mapped more than once.
         // This should not happen if the ID is present in mappings.
-        for (int row = 0; row < ss->m_Rows.size(); ++row) {
+        for (size_t row = 0; row < ss->m_Rows.size(); ++row) {
             if (ss->m_Rows[row].m_Id == cvt.m_Src_id_Handle) {
                 x_MapSegment(*ss, row, cvt);
                 res = true;
@@ -1359,6 +1360,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.22  2004/02/23 15:23:16  grichenk
 * Removed unused members
 *

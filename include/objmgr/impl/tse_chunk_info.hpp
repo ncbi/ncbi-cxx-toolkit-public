@@ -50,6 +50,7 @@ BEGIN_SCOPE(objects)
 class CTSE_Info;
 class CSeq_entry_Info;
 class CSeq_annot_Info;
+class CBioseq_Base_Info;
 
 class NCBI_XOBJMGR_EXPORT CTSE_Chunk_Info : public CObject
 {
@@ -92,7 +93,7 @@ public:
     void x_TSEAttach(CTSE_Info& tse_info);
 
     void x_AddAnnotPlace(EPlaceType place_type, TPlaceId place_id);
-    CSeq_entry_Info& x_GetSeq_entry(const TPlace& place);
+    CBioseq_Base_Info& x_GetBase(const TPlace& place);
 
     void x_AddAnnotType(const CAnnotName& annot_name,
                         const SAnnotTypeSelector& annot_type,
@@ -102,15 +103,15 @@ public:
                         const SAnnotTypeSelector& annot_type,
                         const TLocationSet& location);
 
-    void x_LoadAnnot(const TPlace& place, CSeq_annot_Info& annot_info);
+    void x_LoadAnnot(const TPlace& place, CRef<CSeq_annot_Info> annot);
 
 protected:
     virtual void x_Load(void);
 
-    void x_UpdateAnnotIndex(void);
-    void x_UpdateAnnotIndexThis(void);
-    void x_UnmapAnnotObjects(void);
-    void x_DropAnnotObjects(void);
+    void x_UpdateAnnotIndex(CTSE_Info& tse);
+    void x_UpdateAnnotIndexContents(CTSE_Info& tse);
+    void x_UnmapAnnotObjects(CTSE_Info& tse);
+    void x_DropAnnotObjects(CTSE_Info& tse);
 
 private:
     friend class CTSE_Info;
@@ -161,6 +162,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.4  2004/01/22 20:10:39  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

@@ -34,7 +34,7 @@
 */
 
 
-#include <objmgr/seq_map.hpp>
+#include <objmgr/seq_map_ci.hpp>
 #include <objects/seq/Seq_data.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -120,7 +120,7 @@ private:
     ENa_strand              m_Strand;
     TCoding                 m_Coding;
     // Current CSeqMap segment
-    CSeqMap::const_iterator m_Seg;
+    CSeqMap_CI              m_Seg;
     // Current cache pointer
     TCache_I                m_Cache;
     // Current cache
@@ -317,6 +317,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.16  2003/12/02 16:42:50  grichenk
 * Fixed GetSeqData to return empty string if start > stop.
 * Added GetSeqData(const_iterator, const_iterator, string).

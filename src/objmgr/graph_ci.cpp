@@ -80,23 +80,22 @@ void CMappedGraph::MakeMappedGraph(void) const
 
 CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve,
-                     const CSeq_entry* entry)
-    : CAnnotTypes_CI(scope, loc,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-                     overlap_type, resolve, entry)
+                     EOverlapType overlap_type,
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     scope, loc,
+                     overlap_type, resolve)
 {
 }
 
 
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-                     SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve,
-                     const CSeq_entry* entry)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Graph),
-                     overlap_type, resolve, entry)
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
+                     TSeqPos start, TSeqPos stop,
+                     EOverlapType overlap_type,
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph,
+                     bioseq, start, stop,
+                     overlap_type, resolve)
 {
 }
 
@@ -112,6 +111,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.22  2004/01/28 20:54:36  vasilche
 * Fixed mapping of annotations.
 *

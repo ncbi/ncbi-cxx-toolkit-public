@@ -100,7 +100,7 @@ CGBDataLoader::STSEinfo::~STSEinfo()
 #define DUMP(stse) CSeqref::printTSE((stse).key) << \
     " stse=" << &(stse) << \
     " tsei=" << (stse).tseinfop << \
-    " tse=" << ((stse).tseinfop? &((stse).tseinfop->GetTSE()): (void*)0)
+    " tse=" << ((stse).tseinfop? (stse).tseinfop->GetSeq_entryCore().GetPointer(): 0)
 
 
 // Create driver specified in "env"
@@ -486,9 +486,8 @@ CGBDataLoader::ResolveConflict(const CSeq_id_Handle& handle,
         g.Lock(&*tse);
 
         if(tse->mode.test(STSEinfo::eDead) && !ti->IsDead()) {
-            GetDataSource()->
-                x_UpdateTSEStatus(const_cast<CSeq_entry&>(ti->GetSeq_entry()),
-                                  true);
+            GetDataSource()->x_UpdateTSEStatus(const_cast<CTSE_Info&>(*ti),
+                                               true);
         }
         if(tse->m_SeqIds.find(handle)!=tse->m_SeqIds.end()) {
             // listed for given TSE
@@ -1161,6 +1160,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.105  2004/03/16 15:47:29  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.104  2004/02/17 21:17:53  vasilche
 * Fixed 'non-const reference to temporary' warning.
 *

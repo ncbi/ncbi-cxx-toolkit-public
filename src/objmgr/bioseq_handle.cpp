@@ -29,9 +29,11 @@
 *
 */
 
-//#include <serial/typeinfo.hpp>
-
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+
+#include <objmgr/impl/scope_impl.hpp>
 
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seqmatch_info.hpp>
@@ -57,11 +59,6 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CBioseq_Handle::CBioseq_Handle(void)
-{
-}
-
-
 CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
                                CBioseq_ScopeInfo* bioseq_info)
     : m_Seq_id(id),
@@ -70,19 +67,9 @@ CBioseq_Handle::CBioseq_Handle(const CSeq_id_Handle& id,
 }
 
 
-CBioseq_Handle::~CBioseq_Handle(void)
+const CBioseq_Info& CBioseq_Handle::x_GetInfo(void) const
 {
-}
-
-
-CDataSource& CBioseq_Handle::x_GetDataSource(void) const
-{
-    // m_TSE_Info and its m_DataSource should never be null
-    if ( !m_Bioseq_Info ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Can not resolve data source for bioseq handle.");
-    }
-    return m_Bioseq_Info->GetDataSource();
+    return x_GetScopeInfo().GetBioseq_Info();
 }
 
 
@@ -92,53 +79,51 @@ CConstRef<CSeq_id> CBioseq_Handle::GetSeqId(void) const
 }
 
 
+CConstRef<CBioseq> CBioseq_Handle::GetCompleteBioseq(void) const
+{
+    return x_GetInfo().GetCompleteBioseq();
+}
+
+
 const CBioseq& CBioseq_Handle::GetBioseq(void) const
 {
-    return x_GetDataSource().GetBioseq(x_GetBioseq_Info());
+    ERR_POST_ONCE(Warning<<
+                  "CBioseq_Handle::GetBioseq() is deprecated, "
+                  "use GetCompleteBioseq() or GetBioseqCore().");
+    return *GetCompleteBioseq();
 }
 
 
 const CSeq_entry& CBioseq_Handle::GetTopLevelSeqEntry(void) const
 {
-    // Can not use m_TSE->m_TSE since the handle may be unresolved yet
-    CConstRef<CTSE_Info> tse_info(&x_GetBioseq_Info().GetTSE_Info());
-    return x_GetDataSource().GetTSE(*tse_info);
-}
-
-
-CSeq_entry_Handle CBioseq_Handle::GetTopLevelSeqEntryHandle(void) const
-{
-    return CSeq_entry_Handle(GetScope(), x_GetBioseq_Info().GetTSE_Info());
-}
-
-
-CSeq_entry_Handle CBioseq_Handle::GetSeq_entry_Handle(void) const
-{
-    return CSeq_entry_Handle(GetScope(), x_GetBioseq_Info().GetSeq_entry_Info());
+    ERR_POST_ONCE(Warning<<
+                  "CBioseq_Handle::GetTopLevelSeqEntry() is deprecated, "
+                  "use GetTopLevelEntry().");
+    return *GetTopLevelEntry().GetCompleteSeq_entry();
 }
 
 
 CBioseq_Handle::TBioseqCore CBioseq_Handle::GetBioseqCore(void) const
 {
-    return x_GetDataSource().GetBioseqCore(x_GetBioseq_Info());
+    return x_GetInfo().GetBioseqCore();
 }
 
 
 TSeqPos CBioseq_Handle::GetBioseqLength(void) const
 {
-    return x_GetBioseq_Info().GetBioseqLength();
+    return x_GetInfo().GetBioseqLength();
 }
 
 
 CSeq_inst::TMol CBioseq_Handle::GetBioseqMolType(void) const
 {
-    return x_GetBioseq_Info().GetBioseqMolType();
+    return x_GetInfo().GetInst_Mol();
 }
 
 
 const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 {
-    return x_GetBioseq_Info().GetSeqMap();
+    return x_GetInfo().GetSeqMap();
 }
 
 
@@ -277,39 +262,66 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 }
 
 
-const CTSE_Info& CBioseq_Handle::x_GetTSE_Info(void) const
+CSeq_entry_Handle CBioseq_Handle::GetTopLevelEntry(void) const
 {
-    _ASSERT(*this);
-    return x_GetBioseq_Info().GetTSE_Info();
+    return CSeq_entry_Handle(GetScope(),
+                             x_GetInfo().GetTSE_Info());
 }
 
 
-CSeq_entry& CBioseq_Handle::x_GetTSE_NC(void)
+CSeq_entry_Handle CBioseq_Handle::GetParentEntry(void) const
 {
-    _ASSERT(*this);
-    return const_cast<CSeq_entry&>(x_GetBioseq_Info().GetSeq_entry());
+    return CSeq_entry_Handle(m_Scope,
+                             x_GetInfo().GetParentSeq_entry_Info());
 }
 
 
-void CBioseq_Handle::AddAnnot(CSeq_annot& annot)
+CSeq_entry_Handle CBioseq_Handle::GetSeq_entry_Handle(void) const
 {
-    _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().AttachAnnot(x_GetTSE_NC(), annot);
+    return GetParentEntry();
 }
 
 
-void CBioseq_Handle::RemoveAnnot(CSeq_annot& annot)
+CBioseq_EditHandle::CBioseq_EditHandle(const CSeq_id_Handle& id,
+                                       CBioseq_ScopeInfo* bioseq_info)
+    : CBioseq_Handle(id, bioseq_info)
 {
-    _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().RemoveAnnot(x_GetTSE_NC(), annot);
 }
 
 
-void CBioseq_Handle::ReplaceAnnot(CSeq_annot& old_annot,
-                                  CSeq_annot& new_annot)
+CSeq_entry_EditHandle CBioseq_EditHandle::GetParentEntry(void) const
 {
-    _ASSERT(bool(m_Bioseq_Info));
-    x_GetDataSource().ReplaceAnnot(x_GetTSE_NC(), old_annot, new_annot);
+    return CSeq_entry_EditHandle(m_Scope,
+                                 x_GetInfo().GetParentSeq_entry_Info());
+}
+
+
+CSeq_annot_EditHandle CBioseq_EditHandle::AddAnnot(CSeq_annot& annot)
+{
+    CSeq_entry_EditHandle entry = GetParentEntry();
+    return m_Scope->AttachAnnot(entry, annot);
+}
+
+
+void CBioseq_EditHandle::RemoveAnnot(CSeq_annot_EditHandle& annot)
+{
+    if ( annot.GetParentEntry() != GetParentEntry() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CBioseq_EditHandle::RemoveAnnot: annot is not owned");
+    }
+    m_Scope->RemoveAnnot(annot);
+}
+
+
+CSeq_annot_EditHandle
+CBioseq_EditHandle::ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
+                                 CSeq_annot& new_annot)
+{
+    if ( old_annot.GetParentEntry() != GetParentEntry() ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CBioseq_EditHandle::ReplaceAnnot: annot is not owned");
+    }
+    return m_Scope->ReplaceAnnot(old_annot, new_annot);
 }
 
 
@@ -415,6 +427,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.53  2004/02/06 16:07:27  grichenk
 * Added CBioseq_Handle::GetSeq_entry_Handle()
 * Fixed MapLocation()

@@ -33,6 +33,8 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -55,13 +57,23 @@ CBioseq_CI::~CBioseq_CI(void)
 }
 
 
-CBioseq_CI::CBioseq_CI(CScope& scope,
-                       const CSeq_entry& entry,
+CBioseq_CI::CBioseq_CI(const CSeq_entry_Handle& entry,
+                       CSeq_inst::EMol filter,
+                       EBioseqLevelFlag level)
+    : m_Scope(&entry.GetScope())
+{
+    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter, level);
+    m_Current = m_Handles.begin();
+}
+
+
+CBioseq_CI::CBioseq_CI(CScope& scope, const CSeq_entry& entry,
                        CSeq_inst::EMol filter,
                        EBioseqLevelFlag level)
     : m_Scope(&scope)
 {
-    m_Scope->x_PopulateBioseq_HandleSet(entry, m_Handles, filter, level);
+    m_Scope->x_PopulateBioseq_HandleSet(m_Scope->GetSeq_entryHandle(entry),
+                                        m_Handles, filter, level);
     m_Current = m_Handles.begin();
 }
 
@@ -89,6 +101,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.1  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

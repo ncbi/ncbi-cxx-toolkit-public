@@ -319,11 +319,12 @@ protected:
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#include <objmgr/seq_map_ci.hpp>
-
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.43  2003/11/12 16:53:16  grichenk
 * Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
 *

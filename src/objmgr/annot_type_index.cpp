@@ -33,8 +33,10 @@
 #include <objmgr/impl/annot_type_index.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/annot_object_index.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -167,6 +169,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.1  2004/02/04 18:03:21  grichenk
 * Initial revision
 *

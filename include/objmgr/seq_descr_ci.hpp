@@ -51,13 +51,11 @@ public:
     CSeq_descr_CI(void);
     // Start searching from a bioseq, limit number of seq-entries
     // to "search_depth" (0 = unlimited).
-    CSeq_descr_CI(const CBioseq_Handle& handle,
-                  CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
+    explicit CSeq_descr_CI(const CBioseq_Handle& handle,
                   size_t search_depth = 0);
     // Start searching from a seq-entry, limit number of seq-entries
     // to "search_depth" (0 = unlimited).
-    CSeq_descr_CI(const CSeq_entry_Handle& entry,
-                  CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
+    explicit CSeq_descr_CI(const CSeq_entry_Handle& entry,
                   size_t search_depth = 0);
     CSeq_descr_CI(const CSeq_descr_CI& iter);
     ~CSeq_descr_CI(void);
@@ -78,47 +76,8 @@ private:
 
     CSeq_entry_Handle     m_NextEntry;
     CSeq_entry_Handle     m_CurrentEntry;
-    CSeqdesc::E_Choice    m_DescrType;
     size_t                m_MaxCount;
 };
-
-
-inline
-CSeq_descr_CI& CSeq_descr_CI::operator++(void)
-{
-    x_Next();
-    return *this;
-}
-
-
-inline
-CSeq_descr_CI::operator bool (void) const
-{
-    return m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr();
-}
-
-
-inline
-const CSeq_descr& CSeq_descr_CI::operator* (void) const
-{
-    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
-    return m_CurrentEntry.GetDescr(m_DescrType);
-}
-
-
-inline
-const CSeq_descr* CSeq_descr_CI::operator-> (void) const
-{
-    _ASSERT(m_CurrentEntry  &&  m_CurrentEntry.IsSetDescr());
-    return &m_CurrentEntry.GetDescr(m_DescrType);
-}
-
-
-inline
-CSeq_entry_Handle CSeq_descr_CI::GetSeq_entry_Handle(void) const
-{
-    return m_CurrentEntry;
-}
 
 
 END_SCOPE(objects)
@@ -127,6 +86,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.10  2004/02/09 19:18:49  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

@@ -35,15 +35,11 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objects/seqloc/Na_strand.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/seq/Seq_inst.hpp>
+#include <objects/seqset/Bioseq_set.hpp> // for EClass
+#include <objects/seq/Seq_inst.hpp> // for EMol
 
 #include <objmgr/seq_id_handle.hpp>
-#include <objmgr/objmgr_exception.hpp>
-#include <objmgr/impl/mutex_pool.hpp>
-#include <objmgr/impl/scope_info.hpp>
-#include <objmgr/impl/bioseq_info.hpp>
-#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -63,6 +59,13 @@ class CSynonymsSet;
 class CBioseq_ScopeInfo;
 class CSeq_id_ScopeInfo;
 
+class CBioseq_Handle;
+class CSeq_annot_Handle;
+class CSeq_entry_Handle;
+class CBioseq_EditHandle;
+class CSeq_annot_EditHandle;
+class CSeq_entry_EditHandle;
+
 // Bioseq handle -- must be a copy-safe const type.
 class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 {
@@ -70,11 +73,11 @@ public:
     // Destructor
     CBioseq_Handle(void);
     CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
-    ~CBioseq_Handle(void);
 
-    // Bioseq core -- using partially populated CBioseq
-    typedef CConstRef<CBioseq> TBioseqCore;
+    CScope& GetScope(void) const;
 
+    CSeq_entry_Handle GetParentEntry(void) const;
+    CSeq_entry_Handle GetSeq_entry_Handle(void) const;
 
     // Comparison
     bool operator== (const CBioseq_Handle& h) const;
@@ -85,19 +88,25 @@ public:
     operator bool(void)  const;
     bool operator!(void) const;
 
-    // Get the complete bioseq (as loaded by now)
+    // Bioseq core -- using partially populated CBioseq
+    typedef CConstRef<CBioseq> TBioseqCore;
+    // Get bioseq core structure
+    TBioseqCore GetBioseqCore(void) const;
+    // Get the complete bioseq
+    CConstRef<CBioseq> GetCompleteBioseq(void) const;
+
+    // Get top level seq-entry for a bioseq
+    CSeq_entry_Handle GetTopLevelEntry(void) const;
+
+    // Deprecated interface.
     const CBioseq& GetBioseq(void) const;
+    const CSeq_entry& GetTopLevelSeqEntry(void) const;
 
     CConstRef<CSeq_id> GetSeqId(void) const;
 
     const CSeq_id_Handle& GetSeq_id_Handle(void) const;
 
     bool IsSynonym(const CSeq_id& id) const;
-
-    // Get top level seq-entry for a bioseq
-    const CSeq_entry& GetTopLevelSeqEntry(void) const;
-    CSeq_entry_Handle GetTopLevelSeqEntryHandle(void) const;
-    CSeq_entry_Handle GetSeq_entry_Handle(void) const;
 
     // Go up to a certain complexity level (or the nearest level of the same
     // priority if the required class is not found):
@@ -124,9 +133,6 @@ public:
     // 0       other (255)
     const CSeq_entry& GetComplexityLevel(CBioseq_set::EClass cls) const;
 
-    // Get bioseq core structure
-    TBioseqCore GetBioseqCore(void) const;
-    
     // Get some values from core:
     TSeqPos GetBioseqLength(void) const;
     CSeq_inst::TMol GetBioseqMolType(void) const;
@@ -173,30 +179,17 @@ public:
     CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
                                            ESequenceViewMode mode) const;
 
-    CScope& GetScope(void) const;
-
-    // Modification functions
-    // Add/remove/replace annotations:
-    void AddAnnot(CSeq_annot& annot);
-    void RemoveAnnot(CSeq_annot& annot);
-    void ReplaceAnnot(CSeq_annot& old_annot, CSeq_annot& new_annot);
-
     CRef<CSeq_loc> MapLocation(const CSeq_loc& loc) const;
 
-private:
-    // Get data source
-    CDataSource& x_GetDataSource(void) const;
-
-    const CBioseq_ScopeInfo& x_GetBioseq_ScopeInfo(void) const;
-    const CBioseq_Info& x_GetBioseq_Info(void) const;
+protected:
+    const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
+    const CBioseq_Info& x_GetInfo(void) const;
 
     CConstRef<CSynonymsSet> x_GetSynonyms(void) const;
 
-    const CTSE_Info& x_GetTSE_Info(void) const;
-    CSeq_entry& x_GetTSE_NC(void);
-
-    CSeq_id_Handle           m_Seq_id;
-    CRef<CBioseq_ScopeInfo>  m_Bioseq_Info;
+    CHeapScope          m_Scope;
+    CSeq_id_Handle      m_Seq_id;
+    CConstRef<CObject>  m_Bioseq_Info;
 
     friend class CSeqVector;
     friend class CHandleRangeMap;
@@ -204,6 +197,40 @@ private:
     friend class CScope_Impl;
     friend class CAnnotTypes_CI;
 };
+
+
+class NCBI_XOBJMGR_EXPORT CBioseq_EditHandle : public CBioseq_Handle
+{
+public:
+    CBioseq_EditHandle(void);
+    CBioseq_EditHandle(const CSeq_id_Handle& id,
+                       CBioseq_ScopeInfo* bioseq_info);
+    
+    CSeq_entry_EditHandle GetParentEntry(void) const;
+
+    // Modification functions
+    // Add/remove/replace annotations:
+    CSeq_annot_EditHandle AddAnnot(CSeq_annot& annot);
+    void RemoveAnnot(CSeq_annot_EditHandle& annot);
+    CSeq_annot_EditHandle ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
+                                       CSeq_annot& new_annot);
+
+protected:
+    friend class CScope_Impl;
+
+    CBioseq_Info& x_GetInfo(void) const;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CBioseq_Handle inline methods
+/////////////////////////////////////////////////////////////////////////////
+
+
+inline
+CBioseq_Handle::CBioseq_Handle(void)
+{
+}
 
 
 inline
@@ -216,7 +243,6 @@ const CSeq_id_Handle& CBioseq_Handle::GetSeq_id_Handle(void) const
 inline
 CBioseq_Handle::operator bool(void)  const
 {
-    _ASSERT(!m_Bioseq_Info || m_Bioseq_Info->HasBioseq());
     return m_Bioseq_Info;
 }
 
@@ -224,46 +250,39 @@ CBioseq_Handle::operator bool(void)  const
 inline
 bool CBioseq_Handle::operator!(void) const
 {
-    _ASSERT(!m_Bioseq_Info || m_Bioseq_Info->HasBioseq());
     return !m_Bioseq_Info;
 }
 
 
 inline
-const CBioseq_ScopeInfo& CBioseq_Handle::x_GetBioseq_ScopeInfo(void) const
+const CBioseq_ScopeInfo& CBioseq_Handle::x_GetScopeInfo(void) const
 {
-    _ASSERT(m_Bioseq_Info);
-    m_Bioseq_Info->CheckScope();
-    return *m_Bioseq_Info;
+    return reinterpret_cast<const CBioseq_ScopeInfo&>(*m_Bioseq_Info);
 }
 
 
 inline
-const CBioseq_Info& CBioseq_Handle::x_GetBioseq_Info(void) const
+CBioseq_Info& CBioseq_EditHandle::x_GetInfo(void) const
 {
-    _ASSERT(m_Bioseq_Info);
-    m_Bioseq_Info->CheckScope();
-    return m_Bioseq_Info->GetBioseq_Info();
+    return const_cast<CBioseq_Info&>(CBioseq_Handle::x_GetInfo());
 }
 
 
 inline
 CScope& CBioseq_Handle::GetScope(void) const 
 {
-    _ASSERT(m_Bioseq_Info);
-    return m_Bioseq_Info->GetScope();
+    return m_Scope;
 }
 
 
 inline
 bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
 {
-    if ( &GetScope() != &h.GetScope() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Unable to compare handles from different scopes");
+    if ( m_Scope != m_Scope ) {
+        return false;
     }
     if ( *this && h )
-        return &x_GetBioseq_Info() == &h.x_GetBioseq_Info();
+        return &x_GetInfo() == &h.x_GetInfo();
     // Compare by id key
     return GetSeq_id_Handle() == h.GetSeq_id_Handle();
 }
@@ -279,12 +298,11 @@ bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 inline
 bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
 {
-    if ( &GetScope() != &h.GetScope() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
-                   "Unable to compare handles from different scopes");
+    if ( m_Scope != h.m_Scope ) {
+        return m_Scope < h.m_Scope;
     }
     if ( *this && h )
-        return &x_GetBioseq_Info() < &h.x_GetBioseq_Info();
+        return &x_GetInfo() < &h.x_GetInfo();
     return GetSeq_id_Handle() < h.GetSeq_id_Handle();
 }
 
@@ -295,6 +313,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.48  2004/02/06 16:07:26  grichenk
 * Added CBioseq_Handle::GetSeq_entry_Handle()
 * Fixed MapLocation()

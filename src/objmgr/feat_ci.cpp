@@ -31,7 +31,11 @@
 */
 
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/impl/annot_object.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
@@ -46,19 +50,81 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+CFeat_CI::CFeat_CI(void)
+{
+}
+
+
+CFeat_CI::CFeat_CI(const CFeat_CI& iter)
+    : CAnnotTypes_CI(iter)
+{
+    Update();
+}
+
+
+CFeat_CI::~CFeat_CI(void)
+{
+}
+
+
+CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
+{
+    CAnnotTypes_CI::operator=(iter);
+    Update();
+    return *this;
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   TFeatType feat_type,
+                   EOverlapType overlap_type,
+                   EResolveMethod resolve,
+                   EFeat_Location loc_type)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector(feat_type)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve))
+{
+    Update();
+}
+
+
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    TFeatType feat_type,
                    EOverlapType overlap_type,
                    EResolveMethod resolve,
                    EFeat_Location loc_type,
-                   const CSeq_entry* entry)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_type)
+                   const CSeq_entry_Handle& limitEntry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector(feat_type)
                      .SetByProduct(loc_type == e_Product)
                      .SetOverlapType(overlap_type)
                      .SetResolveMethod(resolve)
-                     .SetLimitSeqEntry(entry))
+                     .SetLimitSeqEntry(limitEntry))
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   TFeatType feat_type,
+                   EOverlapType overlap_type,
+                   EResolveMethod resolve,
+                   EFeat_Location loc_type,
+                   const CSeq_entry* limitEntry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     SAnnotSelector(feat_type)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve)
+                     .SetLimitSeqEntry(limitEntry))
 {
     Update();
 }
@@ -69,14 +135,13 @@ CFeat_CI::CFeat_CI(CScope& scope,
                    TFeatType feat_type,
                    EOverlapType overlap_type,
                    EResolveMethod resolve,
-                   EFeat_Location loc_type,
-                   const CSeq_entry* entry)
-    : CAnnotTypes_CI(scope, loc,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_type)
+                   EFeat_Location loc_type)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope, loc,
+                     SAnnotSelector(feat_type)
                      .SetByProduct(loc_type == e_Product)
                      .SetOverlapType(overlap_type)
-                     .SetResolveMethod(resolve)
-                     .SetLimitSeqEntry(entry))
+                     .SetResolveMethod(resolve))
 {
     Update();
 }
@@ -84,8 +149,10 @@ CFeat_CI::CFeat_CI(CScope& scope,
 
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc)
-    : CAnnotTypes_CI(scope, loc,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope, loc,
+                     eOverlap_Intervals,
+                     eResolve_TSE)
 {
     Update();
 }
@@ -93,8 +160,10 @@ CFeat_CI::CFeat_CI(CScope& scope,
 
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     eOverlap_Intervals,
+                     eResolve_TSE)
 {
     Update();
 }
@@ -102,9 +171,10 @@ CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
 
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
-                   SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, loc,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope, loc,
+                     sel)
 {
     Update();
 }
@@ -112,43 +182,82 @@ CFeat_CI::CFeat_CI(CScope& scope,
 
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
-                   SAnnotSelector sel)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     bioseq, start, stop,
+                     sel)
 {
     Update();
 }
 
 
 CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot)
-    : CAnnotTypes_CI(annot,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     annot)
 {
     Update();
 }
 
 
 CFeat_CI::CFeat_CI(const CSeq_annot_Handle& annot,
-                   SAnnotSelector sel)
-    : CAnnotTypes_CI(annot,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     annot,
+                     sel)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CSeq_entry_Handle& entry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     entry)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(const CSeq_entry_Handle& entry,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     entry,
+                     sel)
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_annotHandle(annot))
+{
+    Update();
+}
+
+
+CFeat_CI::CFeat_CI(CScope& scope, const CSeq_annot& annot,
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_annotHandle(annot),
+                     sel)
 {
     Update();
 }
 
 
 CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry)
-    : CAnnotTypes_CI(scope, entry,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_entryHandle(entry))
 {
     Update();
 }
 
 
 CFeat_CI::CFeat_CI(CScope& scope, const CSeq_entry& entry,
-                   SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, entry,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Ftable))
+                   const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Ftable,
+                     scope.GetSeq_entryHandle(entry),
+                     sel)
 {
     Update();
 }
@@ -168,6 +277,7 @@ CMappedFeat::CMappedFeat(const CMappedFeat& feat)
 CMappedFeat& CMappedFeat::operator=(const CMappedFeat& feat)
 {
     if ( this != &feat ) {
+        m_Scope = feat.m_Scope;
         m_AnnotObject_Ref = feat.m_AnnotObject_Ref;
         m_OriginalSeq_feat = feat.m_OriginalSeq_feat;
         m_MappedSeq_feat = feat.m_MappedSeq_feat;
@@ -182,8 +292,24 @@ CMappedFeat::~CMappedFeat(void)
 }
 
 
+CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
+{
+    return CSeq_annot_Handle(m_Scope, m_AnnotObject_Ref.GetSeq_annot_Info());
+}
+
+
+const CSeq_annot& CMappedFeat::GetSeq_annot(void) const
+{
+    ERR_POST_ONCE(Warning<<
+                  "CMappedFeat::GetSeq_annot() is deprecated, "
+                  "use GetAnnot().");
+    return *m_AnnotObject_Ref.GetSeq_annot_Info().GetCompleteSeq_annot();
+}
+
+
 void CMappedFeat::Reset(void)
 {
+    m_Scope.Reset();
     m_AnnotObject_Ref = CAnnotObject_Ref();
     m_OriginalSeq_feat.Reset();
     m_MappedSeq_feat.Reset();
@@ -191,8 +317,9 @@ void CMappedFeat::Reset(void)
 }
 
 
-CMappedFeat& CMappedFeat::Set(const CAnnotObject_Ref& annot)
+CMappedFeat& CMappedFeat::Set(CScope& scope, const CAnnotObject_Ref& annot)
 {
+    m_Scope.Set(&scope);
     _ASSERT(annot.IsFeat());
     m_AnnotObject_Ref = annot;
     m_OriginalSeq_feat.Reset();
@@ -359,6 +486,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.27  2004/02/11 22:19:24  grichenk
 * Fixed annot type initialization in iterators
 *

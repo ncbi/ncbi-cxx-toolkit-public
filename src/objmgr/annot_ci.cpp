@@ -31,7 +31,8 @@
 */
 
 #include <objmgr/annot_ci.hpp>
-
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/impl/annot_object.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -39,16 +40,79 @@ BEGIN_SCOPE(objects)
 
 
 
+CAnnot_CI::CAnnot_CI(void)
+{
+    SetNoMapping(true);
+    SetSortOrder(eSortOrder_None);
+    m_Iterator = m_SeqAnnotSet.end();
+}
+
+
+CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
+    : CAnnotTypes_CI(iter)
+{
+    m_SeqAnnotSet = iter.m_SeqAnnotSet;
+    if (iter) {
+        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
+    }
+    else {
+        m_Iterator = m_SeqAnnotSet.end();
+    }
+}
+
+
+CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     scope, loc,
+                     SAnnotSelector()
+                     .SetNoMapping(true)
+                     .SetSortOrder(eSortOrder_None))
+{
+    x_Collect();
+}
+
+
+
+CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
+                     TSeqPos start, TSeqPos stop,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     bioseq, start, stop,
+                     SAnnotSelector()
+                     .SetNoMapping(true)
+                     .SetSortOrder(eSortOrder_None))
+{
+    x_Collect();
+}
+
+
+CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
+{
+    CAnnotTypes_CI::operator=(iter);
+    m_SeqAnnotSet.clear();
+    m_SeqAnnotSet = iter.m_SeqAnnotSet;
+    if (iter) {
+        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
+    }
+    else {
+        m_Iterator = m_SeqAnnotSet.end();
+    }
+    return *this;
+}
+
+
 CAnnot_CI::CAnnot_CI(CScope& scope,
                      const CSeq_loc& loc,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve,
-                     const CSeq_entry* entry)
-    : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_not_set)
-          .SetNoMapping(true)
-          .SetSortOrder(eSortOrder_None),
-          overlap_type, resolve, entry)
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     scope, loc,
+                     SAnnotSelector()
+                     .SetNoMapping(true)
+                     .SetSortOrder(eSortOrder_None)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve))
 {
     x_Collect();
 }
@@ -56,12 +120,14 @@ CAnnot_CI::CAnnot_CI(CScope& scope,
 
 CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve, const CSeq_entry* entry)
-    : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_not_set)
-          .SetNoMapping(true)
-          .SetSortOrder(eSortOrder_None),
-          overlap_type, resolve, entry)
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+                     bioseq, start, stop,
+                     SAnnotSelector()
+                     .SetNoMapping(true)
+                     .SetSortOrder(eSortOrder_None)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve))
 {
     x_Collect();
 }
@@ -80,8 +146,8 @@ void CAnnot_CI::x_Collect(void)
             Next();
             continue;
         }
-        CSeq_annot_Handle h;
-        h.x_Set(GetScope(), Get().GetAnnotObject_Info().GetSeq_annot_Info());
+        CSeq_annot_Handle h(GetScope(),
+                            Get().GetAnnotObject_Info().GetSeq_annot_Info());
         m_SeqAnnotSet.insert(h);
         Next();
     }
@@ -95,6 +161,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.28  2003/09/11 17:45:07  grichenk
 * Added adaptive-depth option to annot-iterators.
 *

@@ -56,6 +56,7 @@ class CSeq_entry_Info;
 class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
 class CTSE_Chunk_Info;
+class CTSE_Info_Object;
 
 class CDataSource;
 class CHandleRange;
@@ -80,7 +81,7 @@ struct NCBI_XOBJMGR_EXPORT SIdAnnotObjs
     typedef CRange<TSeqPos>                                  TRange;
     typedef CRangeMultimap<SAnnotObject_Index, TSeqPos>      TRangeMap;
     typedef vector<TRangeMap>                                TAnnotSet;
-    typedef vector<CRef<CSeq_annot_SNP_Info> >               TSNPSet;
+    typedef vector<CConstRef<CSeq_annot_SNP_Info> >          TSNPSet;
 
     TAnnotSet m_AnnotSet;
     TSNPSet   m_SNPSet;
@@ -92,16 +93,20 @@ private:
 
 class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
 {
+    typedef CSeq_entry_Info TParent;
 public:
     // 'ctors
-    CTSE_Info(CSeq_entry& tse, bool dead = false, const CObject* blob_id = 0);
+    explicit CTSE_Info(const CSeq_entry& tse,
+                       bool dead = false,
+                       const CObject* blob_id = 0);
+    explicit CTSE_Info(const CTSE_Info& info);
     virtual ~CTSE_Info(void);
 
     bool HaveDataSource(void) const;
     CDataSource& GetDataSource(void) const;
 
-    const CSeq_entry& GetTSE(void) const;
-    CSeq_entry& GetTSE(void);
+    CConstRef<CSeq_entry> GetCompleteTSE(void) const;
+    CConstRef<CSeq_entry> GetTSECore(void) const;
 
     const CTSE_Info& GetTSE_Info(void) const;
     CTSE_Info& GetTSE_Info(void);
@@ -121,7 +126,7 @@ public:
     void SetBlobId(const CObject* blob_id);
 
     // indexes types
-    typedef map<int, CSeq_entry_Info*>                       TBioseq_sets;
+    typedef map<int, CBioseq_set_Info*>                      TBioseq_sets;
     typedef map<CSeq_id_Handle, CBioseq_Info*>               TBioseqs;
 
     typedef SIdAnnotObjs::TRange                             TRange;
@@ -141,18 +146,17 @@ public:
     CConstRef<CBioseq_Info> FindBioseq(const CSeq_id_Handle& key) const;
 
     void UpdateAnnotIndex(void) const;
-    void UpdateAnnotIndex(const CSeq_entry_Info& entry_info) const;
-    void UpdateAnnotIndex(const CSeq_annot_Info& annot_info) const;
+    void UpdateAnnotIndex(const CTSE_Info_Object& object) const;
     void UpdateAnnotIndex(void);
-    void UpdateAnnotIndex(CSeq_entry_Info& entry_info);
-    void UpdateAnnotIndex(CSeq_annot_Info& annot_info);
+    void UpdateAnnotIndex(CTSE_Info_Object& object);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
-    void x_DSAttach(CDataSource* data_source);
-    void x_DSDetach(CDataSource* data_source);
-    void x_DSAttach(void);
-    void x_DSDetach(void);
+    void x_DSAttachContents(CDataSource& ds);
+    void x_DSDetachContents(CDataSource& ds);
+    
+    virtual void x_SetDirtyAnnotIndexNoParent(void);
+    virtual void x_ResetDirtyAnnotIndexNoParent(void);
 
     CRef<CTSE_Chunk_Info> GetNotLoadedChunk(void);
     void LoadAllChunks(void);
@@ -166,16 +170,21 @@ private:
     friend class CSeq_entry_Info;
     friend class CSeq_annot_Info;
     friend class CBioseq_Info;
+    friend class CBioseq_set_Info;
     friend class CTSE_Chunk_Info;
+    friend class CSeq_annot_SNP_Info;
     friend struct SAnnotSelector;
 
-    CSeq_entry_Info& GetBioseq_set(int id);
+    CBioseq_set_Info& GetBioseq_set(int id);
     CBioseq_Info& GetBioseq(int gi);
+    
+    void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
     void x_SetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
     void x_ResetBioseqId(const CSeq_id_Handle& key, CBioseq_Info* info);
-    void x_SetBioseq_setId(int key, CSeq_entry_Info* info);
-    void x_ResetBioseq_setId(int key, CSeq_entry_Info* info);
+    void x_SetBioseq_setId(int key, CBioseq_set_Info* info);
+    void x_ResetBioseq_setId(int key, CBioseq_set_Info* info);
 
     // index access methods
     TAnnotObjs& x_SetAnnotObjs(const CAnnotName& name);
@@ -195,10 +204,10 @@ private:
 
     void x_MapSNP_Table(const CAnnotName& name,
                         const CSeq_id_Handle& key,
-                        const CRef<CSeq_annot_SNP_Info>& snp_info);
+                        const CSeq_annot_SNP_Info& snp_info);
     void x_UnmapSNP_Table(const CAnnotName& name,
                           const CSeq_id_Handle& key,
-                          const CRef<CSeq_annot_SNP_Info>& snp_info);
+                          const CSeq_annot_SNP_Info& snp_info);
 
     void x_MapAnnotObject(TRangeMap& rangeMap,
                           const SAnnotObject_Key& key,
@@ -226,9 +235,6 @@ private:
                             const CAnnotName& name,
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(SAnnotObjects_Info& infos);
-
-    void x_DSAttachThis(void);
-    void x_DSDetachThis(void);
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
@@ -264,7 +270,6 @@ private:
     TChunks                m_Chunks;
 
     // Hide copy methods
-    CTSE_Info(const CTSE_Info&);
     CTSE_Info& operator= (const CTSE_Info&);
 
 };
@@ -288,6 +293,7 @@ bool CTSE_Info::HaveDataSource(void) const
 inline
 CDataSource& CTSE_Info::GetDataSource(void) const
 {
+    _ASSERT(m_DataSource);
     return *m_DataSource;
 }
 
@@ -303,20 +309,6 @@ inline
 CTSE_Info& CTSE_Info::GetTSE_Info(void)
 {
     return *this;
-}
-
-
-inline
-const CSeq_entry& CTSE_Info::GetTSE(void) const
-{
-    return GetSeq_entry();
-}
-
-
-inline
-CSeq_entry& CTSE_Info::GetTSE(void)
-{
-    return GetSeq_entry();
 }
 
 
@@ -361,6 +353,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.46  2004/02/19 17:17:00  vasilche
 * Formatting.
 *

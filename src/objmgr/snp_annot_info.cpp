@@ -31,6 +31,8 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/tse_info.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -495,6 +497,62 @@ CSeq_annot_SNP_Info::~CSeq_annot_SNP_Info(void)
 }
 
 
+const CSeq_annot_Info& CSeq_annot_SNP_Info::GetParentSeq_annot_Info(void) const
+{
+    return static_cast<const CSeq_annot_Info&>(GetBaseParent_Info());
+}
+
+
+CSeq_annot_Info& CSeq_annot_SNP_Info::GetParentSeq_annot_Info(void)
+{
+    return static_cast<CSeq_annot_Info&>(GetBaseParent_Info());
+}
+
+
+const CSeq_entry_Info& CSeq_annot_SNP_Info::GetParentSeq_entry_Info(void) const
+{
+    return GetParentSeq_annot_Info().GetParentSeq_entry_Info();
+}
+
+
+CSeq_entry_Info& CSeq_annot_SNP_Info::GetParentSeq_entry_Info(void)
+{
+    return GetParentSeq_annot_Info().GetParentSeq_entry_Info();
+}
+
+
+void CSeq_annot_SNP_Info::x_ParentAttach(CSeq_annot_Info& parent)
+{
+    x_BaseParentAttach(parent);
+}
+
+
+void CSeq_annot_SNP_Info::x_ParentDetach(CSeq_annot_Info& parent)
+{
+    x_BaseParentDetach(parent);
+}
+
+
+void CSeq_annot_SNP_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
+{
+    CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(GetGi());
+    tse.x_MapSNP_Table(GetParentSeq_annot_Info().GetName(), idh, *this);
+    TParent::x_UpdateAnnotIndexContents(tse);
+}
+
+
+void CSeq_annot_SNP_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
+{
+    CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(GetGi());
+    tse.x_UnmapSNP_Table(GetParentSeq_annot_Info().GetName(), idh, *this);
+}
+
+
+void CSeq_annot_SNP_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
+{
+}
+
+
 size_t CIndexedStrings::GetIndex(const string& s, size_t max_index)
 {
     TIndices::iterator it = m_Indices.lower_bound(s);
@@ -534,7 +592,7 @@ CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
     return m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
 }
 
-
+#if 0
 CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
 {
     CRef<CSeq_entry> entry(new CSeq_entry); // return value
@@ -542,7 +600,7 @@ CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
     entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
     return entry;
 }
-
+#endif
 
 void CSeq_annot_SNP_Info::x_SetGi(int gi)
 {
@@ -570,6 +628,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.11  2004/03/16 15:47:28  vasilche
+ * Added CBioseq_set_Handle and set of EditHandles
+ *
  * Revision 1.10  2004/02/06 16:13:20  vasilche
  * Added parsing "replace" as a synonym of "allele" in SNP qualifiers.
  * More compact format of SNP table in cache. SNP table version increased.

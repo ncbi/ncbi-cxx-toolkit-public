@@ -495,6 +495,69 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
 }
 
 
+template<class C>
+void Dump(CSplitCacheApp* app, const C& obj, ESerialDataFormat format,
+          const string& key, const string& suffix = kEmptyStr)
+{
+    string ext;
+    switch ( format ) {
+    case eSerial_AsnText:   ext = "asn"; break;
+    case eSerial_AsnBinary: ext = "asb"; break;
+    case eSerial_Xml:       ext = "xml"; break;
+    }
+    string file_name = app->GetFileName(key, suffix, ext);
+    WAIT_LINE4(app) << "Dumping to " << file_name << " ...";
+    AutoPtr<CObjectOStream> out(CObjectOStream::Open(file_name,
+                                                     format));
+    *out << obj;
+}
+
+
+enum EDataType
+{
+    eDataType_MainBlob = 0,
+    eDataType_SplitInfo = 1,
+    eDataType_Chunk = 2
+};
+
+
+template<class C>
+void DumpData(CSplitCacheApp* app, const C& obj, EDataType data_type,
+              const string& key, const string& suffix = kEmptyStr)
+{
+    string file_name = app->GetFileName(key, suffix, "bin");
+    WAIT_LINE4(app) << "Storing to " << file_name << " ...";
+    CSplitDataMaker data(app->GetParams(), data_type);
+    data << obj;
+    AutoPtr<CObjectOStream> out
+        (CObjectOStream::Open(file_name, eSerial_AsnBinary));
+    *out << data.GetData();
+}
+
+
+template<class C>
+void StoreToCache(CSplitCacheApp* app, const C& obj, EDataType data_type,
+                  const CSeqref& seqref, const string& suffix = kEmptyStr)
+{
+    string key = app->GetReader().GetBlobKey(seqref) + suffix;
+    WAIT_LINE4(app) << "Storing to cache " << key << " ...";
+    CNcbiOstrstream stream;
+    {{
+        CSplitDataMaker data(app->GetParams(), data_type);
+        data << obj;
+        AutoPtr<CObjectOStream> out
+            (CObjectOStream::Open(eSerial_AsnBinary, stream));
+        *out << data.GetData();
+    }}
+    size_t size = stream.pcount();
+    line << setiosflags(ios::fixed) << setprecision(2) <<
+        " " << setw(7) << (size/1024.0) << " KB";
+    const char* data = stream.str();
+    stream.freeze(false);
+    app->GetCache().Store(key, seqref.GetVersion(), data, size);
+}
+
+
 void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 {
     {
@@ -583,10 +646,10 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     }
 
     if ( m_DumpAsnText ) {
-        Dump(*seq_entry, eSerial_AsnText, blob_key);
+        Dump(this, *seq_entry, eSerial_AsnText, blob_key);
     }
     if ( m_DumpAsnBinary ) {
-        Dump(*seq_entry, eSerial_AsnBinary, blob_key);
+        Dump(this, *seq_entry, eSerial_AsnBinary, blob_key);
     }
 
     size_t blob_size = m_Cache->GetSize(m_Reader->GetBlobKey(seqref), version);
@@ -608,36 +671,36 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 
     const CSplitBlob& blob = splitter.GetBlob();
     if ( m_DumpAsnText ) {
-        Dump(blob.GetMainBlob(), eSerial_AsnText, blob_key, "-main");
-        Dump(blob.GetSplitInfo(), eSerial_AsnText, blob_key, "-split");
+        Dump(this, blob.GetMainBlob(), eSerial_AsnText, blob_key, "-main");
+        Dump(this, blob.GetSplitInfo(), eSerial_AsnText, blob_key, "-split");
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
-            Dump(*it->second, eSerial_AsnText, blob_key, suffix);
+            Dump(this, *it->second, eSerial_AsnText, blob_key, suffix);
         }
     }
     if ( m_DumpAsnBinary ) {
-        Dump(blob.GetMainBlob(), eSerial_AsnBinary, blob_key, "-main");
-        Dump(blob.GetSplitInfo(), eSerial_AsnBinary, blob_key, "-split");
+        Dump(this, blob.GetMainBlob(), eSerial_AsnBinary, blob_key, "-main");
+        Dump(this, blob.GetSplitInfo(), eSerial_AsnBinary, blob_key, "-split");
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
-            Dump(*it->second, eSerial_AsnBinary, blob_key, suffix);
+            Dump(this, *it->second, eSerial_AsnBinary, blob_key, suffix);
         }
     }
     {{ // storing split data
-        DumpData(blob.GetMainBlob(), eDataType_MainBlob, blob_key, "-main");
-        DumpData(blob.GetSplitInfo(), eDataType_SplitInfo, blob_key, "-split");
+        DumpData(this, blob.GetMainBlob(), eDataType_MainBlob, blob_key, "-main");
+        DumpData(this, blob.GetSplitInfo(), eDataType_SplitInfo, blob_key, "-split");
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
-            DumpData(*it->second, eDataType_Chunk, blob_key, suffix);
+            DumpData(this, *it->second, eDataType_Chunk, blob_key, suffix);
         }
     }}
     {{ // storing split data into cache
-        StoreToCache(blob.GetMainBlob(), eDataType_MainBlob, seqref, "-main");
-        StoreToCache(blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
+        StoreToCache(this, blob.GetMainBlob(), eDataType_MainBlob, seqref, "-main");
+        StoreToCache(this, blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
                      "-split");
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
             string suffix = "-chunk-" + NStr::IntToString(it->first);
-            StoreToCache(*it->second, eDataType_Chunk, seqref, suffix);
+            StoreToCache(this, *it->second, eDataType_Chunk, seqref, suffix);
         }
     }}
 }
@@ -645,9 +708,9 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
 
 CConstRef<CSeqref> CSplitCacheApp::GetSeqref(CBioseq_Handle bh)
 {
-    CConstRef<CTSE_Info> tse_info =
-        m_Scope->GetImpl().GetTSE_Info(bh.GetTopLevelSeqEntry());
-    return ConstRef(&m_Loader->GetSeqref(*tse_info));
+    CSeq_entry_Handle tse = bh.GetTopLevelEntry();
+    CConstRef<CObject> id = tse.GetBlobId();
+    return ConstRef(dynamic_cast<const CSeqref*>(id.GetPointer()));
 }
 
 
@@ -666,6 +729,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/03/16 15:47:29  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.14  2004/02/09 19:18:55  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

@@ -32,81 +32,156 @@
 
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/objmgr_exception.hpp>
-
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_annot_CI::CSeq_annot_CI(CScope& scope,
-                             const CSeq_entry& entry,
-                             EFlags flags)
-    : m_Scope(&scope),
-      m_Flags(flags)
+CSeq_annot_CI::SEntryLevel_CI::SEntryLevel_CI(const CBioseq_set_Info& seqset,
+                                              const TEntry_CI& iter)
+    : m_Set(&seqset), m_Iter(iter)
 {
-    m_Level.m_Seq_entry = m_Scope->x_GetSeq_entry_Info(entry);
-    if ( !m_Level.m_Seq_entry ) {
-        NCBI_THROW(CAnnotException, eFindFailed,
-                   "Can not find seq-entry in the scope");
-    }
-    if (m_Flags == eSearch_recursive) {
-        m_Level.m_Child = m_Level.m_Seq_entry->m_Entries.begin();
-    }
-    else {
-        m_Level.m_Child = m_Level.m_Seq_entry->m_Entries.end();
-    }
-    m_Annot = m_Level.m_Seq_entry->m_Annots.begin();
-    while ( !x_Found() ) {
-        x_Next();
-    }
+}
+
+
+CSeq_annot_CI::SEntryLevel_CI::SEntryLevel_CI(const SEntryLevel_CI& l)
+    : m_Set(l.m_Set), m_Iter(l.m_Iter)
+{
+}
+
+
+CSeq_annot_CI::SEntryLevel_CI&
+CSeq_annot_CI::SEntryLevel_CI::operator=(const SEntryLevel_CI& l)
+{
+    m_Set = l.m_Set;
+    m_Iter = l.m_Iter;
+    return *this;
+}
+
+
+CSeq_annot_CI::SEntryLevel_CI::~SEntryLevel_CI(void)
+{
+}
+
+
+CSeq_annot_CI::CSeq_annot_CI(void)
+{
+}
+
+
+CSeq_annot_CI::~CSeq_annot_CI(void)
+{
+}
+
+
+CSeq_annot_CI::CSeq_annot_CI(const CSeq_annot_CI& iter)
+{
+    *this = iter;
 }
 
 
 CSeq_annot_CI& CSeq_annot_CI::operator=(const CSeq_annot_CI& iter)
 {
     if (this != &iter) {
-        m_Scope = iter.m_Scope;
-        m_Flags = iter.m_Flags;
-        m_Level_Stack = iter.m_Level_Stack;
-        m_Level = iter.m_Level;
-        m_Annot = iter.m_Annot;
-        m_Value.x_Reset();
+        m_CurrentEntry = iter.m_CurrentEntry;
+        m_AnnotIter = iter.m_AnnotIter;
+        m_CurrentAnnot = iter.m_CurrentAnnot;
+        m_EntryStack = iter.m_EntryStack;
     }
     return *this;
 }
 
 
-bool CSeq_annot_CI::x_Found(void) const
+CSeq_annot_CI::CSeq_annot_CI(CScope& scope, const CSeq_entry& entry,
+                             EFlags flags)
+    : m_Scope(scope)
 {
-    // Iterator must be valid or no more annotations should be
-    // available
-    return (m_Annot != m_Level.m_Seq_entry->m_Annots.end())  ||
-        (m_Level_Stack.empty()  &&
-        m_Level.m_Child == m_Level.m_Seq_entry->m_Entries.end());
+    x_Initialize(scope.GetSeq_entryHandle(entry), flags);
 }
 
 
-void CSeq_annot_CI::x_Next(void)
+CSeq_annot_CI::CSeq_annot_CI(const CSeq_entry_Handle& entry, EFlags flags)
+    : m_Scope(entry.GetScope())
 {
-    if (m_Annot != m_Level.m_Seq_entry->m_Annots.end()) {
-        ++m_Annot;
-        return;
+    x_Initialize(entry, flags);
+}
+
+
+inline
+void CSeq_annot_CI::x_Push(void)
+{
+    if ( m_CurrentEntry->IsSet() ) {
+        const CBioseq_set_Info& set = m_CurrentEntry->GetSet();
+        m_EntryStack.push(SEntryLevel_CI(set, set.GetSeq_set().begin()));
     }
-    // No more annots on this level, search the children
-    if (m_Level.m_Child == m_Level.m_Seq_entry->m_Entries.end()) {
-        if ( !m_Level_Stack.empty() ) {
-            m_Level = m_Level_Stack.top();
-            m_Level_Stack.pop();
-            ++m_Level.m_Child;
-            // update annot iterator so that bool() works fine
-            m_Annot = m_Level.m_Seq_entry->m_Annots.end();
+}
+
+
+inline
+void CSeq_annot_CI::x_SetEntry(const CSeq_entry_Info& entry)
+{
+    m_CurrentEntry.Reset(&entry);
+    m_AnnotIter = entry.m_Contents->GetAnnot().begin();
+    if ( !m_EntryStack.empty() ) {
+        x_Push();
+    }
+}
+
+
+void CSeq_annot_CI::x_Initialize(const CSeq_entry_Handle& entry, EFlags flags)
+{
+    if ( !entry ) {
+        NCBI_THROW(CAnnotException, eFindFailed,
+                   "Can not find seq-entry in the scope");
+    }
+    if ( entry.Which() == CSeq_entry::e_not_set ) {
+        NCBI_THROW(CAnnotException, eFindFailed,
+                   "seq-entry is empty");
+    }
+
+    x_SetEntry(entry.x_GetInfo());
+    if ( flags == eSearch_recursive ) {
+        x_Push();
+    }
+    
+    x_Settle();
+}
+
+
+CSeq_annot_CI& CSeq_annot_CI::operator++(void)
+{
+    _ASSERT(*this);
+    ++m_AnnotIter;
+    x_Settle();
+    return *this;
+}
+
+
+void CSeq_annot_CI::x_Settle(void)
+{
+    for ( ;; ) {
+        if ( m_AnnotIter != m_CurrentEntry->m_Contents->GetAnnot().end() ) {
+            m_CurrentAnnot = CSeq_annot_Handle(GetScope(), **m_AnnotIter);
+            return;
         }
-        return;
+
+        if ( m_EntryStack.empty() ) {
+            m_CurrentAnnot = CSeq_annot_Handle();
+            return;
+        }
+        
+        if ( m_EntryStack.top().m_Iter !=
+             m_EntryStack.top().m_Set->GetSeq_set().end() ) {
+            x_SetEntry(**m_EntryStack.top().m_Iter++);
+        }
+        else {
+            m_EntryStack.pop();
+        }
     }
-    m_Level_Stack.push(m_Level);
-    m_Level.m_Seq_entry = *m_Level.m_Child;
-    m_Level.m_Child = m_Level.m_Seq_entry->m_Entries.begin();
-    m_Annot = m_Level.m_Seq_entry->m_Annots.begin();
 }
 
 
@@ -116,6 +191,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.5  2003/10/08 14:14:27  vasilche
 * Use CHeapScope instead of CRef<CScope> internally.
 *

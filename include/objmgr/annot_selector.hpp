@@ -37,16 +37,18 @@
 #include <corelib/ncbi_limits.h>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
-#include <objmgr/impl/annot_object.hpp>
 
 #include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CSeq_annot;
 class CSeq_entry;
-class CTSE_Info;
+class CSeq_annot;
+
+class CSeq_entry_Handle;
+class CSeq_annot_Handle;
+class CAnnotObject_Info;
 
 class CAnnotName
 {
@@ -235,12 +237,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         eCombine_None,       // default - do not combine feature from segments
         eCombine_All         // combine feature from different segments
     };
-    enum ELimitObject {
-        eLimit_None,
-        eLimit_TSE,
-        eLimit_Entry,
-        eLimit_Annot
-    };
     enum EIdResolving {
         eLoadedOnly,       // Resolve only ids already loaded into the scope
         eIgnoreUnresolved, // Ignore unresolved ids (default)
@@ -252,6 +248,9 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     SAnnotSelector(TFeatType  feat);
     SAnnotSelector(TAnnotType annot, TFeatType  feat, bool feat_product);
     SAnnotSelector(TFeatType  feat, bool feat_product);
+    SAnnotSelector(const SAnnotSelector& sel);
+    SAnnotSelector& operator=(const SAnnotSelector& sel);
+    ~SAnnotSelector(void);
     
     SAnnotSelector& SetAnnotType(TAnnotType type)
         {
@@ -387,9 +386,12 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
         }
 
     SAnnotSelector& SetLimitNone(void);
-    SAnnotSelector& SetLimitTSE(const CSeq_entry* tse);
-    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* entry);
-    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* annot);
+    SAnnotSelector& SetLimitTSE(const CSeq_entry* limit);
+    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry* limit);
+    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot* limit);
+    SAnnotSelector& SetLimitTSE(const CSeq_entry_Handle& limit);
+    SAnnotSelector& SetLimitSeqEntry(const CSeq_entry_Handle& limit);
+    SAnnotSelector& SetLimitSeqAnnot(const CSeq_annot_Handle& limit);
 
     SAnnotSelector& SetIdResolvingLoaded(void)
         {
@@ -438,10 +440,10 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool ExcludedAnnotName(const CAnnotName& name) const;
 
     // Limit search with a set of TSEs
-    typedef vector<const CSeq_entry*> TTSE_Limits;
-    SAnnotSelector& ExcludeTSE(const CSeq_entry& tse);
+    typedef vector<CSeq_entry_Handle> TTSE_Limits;
+    SAnnotSelector& ExcludeTSE(const CSeq_entry_Handle& tse);
     SAnnotSelector& ResetExcludedTSE(void);
-    bool ExcludedTSE(const CSeq_entry& tse) const;
+    bool ExcludedTSE(const CSeq_entry_Handle& tse) const;
 
     // No locations mapping flag. Set to true by CAnnot_CI.
     SAnnotSelector& SetNoMapping(bool value = true)
@@ -467,6 +469,16 @@ protected:
     ESegmentSelect        m_SegmentSelect;
     ESortOrder            m_SortOrder;
     ECombineMethod        m_CombineMethod;
+
+    enum ELimitObject {
+        eLimit_None,
+        eLimit_TSE_Info,
+        eLimit_Seq_entry_Info,
+        eLimit_Seq_annot_Info,
+        eLimit_TSE,
+        eLimit_Seq_entry,
+        eLimit_Seq_annot
+    };
     ELimitObject          m_LimitObjectType;
     EIdResolving          m_IdResolving;
     CConstRef<CObject>    m_LimitObject;
@@ -481,19 +493,15 @@ protected:
 };
 
 
-inline
-void SAnnotSelector::x_ClearAnnotTypesSet(void)
-{
-    m_AnnotTypesSet.clear();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/03/16 15:47:25  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.27  2004/02/26 14:41:40  grichenk
 * Fixed types excluding in SAnnotSelector and multiple types search
 * in CAnnotTypes_CI.

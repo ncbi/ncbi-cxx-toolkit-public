@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.19  2003/11/26 20:57:06  vasilche
 * Removed redundant const before enum parameter.
 *
@@ -123,6 +126,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/data_loader.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -206,14 +210,16 @@ NcbiCout << "1.1.2 Adding Seq_entry to the scope=================" << NcbiEndl;
             // 3 scopes
             CRef< CScope> pScope1(new CScope(*pOm));
             CScope scope2(*pOm);
-            CScope* pScope3 = new CScope(*pOm);
+            CRef<CScope> pScope3(new CScope(*pOm));
             CRef< CSeq_entry> pEntry = CreateTestEntry();
             // add entry to all scopes
             pScope1->AddTopLevelSeqEntry( *pEntry);
             scope2.AddTopLevelSeqEntry( *pEntry);
             pScope3->AddTopLevelSeqEntry( *pEntry);
 
-            delete pScope3; // data source and seq_entry alive
+            pScope1.Reset();
+            pScope3.Reset();
+            //delete pScope3; // data source and seq_entry alive
         }
         // scopes deleted, seq_entry and data source deleted
     }

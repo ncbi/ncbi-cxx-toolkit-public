@@ -33,10 +33,12 @@
 *
 */
 
+#include <corelib/ncbistd.hpp>
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
-#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -139,13 +141,13 @@ public:
     const string& GetExcept_text(void) const
         { return GetOriginalFeature().GetExcept_text(); }
 
-    const CSeq_annot& GetSeq_annot(void) const
-        { return m_AnnotObject_Ref.GetSeq_annot(); }
+    CSeq_annot_Handle GetAnnot(void) const;
+    const CSeq_annot& GetSeq_annot(void) const;
 
 private:
     friend class CFeat_CI;
     friend class CAnnot_CI;
-    CMappedFeat& Set(const CAnnotObject_Ref& annot);
+    CMappedFeat& Set(CScope& scope, const CAnnotObject_Ref& annot);
     void Reset(void);
 
     const CSeq_feat& x_MakeOriginalFeature(void) const;
@@ -154,6 +156,7 @@ private:
 
     const CSeq_loc& GetMappedLocation(void) const;
 
+    CHeapScope                   m_Scope;
     CAnnotObject_Ref             m_AnnotObject_Ref;
     mutable CConstRef<CSeq_feat> m_OriginalSeq_feat;
     mutable CConstRef<CSeq_feat> m_MappedSeq_feat;
@@ -186,18 +189,25 @@ public:
              TSeqPos start, TSeqPos stop);
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
-             SAnnotSelector sel);
+             const SAnnotSelector& sel);
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
-             SAnnotSelector sel);
+             const SAnnotSelector& sel);
 
     // Iterate all features from the object regardless of their location
+    CFeat_CI(CScope& scope, const CSeq_annot& annot);
+    CFeat_CI(CScope& scope, const CSeq_annot& annot,
+             const SAnnotSelector& sel);
     CFeat_CI(const CSeq_annot_Handle& annot);
     CFeat_CI(const CSeq_annot_Handle& annot,
-             SAnnotSelector sel);
+             const SAnnotSelector& sel);
+
     CFeat_CI(CScope& scope, const CSeq_entry& entry);
     CFeat_CI(CScope& scope, const CSeq_entry& entry,
-             SAnnotSelector sel);
+             const SAnnotSelector& sel);
+    CFeat_CI(const CSeq_entry_Handle& entry);
+    CFeat_CI(const CSeq_entry_Handle& entry,
+             const SAnnotSelector& sel);
 
     // Search all TSEs in all datasources. By default search sequence segments
     // (for constructed sequences) only if the referenced sequence is in the
@@ -209,8 +219,21 @@ public:
              TFeatType feat_type,
              EOverlapType overlap_type = eOverlap_Intervals,
              EResolveMethod resolve = eResolve_TSE,
-             EFeat_Location loc_type = e_Location,
-             const CSeq_entry* entry = 0);
+             EFeat_Location loc_type = e_Location);
+    CFeat_CI(CScope& scope,
+             const CSeq_loc& loc,
+             TFeatType feat_type,
+             EOverlapType overlap_type,
+             EResolveMethod resolve,
+             EFeat_Location loc_type,
+             const CSeq_entry_Handle& limitEntry);
+    CFeat_CI(CScope& scope,
+             const CSeq_loc& loc,
+             TFeatType feat_type,
+             EOverlapType overlap_type,
+             EResolveMethod resolve,
+             EFeat_Location loc_type,
+             const CSeq_entry* limitEntry);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
     // the whole bioseq is searched. References are resolved depending on the
     // "resolve" flag (see above).
@@ -221,8 +244,21 @@ public:
              TFeatType feat_type,
              EOverlapType overlap_type = eOverlap_Intervals,
              EResolveMethod resolve = eResolve_TSE,
-             EFeat_Location loc_type = e_Location,
-             const CSeq_entry* entry = 0);
+             EFeat_Location loc_type = e_Location);
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             TFeatType feat_type,
+             EOverlapType overlap_type,
+             EResolveMethod resolve,
+             EFeat_Location loc_type,
+             const CSeq_entry_Handle& limitEntry);
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             TFeatType feat_type,
+             EOverlapType overlap_type,
+             EResolveMethod resolve,
+             EFeat_Location loc_type,
+             const CSeq_entry* limitEntry);
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);
@@ -250,40 +286,11 @@ inline
 void CFeat_CI::Update(void)
 {
     if ( IsValid() ) {
-        m_OriginalSeq_feat.Set(Get());
+        m_OriginalSeq_feat.Set(GetScope(), Get());
     }
     else {
         m_OriginalSeq_feat.Reset();
     }
-}
-
-
-inline
-CFeat_CI::CFeat_CI(void)
-{
-}
-
-
-inline
-CFeat_CI::CFeat_CI(const CFeat_CI& iter)
-    : CAnnotTypes_CI(iter)
-{
-    Update();
-}
-
-
-inline
-CFeat_CI::~CFeat_CI(void)
-{
-}
-
-
-inline
-CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
-{
-    CAnnotTypes_CI::operator=(iter);
-    Update();
-    return *this;
 }
 
 
@@ -361,6 +368,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.37  2004/02/04 18:05:32  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

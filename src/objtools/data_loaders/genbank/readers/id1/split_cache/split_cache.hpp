@@ -93,7 +93,8 @@ private:
 
 class CLog;
 class CSplitDataMaker;
-#define WAIT_LINE CLog line(this); line
+#define WAIT_LINE4(app) CLog line(app); line
+#define WAIT_LINE WAIT_LINE4(this)
 #define LINE(Msg) do { WAIT_LINE << Msg; } while(0)
 
 
@@ -119,64 +120,20 @@ public:
                               const string& suffix,
                               const string& ext);
 
-
-    template<class C>
-    void Dump(const C& obj, ESerialDataFormat format,
-              const string& key, const string& suffix = kEmptyStr)
-        {
-            string ext;
-            switch ( format ) {
-            case eSerial_AsnText:   ext = "asn"; break;
-            case eSerial_AsnBinary: ext = "asb"; break;
-            case eSerial_Xml:       ext = "xml"; break;
-            }
-            string file_name = GetFileName(key, suffix, ext);
-            WAIT_LINE << "Dumping to " << file_name << " ...";
-            AutoPtr<CObjectOStream> out(CObjectOStream::Open(file_name,
-                                                             format));
-            *out << obj;
-        }
-
-    enum EDataType
+    const SSplitterParams GetParams(void) const
     {
-        eDataType_MainBlob = 0,
-        eDataType_SplitInfo = 1,
-        eDataType_Chunk = 2
-    };
+        return m_SplitterParams;
+    }
 
-    template<class C>
-    void DumpData(const C& obj, EDataType data_type,
-                  const string& key, const string& suffix = kEmptyStr)
-        {
-            string file_name = GetFileName(key, suffix, "bin");
-            WAIT_LINE << "Storing to " << file_name << " ...";
-            CSplitDataMaker data(m_SplitterParams, data_type);
-            data << obj;
-            AutoPtr<CObjectOStream> out
-                (CObjectOStream::Open(file_name, eSerial_AsnBinary));
-            *out << data.GetData();
-        }
-    template<class C>
-    void StoreToCache(const C& obj, EDataType data_type,
-                      const CSeqref& seqref, const string& suffix = kEmptyStr)
-        {
-            string key = m_Reader->GetBlobKey(seqref) + suffix;
-            WAIT_LINE << "Storing to cache " << key << " ...";
-            CNcbiOstrstream stream;
-            {{
-                CSplitDataMaker data(m_SplitterParams, data_type);
-                data << obj;
-                AutoPtr<CObjectOStream> out
-                    (CObjectOStream::Open(eSerial_AsnBinary, stream));
-                *out << data.GetData();
-            }}
-            size_t size = stream.pcount();
-            line << setiosflags(ios::fixed) << setprecision(2) <<
-                " " << setw(7) << (size/1024.0) << " KB";
-            const char* data = stream.str();
-            stream.freeze(false);
-            m_Cache->Store(key, seqref.GetVersion(), data, size);
-        }
+    const CCachedId1Reader& GetReader(void) const
+    {
+        return *m_Reader;
+    }
+
+    CBDB_BLOB_Cache& GetCache(void)
+    {
+        return *m_Cache;
+    }
 
 protected:
     CConstRef<CSeqref> GetSeqref(CBioseq_Handle bh);
@@ -212,6 +169,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/16 15:47:29  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.8  2004/01/07 17:37:37  vasilche
 * Fixed include path to genbank loader.
 * Moved split_cache application.

@@ -32,6 +32,7 @@
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/handle_range_map.hpp>
 #include <objmgr/impl/seq_entry_info.hpp>
+#include <objmgr/impl/bioseq_base_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
 
@@ -73,7 +74,7 @@ CAnnotObject_Info::CAnnotObject_Info(void)
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
+CAnnotObject_Info::CAnnotObject_Info(const CSeq_feat& feat,
                                      CSeq_annot_Info& annot)
     : m_Object(&feat),
       m_FeatSubtype(feat.GetData().GetSubtype()),
@@ -85,7 +86,7 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_feat& feat,
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
+CAnnotObject_Info::CAnnotObject_Info(const CSeq_align& align,
                                      CSeq_annot_Info& annot)
     : m_Object(&align),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
@@ -97,7 +98,7 @@ CAnnotObject_Info::CAnnotObject_Info(CSeq_align& align,
 }
 
 
-CAnnotObject_Info::CAnnotObject_Info(CSeq_graph& graph,
+CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
                                      CSeq_annot_Info& annot)
     : m_Object(&graph),
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
@@ -164,27 +165,9 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
 }
 
 
-const CSeq_annot& CAnnotObject_Info::GetSeq_annot(void) const
-{
-    return GetSeq_annot_Info().GetSeq_annot();
-}
-
-
-const CSeq_entry& CAnnotObject_Info::GetSeq_entry(void) const
-{
-    return GetSeq_annot_Info().GetSeq_entry();
-}
-
-
 const CSeq_entry_Info& CAnnotObject_Info::GetSeq_entry_Info(void) const
 {
-    return GetSeq_annot_Info().GetSeq_entry_Info();
-}
-
-
-const CSeq_entry& CAnnotObject_Info::GetTSE(void) const
-{
-    return GetSeq_annot_Info().GetTSE();
+    return GetSeq_annot_Info().GetParentSeq_entry_Info();
 }
 
 
@@ -209,21 +192,24 @@ CDataSource& CAnnotObject_Info::GetDataSource(void) const
 const CSeq_feat& CAnnotObject_Info::GetFeat(void) const
 {
     _ASSERT(!IsChunkStub() && IsFeat());
-    return *dynamic_cast<const CSeq_feat*>(m_Object.GetPointer());
+    const CObject& obj = *m_Object;
+    return dynamic_cast<const CSeq_feat&>(obj);
 }
 
 
 const CSeq_align& CAnnotObject_Info::GetAlign(void) const
 {
     _ASSERT(!IsChunkStub() && IsAlign());
-    return *dynamic_cast<const CSeq_align*>(m_Object.GetPointer());
+    const CObject& obj = *m_Object;
+    return dynamic_cast<const CSeq_align&>(obj);
 }
 
 
 const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 {
     _ASSERT(!IsChunkStub() && IsGraph());
-    return *dynamic_cast<const CSeq_graph*>(m_Object.GetPointer());
+    const CObject& obj = *m_Object;
+    return dynamic_cast<const CSeq_graph&>(obj);
 }
 
 
@@ -424,6 +410,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.32  2004/02/04 18:05:38  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

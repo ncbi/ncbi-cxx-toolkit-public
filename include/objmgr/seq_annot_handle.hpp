@@ -33,20 +33,26 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
-#include <objmgr/scope.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-class CScope;
 class CSeq_annot;
-class CSeq_annot_Info;
+
+class CScope;
+
 class CSeq_annot_CI;
 class CAnnotTypes_CI;
 class CAnnot_CI;
+class CSeq_annot_Handle;
+class CSeq_annot_EditHandle;
+class CSeq_entry_Handle;
+class CSeq_entry_EditHandle;
+
+class CSeq_annot_Info;
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_annot_Handle
@@ -57,34 +63,54 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_Handle
 public:
     CSeq_annot_Handle(void);
     CSeq_annot_Handle(CScope& scope, const CSeq_annot_Info& annot);
-    CSeq_annot_Handle(const CSeq_annot_Handle& sah);
-    ~CSeq_annot_Handle(void);
 
-    CSeq_annot_Handle& operator=(const CSeq_annot_Handle& sah);
-
-    CScope& GetScope(void) const;
-
-    const CSeq_annot& GetSeq_annot(void) const;
+    //
     operator bool(void) const;
     bool operator!(void) const;
+    void Reset(void);
 
     bool operator==(const CSeq_annot_Handle& annot) const;
     bool operator!=(const CSeq_annot_Handle& annot) const;
     bool operator<(const CSeq_annot_Handle& annot) const;
 
+    //
+    CScope& GetScope(void) const;
+
+    const CSeq_annot& GetSeq_annot(void) const;
+    CConstRef<CSeq_annot> GetCompleteSeq_annot(void) const;
+
+    //
+    CSeq_entry_Handle GetParentEntry(void) const;
+
+    // Seq-annot accessors
     bool IsNamed(void) const;
     const string& GetName(void) const;
 
-private:
+    const CSeq_annot_Info& x_GetInfo(void) const;
+
+protected:
     void x_Set(CScope& scope, const CSeq_annot_Info& annot);
-    void x_Reset(void);
 
-    mutable CHeapScope         m_Scope;
-    CConstRef<CSeq_annot_Info> m_Seq_annot;
+    CHeapScope          m_Scope;
+    CConstRef<CObject>  m_Info;
+};
 
-    friend class CSeq_annot_CI;
-    friend class CAnnotTypes_CI;
-    friend class CAnnot_CI;
+
+class NCBI_XOBJMGR_EXPORT CSeq_annot_EditHandle : public CSeq_annot_Handle
+{
+public:
+    CSeq_annot_EditHandle(void);
+    CSeq_annot_EditHandle(CScope& scope, CSeq_annot_Info& info);
+
+    CSeq_entry_EditHandle GetParentEntry(void) const;
+
+    // remove current annot
+    void RemoveAnnot(void);
+
+protected:
+    friend class CScope_Impl;
+
+    CSeq_annot_Info& x_GetInfo(void) const;
 };
 
 
@@ -94,37 +120,82 @@ private:
 
 
 inline
+CSeq_annot_Handle::CSeq_annot_Handle(void)
+{
+}
+
+
+inline
 CSeq_annot_Handle::operator bool(void) const
 {
-    return m_Seq_annot;
+    return m_Info;
 }
 
 
 inline
 bool CSeq_annot_Handle::operator!(void) const
 {
-    return !m_Seq_annot;
+    return !m_Info;
 }
 
 
 inline
-bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& annot) const
+CScope& CSeq_annot_Handle::GetScope(void) const
 {
-    return m_Seq_annot == annot.m_Seq_annot;
+    return *m_Scope;
 }
 
 
 inline
-bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& annot) const
+void CSeq_annot_Handle::Reset(void)
 {
-    return m_Seq_annot != annot.m_Seq_annot;
+    m_Scope.Reset();
+    m_Info.Reset();
 }
 
 
 inline
-bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& annot) const
+const CSeq_annot_Info& CSeq_annot_Handle::x_GetInfo(void) const
 {
-    return m_Seq_annot < annot.m_Seq_annot;
+    return reinterpret_cast<const CSeq_annot_Info&>(*m_Info);
+}
+
+
+inline
+bool CSeq_annot_Handle::operator==(const CSeq_annot_Handle& handle) const
+{
+    return m_Scope == handle.m_Scope  &&  m_Info == handle.m_Info;
+}
+
+
+inline
+bool CSeq_annot_Handle::operator!=(const CSeq_annot_Handle& handle) const
+{
+    return m_Scope != handle.m_Scope  ||  m_Info != handle.m_Info;
+}
+
+
+inline
+bool CSeq_annot_Handle::operator<(const CSeq_annot_Handle& handle) const
+{
+    if ( m_Scope != handle.m_Scope ) {
+        return m_Scope < handle.m_Scope;
+    }
+    return m_Info < handle.m_Info;
+}
+
+
+inline
+CSeq_annot_EditHandle::CSeq_annot_EditHandle(void)
+{
+}
+
+
+inline
+CSeq_annot_EditHandle::CSeq_annot_EditHandle(CScope& scope,
+                                             CSeq_annot_Info& info)
+    : CSeq_annot_Handle(scope, info)
+{
 }
 
 
@@ -134,6 +205,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.3  2003/10/08 14:14:54  vasilche
 * Use CHeapScope instead of CRef<CScope> internally.
 *

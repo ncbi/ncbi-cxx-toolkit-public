@@ -34,6 +34,8 @@
 */
 
 #include <objmgr/annot_types_ci.hpp>
+#include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <corelib/ncbistd.hpp>
@@ -162,27 +164,25 @@ class NCBI_XOBJMGR_EXPORT CGraph_CI : public CAnnotTypes_CI
 public:
     CGraph_CI(void);
     CGraph_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
     CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
     // Search all TSEs in all datasources
     CGraph_CI(CScope& scope, const CSeq_loc& loc,
               EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE,
-              const CSeq_entry* entry = 0);
+              EResolveMethod resolve = eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE,
-              const CSeq_entry* entry = 0);
+              EResolveMethod resolve = eResolve_TSE);
     
     // Iterate all graphs from the object regardless of their location
     CGraph_CI(const CSeq_annot_Handle& annot);
     CGraph_CI(const CSeq_annot_Handle& annot,
-              SAnnotSelector sel);
-    CGraph_CI(CScope& scope, const CSeq_entry& entry);
-    CGraph_CI(CScope& scope, const CSeq_entry& entry,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
+    CGraph_CI(const CSeq_entry_Handle& entry);
+    CGraph_CI(const CSeq_entry_Handle& entry,
+              const SAnnotSelector& sel);
 
     virtual ~CGraph_CI(void);
 
@@ -206,53 +206,46 @@ CGraph_CI::CGraph_CI(void)
 
 inline
 CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, loc,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Graph))
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, sel)
 {
 }
 
 
 inline
-CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Graph))
+CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, start, stop, sel)
 {
 }
 
 
 inline
 CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
-    : CAnnotTypes_CI(annot,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot)
 {
 }
 
 
 inline
 CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
-                    SAnnotSelector sel)
-    : CAnnotTypes_CI(annot,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Graph))
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, sel)
 {
 }
 
 
 inline
-CGraph_CI::CGraph_CI(CScope& scope, const CSeq_entry& entry)
-    : CAnnotTypes_CI(scope, entry,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Graph))
+CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
 {
 }
 
 
 inline
-CGraph_CI::CGraph_CI(CScope& scope, const CSeq_entry& entry,
-                    SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, entry,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Graph))
+CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, sel)
 {
 }
 
@@ -301,6 +294,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.31  2004/02/11 22:19:23  grichenk
 * Fixed annot type initialization in iterators
 *

@@ -47,19 +47,17 @@ class NCBI_XOBJMGR_EXPORT CAnnot_CI : public CAnnotTypes_CI
 public:
     CAnnot_CI(void);
     CAnnot_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
     CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
     // Search all TSEs in all datasources
     CAnnot_CI(CScope& scope, const CSeq_loc& loc,
               EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE,
-              const CSeq_entry* entry = 0);
+              EResolveMethod resolve = eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CAnnot_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE,
-              const CSeq_entry* entry = 0);
+              EResolveMethod resolve = eResolve_TSE);
 
     // Iterate all features from the object regardless of their location
     CAnnot_CI(const CAnnot_CI& iter);
@@ -90,72 +88,13 @@ private:
 
 
 inline
-CAnnot_CI::CAnnot_CI(void)
-{
-    SetNoMapping(true);
-    SetSortOrder(eSortOrder_None);
-    m_Iterator = m_SeqAnnotSet.end();
-}
-
-inline
-CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
-    : CAnnotTypes_CI(iter)
-{
-    m_SeqAnnotSet = iter.m_SeqAnnotSet;
-    if (iter) {
-        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
-    }
-    else {
-        m_Iterator = m_SeqAnnotSet.end();
-    }
-}
-
-inline
-CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotType(CSeq_annot::C_Data::e_not_set)
-                     .SetNoMapping(true)
-                     .SetSortOrder(eSortOrder_None))
-{
-    x_Collect();
-}
-
-
-inline
-CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
-                     TSeqPos start, TSeqPos stop,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotType(CSeq_annot::C_Data::e_not_set)
-                     .SetNoMapping(true)
-                     .SetSortOrder(eSortOrder_None))
-{
-    x_Collect();
-}
-
-inline
-CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
-{
-    CAnnotTypes_CI::operator=(iter);
-    m_SeqAnnotSet.clear();
-    m_SeqAnnotSet = iter.m_SeqAnnotSet;
-    if (iter) {
-        m_Iterator = m_SeqAnnotSet.find(*iter.m_Iterator);
-    }
-    else {
-        m_Iterator = m_SeqAnnotSet.end();
-    }
-    return *this;
-}
-
-inline
 CAnnot_CI& CAnnot_CI::operator++ (void)
 {
     _ASSERT(m_Iterator != m_SeqAnnotSet.end());
     ++m_Iterator;
     return *this;
 }
+
 
 inline
 CAnnot_CI& CAnnot_CI::operator-- (void)
@@ -165,11 +104,13 @@ CAnnot_CI& CAnnot_CI::operator-- (void)
     return *this;
 }
 
+
 inline
 CAnnot_CI::operator bool (void) const
 {
     return m_Iterator != m_SeqAnnotSet.end();
 }
+
 
 inline
 CSeq_annot_Handle& CAnnot_CI::operator*(void) const
@@ -177,6 +118,7 @@ CSeq_annot_Handle& CAnnot_CI::operator*(void) const
     _ASSERT(*this);
     return m_Value = *m_Iterator;
 }
+
 
 inline
 CSeq_annot_Handle* CAnnot_CI::operator->(void) const
@@ -193,6 +135,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/03/16 15:47:25  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.25  2004/02/04 18:05:31  grichenk
 * Added annotation filtering by set of types/subtypes.
 * Renamed *Choice to *Type in SAnnotSelector.

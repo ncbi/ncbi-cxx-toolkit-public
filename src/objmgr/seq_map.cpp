@@ -33,6 +33,7 @@
 */
 
 #include <objmgr/seq_map.hpp>
+#include <objmgr/seq_map_ci.hpp>
 #include <objmgr/seq_map_ext.hpp>
 #include <objmgr/seq_id_mapper.hpp>
 #include <objmgr/scope.hpp>
@@ -809,6 +810,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.51  2004/02/19 17:19:10  vasilche
 * Removed 'unused argument' warning.
 *

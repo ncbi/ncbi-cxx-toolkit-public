@@ -34,6 +34,8 @@
 #include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
+#include <objmgr/impl/bioseq_set_info.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/annot_object.hpp>
 
@@ -85,10 +87,10 @@ void CTSE_Chunk_Info::x_Load(void)
 }
 
 
-void CTSE_Chunk_Info::x_UpdateAnnotIndex(void)
+void CTSE_Chunk_Info::x_UpdateAnnotIndex(CTSE_Info& tse)
 {
     if ( m_DirtyAnnotIndex ) {
-        x_UpdateAnnotIndexThis();
+        x_UpdateAnnotIndexContents(tse);
         m_DirtyAnnotIndex = false;
     }
 }
@@ -119,7 +121,7 @@ void CTSE_Chunk_Info::x_AddAnnotType(const CAnnotName& annot_name,
 }
 
 
-void CTSE_Chunk_Info::x_UpdateAnnotIndexThis(void)
+void CTSE_Chunk_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
     ITERATE ( TAnnotContents, it, m_AnnotContents ) {
         m_ObjectInfosList.push_back(TObjectInfos(it->first));
@@ -142,32 +144,32 @@ void CTSE_Chunk_Info::x_UpdateAnnotIndexThis(void)
                 key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
                 key.m_Handle = CSeq_id_Handle::GetGiHandle(lit->first);
                 key.m_Range = lit->second;
-                GetTSE_Info().x_MapAnnotObject(key, annotRef, infos);
+                tse.x_MapAnnotObject(key, annotRef, infos);
             }
         }
     }
 }
 
 
-void CTSE_Chunk_Info::x_UnmapAnnotObjects(void)
+void CTSE_Chunk_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
 {
     NON_CONST_ITERATE ( TObjectInfosList, it, m_ObjectInfosList ) {
-        GetTSE_Info().x_UnmapAnnotObjects(*it);
+        tse.x_UnmapAnnotObjects(*it);
     }
     m_ObjectInfosList.clear();
 }
 
 
-void CTSE_Chunk_Info::x_DropAnnotObjects(void)
+void CTSE_Chunk_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
 {
     m_ObjectInfosList.clear();
 }
 
 
-CSeq_entry_Info& CTSE_Chunk_Info::x_GetSeq_entry(const TPlace& place)
+CBioseq_Base_Info& CTSE_Chunk_Info::x_GetBase(const TPlace& place)
 {
     if ( place.first == eBioseq ) {
-        return GetTSE_Info().GetBioseq(place.second).GetSeq_entry_Info();
+        return GetTSE_Info().GetBioseq(place.second);
     }
     else {
         return GetTSE_Info().GetBioseq_set(place.second);
@@ -176,13 +178,10 @@ CSeq_entry_Info& CTSE_Chunk_Info::x_GetSeq_entry(const TPlace& place)
 
 
 void CTSE_Chunk_Info::x_LoadAnnot(const TPlace& place,
-                                  CSeq_annot_Info& annot)
+                                  CRef<CSeq_annot_Info> annot)
 {
-    annot.x_Seq_entryAttach(x_GetSeq_entry(place));
-    if ( GetTSE_Info().HaveDataSource() ) {
-        annot.x_DSAttach();
-    }
-    GetTSE_Info().UpdateAnnotIndex(annot);
+    x_GetBase(place).x_AttachAnnot(annot);
+    GetTSE_Info().UpdateAnnotIndex(*annot);
 }
 
 
@@ -192,6 +191,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.6  2004/01/22 20:10:41  vasilche
 * 1. Splitted ID2 specs to two parts.
 * ID2 now specifies only protocol.

@@ -44,6 +44,8 @@
 
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <objmgr/impl/tse_info_object.hpp>
+
 BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
@@ -55,6 +57,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CSeq_feat;
 class CSeq_annot;
+class CSeq_annot_Info;
 class CSeq_annot_SNP_Info;
 class CSeq_point;
 class CSeq_interval;
@@ -201,13 +204,28 @@ private:
 };
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_annot_SNP_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_annot_SNP_Info : public CTSE_Info_Object
 {
+    typedef CTSE_Info_Object TParent;
 public:
     CSeq_annot_SNP_Info(void);
     ~CSeq_annot_SNP_Info(void);
 
-    CRef<CSeq_entry> GetEntry(void);
+    const CSeq_annot_Info& GetParentSeq_annot_Info(void) const;
+    CSeq_annot_Info& GetParentSeq_annot_Info(void);
+
+    const CSeq_entry_Info& GetParentSeq_entry_Info(void) const;
+    CSeq_entry_Info& GetParentSeq_entry_Info(void);
+
+    // tree initialization
+    void x_ParentAttach(CSeq_annot_Info& parent);
+    void x_ParentDetach(CSeq_annot_Info& parent);
+
+    void x_UpdateAnnotIndexContents(CTSE_Info& tse);
+    void x_UnmapAnnotObjects(CTSE_Info& tse);
+    void x_DropAnnotObjects(CTSE_Info& tse);
+
+    //CRef<CSeq_entry> GetEntry(void);
 
     typedef vector<SSNP_Info> TSNP_Set;
     typedef TSNP_Set::const_iterator const_iterator;
@@ -222,10 +240,9 @@ public:
     int GetGi(void) const;
     const CSeq_id& GetSeq_id(void) const;
 
-    const CSeq_annot& GetSeq_annot(void) const;
-
     const SSNP_Info& GetSNP_Info(size_t index) const;
 
+    const CSeq_annot& GetRemainingSeq_annot(void) const;
     void Reset(void);
 
 protected:
@@ -242,6 +259,7 @@ private:
     CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info&);
     CSeq_annot_SNP_Info& operator=(const CSeq_annot_SNP_Info&);
 
+    friend class CSeq_annot_Info;
     friend class CSeq_annot_SNP_Info_Reader;
     friend class CSNP_Seq_feat_hook;
     friend struct SSNP_Info;
@@ -373,7 +391,7 @@ bool CSeq_annot_SNP_Info::x_CheckGi(int gi)
 
 
 inline
-const CSeq_annot& CSeq_annot_SNP_Info::GetSeq_annot(void) const
+const CSeq_annot& CSeq_annot_SNP_Info::GetRemainingSeq_annot(void) const
 {
     return *m_Seq_annot;
 }
@@ -426,6 +444,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.11  2004/02/06 16:13:19  vasilche
 * Added parsing "replace" as a synonym of "allele" in SNP qualifiers.
 * More compact format of SNP table in cache. SNP table version increased.

@@ -32,6 +32,8 @@
 
 #include <objmgr/align_ci.hpp>
 
+#include <objects/seqalign/Seq_align.hpp>
+
 #include <objmgr/impl/annot_object.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
 
@@ -43,27 +45,44 @@ BEGIN_SCOPE(objects)
 CAlign_CI::CAlign_CI(CScope& scope,
                      const CSeq_loc& loc,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve,
-                     const CSeq_entry* entry)
-    : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Align),
-          overlap_type, resolve, entry)
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     scope, loc,
+                     overlap_type,
+                     resolve)
 {
 }
 
 
 CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
                      SAnnotSelector::EOverlapType overlap_type,
-                     EResolveMethod resolve, const CSeq_entry* entry)
-    : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Align),
-          overlap_type, resolve, entry)
+                     EResolveMethod resolve)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align,
+                     bioseq, start, stop,
+                     overlap_type,
+                     resolve)
 {
 }
 
 
 CAlign_CI::~CAlign_CI(void)
 {
+}
+
+
+CAlign_CI& CAlign_CI::operator++ (void)
+{
+    Next();
+    m_MappedAlign.Reset();
+    return *this;
+}
+
+
+CAlign_CI& CAlign_CI::operator-- (void)
+{
+    Prev();
+    m_MappedAlign.Reset();
+    return *this;
 }
 
 
@@ -113,6 +132,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.21  2004/01/29 15:44:46  vasilche
 * Fixed mapped align when it's not mapped.
 *

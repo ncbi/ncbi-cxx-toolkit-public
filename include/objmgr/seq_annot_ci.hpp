@@ -38,21 +38,16 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 
-#include <objmgr/impl/seq_entry_info.hpp>
+#include <vector>
+#include <stack>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CSeq_annot_Handle;
-
-struct SAnnotILevel {
-    typedef CSeq_entry_Info::TEntries TEntries;
-    typedef TEntries::const_iterator  TEntry_I;
-
-    CConstRef<CSeq_entry_Info> m_Seq_entry;
-    TEntry_I                   m_Child;
-};
-
+class CSeq_entry_Info;
+class CSeq_annot_Info;
+class CBioseq_set_Info;
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_CI
 {
@@ -63,8 +58,9 @@ public:
     };
 
     CSeq_annot_CI(void);
-    CSeq_annot_CI(CScope& scope,
-                  const CSeq_entry& entry,
+    explicit CSeq_annot_CI(const CSeq_entry_Handle& entry,
+                           EFlags flags = eSearch_recursive);
+    CSeq_annot_CI(CScope& scope, const CSeq_entry& entry,
                   EFlags flags = eSearch_recursive);
     CSeq_annot_CI(const CSeq_annot_CI& iter);
     ~CSeq_annot_CI(void);
@@ -74,22 +70,42 @@ public:
     operator bool(void) const;
     CSeq_annot_CI& operator++(void);
 
-    CSeq_annot_Handle& operator*(void) const;
-    CSeq_annot_Handle* operator->(void) const;
+    CScope& GetScope(void) const;
+
+    const CSeq_annot_Handle& operator*(void) const;
+    const CSeq_annot_Handle* operator->(void) const;
+
+    struct SEntryLevel_CI
+    {
+        typedef vector< CRef<CSeq_entry_Info> > TEntries;
+        typedef TEntries::const_iterator  TEntry_CI;
+        
+        SEntryLevel_CI(const CBioseq_set_Info& seqset, const TEntry_CI& iter);
+        SEntryLevel_CI(const SEntryLevel_CI&);
+        SEntryLevel_CI& operator=(const SEntryLevel_CI&);
+        ~SEntryLevel_CI(void);
+        
+        CConstRef<CBioseq_set_Info> m_Set;
+        TEntry_CI                   m_Iter;
+    };
 
 private:
-    bool x_Found(void) const;
-    void x_Next(void);
+    void x_Initialize(const CSeq_entry_Handle& entry_handle, EFlags flags);
 
-    typedef CSeq_entry_Info::TAnnots::const_iterator TAnnot_I;
-    typedef stack<SAnnotILevel>                      TLevel_Stack;
+    void x_SetEntry(const CSeq_entry_Info& entry);
+    void x_Push(void);
+    void x_Settle(void);
 
-    mutable CHeapScope   m_Scope;
-    TLevel_Stack         m_Level_Stack;
-    SAnnotILevel         m_Level;
-    TAnnot_I             m_Annot;
-    EFlags               m_Flags;
-    mutable CSeq_annot_Handle   m_Value;
+    typedef vector< CRef<CSeq_annot_Info> > TAnnots;
+
+    typedef TAnnots::const_iterator TAnnot_CI;
+    typedef stack<SEntryLevel_CI>   TEntryStack;
+
+    CHeapScope                  m_Scope;
+    CConstRef<CSeq_entry_Info>  m_CurrentEntry;
+    TAnnot_CI                   m_AnnotIter;
+    CSeq_annot_Handle           m_CurrentAnnot;
+    TEntryStack                 m_EntryStack;
 };
 
 
@@ -101,58 +117,32 @@ private:
 
 
 inline
-CSeq_annot_CI::CSeq_annot_CI(void)
+CScope& CSeq_annot_CI::GetScope(void) const
 {
+    return m_Scope;
 }
 
-inline
-CSeq_annot_CI::CSeq_annot_CI(const CSeq_annot_CI& iter)
-{
-    *this = iter;
-}
-
-inline
-CSeq_annot_CI::~CSeq_annot_CI(void)
-{
-    return;
-}
 
 inline
 CSeq_annot_CI::operator bool(void) const
 {
-    return bool(m_Level.m_Seq_entry)  &&
-        m_Annot != m_Level.m_Seq_entry->m_Annots.end();
+    return m_CurrentAnnot;
 }
 
-inline
-CSeq_annot_CI& CSeq_annot_CI::operator++(void)
-{
-    _ASSERT(bool(*this));
-    m_Value.x_Reset();
-    do {
-        x_Next();
-    } while (!x_Found());
-    return *this;
-}
 
 inline
-CSeq_annot_Handle& CSeq_annot_CI::operator*(void) const
+const CSeq_annot_Handle& CSeq_annot_CI::operator*(void) const
 {
-    _ASSERT(bool(*this));
-    if (!m_Value) {
-        m_Value.x_Set(*m_Scope, **m_Annot);
-    }
-    return m_Value;
+    _ASSERT(*this);
+    return m_CurrentAnnot;
 }
 
+
 inline
-CSeq_annot_Handle* CSeq_annot_CI::operator->(void) const
+const CSeq_annot_Handle* CSeq_annot_CI::operator->(void) const
 {
-    _ASSERT(bool(*this));
-    if (!m_Value) {
-        m_Value.x_Set(*m_Scope, **m_Annot);
-    }
-    return &m_Value;
+    _ASSERT(*this);
+    return &m_CurrentAnnot;
 }
 
 
@@ -162,6 +152,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.7  2003/10/08 17:55:53  vasilche
 * Fixed null initialization of CHeapScope.
 *

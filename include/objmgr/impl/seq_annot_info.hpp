@@ -37,6 +37,7 @@
 
 #include <util/range.hpp>
 
+#include <objmgr/impl/tse_info_object.hpp>
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/annot_selector.hpp>
 #include <objmgr/impl/annot_object.hpp>
@@ -52,46 +53,54 @@ class CSeq_annot;
 class CSeq_entry;
 class CTSE_Info;
 class CTSE_Chunk_Info;
-class CSeq_entry_Info;
+class CBioseq_Base_Info;
 class CAnnotObject_Info;
 struct SAnnotObject_Key;
 class CSeq_annot_SNP_Info;
 
-class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CObject
+class NCBI_XOBJMGR_EXPORT CSeq_annot_Info : public CTSE_Info_Object
 {
+    typedef CTSE_Info_Object TParent;
 public:
-    CSeq_annot_Info(CSeq_annot& annot, CSeq_entry_Info& entry);
-    CSeq_annot_Info(CSeq_annot& annot);
-    CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
+    explicit CSeq_annot_Info(const CSeq_annot& annot);
+    explicit CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot);
     CSeq_annot_Info(CTSE_Chunk_Info& chunk_info, const CAnnotName& name);
+    explicit CSeq_annot_Info(const CSeq_annot_Info&);
     ~CSeq_annot_Info(void);
 
-    CDataSource& GetDataSource(void) const;
-
-    const CSeq_entry& GetTSE(void) const;
-    const CTSE_Info& GetTSE_Info(void) const;
-    CTSE_Info& GetTSE_Info(void);
     CTSE_Chunk_Info& GetTSE_Chunk_Info(void) const;
 
-    const CSeq_entry& GetSeq_entry(void) const;
-    const CSeq_entry_Info& GetSeq_entry_Info(void) const;
-    CSeq_entry_Info& GetSeq_entry_Info(void);
+    const CBioseq_Base_Info& GetParentBioseq_Base_Info(void) const;
+    CBioseq_Base_Info& GetParentBioseq_Base_Info(void);
 
-    const CSeq_annot& GetSeq_annot(void) const;
-    CSeq_annot& GetSeq_annot(void);
+    const CSeq_entry_Info& GetParentSeq_entry_Info(void) const;
+    CSeq_entry_Info& GetParentSeq_entry_Info(void);
+
+    typedef CSeq_annot TObject;
+    CConstRef<TObject> GetCompleteSeq_annot(void) const;
+    CConstRef<TObject> GetSeq_annotCore(void) const;
 
     const CAnnotName& GetName(void) const;
 
     const CAnnotObject_Info& GetAnnotObject_Info(size_t index) const;
     size_t GetAnnotObjectIndex(const CAnnotObject_Info& info) const;
 
-    void x_DSAttach(void);
-    void x_DSDetach(void);
+    // tree initialization
+    virtual void x_DSAttachContents(CDataSource& ds);
+    virtual void x_DSDetachContents(CDataSource& ds);
 
+    virtual void x_TSEAttachContents(CTSE_Info& tse);
+    virtual void x_TSEDetachContents(CTSE_Info& tse);
+
+    void x_ParentAttach(CBioseq_Base_Info& parent);
+    void x_ParentDetach(CBioseq_Base_Info& parent);
+
+    //
     void UpdateAnnotIndex(void) const;
 
-    void x_UpdateAnnotIndex(void);
+    void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
+    void x_SetObject(const TObject& obj);
     void x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
     bool x_HaveSNP_annot_Info(void) const;
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
@@ -103,46 +112,38 @@ protected:
     friend class CSeq_entry_Info;
     friend class CAnnotTypes_CI;
 
-    void x_DSAttachThis(void);
-    void x_DSDetachThis(void);
-
-    void x_Seq_entryAttach(CSeq_entry_Info& entry);
-    void x_TSEDetach(void);
-
-    void x_UpdateAnnotIndexThis(void);
     void x_UpdateName(void);
 
-    void x_MapAnnotObjects(CSeq_annot::C_Data::TFtable& objs);
-    void x_MapAnnotObjects(CSeq_annot::C_Data::TAlign& objs);
-    void x_MapAnnotObjects(CSeq_annot::C_Data::TGraph& objs);
-    void x_UnmapAnnotObjects(void);
-    void x_DropAnnotObjects(void);
+    typedef vector< CConstRef<TObject> > TDSMappedObjects;
+    virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
+    virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    CSeq_annot_Info(const CSeq_annot_Info&);
+    void x_MapAnnotObjects(CTSE_Info& tse,
+                           const CSeq_annot::C_Data::TFtable& objs);
+    void x_MapAnnotObjects(CTSE_Info& tse,
+                           const CSeq_annot::C_Data::TAlign& objs);
+    void x_MapAnnotObjects(CTSE_Info& tse,
+                           const CSeq_annot::C_Data::TGraph& objs);
+    void x_UnmapAnnotObjects(CTSE_Info& tse);
+    void x_DropAnnotObjects(CTSE_Info& tse);
+
     CSeq_annot_Info& operator=(const CSeq_annot_Info&);
 
     // Seq-annot object
-    CRef<CSeq_annot>       m_Seq_annot;
-
-    // Parent Seq-entry object info
-    CSeq_entry_Info*       m_Seq_entry_Info;
-
-    // top level Seq-entry info
-    CTSE_Info*             m_TSE_Info;
+    CConstRef<TObject>      m_Object;
+    TDSMappedObjects        m_DSMappedObjects;
 
     // name of Seq-annot
-    CAnnotName             m_Name;
+    CAnnotName              m_Name;
 
     // Annotations indexes
-    SAnnotObjects_Info     m_ObjectInfos;
+    SAnnotObjects_Info      m_ObjectInfos;
 
     // SNP annotation table
-    CRef<CSeq_annot_SNP_Info>   m_SNP_Info;
+    CRef<CSeq_annot_SNP_Info> m_SNP_Info;
 
     // Split Chunk info
-    CTSE_Chunk_Info*       m_Chunk_Info;
-
-    bool m_DirtyAnnotIndex;
+    CTSE_Chunk_Info*        m_Chunk_Info;
 };
 
 
@@ -151,69 +152,6 @@ protected:
 //  Inline methods
 //
 /////////////////////////////////////////////////////////////////////
-
-
-inline
-const CSeq_annot& CSeq_annot_Info::GetSeq_annot(void) const
-{
-    return *m_Seq_annot;
-}
-
-
-inline
-CSeq_annot& CSeq_annot_Info::GetSeq_annot(void)
-{
-    return *m_Seq_annot;
-}
-
-
-inline
-const CSeq_entry_Info& CSeq_annot_Info::GetSeq_entry_Info(void) const
-{
-    return *m_Seq_entry_Info;
-}
-
-
-inline
-CSeq_entry_Info& CSeq_annot_Info::GetSeq_entry_Info(void)
-{
-    return *m_Seq_entry_Info;
-}
-
-
-inline
-const CTSE_Info& CSeq_annot_Info::GetTSE_Info(void) const
-{
-    return *m_TSE_Info;
-}
-
-
-inline
-CTSE_Info& CSeq_annot_Info::GetTSE_Info(void)
-{
-    return *m_TSE_Info;
-}
-
-
-inline
-CTSE_Chunk_Info& CSeq_annot_Info::GetTSE_Chunk_Info(void) const
-{
-    return *m_Chunk_Info;
-}
-
-
-inline
-void CSeq_annot_Info::x_DSAttach(void)
-{
-    x_DSAttachThis();
-}
-
-
-inline
-void CSeq_annot_Info::x_DSDetach(void)
-{
-    x_DSDetachThis();
-}
 
 
 inline
@@ -244,6 +182,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.9  2003/11/26 17:55:55  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

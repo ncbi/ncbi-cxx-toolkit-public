@@ -33,8 +33,13 @@
 *
 */
 
-#include <objmgr/annot_types_ci.hpp>
 #include <corelib/ncbistd.hpp>
+
+#include <objmgr/annot_types_ci.hpp>
+#include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+
+#include <objects/seqalign/Seq_align.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -45,27 +50,25 @@ class NCBI_XOBJMGR_EXPORT CAlign_CI : public CAnnotTypes_CI
 public:
     CAlign_CI(void);
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
               EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE,
-              const CSeq_entry* entry = 0);
+              EResolveMethod resolve = eResolve_TSE);
     // Search only in TSE, containing the bioseq
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
               EOverlapType overlap_type = eOverlap_Intervals,
-              EResolveMethod resolve = eResolve_TSE,
-              const CSeq_entry* entry = 0);
+              EResolveMethod resolve = eResolve_TSE);
 
     // Iterate all features from the object regardless of their location
     CAlign_CI(const CSeq_annot_Handle& annot);
     CAlign_CI(const CSeq_annot_Handle& annot,
-              SAnnotSelector sel);
-    CAlign_CI(CScope& scope, const CSeq_entry& entry);
-    CAlign_CI(CScope& scope, const CSeq_entry& entry,
-              SAnnotSelector sel);
+              const SAnnotSelector& sel);
+    CAlign_CI(const CSeq_entry_Handle& entry);
+    CAlign_CI(const CSeq_entry_Handle& entry,
+              const SAnnotSelector& sel);
 
     virtual ~CAlign_CI(void);
 
@@ -95,9 +98,8 @@ CAlign_CI::CAlign_CI(void)
 
 inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, loc,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, scope, loc, sel)
 {
 }
 
@@ -105,62 +107,39 @@ CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
 inline
 CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, bioseq, start, stop, sel)
 {
 }
 
 
 inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
-    : CAnnotTypes_CI(annot,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot)
 {
 }
 
 
 inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(annot,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, annot, sel)
 {
 }
 
 
 inline
-CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry)
-    : CAnnotTypes_CI(scope, entry,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
+CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry)
 {
 }
 
 
 inline
-CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry,
-                     SAnnotSelector sel)
-    : CAnnotTypes_CI(scope, entry,
-                     sel.CheckAnnotType(CSeq_annot::C_Data::e_Align))
+CAlign_CI::CAlign_CI(const CSeq_entry_Handle& entry,
+                     const SAnnotSelector& sel)
+    : CAnnotTypes_CI(CSeq_annot::C_Data::e_Align, entry, sel)
 {
-}
-
-
-inline
-CAlign_CI& CAlign_CI::operator++ (void)
-{
-    Next();
-    m_MappedAlign.Reset();
-    return *this;
-}
-
-
-inline
-CAlign_CI& CAlign_CI::operator-- (void)
-{
-    Prev();
-    m_MappedAlign.Reset();
-    return *this;
 }
 
 
@@ -177,6 +156,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/03/16 15:47:25  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.26  2004/02/11 22:19:23  grichenk
 * Fixed annot type initialization in iterators
 *

@@ -30,82 +30,71 @@
 */
 
 #include <objmgr/seq_annot_handle.hpp>
+#include <objmgr/seq_entry_handle.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CSeq_annot_Handle::CSeq_annot_Handle(void)
-    : m_Seq_annot(0)
-{
-}
-
-
 CSeq_annot_Handle::CSeq_annot_Handle(CScope& scope,
-                                     const CSeq_annot_Info& annot)
-    : m_Scope(&scope),
-      m_Seq_annot(&annot)
+                                     const CSeq_annot_Info& info)
+    : m_Scope(&scope), m_Info(&info)
 {
 }
 
 
-CSeq_annot_Handle::CSeq_annot_Handle(const CSeq_annot_Handle& sah)
-    : m_Scope(sah.m_Scope),
-      m_Seq_annot(sah.m_Seq_annot)
+CConstRef<CSeq_annot> CSeq_annot_Handle::GetCompleteSeq_annot(void) const
 {
-}
-
-
-CSeq_annot_Handle::~CSeq_annot_Handle(void)
-{
-}
-
-
-CSeq_annot_Handle& CSeq_annot_Handle::operator=(const CSeq_annot_Handle& sah)
-{
-    m_Scope = sah.m_Scope;
-    m_Seq_annot = sah.m_Seq_annot;
-    return *this;
-}
-
-
-void CSeq_annot_Handle::x_Set(CScope& scope, const CSeq_annot_Info& annot)
-{
-    m_Scope = CHeapScope(&scope);
-    m_Seq_annot.Reset(&annot);
-}
-
-
-void CSeq_annot_Handle::x_Reset(void)
-{
-    m_Scope = CHeapScope();
-    m_Seq_annot.Reset();
-}
-
-
-CScope& CSeq_annot_Handle::GetScope(void) const
-{
-    return *m_Scope;
+    return x_GetInfo().GetCompleteSeq_annot();
 }
 
 
 const CSeq_annot& CSeq_annot_Handle::GetSeq_annot(void) const
 {
-    return m_Seq_annot->GetSeq_annot();
+    ERR_POST_ONCE(Warning<<
+                  "CSeq_annot_Handle::GetSeq_annot() is deprecated, "
+                  "use GetCompleteSeq_annot().");
+    return *GetCompleteSeq_annot();
+}
+
+
+CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
+{
+    return CSeq_entry_Handle(m_Scope, x_GetInfo().GetParentSeq_entry_Info());
 }
 
 
 bool CSeq_annot_Handle::IsNamed(void) const
 {
-    return m_Seq_annot->GetName().IsNamed();
+    return x_GetInfo().GetName().IsNamed();
 }
 
 
 const string& CSeq_annot_Handle::GetName(void) const
 {
-    return m_Seq_annot->GetName().GetName();
+    return x_GetInfo().GetName().GetName();
+}
+
+
+CSeq_annot_Info& CSeq_annot_EditHandle::x_GetInfo(void) const
+{
+    return const_cast<CSeq_annot_Info&>(CSeq_annot_Handle::x_GetInfo());
+}
+
+
+CSeq_entry_EditHandle CSeq_annot_EditHandle::GetParentEntry(void) const
+{
+    return CSeq_entry_EditHandle(GetScope(),
+                                 x_GetInfo().GetParentSeq_entry_Info());
+}
+
+
+void CSeq_annot_EditHandle::RemoveAnnot(void)
+{
+    m_Scope->RemoveAnnot(*this);
 }
 
 
@@ -115,6 +104,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.4  2003/10/08 17:55:53  vasilche
 * Fixed null initialization of CHeapScope.
 *

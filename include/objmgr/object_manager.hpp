@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.18  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
@@ -112,7 +115,6 @@
 #include <corelib/ncbimtx.hpp>
 
 #include <objmgr/data_loader_factory.hpp>
-#include <objmgr/impl/priority.hpp>
 
 #include <set>
 #include <map>
@@ -143,7 +145,7 @@ public:
 
 public:
     typedef CRef<CDataSource> TDataSourceLock;
-    typedef CPriorityNode::TPriority TPriority;
+    typedef int TPriority;
 
 // configuration functions
 // this data is always available to scopes -
@@ -201,7 +203,7 @@ protected:
 
     TDataSourceLock AcquireDataLoader(CDataLoader& loader);
     TDataSourceLock AcquireDataLoader(const string& loader_name);
-    TDataSourceLock AcquireTopLevelSeqEntry(CSeq_entry& top_entry);
+    TDataSourceLock AcquireTopLevelSeqEntry(const CSeq_entry& top_entry);
     void AcquireDefaultDataSources(TDataSourcesLock& sources);
     bool ReleaseDataSource(TDataSourceLock& data_source);
 
@@ -209,9 +211,9 @@ private:
 
 // these are for Object Manager itself
 // nobody else should use it
-    TDataSourceLock x_RegisterTSE(CSeq_entry& top_entry);
+    TDataSourceLock x_RegisterTSE(const CSeq_entry& top_entry);
     TDataSourceLock x_RegisterLoader(CDataLoader& loader,
-                                     CPriorityNode::TPriority priority,
+                                     TPriority priority,
                                      EIsDefault   is_default = eNonDefault,
                                      bool         no_warning = false);
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;

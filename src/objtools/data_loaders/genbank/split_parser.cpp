@@ -218,7 +218,7 @@ void CSplitParser::Load(CTSE_Chunk_Info& chunk,
         ITERATE ( CID2S_Chunk_Data::TAnnots, it, data.GetAnnots() ) {
             CSeq_annot& annot = const_cast<CSeq_annot&>(**it);
             CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(annot));
-            chunk.x_LoadAnnot(place, *annot_info);
+            chunk.x_LoadAnnot(place, annot_info);
         }
 
         ITERATE ( CID2S_Chunk_Data::TAssembly, it, data.GetAssembly() ) {
@@ -244,6 +244,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.5  2004/03/16 15:47:29  vasilche
+ * Added CBioseq_set_Handle and set of EditHandles
+ *
  * Revision 1.4  2004/02/17 21:19:35  vasilche
  * Fixed 'non-const reference to temporary' warnings.
  *

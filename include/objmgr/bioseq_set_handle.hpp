@@ -1,5 +1,5 @@
-#ifndef SEQ_ENTRY_HANDLE__HPP
-#define SEQ_ENTRY_HANDLE__HPP
+#ifndef OBJMGR__BIOSEQ_SET_HANDLE__HPP
+#define OBJMGR__BIOSEQ_SET_HANDLE__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -35,7 +35,6 @@
 
 #include <corelib/ncbiobj.hpp>
 
-#include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objmgr/impl/heap_scope.hpp>
@@ -48,6 +47,9 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
+class CSeq_annot;
+class CSeq_entry;
+
 class CScope;
 
 class CSeq_entry_Handle;
@@ -59,83 +61,79 @@ class CBioseq_set_EditHandle;
 class CBioseq_EditHandle;
 class CSeq_annot_EditHandle;
 
-class CSeq_entry_Info;
-class CTSE_Info;
+class CBioseq_set_Info;
 
-class NCBI_XOBJMGR_EXPORT CSeq_entry_Handle
+class NCBI_XOBJMGR_EXPORT CBioseq_set_Handle
 {
 public:
-    CSeq_entry_Handle(void);
-    CSeq_entry_Handle(CScope& scope, const CSeq_entry_Info& info);
+    CBioseq_set_Handle(void);
+    CBioseq_set_Handle(CScope& scope, const CBioseq_set_Info& info);
 
     //
     operator bool(void) const;
     bool operator!(void) const;
     void Reset(void);
 
-    bool operator ==(const CSeq_entry_Handle& handle) const;
-    bool operator !=(const CSeq_entry_Handle& handle) const;
-    bool operator <(const CSeq_entry_Handle& handle) const;
+    bool operator ==(const CBioseq_set_Handle& handle) const;
+    bool operator !=(const CBioseq_set_Handle& handle) const;
+    bool operator <(const CBioseq_set_Handle& handle) const;
 
     // 
     CScope& GetScope(void) const;
 
-    CConstRef<CSeq_entry> GetCompleteSeq_entry(void) const;
-    CConstRef<CSeq_entry> GetSeq_entryCore(void) const;
+    CConstRef<CBioseq_set> GetCompleteBioseq_set(void) const;
+    CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
 
-    bool HasParentEntry(void) const;
-    CBioseq_set_Handle GetParentBioseq_set(void) const;
+    // owner Seq-entry
     CSeq_entry_Handle GetParentEntry(void) const;
 
-    // Seq-entry accessors
-    // const CSeq_entry& GetSeq_entry(void) const;
-    CSeq_entry::E_Choice Which(void) const;
+    // member access
+    bool IsSetId(void) const;
+    const CBioseq_set::TId& GetId(void) const;
 
-    // Bioseq access
-    bool IsSeq(void) const;
-    CBioseq_Handle GetSeq(void) const;
+    bool IsSetColl(void) const;
+    const CBioseq_set::TColl& GetColl(void) const;
 
-    // Bioseq_set access
-    bool IsSet(void) const;
-    CBioseq_set_Handle GetSet(void) const;
+    bool IsSetLevel(void) const;
+    CBioseq_set::TLevel GetLevel(void) const;
 
-    bool Set_IsSetId(void) const;
-    const CBioseq_set::TId& Set_GetId(void) const;
-    bool Set_IsSetColl(void) const;
-    const CBioseq_set::TColl& Set_GetColl(void) const;
-    bool Set_IsSetLevel(void) const;
-    CBioseq_set::TLevel Set_GetLevel(void) const;
-    bool Set_IsSetClass(void) const;
-    CBioseq_set::TClass Set_GetClass(void) const;
-    bool Set_IsSetRelease(void) const;
-    const CBioseq_set::TRelease& Set_GetRelease(void) const;
-    bool Set_IsSetDate(void) const;
-    const CBioseq_set::TDate& Set_GetDate(void) const;
+    bool IsSetClass(void) const;
+    CBioseq_set::TClass GetClass(void) const;
+
+    bool IsSetRelease(void) const;
+    const CBioseq_set::TRelease& GetRelease(void) const;
+
+    bool IsSetDate(void) const;
+    const CBioseq_set::TDate& GetDate(void) const;
 
     bool IsSetDescr(void) const;
     const CSeq_descr& GetDescr(void) const;
 
-    CConstRef<CObject> GetBlobId(void) const;
-
-    CConstRef<CTSE_Info> GetTSE_Info(void) const;
-
-    const CSeq_entry_Info& x_GetInfo(void) const;
-
 protected:
+    friend class CScope_Impl;
+
+    friend class CBioseq_Handle;
+
+    friend class CSeqMap_CI;
+    friend class CSeq_entry_CI;
+    friend class CSeq_annot_CI;
+    friend class CAnnotTypes_CI;
+
+    CScope_Impl* x_GetScopeImpl(void) const;
+    const CBioseq_set_Info& x_GetInfo(void) const;
+
+private:
     CHeapScope          m_Scope;
     CConstRef<CObject>  m_Info;
 };
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_entry_EditHandle : public CSeq_entry_Handle
+class NCBI_XOBJMGR_EXPORT CBioseq_set_EditHandle : public CBioseq_set_Handle
 {
 public:
-    CSeq_entry_EditHandle(void);
-    CSeq_entry_EditHandle(CScope& scope, CSeq_entry_Info& info);
+    CBioseq_set_EditHandle(void);
+    CBioseq_set_EditHandle(CScope& scope, CBioseq_set_Info& info);
 
-    CBioseq_set_EditHandle SetSet(void) const;
-
-    CBioseq_set_EditHandle GetParentBioseq_set(void) const;
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot);
@@ -151,65 +149,83 @@ public:
 protected:
     friend class CScope_Impl;
 
-    CSeq_entry_Info& x_GetInfo(void) const;
+    friend class CSeq_entry_I;
+    friend class CSeq_annot_I;
+
+    CBioseq_set_Info& x_GetInfo(void) const;
 };
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CSeq_entry_Handle inline methods
+// CBioseq_set_Handle inline methods
 /////////////////////////////////////////////////////////////////////////////
 
 
 inline
-CSeq_entry_Handle::CSeq_entry_Handle(void)
+CBioseq_set_Handle::CBioseq_set_Handle(void)
 {
 }
 
 
 inline
-CScope& CSeq_entry_Handle::GetScope(void) const
+CScope& CBioseq_set_Handle::GetScope(void) const
 {
     return m_Scope;
 }
 
 
 inline
-CSeq_entry_Handle::operator bool(void) const
+void CBioseq_set_Handle::Reset(void)
+{
+    m_Scope.Reset();
+    m_Info.Reset();
+}
+
+
+inline
+CScope_Impl* CBioseq_set_Handle::x_GetScopeImpl(void) const
+{
+    return m_Scope;
+}
+
+
+inline
+const CBioseq_set_Info& CBioseq_set_Handle::x_GetInfo(void) const
+{
+    return reinterpret_cast<const CBioseq_set_Info&>(*m_Info);
+}
+
+
+inline
+CBioseq_set_Handle::operator bool(void) const
 {
     return m_Info;
 }
 
 
 inline
-bool CSeq_entry_Handle::operator!(void) const
+bool CBioseq_set_Handle::operator!(void) const
 {
     return !m_Info;
 }
 
 
 inline
-const CSeq_entry_Info& CSeq_entry_Handle::x_GetInfo(void) const
-{
-    return reinterpret_cast<const CSeq_entry_Info&>(*m_Info);
-}
-
-
-inline
-bool CSeq_entry_Handle::operator ==(const CSeq_entry_Handle& handle) const
+bool CBioseq_set_Handle::operator ==(const CBioseq_set_Handle& handle) const
 {
     return m_Scope == handle.m_Scope  &&  m_Info == handle.m_Info;
 }
 
 
 inline
-bool CSeq_entry_Handle::operator !=(const CSeq_entry_Handle& handle) const
+bool CBioseq_set_Handle::operator !=(const CBioseq_set_Handle& handle) const
 {
     return m_Scope != handle.m_Scope  ||  m_Info != handle.m_Info;
 }
 
 
 inline
-bool CSeq_entry_Handle::operator <(const CSeq_entry_Handle& handle) const
+bool CBioseq_set_Handle::operator <(const CBioseq_set_Handle& handle) const
 {
     if ( m_Scope != handle.m_Scope ) {
         return m_Scope < handle.m_Scope;
@@ -218,36 +234,29 @@ bool CSeq_entry_Handle::operator <(const CSeq_entry_Handle& handle) const
 }
 
 
-inline
-bool CSeq_entry_Handle::IsSeq(void) const
-{
-    return Which() == CSeq_entry::e_Seq;
-}
-
-
-inline
-bool CSeq_entry_Handle::IsSet(void) const
-{
-    return Which() == CSeq_entry::e_Set;
-}
-
-
 /////////////////////////////////////////////////////////////////////////////
-// CSeq_entry_EditHandle
+// CBioseq_set_EditHandle
 /////////////////////////////////////////////////////////////////////////////
 
 
 inline
-CSeq_entry_EditHandle::CSeq_entry_EditHandle(void)
+CBioseq_set_EditHandle::CBioseq_set_EditHandle(void)
 {
 }
 
 
 inline
-CSeq_entry_EditHandle::CSeq_entry_EditHandle(CScope& scope,
-                                             CSeq_entry_Info& info)
-    : CSeq_entry_Handle(scope, info)
+CBioseq_set_EditHandle::CBioseq_set_EditHandle(CScope& scope,
+                                               CBioseq_set_Info& info)
+    : CBioseq_set_Handle(scope, info)
 {
+}
+
+
+inline
+CBioseq_set_Info& CBioseq_set_EditHandle::x_GetInfo(void) const
+{
+    return const_cast<CBioseq_set_Info&>(CBioseq_set_Handle::x_GetInfo());
 }
 
 
@@ -257,7 +266,7 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.4  2004/03/16 15:47:26  vasilche
+* Revision 1.1  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
 * Revision 1.3  2004/02/09 19:18:50  grichenk
@@ -274,4 +283,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif //SEQ_ENTRY_HANDLE__HPP
+#endif//OBJMGR__BIOSEQ_SET_HANDLE__HPP

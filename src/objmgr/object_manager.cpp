@@ -37,6 +37,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/data_loader.hpp>
+#include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
@@ -256,7 +257,7 @@ CObjectManager::AcquireDataLoader(const string& loader_name)
 
 
 CObjectManager::TDataSourceLock
-CObjectManager::AcquireTopLevelSeqEntry(CSeq_entry& top_entry)
+CObjectManager::AcquireTopLevelSeqEntry(const CSeq_entry& top_entry)
 {
     TReadLockGuard guard(m_OM_Lock);
     TDataSourceLock lock = x_FindDataSource(&top_entry);
@@ -331,7 +332,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
 
 
 CObjectManager::TDataSourceLock
-CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
+CObjectManager::x_RegisterTSE(const CSeq_entry& top_entry)
 {
     TDataSourceLock ret = x_FindDataSource(&top_entry);
     if ( !ret ) {
@@ -362,7 +363,7 @@ bool CObjectManager::ReleaseDataSource(TDataSourceLock& pSource)
         return false;
     }
 
-    const CObject* key = ds.GetTopEntry();
+    CConstRef<CSeq_entry> key = ds.GetTopEntry();
     if ( !key ) {
         ERR_POST("CObjectManager::ReleaseDataSource: "
                  "unknown data source key");
@@ -435,6 +436,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.29  2003/09/30 16:22:02  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

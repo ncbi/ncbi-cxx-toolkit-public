@@ -75,7 +75,7 @@ int CTestApplication::Run()
     CORE_SetLOG(LOG_cxx2c());
 
     {{
-      CRef<CObjectManager> pOm(new CObjectManager);
+        CRef<CObjectManager> pOm(new CObjectManager);
     }}
 
     CObjectManager Om, *pOm=&Om;
@@ -106,45 +106,46 @@ int CTestApplication::Run()
             ERR_POST(Fatal << "Gi (" << gi << "):: not found in ID");
         } else {
 //          scope.ResetHistory();
-          ITERATE (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
-            //CObjectOStreamAsn oos(NcbiCout);
-            //oos << **it;
-            //NcbiCout << NcbiEndl;
-            ;
-          }
-          CSeqVector v = h.GetSeqVector();
-          v.SetIupacCoding();
-          LOG_POST("Vector size = " << v.size());
-          string vs;
-          for (TSeqPos cc = 0; cc < v.size(); cc++) {
-              vs += v[cc];
-              if (cc > 40) break;
-          }
-          LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
-          CRef<CSeq_loc> loc(new CSeq_loc);
-          loc->SetWhole().SetGi(gi);
-          int fcount = 0;
-          {{ // Creating a block to destroy the iterator after using it
-              CFeat_CI feat_it1(scope, *loc, CSeqFeatData::e_Cdregion);
-              LOG_POST("Iterating CDS features, no references resolving");
-              for ( ; feat_it1;  ++feat_it1) {
-                  fcount++;
-              }
-          }}
-          LOG_POST("CDS count (non-resolved) = " << fcount);
-          fcount = 0;
-          {{ // Creating a block to destroy the iterator after using it
-              CFeat_CI feat_it2(scope, *loc,
-                                CSeqFeatData::e_Cdregion,
-                                SAnnotSelector::eOverlap_Intervals,
-                                CFeat_CI::eResolve_All);
-              LOG_POST("Iterating CDS features, resolving references");
-              for ( ; feat_it2;  ++feat_it2) {
-                  fcount++;
-              }
-          }}
-          LOG_POST("CDS count (resolved) = " << fcount);
-          LOG_POST("Gi (" << gi << "):: OK");
+            CConstRef<CBioseq> core = h.GetBioseqCore();
+            ITERATE (list<CRef<CSeq_id> >, it, core->GetId()) {
+                //CObjectOStreamAsn oos(NcbiCout);
+                //oos << **it;
+                //NcbiCout << NcbiEndl;
+                ;
+            }
+            CSeqVector v = h.GetSeqVector();
+            v.SetIupacCoding();
+            LOG_POST("Vector size = " << v.size());
+            string vs;
+            for (TSeqPos cc = 0; cc < v.size(); cc++) {
+                vs += v[cc];
+                if (cc > 40) break;
+            }
+            LOG_POST("Data: " << NStr::PrintableString(vs.substr(0, 40)));
+            CRef<CSeq_loc> loc(new CSeq_loc);
+            loc->SetWhole().SetGi(gi);
+            int fcount = 0;
+            {{ // Creating a block to destroy the iterator after using it
+                CFeat_CI feat_it1(scope, *loc, CSeqFeatData::e_Cdregion);
+                LOG_POST("Iterating CDS features, no references resolving");
+                for ( ; feat_it1;  ++feat_it1) {
+                    fcount++;
+                }
+            }}
+            LOG_POST("CDS count (non-resolved) = " << fcount);
+            fcount = 0;
+            {{ // Creating a block to destroy the iterator after using it
+                CFeat_CI feat_it2(scope, *loc,
+                                  CSeqFeatData::e_Cdregion,
+                                  SAnnotSelector::eOverlap_Intervals,
+                                  CFeat_CI::eResolve_All);
+                LOG_POST("Iterating CDS features, resolving references");
+                for ( ; feat_it2;  ++feat_it2) {
+                    fcount++;
+                }
+            }}
+            LOG_POST("CDS count (resolved) = " << fcount);
+            LOG_POST("Gi (" << gi << "):: OK");
         }
     }
 
@@ -175,6 +176,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/16 15:47:29  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.3  2004/01/13 16:55:58  vasilche
 * CReader, CSeqref and some more classes moved from xobjmgr to separate lib.
 * Headers moved from include/objmgr to include/objtools/data_loaders/genbank.

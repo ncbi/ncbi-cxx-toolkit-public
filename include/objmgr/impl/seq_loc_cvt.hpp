@@ -47,6 +47,8 @@
 #include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
+#include <objects/seqalign/Seq_align.hpp>
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -58,6 +60,10 @@ class CSeq_id;
 class CSeq_loc;
 class CSeq_interval;
 class CSeq_point;
+
+class CDense_seg;
+class CPacked_seg;
+class CSeq_align_set;
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_loc_Conversion
@@ -235,7 +241,7 @@ struct SAlignment_Segment
         void SetMapped(void);
 
         CSeq_id_Handle m_Id;
-        int            m_Start;
+        TSeqPos        m_Start;
         bool           m_IsSetStrand;
         ENa_strand     m_Strand;
         int            m_Width; // not stored in ASN.1, width of a character
@@ -283,7 +289,7 @@ private:
     void x_Init(const CSeq_align_set& align_set);
 
     void x_MapSegment(SAlignment_Segment& sseg,
-                      int row_idx,
+                      size_t row_idx,
                       CSeq_loc_Conversion& cvt);
     bool x_ConvertSegments(TSegments& segs, CSeq_loc_Conversion& cvt);
     void x_GetDstSegments(const TSegments& ssegs, TSegments& dsegs) const;
@@ -389,7 +395,7 @@ SAlignment_Segment::SAlignment_Row::SAlignment_Row(const CSeq_id& id,
                                                    bool is_set_strand,
                                                    ENa_strand strand,
                                                    int width)
-    : m_Id(CSeq_id_Mapper::GetSeq_id_Mapper().GetHandle(id)),
+    : m_Id(CSeq_id_Handle::GetHandle(id)),
       m_Start(start),
       m_IsSetStrand(is_set_strand),
       m_Strand(strand),
@@ -426,6 +432,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/03/16 15:47:27  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.12  2004/02/23 15:23:16  grichenk
 * Removed unused members
 *

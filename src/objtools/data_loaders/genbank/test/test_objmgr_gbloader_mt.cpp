@@ -85,52 +85,53 @@ CTestThread::~CTestThread()
 
 void* CTestThread::Main(void)
 {
-  CObjectManager om;
-  CObjectManager *pom=0;
-  switch((m_mode>>2)&1) {
-  case 1: pom =  &*m_ObjMgr; break;
-  case 0:
-    pom =  &om;
-    om.RegisterDataLoader(*new CGBDataLoader("ID",0,2),CObjectManager::eDefault);
-    break;
-  }
-  
-  CScope scope1(*pom);
-  scope1.AddDefaults();
-
-  LOG_POST(" Processing gis from "<< m_Start << " to " << m_Stop);
-  
-  for (int i = m_Start;  i < m_Stop;  i++) {
-    CScope scope2(*pom);
-    scope2.AddDefaults();
-
-    CScope *s;
-    switch(m_mode&3) {
-    case 2: s =  &*m_Scope; break;
-    case 1: s =  &scope1;   break;
-    case 0: s =  &scope2;   break;
-    default:
-      throw runtime_error("unexpected mode");
+    CObjectManager om;
+    CObjectManager *pom=0;
+    switch((m_mode>>2)&1) {
+    case 1: pom =  &*m_ObjMgr; break;
+    case 0:
+        pom =  &om;
+        om.RegisterDataLoader(*new CGBDataLoader("ID",0,2),CObjectManager::eDefault);
+        break;
     }
+  
+    CScope scope1(*pom);
+    scope1.AddDefaults();
+
+    LOG_POST(" Processing gis from "<< m_Start << " to " << m_Stop);
+  
+    for (int i = m_Start;  i < m_Stop;  i++) {
+        CScope scope2(*pom);
+        scope2.AddDefaults();
+
+        CScope *s;
+        switch(m_mode&3) {
+        case 2: s =  &*m_Scope; break;
+        case 1: s =  &scope1;   break;
+        case 0: s =  &scope2;   break;
+        default:
+            throw runtime_error("unexpected mode");
+        }
     
-    int gi = i ; // (i + m_Idx)/2+3;
-    CSeq_id x;
-    x.SetGi(gi);
-    CBioseq_Handle h = s->GetBioseqHandle(x);
-    if ( !h ) {
-      LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
-    } else {
-      //CObjectOStreamAsn oos(NcbiCout);
-      ITERATE (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
-        //oos << **it;
-        //NcbiCout << NcbiEndl;
-               ;
-      }
-      LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " OK");
+        int gi = i ; // (i + m_Idx)/2+3;
+        CSeq_id x;
+        x.SetGi(gi);
+        CBioseq_Handle h = s->GetBioseqHandle(x);
+        if ( !h ) {
+            LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " :: not found in ID");
+        } else {
+            //CObjectOStreamAsn oos(NcbiCout);
+            CConstRef<CBioseq> core = h.GetBioseqCore();
+            ITERATE (list<CRef<CSeq_id> >, it, core->GetId()) {
+                //oos << **it;
+                //NcbiCout << NcbiEndl;
+                ;
+            }
+            LOG_POST(setw(3) << CThread::GetSelf() << ":: gi=" << gi << " OK");
+        }
+        s->ResetHistory();
     }
-    s->ResetHistory();
-  }
-  return 0;
+    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -262,6 +263,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/16 15:47:29  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.1  2003/12/16 17:51:20  kuznets
 * Code reorganization
 *

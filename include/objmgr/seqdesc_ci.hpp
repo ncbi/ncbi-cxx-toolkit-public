@@ -87,51 +87,15 @@ private:
 
 
 
-inline
-CSeqdesc_CI& CSeqdesc_CI::operator++(void)
-{
-    x_Next();
-    return *this;
-}
-
-
-inline
-CSeqdesc_CI::operator bool(void) const
-{
-    return bool(m_Current)  &&  (m_Inner != m_InnerEnd  ||  m_Outer);
-}
-
-
-inline
-const CSeqdesc& CSeqdesc_CI::operator*(void) const
-{
-    _ASSERT(m_Current);
-    return *m_Current;
-}
-
-
-inline
-const CSeqdesc* CSeqdesc_CI::operator->(void) const
-{
-    _ASSERT(m_Current);
-    return m_Current;
-}
-
-
-inline
-CSeq_entry_Handle CSeqdesc_CI::GetSeq_entry_Handle(void) const
-{
-    return m_Outer ? m_Outer.GetSeq_entry_Handle() :
-        CSeq_entry_Handle();
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/03/16 15:47:26  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.8  2004/02/09 19:18:50  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.

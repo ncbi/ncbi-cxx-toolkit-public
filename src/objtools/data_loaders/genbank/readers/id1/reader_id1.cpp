@@ -484,10 +484,17 @@ void CId1Reader::RetrieveSeqrefs(TSeqrefs& srs, int gi, TConn conn)
     }
 
     const CID1blob_info& info = id1_reply.GetGotblobinfo();
-    CRef<CSeqref> ref(new CSeqref(gi, info.GetSat(), info.GetSat_key()));
     if ( info.GetWithdrawn() > 0 || info.GetConfidential() > 0 ) {
-        ref->SetFlags(ref->GetFlags() | CSeqref::fPrivate);
+        LOG_POST(Warning<<"CId1Reader::RetrieveSeqrefs("<<gi<<"): "
+                 "gi is private");
+        return;
     }
+    if ( info.GetSat() < 0 || info.GetSat_key() < 0 ) {
+        LOG_POST(Warning<<"CId1Reader::RetrieveSeqrefs("<<gi<<"): "
+                 "negative sat/satkey");
+        return;
+    }
+    CRef<CSeqref> ref(new CSeqref(gi, info.GetSat(), info.GetSat_key()));
     ref->SetVersion(x_GetVersion(info));
     srs.push_back(ref);
    
@@ -893,6 +900,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.79  2004/03/16 15:47:29  vasilche
+ * Added CBioseq_set_Handle and set of EditHandles
+ *
  * Revision 1.78  2004/03/05 17:43:52  dicuccio
  * Added support for satellite 31: TRACE_CHGR
  *

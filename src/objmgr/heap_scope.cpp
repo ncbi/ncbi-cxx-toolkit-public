@@ -37,13 +37,9 @@
 *
 */
 
-#include <objmgr/scope.hpp>
-#include <objmgr/bioseq_handle.hpp>
-#include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/seq_annot_handle.hpp>
-#include <objmgr/bioseq_set_handle.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/impl/scope_impl.hpp>
-#include <objmgr/impl/synonyms.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -51,258 +47,32 @@ BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// CScope
+// CHeapScope
 //
 /////////////////////////////////////////////////////////////////////////////
 
 
-CScope::CScope(CObjectManager& objmgr)
+void CHeapScope::Set(CScope* scope)
 {
-    if ( CanBeDeleted() ) {
-        // this CScope object is allocated in heap
-        m_Impl.Reset(new CScope_Impl(objmgr));
-        m_Impl->m_HeapScope = this;
+    if ( scope ) {
+        m_Scope.Reset(scope->m_Impl->m_HeapScope);
+        _ASSERT(m_Scope);
     }
     else {
-        // allocate heap CScope object
-        m_HeapScope.Reset(new CScope(objmgr));
-        _ASSERT(m_HeapScope->CanBeDeleted());
-        m_Impl = m_HeapScope->m_Impl;
-        _ASSERT(m_Impl);
+        m_Scope.Reset();
     }
 }
 
 
-CScope::~CScope(void)
+CScope& CHeapScope::GetScope(void) const
 {
-    if ( bool(m_Impl) && m_Impl->m_HeapScope == this ) {
-        m_Impl->m_HeapScope = 0;
-    }
+    return static_cast<CScope&>(const_cast<CObject&>(*m_Scope));
 }
 
 
-CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id& id)
+CScope_Impl* CHeapScope::GetImpl(void) const
 {
-    return m_Impl->GetBioseqHandle(id);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
-{
-    return m_Impl->GetBioseqHandle(id);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
-{
-    return m_Impl->GetBioseqHandle(loc);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::GetBioseqHandle(CBioseq&) is deprecated");
-    return m_Impl->GetBioseqHandle(seq);
-}
-
-
-CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
-    return m_Impl->GetSeq_entryHandle(entry);
-}
-
-
-CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::GetSeq_annotHandle(CSeq_annot&) is deprecated.");
-    return m_Impl->GetSeq_annotHandle(annot);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
-                                              const CBioseq_Handle& bh)
-{
-    return m_Impl->GetBioseqHandleFromTSE(id, bh);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
-                                              const CSeq_entry_Handle& seh)
-{
-    return m_Impl->GetBioseqHandleFromTSE(id, seh);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                              const CBioseq_Handle& bh)
-{
-    return m_Impl->GetBioseqHandleFromTSE(id, bh);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                              const CSeq_entry_Handle& seh)
-{
-    return m_Impl->GetBioseqHandleFromTSE(id, seh);
-}
-
-
-CBioseq_EditHandle CScope::GetEditHandle(const CBioseq_Handle& seq)
-{
-    return m_Impl->GetEditHandle(seq);
-}
-
-
-CSeq_entry_EditHandle CScope::GetEditHandle(const CSeq_entry_Handle& entry)
-{
-    return m_Impl->GetEditHandle(entry);
-}
-
-
-CSeq_annot_EditHandle CScope::GetEditHandle(const CSeq_annot_Handle& annot)
-{
-    return m_Impl->GetEditHandle(annot);
-}
-
-
-CBioseq_set_EditHandle CScope::GetEditHandle(const CBioseq_set_Handle& seqset)
-{
-    return m_Impl->GetEditHandle(seqset);
-}
-
-
-void CScope::ResetHistory(void)
-{
-    m_Impl->ResetHistory();
-}
-
-
-CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id& id)
-{
-    return m_Impl->GetSynonyms(id);
-}
-
-
-CConstRef<CSynonymsSet> CScope::GetSynonyms(const CSeq_id_Handle& id)
-{
-    return m_Impl->GetSynonyms(id);
-}
-
-
-CConstRef<CSynonymsSet> CScope::GetSynonyms(const CBioseq_Handle& bh)
-{
-    return m_Impl->GetSynonyms(bh);
-}
-
-
-void CScope::AddDefaults(TPriority priority)
-{
-    m_Impl->AddDefaults(priority);
-}
-
-
-void CScope::AddDataLoader(const string& loader_name, TPriority priority)
-{
-    m_Impl->AddDataLoader(loader_name, priority);
-}
-
-
-void CScope::AddScope(CScope& scope, TPriority priority)
-{
-    m_Impl->AddScope(*scope.m_Impl, priority);
-}
-
-
-CSeq_entry_Handle CScope::AddTopLevelSeqEntry(const CSeq_entry& top_entry,
-                                              TPriority priority)
-{
-    return m_Impl->AddTopLevelSeqEntry(top_entry, priority);
-}
-
-
-CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq, TPriority priority)
-{
-    return m_Impl->AddBioseq(bioseq, priority);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
-                                              const CSeq_entry& tse)
-{
-    ERR_POST_ONCE(Warning<<
-                  "GetBioseqHandleFromTSE(CSeq_entry) is deprecated: "
-                  "use handles.");
-    CSeq_entry_Handle h = GetSeq_entryHandle(tse);
-    return GetBioseqHandleFromTSE(id, h);
-}
-
-
-CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
-                                              const CSeq_entry& tse)
-{
-    ERR_POST_ONCE(Warning<<
-                  "GetBioseqHandleFromTSE(CSeq_entry) is deprecated: "
-                  "use handles.");
-    CSeq_entry_Handle h = GetSeq_entryHandle(tse);
-    return GetBioseqHandleFromTSE(id, h);
-}
-
-
-void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::AttachEntry() is deprecated: "
-                  "use class CSeq_entry_EditHandle.");
-    CBioseq_set_EditHandle ph =
-        GetEditHandle(GetSeq_entryHandle(parent).GetSet());
-    ph.AttachEntry(entry);
-}
-
-
-void CScope::RemoveEntry(CSeq_entry& entry)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::RemoveEntry() is deprecated: "
-                  "use class CSeq_entry_EditHandle.");
-    CSeq_entry_EditHandle eh = GetEditHandle(GetSeq_entryHandle(entry));
-    eh.RemoveEntry();
-}
-
-
-void CScope::AttachAnnot(CSeq_entry& parent, CSeq_annot& annot)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::AttachAnnot() is deprecated: "
-                  "use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle ph = GetEditHandle(GetSeq_entryHandle(parent));
-    ph.AttachAnnot(annot);
-}
-
-
-void CScope::RemoveAnnot(CSeq_entry& parent, CSeq_annot& annot)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::RemoveAnnot() is deprecated: "
-                  "use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle ph = GetEditHandle(GetSeq_entryHandle(parent));
-    CSeq_annot_EditHandle ah = GetEditHandle(GetSeq_annotHandle(annot));
-    ph.RemoveAnnot(ah);
-}
-
-
-void CScope::ReplaceAnnot(CSeq_entry& parent,
-                          CSeq_annot& old_annot, CSeq_annot& new_annot)
-{
-    ERR_POST_ONCE(Warning<<
-                  "CScope::RemoveAnnot() is deprecated: "
-                  "use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle ph = GetEditHandle(GetSeq_entryHandle(parent));
-    CSeq_annot_EditHandle ah = GetEditHandle(GetSeq_annotHandle(old_annot));
-    ph.ReplaceAnnot(ah, new_annot);
+    return GetScope().m_Impl.GetPointer();
 }
 
 
@@ -312,7 +82,7 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.102  2004/03/16 15:47:28  vasilche
+* Revision 1.1  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
 * Revision 1.101  2004/02/19 17:23:01  vasilche

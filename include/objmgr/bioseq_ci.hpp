@@ -35,8 +35,8 @@
 
 
 #include <corelib/ncbiobj.hpp>
-#include <objmgr/scope.hpp>
-
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/impl/heap_scope.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -45,6 +45,18 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CBioseq_Handle;
 class CSeq_entry;
+class CSeq_entry_Handle;
+
+
+// Base class for CBioseq_CI to make enums visible in CScope
+class CBioseq_CI_Base {
+public:
+    enum EBioseqLevelFlag {
+        eLevel_All,
+        eLevel_Mains,
+        eLevel_Parts
+    };
+};
 
 
 class NCBI_XOBJMGR_EXPORT CBioseq_CI : public CBioseq_CI_Base
@@ -54,6 +66,9 @@ public:
     CBioseq_CI(void);
     // Iterate over bioseqs from the entry taken from the scope. Use optional
     // filter to iterate over selected bioseq types only.
+    CBioseq_CI(const CSeq_entry_Handle& entry,
+               CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
+               EBioseqLevelFlag level = eLevel_All);
     CBioseq_CI(CScope& scope, const CSeq_entry& entry,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
@@ -70,7 +85,7 @@ public:
     const CBioseq_Handle* operator-> (void) const;
 
 private:
-    typedef CScope_Impl::TBioseq_HandleSet    TBioseq_HandleSet;
+    typedef vector<CBioseq_Handle>            TBioseq_HandleSet;
     typedef TBioseq_HandleSet::const_iterator THandleIterator;
 
     CHeapScope           m_Scope;
@@ -123,6 +138,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/03/16 15:47:25  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.14  2004/02/19 17:15:02  vasilche
 * Removed unused include.
 *

@@ -75,7 +75,7 @@ CSeqdesc_CI::CSeqdesc_CI(const CSeq_descr_CI& desc_it,
 CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
                          CSeqdesc::E_Choice choice,
                          size_t search_depth)
-    : m_Outer(handle, choice, search_depth),
+    : m_Outer(handle, search_depth),
       m_Current(NULL),
       m_Choice(choice)
 {
@@ -91,7 +91,7 @@ CSeqdesc_CI::CSeqdesc_CI(const CBioseq_Handle& handle,
 CSeqdesc_CI::CSeqdesc_CI(const CSeq_entry_Handle& entry,
                          CSeqdesc::E_Choice choice,
                          size_t search_depth)
-    : m_Outer(entry, choice, search_depth),
+    : m_Outer(entry, search_depth),
       m_Current(NULL),
       m_Choice(choice)
 {
@@ -155,12 +155,49 @@ void CSeqdesc_CI::x_Next(void)
 }
 
 
+CSeqdesc_CI& CSeqdesc_CI::operator++(void)
+{
+    x_Next();
+    return *this;
+}
+
+
+CSeqdesc_CI::operator bool(void) const
+{
+    return bool(m_Current)  &&  (m_Inner != m_InnerEnd  ||  m_Outer);
+}
+
+
+const CSeqdesc& CSeqdesc_CI::operator*(void) const
+{
+    _ASSERT(m_Current);
+    return *m_Current;
+}
+
+
+const CSeqdesc* CSeqdesc_CI::operator->(void) const
+{
+    _ASSERT(m_Current);
+    return m_Current;
+}
+
+
+CSeq_entry_Handle CSeqdesc_CI::GetSeq_entry_Handle(void) const
+{
+    return m_Outer ? m_Outer.GetSeq_entry_Handle() :
+        CSeq_entry_Handle();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/16 15:47:28  vasilche
+* Added CBioseq_set_Handle and set of EditHandles
+*
 * Revision 1.10  2004/02/09 19:18:54  grichenk
 * Renamed CDesc_CI to CSeq_descr_CI. Redesigned CSeq_descr_CI
 * and CSeqdesc_CI to avoid using data directly.
