@@ -777,22 +777,15 @@ Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk,
          coordinates, so need to divide it by 3 */
       start_shift /= CODON_LENGTH;
    } else {
-      Int4 oof_start, oof_end;
-      if (hsp->subject.frame > 0) {
-         oof_start = 0;
-         oof_end = subject_blk->length;
-      } else {
-         oof_start = subject_blk->length + 1;
-         oof_end = 2*subject_blk->length + 1;
-      }
+      Int4 oof_end;
+      oof_end = subject_blk->length;
       
       start_shift = 
-         MAX(oof_start, hsp->subject.offset - MAX_FULL_TRANSLATION);
+         MAX(0, hsp->subject.offset - MAX_FULL_TRANSLATION);
       translation_length =
-         MIN(hsp->subject.end + MAX_FULL_TRANSLATION, 
-             oof_end) - start_shift;
+         MIN(hsp->subject.end + MAX_FULL_TRANSLATION, oof_end) - start_shift;
       if (hsp->subject.frame > 0) {
-         nucl_shift = start_shift - oof_start;
+         nucl_shift = start_shift;
       } else {
          nucl_shift = oof_end - start_shift - translation_length;
       }
@@ -818,32 +811,19 @@ Blast_HSPGetPartialSubjectTranslation(BLAST_SequenceBlk* subject_blk,
 }
 
 void
-Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, BLAST_SequenceBlk* subject_blk, 
-                             Boolean is_ooframe, Int4 start_shift)
+Blast_HSPAdjustSubjectOffset(BlastHSP* hsp, Int4 start_shift)
 {
-
-            if (is_ooframe) {
-               /* Adjust subject offsets for negative frames */
-               if (hsp->subject.frame < 0) {
-                  Int4 strand_start = subject_blk->length + 1;
-                  hsp->subject.offset -= strand_start;
-                  hsp->subject.end -= strand_start;
-                  hsp->subject.gapped_start -= strand_start;
-                  hsp->gap_info->start2 -= strand_start;
-               }
-            } 
-
-            /* Adjust subject offsets if shifted (partial) sequence was used 
-               for extension */
-            if (start_shift > 0) {
-               hsp->subject.offset += start_shift;
-               hsp->subject.end += start_shift;
-               hsp->subject.gapped_start += start_shift;
-               if (hsp->gap_info)
-                  hsp->gap_info->start2 += start_shift;
-            }
-
-            return;
+    /* Adjust subject offsets if shifted (partial) sequence was used 
+       for extension */
+    if (start_shift > 0) {
+        hsp->subject.offset += start_shift;
+        hsp->subject.end += start_shift;
+        hsp->subject.gapped_start += start_shift;
+        if (hsp->gap_info)
+            hsp->gap_info->start2 += start_shift;
+    }
+    
+    return;
 }
 
 int
@@ -1854,7 +1834,7 @@ Blast_HSPListReevaluateWithAmbiguities(EBlastProgramType program,
                subject_start, word_params, hit_params, sbp, kTranslateSubject);
          /* If partial translation was done and subject sequence was shifted,
             shift back offsets in the HSP structure. */
-         Blast_HSPAdjustSubjectOffset(hsp, subject_blk, FALSE, start_shift);
+         Blast_HSPAdjustSubjectOffset(hsp, start_shift);
       }
    
       if (delete_hsp) { /* This HSP is now below the cutoff */

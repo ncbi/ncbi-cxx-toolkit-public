@@ -3464,6 +3464,11 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
    
    if (score_options->is_ooframe) {
       q_length = init_hsp->q_off;
+      /* For negative subject frames, make subject offset relative to the part
+         of the mixed-frame sequence corresponding to the reverse strand. */
+      if (program == eBlastTypeTblastn && subject_blk->frame < 0)
+          init_hsp->s_off -= subject_length + 1;
+      
       s_length = init_hsp->s_off;
 
       if (program == eBlastTypeBlastx) {
@@ -3471,8 +3476,7 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
          query = query_blk->oof_sequence + CODON_LENGTH + q_length;
          query_length -= CODON_LENGTH - 1;
          switch_seq = TRUE;
-      } else if (program == eBlastTypeTblastn ||
-                 program == eBlastTypeRpsTblastn) {
+      } else if (program == eBlastTypeTblastn) {
          subject = subject_blk->oof_sequence + CODON_LENGTH + s_length;
          query = query_blk->sequence + q_length;
          subject_length -= CODON_LENGTH - 1;
@@ -3495,14 +3499,16 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
    if (q_length != 0 && s_length != 0) {
       found_start = TRUE;
       if(score_options->is_ooframe) {
-         score_left = s_OutOfFrameSemiGappedAlignWrap(query, subject, q_length, s_length,
-               NULL, &private_q_start, &private_s_start, TRUE, NULL, 
-               gap_align, score_params, q_length, TRUE, switch_seq);
+         score_left = 
+             s_OutOfFrameSemiGappedAlignWrap(query, subject, q_length, s_length,
+                 NULL, &private_q_start, &private_s_start, TRUE, NULL, 
+                 gap_align, score_params, q_length, TRUE, switch_seq);
       } else {
-         score_left = s_SemiGappedAlign(query, subject+subject_shift, q_length, 
-            s_length, NULL,
-            &private_q_start, &private_s_start, TRUE, NULL, gap_align, 
-            score_params, init_hsp->q_off, FALSE, TRUE);
+         score_left = 
+             s_SemiGappedAlign(query, subject+subject_shift, q_length, s_length, 
+                               NULL, &private_q_start, &private_s_start, TRUE, 
+                               NULL, gap_align, score_params, init_hsp->q_off, 
+                               FALSE, TRUE);
       }
         
       gap_align->query_start = q_length - private_q_start;
@@ -3514,19 +3520,21 @@ s_BlastProtGappedAlignment(EBlastProgramType program,
    if (q_length < query_length && s_length < subject_length) {
       found_end = TRUE;
       if(score_options->is_ooframe) {
-         score_right = s_OutOfFrameSemiGappedAlignWrap(query-1, subject-1, 
-            query_length-q_length+1, subject_length-s_length+1,
-            NULL, &(gap_align->query_stop), &(gap_align->subject_stop), 
-            TRUE, NULL, gap_align, 
-            score_params, q_length, FALSE, switch_seq);
+         score_right = 
+             s_OutOfFrameSemiGappedAlignWrap(query-1, subject-1, 
+                 query_length-q_length+1, subject_length-s_length+1,
+                 NULL, &(gap_align->query_stop), &(gap_align->subject_stop), 
+                 TRUE, NULL, gap_align, score_params, q_length, FALSE, 
+                 switch_seq);
          gap_align->query_stop += q_length;
          gap_align->subject_stop += s_length + subject_shift;
       } else {
-         score_right = s_SemiGappedAlign(query+init_hsp->q_off,
-            subject+init_hsp->s_off, query_length-q_length, 
-            subject_length-s_length, NULL, &(gap_align->query_stop), 
-            &(gap_align->subject_stop), TRUE, NULL, gap_align, 
-            score_params, init_hsp->q_off, FALSE, FALSE);
+         score_right = 
+             s_SemiGappedAlign(query+init_hsp->q_off, subject+init_hsp->s_off, 
+                               query_length-q_length, subject_length-s_length, 
+                               NULL, &(gap_align->query_stop), 
+                               &(gap_align->subject_stop), TRUE, NULL, gap_align, 
+                               score_params, init_hsp->q_off, FALSE, FALSE);
          /* Make end offsets point to the byte after the end of the 
             alignment */
          gap_align->query_stop += init_hsp->q_off + 1;
