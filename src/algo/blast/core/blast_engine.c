@@ -532,6 +532,9 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
    BlastQueryInfo concat_db_info;
    RPSAuxInfo *rps_info;
    BlastRawCutoffs* raw_cutoffs = NULL;
+   BlastQueryInfo* one_query_info = NULL;
+   BLAST_SequenceBlk* one_query = NULL;
+   Int4 index;
 
    if (program_number != eBlastTypeRpsBlast &&
        program_number != eBlastTypeRpsTblastn)
@@ -600,23 +603,35 @@ BLAST_RPSSearchEngine(EBlastProgramType program_number,
       search space sizes for the concatenated DB. This means that
       E-values cannot be calculated after hits are found. */
 
-   BLAST_SearchEngineCore(program_number, &concat_db, query_info, 
-         query, lookup_wrap, gap_align, score_params, 
-         word_params, ext_params, hit_params, db_options, 
-         diagnostics, aux_struct, &hsp_list);
+   for (index = 0; index < query_info->num_queries; ++index) {
+       /* Separate one query from the set: create an auxiliary query_info 
+          structure which refers to this single query. */
+       if (Blast_GetOneQueryStructs(&one_query_info, &one_query, 
+                                    query_info, query, index) != 0)
+           return -1;
+
+       BLAST_SearchEngineCore(program_number, &concat_db, one_query_info, 
+          one_query, lookup_wrap, gap_align, score_params, 
+          word_params, ext_params, hit_params, db_options, 
+          diagnostics, aux_struct, &hsp_list);
+
+       /* Save the resulting list of HSPs. 'query' and 'subject' are
+          still reversed */
+       if (hsp_list && hsp_list->hspcnt > 0) {
+           hsp_list->query_index = index;
+           /* Save the HSP list */
+           BlastHSPStreamWrite(hsp_stream, &hsp_list);
+       }
+   }
+
+   BlastQueryInfoFree(one_query_info);
+   BlastSequenceBlkFree(one_query);
 
    /* Fill the cutoff values in the diagnostics structure */
    if (diagnostics->cutoffs)
       raw_cutoffs = diagnostics->cutoffs;
 
    FillReturnCutoffsInfo(raw_cutoffs, score_params, word_params, ext_params, hit_params);
-
-   /* Save the resulting list of HSPs. 'query' and 'subject' are
-      still reversed */
-   if (hsp_list && hsp_list->hspcnt > 0) {
-      /* Save the HSPs into a hit list */
-      BlastHSPStreamWrite(hsp_stream, &hsp_list);
-   }
 
    /* Do the traceback. After this call, query and 
       subject have reverted to their traditional meanings. */
