@@ -28,8 +28,51 @@
  * File Description:
  *   Test UTIL_PushbackStream() interface.
  *
+ */
+
+#include "../../util/test/pbacktest.hpp"
+#include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
+/* This header must go last */
+#include "test_assert.h"
+
+
+int main(int argc, char* argv[])
+{
+    USING_NCBI_SCOPE;
+
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostFlag(eDPF_All);
+    CONNECT_Init(0);
+
+    string host = "ray";
+    string path = "/Service/bounce.cgi";
+    string args = kEmptyStr;
+    string uhdr = kEmptyStr;
+
+    LOG_POST("Creating HTTP connection to http://" + host + path + args);
+    CConn_HttpStream ios(host, path, args, uhdr);
+
+    int n = TEST_StreamPushback(ios,
+                                argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
+                                false/*no rewind*/);
+
+    CORE_SetREG(0);
+    CORE_SetLOG(0);
+    CORE_SetLOCK(0);
+
+    return n;
+}
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/06/10 19:55:10  lavr
+ * Take advantage of CONNECT_Init() call
+ *
  * Revision 1.6  2002/04/15 19:21:44  lavr
  * +#include "../test/test_assert.h"
  *
@@ -50,36 +93,3 @@
  *
  * ==========================================================================
  */
-
-#include "../../util/test/pbacktest.hpp"
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <connect/ncbi_util.h>
-/* This header must go last */
-#include "test_assert.h"
-
-
-int main(int argc, char* argv[])
-{
-    USING_NCBI_SCOPE;
-
-    CORE_SetLOG(LOG_cxx2c());
-    SetDiagTrace(eDT_Enable);
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagPostFlag(eDPF_All);
-
-    string host = "ray";
-    string path = "/Service/bounce.cgi";
-    string args = kEmptyStr;
-    string uhdr = kEmptyStr;
-
-    LOG_POST("Creating HTTP connection to http://" + host + path + args);
-    CConn_HttpStream ios(host, path, args, uhdr);
-
-    int n = TEST_StreamPushback(ios,
-                                argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
-                                false/*no rewind*/);
-
-    CORE_SetLOG(0);
-    return n;
-}
