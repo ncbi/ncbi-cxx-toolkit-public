@@ -131,8 +131,10 @@ static edit_op_t *edit_script_next(MBGapEditScript *es, edit_op_t *op)
 static Int4 edit_script_more(MBGapEditScript *data, Uint4 op, Uint4 k)
 {
     if (op == EDIT_OP_ERR) {
+#if ERR_POST_EX_DEFINED
         ErrPostEx(SEV_FATAL, 1, 0, 
                   "edit_script_more: bad opcode %d:%d", op, k);
+#endif
         return -1;
     }
     
@@ -208,9 +210,9 @@ MBSpacePtr MBSpaceNew()
     MBSpacePtr p;
     Int4 amount;
     
-    p = Nlm_Malloc(sizeof(MBSpace));
+    p = (MBSpacePtr) Malloc(sizeof(MBSpace));
     amount = MAX_SPACE;
-    p->space_array = Nlm_Malloc(sizeof(ThreeVal)*amount);
+    p->space_array = (ThreeValPtr) Malloc(sizeof(ThreeVal)*amount);
     if (p->space_array == NULL) {
        p = MemFree(p);
        return NULL;
@@ -251,7 +253,9 @@ static ThreeValPtr get_mb_space(MBSpacePtr S, Int4 amount)
     while (S->used+amount > S->size) {
        if (S->next == NULL)
           if ((S->next = MBSpaceNew()) == NULL) {
+#if ERR_POST_EX_DEFINED
 	     ErrPostEx(SEV_WARNING, 0, 0, "Cannot get new space for greedy extension");
+#endif
 	     return NULL;
           }
        S = S->next;
@@ -380,12 +384,12 @@ len2 corresponds to the unpacked (true) length.
  *   edit_script     -
  *   rem             - offset shift within a packed sequence
  */
-Int4 BLAST_GreedyAlign(const UcharPtr s1, Int4 len1,
-			  const UcharPtr s2, Int4 len2,
+Int4 BLAST_GreedyAlign(const Uint1Ptr s1, Int4 len1,
+			  const Uint1Ptr s2, Int4 len2,
 			  Boolean reverse, Int4 xdrop_threshold, 
 			  Int4 match_cost, Int4 mismatch_cost,
 			  Int4Ptr e1, Int4Ptr e2, 
-			  GreedyAlignMemPtr abmp, MBGapEditScript *S,
+			  GreedyAlignMemPtr gamp, MBGapEditScript *S,
                           Uint1 rem)
 {
     Int4 col,			/* column number */
@@ -396,7 +400,7 @@ Int4 BLAST_GreedyAlign(const UcharPtr s1, Int4 len1,
         MAX_D, 			/* maximum cost */
         ORIGIN,
         return_val = 0;
-    Int4Ptr PNTR flast_d = abmp->flast_d; /* rows containing the last d */
+    Int4Ptr PNTR flast_d = gamp->flast_d; /* rows containing the last d */
     Int4Ptr max_row;		/* reached for cost d=0, ... len1.  */
     
     Int4 X_pen = xdrop_threshold;
@@ -404,10 +408,10 @@ Int4 BLAST_GreedyAlign(const UcharPtr s1, Int4 len1,
     Int4 Op_cost = mismatch_cost + M_half*2;
     Int4 D_diff = ICEIL(X_pen+M_half, Op_cost);
     
-    Int4 x, cur_max, b_diag = 0, best_diag = INT_MAX/2;
-    Int4Ptr max_row_free = abmp->max_row_free;
+    Int4 x, cur_max, b_diag = 0, best_diag = INT4_MAX/2;
+    Int4Ptr max_row_free = gamp->max_row_free;
     Char nlower = 0, nupper = 0;
-    MBSpacePtr space = abmp->space;
+    MBSpacePtr space = gamp->space;
     Int4 max_len = len2;
  
     MAX_D = (Int4) (len1/ERROR_FRACTION + 1);
@@ -595,13 +599,13 @@ Int4 BLAST_GreedyAlign(const UcharPtr s1, Int4 len1,
 }
 
 
-Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1, 
-				 const UcharPtr s2, Int4 len2,
+Int4 BLAST_AffineGreedyAlign (const Uint1Ptr s1, Int4 len1, 
+				 const Uint1Ptr s2, Int4 len2,
 				 Boolean reverse, Int4 xdrop_threshold, 
 				 Int4 match_score, Int4 mismatch_score, 
 				 Int4 gap_open, Int4 gap_extend,
 				 Int4Ptr e1, Int4Ptr e2, 
-				 GreedyAlignMemPtr abmp, MBGapEditScript *S,
+				 GreedyAlignMemPtr gamp, MBGapEditScript *S,
                                  Uint1 rem)
 {
     Int4 col,			/* column number */
@@ -613,7 +617,7 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
         ORIGIN,
         return_val = 0;
     ThreeValPtr PNTR flast_d;	/* rows containing the last d */
-    Int4Ptr max_row_free = abmp->max_row_free;
+    Int4Ptr max_row_free = gamp->max_row_free;
     Int4Ptr max_row;		/* reached for cost d=0, ... len1.  */
     Int4 Mis_cost, GO_cost, GE_cost;
     Int4 D_diff, gd;
@@ -621,9 +625,9 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
     Int4 max_cost;
     Int4 *lower, *upper;
     
-    Int4 x, cur_max, b_diag = 0, best_diag = INT_MAX/2;
+    Int4 x, cur_max, b_diag = 0, best_diag = INT4_MAX/2;
     Char nlower = 0, nupper = 0;
-    MBSpacePtr space = abmp->space;
+    MBSpacePtr space = gamp->space;
     Int4 stop_condition;
     Int4 max_d;
     Int4Ptr uplow_free;
@@ -641,7 +645,7 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
     if (gap_open == 0 && gap_extend == 0) {
        return BLAST_GreedyAlign(s1, len1, s2, len2, reverse, 
                                    xdrop_threshold, match_score, 
-                                   mismatch_score, e1, e2, abmp, S, rem);
+                                   mismatch_score, e1, e2, gamp, S, rem);
     }
     
     Mis_cost = mismatch_score + match_score;
@@ -690,7 +694,7 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
 	/* hit last row; stop search */
 	return row*match_score;
     }
-    flast_d = abmp->flast_d_affine;
+    flast_d = gamp->flast_d_affine;
     if (S==NULL) {
         space = 0;
     } else { 
@@ -699,7 +703,7 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
     max_row = max_row_free + D_diff;
     for (k = 0; k < D_diff; k++)
 	max_row_free[k] = 0;
-    uplow_free = abmp->uplow_free;
+    uplow_free = gamp->uplow_free;
     lower = uplow_free;
     upper = uplow_free+max_d+1+max_cost;
     /* next 3 lines set boundary for -1,-2,...,-max_cost+1*/
