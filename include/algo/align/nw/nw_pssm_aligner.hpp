@@ -121,8 +121,6 @@ protected:
     // core dynamic programming
     virtual CNWAligner::TScore x_Align (SAlignInOut* data);
     CNWAligner::TScore x_AlignProfile (SAlignInOut* data);
-
-    virtual CNWAligner::TScore x_ScoreByTranscript(void) const;
 };
 
 
@@ -135,6 +133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/11/29 15:41:40  ucko
+ * Remove declaration of obsolete virtual method CNWAligner::x_ScoreByTranscript.
+ *
  * Revision 1.2  2004/11/29 14:36:45  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *
