@@ -1,5 +1,5 @@
-#ifndef CORELIB_TEST___TEST_ASSERT__H
-#define CORELIB_TEST___TEST_ASSERT__H
+#ifndef TEST_ASSERT__H
+#define TEST_ASSERT__H
 
 /*  $Id$
  * ===========================================================================
@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/03/22 19:49:55  lavr
+ * Undef NDEBUG; include <assert.h>; must go last in the list of include files
+ *
  * Revision 6.4  2002/03/21 22:02:35  lavr
  * Provide assert() for MSVC
  *
@@ -53,23 +56,7 @@
 
 #if defined(NDEBUG)
 #  undef  NDEBUG
-#endif 
-
-#if !defined(_DEBUG)
-#  if !defined(_MSC_VER)
-#    define _DEBUG
-#  elif !defined(assert)
-#    include <stdio.h>
-#    include <stdlib.h>
-#    define assert(expr) if (expr) {                          \
-                             fprintf(stderr,                  \
-                                     "Assertion failed: %s"   \
-                                     ", %s line %d\n", #expr, \
-                                     __FILE__, __LINE__);     \
-                             abort();                         \
-                         }
-#  endif
 #endif
+#include <assert.h>
 
-
-#endif  /* CORELIB_TEST___TEST_ASSERT__H */
+#endif  /* TEST_ASSERT__H */
