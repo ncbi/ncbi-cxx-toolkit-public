@@ -51,13 +51,19 @@ BEGIN_SCOPE(objects)
 class CFeatHeaderItem : public CFlatItem
 {
 public:
-    CFeatHeaderItem(CFFContext& ctx) : CFlatItem(ctx) {}
+    CFeatHeaderItem(CFFContext& ctx);
     void Format(IFormatter& formatter,
         IFlatTextOStream& text_os) const {
         formatter.FormatFeatHeader(*this, text_os);
     }
+
+    const CSeq_id& GetId(void) const { return *m_Id; }  // for FTable format
+
 private:
-    void x_GatherInfo(CFFContext& ctx) {}
+    void x_GatherInfo(CFFContext& ctx);
+
+    // data
+    CConstRef<CSeq_id>  m_Id;  // for FTable format
 };
 
 
@@ -255,7 +261,7 @@ private:
         CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const;
     void x_FormatNoteQual(ESourceQualifier slot, const string& name,
             CFlatFeature::TQuals& qvec, IFlatQVal::TFlags flags = 0) const {
-        x_FormatQual(slot, "note", qvec, flags | IFlatQVal::fIsNote); 
+        x_FormatQual(slot, name, qvec, flags | IFlatQVal::fIsNote); 
     }
 
     typedef multimap<ESourceQualifier, CConstRef<IFlatQVal> > TQuals;
@@ -273,6 +279,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/18 15:27:25  shomrat
+* + GetId for ftable format
+*
 * Revision 1.6  2004/03/08 21:00:48  shomrat
 * Exception qualifiers gathering
 *
