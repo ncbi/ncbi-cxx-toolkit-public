@@ -300,6 +300,32 @@ bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj)
 }
 
 
+bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config) const
+{
+    list<string> libs_3party;
+    ITERATE(list<string>, p, m_ProjectLibs) {
+        const string& lib = *p;
+        list<string> components;
+        GetApp().GetSite().GetComponents(lib, &components);
+        copy(components.begin(), 
+             components.end(), back_inserter(libs_3party));
+    }
+    
+    ITERATE(list<string>, p, libs_3party) {
+        const string& requires = *p;
+        SLibInfo lib_info;
+        GetApp().GetSite().GetLibInfo(requires, config, &lib_info);
+        
+        if ( lib_info.m_LibPath.empty() ) 
+            continue;
+
+        if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) )
+            return false;
+    }
+
+    return true;
+}
+
 //-----------------------------------------------------------------------------
 CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
     (const SConfigInfo&            config, 
@@ -707,6 +733,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/02/24 20:54:26  gorelenk
+ * Added implementation of member-function bool IsConfigEnabled
+ * of class CMsvcPrjProjectContext.
+ *
  * Revision 1.15  2004/02/24 18:13:26  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext constructor.
  * Changed implementation of member-function AdditionalLinkerOptions of
