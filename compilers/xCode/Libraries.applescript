@@ -181,7 +181,7 @@ property gui__core : {name:"gui__core", path:"gui:core", exc:{"AlgoCommand.cpp",
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
 property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__.cpp", "gui_project___.cpp"}, asn1:true, asn1Name:"gui_project"}
-property gui__config : {name:"gui__config", path:"gui:config", inc:{"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "feat_decorate.cpp", "config___.cpp", "config__.cpp"}, asn1:true}
+property gui__config : {name:"gui__config", path:"gui:config", inc:{"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"}, asn1:true}
 property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
 property gui_print : {name:"gui_print", path:"gui:print"}
@@ -388,6 +388,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/11/29 12:40:37  lebedev
+ * gui_config updated
+ *
  * Revision 1.34  2004/11/26 16:08:41  lebedev
  * algo_gnomon += gui_widgets
  *
