@@ -129,11 +129,11 @@
   The local variable will be destroyed when you leave the function. 
 <p>When using Solaris make, the macro .KEEP_STATE can be used to track hidden 
   dependencies, but this doesn't work well with Sunpro C++ 5.0 and STL. The reason 
-  is because the STLheaders include files with names of the form *.cc. When make 
+  is because the STL headers include files with names of the form *.cc. When make 
   sees these files, it tries to compile them using the implicit makefile rules.One 
   workaround is to redefine the implicit rules to ignore *.cc: <br>
-  SUFFIXES = .o .c .h .hpp .cpp <br>
-  .SUFFIXES: $(SUFFIXES) <br>
+  .SUFFIXES: <br>
+  .SUFFIXES:  .o .c .h .hpp .cpp <br>
   .cpp.o:<br>
   $(CCC) $(CFLAGS) -c $&lt; <br>
   and run make with "make -r" 
