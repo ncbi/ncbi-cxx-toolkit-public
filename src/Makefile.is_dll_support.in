@@ -1,0 +1,9 @@
+#################################
+# $Id$
+# Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
+#################################
+
+# If (and only if) DLLs are not buildable on this platform, then enforce
+# building of all libs as static by overriding $(LIB_OR_DLL) variable by "lib".
+#
+@FORCE_STATIC_LIB@
