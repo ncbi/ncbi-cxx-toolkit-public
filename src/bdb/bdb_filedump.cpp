@@ -37,6 +37,10 @@
 #include <bdb/bdb_filedump.hpp>
 #include <bdb/bdb_blob.hpp>
 
+#include <bdb/bdb_query.hpp>
+#include <bdb/bdb_query_parser.hpp>
+
+
 #include <iomanip>
 
 BEGIN_NCBI_SCOPE
@@ -46,29 +50,52 @@ CBDB_FileDumper::CBDB_FileDumper(const string& col_separator)
   m_PrintNames(ePrintNames),
   m_ValueFormatting(eNoQuotes),
   m_BlobFormat(eBlobSummary | eBlobAsHex),
-  m_RecordsDumped(0)
+  m_RecordsDumped(0),
+  m_Query(0)
 {
 }
 
 CBDB_FileDumper::CBDB_FileDumper(const CBDB_FileDumper& fdump)
 : m_ColumnSeparator(fdump.m_ColumnSeparator),
+  m_BlobDumpFname(fdump.m_BlobDumpFname),
   m_PrintNames(fdump.m_PrintNames),
   m_ValueFormatting(fdump.m_ValueFormatting),
   m_BlobFormat(fdump.m_BlobFormat),
-  m_RecordsDumped(0)
+  m_RecordsDumped(0),
+  m_QueryStr(fdump.m_QueryStr),
+  m_Query(0)
 {
+}
+
+CBDB_FileDumper::~CBDB_FileDumper()
+{
+    delete m_Query;
 }
 
 CBDB_FileDumper& CBDB_FileDumper::operator=(const CBDB_FileDumper& fdump)
 {
     m_ColumnSeparator = fdump.m_ColumnSeparator;
+    m_BlobDumpFname = fdump.m_BlobDumpFname;
     m_PrintNames = fdump.m_PrintNames;
     m_ValueFormatting = fdump.m_ValueFormatting;
     m_BlobFormat = fdump.m_BlobFormat;
     
     m_RecordsDumped = 0;
+    m_QueryStr = fdump.m_QueryStr;
+    
+    delete m_Query; m_Query = 0;
     
     return *this;
+}
+
+void CBDB_FileDumper::SetQuery(const string& query_str)
+{
+    auto_ptr<CBDB_Query>  q(new CBDB_Query);
+    BDB_ParseQuery(query_str.c_str(), q.get());
+    m_QueryStr = query_str;
+    m_Query = q.release();
+
+    // BDB_PrintQueryTree(cout, *m_Query);
 }
 
 void CBDB_FileDumper::Dump(const string& dump_file_name, CBDB_File& db)
@@ -93,6 +120,16 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_File& db)
 }
 
 static const char* kNullStr = "NULL";
+
+/// Query scanner
+///
+/// @internal
+class CBDB_DumpScanner : public CBDB_FileScanner
+{
+public:
+    CBDB_DumpScanner(CBDB_File& dbf) : CBDB_FileScanner(dbf) {}
+    virtual EScanAction OnRecordFound() { return eContinue; }
+};        
 
 void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
 {
@@ -122,9 +159,25 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
     }
     
     m_RecordsDumped = 0;
+    
+    CBDB_DumpScanner scan_filter(db);
 
     string blob_sz;
     for ( ;cur.Fetch() == eBDB_Ok; ++m_RecordsDumped) {
+        
+        if (m_Query) {  // Filtered output
+            bool query_res = scan_filter.StaticEvaluate(*m_Query);
+            
+            //BDB_PrintQueryTree(cout, *m_Query);
+            
+            m_Query->ResetQueryClause();
+            if (!query_res) {
+                --m_RecordsDumped;
+                continue;
+            }
+        }
+        
+        
         if (key) {
             x_DumpFields(out, *key, key_quote_flags, true/*key*/);
         }
@@ -146,10 +199,15 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                     char buf[256];
                     size_t bytes_read;
                     blob_stream->Read(buf, 128, &bytes_read);
+                    unsigned sp_counter = 0;
                     for (unsigned int i = 0; i < bytes_read; ++i) {
                         if (m_BlobFormat & eBlobAsHex) {
                           out << setfill('0') << hex << setw(2) 
-                              << (int)buf[i] << " ";
+                              << (int)buf[i];
+                           if (++sp_counter == 4) {
+                               cout << " ";
+                               sp_counter = 0;
+                           }
                         } else {
                            out << (char)buf[i];
                         }
@@ -158,6 +216,7 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                         out << " ...";
                     }
                     out << "}]";
+                                        
                 } else {  // All BLOB
                     char buf[2048];
                     
@@ -167,9 +226,14 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                     do {
                         blob_stream->Read(buf, 2048, &bytes_read);
                         if (m_BlobFormat & eBlobAsHex) {
+                            unsigned sp_counter = 0;
                             for (unsigned int i = 0; i < bytes_read; ++i) {
                                out << setfill('0') << hex << setw(2) 
-                                   << (int)buf[i] << " ";
+                                   << (int)buf[i];
+                               if (++sp_counter == 4) {
+                                   cout << " ";
+                                   sp_counter = 0;
+                               }
                                if (i > 0 && (i % 79 == 0)) {
                                    out << "\n";
                                }
@@ -184,6 +248,29 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                     out << "\n<<END BLOB>>\n";
                     
                 }
+                
+                // Dump BLOB to a file 
+                // (works only for the first record)
+                
+                if (m_BlobDumpFname.length() && m_RecordsDumped == 0) {
+                    CNcbiOfstream ofs(m_BlobDumpFname.c_str(), 
+                                      IOS_BASE::out | 
+                                      IOS_BASE::trunc | 
+                                      IOS_BASE::binary);
+                    if (ofs.is_open()) {
+                        blob_stream.reset(blob_db->CreateStream());
+                        char buf[2048];
+
+                        out << "BLOB. size=" << size << "\n";
+
+                        size_t bytes_read;
+                        do {
+                            blob_stream->Read(buf, 2048, &bytes_read);
+                            ofs.write(buf, bytes_read);
+                        } while (bytes_read);
+                    }
+                }
+                
                 
             } else {
                 out << kNullStr;
@@ -284,6 +371,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/06/28 12:17:42  kuznets
+ * Improved BLOB dumping
+ *
  * Revision 1.7  2004/06/23 19:37:47  kuznets
  * Added counter for dumped records
  *

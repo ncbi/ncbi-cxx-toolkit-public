@@ -44,6 +44,7 @@
 #include <bdb/bdb_blob.hpp>
 
 
+
 USING_NCBI_SCOPE;
 
 
@@ -244,7 +245,17 @@ void CBDB_FileDumperApp::Init(void)
                              "column_separator",
                              "Column separator string (default:TAB)",
                              CArgDescriptions::eString);
-    
+
+    arg_desc->AddOptionalKey("q",
+                             "query",
+                             "BDB query string",
+                             CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("bfile",
+                             "blob_file",
+                             "Dump BLOB to file (Use with -k)",
+                             CArgDescriptions::eString);
+            
     arg_desc->AddFlag("nl", "Do NOT print field labels(names)");
     arg_desc->AddFlag("bt", "Display BLOB as text (default: HEX)");
     arg_desc->AddFlag("bf", "Display full BLOB");
@@ -256,9 +267,9 @@ void CBDB_FileDumperApp::Init(void)
 
 
 
-void CBDB_FileDumperApp::Dump(const CArgs& args, 
+void CBDB_FileDumperApp::Dump(const CArgs&                args, 
                               CBDB_ConfigStructureParser& parser,
-                              bool dump_lob_storage)
+                              bool                        dump_lob_storage)
 {
     const string& db_name = args["dbname"].AsString();
     
@@ -364,12 +375,37 @@ void CBDB_FileDumperApp::Dump(const CArgs& args,
     
     fdump.SetBlobFormat(bformat);
     
-    if (args["k"]) {
+    if (args["q"]) {  // query
+        fdump.SetQuery(args["q"].AsString());
+    }
+    
+    if (args["bfile"]) {
+        fdump.SetBlobDumpFile(args["bfile"].AsString());
+    }
+    
+    if (args["k"]) {        
         const string& key_str = args["k"].AsString();
 
         CBDB_FileCursor cur(*dump_file);
         cur.SetCondition(CBDB_FileCursor::eEQ);
-        cur.From << key_str;
+        
+        const CBDB_BufferManager* key_buf = dump_file->GetKeyBuffer();
+        
+        unsigned field_count = key_buf->FieldCount();
+        
+        if (field_count > 1) {
+            list<string> keys;
+            NStr::Split(key_str, string("|"), keys, NStr::eNoMergeDelims);
+            
+            unsigned cnt = 0;
+            ITERATE(list<string>, it, keys) {
+                cur.From << *it;
+                if (++cnt == field_count)
+                    break;
+            }
+        } else {
+            cur.From << key_str;
+        }
 
         fdump.Dump(NcbiCout, cur);
 
@@ -424,6 +460,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/28 12:19:13  kuznets
+ * Improved BLOB dumping
+ *
  * Revision 1.6  2004/06/24 11:12:51  kuznets
  * Use reset to assign auto_ptr
  *
