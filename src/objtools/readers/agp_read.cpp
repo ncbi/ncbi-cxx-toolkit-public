@@ -41,7 +41,7 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
-
+#include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -186,6 +186,10 @@ void AgpRead(CNcbiIstream& is, vector<CRef<CBioseq> >& bioseqs)
                    fields[4].find_first_of("ADFGPOW") == 0) {
             CSeq_loc& loc = delta_seq->SetLoc();
             CRef<CSeq_id> comp_id(new CSeq_id(fields[5]));
+            if (comp_id->Which() == CSeq_id::e_not_set) {
+                // not a recognized format; force a local id
+                comp_id->SetLocal().SetStr(fields[5]);
+            }
             loc.SetInt().SetId(*comp_id);
             loc.SetInt().SetFrom(NStr::StringToInt(fields[6]) - 1);
             loc.SetInt().SetTo  (NStr::StringToInt(fields[7]) - 1);
@@ -230,6 +234,9 @@ END_NCBI_SCOPE
 /*
  * =====================================================================
  * $Log$
+ * Revision 1.9  2004/07/08 14:22:19  jcherry
+ * Handle Seq-ids of unrecognized format as local ids
+ *
  * Revision 1.8  2004/06/30 20:57:54  jcherry
  * Handle new component type "U", which specifies a gap whose
  * length is unknown.
