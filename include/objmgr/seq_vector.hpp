@@ -199,7 +199,7 @@ const size_t kRandomDataSize    = kRandomizerPosMask + 1;
 ///  CNcbi2naRandomizer --
 ///
 
-class CNcbi2naRandomizer : public CObject
+class NCBI_XOBJMGR_EXPORT CNcbi2naRandomizer : public CObject
 {
 public:
     // If seed == 0 then use random number for seed
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2005/03/28 20:43:50  jcherry
+* Added export specifier
+*
 * Revision 1.56  2004/12/22 15:56:17  vasilche
 * Added CTSE_Handle.
 * Added CSeqVector constructor from CBioseq_Handle to allow used TSE linking.

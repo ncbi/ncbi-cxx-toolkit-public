@@ -54,7 +54,7 @@ BEGIN_SCOPE(blast)
  * CBlastException error code, this could be meaningless
  * @sa FIXME usage of calloc
  */
-BlastSeqSrc* 
+NCBI_XBLAST_EXPORT BlastSeqSrc* 
 MultiSeqBlastSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program);
 
 END_SCOPE(blast)
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/28 20:42:44  jcherry
+ * Added export specifier
+ *
  * Revision 1.12  2005/01/26 21:02:57  dondosha
  * Made internal functions static, moved internal class to .cpp file
  *
