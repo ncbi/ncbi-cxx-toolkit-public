@@ -301,18 +301,19 @@ static void DumpText(bool doHTML, const BlockMultipleAlignment *alignment,
 
         // uid for link to entrez
         if (doHTML) {
-            if (sequence->identifier->pdbID.size() > 0) {
+            // prefer gi's, since accessions can be outdated
+            if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+                CNcbiOstrstream uidoss;
+                uidoss << sequence->identifier->gi << '\0';
+                uids[row] = uidoss.str();
+                delete uidoss.str();
+            } else if (sequence->identifier->pdbID.size() > 0) {
                 if (sequence->identifier->pdbID != "query" &&
                     sequence->identifier->pdbID != "consensus") {
                     uids[row] = sequence->identifier->pdbID;
                     if (sequence->identifier->pdbChain != ' ')
                         uids[row] += (char) sequence->identifier->pdbChain;
                 }
-            } else if (sequence->identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-                CNcbiOstrstream uidoss;
-                uidoss << sequence->identifier->gi << '\0';
-                uids[row] = uidoss.str();
-                delete uidoss.str();
             } else if (sequence->identifier->accession.size() > 0) {
                 uids[row] = sequence->identifier->accession;
             }
@@ -535,6 +536,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2003/11/26 20:37:54  thiessen
+* prefer gi for URLs
+*
 * Revision 1.63  2003/11/20 22:08:50  thiessen
 * update Entrez url
 *

@@ -421,12 +421,13 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
     CNcbiOstrstream oss;
     oss << "http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Search&doptcmdl=" << opt
         << "&db=" << db << "&term=";
-    if (identifier->pdbID.size() > 0) {
+    // prefer gi's, since accessions can be outdated
+    if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+        oss << identifier->gi;
+    } else if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();
         if (identifier->pdbChain != ' ')
             oss << (char) identifier->pdbChain;
-    } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET) {
-        oss << identifier->gi;
     } else if (identifier->accession.size() > 0) {
         if (identifier->accession == "query" || identifier->accession == "consensus") return;
         oss << identifier->accession.c_str();
@@ -614,6 +615,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2003/11/26 20:37:54  thiessen
+* prefer gi for URLs
+*
 * Revision 1.61  2003/11/20 22:08:49  thiessen
 * update Entrez url
 *
