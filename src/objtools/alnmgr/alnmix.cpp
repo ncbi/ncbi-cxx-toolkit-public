@@ -1221,16 +1221,17 @@ void CAlnMix::x_CreateSegmentsVector()
         lens.resize(m_Rows.size(), 0);
 
         TSeqPos len = 0;
+        CAlnMap::TNumrow rowidx;
 
         TSegments::iterator seg_i = m_Segments.begin();
         while (seg_i != m_Segments.end()) {
-            CAlnMap::TNumrow numrow = 0;
             len = (*seg_i)->m_Len;
             ITERATE (CAlnMixSegment::TStartIterators, start_its_i,
                      (*seg_i)->m_StartIts) {
                 CAlnMixSeq * row = start_its_i->first;
-                TSignedSeqPos& prev_start = starts[numrow];
-                TSeqPos& prev_len = lens[numrow];
+                rowidx = row->m_RowIndex;
+                TSignedSeqPos& prev_start = starts[rowidx];
+                TSeqPos& prev_len = lens[rowidx];
                 TSeqPos start = start_its_i->second->first;
                 if (prev_start >= 0  &&  start >= 0) {
                     if (row->m_PositiveStrand  &&  
@@ -1263,7 +1264,6 @@ void CAlnMix::x_CreateSegmentsVector()
                     prev_start = start;
                     prev_len = len;
                 }
-                numrow++;
             }
             seg_i++;
         }
@@ -1597,6 +1597,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2003/07/09 22:58:12  todorov
+* row index bug fix in case of fillunaln
+*
 * Revision 1.61  2003/07/01 17:40:20  todorov
 * fFillUnaligned bug fix
 *
