@@ -125,7 +125,8 @@ public:
         eInvalidValue,
         eInvalidOperation,
         eTransInProgress,
-        eNull
+        eNull,
+        eQueryError
     };
 
     virtual const char* GetErrCodeString(void) const
@@ -139,6 +140,7 @@ public:
         case eInvalidOperation:  return "eInvalidOperation";
         case eNull:              return "eNull";
         case eTransInProgress:   return "eTransInProgress";
+        case eQueryError:        return "eQueryError";
         default:                 return  CException::GetErrCodeString();
         }
     }
@@ -184,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/02/13 14:58:28  kuznets
+ * + eQuery error code
+ *
  * Revision 1.9  2003/12/10 19:13:18  kuznets
  * Added support of berkeley db transactions
  *
