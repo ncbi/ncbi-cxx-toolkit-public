@@ -46,6 +46,7 @@
 #include <objects/seqloc/Packed_seqpnt.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 
@@ -304,6 +305,8 @@ public:
 
     /// Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
+    CSeq_id_Handle GetSeq_id_Handle(void) const;
+
     /// Get the range
     TRange         GetRange(void) const;
     /// Get strand
@@ -499,6 +502,12 @@ const CSeq_id& CSeq_loc_CI::GetSeq_id(void) const
 }
 
 inline
+CSeq_id_Handle CSeq_loc_CI::GetSeq_id_Handle(void) const
+{
+    return CSeq_id_Handle::GetHandle(GetSeq_id());
+}
+
+inline
 CSeq_loc_CI::TRange CSeq_loc_CI::GetRange(void) const
 {
     x_CheckNotValid("GetRange()");
@@ -577,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/11/29 19:53:34  grichenk
+ * +CSeq_loc_CI::GetSeq_id_Handle
+ *
  * Revision 1.43  2004/11/19 15:40:57  shomrat
  * + SetStrand
  *
