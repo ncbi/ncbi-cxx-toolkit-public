@@ -137,7 +137,7 @@ static void s_LOG_Handler(void*         /*user_data*/,
             break;
         }
 
-        CNcbiDiag diag(level, eDPF_Default);
+        CNcbiDiag diag(level);
         if (call_data->file) {
             diag.SetFile(call_data->file);
         }
@@ -245,6 +245,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2003/05/14 03:52:50  lavr
+ * Minor change: use of default's parameter default value removed in CNcbiDiag
+ *
  * Revision 6.16  2003/05/05 20:17:59  lavr
  * s_LOG_Handler() to explicitly check data_size only
  *
