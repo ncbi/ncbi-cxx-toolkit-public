@@ -49,6 +49,11 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+/** @addtogroup ObjectManagerCore
+ *
+ * @{
+ */
+
 
 class CDataSource;
 class CDataLoader;
@@ -61,13 +66,15 @@ class CScope;
 class CScope_Impl;
 
 
-/////////////////////////////////////////////////////////////////////////////
-// CObjectManager
-
-
 class CSeq_id_Mapper;
 
-// Structure returned by RegisterInObjectManager() method
+/////////////////////////////////////////////////////////////////////////////
+///
+///  SRegisterLoaderInfo --
+///
+/// Structure returned by RegisterInObjectManager() method
+///
+
 template<class TLoader>
 struct SRegisterLoaderInfo
 {
@@ -75,25 +82,32 @@ struct SRegisterLoaderInfo
     bool     IsCreated(void) const { return m_Created; }
 
     void Set(CDataLoader* loader, bool created)
-        {
-            // Check loader type
-            m_Loader = dynamic_cast<TLoader*>(loader);
-            if (loader  &&  !m_Loader) {
-                NCBI_THROW(CLoaderException, eOtherError,
-                    "Loader name already registered for another loader type");
-            }
-            m_Created = created;
+    {
+        // Check loader type
+        m_Loader = dynamic_cast<TLoader*>(loader);
+        if (loader  &&  !m_Loader) {
+            NCBI_THROW(CLoaderException, eOtherError,
+                       "Loader name already registered for another loader type");
         }
+        m_Created = created;
+    }
 
 private:
     TLoader* m_Loader;  // pointer to the loader (created or existing)
     bool     m_Created; // true only if the loader was just created
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CObjectManager --
+///
+///  Core Class for ObjectManager Library
+
 class NCBI_XOBJMGR_EXPORT CObjectManager : public CObject
 {
 public:
-    // Return the existing object manager or create one
+    /// Return the existing object manager or create one
     static CRef<CObjectManager> GetInstance(void);
     virtual ~CObjectManager(void);
 
@@ -106,33 +120,34 @@ public:
 // by name - in case of data loader
 // or by address - in case of Seq_entry
 
-    // whether to put data loader or TSE to the default group or not
+    /// Whether to put data loader or TSE to the default group or not
     enum EIsDefault {
         eDefault,
         eNonDefault
     };
+
     enum EPriority {
         kPriority_NotSet = -1
     };
 
-    // Add data loader using plugin manager
+    /// Add data loader using plugin manager
     CDataLoader* RegisterDataLoader(TPluginManagerParamTree* params = 0,
                                     const string& driver_name = kEmptyStr);
 
-    // Try to find data loader by name
+    /// Try to find data loader by name
     CDataLoader* FindDataLoader(const string& loader_name) const;
 
-    // Get names of all registered loaders.
+    /// Get names of all registered loaders.
     typedef vector<string> TRegisteredNames;
     void GetRegisteredNames(TRegisteredNames& names);
-    // Update loader's options
+    /// Update loader's options
     void SetLoaderOptions(const string& loader_name,
                           EIsDefault    is_default,
                           TPriority     priority = kPriority_NotSet);
 
-    // Revoke previously registered data loader.
-    // Return FALSE if the loader is still in use (by some scope).
-    // Throw an exception if the loader is not registered with this ObjMgr.
+    /// Revoke previously registered data loader.
+    /// Return FALSE if the loader is still in use (by some scope).
+    /// Throw an exception if the loader is not registered with this ObjMgr.
     bool RevokeDataLoader(CDataLoader& loader);
     bool RevokeDataLoader(const string& loader_name);
 
@@ -142,11 +157,11 @@ public:
     //CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
-
+    
     typedef SRegisterLoaderInfo<CDataLoader> TRegisterLoaderInfo;
 
 protected:
-// functions for data loaders
+    // functions for data loaders
     // Register an existing data loader.
     // NOTE:  data loader must be created in the heap (ie using operator new).
     void RegisterDataLoader(CLoaderMaker_Base& loader_maker,
@@ -168,8 +183,8 @@ protected:
 private:
     CObjectManager(void);
 
-// these are for Object Manager itself
-// nobody else should use it
+    // these are for Object Manager itself
+    // nobody else should use it
     TDataSourceLock x_RegisterTSE(CSeq_entry& top_entry);
     TDataSourceLock x_RegisterLoader(CDataLoader& loader,
                                      TPriority priority,
@@ -178,7 +193,7 @@ private:
     CDataLoader* x_GetLoaderByName(const string& loader_name) const;
     TDataSourceLock x_FindDataSource(const CObject* key);
     TDataSourceLock x_RevokeDataLoader(CDataLoader* loader);
-
+    
     typedef CPluginManager<CDataLoader> TPluginManager;
     TPluginManager& x_GetPluginManager(void);
 
@@ -210,6 +225,8 @@ private:
     friend class CDataLoader; // To register data loaders
 };
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -218,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2004/09/24 16:25:31  kononenk
+* Added doxygen formating
+*
 * Revision 1.29  2004/08/02 17:34:43  grichenk
 * Added data_loader_factory.cpp.
 * Renamed xloader_cdd to ncbi_xloader_cdd.
