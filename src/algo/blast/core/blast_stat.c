@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.66  2004/05/04 13:00:02  madden
+ * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_KarlinBlkIdealCalc, make public
+ *
  * Revision 1.65  2004/04/30 14:39:44  papadopo
  * 1. Remove unneeded #defines
  * 2. use BLAST_SCORE_RANGE_MAX during RPS PSSM creation instead of
@@ -2368,8 +2371,8 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	parameters are bad, as they're calculated for non-coding regions.
 */
 
-static Blast_KarlinBlk*
-BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
+Blast_KarlinBlk*
+Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp)
 
 {
 	Blast_KarlinBlk* kbp_ideal;
@@ -2396,7 +2399,7 @@ Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context
 	Blast_KarlinBlk* kbp_ideal,* kbp;
 	Int4 index;
 
-	kbp_ideal = BlastKarlinBlkStandardCalcEx(sbp);
+	kbp_ideal = Blast_KarlinBlkIdealCalc(sbp);
 /* Replace the calculated values with ideal ones for blastx, tblastx. */
 	for (index=context_start; index<=context_end; index++)
 	{
