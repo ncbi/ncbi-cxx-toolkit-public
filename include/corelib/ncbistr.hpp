@@ -179,6 +179,26 @@ public:
                                      ECheckEndPtr   check    = eCheck_Need,
                                      EConvErrAction on_error = eConvErr_Throw);
 
+    /// Convert string to unsigned int. 
+    /// String can contain "software" qulifiers: MB(megabyte), KB (kilobyte)..
+    /// Example: 100MB, 1024KB
+    ///
+    /// @param str
+    ///   String to be converted.
+    /// @param base
+    ///   Numeric base of the number symbols (default = 10).
+    /// @param check
+    ///   Whether trailing symbols (other than '\0') are permitted - default
+    ///   is eCheck_Needed which means that if there are trailing symbols
+    ///   after the number, an action defined by "on_error" parameter will
+    ///   be performed. If the value is eCheck_Skip, the string can have
+    ///   trailing symbols after the number.
+    /// @param on_error
+    ///   Whether to throw an exception on error, or just to return zero.
+    static unsigned int SoftStringToUInt(const string& str, int base = 10,
+                                     ECheckEndPtr   check    = eCheck_Need,
+                                     EConvErrAction on_error = eConvErr_Throw);
+
     /// Convert string to long.
     ///
     /// @param str
@@ -2376,6 +2396,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.61  2004/09/21 18:23:32  kuznets
+ * +NStr::SoftStringToUInt KB, MB converter
+ *
  * Revision 1.60  2004/09/07 21:25:03  ucko
  * +<strings.h> on OSF/1, as it may be needed for str(n)casecmp's declaration.
  *

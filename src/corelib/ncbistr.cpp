@@ -304,7 +304,7 @@ int NStr::StringToInt(const string& str, int base  /* = 10 */,
     errno = 0;
     char* endptr = 0;
     long value = strtol(str.c_str(), &endptr, base);
-    if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
+    if (errno || !endptr || endptr == str.c_str() ||
         value < kMin_Int || value > kMax_Int) {
         if ( on_error == eConvErr_Throw ) {
             NCBI_THROW2(CStringException, eConvert,
@@ -335,6 +335,73 @@ NStr::StringToUInt(const string& str, int base  /* =10 */,
         return 0;
     }
     CHECK_ENDPTR("unsigned int");
+    return (unsigned int) value;
+}
+
+/// @internal
+static
+unsigned int SoftConvertQual(const char* qual, 
+                             unsigned int value,
+                             NStr::ECheckEndPtr check_endptr,
+                             NStr::EConvErrAction on_error)
+{
+    if (!qual || !*qual)
+        return value;
+    if (toupper(*qual) == 'K') {
+        ++qual;
+        value *= 1024;
+    } else 
+    if (toupper(*qual) == 'M') {
+        ++qual;
+        value *= 1024 * 1024;
+    } else
+    if (toupper(*qual) == 'G') {
+        ++qual;
+        value *= 1024 * 1024 * 1024;
+    } else {
+        if (check_endptr == NStr::eCheck_Need && 
+            on_error == NStr::eConvErr_Throw) {
+throw_err:
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted unsigned int. ", 0);
+
+        } else {
+            return value;
+        }
+    }
+    
+    if (*qual && toupper(*qual) == 'B')
+        ++qual;
+
+    if (check_endptr == NStr::eCheck_Need && 
+        on_error == NStr::eConvErr_Throw  &&
+        *qual != 0) {
+            goto throw_err;
+    }
+    return value;
+}
+
+
+unsigned int
+NStr::SoftStringToUInt(const string& str, int base  /* =10 */,
+                       ECheckEndPtr   check_endptr  /* = eCheck_Need */,
+                       EConvErrAction on_error      /* = eConvErr_Throw */)
+{
+    errno = 0;
+    char* endptr = 0;
+    unsigned long value = strtoul(str.c_str(), &endptr, base);
+    if (errno || value > kMax_UInt) {
+        err:
+        if (on_error == eConvErr_Throw) {
+            NCBI_THROW2(CStringException, eConvert,
+                        "String cannot be converted unsigned int",
+                        s_DiffPtr(endptr, str.c_str()));
+        }
+        return 0;
+    }
+    if (endptr && *endptr != '\0') { // some trailer (KB, MB) ?
+        value = SoftConvertQual(endptr, value, check_endptr, on_error);
+    }
     return (unsigned int) value;
 }
 
@@ -1533,6 +1600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.114  2004/09/21 18:23:59  kuznets
+ * +NStr::SoftStringToUInt KB, MB converter
+ *
  * Revision 1.113  2004/08/24 15:23:14  shomrat
  * comma has higher priority over other punctuaution chars
  *
