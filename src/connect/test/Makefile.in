@@ -11,7 +11,7 @@ APP_PROJ = test_ncbi_buffer test_ncbi_core test_ncbi_socket \
            test_ncbi_socket_connector test_ncbi_file_connector \
            test_ncbi_http_connector http_connector_hit test_ncbi_heapmgr \
            test_ncbi_service_connector test_ncbi_sendmail test_ncbi_disp \
-           test_ncbi_conn_stream
+           test_ncbi_conn_stream test_conn_stream_pushback
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
