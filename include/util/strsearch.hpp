@@ -27,15 +27,20 @@
 * ===========================================================================
 *
 * Author:  Mati Shomrat
+*          Anatoliy Kuznetsov
 *
 * File Description:
 *   String search utilities.
 *
-*   Currently there are two search utilities:
-*   1. An implementation of the Boyer-Moore algorithm.
-*   2. A finite state automaton.
-*
 */
+
+/// @file strsearch.hpp
+/// String search utilities.
+///
+///   Currently there are two search utilities:
+/// 1. An implementation of the Boyer-Moore algorithm.
+/// 2. A finite state automata.
+
 
 #include <corelib/ncbistd.hpp>
 #include <string>
@@ -55,26 +60,86 @@ BEGIN_NCBI_SCOPE
 //                            CBoyerMooreMatcher                               //
 //============================================================================//
 
-//
-// This implemetation uses the Boyer-Moore alg. in order to search a single
-// pattern over varying texts.
+
+/// This implemetation uses the Boyer-Moore alg. in order to search a single
+/// pattern over varying texts.
 
 
 class NCBI_XUTIL_EXPORT CBoyerMooreMatcher 
 {
 public:
-    // Initialize a matcher with the pattern to be matched.
-    // case_sensitive - should the search be case sensitive (false by default).
-    // whole_word - a match is found ony if the pattern was found to 
-    //              be between whitespaces (false by default).
+    /// Initialize a matcher with the pattern to be matched.
+    ///
+    /// @param pattern
+    ///    Pattern to be matched
+    /// @param case_sensitive
+    ///    should the search be case sensitive (false by default).
+    /// @param whole_word 
+    ///    a match is found ony if the pattern was found to 
+    ///    be between whitespaces (false by default).
     CBoyerMooreMatcher(const string& pattern,        
-        bool case_sensitive = false,   
-        bool whole_word = false);     
+                       bool          case_sensitive = false,
+                       bool          whole_word = false);     
+
     
+    /// Initialize a matcher with the pattern to be matched.
+    ///
+    /// @param pattern
+    ///    Pattern to be matched
+    /// @param word_delimeters 
+    ///    a match is found ony if the pattern was found to 
+    ///    be between delimiting characters like whitespaces
+    ///    and punctuation marks
+    /// @param case_sensitive
+    ///    should the search be case sensitive (false by default).
+    /// @param invert_delimiters
+    ///    when TRUE means all characters NOT belonging to
+    ///    word_delimeters are to be used
+    CBoyerMooreMatcher(const string& pattern,
+                       const string& word_delimeters,
+                       bool          case_sensitive = false,
+                       bool          invert_delimiters = false);
+
+
+    /// Set word delimiting characters
+    ///
+    /// @param word_delimeters 
+    ///    string of characters used as word delimiters
+    /// @param invert_delimiters
+    ///    when TRUE means all characters NOT belonging to
+    ///    word_delimeters are to be used
+    void SetWordDelimiters(const string& word_delimeters,
+                           bool          invert_delimiters = false);
     
-    // Search for the pattern over text starting at position pos.
-    // Returns the position at which the pattern was found, -1 otherwise.
-    int Search(const string& text, unsigned int pos = 0) const;
+
+
+    /// Search for the pattern over text starting at position pos.
+    ///
+    /// @param text
+    ///    Text to search in.
+    /// @param pos
+    ///    Position shift in text
+    /// @return 
+    ///    the position at which the pattern was found, -1 otherwise.
+    int Search(const string& text, unsigned int pos = 0) const
+    {
+        return Search(text.c_str(), pos, text.length());
+    }
+
+
+    /// Search for the pattern over text starting at position pos.
+    ///
+    /// @param text
+    ///    Text memory taken as NON ASCIIZ string.
+    /// @param pos 
+    ///    String offset position from the start
+    /// @param text_len
+    ///    Length of text
+    /// @return 
+    ///    the position at which the pattern was found, -1 otherwise.
+    int Search(const char*  text, 
+               unsigned int pos,
+               unsigned int text_len) const;
     
 private:
     // Constants
@@ -82,18 +147,22 @@ private:
     
     // Member Functions:
     
-    // Check if the pattern at position pos in the text lies on a
-    // whole word boundry.
-    bool IsWholeWord(const string& text, unsigned int pos) const;
-    
-    // Member Variables
+    /// Check if the pattern at position pos in the text lies on a
+    /// whole word boundry.
+    bool IsWholeWord(const char*   text,
+                     unsigned int  pos,
+                     unsigned int  text_len) const;
+
+    void x_InitPattern(void);
+private:    
     string                  m_Pattern;  
     string::size_type       m_PatLen;
     bool                    m_CaseSensitive;
     bool                    m_WholeWord;
     vector<size_t>          m_LastOccurance;
+    vector<bool>            m_WordDelimiters;
     
-};  // class CBoyerMooreMatcher 
+};
 
 
 //============================================================================//
@@ -431,6 +500,11 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/03/02 19:59:57  kuznets
+* Changes in CBoyerMooreMatcher:
+*   - added work with memory areas
+*   - alternative word delimiters
+*
 * Revision 1.12  2003/05/23 13:33:55  dicuccio
 * Changed local variable name from 'queue' to avoid clash with queue<>
 *
