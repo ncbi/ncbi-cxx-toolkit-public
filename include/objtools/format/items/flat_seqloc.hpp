@@ -35,6 +35,7 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <util/range.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -47,15 +48,31 @@ class CSeq_loc;
 class CFFContext;
 
 
+class CFlatGapLoc : public CSeq_loc
+{
+public:
+    typedef TSeqPos TLength;
+
+    CFlatGapLoc(TLength value) : m_Length(value) { SetNull(); }
+
+    TLength GetLength(void) const { return m_Length; }
+    void SetLength(const TLength& value) { m_Length = value; }
+
+private:
+    TLength m_Length;
+};
+
+
 class CFlatSeqLoc : public CObject // derived from CObject to allow for caching
 {
 public:
+    /*
     struct SInterval
     {
         enum EFlags {
             fReversed     = 0x1,
             fPartialLeft  = 0x2,
-            fPartialRight = 0x4
+            fPartialRight = 0x4,
         };
         typedef int TFlags; // binary OR of EFlags
 
@@ -76,28 +93,40 @@ public:
         TFlags          m_Flags;
     };
     typedef vector<SInterval> TIntervals;
+    */
+
+    enum EType
+    {
+        eType_location,     // Seq-loc
+        eType_assembly      // Genome assembly
+    };
+    typedef EType     TType;
     
-    CFlatSeqLoc(const CSeq_loc& loc, CFFContext& ctx);
+    CFlatSeqLoc(const CSeq_loc& loc, CFFContext& ctx, 
+        TType type = eType_location);
 
     const string&     GetString(void)    const { return m_String;    }
-    const TIntervals& GetIntervals(void) const { return m_Intervals; }
+    //const TIntervals& GetIntervals(void) const { return m_Intervals; }
     
 private:
+    void x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
+        CFFContext& ctx, TType type, bool show_comp);
+    void x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
+        CFFContext& ctx, TType type, bool show_comp);
+    void x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
+        CFFContext& ctx, TType type, bool show_comp);
+    void x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
+        bool html = false);
+    void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
+        CFFContext& ctx, TType type);
+
+    //void x_AddInt(TSeqPos from, TSeqPos to, const string& accn,
+    //              SInterval::TFlags flags = 0);
+
+    
+
     string     m_String;    // whole location, as a GB-style string
-    TIntervals m_Intervals; // individual intervals/points
-
-    void x_Add   (const CSeq_loc& loc, CNcbiOstrstream& oss,
-                  CFFContext& ctx);
-    void x_Add   (const CSeq_interval& si, CNcbiOstrstream& oss,
-                  CFFContext& ctx);
-    // these convert from 0-based to 1-based coordinates in the process
-    SInterval::TFlags x_AddPnt(TSeqPos pnt, const CInt_fuzz* fuzz,
-                               CNcbiOstrstream& oss, CFFContext& ctx);
-    void x_AddInt(TSeqPos from, TSeqPos to, const string& accn,
-                  SInterval::TFlags flags = 0);
-
-    static void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
-                        CFFContext& ctx, string *s = 0);
+    //TIntervals m_Intervals; // individual intervals/points
 };
 
 
@@ -108,6 +137,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/19 17:53:47  shomrat
+* add flag to differentiate between loaction and genome assembly formatting
+*
 * Revision 1.1  2003/12/17 19:47:33  shomrat
 * Initial revision (adapted from flat lib)
 *
