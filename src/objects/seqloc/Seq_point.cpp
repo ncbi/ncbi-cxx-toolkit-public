@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/09/12 21:17:45  kans
+ * IsPartialLeft and IsPartialRight are const
+ *
  * Revision 6.4  2002/09/12 20:39:30  kans
  * added member functions IsPartialLeft and IsPartialRight
  *
@@ -63,7 +66,7 @@ CSeq_point::~CSeq_point(void)
 {
 }
 
-bool CSeq_point::IsPartialLeft (void)
+bool CSeq_point::IsPartialLeft (void) const
 {
     bool minus_strand = false;
 
@@ -98,7 +101,7 @@ bool CSeq_point::IsPartialLeft (void)
     return false;
 }
 
-bool CSeq_point::IsPartialRight (void)
+bool CSeq_point::IsPartialRight (void) const
 {
     bool minus_strand = false;
 

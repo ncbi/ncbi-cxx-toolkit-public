@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2002/09/12 21:17:45  kans
+ * IsPartialLeft and IsPartialRight are const
+ *
  * Revision 6.5  2002/09/12 20:40:42  kans
  * fixed extra IsSetFuzz_to test in IsPartialRight
  *
@@ -71,7 +74,7 @@ CSeq_interval::~CSeq_interval(void)
 {
 }
 
-bool CSeq_interval::IsPartialLeft (void)
+bool CSeq_interval::IsPartialLeft (void) const
 {
     bool minus_strand = false;
 
@@ -106,7 +109,7 @@ bool CSeq_interval::IsPartialLeft (void)
     return false;
 }
 
-bool CSeq_interval::IsPartialRight (void)
+bool CSeq_interval::IsPartialRight (void) const
 {
     bool minus_strand = false;
 

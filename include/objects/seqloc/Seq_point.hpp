@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2002/09/12 21:14:20  kans
+ * IsPartialLeft and IsPartialRight are const
+ *
  * Revision 1.3  2002/09/12 20:39:03  kans
  * added member functions IsPartialLeft and IsPartialRight
  *
@@ -71,8 +74,8 @@ public:
     ~CSeq_point(void);
 
     // check left (5') or right (3') end of location for e_Lim fuzz
-    bool IsPartialLeft (void);
-    bool IsPartialRight (void);
+    bool IsPartialLeft  (void) const;
+    bool IsPartialRight (void) const;
         
 private:
     // Prohibit copy constructor and assignment operator
