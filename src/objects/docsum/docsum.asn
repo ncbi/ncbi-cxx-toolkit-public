@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.10 2001/02/01 14:30:45 sherry Exp $
+-- $Id: docsum.asn,v 1.11 2001/02/01 17:53:01 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.11  2001/02/01 17:53:01  sherry
+-- added MapLinkArchive to Table Source for sequence-mapset
+--
 -- Revision 1.10  2001/02/01 14:30:45  sherry
 -- added orientation to NSE-SeqLoc
 --
@@ -233,7 +236,7 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure that summarizes a refSN
 	link-data SET OF NSE-rslink OPTIONAL, 	-- link data for external resources
 	ss-list SET OF NSE-ss,			-- set of all subsnp id's in the refSNP cluster	
 	contig-mapset SET OF NSE-rsContigHit OPTIONAL, -- list of hits to genome in NT_ contig coordinates
-	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates
+	sequence-mapset SET OF  NSE-rsSeqHit OPTIONAL, -- list of hits to genome in sequence component coordinates from MapLink and MapLinkArchive
 	gene-info SET OF NSE-rsLocusID OPTIONAL	-- set of gene information for locus if present
 }
 
