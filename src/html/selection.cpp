@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/03/26 22:00:01  sandomir
+* checked option in Radio button fixed; minor fixes in Selection
+*
 * Revision 1.2  1999/01/21 16:18:06  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -48,11 +51,11 @@ BEGIN_NCBI_SCOPE
 string CSelection::sm_DefaultCheckboxName = "uid";
 string CSelection::sm_DefaultSaveName = "other_uids";
 
-CSelection::CSelection(CCgiRequest& request, 
+CSelection::CSelection(const CCgiRequest& request, 
                        const string& checkboxName, const string& saveName)
     : m_SaveName(saveName)
 {
-    TCgiEntries& values = const_cast<TCgiEntries&>(request.GetEntries()); // SW_01
+    const TCgiEntries& values = request.GetEntries();
 
     // decode saved ids
     TCgiEntriesCI found = values.find(saveName);

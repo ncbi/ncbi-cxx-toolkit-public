@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/03/26 22:00:01  sandomir
+* checked option in Radio button fixed; minor fixes in Selection
+*
 * Revision 1.31  1999/03/01 21:03:09  vasilche
 * Added CHTML_file input element.
 * Changed CHTML_form constructors.
@@ -1012,7 +1015,7 @@ CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, 
     : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
-    SetAttribute(KHTMLAttributeName_checked, checked);
+    SetOptionalAttribute(KHTMLAttributeName_checked, checked);
     AppendPlainText(description);  // adds the description at the end
 }
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/03/26 22:00:00  sandomir
+* checked option in Radio button fixed; minor fixes in Selection
+*
 * Revision 1.1  1999/01/20 17:39:43  vasilche
 * Selection as separate class CSelection.
 *
@@ -50,7 +53,7 @@ class CCgiRequest;
 class CSelection : public CNCBINode, public CIDs
 {
 public:
-    CSelection(CCgiRequest& request,
+    CSelection( const CCgiRequest& request,
                const string& checkboxName = sm_DefaultCheckboxName,
                const string& saveName = sm_DefaultSaveName);
 
