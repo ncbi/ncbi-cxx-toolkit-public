@@ -145,7 +145,7 @@ public:
         operator TConn(void) const;
 
     private:
-        CRef<CReader> m_Reader;
+        CReader* m_Reader;
         TConn m_Conn;
 
     private:
@@ -221,7 +221,7 @@ void CReader::CConn::Release(void)
 {
     if ( m_Reader ) {
         m_Reader->x_ReleaseConnection(m_Conn);
-        m_Reader.Reset();
+        m_Reader = 0;
     }
 }
 
