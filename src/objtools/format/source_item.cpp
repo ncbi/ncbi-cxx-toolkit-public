@@ -90,7 +90,7 @@ const list<string> CSourceItem::scm_EmptyList;
 void CSourceItem::x_GatherInfo(CFFContext& ctx)
 {
     // For DDBJ format first try a GB-Block descriptor (old style)
-    if ( ctx.GetFormat() == CFlatFileGenerator::eFormat_DDBJ ) {
+    if ( ctx.IsFormatDDBJ() ) {
         CSeqdesc_CI gb_it(ctx.GetHandle(), CSeqdesc::e_Genbank);
         if ( gb_it ) {
             const CGB_block& gb = gb_it->GetGenbank();
@@ -297,6 +297,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/11 22:56:14  shomrat
+* use IsFormatDDBJ method
+*
 * Revision 1.2  2003/12/18 17:43:36  shomrat
 * context.hpp moved
 *
