@@ -36,6 +36,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/08/07 16:31:40  lavr
+ * Added eSCC_SetReadOnWrite to constructor flags; log moved to end
+ *
  * Revision 6.4  2002/01/12 22:15:28  lavr
  * Fixed function description to use not former but current parameter names
  *
@@ -70,7 +73,8 @@ extern CONNECTOR SOCK_CreateConnector
 
 
 typedef enum {
-    eSCC_DebugPrintout = 1
+    eSCC_DebugPrintout = 1,
+    eSCC_SetReadOnWrite = 2
 } ESCC_Flags;
 typedef unsigned int TSCC_Flags;  /* binary OR of "ESCC_Flags */
 
