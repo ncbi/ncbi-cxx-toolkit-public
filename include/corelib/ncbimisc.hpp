@@ -43,6 +43,14 @@
 BEGIN_NCBI_SCOPE
 
 
+//  EOwnership
+
+enum EOwnership {
+    eNoOwnership,
+    eTakeOwnership
+};
+
+
 //  auto_ptr
 //
 // Replacement of std::auto_ptr for compilers with poor "auto_ptr"
@@ -296,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.58  2002/08/12 14:57:52  lavr
+ * +EOwnership
+ *
  * Revision 1.57  2002/07/11 14:17:55  gouriano
  * exceptions replaced by CNcbiException-type ones
  *
