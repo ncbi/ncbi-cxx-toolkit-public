@@ -386,7 +386,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
 
 /** Function to calculate effective query length and db length as well as
  * effective search space. 
- * @param program blastn, blastp, blastx, etc. [in]
+ * @param program_number blastn, blastp, blastx, etc. [in]
  * @param scoring_options options for scoring. [in]
  * @param eff_len_options used to calc. effective lengths [in]
  * @param sbp Karlin-Altschul parameters [out]
