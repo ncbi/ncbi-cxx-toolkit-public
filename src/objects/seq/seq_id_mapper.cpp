@@ -1752,13 +1752,14 @@ TSeq_id_Key CSeq_id_Mapper::GetNextKey(void)
     CFastMutexGuard guard(m_IdMapMutex);
     if (m_NextKey < kKeyUsageTableSegmentSize*kKeyUsageTableSize - 1) {
         m_NextKey++;
+        // If in an occupied segment - just return the key
+        if (m_NextKey % kKeyUsageTableSegmentSize) {
+            return m_NextKey;
+        }
     }
     else {
+        // Reset the key and check segment availability
         m_NextKey = 1;
-    }
-    // If in an occupied segment - just return the key
-    if (m_NextKey % kKeyUsageTableSegmentSize) {
-        return m_NextKey;
     }
 
     // Crossing segment boundary - check if the segment is free
@@ -1808,6 +1809,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/05/06 18:51:15  grichenk
+* Fixed minor bug in keys allocation
+*
 * Revision 1.33  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
