@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.167  2002/11/20 14:15:40  thiessen
+* fix for building with wx2.3.3
+*
 * Revision 1.166  2002/11/19 21:19:44  thiessen
 * more const changes for objects; fix user vs default style bug
 *
@@ -2353,8 +2356,10 @@ void Cn3DGLCanvas::SetGLFontFromRegistry(double fontScale)
         ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - can't set wxNativeFontInfo");
         return;
     }
+#if wxVERSION >= 2304
     if (fontScale != 1.0 && fontScale > 0.0)
         fontInfo.SetPointSize(fontScale * fontInfo.GetPointSize());
+#endif
     auto_ptr<wxFont> newFont(wxFont::New(fontInfo));
     if (!newFont.get() || !newFont->Ok()) {
         ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - can't get font from wxNativeFontInfo");
