@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2001/10/15 22:49:42  vakatov
+* AsnMemoryWrite::Size() -- get rid of the meaningless "const" qualifier
+*
 * Revision 1.5  1999/10/21 16:57:05  golikov
 * AsnMemoryWrite mode param added
 *
@@ -102,7 +105,7 @@ public:
 
     const char* Data(void) const
         { flush(); return m_Data; }
-    const size_t Size(void) const
+    size_t Size(void) const
         { flush(); return m_Ptr; }
 
     operator string(void) const
