@@ -29,6 +29,7 @@
  *                   
 */
 
+#include <algo/mm_aligner.hpp>
 #include <algo/nw_aligner_mrna2dna.hpp>
 #include "nwa.hpp"
 
@@ -39,12 +40,15 @@ void CAppNWA::Init()
 {
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
-                              "Needleman-Wunsch alignment demo application.\n"
-                              "Build 1.00.06 - 01/08/03");
+                              "Global alignment algorithms demo application.\n"
+                              "Build 1.00.07 - 01/15/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
          CArgDescriptions::eString, "nucl");
+
+    argdescr->AddFlag("mm",
+                      "Limit memory use to linear (Myers and Miller method)");
 
     argdescr->AddFlag("mrna2dna", "mRna vs. Dna alignment");
 
@@ -109,14 +113,22 @@ void CAppNWA::x_RunOnPair() const
     const CArgs& args = GetArgs();
 
     // analyze parameters
-    const bool bMrna2Dna = args["mrna2dna"] ?
-        args["mrna2dna"].AsBoolean(): false;
+    const bool bMM = args["mm"];
+    const bool bMrna2Dna = args["mrna2dna"];
 
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
 
         NCBI_THROW(CAppNWAException,
                    eInconsistentParameters,
                    "Wrong matrix specified");
+    }
+
+    if(bMrna2Dna && bMM) {
+
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "Linear memory approach is not yet supported by the "
+                   "spliced alignment algorithm");
     }
 
     // read input sequences
@@ -143,8 +155,11 @@ void CAppNWA::x_RunOnPair() const
 
     auto_ptr<CNWAligner> aligner (
         bMrna2Dna? 
-        new CNWAlignerMrna2Dna (&v1[0], v1.size(), &v2[0], v2.size())
-        : new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt));
+        new CNWAlignerMrna2Dna (&v1[0], v1.size(), &v2[0], v2.size()):
+        (bMM?
+         new CMMAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt):
+         new CNWAligner (&v1[0], v1.size(), &v2[0], v2.size(), smt))
+        );
 
     aligner->SetWm  (args["Wm"]. AsInteger());
     aligner->SetWms (args["Wms"].AsInteger());
@@ -210,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/21 12:42:02  kapustin
+ * Add mm parameter
+ *
  * Revision 1.4  2003/01/08 15:58:32  kapustin
  * Read offset parameter from fasta reading routine
  *
