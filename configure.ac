@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.203 2003/07/09 21:06:34 ucko Exp $
+#  $Id: configure.ac,v 1.204 2003/07/09 21:10:34 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -490,7 +490,7 @@ changequote([, ])dnl
        read answer
        case "$answer" in
          y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
-         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
+         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit 1;;
        esac
        echo
     fi ;;
@@ -738,7 +738,7 @@ changequote([, ])dnl
    read answer
    case "$answer" in
       y )  AC_MSG_WARN([Proceeding at your own risk...]) ; echo ;;
-      * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
+      * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit 1 ;;
    esac
    compiler="UNKNOWN"
 fi
@@ -1015,7 +1015,7 @@ changequote([, ])dnl
       read answer
       case "$answer" in
          y | Y | yes | YES ) ;;
-         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit ;;
+         * )  AC_MSG_WARN([Configuration has been canceled by user.]) ; exit 1 ;;
       esac
       echo
       ;;

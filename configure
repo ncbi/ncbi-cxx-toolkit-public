@@ -3458,7 +3458,7 @@ case "$compiler:$compiler_version" in
          y )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
 echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ; echo ;;
          * )  { echo "$as_me:$LINENO: WARNING: Configuration has been canceled by user." >&5
-echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit ;;
+echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit 1;;
        esac
        echo
     fi ;;
@@ -3704,7 +3704,7 @@ EOF
       y )  { echo "$as_me:$LINENO: WARNING: Proceeding at your own risk..." >&5
 echo "$as_me: WARNING: Proceeding at your own risk..." >&2;} ; echo ;;
       * )  { echo "$as_me:$LINENO: WARNING: Configuration has been canceled by user." >&5
-echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit ;;
+echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit 1 ;;
    esac
    compiler="UNKNOWN"
 fi
@@ -3980,7 +3980,7 @@ if test "$with_dll" = "yes" ; then
       case "$answer" in
          y | Y | yes | YES ) ;;
          * )  { echo "$as_me:$LINENO: WARNING: Configuration has been canceled by user." >&5
-echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit ;;
+echo "$as_me: WARNING: Configuration has been canceled by user." >&2;} ; exit 1 ;;
       esac
       echo
       ;;
