@@ -547,8 +547,12 @@ void CGFFFormatter::x_AddFeature
         if (it.GetRange().IsWhole()) {
             to = sequence::GetLength(it.GetSeq_id(), &ctx.GetScope()) - 1;
         }
-        if ( tentative_stop  &&  (exon_number == num_exons) ) {
-            to -= 3;
+        if (tentative_stop) { // XXX - assumes not split across exons
+            if (strand == '+'  &&  exon_number == num_exons) {
+                to -= 3;
+            } else if (strand == '-'  &&  exon_number == 1) {
+                from += 3;
+            }
         }
 
         string extra_attrs;
@@ -607,6 +611,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/09/01 18:49:26  ucko
+* x_AddFeature: take strand into account when subtracting stop codons.
+*
 * Revision 1.8  2004/06/21 18:53:42  ucko
 * Refactor to ease subclassing by the GFF 3 formatter.
 *
