@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2005/02/18 15:00:47  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 1.9  2004/10/25 18:00:42  shomrat
  * + FlipStrand
  *
@@ -90,17 +93,21 @@ public:
     // destructor
     ~CSeq_point(void);
 
-    // check left (5') or right (3') end of location for e_Lim fuzz
-    bool IsPartialLeft  (void) const;
-    bool IsPartialRight (void) const;
-    bool IsLeftOf       (void) const;
-    bool IsRightOf      (void) const;
+    // check start or stop end of location for e_Lim fuzz
+    bool IsPartialStart(ESeqLocExtremes ext) const;
+    bool IsPartialStop (ESeqLocExtremes ext) const;
 
-    // set / remove e_Lim fuzz on left (5') or right (3') end
-    void SetPartialLeft  (bool val);
-    void SetPartialRight (bool val);
-    void SetLeftOf       (bool val);
-    void SetRightOf      (bool val);
+    // set / remove e_Lim fuzz on start or stop end
+    void SetPartialStart(bool val, ESeqLocExtremes ext);
+    void SetPartialStop (bool val, ESeqLocExtremes ext);
+
+    // is location the space left (5') / right (3') of point
+    bool IsLeftOf (void) const;
+    bool IsRightOf(void) const;
+
+    // set location to be the space left (5') / right (3') of position
+    void SetLeftOf (bool val);
+    void SetRightOf(bool val);
 
     // Flip the strand (e.g. plus to minus)
     void FlipStrand(void);

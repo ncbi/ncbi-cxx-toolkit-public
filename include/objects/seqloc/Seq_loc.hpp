@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Author:  Cliff Clausen, Eugene Vasilchenko
+ * Author:  Cliff Clausen, Eugene Vasilchenko, Mati Shomrat
  *
  * File Description:
  *   .......
@@ -47,13 +47,12 @@
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/seq_id_handle.hpp>
-
 #include <objects/general/Int_fuzz.hpp>
-
 //
-#include <corelib/ncbiexpt.hpp>
-#include <util/range.hpp>
-#include <vector>
+////
+//#include <corelib/ncbiexpt.hpp>
+//#include <util/range.hpp>
+//#include <vector>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -81,7 +80,7 @@ public:
     typedef TSeqPos                      TPoint;
     typedef CPacked_seqint::TRanges      TRanges;
 
-    // constructor
+    /// constructors
     CSeq_loc(void);
     CSeq_loc(E_Choice index);
     CSeq_loc(TId& id, TPoint point, TStrand strand = eNa_strand_unknown);
@@ -107,19 +106,19 @@ public:
     TRange GetTotalRange(void) const;
     void InvalidateTotalRangeCache(void);
  
+    /// Get the location's strand
+    ENa_strand GetStrand(void) const;
     /// Return true if all ranges have reverse strand
     bool IsReverseStrand(void) const;
-
     /// Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
-
     /// Set the strand for all of the location's ranges.
     void SetStrand(ENa_strand strand);
 
     /// Return start and stop positions of the seq-loc.
-    /// End may be less than Start for circular sequences.
-    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
-    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+    /// Stop may be less than Start for circular sequences.
+    TSeqPos GetStart(ESeqLocExtremes ext) const;
+    TSeqPos GetStop (ESeqLocExtremes ext) const;
 
     /// Special case for circular sequences. No ID is checked for
     /// circular locations. If the sequence is not circular
@@ -132,23 +131,27 @@ public:
     /// GenBank-style.
     void GetLabel(string* label) const;
 
-    /// check left (5') or right (3') end of location for e_Lim fuzz
-    bool IsPartialLeft  (void) const;
-    bool IsPartialRight (void) const;
+    /// check start or stop of location for e_Lim fuzz
+    bool IsPartialStart(ESeqLocExtremes ext) const;
+    bool IsPartialStop (ESeqLocExtremes ext) const;
 
-    /// set / remove e_Lim fuzz on left (5') or right (3') end
-    void SetPartialLeft (bool val);
-    void SetPartialRight(bool val);
+    /// set / remove e_Lim fuzz on start or stop
+    void SetPartialStart (bool val, ESeqLocExtremes ext);
+    void SetPartialStop  (bool val, ESeqLocExtremes ext);
 
-    /// set the 'id' field in all parts of this location
-    void SetId(CSeq_id& id); // stores id
-    void SetId(const CSeq_id& id); // stores a new copy of id
+    /// Get the id of the location
+    /// return NULL if has multiple ids or no id at all.
+    const CSeq_id* GetId(void) const;
 
     /// check that the 'id' field in all parts of the location is the same
     /// as the specifies id.
     /// if the id parameter is NULL will return the location's id (if unique)
     void CheckId(const CSeq_id*& id) const;
     void InvalidateIdCache(void);
+
+    /// set the 'id' field in all parts of this location
+    void SetId(CSeq_id& id); // stores id
+    void SetId(const CSeq_id& id); // stores a new copy of id
 
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
@@ -163,7 +166,7 @@ public:
     void Add(const CSeq_loc& other);
 
     void ChangeToMix(void);
-    /// Works only if current state is "Int".
+    /// Works only if current choice is "Int".
     void ChangeToPackedInt(void);
 
     /// CSeq_loc operations
@@ -291,8 +294,12 @@ public:
         eEmpty_Allow    /// treat empty locations as usual
     };
 
+    typedef CSeq_loc::TRange    TRange;
+
+    /// constructors
     CSeq_loc_CI(void);
     CSeq_loc_CI(const CSeq_loc& loc, EEmptyFlag empty_flag = eEmpty_Skip);
+    /// destructor
     ~CSeq_loc_CI(void);
 
     CSeq_loc_CI(const CSeq_loc_CI& iter);
@@ -300,8 +307,6 @@ public:
 
     CSeq_loc_CI& operator++ (void);
     DECLARE_OPERATOR_BOOL(x_IsValid());
-
-    typedef CRange<TSeqPos> TRange;
 
     /// Get seq_id of the current location
     const CSeq_id& GetSeq_id(void) const;
@@ -379,7 +384,7 @@ void CSeq_loc::InvalidateTotalRangeCache(void)
 inline 
 void CSeq_loc::InvalidateIdCache(void)
 {
-    m_IdCache = 0;
+    m_IdCache = NULL;
 }
 
 
@@ -403,8 +408,9 @@ inline
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
     TRange range = m_TotalRangeCache;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) )
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) ) {
         range = x_UpdateTotalRange();
+    }
     return range;
 }
 
@@ -413,11 +419,24 @@ inline
 void CSeq_loc::CheckId(const CSeq_id*& id) const
 {
     const CSeq_id* my_id = m_IdCache;
-    if ( my_id == 0 ) {
+    if ( my_id == NULL ) {
         x_CheckId(my_id);
         m_IdCache = my_id;
     }
     x_UpdateId(id, my_id);
+}
+
+
+inline
+const CSeq_id* CSeq_loc::GetId(void) const
+{
+    try {
+        const CSeq_id* sip = NULL;
+        CheckId(sip);
+        return sip;
+    } catch (CException&) {
+    }
+    return NULL;
 }
 
 
@@ -447,6 +466,13 @@ int CSeq_loc::Compare(const CSeq_loc& loc) const
         return range1.GetToOpen() < range2.GetToOpen()? 1: -1;
     }
     return 0;
+}
+
+
+inline
+bool CSeq_loc::IsReverseStrand(void) const
+{
+    return IsReverse(GetStrand());    
 }
 
 
@@ -589,6 +615,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/02/18 15:00:47  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 1.46  2005/01/24 17:06:26  vasilche
  * Safe boolean operators.
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2005/02/18 15:00:47  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 1.8  2004/10/25 18:00:42  shomrat
  * + FlipStrand
  *
@@ -81,7 +84,6 @@ class NCBI_SEQLOC_EXPORT CPacked_seqpnt : public CPacked_seqpnt_Base
 {
     typedef CPacked_seqpnt_Base Tparent;
 public:
-
     //
     // See CPacked_seqpnt related function in util/sequence.hpp:
     //
@@ -95,20 +97,20 @@ public:
     // destructor
     ~CPacked_seqpnt(void);
 
-    // check left (5') or right (3') end of location for e_Lim fuzz
-    bool IsPartialLeft  (void) const;
-    bool IsPartialRight (void) const;
+    // check start or stop end of location for e_Lim fuzz
+    bool IsPartialStart(ESeqLocExtremes ext) const;
+    bool IsPartialStop (ESeqLocExtremes ext) const;
 
-    // set / remove e_Lim fuzz on left (5') or right (3') end
-    void SetPartialLeft  (bool val);
-    void SetPartialRight (bool val);
+    // set / remove e_Lim fuzz on start or stop end
+    void SetPartialStart(bool val, ESeqLocExtremes ext);
+    void SetPartialStop (bool val, ESeqLocExtremes ext);
         
     // Add a point to the collection. 
     void AddPoint(TSeqPos point);
     void AddPoints(const TPoints& points);
     
-    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
-    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+    TSeqPos GetStart(ESeqLocExtremes ext) const;
+    TSeqPos GetStop (ESeqLocExtremes ext) const;
 
     // Flip the strand (e.g. plus to minus)
     void FlipStrand(void);

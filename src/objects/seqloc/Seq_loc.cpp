@@ -497,51 +497,38 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 }
 
 
-bool CSeq_loc::IsReverseStrand(void) const
+ENa_strand CSeq_loc::GetStrand(void) const
 {
     switch ( Which() ) {
     case e_not_set:
     case e_Null:
     case e_Empty:
+        return eNa_strand_unknown; 
     case e_Whole:
-        {
-            return false;
-        }
+        return eNa_strand_both;
     case e_Int:
-        {
-            return GetInt().IsSetStrand() && IsReverse(GetInt().GetStrand());
-        }
+        return GetInt().IsSetStrand() ? GetInt().GetStrand() : eNa_strand_unknown;
     case e_Pnt:
-        {
-            return GetPnt().IsSetStrand() && IsReverse(GetPnt().GetStrand());
-        }
+        return GetPnt().IsSetStrand() ? GetPnt().GetStrand() : eNa_strand_unknown;
     case e_Packed_int:
-        {
-            return GetPacked_int().IsReverseStrand();
-        }
+        return GetPacked_int().GetStrand();
     case e_Packed_pnt:
-        {
-            return GetPacked_pnt().IsSetStrand()
-                && IsReverse(GetPacked_pnt().GetStrand());
-        }
+        return GetPacked_pnt().IsSetStrand() ?
+            GetPacked_pnt().GetStrand() : eNa_strand_unknown;
     case e_Mix:
-        {
-            return GetMix().IsReverseStrand();
-        }
+        return GetMix().GetStrand();
     case e_Equiv:
     case e_Bond:
     case e_Feat:
     default:
-        {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::IsReverse -- "
-                       "unsupported location type");
-        }
+        NCBI_THROW(CException, eUnknown,
+            "CSeq_loc::GetStrand -- unsupported location type" +
+            CSeq_loc::SelectionName(Which()));
     }
 }
 
 
-TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
+TSeqPos CSeq_loc::GetStart(ESeqLocExtremes ext) const
 {
     switch ( Which() ) {
     case e_not_set:
@@ -556,7 +543,8 @@ TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
         }
     case e_Int:
         {
-            return GetInt().GetFrom();
+            return (ext == eExtreme_Biological  &&  IsReverseStrand()) ?
+                GetInt().GetTo() : GetInt().GetFrom();
         }
     case e_Pnt:
         {
@@ -564,15 +552,15 @@ TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
         }
     case e_Packed_int:
         {
-            return GetPacked_int().GetStart();
+            return GetPacked_int().GetStart(ext);
         }
     case e_Packed_pnt:
         {
-            return GetPacked_pnt().GetStart();
+            return GetPacked_pnt().GetStart(ext);
         }
     case e_Mix:
         {
-            return GetMix().GetStart();
+            return GetMix().GetStart(ext);
         }
     case e_Equiv:
     case e_Bond:
@@ -587,7 +575,7 @@ TSeqPos CSeq_loc::GetStart(TSeqPos /*circular_length*/) const
 }
 
 
-TSeqPos CSeq_loc::GetEnd(TSeqPos /*circular_length*/) const
+TSeqPos CSeq_loc::GetStop(ESeqLocExtremes ext) const
 {
     switch ( Which() ) {
     case e_not_set:
@@ -602,7 +590,8 @@ TSeqPos CSeq_loc::GetEnd(TSeqPos /*circular_length*/) const
         }
     case e_Int:
         {
-            return GetInt().GetTo();
+            return (ext == eExtreme_Biological  &&  IsReverseStrand()) ?
+                GetInt().GetFrom() : GetInt().GetTo();
         }
     case e_Pnt:
         {
@@ -610,15 +599,15 @@ TSeqPos CSeq_loc::GetEnd(TSeqPos /*circular_length*/) const
         }
     case e_Packed_int:
         {
-            return GetPacked_int().GetEnd();
+            return GetPacked_int().GetStop(ext);
         }
     case e_Packed_pnt:
         {
-            return GetPacked_pnt().GetEnd();
+            return GetPacked_pnt().GetStop(ext);
         }
     case e_Mix:
         {
-            return GetMix().GetEnd();
+            return GetMix().GetStop(ext);
         }
     case e_Equiv:
     case e_Bond:
@@ -638,13 +627,20 @@ TSeqPos CSeq_loc::GetCircularLength(TSeqPos seq_len) const
     if (seq_len == kInvalidSeqPos) {
         return GetTotalRange().GetLength();
     }
-    TSeqPos start = GetStart();
-    TSeqPos stop = GetEnd();
-    return start > stop ? seq_len - start + stop + 1 : stop - start + 1;
+    TSeqPos start = GetStart(eExtreme_Biological);
+    TSeqPos stop  = GetStop (eExtreme_Biological);
+    bool    minus = IsReverseStrand();
+
+    if (start < stop) {
+        return minus ? (seq_len - stop + start + 1) : (stop - start - 1);
+    } else {
+        return minus ? (start - stop - 1) : (seq_len - start + stop + 1);
+    }
 }
 
 
 // CSeq_loc_CI implementation
+
 CSeq_loc_CI::CSeq_loc_CI(void)
     : m_Location(0),
       m_EmptyFlag(eEmpty_Skip)
@@ -1072,57 +1068,27 @@ const CSeq_id* s_GetLabel
     return last_id;
 }
 
-bool CSeq_loc::IsPartialLeft (void) const
 
+bool CSeq_loc::IsPartialStart(ESeqLocExtremes ext) const
 {
     switch (Which ()) {
         case e_Null :
             return true;
 
         case e_Int :
-            return GetInt ().IsPartialLeft ();
+            return GetInt().IsPartialStart(ext);
 
         case e_Packed_int :
-            return GetPacked_int ().IsPartialLeft ();
+            return GetPacked_int().IsPartialStart(ext);
 
         case e_Pnt :
-            return GetPnt ().IsPartialLeft ();
+            return GetPnt().IsPartialStart(ext);
 
         case e_Packed_pnt :
-            return GetPacked_pnt ().IsPartialLeft ();
+            return GetPacked_pnt().IsPartialStart(ext);
 
         case e_Mix :
-            return GetMix ().IsPartialLeft ();
-
-        default :
-            break;
-    }
-
-    return false;
-}
-
-bool CSeq_loc::IsPartialRight (void) const
-
-{
-    switch (Which ()) {
-
-        case e_Null :
-            return true;
-
-        case e_Int :
-            return GetInt ().IsPartialRight ();
-
-        case e_Packed_int :
-            return GetPacked_int ().IsPartialRight ();
-
-        case e_Pnt :
-            return GetPnt ().IsPartialRight ();
-
-        case e_Packed_pnt :
-            return GetPacked_pnt ().IsPartialRight ();
-
-        case e_Mix :
-            return GetMix ().IsPartialRight ();
+            return GetMix().IsPartialStart(ext);
 
         default :
             break;
@@ -1132,31 +1098,60 @@ bool CSeq_loc::IsPartialRight (void) const
 }
 
 
-void CSeq_loc::SetPartialLeft (bool val)
+bool CSeq_loc::IsPartialStop(ESeqLocExtremes ext) const
 {
-    if ( val == IsPartialLeft() ) {
+    switch (Which ()) {
+        case e_Null :
+            return true;
+
+        case e_Int :
+            return GetInt().IsPartialStop(ext);
+
+        case e_Packed_int :
+            return GetPacked_int().IsPartialStop(ext);
+
+        case e_Pnt :
+            return GetPnt().IsPartialStop(ext);
+
+        case e_Packed_pnt :
+            return GetPacked_pnt().IsPartialStop(ext);
+
+        case e_Mix :
+            return GetMix().IsPartialStop(ext);
+
+        default :
+            break;
+    }
+
+    return false;
+}
+
+
+void CSeq_loc::SetPartialStart(bool val, ESeqLocExtremes ext)
+{
+    if (val == IsPartialStart(ext)) {
         return;
     }
 
-    switch ( Which() ) {
+    switch (Which()) {
         case e_Int:
-            SetInt().SetPartialLeft(val);
+            SetInt().SetPartialStart(val, ext);
             break;
 
         case e_Packed_int :
-            SetPacked_int().SetPartialLeft(val);
+            SetPacked_int().SetPartialStart(val, ext);
             break;
 
         case e_Pnt:
-            SetPnt().SetPartialLeft(val);
+            SetPnt().SetPartialStart(val, ext);
             break;
 
         case e_Packed_pnt:
-            SetPacked_pnt().SetPartialLeft(val);
+            SetPacked_pnt().SetPartialStart(val, ext);
             break;
 
         case e_Mix :
-            SetMix().SetPartialLeft(val);
+            SetMix().SetPartialStart(val, ext);
             break;
 
         default :
@@ -1165,31 +1160,31 @@ void CSeq_loc::SetPartialLeft (bool val)
 }
 
 
-void CSeq_loc::SetPartialRight(bool val)
+void CSeq_loc::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
-    if ( val == IsPartialRight() ) {
+    if (val == IsPartialStop(ext)) {
         return;
     }
 
-    switch ( Which() ) {
+    switch (Which()) {
         case e_Int:
-            SetInt().SetPartialRight(val);
+            SetInt().SetPartialStop(val, ext);
             break;
 
         case e_Packed_int :
-            SetPacked_int().SetPartialRight(val);
+            SetPacked_int().SetPartialStop(val, ext);
             break;
 
         case e_Pnt:
-            SetPnt().SetPartialRight(val);
+            SetPnt().SetPartialStop(val, ext);
             break;
 
         case e_Packed_pnt:
-            SetPacked_pnt().SetPartialRight(val);
+            SetPacked_pnt().SetPartialStop(val, ext);
             break;
 
         case e_Mix:
-            SetMix().SetPartialRight(val);
+            SetMix().SetPartialStop(val, ext);
             break;
 
         default :
@@ -2448,6 +2443,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.54  2005/02/18 15:01:53  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 6.53  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *

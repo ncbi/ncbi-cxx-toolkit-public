@@ -53,82 +53,107 @@ CSeq_loc_mix::~CSeq_loc_mix(void)
 {
 }
 
-bool CSeq_loc_mix::IsPartialLeft (void) const
-
+bool CSeq_loc_mix::IsPartialStart(ESeqLocExtremes ext) const
 {
-    if ( !Get().empty() ) {
-        return Get ().front ()->IsPartialLeft ();
+    if (!Get().empty()) {
+        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().back()->IsPartialStart(ext) : Get().front()->IsPartialStart(ext);
     }
     return false;
 }
 
-bool CSeq_loc_mix::IsPartialRight (void) const
-
+bool CSeq_loc_mix::IsPartialStop(ESeqLocExtremes ext) const
 {
-    if ( !Get().empty() ) {
-        return Get ().back ()->IsPartialRight ();
+    if (!Get().empty()) {
+        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().front()->IsPartialStop(ext) : Get().back()->IsPartialStop(ext);
     }
     return false;
 }
 
 
-void CSeq_loc_mix::SetPartialLeft (bool val)
+void CSeq_loc_mix::SetPartialStart(bool val, ESeqLocExtremes ext)
 {
-    if ( !Set().empty() ) {
-        Set().front()->SetPartialLeft(val);
+    if (IsPartialStart(ext) == val  ||  Set().empty()) {
+        return;
     }
-    _ASSERT(val == IsPartialLeft());
+    if ((IsReverseStrand()  &&  ext == eExtreme_Positional)) {
+        Set().back()->SetPartialStart(val, ext);
+    }else {
+        Set().front()->SetPartialStart(val, ext);
+    }
 }
 
 
-void CSeq_loc_mix::SetPartialRight(bool val)
+void CSeq_loc_mix::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
-    if ( !Set().empty() ) {
-        Set().back()->SetPartialRight(val);
+    if (IsPartialStart(ext) == val  ||  Set().empty()) {
+        return;
     }
-    _ASSERT(val == IsPartialRight());
+    if (IsReverseStrand()  &&  ext == eExtreme_Positional) {
+        Set().front()->SetPartialStop(val, ext);
+    } else {
+        Set().back()->SetPartialStop(val, ext);
+    }
 }
 
 
-bool CSeq_loc_mix::IsReverseStrand(void) const
+ENa_strand CSeq_loc_mix::GetStrand(void) const
 {
-    CSeq_loc_mix::Tdata::const_iterator li = Get().begin();
-    while ( li != Get().end()  &&  (*li)->IsNull() ) {
-        ++li;
-    }
-    if ( li == Get().end() ) {
-        return false;
-    }
-    bool res = (*li)->IsReverseStrand();
-    if ( res ) {
-        for ( ++li; li != Get().end(); ++li) {
-            if ( (*li)->IsNull() ) {
-                continue;
-            }
-            if (res != (*li)->IsReverseStrand()) {
-                return false;
+    ENa_strand strand = eNa_strand_unknown;
+    bool strand_set = false;
+    const CSeq_id* id = NULL;
+    ITERATE(Tdata, it, Get()) {
+        if ((*it)->IsNull()  ||  (*it)->IsEmpty()) {
+            continue;
+        }
+
+        // check fro multiple IDs
+        const CSeq_id* iid = (*it)->GetId();
+        if (iid == NULL) {
+            return eNa_strand_other;
+        }
+        if (id == NULL) {
+            id = iid;
+        } else {
+            if (id->Compare(*iid) != CSeq_id::e_YES) {
+                return eNa_strand_other;
             }
         }
+
+        ENa_strand istrand = (*it)->GetStrand();
+        if (strand == eNa_strand_unknown  &&  istrand == eNa_strand_plus) {
+            strand = istrand;
+            strand_set = true;
+        } else if (strand == eNa_strand_plus  &&  istrand == eNa_strand_unknown) {
+        } else if (!strand_set) {
+            strand = istrand;
+            strand_set = true;
+        } else if (istrand != strand) {
+            return eNa_strand_other;
+        }
     }
-    return res;
+    return strand;
 }
 
 
-TSeqPos CSeq_loc_mix::GetStart(TSeqPos /*circular_length*/) const
+TSeqPos CSeq_loc_mix::GetStart(ESeqLocExtremes ext) const
 {
-    if ( IsReverseStrand() ) {
-        return Get().back()->GetStart();
+    if (!Get().empty()) {
+        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().back()->GetStart(ext) : Get().front()->GetStart(ext);
     }
-    return Get().front()->GetStart();
+    return kInvalidSeqPos;
 }
 
 
-TSeqPos CSeq_loc_mix::GetEnd(TSeqPos /*circular_length*/) const
+TSeqPos CSeq_loc_mix::GetStop(ESeqLocExtremes ext) const
 {
-    if ( IsReverseStrand() ) {
-        return Get().front()->GetEnd();
+    if (!Get().empty()) {
+        return (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().front()->GetStop(ext) : Get().back()->GetStop(ext);
     }
-    return Get().back()->GetEnd();
+    return kInvalidSeqPos;
 }
 
 
@@ -206,6 +231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.20  2005/02/18 15:01:53  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 6.19  2005/01/05 18:29:59  shomrat
  * Fixed IsReverseStrand
  *

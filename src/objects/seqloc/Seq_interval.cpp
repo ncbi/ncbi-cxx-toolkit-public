@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2005/02/18 15:01:53  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 6.9  2004/10/25 18:01:33  shomrat
  * + FlipStrand
  *
@@ -95,19 +98,19 @@ bool CSeq_interval::x_IsMinusStrand(void) const
 }
 
 
-bool CSeq_interval::IsPartialLeft (void) const
+bool CSeq_interval::IsPartialStart(ESeqLocExtremes ext) const
 {
-    if (x_IsMinusStrand()) {
-        if (IsSetFuzz_to ()) {
-            const CInt_fuzz & ifp = GetFuzz_to ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+    if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+        if (IsSetFuzz_to()) {
+            const CInt_fuzz& ifp = GetFuzz_to();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_gt) {
                 return true;
             }
         }
     } else {
-        if (IsSetFuzz_from ()) {
-            const CInt_fuzz & ifp = GetFuzz_from ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+        if (IsSetFuzz_from()) {
+            const CInt_fuzz& ifp = GetFuzz_from();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_lt) {
                 return true;
             }
         }
@@ -115,19 +118,19 @@ bool CSeq_interval::IsPartialLeft (void) const
     return false;
 }
 
-bool CSeq_interval::IsPartialRight (void) const
+bool CSeq_interval::IsPartialStop(ESeqLocExtremes ext) const
 {
-    if (x_IsMinusStrand()) {
-        if (IsSetFuzz_from ()) {
-            const CInt_fuzz & ifp = GetFuzz_from ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
+    if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+        if (IsSetFuzz_from()) {
+            const CInt_fuzz& ifp = GetFuzz_from();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_lt) {
                 return true;
             }
         }
     } else {
-        if (IsSetFuzz_to ()) {
-            const CInt_fuzz & ifp = GetFuzz_to ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
+        if (IsSetFuzz_to()) {
+            const CInt_fuzz& ifp = GetFuzz_to();
+            if (ifp.IsLim()  &&  ifp.GetLim() == CInt_fuzz::eLim_gt) {
                 return true;
             }
         }
@@ -137,49 +140,45 @@ bool CSeq_interval::IsPartialRight (void) const
 
 
 // set / remove e_Lim fuzz on left (5') or right (3') end
-void CSeq_interval::SetPartialLeft (bool val)
+void CSeq_interval::SetPartialStart(bool val, ESeqLocExtremes ext)
 {
-    if (val == IsPartialLeft()) {
-        return;
-    }
-
-    if (val) {
-        if (x_IsMinusStrand()) {
-            SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+    if (val != IsPartialStart(ext)) {
+        if (val) {
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+            } else {
+                SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+            }
         } else {
-            SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
-        }
-    } else {
-        if (x_IsMinusStrand()) {
-            ResetFuzz_to();
-        } else {
-            ResetFuzz_from();
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                ResetFuzz_to();
+            } else {
+                ResetFuzz_from();
+            }
         }
     }
-    _ASSERT(val == IsPartialLeft());
+    _ASSERT(val == IsPartialStart(ext));
 }
 
 
-void CSeq_interval::SetPartialRight(bool val)
+void CSeq_interval::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
-    if (val == IsPartialRight()) {
-        return;
-    }
-
-    if (val) {
-        if (x_IsMinusStrand()) {
-            SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+    if (val != IsPartialStop(ext)) {
+        if (val) {
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+            } else {
+                SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+            }
         } else {
-            SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
-        }
-    } else {
-        if (x_IsMinusStrand()) {
-            ResetFuzz_from();
-        } else {
-            ResetFuzz_to();
+            if (ext == eExtreme_Biological  &&  x_IsMinusStrand()) {
+                ResetFuzz_from();
+            } else {
+                ResetFuzz_to();
+            }
         }
     }
-    _ASSERT(val == IsPartialRight());
+    _ASSERT(val == IsPartialStop(ext));
 }
 
 

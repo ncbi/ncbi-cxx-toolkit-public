@@ -43,6 +43,7 @@
 #include <objects/seqloc/Seq_interval.hpp>
 #include <corelib/ncbiutil.hpp>
 
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -74,76 +75,109 @@ TSeqPos CPacked_seqint::GetLength(void) const
 }
 
 
-bool CPacked_seqint::IsPartialLeft (void) const
-
+bool CPacked_seqint::IsPartialStart(ESeqLocExtremes ext) const
 {
-    if ( !Get().empty() ) {
-        return Get ().front ()->IsPartialLeft ();
+    const CSeq_interval* ival = NULL;
+    if (!Get().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().back() : Get().front();
     }
-    return false;
-}
-
-bool CPacked_seqint::IsPartialRight (void) const
-
-{
-    if ( !Get().empty() ) {
-        return Get ().back ()->IsPartialRight ();
-    }
-    return false;
+    return (ival != NULL) ? ival->IsPartialStart(ext) : false;
 }
 
 
-void CPacked_seqint::SetPartialLeft (bool val)
+bool CPacked_seqint::IsPartialStop(ESeqLocExtremes ext) const
 {
-    if ( !Set().empty() ) {
-        Set().front()->SetPartialLeft(val);
+    const CSeq_interval* ival = NULL;
+    if (!Get().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Get().front() : Get().back();
     }
-    _ASSERT(val == IsPartialLeft());
+    return (ival != NULL) ? ival->IsPartialStop(ext) : false;
 }
 
 
-void CPacked_seqint::SetPartialRight(bool val)
+void CPacked_seqint::SetPartialStart(bool val, ESeqLocExtremes ext)
 {
-    if ( !Set().empty() ) {
-        Set().back()->SetPartialRight(val);
+    CSeq_interval* ival = NULL;
+    if (!Set().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Set().back() : Set().front();
     }
-    _ASSERT(val == IsPartialRight());
+    if (ival != NULL) {
+        ival->SetPartialStop(val, ext);
+    }
 }
 
 
-bool CPacked_seqint::IsReverseStrand(void) const
+void CPacked_seqint::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
-    bool rev = Get().front()->IsSetStrand()
-        &&  IsReverse(Get().front()->GetStrand());
+    CSeq_interval* ival = NULL;
+    if (!Set().empty()) {
+        ival = (IsReverseStrand()  &&  ext == eExtreme_Positional) ?
+            Set().front() : Set().back();
+    }
+    if (ival != NULL) {
+        ival->SetPartialStop(val, ext);
+    }
+}
+
+
+ENa_strand CPacked_seqint::GetStrand(void) const
+{
+    ENa_strand strand = eNa_strand_unknown;
+    bool strand_set = false;
+    const CSeq_id* id = NULL;
     ITERATE(Tdata, i, Get()) {
-        if ( (*i)->IsSetStrand() ) {
-            if ( rev != IsReverse((*i)->GetStrand()) ) {
-                return false;
-            }
+        // check for multiple IDs
+        if (id == NULL) {
+            id = &((*i)->GetId());
+        } else if (id->Compare((*i)->GetId()) != CSeq_id::e_YES) {
+            return eNa_strand_other;
         }
-        if ( !rev ) {
-            break; // at least one strand is not set (not reverse)
+
+        ENa_strand istrand = (*i)->IsSetStrand() ? (*i)->GetStrand() : eNa_strand_unknown;
+        if (strand == eNa_strand_unknown  &&  istrand == eNa_strand_plus) {
+            strand = istrand;
+            strand_set = true;
+        } else if (strand == eNa_strand_plus  &&  istrand == eNa_strand_unknown) {
+            // treat unknown as plus - do nothing
+        } else if (!strand_set) {
+            strand = istrand;
+            strand_set = true;
+        } else if (istrand != strand) {
+            return eNa_strand_other;
         }
     }
-    return rev;
+    return strand;
 }
 
 
-TSeqPos CPacked_seqint::GetStart(TSeqPos /*circular_length*/) const
+TSeqPos CPacked_seqint::GetStart(ESeqLocExtremes ext) const
 {
-    if ( IsReverseStrand() ) {
-        return Get().back()->GetFrom();
+    if (Get().empty()) {
+        return kInvalidSeqPos;
     }
-    return Get().front()->GetFrom();
+    if (IsReverseStrand()) {
+        return (ext == eExtreme_Positional) ? Get().back()->GetFrom() :
+            Get().front()->GetTo(); 
+    } else {
+        return Get().front()->GetFrom();
+    }
 }
 
 
-TSeqPos CPacked_seqint::GetEnd(TSeqPos /*circular_length*/) const
+TSeqPos CPacked_seqint::GetStop(ESeqLocExtremes ext) const
 {
-    if ( IsReverseStrand() ) {
-        return Get().front()->GetTo();
+    if (Get().empty()) {
+        return kInvalidSeqPos;
     }
-    return Get().back()->GetTo();
+    if (IsReverseStrand()) {
+        return (ext == eExtreme_Positional) ? Get().front()->GetTo() :
+            Get().back()->GetFrom(); 
+    } else {
+        return Get().back()->GetTo();
+    }
 }
 
 
@@ -204,6 +238,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.13  2005/02/18 15:01:53  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 6.12  2005/01/05 18:29:59  shomrat
  * Fixed IsReverseStrand
  *

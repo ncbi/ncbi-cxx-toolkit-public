@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2005/02/18 15:01:53  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 6.8  2004/10/25 18:01:33  shomrat
  * + FlipStrand
  *
@@ -92,93 +95,77 @@ bool CPacked_seqpnt::x_IsMinusStrand(void) const
 }
 
 
-bool CPacked_seqpnt::IsPartialLeft (void) const
+bool CPacked_seqpnt::IsPartialStart(ESeqLocExtremes ext) const
 {
-    if (x_IsMinusStrand()) {
-        if (IsSetFuzz ()) {
-            const CInt_fuzz & ifp = GetFuzz ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
-                return true;
-            }
-        }
-    } else {
-        if (IsSetFuzz ()) {
-            const CInt_fuzz & ifp = GetFuzz ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
-                return true;
-            }
-        }
-    }
-    return false;
+    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+        CInt_fuzz::eLim_gt : CInt_fuzz::eLim_lt;
+
+    return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
 }
 
-bool CPacked_seqpnt::IsPartialRight (void) const
+bool CPacked_seqpnt::IsPartialStop(ESeqLocExtremes ext) const
 {
-    if (x_IsMinusStrand()) {
-        if (IsSetFuzz ()) {
-            const CInt_fuzz & ifp = GetFuzz ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_lt) {
-                return true;
-            }
-        }
-    } else {
-        if (IsSetFuzz ()) {
-            const CInt_fuzz & ifp = GetFuzz ();
-            if (ifp.IsLim ()  &&  ifp.GetLim () == CInt_fuzz::eLim_gt) {
-                return true;
-            }
-        }
-    }
-    return false;
+    CInt_fuzz::TLim lim = (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+        CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt;
+
+    return IsSetFuzz()  &&  GetFuzz().IsLim()  &&  GetFuzz().GetLim() == lim;
 }
 
 
-// set / remove e_Lim fuzz on left (5') or right (3') end
-void CPacked_seqpnt::SetPartialLeft (bool val)
+// set / remove e_Lim fuzz on start or stop end
+void CPacked_seqpnt::SetPartialStart(bool val, ESeqLocExtremes ext)
 {
-    if (val == IsPartialLeft()) {
+    if (val == IsPartialStart(ext)) {
         return;
     }
 
     if (val) {
-        SetFuzz().SetLim(x_IsMinusStrand() ? CInt_fuzz::eLim_gt : CInt_fuzz::eLim_lt);
+        CInt_fuzz::TLim lim = 
+            (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+                CInt_fuzz::eLim_gt : CInt_fuzz::eLim_lt;
+
+        SetFuzz().SetLim(lim);
     } else {
         ResetFuzz();
     }
-    _ASSERT(val == IsPartialLeft());
 }
 
 
-void CPacked_seqpnt::SetPartialRight(bool val)
+void CPacked_seqpnt::SetPartialStop(bool val, ESeqLocExtremes ext)
 {
-    if (val == IsPartialRight()) {
+    if (val == IsPartialStop(ext)) {
         return;
     }
 
-    if ( val ) {
-        SetFuzz().SetLim(x_IsMinusStrand() ? CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt);
+    if (val) {
+        CInt_fuzz::TLim lim = 
+            (x_IsMinusStrand()  &&  ext == eExtreme_Biological) ?
+                CInt_fuzz::eLim_lt : CInt_fuzz::eLim_gt;
+
+        SetFuzz().SetLim(lim);
     } else {
         ResetFuzz();
     }
-    _ASSERT(val == IsPartialRight());
 }
 
 
-TSeqPos CPacked_seqpnt::GetStart(TSeqPos /*circular_length*/) const
+TSeqPos CPacked_seqpnt::GetStart(ESeqLocExtremes ext) const
 {
-    if (IsSetStrand()  &&  IsReverse(GetStrand())) {
-        return GetPoints().back();
+    if (!GetPoints().empty()) {
+        return (x_IsMinusStrand()  &&  ext == eExtreme_Positional) ?
+            GetPoints().back() : GetPoints().front();
     }
-    return GetPoints().front();
+    return kInvalidSeqPos;
 }
 
 
-TSeqPos CPacked_seqpnt::GetEnd(TSeqPos /*circular_length*/) const
+TSeqPos CPacked_seqpnt::GetStop(ESeqLocExtremes ext) const
 {
-    if (IsSetStrand()  &&  IsReverse(GetStrand())) {
-        return GetPoints().front();
+    if (!GetPoints().empty()) {
+        return (x_IsMinusStrand()  &&  ext == eExtreme_Positional) ?
+            GetPoints().front() : GetPoints().back();
     }
-    return GetPoints().back();
+    return kInvalidSeqPos;
 }
 
 

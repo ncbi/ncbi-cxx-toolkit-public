@@ -43,6 +43,7 @@
 #include <objects/seqloc/Na_strand.hpp>
 #include <util/range.hpp>
 
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -50,6 +51,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_id;
+
 
 class NCBI_SEQLOC_EXPORT CPacked_seqint : public CPacked_seqint_Base
 {
@@ -70,13 +72,13 @@ public:
     // get the length of the pieces
     TSeqPos GetLength(void) const;
 
-    // check left (5') or right (3') end of location for e_Lim fuzz
-    bool IsPartialLeft  (void) const;
-    bool IsPartialRight (void) const;
+    // check start or stop end of location for e_Lim fuzz
+    bool IsPartialStart(ESeqLocExtremes ext) const;
+    bool IsPartialStop (ESeqLocExtremes ext) const;
 
-    // set / remove e_Lim fuzz on left (5') or right (3') end
-    void SetPartialLeft (bool val);
-    void SetPartialRight(bool val);
+    // set / remove e_Lim fuzz on start or stop end
+    void SetPartialStart(bool val, ESeqLocExtremes ext);
+    void SetPartialStop (bool val, ESeqLocExtremes ext);
 
     /// for convenience
     void AddInterval(const CSeq_interval& ival);
@@ -85,9 +87,10 @@ public:
     void AddIntervals(const CPacked_seqint& ivals);
     void AddIntervals(const Tdata& ivals);
 
+    ENa_strand GetStrand(void) const;
     bool IsReverseStrand(void) const;
-    TSeqPos GetStart(TSeqPos circular_length = kInvalidSeqPos) const;
-    TSeqPos GetEnd(TSeqPos circular_length = kInvalidSeqPos) const;
+    TSeqPos GetStart(ESeqLocExtremes ext) const;
+    TSeqPos GetStop (ESeqLocExtremes ext) const;
 
     /// Set the strand for all of the location's ranges.
     void SetStrand(ENa_strand strand);
@@ -111,6 +114,12 @@ CPacked_seqint::CPacked_seqint(void)
 {
 }
 
+inline
+bool CPacked_seqint::IsReverseStrand(void) const
+{
+    return IsReverse(GetStrand());
+}
+
 /////////////////// end of CPacked_seqint inline methods
 
 
@@ -122,6 +131,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2005/02/18 15:00:47  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 1.11  2004/11/19 15:41:23  shomrat
  * + SetStrand
  *

@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2005/02/18 15:00:47  shomrat
+ * Use ESeqLocExtremes to solve Left/Right ambiguity
+ *
  * Revision 1.14  2004/10/25 18:00:42  shomrat
  * + FlipStrand
  *
@@ -98,7 +101,6 @@ class NCBI_SEQLOC_EXPORT CSeq_interval : public CSeq_interval_Base
 {
     typedef CSeq_interval_Base Tparent;
 public:
-
     // See also related function in util/sequence.hpp:
     //
     //   bool IsValid(const CSeq_interval&, CScope*)
@@ -114,13 +116,13 @@ public:
     // Get the length of the interval
     TSeqPos GetLength(void) const;
 
-    // check left (5') or right (3') end of location for e_Lim fuzz
-    bool IsPartialLeft  (void) const;
-    bool IsPartialRight (void) const;
+    // check start or stop end of location for e_Lim fuzz
+    bool IsPartialStart(ESeqLocExtremes ext) const;
+    bool IsPartialStop (ESeqLocExtremes ext) const;
 
-    // set / remove e_Lim fuzz on left (5') or right (3') end
-    void SetPartialLeft (bool val);
-    void SetPartialRight(bool val);
+    // set / remove e_Lim fuzz on start or stop end
+    void SetPartialStart(bool val, ESeqLocExtremes ext);
+    void SetPartialStop (bool val, ESeqLocExtremes ext);
 
     // Flip the strand (e.g. plus to minus)
     void FlipStrand(void);
