@@ -49,7 +49,7 @@ typedef struct BlastRawCutoffs {
                        extensions */
    Int4 x_drop_gap_final; /**< Raw value of the x-dropoff for gapped 
                              extensions with traceback */
-   Int4 gap_trigger; /**< Minimal raw score for starting gapped extension */
+   Int4 ungapped_cutoff; /**< Minimal raw score for starting gapped extension */
    Int4 cutoff_score; /**< Cutoff score corresponding to given evalue. */
 } BlastRawCutoffs;
 
