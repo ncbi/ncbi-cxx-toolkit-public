@@ -95,24 +95,33 @@ private:
 
     CObjectIStream* OpenFile(const CArgs& args);
 
-    auto_ptr<CValidError> ProcessSeqEntry(void);
-    auto_ptr<CValidError> ProcessSeqSubmit(void);
-    auto_ptr<CValidError> ProcessSeqAnnot(void);
+    CConstRef<CValidError> ProcessSeqEntry(void);
+    CConstRef<CValidError> ProcessSeqSubmit(void);
+    CConstRef<CValidError> ProcessSeqAnnot(void);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
-    unsigned int PrintValidError(const CValidError& errors, const CArgs& args);
-    void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os);
+    SIZE_TYPE PrintValidError(CConstRef<CValidError> errors, 
+        const CArgs& args);
+    SIZE_TYPE PrintBatchErrors(CConstRef<CValidError> errors,
+        const CArgs& args);
 
+    void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os);
+    void PrintBatchItem(const CValidErrItem& item, CNcbiOstream& os);
+   
 
     CRef<CObjectManager> m_ObjMgr;
     auto_ptr<CObjectIStream> m_In;
     unsigned int m_Options;
     bool m_Continue;
+
+    size_t m_Level;
+    size_t m_Reported;
 };
 
 
 CTest_validatorApplication::CTest_validatorApplication(void) :
-    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false)
+    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_Level(0),
+    m_Reported(0)
 {
 }
 
@@ -139,7 +148,7 @@ void CTest_validatorApplication::Init(void)
     arg_desc->AddFlag("nonascii", "Report Non Ascii Error");
     arg_desc->AddFlag("context", "Suppress context in error msgs");
     arg_desc->AddFlag("align", "Validate Alignments");
-    arg_desc->AddFlag("exon", "Validate exons");
+    arg_desc->AddFlag("exon", "Validate exons", false);
     arg_desc->AddFlag("splice", "Report splice error as error");
     arg_desc->AddFlag("ovlpep", "Report overlapping peptide as error");
     arg_desc->AddFlag("taxid", "Requires taxid");
@@ -189,7 +198,7 @@ int CTest_validatorApplication::Run(void)
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
-    CRef<CValidError> eval;
+    CConstRef<CValidError> eval;
     if ( args["t"] ) {          // Release file
         ProcessReleaseFile(args);
         return 0;
@@ -201,11 +210,11 @@ int CTest_validatorApplication::Run(void)
                 "Conflict: '-s' flag is specified but file is not Seq-submit");
         } 
         if ( args["s"]  ||  header == "Seq-submit" ) {  // Seq-submit
-            eval.Reset(ProcessSeqSubmit().release());
+            eval = ProcessSeqSubmit();
         } else if ( header == "Seq-entry" ) {           // Seq-entry
-            eval.Reset(ProcessSeqEntry().release());
+            eval = ProcessSeqEntry();
         } else if ( header == "Seq-annot" ) {           // Seq-annot
-            eval.Reset(ProcessSeqAnnot().release());
+            eval = ProcessSeqAnnot();
         } else {
             NCBI_THROW(CException, eUnknown, "Unhandaled type " + header);
         }
@@ -214,7 +223,7 @@ int CTest_validatorApplication::Run(void)
     
     unsigned int result = 0;
     if ( eval ) {
-        result = PrintValidError(*eval, args);
+        result = PrintValidError(eval, args);
     }
     
     return result;
@@ -225,25 +234,33 @@ void CTest_validatorApplication::ReadClassMember
 (CObjectIStream& in,
  const CObjectInfo::CMemberIterator& member)
 {
-    // Read each element separately to a local TSeqEntry,
-    // process it somehow, and... not store it in the container.
-    for ( CIStreamContainerIterator i(in, member); i; ++i ) {
-        try {
-            // Get seq-entry to validate
-            CRef<CSeq_entry> se(new CSeq_entry);
-            i >> *se;
+    m_Level++;
+
+    if ( m_Level == 1 ) {
+        // Read each element separately to a local TSeqEntry,
+        // process it somehow, and... not store it in the container.
+        for ( CIStreamContainerIterator i(in, member); i; ++i ) {
+	    try {
+                // Get seq-entry to validate
+	        CRef<CSeq_entry> se(new CSeq_entry);
+		i >> *se;
             
-            // Validate Seq-entry
-            CValidator validator(*m_ObjMgr);
-            auto_ptr<CValidError> eval = validator.Validate(*se, 0, m_Options);
-            PrintValidError(*eval, GetArgs());
-            
-        } catch (exception e) {
-            if ( !m_Continue ) {
-                 throw;
-            }
-            // should we issue some sort of warning?
-        }
+		// Validate Seq-entry
+		CValidator validator(*m_ObjMgr);
+		CConstRef<CValidError> eval = validator.Validate(*se, 0, m_Options);
+		if ( eval ) {
+		    m_Reported += PrintBatchErrors(eval, GetArgs());
+		}
+		
+	    } catch (exception e) {
+	        if ( !m_Continue ) {
+		  throw;
+		}
+		// should we issue some sort of warning?
+	    }
+	}
+    } else {
+        in.ReadClassMember(member);
     }
 }
 
@@ -262,6 +279,32 @@ void CTest_validatorApplication::ProcessReleaseFile
     // Read the CBioseq_set, it will call the hook object each time we 
     // encounter a Seq-entry
     *m_In >> *seqset;
+
+    NcbiCerr << m_Reported << " messages reported" << endl;
+}
+
+
+SIZE_TYPE CTest_validatorApplication::PrintBatchErrors
+(CConstRef<CValidError> errors,
+ const CArgs& args)
+{
+    if ( !errors  ||  errors->TotalSize() == 0 ) {
+        return 0;
+    }
+    
+    EDiagSev show  = static_cast<EDiagSev>(args["q"].AsInteger());
+    CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
+    SIZE_TYPE reported = 0;
+    
+    for ( CValidError_CI vit(*errors); vit; ++vit ) {
+        if ( vit->GetSeverity() < show ) {
+            continue;
+        }
+	PrintBatchItem(*vit, *os);
+        ++reported;
+    }
+
+    return reported;
 }
 
 
@@ -274,7 +317,7 @@ CRef<CSeq_entry> CTest_validatorApplication::ReadSeqEntry(void)
 }
 
 
-auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
+CConstRef<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(ReadSeqEntry());
@@ -285,7 +328,7 @@ auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqEntry(void)
 }
 
 
-auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
+CConstRef<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
     
@@ -298,7 +341,7 @@ auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqSubmit(void)
 }
 
 
-auto_ptr<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
+CConstRef<CValidError> CTest_validatorApplication::ProcessSeqAnnot(void)
 {
     CRef<CSeq_annot> sa(new CSeq_annot);
     
@@ -372,7 +415,7 @@ CObjectIStream* CTest_validatorApplication::OpenFile
 
 
 unsigned int CTest_validatorApplication::PrintValidError
-(const CValidError& errors, 
+(CConstRef<CValidError> errors, 
  const CArgs& args)
 {
     EDiagSev show = static_cast<EDiagSev>(args["q"].AsInteger());
@@ -380,16 +423,16 @@ unsigned int CTest_validatorApplication::PrintValidError
     
     CNcbiOstream* os = args["x"] ? &(args["x"].AsOutputFile()) : &NcbiCout;
 
-    if ( errors.TotalSize() == 0 ) {
+    if ( errors->TotalSize() == 0 ) {
         *os << "All entries are OK!" << endl;
-        os->flush();
-        return 0;
+	os->flush();
+	return 0;
     }
 
     unsigned int result = 0;
     unsigned int reported = 0;
 
-    for ( CValidError_CI vit(errors); vit; ++vit) {
+    for ( CValidError_CI vit(*errors); vit; ++vit) {
         if ( vit->GetSeverity() >= count ) {
             ++result;
         }
@@ -401,13 +444,14 @@ unsigned int CTest_validatorApplication::PrintValidError
     }
     *os << reported << " messages reported" << endl;
     os->flush();
-
-    *os << "Total number of errors: " << errors.TotalSize() << endl
-        << "Info: "     << errors.InfoSize()     << endl
-        << "Warning: "  << errors.WarningSize()  << endl
-        << "Error: "    << errors.ErrorSize()    << endl
-        << "Critical: " << errors.CriticalSize() << endl
-        << "Fatal: "    << errors.FatalSize()    << endl;
+        
+    *os << "Total number of errors: " << errors->TotalSize() << endl
+	<< "Info: "     << errors->InfoSize()     << endl
+	<< "Warning: "  << errors->WarningSize()  << endl
+	<< "Error: "    << errors->ErrorSize()    << endl
+	<< "Critical: " << errors->CriticalSize() << endl
+	<< "Fatal: "    << errors->FatalSize()    << endl;
+    
     return result;
 }
 
@@ -420,6 +464,17 @@ void CTest_validatorApplication::PrintValidErrItem
        << "Message: " << item.GetMsg() << endl << endl;
        //<< "Verbose: " << item.GetVerbose() << endl << endl;
 }
+
+
+
+void CTest_validatorApplication::PrintBatchItem
+(const CValidErrItem& item,
+ CNcbiOstream&os)
+{
+    os << item.GetSevAsStr() << ": [" << item.GetErrCode() <<"] ["
+       << item.GetMsg() << "]" << endl;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
@@ -437,6 +492,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2003/05/14 21:16:48  shomrat
+ * Using CRef instead of auto_ptr; changed to output format
+ *
  * Revision 1.19  2003/04/24 16:16:00  vasilche
  * Added missing includes and forward class declarations.
  *
