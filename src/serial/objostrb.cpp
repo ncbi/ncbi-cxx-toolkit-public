@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 20:10:03  vasilche
+* Avoid using of numeric_limits.
+*
 * Revision 1.3  1999/06/07 19:30:27  vasilche
 * More bug fixes
 *
@@ -63,7 +66,7 @@ void WriteNumber(CObjectOStreamBinary* out, TYPE data)
 {
     typedef CObjectOStreamBinary::TByte TByte;
 
-    if ( !numeric_limits<TYPE>::is_signed ) {
+    if ( !(TYPE(-1) < TYPE(0)) ) { // signed
         // unsigned number
         if ( data < 0x80 ) {
             // one byte: 0xxxxxxx
@@ -147,13 +150,13 @@ void WriteStdOrdinal(CObjectOStreamBinary* out, const TYPE& data)
     if ( data == 0 )
         out->WriteNull();
     else if ( sizeof(TYPE) == 1 ) {
-        out->WriteByte(numeric_limits<TYPE>::is_signed?
+        out->WriteByte((TYPE(-1) < TYPE(0))?
                        CObjectStreamBinaryDefs::eStd_sbyte:
                        CObjectStreamBinaryDefs::eStd_ubyte);
         out->WriteByte(data);
     }
     else {
-        out->WriteByte(numeric_limits<TYPE>::is_signed?
+        out->WriteByte((TYPE(-1) < TYPE(0))?
                        CObjectStreamBinaryDefs::eStd_sordinal:
                        CObjectStreamBinaryDefs::eStd_uordinal);
         WriteNumber(out, data);

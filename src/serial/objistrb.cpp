@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/07 20:10:02  vasilche
+* Avoid using of numeric_limits.
+*
 * Revision 1.3  1999/06/07 19:30:25  vasilche
 * More bug fixes
 *
@@ -195,17 +198,19 @@ template<class TYPE>
 class CStdDataReader : public CNumberReader
 {
 public:
+    static bool IsSigned(void)
+        { return TYPE(-1) < TYPE(0); }
 
     static TByte checkSign(TByte code, TByte highBit, bool sign)
         {
             // check if signed number is returned as unsigned
-            if ( !numeric_limits<TYPE>::is_signed &&
+            if ( !IsSigned() &&
                  sign && (code & highBit) ) {
                 throw overflow_error(typeid(TYPE), sign, code);
             }
             // mask data bits
             code &= (highBit << 1) - 1;
-            if ( numeric_limits<TYPE>::is_signed && sign ) {
+            if ( IsSigned() && sign ) {
                 // extend sign
                 return (code ^ highBit) - highBit;
             }
@@ -238,8 +243,8 @@ public:
 template<class TYPE>
 TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
 {
-    bool incompatibleSign = !numeric_limits<TYPE>::is_signed && sign;
-    bool expandSign = numeric_limits<TYPE>::is_signed && sign;
+    bool incompatibleSign = !IsSigned() && sign;
+    bool expandSign = IsSigned() && sign;
     TByte code = in.ReadByte();
     if ( !(code & 0x80) ) {
         // one byte: 0xxxxxxx
@@ -251,8 +256,8 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
         TByte c1 = checkSign(code, 0x20, sign);
         if ( sizeof(TYPE) == 1 ) {
             // check for byte fit
-            if ( !numeric_limits<TYPE>::is_signed && (c1) ||
-                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c1, c0)) )
+            if ( !IsSigned() && (c1) ||
+                 IsSigned() && !(isSignExpansion(c1, c0)) )
                 throw overflow_error(typeid(TYPE), sign, code, c0);
             return TYPE(c0);
         }
@@ -267,16 +272,16 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
         TByte c2 = checkSign(code, 0x10, sign);
         if ( sizeof(TYPE) == 1 ) {
             // check for byte fit
-            if ( !numeric_limits<TYPE>::is_signed && (c2 || c1) ||
-                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c2, c0) &&
-                                                      isSignExpansion(c1, c0)) )
+            if ( !IsSigned() && (c2 || c1) ||
+                 IsSigned() && !(isSignExpansion(c2, c0) &&
+                                 isSignExpansion(c1, c0)) )
                 throw overflow_error(typeid(TYPE), sign, code, c1, c0);
             return TYPE(c0);
         }
         else if ( sizeof(TYPE) == 2 ) {
             // check for two byte fit
-            if ( !numeric_limits<TYPE>::is_signed && (c2) ||
-                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c2, c1)) )
+            if ( !IsSigned() && (c2) ||
+                 IsSigned() && !(isSignExpansion(c2, c1)) )
                 throw overflow_error(typeid(TYPE), sign, code, c1, c0);
             return TYPE((c1 << 8) | c0);
         }
@@ -292,18 +297,18 @@ TYPE CStdDataReader<TYPE>::ReadNumber(CObjectIStreamBinary& in, bool sign)
         TByte c3 = checkSign(code, 0x08, sign);
         if ( sizeof(TYPE) == 1 ) {
             // check for byte fit
-            if ( !numeric_limits<TYPE>::is_signed && (c3 || c2 || c1) ||
-                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c3, c0) &&
-                                                      isSignExpansion(c2, c0) &&
-                                                      isSignExpansion(c1, c0)) )
+            if ( !IsSigned() && (c3 || c2 || c1) ||
+                 IsSigned() && !(isSignExpansion(c3, c0) &&
+                                 isSignExpansion(c2, c0) &&
+                                 isSignExpansion(c1, c0)) )
                 throw overflow_error(typeid(TYPE), sign, code, c2, c1, c0);
             return TYPE(c0);
         }
         else if ( sizeof(TYPE) == 2 ) {
             // check for two byte fit
-            if ( !numeric_limits<TYPE>::is_signed && (c3 || c2) ||
-                 numeric_limits<TYPE>::is_signed && !(isSignExpansion(c3, c1) &&
-                                                      isSignExpansion(c2, c1)) )
+            if ( !IsSigned() && (c3 || c2) ||
+                 IsSigned() && !(isSignExpansion(c3, c1) &&
+                                 isSignExpansion(c2, c1)) )
                 throw overflow_error(typeid(TYPE), sign, code, c2, c1, c0);
             return TYPE((c1 << 8) | c0);
         }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/07 20:10:04  vasilche
+* Avoid using of numeric_limits.
+*
 * Revision 1.1  1999/05/19 19:56:56  vasilche
 * Commit just in case.
 *
@@ -41,21 +44,5 @@
 #include <serial/stdtypes.hpp>
 
 BEGIN_NCBI_SCOPE
-
-const CTypeInfo::TTypeInfo CObjectStreamBinaryDefs::sm_StdTypes[] =
-{
-    CStdTypeInfo<char>::sm_TypeInfo,
-    CStdTypeInfo<unsigned char>::sm_TypeInfo,
-    CStdTypeInfo<signed char>::sm_TypeInfo,
-    CStdTypeInfo<short>::sm_TypeInfo,
-    CStdTypeInfo<unsigned short>::sm_TypeInfo,
-    CStdTypeInfo<int>::sm_TypeInfo,
-    CStdTypeInfo<unsigned int>::sm_TypeInfo,
-    CStdTypeInfo<long>::sm_TypeInfo,
-    CStdTypeInfo<unsigned long>::sm_TypeInfo,
-    CStdTypeInfo<float>::sm_TypeInfo,
-    CStdTypeInfo<double>::sm_TypeInfo,
-    CStdTypeInfo<string>::sm_TypeInfo
-};
 
 END_NCBI_SCOPE
