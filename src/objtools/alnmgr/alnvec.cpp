@@ -93,32 +93,6 @@ CAlnVec::~CAlnVec(void)
 }
 
 
-string CAlnVec::GetSeqString(TNumrow row, TSeqPos from, TSeqPos to) const
-{
-    string buff;
-    x_GetSeqVector(row).GetSeqData(from, to + 1, buff);
-    return buff;
-}
-
-
-string CAlnVec::GetSegSeqString(TNumrow row, TNumseg seg, int offset) const
-{
-    string buff;
-    x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
-                                   GetStop (row, seg, offset) + 1,
-                                   buff);
-    return buff;
-}
-
-
-string CAlnVec::GetSeqString(TNumrow row, const CRange<TSeqPos>& range) const
-{
-    string buff;
-    x_GetSeqVector(row).GetSeqData(range.GetFrom(), range.GetTo() + 1, buff);
-    return buff;
-}
-
-
 const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
 {
     TBioseqHandleCache::iterator i = m_BioseqHandlesCache.find(row);
@@ -162,6 +136,44 @@ CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
     }
 }
 
+string CAlnVec::GetAlnSeqString(TNumrow row, const TSignedRange& aln_rng) const
+{
+    string str, str_buff;
+    
+    // get the chunks which are aligned to seq on anchor
+    CRef<CAlnMap::CAlnChunkVec> chunk_vec = 
+        GetAlnChunks(row, aln_rng, fSkipInserts & fSkipUnalignedGaps);
+    
+    // for each chunk
+    for (int i=0; i<chunk_vec->size(); i++) {
+        CConstRef<CAlnMap::CAlnChunk> chunk = (*chunk_vec)[i];
+                
+        if (chunk->GetType() & fSeq) {
+            // add the sequence string
+            x_GetSeqVector(row).GetSeqData(chunk->GetRange().GetFrom(),
+                                           chunk->GetRange().GetTo()+1,
+                                           str_buff);
+
+            str += str_buff;
+        } else {
+            // add appropriate number of gap/end chars
+            const int n = chunk->GetAlnRange().GetLength();
+            char* ch_buff = new char[n+1];
+            char fill_ch;
+            if (chunk->GetType() & fNoSeqOnLeft  ||
+                chunk->GetType() & fNoSeqOnRight) {
+                fill_ch = GetEndChar();
+            } else {
+                fill_ch = GetGapChar(row);
+            }
+            memset(ch_buff, fill_ch, n);
+            ch_buff[n] = 0;
+            str += ch_buff;
+            delete ch_buff;
+        }
+    }
+    return str;
+}
 
 //
 // CreateConsensus()
@@ -421,6 +433,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2002/10/21 19:15:20  todorov
+* added GetAlnSeqString
+*
 * Revision 1.10  2002/10/08 18:03:15  todorov
 * added the default m_EndChar value
 *

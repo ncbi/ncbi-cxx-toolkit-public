@@ -65,10 +65,19 @@ public:
 
     CScope& GetScope(void) const;
 
-    string GetSeqString   (TNumrow row, TSeqPos from, TSeqPos to)        const;
-    string GetSeqString   (TNumrow row, const CAlnMap::TRange& range)    const;
+    // GetSeqString methods
+    // in seq coords
+    string GetSeqString   (TNumrow row,
+                           TSeqPos seq_from,
+                           TSeqPos seq_to)                               const;
+    string GetSeqString   (TNumrow row,
+                           const CAlnMap::TRange& seq_rng)               const;
     string GetSegSeqString(TNumrow row, TNumseg seg, TNumseg offset = 0) const;
+    // in aln coords
+    string GetAlnSeqString(TNumrow row, 
+                           const CAlnMap::TSignedRange& aln_rng)         const;
 
+    
     const CBioseq_Handle& GetBioseqHandle(TNumrow row)                  const;
     TResidue              GetResidue     (TNumrow row, TSeqPos aln_pos) const;
 
@@ -157,6 +166,35 @@ CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
         }
     }
 }
+
+inline
+string CAlnVec::GetSeqString(TNumrow row, TSeqPos seq_from, TSeqPos seq_to) const
+{
+    string buff;
+    x_GetSeqVector(row).GetSeqData(seq_from, seq_to + 1, buff);
+    return buff;
+}
+
+
+inline
+string CAlnVec::GetSegSeqString(TNumrow row, TNumseg seg, int offset) const
+{
+    string buff;
+    x_GetSeqVector(row).GetSeqData(GetStart(row, seg, offset),
+                                   GetStop (row, seg, offset) + 1,
+                                   buff);
+    return buff;
+}
+
+
+inline
+string CAlnVec::GetSeqString(TNumrow row, const CAlnMap::TRange& seq_rng) const
+{
+    string buff;
+    x_GetSeqVector(row).GetSeqData(seq_rng.GetFrom(), seq_rng.GetTo() + 1, buff);
+    return buff;
+}
+
 
 inline
 void CAlnVec::SetGapChar(TResidue gap_char)
@@ -257,6 +295,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2002/10/21 19:15:12  todorov
+ * added GetAlnSeqString
+ *
  * Revision 1.10  2002/10/04 17:31:36  todorov
  * Added gap char and end char
  *
