@@ -130,6 +130,12 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
         CDirEntry::SplitPath(incl_path, &incl_dir);
         include_dirs.insert(incl_dir);
 
+        //impl include sub-dir
+        string impl_dir = 
+            CDirEntry::ConcatPath(incl_dir, 
+                                  GetApp().GetProjectTreeInfo().m_Impl);
+        impl_dir = CDirEntry::AddTrailingPathSeparator(impl_dir);
+        include_dirs.insert(impl_dir);
     }
     copy(include_dirs.begin(), 
          include_dirs.end(), 
@@ -855,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/06/07 19:16:07  gorelenk
+ * + Taking into account 'impl' in creation of header dir list.
+ *
  * Revision 1.30  2004/06/07 13:56:17  gorelenk
  * Changed CMsvcPrjProjectContext::GetMsvcProjectMakefile to accomodate
  * project creation rules.
