@@ -54,6 +54,7 @@ s/std::\([a-z_]*\)<\([^,<>]*\), \([^,<>]*<[^<>]*>\), std::less<\2>, std::allocat
 
 egrep -e '
 ^".*", line [0-9][0-9]*: Error: 
+^Fatal Error 
 ^Error: ' $tempfile > /dev/null
 
 if test $? -eq 0 ;  then
