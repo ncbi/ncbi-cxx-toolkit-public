@@ -75,7 +75,7 @@ public:
     CNWAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
                EScoringMatrixType matrix_type)
-        throw(CNWAlignerException);
+        throw(CAlgoAlignException);
 
     virtual ~CNWAligner() {}
 
@@ -92,7 +92,7 @@ public:
     };
     virtual void FormatAsText(string* output, EFormat type,
                               size_t line_width = 100) const
-                              throw(CNWAlignerException);
+                              throw(CAlgoAlignException);
 
     void FormatAsSeqAlign(CSeq_align*) const;
 
@@ -143,7 +143,7 @@ public:
 
     // guiding hits
     void  SetGuides(const vector<size_t>& guides)
-        throw (CNWAlignerException);
+        throw (CAlgoAlignException);
 
 protected:
     // Bonuses and penalties
@@ -194,7 +194,7 @@ protected:
                              vector<char>* seq2_transformed) const;
 
     virtual TScore x_ScoreByTranscript() const
-        throw(CNWAlignerException);
+        throw(CAlgoAlignException);
 
     // overflow safe "infinity"
     enum { kInfMinus = kMin_Int / 2 };
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/06/17 17:20:28  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.22  2003/06/17 14:49:38  dicuccio
  * Fix-up after move to algo/align
  *

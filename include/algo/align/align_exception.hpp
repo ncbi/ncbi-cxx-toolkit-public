@@ -50,7 +50,7 @@ class NCBI_XALGO_EXPORT CAlgoException : public CException
     NCBI_EXCEPTION_DEFAULT(CAlgoException,CException);
 };
 
-class NCBI_XALGO_EXPORT CNWAlignerException : public CAlgoException 
+class NCBI_XALGO_EXPORT CAlgoAlignException : public CAlgoException 
 {
 public:
     enum EErrCode {
@@ -79,7 +79,7 @@ public:
             return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CNWAlignerException, CAlgoException);
+    NCBI_EXCEPTION_DEFAULT(CAlgoAlignException, CAlgoException);
 };
 
 
@@ -92,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/17 17:20:28  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.4  2003/04/10 19:04:27  siyan
  * Added doxygen support
  *

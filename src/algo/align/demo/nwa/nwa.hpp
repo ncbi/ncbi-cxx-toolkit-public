@@ -83,7 +83,7 @@ public:
 private:
 
     void x_RunOnPair() const
-        throw(CAppNWAException, CNWAlignerException);
+        throw(CAppNWAException, CAlgoAlignException);
 
     bool x_ReadFastaFile(const string& filename,
                          string*       seqname,
@@ -98,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/06/17 17:20:44  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.5  2003/01/24 16:49:36  kapustin
  * Add write file exception type
  *

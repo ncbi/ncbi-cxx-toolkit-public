@@ -183,7 +183,7 @@ auto_ptr<ofstream> open_ofstream (const string& filename) {
 
 
 void CAppNWA::x_RunOnPair() const
-    throw(CAppNWAException, CNWAlignerException)
+    throw(CAppNWAException, CAlgoAlignException)
 {
     const CArgs& args = GetArgs();
 
@@ -406,6 +406,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/06/17 17:20:44  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.20  2003/06/17 14:51:04  dicuccio
  * Fixed after algo/ rearragnement
  *

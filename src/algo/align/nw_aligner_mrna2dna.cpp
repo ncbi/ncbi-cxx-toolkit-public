@@ -48,7 +48,7 @@ static unsigned char acceptor[splice_type_count][2] = {
 
 CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
-    throw(CNWAlignerException)
+    throw(CAlgoAlignException)
     : CNWAligner(seq1, len1, seq2, len2, eNucl),
     m_IntronMinSize(GetDefaultIntronMinSize())
 {
@@ -63,7 +63,7 @@ CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
 
 
 CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
-    throw(CNWAlignerException)
+    throw(CAlgoAlignException)
 {
     switch(splice_type) {
     case 0: return -30;
@@ -72,7 +72,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::GetDefaultWi(unsigned char splice_type)
     case 3: return -40; // arbitrary splice (??/??)
     }
 
-    NCBI_THROW(CNWAlignerException,
+    NCBI_THROW(CAlgoAlignException,
                eInvalidSpliceTypeIndex,
                "Invalid splice type index");
 }
@@ -84,7 +84,7 @@ void CNWAlignerMrna2Dna::SetWi  (unsigned char splice_type, TScore value) {
         m_Wi[splice_type]  = value;
     }
     else {
-        NCBI_THROW(CNWAlignerException,
+        NCBI_THROW(CAlgoAlignException,
                    eInvalidSpliceTypeIndex,
                    "Invalid splice type index");
     }
@@ -358,7 +358,7 @@ void CNWAlignerMrna2Dna::x_DoBackTrace ( const Uint2* backtrace_matrix,
             while(!(Key & dnr_mask));
 
             if(Key & 0x0070) {
-                NCBI_THROW(CNWAlignerException,
+                NCBI_THROW(CAlgoAlignException,
                            eInternal,
                            "Adjacent splices encountered during backtrace");
             }
@@ -391,7 +391,7 @@ void CNWAlignerMrna2Dna::x_DoBackTrace ( const Uint2* backtrace_matrix,
 
 
 CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
-    throw (CNWAlignerException)
+    throw (CAlgoAlignException)
 {
     const size_t dim = m_Transcript.size();
     if(dim == 0) return 0;
@@ -427,7 +427,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 
     default: {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eInternal,
                    "Invalid transcript symbol");
         }
@@ -483,7 +483,7 @@ CNWAligner::TScore CNWAlignerMrna2Dna::x_ScoreByTranscript() const
 
         default: {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eInternal,
                    "Invalid transcript symbol");
         }
@@ -698,7 +698,7 @@ size_t CNWAlignerMrna2Dna::MakeGuides(const size_t guide_size)
 
 void CNWAlignerMrna2Dna::FormatAsText(string* output, 
                               EFormat type, size_t line_width) const
-    throw(CNWAlignerException)
+    throw(CAlgoAlignException)
 
 {
     CNcbiOstrstream ss;
@@ -810,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2003/06/17 17:20:44  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.19  2003/06/17 14:51:04  dicuccio
  * Fixed after algo/ rearragnement
  *

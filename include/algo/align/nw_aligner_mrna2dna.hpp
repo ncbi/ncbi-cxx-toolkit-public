@@ -60,7 +60,7 @@ public:
 
     CNWAlignerMrna2Dna(const char* seq1, size_t len1,
                        const char* seq2, size_t len2)
-        throw(CNWAlignerException);
+        throw(CAlgoAlignException);
 
     // Setters
     void SetWi  (unsigned char splice_type, TScore value);
@@ -73,7 +73,7 @@ public:
 
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type)
-        throw(CNWAlignerException);
+        throw(CAlgoAlignException);
     static size_t GetDefaultIntronMinSize () {
         return 50;
     }
@@ -81,7 +81,7 @@ public:
     // Formatters
     virtual void FormatAsText(string* output, EFormat type,
                               size_t line_width = 100) const
-                              throw(CNWAlignerException);
+                              throw(CAlgoAlignException);
 
 protected:
 
@@ -93,7 +93,7 @@ protected:
                             vector<ETranscriptSymbol>* transcript);
 
     virtual TScore x_ScoreByTranscript() const
-        throw(CNWAlignerException);
+        throw(CAlgoAlignException);
 
     // guiding hits
     unsigned char x_CalcFingerPrint64( const char* beg, const char* end,
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/06/17 17:20:28  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.10  2003/05/23 18:23:22  kapustin
  * Introduce a generic splice type. Make transcript symbol to be more specific about type of the intron. Backtrace procedure now takes double-byte matrix.
  *

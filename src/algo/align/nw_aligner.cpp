@@ -100,7 +100,7 @@ static const char matrix_blosum62[kBlosumSize][kBlosumSize] = {
 CNWAligner::CNWAligner( const char* seq1, size_t len1,
                         const char* seq2, size_t len2,
                         EScoringMatrixType matrix_type )
-    throw(CNWAlignerException)
+    throw(CAlgoAlignException)
     : m_Wm(GetDefaultWm()),
       m_Wms(GetDefaultWms()),
       m_Wg(GetDefaultWg()),
@@ -114,7 +114,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
 {
     if(!seq1 && m_SeqLen1 || !seq2 && m_SeqLen2) {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eBadParameter,
                    "NULL sequence pointer(s) passed");
     }
@@ -127,7 +127,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
             << iErrPos1;
         string message = CNcbiOstrstreamToString(oss);
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eInvalidCharacter,
                    message );
     }
@@ -139,7 +139,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
             << iErrPos2;
         string message = CNcbiOstrstreamToString(oss);
         NCBI_THROW (
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eInvalidCharacter,
                    message );
     }
@@ -324,7 +324,7 @@ CNWAligner::TScore CNWAligner::Run()
 {
     if(!x_CheckMemoryLimit()) {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eMemoryLimit,
                    "Memory limit exceeded");
     }
@@ -405,7 +405,7 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace,
 
 
 void  CNWAligner::SetGuides(const vector<size_t>& guides)
-    throw (CNWAlignerException)
+    throw (CAlgoAlignException)
 {
     size_t dim = guides.size();
     const char* err = 0;
@@ -442,7 +442,7 @@ void  CNWAligner::SetGuides(const vector<size_t>& guides)
     }
 
     if(err) {
-        NCBI_THROW( CNWAlignerException, eBadParameter, err );
+        NCBI_THROW( CAlgoAlignException, eBadParameter, err );
     }
     else {
         m_guides = guides;
@@ -559,7 +559,7 @@ void CNWAligner::FormatAsSeqAlign(CSeq_align* seqalign) const
 // requires prior call to Run
 void CNWAligner::FormatAsText(string* output, 
                               EFormat type, size_t line_width) const
-        throw(CNWAlignerException)
+        throw(CAlgoAlignException)
 
 {
     CNcbiOstrstream ss;
@@ -668,7 +668,7 @@ void CNWAligner::FormatAsText(string* output,
     
     default: {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eBadParameter,
                    "Incorrect format specified");
     }
@@ -880,7 +880,7 @@ bool CNWAligner::x_CheckMemoryLimit()
 
 
 CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
-    throw (CNWAlignerException)
+    throw (CAlgoAlignException)
 {
     const size_t dim = m_Transcript.size();
     if(dim == 0) return 0;
@@ -904,7 +904,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
     case eDelete:   state1 = 0; state2 = 1; score += m_Wg; break;
     default: {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eInternal,
                    "Invalid transcript symbol");
         }
@@ -941,7 +941,7 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         
         default: {
         NCBI_THROW(
-                   CNWAlignerException,
+                   CAlgoAlignException,
                    eInternal,
                    "Invalid transcript symbol");
         }
@@ -998,6 +998,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/06/17 17:20:44  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.29  2003/06/17 16:06:13  kapustin
  * Detect all variety of splices in Seq-Align formatter (restored from 1.27)
  *

@@ -64,7 +64,7 @@ public:
     CMMAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
                EScoringMatrixType matrix_type)
-        throw(CNWAlignerException);
+        throw(CAlgoAlignException);
 
     virtual ~CMMAligner() {}
 
@@ -141,6 +141,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/06/17 17:20:28  kapustin
+ * CNWAlignerException -> CAlgoAlignException
+ *
  * Revision 1.9  2003/04/14 18:56:56  kapustin
  * Run() --> x_Run()
  *
