@@ -4038,7 +4038,10 @@ if test "$with_64" = "yes" ; then
       # at least in the x86 ReleaseMT configuration.
       LIBS="-lCstd $LIBS"
       ;;
-    sparc-*:GCC )
+    mips*:GCC )
+      ARCH_CFLAGS="-mips64"
+      ;;
+    *:GCC )
       # May not work prior to GCC 3.1.
       ARCH_CFLAGS="-m64"
       ;;

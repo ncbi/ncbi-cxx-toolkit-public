@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.310 2004/07/20 22:35:11 ucko Exp $
+#  $Id: configure.ac,v 1.311 2004/07/22 14:52:51 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -858,7 +858,10 @@ changequote(, )dnl
       LIBS="-lCstd $LIBS"
       ;;
 changequote([, ])dnl
-    sparc-*:GCC )
+    mips*:GCC )
+      ARCH_CFLAGS="-mips64"
+      ;;
+    *:GCC )
       # May not work prior to GCC 3.1.
       ARCH_CFLAGS="-m64"
       ;;
