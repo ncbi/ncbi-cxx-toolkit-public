@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/11 22:43:35  lewisg
+* added docsum page
+*
 * Revision 1.1  1998/12/11 18:11:17  lewisg
 * frontpage added
 *
@@ -43,55 +46,63 @@
 #include <html.hpp>
 #include <page.hpp>
 #include <factory.hpp>
-#include <ncbiapp.hpp>
+#include <cgiapp.hpp>
 #include <components.hpp>
 #include <querypages.hpp>
 BEGIN_NCBI_SCOPE
- 
+
+class CMyApp : public CSimpleCgiApp
+{
+public:
+    CMyApp(int argc = 0, char** argv = 0)
+        : CSimpleCgiApp(argc, argv) {}
+    virtual int Run(void);
+};
+
 
 extern "C" int main(int argc, char *argv[])
 {
+    int result;
 
-    CPmFrontPage FrontPage;
-    FrontPage.Create();
-    FrontPage.Print(NcbiCout);
+    CMyApp app( argc, argv );
+    try {
+	app.Init(); 
+	result = app.Run();
+	app.Exit(); 
+    } catch(...) {}
 
-#if 0
-	CHTML_form Form;
+    return result;
+}
 
-	CQueryBox QueryBox;
-	QueryBox.Create(1);
-	Form.AppendChild(&QueryBox);
+SFactoryList < CHTMLBasicPage > PageList [] = {
+    { CPmDocSumPage::New, "docsum", 0 },
+    { CPmFrontPage::New, "", 0 }
+};
 
 
-	CPagerBox Box;
-	Box.InitMembers(0);
-	Box.m_TopButton->m_Name = "Display";
-	Box.m_TopButton->m_Select = "display";
-	Box.m_TopButton->m_List["dopt"] = "Top";
-	Box.m_RightButton->m_Name = "save";
-	Box.m_RightButton->m_Select = "m_s";
-	Box.m_RightButton->m_List["m_s"] = "Right";
-	Box.m_LeftButton->m_Name = "Order";
-	Box.m_LeftButton->m_Select = "order";
-	Box.m_LeftButton->m_List["m_o"] = "Left";
-	Box.m_PageList->m_Pages[1] = "http://one";
-	Box.m_PageList->m_Forward = "http://forward";
-	Box.m_PageList->m_Backward = "http://backward";
-	Box.Finish(0);
-	Form.AppendChild(&Box);
+int CMyApp::Run(void) 
+{
+    CFactory < CHTMLBasicPage > Factory;
+    int i;
+    CHTMLBasicPage * Page;
 
-	CSmallPagerBox Box2;
-	Box2.InitMembers(0);
-	Box2.m_PageList->m_Pages[1] = "http://one";
-	Box2.m_PageList->m_Forward = "http://forward";
-	Box2.m_PageList->m_Backward = "http://backward";
-	Box2.Finish(0);
-	Form.AppendChild(&Box2);
-	Form.Print(NcbiCout);
-#endif
+    NcbiCout << "Content-TYPE: text/html\n\n";  // CgiResponse
 
+    try {    	
+	i = Factory.CgiFactory( (TCgiEntries&)(GetRequest()->GetEntries()), PageList);
+	Page = (PageList[i].pFactory)();
+	Page->SetApplication(this);
+	Page->Create(PageList[i].Style);
+	Page->Print(NcbiCout);  // serialize it
+
+    }
+    catch (...) {
+	delete Page;
+	throw;
+    }
+    delete Page;
     return 0;  
 }
+
 
 END_NCBI_SCOPE
