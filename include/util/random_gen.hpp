@@ -41,6 +41,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/07/06 11:49:21  clausen
+ * Added GetRand(min,max)
+ *
  * Revision 1.2  2001/07/05 16:55:40  vakatov
  * Added typedef CRandom::TValue and CRandom::GetMax() to allow for
  * seamless extension of this API in the future
@@ -79,6 +82,7 @@ public:
 
     // Get the next random number in the interval [0..GetMax()] (inclusive)
     TValue GetRand(void);
+    TValue GetRand(TValue min_value, TValue max_value); 
 
     // The max. value GetRand() returns
     static TValue GetMax(void);
@@ -129,6 +133,11 @@ inline CRandom::TValue CRandom::GetRand(void)
     }
 
     return (r >> 1) & 0x7fffffff;  // discard the least-random bit
+}
+
+inline CRandom::TValue CRandom::GetRand(TValue min_value, TValue max_value)
+{
+  return min_value + (GetRand() % (max_value - min_value + 1));
 }
 
 
