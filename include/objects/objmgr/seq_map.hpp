@@ -205,8 +205,13 @@ private:
 
 private:
     // Prohibit copy operator and constructor
+#ifdef NCBI_OS_MSWIN
     CSeqMap(const CSeqMap&) { THROW1_TRACE(runtime_error, "unimplemented"); }
     CSeqMap& operator= (const CSeqMap&) { THROW1_TRACE(runtime_error, "unimplemented"); }
+#else
+    CSeqMap(const CSeqMap&);
+    CSeqMap& operator= (const CSeqMap&);
+#endif
     
 protected:    
     // interface for iterators
@@ -273,9 +278,8 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.23  2002/12/26 20:48:22  dicuccio
-* Added Win32 export specifier.  Added obtuse work-around for unimplemented copy
-* ctor / assignment operator.
+* Revision 1.24  2002/12/26 20:49:28  dicuccio
+* Wrapped previous unimplemented ctor in #ifdef for MSWIN only
 *
 * Revision 1.22  2002/12/26 16:39:21  vasilche
 * Object manager class CSeqMap rewritten.
