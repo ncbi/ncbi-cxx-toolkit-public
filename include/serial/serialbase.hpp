@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/05/04 16:21:36  vasilche
+* Fixed bug in choice reset.
+*
 * Revision 1.2  2000/04/28 16:58:03  vasilche
 * Added classes CByteSource and CByteSourceReader for generic reading.
 * Added delayed reading of choice variants.
@@ -109,7 +112,7 @@ public:
         }
     static void ResetChoice(void* object)
         {
-            if ( Which(object) != CClassType::e_not_set )
+            if ( Which(object) != -1 )
                 Reset(object);
         }
     static void Select(void* object, int index)
