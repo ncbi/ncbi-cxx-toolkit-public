@@ -55,6 +55,9 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+
+static const size_t g_sizeof_endl = strlen(Endl());
+
 void CSeqLoader::Open(const string& filename_index)
 {
     CNcbiIfstream idxstream (filename_index.c_str());
@@ -171,7 +174,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
         
     }
     
-    auto_ptr<istream> input (0);
+    auto_ptr<CNcbiIstream> input (0);
     
     map<string, SIdxTarget>::const_iterator im = m_idx.find(id);
     if(im == m_idx.end()) {
@@ -183,7 +186,13 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     }
     else {
         const string& filename = m_filenames[im->second.m_filename_idx-m_min_idx];
-        input.reset(new ifstream (filename.c_str()));
+        CNcbiIstream* istr = new ifstream (filename.c_str());
+        if(!istr || !*istr) {
+            NCBI_THROW( CSplignAppException,
+                        eCannotOpenFile,
+                        filename.c_str());
+        }
+        input.reset(istr);
         input->seekg(im->second.m_offset);
     }
   
@@ -198,8 +207,10 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
     seq->clear();
     
     if(from == 0 && to == kMax_UInt) {
+
         // read entire sequence until the next one or eof
         while(*input) {
+
             CT_POS_TYPE i0 = input->tellg();
             input->getline(buf, sizeof buf, '\n');
             if(!*input) {
@@ -208,7 +219,7 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
             CT_POS_TYPE i1 = input->tellg();
             if(i1 - i0 > 1) {
                 CT_OFF_TYPE line_size = i1 - i0;
-                line_size = line_size - 1;
+                line_size -= g_sizeof_endl;
                 if(buf[0] == '>') break;
                 size_t size_old = seq->size();
                 seq->resize(size_old + line_size);
@@ -221,12 +232,14 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
         }
     }
     else {
+
         // read only a portion of a sequence
         const size_t dst_seq_len = to - from + 1;
         seq->resize(dst_seq_len + sizeof buf);
         CT_POS_TYPE i0 = input->tellg(), i1;
         CT_OFF_TYPE dst_read = 0, src_read = 0;
         while(*input) {
+
             input->getline(buf, sizeof buf, '\n');
             if(buf[0] == '>' || !*input) {
                 seq->resize(dst_read);
@@ -235,10 +248,10 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
             i1 = input->tellg();
             
             CT_OFF_TYPE off = i1 - i0;
-            if (off > 1) {
-                src_read += off - 1;
+            if (off > g_sizeof_endl) {
+                src_read += off - g_sizeof_endl;
             }
-            else if (off == 1) {
+            else if (off == g_sizeof_endl) {
                 continue;
             }
             else { 
@@ -246,8 +259,9 @@ void CSeqLoader::Load(const string& id, vector<char>* seq,
             }
             
             if(src_read > CT_OFF_TYPE(from)) {
+
                 CT_OFF_TYPE line_size = i1 - i0;
-                line_size = line_size - 1;
+                line_size = line_size - g_sizeof_endl;
                 size_t start  = dst_read? 0: (line_size - (src_read - from));
                 size_t finish = (src_read > CT_OFF_TYPE(to))?
                     (line_size - (src_read - to) + 1):
@@ -368,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/06/23 21:44:25  kapustin
+ * Use Endl() to figure out EOL length
+ *
  * Revision 1.18  2004/06/23 19:31:10  kapustin
  * Minor cleanup
  *
