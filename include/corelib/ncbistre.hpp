@@ -28,18 +28,20 @@
  *
  * Author:  Denis Vakatov
  *
- * File Description:
- *   NCBI C++ stream class wrappers
- *   Triggering between "new" and "old" C++ stream libraries
  *
  */
+
+/// @file ncbistre.hpp
+/// NCBI C++ stream class wrappers for triggering between "new" and
+/// "old" C++ stream libraries.
+
 
 #include <corelib/ncbistl.hpp>
 
 
-// Determine which iostream library to use, include appropriate
-// headers, and #define specific preprocessor variables.
-// The default is the new(template-based, std::) one.
+/// Determine which iostream library to use, include appropriate
+/// headers, and #define specific preprocessor variables.
+/// The default is the new(template-based, std::) one.
 
 #if !defined(HAVE_IOSTREAM)  &&  !defined(NCBI_USE_OLD_IOSTREAM)
 #  define NCBI_USE_OLD_IOSTREAM
@@ -121,24 +123,50 @@ BEGIN_NCBI_SCOPE
 
 
 // I/O classes
+
+/// Portable alias for streampos.
 typedef IO_PREFIX::streampos     CNcbiStreampos;
+
+/// Portable alias for streamoff.
 typedef IO_PREFIX::streamoff     CNcbiStreamoff;
 
+/// Portable alias for ios.
 typedef IO_PREFIX::ios           CNcbiIos;
 
+/// Portable alias for streambuf.
 typedef IO_PREFIX::streambuf     CNcbiStreambuf;
+
+/// Portable alias for istream.
 typedef IO_PREFIX::istream       CNcbiIstream;
+
+/// Portable alias for ostream.
 typedef IO_PREFIX::ostream       CNcbiOstream;
+
+/// Portable alias for iostream.
 typedef IO_PREFIX::iostream      CNcbiIostream;
 
+/// Portable alias for strstreambuf.
 typedef IO_PREFIX::strstreambuf  CNcbiStrstreambuf;
+
+/// Portable alias for istrstream.
 typedef IO_PREFIX::istrstream    CNcbiIstrstream;
+
+/// Portable alias for ostrstream.
 typedef IO_PREFIX::ostrstream    CNcbiOstrstream;
+
+/// Portable alias for strstream.
 typedef IO_PREFIX::strstream     CNcbiStrstream;
 
+/// Portable alias for filebuf.
 typedef IO_PREFIX::filebuf       CNcbiFilebuf;
+
+/// Portable alias for ifstream.
 typedef IO_PREFIX::ifstream      CNcbiIfstream;
+
+/// Portable alias for ofstream.
 typedef IO_PREFIX::ofstream      CNcbiOfstream;
+
+/// Portable alias for fstream.
 typedef IO_PREFIX::fstream       CNcbiFstream;
 
 // Standard I/O streams
@@ -394,6 +422,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2003/08/24 02:18:40  siyan
+ * Documentation changes.
+ *
  * Revision 1.33  2003/08/19 15:41:30  dicuccio
  * Added conditionally compiled prototype for operator<<(ostream&, __int64)
  *
