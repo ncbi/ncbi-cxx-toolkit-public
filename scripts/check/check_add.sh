@@ -65,7 +65,7 @@ x_app=`echo "$x_app" | sed -e 's/^.*=//'`${x_exeext}
 
 # Get cmd-lines to run test
 x_run=`grep '^ *CHECK_CMD' ${x_srcdir}/Makefile.${x_test}.app`
-x_run=`echo "$x_run" | sed -e 's/^.*=//'`
+x_run=`echo "$x_run" | sed -e 's/^[^=]*=//'`
 
 if test -z "${x_run}"; then
     # If command line not defined, then just run the test without parameters
@@ -81,7 +81,7 @@ x_cnt=1
 test_out="$x_pwd/$x_test.test_out"
 
 for x_cmd in ${x_run} ; do
-   x_cmd=`echo "${x_cmd}" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//'`
+   x_cmd=`echo "${x_cmd}" | sed -e 's/%gj_s4%/ /g' | sed -e 's/^ *//' | sed -e 's/\"/\\\\"/g'`
 
 cat >> $x_out <<EOF
 #######################################################
