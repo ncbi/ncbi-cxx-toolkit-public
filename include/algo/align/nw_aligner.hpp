@@ -108,9 +108,10 @@ public:
         size_t m_iter_done;
         size_t m_iter_total;
         void*  m_data;
+        char   m_text_buffer [1024];
     };
 
-    typedef bool (*ProgressCallback_t) (const SProgressInfo*);
+    typedef bool (*ProgressCallback_t) (SProgressInfo*);
     void SetProgressCallback ( ProgressCallback_t prg_callback, void* data );
 
     // Getters
@@ -173,6 +174,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/03/12 21:11:03  kapustin
+ * Add text buffer to progress callback info structure
+ *
  * Revision 1.12  2003/03/05 20:12:22  kapustin
  * Simplify FormatAsText interface
  *
