@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/03/17 17:05:59  vasilche
+* String literal split to avoid influence of cvs.
+*
 * Revision 1.14  2000/03/17 16:49:55  vasilche
 * Added copyright message to generated files.
 * All objects pointers in choices now share the only CObject pointer.
@@ -214,7 +217,7 @@ void CFileCode::GenerateCode(void)
 CNcbiOstream& CFileCode::WriteCopyrightHeader(CNcbiOstream& out) const
 {
     return out <<
-        "/* $Id$\n"
+        "/* $""Id$\n"
         " * ===========================================================================\n"
         " *\n"
         " *                            PUBLIC DOMAIN NOTICE\n"
@@ -283,11 +286,7 @@ CNcbiOstream& CFileCode::WriteUserCopyright(CNcbiOstream& out) const
     WriteSourceFile(out) << ".\n"
         " *\n"
         " * ---------------------------------------------------------------------------\n"
-        " * $Log$
-        " * Revision 1.14  2000/03/17 16:49:55  vasilche
-        " * Added copyright message to generated files.
-        " * All objects pointers in choices now share the only CObject pointer.
-        " * All setters/getters made public until we'll find better solution.
+        " * $""Log$\n"
         " *\n"
         " * ===========================================================================\n"
         " */\n";
