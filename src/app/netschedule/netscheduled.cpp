@@ -130,7 +130,11 @@ const unsigned kMaxMessageSize = kNetScheduleMaxErrSize * 4;
 struct SThreadData
 {
     string      request;
-    string      auth;
+
+    string            auth;
+    string            auth_prog;  // prog='...' from auth string
+    CQueueClientInfo  auth_prog_info;    
+
     string      queue;
     string      answer;
 
@@ -180,18 +184,54 @@ public:
         m_ThrdSrvAcceptTimeout.usec = 500;
     }
 
-    void ProcessSubmit(CSocket& sock, SThreadData& tdata);
-    void ProcessCancel(CSocket& sock, SThreadData& tdata);
-    void ProcessStatus(CSocket& sock, SThreadData& tdata);
-    void ProcessGet(CSocket& sock, SThreadData& tdata);
-    void ProcessWaitGet(CSocket& sock, SThreadData& tdata);
-    void ProcessPut(CSocket& sock, SThreadData& tdata);
-    void ProcessPutFailure(CSocket& sock, SThreadData& tdata);
-    void ProcessDropQueue(CSocket& sock, SThreadData& tdata);
-    void ProcessReturn(CSocket& sock, SThreadData& tdata);
-    void ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata);
-    void ProcessDropJob(CSocket& sock, SThreadData& tdata);
-    void ProcessStatistics(CSocket& sock, SThreadData& tdata);
+    void ProcessSubmit(CSocket&                sock,
+                       SThreadData&            tdata,
+                       CQueueDataBase::CQueue& queue);
+
+    void ProcessCancel(CSocket&                sock,
+                       SThreadData&            tdata,
+                       CQueueDataBase::CQueue& queue);
+
+    void ProcessStatus(CSocket&                sock,
+                       SThreadData&            tdata,
+                       CQueueDataBase::CQueue& queue);
+
+    void ProcessGet(CSocket&                sock,
+                    SThreadData&            tdata,
+                    CQueueDataBase::CQueue& queue);
+
+    void ProcessWaitGet(CSocket&                sock,
+                        SThreadData&            tdata,
+                        CQueueDataBase::CQueue& queue);
+
+    void ProcessPut(CSocket&                sock,
+                    SThreadData&            tdata,
+                    CQueueDataBase::CQueue& queue);
+
+    void ProcessPutFailure(CSocket&                sock,
+                           SThreadData&            tdata,
+                           CQueueDataBase::CQueue& queue);
+
+    void ProcessDropQueue(CSocket&                sock,
+                          SThreadData&            tdata,
+                          CQueueDataBase::CQueue& queue);
+
+    void ProcessReturn(CSocket&                sock,
+                       SThreadData&            tdata,
+                       CQueueDataBase::CQueue& queue);
+
+    void ProcessJobRunTimeout(CSocket&                sock,
+                              SThreadData&            tdata,
+                              CQueueDataBase::CQueue& queue);
+
+    void ProcessDropJob(CSocket&                sock,
+                        SThreadData&            tdata,
+                        CQueueDataBase::CQueue& queue);
+
+    void ProcessStatistics(CSocket&                sock,
+                           SThreadData&            tdata,
+                           CQueueDataBase::CQueue& queue);
+
 protected:
     virtual void ProcessOverflow(SOCK sock) 
     { 
@@ -330,6 +370,9 @@ void CNetScheduleServer::Process(SOCK sock)
             io_st = socket.ReadLine(tdata->queue);
             JS_CHECK_IO_STATUS(io_st)
 
+            CQueueDataBase::CQueue queue(*m_QueueDB, tdata->queue);
+
+/*
             if (!m_QueueDB->QueueExists(tdata->queue)) {
                 tdata->req.err_msg = "Queue ";
                 tdata->req.err_msg.append(tdata->queue);
@@ -337,7 +380,7 @@ void CNetScheduleServer::Process(SOCK sock)
                 WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
                 return;
             }
-
+*/
             io_st = socket.ReadLine(tdata->request);
             JS_CHECK_IO_STATUS(io_st)
 
@@ -348,37 +391,85 @@ void CNetScheduleServer::Process(SOCK sock)
             if (req.req_type == eQuitSession) {
                 break;
             }
-            
+
+
+            // program version control:
+            //
+            // we want status request to be fast, skip version control 
+            //
+            if ((req.req_type != eStatusJob) && 
+                    queue.IsVersionControl()) {
+
+                if (tdata->auth == "netschedule_control") {
+                    goto end_version_control;
+                }
+                
+                string::size_type pos; 
+                pos = tdata->auth.find("prog='");
+                if (pos == string::npos) {
+                client_ver_err:
+                    WriteMsg(socket, "ERR:", "CLIENT_VERSION");
+                    return;
+                } else {
+                    string& prog = tdata->auth_prog;
+                    prog.erase();
+                    const char* prog_str = tdata->auth.c_str();
+                    prog_str += pos + 6;
+                    for(; *prog_str && *prog_str != '\''; ++prog_str) {
+                        char ch = *prog_str;
+                        prog.push_back(ch);
+                    }
+                    if (prog.empty()) {
+                        goto client_ver_err;
+                    }
+                    try {
+                        CQueueClientInfo& prog_info = tdata->auth_prog_info;
+                        ParseVersionString(prog,
+                                           &prog_info.client_name, 
+                                           &prog_info.version_info);
+                        bool match = queue.IsMatchingClient(prog_info);
+                        if (!match)
+                            goto client_ver_err;
+                    }
+                    catch (exception&)
+                    {
+                        goto client_ver_err;
+                    }
+                }
+            }
+
+end_version_control:
+
             switch (req.req_type) {
             case eSubmitJob:
-                ProcessSubmit(socket, *tdata);
+                ProcessSubmit(socket, *tdata, queue);
                 break;
             case eCancelJob:
-                ProcessCancel(socket, *tdata);
+                ProcessCancel(socket, *tdata, queue);
                 break;
             case eStatusJob:
-                ProcessStatus(socket, *tdata);
+                ProcessStatus(socket, *tdata, queue);
                 break;
             case eGetJob:
-                ProcessGet(socket, *tdata);
+                ProcessGet(socket, *tdata, queue);
                 break;
             case eWaitGetJob:
-                ProcessWaitGet(socket, *tdata);
+                ProcessWaitGet(socket, *tdata, queue);
                 break;
             case ePutJobResult:
-                ProcessPut(socket, *tdata);
+                ProcessPut(socket, *tdata, queue);
                 break;
             case ePutJobFailure:
-                ProcessPutFailure(socket, *tdata);
+                ProcessPutFailure(socket, *tdata, queue);
                 break;
             case eReturnJob:
-                ProcessReturn(socket, *tdata);
+                ProcessReturn(socket, *tdata, queue);
                 break;
             case eJobRunTimeout:
-                ProcessJobRunTimeout(socket, *tdata);
+                ProcessJobRunTimeout(socket, *tdata, queue);
                 break;
             case eDropJob:
-                ProcessDropJob(socket, *tdata);
+                ProcessDropJob(socket, *tdata, queue);
                 break;
             case eShutdown:
                 LOG_POST("Shutdown request...");
@@ -388,12 +479,12 @@ void CNetScheduleServer::Process(SOCK sock)
                 WriteMsg(socket, "OK:", NETSCHEDULED_VERSION);
                 break;
             case eDropQueue:
-                ProcessDropQueue(socket, *tdata);
+                ProcessDropQueue(socket, *tdata, queue);
                 break;
             case eLogging:
                 break;
             case eStatistics:
-                ProcessStatistics(socket, *tdata);
+                ProcessStatistics(socket, *tdata, queue);
                 break;
             case eError:
                 WriteMsg(socket, "ERR:", tdata->req.err_msg.c_str());
@@ -456,7 +547,9 @@ void CNetScheduleServer::Process(SOCK sock)
     }
 }
 
-void CNetScheduleServer::ProcessSubmit(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessSubmit(CSocket&                sock, 
+                                       SThreadData&            tdata,
+                                       CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
     unsigned client_address = 0;
@@ -464,7 +557,6 @@ void CNetScheduleServer::ProcessSubmit(CSocket& sock, SThreadData& tdata)
         sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
     }
 
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     unsigned job_id =
         queue.Submit(req.input, client_address, req.port, req.timeout);
 
@@ -475,43 +567,46 @@ void CNetScheduleServer::ProcessSubmit(CSocket& sock, SThreadData& tdata)
     WriteMsg(sock, "OK:", buf);
 }
 
-void CNetScheduleServer::ProcessCancel(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessCancel(CSocket&                sock, 
+                                       SThreadData&            tdata,
+                                       CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     queue.Cancel(job_id);
     WriteMsg(sock, "OK:", "");
 }
 
-void CNetScheduleServer::ProcessDropJob(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessDropJob(CSocket&                sock, 
+                                        SThreadData&            tdata,
+                                        CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     queue.DropJob(job_id);
     WriteMsg(sock, "OK:", "");
 }
 
 
-void 
-CNetScheduleServer::ProcessJobRunTimeout(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessJobRunTimeout(CSocket&                sock, 
+                                              SThreadData&            tdata,
+                                              CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     queue.SetJobRunTimeout(job_id, req.timeout);
     WriteMsg(sock, "OK:", "");
 }
 
-void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessStatus(CSocket&                sock, 
+                                       SThreadData&            tdata,
+                                       CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
 
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
 
     CNetScheduleClient::EJobStatus status = queue.GetStatus(job_id);
@@ -558,10 +653,11 @@ void CNetScheduleServer::x_MakeGetAnswer(const char*   key_buf,
 }
 
 
-void CNetScheduleServer::ProcessGet(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessGet(CSocket&                sock, 
+                                    SThreadData&            tdata,
+                                    CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     unsigned job_id;
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
@@ -583,10 +679,11 @@ void CNetScheduleServer::ProcessGet(CSocket& sock, SThreadData& tdata)
    }
 }
 
-void CNetScheduleServer::ProcessWaitGet(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessWaitGet(CSocket&                sock, 
+                                        SThreadData&            tdata,
+                                        CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     unsigned job_id;
     unsigned client_address;
     sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
@@ -611,20 +708,22 @@ void CNetScheduleServer::ProcessWaitGet(CSocket& sock, SThreadData& tdata)
 
 }
 
-void CNetScheduleServer::ProcessPutFailure(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessPutFailure(CSocket&                sock, 
+                                           SThreadData&            tdata,
+                                           CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     queue.JobFailed(job_id, req.err_msg);
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
-void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessPut(CSocket&                sock, 
+                                    SThreadData&            tdata,
+                                    CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     queue.PutResult(job_id, req.job_return_code, req.output);
@@ -632,10 +731,11 @@ void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
 }
 
 
-void CNetScheduleServer::ProcessReturn(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessReturn(CSocket&                sock, 
+                                       SThreadData&            tdata,
+                                       CQueueDataBase::CQueue& queue)
 {
     SJS_Request& req = tdata.req;
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     queue.ReturnJob(job_id);
@@ -643,18 +743,19 @@ void CNetScheduleServer::ProcessReturn(CSocket& sock, SThreadData& tdata)
 }
 
 
-void CNetScheduleServer::ProcessDropQueue(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessDropQueue(CSocket&                sock, 
+                                          SThreadData&            tdata,
+                                          CQueueDataBase::CQueue& queue)
 {
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
     queue.Truncate();
     WriteMsg(sock, "OK:", kEmptyStr.c_str());
 }
 
 
-void CNetScheduleServer::ProcessStatistics(CSocket& sock, SThreadData& tdata)
+void CNetScheduleServer::ProcessStatistics(CSocket&                sock, 
+                                           SThreadData&            tdata,
+                                           CQueueDataBase::CQueue& queue)
 {
-    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
-
     sock.DisableOSSendDelay(false);
 
     WriteMsg(sock, "OK:", NETSCHEDULED_VERSION);
@@ -1208,7 +1309,7 @@ int CNetScheduleDApp::Run(void)
 
         string qname = "noname";
         LOG_POST(Info << "Mounting queue: " << qname);
-        qdb->MountQueue(qname, 3600, 7, 3600, 1800); // default queue
+        qdb->MountQueue(qname, 3600, 7, 3600, 1800, kEmptyStr); // default queue
 
 
         // Scan and mount queues
@@ -1239,15 +1340,22 @@ int CNetScheduleDApp::Run(void)
             min_run_timeout = 
                 std::min(min_run_timeout, (unsigned)run_timeout_precision);
 
+            string program_name = reg.GetString(sname, "program", kEmptyStr);
+
             LOG_POST(Info 
                 << "Mounting queue:           " << qname                 << "\n"
                 << "   Timeout:               " << timeout               << "\n"
                 << "   Notification timeout:  " << notif_timeout         << "\n"
                 << "   Run timeout:           " << run_timeout           << "\n"
-                << "   Run timeout precision: " << run_timeout_precision <<"\n"
+                << "   Run timeout precision: " << run_timeout_precision << "\n"
+                << "   Programs:              " << program_name          << "\n"
             );
+
             qdb->MountQueue(qname, timeout, 
-                            notif_timeout, run_timeout, run_timeout_precision);
+                            notif_timeout, 
+                            run_timeout, 
+                            run_timeout_precision,
+                            program_name);
             
         }
 
@@ -1337,6 +1445,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2005/04/06 12:39:55  kuznets
+ * + client version control
+ *
  * Revision 1.23  2005/03/31 19:28:34  kuznets
  * Corrected use of prep macros
  *

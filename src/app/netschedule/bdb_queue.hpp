@@ -56,7 +56,7 @@
 #include "queue_clean_thread.hpp"
 #include "notif_thread.hpp"
 #include "job_time_line.hpp"
-
+#include "queue_vc.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -188,6 +188,9 @@ struct SLockedQueue
     CDatagramSocket              udp_socket;    ///< UDP notification socket
     CFastMutex                   us_lock;       ///< UDP socket lock
 
+    // Client program version control
+    CQueueClientInfoList         program_version_list;
+
     SLockedQueue(const string& queue_name) 
         : timeout(3600), 
           notif_timeout(7), 
@@ -257,7 +260,8 @@ public:
                     int           timeout,
                     int           notif_timeout,
                     int           run_timeout,
-                    int           run_timeout_precision);
+                    int           run_timeout_precision,
+                    const string& program_name);
     void Close();
     bool QueueExists(const string& qname) const 
                 { return m_QueueCollection.QueueExists(qname); }
@@ -384,6 +388,16 @@ public:
 
         void PrintStat(CNcbiOstream & out);
 
+        bool IsVersionControl() const
+        {
+            return m_LQueue.program_version_list.IsConfigured();
+        }
+
+        bool IsMatchingClient(const CQueueClientInfo& cinfo) const
+        {
+            return m_LQueue.program_version_list.IsMatchingClient(cinfo);
+        }
+
     private:
         CBDB_FileCursor* GetCursor(CBDB_Transaction& trans);
 
@@ -417,9 +431,6 @@ private:
 
     CAtomicCounter                  m_IdCounter;
 
-//    unsigned int                    m_MaxId;   ///< job id counter
-//    CFastMutex                      m_IdLock;
-
     bm::bvector<>                   m_UsedIds; /// id access locker
     CRef<CJobQueueCleanerThread>    m_PurgeThread;
 
@@ -443,6 +454,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2005/04/06 12:39:55  kuznets
+ * + client version control
+ *
  * Revision 1.17  2005/03/29 16:48:28  kuznets
  * Use atomic counter for job id assignment
  *

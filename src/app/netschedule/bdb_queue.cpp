@@ -33,6 +33,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/version.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/ncbi_socket.hpp>
 
@@ -262,7 +263,8 @@ void CQueueDataBase::MountQueue(const string& queue_name,
                                 int           timeout,
                                 int           notif_timeout,
                                 int           run_timeout,
-                                int           run_timeout_precision)
+                                int           run_timeout_precision,
+                                const string& program_name)
 {
     _ASSERT(m_Env);
 
@@ -327,7 +329,28 @@ void CQueueDataBase::MountQueue(const string& queue_name,
         queue.udp_socket.Bind(udp_port);
     }
 
-    LOG_POST(Info << "Records = " << recs);
+    // program version control
+    if (!program_name.empty()) {
+        list<string> programs;
+        NStr::Split(program_name, ";,", programs);
+        CQueueClientInfo program_info;
+        ITERATE(list<string>, it, programs) {
+            const string& vstr = *it;
+            try {
+                ParseVersionString(vstr, 
+                    &program_info.client_name, &program_info.version_info);
+                NStr::TruncateSpacesInPlace(program_info.client_name);
+                queue.program_version_list.AddClientInfo(program_info);
+            } 
+            catch (CStringException&) {
+                LOG_POST(Error << "Program string '" << vstr << "'" 
+                               << " cannot be parsed and ignored.");
+            }
+
+        }
+    }
+
+    LOG_POST(Info << "Queue records = " << recs);
     
 }
 
@@ -1575,6 +1598,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/04/06 12:39:55  kuznets
+ * + client version control
+ *
  * Revision 1.22  2005/03/29 16:48:28  kuznets
  * Use atomic counter for job id assignment
  *
