@@ -532,7 +532,11 @@ static string s_TitleFromBioSource(const CBioSource& source,
         sfx = ' ' + suffix;
     }
 
-    return name + chromosome + clone + map_ + strain + sfx;
+    string title = NStr::TruncateSpaces(name + chromosome + clone + map_
+                                        + strain + sfx);
+    if (islower(title[0])) {
+        title[0] = toupper(title[0]);
+    }
 }
 
 
@@ -876,6 +880,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.30  2004/01/22 19:57:33  ucko
+* s_TitleFromBioSource: trim trailing spaces and capitalize first letter
+* of title [per C Toolkit].
+*
 * Revision 1.29  2003/12/29 22:16:19  ucko
 * s_TitleFromProtein: consult activity if name and desc are both empty.
 *
