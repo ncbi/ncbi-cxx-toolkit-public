@@ -83,7 +83,9 @@ class CVariant
 public:
 
     // Contructors to create CVariant from various primitive types
+#if (SIZE_OF_LONG_LONG > 0)
     explicit CVariant(long long v);
+#endif
     explicit CVariant(int v);
     explicit CVariant(long v);
     explicit CVariant(short v);
@@ -113,6 +115,10 @@ public:
 
     // Get methods
     EDB_Type GetType() const;
+
+#if (SIZE_OF_LONG_LONG > 0)
+    long long     GetInt8(void) const; 
+#endif
 
     string        GetString(void) const;
     long          GetInt4(void) const;
@@ -168,6 +174,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2002/02/06 22:50:49  kholodov
+ * Conditionalized the usage of long long
+ *
  * Revision 1.2  2002/02/06 22:21:00  kholodov
  * Added constructor from long long to BigInt type
  *

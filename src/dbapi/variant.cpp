@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/02/06 22:50:48  kholodov
+* Conditionalized the usage of long long
+*
 * Revision 1.2  2002/02/06 22:21:00  kholodov
 * Added constructor from long long to BigInt type
 *
@@ -120,8 +123,10 @@ CVariant::CVariant(CDB_Object* o)
 }
 
 
+#if (SIZE_OF_LONG_LONG > 0)
 CVariant::CVariant(long long v) 
   : m_data(new CDB_BigInt(v)) {}
+#endif
 
 CVariant::CVariant(int v) 
   : m_data(new CDB_Int(v)) {}
@@ -243,6 +248,14 @@ string CVariant::GetString(void) const
   return string("");
 
 }
+
+#if (SIZE_OF_LONG_LONG > 0)
+long long CVariant::GetInt8() const
+{
+  crash( GetType() == eDB_BigInt );
+  return ((CDB_BigInt*)GetData())->Value();
+}
+#endif
 
 long CVariant::GetInt4() const
 {
