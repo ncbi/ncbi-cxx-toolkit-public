@@ -100,7 +100,9 @@ void CBDB_Env::JoinEnv(const char* db_home)
     int ret = m_Env->txn_stat(m_Env, &txn_statp, 0);
     if (ret == 0)
     {
-        m_Transactional = true;
+        if (m_Env->flags & DB_ENV_THREAD) {
+            m_Transactional = true;
+        }
         ::free(txn_statp);
     }
 }
@@ -121,6 +123,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/15 14:51:43  kuznets
+ * Checking environment flags in JoinEnv to determine environment is
+ * transactional.
+ *
  * Revision 1.7  2003/12/12 14:07:40  kuznets
  * JoinEnv: checking if we joining transactional environment
  *
