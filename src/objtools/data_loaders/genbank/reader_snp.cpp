@@ -234,14 +234,13 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
 
 
 void CSNP_Seq_feat_hook::ReadContainerElement(CObjectIStream& in,
-                                              const CObjectInfo& ftable)
+                                              const CObjectInfo& /*ftable*/)
 {
     if ( !m_Feat ) {
         m_Feat.Reset(new CSeq_feat);
     }
     in.ReadObject(&*m_Feat, m_Feat->GetTypeInfo());
     SSNP_Info snp_info;
-    //snp_info.m_Seq_annot_SNP_Info = &m_Seq_annot_SNP_Info;
     SSNP_Info::ESNP_Type snp_type =
         snp_info.ParseSeq_feat(*m_Feat, m_Seq_annot_SNP_Info);
     ++m_Count[snp_type];
@@ -259,6 +258,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2003/08/19 18:35:21  vasilche
+ * CPackString classes were moved to SERIAL library.
+ *
  * Revision 1.2  2003/08/15 19:19:16  vasilche
  * Fixed memory leak in string packing hooks.
  * Fixed processing of 'partial' flag of features.

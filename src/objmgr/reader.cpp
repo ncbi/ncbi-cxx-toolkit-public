@@ -29,7 +29,7 @@
 
 #include <objmgr/reader.hpp>
 
-#include <objmgr/impl/pack_string.hpp>
+#include <serial/pack_string.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <objects/general/Object_id.hpp>
@@ -126,20 +126,9 @@ bool CReader::TrySNPTable(void)
 
 bool CReader::TryStringPack(void)
 {
-    static bool use_string_pack = s_GetEnvFlag(STRING_PACK_ENV, true);
-    if ( !use_string_pack ) {
-        return false;
-    }
-
-    string s1("qual"), s2;
-    s1.c_str();
-    s2 = s1;
-    if ( s1.c_str() != s2.c_str() ) {
-        // strings don't use reference counters
-        return (use_string_pack = false);
-    }
-
-    return true;
+    static bool use_string_pack =
+        CPackString::TryStringPack() && s_GetEnvFlag(STRING_PACK_ENV, true);
+    return use_string_pack;
 }
 
 
@@ -153,7 +142,8 @@ void CReader::SetSNPReadHooks(CObjectIStream& in)
 
     type = CType<CGb_qual>();
     type.FindMember("qual").SetLocalReadHook(in, new CPackStringClassHook);
-    type.FindMember("val").SetLocalReadHook(in, new CPackStringClassHook(1));
+    type.FindMember("val").SetLocalReadHook(in,
+                                            new CPackStringClassHook(4, 128));
 
     type = CObjectTypeInfo(CType<CImp_feat>());
     type.FindMember("key").SetLocalReadHook(in,
@@ -199,6 +189,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.20  2003/08/19 18:35:21  vasilche
+ * CPackString classes were moved to SERIAL library.
+ *
  * Revision 1.19  2003/08/14 20:05:19  vasilche
  * Simple SNP features are stored as table internally.
  * They are recreated when needed using CFeat_CI.

@@ -32,7 +32,6 @@
 
 #include <objmgr/reader.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
-#include <objmgr/impl/pack_string.hpp>
 
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
@@ -58,6 +57,7 @@
 #include <serial/objectiter.hpp>
 #include <serial/objectio.hpp>
 #include <serial/serial.hpp>
+#include <serial/pack_string.hpp>
 
 #include <algorithm>
 #include <numeric>
@@ -407,6 +407,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.3  2003/08/19 18:35:21  vasilche
+ * CPackString classes were moved to SERIAL library.
+ *
  * Revision 1.2  2003/08/15 19:19:16  vasilche
  * Fixed memory leak in string packing hooks.
  * Fixed processing of 'partial' flag of features.

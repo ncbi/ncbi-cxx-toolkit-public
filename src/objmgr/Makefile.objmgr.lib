@@ -13,7 +13,7 @@ SRC = snp_annot_info annot_types_ci seq_loc_cvt \
       align_ci data_loader handle_range \
       handle_range_map object_manager reader reader_id1 reader_pubseq \
       seq_vector seq_vector_ci seqdesc_ci seq_id_handle seq_id_mapper \
-      seq_id_tree gbload_util gbloader pack_string reader_zlib \
+      seq_id_tree gbload_util gbloader reader_zlib \
       seq_annot_ci reader_snp
 
 LIB    = xobjmgr
