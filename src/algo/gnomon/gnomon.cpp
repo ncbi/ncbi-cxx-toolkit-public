@@ -213,7 +213,7 @@ void CGnomon::Run(void)
 {
     // compute the GC content of the sequence
     TSeqPos gc_content = 0;
-    ITERATE (string, iter, m_Seq) {
+    ITERATE (vector<char>, iter, m_Seq) {
         int c = toupper(*iter);
         if (c == 'C'  ||  c == 'G') {
             ++gc_content;
@@ -355,6 +355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/11/05 21:15:24  ucko
+ * Fixed usage of ITERATE.  (m_Seq is a vector, not a string.)
+ *
  * Revision 1.1  2003/10/24 15:07:25  dicuccio
  * Initial revision
  *
