@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2001/10/26 14:49:16  ucko
+ * Restructured to avoid CRefs as arguments.
+ *
  * Revision 1.22  2001/10/23 20:05:12  ucko
  * Request ASCII from CSeq_vector.
  *
@@ -159,11 +162,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(NCBI_NS_NCBI::objects); // MSVC requires qualification (!)
 
 
-static CRef<CSeq_id> s_ParseFastaSeqID(const string& s);
-static CRef<CSeq_id> s_ParseFlatSeqID(const string& s);
-
-
-
 /////////////////////////////////
 //  CId1FetchApp::
 //
@@ -176,7 +174,9 @@ class CId1FetchApp : public CNcbiApplication
 
 private:
     bool LookUpGI(int gi);
-    int  LookUpSeqID(CRef<CSeq_id> id);
+    int  LookUpSeqID(const CSeq_id& id);
+    int  LookUpFastaSeqID(const string& s);
+    int  LookUpFlatSeqID(const string& s);
 
     bool CheckEntrezReply  (const CE2Reply& rep);
 
@@ -388,14 +388,14 @@ int CId1FetchApp::Run(void)
     }
 
     if (args["fasta"]) {
-        int gi = LookUpSeqID( s_ParseFastaSeqID(args["fasta"].AsString()) );
+        int gi = LookUpFastaSeqID(args["fasta"].AsString());
         if (gi <= 0  ||  !LookUpGI(gi)) {
             return -1;
         }
     }
 
     if (args["flat"]) {
-        int gi = LookUpSeqID( s_ParseFlatSeqID(args["flat"].AsString()) );
+        int gi = LookUpFlatSeqID(args["flat"].AsString());
         if (gi <= 0  ||  !LookUpGI(gi)) {
             return -1;
         }
@@ -409,9 +409,9 @@ int CId1FetchApp::Run(void)
 
             is >> id;
             if (id.find('|') != NPOS) {
-                gi = LookUpSeqID(s_ParseFastaSeqID(id));
+                gi = LookUpFastaSeqID(id);
             } else if (id.find_first_of(":=(") != NPOS) {
-                gi = LookUpSeqID(s_ParseFlatSeqID(id));
+                gi = LookUpFlatSeqID(id);
             } else {
                 gi = NStr::StringToInt(id);
             }
@@ -690,13 +690,13 @@ static vector<string> s_SplitString(const string& s, char delimiter)
 }
 
 
-static CRef<CSeq_id> s_ParseFastaSeqID(const string& s)
+int CId1FetchApp::LookUpFastaSeqID(const string& s)
 {
-    return CRef<CSeq_id>(new CSeq_id(s));
+    return LookUpSeqID(CSeq_id(s));
 }
 
 
-static CRef<CSeq_id> s_ParseFlatSeqID(const string& s)
+int CId1FetchApp::LookUpFlatSeqID(const string& s)
 {
     CSeq_id::E_Choice type = static_cast<CSeq_id::E_Choice>(atoi(s.c_str()));
     SIZE_TYPE pos = s.find_first_of(":=(");
@@ -708,7 +708,7 @@ static CRef<CSeq_id> s_ParseFlatSeqID(const string& s)
     switch (s[pos]) {
     case ':':
     case '=':
-        return CRef<CSeq_id>(new CSeq_id(type, data, kEmptyStr));
+        return LookUpSeqID(CSeq_id(type, data, kEmptyStr));
     case '(':
     {
         data.erase(data.end() - 1);
@@ -716,21 +716,21 @@ static CRef<CSeq_id> s_ParseFlatSeqID(const string& s)
         vector<string> pieces = s_SplitString(data, ',');
         pieces.resize(4, kEmptyStr);
         // name acc rel ver -> acc name ver rel
-        return CRef<CSeq_id>(new CSeq_id(type, pieces[1], pieces[0], pieces[3],
-                                         pieces[2]));
+        return LookUpSeqID(CSeq_id(type, pieces[1], pieces[0], pieces[3],
+                                   pieces[2]));
     }
     default: // can't happen, but shut the compiler up
-        return CRef<CSeq_id>(new CSeq_id);
+        return -1;
     }
 }
 
 
-int CId1FetchApp::LookUpSeqID(CRef<CSeq_id> id)
+int CId1FetchApp::LookUpSeqID(const CSeq_id& id)
 {
     CID1server_request      request;
     CObjectOStreamAsnBinary server_output(*m_ID1_Server);
 
-    request.SetGetgi(id);
+    SerialAssign<CSeq_id>(request.SetGetgi(), id);
     server_output << request;
 
     CID1server_back         reply;
@@ -739,7 +739,7 @@ int CId1FetchApp::LookUpSeqID(CRef<CSeq_id> id)
     server_input >> reply;
     if ( reply.IsError() ) {
         CNcbiOstrstream oss;
-        id->WriteAsFasta(oss);
+        id.WriteAsFasta(oss);
         THROW1_TRACE(runtime_error, "Unable to find seq_id for "
             + (string)CNcbiOstrstreamToString(oss));
     }
