@@ -117,6 +117,7 @@ public:
     // typedefs
     typedef int                                     TPriority;
     typedef set<TTSE_Lock>                          TTSE_LockSet;
+    typedef map<TTSE_Lock, TSeq_id_HandleSet>       TTSE_LockMap;
     typedef CTSE_Info::ESuppression_Level           ESuppression_Level;
     typedef CRef<CTSE_Info>                         TTSE_Ref;
     typedef CConstRef<CObject>                      TBlobId;
@@ -169,9 +170,11 @@ public:
     void UpdateAnnotIndex(const CSeq_entry_Info& entry_info);
     void UpdateAnnotIndex(const CSeq_annot_Info& annot_info);
 
-    //void GetSynonyms(const CSeq_id_Handle& id, set<CSeq_id_Handle>& syns);
-    TTSE_LockSet GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                     const TTSE_LockSet& history);
+    TTSE_LockMap GetTSESetWithOrphanAnnots(const TSeq_id_HandleSet& ids,
+                                           const TTSE_LockSet& history);
+    TTSE_LockMap GetTSESetWithBioseqAnnots(const CBioseq_Info& bioseq,
+                                           const TTSE_Lock& tse,
+                                           const TTSE_LockSet& history);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -335,7 +338,9 @@ private:
                           CSeq_inst::EMol filter,
                           TBioseqLevelFlag level);
 
-    TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh, bool bioseq);
+    // choice should be only eBioseqCore, eExtAnnot, or eOrphanAnnot
+    TTSE_LockSet x_GetRecords(const CSeq_id_Handle& idh,
+                              CDataLoader::EChoice choice);
 
     //typedef CMutex TMainLock;
     //typedef CFastMutex TAnnotLock;

@@ -112,18 +112,43 @@ protected:
 
 enum EBlobContentsMask
 {
-    fBlobHasCore     = 1 << 0,
-    fBlobHasDescr    = 1 << 1,
-    fBlobHasSeqMap   = 1 << 2,
-    fBlobHasSeqData  = 1 << 3,
-    fBlobHasFeatures = 1 << 4,
-    fBlobHasExternal = 1 << 5,
-    fBlobHasAlign    = 1 << 6,
-    fBlobHasGraph    = 1 << 7,
+    fBlobHasCore        = 1 << 0,
+    fBlobHasDescr       = 1 << 1,
+    fBlobHasSeqMap      = 1 << 2,
+    fBlobHasSeqData     = 1 << 3,
+    fBlobHasIntFeat     = 1 << 4,
+    fBlobHasExtFeat     = 1 << 5,
+    fBlobHasOrphanFeat  = 1 << 6,
+    fBlobHasIntAlign    = 1 << 7,
+    fBlobHasExtAlign    = 1 << 8,
+    fBlobHasOrphanAlign = 1 << 9,
+    fBlobHasIntGraph    = 1 << 10,
+    fBlobHasExtGraph    = 1 << 11,
+    fBlobHasOrphanGraph = 1 << 12,
     
-    fBlobHasAllLocal = fBlobHasCore | fBlobHasDescr | fBlobHasSeqMap | fBlobHasSeqData,
+    fBlobHasIntAnnot    = (fBlobHasIntFeat |
+                           fBlobHasIntAlign |
+                           fBlobHasIntGraph),
+    fBlobHasExtAnnot    = (fBlobHasExtFeat |
+                           fBlobHasExtAlign |
+                           fBlobHasExtGraph),
+    fBlobHasOrphanAnnot = (fBlobHasOrphanFeat |
+                           fBlobHasOrphanAlign |
+                           fBlobHasOrphanGraph),
+    fBlobHasAnyFeat     = (fBlobHasIntFeat |
+                           fBlobHasExtFeat |
+                           fBlobHasOrphanFeat),
+    fBlobHasAnyAlign     = (fBlobHasIntAlign |
+                           fBlobHasExtAlign |
+                           fBlobHasOrphanAlign),
+    fBlobHasAnyGraph     = (fBlobHasIntGraph |
+                           fBlobHasExtGraph |
+                           fBlobHasOrphanGraph),
+    fBlobHasAllLocal     = (fBlobHasCore | fBlobHasDescr |
+                           fBlobHasSeqMap | fBlobHasSeqData |
+                           fBlobHasIntAnnot),
 
-    fBlobHasAll      = (1 << 16)-1
+    fBlobHasAll          = (1 << 16)-1
 };
 typedef int TBlobContentsMask;
 
@@ -133,6 +158,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2004/10/25 16:53:38  vasilche
+* Added suppord for orphan annotations.
+*
 * Revision 1.1  2004/08/04 14:55:17  vasilche
 * Changed TSE locking scheme.
 * TSE cache is maintained by CDataSource.

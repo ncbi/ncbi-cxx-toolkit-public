@@ -54,6 +54,7 @@ class CSeqMap;
 class CScope;
 class CBioseq_Info;
 class CSynonymsSet;
+class CSeqMatch_Info;
 struct SSeq_id_ScopeInfo;
 
 struct NCBI_XOBJMGR_EXPORT CDataSource_ScopeInfo : public CObject
@@ -92,19 +93,22 @@ private:
 class NCBI_XOBJMGR_EXPORT CBioseq_ScopeInfo : public CObject
 {
 public:
-    typedef pair<const CSeq_id_Handle, SSeq_id_ScopeInfo> TScopeInfo;
+    typedef pair<const CSeq_id_Handle, SSeq_id_ScopeInfo>   TScopeInfo;
+    typedef set<TTSE_Lock>                                  TTSE_LockSet;
+    typedef map<TTSE_Lock, TSeq_id_HandleSet>               TTSE_LockMap;
+    typedef CObjectFor<TTSE_LockMap>                        TAnnotRefMap;
+    typedef CInitMutex<TAnnotRefMap>                        TAnnotRefInfo;
 
     CBioseq_ScopeInfo(TScopeInfo* scope_info); // no sequence
     CBioseq_ScopeInfo(TScopeInfo* scope_info,
                       const CConstRef<CBioseq_Info>& bioseq,
-                      const TTSE_Lock& tse_lock);
+                      const CSeqMatch_Info& match_info);
 
     ~CBioseq_ScopeInfo(void);
 
     CScope& GetScope(void) const;
 
     bool HasBioseq(void) const;
-    const CSeq_id_Handle& GetSeq_id_Handle(void) const;
     const CBioseq_Info& GetBioseq_Info(void) const;
 
     const TTSE_Lock& GetTSE_Lock(void) const;
@@ -130,6 +134,9 @@ private:
     // caches synonyms of bioseq if any
     // all synonyms share the same CBioseq_ScopeInfo object
     CInitMutex<CSynonymsSet> m_SynCache;
+
+    // caches and locks TSEs with external annotations on this Bioseq
+    TAnnotRefInfo                 m_BioseqAnnotRef_Info;
 
 private:
     CBioseq_ScopeInfo(const CBioseq_ScopeInfo& info);
@@ -208,13 +215,6 @@ const CBioseq_Info& CBioseq_ScopeInfo::GetBioseq_Info(void) const
 
 
 inline
-const CSeq_id_Handle& CBioseq_ScopeInfo::GetSeq_id_Handle(void) const
-{
-    return m_ScopeInfo->first;
-}
-
-
-inline
 const TTSE_Lock& CBioseq_ScopeInfo::GetTSE_Lock(void) const
 {
     return m_TSE_Lock;
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/10/25 16:53:31  vasilche
+* Added suppord for orphan annotations.
+*
 * Revision 1.11  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme

@@ -256,9 +256,6 @@ private:
 
     CConstRef<TAnnotRefMap>
     GetTSESetWithAnnots(const CSeq_id_Handle& idh_type);
-    void GetTSESetWithAnnotsRef(const CBioseq_ScopeInfo& binfo,
-                                const CSeq_id_Handle& idh,
-                                TAnnotRefMap& tse_map);
 
     void x_AttachToOM(CObjectManager& objmgr);
     void x_DetachFromOM(void);
@@ -358,7 +355,18 @@ private:
     CRef<CBioseq_ScopeInfo> x_FindBioseq_Info(const CSeq_id_Handle& id,
                                               int get_flag);
 
+    void x_AddTSESetWithAnnots(TTSE_LockMap& tse_map,
+                               const TTSE_LockMap& add,
+                               CDataSource_ScopeInfo& ds_info);
+    CDataSource_ScopeInfo*
+    x_GetTSESetWithOrphanAnnots(TTSE_LockMap& tse_map,
+                                const TSeq_id_HandleSet& ids,
+                                CDataSource* bioseq_ds);
+    CDataSource_ScopeInfo*
+    x_GetTSESetWithBioseqAnnots(TTSE_LockMap& tse_map,
+                                CBioseq_ScopeInfo& binfo);
 
+private:
     CScope*         m_HeapScope;
 
     CObjectManager* m_pObjMgr;

@@ -39,6 +39,7 @@
 #include <objmgr/impl/data_source.hpp>
 
 #include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqmatch_info.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -150,11 +151,12 @@ CBioseq_ScopeInfo::CBioseq_ScopeInfo(TScopeInfo* scope_info)
 
 CBioseq_ScopeInfo::CBioseq_ScopeInfo(TScopeInfo* scope_info,
                                      const CConstRef<CBioseq_Info>& bioseq,
-                                     const TTSE_Lock& tse_lock)
+                                     const CSeqMatch_Info& match_info)
     : m_ScopeInfo(scope_info),
       m_Bioseq_Info(bioseq),
-      m_TSE_Lock(tse_lock)
+      m_TSE_Lock(match_info.GetTSE_Lock())
 {
+    _ASSERT(bioseq == match_info.GetBioseq_Info());
 }
 
 
@@ -196,6 +198,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/10/25 16:53:32  vasilche
+* Added suppord for orphan annotations.
+*
 * Revision 1.8  2004/08/04 14:53:26  vasilche
 * Revamped object manager:
 * 1. Changed TSE locking scheme
