@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2002/08/28 20:30:33  thiessen
+* fix proximity sort bug
+*
 * Revision 1.37  2002/07/26 15:28:44  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -1240,35 +1243,6 @@ BlockMultipleAlignment::GetUngappedAlignedBlocks(void) const
         if (uab) uabs->push_back(uab);
     }
     return uabs;
-}
-
-template < class T >
-static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
-{
-    if (v.size() != remove.size()) {
-#ifndef _DEBUG
-		// MSVC gets internal compiler error here on debug builds... ugh!
-        ERR_POST(Error << "VectorRemoveElements() - size mismatch");
-#endif
-        return;
-    }
-
-    std::vector < T > copy(v.size() - nToRemove);
-    int i, nRemoved = 0;
-    for (i=0; i<v.size(); i++) {
-        if (remove[i])
-            nRemoved++;
-        else
-            copy[i - nRemoved] = v[i];
-    }
-    if (nRemoved != nToRemove) {
-#ifndef _DEBUG
-        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
-#endif
-        return;
-    }
-
-    v = copy;
 }
 
 bool BlockMultipleAlignment::ExtractRows(

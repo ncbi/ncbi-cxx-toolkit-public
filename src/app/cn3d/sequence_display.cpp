@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2002/08/28 20:30:33  thiessen
+* fix proximity sort bug
+*
 * Revision 1.56  2002/08/15 22:13:16  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -989,35 +992,6 @@ void SequenceDisplay::UpdateBlockBoundaryRow(DisplayRowFromString *blockBoundary
     if (*viewerWindow) GlobalMessenger()->PostRedrawSequenceViewer((*viewerWindow)->viewer);
 }
 
-template < class T >
-static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
-{
-    if (v.size() != remove.size()) {
-#ifndef _DEBUG
-		// MSVC gets internal compiler error here on debug builds... ugh!
-        ERR_POST(Error << "VectorRemoveElements() - size mismatch");
-#endif
-        return;
-    }
-
-    std::vector < T > copy(v.size() - nToRemove);
-    int i, nRemoved = 0;
-    for (i=0; i<v.size(); i++) {
-        if (remove[i])
-            nRemoved++;
-        else
-            copy[i - nRemoved] = v[i];
-    }
-    if (nRemoved != nToRemove) {
-#ifndef _DEBUG
-        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
-#endif
-        return;
-    }
-
-    v = copy;
-}
-
 void SequenceDisplay::RemoveBlockBoundaryRows(void)
 {
     std::vector < bool > toRemove(rows.size(), false);
@@ -1227,17 +1201,23 @@ bool SequenceDisplay::ProximitySort(int displayRow)
 
     // arrange by proximity to key row
     std::vector < DisplayRowFromAlignment * > arrangedByProximity(sortedByScore.size(), NULL);
+
+    // add master and key row
     arrangedByProximity[0] = sortedByScore[M];  // move master back to top
     arrangedByProximity[M] = sortedByScore[0];  // move key row to M
-    int i = 1, j = 1, N, R = 1;
+    // remove these from sorted list
+    std::vector < bool > toRemove(sortedByScore.size(), false);
+    toRemove[M] = toRemove[0] = true;
+    VectorRemoveElements(sortedByScore, toRemove, 2);
+
+    // add the rest of the sequences in the sorted list to the arranged list
+    int i = 1, j = 1, N, R = 0;
     while (R < sortedByScore.size()) {
         N = M + i*j;    // iterate N = M+1, M-1, M+2, M-2, ...
         j = -j;
         if (j > 0) i++;
-        if (N > 0 && N < sortedByScore.size() && !arrangedByProximity[N]) {
-            if (R == M) R++;
+        if (N > 0 && N < arrangedByProximity.size())
             arrangedByProximity[N] = sortedByScore[R++];
-        }
     }
 
     // recreate the row list with new order

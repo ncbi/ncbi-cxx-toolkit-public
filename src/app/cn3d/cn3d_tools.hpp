@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/08/28 20:30:33  thiessen
+* fix proximity sort bug
+*
 * Revision 1.18  2002/07/23 15:46:49  thiessen
 * print out more BLAST info; tweak save file name
 *
@@ -97,6 +100,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <string>
+#include <vector>
 
 class wxFrame;
 
@@ -177,6 +181,37 @@ static const std::string
     // advanced options
     REG_ADVANCED_SECTION = "Cn3D-4-Advanced",
     REG_CDD_ANNOT_READONLY = "CDDAnnotationsReadOnly";
+
+
+// utility function to remove some elements from a vector
+template < class T >
+static void VectorRemoveElements(std::vector < T >& v, const std::vector < bool >& remove, int nToRemove)
+{
+    if (v.size() != remove.size()) {
+#ifndef _DEBUG
+        // MSVC gets internal compiler error here on debug builds... ugh!
+        ERR_POST(Error << "VectorRemoveElements() - size mismatch");
+#endif
+        return;
+    }
+
+    std::vector < T > copy(v.size() - nToRemove);
+    int i, nRemoved = 0;
+    for (i=0; i<v.size(); i++) {
+        if (remove[i])
+            nRemoved++;
+        else
+            copy[i - nRemoved] = v[i];
+    }
+    if (nRemoved != nToRemove) {
+#ifndef _DEBUG
+        ERR_POST(Error << "VectorRemoveElements() - bad nToRemove");
+#endif
+        return;
+    }
+
+    v = copy;
+}
 
 END_SCOPE(Cn3D)
 
