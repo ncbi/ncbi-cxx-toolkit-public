@@ -903,9 +903,7 @@ SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
         Node(i)->Print(sout, mode);
         cols++;
     }
-    sout.put('\0');
-
-    SIZE_TYPE textlen = strlen(sout.str());
+    SIZE_TYPE textlen = sout.pcount();
     if ( mode == ePlainText ) {
         textlen += m_Parent->m_ColSepL.length() +
             m_Parent->m_ColSepR.length();
@@ -2256,6 +2254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.110  2004/10/27 14:40:25  ivanov
+ * CHTML_tr::GetTextLength() - use pcount() to determine ostrstream data size
+ *
  * Revision 1.109  2004/10/26 20:17:25  ivanov
  * Removed debug code
  *
