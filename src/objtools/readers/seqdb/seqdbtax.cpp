@@ -94,6 +94,18 @@ CSeqDBTaxInfo::CSeqDBTaxInfo(CSeqDBAtlas & atlas)
     // Skip the four reserved fields
     magic_num_ptr += 4;
     
+    Int4 taxid_array_size = (idx_file_len - data_start)/sizeof(CSeqDBTaxId);
+    
+    if (taxid_array_size != m_AllTaxidCount) {
+        ERR_POST("SeqDB: Taxid metadata indicates (" << m_AllTaxidCount
+                 << ") entries but file has room for (" << taxid_array_size
+                 << ").");
+        
+        if (taxid_array_size < m_AllTaxidCount) {
+            m_AllTaxidCount = taxid_array_size;
+        }
+    }
+    
     m_TaxData = (CSeqDBTaxId*)
         m_Atlas.GetRegion(m_IndexFN, data_start, idx_file_len, locked);
     
