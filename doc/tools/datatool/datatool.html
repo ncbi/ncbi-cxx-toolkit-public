@@ -103,115 +103,101 @@ for generation of C++ class hierarchy based on ASN.1 data definition.
 <h2>
 <a NAME="refMainArgs"></a>Main arguments</h2>
 Equivalent to arguments of asntool
-<table BORDER CELLSPACING=0 NOSAVE >
+<table BORDER CELLSPACING=0>
+
 <tr>
 <th>argument</th>
-
 <th>effect</th>
-
 <th>comment</th>
 </tr>
 
 <tr>
-<td>-H</td>
+<td>-h</td>
+<td>display DATATOOL arguments</a></td>
+<td>&nbsp;</td>
+</tr>
 
-<td>display DATATOOL <a href="#refMainArgs">main arguments</a></td>
+<tr VALIGN=BASELINE>
+<td><a NAME="refArg_m"></a>-m &lt;file&gt;</td>
+<td>ASN.1 module file(s)</td>
+<td>required argument</td>
 </tr>
 
 <tr>
-<td>-oH</td>
-
-<td>display DATATOOL <a href="#refCodeGenerationArgs">code generation arguments</a></td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><a NAME="refArg_m"></a>-m &lt;file></td>
-
-<td>ASN.1 module file</td>
-
-<td VALIGN=CENTER ROWSPAN="2" NOSAVE>only one of these arguments is required</td>
-</tr>
-
-<tr VALIGN=BASELINE NOSAVE>
-<td NOSAVE><a NAME="refArg_mx"></a>-mx &lt;file></td>
-
-<td>XML module file</td>
-</tr>
-
-<tr>
-<td>-M &lt;file></td>
-
-<td>external ASN.1 module files</td>
-
-<td ROWSPAN="2">these modules are used for IMPORT type resolution</td>
-</tr>
-
-<tr>
-<td>-Mx &lt;file></td>
-
-<td>external XML module files</td>
+<td>-M &lt;file&gt;</td>
+<td>external module file(s)</td>
+<td ROWSPAN="2">is used for IMPORT type resolution</td>
 </tr>
 
 <tr>
 <td>-i</td>
-
 <td>ignore unresolved types</td>
 </tr>
 
 <tr>
-<td>-f &lt;file></td>
-
+<td>-f &lt;file&gt;</td>
 <td>write ASN.1 module file</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-fx &lt;file></td>
-
-<td>write XML module file</td>
+<td>-fx &lt;file&gt;</td>
+<td>write DTD module file</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-v &lt;file></td>
+<td>-dn &lt;string&gt;</td>
+<td>DTD module name in XML header</td>
+<td>no extension</td>
+</tr>
 
+<tr>
+<td>-v &lt;file&gt;</td>
 <td>read value in ASN.1 text format</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-vx &lt;file></td>
-
+<td>-vx &lt;file&gt;</td>
 <td>read value in XML format</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-p &lt;file></td>
+<td>-F</td>
+<td>read value completely into memory</td>
+<td>&nbsp;</td>
+</tr>
 
+<tr>
+<td>-p &lt;file&gt;</td>
 <td>write value in ASN.1 text format</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-px &lt;file></td>
-
+<td>-px &lt;file&gt;</td>
 <td>write value in XML format</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-d &lt;file></td>
-
+<td>-d &lt;file&gt;</td>
 <td>read value in ASN.1 binary format</td>
-
-<td><a href="#refArg_t">-t</a> argument required</td>
+<td><a href="#refArg_t">"-t"</a> argument required</td>
 </tr>
 
-<tr VALIGN=BASELINE NOSAVE>
-<td><a NAME="refArg_t"></a>-t &lt;type></td>
-
-<td NOSAVE>binary value type</td>
+<tr VALIGN=BASELINE>
+<td><a NAME="refArg_t"></a>-t &lt;type&gt;</td>
+<td>binary value type</td>
+<td>see "-d" argument</td>
 </tr>
 
 <tr>
-<td>-e &lt;file></td>
-
+<td>-e &lt;file&gt;</td>
 <td>write value in ASN.1 binary format</td>
+<td>&nbsp;</td>
 </tr>
 </table>
 
@@ -219,108 +205,120 @@ Equivalent to arguments of asntool
 <a NAME="refCodeGenerationArgs"></a>Code generation arguments</h2>
 
 <table BORDER CELLSPACING=0 >
+
 <tr>
 <th>argument</th>
-
 <th>effect</th>
-
 <th>comment</th>
 </tr>
 
 <tr>
-<td>-oH</td>
+<td><a NAME="refArg_od"></a>-od &lt;file&gt;</td>
+<td>C++ code <a href="#refDefFile">definition file</a></td>
+<td>see <a href="#refDefFile">Definition file</a></td>
+</tr>
 
-<td>display DATATOOL <a href="#refCodeGenerationArgs">code generation arguments</a></td>
+<tr>
+<td>-odi</td>
+<td>ignore absent code definition file</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td>-oA</td>
-
 <td>generate C++ files for all types</td>
-
 <td ROWSPAN="2">only types from main module are used
 <br>(see <a href="#refArg_m">-m</a> and <a href="#refArg_mx">-mx</a> argument)</td>
 </tr>
 
 <tr>
-<td>-ot &lt;types></td>
-
+<td>-ot &lt;types&gt;</td>
 <td>generate C++ files for listed types</td>
 </tr>
 
 <tr>
-<td>-ox &lt;types></td>
-
+<td>-ox &lt;types&gt;</td>
 <td>exclude types from generation</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td>-oX</td>
-
 <td>turn off recursive type generation</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><a NAME="refArg_od"></a>-od &lt;file></td>
-
-<td>C++ code <a href="#refDefFile">definition file</a></td>
-
-<td>see <a href="#refDefFile">Definition file</a></td>
-</tr>
-
-<tr>
-<td>-of &lt;file></td>
-
+<td>-of &lt;file&gt;</td>
 <td>write list of generated C++ files</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>-oc &lt;file&gt;</td>
+<td>write combining C++ files</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>-on &lt;string&gt;</td>
+<td>default namespace</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td><a NAME="refArg_op"></a>-opm &lt;dir></td>
-
 <td>directory for searching source modules</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-oph &lt;dir></td>
-
+<td>-oph &lt;dir&gt;</td>
 <td>directory for generated *.hpp files</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td>-opc &lt;dir></td>
-
+<td>-opc &lt;dir&gt;</td>
 <td>directory for generated *.cpp files</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><a NAME="refArg_or"></a>-or &lt;prefix></td>
-
+<td><a NAME="refArg_or"></a>-or &lt;prefix&gt;</td>
 <td>add prefix to generated file names</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td>-ors</td>
-
 <td>add source file dir to generated file names</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td>-orm</td>
-
 <td>add module name to generated file names</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td>-orA</td>
-
 <td>combine all <a href="#refArg_or">-or*</a> prefixes</td>
+<td>&nbsp;</td>
 </tr>
 
 <tr>
 <td>-oR &lt;dir></td>
-
 <td>set <a href="#refArg_op">-op*</a> and <a href="#refArg_or">-or*</a>
 arguments for NCBI dir tree</td>
+<td>&nbsp;</td>
+</tr>
+
+<tr>
+<td>-lax_syntax</td>
+<td>allow non-standard ASN.1 syntax accepted by asntool</td>
+<td>&nbsp;</td>
 </tr>
 </table>
 
