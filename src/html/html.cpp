@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/01/05 20:23:29  vasilche
+* Fixed HTMLEncode.
+*
 * Revision 1.18  1999/01/04 20:06:14  vasilche
 * Redesigned CHTML_table.
 * Added selection support to HTML forms (via hidden values).
@@ -221,7 +224,7 @@ string CHTMLHelper::HTMLEncode(const string& input)
     while ( ptr != string::npos ) {
         // copy plain part of input
         if ( ptr != last )
-            output.append(input, last, ptr);
+            output.append(input, last, ptr - last);
 
         // append encoded symbol
         switch ( input[ptr] ) {
@@ -248,7 +251,7 @@ string CHTMLHelper::HTMLEncode(const string& input)
 
     // append last part of input
     if ( last != input.size() )
-        output.append(input, last, input.size());
+        output.append(input, last, input.size() - last);
 
     return output;
 }
