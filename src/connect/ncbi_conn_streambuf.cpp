@@ -31,7 +31,7 @@
  */
 
 #include "ncbi_conn_streambuf.hpp"
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbidbg.hpp>
 #include <connect/ncbi_conn_exception.hpp>
 #include <memory>
 
@@ -43,33 +43,27 @@ BEGIN_NCBI_SCOPE
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                                  streamsize buf_size, bool tie)
-    : m_Conn(0), m_Buf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
+    : m_Conn(0), m_ReadBuf(0), m_BufSize(buf_size ? buf_size : 1), m_Tie(tie)
 {
     if ( !connector ) {
         ERR_POST("CConn_Streambuf::CConn_Streambuf(): NULL connector");
         return;
     }
-
-    auto_ptr<CT_CHAR_TYPE> bp(new CT_CHAR_TYPE[2 * m_BufSize]);
-
-    m_ReadBuf  = bp.get();
-    m_WriteBuf = bp.get() + m_BufSize;
-
-    setp(m_WriteBuf, m_WriteBuf + m_BufSize);
-    setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);
-
     if (LOG_IF_ERROR(CONN_Create(connector, &m_Conn),
                      "CConn_Streambuf(): CONN_Create() failed") !=eIO_Success){
         return;
     }
     _ASSERT(m_Conn != 0);
-
     CONN_SetTimeout(m_Conn, eIO_Open,  timeout);
     CONN_SetTimeout(m_Conn, eIO_Read,  timeout);
     CONN_SetTimeout(m_Conn, eIO_Write, timeout);
     CONN_SetTimeout(m_Conn, eIO_Close, timeout);
 
-    m_Buf = bp.release();
+    m_ReadBuf  = buf_size ? new CT_CHAR_TYPE[m_BufSize << 1] : &x_Buf;
+    m_WriteBuf = buf_size ? m_ReadBuf + m_BufSize            : 0;
+
+    setg(m_ReadBuf,  m_ReadBuf, m_ReadBuf);  // Empty get area
+    setp(m_WriteBuf, m_WriteBuf + buf_size); // Put area (if any)
 }
 
 
@@ -81,7 +75,8 @@ CConn_Streambuf::~CConn_Streambuf()
         _TRACE("CConn_Streambuf::~CConn_Streambuf(): "
                "CONN_Close() failed (" << IO_StatusStr(status) << ")");
     }
-    delete[] m_Buf;
+    if (m_ReadBuf != &x_Buf)
+        delete[] m_ReadBuf;
 }
 
 
@@ -89,9 +84,8 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
 {
     if ( !m_Conn )
         return CT_EOF;
-    _ASSERT(!pbase()  ||  pbase() == m_WriteBuf);
 
-    if (pbase()  &&  pptr()) {
+    if ( m_WriteBuf ) {
         // send buffer
         size_t n_write = pptr() - m_WriteBuf;
         if ( n_write ) {
@@ -139,7 +133,6 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         _VERIFY(sync() == 0);
     }
     _ASSERT(!gptr()  ||  gptr() >= egptr());
-    _ASSERT(!gptr()  ||  eback() == m_ReadBuf);
 
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
@@ -148,11 +141,9 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
 #endif
 
     // read from connection
-    CT_CHAR_TYPE  c;
-    size_t        n_read;
-    CT_CHAR_TYPE* x_buf  = gptr() ? m_ReadBuf : &c;
-    size_t        x_read = gptr() ? m_BufSize : 1;
-    EIO_Status status = CONN_Read(m_Conn, x_buf, x_read*sizeof(CT_CHAR_TYPE),
+    size_t     n_read;
+    EIO_Status status = CONN_Read(m_Conn, m_ReadBuf,
+                                  m_BufSize*sizeof(CT_CHAR_TYPE),
                                   &n_read, eIO_ReadPlain);
     if ( !n_read ) {
         if (status != eIO_Closed)
@@ -160,11 +151,10 @@ CT_INT_TYPE CConn_Streambuf::underflow(void)
         return CT_EOF;
     }
 
-    if ( gptr() ) {
-        // update input buffer with data just read
-        setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
-    }
-    return CT_TO_INT_TYPE(*x_buf);
+    // update input buffer with data just read
+    setg(m_ReadBuf, m_ReadBuf, m_ReadBuf + n_read/sizeof(CT_CHAR_TYPE));
+
+    return CT_TO_INT_TYPE(*m_ReadBuf);
 }
 
 
@@ -172,14 +162,13 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
 {
     if ( !m_Conn )
         return 0;
-    _ASSERT(!gptr()  ||  eback() == m_ReadBuf);
 
     // flush output buffer, if tied up to it
     if ( m_Tie ) {
         _VERIFY(sync() == 0);
     }
 
-    if (!buf  ||  m <= 0)
+    if (m <= 0)
         return 0;
     size_t n = (size_t) m;
 
@@ -200,8 +189,8 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
         return (streamsize) n_read;
 
     do {
-        size_t       x_read = gptr() && n < (size_t)m_BufSize? m_BufSize : n;
-        CT_CHAR_TYPE* x_buf = gptr() && n < (size_t)m_BufSize? m_ReadBuf : buf;
+        size_t       x_read = n < (size_t) m_BufSize ? m_BufSize : n;
+        CT_CHAR_TYPE* x_buf = n < (size_t) m_BufSize ? m_ReadBuf : buf;
         EIO_Status   status = CONN_Read(m_Conn, x_buf,
                                         x_read*sizeof(CT_CHAR_TYPE),
                                         &x_read, eIO_ReadPlain);
@@ -214,7 +203,7 @@ streamsize CConn_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
                 x_read = n;
             memcpy(buf, m_ReadBuf, x_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + x_read, m_ReadBuf + xx_read);
-        } else if (gptr()) {
+        } else {
             _ASSERT(x_read <= n);
             size_t xx_read = x_read > (size_t) m_BufSize ? m_BufSize : x_read;
             memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
@@ -260,7 +249,7 @@ int CConn_Streambuf::sync(void)
     do {
         if (CT_EQ_INT_TYPE(overflow(CT_EOF), CT_EOF))
             return -1;
-    } while (pbase()  &&  pptr() > pbase());
+    } while (m_WriteBuf  &&  pptr() > m_WriteBuf);
     return 0;
 }
 
@@ -291,6 +280,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2004/01/09 17:39:15  lavr
+ * Define and use internal 1-byte buffer for unbuffered streams' get ops
+ *
  * Revision 6.41  2003/11/12 17:45:20  lavr
  * Minor cosmetic fix
  *

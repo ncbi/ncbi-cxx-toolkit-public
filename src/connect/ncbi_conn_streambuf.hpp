@@ -76,12 +76,12 @@ protected:
 private:
     CONN                m_Conn;      // underlying connection handle
 
-    CT_CHAR_TYPE*       m_Buf;       // of size  2 * m_BufSize
-    CT_CHAR_TYPE*       m_ReadBuf;   // m_Buf
-    CT_CHAR_TYPE*       m_WriteBuf;  // m_Buf + m_BufSize
-    streamsize          m_BufSize;   // of m_WriteBuf, m_ReadBuf
+    CT_CHAR_TYPE*       m_ReadBuf;   // I/O arena or &x_Buf (if unbuffered)
+    CT_CHAR_TYPE*       m_WriteBuf;  // m_ReadBuf + m_BufSize (0 if unbuffered)
+    streamsize          m_BufSize;   // of m_ReadBuf, m_WriteBuf(if buffered)
 
     bool                m_Tie;       // always flush before reading
+    CT_CHAR_TYPE        x_Buf;       // Default m_ReadBuf for unbuffered stream
 
     EIO_Status          x_LogIfError(const char* file, int line,
                                      EIO_Status status, const string& msg);
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2004/01/09 17:39:15  lavr
+ * Define and use internal 1-byte buffer for unbuffered streams' get ops
+ *
  * Revision 6.28  2003/12/29 15:17:41  lavr
  * Rollback to R6.26
  *
