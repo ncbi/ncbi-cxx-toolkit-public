@@ -39,8 +39,6 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 // Object Manager includes
-#include <objmgr/gbloader.hpp>
-#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
 #include <algorithm>
@@ -55,7 +53,6 @@ CAlnMix::CAlnMix(void)
       m_ContainsAA(false),
       m_ContainsNA(false)
 {
-    x_CreateScope();
 }
 
 
@@ -105,18 +102,6 @@ void CAlnMix::x_Reset()
         (*seq_i)->m_Starts.clear();
         (*seq_i)->m_ExtraRow = 0;
     }
-}
-
-
-void CAlnMix::x_CreateScope()
-{
-    m_ObjMgr = new CObjectManager;
-    
-    m_ObjMgr->RegisterDataLoader(*new CGBDataLoader("ID", NULL, 2),
-                                 CObjectManager::eDefault);
-
-    m_Scope = new CScope(*m_ObjMgr);
-    m_Scope->AddDefaults();
 }
 
 
@@ -190,6 +175,15 @@ void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
     dsp->Validate(true);
 #endif    
     m_InputDSsMap[(void *)dsp] = dsp;
+
+    // check if scope was given
+    if ( !(flags & fDontUseObjMgr  ||  m_Scope) ) {
+        NCBI_THROW(CAlnException, eMergeFailure, 
+                   "CAlnMix::Add(): "
+                   "AlnMix will not create a scope for you. "
+                   "Either create one in advance and provide reference "
+                   "through CAlnMix constructor or use fDontUseObjMgr flag.");
+    }
 
     // translate (extend with widths) the dense-seg if necessary
     if (flags & fForceTranslation  &&  !dsp->IsSetWidths()) {
@@ -1909,6 +1903,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.84  2003/12/22 18:30:37  todorov
+* ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
+*
 * Revision 1.83  2003/12/18 19:46:27  todorov
 * iterate -> ITERATE
 *

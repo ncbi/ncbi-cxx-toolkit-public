@@ -47,8 +47,6 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 
 // Object Manager includes
-#include <objmgr/gbloader.hpp>
-#include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 
@@ -115,22 +113,6 @@ const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
             NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
         }
     }
-}
-
-
-CScope& CAlnVec::GetScope(void) const
-{
-    if (!m_Scope) {
-        m_ObjMgr = new CObjectManager;
-        
-        m_ObjMgr->RegisterDataLoader
-            (*new CGBDataLoader("ID", NULL, 2),
-             CObjectManager::eDefault);
-
-        m_Scope = new CScope(*m_ObjMgr);
-        m_Scope->AddDefaults();
-    }
-    return *m_Scope;
 }
 
 
@@ -868,6 +850,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.56  2003/12/22 18:30:37  todorov
+* ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
+*
 * Revision 1.55  2003/12/18 19:47:51  todorov
 * + GetColumnVector & CalculatePercentIdentity
 *

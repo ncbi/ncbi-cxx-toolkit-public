@@ -44,7 +44,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 // forward declarations
 class CScope;
-class CObjectManager;
 class CSeq_id;
 
 class CAlnMixSegment;
@@ -132,7 +131,6 @@ private:
 
     void x_Reset               (void);
     void x_InitBlosum62Map     (void);
-    void x_CreateScope         (void);
     void x_Merge               (void);
     bool x_SecondRowFits       (const CAlnMixMatch * match) const;
     void x_CreateRowsVector    (void);
@@ -154,7 +152,6 @@ private:
                                         const CAlnMixSegment* aln_seg2);
 
 
-    CRef<CObjectManager>        m_ObjMgr;
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
     TConstAlns                  m_InputAlns;
@@ -322,6 +319,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/12/22 18:30:38  todorov
+* ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
+*
 * Revision 1.33  2003/12/08 21:28:04  todorov
 * Forced Translation of Nucleotide Sequences
 *

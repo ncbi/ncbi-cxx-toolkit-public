@@ -42,7 +42,6 @@ BEGIN_objects_SCOPE
 
 
 // forward declarations
-class CObjectManager;
 class CScope;
 
 class NCBI_XALNMGR_EXPORT CAlnVec : public CAlnMap
@@ -137,7 +136,6 @@ protected:
     CSeqVector& x_GetSeqVector         (TNumrow row)       const;
     CSeqVector& x_GetConsensusSeqVector(void)              const;
 
-    mutable CRef<CObjectManager>    m_ObjMgr;
     mutable CRef<CScope>            m_Scope;
     mutable TBioseqHandleCache      m_BioseqHandlesCache;
     mutable TSeqVectorCache         m_SeqVectorCache;
@@ -159,6 +157,20 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //  IMPLEMENTATION of INLINE functions
 /////////////////////////////////////////////////////////////////////////////
+
+
+inline
+CScope& CAlnVec::GetScope(void) const
+{
+    if (!m_Scope) {
+        NCBI_THROW(CAlnException, eInvalidRequest,
+                   "CAlnVec::GetScope(): "
+                   "AlnVec will no longer create a scope for you."
+                   "Please create one in advance and provide reference "
+                   "through CAlnVec constructor.");
+    }
+    return *m_Scope;
+}
 
 
 inline 
@@ -351,6 +363,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.31  2003/12/22 18:30:38  todorov
+ * ObjMgr is no longer created internally. Scope should be passed as a reference in the ctor
+ *
  * Revision 1.30  2003/12/18 19:48:28  todorov
  * + GetColumnVector & CalculatePercentIdentity
  *
