@@ -268,41 +268,6 @@ CT_INT_TYPE CCompressionStreambuf::underflow(void)
 }
 
 
-bool CCompressionStreambuf::ProcessStreamWrite()
-{
-    const char*      in_buf    = pbase();
-    const streamsize count     = pptr() - pbase();
-    unsigned long    in_avail  = count;
-
-    // End of stream has been detected
-    if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
-        return false;
-    }
-    // Loop until no data is left
-    while ( in_avail ) {
-        // Process next data piece
-        unsigned long out_avail = 0;
-        m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
-            in_buf + count - in_avail, in_avail,
-            m_Writer->m_OutBuf, m_Writer->m_OutBufSize,
-            &in_avail, &out_avail);
-        if ( m_Writer->m_LastStatus != CP::eStatus_Success  &&
-             m_Writer->m_LastStatus != CP::eStatus_EndOfData ) {
-           return false;
-        }
-        // Write the data to the underlying stream
-        if ( out_avail  &&
-             m_Stream->rdbuf()->sputn(m_Writer->m_OutBuf, out_avail) !=
-             (streamsize)out_avail) {
-            return false;
-        }
-    }
-    // Decrease the put pointer
-    pbump(-count);
-    return true;
-}
-
-
 bool CCompressionStreambuf::ProcessStreamRead()
 {
     unsigned long in_len, in_avail, out_size, out_avail;
@@ -370,6 +335,41 @@ bool CCompressionStreambuf::ProcessStreamRead()
 }
 
 
+bool CCompressionStreambuf::ProcessStreamWrite()
+{
+    const char*      in_buf    = pbase();
+    const streamsize count     = pptr() - pbase();
+    unsigned long    in_avail  = count;
+
+    // End of stream has been detected
+    if ( m_Writer->m_LastStatus == CP::eStatus_EndOfData ) {
+        return false;
+    }
+    // Loop until no data is left
+    while ( in_avail ) {
+        // Process next data piece
+        unsigned long out_avail = 0;
+        m_Writer->m_LastStatus = m_Writer->m_Processor->Process(
+            in_buf + count - in_avail, in_avail,
+            m_Writer->m_OutBuf, m_Writer->m_OutBufSize,
+            &in_avail, &out_avail);
+        if ( m_Writer->m_LastStatus != CP::eStatus_Success  &&
+             m_Writer->m_LastStatus != CP::eStatus_EndOfData ) {
+           return false;
+        }
+        // Write the data to the underlying stream
+        if ( out_avail  &&
+             m_Stream->rdbuf()->sputn(m_Writer->m_OutBuf, out_avail) !=
+             (streamsize)out_avail) {
+            return false;
+        }
+    }
+    // Decrease the put pointer
+    pbump(-count);
+    return true;
+}
+
+
 streamsize CCompressionStreambuf::xsputn(const CT_CHAR_TYPE* buf,
                                          streamsize count)
 {
@@ -431,9 +431,14 @@ streamsize CCompressionStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize count)
             done += block_size;
             // Update get pointers.
             // Satisfy "usual backup condition", see standard: 27.5.2.4.3.13
-            *m_Reader->m_OutBuf = buf[done - 1];
-            setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf + 1,
-                 m_Reader->m_OutBuf + 1);
+            if ( block_size == egptr() - gptr() ) {
+                *m_Reader->m_OutBuf = buf[done - 1];
+                setg(m_Reader->m_OutBuf, m_Reader->m_OutBuf + 1,
+                     m_Reader->m_OutBuf + 1);
+            } else {
+                // Update the read pointer
+                gbump(block_size);
+            }
         }
         // Process block if necessary
         if ( done == count  ||  !ProcessStreamRead() ) {
@@ -450,6 +455,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/06/02 16:15:46  ivanov
+ * Fixed updating get pointers in the xsgetn()
+ *
  * Revision 1.11  2004/05/17 21:07:25  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
