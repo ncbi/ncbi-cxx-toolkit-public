@@ -585,7 +585,7 @@ CRef<CBioseq> CGFFReader::x_ResolveID(const CSeq_id& id, const string& mol)
         if (seq) {
             x_PlaceSeq(*seq);
             ITERATE (CBioseq::TId, it, seq->GetId()) {
-                m_SeqCache.insert(make_pair(*it, seq));
+                m_SeqCache.insert(make_pair(CConstRef<CSeq_id>(*it), seq));
             }
         }
     }
@@ -642,6 +642,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/12/04 00:58:24  ucko
+* Fix for WorkShop's context-insensitive make_pair.
+*
 * Revision 1.1  2003/12/03 20:56:36  ucko
 * Initial commit.
 *
