@@ -1,5 +1,5 @@
-#ifndef NCBISTD__HPP
-#define NCBISTD__HPP
+#ifndef CORELIB___NCBISTD__HPP
+#define CORELIB___NCBISTD__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,10 +28,12 @@
  *
  * Author:  Denis Vakatov, Eugene Vasilchenko
  *
- * File Description:
- *   The NCBI C++ standard #include's and #defin'itions
  *
  */
+
+/// @file ncbistd.hpp
+/// The NCBI C++ standard #include's and #defin'itions
+
 
 #include <corelib/ncbitype.h>
 #include <corelib/ncbiexpt.hpp>
@@ -40,39 +42,64 @@
 #include <corelib/ncbidbg.hpp>
 
 
+/** @addtogroup AppFramework
+ *
+ * @{
+ */
+
 BEGIN_NCBI_SCOPE
 
 
-//  Ownership
+/// Which type of ownership between objects.
+///
+/// Can be used to specify ownership relationship between objects.
+/// For example, specify if a CSocket object owns the underlying
+/// SOCK object. 
 enum EOwnership {
-    eNoOwnership,
-    eTakeOwnership
+    eNoOwnership,       ///< No ownership relationship
+    eTakeOwnership      ///< An object can take ownership of another
 };
 
 
-// Nullability
+/// Whether a value is nullable.
 enum ENullable
 {
-    eNullable,
-    eNotNullable
+    eNullable,          ///< Value can be null
+    eNotNullable        ///< Value cannot be null
 };
 
 
-//  auto_ptr
-//
-// Replacement of std::auto_ptr for compilers with poor "auto_ptr"
-// implementation.
-//
-
 #if defined(HAVE_NO_AUTO_PTR)
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// auto_ptr --
+///
+/// Define auto_ptr if needed.
+///
+/// Replacement of STL's std::auto_ptr for compilers with poor "auto_ptr"
+/// implementation.
+/// 
+/// See C++ Toolkit documentation for limiatations and use of auto_ptr.
+
 template <class X>
 class auto_ptr
 {
 public:
-    typedef X element_type;
+    typedef X element_type;         ///< Define element_type
 
+    /// Explicit conversion to auto_ptr.
     explicit auto_ptr(X* p = 0) : m_Ptr(p) {}
+
+    /// Copy constructor with implicit conversion.
+    ///
+    /// Note that the copy constructor parameter is not a const
+    /// because it is modified -- ownership is transferred.
     auto_ptr(auto_ptr<X>& a) : m_Ptr(a.release()) {}
+
+    /// Assignment operator.
     auto_ptr<X>& operator=(auto_ptr<X>& a) {
         if (this != &a) {
             if (m_Ptr  &&  m_Ptr != a.m_Ptr) {
@@ -82,20 +109,31 @@ public:
         }
         return *this;
     }
+
+    /// Destructor.
     ~auto_ptr(void) {
         if ( m_Ptr )
             delete m_Ptr;
     }
 
-    X&  operator*(void)         const { return *m_Ptr; }
-    X*  operator->(void)        const { return m_Ptr; }
-    int operator==(const X* p)  const { return (m_Ptr == p); }
-    X*  get(void)               const { return m_Ptr; }
+    /// Deference operator.
+    X&  operator*(void) const { return *m_Ptr; }
 
+    /// Reference operator.
+    X*  operator->(void) const { return m_Ptr; }
+
+    /// Equality operator.
+    int operator==(const X* p) const { return (m_Ptr == p); }
+
+    /// Get pointer value.
+    X*  get(void) const { return m_Ptr; }
+
+    /// Release pointer.
     X* release(void) {
         X* x_Ptr = m_Ptr;  m_Ptr = 0;  return x_Ptr;
     }
 
+    /// Reset pointer.
     void reset(X* p = 0) {
         if (m_Ptr != p) {
             delete m_Ptr;
@@ -104,84 +142,101 @@ public:
     }
 
 private:
-    X* m_Ptr;
+    X* m_Ptr;               ///< Internal pointer implementation.
 };
+
 #endif /* HAVE_NO_AUTO_PTR */
 
 
 
-// default create function
+/// Functor template for allocating object.
 template<class X>
 struct Creater
 {
+    /// Default create function.
     static X* Create(void)
     { return new X; }
 };
 
-// default delete function
+/// Functor tempate for deleting object.
 template<class X>
 struct Deleter
 {
+    /// Default delete function.
     static void Delete(X* object)
     { delete object; }
 };
 
-// array delete function
+/// Functor template for deleting array of objects.
 template<class X>
 struct ArrayDeleter
 {
+    /// Array delete function.
     static void Delete(X* object)
     { delete[] object; }
 };
 
-// C structures delete function
+/// Functor template for the C language deallocation function, free().
 template<class X>
 struct CDeleter
 {
+    /// C Language deallocation function.
     static void Delete(X* object)
     { free(object); }
 };
 
 
 
-//  class AutoPtr
-//
-// Standard auto_ptr template from STL have designed in a way which doesn't
-// allow to put it in STL containers (list, vector, map etc.).
-// The reason is absence of copy constructor and assignment operator.
-// We decided that it would be useful to have analog of STL's auto_ptr
-// without this restriction - AutoPtr.
-// NOTE: due to nature of AutoPtr its copy constructor and assignment
-// operator modify the state of the source AutoPtr object (as it transfers
-// ownernership to the target utoPtr object).
-// Also we added possibility to redefine the way pointer will be deleted:
-// second argument of template allows to put pointers from "malloc" in
-// AutoPtr, or you can use "ArrayDeleter" (see above) to properly delete
-// an array of objects using "delete[]" instead of "delete".
-// By default, the internal pointer will be deleted by C++ "delete" operator.
-//
+/////////////////////////////////////////////////////////////////////////////
+///
+/// AutoPtr --
+///
+/// Define an "auto_ptr" like class that can be used inside STL containers.
+///
+/// The Standard auto_ptr template from STL doesn't allow the auto_ptr to be
+/// put in STL containers (list, vector, map etc.). The reason for this is
+/// the absence of copy constructor and assignment operator.
+/// We decided that it would be useful to have an analog of STL's auto_ptr
+/// without this restriction - AutoPtr.
+///
+/// Due to nature of AutoPtr its copy constructor and assignment operator
+/// modify the state of the source AutoPtr object as it transfers ownership
+/// to the target AutoPtr object. Also, we added possibility to redefine the
+/// way pointer will be deleted: the second argument of template allows
+/// pointers from "malloc" in AutoPtr, or you can use "ArrayDeleter" (see
+/// above) to properly delete an array of objects using "delete[]" instead
+/// of "delete". By default, the internal pointer will be deleted by C++
+/// "delete" operator.
+///
+/// @sa
+///   Deleter(), ArrayDeleter(), CDeleter()
 
 template< class X, class Del = Deleter<X> >
 class AutoPtr
 {
 public:
-    typedef X element_type;
+    typedef X element_type;         ///< Define element type.
 
+    /// Constructor.
     AutoPtr(X* p = 0)
         : m_Ptr(p), m_Owner(true)
     {
     }
+
+    /// Copy constructor.
     AutoPtr(const AutoPtr<X>& p)
         : m_Ptr(0), m_Owner(p.m_Owner)
     {
         m_Ptr = p.x_Release();
     }
 
+    /// Destructor.
     ~AutoPtr(void)
     {
         reset();
     }
 
+    /// Assignment operator.
     AutoPtr& operator=(const AutoPtr<X>& p)
     {
         if (this != &p) {
@@ -191,32 +246,40 @@ public:
         }
         return *this;
     }
+
+    /// Assignment operator.
     AutoPtr& operator=(X* p)
     {
         reset(p);
         return *this;
     }
 
-    // bool operator is for using in if() clause
+    /// Bool operator for use in if() clause.
     operator bool(void) const
     {
         return m_Ptr != 0;
     }
 
-    // standard getters
+    // Standard getters.
+
+    /// Dereference operator.
     X& operator* (void) const { return *m_Ptr; }
+
+    /// Reference operator.
     X* operator->(void) const { return  m_Ptr; }
+
+    /// Get pointer.
     X* get       (void) const { return  m_Ptr; }
 
-    // release will release ownership of pointer to caller
+    /// Release will release ownership of pointer to caller.
     X* release(void)
     {
         m_Owner = false;
         return m_Ptr;
     }
 
-    // reset will delete old pointer, set content to new value,
-    // and accept ownership upon the new pointer
+    /// Reset will delete old pointer, set content to new value,
+    /// and accept ownership upon the new pointer.
     void reset(X* p = 0)
     {
         if (m_Ptr  &&  m_Owner) {
@@ -227,10 +290,10 @@ public:
     }
 
 private:
-    X* m_Ptr;
+    X* m_Ptr;                       ///< Internal pointer representation.
     mutable bool m_Owner;
 
-    // release for const object
+    /// Release for const object.
     X* x_Release(void) const
     {
         return const_cast<AutoPtr<X>*>(this)->release();
@@ -250,11 +313,14 @@ private:
 #  ifdef max
 #    undef max
 #  endif
+/// Min function template.
 template <class T>
 inline
 const T& min(const T& a, const T& b) {
     return b < a ? b : a;
 }
+
+/// Max function template.
 template <class T>
 inline
 const T& max(const T& a, const T& b) {
@@ -268,6 +334,7 @@ const T& max(const T& a, const T& b) {
 //
 
 #if !defined(HAVE_STRDUP)
+/// Supply string duplicate function, if one is not defined.
 extern char* strdup(const char* str);
 #endif
 
@@ -280,48 +347,71 @@ extern char* strdup(const char* str);
 // a variable.
 //
 
+/// iterate macro to sequence through container elements.
+///
+/// This version is deprecated. Use equivalent ITERATE instead.
+/// @sa
+///   ITERATE
 #define iterate(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
+/// Non constant version of iterate macro.
 #define non_const_iterate(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
-
+/// ITERATE macro to sequence through container elements.
+///
+/// This upper case style is prefered over the "iterate" macro.
+/// @sa
+///   iterate
 #define ITERATE(Type, Var, Cont) \
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
+/// Non constant version of iterate macro.
+///
+/// This upper case style is prefered over the "non_const_iterate" macro.
+/// @sa
+///   non_const_iterate
 #define NON_CONST_ITERATE(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
 
-// Avoid a silly name clash between MS-Win and C Toolkit headers
-//
-
 #if defined(NCBI_OS_MSWIN)  &&  !defined(Beep)
+/// Avoid a silly name clash between MS-Win and C Toolkit headers.
 #  define Beep Beep
 #endif
 
 
-// Type for sequence locations and lengths.  Use this typedef rather
-// than its expansion, which may change.
+/// Type for sequence locations and lengths.
+///
+/// Use this typedef rather than its expansion, which may change.
 typedef unsigned int TSeqPos;
 
+/// Define special value for invalid sequence position.
 const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
 
 
-// Use this type when and only when negative values are a possibility
-// (for differences between positions or error reporting -- though
-// exceptions are generally better for the latter).  Again, the
-// expansion may change.
+/// Type for signed sequence position.
+///
+/// Use this type when and only when negative values are a possibility
+/// for reporting differences between positions, or for error reporting --
+/// though exceptions are generally better for error reporting.
+/// Use this typedef rather than its expansion, which may change.
 typedef int TSignedSeqPos;
 
 
 END_NCBI_SCOPE
 
 
+/* @} */
+
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.65  2003/08/14 12:48:18  siyan
+ * Documentation changes.
+ *
  * Revision 1.64  2003/04/21 14:31:12  kuznets
  * lower case iterate returned back to the header
  *
