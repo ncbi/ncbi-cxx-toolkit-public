@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 
 static bool isDNA_Alphabet(char ch)
 {
-    return ::strchr("ATGC", ch) != 0;
+    return ::strchr("ATGCN", ch) != 0;
 }
 
 // Check if letter belongs to amino acid alphabet
@@ -238,6 +238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/04/01 12:17:20  kuznets
+ * Added 'N' to the legal DNA alphabet. (isDNA_Alphabet)
+ *
  * Revision 1.15  2004/03/24 20:35:34  ucko
  * Use the correct type (CT_POS_TYPE rather than int) for tellg's return value.
  *
