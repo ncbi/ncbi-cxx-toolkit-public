@@ -293,7 +293,7 @@ public:
     ///
     /// @param entry_point_names
     ///    - list of alternative DLL entry points
-    CDllResolver(const vector<string>& entry_poin_names); 
+    CDllResolver(const vector<string>& entry_point_names); 
 
     
     ~CDllResolver();
@@ -373,6 +373,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/11/10 15:28:24  kuznets
+ * Fixed misprint
+ *
  * Revision 1.15  2003/11/10 15:04:35  kuznets
  * CDllResolver changed to inspect DLL candidate for several alternative
  * entry points

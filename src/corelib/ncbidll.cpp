@@ -234,9 +234,9 @@ CDllResolver::CDllResolver(const string& entry_point_name)
     m_EntryPoinNames.push_back(entry_point_name);
 }
 
-CDllResolver::CDllResolver(const vector<string>& entry_poin_names)
+CDllResolver::CDllResolver(const vector<string>& entry_point_names)
 {
-    m_EntryPoinNames = entry_poin_names;
+    m_EntryPoinNames = entry_point_names;
 }
 
 CDllResolver::~CDllResolver()
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/11/10 15:28:46  kuznets
+ * Fixed misprint
+ *
  * Revision 1.13  2003/11/10 15:05:04  kuznets
  * Reflecting changes in hpp file
  *
