@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.42  2002/04/17 20:05:05  lavr
+ * Cosmetic changes
+ *
  * Revision 6.41  2002/03/22 19:52:19  lavr
  * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
  *
@@ -882,7 +885,7 @@ static EIO_Status s_Connect(SOCK            sock,
                 char str[256];
                 sprintf(str,
                         "[SOCK::s_Connect]  Failed connect() to %.64s:%d",
-                        host ? host : "???", (int)ntohs(x_port));
+                        host ? host : "???", (int) ntohs(x_port));
                 CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error, str);
             }
             SOCK_CLOSE(x_sock);
@@ -900,12 +903,9 @@ static EIO_Status s_Connect(SOCK            sock,
                 s_Select(x_sock, eIO_Write, s_to2tv(timeout, &tv));
             if (status != eIO_Success  &&  CORE_GetLOG()) {
                 char str[256];
-                sprintf(str,
-                        "[SOCK::s_Connect]  Failed pending connect to "
-                        "%.64s:%d (%.32s)",
-                        host ? host : "???",
-                        (int) ntohs(x_port),
-                        IO_StatusStr(status));
+                sprintf(str, "[SOCK::s_Connect]  Failed pending connect to "
+                        "%.64s:%d (%.32s)", host ? host : "???",
+                        (int) ntohs(x_port), IO_StatusStr(status));
                 CORE_LOG(eLOG_Error, str);
                 SOCK_CLOSE(x_sock);
                 return status;
