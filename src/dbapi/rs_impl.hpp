@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.10  2002/10/31 22:37:05  kholodov
+* Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
+* Fixed: minor errors, diagnostic messages
+*
 * Revision 1.9  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -98,9 +102,13 @@ public:
     virtual const CVariant& GetVariant(unsigned int idx);
     virtual const CVariant& GetVariant(const string& colName);
 
+    virtual void DisableBind(bool b);
     virtual void BindBlobToVariant(bool b);
   
     virtual size_t Read(void* buf, size_t size);
+    virtual int GetColumnNo();
+    virtual unsigned int GetTotalColumns();
+
     virtual void Close();
     virtual const IResultSetMetaData* GetMetaData();
     virtual istream& GetBlobIStream(size_t buf_size);
@@ -120,6 +128,10 @@ protected:
         return m_bindBlob;
     }
 
+    bool IsDisableBind() {
+        return m_disableBind;
+    }
+
 private:
     
     class CConnection* m_conn;
@@ -130,6 +142,7 @@ private:
     CBlobOStream *m_ostr;
     int m_column;
     bool m_bindBlob;
+    bool m_disableBind;
 
 };
 

@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.15  2002/10/31 22:37:05  kholodov
+* Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
+* Fixed: minor errors, diagnostic messages
+*
 * Revision 1.14  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -336,10 +340,11 @@ EDB_Type CVariant::GetType() const
 
 string CVariant::GetString(void) const 
 {
-    CNcbiOstrstream s;
 
     if( IsNull() )
         return "null";
+
+    CNcbiOstrstream s;
 
     switch( GetType() ) {
     case eDB_Char:

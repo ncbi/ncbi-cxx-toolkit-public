@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.18  2002/10/31 22:37:05  kholodov
+* Added: DisableBind(), GetColumnNo(), GetTotalColumns() methods
+* Fixed: minor errors, diagnostic messages
+*
 * Revision 1.17  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -118,12 +122,12 @@ BEGIN_NCBI_SCOPE
 CResultSet::CResultSet(CConnection* conn, CDB_Result *rs)
     : m_conn(conn),
       m_rs(rs), m_istr(0), m_ostr(0), m_column(-1),
-      m_bindBlob(false)
+      m_bindBlob(false), m_disableBind(false)
 {
     SetIdent("CResultSet");
 
     if( m_rs == 0 ) {
-        _TRACE("CResultSet::ctor(): zero CDB_Result* argument");
+        _TRACE("CResultSet::ctor(): null CDB_Result* object");
         _ASSERT(0);
     }
     else {
@@ -168,32 +172,37 @@ void CResultSet::BindBlobToVariant(bool b)
     m_bindBlob = b;
 }
 
+void CResultSet::DisableBind(bool b) 
+{
+    m_disableBind = b;
+}
+
 bool CResultSet::Next() 
 {
 
     bool more = false;
     EDB_Type type = eDB_UnsupportedType;
 
-    if( m_rs->Fetch() ) {
+    more = m_rs->Fetch();
+    if( more ) {
 
-        
-        for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
+        if( !IsDisableBind() ) {
+            for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
       
-            type = m_rs->ItemDataType(i);
-
-            if( !IsBindBlob() 
-                && (type == eDB_Text || type == eDB_Image) ) {
-                m_column = m_rs->CurrentItemNo();
-                break;
+                type = m_rs->ItemDataType(i);
+                
+                if( !IsBindBlob() 
+                    && (type == eDB_Text || type == eDB_Image) ) {
+                    m_column = m_rs->CurrentItemNo();
+                    break;
+                }
+            
+                m_rs->GetItem(m_data[i].GetNonNullData());
             }
-
-            m_rs->GetItem(m_data[i].GetNonNullData());
         }
 
-        more = true;
-    }
-
-    if(! more ) {
+    } 
+    else {
         if( m_ostr ) {
             _TRACE("CResulstSet: deleting BLOB output stream...");
                    delete m_ostr;
@@ -229,6 +238,18 @@ size_t CResultSet::Read(void* buf, size_t size)
     else {
         return m_rs->ReadItem(buf, size);
     }
+}
+
+int CResultSet::GetColumnNo()
+{
+    int col = m_rs->CurrentItemNo();
+
+    return col > 0 ? col + 1 : -1;
+}
+
+unsigned int CResultSet::GetTotalColumns()
+{
+    return m_rs->NofItems();
 }
 
 istream& CResultSet::GetBlobIStream(size_t buf_size)
