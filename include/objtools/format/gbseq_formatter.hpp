@@ -63,8 +63,8 @@ public:
     ~CGBSeqFormatter(void);
 
     virtual void Start       (IFlatTextOStream&);
-    virtual void StartSection(IFlatTextOStream&);
-    virtual void EndSection  (IFlatTextOStream&);
+    virtual void StartSection(const CStartSectionItem&, IFlatTextOStream&);
+    virtual void EndSection  (const CEndSectionItem&, IFlatTextOStream&);
     virtual void End         (IFlatTextOStream&);
 
     virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os);
@@ -114,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/22 15:45:05  shomrat
+* Start/End section changed
+*
 * Revision 1.1  2004/04/13 16:43:59  shomrat
 * Inital Revision
 *
