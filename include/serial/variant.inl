@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/09/09 18:14:00  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.5  2000/10/13 20:22:47  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -174,7 +179,13 @@ void CVariantInfo::CopyVariant(CObjectStreamCopier& stream) const
 inline
 void CVariantInfo::SkipVariant(CObjectIStream& stream) const
 {
-    m_SkipFunction(stream, this);
+    if ( !m_ReadHookData.HaveHooks() ) {
+        m_SkipFunction(stream, this);
+    }
+    else {
+        TObjectPtr object = CreateChoice();
+        ReadVariant(stream, object);
+    }
 }
 
 inline
@@ -195,6 +206,12 @@ inline
 void CVariantInfo::DefaultCopyVariant(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetDefaultFunction()(stream, this);
+}
+
+inline
+void CVariantInfo::DefaultSkipVariant(CObjectIStream& stream) const
+{
+    m_SkipFunction(stream, this);
 }
 
 #endif /* def VARIANT__HPP  &&  ndef VARIANT__INL */

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/09/09 18:14:02  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.9  2001/05/17 15:07:09  lavr
 * Typos corrected
 *
@@ -349,6 +354,11 @@ void CVariantInfo::SetCopyFunction(TVariantCopyFunction func)
 void CVariantInfo::SetSkipFunction(TVariantSkipFunction func)
 {
     m_SkipFunction = func;
+}
+
+TObjectPtr CVariantInfo::CreateChoice(void) const
+{
+    return GetChoiceType()->Create();
 }
 
 TConstObjectPtr

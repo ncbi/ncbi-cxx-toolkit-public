@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2002/09/09 18:14:00  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.36  2001/10/22 15:16:20  grichenk
 * Optimized CTypeInfo::IsCObject()
 *
@@ -294,6 +299,7 @@ public:
     void DefaultReadData(CObjectIStream& in, TObjectPtr object) const;
     void DefaultWriteData(CObjectOStream& out, TConstObjectPtr object) const;
     void DefaultCopyData(CObjectStreamCopier& copier) const;
+    void DefaultSkipData(CObjectIStream& in) const;
 
 private:
     // private constructors to avoid copying

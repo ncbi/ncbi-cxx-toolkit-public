@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/09/09 18:13:59  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.11  2000/10/13 20:22:46  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -201,13 +206,25 @@ void CMemberInfo::CopyMissingMember(CObjectStreamCopier& stream) const
 inline
 void CMemberInfo::SkipMember(CObjectIStream& stream) const
 {
-    m_SkipFunction(stream, this);
+    if ( !m_ReadHookData.HaveHooks() ) {
+        m_SkipFunction(stream, this);
+    }
+    else {
+        TObjectPtr object = CreateClass();
+        ReadMember(stream, object);
+    }
 }
 
 inline
 void CMemberInfo::SkipMissingMember(CObjectIStream& stream) const
 {
-    m_SkipMissingFunction(stream, this);
+    if ( !m_ReadHookData.HaveHooks() ) {
+        m_SkipMissingFunction(stream, this);
+    }
+    else {
+        TObjectPtr object = CreateClass();
+        ReadMissingMember(stream, object);
+    }
 }
 
 inline
@@ -241,6 +258,18 @@ inline
 void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
 {
     m_CopyHookData.GetDefaultFunction().m_Missing(stream, this);
+}
+
+inline
+void CMemberInfo::DefaultSkipMember(CObjectIStream& stream) const
+{
+    m_SkipFunction(stream, this);
+}
+
+inline
+void CMemberInfo::DefaultSkipMissingMember(CObjectIStream& stream) const
+{
+    m_SkipMissingFunction(stream, this);
 }
 
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */

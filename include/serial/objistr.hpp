@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2002/09/09 18:13:59  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.70  2001/10/17 20:41:19  grichenk
 * Added CObjectOStream::CharBlock class
 *
@@ -403,6 +408,9 @@ public:
 
 	// member
 	void ReadClassMember(const CObjectInfoMI& member);
+
+    // variant
+    void ReadChoiceVariant(const CObjectInfoCV& object);
 
     // END OF USER INTERFACE
 

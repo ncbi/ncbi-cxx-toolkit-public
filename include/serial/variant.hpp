@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/09/09 18:14:00  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.5  2000/10/13 20:22:47  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -70,6 +75,7 @@
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
 #include <serial/hookfunc.hpp>
+#include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -171,11 +177,15 @@ public:
     void DefaultWriteVariant(CObjectOStream& out,
                              TConstObjectPtr choicePtr) const;
     void DefaultCopyVariant(CObjectStreamCopier& copier) const;
+    void DefaultSkipVariant(CObjectIStream& in) const;
     
     virtual void UpdateDelayedBuffer(CObjectIStream& in,
                                      TObjectPtr classPtr) const;
 
 private:
+    // Create choice object
+    TObjectPtr CreateChoice(void) const;
+
     // owning choice type info
     const CChoiceTypeInfo* m_ChoiceType;
     // type of variant implementation: inline, pointer etc.

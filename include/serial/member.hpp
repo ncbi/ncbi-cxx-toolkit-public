@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/09/09 18:13:59  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.19  2000/10/13 20:22:45  vasilche
 * Fixed warnings on 64 bit compilers.
 * Fixed missing typename in templates.
@@ -129,6 +134,7 @@
 #include <serial/item.hpp>
 #include <serial/hookdata.hpp>
 #include <serial/hookfunc.hpp>
+#include <serial/typeinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -225,11 +231,16 @@ public:
                             TConstObjectPtr classPtr) const;
     void DefaultCopyMember(CObjectStreamCopier& copier) const;
     void DefaultCopyMissingMember(CObjectStreamCopier& copier) const;
+    void DefaultSkipMember(CObjectIStream& in) const;
+    void DefaultSkipMissingMember(CObjectIStream& in) const;
 
     virtual void UpdateDelayedBuffer(CObjectIStream& in,
                                      TObjectPtr classPtr) const;
 
 private:
+    // Create parent class object
+    TObjectPtr CreateClass(void) const;
+
     // containing class type info
     const CClassTypeInfo* m_ClassType;
     // is optional

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2002/09/09 18:14:02  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.87  2002/08/30 16:22:21  vasilche
 * Removed excessive _TRACEs
 *
@@ -375,6 +380,7 @@
 #include <serial/objectinfo.hpp>
 #include <serial/objectiter.hpp>
 #include <serial/objlist.hpp>
+#include <serial/choiceptr.hpp>
 
 #include <limits.h>
 #if HAVE_WINDOWS_H
@@ -786,6 +792,82 @@ void CObjectIStream::ReadClassMember(const CObjectInfo::CMemberIterator& member)
     TObjectPtr classPtr = member.GetClassObject().GetObjectPtr();
     ReadObject(memberInfo->GetMemberPtr(classPtr),
 		       memberInfo->GetTypeInfo());
+}
+
+void CObjectIStream::ReadChoiceVariant(const CObjectInfoCV& object)
+{
+    const CVariantInfo* variantInfo = object.GetVariantInfo();
+    TObjectPtr choicePtr = object.GetChoiceObject().GetObjectPtr();
+    const CChoiceTypeInfo* choiceType = variantInfo->GetChoiceType();
+    TMemberIndex index = variantInfo->GetIndex();
+
+    // Delayed
+    if ( variantInfo->CanBeDelayed() ) {
+        TTypeInfo variantType = variantInfo->GetTypeInfo();
+        if ( index != choiceType->GetIndex(choicePtr) ) {
+            // index is differnet from current -> first, reset choice
+            choiceType->ResetIndex(choicePtr);
+            CDelayBuffer& buffer = variantInfo->GetDelayBuffer(choicePtr);
+            if ( !buffer ) {
+                StartDelayBuffer();
+                if ( variantInfo->IsObjectPointer() )
+                    SkipExternalObject(variantType);
+                else
+                    SkipObject(variantType);
+                EndDelayBuffer(buffer, variantInfo, choicePtr);
+                // update index
+                choiceType->SetDelayIndex(choicePtr, index);
+                return;
+            }
+            buffer.Update();
+            _ASSERT(!variantInfo->GetDelayBuffer(choicePtr));
+        }
+        // select for reading
+        choiceType->SetIndex(choicePtr, index);
+
+        TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+        if ( variantInfo->IsPointer() ) {
+            variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+            _ASSERT(variantPtr != 0 );
+            if ( variantInfo->IsObjectPointer() ) {
+                ReadExternalObject(variantPtr, variantType);
+                return;
+            }
+        }
+        ReadObject(variantPtr, variantType);
+    }
+    else {
+        choiceType->SetIndex(choicePtr, index);
+        TObjectPtr variantPtr = variantInfo->GetItemPtr(choicePtr);
+        // Inline
+        if ( variantInfo->IsInline() ) {
+            ReadObject(variantPtr, variantInfo->GetTypeInfo());
+        }
+
+        // Pointer
+        if ( variantInfo->IsNonObjectPointer() ) {
+            variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+            _ASSERT(variantPtr != 0 );
+            ReadObject(variantPtr, variantInfo->GetTypeInfo());
+        }
+
+        // Object pointer
+        if ( variantInfo->IsObjectPointer() ) {
+            variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+            _ASSERT(variantPtr != 0 );
+            ReadExternalObject(variantPtr, variantInfo->GetTypeInfo());
+        }
+
+        // Subclass
+        if ( variantInfo->IsSubClass() ) {
+            const CChoicePointerTypeInfo* choicePtrType =
+                CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+            TObjectPtr variantPtr =
+                choicePtrType->GetPointerTypeInfo()->GetObjectPointer(choicePtr);
+            _ASSERT(variantPtr);
+            ReadExternalObject(variantPtr, variantInfo->GetTypeInfo());
+        }
+    }
 }
 
 string CObjectIStream::ReadFileHeader(void)

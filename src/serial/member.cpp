@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/09/09 18:14:02  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.21  2001/07/25 19:14:24  grichenk
 * Implemented functions for reading/writing parent classes
 *
@@ -525,6 +530,11 @@ void CMemberInfo::ResetGlobalCopyHook(void)
 void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
 {
     m_CopyHookData.ResetLocalHook(stream.m_ClassMemberHookKey);
+}
+
+TObjectPtr CMemberInfo::CreateClass(void) const
+{
+    return GetClassType()->Create();
 }
 
 TConstObjectPtr

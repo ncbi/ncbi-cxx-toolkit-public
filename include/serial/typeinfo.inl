@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/09/09 18:14:00  grichenk
+* Added CObjectHookGuard class.
+* Added methods to be used by hooks for data
+* reading and skipping.
+*
 * Revision 1.5  2001/10/22 15:16:20  grichenk
 * Optimized CTypeInfo::IsCObject()
 *
@@ -114,7 +119,13 @@ void CTypeInfo::CopyData(CObjectStreamCopier& copier) const
 inline
 void CTypeInfo::SkipData(CObjectIStream& in) const
 {
-    m_SkipFunction(in, this);
+    if ( !m_ReadHookData.HaveHooks() ) {
+        m_SkipFunction(in, this);
+    }
+    else {
+        TObjectPtr object = Create();
+        ReadData(in, object);
+    }
 }
 
 inline
@@ -135,6 +146,12 @@ inline
 void CTypeInfo::DefaultCopyData(CObjectStreamCopier& copier) const
 {
     m_CopyHookData.GetDefaultFunction()(copier, this);
+}
+
+inline
+void CTypeInfo::DefaultSkipData(CObjectIStream& in) const
+{
+    m_SkipFunction(in, this);
 }
 
 inline
