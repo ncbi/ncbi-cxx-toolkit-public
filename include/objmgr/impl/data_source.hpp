@@ -199,7 +199,8 @@ public:
     enum FLockFlags {
         fLockNoHistory = 1<<0,
         fLockNoManual  = 1<<1,
-        fLockNoThrow   = 1<<2
+        fLockNoThrow   = 1<<2,
+        fLockForce     = 1<<3
     };
     typedef int TLockFlags;
     TTSE_Lock x_LockTSE(const CTSE_Info& tse_info,

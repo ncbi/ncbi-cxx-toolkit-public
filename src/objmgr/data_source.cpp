@@ -730,7 +730,8 @@ CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
                 // skip TSE containing sequence
                 continue;
             }
-            TTSE_Lock lock = x_LockTSE(**tse, load_locks, fLockNoThrow);
+            TTSE_Lock lock = x_LockTSE(**tse, load_locks,
+                                       fLockNoThrow|fLockForce);
             if ( lock ) {
                 annot_locks.insert(lock);
             }
@@ -1106,21 +1107,18 @@ TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,
             return ret;
         }
     }
+    if ( (flags & fLockForce) != 0 ) {
+        TMainLock::TWriteLockGuard guard(m_DSCacheLock);
+        if ( tse_info.HasDataSource() && &tse_info.GetDataSource() == this ) {
+            x_SetLock(ret, ConstRef(&tse_info));
+            _ASSERT(IsLocked(tse_info));
+            return ret;
+        }
+    }
     if ( (flags & fLockNoThrow) == 0 ) {
         NCBI_THROW(CObjMgrException, eOtherError,
                    "CDataSource::x_LockTSE: cannot find in locks");
     }
-    /*
-    if ( !ret ) {
-        TMainLock::TWriteLockGuard guard(m_DSCacheLock);
-        if ( !tse_info.HasDataSource() || &tse_info.GetDataSource() != this ) {
-            NCBI_THROW(CObjMgrException, eOtherError,
-                       "CDataSource::LockTSE: not owner");
-        }
-        x_SetLock(ret, ConstRef(&tse_info));
-        _ASSERT(IsLocked(tse_info));
-    }
-    */
     return ret;
 }
 
