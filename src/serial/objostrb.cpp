@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/16 20:35:35  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.6  1999/06/15 16:19:52  vasilche
 * Added ASN.1 object output stream.
 *
@@ -293,48 +297,35 @@ void CObjectOStreamBinary::WriteString(const string& str)
     }
 }
 
-void CObjectOStreamBinary::WritePointer(TConstObjectPtr object,
-                                        TTypeInfo typeInfo)
+void CObjectOStreamBinary::WriteMemberPrefix(COObjectInfo& info)
 {
-    _TRACE("CObjectOStreamBinary::WritePointer(" << unsigned(object) << ", " << typeInfo->GetName() << ")");
-    if ( object == 0 ) {
-        _TRACE("CObjectOStreamBinary::WritePointer: " << unsigned(object) << ": null");
-        WriteNull();
-        return;
-    }
-
-    COObjectInfo info(m_Objects, object, typeInfo);
-
-    // find if this object is part of another object
     while ( info.IsMember() ) {
-        // member of object
-        _TRACE("CObjectOStreamBinary::WritePointer: " << unsigned(object) << ": member " << info.GetMemberInfo().GetName() << " of...");
         WriteByte(CObjectStreamBinaryDefs::eMemberReference);
         WriteId(info.GetMemberInfo().GetName());
         info.ToContainerObject();
     }
+}
 
-    const CORootObjectInfo& root = info.GetRootObjectInfo();
-    if ( root.IsWritten() ) {
-        // put reference on it
-        _TRACE("CObjectOStreamBinary::WritePointer: " << unsigned(object) << ": @" << root.GetIndex());
-        WriteByte(CObjectStreamBinaryDefs::eObjectReference);
-        WriteIndex(root.GetIndex());
-    }
-    else {
-        // new object
-        TTypeInfo realTypeInfo = root.GetTypeInfo();
-        if ( typeInfo == realTypeInfo ) {
-            _TRACE("CObjectOStreamBinary::WritePointer: " << unsigned(object) << ": new");
-            WriteByte(CObjectStreamBinaryDefs::eThisClass);
-        }
-        else {
-            _TRACE("CObjectOStreamBinary::WritePointer: " << unsigned(object) << ": new " << realTypeInfo->GetName());
-            WriteByte(CObjectStreamBinaryDefs::eOtherClass);
-            WriteId(realTypeInfo->GetName());
-        }
-        Write(info.GetRootObject(), realTypeInfo);
-    }
+void CObjectOStreamBinary::WriteNullPointer(void)
+{
+    WriteNull();
+}
+
+void CObjectOStreamBinary::WriteObjectReference(TIndex index)
+{
+    WriteByte(CObjectStreamBinaryDefs::eObjectReference);
+    WriteIndex(index);
+}
+
+void CObjectOStreamBinary::WriteThisTypeReference(TTypeInfo )
+{
+    WriteByte(CObjectStreamBinaryDefs::eThisClass);
+}
+
+void CObjectOStreamBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
+{
+    WriteByte(CObjectStreamBinaryDefs::eOtherClass);
+    WriteId(typeInfo->GetName());
 }
 
 void CObjectOStreamBinary::WriteByte(TByte byte)
@@ -347,18 +338,18 @@ void CObjectOStreamBinary::WriteBytes(const char* bytes, size_t size)
     m_Output.write(bytes, size);
 }
 
-void CObjectOStreamBinary::Begin(FixedBlock& , unsigned size)
+void CObjectOStreamBinary::FBegin(Block& block)
 {
     WriteByte(CObjectStreamBinaryDefs::eBlock);
-    WriteSize(size);
+    WriteSize(block.GetSize());
 }
 
-void CObjectOStreamBinary::Next(VarBlock& )
+void CObjectOStreamBinary::VNext(const Block& )
 {
     WriteByte(CObjectStreamBinaryDefs::eElement);
 }
 
-void CObjectOStreamBinary::End(VarBlock& )
+void CObjectOStreamBinary::VEnd(const Block& )
 {
     WriteByte(CObjectStreamBinaryDefs::eEndOfElements);
 }

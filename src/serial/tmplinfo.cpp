@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/16 20:35:36  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.3  1999/06/15 16:19:53  vasilche
 * Added ASN.1 object output stream.
 *
@@ -112,8 +116,8 @@ void CTemplateResolver1::Register(TTypeInfo templ, TTypeInfo arg)
     }
 }
 
-void CTemplateResolver1::Write(CObjectOStream& out,
-                               TTypeInfo tmpl, TTypeInfo arg) const
+void CTemplateResolver1::Write(CObjectOStream& ,
+                               TTypeInfo , TTypeInfo ) const
 {
     //    out.WriteTemplateInfo(GetName(), tmpl, arg);
 }
@@ -146,8 +150,8 @@ void CTemplateResolver2::Register(TTypeInfo templ,
     }
 }
 
-void CTemplateResolver2::Write(CObjectOStream& out, TTypeInfo tmpl,
-                               TTypeInfo arg1, TTypeInfo arg2) const
+void CTemplateResolver2::Write(CObjectOStream& , TTypeInfo ,
+                               TTypeInfo , TTypeInfo ) const
 {
     //    out.WriteTemplateInfo(GetName(), tmpl, arg1, arg2);
 }

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/16 20:35:25  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.6  1999/06/15 16:20:08  vasilche
 * Added ASN.1 object output stream.
 *
@@ -87,7 +91,7 @@ private:
     CTypeRef m_DataTypeRef;
 };
 
-template<class Data>
+template<typename Data>
 class CStlClassInfoList : CStlClassInfoListImpl
 {
     typedef CStlClassInfoListImpl CParent;
@@ -143,7 +147,7 @@ protected:
         {
             const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::FixedBlock block(out, l.size());
+            CObjectOStream::Block block(out, l.size());
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
                 block.Next();
@@ -155,7 +159,7 @@ protected:
         {
             TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectIStream::FixedBlock block(in);
+            CObjectIStream::Block block(in, CObjectIStream::eFixed);
             while ( block.Next() ) {
                 l.push_back(Data());
                 in.ReadExternalObject(&l.back(), dataTypeInfo);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/16 20:35:34  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.1  1999/06/15 16:19:51  vasilche
 * Added ASN.1 object output stream.
 *
@@ -210,48 +214,30 @@ void CObjectOStreamAsn::WriteMemberName(const string& str)
     m_Output << str << ' ';
 }
 
-void CObjectOStreamAsn::WritePointer(TConstObjectPtr object,
-                                        TTypeInfo typeInfo)
+void CObjectOStreamAsn::WriteMemberSuffix(COObjectInfo& info)
 {
-    _TRACE("CObjectOStreamAsn::WritePointer(" << unsigned(object) << ", " << typeInfo->GetName() << ")");
-    if ( object == 0 ) {
-        _TRACE("CObjectOStreamAsn::WritePointer: " << unsigned(object) << ": null");
-        WriteNull();
-        return;
+    string memberName = info.GetMemberInfo().GetName();
+    info.ToContainerObject();
+    if ( info.IsMember() ) {
+        WriteMemberSuffix(info);
     }
+    m_Output << '.' << memberName;
+}
 
-    COObjectInfo info(m_Objects, object, typeInfo);
+void CObjectOStreamAsn::WriteNullPointer(void)
+{
+    m_Output << "null";
+}
 
-    // find if this object is part of another object
-    string memberSuffix;
-    while ( info.IsMember() ) {
-        // member of object
-        _TRACE("CObjectOStreamAsn::WritePointer: " << unsigned(object) << ": member " << info.GetMemberInfo().GetName() << " of...");
-        memberSuffix = '.' + info.GetMemberInfo().GetName() + memberSuffix;
-        info.ToContainerObject();
-    }
+void CObjectOStreamAsn::WriteObjectReference(TIndex index)
+{
+    m_Output << '@' << index;
+}
 
-    const CORootObjectInfo& root = info.GetRootObjectInfo();
-    if ( root.IsWritten() ) {
-        // put reference on it
-        _TRACE("CObjectOStreamAsn::WritePointer: " << unsigned(object) << ": @" << root.GetIndex());
-        m_Output << '@';
-        WriteIndex(root.GetIndex());
-    }
-    else {
-        // new object
-        TTypeInfo realTypeInfo = root.GetTypeInfo();
-        if ( typeInfo == realTypeInfo ) {
-            _TRACE("CObjectOStreamAsn::WritePointer: " << unsigned(object) << ": new");
-        }
-        else {
-            _TRACE("CObjectOStreamAsn::WritePointer: " << unsigned(object) << ": new " << realTypeInfo->GetName());
-            WriteId(realTypeInfo->GetName());
-            m_Output << "::=";
-        }
-        Write(info.GetRootObject(), realTypeInfo);
-    }
-    m_Output << memberSuffix;
+void CObjectOStreamAsn::WriteOtherTypeReference(TTypeInfo typeInfo)
+{
+    WriteId(typeInfo->GetName());
+    m_Output << "::=";
 }
 
 void CObjectOStreamAsn::WriteNewLine(void)
@@ -261,14 +247,14 @@ void CObjectOStreamAsn::WriteNewLine(void)
         m_Output << "  ";
 }
 
-void CObjectOStreamAsn::WriteBlockBegin(void)
+void CObjectOStreamAsn::VBegin(Block& )
 {
     m_Output << '{';
     ++m_Ident;
     WriteNewLine();
 }
 
-void CObjectOStreamAsn::WriteBlockSeparator(const Block& block)
+void CObjectOStreamAsn::VNext(const Block& block)
 {
     if ( block.GetNextIndex() != 0 ) {
         m_Output << " ,";
@@ -276,40 +262,10 @@ void CObjectOStreamAsn::WriteBlockSeparator(const Block& block)
     }
 }
 
-void CObjectOStreamAsn::WriteBlockEnd(void)
+void CObjectOStreamAsn::VEnd(const Block& )
 {
     --m_Ident;
     m_Output << " }";
-}
-
-void CObjectOStreamAsn::Begin(FixedBlock& , unsigned )
-{
-    WriteBlockBegin();
-}
-
-void CObjectOStreamAsn::Begin(VarBlock& )
-{
-    WriteBlockBegin();
-}
-
-void CObjectOStreamAsn::Next(FixedBlock& block)
-{
-    WriteBlockSeparator(block);
-}
-
-void CObjectOStreamAsn::Next(VarBlock& block)
-{
-    WriteBlockSeparator(block);
-}
-
-void CObjectOStreamAsn::End(FixedBlock& )
-{
-    WriteBlockEnd();
-}
-
-void CObjectOStreamAsn::End(VarBlock& )
-{
-    WriteBlockEnd();
 }
 
 END_NCBI_SCOPE

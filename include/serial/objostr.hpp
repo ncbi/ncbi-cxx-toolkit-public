@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/16 20:35:23  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.5  1999/06/15 16:20:03  vasilche
 * Added ASN.1 object output stream.
 *
@@ -90,7 +94,7 @@ public:
     // object level writers
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
     // type info writers
-    virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo) = 0;
+    virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
     // write member name
     virtual void WriteMemberName(const string& name);
 
@@ -99,6 +103,15 @@ public:
     {
     public:
         Block(CObjectOStream& out);
+        Block(CObjectOStream& out, unsigned size);
+        ~Block(void);
+
+        void Next(void);
+
+        bool Fixed(void) const
+            {
+                return m_Fixed;
+            }
 
         unsigned GetIndex(void) const
             {
@@ -108,6 +121,11 @@ public:
         unsigned GetNextIndex(void) const
             {
                 return m_NextIndex;
+            }
+
+        unsigned GetSize(void) const
+            {
+                return m_Size;
             }
 
     protected:
@@ -124,48 +142,35 @@ public:
         Block& operator=(const Block&);
         // to prevent allocation in heap
         void* operator new(size_t size);
+        friend class CObjectOStream;
 
-        int m_NextIndex;
-    };
-    
-    class FixedBlock : public Block
-    {
-    public:
-        FixedBlock(CObjectOStream& out, unsigned size);
-        ~FixedBlock(void);
-
-        void Next(void);
-
-        unsigned GetSize(void) const
-            {
-                return m_Size;
-            }
-
-    private:
-        int m_Size;
-    };
-    
-    class VarBlock : public Block
-    {
-    public:
-        VarBlock(CObjectOStream& out);
-        ~VarBlock(void);
-
-        void Next(void);
+        bool m_Fixed;
+        unsigned m_NextIndex;
+        unsigned m_Size;
     };
     
 protected:
     // block interface
-    friend class FixedBlock;
-    friend class VarBlock;
-    virtual void Begin(FixedBlock& block, unsigned size) = 0;
-    virtual void Next(FixedBlock& block);
-    virtual void End(FixedBlock& block);
-    virtual void Begin(VarBlock& block);
-    virtual void Next(VarBlock& block);
-    virtual void End(VarBlock& block);
+    friend class Block;
+    static void SetNonFixed(Block& block)
+        {
+            block.m_Fixed = false;
+            block.m_Size = 0;
+        }
+    virtual void FBegin(Block& block);
+    virtual void VBegin(Block& block);
+    virtual void FNext(const Block& block);
+    virtual void VNext(const Block& block);
+    virtual void FEnd(const Block& block);
+    virtual void VEnd(const Block& block);
 
     // low level writers
+    virtual void WriteMemberPrefix(COObjectInfo& info);
+    virtual void WriteMemberSuffix(COObjectInfo& info);
+    virtual void WriteNullPointer(void) = 0;
+    virtual void WriteObjectReference(TIndex index) = 0;
+    virtual void WriteThisTypeReference(TTypeInfo typeInfo);
+    virtual void WriteOtherTypeReference(TTypeInfo typeInfo) = 0;
     virtual void WriteString(const string& str) = 0;
     virtual void WriteId(const string& id);
 

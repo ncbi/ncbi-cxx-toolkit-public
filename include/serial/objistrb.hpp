@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/16 20:35:23  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.4  1999/06/15 16:20:02  vasilche
 * Added ASN.1 object output stream.
 *
@@ -79,14 +83,15 @@ public:
 
     virtual void SkipValue(void);
 
-    virtual unsigned Begin(FixedBlock& block);
-    virtual bool Next(VarBlock& block);
-
     TByte ReadByte(void);
     void ReadBytes(TByte* bytes, unsigned size);
     TIndex ReadIndex(void);
     unsigned ReadSize(void);
     virtual string ReadString(void);
+
+protected:
+    virtual void FBegin(Block& block);
+    virtual bool VNext(const Block& block);
 
 private:
     CIObjectInfo ReadObjectPointer(void);

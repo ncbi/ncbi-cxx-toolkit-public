@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/16 20:35:21  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.5  1999/06/15 16:20:01  vasilche
 * Added ASN.1 object output stream.
 *
@@ -120,10 +124,27 @@ public:
     virtual string ReadMemberName(void);
 
     // block interface
+    enum EFixed {
+        eFixed
+    };
     class Block
     {
     public:
         Block(CObjectIStream& in);
+        Block(CObjectIStream& in, EFixed eFixed);
+        ~Block(void);
+
+        bool Next(void);
+
+        bool Fixed(void) const
+            {
+                return m_Fixed;
+            }
+
+        bool Finished(void) const
+            {
+                return m_Finished;
+            }
 
         unsigned GetIndex(void) const
             {
@@ -133,6 +154,11 @@ public:
         unsigned GetNextIndex(void) const
             {
                 return m_NextIndex;
+            }
+
+        unsigned GetSize(void) const
+            {
+                return m_Size;
             }
 
     protected:
@@ -149,53 +175,33 @@ public:
         Block& operator=(const Block&);
         // to prevent allocation in heap
         void* operator new(size_t size);
+        friend class CObjectIStream;
 
-        unsigned m_NextIndex;
-    };
-
-    class VarBlock : public Block
-    {
-    public:
-        VarBlock(CObjectIStream& in);
-        bool Next(void);
-        ~VarBlock(void);
-
-        bool Finished(void) const
-            {
-                return m_Finished;
-            }
-
-    private:
+        bool m_Fixed;
         bool m_Finished;
-    };
-
-    // block interface
-    class FixedBlock : public Block
-    {
-    public:
-        FixedBlock(CObjectIStream& in);
-        bool Next(void);
-        ~FixedBlock(void);
-
-        unsigned GetSize(void) const
-            {
-                return m_Size;
-            }
-
-    private:
         unsigned m_Size;
+        unsigned m_NextIndex;
     };
 
 protected:
     // block interface
-    friend class VarBlock;
-    friend class FixedBlock;
-    virtual void Begin(VarBlock& block);
-    virtual bool Next(VarBlock& block) = 0;
-    virtual void End(VarBlock& block);
-    virtual unsigned Begin(FixedBlock& block) = 0;
-    virtual void Next(FixedBlock& block);
-    virtual void End(FixedBlock& block);
+    friend class Block;
+    static void SetNonFixed(Block& block)
+        {
+            block.m_Fixed = false;
+            block.m_Size = 0;
+        }
+    static void SetFixed(Block& block, unsigned size)
+        {
+            block.m_Fixed = true;
+            block.m_Size = size;
+        }
+    virtual void FBegin(Block& block);
+    virtual void VBegin(Block& block);
+    virtual void FNext(const Block& block);
+    virtual bool VNext(const Block& block);
+    virtual void FEnd(const Block& block);
+    virtual void VEnd(const Block& block);
 
 protected:
     // low level readers

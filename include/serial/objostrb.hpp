@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/16 20:35:25  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.3  1999/06/15 16:20:04  vasilche
 * Added ASN.1 object output stream.
 *
@@ -75,8 +79,6 @@ public:
     virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
-    virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
-
     void WriteNull(void);
     void WriteByte(TByte byte);
     void WriteBytes(const char* bytes, size_t size);
@@ -86,9 +88,15 @@ public:
 
 protected:
 
-    virtual void Begin(FixedBlock& block, unsigned size);
-    virtual void Next(VarBlock& block);
-    virtual void End(VarBlock& block);
+    virtual void WriteMemberPrefix(COObjectInfo& info);
+    virtual void WriteNullPointer(void);
+    virtual void WriteObjectReference(TIndex index);
+    virtual void WriteThisTypeReference(TTypeInfo typeInfo);
+    virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
+
+    virtual void FBegin(Block& block);
+    virtual void VNext(const Block& block);
+    virtual void VEnd(const Block& block);
 
 private:
     TStrings m_Strings;

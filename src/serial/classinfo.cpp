@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/06/16 20:35:29  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.7  1999/06/15 16:19:47  vasilche
 * Added ASN.1 object output stream.
 *
@@ -113,7 +117,7 @@ void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
-    CObjectOStream::VarBlock block(out);
+    CObjectOStream::Block block(out);
     for ( TMembers::const_iterator i = m_Members.begin();
           i != m_Members.end(); ++i ) {
         const CMemberInfo& memberInfo = i->second;
@@ -129,7 +133,7 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    CObjectIStream::VarBlock block(in);
+    CObjectIStream::Block block(in);
     while ( block.Next() ) {
         const string& memberName = in.ReadMemberName();
         TMembers::const_iterator i = m_Members.find(memberName);

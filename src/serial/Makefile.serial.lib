@@ -3,5 +3,5 @@
 # Build library "XSER"
 #################################
 
-LIBOBJ = typeinfo stdtypes classinfo tmplinfo stltypes objistr objostr objistrb objostrb objlist ptrinfo objostrasn
+LIBOBJ = typeinfo classinfo tmplinfo stltypes objistr objostr objistrb objostrb objlist ptrinfo objostrasn objistrasn
 LIB    = xser

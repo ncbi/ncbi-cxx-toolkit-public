@@ -1,5 +1,5 @@
-#ifndef OBJOSTRASN__HPP
-#define OBJOSTRASN__HPP
+#ifndef OBJISTRASN__HPP
+#define OBJISTRASN__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -33,80 +33,87 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1999/06/16 20:35:24  vasilche
+* Revision 1.1  1999/06/16 20:35:22  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
 *
-* Revision 1.1  1999/06/15 16:20:04  vasilche
+* Revision 1.4  1999/06/15 16:20:02  vasilche
 * Added ASN.1 object output stream.
 *
-* Revision 1.2  1999/06/10 21:06:40  vasilche
+* Revision 1.3  1999/06/10 21:06:38  vasilche
 * Working binary output and almost working binary input.
 *
-* Revision 1.1  1999/06/07 19:30:18  vasilche
-* More bug fixes
+* Revision 1.2  1999/06/04 20:51:32  vasilche
+* First compilable version of serialization.
+*
+* Revision 1.1  1999/05/19 19:56:25  vasilche
+* Commit just in case.
 *
 * ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/objostr.hpp>
+#include <corelib/ncbistre.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CObjectOStreamAsn : public CObjectOStream
+class CObjectIStreamAsn : public CObjectIStream
 {
 public:
     typedef unsigned char TByte;
-    typedef map<string, TIndex> TStrings;
 
-    CObjectOStreamAsn(CNcbiOstream& out);
-    virtual ~CObjectOStreamAsn(void);
+    CObjectIStreamAsn(CNcbiIstream& in);
 
-    virtual void WriteStd(const char& data);
-    virtual void WriteStd(const unsigned char& data);
-    virtual void WriteStd(const signed char& data);
-    virtual void WriteStd(const short& data);
-    virtual void WriteStd(const unsigned short& data);
-    virtual void WriteStd(const int& data);
-    virtual void WriteStd(const unsigned int& data);
-    virtual void WriteStd(const long& data);
-    virtual void WriteStd(const unsigned long& data);
-    virtual void WriteStd(const float& data);
-    virtual void WriteStd(const double& data);
-    virtual void WriteStd(const string& data);
-    virtual void WriteStd(char* const& data);
-    virtual void WriteStd(const char* const& data);
+    virtual void ReadStd(char& data);
+    virtual void ReadStd(unsigned char& data);
+    virtual void ReadStd(signed char& data);
+    virtual void ReadStd(short& data);
+    virtual void ReadStd(unsigned short& data);
+    virtual void ReadStd(int& data);
+    virtual void ReadStd(unsigned int& data);
+    virtual void ReadStd(long& data);
+    virtual void ReadStd(unsigned long& data);
+    virtual void ReadStd(float& data);
+    virtual void ReadStd(double& data);
+    virtual void ReadStd(string& data);
 
-    void WriteNull(void);
-    void WriteIndex(TIndex index);
-    void WriteSize(unsigned size);
-    void WriteString(const string& str);
-    void WriteChar(char c);
-    void WriteId(const string& str);
-    void WriteMemberName(const string& str);
+    virtual TObjectPtr ReadPointer(TTypeInfo declaredType);
+
+    virtual void SkipValue(void);
+
+    TByte ReadByte(void);
+    void ReadBytes(TByte* bytes, unsigned size);
+    TIndex ReadIndex(void);
+    virtual string ReadString(void);
+    virtual string ReadId(void);
 
 protected:
-
-    virtual void WriteMemberSuffix(COObjectInfo& info);
-    virtual void WriteNullPointer(void);
-    virtual void WriteObjectReference(TIndex index);
-    virtual void WriteOtherTypeReference(TTypeInfo typeInfo);
-
     virtual void VBegin(Block& block);
-    virtual void VNext(const Block& block);
-    virtual void VEnd(const Block& block);
-
-    void WriteNewLine(void);
+    virtual bool VNext(const Block& block);
 
 private:
-    CNcbiOstream& m_Output;
+    CIObjectInfo ReadObjectPointer(void);
 
-    int m_Ident;
+    void SkipObjectData(void);
+    void SkipObjectPointer(void);
+    void SkipBlock(void);
+
+    // low level methods
+    char GetChar(void);
+    bool GetChar(char c);
+    void UngetChar(char c);
+    void Expect(char c);
+    bool Expect(char charTrue, char charFalse);
+    bool ReadEscapedChar(char& out, char terminator);
+
+    void SkipWhiteSpace(void);
+
+    CNcbiIstream& m_Input;
 };
 
-//#include <serial/objostrasn.inl>
+//#include <objistrb.inl>
 
 END_NCBI_SCOPE
 
-#endif  /* OBJOSTRASN__HPP */
+#endif  /* OBJISTRB__HPP */

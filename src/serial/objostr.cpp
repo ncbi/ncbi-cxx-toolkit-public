@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/06/16 20:35:33  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.5  1999/06/15 16:19:50  vasilche
 * Added ASN.1 object output stream.
 *
@@ -77,7 +81,8 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
                          "trying to write already written object");
         }
         m_Objects.RegisterObject(info.GetRootObjectInfo());
-        _TRACE("CTypeInfo::Write: " << unsigned(object) << " @" << info.GetRootObjectInfo().GetIndex());
+        _TRACE("CTypeInfo::Write: " << unsigned(object)
+               << " @" << info.GetRootObjectInfo().GetIndex());
     }
     WriteData(object, typeInfo);
     m_Objects.CheckAllWritten();
@@ -99,9 +104,65 @@ void CObjectOStream::WriteExternalObject(TConstObjectPtr object,
                          "trying to write already written object");
         }
         m_Objects.RegisterObject(info.GetRootObjectInfo());
-        _TRACE("CTypeInfo::Write: " << unsigned(object) << " @" << info.GetRootObjectInfo().GetIndex());
+        _TRACE("CTypeInfo::Write: " << unsigned(object)
+               << " @" << info.GetRootObjectInfo().GetIndex());
     }
     WriteData(object, typeInfo);
+}
+
+void CObjectOStream::WritePointer(TConstObjectPtr object, TTypeInfo typeInfo)
+{
+    _TRACE("WritePointer(" << unsigned(object) << ", "
+           << typeInfo->GetName() << ")");
+    if ( object == 0 ) {
+        _TRACE("WritePointer: " << unsigned(object) << ": null");
+        WriteNullPointer();
+        return;
+    }
+
+    COObjectInfo info(m_Objects, object, typeInfo);
+
+    // find if this object is part of another object
+    if ( info.IsMember() ) {
+        WriteMemberPrefix(info);
+    }
+
+    const CORootObjectInfo& root = info.GetRootObjectInfo();
+    if ( root.IsWritten() ) {
+        // put reference on it
+        _TRACE("WritePointer: " << unsigned(object) << ": @" << root.GetIndex());
+        WriteObjectReference(root.GetIndex());
+    }
+    else {
+        // new object
+        TTypeInfo realTypeInfo = root.GetTypeInfo();
+        if ( typeInfo == realTypeInfo ) {
+            _TRACE("WritePointer: " << unsigned(object) << ": new");
+            WriteThisTypeReference(realTypeInfo);
+        }
+        else {
+            _TRACE("WritePointer: " << unsigned(object) << ": new "
+                   << realTypeInfo->GetName());
+            WriteOtherTypeReference(realTypeInfo);
+        }
+        Write(info.GetRootObject(), realTypeInfo);
+    }
+
+    if ( info.IsMember() ) {
+        WriteMemberSuffix(info);
+    }
+}
+
+void CObjectOStream::WriteMemberPrefix(COObjectInfo& )
+{
+}
+
+void CObjectOStream::WriteMemberSuffix(COObjectInfo& )
+{
+}
+
+void CObjectOStream::WriteThisTypeReference(TTypeInfo )
+{
 }
 
 void CObjectOStream::WriteId(const string& id)
@@ -114,69 +175,69 @@ void CObjectOStream::WriteMemberName(const string& name)
     WriteId(name);
 }
 
-void CObjectOStream::Next(FixedBlock& )
+void CObjectOStream::FBegin(Block& block)
+{
+    SetNonFixed(block);
+    VBegin(block);
+}
+
+void CObjectOStream::FNext(const Block& )
 {
 }
 
-void CObjectOStream::End(FixedBlock& )
+void CObjectOStream::FEnd(const Block& )
 {
 }
 
-void CObjectOStream::Begin(VarBlock& )
+void CObjectOStream::VBegin(Block& )
 {
 }
 
-void CObjectOStream::Next(VarBlock& )
+void CObjectOStream::VNext(const Block& )
 {
 }
 
-void CObjectOStream::End(VarBlock& )
+void CObjectOStream::VEnd(const Block& )
 {
 }
 
 CObjectOStream::Block::Block(CObjectOStream& out)
-    : m_Out(out), m_NextIndex(0)
+    : m_Out(out), m_Fixed(false), m_NextIndex(0), m_Size(0)
 {
+    out.VBegin(*this);
 }
 
-CObjectOStream::FixedBlock::FixedBlock(CObjectOStream& out, unsigned size)
-    : Block(out), m_Size(size)
+CObjectOStream::Block::Block(CObjectOStream& out, unsigned size)
+    : m_Out(out), m_Fixed(true), m_NextIndex(0), m_Size(size)
 {
-    m_Out.Begin(*this, size);
+    out.FBegin(*this);
 }
 
-void CObjectOStream::FixedBlock::Next(void)
+void CObjectOStream::Block::Next(void)
 {
-    if ( GetNextIndex() >= GetSize() ) {
-        THROW1_TRACE(runtime_error, "too many elements");
+    if ( Fixed() ) {
+        if ( GetNextIndex() >= GetSize() ) {
+            THROW1_TRACE(runtime_error, "too many elements");
+        }
+        m_Out.FNext(*this);
     }
-    m_Out.Next(*this);
+    else {
+        m_Out.VNext(*this);
+    }
     IncIndex();
 }
 
-CObjectOStream::FixedBlock::~FixedBlock(void)
+CObjectOStream::Block::~Block(void)
 {
-    if ( GetNextIndex() != GetSize() ) {
-        THROW1_TRACE(runtime_error, "not all elements written");
+    if ( Fixed() ) {
+        if ( GetNextIndex() != GetSize() ) {
+            THROW1_TRACE(runtime_error, "not all elements written");
+        }
+        m_Out.FEnd(*this);
     }
-    m_Out.End(*this);
-}
-
-CObjectOStream::VarBlock::VarBlock(CObjectOStream& out)
-    : Block(out)
-{
-    m_Out.Begin(*this);
-}
-
-void CObjectOStream::VarBlock::Next(void)
-{
-    m_Out.Next(*this);
-    IncIndex();
-}
-
-CObjectOStream::VarBlock::~VarBlock(void)
-{
-    m_Out.End(*this);
+    else {
+        m_Out.VEnd(*this);
+    }
 }
 
 END_NCBI_SCOPE

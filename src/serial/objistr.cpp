@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/16 20:35:30  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.6  1999/06/15 16:19:48  vasilche
 * Added ASN.1 object output stream.
 *
@@ -82,75 +86,86 @@ void CObjectIStream::SkipValue(void)
     THROW1_TRACE(runtime_error, "cannot skip value");
 }
 
-void CObjectIStream::Begin(VarBlock& )
+void CObjectIStream::FBegin(Block& block)
+{
+    SetNonFixed(block);
+    VBegin(block);
+}
+
+void CObjectIStream::VBegin(Block& )
 {
 }
 
-void CObjectIStream::Next(FixedBlock& )
+void CObjectIStream::FNext(const Block& )
 {
 }
 
-void CObjectIStream::End(FixedBlock& )
+bool CObjectIStream::VNext(const Block& )
+{
+    return false;
+}
+
+void CObjectIStream::FEnd(const Block& )
 {
 }
 
-void CObjectIStream::End(VarBlock& )
+void CObjectIStream::VEnd(const Block& )
 {
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in)
-    : m_In(in), m_NextIndex(0)
+    : m_In(in), m_Fixed(false), m_Finished(false), m_NextIndex(0), m_Size(0)
 {
+    in.VBegin(*this);
 }
 
-CObjectIStream::FixedBlock::FixedBlock(CObjectIStream& in)
-    : Block(in), m_Size(0)
+CObjectIStream::Block::Block(CObjectIStream& in, EFixed )
+    : m_In(in), m_Fixed(true), m_Finished(false), m_NextIndex(0), m_Size(0)
 {
-    m_Size = in.Begin(*this);
+    in.FBegin(*this);
 }
 
-bool CObjectIStream::FixedBlock::Next(void)
+bool CObjectIStream::Block::Next(void)
 {
-    if ( GetNextIndex() >= GetSize() ) {
-        return false;
+    if ( Fixed() ) {
+        if ( GetNextIndex() >= GetSize() ) {
+            return false;
+        }
+        m_In.FNext(*this);
     }
-    m_In.Next(*this);
-    IncIndex();
-    return true;
-}
-
-CObjectIStream::FixedBlock::~FixedBlock(void)
-{
-    if ( GetNextIndex() != GetSize() ) {
-        THROW1_TRACE(runtime_error, "not all elements read");
-    }
-    m_In.End(*this);
-}
-
-CObjectIStream::VarBlock::VarBlock(CObjectIStream& in)
-    : Block(in), m_Finished(false)
-{
-    in.Begin(*this);
-}
-
-bool CObjectIStream::VarBlock::Next(void)
-{
-    if ( Finished() )
-        return false;
-    if ( !m_In.Next(*this) ) {
-        m_Finished = true;
-        return false;
+    else {
+        if ( Finished() ) {
+            return false;
+        }
+        if ( !m_In.VNext(*this) ) {
+            m_Finished = true;
+            return false;
+        }
     }
     IncIndex();
     return true;
 }
 
-CObjectIStream::VarBlock::~VarBlock(void)
+CObjectIStream::Block::~Block(void)
 {
-    if ( !Finished() ) {
-        THROW1_TRACE(runtime_error, "not all elements read");
+    if ( Fixed() ) {
+        if ( GetNextIndex() != GetSize() ) {
+            _TRACE("not all elements read");
+            ERR_POST("not all elements read");
+            return;
+            THROW1_TRACE(runtime_error, "not all elements read");
+        }
+        m_In.FEnd(*this);
     }
-    m_In.End(*this);
+    else {
+        if ( !Finished() ) {
+            _TRACE("not all elements read");
+            ERR_POST("not all elements read");
+            return;
+            THROW1_TRACE(runtime_error, "not all elements read");
+        }
+        m_In.VEnd(*this);
+    }
 }
 
 string CObjectIStream::ReadId(void)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/06/16 20:35:32  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.8  1999/06/16 13:24:54  vakatov
 * tiny typo fixed
 *
@@ -511,15 +515,24 @@ string CObjectIStreamBinary::ReadString(void)
     }
 }
 
-unsigned CObjectIStreamBinary::Begin(FixedBlock& )
+void CObjectIStreamBinary::FBegin(Block& block)
 {
-    if ( ReadByte() != CObjectStreamBinaryDefs::eBlock ) {
+    TByte code = ReadByte();
+    switch ( code ) {
+    case CObjectStreamBinaryDefs::eBlock:
+        SetFixed(block, ReadSize());
+        break;
+    case CObjectStreamBinaryDefs::eElement:
+    case CObjectStreamBinaryDefs::eEndOfElements:
+        m_Input.unget();
+        SetNonFixed(block);
+        break;
+    default:
         THROW1_TRACE(runtime_error, "bad block start byte");
     }
-    return ReadSize();
 }
 
-bool CObjectIStreamBinary::Next(VarBlock& )
+bool CObjectIStreamBinary::VNext(const Block& )
 {
     switch ( ReadByte() ) {
     case CObjectStreamBinaryDefs::eElement:
@@ -681,7 +694,7 @@ void CObjectIStreamBinary::SkipObjectPointer(void)
 
 void CObjectIStreamBinary::SkipObjectData(void)
 {
-    VarBlock block(*this);
+    Block block(*this);
     while ( block.Next() ) {
         ReadMemberName();
         SkipValue();

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/06/16 20:35:33  vasilche
+* Cleaned processing of blocks of data.
+* Added input from ASN.1 text format.
+*
 * Revision 1.4  1999/06/15 16:19:49  vasilche
 * Added ASN.1 object output stream.
 *
@@ -167,7 +171,9 @@ void COObjectList::CheckAllWritten(void) const
         if ( !i->second.IsWritten() ) {
             ERR_POST("object not written: " << unsigned(i->first) <<
                      '{' << i->second.GetTypeInfo()->GetName() << '}');
-            throw runtime_error("object not written");
+            _TRACE("object not written: " << unsigned(i->first) <<
+                   '{' << i->second.GetTypeInfo()->GetName() << '}');
+            THROW1_TRACE(runtime_error, "object not written");
         }
     }
 }
