@@ -851,13 +851,13 @@ int CTestApplication::Run(void)
     }}
 
     {{
-    const char* g10_1 = "10GB";
-    const char* g10_2 = "10G";
+    const char* g10_1 = "1GB";
+    const char* g10_2 = "1G";
     unsigned v;
     v = NStr::StringToUInt_DataSize(g10_1);
-    assert(v == 10 * 1024 * 1024 * 1024);
+    assert(v == 1 * 1024 * 1024 * 1024);
     v = NStr::StringToUInt_DataSize(g10_2);
-    assert(v == 10 * 1024 * 1024 * 1024);
+    assert(v == 1 * 1024 * 1024 * 1024);
     }}
 
     {{
@@ -874,6 +874,18 @@ int CTestApplication::Run(void)
     assert(err_catch);
     }}
 
+    assert(NStr::strncasecmp("ab", "a", 1) == 0);
+    assert(NStr::strncasecmp("Ab", "a", 1) == 0);
+    assert(NStr::strncasecmp("a", "Ab", 1) == 0);
+    assert(NStr::strncasecmp("a", "ab", 1) == 0);
+
+    assert(NStr::strcasecmp("a",  "A") == 0);
+    assert(NStr::strcasecmp("a",  "a") == 0);
+    assert(NStr::strcasecmp("ab", "a") != 0);
+    assert(NStr::strcasecmp("a", "ab") != 0);
+    assert(NStr::strcasecmp("a",   "") != 0);
+    assert(NStr::strcasecmp("",   "a") != 0);
+    assert(NStr::strcasecmp("",    "") == 0);
 
     NcbiCout << " completed successfully!" << NcbiEndl;
 
@@ -899,6 +911,11 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.33  2004/10/13 01:07:05  vakatov
+ * + NStr::strncasecmp
+ * + NStr::strcasecmp
+ * NStr::StringToUInt_DataSize - do not check for values which can overflow Uint
+ *
  * Revision 6.32  2004/09/21 18:45:20  kuznets
  * SoftStringToUInt renamed StringToUInt_DataSize
  *
