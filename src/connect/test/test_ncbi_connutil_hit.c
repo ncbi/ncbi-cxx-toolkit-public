@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/09/27 13:49:29  lavr
+ * URL_Connect args adjusted
+ *
  * Revision 6.2  2000/03/29 17:21:47  vakatov
  * + CORE_SetLOG(0) at the program end.
  *
@@ -99,7 +102,8 @@ int main(int argc, char** argv)
     timeout.usec = 0;
 
     /* Connect */
-    sock = URL_Connect(host, port, path, args, content_length,
+    sock = URL_Connect(host, port, path, args,
+                       eReqMethodAny, content_length,
                        &timeout, &timeout, user_header, 1/*true*/);
     if ( !sock )
         return 3;
