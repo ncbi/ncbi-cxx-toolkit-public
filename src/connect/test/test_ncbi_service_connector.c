@@ -46,7 +46,6 @@ int main(int argc, const char* argv[])
     SConnNetInfo *net_info;
     CONNECTOR connector;
     EIO_Status status;
-    STimeout  timeout;
     char ibuf[1024];
     CONN conn;
     size_t n;
@@ -72,11 +71,6 @@ int main(int argc, const char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
-    timeout.sec  = 5;
-    timeout.usec = 123456;
-
-    CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
-
 #if 0
     for (n = 0; n < 10; n++) {
         int m;
@@ -101,6 +95,9 @@ int main(int argc, const char* argv[])
 #endif
 
     for (;;) {
+        STimeout timeout;
+        timeout.sec  = 5;
+        timeout.usec = 12345;
         if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
             CONN_Close(conn);
             CORE_LOG(eLOG_Fatal, "Error waiting for reading");
@@ -137,7 +134,7 @@ int main(int argc, const char* argv[])
     if (CONN_Create(connector, &conn) != eIO_Success)
         CORE_LOG(eLOG_Fatal, "Failed to create connection");
 
-    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00\x00", 7, &n) !=
+    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00", 7, &n) !=
         eIO_Success || n != 7) {
         CONN_Close(conn);
         CORE_LOG(eLOG_Fatal, "Error writing to service ID1");
@@ -160,6 +157,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.28  2003/10/21 11:37:47  lavr
+ * Set write timeout from the environment/registry instead of explicitly
+ *
  * Revision 6.27  2003/07/24 16:38:59  lavr
  * Add conditional check for early connection drops (#if 0'd)
  *
