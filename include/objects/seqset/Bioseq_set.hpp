@@ -17,7 +17,7 @@ public:
     ~CBioseq_set(void);
 
     // create dynamically allocated object
-    static CBioseq_set* NewInstance(void)
+    static CBioseq_set* New(void)
         {
             return new CBioseq_set(NCBI_NS_NCBI::CObject::eCanDelete);
         }
