@@ -9,17 +9,19 @@
 
 
 
-	 <ul>
-		<li> <a href="#ref_Source">NCBI C++ source code</a>
-		<li> <a href="#ref_Ncbiconf">NCBI C++ configuration header "ncbiconf.h"</a>
-		<li> <a href="#ref_Autoconf">Using "autoconf" utilities</a>
-		<li> <a href="#ref_PreGen">Pre-generated configuration headers</a>
-		<li> <a href="#ref_Compilers">List of supported compilers</a>
-	 </ul>
-
-
-	 <br></br>
-	 <a name="ref_Source"><h2>NCBI C++ source code</h2></a>
+	 
+<ul>
+  <li> <a href="#ref_Source">NCBI C++ source code</a> 
+  <li> <a href="#ref_Ncbiconf">NCBI C++ configuration header "ncbiconf.h"</a> 
+  <li> <a href="#ref_Autoconf">Creating &quot;ncbiconf.h&quot;</a> 
+  <li> <a href="#ref_PreGen">Pre-generated configuration headers</a> 
+  <li> <a href="#ref_Compilers">List of supported compilers</a> 
+</ul>
+<p>This page describes how to get the NCBI C++ library and how to create the <i>ncbiconf.h</i> 
+  header used to configure it to work with the platform and compiler you are using.</p>
+<p><br>
+</p>
+<a name="ref_Source"><h2>NCBI C++ source code</h2></a>
 
 	 <p>
 	 The NCBI C++ source code can be obtained from internal NCBI
@@ -47,32 +49,54 @@
 	 </ul>
 
 
-	 <br></br>
-	 <a name="ref_Ncbiconf"><h2>NCBI C++ configuration header <i>"ncbiconf.h"</i></h2></a>
+	 <br>
+	 <a name="ref_Ncbiconf"><h2>NCBI C++ configuration header <i>"ncbiconf.h"</i></h2>
+</a> 
+<p> Because each computer and compiler compiles C++ code differently, it's necessary 
+  to run a program called <i>configure </i>that creates a header file called <i>ncbiconf.h</i> 
+  that describes the these differences, allowing for truly portable code. <i>ncbiconf.h</i> 
+  is then included in all standard NCBI headers. An example of the information 
+  contained in <i>ncbiconf.h</i> are preprocessor variable used to define NCBI 
+  C++ <a href="types.html#ref_IntFixed">sized integer</a> and <a href="types.html#ref_BigScalar"><i>BigScalar</i></a> 
+  types. 
+<p><br>
+<p><br>
+<a name="ref_Autoconf">
+<h2>Creating <i>&quot;ncbiconf.h&quot;</i></h2>
+</a>
+<p>If necessary, remove "config.cache" in internal/cpp and remove (or save somewhere 
+  else) <i>"projects/corelib/include/ncbiconf.h"</i> before running the <i>"configure"</i> 
+  script. Next, set environment variables that point to your c and c++ compilers, 
+  and, in the case of Sunpro C++ 4.2, the location of the Standard Library.
+<p>Sunpro C++ 4.2:
+<pre>
+(if you are using csh or tcsh)
+setenv CC  "cc"
+setenv CXX "CC"
+setenv CPPFLAGS "-I/netopt/stlport/3.01"
 
-	 <p>
-	 Each and every NCBI C++ header files will include a
-	 platform(compiler)-specific header file <i>"ncbiconf.h"</i>.
-	 This header defines a set of preprocessor variables that
-	 help other code to determine compiler-specific "features".
-	 This information is also used in other standard NCBI C++
-	 header files e.g. in order to properly define NCBI C++
-	 <a href="types.html#ref_IntFixed">sized integer</a> and
-	 <a href="types.html#ref_BigScalar"><i>BigScalar</i></a> types.
+(if you are using sh)
+CC="cc"  ;  export CC
+CXX="CC" ;  export CXX
+CPPFLAGS="-I/netopt/stlport/3.01" ;  export CPPFLAGS
+</pre>
+<p>Sunpro C++ 5.0: 
+<pre>
+(if you are using csh or tcsh)
+setenv CC  "/netopt/SUNWspro6/bin/cc"
+setenv CXX "/netopt/SUNWspro6/bin/CC"
 
-
-	 <br></br>
-	 <br></br>
-	 <a name="ref_Autoconf"><h2>Using "autoconf" utilities</h2></a>
-
-	 <p>
-	 It is a common practice on UNIX platform to use
-	 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a>
-	 tools to automatically generate compiler-specific header files like
-	 <i>"ncbiconf.h"</i> and even makefiles that would work for the given
-	 platform.
-
-	 <p>
+(if you are using sh)
+CC="/netopt/SUNWspro6/bin/cc"  ;  export CC
+CXX="/netopt/SUNWspro6/bin/CC" ;  export CXX
+</pre>
+<p>Then, run &quot;./<i>configure</i>&quot;. 
+<p>&nbsp; 
+<h3>Background:</h3>
+<p>This installation procedure uses the GNU <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Top.html">autoconf</a> 
+  tool to automatically generate compiler-specific header files like <i>"ncbiconf.h"</i> 
+  and even makefiles that would work for the given platform. 
+<p>
 	 Usually, an external user will generate <i>"ncbiconf.h"</i> header specific
 	 for his platform by merely executing <i>"configure"</i> script
 	 from this directory using "sh" command interpretator(located in
@@ -86,50 +110,14 @@
 	 The resultant <i>"ncbiconf.h"</i> will be automagically copied to directory
 	 <i>"<b>projects/</b>corelib/include/"</i>.
 
-	 <p>
-	 You can specify the C and C++ compilers and theirs flags by setting
-	 environment variables
-	 <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html"><i>CC, CFLAGS, CXX, CXXFLAGS and CPPFLAGS</i></a> (before running the
-	 <i>"configure"</i> script).
-	 For example, when you want to configure for the use of version of
-	 <a href="http://corp.metabyte.com/~fbp/stl/index.html">
-		STL adaptation effort</a>
-	 plus a string library from
-	 <a href="http://corp.metabyte.com/~fbp/stl/components.html">
-		Moderna Software</a>
-	 installed in NCBI for WorkShop Compilers 4.2:
-<pre>
-(csh)
-setenv CC  "cc"
-setenv CXX "CC"
-setenv CPPFLAGS "-I/netopt/stlport/3.01"
-
-(sh)
-CC="cc"  ;  export CC
-CXX="CC" ;  export CXX
-CPPFLAGS="-I/netopt/stlport/3.01" ;  export CPPFLAGS
-</pre>
-
-	 An if you are planning to use WorkShop Compilers 5.0(they have
-	 a "native" implementation of Standard C++ libs):
-<pre>
-(csh)
-setenv CC  "/netopt/SUNWspro6/bin/cc"
-setenv CXX "/netopt/SUNWspro6/bin/CC"
-
-(sh)
-CC="/netopt/SUNWspro6/bin/cc"  ;  export CC
-CXX="/netopt/SUNWspro6/bin/CC" ;  export CXX
-</pre>
-
-	 Hint:  we recommend to always remove "config.cache" and remove
-	 (or save somewhere else) <i>"projects/corelib/include/ncbiconf.h"</i>
-	 before running the <i>"configure"</i> script.
 	 
-
-	 <br></br>
-	 <br></br>
-	 <a name="ref_PreGen"><h2>Pre-generated configuration headers</h2></a>
+<p> You can specify the C and C++ compilers and theirs flags by setting environment 
+  variables <a href="http://sunland.gsfc.nasa.gov/info/autoconf/Preset_Output_Variables.html"><i>CC, 
+  CFLAGS, CXX, CXXFLAGS and CPPFLAGS</i></a> (before running the <i>"configure"</i> 
+  script).
+<p><br>
+  <br>
+<a name="ref_PreGen"><h2>Pre-generated configuration headers</h2></a>
 
 	 <p>
 	 For the platforms that do not have "sh"(or at least "bash") installed
@@ -141,7 +129,7 @@ CXX="/netopt/SUNWspro6/bin/CC" ;  export CXX
 	 </ul>
 	 
 
-	 <br></br>
+	 <br>
 	 <a name="ref_Compilers"><h2>List of supported compilers</h2></a>
 
 	 <p>
@@ -155,7 +143,7 @@ CXX="/netopt/SUNWspro6/bin/CC" ;  export CXX
 	 </ul>
 
 
-	 <br></br>
+	 <br>
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
