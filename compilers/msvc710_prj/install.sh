@@ -39,6 +39,7 @@ sleep 2
 
 # Derive the destination dirs
 docdir="$target"/doc
+scriptdir="$target"/scripts
 incdir="$target"/include
 srcdir="$target"/src
 dbgdir="$target"/Debug
@@ -61,6 +62,13 @@ test -d "$target"  ||  error "Cannot create target dir \"$target\""
 makedir "$docdir" -p
 cp -pr "$builddir"/doc/* "$docdir"
 cd "$docdir"
+find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
+
+
+# Scripts
+makedir "$scriptdir" -p
+cp -pr "$builddir"/scripts/* "$scriptdir"
+cd "$scriptdir"
 find . -type d -name CVS -exec rm -r {} \; >/dev/null 2>&1
 
 
