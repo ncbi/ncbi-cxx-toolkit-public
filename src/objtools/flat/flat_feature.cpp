@@ -287,10 +287,10 @@ void CFlattishFeature::x_AddQuals(const CProt_ref& prot) const
 
 
 struct SLegalImport {
-    string            m_Name;
+    const char*       m_Name;
     EFeatureQualifier m_Value;
 
-    operator const string&(void) const { return m_Name; }
+    operator string(void) const { return m_Name; }
 };
 
 
@@ -755,6 +755,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 22:01:36  ucko
+* Change SLegalImport::m_Name from string to const char* (needed by MSVC).
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *
