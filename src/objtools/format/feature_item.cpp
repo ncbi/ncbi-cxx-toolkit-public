@@ -619,7 +619,7 @@ void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
         m_Type = m_Feat->GetData().GetSubtype();
         //x_FixLocation(ctx);
         x_AddQuals(ctx);
-    } catch (CException& e) {
+    } catch (CException&) {
         x_SetSkip();
     }
 }
@@ -3465,6 +3465,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2004/12/17 13:58:15  dicuccio
+* Drop unused exception variable (fixes compiler warning)
+*
 * Revision 1.37  2004/11/24 16:52:50  shomrat
 * Standardize flat-file customization flags
 *

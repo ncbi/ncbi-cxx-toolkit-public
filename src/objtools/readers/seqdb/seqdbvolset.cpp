@@ -53,7 +53,7 @@ CSeqDBVolSet::CSeqDBVolSet(CSeqDBAtlas          & atlas,
             }
         }
     }
-    catch(CSeqDBException & e) {
+    catch(CSeqDBException&) {
         // For SeqDB's own exceptions, we'll keep the error message.
         
         for(Uint4 i = 0; i < m_VolList.size(); i++) {
