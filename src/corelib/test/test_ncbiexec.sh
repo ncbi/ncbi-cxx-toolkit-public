@@ -1,7 +1,7 @@
 #! /bin/sh
 # $Id$
 
-check_exec_test.sh test_ncbiexec
+$CHECK_EXEC test_ncbiexec
 exit_code=$?
 echo "exit code = $exit_code"
 

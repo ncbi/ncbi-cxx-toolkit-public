@@ -1,15 +1,15 @@
 #! /bin/sh
 # $Id$
 
-check_exec_test.sh test_ncbi_system general
+$CHECK_EXEC test_ncbi_system general
 test_general=$?
 echo "exit_code(General-test) = $test_general"
 
-check_exec_test.sh test_ncbi_system cpu
+$CHECK_EXEC test_ncbi_system cpu
 test_cpu=$?
 echo "exit_code(CPU-test) = $test_cpu"
 
-check_exec_test.sh test_ncbi_system mem
+$CHECK_EXEC test_ncbi_system mem
 test_mem=$?
 echo "exit_code(MEM-test) = $test_mem"
 
