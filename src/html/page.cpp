@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/09/17 14:16:09  sandomir
+* tmp diagnostics to find error
+*
 * Revision 1.19  1999/09/15 15:04:47  sandomir
 * minor memory leak in tag mapping
 *
@@ -83,6 +86,8 @@
 #include <html/components.hpp>
 #include <html/page.hpp>
 #include <corelib/ncbiutil.hpp>
+
+#include <errno.h>
 
 BEGIN_NCBI_SCOPE
  
@@ -202,6 +207,20 @@ CNCBINode* CHTMLPage::CreateTemplate(void)
     char          buf[1024];
     CNcbiIfstream ifstr(m_TemplateFile.c_str());
     if ( !ifstr.good() ) {
+	  // tmp diagnostics to find error //
+	  if( errno > 0 ) { // #include <errno.h>
+		ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror( errno ) );
+	  }
+	  
+	  char* wd = getcwd( 0, PATH_MAX );
+	  if( wd ) {
+		ERR_POST( "CHTMLPage::CreateTemplate: wd " << wd );
+		free( wd );
+	  }
+	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << ifstr.rdstate() );	  
+	  
+	  // //
+
         THROW1_TRACE(runtime_error, "\
 CHTMLPage::CreateTemplate():  failed to open template file " + m_TemplateFile);
     }
