@@ -2169,7 +2169,7 @@ void CFeatureItem::x_AddFTableBondQuals(const CSeqFeatData::TBond& bond) const
 void CFeatureItem::x_AddFTableSiteQuals(const CSeqFeatData::TSite& site) const
 {
     size_t siteidx = static_cast<size_t>(site);
-    if ( siteidx = static_cast<size_t>(CSeqFeatData::eSite_other) ) {
+    if ( siteidx == static_cast<size_t>(CSeqFeatData::eSite_other) ) {
         siteidx = 26;
     }
     if ( siteidx > 0  &&  siteidx < 27 ) {
@@ -2750,6 +2750,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/04/12 16:17:27  vasilche
+* Fixed '=' <-> '==' typo.
+*
 * Revision 1.16  2004/04/07 14:27:15  shomrat
 * Added methods forFTable format
 *
