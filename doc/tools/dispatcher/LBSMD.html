@@ -258,13 +258,13 @@ more verbose (when every warning generated is stored) modes.
 Logfile size can be controlled by a <tt>-s</tt> switch. By default <tt>-s&nbsp;0</tt> is the
 active flag, which means to create (if necessary) and to append messages to the logfile with
 no limitation on the file size whatsoever. <tt>-s&nbsp;-1</tt> instructs indefinite appending
-to the logfile, which has to exist. Otherwise, the log messages are not stored.
-<tt>-s&nbsp;<i>positive_number</i></tt> instructs to create (if necessary) and to append to the logfile
-up to the file reaches the specified size in kilobytes. After that, the log message writing is suspended,
-and excessive messages are discarded. Note that the limiting file size is only approximate, and sometimes
-the logfile can grow slightly bigger. The daemon keeps track of logfiles and leaves final logging message
-when switching from one file to another in case the file was moved or removed or when finishing
-logging due to the file size restriction.
+to the logfile, which has however to exist. Otherwise, log messages are not stored.
+<tt>-s&nbsp;<i>positive_number</i></tt> restricts to create (if necessary) and to append to the logfile
+until the file reaches the specified size in kilobytes. After that, the message logging is suspended,
+and subsequent messages are discarded. Note that the limiting file size is only approximate,
+and sometimes the logfile can grow slightly bigger. The daemon keeps track of logfiles and leaves
+the final logging message either when switching from one file to another in case of the file has been
+moved or removed or when the file size has reached its limit.
 
 <p>
 <hr>
