@@ -97,9 +97,9 @@ extern unsigned int GetCpuCount(void);
 /* [UNIX & Windows]
  * Sleep specified number of microseconds/millisecond/seconds
  */
-extern void SleepSec(unsigned int sec);
-extern void SleepMilliSec(unsigned int ml_sec);
-extern void SleepMicroSec(unsigned int mc_sec);
+extern void SleepSec(unsigned long sec);
+extern void SleepMilliSec(unsigned long ml_sec);
+extern void SleepMicroSec(unsigned long mc_sec);
 
 
 END_NCBI_SCOPE
@@ -108,6 +108,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/16 13:38:00  ivanov
+ * Little modification and optimization of the Sleep* functions
+ *
  * Revision 1.8  2002/07/15 21:43:25  ivanov
  * Added functions SleepMicroSec, SleepMilliSec, SleepSec
  *

@@ -354,7 +354,7 @@ unsigned int GetCpuCount(void)
 // Sleep
 //
 
-void SleepMicroSec(unsigned int mc_sec)
+void SleepMicroSec(unsigned long mc_sec)
 {
 #if defined(NCBI_OS_MSWIN)
     Sleep(mc_sec / 1000);
@@ -369,13 +369,17 @@ void SleepMicroSec(unsigned int mc_sec)
 }
 
 
-void SleepMilliSec(unsigned int ml_sec)
+void SleepMilliSec(unsigned long ml_sec)
 {
-    SleepMicroSec(ml_sec * 1000);
+#if defined(NCBI_OS_MSWIN)
+    Sleep(ml_sec);
+#else
+    SleepMicroSec(ml_sec * kMilliSecondsPerSecond);
+#endif
 }
 
 
-void SleepSec(unsigned int sec)
+void SleepSec(unsigned long sec)
 {
     SleepMicroSec(sec * kMicroSecondsPerSecond);
 }
@@ -387,6 +391,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2002/07/16 13:37:48  ivanov
+ * Little modification and optimization of the Sleep* functions
+ *
  * Revision 1.20  2002/07/15 21:43:04  ivanov
  * Added functions SleepMicroSec, SleepMilliSec, SleepSec
  *
