@@ -118,7 +118,7 @@ CSeqMasker::~CSeqMasker()
 CSeqMasker::TMaskList *
 CSeqMasker::operator()( const string & data ) const
 {
-    TMaskList * mask = new TMaskList;
+    auto_ptr<TMaskList> mask(new TMaskList);
 
     if( window_size > data.size() )
     {
@@ -128,13 +128,14 @@ CSeqMasker::operator()( const string & data ) const
 
     Uint1 nbits = discontig ? CSeqMaskerUtil::BitCount( pattern ) : 0;
     Uint4 unit_size = lstat.UnitSize() + nbits;
-    CSeqMaskerWindow & window
-        = *(discontig ? new CSeqMaskerWindowPattern( data, unit_size, 
-                                                     window_size, window_step, 
-                                                     pattern, unit_step )
-            : new CSeqMaskerWindow( data, unit_size, 
-                                    window_size, window_step, 
-                                    unit_step ));
+    auto_ptr<CSeqMaskerWindow> window_ptr
+        (discontig ? new CSeqMaskerWindowPattern( data, unit_size, 
+                                                  window_size, window_step, 
+                                                  pattern, unit_step )
+         : new CSeqMaskerWindow( data, unit_size, 
+                                 window_size, window_step, 
+                                 unit_step ));
+    CSeqMaskerWindow & window = *window_ptr;
     score->SetWindow( window );
 
     if( trigger == eTrigger_Min ) trigger_score->SetWindow( window );
@@ -150,21 +151,25 @@ CSeqMasker::operator()( const string & data ) const
         if( s < limit )
         {
             if( end > start )
+            {
                 if( window.Start() > cend )
                 {
                     mask->push_back( TMaskedInterval( start, end ) );
                     start = end = cend = 0;
                 }
+            }
         }
         else if( ts < cutoff_score )
         {
             if( end  > start )
+            {
                 if( window.Start() > cend + 1 )
                 {
                     mask->push_back( TMaskedInterval( start, end ) );
                     start = end = cend = 0;
                 }
                 else cend = window.End();
+            }
         }
         else
         {
@@ -188,13 +193,13 @@ CSeqMasker::operator()( const string & data ) const
 
     if( end > start ) mask->push_back( TMaskedInterval( start, end ) );
 
-    delete &window;
+    window_ptr.reset();
 
     if( merge_pass )
     {
-        if( mask->size() < 2 ) return mask;
+        if( mask->size() < 2 ) return mask.release();
 
-        mlist masked, unmasked;
+        TMList masked, unmasked;
         TMaskList::iterator jtmp = mask->end();
 
         for( TMaskList::iterator i = mask->begin(), j = --jtmp; 
@@ -217,9 +222,9 @@ CSeqMasker::operator()( const string & data ) const
                                  unit_size, data, *this ) );
 
         Int4 count = 0;
-        mlist::iterator i = masked.begin();
-        mlist::iterator j = unmasked.begin();
-        mlist::iterator k = i, l = i;
+        TMList::iterator i = masked.begin();
+        TMList::iterator j = unmasked.begin();
+        TMList::iterator k = i, l = i;
         --k; ++l;
 
         for( ; i != masked.end(); k = l = i, --k, ++l )
@@ -236,7 +241,7 @@ CSeqMasker::operator()( const string & data ) const
 
             if( can_go_left )
             {
-                mlist::iterator tmp = j; --tmp;
+                TMList::iterator tmp = j; --tmp;
                 lavg = MergeAvg( k, tmp, unit_size );
                 can_go_left = can_go_left && (lavg >= merge_cutoff_score);
             }
@@ -248,7 +253,9 @@ CSeqMasker::operator()( const string & data ) const
             }
 
             if( can_go_right )
+            {
                 if( can_go_left )
+                {
                     if( ravg >= lavg )
                     {
                         ++count;
@@ -273,12 +280,14 @@ CSeqMasker::operator()( const string & data ) const
                         }
                         else i = k;
                     }
+                }
                 else
                 {
                     ++count;
                     ++i;
                     ++j;
                 }
+            }
             else if( can_go_left )
             {
                 --count;
@@ -307,6 +316,7 @@ CSeqMasker::operator()( const string & data ) const
 
         for( i = masked.begin(), j = unmasked.begin(), k = i++; 
              i != masked.end(); (k = i++), j++ )
+        {
             if( k->end + abs_merge_cutoff_dist >= i->start )
             {
                 _TRACE( "Unconditionally merging " 
@@ -319,22 +329,23 @@ CSeqMasker::operator()( const string & data ) const
 
                 if( ++i == masked.end() ) break;
             }
+        }
 
         mask->clear();
 
-        for( mlist::const_iterator i = masked.begin(); i != masked.end(); ++i )
+        for( TMList::const_iterator i = masked.begin(); i != masked.end(); ++i )
             mask->push_back( TMaskedInterval( i->start, i->end ) );
     }
 
-    return mask;
+    return mask.release();
 }
 
 //-------------------------------------------------------------------------
-double CSeqMasker::MergeAvg( mlist::iterator mi, 
-                             const mlist::iterator & umi,
+double CSeqMasker::MergeAvg( TMList::iterator mi, 
+                             const TMList::iterator & umi,
                              Uint4 unit_size ) const
 {
-    mlist::iterator tmp = mi++;
+    TMList::iterator tmp = mi++;
     Uint4 n1 = (tmp->end - tmp->start - unit_size + 2)/merge_unit_step;
     Uint4 n2 = (umi->end - umi->start - unit_size + 2)/merge_unit_step;
     Uint4 n3 = (mi->end - mi->start - unit_size + 2)/merge_unit_step;
@@ -344,10 +355,10 @@ double CSeqMasker::MergeAvg( mlist::iterator mi,
 }
 
 //-------------------------------------------------------------------------
-void CSeqMasker::Merge( mlist & m, mlist::iterator mi, 
-                        mlist & um, mlist::iterator & umi ) const
+void CSeqMasker::Merge( TMList & m, TMList::iterator mi, 
+                        TMList & um, TMList::iterator & umi ) const
 {
-    mlist::iterator tmp = mi++;
+    TMList::iterator tmp = mi++;
     tmp->end = mi->end;
     m.erase( mi );
     umi = um.erase( umi );
@@ -511,7 +522,7 @@ void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
     TMaskList::const_iterator send( src->end() );
     TMaskList::iterator di( dest->begin() );
     TMaskList::iterator dend( dest->end() );
-    auto_ptr< TMaskList > res( new TMaskList );
+    TMaskList res;
     TMaskedInterval seg;
     TMaskedInterval next_seg;
 
@@ -538,15 +549,15 @@ void CSeqMasker::MergeMaskInfo( TMaskList * dest, const TMaskList * src )
         }
 
         if( seg.second < next_seg.first ) {
-            res->push_back( seg );
+            res.push_back( seg );
             seg = next_seg;
         } if( seg.second < next_seg.second ) {
             seg.second = next_seg.second;
         }
     }
 
-    res->push_back( seg );
-    dest->swap( *res.get() );
+    res.push_back( seg );
+    dest->swap(res);
 }
 
 
@@ -556,6 +567,10 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.5  2005/02/14 12:15:17  dicuccio
+ * More typedef changes: mlist -> TMList.  Use exlicit bracing to scope if/else
+ * statements
+ *
  * Revision 1.4  2005/02/13 18:27:21  dicuccio
  * Formatting changes (ctor initializer list properly indented; braces added in
  * complex if/else series).  Opitmization in LStat ctor - hoist string out of
