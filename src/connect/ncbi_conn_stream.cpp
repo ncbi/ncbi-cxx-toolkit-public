@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/02/21 18:04:25  lavr
+ * +class CConn_MemoryStream
+ *
  * Revision 6.12  2002/02/05 22:04:12  lavr
  * Included header files rearranged
  *
@@ -75,6 +78,8 @@
 
 #include "ncbi_conn_streambuf.hpp"
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <corelib/ncbithr.hpp>
 #include <memory>
 
 
@@ -206,5 +211,15 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
     return;
 }
 
+
+CConn_MemoryStream::CConn_MemoryStream(CRWLock*   lk,
+                                       bool       pass_lk_ownership,
+                                       streamsize buf_size)
+    : CConn_IOStream(MEMORY_CreateConnector
+                     (MT_LOCK_cxx2c(lk, pass_lk_ownership)),
+                     0, buf_size)
+{
+    return;
+}
 
 END_NCBI_SCOPE

@@ -48,8 +48,13 @@
  *                         daemon and implemented as either HTTP GCI,
  *                         standalone server, or NCBID service.
  *
+ *   CConn_MemoryStream  - In-memory stream of data (analogous to strstream).
+ *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2002/02/21 18:04:24  lavr
+ * +class CConn_MemoryStream
+ *
  * Revision 6.11  2002/01/28 20:17:43  lavr
  * +Forward declaration of CConn_Streambuf and a private member pointer
  * of this type (for clean destruction of a streambuf sub-object)
@@ -91,6 +96,7 @@
 #include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_service_connector.h>
+#include <connect/ncbi_memory_connector.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -232,6 +238,22 @@ public:
      const SSERVICE_Extra* params   = 0,
      const STimeout*       timeout  = CONN_DEFAULT_TIMEOUT,
      streamsize            buf_size = kConn_DefBufSize);
+};
+
+
+
+class CRWLock; // Forward declaration
+
+/*
+ * In-memory stream.
+ */
+
+class CConn_MemoryStream : public CConn_IOStream
+{
+public:
+    CConn_MemoryStream(CRWLock*   lk = 0,
+                       bool       pass_lk_ownership = true,
+                       streamsize buf_size = kConn_DefBufSize);
 };
 
 
