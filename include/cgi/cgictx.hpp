@@ -159,9 +159,6 @@ public:
     // return empty string if no such entry
     // throw runtime_error if there are several entries with the same name
     CCgiEntry GetRequestValue(const string& name) const;
-    // Temporary synonym
-    CCgiEntry GetRequestValueEx(const string& name) const
-        { return GetRequestValue(name); }
 
     void AddRequestValue(const string& name, const CCgiEntry& value);
     void RemoveRequestValues(const string& name);
@@ -311,6 +308,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2002/07/17 17:03:01  ucko
+* Phase out GetRequestValueEx.
+*
 * Revision 1.20  2002/07/10 18:39:44  ucko
 * Made CCgiEntry-based functions the only version; kept "Ex" names as
 * temporary synonyms, to go away in a few days.
