@@ -1,4 +1,4 @@
---$Revision: 3.2 $
+--$Revision: 3.3 $
 --**********************************************************************
 --
 --  NCBI Sequence Alignment elements
@@ -23,17 +23,21 @@ Seq-align ::= SEQUENCE {
     type ENUMERATED {
         not-set (0) ,
         global (1) ,
-        diags (2) ,
+        diags (2) ,		-- unbroken, but not ordered, diagonals
         partial (3) ,           -- mapping pieces together
+	disc (4) ,              -- discontinuous alignment
         other (255) } ,
     dim INTEGER OPTIONAL ,     -- dimensionality
     score SET OF Score OPTIONAL ,   -- for whole alignment
     segs CHOICE {                   -- alignment data
         dendiag SEQUENCE OF Dense-diag ,
         denseg Dense-seg ,
-        std SEQUENCE OF Std-seg } }
-        
-        
+        std SEQUENCE OF Std-seg ,
+	packed Packed-seg ,
+	disc Seq-align-set } ,
+    bounds SET OF Seq-loc OPTIONAL }  -- regions of sequence over which align
+                                      --  was computed
+
 Dense-diag ::= SEQUENCE {         -- for (multiway) diagonals
     dim INTEGER DEFAULT 2 ,    -- dimensionality
     ids SEQUENCE OF Seq-id ,   -- sequences in order
@@ -63,6 +67,17 @@ Dense-seg ::= SEQUENCE {          -- for (multiway) global or partial alignments
     lens SEQUENCE OF INTEGER ,    -- lengths in ids order within segs
     strands SEQUENCE OF Na-strand OPTIONAL ,
     scores SEQUENCE OF Score OPTIONAL }  -- score for each seg
+
+Packed-seg ::= SEQUENCE {         -- for (multiway) global or partial alignments
+    dim INTEGER DEFAULT 2 ,       -- dimensionality
+    numseg INTEGER ,              -- number of segments here
+    ids SEQUENCE OF Seq-id ,      -- sequences in order
+    starts SEQUENCE OF INTEGER ,  -- start OFFSETS in ids order for whole alignment
+    present OCTET STRING ,        -- Boolean if each sequence present or absent in
+                                  --   each segment
+    lens SEQUENCE OF INTEGER ,    -- length of each segment
+    strands SEQUENCE OF Na-strand OPTIONAL ,
+    scores SEQUENCE OF Score OPTIONAL }  -- score for each segment
 
 Std-seg ::= SEQUENCE {
     dim INTEGER DEFAULT 2 ,       -- dimensionality
