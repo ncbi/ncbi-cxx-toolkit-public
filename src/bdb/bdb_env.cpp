@@ -35,14 +35,16 @@
 BEGIN_NCBI_SCOPE
 
 CBDB_Env::CBDB_Env()
-: m_Env(0)
+: m_Env(0),
+  m_Transactional(false)
 {
     int ret = db_env_create(&m_Env, 0);
     BDB_CHECK(ret, "DB_ENV");
 }
 
 CBDB_Env::CBDB_Env(DB_ENV* env)
-: m_Env(env)
+: m_Env(env),
+  m_Transactional(false)
 {
 }
 
@@ -75,6 +77,7 @@ void CBDB_Env::OpenWithTrans(const char* db_home)
     Open(db_home, 
          DB_INIT_TXN | DB_RECOVER |
          DB_CREATE | DB_INIT_LOCK | DB_INIT_MPOOL | DB_THREAD);
+    m_Transactional = true;
 }
 
 void CBDB_Env::OpenConcurrentDB(const char* db_home)
@@ -90,6 +93,16 @@ void CBDB_Env::OpenConcurrentDB(const char* db_home)
 void CBDB_Env::JoinEnv(const char* db_home)
 {
     Open(db_home, DB_JOINENV);
+
+    // Check if we joined the transactional environment
+
+    DB_TXN_STAT *txn_statp;
+    int ret = m_Env->txn_stat(m_Env, &txn_statp, 0);
+    if (ret == 0)
+    {
+        m_Transactional = true;
+        ::free(txn_statp);
+    }
 }
 
 DB_TXN* CBDB_Env::CreateTxn(DB_TXN* parent_txn, unsigned int flags)
@@ -108,6 +121,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/12 14:07:40  kuznets
+ * JoinEnv: checking if we joining transactional environment
+ *
  * Revision 1.6  2003/12/10 19:14:02  kuznets
  * Added support of berkeley db transactions
  *
