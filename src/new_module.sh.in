@@ -1,4 +1,8 @@
-#!/bin/sh
+#! /bin/sh
+#
+# $Id$
+# Author:  Eugene Vasilchenko, NCBI 
+
 
 # detect root directory
 p="`pwd`"
@@ -6,7 +10,7 @@ mp=
 while true; do
     d="`basename \"$p\"`"
     p="`dirname \"$p\"`"
-    if test -d "$p/src" && test -d "$p/include" && test -f "$p/configure.in" &&
+    if test -d "$p/src" && test -d "$p/include"  &&
         test -f "$p/src/Makefile.module"; then
         break
     fi
