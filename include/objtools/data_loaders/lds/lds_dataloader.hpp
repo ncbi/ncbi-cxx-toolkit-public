@@ -51,6 +51,8 @@ class CLDS_Database;
 class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
+    CLDS_DataLoader();
+
     // Construct dataloader, attach the external LDS database
     CLDS_DataLoader(CLDS_Database& lds_db,
                     const string& dl_name = "LDS_dataloader");
@@ -80,6 +82,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/16 20:17:25  kuznets
+ * Added empty constructor prototype
+ *
  * Revision 1.7  2003/11/28 13:40:40  dicuccio
  * Fixed to match new API in CDataLoader
  *
