@@ -3932,8 +3932,8 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
                 x_errno = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                              "[SOCK_gethostbyname]  Failed "
-                              "gethostbyname%s(\"%.64s\")", suffix, hostname);
+                              ("[SOCK_gethostbyname]  Failed "
+                              "gethostbyname%s(\"%.64s\")", suffix, hostname));
         }
 
 #endif /*HAVE_GETADDR_INFO*/
@@ -4040,8 +4040,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
             if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                 strcpy(addr, "<unknown>");
             CORE_LOG_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                              "[SOCK_gethostbyaddr]  Failed "
-                              "gethostbyaddr%s(%s)", suffix, addr);
+                              ("[SOCK_gethostbyaddr]  Failed "
+                              "gethostbyaddr%s(%s)", suffix, addr));
         }
 
         return name;
@@ -4057,6 +4057,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.145  2004/05/05 11:31:16  ivanov
+ * Fixed compile errors
+ *
  * Revision 6.144  2004/05/04 19:51:27  lavr
  * More elaborate diagnostics and better event dispatching
  *
