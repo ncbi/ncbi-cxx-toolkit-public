@@ -499,6 +499,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2004/03/17 16:03:42  vasilche
+* Removed Windows EOL
+*
 * Revision 1.28  2004/03/16 15:47:25  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
