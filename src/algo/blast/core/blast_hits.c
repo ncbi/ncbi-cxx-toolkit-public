@@ -163,11 +163,12 @@ s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
 
     /* Make corrections in edit block and free any parts that are no longer
        needed */
-    if (gapped && best_start_esp != hsp->gap_info->esp) {
+    if (gapped && best_start_esp && best_start_esp != hsp->gap_info->esp) {
         /* best_prev_esp is the link in the chain exactly preceding the starting
-           edit script of the best part of the alignment. If best alignment does
-           not start from the original start, best_prev_esp cannot be NULL. */
-        ASSERT(best_prev_esp);
+           edit script of the best part of the alignment. If best alignment was
+           found, but it does not start from the original start, best_prev_esp 
+           cannot be NULL. */
+        ASSERT (best_prev_esp);
         /* Unlink the good part of the alignment from the previous 
            (negative-scoring) part that is being deleted. */
         best_prev_esp->next = NULL;
