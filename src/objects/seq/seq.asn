@@ -1,4 +1,4 @@
---$Revision: 6.3 $
+--$Revision: 6.4 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -100,6 +100,7 @@ MolInfo ::= SEQUENCE {
         genomic-mRNA (10) ,      -- reported a mix of genomic and cdna sequence
         cRNA (11) ,              -- viral RNA genome copy intermediate
         snoRNA (12) ,            -- small nucleolar RNA
+        transcribed-RNA (13) ,   -- transcribed RNA other than existing classes
         other (255) } DEFAULT unknown ,
     tech INTEGER {
         unknown (0) ,
