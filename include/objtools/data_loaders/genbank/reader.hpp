@@ -129,12 +129,22 @@ public:
             m_Flags = flags;
         }
 
+    int GetVersion(void) const
+        {
+            return m_Version;
+        }
+    void SetVersion(int version)
+        {
+            m_Version = version;
+        }
+
 protected:
     TFlags  m_Flags;
 
     int m_Gi;
     int m_Sat;
     int m_SatKey;
+    int m_Version;
 };
 
 
@@ -207,6 +217,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.30  2003/10/08 14:16:12  vasilche
+* Added version of blobs loaded from ID1.
+*
 * Revision 1.29  2003/10/07 13:43:22  vasilche
 * Added proper handling of named Seq-annots.
 * Added feature search from named Seq-annots.

@@ -39,6 +39,8 @@ class CConn_ServiceStream;
 BEGIN_SCOPE(objects)
 
 class CID1server_back;
+class CID1server_maxcomplex;
+class CID1blob_info;
 
 class NCBI_XOBJMGR_EXPORT CId1Reader : public CReader
 {
@@ -57,6 +59,9 @@ public:
     virtual void SetParallelLevel(TConn noConn);
     virtual void Reconnect(TConn conn);
 
+    int GetVersion(const CSeqref& seqref,
+                   TConn conn);
+
 protected:
     CConn_ServiceStream* x_GetConnection(TConn conn);
     CConn_ServiceStream* x_NewConnection(void);
@@ -69,6 +74,11 @@ protected:
     void x_SendRequest(const CSeqref& seqref,
                        CConn_ServiceStream* stream,
                        bool is_snp);
+    void x_SetParams(const CSeqref& seqref,
+                     CID1server_maxcomplex& params,
+                     bool is_snp);
+    void x_UpdateVersion(CSeqref& seqref,
+                         const CID1blob_info& info);
 
     CRef<CSeq_annot_SNP_Info> x_ReceiveSNPAnnot(CConn_ServiceStream* stream);
 
@@ -96,6 +106,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.21  2003/10/08 14:16:12  vasilche
+* Added version of blobs loaded from ID1.
+*
 * Revision 1.20  2003/10/01 18:06:58  kuznets
 * x_ReceiveSNPAnnot made public
 *

@@ -180,7 +180,10 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
     }
 
     const CID1blob_info& info = id1_reply.GetGotblobinfo();
-    srs.push_back(Ref(new CSeqref(gi, info.GetSat(), info.GetSat_key())));
+    CRef<CSeqref> ref(new CSeqref(gi, info.GetSat(), info.GetSat_key()));
+    x_UpdateVersion(*ref, info);
+    srs.push_back(ref);
+   
     if ( TrySNPSplit() ) {
         if ( !info.IsSetExtfeatmask() ) {
             AddSNPSeqref(srs, gi, CSeqref::fPossible);
@@ -189,6 +192,36 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
             AddSNPSeqref(srs, gi);
         }
     }
+}
+
+
+int CId1Reader::GetVersion(const CSeqref& seqref,
+                           TConn conn)
+{
+    if ( seqref.GetVersion() == 0 ) {
+        CConn_ServiceStream* stream = x_GetConnection(conn);
+        {{
+            CID1server_request id1_request;
+            x_SetParams(seqref,
+                        id1_request.SetGetblobinfo(),
+                        IsSNPSeqref(seqref));
+            CObjectOStreamAsnBinary out(*stream);
+            out << id1_request;
+            out.Flush();
+        }}
+
+        CID1server_back    id1_reply;
+        {{
+            CObjectIStreamAsnBinary in(*stream);
+            in >> id1_reply;
+        }}
+
+        if ( id1_reply.IsGotblobinfo() ) {
+            x_UpdateVersion(const_cast<CSeqref&>(seqref),
+                            id1_reply.GetGotblobinfo());
+        }
+    }
+    return seqref.GetVersion();
 }
 
 
@@ -269,12 +302,10 @@ CRef<CSeq_annot_SNP_Info> CId1Reader::GetSNPAnnot(const CSeqref& seqref,
 }
 
 
-void CId1Reader::x_SendRequest(const CSeqref& seqref,
-                               CConn_ServiceStream* stream,
-                               bool is_snp)
+void CId1Reader::x_SetParams(const CSeqref& seqref,
+                             CID1server_maxcomplex& params,
+                             bool is_snp)
 {
-    CID1server_request id1_request;
-    
     bool is_external = is_snp;
     bool skip_extfeat = !is_external && TrySNPSplit();
     enum {
@@ -284,15 +315,38 @@ void CId1Reader::x_SendRequest(const CSeqref& seqref,
     if ( skip_extfeat ) {
         maxplex = EEntry_complexities(int(maxplex) | kNoExtFeat);
     }
-    CID1server_maxcomplex& params = id1_request.SetGetsefromgi();
     params.SetMaxplex(maxplex);
     params.SetGi(seqref.GetGi());
     params.SetEnt(seqref.GetSatKey());
     params.SetSat(NStr::IntToString(seqref.GetSat()));
-    
-    CObjectOStreamAsnBinary server_output(*stream);
-    server_output << id1_request;
-    server_output.Flush();
+}
+
+
+void CId1Reader::x_UpdateVersion(CSeqref& seqref,
+                                 const CID1blob_info& info)
+{
+    int version = info.GetBlob_state();
+    if ( version < 0 ) {
+        version = -version;
+    }
+    if ( version == 0 ) {
+        // set to default: 1
+        // so that we will not reask version in future
+        version = 1;
+    }
+    seqref.SetVersion(version);
+}
+
+
+void CId1Reader::x_SendRequest(const CSeqref& seqref,
+                               CConn_ServiceStream* stream,
+                               bool is_snp)
+{
+    CID1server_request id1_request;
+    x_SetParams(seqref, id1_request.SetGetsefromgi(), is_snp);
+    CObjectOStreamAsnBinary out(*stream);
+    out << id1_request;
+    out.Flush();
 }
 
 
@@ -344,6 +398,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.47  2003/10/08 14:16:13  vasilche
+ * Added version of blobs loaded from ID1.
+ *
  * Revision 1.46  2003/10/01 18:08:14  kuznets
  * s_SkipBytes renamed to Id1ReaderSkipBytes (made non static)
  *

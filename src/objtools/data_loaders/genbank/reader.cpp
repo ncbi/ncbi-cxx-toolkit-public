@@ -61,14 +61,17 @@ static const char* const SNP_TABLE_ENV = "GENBANK_SNP_TABLE";
 static const char* const ENV_YES = "YES";
 
 CSeqref::CSeqref(void)
-    : m_Flags(fHasAllLocal)
+    : m_Flags(fHasAllLocal),
+      m_Gi(0), m_Sat(0), m_SatKey(0),
+      m_Version(0)
 {
 }
 
 
 CSeqref::CSeqref(int gi, int sat, int satkey)
     : m_Flags(fHasAllLocal),
-      m_Gi(gi), m_Sat(sat), m_SatKey(satkey)
+      m_Gi(gi), m_Sat(sat), m_SatKey(satkey),
+      m_Version(0)
 {
 }
 
@@ -311,6 +314,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.24  2003/10/08 14:16:13  vasilche
+ * Added version of blobs loaded from ID1.
+ *
  * Revision 1.23  2003/10/07 13:43:23  vasilche
  * Added proper handling of named Seq-annots.
  * Added feature search from named Seq-annots.
