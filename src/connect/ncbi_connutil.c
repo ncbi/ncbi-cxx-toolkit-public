@@ -220,7 +220,8 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
             str[len]   = '\0';
         }
         info->http_user_header = strdup(str);
-    }
+    } else
+        info->http_user_header = 0;
 
     /* not adjusted yet... */
     info->http_proxy_adjusted = 0/*false*/;
@@ -1507,6 +1508,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.67  2005/02/24 19:03:11  lavr
+ * Always init SConnNetInfo::http_user_header
+ *
  * Revision 6.66  2005/02/24 19:00:45  lavr
  * +CONN_HTTP_USER_HEADER
  *
