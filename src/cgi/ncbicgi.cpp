@@ -79,8 +79,10 @@ CCgiCookie::CCgiCookie(const CCgiCookie& cookie)
 CCgiCookie::CCgiCookie(const string& name,   const string& value,
                        const string& domain, const string& path)
 {
-    if ( name.empty() )
-        throw invalid_argument("Empty cookie name");
+    if ( name.empty() ) {
+        NCBI_THROW2(CCgiParseException, eCookie,
+                    "Empty cookie name", 0);
+    }
     x_CheckField(name, " ;,=");
     m_Name = name;
 
@@ -133,7 +135,7 @@ string CCgiCookie::GetExpDate(void) const
 bool CCgiCookie::GetExpDate(tm* exp_date) const
 {
     if ( !exp_date )
-        throw invalid_argument("Null cookie exp.date");
+        NCBI_THROW(CCgiException, eUnknown, "Null cookie exp.date passed");
     if ( s_ZeroTime(m_Expires) )
         return false;
     *exp_date = m_Expires;
@@ -167,13 +169,27 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
 // Check if the cookie field is valid
 void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
 {
-    if (banned_symbols  &&  str.find_first_of(banned_symbols) != NPOS) {
-        throw invalid_argument("CCgiCookie::CheckValidCookieField() [1]");
+    if ( banned_symbols ) {
+        string::size_type pos = str.find_first_of(banned_symbols);
+        if (pos != NPOS) {
+            NCBI_THROW2(CCgiParseException, eFormat,
+                        "Banned symbol '"
+                        + NStr::PrintableString(string(1, str[pos]))
+                        + "' in the cookie name: "
+                        + NStr::PrintableString(str),
+                        pos);
+        }
     }
 
     for (const char* s = str.c_str();  *s;  s++) {
-        if ( !isprint(*s) )
-            throw invalid_argument("CCgiCookie::CheckValidCookieField() [2]");
+        if ( !isprint(*s) ) {
+            NCBI_THROW2(CCgiParseException, eFormat,
+                        "Unprintable symbol '"
+                        + NStr::PrintableString(string(1, *s))
+                        + "' in the cookie name: "
+                        + NStr::PrintableString(str),
+                        s - str.c_str());
+        }
     }
 }
 
@@ -376,7 +392,7 @@ CCgiCookie* CCgiCookies::Find(const string& name, TRange* range)
 const CCgiCookie* CCgiCookies::Find(const string& name, TCRange* range)
     const
 {
-    CCgiCookies& nonconst_This = const_cast<CCgiCookies&>(*this);
+    CCgiCookies& nonconst_This = const_cast<CCgiCookies&> (*this);
     if ( range ) {
         TRange x_range;
         const CCgiCookie* ck = nonconst_This.Find(name, &x_range);
@@ -463,7 +479,8 @@ const string& CCgiRequest::GetPropertyName(ECgiProp prop)
 {
     if ((long) prop < 0  ||  (long) eCgi_NProperties <= (long) prop) {
         _TROUBLE;
-        throw logic_error("CCgiRequest::GetPropertyName(BadPropIdx)");
+        NCBI_THROW(CCgiException, eUnknown,
+                   "CCgiRequest::GetPropertyName(BadPropIdx)");
     }
     return s_PropName[prop];
 }
@@ -616,8 +633,8 @@ static string s_FindAttribute(const string& str, const string& name,
     if (att_pos == NPOS  ||  att_pos >= end) {
         if (required) {
             NCBI_THROW2(CCgiParseException, eAttribute,
-                        "s_FindAttribute: missing " + name + " in "
-                        + str.substr(start, end - start),
+                        "In multipart HTTP request -- missing attribute \""
+                        + name + "\": " + str.substr(start, end - start),
                         start);
         } else {
             return kEmptyStr;
@@ -626,9 +643,9 @@ static string s_FindAttribute(const string& str, const string& name,
     SIZE_TYPE att_start = att_pos + name.size() + 4;
     SIZE_TYPE att_end   = str.find('\"', att_start);
     if (att_end == NPOS  ||  att_end >= end) {
-        NCBI_THROW2(CCgiParseException, eFormat,
-                    "s_FindAttribute: malformatted " + name + " in "
-                    + str.substr(att_pos, end - att_pos),
+        NCBI_THROW2(CCgiParseException, eAttribute,
+                    "In multipart HTTP request -- malformatted attribute \""
+                    + name + "\": " + str.substr(att_pos, end - att_pos),
                     att_start);
     }
     return str.substr(att_start, att_end - att_start);
@@ -655,7 +672,7 @@ static void s_ParseMultipartEntries(const string& boundary,
             return;
         }
         NCBI_THROW2(CCgiParseException, eEntry,
-                    s_Me + ": input does not start with boundary line "
+                    s_Me + ": the part does not start with boundary line: "
                     + boundary,
                     0);
     }
@@ -665,7 +682,7 @@ static void s_ParseMultipartEntries(const string& boundary,
         SIZE_TYPE tail_start = str.find(s_Eol + boundary + "--");
         if (tail_start == NPOS) {
             NCBI_THROW2(CCgiParseException, eEntry,
-                        s_Me + ": input does not contain trailing boundary "
+                        s_Me + ": the part does not contain trailing boundary "
                         + boundary + "--",
                         0);
         }
@@ -689,13 +706,13 @@ static void s_ParseMultipartEntries(const string& boundary,
             pos = str.find(':', bol_pos);
             if (pos == NPOS  ||  pos >= eol_pos) {
                 NCBI_THROW2(CCgiParseException, eEntry,
-                            s_Me + ": no colon in header "
+                            s_Me + ": no colon in the part header: "
                             + str.substr(bol_pos, eol_pos - bol_pos),
                             bol_pos);
             }
             if (NStr::CompareNocase(str, bol_pos, pos - bol_pos,
                                     "Content-Disposition") != 0) {
-                ERR_POST(Warning << s_Me << ": ignoring unrecognized header "
+                ERR_POST(Warning << s_Me << ": ignoring unrecognized header: "
                          + str.substr(bol_pos, eol_pos - bol_pos));
                 pos = eol_pos + eol_size;
                 continue;
@@ -748,10 +765,11 @@ static void s_ParsePostQuery(const string& content_type, const string& str,
     if ( NStr::StartsWith(content_type, "multipart/form-data") ) {
         string start = "boundary=";
         SIZE_TYPE pos = content_type.find(start);
-        if ( pos == NPOS )
+        if (pos == NPOS) {
             NCBI_THROW2(CCgiParseException, eEntry,
                         "CCgiRequest::ParsePostQuery(\"" +
                         content_type + "\"): no boundary field", 0);
+        }
         s_ParseMultipartEntries("--" + content_type.substr(pos + start.size()),
                                 str, entries);
         return;
@@ -875,8 +893,9 @@ void CCgiRequest::x_Init
                             break; // end of data
                         }
                         else {
-                            THROW1_TRACE(runtime_error, "\
-CCgiRequest::x_Init() -- error in reading POST content: read fault");
+                            NCBI_THROW2(CCgiParseException, eRead,
+                                       "Failed read of HTTP request body",
+                                        str.length());
                         }
                     }
                     str.append(buffer, count);
@@ -891,27 +910,27 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
                     if ( count == 0 ) {
                         str.resize(pos);
                         if ( istr->eof() ) {
-                            string err = "\
-CCgiRequest::x_Init() -- error in reading POST content: unexpected EOF";
-                            string pos_str("(pos=");
-                            pos_str.append(NStr::UIntToString(pos));
-                            pos_str.append("; content_length=");
-                            pos_str.append(NStr::UIntToString(len));
-                            pos_str.append("):\n");
-
+                            string err =
+                                "Premature EOF while reading HTTP request"
+                                " body: (pos=";
+                            err += NStr::UIntToString(pos);
+                            err += "; content_length=";
+                            err += NStr::UIntToString(len);
+                            err += "):\n";
                             if (m_ErrBufSize  &&  pos) {
-                                pos_str.append(NStr::PrintableString(str),
-                                               0, min(m_ErrBufSize, pos));
-                                if (m_ErrBufSize < pos) {
-                                    pos_str.append("\n[truncated...]");
+                                string content = NStr::PrintableString(str);
+                                if (content.length() > m_ErrBufSize) {
+                                    content.resize(m_ErrBufSize);
+                                    content += "\n[truncated...]";
                                 }
+                                err += content;
                             }
-                            err.append(pos_str);
-                            THROW1_TRACE(runtime_error, err);
+                            NCBI_THROW2(CCgiParseException, eRead, err, pos);
                         }
                         else {
-                            THROW1_TRACE(runtime_error, "\
-CCgiRequest::x_Init() -- error in reading POST content: read fault");
+                            NCBI_THROW2(CCgiParseException, eRead,
+                                       "Failed read of HTTP request body",
+                                        pos);
                         }
                     }
                     pos += count;
@@ -1010,7 +1029,17 @@ size_t CCgiRequest::GetContentLength(void) const
     if ( str.empty() ) {
         return kContentLengthUnknown;
     }
-    return (size_t) NStr::StringToUInt(str);
+
+    size_t content_length;
+    try {
+        content_length = (size_t) NStr::StringToUInt(str);
+    } catch (CStringException& e) {
+        NCBI_THROW2(CCgiParseException, eFormat,
+                    "Malformed Content-Length value in HTTP request: " + str,
+                    e.GetPos());
+    }
+
+    return content_length;
 }
 
 
@@ -1099,14 +1128,15 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 }
 
 
-
 extern string URL_DecodeString(const string& str)
 {
-    string    x_str = str;
+    string    x_str   = str;
     SIZE_TYPE err_pos = s_URL_Decode(x_str);
-    if (err_pos != 0)
+    if (err_pos != 0) {
         NCBI_THROW2(CCgiParseException, eFormat,
-                    "URL_DecodeString(<badly_formatted_str>)",err_pos);
+                    "URL_DecodeString(\"" + NStr::PrintableString(str) + "\")",
+                    err_pos);
+    }
     return x_str;
 }
 
@@ -1228,6 +1258,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.77  2004/08/04 16:15:37  vakatov
+* Consistently throw CCgiParseException in those (and only those) cases where
+* the HTTP request itself is malformatted.
+* Improved and fixed diagnostic messages.
+* Purged CVS logs dated before 2003.
+*
 * Revision 1.76  2004/05/17 20:56:50  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -1265,229 +1301,5 @@ END_NCBI_SCOPE
 *
 * Revision 1.65  2003/02/19 17:50:47  kuznets
 * Added function AddExpTime to CCgiCookie class
-*
-* Revision 1.64  2002/09/17 19:57:50  ucko
-* Add position field to CGI entries; minor reformatting.
-*
-* Revision 1.63  2002/08/08 19:26:04  ucko
-* When parsing multipart forms, allow (but ignore) data after the
-* trailing boundary.
-*
-* Revision 1.62  2002/07/19 14:50:23  ucko
-* Substitute NStr::Compare for uses of string::compare added in last revision.
-*
-* Revision 1.61  2002/07/18 21:15:24  ucko
-* Rewrite multipart/form-data parser; the old line-by-line approach was
-* somewhat clumsy and inefficient.
-*
-* Revision 1.60  2002/07/18 20:18:09  lebedev
-* NCBI_OS_MAC: STDIN_FILENO define added
-*
-* Revision 1.59  2002/07/17 17:02:26  ucko
-* Reinstate more lost changes from R1.56.
-*
-* Revision 1.58  2002/07/11 17:39:56  gouriano
-* corrected wrong merge of v1.56 and v1.57
-*
-* Revision 1.57  2002/07/11 14:22:59  gouriano
-* exceptions replaced by CNcbiException-type ones
-*
-* Revision 1.56  2002/07/10 18:40:21  ucko
-* Made CCgiEntry-based functions the only version; kept "Ex" names as
-* temporary synonyms, to go away in a few days.
-*
-* Revision 1.55  2002/07/05 20:45:46  ucko
-* Add a couple of missing calls to the extended version of s_AddEntry.
-*
-* Revision 1.54  2002/07/03 20:24:31  ucko
-* Extend to support learning uploaded files' names; move CVS logs to end.
-*
-* Revision 1.53  2002/04/26 21:18:31  lavr
-* Do not enforce the last line of the form to have HTTP_EOL (but just EOF)
-*
-* Revision 1.52  2002/01/10 23:48:55  vakatov
-* s_ParseMultipartEntries() -- allow for empty parts
-*
-* Revision 1.51  2001/12/06 00:19:55  vakatov
-* CCgiRequest::ParseEntries() -- allow leading '&' in the query string (temp.)
-*
-* Revision 1.50  2001/10/04 18:17:53  ucko
-* Accept additional query parameters for more flexible diagnostics.
-* Support checking the readiness of CGI input and output streams.
-*
-* Revision 1.49  2001/06/19 20:08:30  vakatov
-* CCgiRequest::{Set,Get}InputStream()  -- to provide safe access to the
-* requests' content body
-*
-* Revision 1.48  2001/06/13 21:04:37  vakatov
-* Formal improvements and general beautifications of the CGI lib sources.
-*
-* Revision 1.47  2001/05/17 15:01:49  lavr
-* Typos corrected
-*
-* Revision 1.46  2001/02/02 20:55:13  vakatov
-* CCgiRequest::GetEntry() -- "const"
-*
-* Revision 1.45  2001/01/30 23:17:31  vakatov
-* + CCgiRequest::GetEntry()
-*
-* Revision 1.44  2000/11/01 20:36:31  vasilche
-* Added HTTP_EOL string macro.
-*
-* Revision 1.43  2000/06/26 16:34:27  vakatov
-* CCgiCookies::Add(const string&) -- maimed to workaround MS IE bug
-* (it sent empty cookies w/o "=" in versions prior to 5.5)
-*
-* Revision 1.42  2000/05/04 16:29:12  vakatov
-* s_ParsePostQuery():  do not throw on an unknown Content-Type
-*
-* Revision 1.41  2000/05/02 16:10:07  vasilche
-* CGI: Fixed URL parsing when Content-Length header is missing.
-*
-* Revision 1.40  2000/05/01 16:58:18  vasilche
-* Allow missing Content-Length and Content-Type headers.
-*
-* Revision 1.39  2000/02/15 19:25:33  vakatov
-* CCgiRequest::ParseEntries() -- fixed UMR
-*
-* Revision 1.38  2000/02/01 22:19:57  vakatov
-* CCgiRequest::GetRandomProperty() -- allow to retrieve value of
-* properties whose names are not prefixed by "HTTP_" (optional).
-* Get rid of the aux.methods GetServerPort() and GetRemoteAddr() which
-* are obviously not widely used (but add to the volume of API).
-*
-* Revision 1.37  2000/02/01 16:53:29  vakatov
-* CCgiRequest::x_Init() -- parse "$QUERY_STRING"(or cmd.-line arg) even
-* in the case of "POST" method, in order to catch possible "ACTION" args.
-*
-* Revision 1.36  2000/01/20 17:52:07  vakatov
-* Two CCgiRequest:: constructors:  one using raw "argc", "argv", "envp",
-* and another using auxiliary classes "CNcbiArguments" and "CNcbiEnvironment".
-* + constructor flag CCgiRequest::fOwnEnvironment to take ownership over
-* the passed "CNcbiEnvironment" object.
-*
-* Revision 1.35  1999/12/30 22:11:17  vakatov
-* CCgiCookie::GetExpDate() -- use a more standard time string format.
-* CCgiCookie::CCgiCookie() -- check the validity of passed cookie attributes
-*
-* Revision 1.34  1999/11/22 19:07:47  vakatov
-* CCgiRequest::CCgiRequest() -- check for the NULL "query_string"
-*
-* Revision 1.33  1999/11/02 22:15:50  vakatov
-* const CCgiCookie* CCgiCookies::Find() -- forgot to cast to non-const "this"
-*
-* Revision 1.32  1999/11/02 20:35:42  vakatov
-* Redesigned of CCgiCookie and CCgiCookies to make them closer to the
-* cookie standard, smarter, and easier in use
-*
-* Revision 1.31  1999/06/21 16:04:17  vakatov
-* CCgiRequest::CCgiRequest() -- the last(optional) arg is of type
-* "TFlags" rather than the former "bool"
-*
-* Revision 1.30  1999/05/11 03:11:51  vakatov
-* Moved the CGI API(along with the relevant tests) from "corelib/" to "cgi/"
-*
-* Revision 1.29  1999/05/04 16:14:45  vasilche
-* Fixed problems with program environment.
-* Added class CNcbiEnvironment for cached access to C environment.
-*
-* Revision 1.28  1999/05/04 00:03:12  vakatov
-* Removed the redundant severity arg from macro ERR_POST()
-*
-* Revision 1.27  1999/05/03 20:32:29  vakatov
-* Use the (newly introduced) macro from <corelib/ncbidbg.h>:
-*   RETHROW_TRACE,
-*   THROW0_TRACE(exception_class),
-*   THROW1_TRACE(exception_class, exception_arg),
-*   THROW_TRACE(exception_class, exception_args)
-* instead of the former (now obsolete) macro _TRACE_THROW.
-*
-* Revision 1.26  1999/04/30 19:21:03  vakatov
-* Added more details and more control on the diagnostics
-* See #ERR_POST, EDiagPostFlag, and ***DiagPostFlag()
-*
-* Revision 1.25  1999/04/28 16:54:42  vasilche
-* Implemented stream input processing for FastCGI applications.
-* Fixed POST request parsing
-*
-* Revision 1.24  1999/04/14 21:01:22  vakatov
-* s_HexChar():  get rid of "::tolower()"
-*
-* Revision 1.23  1999/04/14 20:11:56  vakatov
-* + <stdio.h>
-* Changed all "str.compare(...)" to "NStr::Compare(str, ...)"
-*
-* Revision 1.22  1999/04/14 17:28:58  vasilche
-* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
-* As a result special parameter is added with empty name: "=cmd"
-*
-* Revision 1.21  1999/03/01 21:02:22  vasilche
-* Added parsing of 'form-data' requests.
-*
-* Revision 1.20  1999/01/07 22:03:42  vakatov
-* s_URL_Decode():  typo fixed
-*
-* Revision 1.19  1999/01/07 21:15:22  vakatov
-* Changed prototypes for URL_DecodeString() and URL_EncodeString()
-*
-* Revision 1.18  1999/01/07 20:06:04  vakatov
-* + URL_DecodeString()
-* + URL_EncodeString()
-*
-* Revision 1.17  1998/12/28 17:56:36  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
-*
-* Revision 1.16  1998/12/04 23:38:35  vakatov
-* Workaround SunPro's "buggy const"(see "BW_01")
-* Renamed "CCgiCookies::Erase()" method to "...Clear()"
-*
-* Revision 1.15  1998/12/01 00:27:19  vakatov
-* Made CCgiRequest::ParseEntries() to read ISINDEX data, too.
-* Got rid of now redundant CCgiRequest::ParseIndexesAsEntries()
-*
-* Revision 1.14  1998/11/30 21:23:19  vakatov
-* CCgiRequest:: - by default, interprete ISINDEX data as regular FORM entries
-* + CCgiRequest::ParseIndexesAsEntries()
-* Allow FORM entry in format "name1&name2....." (no '=' necessary after name)
-*
-* Revision 1.13  1998/11/27 20:55:21  vakatov
-* CCgiRequest::  made the input stream arg. be optional(std.input by default)
-*
-* Revision 1.12  1998/11/27 19:44:34  vakatov
-* CCgiRequest::  Engage cmd.-line args if "$REQUEST_METHOD" is undefined
-*
-* Revision 1.11  1998/11/27 15:54:05  vakatov
-* Cosmetics in the ParseEntries() diagnostics
-*
-* Revision 1.10  1998/11/26 00:29:53  vakatov
-* Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
-*
-* Revision 1.9  1998/11/24 23:07:30  vakatov
-* Draft(almost untested) version of CCgiRequest API
-*
-* Revision 1.8  1998/11/24 21:31:32  vakatov
-* Updated with the ISINDEX-related code for CCgiRequest::
-* TCgiEntries, ParseIndexes(), GetIndexes(), etc.
-*
-* Revision 1.7  1998/11/24 17:52:17  vakatov
-* Starting to implement CCgiRequest::
-* Fully implemented CCgiRequest::ParseEntries() static function
-*
-* Revision 1.6  1998/11/20 22:36:40  vakatov
-* Added destructor to CCgiCookies:: class
-* + Save the works on CCgiRequest:: class in a "compilable" state
-*
-* Revision 1.4  1998/11/19 23:41:12  vakatov
-* Tested version of "CCgiCookie::" and "CCgiCookies::"
-*
-* Revision 1.3  1998/11/19 20:02:51  vakatov
-* Logic typo:  actually, the cookie string does not contain "Cookie: "
-*
-* Revision 1.2  1998/11/19 19:50:03  vakatov
-* Implemented "CCgiCookies::"
-* Slightly changed "CCgiCookie::" API
-*
-* Revision 1.1  1998/11/18 21:47:53  vakatov
-* Draft version of CCgiCookie::
 * ==========================================================================
 */
