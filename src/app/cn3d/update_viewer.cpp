@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.45  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -863,53 +866,6 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
 
         // replace alignment with BLAST result
         TESTMSG("BLAST succeeded - replacing alignment");
-        delete alignment;
-        *a = newAlignments.front();
-        break;
-    }
-
-    // recreate alignment display with new alignment
-    AlignmentList copy = alignmentStack.back();
-    alignmentStack.back().clear();
-    displayStack.back()->Empty();
-    AddAlignments(copy);
-    (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
-}
-
-void UpdateViewer::BlockAlignUpdate(BlockMultipleAlignment *alignment, bool localAlignment)
-{
-    const BlockMultipleAlignment *multipleForPSSM = alignmentManager->GetCurrentMultipleAlignment();
-    if (!multipleForPSSM) {
-        ERR_POST(Error << "Can't do block alignment when no multiple alignment is present");
-        return;
-    }
-
-    // find alignment, and replace it with block alignment result
-    AlignmentList::iterator a, ae = alignmentStack.back().end();
-    for (a=alignmentStack.back().begin(); a!=ae; a++) {
-        if (*a != alignment) continue;
-
-        // run block alignment between master and first slave (should be only one slave...)
-        TESTMSG("Running block alignment algorithm...");
-        BlockAligner::AlignmentList toRealign;
-        toRealign.push_back(alignment);
-        BlockAligner::AlignmentList newAlignments;
-        alignmentManager->blockAligner->CreateNewPairwiseAlignmentsByBlockAlignment(
-            multipleForPSSM, toRealign, &newAlignments, localAlignment);
-        if (newAlignments.size() != 1) {
-            ERR_POST(Warning <<
-                "block aligner failed to find any significant alignment; alignment unchanged");
-            return;
-        }
-        if (newAlignments.front()->NAlignedBlocks() == 0) {
-            ERR_POST(Warning <<
-                "block aligner failed to find any significant alignment; alignment unchanged");
-            delete newAlignments.front();
-            return;
-        }
-
-        // replace alignment with result
-        TESTMSG("block alignment succeeded - replacing alignment");
         delete alignment;
         *a = newAlignments.front();
         break;

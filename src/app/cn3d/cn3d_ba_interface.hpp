@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.4  2002/08/13 20:46:36  thiessen
 * add global block aligner
 *
@@ -70,8 +73,8 @@ public:
     // creates new pairwise alignments (as two-row BlockMultipleAlignments), each of which has
     // the given master and one of the given sequences. If the alignment algorithm fails to
     // align the new sequence, it will include a null-alignment for that sequence.
-    void CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultipleAlignment *multiple,
-        const AlignmentList& toRealign, AlignmentList *newAlignments, bool localAlignment);
+    bool CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
+        const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple);
 
     // brings up a dialog that lets the user set block aligner options
     void SetOptions(wxWindow* parent);
@@ -84,10 +87,16 @@ public:
         double lambda;
         double K;
         int searchSpaceSize;
+        bool globalAlignment;
+        bool mergeAfterEachSequence;
+        bool alignAllBlocks;
     } BlockAlignerOptions;
 
 private:
     BlockAlignerOptions currentOptions;
+
+public:
+    bool IsSetToMergeAfterEachSequence(void) const { return currentOptions.mergeAfterEachSequence; }
 };
 
 END_SCOPE(Cn3D)

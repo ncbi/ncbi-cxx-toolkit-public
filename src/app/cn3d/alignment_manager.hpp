@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.41  2002/07/26 15:28:44  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -233,11 +236,14 @@ public:
     // (e.g., for coloring by sequence conservation)
     const Vector * GetAlignmentColor(const Sequence *sequence, int seqIndex) const;
 
-    // update/threader functions
     void ShowUpdateWindow(void) const;
+
+    // sequence alignment algorithm functions
     void RealignSlaveSequences(BlockMultipleAlignment *multiple, const std::vector < int >& slavesToRealign);
     void ThreadUpdate(const ThreaderOptions& options, BlockMultipleAlignment *single);
     void ThreadAllUpdates(const ThreaderOptions& options);
+    void BlockAlignAllUpdates(void );
+    void BlockAlignUpdate(BlockMultipleAlignment *single);
 
     // merge functions
     typedef std::map < BlockMultipleAlignment *, bool > UpdateMap;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.11  2002/08/15 22:13:13  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -86,6 +89,7 @@
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/wx_tools.hpp"
 #include "cn3d/cn3d_blast.hpp"
+#include "cn3d/cn3d_tools.hpp"
 
 // necessary C-toolkit headers
 #include <ncbi.h>
@@ -100,7 +104,8 @@ void findAllowedGaps(SeqAlign *listOfSeqAligns, Int4 numBlocks, Int4 *allowedGap
     Nlm_FloatHi percentile, Int4 gapAddition);
 extern void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
     Int4 startQueryPosition, Int4 endQueryPosition, Int4 numBlocks, Int4 *blockStarts, Int4 *blockEnds,
-    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold, Boolean localAlignment);
+    Int4 masterLength, BLAST_Score **posMatrix, BLAST_Score scoreThreshold,
+    Int4 *frozenBlocks, Boolean localAlignment);
 extern void LIBCALL sortAlignPieces(Int4 numBlocks);
 extern SeqAlign *makeMultiPieceAlignments(Uint1Ptr query, Int4 numBlocks, Int4 queryLength, Uint1Ptr seq,
     Int4 seqLength, Int4 *blockStarts, Int4 *blockEnds, Int4 *allowedGaps, Int4 scoreThresholdMultipleBlock,
@@ -129,11 +134,14 @@ class BlockAlignerOptionsDialog : public wxDialog
 {
 public:
     BlockAlignerOptionsDialog(wxWindow* parent, const BlockAligner::BlockAlignerOptions& init);
+    ~BlockAlignerOptionsDialog(void);
+
     bool GetValues(BlockAligner::BlockAlignerOptions *options);
 
 private:
     IntegerSpinCtrl *iSingle, *iMultiple, *iExtend, *iSize;
     FloatingPointSpinCtrl *fpPercent, *fpLambda, *fpK;
+    wxCheckBox *cGlobal, *cMerge, *cAlignAll;
 
     void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
@@ -150,6 +158,9 @@ BlockAligner::BlockAligner(void)
     currentOptions.lambda = 0.0;
     currentOptions.K = 0.0;
     currentOptions.searchSpaceSize = 0;
+    currentOptions.globalAlignment = true;
+    currentOptions.mergeAfterEachSequence = false;
+    currentOptions.alignAllBlocks = true;
 }
 
 static Int4 Round(double d)
@@ -253,8 +264,38 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
     return bma.release();
 }
 
-void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultipleAlignment *multiple,
-    const AlignmentList& toRealign, AlignmentList *newAlignments, bool localAlignment)
+static void FreezeBlocks(const BlockMultipleAlignment *multiple,
+    const BlockMultipleAlignment *pairwise, Int4 *frozenBlocks)
+{
+    auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
+        multipleABlocks(multiple->GetUngappedAlignedBlocks()),
+        pairwiseABlocks(pairwise->GetUngappedAlignedBlocks());
+
+    // if a block in the multiple is contained in the pairwise (looking at master coords),
+    // then add a constraint to keep it there
+    BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator
+        m, me = multipleABlocks->end(), p, pe = pairwiseABlocks->end();
+    const Block::Range *multipleRangeMaster, *pairwiseRangeMaster, *pairwiseRangeSlave;
+    int i;
+    for (i=0, m=multipleABlocks->begin(); m!=me; i++, m++) {
+        multipleRangeMaster = (*m)->GetRangeOfRow(0);
+        for (p=pairwiseABlocks->begin(); p!=pe; p++) {
+            pairwiseRangeMaster = (*p)->GetRangeOfRow(0);
+            if (pairwiseRangeMaster->from <= multipleRangeMaster->from &&
+                    pairwiseRangeMaster->to >= multipleRangeMaster->to) {
+                pairwiseRangeSlave = (*p)->GetRangeOfRow(1);
+                frozenBlocks[i] = pairwiseRangeSlave->from +
+                    (multipleRangeMaster->from - pairwiseRangeMaster->from);
+                break;
+            }
+        }
+        if (p == pe) frozenBlocks[i] = -1;
+//        TESTMSG("block " << (i+1) << " frozen at query " << (frozenBlocks[i]+1));
+    }
+}
+
+bool BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(BlockMultipleAlignment *multiple,
+    const AlignmentList& toRealign, AlignmentList *newAlignments, int *nRowsAddedToMultiple)
 {
     // parameters passed to Alejandro's functions
     Int4 numBlocks;
@@ -270,9 +311,10 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     SeqIdPtr query_id;
     Int4 bestFirstBlock, bestLastBlock;
     SeqAlignPtr results;
-    SeqAlignPtr listOfSeqAligns;
+    SeqAlignPtr listOfSeqAligns = NULL;
 
     // the following would be command-line arguments to Alejandro's standalone program
+    Boolean localAlignment = currentOptions.globalAlignment ? FALSE : TRUE;
     BLAST_Score scoreThresholdSingleBlock =
         localAlignment ? currentOptions.singleBlockThreshold : NEG_INFINITY;
     BLAST_Score scoreThresholdMultipleBlock = currentOptions.multipleBlockThreshold;
@@ -289,6 +331,7 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList> blocks(multiple->GetUngappedAlignedBlocks());
     numBlocks = blocks->size();
     BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+    if (nRowsAddedToMultiple) *nRowsAddedToMultiple = 0;
 
     // master sequence info
     masterLength = multiple->GetMaster()->Length();
@@ -305,20 +348,26 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     listOfSeqAligns = multiple->CreateCSeqAlign();
 
     // set up block info
-    allocateAlignPieceMemory(numBlocks);
     blockStarts = (Int4*) MemNew(sizeof(Int4) * masterLength);
     blockEnds = (Int4*) MemNew(sizeof(Int4) * masterLength);
-    allowedGaps = (Int4*) MemNew(sizeof(Int4) * (masterLength - 1));
+    allowedGaps = (Int4*) MemNew(sizeof(Int4) * (numBlocks - 1));
     for (i=0, b=blocks->begin(); b!=be; i++, b++) {
         const Block::Range *range = (*b)->GetRangeOfRow(0);
         blockStarts[i] = range->from;
         blockEnds[i] = range->to;
     }
-    findAllowedGaps(listOfSeqAligns, numBlocks, allowedGaps, percentile, gapAddition);
+    if (listOfSeqAligns) {
+        findAllowedGaps(listOfSeqAligns, numBlocks, allowedGaps, percentile, gapAddition);
+    } else {
+        for (i=0; i<numBlocks-1; i++)
+            allowedGaps[i] = blockStarts[i+1] - blockEnds[i] - 1 + gapAddition;
+    }
 
     // set up PSSM
     BLAST_Matrix *matrix = BLASTer::CreateBLASTMatrix(multiple, NULL);
     thisScoreMat = matrix->matrix;
+
+    Int4 *frozenBlocks = (Int4*) MemNew(numBlocks * sizeof(Int4));
 
     AlignmentList::const_iterator s, se = toRealign.end();
     for (s=toRealign.begin(); s!=se; s++) {
@@ -339,16 +388,25 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
             ((*s)->alignTo >= 0 && (*s)->alignTo < query->Length()) ?
                 ((*s)->alignTo + 1) : query->Length();
 
+        // set frozen blocks
+        if (currentOptions.alignAllBlocks)
+            for (i=0; i<numBlocks; i++) frozenBlocks[i] = -1;
+        else
+            FreezeBlocks(multiple, *s, frozenBlocks);
+
         // actually do the block alignment
+        TESTMSG("doing " << (localAlignment ? "local" : "global") << " block alignment of "
+            << query->identifier->ToString());
+        allocateAlignPieceMemory(numBlocks);
         findAlignPieces(convertedQuery, queryLength, startQueryPosition, endQueryPosition,
             numBlocks, blockStarts, blockEnds, masterLength, thisScoreMat,
-            scoreThresholdSingleBlock, (localAlignment ? TRUE : FALSE));
+            scoreThresholdSingleBlock, frozenBlocks, localAlignment);
         sortAlignPieces(numBlocks);
         results = makeMultiPieceAlignments(convertedQuery, numBlocks,
             queryLength, masterSequence, masterLength,
             blockStarts, blockEnds, allowedGaps, scoreThresholdMultipleBlock,
             subject_id, query_id, &bestFirstBlock, &bestLastBlock,
-            Lambda, K, searchSpaceSize, (localAlignment ? TRUE : FALSE));
+            Lambda, K, searchSpaceSize, localAlignment);
 
         // process results; assume first result SeqAlign is the highest scoring
         if (results) {
@@ -365,15 +423,37 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
                 (newAlignment=UnpackBlockAlignerSeqAlign(best, multiple->GetMaster(), query)) == NULL) {
                 ERR_POST(Error << "conversion of results to C++ object failed: " << err);
             } else {
-                newAlignments->push_back(newAlignment);
+
+                if (currentOptions.mergeAfterEachSequence) {
+                    if (multiple->MergeAlignment(newAlignment)) {
+                        delete newAlignment; // if merge is successful, we can delete this alignment;
+                        if (nRowsAddedToMultiple)
+                            (*nRowsAddedToMultiple)++;
+                        else
+                            ERR_POST(Error << "BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment() "
+                                "called with merge on, but NULL nRowsAddedToMultiple pointer");
+                        // recalculate PSSM
+                        BLAST_MatrixDestruct(matrix);
+                        matrix = BLASTer::CreateBLASTMatrix(multiple, NULL);
+                        thisScoreMat = matrix->matrix;
+
+                    } else {                 // otherwise keep it
+                        newAlignments->push_back(newAlignment);
+                    }
+                } else {
+                    newAlignments->push_back(newAlignment);
+                }
             }
 
             SeqAlignSetFree(results);
+
         }
 
         // cleanup
         MemFree(convertedQuery);
         freeBestPairs(numBlocks);
+        freeAlignPieceLists(numBlocks);
+        freeBestScores(numBlocks);
     }
 
     // cleanup
@@ -381,10 +461,11 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     MemFree(blockStarts);
     MemFree(blockEnds);
     MemFree(allowedGaps);
-    SeqAlignSetFree(listOfSeqAligns);
+    if (listOfSeqAligns) SeqAlignSetFree(listOfSeqAligns);
     MemFree(masterSequence);
-    freeAlignPieceLists(numBlocks);
-    freeBestScores(numBlocks);
+    MemFree(frozenBlocks);
+
+    return true;
 }
 
 void BlockAligner::SetOptions(wxWindow* parent)
@@ -416,8 +497,11 @@ void BlockAligner::SetOptions(wxWindow* parent)
 #define ID_S_K 10012
 #define ID_T_SIZE 10013
 #define ID_S_SIZE 10014
-#define ID_B_OK 10015
-#define ID_B_CANCEL 10016
+#define ID_C_GLOBAL 10015
+#define ID_C_MERGE 10016
+#define ID_C_ALIGN_ALL 10017
+#define ID_B_OK 10018
+#define ID_B_CANCEL 10019
 
 BEGIN_EVENT_TABLE(BlockAlignerOptionsDialog, wxDialog)
     EVT_BUTTON(-1,  BlockAlignerOptionsDialog::OnButton)
@@ -473,9 +557,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item3->Add(fpPercent->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
     item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
     item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
-
     item3->Add( 5, 5, 0, wxALIGN_CENTRE|wxALL, 5 );
 
     wxStaticText *item16 = new wxStaticText( panel, ID_TEXT, "Lambda:", wxDefaultPosition, wxDefaultSize, 0 );
@@ -505,6 +587,31 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item3->Add(iSize->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     item3->Add(iSize->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
+    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 20, 20, 0, wxALIGN_CENTRE|wxALL, 5 );
+
+    wxStaticText *item23 = new wxStaticText( panel, ID_TEXT, "Global alignment:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item23, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cGlobal = new wxCheckBox( panel, ID_C_GLOBAL, "", wxDefaultPosition, wxDefaultSize, 0 );
+    cGlobal->SetValue(init.globalAlignment);
+    item3->Add( cGlobal, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+
+    wxStaticText *item28 = new wxStaticText( panel, ID_TEXT, "Merge after each row aligned:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item28, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cMerge = new wxCheckBox( panel, ID_C_MERGE, "", wxDefaultPosition, wxDefaultSize, 0 );
+    cMerge->SetValue(init.mergeAfterEachSequence);
+    item3->Add( cMerge, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+
+    wxStaticText *item24 = new wxStaticText( panel, ID_TEXT, "Realign all blocks:", wxDefaultPosition, wxDefaultSize, 0 );
+    item3->Add( item24, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
+    cAlignAll = new wxCheckBox( panel, ID_C_ALIGN_ALL, "", wxDefaultPosition, wxDefaultSize, 0 );
+    cAlignAll->SetValue(init.alignAllBlocks);
+    item3->Add( cAlignAll, 0, wxALIGN_CENTRE|wxALL, 5 );
+    item3->Add( 5, 5, 0, wxALIGN_CENTRE, 5 );
+
     item1->Add( item3, 0, wxALIGN_CENTRE, 5 );
 
     item0->Add( item1, 0, wxALIGN_CENTRE|wxALL, 5 );
@@ -528,8 +635,22 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     item0->SetSizeHints(this);
 }
 
+BlockAlignerOptionsDialog::~BlockAlignerOptionsDialog(void)
+{
+    delete iSingle;
+    delete iMultiple;
+    delete iExtend;
+    delete iSize;
+    delete fpPercent;
+    delete fpLambda;
+    delete fpK;
+}
+
 bool BlockAlignerOptionsDialog::GetValues(BlockAligner::BlockAlignerOptions *options)
 {
+    options->globalAlignment = cGlobal->IsChecked();
+    options->mergeAfterEachSequence = cMerge->IsChecked();
+    options->alignAllBlocks = cAlignAll->IsChecked();
     return (
         iSingle->GetInteger(&(options->singleBlockThreshold)) &&
         iMultiple->GetInteger(&(options->multipleBlockThreshold)) &&

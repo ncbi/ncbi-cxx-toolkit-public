@@ -453,7 +453,7 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 		     Int4 numBlocks,
                      Int4 *blockStarts, Int4 *blockEnds, Int4 masterLength,
 		     BLAST_Score **posMatrix, BLAST_Score scoreThreshold,
-		     Boolean localAlign)
+		     Int4 *frozenBlocks, Boolean localAlign)
 {
 
    Int4 blockIndex;  /*loop index*/
@@ -489,23 +489,32 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
      }
    }
    for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
-     if (localAlign) {
-       actualStartQuery = startQueryPosition;
-       actualEndQuery = endQueryPosition;
+     if (-1 == frozenBlocks[blockIndex]) {
+       if (localAlign) {
+	 actualStartQuery = startQueryPosition;
+	 actualEndQuery = endQueryPosition;
+       }
+       else {
+	 actualStartQuery = MAX(startQueryPosition,requiredStartMIN[blockIndex]);
+	 actualEndQuery = MIN(endQueryPosition,requiredStartMAX[blockIndex]);
+       }
      }
      else {
-       actualStartQuery = MAX(startQueryPosition,requiredStartMIN[blockIndex]);
-       actualEndQuery = MIN(endQueryPosition,requiredStartMAX[blockIndex]);
+       actualStartQuery = frozenBlocks[blockIndex];
+       actualEndQuery = actualStartQuery+1;
      }
-     for(queryPos = startQueryPosition; queryPos < endQueryPosition; queryPos++) {
-       score = 0;
-       for (dbPos = blockStarts[blockIndex], incrementedQueryPos = queryPos; 
-	    ((dbPos <= blockEnds[blockIndex]) && (incrementedQueryPos < queryLength));
-	    dbPos++, incrementedQueryPos++) {
-	 score += posMatrix[dbPos][convertedQuery[incrementedQueryPos]];
-       }
-       candidateQueryEnd = queryPos + blockEnds[blockIndex] -   blockStarts[blockIndex];
-       if ((score >= scoreThreshold) && (candidateQueryEnd < endQueryPosition)) {
+       for(queryPos = actualStartQuery; queryPos < actualEndQuery; queryPos++) {
+	 score = 0;
+	 for (dbPos = blockStarts[blockIndex], incrementedQueryPos = queryPos; 
+	      ((dbPos <= blockEnds[blockIndex]) && (incrementedQueryPos < queryLength));
+	      dbPos++, incrementedQueryPos++) {
+	   score += posMatrix[dbPos][convertedQuery[incrementedQueryPos]];
+	 }
+	 candidateQueryEnd = queryPos + blockEnds[blockIndex] -   blockStarts[blockIndex];
+       if (((score >= scoreThreshold) || (-1 != frozenBlocks[blockIndex])) 
+	   && (candidateQueryEnd < endQueryPosition)) {
+	 if ((score < 0) && (-1 != frozenBlocks[blockIndex]))
+	   ErrPostEx(SEV_WARNING, 0, 0, "in frozen block %d score is %d",blockIndex+1,score);
 	 newPiece = (alignPiece *) MemNew(1 * sizeof(alignPiece));
 	 newPiece->queryStart = queryPos;
 	 newPiece->queryEnd = candidateQueryEnd;
@@ -1236,6 +1245,58 @@ Int4 getSearchSpaceSize(Int4 masterLength, Int4 databaseLength, Int4 initSearchS
    }
 }
 
+/* Parse inputBlockString, which describes the blocks to be frozen.
+   This procedure is called only if there is at least 1 block to be
+   frozen. The value of frozenBlocks[N] indicates that block N in the
+   CDD sequence should be forcibly aligned to with its first residue 
+   matching position frozenBlocks[N] (numbering from zero .. sequence length
+   - 1) in the query. A value of -1 indicates that block N is unrestricted.
+   When this proceudre is called, the memory for frozenBlocks has already
+   been allocated and all entries have been initialized to -1. 
+*/              
+
+static void parseFrozenBlocksString(Char *inputBlockString, Int4 *frozenBlocks,
+                                     Int4 numBlocks, Int4 queryLength, 
+				     Int4 lastBlockLength) 
+
+{
+     Char *blockStr, *posStr; /*strings to temporarily hold one block number and
+                           one position*/  
+     Int4 block, pos; /*Integer versions of blockStr and posStr*/
+     Boolean WarningIssued;
+
+     blockStr = StrTok(inputBlockString, ",");
+     posStr = StrTok(NULL, ",");
+     while (posStr != NULL) {
+       block = atoi(blockStr);
+       pos = atoi(posStr);
+       WarningIssued = FALSE;
+       if (block <= 0) {
+         ErrPostEx(SEV_WARNING, 0, 0, "block numbers must be >=1");
+	 WarningIssued = TRUE;
+       }
+       if (block > numBlocks) {
+         ErrPostEx(SEV_WARNING, 0, 0, "block number %d greater than number of blocks %d",block,numBlocks);
+	 WarningIssued = TRUE;
+       }
+       if (pos <= 0) {
+         ErrPostEx(SEV_WARNING, 0, 0, "positions in query must be >=1");
+	 WarningIssued = TRUE;
+       }
+       if ((pos + lastBlockLength -1) > queryLength) {
+         ErrPostEx(SEV_WARNING, 0, 0, "postion %d + last block length %d -1  exceeds query length %d",pos,lastBlockLength,queryLength);
+	 WarningIssued = TRUE;
+       }
+       if (WarningIssued)
+	 break;
+       /* the '-1' here is to convert one-numbered user strings to zero-numbered */
+       frozenBlocks[block - 1] = pos - 1;
+       blockStr = StrTok(NULL, ",");
+       posStr = StrTok(NULL, ",");
+     };
+   }
+
+
 #define NUMARG (sizeof(myargs)/sizeof(myargs[0]))
 
 static Args myargs [] = {
@@ -1298,7 +1359,9 @@ static Args myargs [] = {
     { "End of required region in query (-1 indicates end of query)", /* 28 */
       "-1", NULL, NULL, FALSE, 'R', ARG_INT, 0.0, 0, NULL},
     { "Local alignment if T (default), global alignment if F",  /* 29 */
-      "T", NULL, NULL, FALSE, 'l', ARG_BOOLEAN, 0.0, 0, NULL}
+      "T", NULL, NULL, FALSE, 'l', ARG_BOOLEAN, 0.0, 0, NULL},
+    { "Frozen blocks", /* 30 */
+      "none", NULL, NULL, FALSE, 'N', ARG_STRING, 0.0, 0, NULL}
 };
 
 Int2  Main(void)
@@ -1353,6 +1416,8 @@ Int2  Main(void)
    Int4 startQueryRegion, endQueryRegion; /*start and end positions of query 
 					    desired in alignments*/
    Boolean localAlignment; /*should the alignment be local or global*/
+   Int4 *frozenBlocks = NULL; /*locations in query of start of frozen blocks
+                                -1, if not frozen*/
 
    if (! GetArgs ("blockalign", NUMARG, myargs))
      {
@@ -1423,6 +1488,25 @@ Int2  Main(void)
 	      &allowedGaps, &subject_id, myargs[21].floatvalue, myargs[22].intvalue, 
               myargs[26].floatvalue);
 
+   /* 
+    * blocks to be frozen; if any, then the frozenBlocks array
+    * will contain numBlocks integers, where the value of frozenBlocks[N]
+    * indicates that block[N] should have its first residue frozen at this
+    * position (numbering from zero .. sequence length - 1); a value of
+    * -1 indicates that block[N] is unrestricted.
+    */              
+   frozenBlocks = (Int4 *) MemNew(numBlocks * sizeof(Int4));
+   for(i = 0; i < numBlocks; i++)
+     frozenBlocks[i] = -1;
+   if (myargs[30].strvalue && StrCmp(myargs[30].strvalue, "none") != 0) {
+     parseFrozenBlocksString(myargs[30].strvalue, frozenBlocks, numBlocks,
+             queryLength, 
+	     blockEnds[numBlocks-1] - blockStarts[numBlocks -1] + 1); 
+     for(i = 0; i < numBlocks; i++)
+       if (-1 != frozenBlocks[i])
+	 fprintf(diagfp, "block #%i frozen at residue %i\n", i , frozenBlocks[i]);
+   }
+
    init_buff_ex(90);
    fprintf(outfp, "\n");
    IMPALAPrintReference(FALSE, 90, outfp);
@@ -1465,10 +1549,10 @@ Int2  Main(void)
    allocateAlignPieceMemory(numBlocks);
    localAlignment = (Boolean) myargs[29].intvalue;
    if (localAlignment)
-     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue, localAlignment);
+     findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, myargs[17].intvalue, frozenBlocks, localAlignment);
    else
      findAlignPieces(convertedQuery,queryLength, startQueryRegion, endQueryRegion, numBlocks, blockStarts,blockEnds,masterLength, thisScoreMat, 
-NEG_INFINITY, localAlignment);
+NEG_INFINITY, frozenBlocks, localAlignment);
    sortAlignPieces(numBlocks);
    results = makeMultiPieceAlignments(convertedQuery, numBlocks, 
       queryLength, masterSequence, masterLength,
@@ -1567,6 +1651,9 @@ NEG_INFINITY, localAlignment);
    free_buff();
 
    ReadDBBioseqFetchDisable();
+
+   if (NULL !=frozenBlocks) 
+     MemFree(frozenBlocks);
 
    for (i = 0; i < masterLength; i++) {
      if (NULL != thisPosFreqs[i])

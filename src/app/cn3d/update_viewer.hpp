@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.17  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -140,9 +143,6 @@ public:
     // run BLAST on given pairwise alignment - if BLAST is successful, then alignment will be
     // replaced with the result, otherwise the alignment is left unchanged
     void BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFromMultiple);
-
-    // run block alignment algorithm on an update
-    void BlockAlignUpdate(BlockMultipleAlignment *alignment, bool localAlignment);
 
     // save pending structures
     void SavePendingStructures(void);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.58  2002/09/05 18:38:57  thiessen
 * add sort by highlights
 *
@@ -740,17 +743,10 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
                 return false;
             }
 
-            // local Block align single
-            if (updateWindow->DoLocalBlockAlignSingle()) {
-                updateWindow->updateViewer->BlockAlignUpdate(alignment, true);
-                if (!controlDown) updateWindow->LocalBlockAlignSingleOff();
-                return false;
-            }
-
-            // global Block align single
-            if (updateWindow->DoGlobalBlockAlignSingle()) {
-                updateWindow->updateViewer->BlockAlignUpdate(alignment, false);
-                if (!controlDown) updateWindow->GlobalBlockAlignSingleOff();
+            // Block align single
+            if (updateWindow->DoBlockAlignSingle()) {
+                updateWindow->updateViewer->alignmentManager->BlockAlignUpdate(alignment);
+                if (!controlDown) updateWindow->BlockAlignSingleOff();
                 return false;
             }
 

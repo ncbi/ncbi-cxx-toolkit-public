@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.112  2002/09/16 21:24:58  thiessen
+* add block freezing to block aligner
+*
 * Revision 1.111  2002/09/14 19:18:32  thiessen
 * fix center-on-aligned bug when no structured master
 *
@@ -1181,7 +1184,13 @@ void StructureSet::SetCenter(const Vector *given)
                 }
             }
         }
-        if (i==0) center = siteSum / nAtoms;
+        if (i==0) {
+            if (nAtoms == 0) {
+                center.Set(0.0, 0.0, 0.0);
+                break;
+            }
+            center = siteSum / nAtoms;
+        }
     }
     TESTMSG("center: " << center << ", maxDistFromCenter " << maxDistFromCenter);
     rotationCenter = center;
