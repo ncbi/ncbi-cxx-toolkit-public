@@ -61,11 +61,7 @@ Contents: C++ driver for running BLAST
 #endif
 #include <objtools/data_loaders/blastdb/bdbloader.hpp>
 
-#ifndef USE_READDB
 #include <algo/blast/api/seqsrc_seqdb.hpp>
-#else
-#include <algo/blast/api/seqsrc_readdb.h>
-#endif
 
 #include "blast_input.hpp" // From working directory
 #include <objtools/alnmgr/util/blast_format.hpp>
@@ -683,16 +679,9 @@ int CBlastApplication::Run(void)
     bool db_is_aa = (program == eBlastp || program == eBlastx || 
                      program == eRPSBlast || program == eRPSTblastn);
 
-#ifndef USE_READDB
     BlastSeqSrc* seq_src = 
         SeqDbBlastSeqSrcInit(args["db"].AsString(), db_is_aa,
                              first_oid, last_oid);
-#else
-    BlastSeqSrc* seq_src =
-        ReaddbBlastSeqSrcInit(args["db"].AsString().c_str(), 
-                              (db_is_aa ? TRUE : FALSE),
-                              first_oid, last_oid, NULL);
-#endif
     char* error_str = BlastSeqSrcGetInitError(seq_src);
     if (error_str) {
         string msg(error_str);
