@@ -109,7 +109,6 @@ on SetProjectData()
 		AddSimpleProject("mitsock", {"C"}, "connect:mitsock", ¬
 			{"OTSocketInternal", "OTErrno", "OTSockets", "OTidle", "OTNetdbServices", "OTnetdb"})
 		
-		-- can't do "ncbi_lbsm_ipc", "ncbi_server_info", "ncbi_service_lbsmd", "ncbi_lbsm"
 		set myFiles to {"ncbi_conn_streambuf.cpp", "ncbi_conn_stream.cpp", "ncbi_core_cxx.cpp", ¬
 			"email_diag_handler.cpp", "ncbi_ansi_ext.c", "ncbi_buffer.c", "ncbi_connection.c", ¬
 			"ncbi_connutil.c", "ncbi_core.c", "ncbi_file_connector.c", "ncbi_heapmgr.c", ¬
@@ -118,8 +117,7 @@ on SetProjectData()
 			"ncbi_connector.c", "ncbi_service_connector.c", "ncbi_service_lbsmd_stub.c", ¬
 			"ncbi_server_info.c", "ncbi_sendmail.c"}
 		
-		AddProject(DataPlusSysPaths(SimpleProjectData("connect", {"C++"}, "connect", myFiles), ¬
-			{CToolkitRoot() & "include:", CToolkitRoot() & "corelib:"}))
+		AddProject(SimpleProjectData("connect", {"C++"}, "connect", myFiles))
 		
 	end if
 	
