@@ -1,6 +1,0 @@
-# $Id$
-
-ASN_DEP = seq blastdb
-
-LIB = xalnutil
-SRC = showalign

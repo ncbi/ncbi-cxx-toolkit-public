@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objtools/alnmgr/util/showalign.hpp>
+#include <objtools/blast_format/showalign.hpp>
 
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -2337,6 +2337,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.61  2005/02/22 14:24:24  camacho
+*Moved showalign.[hc]pp to objtools/blast_format
+*
 *Revision 1.60  2005/02/22 14:20:32  lebedev
 *showalign.cpp restored
 *

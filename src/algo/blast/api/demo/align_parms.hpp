@@ -38,7 +38,7 @@
 /// when DisplaySeqalign changes.
 
 #include "optional.hpp"
-#include <objtools/alnmgr/util/showalign.hpp>
+#include <objtools/blast_format/showalign.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -104,6 +104,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/02/22 14:25:33  camacho
+ * Moved showalign.[hc]pp to objtools/blast_format
+ *
  * Revision 1.1  2004/02/18 17:04:41  bealer
  * - Adapt blast_client code for Remote Blast API, merging code into the
  *   remote_blast demo application.

@@ -1,6 +1,0 @@
-# $Id$
-
-LIB_PROJ = xalnutil
-
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
