@@ -512,7 +512,7 @@ if (argc > 1)
 
 if (argc > 2)
   {
-  outfile = fopen(argv[op+1], "w");
+  outfile = fopen(argv[op+1], "wb");
   if (outfile == NULL)
     {
     printf("** Failed to open %s\n", argv[op+1]);
