@@ -252,7 +252,18 @@ bool CDllResolver::TryCandidate(const string& file_name)
         SResolvedEntry entry_point(dll);
 
         ITERATE(vector<string>, it, m_EntryPoinNames) {
-            const string& entry_point_name = *it;
+            string entry_point_name;
+            
+            const string& dll_name = dll->GetName();
+            
+            if (!dll_name.empty()) {
+                string base_name;
+                CDirEntry::SplitPath(entry_point_name, 0, &base_name, 0);
+                NStr::Replace(*it, "${basename}", base_name, entry_point_name);
+            }
+            
+            // Check for the BASE library name macro
+            
             if (entry_point_name.empty())
                 continue;
             p = dll->GetEntryPoint(entry_point_name);
@@ -293,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/12/09 13:06:44  kuznets
+ * Supported dll base name in entry point resolution (CDllResolver)
+ *
  * Revision 1.17  2003/12/01 16:39:15  kuznets
  * CDllResolver changed to try all entry points
  * (prev. version stoped on first successfull).
