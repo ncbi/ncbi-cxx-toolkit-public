@@ -49,9 +49,13 @@ Contents: Structures and functions prototypes used for BLAST gapped extension
 extern "C" {
 #endif
 
-#define EXTEND_DYN_PROG            1
-#define EXTEND_GREEDY              2
-#define EXTEND_GREEDY_NO_TRACEBACK 3
+/** Defines extension algorithm types */
+typedef enum {
+    EXTEND_DYN_PROG = 1,
+    EXTEND_GREEDY,
+    EXTEND_GREEDY_NO_TRACEBACK,
+    EXTEND_ALGO_MAX
+} ExtensionAlgorithmType;
 
 #define MB_DIAG_NEAR 30
 #define MB_DIAG_CLOSE 6
