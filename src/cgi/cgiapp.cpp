@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/11/17 22:48:51  vakatov
+* Moved "GetModTime()"-related code and headers to under #if HAVE_LIBFASTCGI
+*
 * Revision 1.18  1999/11/15 15:54:53  sandomir
 * Registry support moved from CCgiApplication to CNcbiApplication
 *
@@ -98,20 +101,30 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
-// OS
-#include <sys/stat.h>
-#include <errno.h>
-
 #if defined(HAVE_LIBFASTCGI)
-// 3rd-party headers
 # include <fcgiapp.h>
-// local headers
 # include "fcgibuf.hpp"
+# include <sys/stat.h>
+# include <errno.h>
 #endif /* HAVE_LIBFASTCGI */
+
 
 BEGIN_NCBI_SCOPE
 
-static time_t GetModTime( const char* const* argv );
+
+#if defined(HAVE_LIBFASTCGI)
+static time_t s_GetModTime(const char* const* argv)
+{
+    _ASSERT(argv  &&  argv[0]);
+    struct stat st;
+    if (stat(argv[0], &st) != 0) {
+        ERR_POST("s_GetModTime(): " << strerror(errno));
+        THROW1_TRACE(CErrnoException, "Program status access error");
+    }
+    return st.st_mtime;
+}
+#endif /* HAVE_LIBFASTCGI */
+
 
 
 ///////////////////////////////////////////////////////
@@ -128,7 +141,7 @@ int CCgiApplication::Run(void)
 #if defined(HAVE_LIBFASTCGI)
     if ( !FCGX_IsCGI() ) {
 
-        time_t mtime = GetModTime( m_Argv );        
+        time_t mtime = s_GetModTime( m_Argv );        
         
         int iterations;
         {
@@ -200,7 +213,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
             _TRACE("CCgiApplication::Run: FINISHING");
             FCGX_Finish();
 
-            time_t mtimeNew = GetModTime( m_Argv );    
+            time_t mtimeNew = s_GetModTime( m_Argv );    
             if( mtimeNew != mtime ) {
                 _TRACE("CCgiApplication::Run: program modification date changed");
                 break;
@@ -260,20 +273,6 @@ CCgiContext* CCgiApplication::CreateContext( CNcbiEnvironment* env,
                                              int argc, char** argv ) 
 {
     return new CCgiContext( *this, env, in, out, argc, argv );
-}
-
-//
-
-time_t GetModTime( const char* const* argv )
-{
-    _ASSERT( argv && argv[ 0 ] );
-
-    struct stat st;
-    if( stat( argv[ 0 ], &st ) != 0 ) {
-        ERR_POST(  "NCBI_NS_NCBI::GetModTime: " << strerror( errno ) );
-        THROW1_TRACE(CErrnoException,"Program status access error");
-    }
-    return st.st_mtime;
 }
 
 END_NCBI_SCOPE
