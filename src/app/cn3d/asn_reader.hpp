@@ -166,7 +166,7 @@ bool GetAsnDataViaHTTP(
         okay = true;
 
     } catch (std::exception& e) {
-        *err = string("Network connection failed or data is not in expected format; error: ") + e.what();
+        *err = std::string("Network connection failed or data is not in expected format; error: ") + e.what();
     }
     ncbi::SetDiagTrace(ncbi::eDT_Default);
 
@@ -181,6 +181,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/09/23 10:34:06  thiessen
+* oops, forgot std:: qualifier
+*
 * Revision 1.21  2004/09/23 10:30:56  thiessen
 * keep and restore original registry
 *
