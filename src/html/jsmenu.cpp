@@ -134,7 +134,7 @@ void CHTMLPopupMenu::SetAttribute(EHTML_PM_Attribute attribute,
 }
 
 
-string CHTMLPopupMenu::GetName(void)
+string CHTMLPopupMenu::GetName(void) const
 {
     return m_Name;
 }
@@ -272,6 +272,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2002/04/29 18:07:21  ucko
+ * Make GetName const.
+ *
  * Revision 1.6  2002/02/13 20:16:09  ivanov
  * Added support of dynamic popup menus. Changed GetCodeBody().
  *
