@@ -242,7 +242,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     if ( !info ) { \
         DECLARE_BASE_OBJECT(CClass); \
         info = Code; \
-        RegisterTypeInfoObject(info);
+        NCBI_NS_NCBI::RegisterTypeInfoObject(info);
 #define BEGIN_TYPE_INFO(ClassName, Method, InfoType, Code) \
 	BEGIN_BASE_TYPE_INFO(ClassName, ClassName, Method, InfoType, Code)
     
@@ -432,7 +432,7 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 {   static NCBI_NS_NCBI::CEnumeratedTypeValues* enumInfo = 0; \
     if ( !enumInfo ) { \
     enumInfo = new NCBI_NS_NCBI::CEnumeratedTypeValues(EnumAlias, IsInteger); \
-    RegisterEnumTypeValuesObject(enumInfo); \
+    NCBI_NS_NCBI::RegisterEnumTypeValuesObject(enumInfo); \
     EnumName enumValue;
 #define END_ENUM_INFO_METHOD } return enumInfo; }
 
