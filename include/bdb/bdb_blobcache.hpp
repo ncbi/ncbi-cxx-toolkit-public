@@ -108,10 +108,18 @@ public:
 
     /// Suggest page size. Should be called before Open.
     /// Does not have any effect if cache is already created.
-    void SetPageSize(EPageSize page_size)
+    void SetPageSize(EPageSize page_size) { m_PageSizeHint = page_size; }
+
+    /// Options controlling transaction and write syncronicity.
+    enum EWriteSyncMode
     {
-        m_PageSizeHint = page_size;
-    }
+        eWriteSync,
+        eWriteNoSync
+    };
+
+    /// Set write syncronization
+    void SetWriteSync(EWriteSyncMode wsync) { m_WSync = wsync; }
+    EWriteSyncMode GetWriteSync() const { return m_WSync; }
 
     /// Locking modes to protect cache instance
     enum ELockMode 
@@ -290,7 +298,9 @@ private:
     {
     public: 
         CCacheTransaction(CBDB_Cache& cache)
-            : CBDB_Transaction(*(cache.m_Env))
+            : CBDB_Transaction(*(cache.m_Env), 
+              cache.GetWriteSync() == eWriteSync ? 
+                    CBDB_Transaction::eTransSync : CBDB_Transaction::eTransASync)
         {
             cache.m_CacheDB->SetTransaction(this);
             cache.m_CacheAttrDB->SetTransaction(this);
@@ -371,6 +381,7 @@ private:
 
     CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attributes
     EPageSize               m_PageSizeHint; ///< Suggested page size
+    EWriteSyncMode          m_WSync;        ///< Write syncronization
 };
 
 
@@ -432,6 +443,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/09/03 13:34:59  kuznets
+ * Added async write option
+ *
  * Revision 1.31  2004/08/24 15:04:19  kuznets
  * + SetPageSize() to fine control IO performance
  *
