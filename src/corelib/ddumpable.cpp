@@ -142,6 +142,15 @@ void CDebugDumpContext::SetFrame(const string& frame)
 }
 
 
+void CDebugDumpContext::Log(const string& name,
+                            const char* value, 
+                            CDebugDumpFormatter::EValueType type,
+                            const string& comment)
+{
+    Log(name,value ? (const string&)value : kEmptyStr,type,comment);
+}
+
+
 void CDebugDumpContext::Log(const string&                   name,
                             const string&                   value,
                             CDebugDumpFormatter::EValueType type,
@@ -158,6 +167,34 @@ void CDebugDumpContext::Log(const string& name, bool value,
                             const string& comment)
 {
     Log(name, NStr::BoolToString(value), CDebugDumpFormatter::eValue, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, short value,
+                            const string& comment)
+{
+    Log(name, NStr::IntToString(value), CDebugDumpFormatter::eValue, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, unsigned short value,
+                            const string& comment)
+{
+    Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, int value,
+                            const string& comment)
+{
+    Log(name, NStr::IntToString(value), CDebugDumpFormatter::eValue, comment);
+}
+
+
+void CDebugDumpContext::Log(const string& name, unsigned int value,
+                            const string& comment)
+{
+    Log(name, NStr::UIntToString(value), CDebugDumpFormatter::eValue, comment);
 }
 
 
@@ -337,6 +374,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/12 20:16:01  gouriano
+ * Added more Log() methods: for short, int, and char* types
+ *
  * Revision 1.5  2003/05/19 21:05:41  vakatov
  * x_InsertPageBreak() --  title: "" -> kEmptyStr,  len:  int -> unsigned int.
  * Fixed code indentation and simplified some code.

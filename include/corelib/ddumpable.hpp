@@ -84,10 +84,21 @@ public:
     // Log data in the form [name, data, comment]
     // All data is passed to a formatter as string, still sometimes
     // it is probably worth to emphasize that the data is REALLY a string
+    void Log(const string& name, const char* value, 
+             CDebugDumpFormatter::EValueType type=CDebugDumpFormatter::eValue,
+             const string& comment = kEmptyStr);
     void Log(const string& name, const string& value, 
              CDebugDumpFormatter::EValueType type=CDebugDumpFormatter::eValue,
              const string& comment = kEmptyStr);
     void Log(const string& name, bool value,
+             const string& comment = kEmptyStr);
+    void Log(const string& name, short value,
+             const string& comment = kEmptyStr);
+    void Log(const string& name, unsigned short value,
+             const string& comment = kEmptyStr);
+    void Log(const string& name, int value,
+             const string& comment = kEmptyStr);
+    void Log(const string& name, unsigned int value,
              const string& comment = kEmptyStr);
     void Log(const string& name, long value,
              const string& comment = kEmptyStr);
@@ -332,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/12 20:15:23  gouriano
+ * Added more Log() methods: for short, int, and char* types
+ *
  * Revision 1.5  2003/05/19 21:05:39  vakatov
  * x_InsertPageBreak() --  title: "" -> kEmptyStr,  len:  int -> unsigned int.
  * Fixed code indentation and simplified some code.
