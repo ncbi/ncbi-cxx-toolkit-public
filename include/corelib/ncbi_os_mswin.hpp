@@ -60,5 +60,23 @@ inline int GetObject(HGDIOBJ hGdiObj, int cbBuffer, LPVOID lpvObject)
 }
 #endif
 
+// DrawText
+#ifdef DrawText
+#undef DrawText
+inline int DrawText(HDC hDC, 
+					LPCTSTR lpString, 
+					int nCount, 
+					LPRECT lpRect,
+					UINT uFormat)
+{
+#  ifdef _UNICODE
+    return DrawTextW(hDC, lpString, nCount, lpRect, uFormat);
+#  else
+    return DrawTextA(hDC, lpString, nCount, lpRect, uFormat);
+#  endif
+}
+#endif
+
+
 
 #endif  /* CORELIB___NCBI_OS_MSWIN__HPP */
