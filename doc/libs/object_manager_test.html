@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <title>Object manager - test cases</title>
+</head>
+<body>
+<div align="Center">
+<h1>Object Manager.</h1>
+</div>
+<h2>Test cases.</h2>
+1.<br>
+Create object manager as a referenced object in the heap (in CRef container).<br>
+Create data loader 1 in the heap and register it with the object manager
+as a non-default one.<br>
+Create data loader 2 in the heap and register it with the object manager
+as a default one.<br>
+Create scope 1 as a referenced object in the heap.<br>
+Add default data loaders to the scope 1 - only data loader 2 is added.<br>
+Add data loader 1 to the scope 1 - now scope1 has two data loaders.<br>
+Create scope 2 as an object on the stack.<br>
+Add default data loaders to the scope 2 - only data loader 2 is added.<br>
+Both scopes go out of scope - both scopes are deleted, both data loaders
+are alive.<br>
+Object manager goes out of scope - both data loaders are deleted.<br>
+<br>
+2.<br>
+Create object manager as a referenced object in the heap.<br>
+Create data loader 1 in the heap and register it with the object manager
+as a default one.<br>
+Create scope 1 in the heap.<br>
+Add default data loaders to the scope 1.<br>
+Delete scope - data loader 1 is alive.<br>
+Object manager goes out of scope - data loader 1 is deleted.<br>
+<br>
+3.<br>
+Create object manager as a referenced object in the heap.<br>
+Create data loader 1 in the heap and register it with the object manager
+as a default one.<br>
+Create scope 1 as a referenced object in the heap.<br>
+ Add default data loaders to the scope 1.<br>
+Revoke data loader 1 in the object manager - the call fails: data loader
+is in use.<br>
+Scope goes out of scope - scope is deleted.<br>
+Revoke data loader 1 in the object manager - the call succeeds.<br>
+Revoke data loader 1 in the object manager - object manager generates an
+exception: no such data loader.<br>
+<br>
+4.<br>
+Create object manager as a referenced object in the heap.<br>
+Create scope 1 as a referenced object in the heap.<br>
+ Add default data loaders to the scope 1 - the call succeedes, no data loaders
+added though,<br>
+Add data loader 1 to the scope - object manager generates an exception: no
+such data loader.<br>
+<br>
+5.<br>
+Create object manager as a referenced object in the heap.<br>
+Create scope on the stack.<br>
+Add top level seq entry to the scope - a data source is created to store
+the entry.<br>
+Scope goes out of scope - the seq entry is deleted, the data source is deleted.<br>
+<br>
+6.<br>
+to be continued...<br>
+<br>
+</body>
+</html>
