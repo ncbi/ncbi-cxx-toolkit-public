@@ -36,13 +36,13 @@ XLIB    = $(LIB:%=@lib_pre@%@lib_ext@)
 
 $(XLIB): $(XLIBOBJ)
 	$(AR) @f_outlib@$(XLIB) $(XLIBOBJ)
-	-$(RANLIB) $(XLIB)
+	$(RANLIB) $(XLIB)
 
 
 ### Standard targets
 
 all: $(XLIB) $(XOBJ)
-	@$(COPY_IF) $(libdir) $(XLIB) $(XOBJ)
+	@$(BINCOPY) $(XLIB) $(XOBJ) $(libdir)
 
 clean:
 	-$(RMDIR) SunWS_cache
