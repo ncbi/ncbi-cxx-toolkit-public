@@ -79,7 +79,7 @@ public:
   ~CIStream() { delete m_sb; }
 
   bool Eof();
-  static size_t CIStream::Read(istream &is, char* buffer, size_t bufferLength);
+  static size_t Read(istream &is, char* buffer, size_t bufferLength);
 
   streambuf *m_sb;
 };
@@ -162,6 +162,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.15  2002/05/06 20:37:08  ucko
+* Drop redundant CIStream:: which generated warnings under some compilers.
+*
 * Revision 1.14  2002/05/03 21:28:01  ucko
 * Introduce T(Signed)SeqPos.
 *
