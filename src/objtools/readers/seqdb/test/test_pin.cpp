@@ -49,7 +49,6 @@
 #include <objects/seq/seq__.hpp>
 
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <assert.h>
 #include <readdb.h>
 
@@ -57,123 +56,8 @@ volatile int gnum = 0;
 
 USING_NCBI_SCOPE;
 
-#include <sys/time.h>
-#include <unistd.h>
-
-inline double dbl_time(void)
-{
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-    
-    gettimeofday(& tv, 0);
-    
-    return tv.tv_sec + double(tv.tv_usec) / 1000000.0;
-}
-
-
 struct charbox {
     char xyz[10234];
-};
-
-//#include "thr_test.cpp"
-
-int hang10()
-{
-    if (long(& dbl_time) == 1102000L) {
-        cout << "inconceivable!" << endl;
-    }
-    return 0;
-}
-
-class CAccelThread {
-public:
-    CAccelThread(CSeqDB & db)
-        : _db(db)
-    {
-    }
-    
-    void RunInline(void)
-    {
-//         _pid = fork();
-        
-//         if (! _pid) {
-            _Iterate();
-            exit(0);
-//         }
-    }
-    
-    void Run(void)
-    {
-        _pid = fork();
-        
-        if (! _pid) {
-            _Iterate();
-            exit(0);
-        }
-    }
-    
-    void Wait(void)
-    {
-        if (_pid) {
-            waitpid(_pid, 0, 0);
-            _pid = 0;
-        }
-    }
-    
-private:
-    void _Iterate(void)
-    {
-        Uint4 oidx = 0;
-        
-        try {
-            Uint4 oid = 0;
-            const char * buf = 0;
-        
-            Uint4 hashesque = 0;
-        
-            Uint4 part = _db.GetNumSeqs() / 40;
-            Uint4 parts = part;
-        
-            cout << "ITER:" << flush;
-        
-            while(_db.CheckOrFindOID(oid)) {
-                if (oid > parts) {
-                    parts += part;
-                    cout << "+" << flush;
-                }
-                
-                /*Uint4 oid_len =*/ _db.GetSequence(oid, & buf);
-                
-//                 for(Uint4 ii = 0; ii < oid_len; ii += 511) {
-//                     hashesque += buf[ii];
-//                 }
-            
-                _db.RetSequence(& buf);
-            
-                oid ++;
-                oidx = oid;
-                
-                if (oid > 2763324) {
-                    x_PossiblyStopMaybe();
-                }
-            }
-            _hash = hashesque;
-            cout << "!" << endl;
-        }
-        catch(...) {
-            cout << "***" << oidx << "-" << _db.GetNumSeqs() << endl;
-        }
-    }
-    
-    void x_PossiblyStopMaybe(void)
-    {
-        //cout << " It is not widely known that I once leveled Rome. " << endl;
-    }
-    
-    CSeqDB & _db;
-    Uint4    _hash;
-    Uint4    _pid;
 };
 
 int test1(int argc, char ** argv)
@@ -196,8 +80,6 @@ int test1(int argc, char ** argv)
     bool  get_bioseq    = false;
     bool  show_progress = true;
     bool  approx        = true;
-    bool  accel_thread  = false;
-    bool  accel_inline  = false;
     Uint4 membound      = 0;
     Uint4 slicesize     = 0;
     bool  defer_ret     = false;
@@ -213,131 +95,53 @@ int test1(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
-        if (s == "-accel1") {
-            s = "-accel2";
-            accel_thread = true;
-        } else desc += " [-accel1]";
-        
-        if (s == "-accel3") {
-            s = "-accel2";
-            accel_thread = true;
-            accel_inline = true;
-        } else desc += " [-accel1]";
-        
-        if (s == "-accel2") {
-            CSeqDB nt("nr", 'p');
-            
-            CAccelThread accel(nt);
-            
-            vector<Uint4> V;
-            
-            Uint4 numseq = nt.GetNumSeqs();
-            
-            for(Uint4 i = 0; i < numseq; i+=2) {
-                // Pick a random location in the array; push the
-                // value at that location onto the end.
-                
-                // Put i into the old location for that value.
-                
-                V.push_back(0);
-                
-                Uint4 loc = (rand() + (rand() << 16)) % V.size();
-                
-                V[i/2] = V[loc];
-                V[loc] = i/2;
-            }
-            
-            double t_s(dbl_time());
-            
-            if (accel_thread) {
-                if (accel_inline) {
-                    accel.RunInline();
-                } else {
-                    accel.Run();
-                }
-            }
-            
-            Uint4 part = V.size() / 40;
-            Uint4 parts = part;
-            
-            cout << "iter:" << flush;
-            
-            for(Uint4 i = 0; i < V.size(); i++) {
-                if (i > parts) {
-                    parts += part;
-                    cout << "-" << flush;
-                }
-                
-                Uint4 oid = V[i];
-                
-                const char * buf = 0;
-                nt.GetSequence(oid, & buf);
-                nt.RetSequence(& buf);
-            }
-            
-            double t_e(dbl_time());
-            
-            cout << "#" << endl;
-            cout << "time elapsed: " << (t_e - t_s) << endl;
-            
-            
-            double w_s(dbl_time());
-            
-            accel.Wait();
-            
-            double w_e(dbl_time());
-            
-            cout << "time elapsed: " << (w_e - w_s) << endl;
-            
-            return 0;
-        } else desc += " [-accel2]";
-        
         if (s == "-mutexes") {
             /*Uint4 z = 0;*/
             
             CMutex a;
             CFastMutex b;
             
+            CStopWatch sw(true);
+            double spt1 = sw.Elapsed();
             
-            double spt1 = dbl_time();
             for(int i = 0; i<10000000; i++) {
                 CMutexGuard aa(a);
                 
                 gnum++;
             }
             
-            double spt2 = dbl_time();
+            double spt2 = sw.Elapsed();
             for(int i = 0; i<10000000; i++) {
                 CFastMutexGuard bb(b);
                 
                 gnum++;
             }
 
-            double spt3 = dbl_time();
+            double spt3 = sw.Elapsed();
             for(int i = 0; i<10000000; i++) {
                 gnum++;
             }
 
-            double sptA = dbl_time();
+            double sptA = sw.Elapsed();
             for(int i = 0; i<10000000; i++) {
                 CMutexGuard aa(a);
                 
                 gnum++;
             }
             
-            double sptB = dbl_time();
+            double sptB = sw.Elapsed();
             for(int i = 0; i<10000000; i++) {
                 CFastMutexGuard bb(b);
                 
                 gnum++;
             }
             
-            double sptC = dbl_time();
+            double sptC = sw.Elapsed();
             for(int i = 0; i<10000000; i++) {
                 gnum++;
             }
             
-            double sptX = dbl_time();
+            double sptX = sw.Elapsed();
             
             cout << "\nS run1 = " << spt2 - spt1 << endl;
             cout <<   "S run2 = " << sptB - sptA << endl;
@@ -1179,10 +983,12 @@ int test1(int argc, char ** argv)
             double woist = 0.0;
             double totul = 0.0;
             
+            CStopWatch sw(true);
+            
             for(int i = 0; i<10; i++) {
                 CSeqDBIter skywalk = phil.Begin();
                 
-                double spt1 = dbl_time();
+                double spt1 = sw.Elapsed();
                 Uint8 mylen = 0;
                 
                 while(skywalk) {
@@ -1197,7 +1003,7 @@ int test1(int argc, char ** argv)
                     //cout << this_oid << " is length " << this_len << endl;
                 }
                 
-                double spt2  = dbl_time();
+                double spt2  = sw.Elapsed();
                 double rezzy = spt2 - spt1;
                 
                 cout << "mylen " << mylen
@@ -1379,25 +1185,27 @@ int test1(int argc, char ** argv)
             double xt[Asize];
             const char * tag[Asize];
             
-            xt[xt_iter++] = dbl_time();
+            CStopWatch sw(true);
+            
+            xt[xt_iter++] = sw.Elapsed();
             CSeqDB al("nr", 'p');
-            xt[xt_iter++] = dbl_time();
+            xt[xt_iter++] = sw.Elapsed();
             cerr << "hmmmmmm" << endl;
-            xt[xt_iter++] = dbl_time();
+            xt[xt_iter++] = sw.Elapsed();
             
             const char * buf = 0;
             
             for (int j = 0; j<10; j++) {
-                xt[xt_iter++] = dbl_time();
+                xt[xt_iter++] = sw.Elapsed();
                 al.GetSequence(1001, & buf);
             }
             int k01 = xt_iter;
-            xt[xt_iter++] = dbl_time();
+            xt[xt_iter++] = sw.Elapsed();
             
             for(int i = 0; i<100000; i++) {
                 al.GetSequence(1001, & buf);
             }
-            xt[xt_iter++] = dbl_time();
+            xt[xt_iter++] = sw.Elapsed();
             
             for(int i = 0; i < Asize; i++) {
                 tag[i] = 0;
@@ -1517,12 +1325,8 @@ int test1(int argc, char ** argv)
             }
             cout << "total2 " << len_tot << endl;
             
-            Uint8 x = len1 - 5;
-            
             len_tot = 0;
             for(Uint4 i = 0; i<len3; i++) {
-                if (i > x)
-                    hang10();
                 len_tot += dbi3.GetSeqLength(i);
             }
             cout << "total3 " << len_tot << endl;
@@ -1921,9 +1725,11 @@ int test1(int argc, char ** argv)
     //return 0;
     
     
+    CStopWatch sw(true);
+    
     for(int k = 0; k<num_itera; k++) {
         try {
-            double dstart = dbl_time();
+            double dstart = sw.Elapsed();
             
             CSeqDB dbi(dbname, seqtype, 0, 0, use_mm);
             
@@ -1945,7 +1751,7 @@ int test1(int argc, char ** argv)
             if (show_progress)
                 cout << "at line " << __LINE__ << endl;
 
-            double dend = dbl_time();
+            double dend = sw.Elapsed();
             
             if (show_progress) {
                 cout << "NR seq count: " << nseqs   << endl;
@@ -1953,7 +1759,7 @@ int test1(int argc, char ** argv)
                 cout << "Compute time: " << (dend - dstart) << endl;
             }
             
-            double cstart = dbl_time();
+            double cstart = sw.Elapsed();
         
             Uint8 cleng = 0;
             
@@ -2048,7 +1854,7 @@ int test1(int argc, char ** argv)
                 
                 if (show_progress) {
                     if (i >= report_at) {
-                        double t = dbl_time() - cstart;
+                        double t = sw.Elapsed() - cstart;
                         double s_per_t = i / (t ? t : 0.00001);
                 
                         cout << "t[" << t << "] s/t[" << s_per_t << "] REPORTING: i=" << i
@@ -2080,7 +1886,7 @@ int test1(int argc, char ** argv)
             }
             cout << "Done dumping remaining sequences." << endl;
             
-            double cend = dbl_time();
+            double cend = sw.Elapsed();
             
             if (show_progress) {
                 cout << "\nNR seq count:  " << nseqs   << "\n";
