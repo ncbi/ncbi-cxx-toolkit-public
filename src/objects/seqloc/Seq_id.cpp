@@ -321,6 +321,12 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             default:                                return eAcc_unreserved_nuc;
             }
 
+        case 'C':
+            switch (pfx[1]) {
+            case 'A':                               return eAcc_gb_est;
+            default:                                return eAcc_unreserved_nuc;
+            }
+
         default: return eAcc_unreserved_nuc;
         }
 
@@ -820,6 +826,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.38  2002/10/18 16:03:08  ucko
+ * +CA (eAcc_gb_est)
+ *
  * Revision 6.37  2002/10/03 18:55:04  clausen
  * Removed extra whitespace
  *
