@@ -50,7 +50,7 @@ public:
     // Original graph with unmapped location/product
     const CSeq_graph& GetOriginalGraph(void) const
         {
-            return m_AnnotObject_Ref.GetGraph();
+            return m_GraphRef->GetGraph();
         }
     // Graph mapped to the master sequence.
     // WARNING! The function is rather slow and should be used with care.
@@ -147,15 +147,20 @@ private:
     friend class CGraph_CI;
     friend class CAnnot_CI;
 
-    void Set(const CAnnotObject_Ref& annot);
+    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
+    typedef TAnnotSet::const_iterator   TIterator;
+
+    void Set(CAnnot_Collector& collector,
+             const TIterator& annot);
 
     void MakeMappedGraph(void) const;
     void MakeMappedLoc(void) const;
 
-    CAnnotObject_Ref                m_AnnotObject_Ref;
+    mutable CRef<CAnnot_Collector> m_Collector;
+    TIterator                      m_GraphRef;
+
     mutable CConstRef<CSeq_graph>   m_MappedGraph;
     mutable CConstRef<CSeq_loc>     m_MappedLoc;
-    mutable CRef<CSeq_loc>          m_CreatedLoc;
 };
 
 
@@ -214,7 +219,7 @@ CGraph_CI::CGraph_CI(CScope& scope, const CSeq_loc& loc,
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, scope, loc, sel)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -225,7 +230,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, bioseq, start, stop, sel)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -235,7 +240,7 @@ CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -246,7 +251,7 @@ CGraph_CI::CGraph_CI(const CSeq_annot_Handle& annot,
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, annot, sel)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -256,7 +261,7 @@ CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -267,7 +272,7 @@ CGraph_CI::CGraph_CI(const CSeq_entry_Handle& entry,
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_Graph, entry, sel)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -277,7 +282,7 @@ CGraph_CI& CGraph_CI::operator++ (void)
 {
     Next();
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
     return *this;
 }
@@ -286,7 +291,7 @@ inline
 CGraph_CI& CGraph_CI::operator-- (void)
 {
     Prev();
-    m_Graph.Set(Get());
+    m_Graph.Set(GetCollector(), GetIterator());
     return *this;
 }
 
@@ -316,6 +321,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/04/07 13:20:17  grichenk
+* Moved more data from iterators to CAnnot_Collector
+*
 * Revision 1.34  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

@@ -102,6 +102,9 @@ public:
     size_t GetSize(void) const;
 
 protected:
+    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
+    typedef TAnnotSet::const_iterator   TIterator;
+
     // Check if a datasource and an annotation are selected.
     bool IsValid(void) const;
     // Move to the next valid position
@@ -111,10 +114,10 @@ protected:
     const CAnnotObject_Ref& Get(void) const;
     CScope& GetScope(void) const;
 
-private:
-    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
-    typedef TAnnotSet::const_iterator   TIterator;
+    CAnnot_Collector& GetCollector(void);
+    const TIterator& GetIterator(void) const;
 
+private:
     const TAnnotSet& x_GetAnnotSet(void) const;
 
     CRef<CAnnot_Collector> m_DataCollector;
@@ -174,6 +177,22 @@ const CAnnotObject_Ref& CAnnotTypes_CI::Get(void) const
 
 
 inline
+CAnnot_Collector& CAnnotTypes_CI::GetCollector(void)
+{
+    _ASSERT(m_DataCollector);
+    return *m_DataCollector;
+}
+
+
+inline
+const CAnnotTypes_CI::TIterator& CAnnotTypes_CI::GetIterator(void) const
+{
+    _ASSERT( IsValid() );
+    return m_CurrAnnot;
+}
+
+
+inline
 size_t CAnnotTypes_CI::GetSize(void) const
 {
     return x_GetAnnotSet().size();
@@ -193,6 +212,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2004/04/07 13:20:16  grichenk
+* Moved more data from iterators to CAnnot_Collector
+*
 * Revision 1.69  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

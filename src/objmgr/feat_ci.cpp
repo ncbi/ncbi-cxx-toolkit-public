@@ -277,8 +277,8 @@ CMappedFeat::CMappedFeat(const CMappedFeat& feat)
 CMappedFeat& CMappedFeat::operator=(const CMappedFeat& feat)
 {
     if ( this != &feat ) {
-        m_Scope = feat.m_Scope;
-        m_AnnotObject_Ref = feat.m_AnnotObject_Ref;
+        m_Collector = feat.m_Collector;
+        m_FeatRef = feat.m_FeatRef;
         m_OriginalSeq_feat = feat.m_OriginalSeq_feat;
         m_MappedSeq_feat = feat.m_MappedSeq_feat;
         m_MappedSeq_loc = feat.m_MappedSeq_loc;
@@ -294,7 +294,8 @@ CMappedFeat::~CMappedFeat(void)
 
 CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 {
-    return CSeq_annot_Handle(m_Scope, m_AnnotObject_Ref.GetSeq_annot_Info());
+    return CSeq_annot_Handle(m_Collector->GetScope(),
+        m_FeatRef->GetSeq_annot_Info());
 }
 
 
@@ -303,25 +304,25 @@ const CSeq_annot& CMappedFeat::GetSeq_annot(void) const
     ERR_POST_ONCE(Warning<<
                   "CMappedFeat::GetSeq_annot() is deprecated, "
                   "use GetAnnot().");
-    return *m_AnnotObject_Ref.GetSeq_annot_Info().GetCompleteSeq_annot();
+    return *m_FeatRef->GetSeq_annot_Info().GetCompleteSeq_annot();
 }
 
 
 void CMappedFeat::Reset(void)
 {
-    m_Scope.Reset();
-    m_AnnotObject_Ref = CAnnotObject_Ref();
+    m_Collector.Reset();
     m_OriginalSeq_feat.Reset();
     m_MappedSeq_feat.Reset();
     m_MappedSeq_loc.Reset();
 }
 
 
-CMappedFeat& CMappedFeat::Set(CScope& scope, const CAnnotObject_Ref& annot)
+CMappedFeat& CMappedFeat::Set(CAnnot_Collector& collector,
+                              const TIterator& annot)
 {
-    m_Scope.Set(&scope);
-    _ASSERT(annot.IsFeat());
-    m_AnnotObject_Ref = annot;
+    m_Collector.Reset(&collector);
+    _ASSERT(annot->IsFeat());
+    m_FeatRef = annot;
     m_OriginalSeq_feat.Reset();
     m_MappedSeq_feat.Reset();
     m_MappedSeq_loc.Reset();
@@ -331,20 +332,31 @@ CMappedFeat& CMappedFeat::Set(CScope& scope, const CAnnotObject_Ref& annot)
 
 const CSeq_feat& CMappedFeat::x_MakeOriginalFeature(void) const
 {
-    if ( m_AnnotObject_Ref.IsSNPFeat() ) {
+    if ( m_FeatRef->IsSNPFeat() ) {
         _ASSERT(!m_OriginalSeq_feat);
         const CSeq_annot_SNP_Info& snp_annot =
-            m_AnnotObject_Ref.GetSeq_annot_SNP_Info();
+            m_FeatRef->GetSeq_annot_SNP_Info();
         const SSNP_Info& snp_info =
-            snp_annot.GetSNP_Info(m_AnnotObject_Ref.GetAnnotObjectIndex());
-        snp_info.UpdateSeq_feat(m_CreatedOriginalSeq_feat,
-                                m_CreatedOriginalSeq_point,
-                                m_CreatedOriginalSeq_interval,
+            snp_annot.GetSNP_Info(m_FeatRef->GetAnnotObjectIndex());
+        CRef<CSeq_feat> orig_feat;
+        m_Collector->m_CreatedOriginalSeq_feat.AtomicReleaseTo(orig_feat);
+        CRef<CSeq_point> created_point;
+        m_Collector->m_CreatedOriginalSeq_point.AtomicReleaseTo(created_point);
+        CRef<CSeq_interval> created_interval;
+        m_Collector->m_CreatedOriginalSeq_interval.
+            AtomicReleaseTo(created_interval);
+        snp_info.UpdateSeq_feat(orig_feat,
+                                created_point,
+                                created_interval,
                                 snp_annot);
-        m_OriginalSeq_feat = m_CreatedOriginalSeq_feat;
+        m_OriginalSeq_feat = orig_feat;
+        m_Collector->m_CreatedOriginalSeq_feat.AtomicResetFrom(orig_feat);
+        m_Collector->m_CreatedOriginalSeq_point.AtomicResetFrom(created_point);
+        m_Collector->m_CreatedOriginalSeq_interval.
+            AtomicResetFrom(created_interval);
     }
     else {
-        m_OriginalSeq_feat.Reset(&m_AnnotObject_Ref.GetFeat());
+        m_OriginalSeq_feat.Reset(&m_FeatRef->GetFeat());
     }
     return *m_OriginalSeq_feat;
 }
@@ -353,30 +365,46 @@ const CSeq_feat& CMappedFeat::x_MakeOriginalFeature(void) const
 const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
 {
     _ASSERT(!m_MappedSeq_loc);
-    if ( m_AnnotObject_Ref.MappedSeq_locNeedsUpdate() ) {
+    if ( m_FeatRef->MappedSeq_locNeedsUpdate() ) {
         _ASSERT(!m_MappedSeq_feat);
         // need to covert Seq_id to Seq_loc
         // clear references to mapped location from mapped feature
-        if ( m_CreatedMappedSeq_feat ) {
-            if ( !m_CreatedMappedSeq_feat->ReferencedOnlyOnce() ) {
-                m_CreatedMappedSeq_feat.Reset();
+        // Can not use m_MappedSeq_feat since it's a const-ref
+        CRef<CSeq_feat> mapped_feat;
+        m_Collector->m_CreatedMappedSeq_feat.AtomicReleaseTo(mapped_feat);
+        if ( mapped_feat ) {
+            if ( !mapped_feat->ReferencedOnlyOnce() ) {
+                mapped_feat.Reset();
             }
             else {
                 // hack with null pointer as ResetLocation doesn't reset CRef<>
                 CSeq_loc* loc = 0;
-                m_CreatedMappedSeq_feat->SetLocation(*loc);
-                m_CreatedMappedSeq_feat->ResetProduct();
+                mapped_feat->SetLocation(*loc);
+                mapped_feat->ResetProduct();
             }
         }
+        m_MappedSeq_feat = mapped_feat;
+        m_Collector->m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
 
-        m_AnnotObject_Ref.UpdateMappedSeq_loc(m_CreatedMappedSeq_loc,
-                                              m_CreatedMappedSeq_point,
-                                              m_CreatedMappedSeq_interval);
-        m_MappedSeq_loc = m_CreatedMappedSeq_loc;
+        CRef<CSeq_loc> mapped_loc;
+        m_Collector->m_CreatedMappedSeq_loc.AtomicReleaseTo(mapped_loc);
+        CRef<CSeq_point> created_point;
+        m_Collector->m_CreatedMappedSeq_point.AtomicReleaseTo(created_point);
+        CRef<CSeq_interval> created_interval;
+        m_Collector->m_CreatedMappedSeq_interval.
+            AtomicReleaseTo(created_interval);
+        m_FeatRef->UpdateMappedSeq_loc(mapped_loc,
+                                       created_point,
+                                       created_interval);
+        m_MappedSeq_loc = mapped_loc;
+        m_Collector->m_CreatedMappedSeq_loc.AtomicResetFrom(mapped_loc);
+        m_Collector->m_CreatedMappedSeq_point.AtomicResetFrom(created_point);
+        m_Collector->m_CreatedMappedSeq_interval.
+            AtomicResetFrom(created_interval);
     }
-    else if ( m_AnnotObject_Ref.IsMapped() ) {
+    else if ( m_FeatRef->IsMapped() ) {
         _ASSERT(!m_MappedSeq_feat);
-        m_MappedSeq_loc.Reset(&m_AnnotObject_Ref.GetMappedSeq_loc());
+        m_MappedSeq_loc.Reset(&m_FeatRef->GetMappedSeq_loc());
     }
     return *m_MappedSeq_loc;
 }
@@ -384,14 +412,15 @@ const CSeq_loc& CMappedFeat::x_MakeMappedLocation(void) const
 
 const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
 {
-    if ( m_AnnotObject_Ref.IsMapped() ) {
+    if ( m_FeatRef->IsMapped() ) {
         _ASSERT(!m_MappedSeq_feat);
         // some Seq-loc object is mapped
-        if ( !m_CreatedMappedSeq_feat ||
-             !m_CreatedMappedSeq_feat->ReferencedOnlyOnce() ) {
-            m_CreatedMappedSeq_feat.Reset(new CSeq_feat);
+        CRef<CSeq_feat> mapped_feat;
+        m_Collector->m_CreatedMappedSeq_feat.AtomicReleaseTo(mapped_feat);
+        if ( !mapped_feat || !mapped_feat->ReferencedOnlyOnce() ) {
+            mapped_feat.Reset(new CSeq_feat);
         }
-        CSeq_feat& dst = *m_CreatedMappedSeq_feat;
+        CSeq_feat& dst = *mapped_feat;
         CSeq_feat& src = const_cast<CSeq_feat&>(GetOriginalFeature());
 
         if ( src.IsSetId() )
@@ -471,7 +500,8 @@ const CSeq_feat& CMappedFeat::x_MakeMappedFeature(void) const
             dst.SetExcept_text(src.GetExcept_text());
         else
             dst.ResetExcept_text();
-        m_MappedSeq_feat = m_CreatedMappedSeq_feat;
+        m_MappedSeq_feat = mapped_feat;
+        m_Collector->m_CreatedMappedSeq_feat.AtomicResetFrom(mapped_feat);
     }
     else {
         m_MappedSeq_feat.Reset(&GetOriginalFeature());
@@ -486,6 +516,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/04/07 13:20:17  grichenk
+* Moved more data from iterators to CAnnot_Collector
+*
 * Revision 1.29  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

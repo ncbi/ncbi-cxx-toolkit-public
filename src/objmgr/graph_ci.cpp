@@ -37,10 +37,11 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-void CMappedGraph::Set(const CAnnotObject_Ref& annot)
+void CMappedGraph::Set(CAnnot_Collector& collector, const TIterator& annot)
 {
-    _ASSERT(annot.IsGraph());
-    m_AnnotObject_Ref = annot;
+    _ASSERT(annot->IsGraph());
+    m_Collector.Reset(&collector);
+    m_GraphRef = annot;
     m_MappedGraph.Reset();
     m_MappedLoc.Reset();
 }
@@ -48,14 +49,17 @@ void CMappedGraph::Set(const CAnnotObject_Ref& annot)
 
 void CMappedGraph::MakeMappedLoc(void) const
 {
-    if ( m_AnnotObject_Ref.MappedSeq_locNeedsUpdate() ) {
+    if ( m_GraphRef->MappedSeq_locNeedsUpdate() ) {
         m_MappedGraph.Reset();
         m_MappedLoc.Reset();
-        m_AnnotObject_Ref.UpdateMappedSeq_loc(m_CreatedLoc);
-        m_MappedLoc = m_CreatedLoc;
+        CRef<CSeq_loc> created_loc;
+        m_Collector->m_CreatedMappedSeq_loc.AtomicReleaseTo(created_loc);
+        m_GraphRef->UpdateMappedSeq_loc(created_loc);
+        m_MappedLoc = created_loc;
+        m_Collector->m_CreatedMappedSeq_loc.AtomicResetFrom(created_loc);
     }
-    else if ( m_AnnotObject_Ref.IsMapped() ) {
-        m_MappedLoc.Reset(&m_AnnotObject_Ref.GetMappedSeq_loc());
+    else if ( m_GraphRef->IsMapped() ) {
+        m_MappedLoc.Reset(&m_GraphRef->GetMappedSeq_loc());
     }
     else {
         m_MappedLoc.Reset(&GetOriginalGraph().GetLoc());
@@ -65,7 +69,7 @@ void CMappedGraph::MakeMappedLoc(void) const
 
 void CMappedGraph::MakeMappedGraph(void) const
 {
-    if ( m_AnnotObject_Ref.IsMapped() ) {
+    if ( m_GraphRef->IsMapped() ) {
         CSeq_loc& loc = const_cast<CSeq_loc&>(GetLoc());
         CSeq_graph* tmp;
         m_MappedGraph.Reset(tmp = new CSeq_graph);
@@ -87,7 +91,7 @@ CGraph_CI::CGraph_CI(CScope& scope,
                      overlap_type, resolve)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -101,7 +105,7 @@ CGraph_CI::CGraph_CI(const CBioseq_Handle& bioseq,
                      overlap_type, resolve)
 {
     if ( IsValid() ) {
-        m_Graph.Set(Get());
+        m_Graph.Set(GetCollector(), GetIterator());
     }
 }
 
@@ -117,6 +121,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2004/04/07 13:20:17  grichenk
+* Moved more data from iterators to CAnnot_Collector
+*
 * Revision 1.25  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

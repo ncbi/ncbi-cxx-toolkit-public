@@ -180,8 +180,6 @@ private:
     CAnnot_Collector(const CAnnot_Collector&);
     CAnnot_Collector& operator= (const CAnnot_Collector&);
 
-    friend class CAnnotTypes_CI;
-
     typedef CConstRef<CTSE_Info> TTSE_Lock;
     typedef set<TTSE_Lock>       TTSE_LockSet;
     typedef vector<CAnnotObject_Ref> TAnnotSet;
@@ -253,6 +251,19 @@ private:
     TTSE_LockSet                     m_TSE_LockSet;
     CHeapScope                       m_Scope;
     auto_ptr<CAnnotMappingCollector> m_MappingCollector;
+
+    // Temporary objects to be re-used by iterators
+    CRef<CSeq_feat>      m_CreatedOriginalSeq_feat;
+    CRef<CSeq_point>     m_CreatedOriginalSeq_point;
+    CRef<CSeq_interval>  m_CreatedOriginalSeq_interval;
+    CRef<CSeq_feat>      m_CreatedMappedSeq_feat;
+    CRef<CSeq_loc>       m_CreatedMappedSeq_loc;
+    CRef<CSeq_point>     m_CreatedMappedSeq_point;
+    CRef<CSeq_interval>  m_CreatedMappedSeq_interval;
+
+    friend class CAnnotTypes_CI;
+    friend class CMappedFeat;
+    friend class CMappedGraph;
 };
 
 
@@ -558,6 +569,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/04/07 13:20:17  grichenk
+* Moved more data from iterators to CAnnot_Collector
+*
 * Revision 1.1  2004/04/05 15:54:25  grichenk
 * Initial revision
 *

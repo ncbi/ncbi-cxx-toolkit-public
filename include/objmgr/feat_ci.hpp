@@ -68,9 +68,9 @@ public:
         { return GetOriginalFeature().GetData(); }
 
     bool IsSetPartial(void) const
-        { return m_AnnotObject_Ref.IsPartial(); }
+        { return m_FeatRef->IsPartial(); }
     bool GetPartial(void) const
-        { return m_AnnotObject_Ref.IsPartial(); }
+        { return m_FeatRef->IsPartial(); }
 
     bool IsSetExcept(void) const
         { return GetOriginalFeature().IsSetExcept(); }
@@ -86,13 +86,13 @@ public:
         { return GetOriginalFeature().IsSetProduct(); }
     const CSeq_loc& GetProduct(void) const
         {
-            return m_AnnotObject_Ref.IsMappedProduct()?
+            return m_FeatRef->IsMappedProduct()?
                 GetMappedLocation(): GetOriginalFeature().GetProduct();
         }
 
     const CSeq_loc& GetLocation(void) const
         {
-            return m_AnnotObject_Ref.IsMappedLocation()?
+            return m_FeatRef->IsMappedLocation()?
                 GetMappedLocation(): GetOriginalFeature().GetLocation();
         }
 
@@ -147,7 +147,12 @@ public:
 private:
     friend class CFeat_CI;
     friend class CAnnot_CI;
-    CMappedFeat& Set(CScope& scope, const CAnnotObject_Ref& annot);
+
+    typedef CAnnot_Collector::TAnnotSet TAnnotSet;
+    typedef TAnnotSet::const_iterator   TIterator;
+
+    CMappedFeat& Set(CAnnot_Collector& collector,
+                     const TIterator& annot);
     void Reset(void);
 
     const CSeq_feat& x_MakeOriginalFeature(void) const;
@@ -156,18 +161,12 @@ private:
 
     const CSeq_loc& GetMappedLocation(void) const;
 
-    CHeapScope                   m_Scope;
-    CAnnotObject_Ref             m_AnnotObject_Ref;
+    mutable CRef<CAnnot_Collector> m_Collector;
+    TIterator                      m_FeatRef;
+
     mutable CConstRef<CSeq_feat> m_OriginalSeq_feat;
     mutable CConstRef<CSeq_feat> m_MappedSeq_feat;
     mutable CConstRef<CSeq_loc>  m_MappedSeq_loc;
-    mutable CRef<CSeq_feat>      m_CreatedOriginalSeq_feat;
-    mutable CRef<CSeq_point>     m_CreatedOriginalSeq_point;
-    mutable CRef<CSeq_interval>  m_CreatedOriginalSeq_interval;
-    mutable CRef<CSeq_feat>      m_CreatedMappedSeq_feat;
-    mutable CRef<CSeq_loc>       m_CreatedMappedSeq_loc;
-    mutable CRef<CSeq_point>     m_CreatedMappedSeq_point;
-    mutable CRef<CSeq_interval>  m_CreatedMappedSeq_interval;
 };
 
 
@@ -292,7 +291,7 @@ inline
 void CFeat_CI::Update(void)
 {
     if ( IsValid() ) {
-        m_OriginalSeq_feat.Set(GetScope(), Get());
+        m_OriginalSeq_feat.Set(GetCollector(), GetIterator());
     }
     else {
         m_OriginalSeq_feat.Reset();
@@ -374,6 +373,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/04/07 13:20:17  grichenk
+* Moved more data from iterators to CAnnot_Collector
+*
 * Revision 1.39  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
