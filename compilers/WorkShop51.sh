@@ -19,10 +19,11 @@ NCBI_COMPILER="WorkShop6"
 case "$1" in
  32 | 32-bit | 32bit )
    WS64_CFLAGS= 
-   LIBS="-Bstatic -L$WS_PATH/lib -lm -Bdynamic"
+   LIBS="-Bstatic -L$WS_PATH/lib -lCrun -lm -Bdynamic"
    ;;
  64 | 64-bit | 64bit )
    WS64_CFLAGS="-xtarget=ultra -xarch=v9"
+   LIBS="-Bstatic -L$WS_PATH/lib -lCrun -Bdynamic"
    ;;
  *)
    echo "USAGE: `basename $0` {32|64} [build_dir] [--configure-flags]"
