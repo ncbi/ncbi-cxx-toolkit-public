@@ -1,0 +1,9 @@
+# $Id$
+
+# Meta-makefile ("asniotest" program)
+#################################
+
+APP_PROJ = asniotest
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
