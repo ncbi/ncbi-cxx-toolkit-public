@@ -216,9 +216,9 @@ diag &lt;&lt; ErrCode(2,1);  // set error code 2, subcode 1
 
 Error codes and subcodes are posted to an output stream only if applicable 
 <a href="#PostFlags">post flags</a> were set. 
-<br />
+<br>
 In addition to error codes, <i>CNcbiDiag</i> can also post their text explanations.
-It uses <i>CDiagErrCodeInfo</i> class to find an error message, which
+It uses <i><a href="../lxr/ident?i=CDiagErrCodeInfo">CDiagErrCodeInfo</a></i> class to find an error message, which
 corresponds to a given error code/subcode. Such descriptions could be
 specified directly in the program code or placed in a separate message file.
 It is even possible to use several such files simultaneously.
@@ -226,20 +226,20 @@ It is even possible to use several such files simultaneously.
 stream(s), not necessarily files.
 
 
-<h4>Preparing error message file.</h4>
+<h4>Preparing error message file</h4>
 
 Error message file is a plain ASCII text. We would suggest using
 <var>.msg</var> extension, but it is not mandatory. For example,
 the message file for an application named <i>SomeApp</i> might be called
 <i>SomeApp.msg</i>.
-<br />
+<br>
 The message file must contain a  line with the keyword <i>MODULE</i> in it,
 followed by the name of the module (in our example <i>SomeApp</i>).
 This line must be placed in the beginning of the file, before any other declarations.
 Lines with symbol <var>#</var> in the first position are treated as comments
 and ignored.
 
-<br />
+<br>
 Here is an example of the message file:
 
 <blockquote><pre>
@@ -276,9 +276,9 @@ subcodes of the top-level error code.
 In the above example
 <var>Open</var> is a subcode of <var>File</var>
 top-level error, which means the error with code 2 and subcode 1.
-<br />
+<br>
 Both types of lines have similar structure:
-<br />
+<br>
 <blockquote><pre>
 $$/$^ &lt;mnemonic_name&gt;, &lt;code&gt; [, &lt;severity&gt; ] [: &lt;message&gt; ] \n
 [ &lt;explanation&gt; ]
@@ -286,42 +286,41 @@ $$/$^ &lt;mnemonic_name&gt;, &lt;code&gt; [, &lt;severity&gt; ] [: &lt;message&g
 where
 
 <ul>
-<li><b>mnemonic_name</b> (<i>required</i>)<br />
+<li><b>mnemonic_name</b> (<i>required</i>)<br>
 Internal name of the error code/subcode. This is used as a part of an error name
 in a program code - so, it should also be a correct  C/C++ identifier.
 </li>
 
-<li><b>code</b> (<i>required</i>)<br />
+<li><b>code</b> (<i>required</i>)<br>
 Integer identifier of the error.
 </li>
 
-<li><b>severity</b> (<i>optional</i>)<br />
+<li><b>severity</b> (<i>optional</i>)<br>
 This may be supplied to specify the severity level of the
 error. It may be specified as a severity level string
 (Valid values are <i>Info, Warning, Error, Critical, Fatal, Trace</i>) or as
 an integer in the range from 0 (eDiag_Info) to 5 (eDiag_Trace).
 While the latter is acceptable, it is way more readable to use string
 values instead.
-<br />
+<br>
 If the severity level was not specified or could not be recognized, it is ignored,
 or inherited from a higher level (the severity of a subcode becomes the same
 as the severity of a top-level error code, which contains this subcode).
 As long as diagnostic <i>eDPF_ErrCodeUseSeverity</i> flag is set,
 the severity level specified in the message file overrides the one
 specified in a program, which allows for runtime customization.
-<br />
 In the above example, <i>Critical</i> severity level will be used for
 all <var>File</var> errors, except <var>Read</var> subcode,
 which would have <i>Error</i> severity level.
 </li>
 
-<li><b>message</b> (<i>optional</i>)<br />
+<li><b>message</b> (<i>optional</i>)<br>
 Short description of the error. It must be a single-line message.
 As long as diagnostic <i>eDPF_ErrCodeMessage</i> flag is set,
 this message is posted as a part of the diagnostic output.
 </li>
 
-<li><b>explanation</b> (<i>optional</i>)<br />
+<li><b>explanation</b> (<i>optional</i>)<br>
 Following a top-level error code or a subcode definition string,
 it may be one or several lines of an explanation text.
 Its purpose is to provide additional information, which could be
@@ -330,7 +329,6 @@ This text is posted in a diagnostic channel only if
 <i>eDPF_ErrCodeExplanaton</i> flag was set.
 </li>
 </ul>
-
 
 
 <h4>Using error codes in the program</h4>
@@ -479,12 +477,7 @@ Installed Handler "diag.cpp", line 45: Critical: This is a test message</pre>
 <i><a href="../index.html">up</a></i>
 <i><a href="exceptions.html">next</a></i>
 
-<br>
-
 <!--#include virtual="../ssi/navlinks.shtml" -->
-
-<!-- Begin footer content -->
-
 <!--#include virtual="../ssi/footer.shtml" -->
 
 

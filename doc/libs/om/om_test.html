@@ -2,14 +2,9 @@
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
-
-
-
 <div align="Center">
 <h1>Object Manager.</h1>
 </div>
-
-
 
 <ul>
 <li><a href="#White_box_testing">White box testing.</a></li>
@@ -54,9 +49,6 @@
 <hr>
 
 
-
-
-
 <h2>Testing.</h2>
 <p>
 The whole point of testing is to assure software quality. "Quality"
@@ -68,7 +60,6 @@ Testing should   intentionally attempt to make things go wrong to determine
 if things happen   when they shouldn't or things don't happen when they
 should.
 </p>
-
 
 
 <h2>1.<a name="White_box_testing"></a>White box testing.</h2>
@@ -97,10 +88,7 @@ include.
 </ul>
 
 
-
-
 <h2>Test cases.</h2>
-
 
 <h3>1.1. <a name="Basic_tests"></a>Basic tests.</h3>
 <p>
@@ -116,8 +104,6 @@ Assumptions:
   <li>CDataLoader object must be created on the heap as a referenced object,</li>
   <li>CSeq_entry object must be created on the heap as a referenced object.</li>
 </ul>
-
-
 
 <h4>1.1.1 Creating CScope.</h4>
 <p>
@@ -142,8 +128,6 @@ Object manager goes out of scope - both data loaders are deleted.
 </p>
 
 
-
-
 <h4>1.1.2. Adding Seq_entry to the scope.</h4>
 <p>
 Create 3 scope objects, using three described methods.<br>
@@ -155,7 +139,6 @@ Delete scope on the heap - data source and seq_entry objects are
 Remaining scopes go out of scope - data source and seq_entry objects
 are   deleted.
 </p>
-
 
 
 <h4>1.1.3. Handling Data loader.</h4>
@@ -174,9 +157,6 @@ Revoke data loader 1 - the call succeeds, the data loader is deleted.<br>
 Revoke data loader 1 again - object manager generates an exception
 saying  that such data loader was not registered.<br>
 </p>
-
-
-
 
 
 <h3>1.2 <a name="Bio_sequence_data_handling"></a>
@@ -207,8 +187,6 @@ references to other sequences - from 1.2.1.1.<br>
 </p>
 
 
-
-
 <h4>1.2.2. Test bio sequence data.</h4>
 <p>
 Input: Scope and seq_id.<br>
@@ -226,10 +204,6 @@ Operations:
 </ul>
 
 
-
-
-
-
 <h4>1.2.3. Scope as an object on the stack.</h4>
 <p>
 Create scope on the stack.<br>
@@ -238,15 +212,12 @@ Run test 1.2.2 against each bio sequence.<br>
 </p>
 
 
-
 <h4>1.2.4. Scope as an object on the heap.</h4>
 <p>
 Create scope on the heap.<br>
 Create Seq_entries 1.2.1.1 and 1.2.1.3.<br>
 Run test 1.2.2 against each bio sequence.
 </p>
-
-
 
 
 <h4>1.2.5. Adding annotations.</h4>
@@ -258,16 +229,12 @@ changed.
 </p>
 
 
-
-
 <h4>1.2.6. Constructed bio sequences.</h4>
 <p>
 Create Seq_entries 1.2.1.1 and 1.2.1.4 (the latter contains only references
 to 1.2.1.1).<br>
 Run test 1.2.2 against each constructed bio sequence.
 </p>
-
-
 
 
 <h4>1.2.7. One entry in two scopes.</h4>
@@ -282,12 +249,7 @@ and resolved properly.
 </p>
 
 
-
 <h4>1.2.8. Scope history.</h4>
-
-
-
-
 
 
 <h3>2.1 <a name="Functional_tests"></a>Functional tests</h3>
@@ -303,8 +265,6 @@ results.<br>
 <a href="http://www.ncbi.nlm.nih.gov/BLAST/fasta.html">FASTA</a>
 format.Compare it with the production FASTA generator.
 </p>
-
-
 
 
 <h4>2.1.2 Modify existing id1_fetch application.</h4>
@@ -326,13 +286,11 @@ be  able to download data pointed to by an external link.
 </p>
 
 
-
 <h4>2.1.3. Working with annotations.</h4>
 <p>
 2.1.3.1. Same activity in multiple threads.<br>
 2.1.3.2. Slightly different activity in different threads.
 </p>
-
 
 
 <h4>2.1.4 Scope isolation (single thread)</h4>
@@ -343,8 +301,6 @@ different.
 </p>
 
 
-
-
 <h4>2.1.5 Scope isolation (multiple threads)</h4>
 <p>
 These tests start with scopes "looking" at the same data.<br>
@@ -353,11 +309,6 @@ Make sure the data is added correctly.<br>
 2.1.5.2 Add different data to different scopes working in parallel thread.
 Make sure the data is added correctly.
 </p>
-
-
-
-
-
 
 
 <h3>2.2 <a name="Stress_tests"></a>Stress tests</h3>
@@ -371,10 +322,6 @@ too often") overlapping.<br>
 2.2.3. Run two threads: one is "slow", another is "fast". The purpose
 of  the second thread is to overflow the memory cache.
 </p>
-
-
-
-
 
 
 <h3>2.3 <a name="Performance_tests"></a>Performance tests</h3>
@@ -395,18 +342,10 @@ and complex ones
 </p>
 
 
-
-
-
-
 <h3>2.4 <a name="Recovery_tests"></a>Recovery tests</h3>
 <p>
 2.4.1. ??
 </p>
-
-
-
-
 
 
 <h3>2.5 <a name="Mutation_tests"></a>Mutation tests</h3>
@@ -418,11 +357,5 @@ reflected in object manager's data.<br>
 from  file.
 </p>
 
-
-
-<br>
 <!--#include virtual="../../ssi/navlinks.shtml" -->
-
-<!-- Begin footer content -->
-
 <!--#include virtual="../../ssi/footer.shtml" -->

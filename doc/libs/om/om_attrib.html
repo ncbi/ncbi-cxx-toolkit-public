@@ -3,11 +3,9 @@
 <!--#include virtual="../../ssi/header.shtml" -->
 
 
-
 <div align="Center">
 <h1>Object Manager.</h1>
 </div>
-
 
 <h2>Classes - attributes and operations.</h2>
 
@@ -25,8 +23,6 @@
   <li><a href="#Alignment_iterator">Alignment iterator</a></li>
 </ul>
 <hr>
-
-
 
 
 <h3><a name="Object_manager"></a>Object manager.</h3>
@@ -60,9 +56,6 @@ a default  data object.
     // register top-level seq_entry
     bool RegisterTopLevelSeqEntry(CSeq_entry&amp; TopEntry);
 </pre>
-
-
-
 
 
 <h3><a name="Scope"></a>Scope.</h3>
@@ -108,8 +101,6 @@ good  reason is impractical in most cases.
     // Construct BioseqHandle
     CBioseqHandle  GetBioseqHandle(const CSeq_id&amp; id);
 </pre>
-
-
 
 
 <h3><a name="Bioseq_handle"></a>Bioseq handle.</h3>
@@ -186,9 +177,6 @@ to compare Bioseq   handles created by different Scopes.
 </pre>
 
 
-
-
-
 <h3><a name="Seq_vector"></a>Seq vector.</h3>
 <p>
 SeqVector
@@ -224,9 +212,6 @@ the same   Scope. It may not access other Scopes.
     // Return gap symbol corresponding to the selected coding
     TResidue GetGapChar(void);
 </pre>
-
-
-
 
 
 <h3><a name="Seq_map"></a>Seq map.</h3>
@@ -267,15 +252,10 @@ by   a Bioseq handle.
 </pre>
 
 
-
-
-
 <h3><a name="Data_loader"></a>Data loader.</h3>
 <p>
 Data loader is never used by a client application directly.
 </p>
-
-
 
 
 <h3><a name="Description_iterator"></a>Description iterator.</h3>
@@ -332,9 +312,6 @@ objects, it would be more convenient to enumerate the latters directly.
 </pre>
 
 
-
-
-
 <h3><a name="Annotation_iterator"></a>Annotation iterator.</h3>
 <p>
 Any annotation iterator
@@ -347,9 +324,6 @@ all appropriate annotations.
 Annotation iterator is a base class for defining other iterators (feature,
 graph and alignment) - it is not used directly.
 </p>
-
-
-
 
 
 <h3><a name="Feature_iterator"></a>Feature iterator.</h3>
@@ -388,9 +362,6 @@ data objects the sequence refers to.
 </pre>
 
 
-
-
-
 <h3><a name="Graph_data_iterator"></a>Graph data iterator.</h3>
 <p>
 Graph data iterator
@@ -422,9 +393,6 @@ data objects the sequence refers to.
     const CSeq_graph&amp; operator* (void) const;
     const CSeq_graph* operator-&gt; (void) const;
 </pre>
-
-
-
 
 
 <h3><a name="Alignment_iterator"></a>Alignment iterator.</h3>
@@ -460,11 +428,5 @@ data objects the sequence refers to.
 </pre>
 
 
-
-<br>
 <!--#include virtual="../../ssi/navlinks.shtml" -->
-
-<!-- Begin footer content -->
-
-
 <!--#include virtual="../../ssi/footer.shtml" -->
