@@ -33,54 +33,59 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  1998/11/05 21:43:29  vakatov
-* saving...
+* Revision 1.10  1998/11/17 02:02:08  vakatov
+* Compiles through with SunPro C++ 5.0
 *
-* Revision 1.8  1998/10/30 20:08:07  vakatov
-* Fixes to (first-time) compile and test-run on MSVS++
 * ==========================================================================
 */
 
 #include <ncbistd.hpp>
+#include <map>
+
+// (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
+BEGIN_NCBI_SCOPE
+
+typedef map<string, string>      TCgiProperties;
+typedef map<string, string>      TCgiCookies;
+typedef multimap<string, string> TCgiEntries;
 
 
 ///////////////////////////////////////////////////////
 // The CGI send-cookie class
 //
 
-class CNcbiCookie {
+class CCgiCookie {
 public:
     // Throw the "invalid_argument" if "name" or "value" have invalid format
     //  - the "name" must not be empty; it must not contain '='
     //  - both "name" and "value" must not contain: ";, "
-    CNcbiCookie(const string& name, const string& value)
-        throw(invalid_argument);
+    CCgiCookie(const string& name, const string& value);
 
     // All SetXXX() methods beneath:
     //  - set the property to "str" if "str" has valid format
     //  - throw the "invalid_argument" if "str" has invalid format
-    void SetName   (const string& str)  throw(invalid_argument);
-    void SetValue  (const string& str)  throw(invalid_argument);
-    void SetDomain (const string& str)  throw(invalid_argument);
+    void SetName   (const string& str);
+    void SetValue  (const string& str);
+    void SetDomain (const string& str);
     // Wed, 09 Aug 1995 07:49:37 GMT
     // Wednesday, 09-Aug-94 07:49:37 GMT
     // Wed Aug 9 07:49:37 1994  (this is ANSI C "asctime()")
-    void SetExpDate(const string& str)  throw(invalid_argument);
-    void SetExpDate(const struct tm& exp_date) throw();
+    void SetExpDate(const string& str);
+    void SetExpDate(const tm& exp_date);
 
     // All GetXXX() methods beneath:
     //  - return "true"  and copy the property to the "str" if the prop. is set
     //  - return "false" and empty the "str" if the property is not set
     //  - throw the "invalid_argument" exception if argument is a zero pointer
-    bool GetName   (string* str) const   throw(invalid_argument);
-    bool GetValue  (string* str) const   throw(invalid_argument);
-    bool GetDomain (string* str) const   throw(invalid_argument);
-    bool GetExpDate(string* str) const   throw(invalid_argument);
-    bool GetExpDate(struct tm* exp_date) throw(invalid_argument);
+    bool GetName   (string* str) const;
+    bool GetValue  (string* str) const;
+    bool GetDomain (string* str) const;
+    bool GetExpDate(string* str) const;
+    bool GetExpDate(tm*     exp_date);
 
     // Is secure
-    bool GetSecure(void)         throw();
-    void SetSecure(bool secure)  throw();
+    bool GetSecure(void);
+    void SetSecure(bool secure);
 
     // Compose and write to output stream "os":
     //   "Set-cookie: name=value; expires=date; path=val_path; domain=dom_name;
@@ -88,17 +93,16 @@ public:
     // (here, only "name=value" is mandatory)
     CNcbiOstream& Put(CNcbiOstream& os) const;
     friend CNcbiOstream& operator<<(CNcbiOstream& os,
-                                    const CNcbiCookie& cookie);
+                                    const CCgiCookie& cookie);
 
 private:
     string m_Name;
     string m_Value;
     string m_Domain;
     string m_ValidPath;
-
-    struct tm m_Expires;
-    bool      m_Secure;
-};  // CNcbiCookie
+    tm     m_Expires;
+    bool   m_Secure;
+};  // CCgiCookie
 
 
 
@@ -106,21 +110,23 @@ private:
 // Set of CGI send-cookies
 //
 
-class CNcbiCookies {
+class CCgiCookies {
 public:
-    CNcbiCookies(void);  // empty set of cookies
-    // 
-    CNcbiCookies(const string& str);
+    // Empty set of cookies
+    CCgiCookies(void);
+    // Format of the string:  "Cookie: name1=value1; name2=value2; ..."
+    CCgiCookies(const string& str);
 
-    void AddCookie(string key, string value);
-    void AddCookies(const string& key_value);
-    void AddCookies(const CNcbiCookie& cookie);
+    void AddCookie(string name, string value);
+    void AddCookies(const string& str); // "Cookie: name1=value1; ..."
+    void AddCookies(const CCgiCookie& cookie);
 
-    list<pair<string, string> > FindCookie(const string& key);
+    CCgiCookie* FindCookie  (const string& name) const;
+    bool        RemoveCookie(const string& name) const;
 
 private:
-    multimap<string, string> m_Cookies;
-};  // CNcbiCookies
+    TCgiCookies m_Cookies;
+};  // CCgiCookies
 
 
 
@@ -129,7 +135,7 @@ private:
 //
 
 // Set of "standard" HTTP request properties
-enum ENcbiCgiProp {
+enum ECgiProp {
     // server properties
     eCgi_ServerSoftware = 0,
     eCgi_ServerName,
@@ -154,36 +160,32 @@ enum ENcbiCgiProp {
     eCgi_RemoteUser,
     eCgi_RemoteIdent,
 
-    // # of CRequest-supported standard properties
+    // # of CCgiRequest-supported standard properties
     // for internal use only!
     eCgi_NProperties
-};  // ENcbiCgiProp
+};  // ECgiProp
 
 
 //
-class CNcbiRequest {
-    typedef map<string, string> TProperties;
-    typedef multimap<string, string> TCookies;
-    typedef multimap<string, string> TEntries;
-
+class CCgiRequest {
 public:
     // the startup initialization using environment and/or standard input
-    CNcbiRequest(void);
+    CCgiRequest(void);
 
     // get "standard" properties(empty string if not found)
-    const string& GetProperty(EProperty property);
+    const string& GetProperty(ECgiProp prop);
     // get random client properties("HTTP_<key>")
     const string& GetRandomProperty(const string& key);
     // auxiliaries(to convert from the "string" representation)
-    Uint2   GetServerPort(void);
-    Uint4   GetServerAddr(void);  // (in the network byte order)
-    size_t  GetContentLength(void);
+    Uint2  GetServerPort(void);
+    Uint4  GetServerAddr(void);  // (in the network byte order)
+    size_t GetContentLength(void);
 
     // set of cookies received from the client
-    const TCookies& GetCookies(void) const;
+    const TCgiCookies& GetCookies(void) const;
 
     // set of entries(decoded) received from the client
-    const TEntries& GetEntries(void) const;
+    const TCgiEntries& GetEntries(void);
 
     /* DANGER!!!  Direct access to the data received from client
      * NOTE 1: m_Entries() would not work(return an empty set) if
@@ -196,6 +198,19 @@ public:
      */
     CNcbiIstream& GetContent(void);
 
+    // Fetch cookies from "str", add them to "cookies"
+    // Format of the string:  "Cookie: name1=value1; name2=value2; ..."
+    // Original cookie of the same name will be overriden by the new ones
+    // Return the resultant set of cookies
+    static TCgiCookies& ParseCookies(const string& str, TCgiCookies& cookies);
+
+    // Decode the URL-encoded stream "istr" into a set of entries
+    // (<name, value>) and add them to the "entries" set
+    // The new entries are added without overriding the original ones, even
+    // if they have the same names
+    // Return the resultant set of entries
+    static TCgiEntries& ParseContent(CNcbiIstream& istr, TCgiEntries& entries);
+
 private:
     // "true" after m_Entries() or m_Content() call
     bool m_IsContentFetched;
@@ -203,37 +218,24 @@ private:
     // only needed if m_Content() gets called
     CNcbiIstrstream m_QueryStream;
     // set of the request properties(already retrieved; cached)
-    TProperties m_Properties;
+    TCgiProperties m_Properties;
     // set of the request entries(already retrieved; cached)
-    TEntries m_Entries;
+    TCgiEntries m_Entries;
     // set of the request cookies(already retrieved; cached)
-    TCookies m_Cookies;
+    TCgiCookies m_Cookies;
 
     // retrieve the property
     const string& GetPropertyByName(const string& name);
-};  // CNcbiRequest
+};  // CCgiRequest
 
-
-
-///////////////////////////////////////////////////////
-// EXTERN Functions
-
-// Fetch cookies from "str", add them to "cookies"
-// Format of the string:  "Cookie: name1=value1; name2=value2; ..."
-// Return the resultant set of cookies
-extern multimap<string, string>& ParseCookies
-(const string& str, multimap<string, string>& cookies);
-
-// Decode the URL-encoded stream "istr" into a set of entries
-// (<name, value>) and add them to the "entries" set
-// Return the resultant set of entries
-extern multimap<string, string>& ParseContent
-(CNcbiIstream& istr, multimap<string, string>& entries);
 
 
 ///////////////////////////////////////////////////////
 // All inline function implementations are in this file
-#include <ncbicgi.inl>
+// #include <ncbicgi.inl>
 
+
+// (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
+END_NCBI_SCOPE
 
 #endif  /* NCBICGI__HPP */
