@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.5  2003/07/24 21:31:06  dondosha
+ * Changed to calls to BlastConstructErrorMessage to API from blast_message.h
+ *
  * Revision 1.4  2003/07/24 20:38:30  dondosha
  * Removed LIBCALL etc. macros
  *
@@ -1427,7 +1430,7 @@ BLAST_ScorePtr PNTR BlastScoreBlkMatCreateEx(BLAST_ScorePtr PNTR matrix,BLAST_Sc
 		{
 			if (blastna_to_ncbi4na[index1] & blastna_to_ncbi4na[index2])
 			{ /* round up for positive scores, down for negatives. */
-				matrix[index1][index2] = Nlm_Nint( (double) ((degeneracy[index2]-1)*penalty + reward))/degeneracy[index2];
+				matrix[index1][index2] = Nint( (double) ((degeneracy[index2]-1)*penalty + reward))/degeneracy[index2];
 				if (index1 != index2)
 				{
 				      matrix[index2][index1] = matrix[index1][index2];
@@ -2875,7 +2878,7 @@ BlastKarlinGetDefaultMatrixValues(CharPtr matrix, Int4Ptr open, Int4Ptr extensio
 */
 
 Int2
-BlastKarlinBlkGappedCalc(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, ValNodePtr PNTR error_return)
+BlastKarlinBlkGappedCalc(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, Blast_MessagePtr PNTR error_return)
 
 {
 
@@ -2891,7 +2894,7 @@ BlastKarlinBlkGappedCalc(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend,
 */
 
 Int2
-BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, ValNodePtr PNTR error_return)
+BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, Blast_MessagePtr PNTR error_return)
 
 {
 	Char buffer[256];
@@ -2907,13 +2910,13 @@ BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_exten
 			vnp = head = BlastLoadMatrixValues();
 
 			sprintf(buffer, "%s is not a supported matrix", matrix_name);
-			BlastConstructErrorMessage("BlastKarlinBlkGappedCalc", buffer, 2, error_return);
+			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
 
 			while (vnp)
 			{
 				matrix_info = vnp->data.ptrvalue;
 				sprintf(buffer, "%s is a supported matrix", matrix_info->name);
-				BlastConstructErrorMessage("BlastKarlinBlkGappedCalc", buffer, 2, error_return);
+            Blast_MessageWrite(error_return, 2, 0, 0, buffer);
 				vnp = vnp->next;
 			}
 
@@ -2925,7 +2928,7 @@ BlastKarlinBlkGappedCalcEx(BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_exten
 				sprintf(buffer, "Gap existence and extension values of %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, matrix_name);
 			else
 				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld not supported for %s", (long) gap_open, (long) gap_extend, (long) decline_align, matrix_name);
-			BlastConstructErrorMessage("BlastKarlinBlkGappedCalc", buffer, 2, error_return);
+			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
 			BlastKarlinReportAllowedValues(matrix_name, error_return);
 		}
 	}
@@ -3093,7 +3096,8 @@ PrintAllowedValuesMessage(const Char *matrix_name, Int4 gap_open, Int4 gap_exten
 	
 
 Int2
-BlastKarlinReportAllowedValues(const Char *matrix_name, ValNodePtr PNTR error_return)
+BlastKarlinReportAllowedValues(const Char *matrix_name, 
+   Blast_MessagePtr PNTR error_return)
 {
 	array_of_8 *values;
 	Boolean found_matrix=FALSE;
@@ -3125,7 +3129,7 @@ BlastKarlinReportAllowedValues(const Char *matrix_name, ValNodePtr PNTR error_re
 				sprintf(buffer, "Gap existence and extension values of %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]));
 			else
 				sprintf(buffer, "Gap existence, extension and decline-to-align values of %ld, %ld and %ld are supported", (long) Nint(values[index][0]), (long) Nint(values[index][1]), (long) Nint(values[index][2]));
-			BlastConstructErrorMessage("BlastKarlinBlkGappedCalc", buffer, 2, error_return);
+			Blast_MessageWrite(error_return, 2, 0, 0, buffer);
 		}
 	}
 

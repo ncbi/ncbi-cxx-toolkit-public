@@ -34,6 +34,9 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 
 /* $Revision$ 
 * $Log$
+* Revision 1.4  2003/07/24 21:31:12  dondosha
+* Changed to calls to BlastConstructErrorMessage to API from blast_message.h
+*
 * Revision 1.3  2003/07/24 19:38:14  dondosha
 * Removed LIBCALL, LIBCALLBACK, PROTO macros from declarations
 *
@@ -252,6 +255,7 @@ Contents: definitions and prototypes used by blastkar.c to calculate BLAST
 #define __BLASTKAR__
 
 #include <blast_def.h>
+#include <blast_message.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -483,9 +487,9 @@ BLAST_KarlinBlkPtr BlastKarlinBlkDestruct (BLAST_KarlinBlkPtr);
 
 Int2 BlastKarlinBlkCalc (BLAST_KarlinBlkPtr kbp, BLAST_ScoreFreqPtr sfp);
 
-Int2 BlastKarlinBlkGappedCalc (BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, ValNodePtr PNTR error_return);
+Int2 BlastKarlinBlkGappedCalc (BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, CharPtr matrix_name, Blast_MessagePtr PNTR error_return);
 
-Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, ValNodePtr PNTR error_return);
+Int2 BlastKarlinBlkGappedCalcEx (BLAST_KarlinBlkPtr kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, CharPtr matrix_name, Blast_MessagePtr PNTR error_return);
 
 
 /*
@@ -505,7 +509,7 @@ CharPtr PrintMatrixMessage(const Char *matrix);
 BlastKarlinkGapBlkFill should return 2 before this is called. */
 CharPtr PrintAllowedValuesMessage(const Char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
-Int2 BlastKarlinReportAllowedValues(const Char *matrix_name, ValNodePtr PNTR error_return);
+Int2 BlastKarlinReportAllowedValues(const Char *matrix_name, Blast_MessagePtr PNTR error_return);
 
 
 Nlm_FloatHi BlastKarlinLHtoK (BLAST_ScoreFreqPtr sfp, Nlm_FloatHi lambda, Nlm_FloatHi H);
