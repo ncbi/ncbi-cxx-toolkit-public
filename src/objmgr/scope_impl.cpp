@@ -776,11 +776,10 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id,
             TReadLockGuard rguard(m_Scope_Conf_RWLock);
             info = x_GetBioseq_Info(id, get_flag, match);
         }}
-        if ( info && info->HasBioseq() ) {
-            ret = GetBioseqHandle(id, *info);
-        }
-        else {
-            ret = CBioseq_Handle(id, *info);
+        if ( info ) {
+            ret = info->HasBioseq() ?
+                GetBioseqHandle(id, *info)
+                : CBioseq_Handle(id, *info);
         }
     }
     return ret;
