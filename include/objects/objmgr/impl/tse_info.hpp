@@ -99,7 +99,6 @@ private:
     CMutex& GetMutex(void) const;
     void x_AssignMutex(void) const;
     
-    mutable CAtomicCounter m_LockCount;
     bool m_Indexed;
 
     mutable CMutex* m_TSE_Mutex;
@@ -133,14 +132,14 @@ private:
 inline
 void CTSE_Info::LockCounter(void) const
 {
-    m_LockCount.Add(1);
+    Add(1);
 }
 
 inline
 void CTSE_Info::UnlockCounter(void) const
 {
-    if (m_LockCount.Get() > 0) {
-        m_LockCount.Add(-1);
+    if (Get() > 0) {
+        Add(-1);
     }
     else {
         THROW1_TRACE(runtime_error,
@@ -151,7 +150,7 @@ void CTSE_Info::UnlockCounter(void) const
 inline
 bool CTSE_Info::CounterLocked(void) const
 {
-    return m_LockCount.Get() > 0;
+    return Get() > 0;
 }
 
 inline
@@ -195,6 +194,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/07/10 16:50:33  grichenk
+* Fixed bug with duplicate and uninitialized atomic counters
+*
 * Revision 1.8  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex

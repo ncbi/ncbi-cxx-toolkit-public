@@ -54,7 +54,7 @@ static CMutex s_TSEMutexPool[kTSEMutexPoolSize];
 CTSE_Info::CTSE_Info(void)
     : m_Dead(false)
 {
-    m_LockCount.Set(0);
+    Set(0);
 }
 
 
@@ -139,7 +139,7 @@ void CTSE_Info::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
             }
         }
     }
-    DebugDumpValue(ddc, "m_LockCount", m_LockCount.Get());
+    DebugDumpValue(ddc, "CMutableAtomicCounter::Get()", Get());
 }
 
 
@@ -149,6 +149,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/07/10 16:50:33  grichenk
+* Fixed bug with duplicate and uninitialized atomic counters
+*
 * Revision 1.7  2002/07/08 20:51:02  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
