@@ -203,6 +203,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/17 19:06:27  kuznets
+ * GCC warning fix
+ *
  * Revision 1.1  2004/02/17 17:26:29  kuznets
  * Initial revision
  *

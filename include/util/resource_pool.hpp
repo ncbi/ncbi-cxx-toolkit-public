@@ -61,7 +61,7 @@ public:
 
     ~CResourcePool()
     {
-        ITERATE(vector<Value*>, it, m_FreeObjects) {
+        ITERATE(typename vector<Value*>, it, m_FreeObjects) {
             Value* v = *it;
             delete v;
         }
@@ -135,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/17 19:06:59  kuznets
+ * GCC warning fix
+ *
  * Revision 1.1  2004/02/13 20:24:47  kuznets
  * Initial revision. CResourcePool implements light weight solution for pooling
  * of heavy weight objects (intended as optimization tool).

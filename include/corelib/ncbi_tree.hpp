@@ -433,6 +433,7 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
                 case eTreeTraverseStop:
                     return func;
                 case eTreeTraverse:
+                case eTreeTraverseStepOver:
                     break;
             }
         }
@@ -710,6 +711,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/02/17 19:07:27  kuznets
+ * GCC warning fix
+ *
  * Revision 1.21  2004/01/29 20:03:17  jcherry
  * Added default value for AddNode(const TValue& val)
  *
