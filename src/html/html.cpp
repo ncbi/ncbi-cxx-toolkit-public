@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2001/07/16 13:54:09  ivanov
+* Added support JavaScript popups menu (jsmenu.[ch]pp)
+*
 * Revision 1.65  2001/06/08 19:00:22  ivanov
 * Added base classes: CHTMLDualNode, CHTMLSpecialChar
 *     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
@@ -392,6 +395,72 @@ void CHTMLNode::AppendHTMLText(const char* appendstring)
         AppendChild(new CHTMLText(appendstring));
 }
 
+void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute name, 
+                                const string& value)
+{
+    if ( value.empty() )
+        return;
+
+    string handler_name;
+
+    switch (name) {
+
+    case eHTML_EH_Blur:
+        handler_name = "onBlur";
+        break;
+    case eHTML_EH_Change:
+        handler_name = "onChange";
+        break;
+    case eHTML_EH_Click:
+        handler_name = "onClick";
+        break;
+    case eHTML_EH_DblClick:
+        handler_name = "onDblClick";
+        break;
+    case eHTML_EH_Focus:
+        handler_name = "onFocus";
+        break;
+    case eHTML_EH_Load:
+        handler_name = "onLoad";
+        break;
+    case eHTML_EH_Unload:
+        handler_name = "onUnload";
+        break;
+    case eHTML_EH_MouseDown:
+        handler_name = "onMouseDown";
+        break;
+    case eHTML_EH_MouseUp:
+        handler_name = "onMouseUp";
+        break;
+    case eHTML_EH_MouseMove:
+        handler_name = "onMouseMove";
+        break;
+    case eHTML_EH_MouseOver:
+        handler_name = "onMouseOver";
+        break;
+    case eHTML_EH_MouseOut:
+        handler_name = "onMouseOut";
+        break;
+    case eHTML_EH_Select:
+        handler_name = "onSelect";
+        break;
+    case eHTML_EH_Submit:
+        handler_name = "onSubmit";
+        break;
+    case eHTML_EH_KeyDown:
+        handler_name = "onKeyDown";
+        break;
+    case eHTML_EH_KeyPress:
+        handler_name = "onKeyPress";
+        break;
+    case eHTML_EH_KeyUp:
+        handler_name = "onKeyUp";
+        break;
+    }
+
+    SetAttribute(handler_name, value);
+}
+
 
 // <@XXX@> mapping tag node
 
@@ -684,6 +753,143 @@ CNcbiOstream& CHTMLSpecialChar::PrintChildren(CNcbiOstream& out, TMode mode)
         for ( int i = 0; i < m_Count; i++ )
             out << "&" << m_Name << ";";
     }
+    return out;
+}
+
+
+// the <HTML> tag
+
+const char CHTML_html::sm_TagName[] = "html";
+
+CHTML_html::~CHTML_html(void)
+{
+}
+
+void CHTML_html::Init(void)
+{
+    m_Head = 0;
+}
+
+void CHTML_html::InitPopupMenus(CHTML_head&    head,
+                                CHTML_body&    body,
+                                const string&  menu_lib_url)
+{
+    // Was already inited ?
+    if ( m_Head ) {
+        THROW1_TRACE(runtime_error, "CHTMLPopupMenu was already inited");
+    }
+
+    // Check present tags HEAD and BODY
+    bool have_head = false;
+    bool have_body = false;
+
+    iterate (TChildren, i, Children()) {
+        if ((*i)->GetName() == CHTML_head::sm_TagName) {
+            if ((void*)(*i) != &head) {
+                THROW1_TRACE(runtime_error, "different HEAD tag");
+            }
+            have_head = true; 
+        } else {
+            if ((*i)->GetName() == CHTML_body::sm_TagName) {
+                if ((void*)(*i) != &body) {
+                    THROW1_TRACE(runtime_error, "different BODY tag");
+                }
+                have_body = true; 
+            }
+        } 
+    }
+    if ( !have_head ) {
+        AppendChild(&head);
+    }
+    if ( !have_body ) {
+        AppendChild(&body);
+    }
+
+    // Set script path
+    head.SetPopupMenuScript(menu_lib_url);
+    // Set flag for support menu in the BODY tag
+    body.m_HaveMenuCode = true;
+    // Save pointer to the HEAD node (for the adding of new menus)
+    m_Head = &head;
+}
+
+
+void CHTML_html::AddPopupMenu(CHTMLPopupMenu& menu)
+{
+    if ( m_Head ) {
+        m_Head->AddPopupMenu(menu); 
+    } else {
+        THROW1_TRACE(runtime_error, "InitPopupMenues() must called first");
+    }
+}
+
+
+// the <HEAD> tag
+
+const char CHTML_head::sm_TagName[] = "head";
+
+CHTML_head::~CHTML_head(void)
+{
+}
+
+void CHTML_head::Init(void)
+{
+    m_MenuScript = kEmptyStr;
+}
+
+void CHTML_head::SetPopupMenuScript(const string& url)
+{
+    m_MenuScript = url;
+}
+
+void CHTML_head::AddPopupMenu(CHTMLPopupMenu& menu)
+{
+    m_Menus.push_back(&menu);
+}
+
+void CHTML_head::WritePopupMenus(CNcbiOstream& out)
+{
+    if ( m_Menus.empty() )
+        return;
+
+    string code;
+    iterate (TMenus, i, m_Menus) {
+        code += (*i)->GetCodeMenuItems();
+    }
+    out << CHTMLPopupMenu::GetCodeHead(m_MenuScript, code,
+                                       (*m_Menus.begin())->GetName());
+}
+
+
+CNcbiOstream& CHTML_head::PrintEnd(CNcbiOstream& out, TMode mode)
+{
+    if ( mode == eHTML ) {
+        WritePopupMenus(out);
+    }
+    CParent::PrintEnd(out, mode);
+    return out;
+}
+
+
+// the <BODY> tag
+
+const char CHTML_body::sm_TagName[] = "body";
+
+CHTML_body::~CHTML_body(void)
+{
+}
+
+void CHTML_body::Init(void)
+{
+    m_HaveMenuCode = false;
+}
+
+CNcbiOstream& CHTML_body::PrintEnd(CNcbiOstream& out, TMode mode)
+{
+    if (mode == eHTML  &&   m_HaveMenuCode) {
+        out << CHTMLPopupMenu::GetCodeBody();
+    }
+    CParent::PrintEnd(out, mode);
     return out;
 }
 
@@ -1924,7 +2130,7 @@ CHTML_script::~CHTML_script(void)
 
 CHTML_script* CHTML_script::AppendScript(const string& script)
 {
-    AppendChild(new CHTMLComment(script));
+    AppendChild(new CHTMLPlainText("\n<!--\n" + script + "-->\n", true));
     return this;
 }
 
@@ -1938,9 +2144,6 @@ CHTML_NAME(Tag)::~CHTML_NAME(Tag)(void) \
 const char CHTML_NAME(Tag)::sm_TagName[] = #Tag
 
 
-DEFINE_HTML_ELEMENT(html);
-DEFINE_HTML_ELEMENT(head);
-DEFINE_HTML_ELEMENT(body);
 DEFINE_HTML_ELEMENT(base);
 DEFINE_HTML_ELEMENT(isindex);
 DEFINE_HTML_ELEMENT(link);

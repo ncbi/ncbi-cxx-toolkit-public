@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2001/07/16 13:54:42  ivanov
+* Added support JavaScript popups menu (jsmenu.[ch]pp)
+*
 * Revision 1.51  2001/06/08 19:01:41  ivanov
 * Added base classes: CHTMLDualNode, CHTMLSpecialChar
 *     (and based on it: CHTML_nbsp, _gt, _lt, _quot, _amp, _copy, _reg)
@@ -213,9 +216,115 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
+#include <html/jsmenu.hpp>
 
 BEGIN_NCBI_SCOPE
+
+
+
+// Macro for declare html elements
+
+#define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
+
+#define DECLARE_HTML_ELEMENT_CONSTRUCTORS(Tag, Parent) \
+    CHTML_NAME(Tag)(void) \
+        : CParent(sm_TagName) \
+        { } \
+    CHTML_NAME(Tag)(const char* text) \
+        : CParent(sm_TagName, text) \
+        { } \
+    CHTML_NAME(Tag)(const string& text) \
+        : CParent(sm_TagName, text) \
+        { } \
+    CHTML_NAME(Tag)(CNCBINode* node) \
+        : CParent(sm_TagName, node) \
+        { } \
+    ~CHTML_NAME(Tag)(void)
+
+
+#define DECLARE_HTML_ELEMENT_CONSTRUCTORS_WITH_INIT(Tag, Parent) \
+    CHTML_NAME(Tag)(void) \
+        : CParent(sm_TagName) \
+        { Init(); } \
+    CHTML_NAME(Tag)(const char* text) \
+        : CParent(sm_TagName, text) \
+        { Init(); } \
+    CHTML_NAME(Tag)(const string& text) \
+        : CParent(sm_TagName, text) \
+        { Init(); } \
+    CHTML_NAME(Tag)(CNCBINode* node) \
+        : CParent(sm_TagName, node) \
+        { Init(); } \
+    ~CHTML_NAME(Tag)(void)
+
+
+#define DECLARE_HTML_ELEMENT_TYPES(Parent) \
+    typedef Parent CParent; \
+    static const char sm_TagName[]
+
+
+#define DECLARE_HTML_ELEMENT_COMMON(Tag, Parent) \
+    DECLARE_HTML_ELEMENT_TYPES(Parent); \
+public: \
+    DECLARE_HTML_ELEMENT_CONSTRUCTORS(Tag, Parent)
+
+
+#define DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(Tag, Parent) \
+    DECLARE_HTML_ELEMENT_TYPES(Parent); \
+public: \
+    DECLARE_HTML_ELEMENT_CONSTRUCTORS_WITH_INIT(Tag, Parent)
+
+
+#define DECLARE_HTML_ELEMENT(Tag, Parent) \
+class CHTML_NAME(Tag) : public Parent \
+{ \
+    DECLARE_HTML_ELEMENT_COMMON(Tag, Parent); \
+}
+
+
+// Macro for declare special chars
+
+#define DECLARE_HTML_SPECIAL_CHAR(Tag, plain) \
+class CHTML_NAME(Tag) : public CHTMLSpecialChar \
+{ \
+    typedef CHTMLSpecialChar CParent; \
+public: \
+    CHTML_NAME(Tag)(int count = 1) \
+        : CParent(#Tag, plain, count) \
+        { } \
+    ~CHTML_NAME(Tag)(void) { }; \
+}
+
+
+
+// event tag handler type 
+//
+// NOTE: Availability of realization event-handlers for some tags
+//       stand on from browser's type! Set of event-handlers for tags can 
+//       fluctuate in different browsers.
+
+enum EHTML_EH_Attribute {
+    //                  work with next HTML-tags (tag's group):
+    eHTML_EH_Blur,      //   select, text, textarea
+    eHTML_EH_Change,    //   select, text, textarea 
+    eHTML_EH_Click,     //   button, checkbox, radio, link, reset, submit
+    eHTML_EH_DblClick,  //   
+    eHTML_EH_Focus,     //   select, text, textarea  
+    eHTML_EH_Load,      //   body, frameset
+    eHTML_EH_Unload,    //   body, frameset
+    eHTML_EH_MouseDown, //
+    eHTML_EH_MouseUp,   //
+    eHTML_EH_MouseMove, //
+    eHTML_EH_MouseOver, //
+    eHTML_EH_MouseOut,  //
+    eHTML_EH_Select,    //   text, textarea
+    eHTML_EH_Submit,    //   form  
+    eHTML_EH_KeyDown,   //
+    eHTML_EH_KeyPress,  //
+    eHTML_EH_KeyUp      //
+};
 
 
 // base class for html node
@@ -286,6 +395,9 @@ public:
     void AppendPlainText(const string& text, bool noEncode = false);
     void AppendHTMLText (const char* text);
     void AppendHTMLText (const string& text);
+
+    // set tag event handler
+    void SetEventHandler(const EHTML_EH_Attribute name, const string& value);
 };
 
 
@@ -549,6 +661,83 @@ public:
 
 private:
     int m_Count;
+};
+
+
+// the <head> tag
+class CHTML_head : public CHTMLElement
+{
+    friend class CHTML_html;
+
+    // CParent, constructors, destructor
+    DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(head, CHTMLElement);
+    
+private:
+    // Init members
+    void Init(void);
+
+    // Set URL for the standard popup menu support script
+    void SetPopupMenuScript(const string& url = kEmptyStr);
+
+    // Add popup menu
+    void AddPopupMenu(CHTMLPopupMenu& menu); 
+
+    // Write all popup menu definitions to the output stream "os"
+    void WritePopupMenus(CNcbiOstream& out);
+
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
+
+    // List of popup menus
+    typedef list< CRef<CHTMLPopupMenu> > TMenus;
+    TMenus m_Menus;
+    string m_MenuScript;
+};
+
+
+// the <body> tag
+class CHTML_body : public CHTMLElement
+{
+    friend class CHTML_html;
+
+    // CParent, constructors, destructor
+    DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(body, CHTMLElement);
+
+protected:
+    virtual CNcbiOstream& PrintEnd(CNcbiOstream& out, TMode mode);
+    
+private:
+    // Init members
+    void Init(void);
+
+    // Initialization flag
+    bool m_HaveMenuCode;
+};
+
+
+// the <html> tag
+class CHTML_html : public CHTMLElement
+{
+    // CParent, constructors, destructor
+    DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(html, CHTMLElement);
+   
+    // Init for future adding of popup menus.
+    // Also, if this HTML does not have HEAD (or BODY) already, then
+    // "head" (or "body") will be added as a child to the HTML.
+    // If this HTML already has HEAD or BODY, then they must be the same as
+    // the passed "head" and "body";  otherwise, an exception will be thrown.
+    void InitPopupMenus(CHTML_head&    head, 
+                        CHTML_body&    body,
+                        const string&  menu_lib_url = kEmptyStr);
+
+    // Add popup menu
+    // NOTE:  InitPopupMenus() must be called
+    void AddPopupMenu(CHTMLPopupMenu& menu); 
+
+private:
+    // Init members
+    void Init(void);
+
+    CRef<CHTML_head> m_Head;    // HEAD node
 };
 
 
@@ -1177,50 +1366,6 @@ public:
 
 
 
-#define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
-
-
-// Macro for declare html elements
-
-#define DECLARE_HTML_ELEMENT(Tag, Parent) \
-class CHTML_NAME(Tag) : public Parent \
-{ \
-    typedef Parent CParent; \
-    static const char sm_TagName[]; \
-public: \
-    CHTML_NAME(Tag)(void) \
-        : CParent(sm_TagName) \
-        { } \
-    CHTML_NAME(Tag)(const char* text) \
-        : CParent(sm_TagName, text) \
-        { } \
-    CHTML_NAME(Tag)(const string& text) \
-        : CParent(sm_TagName, text) \
-        { } \
-    CHTML_NAME(Tag)(CNCBINode* node) \
-        : CParent(sm_TagName, node) \
-        { } \
-    ~CHTML_NAME(Tag)(void); \
-}
-
-
-// Macro for declare special chars
-
-#define DECLARE_HTML_SPECIAL_CHAR(Tag, plain) \
-class CHTML_NAME(Tag) : public CHTMLSpecialChar \
-{ \
-    typedef CHTMLSpecialChar CParent; \
-public: \
-    CHTML_NAME(Tag)(int count = 1) \
-        : CParent(#Tag, plain, count) \
-        { } \
-    ~CHTML_NAME(Tag)(void) { }; \
-}
-
-
-DECLARE_HTML_ELEMENT( html,       CHTMLElement);
-DECLARE_HTML_ELEMENT( head,       CHTMLElement);
-DECLARE_HTML_ELEMENT( body,       CHTMLElement);
 DECLARE_HTML_ELEMENT( base,       CHTMLElement);
 DECLARE_HTML_ELEMENT( isindex,    CHTMLOpenElement);
 DECLARE_HTML_ELEMENT( link,       CHTMLOpenElement);
