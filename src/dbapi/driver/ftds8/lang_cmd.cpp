@@ -304,7 +304,7 @@ bool CTDS_LangCmd::x_AssignParams()
             return false;
         }
 
-        cmd += "declare" + name + ' ' + type + "\nselect " + name + " = ";
+        cmd += "declare " + name + ' ' + type + "\nselect " + name + " = ";
 
         if (!param.IsNULL()) {
             switch (param.GetType()) {
@@ -332,13 +332,13 @@ bool CTDS_LangCmd::x_AssignParams()
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
                 const char* c = val.Value(); // No more than 255 chars
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i++] = '\n';
                 val_buffer[i] = '\0';
                 break;
@@ -347,13 +347,13 @@ bool CTDS_LangCmd::x_AssignParams()
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
                 const char* c = val.Value();
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i++] = '\n';
                 val_buffer[i] = '\0';
                 break;
@@ -429,6 +429,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/12/13 23:40:53  soussov
+ * changes double quotes to single quotes in SQL queries
+ *
  * Revision 1.2  2001/11/06 18:00:02  lavr
  * Formatted uniformly as the rest of the library
  *

@@ -281,13 +281,13 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
             const CDB_Char& val = dynamic_cast<const CDB_Char&> (param);
             const char* c = val.Value(); // No more than 255 chars
             size_t i = 0;
-            val_buffer[i++] = '"';
+            val_buffer[i++] = '\'';
             while (*c) {
-                if (*c == '"')
-                    val_buffer[i++] = '"';
+                if (*c == '\'')
+                    val_buffer[i++] = '\'';
                 val_buffer[i++] = *c++;
             }
-            val_buffer[i++] = '"';
+            val_buffer[i++] = '\'';
             val_buffer[i++] = '\n';
             val_buffer[i] = '\0';
             break;
@@ -296,13 +296,13 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
             const CDB_VarChar& val = dynamic_cast<const CDB_VarChar&> (param);
             const char* c = val.Value();
             size_t i = 0;
-            val_buffer[i++] = '"';
+            val_buffer[i++] = '\'';
             while (*c) {
-                if (*c == '"')
-                    val_buffer[i++] = '"';
+                if (*c == '\'')
+                    val_buffer[i++] = '\'';
                 val_buffer[i++] = *c++;
             }
-            val_buffer[i++] = '"';
+            val_buffer[i++] = '\'';
             val_buffer[i++] = '\n';
             val_buffer[i] = '\0';
             break;
@@ -422,7 +422,7 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
             return false;
         }
 
-        cmd += "declare" + name + ' ' + type + '\n';
+        cmd += "declare " + name + ' ' + type + '\n';
         if (!param.IsNULL()) {
             cmd += "select " + name + " = ";
             x_AddParamValue(cmd, param);
@@ -470,6 +470,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/12/13 23:40:53  soussov
+ * changes double quotes to single quotes in SQL queries
+ *
  * Revision 1.1  2001/10/25 00:39:22  vakatov
  * Initial revision
  *
