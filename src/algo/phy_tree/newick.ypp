@@ -1,5 +1,5 @@
 %{
-/*  $Id: newick.ypp,v 1.2 2004/05/25 14:42:45 jcherry Exp $
+/*  $Id: newick.ypp,v 1.3 2005/03/30 20:33:30 jcherry Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -30,6 +30,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 
 /*
  * Meant to be used in conjunction with flex lexer defined
@@ -40,8 +41,6 @@
  * code for it to compile on some platforms.
  */
 
-
-#include <ncbi_pch.hpp>
 #include <algo/phy_tree/phy_node.hpp>
 USING_SCOPE(ncbi);
 static int nodecount = 0;
@@ -82,6 +81,21 @@ node:	'(' nodelist ')' ':' NUM {
 
 |  '(' nodelist ')' { 
     $$ = $2;
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|  '(' nodelist ')' LABEL ':' NUM { 
+    $$ = $2;
+    $$->GetValue().SetLabel($4);
+    $$->GetValue().SetDist($6);
+    $$->GetValue().SetId(nodecount);
+    nodecount++; 
+}
+
+|  '(' nodelist ')' LABEL { 
+    $$ = $2;
+    $$->GetValue().SetLabel($4);
     $$->GetValue().SetId(nodecount);
     nodecount++; 
 }
@@ -162,6 +176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log: newick.ypp,v $
+ * Revision 1.3  2005/03/30 20:33:30  jcherry
+ * Deal with labels on internal nodes
+ *
  * Revision 1.2  2004/05/25 14:42:45  jcherry
  * #include <ncbi_pch.hpp>
  *

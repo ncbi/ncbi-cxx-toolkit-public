@@ -1,5 +1,3 @@
-#include <ncbi_pch.hpp>
-
 /* A Bison parser, made from newick.ypp
    by GNU bison 1.35.  */
 
@@ -48,6 +46,7 @@
  *
  */
 
+#include <ncbi_pch.hpp>
 
 /*
  * Meant to be used in conjunction with flex lexer defined
@@ -57,7 +56,6 @@
  * The line '#include <unistd.h>' must be removed from the flex-generated
  * code for it to compile on some platforms.
  */
-
 
 #include <algo/phy_tree/phy_node.hpp>
 USING_SCOPE(ncbi);
@@ -85,7 +83,7 @@ typedef union {
 
 
 
-#define	YYFINAL		16
+#define	YYFINAL		19
 #define	YYFLAG		-32768
 #define	YYNTBASE	10
 
@@ -126,13 +124,14 @@ static const char yytranslate[] =
 #if YYDEBUG
 static const short yyprhs[] =
 {
-       0,     0,     3,     9,    13,    17,    19,    21
+       0,     0,     3,     9,    13,    20,    25,    29,    31,    33
 };
 static const short yyrhs[] =
 {
       11,     5,     0,     6,    12,     7,     8,     4,     0,     6,
-      12,     7,     0,     3,     8,     4,     0,     3,     0,    11,
-       0,    12,     9,    11,     0
+      12,     7,     0,     6,    12,     7,     3,     8,     4,     0,
+       6,    12,     7,     3,     0,     3,     8,     4,     0,     3,
+       0,    11,     0,    12,     9,    11,     0
 };
 
 #endif
@@ -141,7 +140,7 @@ static const short yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined. */
 static const short yyrline[] =
 {
-       0,    69,    75,    82,    88,    96,   105,   110
+       0,    69,    75,    82,    88,    96,   103,   111,   120,   125
 };
 #endif
 
@@ -159,13 +158,13 @@ static const char *const yytname[] =
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives. */
 static const short yyr1[] =
 {
-       0,    10,    11,    11,    11,    11,    12,    12
+       0,    10,    11,    11,    11,    11,    11,    11,    12,    12
 };
 
 /* YYR2[YYN] -- Number of symbols composing right hand side of rule YYN. */
 static const short yyr2[] =
 {
-       0,     2,     5,     3,     3,     1,     1,     3
+       0,     2,     5,     3,     6,     4,     3,     1,     1,     3
 };
 
 /* YYDEFACT[S] -- default rule to reduce with in state S when YYTABLE
@@ -173,19 +172,19 @@ static const short yyr2[] =
    error. */
 static const short yydefact[] =
 {
-       0,     5,     0,     0,     0,     6,     0,     1,     4,     3,
-       0,     0,     7,     2,     0,     0,     0
+       0,     7,     0,     0,     0,     8,     0,     1,     6,     3,
+       0,     5,     0,     9,     0,     2,     4,     0,     0,     0
 };
 
 static const short yydefgoto[] =
 {
-      14,     3,     6
+      17,     3,     6
 };
 
 static const short yypact[] =
 {
-      -1,    -4,    -1,     1,     3,-32768,    -6,-32768,-32768,     2,
-      -1,     5,-32768,-32768,    11,    12,-32768
+       0,    -7,     0,     5,     1,-32768,     2,-32768,-32768,    -1,
+       0,    -4,     8,-32768,     9,-32768,-32768,    14,    15,-32768
 };
 
 static const short yypgoto[] =
@@ -194,19 +193,19 @@ static const short yypgoto[] =
 };
 
 
-#define	YYLAST		12
+#define	YYLAST		15
 
 
 static const short yytable[] =
 {
-       5,     9,     1,    10,     4,     2,     7,     8,    12,    13,
-      11,    15,    16
+       5,     4,    11,     1,    14,     8,     2,    12,    13,     9,
+       7,    10,    15,    16,    18,    19
 };
 
 static const short yycheck[] =
 {
-       2,     7,     3,     9,     8,     6,     5,     4,    10,     4,
-       8,     0,     0
+       2,     8,     3,     3,     8,     4,     6,     8,    10,     7,
+       5,     9,     4,     4,     0,     0
 };
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
 #line 3 "/usr/share/bison/bison.simple"
@@ -941,7 +940,7 @@ case 3:
 case 4:
 #line 88 "newick.ypp"
 { 
-    yyval.nodeval = new TPhyTreeNode;
+    yyval.nodeval = yyvsp[-4].nodeval;
     yyval.nodeval->GetValue().SetLabel(yyvsp[-2].strval);
     yyval.nodeval->GetValue().SetDist(yyvsp[0].dblval);
     yyval.nodeval->GetValue().SetId(nodecount);
@@ -951,21 +950,40 @@ case 4:
 case 5:
 #line 96 "newick.ypp"
 { 
-    yyval.nodeval = new TPhyTreeNode;
+    yyval.nodeval = yyvsp[-2].nodeval;
     yyval.nodeval->GetValue().SetLabel(yyvsp[0].strval);
     yyval.nodeval->GetValue().SetId(nodecount);
     nodecount++; 
 ;
     break;}
 case 6:
-#line 105 "newick.ypp"
+#line 103 "newick.ypp"
+{ 
+    yyval.nodeval = new TPhyTreeNode;
+    yyval.nodeval->GetValue().SetLabel(yyvsp[-2].strval);
+    yyval.nodeval->GetValue().SetDist(yyvsp[0].dblval);
+    yyval.nodeval->GetValue().SetId(nodecount);
+    nodecount++; 
+;
+    break;}
+case 7:
+#line 111 "newick.ypp"
+{ 
+    yyval.nodeval = new TPhyTreeNode;
+    yyval.nodeval->GetValue().SetLabel(yyvsp[0].strval);
+    yyval.nodeval->GetValue().SetId(nodecount);
+    nodecount++; 
+;
+    break;}
+case 8:
+#line 120 "newick.ypp"
 {
     yyval.nodeval = new TPhyTreeNode;
     yyval.nodeval->AddNode(yyvsp[0].nodeval);
 ;
     break;}
-case 7:
-#line 110 "newick.ypp"
+case 9:
+#line 125 "newick.ypp"
 {
     yyval.nodeval = yyvsp[-2].nodeval;
     yyval.nodeval->AddNode(yyvsp[0].nodeval);
@@ -1204,7 +1222,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 117 "newick.ypp"
+#line 132 "newick.ypp"
 
 
 void yyerror(const char *s)
@@ -1252,8 +1270,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.3  2004/05/24 20:48:40  gorelenk
- * PCH moved upmost
+ * Revision 1.4  2005/03/30 20:33:30  jcherry
+ * Deal with labels on internal nodes
+ *
+ * Revision 1.2  2004/05/25 14:42:45  jcherry
+ * #include <ncbi_pch.hpp>
+ *
+ * Revision 1.1  2004/02/11 17:40:56  jcherry
+ * Initial version
  *
  * ===========================================================================
  */
