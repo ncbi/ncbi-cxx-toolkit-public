@@ -77,7 +77,7 @@ void COMSSA::Init()
     auto_ptr<CArgDescriptions> argDesc(new CArgDescriptions);
 
     argDesc->AddDefaultKey("d", "blastdb", "Blast database to parse",
-			   CArgDescriptions::eString, "yeast");
+			   CArgDescriptions::eString, "nr");
     argDesc->AddDefaultKey("f", "infile", "dta file to read in",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("m", "xmlinfile", "xml encapsulated dta file to read in",
@@ -87,9 +87,9 @@ void COMSSA::Init()
     argDesc->AddDefaultKey("g", "graph", "graph file to write out",
 			   CArgDescriptions::eString, "");
     argDesc->AddDefaultKey("t", "tol", "msms tolerance",
-			   CArgDescriptions::eDouble, "1.5");
+			   CArgDescriptions::eDouble, "0.8");
     argDesc->AddDefaultKey("p", "ptol", "peptide mass tolerance",
-			   CArgDescriptions::eDouble, "20.0");
+			   CArgDescriptions::eDouble, "2.0");
     argDesc->AddDefaultKey("i", "baseline", "baseline cutoff by fraction of max intensity",
 			   CArgDescriptions::eDouble, "0.025");
     argDesc->AddDefaultKey("c", "cull", 
@@ -112,7 +112,7 @@ void COMSSA::Init()
 			   CArgDescriptions::eInteger, "14");
     argDesc->AddDefaultKey("hl", "hitlist", 
 			   "number of hits kept for spectrum",
-			   CArgDescriptions::eInteger, "25");
+			   CArgDescriptions::eInteger, "100");
 
     SetupArgDescriptions(argDesc.release());
 
@@ -244,6 +244,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.7  2003/11/20 15:40:53  lewisg
+  fix hitlist bug, change defaults
+
   Revision 1.6  2003/11/18 18:16:04  lewisg
   perf enhancements, ROCn adjusted params made default
 

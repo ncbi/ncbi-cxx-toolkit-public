@@ -191,30 +191,33 @@ bool CMSPeak::AddHit(CMSHit& in, CMSHit *& out)
     out = 0;
     // initialize index using charge
     int Index = in.GetCharge() - Charges[0];
-    if(in.GetHits() < LastHitNum[Index]) return false;  
-    int i, min(0);  // min is the minimum number of hits in the list
-    // find the minimum in the hitslist
-    for(i = 0; i < HitListIndex[Index] && 
-	    in.GetHits() <= HitList[Index][i].GetHits(); i++)
-        if(min > HitList[Index][i].GetHits())
-	    min = HitList[Index][i].GetHits();
-    if(i >= HitListSize) {
-        LastHitNum[Index] = min;
-        return false;
-    }
-    // add to end of list
-    if(i >= HitListIndex[Index]) {
-        HitList[Index][i] = in;
-        out = & (HitList[Index][i]);
-        HitListIndex[Index]++;
+    // check to see if hitlist is full
+    if(HitListIndex[Index] >= HitListSize) {
+	// if less or equal hits than recorded min, don't bother
+	if(in.GetHits() <= LastHitNum[Index]) return false;  
+	int i, min(HitList[Index][0].GetHits()); //the minimum number of hits in the list
+	int minpos(0);     // the position of min
+	// find the minimum in the hitslist
+	for(i = 1; i < HitListSize; i++) {
+	    if(min > HitList[Index][i].GetHits()) {
+		min = HitList[Index][i].GetHits();
+		minpos = i;
+	    }
+	}
+	// keep record of min
+	LastHitNum[Index] = min;	
+	// replace in list
+	HitList[Index][minpos] = in;
+	out =  & (HitList[Index][minpos]);
 	return true;
     } 
-    // otherwise replace in list
     else {
-        HitList[Index][i] = in;
-        out =  & (HitList[Index][i]);
+	// add to end of list
+	HitList[Index][HitListIndex[Index]] = in;
+	out = & (HitList[Index][HitListIndex[Index]]);
+	HitListIndex[Index]++;
 	return true;
-    } 
+    }
 }
 
 

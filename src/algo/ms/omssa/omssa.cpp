@@ -146,6 +146,18 @@ int CSearch::CompareLadders(CLadder& BLadder,
 }
 
 
+#ifdef _DEBUG
+#define CHECKGI
+#ifdef CHECKGI
+static void CheckGi(int gi)
+{
+    if(gi == 127655 || gi == 127664 ) {
+	ERR_POST(Info << "test seq");
+    }
+}
+#endif
+#endif
+
 // loads spectra into peaks
 void CSearch::Spectrum2Peak(CMSRequest& MyRequest, CMSPeakSet& PeakSet, 
 							int SingleWindow, int DoubleWindow)
@@ -231,19 +243,7 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
     CMSPeak* Peaks;
 	
     Spectrum2Peak(MyRequest, PeakSet, SingleWindow, DoubleWindow);
-	
-#ifdef DEBUG_PEAKS
-    Peaks = *(PeakSet.GetPeaks().begin());
-    string FileOutName(NStr::IntToString(Peaks->GetMass()) + ".txt");
-    ofstream FileOut(FileOutName.c_str());
-    FileOut << Peaks->GetNum(MSCULLED) << " " << Peaks->GetMass() << " " << 
-	MyRequest.GetMsmstol() << endl;
-    ofstream FileOut2("outfile.dta");
-    Peaks->Write(FileOut2, CMSPeak::eDTA, MSCULLED);
-    int TotalHits(0);
-    double SumCalcPoisson(0.0L);
-#endif
-	
+		
     // iterate through sequences
     for(iSearch = 0; iSearch < numseq; iSearch++) {
 	if(iSearch/10000*10000 == iSearch) ERR_POST(Info << "sequence " << 
@@ -252,11 +252,9 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 	while(readdb_get_header_ex(rdfp, iSearch, &header, &sip,
 				   &blastdefline, &taxid, NULL, NULL)) {
 			
-#if 0
+#ifdef CHECKGI
 	    SeqId *bestid = SeqIdFindBest(sip, SEQID_GI);
-	    if(bestid->data.intvalue ==  70561) {
-		ERR_POST(Info << "test seq" << iSearch);
-	    }
+	    CheckGi(bestid->data.intvalue);
 #endif 
 			
 	    MemFree(blastdefline);
@@ -356,16 +354,13 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 			Peaks = MassPeak->Peak;
 						
 						
-#if 0
+#ifdef CHECKGI
 			SeqId *bestid;
 						
 			header = 0;
 			readdb_get_header(rdfp, iSearch, &header, &sip, &blastdefline);
 			bestid = SeqIdFindBest(sip, SEQID_GI);
-			if(bestid->data.intvalue ==  70561) {
-			    ERR_POST(Info << "test seq" << iSearch);
-			}
-
+			CheckGi(bestid->data.intvalue);
 			MemFree(blastdefline);
 			SeqIdSetFree(sip);
 #endif
@@ -426,26 +421,15 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 				    NewHitOut->SetSeqIndex(iSearch);
 				    NewHitOut->SetMass(MassPeak->Mass);
 				    // record the hits
-				    NewHitOut->RecordMatches(BLadder[LadderVal],
-							     YLadder[LadderVal],
-							     B2Ladder[LadderVal], 
-							     Y2Ladder[LadderVal],
-							     Peaks);
+				    NewHitOut->
+					RecordMatches(BLadder[LadderVal],
+						      YLadder[LadderVal],
+						      B2Ladder[LadderVal], 
+						      Y2Ladder[LadderVal],
+						      Peaks);
 				}
 			    }
-#ifdef DEBUG_PEAKS
-			    FileOut << hits << " " << endposition - position << endl;
-			    TotalHits += hits;
-			    SumCalcPoisson += CalcPoissonMean(position, 
-							      endposition,
-							      MassPeak->Mass,
-							      Peaks);
-#endif
-							
 			} while(CalcModIndex(ModIndex, iMod, NumMod[iMissed]));
-						
-						
-						
 		    } // MassPeak
 		} //iMod
 	    } // iMissed
@@ -472,10 +456,6 @@ int CSearch::Search(CMSRequest& MyRequest, CMSResponse& MyResponse, int Cutoff,
 	
     free_imatrix(Masses, 0, MAXMISSEDCLEAVE, 0, MAXMOD);
 	
-#ifdef DEBUG_PEAKS
-    _TRACE("Hit Average:" << ((double)TotalHits)/(*PeakSet.GetPeaks().begin())->GetPeptidesExamined() << " Calc Average:" << SumCalcPoisson / (*PeakSet.GetPeaks().begin())->GetPeptidesExamined());
-#endif
-    
     // read out hits
     SetResult(PeakSet, MyResponse, Cutoff, 0.0, 0.2, 0.005);
 	
@@ -568,9 +548,8 @@ void CSearch::SetResult(CMSPeakSet& PeakSet, CMSResponse& MyResponse,
 		     iseq++) {
 		    seqstring += UniqueAA[Sequence[iseq]];
 		}
-#if 0
-		if(bestid->data.intvalue ==  70561 )
-		    ERR_POST(Info << "test seq");
+#ifdef CHECKGI
+		CheckGi(bestid->data.intvalue);
 #endif
 		if(PepDone.find(seqstring) != PepDone.end()) {
 		    Hit = PepDone[seqstring];
@@ -617,7 +596,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
 	TMSHitList& HitList = Peaks->GetHitList(iCharges);   
 	for(iHitList = 0; iHitList != Peaks->GetHitListIndex(iCharges);
 	    iHitList++) {
-#if 0
+#ifdef CHECKGI
 	    unsigned header;
 	    char *blastdefline;
 	    SeqId *sip, *bestid;
@@ -627,9 +606,7 @@ void CSearch::CalcNSort(TScoreList& ScoreList, double Threshold, CMSPeak* Peaks)
 			      &header, &sip,&blastdefline);
 	    bestid = SeqIdFindBest(sip, SEQID_GI);
 	    if(!bestid) continue;
-	    if(bestid->data.intvalue ==  70561) {
-		ERR_POST(Info << "test seq");
-	    }
+	    CheckGi(bestid->data.intvalue);
 	    MemFree(blastdefline);
 	    SeqIdSetFree(sip);
 #endif
@@ -730,6 +707,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.9  2003/11/20 15:40:53  lewisg
+fix hitlist bug, change defaults
+
 Revision 1.8  2003/11/17 18:36:56  lewisg
 fix cref use to make sure ref counts are decremented at loop termination
 
