@@ -55,11 +55,12 @@ BEGIN_NCBI_SCOPE
 /// Create CPipe-based CONNECTOR.
 ///
 /// Create new CONNECTOR structure to handle a data transfer between two
-/// process over interprocess pipe. Return NULL on error.
+/// processes over interprocess pipe.  Return NULL on error.
 extern NCBI_XCONNECT_EXPORT CONNECTOR PIPE_CreateConnector
 (const string&         cmd,
  const vector<string>& args,
- CPipe::TCreateFlags   create_flags = 0
+ CPipe::TCreateFlags   create_flags = 0,
+ CPipe*                pipe = 0
 );
 
 
@@ -72,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/09/23 21:04:08  lavr
+ * Allow to create the connector on top of existing pipe (and don't delete it!)
+ *
  * Revision 1.1  2003/09/02 20:25:29  ivanov
  * Initial revision
  *
