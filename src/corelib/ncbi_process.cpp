@@ -399,6 +399,18 @@ void CPIDGuard::Release(void)
 }
 
 
+void CPIDGuard::Remove(void)
+{
+    if ( !m_Path.empty() ) {
+        // MT-Safe protect
+        CFastMutexGuard LOCK(s_PidGuardMutex);
+        // Remove the file
+        CDirEntry(m_Path).Remove();
+        m_Path.erase();
+    }
+}
+
+
 void CPIDGuard::UpdatePID(TPid pid)
 {
     if (pid == 0) {
@@ -447,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/07/12 16:46:56  ivanov
+ * Added implementation CPIDGuard::Remove()
+ *
  * Revision 1.8  2004/05/18 17:01:15  ivanov
  * CProcess::
  *     + WaitForAlive(), WaitForTerminate().
