@@ -1115,6 +1115,43 @@ void CAlnMix::x_CreateDenseg()
             }
         }
     }
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+    offset = 0;
+    for (numrow = 0;  numrow < numrows;  numrow++) {
+
+        TSignedSeqPos max_start = -1, start;
+
+        if (strands[numrow] == eNa_strand_plus) {
+            offset = 0;
+        } else {
+            offset = (numsegs -1) * numrows;
+        }
+
+        for (numseg = 0;  numseg < numsegs;  numseg++) {
+          start = starts[offset + numrow];
+            if (start >= 0) {
+                if (start < max_start) {
+                    string errstr = string("CAlnMix::x_CreateDenseg():")
+                        + " Starts are not consistent!"
+                        + " Row=" + NStr::IntToString(numrow) +
+                        " Seg=" + NStr::IntToString(numseg) +
+                        " MaxStart=" + NStr::IntToString(max_start) +
+                        " Start=" + NStr::IntToString(start);
+                    
+                    NCBI_THROW(CAlnException, eMergeFailure, errstr);
+                }
+                max_start = start + 
+                  lens[strands[numrow] == eNa_strand_plus ?
+                      numseg : numsegs - 1 - numseg];
+            }
+            if (strands[numrow] == eNa_strand_plus) {
+                offset += numrows;
+            } else {
+                offset -= numrows;
+            }
+        }
+    }
+#endif
 }
 
 
@@ -1125,6 +1162,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/01/07 17:23:49  todorov
+* Added conditionally compiled validation code
+*
 * Revision 1.15  2003/01/02 20:03:48  todorov
 * Row strand init & check
 *
