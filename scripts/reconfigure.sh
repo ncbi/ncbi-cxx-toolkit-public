@@ -11,8 +11,12 @@
 script_name=`basename $0`
 script_dir=`dirname $0`
 
+if test -z "$builddir" ; then
+  # temporary patch
+  builddir=`pwd`
+fi
+
 top_srcdir=`(cd "${script_dir}/.." ; pwd)`
-builddir=`pwd`
 status_dir=`(cd "${builddir}/../status" ; pwd)`
 
 ###  What to do (cmd-line arg)
@@ -22,14 +26,15 @@ method="$1"
 
 ###  Checks
 
-if test ! -x "$top_srcdir/scripts/hello.sh"  -o  ! -f "$builddir/../inc/ncbiconf.h" ; then
+if test -z "$builddir"  -o  ! -x "$top_srcdir/scripts/hello.sh"  -o  ! -f "$builddir/../inc/ncbiconf.h" ; then
   cat <<EOF
 
 [$script_name]  ERROR:
   This script must be run only using its counterpart (which is also
   called "$script_name") located in the appropriate build directory,
   like this:
-    ( cd c++/GCC-Debug/build  &&  ./$script_name $method )
+     ( cd $top_srcdir/GCC-Debug/build  &&  $script_name $method )
+
 EOF
    exit 1
 fi
