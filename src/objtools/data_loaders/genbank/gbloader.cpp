@@ -65,6 +65,14 @@
 
 #include <algorithm>
 
+/*
+#if defined(NCBI_OS_MAC)
+#   include <types.h>
+#else
+#   include <sys/types.h>
+#endif
+*/
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
@@ -81,6 +89,8 @@ static const char* const DEFAULT_DRV_ORDER = "PUBSEQOS:ID1";
 #else
 static const char* const DEFAULT_DRV_ORDER = "ID1";
 #endif
+
+#define DEFAULT_ID_GC_SIZE 1000
 
 class CGBReaderRequestResult : public CReaderRequestResult
 {
@@ -195,9 +205,39 @@ CGBDataLoader::CGBDataLoader(const string&     loader_name,
 CGBDataLoader::~CGBDataLoader(void)
 {
     GBLOG_POST( "~CGBDataLoader");
+}
 
-    m_LoadMapBlob_ids.clear();
-    m_LoadMapSeq_ids.clear();
+
+namespace {
+    typedef CGBDataLoader::TParamTree TParams;
+
+    TParams* FindSubNode(TParams* params,
+                         const string& name)
+    {
+        if ( params ) {
+            for ( TParams::TNodeList_I it = params->SubNodeBegin();
+                  it != params->SubNodeEnd(); ++it ) {
+                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                    return static_cast<TParams*>(*it);
+                }
+            }
+        }
+        return 0;
+    }
+
+    const TParams* FindSubNode(const TParams* params,
+                               const string& name)
+    {
+        if ( params ) {
+            for ( TParams::TNodeList_CI it = params->SubNodeBegin();
+                  it != params->SubNodeEnd(); ++it ) {
+                if ( NStr::CompareNocase((*it)->GetValue().id, name) == 0 ) {
+                    return static_cast<const TParams*>(*it);
+                }
+            }
+        }
+        return 0;
+    }
 }
 
 
@@ -211,7 +251,7 @@ CGBDataLoader::GetParamsSubnode(const TParamTree* params,
             subnode = params;
         }
         else {
-            subnode = params->FindSubNode(subnode_name);
+            subnode = FindSubNode(params, subnode_name);
         }
     }
     return subnode;
@@ -228,7 +268,7 @@ CGBDataLoader::GetParamsSubnode(TParamTree* params,
         subnode = params;
     }
     else {
-        subnode = const_cast<TParamTree*>(params->FindSubNode(subnode_name));
+        subnode = FindSubNode(params, subnode_name);
         if ( !subnode ) {
             subnode = params->AddNode(subnode_name, kEmptyStr);
         }
@@ -271,8 +311,7 @@ void CGBDataLoader::SetParam(TParamTree* params,
                              const string& param_name,
                              const string& param_value)
 {
-    TParamTree* subnode =
-        const_cast<TParamTree*>(params->FindSubNode(param_name));
+    TParamTree* subnode = FindSubNode(params, param_name);
     if ( !subnode ) {
         params->AddNode(param_name, param_value);
     }
@@ -286,8 +325,7 @@ string CGBDataLoader::GetParam(const TParamTree* params,
                                const string& param_name)
 {
     if ( params ) {
-        TParamTree* subnode =
-            const_cast<TParamTree*>(params->FindSubNode(param_name));
+        const TParamTree* subnode = FindSubNode(params, param_name);
         if ( subnode ) {
             return subnode->GetValue();
         }
@@ -298,6 +336,9 @@ string CGBDataLoader::GetParam(const TParamTree* params,
 
 void CGBDataLoader::x_CreateDriver(CReader* reader)
 {
+    m_LoadMapSeq_ids.SetMaxSize(DEFAULT_ID_GC_SIZE);
+    m_LoadMapSeq_ids2.SetMaxSize(DEFAULT_ID_GC_SIZE);
+    m_LoadMapBlob_ids.SetMaxSize(DEFAULT_ID_GC_SIZE);
     if ( reader ) {
         m_Dispatcher = new CReadDispatcher;
         m_Dispatcher->InsertReader(1, Ref(reader));
@@ -330,6 +371,22 @@ void CGBDataLoader::x_CreateDriver(const string& reader_name)
 void CGBDataLoader::x_CreateDriver(const TParamTree* params)
 {
     params = GetLoaderParams(params);
+
+    {{
+        size_t queue_size;
+        try {
+            queue_size =
+                NStr::StringToUInt(GetParam(params,
+                                            NCBI_GBLOADER_PARAM_ID_GC_SIZE));
+        }
+        catch ( ... ) {
+            queue_size = DEFAULT_ID_GC_SIZE;
+        }
+        m_LoadMapSeq_ids.SetMaxSize(queue_size);
+        m_LoadMapSeq_ids2.SetMaxSize(queue_size);
+        m_LoadMapBlob_ids.SetMaxSize(queue_size);
+    }}
+
     m_Dispatcher = new CReadDispatcher;
 
     if ( x_CreateReaders(params) ) {
@@ -361,6 +418,14 @@ bool CGBDataLoader::x_CreateReaders(const TParamTree* params)
 void CGBDataLoader::x_CreateWriters(const TParamTree* params)
 {
     string str = GetParam(params, NCBI_GBLOADER_PARAM_WRITER_NAME);
+    if ( str.empty() ) {
+        // try config first
+        string env_reader = GetConfigString("GENBANK", "LOADER_METHOD");
+        NStr::ToLower(env_reader);
+        if ( NStr::StartsWith(env_reader, "cache") ) {
+            str = "cache";
+        }
+    }
     NStr::ToLower(str);
     x_CreateWriters(str, params);
 }
@@ -936,63 +1001,21 @@ void CGBDataLoader::DropTSE(CRef<CTSE_Info> /* tse_info */)
 CRef<CLoadInfoSeq_ids>
 CGBDataLoader::GetLoadInfoSeq_ids(const string& key)
 {
-    {{
-        TReadLockGuard guard(m_LoadMap_Lock);
-        TLoadMapSeq_ids::iterator iter = m_LoadMapSeq_ids.find(key);
-        if ( iter != m_LoadMapSeq_ids.end() ) {
-            return iter->second;
-        }
-    }}
-    {{
-        TWriteLockGuard guard(m_LoadMap_Lock);
-        CRef<CLoadInfoSeq_ids>& ret = m_LoadMapSeq_ids[key];
-        if ( !ret ) {
-            ret = new CLoadInfoSeq_ids();
-        }
-        return ret;
-    }}
+    return m_LoadMapSeq_ids.Get(key);
 }
 
 
 CRef<CLoadInfoSeq_ids>
 CGBDataLoader::GetLoadInfoSeq_ids(const CSeq_id_Handle& key)
 {
-    {{
-        TReadLockGuard guard(m_LoadMap_Lock);
-        TLoadMapSeq_ids2::iterator iter = m_LoadMapSeq_ids2.find(key);
-        if ( iter != m_LoadMapSeq_ids2.end() ) {
-            return iter->second;
-        }
-    }}
-    {{
-        TWriteLockGuard guard(m_LoadMap_Lock);
-        CRef<CLoadInfoSeq_ids>& ret = m_LoadMapSeq_ids2[key];
-        if ( !ret ) {
-            ret = new CLoadInfoSeq_ids();
-        }
-        return ret;
-    }}
+    return m_LoadMapSeq_ids2.Get(key);
 }
 
 
 CRef<CLoadInfoBlob_ids>
 CGBDataLoader::GetLoadInfoBlob_ids(const CSeq_id_Handle& key)
 {
-    {{
-        TReadLockGuard guard(m_LoadMap_Lock);
-        TLoadMapBlob_ids::iterator iter = m_LoadMapBlob_ids.find(key);
-        if ( iter != m_LoadMapBlob_ids.end() ) {
-            return iter->second;
-        }
-    }}
-    {{
-        TWriteLockGuard guard(m_LoadMap_Lock);
-        CRef<CLoadInfoBlob_ids>& ret = m_LoadMapBlob_ids[key];
-        if ( !ret ) {
-            ret = new CLoadInfoBlob_ids(key);
-        }
-        return ret;
-    }}
+    return m_LoadMapBlob_ids.Get(key);
 }
 
 
