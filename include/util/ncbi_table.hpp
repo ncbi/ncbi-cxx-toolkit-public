@@ -33,8 +33,34 @@
 *
 */
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiexpt.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CNcbiTable_Exception : EXCEPTION_VIRTUAL_BASE public CException
+{
+public:
+    /// Exception types
+    enum EErrCode {
+        eRowNotFound,          ///< Row not found
+        eColumnNotFound,       ///< Column not found
+        eRowAlreadyExists,     ///< Row id has been assigned before
+        eColumnAlreadyExists,  ///< Column id has been assigned before
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eRowNotFound:        return "eRowNotFound";
+        case eColumnNotFound:     return "eColumnNotFound";
+        default:            return  CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNcbiTable_Exception, CException);
+};
+
+
 
 /// Template class to create a table with custom row-column access
 ///
@@ -254,7 +280,9 @@ void CNcbiTable<TValue, TRow, TColumn>::AssociateRow(const TRow&  row,
     if (it == m_RowMap.end()) {
         m_RowMap.insert(pair<TRow, unsigned int>(row, row_idx));
     } else {
-        _ASSERT(0); // Row key already exists
+        NCBI_THROW(
+          CNcbiTable_Exception, 
+          eRowAlreadyExists, "Cannot assign row key (already assigned).");
     }
 }
 
@@ -266,7 +294,9 @@ void CNcbiTable<TValue, TRow, TColumn>::AssociateColumn(const TColumn& col,
     if (it == m_ColumnMap.end()) {
         m_ColumnMap.insert(pair<TColumn, unsigned int>(col, col_idx));
     } else {
-        _ASSERT(0); // Column key already exists
+        NCBI_THROW(
+          CNcbiTable_Exception, 
+          eRowAlreadyExists, "Cannot assign column key (already assigned).");
     }
 
 }
@@ -337,7 +367,9 @@ CNcbiTable<TValue, TRow, TColumn>::GetRow(const TRow& row) const
 {
     typename TRowMap::const_iterator it = m_RowMap.find(row);
     if (it == m_RowMap.end()) {
-        _ASSERT(0);
+        NCBI_THROW(
+          CNcbiTable_Exception, 
+          eRowNotFound, "Row not found.");
     } 
     unsigned int idx = it->second;
     return *(m_Table[idx]);
@@ -385,7 +417,9 @@ CNcbiTable<TValue, TRow, TColumn>::ColumnIdx(const TColumn& col) const
 {
     typename TColumnMap::const_iterator it = m_ColumnMap.find(col);
     if (it == m_ColumnMap.end()) {
-        _ASSERT(0);
+        NCBI_THROW(
+          CNcbiTable_Exception, 
+          eColumnNotFound, "Column not found.");
     }
     return it->second;
 }
@@ -396,7 +430,9 @@ CNcbiTable<TValue, TRow, TColumn>::RowIdx(const TRow& row) const
 {
     typename TRowMap::const_iterator it = m_RowMap.find(row);
     if (it == m_RowMap.end()) {
-        _ASSERT(0);
+        NCBI_THROW(
+          CNcbiTable_Exception, 
+          eRowNotFound, "Row not found.");
     }
     return it->second;
 }
@@ -427,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/14 18:34:21  kuznets
+ * ASSERT protection replaced with exception throw
+ *
  * Revision 1.3  2004/09/02 13:33:42  kuznets
  * Added comments, copy-ctor, assignment op
  *
