@@ -403,72 +403,45 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
     }}
 
     // Collect all source, header, inline, resource files
-    CMsvcPrjFilesCollector collector(project_context, prj);
+    CMsvcPrjFilesCollector      collector(project_context, prj);
+    
+    // Insert sources, headers, inlines:
+    auto_ptr<IFilesToProjectInserter> inserter;
 
-    {{
-        //Files - source files
-        CRef<CFilter> filter(new CFilter());
-        filter->SetAttlist().SetName("Source Files");
-        filter->SetAttlist().SetFilter
-            ("cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx");
+    if (prj.m_ProjType == CProjKey::eDll) {
+        inserter.reset(new CDllProjectFilesInserter
+                                    (&xmlprj,
+                                     CProjKey(prj.m_ProjType, prj.m_ID), 
+                                     project_configs, 
+                                     project_context.ProjectDir()));
 
-        CSourceFileToProjectInserter src_inserter(prj.m_ID,
-                                                  project_configs, 
-                                                  project_context.ProjectDir());
+    } else {
+        inserter.reset(new CBasicProjectsFilesInserter 
+                                     (&xmlprj,
+                                      prj.m_ID,
+                                      project_configs, 
+                                      project_context.ProjectDir()));
+    }
 
-        ITERATE(list<string>, p, collector.SourceFiles()) {
+    ITERATE(list<string>, p, collector.SourceFiles()) {
+        //Include collected source files
+        const string& rel_source_file = *p;
+        inserter->AddSourceFile(rel_source_file);
+    }
 
-            //Include collected source files
-            const string& rel_source_file = *p;
+    ITERATE(list<string>, p, collector.HeaderFiles()) {
+        //Include collected header files
+        const string& rel_source_file = *p;
+        inserter->AddHeaderFile(rel_source_file);
+    }
+    ITERATE(list<string>, p, collector.InlineFiles()) {
+        //Include collected inline files
+        const string& rel_source_file = *p;
+        inserter->AddInlineFile(rel_source_file);
+    }
+    inserter->Finalize();
 
-            src_inserter(filter, 
-                         rel_source_file);
-#if 0
-            //Include collected source files
-            CRef< CFFile > file(new CFFile());
-            file->SetAttlist().SetRelativePath(*p);
 
-            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
-            ce->SetFile(*file);
-            filter->SetFF().SetFF().push_back(ce);
-#endif
-        }
-        xmlprj.SetFiles().SetFilter().push_back(filter);
-    }}
-    {{
-        //Files - header files
-        CRef<CFilter> filter(new CFilter());
-        filter->SetAttlist().SetName("Header Files");
-        filter->SetAttlist().SetFilter("h;hpp;hxx;hm;inc;xsd");
-
-        ITERATE(list<string>, p, collector.HeaderFiles()) {
-            //Include collected header files
-            CRef<CFFile> file(new CFFile());
-            file->SetAttlist().SetRelativePath(*p);
-
-            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
-            ce->SetFile(*file);
-            filter->SetFF().SetFF().push_back(ce);
-        }
-        xmlprj.SetFiles().SetFilter().push_back(filter);
-    }}
-    {{
-        //Files - inline files
-        CRef<CFilter> filter(new CFilter());
-        filter->SetAttlist().SetName("Inline Files");
-        filter->SetAttlist().SetFilter("inl");
-
-        ITERATE(list<string>, p, collector.InlineFiles()) {
-            //Include collected inline files
-            CRef< CFFile > file(new CFFile());
-            file->SetAttlist().SetRelativePath(*p);
-
-            CRef< CFilter_Base::C_FF::C_E > ce(new CFilter_Base::C_FF::C_E());
-            ce->SetFile(*file);
-            filter->SetFF().SetFF().push_back(ce);
-        }
-        xmlprj.SetFiles().SetFilter().push_back(filter);
-    }}
     {{
         //Resource Files - header files - empty
         CRef<CFilter> filter(new CFilter());
@@ -596,11 +569,14 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
         "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
 
     //Outputs
+#if 0
     string data_tool_src_base;
     CDirEntry::SplitPath(src.m_SourceFile, NULL, &data_tool_src_base);
     string outputs = "$(InputDir)" + data_tool_src_base + "__.cpp;";
     outputs += "$(InputDir)" + data_tool_src_base + "___.cpp;";
     build_info->m_Outputs = outputs;
+#endif
+    build_info->m_Outputs = "$(InputDir)$(InputName).files;";
 
     //Additional Dependencies
     build_info->m_AdditionalDependencies = "$(InputDir)$(InputName).def;";
@@ -612,6 +588,13 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/05/26 18:01:46  gorelenk
+ * Changed CMsvcProjectGenerator::Generate :
+ * Changed insertion fo source files, headers, inlines.
+ * Changed s_CreateDatatoolCustomBuildInfo :
+ * used $(InputDir)$(InputName).files as a datatool sources custom build step
+ * output.
+ *
  * Revision 1.33  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
