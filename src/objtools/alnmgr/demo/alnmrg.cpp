@@ -90,6 +90,12 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
+        ("b", "bin_obj_type",
+         "This forced the input file to be read in binary ASN.1 mode\n"
+         "and specifies the type of the top-level ASN.1 object.\n",
+         CArgDescriptions::eString, "");
+
+    arg_desc->AddDefaultKey
         ("log", "log_file_name",
          "Name of log file to write to",
          CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
@@ -155,17 +161,24 @@ void CAlnMrgApp::LoadInputAlignments(void)
     CNcbiIstream& is = args["in"].AsInputFile();
     bool done = false;
     
+    bool binary = args["b"];
+
+    // determine the asn type of the top-level object
     string asn_type;
-    {{
+    if (binary) {
+        // should be user-specified
+        asn_type = args["b"].AsString();
+    } else {
+        // auto-detection is possible in ASN.1 text mode
         auto_ptr<CObjectIStream> in
             (CObjectIStream::Open(eSerial_AsnText, is));
 
         asn_type = in->ReadFileHeader();
         is.seekg(0);
-    }}
+    }
 
     auto_ptr<CObjectIStream> in
-        (CObjectIStream::Open(eSerial_AsnText, is));
+        (CObjectIStream::Open(binary?eSerial_AsnBinary:eSerial_AsnText, is));
     
     CTypesIterator i;
     CType<CSeq_align>::AddTo(i);
@@ -363,6 +376,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/09/08 17:05:57  todorov
+* ability to read binary files
+*
 * Revision 1.9  2003/09/04 19:05:46  todorov
 * Removed view. Should be optional
 *
