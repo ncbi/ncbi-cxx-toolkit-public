@@ -375,10 +375,7 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
         if (hnd.GetInst_Repr() == CSeq_inst::eRepr_delta) {
             unsigned int pieces = 1;
-            for (CSeqMap_CI it = hnd.GetSeqMap().
-                BeginResolved(&scope, SSeqMapSelector()
-                              .SetFlags(CSeqMap::fFindGap));
-                 it;  ++it) {
+            for (CSeqMap_CI it(hnd, CSeqMap::fFindGap); it;  ++it) {
                 ++pieces;
             }
             if (pieces == 1) {
@@ -868,6 +865,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.48  2004/12/22 15:56:46  vasilche
+* Updated for new API in CSeqMap.
+*
 * Revision 1.47  2004/12/14 17:41:03  grichenk
 * Reduced number of CSeqMap::FindResolved() methods, simplified
 * BeginResolved and EndResolved. Marked old methods as deprecated.
