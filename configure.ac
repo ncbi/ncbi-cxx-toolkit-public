@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.175 2003/03/25 18:57:06 ucko Exp $
+#  $Id: configure.ac,v 1.176 2003/03/26 17:35:28 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2314,7 +2314,7 @@ else
       FLTK_LIBS=`$FLTK_BINPATH/fltk-config --ldflags`
    fi
    FLTK_LIBS_GL=`$FLTK_BINPATH/fltk-config --ldflags --use-gl`
-   FLTK_POST_LINK="$FLTK_BINPATH/fltk-config --post"
+   FLTK_CONFIG="$FLTK_BINPATH/fltk-config"
    AC_DEFINE(HAVE_FLTK, 1, [Define to 1 if FLTK is available.])
 fi
 
@@ -3220,7 +3220,7 @@ AC_SUBST(OPENGL_LIBS)
 AC_SUBST(FLTK_INCLUDE)
 AC_SUBST(FLTK_LIBS)
 AC_SUBST(FLTK_LIBS_GL)
-AC_SUBST(FLTK_POST_LINK)
+AC_SUBST(FLTK_CONFIG)
 AC_SUBST(WXWIN_INCLUDE)
 AC_SUBST(WXWIN_LIBS)
 AC_SUBST(WXWIN_GL_LIBS)
