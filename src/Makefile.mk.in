@@ -233,6 +233,12 @@ NCBI_C_INCLUDE = @NCBI_C_INCLUDE@
 NCBI_C_LIBPATH = @NCBI_C_LIBPATH@
 NCBI_C_ncbi = @NCBI_C_ncbi@
 
+# OpenGL: headers and libs (including core X dependencies) for code
+# not using other toolkits.  (The wxWindows and FLTK variables already
+# include these as appropriate.)
+OPENGL_INCLUDE = @OPENGL_INCLUDE@
+OPENGL_LIBS    = @OPENGL_LIBS@
+
 # wxWindows:  headers and libs
 WXWIN_INCLUDE = @WXWIN_INCLUDE@
 WXWIN_LIBS    = @WXWIN_LIBS@
