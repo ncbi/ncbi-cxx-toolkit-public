@@ -118,6 +118,7 @@ public:
     void* operator new[](size_t size);
     void operator delete(void* ptr);
     void operator delete[](void* ptr);
+    void* operator new(size_t, void* place);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -770,6 +771,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.46  2003/07/17 20:01:06  vasilche
+ * Added inplace operator new().
+ *
  * Revision 1.45  2003/05/18 04:47:09  vakatov
  * Rollback to R1.43, as R1.44 created another, more problematic warning --
  * that "operator T*()" would be chosen over "operator bool()" for non-const

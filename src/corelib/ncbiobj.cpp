@@ -139,6 +139,15 @@ void* CObject::operator new(size_t size)
 }
 
 
+// CObject local new operator to mark allocation in heap
+void* CObject::operator new(size_t size, void* place)
+{
+    _ASSERT(size >= sizeof(CObject));
+    memset(place, 0, size);
+    return place;
+}
+
+
 void* CObject::operator new[](size_t size)
 {
 #ifdef NCBI_OS_MSWIN
@@ -284,19 +293,26 @@ void CObject::AddReferenceOverflow(TCount count) const
 void CObject::RemoveLastReference(void) const
 {
     TCount count = m_Counter.Get();
-    if ( count == TCount(eCounterInHeap) ) {
-        // last reference to heap object -> delete
-        delete this;
-    }
-    else if ( count == TCount(eCounterNotInHeap) ) {
-        // last reference to non heap object -> do nothing
+    if ( ObjectStateCanBeDeleted(count) ) {
+        if ( count == TCount(eCounterInHeap) ) {
+            // last reference to heap object -> delete
+            delete this;
+            return;
+        }
     }
     else {
-        _ASSERT(!ObjectStateValid(count + eCounterStep));
-        // bad object
-        NCBI_THROW(CObjectException, eNoRef,
-            "Unreferenced CObject may not be released");
+        if ( ObjectStateValid(count) ) {
+            // last reference to non heap object -> do nothing
+            return;
+        }
     }
+    // Error here
+    // restore original value
+    m_Counter.Add(eCounterStep);
+    _ASSERT(!ObjectStateValid(count + eCounterStep));
+    // bad object
+    NCBI_THROW(CObjectException, eNoRef,
+               "Unreferenced CObject may not be released");
 }
 
 
@@ -377,6 +393,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/07/17 20:01:07  vasilche
+ * Added inplace operator new().
+ *
  * Revision 1.35  2003/03/06 19:40:52  ucko
  * InitCounter: read m_Value directly rather than going through Get(), which
  * would end up spinning forever if it came across NCBI_COUNTER_RESERVED_VALUE.
