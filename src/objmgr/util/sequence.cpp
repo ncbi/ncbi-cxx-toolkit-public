@@ -3033,7 +3033,7 @@ void x_Translate(const Container& seq,
                 CGen_code_table::GetTransTable(1));
 
     // main loop through bases
-    Container::const_iterator start = seq.begin();
+    typename Container::const_iterator start = seq.begin();
 
     size_t i;
     size_t k;
@@ -3870,6 +3870,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.69  2004/01/30 17:49:29  ucko
+* Add missing "typename"
+*
 * Revision 1.68  2004/01/30 17:22:53  dicuccio
 * Added sequence::GetId(const CBioseq_Handle&) - returns a selected ID class
 * (best, GI).  Added CSeqTranslator - utility class to translate raw sequence
