@@ -1,4 +1,4 @@
---$Revision: 1.3 $
+--$Revision: 1.4 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -19,7 +19,7 @@ IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Pub-equiv FROM NCBI-Pub
         Org-ref FROM NCBI-Organism
         Seq-id, Seq-loc FROM NCBI-Seqloc
-        Entrez-link FROM NCBI-Entrez;
+        Link-set FROM NCBI-Access;
 
 --*** Sequence ********************************
 --*
@@ -49,7 +49,7 @@ Seq-descr ::= SET OF CHOICE {
     region VisibleString ,       -- overall region (globin locus)
     user User-object ,           -- user defined object
 	sp SP-block ,                -- SWISSPROT specific info
-    neighbors Entrez-link }      -- neighboring information
+    neighbors Link-set }         -- neighboring information
 
 GIBB-mol ::= ENUMERATED {       -- type of molecule represented
     unknown (0) ,
