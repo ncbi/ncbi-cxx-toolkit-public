@@ -184,7 +184,7 @@ void CSeq_annot_SplitInfo::Add(const CAnnotObject_SplitInfo& obj)
 {
     EAnnotPriority index = obj.GetPriority();
     m_TopPriority = min(m_TopPriority, index);
-    m_Objects.resize(max(m_Objects.size(), index+1u));
+    m_Objects.resize(max(m_Objects.size(), index + size_t(1)));
     if ( !m_Objects[index] ) {
         m_Objects[index] = new CLocObjects_SplitInfo;
     }
@@ -371,6 +371,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/30 23:27:59  ucko
+* Make sure to call max on identically-typed arguments.
+*
 * Revision 1.7  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *

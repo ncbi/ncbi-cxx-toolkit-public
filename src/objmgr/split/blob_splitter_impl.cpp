@@ -187,7 +187,7 @@ void CBlobSplitterImpl::CollectPieces(const CSeq_annot_SplitInfo& info)
 void CBlobSplitterImpl::Add(const SAnnotPiece& piece)
 {
     EAnnotPriority priority = piece.m_Priority;
-    m_Pieces.resize(max(m_Pieces.size(), priority+1u));
+    m_Pieces.resize(max(m_Pieces.size(), priority + size_t(1)));
     if ( !m_Pieces[priority] ) {
         m_Pieces[priority] = new CAnnotPieces;
     }
@@ -380,6 +380,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/30 23:27:59  ucko
+* Make sure to call max on identically-typed arguments.
+*
 * Revision 1.9  2004/06/30 20:56:32  vasilche
 * Added splitting of Seqdesr objects (disabled yet).
 *
