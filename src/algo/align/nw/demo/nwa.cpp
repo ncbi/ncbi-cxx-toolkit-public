@@ -60,6 +60,8 @@ void CAppNWA::Init()
          "the second input sequence in fasta file",
          CArgDescriptions::eString);
 
+    argdescr->AddFlag("esf", "End-space free alignment");
+
     argdescr->AddDefaultKey
         ("Wm", "match", "match bonus (nucleotide sequences)",
          CArgDescriptions::eInteger,
@@ -146,6 +148,7 @@ void CAppNWA::x_RunOnPair() const
     const bool bMM = args["mm"];
     const bool bMT = args["mt"];
     const bool bMrna2Dna = args["mrna2dna"];
+    const bool bEndSpaceFree = args["esf"];
 
     if(bMrna2Dna && args["matrix"].AsString() != "nucl") {
         NCBI_THROW(CAppNWAException,
@@ -246,6 +249,7 @@ void CAppNWA::x_RunOnPair() const
     }
 
     aligner->SetSeqIds(seqname1, seqname2);
+    aligner->SetEndSpaceFree(bEndSpaceFree || bMrna2Dna);
 
     int score = aligner->Run();
     cerr << "Score = " << score << endl;
@@ -330,6 +334,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/02/11 16:06:55  kapustin
+ * Add end-space free alignment support
+ *
  * Revision 1.9  2003/01/28 12:46:27  kapustin
  * Format() --> FormatAsText(). Fix the flag spelling forcing ASN output ("oasn").
  *

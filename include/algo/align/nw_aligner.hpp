@@ -4,7 +4,7 @@
 /* $Id$
 * ===========================================================================
 *
-*                            PUBLIC DOMAIN NOTICE                          
+*                            public DOMAIN NOTICE                          
 *               National Center for Biotechnology Information
 *                                                                          
 *  This software/database is a "United States Government Work" under the   
@@ -121,12 +121,13 @@ public:
     string GetTranscript() const;
 
     // Setters
-    void SetWm  (TScore value)  { m_Wm  = value; }
-    void SetWms (TScore value)  { m_Wms = value; }
-    void SetWg  (TScore value)  { m_Wg  = value; }
-    void SetWs  (TScore value)  { m_Ws  = value; }
+    void SetWm  (TScore value)  { m_Wm  = value; }   // match (na)
+    void SetWms (TScore value)  { m_Wms = value; }   // mismatch (na)
+    void SetWg  (TScore value)  { m_Wg  = value; }   // gap opening
+    void SetWs  (TScore value)  { m_Ws  = value; }   // gap extension
 
     void SetSeqIds(const string& id1, const string& id2);
+    void SetEndSpaceFree(bool free = true);
 
     // progress reporting
     struct SProgressInfo
@@ -161,6 +162,8 @@ protected:
     TScore   m_Wms;  // mismatch penalty (eNucl)
     TScore   m_Wg;   // gap opening penalty
     TScore   m_Ws;   // gap extension penalty
+
+    bool     m_end_space_free;  // if true then end gaps are not penalized
 
     // Pairwise scoring matrix
     EScoringMatrixType    m_MatrixType;
@@ -198,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/02/11 16:06:13  kapustin
+ * Add end-space free alignment support
+ *
  * Revision 1.8  2003/02/04 23:04:38  kapustin
  * Add progress callback support
  *
@@ -205,7 +211,8 @@ END_NCBI_SCOPE
  * Add EstiamteRunningTime()
  *
  * Revision 1.6  2003/01/28 12:36:52  kapustin
- * Format() --> FormatAsText(). Add FormatAsSeqAlign() and support for sequence ids
+ * Format() --> FormatAsText(). Add FormatAsSeqAlign() and
+ * support for sequence ids
  *
  * Revision 1.5  2003/01/24 16:48:36  kapustin
  * Support more output formats - type 2 and gapped FastA

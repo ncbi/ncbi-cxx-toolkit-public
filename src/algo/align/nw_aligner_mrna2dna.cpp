@@ -40,11 +40,11 @@ BEGIN_NCBI_SCOPE
 CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
                                        const char* seq2, size_t len2)
     throw(CNWAlignerException)
-    : CNWAligner(seq1, len1, seq2, len2, eNucl), 
-    m_Wi(GetDefaultWi()),  
+    : CNWAligner(seq1, len1, seq2, len2, eNucl),
+    m_Wi(GetDefaultWi()),
     m_IntronMinSize(GetDefaultIntronMinSize())
 {
-    // the first sequence is assumed to be mRna
+    SetEndSpaceFree(); // default for spliced alignments
 }
 
 
@@ -67,8 +67,8 @@ const unsigned char kMaskDnr   = 0x20;
 
 int CNWAlignerMrna2Dna::Run()
 {
-    const int N1 = m_SeqLen1 + 1;
-    const int N2 = m_SeqLen2 + 1;
+    const size_t N1 = m_SeqLen1 + 1;
+    const size_t N2 = m_SeqLen2 + 1;
 
     TScore* rowV    = new TScore [N2];
     TScore* rowF    = new TScore [N2];
@@ -81,10 +81,10 @@ int CNWAlignerMrna2Dna::Run()
     const char* seq1   = m_Seq1 - 1;
     const char* seq2   = m_Seq2 - 1;
 
-    bool bFreeGapLeft1  = true;
-    bool bFreeGapRight1 = true;
-    bool bFreeGapLeft2  = true;
-    bool bFreeGapRight2 = true;
+    bool bFreeGapLeft1  = m_end_space_free;
+    bool bFreeGapRight1 = m_end_space_free;
+    bool bFreeGapLeft2  = m_end_space_free;
+    bool bFreeGapRight2 = m_end_space_free;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -92,10 +92,10 @@ int CNWAlignerMrna2Dna::Run()
 
     // first row
     rowV[0] = wgleft1;
-    int k;
+    size_t k;
     for (k = 1; k < N2; k++) {
         rowV[k] = pV[k] + wsleft1;
-        rowF[k] = kMin_Int;
+        rowF[k] = kInfMinus;
         backtrace_matrix[k] = kMaskE | kMaskEc;
     }
     rowV[0] = 0;
@@ -108,28 +108,26 @@ int CNWAlignerMrna2Dna::Run()
     TScore E, G, n0;
     unsigned char tracer;
 
-    int*    jAllDonors = new int [N2];
+    size_t* jAllDonors = new size_t [N2];
     TScore* vAllDonors = new TScore [N2];
-    int     jTail, jHead;
+    size_t  jTail, jHead;
     TScore  vBestDonor;
 
-    int i, j, k0;
+    size_t i, j, k0;
     char ci;
     for(i = 1;  i < N1;  ++i) {
         
         V = V0 += wsleft2;
-        E = kMin_Int;
+        E = kInfMinus;
         k0 = k;
         backtrace_matrix[k++] = kMaskFc;
         ci = seq1[i];
 
         jTail = jHead = 0;
-        vBestDonor = kMin_Int;
+        vBestDonor = kInfMinus;
 
-        if(i == N1 - 1) {
-            if(bFreeGapRight1) {
+        if(i == N1 - 1 && bFreeGapRight1) {
                 wg1 = ws1 = 0;
-            }
         }
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
@@ -193,7 +191,7 @@ int CNWAlignerMrna2Dna::Run()
             }
 
             if(seq2[j-1] == 'a' && seq2[j] == 'g' // acceptor
-               && i < N1 - 1 && vBestDonor > kMin_Int) {
+               && i < N1 - 1 && vBestDonor > kInfMinus) {
                 TScore vAcc = vBestDonor + m_Wi;
                 if(vAcc > V) {
                     V = vAcc;
@@ -280,6 +278,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/02/11 16:06:54  kapustin
+ * Add end-space free alignment support
+ *
  * Revision 1.6  2003/01/30 20:32:06  kapustin
  * Call x_LoadScoringMatrix() from the base class constructor.
  *

@@ -88,6 +88,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_Wms(GetDefaultWms()),
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
+      m_end_space_free(false),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
       m_MatrixType(matrix_type),
@@ -142,6 +143,11 @@ void CNWAligner::SetSeqIds(const string& id1, const string& id2)
 }
 
 
+void CNWAligner::SetEndSpaceFree(bool free)
+{
+    m_end_space_free = free;
+}
+
 // evaluate score for each possible alignment;
 // fill out backtrace matrix
 // bit coding (four bits per value): D E Ec Fc
@@ -180,12 +186,21 @@ int CNWAligner::Run()
         bNowExit = m_prg_callback(&m_prg_info);
     }
 
+    bool bFreeGapLeft1  = m_end_space_free;
+    bool bFreeGapRight1 = m_end_space_free;
+    bool bFreeGapLeft2  = m_end_space_free;
+    bool bFreeGapRight2 = m_end_space_free;
+
+    TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
+    TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
+    TScore wg1 = m_Wg, ws1 = m_Ws;
+
     // first row
     size_t k;
     if(!bNowExit) {
-        rowV[0] = m_Wg;
+        rowV[0] = wgleft1;
         for (k = 1; k < N2; k++) {
-            rowV[k] = pV[k] + m_Ws;
+            rowV[k] = pV[k] + wsleft1;
             rowF[k] = kInfMinus;
             backtrace_matrix[k] = kMaskE | kMaskEc;
         }
@@ -198,41 +213,53 @@ int CNWAligner::Run()
     }
 
     // recurrences
+    TScore wgleft2   = bFreeGapLeft2? 0: m_Wg;
+    TScore wsleft2   = bFreeGapLeft2? 0: m_Ws;
     TScore V  = 0;
-    TScore V0 = m_Wg;
+    TScore V0 = wgleft2;
     TScore E, G, n0;
     unsigned char tracer;
 
     size_t i, j;
     for(i = 1;  i < N1 && !bNowExit;  ++i) {
         
-        V = V0 += m_Ws;
+        V = V0 += wsleft2;
         E = kInfMinus;
         backtrace_matrix[k++] = kMaskFc;
         char ci = seq1[i];
+
+        if(i == N1 - 1 && bFreeGapRight1) {
+                wg1 = ws1 = 0;
+        }
+
+        TScore wg2 = m_Wg, ws2 = m_Ws;
+
 
         for (j = 1; j < N2; ++j, ++k) {
 
             G = pV[j] + m_Matrix[ci][seq2[j]];
             pV[j] = V;
 
-            n0 = V + m_Wg;
+            n0 = V + wg1;
             if(E > n0) {
-                E += m_Ws;      // continue the gap
+                E += ws1;      // continue the gap
                 tracer = kMaskEc;
             }
             else {
-                E = n0 + m_Ws;  // open a new gap
+                E = n0 + ws1;  // open a new gap
                 tracer = 0;
             }
 
-            n0 = rowV[j] + m_Wg;
+            if(j == N2 - 1 && bFreeGapRight2) {
+                wg2 = ws2 = 0;
+            }
+            n0 = rowV[j] + wg2;
             if(rowF[j] > n0) {
-                rowF[j] += m_Ws;
+                rowF[j] += ws2;
                 tracer |= kMaskFc;
             }
             else {
-                rowF[j] = n0 + m_Ws;
+                rowF[j] = n0 + ws2;
             }
 
             if (E >= rowF[j]) {
@@ -803,6 +830,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/02/11 16:06:54  kapustin
+ * Add end-space free alignment support
+ *
  * Revision 1.12  2003/02/04 23:04:50  kapustin
  * Add progress callback support
  *
