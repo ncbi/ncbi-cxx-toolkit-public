@@ -1164,3 +1164,22 @@ BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp)
    sfree(ewp);
    return NULL;
 }
+
+void 
+BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
+   Int4 q_off, Int4 s_off, Int4 len, Int4 score)
+{
+  BlastUngappedData* ungapped_data = NULL;
+
+  ungapped_data = (BlastUngappedData*) malloc(sizeof(BlastUngappedData));
+
+  ungapped_data->q_start = q_start;
+  ungapped_data->s_start = s_start;
+  ungapped_data->length  = len;
+  ungapped_data->score   = score;
+  ungapped_data->frame   = 0;
+
+  BLAST_SaveInitialHit(ungapped_hsps, q_off, s_off, ungapped_data);
+
+  return;
+}

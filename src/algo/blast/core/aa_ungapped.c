@@ -38,8 +38,6 @@ static NCBI_INLINE Int4 DiagGetLastHit(BLAST_DiagTable* diag, Int4 query_offset,
 
 static NCBI_INLINE Int4 DiagSetLastHit(BLAST_DiagTable* diag, Int4 query_offset, Int4 subject_offset);
 
-static void BlastAaSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, Int4 q_off, Int4 s_off, Int4 len, Int4 score);
-
 /*
  * this is currently somewhat broken since the diagonal array is NULL
  * and the offset arrays are allocated for every subject sequence.  this
@@ -162,7 +160,7 @@ Int4 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                      query_offsets[i], dropoff, &hsp_q, &hsp_s, &hsp_len);
                /* if the hsp meets the score threshold, report it */
                if (score > cutoff) {
-                  BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
+                  BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
                      query_offsets[i], subject_offsets[i], hsp_len, score);
                   /* Reset level, so we know this hit has been extended */
                   diag_array[diag_coord].diag_level = 0;
@@ -256,7 +254,7 @@ Int4 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 
             /* if the hsp meets the score threshold, report it */
             if (score > cutoff) {
-               BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
+               BlastSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, 
                   query_offsets[i], subject_offsets[i], hsp_len, score);
             }
             diag_array[diag_coord].last_hit = hsp_s + hsp_len + diag_offset;
@@ -337,25 +335,6 @@ static NCBI_INLINE Int4 DiagCheckLevel(BLAST_DiagTable* diag, Int4 query_offset,
     return -1;
   else
     return subject_offset - level;
-}
-
-static void 
-BlastAaSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 
-   Int4 q_off, Int4 s_off, Int4 len, Int4 score)
-{
-  BlastUngappedData* ungapped_data = NULL;
-
-  ungapped_data = (BlastUngappedData*) malloc(sizeof(BlastUngappedData));
-
-  ungapped_data->q_start = q_start;
-  ungapped_data->s_start = s_start;
-  ungapped_data->length  = len;
-  ungapped_data->score   = score;
-  ungapped_data->frame   = 0;
-
-  BLAST_SaveInitialHit(ungapped_hsps, q_off, s_off, ungapped_data);
-
-  return;
 }
 
 Int4 BlastAaExtendRight(Int4 ** matrix,
