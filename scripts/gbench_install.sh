@@ -311,16 +311,20 @@ chmod 755 ${target_dir}/bin/run-gbench.sh
 COMMON_ExecRB cp ${source_dir}/gbench_install/gbench_remote_template.sh ${target_dir}/bin/gbench_remote_template.sh
 COMMON_ExecRB cp ${source_dir}/gbench_install/gbench_noremote_template.sh ${target_dir}/bin/gbench_noremote_template.sh
 
-COMMON_ExecRB cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
-
-COMMON_ExecRB cp -p ${source_dir}/news.ini ${target_dir}/etc/
-
-COMMON_ExecRB cp -p ${source_dir}/algo_urls ${target_dir}/etc/
-
 COMMON_ExecRB cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 chmod 755 ${target_dir}/bin/move-gbench.sh
 
 COMMON_ExecRB ${target_dir}/bin/move-gbench.sh ${target_dir}
+
+find ${source_dir}/../res -type f | grep -v '/CVS/' |
+while read file
+do
+    new_file=`echo $file | sed "s,^${source_dir}/../res/,,"`
+    echo "Installing resource: $new_file"
+    new_file=${target_dir}/${new_file}
+    mkdir -p `dirname $new_file`
+    COMMON_ExecRB cp $file $new_file
+done
 
 echo "Configuring plugin cache"
 # COMMON_AddRunpath may interfere with compiled-in runpaths, so we
