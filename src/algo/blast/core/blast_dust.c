@@ -80,6 +80,7 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
    if (windowsize < 8 || windowsize > 64) windowsize = 64;
    if (linker < 1 || linker > 32) linker = 1;
    
+   level *= 100; /* Increase precision of score calculation */
    nreg = 0;
    seq = (Uint1*) calloc(1, windowsize);			/* triplets */
    if (!seq) {
@@ -228,7 +229,7 @@ static Boolean wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 		{
 			sum += (Uint4)(*countsptr);
 
-			newlevel = 10 * sum / loop;
+			newlevel = 1000 * sum / loop;
 
 			if (cloc->curlevel < newlevel)
 			{
