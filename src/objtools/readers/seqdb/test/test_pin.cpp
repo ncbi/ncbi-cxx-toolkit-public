@@ -736,6 +736,33 @@ int test1(int argc, char ** argv)
         } else desc += " [-gi2oid | -gi2oidR]";
         
         
+        if (s == "-seqidtrans") {
+            CSeqDB nr("nr", 'p');
+            
+            string seqid_str("gi|129295");
+            
+            vector<Uint4> oids;
+            CSeq_id seqid(seqid_str);
+            
+            nr.SeqidToOids(seqid, oids);
+            
+            cout << "\nTranslating Seqid: " << seqid_str << endl;
+            
+            for(Uint4 i = 0; i<oids.size(); i++) {
+                cout << "  found oid: " << oids[i] << endl;
+            }
+            
+            cout << "\nTranslating gi 129295" << endl;
+            Uint4 oid2((Uint4)-1);
+            
+            nr.GiToOid(129295, oid2);
+            
+            cout << "  found oid: " << oid2 << "\n" << endl;
+            
+            return 0;
+        } else desc += " [-gi2oid | -gi2oidR]";
+        
+        
         if (s == "-xlate3") {
             string dbname("nr");
             //string dbname("prot_dbs");
