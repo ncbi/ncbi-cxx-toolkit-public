@@ -31,32 +31,26 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Na_strand.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <algorithm>
 #include "seq_match.hpp"
 
 BEGIN_NCBI_SCOPE
 
 /// This class provides functions for finding all the ORFs
-/// of a specified minimum length in a DNA sequence,
-/// and a way of representating and ORF.
+/// of a specified minimum length in a DNA sequence.
 
 class COrf
 {
 public:
-    COrf(TSeqPos from, TSeqPos to, ENa_strand strand) :
-        m_From(from), m_To(to), m_Strand(strand) {}
-
-    /// Member access functions.
-    TSeqPos GetFrom(void) const {return m_From;}
-    TSeqPos GetTo(void) const {return m_To;}
-    ENa_strand GetStrand(void) const {return m_Strand;}
-
     /// Find all ORFs in both orientations that
     /// are at least min_length_bp long.
-    /// Report results as COrf objects.
+    /// Report results as Seq-locs
     /// seq must be in ncbi8na
     template<class Seq>
-    static void FindOrfs(const Seq& seq, vector<COrf>& results,
+    static void FindOrfs(const Seq& seq, vector<CRef<CSeq_loc> >& results,
                          unsigned int min_length_bp = 3)
     {
         vector<TSeqPos> begins, ends;
@@ -64,7 +58,10 @@ public:
         // find ORFs on the forward sequence and report them as-is
         FindForwardOrfs(seq, begins, ends, min_length_bp);
         for (unsigned int i = 0;  i < begins.size();  i++) {
-            COrf orf(begins[i], ends[i], eNa_strand_plus);
+            CRef<CSeq_loc> orf(new CSeq_loc);
+            orf->SetInt().SetFrom(begins[i]);
+            orf->SetInt().SetTo(ends[i]);
+            orf->SetInt().SetStrand(eNa_strand_plus);
             results.push_back(orf);
         }
 
@@ -75,12 +72,29 @@ public:
         CSeqMatch::CompNcbi8na(comp);
         FindForwardOrfs(comp, begins, ends, min_length_bp);
         for (unsigned int i = 0;  i < begins.size();  i++) {
-            COrf orf(comp.length() - ends[i] - 1,
-                     comp.length() - begins[i] - 1,
-                     eNa_strand_minus);
+            CRef<CSeq_loc> orf(new CSeq_loc);
+            orf->SetInt().SetFrom(comp.length() - ends[i] - 1);
+            orf->SetInt().SetTo(comp.length() - begins[i] - 1);
+            orf->SetInt().SetStrand(eNa_strand_minus);
             results.push_back(orf);
         }
     }
+
+
+    /// Overloaded version of above to take CSeqVector.
+    /// Template above should perhaps be made to work with this
+    /// (when new CSeqportUtil is ready; but what to do about vec coding?).
+    static void FindOrfs(CSeqVector& vec, vector<CRef<CSeq_loc> >& results,
+                         unsigned int min_length_bp = 3)
+    {
+        string seq8na;  // will contain ncbi8na
+        CSeqVector::TCoding orig_coding = vec.GetCoding();
+        vec.SetNcbiCoding();
+        vec.GetSeqData( (TSeqPos) 0, vec.size(), seq8na );
+        vec.SetCoding(orig_coding);      // politely restore coding
+        FindOrfs(seq8na, results, min_length_bp);
+    }
+
 
     /// Find all ORFs in forward orientation with
     /// length in *base pairs* >= min_length_bp.
@@ -171,6 +185,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/18 18:01:58  jcherry
+ * Changed COrf::FindOrfs to produce a vector of CRef<CSeq_loc>.
+ * Added version of FindOrfs that takes a CSeqVector.
+ *
  * Revision 1.4  2003/08/17 19:25:30  jcherry
  * Changed member variable names to follow convention
  *
