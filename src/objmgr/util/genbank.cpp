@@ -1482,7 +1482,8 @@ static const CSeq_id& s_GetID(const CSeq_loc& loc)
 }
 
 
-static bool s_CompareFeats(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2)
+static inline
+bool s_CompareFeats(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2)
 {
     return *f1 < *f2;
 }
@@ -2848,6 +2849,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.33  2003/02/24 18:57:46  vasilche
+* Use inlined version of feature comparison.
+*
 * Revision 1.32  2003/02/10 15:54:01  grichenk
 * Use CFeat_CI->GetMappedFeature() and GetOriginalFeature()
 *
