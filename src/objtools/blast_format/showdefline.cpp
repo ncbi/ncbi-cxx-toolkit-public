@@ -454,7 +454,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
         string user_url= m_Reg->Get(m_BlastType, "TOOL_URL");
         sdl->id_url = s_GetIdUrl(ids, FindGi(ids), user_url,
                                  m_IsDbNa, m_Database, 
-                                 (m_Option & eNewTargetWindow), m_Rid,
+                                 (bool)(m_Option & eNewTargetWindow), m_Rid,
                                  m_QueryNumber);
     }
     
@@ -764,7 +764,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
         sdl->sum_n = sum_n;
         sdl->bit_string = bit_score_buf;
         sdl->evalue_string = evalue_buf;
-    } catch (CException& e){
+    } catch (CException& ){
         sdl = new SDeflineInfo;
         CBlastFormatUtil::GetAlnScores(aln, score, bits, evalue, sum_n, use_this_gi);
         CBlastFormatUtil::GetScoreString(evalue, bits, evalue_buf, bit_score_buf);
@@ -789,7 +789,7 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
             ids.push_back(id_ref);
             sdl->id_url = s_GetIdUrl(ids, sdl->gi, user_url,
                                      m_IsDbNa, m_Database, 
-                                     (m_Option & eNewTargetWindow), m_Rid,
+                                     (bool)(m_Option & eNewTargetWindow), m_Rid,
                                      m_QueryNumber);
             sdl->score_url = NcbiEmptyString;
         }
@@ -801,6 +801,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.7  2005/02/14 15:42:47  jianye
+*fixed compiler warning
+*
 *Revision 1.6  2005/02/09 17:34:37  jianye
 *move common url to blastfmtutil.hpp
 *
