@@ -350,12 +350,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu, char** redirect)
         else if (http_status == 403  ||  http_status == 404)
             uuu->net_info->max_try = 0;
     }
-    
-    if (uuu->net_info->debug_printout == eDebugPrintout_Data ||
-        (uuu->net_info->debug_printout == eDebugPrintout_Some &&
-         (server_error || !uuu->error_header))) {
-        const char* header_header;
 
+    if (uuu->net_info->debug_printout == eDebugPrintout_Some &&
+        (server_error || !uuu->error_header)) {
+        /* HTTP header gets printed as part of data logging when
+           uuu->net_info->debug_printout == eDebugPrintout_Data. */
+        const char* header_header;
         if (!server_error) 
             header_header = "HTTP header";
         else if (moved)
@@ -964,6 +964,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2003/10/23 12:27:38  lavr
+ * Do not double HTTP header when full data logging is explicitly on
+ *
  * Revision 6.57  2003/10/07 20:00:10  lavr
  * Remove SOCK_Shutdown() after sending the HTTP header and request body
  *
