@@ -217,9 +217,6 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
                 m_FeatChoice =
                     CSeqFeatData::GetTypeFromSubtype(m_FeatSubtype);
             }
-            else {
-                m_FeatChoice = CSeqFeatData::e_not_set;
-            }
             return *this;
         }
 
@@ -399,6 +396,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/10/01 15:08:48  vasilche
+* Do not reset feature type if feature subtype is set to 'any'.
+*
 * Revision 1.18  2003/09/30 16:21:59  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
