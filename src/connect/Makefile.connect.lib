@@ -5,7 +5,7 @@ LIBOBJ_C = ncbi_buffer ncbi_priv ncbi_core ncbi_util ncbi_socket_ \
       ncbi_socket_connector ncbi_file_connector ncbi_http_connector \
       ncbi_heapmgr ncbi_server_info ncbi_service \
       ncbi_service_dispd ncbi_ansi_ext ncbi_service_connector \
-      ncbi_sendmail
+      ncbi_sendmail_
 
 LIBOBJ   = $(LIBOBJ_C)
 UNIX_SRC = ncbi_service_lbsmd ncbi_lbsm ncbi_lbsm_ipc
