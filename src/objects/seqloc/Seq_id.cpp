@@ -547,6 +547,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A': case 'B': case 'D': case 'F': return eAcc_gb_est;
             case 'C': case 'E': case 'G':           return eAcc_gb_gss;
             case 'H':                               return eAcc_gb_con;
+            case 'I': case 'J':                     return eAcc_ddbj_est;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1348,6 +1349,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.63  2003/10/31 20:16:07  ucko
+ * CSeq_id::IdentifyAccession: CI and CJ are both DDBJ EST.
+ *
  * Revision 6.62  2003/10/24 14:57:03  ucko
  * IdentifyAccession: CH -> eAcc_gb_con.
  * GetSeqIdString: include the database name for IDs of type general.
