@@ -792,6 +792,12 @@ bool CDirEntry::MatchesMask(const char* name, const char* mask)
 }
 
 
+bool CDirEntry::MatchesMask(const char* name, const CMask& mask) 
+{
+    return mask.Match(name);
+}
+
+
 bool CDirEntry::GetMode(TMode* user_mode, TMode* group_mode, TMode* other_mode)
     const
 {
@@ -957,8 +963,8 @@ void CDirEntry::GetDefaultMode(TMode* user_mode, TMode* group_mode,
 }
 
 
-bool CDirEntry::GetTime(CTime *modification,
-                        CTime *creation, CTime *last_access) const
+bool CDirEntry::GetTime(CTime* modification,
+                        CTime* creation, CTime* last_access) const
 {
     struct stat st;
     if (stat(GetPath().c_str(), &st) != 0) {
@@ -978,7 +984,7 @@ bool CDirEntry::GetTime(CTime *modification,
 }
 
 
-bool CDirEntry::SetTime(CTime *modification, CTime *last_access) const
+bool CDirEntry::SetTime(CTime* modification, CTime* last_access) const
 {
     struct utimbuf times;
 
@@ -1235,7 +1241,7 @@ string CFile::GetTmpNameEx(const string&        dir,
 class CTmpStream : public fstream
 {
 public:
-    CTmpStream(const char *s, IOS_BASE::openmode mode) : fstream(s, mode) 
+    CTmpStream(const char* s, IOS_BASE::openmode mode) : fstream(s, mode) 
     {
         m_FileName = s; 
     }
@@ -1312,7 +1318,7 @@ CDir::CDir(const string& dirname) : CParent(dirname)
 static bool s_GetHomeByUID(string& home)
 {
     // Get the info using user ID
-    struct passwd *pwd;
+    struct passwd* pwd;
 
     if ((pwd = getpwuid(getuid())) == 0) {
         return false;
@@ -1459,19 +1465,15 @@ string CDir::GetCwd()
     string cwd;
 
 #if defined(NCBI_OS_UNIX)
-
     char buf[4096];
-    if (getcwd(buf, sizeof(buf) - 1)) {
+    if ( getcwd(buf, sizeof(buf) - 1) ) {
         cwd = buf;
     }
-
 #elif defined(NCBI_OS_MSWIN)
-
     char buf[4096];
-    if (_getcwd(buf, sizeof(buf) - 1)) {
+    if ( _getcwd(buf, sizeof(buf) - 1) ) {
         cwd = buf;
     }
-
 #endif
 
     return cwd;
@@ -1493,7 +1495,7 @@ static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
     SInt16 itemIndex = index;
     OSErr err = GetDirItems(dir.vRefNum, dir.parID, dir.name, true, true, 
                             &fss, 1, &actual, &itemIndex);
-    if (err != noErr) {
+    if ( err != noErr ) {
         throw err;
     }
     return CDirEntry(fss);
@@ -1504,89 +1506,22 @@ static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
 CDir::TEntries CDir::GetEntries(const string&   mask,
                                 EGetEntriesMode mode) const
 {
-    TEntries contents;
-    string x_mask    = mask.empty() ? string("*") : mask;
-    string path_base = GetPath();
-    if ( path_base[path_base.size() - 1] != GetPathSeparator() ) {
-        path_base += GetPathSeparator();
+    CMaskFileName masks;
+    if ( !mask.empty() ) {
+        masks.Add(mask);
     }
-
-#if defined(NCBI_OS_MSWIN)
-    // Append to the "path" mask for all files in directory
-    string pattern = path_base + x_mask;
-
-    // Open directory stream and try read info about first entry
-    struct _finddata_t entry;
-    long desc = _findfirst(pattern.c_str(), &entry);
-    if (desc != -1) {
-        CDirEntry* dir_entry = new CDirEntry(path_base + entry.name);
-        if (mode == eIgnoreRecursive) {
-            if ((::strcmp(entry.name, ".") == 0) ||
-                (::strcmp(entry.name, "..") == 0)) 
-            {
-                delete dir_entry;
-                dir_entry = 0;
-            }
-        }
-        if (dir_entry)
-            contents.push_back(dir_entry);
-
-        while ( _findnext(desc, &entry) != -1 ) {
-            if (mode == eIgnoreRecursive) {
-                if ((::strcmp(entry.name, ".") == 0) ||
-                    (::strcmp(entry.name, "..") == 0)) continue;
-            }
-
-            contents.push_back(new CDirEntry(path_base + entry.name));
-        }
-        _findclose(desc);
-    }
-
-#elif defined(NCBI_OS_UNIX)
-    DIR* dir = opendir(GetPath().c_str());
-    if ( dir ) {
-        while (struct dirent* entry = readdir(dir)) {
-            if ( MatchesMask(entry->d_name, x_mask.c_str()) ) {
-                if (mode == eIgnoreRecursive) {
-                    if ((::strcmp(entry->d_name, ".") == 0) ||
-                        (::strcmp(entry->d_name, "..") == 0)) continue;
-                }
-                contents.push_back(new CDirEntry(path_base + entry->d_name));
-            }
-        }
-        closedir(dir);
-    }
-
-#elif defined(NCBI_OS_MAC)
-    try {
-        for (int index = 1;  ;  index++) {
-            CDirEntry entry = MacGetIndexedItem(*this, index);
-            if ( MatchesMask(entry.GetName().c_str(), x_mask.c_str()) ) {
-                contents.push_back(new CDirEntry(entry));
-            }
-        }
-    } catch (OSErr& err) {
-        if (err != fnfErr) {
-            throw COSErrException_Mac(err, "CDir::GetEntries() ");
-        }
-    }
-#endif
-
-    return contents;
+    return GetEntries(masks, mode);
 }
 
 
 CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
                                 EGetEntriesMode        mode) const
 {
-    if (masks.empty())
-        return GetEntries();
-
-    TEntries contents;
-    string path_base = GetPath();
-    if ( path_base[path_base.size() - 1] != GetPathSeparator() ) {
-        path_base += GetPathSeparator();
+    if ( masks.empty() ) {
+        return GetEntries("", mode);
     }
+    TEntries contents;
+    string path_base = AddTrailingPathSeparator(GetPath());
 
 #if defined(NCBI_OS_MSWIN)
 
@@ -1598,21 +1533,19 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
     long desc = _findfirst(pattern.c_str(), &entry);
-    if (desc != -1) {
-        skip_recursive_entry =
-            (mode == eIgnoreRecursive) &&
-            ((::strcmp(entry.name, ".") == 0) ||
-             (::strcmp(entry.name, "..") == 0));
-
+    if ( desc != -1 ) {
+        skip_recursive_entry = (mode == eIgnoreRecursive)  &&
+                                ((::strcmp(entry.name, ".") == 0) ||
+                                    (::strcmp(entry.name, "..") == 0));
         // check all masks
-        if (!skip_recursive_entry) {
+        if ( !skip_recursive_entry ) {
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if (mask.empty()) {
+                if ( mask.empty() ) {
                     contents.push_back(new CDirEntry(path_base + entry.name));
                     break;
                 }
-                if (MatchesMask(entry.name, mask.c_str()) ) {
+                if ( MatchesMask(entry.name, mask.c_str() ) ) {
                     contents.push_back(new CDirEntry(path_base + entry.name));
                     break;
                 }                
@@ -1620,21 +1553,18 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
         }
 
         while ( _findnext(desc, &entry) != -1 ) {
-            skip_recursive_entry =
-                (mode == eIgnoreRecursive) &&
-                ((::strcmp(entry.name, ".") == 0) ||
-                 (::strcmp(entry.name, "..") == 0));
-
-            if (skip_recursive_entry) {
+            if ( (mode == eIgnoreRecursive)  &&
+                 ((::strcmp(entry.name, ".") == 0) ||
+                  (::strcmp(entry.name, "..") == 0)) ) {
                 continue;
             }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if (mask.empty()) {
+                if ( mask.empty() ) {
                     contents.push_back(new CDirEntry(path_base + entry.name));
                     break;
                 }
-                if (MatchesMask(entry.name, mask.c_str()) ) {
+                if ( MatchesMask(entry.name, mask.c_str()) ) {
                     contents.push_back(new CDirEntry(path_base + entry.name));
                     break;
                 }
@@ -1648,17 +1578,14 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
     DIR* dir = opendir(GetPath().c_str());
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
-
-            bool skip_recursive_entry =
-                    (mode == eIgnoreRecursive) &&
-                    ((::strcmp(entry->d_name, ".") == 0) ||
-                     (::strcmp(entry->d_name, "..") == 0));
-            if (skip_recursive_entry) {
+            if ( (mode == eIgnoreRecursive) &&
+                 ((::strcmp(entry->d_name, ".") == 0) ||
+                  (::strcmp(entry->d_name, "..") == 0)) ) {
                 continue;
             }
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if (mask.empty()) {
+                if ( mask.empty() ) {
                     contents.push_back(
                          new CDirEntry(path_base + entry->d_name));
                     break;
@@ -1679,7 +1606,7 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
             CDirEntry entry = MacGetIndexedItem(*this, index);
             ITERATE(vector<string>, it, masks) {
                 const string& mask = *it;
-                if (mask.empty()) {
+                if ( mask.empty() ) {
                     contents.push_back(new CDirEntry(entry));
                     break;
                 }
@@ -1687,6 +1614,74 @@ CDir::TEntries CDir::GetEntries(const vector<string>&  masks,
                     contents.push_back(new CDirEntry(entry));
                     break;
                 }
+            }
+        }
+    } catch (OSErr& err) {
+        if ( err != fnfErr ) {
+            throw COSErrException_Mac(err, "CDir::GetEntries() ");
+        }
+    }
+#endif
+
+    return contents;
+}
+
+
+CDir::TEntries CDir::GetEntries(const CMask&    masks,
+                        EGetEntriesMode mode) const
+{
+    TEntries contents;
+    string path_base = AddTrailingPathSeparator(GetPath());
+
+#if defined(NCBI_OS_MSWIN)
+    // Append to the "path" mask for all files in directory
+    string pattern = path_base + "*";
+
+    // Open directory stream and try read info about first entry
+    struct _finddata_t entry;
+    long desc = _findfirst(pattern.c_str(), &entry);
+    if ( desc != -1 ) {
+        if ( masks.Match(entry.name) &&
+             !( (mode == eIgnoreRecursive)  && 
+                ((::strcmp(entry.name, ".") == 0) ||
+                 (::strcmp(entry.name, "..") == 0)) ) ) {
+            contents.push_back(new CDirEntry(path_base + entry.name));
+        }
+        while ( _findnext(desc, &entry) != -1 ) {
+            if ( masks.Match(entry.name) ) {
+                if ( (mode == eIgnoreRecursive)  &&
+                     ((::strcmp(entry.name, ".")  == 0) ||
+                      (::strcmp(entry.name, "..") == 0)) ) {
+                      continue;
+                }
+                contents.push_back(new CDirEntry(path_base + entry.name));
+            }
+        }
+        _findclose(desc);
+    }
+
+#elif defined(NCBI_OS_UNIX)
+    DIR* dir = opendir(GetPath().c_str());
+    if ( dir ) {
+        while (struct dirent* entry = readdir(dir)) {
+            if ( masks.Match(entry->d_name) ) {
+                if ( (mode == eIgnoreRecursive)  &&
+                     ((::strcmp(entry->d_name, ".")  == 0) ||
+                      (::strcmp(entry->d_name, "..") == 0)) ) {
+                      continue;
+                }
+                contents.push_back(new CDirEntry(path_base + entry->d_name));
+            }
+        }
+        closedir(dir);
+    }
+
+#elif defined(NCBI_OS_MAC)
+    try {
+        for (int index = 1;  ;  index++) {
+            CDirEntry entry = MacGetIndexedItem(*this, index);
+            if ( masks.Match(entry.GetName().c_str() ) {
+                contents.push_back(new CDirEntry(entry));
             }
         }
     } catch (OSErr& err) {
@@ -1732,27 +1727,27 @@ bool CDir::Create(void) const
 
 bool CDir::CreatePath(void) const
 {
-    if (Exists()) {
+    if ( Exists() ) {
         return true;
     }
     string path(GetPath());
-    if (path.empty()) {
+    if ( path.empty() ) {
         return true;
     }
-    if (path[path.length()-1] == GetPathSeparator()) {
+    if ( path[path.length()-1] == GetPathSeparator() ) {
         path.erase(path.length() - 1);
     }
     CDir dir_this(path);
-    if (dir_this.Exists()) {
+    if ( dir_this.Exists() ) {
         return true;
     }
     string path_up = dir_this.GetDir();
-    if (path_up == path) {
+    if ( path_up == path ) {
         // special case: is this a disk name?
         return true;
     } 
     CDir dir_up(path_up);
-    if (dir_up.CreatePath()) {
+    if ( dir_up.CreatePath() ) {
         return dir_this.Create();
     }
     return false;
@@ -1864,7 +1859,7 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
         default:
             _TROUBLE;
     }
-    if (share_attr == CMemoryFile_Base::eMMS_Shared) {
+    if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
         attrs->file_share = FILE_SHARE_READ | FILE_SHARE_WRITE;
     } else {
         attrs->file_share = 0;
@@ -1879,7 +1874,7 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
             break;
         case CMemoryFile_Base::eMMP_Write:
             attrs->map_protect = PROT_WRITE;
-            if  (share_attr == CMemoryFile_Base::eMMS_Shared ) {
+            if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
                 // Must be read + write
                 attrs->file_access = O_RDWR;
             } else {
@@ -1888,7 +1883,7 @@ s_TranslateAttrs(CMemoryFile_Base::EMemMapProtect protect_attr,
             break;
         case CMemoryFile_Base::eMMP_ReadWrite:
             attrs->map_protect = PROT_READ | PROT_WRITE;
-            if  (share_attr == CMemoryFile_Base::eMMS_Shared ) {
+            if ( share_attr == CMemoryFile_Base::eMMS_Shared ) {
                 attrs->file_access = O_RDWR;
             } else {
                 attrs->file_access = O_RDONLY;
@@ -1946,7 +1941,7 @@ bool CMemoryFile_Base::MemMapAdviseAddr(void* addr, size_t len,
                                         EMemMapAdvise advise)
 {
     int adv;
-    if (!addr || !len) {
+    if ( !addr || !len ) {
         return false;
     }
     switch (advise) {
@@ -2004,7 +1999,7 @@ CMemoryFileSegment::CMemoryFileSegment(SMemoryFileHandle& handle,
 #elif defined(NCBI_OS_UNIX)
     m_DataPtrReal = mmap(0, m_LengthReal, attrs.map_protect,
                          attrs.map_access, handle.hMap, m_OffsetReal);
-    if (m_DataPtrReal == MAP_FAILED) {
+    if ( m_DataPtrReal == MAP_FAILED ) {
         m_DataPtrReal = 0;
     }
 #endif
@@ -2089,12 +2084,12 @@ CMemoryFileMap::CMemoryFileMap(const string&  file_name,
 
     // Check file size
     Int8 file_size = GetFileSize();
-    if (file_size < 0) {
+    if ( file_size < 0 ) {
         NCBI_THROW(CFileException, eMemoryMap,
             "CMemoryFileMap: The mapped file \"" + m_FileName +"\" must exists");
     }
     // Open file
-    if (file_size == 0) {
+    if ( file_size == 0 ) {
         // Special case -- file is empty
         m_Handle = new SMemoryFileHandle();
         m_Handle->hMap = 0;
@@ -2195,7 +2190,7 @@ void CMemoryFileMap::x_Open(void)
                                       m_Attrs->file_share, NULL,
                                       OPEN_EXISTING,
                                       FILE_ATTRIBUTE_NORMAL, NULL);
-            if (hFile == INVALID_HANDLE_VALUE)
+            if ( hFile == INVALID_HANDLE_VALUE )
                 break;
 
             m_Handle->hMap = CreateFileMapping(hFile, NULL,
@@ -2210,7 +2205,7 @@ void CMemoryFileMap::x_Open(void)
 #elif defined(NCBI_OS_UNIX)
         // Open file
         m_Handle->hMap = open(m_FileName.c_str(), m_Attrs->file_access);
-        if (m_Handle->hMap < 0) {
+        if ( m_Handle->hMap < 0 ) {
             break;
         }
 #endif
@@ -2317,6 +2312,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.86  2005/01/31 11:49:14  ivanov
+ * Added CMask versions of:
+ *     CDirEntries::MatchesMask(), CDirEntries::GetEntries().
+ * Some cosmetics.
+ *
  * Revision 1.85  2004/12/14 17:50:28  ivanov
  * CDir::Create(): return TRUE if creating directory already exists
  *
