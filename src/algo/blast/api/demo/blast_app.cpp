@@ -76,6 +76,9 @@ Contents: C++ driver for running BLAST
 // For repeats filtering
 #include <algo/blast/api/repeats_filter.hpp>
 
+// For locking mechanism
+#include <algo/blast/api/blast_mtlock.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
@@ -243,6 +246,11 @@ void CBlastApplication::Init(void)
     arg_desc->AddDefaultKey("tabular", "tabular", 
                              "On the fly tabular output", 
                              CArgDescriptions::eBoolean, "F");
+
+    arg_desc->AddDefaultKey("threads", "num_threads",
+                            "Number of threads to use in preliminary stage"
+                            " of the search",
+                            CArgDescriptions::eInteger, "1");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -705,19 +713,20 @@ int CBlastApplication::Run(void)
     Int4 to = args["qend"].AsInteger();
     Int4 first_oid = 0;
     Int4 last_oid = 0;
+    bool query_is_aa;
 
-    if (program == eBlastn ||
-        program == eBlastx ||
-        program == eRPSTblastn) {
+    query_is_aa = 
+        (program == eBlastp || program == eTblastn || program == eRPSBlast);
+
+    if (query_is_aa) {
+        strand = eNa_strand_unknown;
+    } else {
         if (strand_number == 1)
             strand = eNa_strand_plus;
         else if (strand_number == 2)
             strand = eNa_strand_minus;
         else
             strand = eNa_strand_both;
-    }
-    else {
-        strand = eNa_strand_unknown;
     }
 
     InitScope();
@@ -777,17 +786,26 @@ int CBlastApplication::Run(void)
         hsp_stream = Blast_HSPListCQueueInit();
     }
 
-    CDbBlast blaster(query_loc, seq_src, *opts, rps_info, hsp_stream);
+    int num_threads = args["threads"].AsInteger();
+    CRef<CDbBlast> blaster;
+    if (num_threads <= 1) {
+        blaster.Reset(new CDbBlast(query_loc, seq_src, *opts, rps_info, 
+                                   hsp_stream));
+    } else {
+        MT_LOCK lock = Blast_CMT_LOCKInit();
+        blaster.Reset(new CDbBlast(query_loc, seq_src, *opts, rps_info, 
+                                   hsp_stream, lock));
+    }
     TSeqAlignVector seqalignv;
 
     if (tabular_output) {
-        blaster.SetupSearch();
+        blaster->SetupSearch();
         // Start the on-the-fly formatting thread
         CBlastTabularFormatThread* tab_thread = 
-            new CBlastTabularFormatThread(blaster, query_loc, 
+            new CBlastTabularFormatThread(*blaster, query_loc, 
                                           args["out"].AsOutputFile());
         tab_thread->Run();
-        blaster.RunSearchEngine();
+        blaster->RunSearchEngine();
         // Join the on-the-fly formatting thead
         void *exit_data;
         tab_thread->Join(&exit_data);
@@ -795,7 +813,7 @@ int CBlastApplication::Run(void)
         hsp_stream = BlastHSPStreamFree(hsp_stream);
     } else {
         // Run the BLAST engine
-        seqalignv = blaster.Run();
+        seqalignv = blaster->Run();
     }
 
     BlastSeqSrcFree(seq_src);
@@ -807,7 +825,7 @@ int CBlastApplication::Run(void)
         sfree(rps_info);
     }
 
-    FormatResults(blaster, seqalignv);
+    FormatResults(*blaster, seqalignv);
 
     return status;
 }
