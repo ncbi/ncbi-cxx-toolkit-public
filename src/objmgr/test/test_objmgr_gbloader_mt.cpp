@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2003/03/27 21:54:58  grichenk
+* Renamed test applications and makefiles, updated references
+*
 * Revision 1.19  2003/03/11 15:51:06  kuznets
 * iterate -> ITERATE
 *

@@ -8,8 +8,8 @@
 
 REQUIRES = dbapi
 
-APP = test_title
-SRC = test_title
+APP = test_objmgr_title
+SRC = test_objmgr_title
 LIB = xobjutil xobjmgr id1 submit seqset $(SEQ_LIBS) pub medline biblio \
       general dbapi_driver xser xutil xconnect xncbi
 

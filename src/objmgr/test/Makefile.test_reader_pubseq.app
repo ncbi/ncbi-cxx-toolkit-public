@@ -8,8 +8,8 @@
 
 REQUIRES = dbapi
 
-APP = reader_pubseq_test
-SRC = reader_pubseq_test
+APP = test_reader_pubseq
+SRC = test_reader_pubseq
 
 LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       dbapi_driver \

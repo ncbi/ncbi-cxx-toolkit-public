@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2003/03/27 21:54:58  grichenk
+* Renamed test applications and makefiles, updated references
+*
 * Revision 1.10  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *

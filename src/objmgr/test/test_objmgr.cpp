@@ -67,7 +67,7 @@ void CTestApp::Init(void)
     arg_desc->AddFlag("dump_entries", "print all generated seq entries");
     arg_desc->AddFlag("dump_features", "print all found features");
 
-    string prog_description = "testobjmgr1";
+    string prog_description = "testobjmgr";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, false);
 
@@ -230,6 +230,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/03/27 21:54:58  grichenk
+* Renamed test applications and makefiles, updated references
+*
 * Revision 1.29  2003/03/26 14:30:23  lavr
 * Conform to modified representation of NUL char in NStr::PrintableString()
 *
