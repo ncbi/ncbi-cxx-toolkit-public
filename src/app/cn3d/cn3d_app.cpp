@@ -433,6 +433,8 @@ bool Cn3DApp::OnInit(void)
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
         { wxCMD_LINE_OPTION, "d", "id", "MMDB/PDB ID to load via network",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
+        { wxCMD_LINE_OPTION, "s", "style", "preferred favorite style",
+            wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_NEEDS_SEPARATOR },
         { wxCMD_LINE_PARAM, NULL, NULL, "input file",
             wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL},
         { wxCMD_LINE_NONE }
@@ -518,6 +520,11 @@ bool Cn3DApp::OnInit(void)
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
     if (showLog) RaiseLogWindow();
+
+    // set preferred style if given
+    wxString favStyle;
+    if (commandLine.Found("s", &favStyle))
+        structureWindow->SetPreferredFavoriteStyle(favStyle.c_str());
 
     // get model type from -o
     EModel_type model = eModel_type_other;
@@ -633,6 +640,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/08/04 18:58:30  thiessen
+* add -s command line option for preferred favorite style
+*
 * Revision 1.21  2004/05/22 15:33:41  thiessen
 * fix scrolling bug in log frame
 *

@@ -87,6 +87,7 @@ public:
     void SetWindowTitle(void);
     void DialogTextChanged(const MultiTextDialog *changed);
     void DialogDestroyed(const MultiTextDialog *destroyed);
+    void SetPreferredFavoriteStyle(const std::string& s) { preferredFavoriteStyle = s; }
 
     enum {
         // File menu
@@ -239,6 +240,7 @@ private:
     wxMenuBar *menuBar;
     wxMenu *fileMenu, *favoritesMenu, *windowMenu;
     void SetupFavoritesMenu(void);
+    std::string preferredFavoriteStyle;
 
     wxTimer animationTimer;
     enum { ANIM_FRAMES, ANIM_SPIN };    // animation modes
@@ -268,6 +270,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/04 18:58:30  thiessen
+* add -s command line option for preferred favorite style
+*
 * Revision 1.13  2004/04/22 00:05:04  thiessen
 * add seclect molecule
 *

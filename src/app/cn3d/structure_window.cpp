@@ -1411,27 +1411,48 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     SetWorkingTitle(glCanvas->structureSet);
     GlobalMessenger()->SetAllWindowTitles();
 
-    // use a default style if no global style stored in asn data
-    if (glCanvas->structureSet->hasUserStyle) {
-        SetRenderingMenuFlag(0);
-        SetColoringMenuFlag(0);
-    } else {
-        // set default rendering style and view, and turn on corresponding style menu flags
-        if (glCanvas->structureSet->alignmentSet) {
-            glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
-            SetRenderingMenuFlag(MID_TUBE);
-            if (glCanvas->structureSet->IsCDD()) {
-                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
-                SetColoringMenuFlag(MID_INFO);
-            } else {
-                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
-                SetColoringMenuFlag(MID_IDENTITY);
+    // if a preferred favorite has been specified (e.g. on the command line)
+    bool foundPreferred = false;
+    if (preferredFavoriteStyle.size() > 0) {
+        CCn3d_style_settings_set::Tdata::const_iterator f, fe = favoriteStyles.Get().end();
+        for (f=favoriteStyles.Get().begin(); f!=fe; ++f) {
+            if ((*f)->GetName() == preferredFavoriteStyle) {
+                INFOMSG("using favorite: " << (*f)->GetName());
+                glCanvas->structureSet->styleManager->SetGlobalStyle(**f);
+                SetRenderingMenuFlag(0);
+                SetColoringMenuFlag(0);
+                foundPreferred = true;
+                break;
             }
-        } else {
-            glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
-            SetRenderingMenuFlag(MID_WORM);
-            glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
-            SetColoringMenuFlag(MID_SECSTRUC);
+        }
+    }
+
+    if (!foundPreferred) {
+
+        // use style stored in asn data (already set up during StructureSet construction)
+        if (glCanvas->structureSet->hasUserStyle) {
+            SetRenderingMenuFlag(0);
+            SetColoringMenuFlag(0);
+        }
+
+        // set default rendering style and view, and turn on corresponding style menu flags
+        else {
+            if (glCanvas->structureSet->alignmentSet) {
+                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+                SetRenderingMenuFlag(MID_TUBE);
+                if (glCanvas->structureSet->IsCDD()) {
+                    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eInformationContentShortcut);
+                    SetColoringMenuFlag(MID_INFO);
+                } else {
+                    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eIdentityShortcut);
+                    SetColoringMenuFlag(MID_IDENTITY);
+                }
+            } else {
+                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormShortcut);
+                SetRenderingMenuFlag(MID_WORM);
+                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eSecondaryStructureShortcut);
+                SetColoringMenuFlag(MID_SECSTRUC);
+            }
         }
     }
 
@@ -1593,6 +1614,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/08/04 18:58:30  thiessen
+* add -s command line option for preferred favorite style
+*
 * Revision 1.33  2004/05/31 13:15:09  thiessen
 * make select molecule take PDB chain/het name
 *
