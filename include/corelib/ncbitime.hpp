@@ -39,6 +39,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/06/12 16:56:36  vakatov
+* Added comments for the time constituents access methods
+*
 * Revision 1.7  2001/05/29 20:12:58  ivanov
 * Changed type of return value in NanoSecond().
 *
@@ -204,15 +207,15 @@ public:
     operator string(void) const;
 
     // Get various constituents of the time
-    int  YearDayNumber (void) const;
-    int  Year          (void) const;
-    int  Month         (void) const;
-    int  Day           (void) const;
-    int  Hour          (void) const;
-    int  Minute        (void) const;
-    int  Second        (void) const;
-    long NanoSecond    (void) const;
-    int  DayOfWeek     (void) const;
+    int  YearDayNumber (void) const;  // year day number,          1..366
+    int  Year          (void) const;  // year (e.g. 2001)
+    int  Month         (void) const;  // month number,             1..12
+    int  Day           (void) const;  // day of the month,         1..31
+    int  Hour          (void) const;  // hours since midnight,     0..23
+    int  Minute        (void) const;  // minutes after the hour,   0..59
+    int  Second        (void) const;  // seconds after the minute, 0..59
+    long NanoSecond    (void) const;  // nanosecs after the sec,   0..999999999
+    int  DayOfWeek     (void) const;  // days since Sunday,        0..6
 
     // Add (subtract if negative) to the time.
     // Parameter "adl" specifies if to do adjustment for the "daylight" 
