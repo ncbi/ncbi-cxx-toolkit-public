@@ -158,7 +158,7 @@ public:
     // Expect value cut-off threshold for an HSP, or a combined hit if sum
     // statistics is used
     double GetEvalueThreshold() const;
-    void SetEvalueThrehold(double eval);
+    void SetEvalueThreshold(double eval);
 
     double GetOriginalEvalue() const;
     //void SetOriginalEvalue(double e);
@@ -707,7 +707,7 @@ CBlastOption::GetEvalueThreshold() const
 }
 
 inline void
-CBlastOption::SetEvalueThrehold(double eval)
+CBlastOption::SetEvalueThreshold(double eval)
 {
     m_HitSaveOpts->expect_value = eval;
 }
@@ -1004,6 +1004,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/08/28 22:32:53  camacho
+* Correct typo
+*
 * Revision 1.19  2003/08/21 19:30:17  dondosha
 * Free previous value of gen_code_string and allocate memory for new one in SetDbGeneticCodeStr
 *
