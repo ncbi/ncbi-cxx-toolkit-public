@@ -648,7 +648,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
                                       buffer, &error_msg, &repeat_database,
                                       NULL, NULL);
 				if (repeat_database == NULL)
-                                   repeat_database = StringSave("humlines.lib humsines.lib retrovir.lib");
+                                   repeat_database = strdup("humlines.lib humsines.lib retrovir.lib");
 				do_repeats = TRUE;
 			}
 			else if (*ptr == 'V')
@@ -660,7 +660,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
                                       &error_msg, &vs_database, NULL, NULL); 
 				vs_options = BLASTOptionDelete(vs_options);
 				if (vs_database == NULL)
-                                   vs_database = StringSave("UniVec_Core");
+                                   vs_database = strdup("UniVec_Core");
 				do_vecscreen = TRUE;
 			}
 #endif

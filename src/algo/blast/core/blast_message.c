@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.6  2003/07/29 14:42:31  coulouri
+ * use strdup() instead of StringSave()
+ *
  * Revision 1.5  2003/07/25 21:12:28  coulouri
  * remove constructions of the form "return sfree();" and "a=sfree(a);"
  *
@@ -89,7 +92,7 @@ Blast_MessageWrite(Blast_MessagePtr *blast_msg, Int4 severity, Int4 code,
 	(*blast_msg)->severity = severity;
 	(*blast_msg)->code = code;
 	(*blast_msg)->subcode = subcode;
-	(*blast_msg)->message = StringSave(message);
+	(*blast_msg)->message = strdup(message);
 
 	return 0;
 }

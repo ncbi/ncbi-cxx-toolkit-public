@@ -143,25 +143,25 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
 
 	switch (number) {
 		case blast_type_blastn:
-			*program = StringSave("blastn");
+			*program = strdup("blastn");
 			break;
 		case blast_type_blastp:
-			*program = StringSave("blastp");
+			*program = strdup("blastp");
 			break;
 		case blast_type_blastx:
-			*program = StringSave("blastx");
+			*program = strdup("blastx");
 			break;
 		case blast_type_tblastn:
-			*program = StringSave("tblastn");
+			*program = strdup("tblastn");
 			break;
 		case blast_type_tblastx:
-			*program = StringSave("tblastx");
+			*program = strdup("tblastx");
 			break;
 		case blast_type_psitblastn:
-			*program = StringSave("psitblastn");
+			*program = strdup("psitblastn");
 			break;
 		default:
-			*program = StringSave("unknown");
+			*program = strdup("unknown");
 			break;
 	}
 

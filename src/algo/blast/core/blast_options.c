@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.42  2003/07/29 14:42:31  coulouri
+ * use strdup() instead of StringSave()
+ *
  * Revision 1.41  2003/07/28 19:04:15  camacho
  * Replaced all MemNews for calloc
  *
@@ -290,11 +293,11 @@ Int2 BLAST_FillQuerySetUpOptions(QuerySetUpOptionsPtr options,
       dust for nucleotides). */
    if (!filter_string || !StringICmp(filter_string, "T")) {
       if (program == blast_type_blastn)
-         options->filter_string = StringSave("D");
+         options->filter_string = strdup("D");
       else
-         options->filter_string = StringSave("S");
+         options->filter_string = strdup("S");
    } else {
-      options->filter_string = StringSave(filter_string); 
+      options->filter_string = strdup(filter_string); 
    }
 
    return 0;
@@ -616,9 +619,9 @@ BLAST_FillScoringOptions(BlastScoringOptionsPtr options,
 
    if (program_number != blast_type_blastn) {	/* protein-protein options. */
       if (matrix)
-         options->matrix = StringSave(matrix);
+         options->matrix = strdup(matrix);
       else
-         options->matrix = StringSave("BLOSUM62");
+         options->matrix = strdup("BLOSUM62");
    } else {	/* nucleotide-nucleotide options. */
       if (penalty)
          options->penalty = penalty;
@@ -776,7 +779,7 @@ LookupTableOptionsNew(Uint1 program_number, LookupTableOptionsPtr *options)
    if (program_number != blast_type_blastn) {
       (*options)->word_size = BLAST_WORDSIZE_PROT;
       (*options)->alphabet_size = 25;
-      (*options)->matrixname = StringSave("BLOSUM62");
+      (*options)->matrixname = strdup("BLOSUM62");
       (*options)->lut_type = AA_LOOKUP_TABLE;
       
       if (program_number == blast_type_blastp)

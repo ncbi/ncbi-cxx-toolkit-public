@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.13  2003/07/29 14:42:31  coulouri
+ * use strdup() instead of StringSave()
+ *
  * Revision 1.12  2003/07/28 19:04:15  camacho
  * Replaced all MemNews for calloc
  *
@@ -1393,7 +1396,7 @@ BLAST_MatrixFill(BLAST_ScoreBlkPtr sbp)
     }
 
     blast_matrix->is_prot = sbp->protein_alphabet;
-    blast_matrix->name = StringSave(sbp->name);
+    blast_matrix->name = strdup(sbp->name);
     blast_matrix->rows = dim1;
     blast_matrix->columns = dim2;
     blast_matrix->matrix = matrix;
@@ -1498,7 +1501,7 @@ static Int2 BlastScoreBlkMatCreate(BLAST_ScoreBlkPtr sbp)
 	sbp->mat_dim2 = BLASTNA_SIZE;
 
 	sprintf(buffer, "blastn matrix:%ld %ld", (long) sbp->reward, (long) sbp->penalty);
-	sbp->name = StringSave(buffer);
+	sbp->name = strdup(buffer);
 
 	return 0;
 }
@@ -1530,7 +1533,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
         len = strlen(matrix_name);
         for (i = 0; i < len && i < (sizeof(matrix)-1); i++)
             matrix[i] = toupper(matrix_name[i]);
-        sbp->name = StringSave(matrix);
+        sbp->name = strdup(matrix);
 
         /* 1. Try local directory */
         if(FileLength(matrix) > 0)
@@ -1545,7 +1548,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
            alphabet_type[2] = NULLB;
 
            if(FindPath("ncbi", "ncbi", "data", string, PATH_MAX)) {
-               matrix_dir = StringSave(string);
+               matrix_dir = strdup(string);
                sprintf(string, "%s%s", matrix_dir, matrix);
                if(FileLength(string) > 0) {
                   fp = fopen(string, "r");
@@ -2612,7 +2615,7 @@ MatrixInfoNew(CharPtr name, array_of_8 *values, Int4Ptr prefs, Int4 max_number)
 	MatrixInfoPtr matrix_info;
 
 	matrix_info = (MatrixInfoPtr) calloc(1, sizeof(MatrixInfo));
-	matrix_info->name = StringSave(name);
+	matrix_info->name = strdup(name);
 	matrix_info->values = values;
 	matrix_info->prefs = prefs;
 	matrix_info->max_number_values = max_number;
