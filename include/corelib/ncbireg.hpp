@@ -1,5 +1,5 @@
-#ifndef NCBIREG__HPP
-#define NCBIREG__HPP
+#ifndef CORELIB___NCBIREG__HPP
+#define CORELIB___NCBIREG__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,15 +28,15 @@
  *
  * Author:  Denis Vakatov
  *
- *
  */
 
 /// @file ncbireg.hpp
-/// Process information in the NCBI Registry using configuration files.
+/// Process information in the NCBI Registry, including working with
+/// configuration files.
 ///
 /// Classes to perform NCBI Registry operations including:
 /// - Read and parse configuration file
-/// - Search, edit, etc. for the retrieved configuration information
+/// - Search, edit, etc. the retrieved configuration information
 /// - Write information back to configuration file
 ///
 /// The Registry is defined as a text file with sections and entries in the 
@@ -96,7 +96,8 @@ public:
 
     // Standard exception boilerplate code
     NCBI_EXCEPTION_DEFAULT2(CRegistryException,
-        CParseTemplException<CCoreException>, std::string::size_type);
+                            CParseTemplException<CCoreException>,
+                            std::string::size_type);
 };
 
 
@@ -107,18 +108,18 @@ public:
 ///
 /// Define the Registry.
 ///
-/// Load, access, modify and store runtime information read from a
-/// configuration file named as *.ini where the * is by default 
-/// the application name.
+/// Load, access, modify and store runtime information (usually used to
+/// work with configuration files).
 
-class NCBI_XNCBI_EXPORT CNcbiRegistry {
+class NCBI_XNCBI_EXPORT CNcbiRegistry
+{
 public:
     /// Registry parameter settings.
     ///
     /// A Registry parameter can be either transient or persistent,
-    /// overrideable or not overridable, truncatable or not truncatable.
+    /// overridable or not overridable, truncatable or not truncatable.
     enum EFlags {
-        eTransient   = 0x1,     ///< Transient -- Wont be saved
+        eTransient   = 0x1,     ///< Transient -- Wont be saved (by Write())
         ePersistent  = 0x100,   ///< Persistent -- Saved when file is written
         eOverride    = 0x2,     ///< Existing value can be overriden
         eNoOverride  = 0x200,   ///< Cannot change existing value
@@ -136,7 +137,8 @@ public:
     /// Constructor.
     ///
     /// @param is
-    ///   Input stream to load the Registry from (usually a file).
+    ///   Input stream to load the Registry from.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
     /// @param flags
     ///   How parameters are stored. The default is to store all parameters as
     ///   persistent unless the  "eTransient" flag is set in which case the
@@ -167,6 +169,7 @@ public:
     /// possible to load other parameters from other files using this method.
     /// @param is
     ///   Input stream to read and parse.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
     /// @param flags
     ///   How parameters are stored. The default is for all values to be read
     ///   as persistent with the capability of overriding any previously
@@ -182,10 +185,10 @@ public:
     ///   Write()
     void Read(CNcbiIstream& is, TFlags flags = 0);
 
-    /// Write the registry content to output stream "os".
-    ///
-    /// Writes the persistent registry content (non-transient entries only) to
-    /// the specified output stream, "os".
+    /// Write the registry content to output stream.
+    /// @param os
+    ///   Output stream to write the registry to.
+    ///   NOTE:  if the stream is a file, it must be opened in binary mode!
     /// @return
     ///   TRUE if operation is successful.
     /// @sa
@@ -209,7 +212,7 @@ public:
     /// @param flags
     ///   To control search.
     /// @return
-    ///   Return empty string if the configuration parameter is not found.
+    ///   The parameter value, or empty string if the parameter is not found.
     /// @sa
     ///   GetString()
     const string& Get(const string& section, const string& name,
@@ -219,16 +222,6 @@ public:
     ///
     /// Similar to the "Get()", but if the configuration parameter is not
     /// found, then return 'default_value' rather than empty string.
-    /// @param section
-    ///   Section name to search under.
-    /// @param name
-    ///   Parameter name to search for.
-    /// @param default_value
-    ///   Default value of parameter.
-    /// @param flags
-    ///   To control search.
-    /// @return
-    ///   Return default value if the configuration parameter is not found.
     /// @sa
     ///   Get()
     const string GetString(const string& section, const string& name,
@@ -246,76 +239,42 @@ public:
     /// Get integer value of specified parameter name.
     ///
     /// Like "GetString()", plus convert the value into integer.
-    /// @param section
-    ///   Section name to search under.
-    /// @param name
-    ///   Parameter name to search for.
-    /// @param default_value
-    ///   Default value of parameter.
-    /// @param flags
-    ///   To control search.
     /// @param err_action
     ///   What to do if error encountered in converting parameter value.
-    /// @return
-    ///   Return default value if the configuration parameter is not found.
     /// @sa
     ///   GetString()
-    int     GetInt    (const string& section, const string& name,
-                       int    default_value,  TFlags flags = 0,
-                       EErrAction err_action = eThrow) const;
+    int GetInt(const string& section, const string& name,
+               int default_value, TFlags flags = 0,
+               EErrAction err_action = eThrow) const;
 
     /// Get boolean value of specified parameter name.
     ///
     /// Like "GetString()", plus convert the value into boolean.
-    /// @param section
-    ///   Section name to search under.
-    /// @param name
-    ///   Parameter name to search for.
-    /// @param default_value
-    ///   Default value of parameter.
-    /// @param flags
-    ///   To control search.
     /// @param err_action
     ///   What to do if error encountered in converting parameter value.
-    /// @return
-    ///   Return default value if the configuration parameter is not found.
     /// @sa
     ///   GetString()
-    bool    GetBool   (const string& section, const string& name,
-                       bool   default_value,  TFlags flags = 0,
-                       EErrAction err_action = eThrow) const;
+    bool GetBool(const string& section, const string& name,
+                 bool default_value,  TFlags flags = 0,
+                 EErrAction err_action = eThrow) const;
 
     /// Get double value of specified parameter name.
     ///
     /// Like "GetString()", plus convert the value into double.
-    /// @param section
-    ///   Section name to search under.
-    /// @param name
-    ///   Parameter name to search for.
-    /// @param default_value
-    ///   Default value of parameter.
-    /// @param flags
-    ///   To control search.
     /// @param err_action
     ///   What to do if error encountered in converting parameter value.
-    /// @return
-    ///   Return default value if the configuration parameter is not found.
     /// @sa
     ///   GetString()
-    double  GetDouble (const string& section, const string& name,
-                       double default_value,  TFlags flags = 0,
-                       EErrAction err_action = eThrow) const;
+    double GetDouble(const string& section, const string& name,
+                     double default_value, TFlags flags = 0,
+                     EErrAction err_action = eThrow) const;
 
     /// Set the configuration parameter value.
     ///
     /// Unset the parameter if specified "value" is empty.
     ///
-    /// @param section
-    ///   Section name to search under.
-    /// @param name
-    ///   Parameter name to search for.
     /// @param value
-    ///   Value parameter is set to.
+    ///   Value to set the parameter to.
     /// @param flags
     ///   To control search.
     ///   Valid flags := { ePersistent, eNoOverride, eTruncate }
@@ -329,50 +288,47 @@ public:
     /// @param comment
     ///   Optional comment string describing parameter.
     /// @return
-    ///   TRUE if specified parameter is set; FALSE, otherwise.
+    ///   TRUE if specified parameter is set;  FALSE otherwise.
     bool Set(const string& section, const string& name, const string& value,
              TFlags flags = 0, const string& comment = kEmptyStr);
 
     /// Set comment "comment" for the registry entry "section:name".
     ///
     /// @param comment
-    ///   Comment string value. Delete comment if set to kEmptyStr.
+    ///   Comment string value.
     /// @param section
-    ///   Section name. If "section" is empty string (kEmptyStr), then set as
-    ///   the registry comment.
+    ///   Section name.
+    ///   If "section" is empty string, then set as the registry comment.
     /// @param name
-    ///   Parameter name. If "name" is empty string (kEmptyStr), then set as
-    ///   the "section" comment.
+    ///   Parameter name.
+    ///   If "name" is empty string, then set as the "section" comment.
     /// @return
     ///   FALSE if "section" and/or "name" do not exist in registry.
-    bool SetComment(const string& comment,  // kEmptyStr to delete the comment
+    bool SetComment(const string& comment, ///< kEmptyStr to delete the comment
                     const string& section = kEmptyStr,
                     const string& name    = kEmptyStr);
 
     /// Get comment of the registry entry "section:name".
     ///
     /// @param section
-    ///   Section name. If "section" is empty string (kEmptyStr), then set as
-    ///   the registry comment.
+    ///   Section name. If passed empty string, then get the registry comment.
     /// @param name
-    ///   Parameter name. If "name" is empty string (kEmptyStr), then set as
-    ///   the "section" comment.
+    ///   Parameter name. If empty string, then get the "section" comment.
     /// @return
-    ///   Empty string if the "section:name" entry not found; else return
-    ///   comment string.
+    ///   Comment string. If not found, return an empty string.
     const string& GetComment(const string& section = kEmptyStr,
                              const string& name    = kEmptyStr);
 
     /// Enumerate section names.
     ///
-    /// Write all section names to the "sections" passed list.
-    /// Previous contents of the passed list is erased.
+    /// Write all section names to the "sections" list.
+    /// Previous contents of the list are erased.
     void EnumerateSections(list<string>* sections) const;
 
     /// Enumerate parameter names for a specfiied section.
     ///
     /// Write all parameter names for specified "section" to the "entries"
-    /// passed list. Previous contents of the passed list is erased.
+    /// list. Previous contents of the list are erased.
     void EnumerateEntries(const string& section, list<string>* entries) const;
 
 private:
@@ -391,7 +347,7 @@ private:
     /// values (TRegSection).
     typedef map<string, TRegSection, PNocase>  TRegistry;
 
-    TRegistry    m_Registry;  ///< Internal representation of Registry
+    TRegistry    m_Registry;  ///< Internal representation of registry.
 
     string       m_Comment;   ///< All-registry comment
 
@@ -424,8 +380,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.28  2003/08/12 12:51:35  siyan
- * Minor comment changes.
+ * Revision 1.29  2003/08/12 19:00:39  vakatov
+ * Fixed comments and code layout
  *
  * Revision 1.27  2003/07/21 18:42:38  siyan
  * Documentation changes.
@@ -508,4 +464,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* NCBIREG__HPP */
+#endif  /* CORELIB___NCBIREG__HPP */
