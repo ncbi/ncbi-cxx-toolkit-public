@@ -71,11 +71,11 @@ class CAlnMrgApp : public CNcbiApplication
     void             View4               (int screen_width);
 
 private:
-    CRef<CAlnMix>                m_Mix;
     CAlnMix::TMergeFlags         m_MergeFlags;
     CAlnMix::TAddFlags           m_AddFlags;
     mutable CRef<CObjectManager> m_ObjMgr;
     mutable CRef<CScope>         m_Scope;
+    CRef<CAlnMix>                m_Mix; // must appear AFTER m_ObjMgr!
 };
 
 void CAlnMrgApp::Init(void)
@@ -417,6 +417,11 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/12/20 03:39:12  ucko
+* Reorder data members of CAlnMrgApp: m_Mix should follow m_ObjMgr so
+* it's destroyed first by default, so that the scope will no longer be
+* live by the time m_ObjMgr is destroyed.
+*
 * Revision 1.15  2003/12/19 19:38:34  todorov
 * Demon creation of scope outside alnmix
 *
