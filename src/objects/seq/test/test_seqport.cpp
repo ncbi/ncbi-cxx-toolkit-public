@@ -1411,8 +1411,7 @@ void CSeqportTestApp::PackTest(const CSeq_data&     in_seq,
     try{
         CSeqportUtil::GetCopy(in_seq, out_seq, 0, 0);
   
-        TSeqPos uLen = CSeqportUtil::Pack(out_seq,
-                                    uBeginIdx, uLength);
+        TSeqPos uLen = CSeqportUtil::Pack(out_seq, uLength);
   
         cout << endl << "Pack Results" << endl;
         cout << "uLength = " << uLength  << endl;
@@ -1528,6 +1527,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2003/11/06 16:13:59  shomrat
+ * changed call to Pack due to change in its signature
+ *
  * Revision 1.10  2003/04/15 19:48:06  vasilche
  * Fixed uninitialized variable.
  *
