@@ -77,9 +77,11 @@ public:
     };
 
     enum FMappedFlags {
-        fMapped_Partial   = 1<<0,
-        fMapped_Product   = 1<<1,
-        fMapped_Seq_point = 1<<2
+        fMapped_Partial      = 1<<0,
+        fMapped_Product      = 1<<1,
+        fMapped_Seq_point    = 1<<2,
+        fMapped_Partial_from = 1<<3,
+        fMapped_Partial_to   = 1<<4
     };
 
     enum EMappedObjectType {
@@ -145,6 +147,8 @@ public:
     void SetMappedSeq_loc(CSeq_loc* loc);
     void SetMappedSeq_id(CSeq_id& id);
     void SetMappedPoint(bool point);
+    void SetMappedPartial_from(void);
+    void SetMappedPartial_to(void);
     void SetMappedSeq_id(CSeq_id& id, bool point);
     void SetMappedSeq_align(CSeq_align* align);
     void SetMappedSeq_align_Cvts(CSeq_loc_Conversion_Set& cvts);
@@ -506,6 +510,22 @@ void CAnnotObject_Ref::SetMappedPoint(bool point)
 
 
 inline
+void CAnnotObject_Ref::SetMappedPartial_from(void)
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    m_MappedFlags |= fMapped_Partial_from;
+}
+
+
+inline
+void CAnnotObject_Ref::SetMappedPartial_to(void)
+{
+    _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
+    m_MappedFlags |= fMapped_Partial_to;
+}
+
+
+inline
 bool CAnnotObject_Ref::IsMappedPoint(void) const
 {
     _ASSERT(GetMappedObjectType() == eMappedObjType_Seq_id);
@@ -645,6 +665,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/10/26 15:46:59  vasilche
+* Fixed processing of partial intervals in feature mapping.
+*
 * Revision 1.17  2004/10/08 14:18:34  grichenk
 * Moved MakeMappedXXXX methods to CAnnotCollector,
 * fixed mapped feature initialization bug.

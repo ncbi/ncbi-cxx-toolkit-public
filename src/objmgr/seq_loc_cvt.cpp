@@ -26,7 +26,7 @@
 * Author: Eugene Vasilchenko
 *
 * File Description:
-*   Class for mapping Seq-loc petween sequences.
+*   Class for mapping Seq-loc between sequences.
 *
 */
 
@@ -199,12 +199,45 @@ void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg)
 }
 
 
+CConstRef<CInt_fuzz>
+CSeq_loc_Conversion::ReverseFuzz(const CInt_fuzz& fuzz) const
+{
+    if ( fuzz.IsLim() ) {
+        CInt_fuzz::ELim lim = fuzz.GetLim();
+        switch ( lim ) {
+        case CInt_fuzz::eLim_lt: lim = CInt_fuzz::eLim_gt; break;
+        case CInt_fuzz::eLim_gt: lim = CInt_fuzz::eLim_lt; break;
+        case CInt_fuzz::eLim_tr: lim = CInt_fuzz::eLim_tl; break;
+        case CInt_fuzz::eLim_tl: lim = CInt_fuzz::eLim_tr; break;
+        default: return ConstRef(&fuzz);
+        }
+        CRef<CInt_fuzz> ret(new CInt_fuzz);
+        ret->SetLim(lim);
+        return ret;
+    }
+    return ConstRef(&fuzz);
+}
+
+
 bool CSeq_loc_Conversion::ConvertPoint(const CSeq_point& src)
 {
     ENa_strand strand = src.IsSetStrand()? src.GetStrand(): eNa_strand_unknown;
     bool ret = GoodSrcId(src.GetId()) && ConvertPoint(src.GetPoint(), strand);
-    if ( ret  &&  src.IsSetFuzz() ) {
-        m_SrcFuzz_from = &src.GetFuzz();
+    if ( ret ) {
+        if ( src.IsSetFuzz() ) {
+            if ( MinusStrand() ) {
+                m_DstFuzz_from = ReverseFuzz(src.GetFuzz());
+            }
+            else {
+                m_DstFuzz_from = &src.GetFuzz();
+            }
+            // normalize left and right fuzz values
+            if ( bool(m_DstFuzz_from) && m_DstFuzz_from->IsLim() &&
+                 m_DstFuzz_from->GetLim() == CInt_fuzz::eLim_lt ) {
+                m_DstFuzz_from.Reset();
+                m_PartialFlag |= fPartial_from;
+            }
+        }
     }
     return ret;
 }
@@ -216,11 +249,32 @@ bool CSeq_loc_Conversion::ConvertInterval(const CSeq_interval& src)
     bool ret = GoodSrcId(src.GetId()) &&
         ConvertInterval(src.GetFrom(), src.GetTo(), strand);
     if ( ret ) {
-        if ( src.IsSetFuzz_from() ) {
-            m_SrcFuzz_from = &src.GetFuzz_from();
+        if ( MinusStrand() ) {
+            if ( !(m_PartialFlag & fPartial_to) && src.IsSetFuzz_from() ) {
+                m_DstFuzz_to = ReverseFuzz(src.GetFuzz_from());
+            }
+            if ( !(m_PartialFlag & fPartial_from) && src.IsSetFuzz_to() ) {
+                m_DstFuzz_from = ReverseFuzz(src.GetFuzz_to());
+            }
         }
-        if ( src.IsSetFuzz_to() ) {
-            m_SrcFuzz_to = &src.GetFuzz_to();
+        else {
+            if ( !(m_PartialFlag & fPartial_from) && src.IsSetFuzz_from() ) {
+                m_DstFuzz_from = &src.GetFuzz_from();
+            }
+            if ( !(m_PartialFlag & fPartial_to) && src.IsSetFuzz_to() ) {
+                m_DstFuzz_to = &src.GetFuzz_to();
+            }
+        }
+        // normalize left and right fuzz values
+        if ( bool(m_DstFuzz_from) && m_DstFuzz_from->IsLim() &&
+             m_DstFuzz_from->GetLim() == CInt_fuzz::eLim_lt ) {
+            m_DstFuzz_from.Reset();
+            m_PartialFlag |= fPartial_from;
+        }
+        if ( bool(m_DstFuzz_to) && m_DstFuzz_to->IsLim() &&
+             m_DstFuzz_to->GetLim() == CInt_fuzz::eLim_gt ) {
+            m_DstFuzz_to.Reset();
+            m_PartialFlag |= fPartial_to;
         }
     }
     return ret;
@@ -232,8 +286,8 @@ bool CSeq_loc_Conversion::ConvertPoint(TSeqPos src_pos,
 {
     _ASSERT(!IsSpecialLoc());
     m_PartialFlag = 0;
-    m_SrcFuzz_from.Reset();
-    m_SrcFuzz_to.Reset();
+    m_DstFuzz_from.Reset();
+    m_DstFuzz_to.Reset();
     if ( src_pos < m_Src_from || src_pos > m_Src_to ) {
         m_Partial = true;
         return false;
@@ -258,16 +312,16 @@ bool CSeq_loc_Conversion::ConvertInterval(TSeqPos src_from, TSeqPos src_to,
 {
     _ASSERT(!IsSpecialLoc());
     m_PartialFlag = 0;
-    m_SrcFuzz_from.Reset();
-    m_SrcFuzz_to.Reset();
+    m_DstFuzz_from.Reset();
+    m_DstFuzz_to.Reset();
     if ( src_from < m_Src_from ) {
         m_Partial = true;
-        m_PartialFlag |= ePartialLeft;
+        m_PartialFlag |= fPartial_from;
         src_from = m_Src_from;
     }
     if ( src_to > m_Src_to ) {
         m_Partial = true;
-        m_PartialFlag |= ePartialRight;
+        m_PartialFlag |= fPartial_to;
         src_to = m_Src_to;
     }
     if ( src_from > src_to ) {
@@ -323,19 +377,17 @@ CRef<CSeq_interval> CSeq_loc_Conversion::GetDstInterval(void)
     if ( m_LastStrand != eNa_strand_unknown ) {
         interval.SetStrand(m_LastStrand);
     }
-    if ( m_PartialFlag ) {
-        if ( m_PartialFlag & ePartialLeft ) {
-            interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
-        }
-        if ( m_PartialFlag & ePartialRight ) {
-            interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
-        }
+    if ( m_PartialFlag & fPartial_from ) {
+        interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
     }
-    if (!interval.IsSetFuzz_from()  &&  bool(m_SrcFuzz_from)) {
-        interval.SetFuzz_from(const_cast<CInt_fuzz&>(*m_SrcFuzz_from));
+    else if ( m_DstFuzz_from ) {
+        interval.SetFuzz_from(const_cast<CInt_fuzz&>(*m_DstFuzz_from));
     }
-    if (!interval.IsSetFuzz_to()  &&  bool(m_SrcFuzz_to)) {
-        interval.SetFuzz_to(const_cast<CInt_fuzz&>(*m_SrcFuzz_to));
+    if ( m_PartialFlag & fPartial_to ) {
+        interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+    }
+    else if ( m_DstFuzz_to ) {
+        interval.SetFuzz_to(const_cast<CInt_fuzz&>(*m_DstFuzz_to));
     }
     return ret;
 }
@@ -353,9 +405,11 @@ CRef<CSeq_point> CSeq_loc_Conversion::GetDstPoint(void)
     if ( m_LastStrand != eNa_strand_unknown ) {
         point.SetStrand(m_LastStrand);
     }
-    _ASSERT( !m_PartialFlag );
-    if ( m_SrcFuzz_from ) {
-        point.SetFuzz(const_cast<CInt_fuzz&>(*m_SrcFuzz_from));
+    if ( m_PartialFlag & fPartial_from ) {
+        point.SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+    }
+    else if ( m_DstFuzz_from ) {
+        point.SetFuzz(const_cast<CInt_fuzz&>(*m_DstFuzz_from));
     }
     return ret;
 }
@@ -423,6 +477,13 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
                 dst_pnts = &pnts.SetPoints();
                 if ( src_pack_pnts.IsSetStrand() ) {
                     pnts.SetStrand(ConvertStrand(src_pack_pnts.GetStrand()));
+                }
+                if ( src_pack_pnts.IsSetFuzz() ) {
+                    CConstRef<CInt_fuzz> fuzz(&src_pack_pnts.GetFuzz());
+                    if ( MinusStrand() ) {
+                        fuzz = ReverseFuzz(*fuzz);
+                    }
+                    pnts.SetFuzz(const_cast<CInt_fuzz&>(*fuzz));
                 }
             }
             dst_pnts->push_back(dst_pos);
@@ -792,10 +853,23 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
     ref.SetPartial(m_Partial || ref.IsPartial());
     ref.SetTotalRange(m_TotalRange);
     if ( IsSpecialLoc() ) {
-        // special interval or point
-        ref.SetMappedSeq_id(GetDstId(),
-                            m_LastType == eMappedObjType_Seq_point);
-        ref.SetMappedStrand(m_LastStrand);
+        if ( bool(m_DstFuzz_from) || bool(m_DstFuzz_to) ) {
+            CRef<CSeq_loc> mapped_loc;
+            SetDstLoc(&mapped_loc);
+            ref.SetMappedSeq_loc(mapped_loc);
+        }
+        else {
+            // special interval or point
+            ref.SetMappedSeq_id(GetDstId(),
+                                m_LastType == eMappedObjType_Seq_point);
+            ref.SetMappedStrand(m_LastStrand);
+            if ( m_PartialFlag & fPartial_from ) {
+                ref.SetMappedPartial_from();
+            }
+            if ( m_PartialFlag & fPartial_to ) {
+                ref.SetMappedPartial_to();
+            }
+        }
         m_LastType = eMappedObjType_not_set;
     }
 }
@@ -1409,6 +1483,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2004/10/26 15:46:59  vasilche
+* Fixed processing of partial intervals in feature mapping.
+*
 * Revision 1.40  2004/10/25 19:29:24  grichenk
 * Preserve fuzz from the original location or use it to
 * indicate truncated intervals.

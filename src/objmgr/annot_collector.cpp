@@ -253,6 +253,12 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
             point.SetStrand(GetMappedStrand());
         else
             point.ResetStrand();
+        if ( m_MappedFlags & fMapped_Partial_from ) {
+            point.SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+        }
+        else {
+            point.ResetFuzz();
+        }
     }
     else {
         CSeq_interval& interval = loc->SetInt();
@@ -263,6 +269,18 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc) const
             interval.SetStrand(GetMappedStrand());
         else
             interval.ResetStrand();
+        if ( m_MappedFlags & fMapped_Partial_from ) {
+            interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        }
+        else {
+            interval.ResetFuzz_from();
+        }
+        if ( m_MappedFlags & fMapped_Partial_to ) {
+            interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        }
+        else {
+            interval.ResetFuzz_to();
+        }
     }
 }
 
@@ -293,6 +311,12 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
             point.SetStrand(GetMappedStrand());
         else
             point.ResetStrand();
+        if ( m_MappedFlags & fMapped_Partial_from ) {
+            point.SetFuzz().SetLim(CInt_fuzz::eLim_lt);
+        }
+        else {
+            point.ResetFuzz();
+        }
     }
     else {
         if ( !int_ref || !int_ref->ReferencedOnlyOnce() ) {
@@ -307,6 +331,18 @@ void CAnnotObject_Ref::UpdateMappedSeq_loc(CRef<CSeq_loc>& loc,
             interval.SetStrand(GetMappedStrand());
         else
             interval.ResetStrand();
+        if ( m_MappedFlags & fMapped_Partial_from ) {
+            interval.SetFuzz_from().SetLim(CInt_fuzz::eLim_lt);
+        }
+        else {
+            interval.ResetFuzz_from();
+        }
+        if ( m_MappedFlags & fMapped_Partial_to ) {
+            interval.SetFuzz_to().SetLim(CInt_fuzz::eLim_gt);
+        }
+        else {
+            interval.ResetFuzz_to();
+        }
     }
 }
 
@@ -1762,6 +1798,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2004/10/26 15:46:59  vasilche
+* Fixed processing of partial intervals in feature mapping.
+*
 * Revision 1.33  2004/10/25 16:53:35  vasilche
 * Check if TSE contains Bioseq by matching Seq-id.
 *

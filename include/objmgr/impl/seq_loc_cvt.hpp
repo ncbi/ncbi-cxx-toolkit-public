@@ -58,6 +58,7 @@ class CSeq_id;
 class CSeq_loc;
 class CSeq_interval;
 class CSeq_point;
+class CInt_fuzz;
 
 class CSeq_feat;
 class CSeq_align;
@@ -119,6 +120,8 @@ public:
                          CRef<CSeq_feat>& mapped_feat);
     void ConvertRna(CAnnotObject_Ref& ref,
                     CRef<CSeq_feat>& mapped_feat);
+
+    CConstRef<CInt_fuzz> ReverseFuzz(const CInt_fuzz& fuzz) const;
 
     enum EConvertFlag {
         eCnvDefault,
@@ -214,14 +217,14 @@ private:
 
     // Separate flags for left and right truncations of each interval
     enum EPartialFlag {
-        ePartialLeft  = 1,
-        ePartialRight = 2
+        fPartial_from  = 1 << 0,
+        fPartial_to    = 1 << 1
     };
     typedef int TPartialFlag;
 
     TPartialFlag m_PartialFlag;
-    CConstRef<CInt_fuzz> m_SrcFuzz_from;
-    CConstRef<CInt_fuzz> m_SrcFuzz_to;
+    CConstRef<CInt_fuzz> m_DstFuzz_from;
+    CConstRef<CInt_fuzz> m_DstFuzz_to;
     
     //   Last Point, Interval or other simple location's conversion result:
     enum EMappedObjectType {
@@ -371,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/10/26 15:46:59  vasilche
+* Fixed processing of partial intervals in feature mapping.
+*
 * Revision 1.24  2004/10/25 19:29:24  grichenk
 * Preserve fuzz from the original location or use it to
 * indicate truncated intervals.
