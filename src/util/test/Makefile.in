@@ -5,7 +5,7 @@
 
 LIB_PROJ = pbacktest
 
-APP_PROJ = test_utf8 testrange test_resize_iter test_fstream_pushback
+APP_PROJ = test_utf8 test_rangemap test_resize_iter test_fstream_pushback
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

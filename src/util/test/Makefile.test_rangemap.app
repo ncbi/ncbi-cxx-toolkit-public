@@ -6,8 +6,8 @@
 # Build serialization test application "serialtest"
 #################################
 
-APP = testrangemap
-SRC = testrangemap
+APP = test_rangemap
+SRC = test_rangemap
 LIB = xutil xncbi
 
-CHECK_CMD = testrangemap
+CHECK_CMD = test_rangemap
