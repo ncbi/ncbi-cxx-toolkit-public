@@ -176,6 +176,8 @@ protected:
     virtual bool        HasFailed() const;
     virtual int         RowCount() const;
     virtual void        Release();
+    int                 LastInsertId() const;
+
 
 private:
     CMySQL_Connection* m_Connect;
@@ -246,6 +248,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/29 21:23:35  butanaev
+ * Added function to return last insert id.
+ *
  * Revision 1.5  2003/02/26 17:08:30  kuznets
  * Added NCBI_DBAPIDRIVER_MYSQL_EXPORT declaration to classes for Windows DLL.
  *
