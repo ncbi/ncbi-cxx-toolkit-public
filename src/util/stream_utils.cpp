@@ -26,10 +26,14 @@
  * Author:  Anton Lavrentiev, Denis Vakatov
  *
  * File Description:
- *   Perform stream pushback
+ *   Push an arbitrary block of data back to a C++ input stream.
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/12/09 06:31:52  vakatov
+ * UTIL_StreamPushback() to return VOID rather than STREAMBUF*.
+ * Got rid of a warning;  added comments;  use _ASSERT(), not assert().
+ *
  * Revision 1.1  2001/12/07 22:59:36  lavr
  * Initial revision
  *
@@ -37,13 +41,13 @@
  */
 
 #include <util/stream_pushback.hpp>
-#include <assert.h>
 #include <string.h>
 
+
 #ifdef NCBI_COMPILER_GCC
-#define PUBSYNC sync
+#  define PUBSYNC sync
 #else
-#define PUBSYNC pubsync
+#  define PUBSYNC pubsync
 #endif
 
 
@@ -57,11 +61,11 @@ BEGIN_NCBI_SCOPE
 
 class CPushback_Streambuf : public streambuf
 {
-    friend streambuf* UTIL_StreamPushback(istream& is, CT_CHAR_TYPE* buf,
-                                          streamsize size, void* del_ptr);
+    friend void UTIL_StreamPushback(istream& is, CT_CHAR_TYPE* buf,
+                                    streamsize buf_size, void* del_ptr);
 public:
     CPushback_Streambuf(istream& istream, CT_CHAR_TYPE* buf,
-                        streamsize size, void* del_ptr);
+                        streamsize buf_size, void* del_ptr);
     virtual ~CPushback_Streambuf();
 
 protected:
@@ -79,27 +83,28 @@ protected:
     virtual streambuf*  setbuf(CT_CHAR_TYPE* buf, streamsize buf_size);
 
 private:
-    streambuf*    x_SelfDestroy(void);
+    streambuf* x_SelfDestroy(void);
 
-    bool          m_SelfDestroy;
-
-    istream&      m_Is;
-    streambuf*    m_Sb;
+    bool          m_SelfDestroy;  // if x_SelfDestroy() is already in progress
+    istream&      m_Is;           // i/o stream this streambuf is attached to
+    streambuf*    m_Sb;           // original streambuf
     CT_CHAR_TYPE* m_Buf;
-    streamsize    m_Size;
+    streamsize    m_BufSize;
     void*         m_DelPtr;
 };
 
 
+
 CPushback_Streambuf::CPushback_Streambuf(istream&      is,
                                          CT_CHAR_TYPE* buf,
-                                         streamsize    size,
+                                         streamsize    buf_size,
                                          void*         del_ptr) :
     m_SelfDestroy(false),
-    m_Is(is), m_Sb(is.rdbuf()), m_Buf(buf), m_Size(size), m_DelPtr(del_ptr)
+    m_Is(is), m_Sb(is.rdbuf()),
+    m_Buf(buf), m_BufSize(buf_size), m_DelPtr(del_ptr)
 {
-    setp(0, 0); // unbuffered output at this level of streambuf's hierachy
-    setg(m_Buf, m_Buf, m_Buf + m_Size);
+    setp(0, 0); // unbuffered output at this level of streambuf's hierarchy
+    setg(m_Buf, m_Buf, m_Buf + m_BufSize);
     m_Is.rdbuf(this);
 }
 
@@ -110,7 +115,7 @@ CPushback_Streambuf::~CPushback_Streambuf()
         delete[] (char*) m_DelPtr;
     }
 
-    if (m_SelfDestroy) {
+    if ( m_SelfDestroy ) {
         m_Is.rdbuf(m_Sb);
     } else {
         delete m_Sb;
@@ -120,7 +125,7 @@ CPushback_Streambuf::~CPushback_Streambuf()
 
 CT_INT_TYPE CPushback_Streambuf::overflow(CT_INT_TYPE c)
 {
-    if (CT_EQ_INT_TYPE(c, CT_EOF)) {
+    if ( CT_EQ_INT_TYPE(c, CT_EOF) ) {
         return m_Sb->sputc(CT_TO_CHAR_TYPE(c));
     }
     if (m_Sb->PUBSYNC() == 0) {
@@ -144,8 +149,9 @@ streamsize CPushback_Streambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
     if (gptr() >= egptr()) {
         streambuf* sb = x_SelfDestroy();
         CT_INT_TYPE c = sb->sbumpc();
-        if (CT_EQ_INT_TYPE(c, CT_EOF))
+        if ( CT_EQ_INT_TYPE(c, CT_EOF) ) {
             return 0;
+        }
         *buf = CT_TO_CHAR_TYPE(c);
         return 1;
     }
@@ -190,7 +196,7 @@ streambuf* CPushback_Streambuf::setbuf(CT_CHAR_TYPE* /*buf*/,
 }
 
 
-// NB: Never use class data members after calling this beast
+// NB: Never use class data members after calling this beast!
 streambuf* CPushback_Streambuf::x_SelfDestroy()
 {
     streambuf* sb = m_Sb;
@@ -200,58 +206,53 @@ streambuf* CPushback_Streambuf::x_SelfDestroy()
 }
 
 
+
 /*****************************************************************************
  *  Public interface
  */
 
-streambuf* UTIL_StreamPushback(istream&      is,
-                               CT_CHAR_TYPE* buf,
-                               streamsize    size,
-                               void*         del_ptr)
+extern void UTIL_StreamPushback(istream&      is,
+                                CT_CHAR_TYPE* buf,
+                                streamsize    buf_size,
+                                void*         del_ptr)
 {
-    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*>(is.rdbuf());
+    CPushback_Streambuf* sb = dynamic_cast<CPushback_Streambuf*> (is.rdbuf());
 
-    assert(del_ptr <= buf);
+    _ASSERT(del_ptr <= buf);
     if ( sb ) {
-#if 0
-        {{
-            int i = 0;
-            CPushback_Streambuf* s = sb;
-            do {
-                i++;
-                s = dynamic_cast<CPushback_Streambuf*>(s->m_Sb);
-            } while (s);
-            if (i > 1)
-                cerr << "Current sb depth is " << i << endl;
-        }}
-#endif
-        assert(del_ptr < (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)  ||
-               sb->m_Buf + sb->m_Size <= del_ptr);
-        if (sb->m_Buf <= buf  &&  buf + size == sb->gptr()) {
-            assert(!del_ptr  ||  del_ptr == sb->m_DelPtr);
-            sb->setg(buf, buf, sb->m_Buf + sb->m_Size);
-            return sb;
+        // We may not need to create another streambuf, just recycle the
+        // existing one here...
+        _ASSERT(del_ptr < (sb->m_DelPtr ? sb->m_DelPtr : sb->m_Buf)  ||
+                sb->m_Buf + sb->m_BufSize <= del_ptr);
+
+        // Points to a (adjacent) part of the internal buffer we just read?
+        if (sb->m_Buf <= buf  &&  buf + buf_size == sb->gptr()) {
+            _ASSERT(!del_ptr  ||  del_ptr == sb->m_DelPtr);
+            sb->setg(buf, buf, sb->m_Buf + sb->m_BufSize);
+            return;
         }
-        if ((size_t)(sb->gptr() - sb->m_Buf) >= size  &&
-            memcmp(buf, sb->gptr() - size, size) == 0) {
-            sb->gbump(-int(size));
-            if (del_ptr)
+        // Equal to a (adjacent) part of the internal buffer we just read?
+        if ((streamsize)(sb->gptr() - sb->m_Buf) >= buf_size  &&
+            memcmp(buf, sb->gptr() - buf_size, buf_size) == 0) {
+            sb->gbump(-int(buf_size));
+            if ( del_ptr ) {
                 delete[] (char*) del_ptr;
-            return sb;
+            }
+            return;
         }
     }
 
-    return new CPushback_Streambuf(is, buf, size, del_ptr);
+    (void) new CPushback_Streambuf(is, buf, buf_size, del_ptr);
 }
 
 
-streambuf* UTIL_StreamPushback(istream&      is,
-                               CT_CHAR_TYPE* buf,
-                               streamsize    size)
+extern void UTIL_StreamPushback(istream&      is,
+                                CT_CHAR_TYPE* buf,
+                                streamsize    buf_size)
 {
-    CT_CHAR_TYPE* b = new CT_CHAR_TYPE[size];
-    memcpy(b, buf, size);
-    return UTIL_StreamPushback(is, b, size, b);
+    CT_CHAR_TYPE* buf_copy = new CT_CHAR_TYPE[buf_size];
+    memcpy(buf_copy, buf, buf_size);
+    UTIL_StreamPushback(is, buf_copy, buf_size, buf_copy);
 }
 
 
