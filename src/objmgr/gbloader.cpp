@@ -262,24 +262,36 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
 {
   _VERIFY(tse);
   // reset LRU links
-  if(!tse->next) // already the last one
+  if(tse == m_UseListTail) // already the last one
     return;
-
-  if(tse->prev) tse->prev=tse->next;
-  else          m_UseListHead = tse->next;
-  tse->next->prev=tse->prev;
   
-  tse->prev=m_UseListTail;
-  m_UseListTail=tse;
-  tse->next=0;
-  if(!m_UseListHead) m_UseListHead=m_UseListTail;
+  // Unlink from current place
+  if(tse->prev) tse->prev->next=tse->next;
+  if(tse->next) tse->next->prev=tse->prev;
+  tse->prev = tse->next=0;
+  if(tse == m_UseListHead )
+    {
+      _VERIFY(tse->next);
+      m_UseListHead = tse->next;
+    }
+  if(m_UseListTail)
+    {
+      tse->prev = m_UseListTail;
+      m_UseListTail->next = tse;
+      m_UseListTail = tse;
+    }
+  else
+    {
+      _VERIFY(m_UseListHead==0);
+      m_UseListHead = m_UseListTail = tse; 
+    }
 }
 
 void
 CGBDataLoader::x_GC(void)
 {
   // cout << "X_GC " << m_TseCount << "," << m_TseGC_Threshhold << "," << m_InvokeGC << endl;
-  // dirty read - but that ok for garbage collector 
+  // dirty read - but that ok for garbage collector
   if(m_TseCount<m_TseGC_Threshhold) return;
   if(!m_InvokeGC) return ;
   cout << "X_GC " << m_TseCount << endl;
@@ -290,21 +302,21 @@ CGBDataLoader::x_GC(void)
   CMutexGuard x(m_LookupMutex);
   while(skip+1<m_TseCount - 0.9*m_TseGC_Threshhold)
     {
-      const CSeq_entry *sep=0;
       int i=skip;
       STSEinfo *tse_to_drop=m_UseListHead;
       while(tse_to_drop && i-->0)
         tse_to_drop = tse_to_drop->next;
-      if(tse_to_drop)
+      _VERIFY(tse_to_drop);
+      const CSeq_entry *sep=tse_to_drop->m_upload.m_tse;
+      if(!sep)
+        skip++;
+      else
         {
-          sep=tse_to_drop->m_upload.m_tse;
           char b[100];
           LOG_POST("X_GC::DropTSE(" << tse_to_drop << "::" << tse_to_drop->key->printTSE(b,sizeof(b)) << ")");
           if(!GetDataSource()->DropTSE(*sep))
             skip++;
         }
-      else
-          break;
     }
 //#endif
   m_InvokeGC=false;
@@ -621,6 +633,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/03/21 23:16:32  kimelman
+* GC bugfixes
+*
 * Revision 1.7  2002/03/21 21:39:48  grichenk
 * garbage collector bugfix
 *
