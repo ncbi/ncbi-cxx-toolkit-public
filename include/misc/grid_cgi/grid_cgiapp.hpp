@@ -56,7 +56,13 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+///
 ///  Grid Cgi Application
+///
+///  Base class for CGI applications starting background jobs using 
+///  NetSchedule. Implements pattern for job submission, status check, 
+///  error processing, etc.  All request procesing is done on the back end.
+///  CGI application is responsible for UI rendering.
 ///
 class CGridCgiApplication : public CCgiApplication
 {
@@ -88,38 +94,38 @@ protected:
     ///
     virtual bool CollectParams(void) = 0;
 
-    /// This method is called when a job is ready to be send to a worker node.
-    /// Override this method to prepare an input data for the worker node.
+    /// This method is called when a job is ready to be send to a the queue.
+    /// Override this method to prepare input data for the worker node.
     /// 
     virtual void OnJobSubmit(CNcbiOstream& os,CHTMLPage& page) = 0;
 
-    /// This method is call when a worker node finished its job and 
-    /// its result is ready to be retrieved.
+    /// This method is call when a worker node finishes its job and 
+    /// result is ready to be retrieved.
     /// Override this method to get a result from a worker node 
     /// and render a result HTML page
     ///
     virtual void OnJobDone(CNcbiIstream& is, CHTMLPage& page) = 0;
 
-    /// This method is call when a worker node repored its failure.
+    /// This method is called when worker node repored a failure.
     /// Override this method to get a error message and render 
-    /// a error HTML page
+    /// a error HTML page.
     ///
     virtual void OnJobFailed(const string& msg, CHTMLPage& page) {}
 
-    /// This method is call if a job was canceled during its execution
+    /// This method is called if job was canceled during its execution.
     /// Override this message to show a job cancelation message.
     ///
     virtual void OnJobCanceled(CHTMLPage& page) {}
 
-    /// When a job is running a HTML page periodically (using java script)
-    /// calls this CGI to check a job status. If the job is not ready yet
+    /// When a job is running, the HTML page periodically (using java script)
+    /// calls this CGI to check job status. If the job is not ready yet
     /// this method is called.
-    /// Override this method to render a information HTML page or to request
-    /// the job cancelation.
+    /// Override this method to render information HTML page with option
+    /// to cancel the job.
     ///
     virtual void OnStatusCheck(CHTMLPage& page) {}
 
-    /// Return a name page name. It is used when an inctance of CHTMLPage
+    /// Return page name. It is used when an inctance of CHTMLPage
     /// class is created.
     ///
     virtual string GetPageTitle(void) const = 0;
@@ -138,9 +144,9 @@ protected:
     ///
     virtual string GetRefreshJScript(void) const;
 
-    /// When a job is still runnig this method is called to check if
-    /// a job cancelation has been requested. If so the job will be 
-    /// canceled.
+    /// When job is still runnig this method is called to check if
+    /// cancel has been requested via the user interface(HTML). 
+    /// If so the job will be canceled.
     ///
     virtual bool JobStopRequested(void) const { return false; }
 
@@ -164,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/03/31 19:53:59  kuznets
+ * Documentation changes
+ *
  * Revision 1.2  2005/03/31 14:54:55  didenko
  * + comments
  *
