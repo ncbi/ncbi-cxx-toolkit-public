@@ -153,6 +153,24 @@ string& CFlatItemFormatter::Pad(const string& s, string& out,
 }
 
 
+void s_TrimSpaces(string& str, int indent)
+{
+    if (str.empty()) {
+        return;
+    }
+
+    int end = str.length() - 1;
+    while (end >= indent  &&  isspace(str[end])) {
+        end--;
+    }
+    if (end < indent) {
+        str.erase(indent);
+    } else {
+        str.erase(end + 1);
+    }
+}
+
+
 list<string>& CFlatItemFormatter::Wrap
 (list<string>& l,
  SIZE_TYPE width,
@@ -163,8 +181,11 @@ list<string>& CFlatItemFormatter::Wrap
     NStr::TWrapFlags flags = /* ??? NStr::fWrap_HTMLPre :*/ 0;
     string tag2;
     Pad(tag, tag2, where);
-    NStr::Wrap(body, width, l, flags,
-               where == eFeat ? m_FeatIndent : m_Indent, tag2);
+    const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
+    NStr::Wrap(body, width, l, flags, indent, tag2);
+    NON_CONST_ITERATE (list<string>, it, l) {
+        s_TrimSpaces(*it, indent.length());
+    }
     return l;
 }
 
@@ -178,8 +199,11 @@ list<string>& CFlatItemFormatter::Wrap
     NStr::TWrapFlags flags = /* ??? NStr::fWrap_HTMLPre :*/ 0;
     string tag2;
     Pad(tag, tag2, where);
-    NStr::Wrap(body, GetWidth(), l, flags,
-               where == eFeat ? m_FeatIndent : m_Indent, tag2);
+    const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
+    NStr::Wrap(body, GetWidth(), l, flags, indent, tag2);
+    NON_CONST_ITERATE (list<string>, it, l) {
+        s_TrimSpaces(*it, indent.length());
+    }
     return l;
 }
 
@@ -239,6 +263,7 @@ void CFlatItemFormatter::x_FormatRefJournal
         
         switch ( ref.GetCategory() ) {
         case CReferenceItem::eSubmission:
+        {{
             journal = "Submitted ";
             if ( ref.GetDate() != 0 ) {
                 journal += '(';
@@ -247,24 +272,39 @@ void CFlatItemFormatter::x_FormatRefJournal
             }
             journal += ref.GetJournal();
             break;
+        }}
         case CReferenceItem::eUnpublished:
-            journal = ref.GetJournal();
+        {{
+            string year;
+            if (ref.GetContext()->Config().DropBadCitGens()) {
+                if ( ref.GetDate() != 0 ) {
+                    ref.GetDate()->GetDate(&year, " (%Y)");
+                }
+            }
+            journal = ref.GetJournal() + year;
             break;
+        }}
         case CReferenceItem::ePublished:
+        {{
             journal = ref.GetJournal();
-            if ( !ref.GetVolume().empty() ) {
-                journal += " " + ref.GetVolume();
+            if (!ref.GetVolume().empty()) {
+                journal += ' ';
+                journal += ref.GetVolume();
             }
-            if ( !ref.GetIssue().empty() ) {
-                journal += " (" + ref.GetIssue() + ')';
+            if (!ref.GetIssue().empty()) {
+                journal += " (";
+                journal += ref.GetIssue();
+                journal += ')';
             }
-            if ( !ref.GetPages().empty() ) {
-                journal += ", " + ref.GetPages();
+            if (!ref.GetPages().empty()) {
+                journal += ", ";
+                journal += ref.GetPages();
             }
-            if ( ref.GetDate() != 0 ) {
+            if (ref.GetDate() != NULL) {
                 ref.GetDate()->GetDate(&journal, " (%Y)");
             }
             break;
+        }}
         default:
             break;
         }
@@ -301,13 +341,16 @@ void CFlatItemFormatter::x_FormatRefJournal
             jour << "(in) ";
             if ( book.CanGetAuthors() ) {
                 const CCit_book::TAuthors& auth = book.GetAuthors();
-                jour << CReferenceItem::GetAuthString(&auth);
-                size_t num_auth = s_NumAuthors(auth);
-                jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << endl;
+                string authstr = CReferenceItem::GetAuthString(&auth);
+                if (!authstr.empty()) {
+                    jour << authstr;
+                    size_t num_auth = s_NumAuthors(auth);
+                    jour << ((num_auth == 1) ? " (Ed.);" : " (Eds.);") << endl;
+                }
             }
             jour << NStr::ToUpper(title);
             if ( !ref.GetVolume().empty()  &&  ref.GetVolume() != "0" ) {
-                jour << " " << ref.GetVolume();
+                jour << ", Vol. " << ref.GetVolume();
             }
 
             if ( !ref.GetIssue().empty() ) {
@@ -371,6 +414,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/08/30 13:39:52  shomrat
+* fixed reference formatting
+*
 * Revision 1.13  2004/08/19 16:35:49  shomrat
 * strip spaces from journal
 *
