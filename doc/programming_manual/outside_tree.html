@@ -127,8 +127,13 @@ as this example does not use any of the C++ classes or resources defined in the 
 Toolkit. But having accomplished this, you are now prepared to write an actual application,
 such as described in <a href="applic.html"> 
 Writing a simple application project</a>
-
 <p>
+
+Most real applications will at a minimum, require that you <i>#include</i>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbistd.hpp">
+<i>ncbistd.hpp>/i></a> in your header file. In addition to defining some basic NCBI C++ Toolkit objects
+and templates, this header file in turn includes other header files that define the C Toolkit data types,
+NCBI namespaces, debugging macros, and exception classes.
 
 </body>
 <a href="../index.html"> <i> up </i> </a>
