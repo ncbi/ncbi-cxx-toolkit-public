@@ -327,7 +327,7 @@ class NCBI_XOBJUTIL_EXPORT CCdregion_translate
 public:
     // translation coding region into ncbieaa protein sequence
     static void TranslateCdregion (string& prot,
-                                   CBioseq_Handle& bsh,
+                                   const CBioseq_Handle& bsh,
                                    const CSeq_loc& loc,
                                    const CCdregion& cdr,
                                    bool include_stop = true,
@@ -335,7 +335,7 @@ public:
 
     // return iupac sequence letters under feature location
     static void ReadSequenceByLocation (string& seq,
-                                        CBioseq_Handle& bsh,
+                                        const CBioseq_Handle& bsh,
                                         const CSeq_loc& loc);
 
 };
@@ -360,6 +360,11 @@ struct NCBI_XOBJUTIL_EXPORT SRelLoc
 
     typedef CSeq_interval         TRange;
     typedef vector<CRef<TRange> > TRanges;
+
+    // for manual work
+    SRelLoc(const CSeq_loc& parent, const TRanges& ranges)
+        : m_ParentLoc(&parent), m_Ranges(ranges) { }
+
     CConstRef<CSeq_loc> m_ParentLoc;
     TRanges             m_Ranges;
 };
@@ -498,6 +503,11 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.31  2003/10/08 21:07:32  ucko
+* CCdregion_translate: take const Bioseq_Handles, since there's no need
+* to modify them.
+* SRelLoc: add a raw constructor.
+*
 * Revision 1.30  2003/09/22 18:38:14  grichenk
 * Fixed circular seq-locs processing by TestForOverlap()
 *
