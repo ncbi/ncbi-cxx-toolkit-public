@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/11/27 15:54:05  vakatov
+* Cosmetics in the ParseEntries() diagnostics
+*
 * Revision 1.10  1998/11/26 00:29:53  vakatov
 * Finished NCBI CGI API;  successfully tested on MSVC++ and SunPro C++ 5.0
 *
@@ -374,7 +377,7 @@ CCgiRequest::CCgiRequest(CNcbiIstream& istr)
         SIZE_TYPE err_pos = ParseEntries(str, m_Entries);
         if (err_pos != 0)
             throw CParseException("Init(STDIN) CCgiRequest::ParseEntries(\"" +
-                                  str + "\"", err_pos);
+                                  str + "\")", err_pos);
     }
 }
 
@@ -502,7 +505,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
 
     // At least one '=' must present in the parsed string
     if (str.find_first_of('=') == NPOS)
-        return 1;
+        return len;
 
     // No spaces must present in the parsed string
     SIZE_TYPE err_pos = str.find_first_of(" \t\r\n");
