@@ -1,4 +1,4 @@
-/*  $Id:
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -32,6 +32,7 @@
  */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
+#include <objects/objmgr/object_manager.hpp>
 
 #include "validatorp.hpp"
 #include "utilities.hpp"
@@ -114,22 +115,23 @@ bool less_seq_id(const CConstRef<CSeq_id>& id1, const CConstRef<CSeq_id>& id2)
 
 // Constructor
 CValidError_imp::CValidError_imp
-(CObjectManager&     objmgr,
- CValidError*        errs,
- unsigned int        options)
-    : m_ObjMgr(&objmgr),
+(CObjectManager& objmgr, 
+ CValidError*       errs,
+ Uint4              options) :
+      m_ObjMgr(&objmgr),
       m_Scope(0),
       m_TSE(0),
       m_ErrRepository(errs),
-      m_NonASCII((options & CValidError::eVal_non_ascii) != 0),
-      m_SuppressContext((options & CValidError::eVal_no_context) != 0),
-      m_ValidateAlignments((options & CValidError::eVal_val_align) != 0),
-      m_ValidateExons((options & CValidError::eVal_val_exons) != 0),
-      m_SpliceErr((options & CValidError::eVal_splice_err) != 0),
-      m_OvlPepErr((options & CValidError::eVal_ovl_pep_err) != 0),
-      m_RequireTaxonID((options & CValidError::eVal_need_taxid) != 0),
-      m_RequireISOJTA((options & CValidError::eVal_need_isojta) != 0),
-      m_PerfBottlenecks((options & CValidError::eVal_perf_bottlenecks) != 0),
+      m_NonASCII((options & CValidator::eVal_non_ascii) != 0),
+      m_SuppressContext((options & CValidator::eVal_no_context) != 0),
+      m_ValidateAlignments((options & CValidator::eVal_val_align) != 0),
+      m_ValidateExons((options & CValidator::eVal_val_exons) != 0),
+      m_SpliceErr((options & CValidator::eVal_splice_err) != 0),
+      m_OvlPepErr((options & CValidator::eVal_ovl_pep_err) != 0),
+      m_RequireTaxonID((options & CValidator::eVal_need_taxid) != 0),
+      m_RequireISOJTA((options & CValidator::eVal_need_isojta) != 0),
+      m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
+      m_IsStandaloneAnnot(false),
       m_NoPubs(false),
       m_NoBioSource(false),
       m_IsGPS(false),
@@ -349,7 +351,10 @@ void CValidError_imp::PostErr
 }
 
 
-void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
+void CValidError_imp::Validate
+(const CSeq_entry& se,
+ const CCit_sub* cs,
+ CScope* scope)
 {
     // Check that CSeq_entry has data
     if (se.Which() == CSeq_entry::e_not_set) {
@@ -364,7 +369,7 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
         return;
     }
     
-    Setup(se);
+    Setup(se, scope);
  
     // If m_NonASCII is true, then this flag was set by the caller
     // of validate to indicate that a non ascii character had been
@@ -431,7 +436,7 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
 }
 
 
-void CValidError_imp::Validate(const CSeq_submit& ss)
+void CValidError_imp::Validate(const CSeq_submit& ss, CScope* scope)
 {
     // Check that ss is type e_Entrys
     if ( ss.GetData().Which() != CSeq_submit::C_Data::e_Entrys ) {
@@ -443,7 +448,34 @@ void CValidError_imp::Validate(const CSeq_submit& ss)
 
     // Just loop thru CSeq_entrys
     ITERATE( list< CRef< CSeq_entry > >, se, ss.GetData().GetEntrys() ) {
-        Validate(**se, cs);
+        Validate(**se, cs, scope);
+    }
+}
+
+
+// Validate standalone Seq-annot objects
+void CValidError_imp::Validate(const CSeq_annot& sa, CScope* scope)
+{
+    Setup(sa, scope);
+
+    // Iterate thru components of record and validate each
+
+    CValidError_annot annot_validator(*this);
+    annot_validator.ValidateSeqAnnot(sa);
+
+    CValidError_feat feat_validator(*this);
+    for (CTypeConstIterator <CSeq_feat> fi (sa); fi; ++fi) {
+        feat_validator.ValidateSeqFeat(*fi);
+    }
+
+    CValidError_align align_validator(*this);
+    for (CTypeConstIterator <CSeq_align> ai (sa); ai; ++ai) {
+        align_validator.ValidateSeqAlign(*ai);
+    }
+
+    CValidError_graph graph_validator(*this);
+    for (CTypeConstIterator <CSeq_graph> gi (sa); gi; ++gi) {
+        graph_validator.ValidateSeqGraph(*gi);
     }
 }
 
@@ -1434,13 +1466,16 @@ bool CValidError_imp::IsMixedStrands(const CSeq_loc& loc)
 }
 
 
-void CValidError_imp::Setup(const CSeq_entry& se) 
+void CValidError_imp::Setup(const CSeq_entry& se, CScope* scope) 
 {
     // "Save" the Seq-entry
     m_TSE = &se;
 
-    // Set scope to CSeq_entry
-    SetScope(se);
+    if ( scope ) {
+        m_Scope.Reset(scope);
+    } else {
+        SetScope(se);
+    }
 
     // If no Pubs/BioSource in CSeq_entry, post only one error
     CTypeConstIterator<CPub> pub(ConstBegin(se));
@@ -1567,6 +1602,36 @@ void CValidError_imp::SetScope(const CSeq_entry& se)
 {
     m_Scope.Reset(new CScope(*m_ObjMgr));
     m_Scope->AddTopLevelSeqEntry(*const_cast<CSeq_entry*>(&se));
+    m_Scope->AddDefaults();
+}
+
+
+void CValidError_imp::Setup(const CSeq_annot& sa, CScope* scope) 
+{
+    m_IsStandaloneAnnot = true;
+    m_TSE.Reset(new CSeq_entry); // set a dummy Seq-entry
+
+    if ( scope ) {
+        m_Scope.Reset(scope);
+    } else {
+        SetScope(sa);
+    }
+    
+    // Map features to their enclosing Seq_annot
+    if ( sa.GetData().IsFtable() ) {
+        ITERATE( CSeq_annot::C_Data::TFtable, fi, sa.GetData().GetFtable() ) {
+            m_FeatAnnotMap[&(**fi)] = &sa;
+        }
+    }
+}
+
+
+void CValidError_imp::SetScope(const CSeq_annot& sa)
+{
+    CRef<CSeq_entry> se(new CSeq_entry);  // dummy Seq-entry
+
+    m_Scope.Reset(new CScope(*m_ObjMgr));
+    m_Scope->AttachAnnot(*se, const_cast<CSeq_annot&>(sa));
     m_Scope->AddDefaults();
 }
 
@@ -1791,6 +1856,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2003/03/20 18:55:55  shomrat
+* Added validation of standalone Seq-annot objects
+*
 * Revision 1.22  2003/03/18 21:48:37  grichenk
 * Removed obsolete class CAnnot_CI
 *

@@ -278,12 +278,15 @@ public:
     // Interface to be used by the CValidError class
 
     // Constructor & Destructor
-    CValidError_imp(CObjectManager&, CValidError*, unsigned int options = 0);
+    CValidError_imp(CObjectManager& objmgr, CValidError* errors, 
+        Uint4 options = 0);
     virtual ~CValidError_imp(void);
 
     // Validation methods
-    void Validate(const CSeq_entry& se, const CCit_sub* cs = 0);
-    void Validate(const CSeq_submit& ss);
+    void Validate(const CSeq_entry& se, const CCit_sub* cs = 0,
+        CScope* scope = 0);
+    void Validate(const CSeq_submit& ss, CScope* scope = 0);
+    void Validate(const CSeq_annot& sa, CScope* scope = 0);
 
 public:
     // interface to be used by the various validation classes
@@ -319,7 +322,6 @@ public:
     void ValidateDbxref(TDbtags xref_list, const CSerialObject& obj);
 
     // getters
-    inline CObjectManager* GetObjMgr(void)  { return m_ObjMgr; }
     inline CScope* GetScope(void) { return m_Scope; }
 
     // flags derived from options parameter
@@ -337,6 +339,7 @@ public:
     // }
 
     // flags calculated by examining data in record
+    inline bool IsStandaloneAnnot(void) const { return m_IsStandaloneAnnot; }
     inline bool IsNoPubs(void) const { return m_NoPubs; }
     inline bool IsNoBioSource(void) const { return m_NoBioSource; }
     inline bool IsGPS(void) const { return m_IsGPS; }
@@ -380,8 +383,10 @@ private:
     CValidError_imp(const CValidError_imp&);
     CValidError_imp& operator= (const CValidError_imp&);
 
-    void Setup(const CSeq_entry& se);
+    void Setup(const CSeq_entry& se, CScope* scope);
+    void Setup(const CSeq_annot& sa, CScope* scope);
     void SetScope(const CSeq_entry& se);
+    void SetScope(const CSeq_annot& sa);
 
     void InitializeSourceQualTags();
     void ValidateSourceQualTags(const string& str, const CSerialObject& obj);
@@ -396,8 +401,7 @@ private:
     bool HasTitle(const CTitle& title);
     bool HasIsoJTA(const CTitle& title);
 
-
-    CObjectManager* const   m_ObjMgr;
+    CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
     CConstRef<CSeq_entry>   m_TSE;
 
@@ -419,6 +423,7 @@ private:
     // }
 
     // flags calculated by examining data in record
+    bool m_IsStandaloneAnnot;
     bool m_NoPubs;                  // Suppress no pub error if true
     bool m_NoBioSource;             // Suppress no organism error if true
     bool m_IsGPS;
@@ -740,6 +745,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2003/03/20 18:55:28  shomrat
+* Added validation of standalone Seq-annot objects
+*
 * Revision 1.15  2003/02/24 20:16:41  shomrat
 * Holds refernce to the CValidError object, and not the internal TErrs
 *
