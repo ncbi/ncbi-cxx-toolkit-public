@@ -38,7 +38,7 @@
 
 #include <test/test_assert.h>  /* This header must go last */
 
-#define _STR(a)
+#define _STR(a) #a
 #define  STR(a) _STR(a)
 
 
@@ -206,6 +206,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/04/11 17:59:22  lavr
+ * Macro _STR(x) [mistakenly left empty] defined properly
+ *
  * Revision 1.9  2003/03/25 22:14:36  lavr
  * Take advantage of CStreamUtils::Readsome() instead of custom s_Read()
  *
