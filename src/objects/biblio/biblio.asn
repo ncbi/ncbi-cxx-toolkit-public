@@ -1,4 +1,4 @@
---$Revision: 2.1 $
+--$Revision: 3.0 $
 --****************************************************************
 --
 --  NCBI Bibliographic data elements
@@ -7,6 +7,7 @@
 --  Taken from the American National Standard for
 --      Bibliographic References
 --      ANSI Z39.29-1977
+--  Version 3.0 - June 1994
 --
 --****************************************************************
 
@@ -14,7 +15,7 @@ NCBI-Biblio DEFINITIONS ::=
 BEGIN
 
 EXPORTS Cit-art, Cit-jour, Cit-book, Cit-pat, Cit-let, Id-pat, Cit-gen,
-		Cit-proc, Cit-sub, Title;
+        Cit-proc, Cit-sub, Title;
 
 IMPORTS Person-id, Date FROM NCBI-General;
 
@@ -44,20 +45,30 @@ Cit-proc ::= SEQUENCE {             -- Meeting proceedings
     
 Cit-pat ::= SEQUENCE {                  -- patent citation
     title VisibleString ,
-    authors Auth-list,                  -- authors
+    authors Auth-list,                  -- author/inventor
     country VisibleString ,             -- Patent Document Country
     doc-type VisibleString ,            -- Patent Document Type
     number VisibleString ,              -- Patent Document Number
-    date-issue Date ,                   -- Patent-Issue Date
-    class VisibleString OPTIONAL ,      -- Patent Doc Class Code 
+    date-issue Date ,                   -- Patent Issue/Pub Date
+    class SEQUENCE OF VisibleString OPTIONAL ,      -- Patent Doc Class Code 
     app-number VisibleString OPTIONAL , -- Patent Doc Appl Number
-    app-date Date OPTIONAL }            -- Patent Appl File Date
+    app-date Date OPTIONAL ,            -- Patent Appl File Date
+    applicants Auth-list OPTIONAL ,     -- Applicants
+    assignees Auth-list OPTIONAL ,      -- Assignees
+    priority SEQUENCE OF Patent-priority OPTIONAL , -- Priorities
+    abstract VisibleString OPTIONAL }   -- abstract of patent
+
+Patent-priority ::= SEQUENCE {
+    country VisibleString ,             -- Patent country code
+    number VisibleString ,              -- number assigned in that country
+    date Date }                         -- date of application
 
 Id-pat ::= SEQUENCE {                   -- just to identify a patent
     country VisibleString ,             -- Patent Document Country
     id CHOICE {
         number VisibleString ,          -- Patent Document Number
-        app-number VisibleString } }    -- Patent Doc Appl Number
+        app-number VisibleString } ,    -- Patent Doc Appl Number
+    doc-type VisibleString OPTIONAL }   -- Patent Doc Type
 
 Cit-let ::= SEQUENCE {                  -- letter, thesis, or manuscript
     cit Cit-book ,                      -- same fields as a book
@@ -71,13 +82,15 @@ Cit-let ::= SEQUENCE {                  -- letter, thesis, or manuscript
                                 -- for the form of a sequence submission
 Cit-sub ::= SEQUENCE {               -- citation for a direct submission
     authors Auth-list ,              -- not necessarily authors of the paper
-    imp Imprint ,
+    imp Imprint OPTIONAL ,			 -- this only used to get date.. will go
     medium ENUMERATED {              -- medium of submission
         paper   (1) ,
         tape    (2) ,
         floppy  (3) ,
         email   (4) ,
-        other   (255) } OPTIONAL }
+        other   (255) } OPTIONAL ,
+    date Date OPTIONAL ,              -- replaces imp, will become required
+    descr VisibleString OPTIONAL }    -- description of changes for public view
     
 Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
     cit VisibleString OPTIONAL ,     -- anything, not parsable
@@ -89,7 +102,7 @@ Cit-gen ::= SEQUENCE {      -- NOT from ANSI, this is a catchall
     pages VisibleString OPTIONAL ,
     date Date OPTIONAL ,
     serial-number INTEGER OPTIONAL ,   -- for GenBank style references
-	title VisibleString OPTIONAL }     -- eg. cit="unpublished",title="title"
+    title VisibleString OPTIONAL }     -- eg. cit="unpublished",title="title"
     
     
     -- Authorship Group
@@ -111,7 +124,7 @@ Author ::= SEQUENCE {
         patent-assignee (3),
         translator (4) } OPTIONAL ,
     affil Affil OPTIONAL ,
-	is-corr BOOLEAN OPTIONAL }          -- TRUE if corressponding author
+    is-corr BOOLEAN OPTIONAL }          -- TRUE if corressponding author
 
 Affil ::= CHOICE {
     str VisibleString ,                 -- unparsed string
@@ -121,7 +134,10 @@ Affil ::= CHOICE {
     city VisibleString OPTIONAL ,       -- Author Affiliation, City
     sub VisibleString OPTIONAL ,        -- Author Affiliation, County Sub
     country VisibleString OPTIONAL ,    -- Author Affiliation, Country
-	street VisibleString OPTIONAL }}    -- street address, not ANSI
+    street VisibleString OPTIONAL ,    -- street address, not ANSI
+    email VisibleString OPTIONAL ,
+    fax VisibleString OPTIONAL ,
+    phone VisibleString OPTIONAL }}
 
     -- Title Group
     -- Valid for = A = Analytic (Cit-art)
@@ -148,12 +164,22 @@ Imprint ::= SEQUENCE {                  -- Imprint group
     section VisibleString OPTIONAL ,
     pub Affil OPTIONAL,                     -- publisher, required for book
     cprt Date OPTIONAL,                     -- copyright date, "    "   "
-    part-sup VisibleString OPTIONAL ,       -- used in MEDLINE
+    part-sup VisibleString OPTIONAL ,       -- part/sup of volume
     language VisibleString DEFAULT "ENG" ,  -- put here for simplicity
-	prepub ENUMERATED {                     -- for prepublication citaions
-		submitted (1) ,                     -- submitted, not accepted
-		in-press (2) ,						-- accepted, not published
-		other (255)  } OPTIONAL }
+    prepub ENUMERATED {                     -- for prepublication citaions
+        submitted (1) ,                     -- submitted, not accepted
+        in-press (2) ,                      -- accepted, not published
+        other (255)  } OPTIONAL ,
+    part-supi VisibleString OPTIONAL ,      -- part/sup on issue
+    retract CitRetract OPTIONAL }           -- retraction info
+
+CitRetract ::= SEQUENCE {
+    type ENUMERATED {                    -- retraction of an entry
+        retracted (1) ,               -- this citation retracted
+        notice (2) ,                  -- this citation is a retraction notice
+        in-error (3) ,                -- an erratum was published about this
+        erratum (4) } ,               -- this is a published erratum
+    exp VisibleString OPTIONAL }      -- citation and/or explanation
 
 Meeting ::= SEQUENCE {
     number VisibleString ,

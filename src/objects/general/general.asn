@@ -1,8 +1,9 @@
---$Revision: 2.0 $
+--$Revision: 3.0 $
 --**********************************************************************
 --
 --  NCBI General Data elements
 --  by James Ostell, 1990
+--  Version 3.0 - June 1994
 --
 --**********************************************************************
 
@@ -103,7 +104,9 @@ Int-fuzz ::= CHOICE {
         lt (2) ,                     -- less than
         tr (3) ,                     -- space to right of position
         tl (4) ,                     -- space to left of position
-        other (255) } }              -- something else
+        circle (5) ,                 -- artificial break at origin of circle
+        other (255) } ,              -- something else
+    alt SET OF INTEGER }             -- set of alternatives for the integer
 
 
 --**** User-object **********************************************

@@ -1,8 +1,9 @@
---$Revision: 2.0 $
+--$Revision: 3.0 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
 --  by James Ostell, 1990
+--  Version 3.0 - June 1994
 --
 --**********************************************************************
 
@@ -14,6 +15,7 @@ EXPORTS Seq-feat, Feat-id;
 IMPORTS Gene-ref FROM NCBI-Gene
         Prot-ref FROM NCBI-Protein
         Org-ref FROM NCBI-Organism
+        BioSource FROM NCBI-BioSource
         RNA-ref FROM NCBI-RNA
         Seq-loc, Giimport-id FROM NCBI-Seqloc
         Pubdesc, Numbering, Heterogen FROM NCBI-Sequence
@@ -49,7 +51,7 @@ Seq-feat ::= SEQUENCE {
     exp-ev ENUMERATED {           -- evidence for existence of feature
         experimental (1) ,        -- any reasonable experimental check
         not-experimental (2) } OPTIONAL , -- similarity, pattern, etc
-	xref SET OF SeqFeatXref OPTIONAL }   -- cite other relevant features
+    xref SET OF SeqFeatXref OPTIONAL }   -- cite other relevant features
 
 SeqFeatData ::= CHOICE {
     gene Gene-ref ,
@@ -68,45 +70,49 @@ SeqFeatData ::= CHOICE {
         xlink (3) ,
         thioether (4) ,
         other (255) } ,
-	site ENUMERATED {
-		active (1) ,
-		binding (2) ,
-		cleavage (3) ,
-		inhibit (4) ,
-		modified (5),
-		glycosylation (6) ,
-		myristoylation (7) ,
-		mutagenized (8) ,
-		metal-binding (9) ,
-		phosphorylation (10) ,
-		acetylation (11) ,
-		amidation (12) ,
-		methylation (13) ,
-		hydroxylation (14) ,
-		sulfatation (15) ,
-		oxidative-deamination (16) ,
-		pyrrolidone-carboxylic-acid (17) ,
-		gamma-carboxyglutamic-acid (18) ,
-		blocked (19) ,
-		lipid-binding (20) ,
-		np-binding (21) ,
-		dna-binding (22) ,
-		other (255) } ,
+    site ENUMERATED {
+        active (1) ,
+        binding (2) ,
+        cleavage (3) ,
+        inhibit (4) ,
+        modified (5),
+        glycosylation (6) ,
+        myristoylation (7) ,
+        mutagenized (8) ,
+        metal-binding (9) ,
+        phosphorylation (10) ,
+        acetylation (11) ,
+        amidation (12) ,
+        methylation (13) ,
+        hydroxylation (14) ,
+        sulfatation (15) ,
+        oxidative-deamination (16) ,
+        pyrrolidone-carboxylic-acid (17) ,
+        gamma-carboxyglutamic-acid (18) ,
+        blocked (19) ,
+        lipid-binding (20) ,
+        np-binding (21) ,
+        dna-binding (22) ,
+        signal-peptide (23) ,
+        transit-peptide (24) ,
+        transmembrane-region (25) ,
+        other (255) } ,
     rsite Rsite-ref ,       -- restriction site  (for maps really)
     user User-object ,      -- user defined structure
     txinit Txinit ,         -- transcription initiation
-	num Numbering ,         -- a numbering system
-	psec-str ENUMERATED {   -- protein secondary structure
-		helix (1) ,         -- any helix
-		sheet (2) ,         -- beta sheet
-		turn  (3) } ,       -- beta or gamma turn
-	non-std-residue VisibleString ,  -- non-standard residue here in seq
-	het Heterogen }         -- cofactor, prosthetic grp, etc, bound to seq
+    num Numbering ,         -- a numbering system
+    psec-str ENUMERATED {   -- protein secondary structure
+        helix (1) ,         -- any helix
+        sheet (2) ,         -- beta sheet
+        turn  (3) } ,       -- beta or gamma turn
+    non-std-residue VisibleString ,  -- non-standard residue here in seq
+    het Heterogen ,         -- cofactor, prosthetic grp, etc, bound to seq
+    biosrc BioSource }
 
-SeqFeatXref ::= SEQUENCE {
-    id Feat-id OPTIONAL ,		 -- the feature copied
-    data SeqFeatData }           -- the specific data
-	
+SeqFeatXref ::= SEQUENCE {		 -- both optional because can have one or both
+    id Feat-id OPTIONAL ,        -- the feature copied
+    data SeqFeatData OPTIONAL }  -- the specific data
+    
 --*** CdRegion ***********************************************
 --*
 --*  Instructions to translate from a nucleic acid to a peptide
@@ -117,10 +123,10 @@ SeqFeatXref ::= SEQUENCE {
 Cdregion ::= SEQUENCE {
     orf BOOLEAN OPTIONAL ,             -- just an ORF ?
     frame ENUMERATED {
-        not-set (0) ,                  -- not set, default to one
+        not-set (0) ,                  -- not set, code uses one
         one (1) ,
         two (2) ,
-        three (3) } DEFAULT one ,      -- reading frame
+        three (3) } DEFAULT not-set ,      -- reading frame
     conflict BOOLEAN OPTIONAL ,        -- conflict
     gaps INTEGER OPTIONAL ,            -- number of gaps on conflict/except
     mismatch INTEGER OPTIONAL ,        -- number of mismatches on above
@@ -144,17 +150,17 @@ Genetic-code ::= SET OF CHOICE {
     id INTEGER ,                       -- id in dbase
     ncbieaa VisibleString ,            -- indexed to IUPAC extended
     ncbi8aa OCTET STRING ,             -- indexed to NCBI8aa
-	ncbistdaa OCTET STRING ,           -- indexed to NCBIstdaa
+    ncbistdaa OCTET STRING ,           -- indexed to NCBIstdaa
     sncbieaa VisibleString ,            -- start, indexed to IUPAC extended
     sncbi8aa OCTET STRING ,             -- start, indexed to NCBI8aa
-	sncbistdaa OCTET STRING }           -- start, indexed to NCBIstdaa
+    sncbistdaa OCTET STRING }           -- start, indexed to NCBIstdaa
 
 Code-break ::= SEQUENCE {              -- specific codon exceptions
     loc Seq-loc ,                      -- location of exception
     aa CHOICE {                        -- the amino acid
         ncbieaa INTEGER ,              -- ASCII value of NCBIeaa code
         ncbi8aa INTEGER ,              -- NCBI8aa code
-		ncbistdaa INTEGER } }           -- NCBIstdaa code
+        ncbistdaa INTEGER } }           -- NCBIstdaa code
 
 Genetic-code-table ::= SET OF Genetic-code     -- table of genetic codes
 
@@ -233,7 +239,7 @@ Trna-ext ::= SEQUENCE {                -- tRNA feature extensions
         iupacaa INTEGER ,
         ncbieaa INTEGER ,
         ncbi8aa INTEGER ,
-		ncbistdaa INTEGER } OPTIONAL ,
+        ncbistdaa INTEGER } OPTIONAL ,
     codon SET OF INTEGER OPTIONAL }     -- codon(s) as in Genetic-code
                                         -- NOT anti-codons
 END
@@ -265,15 +271,16 @@ Gene-ref ::= SEQUENCE {
     maploc VisibleString OPTIONAL ,    -- descriptive map location
     pseudo BOOLEAN DEFAULT FALSE ,          -- pseudogene
     db SET OF Dbtag OPTIONAL ,      -- ids in other dbases
-	syn SET OF VisibleString OPTIONAL }      -- synonyms for locus
+    syn SET OF VisibleString OPTIONAL }      -- synonyms for locus
 
 END
+
 
 --**********************************************************************
 --
 --  NCBI Organism
---  by James Ostell, 1990
---  version 0.8
+--  by James Ostell, 1994
+--  version 3.0
 --
 --**********************************************************************
 
@@ -287,16 +294,151 @@ IMPORTS Dbtag FROM NCBI-General;
 --*** Org-ref ***********************************************
 --*
 --*  Reference to an organism
+--*     defines only the organism.. lower levels of detail for biological
+--*     molecules are provided by the Source object
 --*
 
 Org-ref ::= SEQUENCE {
-    taxname VisibleString OPTIONAL ,   -- scientific name
+    taxname VisibleString OPTIONAL ,   -- preferred formal name
     common VisibleString OPTIONAL ,    -- common name
-    mod SET OF VisibleString OPTIONAL , -- modifier for tissue/strain/line
-    db SET OF Dbtag OPTIONAL ,         -- ids in other dbases
-    syn SET OF VisibleString OPTIONAL }  -- synonyms for taxname or common
+    mod SET OF VisibleString OPTIONAL , -- unstructured modifiers
+    db SET OF Dbtag OPTIONAL ,         -- ids in taxonomic or culture dbases
+    syn SET OF VisibleString OPTIONAL ,  -- synonyms for taxname or common
+    orgname OrgName OPTIONAL }
 
-END 
+OrgName ::= SEQUENCE {
+    name CHOICE {
+        binomial BinomialOrgName ,         -- genus/species type name
+        virus VisibleString ,              -- virus names are different
+        hybrid MultiOrgName ,              -- hybrid between organisms
+        namedhybrid BinomialOrgName ,      -- some hybrids have genus x species name
+        partial PartialOrgName } ,         -- when genus not known
+    attrib VisibleString OPTIONAL ,        -- attribution of name
+    mod SEQUENCE OF OrgMod OPTIONAL }
+
+OrgMod ::= SEQUENCE {
+    subtype INTEGER {
+        strain (2) ,
+        substrain (3) ,
+        type (4) ,
+        subtype (5) ,
+        variety (6) ,
+        serotype (7) ,
+        serogroup (8) ,
+        serovar (9) ,
+        cultivar (10) ,
+        pathovar (11) ,
+        chemovar (12) ,
+        biovar (13) ,
+        biotype (14) ,
+        group (15) ,
+        subgroup (16) ,
+        isolate (17) ,
+        common (18) ,
+        acronym (19) ,
+        dosage (20) ,					   -- chromosome dosage of hybrid
+        nat-host (21) ,					   -- natural host of this specimen
+        other (255) } ,
+    subname VisibleString ,
+    attrib VisibleString OPTIONAL }  -- attribution/source of name
+
+BinomialOrgName ::= SEQUENCE {
+    genus VisibleString ,               -- required
+    species VisibleString OPTIONAL ,    -- species required if subspecies used
+    subspecies VisibleString OPTIONAL }
+
+MultiOrgName ::= SEQUENCE OF OrgName   -- the first will be used to assign division
+
+PartialOrgName ::= SEQUENCE OF TaxElement  -- when we don't know the genus
+
+TaxElement ::= SEQUENCE {
+    fixed-level INTEGER {
+       other (0) ,                     -- level must be set in string
+       family (1) ,
+       order (2) ,
+       class (3) } ,
+    level VisibleString OPTIONAL ,
+    name VisibleString }
+
+END
+
+
+--**********************************************************************
+--
+--  NCBI BioSource
+--  by James Ostell, 1994
+--  version 3.0
+--
+--**********************************************************************
+
+NCBI-BioSource DEFINITIONS ::=
+BEGIN
+
+EXPORTS BioSource;
+
+IMPORTS Org-ref FROM NCBI-Organism;
+
+--********************************************************************
+--
+-- BioSource gives the source of the biological material
+--   for sequences
+--
+--********************************************************************
+
+BioSource ::= SEQUENCE {
+    genome INTEGER {		 -- biological context
+        unknown (0) ,
+        genomic (1) ,
+        chloroplast (2) ,
+        chromoplast (3) ,
+        kinetoplast (4) ,
+        mitochondrion (5) ,
+        plastid (6) ,
+        macronuclear (7) ,
+        extrachrom (8) ,
+        plasmid (9) ,
+        transposon (10) ,
+        insertion-seq (11) } DEFAULT unknown ,
+    origin INTEGER {
+      unknown (0) ,
+      natural (1) ,                    -- normal biological entity
+      natmut (2) ,                     -- naturally occuring mutant
+      mut (3) ,                        -- artificially mutagenized
+      artificial (4) ,                 -- artificially engineered
+      synthetic (5) ,                  -- purely synthetic
+      other (255) } DEFAULT unknown , 
+    org Org-ref ,
+    subtype SEQUENCE OF SubSource OPTIONAL }
+
+SubSource ::= SEQUENCE {
+    subtype INTEGER {
+        chromosome (1) ,
+        map (2) ,
+        clone (3) ,
+        subclone (4) ,
+        haplotype (5) ,
+        genotype (6) ,
+        sex (7) ,
+        cell-line (8) ,
+        cell-type (9) ,
+        tissue-type (10) ,
+        cultivar (11) ,
+        dev-stage (12) ,
+        frequency (13) ,
+        germline (14) ,
+        rearranged (15) ,
+        lab-host (16) ,
+        pop-variant (17) ,
+        variety (18) ,
+        plasmid-name (19) ,
+        transposon-name (20) ,
+        insertion-seq-name (21) ,
+        plastid-name (22) ,
+        other (255) } ,
+    name VisibleString ,
+    attrib VisibleString OPTIONAL }    -- attribution/source of this name
+        
+END
 
 --**********************************************************************
 --
@@ -323,7 +465,11 @@ Prot-ref ::= SEQUENCE {
     desc VisibleString OPTIONAL ,      -- description (instead of name)
     ec SET OF VisibleString OPTIONAL , -- E.C. number(s)
     activity SET OF VisibleString OPTIONAL ,  -- activities
-    db SET OF Dbtag OPTIONAL }         -- ids in other dbases
+    db SET OF Dbtag OPTIONAL ,         -- ids in other dbases
+    processed ENUMERATED {             -- processing status
+       not-set (0) ,
+       preprotein (1) ,
+       mature (2) } DEFAULT not-set }
 
 
 
@@ -386,7 +532,7 @@ Tx-evidence ::= SEQUENCE {
         pe-map (7) ,    -- primer extension mapping with homologous sequence ladder    
         pe-size (8) ,   -- primer extension product length measurement
         pseudo-seq (9) , -- full-length processed pseudogene sequencing
-		rev-pe-map (10) ,   -- see NOTE (1) below
+        rev-pe-map (10) ,   -- see NOTE (1) below
         other (255) } ,
     expression-system ENUMERATED {
         unknown (0) ,
@@ -400,9 +546,9 @@ Tx-evidence ::= SEQUENCE {
     from-homolog BOOLEAN DEFAULT FALSE }     -- experiment actually done on
                                              --  close homolog
 
-	-- NOTE (1) length measurement of a reverse direction primer-extension
-	--			product (blocked  by  RNA  5'end)  by  comparison with
-	--			homologous sequence ladder (J. Mol. Biol. 199, 587)
+    -- NOTE (1) length measurement of a reverse direction primer-extension
+    --          product (blocked  by  RNA  5'end)  by  comparison with
+    --          homologous sequence ladder (J. Mol. Biol. 199, 587)
 
     
 END

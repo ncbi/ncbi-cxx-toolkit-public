@@ -1,4 +1,4 @@
---$Revision: 2.0 $
+--$Revision: 3.0 $
 --**********************************************************************
 --
 --  NCBI Sequence Analysis Results (other than alignments)
@@ -25,8 +25,8 @@ Seq-graph ::= SEQUENCE {
     title-x VisibleString OPTIONAL ,    -- title for x-axis
     title-y VisibleString OPTIONAL ,
     comp INTEGER OPTIONAL ,             -- compression (residues/value)
-	a REAL OPTIONAL ,                   -- for scaling values
-	b REAL OPTIONAL ,                   -- display = (a x value) + b
+    a REAL OPTIONAL ,                   -- for scaling values
+    b REAL OPTIONAL ,                   -- display = (a x value) + b
     numval INTEGER ,                    -- number of values in graph
     graph CHOICE {
         real Real-graph ,

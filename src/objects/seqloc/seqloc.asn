@@ -1,8 +1,10 @@
---$Revision: 2.0 $
+--$Revision: 3.0 $
 --**********************************************************************
 --
 --  NCBI Sequence location and identifier elements
 --  by James Ostell, 1990
+--
+--  Version 3.0 - 1994
 --
 --**********************************************************************
 
@@ -32,9 +34,9 @@ Seq-id ::= CHOICE {
     other Textseq-id ,       -- catch all
     general Dbtag ,          -- for other databases
     gi INTEGER ,             -- GenInfo Integrated Database
-	ddbj Textseq-id ,        -- DDBJ
-	prf Textseq-id ,         -- PRF SEQDB
-	pdb PDB-seq-id }         -- PDB sequence
+    ddbj Textseq-id ,        -- DDBJ
+    prf Textseq-id ,         -- PRF SEQDB
+    pdb PDB-seq-id }         -- PDB sequence
 
 Patent-seq-id ::= SEQUENCE {
     seqid INTEGER ,         -- number of sequence in patent
@@ -52,12 +54,12 @@ Giimport-id ::= SEQUENCE {
     release VisibleString OPTIONAL }   -- the release
 
 PDB-seq-id ::= SEQUENCE {
-	mol PDB-mol-id ,          -- the molecule name
-	chain INTEGER DEFAULT 32 ,-- a single ASCII character, chain id
+    mol PDB-mol-id ,          -- the molecule name
+    chain INTEGER DEFAULT 32 ,-- a single ASCII character, chain id
     rel Date OPTIONAL }   -- release date, month and year
 
 PDB-mol-id ::= VisibleString  -- name of mol, 4 chars
-	
+    
 --*** Sequence locations **********************************
 --*
 
@@ -106,8 +108,8 @@ Na-strand ::= ENUMERATED {          -- strand of nucleid acid
     other (255) }
 
 Seq-bond ::= SEQUENCE {         -- bond between residues
-	a Seq-point ,           -- connection to a least one residue
-	b Seq-point OPTIONAL }  -- other end may not be available
+    a Seq-point ,           -- connection to a least one residue
+    b Seq-point OPTIONAL }  -- other end may not be available
 
 Seq-loc-mix ::= SEQUENCE OF Seq-loc   -- this will hold anything
 

@@ -1,8 +1,10 @@
---$Revision: 2.1 $
+--$Revision: 3.0 $
 --**********************************************************************
 --
 --  NCBI Sequence Collections
 --  by James Ostell, 1990
+--
+--  Version 3.0 - 1994
 --
 --**********************************************************************
 
@@ -33,8 +35,11 @@ Bioseq-set ::= SEQUENCE {      -- just a collection
         pir (8) ,                   -- converted pir
         pub-set (9) ,               -- all the seqs from a single publication
         equiv (10) ,                -- a set of equivalent maps or seqs
-		swissprot (11) ,            -- converted SWISSPROT
-		pdb-entry (12) ,            -- a complete PDB entry
+        swissprot (11) ,            -- converted SWISSPROT
+        pdb-entry (12) ,            -- a complete PDB entry
+        mut-set (13) ,              -- set of mutations
+        pop-set (14) ,              -- population study
+        phy-set (15) ,              -- phylogenetic study
         other (255) } DEFAULT not-set ,
     release VisibleString OPTIONAL ,
     date Date OPTIONAL ,
