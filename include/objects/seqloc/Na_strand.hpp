@@ -63,6 +63,19 @@ bool SameOrientation(ENa_strand a, ENa_strand b)
 }
 
 
+inline
+ENa_strand Reverse(ENa_strand s)
+{
+    switch ( s ) {
+    case eNa_strand_minus:     s = eNa_strand_plus;        break;
+    case eNa_strand_plus:      s = eNa_strand_minus;       break;
+    case eNa_strand_both:      s = eNa_strand_both_rev;    break;
+    case eNa_strand_both_rev:  s = eNa_strand_both;        break;
+    }
+    return s;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -72,6 +85,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/27 14:20:27  vasilche
+* Added Reverse(ENa_strand).
+*
 * Revision 1.1  2002/11/12 19:53:25  ucko
 * Add simple utilities to distinguish forward- and reverse-orientation strands.
 *
