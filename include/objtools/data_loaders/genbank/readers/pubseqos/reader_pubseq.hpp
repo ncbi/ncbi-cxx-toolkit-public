@@ -41,17 +41,12 @@ class I_BaseCmd;
 
 BEGIN_SCOPE(objects)
 
-
-class CPubseqReader;
-class CPubseqBlob;
-
-
 class NCBI_XREADER_PUBSEQOS_EXPORT CPubseqReader : public CId1ReaderBase
 {
 public:
     CPubseqReader(int max_connections = 2,
                   const string& server = "PUBSEQ_OS",
-                  const string& user="anyone",
+                  const string& user = "anyone",
                   const string& pswd = "allowed");
 
     ~CPubseqReader();
@@ -103,7 +98,6 @@ private:
     typedef map< TConn, AutoPtr<CDB_Connection> > TConnections;
     TConnections              m_Connections;
 };
-
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
