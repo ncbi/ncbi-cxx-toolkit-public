@@ -2,339 +2,377 @@
 <!--#set var="DOCROOT" value="../.." -->
 <!--#include virtual="../../ssi/header.shtml" -->
 
-<h1>DATATOOL - the data serialization utility (NCBI C++)</h1>
+<h1>DATATOOL<br />
+code generation and data serialization utility</h1>
 
 <ul>
 <li>
-<a href="#refSynopsis">Synopsis</a></li>
+  <a href="#refSynopsis">Synopsis</a>
+</li>
 
 <li>
-<a href="#refArgs">Invocation</a></li>
+  <a href="#refArgs">Invocation</a>
+  <ul>
+  <li>
+    <a href="#refMainArgs">Main arguments</a>
+  </li>
+  <li>
+    <a href="#refCodeGenerationArgs">Code generation arguments</a>
+  </li>
+  </ul>
+</li>
 
-<ul>
 <li>
-<a href="#refMainArgs">Main arguments</a></li>
+  <a href="#refDefFile">Definition file</a>
+  <ul>
+  <li>
+    <a href="#refDefCommon">Common definitions</a>
+  </li>
+  <li>
+    <a href="#refDefINT">INTEGER, REAL, BOOLEAN, NULL</a>
+  </li>
+  <li>
+    <a href="#refDefENUM">ENUMERATED</a>
+  </li>
+  <li>
+    <a href="#refDefOCTETS">OCTET STRING</a>
+  </li>
+  <li>
+    <a href="#refDefArray">SEQUENCE OF, SET OF</a>
+  </li>
+  <li>
+    <a href="#refDefClass">SEQUENCE, SET</a>
+  </li>
+  <li>
+    <a href="#refDefChoice">CHOICE</a>
+  </li>
+  </ul>
+</li>
 
 <li>
-<a href="#refCodeGenerationArgs">Code generation arguments</a></li>
+  <a href="#refCode">Generated code</a>
+  <ul>
+  <li>
+    <a href="#refNormalizedName">Normalized name</a>
+  </li>
+  <li>
+    <a href="#refCodeEnum">ENUMERATED</a>
+  </li>
+  <li>
+    <a href="#refCodeClass">SEQUENCE, SET</a>
+  </li>
+  <li>
+    <a href="#refCodeChoice">CHOICE</a>
+  </li>
+  <li>
+    <a href="#refCodeOther">Other</a>
+  </li>
+  </ul>
+</li>
 </ul>
 
-<li>
-<a href="#refDefFile">Definition file</a></li>
-
-<ul>
-<li>
-<a href="#refDefCommon">Common definitions</a></li>
-
-<li>
-<a href="#refDefINT">INTEGER, REAL, BOOLEAN, NULL</a></li>
-
-<li>
-<a href="#refDefENUM">ENUMERATED</a></li>
-
-<li>
-<a href="#refDefOCTETS">OCTET STRING</a></li>
-
-<li>
-<a href="#refDefArray">SEQUENCE OF, SET OF</a></li>
-
-<li>
-<a href="#refDefClass">SEQUENCE, SET</a></li>
-
-<li>
-<a href="#refDefChoice">CHOICE</a></li>
-</ul>
-
-<li>
-<a href="#refCode">Generated code</a></li>
-
-<ul>
-<li>
-<a href="#refNormalizedName">Normalized name</a></li>
-
-<li>
-<a href="#refCodeEnum">ENUMERATED</a></li>
-
-<li>
-<a href="#refCodeClass">SEQUENCE, SET</a></li>
-
-<li>
-<a href="#refCodeChoice">CHOICE</a></li>
-
-<li>
-<a href="#refCodeOther">Other</a></li>
-</ul>
-</ul>
 
 
-<h2><a NAME="refSynopsis"></a><a NAME="refArgs"></a>Synopsis</h2>
+<a name="refSynopsis"></a>
+<h2>Synopsis</h2>
 
-<table border cellspacing=0>
-<tr VALIGN=BASELINE>
-<th ALIGN=RIGHTE>Location:</th>
-
-<td><span class="ncbi_dir">c++/src/serial/datatool</span></td>
+<table border="1" cellspacing="0">
+<tr valign="baseline">
+  <th align="right">Location:</th>
+  <td><span class="ncbi_dir">c++/src/serial/datatool</span></td>
 </tr>
-
-<tr VALIGN=BASELINE>
-<th ALIGN=RIGHT>Synopsis:</th>
-
-<td>
-  <ol>
-    <li>read ASN.1 data specifications</li>
-    <li>read/write ASN.1 or XML data</li>
-    <li>write ASN.1 or DTD data specification</li>
-    <li>generate C++ classes to serialize (read/write) the data</li>
-  </ol>
-</td>
+<tr valign="baseline">
+  <th align="right">Synopsis:</th>
+  <td>
+    <ol>
+	  <li>
+Generate C++ data storage classes based on
+<a href="http://asn1.elibel.tm.fr" target="_blank">
+<acronym title="Abstract Syntax Notation number One">ASN.1</acronym>
+</a> or
+<a href="http://www.w3.org/TR/REC-xml" target="_blank">
+<acronym title="Document Type Declaration">DTD</acronym>
+</a>
+specification to be used with
+<a href="../../libs.html#ref_SumXSERIAL">NCBI data serialization streams</a>.
+	  </li>
+	  <li>
+Convert ASN.1 specification into DTD and vice versa.
+	  </li>
+	  <li>
+Convert data between ASN.1 and XML formats.
+	  </li>
+<!--
+      <li>read ASN.1 data specifications</li>
+      <li>read/write ASN.1 or XML data</li>
+      <li>write ASN.1 or DTD data specification</li>
+      <li>generate C++ classes to serialize (read/write) the data</li>
+-->
+    </ol>
+<span class="ncbi_note">NOTE:</span>
+Since ASN.1 and DTD are, in general, incompatible, the last two
+functions are supported only partially.
+  </td>
 </tr>
 </table>
 
-<p>This program is intended for data conversion between ASN.1 and XML and
-for generation of C++ class hierarchy based on ASN.1 data definition.
 
 
-<h2><a NAME="refArgs"></a>Invocation</h2>
 
-<h3>
-<a NAME="refMainArgs"></a>Main arguments</h3>
-Equivalent to arguments of asntool
+<a name="refArgs"></a>
+<h2>Invocation</h2>
 
-<table border cellspacing=0>
 
+<a name="refMainArgs"></a>
+<h3>Main arguments</h3>
+
+<table border="1" cellspacing="0">
 <tr>
-<th>argument</th>
-<th>effect</th>
-<th>comment</th>
-</tr>
-
-<tr>
-<td><span class="ncbi_app_a">-h</span></td>
-<td>display DATATOOL arguments</a></td>
-<td>&nbsp;</td>
-</tr>
-
-<tr VALIGN=BASELINE>
-<td><a NAME="refArg_m"></a><span class="ncbi_app_a">-m &lt;file&gt;</span></td>
-<td>ASN.1 module file(s)</td>
-<td>required argument</td>
+  <th>Argument</th>
+  <th>Effect</th>
+  <th>Comments</th>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-M &lt;file&gt;</span></td>
-<td>external module file(s)</td>
-<td ROWSPAN="2">is used for IMPORT type resolution</td>
+  <td><span class="ncbi_app_a">-h</span></td>
+  <td>display the DATATOOL arguments</a></td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-i</span></td>
-<td>ignore unresolved types</td>
+  <td>
+    <a name="refArg_m"></a>
+	<span class="ncbi_app_a">-m &lt;file&gt;</span>
+  </td>
+  <td>ASN.1 or DTD module file(s)</td>
+  <td>required argument</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-f &lt;file&gt;</span></td>
-<td>write ASN.1 module file</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-M &lt;file&gt;</span></td>
+  <td>external module file(s)</td>
+  <td rowspan="2">is used for IMPORT type resolution</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-fx &lt;file&gt;</span></td>
-<td>write DTD module file</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-i</span></td>
+  <td>ignore unresolved types</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-dn &lt;string&gt;</span></td>
-<td>DTD module name in XML header</td>
-<td>no extension</td>
+  <td><span class="ncbi_app_a">-f &lt;file&gt;</span></td>
+  <td>write ASN.1 module file</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-v &lt;file&gt;</span></td>
-<td>read value in ASN.1 text format</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-fx &lt;file&gt;</span></td>
+  <td>write DTD module file</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-vx &lt;file&gt;</span></td>
-<td>read value in XML format</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-dn &lt;string&gt;</span></td>
+  <td>DTD module name in XML header</td>
+  <td>no extension</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-F</span></td>
-<td>read value completely into memory</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-v &lt;file&gt;</span></td>
+  <td>read value in ASN.1 text format</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-p &lt;file&gt;</span></td>
-<td>write value in ASN.1 text format</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-vx &lt;file&gt;</span></td>
+  <td>read value in XML format</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-px &lt;file&gt;</span></td>
-<td>write value in XML format</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-F</span></td>
+  <td>read value completely into memory</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-d &lt;file&gt;<</span>/td>
-<td>read value in ASN.1 binary format</td>
-<td><a href="#refArg_t"><span class="ncbi_app_a">-t</span></a> argument required</td>
-</tr>
-
-<tr VALIGN=BASELINE>
-<td><a NAME="refArg_t"></a><span class="ncbi_app_a">-t &lt;type&gt;</span></td>
-<td>binary value type</td>
-<td>see <span class="ncbi_app_a">-d</span> argument</td>
+  <td><span class="ncbi_app_a">-p &lt;file&gt;</span></td>
+  <td>write value in ASN.1 text format</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-e &lt;file&gt;</span></td>
-<td>write value in ASN.1 binary format</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-px &lt;file&gt;</span></td>
+  <td>write value in XML format</td>
+  <td>&nbsp;</td>
+</tr>
+
+<tr>
+  <td><span class="ncbi_app_a">-d &lt;file&gt;</span></td>
+  <td>read value in ASN.1 binary format</td>
+  <td><span class="ncbi_app_a">-t</span> argument required</td>
+</tr>
+
+<tr>
+  <td><span class="ncbi_app_a">-t &lt;type&gt;</span></td>
+  <td>binary value type</td>
+  <td>see <span class="ncbi_app_a">-d</span> argument</td>
+</tr>
+
+<tr>
+  <td><span class="ncbi_app_a">-e &lt;file&gt;</span></td>
+  <td>write value in ASN.1 binary format</td>
+  <td>&nbsp;</td>
 </tr>
 </table>
 
-<h3>
-<a NAME="refCodeGenerationArgs"></a>Code generation arguments</h3>
 
-<table border cellspacing=0>
+<a name="refCodeGenerationArgs"></a>
+<h3>Code generation arguments</h3>
 
+<table border="1" cellspacing="0">
 <tr>
-<th>argument</th>
-<th>effect</th>
-<th>comment</th>
+  <th>Argument</th>
+  <th>Effect</th>
+  <th>Comments</th>
 </tr>
 
 <tr>
-<td><a NAME="refArg_od"></a><span class="ncbi_app_a">-od &lt;file&gt;</span></td>
-<td>C++ code <a href="#refDefFile">definition file</a></td>
-<td>see <a href="#refDefFile">Definition file</a></td>
+  <td>
+    <a name="refArg_od"></a>
+	<span class="ncbi_app_a">-od &lt;file&gt;</span>
+  </td>
+  <td>C++ code <a href="#refDefFile">definition file</a></td>
+  <td>see <a href="#refDefFile">Definition file</a></td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-odi</span></td>
-<td>ignore absent code definition file</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-odi</span></td>
+  <td>ignore absent code definition file</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oA</span></td>
-<td>generate C++ files for all types</td>
-<td ROWSPAN="2">only types from main module are used
-<br>(see <a href="#refArg_m"><span class="ncbi_app_a">-m</span></a> and <a href="#refArg_mx"><span class="ncbi_app_a">-mx</span></a> argument)</td>
+  <td><span class="ncbi_app_a">-oA</span></td>
+  <td>generate C++ files for all types</td>
+  <td rowspan="2">only types from the main module are used<br />
+    (see <a href="#refArg_m"><span class="ncbi_app_a">-m</span></a>
+	 and <a href="#refArg_mx"><span class="ncbi_app_a">-mx</span></a> arguments)
+  </td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-ot &lt;types&gt;</span></td>
-<td>generate C++ files for listed types</td>
+  <td><span class="ncbi_app_a">-ot &lt;types&gt;</span></td>
+  <td>generate C++ files for listed types</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-ox &lt;types&gt;</span></td>
-<td>exclude types from generation</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-ox &lt;types&gt;</span></td>
+  <td>exclude types from generation</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oX</span></td>
-<td>turn off recursive type generation</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-oX</span></td>
+  <td>turn off recursive type generation</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-of &lt;file&gt;</span></td>
-<td>write list of generated C++ files</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-of &lt;file&gt;</span></td>
+  <td>write the list of generated C++ files</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oc &lt;file&gt;</span></td>
-<td>write combining C++ files</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-oc &lt;file&gt;</span></td>
+  <td>write combining C++ files</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-on &lt;string&gt;</span></td>
-<td>default namespace</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-on &lt;string&gt;</span></td>
+  <td>default namespace</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><a NAME="refArg_op"></a><span class="ncbi_app_a">-opm &lt;dir></span></td>
-<td>directory for searching source modules</td>
-<td>&nbsp;</td>
+  <td><a name="refArg_op"></a><span class="ncbi_app_a">-opm &lt;dir></span></td>
+  <td>directory for searching source modules</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oph &lt;dir&gt;</span></td>
-<td>directory for generated *.hpp files</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-oph &lt;dir&gt;</span></td>
+  <td>directory for generated *.hpp files</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-opc &lt;dir&gt;</span></td>
-<td>directory for generated *.cpp files</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-opc &lt;dir&gt;</span></td>
+  <td>directory for generated *.cpp files</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><a NAME="refArg_or"></a><span class="ncbi_app_a">-or &lt;prefix&gt;</span></td>
-<td>add prefix to generated file names</td>
-<td>&nbsp;</td>
+  <td><a name="refArg_or"></a><span class="ncbi_app_a">-or &lt;prefix&gt;</span></td>
+  <td>add prefix to generated file names</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-orq</span></td>
-<td>use quoted syntax form for generated include files</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-orq</span></td>
+  <td>use quoted syntax form for generated include files</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-ors</span></td>
-<td>add source file dir to generated file names</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-ors</span></td>
+  <td>add source file dir to generated file names</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-orm</span></td>
-<td>add module name to generated file names</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-orm</span></td>
+  <td>add module name to generated file names</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-orA</span></td>
-<td>combine all <a href="#refArg_or">-or*</a> prefixes</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-orA</span></td>
+  <td>combine all <a href="#refArg_or">-or*</a> prefixes</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oR &lt;dir&gt;</span></td>
-<td>set <a href="#refArg_op">-op*</a> and <a href="#refArg_or">-or*</a>
-arguments for NCBI dir tree</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-oR &lt;dir&gt;</span></td>
+  <td>set <a href="#refArg_op">-op*</a> and <a href="#refArg_or">-or*</a>
+    arguments for NCBI directory tree
+  </td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-lax_syntax</span></td>
-<td>allow non-standard ASN.1 syntax accepted by asntool</td>
-<td>&nbsp;</td>
+  <td><span class="ncbi_app_a">-lax_syntax</span></td>
+  <td>allow non-standard ASN.1 syntax accepted by asntool</td>
+  <td>&nbsp;</td>
 </tr>
 
 <tr>
-<td><span class="ncbi_app_a">-oex &lt;export&gt;</span></td>
-<td>add storage-class modifier to generated classes</td>
-<td>can be overriden by
-<br><a href="#refDefCommon"> <span class="ncbi_keyword">[-]._export</span> </a>
-in the definition file</td>
+  <td><span class="ncbi_app_a">-oex &lt;export&gt;</span></td>
+  <td>add storage-class modifier to generated classes</td>
+  <td>can be overriden by<br />
+    <a href="#refDefCommon"><span class="ncbi_keyword">[-]._export</span></a>
+    in the definition file
+  </td>
 </tr>
 </table>
 
-<h2>
-<a NAME="refDefFile"></a>Definition file</h2>
+
+
+
+<a name="refDefFile"></a>
+<h2>Definition file</h2>
 There is a possibility of fine tuning of code generation. It is performed
 via definition file specified in <a href="#refArg_od"><span class="ncbi_app_a">-od</span></a> argument.
 <br>
