@@ -969,6 +969,35 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     bool got = false;
 
     CConstRef<CSeq_id> seq_id = h.GetSeqId();
+#if 1
+    for ( int try_cnt = 3; !got && try_cnt > 0; --try_cnt ) {
+        osr.clear();
+        CTimerGuard tg(m_Timer);
+        CReader::TConn conn = m_Locks.m_Pool.Select(key);
+        try {
+            m_Driver->ResolveSeq_id(osr, *seq_id, conn);
+            got = true;
+            break;
+        }
+        catch ( CLoaderException& e ) {
+            if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
+                throw;
+            }
+            LOG_POST(e.what());
+        }
+        catch(const exception &e) {
+            LOG_POST(e.what());
+        }
+        LOG_POST("GenBank connection failed: Reconnecting....");
+        m_Driver->Reconnect(conn);
+    }
+    if ( !got ) {
+        ERR_POST("CGBLoader:x_ResolveHandle: Seq-id resolve failed: "
+                 "exceeded maximum attempts count");
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Multiple attempts to resolve Seq-id failed");
+    }
+#else
     if ( !seq_id->IsGi() ) {
         //LOG_POST("ResolveHandle-b("<<h.AsString()<<") "<<sr->m_Sr.size());
 
@@ -1044,6 +1073,7 @@ CRef<SSeqrefs> CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
             }
         }
     }
+#endif
 
     g.Lock(); // will unlock everything and lock lookupMutex again 
 
@@ -1203,6 +1233,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2003/12/19 19:49:21  vasilche
+* Use direct Seq-id -> sat/satkey resolution without intermediate gi.
+*
 * Revision 1.94  2003/12/03 15:14:05  kuznets
 * CReader management re-written to use plugin manager
 *
