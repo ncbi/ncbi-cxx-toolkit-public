@@ -715,10 +715,11 @@ void CBDB_IntCache::Store(int key1, int key2, const vector<int>& value)
 
     CTime time_stamp(CTime::eCurrent);
     m_IntCacheDB.time_stamp = (unsigned)time_stamp.GetTimeT();
-    
+
     const int* data = &value[0];
 
     m_IntCacheDB.Insert(data, value.size() * sizeof(vector<int>::value_type));
+
 
     }}
 }
@@ -728,13 +729,15 @@ size_t CBDB_IntCache::GetSize(int key1, int key2)
 {
     CFastMutexGuard guard(x_BDB_IntCacheMutex);
 
-    m_IntCacheDB.key1 = key1;
-    m_IntCacheDB.key2 = key2;
+    CBDB_FileCursor cur(m_IntCacheDB);
+    cur.SetCondition(CBDB_FileCursor::eEQ);
 
-    EBDB_ErrCode ret = m_IntCacheDB.Fetch();
-    if (ret != eBDB_Ok) {
+    cur.From << key1 << key2;
+
+    if (cur.Fetch() != eBDB_Ok) {
         return 0;
     }
+
     return (m_IntCacheDB.LobSize() / sizeof(vector<int>::value_type));
 }
 
@@ -771,12 +774,19 @@ bool CBDB_IntCache::Read(int key1, int key2, vector<int>& value)
 
     time_t curr = (unsigned)time_stamp.GetTimeT();
 
+/*
+    LOG_POST(Info << "Key1=" << key1 
+                  << " Key2=" << key2
+                  << " Load int ts=" 
+                  << ts);
+*/
+
     if (ts + m_ExpirationTime <  curr) {
-    /*
+    
         LOG_POST(Info << "Int cache item expired:" 
                       << ts << " curr=" << curr 
                       << " diff=" << curr - ts );
-    */
+    
         value.resize(0);
         return false;
     }
@@ -800,9 +810,18 @@ void CBDB_IntCache::Remove(int key1, int key2)
 {
     CFastMutexGuard guard(x_BDB_IntCacheMutex);
 
-    m_IntCacheDB.key1 = key1;
-    m_IntCacheDB.key2 = key2;
-    m_IntCacheDB.Delete(CBDB_RawFile::eIgnoreError);    
+    while (true) {
+        CBDB_FileCursor cur(m_IntCacheDB);
+        cur.SetCondition(CBDB_FileCursor::eEQ);
+
+        cur.From << key1 << key2;
+
+        if (cur.Fetch() == eBDB_Ok) {
+            m_IntCacheDB.Delete(CBDB_RawFile::eIgnoreError);    
+        } else {
+            return;
+        }
+    }
 }
 
 void CBDB_IntCache::SetExpirationTime(time_t expiration_timeout)
@@ -842,6 +861,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/10/21 12:11:27  kuznets
+ * Fixed non-updated timestamp in Int cache.
+ *
  * Revision 1.20  2003/10/20 20:44:20  vasilche
  * Added return true for overflow file read.
  *
