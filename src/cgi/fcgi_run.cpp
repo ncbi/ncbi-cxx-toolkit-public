@@ -120,6 +120,18 @@ private:
     int x_Read(char* buf);
 };
 
+inline
+int CCgiWatchFile::x_Read(char* buf)
+{
+    CNcbiIfstream in(m_Filename.c_str());
+    if (in) {
+        in.read(buf, m_Limit);
+        return (int) in.gcount();
+    } else {
+        return -1;
+    }
+}
+
 CCgiWatchFile::CCgiWatchFile(const string& filename, int limit)
         : m_Filename(filename), m_Limit(limit), m_Buf(new char[limit])
 {
@@ -143,18 +155,6 @@ bool CCgiWatchFile::HasChanged(void)
     }
     // no need to update m_Count or m_Buf, since the CGI will restart
     // if there are any discrepancies.
-}
-
-inline
-int CCgiWatchFile::x_Read(char* buf)
-{
-    CNcbiIfstream in(m_Filename.c_str());
-    if (in) {
-        in.read(buf, m_Limit);
-        return (int) in.gcount();
-    } else {
-        return -1;
-    }
 }
 
 
@@ -540,6 +540,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.47  2004/09/15 20:16:19  ucko
+ * Make sure to define CCgiWatchFile::x_Read before its callers so it can
+ * be inlined.
+ *
  * Revision 1.46  2004/09/15 14:06:40  ucko
  * CCgiWatchFile::CCgiWatchFile: log an error if opening the file failed.
  *
