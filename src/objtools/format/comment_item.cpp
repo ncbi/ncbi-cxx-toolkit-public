@@ -81,9 +81,10 @@ CCommentItem::CCommentItem
 (const string& comment,
  CBioseqContext& ctx,
  const CSerialObject* obj) :
-    CFlatItem(&ctx), m_Comment(ExpandTildes(comment, eTilde_comment)),
+    CFlatItem(&ctx), m_Comment(comment),
     m_First(false), m_NeedPeriod(true)
 {
+    ExpandTildes(m_Comment, eTilde_comment);
     swap(m_First, sm_FirstComment);
     if ( obj != 0 ) {
         x_SetObject(*obj);
@@ -807,7 +808,8 @@ void CCommentItem::x_SetSkip(void)
 
 void CCommentItem::x_SetComment(const string& comment)
 {
-    m_Comment = ExpandTildes(comment, eTilde_comment);;
+    m_Comment = comment;
+    ExpandTildes(m_Comment, eTilde_comment);;
 }
 
 
@@ -817,8 +819,12 @@ void CCommentItem::x_SetCommentWithURLlinks
  const string& suffix)
 {
     // !!! test for html - find links within the comment string
-    string comment = ExpandTildes(prefix + str + suffix, eTilde_comment);
-    if (comment.empty()) {
+    string comment = prefix;
+    comment += str;
+    comment += suffix;
+
+    ExpandTildes(comment, eTilde_comment);
+    if (NStr::IsBlank(comment)) {
         return;
     }
 
@@ -1011,6 +1017,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2005/03/28 17:17:56  shomrat
+* Optimizing tilde expension
+*
 * Revision 1.16  2005/02/09 14:55:37  shomrat
 * initial support for HTML output
 *
