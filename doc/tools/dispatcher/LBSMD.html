@@ -72,7 +72,7 @@ Actual calculation of current rates of (non-<a href="#ref_Static"><i>static</i><
 many parameters of the system, including the load average, the number of
 CPUs and processes, etc. The rate calculation fomulas can be found in
 <a href="../../lxr/source/src/connect/ncbi_lbsm.c"><b><i>connect/ncbi_lbsm.c</i></b></a>,
-which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>, not <tt>LBSMD</tt>.
+which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>, not <tt>LBSMD</tt>.
 
 
 <p><hr><p>
@@ -90,7 +90,7 @@ inserting a backslash symbol (\) before the line breaks.
 A comment is introduced by a hash symbol (#).
 
 <p>
-A configuration line of the form
+<a name="ref_HostEnvironment">A configuration line of the form</a>
 <pre>
 <font color="#009900">name=value</font>
 </pre>
@@ -126,7 +126,7 @@ side is completely preserved. IP address substitutions are used by dispatcher wh
 client tries to access a service located at NCBI site. The substitution is seen as a part of host
 environment obtained from the service iterator via call to
 <a href="../../lxr/ident?i=SERV_GetNextInfoEx"><b><i>SERV_GetNextInfoEx()</i></b></a>,
-which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a>.
+which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">service mapping API</a>.
 Partial IP substitutions in the form <tt>@host=host</tt> are used when no detailed
 IP substitution like <tt>@host:port=host:port</tt> matches the host and port of
 the server, just by preserving the port number and substituting the host only.
@@ -152,7 +152,8 @@ An example of the <tt>server_descriptor</tt>:
 </pre>
 <li><font color="#CC33CC"><tt>launcher_info</tt></font> is basically a command line
 preceded by a pipe symbol (<tt>|</tt>), delimiting from <tt>server_descriptor</tt>.
-It is only required for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>.
+It is only required for <a href="#ref_ServerType">servers of type</a> <tt>NCBID</tt>,
+which are configured on the local host.
 </ul>
 
 <p>
@@ -213,7 +214,7 @@ recognized:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>.
      Default is <tt>no</tt>.
-     <a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> returns <i>local only</i> servers
+     <a href="../../libs/conn.html#ref_ServiceAPI">Service mapping API</a> returns <i>local only</i> servers
      in the case of mapping with the use of <tt>LBSMD</tt> running on the same - local - host (direct mapping),
      or if the dispatching (indirect mapping) occurs within the NCBI Intranet. Otherwise, if service mapping
      occurs using non-local network (certainly indirectly, via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>)
@@ -390,7 +391,7 @@ and then the daemon on that host announces that the server was penalized.</br>
 <u>Note</u>: Once the daemon is restarted, the penalty information is lost.
 
 <p>
-<a href="../../libs/conn.html#ref_ServiceAPI">Service API</a> has a call
+<a href="../../libs/conn.html#ref_ServiceAPI">Service mapping API</a> has a call
 <a href="../../lxr/ident?i=SERV_Penalize"><b><i>SERV_Penalize()</i></b></a>
 declared in <a href="../../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>,
 which can be used to set the penalty for the last server obtained from the mapping iterator.
