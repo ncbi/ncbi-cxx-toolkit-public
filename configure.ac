@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.293 2004/04/20 18:21:43 vakatov Exp $
+#  $Id: configure.ac,v 1.294 2004/04/22 21:22:38 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2996,10 +2996,12 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_LIBPATH="\$(libdir)"
       sss=sss
       ssssrv=ssssrv
+      stax=stax
    else
       with_included_sss=no
       sss=
       ssssrv=
+      stax=
    fi
    NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
@@ -3936,6 +3938,7 @@ AC_SUBST(LIBSSSUTILS)
 AC_SUBST(LIBSSSDB)
 AC_SUBST(sss)
 AC_SUBST(ssssrv)
+AC_SUBST(stax)
 AC_SUBST(NCBI_GEO_INCLUDE)
 AC_SUBST(NCBI_GEO_LIBPATH)
 AC_SUBST(LIBGEODB)
