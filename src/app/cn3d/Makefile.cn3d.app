@@ -19,17 +19,20 @@ SRC = \
 	cdd_ref_dialog \
 	cdd_splash_dialog \
 	chemical_graph \
+	cn3d_app \
 	cn3d_ba_interface \
 	cn3d_blast \
 	cn3d_blockalign \
 	cn3d_cache \
 	cn3d_colors \
-	cn3d_main_wxwin \
+	cn3d_glcanvas \
 	cn3d_png \
 	cn3d_threader \
+	cn3d_tools \
 	conservation_colorer \
 	coord_set \
 	data_manager \
+	file_messaging \
 	messenger \
 	molecule \
 	molecule_identifier \
@@ -49,6 +52,7 @@ SRC = \
 	show_hide_manager \
 	structure_base \
 	structure_set \
+	structure_window \
 	style_dialog \
 	style_manager \
 	taxonomy_tree \
