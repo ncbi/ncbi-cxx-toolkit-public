@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/18 20:00:24  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.19  2000/09/01 13:16:18  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -117,6 +123,7 @@
 #include <serial/objlist.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/member.hpp>
+#include <serial/typeinfoimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -151,7 +158,7 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
 {
     _TRACE("COObjectList::RegisterObject("<<NStr::PtrToString(object)<<", "<<
            typeInfo->GetName() << ") size: " << typeInfo->GetSize() <<
-           ", end: " << NStr::PtrToString(typeInfo->EndOf(object)));
+           ", end: " << NStr::PtrToString(Add(object, typeInfo->GetSize())));
     typeInfo = typeInfo->GetRealTypeInfo(object);
 
     const CObject* cObject = typeInfo->GetCObjectPtr(object);
@@ -210,14 +217,15 @@ CWriteObjectInfo& COObjectList::RegisterObject(TConstObjectPtr object,
     TObjectsByPtr::iterator check = ins.first;
     if ( check != m_ObjectsByPtr.begin() ) {
         --check;
-        if ( m_Objects[check->second].GetTypeInfo()->EndOf(check->first) > object )
+        if ( Add(check->first,
+                 m_Objects[check->second].GetTypeInfo()->GetSize()) > object )
             THROW1_TRACE(runtime_error, "overlapping objects");
     }
 
     // check for overlapping with next object
     check = ins.first;
     if ( ++check != m_ObjectsByPtr.end() ) {
-        if ( typeInfo->EndOf(object) > check->first )
+        if ( Add(object, typeInfo->GetSize()) > check->first )
             THROW1_TRACE(runtime_error, "overlapping objects");
     }
 #endif

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/18 20:00:23  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.1  2000/08/15 19:44:48  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -57,11 +63,13 @@ CReadClassMemberHook::~CReadClassMemberHook(void)
 {
 }
 
-void CReadClassMemberHook::SetClassMemberDefault(CObjectIStream& in,
-                                                 const CObjectInfo& object,
-                                                 TMemberIndex index)
+void CReadClassMemberHook::ReadMissingClassMember(CObjectIStream& in,
+                                                  const CObjectInfo& object,
+                                                  TMemberIndex index)
 {
-    in.SetClassMemberDefaultNoHook(object, index);
+    const CMemberInfo* memberInfo =
+        object.GetClassTypeInfo()->GetMemberInfo(index);
+    memberInfo->DefaultReadMissingMember(in, object.GetObjectPtr());
 }
 
 CReadChoiceVariantHook::~CReadChoiceVariantHook(void)
@@ -89,6 +97,27 @@ CWriteChoiceVariantHook::~CWriteChoiceVariantHook(void)
 }
 
 CWriteContainerElementsHook::~CWriteContainerElementsHook(void)
+{
+}
+
+CCopyObjectHook::~CCopyObjectHook(void)
+{
+}
+
+CCopyClassMemberHook::~CCopyClassMemberHook(void)
+{
+}
+
+void CCopyClassMemberHook::CopyMissingClassMember(CObjectStreamCopier& copier,
+                                                  const CObjectTypeInfo& type,
+                                                  TMemberIndex index)
+{
+    const CMemberInfo* memberInfo =
+        type.GetClassTypeInfo()->GetMemberInfo(index);
+    memberInfo->DefaultCopyMissingMember(copier);
+}
+
+CCopyChoiceVariantHook::~CCopyChoiceVariantHook(void)
 {
 }
 

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/18 20:00:01  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.2  2000/06/01 19:06:55  vasilche
 * Added parsing of XML data.
 *
@@ -58,8 +64,8 @@ public:
     typedef map<CLightString, long> TNameToValue;
     typedef map<long, const string*> TValueToName;
 
-    CEnumeratedTypeValues(const string& name, bool isInteger);
     CEnumeratedTypeValues(const char* name, bool isInteger);
+    CEnumeratedTypeValues(const string& name, bool isInteger);
     ~CEnumeratedTypeValues(void);
 
     const string& GetName(void) const

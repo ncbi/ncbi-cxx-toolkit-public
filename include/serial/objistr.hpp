@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/09/18 20:00:04  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.48  2000/09/01 13:16:00  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -234,7 +240,6 @@ class CChoiceTypeInfo;
 class CContainerTypeInfo;
 class CObjectStreamCopier;
 
-class CReadObjectHook;
 class CReadClassMemberHook;
 class CReadChoiceVariantHook;
 class CReadContainerElementHook;
@@ -289,10 +294,9 @@ public:
     void Skip(TTypeInfo type);
 
     // subtree reader
-    void ReadObjectNoHook(const CObjectInfo& object);
-    void ReadObjectNoHook(TObjectPtr object, TTypeInfo typeInfo);
     void ReadObject(const CObjectInfo& object);
     void ReadObject(TObjectPtr object, TTypeInfo typeInfo);
+    void SkipObject(const CObjectTypeInfo& objectType);
     void SkipObject(TTypeInfo typeInfo);
 
     void ReadSeparateObject(const CObjectInfo& object);
@@ -300,73 +304,6 @@ public:
     // internal reader
     void ReadExternalObject(TObjectPtr object, TTypeInfo typeInfo);
     void SkipExternalObject(TTypeInfo typeInfo);
-
-    // container reader
-    virtual void ReadContainer(TObjectPtr containerPtr,
-                               const CContainerTypeInfo* containerType);
-    virtual void ReadContainer(const CObjectInfo& container,
-                               CReadContainerElementHook& hook);
-    virtual void SkipContainer(const CContainerTypeInfo* containerType);
-    
-    // class reader
-    void ReadClass(const CObjectInfo& object, CReadClassMemberHook& hook);
-    void ReadClass(TObjectPtr objectPtr, const CClassTypeInfo* objectType);
-    void ReadClass(const CObjectInfo& object);
-    void SkipClass(const CClassTypeInfo* classType);
-
-    // class member reader
-    void ReadClassMemberNoHook(const CObjectInfo& object,
-                               TMemberIndex index);
-    void SetClassMemberDefaultNoHook(const CObjectInfo& object,
-                                     TMemberIndex index);
-    void ReadClassMember(const CObjectInfo& object,
-                         TMemberIndex index);
-    void SetClassMemberDefault(const CObjectInfo& object,
-                               TMemberIndex index);
-    void SkipClassMember(const CClassTypeInfo* classType,
-                         TMemberIndex index);
-    void SkipClassMemberDefault(const CClassTypeInfo* classType,
-                                TMemberIndex index);
-
-    // choice interface
-    void ReadChoice(const CObjectInfo& choice, CReadChoiceVariantHook& hook);
-    void ReadChoice(const CObjectInfo& choice);
-    void SkipChoice(const CChoiceTypeInfo* choiceType);
-
-    // choice variant interface
-    void ReadChoiceVariantNoHook(const CObjectInfo& object,
-                                 TMemberIndex index);
-    void ReadChoiceVariant(const CObjectInfo& object,
-                           TMemberIndex index);
-    void SkipChoiceVariant(const CChoiceTypeInfo* choiceType,
-                           TMemberIndex index);
-
-    // HOOKS
-    // object
-    void SetReadObjectHook(const CTypeInfo* objectType,
-                           CReadObjectHook* hook);
-    void ResetReadObjectHook(const CTypeInfo* objectType);
-    CReadObjectHook* GetReadObjectHook(const CTypeInfo* objectType) const;
-
-    // class member
-    void SetReadClassMemberHook(const CClassTypeInfo* classType,
-                                TMemberIndex memberIndex,
-                                CReadClassMemberHook* hook);
-    void ResetReadClassMemberHook(const CClassTypeInfo* classType,
-                                  TMemberIndex memberIndex);
-    CReadClassMemberHook*
-    GetReadClassMemberHook(const CClassTypeInfo* classType,
-                           TMemberIndex memberIndex) const;
-
-    // choice variant
-    void SetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                  TMemberIndex variantIndex,
-                                  CReadChoiceVariantHook* hook);
-    void ResetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                    TMemberIndex variantIndex);
-    CReadChoiceVariantHook*
-    GetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                             TMemberIndex variantIndex) const;
 
     // END OF USER INTERFACE
 
@@ -645,41 +582,54 @@ protected:
 public:
 #endif
     
+    // mid level I/O
+    // named type
+    MLIOVIR void ReadNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo, TObjectPtr object);
+    MLIOVIR void SkipNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo);
+
+    // container
+    MLIOVIR void ReadContainer(const CContainerTypeInfo* containerType,
+                               TObjectPtr containerPtr);
+    MLIOVIR void SkipContainer(const CContainerTypeInfo* containerType);
+    
+    // class
+    MLIOVIR void ReadClassSequential(const CClassTypeInfo* classType,
+                                     TObjectPtr classPtr);
+    MLIOVIR void ReadClassRandom(const CClassTypeInfo* classType,
+                                 TObjectPtr classPtr);
+    MLIOVIR void SkipClassSequential(const CClassTypeInfo* classType);
+    MLIOVIR void SkipClassRandom(const CClassTypeInfo* classType);
+
+    // choice
+    MLIOVIR void ReadChoice(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr);
+    MLIOVIR void SkipChoice(const CChoiceTypeInfo* choiceType);
+
+    // low level I/O
     // named type (alias)
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
     virtual void EndNamedType(void);
-    virtual void ReadNamedType(TTypeInfo namedTypeInfo,
-                               TTypeInfo typeInfo, TObjectPtr object);
-    virtual void SkipNamedType(TTypeInfo namedTypeInfo,
-                               TTypeInfo typeInfo);
 
+    // container
     virtual void BeginContainer(const CContainerTypeInfo* containerType) = 0;
     virtual void EndContainer(void) = 0;
     virtual bool BeginContainerElement(TTypeInfo elementType) = 0;
     virtual void EndContainerElement(void);
 
-    // low level class interface
+    // class
     virtual void BeginClass(const CClassTypeInfo* classInfo) = 0;
     virtual void EndClass(void);
 
-    virtual TMemberIndex BeginClassMember(const CMembersInfo& members) = 0;
-    virtual TMemberIndex BeginClassMember(const CMembersInfo& members,
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType) = 0;
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
                                           TMemberIndex pos) = 0;
     virtual void EndClassMember(void);
 
-    void DuplicatedMember(const CMemberInfo* memberInfo);
-    void ExpectedMember(const CMemberInfo* memberInfo);
-
-    virtual void ReadClassRandom(const CObjectInfo& object,
-                                 CReadClassMemberHook& hook);
-    virtual void ReadClassSequential(const CObjectInfo& object,
-                                     CReadClassMemberHook& hook);
-
-    // low level choice interface
+    // choice
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType) = 0;
     virtual void EndChoiceVariant(void);
-    virtual void DoReadChoice(const CObjectInfo& choice,
-                              CReadChoiceVariantHook& hook);
 
     // byte block
 	virtual void BeginBytes(ByteBlock& block) = 0;
@@ -690,6 +640,14 @@ public:
     void Unended(const string& msg);
     // report error about unended object stack frame
     virtual void UnendedFrame(void);
+
+    // report error about class members
+    void DuplicatedMember(const CMemberInfo* memberInfo);
+    void ExpectedMember(const CMemberInfo* memberInfo);
+
+    void StartDelayBuffer(void);
+    void EndDelayBuffer(CDelayBuffer& buffer,
+                        const CItemInfo* itemInfo, TObjectPtr objectPtr);
 
 protected:
     friend class CObjectStreamCopier;
@@ -760,27 +718,6 @@ private:
     vector<TReadObjectInfo> m_Objects;
 
     unsigned m_Fail;
-
-    // hooks data
-    typedef map<const CTypeInfo*, CRef<CReadObjectHook> > TReadObjectHooks;
-    typedef map<const CMemberInfo*, CRef<CReadClassMemberHook> > TReadClassMemberHooks;
-    typedef map<const CMemberInfo*, CRef<CReadChoiceVariantHook> > TReadChoiceVariantHooks;
-
-    static
-    CReadObjectHook* GetHook(const TReadObjectHooks& hooks,
-                             const CTypeInfo* objectType);
-    static
-    CReadClassMemberHook* GetHook(const TReadClassMemberHooks& hooks,
-                                  const CClassTypeInfo* classType,
-                                  TMemberIndex memberIndex);
-    static
-    CReadChoiceVariantHook* GetHook(const TReadChoiceVariantHooks& hooks,
-                                    const CChoiceTypeInfo* choiceType,
-                                    TMemberIndex variantIndex);
-    
-    AutoPtr<TReadObjectHooks> m_ReadObjectHooks;
-    AutoPtr<TReadClassMemberHooks> m_ReadClassMemberHooks;
-    AutoPtr<TReadChoiceVariantHooks> m_ReadChoiceVariantHooks;
 };
 
 #include <serial/objistr.inl>

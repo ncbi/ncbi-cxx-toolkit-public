@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/18 20:00:25  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.8  2000/09/01 13:16:20  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -68,6 +74,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrxml.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/memberid.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/enumvalues.hpp>
@@ -75,6 +83,7 @@
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
+#include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -109,9 +118,8 @@ void CObjectOStreamXml::WriteTypeName(TTypeInfo type)
 }
 
 void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
-                                  long value)
+                                  long value, const string& name)
 {
-    const string& name = values.FindName(value, values.IsInteger());
     if ( !values.GetName().empty() ) {
         // global enum
         m_Output.PutEol();
@@ -157,6 +165,19 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
             }
         }
     }
+}
+
+void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
+                                  long value)
+{
+    WriteEnum(values, value, values.FindName(value, values.IsInteger()));
+}
+
+void CObjectOStreamXml::CopyEnum(const CEnumeratedTypeValues& values,
+                                 CObjectIStream& in)
+{
+    long value = in.ReadEnum(values);
+    WriteEnum(values, value, values.FindName(value, values.IsInteger()));
 }
 
 void CObjectOStreamXml::WriteEscapedChar(char c)
@@ -232,13 +253,6 @@ void CObjectOStreamXml::WriteNull(void)
     m_Output.PutString("null");
 }
 
-void CObjectOStreamXml::WriteString(const string& str)
-{
-    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
-        WriteEscapedChar(*i);
-    }
-}
-
 void CObjectOStreamXml::WriteCString(const char* str)
 {
     if ( str == 0 ) {
@@ -248,6 +262,38 @@ void CObjectOStreamXml::WriteCString(const char* str)
 		while ( *str ) {
 			WriteEscapedChar(*str++);
 		}
+    }
+}
+
+void CObjectOStreamXml::WriteString(const string& str)
+{
+    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
+        WriteEscapedChar(*i);
+    }
+}
+
+void CObjectOStreamXml::WriteStringStore(const string& str)
+{
+    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
+        WriteEscapedChar(*i);
+    }
+}
+
+void CObjectOStreamXml::CopyString(CObjectIStream& in)
+{
+    string str;
+    in.ReadStd(str);
+    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
+        WriteEscapedChar(*i);
+    }
+}
+
+void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
+{
+    string str;
+    in.ReadStringStore(str);
+    for ( string::const_iterator i = str.begin(); i != str.end(); ++i ) {
+        WriteEscapedChar(*i);
     }
 }
 
@@ -271,12 +317,6 @@ void CObjectOStreamXml::OpenTagStart(void)
     m_LastTagAction = eTagOpen;
 }
 
-inline
-void CObjectOStreamXml::OpenTagEnd(void)
-{
-    m_Output.PutChar('>');
-}
-
 bool CObjectOStreamXml::CloseTagStart(bool forceEolBefore)
 {
     m_Output.DecIndentLevel();
@@ -295,12 +335,6 @@ bool CObjectOStreamXml::CloseTagStart(bool forceEolBefore)
     m_Output.PutString("</");
     m_LastTagAction = eTagClose;
     return true;
-}
-
-inline
-void CObjectOStreamXml::CloseTagEnd(void)
-{
-    m_Output.PutChar('>');
 }
 
 void CObjectOStreamXml::PrintTagName(size_t level)
@@ -340,107 +374,81 @@ void CObjectOStreamXml::PrintTagName(size_t level)
     THROW1_TRACE(runtime_error, "illegal frame type");
 }
 
-void CObjectOStreamXml::OpenTag(const string& name)
-{
-    OpenTagStart();
-    m_Output.PutString(name);
-    OpenTagEnd();
-}
-
-void CObjectOStreamXml::CloseTag(const string& name, bool forceEolBefore)
-{
-    if ( CloseTagStart(forceEolBefore) ) {
-        m_Output.PutString(name);
-        CloseTagEnd();
-    }
-}
-
-inline
-void CObjectOStreamXml::OpenTag(size_t level)
-{
-    OpenTagStart();
-    PrintTagName(level);
-    OpenTagEnd();
-}
-
-inline
-void CObjectOStreamXml::CloseTag(size_t level,
-                                 bool forceEolBefore)
-{
-    if ( CloseTagStart(forceEolBefore) ) {
-        PrintTagName(level);
-        CloseTagEnd();
-    }
-}
-
 void CObjectOStreamXml::WriteOtherBegin(TTypeInfo typeInfo)
 {
-    _ASSERT(!typeInfo->GetName().empty());
-    OpenTag(typeInfo->GetName());
+    OpenTag(typeInfo);
 }
 
 void CObjectOStreamXml::WriteOtherEnd(TTypeInfo typeInfo)
 {
-    CloseTag(typeInfo->GetName());
+    CloseTag(typeInfo);
 }
 
 void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
                                    TTypeInfo typeInfo)
 {
-    _ASSERT(!typeInfo->GetName().empty());
-    OpenTag(typeInfo->GetName());
+    OpenTag(typeInfo);
     WriteObject(object, typeInfo);
-    CloseTag(typeInfo->GetName());
+    CloseTag(typeInfo);
 }
 
 void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
-    if ( !containerType->GetName().empty() )
-        OpenTag(containerType->GetName());
+    OpenTagIfNamed(containerType);
 }
 
 void CObjectOStreamXml::EndContainer(void)
 {
-    const string& containerName = TopFrame().GetTypeInfo()->GetName();
-    if ( !containerName.empty() )
-        CloseTag(containerName);
+    CloseTagIfNamed(TopFrame().GetTypeInfo());
+}
+
+bool CObjectOStreamXml::WillHaveName(TTypeInfo elementType)
+{
+    while ( elementType->GetName().empty() ) {
+        if ( elementType->GetTypeFamily() != eTypeFamilyPointer )
+            return false;
+        elementType = CTypeConverter<CPointerTypeInfo>::SafeCast(elementType)->GetPointedType();
+    }
+    // found named type
+    return true;
 }
 
 void CObjectOStreamXml::BeginContainerElement(TTypeInfo elementType)
 {
-    if ( elementType->GetName().empty() )
-        OpenTag(0);
+    if ( !WillHaveName(elementType) )
+        OpenStackTag(0);
 }
 
 void CObjectOStreamXml::EndContainerElement(void)
 {
-    if ( TopFrame().GetTypeInfo()->GetName().empty() )
-        CloseTag(0);
+    if ( !WillHaveName(TopFrame().GetTypeInfo()) )
+        CloseStackTag(0);
 }
 
-void CObjectOStreamXml::WriteContainer(TConstObjectPtr containerPtr,
-                                       const CContainerTypeInfo* containerType)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectOStreamXml::WriteContainer(const CContainerTypeInfo* cType,
+                                       TConstObjectPtr containerPtr)
 {
-    if ( !containerType->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
-        OpenTag(containerType->GetName());
+    if ( !cType->GetName().empty() ) {
+        BEGIN_OBJECT_FRAME2(eFrameArray, cType);
+        OpenTag(cType);
 
-        WriteContainerContents(containerPtr, containerType);
+        WriteContainerContents(cType, containerPtr);
 
-        CloseTag(containerType->GetName(), true);
+        CloseTag(cType, true);
         END_OBJECT_FRAME();
     }
     else {
-        WriteContainerContents(containerPtr, containerType);
+        WriteContainerContents(cType, containerPtr);
     }
 }
 
-void CObjectOStreamXml::WriteContainerContents(TConstObjectPtr containerPtr,
-                                               const CContainerTypeInfo* containerType)
+void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
+                                               TConstObjectPtr containerPtr)
 {
-    TTypeInfo elementType = containerType->GetElementType();
-    auto_ptr<CContainerTypeInfo::CConstIterator> i(containerType->NewConstIterator());
-    if ( !elementType->GetName().empty() ) {
+    TTypeInfo elementType = cType->GetElementType();
+    auto_ptr<CContainerTypeInfo::CConstIterator> i(cType->NewConstIterator());
+    if ( WillHaveName(elementType) ) {
         if ( i->Init(containerPtr) ) {
             do {
                 WriteObject(i->GetElementPtr(), elementType);
@@ -452,238 +460,179 @@ void CObjectOStreamXml::WriteContainerContents(TConstObjectPtr containerPtr,
 
         if ( i->Init(containerPtr) ) {
             do {
-                OpenTag(0);
+                OpenStackTag(0);
                 WriteObject(i->GetElementPtr(), elementType);
-                CloseTag(0);
+                CloseStackTag(0);
             } while ( i->Next() );
         }
 
         END_OBJECT_FRAME();
     }
-}                                               
-
-void CObjectOStreamXml::WriteContainer(const CConstObjectInfo& container,
-                                       CWriteContainerElementsHook& hook)
-{
-    if ( !container.GetTypeInfo()->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameArray, container.GetTypeInfo());
-        OpenTag(container.GetTypeInfo()->GetName());
-
-        WriteContainerElements(container, hook);
-
-        CloseTag(container.GetTypeInfo()->GetName(), true);
-        END_OBJECT_FRAME();
-    }
-    else {
-        WriteContainerElements(container, hook);
-    }
 }
-
-void CObjectOStreamXml::WriteContainerElement(const CConstObjectInfo& element)
-{
-    if ( !element.GetTypeInfo()->GetName().empty() ) {
-        WriteObject(element);
-    }
-    else {
-        BEGIN_OBJECT_FRAME2(eFrameArrayElement, element.GetTypeInfo());
-        OpenTag(0);
-        
-        WriteObject(element);
-        
-        CloseTag(0);
-        END_OBJECT_FRAME();
-    }
-}
+#endif
 
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    _ASSERT(!namedTypeInfo->GetName().empty());
-    OpenTag(namedTypeInfo->GetName());
+    OpenTag(namedTypeInfo);
 }
 
 void CObjectOStreamXml::EndNamedType(void)
 {
-    _ASSERT(!TopFrame().GetTypeInfo()->GetName().empty());
-    CloseTag(TopFrame().GetTypeInfo()->GetName());
+    CloseTag(TopFrame().GetTypeInfo());
 }
 
+#ifdef VIRTUAL_MID_LEVEL_IO
 void CObjectOStreamXml::WriteNamedType(TTypeInfo namedTypeInfo,
                                        TTypeInfo typeInfo,
                                        TConstObjectPtr object)
 {
     BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
-    _ASSERT(!namedTypeInfo->GetName().empty());
-    OpenTag(namedTypeInfo->GetName());
+    OpenTag(namedTypeInfo);
 
     WriteObject(object, typeInfo);
 
-    CloseTag(namedTypeInfo->GetName());
+    CloseTag(namedTypeInfo);
     END_OBJECT_FRAME();
 }
 
+void CObjectOStreamXml::CopyNamedType(TTypeInfo namedTypeInfo,
+                                      TTypeInfo objectType,
+                                      CObjectStreamCopier& copier)
+{
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameNamed, namedTypeInfo);
+    copier.In().BeginNamedType(namedTypeInfo);
+
+    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    OpenTag(namedTypeInfo);
+
+    CopyObject(objectType, copier);
+
+    CloseTag(namedTypeInfo);
+    END_OBJECT_FRAME();
+
+    copier.In().EndNamedType();
+    END_OBJECT_FRAME_OF(copier.In());
+}
+#endif
+
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
-    if ( !classInfo->GetName().empty() )
-        OpenTag(classInfo->GetName());
+    OpenTagIfNamed(classInfo);
 }
 
 void CObjectOStreamXml::EndClass(void)
 {
-    TTypeInfo classType = TopFrame().GetTypeInfo();
-    if ( !classType->GetName().empty() )
-        CloseTag(classType->GetName(), true);
+    CloseTagIfNamed(TopFrame().GetTypeInfo(), true);
 }
 
 void CObjectOStreamXml::BeginClassMember(const CMemberId& /*id*/)
 {
-    OpenTag(0);
+    OpenStackTag(0);
 }
 
 void CObjectOStreamXml::EndClassMember(void)
 {
-    CloseTag(0);
+    CloseStackTag(0);
 }
 
-void CObjectOStreamXml::DoWriteClass(const CConstObjectInfo& object,
-                                     CWriteClassMembersHook& hook)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
+                                   TConstObjectPtr classPtr)
 {
-    TTypeInfo objectType = object.GetTypeInfo();
-    if ( !objectType->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
-        OpenTag(objectType->GetName());
+    if ( !classType->GetName().empty() ) {
+        BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+        OpenTag(classType);
         
-        hook.WriteClassMembers(*this, object);
+        for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+            classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
+        }
         
-        CloseTag(objectType->GetName(), true);
+        CloseTag(classType, true);
         END_OBJECT_FRAME();
     }
     else {
-        hook.WriteClassMembers(*this, object);
+        for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+            classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
+        }
     }
 }
 
-void CObjectOStreamXml::DoWriteClass(TConstObjectPtr objectPtr,
-                                     const CClassTypeInfo* objectType)
+void CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
+                                         TTypeInfo memberType,
+                                         TConstObjectPtr memberPtr)
 {
-    if ( !objectType->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
-        OpenTag(objectType->GetName());
-        
-        WriteClassMembers(objectPtr, objectType);
-        
-        CloseTag(objectType->GetName(), true);
-        END_OBJECT_FRAME();
-    }
-    else {
-        WriteClassMembers(objectPtr, objectType);
-    }
-}
-
-void CObjectOStreamXml::DoWriteClassMember(const CMemberId& id,
-                                           const CConstObjectInfo& object,
-                                           TMemberIndex index,
-                                           CWriteClassMemberHook& hook)
-{
-    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
-    OpenTag(0);
-    
-    hook.WriteClassMember(*this, object, index);
-    
-    CloseTag(0);
-    END_OBJECT_FRAME();
-}
-
-void CObjectOStreamXml::DoWriteClassMember(const CMemberId& id,
-                                           TConstObjectPtr memberPtr,
-                                           TTypeInfo memberType)
-{
-    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
-    OpenTag(0);
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+    OpenStackTag(0);
     
     WriteObject(memberPtr, memberType);
     
-    CloseTag(0);
+    CloseStackTag(0);
     END_OBJECT_FRAME();
 }
 
-void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
-                                           const CMemberId& id)
+bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
+                                         const CDelayBuffer& buffer)
 {
-    const string& choiceName = choiceType->GetName();
-    if ( !choiceName.empty() )
-        OpenTag(choiceName);
-    OpenTag(0);
+    if ( !buffer.HaveFormat(eSerial_Xml) )
+        return false;
+
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+    OpenStackTag(0);
+    
+    Write(buffer.GetSource());
+    
+    CloseStackTag(0);
+    END_OBJECT_FRAME();
+
+    return true;
+}
+#endif
+
+void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
+                                           const CMemberId& /*id*/)
+{
+    OpenTagIfNamed(choiceType);
+    OpenStackTag(0);
 }
 
 void CObjectOStreamXml::EndChoiceVariant(void)
 {
-    CloseTag(0);
-    const string& choiceName = FetchFrameFromTop(1).GetTypeInfo()->GetName();
-    if ( !choiceName.empty() )
-        CloseTag(choiceName);
+    CloseStackTag(0);
+    CloseTagIfNamed(FetchFrameFromTop(1).GetTypeInfo());
 }
 
-void CObjectOStreamXml::WriteChoice(const CConstObjectInfo& choice,
-                                    CWriteChoiceVariantHook& hook)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectOStreamXml::WriteChoice(const CChoiceTypeInfo* choiceType,
+                                    TConstObjectPtr choicePtr)
 {
-    TTypeInfo choiceType = choice.GetTypeInfo();
     if ( !choiceType->GetName().empty() ) {
         BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-        OpenTag(choiceType->GetName());
+        OpenTag(choiceType);
 
-        WriteChoiceContents(choice, hook);
+        WriteChoiceContents(choiceType, choicePtr);
 
-        CloseTag(choiceType->GetName());
+        CloseTag(choiceType);
         END_OBJECT_FRAME();
     }
     else {
-        WriteChoiceContents(choice, hook);
+        WriteChoiceContents(choiceType, choicePtr);
     }
 }
 
-void CObjectOStreamXml::WriteChoice(const CConstObjectInfo& choice)
+void CObjectOStreamXml::WriteChoiceContents(const CChoiceTypeInfo* choiceType,
+                                            TConstObjectPtr choicePtr)
 {
-    TTypeInfo choiceType = choice.GetTypeInfo();
-    if ( !choiceType->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-        OpenTag(choiceType->GetName());
-
-        WriteChoiceContents(choice);
-
-        CloseTag(choiceType->GetName());
-        END_OBJECT_FRAME();
-    }
-    else {
-        WriteChoiceContents(choice);
-    }
-}
-
-void CObjectOStreamXml::WriteChoiceContents(const CConstObjectInfo& choice,
-                                            CWriteChoiceVariantHook& hook)
-{
-    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
-    const CMemberId& id = v.GetVariantInfo()->GetId();
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
-    OpenTag(0);
+    TMemberIndex index = choiceType->GetIndex(choicePtr);
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    OpenStackTag(0);
     
-    hook.WriteChoiceVariant(*this, choice, v.GetVariantIndex());
+    variantInfo->WriteVariant(*this, choicePtr);
     
-    CloseTag(0);
+    CloseStackTag(0);
     END_OBJECT_FRAME();
 }
-
-void CObjectOStreamXml::WriteChoiceContents(const CConstObjectInfo& choice)
-{
-    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
-    const CMemberId& id = v.GetVariantInfo()->GetId();
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
-    OpenTag(0);
-    
-    WriteChoiceVariant(choice, v.GetVariantIndex());
-    
-    CloseTag(0);
-    END_OBJECT_FRAME();
-}
+#endif
 
 static const char* const HEX = "0123456789ABCDEF";
 

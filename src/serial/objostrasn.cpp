@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/09/18 20:00:24  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.44  2000/09/01 13:16:19  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -207,6 +213,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objcopy.hpp>
 #include <serial/memberid.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
@@ -214,6 +222,7 @@
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
+#include <serial/delaybuf.hpp>
 #include <math.h>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
@@ -259,14 +268,26 @@ void CObjectOStreamAsn::WriteTypeName(TTypeInfo type)
     }
 }
 
+inline
+void CObjectOStreamAsn::WriteEnum(long value, const string& valueName)
+{
+    if ( !valueName.empty() )
+		m_Output.PutString(valueName);
+    else
+        m_Output.PutLong(value);
+}
+
 void CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
                                   long value)
 {
-    const string& name = values.FindName(value, values.IsInteger());
-    if ( !name.empty() )
-		m_Output.PutString(name);
-    else
-        m_Output.PutLong(value);
+    WriteEnum(value, values.FindName(value, values.IsInteger()));
+}
+
+void CObjectOStreamAsn::CopyEnum(const CEnumeratedTypeValues& values,
+                                 CObjectIStream& in)
+{
+    long value = in.ReadEnum(values);
+    WriteEnum(value, values.FindName(value, values.IsInteger()));
 }
 
 void CObjectOStreamAsn::WriteBool(bool data)
@@ -370,11 +391,6 @@ void CObjectOStreamAsn::WriteString(const char* ptr, size_t length)
     m_Output.PutChar('"');
 }
 
-void CObjectOStreamAsn::WriteString(const string& str)
-{
-    WriteString(str.data(), str.size());
-}
-
 void CObjectOStreamAsn::WriteCString(const char* str)
 {
     if ( str == 0 ) {
@@ -383,6 +399,30 @@ void CObjectOStreamAsn::WriteCString(const char* str)
     else {
         WriteString(str, strlen(str));
     }
+}
+
+void CObjectOStreamAsn::WriteString(const string& str)
+{
+    WriteString(str.data(), str.size());
+}
+
+void CObjectOStreamAsn::WriteStringStore(const string& str)
+{
+    WriteString(str.data(), str.size());
+}
+
+void CObjectOStreamAsn::CopyString(CObjectIStream& in)
+{
+    string s;
+    in.ReadStd(s);
+    WriteString(s.data(), s.size());
+}
+
+void CObjectOStreamAsn::CopyStringStore(CObjectIStream& in)
+{
+    string s;
+    in.ReadStringStore(s);
+    WriteString(s.data(), s.size());
 }
 
 void CObjectOStreamAsn::WriteId(const string& str)
@@ -449,7 +489,7 @@ void CObjectOStreamAsn::NextElement(void)
     m_Output.PutEol();
 }
 
-void CObjectOStreamAsn::BeginContainer(const CContainerTypeInfo* /*containerType*/)
+void CObjectOStreamAsn::BeginContainer(const CContainerTypeInfo* /*cType*/)
 {
     StartBlock();
 }
@@ -464,16 +504,17 @@ void CObjectOStreamAsn::BeginContainerElement(TTypeInfo /*elementType*/)
     NextElement();
 }
 
-void CObjectOStreamAsn::WriteContainer(TConstObjectPtr containerPtr,
-                                       const CContainerTypeInfo* containerType)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectOStreamAsn::WriteContainer(const CContainerTypeInfo* cType,
+                                       TConstObjectPtr containerPtr)
 {
-    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BEGIN_OBJECT_FRAME2(eFrameArray, cType);
     StartBlock();
         
-    TTypeInfo elementType = containerType->GetElementType();
+    TTypeInfo elementType = cType->GetElementType();
     BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-    auto_ptr<CContainerTypeInfo::CConstIterator> i(containerType->NewConstIterator());
+    auto_ptr<CContainerTypeInfo::CConstIterator> i(cType->NewConstIterator());
     if ( i->Init(containerPtr) ) {
         do {
             NextElement();
@@ -488,28 +529,35 @@ void CObjectOStreamAsn::WriteContainer(TConstObjectPtr containerPtr,
     END_OBJECT_FRAME();
 }
 
-void CObjectOStreamAsn::WriteContainer(const CConstObjectInfo& container,
-                                       CWriteContainerElementsHook& hook)
+void CObjectOStreamAsn::CopyContainer(const CContainerTypeInfo* cType,
+                                      CObjectStreamCopier& copier)
 {
-    const CContainerTypeInfo* containerType = container.GetContainerTypeInfo();
-    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArray, cType);
+    copier.In().BeginContainer(cType);
+
     StartBlock();
-        
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, containerType->GetElementType());
 
-    WriteContainerElements(container, hook);
+    TTypeInfo elementType = cType->GetElementType();
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArrayElement, elementType);
+    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
+
+    while ( copier.In().BeginContainerElement(elementType) ) {
+        NextElement();
+
+        CopyObject(elementType, copier);
+
+        copier.In().EndContainerElement();
+    }
+
+    END_OBJECT_FRAME();
+    END_OBJECT_FRAME_OF(copier.In());
     
-    END_OBJECT_FRAME();
-
     EndBlock();
-    END_OBJECT_FRAME();
-}
 
-void CObjectOStreamAsn::WriteContainerElement(const CConstObjectInfo& element)
-{
-    NextElement();
-    WriteObject(element);
+    copier.In().EndContainer();
+    END_OBJECT_FRAME_OF(copier.In());
 }
+#endif
 
 void CObjectOStreamAsn::BeginClass(const CClassTypeInfo* /*classInfo*/)
 {
@@ -531,55 +579,29 @@ void CObjectOStreamAsn::BeginClassMember(const CMemberId& id)
     }
 }
 
-void CObjectOStreamAsn::DoWriteClass(const CConstObjectInfo& object,
-                                     CWriteClassMembersHook& hook)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectOStreamAsn::WriteClass(const CClassTypeInfo* classType,
+                                   TConstObjectPtr classPtr)
 {
     StartBlock();
     
-    hook.WriteClassMembers(*this, object);
-    
-    EndBlock();
-}
-
-void CObjectOStreamAsn::DoWriteClass(TConstObjectPtr objectPtr,
-                                     const CClassTypeInfo* objectType)
-{
-    StartBlock();
-    
-    WriteClassMembers(objectPtr, objectType);
-    
-    EndBlock();
-}
-
-void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
-                                           const CConstObjectInfo& object,
-                                           TMemberIndex index,
-                                           CWriteClassMemberHook& hook)
-{
-    NextElement();
-
-    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
-    
-    if ( !id.GetName().empty() ) {
-        m_Output.PutString(id.GetName());
-        m_Output.PutChar(' ');
+    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+        classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
     }
     
-    hook.WriteClassMember(*this, object, index);
-
-    END_OBJECT_FRAME();
+    EndBlock();
 }
 
-void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
-                                           TConstObjectPtr memberPtr,
-                                           TTypeInfo memberType)
+void CObjectOStreamAsn::WriteClassMember(const CMemberId& memberId,
+                                         TTypeInfo memberType,
+                                         TConstObjectPtr memberPtr)
 {
     NextElement();
 
-    BEGIN_OBJECT_FRAME2(eFrameClassMember, id);
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
     
-    if ( !id.GetName().empty() ) {
-        m_Output.PutString(id.GetName());
+    if ( !memberId.GetName().empty() ) {
+        m_Output.PutString(memberId.GetName());
         m_Output.PutChar(' ');
     }
     
@@ -588,43 +610,184 @@ void CObjectOStreamAsn::DoWriteClassMember(const CMemberId& id,
     END_OBJECT_FRAME();
 }
 
-void CObjectOStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* /*choiceType*/,
+bool CObjectOStreamAsn::WriteClassMember(const CMemberId& memberId,
+                                         const CDelayBuffer& buffer)
+{
+    if ( !buffer.HaveFormat(eSerial_AsnText) )
+        return false;
+
+    NextElement();
+
+    BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+    
+    if ( !memberId.GetName().empty() ) {
+        m_Output.PutString(memberId.GetName());
+        m_Output.PutChar(' ');
+    }
+    
+    Write(buffer.GetSource());
+
+    END_OBJECT_FRAME();
+
+    return true;
+}
+
+void CObjectOStreamAsn::CopyClassRandom(const CClassTypeInfo* classType,
+                                        CObjectStreamCopier& copier)
+{
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
+    copier.In().BeginClass(classType);
+
+    StartBlock();
+
+    vector<bool> read(classType->GetMembers().LastIndex() + 1);
+
+    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
+
+    TMemberIndex index;
+    while ( (index = copier.In().BeginClassMember(classType)) !=
+            kInvalidMember ) {
+        const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
+        copier.In().SetTopMemberId(memberInfo->GetId());
+        SetTopMemberId(memberInfo->GetId());
+
+        if ( read[index] ) {
+            copier.In().DuplicatedMember(memberInfo);
+        }
+        else {
+            read[index] = true;
+
+            NextElement();
+            if ( !memberInfo->GetId().GetName().empty() ) {
+                m_Output.PutString(memberInfo->GetId().GetName());
+                m_Output.PutChar(' ');
+            }
+
+            memberInfo->CopyMember(copier);
+        }
+        
+        copier.In().EndClassMember();
+    }
+
+    END_OBJECT_FRAME();
+    END_OBJECT_FRAME_OF(copier.In());
+
+    // init all absent members
+    for ( CClassTypeInfo::CIterator i(classType); i; ++i ) {
+        if ( !read[*i] ) {
+            classType->GetMemberInfo(*i)->CopyMissingMember(copier);
+        }
+    }
+
+    EndBlock();
+
+    copier.In().EndClass();
+    END_OBJECT_FRAME_OF(copier.In());
+}
+
+void CObjectOStreamAsn::CopyClassSequential(const CClassTypeInfo* classType,
+                                            CObjectStreamCopier& copier)
+{
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
+    copier.In().BeginClass(classType);
+
+    StartBlock();
+
+    CClassTypeInfo::CIterator pos(classType);
+    BEGIN_OBJECT_FRAME_OF(copier.In(), eFrameClassMember);
+    BEGIN_OBJECT_FRAME(eFrameClassMember);
+
+    TMemberIndex index;
+    while ( (index = copier.In().BeginClassMember(classType, pos)) !=
+            kInvalidMember ) {
+        const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
+        copier.In().SetTopMemberId(memberInfo->GetId());
+        SetTopMemberId(memberInfo->GetId());
+
+        for ( TMemberIndex i = *pos; i < index; ++i ) {
+            // init missing member
+            classType->GetMemberInfo(i)->CopyMissingMember(copier);
+        }
+
+        NextElement();
+        if ( !memberInfo->GetId().GetName().empty() ) {
+            m_Output.PutString(memberInfo->GetId().GetName());
+            m_Output.PutChar(' ');
+        }
+        
+        memberInfo->CopyMember(copier);
+        
+        pos = index + 1;
+
+        copier.In().EndClassMember();
+    }
+
+    END_OBJECT_FRAME();
+    END_OBJECT_FRAME_OF(copier.In());
+
+    // init all absent members
+    for ( ; pos; ++pos ) {
+        classType->GetMemberInfo(*pos)->CopyMissingMember(copier);
+    }
+
+    EndBlock();
+
+    copier.In().EndClass();
+    END_OBJECT_FRAME_OF(copier.In());
+}
+#endif
+
+void CObjectOStreamAsn::BeginChoiceVariant(const CChoiceTypeInfo* ,
                                            const CMemberId& id)
 {
     m_Output.PutString(id.GetName());
     m_Output.PutChar(' ');
 }
 
-void CObjectOStreamAsn::WriteChoice(const CConstObjectInfo& choice,
-                                    CWriteChoiceVariantHook& hook)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectOStreamAsn::WriteChoice(const CChoiceTypeInfo* choiceType,
+                                    TConstObjectPtr choicePtr)
 {
-    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
-    const CMemberId& id = v.GetVariantInfo()->GetId();
+    TMemberIndex index = choiceType->GetIndex(choicePtr);
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
 
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
-
-    m_Output.PutString(id.GetName());
+    m_Output.PutString(variantInfo->GetId().GetName());
     m_Output.PutChar(' ');
     
-    hook.WriteChoiceVariant(*this, choice, v.GetVariantIndex());
+    variantInfo->WriteVariant(*this, choicePtr);
 
     END_OBJECT_FRAME();
 }
 
-void CObjectOStreamAsn::WriteChoice(const CConstObjectInfo& choice)
+void CObjectOStreamAsn::CopyChoice(const CChoiceTypeInfo* choiceType,
+                                   CObjectStreamCopier& copier)
 {
-    CConstObjectInfo::CChoiceVariant v = choice.GetCurrentChoiceVariant();
-    const CMemberId& id = v.GetVariantInfo()->GetId();
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoice, choiceType);
 
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, id);
+    TMemberIndex index = copier.In().BeginChoiceVariant(choiceType);
+    if ( index == kInvalidMember )
+        copier.In().ThrowError(CObjectIStream::eFormatError,
+                      "choice variant id expected");
 
-    m_Output.PutString(id.GetName());
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameChoiceVariant,
+                           variantInfo->GetId());
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+    m_Output.PutString(variantInfo->GetId().GetName());
     m_Output.PutChar(' ');
-    
-    WriteChoiceVariant(choice, v.GetVariantIndex());
+
+    variantInfo->CopyVariant(copier);
 
     END_OBJECT_FRAME();
+
+    copier.In().EndChoiceVariant();
+    END_OBJECT_FRAME_OF(copier.In());
+
+    END_OBJECT_FRAME_OF(copier.In());
 }
+#endif
 
 void CObjectOStreamAsn::BeginBytes(const ByteBlock& )
 {

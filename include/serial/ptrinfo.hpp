@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/09/18 20:00:08  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.22  2000/09/13 15:10:13  vasilche
 * Fixed type detection in type iterators.
 *
@@ -124,6 +130,7 @@
 */
 
 #include <serial/typeinfo.hpp>
+#include <serial/typeref.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -133,40 +140,22 @@ class CPointerTypeInfo : public CTypeInfo
     typedef CTypeInfo CParent;
 public:
     CPointerTypeInfo(TTypeInfo type);
-#ifdef TYPEINFO
-    CPointerTypeInfo(const char* name, TTypeInfo type);
+    CPointerTypeInfo(const CTypeRef& typeRef);
+    CPointerTypeInfo(size_t size, TTypeInfo type);
+    CPointerTypeInfo(size_t size, const CTypeRef& typeRef);
     CPointerTypeInfo(const string& name, TTypeInfo type);
-    CPointerTypeInfo(const char* templ, TTypeInfo arg, TTypeInfo type);
-    CPointerTypeInfo(const char* templ, const char* arg, TTypeInfo type);
-#endif
-    ~CPointerTypeInfo(void);
-
-    virtual ETypeFamily GetTypeFamily(void) const;
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataType;
-        }
+    TTypeInfo GetPointedType(void) const;
     
-    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const
-        {
-            return x_GetObjectPointer(object);
-        }
-    TObjectPtr GetObjectPointer(TObjectPtr object) const
-        {
-            return const_cast<TObjectPtr>(x_GetObjectPointer(object));
-        }
-    virtual TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
-    virtual void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
+    TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
+    TObjectPtr GetObjectPointer(TObjectPtr object) const;
+    void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
 
-    virtual size_t GetSize(void) const;
-
-    virtual TObjectPtr Create(void) const;
+    TTypeInfo GetRealDataTypeInfo(TConstObjectPtr object) const;
 
     virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool IsOrMayContainType(TTypeInfo type) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -174,27 +163,45 @@ public:
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    virtual TTypeInfo GetPointedTypeInfo(void) const;
-    virtual CConstObjectInfo GetPointedObject(const CConstObjectInfo& object) const;
-    virtual CObjectInfo GetPointedObject(const CObjectInfo& object) const;
+    CConstObjectInfo GetPointedObject(const CConstObjectInfo& object) const;
+    CObjectInfo GetPointedObject(const CObjectInfo& object) const;
 
 protected:
-    virtual TConstObjectPtr x_GetObjectPointer(TConstObjectPtr obj) const;
+    static TObjectPtr GetPointer(const CPointerTypeInfo* objectType,
+                                 TObjectPtr objectPtr);
+    static void SetPointer(const CPointerTypeInfo* objectType,
+                           TObjectPtr objectPtr,
+                           TObjectPtr dataPtr);
 
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
+    static TObjectPtr CreatePointer(TTypeInfo objectType);
 
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    static void ReadPointer(CObjectIStream& in,
+                            TTypeInfo objectType,
+                            TObjectPtr objectPtr);
+    static void WritePointer(CObjectOStream& out,
+                             TTypeInfo objectType,
+                             TConstObjectPtr objectPtr);
+    static void SkipPointer(CObjectIStream& in,
+                            TTypeInfo objectType);
+    static void CopyPointer(CObjectStreamCopier& copier,
+                            TTypeInfo objectType);
 
-    virtual void SkipData(CObjectIStream& in) const;
+protected:
+    typedef TObjectPtr (*TGetDataFunction)(const CPointerTypeInfo* objectType,
+                                           TObjectPtr objectPtr);
+    typedef void (*TSetDataFunction)(const CPointerTypeInfo* objectType,
+                                     TObjectPtr objectPtr,
+                                     TObjectPtr dataPtr);
 
-    virtual void CopyData(CObjectStreamCopier& copier) const;
+    CTypeRef m_DataTypeRef;
+    TGetDataFunction m_GetData;
+    TSetDataFunction m_SetData;
 
 private:
-    TTypeInfo m_DataType;
-
+    void InitPointerTypeInfoFunctions(void);
 };
 
-//#include <ptrinfo.inl>
+#include <serial/ptrinfo.inl>
 
 END_NCBI_SCOPE
 

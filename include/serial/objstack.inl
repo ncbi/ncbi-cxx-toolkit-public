@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/18 20:00:08  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.5  2000/09/01 13:16:02  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -188,6 +194,12 @@ CObjectStack::TFrame& CObjectStack::TopFrame(void)
 {
     _ASSERT(!StackIsEmpty());
     return *m_StackPtr;
+}
+
+inline
+void CObjectStack::SetTopMemberId(const CMemberId& memberid)
+{
+    TopFrame().SetMemberId(memberid);
 }
 
 inline

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/18 19:59:59  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.15  2000/09/01 13:15:57  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -106,6 +112,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
 #include <serial/classinfob.hpp>
+#include <serial/variant.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -115,32 +122,61 @@ class CClassInfoHelperBase;
 class CChoiceTypeInfo : public CClassTypeInfoBase {
     typedef CClassTypeInfoBase CParent;
 public:
-    typedef TMemberIndex (*TWhichFunction)(TConstObjectPtr object);
-    typedef void (*TResetFunction)(TObjectPtr object);
-    typedef void (*TSelectFunction)(TObjectPtr object, TMemberIndex index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object, TMemberIndex index);
+    typedef TMemberIndex (*TWhichFunction)(const CChoiceTypeInfo* choiceType,
+                                           TConstObjectPtr choicePtr);
+    typedef void (*TResetFunction)(const CChoiceTypeInfo* choiceType,
+                                   TObjectPtr choicePtr);
+    typedef void (*TSelectFunction)(const CChoiceTypeInfo* choiceType,
+                                    TObjectPtr choicePtr, TMemberIndex index);
+    typedef void (*TSelectDelayFunction)(const CChoiceTypeInfo* choiceType,
+                                         TObjectPtr choicePtr,
+                                         TMemberIndex index);
+    typedef TObjectPtr (*TGetDataFunction)(const CChoiceTypeInfo* choiceType,
+                                           TObjectPtr choicePtr,
+                                           TMemberIndex index);
 
-    CChoiceTypeInfo(const string& name,
-                    size_t size,
+    CChoiceTypeInfo(size_t size, const char* name,
+                    const void* nonCObject, TTypeCreate createFunc,
                     const type_info& ti,
-                    TCreateFunction createFunc,
                     TWhichFunction whichFunc,
                     TSelectFunction selectFunc,
-                    TResetFunction resetFunc = 0);
-    CChoiceTypeInfo(const char* name,
-                    size_t size,
+                    TResetFunction resetFunc);
+    CChoiceTypeInfo(size_t size, const char* name,
+                    const CObject* cObject, TTypeCreate createFunc,
                     const type_info& ti,
-                    TCreateFunction createFunc,
                     TWhichFunction whichFunc,
                     TSelectFunction selectFunc,
-                    TResetFunction resetFunc = 0);
+                    TResetFunction resetFunc);
+    CChoiceTypeInfo(size_t size, const string& name,
+                    const void* nonCObject, TTypeCreate createFunc,
+                    const type_info& ti,
+                    TWhichFunction whichFunc,
+                    TSelectFunction selectFunc,
+                    TResetFunction resetFunc);
+    CChoiceTypeInfo(size_t size, const string& name,
+                    const CObject* cObject, TTypeCreate createFunc,
+                    const type_info& ti,
+                    TWhichFunction whichFunc,
+                    TSelectFunction selectFunc,
+                    TResetFunction resetFunc);
 
-    virtual ETypeFamily GetTypeFamily(void) const;
+    const CMembersInfo& GetVariants(void) const
+        {
+            return GetItems();
+        }
+    const CVariantInfo* GetVariantInfo(TMemberIndex index) const
+        {
+            return static_cast<const CVariantInfo*>
+                (GetItems().GetItemInfo(index));
+        }
 
-protected:
-    friend class CClassInfoHelperBase;
+    CVariantInfo* AddVariant(const char* variantId,
+                             const void* variantPtr,
+                             const CTypeRef& variantType);
+    CVariantInfo* AddVariant(const CMemberId& variantId,
+                             const void* variantPtr,
+                             const CTypeRef& variantType);
 
-public:
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
     virtual void SetDefault(TObjectPtr dst) const;
@@ -152,37 +188,39 @@ public:
     void SetIndex(TObjectPtr object, TMemberIndex index) const;
     void SetDelayIndex(TObjectPtr object, TMemberIndex index) const;
 
-    TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const
-        {
-            return x_GetData(const_cast<TObjectPtr>(object), index);
-        }
-    TObjectPtr GetData(TObjectPtr object, TMemberIndex index) const
-        {
-            return x_GetData(object, index);
-        }
-
-private:
-    TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
+    TConstObjectPtr GetData(TConstObjectPtr object, TMemberIndex index) const;
+    TObjectPtr GetData(TObjectPtr object, TMemberIndex index) const;
 
 protected:
     void SetSelectDelayFunction(TSelectDelayFunction func);
 
-    friend class CChoiceTypeInfoReader;
+    static TObjectPtr GetChoiceData(const CChoiceTypeInfo* choiceType,
+                                    TObjectPtr choicePtr,
+                                    TMemberIndex index);
 
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    virtual void SkipData(CObjectIStream& in) const;
-
-    void CopyData(CObjectStreamCopier& copier) const;
+    static void ReadChoiceDefault(CObjectIStream& in,
+                                  TTypeInfo objectType,
+                                  TObjectPtr objectPtr);
+    static void WriteChoiceDefault(CObjectOStream& out,
+                                   TTypeInfo objectType,
+                                   TConstObjectPtr objectPtr);
+    static void SkipChoiceDefault(CObjectIStream& in,
+                                  TTypeInfo objectType);
+    static void CopyChoiceDefault(CObjectStreamCopier& copier,
+                                  TTypeInfo objectType);
 
 private:
+    void InitChoiceTypeInfoFunctions(void);
+
+protected:
     TWhichFunction m_WhichFunction;
     TResetFunction m_ResetFunction;
     TSelectFunction m_SelectFunction;
     TSelectDelayFunction m_SelectDelayFunction;
+    TGetDataFunction m_GetDataFunction;
 };
+
+#include <serial/choice.inl>
 
 END_NCBI_SCOPE
 

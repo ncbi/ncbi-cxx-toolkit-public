@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/09/18 20:00:06  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.44  2000/09/01 13:16:01  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -216,7 +222,6 @@ BEGIN_NCBI_SCOPE
 class CMemberId;
 class CDelayBuffer;
 
-class CWriteObjectHook;
 class CWriteContainerElementsHook;
 class CWriteClassMembersHook;
 class CWriteChoiceVariantHook;
@@ -273,101 +278,24 @@ public:
     void Write(TConstObjectPtr object, const CTypeRef& type);
 
     // subtree writer
-    void WriteObjectNoHook(const CConstObjectInfo& object);
-    void WriteObjectNoHook(TConstObjectPtr object, TTypeInfo typeInfo);
     void WriteObject(const CConstObjectInfo& object);
     void WriteObject(TConstObjectPtr object, TTypeInfo typeInfo);
+
+    void CopyObject(TTypeInfo objectType,
+                    CObjectStreamCopier& copier);
     
     void WriteSeparateObject(const CConstObjectInfo& object);
 
     // internal writer
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
 
-    // container writer
-    virtual void WriteContainer(TConstObjectPtr containerPtr,
-                                const CContainerTypeInfo* containerType) = 0;
-    virtual void WriteContainer(const CConstObjectInfo& container,
-                                CWriteContainerElementsHook& hook) = 0;
-    virtual void WriteContainerElement(const CConstObjectInfo& element) = 0;
-
-    // class writer
-    void WriteClass(const CConstObjectInfo& object,
-                    CWriteClassMembersHook& hook);
-    void WriteClass(TConstObjectPtr objectPtr,
-                    const CClassTypeInfo* objectType);
-    void WriteClass(const CConstObjectInfo& object);
-    void WriteClassMembers(const CConstObjectInfo& object);
-
-    // class member writer
-    void WriteClassMember(const CConstObjectInfo& object,
-                          TMemberIndex memberIndex,
-                          CWriteClassMemberHook& hook);
-    void WriteClassMemberNoHook(const CConstObjectInfo& object,
-                                TMemberIndex memberIndex);
-    void WriteClassMember(const CConstObjectInfo& object,
-                          TMemberIndex memberIndex);
-
-    // choice writer
-    virtual void WriteChoice(const CConstObjectInfo& choice,
-                             CWriteChoiceVariantHook& hook);
-    virtual void WriteChoice(const CConstObjectInfo& choice);
-
-    // choice variant writer
-    void WriteChoiceVariantNoHook(const CConstObjectInfo& choice,
-                                  TMemberIndex index);
-    void WriteChoiceVariant(const CConstObjectInfo& choice,
-                            TMemberIndex index);
-
-    // HOOKS
-    // object
-    void SetWriteObjectHook(const CTypeInfo* objectType,
-                            CWriteObjectHook* hook);
-    void ResetWriteObjectHook(const CTypeInfo* objectType);
-    CWriteObjectHook* GetWriteObjectHook(const CTypeInfo* objectType) const;
-
-    // class member
-    void SetWriteClassMemberHook(const CClassTypeInfo* objectType,
-                                 TMemberIndex memberIndex,
-                                 CWriteClassMemberHook* hook);
-    void ResetWriteClassMemberHook(const CClassTypeInfo* objectType,
-                                   TMemberIndex memberIndex);
-    CWriteClassMemberHook*
-    GetWriteClassMemberHook(const CClassTypeInfo* objectType,
-                            TMemberIndex memberIndex) const;
-
-    // choice variant
-    void SetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                   TMemberIndex variantIndex,
-                                   CWriteChoiceVariantHook* hook);
-    void ResetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                     TMemberIndex variantIndex);
-    CWriteChoiceVariantHook*
-    GetWriteChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                              TMemberIndex variantIndex) const;
-
     // END OF USER INTERFACE
 
     // low level writers
-    virtual void DoWriteClass(const CConstObjectInfo& object,
-                              CWriteClassMembersHook& hook);
-    virtual void DoWriteClass(TConstObjectPtr objectPtr,
-                              const CClassTypeInfo* objectType);
-    void WriteClassMembers(TConstObjectPtr objectPtr,
-                           const CClassTypeInfo* objectType);
-    virtual void DoWriteClassMember(const CMemberId& id,
-                                    const CConstObjectInfo& object,
-                                    TMemberIndex index,
-                                    CWriteClassMemberHook& hook);
-    virtual void DoWriteClassMember(const CMemberId& id,
-                                    TConstObjectPtr memberPtr,
-                                    TTypeInfo memberType);
 
+    // root object
     virtual void WriteTypeName(TTypeInfo type);
     virtual void EndOfWrite(void);
-
-    // try to write enum value name, false if none
-    virtual void WriteEnum(const CEnumeratedTypeValues& values,
-                           long value) = 0;
 
     // std C types readers
     void WriteStd(const bool& data)
@@ -430,13 +358,27 @@ public:
         {
             WriteString(data);
         }
-    virtual void WriteStringStore(const string& data);
 
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 
+    // NULL
     virtual void WriteNull(void) = 0;
 
+    // enum
+    virtual void WriteEnum(const CEnumeratedTypeValues& values,
+                           long value) = 0;
+    virtual void CopyEnum(const CEnumeratedTypeValues& values,
+                          CObjectIStream& in) = 0;
+
+    // strings
+	virtual void WriteCString(const char* str) = 0;
+    virtual void WriteString(const string& str) = 0;
+    virtual void WriteStringStore(const string& data) = 0;
+    virtual void CopyString(CObjectIStream& in) = 0;
+    virtual void CopyStringStore(CObjectIStream& in) = 0;
+
+    // delayed buffer
     virtual bool Write(const CRef<CByteSource>& source);
 
 	class ByteBlock;
@@ -491,28 +433,65 @@ protected:
 public:
 #endif
 
-    // named type interface
+    // mid level I/O
+    // named type (alias)
+    MLIOVIR void WriteNamedType(TTypeInfo namedTypeInfo,
+                                TTypeInfo typeInfo, TConstObjectPtr object);
+    // container
+    MLIOVIR void WriteContainer(const CContainerTypeInfo* containerType,
+                                TConstObjectPtr containerPtr);
+    void WriteContainerElement(const CConstObjectInfo& element);
+    // class
+    void WriteClassRandom(const CClassTypeInfo* classType,
+                          TConstObjectPtr classPtr);
+    void WriteClassSequential(const CClassTypeInfo* classType,
+                              TConstObjectPtr classPtr);
+    MLIOVIR void WriteClass(const CClassTypeInfo* objectType,
+                            TConstObjectPtr objectPtr);
+    MLIOVIR void WriteClassMember(const CMemberId& memberId,
+                                  TTypeInfo memberType,
+                                  TConstObjectPtr memberPtr);
+    MLIOVIR bool WriteClassMember(const CMemberId& memberId,
+                                  const CDelayBuffer& buffer);
+    // choice
+    MLIOVIR void WriteChoice(const CChoiceTypeInfo* choiceType,
+                             TConstObjectPtr choicePtr);
+    // COPY
+    // named type (alias)
+    MLIOVIR void CopyNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo,
+                               CObjectStreamCopier& copier);
+    // container
+    MLIOVIR void CopyContainer(const CContainerTypeInfo* containerType,
+                               CObjectStreamCopier& copier);
+    // class
+    MLIOVIR void CopyClassRandom(const CClassTypeInfo* objectType,
+                                 CObjectStreamCopier& copier);
+    MLIOVIR void CopyClassSequential(const CClassTypeInfo* objectType,
+                                     CObjectStreamCopier& copier);
+    // choice
+    MLIOVIR void CopyChoice(const CChoiceTypeInfo* choiceType,
+                            CObjectStreamCopier& copier);
+
+    // low level I/O
+    // named type
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
     virtual void EndNamedType(void);
-    virtual void WriteNamedType(TTypeInfo namedTypeInfo,
-                                TTypeInfo typeInfo, TConstObjectPtr object);
 
-    // container interface
-    void WriteContainerElements(const CConstObjectInfo& container,
-                                CWriteContainerElementsHook& hook);
-
+    // container
     virtual void BeginContainer(const CContainerTypeInfo* containerType) = 0;
     virtual void EndContainer(void);
     virtual void BeginContainerElement(TTypeInfo elementType);
     virtual void EndContainerElement(void);
 
-    // class interface
+    // class
     virtual void BeginClass(const CClassTypeInfo* classInfo) = 0;
     virtual void EndClass(void);
 
     virtual void BeginClassMember(const CMemberId& id) = 0;
     virtual void EndClassMember(void);
 
+    // choice
     virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                     const CMemberId& id) = 0;
     virtual void EndChoiceVariant(void);
@@ -549,8 +528,6 @@ protected:
     virtual void WriteULong(unsigned long data) = 0;
     virtual void WriteFloat(float data);
     virtual void WriteDouble(double data) = 0;
-	virtual void WriteCString(const char* str);
-    virtual void WriteString(const string& str) = 0;
 
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterAndWrite(TConstObjectPtr object, TTypeInfo typeInfo);
@@ -564,24 +541,6 @@ protected:
     COStreamBuffer m_Output;
 
     COObjectList m_Objects;
-
-    // hooks data
-    typedef map<const CTypeInfo*, CRef<CWriteObjectHook> > TWriteObjectHooks;
-    typedef map<const CMemberInfo*, CRef<CWriteClassMemberHook> > TWriteClassMemberHooks;
-    typedef map<const CMemberInfo*, CRef<CWriteChoiceVariantHook> > TWriteChoiceVariantHooks;
-
-    static CWriteObjectHook* GetHook(const TWriteObjectHooks& hooks,
-                                     const CTypeInfo* objectType);
-    static CWriteClassMemberHook* GetHook(const TWriteClassMemberHooks& hooks,
-                                          const CClassTypeInfo* objectType,
-                                          TMemberIndex index);
-    static CWriteChoiceVariantHook* GetHook(const TWriteChoiceVariantHooks& hooks,
-                                            const CChoiceTypeInfo* objectType,
-                                            TMemberIndex index);
-
-    AutoPtr<TWriteObjectHooks> m_WriteObjectHooks;
-    AutoPtr<TWriteClassMemberHooks> m_WriteClassMemberHooks;
-    AutoPtr<TWriteChoiceVariantHooks> m_WriteChoiceVariantHooks;
 };
 
 #include <serial/objostr.inl>

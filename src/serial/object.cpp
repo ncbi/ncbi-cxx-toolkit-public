@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/18 20:00:23  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.7  2000/09/01 13:16:17  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -74,6 +80,7 @@
 #include <serial/continfo.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -109,18 +116,19 @@ CObjectInfoEI& CObjectInfoEI::operator=(const CObjectInfo& object)
 
 bool CObjectTypeInfoMI::IsSet(const CConstObjectInfo& object) const
 {
-    const CMemberInfo* mInfo = GetMemberInfo();
-    if ( mInfo->HaveSetFlag() )
-        return mInfo->GetSetFlag(object.GetObjectPtr());
+    const CMemberInfo* memberInfo = GetMemberInfo();
+    if ( memberInfo->HaveSetFlag() )
+        return memberInfo->GetSetFlag(object.GetObjectPtr());
     
-    if ( mInfo->CanBeDelayed() &&
-         mInfo->GetDelayBuffer(object.GetObjectPtr()).Delayed() )
+    if ( memberInfo->CanBeDelayed() &&
+         memberInfo->GetDelayBuffer(object.GetObjectPtr()).Delayed() )
         return true;
 
-    if ( mInfo->Optional() ) {
-        TConstObjectPtr defaultPtr = mInfo->GetDefault();
-        TConstObjectPtr memberPtr = mInfo->GetMember(object.GetObjectPtr());
-        TTypeInfo memberType = mInfo->GetTypeInfo();
+    if ( memberInfo->Optional() ) {
+        TConstObjectPtr defaultPtr = memberInfo->GetDefault();
+        TConstObjectPtr memberPtr =
+            memberInfo->GetMemberPtr(object.GetObjectPtr());
+        TTypeInfo memberType = memberInfo->GetTypeInfo();
         if ( !defaultPtr ) {
             if ( memberType->IsDefault(memberPtr) )
                 return false; // DEFAULT
@@ -133,34 +141,18 @@ bool CObjectTypeInfoMI::IsSet(const CConstObjectInfo& object) const
     return true;
 }
 
-CConstObjectInfo CConstObjectInfoMI::GetMember(void) const
+pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoMI::GetMemberPair(void) const
 {
-    const CMemberInfo* mInfo = GetMemberInfo();
-    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
-                     mInfo->GetTypeInfo());
+    const CMemberInfo* memberInfo = GetMemberInfo();
+    return make_pair(memberInfo->GetMemberPtr(m_Object.GetObjectPtr()),
+                     memberInfo->GetTypeInfo());
 }
 
-CConstObjectInfo CConstObjectInfoMI::operator*(void) const
+pair<TObjectPtr, TTypeInfo> CObjectInfoMI::GetMemberPair(void) const
 {
-    const CMemberInfo* mInfo = GetMemberInfo();
-    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
-                     mInfo->GetTypeInfo());
-}
-
-CObjectInfo CObjectInfoMI::GetMember(void) const
-{
-    const CMemberInfo* mInfo = GetMemberInfo();
-    mInfo->UpdateSetFlag(mInfo->GetMember(m_Object.GetObjectPtr()), true);
-    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
-                     mInfo->GetTypeInfo());
-}
-
-CObjectInfo CObjectInfoMI::operator*(void) const
-{
-    const CMemberInfo* mInfo = GetMemberInfo();
-    mInfo->UpdateSetFlag(mInfo->GetMember(m_Object.GetObjectPtr()), true);
-    return make_pair(mInfo->GetMember(m_Object.GetObjectPtr()),
-                     mInfo->GetTypeInfo());
+    const CMemberInfo* memberInfo = GetMemberInfo();
+    return make_pair(memberInfo->GetMemberPtr(m_Object.GetObjectPtr()),
+                     memberInfo->GetTypeInfo());
 }
 
 void CObjectInfoMI::Erase(void)
@@ -178,7 +170,7 @@ void CObjectInfoMI::Erase(void)
     }
 
     // reset member
-    mInfo->GetTypeInfo()->SetDefault(mInfo->GetMember(objectPtr));
+    mInfo->GetTypeInfo()->SetDefault(mInfo->GetMemberPtr(objectPtr));
 
     // update 'set' flag
     if ( haveSetFlag )
@@ -187,36 +179,40 @@ void CObjectInfoMI::Erase(void)
 
 // choice iterators
 
-CConstObjectInfo CConstObjectInfoCV::GetVariant(void) const
+pair<TConstObjectPtr, TTypeInfo> CConstObjectInfoCV::GetVariantPair(void) const
 {
-    const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
-    TMemberIndex index = GetVariantIndex();
-    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
-                     choiceInfo->GetMemberInfo(index)->GetTypeInfo());
+    const CVariantInfo* variantInfo = GetVariantInfo();
+    return make_pair(variantInfo->GetVariantPtr(m_Object.GetObjectPtr()),
+                     variantInfo->GetTypeInfo());
 }
 
-CConstObjectInfo CConstObjectInfoCV::operator*(void) const
+pair<TObjectPtr, TTypeInfo> CObjectInfoCV::GetVariantPair(void) const
 {
-    const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
-    TMemberIndex index = GetVariantIndex();
-    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
-                     choiceInfo->GetMemberInfo(index)->GetTypeInfo());
+    const CVariantInfo* variantInfo = GetVariantInfo();
+    return make_pair(variantInfo->GetVariantPtr(m_Object.GetObjectPtr()),
+                     variantInfo->GetTypeInfo());
 }
 
-CObjectInfo CObjectInfoCV::GetVariant(void) const
+// readers
+void CObjectInfo::ReadContainer(CObjectIStream& in,
+                                CReadContainerElementHook& hook)
 {
-    const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
-    TMemberIndex index = GetVariantIndex();
-    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
-                     choiceInfo->GetMemberInfo(index)->GetTypeInfo());
-}
+    const CContainerTypeInfo* containerType = GetContainerTypeInfo();
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameArray, containerType);
+    in.BeginContainer(containerType);
 
-CObjectInfo CObjectInfoCV::operator*(void) const
-{
-    const CChoiceTypeInfo* choiceInfo = GetChoiceTypeInfo();
-    TMemberIndex index = GetVariantIndex();
-    return make_pair(choiceInfo->GetData(m_Object.GetObjectPtr(), index),
-                     choiceInfo->GetMemberInfo(index)->GetTypeInfo());
+    TTypeInfo elementType = containerType->GetElementType();
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameArrayElement, elementType);
+
+    while ( in.BeginContainerElement(elementType) ) {
+        hook.ReadContainerElement(in, *this);
+        in.EndContainerElement();
+    }
+
+    END_OBJECT_FRAME_OF(in);
+
+    in.EndContainer();
+    END_OBJECT_FRAME_OF(in);
 }
 
 END_NCBI_SCOPE

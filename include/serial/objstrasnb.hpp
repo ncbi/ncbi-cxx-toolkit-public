@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/18 20:00:08  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.5  2000/02/17 20:02:29  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -118,12 +124,25 @@ namespace CObjectStreamAsnBinaryDefs
         eLongTag = 31,
 
         // eApplication class
-        eStringStore = 1
+        eStringStore = 1,
+
+        // combined bytes
+        eEndOfContentsByte = 0
     };
 
     enum ERealRadix {
         eDecimal = 0
     };
+
+
+    inline TByte MakeTagByte(EClass c, bool constructed, ETag tag);
+    inline TByte MakeTagByte(EClass c, bool constructed);
+    inline ETag ExtractTag(TByte byte);
+    inline bool ExtractConstructed(TByte byte);
+    inline TByte ExtractClassAndConstructed(TByte byte);
+
+#include <serial/objstrasnb.inl>
+
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/09/18 20:00:26  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.29  2000/09/01 13:16:21  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -158,19 +164,16 @@
 
 BEGIN_NCBI_SCOPE
 
-CStlOneArgTemplate::CStlOneArgTemplate(TTypeInfo type, bool randomOrder)
-    : CParent(randomOrder), m_DataType(type)
+CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
+                                       TTypeInfo type, bool randomOrder)
+    : CParent(size, type, randomOrder)
 {
 }
 
-CStlOneArgTemplate::CStlOneArgTemplate(const CTypeRef& type, bool randomOrder)
-    : CParent(randomOrder), m_DataType(type)
+CStlOneArgTemplate::CStlOneArgTemplate(size_t size,
+                                       const CTypeRef& type, bool randomOrder)
+    : CParent(size, type, randomOrder)
 {
-}
-
-TTypeInfo CStlOneArgTemplate::GetElementType(void) const
-{
-    return GetDataTypeInfo();
 }
 
 void CStlOneArgTemplate::SetDataId(const CMemberId& id)
@@ -178,17 +181,23 @@ void CStlOneArgTemplate::SetDataId(const CMemberId& id)
     m_DataId = id;
 }
 
-CStlTwoArgsTemplate::CStlTwoArgsTemplate(TTypeInfo keyType,
+CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
+                                         const CTypeRef& elementType,
+                                         TTypeInfo keyType,
                                          TTypeInfo dataType,
                                          bool randomOrder)
-    : CParent(randomOrder), m_KeyType(keyType), m_ValueType(dataType)
+    : CParent(size, elementType, randomOrder),
+      m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
-CStlTwoArgsTemplate::CStlTwoArgsTemplate(const CTypeRef& keyType,
+CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
+                                         const CTypeRef& elementType,
+                                         const CTypeRef& keyType,
                                          const CTypeRef& dataType,
                                          bool randomOrder)
-    : CParent(randomOrder), m_KeyType(keyType), m_ValueType(dataType)
+    : CParent(size, elementType, randomOrder),
+      m_KeyType(keyType), m_ValueType(dataType)
 {
 }
 
@@ -202,42 +211,42 @@ void CStlTwoArgsTemplate::SetValueId(const CMemberId& id)
     m_ValueId = id;
 }
 
-CStlClassInfoMapImpl::CStlClassInfoMapImpl(TTypeInfo keyType,
+CStlClassInfoMapImpl::CStlClassInfoMapImpl(size_t size,
+                                           TTypeInfo keyType,
                                            TConstObjectPtr keyOffset,
                                            TTypeInfo valueType,
                                            TConstObjectPtr valueOffset)
-    : CParent(keyType, valueType, true),
+    : CParent(size, CTypeRef(&CreateElementClassType, this),
+              keyType, valueType, true),
       m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
 {
 }
 
-CStlClassInfoMapImpl::CStlClassInfoMapImpl(const CTypeRef& keyType,
+CStlClassInfoMapImpl::CStlClassInfoMapImpl(size_t size,
+                                           const CTypeRef& keyType,
                                            TConstObjectPtr keyOffset,
                                            const CTypeRef& valueType,
                                            TConstObjectPtr valueOffset)
-    : CParent(keyType, valueType, true),
+    : CParent(size, CTypeRef(&CreateElementClassType, this),
+              keyType, valueType, true),
       m_KeyOffset(keyOffset), m_ValueOffset(valueOffset)
 {
 }
 
-TTypeInfo CStlClassInfoMapImpl::GetElementType(void) const
+TTypeInfo CStlClassInfoMapImpl::CreateElementClassType(TTypeInfo argType)
 {
-    return GetElementClassType();
-}
-
-const CClassTypeInfo* CStlClassInfoMapImpl::GetElementClassType(void) const
-{
-    if ( !m_ElementType ) {
-        CClassTypeInfo* classInfo =
-            CClassInfoHelper<bool>::CreateAbstractClassInfo("");
-        m_ElementType.reset(classInfo);
-        classInfo->SetRandomOrder(false);
-        classInfo->GetMembers().AddMember(GetKeyId(), m_KeyOffset,
-                                          GetKeyTypeInfo());
-        classInfo->GetMembers().AddMember(GetValueId(), m_ValueOffset,
-                                          GetValueTypeInfo());
-    }
-    return m_ElementType.get();
+    const CStlClassInfoMapImpl* mapType = 
+        CTypeConverter<CStlClassInfoMapImpl>::SafeCast(argType);
+    CClassTypeInfo* classInfo =
+        CClassInfoHelper<bool>::CreateAbstractClassInfo("");
+    classInfo->SetRandomOrder(false);
+    classInfo->AddMember(mapType->GetKeyId(),
+                         TConstObjectPtr(mapType->m_KeyOffset),
+                         mapType->GetKeyTypeInfo());
+    classInfo->AddMember(mapType->GetValueId(),
+                         TConstObjectPtr(mapType->m_ValueOffset),
+                         mapType->GetValueTypeInfo());
+    return classInfo;
 }
 
 END_NCBI_SCOPE

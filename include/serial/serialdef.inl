@@ -33,28 +33,16 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/18 20:00:09  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.1  1999/06/24 14:44:44  vasilche
 * Added binary ASN.1 output.
 *
 * ===========================================================================
 */
-
-inline
-TObjectPtr Add(TObjectPtr object, int offset)
-{
-    return static_cast<char*>(object) + offset;
-}
-
-inline
-TConstObjectPtr Add(TConstObjectPtr object, int offset)
-{
-    return static_cast<const char*>(object) + offset;
-}
-
-inline
-int Sub(TConstObjectPtr first, TConstObjectPtr second)
-{
-    return static_cast<const char*>(first) - static_cast<const char*>(second);
-}
 
 #endif /* def SERIALDEF__HPP  &&  ndef SERIALDEF__INL */

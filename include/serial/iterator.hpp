@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/18 20:00:02  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.13  2000/07/03 18:42:33  vasilche
 * Added interface to typeinfo via CObjectInfo and CConstObjectInfo.
 * Reduced header dependency.
@@ -223,7 +229,13 @@ public:
     void SkipSubTree(void);
 
     // check whether iterator is not finished
-    operator bool(void)
+    operator bool(void) const
+        {
+            _DEBUG_ARG(m_LastCall = eValid);
+            return CheckValid();
+        }
+    // check whether iterator is not finished
+    bool operator!(void) const
         {
             _DEBUG_ARG(m_LastCall = eValid);
             return CheckValid();
@@ -436,13 +448,19 @@ public:
 
     C& operator*(void)
         {
-            CType<C>::AssertPointer(Get().GetObjectPtr());
-            return *static_cast<C*>(Get().GetObjectPtr());
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
     const C& operator*(void) const
         {
-            CType<C>::AssertPointer(Get().GetObjectPtr());
-            return *static_cast<const C*>(Get().GetObjectPtr());
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    C* operator->(void)
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    const C* operator->(void) const
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
 
@@ -471,8 +489,11 @@ public:
 
     const C& operator*(void) const
         {
-            CType<C>::AssertPointer(Get().GetObjectPtr());
-            return *static_cast<const C*>(Get().GetObjectPtr());
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
+        }
+    const C* operator->(void) const
+        {
+            return *CTypeConverter<C>::SafeCast(Get().GetObjectPtr());
         }
 };
 
@@ -593,6 +614,14 @@ public:
     static TTypeInfo GetTypeInfo(void)
         {
             return C::GetTypeInfo();
+        }
+    operator CObjectTypeInfo(void) const
+        {
+            return GetTypeInfo();
+        }
+    operator TTypeInfo(void) const
+        {
+            return GetTypeInfo();
         }
     static void AddTo(CTypesIterator& i)
         {

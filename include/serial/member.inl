@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/18 20:00:02  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.7  2000/08/15 19:44:39  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -67,5 +73,232 @@
 *
 * ===========================================================================
 */
+
+inline
+const CClassTypeInfo* CMemberInfo::GetClassType(void) const
+{
+    return m_ClassType;
+}
+
+inline
+bool CMemberInfo::Optional(void) const
+{
+    return m_Optional;
+}
+
+inline
+TConstObjectPtr CMemberInfo::GetDefault(void) const
+{
+    return m_Default;
+}
+
+inline
+bool CMemberInfo::HaveSetFlag(void) const
+{
+    return m_SetFlagOffset != TOffset(eNoOffset);
+}
+
+inline
+bool CMemberInfo::GetSetFlag(TConstObjectPtr object) const
+{
+    return CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
+}
+
+inline
+bool& CMemberInfo::GetSetFlag(TObjectPtr object) const
+{
+    return CTypeConverter<bool>::Get(Add(object, m_SetFlagOffset));
+}
+
+inline
+void CMemberInfo::UpdateSetFlag(TObjectPtr object, bool value) const
+{
+    TOffset setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != TOffset(eNoOffset) )
+        CTypeConverter<bool>::Get(Add(object, setFlagOffset)) = value;
+}
+
+inline
+bool CMemberInfo::CanBeDelayed(void) const
+{
+    return m_DelayOffset != TOffset(eNoOffset);
+}
+
+inline
+CDelayBuffer& CMemberInfo::GetDelayBuffer(TObjectPtr object) const
+{
+    return CTypeConverter<CDelayBuffer>::Get(Add(object, m_DelayOffset));
+}
+
+inline
+const CDelayBuffer& CMemberInfo::GetDelayBuffer(TConstObjectPtr object) const
+{
+    return CTypeConverter<const CDelayBuffer>::Get(Add(object, m_DelayOffset));
+}
+
+inline
+TConstObjectPtr CMemberInfo::GetMemberPtr(TConstObjectPtr classPtr) const
+{
+    return m_GetConstFunction(this, classPtr);
+}
+
+inline
+TObjectPtr CMemberInfo::GetMemberPtr(TObjectPtr classPtr) const
+{
+    return m_GetFunction(this, classPtr);
+}
+
+inline
+void CMemberInfo::ReadMember(CObjectIStream& stream,
+                             TObjectPtr classPtr) const
+{
+    m_ReadHookData.GetCurrentFunction().first(stream, this, classPtr);
+}
+
+inline
+void CMemberInfo::ReadMissingMember(CObjectIStream& stream,
+                                    TObjectPtr classPtr) const
+{
+    m_ReadHookData.GetCurrentFunction().second(stream, this, classPtr);
+}
+
+inline
+void CMemberInfo::WriteMember(CObjectOStream& stream,
+                              TConstObjectPtr classPtr) const
+{
+    m_WriteHookData.GetCurrentFunction()(stream, this, classPtr);
+}
+
+inline
+void CMemberInfo::CopyMember(CObjectStreamCopier& stream) const
+{
+    m_CopyHookData.GetCurrentFunction().first(stream, this);
+}
+
+inline
+void CMemberInfo::CopyMissingMember(CObjectStreamCopier& stream) const
+{
+    m_CopyHookData.GetCurrentFunction().second(stream, this);
+}
+
+inline
+void CMemberInfo::SkipMember(CObjectIStream& stream) const
+{
+    m_SkipFunction(stream, this);
+}
+
+inline
+void CMemberInfo::SkipMissingMember(CObjectIStream& stream) const
+{
+    m_SkipMissingFunction(stream, this);
+}
+
+inline
+void CMemberInfo::DefaultReadMember(CObjectIStream& stream,
+                                    TObjectPtr classPtr) const
+{
+    m_ReadHookData.GetDefaultFunction().first(stream, this, classPtr);
+}
+
+inline
+void CMemberInfo::DefaultReadMissingMember(CObjectIStream& stream,
+                                           TObjectPtr classPtr) const
+{
+    m_ReadHookData.GetDefaultFunction().second(stream, this, classPtr);
+}
+
+inline
+void CMemberInfo::DefaultWriteMember(CObjectOStream& stream,
+                                     TConstObjectPtr classPtr) const
+{
+    m_WriteHookData.GetDefaultFunction()(stream, this, classPtr);
+}
+
+inline
+void CMemberInfo::DefaultCopyMember(CObjectStreamCopier& stream) const
+{
+    m_CopyHookData.GetDefaultFunction().first(stream, this);
+}
+
+inline
+void CMemberInfo::DefaultCopyMissingMember(CObjectStreamCopier& stream) const
+{
+    m_CopyHookData.GetDefaultFunction().second(stream, this);
+}
+
+inline
+void CMemberInfo::SetGlobalReadHook(CReadClassMemberHook* hook)
+{
+    SetReadHook(0, hook);
+}
+
+inline
+void CMemberInfo::SetLocalReadHook(CObjectIStream& in,
+                                   CReadClassMemberHook* hook)
+{
+    SetReadHook(&in, hook);
+}
+
+inline
+void CMemberInfo::ResetGlobalReadHook(void)
+{
+    ResetReadHook(0);
+}
+
+inline
+void CMemberInfo::ResetLocalReadHook(CObjectIStream& in)
+{
+    ResetReadHook(&in);
+}
+
+inline
+void CMemberInfo::SetGlobalWriteHook(CWriteClassMemberHook* hook)
+{
+    SetWriteHook(0, hook);
+}
+
+inline
+void CMemberInfo::SetLocalWriteHook(CObjectOStream& stream,
+                                    CWriteClassMemberHook* hook)
+{
+    SetWriteHook(&stream, hook);
+}
+
+inline
+void CMemberInfo::ResetGlobalWriteHook(void)
+{
+    ResetWriteHook(0);
+}
+
+inline
+void CMemberInfo::ResetLocalWriteHook(CObjectOStream& stream)
+{
+    ResetWriteHook(&stream);
+}
+
+inline
+void CMemberInfo::SetGlobalCopyHook(CCopyClassMemberHook* hook)
+{
+    SetCopyHook(0, hook);
+}
+
+inline
+void CMemberInfo::SetLocalCopyHook(CObjectStreamCopier& stream,
+                                   CCopyClassMemberHook* hook)
+{
+    SetCopyHook(&stream, hook);
+}
+
+inline
+void CMemberInfo::ResetGlobalCopyHook(void)
+{
+    ResetCopyHook(0);
+}
+
+inline
+void CMemberInfo::ResetLocalCopyHook(CObjectStreamCopier& stream)
+{
+    ResetCopyHook(&stream);
+}
 
 #endif /* def MEMBER__HPP  &&  ndef MEMBER__INL */

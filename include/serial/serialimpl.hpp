@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <serial/typeinfo.hpp>
-//#include <serial/member.hpp>
+#include <serial/typeinfoimpl.hpp>
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/ptrinfo.hpp>
@@ -64,18 +64,31 @@ class CClassInfoHelperBase
 {
 protected:
     typedef const type_info* (*TGetTypeIdFunction)(TConstObjectPtr object);
-    typedef TObjectPtr (*TCreateFunction)(TTypeInfo info);
-    typedef TMemberIndex (*TWhichFunction)(TConstObjectPtr object);
-    typedef void (*TResetFunction)(TObjectPtr object);
-    typedef void (*TSelectFunction)(TObjectPtr object, TMemberIndex index);
-    typedef void (*TSelectDelayFunction)(TObjectPtr object, TMemberIndex index);
+    typedef CTypeInfo::TTypeCreate TCreateFunction; 
+    typedef TMemberIndex (*TWhichFunction)(const CChoiceTypeInfo* choiceType,
+                                           TConstObjectPtr choicePtr);
+    typedef void (*TResetFunction)(const CChoiceTypeInfo* choiceType,
+                                   TObjectPtr choicePtr);
+    typedef void (*TSelectFunction)(const CChoiceTypeInfo* choiceType,
+                                    TObjectPtr choicePtr,
+                                    TMemberIndex index);
+    typedef void (*TSelectDelayFunction)(TObjectPtr object,
+                                         TMemberIndex index);
 
     static CChoiceTypeInfo* CreateChoiceInfo(const char* name, size_t size,
-                                             const type_info& ti,
+                                             const void* nonCObject,
                                              TCreateFunction createFunc,
+                                             const type_info& ti,
                                              TWhichFunction whichFunc,
                                              TSelectFunction selectFunc,
-                                             TResetFunction resetFunc = 0);
+                                             TResetFunction resetFunc);
+    static CChoiceTypeInfo* CreateChoiceInfo(const char* name, size_t size,
+                                             const CObject* cObject,
+                                             TCreateFunction createFunc,
+                                             const type_info& ti,
+                                             TWhichFunction whichFunc,
+                                             TSelectFunction selectFunc,
+                                             TResetFunction resetFunc);
 
 public:
 #if HAVE_NCBI_C
@@ -85,21 +98,16 @@ public:
 #endif
     
 protected:
-    static void SetCreateFunction(CClassTypeInfo* info, TCreateFunction func);
-    static void UpdateCObject(CClassTypeInfoBase* /*info*/,
-                              const void* /*object*/)
-        {
-            // do nothing
-        }
-    static void UpdateCObject(CClassTypeInfoBase* info,
-                              const CObject* object);
-
     static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
+                                           const void* nonCObject,
+                                           TCreateFunction createFunc,
                                            const type_info& id,
                                            TGetTypeIdFunction func);
-private:
     static CClassTypeInfo* CreateClassInfo(const char* name, size_t size,
-                                           const type_info& id);
+                                           const CObject* cObject,
+                                           TCreateFunction createFunc,
+                                           const type_info& id,
+                                           TGetTypeIdFunction func);
 };
 
 // template collecting all helper methods for generated classes
@@ -123,82 +131,128 @@ public:
         {
             return new CClassType();
         }
+    static void* CreateCObject(TTypeInfo /*typeInfo*/)
+        {
+            CObject* object = new CClassType();
+            object->SetCanDelete();
+            return object;
+        }
+
 
     static const type_info* GetTypeId(const void* object)
         {
             return &typeid(Get(object));
         }
-    static void Reset(void* object)
-        {
-            Get(object).Reset();
-        }
 
-    static TMemberIndex Which(const void* object)
+    enum EGeneratedChoiceValues {
+        eGeneratedChoiceEmpty = 0,
+        eGeneratedChoiceToMemberIndex = kEmptyChoice - eGeneratedChoiceEmpty,
+        eMemberIndexToGeneratedChoice = - eGeneratedChoiceToMemberIndex
+    };
+
+    static TMemberIndex WhichChoice(const CChoiceTypeInfo* /*choiceType*/,
+                                    const void* choicePtr)
         {
-            return Get(object).Which() + (kInvalidMember - 0);
+            return Get(choicePtr).Which() + eGeneratedChoiceToMemberIndex;
         }
-    static void ResetChoice(void* object)
+    static void ResetChoice(const CChoiceTypeInfo* choiceType,
+                            void* choicePtr)
         {
-            if ( Which(object) != kInvalidMember )
-                Reset(object);
+            if ( WhichChoice(choiceType, choicePtr) != kEmptyChoice )
+                Get(choicePtr).Reset();
         }
-    static void Select(void* object, TMemberIndex index)
+    static void SelectChoice(const CChoiceTypeInfo* /*choiceType*/,
+                             void* choicePtr,
+                             TMemberIndex index)
         {
             typedef typename CClassType::E_Choice E_Choice;
-            Get(object).Select(E_Choice(index + (0 - kInvalidMember)));
+            Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice));
         }
-    static void SelectDelayBuffer(void* object, TMemberIndex index)
+    static void SelectDelayBuffer(void* choicePtr,
+                                  TMemberIndex index)
         {
             typedef typename CClassType::E_Choice E_Choice;
-
-            Get(object).SelectDelayBuffer(E_Choice(index+(0-kInvalidMember)));
+            Get(choicePtr).SelectDelayBuffer(E_Choice(index + eMemberIndexToGeneratedChoice));
         }
 
     static void SetReadWriteMethods(NCBI_NS_NCBI::CClassTypeInfo* info)
         {
             const CClassType* object = 0;
-            UpdateCObject(info, object);
             NCBISERSetPostRead(object, info);
             NCBISERSetPreWrite(object, info);
         }
     static void SetReadWriteMethods(NCBI_NS_NCBI::CChoiceTypeInfo* info)
         {
             const CClassType* object = 0;
-            UpdateCObject(info, object);
             NCBISERSetPostRead(object, info);
             NCBISERSetPreWrite(object, info);
         }
 
     static CClassTypeInfo* CreateAbstractClassInfo(const char* name)
         {
+            const CClassType* object = 0;
             CClassTypeInfo* info =
                 CParent::CreateClassInfo(name, sizeof(CClassType),
+                                         object, &CVoidTypeFunctions::Create,
                                          typeid(CClassType), &GetTypeId);
             SetReadWriteMethods(info);
             return info;
         }
+
     static CClassTypeInfo* CreateClassInfo(const char* name)
         {
-            CClassTypeInfo* info = CreateAbstractClassInfo(name);
-            SetCreateFunction(info, &Create);
+            const CClassType* object = 0;
+            CClassTypeInfo* info = CreateClassInfo(name, object);
+            SetReadWriteMethods(info);
             return info;
         }
 
     static CChoiceTypeInfo* CreateChoiceInfo(const char* name)
         {
-            CChoiceTypeInfo* info =
-                CParent::CreateChoiceInfo(name, sizeof(CClassType),
-                                          typeid(CClassType), &Create,
-                                          &Which, &Select, &ResetChoice);
+            const CClassType* object = 0;
+            CChoiceTypeInfo* info = CreateChoiceInfo(name, object);
             SetReadWriteMethods(info);
             return info;
         }
-
     static CClassTypeInfo* CreateAsnStructInfo(const char* name)
         {
             return CParent::CreateAsnStructInfo(name,
                                                 sizeof(CClassType),
                                                 typeid(CClassType));
+        }
+
+private:
+    static CClassTypeInfo* CreateClassInfo(const char* name,
+                                           const void* nonCObject)
+        {
+            return CParent::CreateClassInfo(name, sizeof(CClassType),
+                                            nonCObject, &Create,
+                                            typeid(CClassType), &GetTypeId);
+        }
+    static CClassTypeInfo* CreateClassInfo(const char* name,
+                                           const CObject* cObject)
+        {
+            return CParent::CreateClassInfo(name, sizeof(CClassType),
+                                            cObject, &CreateCObject,
+                                            typeid(CClassType), &GetTypeId);
+        }
+    static CChoiceTypeInfo* CreateChoiceInfo(const char* name,
+                                             const void* nonCObject)
+        {
+            return CParent::CreateChoiceInfo(name, sizeof(CClassType),
+                                             nonCObject, &Create, 
+                                             typeid(CClassType),
+                                             &WhichChoice,
+                                             &SelectChoice, &ResetChoice);
+        }
+    static CChoiceTypeInfo* CreateChoiceInfo(const char* name,
+                                             const CObject* cObject)
+        {
+            return CParent::CreateChoiceInfo(name, sizeof(CClassType),
+                                             cObject, &CreateCObject, 
+                                             typeid(CClassType),
+                                             &WhichChoice,
+                                             &SelectChoice, &ResetChoice);
         }
 };
 
@@ -240,12 +294,10 @@ TTypeInfoGetter GetStdTypeInfoGetter(const char* const* )
 #define SERIAL_REF_STD(CType) &NCBI_NS_NCBI::CStdTypeInfo<CType>::GetTypeInfo
 
 #define SERIAL_TYPE_StringStore() NCBI_NS_STD::string
-#define SERIAL_REF_StringStore() \
-    &NCBI_NS_NCBI::GetTypeInfoStringStore
+#define SERIAL_REF_StringStore() &NCBI_NS_NCBI::GetTypeInfoStringStore
 
 #define SERIAL_TYPE_null() bool
-#define SERIAL_REF_null() \
-    &NCBI_NS_NCBI::GetTypeInfoNullBool
+#define SERIAL_REF_null() &NCBI_NS_NCBI::GetTypeInfoNullBool
 
 #define SERIAL_TYPE_ENUM(CType, EnumName) CType
 #define SERIAL_REF_ENUM(CType, EnumName) \
@@ -380,7 +432,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SERIAL_STD_MEMBER(MemberName) \
     MEMBER_PTR(MemberName),NCBI_NS_NCBI::GetStdTypeInfoGetter(MEMBER_PTR(MemberName))
 #define SERIAL_CLASS_MEMBER(MemberName) \
-    MEMBER_PTR(MemberName),&MEMBER_PTR(MemberName).GetTypeInfo)
+    MEMBER_PTR(MemberName),&MEMBER_PTR(MemberName).GetTypeInfo
 #define SERIAL_ENUM_MEMBER(MemberName,EnumName) \
     MEMBER_PTR(MemberName), NCBI_NS_NCBI::EnumTypeInfo(MEMBER_PTR(MemberName), ENUM_METHOD_NAME(EnumName)())
 #define SERIAL_ENUM_IN_MEMBER(MemberName,CppContext,EnumName) \
@@ -394,22 +446,22 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // ADD_NAMED_*_MEMBER macros    
 #define ADD_NAMED_MEMBER(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
 #define ADD_NAMED_STD_MEMBER(MemberAlias,MemberName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_STD_MEMBER(MemberName))
 #define ADD_NAMED_CLASS_MEMBER(MemberAlias,MemberName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_CLASS_MEMBER(MemberName))
 #define ADD_NAMED_ENUM_MEMBER(MemberAlias,MemberName,EnumName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_ENUM_MEMBER(MemberName,EnumName))
 #define ADD_NAMED_ENUM_IN_MEMBER(MemberAlias,MemberName,CppContext,EnumName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                   SERIAL_ENUM_IN_MEMBER(MemberName,CppContext,EnumName))
 #define ADD_NAMED_REF_MEMBER(MemberAlias,MemberName,ClassName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias, \
                             SERIAL_REF_MEMBER(MemberName,ClassName))
 
 // ADD_*_MEMBER macros    
@@ -428,19 +480,23 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 // ADD_NAMED_*_CHOICE_VARIANT macros    
 #define ADD_NAMED_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    ADD_NAMED_MEMBER(MemberAlias,MemberName,TypeMacro,TypeMacroArgs)
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs))
 #define ADD_NAMED_STD_CHOICE_VARIANT(MemberAlias,MemberName) \
-    ADD_NAMED_STD_MEMBER(MemberAlias,MemberName)
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_STD_MEMBER(MemberName))
 #define ADD_NAMED_ENUM_CHOICE_VARIANT(MemberAlias,MemberName,EnumName) \
-    ADD_NAMED_ENUM_MEMBER(MemberAlias,MemberName,EnumName)
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_ENUM_MEMBER(MemberName,EnumName))
 #define ADD_NAMED_ENUM_IN_CHOICE_VARIANT(MemberAlias,MemberName,CppContext,EnumName) \
-    ADD_NAMED_ENUM_IN_MEMBER(MemberAlias,MemberName,CppContext,EnumName)
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_ENUM_IN_MEMBER(MemberName,CppContext,EnumName))
 #define ADD_NAMED_PTR_CHOICE_VARIANT(MemberAlias,MemberName,TypeMacro,TypeMacroArgs) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
-                SERIAL_PTR_CHOICE_VARIANT(MemberName,TypeMacro,TypeMacroArgs))->SetPointer()
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_PTR_CHOICE_VARIANT(MemberName,TypeMacro,TypeMacroArgs))->SetPointer()
 #define ADD_NAMED_REF_CHOICE_VARIANT(MemberAlias,MemberName,ClassName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),MemberAlias, \
-                SERIAL_REF_CHOICE_VARIANT(MemberName,ClassName))->SetObjectPointer()
+    NCBI_NS_NCBI::AddVariant(info,MemberAlias, \
+        SERIAL_REF_CHOICE_VARIANT(MemberName,ClassName))->SetObjectPointer()
 
 // ADD_*_CHOICE_VARIANT macros
 #define ADD_CHOICE_VARIANT(MemberName,TypeMacro,TypeMacroArgs) \
@@ -550,47 +606,100 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define END_ENUM_INFO END_ENUM_INFO_METHOD
 
 // add member methods
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfo typeInfo);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member, const CTypeRef& typeRef);
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, CMemberInfo* memberInfo);
+// one argument level:
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member, TTypeInfo typeInfo);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member, TTypeInfoGetter f);
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          const CTypeRef& typeRef);
+// two arguments level:
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f, TTypeInfo t);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f, TTypeInfoGetter f1);
 
-// one argument:
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter f);
-// two arguments:
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfo t);
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfoGetter f1);
-// three arguments:
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1);
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfoGetter f11);
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2);
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2);
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2);
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2);
+// three arguments level:
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f,
+                       TTypeInfoGetter1 f1, TTypeInfo t1);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f,
+                       TTypeInfoGetter1 f1, TTypeInfoGetter f11);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f,
+                       TTypeInfo t1,
+                       TTypeInfo t2);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f,
+                       TTypeInfoGetter f1,
+                       TTypeInfo t2);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f,
+                       TTypeInfo t1,
+                       TTypeInfoGetter f2);
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f,
+                       TTypeInfoGetter f1,
+                       TTypeInfoGetter f2);
+
+// add varian methods
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member, const CTypeRef& typeRef);
+
+// one argument level:
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member, TTypeInfo typeInfo);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member, TTypeInfoGetter f);
+
+// two arguments level:
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f, TTypeInfo t);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f, TTypeInfoGetter f1);
+
+// three arguments level:
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f,
+                         TTypeInfoGetter1 f1, TTypeInfo t1);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f,
+                         TTypeInfoGetter1 f1, TTypeInfoGetter f11);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f,
+                         TTypeInfo t1,
+                         TTypeInfo t2);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f,
+                         TTypeInfoGetter f1,
+                         TTypeInfo t2);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f,
+                         TTypeInfo t1,
+                         TTypeInfoGetter f2);
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f,
+                         TTypeInfoGetter f1,
+                         TTypeInfoGetter f2);
 
 END_NCBI_SCOPE
 

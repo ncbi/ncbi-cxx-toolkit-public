@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/18 20:00:04  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.12  2000/09/01 13:16:00  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -104,7 +110,6 @@ class CConstObjectInfo;
 class CObjectInfo;
 
 class CPrimitiveTypeInfo;
-class CClassTypeInfoBase;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
 class CContainerTypeInfo;
@@ -113,9 +118,10 @@ class CPointerTypeInfo;
 class CMemberId;
 class CMemberInfo;
 
-class CContainerElementReadHook;
+class CReadContainerElementHook;
 
 class CObjectTypeInfoMI;
+class CObjectTypeInfoVI;
 class CConstObjectInfoMI;
 class CConstObjectInfoCV;
 class CConstObjectInfoEI;
@@ -133,34 +139,41 @@ class CObjectTypeInfo
 {
 public:
     typedef CObjectTypeInfoMI CMemberIterator;
-    typedef CTypeInfo::ETypeFamily ETypeFamily;
-    typedef CPrimitiveTypeInfo::EValueType EValueType;
+    typedef CObjectTypeInfoVI CVariantIterator;
 
     CObjectTypeInfo(TTypeInfo typeinfo = 0);
 
-    TTypeInfo GetTypeInfo(void) const;
     ETypeFamily GetTypeFamily(void) const;
 
     // primitive type interface
     // only when GetTypeFamily() == CTypeInfo::eTypePrimitive
-    EValueType GetPrimitiveValueType(void) const;
+    EPrimitiveValueType GetPrimitiveValueType(void) const;
     bool IsPrimitiveValueSigned(void) const;
 
     // container interface
     // only when GetTypeFamily() == CTypeInfo::eTypeContainer
     CObjectTypeInfo GetElementType(void) const;
+    EContainerType GetContainerType(void) const;
 
-    // class/choice interface
-    // only when GetTypeFamily() == CTypeInfo::eTypeClass ||
-    //           GetTypeFamily() == CTypeInfo::eTypeChoice
+    // class interface
+    // only when GetTypeFamily() == CTypeInfo::eTypeClass
     CMemberIterator BeginMembers(void) const;
-    CMemberIterator GetMemberIterator(TMemberIndex index) const;
     CMemberIterator FindMember(const string& memberName) const;
     CMemberIterator FindMemberByTag(int memberTag) const;
 
+    // choice interface
+    // only when GetTypeFamily() == CTypeInfo::eTypeChoice
+    CVariantIterator BeginVariants(void) const;
+    CVariantIterator FindVariant(const string& memberName) const;
+    CVariantIterator FindVariantByTag(int memberTag) const;
+
+    // pointer interface
+    // only when GetTypeFamily() == CTypeInfo::eTypePointer
+    CObjectTypeInfo GetPointedType(void) const;
+
 public: // mostly for internal use
+    TTypeInfo GetTypeInfo(void) const;
     const CPrimitiveTypeInfo* GetPrimitiveTypeInfo(void) const;
-    const CClassTypeInfoBase* GetClassTypeInfoBase(void) const;
     const CClassTypeInfo* GetClassTypeInfo(void) const;
     const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
     const CContainerTypeInfo* GetContainerTypeInfo(void) const;
@@ -168,6 +181,11 @@ public: // mostly for internal use
 
     TMemberIndex FindMemberIndex(const string& name) const;
     TMemberIndex FindMemberIndex(int tag) const;
+    TMemberIndex FindVariantIndex(const string& name) const;
+    TMemberIndex FindVariantIndex(int tag) const;
+
+    CMemberIterator GetMemberIterator(TMemberIndex index) const;
+    CVariantIterator GetChoiceVariantIterator(TMemberIndex index) const;
 
 protected:
     void ResetTypeInfo(void);
@@ -209,6 +227,7 @@ public:
     // check if CObjectInfo initialized with valid object
     bool Valid(void) const;
     operator bool(void) const;
+    bool operator!(void) const;
 
     void ResetObjectPtr(void);
 
@@ -300,7 +319,7 @@ public:
     CObjectInfo GetPointedObject(void) const;
 
     // container interface
-    void ReadContainer(CObjectIStream& in, CContainerElementReadHook& hook);
+    void ReadContainer(CObjectIStream& in, CReadContainerElementHook& hook);
 };
 
 class CConstObjectInfoEI
@@ -313,12 +332,14 @@ public:
 
     bool Valid(void) const;
     operator bool(void) const;
+    bool operator!(void) const;
 
     void Next(void);
     CConstObjectInfoEI& operator++(void);
 
     CConstObjectInfo GetElement(void) const;
     CConstObjectInfo operator*(void) const;
+    CConstObjectInfo operator->(void) const;
 
 private:
     bool CheckValid(void) const;
@@ -339,12 +360,14 @@ public:
 
     bool Valid(void) const;
     operator bool(void) const;
+    bool operator!(void) const;
 
     void Next(void);
     CObjectInfoEI& operator++(void);
 
     CObjectInfo GetElement(void) const;
     CObjectInfo operator*(void) const;
+    CObjectInfo operator->(void) const;
 
     void Erase(void);
 
@@ -370,6 +393,7 @@ public:
 
     bool Valid(void) const;
     operator bool(void) const;
+    bool operator!(void) const;
 
     bool Optional(void) const;
 
@@ -385,12 +409,13 @@ public:
 
     CObjectTypeInfo GetMemberType(void) const;
     CObjectTypeInfo operator*(void) const;
+    CObjectTypeInfo operator->(void) const;
 
 public: // mostly for internal use
     const CMemberInfo* GetMemberInfo(void) const;
 
 protected:
-    const CClassTypeInfoBase* GetClassTypeInfoBase(void) const;
+    const CClassTypeInfo* GetClassTypeInfo(void) const;
 
     void Init(const CObjectTypeInfo& info);
     void Init(const CObjectTypeInfo& info, TMemberIndex index);
@@ -399,7 +424,7 @@ protected:
     bool IsSet(const CConstObjectInfo& object) const;
 
 private:
-    const CClassTypeInfoBase* m_ClassTypeInfoBase;
+    const CClassTypeInfo* m_ClassTypeInfo;
     TMemberIndex m_MemberIndex;
     TMemberIndex m_LastMemberIndex;
         
@@ -426,8 +451,11 @@ public:
 
     CConstObjectInfo GetMember(void) const;
     CConstObjectInfo operator*(void) const;
+    CConstObjectInfo operator->(void) const;
 
 private:
+    pair<TConstObjectPtr, TTypeInfo> GetMemberPair(void) const;
+
     CConstObjectInfo m_Object;
 };
 
@@ -447,12 +475,15 @@ public:
 
     CObjectInfo GetMember(void) const;
     CObjectInfo operator*(void) const;
+    CObjectInfo operator->(void) const;
 
     // reset value of member to default state
     void Erase(void);
     void Reset(void);
 
 private:
+    pair<TObjectPtr, TTypeInfo> GetMemberPair(void) const;
+
     CObjectInfo m_Object;
 };
 
@@ -470,6 +501,7 @@ public:
 
     bool Valid(void) const;
     operator bool(void) const;
+    bool operator!(void) const;
 
     bool operator==(const CObjectTypeInfoCV& iter) const;
     bool operator!=(const CObjectTypeInfoCV& iter) const;
@@ -481,9 +513,10 @@ public:
 
     CObjectTypeInfo GetVariantType(void) const;
     CObjectTypeInfo operator*(void) const;
+    CObjectTypeInfo operator->(void) const;
 
 public: // mostly for internal use
-    const CMemberInfo* GetVariantInfo(void) const;
+    const CVariantInfo* GetVariantInfo(void) const;
 
 protected:
     const CChoiceTypeInfo* GetChoiceTypeInfo(void) const;
@@ -511,8 +544,11 @@ public:
     
     CConstObjectInfo GetVariant(void) const;
     CConstObjectInfo operator*(void) const;
+    CConstObjectInfo operator->(void) const;
 
 private:
+    pair<TConstObjectPtr, TTypeInfo> GetVariantPair(void) const;
+
     CConstObjectInfo m_Object;
 };
 
@@ -530,10 +566,13 @@ public:
     
     CObjectInfo GetVariant(void) const;
     CObjectInfo operator*(void) const;
+    CObjectInfo operator->(void) const;
 
     void Erase(void);
 
 private:
+    pair<TObjectPtr, TTypeInfo> GetVariantPair(void) const;
+
     CObjectInfo m_Object;
 };
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/09/18 20:00:25  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.27  2000/09/13 15:10:15  vasilche
 * Fixed type detection in type iterators.
 *
@@ -153,17 +159,45 @@
 BEGIN_NCBI_SCOPE
 
 CPointerTypeInfo::CPointerTypeInfo(TTypeInfo type)
-    : CParent(type->GetName()), m_DataType(type)
+    : CParent(eTypeFamilyPointer, sizeof(TObjectPtr)), m_DataTypeRef(type)
 {
+    InitPointerTypeInfoFunctions();
 }
 
-CPointerTypeInfo::~CPointerTypeInfo(void)
+CPointerTypeInfo::CPointerTypeInfo(const CTypeRef& typeRef)
+    : CParent(eTypeFamilyPointer, sizeof(TObjectPtr)), m_DataTypeRef(typeRef)
 {
+    InitPointerTypeInfoFunctions();
 }
 
-CTypeInfo::ETypeFamily CPointerTypeInfo::GetTypeFamily(void) const
+CPointerTypeInfo::CPointerTypeInfo(size_t size, TTypeInfo type)
+    : CParent(eTypeFamilyPointer, size), m_DataTypeRef(type)
 {
-    return eTypePointer;
+    InitPointerTypeInfoFunctions();
+}
+
+CPointerTypeInfo::CPointerTypeInfo(size_t size, const CTypeRef& typeRef)
+    : CParent(eTypeFamilyPointer, size), m_DataTypeRef(typeRef)
+{
+    InitPointerTypeInfoFunctions();
+}
+
+CPointerTypeInfo::CPointerTypeInfo(const string& name, TTypeInfo type)
+    : CParent(eTypeFamilyPointer, sizeof(TObjectPtr), name),
+      m_DataTypeRef(type)
+{
+    InitPointerTypeInfoFunctions();
+}
+
+void CPointerTypeInfo::InitPointerTypeInfoFunctions(void)
+{
+    SetCreateFunction(&CreatePointer);
+    SetReadFunction(&ReadPointer);
+    SetWriteFunction(&WritePointer);
+    SetCopyFunction(&CopyPointer);
+    SetSkipFunction(&SkipPointer);
+    m_GetData = &GetPointer;
+    m_SetData = &SetPointer;
 }
 
 TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)
@@ -171,44 +205,35 @@ TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)
     return new CPointerTypeInfo(base);
 }
 
+bool CPointerTypeInfo::MayContainType(TTypeInfo type) const
+{
+    return GetPointedType()->IsOrMayContainType(type);
+}
+
 TTypeInfo CPointerTypeInfo::GetRealDataTypeInfo(TConstObjectPtr object) const
 {
-    TTypeInfo dataTypeInfo = GetDataTypeInfo();
+    TTypeInfo dataTypeInfo = GetPointedType();
     if ( object )
         dataTypeInfo = dataTypeInfo->GetRealTypeInfo(object);
     return dataTypeInfo;
 }
 
-TConstObjectPtr
-CPointerTypeInfo::x_GetObjectPointer(TConstObjectPtr object) const
+TObjectPtr CPointerTypeInfo::GetPointer(const CPointerTypeInfo* /*objectType*/,
+                                        TObjectPtr objectPtr)
 {
-    return *static_cast<const TConstObjectPtr*>(object);
+    return CTypeConverter<TObjectPtr>::Get(objectPtr);
 }
 
-void CPointerTypeInfo::SetObjectPointer(TObjectPtr object,
-                                        TObjectPtr pointer) const
+void CPointerTypeInfo::SetPointer(const CPointerTypeInfo* /*objectType*/,
+                                  TObjectPtr objectPtr,
+                                  TObjectPtr dataPtr)
 {
-    *static_cast<TObjectPtr*>(object) = pointer;
+    CTypeConverter<TObjectPtr>::Get(objectPtr) = dataPtr;
 }
 
-size_t CPointerTypeInfo::GetSize(void) const
-{
-    return sizeof(void*);
-}
-
-TObjectPtr CPointerTypeInfo::Create(void) const
+TObjectPtr CPointerTypeInfo::CreatePointer(TTypeInfo /*objectType*/)
 {
     return new void*(0);
-}
-
-bool CPointerTypeInfo::MayContainType(TTypeInfo type) const
-{
-    return GetDataTypeInfo()->IsOrMayContainType(type);
-}
-
-bool CPointerTypeInfo::IsOrMayContainType(TTypeInfo type) const
-{
-    return this == type || GetDataTypeInfo()->IsOrMayContainType(type);
 }
 
 bool CPointerTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -252,42 +277,54 @@ void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     }
 }
 
-void CPointerTypeInfo::WriteData(CObjectOStream& out,
-                                 TConstObjectPtr object) const
+void CPointerTypeInfo::ReadPointer(CObjectIStream& in,
+                                   TTypeInfo objectType,
+                                   TObjectPtr objectPtr)
 {
-    out.WritePointer(GetObjectPointer(object), GetDataTypeInfo());
+    const CPointerTypeInfo* pointerType =
+        CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
+
+    CObjectInfo data(in.ReadPointer(pointerType->GetPointedType()));
+    pointerType->SetObjectPointer(objectPtr, data.GetObjectPtr());
 }
 
-void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+void CPointerTypeInfo::WritePointer(CObjectOStream& out,
+                                    TTypeInfo objectType,
+                                    TConstObjectPtr objectPtr)
 {
-    SetObjectPointer(object, in.ReadPointer(GetDataTypeInfo()).GetObjectPtr());
+    const CPointerTypeInfo* pointerType =
+        CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
+
+    out.WritePointer(pointerType->GetObjectPointer(objectPtr),
+                     pointerType->GetPointedType());
 }
 
-void CPointerTypeInfo::SkipData(CObjectIStream& in) const
+void CPointerTypeInfo::CopyPointer(CObjectStreamCopier& copier,
+                                   TTypeInfo objectType)
 {
-    in.SkipPointer(GetDataTypeInfo());
+    const CPointerTypeInfo* pointerType =
+        CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
+
+    copier.CopyPointer(pointerType->GetPointedType());
 }
 
-void CPointerTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void CPointerTypeInfo::SkipPointer(CObjectIStream& in,
+                                   TTypeInfo objectType)
 {
-    copier.CopyPointer(GetDataTypeInfo());
+    const CPointerTypeInfo* pointerType =
+        CTypeConverter<CPointerTypeInfo>::SafeCast(objectType);
+
+    in.SkipPointer(pointerType->GetPointedType());
 }
 
-TTypeInfo CPointerTypeInfo::GetPointedTypeInfo(void) const
+CConstObjectInfo CPointerTypeInfo::GetPointedObject(const CConstObjectInfo& object) const
 {
-    return GetDataTypeInfo();
+    return pair<TConstObjectPtr, TTypeInfo>(GetObjectPointer(object.GetObjectPtr()), GetPointedType());
 }
 
-CConstObjectInfo
-CPointerTypeInfo::GetPointedObject(const CConstObjectInfo& object) const
+CObjectInfo CPointerTypeInfo::GetPointedObject(const CObjectInfo& object) const
 {
-    return pair<TConstObjectPtr, TTypeInfo>(GetObjectPointer(object.GetObjectPtr()), GetDataTypeInfo());
-}
-
-CObjectInfo
-CPointerTypeInfo::GetPointedObject(const CObjectInfo& object) const
-{
-    return pair<TObjectPtr, TTypeInfo>(GetObjectPointer(object.GetObjectPtr()), GetDataTypeInfo());
+    return pair<TObjectPtr, TTypeInfo>(GetObjectPointer(object.GetObjectPtr()), GetPointedType());
 }
 
 END_NCBI_SCOPE

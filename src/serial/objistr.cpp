@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2000/09/18 20:00:23  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.59  2000/09/01 13:16:17  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -250,20 +256,21 @@
 * ===========================================================================
 */
 
-#include <exception>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <exception>
 #include <serial/objistr.hpp>
 #include <serial/typeref.hpp>
 #include <serial/member.hpp>
+#include <serial/variant.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/choice.hpp>
 #include <serial/continfo.hpp>
-#include <serial/objhook.hpp>
 #include <serial/enumvalues.hpp>
 #include <serial/memberlist.hpp>
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
+#include <serial/objistrimpl.hpp>
 #if HAVE_WINDOWS_H
 // In MSVC limits.h doesn't define FLT_MIN & FLT_MAX
 # include <float.h>
@@ -500,128 +507,6 @@ TTypeInfo MapType(const string& name)
     return CClassTypeInfoBase::GetClassInfoByName(name);
 }
 
-CReadObjectHook* CObjectIStream::GetHook(const TReadObjectHooks& hooks,
-                                         TTypeInfo objectType)
-{
-    _ASSERT(objectType);
-    TReadObjectHooks::const_iterator hook = hooks.find(objectType);
-    if ( hook != hooks.end() )
-        return hook->second.GetPointer();
-    return 0;
-}
-
-inline
-void CObjectIStream::SetReadObjectHook(TTypeInfo objectType,
-                                       CReadObjectHook* hook)
-{
-    if ( !objectType || !hook )
-        THROW1_TRACE(runtime_error, "invalid argument");
-    TReadObjectHooks* hooks = m_ReadObjectHooks.get();
-    if ( !hooks )
-        m_ReadObjectHooks.reset(hooks = new TReadObjectHooks);
-    (*hooks)[objectType].Reset(hook);
-}
-
-void CObjectIStream::ResetReadObjectHook(TTypeInfo objectType)
-{
-    if ( !objectType )
-        THROW1_TRACE(runtime_error, "invalid argument");
-    TReadObjectHooks* hooks = m_ReadObjectHooks.get();
-    if ( hooks ) {
-        hooks->erase(objectType);
-        if ( hooks->empty() )
-            m_ReadObjectHooks.reset(0);
-    }
-}
-
-CReadClassMemberHook*
-CObjectIStream::GetHook(const TReadClassMemberHooks& hooks,
-                        const CClassTypeInfo* classType,
-                        TMemberIndex memberIndex)
-{
-    _ASSERT(classType);
-    const CMemberInfo* memberInfo = classType->GetMemberInfo(memberIndex);
-    _ASSERT(memberInfo);
-    TReadClassMemberHooks::const_iterator hook = hooks.find(memberInfo);
-    if ( hook != hooks.end() )
-        return hook->second.GetPointer();
-    return 0;
-}
-
-void CObjectIStream::SetReadClassMemberHook(const CClassTypeInfo* classType,
-                                            TMemberIndex memberIndex,
-                                            CReadClassMemberHook* hook)
-{
-    if ( !hook )
-        THROW1_TRACE(runtime_error, "invalid argument");
-    _ASSERT(classType);
-    const CMemberInfo* memberInfo = classType->GetMemberInfo(memberIndex);
-    _ASSERT(memberInfo);
-    TReadClassMemberHooks* hooks = m_ReadClassMemberHooks.get();
-    if ( !hooks )
-        m_ReadClassMemberHooks.reset(hooks = new TReadClassMemberHooks);
-    (*hooks)[memberInfo].Reset(hook);
-}
-
-void CObjectIStream::ResetReadClassMemberHook(const CClassTypeInfo* classType,
-                                              TMemberIndex memberIndex)
-{
-    _ASSERT(classType);
-    const CMemberInfo* memberInfo = classType->GetMemberInfo(memberIndex);
-    _ASSERT(memberInfo);
-    TReadClassMemberHooks* hooks = m_ReadClassMemberHooks.get();
-    if ( hooks ) {
-        hooks->erase(memberInfo);
-        if ( hooks->empty() )
-            m_ReadClassMemberHooks.reset(0);
-    }
-}
-
-CReadChoiceVariantHook*
-CObjectIStream::GetHook(const TReadChoiceVariantHooks& hooks,
-                        const CChoiceTypeInfo* choiceType,
-                        TMemberIndex variantIndex)
-{
-    _ASSERT(choiceType);
-    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
-    _ASSERT(memberInfo);
-    TReadChoiceVariantHooks::const_iterator hook = hooks.find(memberInfo);
-    if ( hook != hooks.end() )
-        return hook->second.GetPointer();
-    return 0;
-}
-
-void
-CObjectIStream::SetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                         TMemberIndex variantIndex,
-                                         CReadChoiceVariantHook* hook)
-{
-    if ( !hook )
-        THROW1_TRACE(runtime_error, "invalid argument");
-    _ASSERT(choiceType);
-    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
-    _ASSERT(memberInfo);
-    TReadChoiceVariantHooks* hooks = m_ReadChoiceVariantHooks.get();
-    if ( !hooks )
-        m_ReadChoiceVariantHooks.reset(hooks = new TReadChoiceVariantHooks);
-    (*hooks)[memberInfo].Reset(hook);
-}
-
-void
-CObjectIStream::ResetReadChoiceVariantHook(const CChoiceTypeInfo* choiceType,
-                                           TMemberIndex variantIndex)
-{
-    _ASSERT(choiceType);
-    const CMemberInfo* memberInfo = choiceType->GetMemberInfo(variantIndex);
-    _ASSERT(memberInfo);
-    TReadChoiceVariantHooks* hooks = m_ReadChoiceVariantHooks.get();
-    if ( hooks ) {
-        hooks->erase(memberInfo);
-        if ( hooks->empty() )
-            m_ReadChoiceVariantHooks.reset(0);
-    }
-}
-
 void CObjectIStream::RegisterObject(TTypeInfo typeInfo)
 {
 #if NCBISER_ALLOW_CYCLES
@@ -745,33 +630,17 @@ void CObjectIStream::Skip(TTypeInfo typeInfo)
     Skip(typeInfo, eNoTypeName);
 }
 
-void CObjectIStream::ReadClassMemberNoHook(const CObjectInfo& object,
-                                           TMemberIndex index)
+void CObjectIStream::StartDelayBuffer(void)
 {
-    const CMemberInfo* memberInfo =
-        object.GetClassTypeInfo()->GetMemberInfo(index);
-    TTypeInfo memberType = memberInfo->GetTypeInfo();
-    if ( memberInfo->CanBeDelayed() ) {
-        CDelayBuffer& buffer =
-            memberInfo->GetDelayBuffer(object.GetObjectPtr());
-        if ( !buffer ) {
-            m_Input.StartSubSource();
-            SkipObject(memberType);
-            buffer.SetData(object.GetObjectPtr(),
-                           index, memberInfo,
-                           GetDataFormat(), m_Input.EndSubSource());
-            
-            // update 'set' flag
-            memberInfo->UpdateSetFlag(object.GetObjectPtr(), true);
-            return;
-        }
-        buffer.Update();
-    }
-    
-    // read member data
-    ReadObject(memberInfo->GetMember(object.GetObjectPtr()), memberType);
-    // update 'set' flag
-    memberInfo->UpdateSetFlag(object.GetObjectPtr(), true);
+    m_Input.StartSubSource();
+}
+
+void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
+                                    const CItemInfo* itemInfo,
+                                    TObjectPtr objectPtr)
+{
+    buffer.SetData(itemInfo, objectPtr,
+                   GetDataFormat(), m_Input.EndSubSource());
 }
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
@@ -784,82 +653,6 @@ void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)
 {
     ThrowError(eFormatError,
                "duplicated member: "+memberInfo->GetId().ToString());
-}
-
-void CObjectIStream::SetClassMemberDefaultNoHook(const CObjectInfo& object,
-                                                 TMemberIndex index)
-{
-    const CMemberInfo* memberInfo =
-        object.GetClassTypeInfo()->GetMemberInfo(index);
-    if ( !memberInfo->Optional() )
-        ExpectedMember(memberInfo);
-#if 0
-    bool haveSetFlag = memberInfo->HaveSetFlag();
-    if ( haveSetFlag && !memberInfo->GetSetFlag(object.GetObjectPtr()) )
-        return; // member not set
-    
-    TObjectPtr memberPtr = memberInfo->GetMember(object.GetObjectPtr());
-    // assign member dafault
-    TTypeInfo memberType = memberInfo->GetTypeInfo();
-    TConstObjectPtr def = memberInfo->GetDefault();
-    if ( def == 0 ) {
-        _ASSERT(memberType->IsDefault(memberPtr));
-        if ( !memberType->IsDefault(memberPtr) )
-            memberType->SetDefault(memberPtr);
-    }
-    else {
-        _ASSERT(memberType->Equals(memberPtr, def));
-        memberType->Assign(memberPtr, def);
-    }
-    // update 'set' flag
-    if ( haveSetFlag )
-        info->GetSetFlag(object.GetObjectPtr()) = false;
-#endif
-}
-
-void CObjectIStream::SkipClassMemberDefault(const CClassTypeInfo* classType,
-                                            TMemberIndex index)
-{
-    const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
-    if ( !memberInfo->Optional() )
-        ExpectedMember(memberInfo);
-}
-
-void CObjectIStream::ReadChoiceVariantNoHook(const CObjectInfo& object,
-                                             TMemberIndex index)
-{
-    const CChoiceTypeInfo* choiceType = object.GetChoiceTypeInfo();
-    const CMembersInfo& members = choiceType->GetMembers();
-    const CMemberInfo* memberInfo = members.GetMemberInfo(index);
-    TTypeInfo memberType = memberInfo->GetTypeInfo();
-
-    if ( index != choiceType->GetIndex(object.GetObjectPtr()) ) {
-        // index is differnet from current -> first, reset choice
-        choiceType->ResetIndex(object.GetObjectPtr());
-        if ( memberInfo->CanBeDelayed() ) {
-            CDelayBuffer& buffer =
-                memberInfo->GetDelayBuffer(object.GetObjectPtr());
-            if ( !buffer ) {
-                m_Input.StartSubSource();
-                SkipObject(memberType);
-                buffer.SetData(object.GetObjectPtr(),
-                               index, memberInfo,
-                               GetDataFormat(), m_Input.EndSubSource());
-                
-                // update index
-                choiceType->SetDelayIndex(object.GetObjectPtr(), index);
-                return;
-            }
-            buffer.Update();
-        }
-        // select for reading
-        choiceType->SetIndex(object.GetObjectPtr(), index);
-    }
-    TObjectPtr memberPtr = choiceType->GetData(object.GetObjectPtr(), index);
-    if ( memberInfo->IsObjectPointer() )
-        ReadExternalObject(memberPtr, memberType);
-    else
-        ReadObject(memberPtr, memberType);
 }
 
 void CObjectIStream::ReadSeparateObject(const CObjectInfo& object)
@@ -960,7 +753,7 @@ CObjectInfo CObjectIStream::ReadPointer(TTypeInfo declaredType)
     }
     while ( info.GetTypeInfo() != declaredType ) {
         // try to check parent class pointer
-        if ( info.GetTypeInfo()->GetTypeFamily()!=CTypeInfo::eTypeClass ) {
+        if ( info.GetTypeFamily() != eTypeFamilyClass ) {
             SetFailFlags(eFormatError);
             THROW1_TRACE(runtime_error, "incompatible member type");
         }
@@ -1122,10 +915,22 @@ void CObjectIStream::EndNamedType(void)
 {
 }
 
-void CObjectIStream::ReadNamedType(TTypeInfo /*namedTypeInfo*/,
+void CObjectIStream::ReadNamedType(TTypeInfo
+#ifndef VIRTUAL_MID_LEVEL_IO
+                                   namedTypeInfo
+#endif
+                                   ,
                                    TTypeInfo typeInfo, TObjectPtr object)
 {
+#ifndef VIRTUAL_MID_LEVEL_IO
+    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+#endif
     ReadObject(object, typeInfo);
+#ifndef VIRTUAL_MID_LEVEL_IO
+    EndNamedType();
+    END_OBJECT_FRAME();
+#endif
 }
 
 void CObjectIStream::SkipNamedType(TTypeInfo /*namedTypeInfo*/,
@@ -1138,8 +943,8 @@ void CObjectIStream::EndContainerElement(void)
 {
 }
 
-void CObjectIStream::ReadContainer(TObjectPtr containerPtr,
-                                   const CContainerTypeInfo* containerType)
+void CObjectIStream::ReadContainer(const CContainerTypeInfo* containerType,
+                                   TObjectPtr containerPtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
     BeginContainer(containerType);
@@ -1177,27 +982,6 @@ void CObjectIStream::SkipContainer(const CContainerTypeInfo* containerType)
     END_OBJECT_FRAME();
 }
 
-void CObjectIStream::ReadContainer(const CObjectInfo& container,
-                                   CReadContainerElementHook& hook)
-{
-    const CContainerTypeInfo* containerType = container.GetContainerTypeInfo();
-    BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
-    BeginContainer(containerType);
-
-    TTypeInfo elementType = containerType->GetElementType();
-    BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
-
-    while ( BeginContainerElement(elementType) ) {
-        hook.ReadContainerElement(*this, container);
-        EndContainerElement();
-    }
-
-    END_OBJECT_FRAME();
-
-    EndContainer();
-    END_OBJECT_FRAME();
-}
-
 void CObjectIStream::EndClass(void)
 {
 }
@@ -1206,193 +990,108 @@ void CObjectIStream::EndClassMember(void)
 {
 }
 
-void CObjectIStream::ReadClassRandom(const CObjectInfo& object,
-                                     CReadClassMemberHook& hook)
+void CObjectIStream::ReadClassRandom(const CClassTypeInfo* classType,
+                                     TObjectPtr classPtr)
 {
-    const CClassTypeInfo* objectType = object.GetClassTypeInfo();
-    BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
-    BeginClass(objectType);
-    
-    const CMembersInfo& members = objectType->GetMembers();
-    TMemberIndex lastIndex = members.LastMemberIndex();
-    vector<bool> read(lastIndex + 1);
-    
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
-    TMemberIndex index;
-    while ( (index = BeginClassMember(members)) != kInvalidMember ) {
-        const CMemberInfo* memberInfo = objectType->GetMemberInfo(index);
-        TopFrame().SetMemberId(memberInfo->GetId());
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BeginClass(classType);
 
-        if ( read[index] )
-            DuplicatedMember(memberInfo);
-        else {
-            read[index] = true;
-            hook.ReadClassMember(*this, object, index);
-        }
+    ReadClassRandomContentsBegin();
+
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+
+        ReadClassRandomContentsMember();
         
         EndClassMember();
     }
-    END_OBJECT_FRAME();
 
-    // init all absent members
-    for ( TMemberIndex i = members.FirstMemberIndex();
-          i <= lastIndex; ++i ) {
-        if ( !read[i] ) {
-            hook.SetClassMemberDefault(*this, object, i);
-        }
-    }
+    ReadClassRandomContentsEnd();
     
     EndClass();
     END_OBJECT_FRAME();
 }
 
-void CObjectIStream::ReadClassSequential(const CObjectInfo& object,
-                                         CReadClassMemberHook& hook)
+void CObjectIStream::ReadClassSequential(const CClassTypeInfo* classType,
+                                         TObjectPtr classPtr)
 {
-    const CClassTypeInfo* objectType = object.GetClassTypeInfo();
-    BEGIN_OBJECT_FRAME2(eFrameClass, objectType);
-    BeginClass(objectType);
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BeginClass(classType);
     
-    const CMembersInfo& members = objectType->GetMembers();
-    TMemberIndex lastIndex = members.LastMemberIndex();
-    TMemberIndex pos = members.FirstMemberIndex();
+    ReadClassSequentialContentsBegin();
 
-    BEGIN_OBJECT_FRAME(eFrameClassMember);
     TMemberIndex index;
-    while ( (index = BeginClassMember(members, pos)) != kInvalidMember ) {
-        TopFrame().SetMemberId(objectType->GetMemberInfo(index)->GetId());
+    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
 
-        for ( TMemberIndex i = pos; i < index; ++i ) {
-            // init missing member
-            hook.SetClassMemberDefault(*this, object, i);
-        }
-        hook.ReadClassMember(*this, object, index);
-        
+        ReadClassSequentialContentsMember();
+
         EndClassMember();
-
-        pos = index + 1;
-    }
-    END_OBJECT_FRAME();
-
-    // init all absent members
-    for ( TMemberIndex i = pos; i <= lastIndex; ++i ) {
-        hook.SetClassMemberDefault(*this, object, i);
     }
 
+    ReadClassSequentialContentsEnd();
+    
     EndClass();
     END_OBJECT_FRAME();
 }
 
-void CObjectIStream::ReadClass(const CObjectInfo& object,
-                               CReadClassMemberHook& hook)
+void CObjectIStream::SkipClassRandom(const CClassTypeInfo* classType)
 {
-    if ( object.GetClassTypeInfo()->RandomOrder() )
-        ReadClassRandom(object, hook);
-    else
-        ReadClassSequential(object, hook);
-}
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BeginClass(classType);
+    
+    SkipClassRandomContentsBegin();
 
-class CClassMemberReader : public CReadClassMemberHook
-{
-public:
-    void ReadClassMember(CObjectIStream& in,
-                         const CObjectInfo& object, TMemberIndex index)
-        {
-            in.ReadClassMember(object, index);
-        }
-    void SetClassMemberDefault(CObjectIStream& in,
-                               const CObjectInfo& object, TMemberIndex index)
-        {
-            in.SetClassMemberDefault(object, index);
-        }
-};
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
 
-class CClassMemberReaderNoHook : public CReadClassMemberHook
-{
-public:
-    void ReadClassMember(CObjectIStream& in,
-                         const CObjectInfo& object, TMemberIndex index)
-        {
-            in.ReadClassMemberNoHook(object, index);
-        }
-    void SetClassMemberDefault(CObjectIStream& in,
-                               const CObjectInfo& object, TMemberIndex index)
-        {
-            in.SetClassMemberDefaultNoHook(object, index);
-        }
-};
+        SkipClassRandomContentsMember();
 
-static CClassMemberReader classMemberReader;
-static CClassMemberReaderNoHook classMemberReaderNoHook;
-
-void CObjectIStream::ReadClass(const CObjectInfo& object)
-{
-    if ( m_ReadClassMemberHooks.get() ) {
-        ReadClass(object, classMemberReader);
+        EndClassMember();
     }
-    else {
-        ReadClass(object, classMemberReaderNoHook);
+
+    SkipClassRandomContentsEnd();
+    
+    EndClass();
+    END_OBJECT_FRAME();
+}
+
+void CObjectIStream::SkipClassSequential(const CClassTypeInfo* classType)
+{
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    BeginClass(classType);
+    
+    SkipClassSequentialContentsBegin();
+
+    TMemberIndex index;
+    while ( (index = BeginClassMember(classType)) != kInvalidMember ) {
+
+        SkipClassSequentialContentsMember();
+
+        EndClassMember();
     }
-}
 
-class CClassMemberSkipper : public CReadClassMemberHook
-{
-public:
-    void ReadClassMember(CObjectIStream& in,
-                         const CObjectInfo& object, TMemberIndex index)
-        {
-            in.SkipClassMember(object.GetClassTypeInfo(), index);
-        }
-    void SetClassMemberDefault(CObjectIStream& in,
-                               const CObjectInfo& object, TMemberIndex index)
-        {
-            in.SkipClassMemberDefault(object.GetClassTypeInfo(), index);
-        }
-};
-
-static CClassMemberSkipper classMemberSkipper;
-
-void CObjectIStream::SkipClass(const CClassTypeInfo* classType)
-{
-    ReadClass(CObjectInfo(0, classType,
-                          CObjectInfo::eNonCObject), classMemberSkipper);
-}
-
-class CChoiceVariantReader : public CReadChoiceVariantHook
-{
-public:
-    void ReadChoiceVariant(CObjectIStream& in,
-                           const CObjectInfo& object, TMemberIndex index)
-        {
-            in.ReadChoiceVariant(object, index);
-        }
-};
-
-static CChoiceVariantReader choiceVariantReader;
-
-void CObjectIStream::ReadChoice(const CObjectInfo& object)
-{
-    ReadChoice(object, choiceVariantReader);
+    SkipClassSequentialContentsEnd();
+    
+    EndClass();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStream::EndChoiceVariant(void)
 {
 }
 
-void CObjectIStream::DoReadChoice(const CObjectInfo& choice,
-                                  CReadChoiceVariantHook& hook)
+void CObjectIStream::ReadChoice(const CChoiceTypeInfo* choiceType,
+                                TObjectPtr choicePtr)
 {
-    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
 
     TMemberIndex index = BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        ThrowError(eFormatError, "choice variant id expected");
+    _ASSERT(index != kInvalidMember);
 
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, 
-                        choiceType->GetMemberInfo(index)->GetId());
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
 
-    hook.ReadChoiceVariant(*this, choice, index);
+    variantInfo->ReadVariant(*this, choicePtr);
 
     EndChoiceVariant();
     END_OBJECT_FRAME();
@@ -1400,22 +1099,23 @@ void CObjectIStream::DoReadChoice(const CObjectInfo& choice,
     END_OBJECT_FRAME();
 }
 
-class CChoiceVariantSkipper : public CReadChoiceVariantHook
-{
-public:
-    void ReadChoiceVariant(CObjectIStream& in,
-                           const CObjectInfo& object, TMemberIndex index)
-        {
-            in.SkipChoiceVariant(object.GetChoiceTypeInfo(), index);
-        }
-};
-
-static CChoiceVariantSkipper choiceVariantSkipper;
-
 void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 {
-    ReadChoice(CObjectInfo(0, choiceType,
-                           CObjectInfo::eNonCObject), choiceVariantSkipper);
+    BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+
+    TMemberIndex index = BeginChoiceVariant(choiceType);
+    if ( index == kInvalidMember )
+        ThrowError(eFormatError, "choice variant id expected");
+
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+
+    variantInfo->SkipVariant(*this);
+
+    EndChoiceVariant();
+    END_OBJECT_FRAME();
+
+    END_OBJECT_FRAME();
 }
 
 CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/18 20:00:20  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.10  2000/09/01 13:16:13  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -90,12 +96,12 @@ BEGIN_NCBI_SCOPE
 static CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo_map;
 
 CAutoPointerTypeInfo::CAutoPointerTypeInfo(TTypeInfo type)
-    : CParent(/*type->GetName(), */type)
+    : CParent(type->GetName(), type)
 {
-}
-
-CAutoPointerTypeInfo::~CAutoPointerTypeInfo(void)
-{
+    SetReadFunction(&ReadAutoPtr);
+    SetWriteFunction(&WriteAutoPtr);
+    SetCopyFunction(&CopyAutoPtr);
+    SetSkipFunction(&SkipAutoPtr);
 }
 
 TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
@@ -103,40 +109,57 @@ TTypeInfo CAutoPointerTypeInfo::GetTypeInfo(TTypeInfo base)
     return CAutoPointerTypeInfo_map.GetTypeInfo(base);
 }
 
-void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
-                                     TConstObjectPtr object) const
+void CAutoPointerTypeInfo::WriteAutoPtr(CObjectOStream& out,
+                                        TTypeInfo objectType,
+                                        TConstObjectPtr objectPtr)
 {
-    TConstObjectPtr data = GetObjectPointer(object);
-    if ( data == 0 )
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    TConstObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
+    if ( dataPtr == 0 )
         THROW1_TRACE(runtime_error, "null auto pointer");
-    TTypeInfo dataType = GetDataTypeInfo();
-    if ( dataType->GetRealTypeInfo(data) != dataType )
+
+    TTypeInfo dataType = autoPtrType->GetPointedType();
+    if ( dataType->GetRealTypeInfo(dataPtr) != dataType )
         THROW1_TRACE(runtime_error, "auto pointer have different type");
-    out.WriteObject(data, dataType);
+    out.WriteObject(dataPtr, dataType);
 }
 
-void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
-                                    TObjectPtr object) const
+void CAutoPointerTypeInfo::ReadAutoPtr(CObjectIStream& in,
+                                       TTypeInfo objectType,
+                                       TObjectPtr objectPtr)
 {
-    TObjectPtr data = GetObjectPointer(object);
-    TTypeInfo dataType = GetDataTypeInfo();
-    if ( data == 0 ) {
-        SetObjectPointer(object, data = dataType->Create());
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    TObjectPtr dataPtr = autoPtrType->GetObjectPointer(objectPtr);
+    TTypeInfo dataType = autoPtrType->GetPointedType();
+    if ( dataPtr == 0 ) {
+        autoPtrType->SetObjectPointer(objectPtr, dataPtr = dataType->Create());
     }
-    else if ( dataType->GetRealTypeInfo(data) != dataType ) {
+    else if ( dataType->GetRealTypeInfo(dataPtr) != dataType ) {
         THROW1_TRACE(runtime_error, "auto pointer have different type");
     }
-    in.ReadObject(data, dataType);
+    in.ReadObject(dataPtr, dataType);
 }
 
-void CAutoPointerTypeInfo::SkipData(CObjectIStream& in) const
+void CAutoPointerTypeInfo::CopyAutoPtr(CObjectStreamCopier& copier,
+                                       TTypeInfo objectType)
 {
-    GetDataTypeInfo()->SkipData(in);
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    autoPtrType->GetPointedType()->CopyData(copier);
 }
 
-void CAutoPointerTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void CAutoPointerTypeInfo::SkipAutoPtr(CObjectIStream& in,
+                                       TTypeInfo objectType)
 {
-    GetDataTypeInfo()->CopyData(copier);
+    const CAutoPointerTypeInfo* autoPtrType =
+        CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
+
+    autoPtrType->GetPointedType()->SkipData(in);
 }
 
 END_NCBI_SCOPE

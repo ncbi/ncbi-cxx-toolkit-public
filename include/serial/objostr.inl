@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.5  2000/08/15 19:44:41  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -58,97 +64,37 @@
 */
 
 inline
-void CObjectOStream::WriteObjectNoHook(TConstObjectPtr objectPtr,
-                                       TTypeInfo objectType)
+void CObjectOStream::WriteObject(TConstObjectPtr objectPtr,
+                                 TTypeInfo objectType)
 {
     objectType->WriteData(*this, objectPtr);
 }
 
 inline
-void CObjectOStream::WriteObjectNoHook(const CConstObjectInfo& object)
+void CObjectOStream::WriteObject(const CConstObjectInfo& object)
 {
     object.GetTypeInfo()->WriteData(*this, object.GetObjectPtr());
 }
 
 inline
-void CObjectOStream::WriteObject(TConstObjectPtr objectPtr,
-                                 TTypeInfo objectType)
+void CObjectOStream::CopyObject(TTypeInfo objectType,
+                                CObjectStreamCopier& copier)
 {
-    TWriteObjectHooks* hooks = m_WriteObjectHooks.get();
-    if ( hooks ) {
-        CWriteObjectHook* hook = GetHook(*hooks, objectType);
-        if ( hook ) {
-            hook->WriteObject(*this,
-                              CConstObjectInfo(objectPtr, objectType,
-                                               CConstObjectInfo::eNonCObject));
-            return;
-        }
-    }
-    WriteObjectNoHook(objectPtr, objectType);
+    objectType->CopyData(copier);
 }
 
 inline
-void CObjectOStream::WriteObject(const CConstObjectInfo& object)
+void CObjectOStream::WriteClassRandom(const CClassTypeInfo* classType,
+                                      TConstObjectPtr classPtr)
 {
-    TWriteObjectHooks* hooks = m_WriteObjectHooks.get();
-    if ( hooks ) {
-        CWriteObjectHook* hook = GetHook(*hooks, object.GetTypeInfo());
-        if ( hook ) {
-            hook->WriteObject(*this, object);
-            return;
-        }
-    }
-    WriteObjectNoHook(object);
+    WriteClass(classType, classPtr);
 }
 
 inline
-void CObjectOStream::WriteContainerElements(const CConstObjectInfo& container,
-                                            CWriteContainerElementsHook& hook)
+void CObjectOStream::WriteClassSequential(const CClassTypeInfo* classType,
+                                          TConstObjectPtr classPtr)
 {
-    hook.WriteContainerElements(*this, container);
-}
-
-inline
-void CObjectOStream::WriteClass(const CConstObjectInfo& object,
-                                CWriteClassMembersHook& hook)
-{
-    DoWriteClass(object, hook);
-}
-
-inline
-void CObjectOStream::WriteClass(TConstObjectPtr objectPtr,
-                                const CClassTypeInfo* objectType)
-{
-    DoWriteClass(objectPtr, objectType);
-}
-
-inline
-void CObjectOStream::WriteClass(const CConstObjectInfo& object)
-{
-    DoWriteClass(object.GetObjectPtr(), object.GetClassTypeInfo());
-}
-
-inline
-void CObjectOStream::WriteClassMembers(const CConstObjectInfo& object)
-{
-    WriteClassMembers(object.GetObjectPtr(), object.GetClassTypeInfo());
-}
-
-inline
-void CObjectOStream::WriteChoiceVariant(const CConstObjectInfo& choice,
-                                        TMemberIndex index)
-{
-    TWriteChoiceVariantHooks* hooks = m_WriteChoiceVariantHooks.get();
-    if ( hooks ) {
-        CWriteChoiceVariantHook* hook = GetHook(*hooks,
-                                                choice.GetChoiceTypeInfo(),
-                                                index);
-        if ( hook ) {
-            hook->WriteChoiceVariant(*this, choice, index);
-            return;
-        }
-    }
-    WriteChoiceVariantNoHook(choice, index);
+    WriteClass(classType, classPtr);
 }
 
 inline

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/18 20:00:04  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.1  2000/08/15 19:44:39  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -51,8 +57,10 @@ BEGIN_NCBI_SCOPE
 
 class CObjectIStream;
 class CObjectOStream;
+class CObjectStreamCopier;
 class CObjectInfo;
 class CConstObjectInfo;
+class CObjectTypeInfo;
 
 class CReadObjectHook : public CObject
 {
@@ -85,9 +93,9 @@ public:
     virtual void ReadClassMember(CObjectIStream& in,
                                  const CObjectInfo& object,
                                  TMemberIndex memberIndex) = 0;
-    virtual void SetClassMemberDefault(CObjectIStream& in,
-                                       const CObjectInfo& object,
-                                       TMemberIndex memberIndex);
+    virtual void ReadMissingClassMember(CObjectIStream& in,
+                                        const CObjectInfo& object,
+                                        TMemberIndex memberIndex);
 };
 
 class CReadChoiceVariantHook : public CObject
@@ -203,6 +211,59 @@ public:
 
     virtual void WriteContainerElements(CObjectOStream& out,
                                         const CConstObjectInfo& container) = 0;
+};
+
+class CCopyObjectHook : public CObject
+{
+public:
+    CCopyObjectHook(void)
+        {
+        }
+    CCopyObjectHook(ECanDelete canDelete)
+        : CObject(canDelete)
+        {
+        }
+    virtual ~CCopyObjectHook(void);
+    
+    virtual void CopyObject(CObjectStreamCopier& copier,
+                            const CObjectTypeInfo& type) = 0;
+};
+
+class CCopyClassMemberHook : public CObject
+{
+public:
+    CCopyClassMemberHook(void)
+        {
+        }
+    CCopyClassMemberHook(ECanDelete canDelete)
+        : CObject(canDelete)
+        {
+        }
+    virtual ~CCopyClassMemberHook(void);
+    
+    virtual void CopyClassMember(CObjectStreamCopier& copier,
+                                 const CObjectTypeInfo& type,
+                                 TMemberIndex memberIndex) = 0;
+    virtual void CopyMissingClassMember(CObjectStreamCopier& copier,
+                                        const CObjectTypeInfo& type,
+                                        TMemberIndex memberIndex);
+};
+
+class CCopyChoiceVariantHook : public CObject
+{
+public:
+    CCopyChoiceVariantHook(void)
+        {
+        }
+    CCopyChoiceVariantHook(ECanDelete canDelete)
+        : CObject(canDelete)
+        {
+        }
+    virtual ~CCopyChoiceVariantHook(void);
+
+    virtual void CopyChoiceVariant(CObjectStreamCopier& copier,
+                                   const CObjectTypeInfo& objectType,
+                                   TMemberIndex memberIndex) = 0;
 };
 
 //#include <serial/objhook.inl>

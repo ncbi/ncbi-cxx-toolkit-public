@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/18 20:00:10  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.2  1999/06/04 20:51:39  vasilche
 * First compilable version of serialization.
 *
@@ -41,5 +47,41 @@
 *
 * ===========================================================================
 */
+
+inline
+CPrimitiveTypeInfo::CPrimitiveTypeInfo(size_t size,
+                                       EPrimitiveValueType valueType)
+    : CParent(eTypeFamilyPrimitive, size),
+      m_ValueType(valueType)
+{
+}
+
+inline
+CPrimitiveTypeInfo::CPrimitiveTypeInfo(size_t size, const char* name,
+                                       EPrimitiveValueType valueType)
+    : CParent(eTypeFamilyPrimitive, size, name),
+      m_ValueType(valueType)
+{
+}
+
+inline
+CPrimitiveTypeInfo::CPrimitiveTypeInfo(size_t size, const string& name,
+                                       EPrimitiveValueType valueType)
+    : CParent(eTypeFamilyPrimitive, size, name),
+      m_ValueType(valueType)
+{
+}
+
+inline
+EPrimitiveValueType CPrimitiveTypeInfo::GetPrimitiveValueType(void) const
+{
+    return m_ValueType;
+}
+
+inline
+CVoidTypeInfo::CVoidTypeInfo(void)
+    : CParent(0, ePrimitiveValueSpecial)
+{
+}
 
 #endif /* def STDTYPES__HPP  &&  ndef STDTYPES__INL */

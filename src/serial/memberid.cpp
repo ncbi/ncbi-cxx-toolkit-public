@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/18 20:00:22  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.11  2000/09/01 13:16:15  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -147,7 +153,7 @@ string CMemberId::ToString(void) const
 CMemberId::TTag CMemberId::GetTagLong(void) const
 {
     _ASSERT(m_MemberList != 0);
-    m_MemberList->UpdateMemberTags();
+    m_MemberList->UpdateTags();
     return m_Tag;
 }
 

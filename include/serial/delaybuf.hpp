@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/18 20:00:01  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.4  2000/08/15 19:44:38  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -61,7 +67,7 @@
 BEGIN_NCBI_SCOPE
 
 class CByteSource;
-class CMemberInfo;
+class CItemInfo;
 
 class CDelayBuffer
 {
@@ -77,10 +83,6 @@ public:
         }
 
     operator bool(void) const
-        {
-            return Delayed();
-        }
-    operator bool(void)
         {
             return Delayed();
         }
@@ -107,34 +109,23 @@ public:
             return m_Info->m_Source;
         }
 
-    TMemberIndex GetIndex(void) const
-        {
-            const SInfo* info = m_Info.get();
-            if ( !info )
-                return kInvalidMember;
-            else
-                return info->m_Index;
-        }
+    TMemberIndex GetIndex(void) const;
 
-    void SetData(TObjectPtr object,
-                 TMemberIndex index, const CMemberInfo* memberInfo,
+    void SetData(const CItemInfo* itemInfo, TObjectPtr object,
                  ESerialDataFormat dataFormat, const CRef<CByteSource>& data);
 
 private:
     struct SInfo
     {
     public:
-        SInfo(TObjectPtr object,
-              TMemberIndex index, const CMemberInfo* memberInfo,
+        SInfo(const CItemInfo* itemInfo, TObjectPtr object,
               ESerialDataFormat dataFormat, const CRef<CByteSource>& source);
         ~SInfo(void);
 
+        // member info
+        const CItemInfo* m_ItemInfo;
         // main object
         TObjectPtr m_Object;
-        // index of member (for choice check)
-        TMemberIndex m_Index;
-        // member info
-        const CMemberInfo* m_MemberInfo;
         // data format
         ESerialDataFormat m_DataFormat;
         // data source

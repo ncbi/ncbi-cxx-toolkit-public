@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/18 20:00:22  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.10  2000/09/01 13:16:15  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -73,7 +79,6 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/iterator.hpp>
-#include <serial/ptrinfo.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -194,13 +199,13 @@ CConstTreeLevelIterator*
 CConstTreeLevelIterator::Create(const CConstObjectInfo& obj)
 {
     switch ( obj.GetTypeFamily() ) {
-    case CTypeInfo::eTypeClass:
+    case eTypeFamilyClass:
         return new CConstTreeLevelIteratorMany<CConstObjectInfo::CMemberIterator>(obj);
-    case CTypeInfo::eTypeContainer:
+    case eTypeFamilyContainer:
         return new CConstTreeLevelIteratorMany<CConstObjectInfo::CElementIterator>(obj);
-    case CTypeInfo::eTypePointer:
+    case eTypeFamilyPointer:
         return CreateOne(obj.GetPointedObject());
-    case CTypeInfo::eTypeChoice:
+    case eTypeFamilyChoice:
         {
             CConstObjectInfo::CChoiceVariant v(obj);
             if ( v )
@@ -218,10 +223,10 @@ bool CConstTreeLevelIterator::HaveChildren(const CConstObjectInfo& object)
     if ( !object )
         return false;
     switch ( object.GetTypeFamily() ) {
-    case CTypeInfo::eTypeClass:
-    case CTypeInfo::eTypeChoice:
-    case CTypeInfo::eTypePointer:
-    case CTypeInfo::eTypeContainer:
+    case eTypeFamilyClass:
+    case eTypeFamilyChoice:
+    case eTypeFamilyPointer:
+    case eTypeFamilyContainer:
         return true;
     default:
         return false;
@@ -242,13 +247,13 @@ CTreeLevelIterator*
 CTreeLevelIterator::Create(const CObjectInfo& obj)
 {
     switch ( obj.GetTypeFamily() ) {
-    case CTypeInfo::eTypeClass:
+    case eTypeFamilyClass:
         return new CTreeLevelIteratorMany<CObjectInfo::CMemberIterator>(obj);
-    case CTypeInfo::eTypeContainer:
+    case eTypeFamilyContainer:
         return new CTreeLevelIteratorMany<CObjectInfo::CElementIterator>(obj);
-    case CTypeInfo::eTypePointer:
+    case eTypeFamilyPointer:
         return CreateOne(obj.GetPointedObject());
-    case CTypeInfo::eTypeChoice:
+    case eTypeFamilyChoice:
         {
             CObjectInfo::CChoiceVariant v(obj);
             if ( v )
@@ -345,6 +350,7 @@ bool CTreeIteratorTmpl<LevelIterator>::Step(const TObjectInfo& current)
     if ( CanEnter(current) ) {
         AutoPtr<LevelIterator> nextLevel(LevelIterator::Create(current));
         if ( nextLevel ) {
+            _ASSERT(nextLevel->Valid());
             m_Stack.push(nextLevel);
             return true;
         }

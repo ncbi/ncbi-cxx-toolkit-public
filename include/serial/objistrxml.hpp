@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/18 20:00:06  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.6  2000/09/01 13:16:01  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -107,54 +113,63 @@ protected:
     virtual void SkipNull(void);
     virtual void SkipByteBlock(void);
 
-    CLightString SkipTagName(CLightString tag, char c);
     CLightString SkipTagName(CLightString tag, const char* s, size_t length);
     CLightString SkipTagName(CLightString tag, const char* s);
     CLightString SkipTagName(CLightString tag, const string& s);
-    CLightString SkipTagName(CLightString tag, size_t level);
+    CLightString SkipStackTagName(CLightString tag, size_t level);
+    CLightString SkipStackTagName(CLightString tag, size_t level, char c);
 
     bool NextTagIsClosing(void);
     void OpenTag(const string& e);
     void CloseTag(const string& e);
-    void OpenTag(size_t level);
-    void CloseTag(size_t level);
+    void OpenStackTag(size_t level);
+    void CloseStackTag(size_t level);
+    void OpenTag(TTypeInfo type);
+    void CloseTag(TTypeInfo type);
+    void OpenTagIfNamed(TTypeInfo type);
+    void CloseTagIfNamed(TTypeInfo type);
+    bool WillHaveName(TTypeInfo elementType);
 
-    virtual void ReadContainer(TObjectPtr containerPtr,
-                               const CContainerTypeInfo* containerType);
-    virtual void ReadContainer(const CObjectInfo& container,
-                               CReadContainerElementHook& hook);
+#ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void ReadNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo,
+                               TObjectPtr object);
+
+    virtual void ReadContainer(const CContainerTypeInfo* containerType,
+                               TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
-    void ReadContainerContents(TObjectPtr containerPtr,
-                               const CContainerTypeInfo* containerType);
-    void ReadContainerContents(const CObjectInfo& container,
-                               CReadContainerElementHook& hook);
+
+    void ReadContainerContents(const CContainerTypeInfo* containerType,
+                               TObjectPtr containerPtr);
     void SkipContainerContents(const CContainerTypeInfo* containerType);
 
+    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr);
+    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
+    void ReadChoiceContents(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr);
+    void SkipChoiceContents(const CChoiceTypeInfo* choiceType);
+#endif
+
+    // low level I/O
     virtual void BeginNamedType(TTypeInfo namedTypeInfo);
     virtual void EndNamedType(void);
-    void ReadNamedType(TTypeInfo namedTypeInfo,
-                       TTypeInfo typeInfo,
-                       TObjectPtr object);
 
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);
     virtual bool BeginContainerElement(TTypeInfo elementType);
     virtual void EndContainerElement(void);
 
-    void BeginClass(const CClassTypeInfo* classInfo);
-    void EndClass(void);
-    TMemberIndex BeginClassMember(const CMembersInfo& members);
-    TMemberIndex BeginClassMember(const CMembersInfo& members,
-                                  TMemberIndex pos);
+    virtual void BeginClass(const CClassTypeInfo* classInfo);
+    virtual void EndClass(void);
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
+                                          TMemberIndex pos);
     void EndClassMember(void);
 
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
     virtual void EndChoiceVariant(void);
-    virtual void DoReadChoice(const CObjectInfo& choice,
-                              CReadChoiceVariantHook& hook);
-    void ReadChoiceContents(const CObjectInfo& choice,
-                            CReadChoiceVariantHook& hook);
-    
+
     void BeginBytes(ByteBlock& );
     int GetHexChar(void);
     size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
@@ -207,7 +222,7 @@ private:
     ETagState m_TagState;
 };
 
-//#include <serial/objistrxml.inl>
+#include <serial/objistrxml.inl>
 
 END_NCBI_SCOPE
 

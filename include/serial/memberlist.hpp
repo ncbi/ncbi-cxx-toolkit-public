@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/09/18 20:00:03  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.16  2000/09/01 13:15:59  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -114,73 +120,55 @@
 
 BEGIN_NCBI_SCOPE
 
-class CMemberId;
-class CMemberInfo;
 class CConstObjectInfo;
 class CObjectInfo;
 
 // This class supports sets of members with IDs
-class CMembersInfo {
+class CMembersInfo
+{
 public:
     typedef CMemberId::TTag TTag;
-    typedef vector< AutoPtr<CMemberInfo> > TMembers;
+    typedef vector< AutoPtr<CItemInfo> > TItems;
     typedef map<CLightString, TMemberIndex> TMembersByName;
     typedef map<TTag, TMemberIndex> TMembersByTag;
     typedef map<size_t, TMemberIndex> TMembersByOffset;
 
     CMembersInfo(void);
-    ~CMembersInfo(void);
+    virtual ~CMembersInfo(void);
 
     bool Empty(void) const
         {
-            return m_Members.empty();
+            return m_Items.empty();
         }
 
-    static TMemberIndex FirstMemberIndex(void)
+    static TMemberIndex FirstIndex(void)
         {
             return kFirstMemberIndex;
         }
-    TMemberIndex LastMemberIndex(void) const
+    TMemberIndex LastIndex(void) const
         {
-            return m_Members.size();
+            return m_Items.size();
         }
 
-    // AddMember will take ownership of member
-    CMemberInfo* AddMember(CMemberInfo* member);
-    CMemberInfo* AddMember(const CMemberId& id,
-                           TConstObjectPtr member, TTypeInfo type);
-    CMemberInfo* AddMember(const CMemberId& id,
-                           TConstObjectPtr member, const CTypeRef& type);
-    CMemberInfo* AddMember(const char* name, CMemberInfo* member);
-    CMemberInfo* AddMember(const char* name,
-                           TConstObjectPtr member, TTypeInfo type);
-    CMemberInfo* AddMember(const char* name,
-                           TConstObjectPtr member, const CTypeRef& type);
+    TMemberIndex Find(const CLightString& name) const;
+    TMemberIndex Find(const CLightString& name, TMemberIndex pos) const;
+    TMemberIndex Find(TTag tag) const;
+    TMemberIndex Find(TTag tag, TMemberIndex pos) const;
 
-    const CMemberInfo* GetMemberInfo(TMemberIndex index) const
-        {
-            return x_GetMemberInfo(index);
-        }
+    void UpdateTags(void) const;
+    size_t GetFirstItemOffset(void) const;
 
-    const TMembersByName& GetMembersByName(void) const;
-    void UpdateMemberTags(void) const;
+    const CItemInfo* GetItemInfo(TMemberIndex index) const;
+    void AddItem(CItemInfo* item);
 
-    const TMembersByOffset& GetMembersByOffset(void) const;
-    size_t GetFirstMemberOffset(void) const;
-
-    TMemberIndex FindMember(const CLightString& name) const;
-    TMemberIndex FindMember(const CLightString& name, TMemberIndex pos) const;
-    TMemberIndex FindMember(TTag tag) const;
-    TMemberIndex FindMember(TTag tag, TMemberIndex pos) const;
+protected:
+    CItemInfo* x_GetItemInfo(TMemberIndex index) const;
 
 private:
-    CMemberInfo* x_GetMemberInfo(TMemberIndex index) const
-        {
-            _ASSERT(index >= FirstMemberIndex() && index <= LastMemberIndex());
-            return m_Members[index - FirstMemberIndex()].get();
-        }
+    const TMembersByName& GetMembersByName(void) const;
+    const TMembersByOffset& GetMembersByOffset(void) const;
 
-    TMembers m_Members;
+    TItems m_Items;
     mutable auto_ptr<TMembersByName> m_MembersByName;
     mutable TMemberIndex m_ZeroTagIndex;
     mutable auto_ptr<TMembersByTag> m_MembersByTag;
@@ -190,7 +178,7 @@ private:
     CMembersInfo& operator=(const CMembersInfo&);
 };
 
-//#include <serial/memberlist.inl>
+#include <serial/memberlist.inl>
 
 END_NCBI_SCOPE
 

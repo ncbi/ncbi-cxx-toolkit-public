@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.5  2000/09/01 13:16:02  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -57,6 +63,15 @@
 *
 * ===========================================================================
 */
+
+#define VIRTUAL_MID_LEVEL_IO 1
+//#undef VIRTUAL_MID_LEVEL_IO
+
+#ifdef VIRTUAL_MID_LEVEL_IO
+# define MLIOVIR virtual
+#else
+# define MLIOVIR
+#endif
 
 #include <corelib/ncbistd.hpp>
 #include <serial/memberid.hpp>
@@ -104,24 +119,28 @@ public:
     CObjectStack(void);
     virtual ~CObjectStack(void);
 
+    TFrame& PushFrame(EFrameType type, TTypeInfo typeInfo);
+    TFrame& PushFrame(EFrameType type, const CMemberId& memberId);
+    TFrame& PushFrame(EFrameType type);
+
+    void PopFrame(void);
+    void PopErrorFrame(void);
+
+    void SetTopMemberId(const CMemberId& memberId);
+
 protected:
     size_t GetStackDepth(void) const;
     bool StackIsEmpty(void) const;
-
-    TFrame& PushFrame(EFrameType type);
-    TFrame& PushFrame(EFrameType type, TTypeInfo typeInfo);
-    TFrame& PushFrame(EFrameType type, const CMemberId& memberId);
-    void PopFrame(void);
-    void PopErrorFrame(void);
 
     void ClearStack(void);
 
     string GetStackTraceASN(void) const;
 
-    TFrame& FetchFrameFromTop(size_t index);
-    const TFrame& FetchFrameFromTop(size_t index) const;
     const TFrame& TopFrame(void) const;
     TFrame& TopFrame(void);
+
+    TFrame& FetchFrameFromTop(size_t index);
+    const TFrame& FetchFrameFromTop(size_t index) const;
     const TFrame& FetchFrameFromBottom(size_t index) const;
 
     virtual void UnendedFrame(void);

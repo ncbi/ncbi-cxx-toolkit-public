@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/18 20:00:02  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.13  2000/08/15 19:44:38  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -91,173 +97,232 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/serialdef.hpp>
-#include <serial/typeref.hpp>
-#include <serial/typeinfo.hpp>
-#include <serial/memberid.hpp>
+#include <serial/serialutil.hpp>
+#include <serial/item.hpp>
+#include <serial/hookdata.hpp>
 
 BEGIN_NCBI_SCOPE
 
+class CClassTypeInfo;
+
+class CObjectIStream;
+class CObjectOStream;
+class CObjectStreamCopier;
+
+class CReadClassMemberHook;
+class CWriteClassMemberHook;
+class CCopyClassMemberHook;
+
 class CDelayBuffer;
 
-class CMemberInfo {
+class CMemberInfo : public CItemInfo
+{
+    typedef CItemInfo CParent;
 public:
-	typedef size_t TOffset;
-    enum {
-		eNoOffset = -1
-	};
+    typedef TConstObjectPtr (*TMemberGetConst)(const CMemberInfo* memberInfo,
+                                               TConstObjectPtr classPtr);
+    typedef TObjectPtr (*TMemberGet)(const CMemberInfo* memberInfo,
+                                     TObjectPtr classPtr);
+    typedef void (*TMemberRead)(CObjectIStream& in,
+                                const CMemberInfo* memberInfo,
+                                TObjectPtr classPtr);
+    typedef void (*TMemberWrite)(CObjectOStream& out,
+                                 const CMemberInfo* memberInfo,
+                                 TConstObjectPtr classPtr);
+    typedef void (*TMemberSkip)(CObjectIStream& in,
+                                const CMemberInfo* memberInfo);
+    typedef void (*TMemberCopy)(CObjectStreamCopier& copier,
+                                const CMemberInfo* memberInfo);
 
-    CMemberInfo(const CMemberId& id, TOffset offset, const CTypeRef& type)
-        : m_Id(id),
-          m_Offset(offset), m_Type(type),
-          m_Optional(false), m_Pointer(false), m_ObjectPointer(false),
-          m_SetFlagOffset(TOffset(eNoOffset)),
-          m_DelayOffset(TOffset(eNoOffset)),
-          m_Default(0)
-        {
-        }
-    ~CMemberInfo(void)
-        {
-        }
+    CMemberInfo(const CClassTypeInfo* classType,
+                const CMemberId& id, TOffset offset, const CTypeRef& type);
+    CMemberInfo(const CClassTypeInfo* classType,
+                const CMemberId& id, TOffset offset, TTypeInfo type);
+    CMemberInfo(const CClassTypeInfo* classType,
+                const char* id, TOffset offset, const CTypeRef& type);
+    CMemberInfo(const CClassTypeInfo* classType,
+                const char* id, TOffset offset, TTypeInfo type);
+    ~CMemberInfo(void);
 
-    const CMemberId& GetId(void) const
-        {
-            return m_Id;
-        }
-    CMemberId& GetId(void)
-        {
-            return m_Id;
-        }
-    TOffset GetOffset(void) const
-        {
-            return m_Offset;
-        }
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return m_Type.Get();
-        }
+    const CClassTypeInfo* GetClassType(void) const;
 
-    bool Optional(void) const
-        {
-            return m_Optional;
-        }
-    CMemberInfo* SetOptional(void)
-        {
-            m_Optional = true;
-            return this;
-        }
+    bool Optional(void) const;
+    CMemberInfo* SetOptional(void);
 
-    bool IsPointer(void) const
-        {
-            return m_Pointer;
-        }
-    CMemberInfo* SetPointer(void)
-        {
-            m_Pointer = true;
-            return this;
-        }
+    TConstObjectPtr GetDefault(void) const;
+    CMemberInfo* SetDefault(TConstObjectPtr def);
 
-    bool IsObjectPointer(void) const
-        {
-            return m_ObjectPointer;
-        }
-    CMemberInfo* SetObjectPointer(void)
-        {
-            m_Pointer = m_ObjectPointer = true;
-            return this;
-        }
+    bool HaveSetFlag(void) const;
+    CMemberInfo* SetSetFlag(const bool* setFlag);
+    CMemberInfo* SetOptional(const bool* setFlag);
 
-    TConstObjectPtr GetDefault(void) const
-        {
-            return m_Default;
-        }
-    CMemberInfo* SetDefault(TConstObjectPtr def)
-        {
-            m_Optional = true;
-            m_Default = def;
-            return this;
-        }
+    bool GetSetFlag(TConstObjectPtr object) const;
+    bool& GetSetFlag(TObjectPtr object) const;
+    void UpdateSetFlag(TObjectPtr object, bool value) const;
 
-    bool HaveSetFlag(void) const
-        {
-            return m_SetFlagOffset != TOffset(eNoOffset);
-        }
-    CMemberInfo* SetSetFlag(const bool* setFlag)
-        {
-            m_SetFlagOffset = size_t(setFlag);
-            return this;
-        }
-    CMemberInfo* SetOptional(const bool* setFlag)
-        {
-            SetOptional();
-            return SetSetFlag(setFlag);
-        }
+    bool CanBeDelayed(void) const;
+    CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer);
+    CDelayBuffer& GetDelayBuffer(TObjectPtr object) const;
+    const CDelayBuffer& GetDelayBuffer(TConstObjectPtr object) const;
 
-    bool GetSetFlag(TConstObjectPtr object) const
-        {
-            return CType<bool>::Get(Add(object, m_SetFlagOffset));
-        }
-    bool& GetSetFlag(TObjectPtr object) const
-        {
-            return CType<bool>::Get(Add(object, m_SetFlagOffset));
-        }
-    void UpdateSetFlag(TObjectPtr object, bool value) const
-        {
-            TOffset setFlagOffset = m_SetFlagOffset;
-            if ( setFlagOffset != TOffset(eNoOffset) )
-                CType<bool>::Get(Add(object, setFlagOffset)) = value;
-        }
+    // I/O
+    void ReadMember(CObjectIStream& in, TObjectPtr classPtr) const;
+    void ReadMissingMember(CObjectIStream& in, TObjectPtr classPtr) const;
+    void WriteMember(CObjectOStream& out, TConstObjectPtr classPtr) const;
+    void CopyMember(CObjectStreamCopier& copier) const;
+    void CopyMissingMember(CObjectStreamCopier& copier) const;
+    void SkipMember(CObjectIStream& in) const;
+    void SkipMissingMember(CObjectIStream& in) const;
 
-    bool CanBeDelayed(void) const
-        {
-            return m_DelayOffset != TOffset(eNoOffset);
-        }
-    CMemberInfo* SetDelayBuffer(CDelayBuffer* buffer)
-        {
-            m_DelayOffset = size_t(buffer);
-            return this;
-        }
+    TObjectPtr GetMemberPtr(TObjectPtr classPtr) const;
+    TConstObjectPtr GetMemberPtr(TConstObjectPtr classPtr) const;
 
-    CDelayBuffer& GetDelayBuffer(TObjectPtr object) const
-        {
-            return CType<CDelayBuffer>::Get(Add(object, m_DelayOffset));
-        }
-    const CDelayBuffer& GetDelayBuffer(TConstObjectPtr object) const
-        {
-            return CType<const CDelayBuffer>::Get(Add(object, m_DelayOffset));
-        }
+    // hooks
+    void SetGlobalReadHook(CReadClassMemberHook* hook);
+    void SetLocalReadHook(CObjectIStream& in, CReadClassMemberHook* hook);
+    void ResetGlobalReadHook(void);
+    void ResetLocalReadHook(CObjectIStream& in);
 
-    TObjectPtr GetMember(TObjectPtr object) const
-        {
-            return Add(object, m_Offset);
-        }
-    TConstObjectPtr GetMember(TConstObjectPtr object) const
-        {
-            return Add(object, m_Offset);
-        }
-    
+    void SetGlobalWriteHook(CWriteClassMemberHook* hook);
+    void SetLocalWriteHook(CObjectOStream& out, CWriteClassMemberHook* hook);
+    void ResetGlobalWriteHook(void);
+    void ResetLocalWriteHook(CObjectOStream& out);
+
+    void SetGlobalCopyHook(CCopyClassMemberHook* hook);
+    void SetLocalCopyHook(CObjectStreamCopier& copier,
+                          CCopyClassMemberHook* hook);
+    void ResetGlobalCopyHook(void);
+    void ResetLocalCopyHook(CObjectStreamCopier& copier);
+
+    // default I/O (without hooks)
+    void DefaultReadMember(CObjectIStream& in,
+                           TObjectPtr classPtr) const;
+    void DefaultReadMissingMember(CObjectIStream& in,
+                                  TObjectPtr classPtr) const;
+    void DefaultWriteMember(CObjectOStream& out,
+                            TConstObjectPtr classPtr) const;
+    void DefaultCopyMember(CObjectStreamCopier& copier) const;
+    void DefaultCopyMissingMember(CObjectStreamCopier& copier) const;
+
+    virtual void UpdateDelayedBuffer(CObjectIStream& in,
+                                     TObjectPtr classPtr) const;
+
 private:
-    // member ID
-    CMemberId m_Id;
-    // offset of member inside object
-    TOffset m_Offset;
-    // type of member
-    CTypeRef m_Type;
+    // containing class type info
+    const CClassTypeInfo* m_ClassType;
     // is optional
     bool m_Optional;
-    // is pointer in choice
-    bool m_Pointer;
-    // is pointer to CObject descendant
-    bool m_ObjectPointer;
+    // default value
+    TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object
     TOffset m_SetFlagOffset;
     // offset of delay buffer inside object
     TOffset m_DelayOffset;
-    // default value
-    TConstObjectPtr m_Default;
+
+    TMemberGetConst m_GetConstFunction;
+    TMemberGet m_GetFunction;
+
+    CHookData<CObjectIStream, CReadClassMemberHook,
+        pair<TMemberRead, TMemberRead> > m_ReadHookData;
+    CHookData<CObjectOStream, CWriteClassMemberHook,
+        TMemberWrite> m_WriteHookData;
+    CHookData<CObjectStreamCopier, CCopyClassMemberHook,
+        pair<TMemberCopy, TMemberCopy> > m_CopyHookData;
+    TMemberSkip m_SkipFunction;
+    TMemberSkip m_SkipMissingFunction;
+
+    void SetReadHook(CObjectIStream* stream, CReadClassMemberHook* hook);
+    void SetWriteHook(CObjectOStream* stream, CWriteClassMemberHook* hook);
+    void SetCopyHook(CObjectStreamCopier* stream, CCopyClassMemberHook* hook);
+    void ResetReadHook(CObjectIStream* stream);
+    void ResetWriteHook(CObjectOStream* stream);
+    void ResetCopyHook(CObjectStreamCopier* stream);
+
+    void SetReadFunction(TMemberRead func);
+    void SetReadMissingFunction(TMemberRead func);
+    void SetWriteFunction(TMemberWrite func);
+    void SetCopyFunction(TMemberCopy func);
+    void SetCopyMissingFunction(TMemberCopy func);
+    void SetSkipFunction(TMemberSkip func);
+    void SetSkipMissingFunction(TMemberSkip func);
+
+    void UpdateGetFunction(void);
+    void UpdateReadFunction(void);
+    void UpdateReadMissingFunction(void);
+    void UpdateWriteFunction(void);
+    void UpdateCopyMissingFunction(void);
+    void UpdateSkipMissingFunction(void);
+
+    static TConstObjectPtr GetConstSimpleMember(const CMemberInfo* memberInfo,
+                                                TConstObjectPtr classPtr);
+    static TConstObjectPtr GetConstDelayedMember(const CMemberInfo* memberInfo,
+                                                 TConstObjectPtr classPtr);
+    static TObjectPtr GetSimpleMember(const CMemberInfo* memberInfo,
+                                      TObjectPtr classPtr);
+    static TObjectPtr GetWithSetFlagMember(const CMemberInfo* memberInfo,
+                                           TObjectPtr classPtr);
+    static TObjectPtr GetDelayedMember(const CMemberInfo* memberInfo,
+                                       TObjectPtr classPtr);
+    
+
+    static void ReadSimpleMember(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo,
+                                 TObjectPtr classPtr);
+    static void ReadWithSetFlagMember(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo,
+                                        TObjectPtr classPtr);
+    static void ReadLongMember(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo,
+                                 TObjectPtr classPtr);
+    static void ReadHookedMember(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo,
+                                 TObjectPtr classPtr);
+    static void ReadMissingSimpleMember(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo,
+                                        TObjectPtr classPtr);
+    static void ReadMissingOptionalMember(CObjectIStream& in,
+                                            const CMemberInfo* memberInfo,
+                                            TObjectPtr classPtr);
+    static void ReadMissingHookedMember(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo,
+                                        TObjectPtr classPtr);
+    static void WriteSimpleMember(CObjectOStream& out,
+                                  const CMemberInfo* memberInfo,
+                                  TConstObjectPtr classPtr);
+    static void WriteOptionalMember(CObjectOStream& out,
+                                      const CMemberInfo* memberInfo,
+                                      TConstObjectPtr classPtr);
+    static void WriteWithDefaultMember(CObjectOStream& out,
+                                         const CMemberInfo* memberInfo,
+                                         TConstObjectPtr classPtr);
+    static void WriteWithSetFlagMember(CObjectOStream& out,
+                                         const CMemberInfo* memberInfo,
+                                         TConstObjectPtr classPtr);
+    static void WriteLongMember(CObjectOStream& out,
+                                  const CMemberInfo* memberInfo,
+                                  TConstObjectPtr classPtr);
+    static void WriteHookedMember(CObjectOStream& out,
+                                  const CMemberInfo* memberInfo,
+                                  TConstObjectPtr classPtr);
+    static void CopySimpleMember(CObjectStreamCopier& copier,
+                                 const CMemberInfo* memberInfo);
+    static void CopyHookedMember(CObjectStreamCopier& copier,
+                                 const CMemberInfo* memberInfo);
+    static void CopyMissingSimpleMember(CObjectStreamCopier& copier,
+                                        const CMemberInfo* memberInfo);
+    static void CopyMissingOptionalMember(CObjectStreamCopier& copier,
+                                            const CMemberInfo* memberInfo);
+    static void CopyMissingHookedMember(CObjectStreamCopier& copier,
+                                        const CMemberInfo* memberInfo);
+    static void SkipSimpleMember(CObjectIStream& in,
+                                 const CMemberInfo* memberInfo);
+    static void SkipMissingSimpleMember(CObjectIStream& in,
+                                        const CMemberInfo* memberInfo);
+    static void SkipMissingOptionalMember(CObjectIStream& in,
+                                          const CMemberInfo* memberInfo);
 };
 
-//#include <serial/member.inl>
+#include <serial/member.inl>
 
 END_NCBI_SCOPE
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/18 20:00:25  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.19  2000/09/01 13:16:21  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -109,16 +115,49 @@
 * ===========================================================================
 */
 
+#include <serial/serialdef.hpp>
 #include <serial/stdtypesimpl.hpp>
+#include <serial/typeinfoimpl.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfo::ETypeFamily CPrimitiveTypeInfo::GetTypeFamily(void) const
+void CVoidTypeFunctions::ThrowException(const char* operation,
+                                        TTypeInfo objectType)
 {
-    return eTypePrimitive;
+    THROW1_TRACE(runtime_error,
+                 "cannot "+string(operation)+
+                 " object of type: "+objectType->GetName());
+}
+
+void CVoidTypeFunctions::Read(CObjectIStream& ,
+                              TTypeInfo objectType, TObjectPtr )
+{
+    ThrowException("read", objectType);
+}
+
+void CVoidTypeFunctions::Write(CObjectOStream& ,
+                               TTypeInfo objectType, TConstObjectPtr )
+{
+    ThrowException("write", objectType);
+}
+
+void CVoidTypeFunctions::Copy(CObjectStreamCopier& , TTypeInfo objectType)
+{
+    ThrowException("copy", objectType);
+}
+
+void CVoidTypeFunctions::Skip(CObjectIStream& , TTypeInfo objectType)
+{
+    ThrowException("skip", objectType);
+}
+
+TObjectPtr CVoidTypeFunctions::Create(TTypeInfo objectType)
+{
+    ThrowException("create", objectType);
+    return 0;
 }
 
 bool CPrimitiveTypeInfo::GetValueBool(TConstObjectPtr /*objectPtr*/) const
@@ -221,10 +260,9 @@ const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size)
     else
         THROW1_TRACE(runtime_error, "Illegal enum size: "+NStr::UIntToString(size));
     _ASSERT(info->GetSize() == size);
-    _ASSERT(info->GetTypeFamily() == eTypePrimitive);
-    _ASSERT(dynamic_cast<const CPrimitiveTypeInfo*>(info));
-    _ASSERT(static_cast<const CPrimitiveTypeInfo*>(info)->GetValueType() == eInteger);
-    return static_cast<const CPrimitiveTypeInfo*>(info);
+    _ASSERT(info->GetTypeFamily() == eTypeFamilyPrimitive);
+    _ASSERT(CTypeConverter<CPrimitiveTypeInfo>::SafeCast(info)->GetPrimitiveValueType() == ePrimitiveValueInteger);
+    return CTypeConverter<CPrimitiveTypeInfo>::SafeCast(info);
 }
 
 
@@ -280,11 +318,6 @@ TTypeInfo GetStdTypeInfo_const_char_ptr(void)
     return info;
 }
 
-CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoBool::GetValueType(void) const
-{
-    return eBool;
-}
-
 bool CPrimitiveTypeInfoBool::GetValueBool(TConstObjectPtr object) const
 {
     return Get(object);
@@ -295,11 +328,6 @@ void CPrimitiveTypeInfoBool::SetValueBool(TObjectPtr object, bool value) const
     Get(object) = value;
 }
 
-CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoChar::GetValueType(void) const
-{
-    return eChar;
-}
-
 char CPrimitiveTypeInfoChar::GetValueChar(TConstObjectPtr object) const
 {
     return Get(object);
@@ -308,16 +336,6 @@ char CPrimitiveTypeInfoChar::GetValueChar(TConstObjectPtr object) const
 void CPrimitiveTypeInfoChar::SetValueChar(TObjectPtr object, char value) const
 {
     Get(object) = value;
-}
-
-CPrimitiveTypeInfo::EValueType CVoidTypeInfo::GetValueType(void) const
-{
-    return eSpecial;
-}
-
-size_t CVoidTypeInfo::GetSize(void) const
-{
-    return 0;
 }
 
 bool CVoidTypeInfo::IsDefault(TConstObjectPtr ) const
@@ -340,39 +358,49 @@ void CVoidTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
     ThrowIllegalCall();
 }
 
-void CVoidTypeInfo::ReadData(CObjectIStream& , TObjectPtr ) const
+class CStringFunctions
 {
-    ThrowIllegalCall();
-}
+public:
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            copier.CopyString();
+        }
+    static void Skip(CObjectIStream& in, TTypeInfo )
+        {
+            in.SkipString();
+        }
+};
 
-void CVoidTypeInfo::SkipData(CObjectIStream& ) const
+class CStringStoreFunctions
 {
-    ThrowIllegalCall();
-}
-    
-void CVoidTypeInfo::WriteData(CObjectOStream& , TConstObjectPtr ) const
-{
-    ThrowIllegalCall();
-}
+public:
+    static void Read(CObjectIStream& in, TTypeInfo , TObjectPtr objectPtr)
+        {
+            in.ReadStringStore(CTypeConverter<string>::Get(objectPtr));
+        }
+    static void Write(CObjectOStream& out, TTypeInfo ,
+                      TConstObjectPtr objectPtr)
+        {
+            out.WriteStringStore(CTypeConverter<string>::Get(objectPtr));
+        }
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            copier.CopyStringStore();
+        }
+    static void Skip(CObjectIStream& in, TTypeInfo )
+        {
+            in.SkipStringStore();
+        }
+};
 
-void CVoidTypeInfo::CopyData(CObjectStreamCopier& ) const
+CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(void)
+    : CParent(sizeof(string), ePrimitiveValueString)
 {
-    ThrowIllegalCall();
-}
-
-CPrimitiveTypeInfo::EValueType CPrimitiveTypeInfoString::GetValueType(void) const
-{
-    return eString;
-}
-
-size_t CPrimitiveTypeInfoString::GetSize(void) const
-{
-    return sizeof(TObjectType);
-}
-
-TObjectPtr CPrimitiveTypeInfoString::Create(void) const
-{
-    return new TObjectType();
+    SetCreateFunction(&CPrimitiveTypeFunctions<string>::Create);
+    SetReadFunction(&CPrimitiveTypeFunctions<string>::Read);
+    SetWriteFunction(&CPrimitiveTypeFunctions<string>::Write);
+    SetCopyFunction(&CStringFunctions::Copy);
+    SetSkipFunction(&CStringFunctions::Skip);
 }
 
 bool CPrimitiveTypeInfoString::IsDefault(TConstObjectPtr object) const
@@ -403,28 +431,6 @@ TTypeInfo GetStdTypeInfo_string(void)
     return typeInfo;
 }
 
-void CPrimitiveTypeInfoString::ReadData(CObjectIStream& in,
-                                        TObjectPtr object) const
-{
-	in.ReadStd(Get(object));
-}
-
-void CPrimitiveTypeInfoString::SkipData(CObjectIStream& in) const
-{
-	in.SkipString();
-}
-
-void CPrimitiveTypeInfoString::WriteData(CObjectOStream& out,
-                                         TConstObjectPtr object) const
-{
-	out.WriteStd(Get(object));
-}
-
-void CPrimitiveTypeInfoString::CopyData(CObjectStreamCopier& copier) const
-{
-    copier.CopyString();
-}
-
 void CPrimitiveTypeInfoString::GetValueString(TConstObjectPtr object,
                                               string& value) const
 {
@@ -437,52 +443,48 @@ void CPrimitiveTypeInfoString::SetValueString(TObjectPtr object,
     Get(object) = value;
 }
 
-void CStringStoreTypeInfo::ReadData(CObjectIStream& in,
-                                    TObjectPtr object) const
+CStringStoreTypeInfo::CStringStoreTypeInfo(void)
 {
-	in.ReadStringStore(Get(object));
+    SetReadFunction(&CStringStoreFunctions::Read);
+    SetWriteFunction(&CStringStoreFunctions::Write);
+    SetCopyFunction(&CStringStoreFunctions::Copy);
+    SetSkipFunction(&CStringStoreFunctions::Skip);
 }
 
-void CStringStoreTypeInfo::SkipData(CObjectIStream& in) const
+class CNullBoolFunctions
 {
-	in.SkipStringStore();
-}
+public:
+    static void Read(CObjectIStream& in, TTypeInfo ,
+                     TObjectPtr object)
+        {
+            in.ReadNull();
+            CTypeConverter<bool>::Get(object) = true;
+        }
+    static void Write(CObjectOStream& out, TTypeInfo ,
+                      TConstObjectPtr object)
+        {
+            if ( !CTypeConverter<bool>::Get(object) )
+                THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
+            out.WriteNull();
+        }
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            copier.In().ReadNull();
+            copier.Out().WriteNull();
+        }
+    static void Skip(CObjectIStream& in, TTypeInfo )
+        {
+            in.SkipNull();
+        }
+};
 
-void CStringStoreTypeInfo::WriteData(CObjectOStream& out,
-                                     TConstObjectPtr object) const
+CNullBoolTypeInfo::CNullBoolTypeInfo(void)
 {
-	out.WriteStringStore(Get(object));
-}
-
-void CStringStoreTypeInfo::CopyData(CObjectStreamCopier& copier) const
-{
-    copier.CopyStringStore();
-}
-
-void CNullBoolTypeInfo::ReadData(CObjectIStream& in,
-                                 TObjectPtr object) const
-{
-	in.ReadNull();
-    Get(object) = true;
-}
-
-void CNullBoolTypeInfo::SkipData(CObjectIStream& in) const
-{
-	in.SkipNull();
-}
-
-void CNullBoolTypeInfo::WriteData(CObjectOStream& out,
-                                  TConstObjectPtr object) const
-{
-    if ( !Get(object) )
-        THROW1_TRACE(runtime_error, "cannot store FALSE as NULL"); 
-	out.WriteNull();
-}
-
-void CNullBoolTypeInfo::CopyData(CObjectStreamCopier& copier) const
-{
-    copier.In().ReadNull();
-    copier.Out().WriteNull();
+    SetCreateFunction(&CPrimitiveTypeFunctions<bool>::Create);
+    SetReadFunction(&CNullBoolFunctions::Read);
+    SetWriteFunction(&CNullBoolFunctions::Write);
+    SetCopyFunction(&CNullBoolFunctions::Copy);
+    SetSkipFunction(&CNullBoolFunctions::Skip);
 }
 
 TTypeInfo CCharVectorTypeInfo<char>::GetTypeInfo(void)
@@ -528,6 +530,24 @@ void ThrowIllegalCall(void)
 void ThrowIntegerOverflow(void)
 {
     THROW1_TRACE(runtime_error, "integer overflow");
+}
+
+COctetStringTypeInfoBase::COctetStringTypeInfoBase(size_t size)
+    : CParent(size, ePrimitiveValueOctetString)
+{
+    SetCopyFunction(&CopyByteBlock);
+    SetSkipFunction(&SkipByteBlock);
+}
+
+void COctetStringTypeInfoBase::CopyByteBlock(CObjectStreamCopier& copier,
+                                             TTypeInfo )
+{
+    copier.CopyByteBlock();
+}
+
+void COctetStringTypeInfoBase::SkipByteBlock(CObjectIStream& in, TTypeInfo )
+{
+    in.SkipByteBlock();
 }
 
 END_NCBI_SCOPE

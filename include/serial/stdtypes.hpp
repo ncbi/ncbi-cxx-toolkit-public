@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/18 20:00:10  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.20  2000/09/01 13:16:03  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -122,28 +128,13 @@ class CPrimitiveTypeInfo : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
-    CPrimitiveTypeInfo(void)
-        {
-        }
-    CPrimitiveTypeInfo(const string& name)
-        : CParent(name)
-        {
-        }
+    CPrimitiveTypeInfo(size_t size, EPrimitiveValueType valueType);
+    CPrimitiveTypeInfo(size_t size, const char* name,
+                       EPrimitiveValueType valueType);
+    CPrimitiveTypeInfo(size_t size, const string& name,
+                       EPrimitiveValueType valueType);
 
-    virtual ETypeFamily GetTypeFamily(void) const;
-
-    enum EValueType {
-        eSpecial,        // null, void
-        eBool,           // bool: GetBool
-        eChar,           // char: GetChar, GetString
-        eInteger,        // (signed|unsigned) (char|short|int|long): 
-                         //     IsSigned, GetLong, GetULong
-        eReal,           // float|double: GetDouble
-        eString,         // string|char*|const char*: GetString
-        eEnum,           // enum: GetLong GetString
-        eOctetString     // vector<(signed|unsigned)? char>
-    };
-    virtual EValueType GetValueType(void) const = 0;
+    EPrimitiveValueType GetPrimitiveValueType(void) const;
 
     virtual bool GetValueBool(TConstObjectPtr objectPtr) const;
     virtual void SetValueBool(TObjectPtr objectPtr, bool value) const;
@@ -174,25 +165,19 @@ protected:
     friend class CObjectInfo;
     friend class CConstObjectInfo;
 
+    EPrimitiveValueType m_ValueType;
 };
 
 class CVoidTypeInfo : public CPrimitiveTypeInfo
 {
+    typedef CPrimitiveTypeInfo CParent;
 public:
-    virtual EValueType GetValueType(void) const;
-
-    virtual size_t GetSize(void) const;
+    CVoidTypeInfo(void);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
-
-protected:
-    virtual void SkipData(CObjectIStream& ) const;
-    virtual void ReadData(CObjectIStream& , TObjectPtr ) const;
-    virtual void WriteData(CObjectOStream& , TConstObjectPtr ) const;
-    virtual void CopyData(CObjectStreamCopier& copier) const;
 };
 
 // template for getting type info of standard types
@@ -360,7 +345,7 @@ public:
     static TTypeInfo GetTypeInfo(void);
 };
 
-//#include <serial/stdtypes.inl>
+#include <serial/stdtypes.inl>
 
 END_NCBI_SCOPE
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/18 20:00:29  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.15  2000/08/25 15:59:24  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -153,8 +159,8 @@ TTypeInfo CReferenceDataType::GetRealTypeInfo(void)
 CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
 {
     CClassTypeInfo* info = CClassInfoHelper<AnyType>::CreateClassInfo(m_UserTypeName.c_str());
-    info->SetImplicit(true);
-    info->GetMembers().AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
+    info->SetImplicit();
+    info->AddMember("", 0, ResolveOrThrow()->GetTypeInfo());
     return info;
 }
 

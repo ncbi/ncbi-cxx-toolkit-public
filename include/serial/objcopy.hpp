@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/18 20:00:03  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.1  2000/09/01 13:15:59  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -43,12 +49,15 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
 class CContainerTypeInfo;
 class CClassTypeInfo;
 class CChoiceTypeInfo;
+class CMemberInfo;
 
 class CObjectStreamCopier
 {
@@ -69,6 +78,7 @@ public:
 
     // copy object
     void CopyObject(TTypeInfo type);
+    void CopyExternalObject(TTypeInfo type);
 
     // primitive types copy
     void CopyString(void);
@@ -76,17 +86,18 @@ public:
     void CopyByteBlock(void);
 
     // complex types copy
-    void CopyNamedType(TTypeInfo namedTypeInfo, TTypeInfo type);
+    void CopyNamedType(TTypeInfo namedTypeInfo, TTypeInfo objectType);
 
     void CopyPointer(TTypeInfo declaredType);
 
     void CopyContainer(const CContainerTypeInfo* containerType);
 
-    void CopyClass(const CClassTypeInfo* classType);
-    void CopyClassMembersRandom(const CClassTypeInfo* classType);
-    void CopyClassMembersSequential(const CClassTypeInfo* classType);
+    void CopyClassRandom(const CClassTypeInfo* classType);
+    void CopyClassSequential(const CClassTypeInfo* classType);
 
     void CopyChoice(const CChoiceTypeInfo* choiceType);
+
+    void ExpectedMember(const CMemberInfo* memberInfo);
 
 private:
     CObjectIStream& m_In;

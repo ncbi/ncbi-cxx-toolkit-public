@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/09/18 20:00:07  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.27  2000/09/01 13:16:02  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -146,6 +152,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CObjectIStreamAsnBinary;
+
 class CObjectOStreamAsnBinary : public CObjectOStream
 {
 public:
@@ -161,6 +169,8 @@ public:
     ESerialDataFormat GetDataFormat(void) const;
 
     virtual void WriteEnum(const CEnumeratedTypeValues& values, long value);
+    virtual void CopyEnum(const CEnumeratedTypeValues& values,
+                          CObjectIStream& in);
 
     void WriteNull(void);
     void WriteByte(TByte byte);
@@ -185,9 +195,12 @@ protected:
     virtual void WriteLong(long data);
     virtual void WriteULong(unsigned long data);
     virtual void WriteDouble(double data);
-    virtual void WriteString(const string& s);
     virtual void WriteCString(const char* str);
+    virtual void WriteString(const string& s);
     virtual void WriteStringStore(const string& s);
+    virtual void CopyString(CObjectIStream& in);
+    virtual void CopyStringStore(CObjectIStream& in);
+    void CopyStringValue(CObjectIStreamAsnBinary& in);
 
 #if HAVE_NCBI_C
     virtual unsigned GetAsnFlags(void);
@@ -200,37 +213,41 @@ protected:
     virtual void WriteOtherEnd(TTypeInfo typeInfo);
     virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
 
+#ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void WriteContainer(const CContainerTypeInfo* containerType,
+                                TConstObjectPtr containerPtr);
+
+    virtual void WriteClass(const CClassTypeInfo* objectType,
+                            TConstObjectPtr objectPtr);
+    virtual void WriteClassMember(const CMemberId& memberId,
+                                  TTypeInfo memberType,
+                                  TConstObjectPtr memberPtr);
+    virtual bool WriteClassMember(const CMemberId& memberId,
+                                  const CDelayBuffer& buffer);
+
+    virtual void WriteChoice(const CChoiceTypeInfo* choiceType,
+                             TConstObjectPtr choicePtr);
+    // COPY
+    virtual void CopyContainer(const CContainerTypeInfo* containerType,
+                               CObjectStreamCopier& copier);
+    virtual void CopyClassRandom(const CClassTypeInfo* objectType,
+                                 CObjectStreamCopier& copier);
+    virtual void CopyClassSequential(const CClassTypeInfo* objectType,
+                                     CObjectStreamCopier& copier);
+    virtual void CopyChoice(const CChoiceTypeInfo* choiceType,
+                            CObjectStreamCopier& copier);
+#endif
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);
-
-    virtual void WriteContainer(TConstObjectPtr containerPtr,
-                                const CContainerTypeInfo* containerType);
-    virtual void WriteContainer(const CConstObjectInfo& container,
-                                CWriteContainerElementsHook& hook);
-    virtual void WriteContainerElement(const CConstObjectInfo& element);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
     virtual void BeginClassMember(const CMemberId& id);
     virtual void EndClassMember(void);
-    virtual void DoWriteClass(const CConstObjectInfo& object,
-                              CWriteClassMembersHook& hook);
-    virtual void DoWriteClass(TConstObjectPtr objectPtr,
-                              const CClassTypeInfo* objectType);
-    virtual void DoWriteClassMember(const CMemberId& id,
-                                    const CConstObjectInfo& object,
-                                    TMemberIndex index,
-                                    CWriteClassMemberHook& hook);
-    virtual void DoWriteClassMember(const CMemberId& id,
-                                    TConstObjectPtr memberPtr,
-                                    TTypeInfo memberType);
 
     virtual void BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                     const CMemberId& id);
     virtual void EndChoiceVariant(void);
-    virtual void WriteChoice(const CConstObjectInfo& choice,
-                             CWriteChoiceVariantHook& hook);
-    virtual void WriteChoice(const CConstObjectInfo& choice);
 
 	virtual void BeginBytes(const ByteBlock& block);
 	virtual void WriteBytes(const ByteBlock& block,

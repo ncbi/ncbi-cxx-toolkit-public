@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2000/09/18 20:00:05  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.29  2000/09/01 13:16:01  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -157,6 +163,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CObjectOStreamAsnBinary;
+
 class CObjectIStreamAsnBinary : public CObjectIStream
 {
 public:
@@ -200,31 +208,38 @@ protected:
     virtual void SkipByteBlock(void);
 
 protected:
-    virtual void ReadContainer(TObjectPtr containerPtr,
-                               const CContainerTypeInfo* containerType);
-    virtual void ReadContainer(const CObjectInfo& container,
-                               CReadContainerElementHook& hook);
+#ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void ReadContainer(const CContainerTypeInfo* containerType,
+                               TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
 
+    virtual void ReadClassSequential(const CClassTypeInfo* classType,
+                                     TObjectPtr classPtr);
+    virtual void ReadClassRandom(const CClassTypeInfo* classType,
+                                 TObjectPtr classPtr);
+    virtual void SkipClassSequential(const CClassTypeInfo* classType);
+    virtual void SkipClassRandom(const CClassTypeInfo* classType);
+
+    virtual void ReadChoice(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr);
+    virtual void SkipChoice(const CChoiceTypeInfo* choiceType);
+
+#endif
+
+    // low level I/O
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);
     virtual bool BeginContainerElement(TTypeInfo elementType);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
-    virtual TMemberIndex BeginClassMember(const CMembersInfo& members);
-    virtual TMemberIndex BeginClassMember(const CMembersInfo& members,
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType);
+    virtual TMemberIndex BeginClassMember(const CClassTypeInfo* classType,
                                           TMemberIndex pos);
     virtual void EndClassMember(void);
-    virtual void ReadClassRandom(const CObjectInfo& object,
-                                 CReadClassMemberHook& hook);
-    virtual void ReadClassSequential(const CObjectInfo& object,
-                                     CReadClassMemberHook& hook);
 
     virtual TMemberIndex BeginChoiceVariant(const CChoiceTypeInfo* choiceType);
     virtual void EndChoiceVariant(void);
-    virtual void DoReadChoice(const CObjectInfo& choice,
-                              CReadChoiceVariantHook& hook);
 
 	virtual void BeginBytes(ByteBlock& block);
 	virtual size_t ReadBytes(ByteBlock& block, char* dst, size_t length);
@@ -311,9 +326,11 @@ private:
     void UnexpectedMember(TTag tag);
     void UnexpectedTag(TTag tag);
     void UnexpectedByte(TByte byte);
+
+    friend class CObjectOStreamAsnBinary;
 };
 
-//#include <serial/objistrasnb.inl>
+#include <serial/objistrasnb.inl>
 
 END_NCBI_SCOPE
 

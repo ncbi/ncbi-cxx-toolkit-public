@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/09/18 20:00:09  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.11  2000/08/15 19:44:42  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -89,8 +95,11 @@ BEGIN_NCBI_SCOPE
 // forward declaration of two main classes
 class CTypeRef;
 class CTypeInfo;
+
 class CObjectIStream;
 class CObjectOStream;
+
+class CObjectStreamCopier;
 
 // typedef for object references (constant and nonconstant)
 typedef void* TObjectPtr;
@@ -101,16 +110,6 @@ typedef const CTypeInfo* TTypeInfo;
 typedef TTypeInfo (*TTypeInfoGetter)(void);
 typedef TTypeInfo (*TTypeInfoGetter1)(TTypeInfo);
 typedef TTypeInfo (*TTypeInfoGetter2)(TTypeInfo, TTypeInfo);
-
-// helper address functions:
-// add offset to object reference (to get object's member)
-inline
-TObjectPtr Add(TObjectPtr object, int offset);
-inline
-TConstObjectPtr Add(TConstObjectPtr object, int offset);
-// calculate offset of member inside object
-inline
-int Sub(TConstObjectPtr first, TConstObjectPtr second);
 
 #define NCBISER_ALLOW_CYCLES 1
 
@@ -130,6 +129,33 @@ enum ESerialOpenFlags {
     eSerial_UseFileForReread = 1 << 4
 };
 
+// type family
+enum ETypeFamily {
+    eTypeFamilyPrimitive,
+    eTypeFamilyClass,
+    eTypeFamilyChoice,
+    eTypeFamilyContainer,
+    eTypeFamilyPointer
+};
+
+enum EPrimitiveValueType {
+    ePrimitiveValueSpecial,        // null, void
+    ePrimitiveValueBool,           // bool
+    ePrimitiveValueChar,           // char
+    ePrimitiveValueInteger,        // (signed|unsigned) (char|short|int|long)
+    ePrimitiveValueReal,           // float|double
+    ePrimitiveValueString,         // string|char*|const char*
+    ePrimitiveValueEnum,           // enum
+    ePrimitiveValueOctetString     // vector<(signed|unsigned)? char>
+};
+
+enum EContainerType {
+    eContainerVector,              // allows indexing & access to size
+    eContainerList,                // only sequential access
+    eContainerSet,
+    eContainerMap
+};
+
 //type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
 
@@ -140,7 +166,7 @@ const TMemberIndex kInvalidMember = kFirstMemberIndex - 1;
 // special value for marking empty choice
 const TMemberIndex kEmptyChoice = kInvalidMember;
 
-#include <serial/serialdef.inl>
+//#include <serial/serialdef.inl>
 
 END_NCBI_SCOPE
 

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2000/09/18 20:00:28  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.38  2000/09/18 13:53:00  vasilche
 * Fixed '.files' extension.
 *
@@ -189,7 +195,8 @@ static
 const char* StringArgument(const char* arg)
 {
     if ( !arg || !arg[0] ) {
-        ERR_POST(Fatal << "argument expected");
+        ERR_POST("argument expected");
+        exit(1);
     }
     return arg;
 }
@@ -233,7 +240,8 @@ ESerialDataFormat FileType(const char* arg,
     case 'x':
         return eSerial_Xml;
     default:
-        ERR_POST(Fatal << "Invalid argument: " << arg);
+        ERR_POST("Invalid argument: " << arg);
+        exit(1);
         return defType;
     }
 }
@@ -297,7 +305,8 @@ int main(int argc, const char*argv[])
         for ( int i = 1; i < argc; ++i ) {
             const char* arg = argv[i];
             if ( arg[0] != '-' ) {
-                ERR_POST(Fatal << "Invalid argument: " << arg);
+                ERR_POST("Invalid argument: " << arg);
+                return 1;
             }
             switch ( arg[1] ) {
             case 'H':
@@ -382,8 +391,9 @@ int main(int argc, const char*argv[])
                         modulesDir = DirArgument(argv[++i]);
                         break;
                     default:
-                        ERR_POST(Fatal << "Invalid argument: " << arg <<
+                        ERR_POST("Invalid argument: " << arg <<
                                  "\nRun datatool -oH for more info");
+                        return 1;
                         break;
                     }
                     break;
@@ -403,8 +413,9 @@ int main(int argc, const char*argv[])
                         generator.SetFileNamePrefixSource(eFileName_UseAllPrefixes);
                         break;
                     default:
-                        ERR_POST(Fatal << "Invalid argument: " << arg <<
+                        ERR_POST("Invalid argument: " << arg <<
                                  "\nRun datatool -oH for more info");
+                        return 1;
                     }
                     break;
                 case 'R':
@@ -418,13 +429,15 @@ int main(int argc, const char*argv[])
                     generator.SetDefaultNamespace("NCBI_NS_NCBI::objects");
                     break;
                 default:
-                    ERR_POST(Fatal << "Invalid argument: " << arg <<
+                    ERR_POST("Invalid argument: " << arg <<
                              "\nRun datatool -oH for more info");
+                    return 1;
                 }
                 break;
             default:
-                ERR_POST(Fatal << "Invalid argument: " << arg <<
+                ERR_POST("Invalid argument: " << arg <<
                          "\nRun datatool -H for more info");
+                return 1;
             }
         }
     }
@@ -435,9 +448,10 @@ int main(int argc, const char*argv[])
     additionalDefinitions.clear();
 
     try {
-        if ( mainModules.empty() )
-            ERR_POST(Fatal << "Module file not specified");
-
+        if ( mainModules.empty() ) {
+            ERR_POST("Module file not specified");
+            return 1;
+        }
         
         LoadDefinitions(generator.GetMainModules(),
                         modulesDir, mainModules);
@@ -447,7 +461,9 @@ int main(int argc, const char*argv[])
         LoadDefinitions(generator.GetImportModules(),
                         modulesDir, importModules);
         if ( !generator.Check() ) {
-            ERR_POST((ignoreErrors? Error: Fatal) << "Errors was found...");
+            ERR_POST("Errors was found...");
+            if ( !ignoreErrors )
+                return 1;
         }
     
         if ( generateAllTypes )
@@ -472,11 +488,11 @@ int main(int argc, const char*argv[])
         generator.GenerateCode();
     }
     catch (exception& e) {
-        ERR_POST(Fatal << e.what());
+        ERR_POST(e.what());
         return 1;
     }
     catch (...) {
-        ERR_POST(Fatal << "unknown");
+        ERR_POST("unknown");
         return 1;
     }
 	return 0;
@@ -490,8 +506,8 @@ void LoadDefinitions(CFileSet& fileSet,
     iterate ( list<FileInfo>, fi, names ) {
         const string& name = *fi;
         if ( fi->type != eSerial_AsnText ) {
-            ERR_POST(Fatal << "data definition format not supported: " << name);
-            continue;
+            ERR_POST("data definition format not supported: " << name);
+            exit(1);
         }
         try {
 			SourceFile fName(name, modulesDir);
@@ -500,10 +516,12 @@ void LoadDefinitions(CFileSet& fileSet,
             fileSet.AddFile(parser.Modules(name));
         }
         catch (exception& exc) {
-            ERR_POST(Fatal << "Parsing failed: " << exc.what());
+            ERR_POST("Parsing failed: " << exc.what());
+            exit(1);
         }
         catch (...) {
-            ERR_POST(Fatal << "Parsing failed: " << name);
+            ERR_POST("Parsing failed: " << name);
+            exit(1);
         }
     }
 }
@@ -533,8 +551,10 @@ TObject LoadValue(CFileSet& types, const string& defTypeName,
     //    in->SetTypeMapper(&types);
     string typeName = in->ReadTypeName();
     if ( typeName.empty() ) {
-        if ( defTypeName.empty() )
-            ERR_POST(Fatal << "ASN.1 value type must be specified (-t)");
+        if ( defTypeName.empty() ) {
+            ERR_POST("ASN.1 value type must be specified (-t)");
+            exit(1);
+        }
         typeName = defTypeName;
     }
     TTypeInfo typeInfo =
@@ -564,8 +584,10 @@ void CopyValue(CFileSet& types, const string& defTypeName,
     CObjectStreamCopier copier(*in, *out);
     string typeName = in->ReadTypeName();
     if ( typeName.empty() ) {
-        if ( defTypeName.empty() )
-            ERR_POST(Fatal << "ASN.1 value type must be specified (-t)");
+        if ( defTypeName.empty() ) {
+            ERR_POST("ASN.1 value type must be specified (-t)");
+            exit(1);
+        }
         typeName = defTypeName;
     }
     TTypeInfo typeInfo =

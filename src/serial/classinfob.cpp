@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/18 20:00:21  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.3  2000/08/15 19:44:47  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -49,46 +55,18 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/classinfob.hpp>
+#include <serial/object.hpp>
 
 BEGIN_NCBI_SCOPE
-
-static
-string ClassName(const type_info& id)
-{
-    const char* s = id.name();
-    if ( memcmp(s, "class ", 6) == 0 ) {
-        // MSVC
-        return s + 6;
-    }
-    else if ( isdigit(*s ) ) {
-        // GCC
-        while ( isdigit(*s) )
-            ++s;
-        return s;
-    }
-    else {
-        return s;
-    }
-}
-
-CClassTypeInfoBase::CClassTypeInfoBase(const type_info& id, size_t size)
-    : CParent(ClassName(id))
-{
-    Init(id, size);
-}
 
 CClassTypeInfoBase::~CClassTypeInfoBase(void)
 {
     Deregister();
 }
 
-void CClassTypeInfoBase::Init(const type_info& id, size_t size)
+void CClassTypeInfoBase::InitClassTypeInfoBase(const type_info& id)
 {
-    m_Size = size;
     m_Id = &id;
-    m_CreateFunction = 0;
-    m_PostReadFunction = 0;
-    m_PreWriteFunction = 0;
     m_IsCObject = false;
     Register();
 }
@@ -194,43 +172,6 @@ TTypeInfo CClassTypeInfoBase::GetClassInfoByName(const string& name)
     return i->second;
 }
 
-TObjectPtr CClassTypeInfoBase::Create(void) const
-{
-    if ( m_CreateFunction ) {
-        TObjectPtr object = m_CreateFunction(this);
-        if ( m_IsCObject )
-            static_cast<CObject*>(object)->SetCanDelete();
-        return object;
-    }
-    return CParent::Create();
-}
-
-size_t CClassTypeInfoBase::GetSize(void) const
-{
-    return m_Size;
-}
-
-void CClassTypeInfoBase::SetCreateFunction(TCreateFunction func)
-{
-    _ASSERT(m_CreateFunction == 0);
-    _ASSERT(func != 0);
-    m_CreateFunction = func;
-}
-
-void CClassTypeInfoBase::SetPostReadFunction(TPostReadFunction func)
-{
-    _ASSERT(m_PostReadFunction == 0);
-    _ASSERT(func != 0);
-    m_PostReadFunction = func;
-}
-
-void CClassTypeInfoBase::SetPreWriteFunction(TPreWriteFunction func)
-{
-    _ASSERT(m_PreWriteFunction == 0);
-    _ASSERT(func != 0);
-    m_PreWriteFunction = func;
-}
-
 bool CClassTypeInfoBase::IsCObject(void) const
 {
     return m_IsCObject;
@@ -242,11 +183,6 @@ const CObject* CClassTypeInfoBase::GetCObjectPtr(TConstObjectPtr objectPtr) cons
         return static_cast<const CObject*>(objectPtr);
     else
         return 0;
-}
-
-void CClassTypeInfoBase::SetIsCObject(void)
-{
-    m_IsCObject = true;
 }
 
 bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
@@ -270,19 +206,63 @@ bool CClassTypeInfoBase::MayContainType(TTypeInfo typeInfo) const
 bool CClassTypeInfoBase::CalcMayContainType(TTypeInfo typeInfo) const
 {
     // check members
-    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
-              last = GetMembers().LastMemberIndex();
-          i <= last; ++i ) {
-        if ( GetMemberInfo(i)->GetTypeInfo()->IsOrMayContainType(typeInfo) ) {
+    for ( TMemberIndex i = GetItems().FirstIndex(),
+              last = GetItems().LastIndex(); i <= last; ++i ) {
+        if ( GetItems().GetItemInfo(i)->GetTypeInfo()->IsOrMayContainType(typeInfo) ) {
             return true;
         }
     }
     return false;
 }
 
-bool CClassTypeInfoBase::IsOrMayContainType(TTypeInfo typeInfo) const
+class CPostReadHook : public CReadObjectHook
 {
-    return IsType(typeInfo) || MayContainType(typeInfo);
+public:
+    typedef CClassTypeInfoBase::TPostReadFunction TPostReadFunction;
+
+    CPostReadHook(TPostReadFunction func)
+        : m_PostRead(func)
+        {
+        }
+
+    void ReadObject(CObjectIStream& in, const CObjectInfo& object)
+        {
+            object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+            m_PostRead(object.GetTypeInfo(), object.GetObjectPtr());
+        }
+
+private:
+    TPostReadFunction m_PostRead;
+};
+
+class CPreWriteHook : public CWriteObjectHook
+{
+public:
+    typedef CClassTypeInfoBase::TPreWriteFunction TPreWriteFunction;
+
+    CPreWriteHook(TPreWriteFunction func)
+        : m_PreWrite(func)
+        {
+        }
+
+    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object)
+        {
+            m_PreWrite(object.GetTypeInfo(), object.GetObjectPtr());
+            object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+        }
+
+private:
+    TPreWriteFunction m_PreWrite;
+};
+
+void CClassTypeInfoBase::SetPostReadFunction(TPostReadFunction func)
+{
+    SetGlobalReadHook(new CPostReadHook(func));
+}
+
+void CClassTypeInfoBase::SetPreWriteFunction(TPreWriteFunction func)
+{
+    SetGlobalWriteHook(new CPreWriteHook(func));
 }
 
 END_NCBI_SCOPE

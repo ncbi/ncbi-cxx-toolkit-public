@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/18 20:00:21  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.4  2000/08/15 19:44:47  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -56,7 +62,7 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/bytesrc.hpp>
-#include <serial/member.hpp>
+#include <serial/item.hpp>
 #include <serial/stdtypes.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -65,17 +71,13 @@ CDelayBuffer::~CDelayBuffer(void)
 {
 }
 
-void CDelayBuffer::SetData(TObjectPtr object,
-                           TMemberIndex index,
-                           const CMemberInfo* memberInfo,
+void CDelayBuffer::SetData(const CItemInfo* itemInfo, TObjectPtr object,
                            ESerialDataFormat dataFormat,
                            const CRef<CByteSource>& data)
 {
-    _ASSERT(memberInfo->CanBeDelayed());
-    _ASSERT(this == &memberInfo->GetDelayBuffer(object));
     _ASSERT(!Delayed());
 
-    m_Info.reset(new SInfo(object, index, memberInfo, dataFormat, data));
+    m_Info.reset(new SInfo(itemInfo, object, dataFormat, data));
 }
 
 void CDelayBuffer::Forget(void)
@@ -88,30 +90,29 @@ void CDelayBuffer::DoUpdate(void)
 {
     _ASSERT(m_Info.get() != 0);
     SInfo& info = *m_Info;
-    TObjectPtr member = info.m_MemberInfo->GetMember(info.m_Object);
-    TTypeInfo typeInfo = info.m_MemberInfo->GetTypeInfo();
-    if ( info.m_MemberInfo->IsPointer() ) {
-        // create object itself
-        if ( info.m_MemberInfo->IsObjectPointer() ) {
-            _TRACE("Should check for real pointer type (CRef...)");
-            member = CType<TObjectPtr>::Get(member) = typeInfo->Create();
-            CType<CObject>::Get(member).AddReference();
-        }
-        else {
-            member = CType<TObjectPtr>::Get(member) = typeInfo->Create();
-        }
+
+    {
+        auto_ptr<CObjectIStream> in(CObjectIStream::Create(info.m_DataFormat,
+                                                           info.m_Source));
+        info.m_ItemInfo->UpdateDelayedBuffer(*in, info.m_Object);
     }
-    auto_ptr<CObjectIStream> in(CObjectIStream::Create(info.m_DataFormat,
-                                                       info.m_Source));
-    typeInfo->ReadData(*in, member);
+
     Forget();
 }
 
-CDelayBuffer::SInfo::SInfo(TObjectPtr object,
-                           TMemberIndex index, const CMemberInfo* memberInfo,
+TMemberIndex CDelayBuffer::GetIndex(void) const
+{
+    const SInfo* info = m_Info.get();
+    if ( !info )
+        return kInvalidMember;
+    else
+        return info->m_ItemInfo->GetIndex();
+}
+
+CDelayBuffer::SInfo::SInfo(const CItemInfo* itemInfo, TObjectPtr object,
                            ESerialDataFormat format,
                            const CRef<CByteSource>& source)
-    : m_Object(object), m_Index(index), m_MemberInfo(memberInfo),
+    : m_ItemInfo(itemInfo), m_Object(object),
       m_DataFormat(format), m_Source(source)
 {
 }

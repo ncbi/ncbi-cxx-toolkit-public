@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/18 20:00:00  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.4  2000/09/13 15:10:13  vasilche
 * Fixed type detection in type iterators.
 *
@@ -57,6 +63,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeinfo.hpp>
+#include <serial/typeref.hpp>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -67,26 +75,22 @@ class CContainerTypeInfo : public CTypeInfo
 {
     typedef CTypeInfo CParent;
 public:
-    CContainerTypeInfo(bool randomOrder)
-        : m_RandomOrder(randomOrder)
-        {
-        }
-    CContainerTypeInfo(const string& name, bool randomOrder)
-        : CParent(name), m_RandomOrder(randomOrder)
-        {
-        }
-    CContainerTypeInfo(const char* name, bool randomOrder)
-        : CParent(name), m_RandomOrder(randomOrder)
-        {
-        }
-    virtual ETypeFamily GetTypeFamily(void) const;
+    CContainerTypeInfo(size_t size,
+                       TTypeInfo elementType, bool randomOrder);
+    CContainerTypeInfo(size_t size,
+                       const CTypeRef& elementType, bool randomOrder);
+    CContainerTypeInfo(size_t size, const char* name,
+                       TTypeInfo elementType, bool randomOrder);
+    CContainerTypeInfo(size_t size, const char* name,
+                       const CTypeRef& elementType, bool randomOrder);
+    CContainerTypeInfo(size_t size, const string& name,
+                       TTypeInfo elementType, bool randomOrder);
+    CContainerTypeInfo(size_t size, const string& name,
+                       const CTypeRef& elementType, bool randomOrder);
 
-    virtual TTypeInfo GetElementType(void) const = 0;
+    TTypeInfo GetElementType(void) const;
 
-    bool RandomElementsOrder(void) const
-        {
-            return m_RandomOrder;
-        }
+    bool RandomElementsOrder(void) const;
     
     class CConstIterator
     {
@@ -120,7 +124,6 @@ public:
     virtual CIterator* NewIterator(void) const;
 
     virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool IsOrMayContainType(TTypeInfo type) const;
 
     void Assign(TObjectPtr dst, TConstObjectPtr src) const;
     bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const;
@@ -133,13 +136,23 @@ public:
 protected:
     void ThrowDuplicateElementError(void) const;
 
-    void ReadData(CObjectIStream& in, TObjectPtr containerPtr) const;
-    void SkipData(CObjectIStream& in) const;
-    void WriteData(CObjectOStream& out, TConstObjectPtr containerPtr) const;
-    void CopyData(CObjectStreamCopier& copier) const;
+    static void ReadContainer(CObjectIStream& in,
+                              TTypeInfo objectType,
+                              TObjectPtr objectPtr);
+    static void WriteContainer(CObjectOStream& out,
+                               TTypeInfo objectType,
+                               TConstObjectPtr objectPtr);
+    static void SkipContainer(CObjectIStream& in,
+                              TTypeInfo objectType);
+    static void CopyContainer(CObjectStreamCopier& copier,
+                              TTypeInfo objectType);
+
+protected:
+    CTypeRef m_ElementType;
+    bool m_RandomOrder;
 
 private:
-    bool m_RandomOrder;
+    void InitContainerTypeInfoFunctions(void);
 };
 
 class CContainerElementIterator
@@ -147,74 +160,24 @@ class CContainerElementIterator
 public:
     typedef CContainerTypeInfo::CIterator TIterator;
 
-    CContainerElementIterator(void)
-        : m_ElementType(0), m_Valid(false)
-        {
-        }
+    CContainerElementIterator(void);
     CContainerElementIterator(TObjectPtr containerPtr,
-                              const CContainerTypeInfo* containerType)
-        : m_ElementType(containerType->GetElementType()),
-          m_Iterator(containerType->NewIterator()),
-          m_Valid(m_Iterator->Init(containerPtr))
-        {
-        }
-    CContainerElementIterator(const CContainerElementIterator& src)
-        : m_ElementType(src.m_ElementType),
-          m_Iterator(src.CloneIterator()),
-          m_Valid(src.m_Valid)
-        {
-        }
-
-    CContainerElementIterator& operator=(const CContainerElementIterator& src)
-        {
-            m_Valid = false;
-            m_ElementType = src.m_ElementType;
-            m_Iterator = src.CloneIterator();
-            m_Valid = src.m_Valid;
-            return *this;
-        }
-    
+                              const CContainerTypeInfo* containerType);
+    CContainerElementIterator(const CContainerElementIterator& src);
+    CContainerElementIterator& operator=(const CContainerElementIterator& src);
     void Init(TObjectPtr containerPtr,
-              const CContainerTypeInfo* containerType)
-        {
-            m_Valid = false;
-            m_ElementType = containerType->GetElementType();
-            m_Iterator.reset(containerType->NewIterator());
-            m_Valid = m_Iterator->Init(containerPtr);
-        }
+              const CContainerTypeInfo* containerType);
 
-    TTypeInfo GetElementType(void) const
-        {
-            return m_ElementType;
-        }
+    TTypeInfo GetElementType(void) const;
     
-    bool Valid(void) const
-        {
-            return m_Valid;
-        }
-    void Next(void)
-        {
-            _ASSERT(m_Valid);
-            m_Valid = m_Iterator->Next();
-        }
-    void Erase(void)
-        {
-            _ASSERT(m_Valid);
-            m_Valid = m_Iterator->Erase();
-        }
+    bool Valid(void) const;
+    void Next(void);
+    void Erase(void);
 
-    pair<TObjectPtr, TTypeInfo> Get(void) const
-        {
-            _ASSERT(m_Valid);
-            return make_pair(m_Iterator->GetElementPtr(), GetElementType());
-        }
+    pair<TObjectPtr, TTypeInfo> Get(void) const;
 
 private:
-    TIterator* CloneIterator(void) const
-        {
-            TIterator* i = m_Iterator.get();
-            return i? i->Clone(): 0;
-        }
+    TIterator* CloneIterator(void) const;
 
     TTypeInfo m_ElementType;
     AutoPtr<TIterator> m_Iterator;
@@ -226,77 +189,33 @@ class CConstContainerElementIterator
 public:
     typedef CContainerTypeInfo::CConstIterator TIterator;
 
-    CConstContainerElementIterator(void)
-        : m_ElementType(0), m_Valid(false)
-        {
-        }
+    CConstContainerElementIterator(void);
     CConstContainerElementIterator(TConstObjectPtr containerPtr,
-                                   const CContainerTypeInfo* containerType)
-        : m_ElementType(containerType->GetElementType()),
-          m_Iterator(containerType->NewConstIterator()),
-          m_Valid(m_Iterator->Init(containerPtr))
-        {
-        }
-    CConstContainerElementIterator(const CConstContainerElementIterator& src)
-        : m_ElementType(src.m_ElementType),
-          m_Iterator(src.CloneIterator()),
-          m_Valid(src.m_Valid)
-        {
-        }
+                                   const CContainerTypeInfo* containerType);
+    CConstContainerElementIterator(const CConstContainerElementIterator& src);
 
     CConstContainerElementIterator&
-    operator=(const CConstContainerElementIterator& src)
-        {
-            m_Valid = false;
-            m_ElementType = src.m_ElementType;
-            m_Iterator.reset(src.CloneIterator());
-            m_Valid = src.m_Valid;
-            return *this;
-        }
+    operator=(const CConstContainerElementIterator& src);
     
     void Init(TConstObjectPtr containerPtr,
-              const CContainerTypeInfo* containerType)
-        {
-            m_Valid = false;
-            m_ElementType = containerType->GetElementType();
-            m_Iterator.reset(containerType->NewConstIterator());
-            m_Valid = m_Iterator->Init(containerPtr);
-        }
+              const CContainerTypeInfo* containerType);
 
-    TTypeInfo GetElementType(void) const
-        {
-            return m_ElementType;
-        }
+    TTypeInfo GetElementType(void) const;
     
-    bool Valid(void) const
-        {
-            return m_Valid;
-        }
-    void Next(void)
-        {
-            _ASSERT(m_Valid);
-            m_Valid = m_Iterator->Next();
-        }
+    bool Valid(void) const;
+    void Next(void);
 
-    pair<TConstObjectPtr, TTypeInfo> Get(void) const
-        {
-            _ASSERT(m_Valid);
-            return make_pair(m_Iterator->GetElementPtr(), GetElementType());
-        }
+    pair<TConstObjectPtr, TTypeInfo> Get(void) const;
 
 private:
-    TIterator* CloneIterator(void) const
-        {
-            TIterator* i = m_Iterator.get();
-            return i? i->Clone(): 0;
-        }
+    TIterator* CloneIterator(void) const;
 
     TTypeInfo m_ElementType;
     AutoPtr<TIterator> m_Iterator;
     bool m_Valid;
 };
 
-//#include <serial/continfo.inl>
+#include <serial/continfo.inl>
 
 END_NCBI_SCOPE
 

@@ -128,79 +128,6 @@ CTypeRef GetOldAsnTypeRef(const string& name,
                                       reinterpret_cast<TWriteProc>(writeProc));
 }
 
-// member types
-inline
-CMemberInfo*
-AddMember(CMembersInfo& info, CMemberInfo* memberInfo)
-{
-    return info.AddMember(memberInfo);
-}
-
-template<typename T>
-inline
-CMemberInfo* MemberInfo(const char* alias,
-    const T* member, const CTypeRef typeRef)
-{
-	return new CMemberInfo(alias, size_t(member), typeRef);
-}
-
-template<typename T>
-inline
-CMemberInfo* SetMemberInfo(const char* alias, const T* const* member)
-{
-	return MemberInfo(alias, member, GetSetTypeRef(member));
-}
-
-template<typename T>
-inline
-CMemberInfo* SequenceMemberInfo(const char* alias, const T* const* member)
-{
-	return MemberInfo(alias, member, GetSequenceTypeRef(member));
-}
-
-template<typename T>
-inline
-CMemberInfo* SetOfMemberInfo(const char* alias, const T* const* member)
-{
-	return MemberInfo(alias, member, GetSetOfTypeRef(member));
-}
-
-template<typename T>
-inline
-CMemberInfo* SequenceOfMemberInfo(const char* alias, const T* const* member)
-{
-	return MemberInfo(alias, member, GetSequenceOfTypeRef(member));
-}
-
-inline
-CMemberInfo* OctetStringMemberInfo(const char* alias,
-                                   const void* const* member)
-{
-	return MemberInfo(alias, member, GetOctetStringTypeRef(member));
-}
-
-inline
-CMemberInfo* ChoiceMemberInfo(const char* alias, 
-                              const valnode* const* member,
-                              TTypeInfo (*func)(void))
-{
-	return MemberInfo(alias, member, GetChoiceTypeRef(func));
-}
-
-template<typename T>
-inline
-CMemberInfo* OldAsnMemberInfo(const char* alias, 
-                              const T* const* member, const string& name,
-                              T* (ASNCALL*newProc)(void),
-							  T* (ASNCALL*freeProc)(T*),
-                              T* (ASNCALL*readProc)(asnio*, asntype*),
-                              unsigned char (ASNCALL*writeProc)(T*, asnio*, asntype*))
-{
-    return MemberInfo(alias, member,
-                      GetOldAsnTypeRef(name, newProc, freeProc,
-                                       readProc, writeProc));
-}
-
 // old ASN structires info
 #define BEGIN_NAMED_ASN_STRUCT_INFO(AsnStructAlias, AsnStructName) \
     BEGIN_TYPE_INFO(NCBI_NAME2(struct_,AsnStructName), \
@@ -222,35 +149,33 @@ CMemberInfo* OldAsnMemberInfo(const char* alias,
 
 // adding old ASN members
 #define ADD_NAMED_ASN_MEMBER(MemberAlias, MemberName, AsnTypeKind) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(), \
-	NCBI_NAME2(AsnTypeKind,MemberInfo)(MemberAlias,MEMBER_PTR(MemberName)))
+    NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName),\
+	NCBI_NAME3(Get,AsnTypeKind,TypeRef)(MEMBER_PTR(MemberName)))
 #define ADD_ASN_MEMBER(MemberName, AsnTypeKind) \
     ADD_NAMED_ASN_MEMBER(#MemberName, MemberName, AsnTypeKind)
 
 #define ADD_NAMED_OLD_ASN_MEMBER(MemberAlias, MemberName, AsnTypeAlias, AsnTypeName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(), \
-    NCBI_NS_NCBI::OldAsnMemberInfo(MemberAlias,MEMBER_PTR(MemberName), \
-        AsnTypeAlias, \
+    NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName), \
+    NCBI_NS_NCBI::GetOldAsnTypeRef(AsnTypeAlias, \
         &NCBI_NAME2(AsnTypeName,New), &NCBI_NAME2(AsnTypeName,Free), \
         &NCBI_NAME2(AsnTypeName,AsnRead), &NCBI_NAME2(AsnTypeName,AsnWrite)))
 #define ADD_OLD_ASN_MEMBER(MemberName, AsnTypeName) \
     ADD_NAMED_OLD_ASN_MEMBER(#MemberName, MemberName, #AsnTypeName, AsnTypeName)
 
 #define ADD_NAMED_ASN_CHOICE_MEMBER(MemberAlias, MemberName, AsnChoiceName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(), \
-    NCBI_NS_NCBI::ChoiceMemberInfo(MemberAlias,MEMBER_PTR(MemberName), \
-                                   ASN_STRUCT_METHOD_NAME(AsnChoiceName)))
+    NCBI_NS_NCBI::AddMember(info,MemberAlias,MEMBER_PTR(MemberName), \
+    NCBI_NS_NCBI::GetChoiceTypeRef(ASN_STRUCT_METHOD_NAME(AsnChoiceName)))
 #define ADD_ASN_CHOICE_MEMBER(MemberName, AsnChoiceName) \
     ADD_NAMED_ASN_CHOICE_MEMBER(#MemberName, MemberName, AsnChoiceName)
 
 #define ADD_NAMED_ASN_CHOICE_STD_VARIANT(VariantAlias, AsnTypeName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),VariantAlias, \
+    NCBI_NS_NCBI::AddVariant(info,VariantAlias, \
         MEMBER_PTR(data.NCBI_NAME2(AsnTypeName,value)), \
         GetStdTypeInfoGetter(MEMBER_PTR(data.NCBI_NAME2(AsnTypeName,value))))
 #define ADD_ASN_CHOICE_STD_VARIANT(VariantName, AsnTypeName) \
     ADD_NAMED_ASN_CHOICE_STD_VARIANT(#VariantName, AsnTypeName)
 #define ADD_NAMED_ASN_CHOICE_VARIANT(VariantAlias, AsnTypeKind, AsnTypeName) \
-    NCBI_NS_NCBI::AddMember(info->GetMembers(),VariantAlias, \
+    NCBI_NS_NCBI::AddVariant(info,VariantAlias, \
         MEMBER_PTR(data.ptrvalue), \
         NCBI_NAME3(Get,AsnTypeKind,TypeRef)(reinterpret_cast<const NCBI_NAME2 \
             (struct_,AsnTypeName)* const*>(MEMBER_PTR(data.ptrvalue))))

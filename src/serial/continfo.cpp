@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/18 20:00:21  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.3  2000/09/13 15:10:15  vasilche
 * Fixed type detection in type iterators.
 *
@@ -52,9 +58,66 @@
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfo::ETypeFamily CContainerTypeInfo::GetTypeFamily(void) const
+CContainerTypeInfo::CContainerTypeInfo(size_t size,
+                                       TTypeInfo elementType,
+                                       bool randomOrder)
+    : CParent(eTypeFamilyContainer, size),
+      m_ElementType(elementType), m_RandomOrder(randomOrder)
 {
-    return eTypeContainer;
+    InitContainerTypeInfoFunctions();
+}
+
+CContainerTypeInfo::CContainerTypeInfo(size_t size,
+                                       const CTypeRef& elementType,
+                                       bool randomOrder)
+    : CParent(eTypeFamilyContainer, size),
+      m_ElementType(elementType), m_RandomOrder(randomOrder)
+{
+    InitContainerTypeInfoFunctions();
+}
+
+CContainerTypeInfo::CContainerTypeInfo(size_t size, const char* name,
+                                       TTypeInfo elementType,
+                                       bool randomOrder)
+    : CParent(eTypeFamilyContainer, size, name),
+      m_ElementType(elementType), m_RandomOrder(randomOrder)
+{
+    InitContainerTypeInfoFunctions();
+}
+
+CContainerTypeInfo::CContainerTypeInfo(size_t size, const char* name,
+                                       const CTypeRef& elementType,
+                                       bool randomOrder)
+    : CParent(eTypeFamilyContainer, size, name),
+      m_ElementType(elementType), m_RandomOrder(randomOrder)
+{
+    InitContainerTypeInfoFunctions();
+}
+
+CContainerTypeInfo::CContainerTypeInfo(size_t size, const string& name,
+                                       TTypeInfo elementType,
+                                       bool randomOrder)
+    : CParent(eTypeFamilyContainer, size, name),
+      m_ElementType(elementType), m_RandomOrder(randomOrder)
+{
+    InitContainerTypeInfoFunctions();
+}
+
+CContainerTypeInfo::CContainerTypeInfo(size_t size, const string& name,
+                                       const CTypeRef& elementType,
+                                       bool randomOrder)
+    : CParent(eTypeFamilyContainer, size, name),
+      m_ElementType(elementType), m_RandomOrder(randomOrder)
+{
+    InitContainerTypeInfoFunctions();
+}
+
+void CContainerTypeInfo::InitContainerTypeInfoFunctions(void)
+{
+    SetReadFunction(&ReadContainer);
+    SetWriteFunction(&WriteContainer);
+    SetCopyFunction(&CopyContainer);
+    SetSkipFunction(&SkipContainer);
 }
 
 CContainerTypeInfo::CIterator* CContainerTypeInfo::NewIterator(void) const
@@ -67,11 +130,6 @@ CContainerTypeInfo::CIterator* CContainerTypeInfo::NewIterator(void) const
 bool CContainerTypeInfo::MayContainType(TTypeInfo type) const
 {
     return GetElementType()->IsOrMayContainType(type);
-}
-
-bool CContainerTypeInfo::IsOrMayContainType(TTypeInfo type) const
-{
-    return this == type || GetElementType()->IsOrMayContainType(type);
 }
 
 void CContainerTypeInfo::Assign(TObjectPtr dst,
@@ -112,26 +170,42 @@ bool CContainerTypeInfo::Equals(TConstObjectPtr object1,
     }
 }
 
-void CContainerTypeInfo::ReadData(CObjectIStream& in,
-                                  TObjectPtr container) const
+void CContainerTypeInfo::ReadContainer(CObjectIStream& in,
+                                       TTypeInfo objectType,
+                                       TObjectPtr objectPtr)
 {
-    in.ReadContainer(container, this);
+    const CContainerTypeInfo* containerType =
+        CTypeConverter<CContainerTypeInfo>::SafeCast(objectType);
+
+    in.ReadContainer(containerType, objectPtr);
 }
 
-void CContainerTypeInfo::SkipData(CObjectIStream& in) const
+void CContainerTypeInfo::WriteContainer(CObjectOStream& out,
+                                        TTypeInfo objectType,
+                                        TConstObjectPtr objectPtr)
 {
-    in.SkipContainer(this);
+    const CContainerTypeInfo* containerType =
+        CTypeConverter<CContainerTypeInfo>::SafeCast(objectType);
+
+    out.WriteContainer(containerType, objectPtr);
 }
 
-void CContainerTypeInfo::WriteData(CObjectOStream& out,
-                                   TConstObjectPtr container) const
+void CContainerTypeInfo::CopyContainer(CObjectStreamCopier& copier,
+                                       TTypeInfo objectType)
 {
-    out.WriteContainer(container, this);
+    const CContainerTypeInfo* containerType =
+        CTypeConverter<CContainerTypeInfo>::SafeCast(objectType);
+
+    copier.CopyContainer(containerType);
 }
 
-void CContainerTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void CContainerTypeInfo::SkipContainer(CObjectIStream& in,
+                                       TTypeInfo objectType)
 {
-    copier.CopyContainer(this);
+    const CContainerTypeInfo* containerType =
+        CTypeConverter<CContainerTypeInfo>::SafeCast(objectType);
+
+    in.SkipContainer(containerType);
 }
 
 void CContainerTypeInfo::ThrowDuplicateElementError(void) const

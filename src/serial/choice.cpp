@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/18 20:00:20  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.20  2000/09/01 13:16:14  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -129,51 +135,101 @@
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objcopy.hpp>
-#include <serial/memberid.hpp>
-#include <serial/member.hpp>
+#include <serial/variant.hpp>
 #include <serial/bytesrc.hpp>
 #include <serial/delaybuf.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CChoiceTypeInfo::CChoiceTypeInfo(const char* name,
-                                 size_t size,
+CChoiceTypeInfo::CChoiceTypeInfo(size_t size, const char* name, 
+                                 const void* nonCObject,
+                                 TTypeCreate createFunc,
                                  const type_info& ti,
-                                 TCreateFunction createFunc,
                                  TWhichFunction whichFunc,
                                  TSelectFunction selectFunc,
                                  TResetFunction resetFunc)
-    : CParent(name, ti, size),
+    : CParent(eTypeFamilyChoice, size, name, nonCObject, createFunc, ti),
       m_WhichFunction(whichFunc),
-      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc),
-      m_SelectDelayFunction(0)
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc)
 {
-    SetCreateFunction(createFunc);
+    InitChoiceTypeInfoFunctions();
 }
 
-CChoiceTypeInfo::CChoiceTypeInfo(const string& name,
-                                 size_t size,
+CChoiceTypeInfo::CChoiceTypeInfo(size_t size, const char* name,
+                                 const CObject* cObject,
+                                 TTypeCreate createFunc,
                                  const type_info& ti,
-                                 TCreateFunction createFunc,
                                  TWhichFunction whichFunc,
                                  TSelectFunction selectFunc,
                                  TResetFunction resetFunc)
-    : CParent(name, ti, size),
+    : CParent(eTypeFamilyChoice, size, name, cObject, createFunc, ti),
       m_WhichFunction(whichFunc),
-      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc),
-      m_SelectDelayFunction(0)
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc)
 {
-    SetCreateFunction(createFunc);
+    InitChoiceTypeInfoFunctions();
 }
 
-CTypeInfo::ETypeFamily CChoiceTypeInfo::GetTypeFamily(void) const
+CChoiceTypeInfo::CChoiceTypeInfo(size_t size, const string& name, 
+                                 const void* nonCObject,
+                                 TTypeCreate createFunc,
+                                 const type_info& ti,
+                                 TWhichFunction whichFunc,
+                                 TSelectFunction selectFunc,
+                                 TResetFunction resetFunc)
+    : CParent(eTypeFamilyChoice, size, name, nonCObject, createFunc, ti),
+      m_WhichFunction(whichFunc),
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc)
 {
-    return eTypeChoice;
+    InitChoiceTypeInfoFunctions();
+}
+
+CChoiceTypeInfo::CChoiceTypeInfo(size_t size, const string& name,
+                                 const CObject* cObject,
+                                 TTypeCreate createFunc,
+                                 const type_info& ti,
+                                 TWhichFunction whichFunc,
+                                 TSelectFunction selectFunc,
+                                 TResetFunction resetFunc)
+    : CParent(eTypeFamilyChoice, size, name, cObject, createFunc, ti),
+      m_WhichFunction(whichFunc),
+      m_ResetFunction(resetFunc), m_SelectFunction(selectFunc)
+{
+    InitChoiceTypeInfoFunctions();
+}
+
+void CChoiceTypeInfo::InitChoiceTypeInfoFunctions(void)
+{
+    SetReadFunction(&ReadChoiceDefault);
+    SetWriteFunction(&WriteChoiceDefault);
+    SetCopyFunction(&CopyChoiceDefault);
+    SetSkipFunction(&SkipChoiceDefault);
+    m_SelectDelayFunction = 0;
+    m_GetDataFunction = &GetChoiceData;
+}
+
+CVariantInfo* CChoiceTypeInfo::AddVariant(const char* memberId,
+                                          const void* memberPtr,
+                                          const CTypeRef& memberType)
+{
+    CVariantInfo* variantInfo =
+        new CVariantInfo(this, memberId, size_t(memberPtr), memberType);
+    GetItems().AddItem(variantInfo);
+    return variantInfo;
+}
+
+CVariantInfo* CChoiceTypeInfo::AddVariant(const CMemberId& memberId,
+                                          const void* memberPtr,
+                                          const CTypeRef& memberType)
+{
+    CVariantInfo* variantInfo =
+        new CVariantInfo(this, memberId, size_t(memberPtr), memberType);
+    GetItems().AddItem(variantInfo);
+    return variantInfo;
 }
 
 bool CChoiceTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return object == 0 || GetIndex(object) == kEmptyChoice;
+    return GetIndex(object) == kEmptyChoice;
 }
 
 bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
@@ -185,8 +241,8 @@ bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
     if ( index == kEmptyChoice )
         return true;
     return
-        GetMemberInfo(index)->GetTypeInfo()->Equals(GetData(object1, index),
-                                                    GetData(object2, index));
+        GetVariantInfo(index)->GetTypeInfo()->Equals(GetData(object1, index),
+                                                     GetData(object2, index));
 }
 
 void CChoiceTypeInfo::SetDefault(TObjectPtr dst) const
@@ -200,37 +256,12 @@ void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
     if ( index == kEmptyChoice )
         ResetIndex(dst);
     else {
-        _ASSERT(index >= GetMembers().FirstMemberIndex() && 
-                index <= GetMembers().LastMemberIndex());
+        _ASSERT(index >= GetVariants().FirstIndex() && 
+                index <= GetVariants().LastIndex());
         SetIndex(dst, index);
-        GetMemberInfo(index)->GetTypeInfo()->Assign(GetData(dst, index),
-                                                    GetData(src, index));
+        GetVariantInfo(index)->GetTypeInfo()->Assign(GetData(dst, index),
+                                                     GetData(src, index));
     }
-}
-
-void CChoiceTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
-{
-    in.ReadChoice(CObjectInfo(object, this,
-                              CObjectInfo::eNonCObject));
-    DoPostRead(object);
-}
-
-void CChoiceTypeInfo::SkipData(CObjectIStream& in) const
-{
-    in.SkipChoice(this);
-}
-
-void CChoiceTypeInfo::CopyData(CObjectStreamCopier& copier) const
-{
-    copier.CopyChoice(this);
-}
-
-void CChoiceTypeInfo::WriteData(CObjectOStream& out,
-                                TConstObjectPtr object) const
-{
-    DoPreWrite(object);
-    out.WriteChoice(CConstObjectInfo(object, this,
-                                     CObjectInfo::eNonCObject));
 }
 
 void CChoiceTypeInfo::SetSelectDelayFunction(TSelectDelayFunction func)
@@ -240,46 +271,100 @@ void CChoiceTypeInfo::SetSelectDelayFunction(TSelectDelayFunction func)
     m_SelectDelayFunction = func;
 }
 
-TMemberIndex CChoiceTypeInfo::GetIndex(TConstObjectPtr object) const
-{
-    return m_WhichFunction(object);
-}
-
-void CChoiceTypeInfo::ResetIndex(TObjectPtr object) const
-{
-    if ( m_ResetFunction )
-        m_ResetFunction(object);
-    else
-        m_SelectFunction(object, kEmptyChoice);
-}
-
-void CChoiceTypeInfo::SetIndex(TObjectPtr object,
-                               TMemberIndex index) const
-{
-    m_SelectFunction(object, index);
-}
-
-void CChoiceTypeInfo::SetDelayIndex(TObjectPtr object,
+void CChoiceTypeInfo::SetDelayIndex(TObjectPtr objectPtr,
                                     TMemberIndex index) const
 {
-    m_SelectDelayFunction(object, index);
+    m_SelectDelayFunction(this, objectPtr, index);
 }
 
-TObjectPtr CChoiceTypeInfo::x_GetData(TObjectPtr object,
-                                      TMemberIndex index) const
+TObjectPtr CChoiceTypeInfo::GetChoiceData(const CChoiceTypeInfo* choiceType,
+                                          TObjectPtr choicePtr,
+                                          TMemberIndex index)
 {
-    _ASSERT(object != 0);
-    _ASSERT(GetIndex(object) == index);
-    const CMemberInfo* info = GetMembers().GetMemberInfo(index);
+    _ASSERT(choicePtr != 0);
+    _ASSERT(choiceType->GetIndex(choicePtr) == index);
+    const CVariantInfo* info = choiceType->GetVariantInfo(index);
     if ( info->CanBeDelayed() )
-        info->GetDelayBuffer(object).Update();
+        info->GetDelayBuffer(choicePtr).Update();
 
-    TObjectPtr memberPtr = info->GetMember(object);
+    TObjectPtr variantPtr = info->GetItemPtr(choicePtr);
     if ( info->IsPointer() ) {
-        memberPtr = CType<TObjectPtr>::Get(memberPtr);
-        _ASSERT(memberPtr != 0 );
+        variantPtr = CTypeConverter<TObjectPtr>::Get(variantPtr);
+        _ASSERT(variantPtr != 0 );
     }
-    return memberPtr;
+    return variantPtr;
+}
+
+void CChoiceTypeInfo::ReadChoiceDefault(CObjectIStream& in,
+                                        TTypeInfo objectType,
+                                        TObjectPtr objectPtr)
+{
+    const CChoiceTypeInfo* choiceType =
+        CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
+
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
+    TMemberIndex index = in.BeginChoiceVariant(choiceType);
+    if ( index == kInvalidMember )
+        in.ThrowError(CObjectIStream::eFormatError,
+                      "choice variant id expected");
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
+
+    variantInfo->ReadVariant(in, objectPtr);
+
+    in.EndChoiceVariant();
+    END_OBJECT_FRAME_OF(in);
+    END_OBJECT_FRAME_OF(in);
+}
+
+void CChoiceTypeInfo::WriteChoiceDefault(CObjectOStream& out,
+                                         TTypeInfo objectType,
+                                         TConstObjectPtr objectPtr)
+{
+    const CChoiceTypeInfo* choiceType =
+        CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
+
+    BEGIN_OBJECT_FRAME_OF2(out, eFrameChoice, choiceType);
+    TMemberIndex index = choiceType->GetIndex(objectPtr);
+    if ( index == kInvalidMember )
+        THROW1_TRACE(runtime_error, "cannot write empty choice");
+
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());
+    out.BeginChoiceVariant(choiceType, variantInfo->GetId());
+
+    variantInfo->WriteVariant(out, objectPtr);
+
+    out.EndChoiceVariant();
+    END_OBJECT_FRAME_OF(out);
+    END_OBJECT_FRAME_OF(out);
+}
+
+void CChoiceTypeInfo::CopyChoiceDefault(CObjectStreamCopier& copier,
+                                        TTypeInfo objectType)
+{
+    copier.CopyChoice(CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType));
+}
+
+void CChoiceTypeInfo::SkipChoiceDefault(CObjectIStream& in,
+                                        TTypeInfo objectType)
+{
+    const CChoiceTypeInfo* choiceType =
+        CTypeConverter<CChoiceTypeInfo>::SafeCast(objectType);
+
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoice, choiceType);
+    TMemberIndex index = in.BeginChoiceVariant(choiceType);
+    if ( index == kInvalidMember )
+        in.ThrowError(CObjectIStream::eFormatError,
+                      "choice variant id expected");
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameChoiceVariant, variantInfo->GetId());
+
+    variantInfo->SkipVariant(in);
+
+    in.EndChoiceVariant();
+    END_OBJECT_FRAME_OF(in);
+    END_OBJECT_FRAME_OF(in);
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/18 20:00:24  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.8  2000/09/01 13:16:18  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -100,78 +106,6 @@ ESerialDataFormat CObjectIStreamXml::GetDataFormat(void) const
 string CObjectIStreamXml::GetPosition(void) const
 {
     return "line "+NStr::UIntToString(m_Input.GetLine());
-}
-
-inline
-bool CObjectIStreamXml::InsideTag(void) const
-{
-    return m_TagState == eTagInsideOpening || m_TagState == eTagInsideClosing;
-}
-
-inline
-bool CObjectIStreamXml::InsideOpeningTag(void) const
-{
-    return m_TagState == eTagInsideOpening;
-}
-
-inline
-bool CObjectIStreamXml::InsideClosingTag(void) const
-{
-    return m_TagState == eTagInsideClosing;
-}
-
-inline
-bool CObjectIStreamXml::OutsideTag(void) const
-{
-    return m_TagState == eTagOutside;
-}
-
-inline
-bool CObjectIStreamXml::SelfClosedTag(void) const
-{
-    return m_TagState == eTagSelfClosed;
-}
-
-inline
-void CObjectIStreamXml::Found_lt(void)
-{
-    _ASSERT(OutsideTag());
-    m_TagState = eTagInsideOpening;
-}
-
-inline
-void CObjectIStreamXml::Back_lt(void)
-{
-    _ASSERT(InsideOpeningTag());
-    m_TagState = eTagOutside;
-}
-
-inline
-void CObjectIStreamXml::Found_lt_slash(void)
-{
-    _ASSERT(OutsideTag());
-    m_TagState = eTagInsideClosing;
-}
-
-inline
-void CObjectIStreamXml::Found_gt(void)
-{
-    _ASSERT(InsideTag());
-    m_TagState = eTagOutside;
-}
-
-inline
-void CObjectIStreamXml::Found_slash_gt(void)
-{
-    _ASSERT(InsideOpeningTag());
-    m_TagState = eTagSelfClosed;
-}
-
-inline
-void CObjectIStreamXml::EndSelfClosedTag(void)
-{
-    _ASSERT(SelfClosedTag());
-    m_TagState = eTagOutside;
 }
 
 static inline
@@ -314,21 +248,6 @@ void CObjectIStreamXml::EndTag(void)
     Found_gt();
 }
 
-inline
-void CObjectIStreamXml::EndOpeningTag(void)
-{
-    _ASSERT(InsideOpeningTag());
-    EndTag();
-}
-
-inline
-void CObjectIStreamXml::EndClosingTag(void)
-{
-    _ASSERT(InsideClosingTag());
-    EndTag();
-}
-
-inline
 bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
 {
     _ASSERT(InsideOpeningTag());
@@ -347,14 +266,6 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
     m_Input.SkipChar(); // '>'
     Found_gt();
     return false;
-}
-
-inline
-void CObjectIStreamXml::BeginData(void)
-{
-    if ( InsideOpeningTag() )
-        EndOpeningTag();
-    _ASSERT(OutsideTag());
 }
 
 char CObjectIStreamXml::BeginOpeningTag(void)
@@ -746,14 +657,6 @@ string CObjectIStreamXml::ReadOtherPointer(void)
     return NcbiEmptyString;
 }
 
-inline
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag, char c)
-{
-    if ( tag.Empty() || *tag.GetString() != c )
-        ThrowError(eFormatError, "invalid tag name");
-    return CLightString(tag.GetString() + 1, tag.GetLength() - 1);
-}
-
 CLightString CObjectIStreamXml::SkipTagName(CLightString tag,
                                             const char* str, size_t length)
 {
@@ -763,19 +666,8 @@ CLightString CObjectIStreamXml::SkipTagName(CLightString tag,
     return CLightString(tag.GetString() + length, tag.GetLength() - length);
 }
 
-inline
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag, const char* s)
-{
-    return SkipTagName(tag, s, strlen(s));
-}
-
-inline
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag, const string& s)
-{
-    return SkipTagName(tag, s.data(), s.size());
-}
-
-CLightString CObjectIStreamXml::SkipTagName(CLightString tag, size_t level)
+CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
+                                                 size_t level)
 {
     const TFrame& frame = FetchFrameFromTop(level);
     switch ( frame.GetFrameType() ) {
@@ -788,18 +680,17 @@ CLightString CObjectIStreamXml::SkipTagName(CLightString tag, size_t level)
             if ( !name.empty() )
                 return SkipTagName(tag, name);
             else
-                return SkipTagName(tag, level + 1);
+                return SkipStackTagName(tag, level + 1);
         }
     case TFrame::eFrameClassMember:
     case TFrame::eFrameChoiceVariant:
         {
-            tag = SkipTagName(tag, level + 1);
-            tag = SkipTagName(tag, '_');
+            tag = SkipStackTagName(tag, level + 1, '_');
             return SkipTagName(tag, frame.GetMemberId().GetName());
         }
     case TFrame::eFrameArrayElement:
         {
-            tag = SkipTagName(tag, level + 1);
+            tag = SkipStackTagName(tag, level + 1);
             return SkipTagName(tag, "_E");
         }
     default:
@@ -807,6 +698,15 @@ CLightString CObjectIStreamXml::SkipTagName(CLightString tag, size_t level)
     }
     THROW1_TRACE(runtime_error, "illegal frame type");
     return tag;
+}
+
+CLightString CObjectIStreamXml::SkipStackTagName(CLightString tag,
+                                                 size_t level, char c)
+{
+    tag = SkipStackTagName(tag, level);
+    if ( tag.Empty() || *tag.GetString() != c )
+        ThrowError(eFormatError, "invalid tag name");
+    return CLightString(tag.GetString() + 1, tag.GetLength() - 1);
 }
 
 void CObjectIStreamXml::OpenTag(const string& e)
@@ -829,26 +729,49 @@ void CObjectIStreamXml::CloseTag(const string& e)
     }
 }
 
-void CObjectIStreamXml::OpenTag(size_t level)
+void CObjectIStreamXml::OpenStackTag(size_t level)
 {
     CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString rest = SkipTagName(tagName, level);
+    CLightString rest = SkipStackTagName(tagName, level);
     if ( !rest.Empty() )
         ThrowError(eFormatError, "unexpected tag");
 }
 
-void CObjectIStreamXml::CloseTag(size_t level)
+void CObjectIStreamXml::CloseStackTag(size_t level)
 {
     if ( SelfClosedTag() ) {
         EndSelfClosedTag();
     }
     else {
         CLightString tagName = ReadName(BeginClosingTag());
-        CLightString rest = SkipTagName(tagName, level);
+        CLightString rest = SkipStackTagName(tagName, level);
         if ( !rest.Empty() )
             ThrowError(eFormatError, "unexpected tag");
         EndClosingTag();
     }
+}
+
+void CObjectIStreamXml::OpenTagIfNamed(TTypeInfo type)
+{
+    if ( !type->GetName().empty() )
+        OpenTag(type->GetName());
+}
+
+void CObjectIStreamXml::CloseTagIfNamed(TTypeInfo type)
+{
+    if ( !type->GetName().empty() )
+        CloseTag(type->GetName());
+}
+
+bool CObjectIStreamXml::WillHaveName(TTypeInfo elementType)
+{
+    while ( elementType->GetName().empty() ) {
+        if ( elementType->GetTypeFamily() != eTypeFamilyPointer )
+            return false;
+        elementType = CTypeConverter<CPointerTypeInfo>::SafeCast(elementType)->GetPointedType();
+    }
+    // found named type
+    return true;
 }
 
 inline
@@ -860,194 +783,140 @@ bool CObjectIStreamXml::NextTagIsClosing(void)
 
 void CObjectIStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
-    const string& containerName = containerType->GetName();
-    if ( !containerName.empty() )
-        OpenTag(containerName);
+    OpenTagIfNamed(containerType);
 }
 
 void CObjectIStreamXml::EndContainer(void)
 {
-    const string& containerName = TopFrame().GetTypeInfo()->GetName();
-    if ( !containerName.empty() )
-        CloseTag(containerName);
+    CloseTagIfNamed(TopFrame().GetTypeInfo());
 }
 
 bool CObjectIStreamXml::BeginContainerElement(TTypeInfo elementType)
 {
     if ( NextTagIsClosing() )
         return false;
-    if ( elementType->GetName().empty() )
-        OpenTag(0);
+    if ( !WillHaveName(elementType) )
+        OpenStackTag(0);
     return true;
 }
 
 void CObjectIStreamXml::EndContainerElement(void)
 {
-    if ( TopFrame().GetTypeInfo()->GetName().empty() )
-        CloseTag(0);
+    if ( !WillHaveName(TopFrame().GetTypeInfo()) )
+        CloseStackTag(0);
 }
 
-void CObjectIStreamXml::ReadContainer(TObjectPtr containerPtr,
-                                      const CContainerTypeInfo* containerType)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectIStreamXml::ReadContainer(const CContainerTypeInfo* containerType,
+                                      TObjectPtr containerPtr)
 {
-    const string& arrayName = containerType->GetName();
-    if ( arrayName.empty() ) {
-        ReadContainerContents(containerPtr, containerType);
+    if ( containerType->GetName().empty() ) {
+        ReadContainerContents(containerType, containerPtr);
     }
     else {
         BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
-        OpenTag(arrayName);
+        OpenTag(containerType);
 
-        ReadContainerContents(containerPtr, containerType);
+        ReadContainerContents(containerType, containerPtr);
 
-        CloseTag(arrayName);
+        CloseTag(containerType);
         END_OBJECT_FRAME();
     }
 }
 
 void CObjectIStreamXml::SkipContainer(const CContainerTypeInfo* containerType)
 {
-    const string& arrayName = containerType->GetName();
-    if ( arrayName.empty() ) {
+    if ( containerType->GetName().empty() ) {
         SkipContainerContents(containerType);
     }
     else {
         BEGIN_OBJECT_FRAME2(eFrameArray, containerType);
-        OpenTag(arrayName);
+        OpenTag(containerType);
 
         SkipContainerContents(containerType);
 
-        CloseTag(arrayName);
+        CloseTag(containerType);
         END_OBJECT_FRAME();
     }
 }
 
-void CObjectIStreamXml::ReadContainer(const CObjectInfo& container,
-                                      CReadContainerElementHook& hook)
+void CObjectIStreamXml::ReadContainerContents(const CContainerTypeInfo* cType,
+                                              TObjectPtr containerPtr)
 {
-    const string& arrayName = container.GetTypeInfo()->GetName();
-    if ( arrayName.empty() ) {
-        ReadContainerContents(container, hook);
-    }
-    else {
-        BEGIN_OBJECT_FRAME2(eFrameArray, container.GetTypeInfo());
-        OpenTag(arrayName);
-
-        ReadContainerContents(container, hook);
-
-        CloseTag(arrayName);
-        END_OBJECT_FRAME();
-    }
-}
-
-void CObjectIStreamXml::ReadContainerContents(TObjectPtr containerPtr,
-                                              const CContainerTypeInfo* containerType)
-{
-    TTypeInfo elementType = containerType->GetElementType();
-    if ( elementType->GetName().empty() ) {
+    TTypeInfo elementType = cType->GetElementType();
+    if ( !WillHaveName(elementType) ) {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
         while ( !NextTagIsClosing() ) {
-            OpenTag(0);
-            containerType->AddElement(containerPtr, *this);
-            CloseTag(0);
+            OpenStackTag(0);
+            cType->AddElement(containerPtr, *this);
+            CloseStackTag(0);
         }
 
         END_OBJECT_FRAME();
     }
     else {
         while ( !NextTagIsClosing() ) {
-            containerType->AddElement(containerPtr, *this);
+            cType->AddElement(containerPtr, *this);
         }
     }
 }
 
-void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* containerType)
+void CObjectIStreamXml::SkipContainerContents(const CContainerTypeInfo* cType)
 {
-    TTypeInfo elementType = containerType->GetElementType();
-    if ( elementType->GetName().empty() ) {
+    TTypeInfo elementType = cType->GetElementType();
+    if ( !WillHaveName(elementType) ) {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
         while ( !NextTagIsClosing() ) {
-            OpenTag(0);
+            OpenStackTag(0);
             SkipObject(elementType);
-            CloseTag(0);
+            CloseStackTag(0);
         }
         
         END_OBJECT_FRAME();
     }
     else {
         while ( !NextTagIsClosing() ) {
-            SkipObject(containerType);
+            SkipObject(elementType);
         }
     }
 }
-
-void CObjectIStreamXml::ReadContainerContents(const CObjectInfo& container,
-                                              CReadContainerElementHook& hook)
-{
-    if ( NextTagIsClosing() )
-        return;
-
-    TTypeInfo elementType = container.GetContainerTypeInfo()->GetElementType();
-    if ( elementType->GetName().empty() ) {
-        BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
-
-        do {
-            OpenTag(0);
-            hook.ReadContainerElement(*this, container);
-            CloseTag(0);
-        } while ( !NextTagIsClosing() );
-
-        END_OBJECT_FRAME();
-    }
-    else {
-        do {
-            hook.ReadContainerElement(*this, container);
-        } while ( !NextTagIsClosing() );
-    }
-}
+#endif
 
 void CObjectIStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    const string& typeName = namedTypeInfo->GetName();
-    _ASSERT(!typeName.empty());
-    OpenTag(typeName);
+    OpenTag(namedTypeInfo);
 }
 
 void CObjectIStreamXml::EndNamedType(void)
 {
-    _ASSERT(!TopFrame().GetTypeInfo()->GetName().empty());
     CloseTag(TopFrame().GetTypeInfo()->GetName());
 }
 
+#ifdef VIRTUAL_MID_LEVEL_IO
 void CObjectIStreamXml::ReadNamedType(TTypeInfo namedTypeInfo,
                                       TTypeInfo typeInfo,
                                       TObjectPtr object)
 {
-    const string& typeName = namedTypeInfo->GetName();
-    _ASSERT(!typeName.empty());
     BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
 
-    OpenTag(typeName);
+    OpenTag(namedTypeInfo);
     ReadObject(object, typeInfo);
-    CloseTag(typeName);
+    CloseTag(namedTypeInfo);
 
     END_OBJECT_FRAME();
 }
+#endif
 
 void CObjectIStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
-    const string& name = classInfo->GetName();
-    if ( !name.empty() )
-        OpenTag(name);
+    OpenTagIfNamed(classInfo);
 }
 
 void CObjectIStreamXml::EndClass(void)
 {
-    const string& name = TopFrame().GetTypeInfo()->GetName();
-    if ( !name.empty() )
-        CloseTag(name);
+    CloseTagIfNamed(TopFrame().GetTypeInfo());
 }
 
 void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
@@ -1055,102 +924,130 @@ void CObjectIStreamXml::UnexpectedMember(const CLightString& id,
 {
     string message =
         "\""+string(id)+"\": unexpected member, should be one of: ";
-    for ( TMemberIndex i = members.FirstMemberIndex();
-          i <= members.LastMemberIndex(); ++i ) {
-        message += '\"' + members.GetMemberInfo(i)->GetId().ToString() + "\" ";
+    for ( TMemberIndex i = members.FirstIndex();
+          i <= members.LastIndex(); ++i ) {
+        message += '\"' + members.GetItemInfo(i)->GetId().ToString() + "\" ";
     }
     ThrowError(eFormatError, message);
 }
 
-TMemberIndex CObjectIStreamXml::BeginClassMember(const CMembersInfo& members)
+TMemberIndex
+CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType)
 {
     if ( NextTagIsClosing() )
         return kInvalidMember;
 
     CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id = SkipTagName(SkipTagName(tagName, size_t(1)), '_');
-    TMemberIndex index = members.FindMember(id);
+    CLightString id = SkipStackTagName(tagName, 1, '_');
+    TMemberIndex index = classType->GetMembers().Find(id);
     if ( index == kInvalidMember )
-        UnexpectedMember(id, members);
+        UnexpectedMember(id, classType->GetMembers());
     return index;
 }
 
-TMemberIndex CObjectIStreamXml::BeginClassMember(const CMembersInfo& members,
-                                                 TMemberIndex pos)
+TMemberIndex
+CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
+                                    TMemberIndex pos)
 {
     if ( NextTagIsClosing() )
         return kInvalidMember;
 
     CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id =
-        SkipTagName(SkipTagName(tagName, size_t(1)), '_');
-    TMemberIndex index = members.FindMember(id, pos);
+    CLightString id = SkipStackTagName(tagName, 1, '_');
+    TMemberIndex index = classType->GetMembers().Find(id, pos);
     if ( index == kInvalidMember )
-        UnexpectedMember(id, members);
+        UnexpectedMember(id, classType->GetMembers());
     return index;
 }
 
 void CObjectIStreamXml::EndClassMember(void)
 {
-    CloseTag(0);
+    CloseStackTag(0);
 }
 
 TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
-    const string& choiceName = choiceType->GetName();
-    if ( !choiceName.empty() )
-        OpenTag(choiceName);
-
+    OpenTagIfNamed(choiceType);
     CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id = SkipTagName(SkipTagName(tagName, size_t(0)), '_');
-    return choiceType->GetMembers().FindMember(id);
+    CLightString id = SkipStackTagName(tagName, 0, '_');
+    return choiceType->GetVariants().Find(id);
 }
 
 void CObjectIStreamXml::EndChoiceVariant(void)
 {
-    CloseTag(0);
-    const string& choiceName = FetchFrameFromTop(1).GetTypeInfo()->GetName();
-    if ( !choiceName.empty() )
-        CloseTag(choiceName);
+    CloseStackTag(0);
+    CloseTagIfNamed(FetchFrameFromTop(1).GetTypeInfo());
 }
 
-void CObjectIStreamXml::DoReadChoice(const CObjectInfo& choice,
-                                     CReadChoiceVariantHook& hook)
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectIStreamXml::ReadChoice(const CChoiceTypeInfo* choiceType,
+                                   TObjectPtr choicePtr)
 {
-    const string& choiceName = choice.GetTypeInfo()->GetName();
-    if ( choiceName.empty() ) {
-        ReadChoiceContents(choice, hook);
+    if ( choiceType->GetName().empty() ) {
+        ReadChoiceContents(choiceType, choicePtr);
     }
     else {
-        BEGIN_OBJECT_FRAME2(eFrameChoice, choice.GetTypeInfo());
+        BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
 
-        OpenTag(choiceName);
-        ReadChoiceContents(choice, hook);
-        CloseTag(choiceName);
+        OpenTag(choiceType);
+        ReadChoiceContents(choiceType, choicePtr);
+        CloseTag(choiceType);
 
         END_OBJECT_FRAME();
     }
 }
 
-void CObjectIStreamXml::ReadChoiceContents(const CObjectInfo& choice,
-                                           CReadChoiceVariantHook& hook)
+void CObjectIStreamXml::ReadChoiceContents(const CChoiceTypeInfo* choiceType,
+                                           TObjectPtr choicePtr)
 {
     CLightString tagName = ReadName(BeginOpeningTag());
-    CLightString id = SkipTagName(SkipTagName(tagName, size_t(0)), '_');
-    const CChoiceTypeInfo* choiceType = choice.GetChoiceTypeInfo();
-    const CMembersInfo& variants = choiceType->GetMembers();
-    TMemberIndex index = variants.FindMember(id);
+    CLightString id = SkipStackTagName(tagName, 0, '_');
+    TMemberIndex index = choiceType->GetVariants().Find(id);
     if ( index == kInvalidMember )
-        UnexpectedMember(id, variants);
+        UnexpectedMember(id, choiceType->GetVariants());
 
-    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant,
-                        variants.GetMemberInfo(index)->GetId());
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
 
-    hook.ReadChoiceVariant(*this, choice, index);
+    variantInfo->ReadVariant(*this, choicePtr);
     
-    CloseTag(0);
+    CloseStackTag(0);
     END_OBJECT_FRAME();
 }
+
+void CObjectIStreamXml::SkipChoice(const CChoiceTypeInfo* choiceType)
+{
+    if ( choiceType->GetName().empty() ) {
+        SkipChoiceContents(choiceType);
+    }
+    else {
+        BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
+
+        OpenTag(choiceType);
+        SkipChoiceContents(choiceType);
+        CloseTag(choiceType);
+
+        END_OBJECT_FRAME();
+    }
+}
+
+void CObjectIStreamXml::SkipChoiceContents(const CChoiceTypeInfo* choiceType)
+{
+    CLightString tagName = ReadName(BeginOpeningTag());
+    CLightString id = SkipStackTagName(tagName, 0, '_');
+    TMemberIndex index = choiceType->GetVariants().Find(id);
+    if ( index == kInvalidMember )
+        UnexpectedMember(id, choiceType->GetVariants());
+
+    const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    BEGIN_OBJECT_FRAME2(eFrameChoiceVariant, variantInfo->GetId());
+
+    variantInfo->SkipVariant(*this);
+    
+    CloseStackTag(0);
+    END_OBJECT_FRAME();
+}
+#endif
 
 void CObjectIStreamXml::BeginBytes(ByteBlock& )
 {

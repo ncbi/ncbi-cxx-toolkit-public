@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/09/18 19:59:59  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.19  2000/09/01 13:15:57  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -117,8 +123,8 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/choice.hpp>
 #include <serial/stdtypes.hpp>
+#include <serial/stdtypeinfo.hpp>
 #include <map>
-#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 
@@ -133,11 +139,6 @@ public:
     typedef map<const type_info*, TMemberIndex, CLessTypeInfo> TVariantsByType;
 
     CChoicePointerTypeInfo(TTypeInfo pointerType);
-#ifdef TYPENAME
-    CChoicePointerTypeInfo(const string& name, TTypeInfo pointerType);
-    CChoicePointerTypeInfo(const char* name, TTypeInfo pointerType);
-#endif
-    ~CChoicePointerTypeInfo(void);
 
     const CPointerTypeInfo* GetPointerTypeInfo(void) const
         {
@@ -146,12 +147,17 @@ public:
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
-    TMemberIndex GetIndex(TConstObjectPtr object) const;
-    void ResetIndex(TObjectPtr object) const;
-    void SetIndex(TObjectPtr object, TMemberIndex index) const;
-
 protected:
-    TObjectPtr x_GetData(TObjectPtr object, TMemberIndex index) const;
+    static TMemberIndex GetPtrIndex(const CChoiceTypeInfo* choiceType,
+                                    TConstObjectPtr choicePtr);
+    static void SetPtrIndex(const CChoiceTypeInfo* choiceType,
+                            TObjectPtr choicePtr,
+                            TMemberIndex index);
+    static void ResetPtrIndex(const CChoiceTypeInfo* choiceType,
+                              TObjectPtr choicePtr);
+    static TObjectPtr GetPtrData(const CChoiceTypeInfo* choiceType,
+                                 TObjectPtr choicePtr,
+                                 TMemberIndex index);
 
 private:
     void SetPointerType(TTypeInfo pointerType);
@@ -166,20 +172,8 @@ class CNullTypeInfo : public CVoidTypeInfo
     typedef CVoidTypeInfo CParent;
 public:
     CNullTypeInfo(void);
-    ~CNullTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(void);
-
-    TObjectPtr Create(void) const;
-
-protected:
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    void SkipData(CObjectIStream& in) const;
-
-    void CopyData(CObjectStreamCopier& copier) const;
 };
 
 //#include <serial/choiceptr.inl>

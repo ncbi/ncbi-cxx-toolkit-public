@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/18 20:00:21  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.12  2000/09/01 13:16:15  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -66,13 +72,13 @@
 
 BEGIN_NCBI_SCOPE
 
-CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
+CEnumeratedTypeValues::CEnumeratedTypeValues(const char* name,
                                              bool isInteger)
     : m_Name(name), m_Integer(isInteger)
 {
 }
 
-CEnumeratedTypeValues::CEnumeratedTypeValues(const char* name,
+CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
                                              bool isInteger)
     : m_Name(name), m_Integer(isInteger)
 {
@@ -155,30 +161,20 @@ void CEnumeratedTypeValues::AddValue(const char* name, long value)
     AddValue(string(name), value);
 }
 
-CEnumeratedTypeInfo::CEnumeratedTypeInfo(const CEnumeratedTypeValues* values,
-                                         size_t size)
-    : CParent(values->GetName()),
+CEnumeratedTypeInfo::CEnumeratedTypeInfo(size_t size,
+                                         const CEnumeratedTypeValues* values)
+    : CParent(size, values->GetName(), ePrimitiveValueEnum),
       m_ValueType(CPrimitiveTypeInfo::GetIntegerTypeInfo(size)),
       m_Values(*values)
 {
-    _ASSERT(m_ValueType->GetValueType() == eInteger);
+    _ASSERT(m_ValueType->GetPrimitiveValueType() == ePrimitiveValueInteger);
+    SetCreateFunction(&CreateEnum);
+    SetReadFunction(&ReadEnum);
+    SetWriteFunction(&WriteEnum);
+    SetCopyFunction(&CopyEnum);
+    SetSkipFunction(&SkipEnum);
 }
 
-CEnumeratedTypeInfo::EValueType CEnumeratedTypeInfo::GetValueType(void) const
-{
-    return eEnum;
-}
-
-size_t CEnumeratedTypeInfo::GetSize(void) const
-{
-    return m_ValueType->GetSize();
-}
-
-TObjectPtr CEnumeratedTypeInfo::Create(void) const
-{
-    return m_ValueType->Create();
-}
-    
 bool CEnumeratedTypeInfo::IsDefault(TConstObjectPtr object) const
 {
     return m_ValueType->IsDefault(object);
@@ -242,25 +238,48 @@ void CEnumeratedTypeInfo::SetValueString(TObjectPtr objectPtr,
     m_ValueType->SetValueLong(objectPtr, Values().FindValue(value));
 }
 
-void CEnumeratedTypeInfo::SkipData(CObjectIStream& in) const
+TObjectPtr CEnumeratedTypeInfo::CreateEnum(TTypeInfo objectType)
 {
-    in.ReadEnum(Values());
+    const CEnumeratedTypeInfo* enumType =
+        CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
+    return enumType->m_ValueType->Create();
 }
 
-void CEnumeratedTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
+                                   TTypeInfo objectType,
+                                   TObjectPtr objectPtr)
 {
-    m_ValueType->SetValueLong(object, in.ReadEnum(Values()));
+    const CEnumeratedTypeInfo* enumType =
+        CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
+    enumType->m_ValueType->SetValueLong(objectPtr,
+                                        in.ReadEnum(enumType->Values()));
 }
 
-void CEnumeratedTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
+void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
+                                    TTypeInfo objectType,
+                                    TConstObjectPtr objectPtr)
 {
-    out.WriteEnum(Values(), m_ValueType->GetValueLong(object));
+    const CEnumeratedTypeInfo* enumType =
+        CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
+    out.WriteEnum(enumType->Values(),
+                  enumType->m_ValueType->GetValueLong(objectPtr));
 }
 
-void CEnumeratedTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void CEnumeratedTypeInfo::CopyEnum(CObjectStreamCopier& copier,
+                                   TTypeInfo objectType)
 {
-    copier.Out().WriteEnum(Values(), copier.In().ReadEnum(Values()));
+    const CEnumeratedTypeInfo* enumType =
+        CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
+    copier.Out().WriteEnum(enumType->Values(),
+                           copier.In().ReadEnum(enumType->Values()));
+}
+
+void CEnumeratedTypeInfo::SkipEnum(CObjectIStream& in,
+                                   TTypeInfo objectType)
+{
+    const CEnumeratedTypeInfo* enumType =
+        CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
+    in.ReadEnum(enumType->Values());
 }
 
 END_NCBI_SCOPE

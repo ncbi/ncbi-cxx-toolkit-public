@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/09/18 20:00:28  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.22  2000/08/25 15:59:19  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -125,44 +131,34 @@ BEGIN_NCBI_SCOPE
 class CAnyTypeClassInfo : public CClassTypeInfo
 {
 public:
-    CAnyTypeClassInfo(const string& name, size_t memberCount)
-        : CClassTypeInfo(name, typeid(void), 0),
-          m_MemberCount(memberCount), m_IsSetCount(0)
+    CAnyTypeClassInfo(const string& name, size_t count)
+        : CClassTypeInfo(sizeof(AnyType) * count, name,
+                         TObjectPtr(0), &CreateAnyTypeClass,
+                         typeid(void), &GetAnyTypeClassId)
         {
         }
 
-    size_t GetOffsetOfIsSetArray(void) const
+    const AnyType* GetAnyTypePtr(size_t index) const
         {
-            return sizeof(AnyType)*m_MemberCount;
+            return &static_cast<AnyType*>(0)[index];
+        }
+    const bool* GetSetFlagPtr(size_t index)
+        {
+            return &GetAnyTypePtr(index)->booleanValue;
         }
 
-    size_t GetSize(void) const
+protected:
+    static TObjectPtr CreateAnyTypeClass(TTypeInfo objectType)
         {
-            return GetOffsetOfIsSetArray() + sizeof(bool) * m_IsSetCount;
-        }
-
-    TObjectPtr Create(void) const
-        {
-            size_t size = GetSize();
+            size_t size = objectType->GetSize();
             TObjectPtr obj = new char[size];
             memset(obj, 0, size);
             return obj;
         }
-
-    const AnyType* GetMemberPtr(size_t index) const
+    static const type_info* GetAnyTypeClassId(TConstObjectPtr /*objectPtr*/)
         {
-            return &static_cast<const AnyType*>(0)[index];
+            return 0;
         }
-    const bool* AddIsSetFlag(void)
-        {
-            const bool* isSetArray =
-                reinterpret_cast<const bool*>(GetOffsetOfIsSetArray());
-            return isSetArray + m_IsSetCount++;
-        }
-
-private:
-    size_t m_MemberCount;
-    size_t m_IsSetCount;
 };
 
 void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
@@ -242,24 +238,34 @@ CTypeInfo* CDataContainerType::CreateTypeInfo(void)
 
 CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
 {
-    auto_ptr<CAnyTypeClassInfo>
-        typeInfo(new CAnyTypeClassInfo(GlobalName(), GetMembers().size()));
-    int index = 0;
+    size_t count = GetMembers().size();
+    // add place for 'isSet' flags
     for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end(); ++i, ++index ) {
+          i != GetMembers().end(); ++i ) {
+        CDataMember* mem = i->get();
+        if ( mem->Optional() )
+            ++count;
+    }
+    auto_ptr<CAnyTypeClassInfo> typeInfo(new CAnyTypeClassInfo(GlobalName(),
+                                                               count));
+    size_t index = 0;
+    for ( TMembers::const_iterator i = GetMembers().begin();
+          i != GetMembers().end(); ++i ) {
         CDataMember* mem = i->get();
         CDataType* memType = mem->GetType();
+        TConstObjectPtr memberPtr = typeInfo->GetAnyTypePtr(index++);
         CMemberInfo* memInfo =
-            typeInfo->GetMembers().AddMember(new CMemberInfo(mem->GetName(),
-                                                             size_t(typeInfo->GetMemberPtr(index)),
-                                                             memType->GetTypeInfo()));
-        if ( mem->GetDefault() ) {
-            memInfo->SetDefault(memType->CreateDefault(*mem->GetDefault()));
-            memInfo->SetSetFlag(typeInfo->AddIsSetFlag());
-        }
-        else if ( mem->Optional() ) {
-            memInfo->SetOptional();
-            memInfo->SetSetFlag(typeInfo->AddIsSetFlag());
+            typeInfo->AddMember(mem->GetName(), memberPtr,
+                                memType->GetTypeInfo());
+        if ( mem->Optional() ) {
+            if ( mem->GetDefault() ) {
+                TObjectPtr defPtr = memType->CreateDefault(*mem->GetDefault());
+                memInfo->SetDefault(defPtr);
+            }
+            else {
+                memInfo->SetOptional();
+            }
+            memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
         }
     }
     return typeInfo.release();

@@ -4,14 +4,15 @@
 #################################
 
 LIBOBJ = \
-  objcopy classinfob continfo \
-  object iterator typeref typeinfo stdtypes ptrinfo autoptrinfo choiceptr \
-  member memberid memberlist classinfo \
-  stltypes enumerated choice asntypes \
-  serial serialasn delaybuf \
-  exception strbuffer objistr objostr objhook objlist objstack bytesrc \
-  $(serial_ws50_rtti_kludge) \
-  objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml objhook
+	typeinfo typeref stdtypes ptrinfo autoptrinfo \
+	continfo stltypes enumerated asntypes \
+	memberid memberlist item classinfob \
+	member classinfo variant choice choiceptr \
+	objistr objostr objcopy object iterator \
+	serial serialasn delaybuf \
+	exception strbuffer objhook objlist objstack bytesrc \
+	$(serial_ws50_rtti_kludge) \
+	objostrasn objistrasn objostrasnb objistrasnb objostrxml objistrxml
 
 LIB    = xser
 

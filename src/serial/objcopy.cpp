@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/18 20:00:22  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.1  2000/09/01 13:16:15  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -45,6 +51,7 @@
 #include <serial/choice.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objistrimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,22 +87,6 @@ void CObjectStreamCopier::Copy(TTypeInfo type, ENoTypeName)
     END_OBJECT_FRAME_OF(Out());
 
     In().EndOfRead();
-    END_OBJECT_FRAME_OF(In());
-}
-
-void CObjectStreamCopier::CopyNamedType(TTypeInfo namedTypeInfo,
-                                        TTypeInfo type)
-{
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameNamed, namedTypeInfo);
-    In().BeginNamedType(namedTypeInfo);
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameNamed, namedTypeInfo);
-    Out().BeginNamedType(namedTypeInfo);
-    
-    CopyObject(type);
-
-    Out().EndNamedType();
-    END_OBJECT_FRAME_OF(Out());
-    In().EndNamedType();
     END_OBJECT_FRAME_OF(In());
 }
 
@@ -158,13 +149,12 @@ void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
         }
         while ( typeInfo != declaredType ) {
             // try to check parent class pointer
-            if ( typeInfo->GetTypeFamily() != CTypeInfo::eTypeClass ) {
+            if ( typeInfo->GetTypeFamily() != eTypeFamilyClass ) {
                 In().SetFailFlags(CObjectIStream::eFormatError);
                 THROW1_TRACE(runtime_error, "incompatible member type");
             }
-            _ASSERT(dynamic_cast<const CClassTypeInfo*>(typeInfo));
             const CClassTypeInfo* parentClass =
-                static_cast<const CClassTypeInfo*>(typeInfo)->GetParentClassInfo();
+                CTypeConverter<CClassTypeInfo>::SafeCast(typeInfo)->GetParentClassInfo();
             if ( parentClass ) {
                 typeInfo = parentClass;
             }
@@ -179,20 +169,6 @@ void CObjectStreamCopier::CopyPointer(TTypeInfo declaredType)
         In().SetFailFlags(CObjectIStream::eFail);
         throw;
     }
-}
-
-void CObjectStreamCopier::CopyString(void)
-{
-    string s;
-    In().ReadString(s);
-    Out().WriteString(s);
-}
-
-void CObjectStreamCopier::CopyStringStore(void)
-{
-    string s;
-    In().ReadStringStore(s);
-    Out().WriteStringStore(s);
 }
 
 void CObjectStreamCopier::CopyByteBlock(void)
@@ -227,168 +203,6 @@ void CObjectStreamCopier::CopyByteBlock(void)
         }
     }
     ib.End();
-}
-
-void CObjectStreamCopier::CopyContainer(const CContainerTypeInfo* containerType)
-{
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameArray, containerType);
-    In().BeginContainer(containerType);
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameArray, containerType);
-    Out().BeginContainer(containerType);
-
-    TTypeInfo elementType = containerType->GetElementType();
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameArrayElement, elementType);
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameArrayElement, elementType);
-
-    while ( In().BeginContainerElement(elementType) ) {
-        Out().BeginContainerElement(elementType);
-
-        CopyObject(elementType);
-
-        Out().EndContainerElement();
-        In().EndContainerElement();
-    }
-
-    END_OBJECT_FRAME_OF(Out());
-    END_OBJECT_FRAME_OF(In());
-    
-    Out().EndContainer();
-    END_OBJECT_FRAME_OF(Out());
-
-    In().EndContainer();
-    END_OBJECT_FRAME_OF(In());
-}
-
-void CObjectStreamCopier::CopyClassMembersRandom(const CClassTypeInfo* classType)
-{
-    const CMembersInfo& members = classType->GetMembers();
-    TMemberIndex lastIndex = members.LastMemberIndex();
-    vector<bool> read(lastIndex + 1);
-    
-    BEGIN_OBJECT_FRAME_OF(In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME_OF(Out(), eFrameClassMember);
-
-    TMemberIndex index;
-    while ( (index = In().BeginClassMember(members)) != kInvalidMember ) {
-        const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
-        const CMemberId& id = memberInfo->GetId();
-        In().TopFrame().SetMemberId(id);
-        Out().TopFrame().SetMemberId(id);
-
-        if ( read[index] ) {
-            In().DuplicatedMember(memberInfo);
-        }
-        else {
-            read[index] = true;
-            Out().BeginClassMember(id);
-
-            CopyObject(memberInfo->GetTypeInfo());
-
-            Out().EndClassMember();
-        }
-        
-        In().EndClassMember();
-    }
-
-    END_OBJECT_FRAME_OF(Out());
-    END_OBJECT_FRAME_OF(In());
-
-    // init all absent members
-    for ( TMemberIndex i = members.FirstMemberIndex();
-          i <= lastIndex; ++i ) {
-        if ( !read[i] ) {
-            const CMemberInfo* memberInfo = classType->GetMemberInfo(i);
-            if ( !memberInfo->Optional() )
-                In().ExpectedMember(memberInfo);
-        }
-    }
-}
-
-void CObjectStreamCopier::CopyClassMembersSequential(const CClassTypeInfo* classType)
-{
-    const CMembersInfo& members = classType->GetMembers();
-    TMemberIndex lastIndex = members.LastMemberIndex();
-    TMemberIndex pos = members.FirstMemberIndex();
-
-    BEGIN_OBJECT_FRAME_OF(In(), eFrameClassMember);
-    BEGIN_OBJECT_FRAME_OF(Out(), eFrameClassMember);
-
-    TMemberIndex index;
-    while ( (index = In().BeginClassMember(members, pos)) != kInvalidMember ) {
-        const CMemberInfo* memberInfo = classType->GetMemberInfo(index);
-        const CMemberId& id = memberInfo->GetId();
-        In().TopFrame().SetMemberId(id);
-        Out().TopFrame().SetMemberId(id);
-
-        for ( TMemberIndex i = pos; i < index; ++i ) {
-            // init missing member
-            const CMemberInfo* memberInfo2 = classType->GetMemberInfo(i);
-            if ( !memberInfo2->Optional() )
-                In().ExpectedMember(memberInfo2);
-        }
-        Out().BeginClassMember(id);
-
-        CopyObject(memberInfo->GetTypeInfo());
-        
-        Out().EndClassMember();
-        In().EndClassMember();
-
-        pos = index + 1;
-    }
-
-    END_OBJECT_FRAME_OF(Out());
-    END_OBJECT_FRAME_OF(In());
-
-    // init all absent members
-    for ( TMemberIndex i = pos; i <= lastIndex; ++i ) {
-        const CMemberInfo* memberInfo2 = classType->GetMemberInfo(i);
-        if ( !memberInfo2->Optional() )
-            In().ExpectedMember(memberInfo2);
-    }
-}
-
-void CObjectStreamCopier::CopyClass(const CClassTypeInfo* classType)
-{
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameClass, classType);
-    In().BeginClass(classType);
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameClass, classType);
-    Out().BeginClass(classType);
-
-    if ( classType->RandomOrder() )
-        CopyClassMembersRandom(classType);
-    else
-        CopyClassMembersSequential(classType);
-
-    Out().EndClass();
-    END_OBJECT_FRAME_OF(Out());
-    In().EndClass();
-    END_OBJECT_FRAME_OF(In());
-}
-
-void CObjectStreamCopier::CopyChoice(const CChoiceTypeInfo* choiceType)
-{
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameChoice, choiceType);
-    TMemberIndex index = In().BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
-        In().ThrowError(CObjectIStream::eFormatError,
-                        "choice variant id expected");
-    const CMemberInfo* variantInfo = choiceType->GetMemberInfo(index);
-    const CMemberId& id = variantInfo->GetId();
-    BEGIN_OBJECT_FRAME_OF2(In(), eFrameChoiceVariant, id);
-
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameChoice, choiceType);
-    BEGIN_OBJECT_FRAME_OF2(Out(), eFrameChoiceVariant, id);
-    Out().BeginChoiceVariant(choiceType, id);
-
-    CopyObject(variantInfo->GetTypeInfo());
-
-    Out().EndChoiceVariant();
-    END_OBJECT_FRAME_OF(Out());
-    END_OBJECT_FRAME_OF(Out());
-
-    In().EndChoiceVariant();
-    END_OBJECT_FRAME_OF(In());
-    END_OBJECT_FRAME_OF(In());
 }
 
 END_NCBI_SCOPE

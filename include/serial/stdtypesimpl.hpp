@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/18 20:00:11  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.4  2000/09/01 13:16:03  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -89,30 +95,65 @@ void ThrowIllegalCall(void);
     SERIAL_ENUMERATE_ALL_INTEGRAL_TYPES \
     SERIAL_ENUMERATE_ALL_FLOAT_TYPES
 
+template<typename T>
+class CPrimitiveTypeFunctions
+{
+public:
+    static void Read(CObjectIStream& in,
+                     TTypeInfo , TObjectPtr objectPtr)
+        {
+            in.ReadStd(CTypeConverter<T>::Get(objectPtr));
+        }
+    static void Write(CObjectOStream& out,
+                      TTypeInfo , TConstObjectPtr objectPtr)
+        {
+            out.WriteStd(CTypeConverter<T>::Get(objectPtr));
+        }
+    static void Skip(CObjectIStream& in, TTypeInfo )
+        {
+            T data;
+            in.ReadStd(data);
+        }
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            T data;
+            copier.In().ReadStd(data);
+            copier.Out().WriteStd(data);
+        }
+    static TObjectPtr Create(TTypeInfo )
+        {
+            return new T();
+        }
+    static TObjectPtr CreateZero(TTypeInfo )
+        {
+            return new T(0);
+        }
+};
+
 // template to standard C types with default value 0 (int, double, char* etc.)
 template<typename T>
 class CPrimitiveTypeInfoImpl : public CPrimitiveTypeInfo
 {
+    typedef CPrimitiveTypeInfo CParent;
 public:
     typedef T TObjectType;
-    typedef CPrimitiveTypeInfo::EValueType EValueType;
+    CPrimitiveTypeInfoImpl(EPrimitiveValueType valueType)
+        : CParent(sizeof(TObjectType), valueType)
+        {
+            SetCreateFunction(&CPrimitiveTypeFunctions<T>::CreateZero);
+            SetReadFunction(&CPrimitiveTypeFunctions<T>::Read);
+            SetWriteFunction(&CPrimitiveTypeFunctions<T>::Write);
+            SetSkipFunction(&CPrimitiveTypeFunctions<T>::Skip);
+            SetCopyFunction(&CPrimitiveTypeFunctions<T>::Copy);
+        }
 
     static TObjectType& Get(TObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
     static const TObjectType& Get(TConstObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType(0);
+            return CTypeConverter<TObjectType>::Get(object);
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const
@@ -134,32 +175,16 @@ public:
         {
             Get(dst) = Get(src);
         }
-
-protected:
-    virtual void SkipData(CObjectIStream& in) const
-        {
-            in.SkipStd(TObjectType(0));
-        }
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            in.ReadStd(Get(object));
-        }
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            out.WriteStd(Get(object));
-        }
-    virtual void CopyData(CObjectStreamCopier& copier) const
-        {
-            TObjectType data;
-            copier.In().ReadStd(data);
-            copier.Out().WriteStd(data);
-        }
 };
 
 class CPrimitiveTypeInfoBool : public CPrimitiveTypeInfoImpl<bool>
 {
+    typedef CPrimitiveTypeInfoImpl<bool> CParent;
 public:
-    virtual EValueType GetValueType(void) const;
+    CPrimitiveTypeInfoBool(void)
+        : CParent(ePrimitiveValueBool)
+        {
+        }
 
     virtual bool GetValueBool(TConstObjectPtr object) const;
     virtual void SetValueBool(TObjectPtr object, bool value) const;
@@ -167,8 +192,12 @@ public:
 
 class CPrimitiveTypeInfoChar : public CPrimitiveTypeInfoImpl<char>
 {
+    typedef CPrimitiveTypeInfoImpl<char> CParent;
 public:
-    virtual EValueType GetValueType(void) const;
+    CPrimitiveTypeInfoChar(void)
+        : CParent(ePrimitiveValueChar)
+        {
+        }
 
     virtual char GetValueChar(TConstObjectPtr object) const;
     virtual void SetValueChar(TObjectPtr object, char value) const;
@@ -177,7 +206,7 @@ public:
 template<typename T>
 class CPrimitiveTypeInfoLong : public CPrimitiveTypeInfoImpl<T>
 {
-    typedef CPrimitiveTypeInfo::EValueType EValueType;
+    typedef CPrimitiveTypeInfoImpl<T> CParent;
 
     static bool x_IsSigned(void)
         {
@@ -189,9 +218,9 @@ class CPrimitiveTypeInfoLong : public CPrimitiveTypeInfoImpl<T>
                 ThrowIntegerOverflow();
         }
 public:
-    virtual EValueType GetValueType(void) const
+    CPrimitiveTypeInfoLong(void)
+        : CParent(ePrimitiveValueInteger)
         {
-            return eInteger;
         }
     virtual bool IsSigned(void) const
         {
@@ -252,13 +281,13 @@ public:
 template<typename T>
 class CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfoImpl<T>
 {
+    typedef CPrimitiveTypeInfoImpl<T> CParent;
 public:
     typedef T TObjectType;
-    typedef CPrimitiveTypeInfo::EValueType EValueType;
 
-    virtual EValueType GetValueType(void) const
+    CPrimitiveTypeInfoDouble(void)
+        : CParent(ePrimitiveValueReal)
         {
-            return eReal;
         }
     virtual double GetValueDouble(TConstObjectPtr objectPtr) const
         {
@@ -273,47 +302,40 @@ public:
 // CTypeInfo for C++ STL type string
 class CPrimitiveTypeInfoString : public CPrimitiveTypeInfo
 {
+    typedef CPrimitiveTypeInfo CParent;
 public:
     typedef string TObjectType;
 
-    virtual EValueType GetValueType(void) const;
+    CPrimitiveTypeInfoString(void);
 
     static TObjectType& Get(TObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
     static const TObjectType& Get(TConstObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
 
-    virtual size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
-    
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
     virtual void SetDefault(TObjectPtr dst) const;
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
-    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const;
-
-protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    virtual void CopyData(CObjectStreamCopier& copier) const;
+    virtual void GetValueString(TConstObjectPtr objectPtr,
+                                string& value) const;
+    virtual void SetValueString(TObjectPtr objectPtr,
+                                const string& value) const;
 };
 
 template<typename T>
 class CPrimitiveTypeInfoCharPtr : public CPrimitiveTypeInfoImpl<T>
 {
+    typedef CPrimitiveTypeInfoImpl<T> CParent;
 public:
-    typedef CPrimitiveTypeInfo::EValueType EValueType;
-
-    virtual EValueType GetValueType(void) const
+    CPrimitiveTypeInfoCharPtr(void)
+        : CParent(ePrimitiveValueString)
         {
-            return eString;
         }
 
     static void Reset(TObjectPtr dst)
@@ -341,11 +363,13 @@ public:
                 Get(dst) = NotNull(strdup(value));
         }
 
-    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const
+    virtual void GetValueString(TConstObjectPtr objectPtr,
+                                string& value) const
         {
             value = Get(objectPtr);
         }
-    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const
+    virtual void SetValueString(TObjectPtr objectPtr,
+                                const string& value) const
         {
             Get(objectPtr) = NotNull(strdup(value.c_str()));
         }
@@ -353,44 +377,104 @@ public:
 
 class CStringStoreTypeInfo : public CPrimitiveTypeInfoString
 {
-protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    virtual void CopyData(CObjectStreamCopier& copier) const;
+public:
+    CStringStoreTypeInfo(void);
 };
 
 class CNullBoolTypeInfo : public CPrimitiveTypeInfoBool
 {
-protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    virtual void CopyData(CObjectStreamCopier& copier) const;
+public:
+    CNullBoolTypeInfo(void);
+};
+
+class COctetStringTypeInfoBase : public CPrimitiveTypeInfo
+{
+    typedef CPrimitiveTypeInfo CParent;
+public:
+    COctetStringTypeInfoBase(size_t size);
+
+private:
+    static void SkipByteBlock(CObjectIStream& in, TTypeInfo objectType);
+    static void CopyByteBlock(CObjectStreamCopier& copier,
+                              TTypeInfo objectType);
 };
 
 template<typename Char>
-class CCharVectorTypeInfoImpl : public CPrimitiveTypeInfo
+class CCharVectorFunctions
 {
 public:
     typedef vector<Char> TObjectType;
     typedef Char TChar;
-    typedef CPrimitiveTypeInfo::EValueType EValueType;
 
-    virtual EValueType GetValueType(void) const
+    static char* ToChar(Char* p)
+        { return reinterpret_cast<char*>(p); }
+    static const char* ToChar(const Char* p)
+        { return reinterpret_cast<const char*>(p); }
+    static const Char* ToTChar(const char* p)
+        { return reinterpret_cast<const Char*>(p); }
+
+    static void Read(CObjectIStream& in,
+                     TTypeInfo , TObjectPtr objectPtr)
         {
-            return eOctetString;
+            TObjectType& o = CTypeConverter<TObjectType>::Get(objectPtr);
+            CObjectIStream::ByteBlock block(in);
+            if ( block.KnownLength() ) {
+                size_t length = block.GetExpectedLength();
+                o.resize(length);
+                block.Read(ToChar(&o.front()), length, true);
+            }
+            else {
+                // length is unknown -> copy via buffer
+                Char buffer[4096];
+                size_t count;
+                o.clear();
+                while ( (count = block.Read(ToChar(buffer),
+                                            sizeof(buffer))) != 0 ) {
+                    o.insert(o.end(), buffer, buffer + count);
+                }
+            }
+            block.End();
+        }
+    static void Write(CObjectOStream& out,
+                      TTypeInfo , TConstObjectPtr objectPtr)
+        {
+            const TObjectType& o = CTypeConverter<TObjectType>::Get(objectPtr);
+            size_t length = o.size();
+            CObjectOStream::ByteBlock block(out, length);
+            if ( length > 0 )
+                block.Write(ToChar(&o.front()), length);
+        }
+    static TObjectPtr Create(TTypeInfo )
+        {
+            return new TObjectType();
+        }
+};
+
+template<typename Char>
+class CCharVectorTypeInfoImpl : public COctetStringTypeInfoBase
+{
+    typedef COctetStringTypeInfoBase CParent;
+public:
+    typedef vector<Char> TObjectType;
+    typedef Char TChar;
+
+    CCharVectorTypeInfoImpl(void)
+        : CParent(sizeof(TObjectType))
+        {
+            SetCreateFunction(&CCharVectorFunctions<Char>::Create);
+            SetReadFunction(&CCharVectorFunctions<Char>::Read);
+            SetWriteFunction(&CCharVectorFunctions<Char>::Write);
         }
 
 private:
     // helper methods
     static TObjectType& Get(TObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
     static const TObjectType& Get(TConstObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
 
     static char* ToChar(Char* p)
@@ -401,16 +485,6 @@ private:
         { return reinterpret_cast<const Char*>(p); }
 
 public:
-    virtual size_t GetSize(void) const
-        {
-            return CType<TObjectType>::GetSize();
-        }
-
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType();
-        }
-
     virtual bool IsDefault(TConstObjectPtr object) const
         {
             return Get(object).empty();
@@ -446,46 +520,6 @@ public:
             obj.clear();
             const Char* buffer = ToTChar(&value.front());
             obj.insert(obj.end(), buffer, buffer + value.size());
-        }
-
-protected:
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            const TObjectType& o = Get(object);
-            size_t length = o.size();
-            CObjectOStream::ByteBlock block(out, length);
-            if ( length > 0 )
-                block.Write(ToChar(&o.front()), length);
-        }
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            TObjectType& o = Get(object);
-            CObjectIStream::ByteBlock block(in);
-            if ( block.KnownLength() ) {
-                size_t length = block.GetExpectedLength();
-                o.resize(length);
-                block.Read(ToChar(&o.front()), length, true);
-            }
-            else {
-                // length is unknown -> copy via buffer
-                Char buffer[4096];
-                size_t count;
-                o.clear();
-                while ( (count = block.Read(ToChar(buffer),
-                                            sizeof(buffer))) != 0 ) {
-                    o.insert(o.end(), buffer, buffer + count);
-                }
-            }
-            block.End();
-        }
-    virtual void SkipData(CObjectIStream& in) const
-        {
-            in.SkipByteBlock();
-        }
-
-    virtual void CopyData(CObjectStreamCopier& copier) const
-        {
-            copier.CopyByteBlock();
         }
 };
 

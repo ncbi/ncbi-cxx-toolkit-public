@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/18 20:00:25  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.12  2000/09/01 13:16:20  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -142,113 +148,217 @@ void Read(CObjectIStream& in, TObjectPtr object, const CTypeRef& type)
 }
 
 // add member functions
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfo typeInfo)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member, const CTypeRef& typeRef)
 {
-    return info.AddMember(name, member, typeInfo);
-}
-
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          const CTypeRef& typeRef)
-{
-    return info.AddMember(name, member, typeRef);
+    return info->AddMember(name, member, typeRef);
 }
 
 // one argument:
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter f)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member, TTypeInfo typeInfo)
 {
-    return info.AddMember(name, member, CTypeRef(f));
+    return AddMember(info, name, member, CTypeRef(typeInfo));
+}
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member, TTypeInfoGetter f)
+{
+    return AddMember(info, name, member, CTypeRef(f));
 }
 
 // two arguments:
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfo t)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f, TTypeInfo t)
 {
-    return info.AddMember(name, member, CTypeRef(f, t));
+    return AddMember(info, name, member, CTypeRef(f, t));
 }
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfoGetter f1)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f, TTypeInfoGetter f1)
 {
-    return info.AddMember(name, member, CTypeRef(f, f1));
+    return AddMember(info, name, member, CTypeRef(f, f1));
 }
 
 // three arguments:
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1)
 {
-    return info.AddMember(name, member, CTypeRef(f, CTypeRef(f1, t1)));
+    return AddMember(info, name, member, CTypeRef(f, CTypeRef(f1, t1)));
 }
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfoGetter f11)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter1 f,
+                       TTypeInfoGetter1 f1, TTypeInfoGetter f11)
 {
-    return info.AddMember(name, member, CTypeRef(f, CTypeRef(f1, f11)));
+    return AddMember(info, name, member, CTypeRef(f, CTypeRef(f1, f11)));
 }
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2)
 {
-    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, t2)));
+    return AddMember(info, name, member,
+                     CTypeRef(new CGet2TypeInfoSource(f, t1, t2)));
 }
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2)
 {
-    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, t2)));
+    return AddMember(info, name, member,
+                     CTypeRef(new CGet2TypeInfoSource(f, f1, t2)));
 }
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2)
 {
-    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, t1, f2)));
+    return AddMember(info, name, member,
+                     CTypeRef(new CGet2TypeInfoSource(f, t1, f2)));
 }
 
-CMemberInfo*
-AddMember(CMembersInfo& info, const char* name, const void* member,
-          TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfoGetter f2)
+CMemberInfo* AddMember(CClassTypeInfo* info, const char* name,
+                       const void* member,
+                       TTypeInfoGetter2 f,
+                       TTypeInfoGetter f1, TTypeInfoGetter f2)
 {
-    return info.AddMember(name, member, CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
+    return AddMember(info, name, member,
+                     CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
 }
+
+// add member functions
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member, const CTypeRef& typeRef)
+{
+    return info->AddVariant(name, member, typeRef);
+}
+
+// one argument:
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member, TTypeInfo typeInfo)
+{
+    return AddVariant(info, name, member, CTypeRef(typeInfo));
+}
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member, TTypeInfoGetter f)
+{
+    return AddVariant(info, name, member, CTypeRef(f));
+}
+
+// two arguments:
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f, TTypeInfo t)
+{
+    return AddVariant(info, name, member, CTypeRef(f, t));
+}
+
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f, TTypeInfoGetter f1)
+{
+    return AddVariant(info, name, member, CTypeRef(f, f1));
+}
+
+// three arguments:
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f, TTypeInfoGetter1 f1, TTypeInfo t1)
+{
+    return AddVariant(info, name, member, CTypeRef(f, CTypeRef(f1, t1)));
+}
+
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter1 f,
+                         TTypeInfoGetter1 f1, TTypeInfoGetter f11)
+{
+    return AddVariant(info, name, member, CTypeRef(f, CTypeRef(f1, f11)));
+}
+
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfo t2)
+{
+    return AddVariant(info, name, member,
+                      CTypeRef(new CGet2TypeInfoSource(f, t1, t2)));
+}
+
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f, TTypeInfoGetter f1, TTypeInfo t2)
+{
+    return AddVariant(info, name, member,
+                      CTypeRef(new CGet2TypeInfoSource(f, f1, t2)));
+}
+
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f, TTypeInfo t1, TTypeInfoGetter f2)
+{
+    return AddVariant(info, name, member,
+                      CTypeRef(new CGet2TypeInfoSource(f, t1, f2)));
+}
+
+CVariantInfo* AddVariant(CChoiceTypeInfo* info, const char* name,
+                         const void* member,
+                         TTypeInfoGetter2 f,
+                         TTypeInfoGetter f1, TTypeInfoGetter f2)
+{
+    return AddVariant(info, name, member,
+                      CTypeRef(new CGet2TypeInfoSource(f, f1, f2)));
+}
+
+
 
 CChoiceTypeInfo*
 CClassInfoHelperBase::CreateChoiceInfo(const char* name, size_t size,
-                                       const type_info& ti,
+                                       const void* nonCObject,
                                        TCreateFunction createFunc,
+                                       const type_info& ti,
                                        TWhichFunction whichFunc,
                                        TSelectFunction selectFunc,
                                        TResetFunction resetFunc)
 {
-    return new CChoiceTypeInfo(name, size, ti, createFunc,
-                               whichFunc, selectFunc, resetFunc);
+    return new CChoiceTypeInfo(size, name, nonCObject, createFunc,
+                               ti, whichFunc, selectFunc, resetFunc);
 }
 
-CClassTypeInfo*
-CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
-                                      const type_info& id)
+CChoiceTypeInfo*
+CClassInfoHelperBase::CreateChoiceInfo(const char* name, size_t size,
+                                       const CObject* cObject,
+                                       TCreateFunction createFunc,
+                                       const type_info& ti,
+                                       TWhichFunction whichFunc,
+                                       TSelectFunction selectFunc,
+                                       TResetFunction resetFunc)
 {
-    return new CClassTypeInfo(name, id, size);
+    return new CChoiceTypeInfo(size, name, cObject, createFunc,
+                               ti, whichFunc, selectFunc, resetFunc);
 }
 
 CClassTypeInfo*
 CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
+                                      const void* nonCObject,
+                                      TCreateFunction createFunc,
                                       const type_info& id,
-                                      TGetTypeIdFunction func)
+                                      TGetTypeIdFunction idFunc)
 {
-    CClassTypeInfo* info = new CClassTypeInfo(name, id, size);
-    info->SetGetTypeIdFunction(func);
-    return info;
+    return new CClassTypeInfo(size, name, nonCObject, createFunc, id, idFunc);
+}
+
+CClassTypeInfo*
+CClassInfoHelperBase::CreateClassInfo(const char* name, size_t size,
+                                      const CObject* cObject,
+                                      TCreateFunction createFunc,
+                                      const type_info& id,
+                                      TGetTypeIdFunction idFunc)
+{
+    return new CClassTypeInfo(size, name, cObject, createFunc, id, idFunc);
 }
 
 #if HAVE_NCBI_C
@@ -260,46 +370,49 @@ static TObjectPtr CreateAsnStruct(TTypeInfo info)
     return object;
 }
 
+static const type_info* GetNullId(TConstObjectPtr )
+{
+    return 0;
+}
+
 CClassTypeInfo* CClassInfoHelperBase::CreateAsnStructInfo(const char* name,
                                                           size_t size,
                                                           const type_info& id)
 {
-    CClassTypeInfo* info = CreateClassInfo(name, size, id);
-    info->SetCreateFunction(&CreateAsnStruct);
-    return info;
+    return CreateClassInfo(name, size,
+                           TConstObjectPtr(0), &CreateAsnStruct,
+                           id, &GetNullId);
 }
 
-static TMemberIndex WhichAsn(TConstObjectPtr object)
+static TMemberIndex WhichAsn(const CChoiceTypeInfo* /*choiceType*/,
+                             TConstObjectPtr choicePtr)
 {
-    const valnode* node = static_cast<const valnode*>(object);
+    const valnode* node = static_cast<const valnode*>(choicePtr);
     return node->choice + (kEmptyChoice - 0);
 }
 
-static void SelectAsn(TObjectPtr object, TMemberIndex index)
+static void SelectAsn(const CChoiceTypeInfo* /*choiceType*/,
+                      TObjectPtr choicePtr,
+                      TMemberIndex index)
 {
-    valnode* node = static_cast<valnode*>(object);
+    valnode* node = static_cast<valnode*>(choicePtr);
     node->choice = index - (kEmptyChoice - 0);
+}
+
+static void ResetAsn(const CChoiceTypeInfo* /*choiceType*/,
+                     TObjectPtr choicePtr)
+{
+    valnode* node = static_cast<valnode*>(choicePtr);
+    node->choice = 0;
 }
 
 CChoiceTypeInfo* CClassInfoHelperBase::CreateAsnChoiceInfo(const char* name)
 {
-    return CreateChoiceInfo(name, sizeof(valnode), typeid(void),
-                            &CreateAsnStruct,
-                            &WhichAsn, &SelectAsn);
+    return CreateChoiceInfo(name, sizeof(valnode),
+                            TConstObjectPtr(0), &CreateAsnStruct, typeid(void),
+                            &WhichAsn, &SelectAsn, &ResetAsn);
 }
 #endif
-
-void CClassInfoHelperBase::SetCreateFunction(CClassTypeInfo* info,
-                                             TCreateFunction func)
-{
-    info->SetCreateFunction(func);
-}
-
-void CClassInfoHelperBase::UpdateCObject(CClassTypeInfoBase* info,
-                                         const CObject* /*object*/)
-{
-    info->SetIsCObject();
-}
 
 void SetPreWrite(CClassTypeInfo* info, TPreWriteFunction func)
 {

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/09/18 20:00:20  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.20  2000/09/01 13:16:14  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -127,33 +133,17 @@
 #include <serial/objcopy.hpp>
 #include <serial/typemap.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/typeinfoimpl.hpp>
 
 BEGIN_NCBI_SCOPE
 
 CChoicePointerTypeInfo::CChoicePointerTypeInfo(TTypeInfo pointerType)
-    : CParent("", pointerType->GetSize(), typeid(void), 0, 0, 0, 0)
+    : CParent(pointerType->GetSize(), "",
+              TConstObjectPtr(0), &CVoidTypeFunctions::Create, typeid(void),
+              &GetPtrIndex, &SetPtrIndex, &ResetPtrIndex)
 {
+    m_GetDataFunction = &GetPtrData;
     SetPointerType(pointerType);
-}
-
-#ifdef TYPENAME
-CChoicePointerTypeInfo::CChoicePointerTypeInfo(const string& name,
-                                               TTypeInfo pointerType)
-    : CParent(name, pointerType->GetSize(), typeid(void), 0, 0, 0, 0)
-{
-    SetPointerType(pointerType);
-}
-
-CChoicePointerTypeInfo::CChoicePointerTypeInfo(const char* name,
-                                               TTypeInfo pointerType)
-    : CParent(name, pointerType->GetSize(), typeid(void), 0, 0, 0, 0)
-{
-    SetPointerType(pointerType);
-}
-#endif
-
-CChoicePointerTypeInfo::~CChoicePointerTypeInfo(void)
-{
 }
 
 static CTypeInfoMap<CChoicePointerTypeInfo> CChoicePointerTypeInfo_map;
@@ -167,19 +157,18 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
 {
     m_NullPointerIndex = kEmptyChoice;
 
-    const CPointerTypeInfo* pointerType =
-        dynamic_cast<const CPointerTypeInfo*>(base);
-    if ( !pointerType )
+    if ( base->GetTypeFamily() != eTypeFamilyPointer )
         THROW1_TRACE(runtime_error,
                      "invalid argument: must be CPointerTypeInfo");
+    const CPointerTypeInfo* pointerType =
+        CTypeConverter<CPointerTypeInfo>::SafeCast(base);
     m_PointerTypeInfo = pointerType;
 
-    const CClassTypeInfo* classType =
-        dynamic_cast<const CClassTypeInfo*>(pointerType->GetPointedTypeInfo());
-    if ( !classType )
+    if ( pointerType->GetPointedType()->GetTypeFamily() != eTypeFamilyClass )
         THROW1_TRACE(runtime_error,
                      "invalid argument: data must be CClassTypeInfo");
-
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(pointerType->GetPointedType());
     const CClassTypeInfoBase::TSubClasses* subclasses =
         classType->SubClasses();
     if ( !subclasses )
@@ -194,9 +183,8 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
             // null
             variantType = nullTypeInfo;
         }
-        GetMembers().AddMember(new CMemberInfo(i->first, 0,
-                                               variantType))->SetPointer();
-        TMemberIndex index = GetMembers().LastMemberIndex();
+        AddVariant(i->first, 0, variantType)->SetPointer();
+        TMemberIndex index = GetVariants().LastIndex();
         if ( variantType == nullTypeInfo ) {
             if ( m_NullPointerIndex == kEmptyChoice )
                 m_NullPointerIndex = index;
@@ -205,8 +193,7 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
             }
         }
         else {
-            const type_info* id =
-                &static_cast<const CClassTypeInfo*>(variantType)->GetId();
+            const type_info* id = &CTypeConverter<CClassTypeInfo>::SafeCast(variantType)->GetId();
             if ( !m_VariantsByType.insert(TVariantsByType::value_type(id, index)).second ) {
                 THROW1_TRACE(runtime_error,
                              "conflict subclasses: "+variantType->GetName());
@@ -215,17 +202,18 @@ void CChoicePointerTypeInfo::SetPointerType(TTypeInfo base)
     }
 }
 
-TMemberIndex CChoicePointerTypeInfo::GetIndex(TConstObjectPtr object) const
+TMemberIndex CChoicePointerTypeInfo::GetPtrIndex(const CChoiceTypeInfo* choiceType, TConstObjectPtr choicePtr)
 {
-    const CPointerTypeInfo* pointerType = m_PointerTypeInfo;
-    TConstObjectPtr classPtr = pointerType->GetObjectPointer(object);
+    const CChoicePointerTypeInfo* choicePtrType = 
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+
+    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
+    TConstObjectPtr classPtr = pointerType->GetObjectPointer(choicePtr);
     if ( !classPtr )
-        return m_NullPointerIndex;
-    // pointed type info already checked for CClassTypeInfo so we'll use
-    // static_cast<>
+        return choicePtrType->m_NullPointerIndex;
     const CClassTypeInfo* classType =
-        static_cast<const CClassTypeInfo*>(pointerType->GetPointedTypeInfo());
-    const TVariantsByType& variants = m_VariantsByType;
+        CTypeConverter<CClassTypeInfo>::SafeCast(pointerType->GetPointedType());
+    const TVariantsByType& variants = choicePtrType->m_VariantsByType;
     TVariantsByType::const_iterator v =
         variants.find(classType->GetCPlusPlusTypeInfo(classPtr));
     if ( v == variants.end() )
@@ -234,71 +222,88 @@ TMemberIndex CChoicePointerTypeInfo::GetIndex(TConstObjectPtr object) const
     return v->second;
 }
 
-void CChoicePointerTypeInfo::ResetIndex(TObjectPtr object) const
+void CChoicePointerTypeInfo::ResetPtrIndex(const CChoiceTypeInfo* choiceType,
+                                           TObjectPtr choicePtr)
 {
-    m_PointerTypeInfo->SetObjectPointer(object, 0);
+    const CChoicePointerTypeInfo* choicePtrType = 
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+
+    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
+    pointerType->SetObjectPointer(choicePtr, 0);
 }
 
-void CChoicePointerTypeInfo::SetIndex(TObjectPtr object,
-                                      TMemberIndex index) const
+void CChoicePointerTypeInfo::SetPtrIndex(const CChoiceTypeInfo* choiceType,
+                                         TObjectPtr choicePtr,
+                                         TMemberIndex index)
 {
-    _ASSERT(!m_PointerTypeInfo->GetObjectPointer(object));
-    const CMemberInfo* memberInfo = GetMemberInfo(index);
-    m_PointerTypeInfo->SetObjectPointer(object,
-                                        memberInfo->GetTypeInfo()->Create());
+    const CChoicePointerTypeInfo* choicePtrType = 
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+
+    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
+    _ASSERT(!pointerType->GetObjectPointer(choicePtr));
+    const CVariantInfo* variantInfo = choicePtrType->GetVariantInfo(index);
+    pointerType->SetObjectPointer(choicePtr,
+                                  variantInfo->GetTypeInfo()->Create());
 }
 
-TObjectPtr CChoicePointerTypeInfo::x_GetData(TObjectPtr object,
-                                             TMemberIndex /*index*/) const
+TObjectPtr CChoicePointerTypeInfo::GetPtrData(const CChoiceTypeInfo* choiceType,
+                                              TObjectPtr choicePtr,
+                                              TMemberIndex /*index*/)
 {
-    return m_PointerTypeInfo->GetObjectPointer(object);
+    const CChoicePointerTypeInfo* choicePtrType = 
+        CTypeConverter<CChoicePointerTypeInfo>::SafeCast(choiceType);
+
+    const CPointerTypeInfo* pointerType = choicePtrType->m_PointerTypeInfo;
+    return pointerType->GetObjectPointer(choicePtr);
 }
+
+class CNullFunctions
+{
+public:
+    static TObjectPtr Create(TTypeInfo )
+        {
+            return 0;
+        }
+    static void Read(CObjectIStream& in, TTypeInfo ,
+                     TObjectPtr objectPtr)
+        {
+            if ( objectPtr != 0 ) {
+                THROW1_TRACE(runtime_error, "non null value");
+            }
+            in.ReadNull();
+        }
+    static void Write(CObjectOStream& out, TTypeInfo ,
+                      TConstObjectPtr objectPtr)
+        {
+            if ( objectPtr != 0 ) {
+                THROW1_TRACE(runtime_error, "non null value");
+            }
+            out.WriteNull();
+        }
+    static void Copy(CObjectStreamCopier& copier, TTypeInfo )
+        {
+            copier.In().ReadNull();
+            copier.Out().WriteNull();
+        }
+    static void Skip(CObjectIStream& in, TTypeInfo )
+        {
+            in.SkipNull();
+        }
+};
 
 CNullTypeInfo::CNullTypeInfo(void)
 {
-}
-
-CNullTypeInfo::~CNullTypeInfo(void)
-{
-}
-
-TObjectPtr CNullTypeInfo::Create(void) const
-{
-    return 0;
+    SetCreateFunction(&CNullFunctions::Create);
+    SetReadFunction(&CNullFunctions::Read);
+    SetWriteFunction(&CNullFunctions::Write);
+    SetCopyFunction(&CNullFunctions::Copy);
+    SetSkipFunction(&CNullFunctions::Skip);
 }
 
 TTypeInfo CNullTypeInfo::GetTypeInfo(void)
 {
     TTypeInfo typeInfo = new CNullTypeInfo();
     return typeInfo;
-}
-
-void CNullTypeInfo::WriteData(CObjectOStream& out,
-                              TConstObjectPtr object) const
-{
-    if ( object != 0 ) {
-        THROW1_TRACE(runtime_error, "non null value");
-    }
-    out.WriteNull();
-}
-
-void CNullTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
-{
-    if ( object != 0 ) {
-        THROW1_TRACE(runtime_error, "non null value");
-    }
-    in.ReadNull();
-}
-
-void CNullTypeInfo::SkipData(CObjectIStream& in) const
-{
-    in.SkipNull();
-}
-
-void CNullTypeInfo::CopyData(CObjectStreamCopier& copier) const
-{
-    copier.In().ReadNull();
-    copier.Out().WriteNull();
 }
 
 END_NCBI_SCOPE

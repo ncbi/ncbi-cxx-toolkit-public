@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/09/18 20:00:04  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.6  2000/09/01 13:16:00  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -81,7 +87,7 @@ TTypeInfo CObjectTypeInfo::GetTypeInfo(void) const
 }
 
 inline
-CTypeInfo::ETypeFamily CObjectTypeInfo::GetTypeFamily(void) const
+ETypeFamily CObjectTypeInfo::GetTypeFamily(void) const
 {
     return GetTypeInfo()->GetTypeFamily();
 }
@@ -101,43 +107,31 @@ void CObjectTypeInfo::SetTypeInfo(TTypeInfo typeinfo)
 inline
 const CPrimitiveTypeInfo* CObjectTypeInfo::GetPrimitiveTypeInfo(void) const
 {
-    _ASSERT(dynamic_cast<const CPrimitiveTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CPrimitiveTypeInfo*>(GetTypeInfo());
-}
-
-inline
-const CClassTypeInfoBase* CObjectTypeInfo::GetClassTypeInfoBase(void) const
-{
-    _ASSERT(dynamic_cast<const CClassTypeInfoBase*>(GetTypeInfo()));
-    return static_cast<const CClassTypeInfoBase*>(GetTypeInfo());
+    return CTypeConverter<CPrimitiveTypeInfo>::SafeCast(GetTypeInfo());
 }
 
 inline
 const CClassTypeInfo* CObjectTypeInfo::GetClassTypeInfo(void) const
 {
-    _ASSERT(dynamic_cast<const CClassTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CClassTypeInfo*>(GetTypeInfo());
+    return CTypeConverter<CClassTypeInfo>::SafeCast(GetTypeInfo());
 }
 
 inline
 const CChoiceTypeInfo* CObjectTypeInfo::GetChoiceTypeInfo(void) const
 {
-    _ASSERT(dynamic_cast<const CChoiceTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CChoiceTypeInfo*>(GetTypeInfo());
+    return CTypeConverter<CChoiceTypeInfo>::SafeCast(GetTypeInfo());
 }
 
 inline
 const CContainerTypeInfo* CObjectTypeInfo::GetContainerTypeInfo(void) const
 {
-    _ASSERT(dynamic_cast<const CContainerTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CContainerTypeInfo*>(GetTypeInfo());
+    return CTypeConverter<CContainerTypeInfo>::SafeCast(GetTypeInfo());
 }
 
 inline
 const CPointerTypeInfo* CObjectTypeInfo::GetPointerTypeInfo(void) const
 {
-    _ASSERT(dynamic_cast<const CPointerTypeInfo*>(GetTypeInfo()));
-    return static_cast<const CPointerTypeInfo*>(GetTypeInfo());
+    return CTypeConverter<CPointerTypeInfo>::SafeCast(GetTypeInfo());
 }
 
 inline
@@ -161,10 +155,10 @@ CObjectInfo CObjectInfo::GetPointedObject(void) const
 
 // primitive interface
 inline
-CPrimitiveTypeInfo::EValueType
+EPrimitiveValueType
 CObjectTypeInfo::GetPrimitiveValueType(void) const
 {
-    return GetPrimitiveTypeInfo()->GetValueType();
+    return GetPrimitiveTypeInfo()->GetPrimitiveValueType();
 }
 
 inline
@@ -176,13 +170,25 @@ bool CObjectTypeInfo::IsPrimitiveValueSigned(void) const
 inline
 TMemberIndex CObjectTypeInfo::FindMemberIndex(const string& name) const
 {
-    return GetClassTypeInfoBase()->GetMembers().FindMember(name);
+    return GetClassTypeInfo()->GetMembers().Find(name);
 }
 
 inline
 TMemberIndex CObjectTypeInfo::FindMemberIndex(int tag) const
 {
-    return GetClassTypeInfoBase()->GetMembers().FindMember(tag);
+    return GetClassTypeInfo()->GetMembers().Find(tag);
+}
+
+inline
+TMemberIndex CObjectTypeInfo::FindVariantIndex(const string& name) const
+{
+    return GetChoiceTypeInfo()->GetVariants().Find(name);
+}
+
+inline
+TMemberIndex CObjectTypeInfo::FindVariantIndex(int tag) const
+{
+    return GetChoiceTypeInfo()->GetVariants().Find(tag);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -238,6 +244,12 @@ inline
 CConstObjectInfo::operator bool(void) const
 {
     return Valid();
+}
+
+inline
+bool CConstObjectInfo::operator!(void) const
+{
+    return !Valid();
 }
 
 inline
@@ -479,6 +491,12 @@ CConstObjectInfoEI::operator bool(void) const
 }
 
 inline
+bool CConstObjectInfoEI::operator!(void) const
+{
+    return !Valid();
+}
+
+inline
 void CConstObjectInfoEI::Next(void)
 {
     _ASSERT(CheckValid());
@@ -501,6 +519,13 @@ CConstObjectInfo CConstObjectInfoEI::GetElement(void) const
 
 inline
 CConstObjectInfo CConstObjectInfoEI::operator*(void) const
+{
+    _ASSERT(CheckValid());
+    return m_Iterator.Get();
+}
+
+inline
+CConstObjectInfo CConstObjectInfoEI::operator->(void) const
 {
     _ASSERT(CheckValid());
     return m_Iterator.Get();
@@ -536,6 +561,12 @@ CObjectInfoEI::operator bool(void) const
 }
 
 inline
+bool CObjectInfoEI::operator!(void) const
+{
+    return !Valid();
+}
+
+inline
 void CObjectInfoEI::Next(void)
 {
     _ASSERT(CheckValid());
@@ -565,6 +596,13 @@ CObjectInfo CObjectInfoEI::operator*(void) const
 }
 
 inline
+CObjectInfo CObjectInfoEI::operator->(void) const
+{
+    _ASSERT(CheckValid());
+    return m_Iterator.Get();
+}
+
+inline
 void CObjectInfoEI::Erase(void)
 {
     _ASSERT(CheckValid());
@@ -576,7 +614,7 @@ void CObjectInfoEI::Erase(void)
 
 inline
 CObjectTypeInfoMI::CObjectTypeInfoMI(void)
-    : m_ClassTypeInfoBase(0),
+    : m_ClassTypeInfo(0),
       m_MemberIndex(kFirstMemberIndex),
       m_LastMemberIndex(kInvalidMember)
 {
@@ -586,11 +624,11 @@ CObjectTypeInfoMI::CObjectTypeInfoMI(void)
 inline
 void CObjectTypeInfoMI::Init(const CObjectTypeInfo& info)
 {
-    const CClassTypeInfoBase* classType =
-        m_ClassTypeInfoBase = info.GetClassTypeInfoBase();
+    const CClassTypeInfo* classType =
+        m_ClassTypeInfo = info.GetClassTypeInfo();
     const CMembersInfo& members = classType->GetMembers();
-    m_MemberIndex = members.FirstMemberIndex();
-    m_LastMemberIndex = members.LastMemberIndex();
+    m_MemberIndex = members.FirstIndex();
+    m_LastMemberIndex = members.LastIndex();
     _DEBUG_ARG(m_LastCall = eNone);
 }
 
@@ -598,11 +636,11 @@ inline
 void CObjectTypeInfoMI::Init(const CObjectTypeInfo& info,
                                             TMemberIndex index)
 {
-    const CClassTypeInfoBase* classType =
-        m_ClassTypeInfoBase = info.GetClassTypeInfoBase();
+    const CClassTypeInfo* classType =
+        m_ClassTypeInfo = info.GetClassTypeInfo();
     const CMembersInfo& members = classType->GetMembers();
     m_MemberIndex = index;
-    m_LastMemberIndex = members.LastMemberIndex();
+    m_LastMemberIndex = members.LastIndex();
     _DEBUG_ARG(m_LastCall = eNone);
 }
 
@@ -620,15 +658,15 @@ CObjectTypeInfoMI::CObjectTypeInfoMI(const CObjectTypeInfo& info,
 }
 
 inline
-const CClassTypeInfoBase* CObjectTypeInfoMI::GetClassTypeInfoBase(void) const
+const CClassTypeInfo* CObjectTypeInfoMI::GetClassTypeInfo(void) const
 {
-    return m_ClassTypeInfoBase;
+    return m_ClassTypeInfo;
 }
 
 inline
 const CMemberInfo* CObjectTypeInfoMI::GetMemberInfo(void) const
 {
-    return GetClassTypeInfoBase()->GetMemberInfo(GetMemberIndex());
+    return GetClassTypeInfo()->GetMemberInfo(GetMemberIndex());
 }
 
 inline
@@ -669,6 +707,12 @@ CObjectTypeInfoMI::operator bool(void) const
 }
 
 inline
+bool CObjectTypeInfoMI::operator!(void) const
+{
+    return !Valid();
+}
+
+inline
 bool CObjectTypeInfoMI::Optional(void) const
 {
     return GetMemberInfo()->Optional();
@@ -692,21 +736,21 @@ CObjectTypeInfoMI& CObjectTypeInfoMI::operator++(void)
 inline
 bool CObjectTypeInfoMI::operator==(const CObjectTypeInfoMI& iter) const
 {
-    _ASSERT(GetClassTypeInfoBase() == iter.GetClassTypeInfoBase());
+    _ASSERT(GetClassTypeInfo() == iter.GetClassTypeInfo());
     return GetMemberIndex() == iter.GetMemberIndex();
 }
 
 inline
 bool CObjectTypeInfoMI::operator!=(const CObjectTypeInfoMI& iter) const
 {
-    _ASSERT(GetClassTypeInfoBase() == iter.GetClassTypeInfoBase());
+    _ASSERT(GetClassTypeInfo() == iter.GetClassTypeInfo());
     return GetMemberIndex() != iter.GetMemberIndex();
 }
 
 inline
 CObjectTypeInfo CObjectTypeInfoMI::GetClassType(void) const
 {
-    return GetClassTypeInfoBase();
+    return GetClassTypeInfo();
 }
 
 inline
@@ -717,6 +761,12 @@ CObjectTypeInfo CObjectTypeInfoMI::GetMemberType(void) const
 
 inline
 CObjectTypeInfo CObjectTypeInfoMI::operator*(void) const
+{
+    return GetMemberInfo()->GetTypeInfo();
+}
+
+inline
+CObjectTypeInfo CObjectTypeInfoMI::operator->(void) const
 {
     return GetMemberInfo()->GetTypeInfo();
 }
@@ -762,6 +812,24 @@ inline
 bool CConstObjectInfoMI::IsSet(void) const
 {
     return CParent::IsSet(GetClassObject());
+}
+
+inline
+CConstObjectInfo CConstObjectInfoMI::GetMember(void) const
+{
+    return GetMemberPair();
+}
+
+inline
+CConstObjectInfo CConstObjectInfoMI::operator*(void) const
+{
+    return GetMemberPair();
+}
+
+inline
+CConstObjectInfo CConstObjectInfoMI::operator->(void) const
+{
+    return GetMemberPair();
 }
 
 inline
@@ -811,6 +879,24 @@ void CObjectInfoMI::Reset(void)
     Erase();
 }
 
+inline
+CObjectInfo CObjectInfoMI::GetMember(void) const
+{
+    return GetMemberPair();
+}
+
+inline
+CObjectInfo CObjectInfoMI::operator*(void) const
+{
+    return GetMemberPair();
+}
+
+inline
+CObjectInfo CObjectInfoMI::operator->(void) const
+{
+    return GetMemberPair();
+}
+
 // choice interface
 
 inline
@@ -831,7 +917,7 @@ CObjectTypeInfoCV::CObjectTypeInfoCV(const CConstObjectInfo& object)
     const CChoiceTypeInfo* choiceInfo =
         m_ChoiceTypeInfo = object.GetChoiceTypeInfo();
     m_VariantIndex = choiceInfo->GetIndex(object.GetObjectPtr());
-    _ASSERT(m_VariantIndex <= choiceInfo->GetMembers().LastMemberIndex());
+    _ASSERT(m_VariantIndex <= choiceInfo->GetVariants().LastIndex());
 }
 
 inline
@@ -840,7 +926,7 @@ CObjectTypeInfoCV::CObjectTypeInfoCV(const CObjectTypeInfo& info,
 {
     const CChoiceTypeInfo* choiceInfo =
         m_ChoiceTypeInfo = info.GetChoiceTypeInfo();
-    if ( index > choiceInfo->GetMembers().LastMemberIndex() )
+    if ( index > choiceInfo->GetVariants().LastIndex() )
         index = kEmptyChoice;
     else {
         _ASSERT(index >= kEmptyChoice);
@@ -873,6 +959,12 @@ CObjectTypeInfoCV::operator bool(void) const
 }
 
 inline
+bool CObjectTypeInfoCV::operator!(void) const
+{
+    return !Valid();
+}
+
+inline
 CObjectTypeInfoCV& CObjectTypeInfoCV::operator=(const CObjectTypeInfo& info)
 {
     m_ChoiceTypeInfo = info.GetChoiceTypeInfo();
@@ -895,9 +987,9 @@ bool CObjectTypeInfoCV::operator!=(const CObjectTypeInfoCV& iter) const
 }
 
 inline
-const CMemberInfo* CObjectTypeInfoCV::GetVariantInfo(void) const
+const CVariantInfo* CObjectTypeInfoCV::GetVariantInfo(void) const
 {
-    return GetChoiceTypeInfo()->GetMemberInfo(GetVariantIndex());
+    return GetChoiceTypeInfo()->GetVariantInfo(GetVariantIndex());
 }
 
 inline
@@ -920,6 +1012,12 @@ CObjectTypeInfo CObjectTypeInfoCV::GetVariantType(void) const
 
 inline
 CObjectTypeInfo CObjectTypeInfoCV::operator*(void) const
+{
+    return GetVariantInfo()->GetTypeInfo();
+}
+
+inline
+CObjectTypeInfo CObjectTypeInfoCV::operator->(void) const
 {
     return GetVariantInfo()->GetTypeInfo();
 }
@@ -957,6 +1055,24 @@ CConstObjectInfoCV& CConstObjectInfoCV::operator=(const CConstObjectInfo& object
 }
 
 inline
+CConstObjectInfo CConstObjectInfoCV::GetVariant(void) const
+{
+    return GetVariantPair();
+}
+
+inline
+CConstObjectInfo CConstObjectInfoCV::operator*(void) const
+{
+    return GetVariantPair();
+}
+
+inline
+CConstObjectInfo CConstObjectInfoCV::operator->(void) const
+{
+    return GetVariantPair();
+}
+
+inline
 CObjectInfoCV::CObjectInfoCV(void)
 {
 }
@@ -980,6 +1096,24 @@ CObjectInfoCV& CObjectInfoCV::operator=(const CObjectInfo& object)
     CParent::Init(object);
     m_Object = object;
     return *this;
+}
+
+inline
+CObjectInfo CObjectInfoCV::GetVariant(void) const
+{
+    return GetVariantPair();
+}
+
+inline
+CObjectInfo CObjectInfoCV::operator*(void) const
+{
+    return GetVariantPair();
+}
+
+inline
+CObjectInfo CObjectInfoCV::operator->(void) const
+{
+    return GetVariantPair();
 }
 
 /////////////////////////////////////////////////////////////////////////////

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2000/09/18 20:00:21  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.51  2000/09/01 13:16:14  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -245,27 +251,83 @@
 
 BEGIN_NCBI_SCOPE
 
-CClassTypeInfo::CClassTypeInfo(const type_info& ti, size_t size)
-    : CParent(ti, size), m_RandomOrder(false), m_Implicit(false),
-      m_ParentClassInfo(0), m_GetTypeIdFunction(0)
+CClassTypeInfo::CClassTypeInfo(size_t size, const char* name,
+                               const void* nonCObject, TTypeCreate createFunc,
+                               const type_info& ti, TGetTypeIdFunction idFunc)
+    : CParent(eTypeFamilyClass, size, name, nonCObject, createFunc, ti),
+      m_GetTypeIdFunction(idFunc)
 {
+    InitClassTypeInfo();
 }
 
-CClassTypeInfo::CClassTypeInfo(const string& name, const type_info& ti, size_t size)
-    : CParent(name, ti, size), m_RandomOrder(false), m_Implicit(false),
-      m_ParentClassInfo(0), m_GetTypeIdFunction(0)
+CClassTypeInfo::CClassTypeInfo(size_t size, const char* name,
+                               const CObject* cObject, TTypeCreate createFunc,
+                               const type_info& ti, TGetTypeIdFunction idFunc)
+    : CParent(eTypeFamilyClass, size, name, cObject, createFunc, ti),
+      m_GetTypeIdFunction(idFunc)
 {
+    InitClassTypeInfo();
 }
 
-CClassTypeInfo::CClassTypeInfo(const char* name, const type_info& ti, size_t size)
-    : CParent(name, ti, size), m_RandomOrder(false), m_Implicit(false),
-      m_ParentClassInfo(0), m_GetTypeIdFunction(0)
+CClassTypeInfo::CClassTypeInfo(size_t size, const string& name,
+                               const void* nonCObject, TTypeCreate createFunc,
+                               const type_info& ti, TGetTypeIdFunction idFunc)
+    : CParent(eTypeFamilyClass, size, name, nonCObject, createFunc, ti),
+      m_GetTypeIdFunction(idFunc)
 {
+    InitClassTypeInfo();
 }
 
-CTypeInfo::ETypeFamily CClassTypeInfo::GetTypeFamily(void) const
+CClassTypeInfo::CClassTypeInfo(size_t size, const string& name,
+                               const CObject* cObject, TTypeCreate createFunc,
+                               const type_info& ti, TGetTypeIdFunction idFunc)
+    : CParent(eTypeFamilyClass, size, name, cObject, createFunc, ti),
+      m_GetTypeIdFunction(idFunc)
 {
-    return eTypeClass;
+    InitClassTypeInfo();
+}
+
+void CClassTypeInfo::InitClassTypeInfo(void)
+{
+    m_ClassType = eSequential;
+    m_ParentClassInfo = 0;
+
+    UpdateFunctions();
+}
+
+CClassTypeInfo* CClassTypeInfo::SetRandomOrder(bool random)
+{
+    _ASSERT(!Implicit());
+    m_ClassType = random? eRandom: eSequential;
+    UpdateFunctions();
+    return this;
+}
+
+CClassTypeInfo* CClassTypeInfo::SetImplicit(void)
+{
+    m_ClassType = eImplicit;
+    UpdateFunctions();
+    return this;
+}
+
+CMemberInfo* CClassTypeInfo::AddMember(const char* memberId,
+                                       const void* memberPtr,
+                                       const CTypeRef& memberType)
+{
+    CMemberInfo* memberInfo =
+        new CMemberInfo(this, memberId, size_t(memberPtr), memberType);
+    GetItems().AddItem(memberInfo);
+    return memberInfo;
+}
+
+CMemberInfo* CClassTypeInfo::AddMember(const CMemberId& memberId,
+                                       const void* memberPtr,
+                                       const CTypeRef& memberType)
+{
+    CMemberInfo* memberInfo =
+        new CMemberInfo(this, memberId, size_t(memberPtr), memberType);
+    GetItems().AddItem(memberInfo);
+    return memberInfo;
 }
 
 void CClassTypeInfo::AddSubClass(const CMemberId& id,
@@ -299,28 +361,16 @@ const CClassTypeInfo* CClassTypeInfo::GetParentClassInfo(void) const
 
 void CClassTypeInfo::SetParentClass(TTypeInfo parentType)
 {
+    if ( parentType->GetTypeFamily() != eTypeFamilyClass )
+        THROW1_TRACE(runtime_error, "invalid parent class type");
     const CClassTypeInfo* parentClass =
-        dynamic_cast<const CClassTypeInfo*>(parentType);
+        CTypeConverter<CClassTypeInfo>::SafeCast(parentType);
     _ASSERT(parentClass != 0);
     _ASSERT(IsCObject() == parentClass->IsCObject());
     _ASSERT(!m_ParentClassInfo);
     m_ParentClassInfo = parentClass;
     _ASSERT(GetMembers().Empty());
-    GetMembers().AddMember(CMemberId(), 0, parentType);
-}
-
-void CClassTypeInfo::SetGetTypeIdFunction(TGetTypeIdFunction func)
-{
-    _ASSERT(m_GetTypeIdFunction == 0);
-    _ASSERT(func != 0);
-    m_GetTypeIdFunction = func;
-}
-
-const type_info* CClassTypeInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
-{
-    if ( m_GetTypeIdFunction ) 
-        return m_GetTypeIdFunction(object);
-    return 0;
+    AddMember(CMemberId(), 0, parentType);
 }
 
 TTypeInfo CClassTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const
@@ -339,10 +389,10 @@ void CClassTypeInfo::RegisterSubClasses(void) const
         for ( TSubClasses::const_iterator i = subclasses->begin();
               i != subclasses->end();
               ++i ) {
-            const CClassTypeInfo* classInfo = 
-                dynamic_cast<const CClassTypeInfo*>(i->second.Get());
-            if ( classInfo )
-                classInfo->RegisterSubClasses();
+            TTypeInfo subClass = i->second.Get();
+            if ( subClass->GetTypeFamily() == eTypeFamilyClass ) {
+                CTypeConverter<CClassTypeInfo>::SafeCast(subClass)->RegisterSubClasses();
+            }
         }
     }
 }
@@ -352,7 +402,7 @@ TObjectPtr GetMember(const CMemberInfo* memberInfo, TObjectPtr object)
 {
     if ( memberInfo->CanBeDelayed() )
         memberInfo->GetDelayBuffer(object).Update();
-    return memberInfo->GetMember(object);
+    return memberInfo->GetItemPtr(object);
 }
 
 static inline
@@ -361,17 +411,17 @@ TConstObjectPtr GetMember(const CMemberInfo* memberInfo,
 {
     if ( memberInfo->CanBeDelayed() )
         const_cast<CDelayBuffer&>(memberInfo->GetDelayBuffer(object)).Update();
-    return memberInfo->GetMember(object);
+    return memberInfo->GetItemPtr(object);
 }
 
 static
-void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info)
+void AssignMemberDefault2(TObjectPtr object, const CMemberInfo* info)
 {
     // check 'set' flag
     bool haveSetFlag = info->HaveSetFlag();
     if ( haveSetFlag && !info->GetSetFlag(object) )
         return; // member not set
-
+    
     TObjectPtr member = GetMember(info, object);
     // assign member dafault
     TTypeInfo memberType = info->GetTypeInfo();
@@ -388,76 +438,163 @@ void AssignMemberDefault(TObjectPtr object, const CMemberInfo* info)
         info->GetSetFlag(object) = false;
 }
 
-static inline
-void AssignMemberDefault(TObjectPtr object,
-                         const CMembersInfo& members, size_t index)
+void CClassTypeInfo::AssignMemberDefault(TObjectPtr object,
+                                         TMemberIndex index) const
 {
-    AssignMemberDefault(object, members.GetMemberInfo(index));
+    AssignMemberDefault2(object, GetMemberInfo(index));
 }
 
 inline
-const CMemberInfo* GetImplicitMember(const CMembersInfo& members)
+const CMemberInfo* CClassTypeInfo::GetImplicitMember(void) const
 {
-    _ASSERT(members.FirstMemberIndex() == members.LastMemberIndex());
-    return members.GetMemberInfo(members.FirstMemberIndex());
+    _ASSERT(GetMembers().FirstIndex() == GetMembers().LastIndex());
+    return GetMemberInfo(GetMembers().FirstIndex());
 }
 
-void CClassTypeInfo::WriteData(CObjectOStream& out,
-                               TConstObjectPtr object) const
+void CClassTypeInfo::UpdateFunctions(void)
 {
-    DoPreWrite(object);
-    if ( Implicit() ) {
-        // special case: class contains only one implicit member
-        // we'll behave as this one member
-        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
-        out.WriteNamedType(this, memberInfo->GetTypeInfo(),
-                           memberInfo->GetMember(object));
-    }
-    else {
-        out.WriteClass(object, this);
-    }
-}
-
-void CClassTypeInfo::SkipData(CObjectIStream& in) const
-{
-    if ( Implicit() ) {
-        // special case: class contains only one implicit member
-        // we'll behave as this one member
-        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
-        in.SkipNamedType(this, memberInfo->GetTypeInfo());
-    }
-    else {
-        in.SkipClass(this);
+    switch ( m_ClassType ) {
+    case eSequential:
+        SetReadFunction(&ReadClassSequential);
+        SetWriteFunction(&WriteClassSequential);
+        SetCopyFunction(&CopyClassSequential);
+        SetSkipFunction(&SkipClassSequential);
+        break;
+    case eRandom:
+        SetReadFunction(&ReadClassRandom);
+        SetWriteFunction(&WriteClassRandom);
+        SetCopyFunction(&CopyClassRandom);
+        SetSkipFunction(&SkipClassRandom);
+        break;
+    case eImplicit:
+        SetReadFunction(&ReadImplicitMember);
+        SetWriteFunction(&WriteImplicitMember);
+        SetCopyFunction(&CopyImplicitMember);
+        SetSkipFunction(&SkipImplicitMember);
+        break;
     }
 }
 
-void CClassTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+void CClassTypeInfo::ReadClassSequential(CObjectIStream& in,
+                                         TTypeInfo objectType,
+                                         TObjectPtr objectPtr)
 {
-    if ( Implicit() ) {
-        // special case: class contains only one implicit member
-        // we'll behave as this one member
-        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
-        in.ReadNamedType(this, memberInfo->GetTypeInfo(),
-                         memberInfo->GetMember(object));
-    }
-    else {
-        in.ReadClass(CObjectInfo(object, this,
-                                 CObjectInfo::eNonCObject));
-    }
-    DoPostRead(object);
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    in.ReadClassSequential(classType, objectPtr);
 }
 
-void CClassTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void CClassTypeInfo::ReadClassRandom(CObjectIStream& in,
+                                     TTypeInfo objectType,
+                                     TObjectPtr objectPtr)
 {
-    if ( Implicit() ) {
-        // special case: class contains only one implicit member
-        // we'll behave as this one member
-        const CMemberInfo* memberInfo = GetImplicitMember(GetMembers());
-        copier.CopyNamedType(this, memberInfo->GetTypeInfo());
-    }
-    else {
-        copier.CopyClass(this);
-    }
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    in.ReadClassRandom(classType, objectPtr);
+}
+
+void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
+                                        TTypeInfo objectType,
+                                        TObjectPtr objectPtr)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    in.ReadNamedType(classType,
+                     memberInfo->GetTypeInfo(),
+                     memberInfo->GetItemPtr(objectPtr));
+}
+
+void CClassTypeInfo::WriteClassRandom(CObjectOStream& out,
+                                      TTypeInfo objectType,
+                                      TConstObjectPtr objectPtr)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    out.WriteClassRandom(classType, objectPtr);
+}
+
+void CClassTypeInfo::WriteClassSequential(CObjectOStream& out,
+                                          TTypeInfo objectType,
+                                          TConstObjectPtr objectPtr)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    out.WriteClassSequential(classType, objectPtr);
+}
+
+void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
+                                         TTypeInfo objectType,
+                                         TConstObjectPtr objectPtr)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    out.WriteNamedType(classType,
+                       memberInfo->GetTypeInfo(),
+                       memberInfo->GetItemPtr(objectPtr));
+}
+
+void CClassTypeInfo::CopyClassRandom(CObjectStreamCopier& copier,
+                                     TTypeInfo objectType)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    copier.CopyClassRandom(classType);
+}
+
+void CClassTypeInfo::CopyClassSequential(CObjectStreamCopier& copier,
+                                         TTypeInfo objectType)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    copier.CopyClassSequential(classType);
+}
+
+void CClassTypeInfo::CopyImplicitMember(CObjectStreamCopier& copier,
+                                        TTypeInfo objectType)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    copier.CopyNamedType(classType, memberInfo->GetTypeInfo());
+}
+
+void CClassTypeInfo::SkipClassRandom(CObjectIStream& in,
+                                     TTypeInfo objectType)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    in.SkipClassRandom(classType);
+}
+
+void CClassTypeInfo::SkipClassSequential(CObjectIStream& in,
+                                         TTypeInfo objectType)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    in.SkipClassSequential(classType);
+}
+
+void CClassTypeInfo::SkipImplicitMember(CObjectIStream& in,
+                                        TTypeInfo objectType)
+{
+    const CClassTypeInfo* classType =
+        CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
+
+    const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    in.SkipNamedType(classType, memberInfo->GetTypeInfo());
 }
 
 bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const
@@ -467,17 +604,18 @@ bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const
 
 void CClassTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
-              last = GetMembers().LastMemberIndex();
+    for ( TMemberIndex i = GetMembers().FirstIndex(),
+              last = GetMembers().LastIndex();
           i <= last; ++i ) {
-        AssignMemberDefault(dst, GetMembers(), i);
+        AssignMemberDefault(dst, i);
     }
 }
 
-bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+bool CClassTypeInfo::Equals(TConstObjectPtr object1,
+                            TConstObjectPtr object2) const
 {
-    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
-              last = GetMembers().LastMemberIndex();
+    for ( TMemberIndex i = GetMembers().FirstIndex(),
+              last = GetMembers().LastIndex();
           i <= last; ++i ) {
         const CMemberInfo* info = GetMemberInfo(i);
         if ( !info->GetTypeInfo()->Equals(GetMember(info, object1),
@@ -491,10 +629,11 @@ bool CClassTypeInfo::Equals(TConstObjectPtr object1, TConstObjectPtr object2) co
     return true;
 }
 
-void CClassTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+void CClassTypeInfo::Assign(TObjectPtr dst,
+                            TConstObjectPtr src) const
 {
-    for ( TMemberIndex i = GetMembers().FirstMemberIndex(),
-              last = GetMembers().LastMemberIndex();
+    for ( TMemberIndex i = GetMembers().FirstIndex(),
+              last = GetMembers().LastIndex();
           i <= last; ++i ) {
         const CMemberInfo* info = GetMemberInfo(i);
         info->GetTypeInfo()->Assign(GetMember(info, dst),

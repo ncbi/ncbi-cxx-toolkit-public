@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/09/18 20:00:01  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.10  2000/09/01 13:15:58  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -91,19 +97,13 @@ class CEnumeratedTypeInfo : public CPrimitiveTypeInfo
     typedef CPrimitiveTypeInfo CParent;
 public:
     // values should exist for all live time of our instance
-    CEnumeratedTypeInfo(const CEnumeratedTypeValues* values,
-                        size_t size = sizeof(int));
-
-    virtual EValueType GetValueType(void) const;
+    CEnumeratedTypeInfo(size_t size, const CEnumeratedTypeValues* values);
 
     const CEnumeratedTypeValues& Values(void) const
         {
             return m_Values;
         }
 
-    virtual size_t GetSize(void) const;
-    virtual TObjectPtr Create(void) const;
-    
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr , TConstObjectPtr ) const;
     virtual void SetDefault(TObjectPtr dst) const;
@@ -118,10 +118,13 @@ public:
     virtual void SetValueString(TObjectPtr objectPtr, const string& value) const;
 
 protected:
-    virtual void SkipData(CObjectIStream& in) const;
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-    virtual void CopyData(CObjectStreamCopier& copier) const;
+    static TObjectPtr CreateEnum(TTypeInfo objectType);
+    static void ReadEnum(CObjectIStream& in,
+                         TTypeInfo objectType, TObjectPtr objectPtr);
+    static void WriteEnum(CObjectOStream& out,
+                          TTypeInfo objectType, TConstObjectPtr objectPtr);
+    static void SkipEnum(CObjectIStream& in, TTypeInfo objectType);
+    static void CopyEnum(CObjectStreamCopier& copier, TTypeInfo objectType);
 
 private:
     const CPrimitiveTypeInfo* m_ValueType;
@@ -133,7 +136,7 @@ inline
 CEnumeratedTypeInfo* CreateEnumeratedTypeInfo(const T& ,
                                               const CEnumeratedTypeValues* values)
 {
-    return new CEnumeratedTypeInfo(values, sizeof(T));
+    return new CEnumeratedTypeInfo(sizeof(T), values);
 }
 
 END_NCBI_SCOPE

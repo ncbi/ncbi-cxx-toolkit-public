@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/09/18 19:59:58  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.32  2000/09/01 13:15:57  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -179,13 +185,13 @@ BEGIN_NCBI_SCOPE
 class CSequenceOfTypeInfo : public CContainerTypeInfo {
     typedef CContainerTypeInfo CParent;
 public:
+    typedef TObjectPtr TObjectType;
+
     CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder = false);
-	CSequenceOfTypeInfo(const string& name,
-                        TTypeInfo type, bool randomOrder = false);
 	CSequenceOfTypeInfo(const char* name,
                         TTypeInfo type, bool randomOrder = false);
-
-    virtual TTypeInfo GetElementType(void) const;
+	CSequenceOfTypeInfo(const string& name,
+                        TTypeInfo type, bool randomOrder = false);
 
     CConstIterator* NewConstIterator(void) const;
     CIterator* NewIterator(void) const;
@@ -201,28 +207,23 @@ public:
             return m_DataOffset;
         }
     
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataType;
-        }
-
     TObjectPtr CreateData(void) const;
 
     static TObjectPtr& FirstNode(TObjectPtr object)
         {
-            return CType<TObjectPtr>::Get(object);
+            return CTypeConverter<TObjectPtr>::Get(object);
         }
     static TConstObjectPtr FirstNode(TConstObjectPtr object)
         {
-            return CType<TConstObjectPtr>::Get(object);
+            return CTypeConverter<TConstObjectPtr>::Get(object);
         }
     TObjectPtr& NextNode(TObjectPtr object) const
         {
-            return CType<TObjectPtr>::Get(Add(object, m_NextOffset));
+            return CTypeConverter<TObjectPtr>::Get(Add(object, m_NextOffset));
         }
     TConstObjectPtr NextNode(TConstObjectPtr object) const
         {
-            return CType<TConstObjectPtr>::Get(Add(object, m_NextOffset));
+            return CTypeConverter<TConstObjectPtr>::Get(Add(object, m_NextOffset));
         }
     TObjectPtr Data(TObjectPtr object) const
         {
@@ -233,8 +234,6 @@ public:
             return Add(object, m_DataOffset);
         }
 
-    size_t GetSize(void) const;
-
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
     virtual bool IsDefault(TConstObjectPtr object) const;
@@ -243,7 +242,7 @@ public:
                         TConstObjectPtr src) const;
 
 private:
-	void Init(void);
+	void InitSequenceOfTypeInfo(void);
 
     // set this sequence to have ValNode as data holder
     // (used for SET OF (INTEGER, STRING, SET OF etc.)
@@ -253,18 +252,11 @@ private:
 
 protected:
 
-    virtual void WriteData(CObjectOStream& out,
-                           TConstObjectPtr obejct) const;
-
-    virtual void ReadData(CObjectIStream& in,
-                          TObjectPtr object) const;
-
-    virtual void SkipData(CObjectIStream& in) const;
-
-    virtual void CopyData(CObjectStreamCopier& copier) const;
+    static void ReadSequence(CObjectIStream& in,
+                             TTypeInfo objectType,
+                             TObjectPtr objectPtr);
 
 private:
-    TTypeInfo m_DataType;
     size_t m_NextOffset;  // offset in struct of pointer to next object (def 0)
     size_t m_DataOffset;  // offset in struct of data struct (def 0)
 };
@@ -273,8 +265,8 @@ class CSetOfTypeInfo : public CSequenceOfTypeInfo {
     typedef CSequenceOfTypeInfo CParent;
 public:
     CSetOfTypeInfo(TTypeInfo type);
-    CSetOfTypeInfo(const string& name, TTypeInfo type);
     CSetOfTypeInfo(const char* name, TTypeInfo type);
+    CSetOfTypeInfo(const string& name, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 };
@@ -283,18 +275,16 @@ class COctetStringTypeInfo : public CPrimitiveTypeInfo {
     typedef CPrimitiveTypeInfo CParent;
     typedef bytestore* TObjectType;
 public:
-
-    virtual EValueType GetValueType(void) const;
+    COctetStringTypeInfo(void);
 
     static TObjectType& Get(TObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
     static const TObjectType& Get(TConstObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
-    size_t GetSize(void) const;
 
     static TTypeInfo GetTypeInfo(void);
 
@@ -309,13 +299,16 @@ public:
                                      const vector<char>& value) const;
 protected:
     
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    void SkipData(CObjectIStream& in) const;
-
-    void CopyData(CObjectStreamCopier& copier) const;
+    static void ReadOctetString(CObjectIStream& in,
+                                TTypeInfo objectType,
+                                TObjectPtr objectPtr);
+    static void WriteOctetString(CObjectOStream& out,
+                                 TTypeInfo objectType,
+                                 TConstObjectPtr objectPtr);
+    static void SkipOctetString(CObjectIStream& in,
+                                TTypeInfo objectType);
+    static void CopyOctetString(CObjectStreamCopier& copier,
+                                TTypeInfo objectType);
 };
 
 class COldAsnTypeInfo : public CPrimitiveTypeInfo
@@ -328,24 +321,21 @@ public:
     typedef TObjectPtr (ASNCALL*TReadProc)(asnio*, asntype*);
     typedef unsigned char (ASNCALL*TWriteProc)(TObjectPtr, asnio*, asntype*);
 
-    COldAsnTypeInfo(const string& name,
-                    TNewProc newProc, TFreeProc freeProc,
-                    TReadProc readProc, TWriteProc writeProc);
     COldAsnTypeInfo(const char* name,
                     TNewProc newProc, TFreeProc freeProc,
                     TReadProc readProc, TWriteProc writeProc);
-
-    virtual EValueType GetValueType(void) const;
+    COldAsnTypeInfo(const string& name,
+                    TNewProc newProc, TFreeProc freeProc,
+                    TReadProc readProc, TWriteProc writeProc);
 
     static TObjectType& Get(TObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
     static const TObjectType& Get(TConstObjectPtr object)
         {
-            return CType<TObjectType>::Get(object);
+            return CTypeConverter<TObjectType>::Get(object);
         }
-    size_t GetSize(void) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -355,13 +345,12 @@ public:
 
 protected:
     
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    void SkipData(CObjectIStream& in) const;
-
-    void CopyData(CObjectStreamCopier& copier) const;
+    static void ReadOldAsnStruct(CObjectIStream& in,
+                                 TTypeInfo objectType,
+                                 TObjectPtr objectPtr);
+    static void WriteOldAsnStruct(CObjectOStream& out,
+                                  TTypeInfo objectType,
+                                  TConstObjectPtr objectPtr);
 
 private:
     TNewProc m_NewProc;

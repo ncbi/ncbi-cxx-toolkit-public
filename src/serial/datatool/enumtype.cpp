@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/09/18 20:00:29  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.12  2000/08/25 15:59:21  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -210,7 +216,7 @@ CTypeInfo* CEnumDataType::CreateTypeInfo(void)
           i != m_Values.end(); ++i ) {
         info->AddValue(i->first, i->second);
     }
-    return new CEnumeratedTypeInfo(info.release());
+    return new CEnumeratedTypeInfo(sizeof(AnyType::TInteger), info.release());
 }
 
 string CEnumDataType::DefaultEnumName(void) const

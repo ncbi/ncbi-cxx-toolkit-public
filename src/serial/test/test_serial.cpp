@@ -372,19 +372,19 @@ void PrintAsnValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
     _ASSERT(object);
     switch ( object.GetTypeFamily() ) {
-    case CTypeInfo::eTypePrimitive:
+    case eTypeFamilyPrimitive:
         PrintAsnPrimitiveValue(out, object);
         break;
-    case CTypeInfo::eTypeClass:
+    case eTypeFamilyClass:
         PrintAsnClassValue(out, object);
         break;
-    case CTypeInfo::eTypeChoice:
+    case eTypeFamilyChoice:
         PrintAsnChoiceValue(out, object);
         break;
-    case CTypeInfo::eTypeContainer:
+    case eTypeFamilyContainer:
         PrintAsnContainerValue(out, object);
         break;
-    case CTypeInfo::eTypePointer:
+    case eTypeFamilyPointer:
         PrintAsnPointerValue(out, object);
         break;
     }
@@ -395,25 +395,25 @@ static const char Hex[] = "0123456789ABCDEF";
 void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object)
 {
     switch ( object.GetPrimitiveValueType() ) {
-    case CPrimitiveTypeInfo::eBool:
+    case ePrimitiveValueBool:
         out << (object.GetPrimitiveValueBool()? "TRUE": "FALSE");
         break;
-    case CPrimitiveTypeInfo::eChar:
+    case ePrimitiveValueChar:
         out << '\'' << object.GetPrimitiveValueChar() << '\'';
         break;
-    case CPrimitiveTypeInfo::eInteger:
+    case ePrimitiveValueInteger:
         if ( object.IsPrimitiveValueSigned() )
             out << object.GetPrimitiveValueLong();
         else
             out << object.GetPrimitiveValueULong();
         break;
-    case CPrimitiveTypeInfo::eReal:
+    case ePrimitiveValueReal:
         out << object.GetPrimitiveValueDouble();
         break;
-    case CPrimitiveTypeInfo::eString:
+    case ePrimitiveValueString:
         out << '"' << object.GetPrimitiveValueString() << '"';
         break;
-    case CPrimitiveTypeInfo::eEnum:
+    case ePrimitiveValueEnum:
         {
             string s;
             object.GetPrimitiveValueString(s);
@@ -425,7 +425,7 @@ void PrintAsnPrimitiveValue(CNcbiOstream& out, const CConstObjectInfo& object)
                 out << object.GetPrimitiveValueULong();
         }
         break;
-    case CPrimitiveTypeInfo::eOctetString:
+    case ePrimitiveValueOctetString:
         out << '\'';
         {
             vector<char> s;

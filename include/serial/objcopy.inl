@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/18 20:00:04  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.1  2000/09/01 13:15:59  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -62,7 +68,64 @@ CObjectOStream& CObjectStreamCopier::Out(void) const
 inline
 void CObjectStreamCopier::CopyObject(TTypeInfo type)
 {
-    type->CopyData(*this);
+    Out().CopyObject(type, *this);
+}
+
+inline
+void CObjectStreamCopier::ExpectedMember(const CMemberInfo* memberInfo)
+{
+    In().ExpectedMember(memberInfo);
+}
+
+inline
+void CObjectStreamCopier::CopyExternalObject(TTypeInfo type)
+{
+    In().RegisterObject(type);
+    Out().RegisterObject(type);
+    CopyObject(type);
+}
+
+inline
+void CObjectStreamCopier::CopyString(void)
+{
+    Out().CopyString(In());
+}
+
+inline
+void CObjectStreamCopier::CopyStringStore(void)
+{
+    Out().CopyStringStore(In());
+}
+
+inline
+void CObjectStreamCopier::CopyNamedType(TTypeInfo namedTypeInfo,
+                                        TTypeInfo objectType)
+{
+    Out().CopyNamedType(namedTypeInfo, objectType, *this);
+}
+
+inline
+void CObjectStreamCopier::CopyContainer(const CContainerTypeInfo* cType)
+{
+    Out().CopyContainer(cType, *this);
+}
+
+inline
+void CObjectStreamCopier::CopyClassRandom(const CClassTypeInfo* classType)
+{
+    Out().CopyClassRandom(classType, *this);
+}
+
+inline
+void CObjectStreamCopier::CopyClassSequential(const CClassTypeInfo* classType)
+{
+    Out().CopyClassSequential(classType, *this);
+}
+
+inline
+void CObjectStreamCopier::CopyChoice(const CChoiceTypeInfo* choiceType)
+{
+    Out().CopyChoice(choiceType, *this);
 }
 
 #endif /* def OBJCOPY__HPP  &&  ndef OBJCOPY__INL */

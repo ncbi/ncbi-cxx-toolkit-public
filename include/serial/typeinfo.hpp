@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2000/09/18 20:00:11  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.30  2000/09/01 13:16:04  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -152,80 +158,67 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <corelib/ncbiobj.hpp>
-#include <typeinfo>
-#include <memory>
+#include <serial/hookdata.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CObject;
 
 class CObjectIStream;
 class CObjectOStream;
 class CObjectStreamCopier;
+
 class CClassTypeInfo;
-class COObjectList;
-class CTypeRef;
-class CMemberId;
-class CMemberInfo;
+
+class CObjectTypeInfo;
 class CConstObjectInfo;
 class CObjectInfo;
 
-// this structure is used for sorting C++ standard type_info class by pointer
-struct CLessTypeInfo
-{
-    // to avoid warning under MSVS, where type_info::before() erroneously
-    // returns int, we'll define overloaded functions:
-    static bool ToBool(bool b)
-        {
-            return b;
-        }
-    static bool ToBool(int i)
-        {
-            return i != 0;
-        }
+class CReadObjectHook;
+class CWriteObjectHook;
+class CCopyObjectHook;
 
-    bool operator()(const type_info* i1, const type_info* i2) const
-		{
-            return ToBool(i1->before(*i2));
-        }
-};
+class CReadObjectHookData;
+class CWriteObjectHookData;
+class CCopyObjectHookData;
 
 // CTypeInfo class contains all information about C++ types (both basic and
 // classes): members and layout in memory.
 class CTypeInfo
 {
 protected:
-    CTypeInfo(void);
-    CTypeInfo(const string& name);
-    CTypeInfo(const char* name);
+    CTypeInfo(ETypeFamily typeFamily, size_t size);
+    CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name);
+    CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name);
 public:
+    // various function pointers
+    typedef TObjectPtr (*TTypeCreate)(TTypeInfo objectType);
+    typedef void (*TTypeRead)(CObjectIStream& in,
+                              TTypeInfo objectType,
+                              TObjectPtr objectPtr);
+    typedef void (*TTypeWrite)(CObjectOStream& out,
+                               TTypeInfo objectType,
+                               TConstObjectPtr objectPtr);
+    typedef void (*TTypeCopy)(CObjectStreamCopier& copier,
+                              TTypeInfo objectType);
+    typedef void (*TTypeSkip)(CObjectIStream& in,
+                              TTypeInfo objectType);
+
     virtual ~CTypeInfo(void);
 
-    // type family
-    enum ETypeFamily {
-        eTypePrimitive, // see CPrimitiveTypeInfo
-        eTypeClass,     // see CClassTypeInfo
-        eTypeChoice,    // see CChoiceTypeInfo
-        eTypeContainer, // see CContainerTypeInfo
-        eTypePointer    // see CPointerTypeInfo
-    };
-    virtual ETypeFamily GetTypeFamily(void) const = 0;
+    ETypeFamily GetTypeFamily(void) const;
 
     // name of this type
-    const string& GetName(void) const
-        { return m_Name; }
+    const string& GetName(void) const;
 
     // size of data object in memory (like sizeof in C)
-    virtual size_t GetSize(void) const = 0;
-
-    // helpers: return end of object
-    TObjectPtr EndOf(TObjectPtr object) const
-        { return Add(object, GetSize()); }
-    TConstObjectPtr EndOf(TConstObjectPtr object) const
-        { return Add(object, GetSize()); }
+    size_t GetSize(void) const;
 
     // creates object of this type in heap (can be deleted by operator delete)
-    virtual TObjectPtr Create(void) const;
+    TObjectPtr Create(void) const;
+
     // deletes object
     virtual void Delete(TObjectPtr object) const;
     // clear object contents so Delete will not leave unused memory allocated
@@ -250,87 +243,76 @@ public:
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
     // I/O interface:
-    // read object
-    virtual void ReadData(CObjectIStream& in,
-                          TObjectPtr object) const = 0;
-    virtual void SkipData(CObjectIStream& in) const = 0;
-    // write object
-    virtual void WriteData(CObjectOStream& out,
-                           TConstObjectPtr object) const = 0;
-    virtual void CopyData(CObjectStreamCopier& copier) const = 0;
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    void CopyData(CObjectStreamCopier& copier) const;
+    void SkipData(CObjectIStream& in) const;
 
+    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
     virtual bool IsType(TTypeInfo type) const;
     virtual bool MayContainType(TTypeInfo type) const;
-    virtual bool IsOrMayContainType(TTypeInfo type) const;
-    virtual bool IsParentClassOf(const CClassTypeInfo* classInfo) const;
+    bool IsOrMayContainType(TTypeInfo type) const;
+
+    // hooks
+    void SetGlobalReadHook(CReadObjectHook* hook);
+    void SetLocalReadHook(CObjectIStream& in, CReadObjectHook* hook);
+    void ResetGlobalReadHook(void);
+    void ResetLocalReadHook(CObjectIStream& in);
+
+    void SetGlobalWriteHook(CWriteObjectHook* hook);
+    void SetLocalWriteHook(CObjectOStream& out, CWriteObjectHook* hook);
+    void ResetGlobalWriteHook(void);
+    void ResetLocalWriteHook(CObjectOStream& out);
+
+    void SetGlobalCopyHook(CCopyObjectHook* hook);
+    void SetLocalCopyHook(CObjectStreamCopier& copier, CCopyObjectHook* hook);
+    void ResetGlobalCopyHook(void);
+    void ResetLocalCopyHook(CObjectStreamCopier& copier);
+
+    // default methods without checking hook
+    void DefaultReadData(CObjectIStream& in, TObjectPtr object) const;
+    void DefaultWriteData(CObjectOStream& out, TConstObjectPtr object) const;
+    void DefaultCopyData(CObjectStreamCopier& copier) const;
 
 private:
-    friend class CObjectOStream;
-    friend class CObjectIStream;
-
+    // private constructors to avoid copying
     CTypeInfo(const CTypeInfo&);
     CTypeInfo& operator=(const CTypeInfo&);
+
+    // type information
+    ETypeFamily m_TypeFamily;
+    size_t m_Size;
     string m_Name;
-};
 
-// helper template for various types:
-template<typename T>
-struct CType
-{
-    CType(void);
-    CType(const CType&);
-    CType& operator=(const CType&);
-    ~CType(void);
-public:
-    typedef T TObjectType; // type of object
+protected:
+    void SetCreateFunction(TTypeCreate func);
+    void SetReadFunction(TTypeRead func);
+    void SetWriteFunction(TTypeWrite func);
+    void SetCopyFunction(TTypeCopy func);
+    void SetSkipFunction(TTypeSkip func);
 
-    // object getters:
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectType*>(object);
-        }
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectType*>(object);
-        }
-    static TObjectType& Get(const CObjectInfo& object)
-        {
-            return Get(object.GetObjectPtr());
-        }
-    static const TObjectType& Get(const CConstObjectInfo& object)
-        {
-            return Get(object.GetObjectPtr());
-        }
-
-    static size_t GetSize(void)
-        {
-            return sizeof(TObjectType);
-        }
-
-#ifdef _DEBUG
 private:
-    static void AssertPointer(const CObject* /*selector*/, const void* ptr)
-        {
-            // assert that ptr is really pointer to T
-            _ASSERT(dynamic_cast<const T*>(static_cast<const CObject*>(ptr)));
-        }
-    static void AssertPointer(const void* /*selector*/, const void* /*ptr*/)
-        {
-            // cannot check if T is not subclass of CObject
-        }
-public:
-    static void AssertPointer(const void* ptr)
-        {
-            _ASSERT(ptr);
-            const T* selector = static_cast<const T*>(0);
-            AssertPointer(selector, ptr);
-        }
-#else
-    static void AssertPointer(const void* /*ptr*/)
-        {
-            // do nothing in non _DEBUG mode
-        }
-#endif
+    // type specific function pointers
+    TTypeCreate m_CreateFunction;
+
+    CHookData<CObjectIStream, CReadObjectHook, TTypeRead> m_ReadHookData;
+    CHookData<CObjectOStream, CWriteObjectHook, TTypeWrite> m_WriteHookData;
+    CHookData<CObjectStreamCopier, CCopyObjectHook, TTypeCopy> m_CopyHookData;
+    TTypeSkip m_SkipFunction;
+
+    void SetReadHook(CObjectIStream* stream, CReadObjectHook* hook);
+    void SetWriteHook(CObjectOStream* stream, CWriteObjectHook* hook);
+    void SetCopyHook(CObjectStreamCopier* stream, CCopyObjectHook* hook);
+    void ResetReadHook(CObjectIStream* stream);
+    void ResetWriteHook(CObjectOStream* stream);
+    void ResetCopyHook(CObjectStreamCopier* stream);
+
+    static void ReadWithHook(CObjectIStream& in,
+                             TTypeInfo objectType, TObjectPtr objectPtr);
+    static void WriteWithHook(CObjectOStream& out,
+                              TTypeInfo objectType, TConstObjectPtr objectPtr);
+    static void CopyWithHook(CObjectStreamCopier& copier,
+                             TTypeInfo objectType);
 };
 
 #include <serial/typeinfo.inl>

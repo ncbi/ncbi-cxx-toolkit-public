@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/18 19:59:59  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.7  2000/09/01 13:15:57  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -68,23 +74,25 @@
 
 BEGIN_NCBI_SCOPE
 
-class CAutoPointerTypeInfo : public CPointerTypeInfo {
+class CAutoPointerTypeInfo : public CPointerTypeInfo
+{
     typedef CPointerTypeInfo CParent;
 public:
     CAutoPointerTypeInfo(TTypeInfo type);
-    ~CAutoPointerTypeInfo(void);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
 protected:
-    
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-    void SkipData(CObjectIStream& in) const;
-
-    void CopyData(CObjectStreamCopier& copier) const;
+    static void ReadAutoPtr(CObjectIStream& in,
+                            TTypeInfo objectType,
+                            TObjectPtr objectPtr);
+    static void WriteAutoPtr(CObjectOStream& out,
+                             TTypeInfo objectType,
+                             TConstObjectPtr objectPtr);
+    static void SkipAutoPtr(CObjectIStream& in,
+                            TTypeInfo objectType);
+    static void CopyAutoPtr(CObjectStreamCopier& copier,
+                            TTypeInfo objectType);
 };
 
 //#include <serial/autoptrinfo.inl>

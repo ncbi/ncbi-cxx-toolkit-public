@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/09/18 20:00:28  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.15  2000/08/25 15:59:20  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -108,9 +114,9 @@ BEGIN_NCBI_SCOPE
 
 struct CAnyTypeChoice {
     AnyType data;
-    int index;
+    TMemberIndex index;
     CAnyTypeChoice(void)
-        : index(-1)
+        : index(kEmptyChoice)
         {
         }
 };
@@ -120,16 +126,27 @@ TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
     return new CAnyTypeChoice();
 }
 
-TMemberIndex GetIndexAnyTypeChoice(TConstObjectPtr object)
+TMemberIndex GetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
+                                   TConstObjectPtr choicePtr)
 {
-    const CAnyTypeChoice* choice = static_cast<const CAnyTypeChoice*>(object);
+    const CAnyTypeChoice* choice =
+        static_cast<const CAnyTypeChoice*>(choicePtr);
     return choice->index;
 }
 
-void SetIndexAnyTypeChoice(TObjectPtr object, TMemberIndex index)
+void SetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
+                           TObjectPtr choicePtr,
+                           TMemberIndex index)
 {
-    CAnyTypeChoice* choice = static_cast<CAnyTypeChoice*>(object);
+    CAnyTypeChoice* choice = static_cast<CAnyTypeChoice*>(choicePtr);
     choice->index = index;
+}
+
+void ResetIndexAnyTypeChoice(const CChoiceTypeInfo* /*choiceType*/,
+                             TObjectPtr choicePtr)
+{
+    CAnyTypeChoice* choice = static_cast<CAnyTypeChoice*>(choicePtr);
+    choice->index = kEmptyChoice;
 }
 
 const char* CChoiceDataType::GetASNKeyword(void) const
@@ -169,15 +186,17 @@ bool CChoiceDataType::CheckValue(const CDataValue& value) const
 CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
 {
     auto_ptr<CChoiceTypeInfo>
-        typeInfo(new CChoiceTypeInfo(GlobalName(),
-                                     sizeof(CAnyTypeChoice), typeid(CAnyTypeChoice),
-                                     &CreateAnyTypeChoice,
-                                     &GetIndexAnyTypeChoice, &SetIndexAnyTypeChoice));
+        typeInfo(new CChoiceTypeInfo(sizeof(CAnyTypeChoice), GlobalName(),
+                                     TObjectPtr(0), &CreateAnyTypeChoice,
+                                     typeid(CAnyTypeChoice),
+                                     &GetIndexAnyTypeChoice,
+                                     &SetIndexAnyTypeChoice,
+                                     &ResetIndexAnyTypeChoice));
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i ) {
         CDataMember* member = i->get();
-        typeInfo->GetMembers().AddMember(member->GetName(), 0,
-                                         member->GetType()->GetTypeInfo());
+        typeInfo->AddVariant(member->GetName(), 0,
+                             member->GetType()->GetTypeInfo());
     }
     return typeInfo.release();
 }

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/09/18 20:00:11  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.49  2000/09/01 18:16:47  vasilche
 * Added files to MSVC project.
 * Fixed errors on MSVC.
@@ -248,30 +254,35 @@ public:
     typedef auto_ptr<TDataType> TObjectType;
 
     CStlClassInfo_auto_ptr(TTypeInfo typeInfo)
-        : CParent(typeInfo)
-        { }
+        : CParent(sizeof(TDataType), typeInfo)
+        {
+            m_GetData = &GetData;
+            m_SetData = &SetData;
+        }
     CStlClassInfo_auto_ptr(const CTypeRef& typeRef)
-        : CParent(typeRef)
-        { }
+        : CParent(sizeof(TDataType), typeRef)
+        {
+            m_GetData = &GetData;
+            m_SetData = &SetData;
+        }
     
-    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
-        {
-            return static_cast<const TObjectType*>(object)->get();
-        }
-    void SetObjectPointer(TObjectPtr object, TObjectPtr data) const
-        {
-            static_cast<TObjectType*>(object)->
-                reset(static_cast<TDataType*>(data));
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-
     static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
             return new CStlClassInfo_auto_ptr<Data>(info);
+        }
+
+protected:
+    static TObjectPtr GetData(const CPointerTypeInfo* /*objectType*/,
+                              TObjectPtr objectPtr)
+        {
+            return CTypeConverter<TObjectPtr>::Get(objectPtr).get();
+        }
+    static void SetData(const CPointerTypeInfo* /*objectType*/,
+                        TObjectPtr objectPtr,
+                        TObjectPtr dataPtr)
+        {
+            CTypeConverter<TObjectPtr>::Get(objectPtr).
+                reset(&CTypeConverter<TDataType>::Get(dataPtr));
         }
 };
 
@@ -284,30 +295,35 @@ public:
     typedef CRef<TDataType> TObjectType;
 
     CRefTypeInfo(TTypeInfo typeInfo)
-        : CParent(typeInfo)
-        { }
+        : CParent(sizeof(TDataType), typeInfo)
+        {
+            m_GetData = &GetData;
+            m_SetData = &SetData;
+        }
     CRefTypeInfo(const CTypeRef& typeRef)
-        : CParent(typeRef)
-        { }
+        : CParent(sizeof(TDataType), typeRef)
+        {
+            m_GetData = &GetData;
+            m_SetData = &SetData;
+        }
     
-    TConstObjectPtr x_GetObjectPointer(TConstObjectPtr object) const
-        {
-            return static_cast<const TObjectType*>(object)->GetPointerOrNull();
-        }
-    void SetObjectPointer(TObjectPtr object, TObjectPtr data) const
-        {
-            static_cast<TObjectType*>(object)->
-                Reset(static_cast<TDataType*>(data));
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-
     static TTypeInfo GetTypeInfo(TTypeInfo info)
         {
             return new CRefTypeInfo<Data>(info);
+        }
+
+protected:
+    static TObjectPtr GetData(const CPointerTypeInfo* /*objectType*/,
+                              TObjectPtr objectPtr)
+        {
+            return CTypeConverter<TObjectType>::Get(objectPtr).GetPointer();
+        }
+    static void SetData(const CPointerTypeInfo* /*objectType*/,
+                        TObjectPtr objectPtr,
+                        TObjectPtr dataPtr)
+        {
+            CTypeConverter<TObjectType>::Get(objectPtr).
+                Reset(&CTypeConverter<TDataType>::Get(dataPtr));
         }
 };
 
@@ -432,9 +448,10 @@ class CStlOneArgTemplate : public CContainerTypeInfo
 {
     typedef CContainerTypeInfo CParent;
 public:
-
-    CStlOneArgTemplate(TTypeInfo dataType, bool randomOrder);
-    CStlOneArgTemplate(const CTypeRef& dataType, bool randomOrder);
+    CStlOneArgTemplate(size_t size, TTypeInfo dataType,
+                       bool randomOrder);
+    CStlOneArgTemplate(size_t size, const CTypeRef& dataType,
+                       bool randomOrder);
 
     const CMemberId& GetDataId(void) const
         {
@@ -442,16 +459,8 @@ public:
         }
     void SetDataId(const CMemberId& id);
 
-    TTypeInfo GetDataTypeInfo(void) const
-        {
-            return m_DataType.Get();
-        }
-
-    virtual TTypeInfo GetElementType(void) const;
-
 private:
     CMemberId m_DataId;
-    CTypeRef m_DataType;
 };
 
 class CStlTwoArgsTemplate : public CContainerTypeInfo
@@ -459,9 +468,13 @@ class CStlTwoArgsTemplate : public CContainerTypeInfo
     typedef CContainerTypeInfo CParent;
 public:
 
-    CStlTwoArgsTemplate(TTypeInfo keyType, TTypeInfo valueType,
+    CStlTwoArgsTemplate(size_t size,
+                        const CTypeRef& elementType,
+                        TTypeInfo keyType, TTypeInfo valueType,
                         bool randomOrder);
-    CStlTwoArgsTemplate(const CTypeRef& keyType, const CTypeRef& valueType,
+    CStlTwoArgsTemplate(size_t size,
+                        const CTypeRef& elementType,
+                        const CTypeRef& keyType, const CTypeRef& valueType,
                         bool randomOrder);
 
     const CMemberId& GetKeyId(void) const
@@ -500,15 +513,22 @@ public:
     typedef typename TObjectType::value_type value_type;
 
     CStlListTemplateBase(TTypeInfo dataType, bool randomOrder = false)
-        : CParent(dataType, randomOrder)
+        : CParent(sizeof(List), dataType, randomOrder)
         {
+            SetCreateFunction(&CreateList);
         }
     CStlListTemplateBase(const CTypeRef& dataType, bool randomOrder = false)
-        : CParent(dataType, randomOrder)
+        : CParent(sizeof(List), dataType, randomOrder)
         {
+            SetCreateFunction(&CreateList);
         }
 
 protected:
+    static TObjectPtr CreateList(TTypeInfo /*objectType*/)
+        {
+            return new List;
+        }
+
     static TObjectType& Get(TObjectPtr object)
         {
             return *static_cast<TObjectType*>(object);
@@ -522,15 +542,6 @@ protected:
             return *static_cast<const value_type*>(elementPtr);
         }
 
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType;
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
     virtual bool IsDefault(TConstObjectPtr object) const
         {
             return Get(object).empty();
@@ -557,7 +568,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             List& container = Get(containerPtr);
-            TTypeInfo elementType = GetDataTypeInfo();
+            TTypeInfo elementType = GetElementType();
             {
                 // push empty element
                 container.push_back(value_type());
@@ -618,15 +629,22 @@ public:
     typedef typename Set::value_type value_type;
 
     CStlClassInfoSetBase(TTypeInfo dataType)
-        : CParent(dataType, true)
+        : CParent(sizeof(Set), dataType, true)
         {
+            SetCreateFunction(&CreateSet);
         }
     CStlClassInfoSetBase(const CTypeRef& dataType)
-        : CParent(dataType, true)
+        : CParent(sizeof(Set), dataType, true)
         {
+            SetCreateFunction(&CreateSet);
         }
 
 protected:
+    static TObjectPtr CreateSet(TTypeInfo /*objectType*/)
+        {
+            return new Set;
+        }
+
     static TObjectType& Get(TObjectPtr object)
         {
             return *static_cast<TObjectType*>(object);
@@ -640,15 +658,6 @@ protected:
             return *static_cast<const value_type*>(elementPtr);
         }
 
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType;
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
     virtual bool IsDefault(TConstObjectPtr object) const
         {
             return Get(object).empty();
@@ -705,7 +714,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             Data data;
-            in.ReadObject(&data, GetDataTypeInfo());
+            in.ReadObject(&data, GetElementType());
             InsertElement(containerPtr, &data);
         }
 };
@@ -742,7 +751,7 @@ protected:
     void AddElement(TObjectPtr containerPtr, CObjectIStream& in) const
         {
             Data data;
-            in.ReadObject(&data, GetDataTypeInfo());
+            in.ReadObject(&data, GetElementType());
             InsertElement(containerPtr, &data);
         }
 };
@@ -752,21 +761,25 @@ class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
     typedef CStlTwoArgsTemplate CParent;
 public:
 
-    CStlClassInfoMapImpl(TTypeInfo keyType,
+    CStlClassInfoMapImpl(size_t size,
+                         TTypeInfo keyType,
                          TConstObjectPtr keyOffset,
                          TTypeInfo valueType,
                          TConstObjectPtr valueOffset);
-    CStlClassInfoMapImpl(const CTypeRef& keyType,
+    CStlClassInfoMapImpl(size_t size,
+                         const CTypeRef& keyType,
                          TConstObjectPtr keyOffset,
                          const CTypeRef& valueType,
                          TConstObjectPtr valueOffset);
 
-    virtual TTypeInfo GetElementType(void) const;
-
-    const CClassTypeInfo* GetElementClassType(void) const;
+    const CClassTypeInfo* GetElementClassType(void) const
+        {
+            return CTypeConverter<CClassTypeInfo>::SafeCast(GetElementType());
+        }
 
 private:
-    mutable AutoPtr<const CClassTypeInfo> m_ElementType;
+    static TTypeInfo CreateElementClassType(TTypeInfo mapType);
+
     TConstObjectPtr m_KeyOffset, m_ValueOffset;
 };
 
@@ -784,17 +797,26 @@ public:
 	typedef typename value_type::second_type mapped_type;
 
     CStlClassInfoMapBase(TTypeInfo keyType, TTypeInfo dataType)
-        : CParent(keyType, &static_cast<const value_type*>(0)->first,
+        : CParent(sizeof(Map),
+                  keyType, &static_cast<const value_type*>(0)->first,
                   dataType, &static_cast<const value_type*>(0)->second)
         {
+            SetCreateFunction(&CreateMap);
         }
     CStlClassInfoMapBase(const CTypeRef& keyType, const CTypeRef& dataType)
-        : CParent(keyType, &static_cast<const value_type*>(0)->first,
+        : CParent(sizeof(Map),
+                  keyType, &static_cast<const value_type*>(0)->first,
                   dataType, &static_cast<const value_type*>(0)->second)
         {
+            SetCreateFunction(&CreateMap);
         }
 
 protected:
+    static TObjectPtr CreateMap(TTypeInfo /*objectType*/)
+        {
+            return new Map;
+        }
+
     static const TObjectType& Get(TConstObjectPtr object)
         {
             return *static_cast<const TObjectType*>(object);
@@ -806,16 +828,6 @@ protected:
     static const value_type& GetElement(TConstObjectPtr elementPtr)
         {
             return *static_cast<const value_type*>(elementPtr);
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType;
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const

@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/09/18 20:00:26  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.24  2000/08/15 19:44:51  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -126,30 +132,43 @@
 */
 
 #include <serial/typeinfo.hpp>
+#include <serial/typeinfoimpl.hpp>
+#include <serial/object.hpp>
 
 BEGIN_NCBI_SCOPE
 
-CTypeInfo::CTypeInfo(void)
+CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
+    : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
+      m_CreateFunction(&CVoidTypeFunctions::Create),
+      m_ReadHookData(&CVoidTypeFunctions::Read, &ReadWithHook),
+      m_WriteHookData(&CVoidTypeFunctions::Write, &WriteWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &CopyWithHook),
+      m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
 }
 
-CTypeInfo::CTypeInfo(const string& name)
-    : m_Name(name)
+CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
+    : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
+      m_CreateFunction(&CVoidTypeFunctions::Create),
+      m_ReadHookData(&CVoidTypeFunctions::Read, &ReadWithHook),
+      m_WriteHookData(&CVoidTypeFunctions::Write, &WriteWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &CopyWithHook),
+      m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
 }
 
-CTypeInfo::CTypeInfo(const char* name)
-    : m_Name(name)
+CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
+    : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
+      m_CreateFunction(&CVoidTypeFunctions::Create),
+      m_ReadHookData(&CVoidTypeFunctions::Read, &ReadWithHook),
+      m_WriteHookData(&CVoidTypeFunctions::Write, &WriteWithHook),
+      m_CopyHookData(&CVoidTypeFunctions::Copy, &CopyWithHook),
+      m_SkipFunction(&CVoidTypeFunctions::Skip)
 {
 }
 
 CTypeInfo::~CTypeInfo(void)
 {
-}
-
-TObjectPtr CTypeInfo::Create(void) const
-{
-    THROW1_TRACE(runtime_error, "This type cannot be allocated on heap");
 }
 
 void CTypeInfo::Delete(TObjectPtr /*object*/) const
@@ -164,11 +183,6 @@ void CTypeInfo::DeleteExternalObjects(TObjectPtr /*object*/) const
 TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const
 {
     return this;
-}
-
-bool CTypeInfo::IsOrMayContainType(TTypeInfo typeInfo) const
-{
-    return this == typeInfo;
 }
 
 bool CTypeInfo::IsType(TTypeInfo typeInfo) const
@@ -194,6 +208,98 @@ const CObject* CTypeInfo::GetCObjectPtr(TConstObjectPtr /*objectPtr*/) const
 bool CTypeInfo::IsParentClassOf(const CClassTypeInfo* /*classInfo*/) const
 {
     return false;
+}
+
+void CTypeInfo::SetCreateFunction(TTypeCreate func)
+{
+    m_CreateFunction = func;
+}
+
+void CTypeInfo::SetReadHook(CObjectIStream* stream,
+                            CReadObjectHook* hook)
+{
+    m_ReadHookData.SetHook(stream, hook);
+}
+
+void CTypeInfo::ResetReadHook(CObjectIStream* stream)
+{
+    m_ReadHookData.ResetHook(stream);
+}
+
+void CTypeInfo::SetReadFunction(TTypeRead func)
+{
+    m_ReadHookData.GetDefaultFunction() = func;
+}
+
+void CTypeInfo::SetWriteHook(CObjectOStream* stream,
+                             CWriteObjectHook* hook)
+{
+    m_WriteHookData.SetHook(stream, hook);
+}
+
+void CTypeInfo::ResetWriteHook(CObjectOStream* stream)
+{
+    m_WriteHookData.ResetHook(stream);
+}
+
+void CTypeInfo::SetWriteFunction(TTypeWrite func)
+{
+    m_WriteHookData.GetDefaultFunction() = func;
+}
+
+void CTypeInfo::SetCopyHook(CObjectStreamCopier* stream,
+                            CCopyObjectHook* hook)
+{
+    m_CopyHookData.SetHook(stream, hook);
+}
+
+void CTypeInfo::ResetCopyHook(CObjectStreamCopier* stream)
+{
+    m_CopyHookData.ResetHook(stream);
+}
+
+void CTypeInfo::SetCopyFunction(TTypeCopy func)
+{
+    m_CopyHookData.GetDefaultFunction() = func;
+}
+
+void CTypeInfo::SetSkipFunction(TTypeSkip func)
+{
+    m_SkipFunction = func;
+}
+
+void CTypeInfo::ReadWithHook(CObjectIStream& stream,
+                             TTypeInfo objectType,
+                             TObjectPtr objectPtr)
+{
+    CReadObjectHook* hook = objectType->m_ReadHookData.GetHook(&stream);
+    if ( hook )
+        hook->ReadObject(stream, CObjectInfo(objectPtr, objectType,
+                                             CObjectInfo::eNonCObject));
+    else
+        objectType->DefaultReadData(stream, objectPtr);
+}
+
+void CTypeInfo::WriteWithHook(CObjectOStream& stream,
+                              TTypeInfo objectType,
+                              TConstObjectPtr objectPtr)
+{
+    CWriteObjectHook* hook = objectType->m_WriteHookData.GetHook(&stream);
+    if ( hook )
+        hook->WriteObject(stream, CConstObjectInfo(objectPtr, objectType,
+                                                   CObjectInfo::eNonCObject));
+    else
+        objectType->DefaultWriteData(stream, objectPtr);
+}
+
+void CTypeInfo::CopyWithHook(CObjectStreamCopier& stream,
+                             TTypeInfo objectType)
+{
+    CCopyObjectHook* hook = objectType->m_CopyHookData.GetHook(&stream);
+    if ( hook )
+        hook->CopyObject(stream, objectType);
+    else
+        objectType->DefaultCopyData(stream);
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/09/18 20:00:03  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.2  2000/06/16 16:31:05  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -41,5 +47,18 @@
 *
 * ===========================================================================
 */
+
+inline
+CItemInfo* CMembersInfo::x_GetItemInfo(TMemberIndex index) const
+{
+    _ASSERT(index >= FirstIndex() && index <= LastIndex());
+    return m_Items[index - FirstIndex()].get();
+}
+
+inline
+const CItemInfo* CMembersInfo::GetItemInfo(TMemberIndex index) const
+{
+    return x_GetItemInfo(index);
+}
 
 #endif /* def MEMBERLIST__HPP  &&  ndef MEMBERLIST__INL */

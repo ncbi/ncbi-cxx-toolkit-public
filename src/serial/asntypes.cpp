@@ -30,6 +30,12 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2000/09/18 20:00:20  vasilche
+* Separated CVariantInfo and CMemberInfo.
+* Implemented copy hooks.
+* All hooks now are stored in CTypeInfo/CMemberInfo/CVariantInfo.
+* Most type specific functions now are implemented via function pointers instead of virtual functions.
+*
 * Revision 1.45  2000/09/01 13:16:13  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -209,9 +215,8 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/autoptrinfo.hpp>
-#include <serial/objstack.hpp>
-#include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
 #include <serial/objcopy.hpp>
 #include <serial/classinfob.hpp>
 #include <serial/typemap.hpp>
@@ -240,44 +245,47 @@ TTypeInfo CSequenceOfTypeInfo::GetTypeInfo(TTypeInfo base)
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(TTypeInfo type, bool randomOrder)
-    : CParent(randomOrder), m_DataType(type)
+    : CParent(sizeof(TObjectType), type, randomOrder)
 {
-	Init();
-}
-
-CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name,
-                                         TTypeInfo type, bool randomOrder)
-    : CParent(name, randomOrder), m_DataType(type)
-{
-	Init();
+	InitSequenceOfTypeInfo();
 }
 
 CSequenceOfTypeInfo::CSequenceOfTypeInfo(const char* name,
                                          TTypeInfo type, bool randomOrder)
-    : CParent(name, randomOrder), m_DataType(type)
+    : CParent(sizeof(TObjectType), name, type, randomOrder)
 {
-	Init();
+	InitSequenceOfTypeInfo();
 }
 
-void CSequenceOfTypeInfo::Init(void)
+CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name,
+                                         TTypeInfo type, bool randomOrder)
+    : CParent(sizeof(TObjectType), name, type, randomOrder)
 {
-	TTypeInfo type = m_DataType;
+	InitSequenceOfTypeInfo();
+}
+
+void CSequenceOfTypeInfo::InitSequenceOfTypeInfo(void)
+{
+    SetReadFunction(&ReadSequence);
+
+	TTypeInfo type = GetElementType();
     _TRACE("SequenceOf(" << type->GetName() << ") " << typeid(*type).name());
     const CAutoPointerTypeInfo* ptrInfo =
         dynamic_cast<const CAutoPointerTypeInfo*>(type);
     if ( ptrInfo != 0 ) {
         // data type is auto_ptr
-        TTypeInfo asnType = ptrInfo->GetDataTypeInfo();
-        if ( dynamic_cast<const CChoiceTypeInfo*>(asnType) != 0 ) {
+        TTypeInfo asnType = ptrInfo->GetPointedType();
+        if ( asnType->GetTypeFamily() == eTypeFamilyChoice ) {
             // CHOICE
             _TRACE("SequenceOf(" << type->GetName() << ") AUTO CHOICE");
             SetChoiceNext();
-            m_DataType = asnType;
+            m_ElementType = asnType;
         }
-        else if ( dynamic_cast<const CClassTypeInfoBase*>(asnType) != 0 ) {
+        else if ( asnType->GetTypeFamily() == eTypeFamilyClass ) {
             // user types
-            if ( dynamic_cast<const CClassTypeInfoBase*>(asnType)->
-                 GetMembers().GetFirstMemberOffset() < sizeof(void*) ) {
+            const CClassTypeInfo* classType =
+                CTypeConverter<CClassTypeInfo>::SafeCast(asnType);
+            if ( classType->GetItems().GetFirstItemOffset() < sizeof(void*) ) {
                 THROW1_TRACE(runtime_error,
                              "CSequenceOfTypeInfo: incompatible type: " +
                              type->GetName() + ": " + typeid(*type).name() +
@@ -285,14 +293,14 @@ void CSequenceOfTypeInfo::Init(void)
             }
             m_NextOffset = 0;
             m_DataOffset = 0;
-            m_DataType = asnType;
+            m_ElementType = asnType;
             _TRACE("SequenceOf(" << type->GetName() << ") SEQUENCE");
         }
         else if ( asnType->GetSize() <= sizeof(dataval) ) {
             // statndard types and SET/SEQUENCE OF
             _TRACE("SequenceOf(" << type->GetName() << ") AUTO VALNODE");
             SetValNodeNext();
-			m_DataType = asnType;
+			m_ElementType = asnType;
         }
 		else {
 /*
@@ -329,11 +337,6 @@ void CSequenceOfTypeInfo::SetValNodeNext(void)
 {
     m_NextOffset = offsetof(valnode, next);
     m_DataOffset = offsetof(valnode, data);
-}
-
-TTypeInfo CSequenceOfTypeInfo::GetElementType(void) const
-{
-    return GetDataTypeInfo();
 }
 
 class CSequenceConstIterator : public CContainerTypeInfo::CConstIterator
@@ -412,16 +415,11 @@ CContainerTypeInfo::CIterator* CSequenceOfTypeInfo::NewIterator(void) const
     return new CSequenceIterator(this);
 }
 
-size_t CSequenceOfTypeInfo::GetSize(void) const
-{
-    return CType<TObjectPtr>::GetSize();
-}
-
 TObjectPtr CSequenceOfTypeInfo::CreateData(void) const
 {
     if ( m_DataOffset == 0 ) {
         _ASSERT(m_NextOffset == 0 || m_NextOffset == offsetof(valnode, next));
-        return GetDataTypeInfo()->Create();
+        return GetElementType()->Create();
 	}
     else {
         _ASSERT(m_NextOffset == offsetof(valnode, next));
@@ -448,7 +446,7 @@ void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
         return;
     }
 
-    TTypeInfo dataType = GetDataTypeInfo();
+    TTypeInfo dataType = GetElementType();
     dst = FirstNode(dst) = CreateData();
     dataType->Assign(Data(dst), Data(src));
     while ( (src = NextNode(src)) != 0 ) {
@@ -469,74 +467,42 @@ void CSequenceOfTypeInfo::AddElement(TObjectPtr /*containerPtr*/,
     THROW1_TRACE(runtime_error, "illegal call");
 }
 
-class CReadSequenceHook : public CReadContainerElementHook
+void CSequenceOfTypeInfo::ReadSequence(CObjectIStream& in,
+                                       TTypeInfo containerType,
+                                       TObjectPtr containerPtr)
 {
-public:
-    CReadSequenceHook(void)
-        : m_LastNode(0)
-        {
-        }
+    const CSequenceOfTypeInfo* seqType =
+        CTypeConverter<CSequenceOfTypeInfo>::SafeCast(containerType);
 
-    void ReadContainerElement(CObjectIStream& in,
-                              const CObjectInfo& container)
-        {
-            // get sequence type info
-            TTypeInfo containerType = container.GetTypeInfo();
-            _ASSERT(dynamic_cast<const CSequenceOfTypeInfo*>(containerType));
-            const CSequenceOfTypeInfo* sequenceType =
-                static_cast<const CSequenceOfTypeInfo*>(containerType);
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameArray, seqType);
+    in.BeginContainer(seqType);
 
-            // get current node pointer
-            TObjectPtr lastNode = m_LastNode;
-            TObjectPtr* nextNodePtr;
-            if ( !lastNode ) {
-                // first node
-                nextNodePtr =
-                    &sequenceType->FirstNode(container.GetObjectPtr());
-            }
-            else {
-                nextNodePtr = &sequenceType->NextNode(lastNode);
-            }
+    TTypeInfo elementType = seqType->GetElementType();
+    BEGIN_OBJECT_FRAME_OF2(in, eFrameArrayElement, elementType);
 
-            // create node if needed
-            TObjectPtr node = *nextNodePtr;
-            if ( !node )
-                node = *nextNodePtr = sequenceType->CreateData();
+    TObjectPtr* nextNodePtr = &seqType->FirstNode(containerPtr);
 
-            // save last node for next read
-            m_LastNode = node;
+    while ( in.BeginContainerElement(elementType) ) {
+        // get current node pointer
+        TObjectPtr node = *nextNodePtr;
+        
+        // create node
+        _ASSERT(!node);
+        node = *nextNodePtr = seqType->CreateData();
 
-            // read node data
-            in.ReadObject(sequenceType->Data(node),
-                          sequenceType->GetDataTypeInfo());
-        }
+        // read node data
+        in.ReadObject(seqType->Data(node), elementType);
 
-private:
-    TObjectPtr m_LastNode; // last read node pointer (for append)
-};
+        // save next node for next read
+        nextNodePtr = &seqType->NextNode(node);
+        
+        in.EndContainerElement();
+    }
 
-void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr object) const
-{
-    out.WriteContainer(object, this);
-}
+    END_OBJECT_FRAME_OF(in);
 
-void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
-{
-    CReadSequenceHook hook;
-    in.ReadContainer(CObjectInfo(object, this,
-                                 CObjectInfo::eNonCObject), hook);
-}
-
-void CSequenceOfTypeInfo::SkipData(CObjectIStream& in) const
-{
-    in.SkipContainer(this);
-}
-
-void CSequenceOfTypeInfo::CopyData(CObjectStreamCopier& copier) const
-{
-    copier.CopyContainer(this);
+    in.EndContainer();
+    END_OBJECT_FRAME_OF(in);
 }
 
 static CTypeInfoMap<CSetOfTypeInfo> CSetOfTypeInfo_map;
@@ -551,24 +517,23 @@ CSetOfTypeInfo::CSetOfTypeInfo(TTypeInfo type)
 {
 }
 
-CSetOfTypeInfo::CSetOfTypeInfo(const string& name, TTypeInfo type)
-    : CParent(name, type, true)
-{
-}
-
 CSetOfTypeInfo::CSetOfTypeInfo(const char* name, TTypeInfo type)
     : CParent(name, type, true)
 {
 }
 
-CPrimitiveTypeInfo::EValueType COctetStringTypeInfo::GetValueType(void) const
+CSetOfTypeInfo::CSetOfTypeInfo(const string& name, TTypeInfo type)
+    : CParent(name, type, true)
 {
-    return eOctetString;
 }
 
-size_t COctetStringTypeInfo::GetSize(void) const
+COctetStringTypeInfo::COctetStringTypeInfo(void)
+    : CParent(sizeof(TObjectType), ePrimitiveValueOctetString)
 {
-    return CType<TObjectType>::GetSize();
+    SetReadFunction(&ReadOctetString);
+    SetWriteFunction(&WriteOctetString);
+    SetCopyFunction(&CopyOctetString);
+    SetSkipFunction(&SkipOctetString);
 }
 
 bool COctetStringTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -618,10 +583,27 @@ void COctetStringTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 	Get(dst) = BSDup(Get(src));
 }
 
-void COctetStringTypeInfo::WriteData(CObjectOStream& out,
-                                     TConstObjectPtr object) const
+void COctetStringTypeInfo::ReadOctetString(CObjectIStream& in,
+                                           TTypeInfo /*objectType*/,
+                                           TObjectPtr objectPtr)
 {
-	bytestore* bs = const_cast<bytestore*>(Get(object));
+	CObjectIStream::ByteBlock block(in);
+	BSFree(Get(objectPtr));
+    char buffer[1024];
+    size_t count = block.Read(buffer, sizeof(buffer));
+    bytestore* bs = Get(objectPtr) = BSNew(count);
+    BSWrite(bs, buffer, count);
+    while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
+        BSWrite(bs, buffer, count);
+    }
+    block.End();
+}
+
+void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
+                                            TTypeInfo /*objectType*/,
+                                            TConstObjectPtr objectPtr)
+{
+	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
 	if ( bs == 0 )
 		THROW1_TRACE(runtime_error, "null bytestore pointer");
 	Int4 len = BSLen(bs);
@@ -638,28 +620,16 @@ void COctetStringTypeInfo::WriteData(CObjectOStream& out,
 	}
 }
 
-void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
-{
-	CObjectIStream::ByteBlock block(in);
-	BSFree(Get(object));
-    char buffer[1024];
-    size_t count = block.Read(buffer, sizeof(buffer));
-    bytestore* bs = Get(object) = BSNew(count);
-    BSWrite(bs, buffer, count);
-    while ( (count = block.Read(buffer, sizeof(buffer))) != 0 ) {
-        BSWrite(bs, buffer, count);
-    }
-    block.End();
-}
-
-void COctetStringTypeInfo::SkipData(CObjectIStream& in) const
-{
-    in.SkipByteBlock();
-}
-
-void COctetStringTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void COctetStringTypeInfo::CopyOctetString(CObjectStreamCopier& copier,
+                                           TTypeInfo /*objectType*/)
 {
     copier.CopyByteBlock();
+}
+
+void COctetStringTypeInfo::SkipOctetString(CObjectIStream& in,
+                                           TTypeInfo /*objectType*/)
+{
+    in.SkipByteBlock();
 }
 
 void COctetStringTypeInfo::GetValueOctetString(TConstObjectPtr objectPtr,
@@ -690,51 +660,26 @@ TTypeInfo COctetStringTypeInfo::GetTypeInfo(void)
     return typeInfo;
 }
 
-//map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
+COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
+                                 TNewProc newProc, TFreeProc freeProc,
+                                 TReadProc readProc, TWriteProc writeProc)
+    : CParent(sizeof(TObjectType), name, ePrimitiveValueSpecial),
+      m_NewProc(newProc), m_FreeProc(freeProc),
+      m_ReadProc(readProc), m_WriteProc(writeProc)
+{
+    SetReadFunction(&ReadOldAsnStruct);
+    SetWriteFunction(&WriteOldAsnStruct);
+}
 
 COldAsnTypeInfo::COldAsnTypeInfo(const string& name,
                                  TNewProc newProc, TFreeProc freeProc,
                                  TReadProc readProc, TWriteProc writeProc)
-    : CParent(name),
+    : CParent(sizeof(TObjectType), name, ePrimitiveValueSpecial),
       m_NewProc(newProc), m_FreeProc(freeProc),
       m_ReadProc(readProc), m_WriteProc(writeProc)
 {
-}
-
-COldAsnTypeInfo::COldAsnTypeInfo(const char* name,
-                                 TNewProc newProc, TFreeProc freeProc,
-                                 TReadProc readProc, TWriteProc writeProc)
-    : CParent(name),
-      m_NewProc(newProc), m_FreeProc(freeProc),
-      m_ReadProc(readProc), m_WriteProc(writeProc)
-{
-}
-
-/*
-TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
-                                       TReadProc readProc, TWriteProc writeProc)
-{
-    COldAsnTypeInfo*& info = m_Types[newProc];
-    if ( info ) {
-        if ( info->m_NewProc != newProc || info->m_FreeProc != freeProc ||
-             info->m_ReadProc != readProc || info->m_WriteProc != writeProc )
-            THROW1_TRACE(runtime_error, "changed ASN.1 procedures pointers");
-    }
-    else {
-        info = new COldAsnTypeInfo(newProc, freeProc, readProc, writeProc);
-    }
-    return info;
-}
-*/
-
-CPrimitiveTypeInfo::EValueType COldAsnTypeInfo::GetValueType(void) const
-{
-    return eSpecial;
-}
-
-size_t COldAsnTypeInfo::GetSize(void) const
-{
-    return CType<TObjectType>::GetSize();
+    SetReadFunction(&ReadOldAsnStruct);
+    SetWriteFunction(&WriteOldAsnStruct);
 }
 
 bool COldAsnTypeInfo::IsDefault(TConstObjectPtr object) const
@@ -758,29 +703,29 @@ void COldAsnTypeInfo::Assign(TObjectPtr , TConstObjectPtr ) const
     THROW1_TRACE(runtime_error, "cannot assign non default value");
 }
 
-void COldAsnTypeInfo::CopyData(CObjectStreamCopier& copier) const
+void COldAsnTypeInfo::ReadOldAsnStruct(CObjectIStream& in,
+                                       TTypeInfo objectType,
+                                       TObjectPtr objectPtr)
 {
-    THROW1_TRACE(runtime_error, "not implemented");
-}
+    const COldAsnTypeInfo* oldAsnType =
+        CTypeConverter<COldAsnTypeInfo>::SafeCast(objectType);
 
-void COldAsnTypeInfo::WriteData(CObjectOStream& out,
-                                TConstObjectPtr object) const
-{
-    if ( !m_WriteProc(Get(object), CObjectOStream::AsnIo(out, GetName()), 0) )
-        THROW1_TRACE(runtime_error, "write fault");
-}
-
-void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
-{
-    CObjectIStream::AsnIo io(in, GetName());
-    if ( (Get(object) = m_ReadProc(io, 0)) == 0 )
+    CObjectIStream::AsnIo io(in, oldAsnType->GetName());
+    if ( (Get(objectPtr) = oldAsnType->m_ReadProc(io, 0)) == 0 )
         in.ThrowError(in.eFail, "read fault");
     io.End();
 }
 
-void COldAsnTypeInfo::SkipData(CObjectIStream& in) const
+void COldAsnTypeInfo::WriteOldAsnStruct(CObjectOStream& out,
+                                        TTypeInfo objectType,
+                                        TConstObjectPtr objectPtr)
 {
-    in.ThrowError(in.eFail, "cannot skip COldAsnTypeInfo");
+    const COldAsnTypeInfo* oldAsnType =
+        CTypeConverter<COldAsnTypeInfo>::SafeCast(objectType);
+
+    CObjectOStream::AsnIo io(out, oldAsnType->GetName());
+    if ( !oldAsnType->m_WriteProc(Get(objectPtr), io, 0) )
+        THROW1_TRACE(runtime_error, "write fault");
 }
 
 END_NCBI_SCOPE
