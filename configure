@@ -17389,6 +17389,8 @@ if test "$with_geo" != "no" ; then
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
       NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${release_debug}${bit64_sfx}"
+      vpath=$NCBI_GEO_LIBPATH$ncbi_compiler_ver
+      test -d "$vpath"  &&  NCBI_GEO_LIBPATH=$vpath
    fi
    echo "$as_me:$LINENO: checking for NCBI GEO directories in $NCBI_GEO_PATH" >&5
 echo $ECHO_N "checking for NCBI GEO directories in $NCBI_GEO_PATH... $ECHO_C" >&6
@@ -17494,7 +17496,7 @@ if test "$with_sp" != "no" ; then
       SP_GENERIC="$SP_PATH/generic"
    fi
    if test -z "$SP_LIBPATH" ; then
-      SP_LIBPATH="${SP_PATH}/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
+      SP_LIBPATH="${SP_PATH}/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
    fi
    echo "$as_me:$LINENO: checking for SP directories in $SP_PATH" >&5
 echo $ECHO_N "checking for SP directories in $SP_PATH... $ECHO_C" >&6
@@ -17847,6 +17849,8 @@ _ACEOF
 
 
 : ${SABLOT_PATH=$NCBI/Sablot}
+vpath="$SABLOT_PATH/${compiler_vpfx}build"
+test -d "$vpath"  &&  SABLOT_PATH=$vpath
 if test "$with_sablot" != "no"; then
     case "$with_sablot" in
        yes | "" ) ;;

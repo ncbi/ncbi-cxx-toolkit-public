@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.260 2004/01/28 18:35:51 ucko Exp $
+#  $Id: configure.ac,v 1.261 2004/01/29 19:55:37 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2955,6 +2955,8 @@ if test "$with_geo" != "no" ; then
    NCBI_GEO_INCLUDE=${NCBI_GEO_INCLUDE:="$NCBI_GEO_PATH/include"}
    if test -z "$NCBI_GEO_LIBPATH" ; then
       NCBI_GEO_LIBPATH="${NCBI_GEO_PATH}/lib/${release_debug}${bit64_sfx}"
+      vpath=$NCBI_GEO_LIBPATH$ncbi_compiler_ver
+      test -d "$vpath"  &&  NCBI_GEO_LIBPATH=$vpath
    fi
    AC_MSG_CHECKING([for NCBI GEO directories in $NCBI_GEO_PATH])
    if test ! -d "${NCBI_GEO_LIBPATH}"  -o  ! -d "${NCBI_GEO_INCLUDE}" ; then
@@ -3015,7 +3017,7 @@ if test "$with_sp" != "no" ; then
       SP_GENERIC="$SP_PATH/generic"
    fi
    if test -z "$SP_LIBPATH" ; then
-      SP_LIBPATH="${SP_PATH}/${compiler_pfx}${release_debug}${mt_sfx}${bit64_sfx}"
+      SP_LIBPATH="${SP_PATH}/${compiler_vpfx}${release_debug}${mt_sfx}${bit64_sfx}"
    fi
    AC_MSG_CHECKING([for SP directories in $SP_PATH])
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
@@ -3158,6 +3160,8 @@ NCBI_CHECK_THIRD_PARTY_LIB(expat,
  AC_LANG_PROGRAM([#include <expat.h>],
     [XML_Parser parser = XML_ParserCreate("utf-8");]))
 : ${SABLOT_PATH=$NCBI/Sablot}
+vpath="$SABLOT_PATH/${compiler_vpfx}build"
+test -d "$vpath"  &&  SABLOT_PATH=$vpath
 NCBI_CHECK_THIRD_PARTY_LIB(sablot,
  AC_LANG_PROGRAM([#include <sablot.h>],
     [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
