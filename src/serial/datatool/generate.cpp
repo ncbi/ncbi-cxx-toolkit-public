@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/12/03 14:50:27  juran
+* Eliminate "return value expected" warning.
+*
 * Revision 1.37  2001/10/22 15:18:19  grichenk
 * Fixed combined HPP generation.
 *
@@ -229,6 +232,7 @@ CDataType* CCodeGenerator::ExternalResolve(const string& module,
         _TRACE(exc.what());
         return m_ImportFiles.ExternalResolve(module, name, exported);
     }
+    return NULL;  // Eliminate "return value expected" warning
 }
 
 CDataType* CCodeGenerator::ResolveInAnyModule(const string& name,
@@ -245,6 +249,7 @@ CDataType* CCodeGenerator::ResolveInAnyModule(const string& name,
         _TRACE(exc.what());
         return m_ImportFiles.ResolveInAnyModule(name, exported);
     }
+    return NULL;  // Eliminate "return value expected" warning
 }
 
 CDataType* CCodeGenerator::ResolveMain(const string& fullName) const
