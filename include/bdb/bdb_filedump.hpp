@@ -38,6 +38,8 @@
 
 BEGIN_NCBI_SCOPE
 
+class CBDB_Query;
+
 /** @addtogroup BDB_Files
  *
  * @{
@@ -56,6 +58,8 @@ public:
     ///    Column separator
     CBDB_FileDumper(const string& col_separator = "\t");
     CBDB_FileDumper(const CBDB_FileDumper& fdump);
+    ~CBDB_FileDumper();
+    
     CBDB_FileDumper& operator=(const CBDB_FileDumper& fdump);
 
 
@@ -109,6 +113,12 @@ public:
     
     /// Return number of records processed by Dump
     unsigned GetRecordsDumped() const { return m_RecordsDumped; }
+    
+    /// Set query filter
+    void SetQuery(const string& query_str);
+    
+    /// Set BLOB dump file name
+    void SetBlobDumpFile(const string& fname) { m_BlobDumpFname = fname; }
 protected:
         
     void PrintHeader(CNcbiOstream& out,
@@ -126,10 +136,14 @@ private:
         
 protected:
     string               m_ColumnSeparator;
+    string               m_BlobDumpFname;
     EPrintFieldNames     m_PrintNames;
     EValueFormatting     m_ValueFormatting;
     TBlobFormat          m_BlobFormat;
     unsigned int         m_RecordsDumped;
+    
+    string               m_QueryStr;
+    CBDB_Query*          m_Query;
 }; 
 
 /* @} */
@@ -166,6 +180,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/28 12:18:24  kuznets
+ * Added setting to dump BLOB to a file
+ *
  * Revision 1.6  2004/06/23 19:38:04  kuznets
  * Added counter for dumped records
  *
