@@ -200,17 +200,23 @@ private:
     /// Prohibit assignment operator
     CDbBlast& operator=(const CDbBlast& rhs);
 
-    /// Open and initialize RPS blast structures from disk. Note that
-    /// the output arguments are manually allocated and must be
-    /// explicitly freed; see x_ResetRPSFields.
+    /// Open and initialize RPS blast structures from disk.
     /// @param ppinfo Pointer to initialized RPS data [out]
     /// @param rps_mmap Pointer to memory-mapped lookup table file [out]
     /// @param rps_pssm_mmap Pointer to memory-mapped PSSM file [out]
     /// @param dbname Name of RPS database [in]
-    static void         x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo, 
+    static void         x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo, 
                                               CMemoryFile **rps_mmap,
                                               CMemoryFile **rps_pssm_mmap,
                                               string dbname);
+
+    /// Free RPS blast related structures.
+    /// @param ppinfo Pointer to initialized RPS data [in/out]
+    /// @param rps_mmap Pointer to memory-mapped lookup table file [in/out]
+    /// @param rps_pssm_mmap Pointer to memory-mapped PSSM file [in/out]
+    static void         x_Blast_RPSInfoFree(BlastRPSInfo **ppinfo,
+                                            CMemoryFile **rps_mmap,
+                                            CMemoryFile **rps_pssm_mmap);
 
     /************ Internal data structures (m_i = internal members)**********/
     LookupTableWrap*    m_ipLookupTable;   ///< Lookup table, one for all queries
@@ -330,6 +336,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.33  2005/01/21 15:38:44  papadopo
+* changed x_Blast_FillRPSInfo to x_Blast_RPSInfo{Init|Free}
+*
 * Revision 1.32  2005/01/19 13:06:59  rsmith
 * take out redundant and illegal class specification.
 *

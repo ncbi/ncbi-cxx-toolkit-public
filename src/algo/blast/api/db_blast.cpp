@@ -201,7 +201,7 @@ void CDbBlast::x_InitFields()
     m_ibTracebackOnly = false;
 }
 
-void CDbBlast::x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo, 
+void CDbBlast::x_Blast_RPSInfoInit(BlastRPSInfo **ppinfo, 
                                    CMemoryFile **rps_mmap,
                                    CMemoryFile **rps_pssm_mmap,
                                    string dbname)
@@ -275,12 +275,32 @@ void CDbBlast::x_Blast_FillRPSInfo(BlastRPSInfo **ppinfo,
    *rps_pssm_mmap = pssm_mmap;
 }
 
+void CDbBlast::x_Blast_RPSInfoFree(BlastRPSInfo **ppinfo, 
+                                   CMemoryFile **rps_mmap,
+                                   CMemoryFile **rps_pssm_mmap)
+{
+    BlastRPSInfo *rps_info = *ppinfo;
+
+    delete *rps_mmap;
+    *rps_mmap = NULL;
+
+    delete *rps_pssm_mmap;
+    *rps_pssm_mmap = NULL;
+
+    if (rps_info) {
+        delete [] rps_info->aux_info.karlin_k;
+        sfree(rps_info->aux_info.orig_score_matrix);
+        delete rps_info;
+        *ppinfo = NULL;
+    }
+}
+
 void CDbBlast::x_InitRPSFields()
 {
     EProgram program = m_OptsHandle->GetOptions().GetProgram();
     if (program == eRPSBlast || program == eRPSTblastn) {
         string dbname(BLASTSeqSrcGetName(m_pSeqSrc));
-        x_Blast_FillRPSInfo(&m_ipRpsInfo, &m_ipRpsMmap, 
+        x_Blast_RPSInfoInit(&m_ipRpsInfo, &m_ipRpsMmap, 
                             &m_ipRpsPssmMmap, dbname);
         m_OptsHandle->SetOptions().SetMatrixName(m_ipRpsInfo->aux_info.orig_score_matrix);
         m_OptsHandle->SetOptions().SetGapOpeningCost(m_ipRpsInfo->aux_info.gap_open_penalty);
@@ -360,14 +380,7 @@ CDbBlast::x_ResetResultDs()
 void 
 CDbBlast::x_ResetRPSFields()
 {
-    if (m_ipRpsInfo) {
-        delete m_ipRpsMmap;
-        delete m_ipRpsPssmMmap;
-        delete [] m_ipRpsInfo->aux_info.karlin_k;
-        sfree(m_ipRpsInfo->aux_info.orig_score_matrix);
-        delete m_ipRpsInfo;
-        m_ipRpsInfo = NULL;
-    }
+    x_Blast_RPSInfoFree(&m_ipRpsInfo, &m_ipRpsMmap, &m_ipRpsPssmMmap);
 }
 
 /// Initializes the HSP stream structure, if it has not been passed by the 
@@ -658,6 +671,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2005/01/21 15:38:44  papadopo
+ * changed x_Blast_FillRPSInfo to x_Blast_RPSInfo{Init|Free}
+ *
  * Revision 1.52  2005/01/14 18:00:59  papadopo
  * move FillRPSInfo into CDbBlast, to remove some xblast dependencies on SeqDB
  *
