@@ -3653,6 +3653,7 @@ case "$host_os:$compiler" in
    CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    ;;
 
  cygwin*:GCC )

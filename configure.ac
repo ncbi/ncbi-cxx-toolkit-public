@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.218 2003/09/25 19:58:20 ucko Exp $
+#  $Id: configure.ac,v 1.219 2003/10/01 00:46:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -660,6 +660,7 @@ case "$host_os:$compiler" in
    CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
+   CXX_FILTER="2>&1 | \$(top_srcdir)/compilers/cxx_filter.$compiler.sh"
    ;;
 
  cygwin*:GCC )
