@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/10/26 15:25:21  vasilche
+* Added multiset implementation.
+*
 * Revision 1.22  1999/10/08 21:00:39  vasilche
 * Implemented automatic generation of unnamed ASN.1 types.
 *
@@ -455,24 +458,20 @@ protected:
                           TObjectPtr key, TObjectPtr value) const;
 };
 
-template<typename Data>
-class CStlClassInfoSet : public CStlOneArgTemplateImpl< set<Data> >
+template<class Set, typename Data>
+class CStlClassInfoSetBase : public CStlOneArgTemplateImpl<Set>
 {
-    typedef CStlOneArgTemplateImpl< set<Data> > CParent;
+    typedef CStlOneArgTemplateImpl<Set> CParent;
 public:
     typedef Data TDataType;
 
-    CStlClassInfoSet<Data>(void)
+    CStlClassInfoSetBase(void)
         : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
-        { }
-    CStlClassInfoSet<Data>(const CTypeRef& typeRef)
-        : CParent(typeRef)
-        { }
-
-    static TTypeInfo GetTypeInfo(void)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoSet<Data>;
-            return typeInfo;
+        }
+    CStlClassInfoSetBase(const CTypeRef& typeRef)
+        : CParent(typeRef)
+        {
         }
 
 protected:
@@ -491,147 +490,72 @@ protected:
                 o.insert(data);
             }
         }
+
     virtual TObjectPtr AddEmpty(TObjectPtr , size_t ) const
         {
             return 0;
         }
 };
 
-template<typename Key, typename Value>
-class CStlClassInfoMap : public CStlClassInfoMapImpl
+template<typename Data>
+class CStlClassInfoSet :
+    public CStlClassInfoSetBase<set<Data>, Data>
 {
-    typedef CStlClassInfoMapImpl CParent;
-
+    typedef CStlClassInfoSetBase<set<Data>, Data> CParent;
 public:
-    typedef Key TKeyType;
-    typedef Value TValueType;
-    typedef map<TKeyType, TValueType> TObjectType;
-    typedef typename TObjectType::const_iterator TConstIterator;
-
-    CStlClassInfoMap<Key, Value>(void)
-        : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
-                  GetTypeRef(static_cast<const TValueType*>(0)))
+    CStlClassInfoSet(void)
         {
         }
-    CStlClassInfoMap<Key, Value>(const CTypeRef& keyType,
-                                 const CTypeRef& dataType)
-        : CParent(keyType, dataType)
+    CStlClassInfoSet(const CTypeRef& typeRef)
+        : CParent(typeRef)
         {
-        }
-
-    static const TObjectType& Get(TConstObjectPtr object)
-        {
-            return *static_cast<const TObjectType*>(object);
-        }
-    static TObjectType& Get(TObjectPtr object)
-        {
-            return *static_cast<TObjectType*>(object);
-        }
-
-    virtual size_t GetSize(void) const
-        {
-            return sizeof(TObjectType);
-        }
-
-    virtual TObjectPtr Create(void) const
-        {
-            return new TObjectType;
         }
 
     static TTypeInfo GetTypeInfo(void)
         {
-            static TTypeInfo typeInfo = new CStlClassInfoMap<Key, Value>;
+            static TTypeInfo typeInfo = new CStlClassInfoSet<Data>;
             return typeInfo;
-        }
-
-    virtual bool IsDefault(TConstObjectPtr object) const
-        {
-            return Get(object).empty();
-        }
-    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
-        {
-            const TObjectType& o1 = Get(object1);
-            const TObjectType& o2 = Get(object2);
-            if ( o1.size() != o2.size() )
-                return false;
-            TTypeInfo keyTypeInfo = GetKeyTypeInfo();
-            TTypeInfo valueTypeInfo = GetValueTypeInfo();
-            for ( TConstIterator i1 = o1.begin(), i2 = o2.begin();
-                  i1 != o1.end(); ++i1, ++i2 ) {
-                if ( !keyTypeInfo->Equals(&i1->first, &i2->first) ||
-                     !valueTypeInfo->Equals(&i1->second, &i2->second) )
-                    return false;
-            }
-            return true;
-        }
-
-    virtual void SetDefault(TObjectPtr dst) const
-        {
-            Get(dst).clear();
-        }
-
-    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
-        {
-            TObjectType& to = Get(dst);
-            const TObjectType& from = Get(src);
-            to.clear();
-            for ( TConstIterator i = from.begin();
-                  i != from.end(); ++i ) {
-                to.insert(*i);
-            }
-        }
-
-protected:
-    virtual void CollectExternalObjects(COObjectList& objectList,
-                                        TConstObjectPtr object) const
-        {
-            const TObjectType& o = Get(object);
-            for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
-                CollectKeyValuePair(objectList, &i->first, &i->second);
-            }
-        }
-
-    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
-        {
-            const TObjectType& o = Get(object);
-            CObjectOStream::Block block(o.size(), out);
-            for ( TConstIterator i = o.begin(); i != o.end(); ++i ) {
-                block.Next();
-                WriteKeyValuePair(out, &i->first, &i->second);
-            }
-        }
-
-    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
-        {
-            TObjectType& o = Get(object);
-            CObjectIStream::Block block(CObjectIStream::eFixed, in);
-            while ( block.Next() ) {
-                TKeyType key;
-                TValueType value;
-                ReadKeyValuePair(in, &key, &value);
-                o.insert(TObjectType::value_type(key, value));
-            }
         }
 };
 
-template<typename Key, typename Value>
-class CStlClassInfoMultiMap : public CStlClassInfoMapImpl
+template<typename Data>
+class CStlClassInfoMultiSet :
+    public CStlClassInfoSetBase<multiset<Data>, Data>
+{
+    typedef CStlClassInfoSetBase<multiset<Data>, Data> CParent;
+public:
+    CStlClassInfoMultiSet(void)
+        {
+        }
+    CStlClassInfoMultiSet(const CTypeRef& typeRef)
+        : CParent(typeRef)
+        {
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoMultiSet<Data>;
+            return typeInfo;
+        }
+};
+
+template<class Map, typename Key, typename Value>
+class CStlClassInfoMapBase : public CStlClassInfoMapImpl
 {
     typedef CStlClassInfoMapImpl CParent;
 
 public:
     typedef Key TKeyType;
     typedef Value TValueType;
-    typedef multimap<TKeyType, TValueType> TObjectType;
+    typedef Map TObjectType;
     typedef typename TObjectType::const_iterator TConstIterator;
 
-    CStlClassInfoMultiMap<Key, Value>(void)
+    CStlClassInfoMapBase(void)
         : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
                   GetTypeRef(static_cast<const TValueType*>(0)))
         {
         }
-    CStlClassInfoMultiMap<Key, Value>(const CTypeRef& keyType,
-                                      const CTypeRef& dataType)
+    CStlClassInfoMapBase(const CTypeRef& keyType, const CTypeRef& dataType)
         : CParent(keyType, dataType)
         {
         }
@@ -653,12 +577,6 @@ public:
     virtual TObjectPtr Create(void) const
         {
             return new TObjectType;
-        }
-
-    static TTypeInfo GetTypeInfo(void)
-        {
-            static TTypeInfo typeInfo = new CStlClassInfoMultiMap<Key, Value>;
-            return typeInfo;
         }
 
     virtual bool IsDefault(TConstObjectPtr object) const
@@ -725,8 +643,54 @@ protected:
                 TKeyType key;
                 TValueType value;
                 ReadKeyValuePair(in, &key, &value);
-                o.insert(TObjectType::value_type(key, value));
+                typename TObjectType::value_type insert(key, value);
+                o.insert(insert);
             }
+        }
+};
+
+template<typename Key, typename Value>
+class CStlClassInfoMap :
+    public CStlClassInfoMapBase<map<Key, Value>, Key, Value>
+{
+    typedef CStlClassInfoMapBase<map<Key, Value>, Key, Value> CParent;
+
+public:
+    CStlClassInfoMap(void)
+        {
+        }
+    CStlClassInfoMap(const CTypeRef& keyType, const CTypeRef& dataType)
+        : CParent(keyType, dataType)
+        {
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoMap<Key, Value>;
+            return typeInfo;
+        }
+};
+
+template<typename Key, typename Value>
+class CStlClassInfoMultiMap :
+    public CStlClassInfoMapBase<multimap<Key, Value>, Key, Value>
+{
+    typedef CStlClassInfoMapBase<multimap<Key, Value>, Key, Value> CParent;
+
+public:
+    CStlClassInfoMultiMap(void)
+        {
+        }
+    CStlClassInfoMultiMap(const CTypeRef& keyType,
+                                      const CTypeRef& dataType)
+        : CParent(keyType, dataType)
+        {
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoMultiMap<Key, Value>;
+            return typeInfo;
         }
 };
 
