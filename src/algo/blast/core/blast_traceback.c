@@ -719,10 +719,11 @@ Int2 BLAST_ComputeTraceback(BlastResultsPtr results,
                subject = BLAST_SequenceBlkDestruct(subject);
          }
       }
-      /* Re-sort the hit lists according to their best e-values, because
-         they could have changed */
-      
    }
+
+   /* Re-sort the hit lists according to their best e-values, because
+      they could have changed */
+   BLAST_SortResults(results);
 
    return status;
 }
