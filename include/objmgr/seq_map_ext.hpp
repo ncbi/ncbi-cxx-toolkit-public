@@ -90,6 +90,22 @@ private:
 };
 
 
+class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_data : public CSeqMap
+{
+public:
+    typedef CSeq_inst             TObject;
+
+    CSeqMap_Seq_data(const TObject& obj);
+    ~CSeqMap_Seq_data(void);
+
+protected:
+    virtual void x_SetSeq_data(size_t index, CSeq_data& data);
+
+private:
+    CConstRef<TObject> m_Object;
+};
+
+
 class NCBI_XOBJMGR_EXPORT CSeqMap_Seq_locs : public CSeqMap
 {
 public:
@@ -219,6 +235,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/07/12 16:53:28  vasilche
+* Fixed loading of split Seq-data when sequence is not delta.
+*
 * Revision 1.9  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

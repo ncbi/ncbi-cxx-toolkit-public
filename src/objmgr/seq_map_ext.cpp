@@ -119,13 +119,13 @@ void CSeqMap_Delta_seqs::x_SetSeq_data(size_t index, CSeq_data& data)
     CFastMutexGuard guard(m_SeqMap_Mtx);
 
     // check for object
-    if ( segment.m_RefObject ) {
-        NCBI_THROW(CSeqMapException, eDataError,
-                     "CSeq_data already set");
+    if ( bool(segment.m_RefObject) && segment.m_ObjType == eSeqData ) {
+        NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
 
     // do insertion
     // set object
+    segment.m_ObjType = eSeqData;
     segment.m_RefObject.Reset(&data);
     // update sequence
     const_cast<CDelta_seq&>(**x_GetSegmentList_I(index)).SetLiteral().SetSeq_data(data);
@@ -163,6 +163,45 @@ void CSeqMap_Delta_seqs::x_SetSubSeqMap(size_t /*index*/,
     subMap->m_List = m_List;
     subMap->m_Object = m_Object;
 */
+}
+
+
+////////////////////////////////////////////////////////////////////
+//  CSeqMap_Seq_data
+
+CSeqMap_Seq_data::CSeqMap_Seq_data(const TObject& obj)
+    : CSeqMap(),
+      m_Object(&obj)
+{
+    _ASSERT(obj.IsSetLength());
+    x_AddEnd();
+    if ( obj.IsSetSeq_data() ) {
+        x_Add(obj.GetSeq_data(), obj.GetLength());
+    }
+    else {
+        // split Seq-data
+        x_AddGap(obj.GetLength());
+    }
+    x_AddEnd();
+}
+
+CSeqMap_Seq_data::~CSeqMap_Seq_data(void)
+{
+}
+
+void CSeqMap_Seq_data::x_SetSeq_data(size_t index, CSeq_data& data)
+{
+    // check segment type
+    CSegment& segment = x_SetSegment(index);
+    if ( segment.m_SegType != eSeqData ) {
+        NCBI_THROW(CSeqMapException, eSegmentTypeError,
+                   "Invalid segment type");
+    }
+
+    x_SetObject(segment, data);
+
+    // update sequence
+    const_cast<CSeq_inst&>(*m_Object).SetSeq_data(data);
 }
 
 
@@ -322,6 +361,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/07/12 16:53:28  vasilche
+* Fixed loading of split Seq-data when sequence is not delta.
+*
 * Revision 1.12  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

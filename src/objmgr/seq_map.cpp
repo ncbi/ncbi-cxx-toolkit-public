@@ -348,16 +348,13 @@ void CSeqMap::x_SetSeq_data(size_t index, CSeq_data& data)
 void CSeqMap::LoadSeq_data(TSeqPos pos, TSeqPos len,
                            const CSeq_data& data)
 {
-    const CSegment& seg = x_GetSegment(x_FindSegment(pos, 0));
+    size_t index = x_FindSegment(pos, 0);
+    const CSegment& seg = x_GetSegment(index);
     if ( seg.m_Position != pos || seg.m_Length != len ) {
         NCBI_THROW(CSeqMapException, eDataError,
                    "Invalid segment size");
     }
-    if ( seg.m_SegType != eSeqData ) {
-        NCBI_THROW(CSeqMapException, eSegmentTypeError,
-                   "Invalid segment type");
-    }
-    x_SetObject(seg, data);
+    x_SetSeq_data(index, const_cast<CSeq_data&>(data));
 }
 
 
@@ -572,8 +569,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(const CBioseq& seq)
     CConstRef<CSeqMap> ret;
     const CSeq_inst& inst = seq.GetInst();
     if ( inst.IsSetSeq_data() ) {
-        ret.Reset(new CSeqMap(inst.GetSeq_data(),
-                              inst.GetLength()));
+        ret.Reset(new CSeqMap_Seq_data(inst));
     }
     else if ( inst.IsSetExt() ) {
         const CSeq_ext& ext = inst.GetExt();
@@ -606,7 +602,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(const CBioseq& seq)
     else if ( inst.GetRepr() != CSeq_inst::eRepr_not_set && 
               inst.IsSetLength() && inst.GetLength() != 0 ) {
         // split seq-data
-        ret.Reset(new CSeqMap(inst.GetLength()));
+        ret.Reset(new CSeqMap_Seq_data(inst));
     }
     else {
         if ( inst.GetRepr() != CSeq_inst::eRepr_not_set ) {
@@ -899,6 +895,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2004/07/12 16:53:28  vasilche
+* Fixed loading of split Seq-data when sequence is not delta.
+*
 * Revision 1.56  2004/07/12 15:05:32  grichenk
 * Moved seq-id mapper from xobjmgr to seq library
 *
