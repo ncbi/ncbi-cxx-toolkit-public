@@ -328,7 +328,7 @@ public:
     /// Gets a partial mapping of the file.
     const char * GetRegion(const string & fname, TIndx begin, TIndx end, CSeqDBLockHold & locked);
     
-    /// Gets a partial mapping of the file.
+    /// Gets a partial mapping of the file (assumes lock is held).
     void GetRegion(CSeqDBMemLease  & lease,
                    const string    & fname,
                    TIndx             begin,
