@@ -88,7 +88,6 @@ Int4 RPSLookupTableNew(const RPSInfo *info,
    BlastRPSLookupTable* lookup = *lut = 
       (BlastRPSLookupTable*) calloc(1, sizeof(BlastRPSLookupTable));
    Int4* pssm_start;
-   Int4 num_profiles;
    Int4 num_pssm_rows;
    Int4 longest_chain;
 
@@ -136,10 +135,10 @@ Int4 RPSLookupTableNew(const RPSInfo *info,
       return -2;
 
    lookup->rps_seq_offsets = profile_header->start_offsets;
-   num_profiles = profile_header->num_profiles;
-   num_pssm_rows = lookup->rps_seq_offsets[num_profiles];
+   lookup->num_profiles = profile_header->num_profiles;
+   num_pssm_rows = lookup->rps_seq_offsets[lookup->num_profiles];
    lookup->rps_pssm = (Int4 **)malloc((num_pssm_rows+1) * sizeof(Int4 *));
-   pssm_start = profile_header->start_offsets + num_profiles + 1;
+   pssm_start = profile_header->start_offsets + lookup->num_profiles + 1;
 
    for (i = 0; i < num_pssm_rows + 1; i++) {
       lookup->rps_pssm[i] = pssm_start;
