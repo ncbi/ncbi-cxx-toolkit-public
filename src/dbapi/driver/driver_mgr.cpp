@@ -128,7 +128,8 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         CDll drv_dll("dbapi_driver_" + driver_name);
 
         FDllEntryPoint entry_point;
-        if ( !drv_dll.GetEntryPoint("DBAPI_E_" + driver_name, &entry_point) ) {
+        if ( !drv_dll.GetEntryPoint_Func("DBAPI_E_" + driver_name,
+                                         &entry_point) ) {
             drv_dll.Unload();
             return false;
         }
@@ -206,6 +207,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/11/19 15:33:55  ucko
+ * Adjust for CDll API change.
+ *
  * Revision 1.13  2002/09/19 20:05:43  vasilche
  * Safe initialization of static mutexes
  *
