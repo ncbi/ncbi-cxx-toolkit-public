@@ -54,7 +54,7 @@ typedef unsigned int TBioTreeNodeId;
 
 
 /// Tree node feature pair (id to string)
-struct CBioTreeFeaturePair
+struct NCBI_XALGOPHYTREE_EXPORT CBioTreeFeaturePair
 {
     TBioTreeFeatureId  id;
     string             value;
@@ -78,7 +78,7 @@ struct CBioTreeFeaturePair
 /// Implementation note: This class may evolve into a specialized templates
 /// parameterizing different feature storage options (like vector, map, list)
 /// depending on what tree is used.
-class CBioTreeFeatureList
+class NCBI_XALGOPHYTREE_EXPORT CBioTreeFeatureList
 {
 public:
     typedef  vector<CBioTreeFeaturePair>    TFeatureList;
@@ -87,14 +87,21 @@ public:
     CBioTreeFeatureList(const CBioTreeFeatureList& flist);
     CBioTreeFeatureList& operator=(const CBioTreeFeatureList& flist);
 
-    /// Set feature value
-    void SetFeature(CBioTreeFeatureId id, const string& value);
+    /// Set feature value, feature if exists replaced, if not added.
+    void SetFeature(TBioTreeFeatureId id, const string& value);
 
-    /// Get feature
-    const string& GetFeatureValue(CBioTreeFeatureId id) const;
+    /// Get feature value by id
+    /// @return Feature value or empty string if feature does not exists
+    const string& GetFeatureValue(TBioTreeFeatureId id) const;
 
-    /// Remode feature from the list
-    void RemoveFeature(CBioTreeFeatureId id);
+    /// Remove feature from the list
+    void RemoveFeature(TBioTreeFeatureId id);
+
+    /// Get feature value by id (operator semantics)
+    const string& operator[](TBioTreeFeatureId id) const
+    {
+        return GetFeatureValue(id);
+    }
 protected:
     TFeatureList  m_FeatureList;
 };
@@ -110,29 +117,31 @@ struct CBioTreeEmptyNodeData
 /// Template parameter NodeData allows to extend list of 
 /// compile-time (non-dynamic attributes in the tree)
 /// NodeFeatures - extends node with dynamic list of node attributes
-template<class NodeData     = CBioTreeEmptyNodeData, 
-         class NodeFeatures = CBioTreeFeatureList>
+///
+template<class TNodeData     = CBioTreeEmptyNodeData, 
+         class TNodeFeatures = CBioTreeFeatureList>
 struct BioTreeBaseNode
 {
-    TBioTreeNodeId uid;      ///< Unique node Id
-    NodeData       data;     ///< additional node info
-    NodeFeatures   features; ///< list of node features
+    TBioTreeNodeId      uid;      ///< Unique node Id
+    TNodeData           data;     ///< additional node info
+    TNodeFeatures       features; ///< list of node features
 
-    typedef  NodeData      TNodeData;
-    typedef  NodeFeatures  TNodeFeatures;
+    typedef  TNodeData        TNodeDataType;
+    typedef  TNodeFeatures    TNodeFeaturesType;
+
 
     BioTreeBaseNode(TBioTreeNodeId uid_value = 0)
-    : uid(uid_value)
+     : uid(uid_value)
     {}
 
-    BioTreeBaseNode(const BioTreeBaseNode<NodeData, NodeFeatures>& node)
-    : uid(node.uid),
+    BioTreeBaseNode(const BioTreeBaseNode<TNodeData, TNodeFeatures>& node)
+     : uid(node.uid),
       data(node.data),
       features(node.features)
     {}
 
-    BioTreeBaseNode<NodeData, NodeFeatures>& 
-    operator=(const BioTreeBaseNode<NodeData, NodeFeatures>& node)
+    BioTreeBaseNode<TNodeData, TNodeFeatures>& 
+    operator=(const BioTreeBaseNode<TNodeData, TNodeFeatures>& node)
     {
         uid = node.uid;
         data = node.data;
@@ -144,21 +153,28 @@ struct BioTreeBaseNode
 
 /// Feature dictionary. 
 /// Used for mapping between feature ids and feature names.
-class CBioTreeFeatureDictionary
+///
+class NCBI_XALGOPHYTREE_EXPORT CBioTreeFeatureDictionary
 {
 public:
     /// Feature dictionary (feature id -> feature name map)
     typedef map<TBioTreeFeatureId, string> TFeatureDict;
+
+    /// Feature reverse index (feature name -> id)
+    typedef map<string, TBioTreeFeatureId> TFeatureNameIdx;
 
 public:
     CBioTreeFeatureDictionary();
     CBioTreeFeatureDictionary(const CBioTreeFeatureDictionary& btr);
     
     CBioTreeFeatureDictionary& 
-    operator=(const CBioTreeFeatureDictionary& btr);
+       operator=(const CBioTreeFeatureDictionary& btr);
 
     /// Check if feature is listed in the dictionary
-    bool HasFeature() const;
+    bool HasFeature(const string& feature_name);
+
+    /// Check if feature is listed in the dictionary
+    bool HasFeature(TBioTreeFeatureId id);
 
     /// Register new feature, return its id.
     /// If feature is already registered just returns the id.
@@ -167,56 +183,175 @@ public:
 
     /// If feature is already registered returns its id by name.
     /// If feature does not exist returns 0.
-    TBioTreeFeatureId GetId(const string& feature_name);
+    TBioTreeFeatureId GetId(const string& feature_name) const;
 
 
 protected:
-    TFeatureDict  m_Dict;      ///< id -> feature name map
-    unsigned int  m_IdCounter; ///< Feature id counter
-}
+    TFeatureDict     m_Dict;        ///< id -> feature name map
+    TFeatureNameIdx  m_Name2Id;     ///< id -> feature name map
+
+    unsigned int     m_IdCounter;   ///< Feature id counter
+};
 
 
-template<class BioNode>
+/// Basic tree structure for biological applications
+template<class TBioNode>
 class CBioTree
 {
 public:
     /// Biotree node (forms the tree hierarchy)
-    typedef CTreeNode<BioNode> TBioTreeNode;
+    typedef CTreeNode<TBioNode> TBioTreeNode;
+
+    typedef TBioNode            TBioNodeType;
 
 
-    CBioTreeFeatureDictionary& GetFeatureDictionary();
-    const CBioTreeFeatureDictionary& GetFeatureDictionary() const;
+public:
+
+    CBioTree() 
+     : m_NodeIdCounter(0),
+       m_TreeNode(0)
+    {}
+
+    CBioTree(const CBioTree<TBioNode>& btr)
+    : m_FeatureDict(btr.m_FeatureDict),
+      m_NodeIdCounter(btr.m_NodeIdCounter),
+      m_TreeNode(new TBioTreeNode(*(btr.m_TreeNode)))
+    {
+    }
+
+    CBioTree<TBioNode>&
+        operator=(const CBioTree<TBioNode>& btr)
+    {
+        m_FeatureDict = btr.m_FeatureDict;
+        m_NodeIdCounter = btr.m_NodeIdCounter;
+        m_TreeNode = new TBioTreeNode(*(btr.m_TreeNode));
+    }
+
+
+    CBioTreeFeatureDictionary& GetFeatureDictionary()
+    {
+        return m_FeatureDict;
+    }
+
+    const CBioTreeFeatureDictionary& GetFeatureDictionary() const
+    {
+        return m_FeatureDict;
+    }
 
     /// Finds node by id.
     /// @return 
     ///     Node pointer or NULL if requested node id is unknown
-    const TBioTreeNode* FindNode(TBioTreeNodeId node_id) const;
+    const TBioTreeNode* FindNode(TBioTreeNodeId node_id) const
+    {
+        TBioTreeNode* tree_node = 
+            const_cast<TBioTreeNode*>(m_TreeNode.get());
+        if (tree_node == 0) {
+            return 0;
+        }
+        CFindUidFunc func = 
+          TreeDepthFirstTraverse(*tree_node, CFindUidFunc(node_id));
+        return func.GetNode();
+    }
 
     /// Add feature to the tree node
     /// Function controls that the feature is registered in the 
     /// feature dictionary of this tree.
-    void AddFeature(TBioTreeNode* node, 
-                    TBioTreeFeatureId feature_id,
-                    const string& feature_value);
+    void AddFeature(TBioTreeNode*      node, 
+                    TBioTreeFeatureId  feature_id,
+                    const string&      feature_value)
+    {
+        // Check if this id is in the dictionary
+        bool id_found = m_FeatureDict.HasFeature(feature_id);
+        if (id_found) {
+            node->features.SetFeature(feature_id, feature_value);
+        } else {
+            // TODO:throw an exception here
+        }
+    }
+
+    /// Add feature to the tree node
+    /// Function controls that the feature is registered in the 
+    /// feature dictionary of this tree. If feature is not found
+    /// it is added to the dictionary
+    void AddFeature(TBioTreeNode*      node, 
+                    const string&      feature_name,
+                    const string&      feature_value)
+    {
+        // Check if this id is in the dictionary
+        TBioTreeFeatureId feature_id 
+            = m_FeatureDict.GetId(feature_name);
+        if (!feature_id) {
+            // Register the new feature type
+            feature_id = m_FeatureDict.Register(feature_name);
+        }
+        AddFeature(node, feature_id, feature_value);
+    }
+
 
     /// Get new unique node id
-    virtual TBioTreeNodeId GetNodeId();
+    virtual TBioTreeNodeId GetNodeId()
+    {
+        return m_NodeIdCounter++;
+    }
 
     /// Get new unique node id 
     /// (for cases when node id depends on the node's content
-    virtual TBioTreeNodeId GetNodeId(const TBioTreeNode& node);
+    virtual TBioTreeNodeId GetNodeId(const TBioTreeNode& node)
+    {
+        return m_NodeIdCounter++;
+    }
 
     /// Assign new unique node id to the node
-    void SetNodeId(TBioTreeNode* node);
+    void SetNodeId(TBioTreeNode* node)
+    {
+        TBioTreeNodeId uid = GetNodeId(*node);
+        node->uid = uid;
+    }
 
     /// Add node to the tree (node location is defined by the parent id
-    void AddNode(TBioTreeNode* node, TBioTreeNodeId parent);
+    void AddNode(const TBioNodeType& node_value, 
+                 TBioTreeNodeId      parent_id)
+    {
+        const TBioTreeNode* pnode = FindNode(parent_id);
+        if (pnode) {
+            TBioTreeNode* parent_node = const_cast<TBioTreeNode*>(pnode);
+            pnode->AddNode(node_value);
+        }
+    }
+
+protected:
+
+    /// Find node by UID functor
+    class CFindUidFunc 
+    {
+    public:
+        CFindUidFunc(TBioTreeNodeId uid)
+         : m_Uid(uid), 
+           m_Node(0)
+        {}
+
+        TBioTreeNode* GetNode() { return m_Node; }
+
+        ETreeTraverseCode operator()(TBioTreeNode& tree_node, int delta)
+        {
+            if (delta == 0 || delta == 1) {
+                if (tree_node.uid == m_Uid) {
+                    m_Node = &tree_node;
+                    return eTreeTraverseStop;
+                }
+            }
+            return eTreeTraverse;
+        }
+
+    private:
+        TBioTreeNodeId  m_Uid;    ///< Node uid to search for
+        TBioTreeNode*   m_Node;   ///< Search result
+    };
 
 protected:
     CBioTreeFeatureDictionary  m_FeatureDict;
     TBioTreeNodeId             m_NodeIdCounter;
-    TBioTreeNode*              m_TreeNode;      ///< Top level node
-
+    auto_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
 };
 
 
@@ -226,6 +361,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/04/06 17:59:00  kuznets
+ * Work in progress
+ *
  * Revision 1.1  2004/03/29 16:43:38  kuznets
  * Initial revision
  *
