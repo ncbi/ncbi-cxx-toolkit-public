@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2002/12/12 23:07:18  thiessen
+* improved handling of alignment annotation errors
+*
 * Revision 1.40  2002/11/18 20:49:11  thiessen
 * move unaligned/no-coord colors into Colors class
 *
@@ -1522,13 +1525,14 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
     const Sequence *master = GetMaster();
 
     // must do one column at a time, rather than range, in case there are inserts wrt the master
+    bool anyError = false;
     for (int i=from; i<=to; i++) {
 
         // sanity check
         if (i < 0 || i >= master->Length() || !IsAligned(0, i)) {
-            ERR_POST(Error << "BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange() - "
-                " range error or unaligned at " << i);
-            return false;
+            ERR_POST(Warning << "Can't highlight alignment at master residue " << (i+1));
+            anyError = true;
+            continue;
         }
 
         // get block and offset
@@ -1542,7 +1546,7 @@ bool BlockMultipleAlignment::HighlightAlignedColumnsOfMasterRange(int from, int 
         }
     }
 
-    return true;
+    return !anyError;
 }
 
 int BlockMultipleAlignment::NAlignedBlocks(void) const

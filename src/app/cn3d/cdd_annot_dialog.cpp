@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/12/12 23:07:18  thiessen
+* improved handling of alignment annotation errors
+*
 * Revision 1.31  2002/11/25 15:02:20  thiessen
 * changes for cdd annotation evidence show
 *
@@ -579,11 +582,7 @@ bool CDDAnnotateDialog::HighlightInterval(const ncbi::objects::CSeq_interval& in
     }
 
     // do the highlighting
-    bool okay = alignment->HighlightAlignedColumnsOfMasterRange(interval.GetFrom(), interval.GetTo());
-    if (!okay)
-        ERR_POST(Error << "CDDAnnotateDialog::HighlightInterval() - problem highlighting from "
-            << interval.GetFrom() << " to " << interval.GetTo());
-    return okay;
+    return alignment->HighlightAlignedColumnsOfMasterRange(interval.GetFrom(), interval.GetTo());
 }
 
 void CDDAnnotateDialog::HighlightAnnotation(void)
@@ -601,15 +600,21 @@ void CDDAnnotateDialog::HighlightAnnotation(void)
 
     // highlight annotation's intervals
     GlobalMessenger()->RemoveAllHighlights(true);
+    bool okay = true;
     if (selectedAnnot->GetLocation().IsInt()) {
-        HighlightInterval(selectedAnnot->GetLocation().GetInt());
+        okay = HighlightInterval(selectedAnnot->GetLocation().GetInt());
     } else if (selectedAnnot->GetLocation().IsPacked_int()) {
         CPacked_seqint::Tdata::iterator s,
             se = selectedAnnot->SetLocation().SetPacked_int().Set().end();
         for (s=selectedAnnot->SetLocation().SetPacked_int().Set().begin(); s!=se; s++) {
-            if (!HighlightInterval(**s)) break;
+            if (!HighlightInterval(**s))
+                okay = false;
         }
     }
+    if (!okay)
+        wxMessageBox("WARNING: this annotation specifies master residues outside the aligned blocks;"
+            " see the message log for details.", "Annotation Error",
+            wxOK | wxCENTRE | wxICON_ERROR, this);
 }
 
 void CDDAnnotateDialog::MoveAnnotation(bool moveUp)
