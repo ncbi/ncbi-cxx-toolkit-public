@@ -39,6 +39,7 @@
 #include <algo/blast/api/blast_options.hpp>
 #include <algo/blast/core/blast_hits.h>
 #include <algo/blast/core/gapinfo.h>
+#include <algo/blast/api/blast_seqinfosrc.hpp>
 
 /** @addtogroup AlgoBlast
  *
@@ -60,7 +61,7 @@ BEGIN_SCOPE(blast)
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
  * @param query All query sequences [in]
- * @param seq_src handle to BLAST Sequence Source ADT [in]
+ * @param seqinfo_src Source of subject sequences information [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
  * @return Vector of seqalign sets (one set per query sequence).
@@ -69,7 +70,7 @@ TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results, 
                           EProgram prog,
                           TSeqLocVector &query, 
-                          const BlastSeqSrc* seq_src, 
+                          const IBlastSeqInfoSrc* seqinfo_src, 
                           bool is_gapped=true, bool is_ooframe=false);
 
 /** Extracts from the BlastHSPResults structure results for only one subject 
@@ -80,7 +81,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
  * @param results results from running the BLAST algorithm [in]
  * @param prog type of BLAST program [in]
  * @param query All query sequences [in]
- * @param subject One subject sequence location [in]
+ * @param seqinfo_src Source of subject sequences information [in]
  * @param subject_index Index of this subject sequence in a set [in]
  * @param is_gapped Is this a gapped search? [in]
  * @param is_ooframe Is it a search with out-of-frame gapping? [in]
@@ -90,8 +91,19 @@ TSeqAlignVector
 BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results, 
                           EProgram prog,
                           TSeqLocVector &query, 
-                          SSeqLoc& subject, Uint4 subject_index,
+                          const IBlastSeqInfoSrc* seqinfo_src, 
+                          Uint4 subject_index,
                           bool is_gapped=true, bool is_ooframe=false);
+
+/// Remap subject offsets in the vector of Seq-aligns relative to the 
+/// underlying sequences if subject Seq-locs are subsequences.
+/// @param seqalignv Vector of Seq-align lists corresponding to multiple 
+///                  queries. Each list must contain Seq-aligns for each
+///                  subject in the subjects vector. [in] [out]
+/// @param subjectv Vector of subject sequence locations [in]
+void
+Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv, 
+                        const TSeqLocVector& subjectv);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -102,6 +114,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/10/06 14:55:31  dondosha
+* Use IBlastSeqInfoSrc interface in BLAST_Results2CSeqAlign; added Blast_RemapToSubjectLoc function
+*
 * Revision 1.23  2004/07/19 13:56:02  dondosha
 * Pass subject SSeqLoc directly to BLAST_OneSubjectResults2CSeqAlign instead of BlastSeqSrc
 *
