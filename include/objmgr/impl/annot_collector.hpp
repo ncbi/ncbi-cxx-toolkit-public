@@ -546,6 +546,32 @@ void CAnnotObject_Ref::ResetLocation(void)
 }
 
 
+inline
+bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
+{
+    if ( m_Object != ref.m_Object ) {
+        return m_Object < ref.m_Object;
+    }
+    return GetAnnotObjectIndex() < ref.GetAnnotObjectIndex();
+}
+
+
+inline
+bool CAnnotObject_Ref::operator==(const CAnnotObject_Ref& ref) const
+{
+    return ( m_Object == ref.m_Object  &&
+        GetAnnotObjectIndex() == ref.GetAnnotObjectIndex() );
+}
+
+
+inline
+bool CAnnotObject_Ref::operator!=(const CAnnotObject_Ref& ref) const
+{
+    return ( m_Object != ref.m_Object  ||
+        GetAnnotObjectIndex() != ref.GetAnnotObjectIndex() );
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CAnnot_Collector
 /////////////////////////////////////////////////////////////////////////////
@@ -579,6 +605,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/08/17 14:31:46  grichenk
+* operators <, == and != made inline
+*
 * Revision 1.13  2004/08/17 03:28:20  grichenk
 * Added operator !=()
 *
