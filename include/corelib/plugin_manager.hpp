@@ -429,7 +429,7 @@ protected:
 
     /// Protective mutex to syncronize the access to the plugin manager
     /// from different threads
-    CFastMutex m_Mutex;
+    CMutex m_Mutex;
 
     typedef vector<CDllResolver::SResolvedEntry> TResolvedEntries;
 
@@ -591,7 +591,7 @@ typename CPluginManager<TClass, TIfVer>::TClassFactory*
 CPluginManager<TClass, TIfVer>::GetFactory(const string&       driver,
                                            const CVersionInfo& version)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CMutexGuard guard(m_Mutex);
 
     TClassFactory* cf = 0;
 
@@ -666,7 +666,7 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
 template <class TClass, class TIfVer>
 void CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CMutexGuard guard(m_Mutex);
 
     m_Factories.insert(&factory);
 }
@@ -675,7 +675,7 @@ void CPluginManager<TClass, TIfVer>::RegisterFactory(TClassFactory& factory)
 template <class TClass, class TIfVer>
 bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CMutexGuard guard(m_Mutex);
 
     typename set<TClassFactory*>::iterator it = m_Factories.find(&factory);
     if (it != m_Factories.end()) {
@@ -850,6 +850,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2004/08/10 16:54:09  grichenk
+ * Replaced CFastMutex with CMutex
+ *
  * Revision 1.28  2004/08/09 15:39:06  kuznets
  * Improved support of driver name
  *
