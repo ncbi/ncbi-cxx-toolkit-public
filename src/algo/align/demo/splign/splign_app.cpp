@@ -71,7 +71,7 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.08");
+  string program_name ("Splign v.1.09");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -137,6 +137,8 @@ void CSplignApp::Init()
      CArgDescriptions::eDouble, "0.75");
 
 #ifdef GENOME_PIPELINE
+
+  argdescr->AddFlag ("mt", "Use multiple threads (up to CPU count)", true);
 
   argdescr->AddDefaultKey
     ("quality", "quality", "Genomic sequence quality.",
@@ -434,6 +436,8 @@ int CSplignApp::Run()
       arg_name += NStr::IntToString(i);
       aligner->SetWi(i, args[arg_name.c_str()].AsInteger());
   }
+
+  aligner->EnableMultipleThreads(args["mt"]);
 #endif
 
   // setup sequence loader
@@ -462,8 +466,8 @@ int CSplignApp::Run()
   splign.SetEndGapDetection(!(args["noendgaps"]));
   splign.SetMaxGenomicExtension(75000);
 
-  splign.SetAligner(aligner);
-  splign.SetSeqAccessor(seq_loader);
+  splign.SetAligner() = aligner;
+  splign.SetSeqAccessor() = seq_loader;
   splign.SetStartModelId(1);
 
   // splign formatter object
@@ -647,6 +651,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2004/06/29 20:51:21  kapustin
+ * Support simultaneous segment computing
+ *
  * Revision 1.29  2004/06/23 19:30:44  kapustin
  * Tweak model id substitution when doing both strands
  *

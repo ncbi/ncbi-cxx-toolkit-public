@@ -108,15 +108,12 @@ const unsigned char kMaskE        = 0x0004;
 const unsigned char kMaskD        = 0x0008;
 
 // Evaluate dynamic programming matrix. Create transcript.
-CNWAligner::TScore CSplicedAligner16::x_Align (
-                         const char* seg1, size_t len1,
-                         const char* seg2, size_t len2,
-                         vector<ETranscriptSymbol>* transcript )
+CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 {
     TScore V = 0;
 
-    const size_t N1 = len1 + 1;
-    const size_t N2 = len2 + 1;
+    const size_t N1 = data->m_len1 + 1;
+    const size_t N2 = data->m_len2 + 1;
 
     vector<TScore> stl_rowV (N2), stl_rowF (N2);
     TScore* rowV    = &stl_rowV[0];
@@ -127,15 +124,18 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     Uint2* backtrace_matrix = &stl_bm[0];
     TScore* pV = rowV - 1;
 
-    const char* seq1 = seg1 - 1;
-    const char* seq2 = seg2 - 1;
+    const char* seq1 = data->m_seg1 - 1;
+    const char* seq2 = data->m_seg2 - 1;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
-    bool bFreeGapLeft1  = m_esf_L1 && seg1 == m_Seq1;
-    bool bFreeGapRight1 = m_esf_R1 && m_Seq1 + m_SeqLen1 - len1 == seg1;
-    bool bFreeGapLeft2  = m_esf_L2 && seg2 == m_Seq2;
-    bool bFreeGapRight2 = m_esf_R2 && m_Seq2 + m_SeqLen2 - len2 == seg2;
+    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_seg1 == m_Seq1;
+    bool bFreeGapRight1 = data->m_esf_R1 &&
+                          m_Seq1 + m_SeqLen1 - data->m_len1 == data->m_seg1;
+
+    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_seg2 == m_Seq2;
+    bool bFreeGapRight2 = data->m_esf_R2 &&
+                          m_Seq2 + m_SeqLen2 - data->m_len2 == data->m_seg2;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -329,7 +329,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (
     }
 
     try {
-        x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
+        x_DoBackTrace(backtrace_matrix, N1, N2, &data->m_transcript);
     }
     catch(exception&) { // GCC hack
         throw;
@@ -537,6 +537,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/06/29 20:51:21  kapustin
+ * Support simultaneous segment computing
+ *
  * Revision 1.13  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -33,9 +33,10 @@
 
 
 #include <ncbi_pch.hpp>
-#include <algo/align/nw_aligner.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <algo/align/align_exception.hpp>
 
+#include "nw_aligner_threads.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -53,7 +54,9 @@ CNWAligner::CNWAligner()
       m_prg_callback(0),
       m_Seq1(0), m_SeqLen1(0),
       m_Seq2(0), m_SeqLen2(0),
-      m_score(kInfMinus)
+      m_score(kInfMinus),
+      m_mt(false),
+      m_maxthreads(1)
 {
     SetScoreMatrix(0);
 }
@@ -72,7 +75,9 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_prg_callback(0),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
-      m_score(kInfMinus)
+      m_score(kInfMinus),
+      m_mt(false),
+      m_maxthreads(1)
 {
     SetScoreMatrix(scoremat);
     SetSequences(seq1, len1, seq2, len2);
@@ -121,7 +126,6 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 }
 
 
-
 void CNWAligner::SetEndSpaceFree(bool Left1, bool Right1,
                                  bool Left2, bool Right2)
 {
@@ -145,12 +149,10 @@ const unsigned char kMaskEc  = 0x0002;
 const unsigned char kMaskE   = 0x0004;
 const unsigned char kMaskD   = 0x0008;
 
-CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
-                                       const char* seg2, size_t len2,
-                                       vector<ETranscriptSymbol>* transcript)
+CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 {
-    const size_t N1 = len1 + 1;
-    const size_t N2 = len2 + 1;
+    const size_t N1 = data->m_len1 + 1;
+    const size_t N2 = data->m_len2 + 1;
 
     vector<TScore> stl_rowV (N2), stl_rowF(N2);
 
@@ -159,8 +161,8 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 
     TScore* pV = rowV - 1;
 
-    const char* seq1 = seg1 - 1;
-    const char* seq2 = seg2 - 1;
+    const char* seq1 = data->m_seg1 - 1;
+    const char* seq2 = data->m_seg2 - 1;
 
     const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
 
@@ -174,10 +176,13 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 	}
     }
 
-    bool bFreeGapLeft1  = m_esf_L1 && seg1 == m_Seq1;
-    bool bFreeGapRight1 = m_esf_R1 && m_Seq1 + m_SeqLen1 - len1 == seg1;
-    bool bFreeGapLeft2  = m_esf_L2 && seg2 == m_Seq2;
-    bool bFreeGapRight2 = m_esf_R2 && m_Seq2 + m_SeqLen2 - len2 == seg2;
+    bool bFreeGapLeft1  = data->m_esf_L1 && data->m_seg1 == m_Seq1;
+    bool bFreeGapRight1 = data->m_esf_R1 &&
+                          m_Seq1 + m_SeqLen1 - data->m_len1 == data->m_seg1;
+
+    bool bFreeGapLeft2  = data->m_esf_L2 && data->m_seg2 == m_Seq2;
+    bool bFreeGapRight2 = data->m_esf_R2 &&
+                          m_Seq2 + m_SeqLen2 - data->m_len2 == data->m_seg2;
 
     TScore wgleft1   = bFreeGapLeft1? 0: m_Wg;
     TScore wsleft1   = bFreeGapLeft1? 0: m_Ws;
@@ -284,7 +289,7 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     }
 
     if(!m_terminate) {
-        x_DoBackTrace(backtrace_matrix, N1, N2, transcript);
+        x_DoBackTrace(backtrace_matrix, N1, N2, &data->m_transcript);
     }
 
     return V;
@@ -314,43 +319,158 @@ CNWAligner::TScore CNWAligner::x_Run()
     
         if(m_guides.size() == 0) {
 
-            m_score = x_Align(m_Seq1,m_SeqLen1, m_Seq2,m_SeqLen2,
-                              &m_Transcript);
+            SAlignInOut data (m_Seq1, m_SeqLen1, m_esf_L1, m_esf_R1,
+                              m_Seq2, m_SeqLen2, m_esf_L2, m_esf_R2);
+            m_score = x_Align(&data);
+            m_Transcript = data.m_transcript;
         }
-        else {
+        // run the algorithm for every segment between hits
+        else if(m_mt && m_maxthreads > 1) {
+
+            size_t guides_dim = m_guides.size() / 4;
+
+            // setup inputs
+            typedef vector<SAlignInOut> TDataVector;
+            TDataVector vdata;
+            vector<size_t> seed_dims;
+            {{
+                vdata.reserve(guides_dim + 1);
+                seed_dims.reserve(guides_dim + 1);
+                size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
+                for(size_t istart = 4*guides_dim, i = istart; i != 0; i -= 4) {
+                    
+                    q0 = m_guides[i - 3] + 1;
+                    s0 = m_guides[i - 1] + 1;
+                    size_t dim_query = q1 - q0, dim_subj = s1 - s0;
+                    
+                    bool esf_L1 = false, esf_R1 = false,
+                        esf_L2 = false, esf_R2 = false;
+                    if(i == istart) {
+                        esf_R1 = m_esf_R1;
+                        esf_R2 = m_esf_R2;
+                    }
+                    
+                    SAlignInOut data (m_Seq1 + q0, dim_query, esf_L1, esf_R1,
+                                      m_Seq2 + s0, dim_subj, esf_L2, esf_R2);
+                    
+                    vdata.push_back(data);
+                    seed_dims.push_back(m_guides[i-3] - m_guides[i-4] + 1);
+
+                    q1 = m_guides[i - 4];
+                    s1 = m_guides[i - 2];
+                }
+                SAlignInOut data(m_Seq1, q1, m_esf_L1, false,
+                                 m_Seq2, s1, m_esf_L2, false);
+                vdata.push_back(data);
+            }}
+
+            // rearrange vdata so that the largest chunks come first
+            typedef vector<SAlignInOut*> TDataPtrVector;
+            TDataPtrVector vdata_p (vdata.size());
+            {{
+                TDataPtrVector::iterator jj = vdata_p.begin();
+                NON_CONST_ITERATE(TDataVector, ii, vdata) {
+                    *jj++ = &(*ii);
+                }
+                sort(vdata_p.begin(), vdata_p.end(), SAlignInOut::PSpace);
+            }}
             
-            // run the algorithm for every segment between hits
+            // align over the segments
+            {{
+                m_Transcript.clear();
+                size_t idim = vdata.size();
+
+                typedef vector<CNWAlignerThread_Align*> TThreadVector;
+                TThreadVector threads;
+                threads.reserve(idim);
+
+                ITERATE(TDataPtrVector, ii, vdata_p) {
+                    
+                    SAlignInOut& data = **ii;
+
+                    if(NW_RequestNewThread(m_maxthreads)) {
+                        
+                        CNWAlignerThread_Align* thread = 
+                            new CNWAlignerThread_Align(this, &data);
+                        threads.push_back(thread);
+                        thread->Run();
+                    }
+                    else {
+                        x_Align(&data);
+                    }
+                }
+
+                auto_ptr<CException> e;
+                ITERATE(TThreadVector, ii, threads) {
+
+                    if(e.get() == 0) {
+                        CException* pe = 0;
+                        (*ii)->Join(reinterpret_cast<void**>(&pe));
+                        if(pe) {
+                            e.reset(new CException (*pe));
+                        }
+                    }
+                    else {
+                        (*ii)->Join(0);
+                    }
+                }
+                if(e.get()) {
+                    throw *e;
+                }
+
+                for(size_t idata = 0; idata < idim; ++idata) {
+
+                    SAlignInOut& data = vdata[idata];
+                    copy(data.m_transcript.begin(), data.m_transcript.end(),
+                         back_inserter(m_Transcript));
+                    if(idata + 1 < idim) {
+                        for(size_t k = 0; k < seed_dims[idata]; ++k) {
+                            m_Transcript.push_back(eTS_Match);
+                        }
+                    }
+                }
+                
+                m_score = x_ScoreByTranscript();
+            }}
+        }
+        else {            
+
             m_Transcript.clear();
             size_t guides_dim = m_guides.size() / 4;
             size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
-            vector<ETranscriptSymbol> trans;
-            
-            // save original esf settings
-            bool esf_L1 = m_esf_L1, esf_R1 = m_esf_R1,
-                 esf_L2 = m_esf_L2, esf_R2 = m_esf_R2;
-            SetEndSpaceFree(false, esf_R1, false, esf_R2); // last region
             for(size_t istart = 4*guides_dim, i = istart; i != 0; i -= 4) {
 
                 q0 = m_guides[i - 3] + 1;
                 s0 = m_guides[i - 1] + 1;
                 size_t dim_query = q1 - q0, dim_subj = s1 - s0;
-                x_Align(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
-                copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
+                
+                bool esf_L1 = false, esf_R1 = false,
+                     esf_L2 = false, esf_R2 = false;
+                if(i == istart) {
+                    esf_R1 = m_esf_R1;
+                    esf_R2 = m_esf_R2;
+                }
+
+                SAlignInOut data (m_Seq1 + q0, dim_query, esf_L1, esf_R1,
+                                  m_Seq2 + s0, dim_subj, esf_L2, esf_R2);
+
+                x_Align(&data);
+                copy(data.m_transcript.begin(), data.m_transcript.end(),
+                     back_inserter(m_Transcript));
+
                 size_t dim_hit = m_guides[i - 3] - m_guides[i - 4] + 1;
                 for(size_t k = 0; k < dim_hit; ++k) {
                     m_Transcript.push_back(eTS_Match);
                 }
                 q1 = m_guides[i - 4];
                 s1 = m_guides[i - 2];
-                trans.clear();
-                if(i == istart) {  // middle regions
-                    SetEndSpaceFree(false, false, false, false);
-                }
             }
-            SetEndSpaceFree(esf_L1, false, esf_L2, false); // first region
-            x_Align(m_Seq1, q1, m_Seq2, s1, &trans);
-            SetEndSpaceFree(esf_L1, esf_R1, esf_L2, esf_R2); // restore
-            copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
+            SAlignInOut data(m_Seq1, q1, m_esf_L1, false,
+                             m_Seq2, s1, m_esf_L2, false);
+            x_Align(&data);
+            copy(data.m_transcript.begin(), data.m_transcript.end(),
+                 back_inserter(m_Transcript));
+
             m_score = x_ScoreByTranscript();
         }
     }
@@ -610,10 +730,18 @@ bool CNWAligner::x_CheckMemoryLimit()
 }
 
 
+void CNWAligner::EnableMultipleThreads(bool enable)
+{
+    m_maxthreads = (m_mt = enable)? GetCpuCount(): 1;
+}
+
+
 CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
 {
     const size_t dim = m_Transcript.size();
-    if(dim == 0) return 0;
+    if(dim == 0) {
+        return 0;
+    }
 
     vector<ETranscriptSymbol> transcript (dim);
     for(size_t i = 0; i < dim; ++i) {
@@ -975,6 +1103,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2004/06/29 20:51:21  kapustin
+ * Support simultaneous segment computing
+ *
  * Revision 1.49  2004/06/23 19:59:09  kapustin
  * Report incorrect sym position before the symbol
  *
