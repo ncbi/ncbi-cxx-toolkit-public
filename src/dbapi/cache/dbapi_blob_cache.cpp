@@ -140,6 +140,7 @@ public:
     {
         m_Stmt = tg.m_Stmt;
         tg.Forget();
+        return *this;
     }
 
     ~CDBAPI_TransGuard()
@@ -1127,6 +1128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/19 20:27:55  ucko
+ * Actually return something from CDBAPI_TransGuard::operator=.
+ *
  * Revision 1.4  2004/07/19 19:05:32  vasilche
  * Fixed error.
  *
