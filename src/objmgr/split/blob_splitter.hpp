@@ -38,7 +38,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include "blob_splitter_params.hpp"
-#include "splitted_blob.hpp"
+#include "split_blob.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -72,6 +72,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/12/03 19:40:57  kuznets
+* Minor file rename
+*
 * Revision 1.3  2003/12/03 19:30:44  kuznets
 * Misprint fixed
 *

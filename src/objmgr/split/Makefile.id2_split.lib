@@ -8,7 +8,7 @@
 
 REQUIRES = objects dbapi
 
-SRC = 	blob_splitter blob_splitter_params splitted_blob \
+SRC = 	blob_splitter blob_splitter_params split_blob \
 	blob_splitter_impl blob_splitter_parser blob_splitter_maker \
 	id_range object_splitinfo asn_sizer annot_piece chunk_info size
 LIB = id2_split

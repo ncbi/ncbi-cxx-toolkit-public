@@ -42,7 +42,7 @@
 #include <vector>
 
 #include "blob_splitter_params.hpp"
-#include "splitted_blob.hpp"
+#include "split_blob.hpp"
 #include "chunk_info.hpp"
 #include "object_splitinfo.hpp"
 #include "size.hpp"
@@ -144,6 +144,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/12/03 19:40:57  kuznets
+* Minor file rename
+*
 * Revision 1.4  2003/12/03 19:30:44  kuznets
 * Misprint fixed
 *
