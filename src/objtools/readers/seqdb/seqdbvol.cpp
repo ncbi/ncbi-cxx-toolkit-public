@@ -1348,7 +1348,7 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // The normal consumer of this data relies on them, and can
         // walk off memory if a sequence ends on a slice boundary.
         
-        *buffer = m_Seq.GetRegion(start_offset-1, end_offset+1, keep, locked);
+        *buffer = m_Seq.GetRegion(start_offset-1, end_offset+1, keep, locked) + 1;
     } else if (kSeqTypeNucl == seqtype) {
         // The last byte is partially full; the last two bits of
         // the last byte store the number of nucleotides in the
