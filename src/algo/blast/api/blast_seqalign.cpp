@@ -33,13 +33,13 @@
 */
 
 #include "blast_seqalign.hpp"
-#include <algo/blast/core/link_hsps.h>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+#include <objects/seqalign/Dense_diag.hpp>
 #include <objects/seqalign/Std_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 
@@ -57,7 +57,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
-
 
 // Converts a frame into the appropriate strand
 static ENa_strand
@@ -544,7 +543,7 @@ x_BuildScoreList(const BlastHSP* hsp, const BlastScoreBlk* sbp, const
     if (hsp->num_ident > 0)
         scores.push_back(x_MakeScore(score_type, 0.0, hsp->num_ident));
 
-    if (hsp->num > 1 && hsp->ordering_method == BLAST_SMALL_GAPS) {
+    if (hsp->num > 1 && hsp->ordering_method == 0/*BLAST_SMALL_GAPS*/) {
         score_type = "small_gap";
         scores.push_back(x_MakeScore(score_type, 0.0, 1));
     } else if (hsp->ordering_method > 3) {
@@ -567,6 +566,8 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
     x_BuildScoreList(hsp, sbp, score_options, score_list, program);
 
     // Add scores for special cases: stdseg and disc alignments
+#if 0 /* We need to add scores to individual segs only in case
+         of ungapped alignment; but this case is handled separately. */
     if (seqalign->GetSegs().IsStd()) {
         CSeq_align::C_Segs::TStd& stdseg_list = seqalign->SetSegs().SetStd();
 
@@ -582,6 +583,123 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp,
             x_BuildScoreList(hsp, sbp, score_options, score, program);
         }
     }
+#endif
+}
+
+
+CRef<CDense_diag>
+x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
+    const CSeq_id *subject_id, const BlastScoreBlk* sbp,
+    const BlastScoringOptions* score_options, EProgram program, 
+    Int4 query_length, Int4 subject_length)
+{
+    CRef<CDense_diag> retval(new CDense_diag());
+    
+    // Pairwise alignment is 2 dimensional
+    retval->SetDim(2);
+
+    // Set the sequence ids
+    CDense_diag::TIds& ids = retval->SetIds();
+    CRef<CSeq_id> tmp(new CSeq_id(query_id->AsFastaString()));
+    ids.push_back(tmp);
+    tmp.Reset(new CSeq_id(subject_id->AsFastaString()));
+    ids.push_back(tmp);
+    ids.resize(retval->GetDim());
+
+    retval->SetLen(hsp->query.length);
+
+    CDense_diag::TStrands& strands = retval->SetStrands();
+    strands.push_back(x_Frame2Strand(hsp->query.frame));
+    strands.push_back(x_Frame2Strand(hsp->subject.frame));
+    CDense_diag::TStarts& starts = retval->SetStarts();
+    if (hsp->query.frame >= 0) {
+       starts.push_back(hsp->query.offset);
+    } else {
+       starts.push_back(query_length - hsp->query.offset - hsp->query.length);
+    }
+    if (hsp->subject.frame >= 0) {
+       starts.push_back(hsp->subject.offset);
+    } else {
+       starts.push_back(subject_length - hsp->subject.offset - 
+                        hsp->subject.length);
+    }
+
+    CSeq_align::TScore& score_list = retval->SetScores();
+    x_BuildScoreList(hsp, sbp, score_options, score_list, program);
+
+    return retval;
+}
+
+CRef<CStd_seg>
+x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id, 
+    const CSeq_id *subject_id, const BlastScoreBlk* sbp,
+    const BlastScoringOptions* score_options, EProgram program, 
+    Int4 query_length, Int4 subject_length)
+{
+    CRef<CStd_seg> retval(new CStd_seg());
+
+    // Pairwise alignment is 2 dimensional
+    retval->SetDim(2);
+
+    CRef<CSeq_loc> query_loc(new CSeq_loc());
+    CRef<CSeq_loc> subject_loc(new CSeq_loc());
+
+    // Set the sequence ids
+    CStd_seg::TIds& ids = retval->SetIds();
+    CRef<CSeq_id> tmp(new CSeq_id(query_id->AsFastaString()));
+    query_loc->SetInt().SetId(*tmp);
+    ids.push_back(tmp);
+    tmp.Reset(new CSeq_id(subject_id->AsFastaString()));
+    subject_loc->SetInt().SetId(*tmp);
+    ids.push_back(tmp);
+    ids.resize(retval->GetDim());
+
+    query_loc->SetInt().SetStrand(x_Frame2Strand(hsp->query.frame));
+    subject_loc->SetInt().SetStrand(x_Frame2Strand(hsp->subject.frame));
+
+    if (hsp->query.frame == 0) {
+       query_loc->SetInt().SetFrom(hsp->query.offset);
+       query_loc->SetInt().SetTo(hsp->query.offset + hsp->query.length - 1);
+    } else if (hsp->query.frame > 0) {
+       query_loc->SetInt().SetFrom(CODON_LENGTH*(hsp->query.offset) + 
+                                   hsp->query.frame - 1);
+       query_loc->SetInt().SetTo(CODON_LENGTH*(hsp->query.offset+
+                                               hsp->query.length)
+                                 + hsp->query.frame - 2);
+    } else {
+       query_loc->SetInt().SetFrom(query_length -
+           CODON_LENGTH*(hsp->query.offset+hsp->query.length) +
+           hsp->query.frame + 1);
+       query_loc->SetInt().SetTo(query_length - CODON_LENGTH*hsp->query.offset
+                                 + hsp->query.frame);
+    }
+
+    if (hsp->subject.frame == 0) {
+       subject_loc->SetInt().SetFrom(hsp->subject.offset);
+       subject_loc->SetInt().SetTo(hsp->subject.offset + 
+                                   hsp->subject.length - 1);
+    } else if (hsp->subject.frame > 0) {
+       subject_loc->SetInt().SetFrom(CODON_LENGTH*(hsp->subject.offset) + 
+                                   hsp->subject.frame - 1);
+       subject_loc->SetInt().SetTo(CODON_LENGTH*(hsp->subject.offset+
+                                               hsp->subject.length) +
+                                   hsp->subject.frame - 2);
+
+    } else {
+       subject_loc->SetInt().SetFrom(subject_length -
+           CODON_LENGTH*(hsp->subject.offset+hsp->subject.length) +
+           hsp->subject.frame + 1);
+       subject_loc->SetInt().SetTo(subject_length - 
+           CODON_LENGTH*hsp->subject.offset + hsp->subject.frame);
+    }
+
+    retval->SetLoc().push_back(query_loc);
+    retval->SetLoc().push_back(subject_loc);
+
+    CSeq_align::TScore& score_list = retval->SetScores();
+    x_BuildScoreList(hsp, sbp, score_options, score_list, program);
+
+    return retval;
 }
 
 static CRef<CSeq_align>
@@ -591,9 +709,32 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
     const BlastScoringOptions* score_options, const BlastScoreBlk* sbp)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
-    retval.Reset(NULL);
-    NCBI_THROW(CBlastException, eInternal, 
-               "Ungapped alignment construction is unimplemented");
+    BlastHSP** hsp_array;
+    int index;
+
+    retval->SetType(CSeq_align::eType_diags);
+
+    hsp_array = hsp_list->hsp_array;
+
+    /* All HSPs are put in one seqalign, containing a list of 
+     * DenseDiag for same molecule search, or StdSeg for translated searches.
+    */
+    if (program == eBlastn || program == eBlastp) {
+        for (index=0; index<hsp_list->hspcnt; index++) { 
+            BlastHSP* hsp = hsp_array[index];
+            retval->SetSegs().SetDendiag().push_back(
+                x_UngappedHSPToDenseDiag(hsp, query_id, subject_id, sbp, 
+                    score_options, program, query_length, subject_length));
+        }
+    } else { // Translated search
+        for (index=0; index<hsp_list->hspcnt; index++) { 
+            BlastHSP* hsp = hsp_array[index];
+            retval->SetSegs().SetStd().push_back(
+                x_UngappedHSPToStdSeg(hsp, query_id, subject_id, sbp, 
+                    score_options, program, query_length, subject_length));
+        }
+    }
+
     return retval;
 }
 
@@ -786,6 +927,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.22  2003/10/31 22:08:39  dondosha
+* Implemented conversion of BLAST results to seqalign for ungapped search
+*
 * Revision 1.21  2003/10/31 00:05:15  camacho
 * Changes to return discontinuous seq-aligns for each query-subject pair
 *
