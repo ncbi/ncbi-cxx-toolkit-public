@@ -309,10 +309,23 @@ public:
     };
     static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt);
 
-    // For use with FindBestChoice from <corelib/ncbiutil.hpp>
-    static int Score(const CRef<CSeq_id>& id);
-    static int BestRank(const CRef<CSeq_id>& id);
-    static int WorstRank(const CRef<CSeq_id>& id);
+    // Numerical quality ranking; lower is better.
+    // (Text)Score and WorstRank both basically correspond to the C
+    // Toolkit's SeqIdFindWorst, which favors textual accessions,
+    // whereas BestRank corresponds to the C Toolkit's SeqIdFindBest
+    // and favors GIs.  All three give a slight bonus to accessions
+    // that carry versions.
+    int TextScore     (void) const;
+    int BestRankScore (void) const;
+    int WorstRankScore(void) const;
+
+    // Wrappers for use with FindBestChoice from <corelib/ncbiutil.hpp>
+    static int Score(const CRef<CSeq_id>& id)
+        { return id ? id->TextScore() : kMax_Int; }
+    static int BestRank(const CRef<CSeq_id>& id)
+        { return id ? id->BestRankScore() : kMax_Int; }
+    static int WorstRank(const CRef<CSeq_id>& id)
+        { return id ? id->WorstRankScore() : kMax_Int; }
 
     virtual void Assign(const CSerialObject& source,
                         ESerialRecursionMode how = eRecursive);
@@ -350,9 +363,9 @@ bool CSeq_id::Match (const CSeq_id& sid2) const
 
 
 inline
-int CSeq_id::Score(const CRef<CSeq_id>& id)
+int CSeq_id::TextScore(void) const
 {
-    switch (id->Which()) {
+    switch (Which()) {
     case e_not_set:
         return kMax_Int;
 
@@ -361,7 +374,6 @@ int CSeq_id::Score(const CRef<CSeq_id>& id)
         return 20;
 
     case e_General:
-        return 15;
     case e_Gibbsq:
     case e_Gibbmt:
         return 15;
@@ -371,33 +383,33 @@ int CSeq_id::Score(const CRef<CSeq_id>& id)
         return 10;
 
     case e_Other:
-        if (id->GetOther().IsSetVersion()) {
+        if (GetOther().IsSetVersion()) {
             return 7;
         }
         return 8;
 
     default:
         {{
-             const CTextseq_id* text_id = id->GetTextseq_Id();
+             const CTextseq_id* text_id = GetTextseq_Id();
              if (text_id  &&  text_id->IsSetVersion()) {
                  return 4;
              }
              return 5;
-         }}
+        }}
     }
 }
 
 
 inline
-int CSeq_id::BestRank(const CRef<CSeq_id>& id)
+int CSeq_id::BestRankScore(void) const
 {
-    switch (id->Which()) {
+    switch (Which()) {
     case e_not_set:                               return 83;
     case e_General: case e_Local:                 return 80;
     case e_Gibbsq: case e_Gibbmt: case e_Giim:    return 70;
     case e_Patent:                                return 67;
     case e_Other:
-        if (id->GetOther().IsSetVersion()) {
+        if (GetOther().IsSetVersion()) {
             return 64;
         }
         return 65;
@@ -406,12 +418,12 @@ int CSeq_id::BestRank(const CRef<CSeq_id>& id)
     case e_Pir:  case e_Swissprot:
     case e_Tpg:   case e_Genbank:
         {{
-             const CTextseq_id* text_id = id->GetTextseq_Id();
+             const CTextseq_id* text_id = GetTextseq_Id();
              if (text_id  &&  text_id->IsSetVersion()) {
                  return 59;
              }
              return 60;
-         }}
+        }}
     case e_Gi:                                    return 51;
     default:                                      return 5;
     }
@@ -419,29 +431,29 @@ int CSeq_id::BestRank(const CRef<CSeq_id>& id)
 
 
 inline
-int CSeq_id::WorstRank(const CRef<CSeq_id>& id)
+int CSeq_id::WorstRankScore(void) const
 {
-    switch (id->Which()) {
+    switch (Which()) {
     case e_not_set:                               return 83;
     case e_Gi: case e_Giim:                       return 20;
     case e_General: case e_Gibbsq: case e_Gibbmt: return 15;
     case e_Local: case e_Patent:                  return 10;
     case e_Other:
-        if (id->GetOther().IsSetVersion()) {
-            return 8;
+        if (GetOther().IsSetVersion()) {
+            return 7;
         }
-        return 7;
+        return 8;
     case e_Ddbj: case e_Prf: case e_Pdb:
     case e_Tpe:  case e_Tpd: case e_Embl:
     case e_Pir:  case e_Swissprot:
     case e_Tpg:   case e_Genbank:
         {{
-             const CTextseq_id* text_id = id->GetTextseq_Id();
+             const CTextseq_id* text_id = GetTextseq_Id();
              if (text_id  &&  text_id->IsSetVersion()) {
-                 return 5;
+                 return 4;
              }
-             return 4;
-         }}
+             return 5;
+        }}
     default:                                      return 3;
     }
 }
@@ -457,6 +469,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.44  2004/04/01 16:36:34  ucko
+ * Make the scoring functions wrappers around const methods (with slightly
+ * different names to avoid ambiguity when passing CSeq_id::Score et al. to
+ * FindBestChoice) and add a more verbose comment.  Also, WorstRank,
+ * despite being "Worst," should still favor versioned accessions.
+ *
  * Revision 1.43  2004/03/30 20:46:08  ucko
  * BestRank: demote gibb* and patent to 70 and 67 respectively per the C Toolkit.
  *
