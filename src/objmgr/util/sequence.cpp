@@ -1162,8 +1162,8 @@ ECompare s_Compare_Help
         return eNoOverlap;
     }
 
-    list<CRef<T1> >::const_iterator mit = mec.begin();
-    list<CRef<T2> >::const_iterator yit = youc.begin();
+    typename list<CRef<T1> >::const_iterator mit = mec.begin();
+    typename list<CRef<T2> >::const_iterator yit = youc.begin();
     ECompare cmp1, cmp2;
 
     // Check for equality of the lists. Note, order of the lists contents are
@@ -3912,6 +3912,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.72  2004/02/09 14:43:18  vasilche
+* Added missing typename keyword.
+*
 * Revision 1.71  2004/02/05 19:41:46  shomrat
 * Convenience functions for popular overlapping types
 *
