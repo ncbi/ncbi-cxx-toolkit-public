@@ -47,7 +47,7 @@ class NCBI_XALGOALIGN_EXPORT CSplicedAligner16: public CSplicedAligner
 {
 public:
 
-    CSplicedAligner16();
+    CSplicedAligner16(void);
 
     CSplicedAligner16( const char* seq1, size_t len1,
                        const char* seq2, size_t len2);
@@ -55,14 +55,19 @@ public:
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type);
 
+    // returns the size of a single backtrace matrix element
+    virtual size_t GetElemSize(void) const {
+        return 2;
+    }
+
 protected:
 
     TScore m_Wi [splice_type_count_16];
 
-    virtual size_t  x_GetSpliceTypeCount() {
+    virtual size_t  x_GetSpliceTypeCount(void) {
         return splice_type_count_16;
     }
-    virtual TScore* x_GetSpliceScores() {
+    virtual TScore* x_GetSpliceScores(void) {
         return m_Wi;
     }
     virtual TScore  x_Align ( const char* seg1, size_t len1,
@@ -74,12 +79,7 @@ protected:
                         size_t N1, size_t N2,
                         vector<ETranscriptSymbol>* transcript );
     // included primarily for test purpose
-    virtual TScore  x_ScoreByTranscript() const;
-
-    // returns the size of a single backtrace matrix element
-    virtual size_t x_GetElemSize() const {
-        return 2;
-    }
+    virtual TScore  x_ScoreByTranscript(void) const;
 };
 
 
@@ -90,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/29 13:02:03  kapustin
+ * Make x_GetElemSize() public and rename.
+ *
  * Revision 1.3  2003/09/26 14:43:01  kapustin
  * Remove exception specifications
  *

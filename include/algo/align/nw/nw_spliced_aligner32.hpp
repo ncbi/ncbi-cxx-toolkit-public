@@ -46,15 +46,20 @@ class NCBI_XALGOALIGN_EXPORT CSplicedAligner32: public CSplicedAligner
 {
 public:
 
-    CSplicedAligner32();
+    CSplicedAligner32(void);
 
     CSplicedAligner32( const char* seq1, size_t len1,
                        const char* seq2, size_t len2);
 
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type);
-    static TScore GetDefaultWd1 () { return  -5; }
-    static TScore GetDefaultWd2 () { return  -8; }
+    static TScore GetDefaultWd1 (void) { return  -5; }
+    static TScore GetDefaultWd2 (void) { return  -8; }
+
+    // returns the size of a single backtrace matrix element
+    virtual size_t GetElemSize(void) const {
+        return 4;
+    }
 
 protected:
 
@@ -63,10 +68,10 @@ protected:
     TScore m_Wd1; // applies if only one donor/acceptor char damaged
     TScore m_Wd2; // applies if both chars damaged
 
-    virtual size_t  x_GetSpliceTypeCount() {
+    virtual size_t  x_GetSpliceTypeCount(void) {
         return splice_type_count_32;
     }
-    virtual TScore* x_GetSpliceScores() {
+    virtual TScore* x_GetSpliceScores(void) {
         return m_Wi;
     }
     virtual TScore  x_Align ( const char* seg1, size_t len1,
@@ -78,12 +83,7 @@ protected:
                         size_t N1, size_t N2,
                         vector<ETranscriptSymbol>* transcript );
     // included primarily for test purpose
-    virtual TScore  x_ScoreByTranscript() const;
-
-    // returns the size of a single backtrace matrix element
-    virtual size_t x_GetElemSize() const {
-        return 4;
-    }
+    virtual TScore  x_ScoreByTranscript(void) const;
 };
 
 
@@ -94,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/12/29 13:02:03  kapustin
+ * Make x_GetElemSize() public and rename.
+ *
  * Revision 1.3  2003/09/26 14:43:01  kapustin
  * Remove exception specifications
  *
