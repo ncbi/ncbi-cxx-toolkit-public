@@ -144,8 +144,6 @@ typedef Uint1 Boolean;
 
 #endif /* NCBI_C_TOOLKIT */
 
-#define LnGammaInt Nlm_LnGammaInt
- 
 extern void* MemDup (const void *orig, size_t size);
 
 
