@@ -667,6 +667,8 @@ private:
     bool IsHistAssemblyMissing(const CBioseq& seq);
     bool IsFlybaseDbxrefs(const list< CRef< CDbtag > >& dbxrefs);
     bool GraphsOnBioseq(const CBioseq& seq) const;
+    bool IsOtherDNA(const CBioseq& seq) const;
+    bool IsSynthetic(const CBioseq& seq) const;
 
     const CBioseq* GetNucGivenProt(const CBioseq& prot);
     
@@ -868,6 +870,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/06/19 15:34:09  shomrat
+* Added IsOtherDNA and IsSynthetic
+*
 * Revision 1.30  2003/06/02 16:06:43  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
