@@ -3431,7 +3431,7 @@ RPSFillScores(Int4 **matrix, Int4 matrixLength,
 Int4 **
 RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length, 
                    const Uint1* rps_query_seq, Int4 db_seq_length, 
-                   Int4 **posMatrix)
+                   Int4 **posMatrix, const char *matrix_name)
 {
     double *scoreArray;         /*array of score probabilities*/
     double *resProb;            /*array of probabilities for each residue*/
@@ -3453,7 +3453,8 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
                  return_sfp, BLAST_SCORE_RANGE_MAX);
 
-    initialUngappedLambda = RPSfindUngappedLambda("BLOSUM62");
+    initialUngappedLambda = RPSfindUngappedLambda(matrix_name);
+    ASSERT(initialUngappedLambda > 0.0);
     scaledInitialUngappedLambda = initialUngappedLambda / scalingFactor;
     correctUngappedLambda = Blast_KarlinLambdaNR(return_sfp, 
                                               scaledInitialUngappedLambda);
@@ -3617,6 +3618,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.93  2004/09/29 20:39:59  papadopo
+ * Retrieve the ungapped lambda from the actual score matrix underlying an RPS search, not just that of BLOSUM62
+ *
  * Revision 1.92  2004/09/28 16:23:15  papadopo
  * From Michael Gertz:
  * 1. Pass the effective size of the search space into
