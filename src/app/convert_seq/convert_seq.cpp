@@ -53,6 +53,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/readfeat.hpp>
+#include <objtools/readers/agp_read.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -95,7 +96,7 @@ void CConversionApp::Init(void)
                      CArgDescriptions::eString);
     arg_desc->SetConstraint
         ("infmt", &(*new CArgAllow_Strings,
-                    "ID", "asn", "asnb", "xml", "fasta", "gff", "tbl"));
+                    "ID", "asn", "asnb", "xml", "fasta", "gff", "tbl", "agp"));
 
     arg_desc->AddDefaultKey("out", "OutputFile", "File to write the object to",
                             CArgDescriptions::eOutputFile, "-");
@@ -170,6 +171,15 @@ CConstRef<CSeq_entry> CConversionApp::Read(const CArgs& args)
     } else if (infmt == "gff") {
         return CGFFReader().Read(args["in"].AsInputFile(),
                                  CGFFReader::fGBQuals);
+    } else if (infmt == "agp") {
+        CRef<CBioseq_set> bss = AgpRead(args["in"].AsInputFile());
+        if (bss->GetSeq_set().size() == 1) {
+            return bss->GetSeq_set().front();
+        } else {
+            CRef<CSeq_entry> entry(new CSeq_entry);
+            entry->SetSet(*bss);
+            return entry;
+        }
     } else if (infmt == "tbl") {
         CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable
             (args["in"].AsInputFile());
@@ -279,6 +289,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/27 20:07:10  jcherry
+* Added agp as input format
+*
 * Revision 1.2  2004/01/05 17:59:32  vasilche
 * Moved genbank loader and its readers sources to new location in objtools.
 * Genbank is now in library libncbi_xloader_genbank.
