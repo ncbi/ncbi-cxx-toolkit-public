@@ -32,7 +32,7 @@
 */
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
-
+#include <connect/ncbi_core_cxx.hpp>
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
@@ -112,6 +112,9 @@ void CAsn2FlatApp::Init(void)
         arg_desc->SetConstraint("serial", &(*new CArgAllow_Strings,
             "text", "binary", "XML"));
         arg_desc->AddFlag("sub", "Submission");
+        // id
+        arg_desc->AddOptionalKey("id", "ID", 
+            "Specific ID to display", CArgDescriptions::eString);
     }}
 
     // batch processing
@@ -161,10 +164,6 @@ void CAsn2FlatApp::Init(void)
         arg_desc->SetConstraint("view", 
             &(*new CArgAllow_Strings, "all", "prot", "nuc"));
         
-        // id
-        arg_desc->AddOptionalKey("id", "ID", 
-            "Specific ID to display", CArgDescriptions::eString);
-
         // from
         arg_desc->AddOptionalKey("from", "From",
             "Begining of shown range", CArgDescriptions::eInteger);
@@ -186,6 +185,8 @@ void CAsn2FlatApp::Init(void)
         // no-cleanup
         arg_desc->AddFlag("nocleanup",
             "Do not perform data cleanup prior to formatting");
+        // remote
+        arg_desc->AddFlag("gbload", "Use CGBDataLoader");
 
     }}
     SetupArgDescriptions(arg_desc.release());
@@ -194,6 +195,9 @@ void CAsn2FlatApp::Init(void)
 
 int CAsn2FlatApp::Run(void)
 {
+	// initialize conn library
+	CONNECT_Init(&GetConfig());
+
     const CArgs&   args = GetArgs();
 
     // create object manager
@@ -201,9 +205,9 @@ int CAsn2FlatApp::Run(void)
     if ( !m_Objmgr ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create object manager");
     }
-    //if ( args["load"]  &&  args["load"].AsString() == "gb" ) {
-    CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
-    //}
+    if (args["gbload"]  ||  args["id"]  ||  args["mode"].AsString() == "release") {
+        CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+    }
 
     // open the output stream
     m_Os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
@@ -248,6 +252,7 @@ int CAsn2FlatApp::Run(void)
                     NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
                 }
                 HandleSeqEntry(se);
+				//m_Objmgr.Reset();
             }
         }
     } else {  // error opening input file
@@ -275,7 +280,7 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     }
 
     string label;
-    se->GetLabel(&label, CSeq_entry::eBoth);
+    //se->GetLabel(&label, CSeq_entry::eBoth);
 
     // create new scope
     CRef<CScope> scope(new CScope(*m_Objmgr));
@@ -302,8 +307,6 @@ bool CAsn2FlatApp::HandleSeqEntry(CRef<CSeq_entry>& se)
             _TRACE(e.ReportThis() + " " + label);
         }
     }
-
-    // m_FFGenerator->Reset();
 
     return true;
 }
@@ -545,6 +548,9 @@ int main(int argc, const char** argv)
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/03/28 17:36:46  shomrat
+* GBLoader is made optional
+*
 * Revision 1.13  2005/03/02 17:09:42  ucko
 * Comment out call to CFlatFileGenerator::Reset(), which seems to have
 * been dropped with no explanation.
