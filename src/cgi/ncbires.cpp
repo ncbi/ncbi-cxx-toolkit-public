@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/04/13 14:26:01  vasilche
+* Removed old _TRACE
+*
 * Revision 1.19  1999/03/17 18:59:51  vasilche
 * Changed CNcbiQueryResult&Iterator.
 *
@@ -238,9 +241,7 @@ void CNcbiQueryResult::FirstObject(TIterator& obj, TSize StartPos)
 
 void CNcbiQueryResult::FreeObject(CNcbiDataObject* object)
 {
-    _TRACE("FreeObject: " << (long)object);
     delete object;
-    _TRACE("FreedObject: " << (long)object);
 }
 
 END_NCBI_SCOPE
