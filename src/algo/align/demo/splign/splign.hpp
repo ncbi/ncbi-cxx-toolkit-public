@@ -64,6 +64,7 @@ public:
 			 const char* seq1, const char* seq2);
     void ImproveFromRight(const CNWAligner* aligner,
 			  const char* seq1, const char* seq2);
+    void RestoreIdentity();
   };
 
   const vector<SSegment>* Run(void);
@@ -108,6 +109,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/10/31 19:41:31  kapustin
+ * Add CSplign::SSegment::RestoreIdentity()
+ *
  * Revision 1.1  2003/10/30 19:37:20  kapustin
  * Initial toolkit revision
  *
