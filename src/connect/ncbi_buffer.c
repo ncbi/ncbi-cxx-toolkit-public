@@ -28,34 +28,6 @@
  * File Description:
  *   Memory-resident FIFO storage area (to be used e.g. in I/O buffering)
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.7  2001/04/23 22:20:27  vakatov
- * BUF_PeekAt() -- special case for "data" == NULL
- *
- * Revision 6.6  2001/04/23 18:07:21  vakatov
- * + BUF_PeekAt()
- *
- * Revision 6.5  2000/02/23 22:34:34  vakatov
- * Can work both "standalone" and as a part of NCBI C++ or C toolkits
- *
- * Revision 6.4  1999/11/19 19:59:08  vakatov
- * Get rid of an insignificant compiler warning
- *
- * Revision 6.3  1999/10/18 18:01:43  vakatov
- * Use double-quotes (rather than angles) to #include ncbi_buffer.h
- * (this kludge is to ease compilation in the NCBI C++ tree).
- *
- * Revision 6.2  1999/10/12 16:32:14  vakatov
- * Moved all TEST suite code from "ncbi_buffer.c" to "test/test_ncbi_buffer.c"
- *
- * Revision 6.1  1999/08/17 19:45:22  vakatov
- * Moved all real code from NCBIBUF to NCBI_BUFFER;  the code has been cleaned
- * from the NCBI C toolkit specific types and API calls.
- * NCBIBUF module still exists for the backward compatibility -- it
- * provides old NCBI-wise interface.
- *
- * ===========================================================================
  */
 
 #include <connect/ncbi_buffer.h>
@@ -307,3 +279,36 @@ extern BUF BUF_Destroy(BUF buf)
 }
 
 
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.8  2002/12/13 21:18:24  lavr
+ * Log moved to end
+ *
+ * Revision 6.7  2001/04/23 22:20:27  vakatov
+ * BUF_PeekAt() -- special case for "data" == NULL
+ *
+ * Revision 6.6  2001/04/23 18:07:21  vakatov
+ * + BUF_PeekAt()
+ *
+ * Revision 6.5  2000/02/23 22:34:34  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
+ * Revision 6.4  1999/11/19 19:59:08  vakatov
+ * Get rid of an insignificant compiler warning
+ *
+ * Revision 6.3  1999/10/18 18:01:43  vakatov
+ * Use double-quotes (rather than angles) to #include ncbi_buffer.h
+ * (this kludge is to ease compilation in the NCBI C++ tree).
+ *
+ * Revision 6.2  1999/10/12 16:32:14  vakatov
+ * Moved all TEST suite code from "ncbi_buffer.c" to "test/test_ncbi_buffer.c"
+ *
+ * Revision 6.1  1999/08/17 19:45:22  vakatov
+ * Moved all real code from NCBIBUF to NCBI_BUFFER;  the code has been cleaned
+ * from the NCBI C toolkit specific types and API calls.
+ * NCBIBUF module still exists for the backward compatibility -- it
+ * provides old NCBI-wise interface.
+ *
+ * ===========================================================================
+ */
