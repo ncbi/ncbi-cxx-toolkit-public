@@ -305,7 +305,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             switch (pfx[1]) {
             case 'A':                     return eAcc_ddbj_con;
             case 'B': case 'J': case 'P': return eAcc_ddbj_est;
-            case 'C':                     return eAcc_gb_cdna;
+            case 'C': case 'T':           return eAcc_gb_cdna;
             case 'D':                     return eAcc_ddbj_patent;
             case 'E': case 'F': case 'G':
             case 'I': case 'M': case 'Q': return eAcc_gb_est;
@@ -322,14 +322,15 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
 
     case 3:
         if (pfx[2] == '_') { // refseq-style
-            if      (pfx == "NC_") { return eAcc_refseq_chromosome;     }
-            else if (pfx == "NG_") { return eAcc_refseq_genomic;        }
-            else if (pfx == "NM_") { return eAcc_refseq_mrna;           }
-            else if (pfx == "NP_") { return eAcc_refseq_prot;           }
-            else if (pfx == "NT_") { return eAcc_refseq_contig;         }
-            else if (pfx == "XM_") { return eAcc_refseq_mrna_predicted; }
-            else if (pfx == "XP_") { return eAcc_refseq_prot_predicted; }
-            else                   { return eAcc_refseq_unreserved;     }
+            if      (pfx == "NC_") { return eAcc_refseq_chromosome;      }
+            else if (pfx == "NG_") { return eAcc_refseq_genomic;         }
+            else if (pfx == "NM_") { return eAcc_refseq_mrna;            }
+            else if (pfx == "NP_") { return eAcc_refseq_prot;            }
+            else if (pfx == "NT_") { return eAcc_refseq_contig;          }
+            else if (pfx == "XM_") { return eAcc_refseq_mrna_predicted;  }
+            else if (pfx == "XP_") { return eAcc_refseq_prot_predicted;  }
+            else if (pfx == "XR_") { return eAcc_refseq_ncrna_predicted; }
+            else                   { return eAcc_refseq_unreserved;      }
         } else { // protein
             switch (pfx[0]) {
             case 'A': return (pfx == "AAE") ? eAcc_gb_patent_prot
@@ -804,6 +805,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.27  2002/08/14 15:52:27  ucko
+ * Add BT and XR_.
+ *
  * Revision 6.26  2002/08/06 18:22:19  ucko
  * Properly handle versioned PDB accessions.
  *
