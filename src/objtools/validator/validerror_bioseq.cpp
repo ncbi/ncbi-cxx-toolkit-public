@@ -2289,8 +2289,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
 
     // if no full length prot feature on a part of a segmented bioseq
     // search for such feature on the master bioseq
-    if ( is_aa  &&  !full_length_prot_ref  &&
-         bsh.GetInst_Repr() == CSeq_inst::eRepr_seg ) {
+    if ( is_aa  &&  !full_length_prot_ref ) {
         CBioseq_Handle parent = s_GetParent(bsh);
         if ( parent ) {
             TSeqPos parent_len = parent.IsSetInst_Length() ? bsh.GetInst_Length() : 0;
@@ -2306,7 +2305,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     }
 
     if ( is_aa  &&  !full_length_prot_ref  &&  !is_virtual  &&  !m_Imp.IsPDB()   ) {
-        m_Imp.AddProtWithoutFullRef(seq);
+        m_Imp.AddProtWithoutFullRef(bsh);
     }
 }
 
@@ -3597,6 +3596,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.74  2004/04/27 18:41:51  shomrat
+* AddProtWithoutFullRef takes CBioseq_Handle
+*
 * Revision 1.73  2004/04/27 18:26:04  shomrat
 * do not report NoProtRefFound if virtual, or if a segmented part where the parent has a best protein feature
 *
