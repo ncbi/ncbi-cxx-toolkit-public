@@ -493,27 +493,23 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
             if (row > max_len || row < 0) {
                   flower = k+1; nlower = 1;
             } else {
-               /* Slide down the diagonal. Don't do this if reached 
-                  the end point, which has value 0x0f */
+               /* Slide down the diagonal. */
                if (reverse) {
-                  if (s2[len2-row] != 0x0f) {
-                     if (!(rem & 4))
+                  if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[len2-1-row] == 
                             READDB_UNPACK_BASE_N(s1[(len1-1-col)/4],
                                                  3-(len1-1-col)%4)) {
                         ++row;
                         ++col;
                      }
-                     else
-                      while (row < len2 && col < len1 && s2[len2-1-row] == s1[len1-1-col]) {
+                  } else {
+                     while (row < len2 && col < len1 && 
+                            s2[len2-1-row] == s1[len1-1-col]) {
                         ++row;
                         ++col;
                      }
-                  } else {
-                     max_len = row;
-                     flower = k+1; nlower = 1;
                   }
-               } else if (s2[row-1] != 0x0f) { 
+               } else {
                   if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[row] == 
                             READDB_UNPACK_BASE_N(s1[(col+rem)/4],
@@ -527,9 +523,6 @@ Int4 BLAST_GreedyAlign(const Uint1* s1, Int4 len1,
                         ++col;
                      }
                   }
-               } else {
-                  max_len = row;
-                  flower = k+1; nlower = 1;
                }
             }
 	    flast_d[d][k] = row;
@@ -771,26 +764,21 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
             } else {
                /* slide down the diagonal */
                if (reverse) {
-                  if (s2[len2 - row] != 0x0f) {
-                     if (!(rem & 4)) {
-                        while (row < len2 && col < len1 && s2[len2-1-row] == 
-                               READDB_UNPACK_BASE_N(s1[(len1-1-col)/4],
-                                                    3-(len1-1-col)%4)) {
-                           ++row;
-                           ++col;
-                        }
-                     } else {
-                        while (row < len2 && col < len1 && s2[len2-1-row] ==
-                               s1[len1-1-col]) {
-                           ++row;
-                           ++col;
-                        }
+                  if (!(rem & 4)) {
+                     while (row < len2 && col < len1 && s2[len2-1-row] == 
+                            READDB_UNPACK_BASE_N(s1[(len1-1-col)/4],
+                                                 3-(len1-1-col)%4)) {
+                        ++row;
+                        ++col;
                      }
                   } else {
-                     max_len = row;
-                     flower = k; nlower = k+1; 
+                     while (row < len2 && col < len1 && s2[len2-1-row] ==
+                            s1[len1-1-col]) {
+                        ++row;
+                        ++col;
+                     }
                   }
-               } else if (s2[row-1] != 0x0f) {
+               } else {
                   if (!(rem & 4)) {
                      while (row < len2 && col < len1 && s2[row] == 
                             READDB_UNPACK_BASE_N(s1[(col+rem)/4],
@@ -804,22 +792,19 @@ Int4 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
                         ++col;
                      }
                   }
-               } else {
-                  max_len = row;
-                  flower = k; nlower = k+1;
                }
             }
-	    flast_d[d][k].C = row;
-	    if (row + col > cur_max) {
-		cur_max = row + col;
-		b_diag = k;
-	    }
-	    if (row == len2) {
-		flower = k; nlower = k+1;
-	    }
-	    if (col == len1) {
-		fupper = k; nupper = k-1;
-	    }
+            flast_d[d][k].C = row;
+            if (row + col > cur_max) {
+               cur_max = row + col;
+               b_diag = k;
+            }
+            if (row == len2) {
+               flower = k; nlower = k+1;
+            }
+            if (col == len1) {
+               fupper = k; nupper = k-1;
+            }
 	}
 	k = cur_max*M_half - d * gd;
 	if (max_row[d - 1] < k) {
