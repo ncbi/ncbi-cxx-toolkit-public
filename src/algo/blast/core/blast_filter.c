@@ -1267,21 +1267,23 @@ BlastSetUp_MaskQuery(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, B
 
 char* Blast_GetRepeatsFilterOption(const char* filter_string)
 {
+    char* repeat_filter_string = NULL;
+    const char* kPtr;
+    
     if (!filter_string)
         return NULL;
 
-    char* repeat_filter_string = NULL;
-    const char* ptr = strchr(filter_string, 'R');
-    
-    if (ptr) {
-        const char* end = strstr(ptr, ";");
+    kPtr = strchr(filter_string, 'R');
+
+    if (kPtr) {
+        const char* kEnd = strstr(kPtr, ";");
         unsigned int length;
-        if (end)
-            length = (unsigned int) (end - ptr);
+        if (kEnd)
+            length = (unsigned int) (kEnd - kPtr);
         else
-            length = strlen(ptr);
+            length = strlen(kPtr);
         repeat_filter_string = (char*) malloc(length+1);
-        strncpy(repeat_filter_string, ptr, length);
+        strncpy(repeat_filter_string, kPtr, length);
         repeat_filter_string[length] = NULLB;
     }
     
