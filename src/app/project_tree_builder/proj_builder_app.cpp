@@ -395,7 +395,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
                        (m_ProjectTreeInfo->m_Compilers);
 
 
-        // ImplicitExcludedBranches - all subdirs will be excluded by default
+        /// ImplicitExcludedBranches - all subdirs will be excluded by default
         string implicit_exclude_str 
             = GetConfig().GetString("ProjectTree", "ImplicitExclude", "");
         list<string> implicit_exclude_list;
@@ -409,6 +409,16 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
             dir = CDirEntry::AddTrailingPathSeparator(dir);
             m_ProjectTreeInfo->m_ImplicitExcludedAbsDirs.push_back(dir);
         }
+
+        /// <projects> branch of tree (scripts\projects)
+        string projects = 
+            GetConfig().GetString("ProjectTree", "projects", "");
+        m_ProjectTreeInfo->m_Projects = 
+                CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Root, 
+                                      projects);
+        m_ProjectTreeInfo->m_Projects = 
+            CDirEntry::AddTrailingPathSeparator
+                       (m_ProjectTreeInfo->m_Compilers);
     }
     return *m_ProjectTreeInfo;
 }
@@ -460,6 +470,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/02/18 23:37:06  gorelenk
+ * Changed definition of member-function GetProjectTreeInfo.
+ *
  * Revision 1.20  2004/02/13 20:39:52  gorelenk
  * Minor cosmetic changes.
  *
