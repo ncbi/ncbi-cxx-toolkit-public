@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2000/10/13 20:22:53  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.55  2000/10/13 16:28:38  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -331,8 +335,9 @@ CMemberInfo* CClassTypeInfo::AddMember(const char* memberId,
                                        const void* memberPtr,
                                        const CTypeRef& memberType)
 {
-    CMemberInfo* memberInfo =
-        new CMemberInfo(this, memberId, size_t(memberPtr), memberType);
+    CMemberInfo* memberInfo = new CMemberInfo(this, memberId,
+                                              TPointerOffsetType(memberPtr),
+                                              memberType);
     GetItems().AddItem(memberInfo);
     return memberInfo;
 }
@@ -341,8 +346,9 @@ CMemberInfo* CClassTypeInfo::AddMember(const CMemberId& memberId,
                                        const void* memberPtr,
                                        const CTypeRef& memberType)
 {
-    CMemberInfo* memberInfo =
-        new CMemberInfo(this, memberId, size_t(memberPtr), memberType);
+    CMemberInfo* memberInfo = new CMemberInfo(this, memberId,
+                                              TPointerOffsetType(memberPtr),
+                                              memberType);
     GetItems().AddItem(memberInfo);
     return memberInfo;
 }

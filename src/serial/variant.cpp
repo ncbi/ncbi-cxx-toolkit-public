@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/10/13 20:22:57  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.5  2000/10/03 17:22:45  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -148,10 +152,10 @@ public:
 typedef CVariantInfoFunctions TFunc;
 
 CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
-                           const CMemberId& id, TOffset offset,
+                           const CMemberId& id, TPointerOffsetType offset,
                            const CTypeRef& type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
-      m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
+      m_VariantType(eInlineVariant), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstInlineVariant),
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
@@ -162,9 +166,10 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
 }
 
 CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
-                           const CMemberId& id, TOffset offset, TTypeInfo type)
+                           const CMemberId& id, TPointerOffsetType offset,
+                           TTypeInfo type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
-      m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
+      m_VariantType(eInlineVariant), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstInlineVariant),
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
@@ -175,10 +180,10 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
 }
 
 CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
-                           const char* id, TOffset offset,
+                           const char* id, TPointerOffsetType offset,
                            const CTypeRef& type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
-      m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
+      m_VariantType(eInlineVariant), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstInlineVariant),
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
@@ -189,9 +194,10 @@ CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
 }
 
 CVariantInfo::CVariantInfo(const CChoiceTypeInfo* choiceType,
-                           const char* id, TOffset offset, TTypeInfo type)
+                           const char* id, TPointerOffsetType offset,
+                           TTypeInfo type)
     : CParent(id, offset, type), m_ChoiceType(choiceType),
-      m_VariantType(eInlineVariant), m_DelayOffset(TOffset(eNoOffset)),
+      m_VariantType(eInlineVariant), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstInlineVariant),
       m_GetFunction(&TFunc::GetInlineVariant),
       m_ReadHookData(&TFunc::ReadInlineVariant, &TFunc::ReadHookedVariant),
@@ -234,7 +240,7 @@ CVariantInfo* CVariantInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
     if ( IsSubClass() )
         THROW1_TRACE(runtime_error, "sub class cannot be delayed");
-    m_DelayOffset = size_t(buffer);
+    m_DelayOffset = TPointerOffsetType(buffer);
     UpdateFunctions();
     return this;
 }

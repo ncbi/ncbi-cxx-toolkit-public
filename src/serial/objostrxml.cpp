@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/13 20:22:56  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.16  2000/10/13 16:28:40  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -284,7 +288,7 @@ void CObjectOStreamXml::WriteULong(unsigned long data)
 void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
 {
     int shift = int(ceil(log10(fabs(data))));
-    int precision = digits - shift;
+    int precision = int(digits - shift);
     if ( precision < 0 )
         precision = 0;
     if ( precision > 64 ) // limit precision of data

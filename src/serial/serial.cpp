@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/10/13 20:22:56  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.14  2000/09/26 17:38:23  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -463,7 +467,7 @@ static void SelectAsn(const CChoiceTypeInfo* /*choiceType*/,
                       TMemberIndex index)
 {
     valnode* node = static_cast<valnode*>(choicePtr);
-    node->choice = index - (kEmptyChoice - 0);
+    node->choice = Uint1(index - (kEmptyChoice - 0));
 }
 
 static void ResetAsn(const CChoiceTypeInfo* /*choiceType*/,

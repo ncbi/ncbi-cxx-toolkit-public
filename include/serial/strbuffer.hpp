@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.16  2000/08/15 19:44:42  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -203,7 +207,7 @@ public:
     // find specified symbol without skipping
     // return relative offset of symbol from current position (-1 if not found)
     // limit search by 'limit' symbols
-    int PeekFindChar(char c, size_t limit)
+    ssize_t PeekFindChar(char c, size_t limit)
         THROWS1((CSerialIOException));
 
     const char* GetCurrentPos(void) const THROWS1_NONE

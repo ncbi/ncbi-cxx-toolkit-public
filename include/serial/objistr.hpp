@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.52  2000/10/13 16:28:31  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -270,7 +274,7 @@ class CObjectIStream : public CObjectStack
 {
 public:
     // typedefs
-    typedef size_t TObjectIndex;
+    typedef ssize_t TObjectIndex;
 
     // open methods
     virtual void Open(const CRef<CByteSourceReader>& reader);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2000/10/13 20:22:52  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.48  2000/10/13 16:28:37  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -285,7 +289,7 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(const string& name,
 static
 size_t GetFirstItemOffset(const CItemsInfo& items)
 {
-    size_t offset = INT_MAX;
+    TPointerOffsetType offset = INT_MAX;
     for ( CItemsInfo::CIterator i(items); i.Valid(); ++i ) {
         const CItemInfo* itemInfo = items.GetItemInfo(i);
         offset = min(offset, itemInfo->GetOffset());
@@ -639,7 +643,7 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
     if ( bs1 == 0 || bs2 == 0 )
 		return bs1 == bs2;
 
-	Int4 len = BSLen(bs1);
+	size_t len = BSLen(bs1);
     if ( len != BSLen(bs2) )
         return false;
     
@@ -647,7 +651,7 @@ bool COctetStringTypeInfo::Equals(TConstObjectPtr obj1,
 	BSSeek(bs2, 0, SEEK_SET);
 	char buff1[1024], buff2[1024];
 	while ( len > 0 ) {
-		Int4 chunk = sizeof(buff1);
+		size_t chunk = sizeof(buff1);
 		if ( chunk > len )
 			chunk = len;
 		BSRead(bs1, buff1, chunk);
@@ -696,12 +700,12 @@ void COctetStringTypeInfo::WriteOctetString(CObjectOStream& out,
 	bytestore* bs = const_cast<bytestore*>(Get(objectPtr));
 	if ( bs == 0 )
 		THROW1_TRACE(runtime_error, "null bytestore pointer");
-	Int4 len = BSLen(bs);
+	size_t len = BSLen(bs);
 	CObjectOStream::ByteBlock block(out, len);
 	BSSeek(bs, 0, SEEK_SET);
 	char buff[1024];
 	while ( len > 0 ) {
-		Int4 chunk = sizeof(buff);
+		size_t chunk = sizeof(buff);
 		if ( chunk > len )
 			chunk = len;
 		BSRead(bs, buff, chunk);

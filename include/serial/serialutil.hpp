@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.1  2000/09/18 20:00:10  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -129,20 +133,20 @@ public:
 // helper address functions:
 // add offset to object reference (to get object's member)
 inline
-TObjectPtr Add(TObjectPtr object, int offset)
+TObjectPtr Add(TObjectPtr object, TPointerOffsetType offset)
 {
     return static_cast<char*>(object) + offset;
 }
 
 inline
-TConstObjectPtr Add(TConstObjectPtr object, int offset)
+TConstObjectPtr Add(TConstObjectPtr object, TPointerOffsetType offset)
 {
     return static_cast<const char*>(object) + offset;
 }
 
 // calculate offset of member inside object
 inline
-int Sub(TConstObjectPtr first, TConstObjectPtr second)
+TPointerOffsetType Sub(TConstObjectPtr first, TConstObjectPtr second)
 {
     return static_cast<const char*>(first) - static_cast<const char*>(second);
 }

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/13 20:22:45  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.2  2000/10/03 17:22:32  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -68,7 +72,7 @@ TMemberIndex CItemInfo::GetIndex(void) const
 }
 
 inline
-CItemInfo::TOffset CItemInfo::GetOffset(void) const
+TPointerOffsetType CItemInfo::GetOffset(void) const
 {
     return m_Offset;
 }

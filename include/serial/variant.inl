@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.4  2000/09/29 16:18:15  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -120,7 +124,7 @@ bool CVariantInfo::IsObject(void) const
 inline
 bool CVariantInfo::CanBeDelayed(void) const
 {
-    return m_DelayOffset != TOffset(eNoOffset);
+    return m_DelayOffset != eNoOffset;
 }
 
 inline

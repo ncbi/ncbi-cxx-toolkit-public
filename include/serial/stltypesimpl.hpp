@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.1  2000/10/13 16:28:33  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -108,15 +112,13 @@ class CStlTwoArgsTemplate : public CStlOneArgTemplate
 {
     typedef CStlOneArgTemplate CParent;
 public:
-	typedef size_t TOffset;
-
     CStlTwoArgsTemplate(size_t size,
-                        TTypeInfo keyType, TOffset keyOffset,
-                        TTypeInfo valueType, TOffset valueOffset,
+                        TTypeInfo keyType, TPointerOffsetType keyOffset,
+                        TTypeInfo valueType, TPointerOffsetType valueOffset,
                         bool randomOrder);
     CStlTwoArgsTemplate(size_t size,
-                        const CTypeRef& keyType, TOffset keyOffset,
-                        const CTypeRef& valueType, TOffset valueOffset,
+                        const CTypeRef& keyType, TPointerOffsetType keyOffset,
+                        const CTypeRef& valueType, TPointerOffsetType valueOffset,
                         bool randomOrder);
 
     const CMemberId& GetKeyId(void) const
@@ -133,11 +135,11 @@ public:
 private:
     CMemberId m_KeyId;
     CTypeRef m_KeyType;
-    TOffset m_KeyOffset;
+    TPointerOffsetType m_KeyOffset;
 
     CMemberId m_ValueId;
     CTypeRef m_ValueType;
-    TOffset m_ValueOffset;
+    TPointerOffsetType m_ValueOffset;
 
     static TTypeInfo CreateElementTypeInfo(TTypeInfo info);
 };

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/10/13 20:22:55  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.1  2000/09/18 20:00:22  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -45,25 +49,25 @@
 BEGIN_NCBI_SCOPE
 
 CItemInfo::CItemInfo(const CMemberId& id,
-                     TOffset offset, TTypeInfo type)
+                     TPointerOffsetType offset, TTypeInfo type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type)
 {
 }
 
 CItemInfo::CItemInfo(const CMemberId& id,
-                     TOffset offset, const CTypeRef& type)
+                     TPointerOffsetType offset, const CTypeRef& type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type)
 {
 }
 
 CItemInfo::CItemInfo(const char* id,
-                     TOffset offset, TTypeInfo type)
+                     TPointerOffsetType offset, TTypeInfo type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type)
 {
 }
 
 CItemInfo::CItemInfo(const char* id,
-                     TOffset offset, const CTypeRef& type)
+                     TPointerOffsetType offset, const CTypeRef& type)
     : m_Id(id), m_Index(kInvalidMember), m_Offset(offset), m_Type(type)
 {
 }

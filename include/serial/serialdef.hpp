@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.12  2000/09/18 20:00:09  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -158,6 +162,23 @@ enum EContainerType {
 
 //type used for indexing class members and choice variants
 typedef size_t TMemberIndex;
+
+//type used for memory offsets/addresses
+#if SIZEOF_VOIDP == SIZEOF_INT
+typedef unsigned TPointerValueType;
+typedef int TPointerOffsetType;
+#elif SIZEOF_VOIDP == SIZEOF_SHORT
+typedef unsigned short TPointerValueType;
+typedef short TPointerOffsetType;
+#elif SIZEOF_VOIDP == SIZEOF_LONG
+typedef unsigned long TPointerValueType;
+typedef long TPointerOffsetType;
+#elif SIZEOF_VOIDP == SIZEOF_LONG_LONG
+typedef unsigned long long TPointerValueType;
+typedef long long TPointerOffsetType;
+#else
+# error "Invalid pointer size"
+#endif
 
 // start if member indexing
 const TMemberIndex kFirstMemberIndex = 1;

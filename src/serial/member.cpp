@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/10/13 20:22:55  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.15  2000/10/03 17:22:42  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -207,11 +211,11 @@ public:
 typedef CMemberInfoFunctions TFunc;
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
-                         const CMemberId& id, TOffset offset,
+                         const CMemberId& id, TPointerOffsetType offset,
                          const CTypeRef& type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
+      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -229,10 +233,11 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
 }
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
-                         const CMemberId& id, TOffset offset, TTypeInfo type)
+                         const CMemberId& id, TPointerOffsetType offset,
+                         TTypeInfo type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
+      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -250,10 +255,11 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
 }
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
-                         const char* id, TOffset offset, const CTypeRef& type)
+                         const char* id, TPointerOffsetType offset,
+                         const CTypeRef& type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
+      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -271,10 +277,11 @@ CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
 }
 
 CMemberInfo::CMemberInfo(const CClassTypeInfo* classType,
-                         const char* id, TOffset offset, TTypeInfo type)
+                         const char* id, TPointerOffsetType offset,
+                         TTypeInfo type)
     : CParent(id, offset, type),
       m_ClassType(classType), m_Optional(false), m_Default(0),
-      m_SetFlagOffset(TOffset(eNoOffset)), m_DelayOffset(TOffset(eNoOffset)),
+      m_SetFlagOffset(eNoOffset), m_DelayOffset(eNoOffset),
       m_GetConstFunction(&TFunc::GetConstSimpleMember),
       m_GetFunction(&TFunc::GetSimpleMember),
       m_ReadHookData(SMemberReadFunctions(&TFunc::ReadSimpleMember,
@@ -307,7 +314,7 @@ void CMemberInfo::SetParentClass(void)
 
 CMemberInfo* CMemberInfo::SetDelayBuffer(CDelayBuffer* buffer)
 {
-    m_DelayOffset = size_t(buffer);
+    m_DelayOffset = TPointerOffsetType(buffer);
     UpdateFunctions();
     return this;
 }
@@ -330,7 +337,7 @@ CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 {
     _ASSERT(Optional());
-    m_SetFlagOffset = size_t(setFlag);
+    m_SetFlagOffset = TPointerOffsetType(setFlag);
     UpdateFunctions();
     return this;
 }

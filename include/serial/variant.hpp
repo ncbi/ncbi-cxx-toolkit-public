@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.4  2000/10/03 17:22:36  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -101,14 +105,14 @@ public:
         eSubClassVariant = eObjectFlag
     };
 
-    CVariantInfo(const CChoiceTypeInfo* choiceType,
-                 const CMemberId& id, TOffset offset, const CTypeRef& type);
-    CVariantInfo(const CChoiceTypeInfo* choiceType,
-                 const CMemberId& id, TOffset offset, TTypeInfo type);
-    CVariantInfo(const CChoiceTypeInfo* choiceType,
-                 const char* id, TOffset offset, const CTypeRef& type);
-    CVariantInfo(const CChoiceTypeInfo* choiceType,
-                 const char* id, TOffset offset, TTypeInfo type);
+    CVariantInfo(const CChoiceTypeInfo* choiceType, const CMemberId& id,
+                 TPointerOffsetType offset, const CTypeRef& type);
+    CVariantInfo(const CChoiceTypeInfo* choiceType, const CMemberId& id,
+                 TPointerOffsetType offset, TTypeInfo type);
+    CVariantInfo(const CChoiceTypeInfo* choiceType, const char* id,
+                 TPointerOffsetType offset, const CTypeRef& type);
+    CVariantInfo(const CChoiceTypeInfo* choiceType, const char* id,
+                 TPointerOffsetType offset, TTypeInfo type);
 
     const CChoiceTypeInfo* GetChoiceType(void) const;
 
@@ -177,7 +181,7 @@ private:
     // type of variant implementation: inline, pointer etc.
     EVariantType m_VariantType;
     // offset of delay buffer inside object
-    TOffset m_DelayOffset;
+    TPointerOffsetType m_DelayOffset;
 
     TVariantGetConst m_GetConstFunction;
     TVariantGet m_GetFunction;

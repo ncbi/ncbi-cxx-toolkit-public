@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/10/13 20:22:45  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.18  2000/10/03 17:22:32  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -151,14 +155,14 @@ public:
     typedef TObjectPtr (*TMemberGet)(const CMemberInfo* memberInfo,
                                      TObjectPtr classPtr);
 
-    CMemberInfo(const CClassTypeInfo* classType,
-                const CMemberId& id, TOffset offset, const CTypeRef& type);
-    CMemberInfo(const CClassTypeInfo* classType,
-                const CMemberId& id, TOffset offset, TTypeInfo type);
-    CMemberInfo(const CClassTypeInfo* classType,
-                const char* id, TOffset offset, const CTypeRef& type);
-    CMemberInfo(const CClassTypeInfo* classType,
-                const char* id, TOffset offset, TTypeInfo type);
+    CMemberInfo(const CClassTypeInfo* classType, const CMemberId& id,
+                TPointerOffsetType offset, const CTypeRef& type);
+    CMemberInfo(const CClassTypeInfo* classType, const CMemberId& id,
+                TPointerOffsetType offset, TTypeInfo type);
+    CMemberInfo(const CClassTypeInfo* classType, const char* id,
+                TPointerOffsetType offset, const CTypeRef& type);
+    CMemberInfo(const CClassTypeInfo* classType, const char* id,
+                TPointerOffsetType offset, TTypeInfo type);
 
     const CClassTypeInfo* GetClassType(void) const;
 
@@ -233,9 +237,9 @@ private:
     // default value
     TConstObjectPtr m_Default;
     // offset of 'SET' flag inside object
-    TOffset m_SetFlagOffset;
+    TPointerOffsetType m_SetFlagOffset;
     // offset of delay buffer inside object
-    TOffset m_DelayOffset;
+    TPointerOffsetType m_DelayOffset;
 
     TMemberGetConst m_GetConstFunction;
     TMemberGet m_GetFunction;

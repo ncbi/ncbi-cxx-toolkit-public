@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/10/13 20:22:56  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.32  2000/10/13 16:28:41  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -287,9 +291,9 @@ void CStlOneArgTemplate::SetMemFunctions(TTypeCreate create,
 
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
                                          TTypeInfo keyType,
-                                         TOffset keyOffset,
+                                         TPointerOffsetType keyOffset,
                                          TTypeInfo valueType,
-                                         TOffset valueOffset,
+                                         TPointerOffsetType valueOffset,
                                          bool randomOrder)
     : CParent(size, CTypeRef(&CreateElementTypeInfo, this), randomOrder),
       m_KeyType(keyType), m_KeyOffset(keyOffset),
@@ -299,9 +303,9 @@ CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
 
 CStlTwoArgsTemplate::CStlTwoArgsTemplate(size_t size,
                                          const CTypeRef& keyType,
-                                         TOffset keyOffset,
+                                         TPointerOffsetType keyOffset,
                                          const CTypeRef& valueType,
-                                         TOffset valueOffset,
+                                         TPointerOffsetType valueOffset,
                                          bool randomOrder)
     : CParent(size, CTypeRef(&CreateElementTypeInfo, this), randomOrder),
       m_KeyType(keyType), m_KeyOffset(keyOffset),

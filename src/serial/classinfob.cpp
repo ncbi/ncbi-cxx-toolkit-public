@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/10/13 20:22:54  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.8  2000/10/13 16:28:38  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -290,20 +294,25 @@ class CPostReadHook : public CReadObjectHook
 public:
     typedef CClassTypeInfoBase::TPostReadFunction TPostReadFunction;
 
-    CPostReadHook(TPostReadFunction func)
-        : CParent(eCanDelete), m_PostRead(func)
-        {
-        }
+    CPostReadHook(TPostReadFunction func);
 
-    void ReadObject(CObjectIStream& in, const CObjectInfo& object)
-        {
-            object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
-            m_PostRead(object.GetTypeInfo(), object.GetObjectPtr());
-        }
+    void ReadObject(CObjectIStream& in, const CObjectInfo& object);
 
 private:
     TPostReadFunction m_PostRead;
 };
+
+CPostReadHook::CPostReadHook(TPostReadFunction func)
+    : CParent(eCanDelete), m_PostRead(func)
+{
+}
+
+void CPostReadHook::ReadObject(CObjectIStream& in,
+                               const CObjectInfo& object)
+{
+    object.GetTypeInfo()->DefaultReadData(in, object.GetObjectPtr());
+    m_PostRead(object.GetTypeInfo(), object.GetObjectPtr());
+}
 
 class CPreWriteHook : public CWriteObjectHook
 {
@@ -311,20 +320,25 @@ class CPreWriteHook : public CWriteObjectHook
 public:
     typedef CClassTypeInfoBase::TPreWriteFunction TPreWriteFunction;
 
-    CPreWriteHook(TPreWriteFunction func)
-        : CParent(eCanDelete), m_PreWrite(func)
-        {
-        }
+    CPreWriteHook(TPreWriteFunction func);
 
-    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object)
-        {
-            m_PreWrite(object.GetTypeInfo(), object.GetObjectPtr());
-            object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
-        }
+    void WriteObject(CObjectOStream& out, const CConstObjectInfo& object);
 
 private:
     TPreWriteFunction m_PreWrite;
 };
+
+CPreWriteHook::CPreWriteHook(TPreWriteFunction func)
+    : CParent(eCanDelete), m_PreWrite(func)
+{
+}
+
+void CPreWriteHook::WriteObject(CObjectOStream& out,
+                                const CConstObjectInfo& object)
+{
+    m_PreWrite(object.GetTypeInfo(), object.GetObjectPtr());
+    object.GetTypeInfo()->DefaultWriteData(out, object.GetObjectPtr());
+}
 
 void CClassTypeInfoBase::SetPostReadFunction(TPostReadFunction func)
 {

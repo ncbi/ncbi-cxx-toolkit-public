@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/10/13 20:22:47  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.53  2000/10/13 16:28:33  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -416,7 +420,7 @@ class CStlClassInfoFunctions_set : public CStlClassInfoFunctions<Container>
 {
     typedef CStlClassInfoFunctions<Container> CParent;
 public:
-    typedef CParent::TObjectType TObjectType;
+    typedef typename CParent::TObjectType TObjectType;
     typedef typename TObjectType::value_type TElementType;
 
     static void InsertElement(TObjectPtr containerPtr,
@@ -451,7 +455,7 @@ class CStlClassInfoFunctions_multiset :
 {
     typedef CStlClassInfoFunctions<Container> CParent;
 public:
-    typedef CParent::TObjectType TObjectType;
+    typedef typename CParent::TObjectType TObjectType;
     typedef typename TObjectType::value_type TElementType;
 
     static void InsertElement(TObjectPtr containerPtr,
@@ -543,7 +547,7 @@ class CStlClassInfoFunctionsI :
 {
     typedef CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, TObjectPtr> CParent;
 public:
-    typedef CParent::TIterator TIterator;
+    typedef typename CParent::TIterator TIterator;
     typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
     typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
     
@@ -569,7 +573,7 @@ class CStlClassInfoFunctionsI_set :
 {
     typedef CStlClassInfoFunctionsIBase<Container, typename Container::iterator, Container*, typename Container::value_type&, TObjectPtr> CParent;
 public:
-    typedef CParent::TIterator TIterator;
+    typedef typename CParent::TIterator TIterator;
     typedef CContainerTypeInfo::TIteratorDataPtr TIteratorDataPtr;
     typedef CContainerTypeInfo::TNewIteratorResult TNewIteratorResult;
     

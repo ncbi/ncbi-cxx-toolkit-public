@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/10/13 20:22:55  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.11  2000/10/03 17:22:44  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -410,7 +414,7 @@ int CObjectIStreamXml::ReadEscapedChar(char endingChar)
     char c = m_Input.PeekChar();
     if ( c == '&' ) {
         m_Input.SkipChar();
-        int offset = m_Input.PeekFindChar(';', 32);
+        ssize_t offset = m_Input.PeekFindChar(';', 32);
         if ( offset < 0 )
             ThrowError(eFormatError, "too long entity reference");
         const char* p = m_Input.GetCurrentPos(); // save entity string pointer

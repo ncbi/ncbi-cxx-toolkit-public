@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/10/13 20:22:57  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.17  2000/08/15 19:44:51  vasilche
 * Added Read/Write hooks:
 * CReadObjectHook/CWriteObjectHook for objects of specified type.
@@ -260,7 +264,7 @@ void CIStreamBuffer::FindChar(char c)
 }
 
 // this method is highly optimized
-int CIStreamBuffer::PeekFindChar(char c, size_t limit)
+ssize_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     THROWS1((CSerialIOException))
 {
     _ASSERT(limit > 0);
@@ -288,7 +292,7 @@ char* CIStreamBuffer::FillBuffer(char* pos, bool noEOF)
         char* newPos = m_CurrentPos - erase;
         if ( m_Collector ) {
             _ASSERT(m_CollectPos);
-            int count = m_CurrentPos - m_CollectPos;
+            size_t count = m_CurrentPos - m_CollectPos;
             if ( count > 0 )
                 m_Collector->AddChunk(m_CollectPos, count);
             m_CollectPos = newPos;
@@ -746,7 +750,7 @@ void COStreamBuffer::PutLong(long v)
             v = -v;
         
         do {
-            *--pos = '0' + (v % 10);
+            *--pos = char('0' + (v % 10));
             v /= 10;
         } while ( v );
         
@@ -775,7 +779,7 @@ void COStreamBuffer::PutULong(unsigned long v)
             v = -v;
         
         do {
-            *--pos = '0' + (v % 10);
+            *--pos = char('0' + (v % 10));
             v /= 10;
         } while ( v );
         

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/10/13 20:22:56  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.21  2000/10/13 16:28:40  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -746,8 +750,10 @@ double CPrimitiveTypeInfoFloat::GetValueDouble(TConstObjectPtr objectPtr) const
 
 void CPrimitiveTypeInfoFloat::SetValueDouble(TObjectPtr objectPtr, double value) const
 {
+#if defined(FLT_MIN) && defined(FLT_MAX)
     if ( value < FLT_MIN || value > FLT_MAX )
         ThrowIncompatibleValue();
+#endif
     CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr) = TObjectType(value);
 }
 

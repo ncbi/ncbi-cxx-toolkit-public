@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2000/10/13 20:22:55  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.49  2000/10/13 16:28:40  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -421,9 +425,10 @@ void CObjectOStreamAsnBinary::WriteBytes(const char* bytes, size_t size)
 template<typename T>
 void WriteBytesOf(CObjectOStreamAsnBinary& out, const T& value, size_t count)
 {
-    for ( int shift = (count - 1) * 8; shift >= 0; shift -= 8 ) {
-        out.WriteByte(value >> shift);
+    for ( size_t shift = (count - 1) * 8; shift > 0; shift -= 8 ) {
+        out.WriteByte(TByte(value >> shift));
     }
+    out.WriteByte(TByte(value));
 }
 
 inline
@@ -502,7 +507,7 @@ void CObjectOStreamAsnBinary::WriteIndefiniteLength(void)
 inline
 void CObjectOStreamAsnBinary::WriteShortLength(size_t length)
 {
-    WriteByte(length);
+    WriteByte(TByte(length));
 }
 
 void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
@@ -525,7 +530,7 @@ void CObjectOStreamAsnBinary::WriteLongLength(size_t length)
             }
         }
     }
-    WriteByte(0x80 + count);
+    WriteByte(TByte(0x80 + count));
     WriteBytesOf(*this, length, count);
 }
 
@@ -738,7 +743,7 @@ void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
 void CObjectOStreamAsnBinary::WriteDouble2(double data, size_t digits)
 {
     int shift = int(ceil(log10(fabs(data))));
-    int precision = digits - shift;
+    int precision = int(digits - shift);
     if ( precision < 0 )
         precision = 0;
     if ( precision > 64 ) // limit precision of data

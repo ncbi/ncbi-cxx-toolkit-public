@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/10/13 20:22:53  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.22  2000/09/26 17:38:20  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -231,8 +235,9 @@ CVariantInfo* CChoiceTypeInfo::AddVariant(const char* memberId,
                                           const void* memberPtr,
                                           const CTypeRef& memberType)
 {
-    CVariantInfo* variantInfo =
-        new CVariantInfo(this, memberId, size_t(memberPtr), memberType);
+    CVariantInfo* variantInfo = new CVariantInfo(this, memberId,
+                                                 TPointerOffsetType(memberPtr),
+                                                 memberType);
     GetItems().AddItem(variantInfo);
     return variantInfo;
 }
@@ -241,8 +246,9 @@ CVariantInfo* CChoiceTypeInfo::AddVariant(const CMemberId& memberId,
                                           const void* memberPtr,
                                           const CTypeRef& memberType)
 {
-    CVariantInfo* variantInfo =
-        new CVariantInfo(this, memberId, size_t(memberPtr), memberType);
+    CVariantInfo* variantInfo = new CVariantInfo(this, memberId,
+                                                 TPointerOffsetType(memberPtr),
+                                                 memberType);
     GetItems().AddItem(variantInfo);
     return variantInfo;
 }

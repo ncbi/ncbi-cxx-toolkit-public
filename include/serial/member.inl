@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.10  2000/09/29 16:18:13  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -108,7 +112,7 @@ TConstObjectPtr CMemberInfo::GetDefault(void) const
 inline
 bool CMemberInfo::HaveSetFlag(void) const
 {
-    return m_SetFlagOffset != TOffset(eNoOffset);
+    return m_SetFlagOffset != eNoOffset;
 }
 
 inline
@@ -126,15 +130,15 @@ bool& CMemberInfo::GetSetFlag(TObjectPtr object) const
 inline
 void CMemberInfo::UpdateSetFlag(TObjectPtr object, bool value) const
 {
-    TOffset setFlagOffset = m_SetFlagOffset;
-    if ( setFlagOffset != TOffset(eNoOffset) )
+    TPointerOffsetType setFlagOffset = m_SetFlagOffset;
+    if ( setFlagOffset != eNoOffset )
         CTypeConverter<bool>::Get(Add(object, setFlagOffset)) = value;
 }
 
 inline
 bool CMemberInfo::CanBeDelayed(void) const
 {
-    return m_DelayOffset != TOffset(eNoOffset);
+    return m_DelayOffset != eNoOffset;
 }
 
 inline

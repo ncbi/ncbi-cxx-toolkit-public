@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/10/13 20:22:55  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.52  2000/10/13 16:28:39  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -393,7 +397,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
         THROW1_TRACE(runtime_error, "double conversion error");
 
     // remove trailing zeroes
-    int fractDigits = ePos - dotPos - 1;
+    int fractDigits = int(ePos - dotPos - 1);
     while ( fractDigits > 0 && ePos[-1] == '0' ) {
         --ePos;
         --fractDigits;
@@ -871,14 +875,15 @@ unsigned CObjectOStreamAsn::GetAsnFlags(void)
 void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
 {
     asn.m_Count = 0;
-    size_t indent = asn->indent_level = m_Output.GetIndentLevel();
+    size_t indent = m_Output.GetIndentLevel();
+    asn->indent_level = Int1(indent);
     size_t max_indent = asn->max_indent;
     if ( indent >= max_indent ) {
         Boolean* tmp = asn->first;
         asn->first = (BoolPtr) MemNew((sizeof(Boolean) * (indent + 10)));
         MemCopy(asn->first, tmp, (size_t)(sizeof(Boolean) * max_indent));
         MemFree(tmp);
-        asn->max_indent = indent;
+        asn->max_indent = Int1(indent);
     }
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/10/13 20:22:46  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.12  2000/09/01 13:16:01  vasilche
 * Implemented class/container/choice iterators.
 * Implemented CObjectStreamCopier for copying data without loading into memory.
@@ -102,7 +106,7 @@ class COObjectList;
 
 class CWriteObjectInfo {
 public:
-    typedef int TObjectIndex;
+    typedef ssize_t TObjectIndex;
     enum {
         eObjectIndexNotWritten = -1
     };
@@ -145,7 +149,7 @@ private:
 class COObjectList
 {
 public:
-    typedef int TObjectIndex;
+    typedef ssize_t TObjectIndex;
 
     COObjectList(void);
     ~COObjectList(void);
@@ -176,8 +180,8 @@ protected:
 
 private:
     // we need reverse order map due to faster algorithm of lookup
-    typedef vector< CWriteObjectInfo > TObjects;
-    typedef map<TConstObjectPtr, TObjectIndex > TObjectsByPtr;
+    typedef vector<CWriteObjectInfo> TObjects;
+    typedef map<TConstObjectPtr, TObjectIndex> TObjectsByPtr;
 
     TObjects m_Objects;           // registered objects
     TObjectsByPtr m_ObjectsByPtr; // registered objects by pointer

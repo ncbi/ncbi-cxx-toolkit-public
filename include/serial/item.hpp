@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/10/13 20:22:45  vasilche
+* Fixed warnings on 64 bit compilers.
+* Fixed missing typename in templates.
+*
 * Revision 1.2  2000/10/03 17:22:32  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -62,15 +66,18 @@ class CItemsInfo;
 class CItemInfo
 {
 public:
-	typedef size_t TOffset;
     enum {
 		eNoOffset = -1
 	};
 
-    CItemInfo(const CMemberId& id, TOffset offset, TTypeInfo type);
-    CItemInfo(const CMemberId& id, TOffset offset, const CTypeRef& type);
-    CItemInfo(const char* id, TOffset offset, TTypeInfo type);
-    CItemInfo(const char* id, TOffset offset, const CTypeRef& type);
+    CItemInfo(const CMemberId& id, TPointerOffsetType offset,
+              TTypeInfo type);
+    CItemInfo(const CMemberId& id, TPointerOffsetType offset,
+              const CTypeRef& type);
+    CItemInfo(const char* id, TPointerOffsetType offset,
+              TTypeInfo type);
+    CItemInfo(const char* id, TPointerOffsetType offset,
+              const CTypeRef& type);
     virtual ~CItemInfo(void);
 
     const CMemberId& GetId(void) const;
@@ -78,7 +85,7 @@ public:
 
     TMemberIndex GetIndex(void) const;
 
-    TOffset GetOffset(void) const;
+    TPointerOffsetType GetOffset(void) const;
 
     TTypeInfo GetTypeInfo(void) const;
 
@@ -96,7 +103,7 @@ private:
     // member index
     TMemberIndex m_Index;
     // offset of member inside object
-    TOffset m_Offset;
+    TPointerOffsetType m_Offset;
     // type of member
     CTypeRef m_Type;
 };
