@@ -1409,7 +1409,6 @@ extern int/*bool*/ BASE64_Decode
                 break;
             }
             temp = 0;
-            k = 0;
         }
     }
     *src_read    = i;
@@ -1666,6 +1665,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.71  2005/03/21 17:10:03  lavr
+ * BASE64_Decode(): unnecessary re-init of "k" removed
+ *
  * Revision 6.70  2005/03/21 17:04:35  lavr
  * BASE64_{En|De}code few bugs fixed
  *
