@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2000/04/17 04:14:20  vakatov
+* NStr::  extended Compare(), and allow case-insensitive string comparison
+* NStr::  added ToLower() and ToUpper()
+*
 * Revision 1.37  2000/04/04 22:28:06  vakatov
 * NStr::  added conversions for "long"
 *
@@ -181,17 +185,42 @@ struct NStr {
     static string PtrToString(const void* ptr);
 
     /*  str[pos:pos+n) == pattern  --> return 0
-     *  str[pos:pos+n) <  pattern  --> return negative mismatch position
-     *  str[pos:pos+n) >  pattern  --> return positive mismatch position
+     *  str[pos:pos+n) <  pattern  --> return negative value
+     *  str[pos:pos+n) >  pattern  --> return positive value
      */
+    enum ECase {
+        eCase,
+        eNocase  /* ignore character case */
+    };
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const char* pattern);
+                       const char* pattern, ECase use_case = eCase);
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const string& pattern);
-    
+                       const string& pattern, ECase use_case = eCase);
+
+
+    static int Compare(const char* s1, const char* s2,
+                       ECase use_case = eCase);
+    static inline int Compare(const string& s1, const char* s2,
+                              ECase use_case = eCase) {
+        return Compare(s1, 0, NPOS, s2, use_case);
+    }
+    static inline int Compare(const char* s1, const string& s2,
+                              ECase use_case = eCase) {
+        return Compare(s2, 0, NPOS, s1, use_case);
+    }
+    static inline int Compare(const string& s1, const string& s2,
+                              ECase use_case = eCase) {
+        return Compare(s1, 0, NPOS, s2, use_case);
+    }
+
+    static string& ToLower(string& str);
+    static char*   ToLower(char*   str);
+    static string& ToUpper(string& str);
+    static char*   ToUpper(char*   str);
+
     static inline bool StartsWith(const string& str, const string& start) {
         return str.size() >= start.size()  &&
-            Compare(str, (SIZE_TYPE)0, start.size(), start) == 0;
+            Compare(str, 0, start.size(), start) == 0;
     }
     
     static inline bool EndsWith(const string& str, const string& end) {
@@ -221,6 +250,8 @@ struct NStr {
                           SIZE_TYPE start_pos = 0, size_t max_replace = 0);
 
 }; // struct NStr
+
+
 // predicates
 
 // case-insensitive string comparison
@@ -234,7 +265,7 @@ struct PNocase
 template<class Pred>
 bool AStrEquiv( const string& x, const string& y, Pred pr )
 {  
-  return !( pr( x, y ) || pr( y, x ) );
+    return !( pr( x, y ) || pr( y, x ) );
 }
 
 class CTypeInfo;
@@ -257,8 +288,9 @@ public:
     auto_ptr(const auto_ptr<X>& a) : m_Ptr(a.release()) {}
     auto_ptr<X>& operator=(const auto_ptr<X>& a) {
         if (this != &a) {
-            if (m_Ptr  &&  m_Ptr != a.m_Ptr)
-               delete m_Ptr;
+            if (m_Ptr  &&  m_Ptr != a.m_Ptr) {
+                delete m_Ptr;
+            }
             m_Ptr = a.release();
         }
         return *this;
@@ -289,24 +321,24 @@ public:
 
 // "min" and "max" templates
 #if defined(HAVE_NO_MINMAX_TEMPLATE)
-#define NOMINMAX
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
+#  define NOMINMAX
+#  ifdef min
+#    undef min
+#  endif
+#  ifdef max
+#    undef max
+#  endif
 template <class T>
 inline
 const T& min(const T& a, const T& b) {
-  return b < a ? b : a;
+    return b < a ? b : a;
 }
 template <class T>
 inline
 const T& max(const T& a, const T& b) {
-  return  a < b ? b : a;
+    return  a < b ? b : a;
 }
-#endif /* min && max */
+#endif /* HAVE_NO_MINMAX_TEMPLATE */
 
 // strdup()
 #if !defined(HAVE_STRDUP)

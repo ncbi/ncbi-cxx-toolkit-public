@@ -23,14 +23,17 @@
 *
 * ===========================================================================
 *
-* Author: 
-*   Eugene Vasilchenko
+* Authors:  Eugene Vasilchenko, Denis Vakatov
 *
 * File Description:
 *   Some helper functions
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2000/04/17 04:15:08  vakatov
+* NStr::  extended Compare(), and allow case-insensitive string comparison
+* NStr::  added ToLower() and ToUpper()
+*
 * Revision 1.26  2000/04/04 22:28:09  vakatov
 * NStr::  added conversions for "long"
 *
@@ -120,6 +123,8 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <algorithm>
+#include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -135,23 +140,151 @@ const string& CNcbiEmptyString::FirstGet(void) {
 }
 
 
-int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const char* pattern) {
-#if defined(NCBI_OBSOLETE_STR_COMPARE)
-    return str.compare(pattern, pos, n);
-#else
-    return str.compare(pos, n, pattern);
-#endif
+struct s_PCharDiff_Case {
+    int operator()(const char& c1, const char& c2) {
+        return (int) c1 - c2;
+    }
+};
+
+struct s_PCharDiff_Nocase {
+    int operator()(const char& c1, const char& c2) {
+        return toupper(c1) - toupper(c2);
+    }
+};
+
+
+template <class TCharDiff>
+int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+              const char* pattern, TCharDiff char_diff)
+{
+    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
+        return *pattern ? -1 : 0;
+    }
+    if ( !*pattern ) {
+        return 1;
+    }
+
+    if (n == NPOS  ||  n > str.length() - pos) {
+        n = str.length() - pos;
+    }
+
+    const char* s = str.data();
+    while (n  &&  *pattern  &&  char_diff(*s, *pattern) == 0) {
+        s++;  pattern++;  n--;
+    }
+
+    if (n == 0) {
+        return *pattern ? -1 : 0; 
+    }
+    
+    return char_diff(*s, *pattern);
+}
+
+
+template <class PCharDiff>
+int s_Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+              const string& pattern, PCharDiff char_diff)
+{
+    if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
+        return pattern.empty() ? 0 : -1;
+    }
+    if ( pattern.empty() ) {
+        return 1;
+    }
+
+    if (n == NPOS  ||  n > str.length() - pos) {
+        n = str.length() - pos;
+    }
+
+    SIZE_TYPE n_cmp = n;
+    if (n_cmp > pattern.length()) {
+        n_cmp = pattern.length();
+    }
+    const char* s = str.data();
+    const char* p = pattern.data();
+    while (n_cmp  &&  char_diff(*s, *p) == 0) {
+        s++;  p++;  n_cmp--;
+    }
+
+    if (n_cmp == 0) {
+        if (n == pattern.length())
+            return 0;
+        return n > pattern.length() ? 1 : -1;
+    }
+    
+    return char_diff(*s, *p);
+}
+
+int NStr::Compare(const char* s1, const char* s2,
+                  ECase use_case /* = eCase */)
+{
+    if (use_case == eCase) {
+        while (*s1  &&  *s1 == *s2) {
+            s1++;  s2++;
+        }
+        return (int) *s1 - *s2;
+    } else {
+        while (*s1  &&  toupper(*s1) == toupper(*s2)) {
+            s1++;  s2++;
+        }
+        return toupper(*s1) - toupper(*s2);
+    }
 }
 
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const string& pattern) {
-#if defined(NCBI_OBSOLETE_STR_COMPARE)
-    return str.compare(pattern, pos, n);
-#else
-    return str.compare(pos, n, pattern);
-#endif
+                  const char* pattern, ECase use_case /* = eCase */)
+{
+    if (use_case == eCase) {
+        return s_Compare(str, pos, n, pattern, s_PCharDiff_Case());
+    } else {
+        return s_Compare(str, pos, n, pattern, s_PCharDiff_Nocase());
+    }
 }
+
+int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const string& pattern, ECase use_case /* = eCase */)
+{
+    if (use_case == eCase) {
+        return s_Compare(str, pos, n, pattern, s_PCharDiff_Case());
+    } else {
+        return s_Compare(str, pos, n, pattern, s_PCharDiff_Nocase());
+    }
+}
+
+
+
+char* NStr::ToLower(char* str) {
+    char* s = str;
+    for ( ;  *str;  str++) {
+        *str = tolower(*str);
+    }
+    return s;
+}
+
+string& NStr::ToLower(string& str) {
+    char* data = const_cast<char*>(str.data());
+    for (SIZE_TYPE i = str.length();  i;  i--, data++) {
+        *data = tolower(*data);
+    }
+    return str;
+}
+
+char* NStr::ToUpper(char* str) {
+    char* s = str;
+    for ( ;  *str;  str++) {
+        *str = toupper(*str);
+    }
+    return s;
+}
+
+string& NStr::ToUpper(string& str) {
+    char* data = const_cast<char*>(str.data());
+    for (SIZE_TYPE i = str.length();  i;  i--, data++) {
+        *data = toupper(*data);
+    }
+    return str;
+}
+
 
 int NStr::StringToInt(const string& str, int base /* = 10 */ )
 {
@@ -170,7 +303,7 @@ unsigned int NStr::StringToUInt(const string& str, int base /* = 10 */ )
     char* endptr = 0;
     unsigned long value = ::strtoul(str.c_str(), &endptr, base);
     if (errno  ||  !endptr  ||  endptr == str.c_str()  ||
-	value > kMax_UInt)
+        value > kMax_UInt)
         throw runtime_error("NStr::StringToUInt():  cannot convert");
     return value;
 }
