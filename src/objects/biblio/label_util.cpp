@@ -126,22 +126,22 @@ void GetLabelContent(string*            label,
 
     if (title2) {
         if (book) {
-            *label += " (in) " + *title2;
+            *label += "(in) " + *title2;
         }
         else if (title1) {
-            *label += " " + *title1 + *title2;
+            *label += *title1 + *title2 + " ";
         }
         else {
-            *label += " " + *title2;
+            *label += *title2 + " ";
         }
     }
 
     if (volume) {
         if (part_sup) {
-            *label += " " + *volume + *part_sup + ":";
+            *label += *volume + *part_sup;
         }
         else {
-            *label += " " + *volume + ":";
+            *label += *volume + ":";
         }
     }
 
@@ -183,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.4  2004/09/29 14:05:34  shomrat
+ * Fixes to match GetLabelContent to C version.
+ *
  * Revision 1.3  2004/08/18 13:36:35  shomrat
  * Fixed GetLabelContent to match C version
  *
