@@ -726,8 +726,6 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
             {{
                 const CDbtag& dbt = id.GetGeneral();
                 if (dbt.GetTag().Which() == CObject_id::e_Id) {
-                    *label += dbt.GetDb();
-                    *label += '|';
                     *label += NStr::IntToString(dbt.GetTag().GetId());
                 } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
                     *label += dbt.GetTag().GetStr();
@@ -1499,6 +1497,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.77  2004/05/16 16:57:44  dicuccio
+ * Removed insertion of db type in general seq-id labels of type content - led to
+ * duplicates of type
+ *
  * Revision 6.76  2004/05/14 14:34:02  dicuccio
  * Include database name in label content if the db-tag is just an integer
  *
