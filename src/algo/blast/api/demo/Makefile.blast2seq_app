@@ -29,7 +29,7 @@ LIB = xobjread xobjutil xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio genera
 		dbapi_driver xser xutil xconnect xncbi
 
 ## If you need the C toolkit...
-LIBS     = $(NCBI_C_LIBPATH) -lncbitool -lncbiobj -lblast -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS     = $(NCBI_C_LIBPATH) -lncbitool -lncbiid1 -lnetcli -lncbiobj -lblast -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE) -I../../include -I../
 LDFLAGS  = $(ORIG_LDFLAGS) $(BLAST_PROFILE) -L../ -L../../lib
 
