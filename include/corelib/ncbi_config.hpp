@@ -79,6 +79,11 @@ typedef CTreePairNode<string, string>  TParamTree;
 
 class CNcbiRegistry;
 
+class CConfig
+{
+};
+
+
 /// Reconstruct param tree from the application registry
 /// @param reg
 ///     Application registry (loaded from the INI file)
@@ -109,6 +114,7 @@ enum ENcbiConfigErrAction {
 ///    Error action
 /// @param default_value
 ///    Default value for missing parameters
+NCBI_XNCBI_EXPORT
 const string& 
 ParamTree_GetString(const string&         driver_name,
                     const TParamTree*     params,
@@ -134,6 +140,7 @@ ParamTree_GetString(const string&         driver_name,
 ///    Default value for missing parameters
 ///
 /// @sa ParamTree_GetString
+NCBI_XNCBI_EXPORT
 int ParamTree_GetInt(const string&         driver_name,
                      const TParamTree*     params,
                      const string&         param_name, 
@@ -158,6 +165,7 @@ int ParamTree_GetInt(const string&         driver_name,
 ///    Default value for missing parameters
 ///
 /// @sa ParamTree_GetString
+NCBI_XNCBI_EXPORT
 unsigned int 
 ParamTree_GetDataSize(const string&         driver_name,
                       const TParamTree*     params,
@@ -182,6 +190,7 @@ ParamTree_GetDataSize(const string&         driver_name,
 ///    Default value for missing parameters
 ///
 /// @sa ParamTree_GetString
+NCBI_XNCBI_EXPORT
 bool ParamTree_GetBool(const string&         driver_name,
                        const TParamTree*     params,
                        const string&         param_name, 
@@ -198,6 +207,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/09/23 15:40:55  kuznets
+ * +DLL export for used functions
+ *
  * Revision 1.5  2004/09/23 14:19:08  kuznets
  * +ParamTree_GetDataSize
  *
