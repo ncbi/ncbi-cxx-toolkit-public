@@ -137,13 +137,11 @@ public:
     void SetSNP_Point(const SSNP_Info& snp, CSeq_loc_Conversion* cvt);
 
     void SetPartial(bool value);
-    void SetMappedIndex(int index);
     void SetMappedSeq_loc(CSeq_loc& loc);
     void SetMappedSeq_loc(CSeq_loc* loc);
     void SetMappedSeq_id(CSeq_id& id);
     void SetMappedPoint(bool point);
     void SetMappedSeq_id(CSeq_id& id, bool point);
-    void SetMappedSeq_align_Mapper(CSeq_align_Mapper& mapper);
     void SetMappedSeq_align_Mapper(CSeq_align_Mapper* mapper);
     void SetTotalRange(const TRange& range);
     void SetMappedStrand(ENa_strand strand);
@@ -568,6 +566,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/11 17:45:24  grichenk
+* Removed declarations for SetMappedIndex() and SetMappedSeq_align_Mapper()
+*
 * Revision 1.4  2004/05/10 18:26:37  grichenk
 * Fixed 'not used' warnings
 *
