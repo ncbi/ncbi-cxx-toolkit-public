@@ -36,11 +36,12 @@
 import python_ncbi_dbapi
 
 # 2) Connect to a database
-# Parameters: connect(driver_name, db_type, server_name, db_name, user_name, user_pswd)
+# Parameters: connect(driver_name, db_type, server_name, db_name, user_name, user_pswd, use_std_interface)
 # driver_name: ctlib, dblib, ftds, odbc, mysql, msdblib
 # db_type (case insensitive): SYBASE, MSSQL, MYSQL
 # server_name: database server name
 # db_name: default database name
+# use_std_interface: an optional parameter (default value is "False")
 conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')
 
 # 3) Allocate a cursor
@@ -57,8 +58,10 @@ print result
 # ===========================================================================
 #
 # $Log$
+# Revision 1.2  2005/02/08 18:50:14  ssikorsk
+# Adapted to the "simple mode" interface
+#
 # Revision 1.1  2005/01/21 22:15:28  ssikorsk
 # Added: python samples for the NCBI DBAPI extension module.
-#
 #
 # ===========================================================================

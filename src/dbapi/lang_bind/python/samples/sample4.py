@@ -109,7 +109,8 @@ def main():
         global conn
 
         # Connect to a database
-        conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')
+        # Set an optional parameter "use_std_interface" to "True"
+        conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True)
 
         CreateSchema()
 
@@ -127,11 +128,13 @@ if __name__ == "__main__":
 # ===========================================================================
 #
 # $Log$
+# Revision 1.3  2005/02/08 18:50:14  ssikorsk
+# Adapted to the "simple mode" interface
+#
 # Revision 1.2  2005/01/27 21:14:29  ssikorsk
 # Fixed: python samples (DDL + transaction)
 #
 # Revision 1.1  2005/01/21 22:15:28  ssikorsk
 # Added: python samples for the NCBI DBAPI extension module.
-#
 #
 # ===========================================================================

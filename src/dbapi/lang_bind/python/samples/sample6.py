@@ -92,7 +92,8 @@ def main():
         global conn
 
         # Connect to a database
-        conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')
+        # Set an optional parameter "use_std_interface" to "True"
+        conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed', True)
 
         CreateSchema()
 
@@ -106,6 +107,9 @@ if __name__ == "__main__":
 # ===========================================================================
 #
 # $Log$
+# Revision 1.2  2005/02/08 18:50:14  ssikorsk
+# Adapted to the "simple mode" interface
+#
 # Revision 1.1  2005/01/27 22:32:32  ssikorsk
 # New Python DBAPI example.
 # Populate a database with data using "executemany"

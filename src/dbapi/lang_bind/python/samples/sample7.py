@@ -23,12 +23,12 @@
 #
 # ===========================================================================
 #
-# File Name: sample2.py
+# File Name: sample7.py
 #
 # Author: Sergey Sikorskiy
 #
 # Description: a NCBI DBAPI Python extension module usage example
-# (import, connect, cursor, execute, fetchone, fetchmany, fetchall)
+# ( rowcount )
 #
 # ===========================================================================
 
@@ -55,30 +55,37 @@ cursor.execute('select name, type from sysobjects')
 # 5.1) Fetch one record using 'fetchone()'
 print "Fetch one record using 'fetchone()'"
 print cursor.fetchone()
+# Print the number of processed rows
+print cursor.rowcount
 
 # 5.2) Fetch one record using 'fetchmany(1)'
 print "Fetch one record using 'fetchmany(1)'"
 print cursor.fetchmany(1)
+# Print the number of processed rows
+print cursor.rowcount
 
 # 5.3) Fetch two records using 'fetchmany(2)'
 print "Fetch two records using 'fetchmany(2)'"
 print cursor.fetchmany(2)
+# Print the number of processed rows
+print cursor.rowcount
 
 # 5.3) Fetch three records using 'fetchmany(3)'
 print "Fetch three records using 'fetchmany(3)'"
 print cursor.fetchmany(3)
+# Print the number of processed rows
+print cursor.rowcount
 
 # 5.4) Fetch all records using 'fetchall()'
 print "Fetch all records using 'fetchall()'"
 print cursor.fetchall()
+# Print the number of processed rows
+print cursor.rowcount
 
 # ===========================================================================
 #
 # $Log$
-# Revision 1.2  2005/02/08 18:50:14  ssikorsk
+# Revision 1.1  2005/02/08 18:50:14  ssikorsk
 # Adapted to the "simple mode" interface
-#
-# Revision 1.1  2005/01/21 22:15:28  ssikorsk
-# Added: python samples for the NCBI DBAPI extension module.
 #
 # ===========================================================================
