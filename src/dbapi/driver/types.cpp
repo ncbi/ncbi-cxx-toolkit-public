@@ -97,6 +97,15 @@ CDB_Object* CDB_Int::Clone() const
     return m_Null ? new CDB_Int : new CDB_Int(m_Val);
 }
 
+void CDB_Int::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Int) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Int::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_Int&)v;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_SmallInt::
@@ -112,6 +121,14 @@ CDB_Object* CDB_SmallInt::Clone() const
     return m_Null ? new CDB_SmallInt : new CDB_SmallInt(m_Val);
 }
 
+void CDB_SmallInt::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_SmallInt) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_SmallInt::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_SmallInt&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_TinyInt::
@@ -125,6 +142,15 @@ EDB_Type CDB_TinyInt::GetType() const
 CDB_Object* CDB_TinyInt::Clone() const
 {
     return m_Null ? new CDB_TinyInt : new CDB_TinyInt(m_Val);
+}
+
+void CDB_TinyInt::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_TinyInt) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_TinyInt::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_TinyInt&)v;
 }
 
 
@@ -142,6 +168,14 @@ CDB_Object* CDB_BigInt::Clone() const
     return m_Null ? new CDB_BigInt : new CDB_BigInt(m_Val);
 }
 
+void CDB_BigInt::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_BigInt) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_BigInt::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_BigInt&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_VarChar::
@@ -157,6 +191,14 @@ CDB_Object* CDB_VarChar::Clone() const
     return m_Null ? new CDB_VarChar : new CDB_VarChar(m_Val);
 }
 
+void CDB_VarChar::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_VarChar) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_VarChar::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_VarChar&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Char::
@@ -170,6 +212,21 @@ EDB_Type CDB_Char::GetType() const
 CDB_Object* CDB_Char::Clone() const
 {
     return m_Null ? new CDB_Char : new CDB_Char(*this);
+}
+
+void CDB_Char::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Char) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Char::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    register CDB_Char& cv= (CDB_Char&)v;
+    if(m_Size < cv.m_Size) {
+        delete [] m_Val;
+        m_Val= new char[cv.m_Size+1];
+    }
+    m_Size= cv.m_Size;
+    memcpy(m_Val, cv.m_Val, m_Size+1);
 }
 
 CDB_Char::~CDB_Char()
@@ -192,6 +249,14 @@ CDB_Object* CDB_VarBinary::Clone() const
     return m_Null ? new CDB_VarBinary : new CDB_VarBinary(m_Val, m_Size);
 }
 
+void CDB_VarBinary::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_VarBinary) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_VarBinary::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_VarBinary&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Binary::
@@ -205,6 +270,21 @@ EDB_Type CDB_Binary::GetType() const
 CDB_Object* CDB_Binary::Clone() const
 {
     return m_Null ? new CDB_Binary : new CDB_Binary(*this);
+}
+
+void CDB_Binary::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Binary) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Binary::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    register CDB_Binary& cv= (CDB_Binary&)v;
+    if(m_Size < cv.m_Size) {
+        delete [] m_Val;
+        m_Val= new unsigned char[cv.m_Size];
+    }
+    m_Size= cv.m_Size;
+    memcpy(m_Val, cv.m_Val, m_Size);
 }
 
 CDB_Binary::~CDB_Binary()
@@ -227,7 +307,14 @@ CDB_Object* CDB_Float::Clone() const
     return m_Null ? new CDB_Float : new CDB_Float(m_Val);
 }
 
-
+void CDB_Float::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Float) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Float::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_Float&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Double::
@@ -243,6 +330,14 @@ CDB_Object* CDB_Double::Clone() const
     return m_Null ? new CDB_Double : new CDB_Double(m_Val);
 }
 
+void CDB_Double::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Double) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Double::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_Double&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Stream::
@@ -304,6 +399,15 @@ void CDB_Stream::Truncate(size_t nof_bytes)
 {
     m_Store->Truncate(nof_bytes);
     m_Null = (m_Store->GetDataSize() <= 0);
+}
+
+void CDB_Stream::AssignValue(CDB_Object& v)
+{
+    if((v.GetType() != eDB_Image) && (v.GetType() != eDB_Text)) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Stream::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    Assign((CDB_Stream&)v);
 }
 
 CDB_Stream::~CDB_Stream()
@@ -385,6 +489,15 @@ CDB_Object* CDB_SmallDateTime::Clone() const
     return new CDB_SmallDateTime(Value());
 }
 
+void CDB_SmallDateTime::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_SmallDateTime) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_SmallDateTime::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_SmallDateTime&)v;
+}
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_DateTime::
@@ -400,6 +513,14 @@ CDB_Object* CDB_DateTime::Clone() const
     return new CDB_DateTime(Value());
 }
 
+void CDB_DateTime::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_DateTime) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_DateTime::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_DateTime&)v;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Bit::
@@ -415,6 +536,14 @@ CDB_Object* CDB_Bit::Clone() const
     return m_Null ? new CDB_Bit : new CDB_Bit(m_Val ? 1 : 0);
 }
 
+void CDB_Bit::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Bit) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Bit::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_Bit&)v;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -664,6 +793,14 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
     m_Null      = false;
 }
 
+void CDB_Numeric::AssignValue(CDB_Object& v)
+{
+    if(v.GetType() != eDB_Numeric) {
+        throw CDB_ClientEx(eDB_Error, 2, "CDB_Numeric::AssignValue",
+                           "wrong type of CDB_Object");
+    }
+    *this= (CDB_Numeric&)v;
+}
 
 END_NCBI_SCOPE
 
@@ -672,6 +809,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/05/16 21:29:38  soussov
+ * AssignValue methods added
+ *
  * Revision 1.7  2002/02/14 00:59:42  vakatov
  * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
  *

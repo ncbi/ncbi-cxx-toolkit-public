@@ -85,6 +85,7 @@ public:
 
     virtual EDB_Type    GetType() const = 0;
     virtual CDB_Object* Clone()   const = 0;
+    virtual void AssignValue(CDB_Object& v)= 0;
 
     // Create and return a new object (with internal value NULL) of type "type".
     // NOTE:  "size" matters only for eDB_Char, eDB_Binary.
@@ -137,6 +138,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone() const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     Int4 m_Val;
@@ -161,6 +163,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone() const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     Int2 m_Val;
@@ -185,6 +188,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     Uint1 m_Val;
@@ -205,9 +209,11 @@ public:
     }
 
     Int8 Value() const  { return m_Null ? 0 : m_Val; }
+    void* BindVal() const  { return (void*) &m_Val; }
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     Int8 m_Val;
@@ -269,6 +275,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     size_t m_Size;
@@ -384,6 +391,7 @@ public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
 
+    virtual void AssignValue(CDB_Object& v);
     virtual ~CDB_Char();
 
 protected:
@@ -416,6 +424,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     size_t        m_Size;
@@ -477,6 +486,7 @@ public:
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
 
+    virtual void AssignValue(CDB_Object& v);
     virtual ~CDB_Binary();
 
 protected:
@@ -503,6 +513,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     float m_Val;
@@ -528,6 +539,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     double m_Val;
@@ -552,6 +564,7 @@ public:
 
     // current size of data
     virtual size_t Size() const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     // 'ctors
@@ -649,6 +662,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     mutable CTime        m_NCBITime;
@@ -718,6 +732,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     mutable CTime        m_NCBITime;
@@ -752,6 +767,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     Uint1 m_Val;
@@ -777,6 +793,15 @@ public:
         memcpy(m_Body, arr, sizeof(m_Body));
     }
 
+    CDB_Numeric(unsigned int precision, unsigned int scale, bool is_negative,
+                const unsigned char* arr)
+        : CDB_Object(false) {
+        m_Precision = precision;
+        m_Scale     = scale;
+        m_Body[0]= is_negative? 1 : 0;
+        memcpy(m_Body+1, arr, sizeof(m_Body)-1);
+    }
+
     CDB_Numeric(unsigned int precision, unsigned int scale, const char* val) {
         x_MakeFromString(precision, scale, val);
     }
@@ -793,6 +818,16 @@ public:
         return *this;
     }
 
+    CDB_Numeric& Assign(unsigned int precision, unsigned int scale, 
+                        bool is_negative, const unsigned char* arr) {
+        m_Precision = precision;
+        m_Scale     = scale;
+        m_Null      = false;
+        m_Body[0]= is_negative? 1 : 0;
+        memcpy(m_Body + 1, arr, sizeof(m_Body) - 1);
+        return *this;
+    }
+ 
     CDB_Numeric& operator= (const char* val) {
         x_MakeFromString(m_Precision, m_Scale, val);
         return *this;
@@ -806,6 +841,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+    virtual void AssignValue(CDB_Object& v);
 
 protected:
     void x_MakeFromString(unsigned int precision,
@@ -826,6 +862,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/05/16 21:27:01  soussov
+ * AssignValue methods added
+ *
  * Revision 1.8  2002/02/14 00:59:38  vakatov
  * Clean-up: warning elimination, fool-proofing, fine-tuning, identation, etc.
  *
