@@ -584,7 +584,7 @@ bool CTL_CursorCmd::x_AssignParams(bool declare_only)
         CS_SMALLINT   indicator = (!declare_only  &&  param.IsNULL()) ? -1 : 0;
 
         if ( !g_CTLIB_AssignCmdParam(m_Cmd, param, param_name, param_fmt,
-                                     indicator, true/*declare_only*/) ) {
+                                     indicator, declare_only) ) {
             return false;
         }
     }
@@ -600,6 +600,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/25 16:29:57  soussov
+ * fixed typo in CTL_CursorCmd::x_AssignParams
+ *
  * Revision 1.1  2001/09/21 23:40:02  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
