@@ -41,7 +41,7 @@
 #include <vector>
 #include <deque>
 #include <map>
-#include <cstring>
+#include <string.h>
 
 #include <msms.hpp>
 #include <msladder.hpp>
@@ -694,6 +694,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.9  2003/12/08 17:37:20  ucko
+  #include <string.h> rather than <cstring>, since MIPSpro lacks the latter.
+
   Revision 1.8  2003/12/05 13:10:32  lewisg
   delete GetUsed
 
