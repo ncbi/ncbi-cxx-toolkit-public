@@ -277,7 +277,7 @@ RunTest() {
          x_run_fix=\`echo "\$x_run" | sed -e 's/""/\\\\\\\\\\"\\\\\\\\\\"/g' -e "s/''/\\\\\\\\\\'\\\\\\\\\\'/g"\`
          # Run check
          check_exec="$x_root_dir/scripts/check/check_exec.sh"
-         \$check_exec \$x_timeout time \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
+         \$check_exec \$x_timeout time -p \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
          result=\$?
 
          sed -e '/ ["][$][@]["].*\$/ {
