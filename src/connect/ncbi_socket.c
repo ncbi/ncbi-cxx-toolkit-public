@@ -1223,7 +1223,7 @@ static EIO_Status s_Connect(SOCK            sock,
     }
 
     /* success */
-    /* NOTE:  it does not change the timeouts and the data buffer content */
+    /* NOTE:  it does not change the timeouts */
     sock->sock      = x_sock;
     sock->host      = x_host;
     sock->port      = x_port;
@@ -1769,6 +1769,9 @@ extern EIO_Status SOCK_Reconnect(SOCK            sock,
     /* datagram sockets: we do not actually call system's connect() for them */
     if (sock->type == eSOCK_Datagram) {
         assert(sock->sock != SOCK_INVALID);
+        /* drop all pending data */
+        s_WipeRBuf(sock);
+        s_WipeWBuf(sock);
         sock->id++;
         sock->port = htons(port);
         if (host  &&  *host) {
@@ -2948,6 +2951,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.82  2003/01/17 16:56:59  lavr
+ * Always clear all pending data when reconnecting
+ *
  * Revision 6.81  2003/01/17 15:56:05  lavr
  * Keep as much status as possible in failed pending connect
  *
