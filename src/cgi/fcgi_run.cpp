@@ -405,9 +405,11 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             // Safely clear contex data and reset "m_Context" to zero
             CAutoCgiContext auto_context(m_Context);
 
-            // Checking for exit request
-            if (m_Context->GetRequest().GetEntries().find("exitfastcgi") !=
-                m_Context->GetRequest().GetEntries().end()) {
+            // Checking for exit request (if explicitly allowed)
+            if (reg.GetBool("FastCGI", "HonorExitRequest", false,
+                            CNcbiRegistry::eErrPost)
+                && m_Context->GetRequest().GetEntries().find("exitfastcgi")
+                != m_Context->GetRequest().GetEntries().end()) {
                 ostr <<
                     "Content-Type: text/html" HTTP_EOL
                     HTTP_EOL
@@ -546,6 +548,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.50  2004/11/22 17:21:22  vakatov
+ * Do not honor 'exitfastcgi' request unless it is explicitly allowed (via
+ * the application's configuration)
+ *
  * Revision 1.49  2004/10/25 15:23:28  ucko
  * Mark the Fast-CGI IPC file descriptor as close-on-exec, since
  * children have no use for it and shouldn't be able to tie it open.
