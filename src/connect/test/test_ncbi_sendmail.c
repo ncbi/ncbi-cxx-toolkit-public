@@ -28,30 +28,6 @@
  * File Description:
  *   Simple test for CORE_Sendmail
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.7  2002/04/15 19:21:45  lavr
- * +#include "../test/test_assert.h"
- *
- * Revision 6.6  2002/03/22 19:48:58  lavr
- * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
- *
- * Revision 6.5  2001/03/07 20:49:29  lavr
- * Forgotten #include <string.h> added
- *
- * Revision 6.4  2001/03/06 04:32:31  lavr
- * Custom header test added
- *
- * Revision 6.3  2001/03/02 20:01:53  lavr
- * "../ncbi_priv.h" explained
- *
- * Revision 6.2  2001/02/28 17:48:07  lavr
- * Huge body test added
- *
- * Revision 6.1  2001/02/28 00:53:45  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "../ncbi_priv.h"               /* CORE logging facilities */
@@ -185,12 +161,12 @@ int main(void)
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     if (!(fp = fopen("test_ncbi_sendmail.out", "w")) ||
-        fwrite(huge_body, TEST_HUGE_BODY_SIZE, 1, fp) != 1) {
+        fwrite(huge_body, TEST_HUGE_BODY_SIZE - 1, 1, fp) != 1) {
         CORE_LOG(eLOG_Error, "Test failed: Cannot store huge body to file");
     } else {
         fclose(fp);
         CORE_LOG(eLOG_Note, "Success: Check test_ncbi_sendmail.out");
-    }       
+    }
     free(huge_body);
 
     CORE_LOG(eLOG_Note, "Testing custom headers");
@@ -214,14 +190,45 @@ int main(void)
         CORE_LOG(eLOG_Error, "Test failed");
     else
         CORE_LOGF(eLOG_Error, ("Test passed: %s", retval));
-    
+
     CORE_LOG(eLOG_Note, "Testing bad magic");
     info.magic_number = 0;
     retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
     if (!retval)
         CORE_LOG(eLOG_Fatal, "Test failed");
     CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
-    
+
     CORE_LOG(eLOG_Note, "Test completed");
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.8  2002/09/12 16:53:50  lavr
+ * Do not write '\0' into test file; log moved to end
+ *
+ * Revision 6.7  2002/04/15 19:21:45  lavr
+ * +#include "../test/test_assert.h"
+ *
+ * Revision 6.6  2002/03/22 19:48:58  lavr
+ * Removed <stdio.h>: included from ncbi_util.h or ncbi_priv.h
+ *
+ * Revision 6.5  2001/03/07 20:49:29  lavr
+ * Forgotten #include <string.h> added
+ *
+ * Revision 6.4  2001/03/06 04:32:31  lavr
+ * Custom header test added
+ *
+ * Revision 6.3  2001/03/02 20:01:53  lavr
+ * "../ncbi_priv.h" explained
+ *
+ * Revision 6.2  2001/02/28 17:48:07  lavr
+ * Huge body test added
+ *
+ * Revision 6.1  2001/02/28 00:53:45  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */
