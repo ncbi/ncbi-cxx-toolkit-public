@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/04/08 19:00:30  vasilche
+* Added current cell pointer to CHTML_table
+*
 * Revision 1.24  1999/02/23 19:04:27  vasilche
 * Fixed uninitialized m_Width in CQueryBox
 *
@@ -255,7 +258,7 @@ void CQueryBox::CreateSubNodes()
     CheckTable();
     int row = CalculateNumberOfRows();
 
-    SetColSpan(InsertAt(row, 0, m_Database.CreateComponent()), 2);
+    InsertAt(row, 0, m_Database.CreateComponent())->SetColSpan(2);
     InsertAt(row + 1, 0, m_Term.CreateComponent());
     InsertAt(row + 1, 0, m_Submit.CreateComponent());
     InsertAt(row + 2, 0, m_DispMax.CreateComponent()); 

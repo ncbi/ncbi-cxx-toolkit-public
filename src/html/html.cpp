@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/04/08 19:00:31  vasilche
+* Added current cell pointer to CHTML_table
+*
 * Revision 1.32  1999/03/26 22:00:01  sandomir
 * checked option in Radio button fixed; minor fixes in Selection
 *
@@ -465,6 +468,7 @@ CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out)
 // TABLE element
 
 CHTML_table::CHTML_table(void)
+    : m_CurrentRow(0), m_CurrentCol(-1)
 {
 }
 
@@ -485,16 +489,16 @@ CHTML_table* CHTML_table::SetCellPadding(int padding)
     return this;
 }
 
-CHTMLNode* CHTML_table::SetRowSpan(CHTMLNode* node, int span)
+CHTML_tc* CHTML_tc::SetRowSpan(int span)
 {
-    node->SetAttribute(KHTMLAttributeName_rowspan, span);
-    return node;
+    SetAttribute(KHTMLAttributeName_rowspan, span);
+    return this;
 }
 
-CHTMLNode* CHTML_table::SetColSpan(CHTMLNode* node, int span)
+CHTML_tc* CHTML_tc::SetColSpan(int span)
 {
-    node->SetAttribute(KHTMLAttributeName_colspan, span);
-    return node;
+    SetAttribute(KHTMLAttributeName_colspan, span);
+    return this;
 }
 
 int CHTML_table::sx_GetSpan(const CNCBINode* node,
@@ -520,7 +524,7 @@ int CHTML_table::sx_GetSpan(const CNCBINode* node,
     return span;
 }
 
-CHTMLNode* CHTML_table::Row(int needRow)  // todo: exception
+CHTML_tr* CHTML_table::Row(int needRow)  // todo: exception
 {
     // beginning with row 0
     int row = 0;
@@ -533,11 +537,11 @@ CHTMLNode* CHTML_table::Row(int needRow)  // todo: exception
         }
 
         if ( row == needRow ) {
-            return trNode;
+            return static_cast<CHTML_tr*>(trNode);
         }
     }
 
-    CHTMLNode* trNode;
+    CHTML_tr* trNode;
     while ( row <= needRow ) {
         // add needed rows
         AppendChild(trNode = new CHTML_tr);
@@ -546,7 +550,7 @@ CHTMLNode* CHTML_table::Row(int needRow)  // todo: exception
     return trNode;
 }
 
-CHTMLNode* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
+CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
 {
     switch (type) {
     case eHeaderCell:
@@ -558,10 +562,10 @@ CHTMLNode* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
             throw runtime_error("CHTML_table::CheckType: wrong cell type: TH expected");
         break;
     }
-    return cell;
+    return static_cast<CHTML_tc*>(cell);
 }
 
-CHTMLNode* CHTML_table::Cell(int needRow, int needCol, ECellType type)
+CHTML_tc* CHTML_table::Cell(int needRow, int needCol, ECellType type)
 {
     vector<int> rowSpans; // hanging down cells (with rowspan > 1)
 
@@ -595,7 +599,10 @@ CHTMLNode* CHTML_table::Cell(int needRow, int needCol, ECellType type)
 
             if ( row == needRow ) {
                 if ( col == needCol ) {
-                    return sx_CheckType(cell, type);
+                    CHTML_tc* c = sx_CheckType(cell, type);
+                    m_CurrentRow = needRow;
+                    m_CurrentCol = needCol;
+                    return c;
                 }
                 if ( col > needCol )
                     throw runtime_error("Table cells are overlapped");
@@ -665,7 +672,7 @@ CHTMLNode* CHTML_table::Cell(int needRow, int needCol, ECellType type)
     } while ( needRowCols <= needCol );
 
     // add needed columns
-    CHTMLNode* cell;
+    CHTML_tc* cell;
     for ( int i = 1; i < addCells; ++i ) {
         needRowNode->AppendChild(cell = new CHTML_td);
     }
@@ -674,6 +681,8 @@ CHTMLNode* CHTML_table::Cell(int needRow, int needCol, ECellType type)
     else
         cell = new CHTML_td;
     needRowNode->AppendChild(cell);
+    m_CurrentRow = needRow;
+    m_CurrentCol = needCol;
     return cell;
 }
 
@@ -886,7 +895,7 @@ void CHTML_form::AddHidden(const string& name, int value)
 
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
 {
-    SetAttribute(KHTMLAttributeName_name, name);
+    SetNameAttribute(name);
     SetAttribute(KHTMLAttributeName_cols, cols);
     SetAttribute(KHTMLAttributeName_rows, rows);
 }
@@ -894,7 +903,7 @@ CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
 CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows, const string& value)
     : CParent(value)
 {
-    SetAttribute(KHTMLAttributeName_name, name);
+    SetNameAttribute(name);
     SetAttribute(KHTMLAttributeName_cols, cols);
     SetAttribute(KHTMLAttributeName_rows, rows);
 }
@@ -905,7 +914,7 @@ CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows, const str
 CHTML_input::CHTML_input(const string& type, const string& name)
 {
     SetAttribute(KHTMLAttributeName_type, type);
-    SetOptionalAttribute(KHTMLAttributeName_name, name);
+    SetNameAttribute(name);
 };
 
 

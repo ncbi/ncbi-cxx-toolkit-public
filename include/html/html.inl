@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/04/08 19:00:26  vasilche
+* Added current cell pointer to CHTML_table
+*
 * Revision 1.11  1999/02/02 17:57:47  vasilche
 * Added CHTML_table::Row(int row).
 * Linkbar now have equal image spacing.
@@ -145,6 +148,17 @@ inline CHTMLNode* CHTMLNode::SetBgColor(const string& color)
     return this;
 }
 
+inline CHTMLNode* CHTMLNode::SetNameAttribute(const string& name)
+{
+    SetAttribute(KHTMLAttributeName_name, name);
+    return this;
+}
+
+inline string CHTMLNode::GetNameAttribute(void) const
+{
+    return GetAttribute(KHTMLAttributeName_name);
+}
+
 inline const string& CHTMLPlainText::GetText(void) const
 {
     return m_Text;
@@ -252,16 +266,56 @@ inline CHTMLListElementTmpl<TagName>* CHTMLListElementTmpl<TagName>::AppendItem(
     return this;
 }
 
-inline CHTMLNode* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
+inline CHTML_tc* CHTML_table::NextCell(ECellType type)
 {
-    CHTMLNode* cell = Cell(row, column);
+    return Cell(m_CurrentRow, m_CurrentCol + 1, type);
+}
+
+inline CHTML_tc* CHTML_table::NextRowCell(ECellType type)
+{
+    return Cell(m_CurrentRow + 1, 0, type);
+}
+
+inline CHTML_tc* CHTML_table::InsertAt(int row, int column, CNCBINode* node)
+{
+    CHTML_tc* cell = Cell(row, column);
     cell->AppendChild(node);
     return cell;
 }
 
-inline CHTMLNode* CHTML_table::InsertTextAt(int row, int column, const string& text)
+inline CHTML_tc* CHTML_table::InsertAt(int row, int column, const string& text)
 {
     return InsertAt(row, column, new CHTMLPlainText(text));
+}
+
+inline CHTML_tc* CHTML_table::InsertTextAt(int row, int column,
+                                           const string& text)
+{
+    return InsertAt(row, column, text);
+}
+
+inline CHTML_tc* CHTML_table::InsertNextCell(CNCBINode* node)
+{
+    CHTML_tc* cell = NextCell();
+    cell->AppendChild(node);
+    return cell;
+}
+
+inline CHTML_tc* CHTML_table::InsertNextCell(const string& text)
+{
+    return InsertNextCell(new CHTMLPlainText(text));
+}
+
+inline CHTML_tc* CHTML_table::InsertNextRowCell(CNCBINode* node)
+{
+    CHTML_tc* cell = NextRowCell();
+    cell->AppendChild(node);
+    return cell;
+}
+
+inline CHTML_tc* CHTML_table::InsertNextRowCell(const string& text)
+{
+    return InsertNextRowCell(new CHTMLPlainText(text));
 }
 
 inline void CHTML_table::CheckTable(void) const

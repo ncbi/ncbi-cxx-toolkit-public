@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  1999/04/08 19:00:24  vasilche
+* Added current cell pointer to CHTML_table
+*
 * Revision 1.27  1999/03/01 21:03:27  vasilche
 * Added CHTML_file input element.
 * Changed CHTML_form constructors.
@@ -160,6 +163,8 @@ public:
     CHTMLNode* SetVAlign(const string& align);
     CHTMLNode* SetBgColor(const string& color);
     CHTMLNode* SetColor(const string& color);
+    CHTMLNode* SetNameAttribute(const string& name);
+    string GetNameAttribute(void) const;
 
     void AppendPlainText(const string &);  // convenient way to add CHTMLPlainText
     void AppendHTMLText(const string &);  // convenient way to add CHTMLText
@@ -389,11 +394,6 @@ public:
     static const string& s_GetTagName(void)
         { return *TagName; }
 
-    /*
-    CHTMLElementTmpl(void);
-    CHTMLElementTmpl(CNCBINode* node);
-    CHTMLElementTmpl(const string& text);
-    */
     CHTMLElementTmpl(void)
         : CParent(s_GetTagName()) {}
     CHTMLElementTmpl(CNCBINode* node)
@@ -444,6 +444,38 @@ public:
     CHTMLListElementTmpl* AppendItem(CNCBINode* item);
 };
 
+class CHTML_tc : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+
+    CHTML_tc* SetRowSpan(int span);
+    CHTML_tc* SetColSpan(int span);
+
+protected:
+    CHTML_tc(const string& name)
+        : CParent(name)
+        { }
+};
+
+template<const string* TagName>
+class CHTML_tcTmpl : public CHTML_tc
+{
+    typedef CHTML_tc CParent;
+
+public:
+    static const string& s_GetTagName(void)
+        { return *TagName; }
+
+    CHTML_tcTmpl(void)
+        : CParent(s_GetTagName()) {}
+    CHTML_tcTmpl(CNCBINode* node)
+        : CParent(s_GetTagName()) { AppendChild(node); }
+    CHTML_tcTmpl(const string& text)
+        : CParent(s_GetTagName()) { AppendPlainText(text); }
+
+};
+
 typedef CHTMLElementTmpl<&KHTMLTagName_html> CHTML_html;
 typedef CHTMLElementTmpl<&KHTMLTagName_head> CHTML_head;
 typedef CHTMLElementTmpl<&KHTMLTagName_body> CHTML_body;
@@ -489,8 +521,8 @@ typedef CHTMLElementTmpl<&KHTMLTagName_thead> CHTML_thead;
 typedef CHTMLElementTmpl<&KHTMLTagName_tbody> CHTML_tbody;
 typedef CHTMLElementTmpl<&KHTMLTagName_tfoot> CHTML_tfoot;
 typedef CHTMLElementTmpl<&KHTMLTagName_tr> CHTML_tr;
-typedef CHTMLElementTmpl<&KHTMLTagName_th> CHTML_th;
-typedef CHTMLElementTmpl<&KHTMLTagName_td> CHTML_td;
+typedef CHTML_tcTmpl<&KHTMLTagName_th> CHTML_th;
+typedef CHTML_tcTmpl<&KHTMLTagName_td> CHTML_td;
 typedef CHTMLElementTmpl<&KHTMLTagName_applet> CHTML_applet;
 typedef CHTMLElementTmpl<&KHTMLTagName_param> CHTML_param;
 typedef CHTMLOpenElementTmpl<&KHTMLTagName_img> CHTML_img_Base;
@@ -540,20 +572,43 @@ public:
 
     // returns row, will add rows if needed
     // throws exception if it is not left upper corner of cell
-    CHTMLNode* Row(int row);
+    CHTML_tr* Row(int row);
+
+    // current insertion point
+    void SetCurrentCell(int row, int col)
+        { m_CurrentRow = row; m_CurrentCol = col; }
+    int GetCurrentRow(void) const
+        { return m_CurrentRow; }
+    int GetCurrentCol(void) const
+        { return m_CurrentCol; }
 
     enum ECellType {
         eAnyCell,
         eDataCell,
         eHeaderCell
     };
+
     // returns cell, will add rows/columns if needed
     // throws exception if it is not left upper corner of cell
-    CHTMLNode* Cell(int row, int column, ECellType type = eAnyCell);
-    CHTMLNode* HeaderCell(int row, int column)
+    // also sets current insertion point
+    CHTML_tc* Cell(int row, int column, ECellType type = eAnyCell);
+    CHTML_tc* HeaderCell(int row, int column)
         { return Cell(row, column, eHeaderCell); }
-    CHTMLNode* DataCell(int row, int column)
+    CHTML_tc* DataCell(int row, int column)
         { return Cell(row, column, eDataCell); }
+
+    CHTML_tc* NextCell(ECellType type = eAnyCell);
+    CHTML_tc* NextHeaderCell(void)
+        { return NextCell(eHeaderCell); }
+    CHTML_tc* NextDataCell(void)
+        { return NextCell(eDataCell); }
+
+    CHTML_tc* NextRowCell(ECellType type = eAnyCell);
+    CHTML_tc* NextRowHeaderCell(void)
+        { return NextRowCell(eHeaderCell); }
+    CHTML_tc* NextRowDataCell(void)
+        { return NextRowCell(eDataCell); }
+
     // checks table contents for validaty, throws exception if invalid
     void CheckTable(void) const;
     // returns width of table in columns. Should call CheckTable before
@@ -561,21 +616,27 @@ public:
     int CalculateNumberOfRows(void) const;
 
     // return cell of insertion
-    CHTMLNode* InsertAt(int row, int column, CNCBINode* node);
-    CHTMLNode* InsertTextAt(int row, int column, const string& text);
+    CHTML_tc* InsertAt(int row, int column, CNCBINode* node);
+    CHTML_tc* InsertAt(int row, int column, const string& text);
+    CHTML_tc* InsertTextAt(int row, int column, const string& text);
+
+    CHTML_tc* InsertNextCell(CNCBINode* node);
+    CHTML_tc* InsertNextCell(const string& text);
+
+    CHTML_tc* InsertNextRowCell(CNCBINode* node);
+    CHTML_tc* InsertNextRowCell(const string& text);
 
     void ColumnWidth(CHTML_table*, int column, const string & width);
 
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
 
-    static CHTMLNode* SetRowSpan(CHTMLNode* node, int span);
-    static CHTMLNode* SetColSpan(CHTMLNode* node, int span);
-
     virtual CNcbiOstream& PrintChildren(CNcbiOstream& out);
 
 protected:
     // void MakeTable(int, int);
+
+    int m_CurrentRow, m_CurrentCol;
 
     virtual CNCBINode* CloneSelf(void) const;
 
@@ -597,7 +658,7 @@ protected:
     static int sx_GetSpan(const CNCBINode* node, const string& attr, CTableInfo* info);
     static bool sx_IsRow(const CNCBINode* node);
     static bool sx_IsCell(const CNCBINode* node);
-    static CHTMLNode* sx_CheckType(CHTMLNode* node, ECellType type);
+    static CHTML_tc* sx_CheckType(CHTMLNode* node, ECellType type);
 };
 
 // the form tag
