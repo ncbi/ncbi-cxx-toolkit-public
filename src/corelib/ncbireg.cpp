@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/06/26 15:20:22  ivanov
+* Fixed small bug in s_ConvertComment().
+* Changed method of check and create new section in Read().
+*
 * Revision 1.17  2001/06/22 21:49:47  ivanov
 * Added (with Denis Vakatov) ability for read/write the registry file
 * with comments. Also added functions GetComment() and SetComment().
@@ -164,7 +168,7 @@ static const string s_ConvertComment(const string& comment,
     string x_comment;
     const char c_comment = is_file_comment ? '#' : ';';
 
-    SIZE_TYPE endl_pos;
+    SIZE_TYPE endl_pos = 0;
     for (SIZE_TYPE beg = 0;  endl_pos != comment.length();
          beg = endl_pos + 1) {
         SIZE_TYPE pos = comment.find_first_not_of(" \t", beg);
@@ -300,8 +304,8 @@ Invalid registry section name: `" + str + "'", line);
             if ( !comment.empty() ) {
                 _ASSERT( s_IsNameSection(section) );
                 // create section if it not exist
-                TRegSection& reg_section = m_Registry[section];
-                _ASSERT( reg_section.size() >=0 );
+                m_Registry.insert(TRegistry::value_type(section,
+                                                        TRegSection()));
                 SetComment(GetComment(section) + comment, section);
                 comment.erase();
             }
