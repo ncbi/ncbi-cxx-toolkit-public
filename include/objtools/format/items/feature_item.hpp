@@ -215,8 +215,11 @@ private:
     bool x_HasQual(EFeatureQualifier slot) const { 
         return m_Quals.HasQual(slot);
     }
-    pair<TQCI, TQCI> x_GetQual(EFeatureQualifier slot) const {
+    /*pair<TQCI, TQCI> x_GetQual(EFeatureQualifier slot) const {
         return const_cast<const TQuals&>(m_Quals).GetQuals(slot);
+    }*/
+    TQCI x_GetQual(EFeatureQualifier slot) const {
+        return const_cast<const TQuals&>(m_Quals).LowerBound(slot);
     }
     void x_DropIllegalQuals(void) const;
 
@@ -299,6 +302,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/03/28 17:14:50  shomrat
+* Chenged GetQual to return lower bound instead of equal range
+*
 * Revision 1.23  2005/01/12 16:41:42  shomrat
 * Obtain gene synonyms
 *
