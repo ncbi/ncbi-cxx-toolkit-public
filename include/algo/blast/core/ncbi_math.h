@@ -83,7 +83,7 @@ extern double BLAST_LnGammaInt (Int4 n);
  *               of integration
  *  @param p Left-hand endpoint of the integration interval
  *  @param q Right-hand endpoint of the integration interval
- *           (q is assumed >= p)
+ *           (q is assumed > p)
  *  @param eps The relative error tolerance that indicates convergence
  *  @param epsit The number of consecutive diagonal entries in the 
  *               Romberg array whose relative difference must be less than
@@ -97,10 +97,10 @@ extern double BLAST_RombergIntegrate (double (*f) (double, void*),
                                       void* fargs, double p, double q, 
                                       double eps, Int4 epsit, Int4 itmin);
 
-/* Greatest common divisor 
- * @param a First operand (any integer)
- * @param b Second operand (any integer)
- * @return The largest integer that evenly divides a and b
+/** Greatest common divisor 
+ *  @param a First operand (any integer)
+ *  @param b Second operand (any integer)
+ *  @return The largest integer that evenly divides a and b
  */
 extern long BLAST_Gcd (long a, long b);
 
@@ -141,6 +141,9 @@ extern double BLAST_Powi (double x, Int4 n);
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/11/02 13:54:33  papadopo
+ * small doxygen fixes
+ *
  * Revision 1.8  2004/11/01 16:37:57  papadopo
  * Add doxygen tags, remove unused constants
  *
