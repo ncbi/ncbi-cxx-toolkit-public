@@ -15,5 +15,5 @@ SRC = objmgr_sample
 LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general \
       dbapi_driver xser xutil xconnect xncbi
 # The serialization code needs the C Toolkit corelib, but only if it's present.
-LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 ### END COPIED SETTINGS
