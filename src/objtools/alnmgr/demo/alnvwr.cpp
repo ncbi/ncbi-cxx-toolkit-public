@@ -125,8 +125,9 @@ void CAlnMgrTestApp::Init(void)
          "2. Popset style using chunks\n"
          "3. Popset style\n"
          "4. Popset style speed optimized\n"
-         "5. Print chunks\n"
-         "6. Alternative ways to get sequence\n",
+         "5. Print segments\n"
+         "6. Print chunks\n"
+         "7. Alternative ways to get sequence\n",
          CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
@@ -562,6 +563,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/09/26 15:30:07  todorov
+* +Print segments
+*
 * Revision 1.9  2003/07/23 21:01:08  ucko
 * Revert use of (uncommitted) BLAST DB data loader.
 *
