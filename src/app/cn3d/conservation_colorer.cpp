@@ -276,7 +276,7 @@ void ConservationColorer::CalculateConservationColors(void)
                 else if (weightedVariety > maxWeightedVariety) maxWeightedVariety = weightedVariety;
             }
 
-            // information content and fit scores for this column (calculated in bits -> logs of base 2)
+            // information content (calculated in bits -> logs of base 2) and fit scores for this column
             pe = profile.end();
             float &columnInfo = informationContents[profileColumn];
             for (p=profile.begin(); p!=pe; p++) {
@@ -302,9 +302,8 @@ void ConservationColorer::CalculateConservationColors(void)
                 }
             }
             totalInformationContent += columnInfo;
-//            TESTMSG("info prof col " << profileColumn << " = " << information);
 
-            // add up block fit scores
+            // add up residue fit scores to get block fit scores
             for (row=0; row<nRows; row++) {
                 char ch = ScreenResidueCharacter(b->first->GetCharacterAt(blockColumn, row));
                 blockFitScores[b->first][row] += GetPSSMScore(alignment->GetPSSM(),
@@ -312,11 +311,11 @@ void ConservationColorer::CalculateConservationColors(void)
             }
         }
 
-        // calculate average block fit scores per residue (and average of these over the block)
+        // find average/min/max block fit
         float average = 0.0f;
         for (row=0; row<nRows; row++) {
             float& score = blockFitScores[b->first][row];
-            score /= b->first->width;
+            score /= b->first->width;   // average fit score across the block for this row
             average += score;
             if (row == 0 && b == blocks.begin()) {
                 minBlockFit = maxBlockFit = score;
@@ -329,7 +328,7 @@ void ConservationColorer::CalculateConservationColors(void)
 
         // calculate block Z scores from block fit scores
         if (nRows >= 2) {
-            // calculate standard deviation over this column
+            // calculate standard deviation of block fit score over all rows of this block
             float stdDev = 0.0f;
             for (row=0; row<nRows; row++)
                 stdDev += (blockFitScores[b->first][row] - average) *
@@ -338,14 +337,14 @@ void ConservationColorer::CalculateConservationColors(void)
             stdDev = sqrt(stdDev);
             if (stdDev > 1e-10) {
                 // calculate Z scores for each row
-                blockZFitScores[b->first].resize(nRows, 0.0f);
+                blockZFitScores[b->first].resize(nRows);
                 for (row=0; row<nRows; row++)
                     blockZFitScores[b->first][row] = (blockFitScores[b->first][row] - average) / stdDev;
             }
         }
     }
 
-    // calculate row fit scores based on Z-scores per block across row
+    // calculate row fit scores based on Z-scores for each block across a given row
     if (blocks.size() >= 2) {
         for (b=blocks.begin(); b!=be; b++)
             blockRowFitScores[b->first].resize(nRows, kMin_Float);
@@ -369,7 +368,7 @@ void ConservationColorer::CalculateConservationColors(void)
         }
     }
 
-    INFOMSG("Total information content: " << totalInformationContent << " bits");
+    INFOMSG("Total information content of aligned blocks: " << totalInformationContent << " bits");
 
     // now assign colors
     varietyColors.resize(nColumns);
@@ -431,11 +430,10 @@ void ConservationColorer::CalculateConservationColors(void)
     blockZFitColors.clear();
     for (b=blocks.begin(); b!=be; b++) {
         blockZFitColors[b->first].resize(nRows, Vector(0,0,0));
-        if (blockZFitScores.find(b->first) != blockZFitScores.end()) {
-            minBlockZFit = kMin_Float;
-            for (row=0; row<nRows; row++) { // normalize colors per column
+        if (blockZFitScores.find(b->first) != blockZFitScores.end()) {  // if this column has scores
+            for (row=0; row<nRows; row++) {                             // normalize colors per column
                 float zScore = blockZFitScores[b->first][row];
-                if (minBlockZFit == kMin_Float) {
+                if (row == 0) {
                     minBlockZFit = maxBlockZFit = zScore;
                 } else {
                     if (zScore < minBlockZFit) minBlockZFit = zScore;
@@ -459,19 +457,17 @@ void ConservationColorer::CalculateConservationColors(void)
         blockRowFitColors[b->first].resize(nRows, Vector(0,0,0));
     if (blocks.size() >= 2) {
         for (row=0; row<nRows; row++) {
-            minBlockRowFit = kMin_Float;       // normalize colors per row
-            for (b=blocks.begin(); b!=be; b++) {
-                float zScore = blockRowFitScores[b->first][row];
-                if (zScore == kMin_Float) break;
-                if (minBlockRowFit == kMin_Float) {
-                    minBlockRowFit = maxBlockRowFit = zScore;
-                } else {
-                    if (zScore < minBlockRowFit) minBlockRowFit = zScore;
-                    else if (zScore > maxBlockRowFit) maxBlockRowFit = zScore;
+            if (blockRowFitScores.begin()->second[row] != kMin_Float) { // if this row has fit scores
+                for (b=blocks.begin(); b!=be; b++) {                    // normalize colors per row
+                    float zScore = blockRowFitScores[b->first][row];
+                    if (b == blocks.begin()) {
+                        minBlockRowFit = maxBlockRowFit = zScore;
+                    } else {
+                        if (zScore < minBlockRowFit) minBlockRowFit = zScore;
+                        else if (zScore > maxBlockRowFit) maxBlockRowFit = zScore;
+                    }
                 }
-            }
-            for (b=blocks.begin(); b!=be; b++) {
-                if (minBlockRowFit != kMin_Float) {
+                for (b=blocks.begin(); b!=be; b++) {
                     if (maxBlockRowFit == minBlockRowFit)
                         scale = 1.0;
                     else
@@ -519,6 +515,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/02/12 15:36:14  thiessen
+* clean up fit scoring code
+*
 * Revision 1.28  2003/02/06 16:39:53  thiessen
 * add block row fit coloring
 *
