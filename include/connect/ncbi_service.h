@@ -30,9 +30,14 @@
  *
  * File Description:
  *   Top-level API to resolve NCBI service name to the server meta-address.
+ *   More elaborate documentation could be found in:
+ *   http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/libs/conn.html#ref_ServiceAPI
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/09/10 21:18:35  lavr
+ * SERV_GetNextInfoEx(): Description of IP address subst in host environment
+ *
  * Revision 6.20  2001/08/20 21:57:49  lavr
  * Parameter change for clarity: info -> net_info if type is SConnNetInfo
  *
@@ -115,8 +120,8 @@ typedef struct SSERV_IterTag* SERV_ITER;
  * not to make any network connections (only LBSMD will be consulted).
  * If 'info' is not NULL, LBSMD is consulted first (unless 'info->lb_disable'
  * is non-zero, meaning to skip LBSMD), and then DISPD is consulted
- * (using information provided) but only if mapping with LBSMD (if any)
- * failed. This scheme permits to use any combination of service mappers.
+ * (using the information provided) but only if mapping with LBSMD (if any)
+ * has failed. This scheme permits to use any combination of service mappers.
  * Note that if 'info' is not NULL then non-zero value of 'info->stateless'
  * forces 'types' to have 'fSERV_StatelessOnly' set.
  * NB: 'nbo' in comments denotes parameters coming in network byte order.
@@ -159,6 +164,11 @@ SERV_ITER SERV_OpenEx
  * this function can also provide the host environment as follows:
  * when 'env' parameter is passed as a non-NULL pointer, then a copy of
  * the host environment is allocated, and pointer to it is stored in '*env'.
+ * If the environment starts with '@', then following (up to an end or
+ * '\n', whatever comes first) is the IP:port substitution provided
+ * by the mapper for the host:port combination, the info refers to.
+ * Ordinary environment pairs (if any), in the form "name=value" come after
+ * '\n' following the substitution, and separated from each other by '\n'.
  * NULL value stored if no environment is available for the host, which
  * is referred by returned server info. Otherwise, *env remains untouched.
  * NOTE that the application program should NOT destroy returned server info:
