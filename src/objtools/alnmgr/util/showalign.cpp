@@ -913,11 +913,12 @@ void CDisplaySeqalign::DisplayAlnvec(CNcbiOstream& out){
 
 //To display the seqalign
 void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
-    if(m_SeqalignSetRef->Get().empty()){
-        return;
-    }
+   
     CSeq_align_set actual_aln_list;
     s_ExtractSeqalign(actual_aln_list, *m_SeqalignSetRef);
+    if (actual_aln_list.Get().empty()){
+        return;
+    }
     //scope for feature fetching
     if(!(m_AlignOption & eMasterAnchored) && (m_AlignOption & eShowCdsFeature || m_AlignOption & eShowGeneFeature)){
         m_FeatObj = CObjectManager::GetInstance();
@@ -2206,6 +2207,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.53  2004/12/28 16:59:19  jianye
+*added empty seqalign check
+*
 *Revision 1.52  2004/12/21 19:32:16  jianye
 *assert to _ASSERT
 *
