@@ -385,25 +385,19 @@ private:
     
     /// Name resolution
     ///
-    /// This takes the names in dbname_list, finds the path for each
-    /// name, and recreates a space delimited version.  This is only
-    /// done during topmost node construction; names supplied by the
-    /// end user get this treatment, lower level nodes still need
-    /// absolute or relative paths to specify the database locations.
+    /// This finds the path for each name in m_DBList, and resolves
+    /// the path for each.  This is only done during construction of
+    /// the topmost node.  Names supplied by the end user get this
+    /// treatment, lower level nodes will have absolute or relative
+    /// paths to specify the database locations.
     ///
-    /// After each name is resolved, the largest prefix is found and
-    /// moved to the dbname_path variable (and removed from each
-    /// individual name).
-    /// 
-    /// @param dbname_list
-    ///   List of names, seperated by spaces
-    /// @param dbname_path
-    ///   Common prefix of all these names
+    /// After alls names are resolved, the longest common prefix (of
+    /// all names) is found and moved to the dbname_path variable (and
+    /// removed from each individual name).
+    ///
     /// @prot_nucl
     ///   Indicates whether this is a protein or nucleotide database
-    void x_ResolveNames(string & dbname_list,
-                        string & dbname_path,
-                        char     prot_nucl);
+    void x_ResolveNames(char prot_nucl);
     
     /// Add an OID list filter to a volume
     /// 
@@ -419,7 +413,12 @@ private:
     ///   The first OID in the OID range.
     /// @param end
     ///   The OID after the last OID in the range.
-    void x_SetOIDMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
+    /// @param oidfile
+    ///   The name of the OID mask file.
+    void x_SetOIDMask(CSeqDBVolSet & volset,
+                      Uint4          begin,
+                      Uint4          end,
+                      const string & oidfile);
 
     /// Add a GI list filter to a volume
     /// 
@@ -435,8 +434,13 @@ private:
     ///   The first OID in the OID range.
     /// @param end
     ///   The OID after the last OID in the range.
-    void x_SetGiListMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
-
+    /// @param gilist
+    ///   The name of the GI list file.
+    void x_SetGiListMask(CSeqDBVolSet & volset,
+                         Uint4          begin,
+                         Uint4          end,
+                         const string & gilist);
+    
     /// Add an OID range to a volume
     /// 
     /// This method applies the specified begin and end as an OID
@@ -451,6 +455,7 @@ private:
     ///   The OID after the last OID in the range.
     void x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end);
     
+    
     /// Type of set used for KEY/VALUE pairs within each node
     typedef map<string, string> TVarList;
     
@@ -459,6 +464,7 @@ private:
     
     /// Type used to store the set of subnodes for this node
     typedef vector< CRef<CSeqDBAliasNode> > TSubNodeList;
+    
     
     /// The memory management layer for this SeqDB instance
     CSeqDBAtlas & m_Atlas;
@@ -474,6 +480,9 @@ private:
     
     /// List of subnodes contained by this node
     TSubNodeList m_SubNodes;
+    
+    /// Tokenized version of DBLIST
+    vector<string> m_DBList;
 };
 
 

@@ -388,7 +388,23 @@ CSeqDB::FindVolumePaths(const string   & dbname,
                         char             prot_nucl,
                         vector<string> & paths)
 {
-    CSeqDBImpl::FindVolumePaths(dbname, prot_nucl, paths);
+    bool done = false;
+    
+    if ((prot_nucl == 'p') || (prot_nucl == 'n')) {
+        CSeqDBImpl::FindVolumePaths(dbname, prot_nucl, paths);
+    } else {
+        try {
+            CSeqDBImpl::FindVolumePaths(dbname, 'p', paths);
+            done = true;
+        }
+        catch(...) {
+            done = false;
+        }
+        
+        if (! done) {
+            CSeqDBImpl::FindVolumePaths(dbname, 'n', paths);
+        }
+    }
 }
 
 void

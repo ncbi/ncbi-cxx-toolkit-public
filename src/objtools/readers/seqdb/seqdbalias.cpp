@@ -45,6 +45,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
 #include <algorithm>
+#include <sstream>
 
 #include "seqdbalias.hpp"
 #include "seqdbfile.hpp"
@@ -65,16 +66,14 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
 {
     CSeqDBLockHold locked(atlas);
     
-    string new_names(dbname_list);
-    x_ResolveNames(new_names, m_DBPath, prot_nucl);
-    
-    set<string> recurse;
+    NStr::Tokenize(dbname_list, " ", m_DBList, NStr::eMergeDelims);
+    x_ResolveNames(prot_nucl);
     
     if (seqdb_debug_class & debug_alias) {
         cout << "user list((" << dbname_list << "))<>";
     }
     
-    m_Values["DBLIST"] = new_names;
+    set<string> recurse;
     
     x_ExpandAliases("-", prot_nucl, recurse, locked);
     
@@ -124,34 +123,40 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     recurse.insert(full_filename);
     
     x_ReadValues(full_filename, locked);
+    NStr::Tokenize(m_Values["DBLIST"], " ", m_DBList, NStr::eMergeDelims);
     x_ExpandAliases(dbname, prot_nucl, recurse, locked);
 }
 
-// [I'm not sure if this is really worth while; it seemed like it
-// would be and it wasn't too bad to write.  It could probably be
-// omitted in the cliff notes version.]
-
-void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
-                                     string & dbname_path,
-                                     char     prot_nucl)
+void CSeqDBAliasNode::x_ResolveNames(char prot_nucl)
 {
-    dbname_path = ".";
-    
-    vector<string> namevec;
-    NStr::Tokenize(dbname_list, " ", namevec, NStr::eMergeDelims);
+    m_DBPath = ".";
     
     Uint4 i = 0;
     
-    for(i = 0; i < namevec.size(); i++) {
-        string component = namevec[i];
-        string search_path;
+    for(i = 0; i < m_DBList.size(); i++) {
+        m_DBList[i] = 
+            SeqDB_FindBlastDBPath(m_DBList[i], prot_nucl, 0, false);
         
-        namevec[i] =
-            SeqDB_FindBlastDBPath(namevec[i], prot_nucl, & search_path, false);
-        
-        if (namevec[i].empty()) {
+        if (m_DBList[i].empty()) {
+            // Re-tokenize DBLIST, to get the original value of
+            // m_DBList[i] for message; we will be throwing an
+            // exception, so all object data is now throwaway.
+            
+            NStr::Tokenize(m_Values["DBLIST"],
+                           " ",
+                           m_DBList,
+                           NStr::eMergeDelims);
+            
+            // Do over (to get the search path)
+            
+            string search_path;
+            SeqDB_FindBlastDBPath(m_DBList[i],
+                                  prot_nucl,
+                                  & search_path,
+                                  false);
+            
             string msg("No alias or index file found for component [");
-            msg += component + "] in search path [" + search_path + "]";
+            msg += m_DBList[i] + "] in search path [" + search_path + "]";
             
             NCBI_THROW(CSeqDBException,
                        eFileErr,
@@ -159,17 +164,17 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
         }
     }
     
-    // Everything from here depends on namevec[0] existing.
-    if (namevec.empty())
+    // Everything from here depends on m_DBList[0] existing.
+    if (m_DBList.empty())
         return;
     
-    Uint4 common = namevec[0].size();
+    Uint4 common = m_DBList[0].size();
     
     // Reduce common length to length of min db path.
     
-    for(i = 1; common && (i < namevec.size()); i++) {
-        if (namevec[i].size() < common) {
-            common = namevec.size();
+    for(i = 1; common && (i < m_DBList.size()); i++) {
+        if (m_DBList[i].size() < common) {
+            common = m_DBList.size();
         }
     }
     
@@ -179,12 +184,12 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
     
     // Reduce common length to largest universal prefix.
     
-    string & first = namevec[0];
+    string & first = m_DBList[0];
     
-    for(i = 1; common && (i < namevec.size()); i++) {
+    for(i = 1; common && (i < m_DBList.size()); i++) {
         // Reduce common prefix length until match is found.
         
-        while(string(first, 0, common) != string(namevec[i], 0, common)) {
+        while(memcmp(first.c_str(), m_DBList[i].c_str(), common)) {
             --common;
         }
     }
@@ -198,18 +203,11 @@ void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
     if (common) {
         // Factor out common path components.
         
-        dbname_path.assign(first, 0, common);
+        m_DBPath.assign(first, 0, common);
         
-        for(i = 0; i < namevec.size(); i++) {
-            namevec[i].erase(0, common+1);
+        for(i = 0; i < m_DBList.size(); i++) {
+            m_DBList[i].erase(0, common+1);
         }
-    }
-    
-    dbname_list = namevec[0];
-    
-    for(i = 1; i < namevec.size(); i++) {
-        dbname_list += ' ';
-        dbname_list += namevec[i];
     }
 }
 
@@ -289,11 +287,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
                                       set<string>    & recurse,
                                       CSeqDBLockHold & locked)
 {
-    vector<string> namevec;
-    string dblist( m_Values["DBLIST"] );
-    NStr::Tokenize(dblist, " ", namevec, NStr::eMergeDelims);
-    
-    if (namevec.empty()) {
+    if (m_DBList.empty()) {
         string situation;
         
         if (this_name == "-") {
@@ -309,8 +303,8 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
     
     bool parens = false;
     
-    for(Uint4 i = 0; i<namevec.size(); i++) {
-        if (namevec[i] == SeqDB_GetBaseName(this_name)) {
+    for(Uint4 i = 0; i<m_DBList.size(); i++) {
+        if (m_DBList[i] == SeqDB_GetBaseName(this_name)) {
             // If the base name of the alias file is also listed in
             // "dblist", it is assumed to refer to a volume instead of
             // to itself.
@@ -319,7 +313,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
             continue;
         }
         
-        string new_db_loc( x_MkPath(m_DBPath, namevec[i], prot_nucl) );
+        string new_db_loc( x_MkPath(m_DBPath, m_DBList[i], prot_nucl) );
         
         if (recurse.find(new_db_loc) != recurse.end()) {
             NCBI_THROW(CSeqDBException,
@@ -719,52 +713,55 @@ void
 CSeqDBAliasNode::WalkNodes(CSeqDB_AliasWalker * walker,
                            const CSeqDBVolSet & volset) const
 {
-    TVarList::const_iterator iter =
+    TVarList::const_iterator value =
         m_Values.find(walker->GetFileKey());
     
-    if (iter != m_Values.end()) {
-        walker->AddString( (*iter).second );
+    if (value != m_Values.end()) {
+        walker->AddString( (*value).second );
         return;
     }
     
-    ITERATE(TSubNodeList, itr, m_SubNodes) {
-        (*itr)->WalkNodes( walker, volset );
+    ITERATE(TSubNodeList, node, m_SubNodes) {
+        (*node)->WalkNodes( walker, volset );
     }
     
-    ITERATE(TVolNames, itr, m_VolNames) {
-        if (const CSeqDBVol * vptr = volset.GetVol(*itr)) {
+    ITERATE(TVolNames, volname, m_VolNames) {
+        if (const CSeqDBVol * vptr = volset.GetVol(*volname)) {
             walker->Accumulate( *vptr );
         }
     }
 }
 
-void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
+void CSeqDBAliasNode::x_SetOIDMask(CSeqDBVolSet & volset,
+                                   Uint4          begin,
+                                   Uint4          end,
+                                   const string & oidfile)
 {
-    vector<string> namevec;
-    NStr::Tokenize(m_Values["DBLIST"], " ", namevec, NStr::eMergeDelims);
-    
-    if (namevec.size() != 1) {
-        string msg =
-            string("Alias file (") + m_DBPath +
-            ") uses oid list (" + m_Values["OIDLIST"] +
-            ") but has " + NStr::UIntToString(namevec.size())
-            + " volumes (" + m_Values["DBLIST"] + ").";
+    if (m_DBList.size() != 1) {
+        ostringstream oss;
         
-        NCBI_THROW(CSeqDBException, eFileErr, msg);
+        oss << "Alias file (" << m_DBPath << ") uses oid list ("
+            << m_Values["OIDLIST"] << ") but has " << m_DBList.size()
+            << " volumes (" << NStr::Join(m_DBList, " ") << ").";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, oss.str());
     }
     
-    string vol_path(SeqDB_CombinePath(m_DBPath, namevec[0]));
-    string mask_path(SeqDB_CombinePath(m_DBPath, m_Values["OIDLIST"]));
+    string vol_path(SeqDB_CombinePath(m_DBPath, m_DBList[0]));
+    string mask_path(SeqDB_CombinePath(m_DBPath, oidfile));
     
     volset.AddMaskedVolume(vol_path, mask_path, begin, end);
 }
 
-void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
+void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset,
+                                      Uint4          begin,
+                                      Uint4          end,
+                                      const string & gilist)
 {
     string resolved_gilist;
     
     vector<string> gils;
-    NStr::Tokenize(m_Values["GILIST"], " ", gils, NStr::eMergeDelims);
+    NStr::Tokenize(gilist, " ", gils, NStr::eMergeDelims);
     
     // This enforces our restriction that only one GILIST may be
     // applied to any particular volume.  We do not check if the
@@ -805,20 +802,18 @@ void CSeqDBAliasNode::x_SetGiListMask(CSeqDBVolSet & volset, Uint4 begin, Uint4 
 
 void CSeqDBAliasNode::x_SetOIDRange(CSeqDBVolSet & volset, Uint4 begin, Uint4 end)
 {
-    vector<string> namevec;
-    NStr::Tokenize(m_Values["DBLIST"], " ", namevec, NStr::eMergeDelims);
-    
-    if (namevec.size() != 1) {
-        string msg =
-            string("Alias file (") + m_DBPath + ") uses oid range (" +
-            NStr::UIntToString(begin + 1) + "," + NStr::UIntToString(end) +
-            ") but has " + NStr::UIntToString(namevec.size())
-            + " volumes (" + m_Values["DBLIST"] + ").";
+    if (m_DBList.size() != 1) {
+        ostringstream oss;
         
-        NCBI_THROW(CSeqDBException, eFileErr, msg);
+        oss << "Alias file (" << m_DBPath
+            << ") uses oid range (" << (begin + 1) << "," << end
+            << ") but has " << m_DBList.size()
+            << " volumes (" << NStr::Join(m_DBList, " ") << ").";
+        
+        NCBI_THROW(CSeqDBException, eFileErr, oss.str());
     }
     
-    string vol_path(SeqDB_CombinePath(m_DBPath, namevec[0]));
+    string vol_path(SeqDB_CombinePath(m_DBPath, m_DBList[0]));
     
     volset.AddRangedVolume(vol_path, begin, end);
 }
@@ -827,13 +822,12 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
 {
     TVarList::iterator gil_iter   = m_Values.find(string("GILIST"));
     TVarList::iterator oid_iter   = m_Values.find(string("OIDLIST"));
-    TVarList::iterator db_iter    = m_Values.find(string("DBLIST"));
     TVarList::iterator f_oid_iter = m_Values.find(string("FIRST_OID"));
     TVarList::iterator l_oid_iter = m_Values.find(string("LAST_OID"));
     
     bool filtered = false;
     
-    if (db_iter != m_Values.end()) {
+    if (! m_DBList.empty()) {
         if (oid_iter   != m_Values.end() ||
             gil_iter   != m_Values.end() ||
             f_oid_iter != m_Values.end() ||
@@ -856,12 +850,12 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
             }
             
             if (oid_iter != m_Values.end()) {
-                x_SetOIDMask(volset, first_oid, last_oid);
+                x_SetOIDMask(volset, first_oid, last_oid, oid_iter->second);
                 filtered = true;
             }
             
             if (gil_iter != m_Values.end()) {
-                x_SetGiListMask(volset, first_oid, last_oid);
+                x_SetGiListMask(volset, first_oid, last_oid, gil_iter->second);
                 filtered = true;
             }
             
