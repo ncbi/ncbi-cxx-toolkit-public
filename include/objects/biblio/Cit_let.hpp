@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/biblio/Cit_let_.hpp>
+#include <objects/biblio/Cit_book.hpp>
 
 // generated classes
 
@@ -94,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/19 13:03:23  dicuccio
+* Added missing include for Cit_book.hpp
+*
 * Revision 1.1  2004/02/24 15:52:22  grichenk
 * Initial revision
 *

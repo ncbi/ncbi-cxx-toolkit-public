@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/08/19 13:03:23  dicuccio
+ * Added missing include for Cit_book.hpp
+ *
  * Revision 1.5  2004/02/24 16:50:42  grichenk
  * Removed Pub.hpp
  *
@@ -61,6 +64,7 @@
 
 // generated includes
 #include <objects/biblio/Cit_proc_.hpp>
+#include <objects/biblio/Cit_book.hpp>
 
 // generated classes
 
