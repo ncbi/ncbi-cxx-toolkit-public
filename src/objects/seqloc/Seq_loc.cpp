@@ -339,7 +339,7 @@ const CSeq_id* s_GetLabel
 (const CSeq_loc& loc,
  const CSeq_id*  last_id,
  string*         label,
- bool            first = false)
+ bool            first)
 {
     // Ensure label is not null
     if (!label) {
@@ -485,6 +485,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.17  2002/10/03 20:22:50  ucko
+ * Drop duplicate default arg. spec. for s_GetLabel.
+ *
  * Revision 6.16  2002/10/03 18:53:03  clausen
  * Removed extra whitespace
  *
