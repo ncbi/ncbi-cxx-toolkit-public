@@ -1872,7 +1872,9 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
 
     if (SOCK_SHUTDOWN(sock->sock, x_how) != 0) {
         int x_errno = SOCK_ERRNO;
-#ifdef NCBI_OS_LINUX
+#if defined(NCBI_OS_LINUX)/*bug in kernel to report*/  || \
+    defined(NCBI_OS_IRIX)                              || \
+    defined(NCBI_OS_OSF1)
         if (x_errno != SOCK_ENOTCONN)
 #endif
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
@@ -2972,6 +2974,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.87  2003/03/25 22:18:06  lavr
+ * shutdown(): Do not warn on ENOTCONN on SGI and OSF1 (in addition to Linux)
+ *
  * Revision 6.86  2003/02/28 14:50:18  lavr
  * Add one more explicit cast to "unsigned" in s_DoLogData()
  *
