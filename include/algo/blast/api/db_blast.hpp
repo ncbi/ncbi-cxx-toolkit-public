@@ -154,7 +154,8 @@ public:
     const CBlastQueryInfo& GetQueryInfo() const;
     /// Retrieve the internal query sequence structure
     const CBLAST_SequenceBlk& GetQueryBlk() const;
-    /// Get the error/warning message
+    /// Get the error/warning message. FIXME: the DbBlast object owns the
+    /// Blast_Messages in the vector and will delete them!
     TBlastError& GetErrorMessage();
 
 protected:
@@ -317,6 +318,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.29  2005/01/06 15:40:30  camacho
+* Add comments to GetErrorMessage
+*
 * Revision 1.28  2004/12/21 17:15:56  dondosha
 * GetResults method made non-const and moved to .cpp file - it can now retrieve results after preliminary stage
 *
