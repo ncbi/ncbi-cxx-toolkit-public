@@ -108,11 +108,11 @@ static int/*bool*/ s_AddSkipInfo(SERV_ITER iter, SSERV_Info* info)
 }
 
 
-static SERV_ITER s_Open(const char* service,
-                        TSERV_Type type, unsigned int preferred_host,
-                        double preference, const SConnNetInfo* net_info,
+static SERV_ITER s_Open(const char* service, TSERV_Type type,
+                        unsigned int preferred_host, double preference,
+                        const SConnNetInfo* net_info,
                         const SSERV_Info* const skip[], size_t n_skip,
-                        SSERV_Info** info, HOST_INFO* host_info)
+                        SSERV_Info** info, HOST_INFO* host_info, int external)
 {
     const char* s = SERV_ServiceName(service);
     const SSERV_VTable* op;
@@ -121,17 +121,18 @@ static SERV_ITER s_Open(const char* service,
     if (!s || !*s || !(iter = (SERV_ITER) malloc(sizeof(*iter))))
         return 0;
 
-    iter->service = s;
-    iter->type = type;
+    iter->service        = s;
+    iter->type           = type;
     iter->preferred_host = preferred_host == SERV_LOCALHOST
         ? SOCK_gethostbyname(0) : preferred_host;
     iter->preference = 0.01*(preference < 0.0   ? 0.0   :
                              preference > 100.0 ? 100.0 : preference);
-    iter->n_skip = iter->n_max_skip = 0;
-    iter->skip = 0;
-    iter->last = 0;
-    iter->op   = 0;
-    iter->data = 0;
+    iter->n_skip         = iter->n_max_skip = 0;
+    iter->skip           = 0;
+    iter->last           = 0;
+    iter->op             = 0;
+    iter->data           = 0;
+    iter->external       = external;
 
     if (n_skip) {
         TNCBI_Time t = (TNCBI_Time) time(0);
@@ -184,14 +185,16 @@ SERV_ITER SERV_OpenEx(const char* service,
                       const SSERV_Info* const skip[], size_t n_skip)
 {
     return s_Open(service, type, preferred_host, 0.0,
-                  net_info, skip, n_skip, 0, 0);
+                  net_info, skip, n_skip, 0, 0, 0/*not external*/);
 }
 
 
 SERV_ITER SERV_OpenP(const char* service, TSERV_Type type,
-                     unsigned int preferred_host, double preference)
+                     unsigned int preferred_host, double preference,
+                     int/*bool*/ external)
 {
-    return s_Open(service, type, preferred_host, preference, 0, 0, 0, 0, 0);
+    return s_Open(service, type, preferred_host, preference,
+                  0, 0, 0, 0, 0, external);
 }
 
 
@@ -199,11 +202,11 @@ static SSERV_Info* s_GetInfo(const char* service, TSERV_Type type,
                              unsigned int preferred_host, double preference,
                              const SConnNetInfo* net_info,
                              const SSERV_Info* const skip[], size_t n_skip,
-                             HOST_INFO* host_info)
+                             HOST_INFO* host_info, int/*bool*/ external)
 {
     SSERV_Info* info = 0;
-    SERV_ITER iter = s_Open(service, type, preferred_host, preference,
-                            net_info, skip, n_skip, &info, host_info);
+    SERV_ITER iter= s_Open(service, type, preferred_host, preference,
+                           net_info, skip, n_skip, &info, host_info, external);
     if (iter && !info && iter->op && iter->op->GetNextInfo)
         info = (*iter->op->GetNextInfo)(iter, host_info);
     SERV_Close(iter);
@@ -211,21 +214,23 @@ static SSERV_Info* s_GetInfo(const char* service, TSERV_Type type,
 }
 
 
-SSERV_Info* SERV_GetInfoEx(const char* service,
-                           TSERV_Type type, unsigned int preferred_host,
+SSERV_Info* SERV_GetInfoEx(const char* service, TSERV_Type type,
+                           unsigned int preferred_host,
                            const SConnNetInfo* net_info,
                            const SSERV_Info* const skip[], size_t n_skip,
                            HOST_INFO* host_info)
 {
     return s_GetInfo(service, type, preferred_host, 0.0,
-                     net_info, skip, n_skip, host_info);
+                     net_info, skip, n_skip, host_info, 0/*not external*/);
 }
 
 
 SSERV_Info* SERV_GetInfoP(const char* service, TSERV_Type type,
-                          unsigned int preferred_host, double preference)
+                          unsigned int preferred_host, double preference,
+                          int/*bool*/ external)
 {
-    return s_GetInfo(service, type, preferred_host, preference, 0, 0, 0, 0);
+    return s_GetInfo(service, type, preferred_host, preference,
+                     0, 0, 0, 0, external);
 }
 
 
@@ -478,6 +483,9 @@ double SERV_Preference(double pref, double gap, unsigned int n)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2003/06/26 15:20:46  lavr
+ * Additional parameter "external" in implementation of generic methods
+ *
  * Revision 6.47  2003/06/09 19:53:01  lavr
  * +SERV_OpenP()
  *
