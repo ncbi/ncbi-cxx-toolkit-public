@@ -111,6 +111,11 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
     return 0;
 }
 
+/** Fills a scoring block structure for a PHI BLAST search. 
+ * @param sbp Scoring block structure [in] [out]
+ * @param options Scoring options structure [in]
+ * @param blast_message Structure for reporting errors [out]
+ */
 static Int2
 s_PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    Blast_Message** blast_message)
@@ -751,4 +756,38 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
       BlastLinkHSPParametersUpdate(word_params, hit_params, scoring_options->gapped_calculation);
    }
    return status;
+}
+
+void
+BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to)
+{
+   BlastSeqLoc* head_loc = NULL, *last_loc = NULL, *next_loc, *seqloc;
+   
+   /* If there is no mask, or if both coordinates passed are 0, which indicates
+      the full sequence, just return - there is nothing to be done. */
+   if (mask == NULL || *mask == NULL || (from == 0 && to == 0))
+      return;
+
+   for (seqloc = *mask; seqloc; seqloc = next_loc) {
+      next_loc = seqloc->next;
+      seqloc->ssr->left = MAX(0, seqloc->ssr->left - from);
+      seqloc->ssr->right = MIN(seqloc->ssr->right, to) - from;
+      /* If this mask location does not intersect the [from,to] interval,
+         do not add it to the newly constructed list and free its contents. */
+      if (seqloc->ssr->left > seqloc->ssr->right) {
+         /* Shift the pointer to the next link in chain and free this link. */
+         if (last_loc)
+            last_loc->next = seqloc->next;
+         sfree(seqloc->ssr);
+         sfree(seqloc);
+      } else if (!head_loc) {
+         /* First time a mask was found within the range. */
+         head_loc = last_loc = seqloc;
+      } else {
+         /* Append to the previous masks. */
+         last_loc->next = seqloc;
+         last_loc = last_loc->next;
+      }
+   }
+   *mask = head_loc;
 }

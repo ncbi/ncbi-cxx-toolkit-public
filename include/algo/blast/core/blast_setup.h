@@ -192,6 +192,18 @@ Int2 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
     double scale_factor, 
     Blast_Message* *blast_message);
 
+
+/** Adjusts the mask locations coordinates to a sequence interval. Removes those
+ * mask locations that do not intersect the interval. Can do this either for all 
+ * queries or only for the first one.
+ * @param mask Structure containing a mask location. [in] [out]
+ * @param from Starting offset of a sequence interval [in]
+ * @param to Ending offset of a sequence interval [in]
+ */
+void
+BlastSeqLoc_RestrictToInterval(BlastSeqLoc* *mask, Int4 from, Int4 to);
+
+
 #ifdef __cplusplus
 }
 #endif
@@ -200,6 +212,9 @@ Int2 BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk,
 /*
  *
 * $Log$
+* Revision 1.47  2004/11/30 16:54:43  dondosha
+* Added BlastSeqLoc_RestrictToInterval
+*
 * Revision 1.46  2004/11/23 21:46:05  camacho
 * kbp_ideal field of BlastScoreBlk is initialized unconditionally
 *
