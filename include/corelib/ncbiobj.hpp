@@ -113,6 +113,10 @@ public:
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
+    // Static function through which all CRef<> / CConstRef<> null pointer
+    // throws travel.  This is done to avoid an inline throw.
+    static void ThrowNullPointerException(void);
+
 private:
     typedef CAtomicCounter   TCounter;
     typedef TCounter::TValue TCount;
@@ -292,8 +296,7 @@ public:
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr ) {
-                NCBI_THROW(CCoreException,eNullPtr,
-                           "Attempt to release NULL pointer");
+                CObject::ThrowNullPointerException();
             }
             m_Ptr = 0;
             CRefBase<C>::ReleaseReference(ptr);
@@ -323,10 +326,9 @@ public:
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr ) {
-                NCBI_THROW(CCoreException,eNullPtr,
-                           "Attempt to access NULL pointer.");
+                CObject::ThrowNullPointerException();
             }
-            return m_Ptr;
+            return ptr;
         }
     inline
     TObjectType* GetPointerOrNull(void) THROWS_NONE
@@ -365,10 +367,9 @@ public:
         {
             const TObjectType* ptr = m_Ptr;
             if ( !ptr ) {
-                NCBI_THROW(CCoreException,eNullPtr,
-                           "Attempt to access NULL pointer.");
+                CObject::ThrowNullPointerException();
             }
-            return m_Ptr;
+            return ptr;
         }
     const TObjectType* GetPointerOrNull(void) const THROWS_NONE
         {
@@ -516,8 +517,7 @@ public:
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr ) {
-                NCBI_THROW(CCoreException,eNullPtr,
-                           "Attempt to release NULL pointer.");
+                CObject::ThrowNullPointerException();
             }
             m_Ptr = 0;
             CRefBase<C>::ReleaseReference(ptr);
@@ -552,10 +552,9 @@ public:
         {
             TObjectType* ptr = m_Ptr;
             if ( !ptr ) {
-                NCBI_THROW(CCoreException,eNullPtr,
-                           "Attempt to access NULL pointer.");
+                CObject::ThrowNullPointerException();
             }
-            return m_Ptr;
+            return ptr;
         }
     inline
     TObjectType* GetPointerOrNull(void) const THROWS_NONE
@@ -761,6 +760,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2002/11/27 12:53:14  dicuccio
+ * Added CObject::ThrowNullPointerException to get around some inlining issues.
+ * Fixed a few returns (m_Ptr -> ptr).
+ *
  * Revision 1.40  2002/11/26 14:25:34  dicuccio
  * Added more explicit error reporting for thrown exceptions.
  *
