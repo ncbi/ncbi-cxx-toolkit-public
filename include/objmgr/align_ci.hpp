@@ -67,10 +67,7 @@ public:
     CAlign_CI(CScope& scope, const CSeq_entry& entry,
               SAnnotSelector sel);
 
-    CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
-
-    CAlign_CI& operator= (const CAlign_CI& iter);
 
     CAlign_CI& operator++ (void);
     CAlign_CI& operator-- (void);
@@ -92,25 +89,15 @@ private:
 
 inline
 CAlign_CI::CAlign_CI(void)
-    : m_MappedAlign(0)
 {
-    return;
 }
 
-inline
-CAlign_CI::CAlign_CI(const CAlign_CI& iter)
-    : CAnnotTypes_CI(iter),
-      m_MappedAlign(0)
-{
-    return;
-}
 
 inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, loc,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
-      m_MappedAlign(0)
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -120,8 +107,7 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(bioseq, start, stop,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
-      m_MappedAlign(0)
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -129,8 +115,7 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
 inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot)
     : CAnnotTypes_CI(annot,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Align)),
-      m_MappedAlign(0)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -139,8 +124,7 @@ inline
 CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(annot,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
-      m_MappedAlign(0)
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -148,8 +132,7 @@ CAlign_CI::CAlign_CI(const CSeq_annot_Handle& annot,
 inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry)
     : CAnnotTypes_CI(scope, entry,
-                     SAnnotSelector(CSeq_annot::C_Data::e_Align)),
-      m_MappedAlign(0)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Align))
 {
 }
 
@@ -158,19 +141,10 @@ inline
 CAlign_CI::CAlign_CI(CScope& scope, const CSeq_entry& entry,
                      SAnnotSelector sel)
     : CAnnotTypes_CI(scope, entry,
-                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align)),
-      m_MappedAlign(0)
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
 {
 }
 
-
-inline
-CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
-{
-    CAnnotTypes_CI::operator=(iter);
-    m_MappedAlign.Reset();
-    return *this;
-}
 
 inline
 CAlign_CI& CAlign_CI::operator++ (void)
@@ -180,6 +154,7 @@ CAlign_CI& CAlign_CI::operator++ (void)
     return *this;
 }
 
+
 inline
 CAlign_CI& CAlign_CI::operator-- (void)
 {
@@ -187,6 +162,7 @@ CAlign_CI& CAlign_CI::operator-- (void)
     m_MappedAlign.Reset();
     return *this;
 }
+
 
 inline
 CAlign_CI::operator bool (void) const
@@ -201,6 +177,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/01/29 15:44:45  vasilche
+* Fixed mapped align when it's not mapped.
+*
 * Revision 1.22  2004/01/23 16:14:45  grichenk
 * Implemented alignment mapping
 *

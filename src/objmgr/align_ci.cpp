@@ -49,7 +49,6 @@ CAlign_CI::CAlign_CI(CScope& scope,
           SAnnotSelector(CSeq_annot::C_Data::e_Align),
           overlap_type, resolve, entry)
 {
-    return;
 }
 
 
@@ -60,13 +59,11 @@ CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
           SAnnotSelector(CSeq_annot::C_Data::e_Align),
           overlap_type, resolve, entry)
 {
-    return;
 }
 
 
 CAlign_CI::~CAlign_CI(void)
 {
-    return;
 }
 
 
@@ -77,6 +74,9 @@ const CSeq_align& CAlign_CI::operator* (void) const
     if (!m_MappedAlign) {
         if ( annot.IsMapped() ) {
             m_MappedAlign = annot.GetMappedSeq_align_Mapper().GetDstAlign();
+        }
+        else {
+            m_MappedAlign.Reset(&annot.GetAlign());
         }
     }
     return *m_MappedAlign;
@@ -90,6 +90,9 @@ const CSeq_align* CAlign_CI::operator-> (void) const
     if (!m_MappedAlign) {
         if ( annot.IsMapped() ) {
             m_MappedAlign = annot.GetMappedSeq_align_Mapper().GetDstAlign();
+        }
+        else {
+            m_MappedAlign.Reset(&annot.GetAlign());
         }
     }
     return m_MappedAlign.GetPointer();
@@ -110,6 +113,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/01/29 15:44:46  vasilche
+* Fixed mapped align when it's not mapped.
+*
 * Revision 1.20  2004/01/28 20:54:35  vasilche
 * Fixed mapping of annotations.
 *
