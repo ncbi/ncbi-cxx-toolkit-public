@@ -33,7 +33,8 @@
 res_out="check.sh"
 res_list="$res_out.list"
 
-# Fields delimiters in the list (this symbols used directly in the "sed" command)
+# Fields delimiters in the list
+# (this symbols used directly in the "sed" command)
 x_delim=" ____ "
 x_delim_internal="~"
 x_tmp="/var/tmp"
@@ -284,11 +285,12 @@ RunTest() {
       ) > \$x_test_out 2>&1
 
       # Remove old core file if it exist (for clarity of the test)
-      rm -f "\$x_work_dir/core" > /dev/null
+      corefile="\$x_work_dir/core"
+      rm -f "\$corefile"  > /dev/null 2>&1
 
       # Goto the test's directory 
       cd "\$x_work_dir"
-       x_cmd="[\$x_work_dir_tail] \$x_run"
+      x_cmd="[\$x_work_dir_tail] \$x_run"
 
       # And run test if it exist
       if [ -f "\$x_app" ]; then
@@ -314,12 +316,12 @@ RunTest() {
          echo "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@" >> \$x_test_out
          echo "@@@ EXIT CODE: \$result" >> \$x_test_out
 
-         if [ -f "\$x_work_dir/core" ]; then
+         if [ -f "\$corefile" ]; then
             echo "@@@ CORE DUMPED" >> \$x_test_out
             if [ -d "$x_bin_dir" -a -f "$x_bin_dir/\$x_test" ]; then
-               mv "\$x_work_dir/core" "$x_bin_dir/\$x_test.core"
+               mv "\$corefile" "$x_bin_dir/\$x_test.core"
             else
-               rm -f "\$x_work_dir/core"
+               rm -f "\$corefile"
             fi
          fi
 
