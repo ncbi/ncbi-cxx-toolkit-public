@@ -109,9 +109,10 @@ public:
     };
     typedef int TFlags; // binary OR of EFlags
 
-    static const string kSemicolon;  // "; "
-    static const string kComma;      // ", "
+    static const string kSemicolon;  // ";"
+    static const string kComma;      // ","
     static const string kEOL;        // "\n" - end of line
+    static const string kSpace;      // " "
 
     virtual void Format(TFlatQuals& quals, const string& name,
         CBioseqContext& ctx, TFlags flags = 0) const = 0;
@@ -119,16 +120,9 @@ public:
 protected:
     typedef CFormatQual::TStyle   TStyle;
 
-    IFlatQVal(const string* pfx = &kEmptyStr, const string* sfx = &kEmptyStr)
+    IFlatQVal(const string* pfx = &kSpace, const string* sfx = &kEmptyStr)
         : m_Prefix(pfx), m_Suffix(sfx)
     { }
-    /*
-    static void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
-        const srting& sfx, const string& pfx
-        TStyle st = CFormatQual::eQuoted) {
-        q.push_back(TFlatQual(new CFormatQual(n, v, pfx, sfx, st))); 
-    }
-    */  
     void x_AddFQ(TFlatQuals& q, const string& n, const string& v,
         TStyle st = CFormatQual::eQuoted) const {
         q.push_back(TFlatQual(new CFormatQual(n, v, *m_Prefix, *m_Suffix, st))); 
@@ -446,7 +440,7 @@ private:
 class CFlatXrefQVal : public IFlatQVal
 {
 public:
-    typedef CSeq_feat::TDbxref                       TXref;
+    typedef CSeq_feat::TDbxref                TXref;
     typedef CQualContainer<EFeatureQualifier> TQuals;
 
     CFlatXrefQVal(const TXref& value, const TQuals* quals = 0) 
@@ -536,6 +530,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/10/05 15:33:28  shomrat
+* changed const strings
+*
 * Revision 1.14  2004/08/30 13:32:41  shomrat
 * fixed intialization of trna codon qual
 *
