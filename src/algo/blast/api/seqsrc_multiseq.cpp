@@ -403,6 +403,8 @@ BlastSeqSrc* MultiSeqSrcFree(BlastSeqSrc* seq_src)
     return NULL;
 }
 
+/// @bug There is no guarantee that error_msg->code maps to a 
+/// CBlastException error code, this could be meaningless
 BlastSeqSrc*
 MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
 {
@@ -423,9 +425,6 @@ MultiSeqSrcInit(const TSeqLocVector& seq_vector, EProgram program)
         error_msg = (Blast_Message*) error_wrap->ptr;
     if (error_msg && error_msg->code < CBlastException::eMaxErrCode) {
         throw CBlastException(__FILE__, __LINE__, 0,
-                              // FIXME: There is no guarantee that
-                              // error_msg->code maps to a CBlastException
-                              // error code, this could be meaningless
                               (CBlastException::EErrCode) error_msg->code,
                               error_msg->message);
     }
@@ -442,6 +441,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/03/22 16:15:21  camacho
+ * doxygen fix
+ *
  * Revision 1.6  2004/03/19 19:22:55  camacho
  * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
  *
