@@ -21,18 +21,17 @@ The CNcbiRegistry Class</h1>
 <i><a href="#eflags">CNcbiRegistry::EFlags</a></i></li>
 
 <li>
-<i><a href="#methods">Additional Methods</a></i></li>
+<a href="#methods">Additional Methods</a></li>
 </ul>
 
 <h3>
 <a NAME="intro"></a>Introduction</h3>
 The <i><a href="../docxx/CNcbiRegistry.html">CNcbiRegistry</a></i> class
-is used to store, access, and modify runtime information read from a configuration
+is used to access, modify and story runtime information read from a configuration
 file. Previously, these files were by convention named "<i>.*r</i>c" files
-on unix systems. The convention for all platforms now is to name such files
-<i>*.ini</i>,
-where * is by default the application name.&nbsp; Unless you explicitly
-override the default behavior, the <i><a href="applic.html#CNcbiApplication">CNcbiApplication</a></i>
+on UNIX systems. The convention for all platforms now is to name such files
+"<i>*.ini"</i>, where "*" is by default the application name.&nbsp; Unless
+you explicitly override the default behavior, the <i><a href="applic.html#CNcbiApplication">CNcbiApplication</a></i>
 class looks for a configuration file with the default name.&nbsp; You can
 override this by calling your application's <i><a href="applic.html#appmain">AppMain()
 </a></i>method
@@ -85,13 +84,13 @@ Line continuations, as usual, are indicated with a backslash escape. More
 generally,&nbsp; backslashes are processed as:
 <ul>
 <li>
-[backslash] + [backslash] is converted into a single [backslash]</li>
+[backslash] + [backslash] -- converted into a single [backslash]</li>
 
 <li>
-[backslash] + [space(s)] + [EndOfLine] is converted to an [EndOfLine]</li>
+[backslash] + [space(s)] + [EndOfLine] -- converted to an [EndOfLine]</li>
 
 <li>
-[backslash] + ["]&nbsp; is converted into a ["]</li>
+[backslash] + ["]&nbsp; -- converted into a ["]</li>
 </ul>
 Character strings with embedded spaces do not need to be quoted,&nbsp;
 and an unescaped double quote at the very beginning or end of a value is
@@ -103,19 +102,22 @@ identifiers occurring in a registry file:
 the string must contain only:&nbsp; [a-z], [A-Z], [0-9], [_.-] characters</li>
 
 <li>
-the interpretation of the string is <i>not</i> case-sensitive, i.e. <i>pATh
-== path</i></li>
+the interpretation of the string is <i>not</i> case-sensitive, e.g. <i>PATH
+== path == PaTh</i></li>
 
 <li>
 all leading and trailing spaces will be truncated</li>
 </ul>
 
 <h3>
-<a NAME="transience"></a><i>CNcbiRegistry::EFlags</i></h3>
-In addition to the constructor, which initializes the registry by loading
-parameters from a file, the <i>CNcbiRegistry</i> class provides methods
-for <i>saving</i> the registry (as a new configuration file), and reading
-in additonal parameters from a secondary file.&nbsp; Each &lt;<i>name=value</i>>
+<a NAME="transience"></a></h3>
+
+<h3>
+<i>CNcbiRegistry::EFlags</i></h3>
+In addition to the constructor, which initializes the registry in memory
+and loads parameters a file, the <i>CNcbiRegistry</i> class provides methods
+for <i>saving</i> the registry (as a new configuration file), and <i>reading
+in</i> additonal parameters from a secondary file(s).&nbsp; Each &lt;<i>name=value</i>>
 pair stored in the registry has three attributes, specifying whether or
 not that value is:
 <ul>
@@ -131,7 +133,7 @@ value with the same name</li>
 <b><i>truncatable,</i></b> meaning that leading and trailing blanks can
 be truncated from the value</li>
 </ul>
-By default, all of the configuration's parameters are <i>persistent,overridable</i>,
+By default, all of the configuration's parameters are <i>persistent, overridable</i>,
 and <i>truncatable</i>.&nbsp; The <i>EFlags</i> enumeration that quantifies
 these attributes, and the related <i>typedef</i> <i>TFlags</i>, are defined
 as:
@@ -150,46 +152,58 @@ eNoOverride&nbsp; = 0x200,</font></tt>
 eTruncate&nbsp;&nbsp;&nbsp; = 0x4,</font></tt>
 <br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 eNoTruncate&nbsp; = 0x400</font></tt>
-<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; };<br>
-&nbsp;&nbsp;&nbsp; typedef int TFlags;</font></tt></blockquote>
+<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; };</font></tt>
+<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp; typedef int TFlags;</font></tt></blockquote>
 </blockquote>
 </blockquote>
 <i>TFlags</i> is simply used to clarify that an <i>int</i> derived from
-a combination of <i>EFlags</i> is expected - not a "regular" <i>int</i>.&nbsp;
-Many of <i>CNcbiRegistry</i>'s methods take an optional <i>TFlags</i> argument,
-which qualifies the selected values with respect to these attributes.
-<font color="#000000"></font>
+a combination (bit-wise <i>OR</i>) of <i>EFlags</i> is expected - not just
+an arbitrary "regular" <i>int</i>.&nbsp; Many of <i>CNcbiRegistry</i>'s
+methods take an optional <i>TFlags</i> argument, which qualifies the selected
+values with respect to these attributes. For example, this will
+<br>set the value of registry entry <i>MyName</i> in section <i>MySection</i>
+to <i>"Eugene"</i>. It will truncate the leading and trailing blanks in
+the value (<i>eTruncate</i>); also, if this entry value has been set already,
+then it will <b>not</b> be overridden (<i>eNoOverride</i>) by this new
+value ("<i>Eugene"</i>).
+<p><tt><font color="#005050">&nbsp;&nbsp; CNcbiRegistry reg(.....);</font></tt>
+<br><tt><font color="#005050">&nbsp;&nbsp; .....................</font></tt>
+<br><tt><font color="#005050">&nbsp;&nbsp; reg.Set("MySection", "MyName",
+" Eugene&nbsp;&nbsp; ",</font></tt>
+<br><tt><font color="#005050">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+CNcbiRegistry::eNoOverride | CNcbiRegistry::eTruncate);</font></tt>
 <p><font color="#000000">The </font><i>CNcbiRegistry </i><font color="#000000">class
-constructor takes two arguments - an input stream, and an optional
-<i>TFlags</i>
-argument, where the latter can be used to specify that all of the values
-should be stored as <i>transient</i> rather than in the default mode, which
-is <i>persistent</i>:</font>
+constructor takes two arguments - an input stream to read the registry
+from (usually a file), and an optional
+<i>TFlags</i> argument, where the
+latter can be used to specify that all of the values should be stored as
+<i>transient</i>
+rather than in the default mode, which is <i>persistent</i>:</font>
 <center>
 <p><tt><font color="#005050">CNcbiRegistry(CNcbiIstream&amp; is, TFlags
 flags = 0);</font></tt></center>
 
 <p>Once the registry has been initialized by its constructor, it is also
-possible to load additional parameters from a specified file using the
+possible to load additional parameters from other file(s) using the
 <i>Read()
 </i>method:
 <center>
 <p><tt><font color="#005050">void Read(CNcbiIstream&amp; is, TFlags flags
 = 0);</font></tt></center>
 
-<p>Valid flags for the <i>Read() </i>method include<font color="#000000"><i>eTransient
+<p>Valid flags for the <i>Read() </i>method include <font color="#000000"><i>eTransient
 </i>and<i>
-eNoOverride. </i></font>The default is that all values are stored as <i>persistent</i>,
-and that these stored values <i>can</i> be overidden when a new value associated
-with the same name is loaded.&nbsp; Either or both of these defaults can
-be modified by specifying <font color="#000000"><i>eTransient, eNoOverride,
-</i>or<i>
-</i>(<i>eTransient | eNoOverride</i>) as the <i>flags</i> argument in the
-above expression.</font>
+eNoOverride. </i></font>The default is that all the read values to be stored
+as <i>persistent</i>, and that they <i>can</i> override when a new value
+associated with the same name is loaded.&nbsp; Either or both of these
+defaults can be modified by specifying <font color="#000000"><i>eTransient,
+eNoOverride,
+</i>or (<i>eTransient | eNoOverride</i>) as the <i>flags</i>
+argument in the above expression.</font>
 <p>The <i>Write() </i>method takes as its sole argument, a destination
 stream to which only the <i>persistent</i> configuration parameters will
 be written.
-<p>Values can also be set directly, using:
+<p>Values can also be set directly inside your application, using:
 <center>
 <p><tt><font color="#005050">&nbsp;&nbsp;&nbsp; bool Set(const string&amp;
 section, const string&amp; name,</font></tt>
@@ -199,20 +213,24 @@ const string&amp; value, TFlags flags = 0);</font></tt></center>
 <p>Here, valid flag values include <font color="#000000"><i>ePersistent,
 eNoOverride,</i> <i>eTruncate, </i>or any logical combination of these.&nbsp;
 If <i>eNoOverride</i> is set and there <i>is</i> a previously defined value
-for this paramter, then the value is not reset, and the method returns
+for this parameter, then the value is not reset, and the method returns
 <i>false.</i></font>
 <p><font color="#000000">The <i>Get()</i> method first searches the set
-of <i>transient</i> parameters for a parameter named <i>name</i>, and if
-this fails,&nbsp; continues by searching the set of <i>persistent</i> parameters.
-However, If the <i>ePersistent</i> flag is used, then only&nbsp; the set
-of <i>persistent</i> parameters will be searched. On success, Get() returns
-the stored value string, on failure, the empty string is returned.</font>
+of <i>transient</i> parameters for a parameter named <i>name</i>, in section
+<i>section</i>,
+and if this fails,&nbsp; continues by searching the set of <i>persistent</i>
+parameters. However, If the <i>ePersistent</i> flag is used, then only&nbsp;
+the set of <i>persistent</i> parameters will be searched. On success, <i>Get()
+</i>returns the stored value. On failure, the empty string is returned.</font>
 <center>
 <p><tt><font color="#005050">const string&amp; Get(const string&amp; section,
 const string&amp; name, TFlags flags = 0) const;</font></tt></center>
 
 <h3>
-<a NAME="methods"></a><font color="#000000">Additonal methods</font></h3>
+<a NAME="methods"></a></h3>
+
+<h3>
+<font color="#000000">Additonal methods</font></h3>
 Four additional methods are defined in the interface.
 <p><tt><font color="#005050">&nbsp;bool Empty(void) const;</font></tt>
 <br><tt><font color="#005050">&nbsp;void Clear(void);</font></tt>
@@ -222,11 +240,10 @@ sections) const;</font></tt>
 section,&nbsp; list&lt;string>* entries) const;</font></tt>
 <p><i>Empty() </i>returns<i> true </i>if the registry is empty. <i>Clear()
 </i>empties
-out the registry,&nbsp; discarding all stored parameters. <i>EnumerateSections()&nbsp;</i>
-writes the list of section names to the string <i>sections.&nbsp;</i> <i>EnumerateEntries()&nbsp;</i>
+out the registry, discarding all stored parameters. <i>EnumerateSections()&nbsp;</i>
+writes all registry section names to <i>sections.&nbsp;</i> <i>EnumerateEntries()&nbsp;</i>
 writes the list of parameter names in <i>section </i>to<i> entries.</i>
-<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i>&nbsp;
-
+<p><a href="argdescr.html"><i>previous</i>&nbsp;</a>&nbsp; <i><a href="../index.html">up</a></i>
 <i><a href="diag.html">next</a></i>
 <hr>
 <table BORDER=0 CELLSPACING=0 WIDTH="100%" >
