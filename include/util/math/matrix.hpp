@@ -930,7 +930,7 @@ inline CNcbiIstream& operator>>(CNcbiIstream& is, CNcbiMatrix<T>& M)
                        NStr::IntToString(fields.size()));
         }
         A.Resize(A.GetRows() + 1, A.GetCols());
-        for (int i = 0;  i < A.m_Cols;  ++i) {
+        for (int i = 0;  i < A.GetCols();  ++i) {
             A(A.GetRows() - 1, i) = NStr::StringToDouble(fields[i]);
         }
     }
@@ -945,6 +945,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/10 14:29:51  jcherry
+ * Removed wayward use of protected data in operator>>
+ *
  * Revision 1.2  2004/02/10 14:00:40  dicuccio
  * Added comments.  Fixed spacing issues.  Changed extraction operator to be
  * non-friend function
