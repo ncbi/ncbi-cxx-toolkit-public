@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/06/09 19:17:52  gouriano
+* Allow assignment of alias types
+*
 * Revision 1.24  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -120,6 +123,22 @@
 
 BEGIN_NCBI_SCOPE
 
+static bool IsSameTypeInfo( const CSerialObject& obj1,
+                            const CSerialObject& obj2 )
+{
+    TTypeInfo type1 = obj1.GetThisTypeInfo();
+    while (type1->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* t = dynamic_cast<const CPointerTypeInfo*>(type1);
+        type1 = t->GetPointedType();
+    }
+    TTypeInfo type2 = obj2.GetThisTypeInfo();
+    while (type2->GetTypeFamily() == eTypeFamilyPointer) {
+        const CPointerTypeInfo* t = dynamic_cast<const CPointerTypeInfo*>(type2);
+        type2 = t->GetPointedType();
+    }
+    return (type1 == type2);
+}
+
 
 CSerialObject::CSerialObject(void)
 {
@@ -136,7 +155,7 @@ void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how
             "CSerialObject::Assign(): an attempt to assign a serial object to itself");
         return;
     }
-    if ( typeid(source) != typeid(*this) ) {
+    if ( typeid(source) != typeid(*this) && !IsSameTypeInfo(source, *this) ) {
         ERR_POST(Fatal <<
             "CSerialObject::Assign() -- Assignment of incompatible types: " <<
             typeid(*this).name() << " = " << typeid(source).name());
@@ -147,7 +166,7 @@ void CSerialObject::Assign(const CSerialObject& source, ESerialRecursionMode how
 
 bool CSerialObject::Equals(const CSerialObject& object, ESerialRecursionMode how) const
 {
-    if ( typeid(object) != typeid(*this) ) {
+    if ( typeid(object) != typeid(*this)  && !IsSameTypeInfo(object, *this) ) {
         ERR_POST(Fatal <<
             "CSerialObject::Equals() -- Can not compare types: " <<
             typeid(*this).name() << " == " << typeid(object).name());
