@@ -705,8 +705,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
                 /// we scan for a match, starting from the corner formed
                 /// as we march forward a few letters.  We use a maximum
                 /// of 3 letters as our limit
-                int max_radius = min(pstr1->end() - iter1,
-                                     string::difference_type(3));
+                int max_radius = (int)min(pstr1->end() - iter1,
+                                          string::difference_type(3));
 
                 string::const_iterator best_iter1 = iter1 + 1;
                 string::const_iterator best_iter2 = iter2 + 1;
@@ -842,7 +842,7 @@ int CDictionaryUtil::Score(const string& word1, const string& meta1,
     // one point for identical lengths of words
     //score += (word1.length() == word2.length());
 
-    return score;
+    return (int)score;
 }
 
 
@@ -852,6 +852,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/02/07 16:02:28  ivanov
+ * Fixed Workshop compiler warnings in 64bit mode
+ *
  * Revision 1.7  2005/02/01 21:47:15  grichenk
  * Fixed warnings
  *

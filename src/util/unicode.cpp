@@ -150,7 +150,7 @@ TUnicode UTF8ToUnicode( const char* theUTF )
     while((counter <<= 1) < 0) {
         c = *p++;
         if((c & ~077) != 0200) { // Broken UTF-8 chain
-            seq_len = p - theUTF;
+            seq_len = int(p - theUTF);
             return ~0;
         }
         acc = (acc << 6) | (c & 077);
@@ -182,12 +182,12 @@ int UTF8ToUnicode( const char* theUTF, TUnicode* theUnicode )
     while((counter <<= 1) < 0) {
         c = *p++;
         if((c & ~077) != 0200) { // Broken UTF-8 chain
-            seq_len = p - theUTF;
+            seq_len = int(p - theUTF);
             return ~0;
         }
         acc = (acc << 6) | (c & 077);
     } // while
-    seq_len = p - theUTF;
+    seq_len = int(p - theUTF);
     *theUnicode = acc;
     return seq_len;
 }
@@ -239,9 +239,9 @@ int UTF8ToAscii( const char* src, char* dst,
                  int dstLen, const TUnicodeTable* table)
 {
     if ( !src || !dst || dstLen == 0 ) return 0;
-    long srcPos = 0;
-    long dstPos = 0;
-    long srcLen = strlen( src );
+    size_t srcPos = 0;
+    size_t dstPos = 0;
+    size_t srcLen = strlen( src );
 
     for ( srcPos = 0; srcPos < srcLen; )
     {
@@ -284,7 +284,7 @@ int UTF8ToAscii( const char* src, char* dst,
         }
 
         // Check the remaining length and put the result in there.
-        int substLen = strlen( pSubst->Subst );
+        size_t substLen = strlen( pSubst->Subst );
         if ( (dstPos + substLen) > dstLen ) {
             return -1; // Unsufficient space;
         }
@@ -293,7 +293,7 @@ int UTF8ToAscii( const char* src, char* dst,
         memcpy( pDst, pSubst->Subst, substLen );
         dstPos += substLen;
     }
-    return dstPos;
+    return (int)dstPos;
 }
 
 
@@ -302,8 +302,8 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
     if ( !src ) return 0;
 
     string dst;
-    long srcPos = 0;
-    long srcLen = strlen( src );
+    size_t srcPos = 0;
+    size_t srcLen = strlen( src );
 
     for ( srcPos = 0; srcPos < srcLen; )
     {
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2005/02/07 16:02:28  ivanov
+ * Fixed Workshop compiler warnings in 64bit mode
+ *
  * Revision 1.4  2004/12/22 18:07:18  osipov
  * Fixed bug: wrong convertation of 0-31 characters
  *

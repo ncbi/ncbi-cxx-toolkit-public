@@ -64,7 +64,7 @@ size_t CAscii85::s_Encode(const char* src_buf, size_t src_len,
         const size_t l = src_len > 4 ? 4 : src_len;
         const size_t grplen = l + 1;
         unsigned long val = 0;
-        for (int shft = 8 * (l - 1); shft >= 0; shft -= 8, ++src_ptr) {
+        for (size_t shft = 8 * (l - 1); shft >= 0; shft -= 8, ++src_ptr) {
             val |= ((unsigned char) *src_ptr) << shft;
         }
 
@@ -110,6 +110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/07 16:02:28  ivanov
+ * Fixed Workshop compiler warnings in 64bit mode
+ *
  * Revision 1.4  2005/02/01 21:47:14  grichenk
  * Fixed warnings
  *
