@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2001/10/10 16:02:53  ucko
+ * Clean up includes.
+ *
  * Revision 1.16  2001/10/04 19:11:56  ucko
  * Centralize (rudimentary) code to get a sequence's title.
  *
@@ -124,10 +127,6 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seqdesc.hpp>
-#include <objects/seqloc/Giimport_id.hpp>
-#include <objects/seqloc/PDB_mol_id.hpp>
-#include <objects/seqloc/PDB_seq_id.hpp>
-#include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqres/Byte_graph.hpp>
