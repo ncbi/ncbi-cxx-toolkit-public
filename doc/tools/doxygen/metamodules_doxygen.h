@@ -186,23 +186,23 @@
  *  Berkeley DB support API
  */
 
-/** @defgroup BDB_Types	BDB library field types
+/** @defgroup BDB_Types BDB library field types
  *  @ingroup BDB
  */
 
-/** @defgroup BDB_BLOB	BDB library BLOB support
+/** @defgroup BDB_BLOB  BDB library BLOB support
  *  @ingroup BDB
  */
 
-/** @defgroup BDB_BLOB_Cache	BDB library BLOB Cache
+/** @defgroup BDB_BLOB_Cache    BDB library BLOB Cache
  *  @ingroup BDB
  */
 
-/** @defgroup BDB_Files	BDB library files and cursors
+/** @defgroup BDB_Files BDB library files and cursors
  *  @ingroup BDB
  */
 
-/** @defgroup BDB_Map	BDB library map templates
+/** @defgroup BDB_Map   BDB library map templates
  *  @ingroup BDB
  */
 
@@ -214,11 +214,11 @@
  *  Database API members
  */
 
-/** @defgroup DbAPI	Database APIs
+/** @defgroup DbAPI     Database APIs
  *  @ingroup DBAPI
  */
 
-/** @defgroup DbDrvMgr	Driver Manager
+/** @defgroup DbDrvMgr  Driver Manager
  *  @ingroup DBAPI
  */
 
@@ -295,7 +295,7 @@
  *  @ingroup HTML
  */
 
-/** @defgroup HTMLcomp	HTML Page Components
+/** @defgroup HTMLcomp  HTML Page Components
  *  @ingroup HTML
  */
 
@@ -344,6 +344,10 @@
  */
 
 /** @defgroup RangeSupport Range Support
+ *  @ingroup UTIL
+ */
+
+/** @defgroup Regexp Regular Expressions
  *  @ingroup UTIL
  */
 
