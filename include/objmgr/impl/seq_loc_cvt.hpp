@@ -36,6 +36,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <util/range.hpp>
+#include <util/rangemap.hpp>
 
 #include <objmgr/seq_id_handle.hpp>
 #include <objmgr/scope.hpp>
@@ -167,6 +168,36 @@ private:
 };
 
 
+class CSeq_loc_Conversion_Set
+{
+public:
+    CSeq_loc_Conversion_Set(void);
+
+    typedef CRange<TSeqPos> TRange;
+    typedef CRangeMap<CRef<CSeq_loc_Conversion>, TSeqPos> TRangeMap;
+    typedef TRangeMap::iterator TRangeIterator;
+    typedef map<CSeq_id_Handle, TRangeMap> TIdMap;
+
+    void Add(CSeq_loc_Conversion& cvt);
+    TRangeIterator BeginRanges(CSeq_id_Handle id, TSeqPos from, TSeqPos to);
+    void Convert(CAnnotObject_Ref& obj, int index);
+    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+    void SetScope(CHeapScope& scope)
+        {
+            m_Scope = scope;
+        }
+
+private:
+    bool ConvertPoint(const CSeq_point& src, CRef<CSeq_loc>& dst);
+    bool ConvertInterval(const CSeq_interval& src, CRef<CSeq_loc>& dst);
+
+    TIdMap         m_IdMap;
+    bool           m_Partial;
+    TRange         m_TotalRange;
+    CHeapScope     m_Scope;
+};
+
+
 inline
 bool CSeq_loc_Conversion::IsSpecialLoc(void) const
 {
@@ -244,6 +275,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2003/11/10 18:11:03  grichenk
+* Moved CSeq_loc_Conversion_Set to seq_loc_cvt
+*
 * Revision 1.6  2003/11/04 16:21:36  grichenk
 * Updated CAnnotTypes_CI to map whole features instead of splitting
 * them by sequence segments.
