@@ -8,16 +8,17 @@ property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Option
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
 
-property pSaveContinueOnErrors : false
+-- Whether to create projects in the specified category.
+property pCreateCoreLibs : true
+property pCreateSocketLibs : true (* whether to create/compile socket libs *)
+property pCreateObjectLibs : true (* whether to create/compile object libraries *)
+property pCreateObjToolsLibs : true
+property pCreateGuiLibs : true
+property pCreatePluginLibs : true
+
 -- true if we want to save compilation errors in a file and continue.
 -- false if we want to stop on an error.
-
-property pProjectFileExt : ".mcp"
-property pAppExt : ".app"
-property pCPlusPlusExt : ".cpp"
-property pStaticLibExt : ".lib"
-property pPluginExt : ".so"
-property pDynaLibExt : ".dylib"
+property pSaveContinueOnErrors : false
 
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
@@ -26,7 +27,6 @@ property pAlwaysCreateProjects : false
 property pUpdateExistingProjects : true
 
 -- Whether to have the projects use CVS or not.
-
 property pProjectsCVSEnabled : true
 
 -- But profiling doesn't work for Mach-O Codewarrior projects currently.
@@ -35,13 +35,12 @@ property pCreateProfiledTargets : false
 -- Whether to compile anything.
 property pShouldBuild : true
 
--- Whether to create projects in the specified category.
-property pCreateCoreLibs : true
-property pCreateSocketLibs : true (* whether to create/compile socket libs *)
-property pCreateObjectLibs : true (* whether to create/compile object libraries *)
-property pCreateObjToolsLibs : true
-property pCreateGuiLibs : true
-property pCreatePluginLibs : true
+property pProjectFileExt : ".mcp"
+property pAppExt : ".app"
+property pCPlusPlusExt : ".cpp"
+property pStaticLibExt : ".lib"
+property pPluginExt : ".so"
+property pDynaLibExt : ".dylib"
 
 property pStationeryName : "LibraryStationery"
 property pPluginStationeryName : "PluginStationery"
@@ -287,8 +286,9 @@ on SetProjectData()
 		AddSimpleProject("sequtil", {}, "util:sequtil")
 		AddSimpleProject("creaders", {}, "util:creaders")
 		
-		AddSimpleProject("xalgoalign", {}, "algo:align")
 		AddSimpleProject("xalgosplign", {}, "algo:align:splign")
+		AddSimpleProject("xalgoalignnw", {}, "algo:align:nw")
+		-- AddSimpleProject("xalgoalignutil", {}, "algo:align:util") -- fix.
 		
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
 		AddSimpleProject("xstruct_dp", {}, "algo:structure:struct_dp")
@@ -301,6 +301,7 @@ on SetProjectData()
 			mkFileData(gSourceDir & "algo:blast:core") Â
 				}
 		AddProject(ProjectData("xblast", {}, xblastfiles))
+		
 		AddSimpleProject("blast", {}, "algo:blast:core")
 		
 		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
@@ -426,9 +427,9 @@ on SetProjectData()
 		AddSimpleProject("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1")
 		AddSimpleProject("ncbi_xreader_id2", {}, "objtools:data_loaders:genbank:readers:id2")
 		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
-		
-		-- AddSimpleProject("ncbi_xloader_blastdb", {}, "objtools:data_loaders:blastdb") 	-- needs bsd? ctools?
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
+		
+		AddSimpleProject("xobjsimple", {}, "objtools:simple")
 	end if
 	
 	-- GUI libs.
@@ -520,7 +521,7 @@ on SetProjectData()
 		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "selection_buffer", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue"})}
+			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "selection_buffer", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue", "view_link"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
 		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
@@ -535,7 +536,7 @@ on SetProjectData()
 			{"xalgoseq", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
 		-- Algorithm plugins
-		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
+		AddPlugin("gui_algo_align", {}, "plugins:algo:align", {"xalgoalign", "xalgosplign", "xalgoalignnw", "scoremat", "xblast", "xnetblast", "xnetblastcli", "seqdb", "blastdb"})
 		AddPlugin("gui_algo_validator", {}, "plugins:algo:validator", {"xvalidate"})
 		AddProject(DataPlusLibs(ProjectData("gui_algo_external", Â
 			{"plugin", "fltk", "libdl"}, Â
