@@ -1312,10 +1312,12 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Lock&      tse,
                 }
             }
         }
-        TAnnotSet::iterator first_added = m_AnnotSet.begin() + start_size;
-        sort(first_added, m_AnnotSet.end());
-        TAnnotSet::iterator new_end = unique(first_added, m_AnnotSet.end());
-        m_AnnotSet.resize(new_end - m_AnnotSet.begin());
+        if ( hr.end() - hr.begin() > 1 ) {
+            TAnnotSet::iterator first_added = m_AnnotSet.begin() + start_size;
+            sort(first_added, m_AnnotSet.end());
+            m_AnnotSet.erase(unique(first_added, m_AnnotSet.end()),
+                             m_AnnotSet.end());
+        }
     }
 }
 
@@ -1760,6 +1762,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/10/22 17:36:42  grichenk
+* Minor fixes in filtering duplicates
+*
 * Revision 1.31  2004/10/21 18:55:31  grichenk
 * Fixed searching by several ranges in TotalRange mode.
 * Fixed filtering of duplicates.
