@@ -491,10 +491,274 @@ void CObject::ThrowNullPointerException(void)
 
 END_NCBI_SCOPE
 
+#if 0
+
+struct SAllocHeader
+{
+    size_t magic;
+    size_t seq_number;
+    size_t size;
+    void*  ptr;
+};
+
+
+struct SAllocFooter
+{
+    void*  ptr;
+    size_t size;
+    size_t seq_number;
+    size_t magic;
+};
+
+static const size_t kAllocSizeBefore = 24;
+static const size_t kAllocSizeAfter = 24;
+
+static const char kAllocFillBefore1 = 0xaa;
+static const char kAllocFillBefore2 = 0xbb;
+static const char kAllocFillInside = 0xcc;
+static const char kAllocFillAfter = 0xdd;
+static const char kAllocFillFree = 0xee;
+
+static const size_t kAllocMagicHeader = 0x89abcdef;
+static const size_t kAllocMagicFooter = 0xfedcba98;
+
+static std::bad_alloc bad_alloc_instance;
+
+DEFINE_STATIC_FAST_MUTEX(s_alloc_mutex);
+static NCBI_NS_NCBI::CAtomicCounter seq_number;
+static const size_t kLogSize = 64*1024;
+struct SAllocLog {
+    size_t seq_number;
+    enum EType {
+        eEmpty = 0,
+        eInit,
+        eNew,
+        eNewArr,
+        eDelete,
+        eDeleteArr
+    };
+    char type;
+    char completed;
+    size_t size;
+    void* ptr;
+};
+static SAllocLog alloc_log[kLogSize];
+
+
+static inline SAllocHeader* get_header(void* ptr)
+{
+    return (SAllocHeader*)((char*)ptr-kAllocSizeBefore);
+}
+
+
+static inline void* get_guard_before(SAllocHeader* header)
+{
+    return (char*)header+sizeof(SAllocHeader);
+}
+
+
+static inline size_t get_guard_before_size()
+{
+    return kAllocSizeBefore-sizeof(SAllocHeader);
+}
+
+
+static inline size_t get_extra_size(size_t size)
+{
+    return (-size)&3;
+}
+
+
+static inline size_t get_guard_after_size(size_t size)
+{
+    return kAllocSizeAfter-sizeof(SAllocFooter)+get_extra_size(size);
+}
+
+
+static inline void* get_ptr(SAllocHeader* header)
+{
+    return (char*)header+kAllocSizeBefore;
+}
+
+
+static inline void* get_guard_after(SAllocFooter* footer, size_t size)
+{
+    return (char*)footer-get_guard_after_size(size);
+}
+
+
+static inline SAllocFooter* get_footer(SAllocHeader* header, size_t size)
+{
+    return (SAllocFooter*)((char*)get_ptr(header)+size+get_guard_after_size(size));
+}
+
+
+static inline size_t get_total_size(size_t size)
+{
+    return size+get_extra_size(size) + (kAllocSizeBefore+kAllocSizeAfter);
+}
+
+
+static inline SAllocLog& start_log(size_t number, SAllocLog::EType type)
+{
+    SAllocLog& slot = alloc_log[number % kLogSize];
+    slot.type = SAllocLog::eInit;
+    slot.completed = false;
+    slot.seq_number = number;
+    slot.ptr = 0;
+    slot.size = 0;
+    slot.type = type;
+    return slot;
+}
+
+
+static inline
+void memchk(const void* ptr, char byte, size_t size)
+{
+    for ( const char* mem = (const char*)ptr; size && *mem == byte; ++mem, --size ) {
+    }
+    if ( size ) {
+        std::abort();
+    }
+}
+
+
+static inline
+void* alloc_mem(size_t size, bool array) throw()
+{
+    size_t number = seq_number.Add(1);
+    SAllocLog& log = start_log(number, array? SAllocLog::eNewArr: SAllocLog::eNew);
+    log.size = size;
+
+    SAllocHeader* header;
+    {{
+        NCBI_NS_NCBI::CFastMutexGuard guard(s_alloc_mutex);
+        header = (SAllocHeader*)std::malloc(get_total_size(size));
+    }}
+    if ( !header ) {
+        log.completed = true;
+        return 0;
+    }
+    SAllocFooter* footer = get_footer(header, size);
+
+    header->magic = kAllocMagicHeader;
+    footer->magic = kAllocMagicFooter;
+    header->seq_number = footer->seq_number = number;
+    header->size = footer->size = size;
+    header->ptr = footer->ptr = log.ptr = get_ptr(header);
+
+    std::memset(get_guard_before(header),
+                array? kAllocFillBefore2: kAllocFillBefore1,
+                get_guard_before_size());
+    std::memset(get_guard_after(footer, size),
+                kAllocFillAfter,
+                get_guard_after_size(size));
+    std::memset(get_ptr(header), kAllocFillInside, size);
+
+    log.completed = true;
+    return get_ptr(header);
+}
+
+
+static inline
+void free_mem(void* ptr, bool array)
+{
+    size_t number = seq_number.Add(1);
+    SAllocLog& log = start_log(number, array? SAllocLog::eDeleteArr: SAllocLog::eDelete);
+    if ( ptr ) {
+        log.ptr = ptr;
+        
+        SAllocHeader* header = get_header(ptr);
+        if ( header->magic != kAllocMagicHeader ||
+             header->seq_number >= number ||
+             header->ptr != get_ptr(header) ) {
+            abort();
+        }
+        size_t size = log.size = header->size;
+        SAllocFooter* footer = get_footer(header, size);
+        if ( footer->magic != kAllocMagicFooter ||
+             footer->seq_number != header->seq_number ||
+             footer->ptr != get_ptr(header) ||
+             footer->size != size ) {
+            abort();
+        }
+        
+        memchk(get_guard_before(header),
+               array? kAllocFillBefore2: kAllocFillBefore1,
+               get_guard_before_size());
+        memchk(get_guard_after(footer, size),
+               kAllocFillAfter,
+               get_guard_after_size(size));
+        std::memset(header, kAllocFillFree, get_total_size(size));
+
+        {{
+            NCBI_NS_NCBI::CFastMutexGuard guard(s_alloc_mutex);
+            std::free(header);
+        }}
+    }
+    log.completed = true;
+}
+
+
+void* operator new(size_t size) throw(std::bad_alloc)
+{
+    void* ret = alloc_mem(size, false);
+    if ( !ret ) throw bad_alloc_instance;
+    return ret;
+}
+
+
+void* operator new(size_t size, const std::nothrow_t&) throw()
+{
+    return alloc_mem(size, false);
+}
+
+
+void* operator new[](size_t size) throw(std::bad_alloc)
+{
+    void* ret = alloc_mem(size, true);
+    if ( !ret ) throw bad_alloc_instance;
+    return ret;
+}
+
+
+void* operator new[](size_t size, const std::nothrow_t&) throw()
+{
+    return alloc_mem(size, true);
+}
+
+
+void operator delete(void* ptr) throw()
+{
+    free_mem(ptr, false);
+}
+
+
+void  operator delete(void* ptr, const std::nothrow_t&) throw()
+{
+    free_mem(ptr, false);
+}
+
+
+void  operator delete[](void* ptr) throw()
+{
+    free_mem(ptr, true);
+}
+
+
+void  operator delete[](void* ptr, const std::nothrow_t&) throw()
+{
+    free_mem(ptr, true);
+}
+
+#endif
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/02/17 21:08:19  vasilche
+ * Added code to debug memory allocation problems (currently commented out).
+ *
  * Revision 1.41  2003/12/17 20:10:07  vasilche
  * Avoid throwing exceptions from destructors.
  * Display Fatal message in Debug mode and Critical message in Release mode.
