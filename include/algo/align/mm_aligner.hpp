@@ -65,7 +65,7 @@ public:
 
     CMMAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
-               EScoringMatrixType matrix_type);
+               const SNCBIPackedScoreMatrix* scoremat = 0);
 
     virtual ~CMMAligner() {}
 
@@ -142,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/09/30 19:49:32  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.13  2003/09/26 14:43:01  kapustin
  * Remove exception specifications
  *

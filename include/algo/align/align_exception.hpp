@@ -55,7 +55,6 @@ public:
         eInvalidCharacter,
         eIncorrectSequenceOrder,
         eInvalidSpliceTypeIndex,
-	eMatrixTypeNotSet,
 	eNoData
     };
     virtual const char* GetErrCodeString(void) const {
@@ -72,8 +71,6 @@ public:
             return "mRna should go first";
         case eInvalidSpliceTypeIndex:
             return "Splice type index out of range";
-	case eMatrixTypeNotSet:
-	    return "Matrix type not set";
 	case eNoData:
 	    return "No data available";
         default:
@@ -93,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/09/30 19:49:32  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.8  2003/09/12 19:38:27  kapustin
  * Add eNoData subtype
  *

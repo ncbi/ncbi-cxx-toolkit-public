@@ -145,6 +145,8 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
     const char* seq1   = seg1 - 1;
     const char* seq2   = seg2 - 1;
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     bool bFreeGapLeft1  = m_esf_L1 && seg1 == m_Seq1;
     bool bFreeGapRight1 = m_esf_R1 && m_Seq1 + m_SeqLen1 - len1 == seg1;
     bool bFreeGapLeft2  = m_esf_L2 && seg2 == m_Seq2;
@@ -228,7 +230,7 @@ CNWAligner::TScore CSplicedAligner32::x_Align (
 
         for (j = 1; j < N2; ++j, ++k) {
             
-            G = pV[j] + m_Matrix[ci][seq2[j]];
+            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + wg1;
@@ -421,6 +423,8 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
     const char* p1 = m_Seq1;
     const char* p2 = m_Seq2;
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     char state1;   // 0 = normal, 1 = gap, 2 = intron
     char state2;   // 0 = normal, 1 = gap
 
@@ -458,7 +462,7 @@ CNWAligner::TScore CSplicedAligner32::x_ScoreByTranscript() const
 
         case eTS_Match: {
             state1 = state2 = 0;
-            score += m_Matrix[c1][c2];
+            score += sm[c1][c2];
             ++p1; ++p2;
         }
         break;
@@ -554,6 +558,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/30 19:50:04  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.5  2003/09/26 14:43:18  kapustin
  * Remove exception specifications
  *

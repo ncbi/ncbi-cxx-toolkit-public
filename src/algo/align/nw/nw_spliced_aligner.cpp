@@ -47,7 +47,7 @@ CSplicedAligner::CSplicedAligner():
 
 CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
                                  const char* seq2, size_t len2)
-    : CNWAligner(seq1, len1, seq2, len2, eSMT_Nucl),
+    : CNWAligner(seq1, len1, seq2, len2),
       m_IntronMinSize(GetDefaultIntronMinSize())
 {
     SetEndSpaceFree(true, true, false, false);
@@ -161,7 +161,7 @@ struct nwaln_mrnaguide {
     size_t q0, q1, s0, s1;
 };
 
-size_t CSplicedAligner::MakeGuides(const size_t guide_size)
+size_t CSplicedAligner::MakePattern(const size_t guide_size)
 {
     vector<nwaln_mrnaseg> segs;
 
@@ -253,6 +253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/09/30 19:50:04  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.2  2003/09/26 14:43:18  kapustin
  * Remove exception specifications
  *

@@ -35,59 +35,11 @@
 #include <algo/align/nw_aligner.hpp>
 #include <corelib/ncbi_limits.h>
 
+
 BEGIN_NCBI_SCOPE
 
-
-// Nucleotides: IUPACna coding
-static const char nucleotides [] = 
-{ 
-    // base set
-    'A', 'G', 'T', 'C',
-
-    // extension: ambiguity characters
-    'B', 'D', 'H', 'K', 
-    'M', 'N', 'R', 'S', 
-    'V', 'W', 'Y'
-};
-
-
-// Aminoacids: IUPACaa
-static const char aminoacids [] = 
-{ 'A', 'R', 'N', 'D', 'C',
-  'Q', 'E', 'G', 'H', 'I',
-  'L', 'K', 'M', 'F', 'P',
-  'S', 'T', 'W', 'Y', 'V',
-  'B', 'Z', 'X'
-};
-
-
-static const size_t kBlosumSize = sizeof aminoacids;
-static const char matrix_blosum62[kBlosumSize][kBlosumSize] = {
-    /*       A,  R,  N,  D,  C,  Q,  E,  G,  H,  I,  L,  K,  M,  F,  P,  S,  T,  W,  Y,  V,  B,  Z,  X */
-    /*A*/ {  4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0, -2, -1,  0 },
-    /*R*/ { -1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2, -1, -3, -2, -1, -1, -3, -2, -3, -1,  0, -1 },
-    /*N*/ { -2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0, -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1 },
-    /*D*/ { -2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1, -3, -3, -1,  0, -1, -4, -3, -3,  4,  1, -1 },
-    /*C*/ {  0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1, -3, -3, -2 },
-    /*Q*/ { -1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,  0, -3, -1,  0, -1, -2, -1, -2,  0,  3, -1 },
-    /*E*/ { -1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1, -2, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1 },
-    /*G*/ {  0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2, -3, -3, -2,  0, -2, -2, -3, -3, -1, -2, -1 },
-    /*H*/ { -2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1, -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1 },
-    /*I*/ { -1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,  1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1 },
-    /*L*/ { -1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,  2,  0, -3, -2, -1, -2, -1,  1, -4, -3, -1 },
-    /*K*/ { -1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5, -1, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1 },
-    /*M*/ { -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,  5,  0, -2, -1, -1, -1, -1,  1, -3, -1, -1 },
-    /*F*/ { -2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,  0,  6, -4, -2, -2,  1,  3, -1, -3, -3, -1 },
-    /*P*/ { -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4,  7, -1, -1, -4, -3, -2, -2, -1, -2 },
-    /*S*/ {  1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0, -1, -2, -1,  4,  1, -3, -2, -2,  0,  0,  0 },
-    /*T*/ {  0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  1,  5, -2, -2,  0, -1, -1,  0 },
-    /*W*/ { -3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1,  1, -4, -3, -2, 11,  2, -3, -4, -3, -2 },
-    /*Y*/ { -2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2, -1,  3, -3, -2, -2,  2,  7, -1, -3, -2, -1 },
-    /*V*/ {  0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,  1, -1, -2, -2,  0, -3, -1,  4, -3, -2, -1 },
-    /*B*/ { -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0, -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1 },
-    /*Z*/ { -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1, -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1 },
-    /*X*/ {  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1 }
-};
+// IUPACna alphabet (default)
+const char g_nwaligner_nucleotides [] = "AGTCBDHKMNRSVWY";
 
 
 CNWAligner::CNWAligner()
@@ -96,39 +48,33 @@ CNWAligner::CNWAligner()
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
-      m_MatrixType(eSMT_None),
+      m_abc(g_nwaligner_nucleotides),
       m_prg_callback(0),
       m_Seq1(0), m_SeqLen1(0),
       m_Seq2(0), m_SeqLen2(0),
       m_score(kInfMinus)
 {
+    SetScoreMatrix(0);
 }
 
 
 CNWAligner::CNWAligner( const char* seq1, size_t len1,
                         const char* seq2, size_t len2,
-                        EScoringMatrixType matrix_type )
+                        const SNCBIPackedScoreMatrix* scoremat )
 
     : m_Wm(GetDefaultWm()),
       m_Wms(GetDefaultWms()),
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
-      m_MatrixType(matrix_type),
+      m_abc(g_nwaligner_nucleotides),
       m_prg_callback(0),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
       m_score(kInfMinus)
 {
-    x_LoadScoringMatrix();
+    SetScoreMatrix(scoremat);
     SetSequences(seq1, len1, seq2, len2);
-}
-
-
-void CNWAligner::SetMatrixType(EScoringMatrixType matrix_type)
-{
-    m_MatrixType = matrix_type;
-    x_LoadScoringMatrix();
 }
 
 
@@ -136,14 +82,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
 			      const char* seq2, size_t len2,
 			      bool verify)
 {
-    if(m_MatrixType == eSMT_None) {
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eMatrixTypeNotSet,
-                   "Scoring matrix type not set");
-    }
-
-    if(!seq1 && len1 || !seq2 && len2) {
+    if(!seq1 || !seq2) {
         NCBI_THROW(
                    CAlgoAlignException,
                    eBadParameter,
@@ -226,6 +165,8 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
     const char* seq1 = seg1 - 1;
     const char* seq2 = seg2 - 1;
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     m_terminate = false;
 
     if(m_prg_callback) {
@@ -278,7 +219,7 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
         V = V0 += wsleft2;
         E = kInfMinus;
         backtrace_matrix[k++] = kMaskFc;
-        char ci = seq1[i];
+        unsigned char ci = seq1[i];
 
         if(i == N1 - 1 && bFreeGapRight1) {
                 wg1 = ws1 = 0;
@@ -288,7 +229,7 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 
         for (j = 1; j < N2; ++j, ++k) {
 
-            G = pV[j] + m_Matrix[ci][seq2[j]];
+            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + wg1;
@@ -355,19 +296,19 @@ CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
 
 CNWAligner::TScore CNWAligner::Run()
 {
+    if(!m_Seq1 || !m_Seq2) {
+        NCBI_THROW(
+		   CAlgoAlignException,
+		   eNoData,
+		   "Sequence data not available for one or both sequences");
+    }
+
     if(!x_CheckMemoryLimit()) {
+
         NCBI_THROW(
                    CAlgoAlignException,
                    eMemoryLimit,
                    "Memory limit exceeded");
-    }
-
-    if(m_MatrixType == eSMT_None) {
-
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eMatrixTypeNotSet,
-                   "Scoring matrix type not set");
     }
 
     m_score = x_Run();
@@ -454,7 +395,7 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace,
 }
 
 
-void  CNWAligner::SetGuides(const vector<size_t>& guides)
+void  CNWAligner::SetPattern(const vector<size_t>& guides)
 {
     size_t dim = guides.size();
     const char* err = 0;
@@ -569,51 +510,28 @@ void CNWAligner::SetProgressCallback ( FProgressCallback prg_callback,
     m_prg_info.m_data = data;
 }
 
-
-// Load pairwise scoring matrix
-void CNWAligner::x_LoadScoringMatrix()
+ 
+void CNWAligner::SetScoreMatrix(const SNCBIPackedScoreMatrix* psm)
 {
-    switch(m_MatrixType) {
-
-    case eSMT_Nucl: {
-            char c1, c2;
-            const size_t kNuclSize = sizeof nucleotides;
-            for(size_t i = 0; i < kNuclSize; ++i) {
-                c1 = nucleotides[i];
-                for(size_t j = 0; j < i; ++j) {
-                    c2 = nucleotides[j];
-                    m_Matrix[c1][c2] = m_Matrix[c2][c1] =
-                        m_Wms;
-                }
-                m_Matrix[c1][c1] = i < 4? m_Wm: m_Wms;
-            }
-        }
-        break;
-
-    case eSMT_Blosum62: {
-            char c1, c2;
-            for(size_t i = 0; i < kBlosumSize; ++i) {
-                c1 = aminoacids[i];
-                for(size_t j = 0; j < i; ++j) {
-                    c2 = aminoacids[j];
-                    m_Matrix[c1][c2] = m_Matrix[c2][c1] =
-                        matrix_blosum62[i][j];
-                }
-                m_Matrix[c1][c1] = matrix_blosum62[i][i];
-            }
-        }
-        break;
-
-    default: {
-
-        NCBI_THROW(
-                   CAlgoAlignException,
-                   eMatrixTypeNotSet,
-                   "Scoring matrix type not set");
-        }
-        break;
-    };
-
+    if(psm) {
+        m_abc = psm->symbols;
+	NCBISM_Unpack(psm, &m_ScoreMatrix);
+    }
+    else { // assume IUPACna
+        m_abc = g_nwaligner_nucleotides;
+	memset(&m_ScoreMatrix.s, m_Wms, sizeof m_ScoreMatrix.s);
+	// set diag to Wm except ambiguity symbols
+        unsigned char c1, c2;
+	const size_t kNuclSize = strlen(g_nwaligner_nucleotides);
+	for(size_t i = 0; i < kNuclSize; ++i) {
+	    c1 = g_nwaligner_nucleotides[i];
+	    for(size_t j = 0; j < i; ++j) {
+	        c2 = g_nwaligner_nucleotides[j];
+		m_ScoreMatrix.s[c1][c2] = m_ScoreMatrix.s[c2][c1] = m_Wms;
+	    }
+	    m_ScoreMatrix.s[c1][c1] = i < 4? m_Wm: m_Wms;
+	}
+    }
 }
 
 
@@ -625,28 +543,15 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
 {
     char Flags [256];
     memset(Flags, 0, sizeof Flags);
-
-    const char* pabc = 0;
-    size_t abc_size = 0;
-    switch(m_MatrixType)
-    {
-    case eSMT_Nucl:
-        pabc = nucleotides;
-        abc_size = sizeof nucleotides;
-        break;
-    case eSMT_Blosum62:
-        pabc = aminoacids;
-        abc_size = sizeof aminoacids;
-        break;
-    }
+    const size_t abc_size = strlen(m_abc);
     
     size_t k;
     for(k = 0; k < abc_size; ++k) {
-        Flags[pabc[k]] = 1;
+        Flags[unsigned(m_abc[k])] = 1;
     }
 
     for(k = 0; k < len; ++k) {
-        if(Flags[seq[k]] == 0)
+        if(Flags[unsigned(seq[k])] == 0)
             break;
     }
 
@@ -728,15 +633,17 @@ CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
         }
     }
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     for(size_t i = 0; i < dim; ++i) {
 
-        char c1 = m_Seq1? *p1: 'N';
-        char c2 = m_Seq2? *p2: 'N';
+        unsigned char c1 = m_Seq1? *p1: 'N';
+        unsigned char c2 = m_Seq2? *p2: 'N';
         switch(transcript[i]) {
 
         case eTS_Match: {
             state1 = state2 = 0;
-            score += m_Matrix[c1][c2];
+            score += sm[c1][c2];
             ++p1; ++p2;
         }
         break;
@@ -1071,6 +978,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/09/30 19:50:04  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.37  2003/09/26 14:43:18  kapustin
  * Remove exception specifications
  *

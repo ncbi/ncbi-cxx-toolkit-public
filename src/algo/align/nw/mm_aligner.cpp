@@ -48,8 +48,8 @@ CMMAligner::CMMAligner():
 
 CMMAligner::CMMAligner( const char* seq1, size_t len1,
                         const char* seq2, size_t len2,
-                        EScoringMatrixType matrix_type )
-  : CNWAligner(seq1, len1, seq2, len2, matrix_type),
+                        const SNCBIPackedScoreMatrix* scoremat )
+  : CNWAligner(seq1, len1, seq2, len2, scoremat),
     m_mt(false),
     m_maxthreads(1)
 {
@@ -475,6 +475,8 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
     const char* seq1 = m_Seq1 - 1 + rect.i1;
     const char* seq2 = m_Seq2 - 1 + rect.j1;
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     bool bFreeGapLeft1  = m_esf_L1 && rect.i1 == 0;
     bool bFreeGapLeft2  = m_esf_L2 && rect.j1 == 0;
     bool bFreeGapRight2  = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
@@ -509,13 +511,13 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
         
         V = V0 += ws;
         E = kInfMinus;
-        char ci = seq1[i];
+        unsigned char ci = seq1[i];
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
         for (j = 1; j < N2; ++j) {
 
-            G = pV[j] + m_Matrix[ci][seq2[j]];
+            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + m_Wg;
@@ -554,14 +556,14 @@ void CMMAligner::x_RunTop ( const SCoordRect& rect,
         vG[0] = vE[0] = E = kInfMinus;
         vF[0] = V = V0 += ws;
         trace[0] = kMaskFc;
-        char ci = seq1[i];
+        unsigned char ci = seq1[i];
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
         unsigned char tracer;
         for (j = 1; j < N2; ++j) {
 
-            vG[j] = G = pV[j] + m_Matrix[ci][seq2[j]];
+            vG[j] = G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + m_Wg;
@@ -643,6 +645,8 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
     const char* seq1 = m_Seq1 + rect.i1;
     const char* seq2 = m_Seq2 + rect.j1;
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     bool bFreeGapRight1  = m_esf_R1 && rect.i2 == m_SeqLen1 - 1;
     bool bFreeGapRight2  = m_esf_R2 && rect.j2 == m_SeqLen2 - 1;
     bool bFreeGapLeft2  =  m_esf_L2 && rect.j1 == 0;
@@ -678,13 +682,13 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
         
         V = V0 += ws;
         E = kInfMinus;
-        char ci = seq1[i];
+        unsigned char ci = seq1[i];
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
         for (j = N2 - 2; j >= 0; --j) {
 
-            G = pV[j] + m_Matrix[ci][seq2[j]];
+            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + m_Wg;
@@ -724,14 +728,14 @@ void CMMAligner::x_RunBtm(const SCoordRect& rect,
         vF[N2-1] = V = V0 += ws;
         vG[N2-1] = vE[N2-1] = E = kInfMinus;
         trace[N2-1] = kMaskFc;
-        char ci = seq1[i];
+        unsigned char ci = seq1[i];
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
         unsigned char tracer;
         for (j = N2 - 2; j >= 0; --j) {
 
-            vG[j] = G = pV[j] + m_Matrix[ci][seq2[j]];
+            vG[j] = G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + m_Wg;
@@ -815,6 +819,8 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
     const char* seq1 = m_Seq1 + rect.i1 - 1;
     const char* seq2 = m_Seq2 + rect.j1 - 1;
 
+    const TNCBIScore (*sm) [NCBI_FSM_DIM] = m_ScoreMatrix.s;
+
     bool bFreeGapLeft1  = m_esf_L1 && rect.i1 == 0;
     bool bFreeGapRight1 = m_esf_R1 && rect.i2 == m_SeqLen1 - 1;
     bool bFreeGapLeft2  = m_esf_L2 && rect.j1 == 0;
@@ -850,7 +856,7 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
         V = V0 += wsleft2;
         E = kInfMinus;
         backtrace[k++] = kMaskFc;
-        char ci = seq1[i];
+        unsigned char ci = seq1[i];
 
         if(i == N1 - 1 && bFreeGapRight1) {
                 wg1 = ws1 = 0;
@@ -860,7 +866,7 @@ CNWAligner::TScore CMMAligner::x_RunTerm(const SCoordRect& rect,
 
         for (j = 1; j < N2; ++j, ++k) {
 
-            G = pV[j] + m_Matrix[ci][seq2[j]];
+            G = pV[j] + sm[ci][(unsigned char)seq2[j]];
             pV[j] = V;
 
             n0 = V + wg1;
@@ -954,6 +960,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/09/30 19:50:04  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.16  2003/09/26 14:43:18  kapustin
  * Remove exception specifications
  *

@@ -59,8 +59,8 @@ public:
         return 50;
     }
 
-    // Guides
-    size_t MakeGuides(const size_t guide_size = 30);
+    // Alignment pattern
+    size_t MakePattern(const size_t hit_size = 30);
 
 protected:
 
@@ -71,9 +71,7 @@ protected:
     size_t  m_IntronMinSize;
     virtual size_t  x_GetSpliceTypeCount()  = 0;
     virtual TScore* x_GetSpliceScores() = 0;
-    virtual TScore  x_Align ( const char* seg1, size_t len1,
-                              const char* seg2, size_t len2,
-                              vector<ETranscriptSymbol>* transcript) = 0;
+  
     // Guides
     unsigned char   x_CalcFingerPrint64( const char* beg,
                                          const char* end,
@@ -93,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/30 19:49:32  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.3  2003/09/26 14:43:01  kapustin
  * Remove exception specifications
  *

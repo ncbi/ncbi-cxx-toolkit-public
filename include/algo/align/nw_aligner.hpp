@@ -31,14 +31,16 @@
 * File Description:
 *   CNWAligner class definition
 *
-*   CNWAligner encapsulates a generic global alignment algorithm
-*   with affine gap penalty model.
+*   CNWAligner encapsulates a generic global (Needleman-Wunsch)
+*   alignment algorithm with affine gap penalty model.
 *
 */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <algo/align/align_exception.hpp>
+#include <util/tables/raw_scoremat.h>
+
 #include <vector>
 #include <string>
 
@@ -52,7 +54,7 @@
 BEGIN_NCBI_SCOPE
 
 
-// NW algorithm encapsulation
+// Needleman Wunsch algorithm encapsulation
 //
 
 class NCBI_XALGOALIGN_EXPORT CNWAligner
@@ -61,30 +63,24 @@ public:
     typedef int TScore;
 
     // ctors
-    enum EScoringMatrixType {
-        eSMT_None,
-        eSMT_Nucl,
-        eSMT_Blosum62
-    };
-
     CNWAligner(void);
 
+    // Null scoremat pointer indicates IUPACna coding
     CNWAligner(const char* seq1, size_t len1,
                const char* seq2, size_t len2,
-               EScoringMatrixType matrix_type);
+               const SNCBIPackedScoreMatrix* scoremat = 0);
 
     virtual ~CNWAligner(void) {}
 
-    // Run the Needleman-Wunsch algorithm, return the alignment's score
+    // Compute the alignment
     virtual TScore Run();
 
     // Setters
-    void SetMatrixType(EScoringMatrixType matrix_type);
-
     void SetSequences(const char* seq1, size_t len1,
 		      const char* seq2, size_t len2,
 		      bool verify = true);
-
+  
+    void SetScoreMatrix(const SNCBIPackedScoreMatrix* scoremat);
 
     void SetWm  (TScore value)  { m_Wm  = value; }   // match (na)
     void SetWms (TScore value)  { m_Wms = value; }   // mismatch (na)
@@ -94,8 +90,8 @@ public:
     // specify whether end gaps should be penalized
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
 
-    // guiding hits
-    void  SetGuides(const vector<size_t>& guides);
+    // alignment pattern (guides)
+    void  SetPattern(const vector<size_t>& pattern);
 
     // progress reporting
     struct SProgressInfo
@@ -107,6 +103,7 @@ public:
         char   m_text_buffer [1024];
     };
 
+    // return true to cancel calculation
     typedef bool (*FProgressCallback) (SProgressInfo*);
     void SetProgressCallback ( FProgressCallback prg_callback, void* data );
 
@@ -133,7 +130,7 @@ public:
         eTS_Insert  = 'I',
         eTS_Match   = 'M',
         eTS_Replace = 'R',
-        eTS_Intron  =  91
+        eTS_Intron  = 'Z'
     };
 
     // raw transcript
@@ -163,12 +160,11 @@ protected:
     // end-space free flags
     bool     m_esf_L1, m_esf_R1, m_esf_L2, m_esf_R2;
 
-    // Pairwise scoring matrix
-    EScoringMatrixType        m_MatrixType;
-    TScore                    m_Matrix [256][256];
-    void x_LoadScoringMatrix(void);
+    // alphabet and score matrix
+    const char*               m_abc;
+    SNCBIFullScoreMatrix      m_ScoreMatrix;
 
-    // progress callback (true return value indicates exit request)
+    // progress callback
     FProgressCallback         m_prg_callback;
 
     // progress status
@@ -226,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/09/30 19:49:32  kapustin
+ * Make use of standard score matrix interface
+ *
  * Revision 1.28  2003/09/26 14:43:01  kapustin
  * Remove exception specifications
  *
