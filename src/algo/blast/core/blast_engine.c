@@ -234,13 +234,13 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
                }
             }
 
-            aux_struct->GetGappedScore(program_number, query, query_info, 
-               subject, gap_align, score_options, ext_params, hit_params, 
+            aux_struct->GetGappedScore(program_number, query, subject, 
+               gap_align, score_options, ext_params, hit_params, 
                init_hitlist, &hsp_list);
             if (score_options->is_ooframe && translated_subject)
                subject->length = prot_length;
          } else {
-            BLAST_GetUngappedHSPList(init_hitlist, query_info, subject,
+            BLAST_GetUngappedHSPList(init_hitlist, subject,
                                      hit_params->options, &hsp_list);
          }
 
@@ -252,8 +252,11 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          /* The subject ordinal id is not yet filled in this HSP list */
          hsp_list->oid = subject->oid;
          
-         /* Assign frames in all HSPs. */
-         HSPListSetFrames(program_number, hsp_list, score_options->is_ooframe);
+         /* Multiple contexts - adjust all HSP offsets to the individual 
+            query coordinates; also assign frames, except in case of
+            out-of-frame gapping. */
+         BLAST_AdjustQueryOffsets(program_number, hsp_list, query_info, 
+                                  score_options->is_ooframe);
          
          if (hit_options->do_sum_stats == TRUE) {
             status = BLAST_LinkHsps(program_number, hsp_list, query_info,
