@@ -49,6 +49,8 @@
 #elif defined(NCBI_OS_MAC)
 #  include <corelib/ncbi_os_mac.hpp>
 #  include <Script.h>
+#  include <Gestalt.h>
+#  include <Folders.h>
 #endif
 
 
@@ -86,10 +88,15 @@ BEGIN_NCBI_SCOPE
 
 
 
+//////////////////////////////////////////////////////////////////////////////
+//
+// Static functions
+//
+
 #if defined(NCBI_OS_MAC)
 static const FSSpec sNullFSS = {0, 0, "\p"};
 
-static bool operator== (const FSSpec &one, const FSSpec &other)
+static bool operator== (const FSSpec& one, const FSSpec& other)
 {
     return one.vRefNum == other.vRefNum
         && one.parID   == other.parID
@@ -97,11 +104,6 @@ static bool operator== (const FSSpec &one, const FSSpec &other)
 }
 #endif  /* NCBI_OS_MAC */
 
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Static functions
-//
 
 // Construct real entry mode from parts. Parameters can not have "fDefault" 
 // value.
@@ -308,13 +310,13 @@ bool CDirEntry::IsPathSeparator(const char c)
 
 string CDirEntry::AddTrailingPathSeparator(const string& path)
 {
-    size_t pos = path.length();
+    size_t len = path.length();
 #if defined(NCBI_OS_MAC)
-    if ( !pos ) {
+    if ( !len ) {
         return string(1, GetPathSeparator());
     }
 #endif
-    if ( pos  &&  string(ALL_SEPARATORS).find(path.at(pos-1)) == NPOS ) {
+    if (len  &&  string(ALL_SEPARATORS).find(path.at(len-1)) == NPOS) {
         return path + GetPathSeparator();
     }
     return path;
@@ -949,25 +951,28 @@ static bool s_GetHomeByLOGIN(string& home)
 
 string CDir::GetHome(void)
 {
-    char *ptr;
+    char*  str;
     string home;
 
 #if defined(NCBI_OS_MSWIN)
     // Get home dir from environment variables
     // like - C:\Documents and Settings\user\Application Data
-    if ( ptr = getenv("APPDATA") ) {
-        home = ptr;
+    str = getenv("APPDATA");
+    if ( str ) {
+        home = str;
     } else {
         // like - C:\Documents and Settings\user
-        if ( ptr = getenv("USERPROFILE") ) {
-            home = ptr;
+        str = getenv("USERPROFILE");
+        if ( str ) {
+            home = str;
         }
     }
    
 #elif defined(NCBI_OS_UNIX)
     // Try get home dir from environment variable
-    if ( (ptr = getenv("HOME")) != NULL ) {
-        home = ptr;
+    str = getenv("HOME");
+    if ( str ) {
+        home = str;
     } else {
         // Try to retrieve the home dir -- first use user's ID, and if failed, 
         // then use user's login name.
@@ -977,9 +982,40 @@ string CDir::GetHome(void)
     }
    
 #elif defined(NCBI_OS_MAC)
-    // FIX ME 
-    home = kEmptyStr;
-    
+    // Make sure we can use FindFolder() if not, report error
+    long gesResponse;
+    if (Gestalt(gestaltFindFolderAttr, &gesResponse) != noErr  ||
+        (gesResponse & (1 << gestaltFindFolderPresent) == 0)) {
+        return kEmptyStr;
+    }
+
+    // Store the current active directory
+    long  saveDirID;
+    short saveVRefNum;
+    HGetVol((StringPtr) 0, &saveVRefNum, &saveDirID);
+
+    // Find the preferences folder in the active System folder
+    short vRefNum;
+    long  dirID;
+    OSErr err = FindFolder(kOnSystemDisk, kPreferencesFolderType,
+                           kCreateFolder, &vRefNum, &dirID);
+
+    FSSpec spec;
+    if (err == noErr) {
+        char dummy[FILENAME_MAX+1];
+        dummy [0] = '\0';
+        err = FSMakeFSSpec(vRefNum, dirID, (StringPtr) dummy, &spec);
+    }
+
+    // Restore the current active directory
+    HSetVol((StringPtr) 0, saveVRefNum, saveDirID);
+
+    // Convert to C++ string
+    if (err == noErr) {
+        str = 0;
+        err = MacFSSpec2FullPathname(&spec, &str);
+        home = str;
+    }
 #endif 
 
     // Add trailing separator if needed
@@ -1140,6 +1176,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/02/07 21:05:47  kans
+ * implemented GetHome (FindFolder kPreferencesFolderType) for Mac
+ *
  * Revision 1.16  2002/01/24 22:18:02  ivanov
  * Changed CDirEntry::Remove() and CDir::Remove()
  *
