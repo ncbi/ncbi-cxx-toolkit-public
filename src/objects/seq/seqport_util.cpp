@@ -44,6 +44,7 @@
 #include <objects/seq/IUPACaa.hpp>
 #include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/NCBIstdaa.hpp>
+#include <objects/seq/NCBIpaa.hpp>
 
 #include <objects/seqcode/Seq_code_set.hpp>
 #include <objects/seqcode/Seq_code_table.hpp>
@@ -2046,11 +2047,27 @@ TSeqPos CSeqportUtil_implementation::Pack
 
     CSeq_data::E_Choice from_code = in_seq->Which();
     _ASSERT(from_code != CSeq_data::e_not_set);
-
+    
     if ( s_SeqDataToSeqUtil[from_code] == CSeqUtil::e_not_set ) {
         throw runtime_error("Unable tp pack requested coding");
     }
 
+    
+    // nothing to pack for proteins
+    switch ( from_code ) {
+    case CSeq_data::e_Iupacaa:
+        return in_seq->GetIupacaa().Get().size();
+    case CSeq_data::e_Ncbi8aa:
+        return in_seq->GetNcbi8aa().Get().size();
+    case CSeq_data::e_Ncbieaa:
+        return in_seq->GetNcbieaa().Get().size();
+    case CSeq_data::e_Ncbipaa:
+        return in_seq->GetNcbipaa().Get().size();
+    case CSeq_data::e_Ncbistdaa:
+        return in_seq->GetNcbistdaa().Get().size();
+    default:
+        break;
+    }
     // nothing to convert
     if ( from_code == CSeq_data::e_Ncbi2na  &&
          in_seq->GetNcbi2na().Get().size() * 4 <= uLength ) {
@@ -6469,6 +6486,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.23  2004/03/30 21:25:09  shomrat
+ * Do not attempt to pack protein sequences
+ *
  * Revision 6.22  2004/01/22 19:13:26  shomrat
  * fixed bug in complement tables
  *
