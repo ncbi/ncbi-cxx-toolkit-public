@@ -47,12 +47,10 @@ BEGIN_NCBI_SCOPE
 
 // Mutex to sync cache requests coming from different threads
 // All requests are protected with one mutex
-// mutex guarding access to our images
 DEFINE_STATIC_FAST_MUTEX(x_BDB_BLOB_CacheMutex);
 
 // Mutex to sync int cache requests coming from different threads
 // All requests are protected with one mutex
-// mutex guarding access to our images
 DEFINE_STATIC_FAST_MUTEX(x_BDB_IntCacheMutex);
 
 
@@ -2022,6 +2020,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/03/24 13:51:03  friedman
+ * Fixed mutex comments
+ *
  * Revision 1.44  2004/03/23 19:22:08  friedman
  * Replaced 'static CFastMutex' with DEFINE_STATIC_FAST_MUTEX
  *
