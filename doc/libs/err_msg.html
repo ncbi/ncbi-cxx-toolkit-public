@@ -207,11 +207,33 @@ extern void SetDiagHandler(FDiagHandler func,
                            void*        data,
                            FDiagCleanup cleanup); </pre>
 
+	 where:
+	 <pre>
+struct SDiagMessage {
+    SDiagMessage(EDiagSev severity, const char* buf, size_t len, void* data,
+                 const char* file = 0, size_t line = 0,
+                 unsigned int flags = eDPF_Default, const char* prefix = 0);
+    EDiagSev     m_Severity;
+    const char*  m_Buffer;  // not guaranteed to be '\0'-terminated!
+    size_t       m_BufferLen;
+    void*        m_Data;
+    const char*  m_File;
+    size_t       m_Line;
+    unsigned int m_Flags;   // bitwise OR of "EDiagPostFlag"
+    const char*  m_Prefix;
 
-	 <a name="ref_Manipulators"></a>
+    // allocate("new") and compose a message string in the "standard" format:
+    //    "<file>", line <line>: <severity>: [<prefix>] <message>
+    // NOTE:  it is user's responsibility to "delete" the returned string
+    char* Compose(void) const;
+};
+	 </pre>
+
+	 <p></p>
+	 <a name="ref_Manipulators"><h4>Formatting and manipulators</h4></a>
 
 	 <p>
-	 To compose a diagnostic message with <b><i>CNcbiDiag</i></b> one must
+	 To compose a diagnostic message with <b><i>CNcbiDiag</i></b> you can
 	 use the formatting operator "<b><<</b>". It works practically the same
 	 way as operator "<b><<</b>" for standard C++ output streams.
 	 <b><i>CNcbiDiag</i></b> class also has some <b><i>CNcbiDiag</i></b>-specific
@@ -258,7 +280,7 @@ Warning: This is a warning 12345
 	 </pre>
 
 
-	 <a name="ref_ERR_POST"></a>
+	 <a name="ref_ERR_POST"><h4>ERR_POST macro</h4></a>
 
 	 There is an <b><i>ERR_POST(message)</i></b> macro that can be used to
 	 shorten the error posting code. This macro implicitely creates a temporary
