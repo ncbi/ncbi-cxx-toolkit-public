@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/07/18 17:21:34  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.22  1999/12/28 21:01:03  vasilche
 * Fixed conflict on MS VC between bool and const string& arguments by
 * adding const char* argument.
@@ -212,12 +217,6 @@ inline
 CHTML_tc* CHTML_table::InsertNextRowCell(const string& text)
 {
     return InsertNextRowCell(new CHTMLPlainText(text));
-}
-
-inline
-void CHTML_table::CheckTable(void) const
-{
-    x_CheckTable(0);
 }
 
 inline

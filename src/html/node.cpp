@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/07/18 17:21:40  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.18  2000/03/29 15:50:43  vasilche
 * Added const version of CRef - CConstRef.
 * CRef and CConstRef now accept classes inherited from CObject.
@@ -149,12 +154,28 @@ const string& CNCBINode::GetAttribute(const string& name) const
     return NcbiEmptyString;
 }
 
+bool CNCBINode::AttributeIsOptional(const string& name) const
+{
+    if ( HaveAttributes() ) {
+        TAttributes::const_iterator ptr = Attributes().find(name);
+        if ( ptr != Attributes().end() ) {
+            return ptr->second.IsOptional();
+        }
+    }
+    return true;
+}
+
+bool CNCBINode::AttributeIsOptional(const char* name) const
+{
+    return AttributeIsOptional(string(name));
+}
+
 const string* CNCBINode::GetAttributeValue(const string& name) const
 {
     if ( HaveAttributes() ) {
         TAttributes::const_iterator ptr = Attributes().find(name);
         if ( ptr != Attributes().end() ) {
-            return &ptr->second;
+            return &ptr->second.GetValue();
         }
     }
     return 0;
@@ -172,22 +193,33 @@ void CNCBINode::SetAttribute(const char* name, int value)
 
 void CNCBINode::SetAttribute(const string& name)
 {
-    GetAttributes()[name];
+    DoSetAttribute(name, NcbiEmptyString, true);
 }
 
-void CNCBINode::SetAttribute(const string& name, const string& value)
+void CNCBINode::DoSetAttribute(const string& name,
+                               const string& value, bool optional)
 {
-    GetAttributes()[name] = value;
+    GetAttributes()[name] = SAttributeValue(value, optional);
+}
+
+void CNCBINode::SetAttributeOptional(const string& name, bool optional)
+{
+    GetAttributes()[name].SetOptional(optional);
+}
+
+void CNCBINode::SetAttributeOptional(const char* name, bool optional)
+{
+    SetAttributeOptional(string(name), optional);
 }
 
 void CNCBINode::SetAttribute(const char* name)
 {
-    GetAttributes()[name];
+    SetAttribute(string(name));
 }
 
 void CNCBINode::SetAttribute(const char* name, const string& value)
 {
-    GetAttributes()[name] = value;
+    SetAttribute(string(name), value);
 }
 
 // this function searches for a text string in a Text node and replaces it with a node
@@ -249,8 +281,8 @@ CNcbiOstream& CNCBINode::PrintEnd(CNcbiOstream& out, TMode)
 CNcbiOstream& CNCBINode::PrintChildren(CNcbiOstream& out, TMode mode)
 {
     if ( HaveChildren() ) {
-        for ( TChildren::iterator i = Children().begin();
-              i != Children().end(); ++i) {
+        for ( TChildren::iterator begin = ChildBegin(), end = ChildEnd(),
+                  i = begin; i != end; ++i) {
             Node(i)->Print(out, mode);
         }
     }

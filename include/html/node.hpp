@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2000/07/18 17:21:34  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.16  2000/03/29 15:50:38  vasilche
 * Added const version of CRef - CConstRef.
 * CRef and CConstRef now accept classes inherited from CObject.
@@ -114,7 +119,43 @@ public:
 #else
     typedef auto_ptr<TChildren> TChildrenMember;
 #endif
-    typedef map<string, string, PNocase> TAttributes;
+    struct SAttributeValue
+    {
+        SAttributeValue(void)
+            : m_Optional(true)
+            {
+            }
+        SAttributeValue(const string& value, bool optional)
+            : m_Value(value), m_Optional(optional)
+            {
+            }
+        SAttributeValue& operator=(const string& value)
+            {
+                m_Value = value;
+                m_Optional = true;
+                return *this;
+            }
+        const string& GetValue(void) const
+            {
+                return m_Value;
+            }
+        operator const string&(void) const
+            {
+                return m_Value;
+            }
+        bool IsOptional(void) const
+            {
+                return m_Optional;
+            }
+        void SetOptional(bool optional = true)
+            {
+                m_Optional = optional;
+            }
+    private:
+        string m_Value;
+        bool m_Optional;
+    };
+    typedef map<string, SAttributeValue, PNocase> TAttributes;
     
     enum EMode {
         eHTML = 0,
@@ -202,6 +243,10 @@ public:
     // retreive attribute
     bool HaveAttribute(const string& name) const;
     const string& GetAttribute(const string& name) const;
+    bool AttributeIsOptional(const string& name) const;
+    bool AttributeIsOptional(const char* name) const;
+    void SetAttributeOptional(const string& name, bool optional = true);
+    void SetAttributeOptional(const char* name, bool optional = true);
     const string* GetAttributeValue(const string& name) const;
 
     // set attribute
@@ -218,6 +263,10 @@ public:
     void SetOptionalAttribute(const char* name, bool set);
 
 protected:
+    virtual void DoAppendChild(CNCBINode* child);
+    virtual void DoSetAttribute(const string& name,
+                                const string& value, bool optional);
+
     TChildrenMember m_Children;  // Child nodes.
 
     string m_Name; // node name
@@ -234,7 +283,6 @@ private:
     TChildren& GetChildren(void);
     // return attributes map (create if needed)
     TAttributes& GetAttributes(void);
-    void DoAppendChild(CNCBINode* child);
 };
 
 // inline functions are defined here:

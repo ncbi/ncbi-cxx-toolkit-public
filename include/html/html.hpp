@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/07/18 17:21:34  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.42  2000/07/12 16:37:37  vasilche
 * Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
 * Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
@@ -177,8 +182,6 @@
 */
 
 #include <html/node.hpp>
-#include <vector>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -439,13 +442,22 @@ public:
     CHTMLListElement* SetCompact(void);
 };
 
-class CHTML_tr;
-class CHTML_tc;
+// table classes
+
+class CHTML_table; // table
+class CHTML_tr; // row
+class CHTML_tc; // any cell
+class CHTML_th; // header cell
+class CHTML_td; // data cell
+class CHTML_tc_Cache;
+class CHTML_tr_Cache;
+class CHTML_table_Cache;
 
 class CHTML_tc : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
+    typedef unsigned TIndex;
     CHTML_tc(const char* tagname)
         : CParent(tagname)
         { }
@@ -461,10 +473,42 @@ public:
     ~CHTML_tc(void);
 
     // type for row and column indexing
-    typedef unsigned TIndex;
 
     CHTML_tc* SetRowSpan(TIndex span);
     CHTML_tc* SetColSpan(TIndex span);
+
+    void ResetTableCache(void);
+
+protected:
+    virtual void DoSetAttribute(const string& name,
+                                const string& value, bool optional);
+
+    friend class CHTML_tr;
+    friend class CHTML_tc_Cache;
+
+    CHTML_tr* m_Parent;
+};
+
+class CHTML_tr : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    typedef unsigned TIndex;
+
+    CHTML_tr(void);
+    CHTML_tr(CNCBINode* node);
+    CHTML_tr(const string& text);
+
+    void ResetTableCache(void);
+
+protected:
+    virtual void DoAppendChild(CNCBINode* node);
+    void AppendCell(CHTML_tc* cell);
+
+    friend class CHTML_table;
+    friend class CHTML_tr_Cache;
+
+    CHTML_table* m_Parent;
 };
 
 // the table tag
@@ -474,8 +518,11 @@ class CHTML_table : public CHTMLElement
 public:
     // type for row and column indexing
     typedef unsigned TIndex;
-    // limit of row and column index
-    enum { KMaxIndex = 1024 };
+    enum ECellType {
+        eAnyCell,
+        eDataCell,
+        eHeaderCell
+    };
 
     CHTML_table(void);
     ~CHTML_table(void);
@@ -492,18 +539,14 @@ public:
     TIndex GetCurrentCol(void) const
         { return m_CurrentCol; }
 
-    enum ECellType {
-        eAnyCell,
-        eDataCell,
-        eHeaderCell
-    };
-
     class CTableInfo;
 
     // returns cell, will add rows/columns if needed
     // throws exception if it is not left upper corner of cell
     // also sets current insertion point
     CHTML_tc* Cell(TIndex row, TIndex column, ECellType type = eAnyCell);
+    CHTML_tc* Cell(TIndex row, TIndex column, ECellType type,
+                   TIndex rowSpan, TIndex colSpan);
     CHTML_tc* HeaderCell(TIndex row, TIndex column)
         { return Cell(row, column, eHeaderCell); }
     CHTML_tc* DataCell(TIndex row, TIndex column)
@@ -543,18 +586,16 @@ public:
     CHTML_table* SetCellSpacing(int spacing);
     CHTML_table* SetCellPadding(int padding);
 
-    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
+    void ResetTableCache(void);
 
 protected:
     TIndex m_CurrentRow, m_CurrentCol;
+    mutable auto_ptr<CHTML_table_Cache> m_Cache;
+    CHTML_table_Cache& GetCache(void) const;
+    friend class CHTML_table_Cache;
 
-    void x_CheckTable(CTableInfo* info) const;
-    static TIndex sx_GetSpan(const CNCBINode* node, const string& attr,
-                             CTableInfo* info);
-    static bool sx_IsRow(const CNCBINode* node);
-    static bool sx_IsCell(const CNCBINode* node);
-    static bool sx_CanContain(const CNCBINode* node);
-    static CHTML_tc* sx_CheckType(CHTMLNode* node, ECellType type);
+    virtual void DoAppendChild(CNCBINode* node);
+    void AppendRow(CHTML_tr* row);
 };
 
 // the form tag
@@ -954,27 +995,27 @@ public:
     virtual CNcbiOstream& PrintBegin(CNcbiOstream &, TMode mode);
 };
 
-#define CHTML_(Tag) NCBI_NAME2(CHTML_, Tag)
+#define CHTML_NAME(Tag) NCBI_NAME2(CHTML_, Tag)
 
 #define DECLARE_HTML_ELEMENT(Tag, Parent) \
-class CHTML_(Tag) : public Parent \
+class CHTML_NAME(Tag) : public Parent \
 { \
     typedef Parent CParent; \
     static const char sm_TagName[]; \
 public: \
-    CHTML_(Tag)(void) \
+    CHTML_NAME(Tag)(void) \
         : CParent(sm_TagName) \
         { } \
-    CHTML_(Tag)(const char* text) \
+    CHTML_NAME(Tag)(const char* text) \
         : CParent(sm_TagName, text) \
         { } \
-    CHTML_(Tag)(const string& text) \
+    CHTML_NAME(Tag)(const string& text) \
         : CParent(sm_TagName, text) \
         { } \
-    CHTML_(Tag)(CNCBINode* node) \
+    CHTML_NAME(Tag)(CNCBINode* node) \
         : CParent(sm_TagName, node) \
         { } \
-    ~CHTML_(Tag)(void); \
+    ~CHTML_NAME(Tag)(void); \
 }
 
 DECLARE_HTML_ELEMENT(html, CHTMLElement);
@@ -1009,7 +1050,6 @@ DECLARE_HTML_ELEMENT(colgroup, CHTMLElement);
 DECLARE_HTML_ELEMENT(thead, CHTMLElement);
 DECLARE_HTML_ELEMENT(tbody, CHTMLElement);
 DECLARE_HTML_ELEMENT(tfoot, CHTMLElement);
-DECLARE_HTML_ELEMENT(tr, CHTMLElement);
 DECLARE_HTML_ELEMENT(th, CHTML_tc);
 DECLARE_HTML_ELEMENT(td, CHTML_tc);
 DECLARE_HTML_ELEMENT(applet, CHTMLElement);

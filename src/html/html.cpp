@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/07/18 17:21:39  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.54  2000/07/12 16:37:42  vasilche
 * Added new HTML4 tags: LABEL, BUTTON, FIELDSET, LEGEND.
 * Added methods for setting common attributes: STYLE, ID, TITLE, ACCESSKEY.
@@ -484,7 +489,8 @@ CNcbiOstream& CHTMLOpenElement::PrintBegin(CNcbiOstream& out, TMode mode)
             for ( TAttributes::const_iterator i = Attributes().begin(); 
                   i != Attributes().end(); ++i ) {
                 out << ' ' << i->first;
-                if ( !i->second.empty() ) {
+                if ( !i->second.IsOptional() ||
+                     !i->second.GetValue().empty() ) {
                     out << "=\"" << CHTMLHelper::HTMLEncode(i->second) << '"';
                 }
             }
@@ -499,11 +505,19 @@ CHTMLElement::~CHTMLElement(void)
 
 CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out, TMode mode)
 {
-    if( mode == ePlainText ) {
-        return out;
-    } else {
-        return out << "</" << m_Name << ">\n";
+    if ( mode != ePlainText ) {
+        out << "</" << m_Name << '>';
+        const TMode* previous = mode.GetPreviousContext();
+        if ( previous ) {
+            CNCBINode* parent = previous->GetNode();
+            if ( parent->HaveChildren() && parent->Children().size() > 1 )
+                out << '\n'; // separate child nodes by newline
+        }
+        else {
+            out << '\n';
+        }
     }
+    return out;
 }
 
 // HTML comment class
@@ -515,7 +529,8 @@ CNcbiOstream& CHTMLComment::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out;
-    } else {
+    }
+    else {
         return out << "<!--";
     }
 }
@@ -524,7 +539,8 @@ CNcbiOstream& CHTMLComment::PrintEnd(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out;
-    } else {
+    }
+    else {
         return out << "-->";
     }
 }
@@ -553,6 +569,158 @@ CHTMLListElement* CHTMLListElement::SetCompact(void)
 
 // TABLE element
 
+class CHTML_tc_Cache
+{
+public:
+    CHTML_tc_Cache(void)
+        : m_Node(0)
+        {
+        }
+        
+    bool IsUsed(void) const
+        {
+            return m_Node != 0;
+        }
+        
+    bool IsNode(void) const
+        {
+            return m_Node != 0 && m_Node != &sm_UsedNode;
+        }
+    CHTML_tc* GetCellNode(void) const
+        {
+            return m_Node;
+        }
+        
+    void SetUsed(void);
+    void SetCellNode(CHTML_tc* node);
+        
+private:
+    CHTML_tc* m_Node;
+
+    static CHTML_tc sm_UsedNode;
+};
+    
+class CHTML_tr_Cache
+{
+public:
+    typedef CHTML_table::TIndex TIndex;
+
+    CHTML_tr_Cache(void)
+        : m_Node(0),
+          m_CellCount(0), m_CellsSize(0), m_Cells(0), m_FilledCellCount(0)
+        {
+        }
+    ~CHTML_tr_Cache(void)
+        {
+            delete[] m_Cells;
+        }
+
+    CHTML_tr* GetRowNode(void) const
+        {
+            return m_Node;
+        }
+    void SetRowNode(CHTML_tr* rowNode)
+        {
+            _ASSERT(!m_Node && rowNode);
+            m_Node = rowNode;
+        }
+
+    TIndex GetCellCount(void) const
+        {
+            return m_CellCount;
+        }
+    CHTML_tc_Cache& GetCellCache(TIndex col);
+
+    void AppendCell(CHTML_tr* rowNode, TIndex col,
+                    CHTML_tc* cellNode, TIndex colSpan);
+    void SetUsedCells(TIndex colBegin, TIndex colEnd);
+    void SetUsedCells(CHTML_tc* cellNode, TIndex colBegin, TIndex colEnd);
+private:
+    CHTML_tr_Cache(const CHTML_tr_Cache&);
+    CHTML_tr_Cache& operator=(const CHTML_tr_Cache&);
+
+    CHTML_tr* m_Node;
+    TIndex m_CellCount;
+    TIndex m_CellsSize;
+    CHTML_tc_Cache* m_Cells;
+    TIndex m_FilledCellCount;
+};
+
+class CHTML_table_Cache
+{
+public:
+    typedef CHTML_table::TIndex TIndex;
+
+    CHTML_table_Cache(CHTML_table* table);
+    ~CHTML_table_Cache(void);
+        
+    TIndex GetRowCount(void) const
+        {
+            return m_RowCount;
+        }
+
+    CHTML_tr_Cache& GetRowCache(TIndex row);
+    CHTML_tr* GetRowNode(TIndex row);
+    CHTML_tc* GetCellNode(TIndex row, TIndex col,
+                          CHTML_table::ECellType type);
+    CHTML_tc* GetCellNode(TIndex row, TIndex col,
+                          CHTML_table::ECellType type,
+                          TIndex rowSpan, TIndex colSpan);
+
+    void InitRow(TIndex row, CHTML_tr* rowNode);
+    void SetUsedCells(TIndex rowBegin, TIndex rowEnd,
+                      TIndex colBegin, TIndex colEnd);
+private:
+    CHTML_table* m_Node;
+    TIndex m_RowCount;
+    TIndex m_RowsSize;
+    CHTML_tr_Cache** m_Rows;
+    TIndex m_FilledRowCount;
+
+    CHTML_table_Cache(const CHTML_table_Cache&);
+    CHTML_table_Cache& operator=(const CHTML_table_Cache&);
+};
+
+CHTML_tr::CHTML_tr(void)
+    : CParent("tr")
+{
+}
+
+CHTML_tr::CHTML_tr(CNCBINode* node)
+    : CParent("tr", node)
+{
+}
+
+CHTML_tr::CHTML_tr(const string& text)
+    : CParent("tr", text)
+{
+}
+
+void CHTML_tr::DoAppendChild(CNCBINode* node)
+{
+    CHTML_tc* cell = dynamic_cast<CHTML_tc*>(node);
+    if ( cell ) {
+        // adding new cell
+        _ASSERT(!cell->m_Parent);
+        ResetTableCache();
+        cell->m_Parent = this;
+    }
+    CParent::DoAppendChild(node);
+}
+
+void CHTML_tr::AppendCell(CHTML_tc* cell)
+{
+    _ASSERT(!cell->m_Parent);
+    cell->m_Parent = this;
+    CParent::DoAppendChild(cell);
+}
+
+void CHTML_tr::ResetTableCache(void)
+{
+    if ( m_Parent )
+        m_Parent->ResetTableCache();
+}
+
 CHTML_tc::~CHTML_tc(void)
 {
 }
@@ -567,6 +735,318 @@ CHTML_tc* CHTML_tc::SetColSpan(TIndex span)
 {
     SetAttribute("colspan", span);
     return this;
+}
+
+static
+CHTML_table::TIndex x_GetSpan(const CHTML_tc* node,
+                              const string& attributeName)
+{
+    if ( !node->HaveAttribute(attributeName) )
+        return 1;
+
+    const string& value = node->GetAttribute(attributeName);
+
+    try {
+        CHTML_table::TIndex span = NStr::StringToUInt(value);
+        if ( span > 0 )
+            return span;
+    }
+    catch ( exception& ) {
+        // error will be posted later
+    }
+    ERR_POST("Bad attribute: " << attributeName << "=\"" << value << "\"");
+    return 1;
+}
+
+void CHTML_tc::DoSetAttribute(const string& name,
+                              const string& value, bool optional)
+{
+    if ( name == "rowspan" || name == "colspan" ) // changing cell size
+        ResetTableCache();
+    CParent::DoSetAttribute(name, value, optional);
+}
+
+void CHTML_tc::ResetTableCache(void)
+{
+    if ( m_Parent )
+        m_Parent->ResetTableCache();
+}
+
+void CHTML_tc_Cache::SetCellNode(CHTML_tc* cellNode)
+{
+    if ( IsUsed() )
+        THROW1_TRACE(runtime_error, "Overlapped table cells");
+    m_Node = cellNode;
+}
+
+void CHTML_tc_Cache::SetUsed()
+{
+    SetCellNode(&sm_UsedNode);
+}
+
+CHTML_tc CHTML_tc_Cache::sm_UsedNode("");
+
+static
+CHTML_table::TIndex x_NextSize(CHTML_table::TIndex size,
+                               CHTML_table::TIndex limit)
+{
+    do {
+        if ( size == 0 )
+            size = 2;
+        else
+            size *= 2;
+    } while ( size < limit );
+    return size;
+}
+
+CHTML_tc_Cache& CHTML_tr_Cache::GetCellCache(TIndex col)
+{
+    TIndex count = GetCellCount();
+    if ( col >= count ) {
+        TIndex newCount = col + 1;
+        TIndex size = m_CellsSize;
+        if ( newCount > size ) {
+            TIndex newSize = x_NextSize(size, newCount);
+            CHTML_tc_Cache* newCells = new CHTML_tc_Cache[newSize];
+            for ( TIndex i = 0; i < count; ++i )
+                newCells[i] = m_Cells[i];
+            delete[] m_Cells;
+            m_Cells = newCells;
+            m_CellsSize = newSize;
+        }
+        m_CellCount = newCount;
+    }
+    return m_Cells[col];
+}
+
+void CHTML_tr_Cache::SetUsedCells(TIndex colBegin, TIndex colEnd)
+{
+    for ( TIndex col = colBegin; col < colEnd; ++col )
+        GetCellCache(col).SetUsed();
+}
+
+void CHTML_tr_Cache::AppendCell(CHTML_tr* rowNode, TIndex col,
+                                CHTML_tc* cellNode, TIndex colSpan)
+{
+    _ASSERT(m_FilledCellCount <= col);
+    for ( TIndex i = m_FilledCellCount; i < col; ++i ) {
+        CHTML_tc_Cache& cellCache = GetCellCache(i);
+        if ( !cellCache.IsUsed() ) {
+            CHTML_tc* cell;
+            cell = new CHTML_td;
+            rowNode->AppendCell(cell);
+            cellCache.SetCellNode(cell);
+        }
+    }
+    CHTML_tc_Cache& cellCache = GetCellCache(col);
+    _ASSERT(!cellCache.IsUsed());
+    _ASSERT(x_GetSpan(cellNode, "colspan") == colSpan);
+    rowNode->AppendCell(cellNode);
+    cellCache.SetCellNode(cellNode);
+    if ( colSpan != 1 )
+        SetUsedCells(col + 1, col + colSpan);
+    m_FilledCellCount = col + colSpan;
+}
+
+void CHTML_tr_Cache::SetUsedCells(CHTML_tc* cellNode,
+                                  TIndex colBegin, TIndex colEnd)
+{
+    GetCellCache(colBegin).SetCellNode(cellNode);
+    SetUsedCells(colBegin + 1, colEnd);
+    m_FilledCellCount = colEnd;
+}
+
+CHTML_table_Cache::~CHTML_table_Cache(void)
+{
+    for ( TIndex i = 0; i < GetRowCount(); ++i )
+        delete m_Rows[i];
+    delete[] m_Rows;
+}
+
+CHTML_tr_Cache& CHTML_table_Cache::GetRowCache(TIndex row)
+{
+    TIndex count = GetRowCount();
+    if ( row >= count ) {
+        TIndex newCount = row + 1;
+        TIndex size = m_RowsSize;
+        if ( newCount > size ) {
+            TIndex newSize = x_NextSize(size, newCount);
+            CHTML_tr_Cache** newRows = new CHTML_tr_Cache*[newSize];
+            for ( TIndex i = 0; i < count; ++i )
+                newRows[i] = m_Rows[i];
+            delete[] m_Rows;
+            m_Rows = newRows;
+            m_RowsSize = newSize;
+        }
+        for ( TIndex i = count; i < newCount; ++i )
+            m_Rows[i] = new CHTML_tr_Cache;
+        m_RowCount = newCount;
+    }
+    return *m_Rows[row];
+}
+
+void CHTML_table_Cache::InitRow(TIndex row, CHTML_tr* rowNode)
+{
+    CHTML_tr_Cache& rowCache = GetRowCache(row);
+    m_Rows[row]->SetRowNode(rowNode);
+    m_FilledRowCount = row + 1;
+
+    // scan all children (which should be <TH> or <TD> tags)
+    if ( rowNode->HaveChildren() ) {
+        // beginning with column 0
+        TIndex col = 0;
+        for ( CNCBINode::TChildren::iterator iCol = rowNode->ChildBegin(),
+                  iColEnd = rowNode->ChildEnd();
+              iCol != iColEnd; ++iCol ) {
+            CHTML_tc* cellNode =
+                dynamic_cast<CHTML_tc*>(rowNode->Node(iCol));
+            
+            if ( !cellNode )
+                continue;
+            
+            // skip all used cells
+            while ( rowCache.GetCellCache(col).IsUsed() ) {
+                ++col;
+            }
+            
+            // determine current cell size
+            TIndex rowSpan = x_GetSpan(cellNode, "rowspan");
+            TIndex colSpan = x_GetSpan(cellNode, "colspan");
+            
+            // end of new cell in columns
+            rowCache.SetUsedCells(cellNode, col, col + colSpan);
+            if ( rowSpan > 1 )
+                SetUsedCells(row + 1, row + rowSpan, col, col + colSpan);
+
+            // skip this cell's columns
+            col += colSpan;
+        }
+    }
+}
+
+CHTML_table_Cache::CHTML_table_Cache(CHTML_table* table)
+    : m_Node(table),
+      m_RowCount(0), m_RowsSize(0), m_Rows(0), m_FilledRowCount(0)
+{
+    // scan all children (which should be <TR> tags)
+    if ( table->HaveChildren() ) {
+        // beginning with row 0
+        TIndex row = 0;
+        for ( CNCBINode::TChildren::iterator iRow = table->ChildBegin(),
+                  iRowEnd = table->ChildEnd(); iRow != iRowEnd; ++iRow ) {
+            CHTML_tr* rowNode = dynamic_cast<CHTML_tr*>(table->Node(iRow));
+            if( !rowNode )
+                continue;
+
+            InitRow(row, rowNode);
+            ++row;
+        }
+    }
+}
+
+CHTML_tr* CHTML_table_Cache::GetRowNode(TIndex row)
+{
+    GetRowCache(row);
+    while ( row >= m_FilledRowCount ) {
+        CHTML_tr* rowNode = new CHTML_tr;
+        m_Node->AppendRow(rowNode);
+        m_Rows[m_FilledRowCount++]->SetRowNode(rowNode);
+    }
+    return m_Rows[row]->GetRowNode();
+}
+
+void CHTML_table_Cache::SetUsedCells(TIndex rowBegin, TIndex rowEnd,
+                                     TIndex colBegin, TIndex colEnd)
+{
+    for ( TIndex row = rowBegin; row < rowEnd; ++row ) {
+        GetRowCache(row).SetUsedCells(colBegin, colEnd);
+    }
+}
+
+CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
+                                         CHTML_table::ECellType type)
+{
+    _TRACE("Cell("<<row<<", "<<col<<")");
+    CHTML_tr_Cache& rowCache = GetRowCache(row);
+    if ( col < rowCache.GetCellCount() ) {
+        CHTML_tc_Cache& cellCache = rowCache.GetCellCache(col);
+        if ( cellCache.IsNode() ) {
+            CHTML_tc* cell = cellCache.GetCellNode();
+            switch ( type ) {
+            case CHTML_table::eHeaderCell:
+                if ( !dynamic_cast<CHTML_th*>(cell) )
+                    THROW1_TRACE(runtime_error,
+                                 "wrong cell type: TH expected");
+                break;
+            case CHTML_table::eDataCell:
+                if ( !dynamic_cast<CHTML_td*>(cell) )
+                    THROW1_TRACE(runtime_error,
+                                 "wrong cell type: TD expected");
+                break;
+            default:
+                break;
+            }
+            return cell;
+        }
+        if ( cellCache.IsUsed() )
+            THROW1_TRACE(runtime_error, "invalid use of big table cell");
+    }
+    CHTML_tc* cell;
+    if ( type == CHTML_table::eHeaderCell )
+        cell = new CHTML_th;
+    else
+        cell = new CHTML_td;
+    rowCache.AppendCell(GetRowNode(row), col, cell, 1);
+    return cell;
+}
+
+CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
+                                         CHTML_table::ECellType type,
+                                         TIndex rowSpan, TIndex colSpan)
+{
+    _TRACE("Cell("<<row<<", "<<col<<", "<<rowSpan<<", "<<colSpan<<")");
+    CHTML_tr_Cache& rowCache = GetRowCache(row);
+    if ( col < rowCache.GetCellCount() ) {
+        CHTML_tc_Cache& cellCache = rowCache.GetCellCache(col);
+        if ( cellCache.IsNode() ) {
+            CHTML_tc* cell = cellCache.GetCellNode();
+            switch ( type ) {
+            case CHTML_table::eHeaderCell:
+                if ( !dynamic_cast<CHTML_th*>(cell) )
+                    THROW1_TRACE(runtime_error,
+                                 "wrong cell type: TH expected");
+                break;
+            case CHTML_table::eDataCell:
+                if ( !dynamic_cast<CHTML_td*>(cell) )
+                    THROW1_TRACE(runtime_error,
+                                 "wrong cell type: TD expected");
+                break;
+            default:
+                break;
+            }
+            if ( x_GetSpan(cell, "rowspan") != rowSpan ||
+                 x_GetSpan(cell, "colspan") != colSpan )
+                THROW1_TRACE(runtime_error, "cannot change table cell size");
+            return cell;
+        }
+        if ( cellCache.IsUsed() )
+            THROW1_TRACE(runtime_error, "invalid use of big table cell");
+    }
+    
+    CHTML_tc* cell;
+    if ( type == CHTML_table::eHeaderCell )
+        cell = new CHTML_th;
+    else
+        cell = new CHTML_td;
+
+    if ( colSpan != 1 )
+        cell->SetColSpan(colSpan);
+    if ( rowSpan != 1 )
+        cell->SetRowSpan(rowSpan);
+    rowCache.AppendCell(GetRowNode(row), col, cell, colSpan);
+    if ( rowSpan != 1 )
+        SetUsedCells(row + 1, row + rowSpan, col, col + colSpan);
+    return cell;
 }
 
 CHTML_table::CHTML_table(void)
@@ -590,449 +1070,71 @@ CHTML_table* CHTML_table::SetCellPadding(int padding)
     return this;
 }
 
-class CHTML_table::CTableInfo
+void CHTML_table::ResetTableCache(void)
 {
-public:
-    TIndex m_Rows;
-    TIndex m_Columns;
-        TIndex m_FinalRow;
-    vector<TIndex> m_FinalRowSpans;
-    vector<TIndex> m_RowSizes;
-    bool m_BadNode, m_BadRowNode, m_BadCellNode, m_Overlapped, m_BadSpan;
-    
-    CTableInfo(void);
-    void AddRowSize(TIndex columns);
-    void SetFinalRowSpans(TIndex rows, const vector<TIndex>& rowSpans);
-};
-
-CHTML_table::TIndex CHTML_table::sx_GetSpan(const CNCBINode* node,
-                            const string& attributeName, CTableInfo* info)
-{
-    if ( !node->HaveAttribute(attributeName) )
-        return 1;
-
-    TIndex span;
-    try {
-        span = NStr::StringToUInt(node->GetAttribute(attributeName));
-    }
-    catch (runtime_error&) {
-        if ( info )
-            info->m_BadSpan = true;
-        return 1;
-    }
-    if ( span == 0 || span > KMaxIndex ) {
-        if ( info )
-            info->m_BadSpan = true;
-        return 1;
-    }
-    return span;
+    m_Cache.reset(0);
 }
 
-CHTML_tr* CHTML_table::Row(TIndex needRow)  // todo: exception
+CHTML_table_Cache& CHTML_table::GetCache(void) const
 {
-    // beginning with row 0
-    TIndex row = 0;
-    // scan all children (which should be <TR> tags)
-    if ( HaveChildren() ) {
-        for ( TChildren::iterator iRow = ChildBegin();
-              iRow != ChildEnd(); ++iRow, ++row ) {
-            CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(Node(iRow));
-            if ( !trNode ) {
-                THROW1_TRACE(runtime_error,
-                             "Table contains non-HTML node");
-            }
-            if( !sx_IsRow(trNode) ) {
-                if( !sx_CanContain(trNode) ) {
-                    THROW1_TRACE(runtime_error,
-                                 "Table contains wrong tag '" +
-                                  trNode->GetName() + "'");
-                }
-                continue;
-            }
-            
-            if ( row == needRow ) {
-                return static_cast<CHTML_tr*>(trNode);
-            }
-        }
+    CHTML_table_Cache* cache = m_Cache.get();
+    if ( !cache )
+        m_Cache.reset(cache = new CHTML_table_Cache(const_cast<CHTML_table*>(this)));
+    return *cache;
+}
+
+void CHTML_table::DoAppendChild(CNCBINode* node)
+{
+    CHTML_tr* row = dynamic_cast<CHTML_tr*>(node);
+    if ( row ) {
+        // adding new row
+        _ASSERT(!row->m_Parent);
+        ResetTableCache();
+        row->m_Parent = this;
     }
-
-    // add needed empty rows (needRow > 0 here)
-    CHTML_tr* trNode;
-    do {
-        // add needed rows
-        AppendChild(trNode = new CHTML_tr);
-    } while ( ++row <= needRow );
-    return trNode;
+    CParent::DoAppendChild(node);
 }
 
-CHTML_tc* CHTML_table::sx_CheckType(CHTMLNode* cell, ECellType type)
+void CHTML_table::AppendRow(CHTML_tr* row)
 {
-    CHTML_tc* ret;
-    switch (type) {
-    case eHeaderCell:
-        ret = dynamic_cast<CHTML_th*>(cell);
-        if ( !ret )
-            THROW1_TRACE(runtime_error,
-                         "CHTML_table: wrong cell type: TH expected");
-        break;
-    case eDataCell:
-        ret = dynamic_cast<CHTML_td*>(cell);
-        if ( !ret )
-            THROW1_TRACE(runtime_error,
-                         "CHTML_table: wrong cell type: TD expected");
-        break;
-    default:
-        ret = dynamic_cast<CHTML_tc*>(cell);
-        if ( !ret )
-            THROW1_TRACE(runtime_error,
-                         "CHTML_table: wrong cell type: TD or TH expected");
-        break;
-    }
-    return ret;
+    _ASSERT(!row->m_Parent);
+    row->m_Parent = this;
+    CParent::DoAppendChild(row);
 }
 
-CHTML_tc* CHTML_table::Cell(TIndex needRow, TIndex needCol, ECellType type)
+CHTML_tr* CHTML_table::Row(TIndex row)  // todo: exception
 {
-    vector<TIndex> rowSpans; // hanging down cells (with rowspan > 1)
-
-    // beginning with row 0
-    TIndex row = 0;
-    TIndex needRowCols = 0;
-    CHTMLNode* needRowNode = 0;
-    // scan all children (which should be <TR> tags)
-    if ( HaveChildren() ) {
-        for ( TChildren::iterator iRow = ChildBegin();
-              iRow != ChildEnd(); ++iRow ) {
-            CHTMLNode* trNode = dynamic_cast<CHTMLNode*>(Node(iRow));
-            if( !trNode ) {
-                THROW1_TRACE(runtime_error,
-                             "Table contains non-HTML node");
-            }
-            if( !sx_IsRow(trNode) ) {
-                if( !sx_CanContain(trNode) ) {
-                    THROW1_TRACE(runtime_error,
-                                 "Table contains wrong tag '" +
-                                 trNode->GetName() + "'");
-                }
-                continue;
-            }
-            
-            // beginning with column 0
-            TIndex col = 0;
-            // scan all children (which should be <TH> or <TD> tags)
-            if ( trNode->HaveChildren() ) {
-                for ( TChildren::iterator iCol = trNode->ChildBegin();
-                      iCol != trNode->ChildEnd(); ++iCol ) {
-                    CHTMLNode* cell = dynamic_cast<CHTMLNode*>(Node(iCol));
-                    
-                    if ( !cell || !sx_IsCell(cell) ) {
-                        THROW1_TRACE(runtime_error,
-                                     "Table row contains non- <TH> or <TD> tag");
-                    }
-                    
-                    // skip all used cells
-                    while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
-                        --rowSpans[col++];
-                    }
-                    
-                    if ( row == needRow ) {
-                        if ( col == needCol ) {
-                            CHTML_tc* c = sx_CheckType(cell, type);
-                            m_CurrentRow = needRow;
-                            m_CurrentCol = needCol;
-                            return c;
-                        }
-                        if ( col > needCol )
-                            THROW1_TRACE(runtime_error,
-                                         "Table cells are overlapped");
-                    }
-                    
-                    // determine current cell size
-                    TIndex rowSpan =
-                        sx_GetSpan(cell, "rowspan", 0);
-                    TIndex colSpan =
-                        sx_GetSpan(cell, "colspan", 0);
-                    
-                    // end of new cell in columns
-                    const TIndex colEnd = col + colSpan;
-                    // check that there is enough space
-                    for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
-                        if ( rowSpans[i] ) {
-                            THROW1_TRACE(runtime_error,
-                                         "Table cells are overlapped");
-                        }
-                    }
-                    
-                    if ( rowSpan > 1 ) {
-                        // we should remember space used by this cell
-                        // first expand rowSpans vector if needed
-                        if ( rowSpans.size() < colEnd )
-                            rowSpans.resize(colEnd);
-                        
-                        // then store span number
-                        for ( TIndex i = col; i < colEnd; ++i ) {
-                            rowSpans[i] = max(rowSpans[i], rowSpan - 1);
-                        }
-                    }
-                    // skip this cell's columns
-                    col += colSpan;
-                }
-            }
-
-            ++row;
-            
-            if ( row > needRow ) {
-                needRowCols = col;
-                needRowNode = trNode;
-                break;
-            }
-        }
-    }
-
-    while ( row <= needRow ) {
-        // add needed rows
-        AppendChild(needRowNode = new CHTML_tr);
-        ++row;
-        // decrement hanging cell sizes
-        for ( TIndex i = 0; i < rowSpans.size(); ++i ) {
-            if ( rowSpans[i] )
-                --rowSpans[i];
-        }
-    }
-
-    // this row doesn't have enough columns -> add some
-    TIndex addCells = 0;
-
-    do {
-        // skip hanging cells
-        while ( needRowCols < rowSpans.size() && rowSpans[needRowCols] > 0 ) {
-            if ( needRowCols == needCol )
-                THROW1_TRACE(runtime_error,
-                             "Table cells are overlapped");
-            ++needRowCols;
-        }
-        // allocate one column cell
-        ++addCells;
-        ++needRowCols;
-    } while ( needRowCols <= needCol );
-
-    // add needed columns
-    CHTML_tc* cell;
-    for ( TIndex i = 1; i < addCells; ++i ) {
-        needRowNode->AppendChild(cell = new CHTML_td);
-    }
-    if ( type == eHeaderCell )
-        cell = new CHTML_th;
-    else
-        cell = new CHTML_td;
-    needRowNode->AppendChild(cell);
-    m_CurrentRow = needRow;
-    m_CurrentCol = needCol;
-    return cell;
+    return GetCache().GetRowNode(row);
 }
 
-bool CHTML_table::sx_IsRow(const CNCBINode* node)
+CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type)
 {
-    return dynamic_cast<const CHTML_tr*>(node) != 0;
+    return GetCache().GetCellNode(row, col, type);
 }
 
-bool CHTML_table::sx_IsCell(const CNCBINode* node)
+CHTML_tc* CHTML_table::Cell(TIndex row, TIndex col, ECellType type,
+                            TIndex rowSpan, TIndex colSpan)
 {
-    return dynamic_cast<const CHTML_tc*>(node) != 0;
+    return GetCache().GetCellNode(row, col, type, rowSpan, colSpan);
 }
 
-static auto_ptr< set<string, PNocase> > CHTML_table_validTags;
-
-bool CHTML_table::sx_CanContain(const CNCBINode* node)
+void CHTML_table::CheckTable(void) const
 {
-    if ( !CHTML_table_validTags.get() ) {
-        CHTML_table_validTags.reset(new set<string, PNocase>);
-        CHTML_table_validTags->insert("caption");
-        CHTML_table_validTags->insert("col");
-        CHTML_table_validTags->insert("colgroup");
-        CHTML_table_validTags->insert("tbody");
-        CHTML_table_validTags->insert("tfoot");
-        CHTML_table_validTags->insert("thead");
-        CHTML_table_validTags->insert("tr");
-    }
-    return CHTML_table_validTags->find(node->GetName()) !=
-        CHTML_table_validTags->end();
-}
-
-void CHTML_table::x_CheckTable(CTableInfo *info) const
-{
-    vector<TIndex> rowSpans; // hanging down cells (with rowspan > 1)
-
-    // beginning with row 0
-    TIndex row = 0;
-    // scan all children (which should be <TR> tags)
-    if ( HaveChildren() ) {
-        for ( TChildren::const_iterator iRow = ChildBegin();
-              iRow != ChildEnd();
-              ++iRow ) {
-            const CNCBINode* trNode = Node(iRow);
-            if( !sx_IsRow(trNode) ) {
-                if( !sx_CanContain(trNode) ) {
-                    if ( info ) {
-                        // we just gathering info -> skip wrong tag
-                        info->m_BadNode = info->m_BadRowNode = true;
-                        continue;
-                    }
-                    THROW1_TRACE(runtime_error,
-                                 "Table contains wrong tag '" +
-                                 trNode->GetName() + "'");
-                }
-                continue;
-            }
-            
-            // beginning with column 0
-            TIndex col = 0;
-            // scan all children (which should be <TH> or <TD> tags)
-            if ( trNode->HaveChildren() ) {
-                for ( TChildren::const_iterator iCol = trNode->ChildBegin();
-                      iCol != trNode->ChildEnd(); ++iCol ) {
-                    const CNCBINode* cell = Node(iCol);
-                    
-                    if ( !sx_IsCell(cell) ) {
-                        if ( info ) {
-                            // we just gathering info -> skip wrong tag
-                            info->m_BadNode = info->m_BadCellNode = true;
-                            continue;
-                        }
-                        THROW1_TRACE(runtime_error,
-                                     "Table row contains non- <TH> or <TD> tag");
-                    }
-                    
-                    // skip all used cells
-                    while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
-                        --rowSpans[col++];
-                    }
-                    
-                    // determine current cell size
-                    TIndex rowSpan =
-                        sx_GetSpan(cell, "rowspan", info);
-                    TIndex colSpan =
-                        sx_GetSpan(cell, "colspan", info);
-                    
-                    // end of new cell in columns
-                    const TIndex colEnd = col + colSpan;
-                    // check that there is enough space
-                    for ( TIndex i = col; i < colEnd && i < rowSpans.size(); ++i ) {
-                        if ( rowSpans[i] ) {
-                            if ( info )
-                                info->m_Overlapped = true;
-                            else {
-                                THROW1_TRACE(runtime_error,
-                                             "Table cells are overlapped");
-                            }
-                        }
-                    }
-                    
-                    if ( rowSpan > 1 ) {
-                        // we should remember space used by this cell
-                        // first expand rowSpans vector if needed
-                        if ( rowSpans.size() < colEnd )
-                            rowSpans.resize(colEnd);
-                        
-                        // then store span number
-                        for ( TIndex i = col; i < colEnd; ++i ) {
-                            rowSpans[i] = rowSpan - 1;
-                        }
-                    }
-                    // skip this cell's columns
-                    col += colSpan;
-                }
-            }
-            
-            // skip all used cells
-            while ( col < rowSpans.size() && rowSpans[col] > 0 ) {
-                --rowSpans[col++];
-            }
-            
-            if ( info )
-                info->AddRowSize(col);
-            ++row;
-        }
-    }
-    
-    if ( info )
-        info->SetFinalRowSpans(row, rowSpans);
-}
-
-CHTML_table::CTableInfo::CTableInfo(void)
-    : m_Rows(0), m_Columns(0), m_FinalRow(0),
-      m_BadNode(false), m_BadRowNode(false), m_BadCellNode(false),
-      m_Overlapped(false), m_BadSpan(false)
-{
-}
-
-void CHTML_table::CTableInfo::AddRowSize(TIndex columns)
-{
-    m_RowSizes.push_back(columns);
-    m_Columns = max(m_Columns, columns);
-}
-
-void CHTML_table::CTableInfo::SetFinalRowSpans(TIndex row,
-                                               const vector<TIndex>& rowSpans)
-{
-    m_FinalRow = row;
-    m_FinalRowSpans = rowSpans;
-
-    // check for the rest of rowSpans
-    TIndex addRows = 0;
-    for ( TIndex i = 0; i < rowSpans.size(); ++i ) {
-        addRows = max(addRows, rowSpans[i]);
-    }
-    m_Rows = row + addRows;
+    GetCache();
 }
 
 CHTML_table::TIndex CHTML_table::CalculateNumberOfColumns(void) const
 {
-    CTableInfo info;
-    x_CheckTable(&info);
-    return info.m_Columns;
+    CHTML_table_Cache& cache = GetCache();
+    TIndex columns = 0;
+    for ( TIndex i = 0; i < cache.GetRowCount(); ++i )
+        columns = max(columns, cache.GetRowCache(i).GetCellCount());
+    return columns;
 }
 
 CHTML_table::TIndex CHTML_table::CalculateNumberOfRows(void) const
 {
-    CTableInfo info;
-    x_CheckTable(&info);
-    return info.m_Rows;
-}
-
-CNcbiOstream& CHTML_table::PrintChildren(CNcbiOstream& out, TMode mode)
-{
-    CTableInfo info;
-    x_CheckTable(&info);
-
-    if( mode == ePlainText ) {
-        out << CHTMLHelper::GetNL();
-    }
-    TIndex row = 0;
-    if ( HaveChildren() ) {
-        for ( TChildren::iterator iRow = ChildBegin();
-              iRow != ChildEnd(); ++iRow ) {
-            
-            CNCBINode* rowNode = Node(iRow);
-            if ( !sx_IsRow(rowNode) )
-                rowNode->Print(out,mode);
-            else {
-                rowNode->Print(out,mode); 
-                ++row;
-            }
-            if( mode == ePlainText ) {
-                out << CHTMLHelper::GetNL();
-            }
-        }
-    }
-
-    if( mode == eHTML ) {
-        // print implicit rows
-        for ( TIndex i = info.m_FinalRow; i < info.m_Rows; ++i )
-            out << "<TR></TR>";
-    }
-    
-    return out;
+    return GetCache().GetRowCount();
 }
 
 // form element
@@ -1462,7 +1564,8 @@ CNcbiOstream& CHTML_br::PrintBegin(CNcbiOstream& out, TMode mode)
 {
     if( mode == ePlainText ) {
         return out << CHTMLHelper::GetNL();
-    } else {
+    }
+    else {
         return CParent::PrintBegin(out,mode);
     }
 }
@@ -1615,18 +1718,18 @@ CHTML_hr* CHTML_hr::SetNoShade(void)
 CNcbiOstream& CHTML_hr::PrintBegin(CNcbiOstream& out, TMode mode)  
 {
     if( mode == ePlainText ) {
-        return out << CHTMLHelper::GetNL()
-                   << CHTMLHelper::GetNL();
-    } else {
+        return out << CHTMLHelper::GetNL() << CHTMLHelper::GetNL();
+    }
+    else {
         return CParent::PrintBegin(out, mode);
     }
 }
 
 #define DEFINE_HTML_ELEMENT(Tag) \
-CHTML_(Tag)::~CHTML_(Tag)(void) \
+CHTML_NAME(Tag)::~CHTML_NAME(Tag)(void) \
 { \
 } \
-const char CHTML_(Tag)::sm_TagName[] = #Tag
+const char CHTML_NAME(Tag)::sm_TagName[] = #Tag
 
 DEFINE_HTML_ELEMENT(html);
 DEFINE_HTML_ELEMENT(head);
@@ -1660,7 +1763,6 @@ DEFINE_HTML_ELEMENT(colgroup);
 DEFINE_HTML_ELEMENT(thead);
 DEFINE_HTML_ELEMENT(tbody);
 DEFINE_HTML_ELEMENT(tfoot);
-DEFINE_HTML_ELEMENT(tr);
 DEFINE_HTML_ELEMENT(th);
 DEFINE_HTML_ELEMENT(td);
 DEFINE_HTML_ELEMENT(applet);

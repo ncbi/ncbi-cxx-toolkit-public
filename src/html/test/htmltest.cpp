@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/07/18 17:21:42  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.14  1999/10/28 13:40:39  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -107,6 +112,7 @@ SFactoryList < CHTMLBasicPage > PageList [] = {
 
 int CMyApp::ProcessRequest(CCgiContext& ctx) 
 {
+    SetDiagStream(&NcbiCerr);
     CFactory < CHTMLBasicPage > Factory;
 
     try {
@@ -128,6 +134,66 @@ int CMyApp::ProcessRequest(CCgiContext& ctx)
                           ->AppendItem("item 2")
                           ->AppendItem("Item 3")
                           ->AppendItem("Fourth item"));
+        Page->AppendChild(new CHTMLPlainText("Testing table"));
+        CRef<CHTML_table> table(new CHTML_table);
+        Page->AppendChild(table.GetPointer());
+        table->SetAttribute("border");
+        const unsigned ROWS = 20;
+        const unsigned COLUMNS = 10;
+        int xSizes[ROWS][COLUMNS];
+        int ySizes[ROWS][COLUMNS];
+        { // init used table
+            for ( unsigned row = 0; row < ROWS; ++row ) {
+                for ( unsigned col = 0; col < COLUMNS; ++col ) {
+                    xSizes[row][col] = 0;
+                }
+            }
+        }
+        { // fill by cells
+            for ( int ci = 0; ci < 1000; ++ci ) {
+                unsigned xSize = rand() % 5 + 1;
+                unsigned ySize = rand() % 5 + 1;
+                unsigned x = rand() % (COLUMNS - xSize);
+                unsigned y = rand() % (ROWS - ySize);
+                // check whether area is unused
+                bool free = true;
+                for ( unsigned row = y; free && row < y + ySize; ++row ) {
+                    for ( unsigned col = x; free && col < x + xSize; ++col ) {
+                        if ( xSizes[row][col] )
+                            free = false;
+                    }
+                }
+                if ( free ) {
+                    for ( unsigned row = y; row < y + ySize; ++row ) {
+                        for ( unsigned col = x; col < x + xSize; ++col ) {
+                            xSizes[row][col] = ySizes[row][col] = -1;
+                        }
+                    }
+                    xSizes[y][x] = xSize;
+                    ySizes[y][x] = ySize;
+                }
+            }
+            // fill table by generated cells
+            for ( unsigned row = 0; row < ROWS; ++row ) {
+                for ( unsigned col = 0; col < COLUMNS; ++col ) {
+                    int xSize = xSizes[row][col];
+                    if ( xSize > 0 ) {
+                        int ySize = ySizes[row][col];
+                        CHTML_tc* cell = table->Cell(row, col,
+                                                     CHTML_table::eAnyCell,
+                                                     ySize, xSize);
+                        cell->AppendPlainText('@'+NStr::UIntToString(row)+
+                                              ','+NStr::UIntToString(col));
+                        cell->AppendChild(new CHTML_br);
+                        cell->AppendPlainText(NStr::UIntToString(xSize)+'x'+
+                                              NStr::UIntToString(ySize));
+                    }
+                    else if ( xSize == 0 ) {
+                        table->InsertAt(row, col, "*");
+                    }
+                }
+            }
+        }
         Page->AppendChild(new CHTMLComment("this is comment"));
         ctx.GetResponse().WriteHeader();
         Page->Print(ctx.GetResponse().out());

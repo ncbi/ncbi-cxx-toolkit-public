@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/18 17:21:35  vasilche
+* Added possibility to force output of empty attribute value.
+* Added caching to CHTML_table, now large tables work much faster.
+* Changed algorythm of emitting EOL symbols in html output.
+*
 * Revision 1.9  2000/03/29 15:50:39  vasilche
 * Added const version of CRef - CConstRef.
 * CRef and CConstRef now accept classes inherited from CObject.
@@ -165,7 +170,8 @@ CNCBINode* CNCBINode::AppendChild(CNCBINode* child)
 inline
 CNCBINode* CNCBINode::AppendChild(CNodeRef& ref)
 {
-    return AppendChild(&*ref);
+    DoAppendChild(ref.GetPointer());
+    return this;
 }
 
 inline
@@ -197,6 +203,12 @@ CNCBINode::TAttributes& CNCBINode::GetAttributes(void)
         m_Attributes.reset(attributes = new TAttributes);
     return *attributes;
 #endif
+}
+
+inline
+void CNCBINode::SetAttribute(const string& name, const string& value)
+{
+    DoSetAttribute(name, value, false);
 }
 
 inline
