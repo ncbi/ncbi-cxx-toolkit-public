@@ -1,5 +1,5 @@
 # $Id$
 
-SRC = compress stream streambuf bzip2 zlib
+SRC = compress stream streambuf bzip2 zlib reader_zlib
 
 LIB = xcompress
