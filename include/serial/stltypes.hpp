@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2002/06/19 21:42:58  ucko
+* Tweak CStlClassInfo_(multi)map<>::CreateTypeInfo() to avoid GCC 3.1
+* warnings -- yes, we should technically be using pointer-to-member
+* types, but the offsets are constant in practice.
+*
 * Revision 1.59  2002/04/12 19:31:31  grichenk
 * Fixed containers assignment
 *
@@ -808,13 +813,15 @@ public:
 
     static CTypeInfo* CreateTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
         {
+            TElementType* dummy = 0;
             CStlTwoArgsTemplate* info =
-                new CStlTwoArgsTemplate(sizeof(TObjectType),
-                                        keyType,
-                                        offsetof(TElementType, first),
-                                        valueType,
-                                        offsetof(TElementType, second),
-                                        true);
+                new CStlTwoArgsTemplate
+                (sizeof(TObjectType),
+                 keyType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->first),
+                 valueType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->second),
+                 true);
             
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions_set<TObjectType>::SetAddElementFunctions(info);
@@ -840,13 +847,15 @@ public:
 
     static CTypeInfo* CreateTypeInfo(TTypeInfo keyType, TTypeInfo valueType)
         {
+            TElementType* dummy = 0;
             CStlTwoArgsTemplate* info =
-                new CStlTwoArgsTemplate(sizeof(TObjectType),
-                                        keyType,
-                                        offsetof(TElementType, first),
-                                        valueType,
-                                        offsetof(TElementType, second),
-                                        true);
+                new CStlTwoArgsTemplate
+                (sizeof(TObjectType),
+                 keyType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->first),
+                 valueType,
+                 reinterpret_cast<TPointerOffsetType>(&dummy->second),
+                 true);
             
             CStlClassInfoFunctions<TObjectType>::SetMemFunctions(info);
             CStlClassInfoFunctions_multiset<TObjectType>::SetAddElementFunctions(info);
