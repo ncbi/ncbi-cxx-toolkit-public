@@ -34,24 +34,6 @@
  *
  */
 
-#ifndef _DEBUG
-inline
-void CObject::operator delete(void* ptr)
-{
-    ::operator delete(ptr);
-}
-
-inline
-void CObject::operator delete[](void* ptr)
-{
-# ifdef HAVE_WINDOWS_H
-    ::operator delete(ptr);
-# else
-    ::operator delete[](ptr);
-# endif
-}
-#endif  /* _DEBUG */
-
 
 inline
 bool CObject::ObjectStateCanBeDeleted(TCount count)
@@ -141,6 +123,10 @@ void CObject::RemoveReference(void) const
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/09/17 15:20:45  vasilche
+ * Moved atomic counter swap functions to separate file.
+ * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
+ *
  * Revision 1.8  2003/08/12 12:04:49  siyan
  * Changed reference to AddReferenceOverflow() to its new name of
  * CheckReferenceOverflow().

@@ -32,17 +32,33 @@
  */
 
 /// @file ncbimtx.hpp
-/// Multi-threading -- fast mutexes;  platform-specific headers and defines.
+/// Multi-threading -- mutexes;  rw-locks; semaphore
+///
+///   MUTEX:
 ///
 /// MUTEX CLASSES:
-/// - CInternalMutex   -- platform-dependent mutex functionality
+/// - SSystemFastMutex -- platform-dependent mutex functionality
+/// - SSystemMutex     -- platform-dependent mutex functionality
 /// - CFastMutex       -- simple mutex with fast lock/unlock functions
+/// - CMutex           -- mutex that allows nesting (with runtime checks)
 /// - CFastMutexGuard  -- acquire fast mutex, then guarantee for its release
+/// - CMutexGuard      -- acquire mutex, then guarantee for its release
+///
+/// RW-LOCK:
+/// - CInternalRWLock  -- platform-dependent RW-lock structure (fwd-decl)
+/// - CRWLock          -- Read/Write lock related  data and methods
+/// - CAutoRW          -- guarantee RW-lock release
+/// - CReadLockGuard   -- acquire R-lock, then guarantee for its release
+/// - CWriteLockGuard  -- acquire W-lock, then guarantee for its release
+///
+/// SEMAPHORE:
+/// - CSemaphore       -- application-wide semaphore
+///
 
 
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbicntr.hpp>
-#include <list>
+#include <vector>
 #include <memory>
 
 
@@ -140,11 +156,9 @@ public:
             m_ID = id.m_ID;
             return *this;
         }
-    const volatile CThreadSystemID&
-    operator=(const volatile CThreadSystemID& id) volatile
+    void operator=(const volatile CThreadSystemID& id) volatile
         {
             m_ID = id.m_ID;
-            return *this;
         }
 
     /// Equality operator for thread ID.
@@ -946,7 +960,7 @@ private:
                                         ///< writers (if <0)
 
     
-    list<CThreadSystemID>      m_Readers;   ///< List of all readers or writers
+    vector<CThreadSystemID>    m_Readers;   ///< List of all readers or writers
                                             ///< for debugging
     
     /// Private copy constructor to disallow initialization.
@@ -1113,6 +1127,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/09/17 15:20:45  vasilche
+ * Moved atomic counter swap functions to separate file.
+ * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
+ *
  * Revision 1.26  2003/09/02 16:36:50  vasilche
  * Fixed warning on MSVC.
  *

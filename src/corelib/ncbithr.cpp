@@ -38,9 +38,6 @@
  *      CInternalRWLock  -- platform-dependent RW-lock structure (fwd-decl)
  *      CRWLock          -- Read/Write lock related  data and methods
  *
- *    MISC:
- *      SwapPointers     -- atomic pointer swap operation
- *
  */
 
 
@@ -651,24 +648,16 @@ void CThread::GetSystemID(TThreadSystemID* id)
 }
 
 
-#ifdef NCBI_SLOW_ATOMIC_SWAP
-void* x_SwapPointers(void * volatile * location, void* new_value)
-{
-    static CFastMutex mutex;
-    CFastMutexGuard LOCK(mutex);
-    void* old_value = *nv_loc;
-    *nv_loc = new_value;
-    return old_value;
-}
-#endif
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/09/17 15:20:46  vasilche
+ * Moved atomic counter swap functions to separate file.
+ * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
+ *
  * Revision 1.28  2003/06/27 17:28:08  ucko
  * +SwapPointers
  *

@@ -37,6 +37,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbicntr.hpp>
+#include <corelib/ncbiatomic.hpp>
 #include <corelib/ddumpable.hpp>
 
 
@@ -95,6 +96,9 @@ public:
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CObjectException, CCoreException);
+
+protected:
+    void x_InitErrCode(CException::EErrCode err_code);
 };
 
 
@@ -898,6 +902,51 @@ public:
             return ptr;
         }
 
+    /// Reset reference object to new pointer.
+    ///
+    /// This sets the pointer to object to the new pointer, and removes
+    /// reference count to old object and deletes the old object if this is
+    /// the last reference to the old object.
+    /// The new pointer is got from ref argument.
+    /// Operation is atomic on this object, so that AtomicResetFrom() and
+    /// AtomicReleaseTo() called from different threads will work properly.
+    /// Operation is not atomic on ref argument.
+    /// @sa
+    ///   AtomicReleaseTo(CConstRef& ref);
+    inline
+    void AtomicResetFrom(const CConstRef& ref)
+        {
+            TObjectType* ptr = ref.m_Ptr;
+            if ( ptr )
+                CRefBase<C>::AddReference(ptr); // for this
+            TObjectType* old_ptr = AtomicSwap(ptr);
+            if ( old_ptr )
+                CRefBase<C>::RemoveReference(old_ptr);
+        }
+    /// Release referenced object to another CConstRef<> object.
+    ///
+    /// This copies the pointer to object to the argument ref,
+    /// and release reference from this object.
+    /// Old reference object held by argument ref is released and deleted if
+    /// necessary.
+    /// Operation is atomic on this object, so that AtomicResetFrom() and
+    /// AtomicReleaseTo() called from different threads will work properly.
+    /// Operation is not atomic on ref argument.
+    /// @sa
+    ///   AtomicResetFrom(const CConstRef& ref);
+    inline
+    void AtomicReleaseTo(CConstRef& ref)
+        {
+            TObjectType* old_ptr = AtomicSwap(0);
+            if ( old_ptr ) {
+                ref.Reset(old_ptr);
+                CRefBase<C>::RemoveReference(old_ptr);
+            }
+            else {
+                ref.Reset();
+            }
+        }
+
     /// Assignment operator for const references.
     CConstRef<C>& operator=(const CConstRef<C>& ref)
         {
@@ -1016,6 +1065,15 @@ public:
         }
 
 private:
+    TObjectType* AtomicSwap(TObjectType* ptr)
+        {
+            return static_cast<TObjectType*>
+                (SwapPointers(const_cast<void*volatile*>(
+                                  const_cast<void**>(
+                                      reinterpret_cast<const void**>(&m_Ptr))),
+                              const_cast<C*>(ptr)));
+        }
+
     TObjectType* m_Ptr;             ///< Pointer to object
 };
 
@@ -1235,6 +1293,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2003/09/17 15:20:45  vasilche
+ * Moved atomic counter swap functions to separate file.
+ * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
+ *
  * Revision 1.49  2003/08/12 13:35:50  siyan
  * Minor comment changes.
  *

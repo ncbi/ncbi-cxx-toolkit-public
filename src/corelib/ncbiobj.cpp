@@ -34,6 +34,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbimtx.hpp>
 
+//#define USE_SINGLE_ALLOC
 
 // There was a long and bootless discussion:
 // is it possible to determine whether the object has been created
@@ -116,11 +117,58 @@ static inline CAtomicCounter* GetSecondCounter(CObject* ptr)
 }
 #endif
 
+
+#ifdef USE_SINGLE_ALLOC
+#define SINGLE_ALLOC_THRESHOLD (   2*1024)
+#define SINGLE_ALLOC_POOL_SIZE (1024*1024)
+
+DEFINE_STATIC_FAST_MUTEX(sx_SingleAllocMutex);
+static char* single_alloc_pool = 0;
+static size_t single_alloc_pool_size = 0;
+
+void* single_alloc(size_t size)
+{
+    if ( size > SINGLE_ALLOC_THRESHOLD ) {
+        return ::operator new(size);
+    }
+    sx_SingleAllocMutex.Lock();
+    size_t pool_size = single_alloc_pool_size;
+    char* pool;
+    if ( size > pool_size ) {
+        pool_size = SINGLE_ALLOC_THRESHOLD;
+        pool = (char*)malloc(pool_size);
+        if ( !pool ) {
+            sx_SingleAllocMutex.Unlock();
+            throw bad_alloc();
+        }
+        memset(pool, 0, pool_size);
+        single_alloc_pool = pool;
+        single_alloc_pool_size = pool_size;
+    }
+    else {
+        pool = single_alloc_pool;
+    }
+    single_alloc_pool = pool + size;
+    single_alloc_pool_size = pool_size - size;
+    sx_SingleAllocMutex.Unlock();
+    return pool;
+}
+#endif
+
 // CObject local new operator to mark allocation in heap
 void* CObject::operator new(size_t size)
 {
     _ASSERT(size >= sizeof(CObject));
     size = max(size, sizeof(CObject)+sizeof(TCounter));
+
+#ifdef USE_SINGLE_ALLOC
+    void* ptr = single_alloc(size);
+#  if USE_COMPLEX_MASK
+    GetSecondCounter(static_cast<CObject*>(ptr))->Set(eCounterNew);
+#  endif// USE_COMPLEX_MASK
+    static_cast<CObject*>(ptr)->m_Counter.Set(eCounterNew);
+    return ptr;
+#else
     void* ptr = ::operator new(size);
 
 #if USE_HEAPOBJ_LIST
@@ -136,53 +184,69 @@ void* CObject::operator new(size_t size)
 #endif// USE_HEAPOBJ_LIST
     static_cast<CObject*>(ptr)->m_Counter.Set(eCounterNew);
     return ptr;
+#endif
 }
 
 
-// CObject local new operator to mark allocation in othe memory chunk
+// CObject local new operator to mark allocation in other memory chunk
 void* CObject::operator new(size_t size, void* place)
 {
     _ASSERT(size >= sizeof(CObject));
+#ifdef USE_SINGLE_ALLOC
+    return place;
+#else
     memset(place, 0, size);
     return place;
+#endif
 }
 
-// CObject local new operator to mark allocation in heap
+// complement placement delete operator -> do nothing
 void CObject::operator delete(void* /*ptr*/, void* /*place*/)
 {
 }
 
 
+// CObject local new operator to mark allocation in heap
 void* CObject::operator new[](size_t size)
 {
-#ifdef NCBI_OS_MSWIN
-    void* ptr = ::operator new(size);
+#ifdef USE_SINGLE_ALLOC
+    return single_alloc(size);
 #else
+# ifdef NCBI_OS_MSWIN
+    void* ptr = ::operator new(size);
+# else
     void* ptr = ::operator new[](size);
-#endif
+# endif
     memset(ptr, 0, size);
     return ptr;
+#endif
 }
 
 
-#ifdef _DEBUG
 void CObject::operator delete(void* ptr)
 {
+#ifdef USE_SINGLE_ALLOC
+#else
+# ifdef _DEBUG
     CObject* objectPtr = static_cast<CObject*>(ptr);
     _ASSERT(objectPtr->m_Counter.Get() == eCounterDeleted  ||
             objectPtr->m_Counter.Get() == eCounterNew);
+# endif
     ::operator delete(ptr);
+#endif
 }
 
 void CObject::operator delete[](void* ptr)
 {
+#ifdef USE_SINGLE_ALLOC
+#else
 #  ifdef NCBI_OS_MSWIN
     ::operator delete(ptr);
 #  else
     ::operator delete[](ptr);
 #  endif
+#endif
 }
-#endif  /* _DEBUG */
 
 
 // initialization in debug mode
@@ -377,6 +441,15 @@ void CObject::DoDeleteThisObject(void)
     NCBI_THROW(CObjectException,eCorrupted,"CObject is corrupted");
 }
                         
+void CObjectException::x_InitErrCode(CException::EErrCode err_code)
+{
+    CCoreException::x_InitErrCode(err_code);
+    static bool abort_on_throw = getenv("ABORT_ON_COBJECT_THROW") != 0;
+    if ( abort_on_throw ) {
+        abort();
+    }
+}
+
 void CObject::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
     ddc.SetFrame("CObject");
@@ -398,6 +471,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2003/09/17 15:20:46  vasilche
+ * Moved atomic counter swap functions to separate file.
+ * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
+ *
  * Revision 1.38  2003/08/12 12:06:58  siyan
  * Changed name of implementation for AddReferenceOverflow(). It is now
  * CheckReferenceOverflow().

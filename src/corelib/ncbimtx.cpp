@@ -439,6 +439,9 @@ CRWLock::CRWLock(void)
     : m_RW(new CInternalRWLock),
       m_Count(0)
 {
+#if defined(_DEBUG)
+    m_Readers.reserve(16);
+#endif
 }
 
 
@@ -626,7 +629,7 @@ void CRWLock::WriteLock(void)
     }
 
     // No readers allowed
-    assert(m_Readers.begin() == m_Readers.end());
+    assert(m_Readers.empty());
 #endif
 }
 
@@ -672,7 +675,7 @@ bool CRWLock::TryWriteLock(void)
     }
 
     // No readers allowed
-    assert(m_Readers.begin() == m_Readers.end());
+    assert(m_Readers.empty());
 
     return true;
 #endif
@@ -728,7 +731,7 @@ void CRWLock::Unlock(void)
         }
 #if defined(_DEBUG)
         // Check if the unlocking thread is in the owners list
-        list<CThreadSystemID>::iterator found =
+        vector<CThreadSystemID>::iterator found =
             find(m_Readers.begin(), m_Readers.end(), self_id);
         assert(found != m_Readers.end());
         m_Readers.erase(found);
@@ -1024,6 +1027,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/09/17 15:20:46  vasilche
+ * Moved atomic counter swap functions to separate file.
+ * Added CRef<>::AtomicResetFrom(), CRef<>::AtomicReleaseTo() methods.
+ *
  * Revision 1.12  2003/09/02 19:03:59  vasilche
  * Removed debug abort().
  *
