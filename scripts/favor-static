@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# $Id: favor-static,v 1.4 2004/02/11 19:31:06 ucko Exp $
+# $Id: favor-static,v 1.5 2004/02/12 19:20:06 ucko Exp $
 # Author: Aaron Ucko, NCBI
 
 linker=$1
@@ -49,7 +49,7 @@ extra_libs=
 
 case $style in
     WorkShop )
-        set `"$@" $dryrun 2>&1 | $AWK '$1 ~ /\/ld$/ { sub(">&[^ ]*", ""); print }'`
+        eval set `"$@" $dryrun 2>&1 | $AWK '$1 ~ /\/ld$/ { sub(">&[^ ]*", ""); print }'`
         sys0=$LD_LIBRARY_PATH
         sys=/usr/lib
         flag=-B
