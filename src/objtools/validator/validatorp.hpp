@@ -251,6 +251,7 @@ enum EErrType {
     eErr_SEQ_FEAT_DifferntIdTypesInSeqLoc,
     eErr_SEQ_FEAT_MissingCDSproduct,
     eErr_SEQ_FEAT_MissingLocation,
+    eErr_SEQ_FEAT_OnlyGeneXrefs,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -699,6 +700,9 @@ public:
 
     void ValidateSeqFeat(const CSeq_feat& feat);
 
+    size_t GetNumGenes    (void) const { return m_NumGenes; }
+    size_t GetNumGeneXrefs(void) const { return m_NumGeneXrefs; }
+
 private:
     void ValidateSeqFeatData(const CSeqFeatData& data, const CSeq_feat& feat);
     void ValidateSeqFeatProduct(const CSeq_loc& prod, const CSeq_feat& feat);
@@ -752,6 +756,10 @@ private:
     bool IsTransgenic(const CBioSource& bsrc);
     bool IsSameAsCDS(const CSeq_feat& feat);
     bool IsCDDFeat(const CSeq_feat& feat) const;
+
+    // data
+    size_t m_NumGenes;
+    size_t m_NumGeneXrefs;
 };
 
 
@@ -885,6 +893,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2003/10/20 16:08:55  shomrat
+* genes and gene xrefs counters
+*
 * Revision 1.42  2003/10/13 18:44:02  shomrat
 * Added error code for bad tRNA amino acid
 *
