@@ -82,7 +82,9 @@ bool CInitMutexPool::AcquireMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
 void CInitMutexPool::ReleaseMutex(CInitMutex_Base& init, CRef<TMutex>& mutex)
 {
     _ASSERT(mutex);
-    //_ASSERT(init);
+    if ( !init ) {
+        return;
+    }
     CRef<TMutex> local(mutex);
     mutex.Reset();
     _ASSERT(local);
@@ -109,6 +111,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/08/31 14:25:36  vasilche
+* Keep mutex in place if object is not initialized yet.
+*
 * Revision 1.5  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
