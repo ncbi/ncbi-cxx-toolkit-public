@@ -69,7 +69,15 @@ public:
     const CSeq_feat& GetOriginalFeature(void) const;
 
     /// Get original feature handle
-    CSeq_feat_Handle GetSeq_feat_Handle(void) const;
+    const CSeq_feat_Handle& GetSeq_feat_Handle(void) const
+        { return m_OriginalFeat; }
+
+    /// Get feature type
+    CSeqFeatData::E_Choice GetFeatType(void) const
+        { return m_OriginalFeat.GetFeatType(); }
+    /// Get feature subtype
+    CSeqFeatData::ESubtype GetFeatSubtype(void) const
+        { return m_OriginalFeat.GetFeatSubtype(); }
 
     /// Fast way to check if mapped feature is different from the original one
     bool IsMapped(void) const
@@ -354,6 +362,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2005/03/07 17:30:01  vasilche
+* Added methods to get feature type and subtype
+*
 * Revision 1.51  2005/02/24 20:38:28  grichenk
 * Optimized mapping info in CMappedFeat.
 *

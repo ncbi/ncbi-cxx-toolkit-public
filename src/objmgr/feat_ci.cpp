@@ -181,12 +181,6 @@ CMappedFeat::~CMappedFeat(void)
 }
 
 
-CSeq_feat_Handle CMappedFeat::GetSeq_feat_Handle(void) const
-{
-    return m_OriginalFeat;
-}
-
-
 CSeq_annot_Handle CMappedFeat::GetAnnot(void) const
 {
     return m_OriginalFeat.GetAnnot();
@@ -237,6 +231,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2005/03/07 17:30:01  vasilche
+* Added methods to get feature type and subtype
+*
 * Revision 1.40  2005/02/24 20:38:28  grichenk
 * Optimized mapping info in CMappedFeat.
 *
