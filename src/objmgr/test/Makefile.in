@@ -4,7 +4,7 @@
 #################################
 
 APP_PROJ = test_basic test test_mt test_gbloader test_gbloader_mt \
-	test_data test_data_mt reader_id1_test reader_pubseq_test
+	test_data test_data_mt reader_id1_test reader_pubseq_test memtest
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
