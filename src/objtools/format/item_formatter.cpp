@@ -233,6 +233,7 @@ string& CFlatItemFormatter::Pad(const string& s, string& out,
     case eSubp:      return x_Pad(s, out, 12, string(2, ' '));
     case eFeatHead:  return x_Pad(s, out, 21);
     case eFeat:      return x_Pad(s, out, 21, string(5, ' '));
+    case eBarcode:   return x_Pad(s, out, 35, string(16, ' '));
     default:         return out; // shouldn't happen, but some compilers whine
     }
 }
@@ -264,10 +265,20 @@ list<string>& CFlatItemFormatter::Wrap
 {
     string tag2;
     Pad(tag, tag2, where);
-    const string& indent = (where == eFeat ? m_FeatIndent : m_Indent);
-    NStr::Wrap(body, GetWidth(), l, m_WrapFlags, indent, tag2);
+    const string* indent = &m_Indent;  // default
+    if (where == eFeat) {
+        indent = &m_FeatIndent;
+    } else if (where == eBarcode) {
+        indent = &m_BarcodeIndent;
+    }
+
+    if (body.empty()) {
+        l.push_back(tag2);
+    } else {
+        NStr::Wrap(body, GetWidth(), l, m_WrapFlags, *indent, tag2);
+    }
     NON_CONST_ITERATE (list<string>, it, l) {
-        TrimSpaces(*it, indent.length());
+        TrimSpaces(*it, indent->length());
     }
     return l;
 }
@@ -1215,6 +1226,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2005/03/29 18:18:09  shomrat
+* Barcode has special wrapping
+*
 * Revision 1.23  2005/03/28 17:22:57  shomrat
 * Added assignees for Cit-pat
 *
