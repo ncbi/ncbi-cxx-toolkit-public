@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/12/27 23:00:40  kans
+ * added IsSuppressed
+ *
  * Revision 1.2  2002/12/26 12:43:27  dicuccio
  * Added Win32 export specifiers
  *
@@ -69,6 +72,9 @@ public:
     
     // Appends a label to "label" based on content
     void GetLabel(string* label) const;
+
+    // Checks for an emtpy Gene-ref used for suppressing /gene by overlap
+    bool IsSuppressed(void) const;
 
 private:
     // Prohibit copy constructor and assignment operator

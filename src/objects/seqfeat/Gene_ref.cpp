@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/12/27 23:01:02  kans
+ * added IsSuppressed
+ *
  * Revision 6.2  2002/11/15 17:40:35  ucko
  * Before using syn, make sure it's not only set but non-empty.
  *
@@ -77,6 +80,21 @@ void CGene_ref::GetLabel(string* label) const
     } else if (IsSetMaploc()) {
         *label += GetMaploc();
     }
+}
+
+// Checks for an emtpy Gene-ref used for suppressing /gene by overlap
+bool CGene_ref::IsSuppressed(void) const
+{
+    if ((IsSetLocus() && GetLocus().size() > 0) ||
+        (IsSetDesc() && GetDesc().size() > 0) ||
+        (IsSetSyn() && ! GetSyn().empty()) ||
+        (IsSetLocus_tag() && GetLocus_tag().size() > 0) ||
+        (IsSetDb() && GetDb().size() > 0) ||
+        (IsSetAllele() && GetAllele().size() > 0) ||
+        (IsSetMaploc() && GetMaploc().size() > 0)) {
+        return false;
+    }
+    return true;
 }
 
 
