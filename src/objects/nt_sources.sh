@@ -27,7 +27,7 @@ TOOL="$ROOT/compilers/msvc_prj/serial/datatool/DebugMT/datatool"
 
 OBJECTS="$ROOT/src/objects"
 
-MODULES='tinyseq gbseq docsum taxon1 mim entrez2 general biblio medline medlars pub pubmed mla seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd ncbimime access featdef objprt seqcode id1 cn3d'
+MODULES='tinyseq gbseq docsum taxon1 mim entrez2 general biblio medline medlars pub pubmed mla seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd ncbimime access featdef objprt seqcode id1 id2 cn3d'
 
 for m in $MODULES; do \
     echo Updating $m

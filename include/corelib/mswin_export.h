@@ -87,6 +87,7 @@
 #  define NCBI_BLAST_EXPORTS
 #  define NCBI_BLASTDB_EXPORTS
 #  define NCBI_ID1_EXPORTS
+#  define NCBI_ID2_EXPORTS
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_SEQALIGN_EXPORTS
 #  define NCBI_SEQBLOCK_EXPORTS
@@ -405,6 +406,15 @@
 #  define NCBI_ID1_EXPORT           __declspec(dllexport)
 #else
 #  define NCBI_ID1_EXPORT           __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objects_id2
+ */
+#ifdef NCBI_ID2_EXPORTS
+#  define NCBI_ID2_EXPORT           __declspec(dllexport)
+#else
+#  define NCBI_ID2_EXPORT           __declspec(dllimport)
 #endif
 
 /*
@@ -806,6 +816,7 @@
 #  define NCBI_GUIUTILS_EXPORT
 #  define NCBI_GUIWIDGETS_EXPORT
 #  define NCBI_ID1_EXPORT
+#  define NCBI_ID2_EXPORT
 #  define NCBI_LDS_EXPORT
 #  define NCBI_MEDLARS_EXPORT
 #  define NCBI_MEDLINE_EXPORT
@@ -857,6 +868,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.35  2003/09/09 18:53:44  grichenk
+ * +ID2
+ *
  * Revision 1.34  2003/09/04 14:58:51  dicuccio
  * Added export specifier for GUIGRAPH library
  *
