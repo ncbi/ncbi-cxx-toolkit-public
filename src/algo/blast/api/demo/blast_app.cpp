@@ -368,6 +368,14 @@ CBlastApplication::ProcessCommandLineArgs(CBlastOptions& opt,
 
     if (args["hitlist"].AsInteger()) {
         opt.SetHitlistSize(args["hitlist"].AsInteger());
+        /* Hitlist size for preliminary alignments is increased, unless 
+           no traceback is performed. */
+        if (args["ungapped"].AsBoolean() || args["greedy"].AsInteger() == 1) {
+            opt.SetPrelimHitlistSize(args["hitlist"].AsInteger());
+        } else {
+            opt.SetPrelimHitlistSize(MIN(2*args["hitlist"].AsInteger(),
+                                         args["hitlist"].AsInteger() + 50));
+        }
     }
 
     if (args["perc"].AsDouble()) {

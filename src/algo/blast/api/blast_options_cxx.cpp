@@ -146,6 +146,10 @@ void CBlastOptionsRemote::SetValue(EBlastOptIdx opt, const int & v)
         x_SetParam("HitlistSize", v);
         return;
         
+    case eBlastOpt_PrelimHitlistSize:
+        x_SetParam("PrelimHitlistSize", v);
+        return;
+        
     case eBlastOpt_CutoffScore:
         if (0) {
             typedef objects::CBlast4_cutoff TCutoff;
@@ -579,6 +583,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2004/02/17 23:53:31  dondosha
+* Added setting of preliminary hitlist size
+*
 * Revision 1.38  2004/02/04 22:33:36  bealer
 * - Add 'noop' default cases to eliminate compiler warnings.
 *

@@ -202,6 +202,7 @@ void
 CBlastNucleotideOptionsHandle::SetHitSavingOptionsDefaults()
 {
     SetHitlistSize(500);
+    SetPrelimHitlistSize(550);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
     SetPercentIdentity(0);
     // set some default here, allow INT4MAX to mean infinity
@@ -241,6 +242,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/17 23:53:31  dondosha
+ * Added setting of preliminary hitlist size
+ *
  * Revision 1.3  2004/02/10 19:47:46  dondosha
  * Added SetMBGappedExtensionDefaults method; corrected megablast defaults setting
  *

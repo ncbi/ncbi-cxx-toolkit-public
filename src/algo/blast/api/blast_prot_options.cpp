@@ -107,6 +107,7 @@ void
 CBlastProteinOptionsHandle::SetHitSavingOptionsDefaults()
 {
     SetHitlistSize(500);
+    SetHitlistSize(550);
     SetEvalueThreshold(BLAST_EXPECT_VALUE);
     SetPercentIdentity(0);
     m_Opts->SetSumStatisticsMode(false);
@@ -147,6 +148,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/17 23:53:31  dondosha
+ * Added setting of preliminary hitlist size
+ *
  * Revision 1.3  2004/01/17 02:38:30  ucko
  * Initialize variables with = rather than () when possible to avoid
  * confusing MSVC's parser.
