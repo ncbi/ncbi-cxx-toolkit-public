@@ -40,8 +40,8 @@
 extern "C" {
 #endif
 
-#define RPS_MAGIC_NUM 0x1e16    /* RPS data files contain this number */
-#define NUM_EXPANSION_WORDS 3
+#define RPS_MAGIC_NUM 0x1e16    /**< RPS data files contain this number */
+#define NUM_EXPANSION_WORDS 3   /**< Intentionally unused words in .loo file */
 
 /** header of RPS blast '.loo' file */
 

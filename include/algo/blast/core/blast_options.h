@@ -286,7 +286,7 @@ typedef struct BlastExtensionOptions {
 
 /** Computed values used as parameters for gapped alignments */
 typedef struct BlastExtensionParameters {
-   BlastExtensionOptions* options;
+   BlastExtensionOptions* options; /**< The original (unparsed) options. */
    Int4 gap_x_dropoff; /**< X-dropoff value for gapped extension (raw) */
    Int4 gap_x_dropoff_final;/**< X-dropoff value for the final gapped 
                                extension (raw) */
