@@ -279,7 +279,7 @@ int UTF8ToAscii( const char* src, char* dst,
         // Check if type is eAsIs
         if (pSubst->Type ==  eAsIs) {
             memcpy( pDst, pSrc, utfLen );
-            dstPos += utfLen;
+//            dstPos += utfLen;
             continue;
         }
 
@@ -327,14 +327,14 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
 
         // Check if the unicode has a translation
         if ( !pSubst ) {
-            srcPos += utfLen;
+//            srcPos += utfLen;
             continue;
         }
 
         // Check if type is eSkip or substituting string is empty.
         if ( (pSubst->Type ==  eSkip) ||
              !(pSubst->Subst) ) {
-            srcPos += utfLen;
+//            srcPos += utfLen;
             continue;
         }
 
@@ -342,7 +342,7 @@ string UTF8ToAsciiString( const char* src, const TUnicodeTable* table)
         // Check if type is eAsIs
         if (pSubst->Type ==  eAsIs) {
             dst += string( pSrc, utfLen );
-            srcPos += utfLen;
+//            srcPos += utfLen;
             continue;
         }
 
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.4  2004/12/22 18:07:18  osipov
+ * Fixed bug: wrong convertation of 0-31 characters
+ *
  * Revision 1.3  2004/05/17 21:06:02  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

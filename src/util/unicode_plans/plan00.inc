@@ -32,38 +32,38 @@
  */
 
 static TUnicodePlan s_Plan_00h = {
-    { 0, eString },  //                                         U+0000
-    { 0, eString },  //                                         U+0001
-    { 0, eString },  //                                         U+0002
-    { 0, eString },  //                                         U+0003
-    { 0, eString },  //                                         U+0004
-    { 0, eString },  //                                         U+0005
-    { 0, eString },  //                                         U+0006
-    { 0, eString },  //                                         U+0007
-    { 0, eString },  //                                         U+0008
-    { 0, eString },  //                                         U+0009
-    { 0, eString },  //                                         U+000A
-    { 0, eString },  //                                         U+000B
-    { 0, eString },  //                                         U+000C
-    { 0, eString },  //                                         U+000D
-    { 0, eString },  //                                         U+000E
-    { 0, eString },  //                                         U+000F
-    { 0, eString },  //                                         U+0010
-    { 0, eString },  //                                         U+0011
-    { 0, eString },  //                                         U+0012
-    { 0, eString },  //                                         U+0013
-    { 0, eString },  //                                         U+0014
-    { 0, eString },  //                                         U+0015
-    { 0, eString },  //                                         U+0016
-    { 0, eString },  //                                         U+0017
-    { 0, eString },  //                                         U+0018
-    { 0, eString },  //                                         U+0019
-    { 0, eString },  //                                         U+001A
-    { 0, eString },  //                                         U+001B
-    { 0, eString },  //                                         U+001C
-    { 0, eString },  //                                         U+001D
-    { 0, eString },  //                                         U+001E
-    { 0, eString },  //                                         U+001F
+    { "\x00", eString },  //                                         U+0000
+    { "\x01", eString },  //                                         U+0001
+    { "\x02", eString },  //                                         U+0002
+    { "\x03", eString },  //                                         U+0003
+    { "\x04", eString },  //                                         U+0004
+    { "\x05", eString },  //                                         U+0005
+    { "\x06", eString },  //                                         U+0006
+    { "\x07", eString },  //                                         U+0007
+    { "\x08", eString },  //                                         U+0008
+    { "\x09", eString },  //                                         U+0009
+    { "\x0A", eString },  //                                         U+000A
+    { "\x0B", eString },  //                                         U+000B
+    { "\x0C", eString },  //                                         U+000C
+    { "\x0D", eString },  //                                         U+000D
+    { "\x0E", eString },  //                                         U+000E
+    { "\x0F", eString },  //                                         U+000F
+    { "\x10", eString },  //                                         U+0010
+    { "\x11", eString },  //                                         U+0011
+    { "\x12", eString },  //                                         U+0012
+    { "\x13", eString },  //                                         U+0013
+    { "\x14", eString },  //                                         U+0014
+    { "\x15", eString },  //                                         U+0015
+    { "\x16", eString },  //                                         U+0016
+    { "\x17", eString },  //                                         U+0017
+    { "\x18", eString },  //                                         U+0018
+    { "\x19", eString },  //                                         U+0019
+    { "\x1A", eString },  //                                         U+001A
+    { "\x1B", eString },  //                                         U+001B
+    { "\x1C", eString },  //                                         U+001C
+    { "\x1D", eString },  //                                         U+001D
+    { "\x1E", eString },  //                                         U+001E
+    { "\x1F", eString },  //                                         U+001F
     { " ", eString },  //                                          U+0020
     { "!", eString },  // old dictionary                           U+0021
     { "\"", eString },  // old dictionary                          U+0022
@@ -293,6 +293,9 @@ static TUnicodePlan s_Plan_00h = {
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.2  2004/12/22 18:07:18  osipov
+ * Fixed bug: wrong convertation of 0-31 characters
+ *
  * Revision 1.1  2004/05/06 18:21:25  gouriano
  * Imported from pubmed/xmldb
  *
