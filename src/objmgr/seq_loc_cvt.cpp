@@ -1158,7 +1158,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
     case CSeq_loc::e_Empty:
     {
         TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetEmpty()),
-            TRange::GetWhole().GetFrom(), TRange::GetWhole().GetTo());
+                                         TRange::GetWhole().GetFrom(), TRange::GetWhole().GetTo());
         for ( ; mit; ++mit) {
             CSeq_loc_Conversion& cvt = *mit->second;
             cvt.Reset();
@@ -1286,20 +1286,22 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
         // using mix, not bond, since mappings may have
         // different strand, fuzz etc.
         (*dst)->SetBond();
-        CRef<CSeq_point> pntA(0);
-        CRef<CSeq_point> pntB(0);
-        TRangeIterator mit = BeginRanges(
-            CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
-            src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint());
-        for ( ; mit  &&  !bool(pntA); ++mit) {
-            CSeq_loc_Conversion& cvt = *mit->second;
-            cvt.Reset();
-            if (cvt.ConvertPoint(src_bond.GetA())) {
-                pntA.Reset(cvt.GetDstPoint());
-                m_TotalRange += cvt.GetTotalRange();
-                res = true;
+        CRef<CSeq_point> pntA;
+        CRef<CSeq_point> pntB;
+        {{
+            TRangeIterator mit = BeginRanges(
+                CSeq_id_Handle::GetHandle(src_bond.GetA().GetId()),
+                src_bond.GetA().GetPoint(), src_bond.GetA().GetPoint());
+            for ( ; mit  &&  !bool(pntA); ++mit) {
+                CSeq_loc_Conversion& cvt = *mit->second;
+                cvt.Reset();
+                if (cvt.ConvertPoint(src_bond.GetA())) {
+                    pntA = cvt.GetDstPoint();
+                    m_TotalRange += cvt.GetTotalRange();
+                    res = true;
+                }
             }
-        }
+        }}
         if ( src_bond.IsSetB() ) {
             TRangeIterator mit = BeginRanges(
                 CSeq_id_Handle::GetHandle(src_bond.GetB().GetId()),
@@ -1308,7 +1310,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst)
                 CSeq_loc_Conversion& cvt = *mit->second;
                 cvt.Reset();
                 if (!bool(pntB)  &&  cvt.ConvertPoint(src_bond.GetB())) {
-                    pntB.Reset(cvt.GetDstPoint());
+                    pntB = cvt.GetDstPoint();
                     m_TotalRange += cvt.GetTotalRange();
                     res = true;
                 }
@@ -1360,6 +1362,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/02/19 17:18:44  vasilche
+* Formatting + use CRef<> assignment directly.
+*
 * Revision 1.19  2004/02/06 16:07:27  grichenk
 * Added CBioseq_Handle::GetSeq_entry_Handle()
 * Fixed MapLocation()
