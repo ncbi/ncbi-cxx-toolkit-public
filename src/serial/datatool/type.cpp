@@ -273,14 +273,15 @@ const string CDataType::GetVar(const string& varName) const
 
 void  CDataType::ForbidVar(const string& var, const string& value)
 {
+    typedef multimap<string, string> TMultimap;
     if (!var.empty() && !value.empty()) {
-        multimap<string,string>::const_iterator it = m_ForbidVar.find(var);
+        TMultimap::const_iterator it = m_ForbidVar.find(var);
         for ( ; it != m_ForbidVar.end() && it->first == var; ++it) {
             if (it->second == value) {
                 return;
             }
         }
-        m_ForbidVar.insert( pair<string,string>(var,value));
+        m_ForbidVar.insert(TMultimap::value_type(var, value));
     }
 }
 
@@ -690,6 +691,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.78  2004/05/12 21:02:49  ucko
+* ForbidVar: Make sure to use exactly the right type of pair, since
+* WorkShop won't interconvert.
+*
 * Revision 1.77  2004/05/12 18:33:01  gouriano
 * Added type conversion check (when using _type DEF file directive)
 *
