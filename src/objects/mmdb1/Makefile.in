@@ -1,0 +1,3 @@
+LIB_PROJ = mmdb1
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -1,0 +1,3 @@
+LIB_PROJ = seqcode
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
