@@ -5,3 +5,5 @@
 
 SRC = lds_admin lds_coreobjreader lds_files lds_object
 LIB = lds_admin
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
