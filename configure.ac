@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.253 2004/01/14 16:56:52 ucko Exp $
+#  $Id: configure.ac,v 1.254 2004/01/20 17:12:46 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1872,16 +1872,32 @@ if test "$ncbi_cv_type_ios_base" = no; then
 fi
 
 
-AC_CACHE_CHECK([for ios(_base)::xalloc and related functions],
+# Avoid false negatives due to split.
+test "$ncbi_cv_func_ios_xalloc" = no \
+  -a -z "${ncbi_cv_func_ios_register_callback+set}"  &&  \
+    unset ncbi_cv_func_ios_xalloc
+AC_CACHE_CHECK([for ios(_base)::xalloc],
    ncbi_cv_func_ios_xalloc,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
        [[#include <iostream>]],
-       [[std::cout.pword(std::ios::xalloc());
-         std::cout.register_callback(0, std::ios::erase_event);]])],
+       [[std::cout.pword(std::ios::xalloc());]])],
        [ncbi_cv_func_ios_xalloc=yes], [ncbi_cv_func_ios_xalloc=no])])
 if test "$ncbi_cv_func_ios_xalloc" = yes; then
    AC_DEFINE(HAVE_IOS_XALLOC, 1,
-             [Define to 1 if ios(_base)::xalloc et al. exist.])
+             [Define to 1 if you have `ios(_base)::xalloc'.])
+fi
+
+
+AC_CACHE_CHECK([for ios(_base)::register_callback],
+   ncbi_cv_func_ios_register_callback,
+   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+       [[#include <iostream>]],
+       [[std::cout.register_callback(0, std::ios::erase_event);]])],
+       [ncbi_cv_func_ios_register_callback=yes],
+       [ncbi_cv_func_ios_register_callback=no])])
+if test "$ncbi_cv_func_ios_register_callback" = yes; then
+   AC_DEFINE(HAVE_IOS_REGISTER_CALLBACK, 1,
+             [Define to 1 if you have `ios(_base)::register_callback'.])
 fi
 
 
