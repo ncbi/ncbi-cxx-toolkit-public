@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.111  2002/09/14 19:18:32  thiessen
+* fix center-on-aligned bug when no structured master
+*
 * Revision 1.110  2002/09/14 18:41:05  thiessen
 * fix center-on-aligned omission
 *
@@ -1188,8 +1191,9 @@ void StructureSet::CenterViewOnAlignedResidues(void)
 {
     const BlockMultipleAlignment *alignment = alignmentManager->GetCurrentMultipleAlignment();
     if (!alignment || !alignment->GetSequenceOfRow(0) || !alignment->GetSequenceOfRow(0))
-        return;
+        return;                     // no alignment
     const Molecule *masterMolecule = alignment->GetSequenceOfRow(0)->molecule;
+    if (!masterMolecule) return;    // no structured master
     const StructureObject *masterObject;
     if (!masterMolecule->GetParentOfType(&masterObject)) return;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.159  2002/09/14 19:18:32  thiessen
+* fix center-on-aligned bug when no structured master
+*
 * Revision 1.158  2002/09/14 17:03:07  thiessen
 * center initial view on aligned residues
 *
@@ -2132,7 +2135,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     menuBar->EnableTop(menuBar->FindMenu("CDD"), glCanvas->structureSet->IsCDD());
     glCanvas->renderer->AttachStructureSet(glCanvas->structureSet);
-    if (glCanvas->structureSet->alignmentSet && !glCanvas->renderer->HasASNViewSettings())
+    if (!glCanvas->renderer->HasASNViewSettings())
         glCanvas->structureSet->CenterViewOnAlignedResidues();
     glCanvas->Refresh(false);
     SetCursor(wxNullCursor);
