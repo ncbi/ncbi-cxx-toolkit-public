@@ -64,6 +64,7 @@ typedef struct {
     const char*  mx_host;       /* Host to contact sendmail at           */
     short        mx_port;       /* Port to contact sendmail at           */
     STimeout     mx_timeout;    /* Timeout for all network transactions  */
+    unsigned     mx_no_header;  /* Boolean whether to complete MX header */
 } SSendMailInfo;
 
 
@@ -72,6 +73,14 @@ typedef struct {
  * can be specified in the form "Name" <address>; recipients should
  * be separated by commas. In case of address-only recipients (no "Name"
  * part above), angle brackets around the address may be omitted.
+ *
+ * NOTE about MX header:
+ * message header is automatically prepended to a message that has
+ * "mx_no_header" flag cleared (default).  Otherwise, only "header" part
+ * (if any) is sent to the mail exchanger, and the rest of the header and
+ * the message body is passed "as is" following it.
+ * Message header separator and proper message formatting is then
+ * the caller's responsibility.
  */
 
 
@@ -130,6 +139,9 @@ extern NCBI_XCONNECT_EXPORT const char* CORE_SendMailEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/12/04 14:54:39  lavr
+ * Extend API with no-header and multiple recipient capabilities
+ *
  * Revision 6.14  2003/09/02 20:45:45  lavr
  * -<connect/connect_export.h> -- now included from <connect/ncbi_types.h>
  *
