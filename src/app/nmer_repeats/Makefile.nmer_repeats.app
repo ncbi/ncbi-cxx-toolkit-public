@@ -6,5 +6,6 @@
 APP = nmer_repeats
 SRC = nmer_repeats
 LIB = xalgoseq xregexp regexp xobjread xobjutil $(OBJMGR_LIBS)
+LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects dbapi
