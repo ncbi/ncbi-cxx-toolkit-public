@@ -898,13 +898,21 @@ public:
     /// Constructor.
     /// NB. Ctor doesn't start timer, it merely creates it.
     CStopWatch(void);
+    /// Constructor.
+    /// Start timer if argument is true.
+    CStopWatch(bool start);
 
     /// Start the timer.
     void Start(void);
 
-    /// Return time elapsed time since last Start() call.
-    /// Result is underfined if Start() wasn't previously called.
+    /// Return time elapsed time since last Start() or Restart() call.
+    /// Result is underfined if Start() or Restart() wasn't previously called.
     double Elapsed(void) const;
+
+    /// Return time elapsed time since last Start() or Restart() call.
+    /// Start new timer after that.
+    /// Result is underfined if Start() or Restart() wasn't previously called.
+    double Restart(void);
 
 protected:
     /// Get current time mark.
@@ -1208,7 +1216,6 @@ bool CTime::x_NeedAdjustTime(void) const
 
 inline
 CStopWatch::CStopWatch(void)
-    : m_Start(0)
 {
 }
 
@@ -1219,11 +1226,25 @@ void CStopWatch::Start()
 }
 
 inline
+CStopWatch::CStopWatch(bool start)
+{
+    if ( start ) {
+        Start();
+    }
+}
+
+inline
 double CStopWatch::Elapsed() const
 {
     return GetTimeMark() - m_Start;
 }
 
+inline
+double CStopWatch::Restart()
+{
+    double previous = m_Start;
+    return (m_Start = GetTimeMark()) - previous;
+}
 
 
 END_NCBI_SCOPE
@@ -1232,6 +1253,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2004/07/29 19:53:08  vasilche
+ * Added CStopWatch::Restart() to reuse the same timer sequentially.
+ *
  * Revision 1.33  2004/04/07 19:07:29  lavr
  * Document CStopWatch in a little more details
  *
