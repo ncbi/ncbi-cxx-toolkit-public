@@ -54,11 +54,11 @@ Detailed Contents:
 
 #ifndef NCBI_C_TOOLKIT
 #include <corelib/ncbitype.h>
-#include <algo/blast/core/ncbi_math.h>
 #else
 #include <ncbistd.h>
-#include <ncbimath.h>
 #endif
+
+#include <algo/blast/core/ncbi_math.h>
 
 #ifdef __cplusplus
 extern "C" {
