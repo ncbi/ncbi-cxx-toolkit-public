@@ -134,6 +134,8 @@ public:
     virtual TSeqAlignVector Run();
 
     /// Runs the search but does not produce seqalign output
+    /// (useful if the raw search results are needed, rather
+    /// than a set of complete Seq-aligns)
     virtual void PartialRun();
 
     /// Retrieves regions filtered on the query/queries
@@ -143,6 +145,7 @@ public:
     BlastDiagnostics* GetDiagnostics() const;
 
     /// Retrieves the list of HSP results from the engine
+    /// (to be used after PartialRun() method)
     BlastHSPResults* GetResults() const;
 
     /// Returns error messages/warnings. Caller is responsible for deallocating
@@ -311,6 +314,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2005/01/07 15:17:33  papadopo
+* additional clarification on using PartialRun() and GetResults()
+*
 * Revision 1.38  2005/01/06 15:40:19  camacho
 * Add methods to retrieve error messages/warnings
 *
