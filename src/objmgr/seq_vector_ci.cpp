@@ -203,12 +203,12 @@ void CSeqVector_CI::x_UpdateCache(TSeqPos pos)
 
         // Calculate new cache end, adjust start
         TSeqPos newCacheEnd;
-        if ( start < segStart ) {
+        if ( start < TSignedSeqPos(segStart) ) {
             // Segment is too short at the beginning
             m_CachePos = segStart;
             newCacheEnd = segStart + min(segSize, kCacheSize);
         }
-        else if (start + kCacheSize > segStart + segSize) {
+        else if ( start + kCacheSize > TSignedSeqPos(segStart + segSize) ) {
             // Segment is too short at the end
             m_CachePos = segStart + max(kCacheSize, segSize) - kCacheSize;
             newCacheEnd = segStart + segSize;
@@ -240,7 +240,8 @@ void CSeqVector_CI::x_FillCache(TSeqPos count)
     case CSeqMap::eSeqData:
     {
         const CSeq_data& data = m_Seg.GetRefData();
-        TSeqPos dataPos = m_Seg.GetRefPosition();
+        TSeqPos dataPos = m_Seg.GetRefPosition() +
+            (m_CachePos - m_Seg.GetPosition());
         CSeqVector::TCoding dataCoding = data.Which();
 
         CSeqVector::TCoding cacheCoding =
@@ -442,6 +443,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/06/02 21:03:59  vasilche
+* Grichenko's fix of wrong data in CSeqVector.
+*
 * Revision 1.7  2003/06/02 16:53:35  dicuccio
 * Restore file damaged by last check-in
 *
