@@ -760,7 +760,7 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
     if (na.size() % 3) {
         NCBI_THROW(CAlnException, eTranslateFailure,
                    "CAlnVec::TranslateNAToAA(): "
-                   "NA size expected to be divizible by 3");
+                   "NA size expected to be divisible by 3");
     }
 
     const CTrans_table& tbl = CGen_code_table::GetTransTable(1);
@@ -772,7 +772,7 @@ void CAlnVec::TranslateNAToAA(const string& na, string& aa)
         for (i = 0; i < 3; i++, res++) {
             state = tbl.NextCodonState (state, *res);
         }
-        aa.push_back(tbl.GetCodonResidue(state));
+        aa += tbl.GetCodonResidue(state);
     }
 }
 
@@ -839,6 +839,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/08/20 17:23:54  ucko
+* TranslateNAToAA: append to strings with += rather than push_back
+* (which MSVC lacks); fix a typo while I'm at it.
+*
 * Revision 1.39  2003/08/20 14:34:58  todorov
 * Support for NA2AA Densegs
 *
