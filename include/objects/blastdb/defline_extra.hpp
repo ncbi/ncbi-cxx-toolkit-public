@@ -32,6 +32,8 @@
 
 /// @file defline_extra.hpp
 /// Blast defline related defines
+#include <corelib/ncbistd.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -54,6 +56,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/19 13:03:47  dicuccio
+* Added missing include for ncbistd.hpp (to get BEGIN_NCBI_SCOPE/END_NCBI_SCOPE)
+*
 * Revision 1.2  2004/08/10 20:08:27  jianye
 * Added gene linkout
 *
