@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <util/thread_pool.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
@@ -78,12 +79,28 @@ void CStdPoolOfThreads::Register(TThread& thread)
     m_Threads.push_back(CRef<TThread>(&thread));
 }
 
+void CStdPoolOfThreads::UnRegister(TThread& thread)
+{
+    CMutexGuard guard(m_Mutex);
+    CRef<TThread> ref( &thread );
+    TThreads::iterator it = find(m_Threads.begin(), m_Threads.end(),
+                                 CRef<TThread>(&thread));
+    if (it !=  m_Threads.end()) {
+        (*it)->Detach();
+        m_Threads.erase( it );
+    }
+}
+
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2005/03/14 17:10:30  didenko
+* + request priority to CBlockingQueue and CPoolOfThreads
+* + DoxyGen
+*
 * Revision 1.6  2004/10/18 14:44:42  ucko
 * KillAllThreads: don't try to poison full queues.
 *
