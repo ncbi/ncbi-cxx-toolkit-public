@@ -91,10 +91,6 @@
  *  @ingroup CORELIB
  */
 
-/** @defgroup Pipes Portable Process Pipes
- *  @ingroup CORELIB
- */
-
 /** @defgroup Registry
  *  @ingroup CORELIB
  */
@@ -156,6 +152,10 @@
  */
 
 /** @defgroup EmailDiag Email Diagnostic Handler
+ *  @ingroup CONNECT
+ */
+
+/** @defgroup Pipes Portable Pipes
  *  @ingroup CONNECT
  */
 
