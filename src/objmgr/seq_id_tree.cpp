@@ -147,7 +147,7 @@ bool CSeq_id_not_set_Tree::x_Check(const CSeq_id& id) const
 }
 
 
-CSeq_id_Handle CSeq_id_not_set_Tree::FindInfo(const CSeq_id& id) const
+CSeq_id_Handle CSeq_id_not_set_Tree::FindInfo(const CSeq_id& /*id*/) const
 {
     //_ASSERT(x_Check(id));
     TReadLockGuard guard(m_TreeLock);
@@ -1401,6 +1401,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/06/30 18:40:04  vasilche
+* Fixed warning (unused argument).
+*
 * Revision 1.1  2003/06/10 19:06:35  vasilche
 * Simplified CSeq_id_Mapper and CSeq_id_Handle.
 *
