@@ -79,6 +79,9 @@ CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
     if ( (st = BlastDatabaseOptionsNew(&m_DbOpts)))
         NCBI_THROW(CBlastException, eBadParameter, "Db options error");
 
+    if ( (st = PSIBlastOptionsNew(&m_ProtOpts)))
+       NCBI_THROW(CBlastException, eBadParameter, "PSI options error");
+
     switch(prog_name) {
     case eBlastn:       SetBlastn();        break;
     case eBlastp:       SetBlastp();        break;
@@ -93,6 +96,15 @@ CBlastOption::CBlastOption(EProgram prog_name) THROWS((CBlastException))
 
 CBlastOption::~CBlastOption()
 {
+}
+
+void
+CBlastOption::SetDbGeneticCodeAndStr(int gc)
+{
+    SetDbGeneticCode(gc);
+    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc_str =
+        FindGeneticCode(gc);
+    SetDbGeneticCodeStr(gc_str.get());
 }
 
 void
@@ -313,10 +325,7 @@ CBlastOption::SetBlastx()
     m_EffLenOpts->use_real_db_size = TRUE;
 
     // Blast database options
-    m_DbOpts->genetic_code = BLAST_GENETIC_CODE; // not really needed
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
-        FindGeneticCode(BLAST_GENETIC_CODE);
-    SetDbGeneticCodeStr(gc.get());
+    SetDbGeneticCodeAndStr(BLAST_GENETIC_CODE);
 }
 
 void 
@@ -367,10 +376,7 @@ CBlastOption::SetTblastn()
     m_EffLenOpts->use_real_db_size = TRUE;
 
     // Blast database options
-    m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
-        FindGeneticCode(BLAST_GENETIC_CODE);
-    SetDbGeneticCodeStr(gc.get());
+    SetDbGeneticCodeAndStr(BLAST_GENETIC_CODE);
 }
 
 void 
@@ -420,10 +426,7 @@ CBlastOption::SetTblastx()
     m_EffLenOpts->use_real_db_size = TRUE;
 
     // Blast database options
-    m_DbOpts->genetic_code = BLAST_GENETIC_CODE;
-    AutoPtr<Uint1, ArrayDeleter<Uint1> > gc = 
-        FindGeneticCode(BLAST_GENETIC_CODE);
-    SetDbGeneticCodeStr(gc.get());
+    SetDbGeneticCodeAndStr(BLAST_GENETIC_CODE);
 }
 
 bool
@@ -478,6 +481,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/09/09 22:13:36  dondosha
+* Added SetDbGeneticCodeAndStr method to set both integer and string genetic code in one call
+*
 * Revision 1.19  2003/09/09 12:57:15  camacho
 * + internal setup functions, use smart pointers to handle memory mgmt
 *
