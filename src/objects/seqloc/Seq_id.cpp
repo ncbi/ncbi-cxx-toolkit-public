@@ -665,7 +665,7 @@ void x_GetLabel_Type(const CSeq_id& id, string* label,
 
     case CSeq_id::e_General:
         // for general IDs, use the db-name only
-        *label += id.GetGeneral().GetDb();
+        *label += "gnl";
         break;
     }
 
@@ -726,6 +726,7 @@ void x_GetLabel_Content(const CSeq_id& id, string* label,
         case CSeq_id::e_General:
             {{
                 const CDbtag& dbt = id.GetGeneral();
+                *label += dbt.GetDb() + '|';
                 if (dbt.GetTag().Which() == CObject_id::e_Id) {
                     *label += NStr::IntToString(dbt.GetTag().GetId());
                 } else if (dbt.GetTag().Which()==CObject_id::e_Str) {
@@ -1498,6 +1499,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.79  2004/05/21 14:41:46  dicuccio
+ * Moved database tag for general IDs to content part of label
+ *
  * Revision 6.78  2004/05/19 17:26:25  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *
