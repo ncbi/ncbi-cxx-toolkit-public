@@ -197,11 +197,11 @@ public:
                TFlags flags = CSeqMap::fDefaultFlags);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
                CScope* scope,
-               SSeqMapSelector& selector);
+               const SSeqMapSelector& selector);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
                CScope* scope,
                TSeqPos pos,
-               SSeqMapSelector& selector);
+               const SSeqMapSelector& selector);
 
     ~CSeqMap_CI(void);
 
@@ -288,6 +288,10 @@ private:
     bool x_SettleNext(void);
     bool x_SettlePrev(void);
 
+    void x_Select(const CConstRef<CSeqMap>& seqMap,
+                  const SSeqMapSelector& selector,
+                  TSeqPos pos);
+
     typedef vector<TSegmentInfo> TStack;
 
     // position stack
@@ -311,6 +315,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/10/14 17:43:12  vasilche
+* Use one initialization method in all constructors.
+*
 * Revision 1.17  2004/10/01 19:52:50  kononenk
 * Added doxygen formatting
 *
