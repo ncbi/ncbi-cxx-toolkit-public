@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/11/01 14:32:04  vasilche
+* Fixed null pointer reference in MapTagAll
+*
 * Revision 1.14  1999/10/28 13:40:35  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -193,9 +196,12 @@ CNodeRef CNCBINode::MapTagAll(const string& tagname, const TMode& mode)
 {
     const TMode* context = &mode;
     do {
-        CNCBINode* node = context->GetNode()->MapTag(tagname);
-        if ( node )
-            return node;
+        CNCBINode* stackNode = context->GetNode();
+        if ( stackNode ) {
+            CNCBINode* mapNode = stackNode->MapTag(tagname);
+            if ( mapNode )
+                return mapNode;
+        }
         context = context->GetPreviousContext();
     } while ( context );
     return 0;
