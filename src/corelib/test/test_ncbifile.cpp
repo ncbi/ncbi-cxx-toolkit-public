@@ -37,6 +37,7 @@
 
 #include <test/test_assert.h>  /* This header must go last */
 
+
 USING_NCBI_SCOPE;
 
 
@@ -317,99 +318,119 @@ static void s_TEST_MatchesMask(void)
 
 static void s_TEST_File(void)
 {
-    // Create test file 
-    FILE* file = fopen("file_1", "w+");
-    assert( file );
-    fputs("test data", file);
-    fclose(file);
+    {{
+        // Create test file 
+        FILE* file = fopen("file_1", "w+");
+        assert( file );
+        fputs("test data", file);
+        fclose(file);
     
-    CFile f("file_1");
+        CFile f("file_1");
 
-    // Get file size
-    assert( f.GetLength() == 9);
-    CFile("file_2").Remove();
-    assert( CFile("file_2").GetLength() == -1);
+        // Get file size
+        assert( f.GetLength() == 9);
+        CFile("file_2").Remove();
+        assert( CFile("file_2").GetLength() == -1);
 
-    // Check the file exists
-    assert( f.Exists() );
-    assert( !CFile("file_2").Exists() );
+        // Check the file exists
+        assert( f.Exists() );
+        assert( !CFile("file_2").Exists() );
 
-    // Rename the file
-    assert( f.Rename("file_2") );
+        // Rename the file
+        assert( f.Rename("file_2") );
 
-    // Status
-    CDirEntry::EType file_type;
-    file_type = f.GetType(); 
-    CDirEntry::TMode user, group, other;
-    user = group = other = 0;
-    assert ( f.GetMode(&user, &group, &other) );
-    cout << "File type : " << file_type << endl;
-    cout << "File mode : "
-         << ((user  & CDirEntry::fRead)    ? "r" : "-")
-         << ((user  & CDirEntry::fWrite)   ? "w" : "-")
-         << ((user  & CDirEntry::fExecute) ? "x" : "-")
-         << ((group & CDirEntry::fRead)    ? "r" : "-")
-         << ((group & CDirEntry::fWrite)   ? "w" : "-")
-         << ((group & CDirEntry::fExecute) ? "x" : "-")
-         << ((other & CDirEntry::fRead)    ? "r" : "-")
-         << ((other & CDirEntry::fWrite)   ? "w" : "-")
-         << ((other & CDirEntry::fExecute) ? "x" : "-")
-         << endl;
+        // Status
+        CDirEntry::EType file_type;
+        file_type = f.GetType(); 
+        CDirEntry::TMode user, group, other;
+        user = group = other = 0;
+        assert ( f.GetMode(&user, &group, &other) );
+        cout << "File type : " << file_type << endl;
+        cout << "File mode : "
+             << ((user  & CDirEntry::fRead)    ? "r" : "-")
+             << ((user  & CDirEntry::fWrite)   ? "w" : "-")
+             << ((user  & CDirEntry::fExecute) ? "x" : "-")
+             << ((group & CDirEntry::fRead)    ? "r" : "-")
+             << ((group & CDirEntry::fWrite)   ? "w" : "-")
+             << ((group & CDirEntry::fExecute) ? "x" : "-")
+             << ((other & CDirEntry::fRead)    ? "r" : "-")
+             << ((other & CDirEntry::fWrite)   ? "w" : "-")
+             << ((other & CDirEntry::fExecute) ? "x" : "-")
+             << endl;
 
-    // Get/set file modification time
-    CTime::SetFormat("M/D/Y h:m:s Z");
-    CTime mtime, ctime, atime;
-    assert( f.GetTime(&mtime, &ctime , &atime) );
-    cout << "File creation time     : " << ctime.AsString() << endl;
-    cout << "File modification time : " << mtime.AsString() << endl;
-    cout << "File last access time  : " << atime.AsString() << endl;
-    assert( f.GetTime(&mtime, 0 , &atime) );
-    CTime mtime_new(mtime), atime_new(atime);
-    mtime_new.AddDay(-2);
-    atime_new.AddDay(-1);
-    assert( f.SetTime(&mtime_new, &atime_new) );
-    assert( f.GetTime(&mtime, &atime) );
-    cout << "File modification time : " << mtime.AsString() << endl;
-    cout << "File last access time  : " << atime.AsString() << endl;
-    assert( mtime == mtime_new );
+        // Get/set file modification time
+        CTime::SetFormat("M/D/Y h:m:s Z");
+        CTime mtime, ctime, atime;
+        assert( f.GetTime(&mtime, &ctime , &atime) );
+        cout << "File creation time     : " << ctime.AsString() << endl;
+        cout << "File modification time : " << mtime.AsString() << endl;
+        cout << "File last access time  : " << atime.AsString() << endl;
+        assert( f.GetTime(&mtime, 0 , &atime) );
+        CTime mtime_new(mtime), atime_new(atime);
+        mtime_new.AddDay(-2);
+        atime_new.AddDay(-1);
+        assert( f.SetTime(&mtime_new, &atime_new) );
+        assert( f.GetTime(&mtime, &atime) );
+        cout << "File modification time : " << mtime.AsString() << endl;
+        cout << "File last access time  : " << atime.AsString() << endl;
+        assert( mtime == mtime_new );
 
-    // Remove the file
-    assert( f.Remove() );
+        // Remove the file
+        assert( f.Remove() );
 
-    // Check the file exists
-    assert( !CFile("file_1").Exists() );
-    assert( !CFile("file_2").Exists() );
+        // Check the file exists
+        assert( !CFile("file_1").Exists() );
+        assert( !CFile("file_2").Exists() );
+    }}
+    
+    {{
+        // Create temporary file
+        const string kTestData = "testdata";
+        fstream* stream = CFile::CreateTmpFile();
+        assert( stream );
+        assert( (*stream).good() );
+        *stream << kTestData;
+        assert( (*stream).good() );
+        (*stream).flush();
+        (*stream).seekg(0);
+        string str;
+        (*stream) >> str;
+        assert( (*stream).eof() );
+        assert( str == kTestData );
+        delete stream;
 
-    // Create temporary file
-    const string kTestData = "testdata";
-    fstream* stream = CFile::CreateTmpFile();
-    assert( stream );
-    assert( (*stream).good() );
-    *stream << kTestData;
-    assert( (*stream).good() );
-    (*stream).flush();
-    (*stream).seekg(0);
-    string str;
-    (*stream) >> str;
-    assert( (*stream).eof() );
-    assert( str == kTestData );
-    delete stream;
+        stream = CFile::CreateTmpFile("test.tmp");
+        assert( stream );
+        assert( (*stream).good() );
+        *stream << kTestData;
+        assert( (*stream).good() );
+        (*stream).flush();
+        (*stream).seekg(0);
+        (*stream) >> str;
+        assert( (*stream).eof() );
+        assert( str == kTestData );
+        delete stream;
 
-    stream = CFile::CreateTmpFile("test.tmp");
-    assert( stream );
-    assert( (*stream).good() );
-    *stream << kTestData;
-    assert( (*stream).good() );
-    (*stream).flush();
-    (*stream).seekg(0);
-    (*stream) >> str;
-    assert( (*stream).eof() );
-    assert( str == kTestData );
-    delete stream;
+        // Get temporary file name
+        string fn;
+        fn = CFile::GetTmpName();
+        assert( !fn.empty() );
+        assert( !CFile(fn).Exists() );
+        fn = CFile::GetTmpNameEx(".", "tmp_");
+        assert( !fn.empty() );
+        assert( !CFile(fn).Exists() );
 
-    // Get temporary file name
-    cout << CFile::GetTmpName() << endl;
-    cout << CFile::GetTmpNameEx(".","tmp_") << endl;
+#  if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
+        fn = CFile::GetTmpName(CFile::eTmpFileCreate);
+        assert( !fn.empty() );
+        assert( CFile(fn).Exists() );
+        CFile(fn).Remove();
+        fn = CFile::GetTmpNameEx(".", "tmp_", CFile::eTmpFileCreate);
+        assert( !fn.empty() );
+        assert( CFile(fn).Exists() );
+        CFile(fn).Remove();
+#  endif
+    }}
 }
 
 
@@ -546,7 +567,6 @@ static void s_TEST_Dir(void)
     assert( CDirEntry::CreateRelativePath(
             "C:\\x\\y\\z\\", 
             "C:\\x\\y\\z\\").empty() );
-    
 
     assert( CDirEntry::CreateRelativePath(
             "C:\\x\\y\\z\\", 
@@ -724,6 +744,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2004/03/17 15:41:28  ivanov
+ * Expanded temporary file name generation test
+ *
  * Revision 1.35  2004/01/05 22:10:33  gorelenk
  * += UNIX test for CDirEntry::CreateRelativePath()
  *
