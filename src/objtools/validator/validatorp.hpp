@@ -219,6 +219,7 @@ enum EErrType {
     eErr_SEQ_FEAT_UnnecessaryGeneXref,
     eErr_SEQ_FEAT_TranslExceptPhase,
     eErr_SEQ_FEAT_TrnaCodonWrong,
+    eErr_SEQ_FEAT_BadTrnaAA,
     eErr_SEQ_FEAT_BothStrands,
     eErr_SEQ_FEAT_CDSgeneRange,
     eErr_SEQ_FEAT_CDSmRNArange,
@@ -884,6 +885,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.42  2003/10/13 18:44:02  shomrat
+* Added error code for bad tRNA amino acid
+*
 * Revision 1.41  2003/10/01 22:42:45  ucko
 * Actually declare CValidError_feat::IsCDDFeat....
 *
