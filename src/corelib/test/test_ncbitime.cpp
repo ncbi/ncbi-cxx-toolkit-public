@@ -935,7 +935,6 @@ static void s_TestTimeSpan(void)
 
     // Assignment
     {{
-        CTimeSpan t0;
         CTimeSpan t1(-123.4);
         CTimeSpan t2(123.45);
 
@@ -1080,6 +1079,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.29  2005/01/04 11:59:38  ivanov
+ * Get rid of an unused variable
+ *
  * Revision 6.28  2004/12/29 21:41:30  vasilche
  * Fixed parsing and formatting of twelfth hour in AM/PM mode.
  *
