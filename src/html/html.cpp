@@ -227,7 +227,8 @@ void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute event,
 }
 
 
-void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu, EHTML_EH_Attribute event)
+void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
+                                EHTML_EH_Attribute    event)
 {
     if ( !menu ) {
         return;
@@ -237,7 +238,7 @@ void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu, EHTML_EH_Attribute e
         SetEventHandler(event, menu->ShowMenu());
         return;
     case CHTMLPopupMenu::eKurdin: 
-        SetEventHandler(eHTML_EH_MouseOver, menu->ShowMenu());
+        SetEventHandler(event, menu->ShowMenu());
         SetEventHandler(eHTML_EH_MouseOut, "PopUpMenu2_Hide()");
         return;
     case CHTMLPopupMenu::eKurdinSide:
@@ -731,10 +732,6 @@ CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
                 if ( info != m_PopupMenus.end() ) {
                     Node(i)->AppendChild(new CHTMLText(
                         CHTMLPopupMenu::GetCodeBody(type, info->second.m_UseDynamicMenu)));
-                    if ( CHTMLPopupMenu::GetCodeBodyTagHandler(type) != kEmptyStr ) {
-                        Node(i)->SetAttribute(CHTMLPopupMenu::GetCodeBodyTagHandler(type),
-                                              CHTMLPopupMenu::GetCodeBodyTagAction(type));
-                    }
                 }
             }
         }
@@ -2272,6 +2269,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.90  2003/12/02 14:25:58  ivanov
+ * Removed obsolete functions GetCodeBodyTag[Handler|Action]().
+ * AttachPopupMenu(): use event parameter for eKurdin menu also.
+ *
  * Revision 1.89  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *
