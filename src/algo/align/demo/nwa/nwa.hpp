@@ -51,7 +51,8 @@ public:
     enum EErrCode {
         eCannotReadFile,
         eCannotWriteFile,
-        eInconsistentParameters
+        eInconsistentParameters,
+	eNotSupported
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -61,6 +62,8 @@ public:
             return "Cannot write to file";
         case eInconsistentParameters:
             return "Two or more parameters are inconsistent";
+	case eNotSupported:
+	    return "Feature not supported";
         default:
             return CException::GetErrCodeString();
         }
@@ -98,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/10 19:11:50  kapustin
+ * Add eNotSupported exception for multithreading availability checking
+ *
  * Revision 1.6  2003/06/17 17:20:44  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *

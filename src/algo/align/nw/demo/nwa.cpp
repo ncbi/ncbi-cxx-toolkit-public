@@ -232,6 +232,18 @@ void CAppNWA::x_RunOnPair() const
                    "for Myers-Miller method only (-mm flag)");
     }
 
+#ifndef NCBI_THREADS
+    if(bMT) {
+        NCBI_THROW(CAppNWAException,
+		   eNotSupported,
+                   "This application was built without multithreading support. "
+		   "To run in multiple threads, please re-configure and rebuild"
+		   " with proper option.");
+    }
+    
+#endif
+
+
     // read input sequences
     vector<char> v1, v2;
     string seqname1, seqname2;
@@ -407,6 +419,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/09/10 19:11:50  kapustin
+ * Add eNotSupported exception for multithreading availability checking
+ *
  * Revision 1.22  2003/09/02 22:38:52  kapustin
  * Adjust for the library's changes
  *
