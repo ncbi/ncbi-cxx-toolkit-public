@@ -1,4 +1,4 @@
---$Revision: 1.1 $
+--$Revision: 1.2 $
 --********************************************************************
 --
 --  Network Id server network access
@@ -18,10 +18,9 @@ BEGIN
 
 EXPORTS ID2S-Chunk-Id;
 
-IMPORTS Seq-id, Seq-loc FROM NCBI-Seqloc
-        Seq-annot, Seq-descr, Seq-literal
-                        FROM NCBI-Sequence
-        Seq-align       FROM NCBI-Seqalign;
+IMPORTS Seq-loc                                 FROM NCBI-Seqloc
+        Seq-annot, Seq-descr, Seq-literal       FROM NCBI-Sequence
+        Seq-align                               FROM NCBI-Seqalign;
 
 ----------------------------------------------------------------------------
 -- Blob split info types
