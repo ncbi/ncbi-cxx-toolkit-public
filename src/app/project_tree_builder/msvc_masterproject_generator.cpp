@@ -178,7 +178,7 @@ CMsvcMasterProjectGenerator::AddProjectToFilter(CRef<CFilter>&   filter,
                                    build_info);
 
     } else {
-        LOG_POST(Error << "Project not found: " + project_id.Id());
+        LOG_POST(Warning << "Project not found: " + project_id.Id());
     }
 }
 
@@ -210,6 +210,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/20 15:22:51  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.16  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

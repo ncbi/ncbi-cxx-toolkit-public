@@ -98,7 +98,8 @@ const list<string>& CMsvcPrjFilesCollector::ResourceFiles(void) const
 
 struct PSourcesExclude
 {
-    PSourcesExclude(const list<string>& excluded_sources)
+    PSourcesExclude(const string& prj_id, const list<string>& excluded_sources)
+        : m_Prj(prj_id)
     {
         copy(excluded_sources.begin(), excluded_sources.end(), 
              inserter(m_ExcludedSources, m_ExcludedSources.end()) );
@@ -108,10 +109,15 @@ struct PSourcesExclude
     {
         string src_base;
         CDirEntry::SplitPath(src, NULL, &src_base);
-        return m_ExcludedSources.find(src_base) != m_ExcludedSources.end();
+        if (m_ExcludedSources.find(src_base) != m_ExcludedSources.end()) {
+            LOG_POST(Info << "Project " << m_Prj << ": source file excluded by request: " << src);
+            return true;
+        }
+        return false;
     }
 
 private:
+    string m_Prj;
     set<string> m_ExcludedSources;
 };
 
@@ -193,7 +199,7 @@ CMsvcPrjFilesCollector::CollectSources(void)
     list<string> excluded_sources;
     m_Context->GetMsvcProjectMakefile().GetExcludedSourceFiles //TODO
                                             (SConfigInfo(), &excluded_sources);
-    PSourcesExclude pred(excluded_sources);
+    PSourcesExclude pred(m_Project->m_ID, excluded_sources);
     EraseIf(sources, pred);
 
     ITERATE(list<string>, p, sources) {
@@ -376,6 +382,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/12/20 15:23:19  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.11  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

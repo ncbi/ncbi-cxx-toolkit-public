@@ -344,7 +344,7 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
 
         CMsvcPrjProjectContext context(project.m_Project);
         
-        bool config_enabled = context.IsConfigEnabled(cfg_info);
+        bool config_enabled = context.IsConfigEnabled(cfg_info, 0);
 
         const string& config = cfg_info.m_Name;
         
@@ -403,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/12/20 15:25:18  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.21  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

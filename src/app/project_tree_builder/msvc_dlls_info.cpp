@@ -50,6 +50,8 @@ CMsvcDllsInfo::CMsvcDllsInfo(const string& file_path)
     if (ifs) {
         //read registry
         m_Registry.Read(ifs);
+    } else {
+        LOG_POST(Error << file_path << " not found");
     }
 }
 
@@ -222,7 +224,7 @@ static void s_InitalizeDllProj(const string&                  dll_id,
                  (GetApp().GetWholeTree().m_Projects.find(depend_key))->second;
 
             } else  {
-                LOG_POST(Error << "Project not found: " + depend_id);
+                LOG_POST(Warning << dll_id << ": project not found: " + depend_id);
             }
         }
     }
@@ -563,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/12/20 15:22:09  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.25  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

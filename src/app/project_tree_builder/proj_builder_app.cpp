@@ -183,12 +183,21 @@ struct PIsExcludedByProjectMakefile
             const string& dir = *p;
             if ( IsSubdir(dir, project.m_SourcesBaseDir) ) {
                 // implicitly excluded from build
-                return prj_context.GetMsvcProjectMakefile().IsExcludeProject
-                                                                        (true);
+                if (prj_context.GetMsvcProjectMakefile().IsExcludeProject(true)) {
+                    LOG_POST(Warning << "Excluded:  project " << project.m_Name
+                                << " by ProjectTree/ImplicitExclude");
+                    return true;
+                }
+                return false;
             }
         }
-        // implicitly included to build
-        return prj_context.GetMsvcProjectMakefile().IsExcludeProject(false);
+        // implicitly included into build
+        if (prj_context.GetMsvcProjectMakefile().IsExcludeProject(false)) {
+            LOG_POST(Warning << "Excluded:  project " << project.m_Name
+                        << " by Makefile." << project.m_Name << ".*.msvc");
+            return true;
+        }
+        return false;
     }
 };
 
@@ -200,9 +209,12 @@ struct PIsExcludedByRequires
     bool operator() (const TValueType& item) const
     {
         const CProjItem& project = item.second;
-        if ( CMsvcPrjProjectContext::IsRequiresOk(project) )
+        string unmet;
+        if ( CMsvcPrjProjectContext::IsRequiresOk(project, &unmet) ) {
             return false;
-
+        }
+        LOG_POST(Warning << "Excluded:  " << project.m_Name
+                      << "    project requires    " << unmet);
         return true;
     }
 };
@@ -250,26 +262,45 @@ void CProjBulderApp::Init(void)
 static 
 void s_ReportDependenciesStatus(const CCyclicDepends::TDependsCycles& cycles)
 {
-   if ( cycles.empty() ) {
-        LOG_POST(Info << "No dependency cycles found.");
-    } else {
-        ITERATE(CCyclicDepends::TDependsCycles, p, cycles) {
-            const CCyclicDepends::TDependsChain& cycle = *p;
-            LOG_POST(Error << "Dependency cycle found :");
-            ITERATE(CCyclicDepends::TDependsChain, n, cycle) {
-                const CProjKey& proj_id = *n;
-                LOG_POST(Error << "Cycle with project :" + proj_id.Id());
+    const CMsvcDllsInfo& dlls = GetApp().GetDllsInfo();
+    bool reported = false;
+    ITERATE(CCyclicDepends::TDependsCycles, p, cycles) {
+        const CCyclicDepends::TDependsChain& cycle = *p;
+        bool real_cycle = false;
+        string host0, host;
+        ITERATE(CCyclicDepends::TDependsChain, m, cycle) {
+            host = dlls.GetDllHost(m->Id());
+            if (m == cycle.begin()) {
+                host0 = host;
+            } else {
+                real_cycle = (host0 != host) || (host0.empty() && host.empty());
+                if (real_cycle) {
+                    break;
+                }
             }
         }
+        if (!real_cycle) {
+            continue;
+        }
+        string str_chain("Dependency cycle found: ");
+        ITERATE(CCyclicDepends::TDependsChain, n, cycle) {
+            const CProjKey& proj_id = *n;
+            if (n != cycle.begin()) {
+                str_chain += " - ";
+            }
+            str_chain += proj_id.Id();
+        }
+        LOG_POST(Error << str_chain);
+        reported = true;
+    }
+    if (!reported) {
+        LOG_POST(Info << "No dependency cycles found.");
     }
 }
 
 
 int CProjBulderApp::Run(void)
 {
-    // Get and check arguments
-    ParseArguments();
-
 	// Set error posting and tracing on maximum.
 	SetDiagTrace(eDT_Enable);
 	SetDiagPostFlag(eDPF_Default);
@@ -277,6 +308,9 @@ int CProjBulderApp::Run(void)
 
     // Start 
     LOG_POST(Info << "Started at " + CTime(CTime::eCurrent).AsString());
+
+    // Get and check arguments
+    ParseArguments();
 
     // Configure 
     CMsvcConfigure configure;
@@ -300,6 +334,7 @@ int CProjBulderApp::Run(void)
 
     // MSVC specific part:
     
+    LOG_POST(Info << "*** Checking requirements ***");
     // Exclude some projects from build:
 #ifdef COMBINED_EXCLUDE
     {{
@@ -521,6 +556,7 @@ void CProjBulderApp::ParseArguments(void)
 
     // Solution
     m_Solution = CDirEntry::NormalizePath(args["solution"].AsString());
+    LOG_POST(Info << "Solution: " << m_Solution);
 }
 
 
@@ -642,6 +678,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     root = CDirEntry::NormalizePath(root);
     root = CDirEntry::AddTrailingPathSeparator(root);
     m_ProjectTreeInfo->m_Root = root;
+    LOG_POST(Info << "Project tree root: " << root);
 
     /// <include> branch of tree
     string include = GetConfig().GetString("ProjectTree", "include", "");
@@ -667,11 +704,13 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     string ext;
     CDirEntry::SplitPath(subtree, NULL, NULL, &ext);
     if (NStr::CompareNocase(ext, ".lst") == 0) {
+        LOG_POST(Info << "Project list: " << subtree);
         //If this is *.lst file
         m_ProjectTreeInfo->m_IProjectFilter.reset
             (new CProjectsLstFileFilter(m_ProjectTreeInfo->m_Src,
                                         subtree));
     } else {
+        LOG_POST(Info << "Project subtree: " << subtree);
         //Simple subtree
         subtree = CDirEntry::AddTrailingPathSeparator(subtree);
         m_ProjectTreeInfo->m_IProjectFilter.reset
@@ -837,6 +876,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2004/12/20 15:26:03  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.48  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

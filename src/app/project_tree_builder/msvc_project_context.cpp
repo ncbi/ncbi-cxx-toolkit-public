@@ -203,12 +203,6 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                     lib_ok = false;
                     break;
                 }
-/*
-                if ( !CMsvcSite::IsLibOk(lib_info) ) {
-                    lib_ok = false;
-                    break;
-                }
-*/
             }
             if (lib_ok) {
                 m_Requires.push_back(component);
@@ -337,10 +331,19 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info, true) && !lib_info.m_Libs.empty() ) {
-            copy(lib_info.m_Libs.begin(), 
-                 lib_info.m_Libs.end(), 
-                 back_inserter(additional_libs));
+        if ( CMsvcSite::IsLibOk(lib_info, true) ) {
+            if ( !lib_info.m_Libs.empty() ) {
+                copy(lib_info.m_Libs.begin(), 
+                    lib_info.m_Libs.end(), 
+                    back_inserter(additional_libs));
+            }
+        } else {
+            if (!lib_info.IsEmpty()) {
+                LOG_POST(Warning << requires << "|" << cfg_info.m_Name
+                              << " unavailable: additional libraries ignored: "
+                              << NStr::Join(lib_info.m_Libs,","));
+
+            }
         }
     }
 
@@ -380,8 +383,16 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
         }
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( CMsvcSite::IsLibOk(lib_info, true) && !lib_info.m_LibPath.empty() ) {
-            dir_list.push_back(lib_info.m_LibPath);
+        if ( CMsvcSite::IsLibOk(lib_info, true) ) {
+            if ( !lib_info.m_LibPath.empty() ) {
+                dir_list.push_back(lib_info.m_LibPath);
+            }
+        } else {
+            if (!lib_info.IsEmpty()) {
+                LOG_POST(Warning << requires << "|" << cfg_info.m_Name
+                              << " unavailable: library folder  ignored: "
+                              << lib_info.m_LibPath);
+            }
         }
     }
     dir_list.sort();
@@ -434,18 +445,22 @@ CMsvcPrjProjectContext::GetMsvcProjectMakefile(void) const
 }
 
 
-bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj)
+bool CMsvcPrjProjectContext::IsRequiresOk(const CProjItem& prj, string* unmet)
 {
     ITERATE(list<string>, p, prj.m_Requires) {
         const string& requires = *p;
-        if ( !GetApp().GetSite().IsProvided(requires) )
+        if ( !GetApp().GetSite().IsProvided(requires) ) {
+            if (unmet) {
+                *unmet = requires;
+            }
             return false;
+        }
     }
     return true;
 }
 
 
-bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config) const
+bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config, string* unmet) const
 {
     list<string> libs_3party;
     ITERATE(list<string>, p, m_ProjectLibs) {
@@ -471,8 +486,12 @@ bool CMsvcPrjProjectContext::IsConfigEnabled(const SConfigInfo& config) const
         if ( lib_info.IsEmpty() ) 
             continue;
 
-        if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) )
+        if ( !GetApp().GetSite().IsLibEnabledInConfig(requires, config) ) {
+            if (unmet) {
+                *unmet = requires;
+            }
             return false;
+        }
     }
 
     return true;
@@ -934,6 +953,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/12/20 15:24:23  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.41  2004/11/29 17:03:39  gouriano
  * Add 3rd party library dependencies on per-configuration basis
  *

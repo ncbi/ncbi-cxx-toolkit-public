@@ -48,19 +48,20 @@ void CMsvcProjectGenerator::Generate(const CProjItem& prj)
     list<SConfigInfo> project_configs;
     ITERATE(list<SConfigInfo>, p , m_Configs) {
         const SConfigInfo& cfg_info = *p;
+        string unmet;
         // Check config availability
-        if ( !project_context.IsConfigEnabled(cfg_info) ) {
-            str_log += " " + cfg_info.m_Name;
+        if ( !project_context.IsConfigEnabled(cfg_info, &unmet) ) {
+            str_log += " " + cfg_info.m_Name + "(because of " + unmet + ")";
         } else {
             project_configs.push_back(cfg_info);
         }
     }
-    if (project_configs.empty()) {
-        LOG_POST(Info << prj.m_Name << ": skipped (all configurations are disabled)");
-        return;
-    }
     if (!str_log.empty()) {
-        LOG_POST(Info << prj.m_Name << ": disabled configurations: " << str_log);
+        LOG_POST(Warning << prj.m_ID << ": disabled configurations: " << str_log);
+    }
+    if (project_configs.empty()) {
+        LOG_POST(Warning << prj.m_ID << ": skipped (all configurations are disabled)");
+        return;
     }
     
     // Attributes:
@@ -459,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/12/20 15:23:44  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.39  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

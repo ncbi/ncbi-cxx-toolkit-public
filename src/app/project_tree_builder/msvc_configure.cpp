@@ -107,7 +107,12 @@ static void s_CreateThirdPartyLibsInstallMakefile
                 ofs << key << " = " << bin_dir << "\n";
 
                 s_ResetLibInstallKey(dir, lib);
+            } else {
+                LOG_POST(Warning << lib << "|" << config.m_Name << ": "
+                                 << bin_dir << " not found");
             }
+        } else {
+            LOG_POST(Warning << lib << "|" << config.m_Name << ": LIBPATH is empty");
         }
     }
 }
@@ -194,8 +199,13 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
         const string& component = *p;
         SLibInfo lib_info;
         site.GetLibInfo(component, config, &lib_info);
-        if ( !site.IsLibOk(lib_info) )
+        if ( !site.IsLibOk(lib_info) ) {
+            if (!lib_info.IsEmpty()) {
+                LOG_POST(Warning << define << " is disabled because of "
+                                 << component << "|" << config.m_Name);
+            }
             return false;
+        }
     }
     return true;
 }
@@ -299,6 +309,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/20 15:21:32  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.20  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *

@@ -69,6 +69,8 @@ CMsvcSite::CMsvcSite(const CNcbiRegistry& registry)
         string lib_3party_id;
         if ( NStr::SplitInTwo(choice_str, "/", lib_id, lib_3party_id) ) {
             m_LibChoices.push_back(SLibChoice(*this, lib_id, lib_3party_id));
+        } else {
+           LOG_POST(Error << "Incorrect LibChoices definition: " << choice_str);
         }
     }
 
@@ -309,6 +311,12 @@ void CMsvcSite::GetLibInclude(const string& lib_id,
     if ( IsLibOk(lib_info, true) ) {
         includes->push_back(lib_info.m_IncludeDir);
         return;
+    } else {
+        if (!lib_info.IsEmpty()) {
+            LOG_POST(Warning << lib_id << "|" << cfg_info.m_Name
+                          << " unavailable: library include ignored: "
+                          << lib_info.m_IncludeDir);
+        }
     }
 }
 
@@ -408,7 +416,7 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
         const string& macro = *m;
         if (!IsDescribed(macro)) {
             // add empty value
-            LOG_POST(Info << "Macro " << macro << " is not described");
+            LOG_POST(Error << "Macro " << macro << " is not described");
         }
         list<string> components;
         GetComponents(macro, &components);
@@ -422,8 +430,11 @@ void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
                 if ( IsLibOk(lib_info) ) {
                     res = true;
                 } else {
-                    LOG_POST(Info << "Macro " << macro << " cannot be resolved for "
-                        << component << " (" << config.m_Name << ")");
+                    if (!lib_info.IsEmpty()) {
+                        LOG_POST(Warning << "Macro " << macro
+                            << " cannot be resolved for "
+                            << component << "|" << config.m_Name);
+                    }
 //                    res = false;
 //                    break;
                 }
@@ -441,6 +452,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/12/20 15:24:56  gouriano
+ * Changed diagnostic output
+ *
  * Revision 1.24  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *
