@@ -385,7 +385,7 @@ static Int4 gdb3(Int4* a, Int4* b, Int4* c)
 }
 
 /** Deallocate the memory for greedy gapped alignment */
-static GreedyAlignMem* BLAST_GreedyAlignsfree(GreedyAlignMem* gamp)
+static SGreedyAlignMem* BLAST_GreedyAlignsfree(SGreedyAlignMem* gamp)
 {
    if (gamp->flast_d) {
       sfree(gamp->flast_d[0]);
@@ -409,9 +409,9 @@ static GreedyAlignMem* BLAST_GreedyAlignsfree(GreedyAlignMem* gamp)
  * @param ext_params Options and parameters related to the extension [in]
  * @param max_dbseq_length The length of the longest sequence in the 
  *        database [in]
- * @return The allocated GreedyAlignMem structure
+ * @return The allocated SGreedyAlignMem structure
  */
-static GreedyAlignMem* 
+static SGreedyAlignMem* 
 BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
 		       const BlastExtensionParameters* ext_params,
 		       Int4 max_dbseq_length)
@@ -420,7 +420,7 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
                                ERROR_FRACTION in the anonymous enum in
                                greedy_align.c */
 #define ICEIL(x,y) ((((x)-1)/(y))+1)    /* FIXME: duplicated from greedy_align.c */
-   GreedyAlignMem* gamp;
+   SGreedyAlignMem* gamp;
    Int4 max_d, max_d_1, Xdrop, d_diff, max_cost, gd, i;
    Int4 reward, penalty, gap_open, gap_extend;
    Int4 Mis_cost, GE_cost;
@@ -451,7 +451,7 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
 
    max_d = (Int4) (max_dbseq_length / ERROR_FRACTION + 1);
 
-   gamp = (GreedyAlignMem*) calloc(1, sizeof(GreedyAlignMem));
+   gamp = (SGreedyAlignMem*) calloc(1, sizeof(SGreedyAlignMem));
 
    if (score_params->gap_open==0 && score_params->gap_extend==0) {
       d_diff = ICEIL(Xdrop+reward/2, penalty+reward);
@@ -486,14 +486,14 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
       gd = gdb3(&Mis_cost, &gap_open, &GE_cost);
       d_diff = ICEIL(Xdrop+reward/2, gd);
       gamp->uplow_free = (Int4*) calloc(2*(max_d+1+max_cost), sizeof(Int4));
-      gamp->flast_d_affine = (ThreeVal**) 
-	 malloc((MAX(max_d, max_cost) + 2) * sizeof(ThreeVal*));
+      gamp->flast_d_affine = (SThreeVal**) 
+	 malloc((MAX(max_d, max_cost) + 2) * sizeof(SThreeVal*));
       if (!gamp->uplow_free || !gamp->flast_d_affine) {
          BLAST_GreedyAlignsfree(gamp);
          return NULL;
       }
-      gamp->flast_d_affine[0] = (ThreeVal*)
-	 calloc((2*max_d_1 + 6) , sizeof(ThreeVal) * (max_cost+1));
+      gamp->flast_d_affine[0] = (SThreeVal*)
+	 calloc((2*max_d_1 + 6) , sizeof(SThreeVal) * (max_cost+1));
       for (i = 1; i <= max_cost; i++)
 	 gamp->flast_d_affine[i] = 
 	    gamp->flast_d_affine[i-1] + 2*max_d_1 + 6;

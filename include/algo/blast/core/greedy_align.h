@@ -55,33 +55,33 @@ MBGapEditScript *MBGapEditScriptNew(void);
 MBGapEditScript *MBGapEditScriptAppend(MBGapEditScript *es, MBGapEditScript *et);
 
 /* ----- pool allocator ----- */
-typedef struct ThreeVal {
+typedef struct SThreeVal {
     Int4 I, C, D;
-} ThreeVal;
+} SThreeVal;
 
-typedef struct MBSpace {
-    ThreeVal* space_array;
+typedef struct SMBSpace {
+    SThreeVal* space_array;
     Int4 used, size;
-    struct MBSpace *next;
-} MBSpace;
+    struct SMBSpace *next;
+} SMBSpace;
 
-MBSpace* MBSpaceNew(void);
-void MBSpaceFree(MBSpace* sp);
+SMBSpace* MBSpaceNew(void);
+void MBSpaceFree(SMBSpace* sp);
 
-typedef struct GreedyAlignMem {
+typedef struct SGreedyAlignMem {
    Int4** flast_d;
    Int4* max_row_free;
-   ThreeVal** flast_d_affine;
+   SThreeVal** flast_d_affine;
    Int4* uplow_free;
-   MBSpace* space;
-} GreedyAlignMem;
+   SMBSpace* space;
+} SGreedyAlignMem;
 
 Int4 
 BLAST_GreedyAlign (const Uint1* s1, Int4 len1,
 			     const Uint1* s2, Int4 len2,
 			     Boolean reverse, Int4 xdrop_threshold, 
 			     Int4 match_cost, Int4 mismatch_cost,
-			     Int4* e1, Int4* e2, GreedyAlignMem* abmp, 
+			     Int4* e1, Int4* e2, SGreedyAlignMem* abmp, 
 			     MBGapEditScript *S, Uint1 rem);
 Int4 
 BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
@@ -90,7 +90,7 @@ BLAST_AffineGreedyAlign (const Uint1* s1, Int4 len1,
 				  Int4 match_cost, Int4 mismatch_cost,
 				  Int4 gap_open, Int4 gap_extend,
 				  Int4* e1, Int4* e2, 
-				  GreedyAlignMem* abmp, 
+				  SGreedyAlignMem* abmp, 
 				  MBGapEditScript *S, Uint1 rem);
 
 #ifdef __cplusplus
