@@ -48,6 +48,7 @@
 #include <objects/general/Object_id.hpp>
 
 #include "cn3d/chemical_graph.hpp"
+#include "cn3d/asn_reader.hpp"
 #include "cn3d/molecule.hpp"
 #include "cn3d/bond.hpp"
 #include "cn3d/structure_set.hpp"
@@ -57,7 +58,6 @@
 #include "cn3d/object_3d.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
-#include "cn3d/asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -524,6 +524,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/08/21 17:56:29  thiessen
+* change header order for Mac compilation
+*
 * Revision 1.36  2003/06/21 21:04:41  thiessen
 * draw per-model 3D objects
 *
