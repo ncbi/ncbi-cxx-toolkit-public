@@ -86,7 +86,7 @@ private:
     const string*       m_Taxname;
     const string*       m_Common;
     const string*       m_Organelle;
-    const string*       m_Lineage;       // semicolon-delimited
+    string              m_Lineage;       // semicolon-delimited
     const string*       m_SourceLine;    // for "old" format style
     const list<string>* m_Mod;
     bool                m_UsingAnamorph;
@@ -114,7 +114,7 @@ const string& CSourceItem::GetCommon(void) const
 inline
 const string& CSourceItem::GetLineage(void) const
 { 
-    return *m_Lineage;
+    return m_Lineage;
 }
 
 
@@ -154,6 +154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/19 16:15:22  shomrat
+* made m_Lineage non-const
+*
 * Revision 1.2  2004/04/22 15:40:05  shomrat
 * Changes in context
 *
