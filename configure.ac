@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.322 2004/09/09 20:12:48 ucko Exp $
+#  $Id: configure.ac,v 1.323 2004/09/20 14:39:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -839,7 +839,6 @@ C_LIBS=$LIBS
 
 
 #### 32/64-bit compilation, and extra C++ LIBS
-: ${with_64:="no"}
 if test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
@@ -881,6 +880,33 @@ changequote([, ])dnl
 else
    bit64_sfx=
    ARCH_CFLAGS=
+   if test "$with_64" = "no" ; then
+      case "$host:$compiler" in
+       sparc-sun-solaris*:WorkShop* | sparc-sun-solaris*:KCC )
+         ARCH_CFLAGS="-xtarget=native -xarch=v9"
+         ;;
+       mips*:GCC )
+         ARCH_CFLAGS="-mipsn32"
+         ;;
+       *:GCC )
+         # May not work prior to GCC 3.1.
+         ARCH_CFLAGS="-m32"
+         ;;
+   
+       mips-sgi-irix*:MIPSpro73 )
+         ARCH_CFLAGS="-n32"
+         CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
+         AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
+         ;;
+       mips-sgi-irix*:KCC )
+         ARCH_CFLAGS="-n32"
+         ;;
+       * )
+         # Just a warning, since 32-bit mode is typically the default anyway...
+         AC_MSG_WARN(["Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler"])
+         ;;
+      esac
+   fi
    case "$host:$compiler" in
     *solaris*:WorkShop5 )
       LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
@@ -923,6 +949,17 @@ CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
+if test -n "$with_64"; then
+   AC_CACHE_CHECK([whether this system supports --with(out)-64],
+      ncbi_cv_sys_with64_ok,
+      [AC_LINK_IFELSE([
+          AC_LANG_PROGRAM([#include <string>],
+                          [std::string* sp = new std::string("foo");])],
+          ncbi_cv_sys_with64_ok=yes, ncbi_cv_sys_with64_ok=no)])
+   if test "$ncbi_cv_sys_with64_ok" = no; then
+      AC_MSG_ERROR([cannot continue; please try different options])
+   fi
+fi
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
@@ -1378,6 +1415,17 @@ if test "$with_profiling" = "yes" ; then
    STRIP="@:" # Stripping may lose profiling info
 else
    prof_sfx=
+fi
+
+
+#### Determine whether this is implicitly a 64-bit platform
+AC_TYPE_SIZE_T
+AC_CHECK_SIZEOF(size_t)
+NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
+                   [Define to the architecture size.])
+if test $NCBI_PLATFORM_BITS -eq 64; then
+   bit64_sfx=64
 fi
 
 
@@ -1957,7 +2005,6 @@ fi
 
 ### Check for typedefs, structures, and compiler features.
 AC_C_CONST
-AC_TYPE_SIZE_T
 
 ### Check for C standard types and sizes
 AC_C_BIGENDIAN
@@ -1972,10 +2019,6 @@ AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
-AC_CHECK_SIZEOF(size_t)
-NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
-AC_DEFINE_UNQUOTED(NCBI_PLATFORM_BITS, $NCBI_PLATFORM_BITS,
-                   [Define to the architecture size.])
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,

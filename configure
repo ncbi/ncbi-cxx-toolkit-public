@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL CXXCPP EGREP AMQ Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe BDB_LIB THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -4021,7 +4021,6 @@ C_LIBS=$LIBS
 
 
 #### 32/64-bit compilation, and extra C++ LIBS
-: ${with_64:="no"}
 if test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
@@ -4063,6 +4062,34 @@ echo "$as_me: error: \"Do not know how to compile 64-bit with compiler $CXX $com
 else
    bit64_sfx=
    ARCH_CFLAGS=
+   if test "$with_64" = "no" ; then
+      case "$host:$compiler" in
+       sparc-sun-solaris*:WorkShop* | sparc-sun-solaris*:KCC )
+         ARCH_CFLAGS="-xtarget=native -xarch=v9"
+         ;;
+       mips*:GCC )
+         ARCH_CFLAGS="-mipsn32"
+         ;;
+       *:GCC )
+         # May not work prior to GCC 3.1.
+         ARCH_CFLAGS="-m32"
+         ;;
+
+       mips-sgi-irix*:MIPSpro73 )
+         ARCH_CFLAGS="-n32"
+         CPPFLAGS="$ARCH_CFLAGS $CPPFLAGS"
+         AR=${AR:="$CXX $ARCH_CFLAGS -ar -WR,-v -o"}
+         ;;
+       mips-sgi-irix*:KCC )
+         ARCH_CFLAGS="-n32"
+         ;;
+       * )
+         # Just a warning, since 32-bit mode is typically the default anyway...
+         { echo "$as_me:$LINENO: WARNING: \"Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler\"" >&5
+echo "$as_me: WARNING: \"Do not know how to compile 32-bit with compiler $CXX $compiler_ver $host:$compiler\"" >&2;}
+         ;;
+      esac
+   fi
    case "$host:$compiler" in
     *solaris*:WorkShop5 )
       LIBS="-Bstatic -L$CXX_PATH/../SC5.0/lib -lm -Bdynamic $LIBS"
@@ -4103,6 +4130,59 @@ CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
+if test -n "$with_64"; then
+
+echo "$as_me:$LINENO: checking whether this system supports --with(out)-64" >&5
+echo $ECHO_N "checking whether this system supports --with(out)-64... $ECHO_C" >&6
+if test "${ncbi_cv_sys_with64_ok+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+
+          #line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <string>
+int
+main ()
+{
+std::string* sp = new std::string("foo");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_sys_with64_ok=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_sys_with64_ok=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_sys_with64_ok" >&5
+echo "${ECHO_T}$ncbi_cv_sys_with64_ok" >&6
+   if test "$ncbi_cv_sys_with64_ok" = no; then
+      { { echo "$as_me:$LINENO: error: cannot continue; please try different options" >&5
+echo "$as_me: error: cannot continue; please try different options" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
 case "$host_os:$compiler:$compiler_version" in
@@ -4570,8 +4650,7 @@ echo "${ECHO_T}no" >&6
 fi
 
 if test "x$RANLIB" != "x:"; then
-
-echo "$as_me:$LINENO: checking ranlib's effectiveness" >&5
+   echo "$as_me:$LINENO: checking ranlib's effectiveness" >&5
 echo $ECHO_N "checking ranlib's effectiveness... $ECHO_C" >&6
 if test "${ncbi_cv_prog_ranlib_effect+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
@@ -4959,382 +5038,7 @@ else
 fi
 
 
-#### Add "Release"/"Debug", "MT", "DLL", "64", "_p" suffixes to "${build_root}"
-if test "$with_suffix" != "no" ; then
-   build_root="${build_root}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}"
-fi
-
-
-#### Add full host specs to "${build_root}"
-if test "$with_hostspec" = "yes" ; then
-   build_root="${build_root}--${host}"
-fi
-
-case "$host_os" in
-   linux*)
-      kver=`uname -r | sed -e 's/-.*//'`
-      libcver=`ldd --version | awk 'NR == 1 { print $NF }'`
-      verbose_host=$host_cpu-$host_vendor-linux$kver-gnu$libcver
-      ;;
-   *) verbose_host=$host ;;
-esac
-
-#### Overall configuration mode summary
-signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
-
-
-#### Check if there is "${build_root}" dir
-test -d "${build_root}"  ||  mkdir -p "${build_root}"
-
-#### Try to find a version of pwd that yields /net paths.
-# Extract the first word of "amq", so it can be a program name with args.
-set dummy amq; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_AMQ+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $AMQ in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_AMQ="$AMQ" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PATH:/usr/sbin:/sbin"
-for as_dir in $as_dummy
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_AMQ="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  ;;
-esac
-fi
-AMQ=$ac_cv_path_AMQ
-
-if test -n "$AMQ"; then
-  echo "$as_me:$LINENO: result: $AMQ" >&5
-echo "${ECHO_T}$AMQ" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-case "$AMQ" in
-   */amq)
-      echo "$as_me:$LINENO: checking whether $AMQ -w works" >&5
-echo $ECHO_N "checking whether $AMQ -w works... $ECHO_C" >&6
-if test "${ncbi_cv_prog_amq_w+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if $AMQ -w >/dev/null 2>&1; then
-          ncbi_cv_prog_amq_w=yes
-       else
-          ncbi_cv_prog_amq_w=no
-       fi
-fi
-echo "$as_me:$LINENO: result: $ncbi_cv_prog_amq_w" >&5
-echo "${ECHO_T}$ncbi_cv_prog_amq_w" >&6
-      if test "$ncbi_cv_prog_amq_w" = yes; then
-         smart_pwd="$AMQ -w"
-      else
-         smart_pwd=pwd
-      fi
-      ;;
-   *)
-      smart_pwd=pwd
-      ;;
-esac
-
-#### Make "build_root" absolute
-case "${build_root}" in
-   /* ) ;;
-   . )
-      CDPATH=
-      if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
-      then
-         build_root="$PWD"
-      else
-         build_root="`(cd ${build_root}; $smart_pwd)`"
-      fi
-   ;;
-   *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
-esac
-if test -n "$with_fake_root"; then
-   build_root=$with_fake_root/`basename $build_root`
-fi
-
-
-#### Set runpath (may depend on build root)
-if test -z "$with_runpath"; then
-   # Don't allow libdir values containing variable expansions,
-   # including in particular the default "${exec_prefix}/lib"
-   if test -n "$libdir"  &&  expr "$libdir" : '[^$]*$' >/dev/null; then
-      with_runpath=$libdir
-   elif test -n "$exec_prefix"  -a  "$exec_prefix" != "NONE" ; then
-      with_runpath=$exec_prefix/lib
-   elif test -n "$prefix"  -a  "$prefix" != "NONE" ; then
-      with_runpath=$prefix/lib
-   fi
-fi
-
-if   test "$with_runpath" = "no" ; then
-   runpath=
-   pure_runpath=
-elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
-   root_base=`basename $build_root`
-   pure_runpath=`echo ${with_runpath} | sed s/{}/$root_base/`
-   runpath="${CONF_f_runpath}${pure_runpath}"
-   case "$host_os:$compiler" in
-    darwin* )
-      # Needed for a few gui projects, including gbench_plugin_scan;
-      # harmless elsewhere, since it only affects projects that indirectly
-      # need one of these libraries.  (There seems to be no general
-      # equivalent of -rpath-link.)
-      for l in dbapi_driver gui_utils ncbi_xloader_genbank ncbi_xreader \
-               ncbi_xreader_id1 ncbi_xreader_id1c ncbi_xreader_pubseqos; do
-         ll=lib$l.dylib
-         LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
-      done
-      ;;
-    *:GCC )
-      if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
-         runpath="$runpath -Wl,-rpath-link,\$(libdir)"
-      fi
-      ;;
-    *:ICC )
-      runpath="$runpath -Xlinker -rpath-link -Xlinker \$(libdir)"
-      ;;
-   esac
-elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
-   runpath="${CONF_f_runpath}\$(libdir)"
-   pure_runpath='${build_root}/lib'
-else
-   runpath=
-   pure_runpath=
-fi
-if test -z "$CONF_f_runpath" ; then
-   # Drop the linker flag (since passing directory names doesn't work
-   # so well), but keep pure_runpath for other uses.
-   runpath=
-fi
-
-
-#### Linker command-line to build DLL (may depend on runpath)
-has_dll_loadable="@# "
-case "$compiler" in
- GCC | MIPSpro73 | ICC | Compaq )
-   case "$host_os" in
-      solaris* )
-        # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
-        LINK_DLL="$LINK $ARCH_CFLAGS -shared -mimpure-text -o"
-        ;;
-      darwin* )
-        # There is a distinction between shared libraries (dylibs)
-        # and loadable objects (bundles).
-        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
-        has_dll_loadable=""
-        if $CXX -v 2>&1 | grep -q Apple; then
-           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
-        else
-           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
-           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
-        fi
-        ;;
-      * )
-        LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
-        ;;
-   esac
-   ;;
- WorkShop* )
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
-   ;;
- KCC )
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
-   ;;
- VisualAge )
-   # NOTE: --without-dll still recommended, as the linker doesn't seem
-   # to support building shared libraries with undefined symbols.
-   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -qmkshrobj -o"
-   ;;
- * )
-   if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
-      { { echo "$as_me:$LINENO: error: \"Do not know how to build DLLs with compiler $CXX $compiler_ver\"" >&5
-echo "$as_me: error: \"Do not know how to build DLLs with compiler $CXX $compiler_ver\"" >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-   ;;
-esac
-
-
-#### Make "srcdir" absolute
-case "${srcdir}" in
-   /* ) ;;
-   . )
-      CDPATH=
-      if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
-      then
-        srcdir="$PWD"
-      else
-        srcdir="`(cd ${srcdir}; $smart_pwd)`"
-      fi
-   ;;
-   * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
-esac
-real_srcdir=$srcdir
-if test -n "$with_fake_root"; then
-   srcdir=$build_root/..
-fi
-
-
-#### Source, include, and build directories
-ncbiconf="$build_root/inc/ncbiconf.h"
-if test "$build_root" = "$srcdir" ; then
-   builddir="$srcdir/src"
-else
-   builddir="$build_root/build"
-fi
-status_dir="$build_root/status"
-
-
-#### Create build directories
-mkdir -p "$builddir" "$build_root/lib" "$build_root/bin"
-
-
-#### Check if the target directory already has a configured system in it
-if test "$no_create" != "yes"  -a  -f "${ncbiconf}" ; then
-   echo
-   echo "There is already a built \"${ncbiconf}\"!"
-   echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
-   read answer
-   case "$answer" in
-      y | Y | yes | YES ) ;;
-      * )  { { echo "$as_me:$LINENO: error: Re-configuration has been canceled by user." >&5
-echo "$as_me: error: Re-configuration has been canceled by user." >&2;}
-   { (exit 1); exit 1; }; } ;;
-   esac
-   echo
-fi
-
-
-#### Use right command shell in scripts and makefiles
-script_shell="#! ${CONFIG_SHELL:=/bin/sh}"
-make_shell="SHELL=${CONFIG_SHELL:=/bin/sh}"
-
-
-#### Turn on compilation warnings and adjust
-#### some compiler-specific flags and features
-
-if test "$CONF_obj_ext"   = " " ;  then obj_ext="" ; else obj_ext="${CONF_obj_ext:=.o}" ; fi
-if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pre:=lib}" ; fi
-if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
-if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
-if test "$CONF_dll_ext"   = " " ;  then dll_ext="" ; else dll_ext="${CONF_dll_ext:=.so}" ; fi
-if test "$CONF_loadable_ext"  = " " ;  then loadable_ext="" ; else loadable_ext="${CONF_loadable_ext:=.so}" ; fi
-if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
-if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
-if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
-if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_outobj:=-o }" ; fi
-if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
-if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
-if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_runpath:=$CONF_f_libpath}" ; fi
-if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
-
-
-BINCOPY="cp -p"
-MAC_BINCOPY="/Developer/Tools/CpMac -p"
-if test "$with_bincopy" != "yes"; then
-   echo "$as_me:$LINENO: checking whether cross-directory hard links work" >&5
-echo $ECHO_N "checking whether cross-directory hard links work... $ECHO_C" >&6
-if test "${ncbi_cv_sys_xdir_ln+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  mkdir conftestdir
-       touch conftestdir/conftestfile
-       if ln -f conftestdir/conftestfile .; then
-          ncbi_cv_sys_xdir_ln=yes
-       else
-          ncbi_cv_sys_xdir_ln=no
-       fi
-       rm -rf conftestdir conftestfile
-fi
-echo "$as_me:$LINENO: result: $ncbi_cv_sys_xdir_ln" >&5
-echo "${ECHO_T}$ncbi_cv_sys_xdir_ln" >&6
-   if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
-      BINCOPY="ln -f"
-      MAC_BINCOPY="\$(top_srcdir)/scripts/ln_mac.sh"
-   fi
-fi
-ifdiff="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh"
-if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
-   BINCOPY="$ifdiff \"$MAC_BINCOPY\""
-else
-   BINCOPY="$ifdiff \"$BINCOPY\""
-fi
-
-
-#### Manage the debug-vs.-optimization flags ("--*-debug", "--*-optimization")
-if test "$compiler" != "MSVC" ; then
-   if test "$with_debug" = "no" ; then
-      with_optimization=${with_optimization:="yes"}
-      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
-      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
-      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
-   else
-      with_optimization=${with_optimization:="no"}
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
-         CFLAGS="$CFLAGS -g"     ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
-         CXXFLAGS="$CXXFLAGS -g" ; fi
-      if test "$with_optimization" = "no" ; then
-         CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
-         then LDFLAGS="$LDFLAGS -g" ; fi
-      STRIP="@:"
-   fi
-
-   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-O[0-9]*//g'`
-   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-O[0-9]*//g'`
-   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
-   if test "$with_optimization" = "no" ; then
-      CFLAGS="$NOPT_CFLAGS"
-      CXXFLAGS="$NOPT_CXXFLAGS"
-      LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
-      FAST_CFLAGS="$CFLAGS"
-      FAST_CXXFLAGS="$CXXFLAGS"
-      FAST_LDFLAGS="$LDFLAGS"
-   else
-      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
-         CFLAGS="$CFLAGS -O" ; fi
-      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
-         CXXFLAGS="$CXXFLAGS -O" ; fi
-      CPPFLAGS="-DNDEBUG $CPPFLAGS"
-      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
-         LDFLAGS="$LDFLAGS -O" ; fi
-      FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
-      FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
-      FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
-   fi
-
-   if test "$with_debug" = "no"  -a  "$with_optimization" = "no" ; then
-      CPPFLAGS="-DNDEBUG $CPPFLAGS"
-   fi
-fi
-
-
-
-### ------------------------------------------------------------------
-### ------------------------------------------------------------------
-
-### Check for header files.
+#### Determine whether this is implicitly a 64-bit platform
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5804,6 +5508,811 @@ fi
 done
 
 
+echo "$as_me:$LINENO: checking for size_t" >&5
+echo $ECHO_N "checking for size_t... $ECHO_C" >&6
+if test "${ac_cv_type_size_t+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+if ((size_t *) 0)
+  return 0;
+if (sizeof (size_t))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type_size_t=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_type_size_t=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_type_size_t" >&5
+echo "${ECHO_T}$ac_cv_type_size_t" >&6
+if test $ac_cv_type_size_t = yes; then
+  :
+else
+
+cat >>confdefs.h <<_ACEOF
+#define size_t unsigned
+_ACEOF
+
+fi
+
+echo "$as_me:$LINENO: checking for size_t" >&5
+echo $ECHO_N "checking for size_t... $ECHO_C" >&6
+if test "${ac_cv_type_size_t+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+if ((size_t *) 0)
+  return 0;
+if (sizeof (size_t))
+  return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_type_size_t=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_type_size_t=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ac_cv_type_size_t" >&5
+echo "${ECHO_T}$ac_cv_type_size_t" >&6
+
+echo "$as_me:$LINENO: checking size of size_t" >&5
+echo $ECHO_N "checking size of size_t... $ECHO_C" >&6
+if test "${ac_cv_sizeof_size_t+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test "$ac_cv_type_size_t" = yes; then
+  # The cast to unsigned long works around a bug in the HP C Compiler
+  # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+  # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+  # This bug is HP SR number 8606223364.
+  if test "$cross_compiling" = yes; then
+  # Depending upon the size, compute the lo and hi bounds.
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long) (sizeof (size_t))) >= 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_lo=0 ac_mid=0
+  while :; do
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long) (sizeof (size_t))) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_hi=$ac_mid; break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_lo=`expr $ac_mid + 1`
+                    if test $ac_lo -le $ac_mid; then
+                      ac_lo= ac_hi=
+                      break
+                    fi
+                    ac_mid=`expr 2 '*' $ac_mid + 1`
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long) (sizeof (size_t))) < 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_hi=-1 ac_mid=-1
+  while :; do
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long) (sizeof (size_t))) >= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_lo=$ac_mid; break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_hi=`expr '(' $ac_mid ')' - 1`
+                       if test $ac_mid -le $ac_hi; then
+                         ac_lo= ac_hi=
+                         break
+                       fi
+                       ac_mid=`expr 2 '*' $ac_mid`
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_lo= ac_hi=
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+# Binary search between lo and hi bounds.
+while test "x$ac_lo" != "x$ac_hi"; do
+  ac_mid=`expr '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo`
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long) (sizeof (size_t))) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_hi=$ac_mid
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_lo=`expr '(' $ac_mid ')' + 1`
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+done
+case $ac_lo in
+?*) ac_cv_sizeof_size_t=$ac_lo;;
+'') { { echo "$as_me:$LINENO: error: cannot compute sizeof (size_t), 77
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot compute sizeof (size_t), 77
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; } ;;
+esac
+else
+  if test "$cross_compiling" = yes; then
+  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+long longval () { return (long) (sizeof (size_t)); }
+unsigned long ulongval () { return (long) (sizeof (size_t)); }
+#include <stdio.h>
+#include <stdlib.h>
+int
+main ()
+{
+
+  FILE *f = fopen ("conftest.val", "w");
+  if (! f)
+    exit (1);
+  if (((long) (sizeof (size_t))) < 0)
+    {
+      long i = longval ();
+      if (i != ((long) (sizeof (size_t))))
+	exit (1);
+      fprintf (f, "%ld\n", i);
+    }
+  else
+    {
+      unsigned long i = ulongval ();
+      if (i != ((long) (sizeof (size_t))))
+	exit (1);
+      fprintf (f, "%lu\n", i);
+    }
+  exit (ferror (f) || fclose (f) != 0);
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_sizeof_size_t=`cat conftest.val`
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+{ { echo "$as_me:$LINENO: error: cannot compute sizeof (size_t), 77
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot compute sizeof (size_t), 77
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+fi
+rm -f conftest.val
+else
+  ac_cv_sizeof_size_t=0
+fi
+fi
+echo "$as_me:$LINENO: result: $ac_cv_sizeof_size_t" >&5
+echo "${ECHO_T}$ac_cv_sizeof_size_t" >&6
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
+_ACEOF
+
+
+NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
+
+cat >>confdefs.h <<_ACEOF
+#define NCBI_PLATFORM_BITS $NCBI_PLATFORM_BITS
+_ACEOF
+
+if test $NCBI_PLATFORM_BITS -eq 64; then
+   bit64_sfx=64
+fi
+
+
+#### Add "Release"/"Debug", "MT", "DLL", "64", "_p" suffixes to "${build_root}"
+if test "$with_suffix" != "no" ; then
+   build_root="${build_root}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}"
+fi
+
+
+#### Add full host specs to "${build_root}"
+if test "$with_hostspec" = "yes" ; then
+   build_root="${build_root}--${host}"
+fi
+
+case "$host_os" in
+   linux*)
+      kver=`uname -r | sed -e 's/-.*//'`
+      libcver=`ldd --version | awk 'NR == 1 { print $NF }'`
+      verbose_host=$host_cpu-$host_vendor-linux$kver-gnu$libcver
+      ;;
+   *) verbose_host=$host ;;
+esac
+
+#### Overall configuration mode summary
+signature="${compiler}_${compiler_version}-${release_debug}${mt_sfx}${dll_sfx}${bit64_sfx}${prof_sfx}--${verbose_host}-`(hostname || uname -n) 2>/dev/null | sed 1q`"
+
+
+#### Check if there is "${build_root}" dir
+test -d "${build_root}"  ||  mkdir -p "${build_root}"
+
+#### Try to find a version of pwd that yields /net paths.
+# Extract the first word of "amq", so it can be a program name with args.
+set dummy amq; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_AMQ+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $AMQ in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_AMQ="$AMQ" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PATH:/usr/sbin:/sbin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_AMQ="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+AMQ=$ac_cv_path_AMQ
+
+if test -n "$AMQ"; then
+  echo "$as_me:$LINENO: result: $AMQ" >&5
+echo "${ECHO_T}$AMQ" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+case "$AMQ" in
+   */amq)
+      echo "$as_me:$LINENO: checking whether $AMQ -w works" >&5
+echo $ECHO_N "checking whether $AMQ -w works... $ECHO_C" >&6
+if test "${ncbi_cv_prog_amq_w+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if $AMQ -w >/dev/null 2>&1; then
+          ncbi_cv_prog_amq_w=yes
+       else
+          ncbi_cv_prog_amq_w=no
+       fi
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_amq_w" >&5
+echo "${ECHO_T}$ncbi_cv_prog_amq_w" >&6
+      if test "$ncbi_cv_prog_amq_w" = yes; then
+         smart_pwd="$AMQ -w"
+      else
+         smart_pwd=pwd
+      fi
+      ;;
+   *)
+      smart_pwd=pwd
+      ;;
+esac
+
+#### Make "build_root" absolute
+case "${build_root}" in
+   /* ) ;;
+   . )
+      CDPATH=
+      if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
+      then
+         build_root="$PWD"
+      else
+         build_root="`(cd ${build_root}; $smart_pwd)`"
+      fi
+   ;;
+   *  ) build_root="`(cd ${build_root}; $smart_pwd)`" ;;
+esac
+if test -n "$with_fake_root"; then
+   build_root=$with_fake_root/`basename $build_root`
+fi
+
+
+#### Set runpath (may depend on build root)
+if test -z "$with_runpath"; then
+   # Don't allow libdir values containing variable expansions,
+   # including in particular the default "${exec_prefix}/lib"
+   if test -n "$libdir"  &&  expr "$libdir" : '[^$]*$' >/dev/null; then
+      with_runpath=$libdir
+   elif test -n "$exec_prefix"  -a  "$exec_prefix" != "NONE" ; then
+      with_runpath=$exec_prefix/lib
+   elif test -n "$prefix"  -a  "$prefix" != "NONE" ; then
+      with_runpath=$prefix/lib
+   fi
+fi
+
+if   test "$with_runpath" = "no" ; then
+   runpath=
+   pure_runpath=
+elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
+   root_base=`basename $build_root`
+   pure_runpath=`echo ${with_runpath} | sed s/{}/$root_base/`
+   runpath="${CONF_f_runpath}${pure_runpath}"
+   case "$host_os:$compiler" in
+    darwin* )
+      # Needed for a few gui projects, including gbench_plugin_scan;
+      # harmless elsewhere, since it only affects projects that indirectly
+      # need one of these libraries.  (There seems to be no general
+      # equivalent of -rpath-link.)
+      for l in dbapi_driver gui_utils ncbi_xloader_genbank ncbi_xreader \
+               ncbi_xreader_id1 ncbi_xreader_id1c ncbi_xreader_pubseqos; do
+         ll=lib$l.dylib
+         LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
+      done
+      ;;
+    *:GCC )
+      if `$CXX -print-prog-name=ld` --version 2>&1 | grep GNU >/dev/null; then
+         runpath="$runpath -Wl,-rpath-link,\$(libdir)"
+      fi
+      ;;
+    *:ICC )
+      runpath="$runpath -Xlinker -rpath-link -Xlinker \$(libdir)"
+      ;;
+   esac
+elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
+   runpath="${CONF_f_runpath}\$(libdir)"
+   pure_runpath='${build_root}/lib'
+else
+   runpath=
+   pure_runpath=
+fi
+if test -z "$CONF_f_runpath" ; then
+   # Drop the linker flag (since passing directory names doesn't work
+   # so well), but keep pure_runpath for other uses.
+   runpath=
+fi
+
+
+#### Linker command-line to build DLL (may depend on runpath)
+has_dll_loadable="@# "
+case "$compiler" in
+ GCC | MIPSpro73 | ICC | Compaq )
+   case "$host_os" in
+      solaris* )
+        # See http://realm.progsoc.uts.edu.au/~subtle/solaris28_link.html
+        LINK_DLL="$LINK $ARCH_CFLAGS -shared -mimpure-text -o"
+        ;;
+      darwin* )
+        # There is a distinction between shared libraries (dylibs)
+        # and loadable objects (bundles).
+        # See <http://fink.sourceforge.net/doc/porting/shared.php>.
+        has_dll_loadable=""
+        if $CXX -v 2>&1 | grep -q Apple; then
+           LINK_DLL="$LINK $ARCH_CFLAGS -dynamiclib -flat_namespace -undefined suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$LINK $ARCH_CFLAGS -bundle -flat_namespace -undefined suppress -o"
+        else
+           LINK_DLL="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-flat_namespace -Wl,-undefined,suppress -install_name ${pure_runpath%%:*}/\$(XDLL) -o"
+           LINK_LOADABLE="$CC $ARCH_CFLAGS -nostartfiles -Wl,-dynamic -Wl,-bundle -Wl,-flat_namespace -Wl,-undefined,suppress -Wl,-read_only_relocs,warning -lbundle1.o -o"
+        fi
+        ;;
+      * )
+        LINK_DLL="$LINK $ARCH_CFLAGS -shared -o"
+        ;;
+   esac
+   ;;
+ WorkShop* )
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -G -h \$@ -o"
+   ;;
+ KCC )
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG --soname \$@ -o"
+   ;;
+ VisualAge )
+   # NOTE: --without-dll still recommended, as the linker doesn't seem
+   # to support building shared libraries with undefined symbols.
+   LINK_DLL="$LINK $ARCH_CFLAGS $MT_FLAG -qmkshrobj -o"
+   ;;
+ * )
+   if test "$with_dll" = "yes"  &&  test -z "$LINK_DLL" ; then
+      { { echo "$as_me:$LINENO: error: \"Do not know how to build DLLs with compiler $CXX $compiler_ver\"" >&5
+echo "$as_me: error: \"Do not know how to build DLLs with compiler $CXX $compiler_ver\"" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   ;;
+esac
+
+
+#### Make "srcdir" absolute
+case "${srcdir}" in
+   /* ) ;;
+   . )
+      CDPATH=
+      if test "${PWD}" != "" && test "`(cd ${PWD} ; sh -c pwd)`" = "`pwd`"  ;
+      then
+        srcdir="$PWD"
+      else
+        srcdir="`(cd ${srcdir}; $smart_pwd)`"
+      fi
+   ;;
+   * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
+esac
+real_srcdir=$srcdir
+if test -n "$with_fake_root"; then
+   srcdir=$build_root/..
+fi
+
+
+#### Source, include, and build directories
+ncbiconf="$build_root/inc/ncbiconf.h"
+if test "$build_root" = "$srcdir" ; then
+   builddir="$srcdir/src"
+else
+   builddir="$build_root/build"
+fi
+status_dir="$build_root/status"
+
+
+#### Create build directories
+mkdir -p "$builddir" "$build_root/lib" "$build_root/bin"
+
+
+#### Check if the target directory already has a configured system in it
+if test "$no_create" != "yes"  -a  -f "${ncbiconf}" ; then
+   echo
+   echo "There is already a built \"${ncbiconf}\"!"
+   echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
+   read answer
+   case "$answer" in
+      y | Y | yes | YES ) ;;
+      * )  { { echo "$as_me:$LINENO: error: Re-configuration has been canceled by user." >&5
+echo "$as_me: error: Re-configuration has been canceled by user." >&2;}
+   { (exit 1); exit 1; }; } ;;
+   esac
+   echo
+fi
+
+
+#### Use right command shell in scripts and makefiles
+script_shell="#! ${CONFIG_SHELL:=/bin/sh}"
+make_shell="SHELL=${CONFIG_SHELL:=/bin/sh}"
+
+
+#### Turn on compilation warnings and adjust
+#### some compiler-specific flags and features
+
+if test "$CONF_obj_ext"   = " " ;  then obj_ext="" ; else obj_ext="${CONF_obj_ext:=.o}" ; fi
+if test "$CONF_lib_pre"   = " " ;  then lib_pre="" ; else lib_pre="${CONF_lib_pre:=lib}" ; fi
+if test "$CONF_lib_l_pre" = " " ;  then lib_l_pre="" ; else lib_l_pre="${CONF_lib_l_pre:=-l}" ; fi
+if test "$CONF_lib_ext"   = " " ;  then lib_ext="" ; else lib_ext="${CONF_lib_ext:=.a}" ; fi
+if test "$CONF_dll_ext"   = " " ;  then dll_ext="" ; else dll_ext="${CONF_dll_ext:=.so}" ; fi
+if test "$CONF_loadable_ext"  = " " ;  then loadable_ext="" ; else loadable_ext="${CONF_loadable_ext:=.so}" ; fi
+if test "$CONF_lib_l_ext" = " " ;  then lib_l_ext="" ; else lib_l_ext="${CONF_lib_l_ext}" ; fi
+if test "$CONF_exe_ext"   = " " ;  then exe_ext="" ; else exe_ext="${CONF_exe_ext}" ; fi
+if test "$CONF_f_compile" = " " ;  then f_compile="" ; else f_compile="${CONF_f_compile:=-c }" ; fi
+if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_outobj:=-o }" ; fi
+if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
+if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
+if test "$CONF_f_runpath" = " " ;  then f_runpath="" ; else f_runpath="${CONF_f_runpath:=$CONF_f_libpath}" ; fi
+if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
+
+
+BINCOPY="cp -p"
+MAC_BINCOPY="/Developer/Tools/CpMac -p"
+if test "$with_bincopy" != "yes"; then
+   echo "$as_me:$LINENO: checking whether cross-directory hard links work" >&5
+echo $ECHO_N "checking whether cross-directory hard links work... $ECHO_C" >&6
+if test "${ncbi_cv_sys_xdir_ln+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  mkdir conftestdir
+       touch conftestdir/conftestfile
+       if ln -f conftestdir/conftestfile .; then
+          ncbi_cv_sys_xdir_ln=yes
+       else
+          ncbi_cv_sys_xdir_ln=no
+       fi
+       rm -rf conftestdir conftestfile
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_sys_xdir_ln" >&5
+echo "${ECHO_T}$ncbi_cv_sys_xdir_ln" >&6
+   if test "$ncbi_cv_sys_xdir_ln" = "yes"; then
+      BINCOPY="ln -f"
+      MAC_BINCOPY="\$(top_srcdir)/scripts/ln_mac.sh"
+   fi
+fi
+ifdiff="${CONFIG_SHELL} \$(top_srcdir)/scripts/if_diff.sh"
+if test "$OSTYPE" = "darwin" -a -x /Developer/Tools/CpMac; then
+   BINCOPY="$ifdiff \"$MAC_BINCOPY\""
+else
+   BINCOPY="$ifdiff \"$BINCOPY\""
+fi
+
+
+#### Manage the debug-vs.-optimization flags ("--*-debug", "--*-optimization")
+if test "$compiler" != "MSVC" ; then
+   if test "$with_debug" = "no" ; then
+      with_optimization=${with_optimization:="yes"}
+      CFLAGS=`  echo " $CFLAGS"   | sed 's/[ 	]-g[0-9]*//g'`
+      CXXFLAGS=`echo " $CXXFLAGS" | sed 's/[ 	]-g[0-9]*//g'`
+      LDFLAGS=` echo " $LDFLAGS"  | sed 's/[ 	]-g[0-9]*//g'`
+   else
+      with_optimization=${with_optimization:="no"}
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
+         CFLAGS="$CFLAGS -g"     ; fi
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-g[0-9]*' ; then
+         CXXFLAGS="$CXXFLAGS -g" ; fi
+      if test "$with_optimization" = "no" ; then
+         CPPFLAGS="-D_DEBUG $CPPFLAGS" ; fi
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-g[0-9]*' ;
+         then LDFLAGS="$LDFLAGS -g" ; fi
+      STRIP="@:"
+   fi
+
+   NOPT_CFLAGS=`  echo " $CFLAGS"    | sed 's/[ 	]-O[0-9]*//g'`
+   NOPT_CXXFLAGS=`echo " $CXXFLAGS"  | sed 's/[ 	]-O[0-9]*//g'`
+   NOPT_LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
+   if test "$with_optimization" = "no" ; then
+      CFLAGS="$NOPT_CFLAGS"
+      CXXFLAGS="$NOPT_CXXFLAGS"
+      LDFLAGS=` echo " $LDFLAGS"   | sed 's/[ 	]-O[0-9]*//g'`
+      FAST_CFLAGS="$CFLAGS"
+      FAST_CXXFLAGS="$CXXFLAGS"
+      FAST_LDFLAGS="$LDFLAGS"
+   else
+      if echo " $CFLAGS"   |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
+         CFLAGS="$CFLAGS -O" ; fi
+      if echo " $CXXFLAGS" |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
+         CXXFLAGS="$CXXFLAGS -O" ; fi
+      CPPFLAGS="-DNDEBUG $CPPFLAGS"
+      if echo " $LDFLAGS"  |grep -v >/dev/null '[ 	]-O[0-9]*' ; then
+         LDFLAGS="$LDFLAGS -O" ; fi
+      FAST_CFLAGS="$NOPT_CFLAGS $FAST_CFLAGS"
+      FAST_CXXFLAGS="$NOPT_CXXFLAGS $FAST_CXXFLAGS"
+      FAST_LDFLAGS="$NOPT_LDFLAGS $FAST_LDFLAGS"
+   fi
+
+   if test "$with_debug" = "no"  -a  "$with_optimization" = "no" ; then
+      CPPFLAGS="-DNDEBUG $CPPFLAGS"
+   fi
+fi
+
+
+
+### ------------------------------------------------------------------
+### ------------------------------------------------------------------
+
+### Check for header files.
 
 
 for ac_header in iostream  iostream.h
@@ -8307,63 +8816,6 @@ if test $ac_cv_c_const = no; then
 
 cat >>confdefs.h <<\_ACEOF
 #define const
-_ACEOF
-
-fi
-
-echo "$as_me:$LINENO: checking for size_t" >&5
-echo $ECHO_N "checking for size_t... $ECHO_C" >&6
-if test "${ac_cv_type_size_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-if ((size_t *) 0)
-  return 0;
-if (sizeof (size_t))
-  return 0;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_type_size_t=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_type_size_t=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_type_size_t" >&5
-echo "${ECHO_T}$ac_cv_type_size_t" >&6
-if test $ac_cv_type_size_t = yes; then
-  :
-else
-
-cat >>confdefs.h <<_ACEOF
-#define size_t unsigned
 _ACEOF
 
 fi
@@ -12237,373 +12689,6 @@ cat >>confdefs.h <<_ACEOF
 #define SIZEOF_LONG_DOUBLE $ac_cv_sizeof_long_double
 _ACEOF
 
-
-echo "$as_me:$LINENO: checking for size_t" >&5
-echo $ECHO_N "checking for size_t... $ECHO_C" >&6
-if test "${ac_cv_type_size_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-if ((size_t *) 0)
-  return 0;
-if (sizeof (size_t))
-  return 0;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_type_size_t=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_type_size_t=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ac_cv_type_size_t" >&5
-echo "${ECHO_T}$ac_cv_type_size_t" >&6
-
-echo "$as_me:$LINENO: checking size of size_t" >&5
-echo $ECHO_N "checking size of size_t... $ECHO_C" >&6
-if test "${ac_cv_sizeof_size_t+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test "$ac_cv_type_size_t" = yes; then
-  # The cast to unsigned long works around a bug in the HP C Compiler
-  # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
-  # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
-  # This bug is HP SR number 8606223364.
-  if test "$cross_compiling" = yes; then
-  # Depending upon the size, compute the lo and hi bounds.
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long) (sizeof (size_t))) >= 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_lo=0 ac_mid=0
-  while :; do
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long) (sizeof (size_t))) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_hi=$ac_mid; break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_lo=`expr $ac_mid + 1`
-                    if test $ac_lo -le $ac_mid; then
-                      ac_lo= ac_hi=
-                      break
-                    fi
-                    ac_mid=`expr 2 '*' $ac_mid + 1`
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long) (sizeof (size_t))) < 0)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_hi=-1 ac_mid=-1
-  while :; do
-    cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long) (sizeof (size_t))) >= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_lo=$ac_mid; break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_hi=`expr '(' $ac_mid ')' - 1`
-                       if test $ac_mid -le $ac_hi; then
-                         ac_lo= ac_hi=
-                         break
-                       fi
-                       ac_mid=`expr 2 '*' $ac_mid`
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-  done
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_lo= ac_hi=
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-# Binary search between lo and hi bounds.
-while test "x$ac_lo" != "x$ac_hi"; do
-  ac_mid=`expr '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo`
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-int
-main ()
-{
-static int test_array [1 - 2 * !(((long) (sizeof (size_t))) <= $ac_mid)];
-test_array [0] = 0
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_hi=$ac_mid
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_lo=`expr '(' $ac_mid ')' + 1`
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-done
-case $ac_lo in
-?*) ac_cv_sizeof_size_t=$ac_lo;;
-'') { { echo "$as_me:$LINENO: error: cannot compute sizeof (size_t), 77
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot compute sizeof (size_t), 77
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; } ;;
-esac
-else
-  if test "$cross_compiling" = yes; then
-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-long longval () { return (long) (sizeof (size_t)); }
-unsigned long ulongval () { return (long) (sizeof (size_t)); }
-#include <stdio.h>
-#include <stdlib.h>
-int
-main ()
-{
-
-  FILE *f = fopen ("conftest.val", "w");
-  if (! f)
-    exit (1);
-  if (((long) (sizeof (size_t))) < 0)
-    {
-      long i = longval ();
-      if (i != ((long) (sizeof (size_t))))
-	exit (1);
-      fprintf (f, "%ld\n", i);
-    }
-  else
-    {
-      unsigned long i = ulongval ();
-      if (i != ((long) (sizeof (size_t))))
-	exit (1);
-      fprintf (f, "%lu\n", i);
-    }
-  exit (ferror (f) || fclose (f) != 0);
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_sizeof_size_t=`cat conftest.val`
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-{ { echo "$as_me:$LINENO: error: cannot compute sizeof (size_t), 77
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot compute sizeof (size_t), 77
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-fi
-rm -f conftest.val
-else
-  ac_cv_sizeof_size_t=0
-fi
-fi
-echo "$as_me:$LINENO: result: $ac_cv_sizeof_size_t" >&5
-echo "${ECHO_T}$ac_cv_sizeof_size_t" >&6
-cat >>confdefs.h <<_ACEOF
-#define SIZEOF_SIZE_T $ac_cv_sizeof_size_t
-_ACEOF
-
-
-NCBI_PLATFORM_BITS=`expr 8 \* $ac_cv_sizeof_size_t`
-
-cat >>confdefs.h <<_ACEOF
-#define NCBI_PLATFORM_BITS $NCBI_PLATFORM_BITS
-_ACEOF
 
 
 echo "$as_me:$LINENO: checking for struct sockaddr_in.sin_len" >&5
@@ -20718,9 +20803,9 @@ s,@LORDER@,$LORDER,;t t
 s,@TSORT@,$TSORT,;t t
 s,@CCACHE@,$CCACHE,;t t
 s,@TAIL@,$TAIL,;t t
-s,@AMQ@,$AMQ,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@AMQ@,$AMQ,;t t
 s,@Z_INCLUDE@,$Z_INCLUDE,;t t
 s,@Z_LIBS@,$Z_LIBS,;t t
 s,@BZ2_INCLUDE@,$BZ2_INCLUDE,;t t
