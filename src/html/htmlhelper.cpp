@@ -168,7 +168,7 @@ string CHTMLHelper::StripHTML(const string& str)
 }
 
 
-string CHTMLHelper::StripTags (const string& str)
+string CHTMLHelper::StripTags(const string& str)
 {
     SIZE_TYPE pos = 0;
     string s(str);
@@ -190,7 +190,8 @@ string CHTMLHelper::StripTags (const string& str)
             break;
         }
         if (pos < s.size()  &&
-            isalpha((int)s[pos + 1])  &&  isalpha((int)s[pos_end - 1])) {
+            (isalpha((int)s[pos + 1]) || s[pos + 1 == '/'] )  &&
+            isalpha((int)s[pos_end - 1])) {
             s.erase(pos, pos_end - pos + 1);
         }
         pos++;
@@ -242,6 +243,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/09/28 14:05:41  ivanov
+ * Fixed CHTMLHelper::StripTags() to remove single closing tags
+ *
  * Revision 1.17  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
