@@ -60,7 +60,7 @@ USING_SCOPE(objects);
 /// CBlast2seqApplication: command line blast2sequences application
 /// @todo Implement formatting
 /// @todo refactor command line options, so that only those relevant to a
-/// particular program are shown (e.g: cvs -H <command>). This should be
+/// particular program are shown (e.g: cvs -H command). This should be
 /// reusable by all BLAST command line clients
 
 class CBlast2seqApplication : public CNcbiApplication
@@ -464,6 +464,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/03/11 17:27:41  camacho
+ * Minor change to avoid confusing doxygen
+ *
  * Revision 1.37  2004/03/09 18:55:34  dondosha
  * Fix: set out-of-frame mode boolean option in addition to the frame shift penalty
  *
