@@ -76,7 +76,8 @@ public:
     const char* GetSeqEntrySubkey(void) const;
     const char* GetSNPTableSubkey(void) const;
     const char* GetSkeletonSubkey(void) const;
-    string GetChunkSubkey(const CTSE_Chunk_Info& info) const;
+    const char* GetSplitInfoSubkey(void) const;
+    string GetChunkSubkey(int chunk_id) const;
 
     /// Return Id cache key string based on CSeq_id of gi
     string GetIdKey(const CSeq_id& id) const;
@@ -150,6 +151,8 @@ protected:
     void StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
                        const CSeqref& seqref);
 
+    bool LoadData(const string& key, int version, const char* suffix,
+                  CID2_Reply_Data& data);
     bool LoadData(const string& key, const char* suffix,
                   int version, CID2_Reply_Data& data);
 
@@ -191,6 +194,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.16  2004/04/28 17:06:25  vasilche
+* Load split blobs from new ICache.
+*
 * Revision 1.15  2004/01/20 16:56:04  vasilche
 * Allow storing version of any blob (not only SNP).
 *

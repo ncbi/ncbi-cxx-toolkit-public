@@ -706,12 +706,12 @@ void CSplitCacheApp::ProcessBlob(const CSeqref& seqref)
     }}
     {{ // storing split data into cache
         StoreToCache(this, blob.GetMainBlob(), eDataType_MainBlob, seqref,
-                     "Skeleton");
+                     m_Reader->GetSkeletonSubkey());
         StoreToCache(this, blob.GetSplitInfo(), eDataType_SplitInfo, seqref,
-                     "Split");
+                     m_Reader->GetSplitInfoSubkey());
         ITERATE ( CSplitBlob::TChunks, it, blob.GetChunks() ) {
-            string suffix = "Chunk" + NStr::IntToString(it->first);
-            StoreToCache(this, *it->second, eDataType_Chunk, seqref, suffix);
+            StoreToCache(this, *it->second, eDataType_Chunk, seqref,
+                         m_Reader->GetChunkSubkey(it->first));
         }
     }}
 }
@@ -740,6 +740,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/04/28 17:06:26  vasilche
+* Load split blobs from new ICache.
+*
 * Revision 1.17  2004/04/28 16:29:15  vasilche
 * Store split results into new ICache.
 *

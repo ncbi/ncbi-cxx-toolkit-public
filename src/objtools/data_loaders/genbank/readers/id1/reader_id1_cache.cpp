@@ -238,13 +238,19 @@ const char* CCachedId1Reader::GetSNPTableSubkey(void) const
 
 const char* CCachedId1Reader::GetSkeletonSubkey(void) const
 {
-    return "ID2 Reply";
+    return "Skeleton";
 }
 
 
-string CCachedId1Reader::GetChunkSubkey(const CTSE_Chunk_Info& info) const
+const char* CCachedId1Reader::GetSplitInfoSubkey(void) const
 {
-    return "chunk "+NStr::IntToString(info.GetChunkId());
+    return "ID2S-Split-Info";
+}
+
+
+string CCachedId1Reader::GetChunkSubkey(int chunk_id) const
+{
+    return "ID2S-Chunk "+NStr::IntToString(chunk_id);
 }
 
 
@@ -616,38 +622,65 @@ void CCachedId1Reader::GetTSEChunk(const CSeqref& seqref,
                                    CTSE_Chunk_Info& chunk_info,
                                    TConn /*conn*/)
 {
-    CStopWatch sw;
-    if ( CollectStatistics() ) {
-        sw.Start();
-    }
-
-    CID2_Reply_Data chunk_data;
-    string key = GetBlobKey(seqref);
-    string suffix = "-chunk-"+NStr::IntToString(chunk_info.GetChunkId());
-    if ( !LoadData(key, suffix.c_str(), seqref.GetVersion(),
-                   chunk_data) ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "CCachedId1Reader::GetTSEChunk: chunk is missing");
-    }
-    CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
-    size_t size = 0;
-    {{
-        CRef<CByteSourceReader> reader = GetReader(chunk_data,
-                                                   eDataType_Chunk);
-        AutoPtr<CObjectIStream> in(OpenData(chunk_data, *reader));
-        CReader::SetSeqEntryReadHooks(*in);
-        *in >> *chunk;
-        size = in->GetStreamOffset();
-    }}
-    CSplitParser::Load(chunk_info, *chunk);
+    if ( m_BlobCache ) {
+        CID2_Reply_Data chunk_data;
+        string key = GetBlobKey(seqref);
+        string subkey = GetChunkSubkey(chunk_info.GetChunkId());
+        if ( !LoadData(key, seqref.GetVersion(), subkey.c_str(),
+                       chunk_data) ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CCachedId1Reader::GetTSEChunk: chunk is missing");
+        }
+        CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
+        size_t size = 0;
+        {{
+            CRef<CByteSourceReader> reader = GetReader(chunk_data,
+                                                       eDataType_Chunk);
+            AutoPtr<CObjectIStream> in(OpenData(chunk_data, *reader));
+            CReader::SetSeqEntryReadHooks(*in);
+            *in >> *chunk;
+            size = in->GetStreamOffset();
+        }}
+        CSplitParser::Load(chunk_info, *chunk);
     
-    // everything is fine
-    if ( CollectStatistics() ) {
-        double time = sw.Elapsed();
-        LogBlobStat("CId1Cache: read chunk", seqref, size, time);
-        chunk_blob_count++;
-        chunk_bytes += size;
-        chunk_time += time;
+        // everything is fine
+    }
+    else if ( m_OldBlobCache ) {
+        CStopWatch sw;
+        if ( CollectStatistics() ) {
+            sw.Start();
+        }
+
+        CID2_Reply_Data chunk_data;
+        string key = GetBlobKey(seqref);
+        string suffix = "-chunk-"+NStr::IntToString(chunk_info.GetChunkId());
+        if ( !LoadData(key, suffix.c_str(), seqref.GetVersion(),
+                       chunk_data) ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "CCachedId1Reader::GetTSEChunk: chunk is missing");
+        }
+        CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
+        size_t size = 0;
+        {{
+            CRef<CByteSourceReader> reader = GetReader(chunk_data,
+                                                       eDataType_Chunk);
+            AutoPtr<CObjectIStream> in(OpenData(chunk_data, *reader));
+            CReader::SetSeqEntryReadHooks(*in);
+            *in >> *chunk;
+            size = in->GetStreamOffset();
+        }}
+        CSplitParser::Load(chunk_info, *chunk);
+    
+        // everything is fine
+        if ( CollectStatistics() ) {
+            double time = sw.Elapsed();
+            LogBlobStat("CId1Cache: read chunk", seqref, size, time);
+            chunk_blob_count++;
+            chunk_bytes += size;
+            chunk_time += time;
+        }
+    }
+    else {
     }
 }
 
@@ -904,6 +937,46 @@ bool CCachedId1Reader::LoadSplitBlob(CID1server_back& id1_reply,
                                      const CSeqref& seqref)
 {
     if ( m_BlobCache ) {
+        string key = GetBlobKey(seqref);
+        int ver = seqref.GetVersion();
+
+        try {
+            CID2_Reply_Data main_data, split_data;
+            if ( !LoadData(key, ver, GetSkeletonSubkey(), main_data) ||
+                 !LoadData(key, ver, GetSplitInfoSubkey(), split_data) ) {
+                return false;
+            }
+            size_t size = 0;
+            CRef<CSeq_entry> main(new CSeq_entry);
+            {{
+                CRef<CByteSourceReader> reader(GetReader(main_data,
+                                                         eDataType_MainBlob));
+                AutoPtr<CObjectIStream> in(OpenData(main_data, *reader));
+                CReader::SetSeqEntryReadHooks(*in);
+                *in >> *main;
+                size += in->GetStreamOffset();
+            }}
+            CRef<CID2S_Split_Info> split(new CID2S_Split_Info);
+            {{
+                CRef<CByteSourceReader> reader(GetReader(split_data,
+                                                         eDataType_SplitInfo));
+                AutoPtr<CObjectIStream> in(OpenData(split_data, *reader));
+                CReader::SetSeqEntryReadHooks(*in);
+                *in >> *split;
+                size += in->GetStreamOffset();
+            }}
+        
+            id1_reply.SetGotseqentry(*main);
+            split_info = split;
+
+            // everything is fine
+            return true;
+        }
+        catch ( exception& exc ) {
+            ERR_POST("CId1Cache: Exception while loading cached blob: " <<
+                     seqref.printTSE() << ": " << exc.what());
+            return false;
+        }
         return false;
     }
     else if ( m_OldBlobCache ) {
@@ -1210,6 +1283,25 @@ void CCachedId1Reader::StoreSNPTable(const CSeq_annot_SNP_Info& snp_info,
 }
 
 
+bool CCachedId1Reader::LoadData(const string& key, int version,
+                                const char* suffix,
+                                CID2_Reply_Data& data)
+{
+    AutoPtr<IReader> reader(m_BlobCache->GetReadStream(key, version, suffix));
+    if ( !reader.get() ) {
+        return false;
+    }
+    
+    CIRByteSourceReader rd(reader.get());
+    
+    CObjectIStreamAsnBinary in(rd);
+    
+    in >> data;
+
+    return true;
+}
+
+
 bool CCachedId1Reader::LoadData(const string& key, const char* suffix,
                                 int version, CID2_Reply_Data& data)
 {
@@ -1304,6 +1396,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.24  2004/04/28 17:06:25  vasilche
+ * Load split blobs from new ICache.
+ *
  * Revision 1.23  2004/02/17 21:20:11  vasilche
  * Fixed 'unused argument' warning.
  *
