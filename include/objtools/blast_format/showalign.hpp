@@ -223,6 +223,8 @@ private:
   void setFeatureInfo(alnFeatureInfo* featInfo, const CSeq_loc& seqloc, int alnFrom, int alnTo, int alnStop, char patternChar, string patternId) const;  
   void setDbGi();
   void GetInserts(list<insertInformation*>& insertList, CAlnMap::TSeqPosList& insertAlnStart, CAlnMap::TSeqPosList& insertSeqStart, CAlnMap::TSeqPosList& insertLength,  int lineAlnStop);
+  void x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& avList);
+  
 };
 
 

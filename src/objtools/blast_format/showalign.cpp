@@ -830,8 +830,7 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   if(m_SeqalignSetRef->Get().empty()){
     return;
   }
-  
-  string previous_id = NcbiEmptyString, subid = NcbiEmptyString;
+
   //scope for feature fetching
   if(m_AlignOption & eShowCdsFeature || m_AlignOption & eShowGeneFeature){
     m_FeatObj = new CObjectManager();
@@ -859,74 +858,78 @@ void CDisplaySeqalign::DisplaySeqalign(CNcbiOstream& out){
   if(m_AlignOption & eHtml){
     toolUrl = m_Reg->Get(m_BlastType, "TOOL_URL");
   }
-  if(!(m_AlignOption&eMultiAlign)){//pairwise alignment
-
-    list<alnInfo*> avList;  
-    for (CTypeConstIterator<CSeq_align> sa_it2 = ConstBegin(*m_SeqalignSetRef); sa_it2&&num_align<m_NumAlignToShow; ++sa_it2, num_align++) {
+  if(!(m_AlignOption&eMultiAlign)){/*pairwise alignment. Note we can't just show each alnment as we go because we will need seg information form all hsp's with the same id for genome url link.  As a result we show hsp's with the same id as a group*/
+    list<alnInfo*> avList;        
+    string previousId = NcbiEmptyString, subid = NcbiEmptyString;
+    bool isFirstAln = true;
+    for (CSeq_align_set::Tdata::const_iterator iter = m_SeqalignSetRef->Get().begin(); iter != m_SeqalignSetRef->Get().end()&&num_align<m_NumAlignToShow; iter++, num_align++) {
+      
+      //make alnvector
       CRef<CAlnVec> avRef;
-      if(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
-	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*(sa_it2->CreateDensegFromStdseg()));
+      if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Std){
+	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*((*iter)->CreateDensegFromStdseg()));
 	avRef = new CAlnVec(*ds, m_Scope);
-      } else if(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
-	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*sa_it2);
+      } else if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Denseg){
+	const CTypeConstIterator<CDense_seg> ds = ConstBegin(**iter);
 	avRef = new CAlnVec(*ds, m_Scope);
-      } else if(sa_it2->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
-	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*(CreateDensegFromDendiag(*sa_it2)));
+      } else if((*iter)->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
+	const CTypeConstIterator<CDense_seg> ds = ConstBegin(*(CreateDensegFromDendiag(**iter)));
 	avRef = new CAlnVec(*ds, m_Scope);
       } else {
 	NCBI_THROW(CException, eUnknown, "Seq-align should be Denseg, Stdseg or Dendiag!");
       }
+      
       if(!(avRef.Empty())){
 	try{
 	  const CBioseq_Handle& handle = avRef->GetBioseqHandle(1);	
 	  if(handle){
+	    subid=avRef->GetSeqId(1).GetSeqIdString();
+	    
+	    if(!isFirstAln && subid != previousId) {//this aln is a new id, show result for previous id
+	      x_DisplayAlnvecList(out, avList);
+	    
+	      for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
+		delete(*iterAv);
+	      }
+	      avList.clear();
+	      
+	    }
+	    //save the current alnment regardless
 	    alnInfo* alnvecInfo = new alnInfo;
-	    getAlnScores(*sa_it2, alnvecInfo->score, alnvecInfo->bits, alnvecInfo->eValue);
+	    getAlnScores(**iter, alnvecInfo->score, alnvecInfo->bits, alnvecInfo->eValue);
 	    alnvecInfo->alnVec = avRef;
 	    avList.push_back(alnvecInfo);
 	    int gi = GetGiForSeqIdList(handle.GetBioseq().GetId());
-	    if((m_AlignOption & eHtml) && !(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos))){ //need to construct segs for dumpgnl
+	    if(!(toolUrl == NcbiEmptyString || (gi > 0 && toolUrl.find("dumpgnl.cgi") != string::npos))){ //need to construct segs for dumpgnl
 	      string idString = avRef->GetSeqId(1).GetSeqIdString();
-	      if(m_Segs.count(idString) > 0){ //already has seg, concatenate
+	      if(m_Segs.count(idString) > 0){ 	//already has seg, concatenate
+		/*Note that currently it's not necessary to use map to store this information.  But I already implemented this way for previous version.  Will keep this way as it's more flexible if we change something*/
+	
 		m_Segs[idString] += "," + NStr::IntToString(avRef->GetSeqStart(1)) + "-" + NStr::IntToString(avRef->GetSeqStop(1));
 	      } else {//new segs
 		m_Segs.insert(map<string, string>::value_type(idString, NStr::IntToString(avRef->GetSeqStart(1)) + "-" + NStr::IntToString(avRef->GetSeqStop(1))));
 	      }
-	    }
+	    }	    
+	    isFirstAln = false;
+	    previousId = subid;
 	  }
-	} catch(CException& e){
-	  continue;
+	 
+	} catch (CException& e){
+	continue;
 	}
-      }
-    }
-    
-    //display
-  
-    for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
-      m_AV = (*iterAv)->alnVec;
-      const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
-      if(bsp_handle){
-	subid=m_AV->GetSeqId(1).GetSeqIdString();
-	if((previous_id == NcbiEmptyString || subid != previous_id)&&(m_AlignOption&eShowBlastInfo)) {
-	  PrintDefLine(bsp_handle,  out);
-	  out<<"          Length="<<bsp_handle.GetBioseq().GetInst().GetLength()<<endl<<endl;
-	  
-	}
-	previous_id = subid;
-	if (m_AlignOption&eShowBlastInfo) {
-	  
-	  out<<" Score = "<<(*iterAv)->bits<<" ";
-	  out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
-	  out<<"Expect = "<<(*iterAv)->eValue<<endl;
-	}
-	DisplayAlnvec(out);
-	out<<endl;
 	
       }
+    } 
+  
+    //Show here for the last one 
+    if(!avList.empty()){
+      x_DisplayAlnvecList(out, avList);
+      for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
+	delete(*iterAv);
+      }
+      avList.clear();
     }
-    for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
-      delete(*iterAv);
-    }
+  	     
   } else if(m_AlignOption&eMultiAlign){ //multiple alignment
        
     auto_ptr<CObjectOStream> out2(CObjectOStream::Open(eSerial_AsnText, out));
@@ -1724,5 +1727,30 @@ CRef<CSeq_align_set>CDisplaySeqalign::PrepareBlastUngappedSeqalign(CSeq_align_se
   
   return alnSetRef;
 }
+
+void CDisplaySeqalign::x_DisplayAlnvecList(CNcbiOstream& out, list<alnInfo*>& avList) {
+  bool isFirstAlnInList = true;
+  for(list<alnInfo*>::iterator iterAv = avList.begin(); iterAv != avList.end(); iterAv ++){
+    m_AV = (*iterAv)->alnVec;
+    const CBioseq_Handle& bsp_handle=m_AV->GetBioseqHandle(1); 
+    if(isFirstAlnInList && (m_AlignOption&eShowBlastInfo)) {
+      PrintDefLine(bsp_handle,  out);
+      out<<"          Length="<<bsp_handle.GetBioseq().GetInst().GetLength()<<endl<<endl;
+      
+    }
+    
+    if (m_AlignOption&eShowBlastInfo) {
+      
+      out<<" Score = "<<(*iterAv)->bits<<" ";
+      out<<"bits ("<<(*iterAv)->score<<"),"<<"  ";
+      out<<"Expect = "<<(*iterAv)->eValue<<endl;
+    }
+    DisplayAlnvec(out);
+    out<<endl;
+    isFirstAlnInList = false;
+  }
+  
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
