@@ -29,7 +29,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
-#include <objtools/data_loaders/readers/pubseqos/reader_pubseq.hpp>
+#include <objtools/data_loaders/genbank/readers/pubseqos/reader_pubseq.hpp>
 #include <objmgr/impl/seqref_pubseq.hpp>
 #include <objmgr/impl/tse_info.hpp>
 
@@ -68,6 +68,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.2  2003/12/23 14:16:57  kuznets
+* Fixed include path
+*
 * Revision 1.1  2003/12/16 17:51:23  kuznets
 * Code reorganization
 *
