@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/11/02 16:56:02  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.8  2000/10/19 12:40:54  thiessen
 * avoid multiple sequence redraws with scroll set
 *
@@ -149,6 +152,13 @@ void Messenger::RemoveSequenceViewer(const SequenceViewer *sequenceViewer)
         if (*t == sequenceViewer) sequenceViewers.erase(t);
         break;
     }
+}
+
+void Messenger::SequenceWindowsSave(void)
+{
+    SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
+    for (q=sequenceViewers.begin(); q!=qe; q++)
+        (*q)->SaveDialog();
 }
 
 

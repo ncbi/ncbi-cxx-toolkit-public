@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/11/02 16:56:02  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.27  2000/09/11 01:46:15  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -412,14 +415,12 @@ void OpenGLRenderer::PushMatrix(const Matrix* m)
         GLdouble g[16];
         Matrix2GL(*m, g);
         glMultMatrixd(g);
-        currentSlaveTransform = *m;
     }
 }
 
 void OpenGLRenderer::PopMatrix(void)
 {
     glPopMatrix();
-    currentSlaveTransform.SetToIdentity();
 }
 
 // display list management stuff
@@ -504,14 +505,18 @@ void OpenGLRenderer::Display(void)
     if (structureSet) {
         if (currentFrame == ALL_FRAMES) {
             for (unsigned int i=FIRST_LIST; i<=structureSet->lastDisplayList; i++) {
+                PushMatrix(*(structureSet->transformMap[i]));
                 glCallList(i);
+                PopMatrix();
                 AddTransparentSpheresForList(i);
             }
         } else {
             StructureSet::DisplayLists::const_iterator
                 l, le=structureSet->frameMap[currentFrame].end();
             for (l=structureSet->frameMap[currentFrame].begin(); l!=le; l++) {
+                PushMatrix(*(structureSet->transformMap[*l]));
                 glCallList(*l);
+                PopMatrix();
                 AddTransparentSpheresForList(*l);
             }
         }
@@ -756,25 +761,23 @@ void OpenGLRenderer::AddTransparentSphere(const Vector& color, unsigned int name
         return;
     }
 
-    SphereListAndTransform& sphereLT = transparentSphereMap[currentDisplayList];
-    sphereLT.first.resize(sphereLT.first.size() + 1);
-    SphereInfo& info = sphereLT.first.back();
+    SphereList& spheres = transparentSphereMap[currentDisplayList];
+    spheres.resize(spheres.size() + 1);
+    SphereInfo& info = spheres.back();
     info.site = site;
     info.name = name;
     info.color = color;
     info.radius = radius;
     info.alpha = alpha;
-    if (sphereLT.first.size() == 1)
-        sphereLT.second = currentSlaveTransform;
 }
 
 // add spheres associated with this display list; calculate distance from camera to each one
 void OpenGLRenderer::AddTransparentSpheresForList(unsigned int list)
 {
-    SphereMap::const_iterator sLT = transparentSphereMap.find(list);
-    if (sLT == transparentSphereMap.end()) return;
+    SphereMap::const_iterator sL = transparentSphereMap.find(list);
+    if (sL == transparentSphereMap.end()) return;
 
-    const SphereList& sphereList = sLT->second.first;
+    const SphereList& sphereList = sL->second;
  
     Matrix view;
     GL2Matrix(viewMatrix, &view);
@@ -783,9 +786,12 @@ void OpenGLRenderer::AddTransparentSpheresForList(unsigned int list)
     SpherePtrList::reverse_iterator sph = transparentSpheresToRender.rbegin();
 
     SphereList::const_iterator i, ie=sphereList.end();
+    const Matrix *slaveTransform;
     for (i=sphereList.begin(); i!=ie; i++, sph++) {
         sph->siteGL = i->site;
-        ApplyTransformation(&(sph->siteGL), transparentSphereMap[list].second); // slave->master transform
+        slaveTransform = *(structureSet->transformMap[list]);
+        if (slaveTransform)
+            ApplyTransformation(&(sph->siteGL), *slaveTransform);               // slave->master transform
         ApplyTransformation(&(sph->siteGL), view);                              // current view transform
         sph->distanceFromCamera = (Vector(0,0,cameraDistance) - sph->siteGL).length() - i->radius;
         sph->ptr = &(*i);

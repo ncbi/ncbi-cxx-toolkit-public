@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/11/02 16:56:03  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.31  2000/09/20 22:22:29  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -257,7 +260,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime, Messenger *mesg) :
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
     sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
-    messenger(mesg), highlightColor(1,1,0)
+    messenger(mesg), highlightColor(1,1,0), dataChanged(false)
 {
     StructureObject *object;
     parentSet = this;
@@ -324,6 +327,13 @@ StructureSet::~StructureSet(void)
     if (showHideManager) delete showHideManager;
     if (styleManager) delete styleManager;
     if (alignmentManager) delete alignmentManager;
+}
+
+void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
+{
+    _RemoveChild(alignmentSet);
+    delete alignmentSet;
+    alignmentSet = newAlignmentSet;
 }
 
 // because the frame map (for each frame, a list of diplay lists) is complicated

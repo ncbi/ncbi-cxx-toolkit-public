@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/02 16:56:01  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.6  2000/09/20 22:22:26  thiessen
 * working conservation coloring; split and center unaligned justification
 *
@@ -93,7 +96,7 @@ static bool IsAMatch(const Sequence *seq, const CSeq_id& sid)
             return true;
         return false;
     }
-    ERR_POST(Error << "VerifyMatch - can't match this type of Seq-id");
+    ERR_POST(Error << "IsAMatch - can't match this type of Seq-id");
     return false;
 }
 
@@ -184,6 +187,14 @@ AlignmentSet::AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots)
     }
     TESTMSG("number of alignments: " << alignments.size());
 }
+
+AlignmentSet::AlignmentSet(StructureBase *parent, const BlockMultipleAlignment *multiple) :
+    StructureBase(parent)
+{
+}
+
+
+///// MasterSlaveAlignment methods /////
 
 MasterSlaveAlignment::MasterSlaveAlignment(StructureBase *parent, const Sequence *masterSequence, 
     const ncbi::objects::CSeq_align& seqAlign, UsedSequenceList *usedStructuredSequences) :

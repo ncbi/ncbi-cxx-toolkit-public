@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/02 16:56:02  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.22  2000/10/19 12:40:54  thiessen
 * avoid multiple sequence redraws with scroll set
 *
@@ -116,123 +119,12 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-
-static const wxColour highlightColor(255,255,0);  // yellow
-
-// block marker string stuff
-static const char
-    blockLeftEdgeChar = '<',
-    blockRightEdgeChar = '>',
-    blockOneColumnChar = '^',
-    blockInsideChar = '-';
-static const std::string blockBoundaryStringTitle("(blocks)");
-
-class SequenceDisplay;
+#include "cn3d/sequence_viewer_private.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 // SequenceViewerWindow is the top-level window that contains the
 // SequenceViewerWidget.
 ////////////////////////////////////////////////////////////////////////////////
-
-class SequenceViewerWindow : public wxFrame
-{
-    friend class SequenceDisplay;
-
-public:
-    SequenceViewerWindow(SequenceViewer *parent);
-    ~SequenceViewerWindow(void);
-
-    void NewAlignment(ViewableAlignment *newAlignment);
-
-    // scroll to specific column
-    void ScrollToColumn(int column) { viewerWidget->ScrollTo(column, -1); }
-
-    // updates alignment (e.g. if width or # rows has changed);
-    void UpdateAlignment(ViewableAlignment *alignment);
-
-    void OnTitleView(wxCommandEvent& event);
-    void OnEditMenu(wxCommandEvent& event);
-    void OnMouseMode(wxCommandEvent& event);
-    void OnJustification(wxCommandEvent& event);
-
-    // menu identifiers
-    enum {
-        // view menu
-        MID_SHOW_TITLES,
-        MID_HIDE_TITLES,
-
-        // edit menu
-        MID_ENABLE_EDIT,
-        MID_SPLIT_BLOCK,
-        MID_MERGE_BLOCKS,
-        MID_CREATE_BLOCK,
-        MID_DELETE_BLOCK,
-        MID_SYNC_STRUCS,
-        MID_SYNC_STRUCS_ON,
-
-        // mouse mode
-        MID_SELECT_RECT,
-        MID_SELECT_COLS,
-        MID_SELECT_ROWS,
-        MID_MOVE_ROW,
-        MID_DRAG_HORIZ,
-
-        // unaligned justification
-        MID_LEFT,
-        MID_RIGHT,
-        MID_CENTER,
-        MID_SPLIT
-    };
-
-    DECLARE_EVENT_TABLE()
-
-private:
-    SequenceViewerWidget *viewerWidget;
-    SequenceViewer *viewer;
-
-    void OnCloseWindow(wxCloseEvent& event);
-    void EnableEditorMenuItems(bool enabled);
-
-    wxMenuBar *menuBar;
-
-    SequenceViewerWidget::eMouseMode prevMouseMode;
-
-public:
-    void Refresh(void) { viewerWidget->Refresh(false); }
-
-    bool IsEditingEnabled(void) const { return menuBar->IsChecked(MID_DRAG_HORIZ); }
-
-    bool DoSplitBlock(void) const { return menuBar->IsChecked(MID_SPLIT_BLOCK); }
-    void SplitBlockOff(void) {
-        menuBar->Check(MID_SPLIT_BLOCK, false);
-        SetCursor(wxNullCursor);
-    }
-
-    bool DoMergeBlocks(void) const { return menuBar->IsChecked(MID_MERGE_BLOCKS); }
-    void MergeBlocksOff(void)
-    {
-        menuBar->Check(MID_MERGE_BLOCKS, false); 
-        viewerWidget->SetMouseMode(prevMouseMode);
-        SetCursor(wxNullCursor);
-    }
-
-    bool DoCreateBlock(void) const { return menuBar->IsChecked(MID_CREATE_BLOCK); }
-    void CreateBlockOff(void)
-    {
-        menuBar->Check(MID_CREATE_BLOCK, false); 
-        viewerWidget->SetMouseMode(prevMouseMode);
-        SetCursor(wxNullCursor);
-    }
-
-    bool DoDeleteBlock(void) const { return menuBar->IsChecked(MID_DELETE_BLOCK); }
-    void DeleteBlockOff(void) {
-        menuBar->Check(MID_DELETE_BLOCK, false);
-        SetCursor(wxNullCursor);
-    }
-
-    void SyncStructures(void) { Command(MID_SYNC_STRUCS); }
-    bool AlwaysSyncStructures(void) const { return menuBar->IsChecked(MID_SYNC_STRUCS_ON); }
-};
 
 BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
     EVT_CLOSE     (                                     SequenceViewerWindow::OnCloseWindow)
@@ -262,11 +154,13 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
 
     menu = new wxMenu;
     menu->Append(MID_ENABLE_EDIT, "&Enable Editor", noHelp, true);
+    menu->Append(MID_UNDO, "&Undo\tCtrl-Z");
     menu->AppendSeparator();
     menu->Append(MID_SPLIT_BLOCK, "&Split Block", noHelp, true);
     menu->Append(MID_MERGE_BLOCKS, "&Merge Blocks", noHelp, true);
     menu->Append(MID_CREATE_BLOCK, "&Create Block", noHelp, true);
     menu->Append(MID_DELETE_BLOCK, "&Delete Block", noHelp, true);
+    menu->AppendSeparator();
     menu->Append(MID_SYNC_STRUCS, "Sync Structure &Colors");
     menu->Append(MID_SYNC_STRUCS_ON, "&Always Sync Structure Colors", noHelp, true);
     menuBar->Append(menu, "&Edit");
@@ -289,13 +183,9 @@ SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
     // set default initial modes
     viewerWidget->SetMouseMode(SequenceViewerWidget::eSelectRectangle);
     menuBar->Check(MID_SELECT_RECT, true);
-    viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit);
     menuBar->Check(MID_SPLIT, true);
+    currentJustification = BlockMultipleAlignment::eSplit;
     viewerWidget->TitleAreaOff();
-//    menuBar->Check(MID_SPLIT_BLOCK, false);
-//    menuBar->Check(MID_MERGE_BLOCKS, false);
-//    menuBar->Check(MID_CREATE_BLOCK, false);
-//    menuBar->Check(MID_DELETE_BLOCK, false);
     menuBar->Check(MID_SYNC_STRUCS_ON, true);
     EnableEditorMenuItems(false);
 
@@ -308,6 +198,10 @@ SequenceViewerWindow::~SequenceViewerWindow(void)
 
 void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
 {
+    if (!SaveDialog(event.CanVeto())) {
+        event.Veto();       // cancelled
+        return;
+    }
     viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
     Destroy();
 }
@@ -326,10 +220,8 @@ void SequenceViewerWindow::UpdateAlignment(ViewableAlignment *alignment)
 {
     int vsX, vsY;   // to preserve scroll position
     viewerWidget->GetScroll(&vsX, &vsY);
-    viewerWidget->AttachAlignment(alignment);
-    viewerWidget->ScrollTo(vsX, vsY);
-    // ScrollTo causes immediate redraw, so don't need a second one
-    viewer->messenger->UnPostRedrawSequenceViewers();
+    viewerWidget->AttachAlignment(alignment, vsX, vsY);
+    viewer->messenger->PostRedrawSequenceViewers();
 }
 
 void SequenceViewerWindow::OnTitleView(wxCommandEvent& event)
@@ -350,13 +242,20 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
         case MID_ENABLE_EDIT:
             if (turnEditorOn) {
                 TESTMSG("turning on editor");
+                viewer->PushAlignment();    // keep copy of original at bottom of the stack
                 viewer->AddBlockBoundaryRow();
+                Command(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
+                if (!SaveDialog(true)) break;   // cancelled
                 TESTMSG("turning off editor");
                 viewer->RemoveBlockBoundaryRow();
                 if (menuBar->IsChecked(MID_DRAG_HORIZ)) Command(MID_SELECT_RECT);
             }
             EnableEditorMenuItems(turnEditorOn);
+            break;
+        case MID_UNDO:
+            TESTMSG("undoing...");
+            viewer->PopAlignment();
             break;
         case MID_SPLIT_BLOCK:
             if (DoCreateBlock()) CreateBlockOff();
@@ -418,6 +317,7 @@ void SequenceViewerWindow::EnableEditorMenuItems(bool enabled)
         if (DoCreateBlock()) CreateBlockOff();
         if (DoDeleteBlock()) DeleteBlockOff();
     }
+    menuBar->Enable(MID_UNDO, false);
 }
 
 void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
@@ -446,15 +346,36 @@ void SequenceViewerWindow::OnJustification(wxCommandEvent& event)
 
     switch (event.GetId()) {
         case MID_LEFT:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eLeft); break;
+            currentJustification = BlockMultipleAlignment::eLeft; break;
         case MID_RIGHT:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eRight); break;
+            currentJustification = BlockMultipleAlignment::eRight; break;
         case MID_CENTER:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eCenter); break;
+            currentJustification = BlockMultipleAlignment::eCenter; break;
         case MID_SPLIT:
-            viewer->SetUnalignedJustification(BlockMultipleAlignment::eSplit); break;
+            currentJustification = BlockMultipleAlignment::eSplit; break;
     }
     viewer->messenger->PostRedrawSequenceViewers();
+}
+
+bool SequenceViewerWindow::SaveDialog(bool canCancel)
+{
+    // quick & dirty check for whether save is necessary, by whether Undo is enabled
+    if (!menuBar->IsEnabled(MID_UNDO)) return true;
+
+    int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
+    if (canCancel) option |= wxCANCEL;
+
+    wxMessageDialog dialog(NULL, "Do you want to save your edited alignment?", "", option);
+    option = dialog.ShowModal();
+
+    if (option == wxID_CANCEL) return false; // user cancelled this operation
+    
+    if (option == wxID_YES)
+        viewer->SaveAlignment();    // save data
+    else
+        viewer->RevertAlignment();  // revert to original
+
+    return true;
 }
 
 
@@ -463,110 +384,13 @@ void SequenceViewerWindow::OnJustification(wxCommandEvent& event)
 // or any string - anything derived from DisplayRow, implemented below.
 ////////////////////////////////////////////////////////////////////////////////
 
-class DisplayRow
-{
-public:
-    virtual int Size() const = 0;
-    virtual bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color, bool *drawBackground,
-        wxColour *cellBackgroundColor) const = 0;
-    virtual bool GetSequenceAndIndexAt(int column,
-        const Sequence **sequence, int *index) const = 0;
-    virtual const Sequence * GetSequence(void) const = 0;
-    virtual void SelectedRange(int from, int to) const = 0;
-};
-
-class DisplayRowFromAlignment : public DisplayRow
-{
-public:
-    const int row;
-    const BlockMultipleAlignment * const alignment;
-
-    DisplayRowFromAlignment(int r, const BlockMultipleAlignment *a) :
-        row(r), alignment(a) { }
-
-    int Size() const { return alignment->AlignmentWidth(); }
-
-    bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color,
-        bool *drawBackground, wxColour *cellBackgroundColor) const;
-
-    bool GetSequenceAndIndexAt(int column,
-        const Sequence **sequence, int *index) const
-    {
-		bool ignore;
-        return alignment->GetSequenceAndIndexAt(column, row, sequence, index, &ignore);
-    }
-
-    const Sequence * GetSequence(void) const
-    {
-        return alignment->GetSequenceOfRow(row);
-    }
-
-    void SelectedRange(int from, int to) const
-    {
-        alignment->SelectedRange(row, from, to);
-    }
-};
-
-class DisplayRowFromSequence : public DisplayRow
-{
-public:
-    const Sequence * const sequence;
-    Messenger *messenger;
-
-    DisplayRowFromSequence(const Sequence *s, Messenger *mesg) :
-        sequence(s), messenger(mesg) { }
-
-    int Size() const { return sequence->sequenceString.size(); }
-    
-    bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color,
-        bool *drawBackground, wxColour *cellBackgroundColor) const;
-
-    bool GetSequenceAndIndexAt(int column,
-        const Sequence **sequenceHandle, int *index) const;
-
-    const Sequence * GetSequence(void) const
-        { return sequence; }
-    
-    void SelectedRange(int from, int to) const;
-};
-
-class DisplayRowFromString : public DisplayRow
-{
-public:
-    const std::string title;
-    std::string theString;
-    const Vector stringColor, backgroundColor;
-    const bool hasBackgroundColor;
-
-    DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5),
-        const std::string& t = "", bool hasBG = false, Vector bgColor = (1,1,1)) : 
-        theString(s), stringColor(color), title(t),
-        hasBackgroundColor(hasBG), backgroundColor(bgColor) { }
-
-    int Size() const { return theString.size(); }
-    
-    bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color,
-        bool *drawBackground, wxColour *cellBackgroundColor) const;
-
-    bool GetSequenceAndIndexAt(int column,
-        const Sequence **sequenceHandle, int *index) const { return false; }
-
-    const Sequence * GetSequence(void) const { return NULL; }
-
-    void SelectedRange(int from, int to) const { } // do nothing
-};
-
-
-bool DisplayRowFromAlignment::GetCharacterTraitsAt(int column,
+bool DisplayRowFromAlignment::GetCharacterTraitsAt(
+    int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color,
     bool *drawBackground, wxColour *cellBackgroundColor) const
 {
     bool isHighlighted,
-        result = alignment->GetCharacterTraitsAt(column, row, character, color, &isHighlighted);
+        result = alignment->GetCharacterTraitsAt(column, row, justification, character, color, &isHighlighted);
     
     if (isHighlighted) {
         *drawBackground = true;
@@ -577,7 +401,8 @@ bool DisplayRowFromAlignment::GetCharacterTraitsAt(int column,
     return result;
 }
 
-bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
+bool DisplayRowFromSequence::GetCharacterTraitsAt(
+	int column, BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
 {    
     if (column >= sequence->sequenceString.size())
@@ -598,7 +423,8 @@ bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
     return true;
 }
 
-bool DisplayRowFromSequence::GetSequenceAndIndexAt(int column,
+bool DisplayRowFromSequence::GetSequenceAndIndexAt(
+    int column, BlockMultipleAlignment::eUnalignedJustification justification,
     const Sequence **sequenceHandle, int *index) const
 {
     if (column >= sequence->sequenceString.size())
@@ -609,7 +435,7 @@ bool DisplayRowFromSequence::GetSequenceAndIndexAt(int column,
     return true;
 }
 
-void DisplayRowFromSequence::SelectedRange(int from, int to) const
+void DisplayRowFromSequence::SelectedRange(int from, int to, BlockMultipleAlignment::eUnalignedJustification justification) const
 {
     int len = sequence->sequenceString.size();
     
@@ -627,6 +453,7 @@ void DisplayRowFromSequence::SelectedRange(int from, int to) const
 }
 
 bool DisplayRowFromString::GetCharacterTraitsAt(int column,
+	BlockMultipleAlignment::eUnalignedJustification justification,
     char *character, Vector *color, bool *drawBackground, wxColour *cellBackgroundColor) const
 {
     if (column >= theString.size()) return false;
@@ -655,63 +482,6 @@ bool DisplayRowFromString::GetCharacterTraitsAt(int column,
 // SequenceViewerWidget.
 ////////////////////////////////////////////////////////////////////////////////
 
-class SequenceViewerWindow;
-
-class SequenceDisplay : public ViewableAlignment
-{
-    friend class SequenceViewer;
-
-public:
-    SequenceDisplay(SequenceViewerWindow * const *parentViewer, Messenger *messenger);
-    ~SequenceDisplay(void);
-
-    // these functions add a row to the end of the display, from various sources
-    void AddRowFromAlignment(int row, BlockMultipleAlignment *fromAlignment);
-    void AddRowFromSequence(const Sequence *sequence, Messenger *messenger);
-    void AddRowFromString(const std::string& anyString);
-
-    // generic row manipulation functions
-    void AddRow(DisplayRow *row);
-    void PrependRow(DisplayRow *row);
-    void RemoveRow(DisplayRow *row);
-
-private:
-    
-    Messenger *messenger;
-    int startingColumn;
-    typedef std::vector < DisplayRow * > RowVector;
-    RowVector rows;
-
-    int maxRowWidth;
-    void UpdateMaxRowWidth(void);
-
-    BlockMultipleAlignment *alignment;
-    SequenceViewerWindow * const *viewerWindow;
-    bool controlDown;
-
-public:
-    // column to scroll to when this display is first shown
-    void SetStartingColumn(int column) { startingColumn = column; }
-    int GetStartingColumn(void) const { return startingColumn; }
-
-    // methods required by ViewableAlignment base class
-    void GetSize(int *setColumns, int *setRows) const
-        { *setColumns = maxRowWidth; *setRows = rows.size(); }
-    bool GetRowTitle(int row, wxString *title, wxColour *color) const;
-    bool GetCharacterTraitsAt(int column, int row,              // location
-        char *character,										// character to draw
-        wxColour *color,                                        // color of this character
-        bool *drawBackground,                                   // special background color?
-        wxColour *cellBackgroundColor
-    ) const;
-    
-    // callbacks for ViewableAlignment
-    void MouseOver(int column, int row) const;
-    bool MouseDown(int column, int row, unsigned int controls);
-    void SelectedRectangle(int columnLeft, int rowTop, int columnRight, int rowBottom);
-    void DraggedCell(int columnFrom, int rowFrom, int columnTo, int rowTo);
-};
-
 SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow,
     Messenger *mesg) : 
     maxRowWidth(0), viewerWindow(parentViewerWindow), alignment(NULL), startingColumn(0),
@@ -722,6 +492,17 @@ SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindo
 SequenceDisplay::~SequenceDisplay(void)
 {
     for (int i=0; i<rows.size(); i++) delete rows[i];
+}
+
+SequenceDisplay * SequenceDisplay::Clone(BlockMultipleAlignment *newAlignment) const
+{
+    SequenceDisplay *copy = new SequenceDisplay(viewerWindow, messenger);
+    for (int row=0; row<rows.size(); row++)
+        copy->rows.push_back(rows[row]->Clone(newAlignment));
+    copy->startingColumn = startingColumn;
+    copy->maxRowWidth = maxRowWidth;
+    copy->alignment = newAlignment;
+    return copy;
 }
 
 void SequenceDisplay::AddRow(DisplayRow *row)
@@ -841,7 +622,8 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
 
     Vector colorVec;
     if (!displayRow->GetCharacterTraitsAt(
-            column, character, &colorVec, drawBackground, cellBackgroundColor))
+            column, (*viewerWindow)->GetCurrentJustification(),
+            character, &colorVec, drawBackground, cellBackgroundColor))
         return false;
 
     // convert vector color to wxColour
@@ -863,7 +645,8 @@ void SequenceDisplay::MouseOver(int column, int row) const
             if (column < displayRow->Size()) {
                 const Sequence *sequence;
                 int index;
-                if (displayRow->GetSequenceAndIndexAt(column, &sequence, &index)) {
+                if (displayRow->GetSequenceAndIndexAt(column,
+                        (*viewerWindow)->GetCurrentJustification(), &sequence, &index)) {
                     if (index >= 0) {
                         wxString title;
                         wxColour color;
@@ -879,6 +662,15 @@ void SequenceDisplay::MouseOver(int column, int row) const
     }
 }
 
+void SequenceDisplay::UpdateAfterEdit(void)
+{
+    UpdateMaxRowWidth(); // in case alignment width has changed
+    (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
+    (*viewerWindow)->viewer->PushAlignment();
+    if ((*viewerWindow)->AlwaysSyncStructures())
+        (*viewerWindow)->SyncStructures();
+}
+
 bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 {
     TESTMSG("got MouseDown");
@@ -891,19 +683,14 @@ bool SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
         if ((*viewerWindow)->DoSplitBlock()) {
             if (alignment->SplitBlock(column)) {
                 (*viewerWindow)->SplitBlockOff();
-                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                if ((*viewerWindow)->AlwaysSyncStructures())
-                    (*viewerWindow)->SyncStructures();
+                UpdateAfterEdit();
             }
             return false;
         }
         if ((*viewerWindow)->DoDeleteBlock()) {
             if (alignment->DeleteBlock(column)) {
                 (*viewerWindow)->DeleteBlockOff();
-                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                UpdateMaxRowWidth(); // in case alignment width has changed
-                if ((*viewerWindow)->AlwaysSyncStructures())
-                    (*viewerWindow)->SyncStructures();
+                UpdateAfterEdit();
             }
             return false;
         }
@@ -918,22 +705,21 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
     TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
         << columnRight << ',' << rowBottom);
 
-    if (alignment) {
+	BlockMultipleAlignment::eUnalignedJustification justification =
+		(*viewerWindow)->GetCurrentJustification();
+	 
+	if (alignment) {
         if ((*viewerWindow)->DoMergeBlocks()) {
             if (alignment->MergeBlocks(columnLeft, columnRight)) {
                 (*viewerWindow)->MergeBlocksOff();
-                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                if ((*viewerWindow)->AlwaysSyncStructures())
-                    (*viewerWindow)->SyncStructures();
+                UpdateAfterEdit();
             }
             return;
         }
         if ((*viewerWindow)->DoCreateBlock()) {
-            if (alignment->CreateBlock(columnLeft, columnRight)) {
+            if (alignment->CreateBlock(columnLeft, columnRight, justification)) {
                 (*viewerWindow)->CreateBlockOff();
-                (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                if ((*viewerWindow)->AlwaysSyncStructures())
-                    (*viewerWindow)->SyncStructures();
+                UpdateAfterEdit();
             }
             return;
         }
@@ -943,7 +729,7 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
         messenger->RemoveAllHighlights(true);
 
     for (int i=rowTop; i<=rowBottom; i++)
-        rows[i]->SelectedRange(columnLeft, columnRight);
+        rows[i]->SelectedRange(columnLeft, columnRight, justification);
 }
 
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
@@ -964,11 +750,8 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
                 if (GetRowTitle(rowFrom, &title, &ignored) && title == blockBoundaryStringTitle.c_str()) {
                     char ch = strRow->theString[columnFrom];
                     if (ch == blockRightEdgeChar || ch == blockLeftEdgeChar || ch == blockOneColumnChar) {
-                        if (alignment->MoveBlockBoundary(columnFrom, columnTo)) {
-                            (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                            if ((*viewerWindow)->AlwaysSyncStructures())
-                                (*viewerWindow)->SyncStructures();
-                        }
+                        if (alignment->MoveBlockBoundary(columnFrom, columnTo))
+                            UpdateAfterEdit();
                     }
                 }
             }
@@ -976,12 +759,8 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
             // process drag on regular row - block row shift
             DisplayRowFromAlignment *alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom]);
             if (alnRow) {
-                if (alignment->ShiftRow(alnRow->row, columnFrom, columnTo)) {
-                    (*viewerWindow)->viewer->UpdateBlockBoundaryRow();
-                    UpdateMaxRowWidth(); // in case alignment width has changed
-                    if ((*viewerWindow)->AlwaysSyncStructures())
-                        (*viewerWindow)->SyncStructures();
-                }
+                if (alignment->ShiftRow(alnRow->row, columnFrom, columnTo))
+                    UpdateAfterEdit();
             }
         }
         return;
@@ -1009,25 +788,15 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
 // the implementation of the SequenceViewer, the interface to the viewer GUI
 ////////////////////////////////////////////////////////////////////////////////
 
-SequenceViewer::SequenceViewer(Messenger *mesg) :
-    viewerWindow(NULL), display(NULL), messenger(mesg), isEditableAlignment(false),
-    blockBoundaryRow(NULL)
+SequenceViewer::SequenceViewer(AlignmentManager *alnMgr, Messenger *mesg) :
+    viewerWindow(NULL), alignmentManager(alnMgr), messenger(mesg), isEditableAlignment(false)
 {
 }
 
 SequenceViewer::~SequenceViewer(void)
 {
     DestroyGUI();
-    if (display) delete display;
-}
-
-void SequenceViewer::ClearGUI(void)
-{
-    if (viewerWindow) viewerWindow->NewAlignment(NULL);
-    if (display) {
-        delete display;
-        display = NULL;
-    }
+    ClearStacks();
 }
 
 void SequenceViewer::DestroyGUI(void)
@@ -1043,10 +812,106 @@ void SequenceViewer::Refresh(void)
     if (viewerWindow)
         viewerWindow->Refresh();
     else
-        NewAlignment(display);
+        NewDisplay(GetDisplay());
 }
 
-void SequenceViewer::NewAlignment(SequenceDisplay *display)
+void SequenceViewer::InitStacks(BlockMultipleAlignment *alignment, SequenceDisplay *display)
+{
+    ClearStacks();
+    if (alignment) alignmentStack.push_back(alignment);
+    displayStack.push_back(display);
+}
+
+// this works like the OpenGL transform stack: when data is to be saved by pushing,
+// the current data (display + alignment) is copied and put on the top of the stack,
+// becoming the current viewed/edited alignment.
+void SequenceViewer::PushAlignment(void)
+{
+    TESTMSG("alignment stack size at push time: " << alignmentStack.size());
+    if (alignmentStack.size() == 0) {
+        ERR_POST(Error << "SequenceViewer::PushAlignment() - can't be called with empty alignment stack");
+        return;
+    }
+
+    alignmentStack.push_back(alignmentStack.back()->Clone());
+    displayStack.push_back(displayStack.back()->Clone(alignmentStack.back()));
+    viewerWindow->UpdateAlignment(displayStack.back());
+    if (displayStack.size() > 2) viewerWindow->EnableUndo(true);
+}
+
+// there can be a miminum of two items on the stack - the bottom is always the original
+// before editing; the top, when the editor is on, is always the current data, and just beneath
+// the top is a copy of the current data
+void SequenceViewer::PopAlignment(void)
+{
+    if (alignmentStack.size() < 3 || displayStack.size() < 3) {
+        ERR_POST(Error << "SequenceViewer::PopAlignment() - no more data to pop off the stack");
+        return;
+    }
+
+    // top two stack items are identical; delete both...
+    for (int i=0; i<2; i++) {
+        delete alignmentStack.back();
+        alignmentStack.pop_back();
+        delete displayStack.back();
+        displayStack.pop_back();
+    }
+
+    // ... then add a copy of what's underneath, making that copy the current data
+    PushAlignment();
+    if (!FindBlockBoundaryRow()) AddBlockBoundaryRow();
+    if (displayStack.size() == 2) viewerWindow->EnableUndo(false);
+    if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
+}
+
+void SequenceViewer::ClearStacks(void)
+{
+    while (alignmentStack.size() > 0) {
+        delete alignmentStack.back();
+        alignmentStack.pop_back();
+        delete displayStack.back();
+        displayStack.pop_back();
+    }
+}
+
+void SequenceViewer::RevertAlignment(void)
+{
+    // revert to the bottom of the stack
+    while (alignmentStack.size() > 1) {
+        delete alignmentStack.back();
+        alignmentStack.pop_back();
+        delete displayStack.back();
+        displayStack.pop_back();
+    }
+
+    viewerWindow->UpdateAlignment(displayStack.back());
+    if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
+}
+
+void SequenceViewer::SaveDialog(void)
+{
+    if (viewerWindow) viewerWindow->SaveDialog(false);
+}
+
+void SequenceViewer::SaveAlignment(void)
+{
+    // keep only the top of the stack
+    while (alignmentStack.size() > 1) {
+        delete alignmentStack.front();
+        alignmentStack.pop_front();
+        delete displayStack.front();
+        displayStack.pop_front();
+    }
+
+    // go back into the original pairwise alignment data and save according to the
+    // current edited BlockMultipleAlignment
+    alignmentManager->SavePairwiseFromMultiple(alignmentStack.back());
+
+    viewerWindow->UpdateAlignment(displayStack.back());
+    if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
+}
+
+void SequenceViewer::NewDisplay(SequenceDisplay *display)
 {
     if (display) {
         if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
@@ -1058,59 +923,70 @@ void SequenceViewer::NewAlignment(SequenceDisplay *display)
     }
 }
 
-void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *multiple)
+void SequenceViewer::DisplayAlignment(BlockMultipleAlignment *alignment)
 {
-    if (display) delete display;
-    display = new SequenceDisplay(&viewerWindow, messenger);
-    
-    for (int row=0; row<multiple->NRows(); row++)
-        display->AddRowFromAlignment(row, multiple);
+    SequenceDisplay *display = new SequenceDisplay(&viewerWindow, messenger);
+    for (int row=0; row<alignment->NRows(); row++)
+        display->AddRowFromAlignment(row, alignment);
+    isEditableAlignment = true;
 
     // set starting scroll to a few residues left of the first aligned block
-    display->SetStartingColumn(multiple->GetFirstAlignedBlockPosition() - 5);
+    display->SetStartingColumn(alignment->GetFirstAlignedBlockPosition() - 5);
 
-    isEditableAlignment = true;
-    NewAlignment(display);
+    InitStacks(alignment, display);
+    NewDisplay(display);
 }
 
 void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
 {
-    if (display) delete display;
-    display = new SequenceDisplay(&viewerWindow, messenger);
-
+    SequenceDisplay *display = new SequenceDisplay(&viewerWindow, messenger);
     // populate each line of the display with one sequence, with blank lines inbetween
     SequenceList::const_iterator s, se = sequenceList->end();
     for (s=sequenceList->begin(); s!=se; s++) {
         if (s != sequenceList->begin()) display->AddRowFromString("");
         display->AddRowFromSequence(*s, messenger);
     }
-
     isEditableAlignment = false;
-    NewAlignment(display);
+
+    InitStacks(NULL, display);
+    NewDisplay(display);
 }
 
-void SequenceViewer::SetUnalignedJustification(BlockMultipleAlignment::eUnalignedJustification justification)
+DisplayRowFromString * SequenceViewer::FindBlockBoundaryRow(void)
 {
-    if (display && display->alignment)
-        (const_cast<BlockMultipleAlignment*>(display->alignment))->
-            SetUnalignedJustification(justification);
+    SequenceDisplay *display = GetDisplay();
+    if (!display) return NULL;
+
+    DisplayRowFromString *blockBoundaryRow = NULL;
+    for (int row=0; row<display->rows.size(); row++) {
+        if ((blockBoundaryRow = dynamic_cast<DisplayRowFromString*>(display->rows[row])) != NULL) {
+            if (blockBoundaryRow->title == blockBoundaryStringTitle)
+                break;
+            else
+                blockBoundaryRow = NULL;
+        }
+    }
+    return blockBoundaryRow;
 }
 
 void SequenceViewer::AddBlockBoundaryRow(void)
 {
-    if (!display || !display->alignment || !IsEditableAlignment() || blockBoundaryRow) return;
+    SequenceDisplay *display = GetDisplay();
+    if (!display || !display->alignment || !IsEditableAlignment() || FindBlockBoundaryRow()) return;
 
-    blockBoundaryRow =
+    DisplayRowFromString *blockBoundaryRow =
         new DisplayRowFromString("", Vector(0,0,0), blockBoundaryStringTitle, true, Vector(0.8,0.8,1));
     display->PrependRow(blockBoundaryRow);
     UpdateBlockBoundaryRow();
-
     viewerWindow->UpdateAlignment(display);
 }
 
 void SequenceViewer::UpdateBlockBoundaryRow(void)
 {
-    if (!display || !display->alignment || !IsEditableAlignment() || !blockBoundaryRow) return;
+    SequenceDisplay *display = GetDisplay();    
+    DisplayRowFromString *blockBoundaryRow;
+    if (!display || !display->alignment || !IsEditableAlignment() ||
+        !(blockBoundaryRow = FindBlockBoundaryRow())) return;
 
     blockBoundaryRow->theString.resize(display->alignment->AlignmentWidth());
 
@@ -1135,6 +1011,8 @@ void SequenceViewer::UpdateBlockBoundaryRow(void)
 
 void SequenceViewer::RemoveBlockBoundaryRow(void)
 {
+    SequenceDisplay *display = GetDisplay();
+    DisplayRowFromString *blockBoundaryRow = FindBlockBoundaryRow();
     if (blockBoundaryRow) {
         display->RemoveRow(blockBoundaryRow);
         blockBoundaryRow = NULL;
@@ -1144,6 +1022,7 @@ void SequenceViewer::RemoveBlockBoundaryRow(void)
 
 void SequenceViewer::RedrawAlignedMolecules(void) const
 {
+    SequenceDisplay *display = GetDisplay();
     for (int i=0; i<display->rows.size(); i++) {
         const Sequence *sequence = display->rows[i]->GetSequence();
         if (sequence && sequence->molecule)

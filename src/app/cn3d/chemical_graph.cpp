@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/02 16:56:01  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.14  2000/09/14 14:55:34  thiessen
 * add row reordering; misc fixes
 *
@@ -196,6 +199,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
 
             if (molecule->IsProtein() || molecule->IsNucleotide()) {
                 molecule->displayLists.push_back(++(parentSet->lastDisplayList));
+                parentSet->transformMap[parentSet->lastDisplayList] = &(object->transformToMaster);
                 // add molecule's display list to frame
                 parentSet->frameMap[firstNewFrame + n].push_back(parentSet->lastDisplayList);
 
@@ -205,6 +209,7 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
                     parentSet->lastDisplayList += nAlts;
                 }
                 molecule->displayLists.push_back(displayListOtherStart + n);
+                parentSet->transformMap[displayListOtherStart + n] = &(object->transformToMaster);
             }
         }
     }
@@ -276,9 +281,6 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
             //        << " of " << atomSetList.size());
             parentSet->renderer->StartDisplayList(*md);
 
-            // apply relative transformation if this is a slave structure
-            if (object->IsSlave()) parentSet->renderer->PushMatrix(object->transformToMaster);
-
             // draw this molecule with all alternative AtomSets (e.g., NMR's or altConfs)
             a->first->SetActiveEnsemble(a->second);
             continueDraw = m->second->DrawAll(a->first);
@@ -296,9 +298,6 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
                     }
                 }
             }
-
-            // revert transformation matrix
-            if (object->IsSlave()) parentSet->renderer->PopMatrix();
 
             // end display list
             parentSet->renderer->EndDisplayList();
@@ -322,7 +321,6 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
     
         a->first->SetActiveEnsemble(a->second);
         parentSet->renderer->StartDisplayList(displayListOtherStart + n);
-        if (object->IsSlave()) parentSet->renderer->PushMatrix(object->transformToMaster);
 
         for (m=molecules.begin(); m!=me; m++) {
             if (m->second->IsProtein() || m->second->IsNucleotide()) continue;
@@ -336,7 +334,6 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
             }
         }
 
-        if (object->IsSlave()) parentSet->renderer->PopMatrix();
         parentSet->renderer->EndDisplayList();
 
         if (!continueDraw) return false;

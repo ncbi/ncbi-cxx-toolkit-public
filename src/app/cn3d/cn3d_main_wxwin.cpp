@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2000/11/02 16:56:01  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.12  2000/10/16 14:25:48  thiessen
 * working alignment fit coloring
 *
@@ -257,9 +260,9 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 // data and methods for the main program window (a Cn3DMainFrame)
 
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
-    EVT_CLOSE(Cn3DMainFrame::OnCloseWindow)
-    EVT_MENU(MID_EXIT,      Cn3DMainFrame::OnExit)
-    EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
+    EVT_CLOSE(                                      Cn3DMainFrame::OnCloseWindow)
+    EVT_MENU(MID_EXIT,                              Cn3DMainFrame::OnExit)
+    EVT_MENU(MID_OPEN,                              Cn3DMainFrame::OnOpen)
     EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,      Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
@@ -338,11 +341,13 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 
 void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
 {
+    messenger->SequenceWindowsSave();   // give sequence window a chance to save an edited alignment
     Destroy();
 }
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
+    messenger->SequenceWindowsSave();
     Destroy();
 }
 

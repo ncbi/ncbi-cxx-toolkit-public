@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/02 16:56:02  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.15  2000/10/16 20:03:07  thiessen
 * working block creation
 *
@@ -151,7 +154,7 @@ public:
     ~SequenceViewerWidget_SequenceArea(void);
 
     // stuff from parent widget
-    bool AttachAlignment(ViewableAlignment *newAlignment);
+    bool AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY);
     void SetMouseMode(SequenceViewerWidget::eMouseMode mode);
     void SetBackgroundColor(const wxColor& backgroundColor);
     void SetCharacterFont(wxFont *font);
@@ -233,7 +236,8 @@ SequenceViewerWidget_SequenceArea::~SequenceViewerWidget_SequenceArea(void)
     if (currentFont) delete currentFont;
 }
 
-bool SequenceViewerWidget_SequenceArea::AttachAlignment(ViewableAlignment *newAlignment)
+bool SequenceViewerWidget_SequenceArea::AttachAlignment(
+    ViewableAlignment *newAlignment, int initX, int initY)
 {
     alignment = newAlignment;
 
@@ -246,7 +250,8 @@ bool SequenceViewerWidget_SequenceArea::AttachAlignment(ViewableAlignment *newAl
         // if visible area isn't exact multiple of cell size
         SetScrollbars(
             cellWidth, cellHeight, 
-            areaWidth + 1, areaHeight + 1);
+            areaWidth + 1, areaHeight + 1,
+            initX, initY);
 
         alignment->MouseOver(-1, -1);
 
@@ -282,7 +287,7 @@ void SequenceViewerWidget_SequenceArea::SetCharacterFont(wxFont *font)
 	cellHeight = chH;
 
     // need to reset scrollbars and virtual area size
-    AttachAlignment(alignment);
+    AttachAlignment(alignment, 0, 0);
 }
 
 void SequenceViewerWidget_SequenceArea::SetMouseMode(SequenceViewerWidget::eMouseMode mode)
@@ -933,9 +938,9 @@ void SequenceViewerWidget::TitleAreaToggle(void)
     }
 }
 
-bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
+bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment, int initX, int initY)
 {
-    sequenceArea->AttachAlignment(newAlignment);
+    sequenceArea->AttachAlignment(newAlignment, initX, initY);
     titleArea->ShowTitles(newAlignment);
 
     SetSashPosition(titleArea->GetMaxTitleWidth() + 10, true);

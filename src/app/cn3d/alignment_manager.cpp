@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/11/02 16:56:00  thiessen
+* working editor undo; dynamic slave transforms
+*
 * Revision 1.20  2000/10/17 14:35:06  thiessen
 * added row shift - editor basically complete
 *
@@ -112,19 +115,23 @@ BEGIN_SCOPE(Cn3D)
 
 ///// AlignmentManager methods /////
 
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, AlignmentSet *aSet,
-    Messenger *mesg) :
-    sequenceSet(sSet), alignmentSet(aSet), currentMultipleAlignment(NULL),
-    messenger(mesg), sequenceViewer(NULL)
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, AlignmentSet *aSet, Messenger *mesg) :
+    sequenceSet(sSet), alignmentSet(aSet), messenger(mesg), sequenceViewer(NULL)
 {
     NewAlignments(sSet, aSet);
+}
+
+AlignmentManager::~AlignmentManager(void)
+{
+    messenger->RemoveSequenceViewer(sequenceViewer);
+    delete sequenceViewer;
 }
 
 void AlignmentManager::NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet)
 {
     // create a sequence viewer for this alignment
     if (!sequenceViewer) {
-        sequenceViewer = new SequenceViewer(messenger);
+        sequenceViewer = new SequenceViewer(this, messenger);
         messenger->AddSequenceViewer(sequenceViewer);
     }
 
@@ -133,23 +140,25 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, AlignmentSet *aSet
         return;
     }
 
-	// remove old alignment
-	if (currentMultipleAlignment) delete currentMultipleAlignment;
-
-    // for testing, make a multiple with all rows
+    // make a multiple with all rows
     AlignmentList alignments;
     AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
     for (a=alignmentSet->alignments.begin(); a!=ae; a++) alignments.push_back(*a);
-    currentMultipleAlignment = CreateMultipleFromPairwiseWithIBM(alignments);
-
-    sequenceViewer->DisplayAlignment(currentMultipleAlignment);
+    // sequenceViewer will own the resulting alignment
+    sequenceViewer->DisplayAlignment(CreateMultipleFromPairwiseWithIBM(alignments));
 }
 
-AlignmentManager::~AlignmentManager(void)
+void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple)
 {
-    if (currentMultipleAlignment) delete currentMultipleAlignment;
-    messenger->RemoveSequenceViewer(sequenceViewer);
-    delete sequenceViewer;
+    // create new AlignmentSet based on this multiple alignment, feed back into StructureSet
+    AlignmentSet *newAlignmentSet = new AlignmentSet(alignmentSet->parentSet, multiple);
+    alignmentSet->parentSet->ReplaceAlignmentSet(newAlignmentSet);
+    alignmentSet = newAlignmentSet;
+}
+
+const BlockMultipleAlignment * AlignmentManager::GetCurrentMultipleAlignment(void) const
+{ 
+    return sequenceViewer->GetCurrentAlignment();
 }
 
 static bool AlignedToAllSlaves(int masterResidue,
@@ -242,8 +251,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
 ///// BlockMultipleAlignment methods /////
 
 BlockMultipleAlignment::BlockMultipleAlignment(const SequenceList *sequenceList, Messenger *mesg) :
-    sequences(sequenceList), currentJustification(eRight),
-    messenger(mesg), conservationColorer(NULL)
+    sequences(sequenceList), messenger(mesg), conservationColorer(NULL)
 {
     InitCache();
 
@@ -260,10 +268,20 @@ void BlockMultipleAlignment::InitCache(void)
 
 BlockMultipleAlignment::~BlockMultipleAlignment(void)
 {
-    if (sequences) delete sequences;
-
     BlockList::iterator i, ie = blocks.end();
     for (i=blocks.begin(); i!=ie; i++) if (*i) delete *i;
+    if (sequences) delete sequences;
+}
+
+BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
+{
+    BlockMultipleAlignment *copy = new BlockMultipleAlignment(sequences, messenger);
+    copy->sequences = new SequenceList(*sequences); // must actually copy the list
+    BlockList::const_iterator b, be = blocks.end();
+    for (b=blocks.begin(); b!=be; b++)
+        copy->blocks.push_back((*b)->Clone());
+    copy->UpdateBlockMapAndConservationColors();
+	return copy;
 }
 
 bool BlockMultipleAlignment::CheckAlignedBlock(const Block *block) const
@@ -402,14 +420,15 @@ bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
     return true;
 }
 
-bool BlockMultipleAlignment::GetCharacterTraitsAt(int alignmentColumn, int row,
+bool BlockMultipleAlignment::GetCharacterTraitsAt(
+    int alignmentColumn, int row, eUnalignedJustification justification,
     char *character, Vector *color, bool *isHighlighted) const
 {
     const Sequence *sequence;
     int seqIndex;
     bool isAligned;
     
-    if (!GetSequenceAndIndexAt(alignmentColumn, row, &sequence, &seqIndex, &isAligned))
+    if (!GetSequenceAndIndexAt(alignmentColumn, row, justification, &sequence, &seqIndex, &isAligned))
         return false;
 
     *character = (seqIndex >= 0) ? sequence->sequenceString[seqIndex] : '~';
@@ -435,26 +454,25 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(int alignmentColumn, int row,
     return true;
 }
 
-bool BlockMultipleAlignment::GetSequenceAndIndexAt(int alignmentColumn, int row,
-        const Sequence **sequence, int *index, bool *isAligned) const
+bool BlockMultipleAlignment::GetSequenceAndIndexAt(
+    int alignmentColumn, int row, eUnalignedJustification requestedJustification,
+    const Sequence **sequence, int *index, bool *isAligned) const
 {
     *sequence = sequences->at(row);
 
     const BlockInfo& blockInfo = blockMap[alignmentColumn];
-    eUnalignedJustification justification;
 
     if (!blockInfo.block->IsAligned()) {
         *isAligned = false;
+        // override requested justification for end blocks
         if (blockInfo.block == blocks.back()) // also true if there's a single aligned block
-            justification = eLeft;
+            requestedJustification = eLeft;
         else if (blockInfo.block == blocks.front())
-            justification = eRight;
-        else
-            justification = currentJustification;
+            requestedJustification = eRight;
     } else
         *isAligned = true;
 
-    *index = blockInfo.block->GetIndexAt(blockInfo.blockColumn, row, justification);
+    *index = blockInfo.block->GetIndexAt(blockInfo.blockColumn, row, requestedJustification);
 
     return true;
 }
@@ -598,7 +616,8 @@ int BlockMultipleAlignment::GetFirstAlignedBlockPosition(void) const
         return -1;
 }
 
-void BlockMultipleAlignment::SelectedRange(int row, int from, int to) const
+void BlockMultipleAlignment::SelectedRange(int row, int from, int to,
+    eUnalignedJustification justification) const
 {
     // translate from,to (alignment columns) into sequence indexes
     const Sequence *sequence;
@@ -607,7 +626,7 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to) const
 
     // find first residue within range
     while (from <= to) {
-        GetSequenceAndIndexAt(from, row, &sequence, &fromIndex, &ignored);
+        GetSequenceAndIndexAt(from, row, justification, &sequence, &fromIndex, &ignored);
         if (fromIndex >= 0) break;
         from++;
     }
@@ -615,7 +634,7 @@ void BlockMultipleAlignment::SelectedRange(int row, int from, int to) const
 
     // find last residue within range
     while (to >= from) {
-        GetSequenceAndIndexAt(to, row, &sequence, &toIndex, &ignored);
+        GetSequenceAndIndexAt(to, row, justification, &sequence, &toIndex, &ignored);
         if (toIndex >= 0) break;
         to--;
     }
@@ -971,7 +990,8 @@ bool BlockMultipleAlignment::MergeBlocks(int fromAlignmentIndex, int toAlignment
     return true;
 }
 
-bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignmentIndex)
+bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignmentIndex,
+    eUnalignedJustification justification)
 {
     const BlockInfo& info = blockMap[fromAlignmentIndex];
     UnalignedBlock *prevUABlock = dynamic_cast<UnalignedBlock*>(info.block);
@@ -983,8 +1003,8 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
     const Sequence *seq;
 	bool ignored;
     for (row=0; row<NRows(); row++) {
-        if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, &seq, &seqIndexFrom, &ignored) ||
-            !GetSequenceAndIndexAt(toAlignmentIndex, row, &seq, &seqIndexTo, &ignored) ||
+        if (!GetSequenceAndIndexAt(fromAlignmentIndex, row, justification, &seq, &seqIndexFrom, &ignored) ||
+            !GetSequenceAndIndexAt(toAlignmentIndex, row, justification, &seq, &seqIndexTo, &ignored) ||
             seqIndexFrom < 0 || seqIndexTo < 0 ||
             seqIndexTo - seqIndexFrom + 1 != newBlockWidth) return false;
         seqIndexesFrom[row] = seqIndexFrom;
@@ -1121,6 +1141,18 @@ char UngappedAlignedBlock::GetCharacterAt(int blockColumn, int row) const
     return sequences->at(row)->sequenceString[GetIndexAt(blockColumn, row)];
 }
 
+Block * UngappedAlignedBlock::Clone(void) const
+{
+    UngappedAlignedBlock *copy = new UngappedAlignedBlock(sequences);
+    const Block::Range *range;
+    for (int row=0; row<NSequences(); row++) {
+        range = GetRangeOfRow(row);
+        copy->SetRangeOfRow(row, range->from, range->to);
+    }
+    copy->width = width;
+    return copy;
+}
+
 
 ///// UnalignedBlock methods /////
 
@@ -1159,6 +1191,18 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
     if (seqIndex < range->from || seqIndex > range->to) seqIndex = -1;
 
     return seqIndex;
+}
+
+Block * UnalignedBlock::Clone(void) const
+{
+    UnalignedBlock *copy = new UnalignedBlock(sequences);
+    const Block::Range *range;
+    for (int row=0; row<NSequences(); row++) {
+        range = GetRangeOfRow(row);
+        copy->SetRangeOfRow(row, range->from, range->to);
+    }
+    copy->width = width;
+    return copy;
 }
 
 
