@@ -31,29 +31,39 @@
 
 #include <ncbi_pch.hpp>
 #include "splign_util.hpp"
-#include <objects/seqalign/Seq_align.hpp>
-#include <objects/seqloc/Seq_id.hpp>
+
 #include <algo/align/splign/splign_formatter.hpp>
+#include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objects/general/Object_id.hpp>
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
-
-const char kErrMsg_ID_not_set[] = "ID_not_set";
 
 
 CSplignFormatter::CSplignFormatter(const CSplign::TResults& results):
     m_splign_results(results)
 {
-    m_QueryId = m_SubjId = kErrMsg_ID_not_set;
+    x_Init();
 }
 
 
 CSplignFormatter::CSplignFormatter (const CSplign& splign):
     m_splign_results(splign.GetResult())
 {
-    m_QueryId = m_SubjId = kErrMsg_ID_not_set;
+    x_Init();
+}
+
+
+void CSplignFormatter::x_Init(void)
+{
+    const char kSeqId_not_set [] = "lcl|ID_not_set";
+    CConstRef<CSeq_id> seqid_not_set (new CSeq_id (kSeqId_not_set));
+    m_QueryId = m_SubjId = seqid_not_set;
 }
 
 
@@ -73,7 +83,9 @@ string CSplignFormatter::AsText(const CSplign::TResults* results) const
             const CSplign::SSegment& seg = ii->m_segments[i];
             
             oss << (ii->m_QueryStrand? '+': '-')
-                << ii->m_id << '\t' << m_QueryId << '\t' << m_SubjId << '\t';
+                << ii->m_id << '\t' 
+                << m_QueryId->GetSeqIdString(true) << '\t' 
+                << m_SubjId->GetSeqIdString(true) << '\t';
             if(seg.m_exon) {
                 oss << seg.m_idty << '\t';
             }
@@ -175,17 +187,6 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
     sa->SetType(CSeq_align::eType_disc);
     sa->SetDim(2);
   
-    // seq-ids
-    CRef<CSeq_id> id1 ( new CSeq_id (m_QueryId) );
-    if(id1->Which()==CSeq_id::e_not_set) {
-        id1.Reset(new CSeq_id(CSeq_id::e_Local, m_QueryId, kEmptyStr));
-    }
-    
-    CRef<CSeq_id> id2 ( new CSeq_id (m_SubjId) );
-    if(id2->Which()==CSeq_id::e_not_set) {
-        id2.Reset(new CSeq_id(CSeq_id::e_Local, m_SubjId, kEmptyStr));
-    }
-
     // create seq-align-set
     CRef< CSeq_align::C_Segs > segs (new CSeq_align::C_Segs);
     CSeq_align_set& sas = segs->SetDisc();
@@ -220,8 +221,14 @@ CRef<CSeq_align> CSplignFormatter::x_Compartment2SeqAlign (
       ds.FromTranscript(query_start, query_strand, subj_start, subj_strand,
                         transcripts[i]);
       vector< CRef< CSeq_id > > &ids = ds.SetIds();
-      ids.push_back(id1);
-      ids.push_back(id2);
+
+      CRef<CSeq_id> id_query (new CSeq_id());
+      id_query->Assign(*m_QueryId);
+      ids.push_back(id_query);
+
+      CRef<CSeq_id> id_subj (new CSeq_id());
+      id_subj->Assign(*m_SubjId);
+      ids.push_back(id_subj);
 
       sa->SetSegs(*segs);
       sas_data.push_back(sa);
@@ -240,6 +247,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2005/01/03 22:47:35  kapustin
+ * Implement seq-ids with CSeq_id instead of generic strings
+ *
  * Revision 1.12  2004/12/09 22:37:16  kapustin
  * Do not assume query plus strand when converting to seq-align
  *

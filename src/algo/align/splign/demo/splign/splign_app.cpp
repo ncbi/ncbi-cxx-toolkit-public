@@ -504,8 +504,10 @@ int CSplignApp::Run()
     }
 
     const string query (hits[0].m_Query);
+    CConstRef<CSeq_id> seqid_query (new CSeq_id (query));
     const string subj (hits[0].m_Subj);
-    formatter.SetSeqIds(query, subj);
+    CConstRef<CSeq_id> seqid_subj (new CSeq_id (subj));
+    formatter.SetSeqIds(seqid_query, seqid_subj);
 
     const string strand = args["strand"].AsString();
     CSplign::TResults splign_results;
@@ -651,6 +653,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/01/03 22:47:35  kapustin
+ * Implement seq-ids with CSeq_id instead of generic strings
+ *
  * Revision 1.32  2004/12/16 23:12:26  kapustin
  * algo/align rearrangement
  *

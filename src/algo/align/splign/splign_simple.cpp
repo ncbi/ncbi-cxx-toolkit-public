@@ -40,6 +40,7 @@
 #include <algo/align/nw/align_exception.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -193,6 +194,7 @@ CRef<CSeq_align_set> CSplignSimple::GetResultsAsAln(void) const
     NON_CONST_ITERATE (CSeq_align_set::Tdata, compartmentI, sas->Set()) {
         NON_CONST_ITERATE (CSeq_align_set::Tdata, saI,
                            (*compartmentI)->SetSegs().SetDisc().Set()) {
+
             CDense_seg &ds = (*saI)->SetSegs().SetDenseg();
             ds.SetIds().clear();
             si = new CSeq_id;
@@ -211,11 +213,16 @@ END_NCBI_SCOPE
 
 /*===========================================================================
 * $Log$
+* Revision 1.12  2005/01/03 22:47:35  kapustin
+* Implement seq-ids with CSeq_id instead of generic strings
+*
 * Revision 1.11  2004/12/16 23:12:26  kapustin
 * algo/align rearrangement
 *
 * Revision 1.10  2004/11/29 14:37:16  kapustin
-* CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+* CNWAligner::GetTranscript now returns TTranscript and direction can be 
+* specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two 
+* additional parameters to specify starting coordinates.
 *
 * Revision 1.9  2004/11/18 21:27:40  grichenk
 * Removed default value for scope argument in seq-loc related functions.

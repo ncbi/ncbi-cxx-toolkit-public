@@ -33,11 +33,16 @@
 */
 
 #include <algo/align/splign/splign.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/seqalign/Dense_seg.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+BEGIN_SCOPE(objects)
+    class CSeq_id;
+    class CDense_seg;
+    class CSeq_align_set;
+END_SCOPE(objects)
+
 
 class NCBI_XALGOALIGN_EXPORT CSplignFormatter: public CObject
 {
@@ -47,7 +52,9 @@ public:
     CSplignFormatter(const CSplign& splign);
 
     // setters
-    void SetSeqIds(const string& id1, const string& id2) {
+    void SetSeqIds(CConstRef<objects::CSeq_id> id1, 
+                   CConstRef<objects::CSeq_id> id2) {
+
         m_QueryId = id1;
         m_SubjId = id2;
     }
@@ -58,16 +65,19 @@ public:
 
 private:
 
-    const CSplign::TResults m_splign_results;
+    const CSplign::TResults            m_splign_results;
 
-    string            m_QueryId, m_SubjId;
+    CConstRef<objects::CSeq_id>        m_QueryId, m_SubjId;
 
     CRef<objects::CSeq_align> x_Compartment2SeqAlign(
                                const vector<size_t>& boxes,
                                const vector<string>& transcripts,
                                const vector<CNWAligner::TScore>& scores) const;
+
     void x_Exon2DS(const size_t* box, const string& trans,
                    objects::CDense_seg* pds) const;
+
+    void x_Init(void);
 };
 
 
@@ -78,8 +88,13 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/01/03 22:47:20  kapustin
+ * Implement seq-ids with CSeq_id instead of generic strings
+ *
  * Revision 1.9  2004/11/29 14:36:45  kapustin
- * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
+ * CNWAligner::GetTranscript now returns TTranscript and direction can be 
+ * specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two 
+ * additional parameters to specify starting coordinates.
  *
  * Revision 1.8  2004/06/21 17:44:46  kapustin
  * Add result param to AsText and AsSeqAlignSet with zero default
@@ -92,7 +107,6 @@ END_NCBI_SCOPE
  *
  * Revision 1.5  2004/04/23 14:36:24  kapustin
  * Initial revision
- *
  *
  * ===========================================================================
  */
