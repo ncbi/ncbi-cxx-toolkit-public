@@ -304,9 +304,11 @@ bool CTL_BCPInCmd::SendRow()
 
             CDB_Object& param = *m_Params.GetParam(i);
 
-            switch ( param.GetType() ) {
-            case eDB_Text:  {
-                CDB_Text& par = dynamic_cast<CDB_Text&> (param);
+            if((param.GetType() != eDB_Text) && (param.GetType() != eDB_Image)) {
+		continue;
+	    }
+	    else {
+                CDB_Stream& par = dynamic_cast<CDB_Stream&> (param);
                 for (datalen = (CS_INT) par.Size();  datalen > 0;
                      datalen -= (CS_INT) n) {
                     n = par.Read(buff, 2048);
@@ -315,28 +317,9 @@ bool CTL_BCPInCmd::SendRow()
                         m_HasFailed = true;
                         throw CDB_ClientEx
                             (eDB_Error, 123005, "CTL_BCPInCmd::SendRow",
-                             "blk_textxfer failed for the text field");
+                             "blk_textxfer failed for the text/image field");
                     }
                 }
-                break;
-            }
-            case eDB_Image:  {
-                CDB_Image& par = dynamic_cast<CDB_Image&> (param);
-                for (datalen = (CS_INT) par.Size();  datalen > 0;
-                     datalen -= (CS_INT) n) {
-                    n = par.Read(buff, 2048);
-                    if (blk_textxfer(m_Cmd, (CS_BYTE*) buff, (CS_INT) n, 0)
-                        == CS_FAIL) {
-                        m_HasFailed = true;
-                        throw CDB_ClientEx
-                            (eDB_Error, 123006, "CTL_BCPInCmd::SendRow",
-                             "blk_textxfer failed for the image field");
-                    }
-                }
-                break;
-            }
-            default:
-                continue;
             }
         }
     }
@@ -418,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2001/10/11 19:10:59  soussov
+ * merges the text/image processing in CTL_BCPInCmd::SendRow()]
+ *
  * Revision 1.2  2001/10/11 16:30:44  soussov
  * excludes ctlib dependences fron numeric conversions calls
  *
