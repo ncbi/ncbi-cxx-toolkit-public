@@ -628,6 +628,8 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
     }
     result.SetOutput_data()
         .AddField("prot_prod_updated", !updated_id.Equals(prod_id));
+    result.SetOutput_data()
+        .AddField("updated_prod_id", updated_id.AsFastaString());
 }
 
 
@@ -747,6 +749,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/03 21:03:08  jcherry
+ * Record id of updated protein
+ *
  * Revision 1.9  2004/10/25 16:47:17  jcherry
  * Added comparison of translation to updated protein product
  *
