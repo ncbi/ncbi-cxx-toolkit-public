@@ -41,7 +41,8 @@ BEGIN_NCBI_SCOPE
 
 struct PLibExclude
 {
-    PLibExclude(const list<string>& excluded_lib_ids)
+    PLibExclude(const string& prj_name, const list<string>& excluded_lib_ids)
+        : m_Prj(prj_name)
     {
         copy(excluded_lib_ids.begin(), excluded_lib_ids.end(), 
              inserter(m_ExcludedLib, m_ExcludedLib.end()) );
@@ -49,10 +50,15 @@ struct PLibExclude
 
     bool operator() (const string& lib_id) const
     {
-        return m_ExcludedLib.find(lib_id) != m_ExcludedLib.end();
+        if (m_ExcludedLib.find(lib_id) != m_ExcludedLib.end()) {
+            LOG_POST(Warning << "Project " << m_Prj << ": library excluded by request: " << lib_id);
+            return true;
+        }
+        return false;
     }
 
 private:
+    string m_Prj;
     set<string> m_ExcludedLib;
 };
 
@@ -120,6 +126,8 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                   TFiles& files,
                                   const set<string>& keys)
 {
+    set<string> defs_unresolved;
+    map<string,string> defs_resolved;
     NON_CONST_ITERATE(CProjectTreeBuilder::TFiles, p, files) {
 	    NON_CONST_ITERATE(CSimpleMakeFileContents::TContents, 
                           n, 
@@ -139,18 +147,20 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                         list<string> resolved_def;
                         string val_define = FilterDefine(val);
 	                    resolver.Resolve(val_define, &resolved_def);
-	                    if ( resolved_def.empty() )
+	                    if ( resolved_def.empty() ) {
+                            defs_unresolved.insert(val);
 		                    new_vals.push_back(val); //not resolved - keep old val
-                        else {
+                        } else {
+                            defs_resolved[val] = NStr::Join( resolved_def, " ");
                             //was resolved
                             ITERATE(list<string>, l, resolved_def) {
                                 const string& define = *l;
                                 if ( IsConfigurableDefine(define) ) {
+                                    string stripped = StripConfigurableDefine(define);
                                     string resolved_def_str = 
-                                        GetApp().GetSite().ResolveDefine
-                                                     (StripConfigurableDefine
-                                                                     (define));
+                                        GetApp().GetSite().ResolveDefine(stripped);
                                     if ( !resolved_def_str.empty() ) {
+                                        defs_resolved[define] = resolved_def_str;
                                         list<string> resolved_defs;
                                         NStr::Split(resolved_def_str, 
                                                     LIST_SEPARATOR, 
@@ -159,6 +169,14 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                              resolved_defs.end(),
                                              back_inserter(new_vals));
                                     } else {
+// configurable definitions could be described in terms of components
+                                        list<string> components;
+                                        GetApp().GetSite().GetComponents(stripped, &components);
+                                        if (!components.empty()) {
+                                            defs_resolved[define] = "Component= " + NStr::Join( components, ", ");
+                                        } else {
+                                            defs_unresolved.insert(define);
+                                        }
                                         new_vals.push_back(define);
                                     }
 
@@ -173,6 +191,20 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                 if (modified)
                     values = new_vals; // by ref!
 		    }
+        }
+    }
+    if (!defs_resolved.empty()) {
+        LOG_POST(Info << "Resolved:");
+        for (map<string,string>::const_iterator r = defs_resolved.begin();
+            r != defs_resolved.end(); ++r) {
+            LOG_POST(Info << r->first << " = " << r->second);
+        }
+    }
+    if (!defs_unresolved.empty()) {
+        LOG_POST(Info << "Unresolved:");
+        for (set<string>::const_iterator u = defs_unresolved.begin();
+            u != defs_unresolved.end(); ++u) {
+            LOG_POST(Info << *u);
         }
     }
 }
@@ -227,8 +259,21 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
         if(CSymResolver::IsDefine(flag)) {
             string dir = GetApp().GetSite().ResolveDefine
                                              (CSymResolver::StripDefine(flag));
-            if ( !dir.empty() && CDirEntry(dir).IsDir() ) {
-                include_dirs->push_back(dir);    
+            if ( !dir.empty() ) {
+                if ( CDirEntry(dir).IsDir() ) {
+                    include_dirs->push_back(dir);    
+                } else {
+                    string d = 
+                        CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, dir);
+                    d = CDirEntry::NormalizePath(d);
+                    d = CDirEntry::AddTrailingPathSeparator(d);
+                    if ( CDirEntry(d).IsDir() ) {
+                        include_dirs->push_back(d);    
+                    } else {
+                        LOG_POST(Error << flag << " = " << dir << ": "
+                                       << dir << " not found");
+                    }
+                }
             }
         }
 
@@ -363,14 +408,42 @@ void SMakeProjectT::CreateFullPathes(const string&      dir,
 }
 
 
-void SMakeProjectT::ConvertLibDepends(const list<string>& depends_libs, 
+void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
                                       list<CProjKey>*     depends_ids)
 {
+    list<string> depends_libs;
+    SMakeProjectT::ConvertLibDependsMacro(depends, depends_libs);
+
     depends_ids->clear();
-    ITERATE(list<string>, p, depends_libs)
-    {
+    ITERATE(list<string>, p, depends_libs) {
         const string& id = *p;
-        depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+        if(CSymResolver::IsDefine(id)) {
+            string def = GetApp().GetSite().ResolveDefine(
+                CSymResolver::StripDefine(id));
+            list<string> resolved_def;
+            NStr::Split(def, LIST_SEPARATOR, resolved_def);
+            ITERATE(list<string>, r, resolved_def) {
+                depends_ids->push_back(CProjKey(CProjKey::eLib, *r));
+            }
+        } else {
+            depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+        }
+    }
+}
+
+void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends, 
+                                           list<string>& depends_libs)
+{
+    depends_libs.clear();
+    ITERATE(list<string>, p, depends) {
+        const string& id = *p;
+        if (id[0] == '#') {
+            break;
+        }
+        string lib = GetApp().GetSite().ProcessMacros(id);
+        if (!lib.empty()) {
+            depends_libs.push_back(lib);
+        }
     }
 }
 
@@ -470,7 +543,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     adj_depends.sort();
     adj_depends.unique();
 
-    PLibExclude pred(excluded_depends);
+    PLibExclude pred(proj_name, excluded_depends);
     EraseIf(adj_depends, pred);
 
     list<CProjKey> depends_ids;
@@ -1020,6 +1093,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     ResolveDefs(resolver, subtree_makefiles);
 
     // Build projects tree
+    LOG_POST(Info << "*** Building project items tree ***");
     CProjectItemsTree::CreateFrom(root_src_path,
                                   subtree_makefiles.m_In, 
                                   subtree_makefiles.m_Lib, 
@@ -1059,7 +1133,7 @@ CProjectTreeBuilder::BuildProjectTree(const IProjectFilter* filter,
                     target_tree.m_Projects[prj_id] = n->second;
                     modified = true;
                 } else {
-                    LOG_POST (Error << "Project not found: " + prj_id.Id());
+                    LOG_POST (Warning << "Project not found: " + prj_id.Id());
                 }
             }
 
@@ -1142,9 +1216,12 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             k = makefile.m_Contents.find(subproj[j]);
             if (k != makefile.m_Contents.end()) {
                 const list<string>& values = k->second;
-                copy(values.begin(), 
-                        values.end(), 
-                        back_inserter(subprojects));
+                for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
+                    subprojects.push_back(*i);
+                }
             }
         }
         string appproj[] = {"APP_PROJ","EXPENDABLE_APP_PROJ","POTENTIAL_APP_PROJ",""};
@@ -1153,6 +1230,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             if (k != makefile.m_Contents.end()) {
                 const list<string>& values = k->second;
                 for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
                     appprojects.push_back("Makefile." + *i + ".app");
                 }
             }
@@ -1163,6 +1243,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
             if (k != makefile.m_Contents.end()) {
                 const list<string>& values = k->second;
                 for (list<string>::const_iterator i=values.begin(); i!=values.end(); ++i) {
+                    if (i->at(0) == '#') {
+                        break;
+                    }
                     libprojects.push_back("Makefile." + *i + ".lib");
                 }
             }
@@ -1300,6 +1383,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
                                       SMakeFiles&   makefiles)
 {
     {{
+        LOG_POST(Info << "*** Resolving macrodefinitions in App projects ***");
         //App
         set<string> keys;
         keys.insert("LIB");
@@ -1309,6 +1393,7 @@ void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver,
     }}
 
     {{
+        LOG_POST(Info << "*** Resolving macrodefinitions in Lib projects ***");
         //Lib
         set<string> keys;
         keys.insert("LIBS");
@@ -1411,6 +1496,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/12/20 15:28:07  gouriano
+ * Changed diagnostic output. Added processing of macros in dependencies
+ *
  * Revision 1.20  2004/12/06 18:12:20  gouriano
  * Improved diagnostics
  *
@@ -1482,3 +1570,4 @@ END_NCBI_SCOPE
  *
  * ===========================================================================
  */
+
