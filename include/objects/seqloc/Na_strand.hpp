@@ -67,11 +67,17 @@ inline
 ENa_strand Reverse(ENa_strand s)
 {
     switch ( s ) {
-    case eNa_strand_minus:     return eNa_strand_plus;
-    case eNa_strand_plus:      return eNa_strand_minus;
-    case eNa_strand_both:      return eNa_strand_both_rev;
-    case eNa_strand_both_rev:  return eNa_strand_both;
-    default:                   return s;
+    case eNa_strand_unknown:  // defaults to plus
+    case eNa_strand_plus:
+        return eNa_strand_minus;
+    case eNa_strand_minus:
+        return eNa_strand_plus;
+    case eNa_strand_both:
+        return eNa_strand_both_rev;
+    case eNa_strand_both_rev:
+        return eNa_strand_both;
+    default:
+        return s;
     }
 }
 
@@ -85,6 +91,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/19 18:00:50  shomrat
+* changed logic to match C toolkit
+*
 * Revision 1.3  2003/12/18 02:55:52  ucko
 * Rework Reverse to avoid warnings about unhandled cases.
 *
