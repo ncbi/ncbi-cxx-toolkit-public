@@ -2,5 +2,6 @@
 HeadersInInclude = netschedule_client.hpp netcache_client.hpp \
                    netservice_client.hpp \
                    grid_worker.hpp netcache_nsstorage_imp.hpp grid_worker_app.hpp \
-                   netschedule_storage.hpp
+                   netschedule_storage.hpp grid_client.hpp grid_client_app.hpp \
+                   grid_default_factories.hpp
 HeadersInSrc = !
