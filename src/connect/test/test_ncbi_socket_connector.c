@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/04/12 15:21:15  vakatov
+ * Moved the log initialization to after the cmd.line args' parsing
+ *
  * Revision 6.1  2000/04/07 20:06:45  vakatov
  * Initial revision
  *
@@ -54,11 +57,6 @@ int main(int argc, const char* argv[])
     const char*    host;
     unsigned short port;
     unsigned int   max_try;
-
-    /* log and data streams */
-    CORE_SetLOGFILE(stderr, 0/*false*/);
-    data_file = fopen("test_ncbi_socket_connector.out", "wb");
-    assert(data_file);
 
     /* defaults */
     host         = 0;
@@ -103,14 +101,17 @@ int main(int argc, const char* argv[])
                 "Usage: %s <host> <port> [max_try] [timeout]\n  where"
                 "  <port> not less than %d; timeout is a float(in sec)\n",
                 argv[0], (int) MIN_PORT);
-        fclose(data_file);
-        CORE_SetLOG(0);
         return 1 /*error*/;
     }
 
+    /* log and data log streams */
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+    data_file = fopen("test_ncbi_socket_connector.log", "wb");
+    assert(data_file);
+
     /* run the tests */
     fprintf(stderr,
-            "Starting the CON_SOCK test...\n"
+            "Starting the SOCKET CONNECTOR test...\n"
             "%s:%hu,  timeout = %u.%06u, max # of retry = %u\n",
             host, port, timeout.sec, timeout.usec, max_try);
 
