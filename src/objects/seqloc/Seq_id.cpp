@@ -591,10 +591,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
             case 'P': case 'Y':                     return eAcc_gb_genome;
-            case 'Q':                               return eAcc_embl_patent;
+            case 'Q': case 'S':                     return eAcc_embl_patent;
             case 'R':                               return eAcc_embl_genome;
-                // no specific assignments for CS-CU yet
-            case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
+                // no specific assignments for CT-CU yet
+            case 'T': case 'U':                     return eAcc_embl_other_nuc;
             default:                                return eAcc_unreserved_nuc;
             }
 
@@ -1546,6 +1546,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.98  2005/01/25 17:24:55  ucko
+ * IdentifyAccession: CS -> eAcc_embl_patent
+ *
  * Revision 6.97  2005/01/13 15:59:23  dicuccio
  * Use PCase for case-sensitive comparisons in CStaticArrayMap<> - avoids
  * comparison by pointer
