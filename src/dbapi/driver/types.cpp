@@ -380,7 +380,7 @@ size_t CDB_Stream::Read(void* buff, size_t nof_bytes)
 
 size_t CDB_Stream::Append(const void* buff, size_t nof_bytes)
 {
-    m_Null = false;
+    if(buff && (nof_bytes > 0)) m_Null = false;
     return m_Store->Append(buff, nof_bytes);
 }
 
@@ -810,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/25 21:47:51  soussov
+ * adds check for not-empty append before dropping the Null flag in CDB_Stream
+ *
  * Revision 1.9  2002/07/19 15:31:43  soussov
  * add check for NULL pointer in CDB_Text::Append
  *
