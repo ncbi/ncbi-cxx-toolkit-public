@@ -332,7 +332,9 @@ fltk_libdir=`dirname \`dirname $fltk_config\``/lib
 bdb_libdir=`sed -ne 's/BERKELEYDB_LIBS *= *-L\([^ ]*\).*/\1/p' ${src_dir}/build/Makefile.mk`
 sqlite_libdir=`sed -ne 's/SQLITE_LIBS *= *-L\([^ ]*\).*/\1/p' ${src_dir}/build/Makefile.mk`
 COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}:${bdb_libdir}:${sqlite_libdir}
-COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
+CHECK_TIMEOUT=600
+export CHECK_TIMEOUT
+COMMON_ExecRB ${script_dir}/check/check_exec_test.sh ${target_dir}/bin/gbench_plugin_scan -strict ${target_dir}/plugins
 
 echo "Copying executable plugins:"
 for f in ${source_dir}/../plugins/algo/executables/*; do
