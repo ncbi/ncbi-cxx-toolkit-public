@@ -347,6 +347,8 @@ bool CSimpleBlobStore::Init(CDB_Connection* con)
     m_Cmd= m_Con->LangCmd(m_sCMD, 2);
     m_Cmd->SetParam("@key", &m_Key);
     m_Cmd->BindParam("@n", &m_RowNum);
+    m_Cmd->Send(); // sending command to update/insert row
+    m_Cmd->DumpResults(); // we don't expect any useful results
     return true;
 }
 
@@ -363,8 +365,10 @@ I_ITDescriptor& CSimpleBlobStore::ItDescriptor(void)
     m_RowNum= (Int4)(m_ImageNum / m_nofDataCols);
     int i= m_ImageNum % m_nofDataCols;
     if(i == 0) { // prepare new row
-        m_Cmd->Send(); // sending command to update/insert row
-        m_Cmd->DumpResults(); // we don't expect any useful results
+        if(m_RowNum.Value() > 0) {
+            m_Cmd->Send(); // sending command to update/insert row
+            m_Cmd->DumpResults(); // we don't expect any useful results
+        }
 
         string s= m_KeyColName + "= '";
         s.append(m_Key.Value());
@@ -385,7 +389,7 @@ bool CSimpleBlobStore::Fini(void)
     if(m_nofDataCols > 0) {
         delete m_Cmd;
         int i= m_ImageNum % m_nofDataCols;
-        if(i) { // we need to clean-up the current row
+        if(i || m_RowNum.Value() == 0) { // we need to clean-up the current row
             string s= "update " + m_TableName + " set";
             for(int j= i; j < m_nofDataCols; j++) {
                 s+= ((i != j)? ", ":" ") + m_DataColName[j] + " = NULL";
