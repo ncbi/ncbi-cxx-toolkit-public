@@ -61,6 +61,16 @@ int BDB_IntCompare(DB*, const DBT* val1, const DBT* val2)
                      : ((v2 < v1) ? 1 : 0);
 }
 
+int BDB_Int2Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Int2 v1, v2;
+    ::memcpy(&v1, val1->data, sizeof(Int2));
+    ::memcpy(&v2, val2->data, sizeof(Int2));
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
+
 int BDB_FloatCompare(DB*, const DBT* val1, const DBT* val2)
 {
     float v1, v2;
@@ -133,6 +143,16 @@ int BDB_ByteSwap_IntCompare(DB*, const DBT* val1, const DBT* val2)
     return (v1 < v2) ? -1
                      : ((v2 < v1) ? 1 : 0);
 }
+
+int BDB_ByteSwap_Int2Compare(DB*, const DBT* val1, const DBT* val2)
+{
+    Int2 v1, v2;
+    v1 = CByteSwap::GetInt2((unsigned char*)val1->data);
+    v2 = CByteSwap::GetInt2((unsigned char*)val2->data);
+    return (v1 < v2) ? -1
+                     : ((v2 < v1) ? 1 : 0);
+}
+
 
 int BDB_ByteSwap_FloatCompare(DB*, const DBT* val1, const DBT* val2)
 {
@@ -439,6 +459,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/09/17 13:31:12  kuznets
+ * Implemented Int2Compare family of functions
+ *
  * Revision 1.11  2003/09/11 16:34:35  kuznets
  * Implemented byte-order independence.
  *
