@@ -36,7 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class CBDB_Env
+class NCBI_BDB_EXPORT CBDB_Env
 {
 public:
     CBDB_Env();
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/27 15:13:53  kuznets
+ * Fixed DLL export spec
+ *
  * Revision 1.1  2003/08/27 15:03:51  kuznets
  * Initial revision
  *
