@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2001/08/28 17:33:33  thiessen
+* add ChooseGLVisual for wxWin 2.3+
+*
 * Revision 1.71  2001/08/24 18:53:42  thiessen
 * add filename to sequence viewer window titles
 *
@@ -521,7 +524,11 @@ END_EVENT_TABLE()
 Cn3DApp::Cn3DApp() : wxApp()
 {
     // try to force all windows to use best (TrueColor) visuals
+#if wxVERSION_NUMBER >= 2302
+    if (!ChooseGLVisual(NULL)) SetUseBestVisual(true);
+#else
     SetUseBestVisual(true);
+#endif
 }
 
 bool Cn3DApp::OnInit(void)
