@@ -37,36 +37,63 @@
 BEGIN_NCBI_SCOPE
 
 
+
 //////////////////////////////////////////////////////////////////////////////
 //
-// CCompressionBaseStream
+// CCompressionStreamProcessor
 //
 
+CCompressionStreamProcessor::CCompressionStreamProcessor(
+    CCompressionProcessor*  processor,
+    EDeleteProcessor        need_delete,
+    streamsize              in_bufsize,
+    streamsize              out_bufsize)
 
-CCompressionStream::CCompressionStream(
-        CCompressionProcessor* compressor,
-        ECompressorType        compressor_type,
-        TCompressionUIOS*      stream,
-        EStreamType            stream_type,
-        streamsize             in_buf_size,
-        streamsize             out_buf_size,
-        EDeleteCompressor      need_delete_compressor)
-
-    : iostream(0), m_StreamBuf(0), m_Compressor(0)
+    : m_Processor(processor), 
+      m_InBuf(0),
+      m_InBufSize(in_bufsize <= 1 ? kCompressionDefaultBufSize : in_bufsize),
+      m_OutBuf(0),
+      m_OutBufSize(out_bufsize <= 1 ? kCompressionDefaultBufSize :out_bufsize),
+      m_LastOutAvail(0),
+      m_Begin(0),
+      m_End(0),
+      m_NeedDelete(need_delete),
+      m_LastStatus(CCompressionProcessor::eStatus_Error),
+      m_Finalized(0)
 {
-    // Create new stream buffer
+    return;
+}
+
+
+CCompressionStreamProcessor::~CCompressionStreamProcessor(void)
+{
+    if ( m_Processor  &&  m_NeedDelete ) {
+        delete m_Processor;
+    }
+    m_Processor = 0;
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+//
+// CCompressionStream
+//
+
+CCompressionStream::CCompressionStream(CNcbiIos&                    stream,
+                                       CCompressionStreamProcessor* read_sp,
+                                       CCompressionStreamProcessor* write_sp)
+    : CNcbiIos(0), m_Stream(&stream), m_StreamBuf(0),
+      m_Reader(read_sp), m_Writer(write_sp)
+      
+{
+    // Create a new stream buffer
     auto_ptr<CCompressionStreambuf> sb(
-        new CCompressionStreambuf(compressor, compressor_type,
-                                  stream, stream_type,
-                                  in_buf_size, out_buf_size));
+        new CCompressionStreambuf(&stream, read_sp, write_sp));
     init(sb.get());
     m_StreamBuf = sb.release();
     if ( !m_StreamBuf->IsOkay() ) {
         setstate(badbit | eofbit);
-    }
-    // Set compressor deleter
-    if ( need_delete_compressor == eDelete ) {
-        m_Compressor = compressor;
     }
     return;
 }
@@ -84,16 +111,13 @@ CCompressionStream::~CCompressionStream(void)
 #ifdef AUTOMATIC_STREAMBUF_DESTRUCTION
     rdbuf(0);
 #endif
-    if ( m_Compressor ) {
-        delete m_Compressor;
-    }
 }
 
 
-void CCompressionStream::Finalize(void) 
+void CCompressionStream::Finalize(CCompressionStream::EDirection dir) 
 {
     if ( m_StreamBuf ) {
-        m_StreamBuf->Finalize();
+        m_StreamBuf->Finalize(dir);
     }
 }
 
@@ -104,6 +128,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/06/17 15:45:05  ivanov
+ * Added CCompressionStreamProcessor base class. Rewritten CCompressionStream
+ * to use I/O stream processors of class CCompressionStreamProcessor.
+ *
  * Revision 1.3  2003/06/03 20:09:16  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
