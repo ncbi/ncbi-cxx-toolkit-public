@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.5  2003/04/09 18:01:52  dondosha
+* Fixed creation of double integer location list for reverse strands for mask-at-hash case.
+*
 * Revision 1.4  2003/04/03 14:17:45  coulouri
 * fix warnings, remove unused parameter
 *
@@ -783,32 +786,41 @@ BlastSetUp_load_options_to_buffer(const Char *instructions, CharPtr buffer)
 	return ptr;
 }
 
-/** This function takes the list of filtered SeqLoc's (i.e., regions that should
- * not be searches or not added to lookup table) and makes up a set of
- * DoubleIntPtr's that should be searched (that is, takes the complement).  If
- * the entire sequence is filtered, then a DoubleInt is created and both of it's
- * elements (i1 and i2) are set to -1 to indicate this. 
- * If filter_slp is NULL, a DoubleInt for the all of slp is created.
+/** This function takes the list of filtered SeqLoc's (i.e., regions that 
+ * should not be searches or not added to lookup table) and makes up a set 
+ * of DoubleIntPtr's that should be searched (that is, takes the 
+ * complement). If the entire sequence is filtered, then a DoubleInt is 
+ * created and both of its elements (i1 and i2) are set to -1 to indicate 
+ * this. 
+ * If filter_slp is NULL, a DoubleInt for full span of the slp is created.
  * @param slp SeqLoc of sequence. [in]
  * @param filter_slp SeqLoc of filtered region. [in]
+ * @param reverse Should locations from filter_slp be reversed? [in]
  * @param vnp_out Linked list of DoubleIntPtrs with offsets. [out]
- * @param offset offset to be added to any start/stop [out]
+ * @param offset Offset to be added to any start/stop [out]
 */
 static Int2
-BlastSetUp_CreateDoubleInt(SeqLocPtr slp, SeqLocPtr filter_slp, ValNodePtr *vnp_out, Int4 *offset)
+BlastSetUp_CreateDoubleInt(SeqLocPtr slp, SeqLocPtr filter_slp, 
+   Boolean reverse, ValNodePtr *vnp_out, Int4 *offset)
 
 {
 	DoubleIntPtr double_int=NULL; /* stores start/stop for each non-filtered region.*/
 	Int2 status=0;		/* return value. */
 	Int2 overlap;		/* stores return value of SeqLocCompare. */
-	Int4 private_offset=0;		/* value to add to every offset. */
-
+	Int4 seqloc_start=0;  /* Start of this SeqLoc, with added offset */
+        Int4 seqloc_end = 0;    /* End of this SeqLoc, with added offset */
+        Int4 filter_start, filter_end; /* Start and end of the SeqLoc for
+                                          the filtered segment */
+        
 	if (offset)
 	{
-		private_offset = *offset;
-		*offset += SeqLocStop(slp) + 1;  /* adjust so it's ready when function returns. */
+		seqloc_start = *offset;
+                seqloc_end = *offset;
+                /* adjust offset so it's ready when function returns. */
+		*offset += SeqLocStop(slp) + 1;  
 	}
-	private_offset += SeqLocStart(slp);
+	seqloc_start += SeqLocStart(slp);
+        seqloc_end += SeqLocStop(slp);
 
 	/* Check if filter_slp covers entire slp. */
 	overlap = SeqLocCompare(slp, filter_slp);
@@ -833,55 +845,93 @@ BlastSetUp_CreateDoubleInt(SeqLocPtr slp, SeqLocPtr filter_slp, ValNodePtr *vnp_
 
 			while((tmp_slp = SeqLocFindNext(filter_slp, tmp_slp))!=NULL)
 			{
-			/* The canonical "state" at the top of this while loop is
-			that a DoubleInt has been created and the first field ("i1")
-			was filled in on the last iteration.  The first time this
-			loop is entered in a call to the funciton this is not true
-			and the following "if" statement moves everything to the canonical
-			state. */
-				if (first)
-				{
-					first = FALSE;
-					double_int = MemNew(sizeof(DoubleInt));
-					if (SeqLocStart(tmp_slp) > SeqLocStart(slp))
-					{	/* beginning of sequence not filtered. */
-						double_int->i1 = SeqLocStart(slp) + private_offset;
+                           if (reverse) {
+                              filter_start = 
+                                 seqloc_end - SeqLocStop(tmp_slp);
+                              filter_end = 
+                                 seqloc_end - SeqLocStart(tmp_slp);
+                           } else {
+                              filter_start = 
+                                 seqloc_start + SeqLocStart(tmp_slp);
+                              filter_end = 
+                                 seqloc_start + SeqLocStop(tmp_slp);
+                           }
+                           /* The canonical "state" at the top of this 
+                              while loop is that a DoubleInt has been 
+                              created and one field was filled in on the 
+                              last iteration. The first time this loop is 
+                              entered in a call to the funciton this is not
+                              true and the following "if" statement moves 
+                              everything to the canonical state. */
+                           if (first) {
+                              first = FALSE;
+                              double_int = MemNew(sizeof(DoubleInt));
+                              
+                              if (reverse) {
+                                 if (filter_end < seqloc_end) {
+                                    /* end of sequence not filtered */
+                                    double_int->i2 = seqloc_end;
+                                 } else {
+                                    /* end of sequence filtered */
+                                    double_int->i2 = filter_start - 1;
+                                    continue;
+                                 }
+                              } else {
+                                 if (filter_start > seqloc_start) {
+                                    /* beginning of sequence not filtered */
+                                    double_int->i1 = seqloc_start;
+                                 } else {
+                                    /* beginning of sequence filtered */
+                                    double_int->i1 = filter_end + 1;
+                                    continue;
+                                 }
+                              }
+                           }
+                           if (reverse) {
+                              double_int->i1 = filter_end + 1;
+                              ValNodeAddPointer(vnp_out, 0, double_int);
+                              if (filter_start <= seqloc_start) {
+                                 /* last masked region at start of 
+                                    sequence */
+                                 last_interval_open = FALSE;
+                                 break;
+                              }	else {
+                                 double_int = MemNew(sizeof(DoubleInt));
+                                 double_int->i2 = filter_start - 1;
+                              }
+                           } else {
+                              double_int->i2 = filter_start - 1;
+                              ValNodeAddPointer(vnp_out, 0, double_int);
+                              if (filter_end >= seqloc_end) {
+                                 /* last masked region at end of sequence */
+                                 last_interval_open = FALSE;
+                                 break;
+                              }	else {
+                                 double_int = MemNew(sizeof(DoubleInt));
+                                 double_int->i1 = filter_end + 1;
+                              }
+                           }
+                           
 
-					}
-					else 
-					{	/* beginning of sequence filtered. */
-						double_int->i1 = SeqLocStop(tmp_slp) + 1 + private_offset;
-						continue;
-					}
-				}
-				double_int->i2 = SeqLocStart(tmp_slp) - 1 + private_offset;
-				ValNodeAddPointer(vnp_out, 0, double_int);
-
-				if (SeqLocStop(tmp_slp) >= SeqLocStop(slp))
-				{	/* last masked region at end of sequence. */
-					last_interval_open = FALSE;
-					break;
-				}
-				else
-				{
-					double_int = MemNew(sizeof(DoubleInt));
-					double_int->i1 = SeqLocStop(tmp_slp) + 1 + private_offset;
-				}
 			}
 			filter_slp = filter_slp->next;
 		}
 
-		if (last_interval_open)
-		{	/* Need to finish DoubleIntPtr for last interval. */
-			double_int->i2 = SeqLocStop(slp) + private_offset;
-			ValNodeAddPointer(vnp_out, 0, double_int);
+		if (last_interval_open) {
+                   /* Need to finish DoubleIntPtr for last interval. */
+                   if (reverse) {
+                      double_int->i1 = seqloc_start;
+                   } else {
+                      double_int->i2 = seqloc_end;
+                   }
+                   ValNodeAddPointer(vnp_out, 0, double_int);
 		}
 	}
 	else
 	{
 		double_int = MemNew(sizeof(DoubleInt));
-		double_int->i1 = SeqLocStart(slp) + private_offset;
-		double_int->i2 = SeqLocStop(slp) + private_offset;
+		double_int->i1 = seqloc_start;
+		double_int->i2 = seqloc_end;
 		ValNodeAddPointer(vnp_out, 0, double_int);
 	}
 
@@ -1455,6 +1505,8 @@ static Int2 BlastSetUp_CalcEffLengths (const Char *program,
    Int4 query_length;   /* length of an individual query sequence */
    Int8 effective_length, effective_db_length; /* effective lengths of 
                                                   query and database */
+   Int8 effective_search_space; /* Effective search space for a given 
+                                   sequence/strand/frame */
    SeqLocPtr slp;       /* Iterator for the SeqLoc list */
    Int2 i; /* Iteration index for calculating length adjustment */
    Uint1 num_strands;
@@ -1488,11 +1540,9 @@ static Int2 BlastSetUp_CalcEffLengths (const Char *program,
    else
       num_strands = 1;
 
-   for (index = 0, slp = query_slp; slp; 
-        index += num_strands, slp = slp->next) {
+   for (index = 0, slp = query_slp; slp; slp = slp->next) {
       if (eff_len_options->searchsp_eff) {
-         query_info->eff_searchsp_array[index] = 
-            eff_len_options->searchsp_eff;
+         effective_search_space = eff_len_options->searchsp_eff;
       } else {
          query_length = SeqLocLen(slp);
          /* Use the correct Karlin block. For blastn, two identical Karlin 
@@ -1527,11 +1577,11 @@ static Int2 BlastSetUp_CalcEffLengths (const Char *program,
             MAX(query_length - length_adjustment, min_query_length);
          effective_db_length = MAX(1, db_length - db_num_seqs*length_adjustment);
          
-         query_info->eff_searchsp_array[index] = 
-            effective_length * effective_db_length;
-         if (num_strands == 2)
-            query_info->eff_searchsp_array[index+1] = 
-               query_info->eff_searchsp_array[index];
+         effective_search_space = effective_length * effective_db_length;
+      }
+      for (i = 0; i < num_strands; ++i) {
+         query_info->eff_searchsp_array[index] = effective_search_space;
+         ++index;
       }
    }
 
@@ -1771,7 +1821,7 @@ Blast_MessagePtr *blast_message
 		CombineSeqLocs(filter_slp, &filter_slp_combined);
 		filter_slp = SeqLocSetFree(filter_slp);
 
-		if (filter_slp_combined)
+		if (filter_slp_combined && !mask_at_hash)
 		{
 			if ((frame && StringCmp("blastx", program) == 0) || StringCmp("tblastx", program) == 0)
 			{
@@ -1799,14 +1849,17 @@ Blast_MessagePtr *blast_message
 
 			if (!mask_at_hash)
 			{
-				if((status = BlastSetUp_MaskTheResidues(buffer_var, query_length, is_na, filter_slp_combined, reverse, 0)))
-					return status;
-				/* Create vnp_di spanning entire sequence. */
-				BlastSetUp_CreateDoubleInt(slp, NULL, &vnp_di, double_int_offset_ptr);
+                           if((status = BlastSetUp_MaskTheResidues(buffer_var, query_length, is_na, filter_slp_combined, reverse, 0)))
+                              return status;
+                           /* Create vnp_di spanning entire sequence. */
+                           BlastSetUp_CreateDoubleInt(slp, NULL, FALSE, 
+                              &vnp_di, double_int_offset_ptr);
 			}
 			else
 			{
-				BlastSetUp_CreateDoubleInt(slp, filter_slp_combined, &vnp_di, double_int_offset_ptr);
+                           BlastSetUp_CreateDoubleInt(slp, 
+                              filter_slp_combined, reverse, &vnp_di,
+                              double_int_offset_ptr);
 			}
 			MemCpy(&(vnp_di_array[context]), vnp_di, sizeof(ValNode));
 			double_int_offset++; /*add One for sentinel byte between sequences. */
