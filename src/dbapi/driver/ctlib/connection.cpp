@@ -253,7 +253,10 @@ bool CTL_Connection::Refresh()
     // close all commands first
     while(m_CMDs.NofItems() > 0) {
         CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
-        delete pCmd;
+        try {
+            delete pCmd;
+        } catch (CDB_Exception& e) {
+        }
         m_CMDs.Remove((int) 0);
     }
 
@@ -340,7 +343,10 @@ void CTL_Connection::Release()
     // close all commands first
     while(m_CMDs.NofItems() > 0) {
         CDB_BaseEnt* pCmd = static_cast<CDB_BaseEnt*> (m_CMDs.Get(0));
-        delete pCmd;
+        try {
+            delete pCmd;
+        } catch (CDB_Exception& e) {
+        }
         m_CMDs.Remove((int) 0);
     }
 }
@@ -652,11 +658,7 @@ CTL_SendDataCmd::~CTL_SendDataCmd()
     if ( m_BR )
         *m_BR = 0;
 
-    if (ct_cmd_drop(m_Cmd) != CS_SUCCEED) {
-        throw CDB_ClientEx(eDB_Fatal, 190021,
-                           "CTL_SendDataCmd::~CTL_SendDataCmd",
-                           "ct_cmd_drop failed");
-    }
+    ct_cmd_drop(m_Cmd);
 }
 
 
@@ -667,6 +669,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2002/09/16 15:10:23  soussov
+ * add try catch when canceling active commands in Refresh method
+ *
  * Revision 1.9  2002/03/27 05:01:58  vakatov
  * Minor formal fixes
  *
