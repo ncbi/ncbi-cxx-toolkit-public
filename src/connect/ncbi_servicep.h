@@ -60,6 +60,7 @@ struct SSERV_IterTag {
     const char*  service;        /* requested service name                 */
     TSERV_Type   type;           /* requested server type(s)               */
     unsigned int preferred_host; /* preferred host to select, network b.o. */
+    double       preference;     /* range [0..100] %%                      */
     SSERV_Info** skip;           /* servers to skip                        */
     size_t       n_skip;         /* number of servers in the array         */
     size_t       n_max_skip;     /* number of allocated slots in the array */
@@ -69,6 +70,19 @@ struct SSERV_IterTag {
 
     void*        data;           /* private data field                     */
 };
+
+
+/* Modified 'fast track' routine for one-shot obtaining of a service info.
+ * Please see <connect/ncbi_service.h> for explanations [SERV_GetInfoEx()].
+ * For now, this call is to exclusively support MYgethostbyname() replacement
+ * of standard gethostbyname() libcall in apache Web daemon (see in daemons/).
+ */
+SSERV_Info* SERV_GetInfoP
+(const char*         service,       /* service name                          */
+ TSERV_Type          types,         /* mask of type(s) of servers requested  */
+ unsigned int        preferred_host,/* preferred host to use service on, nbo */
+ double              preference     /* [0=min..100=max] preference in %%     */
+ );
 
 
 /* Private interface: update mapper information from the given text
@@ -107,6 +121,12 @@ char* SERV_ServiceName(const char* service);
 char* SERV_GetConfig(void);
 
 
+/* Given the status gap and wanted preference, calculate
+ * acceptable stretch for gap.
+ */
+double SERV_Preference(double pref, double gap, double mean);
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
@@ -115,6 +135,9 @@ char* SERV_GetConfig(void);
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2003/01/31 21:19:41  lavr
+ * +SERV_Preference()
+ *
  * Revision 6.17  2002/10/28 20:16:00  lavr
  * Take advantage of host info API
  *
