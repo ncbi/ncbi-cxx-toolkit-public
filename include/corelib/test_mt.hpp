@@ -85,7 +85,7 @@ extern int           s_SpawnBy;
 ///
 /// Defines the high level behavior of an NCBI threaded application.
 
-class NCBI_XNCBI_EXPORT CThreadedApp : public CNcbiApplication
+class NCBI_TEST_MT_EXPORT CThreadedApp : public CNcbiApplication
 {
 public:
     /// Constructor.
@@ -164,6 +164,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/03/10 20:22:28  gorelenk
+ * Prefix NCBI_XNCBI_EXPORT changed to NCBI_TEST_MT_EXPORT.
+ *
  * Revision 1.7  2003/11/18 11:59:00  siyan
  * Changed so @addtogroup does not cross namespace boundary
  *
