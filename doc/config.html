@@ -340,7 +340,9 @@ On the capable platforms, you can build libraries as <i>shared (dynamic)</i>.
        then build the library as <i>static</i> only, and if the
        library project makefile specifies
 		 <a href="new_proj.html#ref_MakeProjLib"><i>LIB_OR_DLL = dll</i></a>
-       then build the library as <i>dynamic</i> only.
+       then build the library as <i>dynamic</i> only. <br>
+       Note that the resulting static libraries consist of
+       position-independent objects.
   <li> <i><b>--with-dll</b></i> --
        build libraries as <i>dynamic</i>; <br>
 		 however, if the library project makefile specifies
