@@ -41,13 +41,6 @@
 extern "C" {
 #endif
 
-/** Safe free a pointer: belongs to a higher level header. */
-#ifndef sfree
-#define sfree(x) __sfree((void**)&(x))
-#endif
-NCBI_XBLAST_EXPORT
-void __sfree(void** x); /* implemented in lookup_util.c */
-
 /******************** Preprocessor definitions ******************************/
 
 /** Program type: defines the engine's notion of the different
@@ -87,6 +80,22 @@ typedef enum {
 #ifndef NUM_STRANDS
 #define NUM_STRANDS 2
 #endif
+
+/**
+ * A macro expression that returns 1, 0, -1 if a is greater than,
+ * equal to or less than b, respectively.  This macro evaluates its
+ * arguments more than once.
+ */
+#ifndef BLAST_CMP
+#define BLAST_CMP(a,b) ((a)>(b) ? 1 : ((a)<(b) ? -1 : 0))
+#endif
+
+/** Safe free a pointer: belongs to a higher level header. */
+#ifndef sfree
+#define sfree(x) __sfree((void**)&(x))
+#endif
+NCBI_XBLAST_EXPORT
+void __sfree(void** x); /* implemented in lookup_util.c */
 
 /********************* Structure definitions ********************************/
 
