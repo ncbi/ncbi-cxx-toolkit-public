@@ -59,6 +59,8 @@ string JoinNoRedund(const list<string>& l, const string& delim);
 // with one space. Strips all spaces after '(' and before ')'
 void StripSpaces(string& str);
 
+bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
+
 bool ValidateAccession(const string& accn);
 void DateToString(const CDate& date, string& str, bool is_cit_sub = false);
 
@@ -109,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/05/07 15:23:11  shomrat
+* + RemovePeriodFromEnd
+*
 * Revision 1.6  2004/04/22 15:54:37  shomrat
 * Use CBioseq_Handle instead of CBioseq
 *

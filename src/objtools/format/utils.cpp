@@ -123,6 +123,22 @@ void StripSpaces(string& str)
 }
 
 
+bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
+{
+    static const string period = ".";
+    static const string ellipsis = "...";
+
+    if ( NStr::EndsWith(str, period) ) {
+        if ( !keep_ellipsis  ||  !NStr::EndsWith(str, ellipsis) ) {
+            str.erase(str.length() - 1);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 static bool s_IsWholeWord(const string& str, size_t pos, const string& word)
 {
     // NB: To preserve the behavior of the C toolkit we only test on the left.
@@ -530,6 +546,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/05/07 15:23:14  shomrat
+* + RemovePeriodFromEnd
+*
 * Revision 1.7  2004/04/22 15:54:47  shomrat
 * Use CBioseq_Handle instead of CBioseq
 *
