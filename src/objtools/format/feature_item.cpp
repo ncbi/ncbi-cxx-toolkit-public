@@ -1742,7 +1742,7 @@ void CFeatureItem::x_FormatQual
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
-    pair<TQCI, TQCI> range = m_Quals.GetQuals(slot);
+    pair<TQCI, TQCI> range = const_cast<const TQuals&>(m_Quals).GetQuals(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
         it->second->Format(qvec, name, GetContext(), flags);
     }
@@ -2182,7 +2182,7 @@ void CSourceFeatureItem::x_FormatQual
  CFlatFeature::TQuals& qvec,
  IFlatQVal::TFlags flags) const
 {
-    pair<TQCI, TQCI> range = m_Quals.GetQuals(slot);
+    pair<TQCI, TQCI> range = const_cast<const TQuals&>(m_Quals).GetQuals(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
         it->second->Format(qvec, name, GetContext(),
                            flags | IFlatQVal::fIsSource);
@@ -2197,6 +2197,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/03/31 16:00:12  ucko
+* C(Source)FeatureItem::x_FormatQual: make sure to call the const
+* version of GetQuals to fix WorkShop build errors.
+*
 * Revision 1.14  2004/03/30 20:27:09  shomrat
 * Separated quals container from feature class
 *
