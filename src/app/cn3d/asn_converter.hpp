@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/06/11 16:27:16  thiessen
+* use ncbi::auto_ptr
+*
 * Revision 1.5  2002/06/11 13:18:47  thiessen
 * fixes for gcc 3
 *
@@ -128,7 +131,7 @@ static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, 
         ncbi::CObjectOStreamAsnBinary objOstream(asnOstrstream);
         objOstream << from;
 
-        std::auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
+        ncbi::auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
         aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
         if (!aimp || !(cObject = (*readFunc)(aimp->aip, NULL)))
             throw "AsnIoMem -> C object failed";
@@ -148,7 +151,7 @@ template < class ASNClass >
 static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
 {
     err->erase();
-    std::auto_ptr<ASNClass> newObject;
+    ncbi::auto_ptr<ASNClass> newObject;
 
     try {
         // create output stream and load object into it
