@@ -209,7 +209,7 @@ public:
 
 
 
-class I_RPCCmd : public I_BaseCmd
+class NCBI_DBAPIDRIVER_EXPORT I_RPCCmd : public I_BaseCmd
 {
 protected:
     // Binding
@@ -571,6 +571,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/02/12 22:08:32  coremake
+ * Added export specifier NCBI_DBAPIDRIVER_EXPORT to the I_RPCCmd class declaration
+ *
  * Revision 1.16  2002/12/26 19:29:12  dicuccio
  * Added Win32 export specifier for base DBAPI library
  *
