@@ -4,10 +4,10 @@
 # Meta-makefile
 
 LIB_PROJ = test_mt
-
 APP_PROJ = test_ncbithr coretest test_ncbiargs test_ncbiargs_sample \
 		   test_ncbitime test_ncbi_limits test_ncbistr test_ncbidiag_mt \
-		   test_ncbireg_mt test_ncbi_system test_ncbiutil test_ncbifile
+		   test_ncbireg_mt test_ncbi_system test_ncbiutil test_ncbifile \
+		   test_semaphore_mt
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
