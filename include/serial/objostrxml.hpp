@@ -74,6 +74,7 @@ public:
     static string GetDefaultSchemaNamespace(void);
 
     virtual void WriteFileHeader(TTypeInfo type);
+    virtual void EndOfWrite(void);
 
     // DTD file name and prefix. The final module name is built as
     // DTDFilePrefix + DTDFileName.
@@ -290,6 +291,7 @@ private:
     map<string,string> m_NsNameToPrefix;
     map<string,string> m_NsPrefixToName;
     stack<string> m_NsPrefixes;
+    bool m_SkipIndent;
 };
 
 
@@ -306,6 +308,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2005/02/09 14:23:53  gouriano
+* Implemented seriaization of mixed content elements
+*
 * Revision 1.39  2004/06/08 20:23:37  gouriano
 * Moved several functions out of VIRTUAL_MID_LEVEL_IO condition:
 * there is no need for them to be there
