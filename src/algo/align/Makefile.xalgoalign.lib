@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = nw_aligner
+SRC = nw_aligner nw_aligner_mrna2dna
 LIB = xalgo
 
 CXXFLAGS = $(FAST_CXXFLAGS)
