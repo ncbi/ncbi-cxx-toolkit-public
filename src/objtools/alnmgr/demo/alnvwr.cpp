@@ -130,6 +130,11 @@ void CAlnMgrTestApp::Init(void)
          CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey
+        ("w", "ScreenWidth",
+         "Screen width for some of the viewers",
+         CArgDescriptions::eInteger, "60");
+
+    arg_desc->AddDefaultKey
         ("cf", "GetChunkFlags",
          "Flags for GetChunks (CAlnMap::TGetChunkFlags)",
          CArgDescriptions::eInteger, "0");
@@ -163,7 +168,9 @@ void CAlnMgrTestApp::LoadDenseg(void)
         m_ObjMgr = new CObjectManager;
         
         m_ObjMgr->RegisterDataLoader
-            (*new CGBDataLoader("ID", NULL, 2),
+            (*new CBlastDbDataLoader("BLASTDB",
+                                     "nr Trace/Mus_Musculus_WGS",
+                                     CBlastDbDataLoader::eNucleotide),
              CObjectManager::eDefault);
 
         m_Scope = new CScope(*m_ObjMgr);
@@ -173,7 +180,7 @@ void CAlnMgrTestApp::LoadDenseg(void)
     if (asn_type == "Dense-seg") {
         CRef<CDense_seg> ds(new CDense_seg);
         *in >> *ds;
-        m_AV = new CAlnVec(*ds);
+        m_AV = new CAlnVec(*ds, *m_Scope);
     } else if (asn_type == "Seq-submit") {
         CRef<CSeq_submit> ss(new CSeq_submit);
         *in >> *ss;
@@ -324,6 +331,7 @@ void CAlnMgrTestApp::View4(int scrn_width)
     CAlnMap::TNumrow row, nrows = m_AV->GetNumRows();
 
     vector<string> buffer(nrows);
+    vector<CAlnMap::TSeqPosList> insert_aln_starts(nrows);
     vector<CAlnMap::TSeqPosList> insert_starts(nrows);
     vector<CAlnMap::TSeqPosList> insert_lens(nrows);
     vector<CAlnMap::TSeqPosList> scrn_lefts(nrows);
@@ -334,6 +342,7 @@ void CAlnMgrTestApp::View4(int scrn_width)
         m_AV->GetWholeAlnSeqString
             (row,
              buffer[row],
+             &insert_aln_starts[row],
              &insert_starts[row],
              &insert_lens[row],
              scrn_width,
@@ -345,7 +354,9 @@ void CAlnMgrTestApp::View4(int scrn_width)
     TSeqPos pos = 0, aln_len = m_AV->GetAlnStop() + 1;
     do {
         for (row = 0; row < nrows; row++) {
-            cout << m_AV->GetSeqId(row)
+            cout << row 
+                 << "\t"
+                 << m_AV->GetSeqId(row)
                  << "\t" 
                  << scrn_lefts[row].front()
                  << "\t"
@@ -521,14 +532,15 @@ int CAlnMgrTestApp::Run(void)
         m_AV->SetAnchor(args["a"].AsInteger());
     }
 
+    int screen_width = args["w"].AsInteger();
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
     if (args["v"]) {
         switch (args["v"].AsInteger()) {
         case 1: View1(); break;
-        case 2: View2(40); break;
-        case 3: View3(40); break;
-        case 4: View4(40); break;
+        case 2: View2(screen_width); break;
+        case 3: View3(screen_width); break;
+        case 4: View4(screen_width); break;
         case 5: View5(); break;
         case 6: View6(); break;
         case 7: View7(); break;
@@ -552,6 +564,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2003/07/23 20:52:07  todorov
+* +width, +aln_starts for the inserts in GetWhole..
+*
 * Revision 1.7  2003/07/17 22:48:17  todorov
 * View4 implemented in CAlnVec::GetWholeAlnSeqString
 *
