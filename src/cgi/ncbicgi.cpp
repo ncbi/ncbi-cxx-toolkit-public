@@ -445,7 +445,88 @@ void CCgiCookies::Clear(void)
 
 
 
-///////////////////////////////////////////////////////
+////////////////////////////////////////////////////////
+//  CTrackingEnvHolder
+//
+
+class CTrackingEnvHolder 
+{
+public:
+    CTrackingEnvHolder(const CNcbiEnvironment* env);
+    ~CTrackingEnvHolder();
+      
+    const char* const* GetTrackingEnv(void) const { return m_TrackingEnv; }
+
+private:
+    void x_Destroy();
+    const CNcbiEnvironment* m_Env;
+    char**                  m_TrackingEnv;
+};
+
+
+static const char* s_TrackingVars[] = 
+{
+	"HTTP_X_FORWARDED_FOR",
+	"PROXIED_IP",
+	"HTTP_CLIENT_HOST",
+	"REMOTE_HOST",
+	"REMOTE_ADDR",
+	"NI_CLIENT_IPADDR",
+	NULL
+};
+
+CTrackingEnvHolder::CTrackingEnvHolder(const CNcbiEnvironment* env)
+	: m_Env(env),
+     m_TrackingEnv(NULL)
+{
+    if ( !m_Env )
+        return;
+
+    try {
+        int array_size = sizeof(s_TrackingVars) / sizeof(s_TrackingVars[0]);
+        m_TrackingEnv = new char*[array_size];   
+        memset(m_TrackingEnv, 0, sizeof(char*) * array_size);
+
+        int i = 0;
+        for (const char* const* name = s_TrackingVars;  *name;  ++name) {
+            const string& value = m_Env->Get(*name);
+            if ( value.empty() )
+                continue;
+
+            string str( *name );
+            str += '=' + value;
+            m_TrackingEnv[i] = new char[str.length() + 1];
+            strcpy( m_TrackingEnv[i++], str.c_str() );
+        }
+    }
+    catch (...) {
+        x_Destroy();
+        throw;
+    }
+}
+
+
+void CTrackingEnvHolder::x_Destroy()
+{
+    if ( !m_TrackingEnv )
+        return;
+
+    for (char** ptr = m_TrackingEnv;  *ptr;  ++ptr) {
+        delete[] *ptr;
+    }
+
+    delete[] m_TrackingEnv;
+}
+
+
+CTrackingEnvHolder::~CTrackingEnvHolder()
+{
+    x_Destroy();
+}
+
+
+
+////////////////////////////////////////////////////////
 //  CCgiRequest
 //
 
@@ -808,10 +889,10 @@ CCgiRequest::CCgiRequest
  int                     ifd,
  size_t                  errbuf_size)
     : m_Env(0),
-      m_Entries(PNocase_Conditional(
-           (flags & fCaseInsensitiveArgs) ? 
-                    NStr::eNocase : NStr::eCase)),
-      m_ErrBufSize(errbuf_size)
+      m_Entries(PNocase_Conditional((flags & fCaseInsensitiveArgs) ? 
+                                    NStr::eNocase : NStr::eCase)),
+      m_ErrBufSize(errbuf_size),
+      m_TrackingEnvHolder(NULL)
 {
     x_Init(args, env, istr, flags, ifd);
 }
@@ -829,7 +910,8 @@ CCgiRequest::CCgiRequest
       m_Entries(PNocase_Conditional(
            (flags & fCaseInsensitiveArgs) ? 
                     NStr::eNocase : NStr::eCase)),
-      m_ErrBufSize(errbuf_size)
+      m_ErrBufSize(errbuf_size),
+      m_TrackingEnvHolder(NULL)
 {
     CNcbiArguments args(argc, argv);
 
@@ -1006,7 +1088,7 @@ void CCgiRequest::x_Init
         }
         image_name = name;
     }
-    s_AddEntry(m_Entries,   kEmptyStr, image_name, 0);
+    s_AddEntry(m_Entries, kEmptyStr, image_name, 0);
 }
 
 
@@ -1153,6 +1235,15 @@ SIZE_TYPE CCgiRequest::ParseIndexes(const string& str, TCgiIndexes& indexes)
 }
 
 
+
+const char* const* CCgiRequest::GetClientTrackingEnv(void) const
+{
+    if (!m_TrackingEnvHolder.get())
+        m_TrackingEnvHolder.reset(new CTrackingEnvHolder(m_Env));
+	return m_TrackingEnvHolder->GetTrackingEnv();
+}
+
+
 extern string URL_DecodeString(const string& str)
 {
     string    x_str   = str;
@@ -1283,6 +1374,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.84  2005/02/25 17:28:51  didenko
+* + CCgiRequest::GetClientTrackingEnv
+*
 * Revision 1.83  2005/02/16 15:04:35  ssikorsk
 * Tweaked kEmptyStr with Linux GCC
 *

@@ -470,6 +470,7 @@ typedef list<string>                                     TCgiIndexes;
 // Forward class declarations
 class CNcbiArguments;
 class CNcbiEnvironment;
+class CTrackingEnvHolder;
 
 
 
@@ -608,6 +609,11 @@ public:
     ///   zero on success;  otherwise, 1-based location of error
     static SIZE_TYPE ParseIndexes(const string& str, TCgiIndexes& indexes);
 
+    /// Return client tracking environment variables 
+    /// These variables are stored in the form "name=value". 
+    /// The last element in the returned array is 0.
+    const char* const* GetClientTrackingEnv(void) const;
+
 private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;
@@ -642,6 +648,8 @@ private:
     /// prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&);
     CCgiRequest& operator= (const CCgiRequest&);
+
+    mutable auto_ptr<CTrackingEnvHolder> m_TrackingEnvHolder;
 };  // CCgiRequest
 
 
@@ -799,6 +807,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.69  2005/02/25 17:28:51  didenko
+* + CCgiRequest::GetClientTrackingEnv
+*
 * Revision 1.68  2005/02/03 19:40:28  vakatov
 * fIgnoreQueryString to affect cmd.-line arg as well
 *
