@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2003/11/21 16:16:48  vasilche
+* More efficient writing of hex numbers.
+*
 * Revision 1.65  2003/10/31 17:39:40  grichenk
 * Allow empty containers
 *
@@ -648,11 +651,18 @@ void CObjectOStreamXml::WriteEscapedChar(char c)
         break;
     default:
         if ((unsigned int)c < 0x20) {
-            ostrstream os;
-            os << "&#x" << hex << (unsigned int)c << ';' << '\0';
-            m_Output.PutString(os.str());
+            m_Output.PutString("&#x");
+            Uint1 ch = c;
+            unsigned hi = ch >> 4;
+            unsigned lo = ch & 0xF;
+            if ( hi ) {
+                m_Output.PutChar("0123456789abcdef"[hi]);
+            }
+            m_Output.PutChar("0123456789abcdef"[lo]);
+            m_Output.PutChar(';');
         } else if ((unsigned int)c >= 0x80) {
-            if (m_Encoding == eEncoding_UTF8 || m_Encoding == eEncoding_Unknown) {
+            if ( m_Encoding == eEncoding_UTF8 ||
+                 m_Encoding == eEncoding_Unknown ) {
                 Uint1 ch = c;
                 m_Output.PutChar((ch >> 6) | 0xC0);
                 m_Output.PutChar((ch & 0x3F) | 0x80);
