@@ -94,6 +94,7 @@ public:
     //
     // Finally, %% -> %.
     void GetDate(string* label, const string& format) const;
+    void GetDate(string* label, const char*   format) const;
 
 private:
     // Prohibit copy constructor and assignment operator
@@ -121,6 +122,14 @@ void CDate::GetDate(string* label, bool year_only) const
 }
 
 
+// Make sure that stupid compilers don't try to cast char* to bool....
+inline
+void CDate::GetDate(string* label, const char* format) const
+{
+    GetDate(label, string(format));
+}
+
+
 /////////////////// end of CDate inline methods
 
 
@@ -132,6 +141,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2002/10/08 20:24:34  ucko
+ * Add explicit wrapper around new version of GetDate to avoid trouble from
+ * compilers that would rather convert const char* to bool than to string.
+ *
  * Revision 1.4  2002/10/04 17:32:45  ucko
  * Drop spurious "return" from GetDate wrapper.
  *
