@@ -90,6 +90,10 @@ protected: // mostly no-ops
 private:
     string x_GetGeneID(const CFlatFeature& feat, const string& gene_name);
     string x_GetSourceName(const IFlattishFeature&);
+    void   x_AddFeature(list<string>& l, const CSeq_loc& loc,
+                        const string& source, const string& key,
+                        const string& score, int frame, const string& attrs,
+                        bool gtf);
 
     TGFFFlags              m_GFFFlags;
     CRef<IFlatTextOStream> m_Stream;
@@ -114,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/10/17 21:01:54  ucko
+ * +x_AddFeature (helper factored out of FormatFeature)
+ *
  * Revision 1.2  2003/10/09 17:01:48  dicuccio
  * Added export specifiers
  *
