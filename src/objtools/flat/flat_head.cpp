@@ -126,7 +126,9 @@ CFlatHead::CFlatHead(CFlatContext& ctx)
 
     {{
         const CSeq_inst& inst = seq->GetInst();
-        m_Strandedness = inst.GetStrand();
+        if (inst.IsSetStrand()) {
+            m_Strandedness = inst.GetStrand();
+        }
         m_Topology     = inst.GetTopology();
     }}
 
@@ -701,6 +703,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/22 18:04:13  dicuccio
+* Fixed access of unset optional variables
+*
 * Revision 1.5  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn

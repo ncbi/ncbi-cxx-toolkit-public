@@ -140,7 +140,9 @@ void CFlattishFeature::x_AddQuals(void) const
     if (m_Feat->IsSetDbxref()) {
         x_AddQual(eFQ_db_xref, new CFlatXrefQV(m_Feat->GetDbxref()));
     }
-    x_AddQual(eFQ_pseudo, new CFlatBoolQV(m_Feat->GetPseudo()));
+    if (m_Feat->IsSetPseudo()) {
+        x_AddQual(eFQ_pseudo, new CFlatBoolQV(m_Feat->GetPseudo()));
+    }
     if (m_Feat->IsSetExcept_text()) {
         x_AddQual(eFQ_exception, new CFlatStringQV(m_Feat->GetTitle()));
     }
@@ -755,6 +757,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2003/07/22 18:04:13  dicuccio
+* Fixed access of unset optional variables
+*
 * Revision 1.6  2003/06/02 16:06:42  dicuccio
 * Rearranged src/objects/ subtree.  This includes the following shifts:
 *     - src/objects/asn2asn --> arc/app/asn2asn
