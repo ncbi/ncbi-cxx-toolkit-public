@@ -90,9 +90,13 @@ typedef Boolean (*GetBoolFnPtr) (void*, void*);
 typedef enum {
    BLAST_SEQSRC_C_SEQID = 0,  /**< C ASN.1 generated SeqId structure */
    BLAST_SEQSRC_CPP_SEQID,    /**< C++ ASN.1 generated CSeq_id class */ 
-   BLAST_SEQSRC_C_SEQLOC,
-   BLAST_SEQSRC_CPP_SEQLOC, 
-   BLAST_SEQSRC_MESSAGE
+   BLAST_SEQSRC_CPP_SEQID_REF,/**< Pointer to a CRef wrapper over CSeq_id
+                                  object */
+   BLAST_SEQSRC_C_SEQLOC,     /**< Pointer to a C ASN.1 generated SeqLoc 
+                                 structure */
+   BLAST_SEQSRC_CPP_SEQLOC,   /**< Pointer to a C++ ASN.1 generated CSeq_loc 
+                                 structure */
+   BLAST_SEQSRC_MESSAGE       /**< Pointer to a Blast_Message structure */
 } BlastSeqSrcDataType;
 
 /** Function pointer typedef to return pointer to some generic data. 
