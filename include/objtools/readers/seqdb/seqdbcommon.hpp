@@ -121,6 +121,95 @@ enum ESeqDBAllocType {
 };
 
 
+/// CSeqDBGiList
+/// 
+/// This class defines an interface to a list of GI,OID pairs.  It is
+/// used by the CSeqDB class for user specified GI lists.  This class
+/// should not be instantiated directly, instead use a subclass of
+/// this class.  Subclasses should provide a way to populate the
+/// m_GisOids vector.
+
+class NCBI_XOBJREAD_EXPORT CSeqDBGiList : public CObject {
+public:
+    /// Structure that holds GI-OID pairs.
+    struct SGiOid {
+        SGiOid(int gi_in = 0, int oid_in = -1)
+            : gi(gi_in), oid(oid_in)
+        {
+        }
+        
+        int gi;
+        int oid;
+    };
+    
+    /// Possible sorting states
+    enum ESortOrder {
+        eNone,
+        eGi,
+        eOid
+    };
+    
+    /// Constructor
+    CSeqDBGiList();
+    
+    /// Destructor
+    virtual ~CSeqDBGiList()
+    {
+    }
+    
+    /// Sort if necessary to insure order of elements.
+    void InsureOrder(ESortOrder order);
+    
+    /// Test for existence of an OID, GI pair.
+    void FindGis(const vector<int> & oids, vector<int> & gis);
+    
+    /// Access an element of the array.
+    const SGiOid & operator[](int index) const
+    {
+        return m_GisOids[index];
+    }
+    
+    /// Get the number of elements in the array.
+    int Size() const
+    {
+        return (int) m_GisOids.size();
+    }
+    
+    /// Specify the correct OID for a GI.
+    ///
+    /// When SeqDB translates a GI into an OID, this method is called
+    /// to store the oid in the array.
+    ///
+    /// @param index
+    ///   The location in the array of the GI, OID pair.
+    /// @param oid
+    ///   The oid to store in that element.
+    void SetTranslation(int index, int oid);
+    
+protected:
+    ESortOrder     m_CurrentOrder;
+    vector<SGiOid> m_GisOids;
+    
+private:
+    // The following disabled methods are reasonable things to do in
+    // some cases.  But I suspect they are more likely to happen
+    // accidentally than deliberately; due to the high performance
+    // cost, I have prevented them.  If this kind of deep copy is
+    // desireable, it can easily be enabled for a subclass by
+    // assigning both of the data fields in the protected section.
+    
+    /// Prevent copy constructor.
+    CSeqDBGiList(const CSeqDBGiList & other);
+    
+    /// Prevent assignment.
+    CSeqDBGiList & operator=(const CSeqDBGiList & other);
+    
+    /// Test for existence of an OID, GI pair.
+    void x_FindOid(int oid, int & indexB, int & indexE);
+};
+
+void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis);
+
 END_NCBI_SCOPE
 
 #endif // CORELIB__SEQDB__SEQDBCOMMON_HPP

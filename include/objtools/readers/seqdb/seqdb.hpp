@@ -133,6 +133,10 @@ private:
 };
 
 
+/// Forward declaration of ISeqDBGiList interface.
+class CSeqDBGiList;
+
+
 /// CSeqDB
 ///
 /// User interface class for blast databases.
@@ -250,11 +254,14 @@ public:
     ///   attempted.  If kSeqDBNoMMap is specified, or memory mapping
     ///   fails, this platform does not support it, the less efficient
     ///   read and write calls are used instead.
+    /// @param gi_list
+    ///   The database will be filtered by this GI list if non-null.
     CSeqDB(const string & dbname,
            ESeqType       seqtype,
            int            oid_begin,
            int            oid_end,
-           bool           use_mmap);
+           bool           use_mmap,
+           CSeqDBGiList * gi_list = 0);
     
     /// Destructor.
     ///
