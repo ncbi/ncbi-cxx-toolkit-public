@@ -134,6 +134,11 @@ public:
     string GetAppDefaultResource(void) const;
 
 
+    void   GetThirdPartyLibsToInstall    (list<string>* libs) const;
+    string GetThirdPartyLibsBinPathSuffix(void) const;
+    string GetThirdPartyLibsBinSubDir    (void) const;
+    
+
 private:
     const CNcbiRegistry& m_Registry;
     
@@ -152,6 +157,12 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/05/24 14:39:17  gorelenk
+ * Added declaration member-functions for third-party libs
+ * auto-install support: GetThirdPartyLibsToInstall,
+ * GetThirdPartyLibsBinPathSuffix, GetThirdPartyLibsBinSubDir
+ * to class CMsvcSite.
+ *
  * Revision 1.13  2004/05/17 14:35:21  gorelenk
  * Added declaration of GetAppDefaultResource to class CMsvcSite.
  *
