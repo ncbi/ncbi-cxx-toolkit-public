@@ -271,8 +271,8 @@ void IFlatFormatter::x_FormatReferences(SFlatContext& ctx,
 
 
 inline
-static bool s_FFLess(const CConstRef<IFlattishFeature>& f1,
-                     const CConstRef<IFlattishFeature>& f2)
+static bool operator <(const CConstRef<IFlattishFeature>& f1,
+		       const CConstRef<IFlattishFeature>& f2)
 {
     return *f1 < *f2;
 }
@@ -332,7 +332,7 @@ void IFlatFormatter::x_FormatFeatures(SFlatContext& ctx,
         }
     }
     if ( !l.empty() ) {
-        l.merge(l2, s_FFLess);
+        l.merge(l2);
         iterate (list<TFFRef>, it, l) { 
             out << *it;
         }
@@ -347,6 +347,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/10 22:02:14  ucko
+* Rename s_FFLess to operator <, due to bogus MSVC pickiness.
+*
 * Revision 1.1  2003/03/10 16:39:09  ucko
 * Initial check-in of new flat-file generator
 *
