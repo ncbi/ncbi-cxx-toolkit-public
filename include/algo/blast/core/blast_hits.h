@@ -132,6 +132,26 @@ void PHIGetEvalue(BlastHSPList* hsp_list, BlastScoreBlk* sbp);
 Int2 BLAST_ReapHitlistByEvalue(BlastHSPList* hsp_list, 
                                BlastHitSavingOptions* hit_options);
 
+/** Reevaluate the HSP's score, e-value and percent identity after taking
+ * into account the ambiguity information. Needed for blastn only, either
+ * after a greedy gapped extension, or for ungapped search.
+ * @param hsp The HSP structure [in] [out]
+ * @param query_start Pointer to the start of the query sequence [in]
+ * @param subject_start Pointer to the start of the subject sequence [in]
+ * @param hit_options Hit saving options with e-value cut-off [in]
+ * @param score_options Scoring options [in]
+ * @param query_info Query information structure, containing effective search
+ *                   space(s) [in]
+ * @param sbp Score block with Karlin-Altschul parameters [in]
+ * @return Should this HSP be deleted after the score reevaluation?
+ */
+Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp, 
+           Uint1* query_start, Uint1* subject_start, 
+           const BlastHitSavingOptions* hit_options, 
+           const BlastScoringOptions* score_options, 
+           BlastQueryInfo* query_info, BlastScoreBlk* sbp);
+
+
 /** Cleans out the NULLed out HSP's from the HSP array,
  *	moving the BLAST_HSPPtr's up to fill in the gaps.
  * @param hsp_array Array of pointers to HSP structures [in]
