@@ -1163,12 +1163,16 @@ TTSE_Lock CDataSource::GetTSEHandles(const CSeq_entry& entry,
 {
     // Find TSE_Info
     CRef<CTSE_Info> tse_info;
+    CRef<CSeq_entry_Info> entry_info;
     {{
         TMainReadLockGuard  guard(m_DSMainLock);
-        tse_info = x_FindTSE_Info(entry);
+        entry_info = x_FindSeq_entry_Info(entry);
+        if ( entry_info ) {
+            tse_info.Reset(&entry_info->GetTSE_Info());
+        }
     }}
-    if ( tse_info ) {
-        x_CollectBioseqs(*tse_info, bioseqs, filter, level);
+    if ( entry_info ) {
+        x_CollectBioseqs(*entry_info, bioseqs, filter, level);
     }
     return tse_info;
 }
@@ -1224,6 +1228,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.128  2004/02/25 19:23:46  shomrat
+* Use of entry_info instead of tse_info to allow collection of bioseqs on non-tse entries
+*
 * Revision 1.127  2004/02/03 19:02:17  vasilche
 * Fixed broken 'dirty annot index' state after RemoveEntry().
 *
