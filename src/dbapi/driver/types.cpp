@@ -101,11 +101,15 @@ CDB_Object* CDB_Int::Clone() const
 
 void CDB_Int::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Int) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Int::AssignValue",
-                           "wrong type of CDB_Object");
+    switch( v.GetType() ) {
+        case eDB_Int     : *this= (CDB_Int&)v; break;
+        case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
+        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        default:
+            throw CDB_ClientEx(eDB_Error, 2, "CDB_Int::AssignValue",
+                               "wrong type of CDB_Object");
     }
-    *this= (CDB_Int&)v;
+
 }
 
 
@@ -125,9 +129,12 @@ CDB_Object* CDB_SmallInt::Clone() const
 
 void CDB_SmallInt::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_SmallInt) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_SmallInt::AssignValue",
-                           "wrong type of CDB_Object");
+    switch( v.GetType() ) {
+        case eDB_SmallInt: *this= (CDB_SmallInt&)v; break;
+        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        default:
+            throw CDB_ClientEx(eDB_Error, 2, "CDB_SmallInt::AssignValue",
+                                         "wrong type of CDB_Object");
     }
     *this= (CDB_SmallInt&)v;
 }
@@ -172,11 +179,15 @@ CDB_Object* CDB_BigInt::Clone() const
 
 void CDB_BigInt::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_BigInt) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_BigInt::AssignValue",
-                           "wrong type of CDB_Object");
+    switch( v.GetType() ) {
+        case eDB_BigInt  : *this= (CDB_BigInt&)v; break;
+        case eDB_Int     : *this= ((CDB_Int     &)v).Value(); break;
+        case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
+        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        default:
+            throw CDB_ClientEx(eDB_Error, 2, "CDB_BigInt::AssignValue",
+                               "wrong type of CDB_Object");
     }
-    *this= (CDB_BigInt&)v;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -399,11 +410,14 @@ CDB_Object* CDB_Float::Clone() const
 
 void CDB_Float::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Float) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Float::AssignValue",
-                           "wrong type of CDB_Object");
+    switch( v.GetType() ) {
+        case eDB_Float   : *this= (CDB_Float&)v; break;
+        case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
+        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        default:
+            throw CDB_ClientEx(eDB_Error, 2, "CDB_Float::AssignValue",
+                               "wrong type of CDB_Object");
     }
-    *this= (CDB_Float&)v;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -422,11 +436,16 @@ CDB_Object* CDB_Double::Clone() const
 
 void CDB_Double::AssignValue(CDB_Object& v)
 {
-    if(v.GetType() != eDB_Double) {
-        throw CDB_ClientEx(eDB_Error, 2, "CDB_Double::AssignValue",
-                           "wrong type of CDB_Object");
+    switch( v.GetType() ) {
+        case eDB_Double  : *this= (CDB_Double&)v; break;
+        case eDB_Float   : *this= ((CDB_Float   &)v).Value(); break;
+        case eDB_Int     : *this= ((CDB_Int     &)v).Value(); break;
+        case eDB_SmallInt: *this= ((CDB_SmallInt&)v).Value(); break;
+        case eDB_TinyInt : *this= ((CDB_TinyInt &)v).Value(); break;
+        default:
+            throw CDB_ClientEx(eDB_Error, 2, "CDB_Double::AssignValue",
+                               "wrong type of CDB_Object");
     }
-    *this= (CDB_Double&)v;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -900,6 +919,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/01/21 18:07:35  sapojnik
+ * AssignValue() for misc. int, float, double accepts less capable types; only no loss type conversions allowed
+ *
  * Revision 1.15  2003/12/10 18:50:22  soussov
  * fixes bug with null value flag in AssignValue methods for CDB_Char, CDB_Binary, CDB_LongChar, CDB_LongBinary
  *
