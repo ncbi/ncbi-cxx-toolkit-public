@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/04/04 22:34:32  vakatov
+* Checks for the NStr:: for "long", and for the debug tracing
+*
 * Revision 1.57  2000/02/18 16:54:10  vakatov
 * + eDiag_Critical
 *
@@ -538,6 +541,8 @@ static void TestDiag(void)
 
     diag << Critical << "This message has severity \"Critical\"" << Endm;
 
+    diag << Trace << "This message has severity \"Trace\"" << Endm;
+
     SetDiagPostFlag(eDPF_All);
     SetDiagPostPrefix("Foo-Prefix");
     ERR_POST("This is the most detailed " << "error posting");
@@ -757,6 +762,20 @@ static void TestUtilities(void)
         STD_CATCH("TestUtilities");
 
         try {
+            long value = NStr::StringToLong(str);
+            NcbiCout << "long value: " << value << ", toString: '"
+                     << NStr::IntToString(value) << "'" << NcbiEndl;
+        }
+        STD_CATCH("TestUtilities");
+
+        try {
+            unsigned long value = NStr::StringToULong(str);
+            NcbiCout << "unsigned long value: " << value << ", toString: '"
+                     << NStr::UIntToString(value) << "'" << NcbiEndl;
+        }
+        STD_CATCH("TestUtilities");
+
+        try {
             double value = NStr::StringToDouble(str);
             NcbiCout << "double value: " << value << ", toString: '"
                      << NStr::DoubleToString(value) << "'" << NcbiEndl;
@@ -806,6 +825,7 @@ static void TestUtilities(void)
 
 static void TestThrowTrace(void)
 {
+    SetDiagTrace(eDT_Enable);
     NcbiCerr << "The following lines should be equal pairs:" << NcbiEndl;
     try {
         THROW1_TRACE(runtime_error, "Message");
@@ -830,6 +850,7 @@ static void TestThrowTrace(void)
         CNcbiDiag(__FILE__, __LINE__ - 3, eDiag_Trace, eDPF_Trace) <<
             "i: 123";
     }
+    SetDiagTrace(eDT_Default);
 }
 
 
