@@ -1068,111 +1068,28 @@ void CDataSource::GetSynonyms(const CSeq_id_Handle& main_idh,
 
 
 void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                                      TTSE_LockSet& tse_set,
-                                      CScope::TRequestHistory& history)
+                                      TTSE_LockSet& with_seq,
+                                      TTSE_LockSet& with_ref)
 {
-    TTSE_LockSet tmp_tse_set;
-    TTSE_LockSet non_history;
+    CMutexGuard guard(m_DataSource_Mtx);    
 
-    {{
-        CMutexGuard guard(m_DataSource_Mtx);    
-        TTSEMap::const_iterator tse_it = m_TSE_ref.find(idh);
-        if (tse_it == m_TSE_ref.end()) {
-            return;
-        }
-
-        TTSE_LockSet selected_with_ref;
-        TTSE_LockSet selected_with_seq;
-        ITERATE ( CTSE_LockingSet, tse, tse_it->second ) {
-            if ( (*tse)->m_BioseqMap.find(idh) !=
+    TTSEMap::const_iterator rtse_it = m_TSE_ref.find(idh);
+    if (rtse_it != m_TSE_ref.end()  &&  !rtse_it->second.empty()) {
+        ITERATE(CTSE_LockingSet::TTSESet, tse, rtse_it->second) {
+            if ( (*tse)->m_BioseqMap.find(idh) ==
                  (*tse)->m_BioseqMap.end() ) {
-                selected_with_seq.insert(TTSE_Lock(*tse)); // with sequence
+                with_ref.insert(TTSE_Lock(*tse)); // with reference only
             }
-            else
-                selected_with_ref.insert(TTSE_Lock(*tse)); // with reference
-        }
-
-        TTSE_Lock unique_from_history;
-        TTSE_Lock unique_live;
-        ITERATE (TTSE_LockSet, with_seq, selected_with_seq) {
-            if ( history.find(*with_seq) !=
-                 history.end() ) {
-                if ( unique_from_history ) {
-                    THROW1_TRACE(runtime_error,
-                                 "CDataSource::GetTSESetWithAnnots() -- "
-                                 "Ambiguous request: "
-                                 "multiple history matches");
-                }
-                unique_from_history = *with_seq;
-            }
-            else if ( !unique_from_history ) {
-                if ((*with_seq)->m_Dead)
-                    continue;
-                if ( unique_live ) {
-                    THROW1_TRACE(runtime_error,
-                                 "CDataSource::GetTSESetWithAnnots() -- "
-                                 "Ambiguous request: multiple live TSEs");
-                }
-                unique_live = *with_seq;
-            }
-        }
-        if ( unique_from_history ) {
-            tmp_tse_set.insert(unique_from_history);
-        }
-        else if ( unique_live ) {
-            non_history.insert(unique_live);
-        }
-        else if (selected_with_seq.size() == 1) {
-            non_history.insert(*selected_with_seq.begin());
-        }
-        else if (selected_with_seq.size() > 1) {
-            //### Try to resolve the conflict with the help of loader
-            THROW1_TRACE(runtime_error,
-                         "CDataSource::GetTSESetWithAnnots() -- "
-                         "Ambigous request: multiple TSEs found");
-        }
-        ITERATE(TTSE_LockSet, tse, selected_with_ref) {
-            bool in_history =
-                history.find(*tse) !=
-                history.end();
-            if ( !(*tse)->IsDead()  || in_history ) {
-                // Select only TSEs present in the history and live TSEs
-                // Different sets for in-history and non-history TSEs for
-                // the future filtering.
-                if ( in_history ) {
-                    tmp_tse_set.insert(*tse); // in-history TSE
-                }
-                else {
-                    non_history.insert(*tse); // non-history TSE
-                }
-            }
-        }
-    }}
-
-    // Filter out TSEs not in the history yet and conflicting with any
-    // history TSE. The conflict may be caused by any seq-id, even not
-    // mentioned in the searched location.
-    ITERATE (TTSE_LockSet, tse_it, non_history) {
-        bool conflict = false;
-        // Check each seq-id from the current TSE
-        ITERATE (CTSE_Info::TBioseqMap, seq_it, (*tse_it)->m_BioseqMap) {
-            ITERATE (CScope::TRequestHistory, hist_it, history) {
-                conflict =
-                    (*hist_it)->m_BioseqMap.find(seq_it->first) !=
-                    (*hist_it)->m_BioseqMap.end();
-                if ( conflict )
-                    break;
-            }
-            if ( conflict )
-                break;
-        }
-        if ( !conflict ) {
-            // No conflicts found -- add the TSE to the resulting set
-            tmp_tse_set.insert(*tse_it);
         }
     }
-    ITERATE (TTSE_LockSet, lit, tmp_tse_set) {
-        tse_set.insert(*lit);
+    // Add all TSEs containing the ID, even without annotations.
+    // they will be used for filtering to avoid including dead
+    // TSEs with annotations if a newer TSE has no annotations.
+    TTSEMap::const_iterator stse_it = m_TSE_seq.find(idh);
+    if (stse_it != m_TSE_seq.end()  &&  !stse_it->second.empty()) {
+        ITERATE(CTSE_LockingSet::TTSESet, tse, stse_it->second) {
+            with_seq.insert(TTSE_Lock(*tse)); // with sequence
+        }
     }
 }
 
@@ -1403,6 +1320,39 @@ CSeqMatch_Info CDataSource::BestResolve(CSeq_id_Handle idh)
 }
 
 
+CSeqMatch_Info* CDataSource::ResolveConflict(const CSeq_id_Handle& id,
+                                           CSeqMatch_Info& info1,
+                                           CSeqMatch_Info& info2)
+{
+    if (&info1.GetDataSource() != this  ||
+        &info2.GetDataSource() != this) {
+        // Can not compare TSEs from different data sources or
+        // without a loader.
+        return 0;
+    }
+    if (!m_Loader) {
+        if ( info1.GetIdHandle().IsBetter(info2.GetIdHandle()) ) {
+            return &info1;
+        }
+        if ( info2.GetIdHandle().IsBetter(info1.GetIdHandle()) ) {
+            return &info2;
+        }
+        return 0;
+    }
+    TTSE_LockSet tse_set;
+    tse_set.insert(TTSE_Lock(&info1.GetTSE_Info()));
+    tse_set.insert(TTSE_Lock(&info2.GetTSE_Info()));
+    CTSE_Info* tse = m_Loader->ResolveConflict(id, tse_set);
+    if (tse == &info1.GetTSE_Info()) {
+        return &info1;
+    }
+    if (tse == &info2.GetTSE_Info()) {
+        return &info2;
+    }
+    return 0;
+}
+
+
 string CDataSource::GetName(void) const
 {
     if ( m_Loader )
@@ -1533,6 +1483,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.101  2003/05/06 18:54:09  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.100  2003/05/05 20:59:47  vasilche
 * Use one static mutex for all instances of CTSE_LockingSet.
 *

@@ -205,10 +205,11 @@ private:
     const TTSE_LockSet& GetTSESetWithAnnots(const CSeq_id_Handle& idh);
 
     void x_DetachFromOM(void);
-    // Get requests history (used by data sources to process requests)
-    const TRequestHistory& x_GetHistory(void);
     // Add an entry to the requests history, lock the TSE by default
     void x_AddToHistory(const CTSE_Info& tse);
+    // Add a bioseq/seq-id to the scope's cache. Optional seq-id may be used
+    // to cache the bioseq under this id as well as with each synonym.
+    void x_AddBioseqToCache(CBioseq_Info& info, const CSeq_id_Handle* id = 0);
 
     // Find the best possible resolution for the Seq-id
     CSeqMatch_Info x_BestResolve(CSeq_id_Handle idh);
@@ -233,6 +234,8 @@ private:
 
     const CSynonymsSet* x_GetSynonyms(const CSeq_id_Handle& id);
 
+    void x_UpdatePriorityMap(void);
+
     // Conflict reporting function
     enum EConflict {
         eConflict_History,
@@ -242,16 +245,24 @@ private:
                          const CSeqMatch_Info& info1,
                          const CSeqMatch_Info& info2) const;
 
+    // Map data source to its priority and cached TSE set
+    struct SDataSource_Info {
+        CPriority_I::TPriorityVector m_Priority;
+        set<const CTSE_Info*>        m_TSE_Set;
+    };
+    typedef map<CDataSource*, SDataSource_Info> TDataSource_Cache;
+
     CObjectManager      *m_pObjMgr;
-    CPriorityNode       m_setDataSrc;
+    CPriorityNode       m_setDataSrc;   // Data sources ordered by priority
+    TDataSource_Cache   m_DS_Cache;     // Reverse lookup of priorities and TSEs
 
     EFindMode m_FindMode;
 
     TRequestHistory m_History;
 
-    typedef map<CSeq_id_Handle, CBioseq_Handle> TCache;
+    typedef map<CSeq_id_Handle, CBioseq_Handle>      TCache;
     typedef map<CSeq_id_Handle, CRef<CSynonymsSet> > TSynCache;
-    typedef map<CSeq_id_Handle, TTSE_LockSet> TAnnotCache;
+    typedef map<CSeq_id_Handle, TTSE_LockSet>        TAnnotCache;
 
     TCache m_Cache;
     TSynCache m_SynCache;
@@ -275,6 +286,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/05/06 18:54:06  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.44  2003/04/29 19:51:12  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.

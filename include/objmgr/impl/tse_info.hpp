@@ -138,6 +138,7 @@ private:
     friend class CTSE_Guard;
     friend class CDataSource;
     friend class CScope;
+    friend class CDataLoader;
 
     // Hide copy methods
     CTSE_Info(const CTSE_Info&);
@@ -243,6 +244,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/05/06 18:54:08  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.28  2003/04/25 14:23:46  vasilche
 * Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
 *

@@ -36,6 +36,7 @@
 #include <objects/objmgr/impl/tse_info.hpp>
 #include <objects/objmgr/seq_id_mapper.hpp>
 #include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/data_loader.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <set>
 #include <map>
@@ -286,8 +287,8 @@ public:
     void GetSynonyms(const CSeq_id_Handle& id,
                      set<CSeq_id_Handle>& syns);
     void GetTSESetWithAnnots(const CSeq_id_Handle& idh,
-                             TTSE_LockSet& tse_set,
-                             CScope::TRequestHistory& history);
+                             TTSE_LockSet& with_seq,
+                             TTSE_LockSet& with_ref);
 
     // Fill the set with bioseq handles for all sequences from a given TSE.
     // Return empty tse lock if the entry was not found or is not a TSE.
@@ -299,7 +300,13 @@ public:
 
     CSeqMatch_Info BestResolve(CSeq_id_Handle idh);
 
-    //bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
+    // Select the best of the two bioseqs if possible (e.g. dead vs live).
+    CSeqMatch_Info* ResolveConflict(const CSeq_id_Handle& id,
+                                  CSeqMatch_Info& info1,
+                                  CSeqMatch_Info& info2);
+    bool IsLive(const CTSE_Info& tse);
+
+    // bool IsSynonym(const CSeq_id_Handle& h1, const CSeq_id_Handle& h2) const;
 
     string GetName(void) const;
 
@@ -449,6 +456,12 @@ CSeq_id_Mapper& CDataSource::GetSeq_id_Mapper(void) const
     return CSeq_id_Mapper::GetSeq_id_Mapper();
 }
 
+inline
+bool CDataSource::IsLive(const CTSE_Info& tse)
+{
+    return m_Loader ? m_Loader->IsLive(tse) : true;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -456,6 +469,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/05/06 18:54:08  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.52  2003/05/05 20:59:48  vasilche
 * Use one static mutex for all instances of CTSE_LockingSet.
 *

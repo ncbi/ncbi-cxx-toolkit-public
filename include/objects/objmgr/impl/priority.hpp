@@ -98,7 +98,13 @@ public:
 
     CPriority_I& operator++(void);
 
+    typedef vector<CPriorityNode::TPriority> TPriorityVector;
+    void GetPriorityVector(TPriorityVector& v) const;
+
 private:
+    CPriority_I(const CPriority_I&);
+    CPriority_I& operator= (const CPriority_I&);
+
     friend class CPriorityNode;
     typedef CPriorityNode::TPriorityMap TPriorityMap;
     typedef TPriorityMap::iterator      TMap_I;
@@ -365,6 +371,18 @@ CPriority_I& CPriority_I::operator++(void)
     return *this;
 }
 
+inline
+void CPriority_I::GetPriorityVector(TPriorityVector& v) const
+{
+    _ASSERT(m_Node  &&  (m_Node->IsTree()  ||  m_Node->IsDataSource()));
+    if (m_Map  &&  m_Map_I != m_Map->end()) {
+        v.push_back(m_Map_I->first);
+        if ( m_Sub_I.get() != 0 ) {
+            m_Sub_I->GetPriorityVector(v);
+        }
+    }
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -372,6 +390,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/05/06 18:54:08  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.4  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

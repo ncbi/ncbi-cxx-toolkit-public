@@ -33,6 +33,7 @@
 
 #include <objects/objmgr/data_loader.hpp>
 #include <objects/objmgr/seq_id_mapper.hpp>
+#include <objects/objmgr/impl/tse_info.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -103,8 +104,14 @@ CSeq_id_Handle CDataLoader::x_GetSeq_id_Handle(TSeq_id_Key key)
 }
 
 
-CTSE_Info* CDataLoader::ResolveConflict(const CSeq_id_Handle& id,
-                                        const TTSE_LockSet& tseset)
+bool CDataLoader::IsLive(const CTSE_Info& tse)
+{
+    return !tse.m_Dead;
+}
+
+
+CTSE_Info* CDataLoader::ResolveConflict(const CSeq_id_Handle&,
+                                        const TTSE_LockSet&)
 {
     return 0;
 }
@@ -112,6 +119,7 @@ CTSE_Info* CDataLoader::ResolveConflict(const CSeq_id_Handle& id,
 
 void CDataLoader::DebugDump(CDebugDumpContext, unsigned int) const
 {
+    return;
 }
 
 
@@ -121,6 +129,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2003/05/06 18:54:09  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.7  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.

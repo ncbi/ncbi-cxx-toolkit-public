@@ -101,8 +101,9 @@ public:
     // *select the best TSE from the set of dead TSEs.
     // *select the live TSE from the list of live TSEs
     //  and mark the others one as dead.
-    virtual CTSE_Info* ResolveConflict(const CSeq_id_Handle& id,
-                                       const TTSE_LockSet& tseset);
+    virtual CTSE_Info* ResolveConflict(const CSeq_id_Handle&,
+                                       const TTSE_LockSet&);
+    virtual bool IsLive(const CTSE_Info& tse);
 
     virtual void GC(void) = 0;
     virtual void DebugDump(CDebugDumpContext, unsigned int) const;
@@ -142,6 +143,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/05/06 18:54:06  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.17  2003/04/29 19:51:12  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.

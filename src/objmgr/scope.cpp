@@ -78,6 +78,7 @@ CScope::~CScope(void)
 void CScope::AddDefaults(CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AcquireDefaultDataSources(m_setDataSrc, priority);
+    x_UpdatePriorityMap();
 }
 
 
@@ -85,6 +86,13 @@ void CScope::AddDataLoader (const string& loader_name,
                             CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AddDataLoader(m_setDataSrc, loader_name, priority);
+    // Clear annot cache
+    m_AnnotCache.clear();
+    if (!m_History.empty()) {
+        LOG_POST(Warning <<
+            "CScope::AddDataLoader() -- cached data may become inconsistent");
+    }
+    x_UpdatePriorityMap();
 }
 
 
@@ -92,12 +100,44 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                  CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AddTopLevelSeqEntry(m_setDataSrc, top_entry, priority);
+    // Clear annot cache
+    m_AnnotCache.clear();
+    //### Take each seq-id from history with priority lower than
+    //### the one of modified entry, check if there are any conflicts.
+    if (!m_History.empty()) {
+        LOG_POST(Warning <<
+            "CScope::AddTopLevelSeqEntry() -- cached data may become inconsistent");
+    }
+    x_UpdatePriorityMap();
 }
 
 
 void CScope::AddScope(CScope& scope, CPriorityNode::TPriority priority)
 {
     m_pObjMgr->AddScope(m_setDataSrc, scope, priority);
+    // Clear annot cache
+    m_AnnotCache.clear();
+    //### Take each seq-id from history with priority lower than
+    //### the one of modified entry, check if there are any conflicts.
+    if (!m_History.empty()) {
+        LOG_POST(Warning <<
+            "CScope::AddScope() -- cached data may become inconsistent");
+    }
+    x_UpdatePriorityMap();
+}
+
+
+void CScope::x_UpdatePriorityMap(void)
+{
+    m_DS_Cache.clear();
+    for (CPriority_I it(m_setDataSrc); it; ++it) {
+        SDataSource_Info& dsi = m_DS_Cache[&*it];
+        // Check for duplicate data sources - there may be a higher
+        // priority one olready in the map, don't change it.
+        if (dsi.m_Priority.empty()) {
+            it.GetPriorityVector(dsi.m_Priority);
+        }
+    }
 }
 
 
@@ -106,6 +146,8 @@ bool CScope::AttachAnnot(CSeq_entry& entry, CSeq_annot& annot)
     CMutexGuard guard(m_Scope_Mtx);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( it->AttachAnnot(entry, annot) ) {
+            // Clear annot cache
+            m_AnnotCache.clear();
             return true;
         }
     }
@@ -120,6 +162,8 @@ bool CScope::RemoveAnnot(CSeq_entry& entry, CSeq_annot& annot)
         if ( it->GetDataLoader() )
             continue; // can not modify loaded data
         if ( it->RemoveAnnot(entry, annot) ) {
+            // Clear annot cache
+            m_AnnotCache.clear();
             return true;
         }
     }
@@ -134,6 +178,8 @@ bool CScope::ReplaceAnnot(CSeq_entry& entry,
     CMutexGuard guard(m_Scope_Mtx);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( it->ReplaceAnnot(entry, old_annot, new_annot) ) {
+            // Clear annot cache
+            m_AnnotCache.clear();
             return true;
         }
     }
@@ -146,6 +192,14 @@ bool CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
     CMutexGuard guard(m_Scope_Mtx);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
         if ( it->AttachEntry(parent, entry) ) {
+            // Clear annot cache
+            m_AnnotCache.clear();
+            //### Take each seq-id from history with priority lower than
+            //### the one of modified entry, check if there are any conflicts.
+            if (!m_History.empty()) {
+                LOG_POST(Warning <<
+                    "CScope::AttachEntry() -- cached data may become inconsistent");
+            }
             return true;
         }
     }
@@ -185,11 +239,12 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_id_Handle& id)
     if ( !bh ) {
         CSeqMatch_Info match = x_BestResolve(id);
         if (match) {
-            x_AddToHistory(match.GetTSE_Info());
+            x_AddToHistory(const_cast<CTSE_Info&>(match.GetTSE_Info()));
             CRef<CBioseq_Info> bsi =
                 match.GetDataSource().GetBioseqHandle(match);
             _ASSERT(bsi);
             bh = CBioseq_Handle(match.GetIdHandle(), *this, *bsi);
+            x_AddBioseqToCache(*bsi, &id);
         }
     }
     return bh;
@@ -278,12 +333,32 @@ void CScope::x_ResolveInNode(const CPriorityNode& node,
             }
             // Don't process lower priority nodes if something
             // was found
-            if (sm_set.size() > 0)
+            if (!sm_set.empty())
                 return;
         }
     }
     else if ( node.IsDataSource() ) {
-        CSeqMatch_Info info = node.GetDataSource().BestResolve(idh);
+        SDataSource_Info& dsi = m_DS_Cache[&node.GetDataSource()];
+        CSeqMatch_Info info;
+        CSeqMatch_Info from_history;
+        ITERATE(set<const CTSE_Info*>, tse_it, dsi.m_TSE_Set) {
+            CTSE_Info::TBioseqMap::const_iterator seq =
+                (*tse_it)->m_BioseqMap.find(idh);
+            if (seq != (*tse_it)->m_BioseqMap.end()) {
+                // Use cached TSE (same meaning as from history). If info
+                // is set but not in the history just ignore it.
+                info = CSeqMatch_Info(idh, **tse_it);
+                if ( from_history ) {
+                    // Both are in the history - can not resolve the conflict
+                    x_ThrowConflict(eConflict_History, info, from_history);
+                }
+                from_history = info;
+            }
+        }
+        if (!from_history) {
+            // Try to load the sequence from the data source
+            info = node.GetDataSource().BestResolve(idh);
+        }
         if ( info ) {
             sm_set.insert(info);
         }
@@ -297,31 +372,21 @@ CSeqMatch_Info CScope::x_BestResolve(CSeq_id_Handle idh)
     // Protected by m_Scope_Mtx in upper-level functions
     TSeqMatchSet bm_set;
     x_ResolveInNode(m_setDataSrc, idh, bm_set);
-    CSeqMatch_Info best;
-    bool best_is_live = false;
-    NON_CONST_ITERATE (set<CSeqMatch_Info>, bm_it, bm_set) {
-        if ( !bm_it->GetTSE_Info().IsDead() ) {
-            if ( !best_is_live ) {
-                // The first live TSE -- save it
-                best = *bm_it;
-                best_is_live = true;
-                continue;
-            }
-            else {
-                // More than one live TSEs found = conflict
-                x_ThrowConflict(eConflict_Live, best, *bm_it);
-            }
-        }
-        if ( best_is_live )
-            continue; // Don't check for dead TSEs not in the history
-        if ( !best  ||  bm_it->GetIdHandle().IsBetter(best.GetIdHandle()) ) {
-            //###
-            // This is not good - some ids may have no version and will be
-            // treated as older versions.
-            best = *bm_it;
-        }
+    if (bm_set.empty()) {
+        return CSeqMatch_Info();
     }
-    return best;
+    TSeqMatchSet::iterator bm_it = bm_set.begin();
+    CSeqMatch_Info best = *bm_it;
+    ++bm_it;
+    if (bm_it == bm_set.end()) {
+        m_DS_Cache[&best.GetDataSource()].m_TSE_Set.
+            insert(&best.GetTSE_Info());
+        return best;
+    }
+    // More than one TSE found in different data sources.
+    CSeqMatch_Info over = *bm_it;
+    x_ThrowConflict(eConflict_Live, best, over);
+    return CSeqMatch_Info(); // Just to avoid compiler warnings.
 }
 
 
@@ -375,11 +440,88 @@ CScope::GetTSESetWithAnnots(const CSeq_id_Handle& idh)
 
     // Create new entry for idh
     TTSE_LockSet& tse_set = m_AnnotCache[idh];
-    //CMutexGuard guard(m_Scope_Mtx);
+    TTSE_LockSet with_ref;
+    TTSE_LockSet with_seq;
+
+    // CMutexGuard guard(m_Scope_Mtx);
     for (CPriority_I it(m_setDataSrc); it; ++it) {
-        it->GetTSESetWithAnnots(idh, tse_set, m_History);
+        it->GetTSESetWithAnnots(idh, with_seq, with_ref);
     }
-    //### Filter the set depending on the requests history?
+    // Filter the set depending on the requests history?
+    const CTSE_Info* unique_from_history = 0;
+    const CTSE_Info* unique_with_seq = 0;
+    NON_CONST_ITERATE(TTSE_LockSet, tse, with_seq) {
+        if (m_History.find(*tse) != m_History.end()) {
+            if ( unique_from_history ) {
+LOG_POST("Annot conflict - history");
+                CSeqMatch_Info info1(idh, *unique_from_history);
+                CSeqMatch_Info info2(idh, **tse);
+                x_ThrowConflict(eConflict_History, info1, info2);
+            }
+            unique_from_history = *tse;
+        }
+        else if ( !unique_from_history ) {
+            if ( unique_with_seq ) {
+                CSeqMatch_Info info1(idh, *unique_with_seq);
+                CSeqMatch_Info info2(idh, **tse);
+                if (&info1.GetDataSource() == &info2.GetDataSource()) {
+                    // Try to resolve conflict
+                    CSeqMatch_Info* better = info1.GetDataSource().
+                        ResolveConflict(idh, info1, info2);
+                    if (better == &info2) {
+                        unique_with_seq = *tse;
+                    }
+                    else if ( !better ) {
+                        // Still unresolved
+                        unique_with_seq = 0;
+                    }
+                }
+                else {
+                    // Can not resolve conflict between different datasources,
+                    // try check priorities.
+                    const CTSE_Info* tmp = unique_with_seq;
+                    unique_with_seq = 0;
+                    CPriority_I::TPriorityVector& pv1 =
+                        m_DS_Cache[unique_with_seq->m_DataSource].m_Priority;
+                    CPriority_I::TPriorityVector& pv2 =
+                        m_DS_Cache[(*tse)->m_DataSource].m_Priority;
+                    for (int i1 = 0, i2 = 0; i1 < pv1.size(), i2 < pv2.size(); i1++, i2++) {
+                        if (pv1[i1] < pv2[i2]) {
+                            unique_with_seq = tmp;
+                            break; // unique_with_seq is better
+                        }
+                        else if (pv1[i1] > pv2[i2]) {
+                            unique_with_seq = *tse;
+                            break;
+                        }
+                    }
+                }
+                if ( !unique_with_seq ) {
+                    // There was a conflict and it's still unresolved
+                    x_ThrowConflict(eConflict_Live, info1, info2);
+                }
+            }
+            else {
+                // First assignment
+                unique_with_seq = *tse;
+            }
+        }
+    }
+    // At this point we may have unique_from_history or unique_with_seq
+    // or none. Add and proceed to TSEs with references only.
+    if (unique_from_history) {
+        tse_set.insert(TTSE_Lock(unique_from_history));
+    }
+    else if (unique_with_seq) {
+        tse_set.insert(TTSE_Lock(unique_with_seq));
+    }
+    NON_CONST_ITERATE (TTSE_LockSet, it, with_ref) {
+        // Use only live TSEs and TSEs from the history
+        if (m_History.find(*it) != m_History.end()  ||
+            (*it)->m_DataSource->IsLive(**it)) {
+            tse_set.insert(*it);
+        }
+    }
     NON_CONST_ITERATE (TTSE_LockSet, tse_it, tse_set) {
         x_AddToHistory(const_cast<CTSE_Info&>(**tse_it));
     }
@@ -424,19 +566,21 @@ CSeq_id_Handle CScope::GetIdHandle(const CSeq_id& id) const
 }
 
 
-const CScope::TRequestHistory& CScope::x_GetHistory(void)
+void CScope::x_AddToHistory(const CTSE_Info& tse)
 {
-    return m_History;
+    m_History.insert(TTSE_Lock(&tse)).second;
 }
 
 
-void CScope::x_AddToHistory(const CTSE_Info& tse)
+void CScope::x_AddBioseqToCache(CBioseq_Info& info, const CSeq_id_Handle* id)
 {
-    if (!m_History.insert(TTSE_Lock(&tse)).second)
-        return;
-    ITERATE (CTSE_Info::TBioseqMap, bsi, tse.m_BioseqMap) {
-        CBioseq_Handle bsh(bsi->first, *this, *bsi->second);
-        m_Cache[bsi->first] = bsh;
+    ITERATE(CBioseq_Info::TSynonyms, syn, info.m_Synonyms) {
+        CBioseq_Handle bsh(*syn, *this, info);
+        m_Cache[*syn] = bsh;
+    }
+    if ( id ) {
+        CBioseq_Handle bsh(*id, *this, info);
+        m_Cache[*id] = bsh;
     }
 }
 
@@ -475,6 +619,7 @@ void CScope::ResetHistory(void)
     m_Cache.clear();
     m_SynCache.clear();
     m_AnnotCache.clear();
+    m_DS_Cache.clear();
 }
 
 
@@ -492,6 +637,7 @@ void CScope::x_PopulateBioseq_HandleSet(const CSeq_entry& tse,
             ITERATE (set<CBioseq_Info*>, iit, info_set) {
                 CBioseq_Handle h(*(*iit)->m_Synonyms.begin(), *this, **iit);
                 handles.insert(h);
+                x_AddBioseqToCache(**iit);
             }
             break;
         }
@@ -592,6 +738,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2003/05/06 18:54:09  grichenk
+* Moved TSE filtering from CDataSource to CScope, changed
+* some filtering rules (e.g. priority is now more important
+* than scope history). Added more caches to CScope.
+*
 * Revision 1.62  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
