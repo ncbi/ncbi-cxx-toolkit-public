@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.80 2002/05/30 20:07:03 vakatov Exp $
+#  $Id: configure.ac,v 1.81 2002/05/31 00:34:11 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1630,7 +1630,8 @@ if test "$with_sybase" != "no" ; then
      linux* )
        SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl"
        SYBASE_DLLLIST=""
-       # sybase_r="no"
+       # NOTE:  this is a very ad hoc, quick-and-dirty adjustment
+       test "$with_sybase_new" = "yes"  ||  sybase_r="no"
        ;;
      solaris* | * )
        SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"

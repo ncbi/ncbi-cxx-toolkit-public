@@ -7342,7 +7342,8 @@ if test "$with_sybase" != "no" ; then
      linux* )
        SYBASE_LIBLIST="-lblk -lct -lcs -lsybtcl -lcomn -lintl"
        SYBASE_DLLLIST=""
-       # sybase_r="no"
+       # NOTE:  this is a very ad hoc, quick-and-dirty adjustment
+       test "$with_sybase_new" = "yes"  ||  sybase_r="no"
        ;;
      solaris* | * )
        SYBASE_LIBLIST="-lblk -lct -lcs -ltcl -lcomn -lintl"
