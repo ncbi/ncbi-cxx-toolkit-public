@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/11/15 17:27:29  vakatov
+ * Fixed path to the test CGI application.
+ *
  * Revision 6.3  2000/09/27 16:00:24  lavr
  * Registry entries adjusted
  *
@@ -145,7 +148,7 @@ int main(int argc, const char* argv[])
         fprintf(stderr,
                 "Usage:   %s host port path [args] [inp_file] [user_header]\n"
                 "Example: %s ray.nlm.nih.gov 6224 "
-                "/cgi-bin/tools/vakatov/con_url.cgi 'arg1+arg2+arg3'\n",
+                "/tools/vakatov/con_url.cgi 'arg1+arg2+arg3'\n",
                 argv[0], argv[0]);
         fprintf(stderr, "Too few arguments.\n");
         return 1;

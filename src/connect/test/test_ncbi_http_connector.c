@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2000/11/15 17:29:52  vakatov
+ * Fixed path to the test CGI application.
+ *
  * Revision 6.3  2000/09/27 15:58:17  lavr
  * Registry entries adjusted
  *
@@ -58,7 +61,7 @@
 
 #define TEST_HOST            "ray.nlm.nih.gov"
 #define TEST_PORT            "6224"
-#define TEST_PATH            "/cgi-bin/tools/vakatov/con_url.cgi"
+#define TEST_PATH            "/tools/vakatov/con_url.cgi"
 #define TEST_ARGS            "arg1+arg2+arg3"
 #define TEST_DEBUG_PRINTOUT  "yes"
 
@@ -119,6 +122,9 @@ int main(void)
     /* Connection timeout */
     timeout.sec  = 5;
     timeout.usec = 123456;
+
+    /* Printout all socket traffic */
+    /* SOCK_SetDataLoggingAPI(eOn); */
 
     /* Run the tests */
     flags = fHCC_KeepHeader | fHCC_UrlCodec | fHCC_UrlEncodeArgs;
