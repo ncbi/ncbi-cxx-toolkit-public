@@ -4,7 +4,7 @@
 	An AppleScript to compile some NCBI C++ Toolkit test applications with
 	Metrowerks CodeWarrior.
 
-	$Id: maketests.met,v 1.15 2001/12/21 21:53:49 juran Exp $
+	$Id: C++Tests,v 1.2 2001/10/18 19:36:23 juran Exp $
 	
    ================================================================================ *)
 
@@ -72,7 +72,7 @@ on SimpleProjectData(projName, section, features)
 		set projName to characters 1 through 18 of projName as string
 	end if
 	
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		if features does not contain "C" and features does not contain "C++" then
 			error "Project " & projName & "'s default language (a feature) must be C or C++."
@@ -108,7 +108,7 @@ on DataPlusPathAndSources(dataRec, newPath, newSources)
 end DataPlusPathAndSources
 
 on SetProjectData()
-	tell application "CodeWarrior IDE 4.1.0.3"
+	tell application "CodeWarrior IDE 4.2.5"
 		
 		set corelib to "corelib"
 		set connect to "connect"
