@@ -13,5 +13,5 @@ echo ***************************************************************************
 echo -CONFIGURE- has failed
 echo Configuration log was saved at "%SLN_PATH%_configuration_log.txt"
 echo ******************************************************************************
-"%SLN_PATH%_configuration_log.txt"
+start "" "%SLN_PATH%_configuration_log.txt"
 exit 1
