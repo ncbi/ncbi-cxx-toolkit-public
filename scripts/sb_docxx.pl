@@ -40,12 +40,25 @@ sub genlists
   close(FIND);
   close(LISTIN);
   close(LISTOUT);
+  
+  open(FOOTER, ">footer");
+  print FOOTER "<center>";
+  print FOOTER "<a href=\"http://sunweb.ncbi.nlm.nih.gov:6224/IEB/corelib/cpp/index.html\">Manuals</a> ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/HIER.html\">Hierarchy</a> ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/index.html\">Index</a> ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident/\">Identifier search</a> ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/search/\">Text search</a> ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/find/\">File search</a> ";
+  print FOOTER "<a href=\"http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/\">Source code</a> ";
+  print FOOTER "</center>";
+  close(FOOTER);
+  
   print "File list built...\n";
 }
 
 sub docxx
 {
-  open(DOCXX, "doc++ -v -H -S -d doc -I sources.out|");
+  open(DOCXX, "doc++ -v -H -S -B footer -d doc -I sources.out|");
   while(<DOCXX>)
   {
     print;
