@@ -328,6 +328,10 @@ public:
     inline bool IsRequireTaxonID(void) const { return m_RequireTaxonID; }
     inline bool IsRequireISOJTA(void) const { return m_RequireISOJTA; }
 
+    // !!! DEBUG {
+    inline bool AvoidPerfBottlenecks() const { return m_PerfBottlenecks; }
+    // }
+
     // flags calculated by examining data in record
     inline bool IsNoPubs(void) const { return m_NoPubs; }
     inline bool IsNoBioSource(void) const { return m_NoBioSource; }
@@ -347,6 +351,7 @@ public:
     inline bool IsNW(void) const { return m_IsNW; }
     inline bool IsXR(void) const { return m_IsXR; }
     inline bool IsGI(void) const { return m_IsGI; }
+    
 
     TFeatAnnotMap GetFeatAnnotMap(void);
 
@@ -398,6 +403,10 @@ private:
     bool m_RequireTaxonID;          // BioSource requires taxonID dbxref
     bool m_RequireISOJTA;           // Journal requires ISO JTA
 
+    // !!! DEBUG {
+    bool m_PerfBottlenecks;         // Skip suspected performance bottlenecks
+    // }
+
     // flags calculated by examining data in record
     bool m_NoPubs;                  // Suppress no pub error if true
     bool m_NoBioSource;             // Suppress no organism error if true
@@ -417,6 +426,7 @@ private:
     bool m_IsNW;
     bool m_IsXR;
     bool m_IsGI;
+    
 
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
@@ -704,6 +714,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/02/03 20:18:14  shomrat
+* Added flag to skip performance bottlenecks (for testing)
+*
 * Revision 1.10  2003/02/03 17:08:48  shomrat
 * Changed return value for GetCDSGivenProduct
 *
