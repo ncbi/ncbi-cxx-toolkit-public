@@ -61,8 +61,11 @@ public:
     CRef<objects::CSeq_align_set> GetResultsAsAln(void) const;
 
 protected:
-    CSplign        m_Splign;
-    blast::CBl2Seq m_Blast;
+    CSplign                m_Splign;
+    blast::CBl2Seq         m_Blast;
+
+    CConstRef<objects::CSeq_id> m_TranscriptId;
+    CConstRef<objects::CSeq_id> m_GenomicId;
 };
 
 END_NCBI_SCOPE
@@ -71,6 +74,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/05/04 20:49:03  johnson
+ * return correct seq-ids in seq-align
+ *
  * Revision 1.2  2004/05/04 15:23:44  ucko
  * Split splign code out of xalgoalign into new xalgosplign.
  *
