@@ -61,7 +61,7 @@ class CODBC_StatusResult;
 //
 //  CODBC_Reporter::
 //
-class CODBC_Reporter
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Reporter
 {
 public:
     CODBC_Reporter(CDBHandlerStack* hs, SQLSMALLINT ht, SQLHANDLE h) :
@@ -89,7 +89,7 @@ private:
 //  CODBCContext::
 //
 
-class CODBCContext : public I_DriverContext
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBCContext : public I_DriverContext
 {
     friend class CDB_Connection;
 
@@ -154,7 +154,7 @@ private:
 //  CODBC_Connection::
 //
 
-class CODBC_Connection : public I_Connection
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public I_Connection
 {
     friend class CODBCContext;
     friend class CDB_Connection;
@@ -235,7 +235,7 @@ private:
 //  CODBC_LangCmd::
 //
 
-class CODBC_LangCmd : public I_LangCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_LangCmd : public I_LangCmd
 {
     friend class CODBC_Connection;
     friend class CODBC_CursorCmd;
@@ -281,7 +281,7 @@ private:
 //  CODBC_RPCCmd::
 //
 
-class CODBC_RPCCmd : public I_RPCCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RPCCmd : public I_RPCCmd
 {
     friend class CODBC_Connection;
 protected:
@@ -330,7 +330,7 @@ private:
 //  CODBC_CursorCmd::
 //
 
-class CODBC_CursorCmd : public I_CursorCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorCmd : public I_CursorCmd
 {
     friend class CODBC_Connection;
 protected:
@@ -377,7 +377,7 @@ private:
 //  CODBC_BCPInCmd::
 //
 
-class CODBC_BCPInCmd : public I_BCPInCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_BCPInCmd : public I_BCPInCmd
 {
     friend class CODBC_Connection;
 protected:
@@ -414,7 +414,7 @@ private:
 //  CODBC_SendDataCmd::
 //
 
-class CODBC_SendDataCmd : public I_SendDataCmd
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_SendDataCmd : public I_SendDataCmd
 {
     friend class CODBC_Connection;
 protected:
@@ -440,7 +440,7 @@ private:
 //  CODBC_RowResult::
 //
 
-class CODBC_RowResult : public I_Result
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_RowResult : public I_Result
 {
     friend class CODBC_LangCmd;
     friend class CODBC_RPCCmd;
@@ -498,7 +498,7 @@ protected:
 //  CODBC_CursorResult::
 //
 
-class CODBC_StatusResult :  public CODBC_RowResult
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_StatusResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
 protected:
@@ -508,7 +508,7 @@ protected:
     virtual ~CODBC_StatusResult();
 };
 
-class CODBC_ParamResult :  public CODBC_RowResult
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_ParamResult :  public CODBC_RowResult
 {
     friend class CODBC_RPCCmd;
 protected:
@@ -518,7 +518,7 @@ protected:
     virtual ~CODBC_ParamResult();
 };
 
-class CODBC_CursorResult : public I_Result
+class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_CursorResult : public I_Result
 {
     friend class CODBC_CursorCmd;
 protected:
@@ -555,12 +555,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/02/13 15:43:44  ivanov
+ * Added export specifier NCBI_DBAPIDRIVER_ODBC_EXPORT for class definitions
+ *
  * Revision 1.2  2002/07/03 21:48:08  soussov
  * adds DSN support if needed
  *
  * Revision 1.1  2002/06/18 22:00:53  soussov
  * initial commit
- *
  *
  * ===========================================================================
  */
