@@ -31,8 +31,8 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
-* Revision 1.9  1998/12/28 23:29:06  vakatov
-* New CVS and development tree structure for the NCBI C++ projects
+* Revision 1.10  1998/12/31 19:47:29  sandomir
+* GetEntry() fixed
 *
 * Revision 1.8  1998/12/28 15:43:13  sandomir
 * minor fixed in CgiApp and Resource
@@ -117,12 +117,9 @@ void CNcbiResource::HandleRequest( CNcbiMsgRequest& request )
     TCmdList::iterator it = find_if( m_cmd.begin(), m_cmd.end(), 
                                      PRequested<CNcbiCommand>( request ) );
     
-    if( it == m_cmd.end() ) {
-      request.PutMsg( "Unknown command" );
-      throw runtime_error( "Unknown command" );      
-    } 
-    
-    auto_ptr<CNcbiCommand> cmd( (*it)->Clone() );
+    auto_ptr<CNcbiCommand> cmd( ( it == m_cmd.end() ) 
+                                ? GetDefaultCommand()
+                                : (*it)->Clone() );
     cmd->Execute( request );
     
   } catch( std::exception& e ) {
@@ -163,11 +160,6 @@ bool CNcbiCommand::IsRequested( const CNcbiMsgRequest& request ) const
   return false;
 }
 
-string CNcbiCommand::GetEntry() const
-{
-  return "cmd";
-}
-
 //
 // class CNcbiDatabaseInfo
 //
@@ -185,11 +177,6 @@ bool CNcbiDatabaseInfo::IsRequested( const CNcbiMsgRequest& request ) const
   } // for
 
   return false;
-}
-
-string CNcbiDatabaseInfo::GetEntry() const
-{
-  return "db";
 }
 
 //
@@ -222,11 +209,6 @@ bool CNcbiDataObjectReport::IsRequested( const CNcbiMsgRequest& request ) const
   } // for
 
   return false;
-}
-
-string CNcbiDataObjectReport::GetEntry() const
-{
-  return "dopt";
 }
 
 END_NCBI_SCOPE

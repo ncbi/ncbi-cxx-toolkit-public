@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/12/31 19:47:28  sandomir
+* GetEntry() fixed
+*
 * Revision 1.11  1998/12/28 23:29:00  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -193,7 +196,7 @@ public:
 
 protected:
 
-  virtual string GetEntry() const;
+  virtual string GetEntry() const = 0;
 
   CNcbiResource& m_resource;
 };
@@ -218,7 +221,7 @@ public:
 protected:
 
   virtual bool CheckName( const string& name ) const = 0;
-  virtual string GetEntry() const;
+  virtual string GetEntry() const = 0;
   
 };
                      
@@ -341,7 +344,7 @@ public:
 
 protected:
 
-  virtual string GetEntry() const;
+  virtual string GetEntry() const = 0;
   
 };
 
