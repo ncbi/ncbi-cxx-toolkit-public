@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/01/28 22:20:14  grichenk
+ * Fixed & assignments
+ *
  * Revision 6.2  2002/01/28 19:49:49  domrach
  * Get/Set tax id methods added
  *
@@ -80,14 +83,14 @@ static const string s_taxonName( "taxon" );
 int
 COrg_ref::GetTaxId() const
 {
-    const TDb& lDbTags( GetDb() );
+    const TDb& lDbTags = GetDb();
  
     for(TDb::const_iterator i = lDbTags.begin();
 	i != lDbTags.end();
 	++i) {
 	if( i->GetPointer()
 	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
-	    const CObject_id& id( i->GetObject().GetTag() );
+	    const CObject_id& id = i->GetObject().GetTag();
 	    if( id.IsId() )
 		return id.GetId();
 	}
@@ -100,14 +103,14 @@ COrg_ref::SetTaxId( int tax_id )
 {
     int old_id(0);
 
-    TDb& lDbTags( SetDb() );
+    TDb& lDbTags = SetDb();
     // Try to update existing tax id first
     for(TDb::iterator i = lDbTags.begin();
 	i != lDbTags.end();
 	++i) {
 	if( i->GetPointer()
 	    && i->GetObject().GetDb().compare(s_taxonName) == 0 ) {
-	    CObject_id& id( i->GetObject().SetTag() );
+	    CObject_id& id = i->GetObject().SetTag();
 	    if( id.IsId() )
 		old_id = id.GetId();
 	    id.SetId() = tax_id;
