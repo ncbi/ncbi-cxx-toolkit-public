@@ -131,6 +131,8 @@ public:
     void GetLibChoiceIncludes (const string& cpp_flags_define, 
                                list<string>* abs_includes) const;
 
+    string GetAppDefaultResource(void) const;
+
 
 private:
     const CNcbiRegistry& m_Registry;
@@ -150,6 +152,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/05/17 14:35:21  gorelenk
+ * Added declaration of GetAppDefaultResource to class CMsvcSite.
+ *
  * Revision 1.12  2004/05/13 14:54:01  gorelenk
  * Added GetLibChoiceIncludes to class CMsvcSite.
  *
