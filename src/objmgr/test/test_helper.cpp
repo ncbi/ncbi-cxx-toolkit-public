@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/23 15:26:07  gouriano
+* added test_assert.h
+*
 * Revision 1.5  2002/04/22 20:07:45  grichenk
 * Commented calls to CBioseq::ConstructExcludedSequence()
 *
@@ -88,6 +91,8 @@
 #include <objects/objmgr1/align_ci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objects/general/Date.hpp>
+
+#include <test/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
