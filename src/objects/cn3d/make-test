@@ -1,4 +1,4 @@
-mkdir test
+mkdir  test
 mkdir test/include
 mkdir test/src
 rm test/include/* test/src/*
