@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2000/08/01 20:05:11  golikov
+* Removed _TRACE
+*
 * Revision 1.58  2000/07/25 15:27:38  vasilche
 * Added newline symbols before table and after each table row in text mode.
 *
@@ -985,7 +988,6 @@ void CHTML_table_Cache::SetUsedCells(TIndex rowBegin, TIndex rowEnd,
 CHTML_tc* CHTML_table_Cache::GetCellNode(TIndex row, TIndex col,
                                          CHTML_table::ECellType type)
 {
-    _TRACE("Cell("<<row<<", "<<col<<")");
     CHTML_tr_Cache& rowCache = GetRowCache(row);
     if ( col < rowCache.GetCellCount() ) {
         CHTML_tc_Cache& cellCache = rowCache.GetCellCache(col);
