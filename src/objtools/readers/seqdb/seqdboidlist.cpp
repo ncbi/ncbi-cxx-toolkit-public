@@ -70,7 +70,7 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
     
     m_Atlas.GetFile(m_Lease, filename, file_length, locked);
     
-    m_NumOIDs = SeqDB_GetStdOrd((Uint4 *) m_Lease.GetPtr(0));
+    m_NumOIDs = SeqDB_GetStdOrd((Uint4 *) m_Lease.GetPtr(0)) + 1;
     m_Bits    = (unsigned char*) m_Lease.GetPtr(sizeof(Uint4));
     m_BitEnd  = m_Bits + file_length - sizeof(Uint4);
 }
@@ -169,26 +169,30 @@ void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
                                  Uint4            /*oid_end*/,
                                  CSeqDBLockHold & locked)
 {
+    m_Atlas.Lock(locked);
+    
     // Open file and get pointers
     
     TCUC* bitmap = 0;
     TCUC* bitend = 0;
     
     CSeqDBRawFile volmask(m_Atlas);
+    CSeqDBMemLease lease(m_Atlas);
     
     {
         Uint4 num_oids = 0;
         
         volmask.Open(mask_fname);
         
-        CSeqDBMemLease lease(m_Atlas);
         volmask.ReadSwapped(lease, 0, & num_oids, locked);
         
         Uint4 file_length = (Uint4) volmask.GetFileLength();
         
         // Cast forces signed/unsigned conversion.
         
-        bitmap = (TCUC*) volmask.GetRegion(sizeof(Int4), file_length, locked);
+        volmask.GetRegion(lease, sizeof(Int4), file_length, locked);
+        bitmap = (TCUC*) lease.GetPtr(sizeof(Int4));
+        
         //bitend = bitmap + file_length - sizeof(Int4);
         bitend = bitmap + (((num_oids + 31) / 32) * 4);
     }
@@ -260,7 +264,7 @@ void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
         }
     }
     
-    m_Atlas.RetRegion((const char*) bitmap, locked);
+    m_Atlas.RetRegion(lease);
 }
 
 void CSeqDBOIDList::x_SetBitRange(Uint4          oid_start,
@@ -335,10 +339,12 @@ bool CSeqDBOIDList::x_FindNext(TOID & oid) const
         
         oid ++;
         
+        // Try the simpler road fer now.
+        
         if ((oid & 31) == 0) {
             const Uint4 * bp = ((const Uint4*) m_Bits + (oid             >> 5));
             const Uint4 * ep = ((const Uint4*) m_Bits + (whole_word_oids >> 5));
-            
+           
             while((bp < ep) && (0 == *bp)) {
                 ++ bp;
                 oid += 32;
