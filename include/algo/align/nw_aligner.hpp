@@ -1,5 +1,5 @@
-#ifndef UTIL___NW_ALIGNER__HPP
-#define UTIL___NW_ALIGNER__HPP
+#ifndef ALGO___NW_ALIGNER__HPP
+#define ALGO___NW_ALIGNER__HPP
 
 /* $Id$
 * ===========================================================================
@@ -41,6 +41,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.hpp>
 #include <vector>
 #include <string>
 
@@ -55,12 +56,15 @@ class CNWAlignerException : public CException
 {
 public:
     enum EErrCode {
+        eInternal,
         eBadParameter,
         eInvalidCharacter,
         eIncorrectSequenceOrder
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
+        case eInternal:
+            return "Internal error";
         case eBadParameter:
             return "One or more parameters passed are invalid";
         case eInvalidCharacter:
@@ -117,6 +121,16 @@ public:
     static TScore GetDefaultWg  () { return -5; }
     static TScore GetDefaultWs  () { return -2; }
 
+    // Merge transcript into higher-level list
+    enum ETranscriptSymbol {
+        eNone = 0,
+        eInsert,
+        eDelete,
+        eMatch,
+        eReplace,
+        eIntron
+    };
+
 protected:
     // Bonuses and penalties
     TScore   m_Wm;   // match bonus (eNucl)
@@ -126,7 +140,7 @@ protected:
 
     // Pairwise scoring matrix
     TScore   m_Matrix [256][256];
-    void     x_LoadMatrix();
+    void     x_LoadScoringMatrix();
 
     // Source sequences and their lengths
     const char*           m_Seq1;
@@ -138,19 +152,12 @@ protected:
     size_t x_CheckSequence(const char* seq, size_t len) const;
 
     // Transcript and backtrace
-    enum ETranscriptSymbol {
-        eNone = 0,
-        eInsert,
-        eDelete,
-        eMatch,
-        eReplace,
-        eIntron
-    };
     vector<ETranscriptSymbol> m_Transcript;
 
     void   x_DoBackTrace(const unsigned char* backtrace_matrix);
     size_t x_ApplyTranscript(vector<char>* seq1_transformed,
                              vector<char>* seq2_transformed) const;
+    enum { kInfMinus = kMin_Int / 2 };
 };
 
 
@@ -160,6 +167,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/01/21 12:36:56  kapustin
+ * Specify negative infinity value
+ *
  * Revision 1.3  2002/12/12 17:55:00  kapustin
  * Add support for spliced alignment
  *
@@ -172,4 +182,4 @@ END_NCBI_SCOPE
  * ===========================================================================
  */
 
-#endif  /* UTIL___NW_ALIGNER__HPP */
+#endif  /* ALGO___NW_ALIGNER__HPP */
