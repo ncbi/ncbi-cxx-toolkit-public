@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.9  2002/12/19 20:11:02  grichenk
+ * Fixed GetLength() for minus strand
+ *
  * Revision 1.8  2002/09/12 21:13:51  kans
  * IsPartialLeft and IsPartialRight are const
  *
@@ -118,7 +121,12 @@ CSeq_interval::CSeq_interval(void)
 inline
 TSeqPos CSeq_interval::GetLength(void) const
 {
-	return ((GetTo() - GetFrom()) + 1);
+    if (GetTo() >= GetFrom()) {
+	    return ((GetTo() - GetFrom()) + 1);
+    }
+    else {
+	    return ((GetFrom() - GetTo()) + 1);
+    }
 }
 
 /////////////////// end of CSeq_interval inline methods
