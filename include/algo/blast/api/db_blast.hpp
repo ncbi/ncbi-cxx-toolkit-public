@@ -91,7 +91,7 @@ public:
     BlastReturnStat* GetReturnStats() const;
     BlastScoreBlk* GetScoreBlk() const;
     const CBlastQueryInfo& GetQueryInfo() const;
-    TBlastError GetErrorMessage() const;
+    TBlastError& GetErrorMessage();
 
 protected:
     virtual int SetupSearch();
@@ -213,7 +213,7 @@ inline const CBlastQueryInfo& CDbBlast::GetQueryInfo() const
 
 }
 
-inline TBlastError CDbBlast::GetErrorMessage() const
+inline TBlastError& CDbBlast::GetErrorMessage()
 {
     return mi_vErrors;
 }
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/02/25 15:44:47  dondosha
+* Corrected prototype for GetErrorMessage to eliminate warning on Sun compiler
+*
 * Revision 1.10  2004/02/24 20:38:20  dondosha
 * Removed irrelevant CVS log comments
 *
