@@ -40,6 +40,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2001/03/30 22:57:34  grichenk
+ * + CThread::GetSystemID()
+ *
  * Revision 1.7  2001/03/27 18:12:35  grichenk
  * CRWLock destructor releases system resources
  *
@@ -546,6 +549,21 @@ void CThread::AddUsedTls(CTlsBase* tls)
     if ( x_this ) {
         x_this->m_UsedTls.insert(tls);
     }
+}
+
+
+void CThread::GetSystemID(TThreadSystemID* id)
+{
+#if defined(NCBI_WIN32_THREADS)
+    // Can not use GetCurrentThread() since it also requires
+    // DuplicateHandle() and CloseHandle() to be called for the result.
+    *id = GetCurrentThreadId();
+#elif defined(NCBI_POSIX_THREADS)
+    *id = pthread_self();
+#else
+    *id = 0;
+#endif
+    return;
 }
 
 

@@ -52,6 +52,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/03/30 22:57:32  grichenk
+ * + CThread::GetSystemID()
+ *
  * Revision 1.4  2001/03/26 21:45:28  vakatov
  * Workaround static initialization/destruction traps:  provide better
  * timing control, and allow safe use of the objects which are
@@ -84,14 +87,18 @@ BEGIN_NCBI_SCOPE
 //
 // DECLARATIONS of internal (platform-dependent) representations
 //
-//    TTlsKey        -- internal TLS key type
-//    TThreadHandle  -- platform-dependent thread handle type
+//    TTlsKey          -- internal TLS key type
+//    TThreadHandle    -- platform-dependent thread handle type
+//    TThreadSystemID  -- platform-dependent thread ID type
+//
+//  NOTE:  all these types are intended for internal use only!
 //
 
 #if defined(NCBI_WIN32_THREADS)
 
 typedef DWORD  TTlsKey;
 typedef HANDLE TThreadHandle;
+typedef DWORD  TThreadSystemID;
 
 typedef DWORD  TWrapperRes;
 typedef LPVOID TWrapperArg;
@@ -100,6 +107,7 @@ typedef LPVOID TWrapperArg;
 
 typedef pthread_key_t TTlsKey;
 typedef pthread_t     TThreadHandle;
+typedef pthread_t     TThreadSystemID;
 
 typedef void* TWrapperRes;
 typedef void* TWrapperArg;
@@ -109,6 +117,7 @@ typedef void* TWrapperArg;
 // fake
 typedef void* TTlsKey;
 typedef int   TThreadHandle;
+typedef int   TThreadSystemID;
 
 typedef void* TWrapperRes;
 typedef void* TWrapperArg;
@@ -249,6 +258,11 @@ public:
     // Get ID of current thread (for main thread it is always zero).
     typedef unsigned int TID;
     static TID GetSelf(void);
+
+    // Get system ID of the current thread - for internal use only.
+    // The ID is unique only while the thread is running and may be
+    // re-used by another thread later.
+    static void GetSystemID(TThreadSystemID* id);
 
 protected:
     // Derived (user-created) class must provide a real thread function.
