@@ -69,6 +69,12 @@ void CAlnMap::UnsetAnchor(void)
 
 void CAlnMap::SetAnchor(TNumrow anchor)
 {
+    if (anchor == -1) UnsetAnchor();
+    if (anchor < 0  ||  anchor >= m_DS->GetDim()) {
+        NCBI_THROW(CAlnException, eInvalidRow,
+                   "CAlnVec::SetAnchor(): "
+                   "Invalid row");
+    }
     m_AlnSegIdx.clear();
     m_AlnStarts.clear();
     m_NumSegWithOffsets.clear();
@@ -95,6 +101,11 @@ void CAlnMap::SetAnchor(TNumrow anchor)
             m_NumSegWithOffsets.push_back(CNumSegWithOffset(aln_seg, offset));
         }
     }
+    if (!m_AlnSegIdx.size()) {
+        NCBI_THROW(CAlnException, eInvalidDenseg,
+                   "CAlnVec::SetAnchor(): "
+                   "Invalid Dense-seg: No sequence on the anchor row");
+    }
 }
 
 
@@ -118,9 +129,11 @@ CAlnMap::x_SetRawSegType(TNumrow row, TNumseg seg) const
     }
 
     // is it aligned to sequence on the anchor?
-    if (IsSetAnchor() && 
-        m_DS->GetStarts()[seg * m_DS->GetDim() + m_Anchor] >= 0) {
-        flags |= fAlignedToSeqOnAnchor;
+    if (IsSetAnchor()) {
+        flags |= fNotAlignedToSeqOnAnchor;
+        if (m_DS->GetStarts()[seg * m_DS->GetDim() + m_Anchor] >= 0) {
+            flags &= ~(flags & fNotAlignedToSeqOnAnchor);
+        }
     }
 
     // what's on the right?
@@ -449,12 +462,18 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
         chunk->SetRange().SetFrom(-1);
         chunk->SetRange().SetTo(-1);
     }
+
     chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, seg_from));
 
     for (CAlnMap::TNumseg seg = seg_from + 1;  seg < seg_to;  seg++) {
         if ( !chunk->IsGap() ) {
-            chunk->SetRange().SetTo(chunk->GetRange().GetTo()
-                                    + m_AlnMap.m_DS->GetLens()[seg]);
+            if (m_AlnMap.IsPositiveStrand(m_Row)) {
+                chunk->SetRange().SetTo(chunk->GetRange().GetTo()
+                                        + m_AlnMap.m_DS->GetLens()[seg]);
+            } else {
+                chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
+                                          - m_AlnMap.m_DS->GetLens()[seg]);
+            }
         }
         chunk->SetType(chunk->GetType()
                        | m_AlnMap.x_GetRawSegType(m_Row, seg));
@@ -505,8 +524,8 @@ CAlnMap::x_RawSegTypeDiffNextSegType(TNumrow row, TNumseg seg,
     if ((type & fUnalignedOnRight) && !(flags & fIgnoreUnaligned)) {
         return true;
     }
-    if ((type & fAlignedToSeqOnAnchor) ==
-        (next_type & fAlignedToSeqOnAnchor)) {
+    if ((type & fNotAlignedToSeqOnAnchor) ==
+        (next_type & fNotAlignedToSeqOnAnchor)) {
         return false;
     }
     if (type & fSeq) {
@@ -528,6 +547,12 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2002/09/26 17:43:17  todorov
+* 1) Changed flag fAlignedToSeqOnAnchor to fNotAlignedToSeqOnAnchor. This proved
+* more convenient.
+* 2) Introduced some exceptions
+* 3) Fixed a strand bug in CAlnMap::CAlnChunkVec::operator[]
+*
 * Revision 1.8  2002/09/25 18:16:29  dicuccio
 * Reworked computation of consensus sequence - this is now stored directly
 * in the underlying CDense_seg
