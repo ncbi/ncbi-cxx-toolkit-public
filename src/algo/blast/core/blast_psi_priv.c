@@ -1167,8 +1167,8 @@ PSIScaleMatrix(const Uint1* query,              /* [in] */
     int** scaled_pssm = NULL;
     int** pssm = NULL;
     double factor;
-    double factor_low;
-    double factor_high;
+    double factor_low = 0.0;
+    double factor_high = 0.0;
     double new_lambda;      /* Karlin-Altschul parameter */
 
     const double kPositPercent = 0.05;
@@ -1508,6 +1508,9 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/06/07 14:18:24  dondosha
+ * Added some variables initialization, to remove compiler warnings
+ *
  * Revision 1.6  2004/05/28 17:35:03  camacho
  * Fix msvc6 warnings
  *
