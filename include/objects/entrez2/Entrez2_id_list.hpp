@@ -33,15 +33,6 @@
  *   using specifications from the ASN data definition file
  *   'entrez2.asn'.
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.1  2001/09/04 14:06:33  ucko
- * Add resizing iterators for sequences whose representation uses an
- * unnatural unit size -- for instance, ASN.1 octet strings corresponding
- * to sequences of 32-bit integers or of packed nucleotides.
- *
- *
- * ===========================================================================
  */
 
 #ifndef OBJECTS_ENTREZ2_ENTREZ2_ID_LIST_HPP
@@ -58,7 +49,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CEntrez2_id_list : public CEntrez2_id_list_Base
+class NCBI_ENTREZ2_EXPORT CEntrez2_id_list : public CEntrez2_id_list_Base
 {
     typedef CEntrez2_id_list_Base Tparent;
 public:
@@ -103,3 +94,17 @@ END_NCBI_SCOPE
 
 #endif // OBJECTS_ENTREZ2_ENTREZ2_ID_LIST_HPP
 /* Original file checksum: lines: 90, chars: 2507, CRC32: 92bb06a4 */
+
+/*
+ * ===========================================================================
+ * $Log$
+ * Revision 1.2  2003/10/08 12:09:46  dicuccio
+ * Added export specifier.  CVS log to bottom.
+ *
+ * Revision 1.1  2001/09/04 14:06:33  ucko
+ * Add resizing iterators for sequences whose representation uses an
+ * unnatural unit size -- for instance, ASN.1 octet strings corresponding
+ * to sequences of 32-bit integers or of packed nucleotides.
+ *
+ * ===========================================================================
+ */
