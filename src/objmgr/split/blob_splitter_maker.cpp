@@ -75,8 +75,8 @@
 #include "asn_sizer.hpp"
 #include "chunk_info.hpp"
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 template<class C>
 inline
@@ -447,12 +447,15 @@ size_t CBlobSplitterImpl::CountAnnotObjects(const CID2S_Chunk& chunk)
 }
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/26 23:04:58  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.2  2003/11/26 17:56:02  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

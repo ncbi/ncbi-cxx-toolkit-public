@@ -35,8 +35,8 @@
 
 #include "asn_sizer.hpp"
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 CSize::CSize(const CAsnSizer& sizer)
     : m_Count(1),
@@ -65,12 +65,15 @@ CNcbiOstream& CSize::Print(CNcbiOstream& out) const
         "Ratio: " << GetRatio();
 }
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 23:05:00  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.1  2003/11/12 16:18:31  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

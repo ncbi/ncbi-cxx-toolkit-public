@@ -37,8 +37,8 @@
 
 #include "blob_splitter_params.hpp"
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 
 CAsnSizer::CAsnSizer(void)
@@ -80,12 +80,15 @@ size_t CAsnSizer::GetCompressedSize(const SSplitterParams& params)
 }
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 23:04:56  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.1  2003/11/12 16:18:24  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

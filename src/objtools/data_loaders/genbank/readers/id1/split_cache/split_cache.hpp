@@ -44,11 +44,11 @@
 
 #include "blob_splitter_params.hpp"
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CBDB_BLOB_Cache;
 
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class CObjectManager;
 class CSeq_id;
@@ -150,12 +150,15 @@ private:
 };
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/26 23:05:00  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.2  2003/11/26 17:56:03  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

@@ -41,8 +41,8 @@
 #include <vector>
 #include <map>
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 class CID2S_Split_Info;
@@ -92,12 +92,15 @@ private:
 };
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 23:05:00  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.1  2003/11/12 16:18:33  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

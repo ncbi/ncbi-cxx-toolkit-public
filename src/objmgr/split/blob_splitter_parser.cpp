@@ -65,8 +65,8 @@
 #include "asn_sizer.hpp"
 #include "chunk_info.hpp"
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 template<class C>
 inline
@@ -279,12 +279,15 @@ size_t CBlobSplitterImpl::CountAnnotObjects(const CSeq_entry& entry)
 }
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 23:04:58  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.1  2003/11/12 16:18:29  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

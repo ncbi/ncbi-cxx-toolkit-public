@@ -83,8 +83,8 @@
 
 #include "blob_splitter.hpp"
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 
 static const int kDefaultCacheBlobAge = 5; // keep objects for 5 days
@@ -679,8 +679,8 @@ CConstRef<CSeqref> CSplitCacheApp::GetSeqref(CBioseq_Handle bh)
 }
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -694,6 +694,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/26 23:05:00  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.2  2003/11/26 17:56:03  vasilche
 * Implemented ID2 split in ID1 cache.
 * Fixed loading of splitted annotations.

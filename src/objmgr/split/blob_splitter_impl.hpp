@@ -45,11 +45,11 @@
 #include "splitted_blob.hpp"
 #include "size.hpp"
 
-BEGIN_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
 class CObjectOStream;
 
-BEGIN_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 class CSeq_entry;
 class CBioseq;
@@ -136,12 +136,15 @@ private:
 };
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 23:04:58  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.1  2003/11/12 16:18:27  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *

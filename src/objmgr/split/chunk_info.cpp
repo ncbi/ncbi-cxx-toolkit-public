@@ -36,8 +36,8 @@
 #include "object_splitinfo.hpp"
 #include "annot_piece.hpp"
 
-BEGIN_NCBI_SCOPE;
-BEGIN_SCOPE(objects);
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
 
 
 void SChunkInfo::Add(const CSeq_annot_SplitInfo& info)
@@ -98,12 +98,15 @@ size_t SChunkInfo::CountAnnotObjects(void) const
 }
 
 
-END_SCOPE(objects);
-END_NCBI_SCOPE;
+END_SCOPE(objects)
+END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/11/26 23:04:58  vasilche
+* Removed extra semicolons after BEGIN_SCOPE and END_SCOPE.
+*
 * Revision 1.1  2003/11/12 16:18:29  vasilche
 * First implementation of ID2 blob splitter withing cache.
 *
