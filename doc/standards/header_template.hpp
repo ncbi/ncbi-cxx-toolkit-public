@@ -127,28 +127,27 @@ private:
         eVal3   ///< EMyEnum value eVal3 description.
     };
 
-    /// An EMyEnum pointer -- brief description.
+    /// A pointer to EMyEnum -- brief description.
     ///
-    /// Detailed description of m_EnumPtr.
-    EMyEnum* m_EnumPtr;
+    /// Detailed description of m_Foo.
+    EMyEnum* m_Foo;
 
-    EMyEnum  m_EnumVar;  ///< m_EnumVar brief description - follows definition.
+    EMyEnum  m_Bar;  ///< m_Bar brief description - follows definition.
 };
 
 
 END_NCBI_SCOPE
 
+
+
 /*
-* ===========================================================================
-*
-* $Log$
-* Revision 1.3  2003/06/23 19:33:38  ucko
-* Fix reversed multiple-inclusion guard.
-* Having turned keyword expansion off, unexpand Id and add a Log comment
-* at the bottom.
-*
-*
-* ===========================================================================
-*/
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.4  2003/09/22 20:23:03  vakatov
+ * Minor adjustments
+ *
+ * ===========================================================================
+ */
 
 #endif  /* DIR_DIR_DIR___HEADER_TEMPLATE__HPP */
