@@ -1,6 +1,5 @@
-static char const rcsid[] =
-    "$Id$";
-/* ===========================================================================
+/* $Id$
+ * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -27,6 +26,14 @@ static char const rcsid[] =
  * Author:  Christiam Camacho
  *
  */
+
+/** @file blast_encoding.c
+ * Definitions of static arrays defined in blast_encoding.h.
+ * @sa blast_encoding.h
+ */
+
+static char const rcsid[] =
+    "$Id$";
 
 #include <algo/blast/core/blast_encoding.h>
 
@@ -101,6 +108,12 @@ const Uint1 AMINOACID_TO_NCBISTDAA[128] = {
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/05/19 14:52:02  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
  * Revision 1.1  2004/04/07 03:10:56  camacho
  * Initial revision
  *

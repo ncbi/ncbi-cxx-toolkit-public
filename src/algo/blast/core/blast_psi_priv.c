@@ -1,6 +1,5 @@
-static char const rcsid[] =
-    "$Id$";
-/* ===========================================================================
+/* $Id$
+ * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
@@ -27,6 +26,14 @@ static char const rcsid[] =
  * Author:  Christiam Camacho
  *
  */
+
+/** @file blast_psi_priv.c
+ * Defintions for functions in private interface for Position Iterated BLAST 
+ * API.
+ */
+
+static char const rcsid[] =
+    "$Id$";
 
 #include "blast_psi_priv.h"
 #include <algo/blast/core/blast_def.h>
@@ -83,6 +90,12 @@ _PSICopyMatrix(double** dest, const double** src,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/05/19 14:52:02  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
  * Revision 1.3  2004/05/06 14:01:40  camacho
  * + _PSICopyMatrix
  *

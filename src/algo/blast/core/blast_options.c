@@ -1,453 +1,35 @@
-/* 
-**************************************************************************
-*                                                                         *
-*                             COPYRIGHT NOTICE                            *
-*                                                                         *
-* This software/database is categorized as "United States Government      *
-* Work" under the terms of the United States Copyright Act.  It was       *
-* produced as part of the author's official duties as a Government        *
-* employee and thus can not be copyrighted.  This software/database is    *
-* freely available to the public for use without a copyright notice.      *
-* Restrictions can not be placed on its present or future use.            *
-*                                                                         *
-* Although all reasonable efforts have been taken to ensure the accuracy  *
-* and reliability of the software and data, the National Library of       *
-* Medicine (NLM) and the U.S. Government do not and can not warrant the   *
-* performance or results that may be obtained by using this software,     *
-* data, or derivative works thereof.  The NLM and the U.S. Government     *
-* disclaim any and all warranties, expressed or implied, as to the        *
-* performance, merchantability or fitness for any particular purpose or   *
-* use.                                                                    *
-*                                                                         *
-* In any work or product derived from this material, proper attribution   *
-* of the author(s) as the source of the software or data would be         *
-* appreciated.                                                            *
-*                                                                         *
-**************************************************************************
- *
- * $Log$
- * Revision 1.107  2004/05/17 15:30:20  madden
- * Int algorithm_type replaced with enum EBlastPrelimGapExt, removed include for blast_gapalign.h
- *
- * Revision 1.106  2004/05/14 17:11:03  dondosha
- * Minor correction in setting X-dropoffs
- *
- * Revision 1.105  2004/05/14 13:14:15  camacho
- * Use correct definition for inclusion threshold
- *
- * Revision 1.104  2004/05/12 12:18:06  madden
- * Clean out PSIBlast options, add fields to ExtensionOptions to support smith-waterman and composition-based stats
- *
- * Revision 1.103  2004/05/10 14:27:23  madden
- * Correction to CalculateLinkHSPCutoffs to use gap_trigger in calculation of small cutoff
- *
- * Revision 1.102  2004/05/07 15:22:15  papadopo
- * 1. add functions to allocate and free BlastScoringParameters structures
- * 2. apply a scaling factor to all cutoffs generated in HitSavingParameters
- *    or ExtentionParameters structures
- *
- * Revision 1.101  2004/04/29 17:41:05  papadopo
- * Scale down the search space when calculating the S2 cutoff score for a translated RPS search
- *
- * Revision 1.100  2004/04/29 15:08:43  madden
- * Add BlastScoringOptionsDup
- *
- * Revision 1.99  2004/04/23 14:02:25  papadopo
- * ignore validation of LookupTableOptions if performing an RPS search
- *
- * Revision 1.98  2004/04/22 22:18:03  dondosha
- * Set lookup table type correctly in BLAST_FillLookupTableOptions - needed for C driver only
- *
- * Revision 1.97  2004/04/21 17:00:59  madden
- * Removed set but not read variable
- *
- * Revision 1.96  2004/04/19 12:58:44  madden
- * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
- *
- * Revision 1.95  2004/04/16 14:17:06  papadopo
- * add use of RPS-specific defines, remove RPS argument to FillLookupTableOptions
- *
- * Revision 1.94  2004/04/07 03:06:16  camacho
- * Added blast_encoding.[hc], refactoring blast_stat.[hc]
- *
- * Revision 1.93  2004/03/26 20:46:00  dondosha
- * Made gap_trigger parameter an integer, as in the old code
- *
- * Revision 1.92  2004/03/22 20:11:37  dondosha
- * Do not allow small gaps cutoff to be less than gap trigger
- *
- * Revision 1.91  2004/03/17 15:19:10  camacho
- * Add missing casts
- *
- * Revision 1.90  2004/03/11 23:58:10  dondosha
- * Set cutoff_score to 0 before calling BLAST_Cutoffs, so it knows what to calculate
- *
- * Revision 1.89  2004/03/11 20:41:49  camacho
- * Remove dead code
- *
- * Revision 1.88  2004/03/10 17:33:10  papadopo
- * Make a separate lookup table type for RPS blast
- *
- * Revision 1.87  2004/03/09 22:37:26  dondosha
- * Added const qualifiers to parameter arguments wherever relevant
- *
- * Revision 1.86  2004/03/09 18:46:24  dondosha
- * Corrected how cutoffs are calculated
- *
- * Revision 1.85  2004/03/04 21:07:48  papadopo
- * add RPS BLAST functionality
- *
- * Revision 1.84  2004/02/27 15:56:33  papadopo
- * Mike Gertz' modifications to unify handling of gapped Karlin blocks for protein and nucleotide searches. Also modified BLAST_MainSetUp to allocate gapped Karlin blocks last
- *
- * Revision 1.83  2004/02/24 17:57:14  dondosha
- * Added function to combine all options validation functions for the C engine
- *
- * Revision 1.82  2004/02/19 21:16:48  dondosha
- * Use enum type for severity argument in Blast_MessageWrite
- *
- * Revision 1.81  2004/02/17 22:10:30  dondosha
- * Set preliminary hitlist size in options initialization
- *
- * Revision 1.80  2004/02/07 15:48:30  ucko
- * PSIBlastOptionsNew: rearrange slightly so that declarations come first.
- *
- * Revision 1.79  2004/02/06 22:49:30  dondosha
- * Check for NULL pointer in PSIBlastOptionsNew
- *
- * Revision 1.78  2004/02/03 18:33:39  dondosha
- * Correction to previous change: word size can be 11 if discontiguous words
- *
- * Revision 1.77  2004/02/03 16:17:33  dondosha
- * Require word size to be >= 12 with megablast lookup table
- *
- * Revision 1.76  2004/02/02 18:49:32  dondosha
- * Fixes for minor compiler warnings
- *
- * Revision 1.75  2003/12/31 20:04:47  dondosha
- * Round best stride to a number divisible by 4 for all values except 6 and 7
- *
- * Revision 1.74  2003/12/31 16:04:37  coulouri
- * use -1 to disable protein neighboring words
- *
- * Revision 1.73  2003/12/08 16:03:05  coulouri
- * Propagate protein neighboring threshold even if it is zero
- *
- * Revision 1.72  2003/11/24 23:18:32  dondosha
- * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
- *
- * Revision 1.71  2003/11/12 18:17:46  dondosha
- * Correction in calculating scanning stride
- *
- * Revision 1.70  2003/11/04 23:22:47  dondosha
- * Do not calculate hit saving cutoff score for PHI BLAST
- *
- * Revision 1.69  2003/10/30 19:34:01  dondosha
- * Removed gapped_calculation from BlastHitSavingOptions structure
- *
- * Revision 1.68  2003/10/24 20:55:10  camacho
- * Rename GetDefaultStride
- *
- * Revision 1.67  2003/10/22 16:44:33  dondosha
- * Added function to calculate default stride value for AG method
- *
- * Revision 1.66  2003/10/21 22:15:34  camacho
- * Rearranging of C options structures, fix seed extension method
- *
- * Revision 1.65  2003/10/17 18:20:20  dondosha
- * Use separate variables for different initial word extension options
- *
- * Revision 1.64  2003/10/15 16:59:43  coulouri
- * type correctness fixes
- *
- * Revision 1.63  2003/10/07 17:26:11  dondosha
- * Lower case mask moved from options to the sequence block
- *
- * Revision 1.62  2003/10/02 22:08:34  dondosha
- * Corrections for one-strand translated searches
- *
- * Revision 1.61  2003/10/01 22:36:52  dondosha
- * Correction of setting of e2 in revision 1.57 was wrong
- *
- * Revision 1.60  2003/09/24 19:28:20  dondosha
- * Correction in setting extend word method: unset options that are set by default but overridden
- *
- * Revision 1.59  2003/09/12 17:26:01  dondosha
- * Added check that gap extension option cannot be 0 when gap open is not 0
- *
- * Revision 1.58  2003/09/10 19:48:08  dondosha
- * Removed dependency on mb_lookup.h
- *
- * Revision 1.57  2003/09/09 22:12:02  dondosha
- * Minor correction for ungapped cutoff calculation; added freeing of PHI pattern
- *
- * Revision 1.56  2003/09/08 12:55:57  madden
- * Allow use of PSSM to construct lookup table
- *
- * Revision 1.55  2003/08/27 15:05:37  camacho
- * Use symbolic name for alphabet sizes
- *
- * Revision 1.54  2003/08/26 21:53:33  madden
- * Protein alphabet is 26 chars, not 25
- *
- * Revision 1.53  2003/08/11 15:01:59  dondosha
- * Added algo/blast/core to all #included headers
- *
- * Revision 1.52  2003/08/01 17:26:19  dondosha
- * Use renamed versions of functions from local blastkar.h
- *
- * Revision 1.51  2003/07/31 17:45:17  dondosha
- * Made use of const qualifier consistent throughout the library
- *
- * Revision 1.50  2003/07/31 14:31:41  camacho
- * Replaced Char for char
- *
- * Revision 1.49  2003/07/31 14:19:28  camacho
- * Replaced FloatHi for double
- *
- * Revision 1.48  2003/07/31 00:32:37  camacho
- * Eliminated Ptr notation
- *
- * Revision 1.47  2003/07/30 22:06:25  dondosha
- * Convert matrix name to upper case when filling scoring options
- *
- * Revision 1.46  2003/07/30 19:39:14  camacho
- * Remove PNTRs
- *
- * Revision 1.45  2003/07/30 18:58:10  dondosha
- * Removed unused member matrixname from lookup table options
- *
- * Revision 1.44  2003/07/30 17:15:00  dondosha
- * Minor fixes for very strict compiler warnings
- *
- * Revision 1.43  2003/07/30 16:32:02  madden
- * Use ansi functions when possible
- *
- * Revision 1.42  2003/07/29 14:42:31  coulouri
- * use strdup() instead of StringSave()
- *
- * Revision 1.41  2003/07/28 19:04:15  camacho
- * Replaced all MemNews for calloc
- *
- * Revision 1.40  2003/07/25 21:12:28  coulouri
- * remove constructions of the form "return sfree();" and "a=sfree(a);"
- *
- * Revision 1.39  2003/07/25 17:25:43  coulouri
- * in progres:
- *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
- *  * add sfree() macro and __sfree() helper function to util.[ch]
- *  * use sfree() instead of MemFree()
- *
- * Revision 1.38  2003/07/23 17:31:10  camacho
- * BlastDatabaseParameters struct is deprecated
- *
- * Revision 1.37  2003/07/23 16:42:01  dondosha
- * Formatting options moved from blast_options.c to blast_format.c
- *
- * Revision 1.36  2003/07/22 20:26:16  dondosha
- * Initialize BlastDatabaseParameters structure outside engine
- *
- * Revision 1.35  2003/07/22 15:32:55  dondosha
- * Removed dependence on readdb API
- *
- * Revision 1.34  2003/07/21 20:31:47  dondosha
- * Added BlastDatabaseParameters structure with genetic code string
- *
- * Revision 1.33  2003/06/26 21:38:05  dondosha
- * Program number is removed from options structures, and passed explicitly as a parameter to functions that need it
- *
- * Revision 1.32  2003/06/26 20:24:06  camacho
- * Do not free options structure in BlastExtensionParametersFree
- *
- * Revision 1.31  2003/06/23 21:49:11  dondosha
- * Possibility of linking HSPs for tblastn activated
- *
- * Revision 1.30  2003/06/20 21:40:21  dondosha
- * Added parameters for linking HSPs
- *
- * Revision 1.29  2003/06/20 15:20:21  dondosha
- * Memory leak fixes
- *
- * Revision 1.28  2003/06/18 12:21:01  camacho
- * Added proper return value
- *
- * Revision 1.27  2003/06/17 20:42:43  camacho
- * Moved comments to header file, fixed includes
- *
- * Revision 1.26  2003/06/11 16:14:53  dondosha
- * Added initialization of PSI-BLAST and database options
- *
- * Revision 1.25  2003/06/09 20:13:17  dondosha
- * Minor type casting compiler warnings fixes
- *
- * Revision 1.24  2003/06/06 17:02:30  dondosha
- * Typo fix
- *
- * Revision 1.23  2003/06/04 20:16:51  coulouri
- * make prototypes and definitions agree
- *
- * Revision 1.22  2003/06/03 15:50:39  coulouri
- * correct function pointer argument
- *
- * Revision 1.21  2003/05/30 15:52:11  coulouri
- * various lint-induced cleanups
- *
- * Revision 1.20  2003/05/21 22:31:53  dondosha
- * Added forcing of ungapped search for tblastx to option validation
- *
- * Revision 1.19  2003/05/18 21:57:37  camacho
- * Use Uint1 for program name whenever possible
- *
- * Revision 1.18  2003/05/15 22:01:22  coulouri
- * add rcsid string to sources
- *
- * Revision 1.17  2003/05/13 20:41:48  dondosha
- * Correction in assigning of number of db sequences for 2 sequence case
- *
- * Revision 1.16  2003/05/13 15:11:34  dondosha
- * Changed some char * arguments to const char *
- *
- * Revision 1.15  2003/05/07 17:44:31  dondosha
- * Assign ungapped xdropoff default correctly for protein programs
- *
- * Revision 1.14  2003/05/06 20:29:57  dondosha
- * Fix in filling effective length options
- *
- * Revision 1.13  2003/05/06 14:34:51  dondosha
- * Fix in comment
- *
- * Revision 1.12  2003/05/01 16:56:30  dondosha
- * Fixed strict compiler warnings
- *
- * Revision 1.11  2003/05/01 15:33:39  dondosha
- * Reorganized the setup of BLAST search
- *
- * Revision 1.10  2003/04/24 14:27:35  dondosha
- * Correction for latest changes
- *
- * Revision 1.9  2003/04/23 20:04:49  dondosha
- * Added a function BLAST_InitAllDefaultOptions to initialize all various options structures with only default values
- *
- * Revision 1.8  2003/04/17 21:14:41  dondosha
- * Added cutoff score hit parameters that is calculated from e-value
- *
- * Revision 1.7  2003/04/16 22:25:37  dondosha
- * Correction to previous change
- *
- * Revision 1.6  2003/04/16 22:20:24  dondosha
- * Correction in calculation of cutoff score for ungapped extensions
- *
- * Revision 1.5  2003/04/11 22:35:48  dondosha
- * Minor corrections for blastn
- *
- * Revision 1.4  2003/04/03 22:57:50  dondosha
- * Uninitialized variable fix
- *
- * Revision 1.3  2003/04/02 17:20:41  dondosha
- * Added calculation of ungapped cutoff score in correct place
- *
- * Revision 1.2  2003/04/01 17:42:33  dondosha
- * Added arguments to BlastExtensionParametersNew
- *
- * Revision 1.1  2003/03/31 18:22:30  camacho
- * Moved from parent directory
- *
- * Revision 1.30  2003/03/28 23:12:34  dondosha
- * Added program argument to BlastFormattingOptionsNew
- *
- * Revision 1.29  2003/03/27 20:54:19  dondosha
- * Moved ungapped cutoff from hit options to word options
- *
- * Revision 1.28  2003/03/25 16:30:25  dondosha
- * Strict compiler warning fixes
- *
- * Revision 1.27  2003/03/24 20:39:17  dondosha
- * Added BlastExtensionParameters structure to hold raw gapped X-dropoff values
- *
- * Revision 1.26  2003/03/19 19:52:42  dondosha
- * 1. Added strand option argument to BlastQuerySetUpOptionsNew
- * 2. Added check of discontiguous template parameters in LookupTableOptionsValidate
- *
- * Revision 1.25  2003/03/14 19:08:53  dondosha
- * Added arguments to various OptionsNew functions, so all initialization can be done inside
- *
- * Revision 1.24  2003/03/12 17:03:41  dondosha
- * Set believe_query in formatting options to FALSE by default
- *
- * Revision 1.23  2003/03/11 20:40:32  dondosha
- * Correction in assigning gap_x_dropoff_final
- *
- * Revision 1.22  2003/03/10 16:44:42  dondosha
- * Added functions for initialization and freeing of formatting options structure
- *
- * Revision 1.21  2003/03/07 20:41:08  dondosha
- * Small corrections in option initialization functions
- *
- * Revision 1.20  2003/03/06 19:25:52  madden
- * Include blast_util.h
- *
- * Revision 1.19  2003/03/05 21:19:09  coulouri
- * set NA_LOOKUP_TABLE flag
- *
- * Revision 1.18  2003/03/05 20:58:50  dondosha
- * Corrections for handling effective search space for multiple queries
- *
- * Revision 1.17  2003/03/05 15:36:34  madden
- * Moved BlastNumber2Program and BlastProgram2Number from blast_options to blast_util
- *
- * Revision 1.16  2003/03/03 14:43:21  madden
- * Use BlastKarlinkGapBlkFill, PrintMatrixMessage, and PrintAllowedValuesMessage
- *
- * Revision 1.15  2003/02/26 15:42:50  madden
- * const charPtr becomes const char *, add BlastExtensionOptionsValidate
- *
- * Revision 1.14  2003/02/14 16:30:19  dondosha
- * Get rid of a compiler warning for type mismatch
- *
- * Revision 1.13  2003/02/13 21:42:25  madden
- * Added validation functions
- *
- * Revision 1.12  2003/02/04 13:14:36  dondosha
- * Changed the macro definitions for 
- *
- * Revision 1.11  2003/01/31 17:00:32  dondosha
- * Do not set the scan step in LookupTableOptionsNew
- *
- * Revision 1.10  2003/01/28 15:13:25  madden
- * Added functions and structures for parameters
- *
- * Revision 1.9  2003/01/22 20:49:31  dondosha
- * Set decline_align for blastn too
- *
- * Revision 1.8  2003/01/22 15:09:55  dondosha
- * Correction for default penalty assignment
- *
- * Revision 1.7  2003/01/17 22:10:45  madden
- * Added functions for BlastExtensionOptions, BlastInitialWordOptions as well as defines for default values
- *
- * Revision 1.6  2003/01/10 18:36:40  madden
- * Change call to BlastEffectiveLengthsOptionsNew
- *
- * Revision 1.5  2003/01/02 17:09:35  dondosha
- * Fill alphabet size when creating lookup table options structure
- *
- * Revision 1.4  2002/12/24 14:49:00  madden
- * Set defaults for LookupTableOptions for protein-protein searches
- *
- * Revision 1.3  2002/12/04 13:38:21  madden
- * Add function LookupTableOptionsNew
- *
- * Revision 1.2  2002/10/17 15:45:17  madden
- * Make BLOSUM62 default
- *
- * Revision 1.1  2002/10/07 21:05:12  madden
- * Sets default option values
- *
- *
- *
-*/
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's offical duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ */
 
-static char const rcsid[] = "$Id$";
+/** @file blast_options.c
+ * @todo FIXME needs file description & doxygen comments
+ */
+
+static char const rcsid[] = 
+    "$Id$";
 
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_filter.h>
@@ -1741,3 +1323,434 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
    hit_params->cutoff_big_gap *= (Int4)sbp->scale_factor;
    hit_params->cutoff_small_gap *= (Int4)sbp->scale_factor;
 }
+
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.108  2004/05/19 14:52:02  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
+ * Revision 1.107  2004/05/17 15:30:20  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt, removed include for blast_gapalign.h
+ *
+ * Revision 1.106  2004/05/14 17:11:03  dondosha
+ * Minor correction in setting X-dropoffs
+ *
+ * Revision 1.105  2004/05/14 13:14:15  camacho
+ * Use correct definition for inclusion threshold
+ *
+ * Revision 1.104  2004/05/12 12:18:06  madden
+ * Clean out PSIBlast options, add fields to ExtensionOptions to support smith-waterman and composition-based stats
+ *
+ * Revision 1.103  2004/05/10 14:27:23  madden
+ * Correction to CalculateLinkHSPCutoffs to use gap_trigger in calculation of small cutoff
+ *
+ * Revision 1.102  2004/05/07 15:22:15  papadopo
+ * 1. add functions to allocate and free BlastScoringParameters structures
+ * 2. apply a scaling factor to all cutoffs generated in HitSavingParameters
+ *    or ExtentionParameters structures
+ *
+ * Revision 1.101  2004/04/29 17:41:05  papadopo
+ * Scale down the search space when calculating the S2 cutoff score for a translated RPS search
+ *
+ * Revision 1.100  2004/04/29 15:08:43  madden
+ * Add BlastScoringOptionsDup
+ *
+ * Revision 1.99  2004/04/23 14:02:25  papadopo
+ * ignore validation of LookupTableOptions if performing an RPS search
+ *
+ * Revision 1.98  2004/04/22 22:18:03  dondosha
+ * Set lookup table type correctly in BLAST_FillLookupTableOptions - needed for C driver only
+ *
+ * Revision 1.97  2004/04/21 17:00:59  madden
+ * Removed set but not read variable
+ *
+ * Revision 1.96  2004/04/19 12:58:44  madden
+ * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
+ *
+ * Revision 1.95  2004/04/16 14:17:06  papadopo
+ * add use of RPS-specific defines, remove RPS argument to FillLookupTableOptions
+ *
+ * Revision 1.94  2004/04/07 03:06:16  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
+ * Revision 1.93  2004/03/26 20:46:00  dondosha
+ * Made gap_trigger parameter an integer, as in the old code
+ *
+ * Revision 1.92  2004/03/22 20:11:37  dondosha
+ * Do not allow small gaps cutoff to be less than gap trigger
+ *
+ * Revision 1.91  2004/03/17 15:19:10  camacho
+ * Add missing casts
+ *
+ * Revision 1.90  2004/03/11 23:58:10  dondosha
+ * Set cutoff_score to 0 before calling BLAST_Cutoffs, so it knows what to calculate
+ *
+ * Revision 1.89  2004/03/11 20:41:49  camacho
+ * Remove dead code
+ *
+ * Revision 1.88  2004/03/10 17:33:10  papadopo
+ * Make a separate lookup table type for RPS blast
+ *
+ * Revision 1.87  2004/03/09 22:37:26  dondosha
+ * Added const qualifiers to parameter arguments wherever relevant
+ *
+ * Revision 1.86  2004/03/09 18:46:24  dondosha
+ * Corrected how cutoffs are calculated
+ *
+ * Revision 1.85  2004/03/04 21:07:48  papadopo
+ * add RPS BLAST functionality
+ *
+ * Revision 1.84  2004/02/27 15:56:33  papadopo
+ * Mike Gertz' modifications to unify handling of gapped Karlin blocks for protein and nucleotide searches. Also modified BLAST_MainSetUp to allocate gapped Karlin blocks last
+ *
+ * Revision 1.83  2004/02/24 17:57:14  dondosha
+ * Added function to combine all options validation functions for the C engine
+ *
+ * Revision 1.82  2004/02/19 21:16:48  dondosha
+ * Use enum type for severity argument in Blast_MessageWrite
+ *
+ * Revision 1.81  2004/02/17 22:10:30  dondosha
+ * Set preliminary hitlist size in options initialization
+ *
+ * Revision 1.80  2004/02/07 15:48:30  ucko
+ * PSIBlastOptionsNew: rearrange slightly so that declarations come first.
+ *
+ * Revision 1.79  2004/02/06 22:49:30  dondosha
+ * Check for NULL pointer in PSIBlastOptionsNew
+ *
+ * Revision 1.78  2004/02/03 18:33:39  dondosha
+ * Correction to previous change: word size can be 11 if discontiguous words
+ *
+ * Revision 1.77  2004/02/03 16:17:33  dondosha
+ * Require word size to be >= 12 with megablast lookup table
+ *
+ * Revision 1.76  2004/02/02 18:49:32  dondosha
+ * Fixes for minor compiler warnings
+ *
+ * Revision 1.75  2003/12/31 20:04:47  dondosha
+ * Round best stride to a number divisible by 4 for all values except 6 and 7
+ *
+ * Revision 1.74  2003/12/31 16:04:37  coulouri
+ * use -1 to disable protein neighboring words
+ *
+ * Revision 1.73  2003/12/08 16:03:05  coulouri
+ * Propagate protein neighboring threshold even if it is zero
+ *
+ * Revision 1.72  2003/11/24 23:18:32  dondosha
+ * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
+ *
+ * Revision 1.71  2003/11/12 18:17:46  dondosha
+ * Correction in calculating scanning stride
+ *
+ * Revision 1.70  2003/11/04 23:22:47  dondosha
+ * Do not calculate hit saving cutoff score for PHI BLAST
+ *
+ * Revision 1.69  2003/10/30 19:34:01  dondosha
+ * Removed gapped_calculation from BlastHitSavingOptions structure
+ *
+ * Revision 1.68  2003/10/24 20:55:10  camacho
+ * Rename GetDefaultStride
+ *
+ * Revision 1.67  2003/10/22 16:44:33  dondosha
+ * Added function to calculate default stride value for AG method
+ *
+ * Revision 1.66  2003/10/21 22:15:34  camacho
+ * Rearranging of C options structures, fix seed extension method
+ *
+ * Revision 1.65  2003/10/17 18:20:20  dondosha
+ * Use separate variables for different initial word extension options
+ *
+ * Revision 1.64  2003/10/15 16:59:43  coulouri
+ * type correctness fixes
+ *
+ * Revision 1.63  2003/10/07 17:26:11  dondosha
+ * Lower case mask moved from options to the sequence block
+ *
+ * Revision 1.62  2003/10/02 22:08:34  dondosha
+ * Corrections for one-strand translated searches
+ *
+ * Revision 1.61  2003/10/01 22:36:52  dondosha
+ * Correction of setting of e2 in revision 1.57 was wrong
+ *
+ * Revision 1.60  2003/09/24 19:28:20  dondosha
+ * Correction in setting extend word method: unset options that are set by default but overridden
+ *
+ * Revision 1.59  2003/09/12 17:26:01  dondosha
+ * Added check that gap extension option cannot be 0 when gap open is not 0
+ *
+ * Revision 1.58  2003/09/10 19:48:08  dondosha
+ * Removed dependency on mb_lookup.h
+ *
+ * Revision 1.57  2003/09/09 22:12:02  dondosha
+ * Minor correction for ungapped cutoff calculation; added freeing of PHI pattern
+ *
+ * Revision 1.56  2003/09/08 12:55:57  madden
+ * Allow use of PSSM to construct lookup table
+ *
+ * Revision 1.55  2003/08/27 15:05:37  camacho
+ * Use symbolic name for alphabet sizes
+ *
+ * Revision 1.54  2003/08/26 21:53:33  madden
+ * Protein alphabet is 26 chars, not 25
+ *
+ * Revision 1.53  2003/08/11 15:01:59  dondosha
+ * Added algo/blast/core to all #included headers
+ *
+ * Revision 1.52  2003/08/01 17:26:19  dondosha
+ * Use renamed versions of functions from local blastkar.h
+ *
+ * Revision 1.51  2003/07/31 17:45:17  dondosha
+ * Made use of const qualifier consistent throughout the library
+ *
+ * Revision 1.50  2003/07/31 14:31:41  camacho
+ * Replaced Char for char
+ *
+ * Revision 1.49  2003/07/31 14:19:28  camacho
+ * Replaced FloatHi for double
+ *
+ * Revision 1.48  2003/07/31 00:32:37  camacho
+ * Eliminated Ptr notation
+ *
+ * Revision 1.47  2003/07/30 22:06:25  dondosha
+ * Convert matrix name to upper case when filling scoring options
+ *
+ * Revision 1.46  2003/07/30 19:39:14  camacho
+ * Remove PNTRs
+ *
+ * Revision 1.45  2003/07/30 18:58:10  dondosha
+ * Removed unused member matrixname from lookup table options
+ *
+ * Revision 1.44  2003/07/30 17:15:00  dondosha
+ * Minor fixes for very strict compiler warnings
+ *
+ * Revision 1.43  2003/07/30 16:32:02  madden
+ * Use ansi functions when possible
+ *
+ * Revision 1.42  2003/07/29 14:42:31  coulouri
+ * use strdup() instead of StringSave()
+ *
+ * Revision 1.41  2003/07/28 19:04:15  camacho
+ * Replaced all MemNews for calloc
+ *
+ * Revision 1.40  2003/07/25 21:12:28  coulouri
+ * remove constructions of the form "return sfree();" and "a=sfree(a);"
+ *
+ * Revision 1.39  2003/07/25 17:25:43  coulouri
+ * in progres:
+ *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
+ *  * add sfree() macro and __sfree() helper function to util.[ch]
+ *  * use sfree() instead of MemFree()
+ *
+ * Revision 1.38  2003/07/23 17:31:10  camacho
+ * BlastDatabaseParameters struct is deprecated
+ *
+ * Revision 1.37  2003/07/23 16:42:01  dondosha
+ * Formatting options moved from blast_options.c to blast_format.c
+ *
+ * Revision 1.36  2003/07/22 20:26:16  dondosha
+ * Initialize BlastDatabaseParameters structure outside engine
+ *
+ * Revision 1.35  2003/07/22 15:32:55  dondosha
+ * Removed dependence on readdb API
+ *
+ * Revision 1.34  2003/07/21 20:31:47  dondosha
+ * Added BlastDatabaseParameters structure with genetic code string
+ *
+ * Revision 1.33  2003/06/26 21:38:05  dondosha
+ * Program number is removed from options structures, and passed explicitly as a parameter to functions that need it
+ *
+ * Revision 1.32  2003/06/26 20:24:06  camacho
+ * Do not free options structure in BlastExtensionParametersFree
+ *
+ * Revision 1.31  2003/06/23 21:49:11  dondosha
+ * Possibility of linking HSPs for tblastn activated
+ *
+ * Revision 1.30  2003/06/20 21:40:21  dondosha
+ * Added parameters for linking HSPs
+ *
+ * Revision 1.29  2003/06/20 15:20:21  dondosha
+ * Memory leak fixes
+ *
+ * Revision 1.28  2003/06/18 12:21:01  camacho
+ * Added proper return value
+ *
+ * Revision 1.27  2003/06/17 20:42:43  camacho
+ * Moved comments to header file, fixed includes
+ *
+ * Revision 1.26  2003/06/11 16:14:53  dondosha
+ * Added initialization of PSI-BLAST and database options
+ *
+ * Revision 1.25  2003/06/09 20:13:17  dondosha
+ * Minor type casting compiler warnings fixes
+ *
+ * Revision 1.24  2003/06/06 17:02:30  dondosha
+ * Typo fix
+ *
+ * Revision 1.23  2003/06/04 20:16:51  coulouri
+ * make prototypes and definitions agree
+ *
+ * Revision 1.22  2003/06/03 15:50:39  coulouri
+ * correct function pointer argument
+ *
+ * Revision 1.21  2003/05/30 15:52:11  coulouri
+ * various lint-induced cleanups
+ *
+ * Revision 1.20  2003/05/21 22:31:53  dondosha
+ * Added forcing of ungapped search for tblastx to option validation
+ *
+ * Revision 1.19  2003/05/18 21:57:37  camacho
+ * Use Uint1 for program name whenever possible
+ *
+ * Revision 1.18  2003/05/15 22:01:22  coulouri
+ * add rcsid string to sources
+ *
+ * Revision 1.17  2003/05/13 20:41:48  dondosha
+ * Correction in assigning of number of db sequences for 2 sequence case
+ *
+ * Revision 1.16  2003/05/13 15:11:34  dondosha
+ * Changed some char * arguments to const char *
+ *
+ * Revision 1.15  2003/05/07 17:44:31  dondosha
+ * Assign ungapped xdropoff default correctly for protein programs
+ *
+ * Revision 1.14  2003/05/06 20:29:57  dondosha
+ * Fix in filling effective length options
+ *
+ * Revision 1.13  2003/05/06 14:34:51  dondosha
+ * Fix in comment
+ *
+ * Revision 1.12  2003/05/01 16:56:30  dondosha
+ * Fixed strict compiler warnings
+ *
+ * Revision 1.11  2003/05/01 15:33:39  dondosha
+ * Reorganized the setup of BLAST search
+ *
+ * Revision 1.10  2003/04/24 14:27:35  dondosha
+ * Correction for latest changes
+ *
+ * Revision 1.9  2003/04/23 20:04:49  dondosha
+ * Added a function BLAST_InitAllDefaultOptions to initialize all various options structures with only default values
+ *
+ * Revision 1.8  2003/04/17 21:14:41  dondosha
+ * Added cutoff score hit parameters that is calculated from e-value
+ *
+ * Revision 1.7  2003/04/16 22:25:37  dondosha
+ * Correction to previous change
+ *
+ * Revision 1.6  2003/04/16 22:20:24  dondosha
+ * Correction in calculation of cutoff score for ungapped extensions
+ *
+ * Revision 1.5  2003/04/11 22:35:48  dondosha
+ * Minor corrections for blastn
+ *
+ * Revision 1.4  2003/04/03 22:57:50  dondosha
+ * Uninitialized variable fix
+ *
+ * Revision 1.3  2003/04/02 17:20:41  dondosha
+ * Added calculation of ungapped cutoff score in correct place
+ *
+ * Revision 1.2  2003/04/01 17:42:33  dondosha
+ * Added arguments to BlastExtensionParametersNew
+ *
+ * Revision 1.1  2003/03/31 18:22:30  camacho
+ * Moved from parent directory
+ *
+ * Revision 1.30  2003/03/28 23:12:34  dondosha
+ * Added program argument to BlastFormattingOptionsNew
+ *
+ * Revision 1.29  2003/03/27 20:54:19  dondosha
+ * Moved ungapped cutoff from hit options to word options
+ *
+ * Revision 1.28  2003/03/25 16:30:25  dondosha
+ * Strict compiler warning fixes
+ *
+ * Revision 1.27  2003/03/24 20:39:17  dondosha
+ * Added BlastExtensionParameters structure to hold raw gapped X-dropoff values
+ *
+ * Revision 1.26  2003/03/19 19:52:42  dondosha
+ * 1. Added strand option argument to BlastQuerySetUpOptionsNew
+ * 2. Added check of discontiguous template parameters in LookupTableOptionsValidate
+ *
+ * Revision 1.25  2003/03/14 19:08:53  dondosha
+ * Added arguments to various OptionsNew functions, so all initialization can be done inside
+ *
+ * Revision 1.24  2003/03/12 17:03:41  dondosha
+ * Set believe_query in formatting options to FALSE by default
+ *
+ * Revision 1.23  2003/03/11 20:40:32  dondosha
+ * Correction in assigning gap_x_dropoff_final
+ *
+ * Revision 1.22  2003/03/10 16:44:42  dondosha
+ * Added functions for initialization and freeing of formatting options structure
+ *
+ * Revision 1.21  2003/03/07 20:41:08  dondosha
+ * Small corrections in option initialization functions
+ *
+ * Revision 1.20  2003/03/06 19:25:52  madden
+ * Include blast_util.h
+ *
+ * Revision 1.19  2003/03/05 21:19:09  coulouri
+ * set NA_LOOKUP_TABLE flag
+ *
+ * Revision 1.18  2003/03/05 20:58:50  dondosha
+ * Corrections for handling effective search space for multiple queries
+ *
+ * Revision 1.17  2003/03/05 15:36:34  madden
+ * Moved BlastNumber2Program and BlastProgram2Number from blast_options to blast_util
+ *
+ * Revision 1.16  2003/03/03 14:43:21  madden
+ * Use BlastKarlinkGapBlkFill, PrintMatrixMessage, and PrintAllowedValuesMessage
+ *
+ * Revision 1.15  2003/02/26 15:42:50  madden
+ * const charPtr becomes const char *, add BlastExtensionOptionsValidate
+ *
+ * Revision 1.14  2003/02/14 16:30:19  dondosha
+ * Get rid of a compiler warning for type mismatch
+ *
+ * Revision 1.13  2003/02/13 21:42:25  madden
+ * Added validation functions
+ *
+ * Revision 1.12  2003/02/04 13:14:36  dondosha
+ * Changed the macro definitions for 
+ *
+ * Revision 1.11  2003/01/31 17:00:32  dondosha
+ * Do not set the scan step in LookupTableOptionsNew
+ *
+ * Revision 1.10  2003/01/28 15:13:25  madden
+ * Added functions and structures for parameters
+ *
+ * Revision 1.9  2003/01/22 20:49:31  dondosha
+ * Set decline_align for blastn too
+ *
+ * Revision 1.8  2003/01/22 15:09:55  dondosha
+ * Correction for default penalty assignment
+ *
+ * Revision 1.7  2003/01/17 22:10:45  madden
+ * Added functions for BlastExtensionOptions, BlastInitialWordOptions as well as defines for default values
+ *
+ * Revision 1.6  2003/01/10 18:36:40  madden
+ * Change call to BlastEffectiveLengthsOptionsNew
+ *
+ * Revision 1.5  2003/01/02 17:09:35  dondosha
+ * Fill alphabet size when creating lookup table options structure
+ *
+ * Revision 1.4  2002/12/24 14:49:00  madden
+ * Set defaults for LookupTableOptions for protein-protein searches
+ *
+ * Revision 1.3  2002/12/04 13:38:21  madden
+ * Add function LookupTableOptionsNew
+ *
+ * Revision 1.2  2002/10/17 15:45:17  madden
+ * Make BLOSUM62 default
+ *
+ * Revision 1.1  2002/10/07 21:05:12  madden
+ * Sets default option values
+ *
+ * ===========================================================================
+ */

@@ -25,11 +25,14 @@
  *
  * Author:  Kevin Bealer
  *
- * File Description:
- *   Queueing and Polling code for remote_blast.
- *
  */
 
+/** @file queue_poll.cpp
+ * Queueing and Polling code for remote_blast.
+ */
+
+static char const rcsid[] = 
+    "$Id$";
 
 #include <sys/time.h>
 #include <unistd.h>
@@ -546,6 +549,12 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/05/19 14:52:02  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
  * Revision 1.4  2004/04/19 14:37:52  bealer
  * - Fix compiler warnings.
  *

@@ -25,10 +25,15 @@
  *
  * Authors:  Christiam Camacho
  *
- * File Description:
- *   Reading FASTA from an input file
- *
  */
+
+/** @file blast_input.cpp
+ * Reading FASTA from an input file
+ */
+
+static char const rcsid[] = 
+    "$Id$";
+
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objtools/readers/fasta.hpp>

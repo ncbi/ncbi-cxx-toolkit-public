@@ -1,41 +1,37 @@
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's offical duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Ilya Dondoshansky
+ *
+ */
 
-/*****************************************************************************
+/** @file blast_filter.h
+ * BLAST filtering functions. @todo FIXME: contains more than filtering 
+ * functions, combine with blast_dust.h?
+ */
 
-File name: blast_filter.h
-
-Author: Ilya Dondoshansky
-
-Contents: BLAST filtering functions.
-
-Detailed Contents: 
-
-******************************************************************************
- * $Revision$
- * */
 #ifndef __BLAST_FILTER__
 #define __BLAST_FILTER__
 
@@ -108,8 +104,13 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param seqloc_retval Resulting locations for filtered region. [out]
 */
 Int2
-BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
-   Int4 offset, const char* instructions, Boolean *mask_at_hash, BlastSeqLoc* *seqloc_retval);
+BlastSetUp_Filter(Uint1 program_number, 
+    Uint1* sequence, 
+    Int4 length, 
+    Int4 offset, 
+    const char* instructions, 
+    Boolean *mask_at_hash, 
+    BlastSeqLoc* *seqloc_retval);
 
 
 /** Does preparation for filtering and then calls BlastSetUp_Filter

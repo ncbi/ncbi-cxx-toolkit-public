@@ -1,39 +1,39 @@
 /* $Id$
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's offical duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================*/
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's offical duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Ilya Dondoshansky
+ *
+ */
 
-/*****************************************************************************
+/** @file phi_lookup.c
+ * Functions for accessing the lookup table for PHI-BLAST
+ * @todo FIXME needs doxygen comments and lines shorter than 80 characters
+ */
 
-File name: phi_lookup.c
-
-Author: Ilya Dondoshansky
-
-Contents: Functions for accessing the lookup table for PHI-BLAST
-
-******************************************************************************
- * $Revision$
- * */
+static char const rcsid[] = 
+    "$Id$";
 
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/blast_util.h>
@@ -41,7 +41,6 @@ Contents: Functions for accessing the lookup table for PHI-BLAST
 #include <algo/blast/core/phi_lookup.h>
 #include <algo/blast/core/blast_message.h>
 
-static char const rcsid[] = "$Id$";
 
 #define seedepsilon 0.00001
 #define allone  ((1 << ALPHABET_SIZE) - 1)

@@ -25,10 +25,14 @@
  *
  * Authors:  Christiam Camacho
  *
- * File Description:
- *   Main driver for blast2sequences C++ interface
- *
  */
+
+/** @file blast2seq.cpp
+ * Main driver for blast2sequences C++ interface
+ */
+
+static char const rcsid[] = 
+    "$Id$";
 
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
@@ -492,6 +496,12 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/05/19 14:52:02  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
  * Revision 1.44  2004/05/17 15:33:57  madden
  * Int algorithm_type replaced with enum EBlastPrelimGapExt
  *

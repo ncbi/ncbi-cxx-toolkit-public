@@ -1,94 +1,39 @@
-/*   ncbimath.h
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* File Name:  ncbimath.h
-*
-* Author:  Gish, Kans, Ostell, Schuler
-*
-* Version Creation Date:   10/23/91
-*
-* $Revision$
-*
-* File Description:
-*   	prototypes for portable math library
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* Date     Name        Description of modification
-* -------  ----------  -----------------------------------------------------
-*
-* $Log$
-* Revision 1.6  2003/09/26 20:38:12  dondosha
-* Returned prototype for the factorial function (BLAST_Factorial)
-*
-* Revision 1.5  2003/09/26 19:02:31  madden
-* Prefix ncbimath functions with BLAST_
-*
-* Revision 1.4  2003/09/10 21:35:20  dondosha
-* Removed Nlm_ prefix from math functions
-*
-* Revision 1.3  2003/08/25 22:30:24  dondosha
-* Added LnGammaInt definition and Factorial prototype
-*
-* Revision 1.2  2003/08/11 14:57:16  dondosha
-* Added algo/blast/core path to all #included headers
-*
-* Revision 1.1  2003/08/02 16:32:11  camacho
-* Moved ncbimath.h -> ncbi_math.h
-*
-* Revision 1.2  2003/08/01 21:18:48  dondosha
-* Correction of a #include
-*
-* Revision 1.1  2003/08/01 21:03:40  madden
-* Cleaned up version of file for C++ toolkit
-*
-* Revision 6.1  1999/11/24 17:29:16  sicotte
-* Added LnFactorial function
-*
-* Revision 6.0  1997/08/25 18:16:37  madden
-* Revision changed to 6.0
-*
-* Revision 5.2  1996/12/03 21:48:33  vakatov
-* Adopted for 32-bit MS-Windows DLLs
-*
- * Revision 5.1  1996/06/20  14:08:00  madden
- * Changed int to Int4, double to FloatHi
+/* $Id$
+ * ===========================================================================
  *
- * Revision 5.0  1996/05/28  13:18:57  ostell
- * Set to revision 5.0
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
  *
- * Revision 4.0  1995/07/26  13:46:50  ostell
- * force revision to 4.0
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
  *
- * Revision 2.4  1995/05/15  18:45:58  ostell
- * added Log line
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
  *
-*
-*
-* ==========================================================================
-*/
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Gish, Kans, Ostell, Schuler
+ *
+ * Version Creation Date:   10/23/91
+ *
+ * ==========================================================================
+ */
+
+/** @file ncbi_math.h
+ * Prototypes for portable math library (ported from C Toolkit)
+ * @todo FIXME doxygen comments
+ */
 
 #include <algo/blast/core/ncbi_std.h> 
 
@@ -158,6 +103,43 @@ extern double BLAST_Powi (double x, Int4 n);
 #ifdef __cplusplus
 }
 #endif
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.7  2004/05/19 14:52:01  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
+ * Revision 1.6  2003/09/26 20:38:12  dondosha
+ * Returned prototype for the factorial function (BLAST_Factorial)
+ *
+ * Revision 1.5  2003/09/26 19:02:31  madden
+ * Prefix ncbimath functions with BLAST_
+ *
+ * Revision 1.4  2003/09/10 21:35:20  dondosha
+ * Removed Nlm_ prefix from math functions
+ *
+ * Revision 1.3  2003/08/25 22:30:24  dondosha
+ * Added LnGammaInt definition and Factorial prototype
+ *
+ * Revision 1.2  2003/08/11 14:57:16  dondosha
+ * Added algo/blast/core path to all #included headers
+ *
+ * Revision 1.1  2003/08/02 16:32:11  camacho
+ * Moved ncbimath.h -> ncbi_math.h
+ *
+ * Revision 1.2  2003/08/01 21:18:48  dondosha
+ * Correction of a #include
+ *
+ * Revision 1.1  2003/08/01 21:03:40  madden
+ * Cleaned up version of file for C++ toolkit
+ *
+ * ===========================================================================
+ */
 
 
 #endif /* !_NCBIMATH_ */

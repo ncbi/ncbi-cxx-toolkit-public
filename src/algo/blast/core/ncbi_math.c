@@ -1,112 +1,42 @@
-/*   ncbi_math.c
-* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================
-*
-* File Name:  ncbi_math.c
-*
-* Author:  Gish, Kans, Ostell, Schuler
-*
-* Version Creation Date:   10/23/91
-*
-* $Revision$
-*
-* File Description:
-*   	portable math functions
-*
-* Modifications:
-* --------------------------------------------------------------------------
-* Date     Name        Description of modification
-* -------  ----------  -----------------------------------------------------
-* 04-15-93 Schuler     Changed _cdecl to LIBCALL
-* 12-22-93 Schuler     Converted ERRPOST((...)) to ErrPostEx(...)
-*
-* $Log$
-* Revision 1.7  2003/12/05 16:03:57  camacho
-* Remove compiler warnings
-*
-* Revision 1.6  2003/09/26 20:39:32  dondosha
-* Rearranged code so it compiles
-*
-* Revision 1.5  2003/09/26 19:01:59  madden
-* Prefix ncbimath functions with BLAST_
-*
-* Revision 1.4  2003/09/10 21:36:29  dondosha
-* Removed Nlm_ prefix from math functions definitions
-*
-* Revision 1.3  2003/08/25 22:32:51  dondosha
-* Added #ifndef for definition of DBL_EPSILON
-*
-* Revision 1.2  2003/08/11 15:02:00  dondosha
-* Added algo/blast/core to all #included headers
-*
-* Revision 1.1  2003/08/02 16:31:48  camacho
-* Moved ncbimath.c -> ncbi_math.c
-*
-* Revision 1.1  2003/08/01 21:03:46  madden
-* Cleaned up version of file for C++ toolkit
-*
-* Revision 6.3  1999/11/24 17:29:16  sicotte
-* Added LnFactorial function
-*
-* Revision 6.2  1997/11/26 21:26:18  vakatov
-* Fixed errors and warnings issued by C and C++ (GNU and Sun) compilers
-*
-* Revision 6.1  1997/10/31 16:22:49  madden
-* Limited the loop in Log1p to 500 iterations
-*
-* Revision 6.0  1997/08/25 18:16:35  madden
-* Revision changed to 6.0
-*
-* Revision 5.4  1997/01/31 22:21:40  kans
-* had to remove <fp.h> and define HUGE_VAL inline, because of a conflict
-* with <math.h> in 68K CodeWarrior 11
-*
- * Revision 5.3  1997/01/28  22:57:57  kans
- * include <fp.h> for CodeWarrior to get HUGE_VAL
+/* $Id$
+ * ===========================================================================
  *
- * Revision 5.2  1996/12/03  21:48:33  vakatov
- * Adopted for 32-bit MS-Windows DLLs
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
  *
- * Revision 5.1  1996/06/20  14:08:00  madden
- * Changed int to Int4, double to FloatHi
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
  *
- * Revision 5.0  1996/05/28  13:18:57  ostell
- * Set to revision 5.0
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
  *
- * Revision 4.1  1996/03/06  19:47:15  epstein
- * fix problem observed by Epstein & fixed by Spouge in log calculation
+ *  Please cite the author in any work or product based on this material.
  *
- * Revision 4.0  1995/07/26  13:46:50  ostell
- * force revision to 4.0
+ * ===========================================================================
  *
- * Revision 2.11  1995/05/15  18:45:58  ostell
- * added Log line
+ * Authors:  Gish, Kans, Ostell, Schuler
  *
-*
-*
-* ==========================================================================
-*/
+ * Version Creation Date:   10/23/91
+ *
+ * ==========================================================================
+ */
+
+/** @file ncbi_math.c
+ * Definitions for portable math library (ported from C Toolkit)
+ * @todo FIXME doxygen comments and formatting
+ */
+
+static char const rcsid[] = 
+    "$Id$";
 
 #define THIS_MODULE g_corelib
 #define THIS_FILE _this_file
@@ -605,3 +535,41 @@ extern double BLAST_LnFactorial (double x) {
         return LnGamma(x+1.0);
         
 }
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.8  2004/05/19 14:52:03  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
+ * Revision 1.7  2003/12/05 16:03:57  camacho
+ * Remove compiler warnings
+ *
+ * Revision 1.6  2003/09/26 20:39:32  dondosha
+ * Rearranged code so it compiles
+ *
+ * Revision 1.5  2003/09/26 19:01:59  madden
+ * Prefix ncbimath functions with BLAST_
+ *
+ * Revision 1.4  2003/09/10 21:36:29  dondosha
+ * Removed Nlm_ prefix from math functions definitions
+ *
+ * Revision 1.3  2003/08/25 22:32:51  dondosha
+ * Added #ifndef for definition of DBL_EPSILON
+ *
+ * Revision 1.2  2003/08/11 15:02:00  dondosha
+ * Added algo/blast/core to all #included headers
+ *
+ * Revision 1.1  2003/08/02 16:31:48  camacho
+ * Moved ncbimath.c -> ncbi_math.c
+ *
+ * Revision 1.1  2003/08/01 21:03:46  madden
+ * Cleaned up version of file for C++ toolkit
+ *
+ * ===========================================================================
+ */
+

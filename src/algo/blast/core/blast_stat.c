@@ -1,304 +1,57 @@
-static char const rcsid[] = "$Id$";
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author: Tom Madden
+ *
+ */
 
-/* ===========================================================================
-*
-*                            PUBLIC DOMAIN NOTICE
-*               National Center for Biotechnology Information
-*
-*  This software/database is a "United States Government Work" under the
-*  terms of the United States Copyright Act.  It was written as part of
-*  the author's official duties as a United States Government employee and
-*  thus cannot be copyrighted.  This software/database is freely available
-*  to the public for use. The National Library of Medicine and the U.S.
-*  Government have not placed any restriction on its use or reproduction.
-*
-*  Although all reasonable efforts have been taken to ensure the accuracy
-*  and reliability of the software and data, the NLM and the U.S.
-*  Government do not and cannot warrant the performance or results that
-*  may be obtained by using this software or data. The NLM and the U.S.
-*  Government disclaim all warranties, express or implied, including
-*  warranties of performance, merchantability or fitness for any particular
-*  purpose.
-*
-*  Please cite the author in any work or product based on this material.
-*
-* ===========================================================================*/
-/*****************************************************************************
+/** @file blast_stat.c
+ * Functions to calculate BLAST probabilities etc.
+ * Detailed Contents:
+ *
+ *	- allocate and deallocate structures used by BLAST to calculate
+ *	probabilities etc.
+ *
+ *	- calculate residue frequencies for query and "average" database.
+ *
+ *	- read in matrix or load it from memory.
+ *
+ *  - calculate sum-p from a collection of HSP's, for both the case
+ *	  of a "small" gap and a "large" gap, when give a total score and the
+ *	  number of HSP's.
+ *
+ *	- calculate expect values for p-values.
+ *
+ *	- calculate pseuod-scores from p-values.
+ *
+ * @todo FIXME needs doxygen comments
+ */
 
-File name: blast_stat.c
+static char const rcsid[] = 
+    "$Id$";
 
-Author: Tom Madden
-
-Contents: Functions to calculate BLAST probabilities etc.
-
-Detailed Contents:
-
-	- allocate and deallocate structures used by BLAST to calculate
-	probabilities etc.
-
-	- calculate residue frequencies for query and "average" database.
-
-	- read in matrix.
-
-        - calculate sum-p from a collection of HSP's, for both the case
-	of a "small" gap and a "large" gap, when give a total score and the
-	number of HSP's.
-
-	- calculate expect values for p-values.
-
-	- calculate pseuod-scores from p-values.
-
-****************************************************************************** 
- * $Revision$
- * $Log$
- * Revision 1.72  2004/05/17 10:37:38  camacho
- * Rename BLAST_ScoreFreq, BLASTMatrixStructure and BLAST_ResComp to avoid conflicts with C toolkit
- *
- * Revision 1.71  2004/05/07 15:23:47  papadopo
- * add initialization of scale factor to ScoreBlkNew
- *
- * Revision 1.70  2004/05/06 15:59:29  camacho
- * Made Blast_KarlinBlkCalc non-static
- *
- * Revision 1.69  2004/05/06 15:05:13  camacho
- * Fix to previous commit
- *
- * Revision 1.68  2004/05/06 14:44:27  camacho
- * Made Blast_ScoreFreqDestruct non-static
- *
- * Revision 1.67  2004/05/05 21:16:24  camacho
- * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
- *
- * Revision 1.66  2004/05/04 13:00:02  madden
- * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_KarlinBlkIdealCalc, make public
- *
- * Revision 1.65  2004/04/30 14:39:44  papadopo
- * 1. Remove unneeded #defines
- * 2. use BLAST_SCORE_RANGE_MAX during RPS PSSM creation instead of
- * 	(possibly incompatible) RPS_SCORE_MAX
- * 3. return NULL instead of FALSE on an error
- *
- * Revision 1.64  2004/04/30 12:58:49  camacho
- * Replace RPSKarlinLambdaNR by Blast_KarlinLambdaNR
- *
- * Revision 1.63  2004/04/29 20:32:38  papadopo
- * remove RPS_SCORE_MIN, since it turned out to be a workaround for a bug that has since been fixed
- *
- * Revision 1.62  2004/04/29 19:58:03  camacho
- * Use generic matrix allocator/deallocator from blast_psi_priv.h
- *
- * Revision 1.61  2004/04/28 14:40:23  madden
- * Changes from Mike Gertz:
- * - I created the new routine BLAST_GapDecayDivisor that computes a
- *   divisor used to weight the evalue of a collection of distinct
- *   alignments.
- * - I removed  BLAST_GapDecay and BLAST_GapDecayInverse which had become
- *   redundant.
- * - I modified the BLAST_Cutoffs routine so that it uses the value
- *   returned by BLAST_GapDecayDivisor to weight evalues.
- * - I modified BLAST_SmallGapSumE, BLAST_LargeGapSumE and
- *   BLAST_UnevenGapSumE no longer refer to the gap_prob parameter.
- *   Replaced the gap_decay_rate parameter of each of these routines with
- *   a weight_divisor parameter.  Added documentation.
- *
- * Revision 1.60  2004/04/23 19:06:33  camacho
- * Do NOT use lowercase names for #defines
- *
- * Revision 1.59  2004/04/23 13:49:20  madden
- * Cleaned up ifndef in BlastKarlinLHtoK
- *
- * Revision 1.58  2004/04/23 13:21:25  madden
- * Rewrote BlastKarlinLHtoK to do the following and more:
- * 1. fix a bug whereby the wrong formula was used when high score == 1
- *    and low score == -1;
- * 2. fix a methodological error of truncating the first sum
- *    and trying to make it converge quickly by adding terms
- *    of a geometric progression, even though the geometric progression
- *    estimate is not correct in all cases;
- *    the old adjustment code is left in for historical purposes but
- *    #ifdef'd out
- * 3. Eliminate the Boolean bi_modal_score variable.  The old test that
- *    set the value of bi_modal_score would frequently fail to choose the
- *    correct value due to rounding error.
- * 4. changed numerous local variable names to make them more meaningful;
- * 5. added substantial comments to explain what the procedure
- *    is doing and what each variable represents
- *
- * Revision 1.57  2004/04/19 12:58:18  madden
- * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
- *
- * Revision 1.56  2004/04/12 18:57:31  madden
- * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqDestruct, and Blast_ResFreqStdComp non-static
- *
- * Revision 1.55  2004/04/08 13:53:10  papadopo
- * fix doxygen warning
- *
- * Revision 1.54  2004/04/07 03:06:16  camacho
- * Added blast_encoding.[hc], refactoring blast_stat.[hc]
- *
-v * Revision 1.53  2004/04/05 18:53:35  madden
- * Set dimensions if matrix from memory
- *
- * Revision 1.52  2004/04/01 14:14:02  lavr
- * Spell "occurred", "occurrence", and "occurring"
- *
- * Revision 1.51  2004/03/31 17:50:09  papadopo
- * Mike Gertz' changes for length adjustment calculations
- *
- * Revision 1.50  2004/03/11 18:52:41  camacho
- * Remove THREADS_IMPLEMENTED
- *
- * Revision 1.49  2004/03/10 18:00:06  camacho
- * Remove outdated references to blastkar
- *
- * Revision 1.48  2004/03/05 17:52:33  papadopo
- * Allow 32-bit context numbers for queries
- *
- * Revision 1.47  2004/03/04 21:07:51  papadopo
- * add RPS BLAST functionality
- *
- * Revision 1.46  2004/02/19 21:16:48  dondosha
- * Use enum type for severity argument in Blast_MessageWrite
- *
- * Revision 1.45  2003/12/05 16:03:57  camacho
- * Remove compiler warnings
- *
- * Revision 1.44  2003/11/28 22:39:11  camacho
- * + static keyword to BlastKarlinLtoH
- *
- * Revision 1.43  2003/11/28 15:03:48  camacho
- * Added static keyword to BlastKarlinLtoH
- *
- * Revision 1.42  2003/11/26 19:12:13  madden
- * code to simplify some routines and use NlmKarlinLambdaNR in place of BlastKarlinLambdaBis (following Mike Gertzs changes to blastkar.c )
- *
- * Revision 1.41  2003/11/24 23:18:32  dondosha
- * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
- *
- * Revision 1.40  2003/11/19 15:17:42  dondosha
- * Removed unused members from Karlin block structure
- *
- * Revision 1.39  2003/10/16 15:55:22  coulouri
- * fix uninitialized variables
- *
- * Revision 1.38  2003/10/16 15:52:08  coulouri
- * fix uninitialized variables
- *
- * Revision 1.37  2003/10/15 16:59:43  coulouri
- * type correctness fixes
- *
- * Revision 1.36  2003/10/02 22:08:34  dondosha
- * Corrections for one-strand translated searches
- *
- * Revision 1.35  2003/09/26 19:01:59  madden
- * Prefix ncbimath functions with BLAST_
- *
- * Revision 1.34  2003/09/09 14:21:39  coulouri
- * change blastkar.h to blast_stat.h
- *
- * Revision 1.33  2003/09/02 21:12:07  camacho
- * Fix small memory leak
- *
- * Revision 1.32  2003/08/26 15:23:51  dondosha
- * Rolled back previous change as it is not necessary any more
- *
- * Revision 1.31  2003/08/25 22:29:07  dondosha
- * Default matrix loading is defined only in C++ toolkit
- *
- * Revision 1.30  2003/08/25 18:05:41  dondosha
- * Moved assert statement after variables declarations
- *
- * Revision 1.29  2003/08/25 16:23:33  camacho
- * +Loading protein scoring matrices from utils/tables
- *
- * Revision 1.28  2003/08/11 15:01:59  dondosha
- * Added algo/blast/core to all #included headers
- *
- * Revision 1.27  2003/08/01 17:27:04  dondosha
- * Renamed external functions to avoid collisions with ncbitool library; made other functions static
- *
- * Revision 1.26  2003/07/31 18:48:49  dondosha
- * Use Int4 instead of BLAST_Score
- *
- * Revision 1.25  2003/07/31 17:48:06  madden
- * Remove call to FileLength
- *
- * Revision 1.24  2003/07/31 14:31:41  camacho
- * Replaced Char for char
- *
- * Revision 1.23  2003/07/31 14:19:28  camacho
- * Replaced FloatHi for double
- *
- * Revision 1.22  2003/07/31 00:32:37  camacho
- * Eliminated Ptr notation
- *
- * Revision 1.21  2003/07/30 22:08:09  dondosha
- * Process of finding path to the matrix is moved out of the blast library
- *
- * Revision 1.20  2003/07/30 21:52:41  camacho
- * Follow conventional structure definition
- *
- * Revision 1.19  2003/07/30 19:39:14  camacho
- * Remove PNTRs
- *
- * Revision 1.18  2003/07/30 17:58:25  dondosha
- * Changed ValNode to ListNode
- *
- * Revision 1.17  2003/07/30 17:15:00  dondosha
- * Minor fixes for very strict compiler warnings
- *
- * Revision 1.16  2003/07/30 17:06:40  camacho
- * Removed old cvs log
- *
- * Revision 1.15  2003/07/30 16:32:02  madden
- * Use ansi functions when possible
- *
- * Revision 1.14  2003/07/30 15:29:37  madden
- * Removed MemSets
- *
- * Revision 1.13  2003/07/29 14:42:31  coulouri
- * use strdup() instead of StringSave()
- *
- * Revision 1.12  2003/07/28 19:04:15  camacho
- * Replaced all MemNews for calloc
- *
- * Revision 1.11  2003/07/28 03:41:49  camacho
- * Use f{open,close,gets} instead of File{Open,Close,Gets}
- *
- * Revision 1.10  2003/07/25 21:12:28  coulouri
- * remove constructions of the form "return sfree();" and "a=sfree(a);"
- *
- * Revision 1.9  2003/07/25 18:58:43  camacho
- * Avoid using StrUpper and StringHasNoText
- *
- * Revision 1.8  2003/07/25 17:25:43  coulouri
- * in progres:
- *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
- *  * add sfree() macro and __sfree() helper function to util.[ch]
- *  * use sfree() instead of MemFree()
- *
- * Revision 1.7  2003/07/24 22:37:33  dondosha
- * Removed some unused function parameters
- *
- * Revision 1.6  2003/07/24 22:01:44  camacho
- * Removed unused variables
- *
- * Revision 1.5  2003/07/24 21:31:06  dondosha
- * Changed to calls to BlastConstructErrorMessage to API from blast_message.h
- *
- * Revision 1.4  2003/07/24 20:38:30  dondosha
- * Removed LIBCALL etc. macros
- *
- * Revision 1.3  2003/07/24 17:37:46  dondosha
- * Removed MakeBlastScore function that is dependent on objalign.h
- *
- * Revision 1.2  2003/07/24 15:50:49  dondosha
- * Commented out mutex operations
- *
- * Revision 1.1  2003/07/24 15:18:09  dondosha
- * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
- *
- * */
 #include <algo/blast/core/blast_stat.h>
 #include <algo/blast/core/blast_util.h>
 #include <util/tables/raw_scoremat.h>
@@ -3753,3 +3506,263 @@ BLAST_ComputeLengthAdjustment(double K,
 
     return converged ? 0 : 1;
 }
+
+/*
+ * ===========================================================================
+ *
+ * $Log$
+ * Revision 1.73  2004/05/19 14:52:03  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
+ * Revision 1.72  2004/05/17 10:37:38  camacho
+ * Rename BLAST_ScoreFreq, BLASTMatrixStructure and BLAST_ResComp to avoid conflicts with C toolkit
+ *
+ * Revision 1.71  2004/05/07 15:23:47  papadopo
+ * add initialization of scale factor to ScoreBlkNew
+ *
+ * Revision 1.70  2004/05/06 15:59:29  camacho
+ * Made Blast_KarlinBlkCalc non-static
+ *
+ * Revision 1.69  2004/05/06 15:05:13  camacho
+ * Fix to previous commit
+ *
+ * Revision 1.68  2004/05/06 14:44:27  camacho
+ * Made Blast_ScoreFreqDestruct non-static
+ *
+ * Revision 1.67  2004/05/05 21:16:24  camacho
+ * Make Blast_GetStdAlphabet and Blast_ScoreFreqNew non-static
+ *
+ * Revision 1.66  2004/05/04 13:00:02  madden
+ * Change BlastKarlinBlkStandardCalcEx to more descriptive Blast_KarlinBlkIdealCalc, make public
+ *
+ * Revision 1.65  2004/04/30 14:39:44  papadopo
+ * 1. Remove unneeded #defines
+ * 2. use BLAST_SCORE_RANGE_MAX during RPS PSSM creation instead of
+ * 	(possibly incompatible) RPS_SCORE_MAX
+ * 3. return NULL instead of FALSE on an error
+ *
+ * Revision 1.64  2004/04/30 12:58:49  camacho
+ * Replace RPSKarlinLambdaNR by Blast_KarlinLambdaNR
+ *
+ * Revision 1.63  2004/04/29 20:32:38  papadopo
+ * remove RPS_SCORE_MIN, since it turned out to be a workaround for a bug that has since been fixed
+ *
+ * Revision 1.62  2004/04/29 19:58:03  camacho
+ * Use generic matrix allocator/deallocator from blast_psi_priv.h
+ *
+ * Revision 1.61  2004/04/28 14:40:23  madden
+ * Changes from Mike Gertz:
+ * - I created the new routine BLAST_GapDecayDivisor that computes a
+ *   divisor used to weight the evalue of a collection of distinct
+ *   alignments.
+ * - I removed  BLAST_GapDecay and BLAST_GapDecayInverse which had become
+ *   redundant.
+ * - I modified the BLAST_Cutoffs routine so that it uses the value
+ *   returned by BLAST_GapDecayDivisor to weight evalues.
+ * - I modified BLAST_SmallGapSumE, BLAST_LargeGapSumE and
+ *   BLAST_UnevenGapSumE no longer refer to the gap_prob parameter.
+ *   Replaced the gap_decay_rate parameter of each of these routines with
+ *   a weight_divisor parameter.  Added documentation.
+ *
+ * Revision 1.60  2004/04/23 19:06:33  camacho
+ * Do NOT use lowercase names for #defines
+ *
+ * Revision 1.59  2004/04/23 13:49:20  madden
+ * Cleaned up ifndef in BlastKarlinLHtoK
+ *
+ * Revision 1.58  2004/04/23 13:21:25  madden
+ * Rewrote BlastKarlinLHtoK to do the following and more:
+ * 1. fix a bug whereby the wrong formula was used when high score == 1
+ *    and low score == -1;
+ * 2. fix a methodological error of truncating the first sum
+ *    and trying to make it converge quickly by adding terms
+ *    of a geometric progression, even though the geometric progression
+ *    estimate is not correct in all cases;
+ *    the old adjustment code is left in for historical purposes but
+ *    #ifdef'd out
+ * 3. Eliminate the Boolean bi_modal_score variable.  The old test that
+ *    set the value of bi_modal_score would frequently fail to choose the
+ *    correct value due to rounding error.
+ * 4. changed numerous local variable names to make them more meaningful;
+ * 5. added substantial comments to explain what the procedure
+ *    is doing and what each variable represents
+ *
+ * Revision 1.57  2004/04/19 12:58:18  madden
+ * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
+ *
+ * Revision 1.56  2004/04/12 18:57:31  madden
+ * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqDestruct, and Blast_ResFreqStdComp non-static
+ *
+ * Revision 1.55  2004/04/08 13:53:10  papadopo
+ * fix doxygen warning
+ *
+ * Revision 1.54  2004/04/07 03:06:16  camacho
+ * Added blast_encoding.[hc], refactoring blast_stat.[hc]
+ *
+v * Revision 1.53  2004/04/05 18:53:35  madden
+ * Set dimensions if matrix from memory
+ *
+ * Revision 1.52  2004/04/01 14:14:02  lavr
+ * Spell "occurred", "occurrence", and "occurring"
+ *
+ * Revision 1.51  2004/03/31 17:50:09  papadopo
+ * Mike Gertz' changes for length adjustment calculations
+ *
+ * Revision 1.50  2004/03/11 18:52:41  camacho
+ * Remove THREADS_IMPLEMENTED
+ *
+ * Revision 1.49  2004/03/10 18:00:06  camacho
+ * Remove outdated references to blastkar
+ *
+ * Revision 1.48  2004/03/05 17:52:33  papadopo
+ * Allow 32-bit context numbers for queries
+ *
+ * Revision 1.47  2004/03/04 21:07:51  papadopo
+ * add RPS BLAST functionality
+ *
+ * Revision 1.46  2004/02/19 21:16:48  dondosha
+ * Use enum type for severity argument in Blast_MessageWrite
+ *
+ * Revision 1.45  2003/12/05 16:03:57  camacho
+ * Remove compiler warnings
+ *
+ * Revision 1.44  2003/11/28 22:39:11  camacho
+ * + static keyword to BlastKarlinLtoH
+ *
+ * Revision 1.43  2003/11/28 15:03:48  camacho
+ * Added static keyword to BlastKarlinLtoH
+ *
+ * Revision 1.42  2003/11/26 19:12:13  madden
+ * code to simplify some routines and use NlmKarlinLambdaNR in place of BlastKarlinLambdaBis (following Mike Gertzs changes to blastkar.c )
+ *
+ * Revision 1.41  2003/11/24 23:18:32  dondosha
+ * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
+ *
+ * Revision 1.40  2003/11/19 15:17:42  dondosha
+ * Removed unused members from Karlin block structure
+ *
+ * Revision 1.39  2003/10/16 15:55:22  coulouri
+ * fix uninitialized variables
+ *
+ * Revision 1.38  2003/10/16 15:52:08  coulouri
+ * fix uninitialized variables
+ *
+ * Revision 1.37  2003/10/15 16:59:43  coulouri
+ * type correctness fixes
+ *
+ * Revision 1.36  2003/10/02 22:08:34  dondosha
+ * Corrections for one-strand translated searches
+ *
+ * Revision 1.35  2003/09/26 19:01:59  madden
+ * Prefix ncbimath functions with BLAST_
+ *
+ * Revision 1.34  2003/09/09 14:21:39  coulouri
+ * change blastkar.h to blast_stat.h
+ *
+ * Revision 1.33  2003/09/02 21:12:07  camacho
+ * Fix small memory leak
+ *
+ * Revision 1.32  2003/08/26 15:23:51  dondosha
+ * Rolled back previous change as it is not necessary any more
+ *
+ * Revision 1.31  2003/08/25 22:29:07  dondosha
+ * Default matrix loading is defined only in C++ toolkit
+ *
+ * Revision 1.30  2003/08/25 18:05:41  dondosha
+ * Moved assert statement after variables declarations
+ *
+ * Revision 1.29  2003/08/25 16:23:33  camacho
+ * +Loading protein scoring matrices from utils/tables
+ *
+ * Revision 1.28  2003/08/11 15:01:59  dondosha
+ * Added algo/blast/core to all #included headers
+ *
+ * Revision 1.27  2003/08/01 17:27:04  dondosha
+ * Renamed external functions to avoid collisions with ncbitool library; made other functions static
+ *
+ * Revision 1.26  2003/07/31 18:48:49  dondosha
+ * Use Int4 instead of BLAST_Score
+ *
+ * Revision 1.25  2003/07/31 17:48:06  madden
+ * Remove call to FileLength
+ *
+ * Revision 1.24  2003/07/31 14:31:41  camacho
+ * Replaced Char for char
+ *
+ * Revision 1.23  2003/07/31 14:19:28  camacho
+ * Replaced FloatHi for double
+ *
+ * Revision 1.22  2003/07/31 00:32:37  camacho
+ * Eliminated Ptr notation
+ *
+ * Revision 1.21  2003/07/30 22:08:09  dondosha
+ * Process of finding path to the matrix is moved out of the blast library
+ *
+ * Revision 1.20  2003/07/30 21:52:41  camacho
+ * Follow conventional structure definition
+ *
+ * Revision 1.19  2003/07/30 19:39:14  camacho
+ * Remove PNTRs
+ *
+ * Revision 1.18  2003/07/30 17:58:25  dondosha
+ * Changed ValNode to ListNode
+ *
+ * Revision 1.17  2003/07/30 17:15:00  dondosha
+ * Minor fixes for very strict compiler warnings
+ *
+ * Revision 1.16  2003/07/30 17:06:40  camacho
+ * Removed old cvs log
+ *
+ * Revision 1.15  2003/07/30 16:32:02  madden
+ * Use ansi functions when possible
+ *
+ * Revision 1.14  2003/07/30 15:29:37  madden
+ * Removed MemSets
+ *
+ * Revision 1.13  2003/07/29 14:42:31  coulouri
+ * use strdup() instead of StringSave()
+ *
+ * Revision 1.12  2003/07/28 19:04:15  camacho
+ * Replaced all MemNews for calloc
+ *
+ * Revision 1.11  2003/07/28 03:41:49  camacho
+ * Use f{open,close,gets} instead of File{Open,Close,Gets}
+ *
+ * Revision 1.10  2003/07/25 21:12:28  coulouri
+ * remove constructions of the form "return sfree();" and "a=sfree(a);"
+ *
+ * Revision 1.9  2003/07/25 18:58:43  camacho
+ * Avoid using StrUpper and StringHasNoText
+ *
+ * Revision 1.8  2003/07/25 17:25:43  coulouri
+ * in progres:
+ *  * use malloc/calloc/realloc instead of Malloc/Calloc/Realloc
+ *  * add sfree() macro and __sfree() helper function to util.[ch]
+ *  * use sfree() instead of MemFree()
+ *
+ * Revision 1.7  2003/07/24 22:37:33  dondosha
+ * Removed some unused function parameters
+ *
+ * Revision 1.6  2003/07/24 22:01:44  camacho
+ * Removed unused variables
+ *
+ * Revision 1.5  2003/07/24 21:31:06  dondosha
+ * Changed to calls to BlastConstructErrorMessage to API from blast_message.h
+ *
+ * Revision 1.4  2003/07/24 20:38:30  dondosha
+ * Removed LIBCALL etc. macros
+ *
+ * Revision 1.3  2003/07/24 17:37:46  dondosha
+ * Removed MakeBlastScore function that is dependent on objalign.h
+ *
+ * Revision 1.2  2003/07/24 15:50:49  dondosha
+ * Commented out mutex operations
+ *
+ * Revision 1.1  2003/07/24 15:18:09  dondosha
+ * Copy of blastkar.h from ncbitools library, stripped of dependency on ncbiobj
+ *
+ * ===========================================================================
+ */

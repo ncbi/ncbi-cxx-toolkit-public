@@ -25,11 +25,14 @@
  *
  * Author:  Kevin Bealer
  *
- * File Description:
- *   Search-related options for remote_blast.
- *
  */
 
+/** @file search_opts.cpp
+ * Search-related options for remote_blast.
+ */
+
+static char const rcsid[] = 
+    "$Id$";
 
 #include "search_opts.hpp"
 
@@ -228,6 +231,12 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/05/19 14:52:02  camacho
+ * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
+ * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
+ *    location
+ * 3. Added use of @todo doxygen keyword
+ *
  * Revision 1.4  2004/04/15 21:18:56  bealer
  * - Remove semi-colons so that solaris compiler will not choke.
  *
