@@ -42,19 +42,19 @@ class C_DriverMgr : public I_DriverMgr
 {
 public:
     C_DriverMgr(unsigned int nof_drivers= 16) {
-	m_NofRoom= nof_drivers? nof_drivers : 16;
-	m_Drivers= new SDrivers[m_NofRoom];
-	m_NofDrvs= 0;
+        m_NofRoom= nof_drivers? nof_drivers : 16;
+        m_Drivers= new SDrivers[m_NofRoom];
+        m_NofDrvs= 0;
     }
 
     FDBAPI_CreateContext GetDriver(const string& driver_name, 
-				   string* err_msg= 0);
+                                   string* err_msg= 0);
 
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
     virtual ~C_DriverMgr() {
-	delete [] m_Drivers;
+        delete [] m_Drivers;
     }
 
 protected:
@@ -65,14 +65,14 @@ private:
     typedef FDriverRegister (*FDllEntryPoint)  (void);
 
     struct SDrivers {
-	string               drv_name;
-	FDBAPI_CreateContext drv_func;
+        string               drv_name;
+        FDBAPI_CreateContext drv_func;
     } *m_Drivers;
 
     unsigned int m_NofDrvs;
     unsigned int m_NofRoom;
-    CFastMutex m_Mutex1;
-    CFastMutex m_Mutex2;
+    CFastMutex   m_Mutex1;
+    CFastMutex   m_Mutex2;
 };
 
 
@@ -83,6 +83,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2002/04/09 20:05:57  vakatov
+ * Identation
+ *
  * Revision 1.5  2002/04/04 23:48:44  soussov
  * return of error message from dlopen added
  *
