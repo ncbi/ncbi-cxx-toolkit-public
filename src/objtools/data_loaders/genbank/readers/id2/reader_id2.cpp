@@ -77,7 +77,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-#define DEFAULT_ID2_SERVICE_NAME "ID2LXA"
+#define DEFAULT_ID2_SERVICE_NAME "ID2"
 
 static int GetDebugLevel(void)
 {
