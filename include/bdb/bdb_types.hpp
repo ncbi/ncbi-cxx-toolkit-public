@@ -485,6 +485,7 @@ public:
     }
 
     operator const char* () const;
+	operator string() const;
     const CBDB_FieldString& operator= (const CBDB_FieldString& str);
     const CBDB_FieldString& operator= (const char*             str);
     const CBDB_FieldString& operator= (const string&           str);
@@ -525,6 +526,8 @@ public:
 
     // Accessors
     operator const char* () const { return (const char*) GetBuffer(); }
+	operator string() const {  return string((const char*)GetBuffer()); }
+	
     const CBDB_FieldStringCase& operator= (const CBDB_FieldString& str)
     {
         Set(str);
@@ -860,6 +863,11 @@ inline CBDB_FieldString::operator const char* () const
     return str;
 }
 
+inline
+CBDB_FieldString::operator string() const
+{
+	return string((const char*) GetBuffer());
+}
 
 inline 
 const CBDB_FieldString&
@@ -1165,6 +1173,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/07/22 15:48:34  kuznets
+ * Fixed minor compilation issue with GCC
+ *
  * Revision 1.10  2003/07/16 13:32:04  kuznets
  * Implemented CBDB_FieldString::SetString (part of IBDB_FieldConvert interface)
  *
