@@ -32,6 +32,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -201,11 +202,18 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/08/20 14:26:43  ucko
+ * Restore changes from revision 1.9, which seem to have been lost:
+ * include Seq_interval.hpp
+ *
  * Revision 1.11  2003/08/19 18:56:39  jcherry
  * Added a comment
  *
  * Revision 1.10  2003/08/19 18:36:23  jcherry
  * Reimplemented stop codon finding using CTrans_table finite state machine
+ *
+ * Revision 1.9   2003/08/19 17:40:02  rsmith
+ * include Seq_interval.hpp
  *
  * Revision 1.8  2003/08/19 10:21:24  dicuccio
  * Compilation fixes - use objects:: namespace where appropriate
