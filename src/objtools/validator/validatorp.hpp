@@ -37,6 +37,7 @@
 #include <corelib/ncbistd.hpp>
 
 #include <objmgr/scope.hpp>
+#include <objmgr/feat_ci.hpp>  // for CMappedFeat
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/GIBB_mol.hpp>
 #include <util/strsearch.hpp>
@@ -635,6 +636,7 @@ public:
 
 private:
     typedef multimap<string, const CSeq_feat*, PNocase> TStrFeatMap;
+    typedef vector<CMappedFeat>                         TMappedFeatVec;
 
     static const size_t scm_AdjacentNsThreshold; // = 80
     
@@ -654,6 +656,8 @@ private:
     void x_CompareStrings(const TStrFeatMap& str_feat_map, const string& type,
         EErrType err, EDiagSev sev);
     void x_ValidateCompletness(const CBioseq& seq, const CMolInfo& mi);
+    void x_ValidateAbuttingUTR(const CBioseq_Handle& seq);
+    void x_ValidateAbuttingCDSGroup(const TMappedFeatVec& cds_group, bool minus);
 
     void ValidateSeqDescContext(const CBioseq& seq);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
@@ -928,6 +932,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2004/05/10 13:20:11  shomrat
+* + methods for validation of abutting UTRs
+*
 * Revision 1.62  2004/04/27 18:40:50  shomrat
 * ProtWithoutFullRef report CDS feature instead of protein bioseq
 *
