@@ -284,6 +284,12 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
         }
         return INT_TIMEOUT;
     default:
+        if(dberr == 1205) {
+            CDB_DeadlockEx dl("dblib", dberrstr);
+            hs->PostMsg(&dl);
+            return INT_CANCEL;
+        }
+            
         break;
     }
 
@@ -498,6 +504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2005/02/22 22:30:56  soussov
+ * Adds check for deadlock for err handler
+ *
  * Revision 1.30  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
