@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  1999/05/28 18:04:05  vakatov
+* CHTMLNode::  added attribute "CLASS"
+*
 * Revision 1.35  1999/05/20 16:49:11  pubmed
 * Changes for SaveAsText: all Print() methods get mode parameter that can be HTML or PlainText
 *
@@ -168,6 +171,7 @@ public:
     CHTMLNode(const string& name);
 
     // convenient way to set some common attributes
+    CHTMLNode* SetClass(const string& class_name);
     CHTMLNode* SetWidth(int width);
     CHTMLNode* SetWidth(const string& width);
     CHTMLNode* SetHeight(int height);
@@ -180,8 +184,9 @@ public:
     CHTMLNode* SetNameAttribute(const string& name);
     string GetNameAttribute(void) const;
 
-    void AppendPlainText(const string &);  // convenient way to add CHTMLPlainText
-    void AppendHTMLText(const string &);  // convenient way to add CHTMLText
+    // convenient way to add CHTMLPlainText or CHTMLText
+    void AppendPlainText(const string &);
+    void AppendHTMLText (const string &);
 };
 
 // <@XXX@> mapping node
@@ -399,6 +404,7 @@ extern const string KHTMLAttributeName_type;
 extern const string KHTMLAttributeName_valign;
 extern const string KHTMLAttributeName_value;
 extern const string KHTMLAttributeName_width;
+extern const string KHTMLAttributeName_class;
 
 // template for simple closed tag
 template<const string* TagName>

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/05/28 18:04:06  vakatov
+* CHTMLNode::  added attribute "CLASS"
+*
 * Revision 1.16  1999/05/10 17:01:11  vasilche
 * Fixed warning on Sun by renaming CHTML_font::SetSize() -> SetFontSize().
 *
@@ -105,6 +108,12 @@ inline CHTMLNode::CHTMLNode(void)
 inline CHTMLNode::CHTMLNode(const string& name)
     : CParent(name)
 {
+}
+
+inline CHTMLNode* CHTMLNode::SetClass(const string& class_name)
+{
+    SetOptionalAttribute(KHTMLAttributeName_class, class_name);
+    return this;
 }
 
 inline CHTMLNode* CHTMLNode::SetWidth(int width)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  1999/05/28 18:03:51  vakatov
+* CHTMLNode::  added attribute "CLASS"
+*
 * Revision 1.41  1999/05/27 21:43:02  vakatov
 * Get rid of some minor compiler warnings
 *
@@ -286,6 +289,7 @@ const string KHTMLAttributeName_type = "TYPE";
 const string KHTMLAttributeName_valign = "VALIGN";
 const string KHTMLAttributeName_value = "VALUE";
 const string KHTMLAttributeName_width = "WIDTH";
+const string KHTMLAttributeName_class = "CLASS";
 
 
 // CHTMLNode
