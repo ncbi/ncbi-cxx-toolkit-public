@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2002/10/08 18:59:38  grichenk
+* Check for null pointers in containers (assert in debug mode,
+* warning in release).
+*
 * Revision 1.31  2002/09/25 19:37:36  gouriano
 * added the possibility of having no tag prefix in XML I/O streams
 *
@@ -660,6 +664,15 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
     if ( WillHaveName(elementType) ) {
         if ( cType->InitIterator(i, containerPtr) ) {
             do {
+                if (elementType->GetTypeFamily() == eTypeFamilyPointer) {
+                    const CPointerTypeInfo* pointerType =
+                        CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
+                    _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
+                    if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
+                        ERR_POST(Warning << " NULL pointer found in container: skipping");
+                        continue;
+                    }
+                }
 
                 WriteObject(cType->GetElementPtr(i), elementType);
 

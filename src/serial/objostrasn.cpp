@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2002/10/08 18:59:38  grichenk
+* Check for null pointers in containers (assert in debug mode,
+* warning in release).
+*
 * Revision 1.70  2002/08/26 18:32:30  grichenk
 * Added Get/SetAutoSeparator() to CObjectOStream to control
 * output of separators.
@@ -651,8 +655,18 @@ void CObjectOStreamAsn::WriteContainer(const CContainerTypeInfo* cType,
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
         do {
+            if (elementType->GetTypeFamily() == eTypeFamilyPointer) {
+                const CPointerTypeInfo* pointerType =
+                    CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
+                _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
+                if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
+                    ERR_POST(Warning << " NULL pointer found in container: skipping");
+                    continue;
+                }
+            }
+
             NextElement();
-            
+
             WriteObject(cType->GetElementPtr(i), elementType);
 
         } while ( cType->NextElement(i) );

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/10/08 18:59:38  grichenk
+* Check for null pointers in containers (assert in debug mode,
+* warning in release).
+*
 * Revision 1.6  2000/10/17 18:45:33  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -219,6 +223,15 @@ void CContainerTypeInfo::Assign(TObjectPtr dst,
     CConstIterator i;
     if ( InitIterator(i, src) ) {
         do {
+            if (GetElementType()->GetTypeFamily() == eTypeFamilyPointer) {
+                const CPointerTypeInfo* pointerType =
+                    CTypeConverter<CPointerTypeInfo>::SafeCast(GetElementType());
+                _ASSERT(pointerType->GetObjectPointer(GetElementPtr(i)));
+                if ( !pointerType->GetObjectPointer(GetElementPtr(i)) ) {
+                    ERR_POST(Warning << " NULL pointer found in container: skipping");
+                    continue;
+                }
+            }
             AddElement(dst, GetElementPtr(i));
         } while ( NextElement(i) );
     }

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2002/10/08 18:59:38  grichenk
+* Check for null pointers in containers (assert in debug mode,
+* warning in release).
+*
 * Revision 1.67  2002/08/30 16:22:22  vasilche
 * Removed excessive _TRACEs
 *
@@ -1028,7 +1032,15 @@ void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
         do {
-
+            if (elementType->GetTypeFamily() == eTypeFamilyPointer) {
+                const CPointerTypeInfo* pointerType =
+                    CTypeConverter<CPointerTypeInfo>::SafeCast(elementType);
+                _ASSERT(pointerType->GetObjectPointer(cType->GetElementPtr(i)));
+                if ( !pointerType->GetObjectPointer(cType->GetElementPtr(i)) ) {
+                    ERR_POST(Warning << " NULL pointer found in container: skipping");
+                    continue;
+                }
+            }
             WriteObject(cType->GetElementPtr(i), elementType);
 
         } while ( cType->NextElement(i) );
