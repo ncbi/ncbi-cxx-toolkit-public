@@ -534,7 +534,7 @@ void CNetCacheServer::Process(SOCK sock)
     }
     catch (CNetServiceException& ex)
     {
-        ERR_POST("Server error: " << ex.what());
+        // ERR_POST("Server error: " << ex.what());
     }
     catch (exception& ex)
     {
@@ -1248,6 +1248,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/03/24 20:20:00  kuznets
+ * Suppressed communication error (carries no information anyway)
+ *
  * Revision 1.47  2005/03/24 01:23:44  vakatov
  * Fix accidental mix-up of 'flags' vs 'action' arg in calls to
  * CNcbiRegistry::Get*()
