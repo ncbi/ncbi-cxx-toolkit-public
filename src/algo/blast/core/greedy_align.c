@@ -38,6 +38,7 @@
 static char const rcsid[] = "$Id$";
 
 #include <greedy_align.h>
+#include <blast_util.h> /* for READDB_UNPACK_BASE macros */
 
 /* -------- From original file edit.c ------------- */
 
@@ -60,7 +61,7 @@ static edit_op_t edit_op_inc(edit_op_t op, Uint4 n)
     return edit_op_cons(edit_opc_get(op), edit_val_get(op) + n);
 }
 
-static edit_op_t edit_op_inc_last(edit_script_t *es, Uint4 n)
+static edit_op_t edit_op_inc_last(MBGapEditScript *es, Uint4 n)
 {
     edit_op_t *last;
     ASSERT (es->num > 0);
@@ -69,7 +70,7 @@ static edit_op_t edit_op_inc_last(edit_script_t *es, Uint4 n)
     return *last;
 }
 
-static Int4 edit_script_ready(edit_script_t *es, Uint4 n)
+static Int4 edit_script_ready(MBGapEditScript *es, Uint4 n)
 {
     edit_op_t *p;
     Uint4 m = n + n/2;
@@ -86,14 +87,14 @@ static Int4 edit_script_ready(edit_script_t *es, Uint4 n)
     return 1;
 }
 
-static Int4 edit_script_readyplus(edit_script_t *es, Uint4 n)
+static Int4 edit_script_readyplus(MBGapEditScript *es, Uint4 n)
 {
     if (es->size - es->num <= n)
         return edit_script_ready(es, n + es->num);
     return 1;
 }
 
-static Int4 edit_script_put(edit_script_t *es, Uint4 op, Uint4 n)
+static Int4 edit_script_put(MBGapEditScript *es, Uint4 op, Uint4 n)
 {
     if (!edit_script_readyplus(es, 2))
         return 0;
@@ -106,7 +107,7 @@ static Int4 edit_script_put(edit_script_t *es, Uint4 op, Uint4 n)
     return 1;
 }
 
-static edit_script_t *edit_script_init(edit_script_t *es)
+static MBGapEditScript *edit_script_init(MBGapEditScript *es)
 {
 	es->op = 0;
 	es->size = es->num = 0;
@@ -114,12 +115,12 @@ static edit_script_t *edit_script_init(edit_script_t *es)
 	edit_script_ready(es, 8);
 	return es;
 }
-static edit_op_t *edit_script_first(edit_script_t *es)
+static edit_op_t *edit_script_first(MBGapEditScript *es)
 {
     return es->num > 0 ? &es->op[0] : 0;
 }
 
-static edit_op_t *edit_script_next(edit_script_t *es, edit_op_t *op)
+static edit_op_t *edit_script_next(MBGapEditScript *es, edit_op_t *op)
 {
     /* XXX - assumes flat address space */
     if (&es->op[0] <= op && op < &es->op[es->num-1])
@@ -127,7 +128,7 @@ static edit_op_t *edit_script_next(edit_script_t *es, edit_op_t *op)
     else
         return 0;
 }
-static Int4 edit_script_more(edit_script_t *data, Uint4 op, Uint4 k)
+static Int4 edit_script_more(MBGapEditScript *data, Uint4 op, Uint4 k)
 {
     if (op == EDIT_OP_ERR) {
         ErrPostEx(SEV_FATAL, 1, 0, 
@@ -143,7 +144,7 @@ static Int4 edit_script_more(edit_script_t *data, Uint4 op, Uint4 k)
     return 0;
 }
 
-static edit_script_t *edit_script_append(edit_script_t *es, edit_script_t *et)
+MBGapEditScript *MBGapEditScriptAppend(MBGapEditScript *es, MBGapEditScript *et)
 {
     edit_op_t *op;
     
@@ -153,16 +154,16 @@ static edit_script_t *edit_script_append(edit_script_t *es, edit_script_t *et)
     return es;
 }
 
-static edit_script_t *edit_script_new(void)
+MBGapEditScript *MBGapEditScriptNew(void)
 {
-    edit_script_t *es = MemNew(sizeof(*es));
+    MBGapEditScript *es = MemNew(sizeof(*es));
     if (!es)
         return 0;
 
     return edit_script_init(es);
 }
 
-static edit_script_t *edit_script_free(edit_script_t *es)
+MBGapEditScript *MBGapEditScriptFree(MBGapEditScript *es)
 {
     if (es) {
         if (es->op)
@@ -173,21 +174,21 @@ static edit_script_t *edit_script_free(edit_script_t *es)
     return 0;
 }
 
-static Int4 edit_script_del(edit_script_t *data, Uint4 k)
+static Int4 edit_script_del(MBGapEditScript *data, Uint4 k)
 {
     return edit_script_more(data, EDIT_OP_DEL, k);
 }
 
-static Int4 edit_script_ins(edit_script_t *data, Uint4 k)
+static Int4 edit_script_ins(MBGapEditScript *data, Uint4 k)
 {
     return edit_script_more(data, EDIT_OP_INS, k);
 }
-static Int4 edit_script_rep(edit_script_t *data, Uint4 k)
+static Int4 edit_script_rep(MBGapEditScript *data, Uint4 k)
 {
     return edit_script_more(data, EDIT_OP_REP, k);
 }
 
-static edit_script_t *edit_script_reverse_inplace(edit_script_t *es)
+static MBGapEditScript *edit_script_reverse_inplace(MBGapEditScript *es)
 {
     Uint4 i;
     const Uint4 num = es->num;
@@ -202,7 +203,7 @@ static edit_script_t *edit_script_reverse_inplace(edit_script_t *es)
     return es;
 }
 
-static MBSpacePtr new_mb_space()
+MBSpacePtr MBSpaceNew()
 {
     MBSpacePtr p;
     Int4 amount;
@@ -229,7 +230,7 @@ static void refresh_mb_space(MBSpacePtr sp)
    }
 }
 
-static void free_mb_space(MBSpacePtr sp)
+void MBSpaceFree(MBSpacePtr sp)
 {
    MBSpacePtr next_sp;
 
@@ -249,7 +250,7 @@ static ThreeValPtr get_mb_space(MBSpacePtr S, Int4 amount)
     
     while (S->used+amount > S->size) {
        if (S->next == NULL)
-          if ((S->next = new_mb_space()) == NULL) {
+          if ((S->next = MBSpaceNew()) == NULL) {
 	     ErrPostEx(SEV_WARNING, 0, 0, "Cannot get new space for greedy extension");
 	     return NULL;
           }
@@ -384,7 +385,7 @@ Int4 BLAST_GreedyAlign(const UcharPtr s1, Int4 len1,
 			  Boolean reverse, Int4 xdrop_threshold, 
 			  Int4 match_cost, Int4 mismatch_cost,
 			  Int4Ptr e1, Int4Ptr e2, 
-			  GreedyAlignMemPtr abmp, edit_script_t *S,
+			  GreedyAlignMemPtr abmp, MBGapEditScript *S,
                           Uint1 rem)
 {
     Int4 col,			/* column number */
@@ -600,7 +601,7 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
 				 Int4 match_score, Int4 mismatch_score, 
 				 Int4 gap_open, Int4 gap_extend,
 				 Int4Ptr e1, Int4Ptr e2, 
-				 GreedyAlignMemPtr abmp, edit_script_t *S,
+				 GreedyAlignMemPtr abmp, MBGapEditScript *S,
                                  Uint1 rem)
 {
     Int4 col,			/* column number */
@@ -880,3 +881,4 @@ Int4 BLAST_AffineGreedyAlign (const UcharPtr s1, Int4 len1,
     return_val = max_row[return_val];
     return return_val;
 }
+

@@ -39,9 +39,9 @@ static char const rcsid[] = "$Id$";
 
 #include <blast_options.h>
 #include <blast_def.h>
-#include <blast_extend.h>
 #include <blast_gapalign.h>
-#include <blast_setup.h>
+#include <blast_util.h> /* for READDB_UNPACK_BASE macros */
+#include <greedy_align.h>
 
 static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query, 
    BLAST_SequenceBlkPtr subject, BlastGapAlignStructPtr gap_align,
@@ -397,7 +397,7 @@ static GreedyAlignMemPtr BLAST_GreedyAlignMemFree(GreedyAlignMemPtr abmp)
    }
    MemFree(abmp->max_row_free);
    if (abmp->space)
-      free_mb_space(abmp->space);
+      MBSpaceFree(abmp->space);
    abmp = MemFree(abmp);
    return abmp;
 }
@@ -492,7 +492,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
    gamp->max_row_free = Malloc(sizeof(Int4) * (max_d + 1 + d_diff));
 
    if (do_traceback)
-      gamp->space = new_mb_space();
+      gamp->space = MBSpaceNew();
    if (!gamp->max_row_free || (do_traceback && !gamp->space))
       /* Failure in one of the memory allocations */
       gamp = BLAST_GreedyAlignMemFree(gamp);
@@ -1565,7 +1565,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
  *  another. 
  */
 static GapEditScriptPtr
-MBToGapEditScript (edit_script_t PNTR ed_script)
+MBToGapEditScript (MBGapEditScript PNTR ed_script)
 {
    GapEditScriptPtr esp_start = NULL, esp, esp_prev = NULL;
    Uint4 i;
@@ -1615,7 +1615,7 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
    Int4 q_avail, s_avail;
    /* Variables for the call to MegaBlastGreedyAlign */
    Int4 q_ext_l, q_ext_r, s_ext_l, s_ext_r;
-   edit_script_t *ed_script_fwd=NULL, *ed_script_rev=NULL;
+   MBGapEditScript *ed_script_fwd=NULL, *ed_script_rev=NULL;
    Uint1 rem;
    GapEditScriptPtr esp = NULL;
    Boolean do_traceback = 
@@ -1635,12 +1635,12 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
    X = gap_align->gap_x_dropoff;
    
    if (do_traceback) {
-      ed_script_fwd = edit_script_new();
-      ed_script_rev = edit_script_new();
+      ed_script_fwd = MBGapEditScriptNew();
+      ed_script_rev = MBGapEditScriptNew();
    }
    
    /* extend to the right */
-   score = MegaBlastAffineGreedyAlign(s, s_avail, q, q_avail, FALSE, X,
+   score = BLAST_AffineGreedyAlign(s, s_avail, q, q_avail, FALSE, X,
               score_options->reward, -score_options->penalty, 
               score_options->gap_open, score_options->gap_extend,
               &s_ext_r, &q_ext_r, gap_align->greedy_align_mem, 
@@ -1648,7 +1648,7 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
 
    rem = 0;
    /* extend to the left */
-   score += MegaBlastAffineGreedyAlign(subject0, init_hsp->s_off, 
+   score += BLAST_AffineGreedyAlign(subject0, init_hsp->s_off, 
                query->sequence, init_hsp->q_off, TRUE, X, 
                score_options->reward, -score_options->penalty, 
                score_options->gap_open, score_options->gap_extend, 
@@ -1670,12 +1670,12 @@ static Int2 BLAST_GreedyNtGappedAlignment(BLAST_SequenceBlkPtr query,
    }
 
    if (do_traceback) {
-      edit_script_append(ed_script_rev, ed_script_fwd);
+      MBGapEditScriptAppend(ed_script_rev, ed_script_fwd);
       esp = MBToGapEditScript(ed_script_rev);
    }
    
-   edit_script_free(ed_script_fwd);
-   edit_script_free(ed_script_rev);
+   MBGapEditScriptFree(ed_script_fwd);
+   MBGapEditScriptFree(ed_script_rev);
    
    BLAST_GapAlignStructFill(gap_align, init_hsp->q_off-q_ext_l, 
       init_hsp->s_off-s_ext_l, init_hsp->q_off+q_ext_r, 
