@@ -28,8 +28,102 @@
  * File Description:
  *   Standard test for named service resolution facility
  *
+ */
+
+#include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <connect/ncbi_service.h>
+#include <stdlib.h>
+/* This header must go last */
+#include "test_assert.h"
+
+
+/* One can define env.var. 'service'_CONN_HOST to reroute dispatching
+ * information to particular dispatching host (instead of default).
+ */
+int main(int argc, const char* argv[])
+{
+    const char* service = argc > 1 ? argv[1] : "io_bounce";
+    int/*bool*/ local = argc > 2;
+    const SSERV_Info* info;
+    int n_found = 0;
+    SERV_ITER iter;
+
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+    CORE_LOGF(eLOG_Note, ("Looking for service `%s' (%s)", service,
+                          local ? "locally" : "randomly"));
+    CORE_LOG(eLOG_Trace, "Opening service mapper");
+    if ((local &&
+         (iter = SERV_Open(service, fSERV_Any, SERV_LOCALHOST, 0)) != 0) ||
+        (!local && (iter = SERV_OpenSimple(service)) != 0)) {
+        HOST_INFO hinfo;
+        CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
+        while ((info = SERV_GetNextInfoEx(iter, &hinfo)) != 0) {
+            char* info_str = SERV_WriteInfo(info);
+            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            if (hinfo) {
+                double array[2];
+                const char* e = HINFO_Environment(hinfo);
+                CORE_LOG(eLOG_Note, "  Host info available:");
+                CORE_LOGF(eLOG_Note, ("    Number of CPUs: %d",
+                                      HINFO_CpuCount(hinfo)));
+                CORE_LOGF(eLOG_Note, ("    Number of tasks: %d",
+                                      HINFO_TaskCount(hinfo)));
+                if (HINFO_LoadAverage(hinfo, array)) {
+                    CORE_LOGF(eLOG_Note, ("    Load average: %f",
+                                          array[0]));
+                } else
+                    CORE_LOG(eLOG_Note, "    Load average: unavailable");
+                CORE_LOGF(eLOG_Note, ("    Host environment: %s%s%s",
+                                      e ? "\"" : "", e ? e : "NULL",
+                                      e ? "\"" : ""));
+                free(hinfo);
+            }
+            free(info_str);
+            n_found++;
+        }
+        CORE_LOG(eLOG_Trace, "Resetting service mapper");
+        SERV_Reset(iter);
+        CORE_LOG(eLOG_Trace, "Service mapper has been reset");
+        if (n_found && !(info = SERV_GetNextInfo(iter)))
+            CORE_LOG(eLOG_Fatal, "Service not found after reset");
+        CORE_LOG(eLOG_Trace, "Closing service mapper");
+        SERV_Close(iter);
+    }
+
+    if (n_found != 0)
+        CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
+    else
+        CORE_LOG(eLOG_Fatal, "Requested service not found");
+
+#if 0
+    {{
+        SConnNetInfo* net_info;
+        net_info = ConnNetInfo_Create(service);
+        iter = SERV_Open(service, fSERV_Http, SERV_LOCALHOST, net_info);
+        ConnNetInfo_Destroy(net_info);
+    }}
+
+    if (iter != 0) {
+        while ((info = SERV_GetNextInfo(iter)) != 0) {
+            char* info_str = SERV_WriteInfo(info);
+            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
+            free(info_str);
+            n_found++;
+        }
+        SERV_Close(iter);
+    }
+#endif
+
+    return 0;
+}
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2002/10/29 00:35:47  lavr
+ * Added tests for host info API
+ *
  * Revision 6.12  2002/04/15 19:21:44  lavr
  * +#include "../test/test_assert.h"
  *
@@ -69,71 +163,3 @@
  *
  * ==========================================================================
  */
-
-#include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <connect/ncbi_service.h>
-#include <stdlib.h>
-/* This header must go last */
-#include "test_assert.h"
-
-
-/* One can define env.var. 'service'_CONN_HOST to reroute dispatching
- * information to particular dispatching host (instead of default).
- */
-int main(int argc, const char* argv[])
-{
-    const char* service = argc > 1 ? argv[1] : "io_bounce";
-    int/*bool*/ local = argc > 2;
-    const SSERV_Info* info;
-    int n_found = 0;
-    SERV_ITER iter;
-
-    CORE_SetLOGFILE(stderr, 0/*false*/);
-    CORE_LOGF(eLOG_Note, ("Looking for service `%s' (%s)", service,
-                          local ? "locally" : "randomly"));
-    CORE_LOG(eLOG_Trace, "Opening service mapper");
-    if ((local &&
-         (iter = SERV_Open(service, fSERV_Any, SERV_LOCALHOST, 0)) != 0) ||
-        (!local && (iter = SERV_OpenSimple(service)) != 0)) {
-        CORE_LOG(eLOG_Trace, "Service mapper has been successfully opened");
-        while ((info = SERV_GetNextInfo(iter)) != 0) {
-            char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
-            free(info_str);
-            n_found++;
-        }
-        CORE_LOG(eLOG_Trace, "Resetting service mapper");
-        SERV_Reset(iter);
-        CORE_LOG(eLOG_Trace, "Service mapper has been reset");
-        if (n_found && !(info = SERV_GetNextInfo(iter)))
-            CORE_LOG(eLOG_Fatal, "Service not found after reset");
-        CORE_LOG(eLOG_Trace, "Closing service mapper");
-        SERV_Close(iter);
-    }
-
-    if (n_found != 0)
-        CORE_LOGF(eLOG_Note, ("Test complete: %d server(s) found", n_found));
-    else
-        CORE_LOG(eLOG_Fatal, "Requested service not found");
-
-#if 0
-    {{
-        SConnNetInfo* net_info;
-        net_info = ConnNetInfo_Create(service);
-        iter = SERV_Open(service, fSERV_Http, SERV_LOCALHOST, net_info);
-        ConnNetInfo_Destroy(net_info);
-    }}
-
-    if (iter != 0) {
-        while ((info = SERV_GetNextInfo(iter)) != 0) {
-            char* info_str = SERV_WriteInfo(info);
-            CORE_LOGF(eLOG_Note, ("Service `%s' = %s", service, info_str));
-            free(info_str);
-            n_found++;
-        }
-        SERV_Close(iter);
-    }
-#endif
-
-    return 0;
-}
