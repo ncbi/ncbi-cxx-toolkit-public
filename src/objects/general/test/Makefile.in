@@ -1,3 +1,5 @@
-APP_PROJ = test_date
+# $Id$
+
+APP_PROJ = test_date test_uoconv
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
