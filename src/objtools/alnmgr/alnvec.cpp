@@ -59,7 +59,6 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 CAlnVec::CAlnVec(const CDense_seg& ds) 
     : CAlnMap(ds),
-      m_ConsensusSeq(-1),
       m_set_GapChar(false),
       m_set_EndChar(false)
 {
@@ -68,7 +67,6 @@ CAlnVec::CAlnVec(const CDense_seg& ds)
 
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
     : CAlnMap(ds, anchor),
-      m_ConsensusSeq(-1),
       m_set_GapChar(false),
       m_set_EndChar(false)
 {
@@ -78,7 +76,6 @@ CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor)
 CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope) 
     : CAlnMap(ds),
       m_Scope(&scope),
-      m_ConsensusSeq(-1),
       m_set_GapChar(false),
       m_set_EndChar(false)
 {
@@ -88,7 +85,6 @@ CAlnVec::CAlnVec(const CDense_seg& ds, CScope& scope)
 CAlnVec::CAlnVec(const CDense_seg& ds, TNumrow anchor, CScope& scope)
     : CAlnMap(ds, anchor),
       m_Scope(&scope),
-      m_ConsensusSeq(-1),
       m_set_GapChar(false),
       m_set_EndChar(false)
 {
@@ -384,10 +380,10 @@ string& CAlnVec::GetWholeAlnSeqString(TNumrow       row,
 //     a tie, the consensus is considered muddied, and the consensus is
 //     so marked
 //
-void CAlnVec::CreateConsensus(void)
+CRef<CDense_seg> CAlnVec::CreateConsensus(int& consensus_row) const
 {
-    if ( !m_DS  ||  IsSetConsensus() ) {
-        return;
+    if ( !m_DS ) {
+        return CRef<CDense_seg>();
     }
 
     int i;
@@ -599,33 +595,8 @@ void CAlnVec::CreateConsensus(void)
          GetScope().AddTopLevelSeqEntry(*entry);
     }}
 
-    // drop the old, bring in the new
-    m_DS.Reset(new_ds.Release());
-
-    // make sure that the consensus sequence row indicator is saved
-    // by default, this is placed in the last row of the alignment
-    m_ConsensusSeq = m_NumRows - 1;
-    
-#if 0
-
-    cerr << "final consensus: " << data.length() << " bases" << endl;
-    cerr << data << endl;
-
-    cerr << "dense-seg:" << endl;
-    for (i = 0;  i < m_NumRows;  ++i) {
-        if (i != m_NumRows-1) {
-            cerr << m_Ids[i]->GetGi() << ": ";
-        }
-        else {
-            cerr << "consensus : ";
-        }
-        for (j = 0;  j < m_NumSegs;  ++j) {
-            cerr << m_Starts[ j*m_NumRows + i ] << ", ";
-        }
-        cerr << endl;
-    }
-
-#endif
+    consensus_row = new_ds->GetIds().size() - 1;
+    return new_ds;
 }
 
 
@@ -777,6 +748,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.44  2003/08/29 18:18:58  dicuccio
+* Changed CreateConsensus() API to return a new dense-seg instead of altering the
+* current alignment manager
+*
 * Revision 1.43  2003/08/27 21:19:55  todorov
 * using raw_scoremat.h
 *
