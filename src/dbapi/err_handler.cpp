@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2005/02/23 19:17:43  kholodov
+* Added: tracing received exceptions
+*
 * Revision 1.2  2004/05/17 21:10:28  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -60,6 +63,7 @@ CToMultiExHandler::~CToMultiExHandler()
 bool CToMultiExHandler::HandleIt(CDB_Exception* ex)
 {
     m_ex->Push(*ex);
+    _TRACE("CToMultiExHandler::HandleIt(): exception received");
        
     return true;
 }
