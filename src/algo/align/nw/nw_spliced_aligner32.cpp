@@ -119,8 +119,19 @@ CSplicedAligner32::CSplicedAligner32():
 }
 
 CSplicedAligner32::CSplicedAligner32(const char* seq1, size_t len1,
-                                       const char* seq2, size_t len2)
+                                     const char* seq2, size_t len2)
     : CSplicedAligner(seq1, len1, seq2, len2),
+      m_Wd1(GetDefaultWd1()),
+      m_Wd2(GetDefaultWd2())
+{
+    for(unsigned char st = 0; st < splice_type_count_32; ++st) {
+        m_Wi[st] = GetDefaultWi(st);
+    }
+}
+
+
+CSplicedAligner32::CSplicedAligner32(const string& seq1, const string& seq2)
+    : CSplicedAligner(seq1, seq2),
       m_Wd1(GetDefaultWd1()),
       m_Wd2(GetDefaultWd2())
 {
@@ -640,6 +651,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.20  2005/03/02 14:26:16  kapustin
  * A few tweaks to mute GCC and MSVC warnings
  *

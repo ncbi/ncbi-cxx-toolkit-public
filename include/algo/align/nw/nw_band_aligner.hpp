@@ -60,6 +60,11 @@ public:
                  const SNCBIPackedScoreMatrix* scoremat = 0,
                  size_t band = 0);
 
+    CBandAligner(const string& seq1,
+                 const string& seq2,
+                 const SNCBIPackedScoreMatrix* scoremat = 0,
+                 size_t band = 0);
+
     virtual ~CBandAligner(void) {}
 
     // Setters    
@@ -94,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.4  2004/12/15 20:16:50  kapustin
  * Fix after algo/align rearrangement
  *

@@ -56,6 +56,14 @@ CSplicedAligner::CSplicedAligner(const char* seq1, size_t len1,
 }
 
 
+CSplicedAligner::CSplicedAligner(const string& seq1, const string& seq2)
+    : CNWAligner(seq1, seq2),
+      m_IntronMinSize(GetDefaultIntronMinSize())
+{
+    SetEndSpaceFree(true, true, false, false);
+}
+
+
 void CSplicedAligner::SetWi  (unsigned char splice_type, TScore value)
 {
     if(splice_type < GetSpliceTypeCount()) {
@@ -254,6 +262,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.10  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *

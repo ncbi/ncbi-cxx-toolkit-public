@@ -52,6 +52,16 @@ CBandAligner::CBandAligner( const char* seq1, size_t len1,
 }
 
 
+CBandAligner::CBandAligner(const string& seq1,
+                           const string& seq2,
+                           const SNCBIPackedScoreMatrix* scoremat,
+                           size_t band):
+    CNWAligner(seq1, seq2, scoremat),
+    m_band(band)
+{
+}
+
+
 // evaluate score for each possible alignment;
 // fill out backtrace matrix limited to the band
 // bit coding (four bits per value): D E Ec Fc
@@ -337,6 +347,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.4  2005/03/02 14:26:16  kapustin
  * A few tweaks to mute GCC and MSVC warnings
  *

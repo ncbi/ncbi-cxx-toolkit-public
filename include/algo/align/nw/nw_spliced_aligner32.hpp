@@ -48,8 +48,10 @@ public:
 
     CSplicedAligner32(void);
 
-    CSplicedAligner32( const char* seq1, size_t len1,
-                       const char* seq2, size_t len2);
+    CSplicedAligner32(const char* seq1, size_t len1,
+                      const char* seq2, size_t len2);
+
+    CSplicedAligner32(const string& seq1, const string& seq2);
 
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type);
@@ -95,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.10  2004/11/29 14:36:45  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *

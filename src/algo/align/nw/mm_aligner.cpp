@@ -52,6 +52,14 @@ CMMAligner::CMMAligner( const char* seq1, size_t len1,
 }
 
 
+CMMAligner::CMMAligner(const string& seq1,
+                       const string& seq2,
+                       const SNCBIPackedScoreMatrix* scoremat )
+  : CNWAligner(seq1, seq2, scoremat)
+{
+}
+
+
 CNWAligner::TScore CMMAligner::x_Run()
 {
     m_terminate = false;
@@ -938,6 +946,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.22  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *

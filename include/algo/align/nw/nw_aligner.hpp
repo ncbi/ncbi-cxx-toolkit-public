@@ -70,15 +70,23 @@ public:
                const char* seq2, size_t len2,
                const SNCBIPackedScoreMatrix* scoremat = 0);
 
+    CNWAligner(const string& seq1,
+               const string& seq2,
+               const SNCBIPackedScoreMatrix* scoremat = 0);
+
     virtual ~CNWAligner(void) {}
 
     // Compute the alignment
     virtual TScore Run(void);
 
     // Setters
-    void SetSequences(const char* seq1, size_t len1,
-		      const char* seq2, size_t len2,
-		      bool verify = true);
+    virtual void SetSequences(const char* seq1, size_t len1,
+                              const char* seq2, size_t len2,
+                              bool verify = true);
+
+    void SetSequences(const string& seq1,
+                      const string& seq2,
+                      bool verify = true);
   
     void SetScoreMatrix(const SNCBIPackedScoreMatrix* scoremat);
 
@@ -91,7 +99,7 @@ public:
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
 
     // alignment pattern (guides)
-    void  SetPattern(const vector<size_t>& pattern);
+    void SetPattern(const vector<size_t>& pattern);
 
     // progress reporting
     struct SProgressInfo
@@ -280,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.39  2005/02/23 16:57:24  kapustin
  * +SetTranscript
  *

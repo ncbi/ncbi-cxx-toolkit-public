@@ -67,6 +67,10 @@ public:
                const char* seq2, size_t len2,
                const SNCBIPackedScoreMatrix* scoremat = 0);
 
+    CMMAligner(const string& seq1,
+               const string& seq2,
+               const SNCBIPackedScoreMatrix* scoremat = 0);
+
     virtual ~CMMAligner() {}
 
 protected:
@@ -138,6 +142,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.15  2004/06/29 20:46:04  kapustin
  * Support simultaneous segment computing
  *

@@ -76,6 +76,7 @@ protected:
     CSplicedAligner();
     CSplicedAligner( const char* seq1, size_t len1,
                      const char* seq2, size_t len2);
+    CSplicedAligner(const string& seq1, const string& seq2);
 
     size_t  m_IntronMinSize;
 
@@ -100,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.10  2004/04/23 14:39:22  kapustin
  * Add Splign librry and other changes
  *

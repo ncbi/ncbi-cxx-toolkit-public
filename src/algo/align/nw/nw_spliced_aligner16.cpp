@@ -59,8 +59,17 @@ CSplicedAligner16::CSplicedAligner16()
 
 
 CSplicedAligner16::CSplicedAligner16(const char* seq1, size_t len1,
-                                       const char* seq2, size_t len2)
+                                     const char* seq2, size_t len2)
     : CSplicedAligner(seq1, len1, seq2, len2)
+{
+    for(unsigned char st = 0; st < splice_type_count_16; ++st) {
+        m_Wi[st] = GetDefaultWi(st);
+    }
+}
+
+
+CSplicedAligner16::CSplicedAligner16(const string& seq1, const string& seq2)
+    : CSplicedAligner(seq1, seq2)
 {
     for(unsigned char st = 0; st < splice_type_count_16; ++st) {
         m_Wi[st] = GetDefaultWi(st);
@@ -565,6 +574,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.18  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *

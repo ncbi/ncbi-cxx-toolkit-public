@@ -88,6 +88,28 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
 }
 
 
+CNWAligner::CNWAligner(const string& seq1,
+                       const string& seq2,
+                       const SNCBIPackedScoreMatrix* scoremat)
+    : m_Wm(GetDefaultWm()),
+      m_Wms(GetDefaultWms()),
+      m_Wg(GetDefaultWg()),
+      m_Ws(GetDefaultWs()),
+      m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
+      m_abc(g_nwaligner_nucleotides),
+      m_prg_callback(0),
+      m_Seq1(seq1.data()), m_SeqLen1(seq1.size()),
+      m_Seq2(seq2.data()), m_SeqLen2(seq2.size()),
+      m_score(kInfMinus),
+      m_mt(false),
+      m_maxthreads(1)
+
+{
+    SetScoreMatrix(scoremat);
+    SetSequences(seq1, seq2);
+};
+
+
 void CNWAligner::SetSequences(const char* seq1, size_t len1,
 			      const char* seq2, size_t len2,
 			      bool verify)
@@ -127,6 +149,14 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
     m_Seq2 = seq2;
     m_SeqLen2 = len2;
     m_Transcript.clear();
+}
+
+
+void CNWAligner::SetSequences(const string& seq1,
+                              const string& seq2,
+                              bool verify)
+{
+    SetSequences(seq1.data(), seq1.size(), seq2.data(), seq2.size(), verify);
 }
 
 
@@ -1170,6 +1200,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.63  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.62  2005/02/23 16:59:38  kapustin
  * +CNWAligner::SetTranscript. Use CSeq_id's instead of strings in CNWFormatter. Modify CNWFormatter::AsSeqAlign to allow specification of alignment's starts and strands.
  *

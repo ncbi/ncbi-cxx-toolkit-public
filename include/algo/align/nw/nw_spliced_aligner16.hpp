@@ -49,8 +49,10 @@ public:
 
     CSplicedAligner16(void);
 
-    CSplicedAligner16( const char* seq1, size_t len1,
-                       const char* seq2, size_t len2);
+    CSplicedAligner16(const char* seq1, size_t len1,
+                      const char* seq2, size_t len2);
+
+    CSplicedAligner16(const string& seq1, const string& seq2);
 
     // Getters
     static TScore  GetDefaultWi  (unsigned char splice_type);
@@ -91,6 +93,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/16 15:48:26  jcherry
+ * Allow use of std::string for specifying sequences
+ *
  * Revision 1.11  2004/12/06 22:11:24  kapustin
  * File header update
  *
