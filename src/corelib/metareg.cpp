@@ -144,7 +144,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
         {
             string base, ext;
             CDirEntry::SplitPath(name, 0, &base, &ext);
-            return x_Load(CDirEntry::MakePath(dir, '.' + base, ext + "rc"),
+            return x_Load(CDirEntry::MakePath(dir, '.' + base, ext) + "rc",
                           eName_AsIs, flags, reg_flags, reg, name0, style0);
         }
         }
@@ -195,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/08/21 20:50:54  ucko
+* eName_DotRc: avoid accidentally adding a dot before the rc...
+*
 * Revision 1.5  2003/08/18 19:49:09  ucko
 * Remove an unreachable statement.
 *
