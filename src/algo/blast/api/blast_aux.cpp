@@ -164,6 +164,8 @@ CBlastExtensionParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*depth
     if (!m_Ptr)
         return;
 
+    ddc.Log("gap_x_dropoff", m_Ptr->gap_x_dropoff);
+    ddc.Log("gap_x_dropoff_final", m_Ptr->gap_x_dropoff_final);
 }
 
 void
@@ -561,6 +563,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.59  2004/12/20 21:47:36  camacho
+ * Implement CBlastExtensionParameters::DebugDump
+ *
  * Revision 1.58  2004/12/20 16:11:33  camacho
  * + RAII wrapper for BlastScoringParameters
  *
