@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/09/16 15:49:36  sandomir
+* DeleteElements: clear container added to avoid case when user forgets to call clear after DeleteElements
+*
 * Revision 1.5  1999/09/14 18:49:09  vasilche
 * Added AutoMap template to convert cached maps for set/list/vector of values.
 *
@@ -199,21 +202,25 @@ inline void SetMapString(map<Key, string>& m, const Key& key, const string& data
 }
 
 // delete all elements from a container of pointers (list, vector, set, multiset)
+// clear container afterwards
 template<class Cnt>
 inline void DeleteElements( Cnt& cnt )
 {
     for ( typename Cnt::iterator i = cnt.begin(); i != cnt.end(); ++i ) {
         delete *i;
     }
+	cnt.clear();
 }
 
 // delete all elements from map containing pointers
+// clear container afterwards
 template<class Key, class Element>
 inline void DeleteElements(map<Key, Element*>& m)
 {
     for ( map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
         delete i->second;
     }
+	m.clear();
 }
 
 template<class X, class Del = Deleter<X> >
