@@ -484,15 +484,20 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
                                            TNumrow row, TSeqPos seq_pos) const
 {
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
-    TSeqPos delta
-        = seq_pos - m_Starts[raw_seg * m_NumRows + row];
-    if (GetWidth(for_row) != GetWidth(row)) {
-        delta = delta / GetWidth(row) * GetWidth(for_row);
-    }
-
-    return (GetStart(for_row, raw_seg)
+    unsigned offset = raw_seg * m_NumRows;
+    TSignedSeqPos start = m_Starts[offset + for_row];
+    if (start >= 0) {
+        TSeqPos delta
+            = seq_pos - m_Starts[offset + row];
+        if (GetWidth(for_row) != GetWidth(row)) {
+            delta = delta / GetWidth(row) * GetWidth(for_row);
+        }
+        return start
             + (StrandSign(row) == StrandSign(for_row) ? delta
-               : x_GetLen(for_row, raw_seg) - 1 - delta));
+               : x_GetLen(for_row, raw_seg) - 1 - delta);
+    } else {
+        return -1;
+    }
 }
 
 
@@ -906,6 +911,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.39  2003/09/17 16:26:35  todorov
+* Fixed GetSeqPosFromSeqPos
+*
 * Revision 1.38  2003/09/10 22:53:37  todorov
 * Use raw seg in GetSeqPosFromAlnPos
 *
