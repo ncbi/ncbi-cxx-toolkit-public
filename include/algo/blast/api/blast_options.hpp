@@ -2229,13 +2229,19 @@ CBlastOptionsLocal::SetPercentIdentity(double p)
 inline bool
 CBlastOptionsLocal::GetSumStatisticsMode() const
 {
-    return m_HitSaveOpts->do_sum_stats ? true : false;
+    if (m_HitSaveOpts->do_sum_stats == eSumStatsTrue)
+        return true;
+    else 
+        return false;
 }
 
 inline void
 CBlastOptionsLocal::SetSumStatisticsMode(bool m)
 {
-    m_HitSaveOpts->do_sum_stats = m;
+    if (m)
+        m_HitSaveOpts->do_sum_stats = eSumStatsTrue;
+    else
+        m_HitSaveOpts->do_sum_stats = eSumStatsFalse;
 }
 
 inline int
@@ -2469,6 +2475,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2004/06/07 15:45:53  dondosha
+* do_sum_stats hit saving option is now an enum
+*
 * Revision 1.61  2004/05/19 14:52:00  camacho
 * 1. Added doxygen tags to enable doxygen processing of algo/blast/core
 * 2. Standardized copyright, CVS $Id string, $Log and rcsid formatting and i
