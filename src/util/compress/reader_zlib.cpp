@@ -36,7 +36,47 @@
 
 
 BEGIN_NCBI_SCOPE
-BEGIN_SCOPE(objects)
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CDynamicCharArray
+/////////////////////////////////////////////////////////////////////////////
+
+
+CDynamicCharArray::CDynamicCharArray(size_t size)
+    : m_Size(size), m_Array(size? new char[size]: 0)
+{
+}
+
+
+CDynamicCharArray::~CDynamicCharArray(void)
+{
+    delete[] m_Array;
+}
+
+
+char* CDynamicCharArray::Alloc(size_t size)
+{
+    if ( size > m_Size ) {
+        delete[] m_Array;
+        if ( m_Size == 0 ) {
+            m_Size = kInititialSize;
+        }
+        while ( size > m_Size ) {
+            m_Size <<= 1;
+            if ( m_Size == 0 ) { // overflow
+                m_Size = size;
+            }
+        }
+        m_Array = new char[m_Size];
+    }
+    return m_Array;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CResultZBtSrcX
+/////////////////////////////////////////////////////////////////////////////
 
 
 class NCBI_XUTIL_EXPORT CResultZBtSrcX
@@ -50,16 +90,6 @@ public:
 
     size_t x_Read(char* buffer, size_t bufferLength);
 
-    size_t GetCompressedSize(void) const
-        {
-            return m_CompressedSize;
-        }
-
-    double GetDecompressionTime(void) const
-        {
-            return m_DecompressionTime;
-        }
-
     enum {
         kMax_UncomprSize = 1024*1024,
         kMax_ComprSize = 1024*1024
@@ -70,14 +100,102 @@ private:
     const CResultZBtSrcX& operator=(const CResultZBtSrcX&);
 
     CRef<CByteSourceReader> m_Src;
-    vector<char>      m_Buffer;
+    CDynamicCharArray m_Buffer;
     size_t            m_BufferPos;
     size_t            m_BufferEnd;
     CZipCompression   m_Decompressor;
-    vector<char>      m_Compressed;
-    size_t            m_CompressedSize;
-    double            m_DecompressionTime;
+    CDynamicCharArray m_Compressed;
 };
+
+
+CResultZBtSrcX::CResultZBtSrcX(CByteSourceReader* src)
+    : m_Src(src), m_BufferPos(0), m_BufferEnd(0)
+{
+    m_Decompressor.SetFlags(m_Decompressor.fCheckFileHeader |
+                            m_Decompressor.GetFlags());
+}
+
+
+CResultZBtSrcX::~CResultZBtSrcX(void)
+{
+}
+
+
+size_t CResultZBtSrcX::x_Read(char* buffer, size_t buffer_length)
+{
+    size_t ret = 0;
+    while ( buffer_length > 0 ) {
+        size_t cnt = m_Src->Read(buffer, buffer_length);
+        if ( cnt == 0 ) {
+            break;
+        }
+        else {
+            buffer_length -= cnt;
+            buffer += cnt;
+            ret += cnt;
+        }
+    }
+    return ret;
+}
+
+
+void CResultZBtSrcX::ReadLength(void)
+{
+    char header[8];
+    if ( x_Read(header, 8) != 8 ) {
+        NCBI_THROW(CCompressionException, eCompression,
+                   "Too few header bytes");
+    }
+    unsigned int compr_size = 0;
+    for ( size_t i = 0; i < 4; ++i ) {
+        compr_size = (compr_size<<8) | (unsigned char)header[i];
+    }
+    unsigned int uncompr_size = 0;
+    for ( size_t i = 4; i < 8; ++i ) {
+        uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
+    }
+
+    if ( compr_size > kMax_ComprSize ) {
+        NCBI_THROW(CCompressionException, eCompression,
+                   "Compressed size is too large");
+    }
+    if ( uncompr_size > kMax_UncomprSize ) {
+        NCBI_THROW(CCompressionException, eCompression,
+                   "Uncompressed size is too large");
+    }
+    if ( x_Read(m_Compressed.Alloc(compr_size), compr_size) != compr_size ) {
+        NCBI_THROW(CCompressionException, eCompression,
+                   "Compressed data is not complete");
+    }
+    m_BufferPos = m_BufferEnd;
+    if ( !m_Decompressor.DecompressBuffer(m_Compressed.Alloc(compr_size),
+                                          compr_size,
+                                          m_Buffer.Alloc(uncompr_size),
+                                          uncompr_size,
+                                          &uncompr_size) ) {
+        NCBI_THROW(CCompressionException, eCompression,
+                   "Decompression failed");
+    }
+    m_BufferEnd = uncompr_size;
+    m_BufferPos = 0;
+}
+
+
+size_t CResultZBtSrcX::Read(char* buffer, size_t buffer_length)
+{
+    while ( m_BufferPos >= m_BufferEnd ) {
+        ReadLength();
+    }
+    size_t cnt = min(buffer_length, m_BufferEnd - m_BufferPos);
+    memcpy(buffer, m_Buffer.At(m_BufferPos), cnt);
+    m_BufferPos += cnt;
+    return cnt;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CNlmZipBtRdr
+/////////////////////////////////////////////////////////////////////////////
 
 
 CNlmZipBtRdr::CNlmZipBtRdr(CByteSourceReader* src)
@@ -157,119 +275,215 @@ bool CNlmZipBtRdr::Pushback(const char* data, size_t size)
 }
 
 
-size_t CNlmZipBtRdr::GetCompressedSize(void) const
+/////////////////////////////////////////////////////////////////////////////
+// CNlmZipReader
+/////////////////////////////////////////////////////////////////////////////
+
+
+CNlmZipReader::CNlmZipReader(IReader* reader,
+                             TOwnership own,
+                             EHeader header)
+    : m_Reader(reader), m_Own(own), m_Header(header),
+      m_BufferPos(0), m_BufferEnd(0)
 {
-    return m_Decompressor.get()? m_Decompressor->GetCompressedSize(): 0;
+    if ( header == eHeaderNone ) {
+        x_StartDecompressor();
+    }
 }
 
 
-double CNlmZipBtRdr::GetDecompressionTime(void) const
+CNlmZipReader::~CNlmZipReader(void)
 {
-    return m_Decompressor.get()? m_Decompressor->GetDecompressionTime(): 0.;
+    if ( m_Own && fOwnReader ) {
+        delete m_Reader;
+    }
 }
 
 
-CResultZBtSrcX::CResultZBtSrcX(CByteSourceReader* src)
-    : m_Src(src), m_BufferPos(0), m_BufferEnd(0),
-      m_CompressedSize(0), m_DecompressionTime(0)
+ERW_Result CNlmZipReader::PendingCount(size_t* count)
 {
-    m_Decompressor.SetFlags(m_Decompressor.fCheckFileHeader |
-                            m_Decompressor.GetFlags());
+    *count = m_BufferEnd - m_BufferPos;
+    return eRW_Success;
 }
 
 
-CResultZBtSrcX::~CResultZBtSrcX(void)
+ERW_Result CNlmZipReader::Read(void* buffer, size_t count, size_t* bytes_read)
 {
-}
+    if ( count == 0 ) {
+        if ( bytes_read ) {
+            *bytes_read = 0;
+        }
+        return eRW_Success;
+    }
 
-
-size_t CResultZBtSrcX::x_Read(char* buffer, size_t buffer_length)
-{
-    size_t ret = 0;
-    while ( buffer_length > 0 ) {
-        size_t cnt = m_Src->Read(buffer, buffer_length);
-        if ( cnt == 0 ) {
-            break;
+    if ( m_Header != eHeaderNone ) {
+        if ( count >= size_t(kHeaderSize) ) {
+            // we can use buffer to read header
+            size_t bytes = x_ReadZipHeader(static_cast<char*>(buffer));
+            if ( bytes ) {
+                if ( bytes_read ) {
+                    *bytes_read = bytes;
+                }
+                return eRW_Success;
+            }
         }
         else {
-            buffer_length -= cnt;
-            buffer += cnt;
-            ret += cnt;
+            // we have to allocate buffer
+            size_t bytes = x_ReadZipHeader(m_Buffer.Alloc(kHeaderSize));
+            if ( bytes ) {
+                // setup buffer to read
+                m_BufferPos = 0;
+                m_BufferEnd = bytes;
+            }
         }
     }
-    return ret;
+
+    
+    while ( m_BufferPos == m_BufferEnd ) {
+        _ASSERT(m_Header == eHeaderNone);
+        if ( !m_Decompressor.get() ) {
+            return m_Reader->Read(buffer, count, bytes_read);
+        }
+        
+        ERW_Result result = x_DecompressBuffer();
+        if ( result != eRW_Success ) {
+            return result;
+        }
+    }
+
+    count = min(m_BufferEnd - m_BufferPos, count);
+    memcpy(buffer, m_Buffer.At(m_BufferPos), count);
+    if ( bytes_read ) {
+        *bytes_read = count;
+    }
+    m_BufferPos += count;
+    return eRW_Success;
 }
 
 
-void CResultZBtSrcX::ReadLength(void)
+size_t CNlmZipReader::x_ReadZipHeader(char* buffer)
 {
-    char header[8];
-    if ( x_Read(header, 8) != 8 ) {
+    const char* header = buffer;
+    size_t header_read = 0;
+    while ( header_read < size_t(kHeaderSize) ) {
+        size_t cur_cnt = 1;
+        ERW_Result result = m_Reader->Read(buffer, cur_cnt, &cur_cnt);
+        if ( result != eRW_Success || cur_cnt == 0 ) {
+            // not enough bytes
+            x_StartPlain();
+            return header_read;
+        }
+        buffer += cur_cnt;
+        header_read += cur_cnt;
+        if ( memcmp(header, "ZIP", header_read) != 0 ) {
+            // header is not "ZIP"
+            x_StartPlain();
+            return header_read;
+        }
+    }
+    // "ZIP" - skip it
+    m_Header = eHeaderNone;
+    // open decompressor
+    x_StartDecompressor();
+    return 0;
+}
+
+
+void CNlmZipReader::x_StartPlain(void)
+{
+    if ( m_Header == eHeaderAlways ) {
         NCBI_THROW(CCompressionException, eCompression,
-                   "Too few header bytes");
+                   "No 'ZIP' header in NLMZIP stream");
     }
-    unsigned int compr_size = 0;
+    m_Header = eHeaderNone;
+}
+
+
+void CNlmZipReader::x_StartDecompressor(void)
+{
+    m_Decompressor.reset(new CZipCompression);
+    m_Header = eHeaderNone;
+}
+
+
+ERW_Result CNlmZipReader::x_DecompressBuffer(void)
+{
+    static const size_t kLengthsLength = 8;
+    static const size_t kMax_UncomprSize = 1024*1024;
+    static const size_t kMax_ComprSize = 1024*1024;
+
+    char header[kLengthsLength];
+    size_t bytes;
+    ERW_Result result = x_Read(header, kLengthsLength, &bytes);
+    if ( (result == eRW_Success || result == eRW_Eof) && bytes == 0 ) {
+        return eRW_Eof;
+    }
+    if ( result != eRW_Success || bytes != kLengthsLength ) {
+        return eRW_Error;
+    }
+    Uint4 compr_size = 0;
     for ( size_t i = 0; i < 4; ++i ) {
-        compr_size = (compr_size<<8) | (unsigned char)header[i];
+        compr_size = (compr_size<<8) | Uint1(header[i]);
     }
-    unsigned int uncompr_size = 0;
+    Uint4 uncompr_size = 0;
     for ( size_t i = 4; i < 8; ++i ) {
-        uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
+        uncompr_size = (uncompr_size<<8) | Uint1(header[i]);
     }
 
     if ( compr_size > kMax_ComprSize ) {
-        NCBI_THROW(CCompressionException, eCompression,
-                   "Compressed size is too large");
+        return eRW_Error;
     }
     if ( uncompr_size > kMax_UncomprSize ) {
-        NCBI_THROW(CCompressionException, eCompression,
-                   "Uncompressed size is too large");
+        return eRW_Error;
     }
-    m_Compressed.reserve(compr_size);
-    if ( x_Read(&m_Compressed[0], compr_size) != compr_size ) {
-        NCBI_THROW(CCompressionException, eCompression,
-                   "Compressed data is not complete");
+    if ( x_Read(m_Compressed.Alloc(compr_size),
+                compr_size, &bytes) != eRW_Success || bytes != compr_size ) {
+        return eRW_Error;
     }
-    m_BufferPos = m_BufferEnd;
-    m_Buffer.reserve(uncompr_size);
-    CStopWatch sw;
-    if ( 1 ) {
-        sw.Start();
-    }
-    if ( !m_Decompressor.DecompressBuffer(&m_Compressed[0], compr_size,
-                                          &m_Buffer[0], uncompr_size,
-                                          &uncompr_size) ) {
-        NCBI_THROW(CCompressionException, eCompression,
-                   "Decompression failed");
-    }
-    if ( 1 ) {
-        m_DecompressionTime += sw.Elapsed();
+    if ( !m_Decompressor->DecompressBuffer(m_Compressed.At(0),
+                                           compr_size,
+                                           m_Buffer.Alloc(uncompr_size),
+                                           uncompr_size,
+                                           &uncompr_size) ) {
+        return eRW_Error;
     }
     m_BufferEnd = uncompr_size;
     m_BufferPos = 0;
-    m_CompressedSize += compr_size + 8;
+    return eRW_Success;
 }
 
 
-size_t CResultZBtSrcX::Read(char* buffer, size_t buffer_length)
+ERW_Result CNlmZipReader::x_Read(char* buffer,
+                                 size_t count,
+                                 size_t* bytes_read)
 {
-    while ( m_BufferPos >= m_BufferEnd ) {
-        ReadLength();
+    *bytes_read = 0;
+    while ( count ) {
+        size_t cnt;
+        ERW_Result result = m_Reader->Read(buffer, count, &cnt);
+        *bytes_read += cnt;
+        buffer += cnt;
+        count -= cnt;
+        if ( result != eRW_Success ) {
+            return result;
+        }
+        if ( cnt == 0 ) {
+            break;
+        }
     }
-    size_t cnt = min(buffer_length, m_BufferEnd - m_BufferPos);
-    memcpy(buffer, &m_Buffer[m_BufferPos], cnt);
-    m_BufferPos += cnt;
-    return cnt;
+    return eRW_Success;
 }
 
 
-END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/03/10 20:51:49  vasilche
+ * Implemented IReader filter for NlmZip format.
+ *
  * Revision 1.5  2004/08/09 15:59:07  vasilche
  * Implemented CNlmZipBtRdr::Pushback() for uncompressed data.
  *
