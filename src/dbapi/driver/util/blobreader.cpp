@@ -30,7 +30,7 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
-#include "blobstore.hpp"
+#include <dbapi/driver/util/blobstore.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -247,6 +247,9 @@ int main(int argc, char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/25 19:47:28  soussov
+ * moves blobstore.hpp header to include
+ *
  * Revision 1.2  2004/05/17 21:18:21  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -34,7 +34,7 @@
 #include <util/compress/bzip2.hpp>
 #include <dbapi/driver/exception.hpp>
 #include <dbapi/driver/driver_mgr.hpp>
-#include "blobstore.hpp"
+#include <dbapi/driver/util/blobstore.hpp>
 
 USING_NCBI_SCOPE;
 
