@@ -99,7 +99,8 @@ public:
         eSatellite_SNP = 15,
         eSatellite_TRACE = 28,
         eSatellite_TRACE_ASSM = 29,
-        eSatellite_TR_ASSM_CH = 30
+        eSatellite_TR_ASSM_CH = 30,
+        eSatellite_TRACE_CHGR = 31
     };
 
     enum {
@@ -130,6 +131,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.39  2004/03/16 17:49:18  vasilche
+* Use enum constant for TRACE_CHGR entries
+*
 * Revision 1.38  2004/02/18 13:59:57  dicuccio
 * Added additional satellites
 *

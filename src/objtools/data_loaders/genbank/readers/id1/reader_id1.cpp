@@ -424,15 +424,15 @@ int CId1Reader::ResolveSeq_id_to_gi(const CSeq_id& seqId, TConn conn)
 }
 
 
-typedef pair<const char*, int> TSatPair;
+typedef pair<const char*, CReader::ESatellite> TSatPair;
 static const TSatPair sc_SatArray[] = {
     TSatPair("SNP",        CReader::eSatellite_SNP),
     TSatPair("ti",         CReader::eSatellite_TRACE),
     TSatPair("TR_ASSM_CH", CReader::eSatellite_TR_ASSM_CH),
     TSatPair("TRACE_ASSM", CReader::eSatellite_TRACE_ASSM),
-    TSatPair("TRACE_CHGR", 31)
+    TSatPair("TRACE_CHGR", CReader::eSatellite_TRACE_CHGR)
 };
-typedef CStaticArrayMap<const char*, int, PNocase> TSatMap;
+typedef CStaticArrayMap<const char*, CReader::ESatellite, PNocase> TSatMap;
 static const TSatMap sc_SatMap(sc_SatArray, sizeof (sc_SatArray));
 
 
@@ -900,6 +900,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.80  2004/03/16 17:49:18  vasilche
+ * Use enum constant for TRACE_CHGR entries
+ *
  * Revision 1.79  2004/03/16 15:47:29  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *
