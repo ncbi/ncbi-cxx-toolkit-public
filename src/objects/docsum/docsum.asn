@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.16 2001/04/30 15:21:21 sherry Exp $
+-- $Id: docsum.asn,v 1.17 2001/05/01 14:23:44 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.17  2001/05/01 14:23:44  sherry
+-- added seq-ss-exemplar and NSE-ss.orient to report orientation of cluster members to NSE-rs and its exemplar sequence, NSE-rs.seq-ss-exemplar.
+--
 -- Revision 1.16  2001/04/30 15:21:21  sherry
 -- added reference fxn-class if SNP allele is observed on reference contig sequence
 --
@@ -141,7 +144,7 @@ NSE-AssayList ::= SEQUENCE {			-- Table of batch characteristics for all SNP bat
 NSE-Assay ::= SEQUENCE {
 	handle VisibleString,
 	batch VisibleString,			-- Submitter (local) batch id
-	batch-id INTEGER,			-- dbSNP batch_id. Use to join assay to subsnp data
+	batch-id INTEGER,			-- dbSNP batch_id. Use to join assay to subsnp data (NSE-ss, below).
 	moltype ENUMERATED {
 		genomic (1),
 		cDNA (2),
@@ -198,7 +201,10 @@ NSE-ExchangeSet ::= SEQUENCE {
 
 
 
-NSE-rs ::= SEQUENCE {				-- defines the docsum structure that summarizes a refSNP
+NSE-rs ::= SEQUENCE {				-- defines the docsum structure for refSNP clusters, where a refSNP cluster (rs) is
+						-- a grouping of individual dbSNP submissions that all refer to the same variation.
+						-- The refsnp provides a single unified record for annotation of NCBI resources such
+						-- as reference genome sequence.
 	
 						-- #######################################################
 						-- ######
@@ -226,14 +232,16 @@ NSE-rs ::= SEQUENCE {				-- defines the docsum structure that summarizes a refSN
 		ambiguousloc  (6),		-- variation has excessive number of potional locations in genome
 		lowmapquality (7)		-- evidence for calling variation deemed insufficient
 				},
-	observed VisibleString,			-- list of all alleles
+	observed VisibleString,			-- list of all alleles observed in ss-list members, correcting for reverse
+						-- complementation of memebers reported in reverse orientation
 	seq-5 SEQUENCE OF VisibleString,	-- 5' sequence that flanks the variation
 	seq-3 SEQUENCE OF VisibleString,	-- 3' sequence that flanks the variation
 						-- all sequences are in forward orientation, complete sequence
 						-- lower case letters indicate repetetitive or low-complexity sequence by RepeatMasker
-						-- should be assembled as seq-5 + observed + seq-3
 						-- flanking sequence is reported in strings of 255 b.p. and multiple strings
-						-- should be concatenated in order to reconstruct the complete flanking sequence
+						-- should be concatenated in order to reconstruct the complete flanking sequence.
+						-- Sequence should be assembled as seq-5 + observed + seq-3
+	seq-ss-exemplar INTEGER,		-- dbSNP ss# selected as source of refSNP flanking sequence, ss# part of ss-list below 
 	num-chr-hits INTEGER OPTIONAL,		-- total number of distinct chromosomes in genome-mapset
 	num-ctg-hits INTEGER OPTIONAL,		-- total number of distinct contig-ids in genome-mapset
 	num-seq-loc INTEGER OPTIONAL,		-- total number of distinct seq-loc's in genome-mapset
@@ -267,23 +275,30 @@ NSE-rslink ::= SEQUENCE {			-- link data for anther resource
 }
 
 
-NSE-ss ::= SEQUENCE {
+NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All submssions (subsnps, ss#) are
+						-- grouped into reference SNP clusters (rs) above.
+
 						-- #######################################################
 						-- ######
 						-- ######   Data defined in both NSE-rs.brief-sets and full-sets   
 						-- ######
 						-- #######################################################
-	handle VisibleString,
-	batch-id INTEGER,
+	handle VisibleString,			-- Tag for the submitting laboratory
+	batch-id INTEGER,			-- dbSNP number for batch submission
 	subsnp-id INTEGER,			-- dbSNP accession number for submission (ss#)
 	loc-snp-id VisibleString OPTIONAL,	-- submitter (local) subsnp ID
 	subsnp-class ENUMERATED {		-- SubSNP classification by type of variation			SubSNP.subsnp_class
-		snp         (1),		
-		in-del      (2),		
-		het         (3),		
-		microsat    (4),		
-		named       (5),		
-		no-variation (6) }, 
+		snp         (1),		--   true single nucleotide polymorphism
+		in-del      (2),		--   insertion deletion polymorophism, deletions represented by '-' in allele string
+		het         (3),		--   variation has unknown sequence composition, but is observed to be heterozygous
+		microsat    (4),		--   microsatellite / simple sequence repeat
+		named       (5),		--   allele sequences defined by name tag instead of raw sequence, e.g. (Alu)/- 
+		no-variation (6) }, 		--   submission reports invariant region in surveyed sequence
+	orient ENUMERATED {			-- orientation of refsnp cluster members to refsnp cluster sequence
+		forward	    (1),		-- ss flanking sequence is in same orientation as seq-ss-exemplar (above) 
+		refersed    (2) },		-- flanking sequence and alleles are reverse complement of refSNP as defined
+						-- by seq-ss-exemplar. 
+				
 
 						-- #######################################################
 						-- ######
@@ -291,17 +306,21 @@ NSE-ss ::= SEQUENCE {
 						-- ######
 						-- #######################################################
 
-	snp-link VisibleString OPTIONAL,
-	accession SEQUENCE OF VisibleString OPTIONAL,
-	comment SEQUENCE OF VisibleString OPTIONAL,
-	meth-failure SEQUENCE OF VisibleString OPTIONAL,
-	genename VisibleString OPTIONAL,
-	locus-id VisibleString OPTIONAL,
-	flank-5 SEQUENCE OF VisibleString OPTIONAL,
-	assay-5 SEQUENCE OF VisibleString OPTIONAL,
-	observed VisibleString OPTIONAL,
-	assay-3 SEQUENCE OF VisibleString OPTIONAL,
-	flank-3 SEQUENCE OF VisibleString OPTIONAL,
+	snp-link VisibleString OPTIONAL,		-- submission includes reference to another ss# (snp-link value) in dbSNP
+	accession SEQUENCE OF VisibleString OPTIONAL,	-- GenBank or dbSTS sequence accessions used to define local sequence context
+	comment SEQUENCE OF VisibleString OPTIONAL,	-- submitter notes on discovery protocol or measure of evidence for the submission
+	meth-failure SEQUENCE OF VisibleString OPTIONAL,-- notes if submitter reports failure to detect or confirm snp with specific methods
+	genename VisibleString OPTIONAL,		-- gene snp was associated with by submitter
+	locus-id VisibleString OPTIONAL,		-- NCBI LocusLink ID for gene
+	flank-5 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence not surveyed, but appended for minimum length requirements
+	assay-5 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence surveyedd in [NSE-Assay.samplesize] chromosomes
+	observed VisibleString OPTIONAL,		-- /-delimited string of alleles observed by submitter
+	assay-3 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence surveyed in [NSE-Assay.samplesize] chromosomes
+	flank-3 SEQUENCE OF VisibleString OPTIONAL,	-- flanking sequence not surveyed, but appended for minimum length requirements
+							-- n.b. the complete 5' flanking sequence for a submission is constructed as
+							--             flank-5 strings in order + assay-5 strings in order 
+							--      the complete 3' flanking sequence is constructed as
+							--             assay-3 strings in order + flank-3 strings in order
 	pop-info SET OF NSE-ss-popinfo OPTIONAL, 
 	allele-info SET OF NSE-ss-alleinfo OPTIONAL
 }
@@ -329,7 +348,7 @@ NSE-rsMaploc ::= SEQUENCE {		-- Position of a single hit of a variation on a con
 	hit-quality ENUMERATED {
 		high (1),			-- if SNPContigLoc.proc_status = 0
 		loose (2) } OPTIONAL,		-- if SNPContigLoc.proc_status = 1
-	orient ENUMERATED {
+	orient ENUMERATED {			-- orientation of refSNP sequence to contig sequence
 		forward (1),			-- if SNPContigLoc.orientation = 0
 		reverse (2) } OPTIONAL,		-- if SNPContigLoc.orientation = 1
 	physmap-str  VisibleString OPTIONAL,	-- chromosome position of var as seq-loc in # of bases 		SNPContigLoc.phys_pos
