@@ -36,15 +36,7 @@
 */
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-
 #include <objmgr/feat_ci.hpp>
-//#include <objects/seqfeat/SeqFeatData.hpp>
-//#include <objects/seqfeat/Seq_feat.hpp>
-
-//#include <objtools/flat/flat_item.hpp>
-//#include <objtools/flat/flat_context.hpp>
-//#include <objtools/flat/flat_loc.hpp>
-//#include <objtools/flat/flat_formatter.hpp>
 #include <objtools/format/items/flat_qual_slots.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 #include <objtools/format/formatter.hpp>
@@ -67,40 +59,6 @@ public:
 private:
     void x_GatherInfo(CFFContext& ctx) {}
 };
-
-
-/*
-class CFlatFeatureItem : public CFlatItem
-{
-public:
-    typedef 
-    virtual void Format(CFlatItemFormatter& formatter, IFlatTextOStream& text_os) const = 0;
-
-    const CSeq_loc& GetLoc(void) const;
-
-    const vector< CRef<CFlatQual> >& GetQuals(void) const;
-protected:
-};
-
-
-class CSourceFeatItem : public CFlatFeatureItem
-{
-public:
-    CSourceFeatItem(const CSeqdec& desc, CFFContext& ctx);
-
-    void Format(CFlatItemFormatter& formatter, IFlatTextOStream& text_os) const;
-};
-
-
-class CFeatureItem : public CFlatFeatureItem
-{
-public:
-    CFeatureItem(const CSeq_feat& feat, CFFContext& ctx);
-
-    void Format(CFlatItemFormatter& formatter, IFlatTextOStream& text_os) const;
-};
-
-*/
 
 
 class CFlatFeature : public CObject
@@ -244,6 +202,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:57:23  shomrat
+* removed commented code
+*
 * Revision 1.1  2003/12/17 19:46:43  shomrat
 * Initial revision (adapted from flat lib)
 *
