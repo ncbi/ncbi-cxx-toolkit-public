@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.150  2002/08/01 12:51:36  thiessen
+* add E-value display to block aligner
+*
 * Revision 1.149  2002/07/24 12:34:22  thiessen
 * hack around no wxFileName in wx2.2
 *
@@ -2127,7 +2130,10 @@ void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
         SaveDialog(false);                          // give structure window a chance to save data
     }
 
-    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str());
+    const wxString& filestr = wxFileSelector("Choose a text or binary ASN1 file to open", userDir.c_str(),
+        "", "", "All Files|*.*|CDD (*.acd)|*.acd|Binary ASN (*.val)|*.val|ASCII ASN (*.prt)|*.prt",
+        wxOPEN | wxFILE_MUST_EXIST);
+
     if (!filestr.IsEmpty())
         LoadFile(filestr.c_str());
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2002/08/01 12:51:36  thiessen
+* add E-value display to block aligner
+*
 * Revision 1.6  2002/06/13 13:32:39  thiessen
 * add self-hit calculation
 *
@@ -59,6 +62,9 @@
 #include <list>
 #include <vector>
 
+#include <ncbi.h>
+#include <blastkar.h>
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -87,6 +93,11 @@ public:
     // aligned with the multiple using BLAST/PSSM. The scores will be placed in each row, -1.0
     // if no significant alignment is found.
     void CalculateSelfHitScores(const BlockMultipleAlignment *multiple);
+
+
+    // calculate BLAST_Matrix from alignment, optionally filling in karlin block (if !NULL)
+    static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM,
+        BLAST_KarlinBlkPtr karlinBlock);
 };
 
 END_SCOPE(Cn3D)

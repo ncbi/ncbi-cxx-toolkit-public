@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/08/01 12:51:36  thiessen
+* add E-value display to block aligner
+*
 * Revision 1.16  2002/07/26 15:28:45  thiessen
 * add Alejandro's block alignment algorithm
 *
@@ -164,10 +167,11 @@ static Int4 Round(double d)
         return (Int4) (d - 0.5);
 }
 
-BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM)
+BLAST_Matrix * BLASTer::CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM,
+    BLAST_KarlinBlkPtr givenKarlinBlock)
 {
     // for now, use threader's SeqMtf
-    BLAST_KarlinBlkPtr karlinBlock = BlastKarlinBlkCreate();
+    BLAST_KarlinBlkPtr karlinBlock = givenKarlinBlock ? givenKarlinBlock : BlastKarlinBlkCreate();
     Seq_Mtf *seqMtf = Threader::CreateSeqMtf(multipleForPSSM, 1.0, karlinBlock);
 
     BLAST_Matrix *matrix = (BLAST_Matrix *) MemNew(sizeof(BLAST_Matrix));
@@ -249,7 +253,7 @@ BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM)
 #endif
 
     FreeSeqMtf(seqMtf);
-    BlastKarlinBlkDestruct(karlinBlock);
+    if (!givenKarlinBlock) BlastKarlinBlkDestruct(karlinBlock);
     return matrix;
 }
 
@@ -317,7 +321,7 @@ void BLASTer::CreateNewPairwiseAlignmentsByBlast(const BlockMultipleAlignment *m
     // create BLAST_Matrix if using PSSM from multiple
     BLAST_Matrix *BLASTmatrix = NULL;
     if (usePSSM)
-        BLASTmatrix = CreateBLASTMatrix(multiple);
+        BLASTmatrix = CreateBLASTMatrix(multiple, NULL);
 
     std::string err;
     AlignmentList::const_iterator s, se = toRealign.end();
@@ -519,7 +523,7 @@ void BLASTer::CalculateSelfHitScores(const BlockMultipleAlignment *multiple)
     slaveSeqLoc->data.ptrvalue = slaveSeqInt;
 
     // create BLAST_Matrix if using PSSM from multiple
-    BLAST_Matrix *BLASTmatrix = CreateBLASTMatrix(multiple);
+    BLAST_Matrix *BLASTmatrix = CreateBLASTMatrix(multiple, NULL);
 
     std::string err;
     int row;

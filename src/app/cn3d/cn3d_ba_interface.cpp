@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/08/01 12:51:36  thiessen
+* add E-value display to block aligner
+*
 * Revision 1.5  2002/08/01 01:55:16  thiessen
 * add block aligner options dialog
 *
@@ -67,6 +70,7 @@
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/wx_tools.hpp"
+#include "cn3d/cn3d_blast.hpp"
 
 // necessary C-toolkit headers
 #include <ncbi.h>
@@ -131,9 +135,6 @@ BlockAligner::BlockAligner(void)
     currentOptions.K = 0.0;
     currentOptions.searchSpaceSize = 0;
 }
-
-// from cn3d_blast.cpp
-extern BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleForPSSM);
 
 static Int4 Round(double d)
 {
@@ -212,19 +213,24 @@ static BlockMultipleAlignment * UnpackBlockAlignerSeqAlign(const CSeq_align& sa,
     }
 
     // get scores
+    wxString score;
     CSeq_align::TScore::const_iterator c, ce = sa.GetScore().end();
     for (c=sa.GetScore().begin(); c!=ce; c++) {
         if ((*c)->IsSetId() && (*c)->GetId().IsStr()) {
 
             // raw score
-            if ((*c)->GetValue().IsInt() && (*c)->GetId().GetStr() == "score") {
-                wxString score;
-                score.Printf("raw score: %i", (*c)->GetValue().GetInt());
-                bma->SetRowStatusLine(0, score.c_str());
-                bma->SetRowStatusLine(1, score.c_str());
-                break;
-            }
+            if ((*c)->GetValue().IsInt() && (*c)->GetId().GetStr() == "score")
+                score.Printf("%s raw score: %i", score.c_str(), (*c)->GetValue().GetInt());
+
+            // E-value
+            if ((*c)->GetValue().IsReal() && (*c)->GetId().GetStr() == "e_value"
+                    && (*c)->GetValue().GetReal() > 0.0)
+                score.Printf("%s E-value: %g", score.c_str(), (*c)->GetValue().GetReal());
         }
+    }
+    if (score.size() > 0) {
+        bma->SetRowStatusLine(0, score.c_str());
+        bma->SetRowStatusLine(1, score.c_str());
     }
 
     // success
@@ -294,7 +300,7 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     findAllowedGaps(listOfSeqAligns, numBlocks, allowedGaps, percentile, gapAddition);
 
     // set up PSSM
-    BLAST_Matrix *matrix = CreateBLASTMatrix(multiple);
+    BLAST_Matrix *matrix = BLASTer::CreateBLASTMatrix(multiple, NULL);
     thisScoreMat = matrix->matrix;
 
     AlignmentList::const_iterator s, se = toRealign.end();
@@ -457,7 +463,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxStaticText *item16 = new wxStaticText( panel, ID_TEXT, "Lambda:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item16, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     fpLambda = new FloatingPointSpinCtrl(panel,
-        0.0, 1000.0, 1.0, init.lambda,
+        0.0, 10.0, 0.1, init.lambda,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(fpLambda->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
@@ -466,7 +472,7 @@ BlockAlignerOptionsDialog::BlockAlignerOptionsDialog(
     wxStaticText *item19 = new wxStaticText( panel, ID_TEXT, "K:", wxDefaultPosition, wxDefaultSize, 0 );
     item3->Add( item19, 0, wxALIGN_CENTER_VERTICAL|wxALL, 5 );
     fpK = new FloatingPointSpinCtrl(panel,
-        0.0, 10.0, 0.1, init.K,
+        0.0, 1.0, 0.01, init.K,
         wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
         wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
     item3->Add(fpK->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
