@@ -116,9 +116,9 @@ for i in 'DLL' '' ; do
 done
 
 
-# Compiler dir (copy all .pdb files for debug purposes)
+# Compiler dir (copy all .pdb and configurable files files for debug purposes)
 makedir "$cldir" -p
-pdb_files=`find "$builddir"/compilers -type f -name '*.pdb' 2>/dev/null`
+pdb_files=`find "$builddir"/compilers -type f -a \( -name '*.pdb' -o  -name '*.c' -o  -name '*.cpp' \) 2>/dev/null`
 cd "$cldir"
 for pdb in $pdb_files ; do
   rel_dir=`echo $pdb | sed -e "s|$builddir/compilers/||" -e 's|/[^/]*$||'`
