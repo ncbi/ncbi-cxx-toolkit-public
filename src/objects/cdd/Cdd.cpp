@@ -573,29 +573,15 @@ bool CCdd::ReMaster(int Row) {
         jj = (*ii)->SetIds().begin();
         pTempSeqId1 = *j;
         pTempSeqId2 = *(++jj);
-
-        // debugging...
-        int GI;
-        if (pTempSeqId1->IsGi()) {
-          GI = pTempSeqId1->GetGi();
-        }
-        if (pTempSeqId2->IsGi()) {
-          GI = pTempSeqId2->GetGi();
-        }
-
-        (*i)->SetIds().pop_front();
-        (*i)->SetIds().push_front(pTempSeqId2);
-        (*ii)->SetIds().pop_back();
-        (*ii)->SetIds().push_back(pTempSeqId1);
+        (*i)->SetIds().front() = pTempSeqId2;
+        (*ii)->SetIds().back() = pTempSeqId1;
         // swap starts
         k = (*i)->SetStarts().begin();
         kk = (*ii)->SetStarts().begin();
         TempStart1 = *k;
         TempStart2 = *(++kk);
-        (*i)->SetStarts().pop_front();
-        (*i)->SetStarts().push_front(TempStart2);
-        (*ii)->SetStarts().pop_back();
-        (*ii)->SetStarts().push_back(TempStart1);
+        (*i)->SetStarts().front() = TempStart2;
+        (*ii)->SetStarts().back() = TempStart1;
         ii++;
       }
     }
@@ -612,12 +598,10 @@ bool CCdd::ReMaster(int Row) {
         for (i=pDenDiagSet1->begin(); i!=pDenDiagSet1->end(); i++) {
           // replace id of master with new-master id
           j =  (*i)->SetIds().begin();
-          (*ii)->SetIds().pop_front();
-          (*ii)->SetIds().push_front(*j);
+          (*ii)->SetIds().front() = *j;
           // replace start of master with new-master start
           k =  (*i)->SetStarts().begin();
-          (*ii)->SetStarts().pop_front();
-          (*ii)->SetStarts().push_front(*k);
+          (*ii)->SetStarts().front() = *k;
           ii++;
         }
       }
@@ -655,7 +639,7 @@ bool CCdd::ReMaster(int Row) {
         (*m)->SetLocation().SetInt().SetFrom(NewFrom);
         (*m)->SetLocation().SetInt().SetTo(NewTo);
         // erase old master-id, add new
-        (*m)->SetLocation().SetInt().ResetId();
+//        (*m)->SetLocation().SetInt().ResetId();
         if (GetSeqID(0, 0, SeqID)) {
           (*m)->SetLocation().SetInt().SetId(*SeqID);
         }
@@ -673,7 +657,7 @@ bool CCdd::ReMaster(int Row) {
           (*n)->SetFrom(NewFrom);
           (*n)->SetTo(NewTo);
           // erase old master-id, add new
-          (*n)->ResetId();
+//          (*n)->ResetId();
           if (GetSeqID(0, 0, SeqID)) {
             (*n)->SetId(*SeqID);
           }
@@ -1271,6 +1255,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/08/02 17:21:40  hurwitz
+ * fix due to change in asn1 container class, plus bug fix
+ *
  * Revision 1.8  2002/08/02 14:40:01  hurwitz
  * many new features
  *
