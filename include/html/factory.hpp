@@ -37,8 +37,8 @@
 */
 
 #include <ncbistd.hpp>
-#include <stl.hpp>
 #include <ncbicgi.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -72,21 +72,21 @@ int CFactory<Type>::CgiFactory(TCgiEntries & Cgi, SFactoryList <Type> * List)
     TCgiEntries PageCgi;
 
     while(string(List[i].MatchString) != "") {
-	PageCgi.erase(PageCgi.begin(), PageCgi.end());
-	CCgiRequest::ParseEntries(List[i].MatchString, PageCgi);  // parse the MatchString
-	bool ThisPage = true;
-	for (iPageCgi = PageCgi.begin(); iPageCgi != PageCgi.end(); iPageCgi++) { 
-	    Range = Cgi.equal_range(iPageCgi->first);
-	    for(iRange = Range.first; iRange != Range.second; iRange++) {
-		if( iRange->second == iPageCgi->second) goto equality;
-		if(iPageCgi->second == "") goto equality;  // wildcard
-	    }
-	    ThisPage = false;
-	equality:  // ugh
-	    ; // double ugh
-	}
-	if(ThisPage) break;
-	i++;
+        PageCgi.erase(PageCgi.begin(), PageCgi.end());
+        CCgiRequest::ParseEntries(List[i].MatchString, PageCgi);  // parse the MatchString
+        bool ThisPage = true;
+        for (iPageCgi = PageCgi.begin(); iPageCgi != PageCgi.end(); iPageCgi++) { 
+            Range = Cgi.equal_range(iPageCgi->first);
+            for(iRange = Range.first; iRange != Range.second; iRange++) {
+                if( iRange->second == iPageCgi->second) goto equality;
+                if(iPageCgi->second == "") goto equality;  // wildcard
+            }
+            ThisPage = false;
+        equality:  // ugh
+            ; // double ugh
+        }
+        if(ThisPage) break;
+        i++;
     }
     return i;
 }

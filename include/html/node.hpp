@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1998/12/23 14:28:08  vasilche
+* Most of closed HTML tags made via template.
+*
 * Revision 1.4  1998/12/21 22:24:57  vasilche
 * A lot of cleaning.
 *
@@ -50,7 +53,9 @@
 */
 
 #include <ncbistd.hpp>
-#include <stl.hpp>
+#include <map>
+#include <list>
+
 BEGIN_NCBI_SCOPE
 
 // base class for a graph node

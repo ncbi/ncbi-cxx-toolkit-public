@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1998/12/23 14:28:10  vasilche
+* Most of closed HTML tags made via template.
+*
 * Revision 1.10  1998/12/21 22:25:03  vasilche
 * A lot of cleaning.
 *
@@ -118,11 +121,6 @@ CHTMLNode::CHTMLNode(const string& name)
 {
 }
 
-CHTMLNode::CHTMLNode(const CHTMLNode& origin)
-    : CParent(origin)
-{
-}
-
 void CHTMLNode::AppendPlainText(const string& appendstring)
 {
     if ( !appendstring.empty() )
@@ -142,11 +140,6 @@ CHTMLTagNode::CHTMLTagNode(const string& name)
 {
 }
 
-CHTMLTagNode::CHTMLTagNode(const CHTMLTagNode& origin)
-    : CParent(origin)
-{
-}
-
 CNCBINode* CHTMLTagNode::CloneSelf(void) const
 {
     return new CHTMLTagNode(*this);
@@ -161,11 +154,6 @@ void CHTMLTagNode::CreateSubNodes(void)
 
 CHTMLPlainText::CHTMLPlainText(const string& text)
     : m_Text(text)
-{
-}
-
-CHTMLPlainText::CHTMLPlainText(const CHTMLPlainText& origin)
-    : CParent(origin), m_Text(origin.m_Text)
 {
 }
 
@@ -188,11 +176,6 @@ CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out)
 
 CHTMLText::CHTMLText(const string& text)
     : m_Text(text)
-{
-}
-
-CHTMLText::CHTMLText(const CHTMLText& origin)
-    : CParent(origin), m_Text(origin.m_Text)
 {
 }
 
@@ -251,11 +234,6 @@ CHTMLOpenElement::CHTMLOpenElement(const string& name)
 {
 }
 
-CHTMLOpenElement::CHTMLOpenElement(const CHTMLOpenElement& origin)
-    : CParent(origin)
-{
-}
-
 CNCBINode* CHTMLOpenElement::CloneSelf(void) const
 {
     return new CHTMLOpenElement(*this);
@@ -278,9 +256,16 @@ CHTMLElement::CHTMLElement(const string& name)
 {
 }
 
-CHTMLElement::CHTMLElement(const CHTMLElement& origin)
-    : CParent(origin)
+CHTMLElement::CHTMLElement(const string& name, const string& text)
+    : CParent(name)
 {
+    AppendHTMLText(text);
+}
+
+CHTMLElement::CHTMLElement(const string& name, CNCBINode* node)
+    : CParent(name)
+{
+    AppendChild(node);
 }
 
 CNCBINode* CHTMLElement::CloneSelf(void) const
@@ -294,52 +279,25 @@ CNcbiOstream& CHTMLElement::PrintEnd(CNcbiOstream& out)
 }
 
 
-// pre element
-
-CHTML_pre::CHTML_pre(void)
-    : CParent("pre")
-{
-}
-
-CHTML_pre::CHTML_pre(const string& text)
-    : CParent("pre")
-{
-     AppendHTMLText(text);
-}
-
-// capton element
-
-CHTML_caption::CHTML_caption(void)
-    : CParent("caption")
-{
-}
-
-CHTML_caption::CHTML_caption(const string& text)
-    : CParent("caption")
-{
-     AppendHTMLText(text);
-}
-
-
 // anchor element
 
-CHTML_a::CHTML_a(void)
-    : CParent("a")
-{
-}
-
 CHTML_a::CHTML_a(const string& href)
-    : CParent("a")
+    : CParent()
 {
-    SetAttribute("href", href);
+    SetOptionalAttribute("href", href);
 }
-
 
 CHTML_a::CHTML_a(const string& href, const string& text)
-    : CParent("a")
+    : CParent(text)
 {
-    SetAttribute("href", href);
-    AppendHTMLText(text);
+    SetOptionalAttribute("href", href);
+}
+
+
+CHTML_a::CHTML_a(const string& href, CNCBINode* node)
+    : CParent(node)
+{
+    SetOptionalAttribute("href", href);
 }
 
 
@@ -412,11 +370,6 @@ CHTML_table::CHTML_table(const string & bgcolor, const string & width, const str
     SetAttribute("cellspacing", cellspacing);
     SetAttribute("cellpadding", cellpadding);
     MakeTable(row, column);
-}
-
-CHTML_table::CHTML_table(const CHTML_table& origin)
-    : CParent(origin)
-{
 }
 
 CNCBINode* CHTML_table::CloneSelf(void) const
@@ -637,13 +590,7 @@ CHTML_th::CHTML_th(const string & bgcolor, const string & width, const string & 
 
 // form element
 
-CHTML_form::CHTML_form (const CHTML_form& origin)
-    : CParent(origin)
-{
-}
-
 CHTML_form::CHTML_form (const string& action, const string& method, const string& enctype)
-    : CParent("form")
 {
     SetOptionalAttribute("action", action);
     SetOptionalAttribute("method", method);
@@ -657,13 +604,19 @@ void CHTML_form::AddHidden(const string& name, const string& value)
 
 // textarea element
 
-CHTML_textarea::CHTML_textarea(const string & name, int cols, int rows, const string & value)
-    : CParent("textarea")
+CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows)
 {
     SetAttribute("name", name);
     SetAttribute("cols", cols);
     SetAttribute("rows", rows);
-    AppendPlainText(value);  // an exception should propagate ok?
+}
+
+CHTML_textarea::CHTML_textarea(const string& name, int cols, int rows, const string& value)
+    : CParent(value)
+{
+    SetAttribute("name", name);
+    SetAttribute("cols", cols);
+    SetAttribute("rows", rows);
 }
 
 
@@ -796,12 +749,43 @@ CHTML_select* CHTML_select::AppendOption(const string& option, const string& val
 };
 
 
-// p tag with close tag
-
-CHTML_p::CHTML_p(void)
-    : CParent("p")
-{
-}
+const string KHTMLTagName_html = "html";
+const string KHTMLTagName_head = "head";
+const string KHTMLTagName_title = "title";
+const string KHTMLTagName_body = "body";
+const string KHTMLTagName_address = "address";
+const string KHTMLTagName_blockquote = "blockquote";
+const string KHTMLTagName_form = "form";
+const string KHTMLTagName_textarea = "textarea";
+const string KHTMLTagName_select = "select";
+const string KHTMLTagName_h1 = "h1";
+const string KHTMLTagName_h2 = "h2";
+const string KHTMLTagName_h3 = "h3";
+const string KHTMLTagName_h4 = "h4";
+const string KHTMLTagName_h5 = "h5";
+const string KHTMLTagName_h6 = "h6";
+const string KHTMLTagName_p = "p";
+const string KHTMLTagName_pre = "pre";
+const string KHTMLTagName_a = "a";
+const string KHTMLTagName_cite = "cite";
+const string KHTMLTagName_code = "code";
+const string KHTMLTagName_em = "em";
+const string KHTMLTagName_kbd = "kbd";
+const string KHTMLTagName_samp = "samp";
+const string KHTMLTagName_strong = "strong";
+const string KHTMLTagName_var = "var";
+const string KHTMLTagName_b = "b";
+const string KHTMLTagName_i = "i";
+const string KHTMLTagName_tt = "tt";
+const string KHTMLTagName_u = "u";
+const string KHTMLTagName_caption = "caption";
+const string KHTMLTagName_sub = "sub";
+const string KHTMLTagName_sup = "sup";
+const string KHTMLTagName_big = "big";
+const string KHTMLTagName_small = "small";
+const string KHTMLTagName_center = "center";
+const string KHTMLTagName_font = "font";
+const string KHTMLTagName_blink = "blink";
 
 // p tag without close
 

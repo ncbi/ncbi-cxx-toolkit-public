@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1998/12/23 14:28:12  vasilche
+* Most of closed HTML tags made via template.
+*
 * Revision 1.3  1998/12/21 22:25:06  vasilche
 * A lot of cleaning.
 *
@@ -65,7 +68,6 @@ public:
     virtual int Run(void);
 };
 
-
 extern "C" int main(int argc, char *argv[])
 {
     int result;
@@ -96,6 +98,11 @@ int CMyApp::Run(void)
         CHTMLBasicPage * Page = (PageList[i].pFactory)();
         Page->SetApplication(this);
         Page->SetStyle(PageList[i].Style);
+        Page->AppendChild(new CHTML_p(new CHTML_b("bold paragraph")));
+        CHTML_form* form;
+        Page->AppendChild(form = new CHTML_form("FORM"));
+        form->AppendChild(new CHTML_textarea("area", 10, 10));
+        form->AppendChild(new CHTML_textarea("area1", 10, 10, "area1"));
         Page->Print(NcbiCout);  // serialize it
         delete Page;
     }
