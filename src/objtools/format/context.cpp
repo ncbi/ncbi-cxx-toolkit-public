@@ -50,6 +50,8 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/seq_map.hpp>
+#include <objmgr/seq_map_ci.hpp>
 
 #include <objtools/format/context.hpp>
 
@@ -298,8 +300,7 @@ void CBioseqContext::x_SetId(void)
         } 
 
         // GBB source
-        m_ShowGBBSource = m_ShowGBBSource  ||  
-                          ((acc_type & CSeq_id::eAcc_gsdb_dirsub) != 0);
+        m_ShowGBBSource = m_ShowGBBSource  ||  (acc_type == CSeq_id::eAcc_gsdb_dirsub);
     }
 }
 
@@ -464,15 +465,19 @@ SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& part)
 
     SIZE_TYPE serial = 1;
     ITERATE (CSeg_ext::Tdata, it, m_Handle.GetInst_Ext().GetSeg().Get()) {
-        if ( (*it)->IsNull() ) {
+        if ((*it)->IsNull()) {
             continue;
         }
         const CSeq_id& id = GetId(**it);
         CBioseq_Handle bsh = scope.GetBioseqHandleFromTSE(id, m_Handle);
-        if ( bsh   &&  bsh == part ) {
-            return serial;
+        if (bsh  &&
+            bsh.IsSetInst_Repr()  &&
+            bsh.GetInst_Repr() != CSeq_inst::eRepr_virtual) {
+            if (bsh == part) {
+                return serial;
+            }
+            ++serial;
         }
-        ++serial;
     }
 
     return 0;
@@ -481,21 +486,97 @@ SIZE_TYPE CMasterContext::GetPartNumber(const CBioseq_Handle& part)
 
 void CMasterContext::x_SetNumParts(void)
 {
+    CScope& scope = m_Handle.GetScope();
     SIZE_TYPE count = 0;
-    // count only non-gap parts
+
+    // count only non-gap and non-virtual parts
     ITERATE (CSeg_ext::Tdata, it, m_Handle.GetInst_Ext().GetSeg().Get()) {
-        if ( (*it)->IsNull() ) {
+        const CSeq_loc& loc = **it;
+        if (loc.IsNull()) { // skip gaps
             continue;
         }
-        ++count;
+        // count only non-virtual
+        const CSeq_id_Handle id = CSeq_id_Handle::GetHandle(GetId(loc, &scope));
+        CBioseq_Handle part = scope.GetBioseqHandleFromTSE(id, m_Handle);
+        if (part  &&
+            part.IsSetInst_Repr()  &&
+            part.GetInst_Repr() != CSeq_inst::eRepr_virtual) {
+            ++count;    
+        }
     }
     m_NumParts = count;
 }
 
 
+static void s_GetNameForBioseq(const CBioseq_Handle& seq, string& name)
+{
+    name.clear();
+
+    CConstRef<CSeq_id> sip;
+    ITERATE (CBioseq_Handle::TId, it, seq.GetId()) {
+        CConstRef<CSeq_id> id = it->GetSeqId();
+        if (id->IsGenbank()  ||  id->IsEmbl()    ||  id->IsDdbj()  ||
+            id->IsTpg()      ||  id->IsTpe()     ||  id->IsTpd()) {
+            sip = id;
+            break;
+        }
+    }
+
+    if (sip) {
+        const CTextseq_id* tsip = sip->GetTextseq_Id();
+        if (tsip != NULL  &&  tsip->CanGetName()) {
+            name = tsip->GetName();
+        }
+    }
+}
+
+
 void CMasterContext::x_SetBaseName(void)
 {
-    // !!!
+    string parent_name;
+    s_GetNameForBioseq(m_Handle, parent_name);
+
+    // if there's no "SEG_" prefix just use the master's name
+    if (!NStr::StartsWith(parent_name, "SEG_")) {
+        m_BaseName = parent_name;
+        return;
+    }
+
+    // otherwise, eliminate the prefix ...
+    parent_name = parent_name.substr(4);
+
+    // ... and calculate a base name
+
+    // find the first segment
+    CScope* scope = &m_Handle.GetScope();
+    CBioseq_Handle segment;
+    const CSeqMap& seqmap = m_Handle.GetSeqMap();
+    CSeqMap::TSegment_CI it =
+        seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+    while (it) {
+        CSeq_id_Handle id = it.GetRefSeqid();
+        segment = scope->GetBioseqHandleFromTSE(id, m_Handle);
+        if (segment) {
+            break;
+        }
+    }
+    string seg_name;
+    if (segment) {
+        s_GetNameForBioseq(segment, seg_name);
+    }
+
+    if (!seg_name.empty()  &&  NStr::EndsWith(seg_name, "1")  &&
+        parent_name.length() == seg_name.length()  &&
+        NStr::EndsWith(parent_name, "1")) {
+        for (size_t pos = parent_name.length() - 2; pos >= 0; --pos) {
+            if (parent_name[pos] != '0') {
+                break;
+            }
+            parent_name.erase(pos + 1);
+        }
+    }
+
+    m_BaseName = parent_name;
 }
 
 
@@ -506,6 +587,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/08/19 16:28:45  shomrat
+* Implemented GetBaseName
+*
 * Revision 1.18  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
