@@ -163,7 +163,20 @@ CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
     if (type & fSeq) {
         CSeqVector& seq_vec = x_GetSeqVector(row);
         TSignedSeqPos pos = GetSeqPosFromAlnPos(row, aln_pos);
-        return seq_vec[IsPositiveStrand(row) ? pos : seq_vec.size() - pos - 1];
+        if (GetWidth(row) == 3) {
+            string na_buff, aa_buff;
+            if (IsPositiveStrand(row)) {
+                seq_vec.GetSeqData(pos, pos + 3, na_buff);
+            } else {
+                TSeqPos size = seq_vec.size();
+                seq_vec.GetSeqData(size - pos - 3, size - pos, na_buff);
+            }
+            TranslateNAToAA(na_buff, aa_buff);
+            return aa_buff[0];
+        } else {
+            return seq_vec[IsPositiveStrand(row) ?
+                          pos : seq_vec.size() - pos - 1];
+        }
     } else {
         if (type & fNoSeqOnLeft  ||  type & fNoSeqOnRight) {
             return GetEndChar();
@@ -330,6 +343,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2003/12/17 17:01:07  todorov
+ * Added translated GetResidue
+ *
  * Revision 1.28  2003/12/10 17:17:40  todorov
  * CalcScore now const
  *
