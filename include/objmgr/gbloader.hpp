@@ -114,7 +114,7 @@ public:
   CMutexPool();
   ~CMutexPool(void);
   void SetSize(int size);
-  CMutex& GetMutex(int x) { return m_Locks[x%m_size]; }
+  CMutex& GetMutex(int x) { int y=x%m_size; spread[y]++; return m_Locks[y]; }
   template<class A> int  Select(A *a) { return (((unsigned long) a)/sizeof(A)) % m_size ; }
 };
 
@@ -220,6 +220,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.26  2002/07/23 15:31:18  kimelman
+ * fill statistics for MutexPool
+ *
  * Revision 1.25  2002/07/22 22:53:20  kimelman
  * exception handling fixed: 2level mutexing moved to Guard class + added
  * handling of confidential data.
