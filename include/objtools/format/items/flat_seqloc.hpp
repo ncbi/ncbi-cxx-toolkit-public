@@ -79,13 +79,13 @@ public:
     const string&     GetString(void)    const { return m_String;    }
     
 private:
-    void x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
+    bool x_Add(const CSeq_loc& loc, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
-    void x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
+    bool x_Add(const CSeq_interval& si, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
-    void x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
+    bool x_Add(const CSeq_point& pnt, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type, bool show_comp);
-    void x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
+    bool x_Add(TSeqPos pnt, const CInt_fuzz* fuzz, CNcbiOstrstream& oss,
         bool html = false);
     void x_AddID(const CSeq_id& id, CNcbiOstrstream& oss,
         CBioseqContext& ctx, TType type);
@@ -102,6 +102,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/08/19 16:43:15  shomrat
+* changed return type from void to bool for x_Add methods
+*
 * Revision 1.4  2004/04/22 15:36:25  shomrat
 * Changes in context
 *
