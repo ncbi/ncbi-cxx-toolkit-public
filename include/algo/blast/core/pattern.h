@@ -43,19 +43,22 @@ extern "C" {
 
 /** @todo: FIXME comment #defines */
 
-#define BUF_SIZE 100
-#define ASCII_SIZE 256
-#define BITS_PACKED_PER_WORD 30
-#define MaxW   11
-#define MaxP   (BITS_PACKED_PER_WORD * MaxW) /*threshold pattern length*/
-#define MAX_WORDS_IN_PATTERN 100
-#define MAX_HIT 20000
-#define OVERFLOW1  (1 << BITS_PACKED_PER_WORD)
-#define ONE_WORD_PATTERN  0
-#define MULTI_WORD_PATTERN 1
-#define ALPHABET_SIZE 25
-#define PATTERN_SPACE_SIZE 1000
+#define BUF_SIZE 100       /**< Default size for buffers */
+#define ASCII_SIZE 256     /**< Size of ASCII alphabet */ 
+#define BITS_PACKED_PER_WORD 30 /**< Number of bits packed in a word */
+#define MaxW   11               /**< Maximal word size */ 
+#define MaxP   (BITS_PACKED_PER_WORD * MaxW) /**< threshold pattern length*/
+#define MAX_WORDS_IN_PATTERN 100  /**< Maximal number of words in pattern */
+#define MAX_HIT 20000             /**< Maximal length of a hit */
+#define OVERFLOW1  (1 << BITS_PACKED_PER_WORD) /**< Overflow threshold */
+#define ONE_WORD_PATTERN  0  /**< Does pattern consist of a single word? */
+#define MULTI_WORD_PATTERN 1 /**< Does pattern consist of a multiple words? */
+#define ALPHABET_SIZE 25     /**< Size of the protein alphabet */
+#define PATTERN_SPACE_SIZE 1000 /**< Size of the pattern space */
 
+/** Structure containing all auxiliary information needed in a pattern 
+ * search.
+ */
 typedef struct patternSearchItems {
    Int4 numWords;  /**< Number of words need to hold bit representation
                         of pattern*/
