@@ -430,7 +430,7 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
     stack<TTreeNodeIterator> tree_stack;
 
     while (true) {
-        tr = *it;
+        tr = (TTreeNode*)*it;
         stop_scan = eTreeTraverse;
         if (tr) {
             stop_scan = func(*tr, delta_level);
@@ -458,7 +458,7 @@ Fun TreeDepthFirstTraverse(TTreeNode& tree_node, Fun func)
             }
             it = tree_stack.top();
             tree_stack.pop();
-            tr = *it;
+            tr = (TTreeNode*)*it;
             it_end = tr->GetParent()->SubNodeEnd();
             delta_level = -1;
             continue;
@@ -900,6 +900,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.39  2004/08/18 12:11:56  kuznets
+ * Added type castings (compatibility fix for algorithms)
+ *
  * Revision 1.38  2004/07/29 16:57:51  kuznets
  * +CTreePairNode::FindNode
  *
