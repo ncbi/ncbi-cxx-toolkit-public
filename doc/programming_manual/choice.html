@@ -1,170 +1,199 @@
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
-  <head>
-    <title> Choice objects in the NCBI C++ Toolkit</title>
-  </head>
-  <body bgcolor = white>
-    <h1> Choice objects in the NCBI C++ Toolkit</h1>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <title> Choice objects in the NCBI C++ Toolkit</title>
+</head>
+<body bgcolor="#FFFFFF">
+
+<h1>
+Choice objects in the NCBI C++ Toolkit</h1>
+
 <ul>
-  <li> <a href="#intro"> Introduction </a>
-  <li> <a href="#cppchoice"> C++ choice objects </a>
-  <!--li> <a href="#typeinfo"> Type information for choice objects </a-->
+<li>
+<a href="#intro">Introduction</a></li>
+
+<li>
+<a href="#cppchoice">C++ choice objects&nbsp;</a><!--li> <a href="#typeinfo"> Type information for choice objects </a--></li>
 </ul>
-
-<a name="intro"> <h3> Introduction </h3>
-
-The <a href="../tools/datatool/datatool.html"> <i>datatool</i></a> program processes the ASN.1
-specification files in the <i>src/objects/</i> directories to generate the associated C++ class
-definitions. The corresponding program implemented in the C Toolkit, <i>asntool</i>, used the ASN.1
-specifications to generate C enums, structs, and functions. In contrast, <i>datatool</i> must generate C++
-enums, classes and methods. In addition, for each defined object type, <i>datatool</i> must also
-generate the associated <a href="typeinfo.html"> type information</a> method or function. <p>
-
-There is a significant difference in how these two tools implement ASN.1
-<i>choice</i> elements.  As an example, we consider the following ASN.1 specification:
-
+<a NAME="intro"></a>
+<h3>
+Introduction</h3>
+The <i><a href="../tools/datatool/datatool.html">datatool</a></i> program
+processes the ASN.1 specification files (<i>*.asn</i>) in the <i><a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/src/objects/">src/objects/</a></i>directories
+to generate the associated C++ class definitions. The corresponding program
+implemented in the C Toolkit, <i>asntool</i>, used the ASN.1 specifications
+to generate C enums, structs, and functions. In contrast, <i>datatool</i>
+must generate C++ enums, classes and methods. In addition, for each defined
+object type, <i>datatool</i> must also generate the associated <a href="typeinfo.html">type
+information</a> method or function.
+<p>There is a significant difference in how these two tools implement ASN.1
+<i>choice</i>
+elements. As an example, consider the following ASN.1 specification:
 <pre><font color="#000080">Object-id ::= CHOICE {
-    id INTEGER, 
-    str VisibleString }
-</pre></font>
-
-The ASN.1 <i>choice</i> element specifies that the corresponding object may be any <i>one</i> of the
-listed types. In this case, the possible types are an integer and a string.  The approach used in
-<i>asntool</i> was to implement all choice objects as <i>ValNode</i>s, which were in turn defined
+&nbsp;&nbsp;&nbsp; id INTEGER,&nbsp;
+&nbsp;&nbsp;&nbsp; str VisibleString
+}</font></pre>
+The ASN.1 <i>choice</i> element specifies that the corresponding object
+may be any <i>one</i> of the listed types. In this case, the possible types
+are an integer and a string. The approach used in
+<i>asntool</i> was to
+implement all choice objects as <i>ValNode</i>s, which were in turn defined
 as:
-
 <pre><font color="#000080">typedef struct valnode {
-    unsigned choice;
-    DataVal data;
-    struct valnode *next;
-} ValNode;
-</pre></font>
-
-The <i>DataVal</i> field is a <i>union</i> which may directly store numerical values, or
-alternatively, hold a <i>void</i> pointer to a character string or C <i>struct</i>. Thus, to process
-a <i>choice</i> element in the C Toolkit, one could first retrieve the <i>choice</i> field to
-determine how the data should be interpreted, and subsequently, retrieve the data via the
-<i>DataVal</i> field.  In particular, no explicit implementation of individual choice objects was
-used, and it was left to functions which manipulate these elements to enforce logical consistency
-and error checking for legitimate values. A C <i>struct</i> which included a <i>choice</i> element
-as one of its fields merely had to declare that element as type <i>ValNode</i>. This design was
-further complicated by the use of a <i>void</i> pointer to store non-primitive types such as
-<i>struct</i>s or character strings. <p>
-
-In contrast, the C++ <i>datatool</i> implementation of <i>choice</i> elements defines a class with
-built-in, automatic error checking for each <i>choice</i> object. The usage of smart pointers, in
-combination with the <i>CObject</i> class hierarchy (and the associated type information methods)
+&nbsp;&nbsp;&nbsp; unsigned choice;
+&nbsp;&nbsp;&nbsp; DataVal data;
+&nbsp;&nbsp;&nbsp; struct valnode *next;
+} ValNode;</font></pre>
+The <i>DataVal</i> field is a <i>union,</i> which may directly store numerical
+values, or alternatively, hold a <i>void</i> pointer to a character string
+or C <i>struct</i>. Thus, to process a <i>choice</i> element in the C Toolkit,
+one could first retrieve the <i>choice</i> field to determine how the data
+should be interpreted, and subsequently, retrieve the data via the
+<i>DataVal</i>
+field. In particular, no explicit implementation of individual choice objects
+was used, and it was left to functions which manipulate these elements
+to enforce logical consistency and error checking for legitimate values.
+A C <i>struct</i> which included a <i>choice</i> element as one of its
+fields merely had to declare that element as type <i>ValNode</i>. This
+design was further complicated by the use of a <i>void</i> pointer to store
+non-primitive types such as
+<i>struct</i>s or character strings.
+<p>In contrast, the C++ <i>datatool</i> implementation of <i>choice</i>
+elements defines a class with built-in, automatic error checking for each
+<i>choice</i>
+object. The usage of <a href="cref.html#cref">smart pointers,</a> in combination
+with the <i><a href="cref.html#cobject">CObject</a></i> class hierarchy
+(and the associated <a href="typeinfo.html">type information </a>methods)
 solves many of the problems associated with working with <i>void</i> pointers.
-<p>
-
-<a name="cppchoice"> <h3> C++ choice objects</h3>
-The classes generated by <i>datatool</i> for <i>choice</i> elements all have the following 
-internal structure:
+<p><a NAME="cppchoice"></a>
+<h3>
+C++ choice objects</h3>
+The classes generated by <i>datatool</i> for <i>choice</i> elements all
+have the following general structure:
 <pre><font color="#000080">class C[AsnChoiceName] : public CObject
 {
-    typedef CObject Tparent;
 
 public:
-    ...					      <font color=red>    // constructors and destructors</font>
+&nbsp;&nbsp;&nbsp; ...&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// constructors and destructors
 
-    DECLARE_INTERNAL_TYPE_INFO();	      <font color=red>    // declare GetTypeInfo() method</font>
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; DECLARE_INTERNAL_TYPE_INFO();&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// declare GetTypeInfo() method
 
-    enum E_Choice {			      <font color=red>    // enumerate the choice variants</font>
-        e_not_set,
-        e_Xxx,
-	...,
-    };
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; enum E_Choice {&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // enumerate the class names
+</font><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e_not_set,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// for the choice variants
+</font><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e_Xxx,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp; };
 
-    typedef CXxx TXxx;			      <font color=red>    // typedef each variant class</font>
-    ...	
+&nbsp;&nbsp;&nbsp; typedef CXxx TXxx;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // typedef each variant class
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; ...&nbsp;
 
-    virtual void Reset(void);		      <font color=red>    // reset selection to none</font>
+&nbsp;&nbsp;&nbsp; virtual void Reset(void);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// reset selection to none
 
-    E_Choice Which(void) const;		      <font color=red>    // return m_choice  </font>
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; E_Choice Which(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// return m_choice&nbsp;&nbsp;
 
-    void Select(E_Choice index,		      <font color=red>    // change the current selection</font>
-		EResetVariant reset);
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; void Select(E_Choice index,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// change the current selection
+</font><font color="#000080">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EResetVariant reset);
 
-    void CheckSelected(E_Choice index) const; <font color=red>    // throws exception if index != m_choice </font>
-    void ThrowInvalidSelection(E_Choice index) const;
+&nbsp;&nbsp;&nbsp; static string SelectionName(E_Choice index);
 
-    static string SelectionName(E_Choice index);
-
-    bool IsXxx(void) const;		      <font color=red>    // true if m_choice == eXxx</font>
-    CXxx& GetXxx(void);
-    const CXxx& GetXxx(void) const;
-    CXxx& SetXxx(void);
-    void SetXxx(const CRef&lt;CXxx>& ref);
-    ...
+&nbsp;&nbsp;&nbsp; bool IsXxx(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// true if m_choice == eXxx
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; CXxx&amp; GetXxx(void);
+&nbsp;&nbsp;&nbsp; const CXxx&amp; GetXxx(void) const;
+&nbsp;&nbsp;&nbsp; CXxx&amp; SetXxx(void);
+&nbsp;&nbsp;&nbsp; void SetXxx(const CRef&lt;CXxx>&amp; ref);
+&nbsp;&nbsp;&nbsp; ...
 
 private:
 
-    E_Choice m_choice;			      <font color=red>    // choice state</font>
-    union {
-        TXxx m_Xxx;
-	...
-    };
-    CObject *m_object;			      <font color=red>    // variant's data</font>
-    void DoSelect(E_Choice index);	      <font color=red>    // helper method</font>
-    static const char* const sm_SelectionNames[];
-};
-</pre></font>
-For the above ASN.1 specification, <i>datatool</i> generates a class named <i>CObject_id</i>,
-which is derived from <a href="cref.html#cobject"><i>CObject</i></a>. For each choice variant in
-the specification, an enumerated value (in <i>E_Choice</i>), and an internal <i>typedef</i>
-are defined, and a declaration in the <i>union</i> data member is made.
-For this example then, we would have:
-<pre><font color="#000080">    enum E_Choice {
-        e_not_set,
-        e_Id,
-	e_Str
-    };
-    ...
+&nbsp;&nbsp;&nbsp; E_Choice m_choice;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font color="#FF0000">// choice state
+</font><font color="#000080">&nbsp;&nbsp;&nbsp; union {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TXxx m_Xxx;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ...
+&nbsp;&nbsp;&nbsp; };
+&nbsp;&nbsp;&nbsp; CObject *m_object;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font><font color="#FF0000"> // variant's data
+&nbsp;&nbsp;&nbsp; ...
+</font><font color="#000080">};</font></pre>
+For the above ASN.1 specification, <i>datatool</i> generates a class named
+<i>CObject_id</i>,
+which is derived from <i><a href="cref.html#cobject">CObject</a></i>. For
+each choice variant in the specification, an enumerated value (in <i>E_Choice</i>),
+and an internal <i>typedef</i> are defined, and a declaration in the <i>union</i>
+data member is made. For this example then, we would have:
+<pre><font color="#000080">&nbsp;&nbsp;&nbsp; enum E_Choice {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e_not_set,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e_Id,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e_Str
+&nbsp;&nbsp;&nbsp; };
+&nbsp;&nbsp;&nbsp; ...
 
-    typedef int TId;
-    typedef string TStr;
-    ...
+&nbsp;&nbsp;&nbsp; typedef int TId;
+&nbsp;&nbsp;&nbsp; typedef string TStr;
+&nbsp;&nbsp;&nbsp; ...
 
-    union {
-        TId m_Id;
-        string *m_string;
-    };
-</pre></font>
+&nbsp;&nbsp;&nbsp; union {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TId m_Id;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string *m_string;
+&nbsp;&nbsp;&nbsp; };</font></pre>
+In this case both of the choice variants are C++ built-in types. More generally
+however, the choice variant types may refer to any type of object. For
+convenience, we refer to their C++ type names here as "CXxx",
+<p>Two private data members store information about the currently selected
+choice variant:
+<i>m_choice</i> holds the <i>enum</i> value, and <i>m_Xxx</i>
+holds (or points to a <i>CObject</i> containing) the variant's data. The
+choice object's member functions provide access to these two data members.
+<i>Which()</i> returns the currently selected variant's <i>E_Choice enum</i>
+value. Each choice variant has its own <i>Get()</i> and <i>Set()</i> methods.
+Each <i>GetXxx()</i> method throws an exception if the variant type for
+that method does not correspond to the current selection type. Thus, it
+is not possible to unknowingly retrieve the incorrect type of choice variant.
+<p><i>Select(e_Xxx)</i> uses a <i>switch(e_Xxx)</i> statement to initialize
+<i>m_Xxx</i>
+appropriately, sets <i>m_choice</i> to <i>e_Xxx</i>, and returns. Two <i>SetXxx()</i>
+methods are defined, and both use this <i>Select()</i> method. <i>SetXxx()</i>
+with no arguments calls <i>Select(e_Xxx)</i> and returns <i>m_Xxx</i> (as
+iniitialized by <i>Select()</i>).&nbsp; <i>SetXxx(TXxx&amp; value)</i>
+also calls <i>Select(e_Xxx)</i> but resets <i>m_Xxx</i> to <i>value</i>
+before returning.
+<p>Some example choice objects in the C++ Toolkit are:
+<ul>
+<li>
+<i><a href="../docxx/CDate.html">CDate</a></i></li>
 
-In this case both of the choice variants are C++ built-in types. More generally however, the choice
-variant types may refer to any type of object. For convenience, we refer to their C++ type names
-here as "CXxx", <p>
+<li>
+<i><a href="../docxx/CInt_fuzz.html">CInt_fuzz</a></i></li>
 
-Two private data members store information about the currently selected choice variant:
-<i>m_choice</i> holds the <i>enum</i> value, and <i>m_Xxx</i> holds (or points to) the variant's
-data. The choice object's member functions provide access to these two data members. <i>Which()</i>
-return's the currently selected variant's <i>E_Choice enum</i> value. Each choice variant has its
-own <i>Get()</i> and <i>Set()</i> methods. The <i>GetXxx()</i> methods first call
-<i>CheckSelected(e_Xxx)</i>, where an exception will be thrown if <i>e_Xxx != m_choice</i>. Thus, it
-is not possible to unknowingly retrieve the incorrect type of choice variant.<p>
+<li>
+<i><a href="../docxx/CObject_id.html">CObject_id</a></i></li>
 
-Two <i>SetXxx()</i> methods are defined; both use the <i>Select()</i> method, which in turn, uses 
-the <i>DoSelect</i> helper method. The latter uses a <i>switch(e_Xxx)</i> statement to initialize
-<i>m_Xxx</i> appropriately, sets <i>m_choice</i> to <i>e_Xxx</i>, and returns. <i>SetXxx()</i> with
-no arguments calls <i>Select(e_Xxx)</i> and returns <i>m_Xxx</i>. <i>SetXxx(TXxx& value)</i> also
-calls <i>Select(e_Xxx)</i> but sets <i>m_Xxx</i> to <i>value</i> before returning. 
-<p>
+<li>
+<i><a href="../docxx/CPerson_id.html">CPerson_id</a></i></li>
 
-<!--a name="typeinfo"> <h3>Type information for choice objects </h3 -->
+<li>
+<i><a href="../docxx/CAnnotdesc.html">CAnnotdesc</a></i></li>
 
-<p>
-   </body>
-<a href="exceptions.html"> <i> previous</i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="../index.html"> <i> up </i> </a>
-&nbsp;&nbsp;&nbsp;
-<a href="cref.html"> <i> next</i> </a>
+<li>
+<i><a href="../docxx/CSeq_annot.html">CSeq_annot</a></i></li>
+</ul>
+
+<p><br><!--a name="typeinfo"> <h3>Type information for choice objects </h3 -->
+<p><a href="exceptions.html"><i>previous</i>&nbsp;</a>&nbsp;&nbsp; <i><a href="../index.html">up&nbsp;</a></i>&nbsp;&nbsp;
+<i><a href="cref.html">next</a></i>
+<hr>
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td>
+<address>
+<a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address>
+</td>
+
+<td><!-- <td align=center><i>$Revision$</i></td> --></td>
+
+<td ALIGN=RIGHT><i>$Date$</i></td>
+</tr>
+</table>
+
+</body>
 </html>
-
-	 <hr>
-	 <table border=0 width="100%" cellspacing=0>
-		<tr>
-		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
-		  <!-- <td align=center><i>$Revision$</i></td> -->
-		  <td align=right><i>$Date$</i></td>
-	 </table>
