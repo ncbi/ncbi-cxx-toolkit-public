@@ -42,6 +42,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -507,6 +508,24 @@ bool GetModelEvidance
 }
 
 
+// in Ncbistdaa order
+static const char* kAANames[] = {
+    "---", "Ala", "Asx", "Cys", "Asp", "Glu", "Phe", "Gly", "His", "Ile",
+    "Lys", "Leu", "Met", "Asn", "Pro", "Glu", "Arg", "Ser", "Thr", "Val",
+    "Trp", "OTHER", "Tyr", "Glx", "Sec", "TERM"
+};
+
+
+const char* GetAAName(unsigned char aa, bool is_ascii)
+{
+    if (is_ascii) {
+        aa = CSeqportUtil::GetMapToIndex
+            (CSeq_data::e_Ncbieaa, CSeq_data::e_Ncbistdaa, aa);
+    }
+    return (aa < sizeof(kAANames)/sizeof(*kAANames)) ? kAANames[aa] : "OTHER";
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -515,6 +534,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/04/07 14:29:16  shomrat
+* + GetAAName
+*
 * Revision 1.5  2004/03/25 20:47:26  shomrat
 * Use handles
 *

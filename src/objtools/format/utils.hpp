@@ -100,6 +100,9 @@ bool GetModelEvidance(const CBioseq_Handle& bsh, CScope& scope,
                       SModelEvidance& me);
 
 
+const char* GetAAName(unsigned char aa, bool is_ascii);
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -108,6 +111,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/04/07 14:29:19  shomrat
+* + GetAAName
+*
 * Revision 1.4  2004/03/25 20:47:59  shomrat
 * Add class forwarding
 *
