@@ -940,7 +940,13 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
     }
     _ASSERT(beg <= end);
 
+#if defined(NCBI_COMPILER_GCC)  &&  (NCBI_COMPILER_VERSION == 304)
+    // work around a library bug
+    str.replace(end + 1, str.size(), kEmptyStr);
+    str.replace(0, beg, kEmptyStr);
+#else
     str.replace(0, str.size(), str, beg, end - beg + 1);
+#endif
 }
 
 
@@ -1683,6 +1689,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.129  2004/12/20 22:36:47  ucko
+ * TruncateSpacesInPlace: when built with GCC 3.0.4, don't attempt to
+ * replace() str with a portion of itself, as that can yield incorrect
+ * results.
+ *
  * Revision 1.128  2004/11/24 15:30:20  ucko
  * Simplify logic in Wrap slightly.
  *
