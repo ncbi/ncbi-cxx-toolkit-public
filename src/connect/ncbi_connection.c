@@ -454,7 +454,7 @@ extern EIO_Status CONN_Write
     if (!n_written)
         return eIO_InvalidArg;
     *n_written = 0;
-    if (!!buf ^ !!size)
+    if (size && !buf)
         return eIO_InvalidArg;
     CONN_NOT_NULL(Write);
 
@@ -615,7 +615,7 @@ extern EIO_Status CONN_Read
     if (!n_read)
         return eIO_InvalidArg;
     *n_read = 0;
-    if (!!buf ^ !!size)
+    if (size && !buf)
         return eIO_InvalidArg;
 
     CONN_NOT_NULL(Read);
@@ -664,7 +664,7 @@ extern EIO_Status CONN_ReadLine
     if (!n_read)
         return eIO_InvalidArg;
     *n_read = 0;
-    if (!!line ^ !!size)
+    if (size && !line)
         return eIO_InvalidArg;
 
     CONN_NOT_NULL(ReadLine);
@@ -854,6 +854,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.41  2004/05/24 20:19:19  lavr
+ * Fix eIO_InvalidArg conditions (size and no buffer)
+ *
  * Revision 6.40  2004/05/24 19:54:59  lavr
  * +CONN_ReadLine()
  *
