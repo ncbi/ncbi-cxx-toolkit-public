@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/08/15 20:48:49  juran
+* Define SPIN_CTRL_HEIGHT for Mac OS.
+*
 * Revision 1.6  2001/08/06 20:22:49  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -72,6 +75,9 @@ BEGIN_SCOPE(Cn3D)
 #if defined(__WXMSW__)
 static const int SPIN_CTRL_HEIGHT = 20;
 #elif defined(__WXGTK__)
+static const int SPIN_CTRL_HEIGHT = 20;
+#elif defined(__WXMAC__)
+#warning "Is this a reasonable value?"
 static const int SPIN_CTRL_HEIGHT = 20;
 #endif
 
