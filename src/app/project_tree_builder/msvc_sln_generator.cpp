@@ -282,11 +282,12 @@ CMsvcSolutionGenerator::WriteProjectConfigurations(CNcbiOfstream&     ofs,
         const SConfigInfo& cfg_info = *p;
 
         CMsvcPrjProjectContext context(project.m_Project);
-        if ( !context.IsConfigEnabled(cfg_info) ) {
-            continue;
-        }
+        
+        bool config_enabled = context.IsConfigEnabled(cfg_info);
 
         const string& config = cfg_info.m_Name;
+        
+
         ofs << '\t' 
             << '\t' 
             << project.m_GUID 
@@ -341,6 +342,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/02/24 23:26:17  gorelenk
+ * Changed implementation  of member-function WriteProjectConfigurations
+ * of class CMsvcSolutionGenerator.
+ *
  * Revision 1.13  2004/02/24 21:15:31  gorelenk
  * Added test for config availability for project to implementation  of
  * member-function WriteProjectConfigurations of class CMsvcSolutionGenerator.
