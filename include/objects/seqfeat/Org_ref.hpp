@@ -35,22 +35,19 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
- * Revision 1.2  2002/01/10 19:55:01  clausen
+ * Revision 1.1  2002/01/10 19:57:07  clausen
  * Added GetLabel
- *
- * Revision 1.1  2001/10/30 20:25:57  ucko
- * Implement feature labels/keys, subtypes, and sorting
  *
  *
  * ===========================================================================
  */
 
-#ifndef OBJECTS_SEQFEAT_SEQ_FEAT_HPP
-#define OBJECTS_SEQFEAT_SEQ_FEAT_HPP
+#ifndef OBJECTS_SEQFEAT_ORG_REF_HPP
+#define OBJECTS_SEQFEAT_ORG_REF_HPP
 
 
 // generated includes
-#include <objects/seqfeat/Seq_feat_.hpp>
+#include <objects/seqfeat/Org_ref_.hpp>
 
 // generated classes
 
@@ -58,53 +55,37 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CScope;
-
-class CSeq_feat : public CSeq_feat_Base
+class COrg_ref : public COrg_ref_Base
 {
-    typedef CSeq_feat_Base Tparent;
+    typedef COrg_ref_Base Tparent;
 public:
     // constructor
-    CSeq_feat(void);
+    COrg_ref(void);
     // destructor
-    ~CSeq_feat(void);
-        
-    // Selects type of label to return
-    enum ELabelType {
-        eType,
-        eContent,
-        eBoth};
-      
-     // Returns a label for a CSeq_feat. Label may be based on just the
-     // type of feature, just the content of the feature, or both. If scope
-     // is 0, the label will not include information from feature products
-     void GetLabel(string*    label,
-                   ELabelType label_type,
-                   CScope*    scope = 0) const;
-                   
+    ~COrg_ref(void);
     
+    // Appends a label to "label" based on content
+    void GetLabel(string* label) const;
 
 private:
     // Prohibit copy constructor and assignment operator
-    CSeq_feat(const CSeq_feat& value);
-    CSeq_feat& operator=(const CSeq_feat& value);        
+    COrg_ref(const COrg_ref& value);
+    COrg_ref& operator=(const COrg_ref& value);
+
 };
 
 
-// Corresponds to SortFeatItemListByPos from the C toolkit
-bool operator<(const CSeq_feat& f1, const CSeq_feat& f2);
 
-
-/////////////////// CSeq_feat inline methods
+/////////////////// COrg_ref inline methods
 
 // constructor
 inline
-CSeq_feat::CSeq_feat(void)
+COrg_ref::COrg_ref(void)
 {
 }
 
 
-/////////////////// end of CSeq_feat inline methods
+/////////////////// end of COrg_ref inline methods
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -112,5 +93,5 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 
-#endif // OBJECTS_SEQFEAT_SEQ_FEAT_HPP
-/* Original file checksum: lines: 90, chars: 2388, CRC32: c285198b */
+#endif // OBJECTS_SEQFEAT_ORG_REF_HPP
+/* Original file checksum: lines: 90, chars: 2371, CRC32: 49735a91 */
