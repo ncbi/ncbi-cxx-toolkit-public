@@ -348,6 +348,54 @@ string NStr::Int8ToString(Int8 value, bool sign /* = false */ )
     return string(pos, buffer + kBufSize - pos);
 }
 
+Int8 NStr::StringToInt8(const string& str)
+{
+    bool sign = false;    
+    const char* pc = str.c_str();
+        
+    switch (*pc) {
+    case '-': 
+        sign = true;
+    case '+':
+        ++pc;
+        break;
+    }
+    
+    if (!isdigit(*pc))
+        NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+
+    Int8 n = 0;    
+    while (*pc) {
+        if (!isdigit(*pc))
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+        n = n * 10 + (*pc++ - '0');
+    }
+    
+    return sign ? -n : n;
+}
+
+
+Uint8 NStr::StringToUInt8(const string& str)
+{
+    const char* pc = str.c_str();
+
+    if (*pc == '+')
+        ++pc;        
+    
+    if (!isdigit(*pc))
+        NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+
+    Int8 n = 0;  
+    while (*pc) {
+        if (!isdigit(*pc))
+            NCBI_THROW(CStringException,eConvert,"String cannot be converted");
+        n = n * 10 + (*pc++ - '0');
+    }
+    
+    return n;
+}
+
+
 
 string NStr::UInt8ToString(Uint8 value)
 {
@@ -781,6 +829,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2003/01/10 22:17:06  kuznets
+ * Implemented NStr::String2Int8
+ *
  * Revision 1.61  2003/01/10 16:49:54  kuznets
  * Cosmetics
  *
