@@ -133,6 +133,34 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
 #endif
 
 
+// On 64-bit platforms, check argument, passed into function with variable number of arguments,
+// on possible using 0 instead NULL as last argument.
+// Of course, the argument 'arg' can be aligned on segment boundary,
+// when 4 low-order bytes are 0, but chance of this is very low.
+// The function prints out a warning only in Debug mode.
+
+#if defined(_DEBUG)
+static void s_CheckExecArg(const char* arg)
+{
+    if  ( sizeof(void*) == 8  &&  sizeof(int) != sizeof(void*) ) {
+#  if defined(WORDS_BIGENDIAN)
+        int lo = int(((Uint8)srg >> 32) & 0xffff);
+        int hi = int((Uint8)srg & 0xffff);
+#  else
+        int hi = int(((Uint8)arg >> 32) & 0xffff);
+        int lo = int((Uint8)arg & 0xffff);
+#  endif
+        if ( lo==0  &&  hi!=0 ) {
+            ERR_POST(Warning
+                << "It is possible that you use 0 instead NULL "
+                   "in the end of arguments list of CExec::Spawn*() call.");
+        }
+    }
+}
+#else
+#  define s_CheckExecArg(x) 
+#endif
+
 // Get exec arguments
 #define GET_EXEC_ARGS \
     int xcnt = 2; \
@@ -151,6 +179,7 @@ static int s_SpawnUnix(ESpawnFunc func, CExec::EMode mode,
     while ( xi < xcnt ) { \
         xi++; \
         args[xi] = va_arg(vargs, const char*); \
+        s_CheckExecArg(args[xi]); \
     } \
     args[xi] = (const char*)0
 
@@ -323,6 +352,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/08/19 12:18:02  ivanov
+ * Added s_CheckExecArg() to check argument, passed into function with
+ * variable number of arguments, on possible using 0 instead NULL as last
+ * argument on 64-bit platforms.
+ *
  * Revision 1.18  2004/08/18 16:00:50  ivanov
  * Use NULL instead 0 where necessary to avoid problems with 64bit platforms
  *
