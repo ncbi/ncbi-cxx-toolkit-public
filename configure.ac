@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.256 2004/01/21 20:53:48 ucko Exp $
+#  $Id: configure.ac,v 1.257 2004/01/24 15:25:24 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1322,8 +1322,8 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
       # harmless elsewhere, since it only affects projects that indirectly
       # need one of these libraries.  (There seems to be no general
       # equivalent of -rpath-link.)
-      for l in dbapi_driver gui_utils ncbi_xloader_genbank ncbi_xreader_id1 \
-               ncbi_xreader_id1c ncbi_xreader_pubseqos; do
+      for l in dbapi_driver gui_utils ncbi_xloader_genbank ncbi_xreader \
+               ncbi_xreader_id1 ncbi_xreader_id1c ncbi_xreader_pubseqos; do
          ll=lib$l.dylib
          LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
       done
