@@ -34,14 +34,11 @@
 #define ALGO_BLAST_API___BLAST_TYPE__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqalign/Seq_align_set.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
-
-BEGIN_SCOPE(objects)
-    class CScope;
-    class CSeq_loc;
-    class CSeq_align_set;
-END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
 
@@ -76,6 +73,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/09/05 01:48:38  ucko
+* Use full headers rather than forward declarations, which are
+* insufficient for arguments of C(Const)Ref<>.
+*
 * Revision 1.4  2003/08/25 17:21:12  camacho
 * Use forward declarations whenever possible
 *
