@@ -215,20 +215,32 @@ void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 }
 
 
-inline
-void CTSE_Info::x_IndexAnnotTSE(const CSeq_id_Handle& id)
+void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
+                                const CSeq_id_Handle& id)
 {
-    if ( HaveDataSource() ) {
-        GetDataSource().x_IndexAnnotTSE(id, this);
+    TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
+    if ( iter == m_SeqIdToNames.end() || iter->first != id ) {
+        iter = m_SeqIdToNames.insert(iter,
+                                     TSeqIdToNames::value_type(id, TNames()));
+        if ( HaveDataSource() ) {
+            GetDataSource().x_IndexAnnotTSE(id, this);
+        }
     }
+    _VERIFY(iter->second.insert(name).second);
 }
 
 
-inline
-void CTSE_Info::x_UnindexAnnotTSE(const CSeq_id_Handle& id)
+void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
+                                  const CSeq_id_Handle& id)
 {
-    if ( HaveDataSource() ) {
-        GetDataSource().x_UnindexAnnotTSE(id, this);
+    TSeqIdToNames::iterator iter = m_SeqIdToNames.lower_bound(id);
+    _ASSERT(iter != m_SeqIdToNames.end() && iter->first == id);
+    _VERIFY(iter->second.erase(name) == 1);
+    if ( iter->second.empty() ) {
+        m_SeqIdToNames.erase(iter);
+        if ( HaveDataSource() ) {
+            GetDataSource().x_UnindexAnnotTSE(id, this);
+        }
     }
 }
 
@@ -545,6 +557,7 @@ CTSE_Info::x_GetUnnamedAnnotObjs(void) const
 
 
 SIdAnnotObjs& CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
+                                        const CAnnotName& name,
                                         const CSeq_id_Handle& id)
 {
     // repeat for more generic types of selector
@@ -552,7 +565,7 @@ SIdAnnotObjs& CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
     if ( it == objs.end() || it->first != id ) {
         // new id
         it = objs.insert(it, TAnnotObjs::value_type(id, SIdAnnotObjs()));
-        x_IndexAnnotTSE(id);
+        x_IndexAnnotTSE(name, id);
     }
     _ASSERT(it != objs.end() && it->first == id);
     return it->second;
@@ -562,7 +575,7 @@ SIdAnnotObjs& CTSE_Info::x_SetIdObjects(TAnnotObjs& objs,
 SIdAnnotObjs& CTSE_Info::x_SetIdObjects(const CAnnotName& name,
                                         const CSeq_id_Handle& id)
 {
-    return x_SetIdObjects(x_SetAnnotObjs(name), id);
+    return x_SetIdObjects(x_SetAnnotObjs(name), name, id);
 }
 
 
@@ -655,20 +668,22 @@ bool CTSE_Info::x_UnmapAnnotObject(SIdAnnotObjs& objs,
 
 
 void CTSE_Info::x_MapAnnotObject(TAnnotObjs& objs,
+                                 const CAnnotName& name,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& annotRef)
 {
-    x_MapAnnotObject(x_SetIdObjects(objs, key.m_Handle), key, annotRef);
+    x_MapAnnotObject(x_SetIdObjects(objs, name, key.m_Handle), key, annotRef);
 }
 
 
 bool CTSE_Info::x_UnmapAnnotObject(TAnnotObjs& objs,
+                                   const CAnnotName& name,
                                    const SAnnotObject_Key& key)
 {
     TAnnotObjs::iterator it = objs.find(key.m_Handle);
     _ASSERT(it != objs.end() && it->first == key.m_Handle);
     if ( x_UnmapAnnotObject(it->second, key) ) {
-        x_UnindexAnnotTSE(key.m_Handle);
+        x_UnindexAnnotTSE(name, key.m_Handle);
         objs.erase(it);
         return objs.empty();
     }
@@ -708,7 +723,7 @@ void CTSE_Info::x_MapAnnotObject(TAnnotObjs& index,
     _ASSERT(key.m_AnnotObject_Info == &infos.m_Infos.back());
     _ASSERT(annotRef.m_AnnotObject_Info == &infos.m_Infos.back());
     infos.m_Keys.push_back(key);
-    x_MapAnnotObject(index, key, annotRef);
+    x_MapAnnotObject(index, infos.m_Name, key, annotRef);
 }
 
 
@@ -725,7 +740,7 @@ void CTSE_Info::x_UnmapAnnotObjects(SAnnotObjects_Info& infos)
     TAnnotObjs& index = x_SetAnnotObjs(infos.m_Name);
 
     ITERATE( SAnnotObjects_Info::TObjectKeys, it, infos.m_Keys ) {
-        x_UnmapAnnotObject(index, *it);
+        x_UnmapAnnotObject(index, infos.m_Name, *it);
     }
 
     if ( index.empty() ) {
@@ -838,6 +853,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/10/27 16:47:12  vasilche
+* Fixed error:
+* src/objmgr/data_source.cpp", line 913: Fatal: Assertion failed: (it != tse_map.end() && it->first == id)
+*
 * Revision 1.33  2003/10/09 20:20:58  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.

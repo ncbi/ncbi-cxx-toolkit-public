@@ -44,6 +44,7 @@
 #include <objmgr/impl/annot_object_index.hpp>
 
 #include <map>
+#include <set>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -132,6 +133,8 @@ public:
 
     typedef map<CSeq_id_Handle, SIdAnnotObjs>                TAnnotObjs;
     typedef map<CAnnotName, TAnnotObjs>                      TNamedAnnotObjs;
+    typedef set<CAnnotName>                                  TNames;
+    typedef map<CSeq_id_Handle, TNames>                      TSeqIdToNames;
 
     typedef int                                              TChunkId;
     typedef map<TChunkId, CRef<CTSE_Chunk_Info> >            TChunks;
@@ -196,6 +199,7 @@ private:
                                        const CSeq_id_Handle& id) const;
     const SIdAnnotObjs* x_GetUnnamedIdObjects(const CSeq_id_Handle& id) const;
     SIdAnnotObjs& x_SetIdObjects(TAnnotObjs& objs,
+                                 const CAnnotName& name,
                                  const CSeq_id_Handle& id);
     SIdAnnotObjs& x_SetIdObjects(const CAnnotName& name,
                                  const CSeq_id_Handle& idh);
@@ -218,6 +222,7 @@ private:
     bool x_UnmapAnnotObject(SIdAnnotObjs& objs,
                             const SAnnotObject_Key& key);
     void x_MapAnnotObject(TAnnotObjs& objs,
+                          const CAnnotName& name,
                           const SAnnotObject_Key& key,
                           const SAnnotObject_Index& annotRef);
     void x_MapAnnotObject(TAnnotObjs& index,
@@ -229,6 +234,7 @@ private:
                           SAnnotObjects_Info& infos);
 
     bool x_UnmapAnnotObject(TAnnotObjs& objs,
+                            const CAnnotName& name,
                             const SAnnotObject_Key& key);
     void x_UnmapAnnotObjects(SAnnotObjects_Info& infos);
 
@@ -237,8 +243,8 @@ private:
 
     void x_IndexSeqTSE(const CSeq_id_Handle& id);
     void x_UnindexSeqTSE(const CSeq_id_Handle& id);
-    void x_IndexAnnotTSE(const CSeq_id_Handle& id);
-    void x_UnindexAnnotTSE(const CSeq_id_Handle& id);
+    void x_IndexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
+    void x_UnindexAnnotTSE(const CAnnotName& name, const CSeq_id_Handle& id);
 
     // Parent data-source
     CDataSource*           m_DataSource;
@@ -263,6 +269,7 @@ private:
 
     // ID to annot-selector-map
     TNamedAnnotObjs        m_NamedAnnotObjs;
+    TSeqIdToNames          m_SeqIdToNames;
     mutable TAnnotObjsLock m_AnnotObjsLock;
 
     TChunks                m_Chunks;
@@ -376,6 +383,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/10/27 16:47:12  vasilche
+* Fixed error:
+* src/objmgr/data_source.cpp", line 913: Fatal: Assertion failed: (it != tse_map.end() && it->first == id)
+*
 * Revision 1.41  2003/10/09 20:20:59  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.
