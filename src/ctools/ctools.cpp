@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/02/12 19:27:42  lavr
+ * Now unnecessary intermediate function call eliminated
+ *
  * Revision 1.4  2001/02/11 22:45:04  thiessen
  * put outside NCBI namespace, since it requires C linkage
  *
@@ -52,7 +55,7 @@
 USING_NCBI_SCOPE;
 
 
-static int s_ErrorHandler(const ErrDesc* err)
+static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
 {
     EDiagSev level;
     switch (err->severity) {
@@ -102,14 +105,9 @@ static int s_ErrorHandler(const ErrDesc* err)
     return ANS_OK;
 }
 
-static int LIBCALLBACK s_c2cxxErrorHandler(const ErrDesc* err)
-{
-    return s_ErrorHandler(err);
-}
 
 void SetupCToolkitErrPost(void)
 {
     Nlm_CallErrHandlerOnly(TRUE);
     Nlm_ErrSetHandler(reinterpret_cast<ErrHookProc>(s_c2cxxErrorHandler));
 }
-
