@@ -509,9 +509,11 @@ static SIZE_TYPE s_URL_Decode(string& str)
 
 // Add another entry to the container of entries
 void s_AddEntry(TCgiEntries& entries, const string& name,
-                const string& value, const string& filename = kEmptyStr)
+                const string& value, unsigned int position,
+                const string& filename = kEmptyStr)
 {
-    entries.insert(TCgiEntries::value_type(name, CCgiEntry(value, filename)));
+    entries.insert(TCgiEntries::value_type
+                   (name, CCgiEntry(value, filename, position)));
 }
 
 
@@ -533,6 +535,7 @@ static SIZE_TYPE s_ParseIsIndex(const string& str,
         return err_pos + 1;
 
     // Parse into indexes
+    unsigned int num = 1;
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
         // parse and URL-decode ISINDEX name
         SIZE_TYPE end = str.find_first_of('+', beg);
@@ -549,7 +552,7 @@ static SIZE_TYPE s_ParseIsIndex(const string& str,
         if ( indexes ) {
             indexes->push_back(name);
         } else {
-            s_AddEntry(*entries, name, kEmptyStr);
+            s_AddEntry(*entries, name, kEmptyStr, num++);
         }
 
         // continue
@@ -617,13 +620,14 @@ static void s_ParseMultipartEntries(const string& boundary,
                                     const string& str,
                                     TCgiEntries&  entries)
 {
-    const string s_Me("s_ParseMultipartEntries");
-    const string s_Eol(HTTP_EOL);
+    const string    s_Me("s_ParseMultipartEntries");
+    const string    s_Eol(HTTP_EOL);
     const SIZE_TYPE eol_size = s_Eol.size();
 
-    SIZE_TYPE pos = 0;
-    SIZE_TYPE boundary_size = boundary.size();
-    SIZE_TYPE end_pos;
+    SIZE_TYPE    pos           = 0;
+    SIZE_TYPE    boundary_size = boundary.size();
+    SIZE_TYPE    end_pos;
+    unsigned int num           = 1;
 
     if (NStr::Compare(str, 0, boundary_size + eol_size, boundary + s_Eol)
         != 0) {
@@ -694,7 +698,7 @@ static void s_ParseMultipartEntries(const string& boundary,
                         s_Me + ": missing Content-Disposition header", pos);
         }
         s_AddEntry(entries, name, str.substr(pos, next_boundary - pos),
-                   filename);
+                   num++, filename);
         pos = next_boundary + 2*eol_size + boundary_size; 
     }
 }
@@ -917,7 +921,7 @@ CCgiRequest::x_Init() -- error in reading POST content: read fault");
         }
         image_name = name;
     }
-    s_AddEntry(m_Entries,   kEmptyStr, image_name);
+    s_AddEntry(m_Entries,   kEmptyStr, image_name, 0);
 }
 
 
@@ -997,6 +1001,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
         return err_pos + 1;
 
     // Parse into entries
+    unsigned int num = 1;
     for (SIZE_TYPE beg = 0;  beg < len;  ) {
         // ignore 1st ampersand (it is just a temp. slack to some biz. clients)
         if (beg == 0  &&  str[0] == '&') {
@@ -1036,7 +1041,7 @@ SIZE_TYPE CCgiRequest::ParseEntries(const string& str, TCgiEntries& entries)
         }
 
         // store the name-value pair
-        s_AddEntry(entries, name, value);
+        s_AddEntry(entries, name, value, num++);
     }
     return 0;
 }
@@ -1137,6 +1142,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.64  2002/09/17 19:57:50  ucko
+* Add position field to CGI entries; minor reformatting.
+*
 * Revision 1.63  2002/08/08 19:26:04  ucko
 * When parsing multipart forms, allow (but ignore) data after the
 * trailing boundary.

@@ -283,33 +283,48 @@ class CCgiEntry // copy-on-write semantics
 private:
     struct SData : public CObject
     {
-        SData(const string& value, const string& filename)
-            : m_Value(value), m_Filename(filename) { }
+        SData(const string& value, const string& filename,
+              unsigned int position)
+            : m_Value(value), m_Filename(filename), m_Position(position) { }
         SData(const SData& data)
-            : m_Value(data.m_Value), m_Filename(data.m_Filename) { }
-        string m_Value, m_Filename;
+            : m_Value(data.m_Value), m_Filename(data.m_Filename),
+            m_Position(data.m_Position){ }
+
+        string       m_Value, m_Filename;
+        unsigned int m_Position;
     };
 
 public:
-    CCgiEntry(const string& value, const string& filename = kEmptyStr)
-        : m_Data(new SData(value, filename)) { }
-    CCgiEntry(const char* value, const string& filename = kEmptyStr)
-        : m_Data(new SData(value, filename)) { }
+    CCgiEntry(const string& value, const string& filename = kEmptyStr,
+              unsigned int position = 0)
+        : m_Data(new SData(value, filename, position)) { }
+    CCgiEntry(const char* value, const string& filename = kEmptyStr,
+              unsigned int position = 0)
+        : m_Data(new SData(value, filename, position)) { }
     CCgiEntry(const CCgiEntry& e) : m_Data(e.m_Data) { }
 
     const string& GetValue() const
         { return m_Data->m_Value; }
-          string& SetValue()
+    string&       SetValue()
         { x_ForceUnique(); return m_Data->m_Value; }
-          void    SetValue(const string& v)
+    void          SetValue(const string& v)
         { x_ForceUnique(); m_Data->m_Value = v; }
 
     const string& GetFilename() const
         { return m_Data->m_Filename; }
-          string& SetFilename()
+    string&       SetFilename()
         { x_ForceUnique(); return m_Data->m_Filename; }
-          void    SetFilename(const string& f)
+    void          SetFilename(const string& f)
         { x_ForceUnique(); m_Data->m_Filename = f; }
+
+    // CGI parameter number -- automatic image name parameter is #0,
+    // explicit parameters start at #1
+    unsigned int  GetPosition() const
+        { return m_Data->m_Position; }
+    unsigned int& SetPosition()
+        { x_ForceUnique(); return m_Data->m_Position; }
+    void          SetPosition(int p)
+        { x_ForceUnique(); m_Data->m_Position = p; }
 
     operator const string&() const     { return GetValue(); }
     operator       string&()           { return SetValue(); }
@@ -684,6 +699,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.57  2002/09/17 19:57:35  ucko
+* Add position field to CGI entries; minor reformatting.
+*
 * Revision 1.56  2002/07/17 17:04:07  ucko
 * Drop no longer necessary ...Ex names; add more wrappers to CCgiEntry.
 *
