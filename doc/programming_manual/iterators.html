@@ -100,7 +100,7 @@ using a <i>CTypeIterator</i> as follows:</font>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; new CPerson("Larry", "127 Main St",&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; new CPerson("Curly", "131 Main St", 0)));
 
-&nbsp; for (CTypeIterator&lt;CPerson> house = Begin(neighborhood); house; ++house ) {
+&nbsp; for (CTypeIterator&lt;CPerson> house(Begin(neighborhood)); house; ++house ) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FullerBrushMan(*house);
 &nbsp; }</font></pre>
 <font color="#000000">In this example, the data members visited by the
@@ -131,12 +131,12 @@ accepts an optional second argument, <i><a href="../lxr/ident?i=EDetectLoops">eD
 that the iterator should detect and avoid infinite loops. The resulting
 iterator will be somewhat slower but can be safely used on objects whose
 references might create loops.</font>
-<p><font color="#000000">Lets compare the syntax of this new iterator class
+<p><font color="#000000">Let's compare the syntax of this new iterator class
 to the standard iterators:</font>
 <pre><font color="#000080">&nbsp; ContainerType&lt;T> x;
 &nbsp; for (ContainerType&lt;T>::IteratorType i = x.begin(); i != x.end(); ++i)&nbsp;
 
-&nbsp; for (CTypeIterator&lt;T> i = Begin(ObjectName); i; ++i)</font></pre>
+&nbsp; for (CTypeIterator&lt;T> i(Begin(ObjectName)); i; ++i)</font></pre>
 <font color="#000000">The standard iterator begins by pointing to the first
 item in the container
 <i>x.begin()</i>, and with each iteration, visits
@@ -146,6 +146,13 @@ member of <i>ObjectName</i> that is of type
 <i>T</i>, and with each iteration,
 visits subsequent data members of type <i>T</i> until the end of the top-level
 object is reached.</font>
+<p><font color="#000000">A lot of code actually uses
+<i>=&nbsp;Begin(...)</i> instead of <i>(Begin(...))</i> to initialize
+iterators; although the alternate syntax is somewhat more readable and
+often works, some compilers can mis-handle it and give you link errors.
+As such, direct initialization as shown above generally works better.
+Also, note that this issue only applies to construction; you should
+(and must) continue to use <i>=</i> to reset existing iterators.</font>
 <p><font color="#000000">How are generic iterators such as these implemented?
 The <i><a href="../lxr/ident?i=Begin">Begin()</a></i>
 expression returns an object containing a pointer to the input object
@@ -226,7 +233,7 @@ and <i><a href="../docxx/CObjectConstIterator.html">CObjectConstIterator</a></i>
 the Toolkit, a special iterator is also defined, which can automatically
 distinguish <i>CObject</i>s from other class types. The syntax of a <i>CObjectIterator</i>
 is:</font>
-<center><pre><font color="#000080">&nbsp;for (CObjectIterator i = Begin(ObjectName); i; ++i)</font></pre></center>
+<center><pre><font color="#000080">&nbsp;for (CObjectIterator i(Begin(ObjectName)); i; ++i)</font></pre></center>
 <font color="#000000">Note that there is no need to specify the object
 type to iterate over, as the type
 <i>CObject</i> is built into the iterator
@@ -262,7 +269,7 @@ char*, etc.</i>) or an STL type <i>string</i>. For example, to iterate
 over all the <i>string</i> data members in a
 <i>CPerson</i> object, we
 could use:</font>
-<pre><font color="#000080">&nbsp;&nbsp;&nbsp; for (CStdTypeIterator&lt;string> i = Begin(neighborhood); i; ++i) {
+<pre><font color="#000080">&nbsp;&nbsp;&nbsp; for (CStdTypeIterator&lt;string> i(Begin(neighborhood)); i; ++i) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; *i &lt;&lt; ' ';
 &nbsp;&nbsp;&nbsp; }</font></pre>
 <font color="#000000">The <i>CStdTypeConstIterator</i> is identical to
@@ -473,17 +480,17 @@ the section on <i><a href="usrtypeinfo.html">User-defined type information</a></
 </font><font color="#000080">&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Iterating over CA objects in x" &lt;&lt; endl &lt;&lt; endl;
 &nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CTypeIterator&lt;CA> i = Begin(x); i; ++i)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CTypeIterator&lt;CA> i(Begin(x)); i; ++i)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; (*i).m_Data &lt;&lt; endl;
 &nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Iterating over CC objects in x" &lt;&lt; endl &lt;&lt; endl;
 &nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CTypeIterator&lt;CC> i = Begin(x); i; ++i)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CTypeIterator&lt;CC> i(Begin(x)); i; ++i)
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; (*i).m_Data &lt;&lt; endl;
 &nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; "Iterating over CObjects in x" &lt;&lt; endl &lt;&lt; endl;
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CObjectIterator i = Begin(x); i; ++i) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for (CObjectIterator i(Begin(x)); i; ++i) {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; const CD *tmp = dynamic_cast&lt;const CD*>(&amp;*i);
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cout &lt;&lt; tmp->m_c->m_Data &lt;&lt; endl;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
