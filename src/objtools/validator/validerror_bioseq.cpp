@@ -2714,10 +2714,9 @@ void CValidError_bioseq::ValidateGraphValues
     vec.SetCoding(CSeq_data::e_Ncbi4na);
     SIZE_TYPE size = vec.size();
 
-    CByte_graph::TValues values;
-    copy( bg.GetValues().begin(), bg.GetValues().end(), back_inserter(values));
-    
-    SIZE_TYPE numvals = ncbi::min(graph.GetNumval(), values.size());
+    const vector< char >& values = bg.GetValues();
+    SIZE_TYPE numvals = graph.GetNumval() <= values.size() ? 
+        graph.GetNumval() : values.size();
 
     for ( SIZE_TYPE pos = 0; pos < size && pos < numvals; ++pos ) {
         CSeqVector::TResidue res = vec[pos];
@@ -2963,6 +2962,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.26  2003/03/28 18:03:20  shomrat
+* dropped call to min due to compilation error on some platforms
+*
 * Revision 1.25  2003/03/28 16:31:18  shomrat
 * Added Seq-graph validation
 *
