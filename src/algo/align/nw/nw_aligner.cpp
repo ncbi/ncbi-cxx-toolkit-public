@@ -676,7 +676,9 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
     
     size_t k;
     for(k = 0; k < abc_size; ++k) {
-        Flags[unsigned(m_abc[k])] = 1;
+        Flags[unsigned(toupper(m_abc[k]))] = 1;
+        Flags[unsigned(tolower(m_abc[k]))] = 1;
+        Flags[unsigned(k)] = 1;
     }
 
     for(k = 0; k < len; ++k) {
@@ -1108,6 +1110,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2004/08/19 20:33:45  papadopo
+ * mark lower-case and raw numerical characters as valid sequence data
+ *
  * Revision 1.53  2004/08/18 21:48:56  kapustin
  * *** empty log message ***
  *
