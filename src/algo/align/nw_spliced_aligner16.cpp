@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Authors:  Yuri Kapustin
+* Authors:  Yuri Kapustin, Alexander Souvorov
 *
 * File Description:  CSplicedAligner16
 *                   
@@ -565,6 +565,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/12/06 22:13:36  kapustin
+ * File header update
+ *
  * Revision 1.16  2004/11/29 14:37:15  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *

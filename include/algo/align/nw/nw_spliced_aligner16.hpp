@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin
+* Author:  Yuri Kapustin, Alexander Souvorov
 *
 */
 
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/12/06 22:11:24  kapustin
+ * File header update
+ *
  * Revision 1.10  2004/11/29 14:36:45  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *

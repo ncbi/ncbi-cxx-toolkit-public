@@ -26,7 +26,7 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin
+* Author:  Yuri Kapustin, Alexander Souvorov
 *
 * File Description:  Compartment Finder
 *                   
@@ -241,6 +241,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/12/06 22:11:24  kapustin
+ * File header update
+ *
  * Revision 1.1  2004/09/27 17:15:03  kapustin
  * Move from /src/algo/align/splign
  *

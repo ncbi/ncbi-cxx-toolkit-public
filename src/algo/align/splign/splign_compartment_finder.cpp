@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Yuri Kapustin
+* Author:  Yuri Kapustin, Alexander Souvorov
 *
 * File Description: Compartment Finder
 *                   
@@ -432,6 +432,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/12/06 22:13:36  kapustin
+ * File header update
+ *
  * Revision 1.8  2004/10/07 13:42:03  kapustin
  * Introduced intron length penalty and let the latest hit to own a query mark if there are several hits with exactly same score and query coordinate
  *

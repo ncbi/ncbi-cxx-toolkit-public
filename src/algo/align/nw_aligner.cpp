@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Yuri Kapustin, Boris Kiryutin
+ * Authors:  Yuri Kapustin, Boris Kiryutin, Alexander Souvorov
  *
  * File Description:  CNWAligner implementation
  *                   
@@ -1145,6 +1145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.60  2004/12/06 22:13:36  kapustin
+ * File header update
+ *
  * Revision 1.59  2004/11/29 14:37:15  kapustin
  * CNWAligner::GetTranscript now returns TTranscript and direction can be specified. x_ScoreByTanscript renamed to ScoreFromTranscript with two additional parameters to specify starting coordinates.
  *
