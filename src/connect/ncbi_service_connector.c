@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.34  2002/03/22 22:18:28  lavr
+ * Remove uuu->conn (contained in uuu->meta.list); honor timeout on open
+ *
  * Revision 6.33  2002/03/22 19:52:18  lavr
  * Do not include <stdio.h>: included from ncbi_util.h or ncbi_priv.h
  *
@@ -160,8 +163,7 @@ typedef struct SServiceConnectorTag {
     TSERV_Type         types;           /* Server types, record keeping only */
     SConnNetInfo*      net_info;        /* Connection information            */
     SERV_ITER          iter;            /* Dispatcher information            */
-    CONNECTOR          conn;            /* Low level communication connector */
-    SMetaConnector     meta;            /*        ...and its virtual methods */
+    SMetaConnector     meta;            /* Low level comm.conn and its VT    */
     unsigned int       host;            /* from parsed connection info...    */
     unsigned short     port;
     ticket_t           ticket;
@@ -599,9 +601,9 @@ static CONNECTOR s_Open
                                           uuu/*adj.data*/, 0/*cleanup.data*/);
             /* Wait for connection info back (error-transparent by DISPD.CGI)*/
             if (conn && CONN_Create(conn, &c) == eIO_Success) {
-                CONN_SetTimeout(c, eIO_Open, timeout);
+                CONN_SetTimeout(c, eIO_Open,      timeout);
                 CONN_SetTimeout(c, eIO_ReadWrite, timeout);
-                CONN_SetTimeout(c, eIO_Close, timeout);
+                CONN_SetTimeout(c, eIO_Close,     timeout);
                 /* This dummy read triggers parse header callback */
                 CONN_Read(c, 0, 0, &n, eIO_Plain);
                 CONN_Close(c);
@@ -660,10 +662,10 @@ static EIO_Status s_Close
             (*uuu->params.cleanup)(uuu->params.data);
     }
 
-    if (uuu->conn) {
+    if (uuu->meta.list) {
         SMetaConnector* meta = connector->meta;
-        METACONN_Remove(meta, uuu->conn);
-        uuu->conn = 0;
+        METACONN_Remove(meta, uuu->meta.list);
+        uuu->meta.list = 0;
         s_Reset(meta);
     }
 
@@ -677,11 +679,12 @@ static EIO_Status s_VT_Open
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
     SMetaConnector* meta = connector->meta;
+    EIO_Status status = eIO_Unknown;
     const SSERV_Info* info;
     SConnNetInfo* net_info;
     CONNECTOR conn;
 
-    assert(!uuu->conn && !uuu->name);
+    assert(!uuu->meta.list && !uuu->name);
     for (;;) {
         if (!uuu->iter && !s_OpenDispatcher(uuu))
             break;
@@ -691,6 +694,7 @@ static EIO_Status s_VT_Open
         else if (!(info = s_GetNextInfo(uuu)))
             break;
 
+        status = eIO_Unknown;
         if (!(net_info = ConnNetInfo_Clone(uuu->net_info)))
             break;
         if (info && info->type == fSERV_Firewall)
@@ -707,16 +711,18 @@ static EIO_Status s_VT_Open
                 continue;
         }
 
+        /* Setup the new connector on a temporary meta-connector... */
         METACONN_Add(&uuu->meta, conn);
+        /* ...then link the new connector in using current connection's meta */
         conn->meta = meta;
         conn->next = meta->list;
         meta->list = conn;
 
-        CONN_SET_METHOD(meta, wait,  uuu->meta.wait,  uuu->meta.c_wait);
-        CONN_SET_METHOD(meta, write, uuu->meta.write, uuu->meta.c_write);
-        CONN_SET_METHOD(meta, flush, uuu->meta.flush, uuu->meta.c_flush);
-        CONN_SET_METHOD(meta, read,  uuu->meta.read,  uuu->meta.c_read);
-        CONN_SET_METHOD(meta, status,uuu->meta.status,uuu->meta.c_status);
+        CONN_SET_METHOD(meta, wait,   uuu->meta.wait,   uuu->meta.c_wait);
+        CONN_SET_METHOD(meta, write,  uuu->meta.write,  uuu->meta.c_write);
+        CONN_SET_METHOD(meta, flush,  uuu->meta.flush,  uuu->meta.c_flush);
+        CONN_SET_METHOD(meta, read,   uuu->meta.read,   uuu->meta.c_read);
+        CONN_SET_METHOD(meta, status, uuu->meta.status, uuu->meta.c_status);
 #ifdef IMPLEMENTED__CONN_WaitAsync
         CONN_SET_METHOD(meta, wait_async,
                         uuu->meta.wait_async, uuu->meta.c_wait_async);
@@ -735,9 +741,13 @@ static EIO_Status s_VT_Open
         }
 
         if (uuu->meta.open) {
-            EIO_Status status = (*uuu->meta.open)(uuu->meta.c_open, timeout);
+            status = (*uuu->meta.open) (uuu->meta.c_open,
+                                        timeout == CONN_DEFAULT_TIMEOUT
+                                        ? uuu->net_info->timeout : timeout);
             if (status != eIO_Success) {
-                s_Close(connector, timeout, 0/*close_dispatcher - don't!*/);
+                s_Close(connector, timeout == CONN_DEFAULT_TIMEOUT
+                        ? uuu->net_info->timeout : timeout,
+                        0/*don't close dispatcher!*/);
                 continue;
             }
         }
@@ -745,7 +755,7 @@ static EIO_Status s_VT_Open
         return eIO_Success;
     }
 
-    return eIO_Unknown;
+    return status;
 }
 
 
@@ -817,7 +827,6 @@ extern CONNECTOR SERVICE_CreateConnectorEx
         xxx->net_info->firewall = 1/*true*/;
     xxx->types    = types;
     xxx->iter     = 0;
-    xxx->conn     = 0;
     if (params)
         memcpy(&xxx->params, params, sizeof(xxx->params));
     else
