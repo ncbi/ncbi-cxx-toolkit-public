@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.3  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
 * Revision 1.2  2002/09/16 19:34:41  kholodov
 * Added: bulk insert support
 *
@@ -68,6 +71,11 @@ void ICallableStatement::Execute(const string& /*sql*/)
 
 void ICallableStatement::ExecuteUpdate(const string& /*sql*/)
 {
+}
+
+IResultSet* ICallableStatement::ExecuteQuery(const string& /*sql*/)
+{
+    return 0;
 }
 
 IResultSet::~IResultSet()

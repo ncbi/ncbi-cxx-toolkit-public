@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.28  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
 * Revision 1.27  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -325,11 +328,13 @@ CConnection::GetCallableStatement(const string& proc,
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetCallableStatement(): Connection taken, cannot use this method");
 
-    if( m_cstmt == 0 ) {
-        m_cstmt = new CCallableStatement(proc, nofArgs, this);
-        AddListener(m_cstmt);
-        m_cstmt->AddListener(this);
+    if( m_cstmt != 0 ) {
+        //m_cstmt->PurgeResults();
+        delete m_cstmt;
     }
+    m_cstmt = new CCallableStatement(proc, nofArgs, this);
+    AddListener(m_cstmt);
+    m_cstmt->AddListener(this);
     return m_cstmt;
 }
 
@@ -341,11 +346,12 @@ ICursor* CConnection::GetCursor(const string& name,
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetCursor(): Connection taken, cannot use this method");
 
-    if( m_cursor == 0 ) {
-        m_cursor = new CCursor(name, sql, nofArgs, batchSize, this);
-        AddListener(m_cursor);
-        m_cursor->AddListener(this);
+    if( m_cursor != 0 ) {
+        delete m_cursor;
     }
+    m_cursor = new CCursor(name, sql, nofArgs, batchSize, this);
+    AddListener(m_cursor);
+    m_cursor->AddListener(this);
     return m_cursor;
 }
 
@@ -355,11 +361,12 @@ IBulkInsert* CConnection::GetBulkInsert(const string& table_name,
     if( m_connUsed ) 
         throw CDbapiException("CConnection::GetBulkInsert(): Connection taken, cannot use this method");
 
-    if( m_bulkInsert == 0 ) {
-        m_bulkInsert = new CBulkInsert(table_name, nof_cols, this);
-        AddListener(m_bulkInsert);
-        m_bulkInsert->AddListener(this);
+    if( m_bulkInsert != 0 ) {
+        delete m_bulkInsert;
     }
+    m_bulkInsert = new CBulkInsert(table_name, nof_cols, this);
+    AddListener(m_bulkInsert);
+    m_bulkInsert->AddListener(this);
     return m_bulkInsert;
 }
 // New part end

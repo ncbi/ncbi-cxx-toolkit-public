@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
 * Revision 1.6  2004/04/08 15:56:58  kholodov
 * Multiple bug fixes and optimizations
 *
@@ -92,6 +95,7 @@ protected:
 
     virtual void Execute(const string& /*sql*/) {}
     virtual void ExecuteUpdate(const string& /*sql*/) {}
+    virtual IResultSet* ExecuteQuery(const string& /*sql*/) { return 0; }
 
 private:
     int m_status;

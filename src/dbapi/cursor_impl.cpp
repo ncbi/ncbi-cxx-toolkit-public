@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.15  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
 * Revision 1.14  2004/04/22 14:22:25  kholodov
 * Added: Cancel()
 *
@@ -182,7 +185,8 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
 
 void CCursor::Cancel()
 {
-    GetCursorCmd()->Close();
+    if( GetCursorCmd() != 0 )
+        GetCursorCmd()->Close();
 }
 
 void CCursor::Close()

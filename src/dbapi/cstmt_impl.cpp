@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.14  2004/04/26 14:16:56  kholodov
+* Modified: recreate the command objects each time the Get...() is called
+*
 * Revision 1.13  2004/04/12 14:25:33  kholodov
 * Modified: resultset caching scheme, fixed single connection handling
 *
@@ -102,7 +105,7 @@ CCallableStatement::~CCallableStatement()
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd() 
 {
-  return dynamic_cast<CDB_RPCCmd*>(GetBaseCmd());
+  return (CDB_RPCCmd*)GetBaseCmd();
 }
 
 bool CCallableStatement::HasMoreResults()
