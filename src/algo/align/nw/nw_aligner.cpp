@@ -583,7 +583,7 @@ unsigned CNWAligner::EstimateRunningTime(unsigned test_duration_sec)
     unsigned char* backtrace_matrix = new unsigned char [N1*N2];
 
     unsigned ts = 0;
-    time_t t0 = time(unsigned(0));
+    time_t t0 = ::time(0);
 
     try
     {
@@ -666,15 +666,15 @@ unsigned CNWAligner::EstimateRunningTime(unsigned test_duration_sec)
             }
             pV[j] = V;
 
-            t1 = time( unsigned(0) );
-            dt = difftime(t1, t0);
+            t1 = ::time(0);
+            dt = ::difftime(t1, t0);
             if( dt > test_duration_sec ) {
                 throw dt / k;
             }
         }
 
-        t1 = time( unsigned(0) );
-        dt = difftime(t1, t0);
+        t1 = ::time(0);
+        dt = ::difftime(t1, t0);
         ts = N1*N2*dt/k;
     }
     catch(double t) {
@@ -772,6 +772,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/01/31 02:55:48  lavr
+ * User proper argument for ::time()
+ *
  * Revision 1.10  2003/01/30 20:32:36  kapustin
  * Add EstiamteRunningTime()
  *
