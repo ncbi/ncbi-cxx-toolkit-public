@@ -16,7 +16,7 @@ CXX="$CPATH/CC"
 CXXFLAGS="+w +w2 -g -D_DEBUG -DNCBI_USE_NEW_IOSTREAM"
 AR="$CXX -xar -o"
 RANLIB=":"
-LDFLAGS="-xildoff"
+LDFLAGS="-xildoff -g"
 
 PM_SRC_PATH="/net/neptune/pubmed/Cvs"
 PM_LIB_PATH=""
