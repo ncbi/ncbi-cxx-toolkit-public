@@ -175,6 +175,7 @@ void CAlnMrgApp::LoadInputAlignments(void)
             (CObjectIStream::Open(eSerial_AsnText, is));
 
         asn_type = in->ReadFileHeader();
+        in->Close();
         is.seekg(0);
     }
 
@@ -387,6 +388,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/11/20 23:58:07  todorov
+* Added CObjectIStream::Close before IStream::seekg
+*
 * Revision 1.12  2003/09/08 20:41:42  todorov
 * binint fixed. binout added
 *
