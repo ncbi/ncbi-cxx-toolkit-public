@@ -332,7 +332,7 @@ public:
 class CFlatCodeBreakQVal : public IFlatQVal
 {
 public:
-    CFlatCodeBreakQVal(const CCdregion::TCode_break value) : m_Value(value) { }
+    CFlatCodeBreakQVal(const CCdregion::TCode_break& value) : m_Value(value) { }
     void Format(TFlatQuals& quals, const string& name, CBioseqContext& ctx,
                 TFlags flags) const;
 
@@ -577,6 +577,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2005/01/21 13:10:09  dicuccio
+* Pass by reference, not by value
+*
 * Revision 1.18  2004/12/09 14:46:51  shomrat
 * Added CFlatSiteQVal
 *
