@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include "seqdbgilistset.hpp"
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
