@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/08/10 15:02:03  thiessen
+* fill out shortcuts; add update show/hide menu
+*
 * Revision 1.7  2001/03/09 15:48:43  thiessen
 * major changes to add initial update viewer
 *
@@ -103,6 +106,7 @@ public:
     // functions to show/hide more complex groups of stuff
     void ShowAlignedDomains(const StructureSet *set);
     void ShowResidues(const StructureSet *set, bool showAligned);
+    void ShowUnalignedResiduesInAlignedDomains(const StructureSet *set);
     void ShowSelectedResidues(const StructureSet *set);
 
 private:
@@ -111,6 +115,8 @@ private:
 
     // holds info on objects in this StructureSet
     std::vector < const ShowHideInfo * > structureInfo;
+
+    void PrivateShowResidues(const StructureSet *set, bool showAligned);
 
 public:
 };

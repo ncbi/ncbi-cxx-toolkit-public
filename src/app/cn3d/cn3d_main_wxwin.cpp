@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/08/10 15:01:57  thiessen
+* fill out shortcuts; add update show/hide menu
+*
 * Revision 1.63  2001/08/09 23:14:13  thiessen
 * fixes for MIPSPro and Mac compilers
 *
@@ -673,11 +676,15 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Show-Hide menu
     menu = new wxMenu;
     menu->Append(MID_SHOW_HIDE, "&Pick Structures...");
+    menu->AppendSeparator();
     menu->Append(MID_SHOW_ALL, "Show &Everything");
     menu->Append(MID_SHOW_DOMAINS, "Show Aligned &Domains");
     menu->Append(MID_SHOW_ALIGNED, "Show &Aligned Residues");
-    menu->Append(MID_SHOW_UNALIGNED, "Show &Unaligned Residues");
     menu->Append(MID_SHOW_SELECTED, "Show &Selected Residues");
+    wxMenu *subMenu = new wxMenu;
+    subMenu->Append(MID_SHOW_UNALIGNED_ALL, "Show &All");
+    subMenu->Append(MID_SHOW_UNALIGNED_ALN_DOMAIN, "Show in Aligned &Domains");
+    menu->Append(MID_SHOW_UNALIGNED, "&Unaligned Residues", subMenu);
     menuBar->Append(menu, "Show/&Hide");
 
     // Structure Alignment menu
@@ -688,6 +695,7 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     // Style menu
     menu = new wxMenu;
     menu->Append(MID_EDIT_STYLE, "Edit &Global Style");
+    // favorites
     favoritesMenu = new wxMenu;
     favoritesMenu->Append(Cn3DMainFrame::MID_ADD_FAVORITE, "&Add/Replace");
     favoritesMenu->Append(Cn3DMainFrame::MID_REMOVE_FAVORITE, "&Remove");
@@ -695,17 +703,35 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     favoritesMenu->AppendSeparator();
     SetupFavoritesMenu(favoritesMenu);
     menu->Append(MID_FAVORITES, "&Favorites", favoritesMenu);
-    wxMenu *subMenu = new wxMenu;
+    // rendering shortcuts
     subMenu = new wxMenu;
     subMenu->Append(MID_WORM, "&Worms");
     subMenu->Append(MID_TUBE, "&Tubes");
     subMenu->Append(MID_WIRE, "Wir&e");
+    subMenu->Append(MID_BNS, "&Ball and Stick");
+    subMenu->Append(MID_SPACE, "&Space Fill");
+    subMenu->AppendSeparator();
+    subMenu->Append(MID_SC_TOGGLE, "&Toggle Sidechains");
     menu->Append(MID_RENDER, "&Rendering Shortcuts", subMenu);
+    // coloring shortcuts
     subMenu = new wxMenu;
-    subMenu->Append(MID_SECSTRUC, "Sec&ondary Structure");
+    subMenu->Append(MID_SECSTRUC, "&Secondary Structure");
     subMenu->Append(MID_ALIGNED, "&Aligned");
-    subMenu->Append(MID_INFO, "&Information Content");
+    wxMenu *subMenu2 = new wxMenu;
+    subMenu2->Append(MID_IDENTITY, "I&dentity");
+    subMenu2->Append(MID_VARIETY, "&Variety");
+    subMenu2->Append(MID_WGHT_VAR, "&Weighted Variety");
+    subMenu2->Append(MID_INFO, "&Information Content");
+    subMenu2->Append(MID_FIT, "&Fit");
+    subMenu->Append(MID_CONS, "Sequence &Conservation", subMenu2);
+    subMenu->Append(MID_OBJECT, "&Object");
+    subMenu->Append(MID_DOMAIN, "&Domain");
+    subMenu->Append(MID_MOLECULE, "&Molecule");
+    subMenu->Append(MID_HYDROPHOB, "&Hydrophobicity");
+    subMenu->Append(MID_TEMP, "&Temperature");
+    subMenu->Append(MID_ELEMENT, "&Element");
     menu->Append(MID_COLORS, "&Coloring Shortcuts", subMenu);
+    //annotate
     menu->AppendSeparator();
     menu->Append(MID_ANNOTATE, "A&nnotate");
     menuBar->Append(menu, "&Style");
@@ -1002,8 +1028,12 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
         case MID_SHOW_ALIGNED:
             glCanvas->structureSet->showHideManager->ShowResidues(glCanvas->structureSet, true);
             break;
-        case MID_SHOW_UNALIGNED:
+        case MID_SHOW_UNALIGNED_ALL:
             glCanvas->structureSet->showHideManager->ShowResidues(glCanvas->structureSet, false);
+            break;
+        case MID_SHOW_UNALIGNED_ALN_DOMAIN:
+            glCanvas->structureSet->showHideManager->
+                ShowUnalignedResiduesInAlignedDomains(glCanvas->structureSet);
             break;
         case MID_SHOW_SELECTED:
             glCanvas->structureSet->showHideManager->ShowSelectedResidues(glCanvas->structureSet);
@@ -1021,6 +1051,13 @@ void Cn3DMainFrame::OnAlignStructures(wxCommandEvent& event)
     }
 }
 
+#define RENDERING_SHORTCUT(type) \
+    glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::type);\
+    break
+#define COLORING_SHORTCUT(type) \
+    glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::type);\
+    break
+
 void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
 {
     if (glCanvas->structureSet) {
@@ -1034,24 +1071,25 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
                 if (!glCanvas->structureSet->styleManager->EditUserAnnotations(this))
                     return;
                 break;
-            case MID_WORM:
-                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWormDisplay);
-                break;
-            case MID_TUBE:
-                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
-                break;
-            case MID_WIRE:
-                glCanvas->structureSet->styleManager->SetGlobalRenderingStyle(StyleSettings::eWireframeDisplay);
-                break;
-            case MID_SECSTRUC:
-                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eBySecondaryStructure);
-                break;
-            case MID_ALIGNED:
-                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
-                break;
-            case MID_INFO:
-                glCanvas->structureSet->styleManager->SetGlobalColorScheme(StyleSettings::eByInformationContent);
-                break;
+            case MID_WORM: RENDERING_SHORTCUT(eWormShortcut);
+            case MID_TUBE: RENDERING_SHORTCUT(eTubeShortcut);
+            case MID_WIRE: RENDERING_SHORTCUT(eWireframeShortcut);
+            case MID_BNS: RENDERING_SHORTCUT(eBallAndStickShortcut);
+            case MID_SPACE: RENDERING_SHORTCUT(eSpacefillShortcut);
+            case MID_SC_TOGGLE: RENDERING_SHORTCUT(eToggleSidechainsShortcut);
+            case MID_SECSTRUC: COLORING_SHORTCUT(eSecondaryStructureShortcut);
+            case MID_ALIGNED: COLORING_SHORTCUT(eAlignedShortcut);
+            case MID_IDENTITY: COLORING_SHORTCUT(eIdentityShortcut);
+            case MID_VARIETY: COLORING_SHORTCUT(eVarietyShortcut);
+            case MID_WGHT_VAR: COLORING_SHORTCUT(eWeightedVarietyShortcut);
+            case MID_INFO: COLORING_SHORTCUT(eInformationContentShortcut);
+            case MID_FIT: COLORING_SHORTCUT(eFitShortcut);
+            case MID_OBJECT: COLORING_SHORTCUT(eObjectShortcut);
+            case MID_DOMAIN: COLORING_SHORTCUT(eDomainShortcut);
+            case MID_MOLECULE: COLORING_SHORTCUT(eMoleculeShortcut);
+            case MID_HYDROPHOB: COLORING_SHORTCUT(eHydrophobicityShortcut);
+            case MID_TEMP: COLORING_SHORTCUT(eTemperatureShortcut);
+            case MID_ELEMENT: COLORING_SHORTCUT(eElementShortcut);
             default:
                 return;
         }

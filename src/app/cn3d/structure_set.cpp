@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2001/08/10 15:01:57  thiessen
+* fill out shortcuts; add update show/hide menu
+*
 * Revision 1.73  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -440,8 +443,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime->GetStrucseqs().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
-        styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
+        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+        styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
         if (mime->GetStrucseqs().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetStrucseqs().GetStyle_dictionary());
         if (mime->GetStrucseqs().IsSetUser_annotations())
@@ -468,8 +471,8 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime->GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
-        styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
+        styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+        styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
         structureAlignments = &(mime->GetAlignstruc().SetAlignments());
         if (mime->GetAlignstruc().IsSetStyle_dictionary())
             styleDictionary = &(mime->GetAlignstruc().GetStyle_dictionary());
@@ -663,8 +666,8 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, cdd->GetPending());
     else
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
-    styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeDisplay);
-    styleManager->SetGlobalColorScheme(StyleSettings::eByAligned);
+    styleManager->SetGlobalRenderingStyle(StyleSettings::eTubeShortcut);
+    styleManager->SetGlobalColorScheme(StyleSettings::eAlignedShortcut);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2001/08/10 15:02:03  thiessen
+* fill out shortcuts; add update show/hide menu
+*
 * Revision 1.34  2001/08/09 19:07:19  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -249,6 +252,8 @@ public:
             MID_SHOW_DOMAINS,
             MID_SHOW_ALIGNED,
             MID_SHOW_UNALIGNED,
+                MID_SHOW_UNALIGNED_ALL,
+                MID_SHOW_UNALIGNED_ALN_DOMAIN,
             MID_SHOW_SELECTED,
         // Structure Alignments menu
             MID_REFIT_ALL,
@@ -258,10 +263,24 @@ public:
                 MID_WORM,
                 MID_TUBE,
                 MID_WIRE,
+                MID_BNS,
+                MID_SPACE,
+                MID_SC_TOGGLE,
             MID_COLORS, // color shortcuts
                 MID_SECSTRUC,
                 MID_ALIGNED,
-                MID_INFO,
+                MID_CONS,
+                    MID_IDENTITY,
+                    MID_VARIETY,
+                    MID_WGHT_VAR,
+                    MID_INFO,
+                    MID_FIT,
+                MID_OBJECT,
+                MID_DOMAIN,
+                MID_MOLECULE,
+                MID_HYDROPHOB,
+                MID_TEMP,
+                MID_ELEMENT,
             MID_ANNOTATE,
             MID_FAVORITES, // favorites submenu
                 MID_ADD_FAVORITE,

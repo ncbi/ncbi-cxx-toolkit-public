@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/08/10 15:01:57  thiessen
+* fill out shortcuts; add update show/hide menu
+*
 * Revision 1.14  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -392,7 +395,7 @@ void ShowHideManager::ShowObject(const StructureObject *object, bool isShown)
 
 void ShowHideManager::MakeAllVisible(void)
 {
-    while(entitiesHidden.size() > 0) Show(entitiesHidden.begin()->first, true);
+    while (entitiesHidden.size() > 0) Show(entitiesHidden.begin()->first, true);
 }
 
 void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
@@ -425,9 +428,9 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
     }
 }
 
-void ShowHideManager::ShowResidues(const StructureSet *set, bool showAligned)
+
+void ShowHideManager::PrivateShowResidues(const StructureSet *set, bool showAligned)
 {
-    MakeAllVisible();
     StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
     for (o=set->objects.begin(); o!=oe; o++) {
         ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
@@ -447,6 +450,18 @@ void ShowHideManager::ShowResidues(const StructureSet *set, bool showAligned)
             }
         }
     }
+}
+
+void ShowHideManager::ShowResidues(const StructureSet *set, bool showAligned)
+{
+    MakeAllVisible();
+    PrivateShowResidues(set, showAligned);
+}
+
+void ShowHideManager::ShowUnalignedResiduesInAlignedDomains(const StructureSet *set)
+{
+    ShowAlignedDomains(set);
+    PrivateShowResidues(set, false);
 }
 
 void ShowHideManager::ShowSelectedResidues(const StructureSet *set)

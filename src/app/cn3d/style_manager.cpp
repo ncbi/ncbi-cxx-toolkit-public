@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2001/08/10 15:01:58  thiessen
+* fill out shortcuts; add update show/hide menu
+*
 * Revision 1.48  2001/08/09 19:07:14  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -356,23 +359,30 @@ void StyleSettings::SetRenderingStyle(ePredefinedRenderingStyle style)
 {
     // variable settings
     switch (style) {
-        case eWormDisplay:
+
+        // set sidechains isOn only
+        case eToggleSidechainsShortcut:
+            proteinSidechains.isOn = !proteinSidechains.isOn;
+            nucleotideSidechains.isOn = !nucleotideSidechains.isOn;
+            return;
+
+        case eWormShortcut:
             proteinBackbone.type = nucleotideBackbone.type = eTrace;
             proteinBackbone.style = nucleotideBackbone.style = eTubeWorm;
             proteinSidechains.isOn = nucleotideSidechains.isOn = false;
             proteinSidechains.style = nucleotideSidechains.style = eWire;
             heterogens.style = eBallAndStick;
-            solvents.isOn = true;
+            solvents.isOn = false;
             solvents.style = eBallAndStick;
             connections.style = eTubes;
             helixObjects.isOn = strandObjects.isOn = true;
             helixObjects.style = strandObjects.style = eWithArrows;
             break;
 
-        case eTubeDisplay:
+        case eTubeShortcut:
             proteinBackbone.type = nucleotideBackbone.type = eTrace;
             proteinBackbone.style = nucleotideBackbone.style = eTubes;
-            proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+            proteinSidechains.isOn = nucleotideSidechains.isOn = false;
             proteinSidechains.style = nucleotideSidechains.style = eWire;
             heterogens.style = eBallAndStick;
             solvents.isOn = false;
@@ -382,15 +392,41 @@ void StyleSettings::SetRenderingStyle(ePredefinedRenderingStyle style)
             helixObjects.style = strandObjects.style = eWithArrows;
             break;
 
-        case eWireframeDisplay:
+        case eWireframeShortcut:
             proteinBackbone.type = nucleotideBackbone.type = eComplete;
             proteinBackbone.style = nucleotideBackbone.style = eWire;
             proteinSidechains.isOn = nucleotideSidechains.isOn = true;
             proteinSidechains.style = nucleotideSidechains.style = eWire;
             heterogens.style = eWire;
-            solvents.isOn = true;
-            solvents.style = eWire;
+            solvents.isOn = false;
+            solvents.style = eBallAndStick;
             connections.style = eWire;
+            helixObjects.isOn = strandObjects.isOn = false;
+            helixObjects.style = strandObjects.style = eWithArrows;
+            break;
+
+        case eBallAndStickShortcut:
+            proteinBackbone.type = nucleotideBackbone.type = eComplete;
+            proteinBackbone.style = nucleotideBackbone.style = eBallAndStick;
+            proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+            proteinSidechains.style = nucleotideSidechains.style = eBallAndStick;
+            heterogens.style = eBallAndStick;
+            solvents.isOn = false;
+            solvents.style = eBallAndStick;
+            connections.style = eBallAndStick;
+            helixObjects.isOn = strandObjects.isOn = false;
+            helixObjects.style = strandObjects.style = eWithArrows;
+            break;
+
+        case eSpacefillShortcut:
+            proteinBackbone.type = nucleotideBackbone.type = eComplete;
+            proteinBackbone.style = nucleotideBackbone.style = eSpaceFill;
+            proteinSidechains.isOn = nucleotideSidechains.isOn = true;
+            proteinSidechains.style = nucleotideSidechains.style = eSpaceFill;
+            heterogens.style = eSpaceFill;
+            solvents.isOn = false;
+            solvents.style = eSpaceFill;
+            connections.style = eTubes;
             helixObjects.isOn = strandObjects.isOn = false;
             helixObjects.style = strandObjects.style = eWithArrows;
             break;
@@ -415,31 +451,82 @@ void StyleSettings::SetColorScheme(ePredefinedColorScheme scheme)
 {
     // variable settings
     switch (scheme) {
-        case eBySecondaryStructure:
+        case eSecondaryStructureShortcut:
             proteinBackbone.colorScheme = eSecondaryStructure;
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            heterogens.colorScheme = solvents.colorScheme = eElement;
             helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
             break;
 
-        case eByAligned:
-            proteinBackbone.colorScheme = eAligned;
+        case eAlignedShortcut: case eIdentityShortcut: case eVarietyShortcut:
+        case eWeightedVarietyShortcut: case eInformationContentShortcut: case eFitShortcut:
+            switch (scheme) {
+                case eAlignedShortcut: proteinBackbone.colorScheme = eAligned; break;
+                case eIdentityShortcut: proteinBackbone.colorScheme = eIdentity; break;
+                case eVarietyShortcut: proteinBackbone.colorScheme = eVariety; break;
+                case eWeightedVarietyShortcut: proteinBackbone.colorScheme = eWeightedVariety; break;
+                case eInformationContentShortcut: proteinBackbone.colorScheme = eInformationContent; break;
+                case eFitShortcut: proteinBackbone.colorScheme = eFit; break;
+            }
             nucleotideBackbone.colorScheme = eMolecule;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            heterogens.colorScheme = solvents.colorScheme = eElement;
             helixObjects.colorScheme = strandObjects.colorScheme = eObject;
             break;
 
-        case eByInformationContent:
-            proteinBackbone.colorScheme = eInformationContent;
-            nucleotideBackbone.colorScheme = eMolecule;
+        case eObjectShortcut:
+            proteinBackbone.colorScheme = eObject;
+            nucleotideBackbone.colorScheme = eObject;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eObject;
+            heterogens.colorScheme = solvents.colorScheme = eObject;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+
+        case eDomainShortcut:
+            proteinBackbone.colorScheme = eDomain;
+            nucleotideBackbone.colorScheme = eDomain;
             proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            heterogens.colorScheme = solvents.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+            break;
+
+        case eMoleculeShortcut:
+            proteinBackbone.colorScheme = eMolecule;
+            nucleotideBackbone.colorScheme = eMolecule;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eMolecule;
+            heterogens.colorScheme = solvents.colorScheme = eMolecule;
+            helixObjects.colorScheme = strandObjects.colorScheme = eSecondaryStructure;
+            break;
+
+        case eHydrophobicityShortcut:
+            proteinBackbone.colorScheme = eHydrophobicity;
+            nucleotideBackbone.colorScheme = eMolecule;
+            proteinSidechains.colorScheme = eHydrophobicity;
+            nucleotideSidechains.colorScheme = eElement;
+            heterogens.colorScheme = solvents.colorScheme = eElement;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+
+        case eTemperatureShortcut:
+            proteinBackbone.colorScheme = eTemperature;
+            nucleotideBackbone.colorScheme = eTemperature;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eTemperature;
+            heterogens.colorScheme = solvents.colorScheme = eTemperature;
+            helixObjects.colorScheme = strandObjects.colorScheme = eObject;
+            break;
+
+        case eElementShortcut:
+            proteinBackbone.colorScheme = eElement;
+            nucleotideBackbone.colorScheme = eElement;
+            proteinSidechains.colorScheme = nucleotideSidechains.colorScheme = eElement;
+            heterogens.colorScheme = eElement;
+            solvents.colorScheme = eElement;
             helixObjects.colorScheme = strandObjects.colorScheme = eObject;
             break;
     }
 
     // common settings
-    heterogens.colorScheme = eElement;
-    solvents.colorScheme = eElement;
     connections.colorScheme = eUserSelect;
     connections.userColor.Set(0.9,0.9,1);
     virtualDisulfideColor.Set(0.93,0.55,0.05);
