@@ -37,13 +37,13 @@
 BEGIN_NCBI_SCOPE
 
 
-/// Default buffer size
-static const streamsize kDefaultBufferSize = 4096;
-
 /// TAR block size
 static const streamsize kBlockSize = 512;
 
-// Null char
+/// Default buffer size (must be multiple kBlockSize)
+static const streamsize kDefaultBufferSize = 4096;
+
+/// Null char
 static const char kNull = '\0';
 
 // Macro to check bits
@@ -142,6 +142,7 @@ void CTar::Extract(const string& dst_dir)
         ; // below
         }
     
+        // Count absolute position in the archive
         pos += kBlockSize;
 
         // Get size of entry rounded up by kBlockSize
@@ -175,18 +176,24 @@ void CTar::Extract(const string& dst_dir)
                         NCBI_THROW(CTarException, eMemory, "Unable to allocate memory");
                     }
                     // Copy file from archive to disk
-                    streamsize to_read = aligned_size;
+                    streamsize to_read  = aligned_size;
+                    streamsize to_write = info.m_Size;
                     while ( m_Stream->good() &&  to_read > 0 ) {
-                        streamsize x_read = ( to_read > m_BufferSize) ? m_BufferSize : to_read;
-                        streamsize nread = m_Stream->rdbuf()->sgetn(buffer, x_read);
+                        // Read archive
+                        streamsize x_nread = ( to_read > m_BufferSize) ? m_BufferSize : to_read;
+                        streamsize nread = m_Stream->rdbuf()->sgetn(buffer, x_nread);
                         if ( !nread ) {
                             NCBI_THROW(CTarException, eRead, "Cannot read TAR file " + dst_path);
                         }
-                        os.write(buffer, nread);
-                        if ( !os ) {
-                            NCBI_THROW(CTarException, eWrite, "Cannot write file " + dst_path);
+                        to_read -= nread;
+                        // Write to file
+                        if (to_write > 0) {
+                            os.write(buffer, min(nread, to_write));
+                            if ( !os ) {
+                                NCBI_THROW(CTarException, eWrite, "Cannot write file " + dst_path);
+                            }
+                            to_write -= nread;
                         }
-                        to_read -= x_read;
                     }
                     // Clean up
                     delete buffer;
@@ -213,10 +220,11 @@ void CTar::Extract(const string& dst_dir)
         }}
 
         // Update position
-//        m_Stream->seekg(aligned_size, IOS_BASE::cur);
-//???
         pos += aligned_size;
+
+//        m_Stream->seekg(aligned_size, IOS_BASE::cur);
 //        m_Stream->rdbuf()->PUBSEEKPOS(pos);
+//???
     }
 }
 
@@ -367,6 +375,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/12/07 15:29:40  ivanov
+ * Fixed incorrect file size for extracted files
+ *
  * Revision 1.2  2004/12/02 18:01:13  ivanov
  * Comment out unused seekpos()
  *
