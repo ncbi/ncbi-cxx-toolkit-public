@@ -1,6 +1,6 @@
 APP = remote_blast
 SRC = remote_blast search_opts queue_poll align_parms
-LIB = xblast xnetblastcli xnetblast scoremat xobjutil xobjread tables \
+LIB = xblast xnetblastcli xnetblast seqdb scoremat xobjutil xobjread tables \
       xalnutil xalnmgr blastdb $(OBJMGR_LIBS)
 
 CFLAGS   = $(FAST_CFLAGS)
