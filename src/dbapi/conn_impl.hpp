@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/02/08 22:43:11  kholodov
+* Set/GetDataBase() renamed to Set/GetDatabase() respectively
+*
 * Revision 1.3  2002/02/08 21:29:55  kholodov
 * SetDataBase() restored, connection cloning algorithm changed
 *
@@ -89,8 +92,8 @@ public:
 
     CDB_Connection* GetConnAux();
 
-    virtual void SetDataBase(const string& name);
-    virtual string GetDataBase();
+    virtual void SetDatabase(const string& name);
+    virtual string GetDatabase();
 
     void SetDbName(const string& name, CDB_Connection* conn = 0);
 

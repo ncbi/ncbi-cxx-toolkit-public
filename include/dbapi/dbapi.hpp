@@ -256,10 +256,10 @@ public:
 			 const string& database = kEmptyStr) = 0;
 
     // Set current database
-    virtual void SetDataBase(const string& name) = 0;
+    virtual void SetDatabase(const string& name) = 0;
 
     // Get current database
-    virtual string GetDataBase() = 0;
+    virtual string GetDatabase() = 0;
 
     // Get statement object for regular SQL queries
     virtual IStatement* CreateStatement() = 0;
@@ -304,6 +304,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/02/08 22:43:12  kholodov
+ * Set/GetDataBase() renamed to Set/GetDatabase() respectively
+ *
  * Revision 1.3  2002/02/08 21:29:55  kholodov
  * SetDataBase() restored, connection cloning algorithm changed
  *

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2002/02/08 22:43:10  kholodov
+* Set/GetDataBase() renamed to Set/GetDatabase() respectively
+*
 * Revision 1.5  2002/02/08 21:29:54  kholodov
 * SetDataBase() restored, connection cloning algorithm changed
 *
@@ -100,12 +103,12 @@ CConnection::~CConnection()
 }
 
 
-void CConnection::SetDataBase(const string& name)
+void CConnection::SetDatabase(const string& name)
 {
   SetDbName(name);
 }
 
-string CConnection::GetDataBase()
+string CConnection::GetDatabase()
 {
     return m_database;
 }
