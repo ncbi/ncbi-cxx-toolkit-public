@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/01/10 20:04:08  vasilche
+* Fixed duplicate name.
+*
 * Revision 1.20  2000/01/10 19:46:32  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -161,7 +164,7 @@ protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
     virtual void StartMember(Member& member, const CMembers& members);
-    virtual void StartMember(Member& member, const CMemberId& member);
+    virtual void StartMember(Member& member, const CMemberId& id);
     virtual void StartMember(Member& member, LastMember& lastMember);
 	virtual void Begin(ByteBlock& block);
 	virtual size_t ReadBytes(const ByteBlock& block, char* dst, size_t length);

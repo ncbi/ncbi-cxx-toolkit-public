@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/01/10 20:04:07  vasilche
+* Fixed duplicate name.
+*
 * Revision 1.32  2000/01/10 19:46:31  vasilche
 * Fixed encoding/decoding of REAL type.
 * Fixed encoding/decoding of StringStore.
@@ -559,7 +562,7 @@ protected:
 
     // member interface
     virtual void StartMember(Member& member, const CMembers& members) = 0;
-    virtual void StartMember(Member& member, const CMemberId& member) = 0;
+    virtual void StartMember(Member& member, const CMemberId& id) = 0;
     virtual void StartMember(Member& member, LastMember& lastMember) = 0;
     virtual void EndMember(const Member& member);
     static void SetIndex(LastMember& lastMember, TMemberIndex index)
