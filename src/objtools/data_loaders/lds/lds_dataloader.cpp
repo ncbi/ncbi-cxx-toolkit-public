@@ -302,7 +302,7 @@ void CLDS_DataLoader::SetDatabase(CLDS_Database& lds_db,
 
 CDataLoader::TTSE_LockSet
 CLDS_DataLoader::GetRecords(const CSeq_id_Handle& idh,
-                            EChoice choice)
+                            EChoice /* choice */)
 {
     TTSE_LockSet locks;
     CHandleRangeMap hrmap;
@@ -481,6 +481,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2005/02/02 19:49:55  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.26  2005/01/26 16:25:21  grichenk
  * Added state flags to CBioseq_Handle.
  *

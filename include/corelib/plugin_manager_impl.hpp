@@ -122,7 +122,7 @@ protected:
     /// (or returns the deafult value)
     int GetParamInt(const TPluginManagerParamTree* params,
                     const string&                  param_name, 
-                    bool                           mandatory,
+                    bool                           /* mandatory */,
                     int                            default_value) const
     {
         CConfig conf(params);
@@ -138,7 +138,7 @@ protected:
     unsigned int 
     GetParamDataSize(const TPluginManagerParamTree* params,
                 const string&                  param_name, 
-                bool                           mandatory,
+                bool                           /* mandatory */,
                 unsigned int                   default_value) const
     {
         CConfig conf(params);
@@ -154,7 +154,7 @@ protected:
     /// (or returns the deafult value)
     bool GetParamBool(const TPluginManagerParamTree* params,
                       const string&                  param_name, 
-                      bool                           mandatory,
+                      bool                           /* mandatory */,
                       bool                           default_value) const
     {
         CConfig conf(params);
@@ -260,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.11  2004/11/03 17:52:59  kuznets
  * Fixed warning
  *

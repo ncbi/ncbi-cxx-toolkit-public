@@ -591,7 +591,7 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
         if ( m_Recurse ) {
             if ( GetBioseqHandle(bh, idh) ) {
                 LINE("Processing referenced sequences:");
-                CLevelGuard level(m_RecursionLevel);
+                CLevelGuard lvl(m_RecursionLevel);
                 set<CSeq_id_Handle> ids;
                 // collect referenced sequences
                 for ( CSeqMap_CI it(bh.GetSeqMap().
@@ -814,6 +814,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.31  2004/12/27 15:44:28  vasilche
 * Added message about purging cache.
 *

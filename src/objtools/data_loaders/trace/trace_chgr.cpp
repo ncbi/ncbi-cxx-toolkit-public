@@ -87,7 +87,7 @@ CTraceChromatogramLoader::~CTraceChromatogramLoader()
 
 CDataLoader::TTSE_LockSet
 CTraceChromatogramLoader::GetRecords(const CSeq_id_Handle& idh,
-                                     EChoice choice)
+                                     EChoice /* choice */)
 {
     TTSE_LockSet locks;
     // we only handle a particular subset of seq-ids
@@ -217,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2005/02/02 19:49:55  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.9  2004/12/22 20:42:53  grichenk
  * Added entry points registration funcitons
  *

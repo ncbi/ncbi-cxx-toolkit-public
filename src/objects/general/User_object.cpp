@@ -139,7 +139,7 @@ CUser_field& CUser_object::SetField(const string& str,
 
 CRef<CUser_field> CUser_object::SetFieldRef(const string& str,
                                             const string& delim,
-                                            const string& obj_subtype)
+                                            const string& /* obj_subtype */)
 {
     list<string> toks;
     NStr::Split(str, delim, toks);
@@ -405,7 +405,6 @@ const CUser_object& CUser_object::GetExperiment(void) const
         // we have one nested user object that contains the
         // specification of the experimental data
         return GetData().front()->GetData().GetObject();
-        break;
 
     case eExperiment_Unknown:
     default:
@@ -460,10 +459,10 @@ static string s_GetUserObjectContent(const CUser_object& obj)
                         continue;
                     }
 
-                    const string& label = field.GetLabel().GetStr();
-                    if (NStr::CompareNocase(label, s_tag) == 0) {
+                    const string& lbl = field.GetLabel().GetStr();
+                    if (NStr::CompareNocase(lbl, s_tag) == 0) {
                         tag = &field;
-                    } else if (NStr::CompareNocase(label, s_count) == 0) {
+                    } else if (NStr::CompareNocase(lbl, s_count) == 0) {
                         count = &field;
                     }
                 }
@@ -489,14 +488,12 @@ static string s_GetUserObjectContent(const CUser_object& obj)
         case CUser_object::eExperiment_Unknown:
         default:
             return "[experiment]";
-            break;
         }
         break;
 
     case CUser_object::eCategory_Unknown:
     default:
         return "[User]";
-        break;
     }
 }
 
@@ -539,7 +536,6 @@ CUser_object& CUser_object::SetCategory(ECategory category)
             SetClass(s_ncbi);
             return *subobj;
         }}
-        break;
 
     case eCategory_Unknown:
     default:
@@ -577,6 +573,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.13  2005/02/02 19:49:54  grichenk
+* Fixed more warnings
+*
 * Revision 6.12  2004/11/24 15:56:04  dicuccio
 * GetField(): added recursion of CUser_field if recursion in CUser_object fails.
 * SetField(): make equivalent to GetField()

@@ -76,8 +76,8 @@ struct STransactionInfo
 
 /// @internal
 static 
-bool s_CheckExists(const string&  host, 
-                   unsigned short port, 
+bool s_CheckExists(const string&  /* host */, 
+                   unsigned short /* port */, 
                    const string&  key,
                    unsigned char* buf = 0,
                    size_t         buf_size = 0,
@@ -432,14 +432,14 @@ void s_TestClientLB(const string& service_name)
     for (unsigned i = 0; i < keys.size(); ++i) {
         key = keys[i];
 
-        char dataBuf[1024];
-        memset(dataBuf, 0xff, sizeof(dataBuf));
+        char data_Buf[1024];
+        memset(data_Buf, 0xff, sizeof(data_Buf));
         size_t blob_size;
         IReader* reader = nc_client.GetData(key, &blob_size);
         assert(reader);
-        reader->Read(dataBuf, 1024);
+        reader->Read(data_Buf, 1024);
         delete reader;
-        int res = strcmp(dataBuf, test_data);
+        int res = strcmp(data_Buf, test_data);
         assert(res == 0);
         assert(blob_size == sizeof(test_data));
 
@@ -449,12 +449,12 @@ void s_TestClientLB(const string& service_name)
             wrt->Write(test_data2, sizeof(test_data2), &bytes_written);
         delete wrt;
 
-        memset(dataBuf, 0xff, sizeof(dataBuf));
+        memset(data_Buf, 0xff, sizeof(data_Buf));
         reader = nc_client.GetData(key, &blob_size);
         assert(reader);
-        reader->Read(dataBuf, 1024);
+        reader->Read(data_Buf, 1024);
         delete reader;
-        res = strcmp(dataBuf, test_data2);
+        res = strcmp(data_Buf, test_data2);
         assert(res == 0);
         assert(blob_size == sizeof(test_data2));
 
@@ -665,6 +665,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.27  2005/01/28 15:02:03  kuznets
  * Fexed GCC warning
  *

@@ -158,7 +158,7 @@ CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
 }
 
 
-string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& params)
+string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& /* params */)
 {
     return "GBLOADER";
 }
@@ -850,7 +850,7 @@ void CGBDataLoader::FreeConn(CGBReaderRequestResult& result)
 }
 
 
-void CGBDataLoader::DropTSE(CRef<CTSE_Info> tse_info)
+void CGBDataLoader::DropTSE(CRef<CTSE_Info> /* tse_info */)
 {
     //TWriteLockGuard guard(m_LoadMap_Lock);
     //m_LoadMapBlob.erase(GetBlob_id(*tse_info));

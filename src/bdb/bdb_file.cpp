@@ -1041,7 +1041,7 @@ CBDB_IdFile::CBDB_IdFile()
     BindKey("id", &IdKey);
 }
 
-void CBDB_IdFile::SetCmp(DB* db)
+void CBDB_IdFile::SetCmp(DB* /* db */)
 {
     BDB_CompareFunction func = BDB_IntCompare;
     if (IsByteSwapped()) {
@@ -1060,6 +1060,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.47  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.46  2004/12/07 16:09:17  kuznets
  * Compatibility changes (berkelye db v4.3)
  *

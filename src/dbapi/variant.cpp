@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.32  2005/02/02 19:49:54  grichenk
+* Fixed more warnings
+*
 * Revision 1.31  2004/09/29 14:58:07  kholodov
 * Added: SetNull() method
 *
@@ -643,14 +646,11 @@ void CVariant::Truncate(size_t len)
 
 bool CVariant::MoveTo(size_t pos) const
 {
-
     switch(GetType()) {
     case eDB_Image:
         return ((CDB_Image*)GetData())->MoveTo(pos);
-        break;
     case eDB_Text:
         return ((CDB_Text*)GetData())->MoveTo(pos);
-        break;
     default:
         throw CVariantException("CVariant::MoveTo(): invalid type");
     }

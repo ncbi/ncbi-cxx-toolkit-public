@@ -808,13 +808,13 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
     if ( !all_descrs.empty() ) {
         ITERATE ( TDescPlaces, tmit, all_descrs ) {
             CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
-            CID2S_Seq_descr_Info& info = content->SetSeq_descr();
-            info.SetType_mask(tmit->first);
+            CID2S_Seq_descr_Info& inf = content->SetSeq_descr();
+            inf.SetType_mask(tmit->first);
             if ( !tmit->second.first.empty() ) {
-                info.SetBioseqs(*MakeBioseqIds(tmit->second.first));
+                inf.SetBioseqs(*MakeBioseqIds(tmit->second.first));
             }
             if ( !tmit->second.second.empty() ) {
-                info.SetBioseq_sets(*MakeBioseq_setIds(tmit->second.second));
+                inf.SetBioseq_sets(*MakeBioseq_setIds(tmit->second.second));
             }
             chunk_content.push_back(content);
         }
@@ -823,12 +823,12 @@ void CBlobSplitterImpl::MakeID2Chunk(TChunkId chunk_id, const SChunkInfo& info)
     if ( !all_annot_places.first.empty() ||
          !all_annot_places.second.empty() ) {
         CRef<CID2S_Chunk_Content> content(new CID2S_Chunk_Content);
-        CID2S_Seq_annot_place_Info& info = content->SetSeq_annot_place();
+        CID2S_Seq_annot_place_Info& inf = content->SetSeq_annot_place();
         if ( !all_annot_places.first.empty() ) {
-            info.SetBioseqs(*MakeBioseqIds(all_annot_places.first));
+            inf.SetBioseqs(*MakeBioseqIds(all_annot_places.first));
         }
         if ( !all_annot_places.second.empty() ) {
-            info.SetBioseq_sets(*MakeBioseq_setIds(all_annot_places.second));
+            inf.SetBioseq_sets(*MakeBioseq_setIds(all_annot_places.second));
         }
         chunk_content.push_back(content);
     }
@@ -1023,6 +1023,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.18  2004/10/18 14:00:22  vasilche
 * Updated splitter for new SeqSplit specs.
 *

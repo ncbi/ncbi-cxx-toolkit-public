@@ -265,9 +265,9 @@ bool CTDSContext::TDS_SetMaxNofConns(int n)
 
 
 int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
-                                   int           dberr,    int oserr,
+                                   int           dberr,    int /* oserr */,
                                    const string& dberrstr,
-                                   const string& oserrstr)
+                                   const string& /* oserrstr */)
 {
     CTDS_Connection* link = dblink ?
         reinterpret_cast<CTDS_Connection*> (dbgetuserdata(dblink)) : 0;
@@ -323,7 +323,8 @@ int CTDSContext::TDS_dberr_handler(DBPROCESS*    dblink,   int severity,
 
 
 void CTDSContext::TDS_dbmsg_handler(DBPROCESS*    dblink,   DBINT msgno,
-                                    int           msgstate, int   severity,
+                                    int           /* msgstate */,
+                                    int           severity,
                                     const string& msgtxt,
                                     const string& srvname,
                                     const string& procname,
@@ -497,6 +498,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.29  2004/12/20 16:20:29  ssikorsk
  * Refactoring of dbapi/driver/samples
  *

@@ -155,8 +155,8 @@ void s_TEST_BoyerMooreMatcher(void)
     const char* str1 = 
        "eukaryotic initiation factor 4E-I [Drosophila melanogaster]";
 
-    int    len = strlen(str1);
-    int    pos = matcher.Search(str1, 0, len);
+    int    len1 = strlen(str1);
+    int    pos = matcher.Search(str1, 0, len1);
 
     assert((int)pos != -1l);
     }}
@@ -219,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/02 19:49:55  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.6  2004/06/15 13:46:49  kuznets
  * Minor compilation warning fixes
  *

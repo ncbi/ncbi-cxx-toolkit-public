@@ -995,7 +995,7 @@ CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
 
 void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
                      list< CConstRef<CSeq_feat> >& mrna_feats,
-                     TBestFeatOpts opts)
+                     TBestFeatOpts /* opts */)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     int gene_id = 0;
@@ -1097,7 +1097,7 @@ void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
 
 void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
                     list< CConstRef<CSeq_feat> >& cds_feats,
-                    TBestFeatOpts opts)
+                    TBestFeatOpts /* opts */)
 {
     _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
     list< CConstRef<CSeq_feat> > mrna_feats;
@@ -1122,11 +1122,12 @@ void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
 }
 
 
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
-                                            CSeqFeatData::E_Choice feat_type,
-                                            sequence::EOverlapType overlap_type,
-                                            CScope& scope,
-                                            TBestFeatOpts opts)
+CConstRef<CSeq_feat>
+GetBestOverlappingFeat(const CSeq_feat& feat,
+                       CSeqFeatData::E_Choice feat_type,
+                       sequence::EOverlapType overlap_type,
+                       CScope& scope,
+                       TBestFeatOpts /* opts */)
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat_type) {
@@ -1161,11 +1162,12 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
 }
 
 
-CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
-                                            CSeqFeatData::ESubtype subtype,
-                                            sequence::EOverlapType overlap_type,
-                                            CScope& scope,
-                                            TBestFeatOpts opts)
+CConstRef<CSeq_feat>
+GetBestOverlappingFeat(const CSeq_feat& feat,
+                       CSeqFeatData::ESubtype subtype,
+                       sequence::EOverlapType overlap_type,
+                       CScope& scope,
+                       TBestFeatOpts /* opts */)
 {
     CConstRef<CSeq_feat> feat_ref;
     switch (feat.GetData().GetSubtype()) {
@@ -1676,8 +1678,8 @@ void x_Translate(const Container& seq,
 
 void CSeqTranslator::Translate(const string& seq, string& prot,
                                const CGenetic_code* code,
-                               bool include_stop,
-                               bool remove_trailing_X)
+                               bool /* include_stop */,
+                               bool /* remove_trailing_X */)
 {
     x_Translate(seq, prot, code);
 }
@@ -1685,8 +1687,8 @@ void CSeqTranslator::Translate(const string& seq, string& prot,
 
 void CSeqTranslator::Translate(const CSeqVector& seq, string& prot,
                                const CGenetic_code* code,
-                               bool include_stop,
-                               bool remove_trailing_X)
+                               bool /* include_stop */,
+                               bool /* remove_trailing_X */)
 {
     x_Translate(seq, prot, code);
 }
@@ -1696,8 +1698,8 @@ void CSeqTranslator::Translate(const CSeq_loc& loc,
                                const CBioseq_Handle& handle,
                                string& prot,
                                const CGenetic_code* code,
-                               bool include_stop,
-                               bool remove_trailing_X)
+                               bool /* include_stop */,
+                               bool /* remove_trailing_X */)
 {
     CSeqVector seq(loc, handle.GetScope(), CBioseq_Handle::eCoding_Iupac);
     x_Translate(seq, prot, code);
@@ -2606,6 +2608,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.116  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.115  2005/01/26 15:44:19  ucko
 * CFastaOstream::WriteSequence: fix gap-instantiation logic to avoid
 * infinite loops with the gap length isn't an exact multiple of the

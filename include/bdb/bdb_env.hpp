@@ -56,7 +56,7 @@ public:
     enum EEnvOptions {
         eThreaded = (1 << 0),          ///< corresponds to DB_THREAD 
         eRunRecovery = (1 << 1),       ///< Run DB recovery first
-        eRunRecoveryFatal = (1 << 2),  ///< Run DB recovery first
+        eRunRecoveryFatal = (1 << 2)   ///< Run DB recovery first
     };
     
     /// OR-ed combination of EEnvOptions    
@@ -193,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/02/02 19:49:53  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.19  2004/10/18 15:36:47  kuznets
  * +SetLogFileMax
  *

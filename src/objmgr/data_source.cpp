@@ -1019,9 +1019,9 @@ void CDataSource::x_CollectBioseqs(const CSeq_entry_Info& info,
 }
 
 
+#if !defined(NCBI_NO_THREADS)
 void CDataSource::Prefetch(CPrefetchToken_Impl& token)
 {
-#if !defined(NCBI_NO_THREADS)
     if (!m_PrefetchThread) {
         CFastMutexGuard guard(m_PrefetchLock);
         // Check againi
@@ -1032,8 +1032,12 @@ void CDataSource::Prefetch(CPrefetchToken_Impl& token)
     }
     _ASSERT(m_PrefetchThread);
     m_PrefetchThread->AddRequest(token);
-#endif
 }
+#else
+void CDataSource::Prefetch(CPrefetchToken_Impl& /* token */)
+{
+}
+#endif
 
 
 CDataSource::TTSE_Lock CDataSource::x_LockTSE(const CTSE_Info& tse_info,

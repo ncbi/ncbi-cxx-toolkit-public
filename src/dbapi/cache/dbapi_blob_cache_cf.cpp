@@ -141,7 +141,7 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
         IConnection* conn = (IConnection*)ptr;
         drv->Open(conn, temp_dir, temp_prefix);
     } else {
-        const string& driver = 
+        const string& drv_str = 
             GetParam(params, kCFParam_driver, true, kEmptyStr);
         const string& server = 
             GetParam(params, kCFParam_server, true, kEmptyStr);
@@ -154,7 +154,7 @@ ICache* CDBAPI_BlobCacheCF::CreateInstance(
             GetParam(params, 
                      kCFParam_password, false, kCFParam_password_default);
 
-        drv->Open(driver, server, database, 
+        drv->Open(drv_str, server, database, 
                   login, password, 
                   temp_dir, temp_prefix);
 
@@ -196,6 +196,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.5  2004/12/22 21:02:53  grichenk
  * BDB and DBAPI caches split into separate libs.
  * Added entry point registration, fixed driver names.

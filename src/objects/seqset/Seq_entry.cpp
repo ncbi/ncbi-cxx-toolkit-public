@@ -93,7 +93,7 @@ void CSeq_entry::ParentizeOneLevel(void)
     }
 }
 
-void CSeq_entry::UserOp_Assign(const CSerialUserOp& source)
+void CSeq_entry::UserOp_Assign(const CSerialUserOp& /* source */)
 {
     m_ParentEntry = 0;
     ParentizeOneLevel();
@@ -153,6 +153,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.31  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 6.30  2004/11/22 16:05:07  grichenk
  * Removed unused variable
  *

@@ -213,7 +213,8 @@ public:
     /// Cache keeps all updates until it reaches the limit and saves it 
     /// all in one transaction.
     ///
-    void SetReadUpdateLimit(unsigned limit) { /*m_MemAttr.SetLimit(limit);*/ }
+    void SetReadUpdateLimit(unsigned /* limit */)
+    { /*m_MemAttr.SetLimit(limit);*/ }
 
     /// Remove all non-active LOG files
     void CleanLog();
@@ -529,6 +530,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2005/02/02 19:49:53  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.47  2005/01/03 14:26:43  kuznets
  * Implemented variable checkpoint interval (was hard coded)
  *

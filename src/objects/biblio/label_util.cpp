@@ -51,7 +51,7 @@ void GetLabelContent(string*            label,
                      const CImprint*    imprint,
                      const CTitle*      title,
                      const CCit_book*   book,
-                     const CCit_jour*   journal,
+                     const CCit_jour*   /* journal */,
                      const string*      title1,
                      const string*      title2,
                      const string*      titleunique,
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.6  2004/10/22 17:54:49  shomrat
  * Bug fix
  *

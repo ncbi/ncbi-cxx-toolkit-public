@@ -122,14 +122,14 @@ public:
     ~CMutexPool(void)
         {
         }
-    void SetSize(int size)
+    void SetSize(int /* size */)
         {
         }
-    CMutex& GetMutex(int x)
+    CMutex& GetMutex(int /* x */)
         {
             return sm_Lock;
         }
-    int  Select(unsigned key) const
+    int  Select(unsigned /* key */) const
         {
             return 0;
         }
@@ -206,9 +206,9 @@ private:
         }
     void Switch(EState newstate);
 #else
-    void Switch(EState newstate) {}
+    void Switch(EState /* newstate */) {}
     template<class A> void Switch(EState newstate,A *a) {}
-    void Switch(EState newstate,unsigned key) {}
+    void Switch(EState /* newstate */, unsigned /* key */) {}
 #endif
 };
 
@@ -220,6 +220,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.4  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.3  2004/08/04 14:55:17  vasilche
  * Changed TSE locking scheme.
  * TSE cache is maintained by CDataSource.

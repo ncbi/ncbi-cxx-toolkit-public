@@ -1013,12 +1013,12 @@ const CSeq_id* s_GetLabel
     case CSeq_loc::e_Packed_int:
     {
         *label += "(";
-        bool first = true;
+        bool frst = true;
         ITERATE(CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
-            if (!first) {
+            if (!frst) {
                 *label += ", ";
             }
-            first = false;
+            frst = false;
             last_id = s_GetLabel(**it, last_id, label);
         }
         *label += ")";
@@ -1579,7 +1579,6 @@ void CSeq_loc::Add(const CSeq_loc& other)
             x_ChangeToMix(other);
             break;
         }
-        break;
 
     case e_Whole:
         {
@@ -2449,6 +2448,9 @@ END_NCBI_SCOPE
 /*
  * =============================================================================
  * $Log$
+ * Revision 6.53  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 6.52  2005/01/27 17:56:57  grichenk
  * Preserve fuzz when merging/adding seq-locs.
  *

@@ -160,15 +160,19 @@ DestinationFile::~DestinationFile(void)
 #  define ALL_SEPARATOR_CHARS DIR_SEPARATOR_CHAR
 #endif
 
+#ifdef DISK_SEPARATOR_CHAR
 inline
 bool IsDiskSeparator(char c)
 {
-#ifdef DISK_SEPARATOR_CHAR
-    if ( c == DISK_SEPARATOR_CHAR )
-        return true;
-#endif
+    return c == DISK_SEPARATOR_CHAR;
+}
+#else
+inline
+bool IsDiskSeparator(char /* c */)
+{
     return false;
 }
+#endif
 
 inline
 bool IsDirSeparator(char c)
@@ -564,6 +568,9 @@ END_NCBI_SCOPE
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.31  2005/02/01 22:24:11  grichenk
 * Reversed last change
 *

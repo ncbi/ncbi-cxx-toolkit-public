@@ -60,7 +60,7 @@ public:
     enum EGFFFlags {
         fGTFCompat = 0x1, ///< Represent CDSs (and exons) per GTF.
         fGTFOnly   = 0x3, ///< Omit all other features.
-        fShowSeq   = 0x4, ///< Show the actual sequence in a "##" comment.
+        fShowSeq   = 0x4  ///< Show the actual sequence in a "##" comment.
     };
     typedef int TGFFFlags; ///< Binary OR of EGFFFlags
 
@@ -72,19 +72,19 @@ protected: // mostly no-ops
     EDatabase GetDatabase(void) const { return eDB_NCBI; }
 
     void FormatHead      (const CFlatHead& head);
-    void FormatKeywords  (const CFlatKeywords& keys)   { }
-    void FormatSegment   (const CFlatSegment& seg)     { }
-    void FormatSource    (const CFlatSource& source)   { }
-    void FormatReference (const CFlatReference& ref)   { }
-    void FormatComment   (const CFlatComment& comment) { }
-    void FormatPrimary   (const CFlatPrimary& prim)    { }
-    void FormatFeatHeader(const CFlatFeatHeader& fh)   { }
+    void FormatKeywords  (const CFlatKeywords& /* keys */)   { }
+    void FormatSegment   (const CFlatSegment& /* seg */)     { }
+    void FormatSource    (const CFlatSource& /* source */)   { }
+    void FormatReference (const CFlatReference& /* ref */)   { }
+    void FormatComment   (const CFlatComment& /* comment */) { }
+    void FormatPrimary   (const CFlatPrimary& /* prim */)    { }
+    void FormatFeatHeader(const CFlatFeatHeader& /* fh */)   { }
     void FormatFeature   (const IFlattishFeature& f);
     void FormatDataHeader(const CFlatDataHeader& dh);
     void FormatData      (const CFlatData& data);
-    void FormatContig    (const CFlatContig& contig)   { }
-    void FormatWGSRange  (const CFlatWGSRange& range)  { }
-    void FormatGenomeInfo(const CFlatGenomeInfo& g)    { }
+    void FormatContig    (const CFlatContig& /* contig */)   { }
+    void FormatWGSRange  (const CFlatWGSRange& /* range */)  { }
+    void FormatGenomeInfo(const CFlatGenomeInfo& /* g */)    { }
     void EndSequence     (void);
 
 private:
@@ -118,6 +118,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.4  2003/11/04 19:39:45  ucko
  * Default style changed from normal to master now that the OM no longer
  * splits remapped features.

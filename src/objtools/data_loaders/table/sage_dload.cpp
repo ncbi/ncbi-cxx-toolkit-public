@@ -224,12 +224,12 @@ CSageDataLoader::GetRecords(const CSeq_id_Handle& idh,
                " in (");
     string tmp;
     for ( ;  id_iter.first != id_iter.second;  ++id_iter.first) {
-        TIdMap::iterator iter = id_iter.first;
+        TIdMap::iterator it = id_iter.first;
 
         if ( !tmp.empty() ) {
             tmp += ", ";
         }
-        tmp += "'" + iter->second + "'";
+        tmp += "'" + it->second + "'";
     }
     sql += tmp + ")";
 
@@ -413,6 +413,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/02 19:49:55  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.13  2004/12/22 20:42:53  grichenk
  * Added entry points registration funcitons
  *

@@ -931,9 +931,9 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 }
 
 
-void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
-                                TErrorFlags errors,
-                                const CID2_Reply_Get_Blob_Seq_ids& reply)
+void CId2Reader::x_ProcessReply(CReaderRequestResult& /* result */,
+                                TErrorFlags /* errors */,
+                                const CID2_Reply_Get_Blob_Seq_ids& /* reply */)
 {
 /*
     if ( reply.IsSetIds() ) {
@@ -1021,7 +1021,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 
 
 void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
-                                TErrorFlags errors,
+                                TErrorFlags /* errors */,
                                 const CID2S_Reply_Get_Split_Info& reply)
 {
     TBlob_id blob_id = GetBlob_id(reply.GetBlob_id());
@@ -1057,7 +1057,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 
 
 void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
-                                TErrorFlags errors,
+                                TErrorFlags /* errors */,
                                 const CID2S_Reply_Get_Chunk& reply)
 {
     TBlob_id blob_id = GetBlob_id(reply.GetBlob_id());
@@ -1119,7 +1119,7 @@ public:
         {
             return m_CurPos == m_CurSize && m_CurVec == m_Input.end();
         }
-    virtual bool Pushback(const char* data, size_t size)
+    virtual bool Pushback(const char* /* data */, size_t size)
         {
             while ( size ) {
                 size_t chunk = min(size, m_CurPos);
@@ -1162,9 +1162,9 @@ class COctetStringSequenceStream : public CConn_MemoryStream
 public:
     typedef vector<char> TOctetString;
     typedef list<TOctetString*> TOctetStringSequence;
-    COctetStringSequenceStream(const TOctetStringSequence& in)
+    COctetStringSequenceStream(const TOctetStringSequence& inp)
         {
-            ITERATE( TOctetStringSequence, it, in ) {
+            ITERATE( TOctetStringSequence, it, inp ) {
                 write(&(**it)[0], (*it)->size());
             }
         }

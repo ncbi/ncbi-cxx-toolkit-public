@@ -263,14 +263,14 @@ void CBDB_FileDumper::Dump(CNcbiOstream& out, CBDB_FileCursor& cur)
                                       IOS_BASE::binary);
                     if (ofs.is_open()) {
                         blob_stream.reset(blob_db->CreateStream());
-                        char buf[2048];
+                        char buffer[2048];
 
                         out << "BLOB. size=" << size << "\n";
 
                         size_t bytes_read;
                         do {
-                            blob_stream->Read(buf, 2048, &bytes_read);
-                            ofs.write(buf, bytes_read);
+                            blob_stream->Read(buffer, 2048, &bytes_read);
+                            ofs.write(buffer, bytes_read);
                         } while (bytes_read);
                     }
                 }
@@ -381,6 +381,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.10  2004/06/30 16:27:22  kuznets
  * Fixed casting for correct BLOB printing
  *

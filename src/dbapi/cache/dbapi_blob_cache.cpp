@@ -826,9 +826,9 @@ IReader* CDBAPI_Cache::GetReadStream(const string&  key,
     return rdr.release();
 }
 
-void CDBAPI_Cache::GetBlobAccess(const string&     key, 
-                                 int               version,
-                                 const string&     subkey,
+void CDBAPI_Cache::GetBlobAccess(const string&     /* key */, 
+                                 int               /* version */,
+                                 const string&     /* subkey */,
                                  BlobAccessDescr*  blob_descr)
 {
     _ASSERT(0); // Not implemented yet
@@ -1113,7 +1113,7 @@ bool CDBAPI_Cache::x_CheckTimestampExpired(int timestamp) const
 }
 
 
-bool CDBAPI_Cache::x_RetrieveTimeStamp(IStatement&    stmt,
+bool CDBAPI_Cache::x_RetrieveTimeStamp(IStatement&   /* stmt */,
                                       const string&  key,
                                       int            version,
                                       const string&  subkey,
@@ -1230,6 +1230,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.14  2004/12/22 14:35:24  kuznets
  * +GetBlobAccess()
  *

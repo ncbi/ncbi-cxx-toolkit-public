@@ -1178,9 +1178,9 @@ class COctetStringSequenceStream : public CConn_MemoryStream
 public:
     typedef vector<char> TOctetString;
     typedef list<TOctetString*> TOctetStringSequence;
-    COctetStringSequenceStream(const TOctetStringSequence& in)
+    COctetStringSequenceStream(const TOctetStringSequence& inp)
         {
-            ITERATE( TOctetStringSequence, it, in ) {
+            ITERATE( TOctetStringSequence, it, inp ) {
                 write(&(**it)[0], (*it)->size());
             }
         }

@@ -766,7 +766,8 @@ int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 //  Implementation of SeqLocRevCmp()
 //
 
-static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i, CScope* scope)
+static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i,
+                                     CScope* /* scope */)
 {
     CRef<CSeq_interval> rev_int(new CSeq_interval);
     rev_int->Assign(i);
@@ -778,7 +779,8 @@ static CSeq_interval* s_SeqIntRevCmp(const CSeq_interval& i, CScope* scope)
 }
 
 
-static CSeq_point* s_SeqPntRevCmp(const CSeq_point& pnt, CScope* scope)
+static CSeq_point* s_SeqPntRevCmp(const CSeq_point& pnt,
+                                  CScope* /* scope */)
 {
     CRef<CSeq_point> rev_pnt(new CSeq_point);
     rev_pnt->Assign(pnt);
@@ -2608,6 +2610,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.16  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.15  2004/12/16 19:26:39  shomrat
 * Fixed difference calculation for circular bioseqs
 *

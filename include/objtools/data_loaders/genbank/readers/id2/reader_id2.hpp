@@ -178,7 +178,7 @@ private:
     CAtomicCounter              m_RequestSerialNumber;
 
     enum {
-        fAvoidRequest_nested_get_blob_info = 1,
+        fAvoidRequest_nested_get_blob_info = 1
     };
     typedef int TAvoidRequests;
     TAvoidRequests              m_AvoidRequest;

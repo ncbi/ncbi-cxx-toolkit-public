@@ -1333,7 +1333,7 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
-                                                CRef<CSeq_loc>* dst,
+                                                CRef<CSeq_loc>* /* dst */,
                                                 unsigned int loc_index)
 {
     bool res = false;
@@ -1586,6 +1586,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.49  2005/01/12 17:16:14  vasilche
 * Avoid performance warning on MSVC.
 *

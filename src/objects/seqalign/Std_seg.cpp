@@ -115,7 +115,7 @@ TSignedSeqPos CStd_seg::GetSeqStop(TDim row) const
 }
 
 
-void CStd_seg::Validate(bool full_test) const
+void CStd_seg::Validate(bool /* full_test */) const
 {
     CheckNumRows();
 }
@@ -155,6 +155,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2005/02/02 19:49:54  grichenk
+* Fixed more warnings
+*
 * Revision 1.2  2004/05/19 17:25:43  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

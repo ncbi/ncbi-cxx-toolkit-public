@@ -114,7 +114,7 @@ void CObjectsSniffer::OnObjectFoundPre(const CObjectInfo& /*object*/,
 {
 }
 
-void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& object)
+void CObjectsSniffer::OnObjectFoundPost(const CObjectInfo& /* object */)
 {
 }
 
@@ -271,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.20  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.19  2004/08/30 18:21:05  gouriano
 * Use CNcbiStreamoff instead of size_t for stream offset operations
 *

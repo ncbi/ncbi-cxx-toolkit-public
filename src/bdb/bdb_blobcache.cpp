@@ -962,9 +962,9 @@ void CBDB_Cache::Store(const string&  key,
 
 	if (!(m_TimeStampFlag & fTrackSubKey)) {
         if (!subkey.empty()) {
-            CCacheTransaction trans(*this);
+            CCacheTransaction transact(*this);
 		    x_UpdateAccessTime_NonTrans(key, version, subkey);
-            trans.Commit();
+            transact.Commit();
         }
 	}
 
@@ -1787,9 +1787,9 @@ void CBDB_Cache::x_PerformCheckPointNoLock(unsigned bytes_written)
 
 }
 
-bool CBDB_Cache::x_CheckTimestampExpired(const string&  key,
-                                         int            version,
-                                         const string&  subkey,
+bool CBDB_Cache::x_CheckTimestampExpired(const string&  /* key */,
+                                         int            /* version */,
+                                         const string&  /* subkey */,
                                          time_t         curr)
 {
     int timeout = GetTimeout();
@@ -1975,8 +1975,8 @@ bool CBDB_Cache::x_RetrieveBlobAttributes(const string&  key,
 	if (!(m_TimeStampFlag & fTrackSubKey)) {
 	    m_CacheAttrDB->subkey = "";
 
-		EBDB_ErrCode ret = m_CacheAttrDB->Fetch();
-		if (ret != eBDB_Ok) {
+		EBDB_ErrCode err = m_CacheAttrDB->Fetch();
+		if (err != eBDB_Ok) {
 			return false;
 		}
 	}
@@ -2257,6 +2257,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.102  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.101  2005/01/03 14:26:49  kuznets
  * Implemented variable checkpoint interval (was hard coded)
  *

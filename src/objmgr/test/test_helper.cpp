@@ -287,13 +287,13 @@ CSeq_entry& CDataGenerator::CreateTestEntry1(int index)
                 // dimensionality = 2
                 diag->SetDim(2);
                 // list of Seq_ids (gi) (sequences in order)
-                CDense_diag::TIds& id_list = diag->SetIds();
-                CRef<CSeq_id> id(new CSeq_id);
-                id->SetGi(11+index*1000);
-                id_list.push_back(id);
-                id.Reset(new CSeq_id);
-                id->SetGi(12+index*1000);
-                id_list.push_back(id);
+                CDense_diag::TIds& idlist = diag->SetIds();
+                CRef<CSeq_id> sid(new CSeq_id);
+                sid->SetGi(11+index*1000);
+                idlist.push_back(sid);
+                sid.Reset(new CSeq_id);
+                sid->SetGi(12+index*1000);
+                idlist.push_back(sid);
                 // start OFFSETS in ids order
                 CDense_diag::TStarts& start_list = diag->SetStarts();
                 start_list.push_back(0);
@@ -1413,6 +1413,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.62  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.61  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *

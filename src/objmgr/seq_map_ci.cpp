@@ -79,7 +79,7 @@ SSeqMapSelector& SSeqMapSelector::SetLimitTSE(const CSeq_entry_Handle& tse)
 }
 
 
-const CTSE_Handle& SSeqMapSelector::x_GetLimitTSE(CScope* scope) const
+const CTSE_Handle& SSeqMapSelector::x_GetLimitTSE(CScope* /* scope */) const
 {
     _ASSERT(m_LimitTSE);
     return m_LimitTSE;
@@ -563,6 +563,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2005/02/02 19:49:55  grichenk
+* Fixed more warnings
+*
 * Revision 1.35  2005/02/01 21:54:18  grichenk
 * Fixed TSignedSeqPos overflow problem
 *

@@ -1008,7 +1008,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
                                            : s_ScoreAAForFasta);
     switch (fmt) {
     case eFormat_FastA:
-        {{
+        {
             // FastA format
             // Here we have something like:
             //      gi|###|SOME_ACCESSION|title
@@ -1031,8 +1031,7 @@ string CSeq_id::GetStringDescr(const CBioseq& bioseq, EStringFormat fmt)
             }
 
             return CNcbiOstrstreamToString(out_str);
-        }}
-        break;
+        }
 
     case eFormat_ForceGI:
         // eForceGI produces a string containing only the GI in FastA format
@@ -1547,6 +1546,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.100  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 6.99  2005/02/01 17:10:30  ucko
  * IdentifyAccession: DN -> eAcc_gb_est
  *

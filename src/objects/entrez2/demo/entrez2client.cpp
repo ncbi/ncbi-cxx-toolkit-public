@@ -279,9 +279,9 @@ void CEntrez2ClientApp::x_GetDocsums(CEntrez2Client& client,
 //
 // display term positions for a given query
 //
-void CEntrez2ClientApp::x_GetTermPositions(CEntrez2Client& client,
-                                           const string& query,
-                                           const string& db)
+void CEntrez2ClientApp::x_GetTermPositions(CEntrez2Client& /* client */,
+                                           const string& /* query */,
+                                           const string& /* db */)
 {
     LOG_POST(Error << "get-term-pos query unimplemented");
 }
@@ -290,9 +290,9 @@ void CEntrez2ClientApp::x_GetTermPositions(CEntrez2Client& client,
 //
 // display term list for a given query
 //
-void CEntrez2ClientApp::x_GetTermList(CEntrez2Client& client,
-                                      const string& query,
-                                      const string& db)
+void CEntrez2ClientApp::x_GetTermList(CEntrez2Client& /* client */,
+                                      const string& /* query */,
+                                      const string& /* db */)
 {
     LOG_POST(Error << "get-term-list query unimplemented");
 }
@@ -301,9 +301,9 @@ void CEntrez2ClientApp::x_GetTermList(CEntrez2Client& client,
 //
 // display term hierarchy for a given query
 //
-void CEntrez2ClientApp::x_GetTermHierarchy(CEntrez2Client& client,
-                                           const string& query,
-                                           const string& db)
+void CEntrez2ClientApp::x_GetTermHierarchy(CEntrez2Client& /* client */,
+                                           const string& /* query */,
+                                           const string& /* db */)
 {
     LOG_POST(Error << "get-term-hierarchy query unimplemented");
 }
@@ -312,9 +312,9 @@ void CEntrez2ClientApp::x_GetTermHierarchy(CEntrez2Client& client,
 //
 // display links for a given query
 //
-void CEntrez2ClientApp::x_GetLinks(CEntrez2Client& client,
-                                   const string& query,
-                                   const string& db)
+void CEntrez2ClientApp::x_GetLinks(CEntrez2Client& /* client */,
+                                   const string& /* query */,
+                                   const string& /* db */)
 {
     LOG_POST(Error << "get-links query unimplemented");
 }
@@ -323,9 +323,9 @@ void CEntrez2ClientApp::x_GetLinks(CEntrez2Client& client,
 //
 // display linked status for a given query
 //
-void CEntrez2ClientApp::x_GetLinked(CEntrez2Client& client,
-                                    const string& query,
-                                    const string& db)
+void CEntrez2ClientApp::x_GetLinked(CEntrez2Client& /* client */,
+                                    const string& /* query */,
+                                    const string& /* db */)
 {
     LOG_POST(Error << "get-linked query unimplemented");
 }
@@ -334,9 +334,9 @@ void CEntrez2ClientApp::x_GetLinked(CEntrez2Client& client,
 //
 // display link counts for a given query
 //
-void CEntrez2ClientApp::x_GetLinkCounts(CEntrez2Client& client,
-                                        const string& query,
-                                        const string& db)
+void CEntrez2ClientApp::x_GetLinkCounts(CEntrez2Client& /* client */,
+                                        const string& /* query */,
+                                        const string& /* db */)
 {
     LOG_POST(Error << "get-link-counts query unimplemented");
 }
@@ -425,6 +425,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.4  2004/05/19 17:21:09  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

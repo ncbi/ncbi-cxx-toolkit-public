@@ -81,7 +81,7 @@ CCddDataLoader::CCddDataLoader(const string& loader_name)
 // POST: ??
 CDataLoader::TTSE_LockSet
 CCddDataLoader::GetRecords(const CSeq_id_Handle& idh,
-                           EChoice choice)
+                           EChoice /* choice */)
 {
     TTSE_LockSet locks;
     CConstRef<CSeq_id> id = idh.GetSeqId();
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/02 19:49:55  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.10  2004/12/22 20:42:53  grichenk
  * Added entry points registration funcitons
  *

@@ -204,8 +204,8 @@ void BDB_ParseQuery(const char* query_str, CBDB_Query* query)
 
         // the only node in pool
         if (vec.size() == 1) {
-            CBDB_Query::TQueryClause* qc = vec[0];
-            query->SetQueryClause(qc);
+            CBDB_Query::TQueryClause* qcl = vec[0];
+            query->SetQueryClause(qcl);
             pool.ForgetAll();
         }
     }
@@ -217,6 +217,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.5  2004/05/17 20:55:11  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

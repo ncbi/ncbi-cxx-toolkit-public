@@ -876,10 +876,8 @@ CReader::TBlobVersion CId1Reader::x_GetVersion(const CID1server_back& reply)
     switch ( reply.Which() ) {
     case CID1server_back::e_Gotblobinfo:
         return abs(reply.GetGotblobinfo().GetBlob_state());
-        break;
     case CID1server_back::e_Gotsewithinfo:
         return abs(reply.GetGotsewithinfo().GetBlob_info().GetBlob_state());
-        break;
     default:
         return -1;
     }

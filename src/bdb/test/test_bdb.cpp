@@ -575,7 +575,6 @@ static void s_TEST_BDB_Query(void)
     dbf1.Fetch();
 
     CTestScanner  scanner(dbf1);
-    CBDB_Query    query;
 
     {{
         const char* ch = " test";
@@ -593,6 +592,7 @@ static void s_TEST_BDB_Query(void)
         BDB_PrintQueryTree(cout, query);
     }}
 
+    CBDB_Query    query;
     // Testing the query evaluation logic
     //
 
@@ -2021,6 +2021,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2005/02/02 19:49:54  grichenk
+ * Fixed more warnings
+ *
  * Revision 1.56  2004/12/17 12:10:35  kuznets
  * Code cleanup: removed unused variable
  *
