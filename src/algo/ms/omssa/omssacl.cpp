@@ -211,7 +211,6 @@ int COMSSA::Run()
 	    }
     
 	}
-	cerr << endl << endl;
     }
 
 
@@ -241,6 +240,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.3  2003/10/27 20:10:55  lewisg
+  demo program to read out omssa results
+
   Revision 1.2  2003/10/21 21:12:17  lewisg
   reorder headers
 
