@@ -441,7 +441,7 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 
 I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 {
-    DBINT version= DBVERSION_UNKNOWN;
+    DBINT version= DBVERSION_46;
 
 #ifndef NCBI_OS_MSWIN
     if(attr) {
@@ -476,6 +476,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/06/19 15:02:03  soussov
+ * changes default version from unknown to 46
+ *
  * Revision 1.14  2002/06/17 21:26:32  soussov
  * dbsetversion added
  *
