@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2001/09/14 14:56:24  thiessen
+* increase default animation delay
+*
 * Revision 1.81  2001/09/14 14:46:22  thiessen
 * working GL fonts
 *
@@ -589,7 +592,7 @@ void Cn3DApp::InitRegistry(void)
     // first set up defaults, then override any/all with stuff from registry file
 
     // default animation delay and log window startup
-    RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 25);
+    RegistrySetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, 500);
     RegistrySetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, true);
 
     // default quality settings
