@@ -216,7 +216,7 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
 {
     _ASSERT(str);
 
-    str->clear();
+    str->erase();
     char ch;
     EIO_Status io_st;
     size_t  bytes_read;
@@ -263,6 +263,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/06 16:49:10  ucko
+ * CNetCacheClient::ReadStr: clear str with erase(), since clear() isn't
+ * 100% portable.
+ *
  * Revision 1.4  2004/10/06 15:27:24  kuznets
  * Removed unused variable
  *
