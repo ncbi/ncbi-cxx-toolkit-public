@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2001/04/20 14:52:36  kholodov
+* Fixed: Incorrect function call in SerialEqual template
+*
 * Revision 1.2  2001/04/06 18:32:31  kholodov
 * Modified: renamed to SerialEqual, added type checking.
 *
@@ -71,7 +74,7 @@ bool SerialEqual(const T& a,
   }
   
   TTypeInfo type = Type<T>::GetTypeInfo();
-  return SerialCompare(&a, &b, type);
+  return SerialEqual(&a, &b, type);
 }
 
 END_NCBI_SCOPE
