@@ -46,7 +46,7 @@ class CSeq_id;
 class CSeq_point;
 class CSeq_interval;
 
-class CSeqMapRange_CI
+class NCBI_XOBJMGR_EXPORT CSeqMapRange_CI
 {
 public:
     enum EWhole { eWhole };
@@ -138,17 +138,17 @@ private:
     bool           m_MinusStrand;
 };
 
-class CSeqMapResolved_CI
+class NCBI_XOBJMGR_EXPORT CSeqMapResolved_CI
 {
 public:
     CSeqMapResolved_CI(void);
     CSeqMapResolved_CI(const CSeqMap_CI& seg);
     CSeqMapResolved_CI(const CSeqMap_CI& seg, TSeqPos pos);
     CSeqMapResolved_CI(const pair<CSeqMap_CI, TSeqPos> pos);
-    CSeqMapResolved_CI(const CSeqMapResolved_CI& info);
+    //CSeqMapResolved_CI(const CSeqMapResolved_CI& info);
     ~CSeqMapResolved_CI(void);
 
-    CSeqMapResolved_CI& operator=(const CSeqMapResolved_CI& info);
+    //CSeqMapResolved_CI& operator=(const CSeqMapResolved_CI& info);
 
     bool operator==(const CSeqMapResolved_CI& seg) const;
     bool operator!=(const CSeqMapResolved_CI& seg) const;
@@ -216,6 +216,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/12/26 20:51:20  dicuccio
+* Added Win32 export specifier.  Commented out public copy ctor / operator= (no
+* implementation and none necessary)
+*
 * Revision 1.1  2002/12/26 16:39:22  vasilche
 * Object manager class CSeqMap rewritten.
 *
