@@ -27,6 +27,7 @@ INTERNAL = @internal@
 top_srcdir  = @top_srcdir@
 exec_prefix = @exec_prefix@
 builddir    = @builddir@
+rundir      = @rundir@
 
 
 ### Paths

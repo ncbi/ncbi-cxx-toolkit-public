@@ -32,7 +32,7 @@ include $(builddir)/Makefile.$(Rules)
 
 XAPP = $(APP)@exe_ext@
 XOBJ = $(SOURCES:=@obj_ext@)
-XLIB = @f_runpath@$(libdir) @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
+XLIB = @f_runpath@$(rundir) @f_libpath@$(libdir) $(LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(LIB:%=$(libdir)/.%.dep)
 
 $(XAPP): $(XOBJ) $(XLIBDEP)

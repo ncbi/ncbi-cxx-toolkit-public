@@ -60,14 +60,16 @@ AC_ARG_WITH(optimization,
    [ --without-optimization  turn off optimization flags in non-debug mode])
 AC_ARG_WITH(dll,
    [ --with-dll              build all libraries as DLLs])
-AC_ARG_WITH(runpath,
-   [ --without-runpath       do not provide runpath to the built DLLs])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
 AC_ARG_WITH(mt,
    [ --with-64               compile to 64-bit code])
 AC_ARG_WITH(exe,
    [ --without-exe           do not build executables])
+AC_ARG_WITH(runpath,
+   [ --without-runpath       do not provide runpath to the built DLLs])
+AC_ARG_WITH(runpath,
+   [ --with-runpath=         to use the built DLLs from a non-default location])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -141,12 +143,12 @@ for x_arg in "$@" ; do
 
    case "$x_arg" in
       --with-extra-action= | --exec-prefix= \
-      | --cache-file= | --build= | --host= | --target= )
+      | --cache-file= | --build= | --host= | --target= | --with-runpath= )
       AC_MSG_ERROR(["  $x_arg:  requires value\;  use --help to show usage"])
       ;;
 
       --with-extra-action=* | --exec-prefix=* \
-      | --cache-file=* | --build=* | --host=* | --target=* )
+      | --cache-file=* | --build=* | --host=* | --target=* | --with-runpath=* )
       ;;
 
       * )
@@ -417,10 +419,16 @@ case "$compiler" in
 esac
 
 # Provide runpath to the C++ Toolkit DLLs
+rundir="\$(libdir)"
 if test "$with_dll" = "no" ; then
+   if test -z "$with_runpath"  ||  test "$with_runpath" = "yes" ; then
+      with_runpath="no"
+   fi
+elif test -z "$with_dll"  &&  test -z "$with_runpath" ; then
    with_runpath="no"
 fi
-if test "$with_runpath" != "no"; then
+
+if test "$with_runpath" != "no" ; then
    case "$host:$compiler" in
     *:WorkShop* )
       CONF_f_runpath="-R"
@@ -432,6 +440,10 @@ if test "$with_runpath" != "no"; then
       CONF_f_runpath="-rpath "
       ;;
    esac
+
+   if test -n "$with_runpath"  &&  test "$with_runpath" != "yes" ; then
+      rundir="$with_runpath"
+   fi
 else
    CONF_f_runpath=
 fi
@@ -1307,6 +1319,7 @@ AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
 AC_SUBST(includedir)
 AC_SUBST(builddir)
+AC_SUBST(rundir)
 
 AC_SUBST(CC)
 AC_SUBST(CPP)
