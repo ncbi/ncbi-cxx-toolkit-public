@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.195 2003/06/10 15:39:08 dicuccio Exp $
+#  $Id: configure.ac,v 1.196 2003/06/10 15:49:14 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2404,7 +2404,7 @@ if test "$with_opengl" != "no"; then
             X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
             X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
          fi
-	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
+         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
          OPENGL_LIBS="$X_LIBS -LGLU -lGL $X_ALL_LIBS"
          ;;
