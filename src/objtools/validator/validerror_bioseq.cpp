@@ -1587,58 +1587,63 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             // The C++ object serializaton will not load if invalid alphabet
             // so no check needed here
             const CSeq_literal& lit = (*sg)->GetLiteral();
-            len += lit.GetLength();
+            len += lit.CanGetLength() ? lit.GetLength() : 0;
+
             // Check for invalid residues
-            if ( !lit.CanGetSeq_data() ) {
-                break;
-            }
-            const CSeq_data& data = lit.GetSeq_data();
-            vector<TSeqPos> badIdx;
-            CSeqportUtil::Validate(data, &badIdx);
-            const string* ss = 0;
-            switch (data.Which()) {
-            case CSeq_data::e_Iupacaa:
-                ss = &data.GetIupacaa().Get();
-                break;
-            case CSeq_data::e_Iupacna:
-                ss = &data.GetIupacna().Get();
-                break;
-            case CSeq_data::e_Ncbieaa:
-                ss = &data.GetNcbieaa().Get();
-                break;
-            case CSeq_data::e_Ncbistdaa:
-            {
-                const vector<char>& c = data.GetNcbistdaa().Get();
-                ITERATE (vector<TSeqPos>, ci, badIdx) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
-                        "Invalid residue [" +
-                        NStr::IntToString((int)c[*ci]) + "] in position " +
-                        NStr::IntToString(*ci), seq);
+            if ( lit.CanGetSeq_data() ) {
+                const CSeq_data& data = lit.GetSeq_data();
+                vector<TSeqPos> badIdx;
+                CSeqportUtil::Validate(data, &badIdx);
+                const string* ss = 0;
+                switch (data.Which()) {
+                case CSeq_data::e_Iupacaa:
+                    ss = &data.GetIupacaa().Get();
+                    break;
+                case CSeq_data::e_Iupacna:
+                    ss = &data.GetIupacna().Get();
+                    break;
+                case CSeq_data::e_Ncbieaa:
+                    ss = &data.GetNcbieaa().Get();
+                    break;
+                case CSeq_data::e_Ncbistdaa:
+                    {
+                        const vector<char>& c = data.GetNcbistdaa().Get();
+                        ITERATE (vector<TSeqPos>, ci, badIdx) {
+                            PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
+                                "Invalid residue [" +
+                                NStr::IntToString((int)c[*ci]) + "] in position " +
+                                NStr::IntToString(*ci), seq);
+                        }
+                        break;
+                    }
+                default:
+                    break;
                 }
-                break;
-            }
-            default:
-                break;
-            }
-            if (ss) {
-                ITERATE (vector<TSeqPos>, it, badIdx) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
-                        "Invalid residue [" +
-                        ss->substr(*it, 1) + "] in position " +
-                        NStr::IntToString(*it), seq);
+
+                if ( ss ) {
+                    ITERATE (vector<TSeqPos>, it, badIdx) {
+                        PostErr(eDiag_Error, eErr_SEQ_INST_InvalidResidue,
+                            "Invalid residue [" +
+                            ss->substr(*it, 1) + "] in position " +
+                            NStr::IntToString(*it), seq);
+                    }
                 }
+                            
+                // Count adjacent Ns in Seq-lit for htgs_1 and htgs_2
+                if ( tech == CMolInfo::eTech_htgs_1  ||  
+                    tech == CMolInfo::eTech_htgs_2 ) {
+                    size_t adjacent_ns = x_CountAdjacentNs(lit);
+                    if ( adjacent_ns > scm_AdjacentNsThreshold ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
+                            "Run of " + NStr::UIntToString(adjacent_ns) + 
+                            " Ns in delta chain", seq);
+                    }
+                }
+            } else if ( !lit.CanGetLength()  ||  lit.GetLength() == 0 ) {
+                PostErr(eDiag_Error, eErr_SEQ_INST_SeqLitGapLength0,
+                    "Gap of length 0 in delta chain", seq);
             }
             
-            // Count adjacent Ns in Seq-lit for htgs_1 and htgs_2
-            if ( tech == CMolInfo::eTech_htgs_1  ||  
-                 tech == CMolInfo::eTech_htgs_2 ) {
-                size_t adjacent_ns = x_CountAdjacentNs(lit);
-                if ( adjacent_ns > scm_AdjacentNsThreshold ) {
-                    PostErr(eDiag_Warning, eErr_SEQ_INST_InternalNsInSeqLit,
-                        "Run of " + NStr::UIntToString(adjacent_ns) + 
-                        " Ns in delta chain", seq);
-                }
-            }
             break;
         }
         default:
@@ -3286,6 +3291,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.51  2003/10/27 14:16:50  shomrat
+* added ERR_SEQ_INST_SeqLitGapLength0
+*
 * Revision 1.50  2003/10/21 13:48:50  grichenk
 * Redesigned type aliases in serialization library.
 * Fixed the code (removed CRef-s, added explicit
