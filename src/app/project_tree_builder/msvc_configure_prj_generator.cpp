@@ -64,7 +64,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                            CDirEntry::AddTrailingPathSeparator
                                  (CDirEntry::CreateRelativePath(m_ProjectDir, 
                                                                 m_OutputDir))+ 
-                          "$(ConfigurationName)";
+                          "Release";
+//                          "$(ConfigurationName)";
 
     string tree_root_par = "$(ProjectDir)" + 
                            CDirEntry::AddTrailingPathSeparator
@@ -79,7 +80,8 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
 
     // Build command for project_tree_builder.sln
     m_CustomBuildCommand += 
-        "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
+        "devenv /build Release /project project_tree_builder.exe ";
+//        "devenv /build $(ConfigurationName) /project project_tree_builder.exe ";
 
     string project_tree_builder_sln_dir = 
         GetApp().GetProjectTreeInfo().m_Compilers;
@@ -223,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2005/03/18 16:16:29  gouriano
+ * Run CONFIGURE in Release mode always
+ *
  * Revision 1.16  2004/12/20 21:07:33  gouriano
  * Eliminate compiler warnings
  *
