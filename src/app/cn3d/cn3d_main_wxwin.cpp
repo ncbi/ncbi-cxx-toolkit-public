@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.173  2003/01/09 13:46:33  thiessen
+* update version
+*
 * Revision 1.172  2002/12/19 15:56:16  thiessen
 * use wxCHECK_VERSION
 *
@@ -667,7 +670,7 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 
-#define CN3D_VERSION_STRING "4.1"
+#define CN3D_VERSION_STRING "4.2"
 
 // `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3D::Cn3DApp)
