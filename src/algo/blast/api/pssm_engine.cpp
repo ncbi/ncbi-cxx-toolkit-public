@@ -194,18 +194,52 @@ CScoreMatrixBuilder::ExtractAlignmentData()
         list< CRef<CSeq_align> >::const_iterator hsp;
 
         // HSPs with the same query-subject pair
-        for (hsp = hsp_list.begin(); hsp != hsp_list.end(); ++hsp) {
+        if (m_Opts.use_best_alignment) {
 
-            // Note: Std-seg can be converted to Denseg, will need conversion
-            // from Dendiag to Denseg too
-            if ( !(*hsp)->GetSegs().IsDenseg() ) {
-                NCBI_THROW(CBlastException, eNotSupported, 
-                           "Segment type not supported");
+            // Search for the best alignment
+            // FIXME: refactor to use std::find()?
+            list< CRef<CSeq_align> >::const_iterator best_alignment;
+            double min_evalue = numeric_limits<double>::max();
+
+            for (hsp = hsp_list.begin(); hsp != hsp_list.end(); ++hsp) {
+
+                // Note: Std-seg can be converted to Denseg, will need 
+                // conversion from Dendiag to Denseg too
+                if ( !(*hsp)->GetSegs().IsDenseg() ) {
+                    NCBI_THROW(CBlastException, eNotSupported, 
+                               "Segment type not supported");
+                }
+
+                double evalue = s_GetLowestEvalue((*hsp)->GetScore());
+                if (evalue < min_evalue) {
+                    best_alignment = hsp;
+                    min_evalue = evalue;
+                }
             }
-            double evalue = s_GetLowestEvalue((*hsp)->GetScore());
+            ASSERT(best_alignment != hsp_list.end());
             // this could be refactored to support other segment types, will
             // need to pass portion of subj. sequence and evalue
-            x_ProcessDenseg((*hsp)->GetSegs().GetDenseg(), seq_index, evalue);
+            x_ProcessDenseg((*best_alignment)->GetSegs().GetDenseg(), 
+                            seq_index, min_evalue);
+
+        } else {
+
+            for (hsp = hsp_list.begin(); hsp != hsp_list.end(); ++hsp) {
+
+                // Note: Std-seg can be converted to Denseg, will need 
+                // conversion from Dendiag to Denseg too
+                if ( !(*hsp)->GetSegs().IsDenseg() ) {
+                    NCBI_THROW(CBlastException, eNotSupported, 
+                               "Segment type not supported");
+                }
+
+                double evalue = s_GetLowestEvalue((*hsp)->GetScore());
+
+                // this could be refactored to support other segment types, will
+                // need to pass portion of subj. sequence and evalue
+                x_ProcessDenseg((*hsp)->GetSegs().GetDenseg(), seq_index, 
+                                evalue);
+            }
         }
         seq_index++;
 
@@ -373,6 +407,10 @@ s_GetLowestEvalue(const CDense_seg::TScores& scores)
 //////////////////////////////////////////////////////////////////////////////
 // Debugging code
 
+unsigned char ncbistdaa_to_ncbieaa[] = {
+'-','A','B','C','D','E','F','G','H','I','K','L','M',
+'N','P','Q','R','S','T','V','W','X','Y','Z','U','*'};
+
 // Pretty print sequence
 static void 
 s_DBG_printSequence(const Uint1* seq, TSeqPos len, ostream& out,
@@ -385,7 +423,7 @@ s_DBG_printSequence(const Uint1* seq, TSeqPos len, ostream& out,
         // print chars_per_line residues/bases
         for (TSeqPos i = (chars_per_line*line); 
              i < chars_per_line*(line+1) && (i < len); i++) {
-            out << AMINOACID_TO_NCBISTDAA[seq[i]];
+            out << ncbistdaa_to_ncbieaa[seq[i]];
         }
         out << endl;
 
@@ -430,7 +468,7 @@ PsiAlignmentData2String(const PsiAlignmentData* alignment)
             }
 
             ss << setw(3) << j << " {" 
-               << AMINOACID_TO_NCBISTDAA[alignment->desc_matrix[i][j].letter]
+               << ncbistdaa_to_ncbieaa[alignment->desc_matrix[i][j].letter]
                << ",";
             if (alignment->desc_matrix[i][j].used)
                 ss << "used";
@@ -446,19 +484,28 @@ PsiAlignmentData2String(const PsiAlignmentData* alignment)
     ss << endl;
 
     // Print the number of matching sequences per column
-    ss << "Matching sequences (alignment->match_seqs)" << endl;
+    ss << "Matching sequences at each position of the query:" << endl;
+    for (TSeqPos i = 0; i < alignment->dimensions->query_sz; i++) {
+        ss << setw(3) << i << " ";
+    }
     for (TSeqPos i = 0; i < alignment->dimensions->query_sz; i++) { 
-        ss << alignment->match_seqs[i] << " "; 
+        ss << setw(4) << alignment->match_seqs[i] << " "; 
     }
     ss << endl;
     ss << "*****************************************************" << endl;
 
     // Print the number of distinct residues per position
-    ss << "Residue counts in the matrix " << endl;
+    ss << "Residue counts in the matrix" << endl;
+    ss << "   ";
     for (TSeqPos i = 0; i < alignment->dimensions->query_sz; i++) {
-        for (TSeqPos j = 0; j < PSI_ALPHABET_SIZE; j++) {
-            ss << alignment->res_counts[i][j] << " ";
+        ss << setw(3) << i << " ";
+    }
+    for (TSeqPos j = 0; j < PSI_ALPHABET_SIZE; j++) {
+        ss << ncbistdaa_to_ncbieaa[j] << ": ";
+        for (TSeqPos i = 0; i < alignment->dimensions->query_sz; i++) {
+            ss << setw(3) << alignment->res_counts[i][j] << " ";
         }
+        ss << endl;
     }
 
     return ss.str();
@@ -490,6 +537,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/06/09 14:32:23  camacho
+* Added use_best_alignment option
+*
 * Revision 1.3  2004/05/28 17:42:02  camacho
 * Fix compiler warning
 *
