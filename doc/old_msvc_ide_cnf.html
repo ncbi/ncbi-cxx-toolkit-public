@@ -1,0 +1,33 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+<head>
+<title>Deprecated MSVC++ IDE configuration</title>
+</head>
+
+<body>
+<h2>Deprecated MSVC++ IDE configuration</h2>
+
+In order to adjust the MSVC++ project files for your local
+<i><b>C:\cxx</b></i> you must do exactly the following after launching MSVC++ Developer Studio:
+<ul>
+	<li> go to <i>"Tools"/"Options..."</i> form
+	<li> goto folder <i>"Directories"</i>
+	<li> choose option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu
+	<li> add "<i><b>C:\cxx\include</b></i>" to the shown include directory list
+	<li> if you want to use "internal" parts of the NCBI C++
+	     toolkit (such as <b>xhc</b> library) then add
+         "<i><b>C:\cxx\include\internal</b></i>" to the shown include directory list
+</ul>
+
+<hr>
+<table border=0 width="100%" cellspacing=0>
+<tr>
+<td align=left>
+  <address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address>
+</td>
+<!-- <td align=center><i>$Revision$</i></td> -->
+<td align=right><i>$Date$</i></td>
+</tr>
+</table>
+</body>
+</html>

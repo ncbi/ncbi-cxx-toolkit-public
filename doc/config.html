@@ -62,12 +62,16 @@
 	   <ul>
 		  <li> <a href="#ref_MsvcProjDownload">
 		    Getting the Toolkit sources</a>
+		  <li> <a href="#ref_MsvcProjFiles">
+		    Working with project files</a>		    
 		  <li> <a href="#ref_MsvcProjTree">
 		    Building the whole NCBI C++ tree locally</a>
 		  <li> <a href="#ref_MsvcProjCXX">
-		    Using pre-built NCBI C++ toolkit in your projects</a>
+		    Using pre-built NCBI C++ Toolkit in your projects</a>
+		  <li> <a href="#ref_MsvcProjWxwin">
+		    Using wxWindows</a>
 		  <li> <a href="#ref_MsvcProjC">
-		    Using NCBI C toolkit</a>
+		    Using NCBI C Toolkit</a>
 		  <li> <a href="#ref_MsvcProjSettings">
 		    Mandatory project settings (RTTI, MT-safety)</a>
 	   </ul>
@@ -86,7 +90,7 @@ the specified compiler (and other tools) and flags.
 </a>
 
 <p>
-The NCBI C++ toolkit sources and data can be
+The NCBI C++ Toolkit sources and data can be
 <a href="new_proj.html#ref_Checkout">retrieved</a> from the internal NCBI
 CVS tree -- either directly from <i><b>"$CVSROOT/internal/c++/"</b></i>, or using
 auxiliary scripts <b><i>scripts/cvs_core.sh</i></b></a> and
@@ -641,7 +645,7 @@ to the "generic" ones
   <tr>
 	 <td><b>NCBI_C_PATH</b></td>
 	 <td><i>$NCBI</i></td>
-	 <td>Path to the NCBI C toolkit</td>
+	 <td>Path to the NCBI C Toolkit</td>
   </tr>
 
   <tr>
@@ -733,7 +737,7 @@ to use in the generated makefiles:
   <tr>
 	 <td><i><b>NCBI_C_INCLUDE</b></i></td>
 	 <td><i><b>-I</b></i>$NCBI_C_PATH<i>/include</i></td>
-	 <td><i>#include</i> NCBI C toolkit headers</td>
+	 <td><i>#include</i> NCBI C Toolkit headers</td>
   </tr>
 
   <tr>
@@ -741,7 +745,7 @@ to use in the generated makefiles:
 	 <td><i><b>-L</b></i>$NCBI_C_PATH<i>/lib</i>
         <br> or <br>
         <i><b>-L</b></i>$NCBI_C_PATH<i>/altlib</i></td>
-	 <td>path to NCBI C toolkit libs</td>
+	 <td>path to NCBI C Toolkit libs</td>
   </tr>
 
   <tr>
@@ -784,7 +788,7 @@ flags:
 <ul>
   <li> <i><b>--without-sybase</b></i> (Sybase)
   <li> <i><b>--without-fastcgi</b></i> (Fast-CGI)
-  <li> <i><b>--without-ncbi-c</b></i> (NCBI C toolkit)
+  <li> <i><b>--without-ncbi-c</b></i> (NCBI C Toolkit)
   <li> <i><b>--without-sssdb</b></i> (NCBI SSS DB)
   <li> <i><b>--without-sssutils</b></i> (NCBI SSS UTILS)
   <li> <i><b>--without-sss</b></i>
@@ -1020,14 +1024,14 @@ directories.
 
 
 <p>
-Suppose you have deployed the NCBI C++ tree on your local PC, in directory
+Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
 <i><b>C:\cxx</b></i>. You can do it one of the following ways:
 <ul>
 		<li> do <a href="win_cvs.html">CVS checkout</a> of
 		  <i><b>internal/c++</b></i>. This can be done right on your
 		  PC, if you have installed CVS there:
 		  <br> <i>cvs checkout -d cxx internal/c++</i>
-		<li> checkout only the core sources on your UNIX workstation by running
+		<li> checkout only the core sources on your UNIX workstation by running (<a href="cvs_core_msvc.html">notes here</a>)
 		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --without-cvs --with-objects --msvc</i>
 		  <br> and then copy the whole resultant directory
 		  <i><b>cxx</b></i> to your PC directory <i><b>C:\cxx</b></i>
@@ -1037,136 +1041,193 @@ Suppose you have deployed the NCBI C++ tree on your local PC, in directory
 
 
 <p>
+<a name="ref_MsvcProjFiles"><h4>Working with NCBI C++ project files</h4>
+</a>
+Project files for NCBI C++ Toolkit are now generated automatically from the template project files,
+which are kept in the CVS repository. Click <a href="msvc_prj.html">here</a> to know how this is done, or
+if you wish to modify and/or add the NCBI C++ Toolkit project files.
+There is a short summary:
+<ul>
+	<li>All project files in the CVS repository contain a single (DebugMT) configuration. This way, you can directly use
+	<b><tt>cvs.exe</tt></b> on your PC and have project files checked out and in, just <a href="#ref_MsvcProjSettings">make
+	sure</a> you work with single-configuration project files in DebugMT mode.</li>
+	<li>The checked out project files can be checked in back to the CVS only if they contain exactly one configuration
+		(DebugMT).</li>
+	<li>Use script <a href="msvc_prj.html#all2one_sh"><i>all2one.sh</i></a> to convert any multi-configuration
+	project file to a single configuration one.</li>
+	<li>Use script <a href="msvc_prj.html#one2one_sh"><i>one2one.sh</i></a> to change configuration in any
+	single-configuration project file (e.g. from ReleaseDLL to DebugMT).</li>
+	<li>Use script <a href="msvc_prj.html#one2all_sh"><i>one2all.sh</i></a> to convert a single configuration
+	(template) project file to the multi-configuration one (contating all of the following configurations:
+	Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL).</li>
+</ul>
+
+<p>
 <a name="ref_MsvcProjTree"><h4>Building the whole NCBI C++ tree locally</h4>
 </a>
 
 <p>
-Now, you want to use MS Visual C++ IDE to work with these sources.
-In order to adjust the MSVC++ project files for your local
-<i><b>C:\cxx</b></i> you must do exactly the following:
+Now, if you want to use MS Visual C++ IDE to work with these sources, then you have to do exactly the following:
+<p>
+<ul>
+  <li>Go to directory <i><b>compilers</b></i> and run script <i><b>msvc_nt.bat</b></i></li>
+  <li>All MSVC++ project files are already adjusted to contain proper information about include file directories
+  (using relative paths), thus no additional configuration required (<a href="old_msvc_ide_cnf.html">the old way</a> of
+  configuring MSVC++ is deprecated, but still can be used).</li>
+</ul>
+
+<p>
+After the installation is complete you can build the Toolkit projects in two different ways:
+<ul>
+	<li>Build the entire Toolkit from command line in batch mode: chdir to <i><b>compilers/msvc_prj</i></b> and run batch
+	file <a href="msvc_prj.html#all_bat"><i><b>all.bat</b></i></a> there (provided that <b><i>msdev.exe</i></b>
+	in your <tt>PATH</tt>).
+	When run without arguments, it builds all available configurations of all available projects. Or,
+	you can pass any combination of Debug, DebugMT, DebugDLL, Release, ReleaseMT, ReleaseDLL as batch file argument(s)
+	to build all projects in the specified configurations only.</li>
+	<li>Open Microsoft Developer Studio with workspace <i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i> and build the
+		following projects:
+	<ul>
+  		<li> <b>all</b> -- everything
+  		<li> <b>core_all</b> -- all basic libraries and test applications
+  		<li> <b>core_libs</b> -- all basic libraries
+  		<li> <b>core_objects_all</b> -- all serialization libraries (as of now,
+		  	providing for the serialization of NCBI ASN.1 objects), and their test applications
+  		<li> any single library and/or application -- other projects in this workspace</li>
+   	</ul>
+    	You can build <i>any</i> project in any of Debug and/or Release versions. To switch among Debug or
+		Release configurations, use <i>"Build"/"Set active configuration..."</i> menu.
+</ul>
+
+<p>
+
+
+<p>
+<a name="ref_MsvcProjCXX"><h4>Using pre-built NCBI C++ Toolkit in your projects</h4>
+</a>
+
+<p>
+If you don't want to build the whole NCBI C++ tree, but just
+need to <i>use</i> the NCBI C++ Toolkit functionality in your own, separate projects,
+there are pre-built libraries located at:
+<ul>
+	<li> <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i> -- statically-linked against standard Microsoft run-time library,
+	MT-safe versions
+	<li> <i>\\dizzy\public\cxx\<b>DebugMT</b></i> -- statically linked against standard Microsoft run-time library,
+	MT-safe versions with debug information preserved
+</ul>
+along with the header and source files:
+<ul>
+  <li> <i>\\dizzy\public\cxx\<b>include</b></i>
+  <li> <i>\\dizzy\public\cxx\<b>src</b></i>
+</ul>
+<p>
+
+The recommended way to refer to the include file directory is to put <i>\\dizzy\public\cxx\<b>include</b></i>
+in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor",
+</i>list <i>"Additional include directories"</i>.
+<p>
+You have to specify the used library name(s) in <i>"Project"/"Settings..."</i>, tab <i>"Link"</i>,
+category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
+<br>
+You also have to put the correct path to the libraries (either <i>\\dizzy\public\cxx\<b>ReleaseMT</b></i>
+or <i>\\dizzy\public\cxx\<b>DebugMT</b></i>, depending on the configuration you are going to use)
+in the field <i>"Additional library path"</i>.
+<p>
+No further configuration is necessary unless you want to trace and/or debug library sources.
+Moreover, if one of conversion <a href="msvc_prj.html#scripts">scripts</a> is then applied to your project file, then
+the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
+<p>
+If, however, you need to trace through the library source code, then you have to put
+<i>\\dizzy\public\cxx\<b>src</b></i> to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>,
+and list <i>"Source files"</i>.
+<p>
+In either case, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
+to make sure that it is built compatible with the chosen NCBI C++ libraries.
+
+
+<p>
+<a name="ref_MsvcProjWxwin"><h4>Using wxWindows</h4>
+</a>
+
+<p>
+The pre-built versions of this library (along with include files, sources and documentation) are
+put to:
+<ul>
+  <li> <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>include</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>src</b></i>
+  <li> <i>\\dizzy\public\wxwin\<b>docs</b></i>
+</ul>
+Your project has to specify all the library names (<b>tiff jpeg pnm xpm zlib wx</b>) in <i>"Project/Settings..."</i>,
+tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>.
+<br>
+You also have to put the correct path to the libraries (either <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
+or <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>, depending on the configuration you are going to use)
+in the field <i>"Additional library path"</i>.
+<p>
+We recommend that you put the include file directory <i>\\dizzy\public\wxwin\<b>include</b></i>
+in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor",
+</i>list <i>"Additional include directories"</i>.
+<p>
+No further configuration is necessary unless you want to trace and/or debug library sources.
+Moreover, if one of conversion <a href="msvc_prj.html#scripts">scripts</a> is then applied to your project,
+the proper links to required versions of the libraries are automatically maintained according to a chosen configuration.
+<p>
+If, however, you need to trace through the library source code, you have to put <i>\\dizzy\public\wxwin\<b>src</b></i>
+to <i>"Tools"/"Options..."</i>, tab <i>"Directories"</i>, and list <i>"Source files"</i>.
+<p>
+As always, don't forget to provide the right <a href="#ref_MsvcProjSettings">settings</a> for your project
+to make sure that it is built compatible with the chosen libraries.
+
+
+<p>
+<a name="ref_MsvcProjC"><h4>Using NCBI C Toolkit</h4>
+</a>
+
+<p>
+There are projects (such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>) that engage the
+<a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">NCBI C Toolkit</a>.
+To build these, you have to have the NCBI C Toolkit's libraries and
+header files accessible from your PC, and you must specify path to them:
 <ol>
-  <li> Go to directory <i><b>compilers/</b></i> and run script
-		<i><b>msvc_nt.bat</b></i>
-  <li> Launch MSVC++ Developer Studio, then:
-	 <ul>
-		<li> go to <i>"Tools"/"Options"</i> form
-		<li> goto folder <i>"Directories"</i>
-		<li> choose option <i>"Include files"</i> in the <i>"Show directories for:"</i> option menu
-		<li> add "<i><b>C:\cxx\include</b></i>" to the shown include directory list
-		<li> if you want to use "internal" parts of the NCBI C++
-		     toolkit(such as <b>xhc</b> library) then add
-           "<i><b>C:\cxx\include\internal</b></i>" to the shown include directory list
-	 </ul>
+<li>For libraries</li>
+<br><i>"Project"/"Settings..."</i>, tab <i>"Link"</i>, category <i>"Input"</i>, fields <i>"Object/Library modules"</i> and
+<i>"Additional library path"</i>.
+<li>For include files</li>
+<br><i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor"</i>,
+list <i>"Additional include directories"</i>.
 </ol>
-
-Now when the installation is complete you can load workspace
-<i><b>compilers/msvc_prj/ncbi_cpp.dsw</b></i> and build the following projects:
+For example, here are the paths to the automatically built C Toolkit:
 <ul>
-  <li> <b>all</b> -- everything
-  <li> <b>core_all</b> -- all basic libraries and test applications
-  <li> <b>core_lib</b> -- all basic libraries
-  <li> <b>core_objects_all</b> -- all serialization libraries (as of now,
-		  providing for the serialization of NCBI ASN.1 objects),
-		  and their test applications
-  <li> any single library and/or application -- other projects in this
-       workspace
+  <li> <i>\\dizzy\public\<b>include</b></i>
+  <li> <i>\\dizzy\public\<b>altsrc</b></i>
+  <li> <i>\\dizzy\public\<b>lib</b></i>
+  <li> <i>\\dizzy\public\<b>dbglib</b></i>
 </ul>
-
+From now on, we maintain copies of production libraries (<b>lib</b>) in <i>\\dizzy\public\<b>ReleaseMT</b></i>, and
+copies of debug libraries (<b>dbglib</b>) in <i>\\dizzy\public\<b>DebugMT</b></i>, and it's better to use exactly
+these directories the same way, as explained earlier in <a href="#ref_MsvcProjCXX">"How to use pre-built NCBI C++ libraries"</a>.
 <p>
-As for now, you can build <i>any</i> project in <b>Debug</b> mode,
-while <b>Release</b> versions are guranteed to build for <b>core_all</b>
-projects only.
-To switch from <b>Debug</b> to <b>Release</b> configuration, use
-<i>"Build"/"Set active configuration"</i>.
-
-
-<p>
-<a name="ref_MsvcProjCXX"><h4>Using pre-built NCBI C++ toolkit in your projects</h4>
-</a>
-
-<p>
-For those who does not want to build the whole NCBI C++ tree, but just
-need to use the NCBI C++ toolkit functionality in his own, separate project,
-there are pre-built libraries and executables, along with the header and
-source files located at:
-<ul>
-  <li> <i>\\dizzy\users\coremake\public\cxx\<b>include</b></i>
-  <li> <i>\\dizzy\users\coremake\public\cxx\<b>dbglib</b></i>
-  <li> <i>\\dizzy\users\coremake\public\cxx\<b>lib</b></i>
-  <li> <i>\\dizzy\users\coremake\public\cxx\<b>altsrc</b></i>
-  <li> <i>\\dizzy\users\coremake\public\cxx\<b>bin</b></i>
-</ul>
-
-You must specify path to them in <i>"Tools"/"Options"</i> form,
-folder <i>"Directories"</i>.
-
-<p>
-If you just want to use the libs and the headers, and dont need to be
-able to trace through their code during the debugging then
-you only need to add paths <i>\\dizzy\users\coremake\public\cxx\<b>include</b></i>
-and <i>\\dizzy\users\coremake\public\cxx\<b>lib</b></i> to
-<i>"Include files"</i> and <i>"Library files"</i> directory lists, respectively.
-
-<p>
-But if you want to be able to debug in the NCBI C++ libraries,
-then you will have to add <i>\\dizzy\users\coremake\public\cxx\<b>include</b></i>,
-<i>\\dizzy\users\coremake\public\cxx\<b>dbglib</b></i>, and
-<i>\\dizzy\users\coremake\public\cxx\<b>altsrc</b></i> to the
-<i>"Include files"</i>, <i>"Library files"</i>, and <i>"Source files"</i> directory lists,
-respectively.
-
-<p>
-In either case, dont forget to provide the right
-<a href="#ref_MsvcProjSettings">settings</a> for your project
-to make sure that it is built compatible with the chosen NCBI C++
-libraries.
-
-
-
-<p>
-<a name="ref_MsvcProjC"><h4>Using NCBI C toolkit</h4>
-</a>
-
-<p>
-There are projects(such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>)
-that engage the
-<a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">
-NCBI C toolkit</a>.
-To build these, you have to have the "old" NCBI C toolkit's libraries and
-header files accessible from your PC, and you must specify path to them in
-<i>"Tools"/"Options"</i> form, folder <i>"Directories"</i>,
-options <i>"Include files"</i>(e.g. <i><b>C:\ncbi\include.32</b></i>),
-<i>"Library files"</i> and <i>"Source files"</i> (e.g. <i><b>C:\ncbi\build_d.m32</b></i>).
-
-<p>
-For example, here in NCBI the paths to the automatically built C toolkit 
-are as follows:
-<ul>
-  <li> <i>\\dizzy\users\coremake\public\<b>include</b></i>
-  <li> <i>\\dizzy\users\coremake\public\<b>dbglib</b></i>
-  <li> <i>\\dizzy\users\coremake\public\<b>lib</b></i>
-  <li> <i>\\dizzy\users\coremake\public\<b>altsrc</b></i>
-</ul>
-
+Please refer to the following section for mandatory project settings.
 
 <p>
 <a name="ref_MsvcProjSettings"><h4>Mandatory project settings (RTTI, MT-safety)</h4>
 </a>
 
 <p>
-All projects are built in <b><i>MT-safe</i></b> mode
-(i.e. with <b>/MT</b> flag), so you have to make sure that your
-projects are using this flag as well.
-In addition, many C++ projects use <i>Run-Time Type Info</i>.
-<br>
-To meet these requirements, you must do the following in
-<i>"Project"/"Settings..."</i> form, folder <i>"C/C++"</i>:
+When you compose your own, out-of-the-tree projects, which use pre-built C/C++ Toolkit or wxWindows
+libraries (which are built in <b><i>MT-safe</i></b> mode, with <b>/MT</b> flag),
+you have to make sure that your projects are built in MT-safe mode as well.
+<br>In addition, many C++ projects use <i>Run-Time Type Info</i>.
+<br>To meet these requirements, you must do the following in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>:
 <ul>
   <li> Category <i>"C++ Language"</i>: Enable RTTI
   <li> Category <i>"Code generation"</i>:  Use run-time library:
     <ul>
-      <li> <i>"Multithreaded"</i> for the <b>Release</b> configuration
-      <li> <i>"Debug Multithreaded"</i> for the <b>Debug</b> configuration
+      <li> <i>"Multithreaded"</i> for the <b>ReleaseMT</b> configuration
+      <li> <i>"Debug Multithreaded"</i> for the <b>DebugMT</b> configuration
     </ul>
 </ul>
 
@@ -1180,6 +1241,11 @@ To meet these requirements, you must do the following in
 </td>
 <!-- <td align=center><i>$Revision$</i></td> -->
 <td align=right><i>$Date$</i></td>
+</tr>
+<tr>
+<td align=left>
+  <address><a href="mailto:lavr@ncbi.nlm.nih.gov">Anton Lavrentiev</a></address>
+</td>
 </tr>
 </table>
 </body>
