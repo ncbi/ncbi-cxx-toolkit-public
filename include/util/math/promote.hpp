@@ -1,5 +1,5 @@
-#ifndef UTIL_MATH___PROMOTE___HPP
-#define UTIL_MATH___PROMOTE___HPP
+#ifndef UTIL_MATH___PROMOTE__HPP
+#define UTIL_MATH___PROMOTE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -56,8 +56,8 @@ public:
 
 //
 // first, a define to promote identical types to themselves
-#define PROMOTE(type) \
-template<> struct SPromoteTraits<type, type> { \
+#define NCBI_PROMOTE_TRAITS(type) \
+template<> struct SPromoteTraits< type, type > { \
 public: \
     typedef type    TPromote; \
 }
@@ -65,12 +65,12 @@ public: \
 
 //
 // next, this type handles promotion of unlike types
-#define PROMOTE2(type1,type2,type3) \
-template<> struct SPromoteTraits<type1, type2> { \
+#define NCBI_PROMOTE2_TRAITS(type1,type2,type3) \
+template<> struct SPromoteTraits< type1, type2 > { \
 public: \
     typedef type3   TPromote; \
 }; \
-template<> struct SPromoteTraits<type2, type1> { \
+template<> struct SPromoteTraits< type2, type1 > { \
 public: \
     typedef type3   TPromote; \
 }
@@ -81,9 +81,9 @@ public: \
 // promoted type
 //
 #if defined(NCBI_COMPILER_MSVC) && (_MSC_VER <= 1200)
-#  define NCBI_PROMOTE(a,b) SPromoteTraits<a,b>::TPromote
+#  define NCBI_PROMOTE(a,b) SPromoteTraits< a, b >::TPromote
 #else
-# define NCBI_PROMOTE(a,b) typename SPromoteTraits<a,b>::TPromote
+#  define NCBI_PROMOTE(a,b) typename SPromoteTraits< a, b >::TPromote
 #endif
 
 //
@@ -95,110 +95,55 @@ public: \
 
 //
 // promotion of identical types
-PROMOTE(char);
-PROMOTE(unsigned char);
-PROMOTE(short);
-PROMOTE(unsigned short);
-PROMOTE(int);
-PROMOTE(unsigned int);
-PROMOTE(float);
-PROMOTE(double);
+NCBI_PROMOTE_TRAITS(char);
+NCBI_PROMOTE_TRAITS(unsigned char);
+NCBI_PROMOTE_TRAITS(short);
+NCBI_PROMOTE_TRAITS(unsigned short);
+NCBI_PROMOTE_TRAITS(int);
+NCBI_PROMOTE_TRAITS(unsigned int);
+NCBI_PROMOTE_TRAITS(float);
+NCBI_PROMOTE_TRAITS(double);
 
-PROMOTE2(char, unsigned char, unsigned char);
-PROMOTE2(char, short, short);
-PROMOTE2(char, unsigned short, unsigned short);
-PROMOTE2(char, int, int);
-PROMOTE2(char, unsigned int, unsigned int);
-PROMOTE2(char, float, float);
-PROMOTE2(char, double, double);
-PROMOTE2(unsigned char, short, short);
-PROMOTE2(unsigned char, unsigned short, unsigned short);
-PROMOTE2(unsigned char, int, int);
-PROMOTE2(unsigned char, unsigned int, unsigned int);
-PROMOTE2(unsigned char, float, float);
-PROMOTE2(unsigned char, double, double);
-PROMOTE2(short, unsigned short, unsigned short);
-PROMOTE2(short, int, int);
-PROMOTE2(short, unsigned int, unsigned int);
-PROMOTE2(short, float, float);
-PROMOTE2(short, double, double);
-PROMOTE2(unsigned short, int, int);
-PROMOTE2(unsigned short, unsigned int, unsigned int);
-PROMOTE2(unsigned short, float, float);
-PROMOTE2(unsigned short, double, double);
-PROMOTE2(int, unsigned int, unsigned int);
-PROMOTE2(int, float, float);
-PROMOTE2(int, double, double);
-PROMOTE2(unsigned int, float, float);
-PROMOTE2(unsigned int, double, double);
-PROMOTE2(float, double, double);
+NCBI_PROMOTE2_TRAITS(char, unsigned char, unsigned char);
+NCBI_PROMOTE2_TRAITS(char, short, short);
+NCBI_PROMOTE2_TRAITS(char, unsigned short, unsigned short);
+NCBI_PROMOTE2_TRAITS(char, int, int);
+NCBI_PROMOTE2_TRAITS(char, unsigned int, unsigned int);
+NCBI_PROMOTE2_TRAITS(char, float, float);
+NCBI_PROMOTE2_TRAITS(char, double, double);
+NCBI_PROMOTE2_TRAITS(unsigned char, short, short);
+NCBI_PROMOTE2_TRAITS(unsigned char, unsigned short, unsigned short);
+NCBI_PROMOTE2_TRAITS(unsigned char, int, int);
+NCBI_PROMOTE2_TRAITS(unsigned char, unsigned int, unsigned int);
+NCBI_PROMOTE2_TRAITS(unsigned char, float, float);
+NCBI_PROMOTE2_TRAITS(unsigned char, double, double);
+NCBI_PROMOTE2_TRAITS(short, unsigned short, unsigned short);
+NCBI_PROMOTE2_TRAITS(short, int, int);
+NCBI_PROMOTE2_TRAITS(short, unsigned int, unsigned int);
+NCBI_PROMOTE2_TRAITS(short, float, float);
+NCBI_PROMOTE2_TRAITS(short, double, double);
+NCBI_PROMOTE2_TRAITS(unsigned short, int, int);
+NCBI_PROMOTE2_TRAITS(unsigned short, unsigned int, unsigned int);
+NCBI_PROMOTE2_TRAITS(unsigned short, float, float);
+NCBI_PROMOTE2_TRAITS(unsigned short, double, double);
+NCBI_PROMOTE2_TRAITS(int, unsigned int, unsigned int);
+NCBI_PROMOTE2_TRAITS(int, float, float);
+NCBI_PROMOTE2_TRAITS(int, double, double);
+NCBI_PROMOTE2_TRAITS(unsigned int, float, float);
+NCBI_PROMOTE2_TRAITS(unsigned int, double, double);
+NCBI_PROMOTE2_TRAITS(float, double, double);
 
-
-/**
-//
-// prmotion rules for non-builtin types
-// we add these as we need them
-//
-
-//
-// promote: int + CVect/CMatrix<int> --> ???
-PROMOTE2(int, CVect2<int>, CVect2<int>);
-PROMOTE2(int, CVect3<int>, CVect3<int>);
-PROMOTE2(int, CVect4<int>, CVect4<int>);
-PROMOTE2(int, CMatrix3<int>, CMatrix3<int>);
-PROMOTE2(int, CMatrix4<int>, CMatrix4<int>);
-
-//
-// promote: int + CVect/CMatrix<float> --> ???
-PROMOTE2(int, CVect2<float>, CVect2<float>);
-PROMOTE2(int, CVect3<float>, CVect3<float>);
-PROMOTE2(int, CVect4<float>, CVect4<float>);
-PROMOTE2(int, CMatrix3<float>, CMatrix3<float>);
-PROMOTE2(int, CMatrix4<float>, CMatrix4<float>);
-
-//
-// promote: float + CVect/CMatrix<int> --> ???
-PROMOTE2(float, CVect2<int>, CVect2<float>);
-PROMOTE2(float, CVect3<int>, CVect3<float>);
-PROMOTE2(float, CVect4<int>, CVect4<float>);
-PROMOTE2(float, CMatrix3<int>, CMatrix3<float>);
-PROMOTE2(float, CMatrix4<int>, CMatrix4<float>);
-
-//
-// promote: float + CVect/CMatrix<float> --> ???
-PROMOTE2(float, CVect2<float>, CVect2<float>);
-PROMOTE2(float, CVect3<float>, CVect3<float>);
-PROMOTE2(float, CVect4<float>, CVect4<float>);
-PROMOTE2(float, CMatrix3<float>, CMatrix3<float>);
-PROMOTE2(float, CMatrix4<float>, CMatrix4<float>);
-
-//
-// promote: double + CVect/CMatrix<double> --> ???
-PROMOTE2(double, CVect2<double>, CVect2<double>);
-PROMOTE2(double, CVect3<double>, CVect3<double>);
-PROMOTE2(double, CVect4<double>, CVect4<double>);
-PROMOTE2(double, CMatrix3<double>, CMatrix3<double>);
-PROMOTE2(double, CMatrix4<double>, CMatrix4<double>);
-
-//
-// promote: CVect/CMatrix<float> + CVect/CMatrix<float> --> ???
-//PROMOTE2(CVect3<float>, CVect4<float>, CVect4<float>);
-PROMOTE2(CVect3<float>, CMatrix3<float>, CMatrix3<float>);
-PROMOTE2(CVect3<float>, CMatrix4<float>, CMatrix4<float>);
-PROMOTE2(CVect4<float>, CMatrix4<float>, CMatrix4<float>);
-PROMOTE2(float, CVect4< CVect3<float> >, CVect4< CVect3<float> >);
-PROMOTE2(float, CMatrix4< CVect3<float> >, CMatrix4< CVect3<float> >);
-
-**/
-
-#undef PROMOTE
-#undef PROMOTE2
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/03/10 14:14:26  dicuccio
+ * Changed include guard to be consistent.  Moved commented portion to
+ * gui-specific directory.  Cleaned up error in template macros - add space around
+ * types to avoid '>>' on brain-dead compilers
+ *
  * Revision 1.4  2004/02/26 18:35:17  gorelenk
  * Added (_MSC_VER <= 1200) for definition of NCBI_PROMOTE - typename presents
  * causes a compilation error on MSVC 6.0.
