@@ -33,6 +33,7 @@ OBJ = \
 	show_hide_manager \
 	structure_base \
 	structure_set \
+	style_dialog \
 	style_manager \
 	update_viewer \
 	update_viewer_window \
