@@ -9,12 +9,13 @@ CONN_DEBUG_PRINTOUT=ALL; export CONN_DEBUG_PRINTOUT
 
 socket_io_bouncer $port >>socket_io_bouncer.log 2>&1 &
 server_pid=$!
-trap 'kill $server_pid' 1 2 15
+trap 'kill -9 $server_pid' 1 2 15
 
 sleep 1
 ./test_ncbi_socket_connector localhost $port >>test_ncbi_socket_connector.log 2>&1  ||  exit_code=1
 
 kill $server_pid  ||  exit_code=2
+( kill -9 $server_pid ) >/dev/null 2>&1
 if [ $exit_code != 0 ]; then
   if [ -s socket_io_bouncer.log ]; then
     echo '=== socket_io_bouncer.log ==='
