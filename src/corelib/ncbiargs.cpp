@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.20  2000/11/09 21:02:58  vakatov
+ * USAGE to show default value for optional arguments
+ *
  * Revision 1.19  2000/11/08 17:48:37  butanaev
  * There was no minus in optional key synopsis, fixed.
  *
@@ -559,7 +562,7 @@ string CArgDesc_Flag::GetUsageCommentBody(void) const
 
 string CArgDesc_Flag::GetUsageConstraint(void) const
 {
-    return NcbiEmptyString;
+    return kEmptyStr;
 }
 
 
@@ -573,7 +576,7 @@ CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/,
 void CArgDesc_Flag::SetConstraint(CArgAllow* constraint)
 {
     ARG_THROW("Attempt to add constraint to a flag argument",
-              constraint ? constraint->GetUsage() : NcbiEmptyString);
+              constraint ? constraint->GetUsage() : kEmptyStr);
 }
 
 
@@ -589,7 +592,7 @@ public:
     CArgDesc_Plain(const string&            comment,
                    CArgDescriptions::EType  type,
                    CArgDescriptions::TFlags flags,
-                   const string&            default_value = NcbiEmptyString);
+                   const string&            default_value = kEmptyStr);
     virtual ~CArgDesc_Plain(void);
 
     virtual string GetUsageSynopsis   (const string& name,
@@ -666,7 +669,8 @@ string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const
     if ( optional ) {
         return CArgDescriptions::GetTypeName(GetType());
     } else {
-        return CArgDescriptions::GetTypeName(GetType()) + ", optional";
+        return CArgDescriptions::GetTypeName(GetType())
+            + ",  default=`" + GetDefault() + "'";
     }
 }
 
@@ -674,7 +678,7 @@ string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const
 string CArgDesc_Plain::GetUsageConstraint(void) const
 {
     if ( !m_Constraint )
-        return NcbiEmptyString;
+        return kEmptyStr;
 
     return m_Constraint->GetUsage();
 }
@@ -815,7 +819,7 @@ public:
     virtual string GetUsageCommentAttr(bool optional=false) const;
 private:
     // prohibit GetDefault!
-    const string& GetDefault(void) const { _TROUBLE;  return NcbiEmptyString; }
+    const string& GetDefault(void) const { _TROUBLE;  return kEmptyStr; }
 };
 
 
@@ -824,7 +828,7 @@ inline CArgDesc_Key::CArgDesc_Key
  const string&            comment,
  CArgDescriptions::EType  type,
  CArgDescriptions::TFlags flags)
-    : CArgDesc_OptionalKey(synopsis, comment, type, flags, NcbiEmptyString)
+    : CArgDesc_OptionalKey(synopsis, comment, type, flags, kEmptyStr)
 {
     return;
 }
@@ -954,7 +958,7 @@ CArgDescriptions::CArgDescriptions(void)
       m_Constraint(eEqual),
       m_ConstrArgs(0)
 {
-    SetUsageContext("PROGRAM", NcbiEmptyString);
+    SetUsageContext("PROGRAM", kEmptyStr);
 }
 
 
@@ -1050,7 +1054,7 @@ void CArgDescriptions::AddExtra
     auto_ptr<CArgDesc_Plain> arg
         (new CArgDesc_Plain(comment, type, flags));
 
-    x_AddDesc(NcbiEmptyString, *arg);
+    x_AddDesc(kEmptyStr, *arg);
     arg.release();
 }
 
@@ -1120,7 +1124,7 @@ struct CArgContext {
 
 void CArgDescriptions::x_PreCheck(void) const
 {
-    bool     has_extra     = (m_Args.find(NcbiEmptyString) != m_Args.end());
+    bool     has_extra     = (m_Args.find(kEmptyStr) != m_Args.end());
     unsigned n_policy_args = m_ConstrArgs ?
         m_ConstrArgs : (unsigned) m_PlainArgs.size();
     const char* err_msg = 0;
@@ -1191,7 +1195,7 @@ bool CArgDescriptions::x_CreateArg
         (*n_plain)++;
     } else {
         // pos.arg -- extra
-        tag = NcbiEmptyString;
+        tag = kEmptyStr;
         (*n_plain)++;
     }
 
@@ -1464,7 +1468,7 @@ string& CArgDescriptions::PrintUsage(string& str) const
 
     // Extra
     {{
-        TArgsCI it = m_Args.find(NcbiEmptyString);
+        TArgsCI it = m_Args.find(kEmptyStr);
         if (it != m_Args.end()) {
             args.push_back(CArgUsage
                            (it->first, *it->second,
@@ -1524,7 +1528,7 @@ CArgs* CArgDescriptions::CreateArgs(int argc, const char* argv[])
     for (int i = 1;  i < argc;  i++) {
         bool have_arg2 = (i + 1 < argc);
         if ( x_CreateArg(argv[i], have_arg2,
-                         have_arg2 ? (string)argv[i+1] : NcbiEmptyString,
+                         have_arg2 ? (string)argv[i+1] : kEmptyStr,
                          &n_plain, *args) )
             i++;
     }
@@ -1544,7 +1548,7 @@ CArgs* CArgDescriptions::CreateArgs(SIZE_TYPE argc, const CNcbiArguments& argv)
     for (SIZE_TYPE i = 1;  i < argc;  i++) {
         bool have_arg2 = (i + 1 < argc);
         if ( x_CreateArg(argv[i], have_arg2,
-                         have_arg2 ? (string)argv[i+1] : NcbiEmptyString,
+                         have_arg2 ? (string)argv[i+1] : kEmptyStr,
                          &n_plain, *args) )
             i++;
     }
