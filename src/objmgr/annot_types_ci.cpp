@@ -54,9 +54,32 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+CAnnotObject_Ref::TRange CAnnotObject_Ref::x_UpdateTotalRange(void) const
+{
+    TRange range = m_TotalRange;
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) &&
+         range.GetToOpen() == TSeqPos(kDirtyCache) ) {
+        range = m_TotalRange = GetFeatLoc().GetTotalRange();
+    }
+    return range;
+}
+
+
 bool CFeat_Less::operator ()(const CAnnotObject_Ref& x,
                              const CAnnotObject_Ref& y) const
 {
+    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
+    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
+    // smallest left extreme first
+    if ( x_range.GetFrom() != y_range.GetFrom() ) {
+        return x_range.GetFrom() < y_range.GetFrom();
+    }
+
+    // longest feature first
+    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
+        return x_range.GetToOpen() > y_range.GetToOpen();
+    }
+
     const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
     const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
     _ASSERT(x_info && y_info);
@@ -69,7 +92,7 @@ bool CFeat_Less::operator ()(const CAnnotObject_Ref& x,
         x_loc = &x_feat->GetLocation();
     if ( !y_loc )
         y_loc = &y_feat->GetLocation();
-    int diff = x_feat->Compare(*y_feat, *x_loc, *y_loc);
+    int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
     return diff? diff < 0: x_info < y_info;
 }
 
@@ -77,33 +100,20 @@ bool CFeat_Less::operator ()(const CAnnotObject_Ref& x,
 bool CAnnotObject_Less::operator()(const CAnnotObject_Ref& x,
                                    const CAnnotObject_Ref& y) const
 {
-    const CAnnotObject_Info& x_info = x.Get();
-    const CAnnotObject_Info& y_info = y.Get();
-    if ( x_info.IsFeat()  &&  y_info.IsFeat() ) {
+    const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
+    const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
+    _ASSERT(x_info && y_info);
+    if ( x_info->IsFeat()  &&  y_info->IsFeat() ) {
         // CSeq_feat::operator<() may report x == y while the features
         // are different. In this case compare pointers too.
-        int diff = x_info.GetFeat().Compare(y_info.GetFeat(),
-                                            x.GetFeatLoc(), y.GetFeatLoc());
-        if ( diff != 0 )
+        int diff = x_info->GetFeatFast()->Compare(*y_info->GetFeatFast(),
+                                                  x.GetFeatLoc(),
+                                                  y.GetFeatLoc());
+        if ( diff )
             return diff < 0;
     }
     // Compare pointers
-    return &x_info < &y_info;
-}
-
-
-CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
-    : m_Object(&object),
-      m_MappedLoc(0),
-      m_MappedProd(0),
-      m_Partial(false)
-{
-}
-
-
-CAnnotObject_Ref::~CAnnotObject_Ref(void)
-{
-    return;
+    return x_info < y_info;
 }
 
 
@@ -712,6 +722,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2003/02/26 17:54:14  vasilche
+* Added cached total range of mapped location.
+*
 * Revision 1.44  2003/02/25 20:10:40  grichenk
 * Reverted to single total-range index for annotations
 *

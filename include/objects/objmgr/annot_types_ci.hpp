@@ -59,32 +59,42 @@ class CAnnotObject_Less;
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Ref
 {
 public:
+    typedef CRange<TSeqPos> TRange;
+
     CAnnotObject_Ref(void);
     CAnnotObject_Ref(const CAnnotObject_Info& object);
     ~CAnnotObject_Ref(void);
 
     const CAnnotObject_Info& Get(void) const;
+    const CSeq_feat& GetFeatFast(void) const;
+
+    TRange GetTotalRange(void) const;
 
     bool IsPartial(void) const;
     void SetPartial(bool value);
 
     bool IsMappedLoc(void) const;
     const CSeq_loc& GetMappedLoc(void) const;
-    CSeq_loc& SetMappedLoc(void);
     void SetMappedLoc(CSeq_loc& loc);
     const CSeq_loc& GetFeatLoc(void) const;
 
     bool IsMappedProd(void) const;
     const CSeq_loc& GetMappedProd(void) const;
-    CSeq_loc& SetMappedProd(void);
     void SetMappedProd(CSeq_loc& loc);
 
 private:
     friend class CFeat_Less;
     friend class CAnnotObject_Less;
 
+    TRange x_UpdateTotalRange(void) const;
+
+    enum {
+        kDirtyCache = -2
+    };
+
     CConstRef<CAnnotObject_Info> m_Object;
     CRef<CSeq_loc>          m_MappedLoc;  // master sequence coordinates
+    mutable TRange          m_TotalRange; // cached total range of mapped loc
     CRef<CSeq_loc>          m_MappedProd; // master sequence coordinates
     bool                    m_Partial;    // Partial flag (same as in features)
 };
@@ -197,6 +207,39 @@ private:
 
 
 inline
+CAnnotObject_Ref::CAnnotObject_Ref(void)
+    : m_TotalRange(TSeqPos(kDirtyCache), TSeqPos(kDirtyCache-1)),
+      m_Partial(false)
+{
+}
+
+
+inline
+CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
+    : m_Object(&object),
+      m_TotalRange(TSeqPos(kDirtyCache), TSeqPos(kDirtyCache-1)),
+      m_Partial(false)
+{
+}
+
+
+inline
+CAnnotObject_Ref::~CAnnotObject_Ref(void)
+{
+}
+
+
+inline
+CAnnotObject_Ref::TRange CAnnotObject_Ref::GetTotalRange(void) const
+{
+    TRange range = m_TotalRange;
+    if ( range.GetFrom() == TSeqPos(kDirtyCache) )
+        range = x_UpdateTotalRange();
+    return range;
+}
+
+
+inline
 const CAnnotObject_Info& CAnnotObject_Ref::Get(void) const
 {
     return *m_Object;
@@ -223,16 +266,6 @@ bool CAnnotObject_Ref::IsMappedLoc(void) const
 inline
 const CSeq_loc& CAnnotObject_Ref::GetMappedLoc(void) const
 {
-    _ASSERT(m_MappedLoc);
-    return *m_MappedLoc;
-}
-
-inline
-CSeq_loc& CAnnotObject_Ref::SetMappedLoc(void)
-{
-    if (!m_MappedLoc) {
-        m_MappedLoc.Reset(new CSeq_loc);
-    }
     return *m_MappedLoc;
 }
 
@@ -243,10 +276,20 @@ void CAnnotObject_Ref::SetMappedLoc(CSeq_loc& loc)
 }
 
 inline
+const CSeq_feat& CAnnotObject_Ref::GetFeatFast(void) const
+{
+    const CAnnotObject_Info* info = m_Object.GetPointerOrNull();
+    _ASSERT(info && info->IsFeat());
+    const CSeq_feat* feat = info->GetFeatFast();
+    _ASSERT(feat);
+    return *feat;
+}
+
+inline
 const CSeq_loc& CAnnotObject_Ref::GetFeatLoc(void) const
 {
-    _ASSERT(Get().IsFeat());
-    return m_MappedLoc? *m_MappedLoc: Get().GetFeat().GetLocation();
+    const CSeq_loc* loc = m_MappedLoc.GetPointerOrNull();
+    return loc? *loc: GetFeatFast().GetLocation();
 }
 
 inline
@@ -258,16 +301,6 @@ bool CAnnotObject_Ref::IsMappedProd(void) const
 inline
 const CSeq_loc& CAnnotObject_Ref::GetMappedProd(void) const
 {
-    _ASSERT(m_MappedProd);
-    return *m_MappedProd;
-}
-
-inline
-CSeq_loc& CAnnotObject_Ref::SetMappedProd(void)
-{
-    if (!m_MappedProd) {
-        m_MappedProd.Reset(new CSeq_loc);
-    }
     return *m_MappedProd;
 }
 
@@ -312,6 +345,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2003/02/26 17:54:14  vasilche
+* Added cached total range of mapped location.
+*
 * Revision 1.29  2003/02/24 21:35:21  vasilche
 * Reduce checks in CAnnotObject_Ref comparison.
 * Fixed compilation errors on MS Windows.
