@@ -51,6 +51,7 @@ int main(int argc, const char* argv[])
     CONN conn;
     size_t n;
 
+    CORE_SetLOGFormatFlags(fLOG_Full | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
     info = ConnNetInfo_Create(service);
@@ -136,6 +137,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/05/05 20:31:23  lavr
+ * Add date/time stamp to each log message printed
+ *
  * Revision 6.23  2003/04/04 21:01:06  lavr
  * Modify readout procedure
  *
