@@ -41,6 +41,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
+/** @addtogroup ObjectManagerHandles
+ *
+ * @{
+ */
+
 class CSeq_annot;
 
 class CScope;
@@ -55,36 +61,70 @@ class CSeq_entry_EditHandle;
 
 class CSeq_annot_Info;
 
+
 /////////////////////////////////////////////////////////////////////////////
-// CSeq_annot_Handle
-/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_annot_Handle --
+///
+///  Proxy to access seq-annot objects
+///
 
 class NCBI_XOBJMGR_EXPORT CSeq_annot_Handle
 {
 public:
     CSeq_annot_Handle(void);
 
-    //
+    /// Check if handle points to a seq-annot
+    ///
+    /// @sa
+    ///    operator !()
     operator bool(void) const;
+
+    // Check if handle does not point to a seq-annot
+    ///
+    /// @sa
+    ///    operator bool()
     bool operator!(void) const;
+
     CSeq_annot_Handle& operator=(const CSeq_annot_Handle& sah);
+
+    // Reset handle and make it not to point to any seq-annot
     void Reset(void);
 
+    /// Check if handles point to the same seq-annot
+    ///
+    /// @sa
+    ///     operator!=()
     bool operator==(const CSeq_annot_Handle& annot) const;
+
+    // Check if handles point to different seq-annot
+    ///
+    /// @sa
+    ///     operator==()
     bool operator!=(const CSeq_annot_Handle& annot) const;
+
+    /// For usage in containers
     bool operator<(const CSeq_annot_Handle& annot) const;
 
-    //
+    /// Get scope this handle belongs to
     CScope& GetScope(void) const;
 
+    /// Get const reference to the current seq-annot
     const CSeq_annot& GetSeq_annot(void) const;
+
+    /// Complete and return const reference to the current seq-annot
     CConstRef<CSeq_annot> GetCompleteSeq_annot(void) const;
 
-    //
+     /// Get parent Seq-entry handle
+    ///
+    /// @sa 
+    ///     GetSeq_entry_Handle()
     CSeq_entry_Handle GetParentEntry(void) const;
+
+    /// Get top level Seq-entry handle
     CSeq_entry_Handle GetTopLevelEntry(void) const;
 
-    // Get 'edit' version of handle
+    /// Get 'edit' version of handle
     CSeq_annot_EditHandle GetEditHandle(void) const;
 
     // Seq-annot accessors
@@ -111,14 +151,22 @@ public: // non-public section
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_annot_EditHandle --
+///
+///  Proxy to access and edit seq-annot objects
+///
+
 class NCBI_XOBJMGR_EXPORT CSeq_annot_EditHandle : public CSeq_annot_Handle
 {
 public:
     CSeq_annot_EditHandle(void);
 
+    /// Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
-    // remove current annot
+    /// Eemove current annot
     void Remove(void) const;
 
 protected:
@@ -228,6 +276,8 @@ CSeq_annot_EditHandle::CSeq_annot_EditHandle(CScope& scope,
 {
 }
 
+/* @} */
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -235,6 +285,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/09/29 16:52:34  kononenk
+* Added doxygen formatting
+*
 * Revision 1.10  2004/08/05 18:28:17  vasilche
 * Fixed order of CRef<> release in destruction and assignment of handles.
 *
