@@ -37,7 +37,8 @@
 #include <ncbiconf.h>
 
 
-#if defined(NCBI_OS_MAC)
+#if defined(NCBI_OS_MAC) || \
+   (defined(NCBI_OS_DARWIN) && defined(NCBI_COMPILER_METROWERKS))
 #  include <stdio.h>
 #  include <stdlib.h>
 
@@ -128,6 +129,9 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.15  2003/03/12 21:25:17  lavr
+ * More elaborate conditional branch for Mac's Codewarrior
+ *
  * Revision 1.14  2003/03/12 20:54:43  lavr
  * Add NCBI_OS_MAC branch and sync include/test and connect/test locations
  *
