@@ -1246,27 +1246,6 @@ public:
 };
 
 
-// <map> tag.
-class NCBI_XHTML_EXPORT CHTML_map : public CHTMLElement
-{
-    typedef CHTMLElement CParent;
-public:
-    CHTML_map(const string& name);
-    ~CHTML_map(void);
-
-    CHTML_map* AddRect   (const string& href, int x1, int y1, int x2, int y2,
-                          const string& alt = kEmptyStr);
-    CHTML_map* AddCircle (const string& href, int x, int y, int radius,
-                          const string& alt = kEmptyStr);
-    CHTML_map* AddPolygon(const string& href, int coords[], int count,
-                          const string& alt = kEmptyStr);
-    CHTML_map* AddPolygon(const string& href, vector<int> coords,
-                          const string& alt = kEmptyStr);
-    CHTML_map* AddPolygon(const string& href, list<int> coords,
-                          const string& alt = kEmptyStr);
-};
-
-
 // <area> tag.
 class NCBI_XHTML_EXPORT CHTML_area : public CHTMLInlineElement
 {
@@ -1306,6 +1285,31 @@ public:
     CHTML_area* DefinePolygon(int coords[], int count);
     CHTML_area* DefinePolygon(vector<int> coords);
     CHTML_area* DefinePolygon(list<int> coords);
+};
+
+
+// <map> tag.
+class NCBI_XHTML_EXPORT CHTML_map : public CHTMLElement
+{
+    typedef CHTMLElement CParent;
+public:
+    CHTML_map(const string& name);
+    ~CHTML_map(void);
+
+    CHTML_map* AddRect   (const string& href, int x1, int y1, int x2, int y2,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddCircle (const string& href, int x, int y, int radius,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddPolygon(const string& href, int coords[], int count,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddPolygon(const string& href, vector<int> coords,
+                          const string& alt = kEmptyStr);
+    CHTML_map* AddPolygon(const string& href, list<int> coords,
+                          const string& alt = kEmptyStr);
+
+    // Add area
+    CHTML_map* AddArea(CHTML_area* area);
+    CHTML_map* AddArea(CNodeRef& area);
 };
 
 
@@ -1595,6 +1599,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.82  2004/12/27 14:27:32  ivanov
+ * CHTML_map:: added AddArea() method
+ *
  * Revision 1.81  2004/12/13 13:49:40  ivanov
  * Added CHTML_map and CHTML_area classes
  *

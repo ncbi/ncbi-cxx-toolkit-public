@@ -439,6 +439,27 @@ CHTML_map* CHTML_map::AddPolygon(const string& href, list<int> coords,
     return this;
 }
 
+inline
+CHTML_map* CHTML_map::AddArea(CHTML_area* area)
+{
+    AppendChild(area);
+    return this;
+}
+
+inline
+CHTML_map* CHTML_map::AddArea(CNodeRef& area)
+{
+    AppendChild(area);
+    return this;
+}
+
+
+inline
+CHTML_area::CHTML_area(void)
+    : CParent(sm_TagName)
+{
+    return;
+}
 
 inline
 CHTML_area::CHTML_area(const string& href, int x1, int y1, int x2, int y2,
@@ -731,6 +752,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/12/27 14:27:32  ivanov
+ * CHTML_map:: added AddArea() method
+ *
  * Revision 1.37  2004/12/13 13:49:40  ivanov
  * Added CHTML_map and CHTML_area classes
  *
