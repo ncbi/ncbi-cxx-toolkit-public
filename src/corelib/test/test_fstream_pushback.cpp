@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/02/04 20:24:04  lavr
+ * Remove data file if successful
+ *
  * Revision 1.1  2002/01/29 16:02:19  lavr
  * Initial revision
  *
@@ -37,20 +40,25 @@
  */
 
 #include <corelib/ncbidiag.hpp>
+#include <stdio.h>                 // remove()
 #include "pbacktest.hpp"
 
 
 int main(int argc, char* argv[])
 {
     USING_NCBI_SCOPE;
+    static const char filename[] = "test_fstream_pushback.data";
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 
-    fstream fs("test_fstream_pushback.data", ios::in | ios::out | ios::trunc);
+    fstream fs(filename, ios::in | ios::out | ios::trunc);
 
-    return TEST_StreamPushback(fs,
-                               argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
-                               true/*rewind*/);
+    int ret = TEST_StreamPushback(fs,
+                                  argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
+                                  true/*rewind*/);
+    if (ret == 0)
+        remove(filename);
+    return ret;
 }
