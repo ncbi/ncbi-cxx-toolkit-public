@@ -482,7 +482,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                    program_number == blast_type_rpsblast ||
                    program_number == blast_type_blastn) {
 
-                  BLAST_KarlinBlk** kbp;
+                  Blast_KarlinBlk** kbp;
                   if (scoring_options->gapped_calculation)
                      kbp = sbp->kbp_gap;
                   else

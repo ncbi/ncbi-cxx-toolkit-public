@@ -499,7 +499,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 	LinkHSPStruct* hp_start = NULL;
    BlastHSP* hsp;
    BlastHSP** hsp_array;
-	BLAST_KarlinBlk** kbp;
+	Blast_KarlinBlk** kbp;
 	Int4 maxscore, cutoff[2];
 	Boolean linked_set, ignore_small_gaps;
 	double gap_decay_rate, gap_prob, prob[2];

@@ -85,12 +85,12 @@ of K, so high accuracy is generally unwarranted.
 	karlin.h.
 **************************************************************************/
 
-typedef struct BLAST_KarlinBlk {
+typedef struct Blast_KarlinBlk {
 		double	Lambda; /* Lambda value used in statistics */
 		double	K, logK; /* K value used in statistics */
 		double	H; /* H value used in statistics */
 		double	paramC;	/* for use in seed. */
-	} BLAST_KarlinBlk;
+	} Blast_KarlinBlk;
 
 
 
@@ -154,15 +154,15 @@ protein alphabet (e.g., ncbistdaa etc.), FALSE for nt. alphabets. */
 	BLAST_ScoreFreq** sfp;	/* score frequencies. */
 	double **posFreqs; /*matrix of position specific frequencies*/
 	/* kbp & kbp_gap are ptrs that should be set to kbp_std, kbp_psi, etc. */
-	BLAST_KarlinBlk** kbp; 	/* Karlin-Altschul parameters. */
-	BLAST_KarlinBlk** kbp_gap; /* K-A parameters for gapped alignments. */
+	Blast_KarlinBlk** kbp; 	/* Karlin-Altschul parameters. */
+	Blast_KarlinBlk** kbp_gap; /* K-A parameters for gapped alignments. */
 	/* Below are the Karlin-Altschul parameters for non-position based ('std')
 	and position based ('psi') searches. */
-	BLAST_KarlinBlk **kbp_std,	
+	Blast_KarlinBlk **kbp_std,	
                     **kbp_psi,	
                     **kbp_gap_std,
                     **kbp_gap_psi;
-	BLAST_KarlinBlk* 	kbp_ideal;	/* Ideal values (for query with average database composition). */
+	Blast_KarlinBlk* 	kbp_ideal;	/* Ideal values (for query with average database composition). */
 	Int4 number_of_contexts;	/* Used by sfp and kbp, how large are these*/
 	char* 	name;		/* name of matrix. */
 	Uint1* 	ambiguous_res;	/* Array of ambiguous res. (e.g, 'X', 'N')*/
@@ -223,12 +223,19 @@ Int2 BLAST_ScoreBlkMatFill (BlastScoreBlk* sbp, char* matrix);
 	Functions taken from the OLD karlin.c
 */
 
-BLAST_KarlinBlk* BLAST_KarlinBlkCreate (void);
+Blast_KarlinBlk* Blast_KarlinBlkCreate (void);
 
-Int2 BLAST_KarlinBlkGappedCalc (BLAST_KarlinBlk* kbp, Int4 gap_open, 
+/** Deallocates the KarlinBlk
+ * @param kbp KarlinBlk to be deallocated [in]
+*/
+Blast_KarlinBlk* Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp);
+
+
+Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open, 
         Int4 gap_extend, Int4 decline_align, char* matrix_name, 
         Blast_Message** error_return);
-Int2 BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
+
+Int2 Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
                                  Int4 context_end);
 
 /*
@@ -239,7 +246,7 @@ Int2 BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start,
                         1 if matrix not found
                         2 if matrix found, but open, extend etc. values not supported.
 */
-Int2 BLAST_KarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name);
+Int2 Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name);
 
 /* Prints a messages about the allowed matrices, BlastKarlinkGapBlkFill should return 1 before this is called. */
 char* BLAST_PrintMatrixMessage(const char *matrix);
@@ -248,7 +255,7 @@ char* BLAST_PrintMatrixMessage(const char *matrix);
 BlastKarlinkGapBlkFill should return 2 before this is called. */
 char* BLAST_PrintAllowedValues(const char *matrix, Int4 gap_open, Int4 gap_extend, Int4 decline_align);
 
-double BLAST_KarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
+double BLAST_KarlinStoE_simple (Int4 S, Blast_KarlinBlk* kbp, double  searchsp);
 
 /** Calculate the cutoff score from the expected number of HSPs or vice versa.
  * @param S The calculated score [in] [out]
@@ -258,15 +265,15 @@ double BLAST_KarlinStoE_simple (Int4 S, BLAST_KarlinBlk* kbp, double  searchsp);
  * @param dodecay Use gap decay feature? [in]
  * @param gap_decay_rate Gap decay rate to use, if dodecay is set [in]
  */
-Int2 BLAST_Cutoffs (Int4 *S, double* E, BLAST_KarlinBlk* kbp, 
+Int2 BLAST_Cutoffs (Int4 *S, double* E, Blast_KarlinBlk* kbp, 
                     double searchsp, Boolean dodecay, double gap_decay_rate);
 
 /* Functions to calculate SumE (for large and small gaps). */
-double BLAST_SmallGapSumE (BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_SmallGapSumE (Blast_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
-double BLAST_UnevenGapSumE (BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_UnevenGapSumE (Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
-double BLAST_LargeGapSumE (BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
+double BLAST_LargeGapSumE (Blast_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num,  double xsum, Int4 query_length, Int4 subject_length);
 
 /*
 Obtains arrays of the allowed opening and extension penalties for gapped BLAST for

@@ -91,7 +91,7 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
 {
    BlastHSP* hsp;
    BlastHSP** hsp_array;
-   BLAST_KarlinBlk** kbp;
+   Blast_KarlinBlk** kbp;
    Int4 hsp_cnt;
    Int4 index;
    
@@ -543,7 +543,7 @@ Boolean ReevaluateHSPWithAmbiguities(BlastHSP* hsp,
    double searchsp_eff;
    Int4 last_esp_num = 0;
    Int4 align_length;
-   BLAST_KarlinBlk* kbp;
+   Blast_KarlinBlk* kbp;
    Boolean gapped_calculation = score_options->gapped_calculation;
 
    /* NB: this function is called only for BLASTn, so we know where the 

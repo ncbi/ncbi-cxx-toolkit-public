@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.57  2004/04/19 12:58:18  madden
+ * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
+ *
  * Revision 1.56  2004/04/12 18:57:31  madden
  * Rename BLAST_ResFreq to Blast_ResFreq, make Blast_ResFreqNew, Blast_ResFreqDestruct, and Blast_ResFreqStdComp non-static
  *
@@ -759,14 +762,14 @@ BlastScoreBlkNew(Uint1 alphabet, Int4 number_of_contexts)
 		sbp->number_of_contexts = number_of_contexts;
 		sbp->sfp = (BLAST_ScoreFreq**) 
          calloc(sbp->number_of_contexts, sizeof(BLAST_ScoreFreq*));
-		sbp->kbp_std = (BLAST_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
-		sbp->kbp_gap_std = (BLAST_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
-		sbp->kbp_psi = (BLAST_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
-		sbp->kbp_gap_psi = (BLAST_KarlinBlk**)
-         calloc(sbp->number_of_contexts, sizeof(BLAST_KarlinBlk*));
+		sbp->kbp_std = (Blast_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
+		sbp->kbp_gap_std = (Blast_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
+		sbp->kbp_psi = (Blast_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
+		sbp->kbp_gap_psi = (Blast_KarlinBlk**)
+         calloc(sbp->number_of_contexts, sizeof(Blast_KarlinBlk*));
 	}
 
 	return sbp;
@@ -787,8 +790,8 @@ BlastScoreFreqDestruct(BLAST_ScoreFreq* sfp)
 /*
 	Deallocates the Karlin Block.
 */
-static BLAST_KarlinBlk*
-BlastKarlinBlkDestruct(BLAST_KarlinBlk* kbp)
+Blast_KarlinBlk*
+Blast_KarlinBlkDestruct(Blast_KarlinBlk* kbp)
 
 {
 	sfree(kbp);
@@ -821,16 +824,16 @@ BlastScoreBlkFree(BlastScoreBlk* sbp)
         if (sbp->sfp)
             sbp->sfp[index] = BlastScoreFreqDestruct(sbp->sfp[index]);
         if (sbp->kbp_std)
-            sbp->kbp_std[index] = BlastKarlinBlkDestruct(sbp->kbp_std[index]);
+            sbp->kbp_std[index] = Blast_KarlinBlkDestruct(sbp->kbp_std[index]);
         if (sbp->kbp_gap_std)
-            sbp->kbp_gap_std[index] = BlastKarlinBlkDestruct(sbp->kbp_gap_std[index]);
+            sbp->kbp_gap_std[index] = Blast_KarlinBlkDestruct(sbp->kbp_gap_std[index]);
         if (sbp->kbp_psi)
-            sbp->kbp_psi[index] = BlastKarlinBlkDestruct(sbp->kbp_psi[index]);
+            sbp->kbp_psi[index] = Blast_KarlinBlkDestruct(sbp->kbp_psi[index]);
         if (sbp->kbp_gap_psi)
-            sbp->kbp_gap_psi[index] = BlastKarlinBlkDestruct(sbp->kbp_gap_psi[index]);
+            sbp->kbp_gap_psi[index] = Blast_KarlinBlkDestruct(sbp->kbp_gap_psi[index]);
     }
     if (sbp->kbp_ideal)
-        sbp->kbp_ideal = BlastKarlinBlkDestruct(sbp->kbp_ideal);
+        sbp->kbp_ideal = Blast_KarlinBlkDestruct(sbp->kbp_ideal);
     sfree(sbp->sfp);
     sfree(sbp->kbp_std);
     sfree(sbp->kbp_psi);
@@ -2157,7 +2160,7 @@ See:  Karlin, S. & Altschul, S.F. "Methods for Assessing the Statistical
 
 *******************************************************************************/
 static Int2
-BlastKarlinBlkCalc(BLAST_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
+BlastKarlinBlkCalc(Blast_KarlinBlk* kbp, BLAST_ScoreFreq* sfp)
 {
 	
 
@@ -2218,7 +2221,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	Blast_ResFreqString(sbp, rfp, query, query_length);
 	sbp->sfp[context_number] = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sbp->sfp[context_number], rfp, stdrfp);
-	sbp->kbp_std[context_number] = BLAST_KarlinBlkCreate();
+	sbp->kbp_std[context_number] = Blast_KarlinBlkCreate();
 	retval = BlastKarlinBlkCalc(sbp->kbp_std[context_number], sbp->sfp[context_number]);
 	if (retval)
 	{
@@ -2226,7 +2229,7 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 		stdrfp = Blast_ResFreqDestruct(stdrfp);
 		return retval;
 	}
-	sbp->kbp_psi[context_number] = BLAST_KarlinBlkCreate();
+	sbp->kbp_psi[context_number] = Blast_KarlinBlkCreate();
 	retval = BlastKarlinBlkCalc(sbp->kbp_psi[context_number], sbp->sfp[context_number]);
 	rfp = Blast_ResFreqDestruct(rfp);
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
@@ -2240,11 +2243,11 @@ BLAST_ScoreBlkFill(BlastScoreBlk* sbp, char* query, Int4 query_length, Int4 cont
 	parameters are bad, as they're calculated for non-coding regions.
 */
 
-static BLAST_KarlinBlk*
+static Blast_KarlinBlk*
 BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
 
 {
-	BLAST_KarlinBlk* kbp_ideal;
+	Blast_KarlinBlk* kbp_ideal;
 	Blast_ResFreq* stdrfp;
 	BLAST_ScoreFreq* sfp;
 
@@ -2252,7 +2255,7 @@ BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
 	Blast_ResFreqStdComp(sbp, stdrfp);
 	sfp = BlastScoreFreqNew(sbp->loscore, sbp->hiscore);
 	BlastScoreFreqCalc(sbp, sfp, stdrfp, stdrfp);
-	kbp_ideal = BLAST_KarlinBlkCreate();
+	kbp_ideal = Blast_KarlinBlkCreate();
 	BlastKarlinBlkCalc(kbp_ideal, sfp);
 	stdrfp = Blast_ResFreqDestruct(stdrfp);
 
@@ -2262,10 +2265,10 @@ BlastKarlinBlkStandardCalcEx(BlastScoreBlk* sbp)
 }
 
 Int2
-BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context_end)
+Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context_end)
 {
 
-	BLAST_KarlinBlk* kbp_ideal,* kbp;
+	Blast_KarlinBlk* kbp_ideal,* kbp;
 	Int4 index;
 
 	kbp_ideal = BlastKarlinBlkStandardCalcEx(sbp);
@@ -2283,7 +2286,7 @@ BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context
 			kbp->H = kbp_ideal->H;
 		}
 	}
-	kbp_ideal = BlastKarlinBlkDestruct(kbp_ideal);
+	kbp_ideal = Blast_KarlinBlkDestruct(kbp_ideal);
 
 	return 0;
 }
@@ -2292,13 +2295,13 @@ BLAST_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, Int4 context
 	Creates the Karlin Block.
 */
 
-BLAST_KarlinBlk*
-BLAST_KarlinBlkCreate(void)
+Blast_KarlinBlk*
+Blast_KarlinBlkCreate(void)
 
 {
-	BLAST_KarlinBlk* kbp;
+	Blast_KarlinBlk* kbp;
 
-	kbp = (BLAST_KarlinBlk*) calloc(1, sizeof(BLAST_KarlinBlk));
+	kbp = (Blast_KarlinBlk*) calloc(1, sizeof(Blast_KarlinBlk));
 
 	return kbp;
 }
@@ -2613,11 +2616,11 @@ BlastKarlinReportAllowedValues(const char *matrix_name,
 	if kbp is NULL, then a validation is perfomed.
 */
 Int2
-BLAST_KarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return)
+Blast_KarlinBlkGappedCalc(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name, Blast_Message** error_return)
 
 {
 	char buffer[256];
-	Int2 status = BLAST_KarlinkGapBlkFill(kbp, gap_open, gap_extend, decline_align, matrix_name);
+	Int2 status = Blast_KarlinkGapBlkFill(kbp, gap_open, gap_extend, decline_align, matrix_name);
 
 	if (status && error_return)
 	{
@@ -2664,7 +2667,7 @@ BLAST_KarlinBlkGappedCalc(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, 
 			2 if matrix found, but open, extend etc. values not supported.
 */
 Int2
-BLAST_KarlinkGapBlkFill(BLAST_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name)
+Blast_KarlinkGapBlkFill(Blast_KarlinBlk* kbp, Int4 gap_open, Int4 gap_extend, Int4 decline_align, char* matrix_name)
 {
 	Boolean found_matrix=FALSE, found_values=FALSE;
 	array_of_8 *values;
@@ -2836,7 +2839,7 @@ below.
 #define BLASTKAR_SMALL_FLOAT 1.0e-297
 static Int4
 BlastKarlinEtoS_simple(double	E,	/* Expect value */
-	BLAST_KarlinBlk*	kbp,
+	Blast_KarlinBlk*	kbp,
 	double	searchsp)	/* size of search space */
 {
 
@@ -2865,7 +2868,7 @@ BlastKarlinEtoS_simple(double	E,	/* Expect value */
 Int2
 BLAST_Cutoffs(Int4 *S, /* cutoff score */
 	double* E, /* expected no. of HSPs scoring at or above S */
-	BLAST_KarlinBlk* kbp,
+	Blast_KarlinBlk* kbp,
 	double searchsp, /* size of search space. */
 	Boolean dodecay,  /* TRUE ==> use gapdecay feature */
    double gap_decay_rate)
@@ -2919,7 +2922,7 @@ BLAST_Cutoffs(Int4 *S, /* cutoff score */
 */
 double
 BLAST_KarlinStoE_simple(Int4 S,
-		BLAST_KarlinBlk* kbp,
+		Blast_KarlinBlk* kbp,
 		double	searchsp)	/* size of search space. */
 {
 	double	Lambda, K, H; /* parameters for Karlin statistics */
@@ -3167,7 +3170,7 @@ f(double	x, void*	vp)
 */
 
 double
-BLAST_SmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
+BLAST_SmallGapSumE(Blast_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -3202,7 +3205,7 @@ BLAST_SmallGapSumE(BLAST_KarlinBlk* kbp, Int4 gap, double gap_prob, double gap_d
 */
 
 double
-BLAST_UnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
+BLAST_UnevenGapSumE(Blast_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -3234,7 +3237,7 @@ BLAST_UnevenGapSumE(BLAST_KarlinBlk* kbp, Int4 p_gap, Int4 n_gap, double gap_pro
 */
 
 double
-BLAST_LargeGapSumE(BLAST_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
+BLAST_LargeGapSumE(Blast_KarlinBlk* kbp, double gap_prob, double gap_decay_rate, Int2 num, double score_prime, Int4 query_length, Int4 subject_length)
 
 {
 
@@ -3384,7 +3387,7 @@ RPSFillResidueProbability(Uint1 * sequence, Int4 length, double * resProb)
     }
 }
 
-static double
+double
 RPSKarlinLambdaNR(BLAST_ScoreFreq * sfp, double initialLambda)
 {
     Int4 itn;

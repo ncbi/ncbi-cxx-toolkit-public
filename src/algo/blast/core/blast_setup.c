@@ -62,10 +62,10 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
         for (tmp_index = query_info->first_context;
              tmp_index <= query_info->last_context; tmp_index++) {
             if (sbp->kbp_std[tmp_index] != NULL) {
-                BLAST_KarlinBlk *kbp_gap;
-                BLAST_KarlinBlk *kbp;
+                Blast_KarlinBlk *kbp_gap;
+                Blast_KarlinBlk *kbp;
  
-                sbp->kbp_gap_std[tmp_index] = BLAST_KarlinBlkCreate();
+                sbp->kbp_gap_std[tmp_index] = Blast_KarlinBlkCreate();
                 kbp_gap = sbp->kbp_gap_std[tmp_index];
                 kbp     = sbp->kbp_std[tmp_index];
 
@@ -80,8 +80,8 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
     } else {
         for (tmp_index = query_info->first_context;
              tmp_index <= query_info->last_context; tmp_index++) {
-            sbp->kbp_gap_std[tmp_index] = BLAST_KarlinBlkCreate();
-            BLAST_KarlinBlkGappedCalc(sbp->kbp_gap_std[tmp_index],
+            sbp->kbp_gap_std[tmp_index] = Blast_KarlinBlkCreate();
+            Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[tmp_index],
                                       scoring_options->gap_open,
                                       scoring_options->gap_extend,
                                       scoring_options->decline_align,
@@ -97,7 +97,7 @@ static Int2
 PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    Blast_Message** blast_message)
 {
-   BLAST_KarlinBlk* kbp;
+   Blast_KarlinBlk* kbp;
    char buffer[1024];
    Int2 status = 0;
 
@@ -105,7 +105,7 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
    sbp->name = strdup(options->matrix);
    if ((status = BLAST_ScoreBlkMatFill(sbp, options->matrix_path)) != 0)
       return status;
-   kbp = sbp->kbp_gap_std[0] = BLAST_KarlinBlkCreate();
+   kbp = sbp->kbp_gap_std[0] = Blast_KarlinBlkCreate();
    sbp->kbp_std = sbp->kbp_gap_std;
 
    if (0 == strcmp("BLOSUM62", options->matrix)) {
@@ -441,12 +441,12 @@ BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_inf
         program_number == blast_type_tblastx) {
         /* Adjust the ungapped Karlin parameters */
         sbp->kbp = sbp->kbp_std;
-        BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
+        Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                     query_info->last_context);
         /* Adjust the gapped Karlin parameters, if it is a gapped search */
         if (scoring_options->gapped_calculation) {
            sbp->kbp = sbp->kbp_gap_std;
-          BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
+          Blast_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                        query_info->last_context);
         }
     }
@@ -520,7 +520,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    Int4 index;		/* loop index. */
    Int4	db_num_seqs;	/* number of sequences in database. */
    Int8	db_length;	/* total length of database. */
-   BLAST_KarlinBlk* *kbp_ptr; /* Array of Karlin block pointers */
+   Blast_KarlinBlk* *kbp_ptr; /* Array of Karlin block pointers */
    Int4 query_length;   /* length of an individual query sequence */
    Int8 effective_search_space = 0; /* Effective search space for a given 
                                    sequence/strand/frame */
@@ -567,7 +567,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    for (index = query_info->first_context;
         index <= query_info->last_context;
         index++) {
-       BLAST_KarlinBlk * kbp;   /* statistical parameters for the
+       Blast_KarlinBlk * kbp;   /* statistical parameters for the
                                    current context */
        kbp = kbp_ptr[index];
 

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.96  2004/04/19 12:58:44  madden
+ * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
+ *
  * Revision 1.95  2004/04/16 14:17:06  papadopo
  * add use of RPS-specific defines, remove RPS argument to FillLookupTableOptions
  *
@@ -610,7 +613,7 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
    BlastQueryInfo* query_info, Uint4 subj_length,
    BlastInitialWordParameters* parameters)
 {
-   BLAST_KarlinBlk* kbp;
+   Blast_KarlinBlk* kbp;
    Boolean gapped_calculation = TRUE;
 
    ASSERT(sbp);
@@ -743,7 +746,7 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
         const BlastExtensionOptions* options, BlastScoreBlk* sbp,
         BlastQueryInfo* query_info, BlastExtensionParameters* *parameters)
 {
-   BLAST_KarlinBlk* kbp,* kbp_gap;
+   Blast_KarlinBlk* kbp,* kbp_gap;
    BlastExtensionParameters* params;
 
    /* If parameters pointer is NULL, there is nothing to fill, 
@@ -907,7 +910,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 	{
 		Int2 status=0;
 
-		if ((status=BLAST_KarlinkGapBlkFill(NULL, options->gap_open, 
+		if ((status=Blast_KarlinkGapBlkFill(NULL, options->gap_open, 
                      options->gap_extend, options->decline_align, 
                      options->matrix)) != 0)
 		{
@@ -1387,7 +1390,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    BlastHitSavingParameters* params)
 {
    BlastHitSavingOptions* options;
-   BLAST_KarlinBlk* kbp;
+   Blast_KarlinBlk* kbp;
    double evalue;
    Boolean gapped_calculation = TRUE;
 
@@ -1550,7 +1553,7 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
    const PSIBlastOptions* psi_options)
 {
 	double gap_prob, gap_decay_rate, x_variable, y_variable;
-	BLAST_KarlinBlk* kbp;
+	Blast_KarlinBlk* kbp;
 	Int4 expected_length, gap_size, query_length;
 	Int8 search_sp;
    Boolean translated_subject = (program == blast_type_tblastn || 
