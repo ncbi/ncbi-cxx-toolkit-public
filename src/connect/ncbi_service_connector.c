@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/01/11 16:38:18  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
  * Revision 6.5  2001/01/08 22:39:40  lavr
  * Further development of service-mapping protocol: stateless/stateful
  * is now separated from firewall/direct mode (see also in few more files)
@@ -502,7 +506,6 @@ static void s_Destroy(CONNECTOR connector)
         free((void*) uuu->name);
     free((void*) uuu->serv);
     free(uuu);
-    free(connector);
 }
 
 

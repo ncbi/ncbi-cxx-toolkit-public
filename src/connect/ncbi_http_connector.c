@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/11 16:38:17  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
  * Revision 6.6  2001/01/03 22:32:43  lavr
  * Redundant calls to 'adjust_info' removed
  *
@@ -639,7 +643,6 @@ static void s_Destroy(CONNECTOR connector)
         (*uuu->adjust_cleanup)(uuu->adjust_data);
     BUF_Destroy(uuu->buf);
     free(uuu);
-    free(connector);
 }
 
 

@@ -33,6 +33,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/01/11 16:38:16  lavr
+ * free(connector) removed from s_Destroy function
+ * (now always called from outside, in METACONN_Remove)
+ *
  * Revision 6.2  2000/12/29 17:55:53  lavr
  * Adapted for use of new connector structure.
  *
@@ -259,7 +263,6 @@ static void s_Destroy
     free(xxx->inp_file_name);
     free(xxx->out_file_name);
     free(xxx);
-    free(connector);
 }
 
 
