@@ -405,17 +405,18 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
     EIO_Status status;
 
     for (;;) {
-        if (!uuu->sock) {
+        if ( !uuu->sock ) {
             if ((status = s_ConnectAndSend(uuu, drop_unread)) != eIO_Success)
                 break;
             assert(uuu->sock);
-        } else
+        } else {
             status = eIO_Success;
+        }
 
         /* set timeout */
         SOCK_SetTimeout(uuu->sock, eIO_Read, timeout);
 
-        if (!uuu->first_read)
+        if ( !uuu->first_read )
             break;
 
         if ((status = s_ReadHeader(uuu, &redirect)) == eIO_Success) {
@@ -427,14 +428,15 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
             break;
         }
         /* if polling then bail out with eIO_Timeout */
-        if (status == eIO_Timeout && timeout &&
+        if (status == eIO_Timeout  &&  timeout  &&
             memcmp(timeout, &zero_timeout, sizeof(STimeout)) == 0)
             break;
 
         /* HTTP header read error; disconnect and try to use another server */
         s_DropConnection(uuu, 0/*no wait*/);
-        if (!s_Adjust(uuu, &redirect, drop_unread))
+        if ( !s_Adjust(uuu, &redirect, drop_unread) )
             break;
+
         assert(redirect == 0);
     }
     assert(redirect == 0);
@@ -476,9 +478,10 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
             } else if (SOCK_Status(uuu->sock, eIO_Read) == eIO_Closed)
                 /* we are at EOF, and the remaining data cannot be decoded */
                 status = eIO_Unknown;
-        } else
+        } else {
             status = eIO_Unknown;
-        
+        }
+
         if (status != eIO_Success)
             CORE_LOG(eLOG_Error, "[HTTP]  Cannot URL-decode data");
 
@@ -543,20 +546,15 @@ static void s_FlushAndDisconnect(SHttpConnector* uuu,
         uuu->w_timeout  = timeout;
     }
 
-    if (close && !uuu->sock && uuu->can_connect != eCC_None &&
-        ((uuu->flags & fHCC_SureFlush) || BUF_Size(uuu->obuf))) {
+    if (close  &&  !uuu->soc  &&  uuu->can_connect != eCC_None  &&
+        ((uuu->flags & fHCC_SureFlush)  ||  BUF_Size(uuu->obuf))) {
         /* "WRITE" mode and data (or just flag) pending */
         s_PreRead(uuu, timeout, 1/*drop*/);
     }
     s_Disconnect(uuu, 1/*drop_unread*/, timeout);
     assert(!uuu->sock);
-
-    /* clear pending output data, if any */
-    if (BUF_Read(uuu->obuf, 0, obuf_size) != obuf_size) {
-        CORE_LOG(eLOG_Error, "[HTTP]  Cannot drop output buffer");
-        assert(0);
-    }
 }
+
 
 
 /***********************************************************************
@@ -892,6 +890,10 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.38  2003/01/09 22:31:28  vakatov
+ * s_FlushAndDisconnect() -- do not try to drop unread data in the end:
+ * s_Disconnect() call does this job.
+ *
  * Revision 6.37  2002/12/13 21:19:40  lavr
  * Extend User-Agent: header tag
  *
