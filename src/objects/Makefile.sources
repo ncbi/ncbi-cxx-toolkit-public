@@ -3,7 +3,7 @@ include $(builddir)/Makefile.mk
 all all_r:
 	( \
 		cd $(srcdir); \
-		NCBI_DATATOOL_PATH=$(bindir) $(MAKE) sources; \
+		NCBI_DATATOOL_PATH=$(bindir) $(MAKE) makefiles sources; \
 	)
 
 clean clean_r purge purge_r:
