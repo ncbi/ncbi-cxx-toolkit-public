@@ -47,7 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-USING_SCOPE(sequence);
+BEGIN_SCOPE(sequence)
 
 
 TSeqPos GetLength(const CSeq_id& id, CScope* scope)
@@ -212,19 +212,6 @@ TSeqPos GetStart(const CSeq_loc& loc, CScope* scope)
                         Implementation of Compare()
 *******************************************************************************
 */
-
-
-// Anonymous namespace used since WorkShop compilers have
-// problems with static keyword in some cases below. Specifically, if
-// a static function instantiates a template function which in turn
-// calls the function that instantiated it, the WorkShop compilers will
-// complain that the call made to the instantiating function from the
-// template is unusable
-#  define BEGIN_SEQLOC_ANONYMOUS_NAMESPACE namespace {
-#  define END_SEQLOC_ANONYMOUS_NAMESPACE   }
-
-
-BEGIN_SEQLOC_ANONYMOUS_NAMESPACE
 
 
 ECompare s_Compare
@@ -1268,9 +1255,6 @@ ECompare s_Compare
 }
 
 
-END_SEQLOC_ANONYMOUS_NAMESPACE
-
-
 ECompare Compare
 (const CSeq_loc& loc1,
  const CSeq_loc& loc2,
@@ -1280,12 +1264,19 @@ ECompare Compare
 }
 
 
+END_SCOPE(sequence)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.2  2002/06/07 16:11:09  ucko
+* Move everything into the "sequence" namespace.
+* Drop the anonymous-namespace business; "sequence" should provide
+* enough protection, and anonymous namespaces ironically interact poorly
+* with WorkShop's caching when rebuilding shared libraries.
+*
 * Revision 1.1  2002/06/06 18:41:41  clausen
 * Initial version
 *
