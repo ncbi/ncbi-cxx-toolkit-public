@@ -165,7 +165,7 @@ on SetProjectData()
 		set objMgrLibs to {¬
 			"object_seqcode", "object_cdd", "object_seqloc", "object_seqfeat", "object_seq", "object_seqalign", "object_seqblock", "object_seqset", ¬
 			"object_pub", "object_biblio", "object_pubmed", "object_medline", "object_seqres", ¬
-			"object_general", "object_objmgr", "object_id1", "serial", "xobjutil", "util", "connect", "mitsock", "corelib"}
+			"object_general", "object_objmgr", "object_id1", "serial", "xobjutil", "util", "connect", "corelib"}
 			
 	end tell
 
@@ -224,12 +224,12 @@ on SetProjectData()
 	AddProject(DataPlusLibs(SimpleProjectData("asn2asn", "objects:asn2asn", {"C++"}), commonObjLibs))
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("testmedline", "objects:testmedline", {"C++"}), commonObjLibs), {"object_ncbimime", "object_mmdb1", "object_mmdb2", "object_mmdb3", "object_medlars"}))
 
-	AddProject(DataPlusLibs(SimpleProjectData("objmgr_demo", "objects:objmgr:demo",	{"C++"}), objMgrLibs))
-	AddProject(DataPlusLibs(ComplexProjectData("testobjmgr1", "objects:objmgr:test", {"C++"}, {"testobjmgr1", "test_helper"}), objMgrLibs))
-	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("reader_id1_test", "objects:objmgr:test",	{"C++"}), objMgrLibs), {"reader_id1_test"}))
-	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_objmgr1_gbloader", "objects:objmgr:test",	{"C++"}), objMgrLibs), {"test_objmgr1_gbloader"}))
-	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_objmgr1_basic", "objects:objmgr:test",	{"C++"}), objMgrLibs), {"test_objmgr1_basic"}))
-	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_title", "objects:objmgr:test",	{"C++"}), objMgrLibs), {"test_title"}))	
+	AddProject(DataPlusLibs(SimpleProjectData("objmgr_demo", "objects:objmgr:demo",	{"C++", "sockets"}), objMgrLibs))
+	AddProject(DataPlusLibs(ComplexProjectData("testobjmgr1", "objects:objmgr:test", {"C++", "sockets"}, {"testobjmgr1", "test_helper"}), objMgrLibs))
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("reader_id1_test", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"reader_id1_test"}))
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_objmgr1_gbloader", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"test_objmgr1_gbloader"}))
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_objmgr1_basic", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"test_objmgr1_basic"}))
+	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("test_title", "objects:objmgr:test", {"C++", "sockets"}), objMgrLibs), {"test_title"}))	
 
 	AddProject(DataPlusLibs(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), commonObjLibs), {"object_id1", "connect"}))
 	
