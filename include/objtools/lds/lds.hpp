@@ -56,9 +56,11 @@ public:
 public:
 
     CLDS_Database(const string& db_dir_name, 
-                  const string& db_name);
+                  const string& db_name,
+                  const string& alias);
 
-    CLDS_Database(const string& db_dir_name);
+    CLDS_Database(const string& db_dir_name,
+                  const string& alias);
 
     ~CLDS_Database();
 
@@ -73,6 +75,8 @@ public:
     SLDS_TablesCollection& GetTables() { return m_db; }
 
     const TObjTypeMap& GetObjTypeMap() const { return m_ObjTypeMap; }
+
+    const string& GetAlias() const { return m_Alias; }
 private:
     // Loads types map from m_ObjectTypeDB to memory.
     void x_LoadTypeMap();
@@ -82,6 +86,7 @@ private:
 private:
     string                 m_LDS_DirName;
     string                 m_LDS_DbName;
+    string                 m_Alias;
 
     SLDS_TablesCollection  m_db;
 
@@ -93,16 +98,21 @@ private:
 // LDS database incapsulated into CObject compatible container
 //
 
-struct NCBI_LDS_EXPORT CLDS_DatabaseHolder : public CObject
+class NCBI_LDS_EXPORT CLDS_DatabaseHolder : public CObject
 {
-    CLDS_Database*  lds_db;
+public:
+    CLDS_DatabaseHolder(CLDS_Database* db);
+    ~CLDS_DatabaseHolder();
 
-    CLDS_DatabaseHolder(CLDS_Database* db) : lds_db(db) {}
-    ~CLDS_DatabaseHolder() { delete lds_db; }
+    CLDS_Database* GetDefaultDatabase() { return *(m_DataBases.begin()); }
 
 private:
     CLDS_DatabaseHolder(const CLDS_DatabaseHolder&);
     CLDS_DatabaseHolder& operator=(const CLDS_DatabaseHolder&);
+
+private:
+
+    vector<CLDS_Database*> m_DataBases;
 };
 
 
@@ -112,6 +122,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/10/08 18:19:14  kuznets
+ * Database holder class changed to keep more than one database.
+ *
  * Revision 1.13  2003/08/11 19:58:27  kuznets
  * Code clean-up: separated dir name and database name
  *
