@@ -55,13 +55,8 @@ LIB = \
 	mmdb3 \
 	cn3d \
 	pub \
-	seq \
-	seqalign \
-	seqblock \
-	seqfeat \
-	seqloc \
-	seqres \
 	seqset \
+	$(SEQ_LIBS) \
 	general \
 	medline \
 	biblio \

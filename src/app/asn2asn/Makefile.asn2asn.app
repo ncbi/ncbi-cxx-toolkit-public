@@ -8,8 +8,6 @@
 
 APP = asn2asn
 OBJ = asn2asn
-LIB = seqset seq seqres seqloc seqalign seqfeat seqblock \
-	pub medline biblio seqcode general \
-	xser xutil xncbi
+LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil xncbi
 
 LIBS = $(NCBI_C_LIBPATH) $(NCBI_C_ncbi) $(ORIG_LIBS)

@@ -199,3 +199,6 @@ SP_LIBS    = @SP_LIBS@
 NCBI_PM_PATH = @NCBI_PM_PATH@
 
 #################################
+# Useful sets of object libraries
+# Interdependent sequence libraries + seqcode.  Does not include seqset.
+SEQ_LIBS = seq seqalign seqblock seqfeat seqloc seqres seqcode

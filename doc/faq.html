@@ -17,7 +17,7 @@ NCBI C++ Toolkit -- F. A. Q.</h1>
 in something like:
 <i>SunWS_cache/CC_obj_b/bXmZkg3zX5VBJvYgjABX.o</i></a></li>
 
-<li><a href="#ref_CannotFindSer">The linker complains about undefined symbols Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a"</a></li>
+<li><a href="#ref_CannotFindSer">The linker complains about undefined symbols Nlm_MemGet, AsnIoNew, Nlm_MemFree, Nlm_MemCopy, and AsnIoClose in libxser.a</a></li>
 
 <li><a href="#ref_CannotFindObjectSymbol">How does one find the libraries to link when the linker complains of <i>undefined symbols</i></a></li>
 
@@ -107,12 +107,10 @@ point, it's <i>much</i> easier to find the right combination of libraries:
 	 </ul>
 
 <pre>
-LIB = id1 \
-      seqset seq seqres seqloc seqalign seqfeat seq seqalign seqres seqblock \
-      pub medline biblio general xser xutil xconnect xncbi		
+LIB = id1 seqset $(SEQ_LIBS) pub medline biblio general \
+      xser xutil xconnect xncbi		
 
-LIB = cdd ncbimime mmdb1 mmdb2 mmdb3 cn3d \
-      seqset seq seqres seqloc seqalign seqfeat seqalign seqres seqblock \
+LIB = cdd ncbimime mmdb1 mmdb2 mmdb3 cn3d seqset $(SEQ_LIBS) \
       pub medline biblio general xser xutil xconnect xncbi		
 </pre>
 
