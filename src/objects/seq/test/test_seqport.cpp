@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/11/13 12:14:29  clausen
+ * Changed call to CGencode::Translate to reflect new type for code breaks
+ *
  * Revision 1.1  2001/08/24 00:44:05  vakatov
  * Initial revision
  *
@@ -720,7 +723,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
             }
             CRef<CGenetic_code> genetic_code(&gencode);
     
-            map<unsigned int, char> code_breaks;
+            CGencode::TCodeBreaks code_breaks;
             nResponse =1;
             while(nResponse >= 1) {
                 cout << "Enter a code break index (-1 to quit): ";
@@ -729,7 +732,7 @@ void CSeqportTestApp::Test(const CSeq_data&    in_seq,
                     cout << "Enter an aa: ";
                     char aa;
                     cin >> aa;
-                    code_breaks.insert
+                    code_breaks.push_back
                         (make_pair(static_cast<unsigned int>(nResponse), aa));
                 }
             }       
