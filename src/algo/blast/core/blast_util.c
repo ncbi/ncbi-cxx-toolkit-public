@@ -43,7 +43,10 @@ BlastSetUp_SeqBlkNew (const Uint1Ptr buffer, Int4 length, Int2 context,
 	const Int4Ptr frame, BLAST_SequenceBlkPtr *seq_blk, 
         Boolean buffer_allocated)
 {
-	*seq_blk = MemNew(sizeof(BLAST_SequenceBlk));
+   /* Check if BLAST_SequenceBlk itself needs to be allocated here or not */
+   if (*seq_blk == NULL) {
+      *seq_blk = MemNew(sizeof(BLAST_SequenceBlk));
+   }
 
         if (buffer_allocated) {
            (*seq_blk)->sequence_start = buffer;
@@ -83,7 +86,7 @@ MakeBlastSequenceBlk(ReadDBFILEPtr db, BLAST_SequenceBlkPtr PNTR seq_blk,
   (*seq_blk)->oid = oid;
 }
 
-BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
+Int2 BlastSequenceBlkClean(BLAST_SequenceBlkPtr seq_blk)
 {
    if (!seq_blk)
       return NULL;
@@ -94,6 +97,16 @@ BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
       else
          MemFree(seq_blk->sequence);
    }
+   return 0;
+}
+
+BLAST_SequenceBlkPtr BlastSequenceBlkFree(BLAST_SequenceBlkPtr seq_blk)
+{
+   if (!seq_blk)
+      return NULL;
+
+   BlastSequenceBlkClean(seq_blk);
+
    return (BLAST_SequenceBlkPtr) MemFree(seq_blk);
 }
 

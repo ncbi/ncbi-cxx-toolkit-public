@@ -165,6 +165,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
       translation_table_rc = GetPrivatTranslationTable(genetic_code, TRUE);
    }
 
+   /* Allocate subject sequence block once for the entire run */
+   subject = (BLAST_SequenceBlkPtr) Malloc(sizeof(BLAST_SequenceBlk));
+
    /* iterate over all subject sequences */
    for (oid = 0; oid < numseqs; oid++) {
 
@@ -177,7 +180,7 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
             for nucleotides */
          MakeBlastSequenceBlk(db, &subject, oid, BLASTP_ENCODING);
       } else {
-         subject = MemDup(subject_blk, sizeof(BLAST_SequenceBlk));
+         MemCpy(subject, subject_blk, sizeof(BLAST_SequenceBlk));
       }
 
       if (translated_subject) {
@@ -318,13 +321,11 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
             subject->length = nucl_length;
             subject->sequence = nucl_sequence;
          }
-         subject = BlastSequenceBlkFree(subject);
-      } else {
-         /* Two sequences case: do not free the sequence! */
-         subject = MemFree(subject);
+         BlastSequenceBlkClean(subject);
       }
    }
 
+   subject = MemFree(subject);
    BLAST_InitHitListDestruct(init_hitlist);
    BlastHSPListFree(hsp_list);
 
