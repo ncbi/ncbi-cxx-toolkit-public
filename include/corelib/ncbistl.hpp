@@ -86,6 +86,12 @@
 /// Define the name for the NCBI namespace.
 #define NCBI_NS_NCBI ncbi
 
+/// Place it for adding new funtionality to STD scope
+#define BEGIN_STD_SCOPE BEGIN_SCOPE(NCBI_NS_STD)
+
+/// End previously defined STD scope.
+#define END_STD_SCOPE   END_SCOPE(NCBI_NS_STD)
+
 /// Define ncbi namespace.
 ///
 /// Place at beginning of file for NCBI related code.
@@ -150,6 +156,25 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 # define BREAK(it) break
 #endif
 
+#if defined(NCBI_COMPILER_GCC) || defined(NCBI_COMPILER_WORKSHOP)
+// This template is used by some stl algorithms (sort, reverse...)
+// We need to have our own implementation because some C++ Compiler vendors 
+// implemented it by using a temporary variable and an assignment operator 
+// instead of std::swap function.
+// GCC 3.4 note: because this compiler has a broken function template 
+// specialization this template function should be defined before 
+// including any stl include files.
+BEGIN_STD_SCOPE
+template<typename Iter>
+inline
+void iter_swap( Iter it1, Iter it2 )
+{
+    swap( *it1, * it2 );
+}
+
+END_STD_SCOPE
+
+#endif
 
 /* @} */
 
@@ -157,6 +182,10 @@ typedef int NCBI_NAME2(T_EAT_SEMICOLON_,UniqueName)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/03/03 18:02:21  didenko
+ * Added BEGIN_STD_SCOPE and END_STD_SCOPE definition
+ * and iter_swap template function
+ *
  * Revision 1.33  2003/10/27 13:09:02  siyan
  * Added CORELIB___ prefix to #ifndef, #define macro names.
  *
