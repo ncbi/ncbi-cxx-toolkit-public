@@ -797,11 +797,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
           subject_offset = 
              ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO;
 
-          /* test for completion before the current chain has
-             been added. This test counts for both templates
-             (they both add hits or neither one does) */
-          if (query_offset && (hitsfound >= max_hits))
-             break;
           while (query_offset) {
              q_offsets[hitsfound] = query_offset - 1;
              s_offsets[hitsfound++] = subject_offset;
@@ -818,9 +813,15 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
              query_offset = mb_lt->next_pos2[query_offset];
           }
        }
+       word_end_offset += COMPRESSION_RATIO;
+       /* test for buffer full. This test counts 
+          for both templates (they both add hits 
+          or neither one does) */
+       if (hitsfound >= max_hits)
+          break;
+
        word = BlastNaLookupComputeIndex(FULL_BYTE_SHIFT, 
                            mb_lt->mask, s++, word);
-       word_end_offset += COMPRESSION_RATIO;
      }
    } else {
       const Int4 kScanStep = 1; /* scan one letter at a time. */
@@ -845,11 +846,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
             subject_offset = 
                ((s - abs_start) - compressed_wordsize)*COMPRESSION_RATIO
                + bit/2;
-            /* test for completion before the current chain has
-               been added. This test counts for both templates
-               (they both add hits or neither one does) */
-            if (query_offset && (hitsfound >= max_hits))
-               break;
             while (query_offset) {
                q_offsets[hitsfound] = query_offset - 1;
                s_offsets[hitsfound++] = subject_offset;
@@ -867,9 +863,14 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
                query_offset = mb_lt->next_pos2[query_offset];
             }
          }
-         bit += kScanShift;
          word_end_offset += kScanStep;
+         /* test for buffer full. This test counts 
+            for both templates (they both add hits 
+            or neither one does) */
+         if (hitsfound >= max_hits)
+            break;
 
+         bit += kScanShift;
          if (bit >= FULL_BYTE_SHIFT) {
             /* Advance to the next full byte */
             bit -= FULL_BYTE_SHIFT;
