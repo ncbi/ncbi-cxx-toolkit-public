@@ -739,11 +739,11 @@ void CResultZBtSrcX::ReadLength(void)
                      "CResultZBtSrcX: "
                      "too few header bytes");
     }
-    size_t compr_size = 0;
+    unsigned int compr_size = 0;
     for ( size_t i = 0; i < 4; ++i ) {
         compr_size = (compr_size<<8) | (unsigned char)header[i];
     }
-    size_t uncompr_size = 0;
+    unsigned int uncompr_size = 0;
     for ( size_t i = 4; i < 8; ++i ) {
         uncompr_size = (uncompr_size<<8) | (unsigned char)header[i];
     }
@@ -796,6 +796,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.30  2003/07/17 22:23:27  vasilche
+* Fixed unsigned <-> size_t argument.
+*
 * Revision 1.29  2003/07/17 20:07:56  vasilche
 * Reduced memory usage by feature indexes.
 * SNP data is loaded separately through PUBSEQ_OS.
