@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/04/26 14:17:28  sandomir
+* minor changes
+*
 * Revision 1.24  1999/03/17 18:59:46  vasilche
 * Changed CNcbiQueryResult&Iterator.
 *
@@ -143,6 +146,7 @@ public:
                   CCgiServerContext& srvCtx );
 
     const CNcbiResource& GetResource( void ) const THROWS_NONE;
+    CNcbiResource& GetResource( void ) THROWS_NONE;
 
     const CCgiRequest& GetRequest( void ) const THROWS_NONE;
     CCgiRequest& GetRequest( void ) THROWS_NONE;

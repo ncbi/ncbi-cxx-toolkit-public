@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/04/26 14:17:28  sandomir
+* minor changes
+*
 * Revision 1.4  1999/03/17 18:59:47  vasilche
 * Changed CNcbiQueryResult&Iterator.
 *
@@ -50,6 +53,11 @@
 */
 
 inline const CNcbiResource& CNcbiContext::GetResource( void ) const THROWS_NONE
+{
+    return m_resource;
+}
+
+inline CNcbiResource& CNcbiContext::GetResource( void ) THROWS_NONE
 {
     return m_resource;
 }
