@@ -437,6 +437,25 @@ CBDB_Cache::~CBDB_Cache()
     {}
 }
 
+
+void CBDB_Cache::x_PidLock(ELockMode lm)
+{
+    string lock_file = string("lcs_") + m_Name + string(".pid");
+    string lock_file_path = m_Path + lock_file;
+
+    switch (lm)
+    {
+    case ePidLock:
+        _ASSERT(m_PidGuard == 0);
+        m_PidGuard = new CPIDGuard(lock_file_path, m_Path);
+        break;
+    case eNoLock:
+        break;
+    default:
+        break;
+    }
+}
+
 void CBDB_Cache::Open(const char* cache_path, 
                       const char* cache_name,
                       ELockMode lm, 
@@ -449,6 +468,7 @@ void CBDB_Cache::Open(const char* cache_path,
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
+    m_Name = cache_name;
 
     // Make sure our directory exists
     {{
@@ -457,20 +477,6 @@ void CBDB_Cache::Open(const char* cache_path,
             dir.Create();
         }
     }}
-
-    string lock_file = string("lcs_") + string(cache_name) + string(".pid");
-    string lock_file_path = m_Path + lock_file;
-
-    switch (lm)
-    {
-    case ePidLock:
-        m_PidGuard = new CPIDGuard(lock_file_path, m_Path);
-        break;
-    case eNoLock:
-        break;
-    default:
-        break;
-    }
 
     m_Env = new CBDB_Env();
 
@@ -484,6 +490,7 @@ void CBDB_Cache::Open(const char* cache_path,
         if (cache_ram_size) {
             m_Env->SetCacheSize(cache_ram_size);
         }
+        x_PidLock(lm);
         m_Env->OpenWithTrans(cache_path, CBDB_Env::eThreaded);
     } else {
         if (cache_ram_size) {
@@ -493,24 +500,28 @@ void CBDB_Cache::Open(const char* cache_path,
         try {
             m_Env->JoinEnv(cache_path, CBDB_Env::eThreaded);
             if (!m_Env->IsTransactional()) {
-                LOG_POST(Warning << 
-                         "LC: Warning: Joined non-transactional environment ");
+                LOG_POST(Info << 
+                         "LC: '" << cache_name << 
+                         "' Warning: Joined non-transactional environment ");
             }
         } 
         catch (CBDB_ErrnoException& err_ex) 
         {
             if (err_ex.BDB_GetErrno() == DB_RUNRECOVERY) {
                 LOG_POST(Warning << 
-                         "LC: Warning: DB_ENV returned DB_RUNRECOVERY code."
+                         "LC: '" << cache_name << 
+                         "'Warning: DB_ENV returned DB_RUNRECOVERY code."
                          " Running the recovery procedure.");
             }
+            x_PidLock(lm);
             m_Env->OpenWithTrans(cache_path, 
-                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecoveryFatal);
+                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
         catch (CBDB_Exception&)
         {
+            x_PidLock(lm);
             m_Env->OpenWithTrans(cache_path, 
-                   CBDB_Env::eThreaded | CBDB_Env::eRunRecoveryFatal);
+                                 CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
         }
     }
 
@@ -522,8 +533,6 @@ void CBDB_Cache::Open(const char* cache_path,
     if (m_Env->IsTransactional()) {
         m_Env->SetTransactionTimeout(30 * 1000000); // 30 sec
     }
-
-//    m_Env->CleanLog();
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -549,6 +558,11 @@ void CBDB_Cache::Open(const char* cache_path,
     m_Env->TransactionCheckpoint();
 
     m_ReadOnly = false;
+
+    LOG_POST(Info << 
+             "LC: '" << cache_name << 
+             "' Cache mount at: " << cache_path);
+
 }
 
 
@@ -563,6 +577,7 @@ void CBDB_Cache::OpenReadOnly(const char*  cache_path,
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     m_Path = CDirEntry::AddTrailingPathSeparator(cache_path);
+    m_Name = cache_name;
 
     m_CacheDB = new SCacheDB();
     m_CacheAttrDB = new SCache_AttrDB();
@@ -584,6 +599,10 @@ void CBDB_Cache::OpenReadOnly(const char*  cache_path,
     }}
 
     m_ReadOnly = true;
+
+    LOG_POST(Info << 
+             "LC: '" << cache_name << 
+             "' Cache mount read-only at: " << cache_path);
 }
 
 
@@ -594,7 +613,31 @@ void CBDB_Cache::Close()
         x_SaveAttrStorage();
     }
 
-    x_Close();
+    delete m_PidGuard;    m_PidGuard = 0;
+    delete m_CacheDB;     m_CacheDB = 0;
+    delete m_CacheAttrDB; m_CacheAttrDB = 0;
+
+    try {
+        if (m_Env) {
+            m_Env->CleanLog();
+
+            if (m_Env->CheckRemove()) {
+                LOG_POST(Info << 
+                        "LC: '" << m_Name << "' Unmounted. BDB ENV deleted.");
+            } else {
+                LOG_POST(Warning << "LC: '" << m_Name 
+                                << "' environment still in use.");
+
+            }
+        }
+    } 
+    catch (exception& ex) {
+        LOG_POST(Warning << "LC: '" << m_Name 
+                         << "' Exception in Close() " << ex.what()
+                         << " (ignored.)");
+    }
+
+    delete m_Env;         m_Env = 0;
 }
 
 void CBDB_Cache::x_Close()
@@ -1688,6 +1731,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.69  2004/08/24 14:07:44  kuznets
+ * Reworked cache join machamism, no PID lock when join is successfull + remove env on shutdown
+ *
  * Revision 1.68  2004/08/13 15:57:34  kuznets
  * Commented log removal (temp)
  *
