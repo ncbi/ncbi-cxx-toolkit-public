@@ -83,8 +83,8 @@ private:
     friend class CGridClient;
     CGridJobSubmiter(CGridClient&);
 
-    string       m_Input;
     CGridClient& m_GridClient;
+    string       m_Input;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -139,12 +139,12 @@ private:
     CGridJobStatus(CGridClient&);
     void x_SetJobKey(const string& job_key);
 
+    CGridClient& m_GridClient;
     string       m_JobKey;
     string       m_Output;
     string       m_ErrMsg;
     int          m_RetCode;
     size_t       m_BlobSize;
-    CGridClient& m_GridClient;
 
     /// The copy constructor and the assignment operator
     /// are prohibited
@@ -204,6 +204,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/03/28 19:29:37  didenko
+ * Got rid of a wornning on GCC
+ *
  * Revision 1.1  2005/03/25 16:23:43  didenko
  * Initail version
  *
