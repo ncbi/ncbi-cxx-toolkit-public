@@ -453,6 +453,9 @@ protected:
     /// from different threads
     CMutex m_Mutex;
 
+    typedef set<FNCBI_EntryPoint>                TEntryPoints;
+    typedef set<TClassFactory*>                  TFactories;
+
     typedef vector<CDllResolver::SResolvedEntry> TResolvedEntries;
 
     typedef vector<CPluginManager_DllResolver*>  TDllResolvers;
@@ -461,7 +464,9 @@ protected:
 private:
     /// List of factories presently registered with (and owned by)
     /// the plugin manager.
-    set<TClassFactory*>                  m_Factories;
+    TFactories                           m_Factories;
+    /// List of entry points registered in this plugin manager
+    TEntryPoints                         m_EntryPoints;
     /// DLL resolvers
     TDllResolvers                        m_Resolvers;
     /// Paths used for DLL search
@@ -710,7 +715,7 @@ CPluginManager<TClass, TIfVer>::FindClassFactory(const string&  driver,
     int best_minor = -1;
     int best_patch_level = -1;
 
-    NON_CONST_ITERATE(typename set<TClassFactory*>, it, m_Factories) {
+    NON_CONST_ITERATE(typename TFactories, it, m_Factories) {
         TClassFactory* cf = *it;
 
         typename TClassFactory::TDriverList drv_list;
@@ -754,7 +759,7 @@ bool CPluginManager<TClass, TIfVer>::UnregisterFactory(TClassFactory& factory)
 {
     CMutexGuard guard(m_Mutex);
 
-    typename set<TClassFactory*>::iterator it = m_Factories.find(&factory);
+    typename TFactories::iterator it = m_Factories.find(&factory);
     if (it != m_Factories.end()) {
         delete *it;
         m_Factories.erase(it);
@@ -767,6 +772,11 @@ template <class TClass, class TIfVer>
 void CPluginManager<TClass, TIfVer>::RegisterWithEntryPoint
 (FNCBI_EntryPoint plugin_entry_point)
 {
+    CMutexGuard guard(m_Mutex);
+    if ( !m_EntryPoints.insert(plugin_entry_point).second ) {
+        // entry point is already registered
+        return;
+    }
     TDriverInfoList drv_list;
     plugin_entry_point(drv_list, eGetFactoryInfo);
 
@@ -876,27 +886,13 @@ void CPluginManager<TClass, TIfVer>::Resolve(const string&       driver,
 template <class TClass, class TIfVer>
 CPluginManager<TClass, TIfVer>::~CPluginManager()
 {
-    {{
-        typename set<TClassFactory*>::iterator it = m_Factories.begin();
-        typename set<TClassFactory*>::iterator it_end = m_Factories.end();
-        for (; it != it_end; ++it) {
-            TClassFactory* f = *it;
-            delete f;
-        }
+    ITERATE ( typename TFactories, it, m_Factories ) {
+        delete *it;
+    }
 
-    }}
-
-    {{
-        typename vector<CPluginManager_DllResolver*>::iterator it =
-            m_Resolvers.begin();
-        typename vector<CPluginManager_DllResolver*>::iterator it_end =
-            m_Resolvers.end();
-        for (; it != it_end; ++it) {
-            CPluginManager_DllResolver* r = *it;
-            delete r;
-        }
-
-    }}
+    ITERATE ( typename TDllResolvers, it, m_Resolvers ) {
+        delete *it;
+    }
 
     NON_CONST_ITERATE(TResolvedEntries, it, m_RegisteredEntries) {
         delete it->dll;
@@ -930,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2005/03/23 14:38:53  vasilche
+ * Keep track of registered entry points.
+ *
  * Revision 1.44  2005/03/10 20:49:57  vasilche
  * Fixed error message.
  *
