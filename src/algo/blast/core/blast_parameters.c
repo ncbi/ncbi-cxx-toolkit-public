@@ -42,6 +42,10 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/blast_parameters.h>
+#include <algo/blast/core/blast_lookup.h>
+#include <algo/blast/core/mb_lookup.h>
+#include <algo/blast/core/phi_lookup.h>
+#include <algo/blast/core/blast_rps.h>
 
 
 /** Looks for a "valid" Karlin Blk within the list of blocks.
@@ -71,6 +75,49 @@ s_BlastFindValidKarlinBlk(Blast_KarlinBlk** kbp_in, const BlastQueryInfo* query_
              }
         }
         return status;
+}
+
+/** Determines optimal extension method given 1.) the type of
+ * search (e.g., program, whether rps, discontig. mb etc.).
+ * 2.) whether a flag is set specifying the AG stride option
+ * if 2.) is true then the lookup table has been set up for AG stride
+ *
+ * @param lookup_wrap pointer to lookup table [in]
+ * @return suggested extension method.  eMaxSeedExtensionMethod means 
+ *     the input lookup table was not found. 
+ */
+ESeedExtensionMethod
+s_GetBestExtensionMethod(const LookupTableWrap* lookup_wrap)
+{
+   ESeedExtensionMethod retval = eMaxSeedExtensionMethod;
+
+   ASSERT(lookup_wrap);
+
+   switch (lookup_wrap->lut_type) {
+     case AA_LOOKUP_TABLE:
+     case PHI_AA_LOOKUP:  
+     case PHI_NA_LOOKUP:
+     case RPS_LOOKUP_TABLE:
+         retval = eRight;
+         break;
+     case NA_LOOKUP_TABLE:
+         if (((BlastLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
+               retval = eRightAndLeft;
+         else
+               retval = eRight;
+         break;
+     case MB_LOOKUP_TABLE:
+         if (((BlastMBLookupTable*)lookup_wrap->lut)->ag_scanning_mode == TRUE)
+               retval = eRightAndLeft;
+         else if (((BlastMBLookupTable*)lookup_wrap->lut)->template_length > 0)
+               retval = eUpdateDiag;   /* Used for discontiguous megablast. */
+         else
+               retval = eRight;
+         break;
+   }
+   ASSERT(retval != eMaxSeedExtensionMethod);
+
+   return retval;
 }
 
 BlastInitialWordParameters*
@@ -113,6 +160,7 @@ Int2
 BlastInitialWordParametersNew(EBlastProgramType program_number, 
    const BlastInitialWordOptions* word_options, 
    const BlastHitSavingParameters* hit_params, 
+   const LookupTableWrap* lookup_wrap,
    BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    Uint4 subject_length,
@@ -120,6 +168,8 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
 {
    Blast_KarlinBlk* kbp_std;
    Int2 status = 0;
+   const int kQueryLenForStacks = 50;  /* Use stacks rather than diag for 
+                                     any query longer than this.  Only for blastn. */
 
    /* If parameters pointer is NULL, there is nothing to fill, 
       so don't do anything */
@@ -140,6 +190,16 @@ BlastInitialWordParametersNew(EBlastProgramType program_number,
    (*parameters)->x_dropoff_init = (Int4)
       ceil(sbp->scale_factor * word_options->x_dropoff * NCBIMATH_LN2/
            kbp_std->Lambda);
+
+   if (program_number == eBlastTypeBlastn &&
+      (query_info->contexts[query_info->last_context].query_offset +
+            query_info->contexts[query_info->last_context].query_length) > kQueryLenForStacks)
+       (*parameters)->container_type = eWordStacks;
+   else
+       (*parameters)->container_type = eDiagArray;
+
+   (*parameters)->extension_method = 
+                 s_GetBestExtensionMethod(lookup_wrap);
 
    status = BlastInitialWordParametersUpdate(program_number,
                hit_params, sbp, query_info,
@@ -678,6 +738,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/01/10 13:22:34  madden
+ * Add function s_GetBestExtensionMethod to decide on optimal extension method, also set container type based upon search type and query length
+ *
  * Revision 1.1  2004/12/29 13:31:27  madden
  * New files for Blast parameters (separated from blast_options.[ch])
  *
