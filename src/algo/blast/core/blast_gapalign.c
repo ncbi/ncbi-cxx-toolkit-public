@@ -1766,7 +1766,7 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
   BlastGapDPPtr dyn_prog;
   Int4 i, j, cb, j_r, g, decline_penalty;
   Int4 c, d, e, m, tt, h, X, f;
-  Int4 best_score = 0;
+  Int4 best_score = 0, score;
   Int4Ptr *matrix;
   Int4Ptr wa;
   BlastGapDPPtr dp;
@@ -1782,10 +1782,10 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
   X = gap_align->gap_x_dropoff;
 
   if (X < m)
-	X = m;
-
+     X = m;
+  
   if(N <= 0 || M <= 0) return 0;
-
+  
   j = (N + 2) * sizeof(BlastGapDP);
   if (gap_align->dyn_prog)
      dyn_prog = gap_align->dyn_prog;
@@ -1799,103 +1799,105 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
   dyn_prog[0].CC = 0; c = dyn_prog[0].DD = -m;
   dyn_prog[0].FF = -m;
   for(i = 1; i <= N; i++) {
-    if(c < -X) break;
-    dyn_prog[i].CC = c;
-    dyn_prog[i].DD = c - m; 
-    dyn_prog[i].FF = c - m - decline_penalty;
-    c -= h;
+     if(c < -X) break;
+     dyn_prog[i].CC = c;
+     dyn_prog[i].DD = c - m; 
+     dyn_prog[i].FF = c - m - decline_penalty;
+     c -= h;
   }
-
+  
   if(reverse_sequence)
-    B_increment=-1;
+     B_increment = -1;
   else
-    B_increment=1;
-
+     B_increment = 1;
+  
   tt = 0;  j = i;
   for (j_r = 1; j_r <= M; j_r++) {
-	if(reverse_sequence)
-	{
-		base_pair = READDB_UNPACK_BASE_N(A[(M-j_r)/4], ((j_r-1)%4));
-            	wa = matrix[base_pair];
-	}
-        else
-	{
-		base_pair = READDB_UNPACK_BASE_N(A[1+((j_r-1)/4)], (3-((j_r-1)%4)));
-            	wa = matrix[base_pair];
-	}
-      e = c =f = MININT;
-      Bptr = &B[tt];
-      if(reverse_sequence)
+     if(reverse_sequence) {
+        base_pair = READDB_UNPACK_BASE_N(A[(M-j_r)/4], ((j_r-1)%4));
+        wa = matrix[base_pair];
+     } else {
+        base_pair = READDB_UNPACK_BASE_N(A[1+((j_r-1)/4)], (3-((j_r-1)%4)));
+        wa = matrix[base_pair];
+     }
+     e = c = f = MININT;
+     Bptr = &B[tt];
+     if(reverse_sequence)
 	Bptr = &B[N-tt];
-/*
-      Bptr += B_increment;
-*/
-      for (cb = i = tt, dp = &dyn_prog[i]; i < j; i++) {
-	Bptr += B_increment;
-	  d = dp->DD;
-	  if (e < f) e = f;
-	  if (d < f) d = f;
-	  if (c < d || c < e) {
-	      if (d < e) {
-		  c = e;
-	      } else {
-		  c = d; 
-	      }
-	      if (best_score - c > X) {
-		  c = dp->CC+wa[*Bptr]; f = dp->FF;
-		  if (tt == i) tt++;
-		  else { dp->CC =dp->FF= MININT;}
-	      } else {
-		  cb = i;
-                  if ((c-=m) > (d-=h)) {
-                      dp->DD = c;
-                  } else {
-                      dp->DD = d;
-                  }
-                  if (c > (e-=h)) {
-                      e = c;
-                  }
-                  c+=m;
-		  d = dp->CC+wa[*Bptr]; dp->CC = c; c=d;
-		  d = dp->FF; dp->FF = f-decline_penalty; f = d;
-	      }
-	  } else {
-	      if (best_score - c > X){
-		  c = dp->CC+wa[*Bptr]; f= dp->FF;
-		  if (tt == i) tt++;
-		  else { dp->CC =dp->FF= MININT;}
-	      } else {
-		  cb = i; 
-		  if (c > best_score) {
-		      best_score = c;
-		      *pei = j_r; *pej = i;
-		  } 
-		  if ((c-=m) > (d-=h)) {
-		      dp->DD = c; 
-		  } else {
-		      dp->DD = d;
-		  } 
-		  if (c > (e-=h)) {
-		      e = c;
-		  } 
-		  c+=m;
-		  d = dp->FF;
-		  if (c-g>f) dp->FF = c-g-decline_penalty; else dp->FF = f-decline_penalty;
-		  f = d;
-		  d = dp->CC+wa[*Bptr]; dp->CC = c; c = d;
-	      }
-	  }
-	  dp++;
-      }
-      if (tt == j) break;
-      if (cb < j-1) { j = cb+1;}
-      else while (e >= best_score-X && j <= N) {
-	  dyn_prog[j].CC = e; dyn_prog[j].DD = e-m;dyn_prog[j].FF = e-g-decline_penalty;
-	  e -= h; j++;
-      }
-      if (j <= N) {
-	  dyn_prog[j].DD = dyn_prog[j].CC = dyn_prog[j].FF = MININT; j++;
-      }
+
+     for (cb = i = tt, dp = &dyn_prog[i]; i < j; i++) {
+        Bptr += B_increment;
+        score = wa[*Bptr];
+        if (score == MININT)
+           break;
+        d = dp->DD;
+        if (e < f) e = f;
+        if (d < f) d = f;
+        if (c < d || c < e) {
+           if (d < e) {
+              c = e;
+           } else {
+              c = d; 
+           }
+           if (best_score - c > X) {
+              c = dp->CC + score; f = dp->FF;
+              if (tt == i) tt++;
+              else { dp->CC = dp->FF = MININT;}
+           } else {
+              cb = i;
+              if ((c-=m) > (d-=h)) {
+                 dp->DD = c;
+              } else {
+                 dp->DD = d;
+              }
+              if (c > (e-=h)) {
+                 e = c;
+              }
+              c+=m;
+              d = dp->CC + score; dp->CC = c; c=d;
+              d = dp->FF; dp->FF = f - decline_penalty; f = d;
+           }
+        } else {
+           if (best_score - c > X){
+              c = dp->CC + score; f = dp->FF;
+              if (tt == i) tt++;
+              else { dp->CC = dp->FF = MININT;}
+           } else {
+              cb = i; 
+              if (c > best_score) {
+                 best_score = c;
+                 *pei = j_r; *pej = i;
+              } 
+              if ((c-=m) > (d-=h)) {
+                 dp->DD = c; 
+              } else {
+                 dp->DD = d;
+              } 
+              if (c > (e-=h)) {
+                 e = c;
+              } 
+              c+=m;
+              d = dp->FF;
+              if (c-g>f) dp->FF = c-g-decline_penalty; 
+              else dp->FF = f-decline_penalty;
+              f = d;
+              d = dp->CC+score; dp->CC = c; c = d;
+           }
+        }
+        dp++;
+     }
+     if (tt == j) break;
+     if (cb < j-1) { j = cb+1;}
+     else while (e >= best_score-X && j <= N) {
+        dyn_prog[j].CC = e; 
+        dyn_prog[j].DD = e-m;
+        dyn_prog[j].FF = e-g-decline_penalty;
+        e -= h; j++;
+     }
+     if (j <= N) {
+        dyn_prog[j].DD = dyn_prog[j].CC = dyn_prog[j].FF = MININT; 
+        j++;
+     }
   }
   
   if (!gap_align->dyn_prog)
