@@ -172,7 +172,7 @@ case "`uname`" in
 esac
 if test "`uname`" = Darwin -a -x /Developer/Tools/CpMac; then
    for d in $install_dirs ; do
-      /Developer/Tools/CpMac -pr $build_dir/$d $install_dir/$d
+      /Developer/Tools/CpMac -r $build_dir/$d $install_dir/$d
       test $? -eq 0  ||  Usage "Failed copy to:  $install_dir/$d"
    done
 else
