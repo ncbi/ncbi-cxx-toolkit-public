@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2001/01/18 19:37:28  thiessen
+* save structure (re)alignments to asn output
+*
 * Revision 1.21  2000/12/29 19:23:38  thiessen
 * save row order
 *
@@ -177,6 +180,9 @@
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/show_hide_dialog.hpp"
 
+#include <threader/thrdatd.h>
+#include <threader/thrddecl.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -307,14 +313,15 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
 
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_CLOSE(                                          Cn3DMainFrame::OnCloseWindow)
-    EVT_MENU(MID_EXIT,                                  Cn3DMainFrame::OnExit)
-    EVT_MENU(MID_OPEN,                                  Cn3DMainFrame::OnOpen)
-    EVT_MENU(MID_SAVE,                                  Cn3DMainFrame::OnSave)
-    EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,          Cn3DMainFrame::OnAdjustView)
-    EVT_MENU_RANGE(MID_SHOW_HIDE,   MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
-    EVT_MENU(MID_REFIT_ALL,                             Cn3DMainFrame::OnAlignStructures)
-    EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
-    EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
+    EVT_MENU(       MID_EXIT,                           Cn3DMainFrame::OnExit)
+    EVT_MENU(       MID_OPEN,                           Cn3DMainFrame::OnOpen)
+    EVT_MENU(       MID_SAVE,                           Cn3DMainFrame::OnSave)
+    EVT_MENU_RANGE( MID_TRANSLATE,  MID_RESET,          Cn3DMainFrame::OnAdjustView)
+    EVT_MENU_RANGE( MID_SHOW_HIDE,  MID_SHOW_SELECTED,  Cn3DMainFrame::OnShowHide)
+    EVT_MENU(       MID_REFIT_ALL,                      Cn3DMainFrame::OnAlignStructures)
+    EVT_MENU_RANGE( MID_SECSTRUC,   MID_WIREFRAME,      Cn3DMainFrame::OnSetStyle)
+    EVT_MENU_RANGE( MID_QLOW,       MID_QHIGH,          Cn3DMainFrame::OnSetQuality)
+    EVT_MENU(       MID_THREADER,                       Cn3DMainFrame::OnThreader)
 END_EVENT_TABLE()
 
 Cn3DMainFrame::Cn3DMainFrame(
@@ -660,6 +667,32 @@ void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)
         default: ;
     }
     GlobalMessenger()->PostRedrawAllStructures();
+}
+
+void Cn3DMainFrame::OnThreader(wxCommandEvent& event)
+{
+    const double SCALING_FACTOR = 100000;
+    int zscs = 1;
+
+    Qry_Seq*        pQrySeq = NewQrySeq(0, 0);
+    Seq_Mtf*        pPSSM = NULL;
+    Rcx_Ptl*        pPMF = NewRcxPtl(0, 0, 0);
+    Gib_Scd*        pGibbs = NewGibScd(0);
+    Fld_Mtf*        pContacts = NewFldMtf(0, 0, 0);
+    Thd_Tbl*        pResults = NewThdTbl(0, 0);
+    float*          pTrajectory = new float[1];
+    Cor_Def*        pCorDef = NewCorDef(0);
+
+    int RetVal =
+        atd(pContacts, pCorDef, pQrySeq, pPMF, pGibbs, pResults, pPSSM, pTrajectory, zscs, SCALING_FACTOR);
+
+    FreeQrySeq(pQrySeq);
+    FreeRcxPtl(pPMF);
+    FreeGibScd(pGibbs);
+    FreeFldMtf(pContacts);
+    FreeThdTbl(pResults);
+    delete pTrajectory;
+    FreeCorDef(pCorDef);
 }
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/01/18 19:37:01  thiessen
+* save structure (re)alignments to asn output
+*
 * Revision 1.36  2000/12/29 19:23:50  thiessen
 * save row order
 *
@@ -153,6 +156,8 @@
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
 #include <objects/mmdb1/Biostruc.hpp>
+#include <objects/mmdb1/Biostruc_annot_set.hpp>
+#include <objects/mmdb3/Biostruc_feature.hpp>
 
 #include "cn3d/structure_base.hpp"
 #include "cn3d/vector_math.hpp"
@@ -245,8 +250,10 @@ public:
     bool SaveASNData(const char *filename, bool doBinary);
 
 private:
+    // pointers to the asn data
     ncbi::objects::CNcbi_mime_asn1 *mimeData;
     ncbi::objects::CCdd *cddData;
+    ncbi::objects::CBiostruc_annot_set *structureAlignments;
 
     void Init(void);
     void MatchSequencesToMolecules(void);
@@ -258,12 +265,17 @@ private:
 
     // flags to tell whether various parts of the data have been changed
     enum eDataChanged {
-        eAlignmentData = 0x01
+        eAlignmentData = 0x01,
+        eStructureAlignmentData = 0x02
     };
     unsigned int dataChanged;
 
 public:
     bool HasDataChanged(void) const { return (dataChanged > 0); }
+
+    // empty the structure alignment data, in preparation for recomputing
+    void ClearStructureAlignments(void);
+    void AddStructureAlignment(ncbi::objects::CBiostruc_feature *feature);
 };
 
 class ChemicalGraph;
@@ -301,7 +313,8 @@ public:
 
     // set transform based on rigid body fit of given coordinates
     void RealignStructure(int nCoords,
-        const Vector * const *masterCoords, const Vector * const *slaveCoords, const double *weights);
+        const Vector * const *masterCoords, const Vector * const *slaveCoords,
+        const double *weights, int slaveRow);
 
 private:
     const bool isMaster;

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/01/18 19:37:00  thiessen
+* save structure (re)alignments to asn output
+*
 * Revision 1.15  2000/12/29 19:23:49  thiessen
 * save row order
 *
@@ -196,7 +199,9 @@ public:
         // Quality menu
             MID_QLOW,
             MID_QMED,
-            MID_QHIGH
+            MID_QHIGH,
+        // test linking of threader
+            MID_THREADER
     };
 
     void OnExit(wxCommandEvent& event);
@@ -211,6 +216,8 @@ public:
     void OnShowHide(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
+
+    void OnThreader(wxCommandEvent& event);
 
     DECLARE_EVENT_TABLE()
 

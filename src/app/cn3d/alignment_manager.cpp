@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/01/18 19:37:28  thiessen
+* save structure (re)alignments to asn output
+*
 * Revision 1.32  2000/12/29 19:23:38  thiessen
 * save row order
 *
@@ -358,6 +361,8 @@ void AlignmentManager::RealignAllSlaves(void) const
         ERR_POST(Warning << "Can't get master alpha coords");
     } else {
 
+        masterMol->parentSet->ClearStructureAlignments();
+
         for (i=1; i<multiple->NRows(); i++) {
             slaveSeq = multiple->GetSequenceOfRow(i);
             if (!slaveSeq || !(slaveMol = slaveSeq->molecule)) continue;
@@ -369,7 +374,7 @@ void AlignmentManager::RealignAllSlaves(void) const
 
             TESTMSG("realigning slave " << slaveSeq->pdbID << " against master " << masterSeq->pdbID);
             (const_cast<StructureObject*>(slaveObj))->
-                RealignStructure(nResidues, masterCoords, slaveCoords, weights);
+                RealignStructure(nResidues, masterCoords, slaveCoords, weights, i);
         }
     }
 

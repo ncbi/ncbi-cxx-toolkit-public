@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/01/18 19:37:28  thiessen
+* save structure (re)alignments to asn output
+*
 * Revision 1.43  2001/01/12 01:34:18  thiessen
 * network Biostruc load
 *
@@ -179,6 +182,9 @@
 #include <objects/mmdb3/Move.hpp>
 #include <objects/mmdb3/Trans_matrix.hpp>
 #include <objects/mmdb3/Rot_matrix.hpp>
+#include <objects/mmdb3/Chem_graph_pntrs.hpp>
+#include <objects/mmdb3/Residue_pntrs.hpp>
+#include <objects/mmdb3/Residue_interval_pntr.hpp>
 
 #include <corelib/ncbistre.hpp>
 #include <connect/ncbi_util.h>
@@ -200,6 +206,7 @@
 #include "cn3d/messenger.hpp"
 #include "cn3d/cn3d_colors.hpp"
 #include "cn3d/asn_reader.hpp"
+#include "cn3d/block_multiple_alignment.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -319,7 +326,7 @@ void StructureSet::Init(void)
 }
 
 StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
-    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc())
+    StructureBase(NULL), isMultipleStructure(mime->IsAlignstruc()), structureAlignments(NULL)
 {
     Init();
     mimeData = mime;
@@ -354,8 +361,9 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
             if (!object->SetTransformToMaster(
                     mime->GetAlignstruc().GetAlignments(),
                     objects.front()->mmdbID))
-                ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
-                    << " with master " << objects.front()->pdbID);
+                ERR_POST(Warning << "Can't get structure alignment for slave " << object->pdbID
+                    << " with master " << objects.front()->pdbID
+                    << ";\nwill likely require manual realignment");
             objects.push_back(object);
         }
         sequenceSet = new SequenceSet(this, mime->GetAlignstruc().GetSequences());
@@ -363,6 +371,7 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
         alignmentSet = new AlignmentSet(this, mime->GetAlignstruc().GetSeqalign());
         alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
         styleManager->SetToAlignment(StyleSettings::eAligned);
+        structureAlignments = &(mime->GetAlignstruc().SetAlignments());
 
     } else if (mime->IsEntrez() && mime->GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime->GetEntrez().GetData().GetStructure(), true);
@@ -379,15 +388,16 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
 static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
 {
     err.erase();
+    bool okay = true;
+
+    // set up registry field to set GET connection method for HTTP
+    CNcbiRegistry* reg = new CNcbiRegistry;
+//        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");  // for debugging
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
+    CORE_SetREG(REG_cxx2c(reg, true));
+
     try {
-
-        // set up registry field to set GET method
-        CNcbiRegistry* reg = new CNcbiRegistry;
-//        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "TRUE");
-        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
-        reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
-        CORE_SetREG(REG_cxx2c(reg));
-
         // create HHTP stream from mmdbsrv URL
         CNcbiOstrstream args;
         args << "uid=" << mmdbID
@@ -413,10 +423,11 @@ static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
 
     } catch (exception& e) {
         err = e.what();
-        return false;
+        okay = false;
     }
 
-    return true;
+    CORE_SetREG(NULL);
+    return okay;
 }
 
 StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
@@ -494,8 +505,9 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
                 StructureObject *object = new StructureObject(this, biostruc, isMaster, true);
                 if (!isMaster) {
                     if (!object->SetTransformToMaster(cdd->GetFeatures(), masterMMDBID))
-                        ERR_POST(Error << "Can't get alignment for slave " << object->pdbID
-                            << " with master " << objects.front()->pdbID);
+                        ERR_POST(Warning << "Can't get structure alignment for slave " << object->pdbID
+                            << " with master " << objects.front()->pdbID
+                            << ";\nwill likely require manual realignment");
                 }
                 objects.push_back(object);
             }
@@ -508,6 +520,7 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir) :
     styleManager->SetToAlignment(StyleSettings::eAligned);
     VerifyFrameMap();
     showHideManager->ConstructShowHideArray(this);
+    structureAlignments = &(cdd->SetFeatures());
 }
 
 StructureSet::~StructureSet(void)
@@ -518,6 +531,41 @@ StructureSet::~StructureSet(void)
     if (alignmentManager) delete alignmentManager;
     if (cddData) delete cddData;
     if (mimeData) delete mimeData;
+}
+
+void StructureSet::ClearStructureAlignments(void)
+{
+    // create or empty the Biostruc-annot-set that will contain these alignments
+    // in the asn data, erasing any structure alignments currently stored there
+    if (structureAlignments) {
+        structureAlignments->SetId().clear();
+        structureAlignments->SetDescr().clear();
+        structureAlignments->SetFeatures().clear();
+    } else {
+        structureAlignments = new CBiostruc_annot_set();
+    }
+
+    // set up the skeleton of the new Biostruc-annot-set
+    // new Mmdb-id
+    structureAlignments->SetId().resize(1);
+    structureAlignments->SetId().front().Reset(new CBiostruc_id());
+    CRef<CMmdb_id> mid(new CMmdb_id(objects.front()->mmdbID));
+    structureAlignments->SetId().front().GetObject().SetMmdb_id(mid);
+    // new Biostruc-feature-set
+    CRef<CBiostruc_feature_set> featSet(new CBiostruc_feature_set());
+    featSet.GetObject().SetId().Set(objects.front()->mmdbID);
+    structureAlignments->SetFeatures().resize(1, featSet);
+
+    // flag a change in data
+    dataChanged |= eStructureAlignmentData;
+}
+
+void StructureSet::AddStructureAlignment(CBiostruc_feature *feature)
+{
+    CRef<CBiostruc_feature> featureRef(feature);
+    structureAlignments->SetFeatures().front().GetObject().SetFeatures().resize(
+        structureAlignments->SetFeatures().front().GetObject().GetFeatures().size() + 1, featureRef);
+    dataChanged |= eStructureAlignmentData;
 }
 
 void StructureSet::ReplaceAlignmentSet(const AlignmentSet *newAlignmentSet)
@@ -766,11 +814,10 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
         for (f2=f1->GetObject().GetFeatures().begin(); f2!=f2e; f2++) {
 
             // skip if already used
-            if (f2->GetObject().IsSetId()) {
-                if (parentSet->usedFeatures.find(f2->GetObject().GetId().Get()) != parentSet->usedFeatures.end())
-                    continue;
-                parentSet->usedFeatures[f2->GetObject().GetId().Get()] = true;
-            }
+            if (f2->GetObject().IsSetId() &&
+                    parentSet->usedFeatures.find(f2->GetObject().GetId().Get()) !=
+                        parentSet->usedFeatures.end())
+                continue;
 
             // look for alignment feature
             if (f2->GetObject().IsSetType() &&
@@ -790,7 +837,11 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
                     graphAlign.GetBiostruc_ids().back().GetObject().IsMmdb_id() &&
                     graphAlign.GetBiostruc_ids().back().GetObject().GetMmdb_id().Get() == mmdbID) {
 
+                    // mark feature as used
+                    if (f2->GetObject().IsSetId())
+                        parentSet->usedFeatures[f2->GetObject().GetId().Get()] = true;
                     TESTMSG("got transform for " << pdbID << "->master");
+
                     // unpack transform into matrix, moves in reverse order;
                     Matrix xform;
                     transformToMaster = new Matrix();
@@ -826,16 +877,12 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
 }
 
 void StructureObject::RealignStructure(int nCoords,
-    const Vector * const *masterCoords, const Vector * const *slaveCoords, const double *weights)
+    const Vector * const *masterCoords, const Vector * const *slaveCoords,
+    const double *weights, int slaveRow)
 {
-    Vector masterCOM, slaveCOM;
-    Matrix slaveRotation;
-
-    // if this object doesn't already have a transformToMaster, then something weird happened...
-    if (!transformToMaster) {
-        ERR_POST(Error << "StructureObject::RealignStructure() - object doesn't have transformToMaster");
-        return;
-    }
+    Vector masterCOM, slaveCOM; // centers of mass for master, slave
+    Matrix slaveRotation;       // rotation to align slave with master
+    if (!transformToMaster) transformToMaster = new Matrix();
 
     // do the fit
     RigidBodyFit(nCoords, masterCoords, slaveCoords, weights, masterCOM, slaveCOM, slaveRotation);
@@ -847,6 +894,122 @@ void StructureObject::RealignStructure(int nCoords,
     combined = *transformToMaster;
     SetTranslationMatrix(&single, masterCOM);
     ComposeInto(transformToMaster, single, combined);
+
+    const BlockMultipleAlignment *multiple = parentSet->alignmentManager->GetCurrentMultipleAlignment();
+
+    // create a new Biostruc-feature that contains this alignment
+    CBiostruc_feature *feature = new CBiostruc_feature();
+    CRef<CBiostruc_feature_id> id(new CBiostruc_feature_id(mmdbID));
+    feature->SetId(id);
+    CNcbiOstrstream oss;
+    oss << "Structure alignment of slave " << multiple->GetSequenceOfRow(slaveRow)->GetTitle()
+        << " with master " << multiple->GetSequenceOfRow(0)->GetTitle()
+        << ", as computed by Cn3D" << '\0';
+    feature->SetName(std::string(oss.str()));
+    feature->SetType(CBiostruc_feature::eType_alignment);
+    CRef<CBiostruc_feature::C_Location> location(new CBiostruc_feature::C_Location());
+    feature->SetLocation(location);
+    CRef<CChem_graph_alignment> graphAlignment(new CChem_graph_alignment());
+    location.GetObject().SetAlignment(graphAlignment);
+
+    // fill out the Chem-graph-alignment
+    graphAlignment.GetObject().SetDimension(2);
+    CRef<CMmdb_id>
+        masterMID(new CMmdb_id(parentSet->objects.front()->mmdbID)),
+        slaveMID(new CMmdb_id(mmdbID));
+    CRef<CBiostruc_id>
+        masterBID(new CBiostruc_id()),
+        slaveBID(new CBiostruc_id());
+    masterBID.GetObject().SetMmdb_id(masterMID);
+    slaveBID.GetObject().SetMmdb_id(slaveMID);
+    graphAlignment.GetObject().SetBiostruc_ids().resize(2);
+    graphAlignment.GetObject().SetBiostruc_ids().front() = masterBID;
+    graphAlignment.GetObject().SetBiostruc_ids().back() = slaveBID;
+    graphAlignment.GetObject().SetAlignment().resize(2);
+
+    // fill out sequence alignment intervals
+    BlockMultipleAlignment::UngappedAlignedBlockList *blocks = multiple->GetUngappedAlignedBlocks();
+    if (blocks) {
+        CRef<CChem_graph_pntrs>
+            masterCGPs(new CChem_graph_pntrs()),
+            slaveCGPs(new CChem_graph_pntrs());
+        graphAlignment.GetObject().SetAlignment().front() = masterCGPs;
+        graphAlignment.GetObject().SetAlignment().back() = slaveCGPs;
+        CRef<CResidue_pntrs>
+            masterRPs(new CResidue_pntrs()),
+            slaveRPs(new CResidue_pntrs());
+        masterCGPs.GetObject().SetResidues(masterRPs);
+        slaveCGPs.GetObject().SetResidues(slaveRPs);
+
+        masterRPs.GetObject().SetInterval().resize(blocks->size());
+        slaveRPs.GetObject().SetInterval().resize(blocks->size());
+        BlockMultipleAlignment::UngappedAlignedBlockList::const_iterator b, be = blocks->end();
+        CResidue_pntrs::TInterval::iterator
+            mi = masterRPs.GetObject().SetInterval().begin(),
+            si = slaveRPs.GetObject().SetInterval().begin();
+        for (b=blocks->begin(); b!=be; b++, mi++, si++) {
+            CResidue_interval_pntr
+                *masterRIP = new CResidue_interval_pntr(),
+                *slaveRIP = new CResidue_interval_pntr();
+            mi->Reset(masterRIP);
+            si->Reset(slaveRIP);
+
+            masterRIP->SetMolecule_id().Set(multiple->GetSequenceOfRow(0)->molecule->id);
+            slaveRIP->SetMolecule_id().Set(multiple->GetSequenceOfRow(slaveRow)->molecule->id);
+
+            const Block::Range *range = (*b)->GetRangeOfRow(0);
+            masterRIP->SetFrom().Set(range->from + 1); // +1 to convert seqLoc to residueID
+            masterRIP->SetTo().Set(range->to + 1);
+
+            range = (*b)->GetRangeOfRow(slaveRow);
+            slaveRIP->SetFrom().Set(range->from + 1);
+            slaveRIP->SetTo().Set(range->to + 1);
+        }
+    }
+
+    // fill out structure alignment transform
+    CTransform *xform = new CTransform();
+    graphAlignment.GetObject().SetTransform().resize(1);
+    graphAlignment.GetObject().SetTransform().front().Reset(xform);
+    xform->SetId(1);
+    xform->SetMoves().resize(3);
+    CTransform::TMoves::iterator m = xform->SetMoves().begin();
+    for (int i=0; i<3; i++, m++) {
+        CMove *move = new CMove();
+        m->Reset(move);
+        static const int scaleFactor = 100000;
+        if (i == 0) {   // translate slave so its COM is at origin
+            CRef<CTrans_matrix> trans(new CTrans_matrix());
+            move->SetTranslate(trans);
+            trans.GetObject().SetScale_factor(scaleFactor);
+            trans.GetObject().SetTran_1((int)(-(slaveCOM.x * scaleFactor)));
+            trans.GetObject().SetTran_2((int)(-(slaveCOM.y * scaleFactor)));
+            trans.GetObject().SetTran_3((int)(-(slaveCOM.z * scaleFactor)));
+        } else if (i == 1) {
+            CRef<CRot_matrix> rot(new CRot_matrix());
+            move->SetRotate(rot);
+            rot.GetObject().SetScale_factor(scaleFactor);
+            rot.GetObject().SetRot_11((int)(slaveRotation[0] * scaleFactor));
+            rot.GetObject().SetRot_12((int)(slaveRotation[4] * scaleFactor));
+            rot.GetObject().SetRot_13((int)(slaveRotation[8] * scaleFactor));
+            rot.GetObject().SetRot_21((int)(slaveRotation[1] * scaleFactor));
+            rot.GetObject().SetRot_22((int)(slaveRotation[5] * scaleFactor));
+            rot.GetObject().SetRot_23((int)(slaveRotation[9] * scaleFactor));
+            rot.GetObject().SetRot_31((int)(slaveRotation[2] * scaleFactor));
+            rot.GetObject().SetRot_32((int)(slaveRotation[6] * scaleFactor));
+            rot.GetObject().SetRot_33((int)(slaveRotation[10] * scaleFactor));
+        } else if (i == 2) {    // translate slave so its COM is at COM of master
+            CRef<CTrans_matrix> trans(new CTrans_matrix());
+            move->SetTranslate(trans);
+            trans.GetObject().SetScale_factor(scaleFactor);
+            trans.GetObject().SetTran_1((int)(masterCOM.x * scaleFactor));
+            trans.GetObject().SetTran_2((int)(masterCOM.y * scaleFactor));
+            trans.GetObject().SetTran_3((int)(masterCOM.z * scaleFactor));
+        }
+    }
+
+    // store the new alignment in the Biostruc-annot-set
+    parentSet->AddStructureAlignment(feature);
 }
 
 END_SCOPE(Cn3D)
