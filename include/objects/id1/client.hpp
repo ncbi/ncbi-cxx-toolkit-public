@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CID1Client : public CID1Client_Base
+class NCBI_ID1_EXPORT CID1Client : public CID1Client_Base
 {
     typedef CID1Client_Base Tparent;
 public:
@@ -95,6 +95,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/03/21 16:00:03  shomrat
+* Added export specifier
+*
 * Revision 1.1  2002/11/13 20:13:42  ucko
 * Add datatool-generated client classes
 *
