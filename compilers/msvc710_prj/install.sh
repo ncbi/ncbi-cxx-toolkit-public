@@ -118,11 +118,11 @@ for pdb in $pdb_files ; do
 done
 
 # Compiler dir (other common stuff)
-makedir "$cldir"/static -p
-makedir "$cldir"/dll -p
+makedir "$cldir"/$compiler/static -p
+makedir "$cldir"/$compiler/dll -p
 cp -p "$builddir"/compilers/$compiler/*        "$cldir"
-cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/static
-cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/dll
+cp -p "$builddir"/compilers/$compiler/static/* "$cldir"/$compiler/static
+cp -p "$builddir"/compilers/$compiler/dll/*    "$cldir"/$compiler/dll
 
 
 # Gbench public installation
