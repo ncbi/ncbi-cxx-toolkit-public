@@ -14,6 +14,12 @@ timeout.
 Mandatory.
 =========================================================================
 
+max_timeout   : Maximum possible timeout in seconds. 
+
+Individual timeouts cannot be more than this value.
+
+Optional.
+=========================================================================
 
 timestamp : Arbitrary combination of:
             [onread] [subkey] [expire_not_used] [purge_on_startup]
@@ -30,6 +36,9 @@ timestamp : Arbitrary combination of:
 
 [check_expiration] - Expiration timeout is always checked on any access to 
 cache element
+
+[individual_timing_priority] - Individual timing may exceed global 
+timeout settings (enables long term storage)
 
 Mandatory.
 
