@@ -35,7 +35,6 @@ Contents: Functions for accessing the lookup tables for nucleotide BLAST
  * $Revision$
  * */
 
-#include <ncbi.h>
 #include <blast_def.h>
 #include <aa_lookup.h>
 #include <na_lookup.h>
@@ -95,7 +94,7 @@ static NCBI_INLINE Int4 BlastNaLookupAdjustIndex(Uint1Ptr s, Int4 index,
 }
 
 /* Description in na_lookup.h */
-Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
+Int4 BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,  
        Int4Ptr end_offset)
@@ -206,7 +205,7 @@ Int4 LIBCALLBACK BlastNaScanSubject_AG(const LookupTableWrapPtr lookup_wrap,
 }
 
 /* Description in na_lookup.h */
-Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
+Int4 MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,  
        Int4Ptr end_offset)
@@ -286,7 +285,7 @@ Int4 LIBCALLBACK MB_AG_ScanSubject(const LookupTableWrapPtr lookup_wrap,
 }
 
 /* Description in na_lookup.h */
-Int4 LIBCALLBACK BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
+Int4 BlastNaScanSubject(const LookupTableWrapPtr lookup_wrap,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
        Int4Ptr end_offset)
@@ -711,7 +710,7 @@ static NCBI_INLINE Int4 ComputeDiscontiguousIndex_1b(const Uint1Ptr word_start,
 }
 
 /* Description in na_lookup.h */
-Int4 LIBCALLBACK MB_ScanSubject(const LookupTableWrapPtr lookup,
+Int4 MB_ScanSubject(const LookupTableWrapPtr lookup,
        const BLAST_SequenceBlkPtr subject, Int4 start_offset, 
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits,
        Int4Ptr end_offset) 
@@ -769,7 +768,7 @@ Int4 LIBCALLBACK MB_ScanSubject(const LookupTableWrapPtr lookup,
 }
 
 /* Description in na_lookup.h */
-Int4 LIBCALLBACK MB_DiscWordScanSubject(const LookupTableWrapPtr lookup, 
+Int4 MB_DiscWordScanSubject(const LookupTableWrapPtr lookup, 
        const BLAST_SequenceBlkPtr subject, Int4 start_offset,
        Uint4Ptr q_offsets, Uint4Ptr s_offsets, Int4 max_hits, 
        Int4Ptr end_offset)
