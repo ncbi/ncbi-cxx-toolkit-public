@@ -54,6 +54,7 @@
 #include <objects/seqloc/Seq_id.hpp>
 
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbiapp.hpp>
 
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
@@ -144,13 +145,38 @@ string CGBDataLoader::GetLoaderNameFromArgs(const string& /*reader_name*/)
 }
 
 
+CGBDataLoader::TRegisterLoaderInfo CGBDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const TParamTree& params,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority  priority)
+{
+    TParamMaker maker(params);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
+}
+
+
+string CGBDataLoader::GetLoaderNameFromArgs(const TParamTree& params)
+{
+    return "GBLOADER";
+}
+
+
 CGBDataLoader::CGBDataLoader(const string& loader_name, CReader *driver)
   : CDataLoader(loader_name),
     m_Driver(driver)
 {
     GBLOG_POST( "CGBDataLoader");
     if ( !m_Driver ) {
-        x_CreateDriver();
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        auto_ptr<CConfig> cfg;
+        const TParamTree* params = 0;
+        if ( app ) {
+            cfg.reset(new CConfig(app->GetConfig()));
+            params = cfg->GetTree();
+        }
+        x_CreateDriver(kEmptyStr, params);
     }
     if ( m_Driver ) {
         m_ConnMutexes.SetSize(m_Driver->GetParallelLevel());
@@ -164,78 +190,116 @@ CGBDataLoader::CGBDataLoader(const string& loader_name,
     m_Driver(0)
 {
     GBLOG_POST( "CGBDataLoader");
-    x_CreateDriver(reader_name);
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    auto_ptr<CConfig> cfg;
+    const TParamTree* params = 0;
+    if ( app ) {
+        cfg.reset(new CConfig(app->GetConfig()));
+        params = cfg->GetTree();
+    }
+    x_CreateDriver(reader_name, params);
     if ( m_Driver ) {
         m_ConnMutexes.SetSize(m_Driver->GetParallelLevel());
     }
 }
 
 
-void CGBDataLoader::x_CreateDriver(const string& driver_name)
+CGBDataLoader::CGBDataLoader(const string&     loader_name,
+                             const TParamTree& params)
+  : CDataLoader(loader_name),
+    m_Driver(0)
 {
-    if ( !driver_name.empty() ) {
-        m_Driver = x_CreateReader(driver_name);
-        if ( m_Driver ) {
-            return;
-        }
-    }
-
-    static string driver_order = GetConfigString("GENBANK",
-                                                 "LOADER_METHOD",
-                                                 DEFAULT_DRV_ORDER);
-    list<string> drivers;
-    NStr::Split(driver_order, ":", drivers);
-    ITERATE ( list<string>, drv, drivers ) {
-        m_Driver = x_CreateReader(*drv);
-        if ( m_Driver )
-            break;
-    }
-
-    if (!m_Driver) {
-        NCBI_THROW(CLoaderException, eNoConnection,
-                   "Could not create driver: " + driver_order);
+    GBLOG_POST( "CGBDataLoader");
+    x_CreateDriver(kEmptyStr, &params);
+    if ( m_Driver ) {
+        m_ConnMutexes.SetSize(m_Driver->GetParallelLevel());
     }
 }
 
 
-CReader* CGBDataLoader::x_CreateReader(const string& env)
+const CGBDataLoader::TParamTree*
+CGBDataLoader::x_GetLoaderParams(const TParamTree* params) const
 {
-    typedef CPluginManager<CReader> TReader_PluginManager;
-    // TReader_PluginManager ReaderPluginManager;
-    CRef<TReader_PluginManager> ReaderPluginManager;
-    string rpm_name = CInterfaceVersion<CReader>::GetName();
-
-    if ( CPluginManagerStore::HasObject(rpm_name) ) {
-        ReaderPluginManager.Reset(
-            dynamic_cast<TReader_PluginManager*>(
-            CPluginManagerStore::GetObject(rpm_name)));
+    if ( !params ) {
+        return 0;
     }
-    else {
-        ReaderPluginManager.Reset(new TReader_PluginManager);
-        CPluginManagerStore::PutObject(rpm_name, &*ReaderPluginManager);
 
+    const TParamTree* gb_params = 0;
+    // GB loader params may be in a subnode
+    const string& tree_id = params->GetId();
+    if (NStr::CompareNocase(tree_id, kDataLoader_GB_DriverName) != 0) {
+        gb_params = params->FindNode(kDataLoader_GB_DriverName);
+    }
+
+    // Try to use global params if nothing was found
+    return gb_params ? gb_params : params;
+}
+
+
+string CGBDataLoader::x_GetReaderName(const TParamTree* params) const
+{
+    const TPluginManagerParamTree::TPairTreeType* node =
+        params ? params->FindNode(kCFParam_GB_ReaderName) : 0;
+    return node ? node->GetValue() : kEmptyStr;
+}
+
+
+void CGBDataLoader::x_CreateDriver(const string&     driver_name,
+                                   const TParamTree* params)
+{
+    const TParamTree* gb_params = x_GetLoaderParams(params);
+
+    string driver_order = driver_name.empty() ? "*" : driver_name;
+    SIZE_TYPE ast = NStr::Find(driver_order, "*");
+    if (ast != NPOS) {
+        // Add drivers from environment and registry
+        static string add_drivers = GetConfigString("GENBANK",
+                                                    "LOADER_METHOD",
+                                                    DEFAULT_DRV_ORDER);
+        add_drivers += ":" + x_GetReaderName(gb_params);
+        driver_order = NStr::Replace(driver_order, "*", add_drivers, ast);
+    }
+    // Convert driver names to lower case
+    NStr::ToLower(driver_order);
+
+    m_Driver = x_CreateReader(driver_order, gb_params);
+    if (!m_Driver) {
+        NCBI_THROW(CLoaderException, eNoConnection,
+                   "Could not create drivers: " + driver_order);
+    }
+}
+
+
+CReader* CGBDataLoader::x_CreateReader(const string& names,
+                                       const TParamTree* params)
+{
+    typedef CPluginManager<CReader> TReaderManager;
+    typedef CPluginManagerStore::CPMMaker<CReader> TReaderManagerStore;
+    bool created = false;
+    CRef<TReaderManager> ReaderManager(TReaderManagerStore::Get(&created));
+    _ASSERT(ReaderManager);
+
+    if ( created ) {
 #define REGISTER_READER_ENTRY_POINTS
 #if defined(REGISTER_READER_ENTRY_POINTS)
-        ReaderPluginManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id1Reader);
-        ReaderPluginManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id2Reader);
+        ReaderManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id1Reader);
+        ReaderManager->RegisterWithEntryPoint(NCBI_EntryPoint_Id2Reader);
 
 #if defined(HAVE_PUBSEQ_OS)
-        ReaderPluginManager->RegisterWithEntryPoint(NCBI_EntryPoint_ReaderPubseqos);
+        ReaderManager->RegisterWithEntryPoint(NCBI_EntryPoint_ReaderPubseqos);
 #endif // HAVE_PUBSEQ_OS
 
 #endif // REGISTER_READER_ENTRY_POINTS
     }
 
-    string reader_name = env;
-    NStr::ToLower(reader_name);
     try {
-        return ReaderPluginManager->CreateInstance(reader_name);
+        return ReaderManager->CreateInstanceFromList(params, names);
     }
     catch ( exception& e ) {
-        LOG_POST(env << " reader is not available ::" << e.what());
+        LOG_POST(names << " readers are not available ::" << e.what());
     }
     catch ( ... ) {
-        LOG_POST(env << " reader unable to init ");
+        LOG_POST(names << " reader unable to init ");
     }
 
     return 0;
@@ -944,6 +1008,12 @@ END_SCOPE(objects)
 
 USING_SCOPE(objects);
 
+void DataLoaders_Register_GenBank(void)
+{
+    RegisterEntryPoint<CDataLoader>(NCBI_EntryPoint_DataLoader_GB);
+}
+
+
 const string kDataLoader_GB_DriverName("genbank");
 
 class CGB_DataLoaderCF : public CDataLoaderFactory
@@ -982,21 +1052,17 @@ CDataLoader* CGB_DataLoaderCF::CreateAndRegister(
             GetIsDefault(params),
             GetPriority(params)).GetLoader();
     }
-    // Try to use reader name
-    const string& reader_name =
-        GetParam(GetDriverName(), params,
-                 kCFParam_GB_ReaderName, false, kEmptyStr);
-    if ( !reader_name.empty() ) {
+    if ( params ) {
+        // Let the loader detect driver from params
         return CGBDataLoader::RegisterInObjectManager(
             om,
-            reader_name,
+            *params,
             GetIsDefault(params),
             GetPriority(params)).GetLoader();
     }
-    // IsDefault and Priority arguments may be specified
     return CGBDataLoader::RegisterInObjectManager(
         om,
-        0, // no reader
+        0, // no driver - try to autodetect
         GetIsDefault(params),
         GetPriority(params)).GetLoader();
 }

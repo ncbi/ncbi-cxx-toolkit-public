@@ -188,7 +188,10 @@ public:
     static string GetLoaderNameFromArgs(CReader* driver = 0);
 
     // Select reader by name. If failed, select default reader.
-    // Reader name may be the same as in environment: PUBSEQOS or ID1
+    // Reader name may be the same as in environment: PUBSEQOS, ID1 etc.
+    // Several names may be separated with ":". Empty name or "*"
+    // included as one of the names allows to include reader names
+    // from environment and registry.
     static TRegisterLoaderInfo RegisterInObjectManager(
         CObjectManager& om,
         const string&   reader_name,
@@ -196,6 +199,15 @@ public:
         CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(const string& reader_name);
 
+    // Setup loader using param tree. If tree is null or failed to find params,
+    // use environment or select default reader.
+    typedef TPluginManagerParamTree TParamTree;
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const TParamTree& params,
+        CObjectManager::EIsDefault is_default = CObjectManager::eDefault,
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+    static string GetLoaderNameFromArgs(const TParamTree& params);
 
     virtual CConstRef<CSeqref> GetSatSatkey(const CSeq_id_Handle& idh);
     CConstRef<CSeqref> GetSatSatkey(const CSeq_id& id);
@@ -227,15 +239,24 @@ protected:
                               TBlobContentsMask sr_mask);
 
 private:
-    typedef CParamLoaderMaker<CGBDataLoader, CReader*>       TReaderPtrMaker;
-    typedef CParamLoaderMaker<CGBDataLoader, const string&>  TReaderNameMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, CReader*>      TReaderPtrMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, const string&> TReaderNameMaker;
+    typedef CParamLoaderMaker<CGBDataLoader, const TParamTree&> TParamMaker;
     friend class CParamLoaderMaker<CGBDataLoader, CReader*>;
     friend class CParamLoaderMaker<CGBDataLoader, const string&>;
+    friend class CParamLoaderMaker<CGBDataLoader, const TParamTree&>;
 
-    CGBDataLoader(const string& loader_name,
-                  CReader*      driver);
-    CGBDataLoader(const string& loader_name,
-                  const string& reader_name);
+    CGBDataLoader(const string&     loader_name,
+                  CReader*          driver);
+    CGBDataLoader(const string&     loader_name,
+                  const string&     reader_name);
+    CGBDataLoader(const string&     loader_name,
+                  const TParamTree& params);
+
+    // Find GB loader params in the tree or return the original tree.
+    const TParamTree* x_GetLoaderParams(const TParamTree* params) const;
+    // Get reader name from the GB loader params.
+    string x_GetReaderName(const TParamTree* params) const;
 
     typedef map<string, CRef<CLoadInfoSeq_ids> >            TLoadMapSeq_ids;
     typedef map<CSeq_id_Handle, CRef<CLoadInfoSeq_ids> >    TLoadMapSeq_ids2;
@@ -264,8 +285,10 @@ private:
     // private code
     //
     
-    void            x_CreateDriver(const string& driver_name = kEmptyStr);
-    CReader*        x_CreateReader(const string& env);
+    void     x_CreateDriver(const string& driver_name = kEmptyStr,
+                            const TParamTree* params = 0);
+    CReader* x_CreateReader(const string& names,
+                            const TParamTree* params = 0);
 
     CGBDataLoader(const CGBDataLoader&);
     CGBDataLoader& operator=(const CGBDataLoader&);
