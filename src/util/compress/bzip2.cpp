@@ -62,7 +62,7 @@ CBZip2Compression::CBZip2Compression(ELevel level, int verbosity,
 
 CBZip2Compression::~CBZip2Compression(void)
 {
-    delete m_Stream;
+    delete STREAM;
     return;
 }
 
@@ -586,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/23 16:57:21  ivanov
+ * Fixed compilation warning
+ *
  * Revision 1.10  2004/11/17 17:59:36  ivanov
  * cvs commit bzip2.hpp
  *

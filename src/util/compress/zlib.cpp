@@ -94,7 +94,7 @@ CZipCompression::CZipCompression(ELevel level,  int window_bits,
 
 CZipCompression::~CZipCompression()
 {
-    delete m_Stream;
+    delete STREAM;
     return;
 }
 
@@ -904,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/11/23 16:57:21  ivanov
+ * Fixed compilation warning
+ *
  * Revision 1.16  2004/11/17 18:00:17  ivanov
  * Moved #include <zlib.h> from .hpp to .cpp
  *
