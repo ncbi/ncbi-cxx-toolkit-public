@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/09/27 20:58:14  thiessen
+* add VisibleString filter option
+*
 * Revision 1.7  2001/09/24 13:16:53  thiessen
 * fix wxPanel issues
 *
@@ -110,7 +113,8 @@ static bool ReadASNFromFile(const char *filename, ASNClass *ASNobject, bool isBi
 
 // for writing ASN data
 template < class ASNClass >
-static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary, std::string *err)
+static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool isBinary,
+    std::string *err, ncbi::EFixNonPrint fixNonPrint = ncbi::eFNP_Default)
 {
     err->erase();
 
@@ -125,10 +129,10 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
     auto_ptr<ncbi::CObjectOStream> outObject;
     if (isBinary) {
         // Associate ASN.1 binary serialization methods with the input
-        outObject.reset(new ncbi::CObjectOStreamAsnBinary(*outStream));
+        outObject.reset(new ncbi::CObjectOStreamAsnBinary(*outStream, fixNonPrint));
     } else {
         // Associate ASN.1 text serialization methods with the input
-        outObject.reset(new ncbi::CObjectOStreamAsn(*outStream));
+        outObject.reset(new ncbi::CObjectOStreamAsn(*outStream, fixNonPrint));
     }
 
     // write the asn data

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2001/09/27 20:58:28  thiessen
+* add VisibleString filter option
+*
 * Revision 1.79  2001/09/27 15:37:59  thiessen
 * decouple sequence import and BLAST
 *
@@ -940,9 +943,9 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     std::string err;
     bool writeOK = false;
     if (mimeData)
-        writeOK = WriteASNToFile(filename, *mimeData, doBinary, &err);
+        writeOK = WriteASNToFile(filename, *mimeData, doBinary, &err, eFNP_Replace);
     else if (cddData)
-        writeOK = WriteASNToFile(filename, *cddData, doBinary, &err);
+        writeOK = WriteASNToFile(filename, *cddData, doBinary, &err, eFNP_Replace);
     if (writeOK) {
         dataChanged = 0;
     } else {
