@@ -16,7 +16,7 @@
 		<li> <a href="#ref_NamingVar">Class member variables</a>
 		<li> <a href="#ref_NamingFunc">Functions</a>
 	 </ul>
-	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
+	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of quasi-namespaces</a>
 	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
 	 <li> <a href="#ref_Class">Class declaration</a> </ul>
 
@@ -43,7 +43,8 @@
       <tr><td><i><b>E</b>EnumTypeName</i></td><td>enum EMyEnum { ..... };</td></tr>
       <tr><td><i><b>F</b>FunctionTypeName</i></td><td>void (*FMyFunc)(void) { ..... };</td></tr>
       <tr><td><i><b>T</b>AuxiliaryTypedef</i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
-      <tr><td><i><b>N</b>Namespace</i></td><td>namespace NMyNamespace { ..... }; </td></tr>
+      <tr><td><i><b>N</b><a href="#ref_Prefix">QuasiNamespace</a>
+		  </i></td><td>struct NMyNamespace { ..... }; </td></tr>
 
 		<a name="ref_NamingConst">
       <tr><th>Constants</th></tr>
@@ -69,11 +70,11 @@
 	 <br></br> <br></br>
 
 	 <a name="ref_Prefix">
-    <h2> Name prefixing and/or the use of namespaces</h2>
+    <h2>Name prefixing and/or the use of quasi-namespaces</h2>
 
 	 In addition to the above naming conventions that highlights the
 	 nature and/or the scope of things, one should also consider the use
-	 of prefixes(or namespaces) in order to:
+	 of prefixes(or quasi-namespaces) in order to:
 	 <ul>
 		<li> avoid name conflicts
 		<li> indicate the package which the thing belongs to
@@ -85,21 +86,16 @@
 	 types <i>"T<b>Foo</b>Sometype"</i>, etc.
 
 	 <p>
-	 It is decided that we do not use the full functionality of C++
-	 namespaces in NCBI, so the use of <i>"using namespace XXX;"</i> is
-	 prohibited.
+	 It is decided that we do not use the C++ namespaces in NCBI.
 	 <p>
-	 However, the namespace definitions are allowed in the form of
-    <i>"namespace NSomething { .....;  void SomeFunc(int); ... };"</i>(please notice the terminating
-	 <i>';'</i>);  and then one has to use an explicit prefix
-	 for all things belonging to this namespace, e.g. call
-    <i>"NSomething::SomeFunc(5)"</i>. This will work even for compilers
-    that do not support namespaces(there is a hinty redefinition
-    of <i>"namespace"</i> to <i>"struct"</i> in NCBI standard C++ headers,
-	 and that is why the terminating <i>';'</i> after namespace definition
-	 needed). Usually, this approach is good for global functions.
-	 As for classes, etc. it is better to use simple prefixes(as described
-	 above) rather than namespaces.
+	 However, one can emulate a namespace by putting the things into a
+	 structure or class scope, like
+    <i>"struct N<b>Foo</b>Globals { .....;  void SomeFunc(int); ... };"</i>.
+	 Then just use an explicit prefix when referencing these things, e.g. call
+    <i>"N<b>Foo</b>Globals::SomeFunc(5)"</i>.
+	 Usually, this approach is useful for global functions.
+	 As for classes, etc. it is still better to use simple prefixes
+	 (as described above) instead.
 
 
 	 <br></br> <br></br>
