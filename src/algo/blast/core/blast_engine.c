@@ -170,22 +170,22 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
    else
      GetGappedScore = BLAST_MbGetGappedScore;
 
-   /* pick which wordfinder to use */
-   offset_array_size = 10000;
-   wordfinder = BlastNaWordFinder;
-   
    if (mb_lookup) {
       wordfinder = MB_WordFinder;
-   } else if (ag_blast) {
-     wordfinder = BlastNaWordFinder_AG;
+      offset_array_size = 
+         MAX(1024, ((MBLookupTablePtr)lookup->lut)->longest_chain);
+   } else {
+      if (blastp) {
+         wordfinder = BlastAaWordFinder;
+      } else if (ag_blast) {
+         wordfinder = BlastNaWordFinder_AG;
+      } else {
+         wordfinder = BlastNaWordFinder;
+      }
+      offset_array_size = 
+         MAX(1024, ((LookupTablePtr)lookup->lut)->longest_chain);
    }
 
-   if (blastp)
-     {
-       LookupTablePtr lut = lookup->lut;
-       offset_array_size= MAX(1024, lut->longest_chain);
-       wordfinder = BlastAaWordFinder;
-     }
 
    query_offsets = Malloc(offset_array_size * sizeof(Uint4));
    subject_offsets = Malloc(offset_array_size * sizeof(Uint4));

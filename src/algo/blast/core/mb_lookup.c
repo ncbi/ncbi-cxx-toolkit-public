@@ -116,7 +116,7 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    MBLookupTablePtr mb_lt;
    Int4 masked_word_count = 0;
    PV_ARRAY_TYPE *pv_array=NULL;
-   Int4 pv_shift, pv_array_bts, pv_size;
+   Int4 pv_shift, pv_array_bts, pv_size, pv_index;
    Int2 word_length, extra_length;
    Int4 last_offset;
 #ifdef USE_HASH_TABLE
@@ -131,6 +131,8 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
    Uint1 width;
    Int4 from, to;
    ValNodePtr loc;
+   Int4 longest_chain = 0;
+   Int4 pcount, pcount1=0;
    
    if (!location) {
      /* Empty sequence location provided */
@@ -371,29 +373,6 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
       }
    }
    
-   /* Now remove the hash entries that have too many positions */
-   if (lookup_options->max_positions>0) {
-      for (ecode=0; ecode<mb_lt->hashsize; ecode++) {
-	 Int4 pcount, pcount1=0;
-	 for (index=mb_lt->hashtable[ecode], pcount=0; 
-	      index>0; index=mb_lt->next_pos[index], pcount++);
-         if (two_templates) {
-            for (index=mb_lt->hashtable2[ecode], pcount1=0; 
-                 index>0; index=mb_lt->next_pos2[index], pcount1++);
-         }
-	 if ((pcount=MAX(pcount,pcount1))>lookup_options->max_positions) {
-	    mb_lt->hashtable[ecode] = 0;
-            if (two_templates)
-               mb_lt->hashtable2[ecode] = 0;
-	    ErrPostEx(SEV_WARNING, 0, 0, "%lx - %d", ecode, pcount);
-	    masked_word_count++;
-	 }
-      }
-      if (masked_word_count)
-	 ErrPostEx(SEV_WARNING, 0, 0, "Masked %d %dmers", masked_word_count,
-		   4*width);
-   }
-
 #ifdef USE_HASH_TABLE
    /* If hash table is used instead of index table, no need for extra reduction
       of pv_array size */
@@ -423,6 +402,41 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlkPtr query, ValNodePtr location,
 #ifdef QUESTION_PV_ARRAY_USE
    }
 #endif
+
+   /* Now remove the hash entries that have too many positions */
+#if 0
+   if (lookup_options->max_positions>0) {
+#endif
+      for (pv_index = 0; pv_index < pv_size; ++pv_index) {
+         if (pv_array[pv_index]) {
+            for (ecode = pv_index<<pv_array_bts; 
+                 ecode < (pv_index+1)<<pv_array_bts; ++ecode) {
+               for (index=mb_lt->hashtable[ecode], pcount=0; 
+                    index>0; index=mb_lt->next_pos[index], pcount++);
+               if (two_templates) {
+                  for (index=mb_lt->hashtable2[ecode], pcount1=0; 
+                       index>0; index=mb_lt->next_pos2[index], pcount1++);
+               }
+               if ((pcount=MAX(pcount,pcount1))>lookup_options->max_positions) {
+                  mb_lt->hashtable[ecode] = 0;
+                  if (two_templates)
+                     mb_lt->hashtable2[ecode] = 0;
+                  ErrPostEx(SEV_WARNING, 0, 0, "%lx - %d", ecode, pcount);
+                  masked_word_count++;
+               }
+               longest_chain = MAX(longest_chain, pcount);
+            }
+         }
+      }
+      if (masked_word_count)
+	 ErrPostEx(SEV_WARNING, 0, 0, "Masked %d %dmers", masked_word_count,
+		   4*width);
+#if 0
+   }
+#endif
+
+   mb_lt->longest_chain = longest_chain;
+
 
    *mb_lt_ptr = mb_lt;
 
