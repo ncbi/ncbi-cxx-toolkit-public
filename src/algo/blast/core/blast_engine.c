@@ -806,18 +806,20 @@ BLAST_SearchEngine(EBlastProgramType program_number,
            &gap_align)) != 0)
       return status;
       
-   BLAST_PreliminarySearchEngine(program_number, query, query_info, seq_src, 
+   if ((status=BLAST_PreliminarySearchEngine(program_number, query, query_info, seq_src, 
       gap_align, score_params, lookup_wrap, word_options, ext_params, 
       hit_params, eff_len_params, psi_options, db_options, hsp_stream, 
-      diagnostics);
+      diagnostics)) != 0)
+      return status;
 
    /* Prohibit any subsequent writing to the HSP stream. */
    BlastHSPStreamClose(hsp_stream);
 
-   status = 
+   if((status = 
       BLAST_ComputeTraceback(program_number, hsp_stream, query, query_info,
          seq_src, gap_align, score_params, ext_params, hit_params,
-         eff_len_params, db_options, psi_options, results);
+         eff_len_params, db_options, psi_options, results)) != 0)
+      return status;
 
    /* Do not destruct score block here */
    gap_align->sbp = NULL;
