@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2003/02/10 17:30:05  kholodov
+* Fixed: forgot to add actual deletion code to DestroyDs()
+*
 * Revision 1.9  2003/02/10 17:19:27  kholodov
 * Added: DestroyDs() method
 *
@@ -165,6 +168,7 @@ void CDriverManager::DestroyDs(const string& driver_name)
 {
     map<string, IDataSource*>::iterator i_ds = m_ds_list.find(driver_name);
     if (i_ds != m_ds_list.end()) {
+        delete (*i_ds).second;
         m_ds_list.erase(i_ds);
     }
 }
