@@ -264,7 +264,7 @@ protected:
 
 
 template <class TStd>
-class CStdAliasBase : public CAliasBase<TStd>
+class NCBI_XSERIAL_EXPORT CStdAliasBase : public CAliasBase<TStd>
 {
     typedef CAliasBase<TStd> TParent;
     typedef CStdAliasBase<TStd> TThis;
@@ -277,7 +277,7 @@ public:
 
 
 template <class TString>
-class CStringAliasBase : public CAliasBase<TString>
+class NCBI_XSERIAL_EXPORT CStringAliasBase : public CAliasBase<TString>
 {
     typedef CAliasBase<TString> TParent;
     typedef CStringAliasBase<TString> TThis;
@@ -436,6 +436,9 @@ void NCBISERSetPreWrite(const Class* /*object*/, CInfo* info) \
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2004/08/05 18:32:12  vasilche
+* Added EXPORT to CStdAliasBase<> and CStringAliasBase<>.
+*
 * Revision 1.34  2004/08/04 14:44:48  vasilche
 * Added EXPORT to CAliasInfo to workaround bug in MSVC 7.
 *

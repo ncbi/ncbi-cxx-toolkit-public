@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/08/05 18:32:12  vasilche
+* Added EXPORT to CStdAliasBase<> and CStringAliasBase<>.
+*
 * Revision 1.9  2004/08/04 14:44:48  vasilche
 * Added EXPORT to CAliasInfo to workaround bug in MSVC 7.
 *
@@ -235,7 +238,10 @@ void CAliasTypeInfoFunctions::SkipAliasDefault(CObjectIStream& in,
 }
 
 template class NCBI_XSERIAL_EXPORT CAliasBase<int>;
+template class NCBI_XSERIAL_EXPORT CStdAliasBase<int>;
 template class NCBI_XSERIAL_EXPORT CAliasBase<string>;
+template class NCBI_XSERIAL_EXPORT CStringAliasBase<string>;
 template class NCBI_XSERIAL_EXPORT CAliasBase< vector<char> >;
+template class NCBI_XSERIAL_EXPORT CStringAliasBase< vector<char> >;
 
 END_NCBI_SCOPE
