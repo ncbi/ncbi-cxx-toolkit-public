@@ -2,7 +2,7 @@ This is a DEMO of script "scripts/new_project.sh"
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/tmp> $NCBI/c++/scripts/new_project.sh
+~/tmp> $NCBI/c++/scripts/new_project.sh
 
 USAGE:  new_project.sh <name> <type> [builddir]
 SYNOPSIS:
@@ -16,25 +16,30 @@ ARGUMENTS:
                   app[/basic] to build a simple application
                   app/cgi     to build a CGI or FastCGI application
                   app/objects to build an application using ASN.1 objects
+                  app/objmgr  to build an application using the object manager
    [builddir]  -- path to the pre-built NCBI C++ toolkit
                   (default = /netopt/ncbi_tools/c++/Debug/build)
 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~/tmp> $NCBI/c++/scripts/new_project.sh foo app/basic
+Created a model makefile "~/tmp/foo/Makefile.foo_app".
+Created a model source file "~/tmp/foo/foo.cpp".
+
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/tmp> $NCBI/c++/scripts/new_project.sh foo app/basic
-Created a model makefile "/tmp/foo/Makefile.foo_app".
-Created a model source file "/tmp/foo/foo.cpp".
+~/tmp> cd foo; ls
 
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-/tmp> cd foo; ls
 Makefile.foo_app  foo.cpp
 
-/tmp/foo> cat Makefile.foo_app
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+~/tmp/foo> cat Makefile.foo_app
 
 #
 # Makefile:
@@ -89,10 +94,88 @@ include $(builddir)/Makefile.app
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+~/tmp/foo:124} make -f Makefile.foo_app 
+/netopt/forte6u2/bin/CC -c  +w +w2  -g -I. -D_DEBUG  -I/netopt/ncbi_tools/c++/Debug/inc 
+    -I/netopt/ncbi_tools/c++/include -I/netopt/ncbi_tools/c++/include/ctools 
+    -I/netopt/ncbi_tools/c++/include/internal foo.cpp -o foo.o 2>&1 | 
+    /netopt/ncbi_tools/c++/compilers/cxx_filter.WorkShop53.sh
+
+/netopt/forte6u2/bin/CC -xildoff   -g  foo.o   -R/netopt/ncbi_tools/c++/Debug/lib 
+    -L/netopt/ncbi_tools/c++/Debug/lib -lxncbi  -o foo
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+~/tmp/foo> ./foo -h
+========================================================================
+USAGE
+  foo -h -f1 [-kd DefaultKey] -k MandatoryKey [-ko OptionalKey] -f2
+    <barfooetc> [logfile] [one_symbol] [....]
+
+DESCRIPTION   
+   CArgDescriptions demo program
+
+REQUIRED ARGUMENTS
+ -k <String, to contain only symbols: alphanumeric>
+   This is a mandatory alpha-num key argument
+ barfooetc <String, `bar', `etc', `foo'>
+   This is a mandatory plain (named positional) argument
+
+OPTIONAL ARGUMENTS
+ -h
+   Print this USAGE message;  ignore other arguments
+ -f1
+   This is a flag argument: TRUE if set, FALSE if not set
+ -kd <Integer, 0..200>
+   This is an optional integer key argument, with default value
+   Default = `123'
+ -ko <Boolean>
+   This is another optional key argument, without default value
+ -f2
+   This is another flag argument: FALSE if set, TRUE if not set
+ logfile <File_Out>
+   This is an optional named positional argument without default value
+ one_symbol <String, one symbol: ' aB\tCd'>
+   This is an optional named positional argument with default value
+   Default = `a'
+ .... <Boolean>
+   These are the optional extra (unnamed positional) arguments. They will be
+   printed out to the file specified by the 2nd positional argument,
+   "logfile"
+   NOTE:  Specify no more than 3 arguments in "...."
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+~/tmp/foo> ./foo -k hello bar
+========================================================================
+k:         hello
+barfooetc: bar
+ko:        not provided
+(no unnamed positional arguments passed in the cmd-line)
+--------------------------------------------
+barfooetc = `bar'
+f1:  <not assigned>
+f2 = `true'
+h:  <not assigned>
+k = `hello'
+kd = `123'
+ko:  <not assigned>
+logfile:  <not assigned>
+one_symbol = `a'
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
 
 /tmp/foo> cat foo.cpp
 
-/*  $Id: new_project.create.session,v 1.7 2002/05/17 22:48:07 lanczyck Exp $
+/*  $Id: new_project.create.session,v 1.8 2002/05/22 14:28:27 lanczyck Exp $
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -309,6 +392,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log: new_project.create.session,v $
+ * Revision 1.8  2002/05/22 14:28:27  lanczyck
+ * update script usage examples
+ *
  * Revision 1.7  2002/05/17 22:48:07  lanczyck
  * add makefiles.html; style change for existing files
  *
@@ -333,3 +419,6 @@ int main(int argc, const char* argv[])
  *
  * ===========================================================================
  */
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
