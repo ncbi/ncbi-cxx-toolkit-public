@@ -76,6 +76,9 @@ protected:
                           size_t count, const char* what, double time);
     static void PrintBlobStat(const char* type,
                               size_t count, double bytes, double time);
+    static void LogStat(const char* type, const string& name, double time);
+    static void LogStat(const char* type,
+                        const string& name, const string& subkey, double time);
     static void LogStat(const char* type, const CSeq_id& id, double time);
     static void LogStat(const char* type,
                         const CID1server_maxcomplex& maxplex, double time);
@@ -143,6 +146,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.30  2003/12/30 16:00:05  vasilche
+* Added support for new ICache (CBDB_Cache) interface.
+*
 * Revision 1.29  2003/12/19 19:47:44  vasilche
 * Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
 *

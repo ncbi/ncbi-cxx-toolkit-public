@@ -167,6 +167,31 @@ void CId1Reader::PrintBlobStat(const char* type,
 }
 
 
+void CId1Reader::LogStat(const char* type, const string& name, double time)
+{
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    LOG_POST(type<<' '<<name<<" in "<<
+             setiosflags(ios::fixed)<<
+             setprecision(3)<<
+             (time*1000)<<" ms");
+}
+
+
+void CId1Reader::LogStat(const char* type,
+                         const string& name, const string& subkey, double time)
+{
+    if ( CollectStatistics() <= 1 ) {
+        return;
+    }
+    LOG_POST(type<<' '<<name<<" ("<<subkey<<") in "<<
+             setiosflags(ios::fixed)<<
+             setprecision(3)<<
+             (time*1000)<<" ms");
+}
+
+
 void CId1Reader::LogStat(const char* type, const CSeq_id& id, double time)
 {
     if ( CollectStatistics() <= 1 ) {
@@ -758,6 +783,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.67  2003/12/30 16:00:24  vasilche
+ * Added support for new ICache (CBDB_Cache) interface.
+ *
  * Revision 1.66  2003/12/19 19:47:44  vasilche
  * Added support for TRACE data, Seq-id ::= general { db "ti", tag id NNN }.
  *

@@ -32,10 +32,13 @@
 
 #include <objmgr/reader_id1.hpp>
 
+#include <vector>
+
 BEGIN_NCBI_SCOPE
 
 class IBLOB_Cache;
 class IIntCache;
+class ICache;
 class IReader;
 class IWriter;
 
@@ -48,20 +51,40 @@ class CID2_Reply_Data;
 class NCBI_XOBJMGR_EXPORT CCachedId1Reader : public CId1Reader
 {
 public:
-    CCachedId1Reader(TConn noConn = 5, 
-                     IBLOB_Cache* blob_cache = 0,
+    CCachedId1Reader(TConn noConn = 5,
+                     ICache* blob_cache = 0,
+                     ICache* id_cache = 0);
+    CCachedId1Reader(TConn noConn, 
+                     IBLOB_Cache* blob_cache,
                      IIntCache* id_cache = 0);
     ~CCachedId1Reader();
+
+    void SetBlobCache(ICache* blob_cache);
+    void SetIdCache(ICache* id_cache);
 
     void SetBlobCache(IBLOB_Cache* blob_cache);
     void SetIdCache(IIntCache* id_cache);
 
+    int ResolveSeq_id_to_gi(const CSeq_id& id, TConn conn);
     void RetrieveSeqrefs(TSeqrefs& sr, int gi, TConn conn);
     void PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id);
 
-    /// Return BLOB key string based on CSeqref Sat() and SatKey()
+    /// Return BLOB cache key string based on CSeqref Sat() and SatKey()
     /// @sa CSeqref::Sat(), CSeqref::SatKey()
-    string GetBlobKey(const CSeqref& seqref);
+    string GetBlobKey(const CSeqref& seqref) const;
+    /// BLOB cache subkeys:
+    const char* GetSeqEntrySubkey(void) const;
+    const char* GetSNPTableSubkey(void) const;
+    const char* GetSkeletonSubkey(void) const;
+    string GetChunkSubkey(const CTSE_Chunk_Info& info) const;
+
+    /// Return Id cache key string based on CSeq_id of gi
+    string GetIdKey(const CSeq_id& id) const;
+    string GetIdKey(int gi) const;
+    /// Id cache subkeys:
+    const char* GetSeqrefsSubkey(void) const; //Seq-id/gi -> seqrefs (5*N ints)
+    const char* GetGiSubkey(void) const;      //Seq-id -> gi (1 int)
+    const char* GetSNPVerSubkey(void) const;  //gi->SNP annot version (1 int)
 
     int GetSNPBlobVersion(int gi);
 
@@ -72,6 +95,19 @@ protected:
     
     void PrintStatistics(void) const;
 
+    bool x_GetIdCache(const string& key,
+                      const string& subkey,
+                      vector<int>& ints);
+    bool x_GetIdCache(const string& key,
+                      const string& subkey,
+                      int& value);
+    void x_StoreIdCache(const string& key,
+                        const string& subkey,
+                        const vector<int>& ints);
+    void x_StoreIdCache(const string& key,
+                        const string& subkey,
+                        const int& value);
+    
     int x_GetVersion(const CSeqref& seqref, TConn conn);
 
     void x_GetTSEBlob(CID1server_back& id1_reply,
@@ -86,8 +122,14 @@ protected:
                        const CSeqref&   seqref,
                        CNcbiIstream&    stream);
 
-    bool GetBlobInfo(int gi, TSeqrefs& sr);
-    void StoreBlobInfo(int gi, const TSeqrefs& sr);
+    bool GetSeqrefs(int gi, TSeqrefs& srs);
+    void StoreSeqrefs(int gi, const TSeqrefs& srs);
+
+    bool GetSeqrefs(const CSeq_id& id, TSeqrefs& srs);
+    void StoreSeqrefs(const CSeq_id& id, const TSeqrefs& srs);
+
+    bool GetSeqrefs(const string& key, TSeqrefs& srs);
+    void StoreSeqrefs(const string& key, const TSeqrefs& srs);
 
     void StoreSNPBlobVersion(int gi, int version);
 
@@ -133,8 +175,10 @@ private:
     CCachedId1Reader& operator=(const CCachedId1Reader&);
 
 private:
-    IBLOB_Cache*   m_BlobCache;
-    IIntCache*     m_IdCache;
+    ICache*   m_BlobCache;
+    ICache*   m_IdCache;
+    IBLOB_Cache*   m_OldBlobCache;
+    IIntCache*     m_OldIdCache;
 };
 
 
@@ -144,6 +188,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.12  2003/12/30 16:00:06  vasilche
+* Added support for new ICache (CBDB_Cache) interface.
+*
 * Revision 1.11  2003/11/26 18:59:46  ucko
 * Remove stray semicolon after BEGIN_SCOPE(objects) to fix the WorkShop build.
 *
