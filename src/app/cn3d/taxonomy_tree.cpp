@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/09/12 13:09:38  thiessen
+* fix windows/wx header problem
+*
 * Revision 1.2  2002/09/10 17:02:26  thiessen
 * show count for repeated sequences
 *
@@ -46,6 +49,10 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 
+#ifdef __WXMSW__
+#include <windows.h>
+#include <wx/msw/winundef.h>
+#endif
 #include <wx/wx.h>
 #include <wx/treectrl.h>
 
