@@ -165,6 +165,7 @@ GetNumberOfFrames(EProgram p);
 
 /// Convert program type enumeration used in the engine
 /// to the program enumeration.
+NCBI_XBLAST_EXPORT
 EProgram GetProgramFromBlastProgramType(EBlastProgramType prog_type);
 
 END_SCOPE(blast)
@@ -174,6 +175,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.23  2004/07/08 20:19:29  gorelenk
+* Temporary added export spec to GetProgramFromBlastProgramType
+*
 * Revision 1.22  2004/07/06 15:49:30  dondosha
 * Added GetProgramFromBlastProgramType function
 *
