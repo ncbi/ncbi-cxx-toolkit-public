@@ -3337,26 +3337,25 @@ Blast_FillResidueProbability(const Uint1* sequence, Int4 length, double * resPro
 
 /*------------------- RPS BLAST functions --------------------*/
 
+/** Gets the ungapped lambda calculated for the matrix in question given
+ * standard residue composition for both query and subject sequences.
+ * @param matrixName name of amino acid substitution matrix [in]
+ * @return lambda ungapped or 0.0 if matrix is not supported
+ */
 static double
 RPSfindUngappedLambda(const char *matrixName)
 {
-    if (0 == strcmp(matrixName, "BLOSUM62"))
-        return 0.3176;
-    if (0 == strcmp(matrixName, "BLOSUM90"))
-        return 0.3346;
-    if (0 == strcmp(matrixName, "BLOSUM80"))
-        return 0.3430;
-    if (0 == strcmp(matrixName, "BLOSUM50"))
-        return 0.232;
-    if (0 == strcmp(matrixName, "BLOSUM45"))
-        return 0.2291;
-    if (0 == strcmp(matrixName, "PAM30"))
-        return 0.340;
-    if (0 == strcmp(matrixName, "PAM70"))
-        return 0.3345;
-    if (0 == strcmp(matrixName, "PAM250"))
-        return 0.229;
-    return(0);
+    double* lambda_array = NULL;
+    int num_lambdas = Blast_GetMatrixValues(matrixName, NULL, NULL, NULL,
+                                            &lambda_array, NULL, NULL, NULL,
+                                            NULL, NULL);
+    if (num_lambdas > 0) {
+        double retval = lambda_array[0];
+        sfree(lambda_array);
+        return retval;
+    } else {
+        return 0.0;
+    }
 }
 
 /* matrix is a position-specific score matrix with matrixLength positions
@@ -3620,6 +3619,9 @@ BLAST_ComputeLengthAdjustment(double K,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.96  2004/10/04 13:38:53  camacho
+ * Do not use hard coded constants in RPSfindUngappedLambda
+ *
  * Revision 1.95  2004/10/01 14:52:05  camacho
  * Add PAM250 to list of matrices to load from tables library
  *
