@@ -584,6 +584,15 @@ score_compare_hsps(const void* v1, const void* v2)
    h1 = *((BlastHSP**) v1);
    h2 = *((BlastHSP**) v2);
 
+   /* Null HSPs are "greater" than any non-null ones, so they go to the end
+      of a sorted list. */
+   if (!h1 && !h2)
+       return 0;
+   else if (!h1)
+       return 1;
+   else if (!h2)
+       return -1;
+
    if (h1->score > h2->score)
       return -1;
    else if (h1->score < h2->score)
@@ -610,25 +619,30 @@ score_compare_hsps(const void* v1, const void* v2)
    return 0;
 }
 
+Boolean Blast_HSPListIsSortedByScore(const BlastHSPList* hsp_list) 
+{
+    Int4 index;
+    
+    if (!hsp_list || hsp_list->hspcnt <= 1)
+        return TRUE;
+
+    for (index = 0; index < hsp_list->hspcnt - 1; ++index) {
+        if (score_compare_hsps(&hsp_list->hsp_array[index], 
+                               &hsp_list->hsp_array[index+1]) > 0) {
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+
 void Blast_HSPListSortByScore(BlastHSPList* hsp_list)
 {
-    if (!hsp_list)
+    if (!hsp_list || hsp_list->hspcnt <= 1)
         return;
 
-    if (hsp_list->hspcnt > 1) {
-        Int4 index;
-        BlastHSP** hsp_array = hsp_list->hsp_array;
-        /* First check if the array is already sorted. */
-        for (index = 0; index < hsp_list->hspcnt - 1; ++index) {
-            if (score_compare_hsps(&hsp_array[index], &hsp_array[index+1]) > 0) {
-                break;
-            }
-        }
-        /* Sort the HSP array if it is not sorted yet. */
-        if (index < hsp_list->hspcnt - 1) {
-            qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
-                  score_compare_hsps);
-        }
+    if (!Blast_HSPListIsSortedByScore(hsp_list)) {
+        qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
+              score_compare_hsps);
     }
 }
 
@@ -983,7 +997,8 @@ BlastHSPList* Blast_HSPListNew(Int4 hsp_max)
    BlastHSPList* hsp_list = (BlastHSPList*) calloc(1, sizeof(BlastHSPList));
    const Int4 k_default_allocated=100;
 
-   /* hsp_max is max number of HSP's ever allowed, INT4_MAX taken as infinity. */
+   /* hsp_max is max number of HSP's allowed in an HSP list; 
+      INT4_MAX taken as infinity. */
    hsp_list->hsp_max = INT4_MAX; 
    if (hsp_max > 0)
       hsp_list->hsp_max = hsp_max;
@@ -1012,35 +1027,110 @@ static BlastHSPList* Blast_HSPListDup(BlastHSPList* hsp_list)
    return new_hsp_list;
 }
 
+/** This is a copy of a static function from ncbimisc.c.
+ * Turns array into a heap with respect to a given comparison function.
+ */
+static void
+heapify (char* base0, char* base, char* lim, char* last, size_t width, int (*compar )(const void*, const void* ))
+{
+   size_t i;
+   char   ch;
+   char* left_son,* large_son;
+   
+   left_son = base0 + 2*(base-base0) + width;
+   while (base <= lim) {
+      if (left_son == last)
+         large_son = left_son;
+      else
+         large_son = (*compar)(left_son, left_son+width) >= 0 ?
+            left_son : left_son+width;
+      if ((*compar)(base, large_son) < 0) {
+         for (i=0; i<width; ++i) {
+            ch = base[i];
+            base[i] = large_son[i];
+            large_son[i] = ch;
+         }
+         base = large_son;
+         left_son = base0 + 2*(base-base0) + width;
+      } else
+         break;
+   }
+}
+
+/** Creates a heap of elements based on a comparison function.
+ * @param b An array [in] [out]
+ * @param nel Number of elements in b [in]
+ * @param width The size of each element [in]
+ * @param compar Callback to compare two heap elements [in]
+ */
+static void CreateHeap (void* b, size_t nel, size_t width, 
+   int (*compar )(const void*, const void* ))   
+{
+   char*    base = (char*)b;
+   size_t i;
+   char*    base0 = (char*)base,* lim,* basef;
+   
+   if (nel < 2)
+      return;
+   
+   lim = &base[((nel-2)/2)*width];
+   basef = &base[(nel-1)*width];
+   i = nel/2;
+   for (base = &base0[(i - 1)*width]; i > 0; base = base - width) {
+      heapify(base0, base, lim, basef, width, compar);
+      i--;
+   }
+}
+
+/** Given a BlastHSPList* with a heapified HSP array, remove the worst scoring 
+ * HSP and insert the new HSP in the heap. 
+ * @param hsp_list Contains all HSPs for a given subject. [in] [out]
+ * @param hsp A new HSP to be inserted into the HSP list [in]
+ */
+static void 
+Blast_HSPListInsertHSPInHeap(BlastHSPList* hsp_list, 
+                             BlastHSP* hsp)
+{
+    BlastHSP** hsp_array = hsp_list->hsp_array;
+    Blast_HSPFree(hsp_array[0]);
+    hsp_array[0] = hsp;
+    if (hsp_list->hspcnt >= 2) {
+        heapify((char*)hsp_array, (char*)hsp_array, 
+                (char*)&hsp_array[(hsp_list->hspcnt-1)/2],
+                 (char*)&hsp_array[hsp_list->hspcnt-1],
+                 sizeof(BlastHSP*), score_compare_hsps);
+    }
+}
+
 /* Comments in blast_hits.h
  */
 Int2 
 Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
 {
    BlastHSP** hsp_array;
-   Int4 highscore, lowscore, score = 0;
-   Int4 hspcnt, new_index, old_index;
+   Int4 hspcnt;
    Int4 hsp_allocated; /* how many hsps are in the array. */
+   Int2 status = 0;
 
    hspcnt = hsp_list->hspcnt;
    hsp_allocated = hsp_list->allocated;
+   hsp_array = hsp_list->hsp_array;
    
+
    /* Check if list is already full, then reallocate. */
-   if (hspcnt >= hsp_allocated-1 && hsp_list->do_not_reallocate == FALSE)
+   if (hspcnt >= hsp_allocated && hsp_list->do_not_reallocate == FALSE)
    {
       Int4 new_allocated = MIN(2*hsp_list->allocated, hsp_list->hsp_max);
       if (new_allocated > hsp_list->allocated) {
          hsp_array = (BlastHSP**)
-            realloc(hsp_list->hsp_array, new_allocated*sizeof(BlastHSP*));
+            realloc(hsp_array, new_allocated*sizeof(BlastHSP*));
          if (hsp_array == NULL)
          {
-#ifdef ERR_POST_EX_DEFINED
-            ErrPostEx(SEV_WARNING, 0, 0, 
-               "UNABLE to reallocate in Blast_SaveHsp,"
-               " continuing with fixed array of %ld HSP's", 
-                      (long) hsp_allocated);
-#endif
             hsp_list->do_not_reallocate = TRUE; 
+            hsp_array = hsp_list->hsp_array;
+            /** Return a non-zero status, because restriction on number
+                of HSPs here is a result of memory allocation failure. */
+            status = -1;
          } else {
             hsp_list->hsp_array = hsp_array;
             hsp_list->allocated = new_allocated;
@@ -1049,75 +1139,30 @@ Blast_HSPListSaveHSP(BlastHSPList* hsp_list, BlastHSP* new_hsp)
       } else {
          hsp_list->do_not_reallocate = TRUE; 
       }
+      /* If it is the first time when the HSP array is filled to capacity,
+         create a heap now. */
+      if (hsp_list->do_not_reallocate) {
+          CreateHeap(hsp_array, hspcnt, sizeof(BlastHSP*), 
+                     score_compare_hsps);
+      }
    }
 
-   hsp_array = hsp_list->hsp_array;
-
-   /* If we are saving ALL HSP's, simply save and sort later. */
-   if (hsp_list->do_not_reallocate == FALSE)
+   /* If there is space in the allocated HSP array, simply save the new HSP. 
+      Othewise, if the new HSP has lower score than the worst HSP in the heap,
+      then delete it, else insert it in the heap. */
+   if (hspcnt < hsp_allocated)
    {
       hsp_array[hsp_list->hspcnt] = new_hsp;
       (hsp_list->hspcnt)++;
-      return 0;
-   }
-
-   /* Use a binary search to insert the HSP. */
-   score = new_hsp->score;
-    
-
-   if (hspcnt != 0) {
-      highscore = hsp_array[0]->score;
-      lowscore = hsp_array[hspcnt-1]->score;
+      return status;
+   } else if (new_hsp->score < hsp_array[0]->score) {
+       Blast_HSPFree(new_hsp);
    } else {
-      highscore = 0;
-      lowscore = 0;
+       /* Insert the new HSP in heap. */
+       Blast_HSPListInsertHSPInHeap(hsp_list, new_hsp);
    }
-
-   if (score >= highscore) {
-      new_index = 0;
-   } else if (score <= lowscore) {
-      new_index = hspcnt;
-   } else {
-      const Int4 k_MaxIter=30;
-      Int4 index;
-      Int4 low_index = 0;
-      Int4 high_index = hspcnt-1;
-
-      new_index = (low_index+high_index)/2;
-      old_index = new_index;
-      
-      for (index=0; index<k_MaxIter; index++)
-      {
-         if (score > hsp_array[new_index]->score)
-            high_index = new_index;
-         else
-            low_index = new_index;
-         new_index = (low_index+high_index)/2;
-         if (new_index == old_index) { 
-            /* Perform this check as new_index get rounded DOWN above.*/
-            if (score < hsp_array[new_index]->score)
-               new_index++;
-            break;
-         }
-         old_index = new_index;
-      }
-   }
-
-   if (hspcnt >= hsp_allocated-1) {
-      if (new_index >= hspcnt) { 
-         /* this HSP is less significant than others on a full list.*/
-         sfree(new_hsp);
-         return 0;
-      } else { /* Delete the last HSP on the list. */
-         hspcnt = hsp_list->hspcnt--;
-         sfree(hsp_array[hspcnt-1]);
-      }
-   }
-   hsp_list->hspcnt++;
-   memmove((hsp_array+new_index+1), (hsp_array+new_index), (hspcnt-new_index)*sizeof(hsp_array[0]));
-   hsp_array[new_index] = new_hsp;
    
-   return 0;
+   return status;
 }
 
 void 
@@ -1160,7 +1205,7 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
    Int4 index;
    double gap_decay_divisor = 1.;
    
-   if (hsp_list == NULL)
+   if (hsp_list == NULL || hsp_list->hspcnt == 0)
       return 0;
    
    if (gapped_calculation)
@@ -1192,6 +1237,12 @@ Int2 Blast_HSPListGetEvalues(BlastQueryInfo* query_info,
       hsp->evalue /= gap_decay_divisor;
    }
    
+   /* Assign the best e-value field. Here the best e-value will always be
+      attained for the first HSP in the list. Check that the incoming
+      HSP list is properly sorted by score. */
+   ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
+   hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
+
    return 0;
 }
 
@@ -1226,10 +1277,18 @@ void Blast_HSPListPHIGetEvalues(BlastHSPList* hsp_list, BlastScoreBlk* sbp)
    Int4 index;
    BlastHSP* hsp;
 
+   if (!hsp_list || hsp_list->hspcnt == 0)
+       return;
+
    for (index = 0; index < hsp_list->hspcnt; ++index) {
       hsp = hsp_list->hsp_array[index];
       Blast_HSPPHIGetEvalue(hsp, sbp);
    }
+   /* The best e-value is the one for the highest scoring HSP, which 
+      must be the first in the list. Check that HSPs are sorted by score
+      to make sure this assumption is correct. */
+   ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
+   hsp_list->best_evalue = hsp_list->hsp_array[0]->evalue;
 }
 
 Int2 Blast_HSPListReapByEvalue(BlastHSPList* hsp_list, 
@@ -1410,6 +1469,9 @@ Blast_HSPListUniqSort(BlastHSPList* hsp_list)
 	  (hsp_list->hspcnt - new_hspcnt - 1)*sizeof(BlastHSP*));
    hsp_list->hspcnt = new_hspcnt + 1;
 
+   /* Sort the HSP array by score again. */
+   Blast_HSPListSortByScore(hsp_list);
+
    return 0;
 }
 
@@ -1480,6 +1542,9 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       Blast_HSPListPurgeNullHSPs(hsp_list);
    }
 
+   /* Sort the HSP array by score (scores may have changed!) */
+   Blast_HSPListSortByScore(hsp_list);
+
    return status;
 }
 
@@ -1509,6 +1574,8 @@ Blast_HSPListsCombineByScore(BlastHSPList* hsp_list,
          if (hsp_list->hsp_array[index1] != NULL)
             combined_hsp_list->hsp_array[index++] = hsp_list->hsp_array[index1];
       }
+      combined_hsp_list->hspcnt = new_hspcnt;
+      Blast_HSPListSortByScore(combined_hsp_list);
    } else {
       /* Not all HSPs are be saved; sort both arrays by score and save only
          the new_hspcnt best ones. 
@@ -1516,16 +1583,15 @@ Blast_HSPListsCombineByScore(BlastHSPList* hsp_list,
          old HSP list. */
       new_hsp_array = (BlastHSP**) 
          malloc(combined_hsp_list->allocated*sizeof(BlastHSP*));
-      qsort(combined_hsp_list->hsp_array, combined_hsp_list->hspcnt, 
-           sizeof(BlastHSP*), score_compare_hsps);
-      qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*),
-            score_compare_hsps);
+
+      Blast_HSPListSortByScore(combined_hsp_list);
+      Blast_HSPListSortByScore(hsp_list);
       index1 = index2 = 0;
       for (index = 0; index < new_hspcnt; ++index) {
          if (index1 < combined_hsp_list->hspcnt &&
              (index2 >= hsp_list->hspcnt ||
-             (combined_hsp_list->hsp_array[index1]->score >= 
-             hsp_list->hsp_array[index2]->score))) {
+              score_compare_hsps(&combined_hsp_list->hsp_array[index1],
+                                 &hsp_list->hsp_array[index2]) <= 0)) {
             new_hsp_array[index] = combined_hsp_list->hsp_array[index1];
             ++index1;
          } else {
@@ -1545,9 +1611,9 @@ Blast_HSPListsCombineByScore(BlastHSPList* hsp_list,
       /* Point combined_hsp_list's HSP array to the new one */
       sfree(combined_hsp_list->hsp_array);
       combined_hsp_list->hsp_array = new_hsp_array;
+      combined_hsp_list->hspcnt = new_hspcnt;
    }
    
-   combined_hsp_list->hspcnt = new_hspcnt;
    /* Second HSP list now does not own any HSPs */
    hsp_list->hspcnt = 0;
 }
@@ -1758,8 +1824,8 @@ evalue_compare_hsp_lists(const void* v1, const void* v2)
    else if (h2->hspcnt == 0)
       return -1;
 
-   if ((retval = fuzzy_evalue_comp(h1->hsp_array[0]->evalue, 
-                                   h2->hsp_array[0]->evalue)) != 0)
+   if ((retval = fuzzy_evalue_comp(h1->best_evalue, 
+                                   h2->best_evalue)) != 0)
       return retval;
 
    if (h1->hsp_array[0]->score > h2->hsp_array[0]->score)
@@ -1852,61 +1918,6 @@ static void Blast_HitListPurge(BlastHitList* hit_list)
    }
 }
 
-/** This is a copy of a static function from ncbimisc.c.
- * Turns array into a heap with respect to a given comparison function.
- */
-static void
-heapify (char* base0, char* base, char* lim, char* last, size_t width, int (*compar )(const void*, const void* ))
-{
-   size_t i;
-   char   ch;
-   char* left_son,* large_son;
-   
-   left_son = base0 + 2*(base-base0) + width;
-   while (base <= lim) {
-      if (left_son == last)
-         large_son = left_son;
-      else
-         large_son = (*compar)(left_son, left_son+width) >= 0 ?
-            left_son : left_son+width;
-      if ((*compar)(base, large_son) < 0) {
-         for (i=0; i<width; ++i) {
-            ch = base[i];
-            base[i] = large_son[i];
-            large_son[i] = ch;
-         }
-         base = large_son;
-         left_son = base0 + 2*(base-base0) + width;
-      } else
-         break;
-   }
-}
-
-/** The first part of qsort: create heap only, without sorting it
- * @param b An array [in] [out]
- * @param nel Number of elements in b [in]
- * @param width The size of each element [in]
- * @param compar Callback to compare two heap elements [in]
- */
-static void CreateHeap (void* b, size_t nel, size_t width, 
-   int (*compar )(const void*, const void* ))   
-{
-   char*    base = (char*)b;
-   size_t i;
-   char*    base0 = (char*)base,* lim,* basef;
-   
-   if (nel < 2)
-      return;
-   
-   lim = &base[((nel-2)/2)*width];
-   basef = &base[(nel-1)*width];
-   i = nel/2;
-   for (base = &base0[(i - 1)*width]; i > 0; base = base - width) {
-      heapify(base0, base, lim, basef, width, compar);
-      i--;
-   }
-}
-
 /** Given a BlastHitList* with a heapified HSP list array, remove
  *  the worst scoring HSP list and insert the new HSP list in the heap
  * @param hit_list Contains all HSP lists for a given query [in] [out]
@@ -1925,7 +1936,7 @@ Blast_HitListInsertHSPListInHeap(BlastHitList* hit_list,
                  sizeof(BlastHSPList*), evalue_compare_hsp_lists);
       }
       hit_list->worst_evalue = 
-         hit_list->hsplist_array[0]->hsp_array[0]->evalue;
+         hit_list->hsplist_array[0]->best_evalue;
       hit_list->low_score = hit_list->hsplist_array[0]->hsp_array[0]->score;
 }
 
@@ -1941,12 +1952,12 @@ Int2 Blast_HitListUpdate(BlastHitList* hit_list,
       /* Just add to the end; sort later */
       hit_list->hsplist_array[hit_list->hsplist_count++] = hsp_list;
       hit_list->worst_evalue = 
-         MAX(hsp_list->hsp_array[0]->evalue, hit_list->worst_evalue);
+         MAX(hsp_list->best_evalue, hit_list->worst_evalue);
       hit_list->low_score = 
          MIN(hsp_list->hsp_array[0]->score, hit_list->low_score);
    } else {
       /* Compare e-values only with a certain precision */
-      int evalue_order = fuzzy_evalue_comp(hsp_list->hsp_array[0]->evalue,
+      int evalue_order = fuzzy_evalue_comp(hsp_list->best_evalue,
                                            hit_list->worst_evalue);
       if (evalue_order > 0 || 
           (evalue_order == 0 &&
@@ -2130,12 +2141,10 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
    /* Purge the NULL HSPLists from the resulting HitList. */
    hit_list->hsplist_count = hit_list->hsplist_max;
    Blast_HitListPurgeNullHSPLists(hit_list);
-   /* Make sure HSPs in each HSPList are sorted by score. They should be
-      already sorted, but check it and sort if they are not. Note that 
-      e-values are not available at this stage of RPS BLAST, so there is
-      no need to attempt sorting by e-value. */
+
+   /* Check that all HSP lists are sorted by score, as they should be. */
    for (index = 0; index < hit_list->hsplist_count; ++index) {
-      Blast_HSPListSortByScore(hit_list->hsplist_array[index]);
+       ASSERT(Blast_HSPListIsSortedByScore(hit_list->hsplist_array[index]));
    }
    /* Sort the HSPList's by score - e-values are not yet available, but
       the evalue comparison function looks at scores as tie-breakers,
@@ -2175,11 +2184,10 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
    if (!results || !hit_options)
       return -1;
 
-   /* The HSP list should already be sorted by e-value coming into this function.
-    * Still check that this assumption is true, and sort them if for some reason
-    * it is not.
+   /* The HSP list should already be sorted by score coming into this function.
+    * Still check that this assumption is true.
     */
-   Blast_HSPListSortByEvalue(hsp_list);
+   ASSERT(Blast_HSPListIsSortedByScore(hsp_list));
    
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
