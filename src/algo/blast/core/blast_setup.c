@@ -46,7 +46,7 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
                         EBlastProgramType program, BlastQueryInfo * query_info)
 {
-    Int2 tmp_index;
+    Int2 index = 0;
 
     if (sbp == NULL || scoring_options == NULL)
         return 1;
@@ -58,15 +58,15 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
         /* for blastn, duplicate the ungapped Karlin 
            structures for use in gapped alignments */
 
-        for (tmp_index = query_info->first_context;
-             tmp_index <= query_info->last_context; tmp_index++) {
-            if (sbp->kbp_std[tmp_index] != NULL) {
-                Blast_KarlinBlk *kbp_gap;
-                Blast_KarlinBlk *kbp;
+        for (index = query_info->first_context;
+             index <= query_info->last_context; index++) {
+            if (sbp->kbp_std[index] != NULL) {
+                Blast_KarlinBlk *kbp_gap = NULL;
+                Blast_KarlinBlk *kbp = NULL;
  
-                sbp->kbp_gap_std[tmp_index] = Blast_KarlinBlkCreate();
-                kbp_gap = sbp->kbp_gap_std[tmp_index];
-                kbp     = sbp->kbp_std[tmp_index];
+                sbp->kbp_gap_std[index] = Blast_KarlinBlkCreate();
+                kbp_gap = sbp->kbp_gap_std[index];
+                kbp     = sbp->kbp_std[index];
 
                 kbp_gap->Lambda = kbp->Lambda;
                 kbp_gap->K      = kbp->K;
@@ -77,14 +77,31 @@ BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
         }
 
     } else {
-        for (tmp_index = query_info->first_context;
-             tmp_index <= query_info->last_context; tmp_index++) {
-            sbp->kbp_gap_std[tmp_index] = Blast_KarlinBlkCreate();
-            Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[tmp_index],
-                                      scoring_options->gap_open,
-                                      scoring_options->gap_extend,
-                                      scoring_options->decline_align,
-                                      sbp->name, NULL);
+        for (index = query_info->first_context;
+             index <= query_info->last_context; index++) {
+            Int2 retval = 0;
+            sbp->kbp_gap_std[index] = Blast_KarlinBlkCreate();
+            retval = Blast_KarlinBlkGappedCalc(sbp->kbp_gap_std[index],
+                                               scoring_options->gap_open,
+                                               scoring_options->gap_extend,
+                                               scoring_options->decline_align,
+                                               sbp->name, NULL);
+            /* FIXME: retval is not expressive enough and the Blast_Message is
+             * being passed NULL, so it's not possible to pass a meaningful
+             * error code to the calling context! */
+            if (retval != 0) {
+                return retval;
+            }
+
+            /* For right now, copy the contents from kbp_gap_std to 
+             * kbp_gap_psi (as in old code - BLASTSetUpSearchInternalByLoc) */
+            sbp->kbp_gap_psi[index] = Blast_KarlinBlkCreate();
+            
+            sbp->kbp_gap_psi[index]->Lambda = sbp->kbp_gap_std[index]->Lambda;
+            sbp->kbp_gap_psi[index]->K      = sbp->kbp_gap_std[index]->K;
+            sbp->kbp_gap_psi[index]->logK   = sbp->kbp_gap_std[index]->logK;
+            sbp->kbp_gap_psi[index]->H      = sbp->kbp_gap_std[index]->H;
+            sbp->kbp_gap_psi[index]->paramC = sbp->kbp_gap_std[index]->paramC;
         }
     }
 
