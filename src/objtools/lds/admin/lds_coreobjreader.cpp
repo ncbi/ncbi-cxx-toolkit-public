@@ -121,6 +121,14 @@ void CLDS_CoreObjectsReader::OnObjectFoundPost(const CObjectInfo& object)
 }
 
 
+void CLDS_CoreObjectsReader::Reset()
+{
+    while (!m_Stack.empty()) {
+        m_Stack.pop();
+    }
+}
+
+
 CLDS_CoreObjectsReader::SObjectDetails* 
 CLDS_CoreObjectsReader::FindObjectInfo(size_t stream_offset)
 {
@@ -148,6 +156,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/10/07 20:45:23  kuznets
+ * Implemented Reset()
+ *
  * Revision 1.3  2003/07/14 19:44:40  kuznets
  * Fixed a bug with objects offset in for ASN.1 text files
  *
