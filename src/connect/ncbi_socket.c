@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2001/03/29 21:15:36  lavr
+ * More accurate length calculation in 'SOCK_gethostbyaddr'
+ *
  * Revision 6.21  2001/03/22 17:43:54  vakatov
  * Typo fixed in the SOCK_AllowSigPipeAPI() proto
  *
@@ -1423,9 +1426,9 @@ extern int SOCK_gethostname(char*  name,
     int x_errno;
     assert(namelen > 0);
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
-    name[0] = name[namelen-1] = '\0';
-    x_errno = gethostname(name, (int)namelen);
-    if (x_errno  ||  name[namelen-1]) {
+    name[0] = name[namelen - 1] = '\0';
+    x_errno = gethostname(name, (int) namelen);
+    if (x_errno  ||  name[namelen - 1]) {
         CORE_LOG_ERRNO(x_errno, eLOG_Error,
                        "[SOCK_gethostname]  Cannot get local hostname");
         name[0] = '\0';
@@ -1519,14 +1522,13 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
         hp = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET,
                              &x_hp, x_buf, sizeof(x_buf), &x_errno);
-        if (!hp || strlen(hp->h_name) >= namelen - 1)
+        if (!hp || strlen(hp->h_name) > namelen - 1)
             return 0;
         strncpy(name, hp->h_name, namelen - 1);
-        name[namelen - 1] = 0;
 #else
         CORE_LOCK_WRITE;
         hp = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-        if (!hp || strlen(hp->h_name) >= namelen - 1)
+        if (!hp || strlen(hp->h_name) > namelen - 1)
             return 0;
         strncpy(name, hp->h_name, namelen - 1);
         CORE_UNLOCK;
