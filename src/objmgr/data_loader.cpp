@@ -34,7 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <objmgr/data_loader.hpp>
 #include <objmgr/objmgr_exception.hpp>
-#include <objects/seq/seq_id_mapper.hpp>
+#include <objects/seq/seq_id_handle.hpp>
 #include <objmgr/annot_name.hpp>
 #include <objmgr/annot_type_selector.hpp>
 #include <objmgr/impl/tse_info.hpp>
@@ -119,8 +119,8 @@ CDataLoader::TTSE_LockSet
 CDataLoader::GetRecords(const CSeq_id_Handle& /*idh*/,
                         EChoice /*choice*/)
 {
-    NCBI_THROW(CObjMgrException, eNotImplemented,
-               "CDataLoader::GetRecords()");
+    NCBI_THROW(CLoaderException, eNotImplemented,
+               "CDataLoader::GetRecords() is not implemented in subclass");
 }
 
 
@@ -148,11 +148,24 @@ CDataLoader::GetExternalRecords(const CBioseq_Info& bioseq)
 }
 
 
+bool CDataLoader::CanGetBlobById(void) const
+{
+    return false;
+}
+
+
+CDataLoader::TTSE_Lock CDataLoader::GetBlobById(const TBlobId& /*blob_id*/)
+{
+    NCBI_THROW(CLoaderException, eNotImplemented,
+               "CDataLoader::GetBlobById() is not implemented in subclass");
+}
+
+
 void CDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     TTSE_LockSet locks = GetRecords(idh, eBioseqCore);
     ITERATE(TTSE_LockSet, it, locks) {
-        CConstRef<CBioseq_Info> bs_info = (*it)->FindBioseqMatch(idh);
+        CConstRef<CBioseq_Info> bs_info = (*it)->FindMatchingBioseq(idh);
         if ( bs_info ) {
             ids = bs_info->GetId();
             break;
@@ -316,8 +329,8 @@ SRequestDetails CDataLoader::ChoiceToDetails(EChoice choice) const
 
 void CDataLoader::GetChunk(TChunk /*chunk_info*/)
 {
-    NCBI_THROW(CObjMgrException, eNotImplemented,
-               "CDataLoader::GetChunk()");
+    NCBI_THROW(CLoaderException, eNotImplemented,
+               "CDataLoader::GetChunk() is not implemented in subclass");
 }
 
 
@@ -329,16 +342,11 @@ void CDataLoader::GetChunks(const TChunkSet& chunks)
 }
 
 
-TTSE_Lock CDataLoader::ResolveConflict(const CSeq_id_Handle& /*id*/,
-                                       const TTSE_LockSet& /*tse_set*/)
+CDataLoader::TTSE_Lock
+CDataLoader::ResolveConflict(const CSeq_id_Handle& /*id*/,
+                             const TTSE_LockSet& /*tse_set*/)
 {
     return TTSE_Lock();
-}
-
-
-void CDataLoader::DebugDump(CDebugDumpContext, unsigned int) const
-{
-    return;
 }
 
 
@@ -360,12 +368,35 @@ bool CDataLoader::LessBlobId(const TBlobId& id1, const TBlobId& id2) const
 }
 
 
+string CDataLoader::BlobIdToString(const TBlobId& id) const
+{
+    return "TSE("+NStr::PtrToString(id.GetPointerOrNull())+
+        ", loader="+NStr::PtrToString(this)+")";
+}
+
+
+string CBlobIdKey::ToString(void) const
+{
+    if ( !m_Loader ) {
+        return "TSE("+NStr::PtrToString(m_BlobId.GetPointerOrNull())+")";
+    }
+    return m_Loader->BlobIdToString(m_BlobId);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2004/12/22 15:56:06  vasilche
+* Added possibility to reload TSEs by their BlobId.
+* Added convertion of BlobId to string.
+* Added helper class CBlobIdKey to use it as key, and to print BlobId.
+* Removed obsolete DebugDump.
+* Fixed default implementation of CDataSource::GetIds() for matching Seq-ids.
+*
 * Revision 1.22  2004/10/25 16:53:26  vasilche
 * Removed obsolete comments and methods.
 * Added support for orphan annotations.

@@ -216,6 +216,7 @@ public:
         eAll          ///< all blobs (main and external)
     };
     
+    typedef CTSE_Lock               TTSE_Lock;
     typedef set<TTSE_Lock>          TTSE_LockSet;
     typedef CRef<CTSE_Chunk_Info>   TChunk;
     typedef vector<TChunk>          TChunkSet;
@@ -224,7 +225,6 @@ public:
     /// The TSEs loaded in this call will be added to the tse_set.
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);
-
     /// Request from a datasource using handles and ranges instead of seq-loc
     /// The TSEs loaded in this call will be added to the tse_set.
     /// Default implementation will call GetRecords().
@@ -244,7 +244,11 @@ public:
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
 
+    virtual bool CanGetBlobById(void) const;
+    virtual TTSE_Lock GetBlobById(const TBlobId& blob_id);
+
     virtual bool LessBlobId(const TBlobId& id1, const TBlobId& id2) const;
+    virtual string BlobIdToString(const TBlobId& id) const;
 
     virtual SRequestDetails ChoiceToDetails(EChoice choice) const;
     virtual EChoice DetailsToChoice(const SRequestDetails::TAnnotSet& annots) const;
@@ -268,7 +272,6 @@ public:
     virtual TTSE_Lock ResolveConflict(const CSeq_id_Handle& id,
                                       const TTSE_LockSet& tse_set);
     virtual void GC(void);
-    virtual void DebugDump(CDebugDumpContext, unsigned int) const;
 
 protected:
     /// Register the loader only if the name is not yet
@@ -298,6 +301,46 @@ private:
 /* @} */
 
 
+class NCBI_XOBJMGR_EXPORT CBlobIdKey
+{
+public:
+    CBlobIdKey(void)
+        {
+        }
+    CBlobIdKey(const CDataLoader* loader, const CDataLoader::TBlobId& blob_id)
+        : m_Loader(loader), m_BlobId(blob_id)
+        {
+        }
+
+    string ToString(void) const;
+
+    bool operator<(const CBlobIdKey& id) const
+        {
+            if ( m_Loader != id.m_Loader ) return m_Loader < id.m_Loader;
+            if ( !m_Loader ) return m_BlobId < id.m_BlobId;
+            return m_Loader->LessBlobId(m_BlobId, id.m_BlobId);
+        }
+    bool operator==(const CBlobIdKey& id) const
+        {
+            if ( m_Loader != id.m_Loader ) return false;
+            if ( !m_Loader ) return m_BlobId == id.m_BlobId;
+            return !m_Loader->LessBlobId(m_BlobId, id.m_BlobId) &&
+                !m_Loader->LessBlobId(id.m_BlobId, m_BlobId);
+        }
+    bool operator!=(const CBlobIdKey& id) const
+        {
+            if ( m_Loader != id.m_Loader ) return true;
+            if ( !m_Loader ) return m_BlobId != id.m_BlobId;
+            return m_Loader->LessBlobId(m_BlobId, id.m_BlobId) ||
+                m_Loader->LessBlobId(id.m_BlobId, m_BlobId);
+        }
+
+private:
+    CConstRef<CDataLoader>  m_Loader;
+    CDataLoader::TBlobId    m_BlobId;
+};
+
+
 END_SCOPE(objects)
 
 NCBI_DECLARE_INTERFACE_VERSION(objects::CDataLoader, "xloader", 1, 0, 0);
@@ -309,6 +352,13 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/12/22 15:56:06  vasilche
+* Added possibility to reload TSEs by their BlobId.
+* Added convertion of BlobId to string.
+* Added helper class CBlobIdKey to use it as key, and to print BlobId.
+* Removed obsolete DebugDump.
+* Fixed default implementation of CDataSource::GetIds() for matching Seq-ids.
+*
 * Revision 1.39  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *
