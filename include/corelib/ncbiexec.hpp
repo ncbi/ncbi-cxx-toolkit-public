@@ -37,9 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-// Maximum number of arguments for CExec::Spawn* functions
-// #define MAX_EXEC_ARGS  128
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -135,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/05/31 20:48:39  ivanov
+ * Clean up code
+ *
  * Revision 1.1  2002/05/30 16:30:45  ivanov
  * Initial revision
  *
