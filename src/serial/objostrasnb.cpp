@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.66  2002/08/08 14:15:23  grichenk
+* Fixed WriteByte()
+*
 * Revision 1.65  2002/01/17 20:52:35  grichenk
 * Fixed another bug in long binary tags processing
 *
@@ -492,7 +495,7 @@ inline
 void CObjectOStreamAsnBinary::WriteShortTag(EClass c, bool constructed,
                                             TTag tag)
 {
-    WriteByte((c << 6) | (constructed << 5) | tag);
+    WriteByte((c << 6) | (constructed ? (1<<5) : 0) | tag);
 }
 
 inline
