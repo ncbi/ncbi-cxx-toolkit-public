@@ -63,8 +63,6 @@ typedef enum {
 
 #define MAX_DBSEQ_LEN 5000000
 
-#define BLASTAA_SEQ_CODE 11 /* == Seq_code_ncbistdaa */
-
 /* One sequence segment within an HSP */
 typedef struct BlastSeg {
    Int2 frame;  /**< Translation frame */
