@@ -84,6 +84,8 @@ private:
     string m_FrameStack;
 };
 
+
+
 class CUnassignedMember : public CSerialException
 {
 public:
@@ -103,6 +105,8 @@ public:
     NCBI_EXCEPTION_DEFAULT(CUnassignedMember,CSerialException);
 };
 
+
+
 class NCBI_XSERIAL_EXPORT CInvalidChoiceSelection : public CSerialException
 {
 public:
@@ -116,7 +120,11 @@ public:
     CInvalidChoiceSelection(const CDiagCompileInfo& diag_info,
         size_t currentIndex, size_t mustBeIndex,
         const char* const names[], size_t namesCount);
-// for backward compatibility
+    // for backward compatibility
+    CInvalidChoiceSelection(const char* file, int line,
+        size_t currentIndex, size_t mustBeIndex,
+        const char* const names[], size_t namesCount);
+    // for backward compatibility
     CInvalidChoiceSelection(
         size_t currentIndex, size_t mustBeIndex,
         const char* const names[], size_t namesCount);
@@ -141,6 +149,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/09/24 22:28:23  vakatov
+* CInvalidChoiceSelection -- added pre-DIAG_COMPILE_INFO constructor
+*
 * Revision 1.19  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()

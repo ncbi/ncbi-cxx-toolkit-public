@@ -79,6 +79,21 @@ CInvalidChoiceSelection::CInvalidChoiceSelection(
 }
 
 CInvalidChoiceSelection::CInvalidChoiceSelection(
+    const char* file, int line,
+    size_t currentIndex, size_t mustBeIndex,
+    const char* const names[], size_t namesCount)
+        : CSerialException(CDiagCompileInfo(file, line), 0,
+          (CSerialException::EErrCode) CException::eInvalid,"")
+{
+    x_Init(CDiagCompileInfo(file, line),
+           string("Invalid choice selection: ")+
+           GetName(currentIndex, names, namesCount)+". "
+           "Expected: "+
+           GetName(mustBeIndex, names, namesCount),0);
+    x_InitErrCode((CException::EErrCode)(CInvalidChoiceSelection::eFail));
+}
+
+CInvalidChoiceSelection::CInvalidChoiceSelection(
     size_t currentIndex, size_t mustBeIndex,
     const char* const names[], size_t namesCount)
         : CSerialException(CDiagCompileInfo("unknown", 0), 0,
@@ -129,6 +144,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/09/24 22:28:35  vakatov
+* CInvalidChoiceSelection -- added pre-DIAG_COMPILE_INFO constructor
+*
 * Revision 1.15  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()
