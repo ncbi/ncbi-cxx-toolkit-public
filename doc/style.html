@@ -13,6 +13,8 @@
 </i>
 -- Blair P. Houghton
 
+	 <p>
+		Nevertheless, here goes:
 
 	 <ul>
 		<li> <a href="#ref_Naming">Naming conventions</a>
@@ -20,13 +22,16 @@
 		<li> <a href="#ref_NamingCPP">Preprocessor Define/Macro</a>
 		<li> <a href="#ref_NamingTypes">Type Names</a>
 		<li> <a href="#ref_NamingConst">Constants</a>
-		<li> <a href="#ref_NamingVar">Class member variables</a>
-		<li> <a href="#ref_NamingFunc">Functions</a>
+		<li> <a href="#ref_NamingCVar">Class member variables</a>
+		<li> <a href="#ref_NamingCFunc">Class member functions</a>
+		<li> <a href="#ref_NamingStaticFunc">Module static functions</a>
 	 </ul>
 	 <li> <a href="#ref_Prefix">Name prefixing and/or the use of namespaces</a>
 	 <li> <a href="#ref_Scope">Use of the NCBI name scope</a>
 	 <li> <a href="#ref_Indent">Code indentation and bracing</a>
-	 <li> <a href="#ref_Class">Class declaration</a> </ul>
+	 <li> <a href="#ref_Class">Class declaration</a>
+	 <li> <a href="#ref_FunctionDecl">Function declaration</a>
+	 <li> <a href="#ref_FunctionDef">Function definition</a> </ul>
 
 
 	 <br></br>
@@ -39,12 +44,14 @@
       <tr><th>Synopsis</th><th>Example</th></tr>
 
 		<a name="ref_NamingCPP">
-      <tr><th>Preprocessor Define/Macro</th></tr>
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Preprocessor Define/Macro</th></tr>
       <tr><td><i>MACRO_NAME</i></td><td>#define MY_DEFINE 12345</td></tr>
-      <tr><td><i>macro_arg_name</i></td><td>#define MY_MACRO(x, y) ((x + 1) < (y))</td></tr>
+      <tr><td><i>macro_arg_name</i></td><td>#define MY_MACRO(x, y) (((x) + 1) < (y))</td></tr>
 
 		<a name="ref_NamingTypes">
-      <tr><th>Type Names</th></tr>
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Type Names</th></tr>
       <tr><td><i><b>C</b>ClassTypeName</i></td><td>
 				class CMyClass { ..... };</td></tr>
       <tr><td><i><b>S</b>StructTypeName</i></td><td>
@@ -57,12 +64,18 @@
 				void (*FMyFunc)(void) { ..... };</td></tr>
       <tr><td><i><b>P</b>PredicateName</i></td><td>
 				struct PMyPred { bool operator() (..... , .....); };</td></tr>
-      <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td><td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
+      <tr><td><i><b>T</b>AuxiliaryTypedef <a href="#ref_AuxType">(see also)</a></i></td>
+			 <td>typedef map&lt;int,string&gt; TMapIntStr;</td></tr>
+      <tr><td><i><b>T</b>Iterator<b>I</b></i></td>
+			 <td>typedef list&lt;int&gt;::iterator TListI;</td></tr>
+      <tr><td><i><b>T</b>ConstIterator<b>CI</b></i></td>
+			 <td>typedef set&lt;string&gt;::const_iterator TSetCI;</td></tr>
       <tr><td><i><b>N</b>Namespace <a href="#ref_Prefix">(see also)</a></i></td><td>
 				namespace NMyNamespace { ..... } </td></tr>
 
 		<a name="ref_NamingConst">
-      <tr><th>Constants</th></tr>
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Constants</th></tr>
       <tr><td><i><b>k</b>ConstantName</i></td><td>
 				const int kMyConst = 123;</td></tr>
       <tr><td><i><b>e</b>EnumConstantName</i></td>
@@ -78,16 +91,22 @@
 				&nbsp;&nbsp;&nbsp;&nbsp; fMyFlag2 = 0x2 <br>
 				};</td></tr>
 
-		<a name="ref_NamingVar">
-      <tr><th>Class member variables</th></tr>
+		<a name="ref_NamingCVar">
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Class member variables</th></tr>
       <tr><td><i><b>m_</b>ClassMemberName</i></td><td>
-				class X { short m_MyClassData; }</td></tr>
+				class C { short m_MyClassData; }</td></tr>
       <tr><td><i><b>sm_</b>ClassStaticMemberName</i></td><td>
-				class X { static double sm_MyClassStaticData; }</td></tr>
+				class C { static double sm_MyClassStaticData; }</td></tr>
 
-		<a name="ref_NamingFunc">
-      <tr><th>Functions</th></tr>
+		<a name="ref_NamingCFunc">
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Class member functions</th></tr>
       <tr><td><i>Func</i></td><td>bool MyFunc(void);</td></tr>
+
+		<a name="ref_NamingStaticFunc">
+      <tr><th colspan=2 align=left>
+				&nbsp;&nbsp;&nbsp;Module static functions</th></tr>
       <tr><td><i><b>s_</b>StaticFunc</b></td><td>
 				static char s_MyStaticFunc(void);</td></tr>
 
@@ -168,12 +187,16 @@
 	 <a name="ref_Indent">
     <h2>Code indentation and bracing </h2>
 
-    4-spaces indentation only;  tabulation symbol should not be used
-	 for indentation.
+		  <b>4-space indentation only</b>!
+		  Tabulation symbol <b>must not</b> be used for indentation.
 
-<p></p>
-	 In "if", "for", "while", "do", "switch", "case", etc. and
-    type definition statements:
+	 <p>
+		Try not to cross the "standard page boundary" of <b>80</b>
+		symbols.
+
+	 <p>
+		In <i>if, for, while, do, switch, case</i>, etc. and
+		type definition statements:
     <pre>
 if (...) {
     .....;
@@ -183,21 +206,30 @@ if (...) {
     .....;
 }
 
-if|for|do|while (...) {
+for|while (...) {
     .....;
 }
 
+do {
+    .....;
+} while (...);
+
 switch (...) {
-    case ...: {
-        .....;
-        break;
-    }
+case ...: {
+    .....;
+    break;
 }
+} // switch
 
 class|struct|union <[C|S|U]TypeName> {
     .....;
 };
 
+try {
+    .....;
+} catch (exception& e) {
+    .....;
+}
     </pre>
 
 
@@ -236,6 +268,48 @@ private:
     CFooClass& operator=(const CFooClass&) { _TROUBLE;  return *this; }
 };
 	 </pre>
+
+
+	 <a name="ref_FunctionDecl">
+    <h2>Function declaration</h2>
+
+	 <pre>
+// Explain here what MyFunc1() does, and what it returns
+int MyFunc1(void);
+
+// Explain here what MyFunc2() does, and what it returns
+bool MyFunc2
+(double  arg1,      // short description of "arg1"
+ string& arg2,      // short description of "arg2"
+ long    arg3 = 12  // short description of "arg3"
+ );
+	 </pre>
+
+
+	 <a name="ref_FunctionDef">
+    <h2>Function definition</h2>
+
+	 <pre>
+bool MyFunc2
+(double  arg1,
+ string& arg2,
+ long    arg3)
+{
+    .......
+    .......
+    return true;
+}
+
+
+// For static function, put all comments on what the function does
+// and what it returns right here, at the point of the function definition
+static long s_MyFunc3(void)
+{
+    .......
+    .......
+}
+	 </pre>
+
 
 
 	 <hr>
