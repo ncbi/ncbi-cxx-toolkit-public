@@ -1,5 +1,5 @@
-#ifndef NCBI_CGI_APP__HPP
-#define NCBI_CGI_APP__HPP
+#ifndef CGI___CGIAPP__HPP
+#define CGI___CGIAPP__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -79,9 +79,11 @@ public:
     CNcbiResource&       GetResource(void)       { return x_GetResource(); }
 
     // 1-based for FastCGI (but 0 before the first iteration starts);
-    // always 0 for normal CGIs.
+    // always 0 for regular (i.e. not "fast") CGIs.
     unsigned int GetFCgiIteration(void) const { return m_Iteration; }
-    bool         IsFastCGI       (void) const;
+
+    // Return TRUE if it is running as a "fast" CGI
+    bool IsFastCGI(void) const;
 
     virtual void Init(void);  // initialization
     virtual void Exit(void);  // cleanup
@@ -100,6 +102,15 @@ protected:
                                          CNcbiOstream*     out  = 0,
                                          int               ifd  = -1,
                                          int               ofd  = -1);
+
+    // When an exception is thrown during the request processing,
+    // this method will be called. It will examine the exception "e" and
+    // maybe gather other useful info, and write it as HTTP response to "os".
+    // The returned value will be used as a CGI (or FCGI iteration's) exit code
+    // NOTE: Context and Resource are not valid at the time of this method call
+    // The default implementation prints out "e.what()" to "os" and then
+    // returns zero if the printout has got through, -1 otherwise.
+    virtual int            OnException(exception& e, CNcbiOstream& os);
 
     void                   RegisterDiagFactory(const string& key,
                                                CDiagFactory* fact);
@@ -126,13 +137,13 @@ protected:
     void SetCafService(CCookieAffinity* caf);
 
 private:
-    // If FastCGI-capable, and run as a Fast-CGI then iterate through
-    // the FastCGI loop -- doing initialization and running ProcessRequest()
-    // time after time; then return TRUE.
+    // If FastCGI-capable, and run as a Fast-CGI, then iterate through
+    // the FastCGI loop (doing initialization and running ProcessRequest()
+    // for each HTTP request);  then return TRUE.
     // Return FALSE overwise.
-    // In the "result", return exit code of the last CGI iteration run.
-    bool x_RunFastCGI(int* result, unsigned int def_iter = 3);
-    bool x_FCGI_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher);
+    // In the "result", return # of requests whose processing has failed
+    // (exception was thrown or ProcessRequest() returned non-zero value)
+    bool x_RunFastCGI(int* result, unsigned int def_iter = 10);
 
     // Logging
     enum ELogPostFlags {
@@ -140,6 +151,7 @@ private:
         fEnd   = 0x2
     };
     typedef int TLogPostFlags;  // binary OR of "ELogPostFlags"
+
     void x_LogPost(const char*             msg_header,
                    unsigned int            iteration,
                    const CTime&            start_time,
@@ -159,10 +171,13 @@ private:
     typedef map<string, CDiagFactory*> TDiagFactoryMap;
     TDiagFactoryMap           m_DiagFactories;
 
-    auto_ptr<CCookieAffinity> m_caf;         // Cookie affinity service pointer
-    char*                     m_hostIP;      // Cookie affinity host IP buffer
+    auto_ptr<CCookieAffinity> m_Caf;         // Cookie affinity service pointer
+    char*                     m_HostIP;      // Cookie affinity host IP buffer
 
-    unsigned int              m_Iteration;
+    unsigned int              m_Iteration;   // (always 0 for plain CGI)
+
+    // Environment var. value to put to the diag.prefix;  [CGI].DiagPrefixEnv
+    string                    m_DiagPrefixEnv;
 };
 
 
@@ -223,6 +238,14 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/05/21 17:38:04  vakatov
+*    CCgiApplication::x_RunFastCGI():  increased the default number of
+* FastCGI iterations from 3 to 10; also changed the meaning of the exit code.
+*    CCgiApplication::OnException():  new virtual method to handle
+* exception(s) -- allows sending the exception messages back to the HTTP
+* client and setting the exit code.
+*    CCgiApplication::x_FCGI_ShouldRestart():  moved to "fcgi_run.cpp".
+*
 * Revision 1.37  2003/04/10 19:01:40  siyan
 * Added doxygen support
 *
@@ -340,4 +363,4 @@ END_NCBI_SCOPE
 * ===========================================================================
 */
 
-#endif // NCBI_CGI_APP__HPP
+#endif // CGI___CGIAPP__HPP
