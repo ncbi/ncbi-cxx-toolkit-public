@@ -110,6 +110,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/05/17 14:22:30  lavr
+ * Small cosmetic changes
+ *
  * Revision 6.2  2000/05/16 15:06:05  lavr
  * Minor changes for format <-> argument correspondence in warnings
  *
@@ -144,6 +147,7 @@ struct SHEAP_tag {
 #if defined(__GNUC__) && defined(NCBI_HEAPMGR_TEST)
 #define Warning(err, format, what...) Error(err, format, ##what)
 #endif
+
 
 HEAP HEAP_Create(char *base, size_t size, size_t chunk, FHEAP_Expand expand)
 {

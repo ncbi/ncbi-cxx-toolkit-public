@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2000/05/17 14:22:32  lavr
+ * Small cosmetic changes
+ *
  * Revision 6.4  2000/05/16 15:09:02  lavr
  * Added explicit type casting to get "very smart" compilers happy
  *
@@ -280,7 +283,7 @@ SSERV_Info* SERV_ReadInfo(const char* info_str, unsigned int default_host)
                         info->time = (time_t)temp;
                     }
                     if (*s) {
-                        unsigned short i;
+                        size_t i;
                         
                         for (i = 0; i < N_FLAG_TAGS; i++) {
                             if (NCBI_strcasecmp(s, k_FlagTag[i]) == 0)
