@@ -151,6 +151,8 @@ void CThreadedApp::Init(void)
     arg_desc->SetConstraint
         ("spawnby", new CArgAllow_Integers(c_SpawnByMin, c_SpawnByMax));
 
+    // Let test application add its own arguments
+    TestApp_Args( *arg_desc);
 
     string prog_description =
         "MT-environment test";
@@ -226,6 +228,10 @@ bool CThreadedApp::Thread_Destroy(int /*idx*/)
     return true;
 }
 
+bool CThreadedApp::TestApp_Args( CArgDescriptions& /*args*/)
+{
+    return true;
+}
 
 bool CThreadedApp::TestApp_Init(void)
 {
@@ -244,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/04/30 19:09:47  gouriano
+ * added possibility to add custom arguments
+ *
  * Revision 1.1  2002/04/23 13:11:49  gouriano
  * test_mt.cpp/hpp moved into another location
  *

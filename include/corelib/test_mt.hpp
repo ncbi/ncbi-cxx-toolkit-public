@@ -76,6 +76,11 @@ public:
     virtual bool Thread_Destroy(int idx);
 
 protected:
+
+    // Override this method to add your custom arguments
+    // Return "true" on success.
+    virtual bool TestApp_Args( CArgDescriptions& args);
+
     // Override this method to execute code before running threads.
     // Return "true" on success.
     virtual bool TestApp_Init(void);
@@ -95,6 +100,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/04/30 19:10:26  gouriano
+ * added possibility to add custom arguments
+ *
  * Revision 1.1  2002/04/23 13:12:28  gouriano
  * test_mt.hpp moved into another location
  *
