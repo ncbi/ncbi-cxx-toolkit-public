@@ -33,8 +33,9 @@
 #include "hf_hit.hpp"
 #include "splign_app_exception.hpp"
 
+#include <corelib/ncbistre.hpp>
+
 #include <algorithm>
-#include <sstream>
 #include <math.h>
 
 
@@ -132,7 +133,7 @@ CHit::CHit(const string& strTemplate)
         if(s == "-") {
             s = "-1";
         }
-        stringstream ss (s);
+        CNcbiIstrstream ss (s.c_str());
 
         switch(nCount++)   {
         
