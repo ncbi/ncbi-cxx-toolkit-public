@@ -48,6 +48,7 @@ Synopsis:
 Arguments:
    <install_dir>  -- where to install (this can be either a name of
                      pre-installed top source dir, or a name of build dir)
+   --move         -- remove the original build dir (if installed successfully)
    --without-bin  -- do not install executables (from "bin/" dir)
    --srcdir=DIR   -- required if <install_dir> is an absolute path to a dir,
                      which (or whose parent) is not a NCBI C++ top source dir
@@ -73,6 +74,7 @@ shift
 for x_arg in "$@" ; do
   case "$x_arg" in
     --without-bin )  with_bin="no" ;;
+    --move        )  with_move="yes" ;;
     --srcdir=*    )  new_srcdir=`echo "$x_arg" | sed 's%--srcdir=%%'` ;;
     * )  Usage "Unknown argument \"$x_arg\""
   esac
@@ -207,6 +209,11 @@ for f in $files ; do
 done
 
 chmod a+x $install_builddir/*.sh
+
+
+#####  MOVE mode (remove the original build dir)
+
+test "$with_move" = "yes"  &&  rm -r "$build_dir"
 
 
 #####  DONE
