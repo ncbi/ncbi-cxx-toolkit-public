@@ -91,7 +91,12 @@ Int4 CSeqDB::GetAmbigSeqAlloc(TOID            oid,
                               Uint4           nucl_code,
                               ESeqDBAllocType strategy)
 {
-    assert(strategy);
+    if ((strategy != eMalloc) && (strategy != eNew)) {
+        NCBI_THROW(CSeqDBException,
+                   eArgErr,
+                   "Invalid allocation strategy specified.");
+    }
+    
     return m_Impl->GetAmbigSeq(oid, buffer, nucl_code, strategy);
 }
 

@@ -34,7 +34,6 @@
 /// 
 /// This object defines access to one database aliasume.
 
-#include <assert.h>
 #include <iostream>
 
 #include <objtools/readers/seqdb/seqdb.hpp>

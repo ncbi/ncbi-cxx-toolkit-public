@@ -217,9 +217,13 @@ void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 {
     m_ProtNucl = prot_nucl;
     
-    _ASSERT((m_ProtNucl == kSeqTypeProt) ||
-            (m_ProtNucl == kSeqTypeNucl) ||
-            (m_ProtNucl == kSeqTypeUnkn));
+    if ((m_ProtNucl != kSeqTypeProt) &&
+        (m_ProtNucl != kSeqTypeNucl) &&
+        (m_ProtNucl != kSeqTypeUnkn)) {
+        
+        NCBI_THROW(CSeqDBException, eArgErr,
+                   "Invalid argument: seq type must be 'p' or 'n'.");
+    }
     
     _ASSERT(m_FileName.size() >= 5);
     

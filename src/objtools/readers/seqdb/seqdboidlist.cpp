@@ -38,7 +38,7 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBVolSet & volset, bool use_mmap)
       m_Bits    (0),
       m_BitEnd  (0)
 {
-    assert( volset.HasMask() );
+    _ASSERT( volset.HasMask() );
     
     if (volset.HasSimpleMask()) {
         x_Setup( volset.GetSimpleMask(), use_mmap );
@@ -70,7 +70,7 @@ void CSeqDBOIDList::x_Setup(const string  & filename,
 
 void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap)
 {
-    assert(volset.HasMask() && (! volset.HasSimpleMask()));
+    _ASSERT(volset.HasMask() && (! volset.HasSimpleMask()));
     
     // First, get the memory space, clear it.
     
@@ -190,7 +190,7 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
         TUC  * locp = m_Bits + (oid_start / 8);
         TUC  * endp = locp + (bitend-bitmap);
         
-        assert(endp <= m_BitEnd);
+        _ASSERT(endp <= m_BitEnd);
         
         Uint4 * wsrcp = (Uint4*) srcp;
         Uint4 * wlocp = (Uint4*) locp;
@@ -213,7 +213,7 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
         TUC  * locp = m_Bits + (oid_start / 8);
         TUC  * endp = locp + (bitend-bitmap);
         
-        assert(endp <= m_BitEnd);
+        _ASSERT(endp <= m_BitEnd);
         
         while(locp < endp) {
             *locp++ |= *srcp++;
@@ -228,7 +228,7 @@ void CSeqDBOIDList::x_OrFileBits(const string & mask_fname,
         TUC  * locp = m_Bits + (oid_start / 8);
         TUC  * endp = locp + (bitend-bitmap);
         
-        assert(endp <= m_BitEnd);
+        _ASSERT(endp <= m_BitEnd);
         
         TCUC * endp2 = endp - 1;
         
@@ -268,8 +268,8 @@ void CSeqDBOIDList::x_SetBitRange(Uint4          oid_start,
         TUC * bp_start = m_Bits + (oid_start >> 3);
         TUC * bp_end   = m_Bits + (oid_end   >> 3);
         
-        assert(bp_end <= m_BitEnd);
-        assert(bp_start < bp_end);
+        _ASSERT(bp_end   <= m_BitEnd);
+        _ASSERT(bp_start <  bp_end);
         
         memset(bp_start, 0xFF, (bp_end - bp_start));
     }

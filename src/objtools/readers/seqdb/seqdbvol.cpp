@@ -145,7 +145,7 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
         }
     }
     
-    assert(estimated_length == buf4bit.size());
+    _ASSERT(estimated_length == buf4bit.size());
 }
 
 static vector<Uint1>
@@ -212,7 +212,7 @@ s_SeqDBMapNA2ToNA8(const char   * buf2bit,
         }
     }
     
-    assert(base_length == buf8bit.size());
+    _ASSERT(base_length == buf8bit.size());
 }
 
 #if 0
@@ -789,16 +789,18 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4            oid,
             
             base_length = x_GetSequence(oid, & seq_buffer);
             
-            if (base_length < 1)
-                assert(0);
+            if (base_length < 1) {
+                NCBI_THROW(CSeqDBException, eFileErr,
+                           "Error: could not get sequence.");
+            }
             
             // Get ambiguity characters.
             
             vector<Int4> ambchars;
             
             if (! x_GetAmbChar(oid, ambchars) ) {
-                // Should be a throw..
-                assert(0);
+                NCBI_THROW(CSeqDBException, eFileErr,
+                           "File error: could not get ambiguity data.");
             }
             
             // Combine and translate to 4 bits-per-character encoding.

@@ -133,8 +133,7 @@ public:
     
     string GetSimpleMask(void)
     {
-        assert(HasSimpleMask());
-        
+        _ASSERT(HasSimpleMask());
         return m_VolList[0].GetSimpleMask();
     }
     
@@ -169,14 +168,20 @@ public:
     void AddMaskedVolume(const string & volname, const string & maskfile)
     {
         CVolEntry * v = x_FindVolName(volname);
-        assert(v != 0);
+        if (! v) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Error: Could not find volume (" + volname + ").");
+        }
         v->AddMask(maskfile);
     }
     
     void AddFullVolume(const string & volname)
     {
         CVolEntry * v = x_FindVolName(volname);
-        assert(v != 0);
+        if (! v) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Error: Could not find volume (" + volname + ").");
+        }
         v->SetIncludeAll();
     }
     
@@ -238,8 +243,7 @@ private:
         
         string GetSimpleMask(void)
         {
-            assert(1 == m_MaskFiles.size());
-            
+            _ASSERT(1 == m_MaskFiles.size());
             return *(m_MaskFiles.begin());
         }
         

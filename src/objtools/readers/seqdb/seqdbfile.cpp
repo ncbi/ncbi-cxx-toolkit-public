@@ -185,10 +185,6 @@ void CSeqDBRawFile::ReadSwapped(Uint8 * z)
     if (m_Mapped) {
         Uint4 offset = m_Offset;
         m_Offset += 8;
-        //_ASSERT(0); // why was this here, was it just a typo?
-//         *z = CByteSwap::GetInt4((const unsigned char *)(((char *)m_Mapped->GetPtr()) + offset + 4));
-//         *z <<= 32;
-//         *z += CByteSwap::GetInt4((const unsigned char *)(((char *)m_Mapped->GetPtr()) + offset));
 	*z = SeqDB_GetBroken((Int8 *) (((char *)m_Mapped->GetPtr()) + offset));
     } else if (m_Opened) {
         char buf[8];
@@ -198,9 +194,6 @@ void CSeqDBRawFile::ReadSwapped(Uint8 * z)
         // Should throw if .bad()?
             
         m_Offset += 8;
-        //*z = CByteSwap::GetInt8((const unsigned char *)(buf));
-        //*z = BytesToUint8(buf);
-	//*z = SeqDB_GetStdOrd((Int8 *) buf);
 	*z = SeqDB_GetBroken((Int8 *) buf);
     } else {
 	NCBI_THROW(CSeqDBException, eFileErr, "Could not open [raw] file.");
@@ -217,7 +210,6 @@ void CSeqDBRawFile::ReadSwapped(string * z)
         Uint4 offset = m_Offset;
         m_Offset += sizeof(offset);
 	
-	// Uint4 string_size = CByteSwap::GetInt4((const unsigned char *)(((char *)m_Mapped->GetPtr()) + offset));
 	Uint4 string_size = SeqDB_GetStdOrd((Uint4 *)(((char *)m_Mapped->GetPtr()) + offset));
         const char * str = ((const char *)m_Mapped->GetPtr()) + m_Offset;
 	
@@ -228,7 +220,6 @@ void CSeqDBRawFile::ReadSwapped(string * z)
         char sl_buf[4];
         m_Stream.seekg(m_Offset, ios::beg);
         m_Stream.read(sl_buf, 4);
-        //Uint4 string_size = CByteSwap::GetInt4((const unsigned char *) sl_buf);
         Uint4 string_size = SeqDB_GetStdOrd((Uint4 *) sl_buf);
 	
         char * strbuf = new char[string_size+1];
@@ -252,20 +243,26 @@ bool CSeqDBRawFile::ReadBytes(char * z, Uint4 start, Uint4 end)
 {
     // Read bytes from memory, no handling or adjustments.
     if (m_Mapped) {
-        _ASSERT(x_ValidGet(start, end, m_Mapped->GetSize()));
-            
+        if (! x_ValidGet(start, end, m_Mapped->GetSize())) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Invalid file offset: possible file corruption.");
+        }
+        
         memcpy(z, ((char *) m_Mapped->GetPtr()) + start, end - start);
-            
+        
         return true;
     } else if (m_Opened) {
-        _ASSERT(x_ValidGet(start, end, x_GetOpenedLength()));
-            
+        if (! x_ValidGet(start, end, x_GetOpenedLength())) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Invalid file offset: possible file corruption.");
+        }
+        
         m_Stream.seekg(start, ios::beg);
         m_Stream.read((char *) z, end - start);
-            
+        
         return true;
     }
-        
+    
     return false;
 }
 
@@ -273,17 +270,20 @@ bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end)
 {
     bool retval = false;
     _ASSERT(m_Opened);
-        
+    
     m_Stream.seekg(start, ios::beg);
-        
+    
     Int4 size_left = end - start;
-        
+    
     while ((size_left > 0) && m_Stream) {
         m_Stream.read(region, size_left);
         Int4 gcnt = m_Stream.gcount();
-            
-        _ASSERT(gcnt > 0);
-            
+        
+        if (gcnt <= 0) {
+            NCBI_THROW(CSeqDBException, eFileErr,
+                       "Failed file read: possible file corruption.");
+        }
+        
         if (gcnt > size_left) {
             break;
         } else if (gcnt <= size_left) {
@@ -291,7 +291,7 @@ bool CSeqDBRawFile::x_ReadFileRegion(char * region, Uint4 start, Uint4 end)
             region    += gcnt;
         }
     }
-        
+    
     if (size_left == 0) {
         retval = true;
         m_Offset += end - start;
