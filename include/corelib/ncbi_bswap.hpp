@@ -193,7 +193,7 @@ double CByteSwap::GetDouble(const unsigned char* ptr)
 }
 
 inline
-void ByteSwap_PutDouble(unsigned char* ptr, double value)
+void CByteSwap::PutDouble(unsigned char* ptr, double value)
 {
     CByteSwap::PutInt8(ptr, *(Int8*)(&value));
 }
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/09/11 16:05:24  kuznets
+ * Fixed minor misprint
+ *
  * Revision 1.5  2003/09/10 16:44:47  kuznets
  * Fixed a bug with bit shifting without casting to a proper (16,32,64 bit) type.
  * Thanks Eugene Vasilchenko for submitting it.
