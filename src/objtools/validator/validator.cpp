@@ -440,6 +440,7 @@ const string CValidErrItem::sm_Terse [] = {
     "MissingGaps",
     "CompleteTitleProblem",
     "CompleteCircleProblem",
+    "BadHTGSeq",
     END(SEQ_INST),
 
     BEGIN(SEQ_DESCR),
@@ -783,6 +784,8 @@ Seq-hist.assembly alignment for the PRIMARY block.",
 "The sequence title has complete genome in it, but it is not marked as complete.",
 //  SEQ_INST_CompleteCircleProblem
 "This sequence has a circular topology, but it is not marked as complete.",
+//  SEQ_INST_BadHTGSeq
+"High throughput genomic sequences without gaps should have quality score graphs.",
 
 END(SEQ_INST),
 
@@ -1345,6 +1348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/09/22 13:51:10  shomrat
+* + SEQ_INST_BadHTGSeq
+*
 * Revision 1.56  2004/09/21 19:08:56  shomrat
 * + SEQ_FEAT_MrnaTransFail
 *
