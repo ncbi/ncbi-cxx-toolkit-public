@@ -42,6 +42,11 @@
 extern "C" {
 #endif
 
+/** BLASTNA element used to mask bases in BLAST */
+extern const Uint1 kNuclMask;
+/** NCBISTDAA element used to mask residues in BLAST */
+extern const Uint1 kProtMask;
+
 /** Create and initialize a new sequence interval.
  * @param head existing BlastSeqLoc to add onto, if *head
  *   is NULL then it will be set to new BlastSeqLoc, may be NULL [in|out]
