@@ -26,6 +26,11 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.102  2004/05/07 15:22:15  papadopo
+ * 1. add functions to allocate and free BlastScoringParameters structures
+ * 2. apply a scaling factor to all cutoffs generated in HitSavingParameters
+ *    or ExtentionParameters structures
+ *
  * Revision 1.101  2004/04/29 17:41:05  papadopo
  * Scale down the search space when calculating the S2 cutoff score for a translated RPS search
  *
@@ -611,7 +616,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    ASSERT(sbp->kbp_std[query_info->first_context]);
 
    (*parameters)->x_dropoff = (Int4)
-      ceil(word_options->x_dropoff*NCBIMATH_LN2/
+      ceil(sbp->scale_factor * word_options->x_dropoff * NCBIMATH_LN2/
            sbp->kbp_std[query_info->first_context]->Lambda);
 
    status = BlastInitialWordParametersUpdate(program_number,
@@ -662,6 +667,7 @@ BlastInitialWordParametersUpdate(Uint1 program_number,
 
       BLAST_Cutoffs(&s2, &e2, kbp, MIN(subj_length, qlen)*subj_length, TRUE, 
                     hit_params->gap_decay_rate);
+      s2 *= (Int4)sbp->scale_factor;
       parameters->cutoff_score = MIN(hit_params->cutoff_score, s2);
    }
 
@@ -795,6 +801,11 @@ Int2 BlastExtensionParametersNew(Uint1 program_number,
    params->gap_trigger = (Int4)
       ((options->gap_trigger*NCBIMATH_LN2 + kbp->logK) / kbp->Lambda);
 
+   if (sbp->scale_factor > 1.0) {
+      params->gap_trigger *= (Int4)sbp->scale_factor;
+      params->gap_x_dropoff *= (Int4)sbp->scale_factor;
+      params->gap_x_dropoff_final *= (Int4)sbp->scale_factor;
+   }
    return 0;
 }
 
@@ -991,6 +1002,42 @@ BlastScoringOptionsDup(BlastScoringOptions* *new_opt, const BlastScoringOptions*
        (*new_opt)->matrix_path = strdup(old_opt->matrix_path);
 
     return 0;
+}
+
+BlastScoringParameters*
+BlastScoringParametersFree(BlastScoringParameters* parameters)
+{
+	sfree(parameters);
+	return NULL;
+}
+
+
+Int2
+BlastScoringParametersNew(const BlastScoringOptions* score_options, 
+                          BlastScoreBlk* sbp, 
+                          BlastScoringParameters* *parameters)
+{
+   BlastScoringParameters *params;
+   double scale_factor;
+
+   if (score_options == NULL)
+      return 1;
+
+   *parameters = params = (BlastScoringParameters*) 
+                        calloc(1, sizeof(BlastScoringParameters));
+   if (params == NULL)
+      return 2;
+
+   params->options = (BlastScoringOptions *)score_options;
+   scale_factor = sbp->scale_factor;
+   params->scale_factor = scale_factor;
+   params->reward = score_options->reward;
+   params->penalty = score_options->penalty;
+   params->gap_open = score_options->gap_open * (Int4)scale_factor;
+   params->gap_extend = score_options->gap_extend * (Int4)scale_factor;
+   params->decline_align = score_options->decline_align * (Int4)scale_factor;
+   params->shift_pen = score_options->shift_pen * (Int4)scale_factor;
+   return 0;
 }
 
 
@@ -1432,6 +1479,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    BlastHitSavingOptions* options;
    Blast_KarlinBlk* kbp;
    double evalue;
+   double scale_factor = sbp->scale_factor;
 
    ASSERT(params);
    ASSERT(query_info);
@@ -1451,7 +1499,7 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
 
    /* Calculate cutoffs based on the current effective lengths information */
    if (options->cutoff_score > 0) {
-      params->cutoff_score = options->cutoff_score;
+      params->cutoff_score = options->cutoff_score * (Int4) sbp->scale_factor;
    } else if (!options->phi_align) {
       Int4 context = query_info->first_context;
       double searchsp = (double)query_info->eff_searchsp_array[context];
@@ -1462,6 +1510,8 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
 
       params->cutoff_score = 0;
       BLAST_Cutoffs(&params->cutoff_score, &evalue, kbp, searchsp, FALSE, 0);
+      params->cutoff_score *= (Int4) scale_factor;
+
       /* When sum statistics is used, all HSPs above the gap trigger 
          cutoff are saved until the sum statistics is applied to potentially
          link them with other HSPs and improve their e-values. 
@@ -1592,8 +1642,7 @@ Int2 BLAST_ValidateOptions(Uint1 program_number,
 void
 CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params, 
-   Int8 db_length, Int4 subject_length, 
-   const PSIBlastOptions* psi_options)
+   Int8 db_length, Int4 subject_length)
 {
 	double gap_prob, gap_decay_rate, x_variable, y_variable;
 	Blast_KarlinBlk* kbp;
@@ -1662,8 +1711,6 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
       hit_params->ignore_small_gaps = TRUE;
    }	
 
-   if (psi_options) {
-      hit_params->cutoff_big_gap *= (Int4) psi_options->scalingFactor;
-      hit_params->cutoff_small_gap *= (Int4) psi_options->scalingFactor;
-   }
+   hit_params->cutoff_big_gap *= (Int4)sbp->scale_factor;
+   hit_params->cutoff_small_gap *= (Int4)sbp->scale_factor;
 }
