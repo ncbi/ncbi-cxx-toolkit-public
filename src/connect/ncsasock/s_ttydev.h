@@ -8,6 +8,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.0  1997/08/25 18:37:55  madden
+* Revision changed to 6.0
+*
 * Revision 4.0  1995/07/26 13:56:09  ostell
 * force revision to 4.0
 *

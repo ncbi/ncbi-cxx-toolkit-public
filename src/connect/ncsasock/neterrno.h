@@ -22,6 +22,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.0  1997/08/25 18:37:34  madden
+* Revision changed to 6.0
+*
 * Revision 4.1  1997/01/28 22:35:23  kans
 * new symbol collisions in CodeWarrior fixed
 *

@@ -14,6 +14,9 @@
 *
 * RCS Modification History:
 * $Log$
+* Revision 6.0  1997/08/25 18:37:39  madden
+* Revision changed to 6.0
+*
 * Revision 4.1  1997/01/29 00:12:00  kans
 * include <MacTCP.h> instead of obsolete <MacTCPCommonTypes.h>
 *
