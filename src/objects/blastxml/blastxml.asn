@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.2 2000/08/11 17:48:35 shavirin Exp $
+--$Id: blastxml.asn,v 6.3 2000/10/23 20:24:03 shavirin Exp $
 --
---$Revision: 6.2 $
+--$Revision: 6.3 $
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML
@@ -8,6 +8,10 @@
 --
 --
 -- $Log: blastxml.asn,v $
+-- Revision 6.3  2000/10/23 20:24:03  shavirin
+-- Few parameters were changed to OPTIONAL to allow XML without results:
+-- failure or no hits found condition.
+--
 -- Revision 6.2  2000/08/11 17:48:35  shavirin
 -- Small fix.
 --
@@ -30,9 +34,9 @@ BlastOutput ::= SEQUENCE {
 	query-len INTEGER ,		-- length of query sequence
 	query-seq VisibleString OPTIONAL ,	-- query sequence itself
 	iter-num INTEGER OPTIONAL ,	-- iteration number
-	hits SEQUENCE OF Hit ,		-- Hits one for every db sequence
+	hits SEQUENCE OF Hit OPTIONAL,		-- Hits one for every db sequence
 	param Parameters ,		-- search parameters
-	stat Statistics,		-- search statistics            
+	stat Statistics OPTIONAL,	-- search statistics            
         message VisibleString OPTIONAL  -- Some (error?) information
 }
 
@@ -56,7 +60,7 @@ Statistics ::= SEQUENCE {
 	eff-space REAL,			-- Effective search space
         kappa REAL,                     -- Karlin-Altschul parameter K
         lambda REAL,                    -- Karlin-Altschul parameter Lambda
-        enthropy REAL                   -- Karlin-Altschul parameter H
+        entropy REAL                    -- Karlin-Altschul parameter H
 }       
 
 Hit ::= SEQUENCE {
