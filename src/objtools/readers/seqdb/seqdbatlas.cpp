@@ -88,7 +88,7 @@ CSeqDBAtlas::~CSeqDBAtlas()
     // not execute, because of the above test.
     
     for(TPoolIter i = m_Pool.begin(); i != m_Pool.end(); i++) {
-        delete[] ((*i).first);
+        delete[] (char*)((*i).first);
     }
     
     m_Pool.clear();
@@ -173,7 +173,7 @@ bool CSeqDBAtlas::GetFileSize(const string & fname, Uint8 & length)
 void CSeqDBAtlas::GarbageCollect()
 {
     CFastMutexGuard guard(m_Lock);
-    return x_GarbageCollect(0);
+    x_GarbageCollect(0);
 }
 
 void CSeqDBAtlas::x_GarbageCollect(Uint8 reduce_to)
@@ -619,7 +619,10 @@ void CSeqDBAtlas::ShowLayout(bool locked, Uint8 index)
         guard.Guard(m_Lock);
     }
     
-    cout << "\n\nShowing layout (index " << index << "), current alloc = " << m_CurAlloc << endl;
+    // MSVC fails to grok "ostream << [Uint8]". (Okalee-dokalee...)
+    
+    cout << "\n\nShowing layout (index " << Int8(index)
+         << "), current alloc = " << m_CurAlloc << endl;
     
     for(unsigned i = 0; i < m_Regions.size(); i++) {
         m_Regions[i]->Show();
@@ -758,7 +761,7 @@ CSeqDBAtlas::CRegionMap::~CRegionMap()
         _ASSERT(m_Data == 0);
     }
     if (m_Data) {
-        delete[] m_Data;
+        delete[] ((char*) m_Data);
         m_Data = 0;
     }
 }
