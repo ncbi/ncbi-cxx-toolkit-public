@@ -43,6 +43,10 @@
 BEGIN_NCBI_SCOPE
 
 
+// Default compression I/O stream buffer size
+const streamsize kCompressionDefaultBufSize = 16*1024;
+
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // CCompressionException
@@ -70,6 +74,7 @@ public:
 
 
 // Forward declaration
+class CCompressionFile;
 class CCompressionStreambuf;
 
 
@@ -129,23 +134,47 @@ public:
     // The compressor error code can be acquired via GetLastError() call.
     // Notice that altogether the total size of the destination buffer must
     // be little more then size of the source buffer. 
-    virtual bool CompressBuffer
-    (const void* src_buf, unsigned int  src_len,
-     void*       dst_buf, unsigned int  dst_size,
-     /* out */            unsigned int* dst_len) = 0;
-    virtual bool DecompressBuffer
-    (const void* src_buf, unsigned int  src_len,
-     void*       dst_buf, unsigned int  dst_size,
-     /* out */            unsigned int* dst_len) = 0;
+    virtual bool CompressBuffer(
+        const void* src_buf, unsigned int  src_len,
+        void*       dst_buf, unsigned int  dst_size,
+        /* out */            unsigned int* dst_len
+    ) = 0;
+    virtual bool DecompressBuffer(
+        const void* src_buf, unsigned int  src_len,
+        void*       dst_buf, unsigned int  dst_size,
+        /* out */            unsigned int* dst_len
+    ) = 0;
     
-    // (De)compress file with name "src" and put result to file "dst".
+    // (De)compress file "src_file" and put result to file "dst_file".
     // Return TRUE on success, FALSE on error.
-    virtual bool CompressFile  (const string& src, const string& dst) = 0;
-    virtual bool DecompressFile(const string& src, const string& dst) = 0;
+    virtual bool CompressFile(
+        const string&     src_file,
+        const string&     dst_file,
+        size_t            buf_size = kCompressionDefaultBufSize
+    ) = 0;
+    virtual bool DecompressFile(
+        const string&     src_file,
+        const string&     dst_file, 
+        size_t            buf_size = kCompressionDefaultBufSize
+    ) = 0;
 
 protected:
     // Set last compressor's action error/status
     void SetLastError(int status);
+
+protected:
+    // Universal file compression/decompression functions.
+    // Return TRUE on success, FALSE on error.
+    virtual bool x_CompressFile(
+        const string&     src_file,
+        CCompressionFile& dst_file,
+        size_t            buf_size = kCompressionDefaultBufSize
+    );
+    virtual bool x_DecompressFile(
+        CCompressionFile& src_file,
+        const string&     dst_file,
+        size_t            buf_size = kCompressionDefaultBufSize
+    );
 
 private:
     ELevel  m_Level;       // Compression level
@@ -337,6 +366,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/10 16:19:25  ivanov
+ * Added kCompressionDefaultBufSize definition from stream.hpp.
+ * Added auxiliary file compression/decompression functions.
+ *
  * Revision 1.4  2003/06/03 20:09:54  ivanov
  * The Compression API redesign. Added some new classes, rewritten old.
  *
