@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/03/31 17:08:07  kans
+* moved ECanDelete to public area of CObject
+*
 * Revision 1.5  2000/03/29 15:50:27  vasilche
 * Added const version of CRef - CConstRef.
 * CRef and CConstRef now accept classes inherited from CObject.
@@ -86,12 +89,12 @@ public:
     // virtual destructor
     virtual ~CObject(void);
 
-protected:
-    // special constructor for objects allocated in heap
     enum ECanDelete {
         eCanDelete = 0
     };
 
+protected:
+    // special constructor for objects allocated in heap
     CObject(ECanDelete) THROWS_NONE
         : m_Counter(0)
         {
