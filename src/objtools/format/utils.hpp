@@ -65,6 +65,7 @@ string JoinNoRedund(const list<string>& l, const string& delim);
 // with one space. Strips all spaces after '(' and before ')'
 void StripSpaces(string& str);
 void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis = false);
+void TrimSpaces(string& str, int indent = 0);
 bool RemovePeriodFromEnd(string& str, bool keep_ellipsis = true);
 void AddPeriod(string& str);
 
@@ -119,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/08/30 18:21:59  shomrat
+* + TrimSpaces
+*
 * Revision 1.10  2004/08/30 13:37:53  shomrat
 * + TrimSpacesAndJunkFromEnds
 *

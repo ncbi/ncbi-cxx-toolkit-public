@@ -190,6 +190,27 @@ void AddPeriod(string& str)
 }
 
 
+void TrimSpaces(string& str, int indent)
+{
+    if (str.empty()) {
+        return;
+    }
+    if (indent < 0) {
+        indent = 0;
+    }
+
+    int end = str.length() - 1;
+    while (end >= indent  &&  isspace(str[end])) {
+        end--;
+    }
+    if (end < indent) {
+        str.erase(indent);
+    } else {
+        str.erase(end + 1);
+    }
+}
+
+
 void TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
 {
     if (str.empty()) {
@@ -636,6 +657,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/08/30 18:22:02  shomrat
+* + TrimSpaces
+*
 * Revision 1.13  2004/08/30 13:38:13  shomrat
 * + TrimSpacesAndJunkFromEnds
 *
