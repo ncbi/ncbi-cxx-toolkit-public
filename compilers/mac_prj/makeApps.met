@@ -266,7 +266,7 @@ on SetProjectData()
 	AddAppProject("gbench_plugin_scan", {"libdl", "cmdline", "plainname"}, "gui:gbench:gbench_plugin_scan", Â
 		{}, {"gui_core"})
 	
-		---------- SERIAL ----------	
+	---------- SERIAL ----------	
 	AddProject(datatoolData)
 	
 	---------- OBJECTS ----------	
@@ -276,7 +276,7 @@ on SetProjectData()
 		objMgrLibs & {"xvalidate"}, {}))
 	AddProject(DataPlusLibs(SimpleProjectData("id1_fetch_simple", "app:id1_fetch", {"C++", "sockets"}), Â
 		commonObjLibs & {"id1", "xconnect"}, {}))
-
+	
 	if pBuildDemos then
 		---- DEMO ---
 		
@@ -514,7 +514,7 @@ on AppendAccessPath(aPath, isRecursive, isUserPath)
 		if (aPath does not end with ":") then set aPath to aPath & ":"
 		
 		set aPath to POSIX path of aPath
-		set pathsToAdd to {{name:aPath, recursive:isRecursive, origin:root relative, root:"OS X Volume", format:Unix Path}}
+		set pathsToAdd to {{name:aPath, recursive:isRecursive, origin:absolute, format:Unix Path}}
 		if isUserPath then
 			Set Preferences of panel "Access Paths" to {User Paths:pathsToAdd}
 		else
@@ -528,7 +528,7 @@ on PushAccessPath(aPath, isRecursive, isUserPath)
 		if (aPath does not end with ":") then set aPath to aPath & ":"
 		
 		set aPath to POSIX path of aPath
-		set pathToAdd to {name:aPath, recursive:isRecursive, origin:root relative, root:"OS X Volume", format:Unix Path}
+		set pathToAdd to {name:aPath, recursive:isRecursive, origin:absolute, format:Unix Path}
 		if isUserPath then
 			set newPaths to Get Preferences of {User Paths} from panel "Access Paths"
 			copy pathToAdd to beginning of User Paths of newPaths
@@ -920,10 +920,11 @@ on CreateFolder(folderPath)
 	set text item delimiters of AppleScript to ":"
 	-- strip off disk name.
 	tell application "Finder"
+		set pathSoFar to ""
 		if (exists disk (first text item of folderPath)) then
+			set pathSoFar to first text item of folderPath
 			set folderPath to (rest of text items of folderPath) as string
 		end if
-		set pathSoFar to ""
 		repeat with f in (text items of folderPath)
 			set longerPath to pathSoFar & ":" & f
 			if not (exists folder (longerPath)) then
@@ -934,6 +935,7 @@ on CreateFolder(folderPath)
 	end tell
 	set text item delimiters of AppleScript to ""
 end CreateFolder
+
 
 on CreateProject(proj)
 	tell application "CodeWarrior IDE"
