@@ -6,7 +6,7 @@
  *        "configure"-generated configuration headers.
  */
 
-/* Hard-coded;  must always be defined in this(pro-Mac) header
+/* Hard-coded;  must always be defined in this(pro-Mac) header */
 #define NCBI_OS_MAC 1
 
 /* Define if type char is unsigned and you are not using gcc.  */

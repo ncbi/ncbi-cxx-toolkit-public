@@ -1,4 +1,4 @@
-/* $Id: ncbiconf.mac,v 1.1 1999/05/13 16:31:40 vakatov Exp $
+/* $Id: ncbiconf.mac,v 1.2 1999/11/17 21:14:20 vakatov Exp $
  * By Jonathan Kans, NCBI (kans@ncbi.nlm.nih.gov)
  *
  * NOTE:  Unlike its UNIX and NT counterparts, this configuration header
@@ -6,7 +6,7 @@
  *        "configure"-generated configuration headers.
  */
 
-/* Hard-coded;  must always be defined in this(pro-Mac) header
+/* Hard-coded;  must always be defined in this(pro-Mac) header */
 #define NCBI_OS_MAC 1
 
 /* Define if type char is unsigned and you are not using gcc.  */
