@@ -102,10 +102,14 @@ string CNetCacheClient::PutData(const void*  buf,
                                 unsigned int time_to_live)
 {
     string blob_id;
+    string request;
+    
+    const char* client = 
+        !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
 
-    SendClientName();
+    request = client;
+    request.append("\r\nPUT");    
 
-    string request = "PUT ";
     if (time_to_live) {
         request += NStr::IntToString(time_to_live);
     }
@@ -122,6 +126,7 @@ string CNetCacheClient::PutData(const void*  buf,
     if (NStr::FindCase(blob_id, "ID:") != 0) {
         // Answer is not in "ID:....." format
         // (Most likely it is an error)
+        LOG_POST(Error << blob_id);
         return kEmptyStr;
     }
     blob_id.erase(0, 3);
@@ -166,9 +171,14 @@ void CNetCacheClient::SendClientName()
 
 IReader* CNetCacheClient::GetData(const string& key)
 {
-    SendClientName();
+    string request;
+    
+    const char* client = 
+        !m_ClientName.empty() ? m_ClientName.c_str() : "noname";
 
-    string request = "GET ";
+    request = client;
+    request.append("\r\nGET");    
+    
     request += key;
     WriteStr(request.c_str(), request.length() + 1);
 
@@ -281,37 +291,6 @@ bool CNetCacheClient::ReadStr(CSocket& sock, string* str)
     }
     io_st = sock.Read(szBuf, str_len + 2);
     return true;
-/*
-    int loop_cnt = 0;
-    do {
-        EIO_Status io_st;
-        size_t n_read;
-        char ch;
-        for (;;) {
-             
-            io_st = sock.Read(&ch, 1, &n_read, eIO_ReadPlain);
-            switch (io_st) {
-            case eIO_Success:
-                if (ch == 0 || ch == '\r' || ch == '\n') {
-                    goto out_of_loop;
-                }
-                *str += ch;
-                break;
-            case eIO_Timeout:
-                // TODO: add repetition counter or another protector here
-                break;
-            default: // invalid socket or request, bailing out
-                return false;
-            }
-        }
-out_of_loop:
-        io_st = sock.Read(&ch, 1, &n_read);
-        if (++loop_cnt > 10) // protection from a client feeding empty strings
-            return false;
-    } while (str->empty());
-
-    return true;
-*/
 }
 
 
@@ -328,6 +307,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/20 14:51:05  kuznets
+ * Optimization in networking
+ *
  * Revision 1.8  2004/10/20 13:46:22  kuznets
  * Optimized networking
  *
