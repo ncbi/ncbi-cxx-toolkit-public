@@ -10,7 +10,7 @@
 #include &lt;corelib/ncbiapp.hpp&gt;
 #include &lt;corelib/ncbiobj.hpp&gt;
 <font color = "blue">
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 <font color = "black">
 class CTestApp : public CNcbiApplication {
 public:
@@ -28,16 +28,15 @@ public:
 <font color = "black">
 int CTestApp::Run()
 {
-    auto_ptr&lt;int&gt; orig_ap (new int (5));
+<a name="orig">    auto_ptr&lt;int&gt; orig_ap = new int (5);
     {
-        auto_ptr&lt;int&gt; copy_ap;
-        copy_ap.reset (orig_ap.release());
+        auto_ptr&lt;int&gt; copy_ap = orig_ap;
         
-        if (! orig_ap.get())
+        if (! orig_ap.get()) {
             cout << "orig_ap no longer exists - copy_ap = " << *copy_ap << endl;
-      
-        else
+        } else {
             cout  << "orig_ap = " << *orig_ap << ", copy_ap = " << *copy_ap << endl;
+        }
     }
     if (orig_ap.get())
         cout << "orig_ap = " << *orig_ap << endl;
@@ -48,20 +47,18 @@ int CTestApp::Run()
     {
         CRef&lt; CObjectFor&lt;int&gt; &gt; copy = orig;
     
-        if (! orig )
+        if (! orig ) {
             cout << "orig no longer exists - copy = " << *copy << endl;
-
-        else
-           cout  << "orig = " << *orig << ", copy = " << *copy<< endl;
+        } else {
+            cout  << "orig = " << *orig << ", copy = " << *copy<< endl;
+        }
     }
-    if (orig)
+    if (orig) {
         cout << "orig = " << *orig << endl;
+    }
 }
-<font color = "blue">
-END_NCBI_SCOPE
 
-USING_NCBI_SCOPE;
-<font color = "black">
+
 int main(int argc, const char* argv[]) 
 {
     CTestApp theTestApp;
