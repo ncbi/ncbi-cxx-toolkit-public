@@ -319,13 +319,33 @@ As for now, at least the following compilers give enough support
 (as concerns to the C++ and STL implementation) to build NCBI C++
 libraries and tools:
 <ul>
-  <li> MSVC++ 6.XX for MS Windows on PC
-  <li> WorkShop Compilers 5.0 for Solaris 2.6 on Sun
-  <li> egcs-2.91.57 for CYGWIN_NT-4.0 on PC
-  <li> egcs-2.91.66 for RedHat Linux 5.2 on PC
-  <li> Metrowerks CodeWarrior for MacOS
-  <li> egcs-1.1.2 for IRIX6.2 (compiled with "-fsquangle" flag)
-  <li> egcs-2.91.66 for Solaris 2.6 on Sun (compiled with "-fsquangle" flag)
+  <li> SunOS (5.6 and higher)
+    <ul>
+      <li> <b>WorkShop</b> Compilers 5.0 on SUN(sparc) and PC(i386)
+      <li> <b>egcs</b>-2.91.66 (using "-fsquangle" compiler flag)
+		     on SUN(sparc) and PC(i386)
+    </ul>
+
+  <li> MS Windows (NT)
+    <ul>
+      <li> <b>MSVC++</b> 6.0 (SP3) on PC
+		<li> <b>egcs</b>-2.91.57 for CYGWIN_NT-4.0 on PC
+    </ul>
+
+  <li> MacOS
+    <ul>
+      <li> Metrowerks <b>CodeWarrior</b> on PowerPC
+    </ul>
+
+  <li> Linux (RedHat 5.2)
+    <ul>
+      <li> <b>egcs</b>-2.91.66 on PC
+    </ul>
+
+  <li> IRIX64 (6.4)
+    <ul>
+      <li> <b>egcs</b>-2.91.66 (using "-fsquangle" compiler flag) on SGI
+    </ul>
 </ul>
 NOTE: Some projects(e.g. "query") are very platform-specific, and they cannot
 be adopted(or even compiled) for all supported platforms. All such projects
