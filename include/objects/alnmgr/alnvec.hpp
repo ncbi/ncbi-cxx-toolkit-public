@@ -125,21 +125,6 @@ CAlnVec::TNumrow CAlnVec::GetConsensusRow(void) const
     return m_ConsensusSeq;
 }
 
-inline
-CSeqVector& CAlnVec::x_GetSeqVector(TNumrow row) const
-{
-    TSeqVectorCache::iterator iter = m_SeqVectorCache.find(row);
-    if (iter != m_SeqVectorCache.end()) {
-        return *(iter->second);
-    } else {
-        CSeqVector vec = GetBioseqHandle(row).GetSeqVector
-            (CBioseq_Handle::eCoding_Iupac,
-             CBioseq_Handle::eStrand_Plus);
-        CRef<CSeqVector> seq_vec = new CSeqVector(vec);
-        return *(m_SeqVectorCache[row] = seq_vec);
-    }
-}
-
 inline 
 CSeqVector::TResidue CAlnVec::GetResidue(TNumrow row, TSeqPos aln_pos) const
 {
@@ -199,6 +184,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2002/09/25 19:34:15  todorov
+ * "un-inlined" x_GetSeqVector
+ *
  * Revision 1.7  2002/09/25 18:16:26  dicuccio
  * Reworked computation of consensus sequence - this is now stored directly
  * in the underlying CDense_seg
