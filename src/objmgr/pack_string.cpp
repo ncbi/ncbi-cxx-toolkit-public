@@ -69,10 +69,12 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
             ins.first->c_str();
         }
         s = *ins.first;
+#if _DEBUG
         if ( s.c_str() != ins.first->data() ) {
             THROW1_TRACE(runtime_error,
                          "bad ref counting");
         }
+#endif
     }
     else {
         set<string>::const_iterator it = m_Strings.find(s);
@@ -82,10 +84,12 @@ void CPackStringHook::ReadString(CObjectIStream& in, string& s)
         }
         ++m_CompressedIn;
         s = *it;
+#if _DEBUG
         if ( s.c_str() != it->data() ) {
             THROW1_TRACE(runtime_error,
                          "bad ref counting");
         }
+#endif
     }
 }
 
