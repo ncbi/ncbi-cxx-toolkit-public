@@ -21,7 +21,7 @@ fi
 
 LIBS="
  giflib-4.1.3*http://cogent.dl.sourceforge.net/sourceforge/libungif
- libpng-1.2.8-config*ftp://swrinde.nde.swri.edu/pub/png/src
+ libpng-1.2.8-config*cogent.dl.sourceforge.net/sourceforge/libpng
  sqlite-2.8.16*http://www.sqlite.org
  db-4.3.27.NC*http://downloads.sleepycat.com
  fltk-1.1.6-source*http://cogent.dl.sourceforge.net/sourceforge/fltk"
