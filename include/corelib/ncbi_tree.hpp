@@ -152,11 +152,11 @@ public:
     void InsertNode(nodelist_iterator it, TTreeType* subnode);
 
 protected:
-    CopyFrom(const TTreeType& tree);
-    SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
+    void CopyFrom(const TTreeType& tree);
+    void SetParent(TTreeType* parent_node) { m_Parent = parent_node; }
 
 protected:
-    CTree*             m_Parent; ///< Pointer on the parent node
+    TTreeType*         m_Parent; ///< Pointer on the parent node
     TNodeList          m_Nodes;  ///< List of dependent nodes
     V                  m_Value;  ///< Node value
 };
@@ -188,7 +188,7 @@ CTreeNWay<V>::CTreeNWay(const TTreeType& tree)
 }
 
 template<class V>
-CTreeNWay<V>& CTreeNWay::operator=(const TTreeType& tree)
+CTreeNWay<V>& CTreeNWay<V>::operator=(const TTreeType& tree)
 {
     ITERATE(TNodeList, it, m_Nodes) {
         CTreeNWay* node = *it;
@@ -199,25 +199,13 @@ CTreeNWay<V>& CTreeNWay::operator=(const TTreeType& tree)
 }
 
 template<class V>
-CTreeNWay<V>::CopyFrom(const TTreeType& tree)
+void CTreeNWay<V>::CopyFrom(const TTreeType& tree)
 {
     ITERATE(TNodeList, it, tree.m_Nodes) {
         CTreeNWay* src_node = *it;
         CTreeNWay* new_node = new CTreeNWay(*src_node);
         AddNode(new_node);
     }
-}
-
-template<class V>
-const CTreeNWay<V>::TTreeType* CTreeNWay<V>::GetParent() const
-{
-    return m_Parent;
-}
-
-template<class V>
-CTreeNWay<V>::TTreeType* CTreeNWay<V>::GetParent()
-{
-    return m_Parent;
 }
 
 template<class V>
@@ -291,6 +279,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/01/07 21:10:58  jcherry
+ * Compile fixes
+ *
  * Revision 1.2  2004/01/07 17:21:53  kuznets
  * + template implementation
  *
