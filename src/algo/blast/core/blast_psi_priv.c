@@ -925,6 +925,8 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
     ASSERT(msa);
     ASSERT(aligned_blocks);
 
+    /* FIXME: pos_extnt[i].left should not be -1? */
+    /* FIXME: pos_extnt[i].right should not be query_length? */
     for (i = 0; i < msa->dimensions->query_length; i++) {
         aligned_blocks->size[i] = aligned_blocks->pos_extnt[i].right - 
                                    aligned_blocks->pos_extnt[i].left + 1;
@@ -950,6 +952,11 @@ _PSIComputeAlignedRegionLengths(const _PSIMsa* msa,
             }
         }
 
+    }
+    
+    /* Sanity check */
+    for (i = 0; i < msa->dimensions->query_length; i++) {
+        ASSERT(aligned_blocks->size[i] <= msa->dimensions->query_length);
     }
 }
 
@@ -1385,7 +1392,7 @@ _PSIComputeResidueFrequencies(const _PSIMsa* msa,     /* [in] */
                 /* Effective number of independent observations for column p */
                 double alpha = 0.0;
                 /* Renamed to match the formula in the paper */
-                double beta = pseudo_count;
+                const double beta = pseudo_count;
                 double numerator = 0.0;         /* intermediate term */
                 double denominator = 0.0;       /* intermediate term */
                 double qOverPEstimate = 0.0;    /* intermediate term */
@@ -1409,6 +1416,7 @@ _PSIComputeResidueFrequencies(const _PSIMsa* msa,     /* [in] */
 
                 denominator = alpha + beta;
 
+                ASSERT(denominator != 0.0);
                 qOverPEstimate = numerator/denominator;
 
                 /* Note artificial multiplication by standard probability
@@ -2062,6 +2070,9 @@ _PSISaveDiagnostics(const _PSIMsa* msa,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/10/13 16:03:00  camacho
+ * Add assertions as sanity checks
+ *
  * Revision 1.27  2004/10/01 13:59:22  camacho
  * Use calloc where needed
  *
