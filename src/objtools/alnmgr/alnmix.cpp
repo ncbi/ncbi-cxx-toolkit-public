@@ -103,6 +103,9 @@ void CAlnMix::x_Reset()
     m_Segments.clear();
     m_Rows.clear();
     m_ExtraRows.clear();
+    iterate (TSeqs, seq_i, m_Seqs) {
+        (*seq_i)->m_Starts.clear();
+    }
 }
 
 
@@ -122,7 +125,7 @@ void CAlnMix::Merge(TMergeFlags flags)
 {
     if ( !m_DS  ||  m_MergeFlags != flags) {
         if (m_InputDSs.size()) {
-            m_DS = null;
+            x_Reset();
             m_MergeFlags = flags;
             if (m_MergeFlags & fTryOtherMethodOnFail) {
                 try {
@@ -342,38 +345,28 @@ void CAlnMix::Add(const CDense_seg &ds)
 
 void CAlnMix::x_Merge()
 {
-    // Find the refseq (if such exists)
-    {{
-        TSeqs::iterator refseq_it = m_Seqs.end();
-        non_const_iterate (TSeqs, it, m_Seqs){
-            CAlnMixSeq * aln_seq = *it;
-
-            if (aln_seq->m_DS_Count == m_InputDSs.size()) {
-                // found a potential reference sequence
-                if ( !m_SingleRefseq  ||
-                     m_SingleRefseq  &&  
-                     aln_seq->m_Score > (*refseq_it)->m_Score) {
-                    // it has the best score (so far)
-                    m_SingleRefseq = true;
-                    refseq_it = it;
-                }
-            }
-        }
-        if (m_SingleRefseq  &&  refseq_it != m_Seqs.begin()) {
-            // move to the front
-            CAlnMixSeq * refseq = *refseq_it;
-            m_Seqs.erase(refseq_it);
-            m_Seqs.insert(m_Seqs.begin(), refseq);
-        }
-    }}
+    bool first_refseq = true; // mark the first loop
 
     if (m_MergeFlags & fSortSeqsByScore) {
-        // Sort sequences by score,
-        // leaving the reference sequence (if such exists) on
-        stable_sort(m_Seqs.begin() + (m_SingleRefseq ? 1 : 0),
-                    m_Seqs.end(),
-                    x_CompareAlnSeqScores);
+        stable_sort(m_Seqs.begin(), m_Seqs.end(), x_CompareAlnSeqScores);
     }
+
+    // Find the refseq (if such exists)
+    {{
+        m_SingleRefseq = false;
+        non_const_iterate (TSeqs, it, m_Seqs){
+            if ((*it)->m_DS_Count == m_InputDSs.size()) {
+                m_SingleRefseq = true;
+                if ( !first_refseq ) {
+                    CAlnMixSeq * refseq = *it;
+                    m_Seqs.erase(it);
+                    m_Seqs.insert(m_Seqs.begin(), refseq);
+                }
+                break;
+            }
+            first_refseq = false;
+        }
+    }}
 
     // Index the sequences
     {{
@@ -399,7 +392,7 @@ void CAlnMix::x_Merge()
     CRef<CAlnMixSegment> seg;
     CAlnMixSeq::TStarts::iterator start_i, lo_start_i, hi_start_i, tmp_start_i;
 
-    bool first_refseq = true; // mark the first loop
+    first_refseq = true; // mark the first loop
 
     while (true) {
         if (first_refseq) {
@@ -1283,6 +1276,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.34  2003/03/05 21:53:24  todorov
+* clean up miltiple mix case
+*
 * Revision 1.33  2003/03/05 17:42:41  todorov
 * Allowing multiple mixes + general case speed optimization
 *
