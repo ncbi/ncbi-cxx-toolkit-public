@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2001/02/28 17:48:07  lavr
+ * Huge body test added
+ *
  * Revision 6.1  2001/02/28 00:53:45  lavr
  * Initial revision
  *
@@ -38,6 +41,12 @@
 
 #include "../ncbi_priv.h"
 #include <connect/ncbi_sendmail.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+
+
+#define TEST_HUGE_BODY_SIZE     (1024*100)
 
 
 int main(void)
@@ -67,11 +76,15 @@ int main(void)
     SSendMailInfo info;
     const char* retval;
     STimeout mx_tmo;
+    char* huge_body;
     short mx_port;
+    FILE *fp;
 
     CORE_SetLOGFILE(stderr, 0/*false*/);
+    srand(time(0));
 
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Testing CORE_SendMail");
+
     n = (sizeof(to)/sizeof(to[0]))*
         (sizeof(subject)/sizeof(subject[0]))*
         (sizeof(body)/sizeof(body[0]));
@@ -87,6 +100,7 @@ int main(void)
             }
 
     CORE_LOG(eLOG_Note, "Phase 2 of 2: Testing CORE_SendMailEx");
+
     SendMailInfo_Init(&info);
     mx_port = info.mx_port;
     mx_host = info.mx_host;
@@ -129,10 +143,44 @@ int main(void)
 
     CORE_LOG(eLOG_Note, "Testing cc");
     info.cc = "vakatov";
-    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", "Test", &info);
+    retval = CORE_SendMailEx("", "CORE_SendMailEx Test", "Test", &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
     CORE_LOG(eLOG_Note, "Test passed");
+
+    CORE_LOG(eLOG_Note, "Testing bcc");
+    info.cc = 0;
+    info.bcc = "vakatov";
+    retval = CORE_SendMailEx(0, "CORE_SendMailEx Test", "Test", &info);
+    if (retval)
+        CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
+    CORE_LOG(eLOG_Note, "Test passed");
+
+    CORE_LOG(eLOG_Note, "Testing huge body");
+    info.cc = 0;
+    info.bcc = 0;
+    if (!(huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)))
+        CORE_LOG(eLOG_Fatal, "Test failed: Cannot allocate memory");
+    for (i = 0; i < TEST_HUGE_BODY_SIZE - 1; i++)
+        huge_body[i] = "0123456789\nABCDEFGHIJKLMNOPQRSTUVWXYZ ."[rand() % 39];
+    huge_body[i] = 0;
+    retval = CORE_SendMailEx("lavr", "CORE_SendMailEx Test", huge_body, &info);
+    if (retval)
+        CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
+    if (!(fp = fopen("test_ncbi_sendmail.out", "w")) ||
+        fwrite(huge_body, TEST_HUGE_BODY_SIZE, 1, fp) != 1) {
+        CORE_LOG(eLOG_Error, "Test failed: Cannot store huge body to file");
+    } else {
+        fclose(fp);
+        CORE_LOG(eLOG_Note, "Success: Check test_ncbi_sendmail.out");
+    }       
+    free(huge_body);
+
+    CORE_LOG(eLOG_Note, "Testing no recipients");
+    retval = CORE_SendMailEx(0, "CORE_SendMailEx Test", "Test", &info);
+    if (!retval)
+        CORE_LOG(eLOG_Fatal, "Test failed");
+    CORE_LOGF(eLOG_Note, ("Test passed: %s", retval));
 
     CORE_LOG(eLOG_Note, "Testing bad from");
     strcpy(info.from, "blahblah@blahblah");
