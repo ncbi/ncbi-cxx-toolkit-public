@@ -78,7 +78,7 @@ static CObject_id::TId s_GetTaxid(const CSeq_id& id, CScope& scope) {
         }
         ++desc;
     }
-    throw runtime_error("didn't find taxon");
+    return 0;  // no taxid found
 }
 
 
@@ -112,15 +112,19 @@ CTestBlastp_All::RunTest(const CSerialObject& obj,
     const CSeq_id& prod_id
         = *alns.front()->GetSegs().GetDenseg().GetIds()[0];
     CObject_id::TId prod_taxid = s_GetTaxid(prod_id, scope);
-    
+    if (prod_taxid == 0) {
+        throw runtime_error("didn't find taxid for query protein");
+    }
+
     int score;
     int top_score = 0;
     int length_top_match;
     ITERATE (list<CRef<CSeq_align> >, aln, annot->GetData().GetAlign()) {
         const CSeq_id& match_id = *(*aln)->GetSegs().GetDenseg().GetIds()[1];
-        if (s_GetTaxid(match_id, scope)
-            == prod_taxid) {
-            // ignore matches from same organism
+        CObject_id::TId hit_taxid = s_GetTaxid(match_id, scope);
+        if (hit_taxid == prod_taxid || hit_taxid == 0) {
+            // ignore matches from same organism (same taxid)
+            // and those with no taxid
             continue;
         }
         if (!(*aln)->GetNamedScore("score", score)) {
@@ -159,6 +163,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/21 20:38:16  jcherry
+ * Don't throw when a matched protein lacks a taxid; just ignore it.
+ *
  * Revision 1.2  2004/10/20 18:36:58  jcherry
  * Explicitly report whether there is an appropriate blast hit.
  * Look for source organism using CSeqdesc_CI, not just in Bioseq.
