@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2001/10/29 15:25:55  ucko
+* Give (prohibited) CDiagRestorer::new/delete dummy bodies.
+*
 * Revision 1.32  2001/10/29 15:16:11  ucko
 * Preserve default CGI diagnostic settings, even if customized by app.
 *
@@ -420,10 +423,10 @@ public:
 private:
     // Prohibit dynamic allocation; there's no good reason to allow it,
     // and out-of-order destruction is problematic,
-    void* operator new(size_t size);
-    void* operator new[](size_t size);
-    void operator delete(void* ptr);
-    void operator delete[](void* ptr);
+    void* operator new(size_t) { return NULL; }
+    void* operator new[](size_t) { return NULL; }
+    void operator delete(void*) {}
+    void operator delete[](void*) {}
 
     string         m_PostPrefix;
     list<string>   m_PrefixList;
