@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/19 15:50:15  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.14  1999/07/15 16:54:42  vasilche
 * Implemented vector<X> & vector<char> as special case.
 *
@@ -84,6 +88,8 @@
 #include <serial/typeinfo.hpp>
 #include <serial/memberid.hpp>
 #include <vector>
+
+struct asnio;
 
 BEGIN_NCBI_SCOPE
 
@@ -273,6 +279,32 @@ public:
 
 		friend class CObjectIStream;
 	};
+
+    class AsnIo {
+    public:
+        AsnIo(CObjectIStream& in);
+        ~AsnIo(void);
+        operator asnio*(void)
+            {
+                return m_AsnIo;
+            }
+        asnio* operator->(void)
+            {
+                return m_AsnIo;
+            }
+        size_t Read(char* data, size_t length)
+            {
+                return m_In.AsnRead(*this, data, length);
+            }
+    private:
+        CObjectIStream& m_In;
+        asnio* m_AsnIo;
+    };
+
+    virtual void AsnOpen(AsnIo& asn);
+    virtual void AsnClose(AsnIo& asn);
+    virtual unsigned GetAsnFlags(void);
+    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
 
 protected:
     // block interface

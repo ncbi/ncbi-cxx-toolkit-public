@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/19 15:50:17  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.14  1999/07/14 18:58:03  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -84,6 +88,8 @@
 #include <serial/typeinfo.hpp>
 #include <serial/objlist.hpp>
 #include <map>
+
+struct asnio;
 
 BEGIN_NCBI_SCOPE
 
@@ -227,7 +233,33 @@ public:
 		CObjectOStream& m_Out;
 		size_t m_Length;
 	};
-    
+
+    class AsnIo {
+    public:
+        AsnIo(CObjectOStream& out);
+        ~AsnIo(void);
+        operator asnio*(void)
+            {
+                return m_AsnIo;
+            }
+        asnio* operator->(void)
+            {
+                return m_AsnIo;
+            }
+        void Write(const char* data, size_t length)
+            {
+                m_Out.AsnWrite(*this, data, length);
+            }
+    private:
+        CObjectOStream& m_Out;
+        asnio* m_AsnIo;
+    };
+
+    virtual void AsnOpen(AsnIo& asn);
+    virtual void AsnClose(AsnIo& asn);
+    virtual unsigned GetAsnFlags(void);
+    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
+
 protected:
     // block interface
     friend class Block;

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/07/19 15:50:39  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.12  1999/07/13 20:18:24  vasilche
 * Changed types naming.
 *
@@ -110,11 +114,16 @@ TObjectPtr CTypeInfo::Create(void) const
     THROW1_TRACE(runtime_error, GetName() + " cannot be allocated on heap");
 }
 
+TConstObjectPtr CTypeInfo::CreateDefault(void) const
+{
+    return Create();
+}
+
 TConstObjectPtr CTypeInfo::GetDefault(void) const
 {
     TConstObjectPtr def = m_Default;
     if ( !def ) {
-        def = m_Default = Create();
+        def = m_Default = CreateDefault();
     }
     return def;
 }

@@ -1,6 +1,8 @@
 #include "serialobject.hpp"
 #include <serial/serial.hpp>
 #include <serial/classinfo.hpp>
+#include <asn.h>
+#include <webenv.h>
 
 BEGIN_CLASS_INFO(CSerialObject)
     ADD_CLASS_MEMBER(m_Name);
@@ -11,6 +13,7 @@ BEGIN_CLASS_INFO(CSerialObject)
     ADD_STL_CLASS_MEMBER(m_Offsets);
     ADD_STL_CLASS_MEMBER(m_Names);
     ADD_PTR_CLASS_MEMBER(m_Next);
+    ADD_OLD_ASN_MEMBER2("webEnv", m_WebEnv, WebEnv);
 END_CLASS_INFO
 
 /*

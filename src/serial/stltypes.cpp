@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/19 15:50:39  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.6  1999/07/15 19:35:31  vasilche
 * Implemented map<K, V>.
 * Changed ASN.1 text formatting.
@@ -99,6 +103,8 @@ void CStlClassInfoMapImpl::ReadKeyValuePair(CObjectIStream& in,
         CObjectIStream::Member m(in);
         GetValueTypeInfo()->ReadData(in, value);
     }
+    if ( block.Next() )
+        THROW1_TRACE(runtime_error, "too many elements in map pair");
 }
 
 CStlClassInfoCharVector::CStlClassInfoCharVector(void)

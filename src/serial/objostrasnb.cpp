@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/19 15:50:38  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.7  1999/07/09 20:27:08  vasilche
 * Fixed some bugs
 *
@@ -57,6 +61,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/memberid.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -405,6 +410,16 @@ void CObjectOStreamAsnBinary::WriteBytes(const ByteBlock& ,
                                          const char* bytes, size_t length)
 {
 	WriteBytes(bytes, length);
+}
+
+unsigned CObjectOStreamAsnBinary::GetAsnFlags(void)
+{
+    return ASNIO_BIN;
+}
+
+void CObjectOStreamAsnBinary::AsnWrite(AsnIo& , const char* data, size_t length)
+{
+    WriteBytes(data, length);
 }
 
 END_NCBI_SCOPE

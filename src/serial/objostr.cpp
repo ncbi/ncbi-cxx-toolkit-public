@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/19 15:50:35  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.13  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -78,6 +82,7 @@
 #include <serial/objlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/typeinfo.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -299,6 +304,48 @@ void CObjectOStream::Begin(const ByteBlock& )
 
 void CObjectOStream::End(const ByteBlock& )
 {
+}
+
+extern "C" {
+    Int2 LIBCALLBACK WriteAsn(Pointer object, CharPtr data, Uint2 length)
+    {
+        if ( !object || !data )
+            return -1;
+    
+        static_cast<CObjectOStream::AsnIo*>(object)->Write(data, length);
+        return length;
+    }
+}
+
+CObjectOStream::AsnIo::AsnIo(CObjectOStream& out)
+    : m_Out(out)
+{
+    m_AsnIo = AsnIoNew(out.GetAsnFlags() | ASNIO_OUT, 0, this, 0, WriteAsn);
+    out.AsnOpen(*this);
+}
+
+CObjectOStream::AsnIo::~AsnIo(void)
+{
+    AsnIoClose(*this);
+    m_Out.AsnClose(*this);
+}
+
+void CObjectOStream::AsnOpen(AsnIo& )
+{
+}
+
+void CObjectOStream::AsnClose(AsnIo& )
+{
+}
+
+unsigned CObjectOStream::GetAsnFlags(void)
+{
+    return 0;
+}
+
+void CObjectOStream::AsnWrite(AsnIo& , const char* , size_t )
+{
+    THROW1_TRACE(runtime_error, "illegal call");
 }
 
 END_NCBI_SCOPE

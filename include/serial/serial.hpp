@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/07/19 15:50:19  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.20  1999/07/15 16:54:43  vasilche
 * Implemented vector<X> & vector<char> as special case.
 *
@@ -230,6 +234,19 @@ CTypeRef GetChoiceTypeRef(TTypeInfo (*func)(void))
     return CTypeRef(CChoiceTypeInfo::GetTypeInfo, CTypeRef(func));
 }
 
+template<typename T>
+inline
+CTypeRef GetOldAsnTypeRef(T* (*newProc)(void), T* (*freeProc)(T*),
+                          T* (*readProc)(asnio*, asntype*),
+                          unsigned char (*writeProc)(T*, asnio*, asntype*))
+{
+    return CTypeRef(COldAsnTypeInfo::GetTypeInfo(
+        reinterpret_cast<COldAsnTypeInfo::TNewProc>(newProc),
+        reinterpret_cast<COldAsnTypeInfo::TFreeProc>(freeProc),
+        reinterpret_cast<COldAsnTypeInfo::TReadProc>(readProc),
+        reinterpret_cast<COldAsnTypeInfo::TWriteProc>(writeProc)));
+}
+
 //
 inline
 CTypeRef GetTypeRef(const char* object)
@@ -423,11 +440,22 @@ CMemberInfo* OctetStringMemberInfo(const void* const* member)
 }
 
 inline
-CMemberInfo* ChoiceMemberInfo(const valnode* const* member, TTypeInfo (*func)(void))
+CMemberInfo* ChoiceMemberInfo(const valnode* const* member,
+                              TTypeInfo (*func)(void))
 {
 	return MemberInfo(member, GetChoiceTypeRef(func));
 }
 
+template<typename T>
+inline
+CMemberInfo* OldAsnMemberInfo(const T* const* member,
+                              T* (*newProc)(void), T* (*freeProc)(T*),
+                              T* (*readProc)(asnio*, asntype*),
+                              unsigned char (*writeProc)(T*, asnio*, asntype*))
+{
+    return MemberInfo(member, GetOldAsnTypeRef(newProc, freeProc,
+                                               readProc, writeProc));
+}
 
 // type info declaration
 #define NAME2(n1, n2) n1##n2
@@ -487,28 +515,40 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     MemberInfo(&static_cast<const CClass*>(0)->Member, Type)
 #define ADD_MEMBER2(Name, Member, Type) \
     info->AddMember(Name, MEMBER(Member, Type))
-#define ADD_MEMBER(Member, Type) \
-    ADD_MEMBER(#Member, Member, Type)
+#define ADD_MEMBER(Member, Type) ADD_MEMBER2(#Member, Member, Type)
 
 #define CLASS_MEMBER(Member) \
 	MemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_CLASS_MEMBER(Member) \
-	info->AddMember(#Member, CLASS_MEMBER(Member))
+#define ADD_CLASS_MEMBER2(Name, Member) \
+	info->AddMember(Name, CLASS_MEMBER(Member))
+#define ADD_CLASS_MEMBER(Member) ADD_CLASS_MEMBER2(#Member, Member)
 
 #define PTR_CLASS_MEMBER(Member) \
 	PtrMemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_PTR_CLASS_MEMBER(Member) \
-	info->AddMember(#Member, PTR_CLASS_MEMBER(Member))
+#define ADD_PTR_CLASS_MEMBER2(Name, Member) \
+	info->AddMember(Name, PTR_CLASS_MEMBER(Member))
+#define ADD_PTR_CLASS_MEMBER(Member) ADD_PTR_CLASS_MEMBER2(#Member, Member)
 
 #define STL_CLASS_MEMBER(Member) \
 	StlMemberInfo(&static_cast<const CClass*>(0)->Member)
-#define ADD_STL_CLASS_MEMBER(Member) \
-	info->AddMember(#Member, STL_CLASS_MEMBER(Member))
+#define ADD_STL_CLASS_MEMBER2(Name, Member) \
+	info->AddMember(Name, STL_CLASS_MEMBER(Member))
+#define ADD_STL_CLASS_MEMBER(Member) ADD_STL_CLASS_MEMBER2(#Member, Member)
 
 #define ASN_MEMBER(Member, Type) \
 	NAME2(Type, MemberInfo)(&static_cast<const CClass*>(0)->Member)
-#define ADD_ASN_MEMBER(Member, Type) \
-	info->AddMember(#Member, ASN_MEMBER(Member, Type))
+#define ADD_ASN_MEMBER2(Name, Member, Type) \
+	info->AddMember(Name, ASN_MEMBER(Member, Type))
+#define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
+
+#define OLD_ASN_MEMBER(Member, Type) \
+    OldAsnMemberInfo(&static_cast<const CClass*>(0)->Member, \
+                     NAME2(Type, New), NAME2(Type, Free), \
+                     NAME2(Type, AsnRead), NAME2(Type, AsnWrite))
+#define ADD_OLD_ASN_MEMBER2(Name, Member, Type) \
+	info->AddMember(Name, OLD_ASN_MEMBER(Member, Type))
+#define ADD_OLD_ASN_MEMBER(Member, Type) \
+    ADD_OLD_ASN_MEMBER2(#Member, Member, Type)
 
 #define CHOICE_MEMBER(Member, Choices) \
     ChoiceMemberInfo(&static_cast<const CClass*>(0)->Member, \
@@ -517,6 +557,7 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
 #define ADD_CHOICE_MEMBER(Member, Choices) \
     ADD_CHOICE_MEMBER2(#Member, Member, Choices)
+
 #define ADD_CHOICE_STD_VARIANT(Name, Member) \
     info->AddVariant(#Name, GetTypeRef(&static_cast<const valnode*>(0)->data.NAME2(Member, value)))
 #define ADD_CHOICE_VARIANT(Name, Type, Struct) \

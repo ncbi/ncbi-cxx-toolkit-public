@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/19 15:50:30  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.11  1999/07/15 16:54:48  vasilche
 * Implemented vector<X> & vector<char> as special case.
 *
@@ -230,7 +234,7 @@ size_t CSequenceTypeInfo::GetSize(void) const
 
 static const TConstObjectPtr zeroPointer = 0;
 
-TConstObjectPtr CSequenceTypeInfo::GetDefault(void) const
+TConstObjectPtr CSequenceTypeInfo::CreateDefault(void) const
 {
 	TObjectPtr def = Alloc(sizeof(TObjectPtr));
 	Get(def) = GetDataTypeInfo()->Create();
@@ -630,6 +634,67 @@ void COctetStringTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
             BSWrite(bs, buffer, count);
         }
     }
+}
+
+map<COldAsnTypeInfo::TNewProc, COldAsnTypeInfo*> COldAsnTypeInfo::m_Types;
+
+COldAsnTypeInfo::COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
+                                 TReadProc readProc, TWriteProc writeProc)
+    : m_NewProc(newProc), m_FreeProc(freeProc),
+      m_ReadProc(readProc), m_WriteProc(writeProc)
+{
+}
+
+TTypeInfo COldAsnTypeInfo::GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
+                                       TReadProc readProc, TWriteProc writeProc)
+{
+    COldAsnTypeInfo*& info = m_Types[newProc];
+    if ( info ) {
+        if ( info->m_NewProc != newProc || info->m_FreeProc != freeProc ||
+             info->m_ReadProc != readProc || info->m_WriteProc != writeProc )
+            THROW1_TRACE(runtime_error, "changed ASN.1 procedures pointers");
+    }
+    else {
+        info = new COldAsnTypeInfo(newProc, freeProc, readProc, writeProc);
+    }
+    return info;
+}
+
+size_t COldAsnTypeInfo::GetSize(void) const
+{
+    return sizeof(TObjectPtr);
+}
+
+TConstObjectPtr COldAsnTypeInfo::CreateDefault(void) const
+{
+    TObjectPtr obj = Alloc(sizeof(TObjectPtr));
+    Get(obj) = m_NewProc();
+    return obj;
+}
+
+bool COldAsnTypeInfo::Equals(TConstObjectPtr ,
+                             TConstObjectPtr ) const
+{
+    return false;
+}
+
+void COldAsnTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
+{
+    if ( src != GetDefault() )
+        THROW1_TRACE(runtime_error, "cannot assign non default value");
+    Get(dst) = m_NewProc();
+}
+
+void COldAsnTypeInfo::WriteData(CObjectOStream& out,
+                                TConstObjectPtr object) const
+{
+    if ( !m_WriteProc(Get(object), CObjectOStream::AsnIo(out), 0) )
+        THROW1_TRACE(runtime_error, "read fault");
+}
+
+void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
+{
+    Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0);
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/19 15:50:32  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.14  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -78,6 +82,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistr.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -245,6 +250,47 @@ const CIObjectInfo& CObjectIStream::GetRegisteredObject(TIndex index) const
         THROW1_TRACE(runtime_error, "invalid object index");
     }
     return m_Objects[index];
+}
+
+extern "C" {
+    Int2 LIBCALLBACK ReadAsn(Pointer object, CharPtr data, Uint2 length)
+    {
+        if ( !object || !data )
+            return -1;
+    
+        return static_cast<CObjectIStream::AsnIo*>(object)->Read(data, length);
+    }
+}
+
+CObjectIStream::AsnIo::AsnIo(CObjectIStream& in)
+    : m_In(in)
+{
+    m_AsnIo = AsnIoNew(in.GetAsnFlags() | ASNIO_IN, 0, this, ReadAsn, 0);
+    in.AsnOpen(*this);
+}
+
+CObjectIStream::AsnIo::~AsnIo(void)
+{
+    AsnIoClose(*this);
+    m_In.AsnClose(*this);
+}
+
+void CObjectIStream::AsnOpen(AsnIo& )
+{
+}
+
+void CObjectIStream::AsnClose(AsnIo& )
+{
+}
+
+unsigned CObjectIStream::GetAsnFlags(void)
+{
+    return 0;
+}
+
+size_t CObjectIStream::AsnRead(AsnIo& , char* , size_t )
+{
+    THROW1_TRACE(runtime_error, "illegal call");
 }
 
 END_NCBI_SCOPE

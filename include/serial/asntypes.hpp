@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/19 15:50:14  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.7  1999/07/14 18:58:02  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -68,6 +72,8 @@
 
 struct valnode;
 struct bytestore;
+struct asnio;
+struct asntype;
 
 BEGIN_NCBI_SCOPE
 
@@ -94,7 +100,7 @@ public:
 
     virtual size_t GetSize(void) const;
 
-    virtual TConstObjectPtr GetDefault(void) const;
+    virtual TConstObjectPtr CreateDefault(void) const;
 
     TTypeInfo GetDataTypeInfo(void) const
         {
@@ -307,6 +313,52 @@ protected:
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
+};
+
+class COldAsnTypeInfo : public CTypeInfo
+{
+public:
+    typedef TObjectPtr (*TNewProc)(void);
+    typedef TObjectPtr (*TFreeProc)(TObjectPtr);
+    typedef TObjectPtr (*TReadProc)(asnio*, asntype*);
+    typedef unsigned char (*TWriteProc)(TObjectPtr, asnio*, asntype*);
+
+    static TObjectPtr& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectPtr*>(object);
+        }
+    static const TObjectPtr& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectPtr*>(object);
+        }
+
+    static TTypeInfo GetTypeInfo(TNewProc newProc, TFreeProc freeProc,
+                                 TReadProc readProc, TWriteProc writeProc);
+
+    virtual size_t GetSize(void) const;
+
+    virtual TConstObjectPtr CreateDefault(void) const;
+
+    virtual bool Equals(TConstObjectPtr object1,
+                        TConstObjectPtr object2) const;
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
+
+protected:
+    
+    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
+
+    void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+private:
+    COldAsnTypeInfo(TNewProc newProc, TFreeProc freeProc,
+                    TReadProc readProc, TWriteProc writeProc);
+
+    TNewProc m_NewProc;
+    TFreeProc m_FreeProc;
+    TReadProc m_ReadProc;
+    TWriteProc m_WriteProc;
+
+    static map<TNewProc, COldAsnTypeInfo*> m_Types;
 };
 
 //#include <serial/asntypes.inl>

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/19 15:50:18  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.10  1999/07/14 18:58:04  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -100,6 +104,10 @@ public:
     virtual void WriteStd(const unsigned long& data);
     virtual void WriteStd(const float& data);
     virtual void WriteStd(const double& data);
+
+    virtual unsigned GetAsnFlags(void);
+    virtual void AsnOpen(AsnIo& asn);
+    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
 
 protected:
 

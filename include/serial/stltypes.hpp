@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/19 15:50:20  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.14  1999/07/15 19:35:06  vasilche
 * Implemented map<K, V>.
 *
@@ -100,23 +104,12 @@ public:
         : m_DataType(dataType)
         { }
 
-/*
-    const CMemberId& GetDataId(void) const
-        {
-            return m_DataId;
-        }
-    void SetDataId(const CMemberId& id)
-        {
-            m_DataId = id;
-        }
-*/
     TTypeInfo GetDataTypeInfo(void) const
         {
             return m_DataType.Get();
         }
 
 private:
-    //    CMemberId m_DataId;
     CTypeRef m_DataType;
 };
 
@@ -248,7 +241,8 @@ protected:
         {
             CObjectIStream::Block block(in, CObjectIStream::eFixed);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            Reserve(object, block.GetSize());
+            if ( block.Fixed() )
+                Reserve(object, block.GetSize());
             while ( block.Next() ) {
                 in.ReadExternalObject(AddEmpty(object, block.GetIndex()),
                                       dataTypeInfo);
@@ -321,9 +315,46 @@ protected:
 
     virtual TObjectPtr AddEmpty(TObjectPtr object, size_t index) const
         {
+            TObjectType& l = Get(object);
+            if ( index >= l.size() )
+                l.push_back(TDataType());
+            return &(l[index]);
+        }
+};
+
+/*
+template<typename Data>
+class CStlClassInfoSet : public CStlOneArgTemplateImpl< set<Data> >
+{
+    typedef CStlOneArgTemplateImpl<TObjectType> CParent;
+public:
+    typedef Data TDataType;
+
+    CStlClassInfoSet(void)
+        : CParent(GetTypeRef(static_cast<const TDataType*>(0)))
+        { }
+    CStlClassInfoSet(const CTypeRef& typeRef)
+        : CParent(typeRef)
+        { }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoSet;
+            return typeInfo;
+        }
+
+protected:
+    virtual void Reserve(TObjectPtr object, size_t ) const
+        {
+            Get(object).clear();
+        }
+
+    virtual TObjectPtr AddEmpty(TObjectPtr object, size_t ) const
+        {
             return &Get(object)[index];
         }
 };
+*/
 
 class CStlClassInfoMapImpl : public CStlTwoArgsTemplate
 {
@@ -354,6 +385,110 @@ public:
     typedef map<TKeyType, TValueType> TObjectType;
 
     CStlClassInfoMap(void)
+        : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
+                  GetTypeRef(static_cast<const TValueType*>(0)))
+        {
+        }
+
+    static const TObjectType& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectType*>(object);
+        }
+    static TObjectType& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectType*>(object);
+        }
+
+    virtual size_t GetSize(void) const
+        {
+            return sizeof(TObjectType);
+        }
+
+    virtual TObjectPtr Create(void) const
+        {
+            return new TObjectType;
+        }
+
+    static TTypeInfo GetTypeInfo(void)
+        {
+            static TTypeInfo typeInfo = new CStlClassInfoMap;
+            return typeInfo;
+        }
+
+    virtual bool Equals(TConstObjectPtr object1, TConstObjectPtr object2) const
+        {
+            const TObjectType& o1 = Get(object1);
+            const TObjectType& o2 = Get(object2);
+            if ( o1.size() != o2.size() )
+                return false;
+            TTypeInfo keyTypeInfo = GetKeyTypeInfo();
+            TTypeInfo valueTypeInfo = GetValueTypeInfo();
+            for ( TObjectType::const_iterator i1 = o1.begin(), i2 = o2.begin();
+                  i1 != o1.end(); ++i1, ++i2 ) {
+                if ( !keyTypeInfo->Equals(&i1->first, &i2->first) ||
+                     !valueTypeInfo->Equals(&i1->second, &i2->second) )
+                    return false;
+            }
+            return true;
+        }
+
+    virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const
+        {
+            TObjectType& to = Get(dst);
+            const TObjectType& from = Get(src);
+            to.clear();
+            for ( TObjectType::const_iterator i = from.begin();
+                  i != from.end(); ++i ) {
+                to.insert(*i);
+            }
+        }
+
+protected:
+    virtual void CollectExternalObjects(COObjectList& objectList,
+                                        TConstObjectPtr object) const
+        {
+            const TObjectType& o = Get(object);
+            for ( TObjectType::const_iterator i = o.begin();
+                  i != o.end(); ++i ) {
+                CollectKeyValuePair(objectList, &i->first, &i->second);
+            }
+        }
+
+    virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
+        {
+            const TObjectType& o = Get(object);
+            CObjectOStream::Block block(out, o.size());
+            for ( TObjectType::const_iterator i = o.begin();
+                  i != o.end(); ++i ) {
+                block.Next();
+                WriteKeyValuePair(out, &i->first, &i->second);
+            }
+        }
+
+    virtual void ReadData(CObjectIStream& in, TObjectPtr object) const
+        {
+            TObjectType& o = Get(object);
+            CObjectIStream::Block block(in, CObjectIStream::eFixed);
+            while ( block.Next() ) {
+                TKeyType key;
+                TValueType value;
+                ReadKeyValuePair(in, &key, &value);
+                o.insert(TObjectType::value_type(key, value));
+            }
+        }
+};
+
+template<typename Key, typename Value>
+class CStlClassInfoMultiMap : public CStlClassInfoMapImpl
+{
+    typedef CStlClassInfoMapImpl CParent;
+
+public:
+    typedef Key TKeyType;
+    typedef Value TValueType;
+    typedef multimap<TKeyType, TValueType> TObjectType;
+
+    CStlClassInfoMultiMap(void)
         : CParent(GetTypeRef(static_cast<const TKeyType*>(0)),
                   GetTypeRef(static_cast<const TValueType*>(0)))
         {

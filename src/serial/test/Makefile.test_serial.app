@@ -8,7 +8,7 @@
 
 APP = serialtest
 OBJ = serialobject testserial webenv rtti
-LIB = xser xncbi
+LIB = xser xncbi xwebenv
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(NCBI_C_INCLUDE) \
 	-I$(top_srcdir)/src/internal/webenv/asn

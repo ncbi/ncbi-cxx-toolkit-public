@@ -67,17 +67,28 @@ int CTestSerial::Run(void)
         write.m_Names[2] = "two";
         write.m_Names[3] = "three";
         write.m_Names[10] = "ten";
+        write.m_WebEnv = env;
 
         write1.m_Name = "write1";
         write1.m_NamePtr = new string("test");
         write1.m_Size = 0x7fffffff;
         write1.m_Attributes.push_back("write1");
         write1.m_Next = &write1;
+        write1.m_WebEnv = WebEnvNew();
 
         {
             {
                 CObjectOStreamAsn(ofstream("test.asno")) << write;
             }
+            CSerialObject read;
+            {
+                CObjectIStreamAsn(ifstream("test.asno")) >> read;
+            }
+            read.Dump(NcbiCerr);
+            read.m_Next->Dump(NcbiCerr);
+        }
+
+        {
             {
                 CObjectOStreamBinary(ofstream("test.bin",
 											  ios::binary)) << write;
@@ -98,7 +109,8 @@ int CTestSerial::Run(void)
             }
             CSerialObject read;
             {
-                CObjectIStreamAsn(ifstream("test.asn")) >> read;
+                CObjectIStreamAsnBinary(ifstream("test.asnb",
+                                                 ios::binary)) >> read;
             }
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/07/19 15:50:33  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.15  1999/07/14 18:58:09  vasilche
 * Fixed ASN.1 types/field naming.
 *
@@ -105,6 +109,7 @@
 #include <serial/objistrasn.hpp>
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -177,6 +182,7 @@ char CObjectIStreamAsn::GetChar0(void)
 #endif
 }
 
+/*
 inline
 CNcbiIstream& CObjectIStreamAsn::SkipWhiteSpace0(void)
 {
@@ -198,6 +204,7 @@ CNcbiIstream& CObjectIStreamAsn::SkipWhiteSpace0(void)
     m_GetChar = -1;
     return m_Input;
 }
+*/
 
 inline
 void CObjectIStreamAsn::UngetChar(void)
@@ -375,15 +382,66 @@ void CObjectIStreamAsn::ReadStd(char& data)
 }
 
 template<typename T>
+void ReadStdSigned(CObjectIStreamAsn& in, T& data)
+{
+    bool sign;
+    switch ( in.GetChar(true) ) {
+    case '-':
+        sign = true;
+        break;
+    case '+':
+        sign = false;
+        break;
+    default:
+        in.UngetChar();
+        sign = false;
+        break;
+    }
+    char c = in.GetChar();
+    if ( c < '0' || c > '9' )
+        THROW1_TRACE(runtime_error, "bad number");
+    T n = c - '0';
+    while ( (c = in.GetChar()) >= '0' && c <= '9' ) {
+        // TODO: check overflow
+        n = n * 10 + (c - '0');
+    }
+    in.UngetChar();
+    if ( sign )
+        data = -n;
+    else
+        data = n;
+}
+
+template<typename T>
+void ReadStdUnsigned(CObjectIStreamAsn& in, T& data)
+{
+    char c = in.GetChar(true);
+    if ( c == '+' )
+        c = in.GetChar();
+    if ( c < '0' || c > '9' )
+        THROW1_TRACE(runtime_error, "bad number");
+    T n = c - '0';
+    while ( (c = in.GetChar()) >= '0' && c <= '9' ) {
+        // TODO: check overflow
+        n = n * 10 + (c - '0');
+    }
+    in.UngetChar();
+    data = n;
+}
+
+template<typename T>
+inline
 void ReadStdNumber(CObjectIStreamAsn& in, T& data)
 {
-    if ( !(in.SkipWhiteSpace0() >> data) )
-        THROW1_TRACE(runtime_error, "number read error");
+    if ( T(-1) < T(0) )
+        ReadStdSigned(in, data);
+    else
+        ReadStdUnsigned(in, data);
 }
 
 void CObjectIStreamAsn::ReadStd(signed char& data)
 {
-    short i;
+    int i;
     ReadStdNumber(*this, i);
     if ( i < -128 || i > 127 )
         THROW1_TRACE(runtime_error, "signed char overflow error");
@@ -392,7 +450,7 @@ void CObjectIStreamAsn::ReadStd(signed char& data)
 
 void CObjectIStreamAsn::ReadStd(unsigned char& data)
 {
-    unsigned short i;
+    unsigned i;
     ReadStdNumber(*this, i);
     if ( i > 255 )
         THROW1_TRACE(runtime_error, "unsigned char overflow error");
@@ -469,7 +527,8 @@ string CObjectIStreamAsn::ReadId(void)
 	else {
 	    if ( !IsAlpha(c) ) {
 		    UngetChar();
-			THROW1_TRACE(runtime_error, "unexpected char in id");
+            ERR_POST(Warning << "unexpected char in id");
+            return NcbiEmptyString;
 	    }
 	    s += c;
 		while ( IsAlphaNum(c = GetChar()) || c == '-' ) {
@@ -639,6 +698,31 @@ void CObjectIStreamAsn::SkipValue()
             break;
         }
     }
+}
+
+unsigned CObjectIStreamAsn::GetAsnFlags(void)
+{
+    return ASNIO_TEXT;
+}
+
+void CObjectIStreamAsn::AsnOpen(AsnIo& )
+{
+}
+
+size_t CObjectIStreamAsn::AsnRead(AsnIo& , char* data, size_t length)
+{
+    m_Input.get(data, length);
+    if ( !m_Input ) {
+        ERR_POST("AsnRead: fault");
+        return 0;
+    }
+    size_t count = m_Input.gcount();
+    data[count++] = m_Input.get();
+    if ( !m_Input ) {
+        ERR_POST("AsnRead: fault");
+        return 0;
+    }
+    return count;
 }
 
 END_NCBI_SCOPE

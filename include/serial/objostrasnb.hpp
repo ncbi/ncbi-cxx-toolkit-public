@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/19 15:50:19  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.6  1999/07/09 16:32:54  vasilche
 * Added OCTET STRING write/read.
 *
@@ -95,6 +99,9 @@ public:
     void WriteIndefiniteLength(void);
 
     void WriteEndOfContent(void);
+
+    virtual unsigned GetAsnFlags(void);
+    virtual void AsnWrite(AsnIo& asn, const char* data, size_t length);
 
 protected:
 

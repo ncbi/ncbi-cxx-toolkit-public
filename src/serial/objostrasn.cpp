@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/19 15:50:36  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.14  1999/07/15 19:35:30  vasilche
 * Implemented map<K, V>.
 * Changed ASN.1 text formatting.
@@ -95,6 +99,7 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/memberid.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -290,7 +295,7 @@ void CObjectOStreamAsn::VNext(const Block& block)
     WriteNewLine();
 }
 
-void CObjectOStreamAsn::VEnd(const Block& block)
+void CObjectOStreamAsn::VEnd(const Block& )
 {
     --m_Ident;
     WriteNewLine();
@@ -324,6 +329,30 @@ void CObjectOStreamAsn::WriteBytes(const ByteBlock& , const char* bytes, size_t 
 void CObjectOStreamAsn::End(const ByteBlock& )
 {
 	m_Output << "\'H";
+}
+
+unsigned CObjectOStreamAsn::GetAsnFlags(void)
+{
+    return ASNIO_TEXT;
+}
+
+void CObjectOStreamAsn::AsnOpen(AsnIo& asn)
+{
+    size_t indent = asn->indent_level = m_Ident;
+    size_t max_indent = asn->max_indent;
+    if ( indent >= max_indent ) {
+        Boolean* tmp = asn->first;
+        asn->first = (BoolPtr) MemNew((sizeof(Boolean) * (indent + 10)));
+        MemCopy(asn->first, tmp, (size_t)(sizeof(Boolean) * max_indent));
+        MemFree(tmp);
+        asn->max_indent = indent;
+    }
+}
+
+void CObjectOStreamAsn::AsnWrite(AsnIo& , const char* data, size_t length)
+{
+    if ( !m_Output.write(data, length) )
+        THROW1_TRACE(runtime_error, "write fault");
 }
 
 END_NCBI_SCOPE

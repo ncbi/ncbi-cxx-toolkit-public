@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/07/19 15:50:22  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.13  1999/07/13 20:18:10  vasilche
 * Changed types naming.
 *
@@ -107,8 +111,10 @@ public:
 
     // creates object of this type in heap (can be deleted by operator delete)
     virtual TObjectPtr Create(void) const;
-    // gets default object (by default will call Create and use returned value)
+    // gets default object (will call CreateDefault and save returned value )
     virtual TConstObjectPtr GetDefault(void) const;
+    // creates default object (by default will call Create)
+    virtual TConstObjectPtr CreateDefault(void) const;
 
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
 

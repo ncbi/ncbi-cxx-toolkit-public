@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  1999/07/19 15:50:16  vasilche
+* Added interface to old ASN.1 routines.
+* Added naming of key/value in STL map.
+*
 * Revision 1.10  1999/07/09 16:32:53  vasilche
 * Added OCTET STRING write/read.
 *
@@ -119,6 +123,10 @@ public:
     virtual string ReadString(void);
     string ReadId(void);
 
+    virtual unsigned GetAsnFlags(void);
+    virtual void AsnOpen(AsnIo& asn);
+    virtual size_t AsnRead(AsnIo& asn, char* data, size_t length);
+
 protected:
     virtual void VBegin(Block& block);
     virtual bool VNext(const Block& block);
@@ -134,6 +142,7 @@ private:
     void SkipObjectPointer(void);
     void SkipBlock(void);
 
+public:
     // low level methods
     char GetChar(void);
     char GetChar0(void); // get char after call to UngetChar
@@ -141,6 +150,7 @@ private:
 
 	// parse methods
     char GetChar(bool skipWhiteSpace);
+private:
     bool GetChar(char c, bool skipWhiteSpace = false);
     void Expect(char c, bool skipWhiteSpace = false);
     bool Expect(char charTrue, char charFalse, bool skipWhiteSpace = false);
@@ -148,10 +158,6 @@ private:
     bool ReadEscapedChar(char& out, char terminator);
 
     char SkipWhiteSpace(void);
-
-public:
-    CNcbiIstream& SkipWhiteSpace0(void);
-private:
 
     CNcbiIstream& m_Input;
 #if !USE_UNGET

@@ -7,6 +7,8 @@
 #include <vector>
 #include <map>
 
+struct struct_Web_Env;
+
 BEGIN_NCBI_SCOPE
 
 class CTypeInfo;
@@ -33,6 +35,7 @@ public:
     map<int, string> m_Names;
     
     CSerialObject* m_Next;
+    struct_Web_Env* m_WebEnv;
 };
 
 #endif
