@@ -119,6 +119,11 @@ static const SStrCompare s_StrCompare[] = {
     { "ba1", "ba",  1, 1,  NPOS,  1,  1 }
 };
 
+typedef struct {
+    const char* pchar;  // String input
+    int base;           // Radix base 
+    Uint8 expected;     // Expected value
+} SRadixTest;
 
 /////////////////////////////////
 // Test application
@@ -263,6 +268,55 @@ int CTestApplication::Run(void)
         }
         
     }
+
+    // Writing separate tests for StringToUInt8 because we
+    // need to test for different radix values such as 2, 8, and 16
+    // and s_Strings presents string samples with radix of 10 only
+    //
+    static const SRadixTest s_RadixTests[] = {
+        {"A", 16, 10},
+        {"B9", 16, 185},
+        {"C5D", 16, 3165},
+        {"FFFF", 16, 65535},
+        {"17ABCDEF", 16, 397135343},
+        {"BADBADBA", 16, 3134959034},
+        {"7", 8, 7},
+        {"17", 8, 15},
+        {"177", 8, 127},
+        {"0123", 8, 83},
+        {"01234567", 8, 342391},
+        {"0", 2, 0},
+        {"1", 2, 1},
+        {"10", 2, 2},
+        {"11", 2, 3},
+        {"100", 2, 4},
+        {"101", 2, 5},
+        {"110", 2, 6},
+        {"111", 2, 7},
+
+		// Invalid values come next
+        {"10ABCDEFGH", 16, 0},
+        {"12345A", 10, 0},
+        {"012345678", 8, 0},
+        {"012", 2, 0}
+    };
+
+    for (size_t i = 0;  
+         i < sizeof(s_RadixTests)/sizeof(s_RadixTests[0]);
+         ++i) {
+        const string& str = s_RadixTests[i].pchar;
+        int base = s_RadixTests[i].base;
+        Uint8 expected = s_RadixTests[i].expected;
+        NcbiCout << "Checking numeric string: '" << str << "': with base " << base << NcbiEndl;
+        try {
+            Uint8 value = NStr::StringToUInt8(str, base);
+            NcbiCout << "Uint8 value: " << ((unsigned)value)
+			    << ", Expected: " << (unsigned)expected << NcbiEndl;
+        }
+        catch (CException& e) {
+            NCBI_REPORT_EXCEPTION("TestStrings",e);
+        }
+    } 
 
     NcbiCout << NcbiEndl << "NStr::Replace() tests...";
 
@@ -551,6 +605,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.14  2003/02/26 16:47:36  siyan
+ * Added test cases to test new version of NStr::StringToUInt8.
+ *
  * Revision 6.13  2003/01/21 23:55:44  vakatov
  * Get rid of a warning
  *
