@@ -40,6 +40,33 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+SAnnotObject_Index::SAnnotObject_Index(void)
+{
+}
+
+
+SAnnotObject_Index::~SAnnotObject_Index(void)
+{
+}
+
+
+SAnnotObject_Index::SAnnotObject_Index(const SAnnotObject_Index& ind)
+    : m_AnnotObject(ind.m_AnnotObject), m_IndexBy(ind.m_IndexBy), m_HandleRange(ind.m_HandleRange)
+{
+}
+
+
+SAnnotObject_Index& SAnnotObject_Index::operator=(const SAnnotObject_Index& ind)
+{
+    m_AnnotObject = ind.m_AnnotObject;
+    m_IndexBy = ind.m_IndexBy;
+    m_HandleRange = ind.m_HandleRange;
+    return *this;
+}
+
+
+
+
 ////////////////////////////////////////////////////////////////////
 //
 //  CTSE_Info::
@@ -183,6 +210,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/04/25 14:23:26  vasilche
+* Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
+*
 * Revision 1.23  2003/04/24 16:12:38  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

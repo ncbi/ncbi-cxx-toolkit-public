@@ -116,6 +116,9 @@ protected:
     const CSeq_id* x_GetSeq_id(const CSeq_id_Handle& handle) const;
 
 private:
+	CDataLoader(const CDataLoader&);
+	CDataLoader& operator=(const CDataLoader&);
+
     string       m_Name;
     CDataSource* m_DataSource;
     
@@ -139,6 +142,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/04/25 14:23:46  vasilche
+* Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
+*
 * Revision 1.15  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.

@@ -64,6 +64,11 @@ class CDataSource;
 class CAnnotObject_Info;
 
 struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
+    SAnnotObject_Index(void);
+    ~SAnnotObject_Index(void);
+    SAnnotObject_Index(const SAnnotObject_Index&);
+    SAnnotObject_Index& operator=(const SAnnotObject_Index&);
+
     CRef<CAnnotObject_Info>                   m_AnnotObject;
     int                                       m_IndexBy;
     CHandleRangeMap::TLocMap::const_iterator  m_HandleRange;
@@ -238,6 +243,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/04/25 14:23:46  vasilche
+* Added explicit constructors, destructor and assignment operator to make it compilable on MSVC DLL.
+*
 * Revision 1.27  2003/04/24 16:12:37  vasilche
 * Object manager internal structures are splitted more straightforward.
 * Removed excessive header dependencies.
