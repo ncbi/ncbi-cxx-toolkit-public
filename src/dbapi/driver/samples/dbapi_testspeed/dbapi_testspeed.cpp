@@ -50,6 +50,7 @@ const char usage[] =
   "  -t table_name (default is 'TestSpeed')\n"
   "  -g sss_server:port for gateway database driver\n"
   "     (when -g is present, -d becomes optional)\n"
+  "  -i r  use CDB_Result->ReadItem() instead of GetItem() whenever possible\n"
   ;
 
 int Usage()
@@ -78,6 +79,7 @@ int main (int argc, char* argv[])
   int col_count=5;
 
   const char* p = NULL;
+  bool readItems=false;
 
   // Read required args
   p= getParam('S', argc, argv);
@@ -118,6 +120,9 @@ int main (int argc, char* argv[])
 
   p= getParam('t', argc, argv);
   if(p) { table_name = p; };
+
+  p= getParam('i', argc, argv);
+  if(p && *p=='r') { readItems = true; };
 
   p= getParam('d', argc, argv);
   if(p) { driver_name = p; };
@@ -297,7 +302,7 @@ int main (int argc, char* argv[])
     cout << "inserting timeElapsed=" << timeElapsed << "\n";
 
     timer.Start();
-    FetchResults(con, table_name);
+    FetchResults(con, table_name, readItems);
     timeElapsed = timer.Elapsed();
     cout << "fetching timeElapsed=" << timeElapsed << "\n";
     cout << "\n";

@@ -189,7 +189,7 @@ int CreateTable (CDB_Connection* con, const string& table_name)
   return 0;
 }
 
-int FetchResults (CDB_Connection* con, const string& table_name)
+int FetchResults (CDB_Connection* con, const string& table_name, bool readItems)
 {
   char* txt_buf = NULL ;
   long len_txt = 0;
@@ -217,6 +217,20 @@ int FetchResults (CDB_Connection* con, const string& table_name)
             if(iname == 0) iname= "";
             // cout << iname << '=';
 
+            if( readItems && rt!=eDB_Numeric &&
+                rt!=eDB_DateTime && rt!=eDB_SmallDateTime )
+            {
+              bool isNull;
+              char buf[1024];
+              int sz=0;
+              while( j == r->CurrentItemNo() ) {
+                sz+=r->ReadItem(buf, sizeof(buf), &isNull);
+              }
+              cout << j << " " << sz << (j == r->NofItems()-1 ? "\n" : ", ");
+              continue;
+            }
+
+            // Type-specific GetItem()
             if (rt == eDB_Char || rt == eDB_VarChar) {
               CDB_VarChar str_val;
               r->GetItem(&str_val);

@@ -27,6 +27,9 @@
 *
 * File Description: Implementation of dbapi bcp
 * $Log$
+* Revision 1.2  2003/11/25 22:39:58  sapojnik
+* new option:  -i r  use CDB_Result->ReadItem() instead of GetItem()
+*
 * Revision 1.1  2003/10/24 18:46:36  sapojnik
 * first check-in -- may not compile yet
 *
@@ -54,8 +57,8 @@ const char* prnType(EDB_Type t);
 const char* prnSeverity(EDB_Severity s);
 bool HandleIt(const CDB_Exception* ex) ;
 char* getParam(char tag, int argc, char* argv[], bool* flag= 0);
-int CreateTable (CDB_Connection* con, const string& table_name);
-int FetchResults (CDB_Connection* con, const string& table_name);
-int DeleteTable (CDB_Connection* con, const string& table_name);
+int CreateTable(CDB_Connection* con, const string& table_name);
+int FetchResults(CDB_Connection* con, const string& table_name, bool readItems=false);
+int DeleteTable(CDB_Connection* con, const string& table_name);
 
 #endif
