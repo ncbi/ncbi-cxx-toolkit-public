@@ -112,7 +112,17 @@ CArgValue::~CArgValue(void)
     return;
 }
 
+const CArgValue::TStringArray& CArgValue::GetStringList() const
+{
+    NCBI_THROW(CArgException, eInvalidArg,
+        "Value lists not implemented for this argument: " + m_Name);
+}
 
+CArgValue::TStringArray& CArgValue::SetStringList()
+{
+    NCBI_THROW(CArgException, eInvalidArg,
+        "Value lists not implemented for this argument: " + m_Name);
+}
 
 ///////////////////////////////////////////////////////
 //  Overload the comparison operator -- to handle "CRef<CArgValue>" elements
@@ -161,22 +171,34 @@ void          CArg_NoValue::CloseFile   (void) const { THROW_CArg_NoValue; }
 //  CArg_String::
 
 inline CArg_String::CArg_String(const string& name, const string& value)
-    : CArgValue(name),
-      m_String(value)
+    : CArgValue(name)
 {
-    return;
+    m_StringList.push_back(value);
 }
 
 
 bool CArg_String::HasValue(void) const
 {
-    return true;
+    return !m_StringList.empty();
 }
 
 
 const string& CArg_String::AsString(void) const
 {
-    return m_String;
+    if (m_StringList.empty()) {
+        return kEmptyStr;
+    }
+    return m_StringList[0];
+}
+
+const CArgValue::TStringArray& CArg_String::GetStringList() const
+{
+    return m_StringList;
+}
+
+CArgValue::TStringArray& CArg_String::SetStringList()
+{
+    return m_StringList;
 }
 
 
@@ -1602,8 +1624,12 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
                                    const string& arg2,
                                    unsigned      n_plain,
                                    CArgs&        args,
-                                   bool          update) const
+                                   bool          update,
+                                   CArgValue**   new_value) const
 {
+    if (new_value)
+        *new_value = 0;
+
     bool arg2_used = false;
     // Get arg. description
     TArgsCI it = x_Find(name);
@@ -1646,7 +1672,12 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
     }
 
     // Process the "raw" argument value into "CArgValue"
-    CRef<CArgValue> arg_value(arg.ProcessArgument(*value));
+    CArgValue* av = arg.ProcessArgument(*value);
+    CRef<CArgValue> arg_value(av);
+
+    if (new_value) {
+        *new_value = av;
+    }
 
     // Add the argument value to "args"
     args.Add(arg_value, update);
@@ -2297,6 +2328,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/12/02 14:24:14  kuznets
+ * Implement support of multiple key arguments (list of values)
+ *
  * Revision 1.51  2004/12/01 13:48:29  kuznets
  * Changes to make CGI parameters available as arguments
  *

@@ -268,6 +268,19 @@ public:
     /// Close the file.
     virtual void CloseFile (void) const = 0;
 
+
+
+    /// Some values types can contain several value lists
+    ///
+    /// Example: CGIs pass list selections by repeating the same name
+    typedef vector<string>  TStringArray;
+
+    /// Get the value list
+    virtual const TStringArray& GetStringList() const;
+
+    /// Get reference on value list for further modification
+    virtual TStringArray& SetStringList();
+
 protected:
     friend class CArgs;
 
@@ -644,15 +657,41 @@ public:
     {
         ITERATE(TKeyFlagArgs, it, m_KeyFlagArgs) {
             const string& param_name = *it;
+
+            // find first element in the input multimap
+
             typename T::const_iterator vit = arg_map.find(param_name);
-            if (vit != arg_map.end()) {
+            typename T::const_iterator vend = arg_map.end();
+
+            if (vit != vend) {   // at least one value found
                 const string& v = vit->second;
+                CArgValue* new_arg_value;
+
                 x_CreateArg(param_name, param_name, 
                             true, /* value is present */
                             v,
                             1,
                             *args,
-                            update);
+                            update,
+                            &new_arg_value);
+
+                if (new_arg_value) {
+
+                    CArgValue::TStringArray& varr = 
+                        new_arg_value->SetStringList();
+
+                    // try to add all additional arguments to arg value
+                    for (++vit; vit != vend; ++vit) {
+                        const string& n = vit->first;
+                        if (n != param_name) {
+                            break;
+                        }
+                        const string& v = vit->second;
+
+                        varr.push_back(v);
+                    } // for
+                }
+
             } else {
                 x_CreateArg(param_name, param_name, 
                             false, /* value is not present */
@@ -728,7 +767,8 @@ private:
                      const string& arg2,
                      unsigned      n_plain,
                      CArgs&        args,
-                     bool          update = false) const;
+                     bool          update = false,
+                     CArgValue**   new_value = 0) const;
 
     /// Helper method for doing post-processing consistency checks.
     void    x_PostCheck(CArgs& args, unsigned n_plain) const;
@@ -1111,6 +1151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2004/12/02 14:23:59  kuznets
+ * Implement support of multiple key arguments (list of values)
+ *
  * Revision 1.37  2004/12/01 13:48:03  kuznets
  * Changes to make CGI parameters available as arguments
  *

@@ -93,9 +93,15 @@ public:
     virtual CNcbiIstream&  AsInputFile (void) const;
     virtual CNcbiOstream&  AsOutputFile(void) const;
     virtual void           CloseFile   (void) const;
+
+    virtual const TStringArray& GetStringList() const;
+    virtual TStringArray& SetStringList();
+
 private:
-    // Value of the argument as passed to the constructor ("value")
-    string m_String;
+    /// Value of the argument as passed to the constructor ("value")
+    /// becomes the first element in the value list
+    /// AsString() and other methods then use it 
+    TStringArray  m_StringList;
 };
 
 
@@ -391,6 +397,9 @@ public:
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/12/02 14:24:14  kuznets
+ * Implement support of multiple key arguments (list of values)
+ *
  * Revision 1.6  2004/07/22 15:26:09  vakatov
  * Allow "Int8" arguments
  *
