@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algorithm>
+#include <memory>
 
 #include <algo/winmask/seq_masker_window.hpp>
 #include <algo/winmask/seq_masker_window_ambig.hpp>
@@ -567,6 +568,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/03/01 16:07:53  ucko
+ * +<memory> for auto_ptr<>
+ *
  * Revision 1.5  2005/02/14 12:15:17  dicuccio
  * More typedef changes: mlist -> TMList.  Use exlicit bracing to scope if/else
  * statements
