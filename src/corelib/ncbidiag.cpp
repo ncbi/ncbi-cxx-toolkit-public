@@ -31,6 +31,14 @@
  */
 
 
+#include <ncbiconf.h>
+
+#if defined(NCBI_OS_MSWIN)
+#  include <crtdbg.h>
+#  include <windows.h>
+#  undef _ASSERT
+#endif
+
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -38,7 +46,7 @@
 #include <time.h>
 
 #if defined(NCBI_OS_MAC)
-#include <corelib/ncbi_os_mac.hpp>
+#  include <corelib/ncbi_os_mac.hpp>
 #endif
 
 
@@ -621,7 +629,7 @@ extern void Abort(void)
 #if defined(_DEBUG)
     // Check environment variable for silent exit
     const char* value = getenv("DIAG_SILENT_ABORT");
-    if (*value == 'Y'  ||  *value == 'y') {
+    if (value  &&  (*value == 'Y'  ||  *value == 'y')) {
         ::exit(255);
     } else {
         ::abort();
@@ -631,12 +639,40 @@ extern void Abort(void)
 #endif
 }
 
+extern void SuppressDiagPopupMessages(void)
+{
+#if defined(NCBI_OS_MSWIN)
+    // Check environment variable for silent abort app at error
+    const char* value = getenv("DIAG_SILENT_ABORT");
+    if (!value  || !(*value == 'Y'  ||  *value == 'y')) {
+        return;
+    }
+
+    // Windows GPF errors
+    SetErrorMode(SEM_NOGPFAULTERRORBOX);
+
+    // Runtime library
+    _set_error_mode(_OUT_TO_STDERR);
+
+    // Debug library
+    _CrtSetReportFile(_CRT_WARN,   stderr);
+    _CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR,  stderr);
+    _CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, stderr);
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+#endif
+}
+
 
 END_NCBI_SCOPE
 
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.47  2002/04/11 19:58:34  ivanov
+ * Added function SuppressDiagPopupMessages()
+ *
  * Revision 1.46  2002/04/10 14:45:27  ivanov
  * Abort() moved from static to extern and added to header file
  *

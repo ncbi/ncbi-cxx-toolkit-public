@@ -224,16 +224,22 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 // Return previous die-level
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
 
-// Smart abort function.
-// It can process user abort handler and don't popup assert window 
-// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y")
-extern void Abort(void);
-
 // Set/unset abort handler.
 // If "func"==0 that will be used default handler
 typedef void (*FAbortHandler)(void);
 extern void SetAbortHandler(FAbortHandler func = 0);
 
+// Smart abort function.
+// It can process user abort handler and don't popup assert windows
+// if specified (environment variable DIAG_SILENT_ABORT is "Y" or "y")
+extern void Abort(void);
+
+// Suppress popup messages on execution errors.
+// NOTE: Windows-specific (dummy on other platforms),
+// suppresses all error message boxes in runtime and debug libraries,
+// as well as all General Protection Fault messages.
+// Environment variable DIAG_SILENT_ABORT must be set to "Y" or "y".
+extern void SuppressDiagPopupMessages(void);
 
 // Disable/enable posting of "eDiag_Trace" messages.
 // By default, these messages are disabled unless:
@@ -384,6 +390,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.39  2002/04/11 19:58:03  ivanov
+ * Added function SuppressDiagPopupMessages()
+ *
  * Revision 1.38  2002/04/10 14:45:04  ivanov
  * Abort() moved from static to extern and added to header file
  *
