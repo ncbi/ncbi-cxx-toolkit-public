@@ -117,7 +117,7 @@ BlastHSP* BlastHSPFree(BlastHSP* hsp)
 
 Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
         BlastHSPList* hsp_list, BlastHitSavingOptions* hit_options, 
-        BLAST_ScoreBlk* sbp)
+        BlastScoreBlk* sbp)
 {
    BlastHSP* hsp;
    BlastHSP** hsp_array;
@@ -146,11 +146,11 @@ Int2 BLAST_GetNonSumStatsEvalue(Uint1 program, BlastQueryInfo* query_info,
       /* Get effective search space from the score block, or from the 
          query information block, in order of preference */
       if (sbp->effective_search_sp) {
-         hsp->evalue = BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
+         hsp->evalue = BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                           (double)sbp->effective_search_sp);
       } else {
          hsp->evalue = 
-            BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
+            BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                (double)query_info->eff_searchsp_array[hsp->context/factor]);
       }
    }
@@ -460,7 +460,7 @@ static Int2
 BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    const BlastHitSavingOptions* hit_options, BlastQueryInfo* query_info, 
-   BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
    const BlastSeqSrc* bssp)
 {
    Int4 sum, score, gap_open, gap_extend;
@@ -576,7 +576,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
          }
          
          if (sum < 0) {
-            if (BlastKarlinStoE_simple(score, kbp[context],
+            if (BLAST_KarlinStoE_simple(score, kbp[context],
                    searchsp_eff) > hit_options->expect_value) {
                /* Start from new offset */
                new_q_start = query;
@@ -618,7 +618,7 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPList* hsp_list,
       delete_hsp = FALSE;
       hsp->score = score;
       hsp->evalue = 
-         BlastKarlinStoE_simple(score, kbp[context], searchsp_eff);
+         BLAST_KarlinStoE_simple(score, kbp[context], searchsp_eff);
       if (hsp->evalue > hit_options->expect_value) {
          delete_hsp = TRUE;
       } else {
@@ -900,7 +900,7 @@ static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
 Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
         BLAST_SequenceBlk* subject, BlastResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
-        BlastQueryInfo* query_info, BLAST_ScoreBlk* sbp, 
+        BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
         const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
         BlastThrInfo* thr_info)
 {

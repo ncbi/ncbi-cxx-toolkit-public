@@ -300,7 +300,7 @@ FillReturnXDropoffsInfo(BlastReturnStat* return_stats,
 Int2 BLAST_CalcEffLengths (Uint1 program_number, 
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsOptions* eff_len_options, 
-   const BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info)
+   const BlastScoreBlk* sbp, BlastQueryInfo* query_info)
 {
    double alpha, beta; /*alpha and beta for new scoring system */
    Int4 min_query_length;   /* lower bound on query length. */
@@ -332,7 +332,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
    
    if (program_number != blast_type_blastn) {
       if (scoring_options->gapped_calculation) {
-         getAlphaBeta(sbp->name,&alpha,&beta,TRUE, 
+         BLAST_GetAlphaBeta(sbp->name,&alpha,&beta,TRUE, 
             scoring_options->gap_open, scoring_options->gap_extend);
       }
    }
@@ -427,7 +427,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingOptions* hit_options,
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
-   BLAST_ScoreBlk* sbp, Uint4 subject_length, 
+   BlastScoreBlk* sbp, Uint4 subject_length, 
    BlastGapAlignStruct** gap_align, 
    BlastInitialWordParameters** word_params,
    BlastExtensionParameters** ext_params,
@@ -642,7 +642,7 @@ static void BLAST_ThrInfoFree(BlastThrInfo* thr_info)
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrcNewInfo* bssn_info,  BLAST_ScoreBlk* sbp,
+   const BlastSeqSrcNewInfo* bssn_info,  BlastScoreBlk* sbp,
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap,
    const BlastInitialWordOptions* word_options, 
@@ -753,7 +753,7 @@ Int4
 BLAST_TwoSequencesEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
    BLAST_SequenceBlk* subject, 
-   BLAST_ScoreBlk* sbp, const BlastScoringOptions* score_options, 
+   BlastScoreBlk* sbp, const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap,
    const BlastInitialWordOptions* word_options, 
    const BlastExtensionOptions* ext_options, 
@@ -818,7 +818,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
 
 Int2 LookupTableWrapInit(BLAST_SequenceBlk* query, 
         const LookupTableOptions* lookup_options,	
-        ListNode* lookup_segments, BLAST_ScoreBlk* sbp, 
+        ListNode* lookup_segments, BlastScoreBlk* sbp, 
         LookupTableWrap** lookup_wrap_ptr)
 {
    LookupTableWrap* lookup_wrap;
