@@ -1427,6 +1427,8 @@ void StructureWindow::OnSave(wxCommandEvent& event)
                 data += "PSSMChanged\n";
             if ((changeFlags & StructureSet::eCDDData) > 0)
                 data += "DescriptionChanged\n";
+            if ((changeFlags & StructureSet::eUpdateData) > 0)
+                data += "PendingAlignmentsChanged\n";
             SendCommand("CDTree2", "FileSaved", data);
         }
 
@@ -1456,6 +1458,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/08/04 15:29:46  thiessen
+* send PendingAlignmentsChanged to CDTree2
+*
 * Revision 1.16  2003/07/17 20:13:52  thiessen
 * don't ask for filename on save/termination with -f; add eAnyAlignmentData flag
 *
