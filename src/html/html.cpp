@@ -350,10 +350,6 @@ CHTMLPlainText::~CHTMLPlainText(void)
     return;
 }
 
-void CHTMLPlainText::SetText(const string& text)
-{
-    m_Text = text;
-}
 
 CNcbiOstream& CHTMLPlainText::PrintBegin(CNcbiOstream& out, TMode mode)
 {
@@ -385,11 +381,6 @@ CHTMLText::CHTMLText(const char* text)
 CHTMLText::~CHTMLText(void)
 {
     return;
-}
-
-void CHTMLText::SetText(const string& text)
-{
-    m_Name = text;
 }
 
 
@@ -647,6 +638,7 @@ CHTMLSpecialChar::CHTMLSpecialChar(const char* html, const char* plain,
                                    int count)
     : CParent("", plain)
 {
+    m_Name  = html;
     m_Html  = html;
     m_Count = count;
 }
@@ -997,7 +989,6 @@ SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
             textlen += m_Parent->m_ColSepM.length() * (cols - 1);
         }
     }
-
     return textlen;
 }
 
@@ -2303,6 +2294,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.99  2004/02/04 12:43:47  ivanov
+ * Fixed CHTMLText::SetText() -- do not use m_Name for store HTML code.
+ * Bind internal name for objects of the CHTMLSpecialChar class.
+ *
  * Revision 1.98  2004/02/03 19:45:13  ivanov
  * Binded dummy names for the unnamed nodes
  *
