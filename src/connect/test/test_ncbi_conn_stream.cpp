@@ -30,6 +30,10 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2001/07/24 18:00:30  lavr
+ * New function introduced s_Read (instead of direct use of istream::read)
+ * This function is compiler-dependent, and specially-featured for GCC
+ *
  * Revision 6.11  2001/04/23 18:03:06  vakatov
  * Artificial cast to get rid of warning in the 64-bit compilation mode
  *
@@ -82,6 +86,10 @@
 
 BEGIN_NCBI_SCOPE
 
+
+const size_t kBufferSize = 1024*1024;
+
+
 static CNcbiRegistry* s_CreateRegistry(void)
 {
     CNcbiRegistry* reg = new CNcbiRegistry;
@@ -97,7 +105,30 @@ static CNcbiRegistry* s_CreateRegistry(void)
     return reg;
 }
 
-const size_t kBufferSize = 1024*1024;
+
+size_t s_Read(iostream& ios, char* buffer, size_t size)
+{
+#ifdef NCBI_COMPILER_GCC
+    size_t read = 0;
+    for (;;) {
+        ios.read(buffer, size);
+        size_t count = ios.gcount();
+        read += count;
+        if (count == 0 && ios.eof())
+            return read;
+        buffer += count;
+        size   -= count;
+        if (!size)
+            break;
+        ios.clear();
+    }
+    return read;
+#else
+    ios.read(buffer, size);
+    return ios.gcount();
+#endif
+}
+
 
 END_NCBI_SCOPE
 
@@ -138,14 +169,13 @@ int main(void)
         return 1;
     }
 
-    ios.read(buf2, kBufferSize + 1);
+    size_t buflen = s_Read(ios, buf2, kBufferSize + 1);
 
     if (!ios.good() && !ios.eof()) {
         ERR_POST("Error receiving data");
         return 2;
     }
 
-    size_t buflen = ios.gcount();
     LOG_POST(Info << buflen << " bytes obtained" <<
              (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
@@ -180,12 +210,12 @@ int main(void)
 
         if (i + k > kBufferSize + 1)
             k = kBufferSize + 1 - i;
-        ios.read(&buf2[i], k);
+        j = s_Read(ios, &buf2[i], k);
         if (!ios.good() && !ios.eof()) {
             ERR_POST("Error receiving data");
             return 2;
         }
-        if ((j = ios.gcount()) != k)
+        if (j != k)
             LOG_POST("Bytes requested: " << k << ", received: " << j);
         buflen += j;
         l++;
@@ -223,13 +253,13 @@ int main(void)
         return 1;
     }
     
-    ios.read(buf2, kBufferSize + 1);
+    buflen = s_Read(ios, buf2, kBufferSize + 1);
 
     if (!ios.good() && !ios.eof()) {
         ERR_POST("Error receiving data");
         return 2;
     }
-    buflen = ios.gcount();
+
     LOG_POST(Info << buflen << " bytes obtained" <<
              (ios.eof() ? " (EOF)" : ""));
 
