@@ -1030,13 +1030,15 @@ Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
 		<li> do <a href="win_cvs.html">CVS checkout</a> of
 		  <i><b>internal/c++</b></i>. This can be done right on your
 		  PC, if you have installed CVS there:
-		  <br> <i>cvs checkout -d cxx internal/c++</i>
+		  <br> <i>cvs checkout -d cxx internal/c++</i></li>
 		<li> checkout only the core sources on your UNIX workstation by running (<a href="cvs_core_msvc.html">notes here</a>)
 		  <br> <i>$NCBI/c++/scripts/cvs_core.sh cxx --without-cvs --with-objects --msvc</i>
 		  <br> and then copy the whole resultant directory
-		  <i><b>cxx</b></i> to your PC directory <i><b>C:\cxx</b></i>
+		  <i><b>cxx</b></i> to your PC directory <i><b>C:\cxx</b></i></li>
 		<li> if you have the Toolkit sources in the publically distributed
-		  self-extracting archive, then just expand the archive.
+		  self-extracting archive, then just expand the archive, and you are ready
+		  to build any (or all) of MSVC++ project configurations.
+		  The archive also contains pre-generated ASN classes.</li>
 </ul>
 
 
@@ -1165,16 +1167,18 @@ tab <i>"Link"</i>, category <i>"Input"</i>, list <i>"Object/Library modules"</i>
 wxWindows documentation instructs you to use *.lib in Release mode and *d.lib in Debug mode, we renamed the libraries to have
 the same names in any configuration, but put them in different directories.
 <br>
-You also have to put the correct path to the libraries (either <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
+You also have to specify the correct path to the libraries (either <i>\\dizzy\public\wxwin\<b>ReleaseMT</b></i>
 or <i>\\dizzy\public\wxwin\<b>DebugMT</b></i>, depending on the configuration you are going to use)
 in the field <i>"Additional library path"</i>.
 <p>
 We recommend that you put the include file directory <i>\\dizzy\public\wxwin\<b>include</b></i>
 in <i>"Project"/"Settings..."</i>, tab <i>"C/C++"</i>, category <i>"Preprocessor"</i>,
-list <i>"Additional include directories"</i>. Note that you <b>should not</i> define <tt>__WXDEBUG__</tt> as
+list <i>"Additional include directories"</i>. Note that you <b>should never</i> define <tt>__WXDEBUG__</tt> as
 instructed by wxWindows documentation. The wxWindows configuration file <tt>setup.h</tt> was specifically patched to set this
-symbol automatically when in any Debug configuration. Any other wxWindows-related preprocessor symbols should be defined
-as described in documentation (using <i>"Project"/"Settings..."</i>,  tab <i>"C/C++"</i>, category <i>"General"</i>,
+symbol automatically when in any Debug configuration. Also, <tt>WXUSINGDLL</tt> <b>should never</b> be
+excplicitly defined. When DLL library is about to be used, MSVC++ compiler defines <tt>_DLL</tt>, which in turn switches
+on the definition of <tt>WXUSINGDLL</tt> in <tt>setup.h</tt>. Any other wxWindows-related preprocessor symbols should be
+defined as described in documentation (using <i>"Project"/"Settings..."</i>,  tab <i>"C/C++"</i>, category <i>"General"</i>,
 list <i>"Preprocessor definitions"</i>), and they will be propagated to any configuration of the project.
 <p>
 No further configuration is necessary unless you want to trace and/or debug library sources.
