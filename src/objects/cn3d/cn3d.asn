@@ -1,4 +1,4 @@
---$Revision: 1.5 $
+--$Revision: 1.6 $
 --**********************************************************************
 --
 --  Definitions for Cn3D-specific data (rendering settings,
@@ -94,6 +94,7 @@ Cn3d-general-style ::= SEQUENCE {   -- style blob for everything else
 
 -- rendering settings for Cn3D (mirrors StyleSettings class)
 Cn3d-style-settings ::= SEQUENCE {
+    name VisibleString OPTIONAL,                -- a name (for favorites)
     protein-backbone Cn3d-backbone-style,       -- backbone styles
     nucleotide-backbone Cn3d-backbone-style,
     protein-sidechains Cn3d-general-style,      -- styles for other stuff
