@@ -153,7 +153,6 @@ CBlastExtensionOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
 
     ddc.Log("gap_x_dropoff", m_Ptr->gap_x_dropoff);
     ddc.Log("gap_x_dropoff_final", m_Ptr->gap_x_dropoff_final);
-    ddc.Log("gap_trigger", m_Ptr->gap_trigger);
     ddc.Log("ePrelimGapExt", m_Ptr->ePrelimGapExt);
     ddc.Log("eTbackExt", m_Ptr->eTbackExt);
 }
@@ -521,6 +520,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.53  2004/11/02 18:26:17  madden
+ * Remove gap_trigger
+ *
  * Revision 1.52  2004/10/26 15:31:08  dondosha
  * Added function Blast_FillRPSInfo, previously static in demo/blast_app.cpp
  *
