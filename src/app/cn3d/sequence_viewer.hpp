@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/03 01:12:17  thiessen
+* fix memory problem with alignment cloning
+*
 * Revision 1.11  2000/11/02 16:48:23  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -131,7 +134,6 @@ private:
 
     typedef std::list < BlockMultipleAlignment * > AlignmentStack;
     AlignmentStack alignmentStack;
-    BlockMultipleAlignment * GetAlignment(void) const { return alignmentStack.back(); }
 
     typedef std::list < SequenceDisplay * > DisplayStack;
     DisplayStack displayStack;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/03 01:12:17  thiessen
+* fix memory problem with alignment cloning
+*
 * Revision 1.18  2000/11/02 16:48:22  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -274,13 +277,13 @@ public:
     typedef std::vector < const Sequence * > SequenceList;
 
     // makes a new copy of itself
-    virtual Block * Clone(void) const = 0;
+    virtual Block * Clone(const BlockMultipleAlignment *newMultiple) const = 0;
 
 protected:
     typedef std::vector < Range > RangeList;
     RangeList ranges;
 
-    const SequenceList *sequences;
+    const BlockMultipleAlignment *parentAlignment;
 
 public:
     // given a row number (from 0 ... nSequences-1), give the sequence range covered by this block
@@ -293,8 +296,8 @@ public:
         ranges[row].to = to;
     }
 
-    Block(const SequenceList *sequenceList) :
-        sequences(sequenceList), ranges(sequenceList->size()) { }
+    Block(const BlockMultipleAlignment *multiple) :
+        parentAlignment(multiple), ranges(multiple->NRows()) { }
 
     int NSequences(void) const { return ranges.size(); }
 };
@@ -303,7 +306,7 @@ public:
 class UngappedAlignedBlock : public Block
 {
 public:
-    UngappedAlignedBlock(const SequenceList *sequenceList) : Block(sequenceList) { }
+    UngappedAlignedBlock(const BlockMultipleAlignment *multiple) : Block(multiple) { }
 
     bool IsAligned(void) const { return true; }
 
@@ -314,7 +317,7 @@ public:
 
     char GetCharacterAt(int blockColumn, int row) const;
 
-    Block * Clone(void) const;
+    Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };
 
 // an unaligned block; max width of block must be >=1, but range over any given
@@ -323,14 +326,14 @@ public:
 class UnalignedBlock : public Block
 {
 public:
-    UnalignedBlock(const SequenceList *sequenceList) : Block(sequenceList) { }
+    UnalignedBlock(const BlockMultipleAlignment *multiple) : Block(multiple) { }
 
     bool IsAligned(void) const { return false; }
 
     int GetIndexAt(int blockColumn, int row,
         BlockMultipleAlignment::eUnalignedJustification justification) const;
 
-    Block * Clone(void) const;
+    Block * Clone(const BlockMultipleAlignment *newMultiple) const;
 };
 
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/11/03 01:12:44  thiessen
+* fix memory problem with alignment cloning
+*
 * Revision 1.23  2000/11/02 16:56:02  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -203,6 +206,7 @@ void SequenceViewerWindow::OnCloseWindow(wxCloseEvent& event)
         return;
     }
     viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
+    viewer->RemoveBlockBoundaryRow();
     Destroy();
 }
 
@@ -246,7 +250,10 @@ void SequenceViewerWindow::OnEditMenu(wxCommandEvent& event)
                 viewer->AddBlockBoundaryRow();
                 Command(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
-                if (!SaveDialog(true)) break;   // cancelled
+                if (!SaveDialog(true)) {   // cancelled
+                    menuBar->Check(MID_ENABLE_EDIT, true);
+                    break;
+                }
                 TESTMSG("turning off editor");
                 viewer->RemoveBlockBoundaryRow();
                 if (menuBar->IsChecked(MID_DRAG_HORIZ)) Command(MID_SELECT_RECT);
@@ -360,7 +367,10 @@ void SequenceViewerWindow::OnJustification(wxCommandEvent& event)
 bool SequenceViewerWindow::SaveDialog(bool canCancel)
 {
     // quick & dirty check for whether save is necessary, by whether Undo is enabled
-    if (!menuBar->IsEnabled(MID_UNDO)) return true;
+    if (!menuBar->IsEnabled(MID_UNDO)) {
+        viewer->RevertAlignment();  // remove any unnecessary copy from stack
+        return true;
+    }
 
     int option = wxYES_NO | wxYES_DEFAULT | wxICON_EXCLAMATION | wxCENTRE;
     if (canCancel) option |= wxCANCEL;
@@ -621,8 +631,8 @@ bool SequenceDisplay::GetCharacterTraitsAt(int column, int row,
         return false;
 
     Vector colorVec;
-    if (!displayRow->GetCharacterTraitsAt(
-            column, (*viewerWindow)->GetCurrentJustification(),
+    if (!displayRow->GetCharacterTraitsAt(column,
+            (*viewerWindow) ? (*viewerWindow)->GetCurrentJustification() : BlockMultipleAlignment::eLeft,
             character, &colorVec, drawBackground, cellBackgroundColor))
         return false;
 
@@ -754,6 +764,7 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
                             UpdateAfterEdit();
                     }
                 }
+                return;
             }
 
             // process drag on regular row - block row shift
@@ -761,6 +772,7 @@ void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
             if (alnRow) {
                 if (alignment->ShiftRow(alnRow->row, columnFrom, columnTo))
                     UpdateAfterEdit();
+                return;
             }
         }
         return;
@@ -827,7 +839,7 @@ void SequenceViewer::InitStacks(BlockMultipleAlignment *alignment, SequenceDispl
 // becoming the current viewed/edited alignment.
 void SequenceViewer::PushAlignment(void)
 {
-    TESTMSG("alignment stack size at push time: " << alignmentStack.size());
+    TESTMSG("SequenceViewer::PushAlignment() - stack size before push: " << displayStack.size());
     if (alignmentStack.size() == 0) {
         ERR_POST(Error << "SequenceViewer::PushAlignment() - can't be called with empty alignment stack");
         return;
@@ -906,9 +918,6 @@ void SequenceViewer::SaveAlignment(void)
     // go back into the original pairwise alignment data and save according to the
     // current edited BlockMultipleAlignment
     alignmentManager->SavePairwiseFromMultiple(alignmentStack.back());
-
-    viewerWindow->UpdateAlignment(displayStack.back());
-    if (viewerWindow->AlwaysSyncStructures()) viewerWindow->SyncStructures();
 }
 
 void SequenceViewer::NewDisplay(SequenceDisplay *display)
@@ -1015,8 +1024,7 @@ void SequenceViewer::RemoveBlockBoundaryRow(void)
     DisplayRowFromString *blockBoundaryRow = FindBlockBoundaryRow();
     if (blockBoundaryRow) {
         display->RemoveRow(blockBoundaryRow);
-        blockBoundaryRow = NULL;
-        viewerWindow->UpdateAlignment(display);
+        if (viewerWindow) viewerWindow->UpdateAlignment(display);
     }
 }
 

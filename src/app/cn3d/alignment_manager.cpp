@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/11/03 01:12:44  thiessen
+* fix memory problem with alignment cloning
+*
 * Revision 1.21  2000/11/02 16:56:00  thiessen
 * working editor undo; dynamic slave transforms
 *
@@ -218,7 +221,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
         masterTo--; // after loop, masterTo = first non-all-aligned residue
 
         // create new block with ranges from master and all slaves
-        newBlock = new UngappedAlignedBlock(sequenceList);
+        newBlock = new UngappedAlignedBlock(multipleAlignment);
         newBlock->SetRangeOfRow(0, masterFrom, masterTo);
         newBlock->width = masterTo - masterFrom + 1;
 
@@ -275,11 +278,11 @@ BlockMultipleAlignment::~BlockMultipleAlignment(void)
 
 BlockMultipleAlignment * BlockMultipleAlignment::Clone(void) const
 {
-    BlockMultipleAlignment *copy = new BlockMultipleAlignment(sequences, messenger);
-    copy->sequences = new SequenceList(*sequences); // must actually copy the list
+    // must actually copy the list
+    BlockMultipleAlignment *copy = new BlockMultipleAlignment(new SequenceList(*sequences), messenger);
     BlockList::const_iterator b, be = blocks.end();
     for (b=blocks.begin(); b!=be; b++)
-        copy->blocks.push_back((*b)->Clone());
+        copy->blocks.push_back((*b)->Clone(copy));
     copy->UpdateBlockMapAndConservationColors();
 	return copy;
 }
@@ -337,7 +340,7 @@ UnalignedBlock * BlockMultipleAlignment::
     int row, from, to, length;
     SequenceList::const_iterator s, se = sequences->end();
 
-    UnalignedBlock *newBlock = new UnalignedBlock(sequences);
+    UnalignedBlock *newBlock = new UnalignedBlock(this);
     newBlock->width = 0;
 
     for (row=0, s=sequences->begin(); s!=se; row++, s++) {
@@ -404,13 +407,14 @@ bool BlockMultipleAlignment::UpdateBlockMapAndConservationColors(void)
     TESTMSG("alignment display size: " << totalWidth << " x " << NRows());
 
     // fill out the block map
+    UngappedAlignedBlock *uaBlock;
     blockMap.resize(totalWidth);
     for (b=blocks.begin(); b!=be; b++) {
         for (j=0; j<(*b)->width; j++, i++) {
             blockMap[i].block = *b;
             blockMap[i].blockColumn = j;
         }
-        UngappedAlignedBlock *uaBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
+        uaBlock = dynamic_cast<UngappedAlignedBlock*>(*b);
         if (uaBlock) conservationColorer->AddBlock(uaBlock);
     }
 
@@ -934,7 +938,7 @@ bool BlockMultipleAlignment::SplitBlock(int alignmentIndex)
         return false;
 
     TESTMSG("splitting block");
-    UngappedAlignedBlock *newAlignedBlock = new UngappedAlignedBlock(sequences);
+    UngappedAlignedBlock *newAlignedBlock = new UngappedAlignedBlock(this);
     newAlignedBlock->width = info.block->width - info.blockColumn;
     info.block->width = info.blockColumn;
 
@@ -1013,8 +1017,8 @@ bool BlockMultipleAlignment::CreateBlock(int fromAlignmentIndex, int toAlignment
 
     TESTMSG("creating new aligned and unaligned blocks");
 
-    UnalignedBlock *nextUABlock = new UnalignedBlock(sequences);
-    UngappedAlignedBlock *ABlock = new UngappedAlignedBlock(sequences);
+    UnalignedBlock *nextUABlock = new UnalignedBlock(this);
+    UngappedAlignedBlock *ABlock = new UngappedAlignedBlock(this);
     prevUABlock->width = nextUABlock->width = 0;
 
     bool deletePrevUABlock = true, deleteNextUABlock = true;
@@ -1138,12 +1142,12 @@ bool BlockMultipleAlignment::DeleteBlock(int alignmentIndex)
 
 char UngappedAlignedBlock::GetCharacterAt(int blockColumn, int row) const
 {
-    return sequences->at(row)->sequenceString[GetIndexAt(blockColumn, row)];
+    return parentAlignment->sequences->at(row)->sequenceString[GetIndexAt(blockColumn, row)];
 }
 
-Block * UngappedAlignedBlock::Clone(void) const
+Block * UngappedAlignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
 {
-    UngappedAlignedBlock *copy = new UngappedAlignedBlock(sequences);
+    UngappedAlignedBlock *copy = new UngappedAlignedBlock(newMultiple);
     const Block::Range *range;
     for (int row=0; row<NSequences(); row++) {
         range = GetRangeOfRow(row);
@@ -1193,9 +1197,9 @@ int UnalignedBlock::GetIndexAt(int blockColumn, int row,
     return seqIndex;
 }
 
-Block * UnalignedBlock::Clone(void) const
+Block * UnalignedBlock::Clone(const BlockMultipleAlignment *newMultiple) const
 {
-    UnalignedBlock *copy = new UnalignedBlock(sequences);
+    UnalignedBlock *copy = new UnalignedBlock(newMultiple);
     const Block::Range *range;
     for (int row=0; row<NSequences(); row++) {
         range = GetRangeOfRow(row);
