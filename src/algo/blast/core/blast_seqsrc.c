@@ -42,6 +42,7 @@ struct BlastSeqSrc {
 
     BlastSeqSrcConstructor NewFnPtr;       /**< Constructor */
     BlastSeqSrcDestructor  DeleteFnPtr;    /**< Destructor */
+    BlastSeqSrcCopier      CopyFnPtr;      /**< Copier */
 
    /* Functions to get information about database as a whole */
     GetInt4FnPtr      GetNumSeqs;     /**< Get number of sequences in set */
@@ -114,6 +115,27 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp)
     return (BlastSeqSrc*) (*destructor_fnptr)(bssp);
 }
 
+BlastSeqSrc* BlastSeqSrcCopy(const BlastSeqSrc* bssp)
+{
+    BlastSeqSrcCopier copy_fnptr = NULL;
+    BlastSeqSrc* retval;
+
+    if (!bssp) {
+        return NULL;
+    }
+
+    if ( !(retval = (BlastSeqSrc*) BlastMemDup(bssp, sizeof(BlastSeqSrc)))) {
+        return NULL;
+    }
+
+    /* If copy function is not provided, just return a copy of the structure */
+    if ( !(copy_fnptr = (*bssp->CopyFnPtr))) {
+        return retval;
+    }
+
+    return (BlastSeqSrc*) (*copy_fnptr)(retval);
+}
+
 /******************** BlastSeqSrcIterator API *******************************/
 
 BlastSeqSrcIterator* BlastSeqSrcIteratorNew(unsigned int chunk_sz)
@@ -182,6 +204,7 @@ void Set##member(data_structure_type var, member_type arg) \
 /* Note there's no ; after these macros! */
 DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcConstructor, NewFnPtr, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcDestructor, DeleteFnPtr, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(BlastSeqSrcCopier, CopyFnPtr, BlastSeqSrc*)
 
 DEFINE_MEMBER_FUNCTIONS(void*, DataStructure, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrc*)
