@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.107 2002/07/23 18:27:08 ucko Exp $
+#  $Id: configure.ac,v 1.108 2002/07/25 14:57:35 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -255,11 +255,25 @@ AC_PROG_CC
 AC_PROG_CXX
 
 
+#### Detect Insure++, and attempt to find the real compiler.
+case "$CC" in
+   insure* | */insure*)
+      psrcdump=`echo "$CC" | sed -e 's/insure.*/psrcdump/'`
+      real_CC=`$psrcdump -t insure++ | sed -ne 's/^Compiler \(.*\)/\1/p'`
+      real_dir=`$psrcdump -t insure++ | sed -ne 's/^Compilerinstalldir \(.*\)/\1/p'`
+      test -n "$real_dir" && real_CC="$real_dir/$real_CC"
+      ;;
+   *)
+      real_CC=$CC
+      ;;
+esac
+
+
 #### Detect KCC compiler
 if test "$GCC" != "yes" ; then
    touch kcc_test.cpp
-   kcc_ver="`$CXX -V -c kcc_test.cpp 2>&1 | grep '^KAI '`"
-   kcc_license="`$CXX -V -c kcc_test.cpp 2>&1 | grep -v '^KAI '`"
+   kcc_ver="`$real_CC -V -c kcc_test.cpp 2>&1 | grep '^KAI '`"
+   kcc_license="`$real_CC -V -c kcc_test.cpp 2>&1 | grep -v '^KAI '`"
    rm -f kcc_test.cpp kcc_test.o
    case "$kcc_ver" in 
       KAI* )  KCC="yes" ;;
@@ -269,8 +283,8 @@ fi
 
 #### Detect ICC compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"; then
-   icc_ver="`$CXX -V 2>&1 | grep '^Intel(R) C++ Compiler'`"
-   icc_license="`$CXX -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
+   icc_ver="`$real_CC -V 2>&1 | grep '^Intel(R) C++ Compiler'`"
+   icc_license="`$real_CC -c 2>&1 | grep '^icc: NOTE: The evaluation period for this product ends on '`"
    case "$icc_ver" in 
       Intel*C*Compiler* )  ICC="yes" ;;
    esac
@@ -280,7 +294,7 @@ fi
 #### Detect IBM VisualAge compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes"; then
    # Crude, but there doesn't seem to be a better alternative
-   vac_ver="`$CXX 2>&1 | grep 'AIX Compiler.*Version'`"
+   vac_ver="`$real_CC 2>&1 | grep 'AIX Compiler.*Version'`"
    case "$vac_ver" in
       *AIX* ) VAC="yes" ;;
    esac
@@ -290,6 +304,7 @@ fi
 #### Detect Compaq compiler
 if test "$GCC" != "yes"  -a  "$KCC" != "yes"  -a  "$ICC" != "yes" \
   -a  "$VAC" != "yes"; then
+   # Must use CXX rather than real_CC to ensure correct version number.
    ccc_ver="`$CXX -V 2>&1 | grep '^Compaq C++ V'`"
    case "$ccc_ver" in 
       *Compaq* ) CCC="yes" ;; 
@@ -305,7 +320,7 @@ ncbi_compiler="UNKNOWN"
 ncbi_compiler_ver="0"
 
 if test "$GCC" = "yes" ; then
-   compiler_ver="`$CXX -dumpversion 2>&1`"
+   compiler_ver="`$real_CC -dumpversion 2>&1`"
    case "$compiler_ver" in
      2.95* | 2.96* | 3.* )
        compiler="GCC"
@@ -335,7 +350,7 @@ elif test "$CCC" = "yes" ; then
 else
    case "$host_os" in
     solaris* )
-      compiler_ver="`$CXX -V 2>&1`"
+      compiler_ver="`$real_CC -V 2>&1`"
       case "$compiler_ver" in
         *WorkShop*Compilers*5\.0 )
           compiler="WorkShop5"
@@ -356,7 +371,7 @@ else
       esac ;;
 
     irix* )
-      compiler_ver="`$CXX -version 2>&1`"
+      compiler_ver="`$real_CC -version 2>&1`"
       case "$compiler_ver" in
         MIPSpro*Compilers:*Version*7\.3* )
           compiler="MIPSpro73"
@@ -365,7 +380,7 @@ else
       esac ;;
 
     cygwin32 )
-      case "$CXX" in
+      case "$real_CC" in
         *cl\.exe* | cl)
           compiler="MSVC" 
           ncbi_compiler="MSVC"
@@ -499,7 +514,7 @@ case "$host_os:$compiler" in
    ;;
 
  linux*:GCC )
-   LDFLAGS="-Wl,-E"
+   LDFLAGS="-Wl,-E $LDFLAGS"
    # May be needed for pthread_{set,get}concurrency
    CPPFLAGS="-D_GNU_SOURCE $CPPFLAGS"
    ;;
@@ -2524,6 +2539,16 @@ if test "$ICC" = "yes"  -a  -n "$icc_license" ; then
    CXXCPP="$icc_CXX -E"
    CXX="$icc_CXX"
 fi
+
+### Get Insure++ to honor the top-level .psrc file
+case "$CC" in
+   */insure*)
+      CC="$CC -Zop \$(top_srcdir)/.psrc"
+      CXX="$CXX -Zop \$(top_srcdir)/.psrc"
+      CXXCPP="$CXXCPP -Zop \$(top_srcdir)/.psrc"
+      LINK_DLL=`echo "$LINK_DLL" | sed -e 's:insure:& -Zop \$(top_srcdir)/.psrc:'`
+   ;;
+esac
 
 
 #############################################################################
