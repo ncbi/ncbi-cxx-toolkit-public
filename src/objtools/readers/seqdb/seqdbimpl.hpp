@@ -1,5 +1,5 @@
-#ifndef CORELIB__SEQDB__SEQDBIMPL_HPP
-#define CORELIB__SEQDB__SEQDBIMPL_HPP
+#ifndef OBJTOOLS_READERS_SEQDB__SEQDBIMPL_HPP
+#define OBJTOOLS_READERS_SEQDB__SEQDBIMPL_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -38,6 +38,7 @@
 
 #include "seqdbvol.hpp"
 #include "seqdbalias.hpp"
+#include "seqdboidlist.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -76,6 +77,8 @@ public:
     
     Uint4  GetMaxLength(void);
     
+    bool   GetNextOID(Uint4 & next_oid);
+    
 private:
     CSeqDBVol * x_FindVol(Uint4 oid, Uint4 & vol_oid)
     {
@@ -106,6 +109,7 @@ private:
     // Data
     
     CSeqDBAliasFile           m_Aliases;
+    CRef<CSeqDBOIDSrc>        m_OIDList;
     vector< CRef<CSeqDBVol> > m_Volumes;
     vector<Uint4>             m_VolStart;
     vector<Uint4>             m_VolEnd;
@@ -116,5 +120,5 @@ private:
 
 END_NCBI_SCOPE
 
-#endif // CORELIB__SEQDB__SEQDBIMPL_HPP
+#endif // OBJTOOLS_READERS_SEQDB__SEQDBIMPL_HPP
 

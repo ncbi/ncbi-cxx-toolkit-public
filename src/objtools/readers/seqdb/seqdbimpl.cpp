@@ -54,10 +54,22 @@ CSeqDBImpl::CSeqDBImpl(const string & dbpath, const string & db_name_list, char 
             prot_nucl = m_Volumes.back()->GetSeqType();
         }
     }
+    
+//     string month_fname = SeqDB_CombinePath(dbpath, "swissprot.00.msk", '/');
+//     m_OIDList = new CSeqDBOIDList( month_fname, use_mmap );
 }
 
 CSeqDBImpl::~CSeqDBImpl(void)
 {
+}
+
+bool CSeqDBImpl::GetNextOID(Uint4 & next_oid)
+{
+    if (m_OIDList.Empty()) {
+        return next_oid < GetNumSeqs();
+    }
+    
+    return m_OIDList->FindNext(next_oid);
 }
 
 Int4 CSeqDBImpl::GetSeqLength(Uint4 oid)

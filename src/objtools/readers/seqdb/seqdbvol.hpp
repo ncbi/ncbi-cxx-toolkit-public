@@ -1,5 +1,5 @@
-#ifndef CORELIB__SEQDB__SEQDBVOL_HPP
-#define CORELIB__SEQDB__SEQDBVOL_HPP
+#ifndef OBJTOOLS_READERS_SEQDB__SEQDBVOL_HPP
+#define OBJTOOLS_READERS_SEQDB__SEQDBVOL_HPP
 
 /*  $Id$
  * ===========================================================================
@@ -115,6 +115,6 @@ private:
 
 END_NCBI_SCOPE
 
-#endif // CORELIB__SEQDB__SEQDBVOL_HPP
+#endif // OBJTOOLS_READERS_SEQDB__SEQDBVOL_HPP
 
 
