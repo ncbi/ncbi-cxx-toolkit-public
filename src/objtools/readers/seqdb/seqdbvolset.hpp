@@ -44,7 +44,6 @@ using namespace ncbi::objects;
 class CSeqDBVolSet : public CObject {
 public:
     CSeqDBVolSet(CSeqDBMemPool        & mempool,
-                 const string         & dbpath,
                  const vector<string> & vol_names,
                  char                   prot_nucl,
                  bool                   use_mmap);

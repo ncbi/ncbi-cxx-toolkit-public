@@ -32,9 +32,9 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDBImpl::CSeqDBImpl(const string & dbpath, const string & db_name_list, char prot_nucl, bool use_mmap)
-    : m_Aliases (dbpath, db_name_list, prot_nucl, use_mmap),
-      m_VolSet  (m_MemPool, dbpath, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
+CSeqDBImpl::CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mmap)
+    : m_Aliases (db_name_list, prot_nucl, use_mmap),
+      m_VolSet  (m_MemPool, m_Aliases.GetVolumeNames(), prot_nucl, use_mmap)
 {
     m_Aliases.SetMasks(m_VolSet);
     
@@ -107,7 +107,7 @@ Int4 CSeqDBImpl::GetSequence(Int4 oid, const char ** buffer)
     return -1;
 }
 
-Int4 CSeqDBImpl::GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
+Int4 CSeqDBImpl::GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
 {
     Uint4 vol_oid = 0;
     if (CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {

@@ -38,9 +38,9 @@
 
 BEGIN_NCBI_SCOPE
 
-CSeqDB::CSeqDB(const string & dbpath, const string & dbname, char prot_nucl, bool use_mmap)
+CSeqDB::CSeqDB(const string & dbname, char prot_nucl, bool use_mmap)
 {
-    m_Impl = new CSeqDBImpl(dbpath, dbname, prot_nucl, use_mmap);
+    m_Impl = new CSeqDBImpl(dbname, prot_nucl, use_mmap);
 }
 
 Int4 CSeqDB::GetSeqLength(Uint4 oid)
@@ -81,7 +81,7 @@ Int4 CSeqDB::GetSequence(TOID oid, const char ** buffer)
     return m_Impl->GetSequence(oid, buffer);
 }
 
-Int4 CSeqDB::GetAmbigSeq(TOID oid, const char ** buffer, bool nucl_code)
+Int4 CSeqDB::GetAmbigSeq(TOID oid, const char ** buffer, Uint4 nucl_code)
 {
     return m_Impl->GetAmbigSeq(oid, buffer, nucl_code);
 }

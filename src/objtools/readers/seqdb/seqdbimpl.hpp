@@ -48,7 +48,7 @@ using namespace ncbi::objects;
 
 class CSeqDBImpl {
 public:
-    CSeqDBImpl(const string & dbpath, const string & db_name_list, char prot_nucl, bool use_mmap);
+    CSeqDBImpl(const string & db_name_list, char prot_nucl, bool use_mmap);
     
     ~CSeqDBImpl(void);
     
@@ -66,7 +66,7 @@ public:
     
     Int4 GetSequence(Int4 oid, const char ** buffer);
     
-    Int4 GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code);
+    Int4 GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code);
     
     void RetSequence(const char ** buffer);
     

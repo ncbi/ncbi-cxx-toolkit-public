@@ -27,6 +27,9 @@
  *
  */
 
+#include <corelib/metareg.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbifile.hpp>
 #include <objtools/readers/seqdb/seqdbcommon.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -73,8 +76,10 @@ string SeqDB_GetBaseName(string s)
     return SeqDB_GetBasePath( SeqDB_GetFileName(s) );
 }
 
-string SeqDB_CombinePath(const string & one, const string & two, char delim)
+string SeqDB_CombinePath(const string & one, const string & two)
 {
+    char delim = CFile::GetPathSeparator();
+    
     if (two.empty()) {
         return one;
     }
@@ -97,6 +102,53 @@ string SeqDB_CombinePath(const string & one, const string & two, char delim)
     return result;
 }
 
+static bool s_SeqDB_DBExists(const string & dbname, char dbtype)
+{
+    return (CFile(dbname + "." + dbtype + "al").Exists() ||
+            CFile(dbname + "." + dbtype + "in").Exists());
+}
+
+string SeqDB_FindBlastDBPath(const string & dbname, char dbtype)
+{
+    const string failed;
+    string attempt = SeqDB_CombinePath(".", dbname);
+    
+    if (s_SeqDB_DBExists(attempt, dbtype)) {
+        return attempt;
+    }
+    
+    CNcbiEnvironment env;
+    const string & blastdb(env.Get("BLASTDB"));
+    
+    if (! blastdb.empty()) {
+        attempt = SeqDB_CombinePath(blastdb, dbname);
+        
+        if (s_SeqDB_DBExists(attempt, dbtype)) {
+            return attempt;
+        }
+    }
+    
+    CMetaRegistry::SEntry sentry =
+        CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
+    
+    if (! sentry.registry) {
+        return failed;
+    }
+    
+    string regstr = sentry.registry->Get("BLAST", "BLASTDB");
+    
+    if (regstr.empty()) {
+        return failed;
+    }
+    
+    attempt = SeqDB_CombinePath(regstr, dbname);
+    
+    if (s_SeqDB_DBExists(attempt, dbtype)) {
+        return attempt;
+    }
+    
+    return failed;
+}
 
 END_NCBI_SCOPE
 

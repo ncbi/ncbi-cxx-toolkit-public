@@ -32,16 +32,13 @@
 BEGIN_NCBI_SCOPE
 
 CSeqDBVolSet::CSeqDBVolSet(CSeqDBMemPool        & mempool,
-                           const string         & dbpath,
                            const vector<string> & vol_names,
                            char                   prot_nucl,
                            bool                   use_mmap)
     : m_RecentVol(0)
 {
     for(Uint4 i = 0; i < vol_names.size(); i++) {
-        string volpath = SeqDB_CombinePath(dbpath, vol_names[i], '/');
-        
-        x_AddVolume(mempool, volpath, prot_nucl, use_mmap);
+        x_AddVolume(mempool, vol_names[i], prot_nucl, use_mmap);
         
         if (prot_nucl == kSeqTypeUnkn) {
             // Once one volume picks a prot/nucl type, enforce that

@@ -551,13 +551,13 @@ Int4 CSeqDBVol::GetSequence(Int4 oid, const char ** buffer)
     return x_GetSequence(oid, buffer);
 }
 
-Int4 CSeqDBVol::GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
+Int4 CSeqDBVol::GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
 {
     CFastMutexGuard guard(m_Lock);
     return x_GetAmbigSeq(oid, buffer, nucl_code);
 }
 
-Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
+Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, Uint4 nucl_code)
 {
     if (kSeqTypeProt == m_Idx.GetSeqType()) {
         return x_GetSequence(oid, buffer);
@@ -592,7 +592,7 @@ Int4 CSeqDBVol::x_GetAmbigSeq(Int4 oid, const char ** buffer, bool nucl_code)
             CSeqDBMapNa2ToNa4(seq_buffer, buffer_4na, base_length);
             CSeqDBRebuildDNA_4na(buffer_4na, ambchars);
             
-            if (nucl_code == kSeqDBNuclBlastNA) {
+            if (nucl_code == kSeqDBNuclBlastNA8) {
                 // Translate bytewise, in place.
                 CSeqDBMapNcbiNa4ToBlastNa(buffer_4na);
             }

@@ -60,8 +60,7 @@ public:
 
 class CSeqDBAliasNode : public CObject {
 public:
-    CSeqDBAliasNode(const string & dbpath,
-                    const string & name_list,
+    CSeqDBAliasNode(const string & name_list,
                     char           prot_nucl,
                     bool           use_mmap);
     
@@ -108,11 +107,15 @@ private:
     
     string x_MkPath(const string & dir, const string & name, char prot_nucl)
     {
-        return SeqDB_CombinePath(dir, name, '/') + "." + prot_nucl + "al";
+        return SeqDB_CombinePath(dir, name) + "." + prot_nucl + "al";
     }
     
     // Add our volumes and our subnode's volumes to the end of "vols".
     void x_GetVolumeNames(set<string> & vols);
+    
+    void x_ResolveNames(string & dbname_list,
+                        string & dbname_path,
+                        char     prot_nucl);
     
     // --- Data ---
     
@@ -129,8 +132,8 @@ private:
 
 class CSeqDBAliasFile {
 public:
-    CSeqDBAliasFile(const string & dbpath, const string & name_list, char prot_nucl, bool use_mmap)
-        : m_Node      (dbpath, name_list, prot_nucl, use_mmap)
+    CSeqDBAliasFile(const string & name_list, char prot_nucl, bool use_mmap)
+        : m_Node (name_list, prot_nucl, use_mmap)
     {
         m_Node.GetVolumeNames(m_VolumeNames);
     }

@@ -28,6 +28,7 @@
  */
 
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbifile.hpp>
 #include <algorithm>
 
 #include "seqdbalias.hpp"
@@ -48,19 +49,20 @@ BEGIN_NCBI_SCOPE
 // user-input database list as if it were an alias file containing
 // only the DBLIST specification.
 
-CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
-                                 const string & dbname_list,
+CSeqDBAliasNode::CSeqDBAliasNode(const string & dbname_list,
                                  char           prot_nucl,
                                  bool           use_mmap)
-    : m_DBPath(dbpath)
 {
+    string new_names(dbname_list);
+    x_ResolveNames(new_names, m_DBPath, prot_nucl);
+    
     set<string> recurse;
     
     if (seqdb_debug_class & debug_alias) {
         cout << "user list((" << dbname_list << "))<>";
     }
     
-    m_Values["DBLIST"] = dbname_list;
+    m_Values["DBLIST"] = new_names;
     
     x_ExpandAliases("-", prot_nucl, use_mmap, recurse);
 }
@@ -107,6 +109,91 @@ CSeqDBAliasNode::CSeqDBAliasNode(const string & dbpath,
     
     x_ReadValues(full_filename, use_mmap);
     x_ExpandAliases(dbname, prot_nucl, use_mmap, recurse);
+}
+
+// This takes the names in dbname_list, finds the path for each name,
+// and recreates a space delimited version.  This is only done during
+// topmost node construction; names supplied by the end user get this
+// treatment, lower level nodes still need absolute or relative paths
+// to specify the database locations.
+// 
+// After each name is resolved, the largest prefix is found and moved
+// to the m_DBPath variable.
+// 
+// [I'm not sure if this is really worth while; it seemed like it
+// would be and it wasn't too bad to write.  It could probably be
+// omitted in the cliff notes version. -kmb]
+
+void CSeqDBAliasNode::x_ResolveNames(string & dbname_list,
+                                     string & dbname_path,
+                                     char     prot_nucl)
+{
+    dbname_path = ".";
+    
+    vector<string> namevec;
+    NStr::Tokenize(dbname_list, " ", namevec, NStr::eMergeDelims);
+    
+    Uint4 i = 0;
+    
+    for(i = 0; i < namevec.size(); i++) {
+        namevec[i] =
+            SeqDB_FindBlastDBPath(namevec[i], prot_nucl);
+        
+        if (namevec[i].empty()) {
+            NCBI_THROW(CSeqDBException,
+                       eFileErr,
+                       "No alias or index file found.");
+        }
+    }
+    
+    Uint4 common = namevec[0].size();
+    
+    // Reduce common length to length of min db path.
+    
+    for(i = 1; common && (i < namevec.size()); i++) {
+        if (namevec[i].size() < common) {
+            common = namevec.size();
+        }
+    }
+    
+    if (common) {
+        --common;
+    }
+    
+    // Reduce common length to largest universal prefix.
+    
+    string & first = namevec[0];
+    
+    for(i = 1; common && (i < namevec.size()); i++) {
+        string & cur = namevec[i];
+        
+        while(common && (first[common] != cur[common])) {
+            --common;
+        }
+    }
+    
+    // Adjust back to whole path component.
+    
+    while(common && (first[common] != CFile::GetPathSeparator())) {
+        --common;
+    }
+    
+    if (common) {
+        // Factor out common path components.
+        
+        dbname_path.assign(first, 0, common);
+        
+        for(i = 0; i < namevec.size(); i++) {
+            namevec[i].erase(0, common+1);
+        }
+    }
+    
+    dbname_list = namevec[0];
+    
+    for(i = 1; i < namevec.size(); i++) {
+        dbname_list += ' ';
+        dbname_list += namevec[i];
+    }
 }
 
 void CSeqDBAliasNode::x_ReadLine(const char * bp,
@@ -183,7 +270,7 @@ void CSeqDBAliasNode::x_ExpandAliases(const string & this_name,
     bool parens = false;
     
     for(Uint4 i = 0; i<namevec.size(); i++) {
-        if (namevec[i] == this_name) {
+        if (namevec[i] == SeqDB_GetBaseName(this_name)) {
             // If the base name of the alias file is also listed in
             // "dblist", it is assumed to refer to a volume instead of
             // to itself.
@@ -435,8 +522,8 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
     if ((oid_iter != m_Values.end()) &&
         (db_iter  != m_Values.end())) {
         
-        string vol_path (SeqDB_CombinePath(m_DBPath, (*db_iter).second, '/'));
-        string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second, '/'));
+        string vol_path (SeqDB_CombinePath(m_DBPath, (*db_iter).second));
+        string mask_path(SeqDB_CombinePath(m_DBPath, (*oid_iter).second));
         
         volset.AddMaskedVolume(vol_path, mask_path);
         
