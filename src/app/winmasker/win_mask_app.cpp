@@ -45,6 +45,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/reader_id1.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include "win_mask_app.hpp"
@@ -257,7 +258,9 @@ void CWinMaskApplication::Init(void)
 int CWinMaskApplication::Run (void)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CGBDataLoader::RegisterInObjectManager(*om, 0, CObjectManager::eDefault);
+    //CGBDataLoader::RegisterInObjectManager(*om, 0, CObjectManager::eDefault);
+    CGBDataLoader::RegisterInObjectManager(
+        *om, new CId1Reader, CObjectManager::eDefault);
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();
 
@@ -377,6 +380,9 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.6  2005/03/24 18:43:19  morgulis
+ * Change to suppress an error message from GenBank data loader.
+ *
  * Revision 1.5  2005/03/24 16:50:21  morgulis
  * -ids and -exclude-ids options can be applied in Stage 1 and Stage 2.
  *
