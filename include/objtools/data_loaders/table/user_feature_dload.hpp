@@ -54,6 +54,28 @@ public:
         eBeginIsOne = 1
     } EOffset;
 
+    struct SUsrFeatParam
+    {
+        SUsrFeatParam(const string&           input_file,
+                      const string&           temp_file,
+                      bool                    delete_file,
+                      EOffset                 offset,
+                      const string&           type = string(),
+                      const objects::CSeq_id* given_id = 0)
+            : m_InputFile(input_file),
+              m_TempFile(temp_file),
+              m_DeleteFile(delete_file),
+              m_Offset(offset),
+              m_Type(type),
+              m_GivenId(given_id) {}
+        string                  m_InputFile;
+        string                  m_TempFile;
+        bool                    m_DeleteFile;
+        EOffset                 m_Offset;
+        string                  m_Type;
+        const objects::CSeq_id* m_GivenId;
+    };
+
     typedef objects::SRegisterLoaderInfo<CUsrFeatDataLoader>
         TRegisterLoaderInfo;
     static TRegisterLoaderInfo RegisterInObjectManager(
@@ -68,13 +90,7 @@ public:
         objects::CObjectManager::eNonDefault,
         objects::CObjectManager::TPriority priority =
         objects::CObjectManager::kPriority_NotSet);
-    static string GetLoaderNameFromArgs(
-        const string& input_file,
-        const string& temp_file,
-        bool delete_file,
-        EOffset offset,
-        const string& type = string(),
-        const objects::CSeq_id* given_id = 0);
+    static string GetLoaderNameFromArgs(const SUsrFeatParam& param);
 
     // Request features from our database corresponding to a given
     // CSeq_id_Handle
@@ -83,13 +99,12 @@ public:
     // Request an annot by CSeq_id_Handle
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id_Handle& idh);
 private:
+    typedef objects::CParamLoaderMaker<CUsrFeatDataLoader,
+                                       SUsrFeatParam> TMaker;
+    friend class objects::CParamLoaderMaker<CUsrFeatDataLoader, SUsrFeatParam>;
+
     CUsrFeatDataLoader(const string& loader_name,
-                       const string& input_file,
-                       const string& temp_file,
-                       bool delete_file,
-                       EOffset offset,
-                       const string& type,
-                       const objects::CSeq_id* given_id);
+                       const SUsrFeatParam& param);
 
     enum {
         eUnknown = -1,
@@ -150,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/07/28 15:31:44  grichenk
+ * Improved MT-safety of RegisterInObjectManager(), simplified the code.
+ *
  * Revision 1.4  2004/07/26 14:13:31  grichenk
  * RegisterInObjectManager() return structure instead of pointer.
  * Added CObjectManager methods to manipuilate loaders.
