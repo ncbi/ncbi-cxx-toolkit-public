@@ -133,6 +133,7 @@ void CDemoApp::Init(void)
 
 
     arg_desc->AddFlag("seq_map", "scan SeqMap on full depth");
+    arg_desc->AddFlag("print_tse", "print TSE with sequence");
     arg_desc->AddFlag("print_features", "print all found features");
     arg_desc->AddFlag("only_features", "do only one scan of features");
     arg_desc->AddFlag("get_mapped_location", "get mapped location");
@@ -238,6 +239,7 @@ int CDemoApp::Run(void)
     int repeat_count = args["count"].AsInteger();
     int pause = args["pause"].AsInteger();
     bool only_features = args["only_features"];
+    bool print_tse = args["print_tse"];
     bool print_features = args["print_features"];
     bool get_mapped_location = args["get_mapped_location"];
     bool get_original_feature = args["get_original_feature"];
@@ -432,6 +434,13 @@ int CDemoApp::Run(void)
             NcbiCout << "    " << idh.AsString() << NcbiEndl;
         }
     }}
+
+    if ( print_tse ) {
+        NcbiCout << "-------------------- TSE --------------------\n";
+        NcbiCout << MSerial_AsnText <<
+            *handle.GetTopLevelEntry().GetCompleteSeq_entry() << '\n';
+        NcbiCout << "-------------------- END --------------------\n";
+    }
 
     CSeq_id_Handle master_id = CSeq_id_Handle::GetHandle(*id);
 
@@ -750,6 +759,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/04/08 14:11:57  vasilche
+* Added option to dump loaded Seq-entry.
+*
 * Revision 1.62  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more
