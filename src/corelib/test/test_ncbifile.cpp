@@ -55,53 +55,53 @@ static void s_TEST_SplitPath(void)
     
 #if defined(NCBI_OS_MSWIN)
     CFile::SplitPath("c:\\windows\\command\\win.ini", &dir, &title, &ext);
-    _VERIFY( dir   == "c:\\windows\\command\\" );
-    _VERIFY( title == "win" );
-    _VERIFY( ext   == ".ini" );
+    _ASSERT( dir   == "c:\\windows\\command\\" );
+    _ASSERT( title == "win" );
+    _ASSERT( ext   == ".ini" );
 
     path = CFile::MakePath("c:\\windows\\", "win.ini");
-    _VERIFY( path == "c:\\windows\\win.ini" );
+    _ASSERT( path == "c:\\windows\\win.ini" );
 
     CFile::SplitPath("c:win.ini", &dir, &title, &ext);
-    _VERIFY( dir   == "c:" );
-    _VERIFY( title == "win" );
-    _VERIFY( ext   == ".ini" );
+    _ASSERT( dir   == "c:" );
+    _ASSERT( title == "win" );
+    _ASSERT( ext   == ".ini" );
 
     path = CFile::MakePath("c:", "win", "ini");
-    _VERIFY( path == "c:win.ini" );
+    _ASSERT( path == "c:win.ini" );
 
     CFile f("c:\\dir\\subdir\\file.ext");
-    _VERIFY( f.GetDir()  == "c:\\dir\\subdir\\" );
-    _VERIFY( f.GetName() == "file.ext" );
-    _VERIFY( f.GetBase() == "file" );
-    _VERIFY( f.GetExt()  == ".ext" );
+    _ASSERT( f.GetDir()  == "c:\\dir\\subdir\\" );
+    _ASSERT( f.GetName() == "file.ext" );
+    _ASSERT( f.GetBase() == "file" );
+    _ASSERT( f.GetExt()  == ".ext" );
 
 #elif defined(NCBI_OS_UNIX)
 
     CFile::SplitPath("/usr/lib/any.other.lib", &dir, &title, &ext);
-    _VERIFY( dir   == "/usr/lib/" );
-    _VERIFY( title == "any.other" );
-    _VERIFY( ext   == ".lib" );
+    _ASSERT( dir   == "/usr/lib/" );
+    _ASSERT( title == "any.other" );
+    _ASSERT( ext   == ".lib" );
     
     path = CFile::MakePath("/dir/subdir", "file", "ext");
-    _VERIFY( path == "/dir/subdir/file.ext" );
+    _ASSERT( path == "/dir/subdir/file.ext" );
 
     CFile f("/usr/lib/any.other.lib");
-    _VERIFY( f.GetDir()  == "/usr/lib/" );
-    _VERIFY( f.GetName() == "any.other.lib" );
-    _VERIFY( f.GetBase() == "any.other" );
-    _VERIFY( f.GetExt()  == ".lib" );
+    _ASSERT( f.GetDir()  == "/usr/lib/" );
+    _ASSERT( f.GetName() == "any.other.lib" );
+    _ASSERT( f.GetBase() == "any.other" );
+    _ASSERT( f.GetExt()  == ".lib" );
 
 #elif defined(NCBI_OS_MAC)
 	CFile::SplitPath("Hard Disk:Folder:1984.mov", &dir, &title, &ext);
-    _VERIFY( dir  == "Hard Disk:Folder:" );
-    _VERIFY( title == "1984" );
-    _VERIFY( ext  == ".mov" );
+    _ASSERT( dir  == "Hard Disk:Folder:" );
+    _ASSERT( title == "1984" );
+    _ASSERT( ext  == ".mov" );
     
     path = CFile::MakePath("Hard Disk:Folder:",  "file", "ext");
-    _VERIFY( path == "Hard Disk:Folder:file.ext" );
+    _ASSERT( path == "Hard Disk:Folder:file.ext" );
     path = CFile::MakePath("Hard Disk:Folder",   "file", "ext");
-    _VERIFY( path == "Hard Disk:Folder:file.ext" );
+    _ASSERT( path == "Hard Disk:Folder:file.ext" );
     
 #endif
 }
@@ -118,105 +118,105 @@ static void s_TEST_CheckPath(void)
     // IsAbsolutePath() test
 
 #if defined(NCBI_OS_MSWIN)
-    _VERIFY( d.IsAbsolutePath("c:\\") );
-    _VERIFY( d.IsAbsolutePath("c:\\file") );
-    _VERIFY( d.IsAbsolutePath("c:file") );
-    _VERIFY( d.IsAbsolutePath("\\\\machine\\dir") );
-    _VERIFY( d.IsAbsolutePath("\\file") );
-    _VERIFY(!d.IsAbsolutePath("file") );
-    _VERIFY(!d.IsAbsolutePath(".\\file") );
-    _VERIFY(!d.IsAbsolutePath("..\\file") );
-    _VERIFY(!d.IsAbsolutePath("dir\\file") );
+    _ASSERT( d.IsAbsolutePath("c:\\") );
+    _ASSERT( d.IsAbsolutePath("c:\\file") );
+    _ASSERT( d.IsAbsolutePath("c:file") );
+    _ASSERT( d.IsAbsolutePath("\\\\machine\\dir") );
+    _ASSERT( d.IsAbsolutePath("\\file") );
+    _ASSERT(!d.IsAbsolutePath("file") );
+    _ASSERT(!d.IsAbsolutePath(".\\file") );
+    _ASSERT(!d.IsAbsolutePath("..\\file") );
+    _ASSERT(!d.IsAbsolutePath("dir\\file") );
 #elif defined(NCBI_OS_UNIX)
-    _VERIFY( d.IsAbsolutePath("/") );
-    _VERIFY( d.IsAbsolutePath("/file") );
-    _VERIFY( d.IsAbsolutePath("/dir/dir") );
-    _VERIFY(!d.IsAbsolutePath("file") );
-    _VERIFY(!d.IsAbsolutePath("./file") );
-    _VERIFY(!d.IsAbsolutePath("../file") );
-    _VERIFY(!d.IsAbsolutePath("dir/file") );
+    _ASSERT( d.IsAbsolutePath("/") );
+    _ASSERT( d.IsAbsolutePath("/file") );
+    _ASSERT( d.IsAbsolutePath("/dir/dir") );
+    _ASSERT(!d.IsAbsolutePath("file") );
+    _ASSERT(!d.IsAbsolutePath("./file") );
+    _ASSERT(!d.IsAbsolutePath("../file") );
+    _ASSERT(!d.IsAbsolutePath("dir/file") );
 #elif defined(NCBI_OS_MAC)
-    _VERIFY( d.IsAbsolutePath("HD:") );
-    _VERIFY( d.IsAbsolutePath("HD:file") );
-    _VERIFY(!d.IsAbsolutePath("file") );
-    _VERIFY(!d.IsAbsolutePath(":file") );
-    _VERIFY(!d.IsAbsolutePath(":file:file") );
+    _ASSERT( d.IsAbsolutePath("HD:") );
+    _ASSERT( d.IsAbsolutePath("HD:file") );
+    _ASSERT(!d.IsAbsolutePath("file") );
+    _ASSERT(!d.IsAbsolutePath(":file") );
+    _ASSERT(!d.IsAbsolutePath(":file:file") );
 #endif
 
     // Convert path to OS dependent test
 
-    _VERIFY( d.ConvertToOSPath("")             == "" );
-    _VERIFY( d.ConvertToOSPath("c:\\file")     == "c:\\file" );
-    _VERIFY( d.ConvertToOSPath("/dir/file")    == "/dir/file" );
-    _VERIFY( d.ConvertToOSPath("dir:file")     == "dir:file" );
+    _ASSERT( d.ConvertToOSPath("")             == "" );
+    _ASSERT( d.ConvertToOSPath("c:\\file")     == "c:\\file" );
+    _ASSERT( d.ConvertToOSPath("/dir/file")    == "/dir/file" );
+    _ASSERT( d.ConvertToOSPath("dir:file")     == "dir:file" );
 #if defined(NCBI_OS_MSWIN)
-    _VERIFY( d.ConvertToOSPath("dir")          == "dir" );
-    _VERIFY( d.ConvertToOSPath("dir\\file")    == "dir\\file" );
-    _VERIFY( d.ConvertToOSPath("dir/file")     == "dir\\file" );
-    _VERIFY( d.ConvertToOSPath(":dir:file")    == "dir\\file" );
-    _VERIFY( d.ConvertToOSPath(":dir::file")   == "dir\\..\\file" );
-    _VERIFY( d.ConvertToOSPath(":dir:::file")  == "dir\\..\\..\\file" );
-    _VERIFY( d.ConvertToOSPath("./dir/file")   == ".\\dir\\file" );
-    _VERIFY( d.ConvertToOSPath("../file")      == "..\\file" );
-    _VERIFY( d.ConvertToOSPath("../../file")   == "..\\..\\file" );
+    _ASSERT( d.ConvertToOSPath("dir")          == "dir" );
+    _ASSERT( d.ConvertToOSPath("dir\\file")    == "dir\\file" );
+    _ASSERT( d.ConvertToOSPath("dir/file")     == "dir\\file" );
+    _ASSERT( d.ConvertToOSPath(":dir:file")    == "dir\\file" );
+    _ASSERT( d.ConvertToOSPath(":dir::file")   == "dir\\..\\file" );
+    _ASSERT( d.ConvertToOSPath(":dir:::file")  == "dir\\..\\..\\file" );
+    _ASSERT( d.ConvertToOSPath("./dir/file")   == ".\\dir\\file" );
+    _ASSERT( d.ConvertToOSPath("../file")      == "..\\file" );
+    _ASSERT( d.ConvertToOSPath("../../file")   == "..\\..\\file" );
 #elif defined(NCBI_OS_UNIX)
-    _VERIFY( d.ConvertToOSPath("dir")          == "dir" );
-    _VERIFY( d.ConvertToOSPath("dir\\file")    == "dir/file" );
-    _VERIFY( d.ConvertToOSPath("dir/file")     == "dir/file" );
-    _VERIFY( d.ConvertToOSPath(":dir:file")    == "dir/file" );
-    _VERIFY( d.ConvertToOSPath(":dir::file")   == "dir/../file" );
-    _VERIFY( d.ConvertToOSPath(".\\dir\\file") == "./dir/file" );
-    _VERIFY( d.ConvertToOSPath("..\\file")     == "../file" );
-    _VERIFY( d.ConvertToOSPath("..\\..\\file") == "../../file" );
+    _ASSERT( d.ConvertToOSPath("dir")          == "dir" );
+    _ASSERT( d.ConvertToOSPath("dir\\file")    == "dir/file" );
+    _ASSERT( d.ConvertToOSPath("dir/file")     == "dir/file" );
+    _ASSERT( d.ConvertToOSPath(":dir:file")    == "dir/file" );
+    _ASSERT( d.ConvertToOSPath(":dir::file")   == "dir/../file" );
+    _ASSERT( d.ConvertToOSPath(".\\dir\\file") == "./dir/file" );
+    _ASSERT( d.ConvertToOSPath("..\\file")     == "../file" );
+    _ASSERT( d.ConvertToOSPath("..\\..\\file") == "../../file" );
 #elif defined(NCBI_OS_MAC)
-    _VERIFY( d.ConvertToOSPath("dir")          == ":dir" );
-    _VERIFY( d.ConvertToOSPath("dir\\file")    == ":dir:file" );
-    _VERIFY( d.ConvertToOSPath("dir/file")     == ":dir:file" );
-    _VERIFY( d.ConvertToOSPath(":dir:file")    == ":dir:file" );
-    _VERIFY( d.ConvertToOSPath("./dir/file")   == ":dir:file" );
-    _VERIFY( d.ConvertToOSPath("../file")      == "::file" );
-    _VERIFY( d.ConvertToOSPath("../../file")   == ":::file" );
-    _VERIFY( d.ConvertToOSPath("../.././../file")   == "::::file" );
+    _ASSERT( d.ConvertToOSPath("dir")          == ":dir" );
+    _ASSERT( d.ConvertToOSPath("dir\\file")    == ":dir:file" );
+    _ASSERT( d.ConvertToOSPath("dir/file")     == ":dir:file" );
+    _ASSERT( d.ConvertToOSPath(":dir:file")    == ":dir:file" );
+    _ASSERT( d.ConvertToOSPath("./dir/file")   == ":dir:file" );
+    _ASSERT( d.ConvertToOSPath("../file")      == "::file" );
+    _ASSERT( d.ConvertToOSPath("../../file")   == ":::file" );
+    _ASSERT( d.ConvertToOSPath("../.././../file")   == "::::file" );
 #endif
 
     // ConcatPath() test
 
 #if defined(NCBI_OS_MSWIN)
-    _VERIFY( d.ConcatPath("c:", "file")     == "c:file");
-    _VERIFY( d.ConcatPath("dir", "file")    == "dir\\file");
-    _VERIFY( d.ConcatPath("dir", "\\file")  == "dir\\file");
-    _VERIFY( d.ConcatPath("dir\\", "file")  == "dir\\file");
-    _VERIFY( d.ConcatPath("\\dir\\", "file")== "\\dir\\file");
-    _VERIFY( d.ConcatPath("", "file")       == "file");
-    _VERIFY( d.ConcatPath("dir", "")        == "dir\\");
-    _VERIFY( d.ConcatPath("", "")           == "");
+    _ASSERT( d.ConcatPath("c:", "file")     == "c:file");
+    _ASSERT( d.ConcatPath("dir", "file")    == "dir\\file");
+    _ASSERT( d.ConcatPath("dir", "\\file")  == "dir\\file");
+    _ASSERT( d.ConcatPath("dir\\", "file")  == "dir\\file");
+    _ASSERT( d.ConcatPath("\\dir\\", "file")== "\\dir\\file");
+    _ASSERT( d.ConcatPath("", "file")       == "file");
+    _ASSERT( d.ConcatPath("dir", "")        == "dir\\");
+    _ASSERT( d.ConcatPath("", "")           == "");
 #elif defined(NCBI_OS_UNIX)
-    _VERIFY( d.ConcatPath("dir", "file")    == "dir/file");
-    _VERIFY( d.ConcatPath("dir", "/file")   == "dir/file");
-    _VERIFY( d.ConcatPath("dir/", "file")   == "dir/file");
-    _VERIFY( d.ConcatPath("/dir/", "file")  == "/dir/file");
-    _VERIFY( d.ConcatPath("", "file")       == "file");
-    _VERIFY( d.ConcatPath("dir", "")        == "dir/");
-    _VERIFY( d.ConcatPath("", "")           == "");
+    _ASSERT( d.ConcatPath("dir", "file")    == "dir/file");
+    _ASSERT( d.ConcatPath("dir", "/file")   == "dir/file");
+    _ASSERT( d.ConcatPath("dir/", "file")   == "dir/file");
+    _ASSERT( d.ConcatPath("/dir/", "file")  == "/dir/file");
+    _ASSERT( d.ConcatPath("", "file")       == "file");
+    _ASSERT( d.ConcatPath("dir", "")        == "dir/");
+    _ASSERT( d.ConcatPath("", "")           == "");
 #elif defined(NCBI_OS_MAC)
-    _VERIFY( d.ConcatPath("HD", "dir")      == "HD:dir");
-    _VERIFY( d.ConcatPath(":dir", "file")   == ":dir:file");
-    _VERIFY( d.ConcatPath("dir:", "file")   == "dir:file");
-    _VERIFY( d.ConcatPath("dir", ":file")   == "dir:file");
-    _VERIFY( d.ConcatPath("dir::", "file")  == "dir::file");
-    _VERIFY( d.ConcatPath("dir", "::file")  == "dir::file");
-    _VERIFY( d.ConcatPath("", "file")       == ":file");
-    _VERIFY( d.ConcatPath(":file", "")      == ":file:");
-    _VERIFY( d.ConcatPath("", "")           == ":");
+    _ASSERT( d.ConcatPath("HD", "dir")      == "HD:dir");
+    _ASSERT( d.ConcatPath(":dir", "file")   == ":dir:file");
+    _ASSERT( d.ConcatPath("dir:", "file")   == "dir:file");
+    _ASSERT( d.ConcatPath("dir", ":file")   == "dir:file");
+    _ASSERT( d.ConcatPath("dir::", "file")  == "dir::file");
+    _ASSERT( d.ConcatPath("dir", "::file")  == "dir::file");
+    _ASSERT( d.ConcatPath("", "file")       == ":file");
+    _ASSERT( d.ConcatPath(":file", "")      == ":file:");
+    _ASSERT( d.ConcatPath("", "")           == ":");
 #endif
     // Concat any OS paths
-    _VERIFY( d.ConcatPathEx("dir/", "file")     == "dir/file");
-    _VERIFY( d.ConcatPathEx("/dir/", "file")    == "/dir/file");
-    _VERIFY( d.ConcatPathEx("dir\\", ":file")   == "dir\\file");
-    _VERIFY( d.ConcatPathEx("dir\\dir", "file") == "dir\\dir\\file");
-    _VERIFY( d.ConcatPathEx("dir/", ":file")    == "dir/file");
-    _VERIFY( d.ConcatPathEx("dir/dir", "file")  == "dir/dir/file");
-    _VERIFY( d.ConcatPathEx("dir:dir", "file")  == "dir:dir:file");
+    _ASSERT( d.ConcatPathEx("dir/", "file")     == "dir/file");
+    _ASSERT( d.ConcatPathEx("/dir/", "file")    == "/dir/file");
+    _ASSERT( d.ConcatPathEx("dir\\", ":file")   == "dir\\file");
+    _ASSERT( d.ConcatPathEx("dir\\dir", "file") == "dir\\dir\\file");
+    _ASSERT( d.ConcatPathEx("dir/", ":file")    == "dir/file");
+    _ASSERT( d.ConcatPathEx("dir/dir", "file")  == "dir/dir/file");
+    _ASSERT( d.ConcatPathEx("dir:dir", "file")  == "dir:dir:file");
 }
 
 
@@ -259,29 +259,29 @@ static void s_TEST_File(void)
 {
     // Create test file 
     FILE* file = fopen("file_1", "w+");
-    _VERIFY( file );
+    _ASSERT( file );
     fputs("test data", file);
     fclose(file);
     
     CFile f("file_1");
 
     // Get file size
-    _VERIFY( f.GetLength() == 9);
-    _VERIFY( CFile("file_2").GetLength() == -1);
+    _ASSERT( f.GetLength() == 9);
+    _ASSERT( CFile("file_2").GetLength() == -1);
 
     // Check the file exists
-    _VERIFY( f.Exists() );
-    _VERIFY( !CFile("file_2").Exists() );
+    _ASSERT( f.Exists() );
+    _ASSERT( !CFile("file_2").Exists() );
 
     // Rename the file
-    _VERIFY( f.Rename("file_2") );
+    _ASSERT( f.Rename("file_2") );
 
     // Status
     CDirEntry::EType file_type;
     file_type = f.GetType(); 
     CDirEntry::TMode user, group, other;
     user = group = other = 0;
-    _VERIFY ( f.GetMode(&user, &group, &other) );
+    _ASSERT ( f.GetMode(&user, &group, &other) );
     cout << "File type : " << file_type << endl;
     cout << "File mode : "
          << ((user  & CDirEntry::fRead)    ? "r" : "-")
@@ -296,20 +296,20 @@ static void s_TEST_File(void)
          << endl;
     
     // Remove the file
-    _VERIFY( f.Remove() );
+    _ASSERT( f.Remove() );
 
     // Check the file exists
-    _VERIFY( !CFile("file_1").Exists() );
-    _VERIFY( !CFile("file_2").Exists() );
+    _ASSERT( !CFile("file_1").Exists() );
+    _ASSERT( !CFile("file_2").Exists() );
 
     // Create temporary file
     fstream* stream = CFile::CreateTmpFile();
-    _VERIFY( stream );
+    _ASSERT( stream );
     *stream << "test data";
     delete stream;
 
     stream = CFile::CreateTmpFile("test.tmp");
-    _VERIFY( stream );
+    _ASSERT( stream );
     *stream << "test data";
     delete stream;
 
@@ -339,37 +339,37 @@ static void s_TEST_Dir(void)
     CDirEntry("dir_1").Remove();
     
     // Create directory
-    _VERIFY( CDir("dir_1").Create() );
-    _VERIFY( !CDir("dir_1").Create() );
+    _ASSERT( CDir("dir_1").Create() );
+    _ASSERT( !CDir("dir_1").Create() );
 
     // Create file in the directory
     FILE* file = fopen(REL "dir_1" SEP "file_1", "w+");
-    _VERIFY( file );
+    _ASSERT( file );
     fclose(file);
 
     // Check the directory exists
-    _VERIFY( CDir("dir_1").Exists() );
-    _VERIFY( !CDir("dir_2").Exists() );
-    _VERIFY( CDirEntry("dir_1").Exists() );
-    _VERIFY( CDirEntry(REL"dir_1" SEP "file_1").Exists() );
+    _ASSERT( CDir("dir_1").Exists() );
+    _ASSERT( !CDir("dir_2").Exists() );
+    _ASSERT( CDirEntry("dir_1").Exists() );
+    _ASSERT( CDirEntry(REL"dir_1" SEP "file_1").Exists() );
 
     // Check entry type
-    _VERIFY( CDirEntry("dir_1").IsDir() );
-    _VERIFY( !CDirEntry("dir_1").IsFile() );
-    _VERIFY( CDirEntry(REL "dir_1" SEP "file_1").IsFile() );
-    _VERIFY( !CDirEntry(REL "dir_1" SEP "file_1").IsDir() );
+    _ASSERT( CDirEntry("dir_1").IsDir() );
+    _ASSERT( !CDirEntry("dir_1").IsFile() );
+    _ASSERT( CDirEntry(REL "dir_1" SEP "file_1").IsFile() );
+    _ASSERT( !CDirEntry(REL "dir_1" SEP "file_1").IsDir() );
     
     // Rename the directory
-    _VERIFY( CDir("dir_1").Rename("dir_2") );
+    _ASSERT( CDir("dir_1").Rename("dir_2") );
 
     // Remove the directory
-    _VERIFY( !CDirEntry("dir_2").Remove(CDirEntry::eOnlyEmpty) );
-    _VERIFY( CFile(REL "dir_2" SEP "file_1").Remove() );
-    _VERIFY( CDir("dir_2").Remove(CDir::eOnlyEmpty) );
+    _ASSERT( !CDirEntry("dir_2").Remove(CDirEntry::eOnlyEmpty) );
+    _ASSERT( CFile(REL "dir_2" SEP "file_1").Remove() );
+    _ASSERT( CDir("dir_2").Remove(CDir::eOnlyEmpty) );
 
     // Check the directory exists
-    _VERIFY( !CDir("dir_1").Exists() );
-    _VERIFY( !CDir("dir_2").Exists() );
+    _ASSERT( !CDir("dir_1").Exists() );
+    _ASSERT( !CDir("dir_2").Exists() );
 
     // Current directory list
     CDir dir(CWD);
@@ -383,36 +383,81 @@ static void s_TEST_Dir(void)
     cout << endl;
 
     // Create dir structure for deletion
-    _VERIFY( CDir("dir_3").Create() );
-    _VERIFY( CDir(REL "dir_3" SEP "subdir_1").Create() );
-    _VERIFY( CDir(REL "dir_3" SEP "subdir_2").Create() );
+    _ASSERT( CDir("dir_3").Create() );
+    _ASSERT( CDir(REL "dir_3" SEP "subdir_1").Create() );
+    _ASSERT( CDir(REL "dir_3" SEP "subdir_2").Create() );
     
     file = fopen(REL "dir_3" SEP "file", "w+");
-    _VERIFY( file );
+    _ASSERT( file );
     fclose(file);
     file = fopen(REL "dir_3" SEP "subdir_1" SEP "file", "w+");
-    _VERIFY( file );
+    _ASSERT( file );
     fclose(file);
 
     // Delete dir
     dir.Reset("dir_3");
-    _VERIFY( !dir.Remove(CDir::eOnlyEmpty) );
-    _VERIFY( dir.Exists() );
+    _ASSERT( !dir.Remove(CDir::eOnlyEmpty) );
+    _ASSERT( dir.Exists() );
 
-    _VERIFY( !dir.Remove(CDir::eNonRecursive) );
-    _VERIFY( dir.Exists() );
-    _VERIFY( CDir(REL "dir_3" SEP "subdir_1").Exists() );
-    _VERIFY( CFile(REL "dir_3" SEP "subdir_1" SEP "file").Exists() );
-    _VERIFY( !CFile(REL "dir_3" SEP "file").Exists() );
+    _ASSERT( !dir.Remove(CDir::eNonRecursive) );
+    _ASSERT( dir.Exists() );
+    _ASSERT( CDir(REL "dir_3" SEP "subdir_1").Exists() );
+    _ASSERT( CFile(REL "dir_3" SEP "subdir_1" SEP "file").Exists() );
+    _ASSERT( !CFile(REL "dir_3" SEP "file").Exists() );
 
-    _VERIFY( dir.Remove(CDir::eRecursive) );
-    _VERIFY( !dir.Exists() );
+    _ASSERT( dir.Remove(CDir::eRecursive) );
+    _ASSERT( !dir.Exists() );
     
     // Home dir
     string homedir = CDir::GetHome();
-    _VERIFY ( !homedir.empty() );
+    _ASSERT ( !homedir.empty() );
     cout << homedir << endl;
 }
+
+
+/////////////////////////////////
+// Memory mapping
+//
+
+static void s_TEST_MemoryFile(void)
+{
+    static const char   s_FileName[] = "file.tmp";
+    static const char   s_Data[]     = "test data";
+    static const size_t s_DataLen   = sizeof(s_Data) - 1;
+
+    // Create test file 
+    FILE* file = fopen(s_FileName, "w+");
+    _ASSERT( file );
+    fputs("test data", file);
+    fclose(file);
+    
+    // Check if the file exists now
+    CFile f(s_FileName);
+    _ASSERT( f.Exists() );
+    _ASSERT( f.GetLength() == s_DataLen );
+
+    {{
+        // Map file into memory
+        CMemoryFile fm1(s_FileName);
+        _ASSERT( fm1.GetSize() == s_DataLen );
+        _ASSERT( memcmp(fm1.GetPtr(), s_Data, s_DataLen) == 0 );
+
+        // Map second copy of file into memory
+        CMemoryFile fm2(s_FileName);
+        _ASSERT( fm1.GetSize() == fm2.GetSize() );
+        _ASSERT( memcmp(fm1.GetPtr(), fm2.GetPtr(), fm2.GetSize()) == 0 );
+
+        // Unmap second copy
+        _ASSERT( fm2.Unmap() );
+        _ASSERT( fm2.GetSize() == -1 );
+        _ASSERT( fm2.GetPtr()    ==  0 );
+        _ASSERT( fm2.Unmap() );
+    }}
+  
+    // Remove the file
+    _ASSERT( f.Remove() );
+}
+
 
 
 ////////////////////////////////
@@ -451,6 +496,9 @@ int CTest::Run(void)
     // CDir
     s_TEST_Dir();
 
+    // CMemoryFile
+    s_TEST_MemoryFile();
+
     cout << endl;
     cout << "TEST execution completed successfully!" << endl << endl;
     return 0;
@@ -469,6 +517,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2002/04/01 18:50:18  ivanov
+ * Added test for class CMemoryFile
+ *
  * Revision 1.12  2002/03/25 17:08:19  ucko
  * Centralize treatment of Cygwin as Unix rather than Windows in configure.
  *
