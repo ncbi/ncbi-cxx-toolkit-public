@@ -208,8 +208,8 @@ BlastInitialWordParametersFree(BlastInitialWordParameters* parameters);
  * @param word_options The initial word options [in]
  * @param hit_params The hit saving options (needed to calculate cutoff score 
  *                    for ungapped extensions) [in]
- * @param extension_method how will ungapped extensions be done? Should
- *        be obtained from LookupTableWrapGetBestExtendMethod [in]
+ * @param lookup_wrap contains lookup table so the proper extension 
+ *        method can be set [in]
  * @param sbp Statistical (Karlin-Altschul) information [in]
  * @param query_info Query information [in]
  * @param subject_length Average subject sequence length [in]
