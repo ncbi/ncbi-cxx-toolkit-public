@@ -44,12 +44,27 @@
 
 BEGIN_NCBI_SCOPE
 
+
+// Nucleotides: IUPACna coding
+
 static const char nucleotides [] = 
-         { 'A', 'G', 'T', 'C', 'N' };
+{ 
+    // base set
+    'A', 'G', 'T', 'C',
+
+    // extensions - ambiguity characters
+    'B', 'D', 'H', 'K', 
+    'M', 'N', 'R', 'S', 
+    'V', 'W', 'Y'
+};
+
+
+// Aminoacids: IUPACaa
 
 static const char aminoacids [] = 
          { 'A', 'R', 'N', 'D', 'C', 'Q', 'E', 'G', 'H', 'I', 'L', 'K', 'M',
            'F', 'P', 'S', 'T', 'W', 'Y', 'V', 'B', 'Z', 'X' };
+
 
 static const size_t kBlosumSize = sizeof aminoacids;
 static const char matrix_blosum62[kBlosumSize][kBlosumSize] = {
@@ -107,6 +122,12 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
                    eBadParameter,
                    "Zero length specified for sequence(s)");
 
+    if(double(len1)*len2 > kMax_UInt)
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eMemoryLimit,
+                   "Memory limit exceeded");
+
     x_LoadScoringMatrix();
 
     size_t iErrPos1 = x_CheckSequence(seq1, len1);
@@ -126,7 +147,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
         ostrstream oss;
         oss << "The second sequence is inconsistent with the current "
             << "scoring matrix type. Symbol " << seq2[iErrPos2] << " at "
-            << iErrPos1;
+            << iErrPos2;
         string message = CNcbiOstrstreamToString(oss);
         NCBI_THROW(
                    CNWAlignerException,
@@ -234,7 +255,6 @@ int CNWAligner::Run()
 
         TScore wg2 = m_Wg, ws2 = m_Ws;
 
-
         for (j = 1; j < N2; ++j, ++k) {
 
             G = pV[j] + m_Matrix[ci][seq2[j]];
@@ -289,6 +309,7 @@ int CNWAligner::Run()
             m_prg_info.m_iter_done = k;
             bNowExit = m_prg_callback(&m_prg_info);
         }
+       
     }
     
     if(!bNowExit) {
@@ -782,9 +803,8 @@ void CNWAligner::x_LoadScoringMatrix()
                     m_Matrix[c1][c2] = m_Matrix[c2][c1] =
                         m_Wms;
                 }
-                m_Matrix[c1][c1] = m_Wm;
+                m_Matrix[c1][c1] = i < 4? m_Wm: m_Wms;
             }
-            m_Matrix['n']['n'] = m_Wms;
         }
         break;
 
@@ -847,6 +867,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2003/03/14 19:18:50  kapustin
+ * Add memory limit checking. Fix incorrect seq index references when reporting about incorrect input seq character. Support all characters within IUPACna coding
+ *
  * Revision 1.15  2003/03/07 13:51:11  kapustin
  * Use zero-based indices to specify seq coordinates in ASN
  *
