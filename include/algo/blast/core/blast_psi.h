@@ -42,10 +42,6 @@
 extern "C" {
 #endif
 
-#ifndef REAL_PROT_ALPHABET
-#   define REAL_PROT_ALPHABET   20
-#endif
-
 /* Defaults for PSI-BLAST options - these are application level options */
 #define PSI_MAX_NUM_PASSES      1
 #define PSI_SCALING_FACTOR      32
