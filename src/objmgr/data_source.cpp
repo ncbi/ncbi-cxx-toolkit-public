@@ -88,9 +88,11 @@ CTSE_LockingSet::~CTSE_LockingSet(void)
 }
 
 
+DEFINE_CLASS_STATIC_FAST_MUTEX(CTSE_LockingSet::sm_Mutex);
+
 CTSE_LockingSet& CTSE_LockingSet::operator=(const CTSE_LockingSet& tse_set)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(sm_Mutex);
     _ASSERT(!x_Locked());
     m_TSE_set = tse_set.m_TSE_set;
     return *this;
@@ -99,7 +101,7 @@ CTSE_LockingSet& CTSE_LockingSet::operator=(const CTSE_LockingSet& tse_set)
 
 void CTSE_LockingSet::insert(CTSE_Info* tse)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(sm_Mutex);
     if ( m_TSE_set.insert(tse).second && x_Locked() ) {
         tse->AddReference();
     }
@@ -108,7 +110,7 @@ void CTSE_LockingSet::insert(CTSE_Info* tse)
 
 void CTSE_LockingSet::erase(CTSE_Info* tse)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(sm_Mutex);
     if ( m_TSE_set.erase(tse) && x_Locked() ) {
         tse->RemoveReference();
     }
@@ -117,7 +119,7 @@ void CTSE_LockingSet::erase(CTSE_Info* tse)
 
 void CTSE_LockingSet::x_Lock(void)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(sm_Mutex);
     if ( m_LockCount++ == 0 ) {
         NON_CONST_ITERATE( TTSESet, it, m_TSE_set ) {
             (*it)->AddReference();
@@ -129,7 +131,7 @@ void CTSE_LockingSet::x_Lock(void)
 
 void CTSE_LockingSet::x_Unlock(void)
 {
-    CFastMutexGuard guard(m_Mutex);
+    CFastMutexGuard guard(sm_Mutex);
     _ASSERT(m_LockCount > 0);
     if ( --m_LockCount == 0 ) {
         NON_CONST_ITERATE( TTSESet, it, m_TSE_set ) {
@@ -1531,6 +1533,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2003/05/05 20:59:47  vasilche
+* Use one static mutex for all instances of CTSE_LockingSet.
+*
 * Revision 1.99  2003/04/29 19:51:13  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.

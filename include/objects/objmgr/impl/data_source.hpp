@@ -104,7 +104,8 @@ private:
     void x_Lock(void);
     void x_Unlock(void);
 
-    CFastMutex m_Mutex;
+    DECLARE_CLASS_STATIC_FAST_MUTEX(sm_Mutex);
+
     int        m_LockCount;
     TTSESet    m_TSE_set;
 };
@@ -455,6 +456,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2003/05/05 20:59:48  vasilche
+* Use one static mutex for all instances of CTSE_LockingSet.
+*
 * Revision 1.51  2003/04/29 19:51:12  vasilche
 * Fixed interaction of Data Loader garbage collector and TSE locking mechanism.
 * Made some typedefs more consistent.
