@@ -32,13 +32,16 @@
  */
 
 
-#warning "Please redirect your code to include @header@"
-#include <objmgr/util/lds/lds_set.hpp>
+#warning "Please redirect your code to include <objtools/lds/lds_set.hpp>"
+#include <objtools/lds/lds_set.hpp>
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/02 19:24:12  ucko
+ * Reflect correct new location under objtools.
+ *
  * Revision 1.2  2003/06/02 16:01:35  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr
