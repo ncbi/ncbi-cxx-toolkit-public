@@ -49,6 +49,7 @@ public:
 	eCannotReadFile,
 	eErrorReadingIndexFile,
 	eBadData,
+	eNoHits,
 	eGeneral
     };
     virtual const char* GetErrCodeString(void) const {
@@ -65,6 +66,8 @@ public:
             return "Error encountered while reading index file";
         case eBadData:
             return "Error in input data";
+        case eNoHits:
+            return "Default Blast returned no hits";
         case eGeneral:
             return "General exception";
         default:
@@ -167,6 +170,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/07 13:47:37  kapustin
+ * Throw when no hits returned from Blast
+ *
  * Revision 1.3  2004/03/01 20:07:26  kapustin
  * Add eBadData type
  *

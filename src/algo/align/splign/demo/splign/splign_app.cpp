@@ -67,7 +67,7 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.06");
+  string program_name ("Splign v.1.07");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -473,6 +473,13 @@ int CSplignApp::Run()
       CSeqLoaderPairwise* pseq_loader_pw = 
           static_cast<CSeqLoaderPairwise*>(seq_loader.GetNonNullPointer());
       hit_stream.reset(x_GetPairwiseHitStream(*pseq_loader_pw));
+      if(hit_stream.get() == 0) {
+          NCBI_THROW(CSplignAppException,
+                     eNoHits,
+                     "No hits returned from Blast with the default set of parameters. "
+                     "Try running Blast externally and use the batch mode "
+                     "to feed hits to Splign.");
+      }
   }
   else {
       const string filename (args["hits"].AsString());
@@ -595,6 +602,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.26  2004/06/07 13:47:37  kapustin
+ * Throw when no hits returned from Blast
+ *
  * Revision 1.25  2004/06/03 19:30:22  kapustin
  * Specify max genomic extension ta the app level
  *
