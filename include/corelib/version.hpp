@@ -54,6 +54,9 @@ public:
 
     CVersionInfo(const CVersionInfo& version);
 
+    // virtual dtor
+    virtual ~CVersionInfo() {}
+
     // Print version info
     //    <ver_major>.<ver_minor>.<patch_level>
     //    <ver_major>.<ver_minor>.<patch_level> (<name>)
@@ -74,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/26 19:18:07  dicuccio
+ * Added empty virtual destructor
+ *
  * Revision 1.1  2002/12/26 17:11:10  ivanov
  * Initial revision
  *
