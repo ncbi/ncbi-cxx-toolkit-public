@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/03/17 18:59:47  vasilche
+* Changed CNcbiQueryResult&Iterator.
+*
 * Revision 1.3  1999/03/15 19:57:20  vasilche
 * Added CNcbiQueryResultIterator
 *
@@ -107,9 +110,21 @@ inline void CNcbiContext::ClearMsgList( void )
 inline
 void CNcbiQueryResultIterator::reset(void)
 {
-    if ( m_Object ) {
-        m_Result->FreeObject(m_Object);
+    TObject* old = m_Object;
+    if ( old ) {
+        m_Result->FreeObject(old);
         m_Object = 0;
+    }
+}
+
+inline
+void CNcbiQueryResultIterator::reset(TObject* object)
+{
+    TObject* old = m_Object;
+    if ( object != old ) {
+        if ( old )
+            m_Result->FreeObject(old);
+        m_Object = object;
     }
 }
 
@@ -122,9 +137,30 @@ CNcbiDataObject* CNcbiQueryResultIterator::release(void) const
 }
 
 inline
-CNcbiQueryResultIterator::CNcbiQueryResultIterator(TResult* result,
-                                                   TObject* object)
-    : m_Result(result), m_Object(object)
+CNcbiQueryResultIterator::CNcbiQueryResultIterator(TResult* result)
+    : m_Result(result), m_Object(0)
+{
+    if ( m_Result )
+        m_Result->FirstObject(*this);
+}
+
+inline
+CNcbiQueryResultIterator::CNcbiQueryResultIterator(TResult* result, TSize index)
+    : m_Result(result), m_Object(0)
+{
+    if ( m_Result )
+        m_Result->FirstObject(*this, index);
+}
+
+inline
+CNcbiQueryResultIterator::CNcbiQueryResultIterator(bool, TResult* result)
+    : m_Result(result), m_Object(0)
+{
+}
+
+inline
+CNcbiQueryResultIterator::CNcbiQueryResultIterator(void)
+    : m_Result(0), m_Object(0)
 {
 }
 
@@ -145,9 +181,8 @@ CNcbiQueryResultIterator&
 CNcbiQueryResultIterator::operator =(const TIterator& i)
 {
     if ( &i != this ) {
-        reset();
+        reset(i.release());
         m_Result = i.m_Result;
-        m_Object = i.release();
     }
     return *this;
 }
@@ -156,8 +191,32 @@ inline
 CNcbiQueryResultIterator& CNcbiQueryResultIterator::operator ++(void)
 {
     if ( m_Object )
-        m_Object = m_Result->NextObject(m_Object);
+        m_Result->NextObject(*this);
     return *this;
+}
+
+inline
+CNcbiQueryResult::TIterator CNcbiQueryResult::begin(void)
+{
+    return TIterator(this);
+}
+
+inline
+CNcbiQueryResult::TIterator CNcbiQueryResult::begin(TSize index)
+{
+    return TIterator(this, index);
+}
+
+inline
+CNcbiQueryResult::TIterator CNcbiQueryResult::end(void)
+{
+    return TIterator(false, this);
+}
+
+inline
+void CNcbiQueryResult::ResetObject(TIterator& obj, CNcbiDataObject* object)
+{
+    obj.reset(object);
 }
 
 #endif /* def NCBI_RES__HPP  &&  ndef NCBI_RES__INL */

@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  1999/03/17 18:59:46  vasilche
+* Changed CNcbiQueryResult&Iterator.
+*
 * Revision 1.23  1999/03/15 19:57:19  vasilche
 * Added CNcbiQueryResultIterator
 *
@@ -370,12 +373,12 @@ class CNcbiDataObject
 {
 public:
 
-  virtual ~CNcbiDataObject() {}
+    virtual ~CNcbiDataObject() {}
 
-  virtual int GetID( void ) const = 0;
-  virtual string GetType( void ) const = 0;
-
-  virtual const TReportList& GetReportList( void ) const = 0;
+    virtual int GetID( void ) const = 0;
+    virtual string GetType( void ) const = 0;
+    
+    virtual const TReportList& GetReportList( void ) const = 0;
 };
 
 //
@@ -388,14 +391,15 @@ class CNcbiQueryResultIterator
     typedef CNcbiQueryResult TResult;
     typedef CNcbiDataObject TObject;
     typedef CNcbiQueryResultIterator TIterator;
+    typedef unsigned long TSize;
 
 private:
-    inline CNcbiQueryResultIterator(TResult* result, TObject* object);
+    inline CNcbiQueryResultIterator(TResult* result);
+    inline CNcbiQueryResultIterator(TResult* result, TSize index);
+    inline CNcbiQueryResultIterator(bool end, TResult* result);
 
 public:
-    inline CNcbiQueryResultIterator(void)
-        : m_Result(0), m_Object(0)
-        { }
+    inline CNcbiQueryResultIterator(void);
 
     // pass ownership of object to this
     inline CNcbiQueryResultIterator(const TIterator& i);
@@ -438,6 +442,7 @@ private:
 
     // free current object ( for call from destructor etc.)
     inline void reset(void);
+    inline void reset(TObject* obj);
     // disown object ( for call from assignment )
     inline TObject* release(void) const;
 };
@@ -452,18 +457,21 @@ public:
     CNcbiQueryResult(void);
     virtual ~CNcbiQueryResult(void);
 
-    TIterator begin(TSize index = 0)
-        { return TIterator(this, FirstObject(index)); }
-    TIterator end(void)
-        { return TIterator(this, 0); }
+    inline TIterator begin(void);
+    inline TIterator begin(TSize index);
+    inline TIterator end(void);
 
     virtual TSize Size(void) const = 0;
 
 protected:
+    inline void ResetObject(TIterator& obj, CNcbiDataObject* object = 0);
+    
+    // should return first object in query (null if none)
+    virtual void FirstObject(TIterator& obj);
     // should return 'index' object in query (null if none)
-    virtual CNcbiDataObject* FirstObject(TSize index) = 0;
+    virtual void FirstObject(TIterator& obj, TSize index);
     // should free 'object' and return next object in query (null if none)
-    virtual CNcbiDataObject* NextObject(CNcbiDataObject* object) = 0;
+    virtual void NextObject(TIterator& obj) = 0;
     // should free 'object' (if needed)
     virtual void FreeObject(CNcbiDataObject* object);
 };

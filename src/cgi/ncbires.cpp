@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/03/17 18:59:51  vasilche
+* Changed CNcbiQueryResult&Iterator.
+*
 * Revision 1.18  1999/03/15 19:58:24  vasilche
 * Added CNcbiQueryResultIterator
 *
@@ -221,8 +224,23 @@ CNcbiQueryResult::~CNcbiQueryResult(void)
 {
 }
 
+void CNcbiQueryResult::FirstObject(TIterator& obj)
+{
+    FirstObject(obj, 0);
+}
+
+void CNcbiQueryResult::FirstObject(TIterator& obj, TSize StartPos)
+{
+    FirstObject(obj);
+    while ( obj && StartPos-- > 0 )
+        NextObject(obj);
+}
+
 void CNcbiQueryResult::FreeObject(CNcbiDataObject* object)
 {
+    _TRACE("FreeObject: " << (long)object);
+    delete object;
+    _TRACE("FreedObject: " << (long)object);
 }
 
 END_NCBI_SCOPE
