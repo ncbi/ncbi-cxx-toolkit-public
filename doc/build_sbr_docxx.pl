@@ -85,7 +85,7 @@ sub Compose_HeaderAndFooter
 sub PrepareFiles
 {
   $href1 = "<font size=-1><i>Locate <b><a href=\"$BASE_LXR/ident?i=";
-  $href2 = "&d=*\">";
+  $href2 = "&d=smart\">";
   $href3 = "</a></b> in the source code</i></font>";
 
   open(FINDDIR, "find ../.. -type d ! -name CVS | sed 's%^\.\./\.\./%%'|egrep 'include|src'|");
