@@ -128,6 +128,21 @@ private:
 ///////////////////// Helper Classes //////////////////////
 ///////////////////////////////////////////////////////////
 
+class CAlnMixSegment : public CObject
+{
+public:
+    // TStarts really belongs in CAlnMixSeq, but had to move here as
+    // part of a workaround for Compaq's compiler's bogus behavior
+    typedef map<TSeqPos, CRef<CAlnMixSegment> > TStarts;
+    typedef map<CAlnMixSeq*, TStarts::iterator> TStartIterators;
+        
+    TSeqPos         m_Len;
+    TStartIterators m_StartIts;
+    int             m_Index1;
+    int             m_Index2;
+};
+
+
 class CAlnMixSeq : public CObject
 {
 public:
@@ -140,7 +155,7 @@ public:
           m_ExtraRow(0)
     {};
 
-    typedef map<TSeqPos, CRef<CAlnMixSegment> > TStarts;
+    typedef CAlnMixSegment::TStarts TStarts;
 
     int                   m_DS_Count;
     const CBioseq_Handle* m_BioseqHandle;
@@ -167,18 +182,6 @@ public:
     }
 private:
     CRef<CSeqVector> m_SeqVector;
-};
-
-
-class CAlnMixSegment : public CObject
-{
-public:
-    typedef map<CAlnMixSeq*, CAlnMixSeq::TStarts::iterator> TStartIterators;
-        
-    TSeqPos         m_Len;
-    TStartIterators m_StartIts;
-    int             m_Index1;
-    int             m_Index2;
 };
 
 
@@ -232,6 +235,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2002/12/19 15:09:07  ucko
+* Reorder some definitions to make Compaq's C++ compiler happy.
+*
 * Revision 1.8  2002/12/19 00:06:55  todorov
 * Added optional consolidation of segments that are gapped on the query.
 *
