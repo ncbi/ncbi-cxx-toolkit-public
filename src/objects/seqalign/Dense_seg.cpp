@@ -311,8 +311,10 @@ void CDense_seg::RemapToLoc(TDim row, const CSeq_loc& loc)
             + " Seq-loc is not long enough to"
             + " cover the alignment!"
             + " Maximum row seq pos is " + NStr::IntToString(row_stop)
-            + ", while total seq-loc len is only "
-            + NStr::IntToString(ttl_loc_len);
+            + " The total seq-loc len is only "
+            + NStr::IntToString(ttl_loc_len) +
+            + ", it should be at least " + NStr::IntToString(row_stop+1)
+            + " (= max seq pos + 1).";
         NCBI_THROW(CSeqalignException, eOutOfRange, errstr);
     }
 
@@ -477,6 +479,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/09 21:57:03  todorov
+* Fixed the out-of-range exception txt
+*
 * Revision 1.9  2004/02/12 20:54:15  yazhuk
 * Fixed GetStartPos() GetStopPos() handling of empty m_Strands
 *
