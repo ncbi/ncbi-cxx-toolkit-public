@@ -475,9 +475,7 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
       /* only one alignment considered for blast[np]. */
       /* This may be changed by LinkHsps for blastx or tblastn. */
       hsp->num = 1;
-      if ((program_number == eBlastTypeTblastn ||
-           program_number == eBlastTypeRpsTblastn) && 
-          hit_options->longest_intron > 0) {
+      if (hit_options->longest_intron > 0) {
          /* For uneven version of LinkHsps, the individual e-values
             need to be calculated for each HSP. */
          hsp->evalue = 

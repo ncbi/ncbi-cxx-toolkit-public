@@ -174,15 +174,23 @@ BlastInitialWordOptionsValidate(EBlastProgramType program_number,
       }
       
       if (options->extension_method == eUpdateDiag &&
-          lookup_options->mb_template_length == 0 &&
-          (lookup_options->lut_type != MB_LOOKUP_TABLE ||
-           lookup_options->scan_step != COMPRESSION_RATIO)) {
+          lookup_options->mb_template_length == 0) {
+         if (lookup_options->lut_type != MB_LOOKUP_TABLE) {
+            Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                               "eUpdateDiag extension method works only with "
+                               "megablast lookup table");
+            return (Int2) code;
+         } else if (lookup_options->scan_step != COMPRESSION_RATIO ||
+                    lookup_options->word_size % 4 != 0) {
 
-         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
-                            "eUpdateDiag extension method works only with "
-                            "megablast lookup table and scanning stride 4");
-         return (Int2) code;
+            Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                               "eUpdateDiag extension method for contiguous"
+                               " megablast requires scanning stride 4 and"
+                               " word size divisible by 4");
+            return (Int2) code;
+         }
       }
+
       if (lookup_options->mb_template_length != 0 &&
           options->extension_method != eUpdateDiag) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
@@ -1147,6 +1155,16 @@ BlastHitSavingOptionsValidate(EBlastProgramType program_number,
 		return (Int2) code;
 	}	
 
+   if (options->longest_intron > 0 && 
+       program_number != eBlastTypeTblastn && 
+       program_number != eBlastTypeBlastx) {
+		Int4 code=2;
+		Int4 subcode=1;
+		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+         "Uneven gap linking of HSPs is allowed for blastx and tblastn only");
+		return (Int2) code;
+   }
+
 	return 0;
 }
 
@@ -1177,6 +1195,7 @@ Int2 BlastLinkHSPParametersNew(EBlastProgramType program_number,
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE_GAPPED;
    }
    params->gap_size = BLAST_GAP_SIZE;
+   params->overlap_size = BLAST_OVERLAP_SIZE;
 
    *link_hsp_params = params;
    return 0;
@@ -1270,7 +1289,8 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    if (do_sum_stats) {
       BlastLinkHSPParametersNew(program_number, gapped_calculation,
                                 &params->link_hsp_params);
-      params->link_hsp_params->longest_intron = options->longest_intron;
+      params->link_hsp_params->longest_intron = 
+         options->longest_intron / CODON_LENGTH;
    }
 
    status = BlastHitSavingParametersUpdate(program_number, 
@@ -1470,7 +1490,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 {
    double gap_prob, gap_decay_rate, x_variable, y_variable;
    Blast_KarlinBlk* kbp;
-   Int4 expected_length, gap_size, query_length;
+   Int4 expected_length, window_size, query_length;
    Int8 search_sp;
    Boolean translated_subject = (program == eBlastTypeTblastn || 
                                  program == eBlastTypeRpsTblastn || 
@@ -1481,7 +1501,7 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
 
 	/* Do this for the first context, should this be changed?? */
 	kbp = sbp->kbp[query_info->first_context];
-	gap_size = link_hsp_params->gap_size;
+	window_size = link_hsp_params->gap_size + link_hsp_params->overlap_size + 1;
 	gap_prob = link_hsp_params->gap_prob;
 	gap_decay_rate = link_hsp_params->gap_decay_rate;
    /* Use average query length */
@@ -1521,11 +1541,11 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
       adjusted for the "bayesian" possibility that both large and small gaps 
       are being checked for. */
 
-   if (search_sp > 8*gap_size*gap_size) {
+   if (search_sp > 8*window_size*window_size) {
       x_variable /= (1.0 - gap_prob + MY_EPS);
       link_hsp_params->cutoff_big_gap = 
          (Int4) floor((log(x_variable)/kbp->Lambda)) + 1;
-      x_variable = y_variable*(gap_size*gap_size);
+      x_variable = y_variable*(window_size*window_size);
       x_variable /= (gap_prob + MY_EPS);
       link_hsp_params->cutoff_small_gap = 
          MAX(ext_params->gap_trigger, 
@@ -1549,6 +1569,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.130  2004/08/16 19:45:14  dondosha
+ * Implemented uneven gap linking of HSPs for blastx
+ *
  * Revision 1.129  2004/08/12 13:01:02  madden
  * Add static function BlastFindValidKarlinBlk to look for valid Karlin blocks in an array of them, prevents use of bogus (-1) Karlin-Altschul parameters
  *
