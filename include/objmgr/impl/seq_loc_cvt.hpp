@@ -193,7 +193,7 @@ public:
     CSeq_loc_Conversion_Set(void);
 
     typedef CRange<TSeqPos> TRange;
-    typedef CRangeMap<CRef<CSeq_loc_Conversion>, TSeqPos> TRangeMap;
+    typedef CRangeMultimap<CRef<CSeq_loc_Conversion>, TSeqPos> TRangeMap;
     typedef TRangeMap::iterator TRangeIterator;
     typedef map<CSeq_id_Handle, TRangeMap> TIdMap;
 
@@ -262,6 +262,7 @@ class CSeq_align_Mapper : public CObject
 public:
     typedef CSeq_align::C_Segs::TDendiag TDendiag;
     typedef CSeq_align::C_Segs::TStd TStd;
+
     CSeq_align_Mapper(const CSeq_align& align);
     ~CSeq_align_Mapper(void) {}
 
@@ -422,6 +423,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/01/30 15:25:44  grichenk
+* Fixed alignments mapping and sorting
+*
 * Revision 1.9  2004/01/28 20:54:35  vasilche
 * Fixed mapping of annotations.
 *

@@ -716,7 +716,6 @@ void CSeq_align_Mapper::x_MapSegment(SAlignment_Segment& sseg,
     // start and stop on the original sequence
     int start = sseg.m_Rows[row_idx].m_Start;
     int stop = start + sseg.m_Len;
-    cvt.Reset();
     if ( start >= 0
         &&  cvt.ConvertInterval(start, stop, sseg.m_Rows[row_idx].m_Strand) ) {
         // At least part of the interval was converted. Calculate
@@ -776,7 +775,6 @@ bool CSeq_align_Mapper::x_ConvertSegments(TSegments& segs,
         for (int row = 0; row < ss->m_Rows.size(); ++row) {
             if (ss->m_Rows[row].m_Id == cvt.m_Src_id_Handle) {
                 x_MapSegment(*ss, row, cvt);
-                cvt.m_Partial = true;
                 res = true;
             }
         }
@@ -977,7 +975,7 @@ CSeq_loc_Conversion_Set::CSeq_loc_Conversion_Set(void)
 void CSeq_loc_Conversion_Set::Add(CSeq_loc_Conversion& cvt)
 {
     TRangeMap& ranges = m_IdMap[cvt.m_Src_id_Handle];
-    ranges[TRange(cvt.m_Src_from, cvt.m_Src_to)] = Ref(&cvt);
+    ranges.insert(TRangeMap::value_type(TRange(cvt.m_Src_from, cvt.m_Src_to), Ref(&cvt)));
 }
 
 
@@ -1310,7 +1308,9 @@ void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
     dst->Reset(new CSeq_align_Mapper(src));
     NON_CONST_ITERATE(TIdMap, id_it, m_IdMap) {
         NON_CONST_ITERATE(TRangeMap, range_it, id_it->second) {
+            range_it->second->Reset();
             (*dst)->Convert(*range_it->second);
+            m_TotalRange += range_it->second->GetTotalRange();
         }
     }
 }
@@ -1322,6 +1322,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2004/01/30 15:25:45  grichenk
+* Fixed alignments mapping and sorting
+*
 * Revision 1.14  2004/01/28 22:09:35  grichenk
 * Added CSeq_align_Mapper initialization for e_Disc
 *

@@ -1042,7 +1042,7 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
 bool CAnnotTypes_CI::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
                                         CSeq_loc_Conversion* cvt)
 {
-    _ASSERT( cvt->IsPartial() );
+    _ASSERT( cvt->IsPartial()  ||  object_ref.IsAlign() );
     object_ref.ResetLocation();
     CSeq_loc_Conversion_Set& mapping_set =
         m_DataCollector->m_AnnotMappingSet[object_ref];
@@ -1065,7 +1065,8 @@ inline
 bool CAnnotTypes_CI::x_AddObject(CAnnotObject_Ref& object_ref,
                                  CSeq_loc_Conversion* cvt)
 {
-    return ( cvt && cvt->IsPartial() )?
+    // Always map aligns through conv. set
+    return ( cvt && (cvt->IsPartial() || object_ref.IsAlign()) )?
         x_AddObjectMapping(object_ref, cvt): x_AddObject(object_ref);
 }
 
@@ -1146,7 +1147,7 @@ void CAnnotTypes_CI::x_Search(const CTSE_Info& tse,
             }
                 
             CAnnotObject_Ref annot_ref(annot_info);
-            if ( cvt ) {
+            if ( cvt  &&  !annot_ref.IsAlign() ) {
                 cvt->Convert(annot_ref,
                     m_FeatProduct ? CSeq_loc_Conversion::eProduct :
                     CSeq_loc_Conversion::eLocation);
@@ -1364,6 +1365,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.108  2004/01/30 15:25:45  grichenk
+* Fixed alignments mapping and sorting
+*
 * Revision 1.107  2004/01/28 20:54:36  vasilche
 * Fixed mapping of annotations.
 *
