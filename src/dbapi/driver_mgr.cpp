@@ -29,51 +29,6 @@
 *   
 * File Description:  Driver Manager implementation
 *
-*
-* $Log$
-* Revision 1.13  2004/05/17 21:10:28  gorelenk
-* Added include of PCH ncbi_pch.hpp
-*
-* Revision 1.12  2004/04/22 11:29:53  ivanov
-* Use pointer to driver manager instance instead auto_ptr
-*
-* Revision 1.11  2003/12/17 14:56:33  ivanov
-* Changed type of the Driver Manager instance to auto_ptr.
-* Added RemoveInstance() method.
-*
-* Revision 1.10  2003/02/10 17:30:05  kholodov
-* Fixed: forgot to add actual deletion code to DestroyDs()
-*
-* Revision 1.9  2003/02/10 17:19:27  kholodov
-* Added: DestroyDs() method
-*
-* Revision 1.8  2002/09/23 18:35:24  kholodov
-* Added: GetErrorInfo() and GetErrorAsEx() methods.
-*
-* Revision 1.7  2002/09/04 22:18:57  vakatov
-* CDriverManager::CreateDs() -- Get rid of comp.warning, improve diagnostics
-*
-* Revision 1.6  2002/07/09 17:12:29  kholodov
-* Fixed duplicate context creation
-*
-* Revision 1.5  2002/07/03 15:03:05  kholodov
-* Added: throw exception when driver cannot be loaded
-*
-* Revision 1.4  2002/04/29 19:13:13  kholodov
-* Modified: using C_DriverMgr as parent class of CDriverManager
-*
-* Revision 1.3  2002/04/02 18:16:03  ucko
-* More fixes to CDriverManager::LoadDriverDll.
-*
-* Revision 1.2  2002/04/01 22:31:40  kholodov
-* Fixed DLL entry point names
-*
-* Revision 1.1  2002/01/30 14:51:21  kholodov
-* User DBAPI implementation, first commit
-*
-*
-*
-*
 */
 
 #include <ncbi_pch.hpp>
@@ -155,7 +110,7 @@ IDataSource* CDriverManager::CreateDs(const string&        driver_name,
 
 
 IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
-                                          CNcbiRegistry* reg)
+                                          const IRegistry* reg)
 {
     list<string> names;
     NStr::Split(drivers, ":", names);
@@ -207,3 +162,52 @@ void CDriverManager::DestroyDs(const string& driver_name)
 
 
 END_NCBI_SCOPE
+
+/*
+*
+* $Log$
+* Revision 1.14  2004/12/20 16:45:34  ucko
+* Accept any IRegistry rather than specifically requiring a CNcbiRegistry.
+* Move CVS log to end.
+*
+* Revision 1.13  2004/05/17 21:10:28  gorelenk
+* Added include of PCH ncbi_pch.hpp
+*
+* Revision 1.12  2004/04/22 11:29:53  ivanov
+* Use pointer to driver manager instance instead auto_ptr
+*
+* Revision 1.11  2003/12/17 14:56:33  ivanov
+* Changed type of the Driver Manager instance to auto_ptr.
+* Added RemoveInstance() method.
+*
+* Revision 1.10  2003/02/10 17:30:05  kholodov
+* Fixed: forgot to add actual deletion code to DestroyDs()
+*
+* Revision 1.9  2003/02/10 17:19:27  kholodov
+* Added: DestroyDs() method
+*
+* Revision 1.8  2002/09/23 18:35:24  kholodov
+* Added: GetErrorInfo() and GetErrorAsEx() methods.
+*
+* Revision 1.7  2002/09/04 22:18:57  vakatov
+* CDriverManager::CreateDs() -- Get rid of comp.warning, improve diagnostics
+*
+* Revision 1.6  2002/07/09 17:12:29  kholodov
+* Fixed duplicate context creation
+*
+* Revision 1.5  2002/07/03 15:03:05  kholodov
+* Added: throw exception when driver cannot be loaded
+*
+* Revision 1.4  2002/04/29 19:13:13  kholodov
+* Modified: using C_DriverMgr as parent class of CDriverManager
+*
+* Revision 1.3  2002/04/02 18:16:03  ucko
+* More fixes to CDriverManager::LoadDriverDll.
+*
+* Revision 1.2  2002/04/01 22:31:40  kholodov
+* Fixed DLL entry point names
+*
+* Revision 1.1  2002/01/30 14:51:21  kholodov
+* User DBAPI implementation, first commit
+*
+*/
