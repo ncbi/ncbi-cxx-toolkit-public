@@ -11683,9 +11683,9 @@ fi
             X_CFLAGS="-I/usr/ncbi/include $X_CFLAGS"
             X_LIBS="-L/usr/ncbi/lib -R/usr/ncbi/lib $X_LIBS"
          fi
-	 LDFLAGS="$orig_LDFLAGS $X_LIBS"
+         LDFLAGS="$orig_LDFLAGS $X_LIBS"
          OPENGL_INCLUDE="$X_CFLAGS"
-         OPENGL_LIBS="$X_LIBS -lGL $X_ALL_LIBS"
+         OPENGL_LIBS="$X_LIBS -LGLU -lGL $X_ALL_LIBS"
          ;;
    esac
    echo "$as_me:$LINENO: checking for OpenGL" >&5
@@ -11811,7 +11811,7 @@ echo "$as_me:$LINENO: result: $ac_cv_lib_OSMesa_OSMesaCreateContext" >&5
 echo "${ECHO_T}$ac_cv_lib_OSMesa_OSMesaCreateContext" >&6
 if test $ac_cv_lib_OSMesa_OSMesaCreateContext = yes; then
   WithPackages="$WithPackages MESA";
-       OSMESA_LIBS="$X_LIBS -lOSMesa -lGL $X_ALL_LIBS"
+       OSMESA_LIBS="$X_LIBS -lOSMesa -lGLU -lGL $X_ALL_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBOSMESA 1
