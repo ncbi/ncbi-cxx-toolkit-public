@@ -45,6 +45,12 @@ CItemsInfo& CClassTypeInfoBase::GetItems(void)
 }
 
 inline
+const CItemInfo* CClassTypeInfoBase::GetItemInfo(const string& name) const
+{
+    return GetItems().GetItemInfo(GetItems().Find(name));
+}
+
+inline
 const type_info& CClassTypeInfoBase::GetId(void) const
 {
     _ASSERT(m_Id);
@@ -70,6 +76,9 @@ CClassTypeInfoBase::CIterator::CIterator(const CClassTypeInfoBase* type,
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/12/26 21:36:27  gouriano
+* corrected handling choice's XML attributes
+*
 * Revision 1.4  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2002/12/26 21:35:45  gouriano
+* corrected handling choice's XML attributes
+*
 * Revision 1.42  2002/12/26 19:32:34  gouriano
 * changed XML I/O streams to properly handle object copying
 *
@@ -881,10 +884,10 @@ void CObjectOStreamXml::EndClass(void)
 
 void CObjectOStreamXml::BeginClassMember(const CMemberId& id)
 {
-    const CClassTypeInfo* classType = dynamic_cast<const CClassTypeInfo*>
+    const CClassTypeInfoBase* classType = dynamic_cast<const CClassTypeInfoBase*>
         (FetchFrameFromTop(1).GetTypeInfo());
     _ASSERT(classType);
-    BeginClassMember(classType->GetMemberInfo(id.GetName())->GetTypeInfo(),id);
+    BeginClassMember(classType->GetItemInfo(id.GetName())->GetTypeInfo(),id);
 }
 
 void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,

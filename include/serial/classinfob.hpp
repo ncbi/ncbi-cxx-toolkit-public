@@ -73,6 +73,7 @@ public:
                            const void* memberPtr, const CTypeRef& memberType);
 
     const CItemsInfo& GetItems(void) const;
+    const CItemInfo* GetItemInfo(const string& name) const;
 
     const type_info& GetId(void) const;
 
@@ -143,6 +144,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2002/12/26 21:36:27  gouriano
+* corrected handling choice's XML attributes
+*
 * Revision 1.12  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2002/12/26 21:35:49  gouriano
+* corrected handling choice's XML attributes
+*
 * Revision 1.71  2002/12/26 19:32:34  gouriano
 * changed XML I/O streams to properly handle object copying
 *
@@ -974,7 +977,9 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
         const CMemberInfo* memberInfo =
             dynamic_cast<const CMemberInfo*>(
                 choiceType->GetVariants().GetItemInfo(index));
+        BeginClassMember(memberInfo->GetId());
         memberInfo->CopyMember(copier);
+        EndClassMember();
         index = copier.In().BeginChoiceVariant(choiceType);
         if ( index == kInvalidMember )
             copier.ThrowError(CObjectIStream::fFormatError,
