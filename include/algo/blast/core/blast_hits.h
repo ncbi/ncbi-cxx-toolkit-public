@@ -257,16 +257,6 @@ void
 Blast_HSPGetAdjustedOffsets(BlastHSP* hsp, Int4* q_start, Int4* q_end,
                             Int4* s_start, Int4* s_end);
 
-/** Comparison callback function for sorting HSPs by e-value and score, before
- * saving BlastHSPList in a BlastHitList. E-value has priority over score, 
- * because lower scoring HSPs might have lower e-values, if they are linked
- * with sum statistics.
- * E-values are compared only up to a certain precision. 
- */
-NCBI_XBLAST_EXPORT
-int
-Blast_HSPEvalueCompareCallback(const void* v1, const void* v2);
-
 /********************************************************************************
           HSPList API
 ********************************************************************************/
@@ -418,12 +408,23 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPListUniqSort(BlastHSPList* hsp_list);
 
-/** Check if HSP list is sorted by e-value, and sort if it is not. 
- * @param hsp_list HSP list to check [in] [out]
- * @return Was this list sorted coming in, or was an extra sort necessary? 
+/** Sort the HSPs in an HSP list by score. This type of sorting is done
+ * at the beginning of the traceback stage, and is needed to eliminate the effects
+ * of wrong score order because of application of sum statistics. 
+ * Checks if the HSP array is already sorted before proceeding with quicksort.
+ * @param hsp_list Structure containing array of HSPs to be sorted. [in] [out]
  */
-Boolean Blast_HSPListCheckIfSorted(BlastHSPList* hsp_list);
-   
+NCBI_XBLAST_EXPORT
+void Blast_HSPListSortByScore(BlastHSPList* hsp_list);
+
+/** Sort the HSPs in an HSP list by e-value, with scores and other criteria
+ * used to resolve ties. Checks if the HSP array is already sorted before 
+ * proceeding with quicksort.
+ * @param hsp_list Structure containing array of HSPs to be sorted. [in] [out]
+ */
+NCBI_XBLAST_EXPORT
+void Blast_HSPListSortByEvalue(BlastHSPList* hsp_list);
+
 
 /********************************************************************************
           HitList API.
