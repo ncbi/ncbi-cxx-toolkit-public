@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/04/14 20:11:56  vakatov
+* + <stdio.h>
+* Changed all "str.compare(...)" to "NStr::Compare(str, ...)"
+*
 * Revision 1.22  1999/04/14 17:28:58  vasilche
 * Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
 * As a result special parameter is added with empty name: "=cmd"
@@ -110,6 +114,7 @@
 */
 
 #include <corelib/ncbicgi.hpp>
+#include <stdio.h>
 #include <time.h>
 
 
@@ -525,7 +530,7 @@ static void s_ParseMultipartEntries(const string& boundary,
                                   str.substr(pos), 0);
         
         if ( eol == pos + boundary.size() &&
-             str.compare(pos, boundary.size(), boundary) == 0 ) {
+             NStr::Compare(str, pos, boundary.size(), boundary) == 0 ) {
             // boundary
             if ( partStart == NPOS ) // in header
                 throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
@@ -542,7 +547,7 @@ static void s_ParseMultipartEntries(const string& boundary,
             name = NcbiEmptyString;
         }
         else if ( eol == pos + boundary.size() + 2 &&
-                  str.compare(pos, boundary.size(), boundary) == 0 &&
+                  NStr::Compare(str, pos, boundary.size(), boundary) == 0  &&
                   str[eol-1] == '-' && str[eol-2] == '-') {
             // last boundary
             if ( partStart == NPOS ) // in header
@@ -561,13 +566,13 @@ static void s_ParseMultipartEntries(const string& boundary,
         else {
             if ( partStart == NPOS ) {
                // in header
-                if ( pos + NameStart.size() <= eol &&
-                     str.compare(pos, NameStart.size(), NameStart) == 0 ) {
+                if (pos + NameStart.size() <= eol  &&
+                    NStr::Compare(str, pos, NameStart.size(), NameStart) ==0) {
                     SIZE_TYPE nameStart = pos + NameStart.size();
                     SIZE_TYPE nameEnd = str.find('\"', nameStart);
                     if ( nameEnd == NPOS )
-                        throw CParseException("CCgiRequest::ParseMultipartQuery(\"" +
-                                              boundary + "\"): bad name header " + 
+                        throw CParseException("\
+CCgiRequest::ParseMultipartQuery(\"" + boundary + "\"): bad name header " + 
                                               str.substr(pos), 0);
 
                     // new name
@@ -578,7 +583,8 @@ static void s_ParseMultipartEntries(const string& boundary,
                     partStart = eol + Eol.size();
                 }
                 else {
-                    _TRACE("unknown header: \"" << str.substr(pos, eol - pos) << '"' );
+                    _TRACE("unknown header: \"" <<
+                           str.substr(pos, eol - pos) << '"' );
                 }
             }
         }
@@ -665,7 +671,7 @@ void CCgiRequest::x_Init(CNcbiIstream* istr, int argc, char** argv,
         const string& entry = i->first;
         SIZE_TYPE size = entry.size();
         // check for our case
-        if ( size > 2 && entry.compare(size - 2, 2, ".x") == 0 ) {
+        if ( size > 2 && NStr::Compare(entry, size - 2, 2, ".x") == 0 ) {
             // get base name of IMAGE
             string name = entry.substr(0, size - 2);
             // check for .y part
