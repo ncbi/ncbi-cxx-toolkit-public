@@ -66,10 +66,9 @@ public:
 
     /// One .lst file
     typedef list<SLstElement> TFileContents;
-    /// Project name/ Project contents
-    typedef map<string, TFileContents> TProjects;
-    TProjects m_Projects;
-
+    /// Project name/ file contents
+    typedef map<string, TFileContents> TElements;
+    TElements m_Elements;
 
 private:
     void Clear(void);
@@ -80,12 +79,28 @@ private:
                          TFileContents* fc);
 };
 
+class CProjProjectsSets
+{
+public:
+    // IDs (not Names!) of projects inside one set.
+    typedef set<string> TProjectsSet;
+    // set_name / ProjectSet
+    typedef map<string, TProjectsSet> TSets;
+
+    static void Create(const CProjectItemsTree& tree,
+                       const CProjProjects&     elements, 
+                       TSets*                   sets);
+};
+
 
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- * $$
+ * $Log$
+ * Revision 1.3  2004/02/18 23:34:30  gorelenk
+ * Added declaration of class CProjProjectsSets.
+ *
  * ===========================================================================
  */
 
