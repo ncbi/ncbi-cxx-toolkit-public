@@ -61,6 +61,11 @@ typedef Int4 (*GetInt4FnPtr) (void*, void*);
  * passed to user-defined implementation */
 typedef Int8 (*GetInt8FnPtr) (void*, void*);
 
+/** Function pointer typedef to return a null terminated string containing a
+ * sequence identifier. First argument is the BlastSeqSrc structure used, second
+ * argument is passed to user-defined implementation. */
+typedef char* (*GetSeqIdFnPtr) (void*, void*);
+
 /** Function pointer typedef to retrieve sequences from data structure embedded
  * in the BlastSeqSrc structure.
  * First argument is the BlastSeqSrc structure used, second argument is
@@ -121,6 +126,8 @@ BlastSeqSrcPtr BlastSeqSrcFree(BlastSeqSrcPtr bssp);
     (*GetGetTotLen(bssp))(GetDataStructure(bssp), NULL)
 #define BLASTSeqSrcGetSequence(bssp, arg) \
     (*GetGetSequence(bssp))(GetDataStructure(bssp), arg)
+#define BLASTSeqSrcGetSeqIdStr(bssp, arg) \
+    (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
 
 #define DEFINE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DEFINE_ACCESSOR(member_type, member, data_structure_type); \
@@ -140,6 +147,7 @@ DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrcPtr);
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrcPtr);
 DEFINE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrcPtr);
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrcPtr);
+DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrcPtr);
 
 #ifdef __cplusplus
 }

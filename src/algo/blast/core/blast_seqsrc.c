@@ -44,6 +44,7 @@ typedef struct BlastSeqSrc {
     GetInt4FnPtr    GetMaxSeqLen;   /**< Get length of longest seq in set */
     GetInt8FnPtr    GetTotLen;      /**< Get total length of all seqs in set */
     GetSeqBlkFnPtr  GetSequence;    /**< Retrieve individual sequence */
+    GetSeqIdFnPtr   GetSeqIdStr;    /**< Retrieve sequence identifier */
 
     void*           DataStructure;  /**< ADT holding the sequence data */
 
@@ -112,3 +113,4 @@ DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetNumSeqs, BlastSeqSrcPtr)
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetMaxSeqLen, BlastSeqSrcPtr)
 DECLARE_MEMBER_FUNCTIONS(GetInt8FnPtr, GetTotLen, BlastSeqSrcPtr)
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrcPtr)
+DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqIdStr, BlastSeqSrcPtr)
