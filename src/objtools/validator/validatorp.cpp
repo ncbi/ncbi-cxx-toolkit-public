@@ -94,11 +94,18 @@
 #include <objects/biblio/Title.hpp>
 #include <objects/biblio/Imprint.hpp>
 
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 using namespace sequence;
+
+
+bool less_seq_id(const CConstRef<CSeq_id>& id1, const CConstRef<CSeq_id>& id2)
+{
+    return id1->CompareOrdered(*id2) < 0;
+}
 
 
 // =============================================================================
@@ -1318,24 +1325,9 @@ void CValidError_imp::ReportBioseqsWithNoMolinfo(void)
 
 bool CValidError_imp::IsFarLocation(const CSeq_loc& loc) const 
 {
-    // DEBUG {
-    // For testing only!!!
-    if( AvoidPerfBottlenecks() ) {
-        return false;
-    } 
-    // } DEBUG
-
-    // !!! requires a binary search implementation
     for ( CSeq_loc_CI citer(loc); citer; ++citer ) {
-        bool found = false;
-        const CSeq_id& id = citer.GetSeq_id();
-        iterate( vector< CConstRef<CSeq_id> >, i,  m_InitialSeqIds ) {
-            if ( (*i)->Match(id) ) {
-                found = true;
-                break;
-            }
-        }
-        if ( !found ) {
+        CConstRef<CSeq_id> id(&citer.GetSeq_id());
+        if ( !binary_search(m_InitialSeqIds.begin(), m_InitialSeqIds.end(), id, less_seq_id) ) {
             return true;
         }
     }
@@ -1558,6 +1550,7 @@ void CValidError_imp::Setup(const CSeq_entry& se)
         const list< CRef< CSeq_id > >& ids = bsi->GetId();
         copy(ids.begin(), ids.end(), back_inserter(m_InitialSeqIds));
     }
+    sort(m_InitialSeqIds.begin(), m_InitialSeqIds.end(), less_seq_id);
 
     // Map features to their enclosing Seq_annot
     for ( CTypeConstIterator<CSeq_annot> ai(se); ai; ++ai ) {
@@ -1798,6 +1791,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/03/07 19:15:01  shomrat
+* Using binary search in IsFarLocation
+*
 * Revision 1.19  2003/02/24 20:18:09  shomrat
 * Pass the CValidError object to the implementation class instead of the internal TErrs vector
 *
