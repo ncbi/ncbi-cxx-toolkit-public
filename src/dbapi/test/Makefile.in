@@ -1,8 +1,8 @@
 # $Id$
 
-SUB_PROJ = driver cache lang_bind test
+APP_PROJ = dbapi-unit-test
 
-LIB_PROJ = dbapi
+REQUIRES = CPPUNIT
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
