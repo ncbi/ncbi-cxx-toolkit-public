@@ -498,11 +498,13 @@ public:
     ///   Name of the driver (dblib, id1, etc)
     /// @param version
     ///   Interface version
+    /// @param unload_dll
+    ///   Whether to unload drivers DLL in the destructor
     CPluginManager_DllResolver
     (const string&       interface_name,
      const string&       driver_name = kEmptyStr,
      const CVersionInfo& version     = CVersionInfo::kAny,
-     CDll::EAutoUnload unload_dll = CDll::eAutoUnload);
+     CDll::EAutoUnload unload_dll = CDll::eNoAutoUnload);
 
     //
     virtual ~CPluginManager_DllResolver(void);
@@ -928,6 +930,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.43  2005/03/07 14:43:15  ssikorsk
+ * Do not unload PluginManager drivers by default
+ *
  * Revision 1.42  2005/03/03 19:03:16  ssikorsk
  * Pass an 'auto_unload' parameter into CDll and CDllResolver constructors
  *

@@ -213,8 +213,12 @@ public:
     CPluginManager_DllResolver* operator()(void)
     {
         CPluginManager_DllResolver* resolver =
-            new CPluginManager_DllResolver(
-            CInterfaceVersion<objects::CReader>::GetName());
+            new CPluginManager_DllResolver
+            (CInterfaceVersion<objects::CReader>::GetName(), 
+             kEmptyStr,
+             CVersionInfo::kAny,
+             CDll::eAutoUnload);
+
         resolver->SetDllNamePrefix("ncbi");
         return resolver;
     }

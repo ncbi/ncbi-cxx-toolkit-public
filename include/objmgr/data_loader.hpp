@@ -353,8 +353,12 @@ public:
     CPluginManager_DllResolver* operator()(void)
     {
         CPluginManager_DllResolver* resolver =
-            new CPluginManager_DllResolver(
-            CInterfaceVersion<objects::CDataLoader>::GetName());
+            new CPluginManager_DllResolver
+            (CInterfaceVersion<objects::CDataLoader>::GetName(), 
+             kEmptyStr,
+             CVersionInfo::kAny,
+             CDll::eAutoUnload);
+
         resolver->SetDllNamePrefix("ncbi");
         return resolver;
     }
@@ -368,6 +372,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2005/03/07 14:43:15  ssikorsk
+* Do not unload PluginManager drivers by default
+*
 * Revision 1.41  2004/12/22 19:26:31  grichenk
 * +CDllResolver_Getter<objects::CDataLoader>
 *
