@@ -139,14 +139,14 @@ int CDbBlast::SetupSearch()
         mi_pScoreBlock = 0;
 
         status = BLAST_MainSetUp(x_eProgram, 
-                    m_OptsHandle->GetOptions().m_QueryOpts,
-                    m_OptsHandle->GetOptions().m_ScoringOpts, 
-                    m_OptsHandle->GetOptions().m_LutOpts, 
-                    m_OptsHandle->GetOptions().m_HitSaveOpts, 
-                    mi_clsQueries, mi_clsQueryInfo, 
-                    &mi_pLookupSegments, &mi_pFilteredRegions, 
-                    &mi_pScoreBlock, &blast_message);
-
+                                 m_OptsHandle->GetOptions().GetQueryOpts(),
+                                 m_OptsHandle->GetOptions().GetScoringOpts(),
+                                 m_OptsHandle->GetOptions().GetLutOpts(),
+                                 m_OptsHandle->GetOptions().GetHitSaveOpts(),
+                                 mi_clsQueries, mi_clsQueryInfo,
+                                 &mi_pLookupSegments, &mi_pFilteredRegions,
+                                 &mi_pScoreBlock, &blast_message);
+        
         if (translated_query) {
             /* Filter locations were returned in protein coordinates; 
                convert them back to nucleotide here */
@@ -160,7 +160,7 @@ int CDbBlast::SetupSearch()
         
         BLAST_ResultsInit(mi_clsQueryInfo->num_queries, &mi_pResults);
         LookupTableWrapInit(mi_clsQueries, 
-            m_OptsHandle->GetOptions().m_LutOpts, 
+            m_OptsHandle->GetOptions().GetLutOpts(), 
             mi_pLookupSegments, mi_pScoreBlock, &mi_pLookupTable);
         
         mi_bQuerySetUpDone = true;
@@ -193,12 +193,12 @@ CDbBlast::RunSearchEngine()
     BLAST_DatabaseSearchEngine(m_OptsHandle->GetOptions().GetProgram(),
          mi_clsQueries, mi_clsQueryInfo, 
          m_pSeqSrc, mi_pScoreBlock, 
-         m_OptsHandle->GetOptions().m_ScoringOpts, 
-         mi_pLookupTable, m_OptsHandle->GetOptions().m_InitWordOpts, 
-         m_OptsHandle->GetOptions().m_ExtnOpts, 
-         m_OptsHandle->GetOptions().m_HitSaveOpts, 
-         m_OptsHandle->GetOptions().m_EffLenOpts.get(), NULL, 
-         m_OptsHandle->GetOptions().m_DbOpts,
+         m_OptsHandle->GetOptions().GetScoringOpts(), 
+         mi_pLookupTable, m_OptsHandle->GetOptions().GetInitWordOpts(), 
+         m_OptsHandle->GetOptions().GetExtnOpts(), 
+         m_OptsHandle->GetOptions().GetHitSaveOpts(), 
+         m_OptsHandle->GetOptions().GetEffLenOpts(), NULL, 
+         m_OptsHandle->GetOptions().GetDbOpts(),
          mi_pResults, mi_pReturnStats);
 
     mi_pLookupTable = LookupTableWrapFree(mi_pLookupTable);
@@ -218,7 +218,7 @@ CDbBlast::x_Results2SeqAlign()
     retval = BLAST_Results2CSeqAlign(mi_pResults, 
                  m_OptsHandle->GetOptions().GetProgram(),
                  m_tQueries, m_pSeqSrc, 0, 
-                 m_OptsHandle->GetOptions().m_ScoringOpts, 
+                 m_OptsHandle->GetOptions().GetScoringOpts(), 
                  mi_pScoreBlock);
 
     return retval;
@@ -231,6 +231,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/01/16 21:51:34  bealer
+ * - Changes for Blast4 API
+ *
  * Revision 1.7  2003/12/15 23:42:46  dondosha
  * Set database length and number of sequences options in constructor
  *

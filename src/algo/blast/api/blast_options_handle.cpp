@@ -48,14 +48,18 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
-CBlastOptionsHandle::CBlastOptionsHandle()
+CBlastOptionsHandle::CBlastOptionsHandle(EAPILocality locality)
 {
-    m_Opts.Reset(new CBlastOptions);
+    m_Opts.Reset(new CBlastOptions(locality));
 }
 
 void
 CBlastOptionsHandle::SetDefaults()
 {
+    if (m_Opts->GetLocality() == CBlastOptions::eRemote) {
+        return;
+    }
+    
     SetLookupTableDefaults();
     SetQueryOptionDefaults();
     SetInitialWordOptionsDefaults();
@@ -67,7 +71,7 @@ CBlastOptionsHandle::SetDefaults()
 }
 
 CBlastOptionsHandle*
-CBlastOptionsFactory::Create(EProgram program) THROWS((CBlastException))
+CBlastOptionsFactory::Create(EProgram program, EAPILocality locality) THROWS((CBlastException))
 {
     CBlastOptionsHandle* retval = NULL;
 
@@ -75,39 +79,39 @@ CBlastOptionsFactory::Create(EProgram program) THROWS((CBlastException))
     case eBlastn:
 	{
 		CBlastNucleotideOptionsHandle* opts = 
-			new CBlastNucleotideOptionsHandle();
+			new CBlastNucleotideOptionsHandle(locality);
 		opts->SetTraditionalBlastnDefaults();
 		retval = opts;
         break;
 	}
 
     case eBlastp:
-        retval = new CBlastProteinOptionsHandle();
+        retval = new CBlastProteinOptionsHandle(locality);
         break;
 
     case eBlastx:
-        retval = new CBlastxOptionsHandle();
+        retval = new CBlastxOptionsHandle(locality);
         break;
 
     case eTblastn:
-        retval = new CTBlastnOptionsHandle();
+        retval = new CTBlastnOptionsHandle(locality);
         break;
 
     case eTblastx:
-        retval = new CTBlastxOptionsHandle();
+        retval = new CTBlastxOptionsHandle(locality);
         break;
 
     case eMegablast:
 	{
 		CBlastNucleotideOptionsHandle* opts = 
-			new CBlastNucleotideOptionsHandle();
+			new CBlastNucleotideOptionsHandle(locality);
 		opts->SetTraditionalMegablastDefaults();
 		retval = opts;
         break;
 	}
 
     case eDiscMegablast:
-        retval = new CDiscNucleotideOptionsHandle();
+        retval = new CDiscNucleotideOptionsHandle(locality);
         break;
 
     default:
@@ -128,6 +132,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/01/16 21:51:35  bealer
+ * - Changes for Blast4 API
+ *
  * Revision 1.1  2003/11/26 18:23:59  camacho
  * +Blast Option Handle classes
  *

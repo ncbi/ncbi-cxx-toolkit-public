@@ -198,10 +198,10 @@ CBl2Seq::SetupSearch()
         short st;
 
         st = BLAST_MainSetUp(m_OptsHandle->GetOptions().GetProgram(), 
-                             m_OptsHandle->GetOptions().m_QueryOpts,
-                             m_OptsHandle->GetOptions().m_ScoringOpts,
-                             m_OptsHandle->GetOptions().m_LutOpts,
-                             m_OptsHandle->GetOptions().m_HitSaveOpts,
+                             m_OptsHandle->GetOptions().GetQueryOpts(),
+                             m_OptsHandle->GetOptions().GetScoringOpts(),
+                             m_OptsHandle->GetOptions().GetLutOpts(),
+                             m_OptsHandle->GetOptions().GetHitSaveOpts(),
                              mi_clsQueries, 
                              mi_clsQueryInfo, &mi_pLookupSegments, 
                              &filter_mask, &mi_pScoreBlock, &blmsg);
@@ -219,7 +219,7 @@ CBl2Seq::SetupSearch()
         BlastMaskLocFree(filter_mask); // FIXME, return seqlocs for formatter
 
         LookupTableWrapInit(mi_clsQueries, 
-                            m_OptsHandle->GetOptions().m_LutOpts,
+                            m_OptsHandle->GetOptions().GetLutOpts(),
                             mi_pLookupSegments, mi_pScoreBlock, 
                             &mi_pLookupTable);
         mi_bQuerySetUpDone = true;
@@ -251,13 +251,13 @@ CBl2Seq::ScanDB()
         BLAST_TwoSequencesEngine(m_OptsHandle->GetOptions().GetProgram(),
                                  mi_clsQueries, mi_clsQueryInfo, 
                                  *itr, mi_pScoreBlock, 
-                                 m_OptsHandle->GetOptions().m_ScoringOpts,
+                                 m_OptsHandle->GetOptions().GetScoringOpts(),
                                  mi_pLookupTable,
-                                 m_OptsHandle->GetOptions().m_InitWordOpts,
-                                 m_OptsHandle->GetOptions().m_ExtnOpts,
-                                 m_OptsHandle->GetOptions().m_HitSaveOpts,
-                                 m_OptsHandle->GetOptions().m_EffLenOpts.get(),
-                                 NULL, m_OptsHandle->GetOptions().m_DbOpts,
+                                 m_OptsHandle->GetOptions().GetInitWordOpts(),
+                                 m_OptsHandle->GetOptions().GetExtnOpts(),
+                                 m_OptsHandle->GetOptions().GetHitSaveOpts(),
+                                 m_OptsHandle->GetOptions().GetEffLenOpts(),
+                                 NULL, m_OptsHandle->GetOptions().GetDbOpts(),
                                  result, &return_stats);
 
         mi_vResults.push_back(result);
@@ -281,7 +281,7 @@ CBl2Seq::x_Results2SeqAlign()
                 m_OptsHandle->GetOptions().GetProgram(),
                 m_tQueries, NULL, 
                 &m_tSubjects[index],
-                m_OptsHandle->GetOptions().m_ScoringOpts, mi_pScoreBlock);
+                m_OptsHandle->GetOptions().GetScoringOpts(), mi_pScoreBlock);
 
         /* Merge the new vector with the current. Assume that both vectors
            contain CSeq_align_sets for all queries, i.e. have the same 
@@ -319,6 +319,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.40  2004/01/16 21:52:59  bealer
+ * - Changes for Blast4 API
+ *
  * Revision 1.39  2004/01/02 18:53:27  camacho
  * Fix assertion
  *
