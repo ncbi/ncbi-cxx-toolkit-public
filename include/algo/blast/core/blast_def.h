@@ -39,7 +39,7 @@ Detailed Contents:
 #ifndef __BLAST_DEF__
 #define __BLAST_DEF__
 
-#include <blastkar.h>
+#include <ncbi.h>
 #include <ncbithr.h>
 
 #ifdef __cplusplus
