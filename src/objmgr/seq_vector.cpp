@@ -149,7 +149,7 @@ void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 }
 
 
-TSeqPos CSeqVector::x_GetTotalSize(void)
+TSeqPos CSeqVector::x_GetTotalSize(void) const
 {
     if (m_Size == kPosUnknown) {
         // Calculate total sequence size
@@ -198,7 +198,7 @@ TSeqPos CSeqVector::x_GetTotalSize(void)
 }
 
 
-TSeqPos CSeqVector::x_GetVisibleSize(void)
+TSeqPos CSeqVector::x_GetVisibleSize(void) const
 {
     if (m_Size == kPosUnknown)
         x_GetTotalSize();
@@ -539,6 +539,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2002/10/03 13:45:39  grichenk
+* CSeqVector::size() made const
+*
 * Revision 1.33  2002/09/26 20:15:11  grichenk
 * Fixed cache lengths checks
 *

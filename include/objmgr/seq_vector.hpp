@@ -56,7 +56,7 @@ public:
 
     CSeqVector& operator= (const CSeqVector& vec);
 
-    TSeqPos size(void);
+    TSeqPos size(void) const;
     // 0-based array of residues
     TResidue operator[] (TSeqPos pos);
 
@@ -87,8 +87,8 @@ private:
     // Process seq-loc, create visible area ranges
     void x_SetVisibleArea(const CSeq_loc& view_loc);
     // Calculate sequence and visible area size
-    TSeqPos x_GetTotalSize(void);
-    TSeqPos x_GetVisibleSize(void);
+    TSeqPos x_GetTotalSize(void) const;
+    TSeqPos x_GetVisibleSize(void) const;
 
     void x_UpdateVisibleRange(TSeqPos pos);
     void x_UpdateSeqData(TSeqPos pos);
@@ -115,13 +115,13 @@ private:
     bool               m_PlusStrand;
     SSeqData           m_CurData;
     CConstRef<CSeqMap> m_SeqMap;
-    TSeqPos            m_Size;
+    mutable TSeqPos    m_Size;
     string             m_CachedData;
     TSeqPos            m_CachedPos;
     TSeqPos            m_CachedLen;
     TCoding            m_Coding;
-    TRanges            m_Ranges;    // Set of visible ranges
-    TSeqPos            m_RangeSize; // Visible area size
+    mutable TRanges    m_Ranges;    // Set of visible ranges
+    mutable TSeqPos    m_RangeSize; // Visible area size
     TRanges::const_iterator m_SelRange;  // Selected range from the visible area
     // Current visible range limits -- for faster checks in []
     TSeqPos            m_CurFrom;   // visible segment start
@@ -147,7 +147,7 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 }
 
 inline
-TSeqPos CSeqVector::size(void)
+TSeqPos CSeqVector::size(void) const
 {
     if (m_RangeSize == kPosUnknown)
         x_GetVisibleSize();
@@ -209,6 +209,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/10/03 13:45:37  grichenk
+* CSeqVector::size() made const
+*
 * Revision 1.18  2002/09/03 21:26:58  grichenk
 * Replaced bool arguments in CSeqVector constructor and getters
 * with enums.
