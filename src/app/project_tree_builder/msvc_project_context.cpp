@@ -135,19 +135,20 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 string CMsvcPrjProjectContext::AdditionalIncludeDirectories
                                             (const SConfigInfo& cfg_info) const
 {
-    string add_include_dirs = 
-        CDirEntry::CreateRelativePath(m_ProjectDir, 
-                                      GetApp().GetProjectTreeInfo().m_Include);
+    list<string> add_include_dirs_list;
+    add_include_dirs_list.push_back 
+        (CDirEntry::CreateRelativePath(m_ProjectDir, 
+                                      GetApp().GetProjectTreeInfo().m_Include));
     
     //take into account project include dirs
     ITERATE(list<string>, p, m_ProjectIncludeDirs) {
         const string& dir_abs = *p;
-        add_include_dirs += ", ";
-        add_include_dirs += 
-            CDirEntry::CreateRelativePath
-                        (m_ProjectDir, dir_abs);
+        add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir_abs) ?
+                CDirEntry::CreateRelativePath(m_ProjectDir, dir_abs) :
+                dir_abs);
     }
 
+    //MSVC Makefile additional include dirs
     list<string> makefile_add_incl_dirs;
     m_MsvcProjectMakefile->GetAdditionalIncludeDirs(cfg_info, 
                                                     &makefile_add_incl_dirs);
@@ -158,13 +159,13 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
             CDirEntry::AddTrailingPathSeparator
                 (CDirEntry::ConcatPath(m_SourcesBaseDir, dir));
         dir_abs = CDirEntry::NormalizePath(dir_abs);
-        add_include_dirs += ", ";
-        add_include_dirs += 
+        dir_abs = 
             CDirEntry::CreateRelativePath
                         (m_ProjectDir, dir_abs);
+        add_include_dirs_list.push_back(dir_abs);
     }
 
-    // We'll build libs list.
+    // Additional include dirs for 3-party libs
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
@@ -172,12 +173,13 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
         SLibInfo lib_info;
         GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
         if ( !lib_info.m_IncludeDir.empty() ) {
-            add_include_dirs += ", ";
-            add_include_dirs += lib_info.m_IncludeDir;
+            add_include_dirs_list.push_back(lib_info.m_IncludeDir);
         }
     }
 
-    return add_include_dirs;
+    //Leave only unique dirs and join them to string
+    add_include_dirs_list.unique();
+    return NStr::Join(add_include_dirs_list, ", ");
 }
 
 
@@ -641,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/02/05 00:02:08  gorelenk
+ * Added support of user site and  Makefile defines.
+ *
  * Revision 1.8  2004/02/03 17:17:38  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext constructor.
  *

@@ -66,11 +66,18 @@ void CMsvcSite::GetLibInfo(const string& lib,
     NStr::Split(libs_str, " \t,", libinfo->m_Libs); //TODO
 }
 
+string CMsvcSite::ResolveDefine(const string& define) const
+{
+    return m_Registry.GetString("Defines", define, "");
+}
 
 END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/02/05 00:02:09  gorelenk
+ * Added support of user site and  Makefile defines.
+ *
  * Revision 1.3  2004/02/03 17:16:43  gorelenk
  * Removed implementation of method IsExplicitExclude from class CMsvcSite.
  *

@@ -624,7 +624,7 @@ CMsvcProjectGenerator::CollectSources (const CProjItem&              project,
                 CDirEntry::CreateRelativePath(context.ProjectDir(), 
                                               source_file_abs_path));
         } else {
-            LOG_POST(">>>>> Can not resolve/find source file : " + abs_path);
+            LOG_POST(Warning <<"Can not resolve/find source file : " + abs_path);
         }
     }
 }
@@ -705,6 +705,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/02/05 00:02:08  gorelenk
+ * Added support of user site and  Makefile defines.
+ *
  * Revision 1.11  2004/02/03 17:20:47  gorelenk
  * Changed implementation of method Generate of class CMsvcProjectGenerator.
  *
