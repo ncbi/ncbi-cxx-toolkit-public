@@ -265,7 +265,7 @@ private:
         }
     };
 
-    friend class CCacheTransaction;
+public:
 
     /// Cache accession for internal in-memory storage
     ///
@@ -279,7 +279,9 @@ private:
         CacheKey(const string& x_key, int x_version, const string& x_subkey);         
         bool operator < (const CacheKey& cache_key) const;
     };
-
+    
+private:
+    
     /// @internal
     class CMemAttrStorage
     {
@@ -319,7 +321,9 @@ private:
         TAttrMap   m_Attr;     ///< in-memory attributes
     };
 
-    friend class MemAttrStorage;
+    friend class CCacheTransaction;
+    friend class CMemAttrStorage;
+
 
 private:
     string                  m_Path;       ///< Path to storage
@@ -400,6 +404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/08/09 20:56:03  kuznets
+ * Fixed compilation (WorkShop)
+ *
  * Revision 1.26  2004/08/09 15:12:51  vasilche
  * Fixed syntax error.
  *
