@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/11/19 15:45:32  vasilche
+* CNodeRef implemented as CRef<CNCBINode>
+*
 * Revision 1.4  1999/10/28 13:40:30  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -61,115 +64,6 @@ void CNCBINode::UnRef(void)
 {
     if ( --m_RefCount <= 0 )
         Destroy();
-}
-
-inline
-CNodeRef::TObjectType* CNodeRef::Ref(TObjectType* data)
-{
-    if ( data )
-        data->Ref();
-    return data;
-}
-
-inline
-void CNodeRef::UnRef() const
-{
-    if ( m_Data )
-        m_Data->UnRef();
-}
-
-inline
-CNodeRef::CNodeRef(void)
-    : m_Data(0)
-{
-}
-
-inline
-CNodeRef::CNodeRef(TObjectType* data)
-    : m_Data(Ref(data))
-{
-}
-
-inline
-CNodeRef::CNodeRef(const CNodeRef& ref)
-    : m_Data(Ref(ref.m_Data))
-{
-}
-
-inline
-CNodeRef::~CNodeRef(void)
-{
-    UnRef();
-}
-
-inline
-CNodeRef& CNodeRef::operator=(TObjectType* data)
-{
-    if ( data != m_Data ) {
-        UnRef();
-        m_Data = Ref(data);
-    }
-    return *this;
-}
-
-inline
-CNodeRef& CNodeRef::operator=(const CNodeRef& ref)
-{
-    return *this = ref.m_Data;
-}
-
-inline
-CNodeRef::operator bool(void) const
-{
-    return m_Data != 0;
-}
-
-inline
-CNodeRef::operator CNodeRef::TObjectType*(void)
-{
-    return m_Data;
-}
-
-inline
-CNodeRef::operator const CNodeRef::TObjectType*(void) const
-{
-    return m_Data;
-}
-
-inline
-CNodeRef::TObjectType& CNodeRef::operator*(void)
-{
-    return *m_Data;
-}
-
-inline
-const CNodeRef::TObjectType& CNodeRef::operator*(void) const
-{
-    return *m_Data;
-}
-
-inline
-CNodeRef::TObjectType* CNodeRef::operator->(void)
-{
-    return m_Data;
-}
-
-inline
-const CNodeRef::TObjectType* CNodeRef::operator->(void) const
-{
-    return m_Data;
-}
-
-inline
-CNodeRef::TObjectType* CNodeRef::get(void)
-{
-    return m_Data;
-}
-
-inline
-const CNodeRef::TObjectType* CNodeRef::get(void) const
-{
-    return m_Data;
 }
 
 inline

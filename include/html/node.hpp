@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/11/19 15:45:32  vasilche
+* CNodeRef implemented as CRef<CNCBINode>
+*
 * Revision 1.11  1999/10/28 13:40:30  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -80,40 +83,118 @@ BEGIN_NCBI_SCOPE
 
 class CNCBINode;
 
-class CNodeRef
+template<class T>
+class CRef
 {
 public:
-    typedef CNCBINode TObjectType;
+    typedef T TObjectType;
 
-    CNodeRef(void);
-    CNodeRef(TObjectType* data);
-    CNodeRef(const CNodeRef& ref);
-    ~CNodeRef(void);
-    CNodeRef& operator=(TObjectType* data);
-    CNodeRef& operator=(const CNodeRef& ref);
+private:
+    void Ref(void) const
+        {
+            TObjectType* data = m_Data;
+            if ( data )
+                data->Ref();
+        }
+    void UnRef(void) const
+        {
+            TObjectType* data = m_Data;
+            if ( data )
+                data->UnRef();
+        }
 
-    operator bool(void) const;
-    operator TObjectType*(void);
-    operator const TObjectType*(void) const;
-    TObjectType& operator*(void);
-    const TObjectType& operator*(void) const;
-    TObjectType* operator->(void);
-    const TObjectType* operator->(void) const;
-    TObjectType* get(void);
-    const TObjectType* get(void) const;
+public:
+    // constructors
+    CRef(void)
+        : m_Data(0)
+        {
+        }
+    CRef(TObjectType* data)
+        : m_Data(data)
+        {
+            Ref();
+        }
+    CRef(const CRef<T>& ref)
+        : m_Data(ref.m_Data)
+        {
+            Ref();
+        }
+    // destructor
+    ~CRef(void)
+        {
+            UnRef();
+        }
+
+    // assignement operators
+    CRef<T>& operator=(TObjectType* data)
+        {
+            if ( data != m_Data ) {
+                UnRef();
+                m_Data = data;
+                Ref();
+            }
+            return *this;
+        }
+    CRef<T>& operator=(const CRef<T>& ref)
+        {
+            return *this = ref.m_Data;
+        }
+
+    // testers
+    operator bool(void)
+        {
+            return m_Data != 0;
+        }
+    operator bool(void) const
+        {
+            return m_Data != 0;
+        }
+    // getters
+    operator TObjectType*(void)
+        {
+            return m_Data;
+        }
+    operator const TObjectType*(void) const
+        {
+            return m_Data;
+        }
+    TObjectType& operator*(void)
+        {
+            return *m_Data;
+        }
+    const TObjectType& operator*(void) const
+        {
+            return *m_Data;
+        }
+    TObjectType* operator->(void)
+        {
+            return m_Data;
+        }
+    const TObjectType* operator->(void) const
+        {
+            return m_Data;
+        }
+    TObjectType* get(void)
+        {
+            return m_Data;
+        }
+    const TObjectType* get(void) const
+        {
+            return m_Data;
+        }
 
 private:
     TObjectType* m_Data;
-
-    static TObjectType* Ref(TObjectType* data);
-    void UnRef() const;
 };
+
+typedef CRef<CNCBINode> CNodeRef;
 
 // base class for a graph node
 
 class CNCBINode
 {
 public:
+    friend class CRef<CNCBINode>;
     typedef list<CNodeRef> TChildren;
 #if NCBI_LIGHTWEIGHT_LIST
     typedef TChildren TChildrenMember;
@@ -245,7 +326,6 @@ private:
     void UnRef(void);
     void BadRef(void);
     void Destroy(void);
-    friend class CNodeRef;
 };
 
 // inline functions are defined here:
