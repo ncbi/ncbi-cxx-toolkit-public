@@ -41,7 +41,7 @@ BEGIN_NCBI_SCOPE
 
 const size_t kRegexpMaxSubPatterns = 100;
 
-class CRegexp
+class NCBI_XUTIL_EXPORT CRegexp
 {
 public:
     // Flags for constructor and Set
@@ -112,6 +112,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/07 13:50:59  kuznets
+* Added DLL export/import instruction
+*
 * Revision 1.2  2003/06/20 18:32:42  clausen
 * Changed to native interface for regexp
 *
