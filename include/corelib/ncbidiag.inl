@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/04/04 22:31:57  vakatov
+* SetDiagTrace() -- auto-set basing on the application
+* environment and/or registry
+*
 * Revision 1.17  2000/02/18 16:54:04  vakatov
 * + eDiag_Critical
 *
@@ -118,6 +122,7 @@ class CDiagBuffer {
     friend CNcbiDiag& Endm(CNcbiDiag& diag);
     friend EDiagSev SetDiagPostLevel(EDiagSev post_sev);
     friend EDiagSev SetDiagDieLevel(EDiagSev die_sev);
+    friend void SetDiagTrace(EDiagTrace how, EDiagTrace dflt);
     friend void SetDiagHandler(FDiagHandler func, void* data,
                                FDiagCleanup cleanup);
     friend bool IsDiagStream(const CNcbiOstream* os);
@@ -164,17 +169,22 @@ private:
     // user-specified string to add to each posted message
     static char* sm_PostPrefix;
 
-    // (NOTE:  these two dont need to be protected by mutexes because it is not
-    //  critical -- while not having a mutex around would save us a little
-    //  performance)
-    static EDiagSev sm_PostSeverity;
-    static EDiagSev sm_DieSeverity;
+    // NOTE:  these three dont need to be protected by mutexes because it is
+    // not critical, while not having a mutex around them saves us a little
+    // performance
+    static EDiagSev   sm_PostSeverity;
+    static EDiagSev   sm_DieSeverity;
+    static EDiagTrace sm_TraceDefault;  // default state of tracing
+    static bool       sm_TraceEnabled;  // current state of tracing(enab/disab)
+
+    static bool GetTraceEnabled(void);  // dont access sm_TraceEnabled directly
+    static bool GetTraceEnabledFirstTime(void);
 
     // call the current diagnostics handler directly
     static void DiagHandler(SDiagMessage& mess);
 
     // Symbolic name for the severity levels(used by CNcbiDiag::SeverityName)
-    static const char* SeverityName[eDiag_Trace+1];
+    static const char* sm_SeverityName[eDiag_Trace+1];
 
     // Application-wide diagnostic handler & Co.
     static FDiagHandler sm_HandlerFunc;
@@ -231,7 +241,7 @@ CNcbiDiag& operator <<(CNcbiDiag& diag, const X& x) {
 
 inline
 const char* CNcbiDiag::SeverityName(EDiagSev sev) {
-    return CDiagBuffer::SeverityName[sev];
+    return CDiagBuffer::sm_SeverityName[sev];
 }
 
 
@@ -312,6 +322,11 @@ void CDiagBuffer::Detach(const CNcbiDiag* diag) {
     }
 }
 
+inline
+bool CDiagBuffer::GetTraceEnabled(void) {
+    return (sm_TraceDefault == eDT_Default) ?
+        GetTraceEnabledFirstTime() : sm_TraceEnabled;
+}
 
 
 ///////////////////////////////////////////////////////

@@ -1,7 +1,7 @@
 #ifndef NCBIDIAG__HPP
 #define NCBIDIAG__HPP
 
-/*  $RCSfile$  $Revision$  $Date$
+/*  $Id$
 * ===========================================================================
 *
 *                            PUBLIC DOMAIN NOTICE
@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/04/04 22:31:57  vakatov
+* SetDiagTrace() -- auto-set basing on the application
+* environment and/or registry
+*
 * Revision 1.19  2000/03/10 14:17:40  vasilche
 * Added missing namespace specifier to macro.
 *
@@ -252,6 +256,18 @@ extern EDiagSev SetDiagPostLevel(EDiagSev post_sev = eDiag_Error);
 // Abrupt the application if severity is >= "max_sev"
 // Return previous die-level
 extern EDiagSev SetDiagDieLevel(EDiagSev die_sev = eDiag_Fatal);
+
+// Disable/enable posting of "eDiag_Trace" messages.
+// By default, these messages are disabled unless:
+//   1)  environment variable $DIAG_TRACE is set (to any value), or
+//   2)  registry value of DIAG_TRACE, section DEBUG is set (to any value)
+#define DIAG_TRACE "DIAG_TRACE"
+typedef enum {
+    eDT_Default = 0,  // restores the default tracing context
+    eDT_Disable,      // ignore messages of severity "eDiag_Trace"
+    eDT_Enable        // enable messages of severity "eDiag_Trace"
+} EDiagTrace;
+extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt = eDT_Default);
 
 // Set new message handler("func"), data("data") and destructor("cleanup").
 // The "func(..., data)" to be called when any instance of "CNcbiDiagBuffer"

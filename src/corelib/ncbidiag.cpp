@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/04/04 22:31:59  vakatov
+* SetDiagTrace() -- auto-set basing on the application
+* environment and/or registry
+*
 * Revision 1.17  2000/02/18 16:54:07  vakatov
 * + eDiag_Critical
 *
@@ -104,24 +108,22 @@ BEGIN_NCBI_SCOPE
 ///////////////////////////////////////////////////////
 //  CDiagBuffer::
 
-unsigned int CDiagBuffer::sm_PostFlags =
-#if defined(_DEBUG)
-eDPF_All;
+#if defined(NDEBUG)
+unsigned int CDiagBuffer::sm_PostFlags      = eDPF_Prefix | eDPF_Severity;
+EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Error;
 #else
-eDPF_Prefix | eDPF_Severity;
-#endif
+unsigned int CDiagBuffer::sm_PostFlags      = eDPF_All;
+EDiagSev     CDiagBuffer::sm_PostSeverity   = eDiag_Warning;
+#endif /* else!NDEBUG */
 
-char* CDiagBuffer::sm_PostPrefix = 0;
+char*        CDiagBuffer::sm_PostPrefix     = 0;
+EDiagSev     CDiagBuffer::sm_DieSeverity    = eDiag_Fatal;
 
-EDiagSev CDiagBuffer::sm_PostSeverity =
-#if defined(_DEBUG)
-eDiag_Warning;
-#else
-eDiag_Error;
-#endif
-EDiagSev CDiagBuffer::sm_DieSeverity = eDiag_Fatal;
+EDiagTrace   CDiagBuffer::sm_TraceDefault   = eDT_Disable;
+bool         CDiagBuffer::sm_TraceEnabled;  // to be set on first request
 
-const char* CDiagBuffer::SeverityName[eDiag_Trace+1] = {
+
+const char*  CDiagBuffer::sm_SeverityName[eDiag_Trace+1] = {
     "Info", "Warning", "Error", "Critical", "Fatal", "Trace"
 };
 
@@ -158,11 +160,14 @@ void CDiagBuffer::DiagHandler(SDiagMessage& mess)
 
 bool CDiagBuffer::SetDiag(const CNcbiDiag& diag)
 {
-    if (diag.GetSeverity() < sm_PostSeverity)
+    if (diag.GetSeverity() < sm_PostSeverity  ||
+        (diag.GetSeverity() == eDiag_Trace  &&  !GetTraceEnabled())) {
         return false;
+    }
     if (m_Diag != &diag) {
-        if ( dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount() )
+        if ( dynamic_cast<CNcbiOstrstream*>(m_Stream)->pcount() ) {
             Flush();
+        }
         m_Diag = &diag;
     }
     return true;
@@ -193,6 +198,19 @@ void CDiagBuffer::Flush(void)
         ::exit(-1);
 #endif
     }
+}
+
+
+bool CDiagBuffer::GetTraceEnabledFirstTime(void)
+{
+    //## MUTEX_LOCK(s_Mutex);
+    const char* str = ::getenv(DIAG_TRACE);
+    if (str  &&  *str) {
+        sm_TraceDefault = eDT_Enable;
+    }
+    sm_TraceEnabled = (sm_TraceDefault == eDT_Enable);
+    //## MUTEX_UNLOCK(s_Mutex);
+    return sm_TraceEnabled;
 }
 
 
@@ -309,6 +327,21 @@ extern EDiagSev SetDiagDieLevel(EDiagSev die_sev)
     CDiagBuffer::sm_DieSeverity = die_sev;
     //## MUTEX_UNLOCK(s_Mutex);
     return sev;
+}
+
+
+extern void SetDiagTrace(EDiagTrace how, EDiagTrace dflt)
+{
+    //## MUTEX_LOCK(s_Mutex);
+    (void) CDiagBuffer::GetTraceEnabled();
+
+    if (dflt != eDT_Default)
+        CDiagBuffer::sm_TraceDefault = dflt;
+
+    if (how == eDT_Default)
+        how = CDiagBuffer::sm_TraceDefault;
+    CDiagBuffer::sm_TraceEnabled = (how == eDT_Enable);
+    //## MUTEX_UNLOCK(s_Mutex);
 }
 
 
