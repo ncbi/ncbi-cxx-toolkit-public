@@ -133,20 +133,16 @@ CTypeRef GetOldAsnTypeRef(const string& name,
 #define ASN_STRUCT_NAME(name) SERIALASN_NAME2(struct_, name)
 
 #define ASN_TYPE_INFO_GETTER_DECL(name) \
-BEGIN_NCBI_SCOPE \
-const CTypeInfo* ASN_TYPE_INFO_GETTER_NAME(name)(void); \
-END_NCBI_SCOPE
+NCBI_NS_NCBI::TTypeInfo ASN_TYPE_INFO_GETTER_NAME(name)(void) \
 
 #define ASN_TYPE_REF(name) \
 struct ASN_STRUCT_NAME(name); \
-ASN_TYPE_INFO_GETTER_DECL(name) \
-BEGIN_NCBI_SCOPE \
-inline CTypeRef GetTypeRef(const ASN_STRUCT_NAME(name)* ) \
-{ return ASN_TYPE_INFO_GETTER_NAME(name); } \
-END_NCBI_SCOPE
+ASN_TYPE_INFO_GETTER_DECL(name); \
+inline NCBI_NS_NCBI::TTypeInfoGetter GetTypeRef(const ASN_STRUCT_NAME(name)* ) \
+{ return &ASN_TYPE_INFO_GETTER_NAME(name); } \
 
 #define ASN_CHOICE_REF(name) \
-ASN_TYPE_INFO_GETTER_DECL(name)
+ASN_TYPE_INFO_GETTER_DECL(name);
 
 END_NCBI_SCOPE
 

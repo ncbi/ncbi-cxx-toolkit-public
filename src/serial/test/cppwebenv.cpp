@@ -8,7 +8,7 @@
 #include <asn.h>
 #include "twebenv.h"
 
-BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 
 BEGIN_STRUCT_INFO2("Web-Env", Web_Env)
     ADD_ASN_MEMBER(arguments, SetOf)->SetOptional();
@@ -91,5 +91,4 @@ BEGIN_STRUCT_INFO2("Item-Set", Item_Set)
     ADD_CLASS_MEMBER(count);
 END_STRUCT_INFO
 
-END_NCBI_SCOPE
 #endif
