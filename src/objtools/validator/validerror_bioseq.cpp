@@ -222,7 +222,7 @@ void CValidError_bioseq::ValidateSeqIds
                     (**k).IsGenbank()  ||  (**k).IsEmbl()  ||  (**k).IsDdbj();
 
                 if ( letter_after_digit || bad_id_chars ) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat,
+                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat,
                         "Bad accession: " + acc, seq);
                 } else if (num_letters == 1 && num_digits == 5 && seq.IsNa()) {
                 } else if (num_letters == 2 && num_digits == 6 && seq.IsNa()) {
@@ -3088,6 +3088,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/06/18 20:50:41  shomrat
+* NT-036298 (dash instead of underscore) gives Critical level BadSeqIdFormat error
+*
 * Revision 1.37  2003/06/17 13:40:30  shomrat
 * Use SeqVector_CI to improve performance
 *
