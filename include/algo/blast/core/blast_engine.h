@@ -113,20 +113,6 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
    const BlastDatabaseOptions* db_options,
    BlastHSPResults* results, BlastReturnStat* return_stats);
 
-/** Function to calculate effective query length and db length as well as
- * effective search space. 
- * @param program_number blastn, blastp, blastx, etc. [in]
- * @param scoring_options options for scoring. [in]
- * @param eff_len_options used to calc. effective lengths [in]
- * @param sbp Karlin-Altschul parameters [out]
- * @param query_info The query information block, which stores the effective
- *                   search spaces for all queries [in] [out]
-*/
-Int2 BLAST_CalcEffLengths (Uint1 program_number, 
-   const BlastScoringOptions* scoring_options,
-   const BlastEffectiveLengthsOptions* eff_len_options, 
-   const BlastScoreBlk* sbp, BlastQueryInfo* query_info);
-
 /** Gapped extension function pointer type */
 typedef Int2 (*BlastGetGappedScoreType) 
      (Uint1, BLAST_SequenceBlk*, BlastQueryInfo* query_info,
@@ -163,6 +149,7 @@ typedef struct BlastCoreAuxStruct {
    Uint1* translation_table_rc; /**< Translation table for reverse 
                                      strand */
 } BlastCoreAuxStruct;
+
 
 #ifdef __cplusplus
 }

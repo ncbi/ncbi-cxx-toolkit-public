@@ -98,11 +98,14 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
  * @param mask_at_hash If TRUE masking is done while making the lookup table
  *                     only. [out] 
  * @param seqloc_retval Resulting locations for filtered region. [out]
+ * @param no_lookup If lookup table is not needed, and filter string contains
+ *                  'mask at hash only' option, then do not perform any 
+ *                  filtering. [in]
 */
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1* sequence, Int4 length, 
    Int4 offset, char* instructions, Boolean *mask_at_hash, 
-   BlastSeqLoc* *seqloc_retval);
+   BlastSeqLoc* *seqloc_retval, Boolean no_lookup);
 
 #ifdef __cplusplus
 }

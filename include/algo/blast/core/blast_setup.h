@@ -37,6 +37,9 @@ $Revision$
 /*
  *
 * $Log$
+* Revision 1.28  2004/02/24 17:59:03  dondosha
+* Moved BLAST_CalcEffLengths from blast_engine.h; Added BLAST_GapAlignSetUp to set up only gapped alignment related structures
+*
 * Revision 1.27  2004/02/10 20:05:14  dondosha
 * Made BlastScoreBlkGappedFill external again: needed in unit test
 *
@@ -205,7 +208,6 @@ extern "C" {
  * @param program_number Type of BLAST program (0=blastn, ...). [in]
  * @param qsup_options options for query setup. [in]
  * @param scoring_options options for scoring. [in]
- * @param lookup_options options for lookup table. [in]
  * @param hit_options options for saving hits. [in]
  * @param query_blk BLAST_SequenceBlk* for the query. [in]
  * @param query_info The query information block [in]
@@ -218,7 +220,6 @@ extern "C" {
 Int2 BLAST_MainSetUp(Uint1 program_number,
         const QuerySetUpOptions* qsup_options,
         const BlastScoringOptions* scoring_options,
-        const LookupTableOptions* lookup_options,	
         const BlastHitSavingOptions* hit_options,
         BLAST_SequenceBlk* query_blk,
         BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
@@ -237,6 +238,50 @@ Int2
 BlastScoreBlkGappedFill(BlastScoreBlk * sbp,
                         const BlastScoringOptions * scoring_options,
                         Uint1 program, BlastQueryInfo * query_info);
+
+/** Function to calculate effective query length and db length as well as
+ * effective search space. 
+ * @param program_number blastn, blastp, blastx, etc. [in]
+ * @param scoring_options options for scoring. [in]
+ * @param eff_len_options used to calc. effective lengths [in]
+ * @param sbp Karlin-Altschul parameters [out]
+ * @param query_info The query information block, which stores the effective
+ *                   search spaces for all queries [in] [out]
+*/
+Int2 BLAST_CalcEffLengths (Uint1 program_number, 
+   const BlastScoringOptions* scoring_options,
+   const BlastEffectiveLengthsOptions* eff_len_options, 
+   const BlastScoreBlk* sbp, BlastQueryInfo* query_info);
+
+/** Set up the auxiliary structures for gapped alignment / traceback only 
+ * @param program_number blastn, blastp, blastx, etc. [in]
+ * @param seq_src Sequence source information, with callbacks to get 
+ *                sequences, their lengths, etc. [in]
+ * @param scoring_options options for scoring. [in]
+ * @param eff_len_options  used to calculta effective lengths [in]
+ * @param ext_options options for gapped extension. [in]
+ * @param hit_options options for saving hits. [in]
+ * @param query The query sequence block [in]
+ * @param query_info The query information block [in]
+ * @param sbp Contains scoring information. [in]
+ * @param subject_length Length of the subject sequence in two 
+ *                       sequences case [in]
+ * @param ext_params Parameters for gapped extension [out]
+ * @param hit_params Parameters for saving hits [out]
+ * @param gap_align Gapped alignment information and allocated memory [out]
+ */
+Int2 
+BLAST_GapAlignSetUp(Uint1 program_number,
+   const BlastSeqSrc* seq_src,
+   const BlastScoringOptions* scoring_options,
+   const BlastEffectiveLengthsOptions* eff_len_options,
+   const BlastExtensionOptions* ext_options,
+   const BlastHitSavingOptions* hit_options,
+   BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+   BlastScoreBlk* sbp, Uint4 subject_length, 
+   BlastExtensionParameters** ext_params,
+   BlastHitSavingParameters** hit_params,
+   BlastGapAlignStruct** gap_align);
 
 #ifdef __cplusplus
 }
