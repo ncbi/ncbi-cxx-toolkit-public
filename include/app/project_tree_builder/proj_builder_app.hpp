@@ -119,7 +119,7 @@ public:
 
     const CProjectItemsTree& GetWholeTree      (void);
 
-    const CDllSrcFilesDistr& GetDllFilesDistr  (void);
+    CDllSrcFilesDistr&       GetDllFilesDistr  (void);
 
     string GetDatatoolId          (void) const;
     string GetDatatoolPathForApp  (void) const;
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/05/19 14:23:07  gorelenk
+ * Added definition of GetDllFilesDistr to class CProjBulderApp.
+ *
  * Revision 1.14  2004/05/17 16:21:00  gorelenk
  * Added CDllSrcFilesDistr to class CProjBulderApp - binded CDllSrcFilesDistr
  * singleton to app singleton.
