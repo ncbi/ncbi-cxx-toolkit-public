@@ -1261,7 +1261,9 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
 
         CSeqVector sv = 
             m_Scope->GetBioseqHandle(seq).GetSeqVector();
-        sv.SetCoding(CSeq_data::e_Ncbieaa);
+        if ( inst.IsAa() ) {
+            sv.SetCoding(CSeq_data::e_Ncbieaa);
+        }
 
         size_t bad_cnt = 0;
         size_t seq_size = sv.size();
@@ -2383,6 +2385,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2003/02/19 21:59:32  shomrat
+* Set coding to ncbieaa, only if bioseq is AA (bug fix)
+*
 * Revision 1.17  2003/02/14 21:48:47  shomrat
 * Implemented check for Bioseqs with no MolInfo; Bug fix in use of CSeqVector
 *
