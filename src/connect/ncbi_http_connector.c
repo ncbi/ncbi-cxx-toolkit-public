@@ -636,6 +636,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 
+/*ARGSUSED*/
 static const char* s_VT_GetType
 (CONNECTOR connector)
 {
@@ -946,6 +947,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2003/05/31 05:15:15  lavr
+ * Add ARGSUSED where args are meant to be unused
+ *
  * Revision 6.51  2003/05/21 17:54:16  lavr
  * s_VT_Read() to return eIO_Success if some data have been read
  *

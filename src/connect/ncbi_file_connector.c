@@ -96,6 +96,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 
+/*ARGSUSED*/
 static const char* s_VT_GetType
 (CONNECTOR connector)
 {
@@ -103,6 +104,7 @@ static const char* s_VT_GetType
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Open
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -144,6 +146,7 @@ static EIO_Status s_VT_Open
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Write
 (CONNECTOR       connector,
  const void*     buf,
@@ -167,6 +170,7 @@ static EIO_Status s_VT_Write
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Read
 (CONNECTOR       connector,
  void*           buf,
@@ -190,6 +194,7 @@ static EIO_Status s_VT_Read
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Wait
 (CONNECTOR       connector,
  EIO_Event       event,
@@ -199,6 +204,7 @@ static EIO_Status s_VT_Wait
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Flush
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -226,6 +232,7 @@ static EIO_Status s_VT_Status
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -317,6 +324,9 @@ extern CONNECTOR FILE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/05/31 05:14:56  lavr
+ * Add ARGSUSED where args are meant to be unused
+ *
  * Revision 6.11  2003/05/14 03:55:53  lavr
  * Slight VT table reformatting
  *

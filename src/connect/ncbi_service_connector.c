@@ -734,6 +734,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 }
 
 
+/*ARGSUSED*/
 static EIO_Status s_VT_Status(CONNECTOR connector, EIO_Event dir)
 {
     return ((SServiceConnector*) connector->handle)->status;
@@ -846,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2003/05/31 05:16:45  lavr
+ * Add ARGSUSED where args are meant to be unused
+ *
  * Revision 6.58  2003/05/29 20:13:48  lavr
  * -#include <connect/ncbi_connection.h>
  *

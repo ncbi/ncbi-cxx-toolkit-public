@@ -123,6 +123,7 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
+/*ARGSUSED*/
 static int/*bool*/ s_ParseHeader(const char* header, void *iter,
                                  int/*ignored*/ server_error)
 {
@@ -137,6 +138,7 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
+/*ARGSUSED*/
 /* This callback is only for services called via direct HTTP */
 static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         iter,
@@ -391,6 +393,7 @@ static void s_Close(SERV_ITER iter)
  *  EXTERNAL
  ***********************************************************************/
 
+/*ARGSUSED*/
 const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
                                     const SConnNetInfo* net_info,
                                     SSERV_Info** info, HOST_INFO* u/*unused*/)
@@ -428,6 +431,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2003/05/31 05:14:38  lavr
+ * Add ARGSUSED where args are meant to be unused
+ *
  * Revision 6.57  2003/05/22 20:31:40  lavr
  * Comment change
  *

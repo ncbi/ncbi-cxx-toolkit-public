@@ -452,6 +452,7 @@ SSERV_Info* SERV_CreateNcbidInfo
  *  STANDALONE::   constructor and virtual functions
  */
 
+/*ARGSUSED*/
 static char* s_Standalone_Write(size_t reserve, const USERV_Info* u_info)
 {
     char* str = (char*) malloc(reserve + 1);
@@ -462,6 +463,7 @@ static char* s_Standalone_Write(size_t reserve, const USERV_Info* u_info)
 }
 
 
+/*ARGSUSED*/
 static SSERV_Info* s_Standalone_Read(const char** str)
 {
     return SERV_CreateStandaloneInfo(0, 0);
@@ -474,6 +476,7 @@ static size_t s_Standalone_SizeOf(const USERV_Info* u)
 }
 
 
+/*ARGSUSED*/
 static int/*bool*/ s_Standalone_Equal(const USERV_Info* u1,
                                       const USERV_Info* u2)
 {
@@ -697,6 +700,7 @@ SSERV_Info* SERV_CreateFirewallInfo(unsigned int host, unsigned short port,
  *  DNS::   constructor and virtual functions
  */
 
+/*ARGSUSED*/
 static char* s_Dns_Write(size_t reserve, const USERV_Info* u_info)
 {
     char* str = (char*) malloc(reserve + 1);
@@ -707,6 +711,7 @@ static char* s_Dns_Write(size_t reserve, const USERV_Info* u_info)
 }
 
 
+/*ARGSUSED*/
 static SSERV_Info* s_Dns_Read(const char** str)
 {
     return SERV_CreateDnsInfo(0);
@@ -719,6 +724,7 @@ static size_t s_Dns_SizeOf(const USERV_Info* u)
 }
 
 
+/*ARGSUSED*/
 static int/*bool*/ s_Dns_Equal(const USERV_Info* u1, const USERV_Info* u2)
 {
     return 1;
@@ -835,6 +841,9 @@ static const SSERV_Attr* s_GetAttrByTag(const char* tag)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.50  2003/05/31 05:16:28  lavr
+ * Add ARGSUSED where args are meant to be unused
+ *
  * Revision 6.49  2003/04/25 15:21:05  lavr
  * Explicit cast to avoid int->enum warning
  *
