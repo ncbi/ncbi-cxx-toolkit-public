@@ -497,7 +497,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
 Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
-   ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, Int4 query_length, 
+   const Uint4 max_subject_length, const Int4 query_length, 
    const Uint1 program, BLAST_ScoreBlkPtr sbp, 
    BlastGapAlignStructPtr PNTR gap_align_ptr)
 {
@@ -505,7 +505,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
    Boolean is_na = (program == blast_type_blastn ||
                     program == blast_type_blastx ||
                     program == blast_type_tblastx);
-   Int4 max_dbseq_length;
+   Uint4 max_dbseq_length;
    BlastGapAlignStructPtr gap_align = 
       (BlastGapAlignStructPtr) MemNew(sizeof(BlastGapAlignStruct));
 
@@ -537,14 +537,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
       if (!gap_align->dyn_prog)
          gap_align = BLAST_GapAlignStructFree(gap_align);
    } else {
-      if (rdfp) {
-         for (max_dbseq_length = 0; rdfp; rdfp = rdfp->next)
-            max_dbseq_length = 
-               MAX(max_dbseq_length, readdb_get_maxlen(rdfp));
-      } else {
-         max_dbseq_length = subject->length;
-      }
-      max_dbseq_length = MIN(max_dbseq_length, MAX_DBSEQ_LEN);
+      max_dbseq_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
       gap_align->greedy_align_mem = 
          MB_GreedyAlignMemAlloc(score_options, ext_params, 
                                 max_dbseq_length);

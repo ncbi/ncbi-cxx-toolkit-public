@@ -146,9 +146,8 @@ typedef struct BlastGapAlignStruct {
  * @param score_options Options related to scoring alignments [in]
  * @param ext_params Options and parameters related to gapped extension [in]
  * @param total_num_contexts Number of contexts of the query sequence [in]
- * @param rdfp Pointer to the BLAST database (needed for greedy extension 
- *        allocation only, to calculate maximal database sequence length [in]
- * @param subject Subject sequence information (two sequences case) [in]
+ * @param max_subject_length Maximum length of any subject sequence (needed 
+ *        for greedy extension allocation only) [in]
  * @param query_length The length of the query sequence [in]
  * @param program The name of the BLAST program [in]
  * @param sbp The scoring information block [in]
@@ -157,7 +156,7 @@ typedef struct BlastGapAlignStruct {
 Int2
 BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options, 
    BlastExtensionParametersPtr ext_params, Int4 total_num_contexts, 
-   ReadDBFILEPtr rdfp, BLAST_SequenceBlkPtr subject, Int4 query_length, 
+   const Uint4 max_subject_length, const Int4 query_length,
    const Uint1 program, BLAST_ScoreBlkPtr sbp, 
    BlastGapAlignStructPtr PNTR gap_align_ptr);
 
