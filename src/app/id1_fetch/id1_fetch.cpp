@@ -26,10 +26,14 @@
  * Author:  Denis Vakatov, Aleksey Grichenko, Aaron Ucko
  *
  * File Description:
- *   New IDFETCH network client (get Seq-Entry by GI)
+ *   New IDFETCH network client (get data from "ID1")
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2001/09/24 03:22:09  vakatov
+ * Un-#include <cstdlib> and <cctype> which break IRIX/MIPSpro compilation and
+ * apparently are not needed after all
+ *
  * Revision 1.11  2001/09/21 22:38:59  ucko
  * Cope with new Entrez interface; fix MSVC build.
  *
@@ -113,10 +117,9 @@
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+
 #include <memory>
-#include <cstdlib> // for strtol
 #include <algorithm>
-#include <cctype>
 
 #include "genbank.hpp"
 #include "util.hpp"
