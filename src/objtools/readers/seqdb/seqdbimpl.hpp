@@ -152,6 +152,9 @@ public:
     /// Find OIDs matching the specified string.
     void AccessionToOids(const string & acc, vector<TOID> & oids) const;
     
+    /// Translate a CSeq-id to a list of OIDs.
+    void SeqidToOids(const CSeq_id & seqid, vector<TOID> & oids) const;
+    
     /// Find the OID corresponding to the offset given in residues,
     /// into the database as a whole.
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;

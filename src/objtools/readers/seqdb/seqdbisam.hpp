@@ -100,6 +100,15 @@ public:
     
     void UnLease();
     
+    // Accession is optional
+    
+    static EIdentType
+    SimplifySeqid(CSeq_id       & bestid,
+                  const string  * acc,
+                  Uint4         & num_id,
+                  string        & str_id,
+                  bool          & simpler);
+    
 private:
     enum EErrorCode {
         eNotFound        =  1,
@@ -204,13 +213,6 @@ private:
                           string         & prefix,
                           bool             trim_to_null,
                           CSeqDBLockHold & locked);
-    
-    static EIdentType
-    x_SimplifySeqID(const string  & acc,
-                    CRef<CSeq_id>   bestid,
-                    Uint4         & num_id,
-                    string        & str_id,
-                    bool          & simpler);
     
     Int4 x_DiffSample(const string   & term_in,
                       Uint4            SampleNum,

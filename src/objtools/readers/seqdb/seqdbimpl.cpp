@@ -520,6 +520,46 @@ void CSeqDBImpl::AccessionToOids(const string & acc, vector<Uint4> & oids) const
     }
 }
 
+void CSeqDBImpl::SeqidToOids(const CSeq_id & seqid_in, vector<Uint4> & oids) const
+{
+    CSeqDBLockHold locked(m_Atlas);
+    
+    // The lower level functions modify the seqid - namely, changing
+    // or clearing certain fields before printing it to a string.
+    // Further analysis of data and exception flow might reveal that
+    // the Seq_id will always be returned to the original state by
+    // this operation... At the moment, safest route is to clone it.
+    
+    CSeq_id seqid;
+    seqid.Assign(seqid_in);
+    
+    oids.clear();
+    
+    vector<Uint4> vol_oids;
+    
+    for(Uint4 vol_idx = 0; vol_idx < m_VolSet.GetNumVols(); vol_idx++) {
+        // Append any additional OIDs from this volume's indices.
+        m_VolSet.GetVol(vol_idx)->SeqidToOids(seqid, vol_oids, locked);
+        
+        if (vol_oids.empty()) {
+            continue;
+        }
+        
+        Uint4 vol_start = m_VolSet.GetVolOIDStart(vol_idx);
+        
+        ITERATE(vector<Uint4>, iter, vol_oids) {
+            Uint4 oid1 = ((*iter) + vol_start);
+            Uint4 oid2 = oid1;
+            
+            // Filter out any oids not in the virtual oid bitmaps.
+            
+            if (CheckOrFindOID(oid2) && (oid1 == oid2)) {
+                oids.push_back(oid1);
+            }
+        }
+    }
+}
+
 Uint4 CSeqDBImpl::GetOidAtOffset(Uint4 first_seq, Uint8 residue) const
 {
     if (first_seq >= m_NumSeqs) {

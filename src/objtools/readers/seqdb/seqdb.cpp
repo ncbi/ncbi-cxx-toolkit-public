@@ -217,6 +217,11 @@ void CSeqDB::AccessionToOids(const string & acc, vector<TOID> & oids) const
     m_Impl->AccessionToOids(acc, oids);
 }
 
+void CSeqDB::SeqidToOids(const CSeq_id & seqid, vector<TOID> & oids) const
+{
+    m_Impl->SeqidToOids(seqid, oids);
+}
+
 void CSeqDB::SetMemoryBound(Uint8 membound, Uint8 slice_size)
 {
     m_Impl->SetMemoryBound(membound, slice_size);

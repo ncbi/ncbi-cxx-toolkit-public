@@ -123,6 +123,10 @@ public:
                          vector<Uint4>  & oids,
                          CSeqDBLockHold & locked) const;
     
+    void SeqidToOids(CSeq_id        & seqid,
+                     vector<Uint4>  & oids,
+                     CSeqDBLockHold & locked) const;
+    
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
     
 private:

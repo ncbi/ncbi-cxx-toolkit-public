@@ -1280,11 +1280,11 @@ bool CSeqDBIsam::x_SparseStringToOids(const string   &,
 }
 
 CSeqDBIsam::EIdentType
-CSeqDBIsam::x_SimplifySeqID(const string  & acc,
-                            CRef<CSeq_id>   bestid,
-                            Uint4         & num_id,
-                            string        & str_id,
-                            bool          & simpler)
+CSeqDBIsam::SimplifySeqid(CSeq_id       & bestid,
+                          const string  * acc,
+                          Uint4         & num_id,
+                          string        & str_id,
+                          bool          & simpler)
 {
     EIdentType result = eStringID;
     
@@ -1292,22 +1292,24 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
     
     bool use_version = false;
     
-    switch(bestid->Which()) {
+    bool matched = true;
+    
+    switch(bestid.Which()) {
     case CSeq_id::e_Gi:
         simpler = true;
-        num_id = bestid->GetGi();
+        num_id = bestid.GetGi();
         result = eGi;
         break;
         
     case CSeq_id::e_Gibbsq:    /* gibbseq */
         simpler = true;
         result = eStringID;
-        str_id = NStr::UIntToString(bestid->GetGibbsq());
+        str_id = NStr::UIntToString(bestid.GetGibbsq());
         break;
         
     case CSeq_id::e_General:
         {
-            const CDbtag & dbt = bestid->GetGeneral();
+            const CDbtag & dbt = bestid.GetGeneral();
             
             if (dbt.CanGetDb()) {
                 if (dbt.GetDb() == "BL_ORD_ID") {
@@ -1333,67 +1335,82 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
     case CSeq_id::e_Local:     /* local */
         simpler = true;
         result = eStringID;
-        str_id = bestid->GetLocal().GetStr();
+        str_id = bestid.GetLocal().GetStr();
         break;
         
         
         // tsip types
         
     case CSeq_id::e_Embl:      /* embl */
-        tsip = & (bestid->SetEmbl());
+        tsip = & (bestid.SetEmbl());
         use_version = true;
         break;
         
     case CSeq_id::e_Ddbj:      /* ddbj */
-        tsip = & (bestid->SetDdbj());
+        tsip = & (bestid.SetDdbj());
         use_version = true;
         break;
         
     case CSeq_id::e_Genbank:   /* genbank */
-        tsip = & (bestid->SetGenbank());
+        tsip = & (bestid.SetGenbank());
         use_version = true;
         break;
         
     case CSeq_id::e_Tpg:       /* Third Party Annot/Seq Genbank */
-        tsip = & (bestid->SetTpg());
+        tsip = & (bestid.SetTpg());
         use_version = true;
         break;
         
     case CSeq_id::e_Tpe:       /* Third Party Annot/Seq EMBL */
-        tsip = & (bestid->SetTpe());
+        tsip = & (bestid.SetTpe());
         use_version = true;
         break;
         
     case CSeq_id::e_Tpd:       /* Third Party Annot/Seq DDBJ */
-        tsip = & (bestid->SetTpd());
+        tsip = & (bestid.SetTpd());
         use_version = true;
         break;
         
     case CSeq_id::e_Other:     /* other */
-        tsip = & (bestid->SetOther());
+        tsip = & (bestid.SetOther());
         use_version = true;
         break;
         
     case CSeq_id::e_Pir:       /* pir   */
-        tsip = & (bestid->SetPir());
+        tsip = & (bestid.SetPir());
         break;
         
     case CSeq_id::e_Swissprot: /* swissprot */
-        tsip = & (bestid->SetSwissprot());
+        tsip = & (bestid.SetSwissprot());
         break;
         
     case CSeq_id::e_Prf:       /* prf   */
-        tsip = & (bestid->SetPrf());
+        tsip = & (bestid.SetPrf());
         break;
-        
-        
-        // Default: do nothing to string; maybe it will work as is.
         
     default:
+        matched = false;
+    }
+    
+    // Default: if we have a string, use it; if we only have seqid,
+    // create a string.  This should not happen if the seqid matches
+    // one of the cases above, which currently correspond to all the
+    // supported seqid types.
+    
+    CSeq_id::ELabelFlags label_flags = (CSeq_id::ELabelFlags)
+        (CSeq_id::fLabel_GeneralDbIsContent | CSeq_id::fLabel_Version);
+    
+    if (! matched) {
+        // (should not happen normally)
+        
         simpler = false;
-        result = eStringID;
-        str_id = acc;
-        break;
+        result  = eStringID;
+        
+        if (acc) {
+            str_id = *acc;
+        } else {
+            bestid.GetLabel(& str_id, CSeq_id::eFasta, label_flags);
+        }
     }
     
     if (tsip) {
@@ -1407,10 +1424,7 @@ CSeqDBIsam::x_SimplifySeqID(const string  & acc,
             tsip->ResetName();
         }
         
-        CSeq_id::ELabelFlags flags = (CSeq_id::ELabelFlags)
-            (CSeq_id::fLabel_GeneralDbIsContent | CSeq_id::fLabel_Version);
-        
-        bestid->GetLabel(& str_id, CSeq_id::eFasta, flags);
+        bestid.GetLabel(& str_id, CSeq_id::eFasta, label_flags);
         
         if (! tmp_name.empty()) {
             tsip->SetName(tmp_name);
@@ -1436,7 +1450,7 @@ CSeqDBIsam::TryToSimplifyAccession(const string & acc,
         CRef<CSeq_id> bestid =
             FindBestChoice(seqid_set, CSeq_id::BestRank);
         
-        result = x_SimplifySeqID(acc, bestid, num_id, str_id, simpler);
+        result = SimplifySeqid(*bestid, & acc, num_id, str_id, simpler);
     } else {
         str_id = acc;
         result = eStringID;

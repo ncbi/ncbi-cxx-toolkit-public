@@ -1380,15 +1380,56 @@ void CSeqDBVol::AccessionToOids(const string   & acc,
                                 vector<Uint4>  & oids,
                                 CSeqDBLockHold & locked) const
 {
-    if (m_IsamStr.Empty()) {
-        return;
-    }
-    
     bool  simpler (false);
     Uint4 ident   (Uint4(-1));
     string str_id;
     
     switch(CSeqDBIsam::TryToSimplifyAccession(acc, ident, str_id, simpler)) {
+    case CSeqDBIsam::eString:
+        if (! m_IsamStr.Empty()) {
+            // Not simplified
+            m_IsamStr->StringToOids(str_id, oids, simpler, locked);
+        }
+        break;
+        
+    case CSeqDBIsam::ePig:
+        // Converted to PIG type.
+        if (! m_IsamPig.Empty()) {
+            Uint4 oid(Uint4(-1));
+            
+            if (m_IsamPig->PigToOid(ident, oid, locked)) {
+                oids.push_back(oid);
+            }
+        }
+        break;
+        
+    case CSeqDBIsam::eGi:
+        // Converted to GI type.
+        if (! m_IsamGi.Empty()) {
+            Uint4 oid(Uint4(-1));
+            
+            if (m_IsamGi->GiToOid(ident, oid, locked)) {
+                oids.push_back(oid);
+            }
+        }
+        break;
+        
+    case CSeqDBIsam::eOID:
+        // Converted to OID directly.
+        oids.push_back(ident);
+        break;
+    }
+}
+
+void CSeqDBVol::SeqidToOids(CSeq_id        & seqid,
+                            vector<Uint4>  & oids,
+                            CSeqDBLockHold & locked) const
+{
+    bool  simpler (false);
+    Uint4 ident   (Uint4(-1));
+    string str_id;
+    
+    switch(CSeqDBIsam::SimplifySeqid(seqid, 0, ident, str_id, simpler)) {
     case CSeqDBIsam::eString:
         if (! m_IsamStr.Empty()) {
             // Not simplified
