@@ -36,6 +36,9 @@ $Revision$
 
 /*
 * $Log$
+* Revision 1.7  2003/04/11 16:41:16  dondosha
+* Added an extern declaration to eliminate compiler warning
+*
 * Revision 1.6  2003/04/09 18:44:14  dondosha
 * Advance buffer pointer for masking residues for all programs
 *
@@ -230,6 +233,7 @@ $Revision$
 #include <blast_util.h>
 
 extern Uint1 FrameToDefine PROTO((Int2 frame));
+extern void HackSeqLocId(SeqLocPtr slp, SeqIdPtr id);
 
 /* These should be defined elsewhere so other trans. units can use them. */
 #define SEQLOC_MASKING_NOTSET 0
