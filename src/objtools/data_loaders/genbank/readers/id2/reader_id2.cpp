@@ -105,6 +105,11 @@ public:
 };
 
 
+enum {
+    kSkeleton_ChunkId = kMax_Int
+};
+
+
 DEFINE_STATIC_FAST_MUTEX(sx_FirstConnectionMutex);
 
 
@@ -520,6 +525,53 @@ void CId2Reader::LoadBlob(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     if ( !blob.IsLoaded() ) {
+        if ( CId1ReaderBase::IsAnnotBlob_id(blob_id) ) {
+            // create special external annotations blob
+            CAnnotName name;
+            SAnnotTypeSelector type;
+            string db_name;
+            if ( blob_id.GetSubSat() == CId1ReaderBase::eSubSat_SNP ) {
+                blob->SetName("SNP");
+                name.SetNamed("SNP");
+                type.SetFeatSubtype(CSeqFeatData::eSubtype_variation);
+                db_name = "Annot:SNP";
+            }
+            else if ( blob_id.GetSubSat() == CId1ReaderBase::eSubSat_CDD ) {
+                name.SetNamed("CDDSearch");
+                type.SetFeatSubtype(CSeqFeatData::eSubtype_region);
+                db_name = "Annot:CDD";
+            }
+            else if ( blob_id.GetSubSat() == CId1ReaderBase::eSubSat_SNP_graph ) {
+                blob->SetName("SNP");
+                name.SetNamed("SNP");
+                type.SetAnnotType(CSeq_annot::C_Data::e_Graph);
+                db_name = "Annot:SNP graph";
+            }
+            else if ( blob_id.GetSubSat() == CId1ReaderBase::eSubSat_MGC ) {
+                type.SetFeatSubtype(CSeqFeatData::eSubtype_misc_difference);
+                db_name = "Annot:MGC";
+            }
+            if ( !db_name.empty() &&
+                 type.GetFeatSubtype() != CSeqFeatData::eSubtype_any ) {
+                int gi = blob_id.GetSatKey();
+                CSeq_id seq_id;
+                seq_id.SetGeneral().SetDb(db_name);
+                seq_id.SetGeneral().SetTag().SetId(gi);
+
+                CRef<CTSE_Chunk_Info> chunk
+                    (new CTSE_Chunk_Info(kSkeleton_ChunkId));
+                chunk->x_AddAnnotType(name, type,
+                                      CSeq_id_Handle::GetGiHandle(gi));
+                chunk->x_AddBioseqPlace(0);
+                chunk->x_AddBioseqId(CSeq_id_Handle::GetHandle(seq_id));
+                blob->GetSplitInfo().AddChunk(*chunk);
+                blob.SetLoaded();
+                result.AddTSE_Lock(blob);
+                result.UpdateLoadedSet();
+                return;
+            }
+        }
+
         CID2_Request req;
         CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
         x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
@@ -534,18 +586,34 @@ void CId2Reader::LoadChunk(CReaderRequestResult& result,
 {
     CLoadLockBlob blob(result, blob_id);
     _ASSERT(blob);
-    if ( blob->GetSplitInfo().GetChunk(chunk_id).IsLoaded() ) {
+    CTSE_Chunk_Info& chunk_info = blob->GetSplitInfo().GetChunk(chunk_id);
+    if ( chunk_info.IsLoaded() ) {
+        return;
+    }
+    CInitGuard init(chunk_info, result);
+    if ( !init ) {
+        _ASSERT(chunk_info.IsLoaded());
         return;
     }
     CID2_Request req;
-    CID2S_Request_Get_Chunks& req2 = req.SetRequest().SetGet_chunks();
-    x_SetResolve(req2.SetBlob_id(), blob_id);
-    if ( blob->GetBlobVersion() > 0 ) {
-        req2.SetBlob_id().SetVersion(blob->GetBlobVersion());
+    if ( chunk_id == kSkeleton_ChunkId && CId1ReaderBase::IsAnnotBlob_id(blob_id) ) {
+        CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
+        x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
+        req2.SetGet_data();
+        x_ProcessRequest(result, req);
     }
-    //req2.SetSplit_version(blob->GetSplitInfo().GetSplitVersion());
-    req2.SetChunks().push_back(CID2S_Chunk_Id(chunk_id));
-    x_ProcessRequest(result, req);
+    else {
+        CID2S_Request_Get_Chunks& req2 = req.SetRequest().SetGet_chunks();
+        x_SetResolve(req2.SetBlob_id(), blob_id);
+
+        if ( blob->GetBlobVersion() > 0 ) {
+            req2.SetBlob_id().SetVersion(blob->GetBlobVersion());
+        }
+        //req2.SetSplit_version(blob->GetSplitInfo().GetSplitVersion());
+        req2.SetChunks().push_back(CID2S_Chunk_Id(chunk_id));
+        x_ProcessRequest(result, req);
+    }
+    _ASSERT(chunk_info.IsLoaded());
 }
 
 
@@ -972,11 +1040,24 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
 {
     TBlob_id blob_id = GetBlob_id(reply.GetBlob_id());
     CLoadLockBlob blob(result, blob_id);
+    bool is_annot_chunk = false;
     if ( blob.IsLoaded() ) {
-        m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
-        ERR_POST("CId2Reader: ID2-Reply-Get-Blob: "
-                 "blob already loaded: " << blob_id.ToString());
-        return;
+        if ( CId1ReaderBase::IsAnnotBlob_id(blob_id) && !blob->HasSeq_entry() ) {
+            try {
+                // ok it's special processing of external annotation
+                if ( !blob->GetSplitInfo().GetChunk(kSkeleton_ChunkId).IsLoaded() ) {
+                    is_annot_chunk = true;
+                }
+            }
+            catch ( ... ) {
+            }
+        }
+        if ( !is_annot_chunk ) {
+            m_AvoidRequest |= fAvoidRequest_nested_get_blob_info;
+            ERR_POST("CId2Reader: ID2-Reply-Get-Blob: "
+                     "blob already loaded: " << blob_id.ToString());
+            return;
+        }
     }
 
     if ( blob->HasSeq_entry() ) {
@@ -999,7 +1080,7 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
         return;
     }
 
-    if (reply.GetBlob_id().GetSub_sat() == CID2_Blob_Id::eSub_sat_snp){
+    if ( CId1ReaderBase::IsSNPBlob_id(blob_id) ){
         x_ReadSNPData(*blob, reply.GetData());
     }
     else {
@@ -1012,10 +1093,15 @@ void CId2Reader::x_ProcessReply(CReaderRequestResult& result,
         blob->SetBlobVersion(abs(reply.GetBlob_id().GetVersion()));
     }
 
-    if ( reply.GetSplit_version() == 0 ) {
-        // no more data
-        blob.SetLoaded();
-        result.AddTSE_Lock(blob);
+    if ( is_annot_chunk ) {
+        blob->GetSplitInfo().GetChunk(kSkeleton_ChunkId).SetLoaded();
+    }
+    else {
+        if ( reply.GetSplit_version() == 0 ) {
+            // no more data
+            blob.SetLoaded();
+            result.AddTSE_Lock(blob);
+        }
     }
 }
 
