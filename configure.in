@@ -97,11 +97,15 @@ fi
 mkdir -p "$libdir" "$bindir" "$builddir"
 
 
-#### Check if the target directory already has a configured system in it.
+#### Check if the target directory already has a configured system in it
 if test -f "${ncbiconf}" ; then
-   AC_MSG_ERROR([There is already a built "${ncbiconf}"!])
+   echo "There is already a built \"${ncbiconf}\"!"
+   echo "Do you want to re-configure in \"${builddir}\"? [y/n]"
+   read answer
+   test "$answer" = "y"  ||  test "$answer" = "Y"  ||  exit
 fi
 
+#### Get the running host's properties
 AC_CANONICAL_HOST
 AC_DEFINE_UNQUOTED(HOST,        "$host")
 AC_DEFINE_UNQUOTED(HOST_CPU,    "$host_cpu")
@@ -117,19 +121,39 @@ AC_LANG_CPLUSPLUS
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
-AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR) 
+AC_CHECK_PROG(AR, ar, ar cru, ErrorCannotFind_AR)
+AC_CHECK_PROG(STRIP, strip, strip, :)
 
 
 #### Paths to another packages
 
-SYBASE_PATH=${SYBASE_PATH:=No_SybasePath}
-PM_PATH=${PM_PATH:=No_PmPath}
+# Sybase
+SYBASE_PATH=${SYBASE_PATH:="No_SybasePath"}
 
-NCBI_C_INCLUDE=${NCBI_C_INCLUDE:=No_NcbiCInclude}
-NCBI_C_LIB=${NCBI_C_LIB:=No_NcbiCLib}
+# NCBI PubMed
+PM_PATH=${PM_PATH:="No_PmPath"}
 
-NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:=No_SssDbInclude}
-NCBI_SSS_LIB=${NCBI_SSS_LIB:=No_SssDbLib}
+# NCBI C Toolkit
+NCBI=${NCBI:="No_NCBI"}
+NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
+NCBI_C_INCLUDE=${NCBI_C_INCLUDE:="$NCBI_C_PATH/include"}
+NCBI_C_RELEASE_LIB=${NCBI_C_RELEASE_LIB:="$NCBI_C_PATH/lib"}
+NCBI_C_DEBUG_LIB=${NCBI_C_DEBUG_LIB:="$NCBI_C_PATH/altlib"}
+
+# NCBI SSS package
+NCBI_SSS_PATH=${NCBI_SSS_PATH:="No_NcbiSSSPath"}
+NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH"}
+NCBI_SSS_RELEASE_LIB=${NCBI_SSS_RELEASE_LIB:="$NCBI_SSS_PATH/Release"}
+NCBI_SSS_DEBUG_LIB=${NCBI_SSS_DEBUG_LIB:="$NCBI_SSS_PATH/Debug"}
+
+
+### System and miscellaneous libs
+
+THREAD_LIBS=${THREAD_LIBS:="-lpthread"}
+NETWORK_LIBS=${NETWORK_LIBS:="-lsocket -lnsl"}
+
+FASTCGI_LIBS=${FASTCGI_LIBS:="-lfcgi"}
+FASTCGI_LIBS="$FASTCGI_LIBS $NETWORK_LIBS"
 
 
 #### Turn on compilation warnings and adjust
@@ -146,6 +170,14 @@ if test "$CONF_f_outobj"  = " " ;  then f_outobj="" ; else f_outobj="${CONF_f_ou
 if test "$CONF_f_outlib"  = " " ;  then f_outlib="" ; else f_outlib="${CONF_f_outlib}" ; fi
 if test "$CONF_f_libpath" = " " ;  then f_libpath="" ; else f_libpath="${CONF_f_libpath:=-L}" ; fi
 if test "$CONF_f_outexe"  = " " ;  then f_outexe="" ; else f_outexe="${CONF_f_outexe:=-o }" ; fi
+
+#### For some compilers(e.g. SunPro 5.0), there is no sense to compare the
+#### old object/lib/binary file with the new one -- they will always be
+#### different because of some timestamp or smth. else  (--without-bincopy)
+BINCOPY="${CONFIG_SHELL-/bin/sh} $srcdir/src/if_diff.sh \"cp -p\""
+if test "$with_bincopy" = "no" ; then
+   BINCOPY="cp -p"
+fi
 
 #### GNU compiler
 if test "$GCC" = "yes" ; then
@@ -193,6 +225,7 @@ if test "$msvc" != "yes" ; then
       LDFLAGS=`echo $LDFLAGS   | sed 's/-O[0-9]*//g'`
       if echo "$LDFLAGS"  |grep -v >/dev/null '\-g' ;
          then LDFLAGS="$LDFLAGS -g"   ; fi
+      STRIP=":"
    fi
 fi
 changequote([, ])dnl
@@ -367,6 +400,7 @@ AC_SUBST(CPP)
 AC_SUBST(CXX)
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
+AC_SUBST(STRIP)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CXXFLAGS)
@@ -401,6 +435,8 @@ AC_SUBST(NCBI_C_INCLUDE)
 AC_SUBST(NCBI_C_LIB)
 AC_SUBST(NCBI_SSS_INCLUDE)
 AC_SUBST(NCBI_SSS_LIB)
+
+AC_SUBST(BINCOPY)
 
 AC_SUBST(KeepStateTarget)
 
@@ -445,17 +481,21 @@ status_dir="$exec_prefix/status"
 test -d  "$status_dir"  ||  mkdir -p "$status_dir"
 mv config.status config.cache config.log "$status_dir"/
 
-echo "Configuration completed."
-echo ""
-echo "Optional configure flags:"
-echo " --without-debug    to build the release versions of libs and apps"
-echo " --without-fastcgi  to explicitely prohibit the use of Fast-CGI library"
-echo " --with-internal    to build all projects including internal ones"
-echo ""
-echo "Tools / flags / paths:  $builddir/Makefile.mk"
-echo "Preprocessor defines:   $ncbiconf"
-echo ""
-echo "To build everything:    cd $builddir ; make all_r",
+cat << EOCONF
+Configuration completed.
+
+Optional configure flags:
+ --without-debug    to build the release versions of libs and apps
+ --without-fastcgi  to prohibit the use of Fast-CGI library
+ --with-internal    to build all projects including the internal ones
+ --without-bincopy  dont check whether the copied binaries are identical
+
+Tools / flags / paths:  $builddir/Makefile.mk
+Preprocessor defines:   $ncbiconf
+
+To build everything:    cd $builddir && make all_r
+EOCONF
+,
 
 SAVE_builddir="$builddir"
 SAVE_exec_prefix="$exec_prefix"
