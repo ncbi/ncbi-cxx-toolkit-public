@@ -20,6 +20,14 @@ UL.bold     { font-weight: bold; font-style: normal; }
 OL UL       { font-weight: normal; font-style: normal; }
 
 
+/*  Used primarily in the top navbar of the C++ toolkit doc pages */
+
+.teal        { background: #336699; }   /* NCBI logo teal */
+.NAVBAR      {color: #000000; font-weight: normal; font-size: 8pt; }
+A.NAVBAR     {color: #0033CC; font-weight: normal; font-size: 8pt; }
+A.NAVBARBOLD {color: #000000; font-weight: bold;}
+
+
 /*  Used to make internal document navigation-link style text (i.e. [Top],
     and links to source files in the library reference).
     *   font-size (relative or absolute) doesn't work w/ NS4.78;
@@ -36,6 +44,15 @@ A.navr       { font-weight: normal; font-size: smaller; }
 SPAN.nava    { font-weight: normal; font-size: 7pt; }
 SPAN.navait  { font-weight: normal; font-size: 8pt; font-style: italic;}
 SPAN.navr    { font-weight: normal; font-size: smaller; }
+
+
+
+/*  Used to shade rows in a table  */
+
+TR.head  { background: #ccccff; }   /* lavender */
+TR.shade { background: #cccccc; }   /*     grey */
+TD.shade { background: #cccccc; }   /*     grey */
+
 
 /*  Used to highlight text during internal documentation review  */
 
