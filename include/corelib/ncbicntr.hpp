@@ -111,10 +111,22 @@ extern "C" {
    typedef int TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (fetch_and_add(p, d) + d)
 #elif defined(NCBI_OS_DARWIN)
+#  ifdef __MWERKS__
+    // necessary to Metrowerks can compile the following header properly
+#    define __NOEXTENSIONS__
+#    ifdef verify
+#      define NCBI_verify_save verify
+#      undef verify
+#    endif
+#  endif
 #  include <CoreServices/CoreServices.h>
 // Darwin's <AssertMacros.h> defines check as a variant of assert....
 #  ifdef check
 #    undef check
+#  endif
+#  ifdef NCBI_verify_save
+#    undef verify
+#    define verify NCBI_verify_save
 #  endif
    typedef SInt32 TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) (AddAtomic(d, p) + d)
@@ -346,6 +358,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/02/17 20:35:23  rsmith
+* moved core/settings.[ch]pp and core/system_path.[ch]pp to config and utils, respectively.
+*
 * Revision 1.19  2004/02/04 00:38:03  ucko
 * Centralize undefinition of Darwin's check macro.
 *
