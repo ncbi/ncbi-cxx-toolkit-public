@@ -25,8 +25,7 @@
 *
 * Author:  Christiam Camacho
 *
-* File Description:
-*   Declaration of ADT to retrieve sequences for the BLAST engine.
+* Contents: Declaration of ADT to retrieve sequences for the BLAST engine.
 *
 */
 
