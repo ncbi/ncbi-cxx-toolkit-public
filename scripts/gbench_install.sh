@@ -16,7 +16,7 @@ export DYLD_BIND_AT_LAUNCH
 . ${script_dir}/common.sh
 
 
-PLUGINS='algo_align algo_basic ncbi_init net_blast algo_stdio algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator'
+PLUGINS='algo_align algo_basic ncbi_init net_blast algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator'
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core xgbplugin'
 OPT_LIBS='bdb lds lds_admin xobjread'
@@ -159,7 +159,7 @@ CopyFiles()
 
     for x in $LIBS; do
         echo copying: lib$x.so
-        src_file=$src_dir/lib/lib$x.so
+        src_file=$src_dir/shlib/lib$x.so
         if [ -f $src_file ]; then
             rm -f $target_dir/lib/lib$x.so
             DoCopy $src_file $target_dir/lib/
@@ -181,10 +181,10 @@ CopyFiles()
     for x in $PLUGINS; do
         echo copying plugin: $x
         rm -f $target_dir/plugins/libgui_$x.so
-        DoCopy $src_dir/lib/libgui_$x.so $target_dir/plugins/
+        DoCopy $src_dir/shlib/libgui_$x.so $target_dir/plugins/
     done
 
-    for x in $src_dir/lib/libdbapi*.so; do
+    for x in $src_dir/shlib/libdbapi*.so; do
         if [ -f $x ]; then
             f=`basename $x`
             echo copying DB interface: $f
@@ -244,8 +244,8 @@ if [ ! -d $src_dir/bin ]; then
     COMMON_Error "bin directory not found: $src_dir/bin"
 fi
 
-if [ ! -d $src_dir/lib ]; then
-    COMMON_Error "lib directory not found: $src_dir/lib"
+if [ ! -d $src_dir/shlib ]; then
+    COMMON_Error "shlib directory not found: $src_dir/shlib"
 fi
 
 
@@ -277,7 +277,7 @@ echo "Configuring plugin cache"
 # explicitly search FLTK's library directory.
 fltk_config=`sed -ne 's/^FLTK_CONFIG *= *//p' ${src_dir}/build/Makefile.mk`
 fltk_libdir=`$fltk_config --exec-prefix`/lib
-COMMON_AddRunpath ${src_dir}/lib:${fltk_libdir}
+COMMON_AddRunpath ${src_dir}/shlib:${fltk_libdir}
 COMMON_ExecRB ${target_dir}/bin/gbench_plugin_scan ${target_dir}/plugins
 
 # Do this last, to be sure the symlink doesn't end up dangling.
