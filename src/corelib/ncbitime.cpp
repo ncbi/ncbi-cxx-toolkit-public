@@ -487,7 +487,7 @@ time_t CTime::GetTimeT(void) const
     // Correct timezone for GMT time
     if ( IsGmtTime() ) {
 
-       // Callmktime second time for GMT time !!!  
+       // Call mktime() second time for GMT time !!!  
        // 1st - to get correct value of TimeZone().
        // 2nd - to get value "timer". 
 
@@ -825,6 +825,9 @@ CTime& CTime::ToTime(ETimeZone tz)
         if (timer == -1) 
             return *this;
 
+        // MT-Safe protect
+        CFastMutexGuard LOCK(s_TimeMutex);
+
 #if defined(HAVE_LOCALTIME_R)
         struct tm temp;
         if ( tz == eLocal ) {
@@ -1030,7 +1033,7 @@ CTime& CTime::x_AdjustTimeImmediately(const CTime& from, bool shift_time)
         sign = ( *this > from ) ? 1 : -1;
         // !!! Run TimeZoneDiff() first for old time value 
         diff = -tmp.TimeZoneDiff() + TimeZoneDiff();
-        // Correction need't if time already in identical timezone
+        // Correction need's if time already in identical timezone
         if ( !diff  ||  diff == m_AdjustTimeDiff )
             return *this;
     } 
@@ -1159,6 +1162,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2002/08/19 14:02:24  ivanov
+ * MT-safe fix for ToTime()
+ *
  * Revision 1.24  2002/07/23 19:51:17  lebedev
  * NCBI_OS_MAC: GetTimeT fix
  *
