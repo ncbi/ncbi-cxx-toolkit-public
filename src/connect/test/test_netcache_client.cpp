@@ -129,9 +129,10 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
     avg_tran = sum_tran / double(log.size());
 
     NcbiCout << "Sum, Conn, Trans" << endl;
-    NcbiCout << fixed << sum << ", " << sum_conn << ", " << sum_tran << NcbiEndl;
+    NcbiCout.setf(IOS_BASE::fixed, IOS_BASE::floatfield);
+    NcbiCout << sum << ", " << sum_conn << ", " << sum_tran << NcbiEndl;
     NcbiCout << "Avg, Conn, Trans" << endl;
-    NcbiCout << fixed << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
+    NcbiCout << avg << ", " << avg_conn << ", " << avg_tran << NcbiEndl;
 
 }
 
@@ -295,6 +296,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/20 20:53:36  ucko
+ * s_ReportStatistics: GCC 2.95 lacks "fixed" as a manipulator.
+ *
  * Revision 1.5  2004/10/20 15:37:19  kuznets
  * Added stress test for different BLOB sizes
  *
