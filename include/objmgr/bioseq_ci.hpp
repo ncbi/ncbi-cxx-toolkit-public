@@ -37,7 +37,11 @@
 #include <corelib/ncbiobj.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/impl/heap_scope.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 #include <objects/seq/Seq_inst.hpp>
+
+#include <stack>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -52,7 +56,6 @@ BEGIN_SCOPE(objects)
 class CScope;
 class CBioseq_Handle;
 class CSeq_entry;
-class CSeq_entry_Handle;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -107,43 +110,40 @@ public:
     const CBioseq_Handle* operator-> (void) const;
 
 private:
-    typedef vector<CBioseq_Handle>            TBioseq_HandleSet;
-    typedef TBioseq_HandleSet::const_iterator THandleIterator;
+    void x_Initialize(const CSeq_entry_Handle& entry);
+    void x_SetEntry(const CSeq_entry_Handle& entry);
+    void x_Settle(void);
 
-    CHeapScope           m_Scope;
-    TBioseq_HandleSet    m_Handles;
-    THandleIterator      m_Current;
+    typedef stack<CSeq_entry_CI> TEntryStack;
+
+    CHeapScope          m_Scope;
+    CSeq_inst::EMol     m_Filter;
+    EBioseqLevelFlag    m_Level;
+    CSeq_entry_Handle   m_CurrentEntry;
+    CBioseq_Handle      m_CurrentBioseq;
+    TEntryStack         m_EntryStack;
+    int                 m_InParts;
 };
-
-
-inline
-CBioseq_CI& CBioseq_CI::operator++ (void)
-{
-    if ( m_Current != m_Handles.end() ) {
-        m_Current++;
-    }
-    return *this;
-}
 
 
 inline
 CBioseq_CI::operator bool (void) const
 {
-    return m_Current != m_Handles.end();
+    return m_CurrentBioseq;
 }
 
 
 inline
 const CBioseq_Handle& CBioseq_CI::operator* (void) const
 {
-    return *m_Current;
+    return m_CurrentBioseq;
 }
 
 
 inline
 const CBioseq_Handle* CBioseq_CI::operator-> (void) const
 {
-    return &(*m_Current);
+    return &m_CurrentBioseq;
 }
 
 
@@ -163,6 +163,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2005/01/10 19:06:27  grichenk
+* Redesigned CBioseq_CI not to collect all bioseqs in constructor.
+*
 * Revision 1.17  2004/12/13 18:40:43  grichenk
 * Removed CBioseq_CI_Base
 *
