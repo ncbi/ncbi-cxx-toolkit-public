@@ -1,123 +1,27 @@
-<!--#set var="TITLE" value="Using CVS on Mac OS in NCBI" -->
+<!--#set var="TITLE" value="cvs_core.sh MSVC++-related options" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<i><h1><font color="#FF0000"><span style="background-color: #FFFFFF">Warning: This HTML page is deprecated</span></font></h1>
 
-All new changes are being made to the Toolkit Book
-at the following locations:
-<ul>
-<li>
-<i>Official Release:</i> <a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
-    C++ Toolkit Book</a>.
-</li>
-<li>
-<i>Development Version:</i> <a href="http://xpubmed0.ncbi.nlm.nih.gov:5701/books/bv.fcgi?call=bv.View..ShowTOC&rid=toolkit.TOC&depth=2">
 
-    C++ Toolkit Book (no search engine, accessible from inside NCBI only)</a>. </li> </ul> The Development Version is the most recent documentation before it becomes an Official Release. While the Development Version is the lastest version, it is accessible only from inside NCBI, and the search engine functionality is currently missing. Also, the location of the Development Version may change without warning! So it is suggested that you use the Official Release, and use the Development Version only when necessary.</p> </i>
+<h1>
+The documentation has
+<font color="#FF0000"><span style="background-color: #FFFFFF">moved</span></font>
+to:
+<a href="http://www.ncbi.nlm.nih.gov/books/bv.fcgi?rid=toolkit.TOC&depth=2">
+NCBI C++ Toolkit Book</a>.
+</h1>
 
-<hr>
-<!--EOW-->
-
-<h1>Using CVS on Mac OS in NCBI</h1>
-
-  <!--
-  <li>
-    $ <span class="ncbi_cmd">mkdir bin</span>
-  </li>
-
-  <li>
-    $ <span class="ncbi_cmd">ln -s $(which cvs) bin</span>
-  </li>
-  -->
-
-</ol>
-
-<h2>Installing and Configuring MacCVS Pro</h2>
-
-<ol>
-  <li>
-    Download MacCVS
-    Pro 2.7d3</a> (the latest release version as of 2001-03-05)
-    from <a href=
-    "http://sourceforge.net/projects/maccvspro" class="ncbi_url">http://sourceforge.net/projects/maccvspro</a>.
-  </li>
-
-  <li>
-    Put the expanded folder somewhere appropriate, e.g. with other
-    development tools.  Launch the MacCVS Pro application.
-  </li>
-
-  <li>
-    Create a new session document by choosing [<span class="ncbi_menu">File->New</span>] and
-    saving the document.
-  </li>
-
-  <li>
-    Choose [<span class="ncbi_menu">Edit->Session Settings...</span>]:
-    <ul>
-    <li><i>Checkout and Update Options</i>
-      <ul>
-      <li><i>Local Tree Directory</i>:  Click <span class="ncbi_menu">Set</span> and choose a
-          folder in which to check out a CVS working directory.
-      </li>
-      <li><i>Merge Policy</i>:  Select <span class="ncbi_menu">Auto Merge Text Files and
-          Update Binary Files</span>.
-      </li>
-      </ul>
-  </li>
-  <li><i>Remote Host Information</i>
-      <ul>
-        <li><i>CVS Server Settings</i>
-          <ul>
-            <li><i>Server Hostname</i>:  <span class="ncbi_value">cvsvault.ncbi.nlm.nih.gov</span></li>
-            <li><i>CVS Root</i>:  <span class="ncbi_dir">/src/NCBI/vault.ncbi</span></li>
-          </ul>
-        </li>
-        <li><i>Authentication Method</i>:  <span class="ncbi_value">Password</span>
-          <ul>
-            <li><i>CVS User Name</i>:  <span class="ncbi_value">username</span></li>
-          </ul>
-          <ul>
-            <li><i>CVS Password</i>:  <span class="ncbi_value"><b>allowed</b></span></li>
-          </ul>
-        </li>
-        </ul>
-      </li>
-      <li><i>Messages and Misc.</i>
-        <ul>
-          <li><i>Message Output</i>
-            <ul>
-              <li>Checking <span class="ncbi_menu">Automatically clear message window</span> is recommended, though optional.</li>
-            </ul>
-          </li>
-        </ul>
-      </li>
-      <li>Click <span class="ncbi_menu">OK</span>.</li>
-    </ul>
-  </li>
-  <li>
-    Choose [<span class="ncbi_menu">Action->Check Out Module...</span>].  Enter the module name
-    and click <span class="ncbi_menu">Check Out</span>.
-  </li>
-</ol>
-
-<!--
-<h2>Installing and Configuring maccvs (GNU CVS port)</h2>
--->
 
 <!--#include virtual="./ssi/navlinks.shtml" -->
 
 <table border=0 width="100%" cellspacing=0>
-    <tr>
-<td>
-    <address>
-    <a href="mailto:cpp-core@ncbi.nlm.nih.gov">Vlad Lebedev</a>
-    </address>
+<tr>
+<td align=left>
+  <address><a href="mailto:cpp-core@ncbi.nlm.nih.gov">NCBI C++ Core Group</a></address>
 </td>
-<td align=right>
-    <span class="ncbi_cvs_date">$Date$</span>
-</td>
-    </tr>
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> -->
+<!-- <td align=right><span class="ncbi_cvs_date">$Date$</span></td> -->
+</tr>
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->
