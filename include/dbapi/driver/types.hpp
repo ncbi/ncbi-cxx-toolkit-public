@@ -4,25 +4,25 @@
 /* $Id$
  * ===========================================================================
  *
- *                            PUBLIC DOMAIN NOTICE                      
+ *                            PUBLIC DOMAIN NOTICE
  *               National Center for Biotechnology Information
  *
- *  This software/database is a "United States Government Work" under the 
+ *  This software/database is a "United States Government Work" under the
  *  terms of the United States Copyright Act.  It was written as part of
- *  the author's official duties as a United States Government employee and 
- *  thus cannot be copyrighted.  This software/database is freely available 
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
  *  to the public for use. The National Library of Medicine and the U.S.
  *  Government have not placed any restriction on its use or reproduction.
  *
  *  Although all reasonable efforts have been taken to ensure the accuracy
- *  and reliability of the software and data, the NLM and the U.S.      
+ *  and reliability of the software and data, the NLM and the U.S.
  *  Government do not and cannot warrant the performance or results that
  *  may be obtained by using this software or data. The NLM and the U.S.
- *  Government disclaim all warranties, express or implied, including   
+ *  Government disclaim all warranties, express or implied, including
  *  warranties of performance, merchantability or fitness for any particular
- *  purpose.                                                            
+ *  purpose.
  *
- *  Please cite the author in any work or product based on this material. 
+ *  Please cite the author in any work or product based on this material.
  *
  * ===========================================================================
  *
@@ -63,7 +63,7 @@ enum EDB_Type {
 
     eDB_UnsupportedType
 };
- 
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ enum EDB_Type {
 //  CDB_Object::
 //
 // Base class for all "type objects" to support database NULL value
-// and provide the means to get the type and to clone the object. 
+// and provide the means to get the type and to clone the object.
 //
 
 class CDB_Object
@@ -276,7 +276,8 @@ protected:
 class CDB_Char : public CDB_Object
 {
 public:
-    static const size_t kMaxCharSize = 255;
+    // static const size_t kMaxCharSize = 255; <<=not compatible with MS compiler
+    enum {kMaxCharSize = 255 };
 
     CDB_Char(size_t s = 1) : CDB_Object(true) {
         m_Size = (s < 1) ? 1 : (s > kMaxCharSize ? kMaxCharSize : s);
@@ -298,7 +299,7 @@ public:
     CDB_Char(size_t len, const char* str) :  CDB_Object(str == 0) {
         m_Size = (len < 1) ? 1 : (len > kMaxCharSize ? kMaxCharSize : len);
         m_Val = new char[m_Size + 1];
- 
+
         if ( str ) {
             size_t l;
             for (l = 0;  (l < m_Size)  &&  (*str != '\0');  ++str) {
@@ -320,7 +321,7 @@ public:
         m_Val = new char[m_Size + 1];
         memcpy(m_Val, v.m_Val, m_Size + 1);
     }
- 
+
 
     CDB_Char& operator= (const CDB_Char& v) {
         m_Null = v.m_Null;
@@ -412,7 +413,7 @@ public:
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
- 
+
 protected:
     size_t        m_Size;
     unsigned char m_Val[255];
@@ -423,7 +424,8 @@ protected:
 class CDB_Binary : public CDB_Object
 {
 public:
-    static const size_t kMaxBinSize = 255;
+    // static const size_t kMaxBinSize = 255; <<=not compatible with MS compiler
+    enum { kMaxBinSize = 255 };
 
     CDB_Binary(size_t s = 1) : CDB_Object(true) {
         m_Size = (s < 1) ? 1 : (s > kMaxBinSize ? kMaxBinSize : s);
@@ -443,7 +445,7 @@ public:
         m_Val = new unsigned char[m_Size];
         memcpy(m_Val, v.m_Val, m_Size);
     }
- 
+
     void SetValue(const void* v, size_t v_size) {
         if (v  &&  v_size) {
             memcpy(m_Val, v, (v_size > m_Size) ? m_Size : v_size);
@@ -611,7 +613,7 @@ public:
         m_Null        = false;
         return *this;
     }
- 
+
     CDB_SmallDateTime& operator= (const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
@@ -672,7 +674,7 @@ public:
         m_Status = 0x2;
 	m_Null= false;
     }
- 
+
     CDB_DateTime& operator= (const CTime& t) {
         m_NCBITime = t;
         m_Status = 0x1;
@@ -687,7 +689,7 @@ public:
         m_Null = false;
         return *this;
     }
- 
+
     const CTime& Value() const {
         if((m_Status & 0x1) == 0) {
             m_NCBITime.SetTimeDBI(m_DBTime);
@@ -772,7 +774,7 @@ public:
         m_Scale     = scale;
         memcpy(m_Body, arr, sizeof(m_Body));
     }
- 
+
     CDB_Numeric(unsigned int precision, unsigned int scale, const char* val) {
         x_MakeFromString(precision, scale, val);
     }
@@ -822,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2001/12/28 21:22:39  sapojnik
+ * Made compatible with MS compiler: long long to Int8, static const within class def to enum
+ *
  * Revision 1.3  2001/12/14 17:58:26  soussov
  * fixes bug in datetime related constructors
  *

@@ -48,7 +48,7 @@ static int s_NumericBytesPerPrec[] =
  22, 22, 23, 23, 24, 24, 24, 25, 25, 26, 26, 26};
 
 
-unsigned char*  longlong_to_numeric (long long l_num, unsigned int prec, unsigned char* cs_num)
+unsigned char*  longlong_to_numeric (Int8 l_num, unsigned int prec, unsigned char* cs_num)
 {
     bool needs_del= false;
 
@@ -68,7 +68,7 @@ unsigned char*  longlong_to_numeric (long long l_num, unsigned int prec, unsigne
             cs_num[0] = 0x1;
         }
 	while (l_num != 0 && number >= 0) {
-	    long long rem = l_num%256;
+        Int8 rem = l_num%256;
 	    *number = (unsigned char)rem;
 	    l_num = l_num/256;
 	    number--;
@@ -82,14 +82,14 @@ unsigned char*  longlong_to_numeric (long long l_num, unsigned int prec, unsigne
 
 }
 
-long long numeric_to_longlong(unsigned int precision, unsigned char* cs_num)
+Int8 numeric_to_longlong(unsigned int precision, unsigned char* cs_num)
 
 {
 
     if(precision == 0) return 0;
 
     int BYTE_NUM = s_NumericBytesPerPrec[precision - 1];
-    long long my_long = 0;
+    Int8 my_long = 0;
 
     if (BYTE_NUM <= 9) {
         for (int i = 1; i < BYTE_NUM; i++) {
