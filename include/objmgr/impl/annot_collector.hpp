@@ -152,6 +152,7 @@ public:
     void ResetLocation(void);
     bool operator<(const CAnnotObject_Ref& ref) const; // sort by object
     bool operator==(const CAnnotObject_Ref& ref) const; // sort by object
+    bool operator!=(const CAnnotObject_Ref& ref) const; // sort by object
 
 private:
     CConstRef<CObject>      m_Object;
@@ -578,6 +579,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/08/17 03:28:20  grichenk
+* Added operator !=()
+*
 * Revision 1.12  2004/08/16 18:00:40  grichenk
 * Added detection of circular locations, improved annotation
 * indexing by strand.
