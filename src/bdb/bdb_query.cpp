@@ -843,8 +843,8 @@ public:
     operator()(CTreeNode<CBDB_QueryNode>& tr, int delta);
 
 protected:
-    CBoyerMooreMatcher*  m_Matcher;
     CQueryExecEnv&       m_QueryEnv;
+    CBoyerMooreMatcher*  m_Matcher;
 
 };
 
@@ -1128,6 +1128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/03/23 16:58:18  kuznets
+ * Fixed compilation warning (GCC)
+ *
  * Revision 1.11  2004/03/23 16:37:54  kuznets
  * Implemented NOT predicate
  *
