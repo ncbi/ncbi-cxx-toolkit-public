@@ -114,6 +114,75 @@ BlastInitialWordOptionsNew(EBlastProgramType program,
    return 0;
 }
 
+
+Int2
+BlastInitialWordOptionsValidate(EBlastProgramType program_number,
+   const BlastInitialWordOptions* options, 
+   const LookupTableOptions* lookup_options,
+   Blast_Message* *blast_msg)
+{
+   Int4 code=2;
+   Int4 subcode=1;
+   Int2 status = 0;
+
+   ASSERT(options && lookup_options);
+   
+   if (program_number == eBlastTypeBlastn) {
+
+      if (options->extension_method == eRight && 
+          lookup_options->scan_step != COMPRESSION_RATIO) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
+                            "Scanning stride must equal 4 if words are"
+                            " extended only in one direction");
+         status = (Int2) code;
+      }
+
+      if (options->variable_wordsize && 
+          ((lookup_options->word_size % 4) != 0) ) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "Word size must be divisible by 4 if only full "
+                            "bytes of subject sequences are matched to query");
+         status = (Int2) code;
+      }
+      
+      if (options->extension_method == eUpdateDiag &&
+          (lookup_options->lut_type != MB_LOOKUP_TABLE ||
+           lookup_options->scan_step != COMPRESSION_RATIO ||
+           (!options->variable_wordsize && 
+            lookup_options->mb_template_length == 0))) {
+
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "Classical megablast word finder requires "
+                            "megablast lookup table, scanning stride 4 "
+                            "and either discontiguous words, or word size "
+                            "divisible by 4");
+         status = (Int2) code;
+      }
+   } else {
+      if (options->extension_method != eRight) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "For all protein BLAST varieties initial word "
+                            "extension method must be one-directional");
+         status = (Int2) code;
+      }
+      if (options->variable_wordsize) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "For all protein BLAST varieties \"variable "
+                            "wordsize\" option is not applicable");
+         status = (Int2) code;
+      }
+      if (options->container_type != eDiagArray) {
+         Blast_MessageWrite(blast_msg, BLAST_SEV_WARNING, code, subcode, 
+                            "For all protein BLAST varieties only diagonal "
+                            "array container type is used");
+         status = (Int2) code;
+      }
+
+   }
+   return status;
+}
+
+
 Int2
 BLAST_FillInitialWordOptions(BlastInitialWordOptions* options, 
    EBlastProgramType program, Boolean greedy, Int4 window_size, 
@@ -144,12 +213,18 @@ BLAST_FillInitialWordOptions(BlastInitialWordOptions* options,
 
    if (ag_blast) {
       options->extension_method = eRightAndLeft;
+      options->container_type = eDiagArray;
    } else {
-      options->extension_method = eRight;
-      if (mb_lookup)
+      if (mb_lookup) {
          options->container_type = eMbStacks;
-      else
-         options->container_type = eDiagArray;
+         options->extension_method = eUpdateDiag;
+      } else {
+         options->extension_method = eRight;
+         if (program == eBlastTypeBlastn)
+            options->container_type = eLastHitArray;
+         else
+            options->container_type = eDiagArray;
+      }
    }
 
    return 0;
@@ -274,16 +349,10 @@ BlastInitialWordParametersUpdate(EBlastProgramType program_number,
       cutoff_s = ext_params->gap_trigger;
    }
 
-   if (parameters->options->window_size == 0 && 
-       program_number != eBlastTypeBlastn) {
-      /* One-hit protein word finder method. Reduce cutoff score. */
+   /* For non-blastn programs, ungapped cutoff is never greater than gap 
+      trigger. */
+   if (program_number != eBlastTypeBlastn)
       cutoff_s = MIN(cutoff_s, ext_params->gap_trigger);
-      if (hit_params->link_hsp_params && 
-          hit_params->link_hsp_params->cutoff_small_gap > 0) {
-         cutoff_s = 
-            MIN(cutoff_s, hit_params->link_hsp_params->cutoff_small_gap);
-      }
-   }
 
    parameters->cutoff_score = MIN(hit_params->cutoff_score, cutoff_s);
    
@@ -920,10 +989,10 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
                          "Word-size must be greater than zero");
 		return (Int2) code;
-	} else if (program_number == eBlastTypeBlastn && options->word_size < 7)
+	} else if (program_number == eBlastTypeBlastn && options->word_size < 4)
 	{
 		Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
-                         "Word-size must be 7" 
+                         "Word-size must be 4" 
                          "or greater for nucleotide comparison");
 		return (Int2) code;
 	} else if (program_number != eBlastTypeBlastn && options->word_size > 5)
@@ -951,12 +1020,11 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
       return (Int2) code;
    }
 
-   if (program_number == eBlastTypeBlastn && 
-       options->mb_template_length > 0) {
+   if (program_number == eBlastTypeBlastn && options->mb_template_length > 0) {
       if (!DiscWordOptionsValidate(options->word_size,
-            options->mb_template_length, options->mb_template_type)) {
+              options->mb_template_length, options->mb_template_type)) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
-            "Invalid discontiguous template parameters");
+                            "Invalid discontiguous template parameters");
          return (Int2) code;
       } else if (options->lut_type != MB_LOOKUP_TABLE) {
          Blast_MessageWrite(blast_msg, BLAST_SEV_ERROR, code, subcode, 
@@ -969,7 +1037,6 @@ LookupTableOptionsValidate(EBlastProgramType program_number,
          return (Int2) code;
       }
    }
-
 	return 0;
 }
 
@@ -990,8 +1057,8 @@ Int2 BlastHitSavingOptionsNew(EBlastProgramType program_number,
    if (*options == NULL)
       return 1;
 
-   (*options)->hitlist_size = 500;
-   (*options)->prelim_hitlist_size = 500;
+   (*options)->hitlist_size = BLAST_HITLIST_SIZE;
+   (*options)->prelim_hitlist_size = BLAST_PRELIM_HITLIST_SIZE;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
 
    /* other stuff?? */
@@ -1327,6 +1394,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
                            const BlastExtensionOptions* ext_options,
                            const BlastScoringOptions* score_options, 
                            const LookupTableOptions* lookup_options, 
+                           const BlastInitialWordOptions* word_options, 
                            const BlastHitSavingOptions* hit_options,
                            Blast_Message* *blast_msg)
 {
@@ -1341,6 +1409,9 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
    if ((status = LookupTableOptionsValidate(program_number, 
                     lookup_options, blast_msg)) != 0)   
        return status;
+   if ((status = BlastInitialWordOptionsValidate(program_number, 
+                    word_options, lookup_options, blast_msg)) != 0)   
+       return status;
    if ((status = BlastHitSavingOptionsValidate(program_number, hit_options,
                                                blast_msg)) != 0)
        return status;
@@ -1353,7 +1424,7 @@ Int2 BLAST_ValidateOptions(EBlastProgramType program_number,
 void
 CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, BlastLinkHSPParameters* link_hsp_params, 
-   BlastExtensionParameters* ext_params,
+   const BlastExtensionParameters* ext_params,
    Int8 db_length, Int4 subject_length)
 {
    double gap_prob, gap_decay_rate, x_variable, y_variable;
@@ -1437,6 +1508,9 @@ CalculateLinkHSPCutoffs(EBlastProgramType program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.125  2004/08/03 20:19:11  dondosha
+ * Added initial word options validation; set seed container type and extension method appropriately
+ *
  * Revision 1.124  2004/07/16 17:31:19  dondosha
  * When one-hit word finder is used for protein searches, reduce cutoff score, like it is done in old engine
  *
