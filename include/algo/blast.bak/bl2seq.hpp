@@ -43,7 +43,7 @@ USING_SCOPE(objects);
 BEGIN_NCBI_SCOPE
 
 /// Runs the BLAST algorithm between 2 sequences.
-class CBl2Seq : public CObject
+class NCBI_XBLAST_EXPORT CBl2Seq : public CObject
 {
 public:
     typedef vector< CConstRef<CSeq_loc> >   TSeqLocVector;
@@ -219,6 +219,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/04 15:42:56  dicuccio
+* Added export specifiers
+*
 * Revision 1.2  2003/08/04 15:14:19  dicuccio
 * Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
 * abouR char -> bool conversion

@@ -49,7 +49,7 @@ BEGIN_NCBI_SCOPE
 #define GENCODE_STRLEN 64
 
 /// Encapsulates all blast input parameters
-class CBlastOption : public CObject
+class NCBI_XBLAST_EXPORT CBlastOption : public CObject
 {
 public:
 
@@ -999,6 +999,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/04 15:42:56  dicuccio
+* Added export specifiers
+*
 * Revision 1.2  2003/08/04 15:14:19  dicuccio
 * Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
 * abouR char -> bool conversion

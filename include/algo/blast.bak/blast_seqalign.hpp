@@ -64,6 +64,7 @@ USING_SCOPE(objects);
  * @param sbp scoring and statistical information [in]
  * @return set of CSeq_align objects
  */
+NCBI_XBLAST_EXPORT
 CRef<CSeq_align_set>
 BLAST_Results2CppSeqAlign(const BlastResults* results, 
         CBlastOption::EProgram prog,
@@ -77,6 +78,9 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/04 15:42:56  dicuccio
+* Added export specifiers
+*
 * Revision 1.2  2003/08/04 15:14:19  dicuccio
 * Changed #includes to catch the correct C++ files.  Fixed some compiler warnings
 * abouR char -> bool conversion

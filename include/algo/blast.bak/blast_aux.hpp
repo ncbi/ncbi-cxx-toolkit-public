@@ -55,9 +55,11 @@ BEGIN_NCBI_SCOPE
  * @param index Number of frame/query number? this CSeq_loc applies to [in]
  * @return Linked list of BlastMask structures
  */
+NCBI_XBLAST_EXPORT
 BlastMask*
 BLASTSeqLoc2BlastMask(const CSeq_loc& sl, int index);
 
+NCBI_XBLAST_EXPORT
 CRef<CSeq_loc>
 BLASTBlastMask2SeqLoc(BlastMask* mask);
 
@@ -68,7 +70,7 @@ BLASTBlastMask2SeqLoc(BlastMask* mask);
  */
 
 #define DECLARE_AUTO_CLASS_WRAPPER(struct_name, free_func) \
-class C##struct_name##Ptr : public CDebugDumpable \
+class NCBI_XBLAST_EXPORT C##struct_name##Ptr : public CDebugDumpable \
 { \
 public: \
     C##struct_name##Ptr() : m_Ptr(NULL) {} \
@@ -125,6 +127,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:42:56  dicuccio
+* Added export specifiers
+*
 * Revision 1.1  2003/08/04 14:22:58  dicuccio
 * Initial import into the C++ toolkit
 *

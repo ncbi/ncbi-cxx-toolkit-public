@@ -50,6 +50,7 @@ BEGIN_NCBI_SCOPE
  * @param add_nucl_sentinel true to guard nucleotide sequence with sentinel 
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  */
+NCBI_XBLAST_EXPORT
 Uint1*
 BLASTGetSequence(const CSeq_loc& sl, Uint1 encoding, int& buflen,
         CScope* scope, ENa_strand strand = eNa_strand_plus, 
@@ -75,8 +76,10 @@ BLASTGetTranslation(const Uint1* nucl_seq, const Uint1* nucl_seq_rev,
  * are used within this function!
  * @param genetic_code numeric identifier for genetic code requested [in]
  */
+NCBI_XBLAST_EXPORT
 unsigned char* BLASTFindGeneticCode(int genetic_code);
 
+NCBI_XBLAST_EXPORT
 char* BLASTGetMatrixPath(const char* matrix_name, bool is_prot);
 
 END_NCBI_SCOPE
@@ -85,6 +88,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/04 15:42:56  dicuccio
+* Added export specifiers
+*
 * Revision 1.1  2003/08/04 14:22:58  dicuccio
 * Initial import into the C++ toolkit
 *
