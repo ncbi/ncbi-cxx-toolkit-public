@@ -189,8 +189,8 @@ NCBI_XBLAST_EXPORT
 void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score, e-value and percent identity after taking
- * into account the ambiguity information. Needed for blastn only, either
- * after a greedy gapped extension, or for ungapped search.
+ * into account the ambiguity information. Used only for blastn after a greedy
+ * gapped extension.
  * @param hsp The HSP structure [in] [out]
  * @param query_start Pointer to the start of the query sequence [in]
  * @param subject_start Pointer to the start of the subject sequence [in]
@@ -202,25 +202,43 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp);
  * @return Should this HSP be deleted after the score reevaluation?
  */
 NCBI_XBLAST_EXPORT
-Boolean Blast_HSPReevaluateWithAmbiguities(BlastHSP* hsp, 
+Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
+           BlastQueryInfo* query_info, BlastScoreBlk* sbp);
+
+/** Reevaluate the HSP's score, e-value and percent identity after taking
+ * into account the ambiguity information. Used for ungapped searches with 
+ * nucleotide database (blastn, tblastn, tblastx).
+ * @param hsp The HSP structure [in] [out]
+ * @param query_start Pointer to the start of the query sequence [in]
+ * @param subject_start Pointer to the start of the subject sequence [in]
+ * @param word_params Initial word parameters with ungapped cutoff score [in]
+ * @param hit_params Hit saving parameters containing score cut-off [in]
+ * @param query_info Query information structure, containing effective search
+ *                   space(s) [in]
+ * @param sbp Score block with Karlin-Altschul parameters [in]
+ * @return Should this HSP be deleted after the score reevaluation?
+ */
+NCBI_XBLAST_EXPORT
+Boolean Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, 
+           Uint1* query_start, Uint1* subject_start,
+           const BlastInitialWordParameters* word_params, 
+           const BlastHitSavingParameters* hit_params, 
            BlastQueryInfo* query_info, BlastScoreBlk* sbp);
 
 /** Calculate number of identities in an HSP.
  * @param query The query sequence [in]
  * @param subject The uncompressed subject sequence [in]
  * @param hsp All information about the HSP [in]
- * @param is_gapped Is this a gapped search? [in]
  * @param num_ident_ptr Number of identities [out]
  * @param align_length_ptr The alignment length, including gaps [out]
  */
 NCBI_XBLAST_EXPORT
 Int2
 Blast_HSPGetNumIdentities(Uint1* query, Uint1* subject, BlastHSP* hsp, 
-                          Boolean is_gapped, Int4* num_ident_ptr, 
-                          Int4* align_length_ptr);
+                          Int4* num_ident_ptr, Int4* align_length_ptr);
 
 /** Calculate number of identities in an HSP for an out-of-frame alignment.
  * @param query The query sequence [in]
@@ -356,6 +374,8 @@ Blast_HSPListPurgeNullHSPs(BlastHSPList* hsp_list);
  * @param hsp_list The list of HSPs for one subject sequence [in] [out]
  * @param query_blk The query sequence [in]
  * @param subject_blk The subject sequence [in] [out]
+ * @param word_params Initial word parameters, containing ungapped cutoff 
+ *                    score [in]
  * @param hit_params Hit saving parameters, including cutoff score [in]
  * @param query_info Auxiliary query information [in]
  * @param sbp The statistical information [in]
@@ -367,6 +387,7 @@ NCBI_XBLAST_EXPORT
 Int2 
 Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
+   const BlastInitialWordParameters* word_params,
    const BlastHitSavingParameters* hit_params, BlastQueryInfo* query_info, 
    BlastScoreBlk* sbp, const BlastScoringParameters* score_params, 
    const BlastSeqSrc* seq_src);
@@ -406,11 +427,6 @@ Int2 Blast_HSPListsMerge(BlastHSPList* hsp_list,
  */
 NCBI_XBLAST_EXPORT
 void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset);
-
-/** Sort the HSPs in an HSP list by diagonal and remove redundant HSPs. */
-NCBI_XBLAST_EXPORT
-Int2
-Blast_HSPListUniqSort(BlastHSPList* hsp_list);
 
 /** Check if HSP list is sorted by score.
  * @param hsp_list The list to check [in]
