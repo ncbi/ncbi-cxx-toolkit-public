@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/01/12 07:40:22  vakatov
+ * Fixed multiple dangerous typos ('&' instead of '&&' in IFs)
+ *
  * Revision 6.6  2002/01/10 19:21:34  clausen
  * Added GetIupacaa3, GetCode, and GetIndex
  *
@@ -1597,13 +1600,14 @@ void CSeqportUtil_implementation::InitIndexCode()
          
     // Get table for eSeq_code_type_iupacaa3
     iterate (Ttables, i_ct, m_SeqCodeSet->GetCodes()) {
-        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa3 & !iupacaa3_found) {
+        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa3  &&
+           !iupacaa3_found) {
             iupacaa3_found = true;
            iterate(Tcodes, i_td1, (*i_ct)->GetTable()) {
                 m_NcbistdaaIupacaa3.push_back((*i_td1)->GetSymbol());
             }
         }
-        if((*i_ct)->GetCode() == eSeq_code_type_iupacna & !iupacna_found) {
+        if((*i_ct)->GetCode() == eSeq_code_type_iupacna  &&  !iupacna_found) {
             iupacna_found = true;
             if (!(*i_ct)->IsSetStart_at()) {
                 throw runtime_error("Iupacna start_at not set");
@@ -1616,7 +1620,7 @@ void CSeqportUtil_implementation::InitIndexCode()
                 i++;
             }
         }
-        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa & !iupacaa_found) {
+        if((*i_ct)->GetCode() == eSeq_code_type_iupacaa  &&  !iupacaa_found) {
             iupacaa_found = true;
             if (!(*i_ct)->IsSetStart_at()) {
                 throw runtime_error("Iupacaa start_at not set");
@@ -1629,7 +1633,7 @@ void CSeqportUtil_implementation::InitIndexCode()
                 i++;
             }
         }
-        if((*i_ct)->GetCode() == eSeq_code_type_ncbieaa & !ncbieaa_found) {
+        if((*i_ct)->GetCode() == eSeq_code_type_ncbieaa  &&  !ncbieaa_found) {
             ncbieaa_found = true;
             if (!(*i_ct)->IsSetStart_at()) {
                 throw runtime_error("Ncbieaa start_at not set");
@@ -1642,7 +1646,8 @@ void CSeqportUtil_implementation::InitIndexCode()
                 i++;
             }
         }
-        if((*i_ct)->GetCode() == eSeq_code_type_ncbistdaa & !ncbistdaa_found) {
+        if((*i_ct)->GetCode() == eSeq_code_type_ncbistdaa  &&
+           !ncbistdaa_found) {
             ncbistdaa_found = true;
             int i = 0;
             iterate(Tcodes, i_td5, (*i_ct)->GetTable()) {
