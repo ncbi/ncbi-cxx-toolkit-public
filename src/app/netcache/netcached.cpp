@@ -336,7 +336,7 @@ int CNetCacheDApp::Run(void)
     try {
         const CNcbiRegistry& reg = GetConfig();
 
-        TPluginManagerParamTree* param_tree = PluginManager_ConvertRegToTree(reg);
+        TPluginManagerParamTree* param_tree = ParamTree_ConvertRegToTree(reg);
         const TPluginManagerParamTree* bdb_tree = 
             param_tree->FindSubNode(kBDBCacheDriverName);
 
@@ -401,6 +401,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/09/23 14:17:36  kuznets
+ * Fixed compilation bug
+ *
  * Revision 1.1  2004/09/23 13:57:01  kuznets
  * Initial revision
  *
