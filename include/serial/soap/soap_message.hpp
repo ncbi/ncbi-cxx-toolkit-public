@@ -104,6 +104,15 @@ CObjectIStream& operator>> (CObjectIStream& in, CSoapMessage& object)
     return in;
 }
 
+template <typename TObj>
+CConstRef<TObj> SOAP_GetKnownObject(CSoapMessage& msg,
+    CSoapMessage::EMessagePart source = CSoapMessage::eMsgBody)
+{
+    CConstRef<CSerialObject> oo = msg.GetSerialObject(
+        TObj::GetTypeInfo()->GetName(),source);
+    return CConstRef<TObj>( dynamic_cast<const TObj*>(oo.GetPointer()));
+}
+
 END_NCBI_SCOPE
 
 #endif  /* SOAP_MESSAGE__HPP */
@@ -112,6 +121,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/06/28 19:22:53  gouriano
+* Added GetKnownObject function template
+*
 * Revision 1.4  2004/06/24 20:38:28  gouriano
 * Added default object namespace name
 *
