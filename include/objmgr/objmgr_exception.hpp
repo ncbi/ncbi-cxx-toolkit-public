@@ -97,7 +97,8 @@ public:
     enum EErrCode {
         eBadLocation,
         eFindFailed,
-        eLimitError
+        eLimitError,
+        eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CAnnotException, CObjMgrException);
@@ -113,10 +114,24 @@ public:
         eConnectionFailed,
         eCompressionError,
         eLoaderFailed,
-        eNoConnection
+        eNoConnection,
+        eOtherError
     };
     virtual const char* GetErrCodeString(void) const;
     NCBI_EXCEPTION_DEFAULT(CLoaderException, CObjMgrException);
+};
+
+
+class NCBI_XOBJMGR_EXPORT CObjmgrUtilException : public CObjMgrException
+{
+public:
+    enum EErrCode {
+        eNotImplemented,
+        eBadSequenceType,
+        eBadLocation
+    };
+    virtual const char* GetErrCodeString(void) const;
+    NCBI_EXCEPTION_DEFAULT(CObjmgrUtilException, CObjMgrException);
 };
 
 
@@ -126,6 +141,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/11/19 22:18:01  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.4  2003/11/17 16:03:12  grichenk
 * Throw exception in CBioseq_Handle if the parent scope has been reset
 *

@@ -88,6 +88,7 @@ const char* CAnnotException::GetErrCodeString(void) const
     case eBadLocation:      return "eBadLocation";
     case eFindFailed:       return "eFindFailed";
     case eLimitError:       return "eLimitError";
+    case eOtherError:       return "eOtherError";
     default:                return CException::GetErrCodeString();
     }
 }
@@ -102,6 +103,18 @@ const char* CLoaderException::GetErrCodeString(void) const
     case eCompressionError: return "eCompressionError";
     case eLoaderFailed:     return "eLoaderFailed";
     case eNoConnection:     return "eNoConnection";
+    case eOtherError:       return "eOtherError";
+    default:                return CException::GetErrCodeString();
+    }
+}
+
+
+const char* CObjmgrUtilException::GetErrCodeString(void) const
+{
+    switch ( GetErrCode() ) {
+    case eNotImplemented:   return "eNotImplemented";
+    case eBadSequenceType:  return "eBadSequenceType";
+    case eBadLocation:      return "eBadLocation";
     default:                return CException::GetErrCodeString();
     }
 }

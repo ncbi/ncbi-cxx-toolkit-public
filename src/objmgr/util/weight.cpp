@@ -36,6 +36,7 @@
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_vector_ci.hpp>
+#include <objmgr/objmgr_exception.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -105,7 +106,8 @@ void GetProteinWeights(const CBioseq_Handle& handle, TWeights& weights)
 {
     CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
     if (core->GetInst().GetMol() != CSeq_inst::eMol_aa) {
-        THROW1_TRACE(runtime_error, "GetMolecularWeights requires a protein!");
+        NCBI_THROW(CObjmgrUtilException, eBadSequenceType,
+            "GetMolecularWeights requires a protein!");
     }
     weights.clear();
 
@@ -191,6 +193,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.26  2003/11/19 22:18:06  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.25  2003/06/02 18:58:25  dicuccio
 * Fixed #include directives
 *

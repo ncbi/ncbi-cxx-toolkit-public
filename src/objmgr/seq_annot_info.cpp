@@ -170,8 +170,8 @@ void CSeq_annot_Info::x_DSDetachThis(void)
 void CSeq_annot_Info::x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info)
 {
     if ( m_SNP_Info ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeq_annot_Info::SetSNP_annot_Info: already set");
+        NCBI_THROW(CAnnotException, eOtherError,
+                   "CSeq_annot_Info::SetSNP_annot_Info: already set");
     }
     m_SNP_Info.Reset(&snp_info);
 }
@@ -386,6 +386,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/11/19 22:18:03  grichenk
+ * All exceptions are now CException-derived. Catch "exception" rather
+ * than "runtime_error".
+ *
  * Revision 1.9  2003/10/07 13:43:23  vasilche
  * Added proper handling of named Seq-annots.
  * Added feature search from named Seq-annots.

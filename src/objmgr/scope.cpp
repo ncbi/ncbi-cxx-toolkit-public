@@ -256,8 +256,8 @@ CRef<CTSE_Info> CScope_Impl::x_GetTSE_Info(CSeq_entry& tse)
         if ( info )
             return info;
     }
-    THROW1_TRACE(runtime_error,
-                 "CScope_Impl::x_GetTSE_Info: entry is not attached");
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "CScope_Impl::x_GetTSE_Info: entry is not attached");
 }
 
 
@@ -276,8 +276,8 @@ CRef<CSeq_entry_Info> CScope_Impl::x_GetSeq_entry_Info(CSeq_entry& entry)
             return info;
         }
     }
-    THROW1_TRACE(runtime_error,
-                 "CScope_Impl::x_GetSeq_entry_Info: entry is not attached");
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "CScope_Impl::x_GetSeq_entry_Info: entry is not attached");
 }
 
 
@@ -298,8 +298,8 @@ CScope_Impl::x_GetSeq_annot_Info(CSeq_annot& annot)
             return info;
         }
     }
-    THROW1_TRACE(runtime_error,
-                 "CScope_Impl::x_GetSeq_annot_Info: annot is not attached");
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "CScope_Impl::x_GetSeq_annot_Info: annot is not attached");
 }
 
 
@@ -319,7 +319,7 @@ CScope_Impl::GetTSEInfo(const CSeq_entry* tse)
         try {
             ret = x_GetTSE_Info(*tse);
         }
-        catch ( runtime_error& /*exc*/ ) {
+        catch ( exception& /*exc*/ ) {
         }
     }
     return ret;
@@ -335,7 +335,7 @@ CScope_Impl::GetTSE_Info(const CSeq_entry& tse)
         try {
             ret = x_GetTSE_Info(tse);
         }
-        catch ( runtime_error& /*exc*/ ) {
+        catch ( exception& /*exc*/ ) {
         }
     }
     return ret;
@@ -352,7 +352,7 @@ CScope_Impl::GetTSE_Info_WithSeq_entry(const CSeq_entry& entry)
             CConstRef<CSeq_entry_Info> info = x_GetSeq_entry_Info(entry);
             ret.Reset(&info->GetTSE_Info());
         }
-        catch ( runtime_error& /*exc*/ ) {
+        catch ( exception& /*exc*/ ) {
         }
     }
     return ret;
@@ -369,7 +369,7 @@ CScope_Impl::GetTSE_Info_WithSeq_annot(const CSeq_annot& annot)
             CConstRef<CSeq_annot_Info> info = x_GetSeq_annot_Info(annot);
             ret.Reset(&info->GetTSE_Info());
         }
-        catch ( runtime_error& /*exc*/ ) {
+        catch ( exception& /*exc*/ ) {
         }
     }
     return ret;
@@ -385,7 +385,7 @@ CScope_Impl::GetSeq_entry_Info(const CSeq_entry& entry)
         try {
             ret = x_GetSeq_entry_Info(entry);
         }
-        catch ( runtime_error& /*exc*/ ) {
+        catch ( exception& /*exc*/ ) {
         }
     }
     return ret;
@@ -401,7 +401,7 @@ CScope_Impl::GetSeq_annot_Info(const CSeq_annot& annot)
         try {
             ret = x_GetSeq_annot_Info(annot);
         }
-        catch ( runtime_error& /*exc*/ ) {
+        catch ( exception& /*exc*/ ) {
         }
     }
     return ret;
@@ -1013,7 +1013,7 @@ CScope_Impl::x_GetSynonyms(CRef<CBioseq_ScopeInfo> info)
                                      "one of Bioseq's ids is resolved to another sequence");
                         }
                     }
-                    catch ( CException& exc ) {
+                    catch ( exception& exc ) {
                         LOG_POST(Warning << "CScope::GetSynonyms: "
                                  "one of Bioseq's ids cannot be resolved: " <<
                                  exc.what());
@@ -1046,6 +1046,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2003/11/19 22:18:03  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.89  2003/11/12 15:49:39  vasilche
 * Added loading annotations on non gi Seq-id.
 *

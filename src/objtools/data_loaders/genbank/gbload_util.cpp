@@ -32,6 +32,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objmgr/impl/handle_range.hpp>
 #include <objmgr/gbloader.hpp>
+#include <objmgr/objmgr_exception.hpp>
 #include "gbload_util.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -279,7 +280,8 @@ void CGBLGuard::Switch(EState newstate)
     default:
         break;
     }
-    runtime_error("CGBLGuard::Switch - state desynchronized");
+    NCBI_THROW(CLoaderException, eOtherError,
+        "CGBLGuard::Switch - state desynchronized");
 }
 #endif // if(NCBI_THREADS)
 
@@ -288,6 +290,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2003/11/19 22:18:02  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.18  2003/10/27 15:05:41  vasilche
 * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
 * Added recognition of ID1 error codes: private, etc.

@@ -154,9 +154,9 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(void) const
 TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_inst& inst) const
 {
     if ( !inst.IsSetExt() ) {
-        THROW1_TRACE(runtime_error,
-                     "CBioseq_Info::x_CalcBioseqLength: "
-                     "failed: Seq-inst.ext is not set");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CBioseq_Info::x_CalcBioseqLength: "
+                   "failed: Seq-inst.ext is not set");
     }
     switch ( inst.GetExt().Which() ) {
     case CSeq_ext::e_Seg:
@@ -166,9 +166,9 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_inst& inst) const
     case CSeq_ext::e_Delta:
         return x_CalcBioseqLength(inst.GetExt().GetDelta());
     default:
-        THROW1_TRACE(runtime_error,
-                     "CBioseq_Info::x_CalcBioseqLength: "
-                     "failed: bad Seg-ext type");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CBioseq_Info::x_CalcBioseqLength: "
+                   "failed: bad Seg-ext type");
     }
 }
 
@@ -178,9 +178,9 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_id& whole) const
     CConstRef<CBioseq_Info> ref =
         GetTSE_Info().FindBioseq(CSeq_id_Handle::GetHandle(whole));
     if ( !ref ) {
-        THROW1_TRACE(runtime_error,
-                     "CBioseq_Info::x_CalcBioseqLength: "
-                     "failed: external whole reference");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CBioseq_Info::x_CalcBioseqLength: "
+                   "failed: external whole reference");
     }
     return ref->GetBioseqLength();
 }
@@ -218,9 +218,9 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CSeq_loc& seq_loc) const
     case CSeq_loc::e_Equiv:
         return x_CalcBioseqLength(seq_loc.GetEquiv());
     default:
-        THROW1_TRACE(runtime_error,
-                     "CBioseq_Info::x_CalcBioseqLength: "
-                     "failed: bad Seq-loc type");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CBioseq_Info::x_CalcBioseqLength: "
+                   "failed: bad Seq-loc type");
     }
 }
 
@@ -273,9 +273,9 @@ TSeqPos CBioseq_Info::x_CalcBioseqLength(const CDelta_seq& delta_seq) const
     case CDelta_seq::e_Literal:
         return delta_seq.GetLiteral().GetLength();
     default:
-        THROW1_TRACE(runtime_error,
-                     "CBioseq_Info::x_CalcBioseqLength: "
-                     "failed: bad Delta-seq type");
+        NCBI_THROW(CObjMgrException, eOtherError,
+                   "CBioseq_Info::x_CalcBioseqLength: "
+                   "failed: bad Delta-seq type");
     }
 }
 
@@ -330,7 +330,7 @@ void CBioseq_Info::x_AttachMap(CSeqMap& seq_map)
 {
     CFastMutexGuard guard(m_SeqMap_Mtx);
     if ( m_SeqMap ) {
-        THROW1_TRACE(runtime_error,
+        NCBI_THROW(CObjMgrException, eAddDataError,
                      "CBioseq_Info::AttachMap: bioseq already has SeqMap");
     }
     m_SeqMap.Reset(&seq_map);
@@ -382,6 +382,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/11/19 22:18:02  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.13  2003/11/12 16:53:17  grichenk
 * Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
 *

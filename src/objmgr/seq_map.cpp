@@ -496,7 +496,7 @@ bool CSeqMap::CanResolveRange(CScope* scope,
                         strand);
         for ( ; seg; ++seg);
     }
-    catch (runtime_error) {
+    catch (exception) {
         return false;
     }
     return true;
@@ -809,6 +809,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2003/11/19 22:18:04  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.49  2003/11/12 16:53:17  grichenk
 * Modified CSeqMap to work with const objects (CBioseq, CSeq_loc etc.)
 *

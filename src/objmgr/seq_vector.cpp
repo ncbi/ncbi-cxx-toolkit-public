@@ -188,7 +188,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
         try {
             CSeqportUtil::GetIndexComplement(src, srcIndex.first);
         }
-        catch ( runtime_error& /*noComplement*/ ) {
+        catch ( exception& /*noComplement*/ ) {
             reverse = false;
         }
     }
@@ -205,7 +205,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
             // check for types compatibility
             CSeqportUtil::GetMapToIndex(src, dst, srcIndex.first);
         }
-        catch ( runtime_error& /*badType*/ ) {
+        catch ( exception& /*badType*/ ) {
             // incompatible types
             return 0;
         }
@@ -228,7 +228,7 @@ const char* CSeqVector::sx_GetConvertTable(TCoding src,
             code = min(kInvalidCode, code);
             it->second[i] = char(code);
         }
-        catch ( runtime_error& /*noConversion or noComplement*/ ) {
+        catch ( exception& /*noConversion or noComplement*/ ) {
         }
     }
     return &it->second[0];
@@ -278,6 +278,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2003/11/19 22:18:04  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.64  2003/10/08 14:16:55  vasilche
 * Removed circular reference CSeqVector <-> CSeqVector_CI.
 *

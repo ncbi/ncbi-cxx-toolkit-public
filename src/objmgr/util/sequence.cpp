@@ -185,7 +185,7 @@ bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
             CBioseq_Handle hnd1 = scope->GetBioseqHandle(id1);
             CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2);
             return hnd1  &&  hnd2  &&  (hnd1 == hnd2);
-        } catch (runtime_error& e) {
+        } catch (exception& e) {
             ERR_POST(e.what() << ": CSeq_id1: " << id1.DumpAsFasta()
                      << ": CSeq_id2: " << id2.DumpAsFasta());
             return false;
@@ -1134,7 +1134,7 @@ const CSeq_loc::TLocations& s_GetLocations(const CSeq_loc& loc)
         case CSeq_loc::e_Mix:    return loc.GetMix().Get();
         case CSeq_loc::e_Equiv:  return loc.GetEquiv().Get();
         default: // should never happen, but the compiler doesn't know that...
-            THROW1_TRACE(runtime_error,
+        NCBI_THROW(CObjmgrUtilException, eBadLocation,
                          "s_GetLocations: unsupported location type:"
                          + CSeq_loc::SelectionName(loc.Which()));
     }
@@ -1789,7 +1789,7 @@ int x_TestForOverlap_MultiSeq(const CSeq_loc& loc1,
     case eOverlap_Interval:
         {
             // For this types the function should not be called
-            throw runtime_error(
+            NCBI_THROW(CObjmgrUtilException, eNotImplemented,
                 "TestForOverlap() -- error processing multi-ID seq-loc");
         }
     }
@@ -1808,7 +1808,7 @@ int TestForOverlap(const CSeq_loc& loc1,
         rg1 = loc1.GetTotalRange();
         rg2 = loc2.GetTotalRange();
     }
-    catch (runtime_error&) {
+    catch (exception&) {
         // Can not use total range for multi-sequence locations
         if (type == eOverlap_Simple  ||
             type == eOverlap_Contained  ||
@@ -3310,6 +3310,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.65  2003/11/19 22:18:05  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.64  2003/10/17 20:55:27  ucko
 * SRelLoc::Resolve: fix a fuzz-handling paste-o.
 *

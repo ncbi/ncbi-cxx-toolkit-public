@@ -357,9 +357,9 @@ void CSeq_entry_Info::x_AddAnnot(CSeq_annot& annot)
         entry.SetSeq().SetAnnot().push_back(Ref(&annot));
         break;
     default:
-        THROW1_TRACE(runtime_error,
-                     "CSeq_entry_Info::x_AddAnnot: "
-                     "entry is not initializated");
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "CSeq_entry_Info::x_AddAnnot: "
+                   "entry is not initializated");
     }
 
     CRef<CSeq_annot_Info> annot_info(new CSeq_annot_Info(annot, *this));
@@ -387,9 +387,9 @@ void CSeq_entry_Info::x_RemoveAnnot(CSeq_annot_Info& annot_info)
         }
         break;
     default:
-        THROW1_TRACE(runtime_error,
-                     "CSeq_entry_Info::x_RemoveAnnot: "
-                     "entry is not initializated");
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CSeq_entry_Info::x_RemoveAnnot: "
+                   "entry is not initializated");
     }
 
     annot_info.x_TSEDetach();
@@ -410,9 +410,9 @@ void CSeq_entry_Info::x_AddEntry(CSeq_entry& child_entry)
 {
     CSeq_entry& parent_entry = GetSeq_entry();
     if ( parent_entry.Which() != CSeq_entry::e_Set ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeq_entry_Info::x_AddEntry: "
-                     "invalid entry type");
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "CSeq_entry_Info::x_AddEntry: "
+                   "invalid entry type");
     }
 
     parent_entry.SetSet().SetSeq_set().push_back(Ref(&child_entry));
@@ -430,9 +430,9 @@ void CSeq_entry_Info::x_RemoveEntry(CSeq_entry_Info& child_info)
     CSeq_entry& parent_entry = GetSeq_entry();
     CSeq_entry& child_entry = child_info.GetSeq_entry();
     if ( parent_entry.Which() != CSeq_entry::e_Set ) {
-        THROW1_TRACE(runtime_error,
-                     "CSeq_entry_Info::x_AddEntry: "
-                     "invalid entry type");
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "CSeq_entry_Info::x_AddEntry: "
+                   "invalid entry type");
     }
     parent_entry.SetSet().SetSeq_set().remove(Ref(&child_entry));
 
@@ -456,6 +456,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/19 22:18:03  grichenk
+ * All exceptions are now CException-derived. Catch "exception" rather
+ * than "runtime_error".
+ *
  * Revision 1.3  2003/09/30 16:22:03  vasilche
  * Updated internal object manager classes to be able to load ID2 data.
  * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.

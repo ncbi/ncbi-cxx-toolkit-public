@@ -124,8 +124,8 @@ bool CTSE_Info::HasUnnamedAnnot(void) const
 void CTSE_Info::x_DSAttach(CDataSource* data_source)
 {
     if ( m_DataSource ) {
-        THROW1_TRACE(runtime_error,
-                     "CTSE_Info::x_DSAttach: already attached");
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "CTSE_Info::x_DSAttach: already attached");
     }
     m_DataSource = data_source;
     try {
@@ -151,8 +151,8 @@ void CTSE_Info::x_DSAttach(CDataSource* data_source)
 void CTSE_Info::x_DSDetach(CDataSource* data_source)
 {
     if ( m_DataSource != data_source ) {
-        THROW1_TRACE(runtime_error,
-                     "CTSE_Info::x_DSDetach: not attached");
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CTSE_Info::x_DSDetach: not attached");
     }
     ITERATE ( TBioseqs, it, m_Bioseqs ) {
         data_source->x_UnindexSeqTSE(it->first, this);
@@ -276,10 +276,10 @@ void CTSE_Info::x_SetBioseqId(const CSeq_id_Handle& key,
     }
     else {
         // No duplicate bioseqs in the same TSE
-        THROW1_TRACE(runtime_error,
-                     " duplicate Bioseq id '"+key.AsString()+"' present in"+
-                     "\n  seq1: " + ins.first->second->IdsString() +
-                     "\n  seq2: " + info->IdsString());
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   " duplicate Bioseq id '"+key.AsString()+"' present in"+
+                   "\n  seq1: " + ins.first->second->IdsString() +
+                   "\n  seq2: " + info->IdsString());
     }
 }
 
@@ -308,8 +308,8 @@ void CTSE_Info::x_SetBioseq_setId(int key,
     }
     else {
         // No duplicate bioseqs in the same TSE
-        THROW1_TRACE(runtime_error,
-                     " duplicate Bioseq_set id '"+NStr::IntToString(key));
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   " duplicate Bioseq_set id '"+NStr::IntToString(key));
     }
 }
 
@@ -853,6 +853,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2003/11/19 22:18:04  grichenk
+* All exceptions are now CException-derived. Catch "exception" rather
+* than "runtime_error".
+*
 * Revision 1.34  2003/10/27 16:47:12  vasilche
 * Fixed error:
 * src/objmgr/data_source.cpp", line 913: Fatal: Assertion failed: (it != tse_map.end() && it->first == id)
