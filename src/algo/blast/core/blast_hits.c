@@ -1397,7 +1397,9 @@ Int2 MergeHSPLists(BlastHSPList* hsp_list,
       for (index = new_hspcnt - combined_hsp_list->hspcnt; 
            index < hsp_list->hspcnt; ++index)
          BlastHSPFree(hsp_list->hsp_array[index]);
-
+      /* This HSP list is not needed any more */
+      sfree(hsp_list->hsp_array);
+      sfree(hsp_list);
       combined_hsp_list->hspcnt = new_hspcnt;
 
       return 1;
