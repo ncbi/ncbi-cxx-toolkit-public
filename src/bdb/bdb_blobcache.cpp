@@ -1772,7 +1772,7 @@ void CBDB_Cache::x_UpdateAccessTime_NonTrans(const string&  key,
                                              const string&  subkey,
                                              unsigned       timeout)
 {
-    bool track_sk = (m_TimeStampFlag & fTrackSubKey);
+    int track_sk = (m_TimeStampFlag & fTrackSubKey);
     bool updated = false;
     {{
         CBDB_FileCursor cur(*m_CacheAttrDB, 
@@ -2188,6 +2188,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.93  2004/11/10 15:04:15  kuznets
+ * Fixed performance warning(MSVC)
+ *
  * Revision 1.92  2004/11/08 18:42:11  kuznets
  * Removed unused variables
  *
