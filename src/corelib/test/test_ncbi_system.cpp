@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.5  2001/11/08 21:31:45  ivanov
+* Renamed GetCPUNumber() -> GetCpuCount()
+*
 * Revision 6.4  2001/11/08 21:10:59  ivanov
 * Added test for GetCPUNumber()
 *
@@ -69,7 +72,7 @@ static void Test_General(void)
     LOG_POST("\nGeneral tests\n");
 
     // Number of processors
-    cout << "Number of processors: " << GetCPUNumber() << endl;
+    cout << "Number of processors: " << GetCpuCount() << endl;
 }
 
 

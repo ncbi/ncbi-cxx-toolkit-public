@@ -30,10 +30,13 @@
 *   System functions:
 *      SetHeapLimit()
 *      SetCpuTimeLimit()
-*      GetCPUNumber()
+*      GetCpuCount()
 *      
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/11/08 21:31:44  ivanov
+* Renamed GetCPUNumber() -> GetCpuCount()
+*
 * Revision 1.11  2001/11/08 21:10:04  ivanov
 * Added function GetCPUNumber()
 *
@@ -367,12 +370,12 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  GetCPUNumber
+//  GetCpuCount
 //
 
 /*  Return number of active CPUs */
 
-int GetCPUNumber(void)
+int GetCpuCount(void)
 {
 #if defined NCBI_OS_MSWIN
     SYSTEM_INFO sysInfo;
