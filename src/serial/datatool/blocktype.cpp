@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2003/11/21 16:59:11  gouriano
+* Correct conversion of ASN spec into XML schema in case of containers
+*
 * Revision 1.48  2003/06/24 20:55:42  gouriano
 * corrected code generation and serialization of non-empty unnamed containers (XML)
 *
@@ -206,6 +209,7 @@
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/blocktype.hpp>
 #include <serial/datatool/unitype.hpp>
+#include <serial/datatool/reftype.hpp>
 #include <serial/datatool/statictype.hpp>
 #include <serial/autoptrinfo.hpp>
 #include <serial/datatool/value.hpp>
@@ -476,6 +480,13 @@ void CDataMemberContainerType::PrintXMLSchemaElement(CNcbiOstream& out) const
                     if (isSimpleSeq) {
                         type->PrintXMLSchemaElement(out);
                         continue;
+                    }
+                    const CReferenceDataType* typeRef =
+                        dynamic_cast<const CReferenceDataType*>(type->GetElementType());
+                    if (typeRef) {
+                        if (type->XmlTagName() != typeRef->UserTypeXmlTagName()) {
+                            uniseq = false;
+                        }
                     }
                 }
                 if (member.Notag()) {
