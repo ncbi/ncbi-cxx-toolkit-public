@@ -1335,8 +1335,7 @@ BLAST_MergeHsps(BlastHSP* hsp1, BlastHSP* hsp2, Int4 start)
       if (new_segment1->s_end <= new_segment2->s_end) {
          new_segment1 = new_segment1->next;
          num1++;
-      }
-      if (new_segment1->s_end >= new_segment2->s_end) {
+      } else {
          new_segment2 = new_segment2->next;
          num2++;
       }
