@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/12/09 22:09:53  ivanov
+* Changed "pos" type from int to type_t in CHTMLHelper::StripTags()
+*
 * Revision 1.8  2002/09/25 01:24:56  dicuccio
 * Added CHTMLHelper::StripTags() - strips HTML comments and tags from any
 * string.  Implemented CHTMLText::PrintBegin() for mode = ePlainText
@@ -183,7 +186,7 @@ string CHTMLHelper::HTMLEncode(const string& input)
 
 string CHTMLHelper::StripTags (const string& input)
 {
-    int pos;
+    size_t pos;
     string s (input);
 
     // first, strip comments
