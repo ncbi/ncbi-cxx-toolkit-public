@@ -67,12 +67,8 @@ TSeqPos GetLength(const CSeq_id& id, CScope* scope)
     if ( !scope ) {
         return numeric_limits<TSeqPos>::max();
     }
-    try {
-        CBioseq_Handle hnd = scope->GetBioseqHandle(id);
-        return hnd.GetBioseqLength();
-    } catch (...) {
-        return numeric_limits<TSeqPos>::max();
-    }
+    CBioseq_Handle hnd = scope->GetBioseqHandle(id);
+    return hnd.GetBioseqLength();
 }
 
 
@@ -2599,6 +2595,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2004/12/01 16:20:29  grichenk
+* Do not catch exceptions in GetLength()
+*
 * Revision 1.9  2004/12/01 14:29:52  grichenk
 * Removed old SeqLocMerge
 *
