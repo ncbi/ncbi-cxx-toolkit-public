@@ -2522,8 +2522,10 @@ static Int2 BLAST_ProtGappedAlignment(Uint1 program,
             subject_length-s_length, NULL, &(gap_align->query_stop), 
             &(gap_align->subject_stop), TRUE, NULL, gap_align, 
             score_options, init_hsp->q_off, FALSE, FALSE);
-         gap_align->query_stop += init_hsp->q_off;
-         gap_align->subject_stop += init_hsp->s_off;
+         /* Make end offsets point to the byte after the end of the 
+            alignment */
+         gap_align->query_stop += init_hsp->q_off + 1;
+         gap_align->subject_stop += init_hsp->s_off + 1;
       }
    }
    
