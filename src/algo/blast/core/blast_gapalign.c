@@ -1509,7 +1509,8 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
          BLAST_GreedyGappedAlignment(query->sequence, subject->sequence,
             query->length, subject->length, gap_align, 
             score_options, init_hsp->q_off, init_hsp->s_off, 
-            TRUE, (ext_options->algorithm_type == EXTEND_GREEDY));
+            TRUE, (ext_options->algorithm_type == EXTEND_GREEDY ? 
+                   TRUE : FALSE));
          /* For neighboring we have a stricter criterion to keep an HSP */
          if (hit_options->is_neighboring) {
             Int4 hsp_length;
