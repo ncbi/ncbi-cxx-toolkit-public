@@ -100,7 +100,7 @@ TPid CProcess::GetParentPid(void)
     // open snapshot handle
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
-    if (hSnapshot != -1) {
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
         PROCESSENTRY32 pe;
         DWORD pid = GetCurrentProcessId();
         pe.dwSize = sizeof(PROCESSENTRY32);
@@ -494,6 +494,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/02/11 13:20:40  dicuccio
+ * Compiler fix: CreateToolhelp32Snapshot() return value compared to
+ * INVALID_HANDLE_VALUE, not -1
+ *
  * Revision 1.10  2005/02/11 04:39:49  lavr
  * +GetParentPid()
  *
