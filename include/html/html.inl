@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/04/15 16:28:37  vasilche
+* Fixed type in defenition of list HTML tags.
+*
 * Revision 1.12  1999/04/08 19:00:26  vasilche
 * Added current cell pointer to CHTML_table
 *
@@ -234,7 +237,7 @@ template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type)
     : CParent(s_GetTagName())
 {
-    SetAttribute(KHTMLAttributeName_type, name);
+    SetAttribute(KHTMLAttributeName_type, type);
 }
 
 template<const string* TagName>
@@ -248,7 +251,7 @@ template<const string* TagName>
 inline CHTMLListElementTmpl<TagName>::CHTMLListElementTmpl(const string& type, bool compact)
     : CParent(s_GetTagName())
 {
-    SetAttribute(KHTMLAttributeName_type, name);
+    SetAttribute(KHTMLAttributeName_type, type);
     SetOptionalAttribute(KHTMLAttributeName_compact, compact);
 }
 
