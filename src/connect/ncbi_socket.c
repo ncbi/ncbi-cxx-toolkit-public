@@ -367,7 +367,6 @@ struct SOCK_tag {
 };
 
 
-
 /*
  * Please note the following implementation details:
  *
@@ -679,8 +678,10 @@ static void s_DoLog
             sprintf(tail + strlen(tail), ", msg# %u",
                     (unsigned)(event == eIO_Read ? sock->n_in : sock->n_out));
         } else {
-            assert(sa == 0);
-            *tail = 0;
+            if (sa)
+                strncpy0(tail, " OUT-OF-BAND", sizeof(tail) - 1);
+            else
+                *tail = '\0';
         }
         sprintf(head, "%s%s%s at offset %lu%s%s", s_ID(sock, _id),
                 event == eIO_Read
@@ -693,7 +694,8 @@ static void s_DoLog
                 (event == eIO_Read ? " while reading" : " while writing"),
                 (unsigned long) (event == eIO_Read
                                  ? sock->n_read : sock->n_written),
-                sa ? (event == eIO_Read ? " from " : " to ") : "", tail);
+                sock->type == eSOCK_Datagram  &&  sa
+                ? (event == eIO_Read ? " from " : " to ") : "", tail);
         CORE_DATA(data, size, head);
         break;
     case eIO_Close:
@@ -1931,7 +1933,7 @@ static int s_Recv(SOCK        sock,
 }
 
 
-static EIO_Status s_WritePending(SOCK, const struct timeval*, int);
+static EIO_Status s_WritePending(SOCK, const struct timeval*, int, int);
 
 /* s_Select() with stall protection: try pull incoming data from sockets.
  * This method returns array of polls, "revent"s of which are always
@@ -1978,7 +1980,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
                 assert(n != 1);
                 assert(polls[i].sock->pending  ||  polls[i].sock->w_len);
-                status = s_WritePending(polls[i].sock, tv, 1/*writeable*/);
+                status = s_WritePending(polls[i].sock, tv, 1/*writeable*/, 0);
                 if (status != eIO_Success  &&  status != eIO_Timeout) {
                     polls[i].revent = eIO_Close;
                     break;
@@ -2075,20 +2077,21 @@ static EIO_Status s_WipeWBuf(SOCK sock)
 static EIO_Status s_Send(SOCK        sock,
                          const void* buf,
                          size_t      size,
-                         size_t*     n_written)
+                         size_t*     n_written,
+                         int/*bool*/ oob)
 {
     char _id[32];
 
     assert(size > 0  &&  sock->type != eSOCK_Datagram  &&  *n_written == 0);
     for (;;) { /* optionally retry if interrupted by a signal */
         /* try to write */
-        int x_written = send(sock->sock, (void*) buf, size, 0);
+        int x_written = send(sock->sock, (void*) buf, size, oob ? MSG_OOB : 0);
         int x_errno;
 
         if (x_written > 0) {
             /* statistics & logging */
             if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn))
-                s_DoLog(sock, eIO_Write, buf, (size_t) x_written, 0);
+                s_DoLog(sock, eIO_Write, buf, (size_t) x_written, (void*) oob);
             sock->n_written += x_written;
 
             *n_written = x_written;
@@ -2098,6 +2101,8 @@ static EIO_Status s_Send(SOCK        sock,
         x_errno = SOCK_ERRNO;
         /* don't want to handle all possible errors... let them be "unknown" */
         sock->w_status = eIO_Unknown;
+        if (oob)
+            break;
 
         /* blocked -- retry if unblocked before the timeout expires */
         /* (use stall protection if specified) */
@@ -2156,7 +2161,8 @@ static EIO_Status s_Send(SOCK        sock,
 static EIO_Status s_WriteSliced(SOCK        sock,
                                 const void* buf,
                                 size_t      size,
-                                size_t*     n_written)
+                                size_t*     n_written,
+                                int/*bool*/ oob)
 {
     /* split output buffer by slices (of size <= SOCK_WRITE_SLICE)
      * before writing to the socket
@@ -2167,7 +2173,7 @@ static EIO_Status s_WriteSliced(SOCK        sock,
     do {
         size_t n_io = size > SOCK_WRITE_SLICE ? SOCK_WRITE_SLICE : size;
         size_t n_io_done = 0;
-        status = s_Send(sock, (char*) buf + *n_written, n_io, &n_io_done);
+        status = s_Send(sock, (char*) buf + *n_written, n_io, &n_io_done, oob);
         if (status != eIO_Success)
             break;
         *n_written += n_io_done;
@@ -2185,7 +2191,8 @@ static EIO_Status s_WriteSliced(SOCK        sock,
 
 static EIO_Status s_WritePending(SOCK                  sock,
                                  const struct timeval* tv,
-                                 int/*bool*/           writeable)
+                                 int/*bool*/           writeable,
+                                 int/*bool*/           oob)
 {
     const struct timeval* x_tv;
     EIO_Status status;
@@ -2219,7 +2226,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
         }
         sock->pending = 0/*connected*/;
     }
-    if (sock->w_len == 0  ||  sock->w_status == eIO_Closed)
+    if (oob  ||  sock->w_len == 0  ||  sock->w_status == eIO_Closed)
         return eIO_Success;
 
     x_tv = sock->w_timeout;
@@ -2229,7 +2236,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
         char   buf[4096];
         size_t n_written = 0;
         size_t n_write = BUF_PeekAt(sock->w_buf, off, buf, sizeof(buf));
-        status = s_WriteSliced(sock, buf, n_write, &n_written);
+        status = s_WriteSliced(sock, buf, n_write, &n_written, 0);
         if (status != eIO_Success)
             break;
         sock->w_len -= n_written;
@@ -2264,7 +2271,7 @@ static EIO_Status s_Read(SOCK        sock,
         return sock->r_status;
     }
 
-    status = s_WritePending(sock, sock->r_timeout, 0);
+    status = s_WritePending(sock, sock->r_timeout, 0, 0);
     if (sock->pending  ||  !size)
         return sock->pending ? status : s_Status(sock, eIO_Read);
 
@@ -2332,7 +2339,8 @@ static EIO_Status s_Read(SOCK        sock,
 static EIO_Status s_Write(SOCK        sock,
                           const void* buf,
                           size_t      size,
-                          size_t*     n_written)
+                          size_t*     n_written,
+                          int/*bool*/ oob)
 {
     EIO_Status status;
 
@@ -2359,14 +2367,15 @@ static EIO_Status s_Write(SOCK        sock,
         return eIO_Closed;
     }
 
-    if ((status = s_WritePending(sock, sock->w_timeout, 0)) != eIO_Success) {
+    status = s_WritePending(sock, sock->w_timeout, 0, oob);
+    if (status != eIO_Success) {
         if (status == eIO_Timeout  ||  status == eIO_Closed)
             return status;
         return size ? status : eIO_Success;
     }
 
     assert(sock->w_len == 0);
-    return size ? s_WriteSliced(sock, buf, size, n_written) : eIO_Success;
+    return size ? s_WriteSliced(sock, buf, size, n_written, oob) : eIO_Success;
 }
 
 
@@ -2402,7 +2411,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     case eIO_Write:
         if (sock->w_status == eIO_Closed)
             return eIO_Success;  /* has been shut down already */
-        if ((status = s_WritePending(sock, tv, 0)) != eIO_Success
+        if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success
             &&  (!tv  ||  tv->tv_sec  ||  tv->tv_usec)) {
             CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Shutdown]  Shutting down for "
                                      "write with some output pending (%s)",
@@ -2421,7 +2430,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
         if (sock->r_status == eIO_Closed  &&  sock->w_status == eIO_Closed)
             return eIO_Success;
         if (sock->w_status != eIO_Closed  &&
-            (status = s_WritePending(sock, tv, 0)) != eIO_Success
+            (status = s_WritePending(sock, tv, 0, 0)) != eIO_Success
             &&  (!tv ||  tv->tv_sec  ||  tv->tv_usec)) {
             CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Shutdown]  Shutting down for "
                                      "R/W with some output pending (%s)",
@@ -2513,7 +2522,7 @@ static EIO_Status s_Close(SOCK sock)
                                     "back to blocking mode", s_ID(sock, _id)));
         }
     } else {
-        status = s_WritePending(sock, sock->c_timeout, 0);
+        status = s_WritePending(sock, sock->c_timeout, 0, 0);
         if (status != eIO_Success) {
             CORE_LOGF(eLOG_Warning, ("%s[SOCK::s_Close]  Leaving with some "
                                      "output data pending (%s)",
@@ -2991,7 +3000,7 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         EIO_Status            status;
         const struct timeval* x_tv = s_to2tv(timeout, &tv);
 
-        if ((status = s_WritePending(sock, x_tv, 0)) != eIO_Success) {
+        if ((status = s_WritePending(sock, x_tv, 0, 0)) != eIO_Success) {
             if (event == eIO_Write  ||  sock->pending)
                 return status;
         }
@@ -3307,8 +3316,20 @@ extern EIO_Status SOCK_Write(SOCK            sock,
 
     if (sock->sock != SOCK_INVALID) {
         switch ( how ) {
+        case eIO_WriteOutOfBand:
+            if (sock->type == eSOCK_Datagram) {
+                CORE_LOGF(eLOG_Error, ("%s[SOCK::Write] "
+                                       " OOB not supported for datagrams",
+                                       s_ID(sock, _id)));
+                status = eIO_NotSupported;
+                x_written = 0;
+                break;
+            }
+            /*FALLTHRU*/
+
         case eIO_WritePlain:
-            status = s_Write(sock, buf, size, &x_written);
+            status = s_Write(sock, buf, size, &x_written,
+                             how == eIO_WriteOutOfBand ? 1 : 0);
             break;
 
         case eIO_WritePersist:
@@ -3316,7 +3337,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
             do {
                 size_t xx_written;
                 status = s_Write(sock, (char*) buf + x_written,
-                                 size, &xx_written);
+                                 size, &xx_written, 0);
                 x_written += xx_written;
                 size      -= xx_written;
             } while (size  &&  status == eIO_Success);
@@ -3710,7 +3731,7 @@ extern EIO_Status DSOCK_SendMsg(SOCK            sock,
     }
 
     if ( datalen ) {
-        s_Write(sock, data, datalen, &x_msgsize);
+        s_Write(sock, data, datalen, &x_msgsize, 0);
         verify(x_msgsize == datalen);
     }
     sock->eof = 1/*true - finalized message*/;
@@ -4357,6 +4378,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.164  2004/12/27 15:30:35  lavr
+ * Implement OOB write
+ *
  * Revision 6.163  2004/11/15 19:34:23  lavr
  * Speed-up/fix SOCK_Read(), SOCK_Write() and improve SOCK_ReadLine()
  *
