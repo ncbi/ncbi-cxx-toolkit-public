@@ -1140,21 +1140,7 @@ string CFile::GetTmpNameEx(const string&        dir,
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_UNIX)
     string x_dir = dir;
     if ( x_dir.empty() ) {
-#  if defined(NCBI_OS_MSWIN)
-        char* tmpdir = getenv("TEMP");
-#  else
-        char* tmpdir = getenv("TMPDIR");
-#  endif
-        if ( tmpdir ) {
-            x_dir = tmpdir;
-        }
-    }
-    if ( x_dir.empty() ) {
-#  if defined(P_tmpdir)
-        x_dir = P_tmpdir;
-#  else
-        x_dir = kEmptyStr;
-#  endif
+        x_dir = CDir::GetTmpDir();
     }
     if ( !x_dir.empty() ) {
         x_dir = AddTrailingPathSeparator(x_dir);
@@ -1397,6 +1383,43 @@ string CDir::GetHome(void)
 
     // Add trailing separator if needed
     return AddTrailingPathSeparator(home);
+}
+
+
+
+string CDir::GetTmpDir(void)
+{
+    string tmp;
+
+#if defined(NCBI_OS_UNIX)
+
+    char* tmpdir = getenv("TMPDIR");
+    if ( tmpdir ) {
+        tmp = tmpdir;
+    } else  {
+#  if defined(P_tmpdir)
+        tmp = P_tmpdir;
+#  else
+        tmp = "/tmp";
+#  endif
+    }
+
+#elif defined(NCBI_OS_MSWIN)
+
+    char* tmpdir = getenv("TEMP");
+    if ( tmpdir ) {
+        tmp = tmpdir;
+    } else  {
+#  if defined(P_tmpdir)
+        tmp = P_tmpdir;
+#  else
+        tmp = CDir::GetHome();
+#  endif
+    }
+
+#endif
+
+    return tmp;
 }
 
 
@@ -2020,6 +2043,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.78  2004/05/18 16:51:34  ivanov
+ * Added CDir::GetTmpDir()
+ *
  * Revision 1.77  2004/05/14 13:59:27  gorelenk
  * Added include of ncbi_pch.hpp
  *

@@ -569,6 +569,7 @@ public:
                                const string&        prefix = kEmptyStr,
                                ETmpFileCreationMode mode   = eTmpFileGetName);
 
+
     /// What type of temporary file to create.
     enum ETextBinary {
         eText,          ///< Create text file
@@ -675,6 +676,9 @@ public:
 
     /// Get user "home" directory.
     static string GetHome(void);
+
+    /// Get temporary directory.
+    static string GetTmpDir(void);
 
     /// Get the current working directory.
     static string GetCwd();
@@ -1136,6 +1140,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.42  2004/05/18 16:51:25  ivanov
+ * Added CDir::GetTmpDir()
+ *
  * Revision 1.41  2004/04/29 16:18:58  ivanov
  * operator== defined only for MAC OS
  *
