@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/08/12 22:28:41  vasilche
+* More details about inconsistency between threads.
+*
 * Revision 1.6  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
@@ -140,6 +143,9 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 
+#include <map>
+#include <vector>
+
 #include <test/test_assert.h>  /* This header must go last */
 
 
@@ -173,6 +179,8 @@ protected:
     virtual bool TestApp_Init(void);
     virtual bool TestApp_Exit(void);
 
+    typedef vector<CConstRef<CSeq_feat> > TFeats;
+    typedef map<CSeq_id_Handle, TFeats> TFeatMap;
     typedef map<CSeq_id_Handle, int> TValueMap;
     typedef vector<CSeq_id_Handle> TIds;
 
@@ -180,9 +188,11 @@ protected:
     CRef<CObjectManager> m_ObjMgr;
 
     TValueMap m_mapGiToDesc;
-    TValueMap m_mapGiToFeat0;
-    TValueMap m_mapGiToFeat1;
+    TFeatMap m_mapGiToFeat0;
+    TFeatMap m_mapGiToFeat1;
 
+    void SetValue(TFeatMap& vm, const CSeq_id_Handle& id,
+                  const TFeats& value);
     void SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value);
 
     TIds m_Ids;
@@ -207,12 +217,41 @@ void CTestOM::SetValue(TValueMap& vm, const CSeq_id_Handle& id, int value)
     if ( old_value != value ) {
         string name;
         if ( &vm == &m_mapGiToDesc ) name = "desc";
-        if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
-        if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
         ERR_POST("Inconsistent "<<name<<" on "<<id.AsString()<<
                  " was "<<old_value<<" now "<<value);
     }
     _ASSERT(old_value == value);
+}
+
+
+void CTestOM::SetValue(TFeatMap& vm, const CSeq_id_Handle& id,
+                       const TFeats& value)
+{
+    const TFeats* old_value;
+    {{
+        CFastMutexGuard guard(s_GlobalLock);
+        TFeatMap::iterator it = vm.lower_bound(id);
+        if ( it == vm.end() || it->first != id ) {
+            it = vm.insert(it, TFeatMap::value_type(id, value));
+        }
+        old_value = &it->second;
+    }}
+    if ( old_value->size() != value.size() ) {
+        CNcbiOstrstream s;
+        string name;
+        if ( &vm == &m_mapGiToFeat0 ) name = "feat0";
+        if ( &vm == &m_mapGiToFeat1 ) name = "feat1";
+        s << "Inconsistent "<<name<<" on "<<id.AsString()<<
+            " was "<<old_value->size()<<" now "<<value.size() << NcbiEndl;
+        ITERATE ( TFeats, it, *old_value ) {
+            s << " old: " << MSerial_AsnText << **it;
+        }
+        ITERATE ( TFeats, it, value ) {
+            s << " new: " << MSerial_AsnText << **it;
+        }
+        ERR_POST(string(CNcbiOstrstreamToString(s)));
+    }
+    _ASSERT(old_value->size() == value.size());
 }
 
 
@@ -236,6 +275,7 @@ bool CTestOM::Thread_Run(int idx)
     bool ok = true;
     const int kMaxErrorCount = 3;
     static int error_count = 0;
+    TFeats feats;
     for (int i = from;
          ((delta > 0) && (i <= to)) || ((delta < 0) && (i >= to)); i += delta) {
         CSeq_id_Handle sih = m_Ids[i];
@@ -272,20 +312,20 @@ bool CTestOM::Thread_Run(int idx)
                     sel.ExcludedAnnotName("SNP");
                 }
 
-                count = 0;
+                feats.clear();
                 if ( idx%2 == 0 ) {
                     for ( CFeat_CI it(scope, loc, sel); it;  ++it ) {
-                        count++;
+                        feats.push_back(ConstRef(&it->GetOriginalFeature()));
                     }
                     // verify result
-                    SetValue(m_mapGiToFeat0, sih, count);
+                    SetValue(m_mapGiToFeat0, sih, feats);
                 }
                 else {
                     for ( CFeat_CI it(handle, 0, 0, sel); it;  ++it ) {
-                        count++;
+                        feats.push_back(ConstRef(&it->GetOriginalFeature()));
                     }
                     // verify result
-                    SetValue(m_mapGiToFeat1, sih, count);
+                    SetValue(m_mapGiToFeat1, sih, feats);
                 }
             }
         }
