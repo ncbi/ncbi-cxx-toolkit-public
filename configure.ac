@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.212 2003/08/29 16:59:42 ucko Exp $
+#  $Id: configure.ac,v 1.213 2003/09/03 23:30:45 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2188,7 +2188,7 @@ if test "$with_ftds" != "no" ; then
    if test "$with_ftds" = 8 ; then
       FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
       if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
-         FTDS8_LIBS="-lsybdb_ftds-static -ltds_ftds-static"
+         FTDS8_LIBS="-lsybdb_ftds${STATIC} -ltds_ftds${STATIC}"
          FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
          FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
       fi
