@@ -19,6 +19,7 @@ NCBI_COMPILER="WorkShop5"
 case "$1" in
  32 | 32-bit | 32bit )
    WS64_CFLAGS= 
+   LIBS="-Bstatic -L$WS_BIN/../SC5.0/lib -lm -Bdynamic"
    ;;
  64 | 64-bit | 64bit )
    WS64_CFLAGS="-xtarget=ultra -xarch=v9"
