@@ -69,9 +69,6 @@ private:
 void COffsetReadHook::ReadObject(CObjectIStream &in, 
                                  const CObjectInfo &object)
 {
-    const CTypeInfo *type_info = object.GetTypeInfo();
-    const string& class_name = type_info->GetName();
-
     m_Sniffer->m_CallStack.push_back(&object);
 
     try
@@ -274,6 +271,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.18  2004/08/04 14:46:55  vasilche
+* Removed unused variables.
+*
 * Revision 1.17  2004/05/21 21:42:14  gorelenk
 * Added PCH ncbi_pch.hpp
 *
