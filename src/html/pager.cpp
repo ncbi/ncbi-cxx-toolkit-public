@@ -247,10 +247,12 @@ CNCBINode* CPager::GetItemInfo(void) const
     } else {
         int firstItem = m_DisplayPage * m_PageSize + 1;
         int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
-        node->AppendChild(new CHTMLPlainText("Items " + NStr::IntToString(firstItem)));
         if(firstItem != endItem) {
-            node->AppendChild(new CHTMLPlainText("-" + NStr::IntToString(endItem)));
-        }
+	    node->AppendChild(new CHTMLPlainText("Items " + NStr::IntToString(firstItem)
+                                                 + "-" + NStr::IntToString(endItem)));
+        } else {
+	    node->AppendChild(new CHTMLPlainText("Item " + NStr::IntToString(firstItem)));
+	}
         node->AppendChild(new CHTMLPlainText(" of " + NStr::IntToString(m_ItemCount)));
     }
     return node;
