@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2001/11/13 12:12:52  clausen
+ * Added Codon2Idx and Idx2Codon. Modified type of code_breaks
+ *
  * Revision 1.2  2001/09/07 14:16:49  ucko
  * Cleaned up external interface.
  *
@@ -44,7 +47,8 @@
  */
 
 #include <objects/seqloc/Na_strand.hpp>
-#include <map>
+#include <vector>
+#include <utility>
 
 
 BEGIN_NCBI_SCOPE
@@ -57,10 +61,11 @@ class CGenetic_code;
 
 // Public front-end for hidden singleton object of class
 // CGencode_implementation.
-
 class CGencode
 {
 public:
+    typedef vector<pair<unsigned int, char> > TCodeBreaks;
+    
     // Function to translate na to aa. in_seq must
     // be in Iupacna and out_seq will be in Ncbieaa
     // The key to the code_breaks map is the index
@@ -68,18 +73,26 @@ public:
     // an exception to the genetic code occurs. The
     // char values will replace the genetic coded
     // implied aa at that index.
+    
     static void Translate
-    (const CSeq_data&               in_seq,
-     CSeq_data*                     out_seq,
-     const CGenetic_code&           genetic_code,
-     const map<unsigned int, char>& code_breaks,
-     unsigned int                   uBeginIdx          = 0,
-     unsigned int                   uLength            = 0,
-     bool                           bCheck_first       = true,
-     bool                           bPartial_start     = false,
-     ENa_strand                     eStrand            = eNa_strand_plus,
-     bool                           bStop              = true,
-     bool                           bRemove_trailing_x = false);
+    (const CSeq_data&      in_seq,
+     CSeq_data*            out_seq,
+     const CGenetic_code&  genetic_code,
+     const TCodeBreaks &   code_breaks,
+     unsigned int          uBeginIdx          = 0,
+     unsigned int          uLength            = 0,
+     bool                  bCheck_first       = true,
+     bool                  bPartial_start     = false,
+     ENa_strand            eStrand            = eNa_strand_plus,
+     bool                  bStop              = true,
+     bool                  bRemove_trailing_x = false);
+     
+     // Converts a codon triplet to an index = 
+     // 16*codon[0] + 4*codon[1] + codon[2] where 'T'=0, 'C'=1, 'A'=2, 'G'=3     
+     static unsigned int Codon2Idx(const string& codon);
+     
+     // Converts an index to a codon triplet
+     static const string& Idx2Codon(unsigned int idx);
 };
 
 

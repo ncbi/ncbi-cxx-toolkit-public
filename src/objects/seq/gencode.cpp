@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.4  2001/11/13 12:13:33  clausen
+ * Added Codon2Idx and Idx2Codon. Modified type of code_breaks
+ *
  * Revision 6.3  2001/09/07 14:16:50  ucko
  * Cleaned up external interface.
  *
@@ -71,25 +74,37 @@ public:
 
     // see CGencode::Translate()
     void Translate
-    (const CSeq_data&               in_seq,
-     CSeq_data*                     out_seq,
-     const CGenetic_code&           genetic_code,
-     const map<unsigned int, char>& code_breaks,
-     unsigned int                   uBeginIdx,
-     unsigned int                   uLength,
-     bool                           bCheck_first,
-     bool                           bPartial_start,
-     ENa_strand                     eStrand,
-     bool                           bStop,
-     bool                           bRemove_trailing_x)
+    (const CSeq_data&             in_seq,
+     CSeq_data*                   out_seq,
+     const CGenetic_code&         genetic_code,
+     const CGencode::TCodeBreaks& code_breaks,
+     unsigned int                 uBeginIdx,
+     unsigned int                 uLength,
+     bool                         bCheck_first,
+     bool                         bPartial_start,
+     ENa_strand                   eStrand,
+     bool                         bStop,
+     bool                         bRemove_trailing_x)
         const;
 
+    unsigned int Codon2Idx(const string& codon) const;
+    const string& Idx2Codon(unsigned int Idx) const;
+    
 private:
     // Holds gc.prt Genetic-code-table
     static const char* sm_StrGcAsn[];
 
     // Genetic code table data
     CRef<CGenetic_code_table> m_GcTable;
+    
+    // Hold map from gcIndex to gcCodon
+    vector<string> m_Idx2Codon;
+    
+    // Hold map from gcCodon to gcIdx
+    map<string, unsigned int> m_Codon2Idx;
+    
+    // Initialize 
+    void InitIdxCodon();
 
     // Initialize genetic codes.
     void InitGcTable();
@@ -136,17 +151,17 @@ static CGencode_implementation s_Implementation;
 
 // Implement the public interface.
 void CGencode::Translate
-(const CSeq_data&               in_seq,
- CSeq_data*                     out_seq,
- const CGenetic_code&           genetic_code,
- const map<unsigned int, char>& code_breaks,
- unsigned int                   uBeginIdx,
- unsigned int                   uLength,
- bool                           bCheck_first,
- bool                           bPartial_start,
- ENa_strand                     eStrand,
- bool                           bStop,
- bool                           bRemove_trailing_x)
+(const CSeq_data&     in_seq,
+ CSeq_data*           out_seq,
+ const CGenetic_code& genetic_code,
+ const TCodeBreaks&    code_breaks,
+ unsigned int         uBeginIdx,
+ unsigned int         uLength,
+ bool                 bCheck_first,
+ bool                 bPartial_start,
+ ENa_strand           eStrand,
+ bool                 bStop,
+ bool                 bRemove_trailing_x)
 {
     s_Implementation.Translate
         (in_seq,
@@ -162,12 +177,23 @@ void CGencode::Translate
          bRemove_trailing_x);
 }
 
+unsigned int CGencode::Codon2Idx(const string& codon)
+{
+    return s_Implementation.Codon2Idx(codon);
+}
+
+const string& CGencode::Idx2Codon(unsigned int idx)
+{
+    return s_Implementation.Idx2Codon(idx);
+}
+
 
 // Constructor.
 CGencode_implementation::CGencode_implementation()
 {
     InitGcTable();
     InitTran();
+    InitIdxCodon();
 }
 
 
@@ -183,17 +209,17 @@ CGencode_implementation::~CGencode_implementation()
 
 // Translate na to aa
 void CGencode_implementation::Translate
-(const CSeq_data&               in_seq,
- CSeq_data*                     out_seq,
- const CGenetic_code&           genetic_code,
- const map<unsigned int, char>& code_breaks,
- unsigned int                   uBeginIdx,
- unsigned int                   uLength,
- bool                           bCheck_first,
- bool                           bPartial_start,
- ENa_strand                     eStrand,
- bool                           bStop,
- bool                           bRemove_trailing_x)
+(const CSeq_data&             in_seq,
+ CSeq_data*                   out_seq,
+ const CGenetic_code&         genetic_code,
+ const CGencode::TCodeBreaks& code_breaks,
+ unsigned int                 uBeginIdx,
+ unsigned int                 uLength,
+ bool                         bCheck_first,
+ bool                         bPartial_start,
+ ENa_strand                   eStrand,
+ bool                         bStop,
+ bool                         bRemove_trailing_x)
     const
 {
     // Check that in_seq is Iupacna
@@ -439,7 +465,7 @@ void CGencode_implementation::Translate
     }
 
     // Apply code_breaks, if any. Expected to be rare.
-    for (map<unsigned int, char>::const_iterator i_cb = code_breaks.begin();
+    for (CGencode::TCodeBreaks::const_iterator i_cb = code_breaks.begin();
          i_cb != code_breaks.end();  ++i_cb) {
         if (i_cb->first < out_seq_data.size())
             out_seq_data[i_cb->first] = i_cb->second;
@@ -514,6 +540,48 @@ void CGencode_implementation::InitTran()
         m_AaIdx[i][4] = 64;
 }
 
+
+// Initialize m_Idx2Codon and m_Codon2Idx
+void CGencode_implementation::InitIdxCodon()
+{
+    string res("TCAG");
+    int i, j, k; 
+    unsigned int idx = 0;
+    
+    m_Idx2Codon.resize(4*4*4);
+    for(i = 0; i < 4; i++) {
+        for(j = 0; j < 4; j++) {
+            for(k = 0; k < 4; k++) {
+                string tmp = 
+                    res.substr(i,1) + res.substr(j,1) + res.substr(k,1);
+                m_Codon2Idx[tmp] = idx;
+                m_Idx2Codon[idx++] = tmp;
+            }
+        }
+    }
+}
+
+
+// Convert a codon triplet to an index
+unsigned int CGencode_implementation::Codon2Idx(const string& codon) const
+{
+    if( m_Codon2Idx.find(codon) != m_Codon2Idx.end() ) {
+        return m_Codon2Idx.find(codon)->second;
+    } else {
+        THROW1_TRACE(runtime_error, "Cannot find index for " + codon);
+    }
+}
+
+// Convert an index to a codon triplet
+const string& CGencode_implementation::Idx2Codon(unsigned int idx) const
+{
+    if( idx < m_Idx2Codon.size() ) {
+        return m_Idx2Codon[idx];
+    } else {
+        THROW1_TRACE(runtime_error, "Cannot find codon for " +
+                                    NStr::IntToString(idx));
+    }
+}           
 
 // Fuction to return Ncbieaa string (genetic code)
 // given a genetic code id.
