@@ -124,7 +124,7 @@ static const SApprovedDbXref kApprovedDbXrefs[] = {
     SApprovedDbXref(CDbtag::eDbtagType_taxon, "taxon")
 };
 static const size_t
-kApprovedDbXrefs_size = sizeof(kApprovedDbXrefs)/sizeof(kApprovedDbXrefs_size);
+kApprovedDbXrefs_size = sizeof(kApprovedDbXrefs) / sizeof(SApprovedDbXref);
 
 
 
@@ -240,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.12  2004/01/20 20:28:59  ucko
+ * Fix calculation of kApprovedDbXrefs_size.
+ *
  * Revision 6.11  2004/01/20 16:04:36  dicuccio
  * Implemented enumerated type interpretation of string-based database name
  *
