@@ -119,7 +119,7 @@ int CCgiWatchFile::x_Read(char* buf)
     CNcbiIfstream in(m_Filename.c_str());
     if (in) {
         in.read(buf, m_Limit);
-        return in.gcount();
+        return (int) in.gcount();
     } else {
         return -1;
     }
@@ -273,7 +273,7 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
             }
             if ( is_stat_log ) {
                 stat->Reset(start_time, *result, e.what());
-                string msg = stat->Compose();
+                msg = stat->Compose();
                 stat->Submit(msg);
             }
 
@@ -335,6 +335,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.23  2003/02/21 22:11:37  vakatov
+ * Get rid of a couple of compilation warnings
+ *
  * Revision 1.22  2003/02/19 17:53:30  kuznets
  * Cosmetic fix
  *
