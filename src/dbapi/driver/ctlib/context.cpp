@@ -882,6 +882,7 @@ void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
 }
 
 extern "C" {
+    NCBI_DBAPIDRIVER_CTLIB_EXPORT
     void* DBAPI_E_ctlib()
     {
     return (void*)DBAPI_RegisterDriver_CTLIB;
@@ -896,6 +897,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/04/07 13:41:47  gorelenk
+ * Added export prefix to implementations of DBAPI_E_* functions.
+ *
  * Revision 1.30  2003/11/19 22:47:20  soussov
  * adds code to setup client/server msg callbacks for each connection; adds 'prog_name' and 'host_name' attributes for create context
  *

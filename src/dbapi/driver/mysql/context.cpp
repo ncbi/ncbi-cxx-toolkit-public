@@ -97,6 +97,7 @@ void DBAPI_RegisterDriver_MYSQL(I_DriverMgr& mgr)
 }
 
 extern "C" {
+    NCBI_DBAPIDRIVER_MYSQL_EXPORT
     void* DBAPI_E_mysql()
     {
         return (void*) DBAPI_RegisterDriver_MYSQL;
@@ -111,6 +112,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/07 13:41:47  gorelenk
+ * Added export prefix to implementations of DBAPI_E_* functions.
+ *
  * Revision 1.5  2004/03/24 19:46:53  vysokolo
  * addaed support of blob
  *

@@ -397,6 +397,7 @@ void DBAPI_RegisterDriver_ODBC(I_DriverMgr& mgr)
 
 
 extern "C" {
+    NCBI_DBAPIDRIVER_ODBC_EXPORT
     void* DBAPI_E_odbc()
     {
         return (void*)DBAPI_RegisterDriver_ODBC;
@@ -411,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/04/07 13:41:48  gorelenk
+ * Added export prefix to implementations of DBAPI_E_* functions.
+ *
  * Revision 1.12  2004/03/17 19:25:38  gorelenk
  * Added NCBI_DBAPIDRIVER_ODBC_EXPORT export prefix for definition of
  * DBAPI_RegisterDriver_ODBC .

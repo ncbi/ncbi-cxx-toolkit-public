@@ -484,6 +484,7 @@ void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
 }
 
 extern "C" {
+    NCBI_DBAPIDRIVER_DBLIB_EXPORT
     void* DBAPI_E_msdblib()
     {
         return (void*)DBAPI_RegisterDriver_MSDBLIB;
@@ -499,6 +500,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/04/07 13:41:47  gorelenk
+ * Added export prefix to implementations of DBAPI_E_* functions.
+ *
  * Revision 1.27  2003/11/14 20:46:21  soussov
  * implements DoNotConnect mode
  *
