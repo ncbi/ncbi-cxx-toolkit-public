@@ -416,9 +416,7 @@ void CFlatSeqLoc::x_AddID
  CBioseqContext& ctx,
  TType type)
 {
-    CBioseq_Handle bh = 
-        ctx.GetScope().GetBioseqHandleFromTSE(id, ctx.GetHandle());
-    if ( bh  &&  bh == ctx.GetHandle() ) {
+    if (ctx.GetHandle().IsSynonym(id)) {
         if ( type == eType_assembly ) {
             oss << ctx.GetAccession() << ':';
         }
@@ -427,13 +425,7 @@ void CFlatSeqLoc::x_AddID
 
     CConstRef<CSeq_id> idp;
     try {
-        if (bh) {
-            idp.Reset(&GetId(bh, eGetId_Best));
-        } else {
-            if (id.IsGi()) {
-                idp.Reset(&GetId(id, ctx.GetScope(), eGetId_Best));
-            }
-        }
+        idp.Reset(&GetId(id, ctx.GetScope(), eGetId_ForceAcc));
     } catch (CException&) {
         idp.Reset(NULL);
     }
@@ -441,14 +433,7 @@ void CFlatSeqLoc::x_AddID
         idp.Reset(&id);
     }
 
-    string acc;
-    if (idp->GetTextseq_Id() != 0) 
-        acc = idp->GetSeqIdString(true);
-    else {
-        acc = idp->AsFastaString();
-    }
-
-    oss << acc << ':';
+    oss << idp->GetSeqIdString(true) << ':';
 }
 
 
@@ -459,6 +444,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/11/15 20:08:08  shomrat
+* Cleanup of ID formatting
+*
 * Revision 1.14  2004/10/18 18:47:36  shomrat
 * Use sequence::GetId
 *
