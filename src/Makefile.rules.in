@@ -34,12 +34,12 @@ exp_headers = $(HEADER_EXPORT:%=$(pkg_incdir)/%)
 
 export-headers: $(exp_headers)
 
-$(exp_headers): $(src_headers)
+$(pkg_incdir)/%: $(srcdir)/%
 	@if [ -n "$(PACKAGE_EXPORT)" -a -n "$(HEADER_EXPORT)" ]; then \
 	    test -d $(pkg_incdir)  ||  rm -f $(pkg_incdir); \
 	    mkdir -p $(pkg_incdir); \
-	    echo cp -fp $(src_headers) $(pkg_incdir)/; \
-	    cp -fp $(src_headers) $(pkg_incdir)/; \
+	    echo cp -fp $< $@; \
+	    cp -fp $< $@; \
 	fi
 
 purge-headers:
