@@ -136,9 +136,9 @@ void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
 void CSplitParser::x_Attach(CTSE_Chunk_Info& chunk,
                             const CID2S_Bioseq_place_Info& place)
 {
+    chunk.x_AddBioseqPlace(place.GetBioseq_set());
     ITERATE ( CID2S_Bioseq_place_Info::TSeq_ids, it, place.GetSeq_ids() ) {
-        chunk.x_AddBioseqPlace(place.GetBioseq_set(),
-                               CSeq_id_Handle::GetHandle(**it));
+        chunk.x_AddBioseqId(CSeq_id_Handle::GetHandle(**it));
     }
 }
 
@@ -336,6 +336,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.11  2004/08/31 14:40:10  vasilche
+ * Postpone indexing of split blobs.
+ *
  * Revision 1.10  2004/08/19 14:18:36  vasilche
  * Added splitting of whole Bioseqs.
  *
