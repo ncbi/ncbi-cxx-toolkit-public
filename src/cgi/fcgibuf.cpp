@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/10/26 18:11:57  vakatov
+* CCgiObuffer::overflow() -- get rid of unused var "bumpCount" (warning)
+*
 * Revision 1.7  1999/10/21 14:50:49  sandomir
 * optimization for overflow() (internal buffer added)
 *
@@ -95,7 +98,6 @@ CT_INT_TYPE CCgiObuffer::overflow(CT_INT_TYPE c)
     FCGX_Stream* out = m_out;
     const CT_CHAR_TYPE* from = pbase(), * to = pptr();
     streamsize count = to - from;
-    streamsize bumpCount = count;   
 
     while ( count > 0 ) {
         streamsize chunk = min(count, streamsize(out->stop - out->wrNext));
