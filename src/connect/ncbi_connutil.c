@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2000/10/11 22:29:44  lavr
+ * Forgotten blank added after {GET|POST} request in URL_Connect
+ *
  * Revision 6.6  2000/10/05 22:35:24  lavr
  * SConnNetInfo modified to contain 'client_mode' instead of just
  * 'firewall' boolean
@@ -377,10 +380,16 @@ extern SOCK URL_Connect
         }
     }
 
-    if (req_method == eReqMethodGet)
-        X_REQ_R = "GET";
-    else
-        X_REQ_R = "POST";
+    if (req_method == eReqMethodGet) {
+        X_REQ_R = "GET ";
+        if (content_length) {
+            CORE_LOG(eLOG_Warning,
+                     "[URL_Connect]  Content length ignored with GET");
+            content_length = 0;
+        }
+    } else
+        X_REQ_R = "POST ";
+
     /* compose and send HTTP header */
     if (
         /* {POST|GET} <path>?<args> HTTP/1.0\r\n */
@@ -404,9 +413,12 @@ extern SOCK URL_Connect
          != eIO_Success)  ||
 
         /*  Content-Length: <content_length>\r\n\r\n */
-        sprintf(buffer, "Content-Length: %lu\r\n\r\n",
-                (unsigned long) content_length) <= 0  ||
-        SOCK_Write(sock, (const void*) buffer, strlen(buffer), 0)
+        (req_method != eReqMethodGet  &&
+         (sprintf(buffer, "Content-Length: %lu\r\n",
+                  (unsigned long) content_length) <= 0  ||
+          SOCK_Write(sock, (const void*) buffer, strlen(buffer), 0)
+          != eIO_Success))  ||
+        SOCK_Write(sock, (const void*) "\r\n", 2, 0)
         != eIO_Success)
         {
             CORE_LOG(eLOG_Error, "[URL_Connect]  Error sending HTTP header");
