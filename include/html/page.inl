@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/04/19 20:11:48  vakatov
+* CreateTagMapper() template definitions moved from "page.inl" to
+* "page.hpp" because MSVC++ gets confused(cannot understand what
+* is declaration and what is definition).
+*
 * Revision 1.6  1999/04/15 19:48:18  vasilche
 * Fixed several warnings detected by GCC
 *
@@ -96,18 +101,6 @@ template<class C>
 inline BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name))
 {
     return new StaticTagMapperByNodeAndName<C>(function);
-}
-
-template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(void))
-{
-    return new TagMapper<C>(method);
-}
-
-template<class C>
-inline BaseTagMapper* CreateTagMapper(const C*, CNCBINode* (C::*method)(const string& name))
-{
-    return new TagMapperByName<C>(method);
 }
 
 inline void CHTMLBasicPage::AddTagMap(const string& name, CNCBINode* node)

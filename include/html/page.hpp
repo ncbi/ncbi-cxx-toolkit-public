@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/04/19 20:11:47  vakatov
+* CreateTagMapper() template definitions moved from "page.inl" to
+* "page.hpp" because MSVC++ gets confused(cannot understand what
+* is declaration and what is definition).
+*
 * Revision 1.14  1999/04/15 22:06:46  vakatov
 * CQueryBox:: use "enum { kNo..., };" rather than "static const int kNo...;"
 * Fixed "class BaseTagMapper" to "struct ..."
@@ -100,11 +105,16 @@ template<class C>
 BaseTagMapper* CreateTagMapper(CNCBINode* (*function)(C* node, const string& name));
 
 template<class C>
-BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(void));
+inline BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(void))
+{
+    return new TagMapper<C>(method);
+}
 
 template<class C>
-BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(const string& name));
-
+inline BaseTagMapper* CreateTagMapper(const C* _this, CNCBINode* (C::*method)(const string& name))
+{
+    return new TagMapperByName<C>(method);
+}
 
 /////////////////////////////////////////////////////////////
 // CHTMLBasicPage is the virtual base class.  The main functionality is
