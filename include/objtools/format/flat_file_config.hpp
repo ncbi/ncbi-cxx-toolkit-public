@@ -51,7 +51,8 @@ public:
         eFormat_DDBJ,
         eFormat_GBSeq,
         eFormat_FTable,
-        eFormat_GFF
+        eFormat_GFF, // version 2, w/GTF
+        eFormat_GFF3
     };
 
     enum EMode {
@@ -107,7 +108,7 @@ public:
         // determines which Bioseqs in an entry to view
         fViewNucleotides  = 0x1,
         fViewProteins     = 0x2,
-        fViewAll          = (fViewNucleotides | fViewNucleotides)
+        fViewAll          = (fViewNucleotides | fViewProteins)
     };
 
     // types
@@ -135,6 +136,7 @@ public:
     bool IsFormatGBSeq  (void) const { return m_Format == eFormat_GBSeq;   }
     bool IsFormatFTable (void) const { return m_Format == eFormat_FTable;  }
     bool IsFormatGFF    (void) const { return m_Format == eFormat_GFF;     }
+    bool IsFormatGFF3   (void) const { return m_Format == eFormat_GFF3;    }
     // setters
     void SetFormat(const TFormat& format) { m_Format = format; }
     void SetFormatGenbank(void) { m_Format = eFormat_GenBank; }
@@ -143,6 +145,7 @@ public:
     void SetFormatGBSeq  (void) { m_Format = eFormat_GBSeq;   }
     void SetFormatFTable (void) { m_Format = eFormat_FTable;  }
     void SetFormatGFF    (void) { m_Format = eFormat_GFF;     }
+    void SetFormatGFF3   (void) { m_Format = eFormat_GFF3;     }
 
     // -- Mode
     // getters
@@ -345,6 +348,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/06/21 18:51:13  ucko
+* Add a GFF3 format, and fix a typo in the definition of fViewAll.
+*
 * Revision 1.2  2004/04/23 14:13:48  gorelenk
 * Added missed export prefix to declaration of class CFlatFileConfig.
 *
