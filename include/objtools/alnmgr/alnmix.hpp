@@ -183,6 +183,7 @@ public:
         
     TSeqPos         m_Len;
     TStartIterators m_StartIts;
+    int             m_DSIndex; // used by the truncate algorithm
 };
 
 
@@ -322,6 +323,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/06/25 15:17:26  todorov
+* truncation consistent for the whole segment now
+*
 * Revision 1.26  2003/06/24 15:24:28  todorov
 * added optional truncation of overlaps
 *

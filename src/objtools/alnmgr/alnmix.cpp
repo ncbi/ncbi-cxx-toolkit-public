@@ -520,6 +520,45 @@ void CAlnMix::x_Merge()
                 }
             }
             
+            if (m_MergeFlags & fTruncateOverlaps) {
+                // check if this seg is marked for truncation or deletion
+
+                CAlnMix::TTruncateDSIndexMap::iterator ds_i =
+                    m_TruncateMap.find(match->m_DSIndex);
+                if (ds_i != m_TruncateMap.end()) {
+                    CAlnMix::TTruncateSeqPosMap::iterator pos_i =
+                        ds_i->second.find(start1);
+                    if (pos_i != ds_i->second.end()) {
+                        CAlnMixMatch * truncated_match = pos_i->second;
+#if OBJECTS_ALNMGR___ALNMIX__DBG
+                        if (truncated_match->m_AlnSeq1 !=
+                            match->m_AlnSeq1) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMix::x_Merge(): "
+                                       "Truncated refseq not consistent");
+                        }
+                        if (truncated_match->m_Len >= match->m_Len) {
+                            NCBI_THROW(CAlnException, eMergeFailure,
+                                       "CAlnMix::x_Merge(): "
+                                       "truncated_match->m_Len >= match->m_Len");
+                        }                            
+#endif
+                        // this match needs to be truncated
+                        TSeqPos left_diff = 
+                            truncated_match->m_Start1 - match->m_Start1;
+                        TSeqPos right_diff =
+                            match->m_Len - truncated_match->m_Len - left_diff;
+                        match->m_Len = curr_len =
+                            len = truncated_match->m_Len;
+                        match->m_Start1 = start1 = 
+                            truncated_match->m_Start1;
+                        match->m_Start2 = start2 += match->m_StrandsDiffer ?
+                            right_diff : left_diff;
+                    }
+                }
+                
+            }
+
             CAlnMixSeq::TStarts& starts = seq1->m_Starts;
             if (seq2) {
                 // mark it, it is linked to the refseq
@@ -557,6 +596,7 @@ void CAlnMix::x_Merge()
                 //create the first one
                 seg = new CAlnMixSegment;
                 seg->m_Len = len;
+                seg->m_DSIndex = match->m_DSIndex;
                 starts[start1] = seg;
                 seg->m_StartIts[seq1] = 
                     lo_start_i = hi_start_i = starts.begin();
@@ -572,7 +612,10 @@ void CAlnMix::x_Merge()
                     }
                 }
 
-                if (m_MergeFlags & fTruncateOverlaps) {
+                if (m_MergeFlags & fTruncateOverlaps  &&
+                    !(start1 == lo_start_i->first  &&
+                      len == lo_start_i->second->m_Len  &&
+                      match->m_DSIndex == lo_start_i->second->m_DSIndex)) {
 
                     TSignedSeqPos left_diff = 0;
                     if (start1 >= start_i->first) {
@@ -610,9 +653,10 @@ void CAlnMix::x_Merge()
                             // create the new truncated seg
                             seg = new CAlnMixSegment;
                             seg->m_Len = len;
+                            seg->m_DSIndex = match->m_DSIndex;
                             starts[start1] = seg;
                             // point to the newly created start
-                            seg->m_StartIts[seq1] = hi_start_i = --start_i;
+                            seg->m_StartIts[seq1] = hi_start_i = ++lo_start_i;
                             // DONE!
                             
                         } else {
@@ -639,6 +683,7 @@ void CAlnMix::x_Merge()
                         // create the second seg
                         seg = new CAlnMixSegment;
                         seg->m_Len = len2;
+                        seg->m_DSIndex = match->m_DSIndex;
                         starts[start1] = seg;
                         
                         // create rows info
@@ -729,10 +774,12 @@ void CAlnMix::x_Merge()
                         //       x--..
                         // x--------..
                         seg->m_Len = start_i->first - start;
+                        seg->m_DSIndex = match->m_DSIndex;
                     } else {
                         //       x-----)
                         // x---)
                         seg->m_Len = curr_len;
+                        seg->m_DSIndex = match->m_DSIndex;
                         hi_start_i = start_i;
                         hi_start_i--; // DONE!
                     }
@@ -1495,6 +1542,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.59  2003/06/25 15:17:31  todorov
+* truncation consistent for the whole segment now
+*
 * Revision 1.58  2003/06/24 15:24:14  todorov
 * added optional truncation of overlaps
 *
