@@ -262,7 +262,7 @@ STD_CATCH(message) \
     throw; }  while (0)
 
 #define NCBI_REPORT_EXCEPTION(title,ex) \
-    CExceptionReporter::ReportDefault(__FILE__, __LINE__, title, ex)
+    CExceptionReporter::ReportDefault(__FILE__,__LINE__,title,ex,eDPF_Default)
 
 
 
@@ -302,15 +302,18 @@ public:
     // if "reporter" is not specified (passed 0), then use the default reporter
     // (as set with CExceptionReporter::SetDefault)
     void Report(const char* file, int line,
-                const string& title, CExceptionReporter* reporter = 0) const;
+                const string& title, CExceptionReporter* reporter = 0,
+                TDiagPostFlags flags = eDPF_Trace) const;
 
     // Report as a string
-    string ReportThis(void) const;  // this exception only, no backlog attached
-    string ReportAll (void) const;  // including full backlog
+    // this exception only, no backlog attached
+    string ReportThis(TDiagPostFlags flags = eDPF_Trace) const;
+    // including full backlog
+    string ReportAll (TDiagPostFlags flags = eDPF_Trace) const;
 
     // Report "standard" attributes (file, line, type, err.code, user message)
     // into the "out" stream (this exception only, no backlog)
-    void ReportStd(ostream& out) const;
+    void ReportStd(ostream& out, TDiagPostFlags flags = eDPF_Trace) const;
 
     // Report "non-standard" attributes (those of derived class)
     // into the "out" stream
@@ -472,13 +475,13 @@ public:
 
     // Report exception using default reporter
     static void ReportDefault(const char* file, int line,
-                              const string& title,
-                              const CException& ex);
+                              const string& title, const CException& ex,
+                              TDiagPostFlags flags = eDPF_Trace);
 
     // Report exception with _this_ reporter
     virtual void Report(const char* file, int line,
-                        const string& title,
-                        const CException& ex) const = 0;
+                        const string& title, const CException& ex,
+                        TDiagPostFlags flags = eDPF_Trace) const = 0;
 
 private:
     static const CExceptionReporter* sm_DefHandler;
@@ -497,8 +500,8 @@ public:
     virtual ~CExceptionReporterStream(void);
 
     virtual void Report(const char* file, int line,
-                        const string& title,
-                        const CException& ex) const;
+                        const string& title, const CException& ex,
+                        TDiagPostFlags flags = eDPF_Trace) const;
 private:
     ostream& m_Out;
 };
@@ -652,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2002/08/20 19:13:47  gouriano
+ * added DiagPostFlags into CException reporting functions
+ *
  * Revision 1.37  2002/08/06 14:08:30  gouriano
  * introduced EXCEPTION_VIRTUAL_BASE macro to make doc++ happy
  *

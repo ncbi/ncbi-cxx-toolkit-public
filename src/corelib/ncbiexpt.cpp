@@ -159,19 +159,19 @@ const char* CException::what(void) const throw()
 
 
 void CException::Report(const char* file, int line,
-                        const string& title,
-                        CExceptionReporter* reporter) const
+                        const string& title,CExceptionReporter* reporter,
+                        TDiagPostFlags flags) const
 {
     if (reporter ) {
-        reporter->Report(file, line, title, *this);
+        reporter->Report(file, line, title, *this, flags);
     }
     // unconditionally ... 
     // that is, there will be two reports
-    CExceptionReporter::ReportDefault(file, line, title, *this);
+    CExceptionReporter::ReportDefault(file, line, title, *this, flags);
 }
 
 
-string CException::ReportAll(void) const
+string CException::ReportAll(TDiagPostFlags flags) const
 {
     // invert the order
     stack<const CException*> pile;
@@ -183,39 +183,45 @@ string CException::ReportAll(void) const
     os << "NCBI C++ Exception: " << endl;
     for (; !pile.empty(); pile.pop()) {
         //indentation
-        for (size_t cnt = (pile.size()-1)*2; cnt!=0; --cnt) {
-            os.put(' ');
-        }
-        pile.top()->ReportStd(os);
-        pile.top()->ReportExtra(os);
-        os << endl;
+        os << "    ";
+        os << pile.top()->ReportThis(flags) << endl;
     }
     os << '\0';
     if (sm_BkgrEnabled && !m_InReporter) {
         m_InReporter = true;
-        CExceptionReporter::ReportDefault(0,0,"",*this);
+        CExceptionReporter::ReportDefault(0,0,"(background reporting)",
+                                          *this, eDPF_Trace);
         m_InReporter = false;
     }
     return os.str();
 }
 
 
-string CException::ReportThis(void) const
+string CException::ReportThis(TDiagPostFlags flags) const
 {
-    ostrstream os;
-    ReportStd(os);
-    ReportExtra(os);
+    ostrstream os, osex;
+    ReportStd(os, flags);
+    ReportExtra(osex);
+    osex << '\0';
+    if (strlen(osex.str())!=0) {
+        os << " (" << osex.str() << ')';
+    }
     os << '\0';
     return os.str();
 }
 
 
-void CException::ReportStd(ostream& out) const
+void CException::ReportStd(ostream& out, TDiagPostFlags flags) const
 {
-    out <<
-        GetFile() << "(" << GetLine() << ") : " <<
-        GetType() << "::" << GetErrCodeString() << " : \"" <<
-        GetMsg() << "\" ";
+    string text(GetMsg());
+    string err_type(GetType());
+    err_type += "::";
+    err_type += GetErrCodeString();
+    SDiagMessage diagmsg(
+        eDiag_Error, text.c_str(), text.size(),
+        GetFile().c_str(), GetLine(),
+        flags, 0,0,0,err_type.c_str());
+    diagmsg.Write(out, SDiagMessage::fNoEndl);
 }
 
 void CException::ReportExtra(ostream& /*out*/) const
@@ -244,9 +250,15 @@ CException::EErrCode CException::GetErrCode (void) const
 void CException::x_ReportToDebugger(void) const
 {
 #ifdef NCBI_OS_MSWIN
-    bool prev = EnableBackgroundReporting(false);
-    OutputDebugString(ReportAll().c_str());
-    EnableBackgroundReporting(prev);
+    ostrstream os;
+    os << "NCBI C++ Exception: " << endl;
+    os <<
+        GetFile() << "(" << GetLine() << ") : " <<
+        GetType() << "::" << GetErrCodeString() << " : \"" <<
+        GetMsg() << "\" ";
+    ReportExtra(os);
+    os << endl << '\0';
+    OutputDebugString(os.str());
 #endif
 }
 
@@ -342,16 +354,15 @@ bool CExceptionReporter::EnableDefault(bool enable)
 
 
 void CExceptionReporter::ReportDefault(const char* file, int line,
-                                       const string& title,
-                                       const CException& ex)
+    const string& title,const CException& ex, TDiagPostFlags flags)
 {
     if ( !sm_DefEnabled )
         return;
 
     if ( sm_DefHandler ) {
-        sm_DefHandler->Report(file, line, title, ex);
+        sm_DefHandler->Report(file, line, title, ex, flags);
     } else {
-        CNcbiDiag(file, line) << title << ex;
+        CNcbiDiag(file, line, eDiag_Error, flags) << title << ex;
     }
 }
 
@@ -374,32 +385,23 @@ CExceptionReporterStream::~CExceptionReporterStream(void)
 
 
 void CExceptionReporterStream::Report(const char* file, int line,
-                                      const string& title,
-                                      const CException& ex) const
+    const string& title, const CException& ex, TDiagPostFlags flags) const
 {
-    const CException* pex;
-    if (!title.empty()) {
-        m_Out << title << endl;
-    }
-    m_Out << "NCBI C++ Exception";
-    if (file) {
-        m_Out << " at \"" << file << "\", line " << line; 
-    }
-    m_Out << ":" << endl;
+    SDiagMessage diagmsg(
+        eDiag_Error, title.c_str(), title.size(),
+        file, line, flags);
+    diagmsg.Write(m_Out);
+    m_Out << "NCBI C++ Exception: " << endl;
     // invert the order
     stack<const CException*> pile;
+    const CException* pex;
     for (pex = &ex; pex; pex = pex->GetPredecessor()) {
         pile.push(pex);
     }
     for (; !pile.empty(); pile.pop()) {
         pex = pile.top();
-        m_Out <<
-            "    " << // indentation
-            pex->GetType() << "::" << pex->GetErrCodeString() << " at \"" <<
-            pex->GetFile() <<  "\", line " << pex->GetLine() << ": \"" <<
-            pex->GetMsg()  << "\" ";
-        pex->ReportExtra(m_Out);
-        m_Out << endl;
+        m_Out << "    ";
+        m_Out << pex->ReportThis(flags) << endl;
     }
 }
 
@@ -573,6 +575,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2002/08/20 19:11:30  gouriano
+ * added DiagPostFlags into CException reporting functions
+ *
  * Revision 1.26  2002/07/29 19:29:42  gouriano
  * changes to allow multiple inheritance in CException classes
  *
