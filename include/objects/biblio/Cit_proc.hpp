@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2005/01/21 13:08:33  dicuccio
+ * Drop unused header
+ *
  * Revision 1.6  2004/08/19 13:03:23  dicuccio
  * Added missing include for Cit_book.hpp
  *
@@ -64,7 +67,6 @@
 
 // generated includes
 #include <objects/biblio/Cit_proc_.hpp>
-#include <objects/biblio/Cit_book.hpp>
 
 // generated classes
 
