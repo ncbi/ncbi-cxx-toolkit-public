@@ -63,7 +63,7 @@ static Int4 dust_triplet_find (Uint1*, Int4, Int4, Uint1*);
 
 static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
 		       DREGION* reg,
-		       Int4 level, Int4 windowsize, Int4 minwin, Int4 linker)
+		       Int4 level, Int4 windowsize, Int4 linker)
 {
    Int4    len;
    Int4	i;
@@ -75,7 +75,6 @@ static Int4 dust_segs (Uint1* sequence, Int4 length, Int4 start,
    /* defaults are more-or-less in keeping with original dust */
    if (level < 2 || level > 64) level = 20;
    if (windowsize < 8 || windowsize > 64) windowsize = 64;
-   if (minwin < 4 || minwin > 128) minwin = 4;
    if (linker < 1 || linker > 32) linker = 1;
    
    nreg = 0;
@@ -168,7 +167,7 @@ static void wo (Int4 len, Uint1* seq_start, Int4 iseg, DCURLOC* cloc,
 	cloc->curend += cloc->curstart;
 }
 
-/* returns TRUE if there is single triplet in the sequence considered */
+/** returns TRUE if there is single triplet in the sequence considered */
 static Boolean wo1 (Int4 len, Uint1* seq, Int4 iwo, DCURLOC* cloc)
 {
    Uint4 sum;
@@ -264,8 +263,7 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    return n;
 }
 
-/* look for dustable locations (as slpDust from dust.c) */
-
+/** Look for dustable locations */
 static Int2 
 GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
 {
@@ -298,7 +296,7 @@ GetDustLocations (ListNode** loc, DREGION* reg, Int4 nreg)
 }
 
 Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
-                    Int2 level, Int2 window, Int2 minwin, Int2 linker,
+                    Int2 level, Int2 window, Int2 linker,
                     BlastSeqLoc** dust_loc)
 {
 	DREGION* reg,* regold;
@@ -311,7 +309,7 @@ Int2 SeqBufferDust (Uint1* sequence, Int4 length, Int4 offset,
            return -1;
 
         nreg = dust_segs (sequence, length, offset, reg, (Int4)level, 
-                  (Int4)window, (Int4)minwin, (Int4)linker);
+                  (Int4)window, (Int4)linker);
 
         status = GetDustLocations(dust_loc, reg, nreg);
 
