@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/03 18:37:34  grichenk
+* Added more examples of using CFeat_CI and GetSequenceView()
+*
 * Revision 1.2  2002/03/28 14:32:58  grichenk
 * Minor fixes
 *
@@ -51,6 +54,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
 
 // Object manager includes
 #include <objects/objmgr1/object_manager.hpp>
@@ -147,7 +151,7 @@ int CDemoApp::Run(void)
 
     // Get the sequence using CSeqVector. Use default encoding:
     // CSeq_data::e_Iupacna or CSeq_data::e_Iupacaa.
-    CSeqVector seq_vect = handle.GetSeqVector();
+    CSeqVector seq_vect = handle.GetSeqVector(true);
     // -- use the vector: print length and the first 10 symbols
     NcbiCout << "Sequence: length=" << seq_vect.size();
     NcbiCout << " data=";
@@ -178,7 +182,7 @@ int CDemoApp::Run(void)
     // Create CFeat_CI using the current scope and location.
     // No feature type restrictions.
     for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-        feat_it;  ++feat_it) {
+         feat_it;  ++feat_it) {
         count++;
         // Get seq-annot containing the feature
         CConstRef<CSeq_annot> annot = &feat_it.GetSeq_annot();
@@ -187,12 +191,28 @@ int CDemoApp::Run(void)
 
     count = 0;
     // The same region (whole sequence), but restricted feature type:
-    // searching for e_Gene features only.
-    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Gene);
-        feat_it;  ++feat_it) {
+    // searching for e_Cdregion features only. If the sequence is
+    // segmented (constructed), search for features on the referenced
+    // sequences in the same top level seq-entry, ignore far pointers.
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_Cdregion,
+                          CFeat_CI::eResolve_TSE);
+         feat_it;  ++feat_it) {
         count++;
+        // Get seq vector filtered with the current feature location.
+        // e_ViewMerged flag forces each residue to be shown only once.
+        CSeqVector cds_vect = handle.GetSequenceView
+            (feat_it->GetLocation(), CBioseq_Handle::e_ViewMerged,
+             true);
+        // Print first 10 characters of each cd-region
+        NcbiCout << "cds" << count << " len=" << cds_vect.size() << " data=";
+        sout = "";
+        for (size_t i = 0; (i < cds_vect.size()) && (i < 10); i++) {
+            // Convert sequence symbols to printable form
+            sout += cds_vect[i];
+        }
+        NcbiCout << NStr::PrintableString(sout) << NcbiEndl;
     }
-    NcbiCout << "Feat count (whole, gene):      " << count << NcbiEndl;
+    NcbiCout << "Feat count (whole, cds):      " << count << NcbiEndl;
 
     // Region set to interval 0..9 on the bioseq. Any feature
     // intersecting with the region should be selected.
