@@ -5860,11 +5860,11 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 80,\n",
     " 81,\n",
     " 89,\n",
-    " 87,\n",
+    " 83,\n",
     " 65,\n",
     " 85,\n",
     " 66,\n",
-    " 83,\n",
+    " 87,\n",
     " 88,\n",
     " 82\n",
     " }\n",
@@ -6072,10 +6072,10 @@ const char* CSeqportUtil_implementation::sm_StrAsnData[] =
     " 12,\n",
     " 2 ,\n",
     " 10,\n",
-    " 9 ,\n",
+    " 6 ,\n",
     " 14,\n",
     " 1 ,\n",
-    " 6 ,\n",
+    " 9 ,\n",
     " 5 ,\n",
     " 13,\n",
     " 3 ,\n",
@@ -6469,6 +6469,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.22  2004/01/22 19:13:26  shomrat
+ * fixed bug in complement tables
+ *
  * Revision 6.21  2003/11/28 19:01:54  vasilche
  * Avoid calling CStreamUtils::Pushback() when constructing objects from text ASN.
  * Fixed warnings about conversion char -> unsigned char.
