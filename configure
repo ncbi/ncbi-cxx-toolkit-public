@@ -4140,10 +4140,10 @@ else
    esac
 fi
 
-if test "$LIB_OR_DLL" = "both"; then
-   STATIC="-static"
-else
+if test "$LIB_OR_DLL" = "dll"; then
    STATIC=
+else
+   STATIC="-static"
 fi
 
 

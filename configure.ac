@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.263 2004/01/30 16:53:38 ucko Exp $
+#  $Id: configure.ac,v 1.264 2004/02/02 15:16:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1062,10 +1062,10 @@ else
    esac
 fi
 
-if test "$LIB_OR_DLL" = "both"; then
-   STATIC="-static"
-else
+if test "$LIB_OR_DLL" = "dll"; then
    STATIC=
+else
+   STATIC="-static"
 fi
 AC_SUBST(STATIC)
 
