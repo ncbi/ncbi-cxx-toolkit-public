@@ -253,7 +253,7 @@ int CTestApplication::Run(void)
     // NStr::PrintableString()
     assert(NStr::PrintableString(kEmptyStr).empty());
     assert(NStr::PrintableString("AB\\CD\nAB\rCD\vAB\tCD\'AB\"").
-            compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\"") == 0);
+            compare("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"") == 0);
     assert(NStr::PrintableString("A\020B" + string(1, '\0') + "CD").
             compare("A\\x10B\\0CD") == 0);
 
@@ -457,6 +457,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/09/04 19:32:11  vakatov
+ * Minor change to reflect the changed handling of '"' by NStr::PrintableString
+ *
  * Revision 6.6  2002/07/15 18:17:26  gouriano
  * renamed CNcbiException and its descendents
  *
