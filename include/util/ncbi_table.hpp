@@ -137,7 +137,7 @@ CNcbiTable<TValue, TRow, TColumn>::CNcbiTable(unsigned int rows,
 template<class TValue, class TRow, class TColumn>
 CNcbiTable<TValue, TRow, TColumn>::~CNcbiTable()
 {
-    NON_CONST_ITERATE(TRowCollection, it, m_Table) {
+    NON_CONST_ITERATE(typename TRowCollection, it, m_Table) {
         TRowType* r = *it;
         delete r;
     }
@@ -160,7 +160,7 @@ void CNcbiTable<TValue, TRow, TColumn>::AddColumn(const TColumn& col)
 {
     unsigned int cidx = m_Cols;
     AssociateColumn(col, cidx);
-    NON_CONST_ITERATE(TRowCollection, it, m_Table) {
+    NON_CONST_ITERATE(typename TRowCollection, it, m_Table) {
         TRowType* r = *it;
         r->push_back(TValue());
     }
@@ -182,7 +182,7 @@ template<class TValue, class TRow, class TColumn>
 void CNcbiTable<TValue, TRow, TColumn>::AssociateRow(const TRow&  row, 
                                                      unsigned int row_idx)
 {
-    TRowMap::const_iterator it = m_RowMap.find(row);
+    typename TRowMap::const_iterator it = m_RowMap.find(row);
     if (it == m_RowMap.end()) {
         m_RowMap.insert(pair<TRow, unsigned int>(row, row_idx));
     } else {
@@ -194,7 +194,7 @@ template<class TValue, class TRow, class TColumn>
 void CNcbiTable<TValue, TRow, TColumn>::AssociateColumn(const TColumn& col, 
                                                         unsigned int   col_idx)
 {
-    TColumnMap::const_iterator it = m_ColumnMap.find(col);
+    typename TColumnMap::const_iterator it = m_ColumnMap.find(col);
     if (it == m_ColumnMap.end()) {
         m_ColumnMap.insert(pair<TColumn, unsigned int>(col, col_idx));
     } else {
@@ -218,7 +218,7 @@ void CNcbiTable<TValue, TRow, TColumn>::Resize(unsigned int rows,
     }
     m_Cols = cols;
 
-    NON_CONST_ITERATE(TRowCollection, it, m_Table) {
+    NON_CONST_ITERATE(typename TRowCollection, it, m_Table) {
         TRowType* r = *it;
         if (r == 0) {  // new row
             r = new TRowType();
@@ -248,7 +248,7 @@ void CNcbiTable<TValue, TRow, TColumn>::Resize(unsigned int  rows,
     }
     m_Cols = cols;
 
-    NON_CONST_ITERATE(TRowCollection, it, m_Table) {
+    NON_CONST_ITERATE(typename TRowCollection, it, m_Table) {
         TRowType* r = *it;
         if (r == 0) {  // new row
             r = new TRowType();
@@ -267,7 +267,7 @@ template<class TValue, class TRow, class TColumn>
 const typename CNcbiTable<TValue, TRow, TColumn>::TRowType& 
 CNcbiTable<TValue, TRow, TColumn>::GetRow(const TRow& row) const
 {
-    TRowMap::const_iterator it = m_RowMap.find(row);
+    typename TRowMap::const_iterator it = m_RowMap.find(row);
     if (it == m_RowMap.end()) {
         _ASSERT(0);
     } 
@@ -315,7 +315,7 @@ template<class TValue, class TRow, class TColumn>
 unsigned int 
 CNcbiTable<TValue, TRow, TColumn>::ColumnIdx(const TColumn& col) const
 {
-    TColumnMap::const_iterator it = m_ColumnMap.find(col);
+    typename TColumnMap::const_iterator it = m_ColumnMap.find(col);
     if (it == m_ColumnMap.end()) {
         _ASSERT(0);
     }
@@ -326,7 +326,7 @@ template<class TValue, class TRow, class TColumn>
 unsigned int 
 CNcbiTable<TValue, TRow, TColumn>::RowIdx(const TRow& row) const
 {
-    TRowMap::const_iterator it = m_RowMap.find(row);
+    typename TRowMap::const_iterator it = m_RowMap.find(row);
     if (it == m_RowMap.end()) {
         _ASSERT(0);
     }
@@ -359,6 +359,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/09/01 13:04:03  kuznets
+ * Use typename to make GCC happy
+ *
  * Revision 1.1  2004/09/01 12:27:54  kuznets
  * Initial revision
  *
