@@ -84,7 +84,7 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
         case eAll:
         default:
             LOG_POST("Invalid choice: " + NStr::IntToString(choice));
-            return false;
+            return;
         case eBioseq:
         case eBioseqCore:
             break;
@@ -115,14 +115,14 @@ CBlastDbDataLoader::GetRecords(const CSeq_id_Handle& idh,
 
         CConstRef<CSeq_id> seq_id = idh.GetSeqId();
         if ( !(sip = sic.ToC(*seq_id)) )
-            continue;
+            return;
 
         if ( (oid = SeqId2OrdinalId(m_rdfp, sip)) < 0)
-            continue;
+            return;
 
         // If we've already retrieved this particular ordinal id, ignore it
         if ( (found = m_cache.find(oid)) != m_cache.end())
-            continue;
+            return;
 
         {{  // protect access to the blast database
             CFastMutexGuard mtx(*m_mutex);
@@ -178,6 +178,9 @@ END_NCBI_SCOPE
 /* ========================================================================== 
  *
  * $Log$
+ * Revision 1.3  2003/09/30 17:22:06  vasilche
+ * Fixed for new CDataLoader interface.
+ *
  * Revision 1.2  2003/09/30 16:36:36  vasilche
  * Updated CDataLoader interface.
  *
