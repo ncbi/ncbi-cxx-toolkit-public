@@ -77,6 +77,7 @@ enum ESerialDataFormat {
 
 #define SERIAL_VERIFY_DATA_GET    "SERIAL_VERIFY_DATA_GET"
 #define SERIAL_VERIFY_DATA_WRITE  "SERIAL_VERIFY_DATA_WRITE"
+#define SERIAL_VERIFY_DATA_READ   "SERIAL_VERIFY_DATA_READ"
 
 enum ESerialVerifyData {
     eSerialVerifyData_Default = 0, // use current default
@@ -179,6 +180,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2003/09/10 20:57:23  gouriano
+* added possibility to ignore missing mandatory members on reading
+*
 * Revision 1.24  2003/08/19 18:32:38  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

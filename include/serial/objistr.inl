@@ -430,6 +430,18 @@ void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
     }
 }
 
+inline
+void CObjectIStream::SetVerifyData(bool do_verify)
+{
+    m_VerifyData = do_verify;
+}
+
+inline
+bool CObjectIStream::GetVerifyData(void) const
+{
+    return m_VerifyData;
+}
+
 
 #endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */
 
@@ -437,6 +449,9 @@ void FixVisibleChar(char& c, EFixNonPrint fix_method, size_t at_line)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/09/10 20:57:23  gouriano
+* added possibility to ignore missing mandatory members on reading
+*
 * Revision 1.22  2003/08/19 18:32:37  vasilche
 * Optimized reading and writing strings.
 * Avoid string reallocation when checking char values.

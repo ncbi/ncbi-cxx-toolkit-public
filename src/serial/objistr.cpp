@@ -32,6 +32,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbimtx.hpp>
 
@@ -154,8 +155,70 @@ CObjectIStream* CObjectIStream::Open(ESerialDataFormat format,
     return Create(format, *src);
 }
 
+/////////////////////////////////////////////////////////////////////////////
+// data verification setup
+
+ESerialVerifyData CObjectIStream::ms_VerifyDataDefault = eSerialVerifyData_Default;
+static CSafeStaticRef< CTls<int> > s_VerifyTLS;
+
+
+void CObjectIStream::SetVerifyData(ESerialVerifyData verify)
+{
+    ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+    if (tls_verify != eSerialVerifyData_Never &&
+        tls_verify != eSerialVerifyData_Always) {
+        s_VerifyTLS->SetValue(reinterpret_cast<int*>(verify));
+    }
+}
+
+void CObjectIStream::SetVerifyDataGlobal(ESerialVerifyData verify)
+{
+    if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
+        ms_VerifyDataDefault != eSerialVerifyData_Always) {
+        ms_VerifyDataDefault = verify;
+    }
+}
+
+bool CObjectIStream::x_GetVerifyDataDefault(void)
+{
+    ESerialVerifyData verify;
+    if (ms_VerifyDataDefault == eSerialVerifyData_Never ||
+        ms_VerifyDataDefault == eSerialVerifyData_Always) {
+        verify = ms_VerifyDataDefault;
+    } else {
+        verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
+        if (verify == eSerialVerifyData_Default) {
+            if (ms_VerifyDataDefault == eSerialVerifyData_Default) {
+
+                // change the default here, if you wish
+                ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                //ms_VerifyDataDefault = eSerialVerifyData_No;
+
+                const char* str = getenv(SERIAL_VERIFY_DATA_READ);
+                if (str) {
+                    if (NStr::CompareNocase(str,"YES") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Yes;
+                    } else if (NStr::CompareNocase(str,"NO") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_No;
+                    } else if (NStr::CompareNocase(str,"NEVER") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Never;
+                    } else  if (NStr::CompareNocase(str,"ALWAYS") == 0) {
+                        ms_VerifyDataDefault = eSerialVerifyData_Always;
+                    }
+                }
+            }
+            verify = ms_VerifyDataDefault;
+        }
+    }
+    return verify == eSerialVerifyData_Yes ||
+           verify == eSerialVerifyData_Always;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 CObjectIStream::CObjectIStream(void)
-    : m_Fail(fNotOpen), m_Flags(fFlagNone), m_DiscardCurrObject(false)
+    : m_VerifyData(x_GetVerifyDataDefault()),
+      m_Fail(fNotOpen), m_Flags(fFlagNone), m_DiscardCurrObject(false)
 {
 }
 
@@ -429,8 +492,12 @@ void CObjectIStream::EndDelayBuffer(CDelayBuffer& buffer,
 
 void CObjectIStream::ExpectedMember(const CMemberInfo* memberInfo)
 {
-    ThrowError(fFormatError,
-               "member "+memberInfo->GetId().ToString()+" expected");
+    if (GetVerifyData()) {
+        ThrowError(fFormatError,
+                   "member "+memberInfo->GetId().ToString()+" expected");
+    } else {
+        ERR_POST("member "+memberInfo->GetId().ToString()+" is missing");
+    }
 }
 
 void CObjectIStream::DuplicatedMember(const CMemberInfo* memberInfo)
@@ -1201,6 +1268,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.113  2003/09/10 20:56:45  gouriano
+* added possibility to ignore missing mandatory members on reading
+*
 * Revision 1.112  2003/08/26 19:25:58  gouriano
 * added possibility to discard a member of an STL container
 * (from a read hook)

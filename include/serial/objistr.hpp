@@ -108,6 +108,17 @@ public:
     bool DetectLoops(void) const;
     void DetectLoops(bool detectLoops);
 
+    // when enabled, stream verifies data on input
+    // and throws CSerialException with eFormatError err.code
+
+    // for this particular stream
+    void SetVerifyData(bool do_verify);
+    bool GetVerifyData(void) const;
+    // for streams created by the current thread
+    static  void SetVerifyData(ESerialVerifyData verify);
+    // for streams created by the current process
+    static  void SetVerifyDataGlobal(ESerialVerifyData verify);
+
     // constructors
 protected:
     CObjectIStream(void);
@@ -541,8 +552,12 @@ private:
 
 protected:
     CIStreamBuffer m_Input;
+    bool   m_VerifyData;
+    static ESerialVerifyData ms_VerifyDataDefault;
     
 private:
+    static bool x_GetVerifyDataDefault(void);
+
     AutoPtr<CReadObjectList> m_Objects;
 
     TFailFlags m_Fail;
@@ -581,6 +596,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.88  2003/09/10 20:57:23  gouriano
+* added possibility to ignore missing mandatory members on reading
+*
 * Revision 1.87  2003/08/26 19:24:48  gouriano
 * added possibility to discard a member of an STL container
 * (from a read hook)
