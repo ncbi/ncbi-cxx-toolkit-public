@@ -634,7 +634,7 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
 
 Int1 BLAST_ContextToFrame(EBlastProgramType prog_number, Uint4 context_number)
 {
-   Int1 frame = 256;	/* 256 is used to indicate error */
+   Int1 frame = 127;	/* 127 is used to indicate error */
 
    if (prog_number == eBlastTypeBlastn) {
       if (context_number % NUM_STRANDS == 0)
