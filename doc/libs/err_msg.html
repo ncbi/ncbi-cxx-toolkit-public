@@ -19,6 +19,8 @@
 		  <i>Manipulators</i></a>
 		<li> <a href="#ref_ERR_POST">
 		  <i><b>ERR_POST(message)</i></b> macro</a>
+		<li> <a href="#ref_Tracing">
+		  <i>Turn on the tracing (as per <b>_TRACE, eDiag_Trace</b></i>)</a>
 
 	 </ul></ul>
 
@@ -41,7 +43,7 @@
 	 variable. Developer must be careful and do not use
 	 any code with side effects in <i>_ASSERT</i> or <i>_TRACE</i>
 	 as this will cause a discrepancy in functionality between debug
-	 and non-debug code(e.g., <i>_ASSERT(a++)</i> and
+	 and non-debug code. For example, <i>_ASSERT(a++)</i> and
 	 <i>_TRACE("a++ = " &lt;&lt; a++)</i> would increment <i>"a"</i>
 	 in the debug version but do nothing in the non-debug one).
 	 <ul>
@@ -62,7 +64,11 @@
 		<li> <b><i>_TRACE(message)</i></b> --
 		Has absolutely no effect if <i>"_DEBUG"</i> is not defined;
 		otherwise, it outputs the <b><i>message</i></b> using
-		<a href="#ref_Message">Standard NCBI C++ message posting</a>
+		<a href="#ref_Message">Standard NCBI C++ message posting</a>.
+		NOTE: as a matter of fact, the tracing is turned off by default,
+      even if <i>"_DEBUG"</i> is defined, and you still have to do
+		<a href="#ref_Tracing">a special configuration</a> to
+      really turn it on.
 	 </ul> </ul>
 
 	 All these macros automatically report the file name and line
@@ -191,8 +197,8 @@ int  f3(long)  throw(e1,e2); </pre>
 	 Usually, this global callback would merely dump the message to
 	 a diagnostic stream, and there is an auxiliary function
 	 <b><i>SetDiagStream()</i></b> to specify output stream for the diagnostics
-	 (one can call <b><i>SetDiagStream(&amp;NcbiCerr)</i></b> to dump the diagnostics to
-	 the standard error output stream):
+	 (one can call <b><i>SetDiagStream(&amp;NcbiCerr)</i></b> to dump the diagnostics
+    to the standard error output stream):
 	 <pre>
 extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true); </pre>
 
@@ -308,6 +314,21 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
 	 would write to the diagnostic stream something like:
 	 <pre>
 "somefile.cpp", line 222: Warning:  ...print double: 123.345 </pre>
+
+	 <a name="ref_Tracing"><h4>Turn on the tracing</h4></a>
+
+	 The tracing (messages with severity level <i>eDiag_Trace</i>) is considered
+    to be a special, debug-oriented feature, and therefore it is not
+    affected by <i>SetDiagPostLevel()</i> and <i>SetDiagDieLevel()</i>.
+	 To turn the tracing on or off in your code you can use function
+    <i>SetDiagTrace()</i>.
+
+	 <p>
+	 By default, the tracing is off -- unless you assign environment
+    variable <b><i>$DIAG_TRACE</i></b> to an arbitrary non-empty string
+    (or, alternatively, you can set <b><i>DIAG_TRACE</i></b> entry in the
+    <b><i>[DEBUG]</i></b> section of your registry to any non-empty value).
+
 
 	 <hr>
 	 <table border=0 width="100%" cellspacing=0>
