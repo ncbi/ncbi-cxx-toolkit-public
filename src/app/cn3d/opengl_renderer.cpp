@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.13  2000/08/07 14:13:15  thiessen
 * added animation frames
 *
@@ -639,6 +642,215 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
     glPopMatrix();
 }
 
+/* add a thick splined curve from point 1 *halfway* to point 2 */
+static void DrawHalfWorm(const Vector& p0, const Vector& p1,
+    const Vector& p2, const Vector& p3,
+    int segments, bool cap1, bool cap2, 
+    double radius, int sides, double tension)
+{
+    int i, j, k, m, offset;
+    Vector R1, R2, Qt, p, dQt, H, V;
+    double len, MG[4][3], T[4], t, prevlen, cosj, sinj;
+    GLdouble *Nx = NULL, *Ny, *Nz, *Cx, *Cy, *Cz,
+        *pNx, *pNy, *pNz, *pCx, *pCy, *pCz, *tmp;
+
+    /*
+     * The Hermite matrix Mh.
+     */
+    static double Mh[4][4] = {
+        { 2, -2,  1,  1},
+        {-3,  3, -2, -1},
+        { 0,  0,  1,  0},
+        { 1,  0,  0,  0}
+    };
+
+    /*
+     * Variables that affect the curve shape
+     *   a=b=0 = Catmull-Rom
+     */
+    double a = tension,         /* tension    (adjustable)  */
+        c = 0,                  /* continuity (should be 0) */
+        b = 0;                  /* bias       (should be 0) */
+
+    if (sides % 2) sides++;     /* must be an even number! */
+    GLdouble *fblock = new GLdouble[12 * sides];
+
+    /* First, calculate the coordinate points of the center of the worm,
+     * using the Kochanek-Bartels variant of the Hermite curve.
+     */
+    R1 = 0.5 * (1 - a) * (1 + b) * (1 + c) * (p1 - p0) + 0.5 * (1 - a) * (1 - b) * (1 - c) * (p2 - p1);
+    R2 = 0.5 * (1 - a) * (1 + b) * (1 - c) * (p2 - p1) + 0.5 * (1 - a) * (1 - b) * (1 + c) * (p3 - p2);
+
+    /*
+     * Multiply MG=Mh.Gh, where Gh = [ P(1) P(2) R(1) R(2) ]. This
+     * 4x1 matrix of vectors is constant for each segment.
+     */
+    for (i = 0; i < 4; i++) {   /* calculate Mh.Gh */
+        MG[i][0] =
+            Mh[i][0] * p1.x + Mh[i][1] * p2.x + Mh[i][2] * R1.x + Mh[i][3] * R2.x;
+        MG[i][1] =
+            Mh[i][0] * p1.y + Mh[i][1] * p2.y + Mh[i][2] * R1.y + Mh[i][3] * R2.y;
+        MG[i][2] =
+            Mh[i][0] * p1.z + Mh[i][1] * p2.z + Mh[i][2] * R1.z + Mh[i][3] * R2.z;
+    }
+
+    for (i = 0; i <= segments; i++) {
+
+        /* t goes from [0,1] from P(1) to P(2) (and we want to go halfway only),
+           and the function Q(t) defines the curve of this segment. */
+        t = (0.5 / segments) * i;
+        /*
+           * Q(t)=T.(Mh.Gh), where T = [ t^3 t^2 t 1 ]
+         */
+        T[0] = t * t * t;
+        T[1] = t * t;
+        T[2] = t;
+        //T[3] = 1;
+        Qt.x = T[0] * MG[0][0] + T[1] * MG[1][0] + T[2] * MG[2][0] + MG[3][0] /* *T[3] */ ;
+        Qt.y = T[0] * MG[0][1] + T[1] * MG[1][1] + T[2] * MG[2][1] + MG[3][1] /* *T[3] */ ;
+        Qt.z = T[0] * MG[0][2] + T[1] * MG[1][2] + T[2] * MG[2][2] + MG[3][2] /* *T[3] */ ;
+
+        if (radius == 0.0) {
+            if (i > 0) {
+                glBegin(GL_LINES);
+                glVertex3d(p.x, p.y, p.z);
+                glVertex3d(Qt.x, Qt.y, Qt.z);
+                glEnd();
+            }
+            /* save to use as previous point for connecting points together */
+            p = Qt;
+
+        } else {
+            /* construct a circle of points centered at and
+               in a plane normal to the curve at t - these points will
+               be used to construct the "thick" worm */
+
+            /* allocate single block of storage for two circles of points */
+            if (!Nx) {
+                Nx = fblock;
+                Ny = &Nx[sides];
+                Nz = &Nx[sides * 2];
+                Cx = &Nx[sides * 3];
+                Cy = &Nx[sides * 4];
+                Cz = &Nx[sides * 5];
+                pNx = &Nx[sides * 6];
+                pNy = &Nx[sides * 7];
+                pNz = &Nx[sides * 8];
+                pCx = &Nx[sides * 9];
+                pCy = &Nx[sides * 10];
+                pCz = &Nx[sides * 11];
+            }
+
+            /*
+             * The first derivative of Q(t), d(Q(t))/dt, is the slope
+             * (tangent) at point Q(t); now T = [ 3t^2 2t 1 0 ]
+             */
+            T[0] = t * t * 3;
+            T[1] = t * 2;
+            T[2] = 1;
+            T[3] = 0;
+            dQt.x = T[0] * MG[0][0] + T[1] * MG[1][0] + MG[2][0] /* *T[2] + T[3]*MG[3][0] */ ;
+            dQt.y = T[0] * MG[0][1] + T[1] * MG[1][1] + MG[2][1] /* *T[2] + T[3]*MG[3][1] */ ;
+            dQt.z = T[0] * MG[0][2] + T[1] * MG[1][2] + MG[2][2] /* *T[2] + T[3]*MG[3][2] */ ;
+
+            /* use cross prod't of [1,0,0] x normal as horizontal */
+            H = Vector(0.0, -dQt.z, dQt.y);
+            if (H.length() < 0.000001) /* nearly colinear - use [1,0.1,0] instead */
+                H = Vector(0.1 * dQt.z, -dQt.z, dQt.y - 0.1 * dQt.x);
+            H.normalize();
+
+            /* and a vertical vector = normal x H */
+            V = vector_cross(dQt, H);
+            V.normalize();
+
+            /* finally, the worm circumference points (C) and normals (N) are
+               simple trigonomic combinations of H and V */
+            for (j = 0; j < sides; j++) {
+                cosj = cos(2 * PI * j / sides);
+                sinj = sin(2 * PI * j / sides);
+                Nx[j] = H.x * cosj + V.x * sinj;
+                Ny[j] = H.y * cosj + V.y * sinj;
+                Nz[j] = H.z * cosj + V.z * sinj;
+                Cx[j] = Qt.x + Nx[j] * radius;
+                Cy[j] = Qt.y + Ny[j] * radius;
+                Cz[j] = Qt.z + Nz[j] * radius;
+            }
+
+            /* figure out which points on the previous circle "match" best
+               with these, to minimize envelope twisting */
+            for (m = 0; m < sides; m++) {
+                len = 0.0;
+                for (j = 0; j < sides; j++) {
+                    k = j + m;
+                    if (k >= sides)
+                        k -= sides;
+                    len += (Cx[k] - pCx[j]) * (Cx[k] - pCx[j]) +
+                           (Cy[k] - pCy[j]) * (Cy[k] - pCy[j]) +
+                           (Cz[k] - pCz[j]) * (Cz[k] - pCz[j]);
+                }
+                if (m == 0 || len < prevlen) {
+                    prevlen = len;
+                    offset = m;
+                }
+            }
+
+            /* create triangles from points along this and previous circle */
+            if (i > 0) {
+                glBegin(GL_TRIANGLE_STRIP);
+                for (j = 0; j < sides; j++) {
+                    k = j + offset;
+                    if (k >= sides) k -= sides;
+                    glNormal3d(Nx[k], Ny[k], Nz[k]);
+                    glVertex3d(Cx[k], Cy[k], Cz[k]);
+                    glNormal3d(pNx[j], pNy[j], pNz[j]);
+                    glVertex3d(pCx[j], pCy[j], pCz[j]);
+                }
+                glNormal3d(Nx[offset], Ny[offset], Nz[offset]);
+                glVertex3d(Cx[offset], Cy[offset], Cz[offset]);
+                glNormal3d(pNx[0], pNy[0], pNz[0]);
+                glVertex3d(pCx[0], pCy[0], pCz[0]);
+                glEnd();
+            }
+
+            /* put caps on the end */
+            if (cap1 && i == 0) {
+                glBegin(GL_POLYGON);
+                dQt.normalize();
+                glNormal3d(-dQt.x, -dQt.y, -dQt.z);
+                for (j = sides - 1; j >= 0; j--) {
+                    k = j + offset;
+                    if (k >= sides) k -= sides;
+                    glVertex3d(Cx[k], Cy[k], Cz[k]);
+                }
+                glEnd();
+            }
+            else if (cap2 && i == segments) {
+                glBegin(GL_POLYGON);
+                dQt.normalize();
+                glNormal3d(dQt.x, dQt.y, dQt.z);
+                for (j = 0; j < sides; j++) {
+                    k = j + offset;
+                    if (k >= sides) k -= sides;
+                    glVertex3d(Cx[k], Cy[k], Cz[k]);
+                }
+                glEnd();
+            }
+
+            /* store this circle as previous for next round; instead of copying
+               all values, just swap pointers */
+#define SWAPPTR(p1,p2) tmp=(p1); (p1)=(p2); (p2)=tmp
+            SWAPPTR(Nx, pNx);
+            SWAPPTR(Ny, pNy);
+            SWAPPTR(Nz, pNz);
+            SWAPPTR(Cx, pCx);
+            SWAPPTR(Cy, pCy);
+            SWAPPTR(Cz, pCz);
+        }
+    }
+
+    delete fblock;
+}
+
 static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, double length)
 {
     /* to translate into place */
@@ -654,24 +866,25 @@ static void DoCylinderPlacementTransform(const Vector& a, const Vector& b, doubl
     }
 }
 
-static void DrawHalfBond(const Vector& site1, const Vector& site2,
+static void DrawHalfBond(const Vector& site1, const Vector& midpoint,
     StyleManager::eDisplayStyle style, double radius, 
-    bool cap1, bool cap2, int sides, int segments)
+    bool cap1, bool cap2, int sides, int segments, double tension,
+    const Vector *worm0, const Vector& worm1, const Vector& worm2, const Vector *worm3)
 {
     // straight line bond
     if (style == StyleManager::eLineBond || (style == StyleManager::eCylinderBond && radius <= 0.0)) {
         glBegin(GL_LINES);
         glVertex3d(site1.x, site1.y, site1.z);
-        glVertex3d(site2.x, site2.y, site2.z);
+        glVertex3d(midpoint.x, midpoint.y, midpoint.z);
         glEnd();
     }
 
     // cylinder bond
     else if (style == StyleManager::eCylinderBond) {
-        double length = (site1 - site2).length();
+        double length = (site1 - midpoint).length();
         if (length <= 0.000001 || sides <= 0) return;
         glPushMatrix();
-        DoCylinderPlacementTransform(site1, site2, length);
+        DoCylinderPlacementTransform(site1, midpoint, length);
         gluCylinder(qobj, radius, radius, length, sides, 1);
         if (cap1) {
             glPushMatrix();
@@ -689,29 +902,45 @@ static void DrawHalfBond(const Vector& site1, const Vector& site2,
     }
 
     // worm bond
-    else if (style == StyleManager::eWormBond) {
+    else if (style == StyleManager::eLineWormBond || style == StyleManager::eThickWormBond) {
+        if (!worm0 || !worm3) {
+            ERR_POST(Error << "DrawHalfBond: got NULL 0th and/or 3rd coords for worm");
+            return;
+        }
+        DrawHalfWorm(*worm0, worm1, worm2, *worm3, segments, cap1, cap2,
+            (style == StyleManager::eThickWormBond) ? radius : 0.0, 
+            sides, tension);
     }
 }
 
-void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style)
+void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
+    const BondStyle& style, const Vector *site0, const Vector* site3)
 {
     Vector midpoint = (site1 + site2) / 2;
 
     GLenum colorType =
-        (style.end1.style == StyleManager::eLineBond || style.end1.radius <= 0.0)
+        (style.end1.style == StyleManager::eLineBond || 
+         style.end1.style == StyleManager::eLineWormBond || 
+         style.end1.radius <= 0.0)
         ? GL_AMBIENT : GL_DIFFUSE;
     SetColor(colorType, style.end1.color[0], style.end1.color[1], style.end1.color[2]);
     glLoadName(static_cast<GLuint>(style.end1.name));
-    DrawHalfBond(site1, midpoint, style.end1.style, style.end1.radius,
-        style.end1.atomCap, style.midCap, style.end1.sides, style.end1.segments);
+    DrawHalfBond(
+        site1, midpoint,                // points used for straight bonds
+        style.end1.style, style.end1.radius,
+        style.end1.atomCap, style.midCap, style.end1.sides, style.end1.segments,
+        style.tension, site0, site1, site2, site3);    // points used for worm
 
     colorType =
-        (style.end2.style == StyleManager::eLineBond || style.end2.radius <= 0.0)
+        (style.end2.style == StyleManager::eLineBond ||
+         style.end2.style == StyleManager::eLineWormBond || 
+         style.end2.radius <= 0.0)
         ? GL_AMBIENT : GL_DIFFUSE;
     SetColor(colorType, style.end2.color[0], style.end2.color[1], style.end2.color[2]);
     glLoadName(static_cast<GLuint>(style.end2.name));
     DrawHalfBond(midpoint, site2, style.end2.style, style.end2.radius,
-        style.midCap, style.end2.atomCap, style.end2.sides, style.end2.segments);
+        style.midCap, style.end2.atomCap, style.end2.sides, style.end2.segments,
+        style.tension, site3, site2, site1, site0);
 }
 
 END_SCOPE(Cn3D)

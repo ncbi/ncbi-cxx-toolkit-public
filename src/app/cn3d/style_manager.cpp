@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.2  2000/08/04 22:49:04  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -44,6 +47,7 @@
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/residue.hpp"
 #include "cn3d/periodic_table.hpp"
+#include "cn3d/bond.hpp"
 
 USING_NCBI_SCOPE;
 
@@ -76,49 +80,87 @@ bool StyleManager::GetAtomStyle(const StructureObject *object,
 	return true;
 }
 
-bool StyleManager::GetBondStyle(const StructureObject *object,
-        const AtomPntr& atom1, const AtomPntr& atom2, Bond::eBondOrder order,
+bool StyleManager::GetBondStyle(const Bond *bond,
+        const AtomPntr& atom1, const AtomPntr& atom2,
         BondStyle *bondStyle)
 {
     static const Vector magenta(1,0,1); 
     static const Vector green(0,1,0);
 
-    if (!object) {
-        ERR_POST(Error << "StyleManager::GetBondStyle() got NULL object");
+    const StructureObject *object;
+    if (!bond->GetParentOfType(&object)) {
+        ERR_POST(Error << "StyleManager::GetBondStyle() - can't get StructureObject parent");
         return false;
     }
     
-    //if (order == Bond::eVirtual) return false;
-
 /*
     // just do wireframe for now
     bondStyle->end1.style = bondStyle->end2.style = StyleManager::eLineBond;
 */
 
-    // do cylinders for now
-    bondStyle->end1.style = bondStyle->end2.style = StyleManager::eCylinderBond;
-    bondStyle->end1.radius = bondStyle->end2.radius = 0.2;
+    if (bond->order == Bond::eVirtual) {
+        // do worms for now
+        bondStyle->end1.style = bondStyle->end2.style = StyleManager::eThickWormBond;
+
+        // set tension, tighter for smaller protein alpha-helix
+        const Molecule *molecule;
+        if (!bond->GetParentOfType(&molecule)) {
+            ERR_POST(Error << "StyleManager::GetBondStyle() - can't get Molecule parent");
+            return false;
+        }
+        if (molecule->IsProtein())
+            bondStyle->tension = -0.8;
+        else
+            bondStyle->tension = -0.4;
+    }
+
+    bondStyle->end1.segments = bondStyle->end2.segments = 4;
+    bondStyle->end1.radius = bondStyle->end2.radius = 0.4;
     bondStyle->end1.atomCap = bondStyle->end2.atomCap = bondStyle->midCap = false;
     bondStyle->end1.sides = bondStyle->end2.sides = 6;
 
-/*
-    // color by master/slave object for now
-    if (object->IsMaster())
-        bondStyle->end1.color = bondStyle->end2.color = magenta;
-    else
-        bondStyle->end1.color = bondStyle->end2.color = green;
-*/
+    const Residue *residue;
+    bond->GetParentOfType(&residue);
+    
+    if (atom1.rID == 1 && atom1.aID == 1 && atom2.rID == 1 && atom2.aID == 1) {
+        TESTMSG(bondStyle->end1.color << bondStyle->end2.color);
+    }
 
     // color by element for now
     const Residue::AtomInfo *info = object->graph->GetAtomInfo(atom1);
+    if (bond->order != Bond::eVirtual && (info->classification == Residue::ePartialBackboneAtom || 
+        info->classification == Residue::eCompleteBackboneAtom)) {
+        return false;
+    }
     const Element *element = PeriodicTable.GetElement(info->atomicNumber);
     bondStyle->end1.color = element->color;
     bondStyle->end1.name = info->glName;
 
     info = object->graph->GetAtomInfo(atom2);
+    if (bond->order != Bond::eVirtual && (info->classification == Residue::ePartialBackboneAtom || 
+        info->classification == Residue::eCompleteBackboneAtom)) {
+        return false;
+        ;
+    }
     element = PeriodicTable.GetElement(info->atomicNumber);
     bondStyle->end2.color = element->color;
     bondStyle->end2.name = info->glName;
+
+    if (bond->order != Bond::eVirtual) {
+        if (!residue || // can be NULL if this isn't an intra-residue bond
+            residue->IsAminoAcid() || residue->IsNucleotide()) {
+            bondStyle->end1.style = bondStyle->end2.style = StyleManager::eLineBond;
+        } else {
+            bondStyle->end1.style = bondStyle->end2.style = StyleManager::eCylinderBond;
+            bondStyle->end1.radius = bondStyle->end2.radius = 0.2;
+        } 
+    } else {
+        // color by master/slave object for now
+        if (object->IsMaster())
+            bondStyle->end1.color = bondStyle->end2.color = magenta;
+        else
+            bondStyle->end1.color = bondStyle->end2.color = green;
+    }
 
     return true;
 }

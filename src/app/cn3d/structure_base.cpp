@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.6  2000/08/07 00:21:18  thiessen
 * add display list mechanism
 *
@@ -110,6 +113,8 @@ void StructureBase::_RemoveChild(StructureBase *child)
     _ChildList::iterator i = _children.find(child);
     if (i != _children.end())
         _children.erase(i);
+    else
+        ERR_POST(Warning << "attempted to remove non-existent child");
 }
 
 END_SCOPE(Cn3D)

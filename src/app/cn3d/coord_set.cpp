@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.6  2000/08/07 00:21:17  thiessen
 * add display list mechanism
 *
@@ -53,12 +56,18 @@
 
 #include <objects/mmdb2/Model_coordinate_set.hpp>
 #include <objects/mmdb2/Coordinates.hpp>
+#include <objects/mmdb2/Surface_coordinates.hpp>
+#include <objects/mmdb2/Model_descr.hpp>
+#include <objects/mmdb3/Chem_graph_pntrs.hpp>
+#include <objects/mmdb2/Surface_coordinates.hpp>
 
 #include "cn3d/coord_set.hpp"
 #include "cn3d/atom_set.hpp"
+#include "cn3d/object_3d.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -73,13 +82,46 @@ CoordSet::CoordSet(StructureBase *parent,
             coordSet = j->GetObject().GetCoordinates();
         if (coordSet.IsLiteral()) {
             const CCoordinates& coords = coordSet.GetLiteral();
+
+            // coordinates of atoms
             if (coords.IsAtomic()) {
                 if (!atomSet)
                     atomSet = new AtomSet(this, coords.GetAtomic());
                 else
                     ERR_POST(Fatal << "confused by multiple atomic coords");
             }
-            // will eventually unpack feature coordinates here
+
+            // coordinates of 3d-objects
+            else if (coords.IsSurface() && j->GetObject().IsSetDescr() &&
+                j->GetObject().GetDescr().front().GetObject().IsOther_comment() &&
+                coords.GetSurface().GetContents().IsResidues()) {
+
+                const std::string& descr = 
+                    j->GetObject().GetDescr().front().GetObject().GetOther_comment();
+
+                // helix cylinder
+                if (descr == "helix" && coords.GetSurface().GetSurface().IsCylinder()) {
+                    Helix3D *helix =
+                        new Helix3D(this, coords.GetSurface().GetSurface().GetCylinder(),
+                            coords.GetSurface().GetContents().GetResidues());
+                    if (helix->molecule == Object3D::NOT_SET) {
+                        this->_RemoveChild(helix);
+                        delete helix;
+                    } else
+                        objects.push_back(helix);
+                
+                // strand brick
+                } else if (descr == "strand" && coords.GetSurface().GetSurface().IsBrick()) {
+                    Strand3D *strand =
+                        new Strand3D(this, coords.GetSurface().GetSurface().GetBrick(),
+                            coords.GetSurface().GetContents().GetResidues());
+                    if (strand->molecule == Object3D::NOT_SET) {
+                        this->_RemoveChild(strand);
+                        delete strand;
+                    } else
+                        objects.push_back(strand);
+                }                
+            }
         }
     }
 }

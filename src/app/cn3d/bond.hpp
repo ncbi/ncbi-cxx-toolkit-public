@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.4  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -74,12 +77,12 @@ public:
         eVirtual // special identifier for virtual bonds (no "normal" bond order) 
     };
 
-    Bond(StructureBase *parent) : StructureBase(parent) { }
-    //~Bond(void);
+    Bond(StructureBase *parent);
 
     // public data
     AtomPntr atom1, atom2;
     eBondOrder order;
+    const Bond *previousVirtual, *nextVirtual;
 
     // public methods
     bool Draw(const AtomSet *data) const;

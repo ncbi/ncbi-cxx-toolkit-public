@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.10  2000/08/07 00:21:17  thiessen
 * add display list mechanism
 *
@@ -76,12 +79,18 @@
 #include "cn3d/periodic_table.hpp"
 #include "cn3d/show_hide_manager.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/molecule.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+Bond::Bond(StructureBase *parent) : StructureBase(parent), order(eUnknown), 
+    previousVirtual(NULL), nextVirtual(NULL)
+{
+}
+        
 const Bond* MakeBond(StructureBase *parent,
     int mID1, int rID1, int aID1, 
     int mID2, int rID2, int aID2, 
@@ -134,13 +143,8 @@ bool Bond::Draw(const AtomSet *atomSet) const
     }
 
     // get Style
-    const StructureObject *object;
-    if (!GetParentOfType(&object)) {
-        ERR_POST(Error << "Bond::Draw() - can't get StructureObject parent");
-        return false;
-    }
     BondStyle bondStyle;
-    if (!parentSet->styleManager->GetBondStyle(object, atom1, atom2, order, &bondStyle))
+    if (!parentSet->styleManager->GetBondStyle(this, atom1, atom2, &bondStyle))
         return false;
     // don't show bond if either atom isn't visible
     if (bondStyle.end1.style == StyleManager::eNotDisplayed ||
@@ -158,8 +162,28 @@ bool Bond::Draw(const AtomSet *atomSet) const
     const Atom *a2 = atomSet->GetAtom(atom2, overlayEnsembles);
     if (!a2) return true;
 
+    // get prev, next alphas if drawing worm virtual bond
+    const Vector *site0 = NULL, *site3 = NULL;
+    if (bondStyle.end1.style == StyleManager::eLineWormBond ||
+        bondStyle.end1.style == StyleManager::eLineWormBond ||
+        bondStyle.end2.style == StyleManager::eThickWormBond ||
+        bondStyle.end2.style == StyleManager::eThickWormBond) {
+
+        if (previousVirtual) {
+            const Atom *a0 = atomSet->GetAtom(previousVirtual->atom1, overlayEnsembles);
+            if (a0) site0 = &(a0->site);
+        }
+        if (!site0) site0 = &(a1->site);
+
+        if (nextVirtual) {
+            const Atom *a3 = atomSet->GetAtom(nextVirtual->atom2, overlayEnsembles);
+            if (a3) site3 = &(a3->site);
+        }
+        if (!site3) site3 = &(a2->site);
+    }
+
     // draw the bond
-    parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle);
+    parentSet->renderer->DrawBond(a1->site, a2->site, bondStyle, site0, site3);
 
     return true;
 }

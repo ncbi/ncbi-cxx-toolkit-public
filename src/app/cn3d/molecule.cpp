@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.7  2000/08/04 22:49:03  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -83,11 +86,12 @@ Molecule::Molecule(StructureBase *parent,
     }
 
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
-    Residue *prevResidue = NULL;
+    const Residue *prevResidue = NULL;
+    const Bond *prevBond = NULL;
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
     for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
 
-        Residue *residue = new Residue(this, (*i).GetObject(), id,
+        const Residue *residue = new Residue(this, (*i).GetObject(), id,
             standardDictionary, localDictionary);
         if (residues.find(residue->id) != residues.end())
             ERR_POST(Fatal << "confused by repeated Residue ID");
@@ -100,7 +104,14 @@ Molecule::Molecule(StructureBase *parent,
                 id, prevResidue->id, prevResidue->alphaID,
                 id, residue->id, residue->alphaID,
                 Bond::eVirtual);
-            if (bond) virtualBonds.push_back(bond);
+            if (bond) {
+                virtualBonds.push_back(bond);
+                if (prevBond) {
+                    (const_cast<Bond *>(prevBond))->nextVirtual = bond;
+                    (const_cast<Bond *>(bond))->previousVirtual = prevBond;
+                }
+            }
+            prevBond = bond;
         }
         prevResidue = residue;
     }

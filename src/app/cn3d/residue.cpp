@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/08/11 12:58:31  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.9  2000/08/07 00:21:18  thiessen
 * add display list mechanism
 *
@@ -93,16 +96,20 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
 
     if (residue->IsAminoAcid()) {
 
+        // amino acid C-alpha
+        if (element==CAtom::eElement_c && code==" CA ")
+            return Residue::eAlphaBackboneAtom;
+
         // amino acid partial backbone
         if (
-            (element==CAtom::eElement_c && (code==" C  " || code==" CA ")) ||
+            (element==CAtom::eElement_c && code==" C  ") ||
             (element==CAtom::eElement_n && code==" N  ")
            ) 
             return Residue::ePartialBackboneAtom;
 
         // amino acid complete backbone (all backbone that's not part of "partial")
         // including both GLY alpha hydrogens and terminal COOH and NH3+
-        else if (
+        if (
             (element==CAtom::eElement_o &&
                 (code==" O  " || code==" OXT")) ||
             (element==CAtom::eElement_h && 
@@ -112,14 +119,16 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
             return Residue::eCompleteBackboneAtom;
 
         // anything else is side chain
-        else
-            return Residue::eSideChainAtom;
+        return Residue::eSideChainAtom;
 
     } else if (residue->IsNucleotide()) {
 
+        // nucleic acid Phosphorus
+        if (element==CAtom::eElement_p && code==" P  ")
+            return Residue::eAlphaBackboneAtom;
+
         // nucleic acid partial backbone
         if (
-            (element==CAtom::eElement_p && code==" P  ") ||
             (element==CAtom::eElement_c && (code==" C5*" || code==" C4*" || code==" C3*")) ||
             (element==CAtom::eElement_o && (code==" O5*" || code==" O3*")) ||
             (element==CAtom::eElement_h && (code==" H3T" || code==" H5T"))
@@ -127,7 +136,7 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
             return Residue::ePartialBackboneAtom;
 
         // nucleic acid complete backbone (all backbone that's not part of "partial")
-        else if (
+        if (
             (element==CAtom::eElement_o &&
                 (code==" O1P" || code==" O2P" || code==" O4*" || code==" O2*")) ||
             (element==CAtom::eElement_c && (code==" C2*" || code==" C1*")) ||
@@ -139,8 +148,7 @@ static Residue::eAtomClassification ClassifyAtom(const Residue *residue, const C
             return Residue::eCompleteBackboneAtom;
 
         // anything else is side chain
-        else
-            return Residue::eSideChainAtom;
+        return Residue::eSideChainAtom;
     }
 
     return Residue::eUnknownAtom;
@@ -200,25 +208,15 @@ Residue::Residue(StructureBase *parent,
         }
     }
 
+    // get type
+    if (residueGraph->IsSetResidue_type())
+        type = static_cast<eType>(residueGraph->GetResidue_type());
+
     // get StructureObject* parent
     const StructureObject *object;
     if (!GetParentOfType(&object) || object->coordSets.size() == 0) {
         ERR_POST("Residue() : parent doesn't have any CoordSets");
         return;
-    }
-
-    // set residue type and name of alpha atom to store ID of
-    const char *alphaCode = NULL;
-    CAtom::EElement alphaElement;
-    if (residueGraph->IsSetResidue_type()) {
-        type = static_cast<eType>(residueGraph->GetResidue_type());
-        if (IsAminoAcid()) {
-            alphaCode = " CA ";
-            alphaElement = CAtom::eElement_c;
-        } else if (IsNucleotide()) {
-            alphaCode = " P  ";
-            alphaElement = CAtom::eElement_p;
-        }
     }
 
     // get atom info
@@ -239,11 +237,6 @@ Residue::Residue(StructureBase *parent,
         }
         if (c != ce) continue;
 
-        // store alphaID
-        if (alphaCode && atom.IsSetIupac_code() && atom.GetIupac_code().front()==alphaCode &&
-            atom.GetElement()==alphaElement)
-            alphaID = atomID;
-
         AtomInfo *info = new AtomInfo;
         // get name if present
         if (atom.IsSetName()) info->name = atom.GetName();
@@ -258,14 +251,17 @@ Residue::Residue(StructureBase *parent,
             info->isIonizableProton = true;
         else
             info->isIonizableProton = false;
-        // classify atom
-        info->classification = ClassifyAtom(this, atom);
         // assign (unique) name
         info->glName = parentSet->CreateName(this, atomID);
 
+        // classify atom
+        info->classification = ClassifyAtom(this, atom);
+        // store alphaID in residue
+        if (info->classification == eAlphaBackboneAtom) alphaID = atomID;
+
         // add info to map
         if (atomInfos.find(atom.GetId().Get()) != atomInfos.end())
-            ERR_POST(Fatal << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
+            ERR_POST(Error << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
         atomInfos[atomID] = info;
     }
 

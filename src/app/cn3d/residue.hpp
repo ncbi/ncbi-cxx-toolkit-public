@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.7  2000/08/04 22:49:11  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -104,6 +107,7 @@ public:
     // atom type
     enum eAtomClassification {
         eSideChainAtom,
+        eAlphaBackboneAtom,     // C-alpha or P
         ePartialBackboneAtom,   // for unbranched backbone trace
         eCompleteBackboneAtom,  // all backbone atoms
         eUnknownAtom

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.4  2000/08/03 15:12:29  thiessen
 * add skeleton of style and show/hide managers
 *
@@ -55,7 +58,7 @@
 BEGIN_SCOPE(Cn3D)
 
 class AtomSet;
-class FeatureCoord;
+class Object3D;
 
 // a CoordSet contains one set of atomic coordinates, plus any accompanying
 // feature (helix, strand, ...) coordinates - basically the contents of
@@ -66,12 +69,11 @@ class CoordSet : public StructureBase
 public:
     CoordSet(StructureBase *parent, 
                 const ncbi::objects::CBiostruc_model::TModel_coordinates& modelCoords);
-    //~CoordSet(void);
 
     // public data
     AtomSet *atomSet;
-    typedef LIST_TYPE < const FeatureCoord * > FeatureCoordList;
-    FeatureCoordList featureCoords;
+    typedef LIST_TYPE < const Object3D * > Object3DList;
+    Object3DList objects;
 
     // public methods
     bool Draw(const AtomSet *atomSet) const;

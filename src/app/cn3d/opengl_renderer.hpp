@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.10  2000/08/07 14:12:48  thiessen
 * added animation frames
 *
@@ -145,7 +148,8 @@ public:
 
     // drawing methods
     void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
-    void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style);
+    void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style,
+        const Vector *site0, const Vector* site3);
 
 private:
     StructureSet *structureSet;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.10  2000/08/04 22:49:11  thiessen
 * add backbone atom classification and selection feedback mechanism
 *
@@ -111,13 +114,15 @@ private:
     // no default construction
     StructureBase(void);
 
+    StructureBase* _parent;
     // keep track of StructureBase-derived children, so that top-down operations
     // like drawing or deconstructing can trickle down automatically
     typedef std::map < StructureBase * , int > _ChildList;
     _ChildList _children;
     void _AddChild(StructureBase *child);
+
+protected:
     void _RemoveChild(StructureBase *child);
-    StructureBase* _parent;
 
 public:
     // go up the hierarchy to find a parent of the desired type

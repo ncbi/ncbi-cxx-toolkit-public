@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/11 12:59:13  thiessen
+* added worm; get 3d-object coords from asn1
+*
 * Revision 1.3  2000/08/07 00:20:19  thiessen
 * add display list mechanism
 *
@@ -47,12 +50,12 @@
 
 #include "cn3d/vector_math.hpp"
 #include "cn3d/structure_base.hpp"
-#include "cn3d/bond.hpp"
 
 
 BEGIN_SCOPE(Cn3D)
 
 class StructureObject;
+class Bond;
 class BondStyle;
 class AtomStyle;
 
@@ -65,14 +68,15 @@ public:
         eSphereAtom,
         eLineBond,
         eCylinderBond,
-        eWormBond,
+        eLineWormBond,
+        eThickWormBond,
         eNotDisplayed
     };
 
     // style accessors
     bool GetAtomStyle(const StructureObject *object, const AtomPntr& atom, AtomStyle *atomStyle);
-    bool GetBondStyle(const StructureObject *object,
-            const AtomPntr& atom1, const AtomPntr& atom2, Bond::eBondOrder order,
+    bool GetBondStyle(const Bond *bond,
+            const AtomPntr& atom1, const AtomPntr& atom2,
             BondStyle *bondStyle);
 
 private:
@@ -100,6 +104,7 @@ public:
         unsigned int name;
     } end1, end2;
     bool midCap;
+    double tension;
 };
 
 END_SCOPE(Cn3D)
