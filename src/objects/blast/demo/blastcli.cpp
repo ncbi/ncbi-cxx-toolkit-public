@@ -78,17 +78,46 @@ void write(ostream& os, const list<CRef<T> >& t)
 
 //	==========================================================================
 //
+//	submit a request & return the reply
+//
+//	==========================================================================
+
+static CRef<CBlast4_reply>
+submit(CRef<CBlast4_request_body> body, bool echo = true)
+{
+	// create a request and, if echoing is enabled, print it to stdout
+	// to show what a request object looks like.
+
+	CRef<CBlast4_request> request(new CBlast4_request);
+	request->SetBody(*body);
+	if(echo)
+		write(cout, request);
+
+	// submit the request to the server & get the reply.  if echoing is
+	// enabled, print the reply to stdout to show what a reply object
+	// looks like.
+
+	CRef<CBlast4_reply> reply(new CBlast4_reply);
+	CBlast4Client().Ask(*request, *reply);
+	if(echo)
+		write(cout, reply);
+
+	return reply;
+}
+
+//	==========================================================================
+//
 //	sample "get-databases" command
 //
 //	==========================================================================
 
-static CRef<CBlast4_request_body>
+static void
 get_databases()
 {
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_databases();
 
-	return body;
+	submit(body);
 }
 
 //	==========================================================================
@@ -97,13 +126,13 @@ get_databases()
 //
 //	==========================================================================
 
-static CRef<CBlast4_request_body>
+static void
 get_matrices()
 {
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_matrices();
 
-	return body;
+	submit(body);
 }
 
 //	==========================================================================
@@ -112,8 +141,8 @@ get_matrices()
 //
 //	==========================================================================
 
-static CRef<CBlast4_request_body>
-get_search_results(string id)
+static CRef<CBlast4_reply>
+get_search_results(string id, bool echo = true)
 {
 	CRef<CBlast4_get_search_results_request> gsr(
 		new CBlast4_get_search_results_request);
@@ -122,7 +151,7 @@ get_search_results(string id)
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_search_results(*gsr);
 
-	return body;
+	return submit(body, echo);
 }
 
 //	==========================================================================
@@ -131,7 +160,7 @@ get_search_results(string id)
 //
 //	==========================================================================
 
-static CRef<CBlast4_request_body>
+static void
 get_sequences()
 {
 	CRef<CSeq_id> id(new CSeq_id);
@@ -148,7 +177,7 @@ get_sequences()
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_sequences(*gsr);
 
-	return CRef<CBlast4_request_body>(body);
+	submit(CRef<CBlast4_request_body>(body));
 }
 
 //	==========================================================================
@@ -257,7 +286,7 @@ setp(list<CRef<CBlast4_parameter> >& l, string n,
 	l.push_back(p);
 }
 
-static CRef<CBlast4_request_body>
+static void
 finish_params()
 {
 	CRef<CBlast4_finish_params_request> q(new CBlast4_finish_params_request);
@@ -272,7 +301,7 @@ finish_params()
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetFinish_params(*q);
 
-	return body;
+	submit(body);
 }
 
 static CRef<CBioseq>
@@ -292,7 +321,7 @@ get_seq(int gi)
 	return CRef<CBioseq>(s);
 }
 
-static CRef<CBlast4_request_body>
+static string
 queue_search()
 {
 	CRef<CBioseq> seq(get_seq(3091));
@@ -326,7 +355,49 @@ queue_search()
 	CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetQueue_search(*q);
 
-	return body;
+	CRef<CBlast4_reply> reply = submit(body);
+	return reply->GetBody().GetQueue_search().GetRequest_id();
+}
+
+static bool
+search_pending(CRef<CBlast4_reply> reply)
+{
+	const list<CRef<CBlast4_error> >& errors = reply->GetErrors();
+	for(list<CRef<CBlast4_error> >::const_iterator i = errors.begin();
+			i != errors.end(); ++i)
+		if((*i)->GetCode() == eBlast4_error_code_search_pending)
+			return true;
+	return false;
+}
+
+
+static void
+queue_search_and_poll_for_results()
+{
+	string request_id = queue_search();
+
+	// the request is virtually certain not to be ready yet; we check
+	// now because we want to show the reply that indicates that the
+	// search is still pending.
+
+	get_search_results(request_id, true);
+
+	// NCBI requests that clients wait 30 seconds before the first check
+	// and between subsequent checks.
+
+	bool ready = false;
+	while(!ready) {
+		sleep(30);
+		ready = !search_pending(get_search_results(request_id, false));
+	}
+
+	// since the initial get_search_results is virtually certain not
+	// to have succeeded, and since the subsequent get_search_results
+	// calls had echoing suppressed, we can be pretty sure that we
+	// have not echoed the search results.  make the call once more
+	// just for the echo.  (a real client would not do this.)
+
+	get_search_results(request_id, true);
 }
 
 //	==========================================================================
@@ -341,7 +412,6 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
-	CRef<CBlast4_request_body> MakeRequestBody();
 	string usage;
 };
 
@@ -368,37 +438,25 @@ CBlastcliApplication::Init(void)
 int
 CBlastcliApplication::Run(void)
 {
-	CRef<CBlast4_request_body> body(MakeRequestBody());
-	CRef<CBlast4_request> request4(new CBlast4_request);
-	request4->SetBody(*body);
-	write(cout, request4);
-	CRef<CBlast4_reply> reply4(new CBlast4_reply);
-	CBlast4Client().Ask(*request4, *reply4);
-	write(cout, reply4);
-	return 0;
-}
-
-CRef<CBlast4_request_body>
-CBlastcliApplication::MakeRequestBody()
-{
     CArgs args = GetArgs();
 	string a = args[1].AsString();
 	if(a == "finish-params")
-		return finish_params();
+		finish_params();
 	else if(a == "get-databases")
-		return get_databases();
+		get_databases();
 	else if(a == "get-matrices")
-		return get_matrices();
+		get_matrices();
 	else if(a == "get-sequences")
-		return get_sequences();
+		get_sequences();
 	else if(a == "queue-search")
-		return queue_search();
+		queue_search_and_poll_for_results();
 	else if(a == "get-search-results")
-		return get_search_results(args[2].AsString());
+		get_search_results(args[2].AsString());
 	else {
 		cerr << usage << endl;
 		exit(-1);
 	}
+	return 0;
 }
 
 void
