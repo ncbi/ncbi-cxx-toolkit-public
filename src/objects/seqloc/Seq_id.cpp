@@ -555,12 +555,12 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         case 'C':
             switch (pfx[1]) {
             case 'A': case 'B': case 'D': case 'F':
-            case 'K': case 'N':                     return eAcc_gb_est;
+            case 'K': case 'N': case 'O':           return eAcc_gb_est;
             case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
             case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
-                // no specific assignment for CO-CP yet
-            case 'O': case 'P':                     return eAcc_gb_other_nuc;
+                // no specific assignment for CP yet
+            case 'P':                               return eAcc_gb_other_nuc;
             case 'Q':                               return eAcc_embl_patent;
             case 'R':                               return eAcc_embl_genome;
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
@@ -1506,6 +1506,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.82  2004/06/04 14:09:58  ucko
+ * IdentifyAccession: CO now specifically assigned to eAcc_gb_est.
+ *
  * Revision 6.81  2004/06/01 15:26:07  johnson
  * Make CompareOrdered a true model of strict weak ordering
  *
