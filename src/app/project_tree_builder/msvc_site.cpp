@@ -92,6 +92,21 @@ void CMsvcSite::GetLibInfo(const string& lib,
     NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs); //TODO
 }
 
+
+bool CMsvcSite::IsLibEnabledInConfig(const string&      lib, 
+                                     const SConfigInfo& config) const
+{
+    string enabled_configs_str = m_Registry.GetString(lib, "CONFS", "");
+    list<string> enabled_configs;
+    NStr::Split(enabled_configs_str, 
+                LIST_SEPARATOR, enabled_configs);
+
+    return find(enabled_configs.begin(), 
+                enabled_configs.end(), 
+                config.m_Name) != enabled_configs.end();
+}
+
+
 string CMsvcSite::ResolveDefine(const string& define) const
 {
     return m_Registry.GetString("Defines", define, "");
@@ -115,6 +130,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/02/24 20:53:16  gorelenk
+ * Added implementation of member function IsLibEnabledInConfig
+ * of class  CMsvcSite.
+ *
  * Revision 1.7  2004/02/06 23:14:59  gorelenk
  * Implemented support of ASN projects, semi-auto configure,
  * CPPFLAGS support. Second working version.
