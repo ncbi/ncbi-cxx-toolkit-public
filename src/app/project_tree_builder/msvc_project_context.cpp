@@ -98,24 +98,26 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
 
     m_ProjType = project.m_ProjType;
 
-     // Generate include dirs:
-    string include_base_dir = 
-        CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, 
-                              CDirEntry::CreateRelativePath
-                                         (GetApp().GetProjectTreeInfo().m_Src,
-                                          m_SourcesBaseDir));
-    
+    // Generate include dirs:
     // Include dirs for appropriate src dirs
     set<string> include_dirs;
     ITERATE(list<string>, p, project.m_Sources) {
-
+        //create full path for src file
         const string& src_rel = *p;
-        string src_path = CDirEntry::ConcatPath(include_base_dir, src_rel);
-        src_path = CDirEntry::NormalizePath(src_path);
+        string src_abs  = CDirEntry::ConcatPath(m_SourcesBaseDir, src_rel);
+        src_abs = CDirEntry::NormalizePath(src_abs);
+        //part of path (from <src> dir)
+        string rel_path  = 
+            CDirEntry::CreateRelativePath(GetApp().GetProjectTreeInfo().m_Src, 
+                                          src_abs);
+        //add this part to <include> dir
+        string incl_path = 
+            CDirEntry::ConcatPath(GetApp().GetProjectTreeInfo().m_Include, 
+                                  rel_path);
+        string incl_dir;
+        CDirEntry::SplitPath(incl_path, &incl_dir);
+        include_dirs.insert(incl_dir);
 
-        string dir;
-        CDirEntry::SplitPath(src_path, &dir);
-        include_dirs.insert(dir);
     }
     copy(include_dirs.begin(), 
          include_dirs.end(), 
@@ -386,8 +388,8 @@ CMsvcPrjGeneralContext::CMsvcPrjGeneralContext
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "lib");
     else if (m_Type == eExe)
         output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "bin");
-    else if (m_Type == eDll)
-        output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "dll");
+    else if (m_Type == eDll) // same dir as exe 
+        output_dir_prefix = CDirEntry::ConcatPath(output_dir_prefix, "bin"); 
     else {
         //TODO - handle Dll(s)
    	    NCBI_THROW(CProjBulderAppException, 
@@ -756,6 +758,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/03/10 21:28:42  gorelenk
+ * Changed implementation of class CMsvcPrjProjectContext constructor.
+ *
  * Revision 1.20  2004/03/10 16:44:21  gorelenk
  * Changed implementation of class CMsvcPrjProjectContext.
  *
