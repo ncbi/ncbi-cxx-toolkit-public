@@ -1,0 +1,25 @@
+#! /bin/sh
+# $Id: makesqlite,v 1.1 2003/10/29 14:22:52 rsmith Exp $
+
+sqlitedir=${1:-sqlite}
+sqlitebuilddir=${2:-${sqlitedir}-build}
+sqliteinstalldir=${3:-${sqlitedir}-install}
+
+# create and work out of the build directory.
+if test ! -d ${sqlitebuilddir}
+then
+	mkdir ${sqlitebuilddir} || exit 1;
+fi
+cd ${sqlitebuilddir}
+
+# NO, metrowerks compiler does not work for this.
+#export CC=mwcc
+# export CFLAGS=-char unsigned
+
+{
+ { echo '** Configure'; ${sqlitedir}/configure -prefix=${sqliteinstalldir} ; } && \
+ { echo '** Compile'; make all ; } && \
+ { echo '** Install'; make install ; }
+} >&2
+
+echo $sqliteinstalldir
