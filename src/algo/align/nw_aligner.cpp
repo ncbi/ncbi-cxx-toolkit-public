@@ -153,12 +153,12 @@ void CNWAligner::SetSeqIds(const string& id1, const string& id2)
 }
 
 
-void CNWAligner::SetEndSpaceFree(bool L1, bool R1, bool L2, bool R2)
+void CNWAligner::SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2)
 {
-    m_esf_L1 = L1;
-    m_esf_R1 = R1;
-    m_esf_L2 = L2;
-    m_esf_R2 = R2;
+    m_esf_L1 = Left1;
+    m_esf_R1 = Right1;
+    m_esf_L2 = Left2;
+    m_esf_R2 = Right2;
 }
 
 // evaluate score for each possible alignment;
@@ -998,6 +998,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/06/26 20:39:39  kapustin
+ * Rename formal parameters in SetEndSpaceFree() to avoid conflict with macro under some configurations
+ *
  * Revision 1.30  2003/06/17 17:20:44  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *

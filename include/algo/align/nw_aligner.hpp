@@ -107,7 +107,7 @@ public:
     void SetSeqIds(const string& id1, const string& id2);  // set seq ids
 
     // specify whether end gaps should be penalized
-    void SetEndSpaceFree(bool L1, bool R1, bool L2, bool R2);
+    void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
 
     // progress reporting
     struct SProgressInfo
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/06/26 20:39:53  kapustin
+ * Rename formal parameters in SetEndSpaceFree() to avoid conflict with macro under some configurations
+ *
  * Revision 1.23  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
  *
