@@ -2765,6 +2765,27 @@ int test1(int argc, char ** argv)
             return 0;
         } else desc += " [-user-gi-list]";
         
+        if (s == "-seqid2oids") {
+            CSeqDB db(dbname, seqtype);
+            
+            if (args.empty()) {
+                cout << "Usage: test_pin -seqid2oids <seqid>" << endl;
+                return 0;
+            }
+            
+            CSeq_id seqid(args.front());
+            args.pop_front();
+            
+            vector<int> oids;
+            db.SeqidToOids(seqid, oids);
+            
+            for(int i = 0; i < (int)oids.size(); i++) {
+                cout << " oids[" << i << "]= " << oids[i] << ", length= " << db.GetSeqLength(oids[i]) << endl;
+            }
+            
+            return 0;
+        } else desc += " [-acc2bioseq]";
+        
         if (s == "-file-gi-list2") {
             string seqchar = (seqtype == CSeqDB::eProtein) ? "p" : "n";
             
