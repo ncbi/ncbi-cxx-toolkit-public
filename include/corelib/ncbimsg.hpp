@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1998/09/25 22:38:10  vakatov
+* *** empty log message ***
+*
 * Revision 1.2  1998/09/25 19:35:39  vakatov
 * *** empty log message ***
 *
@@ -54,7 +57,6 @@ namespace ncbi_err {
         eE_Info = 0,
         eE_Warning,
         eE_Error,
-
         eE_Fatal   /* guarantees to exit(or abort) */ 
     } EErrSeverity;
 
@@ -63,6 +65,7 @@ namespace ncbi_err {
     public:
         CError(void);
         CError(EErrSeverity sev, const char* message=0, bool flush=true);
+        ~CError(void) { f_Flush(); }
 
         template<class X> CError& operator << (X& x);  // formatted output
         CError& f_Clear(void);  // reset the current message
@@ -70,33 +73,64 @@ namespace ncbi_err {
         // flush curr. message;  then start new one with the specified severity
         CError& f_Severity(EErrSeverity severity);
 
-        // return "true" if succeeded
-        typedef bool (*FFlushHook)(EErrSeverity severity, const char* message);
-        // set new hook function(can be zero) to be called on the "f_Flush()"
-        // return the previous one
-        FFlushHook f_SetFlushHook(FFlushHook hook);
+        // Write the error diagnostics to output stream "os"
+        extern void f_SetStream(ostream& os=cerr);
+        // Do not post messages which severity is less than "severity"
+        extern void f_SetPostLevel(EErrSeverity severity=eE_Error);
+        // Abrupt the application if severity is >= "severity"
+        extern void f_SetDieLevel(EErrSeverity severity=eE_Fatal);
 
         // (for the error stream manipulators)
         CError& operator << (CError& (*f)(CError&)) { return f(*this); }
 
     private:
-        EErrSeverity  m_Severity;
-        ostrstream    m_Buffer;
-        FFlushHook    f_FlushHook;
+        EErrSeverity m_Severity;
+        ostrstream   m_Buffer;
     };
 
     // Set of output manipulators for CError
     //
-    extern CError& Endm   (CError& err) { return err.f_Flush(err); }
+    extern CError& Flush  (CError& err) { return err.f_Flush(err); }
     extern CError& Info   (CError& err) { return err.f_Severity(eE_Info); }
     extern CError& Warning(CError& err) { return err.f_Severity(eE_Warning); }
     extern CError& Error  (CError& err) { return err.f_Severity(eE_Error); }
     extern CError& Fatal  (CError& err) { return err.f_Severity(eE_Fatal); }
 
 
-    class CErrorStore {
 
+
+    ////////////////////////////////////////////////////////////////////
+    // THE BELOW IS MOSTLY FOR INTERNAL USE -- OR FOR ANYBODY WHO
+    // WANT TO PROVIDE HIS OWN ERROR-HANDLE CALLBACKS
+    ////////////////////////////////////////////////////////////////////
+
+
+    // Type of the callback for "CError::f_Flush()"
+    // Return "true" if succeeded
+    typedef bool (*FFlushHook)(EErrSeverity severity, const char* message,
+                               void* data);
+
+    // The function to call when the hook is reset
+    typedef void (*FFlushDone)(void* data);
+
+    // The flush-hook callback and its data
+    class CFlushHook {
+    public:
+        FFlushHook f_Hook;
+        void*      m_Data;
+        FFlushDone f_Done;
+        CFlushHook(FFlushHook hook, void* data=0, FFlushDone done=0)
+            { f_Hook = hook;  m_Data = data;  f_Done = done; }
+    private:
+        CFlushHook(void) { NO_GOOD; }        
     };
+
+    // Set new hook function&data to be called whenever the "f_Flush()"
+    // method gets called for any instance of "CError" in the current
+    // thread
+    // NOTE:  "f_Done()" will be called for the replaced hook(if any)
+    extern void g_SetFlushHook(const SFlushHook& hook);
+
 
 
     ///////////////////////////////////////////////////////

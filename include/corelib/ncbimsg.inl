@@ -33,18 +33,15 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.2  1998/09/25 19:35:39  vakatov
+* Revision 1.3  1998/09/25 22:38:11  vakatov
 * *** empty log message ***
-*
-* Revision 1.1  1998/09/24 22:10:49  vakatov
-* Initial revision
 *
 * ==========================================================================
 */
 
 
 ///////////////////////////////////////////////////////
-
+//  CError::
 
 template<class X> CError& CError::operator << (X& x) {
     m_Buffer << x;
@@ -53,12 +50,18 @@ template<class X> CError& CError::operator << (X& x) {
 
 CError& CError::f_Clear(void) {
     VERIFY( !m_Buffer.rdbuf()->seekpos(0); );
+    return *this;
 };
 
 CError& CError::f_Flush(void) {
-    VERIFY( f_FlushHook(m_Severity, m_Buffer.str(), m_Buffer.pcount()) );
-    m_Buffer.freeze(false);
-    f_Clear();
+    if ( m_Buffer.pcount() ) {
+        VERIFY( f_FlushHook(m_Severity, m_Buffer.str(), m_Buffer.pcount()) );
+        m_Buffer.freeze(false);
+        f_Clear();
+    }
+    if (m_Severity == eE_Fatal)
+        abort();
+    return *this;
 }
 
 
