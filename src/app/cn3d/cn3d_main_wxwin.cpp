@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2001/10/20 20:16:32  thiessen
+* don't use wxDefaultPosition for dialogs (win2000 problem)
+*
 * Revision 1.97  2001/10/17 17:46:22  thiessen
 * save camera setup and rotation center in files
 *
@@ -1307,7 +1310,7 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 StructureSet::TextLines line(1);
                 line[0] = glCanvas->structureSet->GetCDDDescription().c_str();
                 cddDescriptionDialog = new MultiTextDialog(this, line,
-                    this, -1, "CDD Description", wxDefaultPosition, wxSize(400, 200));
+                    this, -1, "CDD Description", wxPoint(50, 50), wxSize(400, 200));
             }
             cddDescriptionDialog->Show(true);
             break;
@@ -1316,7 +1319,7 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
                 StructureSet::TextLines lines;
                 if (!glCanvas->structureSet->GetCDDNotes(&lines)) break;
                 cddNotesDialog = new MultiTextDialog(this, lines,
-                    this, -1, "CDD Notes", wxDefaultPosition, wxSize(500, 400));
+                    this, -1, "CDD Notes", wxPoint(100, 100), wxSize(500, 400));
             }
             cddNotesDialog->Show(true);
             break;
@@ -1369,7 +1372,7 @@ void Cn3DMainFrame::OnShowHide(wxCommandEvent& event)
 
             ShowHideDialog dialog(
                 titles, &structureVisibilities, glCanvas->structureSet->showHideManager, false,
-                this, -1, "Show/Hide Structures");
+                this, -1, "Show/Hide Structures", wxPoint(200, 50));
             dialog.ShowModal();
             //delete titles;    // apparently deleted by wxWindows
             break;

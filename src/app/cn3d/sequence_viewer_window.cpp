@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/10/20 20:16:32  thiessen
+* don't use wxDefaultPosition for dialogs (win2000 problem)
+*
 * Revision 1.23  2001/10/08 14:18:33  thiessen
 * fix show/hide dialog under wxGTK
 *
@@ -295,7 +298,7 @@ void SequenceViewerWindow::OnShowHideRows(wxCommandEvent& event)
     title.Append(sequenceViewer->alignmentManager->GetCurrentMultipleAlignment()->GetMaster()->identifier->ToString().c_str());
     ShowHideDialog dialog(
         titleStrs, &visibilities, sequenceViewer->alignmentManager, true,
-        this, -1, title);
+        this, -1, title, wxPoint(250, 50));
     dialog.ShowModal();
     //delete titleStrs;    // apparently deleted by wxWindows
 }
@@ -361,7 +364,7 @@ void SequenceViewerWindow::OnRealign(wxCommandEvent& event)
     ShowHideDialog dialog(
         titleStrs, &selectedSlaves,
         NULL,   // no "apply" button or callback
-        true, this, -1, title);
+        true, this, -1, title, wxPoint(200, 100));
     dialog.ShowModal();
 
     // make list of slave rows to be realigned
