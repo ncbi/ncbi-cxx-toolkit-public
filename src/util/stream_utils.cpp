@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/02/05 16:05:43  lavr
+ * List of included header files revised
+ *
  * Revision 1.6  2002/02/04 20:22:34  lavr
  * Stream positioning added; more assert()'s to check standard compliance
  *
@@ -52,6 +55,7 @@
  * ===========================================================================
  */
 
+#include <corelib/ncbistd.hpp>
 #include <util/stream_pushback.hpp>
 #include <string.h>
 

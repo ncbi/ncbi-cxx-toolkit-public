@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/02/05 16:05:26  lavr
+ * List of included header files revised
+ *
  * Revision 6.10  2002/01/28 21:29:25  lavr
  * Use iostream(0) as a base class constructor
  *
@@ -69,6 +72,7 @@
 
 #include <connect/ncbi_conn_stream.hpp>
 #include "ncbi_conn_streambuf.hpp"
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE

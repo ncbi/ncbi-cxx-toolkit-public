@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2002/02/05 16:05:26  lavr
+ * List of included header files revised
+ *
  * Revision 6.10  2002/02/04 20:19:10  lavr
  * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
  *
@@ -67,9 +70,8 @@
  * ===========================================================================
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 #include <connect/ncbi_connection.h>
-#include <memory>
 
 
 BEGIN_NCBI_SCOPE

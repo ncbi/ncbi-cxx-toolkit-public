@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2002/02/05 16:05:26  lavr
+ * List of included header files revised
+ *
  * Revision 6.14  2002/02/04 20:19:55  lavr
  * +xsgetn() for MIPSPro compiler (buggy version supplied with std.library)
  * More assert()'s inserted into the code to check standard compliance
@@ -80,7 +83,9 @@
  */
 
 
+#include <corelib/ncbistd.hpp>
 #include "ncbi_conn_streambuf.hpp"
+#include <memory>
 
 
 BEGIN_NCBI_SCOPE

@@ -33,13 +33,16 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/02/05 16:05:59  lavr
+ * List of included header files revised
+ *
  * Revision 1.1  2002/01/29 16:02:19  lavr
  * Initial revision
  *
  * ==========================================================================
  */
 
-#include <corelib/ncbistd.hpp>
+#include <corelib/ncbistre.hpp>
 
 BEGIN_NCBI_SCOPE
 
