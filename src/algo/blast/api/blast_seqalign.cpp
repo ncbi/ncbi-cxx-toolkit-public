@@ -877,12 +877,6 @@ x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
     if (hsp->num_ident > 0)
         scores.push_back(x_MakeScore(score_type, 0.0, hsp->num_ident));
 
-    if (hsp->splice_junction > 0) {
-        // Splice junction(s) was (were) found between linked HSPs
-        score_type = "splice_junction";
-        scores.push_back(x_MakeScore(score_type, 0.0, hsp->splice_junction));
-    }
-
     return;
 }
 
@@ -1115,6 +1109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2004/08/16 19:47:35  dondosha
+* Removed setting of splice_junction score type
+*
 * Revision 1.47  2004/06/07 21:34:55  dondosha
 * Use 2 booleans for gapped and out-of-frame mode instead of scoring options in function arguments
 *
