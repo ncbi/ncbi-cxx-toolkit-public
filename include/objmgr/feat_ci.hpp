@@ -45,6 +45,18 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+/** @addtogroup ObjectManagerIterators
+ *
+ * @{
+ */
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CMappedFeat --
+///
+///  Mapped CSeq_feat class returned from the feature iterator
+
 class NCBI_XOBJMGR_EXPORT CMappedFeat
 {
 public:
@@ -53,17 +65,18 @@ public:
     CMappedFeat& operator=(const CMappedFeat& feat);
     ~CMappedFeat(void);
 
-    // Original feature with unmapped location/product
+    /// Get original feature with unmapped location/product
     const CSeq_feat& GetOriginalFeature(void) const;
-    // Original feature handle
+
+    /// Get original feature handle
     CSeq_feat_Handle GetSeq_feat_Handle(void) const;
 
-    // Fast way to check if mapped feature is different from the original one
+    /// Fast way to check if mapped feature is different from the original one
     bool IsMapped(void) const
         { return m_FeatRef->IsMapped(); }
 
-    // Feature mapped to the master sequence.
-    // WARNING! The function is rather slow and should be used with care.
+    /// Feature mapped to the master sequence.
+    /// WARNING! The function is rather slow and should be used with care.
     const CSeq_feat& GetMappedFeature(void) const;
 
     bool IsSetId(void) const
@@ -180,6 +193,14 @@ private:
 class CSeq_annot_Handle;
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CFeat_CI --
+///
+///  Enumerate CSeq_feat objects related to a bioseq, seq-loc,
+///  or contained in a particular seq-entry or seq-annot 
+///  regardless of the referenced locations.
+
 class NCBI_XOBJMGR_EXPORT CFeat_CI : public CAnnotTypes_CI
 {
 public:
@@ -217,11 +238,11 @@ public:
 
     typedef SAnnotSelector::TFeatType TFeatType;
 
-    // Search all TSEs in all datasources. By default search sequence segments
-    // (for constructed sequences) only if the referenced sequence is in the
-    // same TSE as the master one. Use CFeat_CI::eResolve_All flag to search
-    // features on all referenced sequences or CFeat_CI::eResolve_None to
-    // disable references resolving.
+    /// Search all TSEs in all datasources. By default search sequence segments
+    /// (for constructed sequences) only if the referenced sequence is in the
+    /// same TSE as the master one. Use CFeat_CI::eResolve_All flag to search
+    /// features on all referenced sequences or CFeat_CI::eResolve_None to
+    /// disable references resolving.
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
              TFeatType feat_type,
@@ -230,11 +251,12 @@ public:
              SAnnotSelector::EResolveMethod resolve
              = SAnnotSelector::eResolve_TSE,
              EFeat_Location loc_type = e_Location);
-    // Search only in TSE, containing the bioseq. If both start & stop are 0,
-    // the whole bioseq is searched. References are resolved depending on the
-    // "resolve" flag (see above).
-    // If "entry" is set, search only features from the seq-entry specified
-    // (but no its sub-entries or parent entry).
+
+    /// Search only in TSE, containing the bioseq. If both start & stop are 0,
+    /// the whole bioseq is searched. References are resolved depending on the
+    /// "resolve" flag (see above).
+    /// If "entry" is set, search only features from the seq-entry specified
+    /// (but no its sub-entries or parent entry).
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              TFeatType feat_type,
@@ -243,6 +265,7 @@ public:
              SAnnotSelector::EResolveMethod resolve
              = SAnnotSelector::eResolve_TSE,
              EFeat_Location loc_type = e_Location);
+
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              TFeatType feat_type,
@@ -250,6 +273,7 @@ public:
              SAnnotSelector::EResolveMethod resolve,
              EFeat_Location loc_type,
              const CSeq_entry_Handle& limitEntry);
+
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
              TFeatType feat_type,
@@ -257,12 +281,18 @@ public:
              SAnnotSelector::EResolveMethod resolve,
              EFeat_Location loc_type,
              const CSeq_entry* limitEntry);
+
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);
 
+    /// Move to the next object in iterated sequence
     CFeat_CI& operator++(void);
+
+    /// Move to the pervious object in iterated sequence
     CFeat_CI& operator--(void);
+
+    /// Check if iterator points to an object
     operator bool (void) const;
 
     void Update(void);
@@ -360,12 +390,18 @@ const CSeq_loc& CMappedFeat::GetMappedLocation(void) const
 }
 
 
+/* @} */
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/09/30 23:43:32  kononenk
+* Added doxygen formatting
+*
 * Revision 1.42  2004/09/07 14:10:53  grichenk
 * Added IsMapped()
 *
