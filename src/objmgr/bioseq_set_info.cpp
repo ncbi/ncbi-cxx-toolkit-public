@@ -55,7 +55,7 @@ CBioseq_set_Info::CBioseq_set_Info(void)
 }
 
 
-CBioseq_set_Info::CBioseq_set_Info(const TObject& seqset)
+CBioseq_set_Info::CBioseq_set_Info(TObject& seqset)
     : m_Bioseq_set_Id(-1)
 {
     x_SetObject(seqset);
@@ -63,17 +63,9 @@ CBioseq_set_Info::CBioseq_set_Info(const TObject& seqset)
 
 
 CBioseq_set_Info::CBioseq_set_Info(const CBioseq_set_Info& info)
-    : TParent(info),
-      m_Object(info.m_Object),
-      m_Id(info.m_Id),
-      m_Coll(info.m_Coll),
-      m_Level(info.m_Level),
-      m_Release(info.m_Release),
-      m_Date(info.m_Date)
+    : m_Bioseq_set_Id(-1)
 {
-    ITERATE ( TSeq_set, it, info.m_Seq_set ) {
-        x_AttachEntry(Ref(new CSeq_entry_Info(**it)));
-    }
+    x_SetObject(info);
 }
 
 
@@ -82,69 +74,17 @@ CBioseq_set_Info::~CBioseq_set_Info(void)
 }
 
 
-inline
-void CBioseq_set_Info::x_UpdateObject(CConstRef<TObject> obj)
-{
-    m_Object = obj;
-    x_ResetModifiedMembers();
-}
-
-
-inline
-void CBioseq_set_Info::x_UpdateModifiedObject(void) const
-{
-    if ( x_IsModified() ) {
-        const_cast<CBioseq_set_Info*>(this)->x_UpdateObject(x_CreateObject());
-    }
-}
-
-
 CConstRef<CBioseq_set> CBioseq_set_Info::GetCompleteBioseq_set(void) const
 {
-    x_UpdateModifiedObject();
-    _ASSERT(!x_IsModified());
-    return m_Object;
+    return GetBioseq_setCore();
 }
 
 
 CConstRef<CBioseq_set> CBioseq_set_Info::GetBioseq_setCore(void) const
 {
-    x_UpdateModifiedObject();
-    _ASSERT(!x_IsModified());
+    x_UpdateObject();
+    _ASSERT(!x_NeedUpdateObject());
     return m_Object;
-}
-
-
-const char* CBioseq_set_Info::x_GetTypeName(void) const
-{
-    return "Bioseq-set";
-}
-
-
-const char* CBioseq_set_Info::x_GetMemberName(TMembers member) const
-{
-    if ( member & fMember_id ) {
-        return "id";
-    }
-    if ( member & fMember_coll ) {
-        return "coll";
-    }
-    if ( member & fMember_level ) {
-        return "level";
-    }
-    if ( member & fMember_class ) {
-        return "class";
-    }
-    if ( member & fMember_release ) {
-        return "release";
-    }
-    if ( member & fMember_date ) {
-        return "date";
-    }
-    if ( member & fMember_seq_set ) {
-        return "seq-set";
-    }
-    return TParent::x_GetMemberName(member);
 }
 
 
@@ -201,93 +141,120 @@ void CBioseq_set_Info::x_TSEDetachContents(CTSE_Info& tse)
 }
 
 
-void CBioseq_set_Info::x_SetObject(const TObject& obj)
+void CBioseq_set_Info::x_ParentAttach(CSeq_entry_Info& parent)
+{
+    TParent::x_ParentAttach(parent);
+    CSeq_entry& entry = parent.x_GetObject();
+    _ASSERT(entry.IsSet() && &entry.GetSet() == m_Object);
+    NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
+        if ( (*it)->x_GetObject().GetParentEntry() != &entry ) {
+            entry.ParentizeOneLevel();
+            break;
+        }
+    }
+#ifdef _DEBUG
+    TSeq_set::const_iterator it2 = m_Seq_set.begin();
+    NON_CONST_ITERATE ( CBioseq_set::TSeq_set, it,
+                        entry.SetSet().SetSeq_set() ) {
+        _ASSERT(it2 != m_Seq_set.end());
+        _ASSERT(&(*it2)->x_GetObject() == *it);
+        _ASSERT((*it)->GetParentEntry() == &entry);
+        ++it2;
+    }
+    _ASSERT(it2 == m_Seq_set.end());
+#endif
+}
+
+
+void CBioseq_set_Info::x_ParentDetach(CSeq_entry_Info& parent)
+{
+    NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
+        (*it)->x_GetObject().ResetParentEntry();
+    }
+    TParent::x_ParentDetach(parent);
+}
+
+
+void CBioseq_set_Info::x_DoUpdateObject(void)
+{
+    if ( !m_Seq_set.empty() ) {
+        const CBioseq_set::TSeq_set& seq_set = m_Object->GetSeq_set();
+        _ASSERT(seq_set.size() == m_Seq_set.size());
+        CBioseq_set::TSeq_set::const_iterator it2 = seq_set.begin();
+        NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
+            (*it)->x_UpdateObject();
+            _ASSERT((*it2) == &(*it)->x_GetObject());
+            ++it2;
+        }
+    }
+    TParent::x_DoUpdateObject();
+}
+
+
+void CBioseq_set_Info::x_SetObject(TObject& obj)
 {
     _ASSERT(!m_Object);
     m_Object.Reset(&obj);
-    if ( obj.IsSetId() ) {
-        m_Id.Reset(&obj.GetId());
-        x_SetSetMembers(fMember_id);
-    }
-    if ( obj.IsSetColl() ) {
-        m_Coll.Reset(&obj.GetColl());
-        x_SetSetMembers(fMember_coll);
-    }
-    if ( obj.IsSetLevel() ) {
-        m_Level = obj.GetLevel();
-        x_SetSetMembers(fMember_level);
-    }
-    if ( obj.IsSetClass() ) {
-        m_Class = obj.GetClass();
-        x_SetSetMembers(fMember_class);
-    }
-    if ( obj.IsSetRelease() ) {
-        m_Release = obj.GetRelease();
-        x_SetSetMembers(fMember_release);
-    }
-    if ( obj.IsSetDate() ) {
-        m_Date.Reset(&obj.GetDate());
-        x_SetSetMembers(fMember_date);
-    }
-    if ( obj.IsSetDescr() ) {
-        x_SetDescr(obj.GetDescr());
-    }
     if ( obj.IsSetSeq_set() ) {
-        ITERATE ( TObject::TSeq_set, it, obj.GetSeq_set() ) {
-            x_AttachEntry(Ref(new CSeq_entry_Info(**it)));
+        NON_CONST_ITERATE ( TObject::TSeq_set, it, obj.SetSeq_set() ) {
+            CRef<CSeq_entry_Info> info(new CSeq_entry_Info(**it));
+            m_Seq_set.push_back(info);
+            x_AttachEntry(info);
         }
-        x_SetSetMembers(fMember_seq_set);
     }
     if ( obj.IsSetAnnot() ) {
-        x_SetAnnot(obj.GetAnnot());
+        x_SetAnnot();
     }
 }
 
 
-CRef<CBioseq_set> CBioseq_set_Info::x_CreateObject(void) const
-{        
+void CBioseq_set_Info::x_SetObject(const CBioseq_set_Info& info)
+{
+    _ASSERT(!m_Object);
+    m_Object = sx_ShallowCopy(info.x_GetObject());
+    if ( info.IsSetSeq_set() ) {
+        _ASSERT(m_Object->GetSeq_set().size() == info.m_Seq_set.size());
+        ITERATE ( TSeq_set, it, info.m_Seq_set ) {
+            CRef<CSeq_entry_Info> info(new CSeq_entry_Info(**it));
+            m_Seq_set.push_back(info);
+            x_AttachEntry(info);
+        }
+    }
+    if ( info.IsSetAnnot() ) {
+        x_SetAnnot(info);
+    }
+}
+
+
+CRef<CBioseq_set> CBioseq_set_Info::sx_ShallowCopy(const CBioseq_set& src)
+{
     CRef<TObject> obj(new TObject);
-    if ( IsSetId() ) {
-        obj->SetId(const_cast<TId&>(GetId()));
+    if ( src.IsSetId() ) {
+        obj->SetId(const_cast<TId&>(src.GetId()));
     }
-    if ( IsSetColl() ) {
-        obj->SetColl(const_cast<TColl&>(GetColl()));
+    if ( src.IsSetColl() ) {
+        obj->SetColl(const_cast<TColl&>(src.GetColl()));
     }
-    if ( IsSetLevel() ) {
-        obj->SetLevel(GetLevel());
+    if ( src.IsSetLevel() ) {
+        obj->SetLevel(src.GetLevel());
     }
-    if ( IsSetClass() ) {
-        obj->SetClass(GetClass());
+    if ( src.IsSetClass() ) {
+        obj->SetClass(src.GetClass());
     }
-    if ( IsSetRelease() ) {
-        obj->SetRelease(GetRelease());
+    if ( src.IsSetRelease() ) {
+        obj->SetRelease(src.GetRelease());
     }
-    if ( IsSetDate() ) {
-        obj->SetDate(const_cast<TDate&>(GetDate()));
+    if ( src.IsSetDate() ) {
+        obj->SetDate(const_cast<TDate&>(src.GetDate()));
     }
-    if ( IsSetDescr() ) {
-        obj->SetDescr(const_cast<TDescr&>(GetDescr()));
+    if ( src.IsSetDescr() ) {
+        obj->SetDescr(const_cast<TDescr&>(src.GetDescr()));
     }
-    if ( IsSetSeq_set() ) {
-        TObject::TSeq_set& seq_set = obj->SetSeq_set();
-        if ( x_IsModifiedMember(fMember_seq_set) ) {
-            ITERATE ( TSeq_set, it, GetSeq_set() ) {
-                CConstRef<CSeq_entry> add = (*it)->GetCompleteSeq_entry();
-                seq_set.push_back(Ref(const_cast<CSeq_entry*>(&*add)));
-            }
-        }
-        else {
-            seq_set = m_Object->GetSeq_set();
-        }
+    if ( src.IsSetSeq_set() ) {
+        obj->SetSeq_set() = src.GetSeq_set();
     }
-    if ( IsSetAnnot() ) {
-        TObject::TAnnot& annot = obj->SetAnnot();
-        if ( x_IsModifiedMember(fMember_annot) ) {
-            x_FillAnnot(annot);
-        }
-        else {
-            annot = m_Object->GetAnnot();
-        }
+    if ( src.IsSetAnnot() ) {
+        obj->SetAnnot() = src.GetAnnot();
     }
     return obj;
 }
@@ -303,47 +270,104 @@ int CBioseq_set_Info::x_GetBioseq_set_Id(const CObject_id& object_id)
 }
 
 
-CRef<CSeq_entry_Info> CBioseq_set_Info::x_AddEntry(const CSeq_entry& entry,
+bool CBioseq_set_Info::IsSetDescr(void) const
+{
+    return m_Object->IsSetDescr();
+}
+
+
+const CSeq_descr& CBioseq_set_Info::GetDescr(void) const
+{
+    return m_Object->GetDescr();
+}
+
+
+void CBioseq_set_Info::SetDescr(TDescr& v)
+{
+    m_Object->SetDescr(v);
+}
+
+
+void CBioseq_set_Info::ResetDescr(void)
+{
+    m_Object->ResetDescr();
+}
+
+
+CBioseq_set::TAnnot& CBioseq_set_Info::x_SetObjAnnot(void)
+{
+    return m_Object->SetAnnot();
+}
+
+
+void CBioseq_set_Info::x_ResetObjAnnot(void)
+{
+    m_Object->ResetAnnot();
+}
+
+
+CRef<CSeq_entry_Info> CBioseq_set_Info::AddEntry(CSeq_entry& entry,
                                                    int index)
 {
     CRef<CSeq_entry_Info> info(new CSeq_entry_Info(entry));
-    x_AddEntry(info, index);
+    AddEntry(info, index);
     return info;
 }
 
 
-void CBioseq_set_Info::x_AddEntry(CRef<CSeq_entry_Info> entry, int index)
+void CBioseq_set_Info::AddEntry(CRef<CSeq_entry_Info> info, int index)
 {
-    x_AttachEntry(entry, index);
-    x_SetModifiedMember(fMember_seq_set);
+    _ASSERT(!info->HasParent_Info());
+    CBioseq_set::TSeq_set& obj_seq_set = m_Object->SetSeq_set();
+
+    CRef<CSeq_entry> obj(&info->x_GetObject());
+
+    _ASSERT(obj_seq_set.size() == m_Seq_set.size());
+    if ( size_t(index) >= m_Seq_set.size() ) {
+        obj_seq_set.push_back(obj);
+        m_Seq_set.push_back(info);
+    }
+    else {
+        CBioseq_set::TSeq_set::iterator obj_it = obj_seq_set.begin();
+        for ( int i = 0; i < index; ++i ) {
+            ++obj_it;
+        }
+        obj_seq_set.insert(obj_it, obj);
+        m_Seq_set.insert(m_Seq_set.begin()+index, info);
+    }
+
+    x_AttachEntry(info);
 }
 
 
-void CBioseq_set_Info::x_RemoveEntry(CRef<CSeq_entry_Info> entry)
+void CBioseq_set_Info::RemoveEntry(CRef<CSeq_entry_Info> info)
 {
-    if ( &entry->GetParentBioseq_set_Info() != this ) {
+    if ( &info->GetParentBioseq_set_Info() != this ) {
         NCBI_THROW(CObjMgrException, eAddDataError,
                    "CBioseq_set_Info::x_RemoveEntry: "
                    "not a parent");
     }
-    x_DetachEntry(entry);
-    NON_CONST_ITERATE ( TSeq_set, it, m_Seq_set ) {
-        if ( *it == entry ) {
-            m_Seq_set.erase(it);
-            break;
-        }
-    }
-    x_SetModifiedMember(fMember_seq_set);
+
+    CRef<CSeq_entry> obj(const_cast<CSeq_entry*>(&info->x_GetObject()));
+    CBioseq_set::TSeq_set& obj_seq_set = m_Object->SetSeq_set();
+    TSeq_set::iterator info_it =
+        find(m_Seq_set.begin(), m_Seq_set.end(), info);
+    CBioseq_set::TSeq_set::iterator obj_it =
+        find(obj_seq_set.begin(), obj_seq_set.end(), obj);
+
+    _ASSERT(info_it != m_Seq_set.end());
+    _ASSERT(obj_it != obj_seq_set.end());
+
+    x_DetachEntry(info);
+
+    m_Seq_set.erase(info_it);
+    obj_seq_set.erase(obj_it);
 }
 
 
-void CBioseq_set_Info::x_AttachEntry(CRef<CSeq_entry_Info> entry, int index)
+void CBioseq_set_Info::x_AttachEntry(CRef<CSeq_entry_Info> entry)
 {
-    _ASSERT(!entry->HaveParent_Info());
-    if ( size_t(index) > m_Seq_set.size() ) {
-        index = m_Seq_set.size();
-    }
-    m_Seq_set.insert(m_Seq_set.begin()+index, entry);
+    _ASSERT(!entry->HasParent_Info());
     entry->x_ParentAttach(*this);
     _ASSERT(&entry->GetParentBioseq_set_Info() == this);
     x_AttachObject(*entry);
@@ -355,7 +379,7 @@ void CBioseq_set_Info::x_DetachEntry(CRef<CSeq_entry_Info> entry)
     _ASSERT(&entry->GetParentBioseq_set_Info() == this);
     x_DetachObject(*entry);
     entry->x_ParentDetach(*this);
-    _ASSERT(!entry->HaveParent_Info());
+    _ASSERT(!entry->HasParent_Info());
 }
 
 
@@ -383,6 +407,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/24 18:30:29  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.1  2004/03/16 15:47:27  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

@@ -75,28 +75,15 @@ BEGIN_SCOPE(objects)
 //
 
 
-CBioseq_Info::CBioseq_Info(const CBioseq& seq)
+CBioseq_Info::CBioseq_Info(CBioseq& seq)
 {
     x_SetObject(seq);
 }
 
 
 CBioseq_Info::CBioseq_Info(const CBioseq_Info& info)
-    : TParent(info),
-      m_Object(info.m_Object),
-      m_Id(info.m_Id),
-      m_Inst(info.m_Inst),
-      m_Inst_Repr(info.m_Inst_Repr),
-      m_Inst_Mol(info.m_Inst_Mol),
-      m_Inst_Length(info.m_Inst_Length),
-      m_Inst_Fuzz(info.m_Inst_Fuzz),
-      m_Inst_Topology(info.m_Inst_Topology),
-      m_Inst_Strand(info.m_Inst_Strand),
-      m_Inst_Seq_data(info.m_Inst_Seq_data),
-      m_Inst_Ext(info.m_Inst_Ext),
-      m_Inst_Hist(info.m_Inst_Hist),
-      m_SeqMap(info.m_SeqMap)
 {
+    x_SetObject(info);
 }
 
 
@@ -105,56 +92,15 @@ CBioseq_Info::~CBioseq_Info(void)
 }
 
 
-const char* CBioseq_Info::x_GetTypeName(void) const
-{
-    return "Bioseq";
-}
-
-
-const char* CBioseq_Info::x_GetMemberName(TMembers member) const
-{
-    if ( member & fMember_id ) {
-        return "id";
-    }
-    if ( member & fMember_inst ) {
-        return "inst";
-    }
-    return TParent::x_GetMemberName(member);
-}
-
-
-inline
-void CBioseq_Info::x_UpdateObject(CConstRef<TObject> obj)
-{
-    m_Object = obj;
-    if ( HaveDataSource() ) {
-        x_DSMapObject(obj, GetDataSource());
-    }
-    x_ResetModifiedMembers();
-}
-
-
-inline
-void CBioseq_Info::x_UpdateModifiedObject(void) const
-{
-    if ( x_IsModified() ) {
-        const_cast<CBioseq_Info*>(this)->x_UpdateObject(x_CreateObject());
-    }
-}
-
-
 CConstRef<CBioseq> CBioseq_Info::GetCompleteBioseq(void) const
 {
-    x_UpdateModifiedObject();
-    _ASSERT(!x_IsModified());
     return m_Object;
 }
 
 
 CConstRef<CBioseq> CBioseq_Info::GetBioseqCore(void) const
 {
-    x_UpdateModifiedObject();
-    _ASSERT(!x_IsModified());
+    x_UpdateObject();
     return m_Object;
 }
 
@@ -168,17 +114,13 @@ void CBioseq_Info::x_DSAttachContents(CDataSource& ds)
 
 void CBioseq_Info::x_DSDetachContents(CDataSource& ds)
 {
-    ITERATE ( TDSMappedObjects, it, m_DSMappedObjects ) {
-        x_DSUnmapObject(*it, ds);
-    }
-    m_DSMappedObjects.clear();
+    x_DSUnmapObject(m_Object, ds);
     TParent::x_DSDetachContents(ds);
 }
 
 
 void CBioseq_Info::x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds)
 {
-    m_DSMappedObjects.push_back(obj);
     ds.x_Map(obj, this);
 }
 
@@ -207,142 +149,344 @@ void CBioseq_Info::x_TSEDetachContents(CTSE_Info& tse)
 }
 
 
-void CBioseq_Info::x_SetObject(const TObject& obj)
+void CBioseq_Info::x_ParentAttach(CSeq_entry_Info& parent)
+{
+    TParent::x_ParentAttach(parent);
+    CSeq_entry& entry = parent.x_GetObject();
+    entry.ParentizeOneLevel();
+#ifdef _DEBUG
+    _ASSERT(&entry.GetSeq() == m_Object);
+    _ASSERT(m_Object->GetParentEntry() == &entry);
+#endif
+}
+
+
+void CBioseq_Info::x_ParentDetach(CSeq_entry_Info& parent)
+{
+    //m_Object->ResetParentEntry();
+    TParent::x_ParentDetach(parent);
+}
+
+
+void CBioseq_Info::x_SetObject(TObject& obj)
 {
     _ASSERT(!m_Object);
-    m_Object.Reset(&obj);
 
+    m_Object.Reset(&obj);
     if ( obj.IsSetId() ) {
         ITERATE ( TObject::TId, it, obj.GetId() ) {
             m_Id.push_back(CSeq_id_Handle::GetHandle(**it));
         }
-        x_SetSetMembers(fMember_id);
-    }
-    if ( obj.IsSetDescr() ) {
-        x_SetDescr(obj.GetDescr());
-    }
-    if ( obj.IsSetInst() ) {
-        const TInst& inst = obj.GetInst();
-        if ( inst.IsSetRepr() ) {
-            m_Inst_Repr = inst.GetRepr();
-            x_SetSetMembers(fMember_inst_repr);
-        }
-        if ( inst.IsSetMol() ) {
-            m_Inst_Mol = inst.GetMol();
-            x_SetSetMembers(fMember_inst_mol);
-        }
-        if ( inst.IsSetLength() ) {
-            m_Inst_Length = inst.GetLength();
-            x_SetSetMembers(fMember_inst_length);
-        }
-        else {
-            m_Inst_Length = kInvalidSeqPos;
-            LOG_POST(Warning << "CBioseq_Info::x_InitBioseqInfo: "
-                     "Seq-inst.length is not set");
-        }
-        if ( inst.IsSetFuzz() ) {
-            m_Inst_Fuzz.Reset(&inst.GetFuzz());
-            x_SetSetMembers(fMember_inst_fuzz);
-        }
-        if ( inst.IsSetTopology() ) {
-            m_Inst_Topology = inst.GetTopology();
-            x_SetSetMembers(fMember_inst_topology);
-        }
-        if ( inst.IsSetStrand() ) {
-            m_Inst_Strand = inst.GetStrand();
-            x_SetSetMembers(fMember_inst_strand);
-        }
-        if ( inst.IsSetSeq_data() ) {
-            m_Inst_Seq_data.Reset(&inst.GetSeq_data());
-            x_SetSetMembers(fMember_inst_seq_data);
-        }
-        if ( inst.IsSetExt() ) {
-            m_Inst_Ext.Reset(&inst.GetExt());
-            x_SetSetMembers(fMember_inst_ext);
-        }
-        if ( inst.IsSetHist() ) {
-            m_Inst_Hist.Reset(&inst.GetHist());
-            x_SetSetMembers(fMember_inst_hist);
-        }
-        x_SetSetMembers(fMember_inst);
     }
     if ( obj.IsSetAnnot() ) {
-        x_SetAnnot(obj.GetAnnot());
+        x_SetAnnot();
     }
 }
 
 
-CRef<CBioseq> CBioseq_Info::x_CreateObject(void) const
+void CBioseq_Info::x_SetObject(const CBioseq_Info& info)
+{
+    _ASSERT(!m_Object);
+
+    m_Object = sx_ShallowCopy(*info.m_Object);
+    m_Id = info.m_Id;
+    m_SeqMap = info.m_SeqMap;
+    if ( info.IsSetAnnot() ) {
+        x_SetAnnot(info);
+    }
+}
+
+
+CRef<CBioseq> CBioseq_Info::sx_ShallowCopy(const TObject& src)
 {        
     CRef<TObject> obj(new TObject);
-    if ( IsSetId() ) {
-        TObject::TId& id = obj->SetId();
-        if ( x_IsModifiedMember(fMember_id) ) {
-            ITERATE ( TId, it, GetId() ) {
-                CConstRef<CSeq_id> seq_id = it->GetSeqId();
-                id.push_back(Ref(const_cast<CSeq_id*>(&*seq_id)));
-            }
-        }
-        else {
-            id = m_Object->GetId();
-        }
+    if ( src.IsSetId() ) {
+        obj->SetId() = src.GetId();
     }
-    if ( IsSetDescr() ) {
-        obj->SetDescr(const_cast<TDescr&>(GetDescr()));
+    if ( src.IsSetDescr() ) {
+        obj->SetDescr(const_cast<TDescr&>(src.GetDescr()));
     }
-    if ( IsSetInst() ) {
-        if ( x_IsModifiedMember(fMember_inst_all) ) {
-            CRef<TInst> inst = x_CreateInst();
-            obj->SetInst(*inst);
-        }
-        else {
-            obj->SetInst(const_cast<TInst&>(GetInst()));
-        }
+    if ( src.IsSetInst() ) {
+        CRef<TInst> inst = sx_ShallowCopy(src.GetInst());
+        obj->SetInst(*inst);
     }
-    if ( IsSetAnnot() ) {
-        TObject::TAnnot& annot = obj->SetAnnot();
-        if ( x_IsModifiedMember(fMember_annot) ) {
-            x_FillAnnot(annot);
-        }
-        else {
-            annot = m_Object->GetAnnot();
-        }
+    if ( src.IsSetAnnot() ) {
+        obj->SetAnnot() = src.GetAnnot();
     }
     return obj;
 }
 
 
-CRef<CSeq_inst> CBioseq_Info::x_CreateInst(void) const
+CRef<CSeq_inst> CBioseq_Info::sx_ShallowCopy(const TInst& src)
 {
     CRef<TInst> obj(new TInst);
-    if ( IsSetInst_Repr() ) {
-        obj->SetRepr(GetInst_Repr());
+    if ( src.IsSetRepr() ) {
+        obj->SetRepr(src.GetRepr());
     }
-    if ( IsSetInst_Mol() ) {
-        obj->SetMol(GetInst_Mol());
+    if ( src.IsSetMol() ) {
+        obj->SetMol(src.GetMol());
     }
-    if ( IsSetInst_Length() ) {
-        obj->SetLength(GetInst_Length());
+    if ( src.IsSetLength() ) {
+        obj->SetLength(src.GetLength());
     }
-    if ( IsSetInst_Fuzz() ) {
-        obj->SetFuzz(const_cast<TInst_Fuzz&>(GetInst_Fuzz()));
+    if ( src.IsSetFuzz() ) {
+        obj->SetFuzz(const_cast<TInst_Fuzz&>(src.GetFuzz()));
     }
-    if ( IsSetInst_Topology() ) {
-        obj->SetTopology(GetInst_Topology());
+    if ( src.IsSetTopology() ) {
+        obj->SetTopology(src.GetTopology());
     }
-    if ( IsSetInst_Strand() ) {
-        obj->SetStrand(GetInst_Strand());
+    if ( src.IsSetStrand() ) {
+        obj->SetStrand(src.GetStrand());
     }
-    if ( IsSetInst_Seq_data() ) {
-        obj->SetSeq_data(const_cast<TInst_Seq_data&>(GetInst_Seq_data()));
+    if ( src.IsSetSeq_data() ) {
+        obj->SetSeq_data(const_cast<TInst_Seq_data&>(src.GetSeq_data()));
     }
-    if ( IsSetInst_Ext() ) {
-        obj->SetExt(const_cast<TInst_Ext&>(GetInst_Ext()));
+    if ( src.IsSetExt() ) {
+        obj->SetExt(const_cast<TInst_Ext&>(src.GetExt()));
     }
-    if ( IsSetInst_Hist() ) {
-        obj->SetHist(const_cast<TInst_Hist&>(GetInst_Hist()));
+    if ( src.IsSetHist() ) {
+        obj->SetHist(const_cast<TInst_Hist&>(src.GetHist()));
     }
     return obj;
+}
+
+
+bool CBioseq_Info::IsSetId(void) const
+{
+    return m_Object->IsSetId();
+}
+
+
+const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
+{
+    return m_Id;
+}
+
+
+bool CBioseq_Info::IsSetDescr(void) const
+{
+    return m_Object->IsSetDescr();
+}
+
+
+const CSeq_descr& CBioseq_Info::GetDescr(void) const
+{
+    return m_Object->GetDescr();
+}
+
+
+void CBioseq_Info::SetDescr(TDescr& v)
+{
+    m_Object->SetDescr(v);
+}
+
+
+void CBioseq_Info::ResetDescr(void)
+{
+    m_Object->ResetDescr();
+}
+
+
+CBioseq::TAnnot& CBioseq_Info::x_SetObjAnnot(void)
+{
+    return m_Object->SetAnnot();
+}
+
+
+void CBioseq_Info::x_ResetObjAnnot(void)
+{
+    m_Object->ResetAnnot();
+}
+
+
+bool CBioseq_Info::IsSetInst(void) const
+{
+    return m_Object->IsSetInst();
+}
+
+
+const CBioseq_Info::TInst& CBioseq_Info::GetInst(void) const
+{
+    return m_Object->GetInst();
+}
+
+
+bool CBioseq_Info::IsSetInst_Repr(void) const
+{
+    return IsSetInst() && GetInst().IsSetRepr();
+}
+
+
+CBioseq_Info::TInst_Repr CBioseq_Info::GetInst_Repr(void) const
+{
+    return GetInst().GetRepr();
+}
+
+
+bool CBioseq_Info::IsSetInst_Mol(void) const
+{
+    return IsSetInst() && GetInst().IsSetMol();
+}
+
+
+CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
+{
+    return GetInst().GetMol();
+}
+
+
+bool CBioseq_Info::IsSetInst_Length(void) const
+{
+    return IsSetInst() && GetInst().IsSetLength();
+}
+
+
+CBioseq_Info::TInst_Length CBioseq_Info::GetInst_Length(void) const
+{
+    return GetInst().GetLength();
+}
+
+
+CBioseq_Info::TInst_Length CBioseq_Info::GetBioseqLength(void) const
+{
+    if ( IsSetInst_Length() ) {
+        return GetInst_Length();
+    }
+    else {
+        return x_CalcBioseqLength();
+    }
+}
+
+
+bool CBioseq_Info::IsSetInst_Fuzz(void) const
+{
+    return IsSetInst() && GetInst().IsSetFuzz();
+}
+
+
+const CBioseq_Info::TInst_Fuzz& CBioseq_Info::GetInst_Fuzz(void) const
+{
+    return GetInst().GetFuzz();
+}
+
+
+bool CBioseq_Info::IsSetInst_Topology(void) const
+{
+    return IsSetInst() && GetInst().IsSetTopology();
+}
+
+
+CBioseq_Info::TInst_Topology CBioseq_Info::GetInst_Topology(void) const
+{
+    return GetInst().GetTopology();
+}
+
+
+bool CBioseq_Info::IsSetInst_Strand(void) const
+{
+    return IsSetInst() && GetInst().IsSetStrand();
+}
+
+
+CBioseq_Info::TInst_Strand CBioseq_Info::GetInst_Strand(void) const
+{
+    return GetInst().GetStrand();
+}
+
+
+bool CBioseq_Info::IsSetInst_Seq_data(void) const
+{
+    return IsSetInst() && GetInst().IsSetSeq_data();
+}
+
+
+const CBioseq_Info::TInst_Seq_data& CBioseq_Info::GetInst_Seq_data(void) const
+{
+    return GetInst().GetSeq_data();
+}
+
+
+bool CBioseq_Info::IsSetInst_Ext(void) const
+{
+    return IsSetInst() && GetInst().IsSetExt();
+}
+
+
+const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
+{
+    return GetInst().GetExt();
+}
+
+
+bool CBioseq_Info::IsSetInst_Hist(void) const
+{
+    return IsSetInst() && GetInst().IsSetHist();
+}
+
+
+const CBioseq_Info::TInst_Hist& CBioseq_Info::GetInst_Hist(void) const
+{
+    return GetInst().GetHist();
+}
+
+
+void CBioseq_Info::SetInst(TInst& v)
+{
+    m_Object->SetInst(v);
+}
+
+
+void CBioseq_Info::SetInst_Repr(TInst_Repr v)
+{
+    m_Object->SetInst().SetRepr(v);;
+}
+
+
+void CBioseq_Info::SetInst_Mol(TInst_Mol v)
+{
+    m_Object->SetInst().SetMol(v);;
+}
+
+
+void CBioseq_Info::SetInst_Length(TInst_Length v)
+{
+    m_Object->SetInst().SetLength(v);;
+}
+
+
+void CBioseq_Info::SetInst_Fuzz(TInst_Fuzz& v)
+{
+    m_Object->SetInst().SetFuzz(v);;
+}
+
+
+void CBioseq_Info::SetInst_Topology(TInst_Topology v)
+{
+    m_Object->SetInst().SetTopology(v);;
+}
+
+
+void CBioseq_Info::SetInst_Strand(TInst_Strand v)
+{
+    m_Object->SetInst().SetStrand(v);;
+}
+
+
+void CBioseq_Info::SetInst_Seq_data(TInst_Seq_data& v)
+{
+    m_Object->SetInst().SetSeq_data(v);;
+}
+
+
+void CBioseq_Info::SetInst_Ext(TInst_Ext& v)
+{
+    m_Object->SetInst().SetExt(v);
+}
+
+
+void CBioseq_Info::SetInst_Hist(TInst_Hist& v)
+{
+    m_Object->SetInst().SetHist(v);;
 }
 
 
@@ -526,6 +670,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.16  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

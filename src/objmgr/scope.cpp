@@ -101,24 +101,21 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 
 CBioseq_Handle CScope::GetBioseqHandle(const CBioseq& seq)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::GetBioseqHandle(CBioseq&) is deprecated");
+    //ERR_POST_ONCE(Warning<<"CScope::GetBioseqHandle(CBioseq&) is deprecated");
     return m_Impl->GetBioseqHandle(seq);
 }
 
 
 CSeq_entry_Handle CScope::GetSeq_entryHandle(const CSeq_entry& entry)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
+    //ERR_POST_ONCE(Warning<<"CScope::GetSeq_entryHandle(CSeq_entry&) is deprecated.");
     return m_Impl->GetSeq_entryHandle(entry);
 }
 
 
 CSeq_annot_Handle CScope::GetSeq_annotHandle(const CSeq_annot& annot)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::GetSeq_annotHandle(CSeq_annot&) is deprecated.");
+    //ERR_POST_ONCE(Warning<<"CScope::GetSeq_annotHandle(CSeq_annot&) is deprecated.");
     return m_Impl->GetSeq_annotHandle(annot);
 }
 
@@ -217,14 +214,14 @@ void CScope::AddScope(CScope& scope, TPriority priority)
 }
 
 
-CSeq_entry_Handle CScope::AddTopLevelSeqEntry(const CSeq_entry& top_entry,
+CSeq_entry_Handle CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                               TPriority priority)
 {
     return m_Impl->AddTopLevelSeqEntry(top_entry, priority);
 }
 
 
-CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq, TPriority priority)
+CBioseq_Handle CScope::AddBioseq(CBioseq& bioseq, TPriority priority)
 {
     return m_Impl->AddBioseq(bioseq, priority);
 }
@@ -233,76 +230,65 @@ CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq, TPriority priority)
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id& id,
                                               const CSeq_entry& tse)
 {
-    ERR_POST_ONCE(Warning<<
-                  "GetBioseqHandleFromTSE(CSeq_entry) is deprecated: "
-                  "use handles.");
-    CSeq_entry_Handle h = GetSeq_entryHandle(tse);
-    return GetBioseqHandleFromTSE(id, h);
+    //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
+    return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
 CBioseq_Handle CScope::GetBioseqHandleFromTSE(const CSeq_id_Handle& id,
                                               const CSeq_entry& tse)
 {
-    ERR_POST_ONCE(Warning<<
-                  "GetBioseqHandleFromTSE(CSeq_entry) is deprecated: "
-                  "use handles.");
-    CSeq_entry_Handle h = GetSeq_entryHandle(tse);
-    return GetBioseqHandleFromTSE(id, h);
+    //ERR_POST_ONCE(Warning<<"GetBioseqHandleFromTSE(CSeq_entry) is deprecated: use handles.");
+    return GetBioseqHandleFromTSE(id, GetSeq_entryHandle(tse));
 }
 
 
 void CScope::AttachEntry(CSeq_entry& parent, CSeq_entry& entry)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::AttachEntry() is deprecated: "
-                  "use class CSeq_entry_EditHandle.");
-    CBioseq_set_EditHandle ph =
-        GetEditHandle(GetSeq_entryHandle(parent).GetSet());
-    ph.AttachEntry(entry);
+    //ERR_POST_ONCE(Warning<<"CScope::AttachEntry() is deprecated: use class CSeq_entry_EditHandle.");
+    GetSeq_entryHandle(parent).GetSet().GetEditHandle().AttachEntry(entry);
 }
 
 
 void CScope::RemoveEntry(CSeq_entry& entry)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::RemoveEntry() is deprecated: "
-                  "use class CSeq_entry_EditHandle.");
-    CSeq_entry_EditHandle eh = GetEditHandle(GetSeq_entryHandle(entry));
-    eh.Remove();
+    //ERR_POST_ONCE(Warning<<"CScope::RemoveEntry() is deprecated: use class CSeq_entry_EditHandle.");
+    GetSeq_entryHandle(entry).GetEditHandle().Remove();
 }
 
 
 void CScope::AttachAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::AttachAnnot() is deprecated: "
-                  "use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle ph = GetEditHandle(GetSeq_entryHandle(parent));
-    ph.AttachAnnot(annot);
+    //ERR_POST_ONCE(Warning<<"CScope::AttachAnnot() is deprecated: use class CSeq_annot_EditHandle.");
+    GetSeq_entryHandle(parent).GetEditHandle().AttachAnnot(annot);
 }
 
 
 void CScope::RemoveAnnot(CSeq_entry& parent, CSeq_annot& annot)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::RemoveAnnot() is deprecated: "
-                  "use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle ph = GetEditHandle(GetSeq_entryHandle(parent));
-    CSeq_annot_EditHandle ah = GetEditHandle(GetSeq_annotHandle(annot));
-    ph.RemoveAnnot(ah);
+    //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
+    CSeq_entry_EditHandle eh = GetSeq_entryHandle(parent).GetEditHandle();
+    CSeq_annot_EditHandle ah = GetSeq_annotHandle(annot).GetEditHandle();
+    if ( ah.GetParentEntry() != eh ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope::RemoveAnnot: parent doesn't contain annot");
+    }
+    ah.Remove();
 }
 
 
 void CScope::ReplaceAnnot(CSeq_entry& parent,
                           CSeq_annot& old_annot, CSeq_annot& new_annot)
 {
-    ERR_POST_ONCE(Warning<<
-                  "CScope::RemoveAnnot() is deprecated: "
-                  "use class CSeq_annot_EditHandle.");
-    CSeq_entry_EditHandle ph = GetEditHandle(GetSeq_entryHandle(parent));
-    CSeq_annot_EditHandle ah = GetEditHandle(GetSeq_annotHandle(old_annot));
-    ph.ReplaceAnnot(ah, new_annot);
+    //ERR_POST_ONCE(Warning<<"CScope::RemoveAnnot() is deprecated: use class CSeq_annot_EditHandle.");
+    CSeq_entry_EditHandle eh = GetSeq_entryHandle(parent).GetEditHandle();
+    CSeq_annot_EditHandle ah = GetSeq_annotHandle(old_annot).GetEditHandle();
+    if ( ah.GetParentEntry() != eh ) {
+        NCBI_THROW(CObjMgrException, eModifyDataError,
+                   "CScope::ReplaceAnnot: parent doesn't contain old_annot");
+    }
+    ah.Remove();
+    eh.AttachAnnot(new_annot);
 }
 
 
@@ -312,6 +298,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.104  2004/03/24 18:30:30  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.103  2004/03/16 21:01:32  vasilche
 * Added methods to move Bioseq withing Seq-entry
 *

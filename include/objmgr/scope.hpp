@@ -116,12 +116,12 @@ public:
 
 
     // Add seq_entry, default priority is higher than for defaults or loaders
-    CSeq_entry_Handle AddTopLevelSeqEntry(const CSeq_entry& top_entry,
+    CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                           TPriority pri = kPriority_NotSet);
     // Add bioseq, return bioseq handle. Try to use unresolved seq-id
     // from the bioseq, fail if all ids are already resolved to
     // other sequences.
-    CBioseq_Handle AddBioseq(const CBioseq& bioseq,
+    CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
     // Add Seq-annot
     CSeq_annot_Handle AddSeq_annot(const CSeq_annot& annot,
@@ -189,6 +189,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.72  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

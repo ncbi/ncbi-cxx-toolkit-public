@@ -257,7 +257,7 @@ CObjectManager::AcquireDataLoader(const string& loader_name)
 
 
 CObjectManager::TDataSourceLock
-CObjectManager::AcquireTopLevelSeqEntry(const CSeq_entry& top_entry)
+CObjectManager::AcquireTopLevelSeqEntry(CSeq_entry& top_entry)
 {
     TReadLockGuard guard(m_OM_Lock);
     TDataSourceLock lock = x_FindDataSource(&top_entry);
@@ -332,7 +332,7 @@ CObjectManager::x_RegisterLoader(CDataLoader& loader,
 
 
 CObjectManager::TDataSourceLock
-CObjectManager::x_RegisterTSE(const CSeq_entry& top_entry)
+CObjectManager::x_RegisterTSE(CSeq_entry& top_entry)
 {
     TDataSourceLock ret = x_FindDataSource(&top_entry);
     if ( !ret ) {
@@ -436,6 +436,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.31  2004/03/17 16:05:21  vasilche
 * IRIX CC won't implicitly convert CRef<CSeq_entry> to CObject*
 *

@@ -169,9 +169,7 @@ static int s_DebugSeqIdsCounter(void)
 
 DEFINE_STATIC_FAST_MUTEX(s_RegisterMutex);
 typedef map<const CSeq_id_Handle*, int> TRegisterSet;
-typedef map<const CSeq_id_Info*, int> TRegisterSet2;
 static TRegisterSet* s_RegisterSet = 0;
-static TRegisterSet2* s_RegisterSet2 = 0;
 static int s_Counter = 0;
 #endif
 
@@ -286,6 +284,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/03/24 18:30:30  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.19  2004/02/19 17:25:34  vasilche
 * Use CRef<> to safely hold pointer to CSeq_id_Info.
 * CSeq_id_Info holds pointer to owner CSeq_id_Which_Tree.

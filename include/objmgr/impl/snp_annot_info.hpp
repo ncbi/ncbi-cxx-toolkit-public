@@ -209,6 +209,7 @@ class NCBI_XOBJMGR_EXPORT CSeq_annot_SNP_Info : public CTSE_Info_Object
     typedef CTSE_Info_Object TParent;
 public:
     CSeq_annot_SNP_Info(void);
+    CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info);
     ~CSeq_annot_SNP_Info(void);
 
     const CSeq_annot_Info& GetParentSeq_annot_Info(void) const;
@@ -224,8 +225,6 @@ public:
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
-
-    //CRef<CSeq_entry> GetEntry(void);
 
     typedef vector<SSNP_Info> TSNP_Set;
     typedef TSNP_Set::const_iterator const_iterator;
@@ -255,8 +254,9 @@ protected:
     void x_SetGi(int gi);
     void x_AddSNP(const SSNP_Info& snp_info);
 
+    void x_DoUpdateObject(void);
+
 private:
-    CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info&);
     CSeq_annot_SNP_Info& operator=(const CSeq_annot_SNP_Info&);
 
     friend class CSeq_annot_Info;
@@ -444,6 +444,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.12  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

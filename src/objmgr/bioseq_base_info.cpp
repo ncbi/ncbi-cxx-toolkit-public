@@ -52,20 +52,7 @@ BEGIN_SCOPE(objects)
 
 
 CBioseq_Base_Info::CBioseq_Base_Info(void)
-    : m_ModifiedMembers(0),
-      m_SetMembers(0)
 {
-}
-
-
-CBioseq_Base_Info::CBioseq_Base_Info(const CBioseq_Base_Info& info)
-    : m_ModifiedMembers(info.m_ModifiedMembers),
-      m_SetMembers(info.m_SetMembers),
-      m_Descr(info.m_Descr)
-{
-    ITERATE ( TAnnot, it, info.m_Annot ) {
-        x_AttachAnnot(Ref(new CSeq_annot_Info(**it)));
-    }
 }
 
 
@@ -138,122 +125,25 @@ void CBioseq_Base_Info::x_ParentDetach(CSeq_entry_Info& parent)
 }
 
 
-void CBioseq_Base_Info::x_SetDescr(const CSeq_descr& descr)
+void CBioseq_Base_Info::x_SetAnnot(void)
 {
-    m_Descr.Reset(&descr);
-    x_SetSetMembers(fMember_descr);
-}
-
-
-void CBioseq_Base_Info::x_SetAnnot(const TObjAnnot& annot)
-{
-    ITERATE( TObjAnnot, it, annot ) {
-        x_AttachAnnot(Ref(new CSeq_annot_Info(**it)));
-    }
-    x_SetSetMembers(fMember_annot);
-}
-
-
-void CBioseq_Base_Info::x_FillAnnot(TObjAnnot& annot) const
-{
-    ITERATE( TAnnot, it, m_Annot ) {
-        CConstRef<CSeq_annot> add = (*it)->GetCompleteSeq_annot();
-        annot.push_back(Ref(const_cast<CSeq_annot*>(&*add)));
+    _ASSERT(m_ObjAnnot == 0);
+    m_ObjAnnot = &x_SetObjAnnot();
+    ITERATE( TObjAnnot, it, *m_ObjAnnot ) {
+        CRef<CSeq_annot_Info> info(new CSeq_annot_Info(**it));
+        m_Annot.push_back(info);
+        x_AttachAnnot(info);
     }
 }
 
 
-void CBioseq_Base_Info::x_AttachAnnot(CRef<CSeq_annot_Info> annot)
+void CBioseq_Base_Info::x_SetAnnot(const CBioseq_Base_Info& annot)
 {
-    _ASSERT(!annot->HaveParent_Info());
-    m_Annot.push_back(annot);
-    annot->x_ParentAttach(*this);
-    _ASSERT(&annot->GetParentBioseq_Base_Info() == this);
-    x_AttachObject(*annot);
-}
-
-
-void CBioseq_Base_Info::x_DetachAnnot(CRef<CSeq_annot_Info> annot)
-{
-    _ASSERT(&annot->GetParentBioseq_Base_Info() == this);
-    x_DetachObject(*annot);
-    annot->x_ParentDetach(*this);
-    _ASSERT(!annot->HaveParent_Info());
-}
-
-
-void CBioseq_Base_Info::x_CheckSetMember(TMembers member) const
-{
-    if ( !x_IsSetMember(member) ) {
-        NCBI_THROW(CUnassignedMember,eGet,
-                   string(x_GetTypeName())+'.'+x_GetMemberName(member));
-    }
-}
-
-
-const char* CBioseq_Base_Info::x_GetMemberName(TMembers member) const
-{
-    if ( member & fMember_descr ) {
-        return "descr";
-    }
-    if ( member & fMember_annot ) {
-        return "annot";
-    }
-    return "<unknown>";
-}
-
-
-void CBioseq_Base_Info::x_SetModifiedMember(TMembers members)
-{
-    TMembers old = m_ModifiedMembers;
-    m_ModifiedMembers = old | members;
-    if ( m_ModifiedMembers != old ) {
-        GetParentSeq_entry_Info().x_SetModifiedContents();
-    }
-}
-
-
-void CBioseq_Base_Info::x_ResetModifiedMembers(void)
-{
-    m_ModifiedMembers = 0;
-}
-
-
-void CBioseq_Base_Info::x_SetSetMembers(TMembers members)
-{
-    m_SetMembers |= members;
-}
-
-
-CRef<CSeq_annot_Info> CBioseq_Base_Info::x_AddAnnot(const CSeq_annot& annot)
-{
-    CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot));
-    x_AddAnnot(info);
-    return info;
-}
-
-
-void CBioseq_Base_Info::x_AddAnnot(CRef<CSeq_annot_Info> info)
-{
-    x_SetModifiedMember(fMember_annot);
-    x_AttachAnnot(info);
-}
-
-
-void CBioseq_Base_Info::x_RemoveAnnot(CRef<CSeq_annot_Info> info)
-{
-    if ( &info->GetBaseParent_Info() != this ) {
-        NCBI_THROW(CObjMgrException, eAddDataError,
-                   "CSeq_entry_Info::x_RemoveAnnot: "
-                   "not an owner");
-    }
-    x_SetModifiedMember(fMember_annot);
-    x_DetachAnnot(info);
-    NON_CONST_ITERATE ( TAnnot, it, m_Annot ) {
-        if ( *it == info ) {
-            m_Annot.erase(it);
-            break;
-        }
+    m_ObjAnnot = &x_SetObjAnnot();
+    _ASSERT(m_ObjAnnot->size() == annot.m_Annot.size());
+    m_ObjAnnot->clear();
+    ITERATE ( TAnnot, it, annot.m_Annot ) {
+        AddAnnot(Ref(new CSeq_annot_Info(**it)));
     }
 }
 
@@ -267,12 +157,95 @@ void CBioseq_Base_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 }
 
 
+void CBioseq_Base_Info::x_DoUpdateObject(void)
+{
+    if ( IsSetAnnot() ) {
+        _ASSERT(m_ObjAnnot && m_ObjAnnot->size() == m_Annot.size());
+        TObjAnnot::iterator it2 = m_ObjAnnot->begin();
+        NON_CONST_ITERATE ( TAnnot, it, m_Annot ) {
+            (*it)->x_UpdateObject();
+            it2->Reset(const_cast<CSeq_annot*>(&(*it)->x_GetObject()));
+            ++it2;
+        }
+    }
+    TParent::x_DoUpdateObject();
+}
+
+
+void CBioseq_Base_Info::x_AttachAnnot(CRef<CSeq_annot_Info> annot)
+{
+    _ASSERT(!annot->HasParent_Info());
+    annot->x_ParentAttach(*this);
+    _ASSERT(&annot->GetParentBioseq_Base_Info() == this);
+    x_AttachObject(*annot);
+}
+
+
+void CBioseq_Base_Info::x_DetachAnnot(CRef<CSeq_annot_Info> annot)
+{
+    _ASSERT(&annot->GetParentBioseq_Base_Info() == this);
+    x_DetachObject(*annot);
+    annot->x_ParentDetach(*this);
+    _ASSERT(!annot->HasParent_Info());
+}
+
+CRef<CSeq_annot_Info> CBioseq_Base_Info::AddAnnot(const CSeq_annot& annot)
+{
+    CRef<CSeq_annot_Info> info(new CSeq_annot_Info(annot));
+    AddAnnot(info);
+    return info;
+}
+
+
+void CBioseq_Base_Info::AddAnnot(CRef<CSeq_annot_Info> info)
+{
+    _ASSERT(!info->HasParent_Info());
+    if ( !IsSetAnnot() ) {
+        m_ObjAnnot = &x_SetObjAnnot();
+    }
+    _ASSERT(m_ObjAnnot->size() == m_Annot.size());
+    CRef<CSeq_annot> obj(const_cast<CSeq_annot*>(&info->x_GetObject()));
+    m_ObjAnnot->push_back(obj);
+    m_Annot.push_back(info);
+    x_AttachAnnot(info);
+}
+
+
+void CBioseq_Base_Info::RemoveAnnot(CRef<CSeq_annot_Info> info)
+{
+    if ( &info->GetBaseParent_Info() != this ) {
+        NCBI_THROW(CObjMgrException, eAddDataError,
+                   "CSeq_entry_Info::x_RemoveAnnot: "
+                   "not an owner");
+    }
+    _ASSERT(IsSetAnnot());
+    _ASSERT(m_ObjAnnot->size() == m_Annot.size());
+
+    CRef<CSeq_annot> obj(const_cast<CSeq_annot*>(&info->x_GetObject()));
+    TAnnot::iterator info_it = find(m_Annot.begin(), m_Annot.end(), info);
+    TObjAnnot::iterator obj_it = find(m_ObjAnnot->begin(), m_ObjAnnot->end(),
+                                      obj);
+
+    _ASSERT(info_it != m_Annot.end());
+    _ASSERT(obj_it != m_ObjAnnot->end());
+
+    x_DetachAnnot(info);
+
+    m_Annot.erase(info_it);
+    m_ObjAnnot->erase(obj_it);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.1  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

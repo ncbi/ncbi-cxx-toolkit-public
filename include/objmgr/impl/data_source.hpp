@@ -183,13 +183,13 @@ class NCBI_XOBJMGR_EXPORT CDataSource : public CObject
 public:
     /// 'ctors
     CDataSource(CDataLoader& loader, CObjectManager& objmgr);
-    CDataSource(const CSeq_entry& entry, CObjectManager& objmgr);
+    CDataSource(CSeq_entry& entry, CObjectManager& objmgr);
     virtual ~CDataSource(void);
 
     /// Register new TSE (Top Level Seq-entry)
     typedef set<TTSE_Lock>     TTSE_LockSet;
 
-    CRef<CTSE_Info> AddTSE(const CSeq_entry& se,
+    CRef<CTSE_Info> AddTSE(CSeq_entry& se,
                            bool dead = false,
                            const CObject* blob_id = 0);
     void AddTSE(CRef<CTSE_Info> tse);
@@ -198,7 +198,8 @@ public:
     // Modification methods.
     /// Add new sub-entry to "parent".
     CRef<CSeq_entry_Info> AttachEntry(CBioseq_set_Info& parent,
-                                      const CSeq_entry& entry);
+                                      CSeq_entry& entry,
+                                      int index = -1);
     void RemoveEntry(CSeq_entry_Info& entry);
 
     /// Add annotations to a Seq-entry.
@@ -447,6 +448,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.71  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

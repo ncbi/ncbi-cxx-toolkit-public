@@ -492,6 +492,16 @@ CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
 }
 
 
+CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info)
+    : m_Gi(info.m_Gi),
+      m_SNP_Set(info.m_SNP_Set),
+      m_Comments(info.m_Comments),
+      m_Alleles(info.m_Alleles),
+      m_Seq_annot(info.m_Seq_annot)
+{
+}
+
+
 CSeq_annot_SNP_Info::~CSeq_annot_SNP_Info(void)
 {
 }
@@ -553,6 +563,11 @@ void CSeq_annot_SNP_Info::x_DropAnnotObjects(CTSE_Info& /*tse*/)
 }
 
 
+void CSeq_annot_SNP_Info::x_DoUpdateObject(void)
+{
+}
+
+
 size_t CIndexedStrings::GetIndex(const string& s, size_t max_index)
 {
     TIndices::iterator it = m_Indices.lower_bound(s);
@@ -592,15 +607,6 @@ CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
     return m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
 }
 
-#if 0
-CRef<CSeq_entry> CSeq_annot_SNP_Info::GetEntry(void)
-{
-    CRef<CSeq_entry> entry(new CSeq_entry); // return value
-    entry->SetSet().SetSeq_set(); // it's not optional
-    entry->SetSet().SetAnnot().push_back(m_Seq_annot); // store it in Seq-entry
-    return entry;
-}
-#endif
 
 void CSeq_annot_SNP_Info::x_SetGi(int gi)
 {
@@ -628,6 +634,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.12  2004/03/24 18:30:30  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.11  2004/03/16 15:47:28  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

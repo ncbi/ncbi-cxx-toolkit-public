@@ -143,7 +143,7 @@ void CScope_Impl::AddDataLoader (const string& loader_name,
 }
 
 
-CSeq_entry_Handle CScope_Impl::AddTopLevelSeqEntry(const CSeq_entry& top_entry,
+CSeq_entry_Handle CScope_Impl::AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                                    TPriority priority)
 {
     CRef<CDataSource> ds = m_pObjMgr->AcquireTopLevelSeqEntry(top_entry);
@@ -168,11 +168,11 @@ void CScope_Impl::AddScope(CScope_Impl& scope,
 }
 
 
-CBioseq_Handle CScope_Impl::AddBioseq(const CBioseq& bioseq,
+CBioseq_Handle CScope_Impl::AddBioseq(CBioseq& bioseq,
                                       TPriority priority)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
-    entry->SetSeq(const_cast<CBioseq&>(bioseq));
+    entry->SetSeq(bioseq);
     return AddTopLevelSeqEntry(*entry, priority).GetSeq();
 }
 
@@ -324,8 +324,9 @@ CScope_Impl::x_GetBioseq_Info(const CBioseq& bioseq)
 }
 
 
-CSeq_annot_EditHandle CScope_Impl::AttachAnnot(CSeq_entry_EditHandle& entry,
-                                               const CSeq_annot& annot)
+CSeq_annot_EditHandle
+CScope_Impl::AttachAnnot(const CSeq_entry_EditHandle& entry,
+                         const CSeq_annot& annot)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     CSeq_entry_Info& info = entry.x_GetInfo();
@@ -336,8 +337,9 @@ CSeq_annot_EditHandle CScope_Impl::AttachAnnot(CSeq_entry_EditHandle& entry,
 }
 
 
-CSeq_annot_EditHandle CScope_Impl::AttachAnnot(CBioseq_set_EditHandle& seqset,
-                                               const CSeq_annot& annot)
+CSeq_annot_EditHandle
+CScope_Impl::AttachAnnot(const CBioseq_set_EditHandle& seqset,
+                         const CSeq_annot& annot)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     CBioseq_set_Info& info = seqset.x_GetInfo();
@@ -348,8 +350,9 @@ CSeq_annot_EditHandle CScope_Impl::AttachAnnot(CBioseq_set_EditHandle& seqset,
 }
 
 
-CSeq_annot_EditHandle CScope_Impl::AttachAnnot(CBioseq_EditHandle& seq,
-                                               const CSeq_annot& annot)
+CSeq_annot_EditHandle
+CScope_Impl::AttachAnnot(const CBioseq_EditHandle& seq,
+                         const CSeq_annot& annot)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     CBioseq_Info& info = seq.x_GetInfo();
@@ -360,43 +363,39 @@ CSeq_annot_EditHandle CScope_Impl::AttachAnnot(CBioseq_EditHandle& seq,
 }
 
 
-void CScope_Impl::RemoveAnnot(CSeq_annot_EditHandle& annot)
+void CScope_Impl::RemoveAnnot(const CSeq_annot_EditHandle& annot)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     CSeq_annot_Info& info = annot.x_GetInfo();
     info.GetDataSource().RemoveAnnot(info);
     x_ClearAnnotCache();
-    annot = CSeq_annot_EditHandle();
 }
 
 
-CSeq_annot_EditHandle
-CScope_Impl::ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
-                          const CSeq_annot& new_annot)
+CBioseq_EditHandle
+CScope_Impl::AttachBioseq(const CSeq_entry_EditHandle& entry,
+                          CBioseq& seq)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    CSeq_annot_Info& info = old_annot.x_GetInfo();
-    CRef<CSeq_annot_Info> new_info =
-        info.GetDataSource().ReplaceAnnot(info, new_annot);
-    x_ClearAnnotCache();
-    old_annot = CSeq_annot_EditHandle();
-    return CSeq_annot_EditHandle(*m_HeapScope, *new_info);
+    return GetBioseqHandle(entry.x_GetInfo().SelectSeq(seq)).GetEditHandle();
 }
 
 
-CSeq_entry_EditHandle CScope_Impl::AttachEntry(CBioseq_set_EditHandle& parent,
-                                               const CSeq_entry& entry)
+CSeq_entry_EditHandle
+CScope_Impl::AttachEntry(const CBioseq_set_EditHandle& parent,
+                         CSeq_entry& entry,
+                         int index)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     CBioseq_set_Info& parent_info = parent.x_GetInfo();
     CRef<CSeq_entry_Info> new_info =
-        parent_info.GetDataSource().AttachEntry(parent_info, entry);
+        parent_info.GetDataSource().AttachEntry(parent_info, entry, index);
     x_ClearCacheOnNewData();
     return CSeq_entry_EditHandle(*m_HeapScope, *new_info);
 }
 
 
-void CScope_Impl::RemoveEntry(CSeq_entry_EditHandle& entry)
+void CScope_Impl::RemoveEntry(const CSeq_entry_EditHandle& entry)
 {
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
     CSeq_entry_Info& info = entry.x_GetInfo();
@@ -422,7 +421,6 @@ void CScope_Impl::RemoveEntry(CSeq_entry_EditHandle& entry)
                        "CScope::RemoveEntry(): cannot find data source");
         }
     }
-    entry = CSeq_entry_EditHandle();
 }
 
 
@@ -584,12 +582,12 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_id_Handle& id)
 CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
 {
     if ( !h ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "cannot edit invalid handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eNotImplemented,
                    "detach is not implemented");
     }
     
@@ -601,12 +599,12 @@ CBioseq_EditHandle CScope_Impl::GetEditHandle(const CBioseq_Handle& h)
 CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
 {
     if ( !h ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "cannot edit invalid handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eNotImplemented,
                    "detach is not implemented");
     }
     
@@ -618,12 +616,12 @@ CSeq_entry_EditHandle CScope_Impl::GetEditHandle(const CSeq_entry_Handle& h)
 CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
 {
     if ( !h ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "cannot edit invalid handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eNotImplemented,
                    "detach is not implemented");
     }
     
@@ -635,12 +633,12 @@ CSeq_annot_EditHandle CScope_Impl::GetEditHandle(const CSeq_annot_Handle& h)
 CBioseq_set_EditHandle CScope_Impl::GetEditHandle(const CBioseq_set_Handle& h)
 {
     if ( !h ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eInvalidHandle,
                    "cannot edit invalid handle");
     }
     
     if ( h.x_GetInfo().GetDataSource().GetDataLoader() ) {
-        NCBI_THROW(CObjMgrException, eOtherError,
+        NCBI_THROW(CObjMgrException, eNotImplemented,
                    "detach is not implemented");
     }
     
@@ -713,6 +711,17 @@ CBioseq_Handle CScope_Impl::GetBioseqHandle(const CSeq_loc& loc)
         }
     }
     return bh;
+}
+
+
+CBioseq_Handle CScope_Impl::GetBioseqHandle(const CBioseq_Info& seq)
+{
+    CBioseq_Handle ret;
+    {{
+        TReadLockGuard guard(m_Scope_Conf_RWLock);
+        ret = x_GetBioseqHandle(seq);
+    }}
+    return ret;
 }
 
 
@@ -1162,6 +1171,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/24 18:30:30  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.2  2004/03/16 18:09:10  vasilche
 * Use GetPointer() to avoid ambiguity
 *

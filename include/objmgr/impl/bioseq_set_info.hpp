@@ -63,7 +63,7 @@ public:
     // 'ctors
     CBioseq_set_Info(void);
     explicit CBioseq_set_Info(const CBioseq_set_Info& info);
-    explicit CBioseq_set_Info(const CBioseq_set& seqset);
+    explicit CBioseq_set_Info(CBioseq_set& seqset);
     virtual ~CBioseq_set_Info(void);
 
     typedef CBioseq_set TObject;
@@ -76,6 +76,11 @@ public:
     bool IsSetId(void) const;
     const TId& GetId(void) const;
     void SetId(const TId& v);
+
+    bool IsSetDescr(void) const;
+    const TDescr& GetDescr(void) const;
+    void SetDescr(TDescr& v);
+    void ResetDescr(void);
 
     typedef TObject::TColl TColl;
     bool IsSetColl(void) const;
@@ -105,6 +110,9 @@ public:
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
     bool IsSetSeq_set(void) const;
     const TSeq_set& GetSeq_set(void) const;
+    CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1);
+    void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
+    void RemoveEntry(CRef<CSeq_entry_Info> entry);
 
     // initialization
     // attaching/detaching to CDataSource (it's in CTSE_Info)
@@ -120,38 +128,17 @@ public:
     virtual void x_UpdateAnnotIndexContents(CTSE_Info& tse);
     
     // modification
-    CRef<CSeq_entry_Info> x_AddEntry(const CSeq_entry& entry, int index = -1);
-    void x_AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
-    void x_RemoveEntry(CRef<CSeq_entry_Info> entry);
-
-    void x_AttachEntry(CRef<CSeq_entry_Info> info, int index = -1);
+    void x_AttachEntry(CRef<CSeq_entry_Info> info);
     void x_DetachEntry(CRef<CSeq_entry_Info> info);
-
-    virtual const char* x_GetTypeName(void) const;
-    virtual const char* x_GetMemberName(TMembers member) const;
-
-    enum EMember {
-        fMember_first   = TParent::fMember_last << 1,
-        fMember_id      = fMember_first << 0,
-        fMember_coll    = fMember_first << 1,
-        fMember_level   = fMember_first << 2,
-        fMember_class   = fMember_first << 3,
-        fMember_release = fMember_first << 4,
-        fMember_date    = fMember_first << 5,
-        fMember_seq_set = fMember_first << 6,
-
-        fMember_last_plus_one,
-        fMember_last    = fMember_last_plus_one - 1
-    };
-
-    void x_SetModifiedSeq_set(void);
 
 protected:
     friend class CDataSource;
     friend class CScope_Impl;
+
     friend class CTSE_Info;
-    friend class CSeq_annot_Info;
+    friend class CSeq_entry_Info;
     friend class CBioseq_Info;
+    friend class CSeq_annot_Info;
 
     friend class CSeq_entry_CI;
     friend class CSeq_entry_I;
@@ -159,30 +146,31 @@ protected:
     friend class CSeq_annot_I;
     friend class CAnnotTypes_CI;
 
-    void x_DSAttachThis(void);
-    void x_DSDetachThis(void);
     void x_DSAttachContents(void);
     void x_DSDetachContents(void);
 
-    void x_SetObject(const TObject& object);
-    void x_UpdateModifiedObject(void) const;
-    virtual void x_UpdateObject(CConstRef<TObject> obj);
+    void x_ParentAttach(CSeq_entry_Info& parent);
+    void x_ParentDetach(CSeq_entry_Info& parent);
+
+    TObject& x_GetObject(void);
+    const TObject& x_GetObject(void) const;
+
+    void x_SetObject(TObject& obj);
+    void x_SetObject(const CBioseq_set_Info& info);
 
     int x_GetBioseq_set_Id(const CObject_id& object_id);
 
-    CRef<TObject> x_CreateObject(void) const;
+    TObjAnnot& x_SetObjAnnot(void);
+    void x_ResetObjAnnot(void);
+
+    void x_DoUpdateObject(void);
+    static CRef<TObject> sx_ShallowCopy(const TObject& obj);
 
 private:
     // core object
-    CConstRef<TObject>  m_Object;
+    CRef<TObject>       m_Object;
 
     // members
-    CConstRef<TId>      m_Id;
-    CConstRef<TColl>    m_Coll;
-    TLevel              m_Level;
-    TClass              m_Class;
-    TRelease            m_Release;
-    CConstRef<TDate>    m_Date;
     TSeq_set            m_Seq_set;
 
     // index information
@@ -202,106 +190,107 @@ private:
 
 
 inline
-void CBioseq_set_Info::x_SetModifiedSeq_set(void)
+CBioseq_set& CBioseq_set_Info::x_GetObject(void)
 {
-    x_SetModifiedMember(fMember_seq_set);
+    return *m_Object;
+}
+
+
+inline
+const CBioseq_set& CBioseq_set_Info::x_GetObject(void) const
+{
+    return *m_Object;
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetId(void) const
 {
-    return x_IsSetMember(fMember_id);
+    return m_Object->IsSetId();
 }
 
 
 inline
 const CBioseq_set_Info::TId& CBioseq_set_Info::GetId(void) const
 {
-    x_CheckSetMember(fMember_id);
-    return *m_Id;
+    return m_Object->GetId();
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetColl(void) const
 {
-    return x_IsSetMember(fMember_coll);
+    return m_Object->IsSetColl();
 }
 
 
 inline
 const CBioseq_set_Info::TColl& CBioseq_set_Info::GetColl(void) const
 {
-    x_CheckSetMember(fMember_coll);
-    return *m_Coll;
+    return m_Object->GetColl();
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetLevel(void) const
 {
-    return x_IsSetMember(fMember_level);
+    return m_Object->IsSetLevel();
 }
 
 
 inline
 CBioseq_set_Info::TLevel CBioseq_set_Info::GetLevel(void) const
 {
-    x_CheckSetMember(fMember_level);
-    return m_Level;
+    return m_Object->GetLevel();
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetClass(void) const
 {
-    return x_IsSetMember(fMember_class);
+    return m_Object->IsSetClass();
 }
 
 
 inline
 CBioseq_set_Info::TClass CBioseq_set_Info::GetClass(void) const
 {
-    x_CheckSetMember(fMember_class);
-    return m_Class;
+    return m_Object->GetClass();
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetRelease(void) const
 {
-    return x_IsSetMember(fMember_release);
+    return m_Object->IsSetRelease();
 }
 
 
 inline
 const CBioseq_set_Info::TRelease& CBioseq_set_Info::GetRelease(void) const
 {
-    x_CheckSetMember(fMember_release);
-    return m_Release;
+    return m_Object->GetRelease();
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetDate(void) const
 {
-    return x_IsSetMember(fMember_date);
+    return m_Object->IsSetDate();
 }
 
 
 inline
 const CBioseq_set_Info::TDate& CBioseq_set_Info::GetDate(void) const
 {
-    x_CheckSetMember(fMember_date);
-    return *m_Date;
+    return m_Object->GetDate();
 }
 
 
 inline
 bool CBioseq_set_Info::IsSetSeq_set(void) const
 {
-    return x_IsSetMember(fMember_seq_set);
+    return m_Object->IsSetSeq_set();
 }
 
 
@@ -318,6 +307,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.1  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

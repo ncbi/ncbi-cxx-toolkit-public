@@ -96,13 +96,14 @@ class NCBI_XOBJMGR_EXPORT CTSE_Info : public CSeq_entry_Info
     typedef CSeq_entry_Info TParent;
 public:
     // 'ctors
-    explicit CTSE_Info(const CSeq_entry& tse,
+    // Argument tse will be parentized.
+    explicit CTSE_Info(CSeq_entry& tse,
                        bool dead = false,
                        const CObject* blob_id = 0);
     explicit CTSE_Info(const CTSE_Info& info);
     virtual ~CTSE_Info(void);
 
-    bool HaveDataSource(void) const;
+    bool HasDataSource(void) const;
     CDataSource& GetDataSource(void) const;
 
     CConstRef<CSeq_entry> GetCompleteTSE(void) const;
@@ -284,7 +285,7 @@ typedef CConstRef<CTSE_Info> TTSE_Lock;
 /////////////////////////////////////////////////////////////////////
 
 inline
-bool CTSE_Info::HaveDataSource(void) const
+bool CTSE_Info::HasDataSource(void) const
 {
     return m_DataSource != 0;
 }
@@ -353,6 +354,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.47  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

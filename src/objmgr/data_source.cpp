@@ -151,7 +151,7 @@ CDataSource::CDataSource(CDataLoader& loader, CObjectManager& objmgr)
 }
 
 
-CDataSource::CDataSource(const CSeq_entry& entry, CObjectManager& objmgr)
+CDataSource::CDataSource(CSeq_entry& entry, CObjectManager& objmgr)
     : m_Loader(0),
       m_pTopEntry(&entry),
       m_ObjMgr(&objmgr),
@@ -362,7 +362,8 @@ const CSeq_entry& CDataSource::GetTSE(const CTSE_Info& info)
 }
 #endif
 
-CRef<CTSE_Info> CDataSource::AddTSE(const CSeq_entry& tse, bool dead,
+CRef<CTSE_Info> CDataSource::AddTSE(CSeq_entry& tse,
+                                    bool dead,
                                     const CObject* blob_id)
 {
     CRef<CTSE_Info> info(new CTSE_Info(tse, dead, blob_id));
@@ -603,14 +604,15 @@ CDataSource::x_FindBioseq_Info(const CBioseq& obj)
 
 
 CRef<CSeq_entry_Info> CDataSource::AttachEntry(CBioseq_set_Info& parent,
-                                               const CSeq_entry& entry)
+                                               CSeq_entry& entry,
+                                               int index)
 {
     if ( m_Loader ) {
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "Can not remove a loaded entry");
     }
     TMainWriteLockGuard guard(m_DSMainLock);
-    return parent.x_AddEntry(entry);
+    return parent.AddEntry(entry, index);
 }
 
 
@@ -620,7 +622,7 @@ void CDataSource::RemoveEntry(CSeq_entry_Info& entry)
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "Can not remove a loaded entry");
     }
-    if ( !entry.HaveParent_Info() ) {
+    if ( !entry.HasParent_Info() ) {
         // Top level entry
         NCBI_THROW(CObjMgrException, eModifyDataError,
                    "Can not remove top level seq-entry from a data source");
@@ -628,7 +630,7 @@ void CDataSource::RemoveEntry(CSeq_entry_Info& entry)
 
     TMainWriteLockGuard guard(m_DSMainLock);
     CBioseq_set_Info& parent = entry.GetParentBioseq_set_Info();
-    parent.x_RemoveEntry(Ref(&entry));
+    parent.RemoveEntry(Ref(&entry));
 }
 
 
@@ -659,7 +661,7 @@ CRef<CSeq_annot_Info> CDataSource::AttachAnnot(CSeq_entry_Info& entry_info,
     }
 
     TMainWriteLockGuard guard(m_DSMainLock);
-    return entry_info.x_AddAnnot(annot);
+    return entry_info.AddAnnot(annot);
 }
 
 
@@ -672,7 +674,7 @@ CRef<CSeq_annot_Info> CDataSource::AttachAnnot(CBioseq_Base_Info& parent,
     }
 
     TMainWriteLockGuard guard(m_DSMainLock);
-    return parent.x_AddAnnot(annot);
+    return parent.AddAnnot(annot);
 }
 
 
@@ -685,7 +687,7 @@ void CDataSource::RemoveAnnot(CSeq_annot_Info& annot)
 
     TMainWriteLockGuard guard(m_DSMainLock);
     CBioseq_Base_Info& parent = annot.GetParentBioseq_Base_Info();
-    parent.x_RemoveAnnot(Ref(&annot));
+    parent.RemoveAnnot(Ref(&annot));
 }
 
 
@@ -699,8 +701,8 @@ CRef<CSeq_annot_Info> CDataSource::ReplaceAnnot(CSeq_annot_Info& old_annot,
 
     TMainWriteLockGuard guard(m_DSMainLock);
     CBioseq_Base_Info& parent = old_annot.GetParentBioseq_Base_Info();
-    parent.x_RemoveAnnot(Ref(&old_annot));
-    return parent.x_AddAnnot(new_annot);
+    parent.RemoveAnnot(Ref(&old_annot));
+    return parent.AddAnnot(new_annot);
 }
 
 
@@ -1127,6 +1129,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.130  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.129  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

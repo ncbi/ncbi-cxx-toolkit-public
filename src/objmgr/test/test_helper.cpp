@@ -1341,7 +1341,6 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         CHECK_WRAP();
         CRef<CSeq_entry> tse
             (const_cast<CSeq_entry*>(&handle.GetTopLevelSeqEntry()));
-        //tse->Parentize();
         
         CRef<CSeq_entry> entry(const_cast<CSeq_entry*>(
                                    handle.GetBioseq().GetParentEntry()));
@@ -1411,6 +1410,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2004/03/24 18:30:30  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.54  2004/03/23 15:14:01  vasilche
 * Restored automatic call to Parentize() for Seq-entries in object manager.
 *

@@ -54,7 +54,6 @@ CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot& annot)
     : m_Chunk_Info(0)
 {
     x_SetObject(annot);
-    x_UpdateName();
 }
 
 
@@ -62,7 +61,6 @@ CSeq_annot_Info::CSeq_annot_Info(CSeq_annot_SNP_Info& snp_annot)
     : m_Chunk_Info(0)
 {
     x_SetSNP_annot_Info(snp_annot);
-    x_UpdateName();
 }
 
 
@@ -76,11 +74,9 @@ CSeq_annot_Info::CSeq_annot_Info(CTSE_Chunk_Info& chunk_info,
 
 
 CSeq_annot_Info::CSeq_annot_Info(const CSeq_annot_Info& info)
-    : m_Object(info.m_Object),
-      m_Name(info.m_Name),
-      m_SNP_Info(info.m_SNP_Info),
-      m_Chunk_Info(0)
+    : m_Chunk_Info(0)
 {
+    x_SetObject(info);
 }
 
 
@@ -221,12 +217,13 @@ void CSeq_annot_Info::x_UpdateName(void)
 
 CConstRef<CSeq_annot> CSeq_annot_Info::GetCompleteSeq_annot(void) const
 {
-    return m_Object;
+    return GetSeq_annotCore();
 }
 
 
 CConstRef<CSeq_annot> CSeq_annot_Info::GetSeq_annotCore(void) const
 {
+    x_UpdateObject();
     return m_Object;
 }
 
@@ -235,17 +232,38 @@ void CSeq_annot_Info::x_SetObject(const TObject& obj)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object.Reset(&obj);
+    x_UpdateName();
 }
 
-      
+
+void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info)
+{
+    _ASSERT(!m_SNP_Info && !m_Object);
+    m_Object = info.m_Object;
+    m_Name = info.m_Name;
+    if ( info.m_SNP_Info ) {
+        m_SNP_Info.Reset(new CSeq_annot_SNP_Info(*info.m_SNP_Info));
+        m_SNP_Info->x_ParentAttach(*this);
+        x_AttachObject(*m_SNP_Info);
+    }
+}
+
+
 void CSeq_annot_Info::x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info)
 {
-    _ASSERT(!m_SNP_Info && !m_Object && !snp_info.HaveParent_Info());
+    _ASSERT(!m_SNP_Info && !m_Object && !snp_info.HasParent_Info());
     x_SetObject(snp_info.GetRemainingSeq_annot());
     m_SNP_Info.Reset(&snp_info);
     snp_info.x_ParentAttach(*this);
     _ASSERT(&snp_info.GetParentSeq_annot_Info() == this);
     x_AttachObject(snp_info);
+}
+
+
+void CSeq_annot_Info::x_DoUpdateObject(void)
+{
+    NCBI_THROW(CObjMgrException, eNotImplemented,
+               "CSeq_annot_Info::x_DoUpdateObject: unimplemented");
 }
 
 
@@ -428,6 +446,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2004/03/24 18:30:30  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.13  2004/03/16 15:47:28  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

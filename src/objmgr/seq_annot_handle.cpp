@@ -67,6 +67,12 @@ CSeq_entry_Handle CSeq_annot_Handle::GetParentEntry(void) const
 }
 
 
+CSeq_annot_EditHandle CSeq_annot_Handle::GetEditHandle(void) const
+{
+    return m_Scope->GetEditHandle(*this);
+}
+
+
 bool CSeq_annot_Handle::IsNamed(void) const
 {
     return x_GetInfo().GetName().IsNamed();
@@ -92,7 +98,7 @@ CSeq_entry_EditHandle CSeq_annot_EditHandle::GetParentEntry(void) const
 }
 
 
-void CSeq_annot_EditHandle::Remove(void)
+void CSeq_annot_EditHandle::Remove(void) const
 {
     m_Scope->RemoveAnnot(*this);
 }
@@ -104,6 +110,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/24 18:30:30  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.6  2004/03/16 21:01:32  vasilche
 * Added methods to move Bioseq withing Seq-entry
 *

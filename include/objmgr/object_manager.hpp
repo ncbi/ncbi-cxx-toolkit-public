@@ -38,6 +38,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.19  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
@@ -189,7 +193,7 @@ public:
     // Register top-level seq_entry
     //void RegisterTopLevelSeqEntry(CSeq_entry& top_entry);
 
-    CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
+    //CConstRef<CBioseq> GetBioseq(const CSeq_id& id);
 
     virtual void DebugDump(CDebugDumpContext ddc, unsigned int depth) const;
 
@@ -203,7 +207,7 @@ protected:
 
     TDataSourceLock AcquireDataLoader(CDataLoader& loader);
     TDataSourceLock AcquireDataLoader(const string& loader_name);
-    TDataSourceLock AcquireTopLevelSeqEntry(const CSeq_entry& top_entry);
+    TDataSourceLock AcquireTopLevelSeqEntry(CSeq_entry& top_entry);
     void AcquireDefaultDataSources(TDataSourcesLock& sources);
     bool ReleaseDataSource(TDataSourceLock& data_source);
 
@@ -211,7 +215,7 @@ private:
 
 // these are for Object Manager itself
 // nobody else should use it
-    TDataSourceLock x_RegisterTSE(const CSeq_entry& top_entry);
+    TDataSourceLock x_RegisterTSE(CSeq_entry& top_entry);
     TDataSourceLock x_RegisterLoader(CDataLoader& loader,
                                      TPriority priority,
                                      EIsDefault   is_default = eNonDefault,

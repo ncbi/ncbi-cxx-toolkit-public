@@ -63,14 +63,14 @@ public:
     virtual ~CTSE_Info_Object(void);
 
     // info tree
-    bool HaveDataSource(void) const;
+    bool HasDataSource(void) const;
     CDataSource& GetDataSource(void) const;
 
-    bool HaveTSE_Info(void) const;
+    bool HasTSE_Info(void) const;
     const CTSE_Info& GetTSE_Info(void) const;
     CTSE_Info& GetTSE_Info(void);
 
-    bool HaveParent_Info(void) const;
+    bool HasParent_Info(void) const;
     const CTSE_Info_Object& GetBaseParent_Info(void) const;
     CTSE_Info_Object& GetBaseParent_Info(void);
 
@@ -98,6 +98,12 @@ public:
     void x_UpdateAnnotIndex(CTSE_Info& tse);
     virtual void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
+    bool x_NeedUpdateObject(void) const;
+    void x_SetNeedUpdateObject(void);
+    void x_ResetNeedUpdateObject(void);
+    void x_UpdateObject(void) const;
+    virtual void x_DoUpdateObject(void);
+
 protected:
     void x_BaseParentAttach(CTSE_Info_Object& parent);
     void x_BaseParentDetach(CTSE_Info_Object& parent);
@@ -112,6 +118,7 @@ private:
     CTSE_Info*              m_TSE_Info;
     CTSE_Info_Object*       m_Parent_Info;
     bool                    m_DirtyAnnotIndex;
+    bool                    m_NeedUpdateObject;
 };
 
 
@@ -124,14 +131,14 @@ private:
 
 
 inline
-bool CTSE_Info_Object::HaveTSE_Info(void) const
+bool CTSE_Info_Object::HasTSE_Info(void) const
 {
     return m_TSE_Info != 0;
 }
 
 
 inline
-bool CTSE_Info_Object::HaveParent_Info(void) const
+bool CTSE_Info_Object::HasParent_Info(void) const
 {
     return m_Parent_Info != 0;
 }
@@ -144,12 +151,23 @@ bool CTSE_Info_Object::x_DirtyAnnotIndex(void) const
 }
 
 
+inline
+bool CTSE_Info_Object::x_NeedUpdateObject(void) const
+{
+    return m_NeedUpdateObject;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/03/24 18:30:29  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.1  2004/03/16 15:47:27  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

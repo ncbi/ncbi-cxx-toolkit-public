@@ -65,7 +65,6 @@ class NCBI_XOBJMGR_EXPORT CBioseq_Base_Info : public CTSE_Info_Object
 public:
     // 'ctors
     CBioseq_Base_Info(void);
-    explicit CBioseq_Base_Info(const CBioseq_Base_Info& info);
     virtual ~CBioseq_Base_Info(void);
 
     // info tree
@@ -75,27 +74,23 @@ public:
     // member modification
     // descr
     typedef CSeq_descr TDescr;
-    bool IsSetDescr(void) const;
-    const TDescr& GetDescr(void) const;
-
-    void SetDescr(const TDescr& v);
-    void ResetDescr(void);
+    virtual bool IsSetDescr(void) const = 0;
+    virtual const TDescr& GetDescr(void) const = 0;
+    virtual void SetDescr(TDescr& v) = 0;
+    virtual void ResetDescr(void) = 0;
 
     // annot
     typedef vector< CRef<CSeq_annot_Info> > TAnnot;
+    typedef list< CRef<CSeq_annot> > TObjAnnot;
     bool IsSetAnnot(void) const;
+    bool HasAnnots(void) const;
     const TAnnot& GetAnnot(void) const;
-
-    CRef<CSeq_annot_Info> x_AddAnnot(const CSeq_annot& annot);
-    void x_AddAnnot(CRef<CSeq_annot_Info> annot);
-    void x_RemoveAnnot(CRef<CSeq_annot_Info> annot);
+    void ResetAnnot(void);
+    CRef<CSeq_annot_Info> AddAnnot(const CSeq_annot& annot);
+    void AddAnnot(CRef<CSeq_annot_Info> annot);
+    void RemoveAnnot(CRef<CSeq_annot_Info> annot);
 
     // object initialization
-    void x_SetDescr(const CSeq_descr& descr);
-    typedef list< CRef<CSeq_annot> > TObjAnnot;
-    void x_SetAnnot(const TObjAnnot& annot);
-    void x_FillAnnot(TObjAnnot& annot) const;
-
     void x_AttachAnnot(CRef<CSeq_annot_Info> info);
     void x_DetachAnnot(CRef<CSeq_annot_Info> info);
 
@@ -106,51 +101,29 @@ public:
     virtual void x_TSEAttachContents(CTSE_Info& tse);
     virtual void x_TSEDetachContents(CTSE_Info& tse);
 
-    void x_ParentAttach(CSeq_entry_Info& parent);
-    void x_ParentDetach(CSeq_entry_Info& parent);
+    virtual void x_ParentAttach(CSeq_entry_Info& parent);
+    virtual void x_ParentDetach(CSeq_entry_Info& parent);
 
     // index support
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
-    // flags of modified members
-    enum EMember {
-        fMember_first   = 1,
-        fMember_descr   = fMember_first << 0,
-        fMember_annot   = fMember_first << 1,
+    void x_SetAnnot(void);
+    void x_SetAnnot(const CBioseq_Base_Info& info);
+    void x_DoUpdateObject(void);
 
-        fMember_last_plus_one,
-        fMember_last    = fMember_last_plus_one - 1
-    };
-    typedef int TMembers;
-
-    TMembers x_GetModifiedMembers(void) const;
-    bool x_IsModified(void) const;
-    bool x_IsModifiedMember(TMembers members) const;
-    void x_SetModifiedMember(TMembers members);
-    void x_ResetModifiedMembers(void);
-
-    TMembers x_GetSetMembers(void) const;
-    bool x_IsSetMember(TMembers member) const;
-    void x_CheckSetMember(TMembers member) const;
-    void x_SetSetMembers(TMembers members);
-    void x_SetResetMembers(TMembers members);
-
-    virtual const char* x_GetTypeName(void) const = 0;
-    virtual const char* x_GetMemberName(TMembers member) const;
+    virtual TObjAnnot& x_SetObjAnnot(void) = 0;
+    virtual void x_ResetObjAnnot(void) = 0;
 
 private:
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_CI;
 
+    CBioseq_Base_Info(const CBioseq_Base_Info& info);
     CBioseq_Base_Info& operator=(const CBioseq_Base_Info&);
 
-    // member state
-    TMembers            m_ModifiedMembers;
-    TMembers            m_SetMembers;
-
     // members
-    CConstRef<TDescr>   m_Descr;
     TAnnot              m_Annot;
+    TObjAnnot*          m_ObjAnnot;
 };
 
 
@@ -163,59 +136,16 @@ private:
 
 
 inline
-CBioseq_Base_Info::TMembers CBioseq_Base_Info::x_GetModifiedMembers(void) const
-{
-    return m_ModifiedMembers;
-}
-
-
-inline
-bool CBioseq_Base_Info::x_IsModified(void) const
-{
-    return x_GetModifiedMembers() != 0;
-}
-
-
-inline
-bool CBioseq_Base_Info::x_IsModifiedMember(TMembers member) const
-{
-    return (x_GetModifiedMembers() & member) != 0;
-}
-
-
-inline
-CBioseq_Base_Info::TMembers CBioseq_Base_Info::x_GetSetMembers(void) const
-{
-    return m_SetMembers;
-}
-
-
-inline
-bool CBioseq_Base_Info::x_IsSetMember(TMembers member) const
-{
-    return (x_GetSetMembers() & member) != 0;
-}
-
-
-inline
-bool CBioseq_Base_Info::IsSetDescr(void) const
-{
-    return x_IsSetMember(fMember_descr);
-}
-
-
-inline
-const CBioseq_Base_Info::TDescr& CBioseq_Base_Info::GetDescr(void) const
-{
-    x_CheckSetMember(fMember_descr);
-    return *m_Descr;
-}
-
-
-inline
 bool CBioseq_Base_Info::IsSetAnnot(void) const
 {
-    return x_IsSetMember(fMember_annot);
+    return m_ObjAnnot != 0;
+}
+
+
+inline
+bool CBioseq_Base_Info::HasAnnots(void) const
+{
+    return !m_Annot.empty();
 }
 
 
@@ -232,6 +162,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2004/03/24 18:30:28  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.1  2004/03/16 15:47:26  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

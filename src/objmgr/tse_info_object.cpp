@@ -41,7 +41,8 @@ BEGIN_SCOPE(objects)
 CTSE_Info_Object::CTSE_Info_Object(void)
     : m_TSE_Info(0),
       m_Parent_Info(0),
-      m_DirtyAnnotIndex(true)
+      m_DirtyAnnotIndex(true),
+      m_NeedUpdateObject(false)
 {
 }
 
@@ -51,9 +52,9 @@ CTSE_Info_Object::~CTSE_Info_Object(void)
 }
 
 
-bool CTSE_Info_Object::HaveDataSource(void) const
+bool CTSE_Info_Object::HasDataSource(void) const
 {
-    return HaveTSE_Info() && GetTSE_Info().HaveDataSource();
+    return HasTSE_Info() && GetTSE_Info().HasDataSource();
 }
 
 
@@ -161,6 +162,9 @@ void CTSE_Info_Object::x_BaseParentAttach(CTSE_Info_Object& parent)
     if ( x_DirtyAnnotIndex() ) {
         x_SetParentDirtyAnnotIndex();
     }
+    if ( x_NeedUpdateObject() ) {
+        parent.x_SetNeedUpdateObject();
+    }
 }
 
 
@@ -175,10 +179,10 @@ void CTSE_Info_Object::x_BaseParentDetach(CTSE_Info_Object& _DEBUG_ARG(parent))
 void CTSE_Info_Object::x_AttachObject(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetBaseParent_Info() == this);
-    if ( HaveTSE_Info() ) {
+    if ( HasTSE_Info() ) {
         object.x_TSEAttach(GetTSE_Info());
     }
-    if ( HaveDataSource() ) {
+    if ( HasDataSource() ) {
         object.x_DSAttach(GetDataSource());
     }
 }
@@ -187,10 +191,10 @@ void CTSE_Info_Object::x_AttachObject(CTSE_Info_Object& object)
 void CTSE_Info_Object::x_DetachObject(CTSE_Info_Object& object)
 {
     _ASSERT(&object.GetBaseParent_Info() == this);
-    if ( HaveDataSource() ) {
+    if ( HasDataSource() ) {
         object.x_DSDetach(GetDataSource());
     }
-    if ( HaveTSE_Info() ) {
+    if ( HasTSE_Info() ) {
         object.x_TSEDetach(GetTSE_Info());
     }
 }
@@ -207,7 +211,7 @@ void CTSE_Info_Object::x_SetDirtyAnnotIndex(void)
 
 void CTSE_Info_Object::x_SetParentDirtyAnnotIndex(void)
 {
-    if ( HaveParent_Info() ) {
+    if ( HasParent_Info() ) {
         GetBaseParent_Info().x_SetDirtyAnnotIndex();
     }
     else {
@@ -225,7 +229,7 @@ void CTSE_Info_Object::x_ResetDirtyAnnotIndex(void)
 {
     if ( x_DirtyAnnotIndex() ) {
         m_DirtyAnnotIndex = false;
-        if ( !HaveParent_Info() ) {
+        if ( !HasParent_Info() ) {
             x_ResetDirtyAnnotIndexNoParent();
         }
     }
@@ -251,12 +255,48 @@ void CTSE_Info_Object::x_UpdateAnnotIndexContents(CTSE_Info& /*tse*/)
 }
 
 
+void CTSE_Info_Object::x_SetNeedUpdateObject(void)
+{
+    if ( !x_NeedUpdateObject() ) {
+        m_NeedUpdateObject = true;
+        if ( HasParent_Info() ) {
+            GetBaseParent_Info().x_SetNeedUpdateObject();
+        }
+    }
+}
+
+
+void CTSE_Info_Object::x_ResetNeedUpdateObject(void)
+{
+    m_NeedUpdateObject = false;
+}
+
+
+void CTSE_Info_Object::x_UpdateObject(void) const
+{
+    if ( x_NeedUpdateObject() ) {
+        const_cast<CTSE_Info_Object*>(this)->x_DoUpdateObject();
+        _ASSERT(!x_NeedUpdateObject());
+    }
+}
+
+
+void CTSE_Info_Object::x_DoUpdateObject(void)
+{
+    m_NeedUpdateObject = false;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/03/24 18:30:30  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.1  2004/03/16 15:47:28  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

@@ -82,6 +82,9 @@ public:
     //
     CSeq_entry_Handle GetParentEntry(void) const;
 
+    // Get 'edit' version of handle
+    CSeq_annot_EditHandle GetEditHandle(void) const;
+
     // Seq-annot accessors
     bool IsNamed(void) const;
     const string& GetName(void) const;
@@ -105,10 +108,7 @@ public:
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     // remove current annot
-    void Remove(void);
-
-protected:
-    friend class CScope_Impl;
+    void Remove(void) const;
 
     CSeq_annot_Info& x_GetInfo(void) const;
 };
@@ -205,6 +205,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.5  2004/03/16 21:01:32  vasilche
 * Added methods to move Bioseq withing Seq-entry
 *

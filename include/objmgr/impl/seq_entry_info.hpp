@@ -74,7 +74,7 @@ public:
     // 'ctors
     CSeq_entry_Info(void);
     explicit CSeq_entry_Info(const CSeq_entry_Info& info);
-    explicit CSeq_entry_Info(const CSeq_entry& entry);
+    explicit CSeq_entry_Info(CSeq_entry& entry);
     virtual ~CSeq_entry_Info(void);
 
     const CBioseq_set_Info& GetParentBioseq_set_Info(void) const;
@@ -99,15 +99,32 @@ public:
     const TSet& GetSet(void) const;
     TSet& SetSet(void);
 
+    // SelectSet switches Seq-entry to e_Set variant
+    TSet& SelectSet(void);
+    TSet& SelectSet(TSet& seqset);
+    TSet& SelectSet(CBioseq_set& seqset);
+
     typedef CBioseq_Info TSeq;
     bool IsSeq(void) const;
     const TSeq& GetSeq(void) const;
     TSeq& SetSeq(void);
 
+    // SelectSeq switches Seq-entry to e_Seq variant
+    TSeq& SelectSeq(TSeq& seq);
+    TSeq& SelectSeq(CBioseq& seq);
+
     typedef CSeq_descr TDescr;
     // Bioseq-set access
     bool IsSetDescr(void) const;
     const TDescr& GetDescr(void) const;
+
+    CRef<CSeq_annot_Info> AddAnnot(const CSeq_annot& annot);
+    void AddAnnot(CRef<CSeq_annot_Info> annot);
+    void RemoveAnnot(CRef<CSeq_annot_Info> annot);
+
+    CRef<CSeq_entry_Info> AddEntry(CSeq_entry& entry, int index = -1);
+    void AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
+    void RemoveEntry(CRef<CSeq_entry_Info> entry);
 
     // tree initialization
     void x_Attach(CRef<CSeq_entry_Info> sub_entry, int index = -1);
@@ -126,53 +143,51 @@ public:
 
     void UpdateAnnotIndex(void) const;
 
-    CRef<CSeq_annot_Info> x_AddAnnot(const CSeq_annot& annot);
-    void x_AddAnnot(CRef<CSeq_annot_Info> annot);
-    void x_RemoveAnnot(CRef<CSeq_annot_Info> annot);
-
-    CRef<CSeq_entry_Info> x_AddEntry(const CSeq_entry& entry, int index = -1);
-    void x_AddEntry(CRef<CSeq_entry_Info> entry, int index = -1);
-    void x_RemoveEntry(CRef<CSeq_entry_Info> entry);
-
-    bool x_IsModified(void) const;
-    void x_SetModifiedContents(void);
-    void x_ResetModified(void);
-
 protected:
+    friend class CScope_Impl;
     friend class CDataSource;
+
     friend class CAnnotTypes_CI;
     friend class CSeq_annot_CI;
+
     friend class CTSE_Info;
-    friend class CSeq_annot_Info;
     friend class CBioseq_Info;
-    friend class CScope_Impl;
+    friend class CBioseq_set_Info;
+    friend class CSeq_annot_Info;
 
     void x_AttachContents(void);
     void x_DetachContents(void);
 
-    CRef<TObject> x_CreateObject(void) const;
+    TObject& x_GetObject(void);
+    const TObject& x_GetObject(void) const;
 
-    void x_SetObject(const TObject& obj);
-    void x_UpdateModifiedObject(void) const;
-    void x_UpdateObject(CConstRef<TObject> obj);
+    void x_SetObject(TObject& obj);
+    void x_SetObject(const CSeq_entry_Info& info);
 
-    typedef vector< CConstRef<TObject> > TDSMappedObjects;
+    void x_DetachObjectVariant(void);
+    void x_AttachObjectVariant(CBioseq& seq);
+    void x_AttachObjectVariant(CBioseq_set& seqset);
+
+    void x_Reset(void);
+    void x_Select(CSeq_entry::E_Choice which,
+                  CBioseq_Base_Info* contents);
+    void x_Select(CSeq_entry::E_Choice which,
+                  CRef<CBioseq_Base_Info> contents);
+
     virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
+    void x_DoUpdateObject(void);
+    static CRef<TObject> sx_ShallowCopy(TObject& obj);
+
     // Seq-entry pointer
-    CConstRef<TObject>      m_Object;
-    TDSMappedObjects        m_DSMappedObjects;
+    CRef<TObject>           m_Object;
 
     // Bioseq/Bioseq_set info
     E_Choice                m_Which;
     CRef<CBioseq_Base_Info> m_Contents;
-
-    // flags of modified elements
-    typedef bool TModified;
-    TModified               m_Modified;
 
     // Hide copy methods
     CSeq_entry_Info& operator= (const CSeq_entry_Info&);
@@ -188,16 +203,23 @@ protected:
 
 
 inline
-bool CSeq_entry_Info::x_IsModified(void) const
+CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
 {
-    return m_Modified;
+    return m_Which;
 }
 
 
 inline
-CSeq_entry::E_Choice CSeq_entry_Info::Which(void) const
+CSeq_entry& CSeq_entry_Info::x_GetObject(void)
 {
-    return m_Which;
+    return *m_Object;
+}
+
+
+inline
+const CSeq_entry& CSeq_entry_Info::x_GetObject(void) const
+{
+    return *m_Object;
 }
 
 
@@ -221,6 +243,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.9  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

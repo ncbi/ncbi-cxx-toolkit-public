@@ -49,6 +49,8 @@ BEGIN_SCOPE(objects)
 
 class CSeq_annot;
 class CSeq_entry;
+class CBioseq;
+class CBioseq_set;
 
 class CScope;
 
@@ -66,26 +68,21 @@ class CBioseq_set_Info;
 class NCBI_XOBJMGR_EXPORT CBioseq_set_Handle
 {
 public:
+    // Default constructor
     CBioseq_set_Handle(void);
-    CBioseq_set_Handle(CScope& scope, const CBioseq_set_Info& info);
 
-    //
-    operator bool(void) const;
-    bool operator!(void) const;
-    void Reset(void);
-
-    bool operator ==(const CBioseq_set_Handle& handle) const;
-    bool operator !=(const CBioseq_set_Handle& handle) const;
-    bool operator <(const CBioseq_set_Handle& handle) const;
-
-    // 
+    // Get scope this handle belongs to
     CScope& GetScope(void) const;
-
-    CConstRef<CBioseq_set> GetCompleteBioseq_set(void) const;
-    CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
 
     // owner Seq-entry
     CSeq_entry_Handle GetParentEntry(void) const;
+
+    // Get 'edit' version of handle
+    CBioseq_set_EditHandle GetEditHandle(void) const;
+
+    // Get controlled object
+    CConstRef<CBioseq_set> GetCompleteBioseq_set(void) const;
+    CConstRef<CBioseq_set> GetBioseq_setCore(void) const;
 
     // member access
     bool IsSetId(void) const;
@@ -109,49 +106,67 @@ public:
     bool IsSetDescr(void) const;
     const CSeq_descr& GetDescr(void) const;
 
+    // Utility methods/operators
+    operator bool(void) const;
+    bool operator!(void) const;
+    void Reset(void);
+
+    bool operator ==(const CBioseq_set_Handle& handle) const;
+    bool operator !=(const CBioseq_set_Handle& handle) const;
+    bool operator <(const CBioseq_set_Handle& handle) const;
+
 protected:
     friend class CScope_Impl;
-
     friend class CBioseq_Handle;
+    friend class CSeq_entry_Handle;
 
     friend class CSeqMap_CI;
     friend class CSeq_entry_CI;
     friend class CSeq_annot_CI;
     friend class CAnnotTypes_CI;
 
-    CScope_Impl* x_GetScopeImpl(void) const;
-    const CBioseq_set_Info& x_GetInfo(void) const;
+    CBioseq_set_Handle(CScope& scope, const CBioseq_set_Info& info);
 
-private:
     CHeapScope          m_Scope;
     CConstRef<CObject>  m_Info;
+
+public: // non-public section
+    const CBioseq_set_Info& x_GetInfo(void) const;
 };
 
 
 class NCBI_XOBJMGR_EXPORT CBioseq_set_EditHandle : public CBioseq_set_Handle
 {
 public:
+    // Default constructor
     CBioseq_set_EditHandle(void);
-    CBioseq_set_EditHandle(CScope& scope, CBioseq_set_Info& info);
 
+    // Navigate object tree
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
-    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot);
-    void RemoveAnnot(CSeq_annot_EditHandle& annot);
-    CSeq_annot_EditHandle ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
-                                       const CSeq_annot& new_annot);
+    // Modify object tree
+    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
 
-    CSeq_entry_EditHandle AttachEntry(const CSeq_entry& entry);
-    void RemoveEntry(CSeq_entry_EditHandle& sub_entry);
+    CBioseq_EditHandle AttachBioseq(CBioseq& seq,
+                                    int index = -1) const;
+    CBioseq_EditHandle MoveBioseq(const CBioseq_EditHandle& seq,
+                                  int index = -1) const;
 
-    void RemoveEntry(void);
+    CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry,
+                                      int index = -1) const;
+    CSeq_entry_EditHandle MoveEntry(const CSeq_entry_EditHandle& entry,
+                                    int index = -1) const;
+
+    void Remove(void) const;
 
 protected:
     friend class CScope_Impl;
+    friend class CBioseq_EditHandle;
+    friend class CSeq_entry_EditHandle;
 
-    friend class CSeq_entry_I;
-    friend class CSeq_annot_I;
+    CBioseq_set_EditHandle(CScope& scope, CBioseq_set_Info& info);
 
+public: // non-public section
     CBioseq_set_Info& x_GetInfo(void) const;
 };
 
@@ -179,13 +194,6 @@ void CBioseq_set_Handle::Reset(void)
 {
     m_Scope.Reset();
     m_Info.Reset();
-}
-
-
-inline
-CScope_Impl* CBioseq_set_Handle::x_GetScopeImpl(void) const
-{
-    return m_Scope;
 }
 
 
@@ -266,6 +274,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.1  2004/03/16 15:47:26  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

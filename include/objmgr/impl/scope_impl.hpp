@@ -134,36 +134,37 @@ public:
                   TPriority priority = kPriority_NotSet);
 
     // Add seq_entry, default priority is higher than for defaults or loaders
-    CSeq_entry_Handle AddTopLevelSeqEntry(const CSeq_entry& top_entry,
+    CSeq_entry_Handle AddTopLevelSeqEntry(CSeq_entry& top_entry,
                                           TPriority pri = kPriority_NotSet);
     // Add bioseq, return bioseq handle. Try to use unresolved seq-id
     // from the bioseq, fail if all ids are already resolved to
     // other sequences.
-    CBioseq_Handle AddBioseq(const CBioseq& bioseq,
+    CBioseq_Handle AddBioseq(CBioseq& bioseq,
                              TPriority pri = kPriority_NotSet);
+    CBioseq_EditHandle AttachBioseq(const CSeq_entry_EditHandle& entry,
+                                    CBioseq& bioseq);
 
     // Add Seq-annot.
-    CSeq_annot_Handle AddAnnot(const CSeq_annot& annot,
-                               TPriority pri = kPriority_NotSet);
+    CSeq_annot_Handle AttachAnnot(const CSeq_annot& annot,
+                                  TPriority pri = kPriority_NotSet);
 
 
     // Add new sub-entry to the existing tree if it is in this scope
-    CSeq_entry_EditHandle AttachEntry(CBioseq_set_EditHandle& seqset,
-                                      const CSeq_entry& entry);
-    void RemoveEntry(CSeq_entry_EditHandle& entry);
+    CSeq_entry_EditHandle AttachEntry(const CBioseq_set_EditHandle& seqset,
+                                      CSeq_entry& entry,
+                                      int index = -1);
+    void RemoveEntry(const CSeq_entry_EditHandle& entry);
 
     // Add annotations to a seq-entry (seq or set)
-    CSeq_annot_EditHandle AttachAnnot(CSeq_entry_EditHandle& entry,
+    CSeq_annot_EditHandle AttachAnnot(const CSeq_entry_EditHandle& entry,
                                       const CSeq_annot& annot);
     // Add annotations to a seq-entry (seq or set)
-    CSeq_annot_EditHandle AttachAnnot(CBioseq_EditHandle& seq,
+    CSeq_annot_EditHandle AttachAnnot(const CBioseq_EditHandle& seq,
                                       const CSeq_annot& annot);
     // Add annotations to a seq-entry (seq or set)
-    CSeq_annot_EditHandle AttachAnnot(CBioseq_set_EditHandle& seqset,
+    CSeq_annot_EditHandle AttachAnnot(const CBioseq_set_EditHandle& seqset,
                                       const CSeq_annot& annot);
-    void RemoveAnnot(CSeq_annot_EditHandle& annot);
-    CSeq_annot_EditHandle ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
-                                       const CSeq_annot& new_annot);
+    void RemoveAnnot(const CSeq_annot_EditHandle& annot);
 
     CSeq_entry_EditHandle StartEdit(const CSeq_entry_Handle& seh);
     CBioseq_EditHandle StartEdit(const CBioseq_Handle& bh);
@@ -209,6 +210,8 @@ public:
     CSeq_entry_EditHandle GetEditHandle(const CSeq_entry_Handle& entry);
     CSeq_annot_EditHandle GetEditHandle(const CSeq_annot_Handle& annot);
     CBioseq_set_EditHandle GetEditHandle(const CBioseq_set_Handle& seqset);
+
+    CBioseq_Handle GetBioseqHandle(const CBioseq_Info& seq);
 
 private:
     // constructor/destructor visible from CScope
@@ -333,6 +336,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.1  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

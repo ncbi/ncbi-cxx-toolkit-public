@@ -828,7 +828,7 @@ CAnnotTypes_CI::x_MatchLimitObject(const CAnnotObject_Info& object_info) const
             if ( info == m_DataCollector->m_LimitObjectInfo.GetPointer() ) {
                 return true;
             }
-            if ( !info->HaveParent_Info() ) {
+            if ( !info->HasParent_Info() ) {
                 return false;
             }
             info = &info->GetParentSeq_entry_Info();
@@ -1408,7 +1408,7 @@ void CAnnotTypes_CI::x_SearchAll(const CSeq_annot_Info& annot_info)
         }
     }
 
-    if ( x_NeedSNPs() && annot_info.x_HaveSNP_annot_Info() ) {
+    if ( x_NeedSNPs() && annot_info.x_HasSNP_annot_Info() ) {
         const CSeq_annot_SNP_Info& snp_annot =
             annot_info.x_GetSNP_annot_Info();
         TSeqPos index = 0;
@@ -1486,6 +1486,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.116  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.115  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

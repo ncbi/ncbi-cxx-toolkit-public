@@ -65,10 +65,48 @@ class CTSE_Info;
 class NCBI_XOBJMGR_EXPORT CSeq_entry_Handle
 {
 public:
+    // default constructor
     CSeq_entry_Handle(void);
-    CSeq_entry_Handle(CScope& scope, const CSeq_entry_Info& info);
 
-    //
+    // Get scope this handle belongs to
+    CScope& GetScope(void) const;
+
+    // Navigate object tree
+    bool HasParentEntry(void) const;
+    CBioseq_set_Handle GetParentBioseq_set(void) const;
+    CSeq_entry_Handle GetParentEntry(void) const;
+
+    // Get 'edit' version of handle
+    CSeq_entry_EditHandle GetEditHandle(void) const;
+
+    // Get controlled object
+    CConstRef<CSeq_entry> GetCompleteSeq_entry(void) const;
+    CConstRef<CSeq_entry> GetSeq_entryCore(void) const;
+
+    // Seq-entry accessors
+    typedef CSeq_entry::E_Choice E_Choice;
+    E_Choice Which(void) const;
+
+    // Bioseq access
+    bool IsSeq(void) const;
+    typedef CBioseq_Handle TSeq;
+    TSeq GetSeq(void) const;
+
+    // Bioseq_set access
+    bool IsSet(void) const;
+    typedef CBioseq_set_Handle TSet;
+    TSet GetSet(void) const;
+
+    // descr field is in both Bioseq and Bioseq-set
+    bool IsSetDescr(void) const;
+    typedef CSeq_descr TDescr;
+    const TDescr& GetDescr(void) const;
+
+    typedef CBioseq_set::TClass TClass;
+
+    CConstRef<CObject> GetBlobId(void) const;
+
+    // Utility methods/operators
     operator bool(void) const;
     bool operator!(void) const;
     void Reset(void);
@@ -77,85 +115,110 @@ public:
     bool operator !=(const CSeq_entry_Handle& handle) const;
     bool operator <(const CSeq_entry_Handle& handle) const;
 
-    // 
-    CScope& GetScope(void) const;
+protected:
+    friend class CScope_Impl;
+    friend class CBioseq_Handle;
+    friend class CBioseq_set_Handle;
+    friend class CSeq_annot_Handle;
+    friend class CSeqMap_CI;
+    friend class CSeq_entry_CI;
 
-    CConstRef<CSeq_entry> GetCompleteSeq_entry(void) const;
-    CConstRef<CSeq_entry> GetSeq_entryCore(void) const;
+    CSeq_entry_Handle(CScope& scope, const CSeq_entry_Info& info);
+    CHeapScope          m_Scope;
+    CConstRef<CObject>  m_Info;
 
-    bool HasParentEntry(void) const;
-    CBioseq_set_Handle GetParentBioseq_set(void) const;
-    CSeq_entry_Handle GetParentEntry(void) const;
-
-    // Seq-entry accessors
-    // const CSeq_entry& GetSeq_entry(void) const;
-    CSeq_entry::E_Choice Which(void) const;
-
-    // Bioseq access
-    bool IsSeq(void) const;
-    CBioseq_Handle GetSeq(void) const;
-
-    // Bioseq_set access
-    bool IsSet(void) const;
-    CBioseq_set_Handle GetSet(void) const;
-
-    bool Set_IsSetId(void) const;
-    const CBioseq_set::TId& Set_GetId(void) const;
-    bool Set_IsSetColl(void) const;
-    const CBioseq_set::TColl& Set_GetColl(void) const;
-    bool Set_IsSetLevel(void) const;
-    CBioseq_set::TLevel Set_GetLevel(void) const;
-    bool Set_IsSetClass(void) const;
-    CBioseq_set::TClass Set_GetClass(void) const;
-    bool Set_IsSetRelease(void) const;
-    const CBioseq_set::TRelease& Set_GetRelease(void) const;
-    bool Set_IsSetDate(void) const;
-    const CBioseq_set::TDate& Set_GetDate(void) const;
-
-    bool IsSetDescr(void) const;
-    const CSeq_descr& GetDescr(void) const;
-
-    CConstRef<CObject> GetBlobId(void) const;
-
+public: // non-public section
     CConstRef<CTSE_Info> GetTSE_Info(void) const;
 
     const CSeq_entry_Info& x_GetInfo(void) const;
-
-protected:
-    CHeapScope          m_Scope;
-    CConstRef<CObject>  m_Info;
 };
 
 
 class NCBI_XOBJMGR_EXPORT CSeq_entry_EditHandle : public CSeq_entry_Handle
 {
 public:
+    // Default constructor
     CSeq_entry_EditHandle(void);
-    CSeq_entry_EditHandle(CScope& scope, CSeq_entry_Info& info);
 
-    CBioseq_set_EditHandle SetSet(void) const;
-
+    // Navigate object tree
     CBioseq_set_EditHandle GetParentBioseq_set(void) const;
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
-    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot);
-    void RemoveAnnot(CSeq_annot_EditHandle& annot);
-    CSeq_annot_EditHandle ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
-                                       const CSeq_annot& new_annot);
+    typedef CBioseq_EditHandle TSeq;
+    typedef CBioseq_set_EditHandle TSet;
 
-    CSeq_entry_EditHandle AttachEntry(const CSeq_entry& entry);
-    void RemoveEntry(CSeq_entry_EditHandle& sub_entry);
+    TSet SetSet(void) const;
+    TSeq SetSeq(void) const;
 
-    void Remove(void);
+    // Make this Seq-entry to be empty.
+    // Old contents of the entry will be deleted.
+    void Clear(void) const;
 
-    // Convert entry to bioseq set. Return resulting bioseq_set handle.
-    CBioseq_set_EditHandle MakeSet(void);
-    // Convert entry to bioseq.
-    void MakeSeq(CBioseq_EditHandle& seq);
+    // Convert the empty Seq-entry to Bioseq-set.
+    // Returns new Bioseq-set handle.
+    TSet SelectSet(void) const;
+
+    // Make the empty Seq-entry be in set state with given Bioseq-set object.
+    // Returns new Bioseq-set handle.
+    TSet SelectSet(CBioseq_set& seqset) const;
+
+    // Make the empty Seq-entry be in set state with moving Bioseq-set object
+    // from the argument seqset.
+    // Returns new Bioseq-set handle which could be different from the argument
+    // is the argument is from another scope.
+    TSet MoveAndSelectSet(const TSet& seqset) const;
+
+    // Make the empty Seq-entry be in seq state with specified Bioseq object.
+    // Returns new Bioseq handle.
+    TSeq SelectSeq(CBioseq& seq) const;
+
+    // Make the empty Seq-entry be in seq state with moving bioseq object
+    // from the argument seq.
+    // Returns new Bioseq handle which could be different from the argument
+    // is the argument is from another scope.
+    TSeq MoveAndSelectSeq(const TSeq& seq) const;
+
+    // Convert the entry from Bioseq to Bioseq-set.
+    // Old Bioseq will become the only entry of new Bioseq-set.
+    // New Bioseq-set will have the specified class.
+    // If the set_class argument is omitted,
+    // or equals to CBioseq_set::eClass_not_set,
+    // the class field of new Bioseq-set object will not be initialized.
+    // Returns new Bioseq-set handle.
+    TSeq ConvertSeqToSet(TClass set_class = CBioseq_set::eClass_not_set) const;
+
+    // Collapse one level of Bioseq-set.
+    // The Bioseq-set should originally contain only one sub-entry.
+    // Current Seq-entry will become the same type as sub-entry.
+    // All Seq-annot and Seq-descr objects from old Bioseq-set
+    // will be moved to new contents (sub-entry).
+    void CollapseSet(void) const;
+
+    // Do the same as CollapseSet() when sub-entry is of type bioseq.
+    // Throws an exception in other cases.
+    // Returns resulting Bioseq handle.
+    TSeq ConvertSetToSeq(void) const;
+
+    // Attach new Seq-annot to Bioseq or Bioseq-set
+    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
+
+    // Attach new sub objects to Bioseq-set
+    CBioseq_EditHandle AttachBioseq(CBioseq& seq, int index = -1) const;
+    CSeq_entry_EditHandle AttachEntry(CSeq_entry& entry, int index = -1) const;
+
+    // Remove this Seq-entry from parent,
+    // or scope if it's top level Seq-entry.
+    void Remove(void) const;
 
 protected:
     friend class CScope_Impl;
+    friend class CBioseq_EditHandle;
+    friend class CBioseq_set_EditHandle;
+    friend class CSeq_annot_EditHandle;
 
+    CSeq_entry_EditHandle(CScope& scope, CSeq_entry_Info& info);
+
+public: // non-public section
     CSeq_entry_Info& x_GetInfo(void) const;
 };
 
@@ -262,6 +325,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.5  2004/03/16 21:01:32  vasilche
 * Added methods to move Bioseq withing Seq-entry
 *

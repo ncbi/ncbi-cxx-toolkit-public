@@ -71,23 +71,29 @@ class CSeq_entry_EditHandle;
 class NCBI_XOBJMGR_EXPORT CBioseq_Handle
 {
 public:
-    // Destructor
+    // Default constructor
     CBioseq_Handle(void);
-    CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
 
+    // Get scope this handle belongs to
     CScope& GetScope(void) const;
 
+    // Get id used to obtain this bioseq handle
+    CConstRef<CSeq_id> GetSeqId(void) const;
+    const CSeq_id_Handle& GetSeq_id_Handle(void) const;
+
+    // Check if this id can be used to obtain this bioseq handle
+    bool IsSynonym(const CSeq_id& id) const;
+    CConstRef<CSynonymsSet> GetSynonyms(void) const;
+
+    // Get parent Seq-entry handle
     CSeq_entry_Handle GetParentEntry(void) const;
     CSeq_entry_Handle GetSeq_entry_Handle(void) const;
 
-    // Comparison
-    bool operator== (const CBioseq_Handle& h) const;
-    bool operator!= (const CBioseq_Handle& h) const;
-    bool operator<  (const CBioseq_Handle& h) const;
+    // Get top level Seq-entry handle
+    CSeq_entry_Handle GetTopLevelEntry(void) const;
 
-    // Check
-    operator bool(void)  const;
-    bool operator!(void) const;
+    // Get 'edit' version of handle
+    CBioseq_EditHandle GetEditHandle(void) const;
 
     // Bioseq core -- using partially populated CBioseq
     typedef CConstRef<CBioseq> TBioseqCore;
@@ -96,18 +102,66 @@ public:
     // Get the complete bioseq
     CConstRef<CBioseq> GetCompleteBioseq(void) const;
 
-    // Get top level seq-entry for a bioseq
-    CSeq_entry_Handle GetTopLevelEntry(void) const;
-
     // Deprecated interface.
     const CBioseq& GetBioseq(void) const;
     const CSeq_entry& GetTopLevelSeqEntry(void) const;
 
-    CConstRef<CSeq_id> GetSeqId(void) const;
+    //////////////////////////////////////////////////////////////////
+    // Bioseq members
+    // id
+    typedef vector<CSeq_id_Handle> TId;
+    bool IsSetId(void) const;
+    const TId& GetId(void) const;
+    // descr
+    typedef CSeq_descr TDescr;
+    bool IsSetDescr(void) const;
+    const TDescr& GetDescr(void) const;
+    // inst
+    typedef CSeq_inst TInst;
+    bool IsSetInst(void) const;
+    const TInst& GetInst(void) const;
+    // inst.repr
+    typedef TInst::TRepr TInst_Repr;
+    bool IsSetInst_Repr(void) const;
+    TInst_Repr GetInst_Repr(void) const;
+    // inst.mol
+    typedef TInst::TMol TInst_Mol;
+    bool IsSetInst_Mol(void) const;
+    TInst_Mol GetInst_Mol(void) const;
+    // inst.length
+    typedef TInst::TLength TInst_Length;
+    bool IsSetInst_Length(void) const;
+    TInst_Length GetInst_Length(void) const;
+    TSeqPos GetBioseqLength(void) const; // try to calculate it if not set
+    // inst.fuzz
+    typedef TInst::TFuzz TInst_Fuzz;
+    bool IsSetInst_Fuzz(void) const;
+    const TInst_Fuzz& GetInst_Fuzz(void) const;
+    // inst.topology
+    typedef TInst::TTopology TInst_Topology;
+    bool IsSetInst_Topology(void) const;
+    TInst_Topology GetInst_Topology(void) const;
+    // inst.strand
+    typedef TInst::TStrand TInst_Strand;
+    bool IsSetInst_Strand(void) const;
+    TInst_Strand GetInst_Strand(void) const;
+    // inst.seq-data
+    typedef TInst::TSeq_data TInst_Seq_data;
+    bool IsSetInst_Seq_data(void) const;
+    const TInst_Seq_data& GetInst_Seq_data(void) const;
+    // inst.ext
+    typedef TInst::TExt TInst_Ext;
+    bool IsSetInst_Ext(void) const;
+    const TInst_Ext& GetInst_Ext(void) const;
+    // inst.hist
+    typedef TInst::THist TInst_Hist;
+    bool IsSetInst_Hist(void) const;
+    const TInst_Hist& GetInst_Hist(void) const;
+    // annot
+    bool HasAnnots(void) const;
 
-    const CSeq_id_Handle& GetSeq_id_Handle(void) const;
-
-    bool IsSynonym(const CSeq_id& id) const;
+    //////////////////////////////////////////////////////////////////
+    // Old interface:
 
     // Go up to a certain complexity level (or the nearest level of the same
     // priority if the required class is not found):
@@ -132,10 +186,9 @@ public:
     // 4       gen-prod-set (17) ,  -- genomic products, chrom+mRNa+protein
     // 4       wgs-set (18) ,       -- whole genome shotgun project
     // 0       other (255)
-    const CSeq_entry& GetComplexityLevel(CBioseq_set::EClass cls) const;
+    CSeq_entry_Handle GetComplexityLevel(CBioseq_set::EClass cls) const;
 
     // Get some values from core:
-    TSeqPos GetBioseqLength(void) const;
     CSeq_inst::TMol GetBioseqMolType(void) const;
 
     // Get sequence map.
@@ -182,21 +235,30 @@ public:
 
     CRef<CSeq_loc> MapLocation(const CSeq_loc& loc) const;
 
-protected:
-    const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
-    const CBioseq_Info& x_GetInfo(void) const;
+    // Utility methods/operators
 
-    CConstRef<CSynonymsSet> x_GetSynonyms(void) const;
+    // Comparison
+    bool operator== (const CBioseq_Handle& h) const;
+    bool operator!= (const CBioseq_Handle& h) const;
+    bool operator<  (const CBioseq_Handle& h) const;
+
+    // Check
+    operator bool(void)  const;
+    bool operator!(void) const;
+
+protected:
+    friend class CScope_Impl;
+    friend class CSynonymsSet;
+
+    CBioseq_Handle(const CSeq_id_Handle& id, CBioseq_ScopeInfo* bioseq_info);
+    const CBioseq_ScopeInfo& x_GetScopeInfo(void) const;
 
     CHeapScope          m_Scope;
     CSeq_id_Handle      m_Seq_id;
     CConstRef<CObject>  m_Bioseq_Info;
 
-    friend class CSeqVector;
-    friend class CHandleRangeMap;
-    friend class CDataSource;
-    friend class CScope_Impl;
-    friend class CAnnotTypes_CI;
+public: // non-public section
+    const CBioseq_Info& x_GetInfo(void) const;
 };
 
 
@@ -204,26 +266,62 @@ class NCBI_XOBJMGR_EXPORT CBioseq_EditHandle : public CBioseq_Handle
 {
 public:
     CBioseq_EditHandle(void);
-    CBioseq_EditHandle(const CSeq_id_Handle& id,
-                       CBioseq_ScopeInfo* bioseq_info);
     
     CSeq_entry_EditHandle GetParentEntry(void) const;
 
     // Modification functions
+
+    //////////////////////////////////////////////////////////////////
+    // Bioseq members
+    // descr
+    void SetDescr(TDescr& v) const;
+    // inst
+    void SetInst(TInst& v) const;
+    // inst.repr
+    void SetInst_Repr(TInst_Repr v) const;
+    // inst.mol
+    void SetInst_Mol(TInst_Mol v) const;
+    // inst.length
+    void SetInst_Length(TInst_Length v) const;
+    // inst.fuzz
+    void SetInst_Fuzz(TInst_Fuzz& v) const;
+    // inst.topology
+    void SetInst_Topology(TInst_Topology v) const;
+    // inst.strand
+    void SetInst_Strand(TInst_Strand v) const;
+    // inst.seq-data
+    void SetInst_Seq_data(TInst_Seq_data& v) const;
+    // inst.ext
+    void SetInst_Ext(TInst_Ext& v) const;
+    // inst.hist
+    void SetInst_Hist(TInst_Hist& v) const;
+    // annot
+    //////////////////////////////////////////////////////////////////
+
+
     // Add/remove/replace annotations:
-    CSeq_annot_EditHandle AddAnnot(CSeq_annot& annot);
-    void RemoveAnnot(CSeq_annot_EditHandle& annot);
-    CSeq_annot_EditHandle ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
-                                       CSeq_annot& new_annot);
+    CSeq_annot_EditHandle AttachAnnot(const CSeq_annot& annot) const;
 
     // Tree modification, target handle must be in the same TSE
     // entry.Which() must be e_not_set or e_Set.
-    void MoveTo(CSeq_entry_EditHandle& entry);
-    void MoveTo(CBioseq_set_EditHandle& seqset);
+    void MoveTo(const CSeq_entry_EditHandle& entry, int index = -1) const;
+    void MoveTo(const CBioseq_set_EditHandle& seqset, int index = -1) const;
+    void MoveToSeq(const CSeq_entry_EditHandle& entry) const;
+
+    // these methods are for cross scope move only.
+    CBioseq_EditHandle CopyTo(const CSeq_entry_EditHandle& entry,
+                              int index = -1) const;
+    CBioseq_EditHandle CopyTo(const CBioseq_set_EditHandle& seqset,
+                              int index = -1) const;
+    CBioseq_EditHandle CopyToSeq(const CSeq_entry_EditHandle& entry) const;
 
 protected:
     friend class CScope_Impl;
 
+    CBioseq_EditHandle(const CSeq_id_Handle& id,
+                       CBioseq_ScopeInfo* bioseq_info);
+
+public: // non-public section
     CBioseq_Info& x_GetInfo(void) const;
 };
 
@@ -282,34 +380,9 @@ CScope& CBioseq_Handle::GetScope(void) const
 
 
 inline
-bool CBioseq_Handle::operator==(const CBioseq_Handle& h) const
-{
-    if ( m_Scope != m_Scope ) {
-        return false;
-    }
-    if ( *this && h )
-        return &x_GetInfo() == &h.x_GetInfo();
-    // Compare by id key
-    return GetSeq_id_Handle() == h.GetSeq_id_Handle();
-}
-
-
-inline
 bool CBioseq_Handle::operator!= (const CBioseq_Handle& h) const
 {
     return !(*this == h);
-}
-
-
-inline
-bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
-{
-    if ( m_Scope != h.m_Scope ) {
-        return m_Scope < h.m_Scope;
-    }
-    if ( *this && h )
-        return &x_GetInfo() < &h.x_GetInfo();
-    return GetSeq_id_Handle() < h.GetSeq_id_Handle();
 }
 
 
@@ -319,6 +392,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2004/03/24 18:30:28  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.50  2004/03/16 21:01:32  vasilche
 * Added methods to move Bioseq withing Seq-entry
 *

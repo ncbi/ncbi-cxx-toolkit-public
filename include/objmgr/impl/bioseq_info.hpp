@@ -79,7 +79,7 @@ class NCBI_XOBJMGR_EXPORT CBioseq_Info : public CBioseq_Base_Info
 public:
     // 'ctors
     explicit CBioseq_Info(const CBioseq_Info&);
-    explicit CBioseq_Info(const CBioseq& seq);
+    explicit CBioseq_Info(CBioseq& seq);
     virtual ~CBioseq_Info(void);
 
     typedef CBioseq TObject;
@@ -92,54 +92,95 @@ public:
     typedef vector<CSeq_id_Handle> TId;
     bool IsSetId(void) const;
     const TId& GetId(void) const;
+    bool HasId(const CSeq_id_Handle& id) const;
+    void AddId(const CSeq_id_Handle& id);
+    void RemoveId(const CSeq_id_Handle& id);
     string IdString(void) const;
+
+    bool IsSetDescr(void) const;
+    const TDescr& GetDescr(void) const;
+    void SetDescr(TDescr& v);
+    void ResetDescr(void);
 
     // inst
     typedef TObject::TInst TInst;
     bool IsSetInst(void) const;
     const TInst& GetInst(void) const;
+    void SetInst(TInst& v);
+
     // inst.repr
     typedef TInst::TRepr TInst_Repr;
     bool IsSetInst_Repr(void) const;
     TInst_Repr GetInst_Repr(void) const;
+    void SetInst_Repr(TInst_Repr v);
+
     // inst.mol
     typedef TInst::TMol TInst_Mol;
     bool IsSetInst_Mol(void) const;
     TInst_Mol GetInst_Mol(void) const;
+    void SetInst_Mol(TInst_Mol v);
+
     // inst.length
     typedef TInst::TLength TInst_Length;
     bool IsSetInst_Length(void) const;
     TInst_Length GetInst_Length(void) const;
+    void SetInst_Length(TInst_Length v);
     TSeqPos GetBioseqLength(void) const; // try to calculate it if not set
+
     // inst.fuzz
     typedef TInst::TFuzz TInst_Fuzz;
     bool IsSetInst_Fuzz(void) const;
     const TInst_Fuzz& GetInst_Fuzz(void) const;
+    void SetInst_Fuzz(TInst_Fuzz& v);
+
     // inst.topology
     typedef TInst::TTopology TInst_Topology;
     bool IsSetInst_Topology(void) const;
     TInst_Topology GetInst_Topology(void) const;
+    void SetInst_Topology(TInst_Topology v);
+
     // inst.strand
     typedef TInst::TStrand TInst_Strand;
     bool IsSetInst_Strand(void) const;
     TInst_Strand GetInst_Strand(void) const;
+    void SetInst_Strand(TInst_Strand v);
+
     // inst.seq-data
     typedef TInst::TSeq_data TInst_Seq_data;
     bool IsSetInst_Seq_data(void) const;
     const TInst_Seq_data& GetInst_Seq_data(void) const;
+    void SetInst_Seq_data(TInst_Seq_data& v);
+
     // inst.ext
     typedef TInst::TExt TInst_Ext;
     bool IsSetInst_Ext(void) const;
     const TInst_Ext& GetInst_Ext(void) const;
+    void SetInst_Ext(TInst_Ext& v);
+
     // inst.hist
     typedef TInst::THist TInst_Hist;
     bool IsSetInst_Hist(void) const;
     const TInst_Hist& GetInst_Hist(void) const;
+    void SetInst_Hist(TInst_Hist& v);
 
     // Get some values from core:
     const CSeqMap& GetSeqMap(void) const;
 
     void x_AttachMap(CSeqMap& seq_map);
+
+protected:
+    friend class CDataSource;
+    friend class CScope_Impl;
+
+    friend class CTSE_Info;
+    friend class CSeq_entry_Info;
+    friend class CBioseq_set_Info;
+
+    TObjAnnot& x_SetObjAnnot(void);
+    void x_ResetObjAnnot(void);
+
+private:
+    CBioseq_Info& operator=(const CBioseq_Info&);
 
     void x_DSAttachContents(CDataSource& ds);
     void x_DSDetachContents(CDataSource& ds);
@@ -147,46 +188,21 @@ public:
     void x_TSEAttachContents(CTSE_Info& tse);
     void x_TSEDetachContents(CTSE_Info& tse);
 
-    virtual const char* x_GetTypeName(void) const;
-    virtual const char* x_GetMemberName(TMembers member) const;
+    void x_ParentAttach(CSeq_entry_Info& parent);
+    void x_ParentDetach(CSeq_entry_Info& parent);
 
-    enum EMember {
-        fMember_first       = TParent::fMember_last << 1,
-        fMember_id          = fMember_first << 0,
-        fMember_inst        = fMember_first << 1,
-        fMember_inst_repr   = fMember_first << 2,
-        fMember_inst_mol    = fMember_first << 3,
-        fMember_inst_length = fMember_first << 4,
-        fMember_inst_fuzz   = fMember_first << 5,
-        fMember_inst_topology = fMember_first << 6,
-        fMember_inst_strand = fMember_first << 7,
-        fMember_inst_seq_data = fMember_first << 8,
-        fMember_inst_ext    = fMember_first << 9,
-        fMember_inst_hist   = fMember_first << 10,
+    TObject& x_GetObject(void);
+    const TObject& x_GetObject(void) const;
 
-        fMember_last_plus_one,
-        fMember_last        = fMember_last_plus_one - 1,
-
-        fMember_inst_all    = (fMember_inst_hist << 1) - fMember_inst
-    };
-protected:
-    friend class CDataSource;
-    friend class CScope_Impl;
-    friend class CSeq_entry_Info;
-
-private:
-    CBioseq_Info& operator=(const CBioseq_Info&);
-
-    void x_SetObject(const TObject& obj);
-    void x_UpdateModifiedObject(void) const;
-    void x_UpdateObject(CConstRef<TObject> obj);
+    void x_SetObject(TObject& obj);
+    void x_SetObject(const CBioseq_Info& info);
 
     typedef vector< CConstRef<TObject> > TDSMappedObjects;
     virtual void x_DSMapObject(CConstRef<TObject> obj, CDataSource& ds);
     virtual void x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds);
 
-    CRef<TObject> x_CreateObject(void) const;
-    CRef<TInst> x_CreateInst(void) const;
+    static CRef<TObject> sx_ShallowCopy(const TObject& obj);
+    static CRef<TInst> sx_ShallowCopy(const TInst& inst);
 
     TSeqPos x_CalcBioseqLength(void) const;
     TSeqPos x_CalcBioseqLength(const CSeq_inst& inst) const;
@@ -200,22 +216,10 @@ private:
     TSeqPos x_CalcBioseqLength(const CDelta_seq& delta_seq) const;
 
     // Bioseq object
-    CConstRef<TObject>      m_Object;
-    TDSMappedObjects        m_DSMappedObjects;
+    CRef<TObject>           m_Object;
 
     // Bioseq members
     TId                     m_Id;
-    CConstRef<TInst>        m_Inst;
-    // Bioseq.inst members
-    TInst_Repr              m_Inst_Repr;
-    TInst_Mol               m_Inst_Mol;
-    mutable TInst_Length    m_Inst_Length; // cached sequence length
-    CConstRef<TInst_Fuzz>   m_Inst_Fuzz;
-    TInst_Topology          m_Inst_Topology;
-    TInst_Strand            m_Inst_Strand;
-    CConstRef<TInst_Seq_data> m_Inst_Seq_data;
-    CConstRef<TInst_Ext>    m_Inst_Ext;
-    CConstRef<TInst_Hist>   m_Inst_Hist;
 
     // SeqMap object
     mutable CConstRef<CSeqMap>  m_SeqMap;
@@ -233,177 +237,16 @@ private:
 
 
 inline
-bool CBioseq_Info::IsSetId(void) const
+CBioseq& CBioseq_Info::x_GetObject(void)
 {
-    return x_IsSetMember(fMember_id);
+    return *m_Object;
 }
 
 
 inline
-const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
+const CBioseq& CBioseq_Info::x_GetObject(void) const
 {
-    return m_Id;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst(void) const
-{
-    return x_IsSetMember(fMember_inst);
-}
-
-
-inline
-const CBioseq_Info::TInst& CBioseq_Info::GetInst(void) const
-{
-    x_CheckSetMember(fMember_inst);
-    return *m_Inst;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Repr(void) const
-{
-    return x_IsSetMember(fMember_inst_repr);
-}
-
-
-inline
-CBioseq_Info::TInst_Repr CBioseq_Info::GetInst_Repr(void) const
-{
-    x_CheckSetMember(fMember_inst_repr);
-    return m_Inst_Repr;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Mol(void) const
-{
-    return x_IsSetMember(fMember_inst_mol);
-}
-
-
-inline
-CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
-{
-    x_CheckSetMember(fMember_inst_mol);
-    return m_Inst_Mol;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Length(void) const
-{
-    return x_IsSetMember(fMember_inst_length);
-}
-
-
-inline
-CBioseq_Info::TInst_Length CBioseq_Info::GetInst_Length(void) const
-{
-    x_CheckSetMember(fMember_inst_length);
-    return m_Inst_Length;
-}
-
-
-inline
-CBioseq_Info::TInst_Length CBioseq_Info::GetBioseqLength(void) const
-{
-    TSeqPos length = m_Inst_Length;
-    if ( length == kInvalidSeqPos ) {
-        length = m_Inst_Length = x_CalcBioseqLength();
-    }
-    return length;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Fuzz(void) const
-{
-    return x_IsSetMember(fMember_inst_fuzz);
-}
-
-
-inline
-const CBioseq_Info::TInst_Fuzz& CBioseq_Info::GetInst_Fuzz(void) const
-{
-    x_CheckSetMember(fMember_inst_fuzz);
-    return *m_Inst_Fuzz;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Topology(void) const
-{
-    return x_IsSetMember(fMember_inst_topology);
-}
-
-
-inline
-CBioseq_Info::TInst_Topology CBioseq_Info::GetInst_Topology(void) const
-{
-    x_CheckSetMember(fMember_inst_topology);
-    return m_Inst_Topology;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Strand(void) const
-{
-    return x_IsSetMember(fMember_inst_strand);
-}
-
-
-inline
-CBioseq_Info::TInst_Strand CBioseq_Info::GetInst_Strand(void) const
-{
-    x_CheckSetMember(fMember_inst_strand);
-    return m_Inst_Strand;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Seq_data(void) const
-{
-    return x_IsSetMember(fMember_inst_seq_data);
-}
-
-
-inline
-const CBioseq_Info::TInst_Seq_data& CBioseq_Info::GetInst_Seq_data(void) const
-{
-    x_CheckSetMember(fMember_inst_seq_data);
-    return *m_Inst_Seq_data;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Ext(void) const
-{
-    return x_IsSetMember(fMember_inst_ext);
-}
-
-
-inline
-const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
-{
-    x_CheckSetMember(fMember_inst_ext);
-    return *m_Inst_Ext;
-}
-
-
-inline
-bool CBioseq_Info::IsSetInst_Hist(void) const
-{
-    return x_IsSetMember(fMember_inst_hist);
-}
-
-
-inline
-const CBioseq_Info::TInst_Hist& CBioseq_Info::GetInst_Hist(void) const
-{
-    x_CheckSetMember(fMember_inst_hist);
-    return *m_Inst_Hist;
+    return *m_Object;
 }
 
 
@@ -413,6 +256,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.17  2004/03/24 18:30:28  vasilche
+ * Fixed edit API.
+ * Every *_Info object has its own shallow copy of original object.
+ *
  * Revision 1.16  2004/03/16 15:47:26  vasilche
  * Added CBioseq_set_Handle and set of EditHandles
  *

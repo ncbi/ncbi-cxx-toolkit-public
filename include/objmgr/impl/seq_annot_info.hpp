@@ -100,10 +100,17 @@ public:
 
     void x_UpdateAnnotIndexContents(CTSE_Info& tse);
 
+    const TObject& x_GetObject(void) const;
+
     void x_SetObject(const TObject& obj);
+    void x_SetObject(const CSeq_annot_Info& info);
+
     void x_SetSNP_annot_Info(CSeq_annot_SNP_Info& snp_info);
-    bool x_HaveSNP_annot_Info(void) const;
+    bool x_HasSNP_annot_Info(void) const;
     const CSeq_annot_SNP_Info& x_GetSNP_annot_Info(void) const;
+
+    void x_DoUpdateObject(void);
+    static CRef<TObject> sx_ShallowCopy(TObject& obj);
 
 protected:
     friend class CDataSource;
@@ -155,6 +162,13 @@ protected:
 
 
 inline
+const CSeq_annot& CSeq_annot_Info::x_GetObject(void) const
+{
+    return *m_Object;
+}
+
+
+inline
 const CAnnotObject_Info&
 CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 {
@@ -163,7 +177,7 @@ CSeq_annot_Info::GetAnnotObject_Info(size_t index) const
 
 
 inline
-bool CSeq_annot_Info::x_HaveSNP_annot_Info(void) const
+bool CSeq_annot_Info::x_HasSNP_annot_Info(void) const
 {
     return m_SNP_Info;
 }
@@ -182,6 +196,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.10  2004/03/16 15:47:27  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *

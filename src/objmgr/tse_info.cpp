@@ -72,14 +72,14 @@ SIdAnnotObjs::SIdAnnotObjs(const SIdAnnotObjs& _DEBUG_ARG(objs))
 //
 
 
-CTSE_Info::CTSE_Info(const CSeq_entry& entry,
+CTSE_Info::CTSE_Info(CSeq_entry& entry,
                      bool dead,
                      const CObject* blob_id)
     : m_DataSource(0),
       m_Dead(dead),
       m_Blob_ID(blob_id)
 {
-    const_cast<CSeq_entry&>(entry).Parentize();
+    entry.Parentize();
     x_SetObject(entry);
     x_TSEAttach(*this);
 }
@@ -186,7 +186,7 @@ void CTSE_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 inline
 void CTSE_Info::x_IndexSeqTSE(const CSeq_id_Handle& id)
 {
-    if ( HaveDataSource() ) {
+    if ( HasDataSource() ) {
         GetDataSource().x_IndexSeqTSE(id, this);
     }
 }
@@ -195,7 +195,7 @@ void CTSE_Info::x_IndexSeqTSE(const CSeq_id_Handle& id)
 inline
 void CTSE_Info::x_UnindexSeqTSE(const CSeq_id_Handle& id)
 {
-    if ( HaveDataSource() ) {
+    if ( HasDataSource() ) {
         GetDataSource().x_UnindexSeqTSE(id, this);
     }
 }
@@ -208,7 +208,7 @@ void CTSE_Info::x_IndexAnnotTSE(const CAnnotName& name,
     if ( iter == m_SeqIdToNames.end() || iter->first != id ) {
         iter = m_SeqIdToNames.insert(iter,
                                      TSeqIdToNames::value_type(id, TNames()));
-        if ( HaveDataSource() ) {
+        if ( HasDataSource() ) {
             GetDataSource().x_IndexAnnotTSE(id, this);
         }
     }
@@ -224,7 +224,7 @@ void CTSE_Info::x_UnindexAnnotTSE(const CAnnotName& name,
     _VERIFY(iter->second.erase(name) == 1);
     if ( iter->second.empty() ) {
         m_SeqIdToNames.erase(iter);
-        if ( HaveDataSource() ) {
+        if ( HasDataSource() ) {
             GetDataSource().x_UnindexAnnotTSE(id, this);
         }
     }
@@ -314,7 +314,7 @@ void CTSE_Info::x_ResetBioseq_setId(int key,
 
 void CTSE_Info::x_SetDirtyAnnotIndexNoParent(void)
 {
-    if ( HaveDataSource() ) {
+    if ( HasDataSource() ) {
         GetDataSource().x_SetDirtyAnnotIndex(*this);
     }
 }
@@ -322,7 +322,7 @@ void CTSE_Info::x_SetDirtyAnnotIndexNoParent(void)
 
 void CTSE_Info::x_ResetDirtyAnnotIndexNoParent(void)
 {
-    if ( HaveDataSource() ) {
+    if ( HasDataSource() ) {
         GetDataSource().x_ResetDirtyAnnotIndex(*this);
     }
 }
@@ -712,6 +712,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/03/24 18:30:30  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.42  2004/03/23 15:14:00  vasilche
 * Restored automatic call to Parentize() for Seq-entries in object manager.
 *

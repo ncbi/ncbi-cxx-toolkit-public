@@ -38,6 +38,7 @@
 #include <objmgr/impl/bioseq_set_info.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -66,10 +67,16 @@ CSeq_entry_Handle CBioseq_set_Handle::GetParentEntry(void) const
 {
     CSeq_entry_Handle ret;
     const CBioseq_set_Info& info = x_GetInfo();
-    if ( info.HaveParent_Info() ) {
+    if ( info.HasParent_Info() ) {
         ret = CSeq_entry_Handle(GetScope(), info.GetParentSeq_entry_Info());
     }
     return ret;
+}
+
+
+CBioseq_set_EditHandle CBioseq_set_Handle::GetEditHandle(void) const
+{
+    return m_Scope->GetEditHandle(*this);
 }
 
 
@@ -77,7 +84,7 @@ CSeq_entry_EditHandle CBioseq_set_EditHandle::GetParentEntry(void) const
 {
     CSeq_entry_EditHandle ret;
     CBioseq_set_Info& info = x_GetInfo();
-    if ( info.HaveParent_Info() ) {
+    if ( info.HasParent_Info() ) {
         ret = CSeq_entry_EditHandle(GetScope(),
                                     info.GetParentSeq_entry_Info());
     }
@@ -169,56 +176,32 @@ const CSeq_descr& CBioseq_set_Handle::GetDescr(void) const
 }
 
 
+CBioseq_EditHandle
+CBioseq_set_EditHandle::AttachBioseq(CBioseq& seq, int index) const
+{
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq(seq);
+    return AttachEntry(*entry, index).SetSeq();
+}
+
+
 CSeq_entry_EditHandle
-CBioseq_set_EditHandle::AttachEntry(const CSeq_entry& entry)
+CBioseq_set_EditHandle::AttachEntry(CSeq_entry& entry, int index) const
 {
-    return x_GetScopeImpl()->AttachEntry(*this, entry);
+    return m_Scope->AttachEntry(*this, entry, index);
 }
 
 
 CSeq_annot_EditHandle
-CBioseq_set_EditHandle::AttachAnnot(const CSeq_annot& annot)
+CBioseq_set_EditHandle::AttachAnnot(const CSeq_annot& annot) const
 {
-    return x_GetScopeImpl()->AttachAnnot(*this, annot);
+    return m_Scope->AttachAnnot(*this, annot);
 }
 
 
-void CBioseq_set_EditHandle::RemoveEntry(void)
+void CBioseq_set_EditHandle::Remove(void) const
 {
-    CSeq_entry_EditHandle entry = GetParentEntry();
-    x_GetScopeImpl()->RemoveEntry(entry);
-}
-
-
-void CBioseq_set_EditHandle::RemoveEntry(CSeq_entry_EditHandle& entry)
-{
-    if ( entry.GetParentEntry() != GetParentEntry() ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq_set_EditHandle::RemoveEntry: entry is not owned");
-    }
-    entry.Remove();
-}
-
-
-void CBioseq_set_EditHandle::RemoveAnnot(CSeq_annot_EditHandle& annot)
-{
-    if ( annot.GetParentEntry() != GetParentEntry() ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq_set_EditHandle::RemoveAnnot: annot is not owned");
-    }
-    annot.Remove();
-}
-
-
-CSeq_annot_EditHandle
-CBioseq_set_EditHandle::ReplaceAnnot(CSeq_annot_EditHandle& old_annot,
-                                    const CSeq_annot& new_annot)
-{
-    if ( old_annot.GetParentEntry() != GetParentEntry() ) {
-        NCBI_THROW(CObjMgrException, eModifyDataError,
-                   "CBioseq_set_EditHandle::ReplaceAnnot: annot is not owned");
-    }
-    return x_GetScopeImpl()->ReplaceAnnot(old_annot, new_annot);
+    GetParentEntry().Remove();
 }
 
 
@@ -228,6 +211,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/24 18:30:29  vasilche
+* Fixed edit API.
+* Every *_Info object has its own shallow copy of original object.
+*
 * Revision 1.2  2004/03/16 21:01:32  vasilche
 * Added methods to move Bioseq withing Seq-entry
 *
