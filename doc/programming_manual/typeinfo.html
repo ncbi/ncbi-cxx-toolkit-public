@@ -1,0 +1,263 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+    <title>Class Type Information</title>
+  </head>
+  <body bgcolor = white>
+    <h1> Class Type Information </h1>
+
+  	      <ul>
+	        <li> <a href="#macros"> Preprocessor Macros</a>
+	        <li> <a href=""> <i></i></a>
+	      </ul>
+
+<a name="macros"><h3> Preprocessor Macros for implementing the <i>GetTypeInfo()</i> member function</h3>
+
+A large number of pre-processor macros are defined in 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/serialimpl.hpp"> 
+<i>serialimpl.hpp</i></a>. 
+Six pairs of <i>BEGIN/END</i> macros 
+implement the <i>GetTypeInfo()</i> method for different types of objects. 
+Each of the <i>BEGIN_NAMED_xxx_INFO</i> macros listed in Table 1 has a corresponding 
+<i>END_xxx_INFO</i> macro definition.<p>
+
+Most of these macros take two arguments: (1) <i>Name</i> - the external class name,
+and (2) <i>Cname</i> - the internal C++ symbolic class name. The external class name is used
+in handling serial objects such as the ASN types, where the class may have an external 
+name different from its internal C++ class name (e.g., <i>Bioseq</i> vs <i>CBioseq</i>). 
+Each of the "named" macros in Table 1 has a corresponding "unnamed" macro which takes as
+a single argument, the symbolic class name, and generates a call to the corresponding  named macro. 
+For example, <i>BEGIN_CLASS_INFO</i> is defined as:
+
+<font color = "#000080"> <pre>
+#define BEGIN_CLASS_INFO(Class) \
+	BEGIN_NAMED_CLASS_INFO(#Class, Class)
+</pre></font>
+<p>
+<table BORDER WIDTH="100%"><caption ALIGN=BOTTOM> Table 1</caption>
+<tr><th>Macro name</th>			    <th>Class type used for</th>            <th>Arguments</th>   </tr>
+<tr><td><a href="#info1">BEGIN_NAMED_CLASS_INFO</a></td>
+					    <td>Non-abstract base class object</td> <td>Name, Cname</td> </tr>
+<tr><td><a href="#info2">BEGIN_NAMED_ABSTRACT_CLASS_INFO</a></td>
+					    <td>Abstract base class object</td>	    <td>Name, Cname</td> </tr>
+<tr><td><a href="#info3">BEGIN_NAMED_DERIVED_CLASS_INFO</a></td> 
+					    <td>Derived subclass object</td>	    <td>Name, Cname, BaseClass</td> </tr>
+<tr><td><a href="#info4">BEGIN_NAMED_STRUCT_INFO</a></td>
+					    <td>Struct object</td>		    <td>Name, Cname</td> </tr>
+<tr><td><a href="#info5">BEGIN_NAMED_CHOICE_INFO</a></td>
+					    <td>Choice object</td>	            <td>Name, Cname</td> </tr>
+<tr><td><a href="#info6">BEGIN_NAMED_ENUM_INFO</a></td>
+					    <td>Enum object</td>		    <td>Name, Method, Enum, IsInteger</td> </tr>
+</table>
+
+<p>
+
+<ul>
+<li> <a name=info1>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_CLASS_INFO">
+<i>BEGIN_NAMED_CLASS_INFO</i></a> should be used on classes that
+do not contain any pure virtual functions. For example, the 
+<i>GetTypeInfo()</i> method for the <a href=#CPerson><i>CPerson</i></a> class can be
+implemented as:
+<font color = "#000080"> <pre>
+BEGIN_NAMED_CLASS_INFO("CPerson", CPerson)
+{
+    ADD_NAMED_STD_MEMBER("m_name", m_name);
+    ADD_NAMED_STD_MEMBER("m_addr", m_addr);
+    ADD_NAMED_MEMBER("m_next_door", m_next_door, POINTER, (CLASS, (CPerson)));
+}
+END_CLASS_INFO
+</pre><font color = black>
+The macros used to add members here are defined in <a href="#addm"> Table 2</a>. <p>
+<li><a name=info2>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ABSTRACT_CLASS_INFO">
+<i>BEGIN_NAMED_ABSTRACT_CLASS_INFO</i></a> must be used on
+abstract base classes which contain pure virtual functions. Because these abstract classes cannot
+be instantiated, special handling is required in order to install their static <i>GetTypeInfo()</i>
+methods. <p>
+
+For example, suppose the classes <i>CA</i> and <i>CB</i> are derived from an abstract base
+class, <i>CBase</i>.  In order to apply a <i>CTypeIterator&lt;CBase></i> that will visit
+all objects of type <i>CA</i> and <i>CB</i>, we must be able to implement the
+<i>GetTypeInfo()</i> method on that abstract class. The <i>ABSTRACT_CLASS_INFO</i> macros do
+this for us:
+
+<font color = "#000080"> <pre>
+BEGIN_NAMED_ABSTRACT_CLASS_INFO("CBase", CBase)
+{
+  // ... data member definitions for abstract base class
+
+  ADD_NAMED_SUB_CLASS ("CA", CA);
+  ADD_NAMED_SUB_CLASS ("CB", CB);
+}
+END_ABSTRACT_CLASS_INFO
+</pre></font>
+The <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_SUB_CLASS">
+<i>ADD_NAMED_SUB_CLASS</i></a> macro provides the class inheritance information for all objects -
+its usage is <i>not</i> restricted to abstract classes. However, each class listed as a
+subclass by these macros must also use the DERIVED_CLASS
+macros defined below. Failure to define these hierarchical relations in the
+<i>GetTypeInfo()</i> macros will not lead to compile-time errors, but the iterator will
+<i>not</i> recognize these objects as instances of the parent class.
+<p>
+<li><a name=info3>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_DERIVED_CLASS_INFO">
+<i>BEGIN_NAMED_DERIVED_CLASS_INFO</i></a> should be used on derived subclasses whose parent classes also
+have the <i>GetTypeInfo()</i> method implemented. Data members inherited from parent classes should
+not be included in the derived class type information. 
+
+<font color = "#000080"> <pre>
+BEGIN_NAMED_DERIVED_CLASS_INFO("CA", CA, CBASE)
+{
+  // ... data members in CA not inherited from CBase
+}
+END_DERIVED_CLASS_INFO
+</pre></font>
+
+The type information for classes derived from <i>CObject</i> does <i>not</i> however, follow this
+protocol. In this special case, although the class is derived from <i>CObject</i>, you should
+<i>not</i> use the <i>DERIVED_CLASS</i> macros to implement <i>GetTypeInfo()</i>,
+but instead use the usual <i>BEGIN_CLASS_INFO</i> macro. <i>CObject</i>'s have a
+slightly different interface 
+(see <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=CObjectGetTypeInfo">
+<i>CObjectGetTypeInfo</i></a>)
+to type information than other objects, and apply these
+macros differently. <p>
+
+<li><a name=info4>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_STRUCT_INFO">
+<i>BEGIN_NAMED_STRUCT_INFO</i></a> should be
+used to implement the <i>GetTypeInfo()</i> function for <i>struct</i>s.  <p>
+
+<li><a name=info5>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_CHOICE_INFO">
+<i>BEGIN_NAMED_CHOICE_INFO</i></a> installs <i>GetTypeInfo()</i> for <i>choice</i> nodes, which
+are defined in 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/serial/choice.hpp">
+<i>include/serial/choice.hpp</i></a>.
+ <p>
+<li><a name=info6>
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=BEGIN_NAMED_ENUM_INFO">
+<i>BEGIN_NAMED_ENUM_INFO(Name, Method, Enum, IsInteger)</i></a> takes 4 arguments: 
+<ol><li> <i>Name</i>, the external name of the enum object
+    <li> <i>Method</i>, the function name to be used when installing the type information function
+    <li> <i>Enum</i>, the internal C++ name, 
+    <LI> <i>IsInteger</i>, <i>true</i> or <i>false</i> depending on whether or not all of the 
+    enumeration values are explicitly defined using the <i>ADD_ENUM_VALUE</i> macro.
+</ol><p>
+Example usage:
+<font color = "#000080"> <pre>
+// hpp file:
+enum EMyEnum {
+	eZero = 0,
+	eOne,
+	eTwo,
+	eTen = 10
+};
+
+// cpp file:
+BEGIN_NAMED_ENUM_INFO("MyEnum", GetEnumInfo_EMyEnum, EMyEnum, false)
+{
+	ADD_ENUM_VALUE("zero", eZero);
+	ADD_ENUM_VALUE("one", eOne);
+	ADD_ENUM_VALUE("two", eTwo);
+	ADD_ENUM_VALUE("ten", eTen);
+}
+END_ENUM_INFO
+</pre></font>
+Unlike <i>class</i> and <i>struct</i> objects, the <i>enum</i> types do not have <i>GetTypeInfo()</i>
+functions, but instead, have named functions <i>GetEnumInfo_Xxx()</i>, where <i>Xxx</i> is the internal
+C++ name of the enumeration. 
+</ul>
+When using any of the above macros to install type information, the corresponding class
+definitions must include a declaration of the static class member function <i>GetTypeInfo()</i>
+in the class's public section. In summary, you never actually <i>write</i> the code for the
+<i>GetTypeInfo()</i> methods, but simply declare the static method in the class definitions,
+and use the <i>BEGIN/END_xxx_INFO</i> macros to implement them.
+
+<p>
+<a name="addm">
+The code inside these macros uses additional <i>ADD_NAMED_Xxx_MEMBER</i> macros to add type information
+about the individual data members:
+<ul>
+<li> ADD_NAMED_STD_MEMBER(Name, CName) 
+<li> ADD_NAMED_CLASS_MEMBER (Name, CName) 
+<li> ADD_NAMED_ENUM_MEMBER(Name, CName, Type) 
+<li> ADD_NAMED_CHOICE_MEMBER (Name, CName, Choices) 
+<li> ADD_NAMED_MEMBER(Name, CName, Type, Args)
+</ul>
+Usage of the 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_STD_MEMBER">
+<i>ADD_NAMED_STD_MEMBER</i></a> and 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_CLASS_MEMBER">
+<i>ADD_NAMED_CLASS_MEMBER</i></a> macro is straightforward; <i>Name</i> is simply the external name
+of the data member, and <i>CName</i> is the internal C++ name in the class definition.  Arguments to
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/ident?i=ADD_NAMED_ENUM_MEMBER">
+<i>ADD_NAMED_ENUM_MEMBER</i></a> 
+
+The ADD_M macro is more open-ended, allowing
+for more complex specifications. Again, <i>Name</i> is the data member's identifier in the
+class definition.  The value of <i>Args</i> depends on the value of the <i>Type</i>
+argument, where <i>Type</i> is one of the following:<p>
+
+<table border=1 width=600 cellspacing=1>
+  <caption></caption>
+  <tr>
+	 <th>Type</th>
+	 <th>Args </th>
+  </tr>
+
+  <tr>	 <td> CLASS </td>	 <td> (Name) </td>  </tr>
+  <tr>	 <td> STD   </td>        <td> (Name) </td>  </tr>
+  <tr>	 <td> StringStore </td>  <td> ()     </td>  </tr>
+   <tr>	 <td> null </td>         <td> ()     </td>  </tr>
+  <tr>	 <td> ENUM </td>         <td> (Type, Name) </td>  </tr> 
+  <tr>	 <td> POINTER </td>      <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_multiset </td> <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_set </td>      <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_multimap </td> <td> (KeyType,KeyArgs,ValueType,ValueArgs) </td>  </tr> 
+  <tr>	 <td> STL_map </td>      <td> (KeyType,KeyArgs,ValueType,ValueArgs) </td>  </tr> 
+  <tr>	 <td> STL_list </td>     <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> STL_list_set </td> <td> (Type,Args) </td>  </tr>
+  <tr>	 <td> STL_vector </td>   <td> (Type,Args) </td>  </tr>
+  <tr>	 <td> STL_CHAR_vector </td> <td> (Type) </td>  </tr>
+  <tr>	 <td> STL_auto_ptr </td>   <td> (Type,Args)</td>  </tr>
+  <tr>	 <td> CHOICE </td>         <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> CHOICE_POINTER </td> <td> (Type,Args) </td>  </tr> 
+  <tr>	 <td> CHOICE_STL_auto_ptr </td> <td> (Type,Args) </td>  </tr> 
+
+</table>
+<p>
+
+Some examples of using the ADD_M macros:
+<font color = "#000080"> <pre>
+   ADD_M(m_a, STL_auto_ptr, (CLASS, (CA)));
+   ADD_M(m_x, STL_CHAR_vector, (char))
+   ADD_M(m_x, STL_vector, (STD, (char))
+   ADD_M(m_x, STL_list, (CLASS, (name))
+   ADD_M(m_x, STL_list, (POINTER, (CLASS, (name)))
+   ADD_M(m_x, STL_map, (STD, (long), STD, (string)));
+</pre></font>
+...Add discussion of ADD_ENUM_M. 
+<p>
+ ADD_NAMED_SUB_CLASS(Name, CName)
+ ADD_ENUM_VALUE (Name, Value) enumInfo->AddValue(Name, enumValue = Value)
+<p>
+
+   </body>
+<a href="newpage.html"> <i> previous</i> </a>
+&nbsp;&nbsp;&nbsp;
+<a href="../index.html"> <i> up </i> </a>
+&nbsp;&nbsp;&nbsp;
+<!-- a href="newpage.html"> <i> next</i> </a-->
+</html>
+
+	 <hr>
+	 <table border=0 width="100%" cellspacing=0>
+		<tr>
+		  <td><address><a href="mailto:zimmerma@ncbi.nlm.nih.gov">Diane Zimmerman</a></address></td>
+		  <!-- <td align=center><i>$Revision$</i></td> -->
+		  <td align=right><i>$Date$</i></td>
+	 </table>

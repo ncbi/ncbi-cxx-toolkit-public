@@ -19,17 +19,17 @@
 <font color = "red">//  type information for class CPerson
 <font color = "blue">BEGIN_CLASS_INFO(CPerson)<font color = "black">
 {
-    ADD_STD_M(m_name);
-    ADD_STD_M(m_addr);
-    ADD_M(m_next_door, POINTER, (CLASS, (CPerson)))->SetOptional();
+    ADD_STD_MEMBER(m_name);
+    ADD_STD_MEMBER(m_addr);
+    ADD_MEMBER(m_next_door, POINTER, (CLASS, (CPerson)))->SetOptional();
 }
 <font color = "blue">END_CLASS_INFO
 
 <font color = "red">//  type information for class CDistrict
 <font color = "blue">BEGIN_CLASS_INFO(CDistrict)<font color = "black">
 {
-    ADD_STD_M(m_number);
-    ADD_M(m_blocks, STL_list, (CLASS, (CPerson)));
+    ADD_STD_MEMBER(m_number);
+    ADD_MEMBER(m_blocks, STL_list, (CLASS, (CPerson)));
 }
 <font color = "blue">END_CLASS_INFO
 

@@ -20,38 +20,38 @@ USING_NCBI_SCOPE;
 class CPerson 
 { 
 <font color = "blue">public:</font>
-  CPerson(void)
-    : m_name(0), m_addr(0), m_next_door(0)
-    {}
+    CPerson(void)
+      : m_name(0), m_addr(0), m_next_door(0)
+      {}
 
-  CPerson(string n, string s, CPerson* p)
-    : m_name(n), m_addr(s), m_next_door(p)
-    {}
+    CPerson(string n, string s, CPerson* p)
+      : m_name(n), m_addr(s), m_next_door(p)
+      {}
 
-  virtual ~CPerson(void) {}
+    virtual ~CPerson(void) {}
 
-  static const CTypeInfo* GetTypeInfo(void);
+    static const CTypeInfo* GetTypeInfo(void);
 
-  string m_name, m_addr;
-  CPerson *m_next_door;
+    string m_name, m_addr;
+    CPerson *m_next_door;
 };
 
 class CDistrict
 { 
 <font color = "blue">public:</font>
-  CDistrict(void) : m_number(0) {}
-  CDistrict(int n) : m_number(n) {}
-  virtual ~CDistrict(void) {}
+    CDistrict(void) : m_number(0) {}
+    CDistrict(int n) : m_number(n) {}
+    virtual ~CDistrict(void) {}
 
-  static const CTypeInfo* GetTypeInfo(void);
+    static const CTypeInfo* GetTypeInfo(void);
 
-  int m_number;
+    int m_number;
 
-  void AddBlock (const CPerson& p) { m_blocks.push_back(p); }
-  list&lt;CPerson>& GetBlocks() { return m_blocks; }
+    void AddBlock (const CPerson& p) { m_blocks.push_back(p); }
+    list&lt;CPerson>& GetBlocks() { return m_blocks; }
 
 <font color = "blue">private:</font>
-  list&lt;CPerson> m_blocks;
+    list&lt;CPerson> m_blocks;
 };
 <font color = "green">
 #endif /* CTYPEITER_HPP */
