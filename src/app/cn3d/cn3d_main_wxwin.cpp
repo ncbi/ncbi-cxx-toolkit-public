@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/05/31 14:32:32  thiessen
+* tweak font handling
+*
 * Revision 1.47  2001/05/25 18:15:13  thiessen
 * another programDir fix
 *
@@ -532,6 +535,16 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     GlobalMessenger()->AddStructureWindow(this);
     Show(true);
+    
+    // set up font used by OpenGL
+    glCanvas->SetCurrent();
+#if defined(__WXMSW__)
+    glCanvas->font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
+    glCanvas->renderer->SetFont_Windows(glCanvas->font->GetHFONT());
+#elif defined(__WXGTK__)
+    glCanvas->font = new wxFont(14, wxSWISS, wxNORMAL, wxBOLD);
+    glCanvas->renderer->SetFont_GTK(glCanvas->font->GetInternalFont());
+#endif
 }
 
 Cn3DMainFrame::~Cn3DMainFrame(void)
@@ -840,16 +853,6 @@ Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
     structureSet(NULL)
 {
     renderer = new OpenGLRenderer();
-    
-    // set up font used by OpenGL
-#if defined(__WXMSW__)
-    font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
-    renderer->SetFont_Windows(font->GetHFONT());
-
-#elif defined(__WXGTK__)
-    font = new wxFont(16, wxSWISS, wxNORMAL, wxNORMAL);
-    renderer->SetFont_GTK(font->GetInternalFont());
-#endif
 }
 
 Cn3DGLCanvas::~Cn3DGLCanvas(void)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/05/31 14:32:33  thiessen
+* tweak font handling
+*
 * Revision 1.22  2001/05/22 19:09:31  thiessen
 * many minor fixes to compile/run on Solaris/GTK
 *
@@ -985,8 +988,6 @@ SequenceViewerWidget::SequenceViewerWidget(
 
     sequenceArea->SetTitleArea(titleArea);
     titleArea->SetSequenceArea(sequenceArea);
-
-    SetCharacterFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
 
     SplitVertically(titleArea, sequenceArea);
 }

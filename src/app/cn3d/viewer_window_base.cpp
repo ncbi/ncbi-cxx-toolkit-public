@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2001/05/31 14:32:33  thiessen
+* tweak font handling
+*
 * Revision 1.15  2001/05/23 17:45:41  thiessen
 * change dialog implementation to wxDesigner; interface changes
 *
@@ -110,6 +113,11 @@ ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
     SetStatusWidths(2, widths);
 
     viewerWidget = new SequenceViewerWidget(this);
+#if defined(__WXMSW__)
+    viewerWidget->SetCharacterFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
+#elif defined(__WXGTK__)
+    viewerWidget->SetCharacterFont(new wxFont(14, wxROMAN, wxNORMAL, wxNORMAL));
+#endif
 
     menuBar = new wxMenuBar;
     viewMenu = new wxMenu;
