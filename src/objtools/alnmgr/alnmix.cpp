@@ -1000,9 +1000,17 @@ void CAlnMix::x_CreateSegmentsVector()
                         row->m_StartIt->first > start_its_i->second->first  ||
                         !row->m_PositiveStrand  &&
                         row->m_StartIt->first < start_its_i->second->first) {
-                        NCBI_THROW(CAlnException, eMergeFailure,
-                                   "CAlnMix::x_CreateSegmentsVector(): "
-                                   "Internal error: Integrity broken");
+                        string errstr = 
+                            string("CAlnMix::x_CreateSegmentsVector():")
+                            + " Internal error: Integrity broken"
+                            + " row=" + NStr::IntToString(row->m_RowIndex)
+                            + " row->m_StartIt->first="
+                            + NStr::IntToString(row->m_StartIt->first)
+                            + " start_its_i->second->first="
+                            + NStr::IntToString(start_its_i->second->first)
+                            + " strand="
+                            + (row->m_PositiveStrand ? "plus" : "minus");
+                        NCBI_THROW(CAlnException, eMergeFailure, errstr);
                     }
 #endif
                     // index the segment
@@ -1399,6 +1407,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.48  2003/05/23 18:11:42  todorov
+* More detailed exception txt
+*
 * Revision 1.47  2003/05/20 21:20:59  todorov
 * mingap minus strand multiple segs bug fix
 *
