@@ -42,6 +42,7 @@
 #include <string>
 #include <list>
 #include <deque>
+#include <algorithm>
 #include <math.h>
 
 #include "SpectrumSet.hpp"
@@ -959,6 +960,9 @@ CSearch::~CSearch()
 
 /*
 $Log$
+Revision 1.16  2004/03/31 02:00:26  ucko
++<algorithm> for sort()
+
 Revision 1.15  2004/03/30 19:36:59  lewisg
 multiple mod code
 
