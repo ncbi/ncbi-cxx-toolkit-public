@@ -337,7 +337,7 @@ string CGen_code_table::IndexToCodon(int index)
     int total = index;
     int div = 16;
     for ( int i = 0; i < 3; ++i ) {
-        int j = total % div;
+        int j = total / div;
         codon[i] = na[j];
         total -= div * j;
         div /= 4;
@@ -697,6 +697,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.11  2003/04/28 20:05:22  tolstoy
+* *** empty log message ***
+*
 * Revision 6.10  2003/04/18 19:40:38  kans
 * changed iterate to ITERATE
 *
