@@ -69,11 +69,11 @@ typedef struct {
 } STimeout;
 
 #ifdef __cplusplus
-const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
-const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
+static const STimeout *const kDefaultTimeout  = (const STimeout*)(-1);
+static const STimeout *const kInfiniteTimeout = (const STimeout*)( 0);
 #else
-#  define             kDefaultTimeout   ((const STimeout*)(-1))
-#  define             kInfiniteTimeout  ((const STimeout*)( 0))
+#  define                    kDefaultTimeout   ((const STimeout*)(-1))
+#  define                    kInfiniteTimeout  ((const STimeout*)( 0))
 #endif /*__cplusplus*/
 
 
@@ -103,6 +103,9 @@ typedef unsigned int TNCBI_Time;
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2003/08/26 18:55:13  lavr
+ * Added "static" to k...Timeout to make Sun WorkShop compiler happier
+ *
  * Revision 6.4  2003/08/25 14:36:26  lavr
  * +kDefaultTimeout, +kInfiniteTimeout
  *
