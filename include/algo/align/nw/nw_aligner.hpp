@@ -154,6 +154,16 @@ public:
     // transcript as a string
     string GetTranscriptString(void) const;
 
+    // if set, all positively scoring diags will be
+    // recorded as matches in the alignment transcript;
+    // only real matches otherwise.
+    void  SetPositivesAsMatches(bool positives_as_matches = true) {
+        m_PositivesAsMatches = positives_as_matches;
+    }
+    bool  GetPositivesAsMatches(void) const {
+        return m_PositivesAsMatches;
+    }
+
     // transcript parsers
     size_t         GetLeftSeg(size_t* q0, size_t* q1,
                               size_t* s0, size_t* s1,
@@ -212,6 +222,7 @@ protected:
 
     // Transcript, score and guiding hits
     TTranscript               m_Transcript;
+    bool                      m_PositivesAsMatches;
     TScore                    m_score;
     vector<size_t>            m_guides;
 
@@ -231,8 +242,10 @@ protected:
 
     // backtrace
     void x_DoBackTrace(const unsigned char* backtrace_matrix,
-                       size_t N1, size_t N2,
-                       TTranscript* transcript);
+                       SAlignInOut* data);
+
+    // retrieve transcript symbol for a one-character diag
+    virtual ETranscriptSymbol x_GetDiagTS(size_t i1, size_t i2) const;
 
     friend class CNWAlignerThread_Align;
 };
@@ -288,6 +301,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/04/04 16:32:23  kapustin
+ * Distinguish matches from mismatches in raw transcripts
+ *
  * Revision 1.40  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *

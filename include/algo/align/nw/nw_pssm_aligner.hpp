@@ -121,6 +121,9 @@ protected:
     // core dynamic programming
     virtual CNWAligner::TScore x_Align (SAlignInOut* data);
     CNWAligner::TScore x_AlignProfile (SAlignInOut* data);
+
+    // retrieve transcript symbol for a one-character diag
+    virtual ETranscriptSymbol x_GetDiagTS(size_t i1, size_t i2) const;
 };
 
 
@@ -133,6 +136,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/04 16:32:23  kapustin
+ * Distinguish matches from mismatches in raw transcripts
+ *
  * Revision 1.4  2004/12/15 20:16:50  kapustin
  * Fix after algo/align rearrangement
  *

@@ -83,8 +83,8 @@ protected:
 
     // backtrace
     void           x_DoBackTrace(const unsigned char* backtrace_matrix,
-                                 size_t N1, size_t N2,
-                                 TTranscript* transcript);
+                                 CNWAligner::SAlignInOut* data);
+
     // other
     virtual bool   x_CheckMemoryLimit(void);
 };
@@ -99,6 +99,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/04 16:32:23  kapustin
+ * Distinguish matches from mismatches in raw transcripts
+ *
  * Revision 1.5  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *

@@ -77,12 +77,10 @@ protected:
     virtual TScore* x_GetSpliceScores(void) {
         return m_Wi;
     }
-    virtual TScore  x_Align (SAlignInOut* data);
+    virtual TScore  x_Align (CNWAligner::SAlignInOut* data);
 
-    // backtrace
-    void x_DoBackTrace( const Uint2* backtrace_matrix,
-                        size_t N1, size_t N2,
-                        TTranscript* transcript );
+    void x_DoBackTrace(const Uint2* backtrace_matrix,
+                       CNWAligner::SAlignInOut* data);
 };
 
 
@@ -93,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/04/04 16:32:23  kapustin
+ * Distinguish matches from mismatches in raw transcripts
+ *
  * Revision 1.12  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *
