@@ -779,7 +779,7 @@ bool CQueueDataBase::CQueue::CheckDelete(unsigned int job_id)
         return false;
     }
     cur.Delete(CBDB_File::eIgnoreError);
-cerr << "Job deleted: " << job_id << endl;
+//cerr << "Job deleted: " << job_id << endl;
 
     }}
     trans.Commit();
@@ -810,6 +810,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/02/24 12:35:10  kuznets
+ * Cosmetics..
+ *
  * Revision 1.6  2005/02/23 19:16:38  kuznets
  * Implemented garbage collection thread
  *
