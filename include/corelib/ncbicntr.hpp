@@ -104,7 +104,7 @@
    typedef SInt32 TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) OTAtomicAdd32(p, d)
 #elif defined(NCBI_OS_MSWIN)
-#  include <windows.h>
+#  include <corelib/ncbi_os_mswin.hpp>
    typedef LONG TNCBIAtomicValue;
 #  define NCBI_COUNTER_ADD(p, d) InterlockedExchangeAdd(p, d) + d
 #else
@@ -294,6 +294,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/08/19 19:37:17  vakatov
+* Use <corelib/ncbi_os_mswin.hpp> in the place of <windows.h>
+*
 * Revision 1.6  2002/07/11 14:17:53  gouriano
 * exceptions replaced by CNcbiException-type ones
 *

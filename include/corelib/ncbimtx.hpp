@@ -45,8 +45,7 @@
 #if defined(_MT)  &&  !defined(NCBI_WITHOUT_MT)
 #  if defined(NCBI_OS_MSWIN)
 #    define NCBI_WIN32_THREADS
-#    include <windows.h>
-#    include <corelib/winundef.hpp>
+#    include <corelib/ncbi_os_mswin.hpp>
 #  elif defined(NCBI_OS_UNIX)
 #    define NCBI_POSIX_THREADS
 #    include <pthread.h>
@@ -396,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/08/19 19:37:17  vakatov
+ * Use <corelib/ncbi_os_mswin.hpp> in the place of <windows.h>
+ *
  * Revision 1.10  2002/08/19 18:15:58  ivanov
  * +include <corelib/winundef.hpp>
  *
