@@ -462,11 +462,18 @@ void CSeqVector::x_GetCacheForInterval(TSeqPos& start, TSeqPos stop, string& buf
     // Coordinates relative to the cache
     TSeqPos cache_start = 0;
     TSeqPos cache_stop = m_CachedLen;
-    if (m_CachedPos < vstart) {
-        cache_start += vstart - m_CachedPos;
+    // Do not use more data from the cache than fit into the current range
+    if (cache_stop > m_CurTo - m_CachedPos) {
+        cache_stop = m_CurTo - m_CachedPos;
     }
-    if (cache_stop - cache_start > vstop - vstart) {
-        cache_stop = cache_start + vstop - vstart;
+    // Find the first position in the cache that fits the current range
+    if (m_CachedPos < vstart) {
+        cache_start = vstart - m_CachedPos;
+        cache_stop += cache_start;
+        // Re-adjust cache stop
+        if (cache_stop - cache_start > vstop - vstart) {
+            cache_stop = cache_start + vstop - vstart;
+        }
     }
     buffer += m_CachedData.substr(cache_start, cache_stop - cache_start);
     start += cache_stop - cache_start;
@@ -479,13 +486,6 @@ void CSeqVector::GetSeqData(TSeqPos start, TSeqPos stop, string& buffer)
     TSeqPos seq_size = size();
     if (stop > seq_size)
         stop = seq_size;
-/*
-    // Convert position to destination strand
-    if ( !m_PlusStrand ) {
-        stop = seq_size - start - 1;
-        start = seq_size - stop - 1;
-    }
-*/
 
     buffer = "";
     while (start < stop) {
@@ -532,6 +532,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2002/09/12 19:59:25  grichenk
+* Fixed bugs in calculating cached intervals
+*
 * Revision 1.29  2002/09/10 19:55:52  grichenk
 * Fixed reverse-complement position
 *
