@@ -1763,6 +1763,11 @@ void CDataSource::x_ResolveMapSegment(CSeq_id_Handle rh,
 {
     CBioseq_Handle rbsh = scope.GetBioseqHandle(
         GetIdMapper().GetSeq_id(rh));
+    if ( !rbsh ) {
+        THROW1_TRACE(runtime_error,
+            "CDataSource::x_ResolveMapSegment() -- "
+            "Can not resolve reference.");
+    }
     // This tricky way of getting the seq-map is used to obtain
     // the non-const reference.
     CMutexGuard guard(sm_DataSource_MP.GetMutex(this));    
@@ -1913,6 +1918,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2002/09/10 19:55:49  grichenk
+* Throw exception when unable to create resolved seq-map
+*
 * Revision 1.61  2002/08/09 14:58:50  ucko
 * Restrict template <> to MIPSpro for now, as it also leads to link
 * errors with Compaq's compiler.  (Sigh.)
