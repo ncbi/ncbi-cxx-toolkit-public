@@ -55,7 +55,7 @@ BEGIN_SCOPE(validator)
 class CValidErrItem : public CObject {
 public:
     // constructor
-    CValidErrItem(EDiagSev sev,
+    CValidErrItem(EDiagSev             sev,
                   unsigned int         ei,
                   const string&        msg,
                   const CSerialObject& obj);
@@ -85,22 +85,25 @@ class CValidError
 public:
 
     enum EValidOptions {
-        eVal_non_ascii  = 0x00000001,
-        eVal_splice_err = 0x00000002,
-        eVal_val_align  = 0x00000004,
-        eVal_no_context = 0x00000008
+        eVal_non_ascii   =  1,
+        eVal_splice_err  =  2,
+        eVal_val_align   =  4,
+        eVal_no_context  =  8,
+        eVal_val_exons   = 16,
+        eVal_need_taxid  = 32,
+        eVal_need_isojta = 64        
     };
 
     // constructors
     CValidError
     (CObjectManager&   objmgr,
      const CSeq_entry& se,
-     unsigned int      options = 0x00000000);
+     unsigned int      options = 0);
 
     CValidError
     (CObjectManager&    objmgr,
      const CSeq_submit& ss,
-     unsigned int       options = 0x00000000);
+     unsigned int       options = 0);
 
     // destructor
     ~CValidError(void);
@@ -150,6 +153,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.4  2002/10/11 13:54:49  clausen
+* QA changes
+*
 * Revision 1.3  2002/10/08 19:50:14  kans
 * changed TErrs from list to vector
 *
