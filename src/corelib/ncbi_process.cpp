@@ -32,6 +32,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_process.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 
 
 #if defined(NCBI_OS_MSWIN)
@@ -46,6 +47,7 @@
 
 
 BEGIN_NCBI_SCOPE
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -249,12 +251,14 @@ int CProcess::Wait(unsigned long timeout) const
             break;
         }
         // Process is still running
+        unsigned long x_sleep = kWaitPrecision;
         if (timeout != kMax_ULong /*infinite*/) {
-            unsigned long x_sleep = kWaitPrecision;
             if (timeout < kWaitPrecision) {
                 x_sleep = timeout;
             }
             timeout -= x_sleep;
+        }
+        if ( x_sleep ) {
             SleepMilliSec(x_sleep);
         }
     } while (timeout); 
@@ -281,10 +285,12 @@ int CProcess::Wait(unsigned long timeout) const
     DWORD status = -1;
     try {
         // Is process still running?
-        if ( !hProcess  || hProcess == INVALID_HANDLE_VALUE  ||
-             !GetExitCodeProcess(hProcess, &status) ||
-              status != STILL_ACTIVE ) {
+        if ( !hProcess  || hProcess == INVALID_HANDLE_VALUE ) {
             throw -1;
+        }
+        if ( GetExitCodeProcess(hProcess, &status)  &&
+             status != STILL_ACTIVE ) {
+            throw (int)status;
         }
         // Wait for process termination, or timeout expired
         if (enable_sync  &&  timeout) {
@@ -317,18 +323,22 @@ int CProcess::Wait(unsigned long timeout) const
 // CPIDGuard
 //
 
+// Protective mutex
+DEFINE_STATIC_FAST_MUTEX(s_PidGuardMutex);
+
+// NOTE: This method to protect PID file works only within one process.
+//       CPIDGuard know nothing about PID file modification or deletion 
+//       by other processes. Be aware.
+
+
 CPIDGuard::CPIDGuard(const string& filename, const string& dir)
-    : m_OldPID(0)
+    : m_OldPID(0), m_NewPID(0)
 {
     string real_dir;
     CDirEntry::SplitPath(filename, &real_dir, 0, 0);
     if (real_dir.empty()) {
         if (dir.empty()) {
-#if defined(NCBI_OS_UNIX)
-            real_dir = "/tmp";
-#else
-            real_dir = CDir::GetHome();
-#endif
+            real_dir = CDir::GetTmpDir();
         } else {
             real_dir = dir;
         }
@@ -336,25 +346,54 @@ CPIDGuard::CPIDGuard(const string& filename, const string& dir)
     } else {
         m_Path = filename;
     }
-
-    {{
-        CNcbiIfstream in(m_Path.c_str());
-        if (in.good()) {
-            in >> m_OldPID;
-            if ( CProcess(m_OldPID,CProcess::ePid).IsAlive() ) {
-                NCBI_THROW2(CPIDGuardException, eStillRunning,
-                            "Process is still running", m_OldPID);
-            }
-        }
-    }}
     UpdatePID();
+}
+
+
+CPIDGuard::~CPIDGuard(void)
+{
+    Release();
 }
 
 
 void CPIDGuard::Release(void)
 {
     if ( !m_Path.empty() ) {
-        CDirEntry(m_Path).Remove();
+        // MT-Safe protect
+        CFastMutexGuard LOCK(s_PidGuardMutex);
+
+        // Read info
+        TPid pid = 0;
+        unsigned int ref = 0;
+        CNcbiIfstream in(m_Path.c_str());
+        if ( in.good() ) {
+            in >> pid >> ref;
+            in.close();
+            if ( m_NewPID != pid ) {
+                // We do not own this file more
+                return;
+            }
+            if ( ref ) {
+                ref--;
+            }
+            // Check reference counter
+            if ( ref ) {
+                // Write updated reference counter into the file
+                CNcbiOfstream out(m_Path.c_str(),
+                                  IOS_BASE::out | IOS_BASE::trunc);
+                if ( out.good() ) {
+                    out << pid << endl << ref << endl;
+                }
+                if ( !out.good() ) {
+                    NCBI_THROW(CPIDGuardException, eWrite,
+                               "Unable to write into PID file " + m_Path +": "
+                               + strerror(errno));
+                }
+            } else {
+                // Remove the file
+                CDirEntry(m_Path).Remove();
+            }
+        }
         m_Path.erase();
     }
 }
@@ -365,14 +404,40 @@ void CPIDGuard::UpdatePID(TPid pid)
     if (pid == 0) {
         pid = CProcess::GetCurrentPid();
     }
+
+    // MT-Safe protect
+    CFastMutexGuard LOCK(s_PidGuardMutex);
+
+    // Read old PID
+    unsigned int ref = 1;
+    CNcbiIfstream in(m_Path.c_str());
+    if ( in.good() ) {
+        in >> m_OldPID >> ref;
+        if ( m_OldPID == pid ) {
+            // Guard the same PID. Just increase the reference counter.
+            ref++;
+        } else {
+            if ( CProcess(m_OldPID,CProcess::ePid).IsAlive() ) {
+                NCBI_THROW2(CPIDGuardException, eStillRunning,
+                            "Process is still running", m_OldPID);
+            }
+            ref = 1;
+        }
+    }
+    in.close();
+
+    // Write new PID
     CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if ( out.good() ) {
-        out << pid << endl;
-    } else {
-        NCBI_THROW(CPIDGuardException, eCouldntOpen,
-                   "Unable to open PID file " + m_Path + " for writing: "
+        out << pid << endl << ref << endl;
+    }
+    if ( !out.good() ) {
+        NCBI_THROW(CPIDGuardException, eWrite,
+                   "Unable to write into PID file " + m_Path + ": "
                    + strerror(errno));
     }
+    // Save updated pid
+    m_NewPID = pid;
 }
 
 
@@ -382,6 +447,14 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/18 17:01:15  ivanov
+ * CProcess::
+ *     + WaitForAlive(), WaitForTerminate().
+ *     Fixed UNIX version Wait() to correct work with infinite timeouts.
+ * CPIDGuard::
+ *     Fixed CPIDGuard to use reference counters in PID file.
+ *     Added CPIDGuard::Remove().
+ *
  * Revision 1.7  2004/05/14 13:59:26  gorelenk
  * Added include of ncbi_pch.hpp
  *
