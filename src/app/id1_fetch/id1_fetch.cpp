@@ -27,109 +27,6 @@
  *
  * File Description:
  *   New IDFETCH network client (get data from "ID1")
- *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 1.30  2002/05/06 03:31:51  vakatov
- * OM/OM1 renaming
- *
- * Revision 1.29  2002/03/11 21:52:05  lavr
- * Print complete debug and trace information when compiled with _DEBUG
- *
- * Revision 1.28  2002/01/16 22:14:00  ucko
- * Removed CRef<> argument from choice variant setter, updated sources to
- * use references instead of CRef<>s
- *
- * Revision 1.27  2001/12/07 21:15:16  ucko
- * Remove duplicate includes.
- *
- * Revision 1.26  2001/12/07 21:11:01  grichenk
- * Fixed includes to work with the updated datatool
- *
- * Revision 1.25  2001/12/07 21:03:47  ucko
- * Add #includes required by new datatool version.
- *
- * Revision 1.24  2001/11/16 16:06:45  ucko
- * Handle new Entrez docsum interface properly.
- *
- * Revision 1.23  2001/10/26 14:49:16  ucko
- * Restructured to avoid CRefs as arguments.
- *
- * Revision 1.22  2001/10/23 20:05:12  ucko
- * Request ASCII from CSeq_vector.
- *
- * Revision 1.21  2001/10/17 21:17:53  ucko
- * Seq_vector now properly starts from zero rather than one; adjust code
- * that uses it accordingly.
- *
- * Revision 1.20  2001/10/12 19:32:58  ucko
- * move BREAK to a central location; move CBioseq::GetTitle to object manager
- *
- * Revision 1.19  2001/10/12 15:34:01  ucko
- * Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
- *
- * Revision 1.18  2001/10/12 15:29:08  ucko
- * Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
- * Rewrite GenBank output code to take fuller advantage of the object manager.
- *
- * Revision 1.17  2001/10/10 16:02:53  ucko
- * Clean up includes.
- *
- * Revision 1.16  2001/10/04 19:11:56  ucko
- * Centralize (rudimentary) code to get a sequence's title.
- *
- * Revision 1.15  2001/09/25 20:31:13  ucko
- * Work around bug in Workshop's handling of declarations in for-loop
- * initializers.
- *
- * Revision 1.14  2001/09/25 20:12:02  ucko
- * More cleanups from Denis.
- * Put utility code in the objects namespace.
- * Moved utility code to {src,include}/objects/util (to become libxobjutil).
- * Moved static members of CGenbankWriter to above their first use.
- *
- * Revision 1.13  2001/09/25 13:26:36  lavr
- * CConn_ServiceStream() - arguments adjusted
- *
- * Revision 1.12  2001/09/24 03:22:09  vakatov
- * Un-#include <cstdlib> and <cctype> which break IRIX/MIPSpro compilation and
- * apparently are not needed after all
- *
- * Revision 1.11  2001/09/21 22:38:59  ucko
- * Cope with new Entrez interface; fix MSVC build.
- *
- * Revision 1.10  2001/09/05 16:25:56  ucko
- * Adapted to latest revision of object manager interface.
- *
- * Revision 1.9  2001/09/05 14:44:37  ucko
- * Use NStr::IntToString instead of Stringify.
- *
- * Revision 1.8  2001/09/04 16:20:53  ucko
- * Dramatically fleshed out id1_fetch
- *
- * Revision 1.7  2001/07/19 19:40:20  lavr
- * Typo fixed
- *
- * Revision 1.6  2001/06/01 18:43:44  vakatov
- * Comment out excessive debug/trace printout
- *
- * Revision 1.5  2001/05/16 17:55:37  grichenk
- * Redesigned support for non-blocking stream read operations
- *
- * Revision 1.4  2001/05/11 20:41:16  grichenk
- * Added support for non-blocking stream reading
- *
- * Revision 1.3  2001/05/11 14:06:45  grichenk
- * The first working revision
- *
- * Revision 1.2  2001/04/13 14:09:34  grichenk
- * Next debug version, still not working
- *
- * Revision 1.1  2001/04/10 22:39:04  vakatov
- * Initial revision.
- * Compiles and links, but apparently is not working yet.
- *
- * ===========================================================================
  */
 
 #include <corelib/ncbiapp.hpp>
@@ -168,7 +65,13 @@
 #include <objects/id1/ID1server_back.hpp>
 #include <objects/id1/ID1server_maxcomplex.hpp>
 #include <objects/id1/ID1server_request.hpp>
-#include <objects/objmgr_old/objmgr.hpp>
+
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/seq_vector.hpp>
+#include <objects/objmgr/reader_id1.hpp>
+#include <objects/objmgr/gbloader.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_hist_rec.hpp>
@@ -178,6 +81,7 @@
 #include <objects/seqres/Byte_graph.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 #include <objects/util/genbank.hpp>
 
 #include <memory>
@@ -206,16 +110,20 @@ private:
 
     bool CheckEntrezReply  (const CE2Reply& rep);
 
-    void WriteFastaIDs     (const CID1server_back::TIds& ids);
-    void WriteFastaEntry   (const CID1server_back& id1_reply);
+    void WriteFastaIDs     (const list< CRef< CSeq_id > >& ids);
+
+    void WriteFastaEntry   (const CBioseq& bioseq);
+    void WriteFastaEntry   (const CSeq_entry& seq);
+
     void WriteHistoryTable (const CID1server_back& id1_reply);
+
     void WriteQualityScores(const CID1server_back& id1_reply);
 
     CNcbiOstream*                 m_OutputFile;
     auto_ptr<CConn_ServiceStream> m_ID1_Server;
     auto_ptr<CConn_ServiceStream> m_E2_Server;
-    CObjectManager                m_ObjMgr;
-    CScope*                       m_Scope;
+    CRef<CObjectManager>          m_ObjMgr;
+    CRef<CScope>                  m_Scope;
 };
 
 
@@ -358,7 +266,7 @@ int CId1FetchApp::Run(void)
         SetDiagStream( &args["log"].AsOutputFile() );
     }
 #ifdef _DEBUG
-    SetDiagTrace(eDT_Enable);
+    // SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
 #endif
@@ -408,7 +316,8 @@ int CId1FetchApp::Run(void)
         (new CConn_ServiceStream("Entrez2", fSERV_Any, 0, 0, &tmout));
 
     // Set up object manager
-    m_Scope = &m_ObjMgr.CreateScope();
+    m_ObjMgr = new CObjectManager;
+    m_Scope = new CScope(*m_ObjMgr);
 
     if (args["gi"]) {
         if ( !LookUpGI(args["gi"].AsInteger()) )
@@ -522,9 +431,13 @@ bool CId1FetchApp::LookUpGI(int gi)
 {    
     const CArgs&         args             = GetArgs();
     CConn_ServiceStream* server           = m_ID1_Server.get();
+    bool                 use_objmgr       = false;
     bool                 using_id1_server = true;
     const string&        fmt              = args["fmt"].AsString();
     const string&        lt               = args["lt"].AsString();
+
+    m_ObjMgr->RegisterDataLoader( *new CGBDataLoader("GENBANK"));
+    m_Scope->AddDataLoader("GENBANK");
 
     // Compose request to appropriate server
     CID1server_request id1_request;
@@ -546,68 +459,65 @@ bool CId1FetchApp::LookUpGI(int gi)
         CEntrez2_id_list::TUidIterator it = uids.GetUidIterator();
         *it = gi;
     } else if (lt == "entry") {
-        CRef<CID1server_maxcomplex> params(new CID1server_maxcomplex);
-        params->SetGi(gi);
-        int maxplex = GetTypeInfo_enum_EEntry_complexities()
-            ->FindValue(args["maxplex"].AsString());
-        params->SetMaxplex(maxplex); // Why doesn't this affect the output?
-        if (args["ent"])
-            params->SetEnt(args["ent"].AsInteger());
-        if (args["db"])
-            params->SetSat(args["db"].AsString());
-        id1_request.SetGetsefromgi(*params);
-    } else if (lt == "state") {
+        using_id1_server = false;
+        use_objmgr = true;
+    }
+      else if (lt == "state") {
         id1_request.SetGetgistate(gi);
     } else if (lt == "ids") {
-        id1_request.SetGetseqidsfromgi(gi);
+        using_id1_server = false;
+        use_objmgr = true;
     } else if (lt == "history") {
         id1_request.SetGetgihist(gi);
     } else if (lt == "revisions") {
         id1_request.SetGetgirev(gi);
     }
 
-    {{
-        CObjectOStreamAsnBinary server_output(*server);
-
-        // Send request to the server
-        if (using_id1_server) {
-            server_output << id1_request;
-        } else {
-            server_output << e2_request;
-        }
-        server_output.Flush();
-    }}
-
-    // Get response (Seq-Entry) from the server, dump it to the
-    // output data file in the requested format
-
-    // Dump the raw data coming from server "as is", if so specified
-    if (fmt == "raw") {
-        *m_OutputFile << server->rdbuf();
-        return true;  // Done
-    }    
-
     CID1server_back id1_reply;
-
     CEntrez2_reply e2_reply;
-    {{
-        // Read server response in ASN.1 binary format
-        //### Use CObjectIStream::Open() since only this function
-        //### supports opening streams with non-blocking read.
-        CObjectIStream& server_input
-            = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
+    if (!use_objmgr) {
+        {{
+            CObjectOStreamAsnBinary server_output(*server);
 
-        if (using_id1_server) {
-            server_input >> id1_reply;
-        } else {
-            server_input >> e2_reply;
-        }
-    }}
+            // Send request to the server
+            if (using_id1_server) {
+                server_output << id1_request;
+            } else {
+                server_output << e2_request;
+            }
+            server_output.Flush();
+        }}
 
-    if ( id1_reply.IsGotseqentry() ) {
-        m_ObjMgr.AddEntry(id1_reply.SetGotseqentry(), m_Scope);
-    } else if ( id1_reply.IsGotdeadseqentry() ) {
-        m_ObjMgr.AddEntry(id1_reply.SetGotdeadseqentry(), m_Scope);
+        // Get response (Seq-Entry) from the server, dump it to the
+        // output data file in the requested format
+
+        // Dump the raw data coming from server "as is", if so specified
+        if (fmt == "raw") {
+            *m_OutputFile << server->rdbuf();
+            return true;  // Done
+        }    
+
+        {{
+            // Read server response in ASN.1 binary format
+            //### Use CObjectIStream::Open() since only this function
+            //### supports opening streams with non-blocking read.
+            CObjectIStream& server_input
+                = *CObjectIStream::Open(eSerial_AsnBinary, *server, false);
+
+            if (using_id1_server) {
+                server_input >> id1_reply;
+            } else {
+                server_input >> e2_reply;
+            }
+        }}
+    }
+
+    CSeq_id id;
+    id.SetGi(gi);
+    CBioseq_Handle handle;
+    if (use_objmgr) {
+        // What about db, ent, and maxplex?
+        handle = m_Scope->GetBioseqHandle(id);
     }
 
     // Dump server response in the specified format
@@ -649,9 +559,18 @@ bool CId1FetchApp::LookUpGI(int gi)
             *m_OutputFile << title;
         }
     } else if (fmt == "fasta"  &&  lt == "ids") {
-        WriteFastaIDs( id1_reply.GetIds() );
+        if (!use_objmgr) {
+            WriteFastaIDs( id1_reply.GetIds() );
+        }
+        else {
+            WriteFastaIDs( handle.GetBioseq().GetId());
+        }
     } else if (fmt == "fasta"  &&  lt == "entry") {
-        WriteFastaEntry(id1_reply);
+        if (!use_objmgr) {
+            WriteFastaEntry(id1_reply.GetGotseqentry());
+        } else {
+            WriteFastaEntry(handle.GetTopLevelSeqEntry());
+        }
     } else if (fmt == "fasta"  &&  lt == "state") {
         int state = id1_reply.GetGistate();
         *m_OutputFile << "gi = " << gi << ", states: ";
@@ -677,17 +596,24 @@ bool CId1FetchApp::LookUpGI(int gi)
     } else if (fmt == "quality") {
         WriteQualityScores(id1_reply);
     } else if (fmt == "genbank") {
-        CGenbankWriter(*m_OutputFile, *m_Scope, CGenbankWriter::eFormat_Genbank)
-            .Write( id1_reply.GetGotseqentry() );
+        const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
+        CGenbankWriter(*m_OutputFile, *m_Scope,
+                       CGenbankWriter::eFormat_Genbank).Write(entry);
     } else if (fmt == "genpept") {
-        CGenbankWriter(*m_OutputFile, *m_Scope, CGenbankWriter::eFormat_Genpept)
-            .Write( id1_reply.GetGotseqentry() );
+        const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
+        CGenbankWriter(*m_OutputFile, *m_Scope,
+                       CGenbankWriter::eFormat_Genpept).Write(entry);
     }
 
     if (format != eSerial_None) {
         auto_ptr<CObjectOStream> id1_client_output
-            (CObjectOStream::Open(format, *m_OutputFile));
-        *id1_client_output << id1_reply;
+           (CObjectOStream::Open(format, *m_OutputFile));
+        if (!use_objmgr) {
+            *id1_client_output << id1_reply;
+        } else {
+            const CSeq_entry& entry = handle.GetTopLevelSeqEntry();
+            *id1_client_output << entry;
+        }
     }
 
     if (fmt != "asnb"  &&  fmt != "raw") {
@@ -792,9 +718,9 @@ bool CId1FetchApp::CheckEntrezReply(const CE2Reply& rep)
 }
 
 
-void CId1FetchApp::WriteFastaIDs(const CID1server_back::TIds& ids)
+void CId1FetchApp::WriteFastaIDs(const list< CRef< CSeq_id > >& ids)
 {
-    iterate (CID1server_back::TIds, it, ids) {
+    iterate (list< CRef< CSeq_id > >, it, ids) {
         if (it != ids.begin()) {
             *m_OutputFile << '|';
         }
@@ -803,34 +729,43 @@ void CId1FetchApp::WriteFastaIDs(const CID1server_back::TIds& ids)
 }
 
 
-void CId1FetchApp::WriteFastaEntry(const CID1server_back& id1_reply)
+void CId1FetchApp::WriteFastaEntry(const CBioseq& bioseq)
 {
-    for (CTypeConstIterator<CBioseq> it = ConstBegin(id1_reply);  it;  ++it) {
-        CBioseqHandle handle = m_Scope->GetBioseqHandle(*it->GetId().front());
+        CBioseq_Handle handle = m_Scope->GetBioseqHandle(*(bioseq.GetId().front()));
         // Print the identifier(s) and description.
         *m_OutputFile << '>';
-        WriteFastaIDs(it->GetId());
-        if (it->IsSetDescr()) {
-            iterate (CSeq_descr::Tdata, it2, it->GetDescr().Get()) {
+        WriteFastaIDs(bioseq.GetId());
+        if (bioseq.IsSetDescr()) {
+            iterate (CSeq_descr::Tdata, it2, bioseq.GetDescr().Get()) {
                 if ((*it2)->IsName()) {
                     *m_OutputFile << ' ' << (*it2)->GetName();
                     break;
                 }
             }
         }
-        *m_OutputFile << ' ' << m_Scope->GetTitle(handle);
+        *m_OutputFile << ' ' << handle.GetTitle();
 
         // Now print the actual sequence in an appropriate ASCII format.
         {{
-            CSeq_vector vec = m_Scope->GetSequence(handle);
+            CSeqVector vec = handle.GetSeqVector();
             vec.SetIupacCoding();
-            for (size_t pos = 0;  pos < vec.size();  ++pos) {
+            for (TSeqPos pos = 0;  pos < vec.size();  ++pos) {
                 if (pos % 70 == 0)
                     *m_OutputFile << NcbiEndl;
                 *m_OutputFile << vec[pos];
             }
             *m_OutputFile << NcbiEndl;
         }}
+}
+
+void CId1FetchApp::WriteFastaEntry(const CSeq_entry& seq)
+{
+    if (seq.IsSeq()) {
+        WriteFastaEntry(seq.GetSeq());
+    } else {
+        iterate ( list< CRef< CSeq_entry > >, it, seq.GetSet().GetSeq_set()) {
+            WriteFastaEntry(**it);
+        }
     }
 }
 
@@ -907,6 +842,7 @@ void CId1FetchApp::WriteHistoryTable(const CID1server_back& id1_reply)
 }
 
 
+
 void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
 {   
     /* Test case:
@@ -918,14 +854,16 @@ void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
      */
     string id;
 
-    for (CTypeConstIterator<CTextseq_id> it = ConstBegin(id1_reply);
-         it;  ++it) {
-        id = it->GetAccession() + '.' + NStr::IntToString(it->GetVersion());
-        BREAK(it);
+    {
+        CTypeConstIterator<CTextseq_id> it = ConstBegin(id1_reply);
+        for ( ;it;  ++it) {
+            id = it->GetAccession() + '.' + NStr::IntToString(it->GetVersion());
+            BREAK(it);
+        }
     }
 
-    for (CTypeConstIterator<CSeq_graph> it = ConstBegin(id1_reply);
-         it;  ++it) {
+    CTypeConstIterator<CSeq_graph> it = ConstBegin(id1_reply);
+    for ( ; it;  ++it) {
         string title = it->GetTitle();
         if (title.find("uality") == NPOS) {
             continue;
@@ -945,7 +883,6 @@ void CId1FetchApp::WriteQualityScores(const CID1server_back& id1_reply)
     }
 }
 
-
 END_NCBI_SCOPE
 
 
@@ -960,3 +897,133 @@ int main(int argc, const char* argv[])
 {
     return CId1FetchApp().AppMain(argc, argv);
 }
+
+/*
+* ===========================================================================
+*
+* ---------------------------------------------------------------------------
+* $Log$
+* Revision 1.31  2002/05/06 16:13:46  ucko
+* Merge in Andrei Gourianov's changes to use the new OM (thanks!)
+* Remove some dead code.
+* Don't automatically turn on tracing, even when building with _DEBUG;
+* it is always possible to set DIAG_TRACE in the environment instead.
+* Move CVS log to end.
+*
+*
+* *** These four entries are from src/app/id1_fetch1/id1_fetch1.cpp ***
+* Revision 1.5  2002/05/06 03:31:52  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.4  2002/05/03 21:28:21  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.3  2002/04/10 21:02:21  gouriano
+* moved construction of iterators out of "for" loop initialization:
+* Sun Workshop compiler does not call destructors of such objects
+* in case we use break to exit the loop
+*
+* Revision 1.2  2002/04/10 16:07:30  gouriano
+* corrected data output in different formats
+*
+* Revision 1.1  2002/04/04 16:31:36  gouriano
+* id1_fetch1 - modified version of id1_fetch, which uses objmgr1
+*
+* Revision 1.29  2002/03/11 21:52:05  lavr
+* Print complete debug and trace information when compiled with _DEBUG
+*
+* Revision 1.28  2002/01/16 22:14:00  ucko
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
+* Revision 1.27  2001/12/07 21:15:16  ucko
+* Remove duplicate includes.
+*
+* Revision 1.26  2001/12/07 21:11:01  grichenk
+* Fixed includes to work with the updated datatool
+*
+* Revision 1.25  2001/12/07 21:03:47  ucko
+* Add #includes required by new datatool version.
+*
+* Revision 1.24  2001/11/16 16:06:45  ucko
+* Handle new Entrez docsum interface properly.
+*
+* Revision 1.23  2001/10/26 14:49:16  ucko
+* Restructured to avoid CRefs as arguments.
+*
+* Revision 1.22  2001/10/23 20:05:12  ucko
+* Request ASCII from CSeq_vector.
+*
+* Revision 1.21  2001/10/17 21:17:53  ucko
+* Seq_vector now properly starts from zero rather than one; adjust code
+* that uses it accordingly.
+*
+* Revision 1.20  2001/10/12 19:32:58  ucko
+* move BREAK to a central location; move CBioseq::GetTitle to object manager
+*
+* Revision 1.19  2001/10/12 15:34:01  ucko
+* Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
+*
+* Revision 1.18  2001/10/12 15:29:08  ucko
+* Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
+* Rewrite GenBank output code to take fuller advantage of the object manager.
+*
+* Revision 1.17  2001/10/10 16:02:53  ucko
+* Clean up includes.
+*
+* Revision 1.16  2001/10/04 19:11:56  ucko
+* Centralize (rudimentary) code to get a sequence's title.
+*
+* Revision 1.15  2001/09/25 20:31:13  ucko
+* Work around bug in Workshop's handling of declarations in for-loop
+* initializers.
+*
+* Revision 1.14  2001/09/25 20:12:02  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
+*
+* Revision 1.13  2001/09/25 13:26:36  lavr
+* CConn_ServiceStream() - arguments adjusted
+*
+* Revision 1.12  2001/09/24 03:22:09  vakatov
+* Un-#include <cstdlib> and <cctype> which break IRIX/MIPSpro compilation and
+* apparently are not needed after all
+*
+* Revision 1.11  2001/09/21 22:38:59  ucko
+* Cope with new Entrez interface; fix MSVC build.
+*
+* Revision 1.10  2001/09/05 16:25:56  ucko
+* Adapted to latest revision of object manager interface.
+*
+* Revision 1.9  2001/09/05 14:44:37  ucko
+* Use NStr::IntToString instead of Stringify.
+*
+* Revision 1.8  2001/09/04 16:20:53  ucko
+* Dramatically fleshed out id1_fetch
+*
+* Revision 1.7  2001/07/19 19:40:20  lavr
+* Typo fixed
+*
+* Revision 1.6  2001/06/01 18:43:44  vakatov
+* Comment out excessive debug/trace printout
+*
+* Revision 1.5  2001/05/16 17:55:37  grichenk
+* Redesigned support for non-blocking stream read operations
+*
+* Revision 1.4  2001/05/11 20:41:16  grichenk
+* Added support for non-blocking stream reading
+*
+* Revision 1.3  2001/05/11 14:06:45  grichenk
+* The first working revision
+*
+* Revision 1.2  2001/04/13 14:09:34  grichenk
+* Next debug version, still not working
+*
+* Revision 1.1  2001/04/10 22:39:04  vakatov
+* Initial revision.
+* Compiles and links, but apparently is not working yet.
+*
+* ===========================================================================
+*/
