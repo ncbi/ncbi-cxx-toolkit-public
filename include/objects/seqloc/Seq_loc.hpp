@@ -111,7 +111,6 @@ public:
     CSeq_loc_CI& operator= (const CSeq_loc_CI& iter);
 
     CSeq_loc_CI& operator++ (void);
-    CSeq_loc_CI& operator++ (int);
     operator bool (void) const;
 
     typedef CRange<TSeqPos> TRange;
@@ -212,13 +211,6 @@ CSeq_loc_CI& CSeq_loc_CI::operator++ (void)
 }
 
 inline
-CSeq_loc_CI& CSeq_loc_CI::operator++ (int)
-{
-    m_CurLoc++;
-    return *this;
-}
-
-inline
 CSeq_loc_CI::operator bool (void) const
 {
     return x_IsValid();
@@ -291,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2002/12/19 20:21:10  dicuccio
+ * Remove post-increment operator
+ *
  * Revision 1.14  2002/12/19 20:11:20  grichenk
  * Fixed error message
  *
