@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.210 2003/08/19 14:59:56 ucko Exp $
+#  $Id: configure.ac,v 1.211 2003/08/28 21:11:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2701,6 +2701,9 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${release_debug}"
       if test "$compiler" = "GCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
+         if test -d "$NCBI_SSS_LIBPATH$ncbi_compiler_ver"; then
+            NCBI_SSS_LIBPATH=$NCBI_SSS_LIBPATH$ncbi_compiler_ver
+         fi
       elif test "$compiler" = "KCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}KAI"
       elif test "$compiler" = "ICC" ; then

@@ -12418,6 +12418,9 @@ if test "$with_sss" != "no" ; then
       NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${release_debug}"
       if test "$compiler" = "GCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}GNU"
+         if test -d "$NCBI_SSS_LIBPATH$ncbi_compiler_ver"; then
+            NCBI_SSS_LIBPATH=$NCBI_SSS_LIBPATH$ncbi_compiler_ver
+         fi
       elif test "$compiler" = "KCC" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}KAI"
       elif test "$compiler" = "ICC" ; then
