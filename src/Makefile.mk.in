@@ -130,6 +130,10 @@ LINK_DLL     = @LINK_DLL@
 CFLAGS_DLL   = @CFLAGS_DLL@
 CXXFLAGS_DLL = @CXXFLAGS_DLL@
 
+# To enable extra, potentially unsafe, optimization
+CFAST = @CFAST@
+CXXFAST = @CXXFAST@
+
 
 ### Do not use any default suffix rules
 .SUFFIXES:
