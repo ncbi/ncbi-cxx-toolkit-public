@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/05/16 22:00:54  kholodov
+* Added: _TRACE() message to elementAt()
+*
 * Revision 1.3  2002/05/13 19:10:28  kholodov
 * Modified: indented, if index is out of range, aborts in debug mode, throws exception in release
 *
@@ -217,12 +220,14 @@ public:
     T* GetBuffer() const { return m_start; } 
 
     T& elementAt(unsigned int idx) const { 
-        if( idx >= GetSize() )
+        if( idx >= GetSize() ) {
 #if _DEBUG
+            _TRACE("CDynArray::elementAt(): index out of bounds");
             _ASSERT(0);
 #else
-        throw CArrayOutOfBoundsException("CDynArray::elementAt(): Wrong array index");
+            throw CArrayOutOfBoundsException("CDynArray::elementAt(): index out of bounds");
 #endif
+        }
 
         return m_start[idx]; 
     }
