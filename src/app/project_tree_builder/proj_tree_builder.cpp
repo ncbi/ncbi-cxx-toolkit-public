@@ -288,22 +288,12 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends_libs,
 
 
 //-----------------------------------------------------------------------------
-void SAppProjectT::CreateNcbiCToolkitLibs(const string& applib_mfilepath,
-                                          const TFiles& makeapp,
+void SAppProjectT::CreateNcbiCToolkitLibs(const CSimpleMakeFileContents& makefile,
                                           list<string>* libs_list)
 {
-    libs_list->clear();
-    CProjectItemsTree::TFiles::const_iterator m = makeapp.find(applib_mfilepath);
-    if (m == makeapp.end()) {
-
-        LOG_POST(Info << "No Makefile.*.app for Makefile.in :"
-                  + applib_mfilepath);
-        return;
-    }
-
     CSimpleMakeFileContents::TContents::const_iterator k = 
-    m->second.m_Contents.find("NCBI_C_LIBS");
-    if (k == m->second.m_Contents.end()) {
+    makefile.m_Contents.find("NCBI_C_LIBS");
+    if (k == makefile.m_Contents.end()) {
         return;
     }
     const list<string>& values = k->second;
@@ -346,10 +336,12 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
                   + applib_mfilepath);
         return CProjKey();
     }
+    
+    const CSimpleMakeFileContents& makefile = m->second;
 
     CSimpleMakeFileContents::TContents::const_iterator k = 
-        m->second.m_Contents.find("SRC");
-    if (k == m->second.m_Contents.end()) {
+        makefile.m_Contents.find("SRC");
+    if (k == makefile.m_Contents.end()) {
 
         LOG_POST(Warning << "No SRC key in Makefile.*.app :"
                   + applib_mfilepath);
@@ -365,8 +357,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     //depends
     list<string> depends;
-    k = m->second.m_Contents.find("LIB");
-    if (k != m->second.m_Contents.end())
+    k = makefile.m_Contents.find("LIB");
+    if (k != makefile.m_Contents.end())
         depends = k->second;
     //Adjust depends by information from msvc Makefile
     CMsvcProjectMakefile project_makefile
@@ -395,13 +387,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     //requires
     list<string> requires;
-    k = m->second.m_Contents.find("REQUIRES");
-    if (k != m->second.m_Contents.end())
+    k = makefile.m_Contents.find("REQUIRES");
+    if (k != makefile.m_Contents.end())
         requires = k->second;
 
     //project name
-    k = m->second.m_Contents.find("APP");
-    if (k == m->second.m_Contents.end()  ||  
+    k = makefile.m_Contents.find("APP");
+    if (k == makefile.m_Contents.end()  ||  
                                            k->second.empty()) {
 
         LOG_POST(Error << "No APP key or empty in Makefile.*.app :"
@@ -412,8 +404,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
 
     //LIBS
     list<string> libs_3_party;
-    k = m->second.m_Contents.find("LIBS");
-    if (k != m->second.m_Contents.end()) {
+    k = makefile.m_Contents.find("LIBS");
+    if (k != makefile.m_Contents.end()) {
         const list<string> libs_flags = k->second;
         SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
     }
@@ -421,8 +413,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     //CPPFLAGS
     list<string> include_dirs;
     list<string> defines;
-    k = m->second.m_Contents.find("CPPFLAGS");
-    if (k != m->second.m_Contents.end()) {
+    k = makefile.m_Contents.find("CPPFLAGS");
+    if (k != makefile.m_Contents.end()) {
         const list<string> cpp_flags = k->second;
         SMakeProjectT::CreateIncludeDirs(cpp_flags, 
                                          source_base_dir, &include_dirs);
@@ -430,11 +422,11 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
 
     //NCBI_C_LIBS - Special case for NCBI C Toolkit
-    k = m->second.m_Contents.find("NCBI_C_LIBS");
+    k = makefile.m_Contents.find("NCBI_C_LIBS");
     list<string> ncbi_clibs;
-    if (k != m->second.m_Contents.end()) {
+    if (k != makefile.m_Contents.end()) {
         libs_3_party.push_back("NCBI_C_LIBS");
-        CreateNcbiCToolkitLibs(applib_mfilepath, makeapp, &ncbi_clibs);
+        CreateNcbiCToolkitLibs(makefile, &ncbi_clibs);
     }
     
     CProjItem project(CProjKey::eApp, 
@@ -451,8 +443,8 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     project.m_NcbiCLibs = ncbi_clibs;
 
     //DATATOOL_SRC
-    k = m->second.m_Contents.find("DATATOOL_SRC");
-    if ( k != m->second.m_Contents.end() ) {
+    k = makefile.m_Contents.find("DATATOOL_SRC");
+    if ( k != makefile.m_Contents.end() ) {
         //Add depends from datatoool for ASN projects
         project.m_Depends.push_back(CProjKey(CProjKey::eApp, GetApp().GetDatatoolId()));
         const list<string> datatool_src_list = k->second;
@@ -1021,6 +1013,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/16 23:53:14  gorelenk
+ * Changed implementations of:
+ * SAppProjectT::DoCreate and
+ * SAppProjectT::CreateNcbiCToolkitLibs .
+ *
  * Revision 1.2  2004/03/04 23:31:10  gorelenk
  * Added call to AddDatatoolSourcesDepends in implementation of
  * CProjectTreeBuilder::BuildProjectTree.
