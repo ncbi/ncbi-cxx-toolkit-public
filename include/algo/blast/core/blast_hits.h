@@ -349,11 +349,16 @@ Blast_HSPListSetFrames(EBlastProgramType program_number, BlastHSPList* hsp_list,
  * @param sbp Structure containing statistical information [in]
  * @param gap_decay_rate Adjustment parameter to compensate for the effects of
  * performing multiple tests when linking HSPs. No adjustment is made if 0. [in]
+ * @param scaling_factor Scaling factor by which Lambda should be divided. Used in
+ *                       RPS BLAST only; should be set to 1.0 in other cases. [in]
+ *                       
  */
 NCBI_XBLAST_EXPORT
 Int2 Blast_HSPListGetEvalues(const BlastQueryInfo* query_info,
-        BlastHSPList* hsp_list, Boolean gapped_calculation, 
-        BlastScoreBlk* sbp, double gap_decay_rate);
+                             BlastHSPList* hsp_list,
+                             Boolean gapped_calculation, 
+                             BlastScoreBlk* sbp, double gap_decay_rate,
+                             double scaling_factor);
 
 /** Calculate e-values for a PHI BLAST HSP list.
  * @param hsp_list HSP list found by PHI BLAST [in] [out]
