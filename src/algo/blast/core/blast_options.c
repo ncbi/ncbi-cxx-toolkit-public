@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.14  2003/05/06 20:29:57  dondosha
+ * Fix in filling effective length options
+ *
  * Revision 1.13  2003/05/06 14:34:51  dondosha
  * Fix in comment
  *
@@ -744,7 +747,7 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
    }
 
    /* User provided values if set, otherwise use real ones. */
-   if (dbseq_num==0 || db_length==0) {
+   if (dbseq_num == 0) {
       if (database) {
          ReadDBFILEPtr rdfp = readdb_new_ex(database, is_protein, FALSE);
          if (rdfp == NULL)
@@ -753,12 +756,11 @@ BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options,
                               &options->dbseq_num, TRUE);
          rdfp = readdb_destruct(rdfp);
       }	else {
-         return 3;
+         dbseq_num = 1;
       }
-   }
-
-   if (dbseq_num)
+   } else {
       options->dbseq_num = dbseq_num;
+   }
 
    if (db_length)
       options->db_length = db_length;
