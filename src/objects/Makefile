@@ -1,4 +1,4 @@
-MODULES = general biblio medline medlars pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime access featdef objprt seqcode id1
+MODULES = entrez2 general biblio medline medlars pub pubmed seqloc seqalign seqblock seqfeat seqres seqset seq submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime access featdef objprt seqcode id1
 
 #new_module = $(NCBI)/c++/scripts/new_module.sh
 new_module = ../../../scripts/new_module.sh
