@@ -129,9 +129,10 @@ bool WriteASNToFile(const ASNClass& ASNobject, bool isBinary,
     string filename = CNcbiOstrstreamToString(oss);
     string fullPath = CDirEntry::MakePath(pathToFiles, filename);
     if (CFile(fullPath).Exists()) {
-        *err = "Can't overwrite file ";
-        *err += fullPath;
-        return false;
+        WARNINGMSG("Overwriting temporary file " << fullPath);
+        // *err = "Can't overwrite file ";
+        // *err += fullPath;
+        // return false;
     }
 
     // initialize a binary output stream
@@ -608,6 +609,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/03/09 21:19:53  ucko
+* Only warn about overwriting temporary files, since the previous run
+* may have crashed and left them behind.
+*
 * Revision 1.13  2004/02/12 18:33:29  thiessen
 * add Assign test to UnsignedInt test
 *
