@@ -1,0 +1,11 @@
+# $Id$
+
+# Build library "XFCGI" -- the FastCGI version of library "XCGI"
+# NOTE:  see also makefile for lib "XCGI" -- these two should be kept in-sync!
+#################################
+
+LIBOBJ = ncbicgi cgiapp cgictx ncbicgir ncbires dbres \
+	fcgi_run $(FASTCGI_OBJS)
+LIB    = xfcgi
+
+CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
