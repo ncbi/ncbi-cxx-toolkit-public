@@ -70,6 +70,21 @@ int test1(int argc, char ** argv)
         string s = args.front();
         args.pop_front();
         
+        if (s == "-alphabeta") {
+            
+            // Note: this test is NOT EXPECTED to work, unless the
+            // user has databases named "alpha" and "beta" somewhere
+            // in their path.
+            
+            CSeqDB ab("alpha beta", 'p', true);
+            
+            for(Uint4 i = 0; i < ab.GetNumSeqs(); i++) {
+                cout << "-----seq " << i << " length " << ab.GetSeqLength(i) << " ------------" << endl;
+            }
+            
+            return 0;
+        } else desc += " [-alphabeta]";
+        
         if (s == "-here") {
             CSeqDB nr("tenth", 'p', true);
             
