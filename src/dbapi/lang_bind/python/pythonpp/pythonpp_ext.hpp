@@ -165,6 +165,7 @@ public:
     }
 };
 
+/* Experimental ....
 //////////////////////////////////////////////////////////////////////////
 class CExtBase : public PyObject
 {
@@ -195,12 +196,11 @@ protected:
 };
 
 //////////////////////////////////////////////////////////////////////////
-/* Experimental ....
 template <class T>
 class CExtension : public CExtBase
 {
 protected:
-    typedef CObject (T::*TMethodVarArgsFunc)( CTuple& args );
+    typedef CObject (T::*TMethodVarArgsFunc)( const CTuple& args );
 
     // A helper class for generating functions ...
     template<size_t N = 0>
@@ -209,7 +209,7 @@ protected:
     public:
         CClass(void)
         {
-            // Finalyze method definition ...
+            // Finalyze a method definition ...
             GetMethodHndlList().push_back( SMethodDef() );
         }
 
@@ -227,27 +227,33 @@ protected:
 
         static PyObject* HandleMethodVarArgs( PyObject* self, PyObject* args )
         {
-            TMethodVarArgsFunc func = GetMethodList()[N];
+            TMethodVarArgsFunc func = GetMethodList()[ePosition];
             T* obj = static_cast<T*>(self);
-            CTuple args_tuple( args );
 
-            CObject result = (obj->*func)(args_tuple);
-            Py_INCREF(result.Get());
+            try {
+                const CTuple args_tuple( args );
 
-            return result.Get();
+                return IncRefCount((obj->*func)(args_tuple));
+            } catch(...) {
+                // Just ignore it ...
+            }
+            // NULL means "error".
+            return NULL;
         }
     };
 
 private:
     typedef vector<TMethodVarArgsFunc> TMethodList;
+    static TMethodList sm_MethodList;
 
     static TMethodList& GetMethodList(void)
     {
-        static TMethodList m_MethodList;
-
-        return m_MethodList;
+        return Sm_MethodList;
     }
 };
+
+template <class T> typename CExtension<T>::TMethodList CExtension<T>::sm_MethodList;
+
 */
 
 //////////////////////////////////////////////////////////////////////////
@@ -259,7 +265,9 @@ public:
     {
         // This is not an appropriate place for initialization ....
 //            PyObject_INIT( this, GetType().GetPyTypeObject() );
-    }        ~CExtObject(void)
+    }
+
+    ~CExtObject(void)
     {
     }
 
@@ -273,7 +281,7 @@ public:
     public:
         CClass(void)
         {
-            // Finalyze method definition ...
+            // Finalyze a method definition ...
             GetMethodHndlList().push_back( SMethodDef() );
         }
 
@@ -281,7 +289,7 @@ public:
         static CClass<N + 1> Def(const char* name, TMethodVarArgsFunc func, const char* doc = 0)
         {
             // Prepare data for python ...
-            GetMethodHndlList()[N] = SMethodDef(name, HandleMethodVarArgs, METH_VARARGS, doc);
+            GetMethodHndlList()[ePosition] = SMethodDef(name, HandleMethodVarArgs, METH_VARARGS, doc);
 
             // Prepare data for our handler ...
             GetMethodList().push_back(func);
@@ -291,18 +299,17 @@ public:
 
         static PyObject* HandleMethodVarArgs( PyObject* self, PyObject* args )
         {
-            TMethodVarArgsFunc func = GetMethodList()[N];
+            TMethodVarArgsFunc func = GetMethodList()[ePosition];
             T* obj = static_cast<T*>(self);
-            CTuple args_tuple( args );
 
             try {
-                CObject result = (obj->*func)(args_tuple);
-                Py_INCREF(result.Get());
-                return result.Get();
+                const CTuple args_tuple( args );
+
+                return IncRefCount((obj->*func)(args_tuple));
             } catch(...) {
                 // Just ignore it ...
             }
-
+            // NULL means "error".
             return NULL;
         }
 
@@ -336,13 +343,12 @@ protected:
     }
 
 private:
-    typedef vector<SMethodDef> TMethodHndlList;
+    typedef vector<SMethodDef>  TMethodHndlList;
+    static TMethodHndlList      sm_MethodHndlList;
 
     static TMethodHndlList& GetMethodHndlList(void)
     {
-        static TMethodHndlList m_MethodHndlList;
-
-        return m_MethodHndlList;
+        return sm_MethodHndlList;
     }
 
     static PyObject* GetAttrImpl( PyObject* self, char* name )
@@ -368,15 +374,17 @@ private:
     }
 
 private:
-    typedef vector<TMethodVarArgsFunc> TMethodList;
+    typedef vector<TMethodVarArgsFunc>  TMethodList;
+    static TMethodList                  sm_MethodList;
 
     static TMethodList& GetMethodList(void)
     {
-        static TMethodList m_MethodList;
-
-        return m_MethodList;
+        return sm_MethodList;
     }
 };
+
+template <class T> typename CExtObject<T>::TMethodHndlList CExtObject<T>::sm_MethodHndlList;
+template <class T> typename CExtObject<T>::TMethodList CExtObject<T>::sm_MethodList;
 
 //////////////////////////////////////////////////////////////////////////
 template <class T>
@@ -484,6 +492,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.4  2005/01/19 16:26:13  ssikorsk
+* Fixed: declared template static members
+*
 * Revision 1.3  2005/01/18 22:26:18  ssikorsk
 * Fixed: ucko's fix was rolled back because of a logical error.
 * Explanation: we must have a separate m_MethodList member for each
