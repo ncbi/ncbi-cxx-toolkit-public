@@ -48,6 +48,7 @@
 #include <algo/blast/core/lookup_wrap.h>
 #include <algo/blast/core/blast_engine.h>
 #include <algo/blast/core/blast_traceback.h>
+#include <algo/blast/core/blast_message.h>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -68,7 +69,6 @@ CDbBlast::CDbBlast(const TSeqLocVector& queries, BlastSeqSrc* bssp,
     // Set the database length and number of sequences here
     m_OptsHandle->SetDbLength(BLASTSeqSrcGetTotLen(bssp));
     m_OptsHandle->SetDbSeqNum(BLASTSeqSrcGetNumSeqs(bssp));
-    
 }
 
 CDbBlast::CDbBlast(const TSeqLocVector& queries, 
@@ -111,11 +111,14 @@ CDbBlast::x_ResetQueryDs()
     mi_pResults = BLAST_ResultsFree(mi_pResults);
     
     sfree(mi_pReturnStats);
+    NON_CONST_ITERATE(TBlastError, itr, mi_vErrors) {
+        *itr = Blast_MessageFree(*itr);
+    }
+
 }
 
 int CDbBlast::SetupSearch()
 {
-    Blast_Message* blast_message = NULL;
     int status = 0;
     EProgram x_eProgram = m_OptsHandle->GetOptions().GetProgram();
 
@@ -131,6 +134,8 @@ int CDbBlast::SetupSearch()
 
         mi_pScoreBlock = 0;
 
+        Blast_Message* blast_message = NULL;
+
         status = BLAST_MainSetUp(x_eProgram, 
                                  m_OptsHandle->GetOptions().GetQueryOpts(),
                                  m_OptsHandle->GetOptions().GetScoringOpts(),
@@ -140,8 +145,11 @@ int CDbBlast::SetupSearch()
                                  &mi_pLookupSegments, &mi_pFilteredRegions,
                                  &mi_pScoreBlock, &blast_message);
         if (status != 0) {
-            string msg = blast_message ? blast_message->message : "BLAST_MainSetUp failed";
+            string msg = blast_message ? blast_message->message : 
+                "BLAST_MainSetUp failed";
             NCBI_THROW(CBlastException, eInternal, msg.c_str());
+        } else if (blast_message) {
+            mi_vErrors.push_back(blast_message);
         }
         
         if (translated_query) {
@@ -204,13 +212,13 @@ compare_hsplist_hspcnt(const void* v1, const void* v2)
  *                        sequence. No bound if 0. [in]
  * @return Has the HSP limit been exceeded? 
  */
-bool 
+void 
 CDbBlast::TrimBlastHSPResults()
 {
     int total_hsp_limit = m_OptsHandle->GetOptions().GetTotalHspLimit();
 
     if (total_hsp_limit == 0)
-        return false;
+        return;
 
     Int4 total_hsps = 0;
     Int4 allowed_hsp_num, hsplist_count;
@@ -254,7 +262,12 @@ CDbBlast::TrimBlastHSPResults()
         }
         sfree(hsplist_array);
     }
-    return hsp_limit_exceeded;
+    if (hsp_limit_exceeded) {
+        Blast_Message* blast_message = NULL;
+        Blast_MessageWrite(&blast_message, BLAST_SEV_INFO, 0, 0, 
+                           "Too many HSPs to save all");
+        mi_vErrors.push_back(blast_message);
+    }
 }
 
 void 
@@ -304,6 +317,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.12  2004/02/19 21:12:02  dondosha
+ * Added handling of error messages; fill info message in TrimBlastHSPResults
+ *
  * Revision 1.11  2004/02/18 23:49:08  dondosha
  * Added TrimBlastHSPResults method to remove extra HSPs if limit on total number is provided
  *
