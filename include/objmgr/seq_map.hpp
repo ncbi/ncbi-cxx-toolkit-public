@@ -112,7 +112,8 @@ protected:
         typedef list<TSeqPos>::iterator TList0_I;
         
         struct {
-            char                 m_I[sizeof(TList0_I)];
+            TList0_I m_I;
+            //char                 m_I[sizeof(TList0_I)];
         } m_Iterator;
         
         CRef<CObject>        m_Object;
@@ -278,6 +279,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/27 19:04:46  vasilche
+* Fixed segmentation fault on 64 bit platforms.
+*
 * Revision 1.24  2002/12/26 20:49:28  dicuccio
 * Wrapped previous unimplemented ctor in #ifdef for MSWIN only
 *
