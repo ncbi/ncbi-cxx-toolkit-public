@@ -1171,7 +1171,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
                     CSeqMap::CreateSeqMapForSeq_loc(ref_loc, m_Scope);
                 CSeqMap_CI smit(seqMap->FindResolved(0,
                                                      m_Scope,
-                                                     m_Selector.m_ResolveDepth-1,
+                                                     0, // do not resolve refs
                                                      CSeqMap::fFindRef));
                 while ( smit  &&
                     smit.GetPosition() <= aoit->first.GetToOpen() ) {
@@ -1443,6 +1443,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2004/06/08 14:24:25  grichenk
+* Restricted depth of mapping through annot-locs
+*
 * Revision 1.9  2004/06/07 17:01:17  grichenk
 * Implemented referencing through locs annotations
 *
