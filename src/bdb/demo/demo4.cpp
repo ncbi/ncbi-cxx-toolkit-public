@@ -51,7 +51,7 @@ const int array2[] = {10, 20, 30, 40, 50, 0};
 void LoadBLOB_Table()
 {
     CBDB_LobFile lob;
-    lob.Open(s_LobDBFileName, "lob", CBDB_LobFile::eCreate);
+    lob.Open(s_LobDBFileName, CBDB_LobFile::eCreate);
 
 
     EBDB_ErrCode ret = lob.Insert(1, array1, sizeof(array1));
@@ -73,7 +73,7 @@ void PrintBLOB_Table()
     int  buffer[256];
 
     CBDB_LobFile lob;
-    lob.Open(s_LobDBFileName, "lob", CBDB_LobFile::eReadOnly);
+    lob.Open(s_LobDBFileName, CBDB_LobFile::eReadOnly);
 
     // The safest way to read a LOB is first to retrieve the correspondent
     // record and use LobSize() to get information about the BLOB size.
@@ -176,6 +176,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/22 12:04:32  kuznets
+ * Use single table in file variant of Open
+ *
  * Revision 1.4  2004/05/17 20:55:18  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
