@@ -151,7 +151,7 @@ const CConstObjectInfo& CValidErrItem::GetObject(void) const
 
 CValidError_CI::CValidError_CI(void) :
     m_Validator(0),
-    m_ErrCodeFilter(eErr_ALL), // eErr_UNKNOWN
+    m_ErrCodeFilter(kEmptyStr), // eErr_UNKNOWN
     m_MinSeverity(eDiag_Info),
     m_MaxSeverity(eDiag_Critical)
 {
@@ -160,35 +160,26 @@ CValidError_CI::CValidError_CI(void) :
 
 CValidError_CI::CValidError_CI
 (const CValidError& ve,
- string             errcode,
+ const string& errcode,
  EDiagSev           minsev,
  EDiagSev           maxsev) :
     m_Validator(&ve),
     m_ErrIter(ve.m_ErrItems.begin()),
+    m_ErrCodeFilter(errcode),
     m_MinSeverity(minsev),
     m_MaxSeverity(maxsev)
 {
-    if (errcode.empty()) {
-        m_ErrCodeFilter = eErr_ALL;
+    if ( !Filter(**m_ErrIter) ) {
+        Next();
     }
-
-    for (unsigned int i = eErr_ALL; i < eErr_UNKNOWN; i++) {
-        if (errcode == CValidErrItem::sm_Terse[i]) {
-            m_ErrCodeFilter = i;
-            return;
-        }
-    }
-    m_ErrCodeFilter = eErr_ALL; // eErr_UNKNOWN
 }
 
 
-CValidError_CI::CValidError_CI(const CValidError_CI& iter) :
-    m_Validator(iter.m_Validator),
-    m_ErrIter(iter.m_ErrIter),
-    m_ErrCodeFilter(iter.m_ErrCodeFilter),
-    m_MinSeverity(iter.m_MinSeverity),
-    m_MaxSeverity(iter.m_MaxSeverity)
+CValidError_CI::CValidError_CI(const CValidError_CI& other)
 {
+    if ( this != &other ) {
+        *this = other;
+    }
 }
 
 
@@ -214,18 +205,7 @@ CValidError_CI& CValidError_CI::operator=(const CValidError_CI& iter)
 
 CValidError_CI& CValidError_CI::operator++(void)
 {
-    if (m_ErrIter != m_Validator->m_ErrItems.end()) {
-        ++m_ErrIter;
-    }
-    
-    for (; m_ErrIter != m_Validator->m_ErrItems.end(); ++m_ErrIter) {
-        if ((m_ErrCodeFilter == eErr_ALL  ||
-            (**m_ErrIter).GetErrCode() == CValidErrItem::sm_Terse[m_ErrCodeFilter])  &&
-            (**m_ErrIter).GetSeverity() <= m_MaxSeverity  &&
-            (**m_ErrIter).GetSeverity() >= m_MinSeverity) {
-            break;
-        }
-    }
+    Next();
     return *this;
 }
 
@@ -245,6 +225,36 @@ const CValidErrItem& CValidError_CI::operator*(void) const
 const CValidErrItem* CValidError_CI::operator->(void) const
 {
     return &(**m_ErrIter);
+}
+
+
+bool CValidError_CI::Filter(const CValidErrItem& item) const
+{
+    EDiagSev item_sev = (*m_ErrIter)->GetSeverity();
+    if ( (m_ErrCodeFilter.empty()  ||  
+          NStr::StartsWith(item.GetErrCode(), m_ErrCodeFilter))  &&
+         ((item_sev >= m_MinSeverity)  &&  (item_sev <= m_MaxSeverity)) ) {
+        return true;;
+    }
+    return false;
+}
+
+
+void CValidError_CI::Next(void)
+{
+    if ( AtEnd() ) {
+        return;
+    }
+
+    do {
+        ++m_ErrIter;
+    } while ( !AtEnd()  &&  !Filter(**m_ErrIter) );
+}
+
+
+bool CValidError_CI::AtEnd(void) const
+{
+    return m_ErrIter == m_Validator->m_ErrItems.end();
 }
 
 
@@ -1035,6 +1045,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2003/03/06 19:33:02  shomrat
+* Bug fix and code cleanup in CVAlidError_CI
+*
 * Revision 1.10  2003/02/24 20:20:18  shomrat
 * Pass the CValidError object to the implementation class instead of the internal TErrs vector
 *
