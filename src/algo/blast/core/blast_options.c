@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.97  2004/04/21 17:00:59  madden
+ * Removed set but not read variable
+ *
  * Revision 1.96  2004/04/19 12:58:44  madden
  * Changed BLAST_KarlinBlk to Blast_KarlinBlk to avoid conflict with blastkar.h structure, renamed some functions to start with Blast_Karlin, made Blast_KarlinBlkDestruct public
  *
@@ -1392,7 +1395,6 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
    BlastHitSavingOptions* options;
    Blast_KarlinBlk* kbp;
    double evalue;
-   Boolean gapped_calculation = TRUE;
 
    ASSERT(params);
    ASSERT(query_info);
@@ -1408,7 +1410,6 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
       kbp = sbp->kbp_gap[query_info->first_context];
    } else {
       kbp = sbp->kbp[query_info->first_context];
-      gapped_calculation = FALSE;
    }
 
    /* Calculate cutoffs based on the current effective lengths information */
