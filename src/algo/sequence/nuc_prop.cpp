@@ -40,7 +40,7 @@ void CNucProp::CountNmers(CSeqVector& seqvec, int n, vector<int>& table)
 {
     TSeqPos len = seqvec.size();
 
-    table.reserve(NumberOfNmers(n));
+    table.resize(NumberOfNmers(n));
 
     // clear table
     for (int i = 0;  i < NumberOfNmers(n);  i++) {
@@ -82,16 +82,11 @@ int CNucProp::Nmer2Int(const char *seq, int n)
 
 
 // convert int from Nmer2Int back to a string
-// char *out must point to enough memory
-void CNucProp::Int2Nmer(int nmer_int, int nmer_size, string *out)
+void CNucProp::Int2Nmer(int nmer_int, int nmer_size, string& out)
 {
-    if ( !out ) {
-        return;
-    }
-
-    out->reserve(nmer_size + 1);
+    out.resize(nmer_size);
     for (int i = nmer_size-1;  i >= 0; i--) {
-        *out += Nybble2Nuc(nmer_int & 3);   // analyze two low-order bits
+        out[i] = Nybble2Nuc(nmer_int & 3);   // analyze two low-order bits
         nmer_int >>= 2;
     }
 }
@@ -139,7 +134,7 @@ char CNucProp::Nybble2Nuc(int n)
 }
 
 
-int CNucProp::GetPercentGC(CSeqVector& seqvec)
+int CNucProp::GetPercentGC(const CSeqVector& seqvec)
 {
     TSeqPos gc_count = 0;
     TSeqPos len = seqvec.size();
@@ -167,6 +162,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/08/18 17:35:29  jcherry
+ * Fixed CountNmers to alter result vectors size, not just its capacity.
+ * Made Int2Nmer build its string from scratch, and do so properly.
+ *
  * Revision 1.4  2003/07/28 20:41:01  jcherry
  * Changed GetPercentGC() to round properly
  *
