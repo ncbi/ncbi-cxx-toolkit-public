@@ -1,7 +1,9 @@
 # $Id$
 
-# Meta-makefile("objects" project)
+# Meta-makefile("objtools" project)
 #################################
+
+REQUIRES = objects
 
 SUB_PROJ = alnmgr cddalignview flat validator
 
