@@ -154,7 +154,7 @@ class CDB_DeadlockEx : public CDB_Exception
 {
 public:
     CDB_DeadlockEx(const string& originated_from, const string& msg)
-        : CDB_Exception(eDeadlock, eDB_Warning, 123456, originated_from, msg) {
+        : CDB_Exception(eDeadlock, eDB_Error, 123456, originated_from, msg) {
         return;
     }
 
@@ -168,7 +168,7 @@ class CDB_TimeoutEx : public CDB_Exception
 public:
     CDB_TimeoutEx(int err_code,
                   const string& originated_from, const string& msg)
-        : CDB_Exception(eTimeout, eDB_Warning, err_code, originated_from, msg) {
+        : CDB_Exception(eTimeout, eDB_Error, err_code, originated_from, msg) {
         return;
     }
 
@@ -300,6 +300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/09/26 14:24:20  soussov
+ * raises the severity of deadlock and timeout from warning to error
+ *
  * Revision 1.10  2002/09/04 21:45:54  vakatov
  * Added missing 'const' to CDB_Exception::SeverityString()
  *
