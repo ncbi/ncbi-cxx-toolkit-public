@@ -44,6 +44,7 @@
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_map.hpp>
 #include <bdb/bdb_blobcache.hpp>
+#include <bdb/bdb_filedump.hpp>
 
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -261,7 +262,13 @@ static void s_TEST_BDB_IdTable_Fill(void)
 
     } // for
 
+    // Dumping the database to screen
+
+    CBDB_FileDumper dump;
+    dump.Dump(cout, dbf1);
+
     }}
+
 
     cout << "======== Id table filling test ok." << endl;
 
@@ -1251,6 +1258,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/10/27 14:21:15  kuznets
+ * + DBD dumper test
+ *
  * Revision 1.24  2003/10/24 13:41:51  kuznets
  * Tested blob stream PendingCount
  *
