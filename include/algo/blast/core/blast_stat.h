@@ -59,7 +59,7 @@ Note:  statistical significance is often not greatly affected by the value
 of K, so high accuracy is generally unwarranted.
 *****************************************************************************/
 /* K_SUMLIMIT_DEFAULT == sumlimit used in BlastKarlinLHtoK() */
-#define BLAST_KARLIN_K_SUMLIMIT_DEFAULT 0.01
+#define BLAST_KARLIN_K_SUMLIMIT_DEFAULT 0.0001
 
 /* LAMBDA_ACCURACY_DEFAULT == accuracy to which Lambda should be calc'd */
 #define BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT    (1.e-5)
