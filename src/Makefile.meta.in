@@ -22,6 +22,8 @@ builddir = @builddir@
 
 @make_shell@
 
+### Protect against two MAKE processes running in the same dir
+
 RWL = @top_srcdir@/scripts/run_with_lock.sh
 
 ### Tests config variables
@@ -129,7 +131,7 @@ if test ! -z "$(SUB_PROJ)"  -o  ! -z "$(EXPENDABLE_SUB_PROJ)" ; then \
     for i in $$x_subproj ; do \
         if test "x$$i" = "x-" ; then expendable=true ; continue ; fi ; \
         ( if test -d $$i ; then \
-          cd $$i  &&  $(RWL) $(MAKE) $(MFLAGS)
+          cd $$i  &&  $(MAKE) $(MFLAGS)
 
 SUB_KET = || $(NOTK_BRA) exit 4 $(NOTK_KET) ; \
         else \
@@ -157,7 +159,7 @@ PROJECTS = @PROJECTS@ # File listing relevant project directories.
 # prepending "build/" to each original pattern as an anchor.
 RELEVANT_FILE = $(builddir)/relevant.patterns
 $(RELEVANT_FILE): $(PROJECTS)
-	@if [ -n "$(PROJECTS)" ]; then \
+	@if test -n "$(PROJECTS)" ; then \
 	    sed -e 's@^@build/@' $(PROJECTS) > $(RELEVANT_FILE); \
 	else \
 	    echo '.*' > $(RELEVANT_FILE); \
