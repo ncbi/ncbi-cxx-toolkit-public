@@ -61,7 +61,6 @@ void CSplignApp::Init()
   argdescr->SetUsageContext(GetArguments().GetProgramName(),
 			    "Splign v.0.0.1");
   
-  // principal input arguments
   argdescr->AddOptionalKey
     ("query", "query",
      "Spliced sequence FastA file.",
@@ -81,7 +80,7 @@ void CSplignApp::Init()
      "Minimal exon identity. Lower identity segments "
      "will be marked as gaps.",
      CArgDescriptions::eDouble,
-     "0.8");
+     "0.9");
   
   argdescr->AddDefaultKey
     ("min_query_cov", "min_query_cov",
@@ -90,12 +89,11 @@ void CSplignApp::Init()
      CArgDescriptions::eDouble,
      "0.5");
   
-  argdescr->AddFlag ("endgaps", "Always detect unaligning regions at the ends,"
-                     " regardless of exon identities.", true);
+  argdescr->AddFlag ("norle",
+		     "Do not encode alignment transcripts and Poly(A)s",
+		     true);
 
-  argdescr->AddFlag ("norle", "Do not encode alignment transcripts.", true);
-
-  argdescr->AddFlag ("nopolya", "Do not detect Poly(A).", true);
+  argdescr->AddFlag ("nopolya", "Do not detect Poly(A) end gaps.", true);
 
   argdescr->AddOptionalKey
     ("index", "index",
@@ -210,7 +208,7 @@ int CSplignApp::Run()
   m_SeqQuality = args["quality"].AsString() == "high";
   m_rle = ! args["norle"];
   m_minidty = args["min_idty"].AsDouble();
-  m_endgaps = args["endgaps"];
+  m_endgaps = false;
   m_min_query_coverage = args["min_query_cov"].AsDouble();
   m_nopolya = args["nopolya"];
 
@@ -506,7 +504,7 @@ string CSplignApp::x_RunOnPair( vector<CHit>* hits )
   if(polya_start < kMax_UInt && polya_start < mrna_size) {
     oss << query << '\t' << subj << "\t-\t"
   	<< mrna_size - polya_start << '\t'
-  	<< polya_start + 1 << '\t' << mrna_size << "\t-\t-\t<Poly(A)-Tail>\t";
+  	<< polya_start + 1 << '\t' << mrna_size << "\t-\t-\t<Poly(A)-Gap>\t";
     string thetail (mrna.begin() + polya_start, mrna.end());
     oss << (m_rle? RLE(thetail): thetail);
     oss << endl;
@@ -575,6 +573,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/12/04 20:08:22  kapustin
+ * Remove endgaps argument
+ *
  * Revision 1.10  2003/12/04 19:26:37  kapustin
  * Account for zero-length segment vector
  *
