@@ -2931,7 +2931,7 @@ const CSeq_feat* GetmRNAForProduct(const CBioseq_Handle& bsh)
 }
 
 
-// Get the encoding sequnce of a protein
+// Get the encoding sequence of a protein
 const CBioseq* GetNucleotideParent(const CBioseq& product, CScope* scope)
 {
     if ( scope == 0 ) {
@@ -2969,7 +2969,7 @@ void CFastaOstream::Write(const CBioseq_Handle& handle,
 
 void CFastaOstream::WriteTitle(const CBioseq_Handle& handle)
 {
-    m_Out << '>' << CSeq_id::GetStringDescr(handle.GetBioseq(),
+    m_Out << '>' << CSeq_id::GetStringDescr(*handle.GetBioseqCore(),
                                             CSeq_id::eFormat_FastA)
           << ' ' << sequence::GetTitle(handle) << NcbiEndl;
 }
@@ -3128,8 +3128,8 @@ static TGaps s_AdjustGaps(const TGaps& gaps, const CSeq_loc& location)
 void CFastaOstream::WriteSequence(const CBioseq_Handle& handle,
                                   const CSeq_loc* location)
 {
-    const CBioseq&   seq  = handle.GetBioseq();
-    const CSeq_inst& inst = seq.GetInst();
+    CConstRef<CBioseq> seq  = handle.GetCompleteBioseq();
+    const CSeq_inst& inst = seq->GetInst();
     if ( !(m_Flags & eAssembleParts)  &&  !inst.IsSetSeq_data() ) {
         return;
     }
@@ -3930,7 +3930,8 @@ void CSeqSearch::Search(const CBioseq_Handle& bsh)
     size_t seq_len = seq_vec.size();
     size_t search_len = seq_len;
 
-    CSeq_inst::ETopology topology = bsh.GetBioseq().GetInst().GetTopology();    
+    CSeq_inst::ETopology topology =
+        bsh.GetBioseqCore()->GetInst().GetTopology();    
     if ( topology == CSeq_inst::eTopology_circular ) {
         search_len += m_MaxPatLen - 1;
     }
@@ -4110,6 +4111,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.82  2004/05/27 13:48:24  jcherry
+* Replaced some calls to deprecated CBioseq_Handle::GetBioseq() with
+* GetCompleteBioseq() or GetBioseqCore()
+*
 * Revision 1.81  2004/05/25 21:06:34  johnson
 * Bug fix in x_Translate
 *
