@@ -256,7 +256,7 @@
 			if ( oTask.DllBuild ) {
 				ptb_command_line += " -dll";
 			}
-			ptb_command_line += " -logfile out.log";
+			ptb_command_line += " -logfile " + oTree.TreeRoot + "\\out.log";
 			ptb_command_line += " -conffile " + oTree.CompilersBranch + "\\project_tree_builder.ini";
 			ptb_command_line += " " + oTree.TreeRoot;
 			ptb_command_line += " src\\";
