@@ -96,9 +96,15 @@ public:
   CMutexPool();
   ~CMutexPool(void);
   void SetSize(int size);
-  void Lock(void *p);
-  void Unlock(void *p);
-  CMutex& GetMutex(void *p);
+
+  CMutex& GetMutex(int x) { return m_Locks[x%m_size]; }
+  
+  template<class A> int  Select(A *a) { return (((unsigned)(a))/sizeof(A)) % m_size ; }
+  template<class A> CMutex& GetMutex(A *a) { return GetMutex(Select(a)); }
+
+  template<class A> void Lock  (A* a) { GetMutex(a).Lock();   }
+  template<class A> void Unlock(A* a) { GetMutex(a).Unlock(); }
+
 private:
   int             m_size;
   CMutex         *m_Locks;
@@ -183,7 +189,7 @@ private:
   bool            x_GetRecords(const TSeq_id_Key key,const CHandleRange &hrange, EChoice choice);
   bool            x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr);
   bool            x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
-  bool            x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask);
+  bool            x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask);
 };
 
 
@@ -194,6 +200,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.8  2002/03/29 02:47:01  kimelman
+ * gbloader: MT scalability fixes
+ *
  * Revision 1.7  2002/03/27 20:22:31  butanaev
  * Added connection pool.
  *

@@ -270,8 +270,8 @@ CGBDataLoader::x_UpdateDropList(STSEinfo *tse)
     }
   {{ 
     int c = 0;
-    STSEinfo *tse =  m_UseListHead, *t1=0;
-    while(tse) { c++; t1=tse; tse=tse->next; }
+    STSEinfo *tse2 =  m_UseListHead, *t1=0;
+    while(tse2) { c++; t1=tse2; tse2=tse2->next; }
     _VERIFY(t1== m_UseListTail);
     _VERIFY(c ==  m_TseCount);
   }}
@@ -302,8 +302,8 @@ CGBDataLoader::x_DropTSEinfo(STSEinfo *tse)
   m_TseCount --;
   {{ 
     int c = 0;
-    STSEinfo *tse =  m_UseListHead, *t1=0;
-    while(tse) { c++; t1=tse; tse=tse->next; }
+    STSEinfo *tse2 =  m_UseListHead, *t1=0;
+    while(tse2) { c++; t1=tse2; tse2=tse2->next; }
     _VERIFY(t1== m_UseListTail);
     _VERIFY(c ==  m_TseCount);
   }}
@@ -472,11 +472,12 @@ CGBDataLoader::x_GetRecords(const TSeq_id_Key sih,const CHandleRange &hrange,ECh
             }
           _VERIFY(use_local_lock);
           new_tse = new_tse ||
-            x_GetData(&tse->m_upload,
-                                *srp,
-                                lrange->first.GetFrom(),
-                                lrange->first.GetTo(),
-                                blob_mask);
+            x_GetData(tse,
+                      *srp,
+                      lrange->first.GetFrom(),
+                      lrange->first.GetTo(),
+                      blob_mask
+                      );
         }
       if(use_local_lock) m_Pool.GetMutex(tse).Unlock();
       if(!use_global_lock)
@@ -520,14 +521,14 @@ CGBDataLoader::x_ResolveHandle(const TSeq_id_Key h,SSeqrefs* &sr)
   m_LookupMutex.Unlock();
   if(!local_lock) m_Pool.GetMutex(sr).Lock();
 
-  LOG_POST( "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
+  //LOG_POST( "ResolveHandle-before(" << h << ") " << (sr->m_Sr?sr->m_Sr->size():0) );
   
   bool calibrating = m_Timer.NeedCalibration();
   if(calibrating) m_Timer.Start();
   
   SSeqrefs::TSeqrefs *osr=sr->m_Sr;
   sr->m_Sr=0;
-  for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h)));! srs.Eof();)
+  for(CIStream srs(m_Driver->SeqrefStreamBuf(*x_GetSeqId(h),m_Pool.Select(sr)));! srs.Eof();)
     {
       CSeqref *seqRef = m_Driver->RetrieveSeqref(srs);
       if(!sr->m_Sr) sr->m_Sr = new SSeqrefs::TSeqrefs();
@@ -607,8 +608,9 @@ CGBDataLoader::x_NeedMoreData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TI
 }
 
 bool
-CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt blob_mask)
+CGBDataLoader::x_GetData(STSEinfo *tse,CSeqref* srp,int from,int to,TInt blob_mask)
 {
+  CTSEUpload *tse_up = &tse->m_upload;
   if(!x_NeedMoreData(tse_up,srp,from,to,blob_mask))
     return false;
   m_InvokeGC=true;
@@ -622,7 +624,7 @@ CGBDataLoader::x_GetData(CTSEUpload *tse_up,CSeqref* srp,int from,int to,TInt bl
       CBlobClass cl;
       int count=0;
       cl.Value() = blob_mask;
-      for(CIStream bs(srp->BlobStreamBuf(from, to, cl)); ! bs.Eof();count++ )
+      for(CIStream bs(srp->BlobStreamBuf(from, to, cl,m_Pool.Select(tse))); ! bs.Eof();count++ )
         {
           CBlob *blob = srp->RetrieveBlob(bs);
           //LOG_POST( "GetBlob(" << srp << ") " << from << ":"<< to << "  class("<<blob->Class()<<")");
@@ -675,6 +677,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/03/29 02:47:04  kimelman
+* gbloader: MT scalability fixes
+*
 * Revision 1.16  2002/03/27 20:23:50  butanaev
 * Added connection pool.
 *

@@ -127,6 +127,7 @@ CMutexPool::~CMutexPool(void)
     delete [] m_Locks;
 }
 
+#if 0
 void
 CMutexPool::Lock(void *p)
 {
@@ -141,11 +142,12 @@ CMutexPool::Unlock(void *p)
   m_Locks[i].Unlock();
 }
 
-CMutex& CMutexPool::GetMutex(void *p)
+CMutex& CMutexPool::GetMutex(int x)
 {
-  int i = ((long)p/8) % m_size;
-  return m_Locks[i];
+  return m_Locks[x];
 }
+
+#endif
 
 /*=========================================================================== */
 // CTSEUpload
@@ -155,6 +157,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/29 02:47:03  kimelman
+* gbloader: MT scalability fixes
+*
 * Revision 1.4  2002/03/27 20:23:49  butanaev
 * Added connection pool.
 *

@@ -59,7 +59,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
     }
     catch(exception &e)
     {
-      LOG_POST("Caugth exception " << e.what() << ", reconnectiong...");
+      LOG_POST("Caugth exception " << e.what() << ", reconnecting...");
       Reconnect(conn);
     }
   }
@@ -68,7 +68,7 @@ streambuf *CId1Reader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 
 streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 {
-  CConn_ServiceStream *server = m_Pool[conn];
+  CConn_ServiceStream *server = m_Pool[conn % m_Pool.size()];
   {
     CID1server_request id1_request;
     id1_request.SetGetgi(seqId);
@@ -94,15 +94,15 @@ streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
     server_output << id1_request1;
     server_output.Flush();
   }
-
+  
   *server_input >> id1_reply;
-
+  
   for(CTypeConstIterator<CSeq_hist_rec> it = ConstBegin(id1_reply); it;  ++it)
   {
     int number = 0;
     string dbname;
     int lgi = 0;
-
+    
     iterate(CSeq_hist_rec::TIds, it2, it->GetIds())
     {
       if((*it2)->IsGi())
@@ -129,21 +129,10 @@ streambuf *CId1Reader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
     id1Seqref.Sat() = dbname;
     id1Seqref.SatKey() = number;
     id1Seqref.Flag() = 0;
-
-    try
-    {
-      *ss << id1Seqref;
-    }
-    catch (const exception &e)
-    {
-
-      LOG_POST( "TROUBLE: reader_id1:m_stream:: write failed for (" <<
-                dbname << ":" << number << " - " << gi << ") :: " << e.what() );
-      throw runtime_error("reader_id1 - internal buffer overflow") ;
-    }
+    *ss << id1Seqref;
     break; // mk - get only the first one
   }
-
+  
   return new CStrStreamBuf(ss.release());
 }
 
@@ -178,7 +167,7 @@ struct CId1StreamBuf : public streambuf
   ~CId1StreamBuf();
   CT_INT_TYPE underflow();
   void Close() { m_Server = 0; }
-
+  
   CId1Seqref&                   m_Id1Seqref;
   CT_CHAR_TYPE                  buffer[1024];
   CConn_ServiceStream          *m_Server;
@@ -240,7 +229,7 @@ streambuf *CId1Seqref::BlobStreamBuf(int a, int b, const CBlobClass &c, unsigned
 
 streambuf *CId1Seqref::x_BlobStreamBuf(int, int, const CBlobClass &, unsigned conn)
 {
-  auto_ptr<CId1StreamBuf> b(new CId1StreamBuf(*this, m_Reader->m_Pool[conn]));
+  auto_ptr<CId1StreamBuf> b(new CId1StreamBuf(*this, m_Reader->m_Pool[conn % m_Reader->m_Pool.size()]));
   return b.release();
 }
 
@@ -254,7 +243,7 @@ CSeq_entry *CId1Blob::Seq_entry()
       *objStream >> id1_reply;
       static_cast<CId1StreamBuf *>(m_IStream.rdbuf())->Close();
     }
-  catch ( exception e)
+  catch ( exception& e)
     {
       LOG_POST( "TROUBLE: reader_id1: can not read Seq-entry from reply: " << e.what() );
       clenup=true;
@@ -342,15 +331,13 @@ int CId1Reader::GetParalellLevel(void) const
 void CId1Reader::SetParalellLevel(unsigned size)
 {
   unsigned poolSize = m_Pool.size();
-  if(poolSize > size)
-    for(unsigned i = size; i < poolSize; ++i)
-      delete m_Pool[i];
+  for(unsigned i = size; i < poolSize; ++i)
+    delete m_Pool[i];
 
   m_Pool.resize(size);
 
-  if(poolSize < size)
-    for(unsigned i = poolSize; i < size; ++i)
-      m_Pool[i] = NewID1Service();
+  for(unsigned i = poolSize; i < size; ++i)
+    m_Pool[i] = NewID1Service();
 }
 
 CConn_ServiceStream *CId1Reader::NewID1Service()
@@ -363,6 +350,7 @@ CConn_ServiceStream *CId1Reader::NewID1Service()
 
 void CId1Reader::Reconnect(unsigned conn)
 {
+  conn = conn % m_Pool.size();
   delete m_Pool[conn];
   m_Pool[conn] = NewID1Service();
 }
@@ -372,6 +360,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.15  2002/03/29 02:47:05  kimelman
+* gbloader: MT scalability fixes
+*
 * Revision 1.14  2002/03/27 20:23:50  butanaev
 * Added connection pool.
 *

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/03/29 02:47:07  kimelman
+* gbloader: MT scalability fixes
+*
 * Revision 1.9  2002/03/26 17:24:58  grichenk
 * Removed extra ++i
 *
@@ -105,7 +108,7 @@ int CTestApplication::Run()
                             CObjectManager::eDefault);
 
     int ecount = 0;
-    for (int i = 1;  i < 1800;  i++) {
+    for (int i = 1;  i < 500;  i++) {
         CScope scope(*pOm);
         scope.AddDefaults();
 
