@@ -1067,7 +1067,7 @@ BlastNaExtendRight(Uint4* q_offsets, Uint4* s_offsets, Int4 num_hits,
          /* mini extension to the right */
          max_bases =
             MIN(COMPRESSION_RATIO, 
-                MIN(subject->length - s_offsets[i] - reduced_wordsize,
+                MIN(subject->length - s_offsets[i] - reduced_word_length,
                     query->length - q_offsets[i] - reduced_word_length));
          
          right = 0;
