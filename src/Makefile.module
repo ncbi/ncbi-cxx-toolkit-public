@@ -18,7 +18,7 @@ purge_sources:
 
 .NO_PARALLEL:
 $(FILES): $(ASNFILE) $(IMPFILES:%=$(top_srcdir)/src/%)
-	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -of $@ -or $(MODULE_PATH) -oR $(top_srcdir)
+	$(DATATOOL) -m $(ASNFILE) $(IMPFILES:%=-M %) -oA -of $@ -or $(MODULE_PATH) -oR $(top_srcdir) -od $(MODULE).def
 
 makefiles: Makefile.in Makefile.$(MODULE).lib
 
@@ -36,6 +36,7 @@ Makefile.$(MODULE).lib: $(MODULEFILE)
 		echo 'LIB = $(MODULE)'; \
 		echo 'include $$(srcdir)/$(MODULE).files'; \
 		echo 'LIBOBJ = $$(GENFILES_LOCAL) $$(GENFILES_LOCAL:=_Base)'; \
+		echo 'AR = -strip -x *.o SunWS_cache/*/*.o; $$(CONF_AR)'; \
 	) > $@
 
 $(MODULEFILE):
