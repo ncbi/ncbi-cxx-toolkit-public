@@ -54,6 +54,12 @@
 #include <connect/ncbi_socket.hpp>
 #include <connect/netcache_client.hpp>
 
+#if defined(NCBI_OS_UNIX)
+# include <signal.h>
+#endif
+
+
+
 USING_NCBI_SCOPE;
 
 //const unsigned int kNetCacheBufSize = 64 * 1024;
@@ -171,7 +177,9 @@ private:
     CRotatingLogStream m_Log;
 };
 
+class CNetCacheServer;
 
+static CNetCacheServer* s_netcache_server = 0;
 
 
 /// Netcache threaded server
@@ -206,6 +214,8 @@ public:
         m_QueueSize = m_MaxThreads + 2;
 
         x_CreateLog();
+
+        s_netcache_server = this;
     }
 
     virtual ~CNetCacheServer() {}
@@ -227,6 +237,9 @@ public:
         eLogging
     } ERequestType;
 
+    /// Process "SHUTDOWN" request
+    void ProcessShutdown();
+
 private:
     struct Request
     {
@@ -245,9 +258,6 @@ private:
     void ProcessGet(CSocket&              sock, 
                     const Request&        req,
                     NetCache_RequestStat& stat);
-
-    /// Process "SHUTDOWN" request
-    void ProcessShutdown(CSocket& sock, const Request& req);
 
     /// Process "VERSION" request
     void ProcessVersion(CSocket& sock, const Request& req);
@@ -417,7 +427,7 @@ void CNetCacheServer::Process(SOCK sock)
                     break;
                 case eShutdown:
                     stat.req_code = 'S';
-                    ProcessShutdown(socket, req);
+                    ProcessShutdown();
                     break;
                 case eVersion:
                     stat.req_code = 'V';
@@ -475,7 +485,7 @@ void CNetCacheServer::Process(SOCK sock)
     }
 }
 
-void CNetCacheServer::ProcessShutdown(CSocket& sock, const Request& req)
+void CNetCacheServer::ProcessShutdown()
 {    
     m_Shutdown = true;
  
@@ -1148,14 +1158,35 @@ int CNetCacheDApp::Run(void)
 }
 
 
-int main(int argc, const char* argv[])
+
+/// @internal
+extern "C" void Threaded_Server_SignalHandler( int )
 {
+    if (s_netcache_server) {
+        ERR_POST("Interrupt signal. Trying to shutdown.");
+        s_netcache_server->ProcessShutdown();
+    }
+}
+
+
+
+int main(int argc, const char* argv[])
+{    
+#if defined(NCBI_OS_UNIX)
+    // attempt to get server gracefully shutdown on signal
+     signal( SIGINT, Threaded_Server_SignalHandler);
+     signal( SIGTERM, Threaded_Server_SignalHandler);    
+#endif
+
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2005/01/04 17:33:34  kuznets
+ * Added graceful shutdown on SIGTERM(unix)
+ *
  * Revision 1.32  2005/01/03 14:29:51  kuznets
  * Improved logging
  *
