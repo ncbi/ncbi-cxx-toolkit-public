@@ -194,8 +194,8 @@ void CReferenceItem::x_GatherInfo(CFFContext& ctx)
     }
     x_CleanData();
 
-    // gather Genbank format specific field
-    if ( ctx.IsFormatGenBank() ) {
+    // gather Genbank specific fields (formats: Genbank, GBSeq)
+    if ( ctx.IsFormatGenBank()  ||  ctx.IsFormatGBSeq() ) {
         x_GatherRemark(ctx);
     }
 }
@@ -923,6 +923,46 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CFFContext& ctx)
 }
 
 
+void CReferenceItem::GetAuthNames
+(list<string>& authors,
+ const CAuth_list* alp)
+{   
+    authors.clear();
+
+    if ( alp == 0 ) {
+        return;
+    }
+
+    const CAuth_list::TNames& names = alp->GetNames();
+    switch ( names.Which() ) {
+    case CAuth_list::TNames::e_Std:
+        ITERATE (CAuth_list::TNames::TStd, it, names.GetStd()) {
+            if ( !(*it)->CanGetName() ) {
+                continue;
+            }
+            const CPerson_id& pid = (*it)->GetName();
+            string name;
+            pid.GetLabel(&name, CPerson_id::eGenbank);
+            authors.push_back(name);
+        }
+        break;
+        
+    case CAuth_list::TNames::e_Ml:
+        authors.insert(authors.end(),
+            names.GetMl().begin(), names.GetMl().end());
+        break;
+        
+    case CAuth_list::TNames::e_Str:
+        authors.insert(authors.end(),
+            names.GetStr().begin(), names.GetStr().end());
+        break;
+        
+    default:
+        break;
+    }
+}
+
+
 string CReferenceItem::GetAuthString(const CAuth_list* alp)
 {
     list<string> authors;
@@ -930,33 +970,7 @@ string CReferenceItem::GetAuthString(const CAuth_list* alp)
     if ( alp == 0 ) {
         authors.push_back(".");
     } else {
-        const CAuth_list::TNames& names = alp->GetNames();
-        switch ( names.Which() ) {
-        case CAuth_list::TNames::e_Std:
-            ITERATE (CAuth_list::TNames::TStd, it, names.GetStd()) {
-                if ( !(*it)->CanGetName() ) {
-                    continue;
-                }
-                const CPerson_id& pid = (*it)->GetName();
-                string name;
-                pid.GetLabel(&name, CPerson_id::eGenbank);
-                authors.push_back(name);
-            }
-            break;
-            
-        case CAuth_list::TNames::e_Ml:
-            authors.insert(authors.end(),
-                names.GetMl().begin(), names.GetMl().end());
-            break;
-            
-        case CAuth_list::TNames::e_Str:
-            authors.insert(authors.end(),
-                names.GetStr().begin(), names.GetStr().end());
-            break;
-            
-        default:
-            break;
-        }
+        GetAuthNames(authors, alp);
     }
 
     CNcbiOstrstream auth_line;
@@ -1009,12 +1023,19 @@ void CReferenceItem::x_GatherRemark(CFFContext& ctx)
     if ( m_Pubdesc->IsSetComment()  &&  !m_Pubdesc->GetComment().empty() ) {
         const string& comment = m_Pubdesc->GetComment();
         
-        
         CStaticArraySet<string> texts(s_RemarksText,
             sizeof(s_RemarksText) / sizeof(string));
         if ( texts.find(comment) == texts.end() ) {
             l.push_back(comment);
         }
+    }
+
+    // for GBSeq format collect remarks only from comments.
+    if ( ctx.IsFormatGBSeq() ) {
+        if ( !l.empty() ) {
+            m_Remark = l.front();
+        }
+        return;
     }
 
     // GIBBSQ
@@ -1211,6 +1232,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/04/13 16:49:36  shomrat
+* GBSeq format changes
+*
 * Revision 1.9  2004/03/26 17:26:34  shomrat
 * Set category to unpublished where needed
 *

@@ -189,29 +189,30 @@ void CLocusItem::x_SetLength(CFFContext& ctx)
 void CLocusItem::x_SetStrand(CFFContext& ctx)
 {
     const CBioseq_Handle& bsh = ctx.GetHandle();
+    
+    CSeq_inst::TMol bmol = bsh.IsSetInst_Mol() ?
+        bsh.GetInst_Mol() : CSeq_inst::eMol_not_set;
 
-    const CSeq_inst* inst = bsh.GetBioseqCore()->CanGetInst() ? 
-        &(bsh.GetBioseqCore()->GetInst()) : 0;
-    CSeq_inst::TMol bmol = (inst  &&  inst->CanGetMol()) ?
-        inst->GetMol() : CSeq_inst::eMol_not_set;
-
-    m_Strand = (inst  &&  inst->CanGetStrand()) ?
-        inst->GetStrand() : CSeq_inst::eStrand_not_set;
+    m_Strand = bsh.IsSetInst_Strand() ?
+        bsh.GetInst_Strand() : CSeq_inst::eStrand_not_set;
     if ( m_Strand == CSeq_inst::eStrand_other ) {
         m_Strand = CSeq_inst::eStrand_not_set;
     }
 
-    // if ds-DNA don't show ds
-    if ( bmol == CSeq_inst::eMol_dna  &&  m_Strand == CSeq_inst::eStrand_ds ) {
-        m_Strand = CSeq_inst::eStrand_not_set;
-    }
-
-    // ss-any RNA don't show ss
-    if ( (bmol > CSeq_inst::eMol_rna  ||  
-          (m_Biomol >= CMolInfo::eBiomol_mRNA     &&
-           m_Biomol <= CMolInfo::eBiomol_peptide))  &&
-         m_Strand == CSeq_inst::eStrand_ss ) {
-        m_Strand = CSeq_inst::eStrand_not_set;
+    // cleanup for formats other than GBSeq
+    if ( !ctx.IsFormatGBSeq() ) {
+        // if ds-DNA don't show ds
+        if ( bmol == CSeq_inst::eMol_dna  &&  m_Strand == CSeq_inst::eStrand_ds ) {
+            m_Strand = CSeq_inst::eStrand_not_set;
+        }
+        
+        // ss-any RNA don't show ss
+        if ( (bmol > CSeq_inst::eMol_rna  ||  
+            (m_Biomol >= CMolInfo::eBiomol_mRNA     &&
+            m_Biomol <= CMolInfo::eBiomol_peptide))  &&
+            m_Strand == CSeq_inst::eStrand_ss ) {
+            m_Strand = CSeq_inst::eStrand_not_set;
+        }
     }
 }
 
@@ -533,6 +534,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/13 16:49:01  shomrat
+* GBSeq format changes
+*
 * Revision 1.6  2004/03/25 20:45:05  shomrat
 * Use handles
 *
