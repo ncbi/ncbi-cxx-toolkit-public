@@ -48,7 +48,7 @@ $(XLIBDEP): $(libdir)/$(XLIB)
 
 ### Standard targets
 
-all: $(XLIB) $(XLIBDEP)
+all: $(XLIB) .WAIT $(XLIBDEP)
 
 clean:
 	-$(RMDIR) SunWS_cache

@@ -17,3 +17,7 @@
 	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 %@obj_ext@: $(srcdir)/%.c
 	$(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+
+###  Dummy target for non-DMAKE makes
+.WAIT:
+	@: echo
