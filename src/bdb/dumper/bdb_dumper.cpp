@@ -241,6 +241,7 @@ void CBDB_FileDumperApp::Init(void)
     
     arg_desc->AddFlag("nl", "Do NOT print field labels(names)");
     arg_desc->AddFlag("bt", "Display BLOB as text (default: HEX)");
+    arg_desc->AddFlag("bf", "Display full BLOB");
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
@@ -367,10 +368,19 @@ void CBDB_FileDumperApp::DumpBlob(
         fdump.SetColumnSeparator(args["cs"].AsString());
     }
     
+    CBDB_FileDumper::TBlobFormat bformat = 0;    
     if (args["bt"]) {
-        fdump.SetBlobFormat(CBDB_FileDumper::eBlobSummary |
-                            CBDB_FileDumper::eBlobAsTxt);
+        bformat |= CBDB_FileDumper::eBlobAsTxt;
+    } else {
+        bformat |= CBDB_FileDumper::eBlobAsHex;
     }
+    if (args["bf"]) {
+        bformat |= CBDB_FileDumper::eBlobAll;
+    } else {
+        bformat |= CBDB_FileDumper::eBlobSummary;
+    }
+    
+    fdump.SetBlobFormat(bformat);
 
     if (args["k"]) {
         const string& key_str = args["k"].AsString();
@@ -428,6 +438,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/06/23 14:11:09  kuznets
+ * Added more options for BLOB dumping
+ *
  * Revision 1.3  2004/06/22 18:27:31  kuznets
  * Implemented BLOB dumping(summary)
  *
