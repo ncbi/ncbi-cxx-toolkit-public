@@ -922,7 +922,7 @@ AC_MSG_CHECKING(if NCBI PubMed libraries are available)
 if test "$with_ncbi_c" = "no" ; then
    with_pubmed="no"
 elif test "$with_pubmed" != "no" ; then
-   NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed${bit64_sfx}"}
+   NCBI_PM_PATH=${NCBI_PM_PATH:="$NCBI/pubmed"}${bit64_sfx}
    CPPFLAGS="-I$NCBI_PM_PATH/pmentrez/include/Ncbi $NCBI_C_INCLUDE $orig_CPPFLAGS"
    LIBS="-L$NCBI_PM_PATH/pmentrez/libs -lpmncbi $NCBI_C_LIBPATH -lncbi $orig_LIBS"
    AC_TRY_LINK(
