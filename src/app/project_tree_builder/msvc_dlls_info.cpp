@@ -246,7 +246,7 @@ static void s_InitalizeDllProj(const string&                  dll_id,
     dll->m_SourcesBaseDir = dll_project_dir;
 
     dll->m_Sources.clear();
-    dll->m_Sources.push_back("..\\dll_main");
+    dll->m_Sources.push_back("..\\..\\dll_main");
 }
 
 
@@ -545,6 +545,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/06/04 14:48:53  gorelenk
+ * Changed dll_main location.
+ *
  * Revision 1.17  2004/06/01 16:05:40  gorelenk
  * Changed implementation of s_AddProjItemToDll : added conditional branch for
  * processing lib_choice when library to add is available as a third-party .
