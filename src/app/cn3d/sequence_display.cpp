@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/09/19 22:55:39  thiessen
+* add preliminary net import and BLAST
+*
 * Revision 1.31  2001/08/24 14:54:50  thiessen
 * make status row # order-independent :)
 *
@@ -455,7 +458,7 @@ void SequenceDisplay::MouseOver(int column, int row) const
                     else
                         status.Printf("Row %i", rowNum);
                     if (alnRow->alignment->GetRowStatusLine(alnRow->row).size() > 0) {
-                        if (blockNum > 0) status += " ; ";
+                        status += " ; ";
                         status += alnRow->alignment->GetRowStatusLine(alnRow->row).c_str();
                     }
                 }

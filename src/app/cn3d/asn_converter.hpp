@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/09/19 22:55:43  thiessen
+* add preliminary net import and BLAST
+*
 * Revision 1.1  2001/09/18 03:09:38  thiessen
 * add preliminary sequence import pipeline
 *
@@ -47,6 +50,7 @@
 #include <serial/objostrasnb.hpp>
 
 #include <string>
+#include <memory>
 
 // C stuff
 #include <stdio.h>
@@ -71,7 +75,7 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
         aibp = AsnIoBSOpen("wb", bsp);
         if (!bsp || !aibp) throw "AsnIoBS creation failed";
 
-        if (!((*writeFunc)(from, aibp->aip, NULL))) throw "C data -> AsnIoBS failed";
+        if (!((*writeFunc)(from, aibp->aip, NULL))) throw "C object -> AsnIoBS failed";
 
         AsnIoBSClose(aibp);
         aibp = NULL;
@@ -82,9 +86,11 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
         Nlm_BSSeek(bsp, 0, 0);
         if (Nlm_BSRead(bsp, (void *) asnDataBlock, dataSize) != dataSize)
             throw "AsnIoBS -> datablock failed";
+        Nlm_BSFree(bsp);
+        bsp = NULL;
 
-        CNcbiIstrstream asnIstrstream(asnDataBlock, dataSize);
-        CObjectIStreamAsnBinary objIstream(asnIstrstream);
+        ncbi::CNcbiIstrstream asnIstrstream(asnDataBlock, dataSize);
+        ncbi::CObjectIStreamAsnBinary objIstream(asnIstrstream);
         objIstream >> *to;
         retval = true;
 
@@ -100,6 +106,61 @@ static bool ConvertAsnFromCToCPP(Pointer from, AsnWriteFunc writeFunc, ASNClass 
     return retval;
 }
 
+// a utility function for converting ASN data structures from C++ to C
+template < class ASNClass >
+static Pointer ConvertAsnFromCPPToC(const ASNClass& from, AsnReadFunc readFunc, std::string *err)
+{
+    err->erase();
+    Pointer cObject = NULL;
+    AsnIoMemPtr aimp = NULL;
+
+    try {
+        ncbi::CNcbiOstrstream asnOstrstream;
+        ncbi::CObjectOStreamAsnBinary objOstream(asnOstrstream);
+        objOstream << from;
+
+        auto_ptr<char> strData(asnOstrstream.str()); // to make sure data gets freed
+        AsnIoMemPtr aimp = AsnIoMemOpen("rb", (unsigned char *) asnOstrstream.str(), asnOstrstream.pcount());
+        if (!aimp || !(cObject = (*readFunc)(aimp->aip, NULL)))
+            throw "AsnIoMem -> C object failed";
+
+    } catch (const char *msg) {
+        *err = msg;
+    } catch (exception& e) {
+        *err = std::string("uncaught exception: ") + e.what();
+    }
+
+    if (aimp) AsnIoMemClose(aimp);
+    return cObject;
+}
+
+// create a new copy of a C++ ASN data object
+template < class ASNClass >
+static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
+{
+    err->erase();
+    auto_ptr<ASNClass> newObject;
+
+    try {
+        // create output stream and load object into it
+        ncbi::CNcbiStrstream asnIOstream;
+        ncbi::CObjectOStreamAsnBinary outObject(asnIOstream);
+        outObject << originalObject;
+
+        // create input stream and load into new object
+        ncbi::CObjectIStreamAsnBinary inObject(asnIOstream);
+        newObject.reset(new ASNClass());
+        inObject >> *newObject;
+
+    } catch (exception& e) {
+        *err = e.what();
+        return NULL;
+    }
+
+    return newObject.release();
+}
+
 END_SCOPE(Cn3D)
 
 #endif // CN3D_ASN_CONVERTER__HPP
+

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.78  2001/09/19 22:55:39  thiessen
+* add preliminary net import and BLAST
+*
 * Revision 1.77  2001/09/18 03:10:45  thiessen
 * add preliminary sequence import pipeline
 *
@@ -266,11 +269,6 @@
 
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbi_limits.h>
-#include <connect/ncbi_util.h>
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistrasnb.hpp>
 
 #include <objects/ncbimime/Biostruc_seq.hpp>
 #include <objects/ncbimime/Biostruc_seqs.hpp>
@@ -310,6 +308,7 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/messenger.hpp"
 #include "cn3d/asn_reader.hpp"
+#include "cn3d/asn_converter.hpp"
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/molecule_identifier.hpp"
@@ -522,43 +521,6 @@ StructureSet::StructureSet(CNcbi_mime_asn1 *mime) :
     dataChanged = 0;
 }
 
-static bool GetBiostrucByHTTP(int mmdbID, CBiostruc& biostruc, std::string& err)
-{
-    err.erase();
-    bool okay = true;
-
-    // set up registry field to set GET connection method for HTTP
-    CNcbiRegistry* reg = new CNcbiRegistry;
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
-    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
-    CORE_SetREG(REG_cxx2c(reg, true));
-
-    try {
-        // create HHTP stream from mmdbsrv URL
-        CNcbiOstrstream args;
-        args << "uid=" << mmdbID
-            << "&form=6&db=t&save=Save&dopt=i"
-//            << "&Complexity=Virtual%20Bond%20Model"
-            << "&Complexity=Cn3D%20Subset"
-            << '\0';
-        std::string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
-        TESTMSG("Trying to load Biostruc via " << host << path << '?' << args.str());
-        CConn_HttpStream httpStream(host, path, args.str());
-        delete args.str();
-
-        // load Biostruc from this stream
-        CObjectIStreamAsnBinary asnStream(httpStream);
-        asnStream >> biostruc;
-
-    } catch (exception& e) {
-        err = e.what();
-        okay = false;
-    }
-
-    CORE_SetREG(NULL);
-    return okay;
-}
-
 StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
     StructureBase(NULL), isMultipleStructure(true)
 {
@@ -644,11 +606,20 @@ StructureSet::StructureSet(CCdd *cdd, const char *dataDir, int structureLimit) :
 
             // ... else try network
             if (!gotBiostruc) {
-                gotBiostruc = GetBiostrucByHTTP(mmdbIDs[m], biostruc, err);
+                CNcbiOstrstream args;
+                args << "uid=" << mmdbIDs[m]
+                    << "&form=6&db=t&save=Save&dopt=i"
+        //            << "&Complexity=Virtual%20Bond%20Model"
+                    << "&Complexity=Cn3D%20Subset"
+                    << '\0';
+                static const std::string host = "www.ncbi.nlm.nih.gov", path = "/Structure/mmdb/mmdbsrv.cgi";
+                TESTMSG("Trying to load ASN data from " << host << path << '?' << args.str());
+                gotBiostruc = GetAsnDataViaHTTP(host, path, args.str(), &biostruc, &err);
                 if (!gotBiostruc) {
                     ERR_POST(Warning << "Failed to read Biostruc from network"
                         << "\nreason: " << err);
                 }
+                delete args.str();
             }
 
             if (gotBiostruc) {

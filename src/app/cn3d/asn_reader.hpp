@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/09/19 22:55:43  thiessen
+* add preliminary net import and BLAST
+*
 * Revision 1.4  2001/09/18 03:09:38  thiessen
 * add preliminary sequence import pipeline
 *
@@ -56,6 +59,9 @@
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
+#include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_util.h>
 
 #include <string>
 
@@ -130,36 +136,34 @@ static bool WriteASNToFile(const char *filename, const ASNClass& ASNobject, bool
     return true;
 }
 
-// for copying ASN data
+// for loading (binary) ASN data via HTTP connection
 template < class ASNClass >
-static ASNClass * CopyASNObject(const ASNClass& originalObject, std::string *err)
+static bool GetAsnDataViaHTTP(
+    const std::string& host, const std::string& path, const std::string& args,
+    ASNClass *asnObject, std::string *err)
 {
     err->erase();
-    auto_ptr<ASNClass> newObject;
+    bool okay = false;
+
+    // set up registry field to set GET connection method for HTTP
+    CNcbiRegistry* reg = new CNcbiRegistry;
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_DEBUG_PRINTOUT, "FALSE");
+    reg->Set(DEF_CONN_REG_SECTION, REG_CONN_REQ_METHOD,     "GET");
+    CORE_SetREG(REG_cxx2c(reg, true));
 
     try {
-        // create output stream
-        ncbi::CNcbiStrstream asnIOstream;
-        ncbi::CObjectOStreamAsnBinary outObject(asnIOstream);
-
-        // load object into stream
-        outObject << originalObject;
-
-        // create input stream
-        ncbi::CObjectIStreamAsnBinary inObject(asnIOstream);
-
-        // create new object
-        newObject.reset(new ASNClass());
-
-        // load data into new object
-        inObject >> *newObject;
+        // load data from stream using given URL params
+        CConn_HttpStream httpStream(host, path, args);
+        CObjectIStreamAsnBinary asnStream(httpStream);
+        asnStream >> *asnObject;
+        okay = true;
 
     } catch (exception& e) {
         *err = e.what();
-        return NULL;
     }
 
-    return newObject.release();
+    CORE_SetREG(NULL);
+    return okay;
 }
 
 END_SCOPE(Cn3D)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/09/19 22:55:39  thiessen
+* add preliminary net import and BLAST
+*
 * Revision 1.13  2001/09/18 03:10:46  thiessen
 * add preliminary sequence import pipeline
 *
@@ -80,13 +83,17 @@
 #include <objects/cdd/Update_align.hpp>
 #include <objects/cdd/Update_comment.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 #include <memory>
 
 // C stuff
 #include <stdio.h>
 #include <tofasta.h>
+#include <objseq.h>
+#include <objsset.h>
 
 #include "cn3d/update_viewer.hpp"
 #include "cn3d/update_viewer_window.hpp"
@@ -100,6 +107,7 @@
 #include "cn3d/cn3d_tools.hpp"
 #include "cn3d/asn_converter.hpp"
 #include "cn3d/cn3d_blast.hpp"
+#include "cn3d/asn_reader.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -161,7 +169,6 @@ void UpdateViewer::Refresh(void)
 
 void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
 {
-    if (newAlignments.size() == 0) return;
     AlignmentList& alignments = alignmentStack.back();
     SequenceDisplay *display = displayStack.back();
 
@@ -317,21 +324,46 @@ void UpdateViewer::ImportAndAlign(void)
         return;
     }
 
-    // import the new sequence(s), creating new SequenceSet
-    SequenceSet::SequenceList newSequences;
-
     // choose import type
-    static const wxString choiceStrings[] = { "From GI/Accession", "From FASTA File" };
+    static const wxString choiceStrings[] = { "Network via GI/Accession", "From a FASTA File" };
     static enum choiceValues { FROM_GI=0, FROM_FASTA, N_CHOICES };
     int importFrom = wxGetSingleChoiceIndex(
         "From what source would you like to import a sequence?", "Select Import Source",
         N_CHOICES, choiceStrings, *viewerWindow);
+    if (importFrom < 0) return;     // cancelled
+
+    // import the new sequence(s), creating new SequenceSet
+    SequenceSet::SequenceList newSequences;
+    std::string err;
 
     // network import
     if (importFrom == FROM_GI) {
-        wxString id = wxGetTextFromUser("Enter a GI or Protein Accession:",
+        wxString id = wxGetTextFromUser("Enter a protein GI or Accession:",
             "Input Identifier", "", *viewerWindow);
         if (id.size() > 0) {
+            CSeq_entry seqEntry;
+            static const std::string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
+            std::string args = std::string("view=0&maxplex=1&save=idf&val=") + id.c_str();
+            TESTMSG("Trying to load sequence from " << host << path << '?' << args);
+            if (GetAsnDataViaHTTP(host, path, args, &seqEntry, &err)) {
+                CRef < CBioseq > bioseq;
+                if (seqEntry.IsSeq())
+                    bioseq.Reset(&(seqEntry.GetSeq()));
+                else if (seqEntry.IsSet() && seqEntry.GetSet().GetSeq_set().front()->IsSeq())
+                    bioseq.Reset(&(seqEntry.GetSet().GetSeq_set().front()->GetSeq()));
+                else
+                    ERR_POST(Error << "Confused by SeqEntry format");
+                if (!bioseq.Empty()) {
+                    // create Sequence
+                    const Sequence *sequence = master->parentSet->CreateNewSequence(*bioseq);
+                    if (sequence->isProtein)
+                        newSequences.push_back(sequence);
+                    else
+                        ERR_POST(Error << "The sequence must be a protein");
+                }
+            } else {
+                ERR_POST(Error << "HTTP Bioseq retrieval failed");
+            }
         }
     }
 
@@ -345,19 +377,18 @@ void UpdateViewer::ImportAndAlign(void)
             FileClose(fp);
             if (!sep) {
                 ERR_POST(Error << "Error parsing FASTA file " << fastaFile.c_str());
-                return;
+            } else {
+                // convert C to C++ SeqEntry
+                CSeq_entry se;
+                if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
+                    ERR_POST(Error << "Error converting to C++ object: " << err);
+                } else {
+                    // create Sequence - just one for now
+                    if (se.IsSeq())
+                        newSequences.push_back(master->parentSet->CreateNewSequence(se.GetSeq()));
+                }
+                SeqEntryFree(sep);
             }
-            // convert C to C++ SeqEntry
-            CSeq_entry se;
-            std::string err;
-            if (!ConvertAsnFromCToCPP(sep, (AsnWriteFunc) SeqEntryAsnWrite, &se, &err)) {
-                ERR_POST(Error << "Error converting to C++ object: " << err);
-                return;
-            }
-            SeqEntryFree(sep);
-            // create Sequence - just one for now
-            if (se.IsSeq())
-                newSequences.push_back(master->parentSet->CreateNewSequence(se.GetSeq()));
         }
     }
 
