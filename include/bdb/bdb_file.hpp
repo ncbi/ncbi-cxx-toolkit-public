@@ -193,6 +193,10 @@ protected:
     /// Create DB cursor
     DBC* CreateCursor(CBDB_Transaction* trans = 0) const;
 
+	/// Set byte order swapping. Can be overloaded on derived classes
+	/// @note When overloading DO call parent::x_SetByteSwapped
+	virtual void x_SetByteSwapped(bool bswp);
+
 protected:
     DB*               m_DB;
     DBT*              m_DBT_Key;
@@ -349,6 +353,7 @@ protected:
     /// Wrapper around get operation.    
     EBDB_ErrCode x_Fetch(unsigned int flags);    
 
+	virtual void x_SetByteSwapped(bool bswp);
 
 private:
     CBDB_File(const CBDB_File&);
@@ -486,6 +491,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2004/06/03 11:46:11  kuznets
+ * +x_SetByteSwapped
+ *
  * Revision 1.30  2004/05/06 18:17:58  rotmistr
  * Cursor Update/Delete implemented
  *
