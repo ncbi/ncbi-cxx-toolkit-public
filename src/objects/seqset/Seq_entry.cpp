@@ -105,6 +105,43 @@ bool CSeq_entry::UserOp_Equals(const CSerialUserOp& /*object*/) const
     return true;
 }
 
+
+static CBioseq::ELabelType s_GetBioseqLabelType(CSeq_entry::ELabelType lt)
+{
+    switch (lt) {
+        case CSeq_entry::eType:    return CBioseq::eType;
+        case CSeq_entry::eContent: return CBioseq::eContent;
+        case CSeq_entry::eBoth:    return CBioseq::eBoth;
+    }
+}
+
+
+static CBioseq_set::ELabelType s_GetBioseqSetLabelType(CSeq_entry::ELabelType lt)
+{
+    switch (lt) {
+        case CSeq_entry::eType:    return CBioseq_set::eType;
+        case CSeq_entry::eContent: return CBioseq_set::eContent;
+        case CSeq_entry::eBoth:    return CBioseq_set::eBoth;
+    }
+}
+
+
+void CSeq_entry::GetLabel(string* label, ELabelType type) const
+{
+    switch ( Which() ) {
+    case e_Seq:
+        GetSeq().GetLabel(label, s_GetBioseqLabelType(type));
+        break;
+    case e_Set:
+        GetSet().GetLabel(label, s_GetBioseqSetLabelType(type));
+        break;
+    case e_not_set:
+    default:
+        *label += "???";
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -113,6 +150,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.28  2004/07/22 16:26:04  shomrat
+ * + GetLabel()
+ *
  * Revision 6.27  2004/05/19 17:26:48  gorelenk
  * Added include of PCH - ncbi_pch.hpp
  *

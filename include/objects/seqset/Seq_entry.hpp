@@ -71,6 +71,15 @@ public:
     // or Parentize() was never called.
     CSeq_entry* GetParentEntry(void) const;
 
+    enum ELabelType {
+        eType,
+        eContent,
+        eBoth
+    };
+
+    // Append a label to label based on type or content of CSeq_entry
+    void GetLabel(string* label, ELabelType type) const;
+
 protected:
     // From CSerialUserOp
     virtual void UserOp_Assign(const CSerialUserOp& source);
@@ -112,6 +121,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.18  2004/07/22 16:25:46  shomrat
+ * + GetLabel()
+ *
  * Revision 1.17  2003/06/04 17:25:18  ucko
  * Move FASTA reader to objtools/readers.
  *
