@@ -679,6 +679,10 @@ CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type,
                                    TGetChunkFlags flags) const
     // returns true if types are the same (as specified by flags)
 {
+    if (flags & fChunkSameAsSeg) {
+        return false;
+    }
+        
     if ((left_type & fSeq) != (right_type & fSeq)) {
         return false;
     }
@@ -863,6 +867,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/05/23 18:10:47  todorov
+* +fChunkSameAsSeg
+*
 * Revision 1.27  2003/03/20 16:38:21  todorov
 * +fIgnoreGaps for GetXXXChunks
 *

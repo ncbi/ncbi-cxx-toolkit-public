@@ -68,18 +68,19 @@ public:
     typedef CDense_seg::TNumseg   TNumseg;
 
     enum EGetChunkFlags {
-        fAllChunks           = 0x00,
-        fIgnoreUnaligned     = 0x01,
-        fInsertSameAsSeq     = 0x02,
-        fDeletionSameAsGap   = 0x04,
+        fAllChunks           = 0x0000,
+        fIgnoreUnaligned     = 0x0001,
+        fInsertSameAsSeq     = 0x0002,
+        fDeletionSameAsGap   = 0x0004,
         fIgnoreAnchor        = fInsertSameAsSeq | fDeletionSameAsGap,
-        fIgnoreGaps          = 0x08,
+        fIgnoreGaps          = 0x0008,
+        fChunkSameAsSeg      = 0x0010,
         
-        fSkipUnalignedGaps   = 0x10,
-        fSkipDeletions       = 0x20,
+        fSkipUnalignedGaps   = 0x0020,
+        fSkipDeletions       = 0x0040,
         fSkipAllGaps         = fSkipUnalignedGaps | fSkipDeletions,
-        fSkipInserts         = 0x40,
-        fSkipAlnSeq          = 0x80,
+        fSkipInserts         = 0x0080,
+        fSkipAlnSeq          = 0x0100,
         fSeqOnly             = fSkipAllGaps | fSkipInserts,
         fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq,
         fAlnSegsOnly         = fSkipInserts | fSkipUnalignedGaps
@@ -578,6 +579,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2003/05/23 18:10:38  todorov
+* +fChunkSameAsSeg
+*
 * Revision 1.19  2003/03/20 16:37:14  todorov
 * +fIgnoreGaps for GetXXXChunksalnmap.cpp
 *
