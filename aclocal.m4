@@ -123,3 +123,45 @@ AC_DEFUN(NCBI_CHECK_LIBS,
    [], [$]$1_LIBS)
  LIBS=$saved_LIBS
 ])
+
+AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB,
+[NCBI_CHECK_THIRD_PARTY_LIB_(m4_tolower($1), m4_toupper($1), $@)])
+
+AC_DEFUN(NCBI_CHECK_THIRD_PARTY_LIB_,
+[if test "$with_$1" != "no"; then
+    case "$with_$1" in
+       yes | "" ) ;;
+       *        ) $2_PATH=$with_$1 ;;
+    esac
+    if test -d "[$]$2_PATH"; then
+       in_path=" in [$]$2_PATH"
+       test -d "[$]$2_PATH/include" && $2_INCLUDE="-I[$]$2_PATH/include"
+       if test -d "[$]$2_PATH/lib${bit64_sfx}"; then
+          $2_LIBPATH="-L[$]$2_PATH/lib ${CONF_f_runpath}[$]$2_PATH/lib"
+       fi
+       $2_LIBS="[$]$2_LIBPATH -l$3 $5"
+    else
+       $2_INCLUDE=""
+       $2_LIBS="-l$3 $5"
+       in_path=
+    fi
+    AC_CACHE_CHECK([for lib$3$in_path], ncbi_cv_lib_$1,
+       CPPFLAGS="[$]$2_INCLUDE $orig_CPPFLAGS"
+       LIBS="[$]$2_LIBS $orig_LIBS"
+       [AC_LINK_IFELSE($4, [ncbi_cv_lib_$1=yes], [ncbi_cv_lib_$1=no])])
+    if test "$ncbi_cv_lib_$1" = "no"; then
+       with_$1="no"
+    fi
+ fi
+ if test "$with_$1" = "no"; then
+    $2_PATH="No_$2"
+    $2_INCLUDE=
+    $2_LIBS=
+    WithoutPackages="$WithoutPackages $2"
+ else
+    WithPackages="$WithPackages $2"
+    AC_DEFINE(HAVE_LIB$2, 1, [Define to 1 if lib$3 is available.])
+ fi
+ AC_SUBST($2_INCLUDE)
+ AC_SUBST($2_LIBS)
+])
