@@ -45,7 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XUTIL_EXPORT CUtilException : public CException
+class CUtilException : public CException
 {
 public:
     enum EErrCode {
@@ -66,7 +66,7 @@ public:
 
 
 // this exception is thrown when IO error occurred in serialization
-class NCBI_XUTIL_EXPORT CIOException : public CUtilException
+class CIOException : public CUtilException
 {
 public:
     enum EErrCode {
@@ -85,7 +85,7 @@ public:
     NCBI_EXCEPTION_DEFAULT(CIOException, CUtilException);
 };
 
-class NCBI_XUTIL_EXPORT CEofException : public CIOException
+class CEofException : public CIOException
 {
 public:
     enum EErrCode {
@@ -101,7 +101,7 @@ public:
 };
 
 
-class NCBI_XUTIL_EXPORT CBlockingQueueException : public CUtilException
+class CBlockingQueueException : public CUtilException
 {
 public:
     enum EErrCode {
@@ -129,6 +129,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/08/19 13:10:35  dicuccio
+ * Dropped export specifier on inlined exceptions
+ *
  * Revision 1.2  2003/04/17 17:50:40  siyan
  * Added doxygen support
  *

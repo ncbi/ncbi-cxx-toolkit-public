@@ -38,12 +38,12 @@
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XOBJREAD_EXPORT CObjReaderException : public CException
+class CObjReaderException : public CException
 {
     NCBI_EXCEPTION_DEFAULT(CObjReaderException,CException);
 };
 
-class NCBI_XOBJREAD_EXPORT CObjReaderParseException :
+class CObjReaderParseException :
     public CParseTemplException<CObjReaderException>
 {
 public:
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/08/19 13:09:12  dicuccio
+* Dropped export specifier on inlined exceptions
+*
 * Revision 1.2  2003/06/06 13:46:04  ucko
 * Use the right _EXPORT macro.
 *
