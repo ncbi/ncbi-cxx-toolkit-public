@@ -57,8 +57,6 @@ BEGIN_SCOPE(objects)
 //
 
 
-const TSeqPos CSeqVector::kPosUnknown = numeric_limits<TSeqPos>::max();
-
 CSeqVector::CSeqVector(const CSeqVector& vec)
 {
     *this = vec;
@@ -72,17 +70,17 @@ CSeqVector::CSeqVector(const CBioseq_Handle& handle,
     : m_Scope(&scope),
       m_Handle(handle),
       m_PlusStrand(strand == CBioseq_Handle::eStrand_Plus),
-      m_Size(kPosUnknown),
+      m_Size(kInvalidSeqPos),
       m_CachedData(""),
-      m_CachedPos(kPosUnknown),
+      m_CachedPos(kInvalidSeqPos),
       m_CachedLen(0),
       m_Coding(CSeq_data::e_not_set),
-      m_RangeSize(kPosUnknown),
-      m_CurFrom(kPosUnknown),
+      m_RangeSize(kInvalidSeqPos),
+      m_CurFrom(kInvalidSeqPos),
       m_CurTo(0),
       m_OrgTo(0)
 {
-    m_CurData.dest_start = kPosUnknown;
+    m_CurData.dest_start = kInvalidSeqPos;
     m_CurData.length = 0;
     m_SeqMap.Reset(&m_Handle.x_GetDataSource().GetSeqMap(m_Handle));
     if ( view_loc ) {
@@ -156,7 +154,7 @@ void CSeqVector::x_SetVisibleArea(const CSeq_loc& view_loc)
 
 TSeqPos CSeqVector::x_GetTotalSize(void) const
 {
-    if (m_Size == kPosUnknown) {
+    if (m_Size == kInvalidSeqPos) {
         // Calculate total sequence size
         m_Size = m_SeqMap->End(m_Scope).GetPosition();
 /*
@@ -207,9 +205,9 @@ TSeqPos CSeqVector::x_GetTotalSize(void) const
 
 TSeqPos CSeqVector::x_GetVisibleSize(void) const
 {
-    if (m_Size == kPosUnknown)
+    if (m_Size == kInvalidSeqPos)
         x_GetTotalSize();
-    if (m_RangeSize == kPosUnknown) {
+    if (m_RangeSize == kInvalidSeqPos) {
         // Calculate the visible area size
         m_RangeSize = 0;
         iterate (TRanges, rit, m_Ranges) {
@@ -257,7 +255,7 @@ void CSeqVector::x_UpdateSeqData(TSeqPos pos)
 {
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, pos, &m_CurData);
-    m_CachedPos = kPosUnknown; // Reset cached data
+    m_CachedPos = kInvalidSeqPos; // Reset cached data
     m_CachedLen = 0;
     m_CachedData = "";
 }
@@ -512,7 +510,7 @@ void CSeqVector::SetIupacCoding(void)
     size();
     m_CurData.src_data = 0; // Reset data
     m_Scope->x_GetSequence(m_Handle, 0, &m_CurData);
-    m_CachedPos = kPosUnknown; // Reset cached data
+    m_CachedPos = kInvalidSeqPos; // Reset cached data
     m_CachedLen = 0;
     m_CachedData = "";
 
@@ -546,6 +544,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/01/03 19:45:12  dicuccio
+* Replaced kPosUnknwon with kInvalidSeqPos (non-static variable; worka-round for
+* MSVC)
+*
 * Revision 1.36  2002/12/26 16:39:24  vasilche
 * Object manager class CSeqMap rewritten.
 *
