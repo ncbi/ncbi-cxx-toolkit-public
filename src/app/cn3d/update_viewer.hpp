@@ -104,7 +104,7 @@ private:
 
     const Sequence * GetMasterSequence(void) const;
     typedef std::list < const Sequence * > SequenceList;
-    void FetchSequenceViaHTTP(SequenceList *newSequences, StructureSet *sSet) const;
+    void FetchSequencesViaHTTP(SequenceList *newSequences, StructureSet *sSet) const;
     void ReadSequencesFromFile(SequenceList *newSequences, StructureSet *sSet) const;
     void FetchSequences(StructureSet *sSet, SequenceList *newSequences) const;
 
@@ -134,6 +134,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/03/14 19:48:51  thiessen
+* allow multiple gi's in network sequence import dialog
+*
 * Revision 1.23  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

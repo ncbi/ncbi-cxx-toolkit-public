@@ -88,6 +88,8 @@
 #include "cn3d/cn3d_cache.hpp"
 #include "cn3d/cn3d_ba_interface.hpp"
 
+#include <wx/tokenzr.h>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -314,12 +316,17 @@ const Sequence * UpdateViewer::GetMasterSequence(void) const
     return master;
 }
 
-void UpdateViewer::FetchSequenceViaHTTP(SequenceList *newSequences, StructureSet *sSet) const
+void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSet *sSet) const
 {
-    wxString id =
-        wxGetTextFromUser("Enter a protein GI or Accession:", "Input Identifier", "", *viewerWindow);
+    wxString ids =
+        wxGetTextFromUser("Enter a list of protein GIs or Accessions:",
+            "Input Identifier", "", *viewerWindow);
+    if (ids.size() == 0) return;
 
-    if (id.size() > 0) {
+    wxStringTokenizer tkz(ids, " ,;");
+    while (tkz.HasMoreTokens()) {
+        wxString id = tkz.GetNextToken();
+
         CSeq_entry seqEntry;
         string err;
         static const string host("www.ncbi.nlm.nih.gov"), path("/entrez/viewer.cgi");
@@ -419,7 +426,7 @@ void UpdateViewer::FetchSequences(StructureSet *sSet, SequenceList *newSequences
 
     // network import
     if (importFrom == FROM_GI)
-        FetchSequenceViaHTTP(newSequences, sSet);
+        FetchSequencesViaHTTP(newSequences, sSet);
 
     // FASTA import
     else if (importFrom == FROM_FASTA)
@@ -1161,6 +1168,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2003/03/14 19:48:51  thiessen
+* allow multiple gi's in network sequence import dialog
+*
 * Revision 1.58  2003/03/13 18:55:17  thiessen
 * tweak file load error reporting
 *
