@@ -41,6 +41,7 @@ Detailed Contents:
 #include <algo/blast/core/blast_util.h>
 #include <algo/blast/core/link_hsps.h>
 #include <algo/blast/core/blast_setup.h>
+#include "blast_psi_priv.h"
 
 static char const rcsid[] = "$Id$";
 
@@ -1127,7 +1128,7 @@ Int2 BLAST_RPSTraceback(Uint1 program_number,
             psi_options);
 
          if (program_number != blast_type_rpstblastn)
-            RPSFreePSSM(sbp->posMatrix, one_db_seq.length);
+            _PSIDeallocateMatrix((void**)sbp->posMatrix, one_db_seq.length);
       }
 
       /* Revert query and subject to their traditional meanings. 

@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.62  2004/04/29 19:58:03  camacho
+ * Use generic matrix allocator/deallocator from blast_psi_priv.h
+ *
  * Revision 1.61  2004/04/28 14:40:23  madden
  * Changes from Mike Gertz:
  * - I created the new routine BLAST_GapDecayDivisor that computes a
@@ -267,6 +270,7 @@ v * Revision 1.53  2004/04/05 18:53:35  madden
 #include <algo/blast/core/blast_util.h>
 #include <util/tables/raw_scoremat.h>
 #include <algo/blast/core/blast_encoding.h>
+#include "blast_psi_priv.h"
 
 /* OSF1 apparently doesn't like this. */
 #if defined(HUGE_VAL) && !defined(OS_UNIX_OSF1)
@@ -3609,9 +3613,9 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
     finalLambda = correctUngappedLambda/scaledInitialUngappedLambda;
 
-    returnMatrix = (Int4 **)malloc((db_seq_length+1) * sizeof(Int4 *));
-    for (index = 0; index < (db_seq_length+1); index++)
-        returnMatrix[index] = (Int4 *)malloc(PSI_ALPHABET_SIZE * sizeof(Int4));
+    returnMatrix = (Int4 **)_PSIAllocateMatrix((db_seq_length+1),
+                                               PSI_ALPHABET_SIZE,
+                                               sizeof(Int4));
 
     for (index = 0; index < db_seq_length+1; index++) {
         for (inner_index = 0; inner_index < PSI_ALPHABET_SIZE; inner_index++) {
@@ -3629,17 +3633,6 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
 
     return returnMatrix;
 }
-
-void
-RPSFreePSSM(Int4 **posMatrix, Int4 num_rows)
-{
-    Int4 i;
-
-    for (i = 0; i < (num_rows + 1); i++)
-        sfree(posMatrix[i]);
-    sfree(posMatrix);
-}
-
 
 /** 
  * Computes the adjustment to the lengths of the query and database sequences
