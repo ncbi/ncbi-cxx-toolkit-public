@@ -399,6 +399,8 @@ void CNetCacheServer::ProcessGet(CSocket& sock, const Request& req)
         return;
     CIdBusyGuard guard(&m_UsedIds, blob_id.id, m_InactivityTimeout);
 
+    size_t blob_size = m_Cache->GetSize(req_id, 0, kEmptyStr);
+
     auto_ptr<IReader> rdr(m_Cache->GetReadStream(req_id, 0, kEmptyStr));
     if (!rdr.get()) {
 blob_not_found:
@@ -418,7 +420,11 @@ blob_not_found:
         if (io_res == eRW_Success && bytes_read) {
             if (!read_flag) {
                 read_flag = true;
-                WriteMsg(sock, "OK:", "BLOB found.");
+                string msg("BLOB found. SIZE=");
+                char buf[256];
+                itoa(blob_size, buf, 10);
+                msg += buf;
+                WriteMsg(sock, "OK:", msg);
             }
 
             // translate BLOB fragment to the network
@@ -860,6 +866,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2004/11/01 16:03:39  kuznets
+ * Added blob size to GET response
+ *
  * Revision 1.22  2004/11/01 14:40:24  kuznets
  * Implemented BLOB update, fixed bug in object locking
  *
