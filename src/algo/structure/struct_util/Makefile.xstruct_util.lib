@@ -1,0 +1,11 @@
+# $Id$
+# Author:  Paul Thiessen
+
+# Build library "xstruct_util"
+#################################
+
+SRC =   struct_util \
+        su_alignment_set \
+        su_sequence_set
+
+LIB = xstruct_util
