@@ -280,6 +280,8 @@ public:
                        unsigned int  rebalance_requests = 0,
                        unsigned int  rebalance_bytes    = 0);
 
+    virtual ~CNetCacheClient_LB();
+
     virtual 
     string PutData(const void*   buf,
                    size_t        size,
@@ -419,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2005/03/28 15:31:37  didenko
+ * Made destructors virtual
+ *
  * Revision 1.27  2005/03/22 21:42:50  didenko
  * Got rid of warnning on Sun WorkShop
  *

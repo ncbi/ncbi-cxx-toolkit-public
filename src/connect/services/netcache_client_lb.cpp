@@ -198,6 +198,10 @@ CNetCacheClient_LB::CNetCacheClient_LB(const string& client_name,
     SetClientNameComment(lb_service_name);
 }
 
+CNetCacheClient_LB::~CNetCacheClient_LB()
+{
+}
+
 string CNetCacheClient_LB::PutData(const void*   buf,
                                    size_t        size,
                                    unsigned int  time_to_live)
@@ -399,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2005/03/28 15:32:27  didenko
+ * Made destructors virtual
+ *
  * Revision 1.10  2005/03/22 18:54:07  kuznets
  * Changed project tree layout
  *

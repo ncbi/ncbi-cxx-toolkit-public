@@ -78,6 +78,11 @@ CNetScheduleClient_LB::CNetScheduleClient_LB(const string& client_name,
     SetClientNameComment(lb_service_name);
 }
 
+CNetScheduleClient_LB::~CNetScheduleClient_LB()
+{
+}
+
+
 bool CNetScheduleClient_LB::NeedRebalance(time_t curr) const
 {
     if ((m_LastRebalanceTime == 0) || (m_ServList.size() == 0) ||
@@ -353,6 +358,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/28 15:32:27  didenko
+ * Made destructors virtual
+ *
  * Revision 1.3  2005/03/22 18:54:07  kuznets
  * Changed project tree layout
  *

@@ -73,7 +73,7 @@ public:
     CNetServiceClient(CSocket*      sock,
                       const string& client_name);
 
-    ~CNetServiceClient();
+    virtual ~CNetServiceClient();
 
     /// Set communication timeout default for all new connections
     static
@@ -185,6 +185,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/03/28 15:31:37  didenko
+ * Made destructors virtual
+ *
  * Revision 1.4  2005/03/21 16:42:45  didenko
  * +GetClientName()
  *

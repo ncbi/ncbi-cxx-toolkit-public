@@ -479,6 +479,8 @@ public:
                           unsigned int  rebalance_time     = 10,
                           unsigned int  rebalance_requests = 0);
 
+    virtual ~CNetScheduleClient_LB();
+
     /// Add service address. This function turns off load balancing 
     /// service discovery. 
     /// Services list should be supplied by AddServiceAddress
@@ -641,6 +643,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/28 15:31:37  didenko
+ * Made destructors virtual
+ *
  * Revision 1.19  2005/03/23 21:22:54  didenko
  * Renamed EShutdownLevel values names
  *
