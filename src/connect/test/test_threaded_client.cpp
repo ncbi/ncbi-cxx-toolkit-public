@@ -64,21 +64,44 @@ private:
     unsigned int   m_Delay;
 };
 
+enum EMessage {
+    eHello,
+    eGoodbye
+};
+
+static void s_Send(const string& host, unsigned short port,
+                   unsigned int delay, EMessage message)
+{
+    CConn_SocketStream stream(host, port);
+    SleepMilliSec(delay);
+    string junk;
+
+    const char* text = 0;
+    switch (message) {
+    case eHello:   text = "Hello!";   break;
+    case eGoodbye: text = "Goodbye!"; break;
+    }
+
+    stream >> junk;
+    stream << text << endl;
+    stream >> junk;
+
+    switch (message) {
+    case eHello:
+    {
+        CFastMutexGuard guard(s_Mutex);
+        cerr << "Processed " << ++s_Processed << "/" << s_Requests << endl;
+        break;
+    }
+    case eGoodbye:
+        cerr << "Requested server shutdown." << endl;
+    }
+}
+
 
 void CConnectionRequest::Process(void)
 {
-    CConn_SocketStream stream(m_Host, m_Port);
-    SleepMilliSec(m_Delay);
-    string junk;
-
-    stream >> junk;
-    stream << "Hello!" << endl;
-    stream >> junk;
-
-    {{
-        CFastMutexGuard guard(s_Mutex);
-        cerr << "Processed " << ++s_Processed << "/" << s_Requests << endl;
-    }}
+    s_Send(m_Host, m_Port, m_Delay, eHello);
 }
 
 
@@ -136,16 +159,20 @@ int CThreadedClientApp::Run(void)
 
     pool.Spawn(args["threads"].AsInteger());
 
+    const string&  host = args["host"].AsString();
+    unsigned short port = args["port"].AsInteger();
+
     for (unsigned int i = 0;  i < s_Requests;  ++i) {
+        pool.AcceptRequest(CRef<ncbi::CStdRequest>
+                           (new CConnectionRequest
+                            (host, port, rng.GetRand(0, 999))));
         SleepMilliSec(rng.GetRand(0, 999));
-        pool.AcceptRequest
-            (CRef<ncbi::CStdRequest>
-             (new CConnectionRequest(args["host"].AsString(),
-                                     args["port"].AsInteger(),
-                                     rng.GetRand(0, 999))));
     }
 
+    s_Send(host, port, 500, eGoodbye);
+
     pool.KillAllThreads(true);
+
     return 0;
 }
 
@@ -166,6 +193,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.9  2004/10/18 18:15:09  ucko
+ * Support a clean server shutdown request.
+ *
  * Revision 6.8  2004/10/08 12:41:49  lavr
  * Cosmetics
  *

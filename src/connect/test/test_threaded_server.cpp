@@ -36,6 +36,7 @@
 #include <corelib/ncbienv.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_core_cxx.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <connect/threaded_server.hpp>
 
@@ -48,24 +49,37 @@ class CTestThreadedServer : public CThreadedServer
 public:
     CTestThreadedServer(unsigned short port, unsigned int threads,
                         unsigned int max, unsigned int queue_size)
-        : CThreadedServer(port)
+        : CThreadedServer(port), m_ShutdownRequested(false)
         {
             m_InitThreads = threads;
             m_MaxThreads  = max;
             m_QueueSize   = queue_size;
         }
     virtual void Process(SOCK sock);
+    virtual bool ShutdownRequested(void) { return m_ShutdownRequested; }
+
+private:
+    bool m_ShutdownRequested;
 };
 
 
 void CTestThreadedServer::Process(SOCK sock)
 {
     CConn_SocketStream stream(sock);
-    string junk;
+    string message;
     
     stream << "Hello!" << endl;
-    stream >> junk;
+    stream >> message;
     stream << "Goodbye!" << endl;
+
+    if (message == "Goodbye!") {
+        m_ShutdownRequested = true;
+        // try to connect back because the request is asynchronous.
+        CSocket socket;
+        if (socket.Connect("localhost", GetPort()) == eIO_Success) {
+            socket.Close();
+        }
+    }
 }
 
 
@@ -140,6 +154,9 @@ int main(int argc, const char* argv[])
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2004/10/18 18:15:09  ucko
+ * Support a clean server shutdown request.
+ *
  * Revision 6.5  2004/10/08 12:41:49  lavr
  * Cosmetics
  *
