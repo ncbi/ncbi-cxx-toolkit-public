@@ -323,7 +323,7 @@ void UpdateViewer::FetchSequencesViaHTTP(SequenceList *newSequences, StructureSe
             "Input Identifier", "", *viewerWindow);
     if (ids.size() == 0) return;
 
-    wxStringTokenizer tkz(ids, " ,;");
+    wxStringTokenizer tkz(ids, " ,;\t\r\n", wxTOKEN_STRTOK);
     while (tkz.HasMoreTokens()) {
         wxString id = tkz.GetNextToken();
 
@@ -1168,6 +1168,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.60  2003/03/14 19:57:07  thiessen
+* adjust wxStringTokenizer mode
+*
 * Revision 1.59  2003/03/14 19:48:51  thiessen
 * allow multiple gi's in network sequence import dialog
 *
