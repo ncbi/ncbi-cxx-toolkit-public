@@ -132,7 +132,7 @@ bool HandleIt(const CDB_Exception* ex)
 // Read a command line argument
 char* getParam(char tag, int argc, char* argv[], bool* flag)
 {
-  static last_processed=0;
+  static int last_processed=0;
   if(tag=='\0') {
     // Return the next positional argument
     if(last_processed>=argc-1) return 0;
