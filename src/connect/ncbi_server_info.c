@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2001/09/24 20:43:58  lavr
+ * TSERV_Flags reverted to 'int'; expilict cast added in comparison
+ *
  * Revision 6.30  2001/09/10 21:17:10  lavr
  * Support written for FIREWALL server type
  *
@@ -247,7 +250,7 @@ char* SERV_WriteInfo(const SSERV_Info* info)
         }
         if (*c_t)
             s += sprintf(s, " C=%s", c_t);
-        assert(info->flag < sizeof(k_FlagTag)/sizeof(k_FlagTag[0]));
+        assert(info->flag < (int)(sizeof(k_FlagTag)/sizeof(k_FlagTag[0])));
         if (k_FlagTag[info->flag] && *k_FlagTag[info->flag])
             s += sprintf(s, " %s", k_FlagTag[info->flag]);
         s += sprintf(s, " T=%lu R=%.2f B=%.2f L=%s", (unsigned long)info->time,
