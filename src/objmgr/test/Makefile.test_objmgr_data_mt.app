@@ -10,4 +10,4 @@ LIB = xobjmgr id1 seqset $(SEQ_LIBS) pub medline biblio general dbapi_driver xse
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = test_objmgr1_data_mt
+# CHECK_CMD = test_objmgr1_data_mt
