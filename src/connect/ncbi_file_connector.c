@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.6  2001/12/04 15:56:35  lavr
+ * Use strdup() instead of explicit strcpy(malloc(...), ...)
+ *
  * Revision 6.5  2001/01/25 17:04:43  lavr
  * Reversed:: DESTROY method calls free() to delete connector structure
  *
@@ -52,6 +55,7 @@
  * ==========================================================================
  */
 
+#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_file_connector.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -313,12 +317,10 @@ extern CONNECTOR FILE_CreateConnectorEx
     SFileConnector* xxx = (SFileConnector*) malloc(sizeof(SFileConnector));
 
     /* initialize internal data structures */
-    xxx->inp_file_name  =
-        strcpy((char*) malloc(strlen(inp_file_name) + 1), inp_file_name);
-    xxx->out_file_name =
-        strcpy((char*) malloc(strlen(out_file_name) + 1), out_file_name);
-    xxx->finp = 0;
-    xxx->fout = 0;
+    xxx->inp_file_name = strdup(inp_file_name);
+    xxx->out_file_name = strdup(out_file_name);
+    xxx->finp          = 0;
+    xxx->fout          = 0;
 
     memcpy(&xxx->attr, attr, sizeof(SFileConnAttr));
 

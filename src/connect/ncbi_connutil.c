@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2001/12/04 15:56:28  lavr
+ * Use strdup() instead of explicit strcpy(malloc(...), ...)
+ *
  * Revision 6.23  2001/09/24 20:27:00  lavr
  * Message corrected: "Adjusted path too long"
  *
@@ -111,10 +114,10 @@
  */
 
 #include "ncbi_priv.h"
-#include <connect/ncbi_socket.h>
+#include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
 #include <connect/ncbi_connutil.h>
-#include <connect/ncbi_ansi_ext.h>
+#include <connect/ncbi_socket.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -343,8 +346,7 @@ extern void ConnNetInfo_SetUserHeader(SConnNetInfo* info,
 {
     if (info->http_user_header)
         free((void*) info->http_user_header);
-    info->http_user_header = user_header ?
-        strcpy((char*) malloc(strlen(user_header) + 1), user_header) : 0;
+    info->http_user_header = user_header ? strdup(user_header) : 0;
 }
 
 

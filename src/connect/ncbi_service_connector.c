@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.30  2001/12/04 15:56:47  lavr
+ * Use strdup() instead of explicit strcpy(malloc(...), ...)
+ *
  * Revision 6.29  2001/10/26 21:17:59  lavr
  * 'service=name' now always precedes other params in connects to DISPD/NCBID
  *
@@ -794,17 +797,17 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 
     ccc = (SConnector*)        malloc(sizeof(SConnector));
     xxx = (SServiceConnector*) malloc(sizeof(SServiceConnector));
-    xxx->name = 0;
-    xxx->service = strcpy((char*) malloc(strlen(service) + 1), service);
+    xxx->name     = 0;
+    xxx->service  = strdup(service);
     xxx->net_info = net_info
         ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service);
     if (types & fSERV_StatelessOnly)
         xxx->net_info->stateless = 1/*true*/;
     if (types & fSERV_Firewall)
         xxx->net_info->firewall = 1/*true*/;
-    xxx->types = types;
-    xxx->iter = 0;
-    xxx->conn = 0;
+    xxx->types    = types;
+    xxx->iter     = 0;
+    xxx->conn     = 0;
     if (params)
         memcpy(&xxx->params, params, sizeof(xxx->params));
     else
