@@ -50,7 +50,7 @@ class IFormatter;
 
 ///////////////////////////////////////////////////////////////////////////
 //
-// Origin
+// SEQUENCE
 
 class CSequenceItem : public CFlatItem
 {
@@ -82,6 +82,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/02/19 17:50:06  shomrat
+* correct typo
+*
 * Revision 1.1  2003/12/17 19:50:01  shomrat
 * Initial revision (adapted from flat lib)
 *
