@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.350 2005/02/03 21:47:42 vakatov Exp $
+#  $Id: configure.ac,v 1.351 2005/03/02 16:26:18 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1389,6 +1389,17 @@ else
    TAIL_N="$TAIL -"
    AC_MSG_RESULT(no)
 fi
+
+AC_PROG_EGREP
+AC_MSG_CHECKING([how to run $EGREP quietly])
+if test -z `echo foo | $EGREP -q fo+ 2>>config.log || echo $?`; then
+   EGREP_Q="$EGREP -q"
+elif test -z `echo foo | $EGREP -s fo+ 2>>config.log || echo $?`; then
+   EGREP_Q="$EGREP -s"
+else
+   EGREP_Q=">/dev/null $EGREP"
+fi
+AC_MSG_RESULT($EGREP_Q)
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -4208,6 +4219,7 @@ AC_SUBST(STRIP)
 AC_SUBST(LINK)
 AC_SUBST(C_LINK)
 AC_SUBST(TAIL_N)
+AC_SUBST(EGREP_Q)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(FAST_CFLAGS)

@@ -249,7 +249,7 @@ $(IRRELEVANT_FILE): $(PROJECTS)
 	fi > $(IRRELEVANT_FILE)
 
 # Commands to see whether project directories are relevant.
-RELEVANT = @EGREP@ -f $(RELEVANT_FILE) | @EGREP@ -v -f $(IRRELEVANT_FILE) > /dev/null
+RELEVANT = @EGREP@ -f $(RELEVANT_FILE) | @EGREP_Q@ -v -f $(IRRELEVANT_FILE)
 RELEVANT_DIR = pwd | $(RELEVANT)
 RELEVANT_SUBS = find "`pwd`"/* -type d | $(RELEVANT)
 
