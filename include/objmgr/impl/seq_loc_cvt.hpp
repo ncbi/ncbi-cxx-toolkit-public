@@ -150,6 +150,19 @@ public:
         }
     void SetConversion(const CSeqMap_CI& seg);
 
+    const CSeq_id_Handle& GetSrc_id_Handle(void) const
+        {
+            return m_Src_id_Handle;
+        }
+    TSeqPos GetSrc_from(void) const
+        {
+            return m_Src_from;
+        }
+    TSeqPos GetSrc_to(void) const
+        {
+            return m_Src_to;
+        }
+
     const TRange& GetTotalRange(void) const
         {
             return m_TotalRange;
@@ -376,6 +389,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/10/27 18:01:13  vasilche
+* Fixed order of mapping segments in annotation iterator.
+*
 * Revision 1.26  2004/10/27 15:51:49  vasilche
 * Fixed single conversion in CSeq_loc_Conversion_Set::Add().
 * Use list::splice() instead of list::merge().

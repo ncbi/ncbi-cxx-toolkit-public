@@ -910,8 +910,9 @@ void CSeq_loc_Conversion_Set::x_Add(CSeq_loc_Conversion& cvt,
                                     unsigned int loc_index)
 {
     TIdMap& id_map = m_CvtByIndex[loc_index];
-    TRangeMap& ranges = id_map[cvt.m_Src_id_Handle];
-    ranges.insert(TRangeMap::value_type(TRange(cvt.m_Src_from, cvt.m_Src_to),
+    TRangeMap& ranges = id_map[cvt.GetSrc_id_Handle()];
+    ranges.insert(TRangeMap::value_type(TRange(cvt.GetSrc_from(),
+                                               cvt.GetSrc_to()),
                                         Ref(&cvt)));
 }
 
@@ -1162,6 +1163,51 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
 }
 
 
+namespace {
+
+    struct FSortConversions
+    {
+        bool operator()(const CSeq_loc_Conversion& cvt1,
+                        const CSeq_loc_Conversion& cvt2) const
+            {
+                if ( cvt1.GetSrc_from() != cvt2.GetSrc_from() ) {
+                    return cvt1.GetSrc_from() < cvt2.GetSrc_from();
+                }
+                if ( cvt1.GetSrc_to() != cvt2.GetSrc_to() ) {
+                    return cvt1.GetSrc_to() > cvt2.GetSrc_to();
+                }
+                return &cvt1 < &cvt2;
+            }
+        bool operator()(const CRef<CSeq_loc_Conversion>& cvt1,
+                        const CRef<CSeq_loc_Conversion>& cvt2) const
+            {
+                return (*this)(*cvt1, *cvt2);
+            }
+    };
+
+    struct FSortConversionsReverse
+    {
+        bool operator()(const CSeq_loc_Conversion& cvt1,
+                        const CSeq_loc_Conversion& cvt2) const
+            {
+                if ( cvt1.GetSrc_to() != cvt2.GetSrc_to() ) {
+                    return cvt1.GetSrc_to() > cvt2.GetSrc_to();
+                }
+                if ( cvt1.GetSrc_from() != cvt2.GetSrc_from() ) {
+                    return cvt1.GetSrc_from() < cvt2.GetSrc_from();
+                }
+                return &cvt1 < &cvt2;
+            }
+        bool operator()(const CRef<CSeq_loc_Conversion>& cvt1,
+                        const CRef<CSeq_loc_Conversion>& cvt2) const
+            {
+                return (*this)(*cvt1, *cvt2);
+            }
+    };
+
+}
+
+
 bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
                                               CRef<CSeq_loc>* dst,
                                               unsigned int loc_index)
@@ -1172,19 +1218,26 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
     TRange total_range(TRange::GetEmpty());
     bool revert_order = (src.IsSetStrand() && IsReverse(src.GetStrand()));
     bool res = false;
+    typedef vector< CRef<CSeq_loc_Conversion> > TConversions;
+    TConversions cvts;
     TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
         src.GetFrom(), src.GetTo(), loc_index);
     for ( ; mit; ++mit) {
-        CSeq_loc_Conversion& cvt = *mit->second;
-        cvt.Reset();
-        if (cvt.ConvertInterval(src)) {
-            if (revert_order) {
-                ints.push_front(cvt.GetDstInterval());
-            }
-            else {
-                ints.push_back(cvt.GetDstInterval());
-            }
-            total_range += cvt.GetTotalRange();
+        cvts.push_back(mit->second);
+    }
+    if ( revert_order ) {
+        sort(cvts.begin(), cvts.end(), FSortConversionsReverse());
+    }
+    else {
+        sort(cvts.begin(), cvts.end(), FSortConversions());
+    }
+
+    NON_CONST_ITERATE ( TConversions, it, cvts ) {
+        CRef<CSeq_loc_Conversion> cvt = *it;
+        cvt->Reset();
+        if (cvt->ConvertInterval(src)) {
+            ints.push_back(cvt->GetDstInterval());
+            total_range += cvt->GetTotalRange();
             res = true;
         }
     }
@@ -1485,6 +1538,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2004/10/27 18:01:13  vasilche
+* Fixed order of mapping segments in annotation iterator.
+*
 * Revision 1.42  2004/10/27 15:51:49  vasilche
 * Fixed single conversion in CSeq_loc_Conversion_Set::Add().
 * Use list::splice() instead of list::merge().
