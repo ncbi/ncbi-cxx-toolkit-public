@@ -158,6 +158,7 @@ inline void
 CBl2Seq::SetQuery(const SSeqLoc& query)
 {
     x_ResetQueryDs();
+    m_tQueries.clear();
     m_tQueries.push_back(query);
 }
 
@@ -171,6 +172,7 @@ inline void
 CBl2Seq::SetQueries(const TSeqLocVector& queries)
 {
     x_ResetQueryDs();
+    m_tQueries.clear();
     m_tQueries = queries;
 }
 
@@ -184,6 +186,7 @@ inline void
 CBl2Seq::SetSubject(const SSeqLoc& subject)
 {
     x_ResetSubjectDs();
+    m_tSubjects.clear();
     m_tSubjects.push_back(subject);
 }
 
@@ -197,6 +200,7 @@ inline void
 CBl2Seq::SetSubjects(const TSeqLocVector& subjects)
 {
     x_ResetSubjectDs();
+    m_tSubjects.clear();
     m_tSubjects = subjects;
 }
 
@@ -216,6 +220,7 @@ CBl2Seq::SetOptions()
 inline void
 CBl2Seq::SetOptions(const CBlastOptions& opts)
 {
+    // FIXME: don't own the options
     delete m_pOptions;
     m_pOptions = const_cast<CBlastOptions*>(&opts);
     m_eProgram = m_pOptions->GetProgram();
@@ -241,6 +246,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/10/16 03:16:39  camacho
+* Fix to setting queries/subjects
+*
 * Revision 1.20  2003/09/11 17:44:39  camacho
 * Changed CBlastOption -> CBlastOptions
 *
