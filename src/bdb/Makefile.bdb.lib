@@ -3,7 +3,7 @@
 # Build library "bdb" -- Berkeley DB support
 #################################
 
-SRC = bdb_types bdb_file bdb_cursor bdb_blob
+SRC = bdb_types bdb_file bdb_cursor bdb_blob bdb_expt
 LIB = bdb
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
