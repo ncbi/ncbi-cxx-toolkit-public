@@ -538,7 +538,8 @@ int CBlastApplication::Run(void)
     Uint1 program_number;
     int status = 0;
     BlastSeqSrcNewInfo bssn_info;
-    ReaddbNewArgs readdb_args;
+    ReaddbNewArgs* readdb_args = 
+        (ReaddbNewArgs*) calloc(1, sizeof(ReaddbNewArgs));;
 
     // Process command line args
     const CArgs& args = GetArgs();
@@ -559,12 +560,10 @@ int CBlastApplication::Run(void)
                   *m_ObjMgr, strand, from, to, &id_counter, 
                   args["lcase"].AsBoolean());
 
-    readdb_args.dbname = strdup(args["db"].AsString().c_str());
-    readdb_args.is_protein = (program == eBlastp || program == eBlastx);
-    readdb_args.first_db_seq = 0;
-    readdb_args.final_db_seq = 0;
+    readdb_args->dbname = strdup(args["db"].AsString().c_str());
+    readdb_args->is_protein = (program == eBlastp || program == eBlastx);
     bssn_info.constructor = &ReaddbSeqSrcNew;
-    bssn_info.ctor_argument = (void*) &readdb_args;
+    bssn_info.ctor_argument = (void*) readdb_args;
     BlastSeqSrc* seq_src = BlastSeqSrcNew(&bssn_info);
 
     CDbBlast blaster(query_loc, seq_src, program);
