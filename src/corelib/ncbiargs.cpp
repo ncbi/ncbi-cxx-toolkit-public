@@ -577,7 +577,7 @@ CArgDescMandatory::CArgDescMandatory(const string&            name,
         NCBI_THROW(CArgException, eArgType, s_ArgExptMsg(GetName(),
             "Invalid argument type", "k_EType_Size"));
     default:
-        if (flags == 0)
+        if (flags == 0 || flags == CArgDescriptions::fAllowMultiple)
             return;
     }
 
@@ -1094,6 +1094,10 @@ CArgs::TArgsCI CArgs::x_Find(const string& name) const
     return m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
 }
 
+CArgs::TArgsI CArgs::x_Find(const string& name)
+{
+    return m_Args.find(CRef<CArgValue> (new CArg_NoValue(name)));
+}
 
 
 bool CArgs::Exist(const string& name) const
@@ -1174,7 +1178,7 @@ void CArgs::Remove(const string& name)
     m_Args.erase(it);
 }
 
-void CArgs::Add(CArgValue* arg, bool update)
+void CArgs::Add(CArgValue* arg, bool update, bool add_value)
 {
     // special case:  add an "extra" arg (generate virtual name for it)
     bool is_extra = false;
@@ -1185,12 +1189,20 @@ void CArgs::Add(CArgValue* arg, bool update)
 
     // check-up
     _ASSERT(CArgDescriptions::VerifyName(arg->GetName(), true));
-    if ( Exist(arg->GetName()) ) {
+    CArgs::TArgsI arg_it = x_Find(arg->GetName());
+    if ( arg_it !=  m_Args.end()) {
         if (update) {
             Remove(arg->GetName());
         } else {
-            NCBI_THROW(CArgException,eSynopsis,
-             "Argument with this name is defined already: " + arg->GetName());
+            if (add_value) {
+                const string& v = arg->AsString();
+                CRef<CArgValue>& av = *arg_it;
+                av->SetStringList().push_back(v);
+            } else {
+                NCBI_THROW(CArgException,eSynopsis,
+                   "Argument with this name is defined already: " 
+                   + arg->GetName());
+            }
         }
     }
 
@@ -1679,13 +1691,36 @@ bool CArgDescriptions::x_CreateArg(const string& arg1,
         *new_value = av;
     }
 
+    bool allow_multiple = false;
+    const CArgDescMandatory* adm = 
+        dynamic_cast<const CArgDescMandatory*>(&arg);
+
+    if (adm) {
+        allow_multiple = 
+            (adm->GetFlags() & CArgDescriptions::fAllowMultiple) != 0;
+    }
+
     // Add the argument value to "args"
-    args.Add(arg_value, update);
+    args.Add(arg_value, update, allow_multiple);
 
     return arg2_used;
 }
 
+bool CArgDescriptions::x_IsMultiArg(const string& name) const
+{
+    TArgsCI it = x_Find(name);
+    if (it == m_Args.end()) {
+        return false;
+    }
+    const CArgDesc& arg = **it;
+    const CArgDescMandatory* adm = 
+        dynamic_cast<const CArgDescMandatory*>(&arg);
 
+    if (!adm) {
+        return false;
+    }
+    return (adm->GetFlags() & CArgDescriptions::fAllowMultiple) != 0;
+}
 
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
@@ -2328,6 +2363,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2004/12/03 14:30:37  kuznets
+ * Implemented multiple argument keys (fAllowMultiple)
+ *
  * Revision 1.52  2004/12/02 14:24:14  kuznets
  * Implement support of multiple key arguments (list of values)
  *
