@@ -46,8 +46,8 @@ extern const char* IO_StatusStr(EIO_Status status)
         "Timeout",
         "Closed",
         "Interrupt",
-        "Invalid Argument",
-        "Not Supported",
+        "Invalid argument",
+        "Not supported",
         "Unknown"
     };
 
@@ -461,6 +461,9 @@ extern void REG_Set
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.11  2003/02/20 17:52:12  lavr
+ * Status verbal names changed not to have caps in the middle
+ *
  * Revision 6.10  2002/10/28 15:42:48  lavr
  * Use "ncbi_ansi_ext.h" privately and use strncpy0()
  *
