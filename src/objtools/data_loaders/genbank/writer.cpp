@@ -107,24 +107,5 @@ CWriter::CBlobStream::~CBlobStream(void)
 }
 
 
-CRef<CWriter::CBlobStream>
-CWriter::OpenBlobStream(CReaderRequestResult& /*result*/,
-                        const TBlobId& /*blob_id*/,
-                        const CProcessor& /*processor*/)
-{
-    return null;
-}
-
-
-CRef<CWriter::CBlobStream>
-CWriter::OpenChunkStream(CReaderRequestResult& /*result*/,
-                         const TBlobId& /*blob_id*/,
-                         TChunkId /*chunk_id*/,
-                         const CProcessor& /*processor*/)
-{
-    return null;
-}
-
-
 END_SCOPE(objects)
 END_NCBI_SCOPE

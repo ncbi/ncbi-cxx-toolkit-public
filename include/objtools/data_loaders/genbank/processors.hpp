@@ -201,13 +201,13 @@ public:
 
     typedef CSeq_annot_SNP_Info_Reader::TSNP_InfoMap TSNP_InfoMap;
 
-    void SaveBlob(CReaderRequestResult& result,
-                  const TBlobId& blob_id,
-                  TChunkId chunk_id,
-                  const CLoadLockBlob& blob,
-                  CWriter* writer,
-                  const CSeq_entry& seq_entry,
-                  const TSNP_InfoMap& snps) const;
+    void SaveSNPBlob(CReaderRequestResult& result,
+                     const TBlobId& blob_id,
+                     TChunkId chunk_id,
+                     const CLoadLockBlob& blob,
+                     CWriter* writer,
+                     const CSeq_entry& seq_entry,
+                     const TSNP_InfoMap& snps) const;
 };
 
 
@@ -264,7 +264,6 @@ public:
     void SaveDataAndSkel(CReaderRequestResult& result,
                          const TBlobId& blob_id,
                          TChunkId chunk_id,
-                         const CLoadLockBlob& blob,
                          CWriter* writer,
                          TSplitVersion split_version,
                          const CID2_Reply_Data& split_data,
@@ -275,21 +274,6 @@ public:
                          const CID2_Reply_Data& skel_data) const;
 };
 
-/*
-class CProcessor_ID2_SNP : public CProcessor_ID2
-{
-public:
-    CProcessor_ID2_SNP(CReadDispatcher& dispatcher);
-    ~CProcessor_ID2_SNP(void);
-
-    EType GetType(void) const;
-    TMagic GetMagic(void) const;
-
-    void ProcessBlob(CReaderRequestResult& result,
-                     const TBlobId& blob_id,
-                     const CID2_Reply_Data& data) const;
-};
-*/
 
 class NCBI_XREADER_EXPORT CProcessor_ExtAnnot : public CProcessor
 {

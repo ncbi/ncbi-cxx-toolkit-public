@@ -80,14 +80,10 @@ public:
                                  const TBlobId& blob_id,
                                  TBlobVersion version) = 0;
 
-    virtual void SaveBlob(CReaderRequestResult& result,
-                          const TBlobId& blob_id,
-                          const CProcessor& processor,
-                          CRef<CByteSource> byte_source) = 0;
-
     class NCBI_XREADER_EXPORT CBlobStream : public CObject {
     public:
         virtual ~CBlobStream(void);
+        virtual bool CanWrite(void) const = 0;
         virtual CNcbiOstream& operator*(void) = 0;
         virtual void Close(void) = 0;
         virtual void Abort(void) = 0;
@@ -95,30 +91,12 @@ public:
 
     virtual CRef<CBlobStream> OpenBlobStream(CReaderRequestResult& result,
                                              const TBlobId& blob_id,
-                                             const CProcessor& processor);
-    virtual CRef<CBlobStream> OpenChunkStream(CReaderRequestResult& result,
-                                              const TBlobId& blob_id,
-                                              TChunkId chunk_id,
-                                              const CProcessor& processor);
-
-    virtual void SaveStateAndBlob(CReaderRequestResult& result,
-                                  const TBlobId& blob_id,
-                                  const CProcessor& processor,
-                                  CRef<CByteSource> byte_source) = 0;
-
-    virtual void SaveSNPBlob(CReaderRequestResult& result,
-                             const TBlobId& blob_id,
-                             const CConstObjectInfo& root,
-                             const TSNP_InfoMap& snps) = 0;
-    virtual void SaveSNPTable(CReaderRequestResult& result,
-                              const TBlobId& blob_id,
-                              const CSeq_annot_SNP_Info& snp_info) = 0;
-    virtual void SaveChunk(CReaderRequestResult& result,
-                           const TBlobId& blob_id, TChunkId chunk_id) = 0;
+                                             TChunkId chunk_id,
+                                             const CProcessor& processor) = 0;
 
     virtual bool CanWrite(EType type) const = 0;
 
-
+    // helper writers
     static void WriteInt(CNcbiOstream& stream, int value);
     static void WriteBytes(CNcbiOstream& stream, CRef<CByteSource> bs);
     static void WriteBytes(CNcbiOstream& stream, CRef<CByteSourceReader> rdr);
