@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.9 2000/12/19 22:32:11 sherry Exp $
+-- $Id: docsum.asn,v 1.10 2001/02/01 14:30:45 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.10  2001/02/01 14:30:45  sherry
+-- added orientation to NSE-SeqLoc
+--
 -- Revision 1.9  2000/12/19 22:32:11  sherry
 -- added orientation/hit quality to contig hits, added source database to genbank hits
 --
@@ -354,7 +357,10 @@ NSE-SeqLoc ::= SEQUENCE {
 		hgs-finish (10),		-- genome sequence, finished
 		hgs-draft (11),			-- genome sequence, draft
 		bes (12) 			-- BAC-end sequence
-	} OPTIONAL
+	} OPTIONAL,
+        orient ENUMERATED {
+                forward (1),                    -- if MapLink.orientation = 0
+                reverse (2) } OPTIONAL          -- if MapLink.orientation = 1
 }
 
 
