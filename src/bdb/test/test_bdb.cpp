@@ -115,7 +115,7 @@ void ValidateRecord(const T& dbf1, unsigned int id)
 
     int idata1 = dbf1.idata;
     unsigned int id_key = dbf1.IdKey;
-    string s = (const char*)dbf1.str;
+    string s = dbf1.str;
     int i21 = dbf1.i2;
 
     assert(s == string(buf));
@@ -1565,6 +1565,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/02/04 17:05:47  kuznets
+ * Minor fix (compilation).
+ *
  * Revision 1.34  2004/02/04 15:13:11  kuznets
  * + test case for length prefixed strings, when source std::string
  * contains zero chars.
