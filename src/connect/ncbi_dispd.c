@@ -48,6 +48,11 @@
 #define SERV_DISPD_LOCAL_SVC_BONUS 1.2
 
 
+/* Dispatcher messaging support */
+static int               s_MessageIssued = 0;
+static FDISP_MessageHook s_MessageHook = 0;
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -231,8 +236,10 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 {
     static const char server_info[] = "Server-Info-";
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    size_t len = strlen(text);
 
-    if (strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
+    if (len >= sizeof(server_info) &&
+        strncasecmp(text, server_info, sizeof(server_info) - 1) == 0) {
         const char* p = text + sizeof(server_info) - 1;
         SSERV_Info* info;
         unsigned int d1;
@@ -247,7 +254,8 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
                 return 1/*updated*/;
             free(info);
         }
-    } else if (strncasecmp(text, HTTP_DISP_FAILURES,
+    } else if (len >= sizeof(HTTP_DISP_FAILURES) &&
+               strncasecmp(text, HTTP_DISP_FAILURES,
                            sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
 #if defined(_DEBUG) && !defined(NDEBUG)
         const char* p = text + sizeof(HTTP_DISP_FAILURES) - 1;
@@ -258,6 +266,21 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
 #endif
         data->disp_fail = 1;
         return 1/*updated*/;
+    } else if (len >= sizeof(HTTP_DISP_MESSAGE) &&
+               strncasecmp(text, HTTP_DISP_MESSAGE,
+                           sizeof(HTTP_DISP_MESSAGE) - 1) == 0) {
+        const char* p = text + sizeof(HTTP_DISP_MESSAGE) - 1;
+        while (*p && isspace((unsigned char)(*p)))
+            p++;
+        if (s_MessageHook) {
+            if (s_MessageIssued <= 0) {
+                s_MessageIssued = 1;
+                s_MessageHook(p);
+            }
+        } else {
+            s_MessageIssued = -1;
+            CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", p));
+        }
     }
 
     return 0/*not updated*/;
@@ -428,9 +451,23 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 }
 
 
+void DISP_SetMessageHook(FDISP_MessageHook hook)
+{
+    if (hook) {
+        if (hook != s_MessageHook)
+            s_MessageIssued = s_MessageIssued ? -1 : -2;
+    } else if (s_MessageIssued < -1)
+        s_MessageIssued = 0;
+    s_MessageHook = hook;
+}
+
+
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.59  2003/08/11 19:07:03  lavr
+ * +DISP_SetMessageHook() and implementation of message delivery
+ *
  * Revision 6.58  2003/05/31 05:14:38  lavr
  * Add ARGSUSED where args are meant to be unused
  *
