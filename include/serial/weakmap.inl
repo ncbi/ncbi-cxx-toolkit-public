@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/09/29 20:14:30  vasilche
+* Fixed name conflict (map).
+*
 * Revision 1.1  2000/09/29 16:18:16  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -46,18 +49,18 @@
 
 template<class Object>
 inline
-void CWeakMapKey<Object>::Register(TWeakMap* map)
+void CWeakMapKey<Object>::Register(TWeakMap* m)
 {
-    _ASSERT(m_Maps.find(map) == m_Maps.end());
-    m_Maps.insert(map);
+    _ASSERT(m_Maps.find(m) == m_Maps.end());
+    m_Maps.insert(m);
 }
 
 template<class Object>
 inline
-void CWeakMapKey<Object>::Deregister(TWeakMap* map)
+void CWeakMapKey<Object>::Deregister(TWeakMap* m)
 {
-    _ASSERT(m_Maps.find(map) != m_Maps.end());
-    m_Maps.erase(map);
+    _ASSERT(m_Maps.find(m) != m_Maps.end());
+    m_Maps.erase(m);
 }
 
 template<class Object>
