@@ -43,12 +43,15 @@
 
 #include <objects/entrez2/Entrez2_link_set.hpp>
 #include <objects/entrez2/Entrez2_link_count_list.hpp>
+#include <objects/entrez2/Entrez2_docsum_list.hpp>
+
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 class NCBI_ENTREZ2_EXPORT CEntrez2Client : public CEntrez2Client_Base
 {
@@ -66,27 +69,27 @@ public:
     /// link_type is, for example, "nucleotide_nucleotide".
 
     /// This form just yields a vector of UIDs
-    void GetNeighbors(int query_uid, const string& db,
-                      const string& link_type,
+    void GetNeighbors(int query_uid, const string& db_from,
+                      const string& db_to,
                       vector<int>& neighbor_uids);
 
     /// This form just yields a vector of UIDs, taking a vector of UIDs
-    void GetNeighbors(const vector<int>& query_uids,
-                      const string& db,
+    void GetNeighbors(const vector<int>& db_from,
+                      const string& db_to,
                       const string& link_type,
                       vector<int>& neighbor_uids);
 
     /// This form returns the entire CEntrez2_link_set object,
     /// which includes scores.
     CRef<CEntrez2_link_set> GetNeighbors(int query_uid,
-                                         const string& db,
-                                         const string& link_type);
+                                         const string& db_from,
+                                         const string& db_to);
 
     /// This form returns the entire CEntrez2_link_set object,
     /// which includes scores.
     CRef<CEntrez2_link_set> GetNeighbors(const vector<int>& query_uids,
-                                         const string& db,
-                                         const string& link_type);
+                                         const string& db_from,
+                                         const string& db_to);
 
     /// Retrieve counts of the various types of neighbors available
     CRef<CEntrez2_link_count_list> GetNeighborCounts(int query_uid,
@@ -109,12 +112,18 @@ public:
                    const string& query_string,
                    vector<int>& result_uids);
 
+    /// Retrieve the docsums for a set of UIDs
+    CRef<CEntrez2_docsum_list> GetDocsums(const vector<int>& uids,
+                                          const string& db);
+
+    /// Retrieve the docsums for a single UID
+    CRef<CEntrez2_docsum_list> GetDocsums(int uid,
+                                          const string& db);
 
 private:
     // Prohibit copy constructor and assignment operator
     CEntrez2Client(const CEntrez2Client& value);
     CEntrez2Client& operator=(const CEntrez2Client& value);
-
 };
 
 
@@ -142,6 +151,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2005/01/21 14:44:48  dicuccio
+* Added simple API to retrieve docsums for UIDs
+*
 * Revision 1.8  2004/09/09 20:00:58  jcherry
 * Changed CEntrez2Client::FilterIds to handle large sets of query uids
 * more intelligently.

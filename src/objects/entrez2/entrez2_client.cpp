@@ -94,6 +94,9 @@ void CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
     // then extract the UIDs
     CEntrez2_id_list::TConstUidIterator it
         = link_set->GetIds().GetConstUidIterator();
+    if (link_set->GetIds().IsSetNum()) {
+        neighbor_uids.reserve(link_set->GetIds().GetNum());
+    }
     for ( ;  !it.AtEnd();  ++it) {
         neighbor_uids.push_back(*it);
     }
@@ -232,6 +235,27 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
 }
 
 
+CRef<CEntrez2_docsum_list>
+CEntrez2Client::GetDocsums(const vector<int>& uids,
+                           const string& db)
+{
+    CEntrez2_id_list ids;
+    ids.AssignUids(uids);
+    ids.SetDb().Set(db);
+    return AskGet_docsum(ids);
+}
+
+
+/// Retrieve the docsums for a single UID
+CRef<CEntrez2_docsum_list>
+CEntrez2Client::GetDocsums(int uid, const string& db)
+{
+    vector<int> uids;
+    uids.push_back(uid);
+    return GetDocsums(uids, db);
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
@@ -241,6 +265,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/01/21 14:44:48  dicuccio
+* Added simple API to retrieve docsums for UIDs
+*
 * Revision 1.13  2004/09/09 20:22:59  ucko
 * Don't intermix unsigned int and size_t.
 *
