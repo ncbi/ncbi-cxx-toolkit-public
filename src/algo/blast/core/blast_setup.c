@@ -327,49 +327,6 @@ PHIScoreBlkFill(BlastScoreBlk* sbp, const BlastScoringOptions* options,
 return status;
 }
 
-/** Masks the letters in buffer.
- * @param buffer the sequence to be masked (will be modified). [out]
- * @param max_length the sequence to be masked (will be modified). [in]
- * @param is_na nucleotide if TRUE [in]
- * @param mask_loc the SeqLoc to use for masking [in] 
- * @param reverse minus strand if TRUE [in]
- * @param offset how far along sequence is 1st residuse in buffer [in]
- *
-*/
-static Int2
-BlastSetUp_MaskTheResidues(Uint1 * buffer, Int4 max_length, Boolean is_na,
-                           ListNode * mask_loc, Boolean reverse, Int4 offset)
-{
-    DoubleInt *loc = NULL;
-    Int2 status = 0;
-    Int4 index, start, stop;
-    Uint1 mask_letter;
-
-    if (is_na)
-        mask_letter = 14;
-    else
-        mask_letter = 21;
-
-    for (; mask_loc; mask_loc = mask_loc->next) {
-        loc = (DoubleInt *) mask_loc->ptr;
-        if (reverse) {
-            start = max_length - 1 - loc->i2;
-            stop = max_length - 1 - loc->i1;
-        } else {
-            start = loc->i1;
-            stop = loc->i2;
-        }
-
-        start -= offset;
-        stop -= offset;
-
-        for (index = start; index <= stop; index++)
-            buffer[index] = mask_letter;
-    }
-
-    return status;
-}
-
 Int2
 BlastScoreBlkMatrixInit(Uint1 program_number, 
                   const BlastScoringOptions* scoring_options,
@@ -416,180 +373,57 @@ BlastScoreBlkMatrixInit(Uint1 program_number,
    return 0;
 }
 
-Int2 BLAST_MainSetUp(Uint1 program_number,
-                     const QuerySetUpOptions * qsup_options,
-                     const BlastScoringOptions * scoring_options,
-                     const BlastHitSavingOptions * hit_options,
-                     BLAST_SequenceBlk * query_blk,
-                     BlastQueryInfo * query_info,
-                     BlastSeqLoc ** lookup_segments, BlastMaskLoc * *filter_out,
-                     BlastScoreBlk * *sbpp, Blast_Message * *blast_message)
+
+Int2 
+BlastSetup_GetScoreBlock(BLAST_SequenceBlk* query_blk, BlastQueryInfo* query_info, const BlastScoringOptions* scoring_options, Uint1 program_number, Boolean phi_align, BlastScoreBlk* *sbpp, Blast_Message* *blast_message)
 {
-    BlastScoreBlk *sbp = NULL;
-    Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
-    Boolean is_na;              /* Is this nucleotide? */
-    Int4 context = 0, index;    /* Loop variables. */
-    Int2 status = 0;            /* return value */
-    Int4 query_length = 0;      /* Length of query described by SeqLocPtr. */
-    BlastSeqLoc *filter_slp = NULL;     /* SeqLocPtr computed for filtering. */
-    BlastSeqLoc *filter_slp_combined;   /* Used to hold combined SeqLoc's */
-    BlastSeqLoc *loc;           /* Iterator variable */
-    BlastMaskLoc *last_filter_out = NULL;
-    Uint1 *buffer;              /* holds sequence for plus strand or protein. */
-    Boolean reverse;            /* Indicates the strand when masking filtered locations */
-    BlastMaskLoc *mask_slp, *next_mask_slp; /* Auxiliary locations for lower 
-                                            case masks */
-    Int4 context_offset;
-    Boolean no_forward_strand; 
-    /* If lookup segments are not requested, it means lookup table will not 
-       be created. Then filtering is not needed if 'masking at hash only' 
-       filtering option is set. */
-    Boolean no_lookup = (lookup_segments == NULL); 
+    BlastScoreBlk* sbp;
+    Int2 status=0;      /* return value. */
+    Int4 context; /* loop variable. */
 
-    if (!sbpp)
-       return -1;
+    if (sbpp == NULL)
+       return 1;
 
-    /* At this stage query sequences are nucleotide only for blastn */
-
-    is_na = (program_number == blast_type_blastn);
-    if (is_na)
+    if (program_number == blast_type_blastn)
        sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, query_info->last_context + 1);
     else
        sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, query_info->last_context + 1);
 
-    *sbpp = sbp;
     if (!sbp)
        return 1;
+
+    *sbpp = sbp;
 
     status = BlastScoreBlkMatrixInit(program_number, scoring_options, sbp);
     if (status != 0)
        return status;
 
-    next_mask_slp = query_blk->lcase_mask;
-    mask_slp = NULL;
-
-    if (filter_out)
-       *filter_out = NULL;
-
-    no_forward_strand = (query_info->first_context > 0);
-
     for (context = query_info->first_context;
          context <= query_info->last_context; ++context) {
+      
+        Int4 context_offset;
+        Int4 query_length;
+        Uint1 *buffer;              /* holds sequence */
+
+        /* For each query, check if forward strand is present */
+        if ((query_length = BLAST_GetQueryLength(query_info, context)) < 0)
+            continue;
+
         context_offset = query_info->context_offsets[context];
         buffer = &query_blk->sequence[context_offset];
-        /* For each query, check if forward strand is present */
-        if ((context & 1) == 0)
-           no_forward_strand = FALSE;
 
-        if ((query_length = BLAST_GetQueryLength(query_info, context)) <= 0)
-        {
-           if ((context & 1) == 0)
-              no_forward_strand = TRUE;
-           continue;
-        }
-
-        reverse = (is_na && ((context & 1) != 0));
-        index = (is_na ? context / 2 : context);
-
-        /* It is not necessary to do filtering on the reverse strand - the 
-           masking locations are the same as on the forward strand */
-        if (!reverse || no_forward_strand) {
-            if ((status = BlastSetUp_Filter(program_number, buffer,
-                             query_length, 0, qsup_options->filter_string,
-                             &mask_at_hash, &filter_slp, no_lookup)))
-                return status;
-
-            /* Extract the mask locations corresponding to this query 
-               (frame, strand), detach it from other masks.
-               NB: for translated search the mask locations are expected in 
-               protein coordinates. The nucleotide locations must be converted
-               to protein coordinates prior to the call to BLAST_MainSetUp.
-             */
-            if (next_mask_slp && (next_mask_slp->index == index)) {
-                mask_slp = next_mask_slp;
-                next_mask_slp = mask_slp->next;
-            } else {
-                mask_slp = NULL;
-            }
-
-            /* Attach the lower case mask locations to the filter locations 
-               and combine them */
-            if (mask_slp) {
-                if (filter_slp) {
-                    for (loc = filter_slp; loc->next; loc = loc->next);
-                    loc->next = mask_slp->loc_list;
-                } else {
-                    filter_slp = mask_slp->loc_list;
-                }
-                /* Set location list to NULL, to allow safe memory deallocation */
-                mask_slp->loc_list = NULL;
-            }
-
-            filter_slp_combined = NULL;
-            CombineMaskLocations(filter_slp, &filter_slp_combined, 0);
-
-            filter_slp = BlastSeqLocFree(filter_slp);
-
-            /* NB: for translated searches filter locations are returned in 
-               protein coordinates, because the DNA lengths of sequences are 
-               not available here. The caller must take care of converting 
-               them back to nucleotide coordinates. */
-            if (filter_slp_combined) {
-                if (!last_filter_out) {
-                    last_filter_out = 
-                        (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-                    if (filter_out)
-                       *filter_out = last_filter_out;
-                } else {
-                    last_filter_out->next =
-                        (BlastMaskLoc *) calloc(1, sizeof(BlastMaskLoc));
-                    last_filter_out = last_filter_out->next;
-                }
-                last_filter_out->index = index;
-                last_filter_out->loc_list = filter_slp_combined;
-            }
-        }
-        if (buffer) {
-            if (!mask_at_hash) {
-                if ((status =
-                     BlastSetUp_MaskTheResidues(buffer, query_length, is_na,
-                                                filter_slp_combined, reverse,
-                                                0)))
-                    return status;
-            }
-
-            if (!hit_options->phi_align &&
+            if (!phi_align &&
                 (status = BLAST_ScoreBlkFill(sbp, (char *) buffer,
                                              query_length, context))) {
                Blast_MessageWrite(blast_message, BLAST_SEV_ERROR, 2, 1, 
                   "Query completely filtered; nothing left to search");
                return status;
             }
-        }
     }
 
-    if (program_number == blast_type_blastx && scoring_options->is_ooframe) {
-        BLAST_InitDNAPSequence(query_blk, query_info);
-    }
-
-    if (lookup_segments && filter_out) {
-       *lookup_segments = NULL;
-       BLAST_ComplementMaskLocations(program_number, query_info, *filter_out,
-                                     lookup_segments);
-    }
-
-    /* If there was a lower case mask, its contents have now been moved to 
-     * filter_out and are no longer needed in the query block.
-    */
-    query_blk->lcase_mask = NULL;
-
-    /* Free the filtering locations if masking done for lookup table only */
-    if (filter_out && mask_at_hash) {
-        *filter_out = BlastMaskLocFree(*filter_out);
-    }
 
     /* Fills in block for gapped blast. */
-    if (hit_options->phi_align) {
+    if (phi_align) {
        PHIScoreBlkFill(sbp, scoring_options, blast_message);
     } else if (scoring_options->gapped_calculation) {
        status = BlastScoreBlkGappedFill(sbp, scoring_options, 
@@ -611,7 +445,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         /* Adjust the gapped Karlin parameters, if it is a gapped search */
         if (scoring_options->gapped_calculation) {
            sbp->kbp = sbp->kbp_gap_std;
-           BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
+          BLAST_KarlinBlkStandardCalc(sbp, query_info->first_context,
                                        query_info->last_context);
         }
     }
@@ -620,6 +454,56 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
     sbp->kbp = sbp->kbp_std;
     if (scoring_options->gapped_calculation)
        sbp->kbp_gap = sbp->kbp_gap_std;
+
+    return 0;
+}
+
+Int2 BLAST_MainSetUp(Uint1 program_number,
+                     const QuerySetUpOptions * qsup_options,
+                     const BlastScoringOptions * scoring_options,
+                     const BlastHitSavingOptions * hit_options,
+                     BLAST_SequenceBlk * query_blk,
+                     BlastQueryInfo * query_info,
+                     BlastSeqLoc ** lookup_segments, BlastMaskLoc * *filter_out,
+                     BlastScoreBlk * *sbpp, Blast_Message * *blast_message)
+{
+    Boolean mask_at_hash = FALSE; /* mask only for making lookup table? */
+    Int2 status = 0;            /* return value */
+    BlastMaskLoc *filter_maskloc = NULL;   /* Local variable for mask locs. */
+
+
+    if ((status=BlastSetUp_GetFilteringLocations(query_blk, query_info, program_number, qsup_options->filter_string, 
+       &filter_maskloc, &mask_at_hash, blast_message)))
+    {
+        return status;
+    } 
+
+    if (!mask_at_hash)
+    {
+        if ((status=BlastSetUp_MaskQuery(query_blk, query_info, filter_maskloc, program_number)) != 0)
+            return status;
+    }
+
+    /* If there was a lower case mask, its contents have now been moved to 
+     * filter_maskloc and are no longer needed in the query block.
+    */
+    query_blk->lcase_mask = NULL;
+
+    if (filter_out)
+       *filter_out = filter_maskloc;
+    else 
+        filter_maskloc = BlastMaskLocFree(filter_maskloc);
+
+    if (program_number == blast_type_blastx && scoring_options->is_ooframe) {
+        BLAST_InitDNAPSequence(query_blk, query_info);
+    }
+
+    BLAST_ComplementMaskLocations(program_number, query_info, filter_maskloc, lookup_segments);
+
+
+    if ((status=BlastSetup_GetScoreBlock(query_blk, query_info, scoring_options, program_number, 
+           hit_options->phi_align, sbpp, blast_message)) > 0)
+        return status;
 
     return 0;
 }
