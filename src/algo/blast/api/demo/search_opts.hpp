@@ -547,12 +547,17 @@ public:
                CRef<BlOptTp>        cboh,
                CRef<CRemoteBlast>   cb4o)
     {
-        // Local values
+        // This option is not really a "Same()" value in terms of the
+        // blast4 protocol.  But it is set in the same format between
+        // local and remote because the blast options code hides the
+        // difference.
         
-        op.Local(m_Evalue,
-                 CUserOpt("E"),
-                 CArgKey ("ExpectValue"),
-                 COptDesc("Expect value (cutoff)."));
+        op.Same(m_Evalue,
+                CUserOpt("E"),
+                COptHandler_EvalueThreshold<BlOptTp>(),
+                CArgKey ("ExpectValue"),
+                COptDesc("Expect value (cutoff)."),
+                cboh);
         
         op.Same(m_GapOpen,
                 CUserOpt("gap_open"),
@@ -670,25 +675,6 @@ public:
             op.Remote(num_hits,
                       COptHandler_HitlistSize<BlOptTp>(),
                       cboh);
-            /*
-              The code here is wrong.
-              It compiled before only because of conversion:
-              CRef<TCutoff> -> bool -> double.
-              Now, when CRef<> doesn't have conversion to bool
-              this code produces compilation errors.
-
-            if (m_Evalue.Exists()) {
-                typedef objects::CBlast4_cutoff TCutoff;
-                CRef<TCutoff> cutoff(new TCutoff);
-                cutoff->SetE_value(m_Evalue.GetValue());
-                
-                COptional< CRef<TCutoff> > cutoff_opt(cutoff);
-                
-                op.Remote(cutoff_opt,
-                          COptHandler_EvalueThreshold<BlOptTp>(),
-                          cboh);
-            }
-            */
         }
     }
     
@@ -770,6 +756,9 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/01/12 16:28:07  bealer
+ * - Remove incorrect code and fold into other case.
+ *
  * Revision 1.9  2005/01/12 15:07:44  vasilche
  * Commented out incorrect code.
  *
