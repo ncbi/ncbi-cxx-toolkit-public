@@ -188,7 +188,7 @@ int  f3(long)  throw(e1,e2); </pre>
 	 Usually, this global callback would merely dump the message to
 	 a diagnostic stream, and there is an auxiliary function
 	 <b><i>SetDiagStream()</i></b> to specify output stream for the diagnostics
-	 (one can call <b><i>SetDiagStream(NcbiCerr)</i></b> to dump the diagnostics to
+	 (one can call <b><i>SetDiagStream(&amp;NcbiCerr)</i></b> to dump the diagnostics to
 	 the standard error output stream):
 	 <pre>
 extern void SetDiagStream(CNcbiOstream* os, bool quick_flush=true); </pre>
@@ -310,7 +310,8 @@ ERR_POST(Warning << "...print double: " << ddd); </pre>
 	 <table border=0 width="100%" cellspacing=0>
 		<tr>
 		  <td><address><a href="mailto:vakatov@ncbi.nlm.nih.gov">Denis Vakatov</a></address></td>
-		  <td align=right>($Revision$)</td></tr>
+<!-- <td align=center><i>$Revision$</i></td> -->
+    <td align=right>($Date$)</td></tr>
 	 </table>
   </body>
 </html>
