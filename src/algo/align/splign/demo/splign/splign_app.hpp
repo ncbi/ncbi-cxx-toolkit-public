@@ -33,12 +33,13 @@
 * ===========================================================================
 */
 
+#include "hf_hit.hpp"
+#include "seq_loader.hpp"
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 
-#include "hf_hit.hpp"
-#include "seq_loader.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -91,6 +92,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/12/23 16:50:25  kapustin
+ * Reorder includes to activate msvc pragmas
+ *
  * Revision 1.4  2003/12/15 20:16:58  kapustin
  * GetNextQuery() ->GetNextPair()
  *

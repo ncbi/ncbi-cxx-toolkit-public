@@ -30,12 +30,13 @@
 *
 */
 
-#include <deque>
-
-#include <algo/align/nw_formatter.hpp>
 
 #include "splign.hpp"
 #include "splign_app_exception.hpp"
+
+#include <algo/align/nw_formatter.hpp>
+
+#include <deque>
 
 
 BEGIN_NCBI_SCOPE
@@ -693,6 +694,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/12/23 16:50:25  kapustin
+ * Reorder includes to activate msvc pragmas
+ *
  * Revision 1.7  2003/12/10 21:34:41  kapustin
  * Update annotation chars in boundary exon adjustment routines
  *

@@ -30,11 +30,8 @@
 * ===========================================================================
 */
 
-
 #include "util.hpp"
 #include "hf_hitparser.hpp"
-
-#include <corelib/ncbistl.hpp>
 
 #include <algorithm>
 
@@ -221,6 +218,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/12/23 16:50:25  kapustin
+ * Reorder includes to activate msvc pragmas
+ *
  * Revision 1.8  2003/12/17 19:25:13  kapustin
  * +corelib/ncbistl.hpp to supress msvc warnings
  *
