@@ -87,7 +87,7 @@ fi
 CHECK_BRA = \
 if test -f "$(check_run)"; then \
   $(check_run) $(MAKE) $(MFLAGS)
-CHECK_KET = ||  exit 4 ; \
+CHECK_KET = ||  exit 7 ; \
 fi
 
 CHECK_ADD_BRA = \
