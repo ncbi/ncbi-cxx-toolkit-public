@@ -440,7 +440,7 @@ string CDirEntry::ConvertToOSPath(const string& path)
             size_t found = xpath.find(sep1);
             if (found != 0 && found != string::npos) {
                 size_t start = xpath.rfind(DIR_SEPARATOR,found-1);
-                if (start != string::npos && (found-start > 1)) {
+                if (start != 0 && start != string::npos && (found-start > 1)) {
                     xpath.erase(start,found+sep1.length()-1-start);
                     erased=true;
                 }
@@ -1404,6 +1404,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2002/10/01 17:23:57  gouriano
+ * more fine-tuning of ConvertToOSPath
+ *
  * Revision 1.34  2002/10/01 17:02:53  gouriano
  * minor modification of ConvertToOSPath
  *
