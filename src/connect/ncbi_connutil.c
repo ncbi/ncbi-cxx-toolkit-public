@@ -1062,7 +1062,8 @@ static EIO_Status s_BUF_IO
         return *n_read ? eIO_Success : eIO_Closed;
     case eIO_Write:
         assert(stream);
-        return BUF_PushBack((BUF*) &stream, buf, size);
+        return BUF_PushBack((BUF*) &stream, buf, size)
+            ? eIO_Success : eIO_Unknown;
     default:
         break;
     }
@@ -1474,6 +1475,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.52  2003/02/28 14:47:41  lavr
+ * Bugfix: proper bool -> eIO_Status conversion in s_BUF_IO()
+ *
  * Revision 6.51  2003/01/31 21:17:04  lavr
  * More robust search for sheme in URL
  *
