@@ -81,6 +81,7 @@ public:
 
 public:
     CObjectsSniffer() {}
+    virtual ~CObjectsSniffer() {}
 
     // Add new possible type to the recognition list.
     void AddCandidate(CObjectTypeInfo ti) { m_Candidates.push_back(ti); }
@@ -134,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/27 16:48:16  kuznets
+ * Added virtual destructor.
+ *
  * Revision 1.4  2003/05/22 16:46:46  kuznets
  * ObjectFound methods renamed OnObjectFound, added GetCandidates() method
  *
