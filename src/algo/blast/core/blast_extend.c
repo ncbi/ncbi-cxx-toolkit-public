@@ -636,7 +636,10 @@ BlastnExtendInitialHit(BLAST_SequenceBlkPtr query,
       /* diag_level serves as a boolean variable indicating that this hit 
          has already been saved */
       diag_table->diag_array[real_diag].diag_level = 1;
-      BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
+      if (ungapped_data->score >= word_params->cutoff_score)
+         BLAST_SaveInitialHit(init_hitlist, q_off, s_off, ungapped_data);
+      else
+         ungapped_data = MemFree(ungapped_data);
    } else if (new_hit) {
       /* First hit in the 2-hit case - update the last hit information only */
       diag_table->diag_array[real_diag].last_hit = s_pos;
