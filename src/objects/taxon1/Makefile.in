@@ -1,4 +1,3 @@
 ASN_PROJ = taxon1
-SUB_PROJ = demo
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
