@@ -72,6 +72,11 @@ public:
     /// @param db_home destination directory for the database
     void OpenWithLocks(const char* db_home);
 
+    /// Join the existing environment
+    ///
+    /// @param db_home destination directory for the database
+    void JoinEnv(const char* db_home);
+
     /// Return underlying DB_ENV structure pointer for low level access.
     DB_ENV* GetEnv() { return m_Env; }
 
@@ -92,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/11/03 13:06:55  kuznets
+ * + CBDB_Env::JoinEnv
+ *
  * Revision 1.5  2003/10/20 15:23:38  kuznets
  * Added cache management for BDB environment
  *
