@@ -51,7 +51,7 @@ void CSplignApp::Init()
   
   auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
 
-  string program_name ("Splign v.1.2");
+  string program_name ("Splign v.1.03");
 #ifdef GENOME_PIPELINE
   program_name += 'p';
 #endif
@@ -316,8 +316,7 @@ int CSplignApp::Run()
 
   CSplignFormatter formatter (splign);
 
-  size_t model_id = 0;
-  splign.SetStartModelId(model_id);
+  splign.SetStartModelId(1);
 
   while(x_GetNextPair(ifs_hits, &hits) ) {
 
@@ -424,6 +423,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/04/26 19:26:22  kapustin
+ * Count models from one
+ *
  * Revision 1.18  2004/04/26 15:38:46  kapustin
  * Add model_id as a CSplign member
  *
