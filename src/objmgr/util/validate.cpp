@@ -3088,12 +3088,15 @@ void CValidError_impl::ValidateSeqDesc(const CSeqdesc& desc)
         case CSeqdesc::e_Genbank:
             break;
         case CSeqdesc::e_Pub:
+        {
             const CPubdesc& pub = desc.GetPub ();
             ValidatePubdesc (pub, desc);
             break;
+        }
         case CSeqdesc::e_Region:
             break;
         case CSeqdesc::e_User:
+        {
             const CUser_object& usr = desc.GetUser ();
             const CObject_id& oi = usr.GetType();
             if (!oi.IsStr()) {
@@ -3108,6 +3111,7 @@ void CValidError_impl::ValidateSeqDesc(const CSeqdesc& desc)
                 }
             }
             break;
+        }
         case CSeqdesc::e_Sp:
             break;
         case CSeqdesc::e_Dbxref:
@@ -3125,9 +3129,11 @@ void CValidError_impl::ValidateSeqDesc(const CSeqdesc& desc)
         case CSeqdesc::e_Het:
             break;
         case CSeqdesc::e_Source:
+        {
             const CBioSource& src = desc.GetSource ();
             ValidateBioSource (src, desc);
             break;
+        }
         case CSeqdesc::e_Molinfo:
             break;
         default:
@@ -4615,6 +4621,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.11  2002/10/14 15:06:43  ucko
+* ValidateSeqDesc: Put braces around the cases with local variables, to
+* fix compilation on (at least) GCC.
+*
 * Revision 1.10  2002/10/11 21:36:48  kans
 * flatten organization, iterating within main Validate function, and added ValidateBiosource (MS)
 *
