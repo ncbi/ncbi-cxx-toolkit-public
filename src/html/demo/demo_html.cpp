@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/03/15 16:14:27  vasilche
+* Fixed new CHTML_form constructor.
+*
 * Revision 1.1  1999/01/14 21:37:43  lewisg
 * added html demo
 *
@@ -62,7 +65,7 @@ extern "C" int main()
 	// create the tags
 	Html = new CHTML_html;
 	Body = new CHTML_body;
-	Form = new CHTML_form("cgidemo", "GET");
+	Form = new CHTML_form("cgidemo", CHTML_form::eGet);
 
 	// stick them together
 	Html->AppendChild(Body);
