@@ -86,15 +86,15 @@ bool CDiagStrPathMatcher::Match(const char* str) const
     if ( !str )
         return false;
     string lstr(str);
+    size_t pos;
 #   ifdef NCBI_OS_MSWIN
     // replace \ in windows path to /
-    size_t pos;
     while ( (pos = lstr.find('\\'))  !=  string::npos )
         lstr[pos] = '/';
 #   endif
 #   ifdef NCBI_OS_MACOS
     // replace : in mac path to /
-    while ( (size_t pos = lstr.find(':'))  !=  string::npos )
+    while ( (pos = lstr.find(':'))  !=  string::npos )
         lstr[pos] = '/';
 #   endif
 
@@ -640,6 +640,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.3  2004/09/22 14:52:48  ucko
+ * Unbroke non-MSVC compilation.
+ *
  * Revision 1.2  2004/09/22 14:40:23  kuznets
  * Fixed MSVC compile
  *
