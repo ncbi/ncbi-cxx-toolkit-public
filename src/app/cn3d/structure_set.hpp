@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.65  2002/04/10 13:16:29  thiessen
+* new selection by distance algorithm
+*
 * Revision 1.64  2002/02/19 14:59:40  thiessen
 * add CDD reject and purge sequence
 *
@@ -333,9 +336,9 @@ public:
     // the atom's location is used as the global rotation center
     void SelectedAtom(unsigned int name, bool setCenter);
 
-    // select either residues only or all residues/molecules within cutoff distance of last
-    // atom selected by the user
-    void SelectByDistance(double cutoff, bool residuesOnly) const;
+    // select either biopolymer residues only or all residues/molecules within cutoff distance
+    // of currently selected residues
+    void SelectByDistance(double cutoff, bool biopolymersOnly) const;
 
     // updates sequences in the asn, to remove any sequences
     // that are not used by the current alignmentSet or updates
@@ -386,7 +389,7 @@ private:
     typedef std::pair < const Residue*, int > NamePair;
     typedef std::map < unsigned int, NamePair > NameMap;
     NameMap nameMap;
-    unsigned int lastAtomName, lastAtomSelected;
+    unsigned int lastAtomName;
 
     // holds C Bioseqs associated with Sequences
     typedef std::map < const Sequence *, Bioseq * > BioseqMap;
@@ -457,8 +460,8 @@ public:
 
     // public methods
 
-    // select either residues only or all residues/molecules within cutoff distance of given residue/atom
-    void SelectByDistance(const Residue *residue, int atomID, double cutoff, bool residuesOnly) const;
+    typedef std::map < const Residue *, const Molecule * > ResidueMap;
+    void SelectByDistance(double cutoff, bool biopolymersOnly, ResidueMap *selectedResidues) const;
 
     // set transform based on asn1 data
     bool SetTransformToMaster(const ncbi::objects::CBiostruc_annot_set& annot, int masterMMDBID);

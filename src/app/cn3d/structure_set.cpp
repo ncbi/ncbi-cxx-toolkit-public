@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.99  2002/04/10 13:16:28  thiessen
+* new selection by distance algorithm
+*
 * Revision 1.98  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -732,7 +735,7 @@ void StructureSet::LoadAlignmentsAndStructures(int structureLimit)
 void StructureSet::Load(int structureLimit)
 {
     // member data initialization
-    lastAtomName = lastAtomSelected = OpenGLRenderer::NO_NAME;
+    lastAtomName = OpenGLRenderer::NO_NAME;
     lastDisplayList = OpenGLRenderer::NO_LIST;
     sequenceSet = NULL;
     alignmentSet = NULL;
@@ -1128,7 +1131,6 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     TESTMSG("selected " << molecule->identifier->ToString()
         << " residue " << residue->id << " (PDB: " << residue->nameGraph << ' ' << residue->namePDB
         << ") atom " << atomID << " (PDB: " << residue->GetAtomInfo(atomID)->name << ')');
-    lastAtomSelected = name;
 
     // if indicated, use atom site as rotation center; use coordinate from first CoordSet, default altConf
     if (setCenter) {
@@ -1144,18 +1146,20 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
     }
 }
 
-void StructureSet::SelectByDistance(double cutoff, bool residuesOnly) const
+void StructureSet::SelectByDistance(double cutoff, bool biopolymersOnly) const
 {
-    const Residue *residue;
-    int atomID;
-    if (lastAtomSelected == OpenGLRenderer::NO_NAME ||
-        !GetAtomFromName(lastAtomSelected, &residue, &atomID)) {
-        ERR_POST(Warning << "No previous atom selection!");
-        return;
-    }
-    const StructureObject *object;
-    if (!residue->GetParentOfType(&object)) return;
-    object->SelectByDistance(residue, atomID, cutoff, residuesOnly);
+    StructureObject::ResidueMap residuesToHighlight;
+
+    // add residues to highlight to master list, based on proximities within objects
+    ObjectList::const_iterator o, oe = objects.end();
+    for (o=objects.begin(); o!=oe; o++)
+        (*o)->SelectByDistance(cutoff, biopolymersOnly, &residuesToHighlight);
+
+    // now actually add highlights for new selected residues
+    StructureObject::ResidueMap::const_iterator r, re = residuesToHighlight.end();
+    for (r=residuesToHighlight.begin(); r!=re; r++)
+        if (!GlobalMessenger()->IsHighlighted(r->second, r->first->id))
+            GlobalMessenger()->ToggleHighlight(r->second, r->first->id, false);
 }
 
 const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
@@ -1520,52 +1524,64 @@ void StructureObject::RealignStructure(int nCoords,
 }
 
 void StructureObject::SelectByDistance(
-    const Residue *residue, int atomID, double cutoff, bool residuesOnly) const
+    double cutoff, bool biopolymersOnly, ResidueMap *selectedResidues) const
 {
-    // remove all highlights
-    GlobalMessenger()->RemoveAllHighlights(true);
+    typedef std::vector < const AtomCoord * > CoordList;
+    CoordList highlightedAtoms;
 
-    // get coord of given atom
-    const Molecule *molecule;
-    if (!residue->GetParentOfType(&molecule)) return;
-    const AtomCoord *selected = coordSets.front()->atomSet->
-        GetAtom(AtomPntr(molecule->id, residue->id, atomID), true, false);
-    if (!selected) {
-        ERR_POST(Error << "Can't get coordinates for selected atom!");
-        return;
-    }
+    typedef std::vector < const Residue * > ResidueList;
+    ResidueList unhighlightedResidues;
 
-    // loop over all molecules
+    // first make a list of coordinates of atoms in selected residues,
+    // and also of unselected residues to check for proximity
     ChemicalGraph::MoleculeMap::const_iterator m, me = graph->molecules.end();
     for (m=graph->molecules.begin(); m!=me; m++) {
-
-        // do only biopolymers if residuesOnly is true
-        if (residuesOnly && !(m->second->IsProtein() || m->second->IsNucleotide())) continue;
-
-        // loop over all residues
         Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
         for (r=m->second->residues.begin(); r!=re; r++) {
 
-            // always highlight selected residue
-            if (r->second == residue) {
-                GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
-                continue;
-            }
-
-            // loop through atoms (using default coordinate for each)
-            const Residue::AtomInfoMap& atomInfos = r->second->GetAtomInfos();
-            Residue::AtomInfoMap::const_iterator a, ae = atomInfos.end();
-            for (a=atomInfos.begin(); a!=ae; a++) {
-                const AtomCoord *atomCoord = coordSets.front()->atomSet->
-                    GetAtom(AtomPntr(m->second->id, r->second->id, a->first), true, true);
-
-                // if any atom is < cutoff away, highlight that residue
-                if (atomCoord && (atomCoord->site - selected->site).length() <= cutoff) {
-                    GlobalMessenger()->ToggleHighlight(m->second, r->second->id);
-                    break;
+            if (GlobalMessenger()->IsHighlighted(m->second, r->second->id)) {
+                const Residue::AtomInfoMap& atomInfos = r->second->GetAtomInfos();
+                Residue::AtomInfoMap::const_iterator a, ae = atomInfos.end();
+                for (a=atomInfos.begin(); a!=ae; a++) {
+                    const AtomCoord *atomCoord = coordSets.front()->atomSet->
+                        GetAtom(AtomPntr(m->second->id, r->second->id, a->first), true, true);
+                    if (atomCoord) highlightedAtoms.push_back(atomCoord);
                 }
             }
+
+            else if (!biopolymersOnly || m->second->IsProtein() || m->second->IsNucleotide()) {
+                unhighlightedResidues.push_back(r->second);
+            }
         }
+    }
+
+    // now check all unhighlighted residues, to see if any atoms are within cutoff distance
+    // of any highlighted atoms; if so, add to residue selection list
+    CoordList::const_iterator h, he = highlightedAtoms.end();
+    ResidueList::const_iterator u, ue = unhighlightedResidues.end();
+    for (u=unhighlightedResidues.begin(); u!=ue; u++) {
+        const Molecule *molecule;
+        if (!(*u)->GetParentOfType(&molecule)) continue;
+
+        const Residue::AtomInfoMap& atomInfos = (*u)->GetAtomInfos();
+        Residue::AtomInfoMap::const_iterator a, ae = atomInfos.end();
+        for (a=atomInfos.begin(); a!=ae; a++) {
+            const AtomCoord *uAtomCoord = coordSets.front()->atomSet->
+                GetAtom(AtomPntr(molecule->id, (*u)->id, a->first), true, true);
+            if (!uAtomCoord) continue;
+
+            // for each unhighlighted atom, check for proximity to a highlighted atom
+            for (h=highlightedAtoms.begin(); h!=he; h++) {
+                if ((uAtomCoord->site - (*h)->site).length() <= cutoff)
+                    break;
+            }
+            if (h != he)
+                break;
+        }
+
+        // if any atom of this residue is near a highlighted atom, add to selection list
+        if (a != ae)
+            (*selectedResidues)[*u] = molecule;
     }
 }
 
