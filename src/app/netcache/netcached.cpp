@@ -237,7 +237,15 @@ public:
         eLogging
     } ERequestType;
         
-    void SetShutdownFlag() { m_Shutdown = true; }
+    void SetShutdownFlag() { if (!m_Shutdown) m_Shutdown = true; }
+    
+    /// Override some parent parameters
+    virtual void SetParams()
+    {
+        m_ThrdSrvAcceptTimeout.sec = 0;
+        m_ThrdSrvAcceptTimeout.usec = 500;
+        m_AcceptTimeout = &m_ThrdSrvAcceptTimeout;
+    }
 
 
 private:
@@ -327,6 +335,9 @@ private:
     /// Logging ON/OFF
     bool                        m_LogFlag;
     unsigned int                m_TLS_Size;
+    
+    /// Accept timeout for threaded server
+    STimeout                    m_ThrdSrvAcceptTimeout;
 };
 
 /// @internal
@@ -490,14 +501,16 @@ void CNetCacheServer::Process(SOCK sock)
 
 void CNetCacheServer::ProcessShutdown()
 {    
-    m_Shutdown = true;
+    SetShutdownFlag();
  
     // self reconnect to force the listening thread to rescan
     // shutdown flag
+    /*
     unsigned port = GetPort();
     STimeout to;
     to.sec = 10; to.usec = 0;
     CSocket shut_sock("localhost", port, &to);    
+    */
 }
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
@@ -1165,9 +1178,10 @@ int CNetCacheDApp::Run(void)
 /// @internal
 extern "C" void Threaded_Server_SignalHandler( int )
 {
-    if (s_netcache_server) {
+    if (s_netcache_server && 
+        (!s_netcache_server->ShutdownRequested()) ) {
         s_netcache_server->SetShutdownFlag();
-        LOG_POST("Interrupt signal. Shutdown flag has been set.");
+        LOG_POST("Interrupt signal. Shutdown requested.");
     }
 }
 
@@ -1175,19 +1189,22 @@ extern "C" void Threaded_Server_SignalHandler( int )
 
 int main(int argc, const char* argv[])
 {
-/*
+
 #if defined(NCBI_OS_UNIX)
     // attempt to get server gracefully shutdown on signal
      signal( SIGINT, Threaded_Server_SignalHandler);
      signal( SIGTERM, Threaded_Server_SignalHandler);    
 #endif
-*/
+
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2005/01/05 15:34:51  kuznets
+ * Fast shutdown through low small accept timeout, restored signal procesing
+ *
  * Revision 1.34  2005/01/04 18:55:30  kuznets
  * Commented out signal handlers
  *
