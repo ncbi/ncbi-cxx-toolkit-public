@@ -218,11 +218,22 @@ void CNetServiceClient::WaitForServer()
     }
 }
 
+void CNetServiceClient::TrimErr(string* err_msg)
+{
+    _ASSERT(err_msg);
+    if (err_msg->find("ERR:") == 0) {
+        err_msg->erase(0, 4);
+    }    
+}
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:58:59  kuznets
+ * +TrimErr() method
+ *
  * Revision 1.1  2005/02/07 12:59:10  kuznets
  * Initial revision
  *

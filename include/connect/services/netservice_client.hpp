@@ -117,6 +117,8 @@ protected:
     void WriteStr(const char* str, size_t len);
     void CreateSocket(const string& hostname, unsigned port);
     void WaitForServer();
+    /// Remove "ERR:" prefix 
+    void TrimErr(string* err_msg);
 
     /// @internal
     class CSockGuard
@@ -180,6 +182,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2005/02/09 18:58:33  kuznets
+ * +TrimErr() method
+ *
  * Revision 1.1  2005/02/07 12:58:36  kuznets
  * Initial revision
  *
