@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2002/11/05 23:34:36  thiessen
+ * Status -> status
+ *
  * Revision 1.12  2002/10/21 22:07:49  hurwitz
  * added check for consensus sequence
  *
@@ -171,7 +174,7 @@ public:
     string GetCurationStatusStr();                    // curation status of CD
     int    GetCurationStatus();
     bool   IsCurationStatus();
-    void   SetCurationStatus(int Status);
+    void   SetCurationStatus(int status);
     bool   IsOldRoot();                               // old-root of CD
     void   SetOldRoot(string Accession, int Version);
     bool   GetOldRoot(int Index, string& Accession, int& Version);
