@@ -1169,10 +1169,15 @@ BlastHitSavingParametersUpdate(Uint1 program_number,
 
 Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
 {
-   PSIBlastOptions* options;
-   if (!psi_options)
-      return 0;
+   PSIBlastOptions* options = NULL;
+
+   if ( !psi_options )
+      return 1;
+
    options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
+   if ( !options ) 
+       return 1;
+
    *psi_options = options;
    options->inclusion_ethresh = PSI_INCLUSION_ETHRESH;
    options->pseudo_count = PSI_PSEUDO_COUNT_CONST;
@@ -1191,6 +1196,10 @@ Int2 BlastDatabaseOptionsNew(BlastDatabaseOptions** db_options)
 {
    BlastDatabaseOptions* options = (BlastDatabaseOptions*)
       calloc(1, sizeof(BlastDatabaseOptions));
+
+   if ( !options ) {
+       return 1;
+   }
 
    options->genetic_code = BLAST_GENETIC_CODE;
    *db_options = options;
@@ -1359,6 +1368,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.117  2004/06/17 20:46:25  camacho
+ * Use consistent return values for errors
+ *
  * Revision 1.116  2004/06/09 22:44:03  dondosha
  * Set sum statistics parameter to TRUE by default for ungapped blastp
  *
