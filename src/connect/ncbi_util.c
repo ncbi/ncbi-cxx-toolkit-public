@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.16  2001/08/28 17:49:45  thiessen
+ * oops, sorry - incorrect fix; reverted
+ *
  * Revision 6.15  2001/08/28 17:21:22  thiessen
  * need ncbiconf.h for NCBI_CXX_TOOLKIT
  *
@@ -81,7 +84,6 @@
  * ===========================================================================
  */
 
-#include "ncbiconf.h"
 #include "ncbi_priv.h"
 #ifndef NCBI_CXX_TOOLKIT
 #  include <ncbistd.h>
