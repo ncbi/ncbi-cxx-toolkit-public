@@ -27,7 +27,8 @@ db_blast \
 db_traceback \
 blast_objmgr_tools \
 hspstream_queue \
-repeats_filter_cxx
+repeats_filter_cxx \
+blast_mtlock
 
 SRC  = $(SRC_C:%=.core_%) $(SRC_CXX)
 
