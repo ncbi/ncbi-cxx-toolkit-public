@@ -683,6 +683,9 @@ public:
     /// Close connection.
     virtual void Close() = 0;
 
+    /// Abort connection.
+    virtual void Abort() = 0;
+
     /// If enabled, redirects all error messages 
     /// to CDB_MultiEx object (see below).
     virtual void MsgToEx(bool v) = 0;
@@ -752,6 +755,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2005/02/24 19:50:42  kholodov
+ * Added: IConnection::Abort() method
+ *
  * Revision 1.36  2005/01/31 14:22:07  kholodov
  * Added: use of CDB_ITDescriptor for writing BLOBs
  *
