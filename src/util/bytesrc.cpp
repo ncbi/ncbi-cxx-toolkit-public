@@ -116,6 +116,21 @@ bool CStreamByteSourceReader::EndOfData(void) const
 }
 
 
+size_t CIRByteSourceReader::Read(char* buffer, size_t bufferLength)
+{
+    size_t bytes_read;
+    m_Reader->Read(buffer, bufferLength, &bytes_read);
+    if (bytes_read < bufferLength) {
+        m_EOF = true;
+    }
+    return bytes_read;
+}
+
+bool EndOfData(void) const
+{
+    return m_EOF;
+}
+
 CFStreamByteSource::CFStreamByteSource(const string& fileName, bool binary)
     : CStreamByteSource(*new CNcbiIfstream(fileName.c_str(),
                                            IFStreamFlags(binary)))
@@ -386,6 +401,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.26  2003/10/01 18:45:33  kuznets
+ * +CIRByteSourceReader
+ *
  * Revision 1.25  2003/09/30 20:37:54  kuznets
  * Class names clean up (Removed I from CI prefix for classes based in
  * interfaces)
