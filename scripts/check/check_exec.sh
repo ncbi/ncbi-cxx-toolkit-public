@@ -30,8 +30,9 @@ script_dir=`dirname $0`
 script_dir=`(cd "$script_dir"; pwd)`
 
 # Run command
-( $@ ) &
+( sleep 1; $@ ) &
 pid=$!
+echo $pid
 
 # Execution time-guard
 check_exec_guard="$script_dir/check_exec_guard.sh"
