@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/04/10 18:39:00  vasilche
+* Fixed generation of map<> from SEQUENCE/SET OF SEQUENCE.
+*
 * Revision 1.9  2000/04/07 19:26:37  vasilche
 * Added namespace support to datatool.
 * By default with argument -oR datatool will generate objects in namespace
@@ -178,17 +181,21 @@ AutoPtr<CTypeStrings> CUniSetDataType::GetFullCType(void) const
     const CDataSequenceType* seq =
         dynamic_cast<const CDataSequenceType*>(GetElementType());
     if ( seq && seq->GetMembers().size() == 2 ) {
-        AutoPtr<CTypeStrings> tKey =
-            seq->GetMembers().front()->GetType()->GetFullCType();
-        if ( tKey->CanBeKey() ) {
-            AutoPtr<CTypeStrings> tValue =
-                seq->GetMembers().back()->GetType()->GetFullCType();
-            if ( !tValue->CanBeInSTL() )
-                tValue.reset(tValue.release()->ToPointer());
-            if ( templ.empty() )
-                templ = "multimap";
-            return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
-                                                             tKey, tValue));
+        if ( !seq->GetMembers().front()->Optional() &&
+             !seq->GetMembers().back()->Optional() ) {
+            AutoPtr<CTypeStrings> tKey =
+                seq->GetMembers().front()->GetType()->GetFullCType();
+            if ( tKey->CanBeKey() ) {
+                AutoPtr<CTypeStrings> tValue =
+                    seq->GetMembers().back()->GetType()->GetFullCType();
+                if ( !tValue->CanBeInSTL() )
+                    tValue.reset(tValue.release()->ToPointer());
+                if ( templ.empty() )
+                    templ = "multimap";
+                return AutoPtr<CTypeStrings>(new CMapTypeStrings(templ,
+                                                                 tKey,
+                                                                 tValue));
+            }
         }
     }
     AutoPtr<CTypeStrings> tData = GetElementType()->GetFullCType();
