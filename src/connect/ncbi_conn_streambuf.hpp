@@ -53,7 +53,6 @@ public:
     CConn_Streambuf(CONNECTOR connector, const STimeout* timeout,
                     streamsize buf_size, bool tie);
     CONN    GetCONN()    const { return m_Conn;  };
-    bool    IsOkay(void) const { return !!m_Buf; };
     virtual ~CConn_Streambuf();
 
 protected:
@@ -87,6 +86,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.19  2003/05/20 16:45:49  lavr
+ * IsOkay() removed (GetCONN() should be enough)
+ *
  * Revision 6.18  2003/05/12 18:32:27  lavr
  * Modified not to throw exceptions from stream buffer; few more improvements
  *
