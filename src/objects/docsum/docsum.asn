@@ -1,154 +1,5 @@
--- $Id: docsum.asn,v 1.41 2004/05/24 18:38:34 kholodov Exp $
--- $Log: docsum.asn,v $
--- Revision 1.41  2004/05/24 18:38:34  kholodov
--- Changed val-hapmap to validated-by-hapmap
---
--- Revision 1.40  2004/05/24 14:07:44  kholodov
--- Added: val-hapmap field
---
--- Revision 1.39  2003/10/15 14:24:33  kholodov
--- Modified: sequences now optional for NSE-rs
---
--- Revision 1.38  2003/09/22 20:14:58  kholodov
--- Added: copyright notice
---
--- Revision 1.37  2003/07/09 19:36:33  kholodov
--- Syntax error fixed
---
--- Revision 1.36  2003/07/09 18:10:39  sherry
--- *** empty log message ***
---
--- Revision 1.35  2002/12/03 20:18:51  kholodov
--- Modified: validation status is represented by 4 boolean values
---
--- Revision 1.34  2002/09/03 20:09:59  kholodov
--- Added moltype for rs and ss, create-build, update-build for rs
---
--- Revision 1.33  2002/06/12 14:02:54  kholodov
--- sts-info and unigene-info added
---
--- Revision 1.32  2002/04/12 13:53:14  kholodov
--- Fixed wrong type name NSE-date to NSE-Date
---
--- Revision 1.31  2002/04/11 20:40:41  sherry
--- added NSE-ss linkout-url, validation status; NSE-rs create-date, update-date; NSE-popinfo pop-class, and new section NSE-rsStruct with 3D structure data
---
--- Revision 1.30  2002/03/15 16:39:58  sherry
--- added subsnp method-class and dbSNP-build-id
---
--- Revision 1.29  2002/01/22 16:27:16  kholodov
--- Fixed syntax bug
---
--- Revision 1.27  2002/01/18 19:20:29  sherry
--- added dense option to hit-quality for SNPs mapped to dense regions like HLA
---
--- Revision 1.26  2001/11/28 21:41:42  sherry
--- correction to golden path (UCSC) contig hits
---
--- Revision 1.25  2001/11/28 20:58:42  sherry
--- added UCSC mapping coordinates, and added amino-acid position to function-set
---
--- Revision 1.24  2001/08/21 14:52:56  sherry
--- added subsnp-class (8) = mnp for multiple nucleotide polymorphisms with alleles of common length > 1 bp
---
--- Revision 1.23  2001/08/20 20:27:57  sherry
--- added source-db (5) for RefSeq-genomic and ncbi-build-id for build number of genome mapping data
---
--- Revision 1.22  2001/08/20 20:19:45  sherry
--- source-db (2) defined for GenBank STS division
---
--- Revision 1.21  2001/08/03 14:29:11  sherry
--- added snp-class 'mnp' for variants with allele length > 1
---
--- Revision 1.20  2001/07/11 13:08:05  sherry
--- typo correction and clarification of fxn-class names to fxn-class-contig and fxn-class-mrna
---
--- Revision 1.19  2001/06/08 14:18:59  sherry
---  added exception value (9) to fxn-set
---
--- Revision 1.18  2001/05/02 15:11:19  kholodov
--- Fixed: NSE-ss::orient: refersed -> reversed.
---
--- Revision 1.17  2001/05/01 14:23:44  sherry
--- added seq-ss-exemplar and NSE-ss.orient to report orientation of cluster members to NSE-rs and its exemplar sequence, NSE-rs.seq-ss-exemplar.
---
--- Revision 1.16  2001/04/30 15:21:21  sherry
--- added reference fxn-class if SNP allele is observed on reference contig sequence
---
--- Revision 1.15  2001/04/09 14:21:31  sherry
--- additional documentation regarding refSNP flanking sequence: lowercase for repetititve regions and segmentation of long flanking sequences
---
--- Revision 1.14  2001/03/23 16:17:44  sherry
--- removed unnecessary samplesize from NSE-Pop.. data in NSE-ss-popinfo
---
--- Revision 1.13  2001/03/23 14:10:22  sherry
--- added samplesize to NSE-Pop
---
--- Revision 1.12  2001/03/22 14:04:54  sherry
--- strain added to NSE-Assay
---
--- Revision 1.11  2001/02/01 17:53:01  sherry
--- added MapLinkArchive to Table Source for sequence-mapset
---
--- Revision 1.10  2001/02/01 14:30:45  sherry
--- added orientation to NSE-SeqLoc
---
--- Revision 1.9  2000/12/19 22:32:11  sherry
--- added orientation/hit quality to contig hits, added source database to genbank hits
---
--- Revision 1.8  2000/12/19 22:19:48  sherry
--- added subsnp frequency data and refsnp function via contig annotation
---
--- Revision 1.7  2000/12/05 19:19:57  kholodov
--- Minor errors fixed
---
--- Revision 1.6  2000/12/05 17:06:35  sherry
--- merged docsum.asn and export.asn in this version for a single data structure that can be populated as a brief-set (to emulate docsum.asn) or as a full-set for data exchange (to emulate exchange.asn)
---
---
--- ###
--- ### Revisions to earlier versions of exchange.asn
--- ###
---
--- Revision exchange.asn 1.10  2000/11/03 15:26:41  sherry
--- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
---
--- Revision exchange.asn 1.9  2000/11/02 20:58:14  kholodov
--- fixed incorrect field name
---
--- Revision exchange.asn 1.8  2000/10/18 22:07:11  sherry
--- added XML version number and dbSNP_build number to ExchangeSet
---
--- Revision exchange.asn 1.7  2000/10/13 16:08:20  kholodov
--- added commented CVS log
---
--- ###
--- ### Revisions to earlier versions of docsum.asn
--- ###
---
--- Revision docsum.asn 1.5  2000/11/03 15:26:41  sherry
--- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
---
--- Revision docsum.asn 1.4  2000/10/20 19:21:41  sherry
--- added ambiguousloc and lowmapquality to legal withdrawn reasons
---
--- Revision docsum.asn 1.3  2000/08/24 14:47:53  sherry
--- added subsnp-class and mixed snp-class type
---
---08/23/00:	changed source of NCBI-RefSNPDocsum.taxid to new taxid column in SNP table
---		added NCBI-RefSNPDocsum.snp-class type (7) for cases of mixed subsnp-class in single refSNP (none currently in database)
---		added NCBI-subsnp-id.subsnp-class to define allele class for subSNP as well as SNP
---06/20/00:	Added 'duplicatesub' and 'NotSpecified' as WITHDRAWN reason for snp-type
---05/22/00:	Added splice to fxn-class, 
---		added map coordinates in contig component coordinates (RefSNPSeqHit),
---		changed RefSNPMaphit to RefSNPContigHit
---04/18/00:	Added subsnp set membership, flanking sequence
---03/22/00:	Added changes to fxn-class and validated
---03/01/00:	Added het-SE for standard error of mean heterozygosity
---02/09/00:     Added unigene/UID/loc_cnt
---02/08/00:	Added mapping, fixed taxid, mapstring definitions
---02/03/00: 	Added RefSNP Docsum definitions
---		Short version of ASN1 for development of genome annotation code
+-- $Id: docsum.asn,v 1.42 2004/05/27 18:15:35 kholodov Exp $
+
 NSE DEFINITIONS ::=
 BEGIN
 
@@ -460,8 +311,7 @@ NSE-ss ::= SEQUENCE {				-- data for an individual submission to dbSNP. All subm
 							--             flank-5 strings in order + assay-5 strings in order 
 							--      the complete 3' flanking sequence is constructed as
 							--             assay-3 strings in order + flank-3 strings in order
-	pop-info SET OF NSE-ss-popinfo OPTIONAL, 
-	allele-info SET OF NSE-ss-alleinfo OPTIONAL
+	pop-info SET OF NSE-ss-popinfo OPTIONAL 
 }
 
 
@@ -592,7 +442,8 @@ NSE-rsUnigene ::= SEQUENCE {
 
 
 NSE-ss-popinfo ::= SEQUENCE {
- 	type VisibleString, 			-- batch type (HET, ALLE, GTY)		SubPop.type
+ 	type VisibleString, 			-- batch type (HET, ALLE)		SubPop.type
+	handle VisibleString,               -- submitter’s handle
 	batch-id INTEGER,
 	pop-name VisibleString,			-- submitter population ID		SubPop.loc_pop_id
 	pop-id INTEGER,				-- dbSNP population ID			SubPop.pop_id
@@ -601,21 +452,18 @@ NSE-ss-popinfo ::= SEQUENCE {
  	sub-het REAL OPTIONAL,			-- submitted heterozygosity		SubPop.sub_heterozygosity
 	est-het REAL OPTIONAL,			-- estimated heterogygosity		SubPop.est_heterozygosity
  	est-het-se-sq REAL OPTIONAL,		-- est het std. error
-	sub-het-se-sq REAL OPTIONAL		-- submitted het std. error
+	sub-het-se-sq REAL OPTIONAL,		-- submitted het std. error
+	allele-info SET OF NSE-alleleinfo OPTIONAL  -- allele frequency data, genotype frequency data 
+                                                     -- available in Genotype Report
 }
 
 
 
-NSE-ss-alleinfo ::= SEQUENCE {
-	type VisibleString,			-- allele data for popinfo		SubPopAllele.type
-	batch-id INTEGER,
-	pop-id INTEGER,				-- dbSNP pop ID				SubPopAllele.pop_id                       
- 	snp-allele  VisibleString OPTIONAL,	-- allele if ACTG			SubPopAllele.allele                       
-	other-allele VisibleString OPTIONAL,	-- all other cases			SubPopAllele.other
+NSE-alleleinfo ::= SEQUENCE {
+	snp-allele  VisibleString OPTIONAL,	-- allele if ACTG			                       
+	other-allele VisibleString OPTIONAL,	-- all other cases	
  	freq REAL OPTIONAL,			-- frequency as percentage		
-	count REAL OPTIONAL,			-- frequency as count
- 	freq-min REAL OPTIONAL,			-- min frequency if binned
-	freq-max REAL OPTIONAL			-- max frequency if binned
+	count REAL OPTIONAL			-- frequency as count
 }
 
 
@@ -630,3 +478,158 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
     season VisibleString OPTIONAL }  		-- for "spring", "may-june", etc
 
 END
+
+-- $Log: docsum.asn,v $
+-- Revision 1.42  2004/05/27 18:15:35  kholodov
+-- Modified: allele info moved to popinfo structure
+--
+-- Revision 1.41  2004/05/24 18:38:34  kholodov
+-- Changed val-hapmap to validated-by-hapmap
+--
+-- Revision 1.40  2004/05/24 14:07:44  kholodov
+-- Added: val-hapmap field
+--
+-- Revision 1.39  2003/10/15 14:24:33  kholodov
+-- Modified: sequences now optional for NSE-rs
+--
+-- Revision 1.38  2003/09/22 20:14:58  kholodov
+-- Added: copyright notice
+--
+-- Revision 1.37  2003/07/09 19:36:33  kholodov
+-- Syntax error fixed
+--
+-- Revision 1.36  2003/07/09 18:10:39  sherry
+-- *** empty log message ***
+--
+-- Revision 1.35  2002/12/03 20:18:51  kholodov
+-- Modified: validation status is represented by 4 boolean values
+--
+-- Revision 1.34  2002/09/03 20:09:59  kholodov
+-- Added moltype for rs and ss, create-build, update-build for rs
+--
+-- Revision 1.33  2002/06/12 14:02:54  kholodov
+-- sts-info and unigene-info added
+--
+-- Revision 1.32  2002/04/12 13:53:14  kholodov
+-- Fixed wrong type name NSE-date to NSE-Date
+--
+-- Revision 1.31  2002/04/11 20:40:41  sherry
+-- added NSE-ss linkout-url, validation status; NSE-rs create-date, update-date; NSE-popinfo pop-class, and new section NSE-rsStruct with 3D structure data
+--
+-- Revision 1.30  2002/03/15 16:39:58  sherry
+-- added subsnp method-class and dbSNP-build-id
+--
+-- Revision 1.29  2002/01/22 16:27:16  kholodov
+-- Fixed syntax bug
+--
+-- Revision 1.27  2002/01/18 19:20:29  sherry
+-- added dense option to hit-quality for SNPs mapped to dense regions like HLA
+--
+-- Revision 1.26  2001/11/28 21:41:42  sherry
+-- correction to golden path (UCSC) contig hits
+--
+-- Revision 1.25  2001/11/28 20:58:42  sherry
+-- added UCSC mapping coordinates, and added amino-acid position to function-set
+--
+-- Revision 1.24  2001/08/21 14:52:56  sherry
+-- added subsnp-class (8) = mnp for multiple nucleotide polymorphisms with alleles of common length > 1 bp
+--
+-- Revision 1.23  2001/08/20 20:27:57  sherry
+-- added source-db (5) for RefSeq-genomic and ncbi-build-id for build number of genome mapping data
+--
+-- Revision 1.22  2001/08/20 20:19:45  sherry
+-- source-db (2) defined for GenBank STS division
+--
+-- Revision 1.21  2001/08/03 14:29:11  sherry
+-- added snp-class 'mnp' for variants with allele length > 1
+--
+-- Revision 1.20  2001/07/11 13:08:05  sherry
+-- typo correction and clarification of fxn-class names to fxn-class-contig and fxn-class-mrna
+--
+-- Revision 1.19  2001/06/08 14:18:59  sherry
+--  added exception value (9) to fxn-set
+--
+-- Revision 1.18  2001/05/02 15:11:19  kholodov
+-- Fixed: NSE-ss::orient: refersed -> reversed.
+--
+-- Revision 1.17  2001/05/01 14:23:44  sherry
+-- added seq-ss-exemplar and NSE-ss.orient to report orientation of cluster members to NSE-rs and its exemplar sequence, NSE-rs.seq-ss-exemplar.
+--
+-- Revision 1.16  2001/04/30 15:21:21  sherry
+-- added reference fxn-class if SNP allele is observed on reference contig sequence
+--
+-- Revision 1.15  2001/04/09 14:21:31  sherry
+-- additional documentation regarding refSNP flanking sequence: lowercase for repetititve regions and segmentation of long flanking sequences
+--
+-- Revision 1.14  2001/03/23 16:17:44  sherry
+-- removed unnecessary samplesize from NSE-Pop.. data in NSE-ss-popinfo
+--
+-- Revision 1.13  2001/03/23 14:10:22  sherry
+-- added samplesize to NSE-Pop
+--
+-- Revision 1.12  2001/03/22 14:04:54  sherry
+-- strain added to NSE-Assay
+--
+-- Revision 1.11  2001/02/01 17:53:01  sherry
+-- added MapLinkArchive to Table Source for sequence-mapset
+--
+-- Revision 1.10  2001/02/01 14:30:45  sherry
+-- added orientation to NSE-SeqLoc
+--
+-- Revision 1.9  2000/12/19 22:32:11  sherry
+-- added orientation/hit quality to contig hits, added source database to genbank hits
+--
+-- Revision 1.8  2000/12/19 22:19:48  sherry
+-- added subsnp frequency data and refsnp function via contig annotation
+--
+-- Revision 1.7  2000/12/05 19:19:57  kholodov
+-- Minor errors fixed
+--
+-- Revision 1.6  2000/12/05 17:06:35  sherry
+-- merged docsum.asn and export.asn in this version for a single data structure that can be populated as a brief-set (to emulate docsum.asn) or as a full-set for data exchange (to emulate exchange.asn)
+--
+--
+-- ###
+-- ### Revisions to earlier versions of exchange.asn
+-- ###
+--
+-- Revision exchange.asn 1.10  2000/11/03 15:26:41  sherry
+-- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
+--
+-- Revision exchange.asn 1.9  2000/11/02 20:58:14  kholodov
+-- fixed incorrect field name
+--
+-- Revision exchange.asn 1.8  2000/10/18 22:07:11  sherry
+-- added XML version number and dbSNP_build number to ExchangeSet
+--
+-- Revision exchange.asn 1.7  2000/10/13 16:08:20  kholodov
+-- added commented CVS log
+--
+-- ###
+-- ### Revisions to earlier versions of docsum.asn
+-- ###
+--
+-- Revision docsum.asn 1.5  2000/11/03 15:26:41  sherry
+-- added subsnp-id to export.asn and made loc-snp-id optional in both export.asn and docsum.asn
+--
+-- Revision docsum.asn 1.4  2000/10/20 19:21:41  sherry
+-- added ambiguousloc and lowmapquality to legal withdrawn reasons
+--
+-- Revision docsum.asn 1.3  2000/08/24 14:47:53  sherry
+-- added subsnp-class and mixed snp-class type
+--
+--08/23/00:	changed source of NCBI-RefSNPDocsum.taxid to new taxid column in SNP table
+--		added NCBI-RefSNPDocsum.snp-class type (7) for cases of mixed subsnp-class in single refSNP (none currently in database)
+--		added NCBI-subsnp-id.subsnp-class to define allele class for subSNP as well as SNP
+--06/20/00:	Added 'duplicatesub' and 'NotSpecified' as WITHDRAWN reason for snp-type
+--05/22/00:	Added splice to fxn-class, 
+--		added map coordinates in contig component coordinates (RefSNPSeqHit),
+--		changed RefSNPMaphit to RefSNPContigHit
+--04/18/00:	Added subsnp set membership, flanking sequence
+--03/22/00:	Added changes to fxn-class and validated
+--03/01/00:	Added het-SE for standard error of mean heterozygosity
+--02/09/00:     Added unigene/UID/loc_cnt
+--02/08/00:	Added mapping, fixed taxid, mapstring definitions
+--02/03/00: 	Added RefSNP Docsum definitions
+--		Short version of ASN1 for development of genome annotation code
+
