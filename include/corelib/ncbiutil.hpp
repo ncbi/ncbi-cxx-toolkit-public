@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/07/27 16:05:25  golikov
+* Added DeleteElements for multimap
+*
 * Revision 1.9  1999/12/01 17:35:48  vasilche
 * Added missing typename keyword.
 *
@@ -241,6 +244,17 @@ inline void DeleteElements( Cnt& cnt )
 // clear container afterwards
 template<class Key, class Element>
 inline void DeleteElements(map<Key, Element*>& m)
+{
+    for ( typename map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
+        delete i->second;
+    }
+	m.clear();
+}
+
+// delete all elements from multimap containing pointers
+// clear container afterwards
+template<class Key, class Element>
+inline void DeleteElements(multimap<Key, Element*>& m)
 {
     for ( typename map<Key, Element*>::iterator i = m.begin(); i != m.end(); ++i ) {
         delete i->second;
