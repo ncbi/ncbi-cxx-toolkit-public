@@ -61,6 +61,8 @@ class CPub_set;
 class CAuthor;
 class CTitle;
 class CDesc_CI;
+class CMolInfo;
+class CUser_object;
 
 BEGIN_SCOPE(validator)
 
@@ -135,6 +137,7 @@ enum EErrType {
     eErr_SEQ_DESCR_ObsoleteSourceQual,
     eErr_SEQ_DESCR_StructuredSourceNote,
     eErr_SEQ_DESCR_MultipleTitles,
+    eErr_SEQ_DESCR_Obsolete,
 
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
@@ -366,6 +369,7 @@ public:
     bool IsFarLocation(const CSeq_loc& loc) const;
     CConstRef<CSeq_feat> GetCDSGivenProduct(const CBioseq& seq);
     const CSeq_entry* GetAncestor(const CBioseq& seq, CBioseq_set::EClass clss);
+    bool IsSerialNumberInComment(const string& comment);
 
 private:
     // Prohibit copy constructor & assignment operator
@@ -431,7 +435,7 @@ private:
 
     // seq ids contained within the orignal seq entry. 
     // (used to check for far location)
-    set< CConstRef<CSeq_id> >    m_InitialSeqIds;
+    vector< CConstRef<CSeq_id> >    m_InitialSeqIds;
     // prot bioseqs without a full reference
     vector< CConstRef<CBioseq> > m_ProtWithNoFullRef;
     // Bioseqs without pubs (should be considered only if m_NoPubs is false)
@@ -540,7 +544,15 @@ private:
     void ValidateSeqFeatContext(const CBioseq& seq);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
     void ValidateCollidingGeneNames(const CBioseq& seq);
+
     void ValidateSeqDescContext(const CBioseq& seq);
+    void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol,
+        const CBioseq& seq, const CSeqdesc& desc);
+    void ValidateUpdateDateContext(const CDate& update,const CDate& create,
+        const CBioseq& seq, const CSeqdesc& desc);
+    void ValidateOrgContext(const COrg_ref& this_org, const COrg_ref& org,
+        const CBioseq& seq, const CSeqdesc& desc);
+
 
     void ValidateSecondaryAccConflict(const string& primary_acc,
         const CBioseq& seq, int choice);
@@ -618,8 +630,6 @@ private:
     void ValidateFeatComment(const string& comment, const CSeq_feat& feat);
     void ValidateFeatBioSource(const CBioSource& bsrc, const CSeq_feat& feat);
 
-
-    bool SerialNumberInComment(const string& comment);
     bool IsPlastid(int genome);
     bool IsOverlappingGenePseudo(const CSeq_feat& feat);
     bool IsResidue(unsigned char res);
@@ -647,6 +657,10 @@ public:
     void ValidateSeqDesc(const CSeqdesc& desc);
 
 private:
+
+    void ValidateComment(const string& comment, const CSeqdesc& desc);
+    void ValidateUser(const CUser_object& usr, const CSeqdesc& desc);
+    void ValidateMolInfo(const CMolInfo& minfo, const CSeqdesc& desc);
 };
 
 
@@ -717,6 +731,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2003/02/12 17:40:35  shomrat
+* Added function for SEQ_DESCR checks
+*
 * Revision 1.12  2003/02/07 21:09:43  shomrat
 * Added eErr_SEQ_INST_TerminalNs; Added helper methods
 *
