@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.50  2001/06/05 15:36:10  ivanov
+* Added attribute "alt" to CHTML_image
+*
 * Revision 1.49  2001/05/17 14:55:24  lavr
 * Typos corrected
 *
@@ -764,8 +767,10 @@ class CHTML_image : public CHTML_input
     typedef CHTML_input CParent;
     static const char sm_InputType[];
 public:
-    CHTML_image(const string& name, const string& src);
-    CHTML_image(const string& name, const string& src, int border);
+    CHTML_image(const string& name, const string& src, 
+                const string& alt = NcbiEmptyString);
+    CHTML_image(const string& name, const string& src, int border,
+                const string& alt = NcbiEmptyString);
     ~CHTML_image(void);
 };
 

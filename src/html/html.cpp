@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2001/06/05 15:35:48  ivanov
+* Added attribute "alt" to CHTML_image
+*
 * Revision 1.63  2001/05/17 15:05:42  lavr
 * Typos corrected
 *
@@ -1374,17 +1377,21 @@ CHTML_checkbox::~CHTML_checkbox(void)
 
 const char CHTML_image::sm_InputType[] = "image";
 
-CHTML_image::CHTML_image(const string& name, const string& src)
+CHTML_image::CHTML_image(const string& name, const string& src, 
+                         const string& alt)
     : CParent(sm_InputType, name)
 {
     SetAttribute("src", src);
+    SetAttribute("alt", alt);
 }
 
-CHTML_image::CHTML_image(const string& name, const string& src, int border)
+CHTML_image::CHTML_image(const string& name, const string& src, int border, 
+                         const string& alt)
     : CParent(sm_InputType, name)
 {
     SetAttribute("src", src);
     SetAttribute("border", border);
+    SetAttribute("alt", alt);
 }
 
 CHTML_image::~CHTML_image(void)
