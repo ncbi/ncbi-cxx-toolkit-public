@@ -112,10 +112,8 @@ CSeqDBVolFilter::CSeqDBVolFilter(const string & oid_fn,
       m_EndOID   (end)
 {
     _ASSERT(oid_fn.empty() || gi_fn.empty());
-    if (!(start < end)) {
-        cout << "Start=" << start << ", end=" << end << endl;
-    }
-    _ASSERT(start < end);
+    
+    // It is legal for start == end, it means the list is empty.
 }
 
 bool CSeqDBVolFilter::operator == (const CSeqDBVolFilter & rhs) const
