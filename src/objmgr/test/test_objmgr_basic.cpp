@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/04/02 14:51:52  gouriano
+* *** empty log message ***
+*
 * Revision 1.3  2002/03/20 17:03:51  gouriano
 * *** empty log message ***
 *
@@ -63,6 +66,7 @@ public:
     CTestDataLoader(const string& loader_name) : CDataLoader( loader_name) {}
     virtual bool GetRecords(const CHandleRangeMap& hrmap, const EChoice choice) {return false;}
     virtual bool DropTSE(const CSeq_entry *sep)  {return false;}
+    virtual void GC(void) {return;}
 };
 
 //===========================================================================
