@@ -514,10 +514,16 @@ string CHTMLPopupMenu::GetCodeItems(void) const
             code += "var " + m_Name + " = [\n";
             if ( !m_ConfigName.empty() ) {
                 code += "[\"UseLocalConfig\",\"" + m_ConfigName + "\",\"\",\"\"]";
+                if ( m_Items.size() ) {
+                    code += ",\n";
+                }
             }
             // Write menu items
             ITERATE (TItems, i, m_Items) {
-                code += ",\n[\"" +
+                if ( i != m_Items.begin()) {
+                    code += ",\n";
+                }
+                code += "[\"" +
                     i->title     + "\",\""  +
                     i->action    + "\",\""  +
                     i->mouseover + "\",\""  +
@@ -566,6 +572,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/04/20 16:16:05  ivanov
+ * eKurdinConf: Remove extra comma if local configuration is not specified
+ *
  * Revision 1.27  2004/04/05 16:19:57  ivanov
  * Added support for Sergey Kurdin's popup menu with configurations
  *
