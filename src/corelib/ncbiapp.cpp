@@ -37,7 +37,8 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbiapp.hpp>
 
-#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
+/* take this out for now, since #include <Processes.h> doesn' work on Mac OS 10.2 */
+#if 0 && defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
 #include <Processes.h>
 #include <Files.h>
 #endif
@@ -170,6 +171,9 @@ int CNcbiApplication::AppMain
     string appname = name;
     if (appname.empty()) {
 #if defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS)
+#if 0 /* take all of this out since #include <Processs.h> above doesn't work on OX 10.2 !? */
+    /* But this IS how we should get the app name on Mac OS. */
+    /* probably should stick this code away in a routine localized by OS */
         OSErr               err;
         ProcessSerialNumber psn;
         FSRef               fsRef;
@@ -194,6 +198,7 @@ int CNcbiApplication::AppMain
             appname = filePath;
         }
         else
+#endif /* 0 */
             appname = "ncbi";
 
 #else
@@ -726,6 +731,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.55  2003/03/14 20:35:24  rsmith
+ * Comment out previous changes for Mac OSX since on 10.2 the header files do not compile properly.
+ *
  * Revision 1.54  2003/03/13 22:16:11  rsmith
  * on Metrowerks, Mac OSX, always use ncbi.args as the file name for arguments.
  *
