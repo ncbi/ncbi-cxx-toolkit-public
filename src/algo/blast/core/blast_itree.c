@@ -170,31 +170,60 @@ Blast_IntervalTreeReset(BlastIntervalTree *tree)
     root->hsp = NULL;
 }
 
+/** Retrieves the start offset (within a set of concatentated query
+ *  sequences) of the strand containing a given context
+ *  @param query_info Information for all concatenated queries [in]
+ *  @param context The context whose strand offset is required [in]
+ *  @return Start offset of the strand of the query sequence
+ *          containing 'context'
+ */
+static Int4 
+s_GetQueryStrandOffset(const BlastQueryInfo *query_info,
+                       Int4 context)
+{
+    Int4 c = context;
+
+    while (c) {
+        Int4 frame = query_info->contexts[c].frame;
+        if (frame == 0 || SIGN(frame) != 
+            SIGN(query_info->contexts[c-1].frame)) {
+            break;
+        }
+        c--;
+    }
+
+    return query_info->contexts[c].query_offset;
+}
+
 /** Determine whether an input HSP shares a common start- or
  *  endpoint with an HSP from an interval tree.
  *  @param in_hsp The input HSP 
+ *  @param in_q_start The start offset of the strand of the query
+ *                    sequence containing in_hsp [in]
  *  @param tree_hsp An HSP from the interval tree [in]
+ *  @param tree_q_start The start offset of the strand of the query
+ *                    sequence containing tree_hsp [in]
  *  @param which_end Whether to match the left or right HSP endpoint [in]
  *  @return NULL if there is no common endpoint, otherwise a
  *          pointer to the HSP that should be kept
  */
 static const BlastHSP*
 s_HSPsHaveCommonEndpoint(const BlastHSP *in_hsp,
+                         Int4 in_q_start,
                          const BlastHSP *tree_hsp,
+                         Int4 tree_q_start,
                          enum EIntervalDirection which_end)
 {
     Boolean match;
 
-    /* check if alignments are from different query sequences */
+    /* check if alignments are from different query sequences 
+       or query strands */
 
-    if (in_hsp->context != tree_hsp->context)
+    if (in_q_start != tree_q_start)
         return NULL;
        
-    /* check if alignments are from different strands */
+    /* check if alignments are from different subject strands */
 
-    if (SIGN(in_hsp->query.frame) != SIGN(tree_hsp->query.frame))
-        return NULL;
-       
     if (SIGN(in_hsp->subject.frame) != SIGN(tree_hsp->subject.frame))
         return NULL;
        
@@ -244,6 +273,8 @@ s_HSPsHaveCommonEndpoint(const BlastHSP *in_hsp,
  *  @param root_index The offset into the list of tree nodes that
  *                    represents the root of the subtree [in]
  *  @param in_hsp The input HSP [in]
+ *  @param in_q_start The start offset of the strand of the query
+ *                    sequence containing in_hsp [in]
  *  @param which_end Whether to match the left or right HSP endpoint [in]
  *  @return TRUE if the HSP should not be added to the tree because
  *          it shares an existing endpoint with a 'better' HSP already
@@ -253,6 +284,7 @@ static Boolean
 s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree, 
                              Int4 root_index, 
                              const BlastHSP *in_hsp,
+                             Int4 in_q_start,
                              enum EIntervalDirection which_end)
 {
     SIntervalNode *root_node = tree->nodes + root_index;
@@ -281,7 +313,8 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
         next_node = tree->nodes + tmp_index;
         while (tmp_index != 0) {
             const BlastHSP *best_hsp = s_HSPsHaveCommonEndpoint(in_hsp, 
-                                               next_node->hsp, which_end);
+                                                 in_q_start, next_node->hsp, 
+                                                 next_node->leftptr, which_end);
 
             tmp_index = next_node->midptr;
             if (best_hsp == next_node->hsp)
@@ -317,7 +350,8 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
                is finished */
 
             const BlastHSP *best_hsp = s_HSPsHaveCommonEndpoint(in_hsp, 
-                                                 next_node->hsp, which_end);
+                                                 in_q_start, next_node->hsp, 
+                                                 next_node->leftptr, which_end);
             if (best_hsp == next_node->hsp) {
                 return TRUE;
             }
@@ -342,7 +376,8 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
  *  themselves)
  *  @param tree Interval tree to search [in]
  *  @param in_hsp The input HSP [in]
- *  @param query_info Information on all the queries in a concatenated set [in]
+ *  @param in_q_start The start offset of the strand of the query
+ *                    sequence containing in_hsp [in]
  *  @param which_end Whether to match the left or right HSP endpoint [in]
  *  @return TRUE if the HSP should not be added to the tree because
  *          it shares an existing endpoint with a 'better' HSP already
@@ -353,7 +388,7 @@ s_MidpointTreeHasHSPEndpoint(BlastIntervalTree *tree,
 static Boolean
 s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree, 
                              const BlastHSP *in_hsp,
-                             const BlastQueryInfo *query_info,
+                             Int4 in_q_start,
                              enum EIntervalDirection which_end)
 {
     SIntervalNode *root_node = tree->nodes;
@@ -362,11 +397,9 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
     Int4 target_offset;
 
     if (which_end == eIntervalTreeLeft)
-        target_offset = query_info->contexts[in_hsp->context].query_offset +
-                                            in_hsp->query.offset;
+        target_offset = in_q_start + in_hsp->query.offset;
     else
-        target_offset = query_info->contexts[in_hsp->context].query_offset +
-                                            in_hsp->query.end;
+        target_offset = in_q_start + in_hsp->query.end;
 
     /* Descend the tree */
 
@@ -377,8 +410,8 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
 
         tmp_index = root_node->midptr;
         if (tmp_index != 0) {
-            if (s_MidpointTreeHasHSPEndpoint(tree, tmp_index,
-                                         in_hsp, which_end)) {
+            if (s_MidpointTreeHasHSPEndpoint(tree, tmp_index, in_hsp, 
+                                             in_q_start, which_end)) {
                 return TRUE;
             }
         }
@@ -407,7 +440,8 @@ s_IntervalTreeHasHSPEndpoint(BlastIntervalTree *tree,
                is finished */
 
             const BlastHSP* best_hsp = s_HSPsHaveCommonEndpoint(in_hsp, 
-                                              next_node->hsp, which_end);
+                                              in_q_start, next_node->hsp, 
+                                              next_node->leftptr, which_end);
             if (best_hsp == next_node->hsp) {
                 return TRUE;
             }
@@ -432,6 +466,7 @@ void
 BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
                         const BlastQueryInfo *query_info)
 {
+    Int4 query_start;
     Int4 old_region_start;
     Int4 old_region_end;
     Int4 region_start;
@@ -444,6 +479,12 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
     Int4 old_index;
     enum EIntervalDirection which_half;
     Boolean index_subject_range = FALSE;
+
+    /* Determine the query strand containing the input HSP.
+       Only the strand matters for containment purposes,
+       not the precise value of the query frame */
+
+    query_start = s_GetQueryStrandOffset(query_info, hsp->context);
 
     /* Before adding the HSP, determine whether one or more
        HSPs already in the tree share a common endpoint with
@@ -459,27 +500,26 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
        containment tests the worst that can happen is that
        a rare extra gapped alignment will be computed */
 
-    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, 
-                    query_info, eIntervalTreeLeft)) {
+    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
+                                     eIntervalTreeLeft)) {
         return;
     }
-    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, 
-                    query_info, eIntervalTreeRight)) {
+    if (s_IntervalTreeHasHSPEndpoint(tree, hsp, query_start,
+                                     eIntervalTreeRight)) {
         return;
     }
 
     /* begin by indexing the HSP query offsets */
 
-    region_start = query_info->contexts[hsp->context].query_offset +
-                                        hsp->query.offset;
-    region_end = query_info->contexts[hsp->context].query_offset +
-                                        hsp->query.end;
+    region_start = query_start + hsp->query.offset;
+    region_end = query_start + hsp->query.end;
     index_subject_range = FALSE;
 
     /* encapsulate the input HSP in an SIntervalNode */
     root_index = 0;
     new_index = s_IntervalNodeInit(tree, 0, eIntervalTreeNeither);
     nodes = tree->nodes;
+    nodes[new_index].leftptr = query_start;
     nodes[new_index].midptr = 0;
     nodes[new_index].hsp = hsp;
 
@@ -599,12 +639,8 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
             old_region_end = old_hsp->subject.end;
         }
         else {
-            old_region_start = 
-                       query_info->contexts[old_hsp->context].query_offset +
-                       old_hsp->query.offset;
-            old_region_end = 
-                       query_info->contexts[old_hsp->context].query_offset +
-                       old_hsp->query.end;
+            old_region_start = nodes[old_index].leftptr + old_hsp->query.offset;
+            old_region_end = nodes[old_index].leftptr + old_hsp->query.end;
         }
 
         root_index = mid_index;
@@ -651,7 +687,11 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
 
 /** Determine whether an HSP is contained within another HSP.
  *  @param in_hsp The input HSP 
+ *  @param in_q_start The start offset of the strand of the query
+ *                    sequence containing in_hsp [in]
  *  @param tree_hsp An HSP from the interval tree [in]
+ *  @param tree_q_start The start offset of the strand of the query
+ *                      sequence containing tree_hsp [in]
  *  @param min_diag_separation Number of diagonals separating 
  *                             nonoverlapping hits (only nonzero 
  *                             for megablast) [in]
@@ -659,17 +699,15 @@ BlastIntervalTreeAddHSP(BlastHSP *hsp, BlastIntervalTree *tree,
  */
 static Boolean
 s_HSPIsContained(const BlastHSP *in_hsp,
+                 Int4 in_q_start,
                  const BlastHSP *tree_hsp,
+                 Int4 tree_q_start,
                  Int4 min_diag_separation)
 {
-    /* check if alignments are from different query sequences */
+    /* check if alignments are from different query sequences 
+       or query strands */
 
-    if (in_hsp->context != tree_hsp->context)
-        return FALSE;
-       
-    /* check if alignments are from different query strands */
-
-    if (SIGN(in_hsp->query.frame) != SIGN(tree_hsp->query.frame))
+    if (in_q_start != tree_q_start)
         return FALSE;
        
     if (min_diag_separation > 0) {
@@ -709,6 +747,8 @@ s_HSPIsContained(const BlastHSP *in_hsp,
  *  @param root_index The offset into the list of tree nodes that
  *                    represents the root of the subtree [in]
  *  @param in_hsp The input HSP [in]
+ *  @param in_q_start The start offset of the strand of the query
+ *                    sequence containing in_hsp [in]
  *  @param min_diag_separation Number of diagonals separating 
  *                             nonoverlapping hits (only nonzero 
  *                             for contiguous megablast) [in]
@@ -718,6 +758,7 @@ static Boolean
 s_MidpointTreeContainsHSP(const BlastIntervalTree *tree, 
                           Int4 root_index, 
                           const BlastHSP *in_hsp,
+                          Int4 in_q_start,
                           Int4 min_diag_separation)
 {
     SIntervalNode *node = tree->nodes + root_index;
@@ -737,7 +778,8 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
         while (tmp_index != 0) {
             SIntervalNode *tmp_node = tree->nodes + tmp_index;
 
-            if (s_HSPIsContained(in_hsp, tmp_node->hsp,
+            if (s_HSPIsContained(in_hsp, in_q_start,
+                                 tmp_node->hsp, tmp_node->leftptr,
                                  min_diag_separation)) {
                 return TRUE;
             }
@@ -766,19 +808,22 @@ s_MidpointTreeContainsHSP(const BlastIntervalTree *tree,
 
     /* Reached a leaf of the tree */
 
-    return s_HSPIsContained(in_hsp, node->hsp, min_diag_separation);
+    return s_HSPIsContained(in_hsp, in_q_start,
+                            node->hsp, node->leftptr,
+                            min_diag_separation);
 }
 
 /* see blast_itree.h for description */
 Boolean
 BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree, 
                              const BlastHSP *hsp,
-                             Int4 query_start_offset,
+                             const BlastQueryInfo *query_info,
                              Int4 min_diag_separation)
 {
     SIntervalNode *node = tree->nodes;
-    Int4 region_start = query_start_offset + hsp->query.offset;
-    Int4 region_end = query_start_offset + hsp->query.end;
+    Int4 query_start = s_GetQueryStrandOffset(query_info, hsp->context);
+    Int4 region_start = query_start + hsp->query.offset;
+    Int4 region_end = query_start + hsp->query.end;
 
     /* Descend the tree */
 
@@ -789,8 +834,9 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
 
         Int4 tmp_index = node->midptr;
         if (tmp_index > 0) {
-            if (s_MidpointTreeContainsHSP(tree, tmp_index, hsp,
-                                  min_diag_separation)) {
+            if (s_MidpointTreeContainsHSP(tree, tmp_index, 
+                                          hsp, query_start,
+                                          min_diag_separation)) {
                 return TRUE;
             }
         }
@@ -817,5 +863,7 @@ BlastIntervalTreeContainsHSP(const BlastIntervalTree *tree,
 
     /* Reached a leaf of the tree */
 
-    return s_HSPIsContained(hsp, node->hsp, min_diag_separation);
+    return s_HSPIsContained(hsp, query_start, 
+                            node->hsp, node->leftptr,
+                            min_diag_separation);
 }
