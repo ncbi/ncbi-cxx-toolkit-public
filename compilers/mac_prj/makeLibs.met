@@ -1,3 +1,4 @@
+
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -245,6 +246,7 @@ on SetProjectData()
 		AddSimpleProjectListFiles("bz2", {}, "util:compress:bzip2", Â
 			{"blocksort.c", "huffman.c", "crctable.c", "randtable.c", "compress.c", "decompress.c", "bzlib.c"})
 		AddSimpleProject("xcompress", {}, "util:compress")
+		AddSimpleProjectListFiles("tables", {}, "util:tables", {"raw_scoremat.c"})
 		AddSimpleProject("bdb", {"bdb"}, "bdb")
 		
 		set libdbFiles to {Â
@@ -395,7 +397,7 @@ on SetProjectData()
 		set SomeObjects to {"biblio", "general", "medline", "pub"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "xobjmgr", "xobjutil"}
-		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "xalnmgr", "regexp"}
+		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
