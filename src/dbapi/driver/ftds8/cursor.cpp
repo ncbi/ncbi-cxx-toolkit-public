@@ -408,13 +408,13 @@ bool CTDS_CursorCmd::x_AssignParams()
                 CDB_Char& val = dynamic_cast<CDB_Char&> (param);
                 const char* c = val.Value(); // NB: 255 bytes at most
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i] = '\0';
                 break;
             }
@@ -422,13 +422,13 @@ bool CTDS_CursorCmd::x_AssignParams()
                 CDB_VarChar& val = dynamic_cast<CDB_VarChar&> (param);
                 const char* c = val.Value(); // NB: 255 bytes at most
                 size_t i = 0;
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 while (*c) {
-                    if (*c == '"')
-                        val_buffer[i++] = '"';
+                    if (*c == '\'')
+                        val_buffer[i++] = '\'';
                     val_buffer[i++] = *c++;
                 }
-                val_buffer[i++] = '"';
+                val_buffer[i++] = '\'';
                 val_buffer[i] = '\0';
                 break;
             }
@@ -504,6 +504,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/02/28 23:27:24  soussov
+ * fixes double quote bug in char/varchar parameters substitute
+ *
  * Revision 1.7  2002/12/03 19:18:58  soussov
  * adopting the TDS8 cursors
  *
