@@ -170,10 +170,7 @@ CNetCacheClient::CNetCacheClient(CSocket*      sock,
     if (m_Sock) {
         m_Sock->DisableOSSendDelay();
 
-        unsigned int host;
-        m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
-        m_Host = CSocketAPI::ntoa(host);
-	    m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
+        x_RestoreHostPort();
     }
 }
 
@@ -210,6 +207,26 @@ void CNetCacheClient::CreateSocket(const string& hostname,
     m_Sock->DisableOSSendDelay();
     m_Sock->SetTimeout(eIO_ReadWrite, &m_Timeout);
     m_OwnSocket = eTakeOwnership;
+}
+
+void CNetCacheClient::SetSocket(CSocket* sock, EOwnership own)
+{
+    if (m_OwnSocket == eTakeOwnership) {
+        delete m_Sock;
+    }
+    if ((m_Sock=sock) != 0) {
+        m_Sock->DisableOSSendDelay();
+        m_OwnSocket = own;
+        x_RestoreHostPort();
+    }
+}
+
+void CNetCacheClient::x_RestoreHostPort()
+{
+    unsigned int host;
+    m_Sock->GetPeerAddress(&host, 0, eNH_NetworkByteOrder);
+    m_Host = CSocketAPI::ntoa(host);
+	m_Sock->GetPeerAddress(0, &m_Port, eNH_HostByteOrder);
 }
 
 void CNetCacheClient::CheckConnect(const string& key)
@@ -552,6 +569,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/12/20 13:14:10  kuznets
+ * +NetcacheClient::SetSocket()
+ *
  * Revision 1.26  2004/12/16 17:43:50  kuznets
  * + methods to change comm.timeouts
  *
