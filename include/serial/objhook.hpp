@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/09/09 18:44:53  grichenk
+* Fixed CObjectHookGuard methods for GCC
+*
 * Revision 1.7  2002/09/09 18:20:18  grichenk
 * Fixed includes (to declare Type<>)
 *
@@ -249,11 +252,12 @@ CObjectHookGuard<T>::CObjectHookGuard(CReadObjectHook& hook,
       m_HookMode(eHook_Read),
       m_HookType(eHook_Object)
 {
+    Type<T> type;
     if ( m_Stream ) {
-        CObjectTypeInfo(Type<T>()).SetLocalReadHook(*in, &hook);
+        CObjectTypeInfo(type).SetLocalReadHook(*in, &hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).SetGlobalReadHook(&hook);
+        CObjectTypeInfo(type).SetGlobalReadHook(&hook);
     }
 }
 
@@ -265,11 +269,12 @@ CObjectHookGuard<T>::CObjectHookGuard(CWriteObjectHook& hook,
       m_HookMode(eHook_Write),
       m_HookType(eHook_Object)
 {
+    Type<T> type;
     if ( m_Stream ) {
-        CObjectTypeInfo(Type<T>()).SetLocalWriteHook(*out, &hook);
+        CObjectTypeInfo(type).SetLocalWriteHook(*out, &hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).SetGlobalWriteHook(&hook);
+        CObjectTypeInfo(type).SetGlobalWriteHook(&hook);
     }
 }
 
@@ -283,11 +288,12 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Member),
       m_Id(id)
 {
+    Type<T> type;
     if ( m_Stream ) {
-        CObjectTypeInfo(Type<T>()).FindMember(m_Id).SetLocalReadHook(*in, &hook);
+        CObjectTypeInfo(type).FindMember(m_Id).SetLocalReadHook(*in, &hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).FindMember(m_Id).SetGlobalReadHook(&hook);
+        CObjectTypeInfo(type).FindMember(m_Id).SetGlobalReadHook(&hook);
     }
 }
 
@@ -301,11 +307,12 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Member),
       m_Id(id)
 {
+    Type<T> type;
     if ( m_Stream ) {
-        CObjectTypeInfo(Type<T>()).FindMember(m_Id).SetLocalWriteHook(*out, &hook);
+        CObjectTypeInfo(type).FindMember(m_Id).SetLocalWriteHook(*out, &hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).FindMember(m_Id).SetGlobalWriteHook(&hook);
+        CObjectTypeInfo(type).FindMember(m_Id).SetGlobalWriteHook(&hook);
     }
 }
 
@@ -319,11 +326,12 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Variant),
       m_Id(id)
 {
+    Type<T> type;
     if ( m_Stream ) {
-        CObjectTypeInfo(Type<T>()).FindVariant(m_Id).SetLocalReadHook(*in, &hook);
+        CObjectTypeInfo(type).FindVariant(m_Id).SetLocalReadHook(*in, &hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).FindVariant(m_Id).SetGlobalReadHook(&hook);
+        CObjectTypeInfo(type).FindVariant(m_Id).SetGlobalReadHook(&hook);
     }
 }
 
@@ -337,11 +345,12 @@ CObjectHookGuard<T>::CObjectHookGuard(string id,
       m_HookType(eHook_Variant),
       m_Id(id)
 {
+    Type<T> type;
     if ( m_Stream ) {
-        CObjectTypeInfo(Type<T>()).FindVariant(m_Id).SetLocalWriteHook(*out, &hook);
+        CObjectTypeInfo(type).FindVariant(m_Id).SetLocalWriteHook(*out, &hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).FindVariant(m_Id).SetGlobalWriteHook(&hook);
+        CObjectTypeInfo(type).FindVariant(m_Id).SetGlobalWriteHook(&hook);
     }
 }
 
@@ -353,11 +362,12 @@ CObjectHookGuard<T>::CObjectHookGuard(CReadContainerElementHook& hook)
       m_HookMode(eHook_Read),
       m_HookType(eHook_Element),
 {
+    Type<T> type;
     if (m_Stream) {
-        CObjectTypeInfo(Type<T>()).GetElementType().GetContainerTypeInfo()->SetLocalReadHook(*in, hook);
+        CObjectTypeInfo(type).GetElementType().GetContainerTypeInfo()->SetLocalReadHook(*in, hook);
     }
     else {
-        CObjectTypeInfo(Type<T>()).GetElementType().SetGlobalReadHook(hook);
+        CObjectTypeInfo(type).GetElementType().SetGlobalReadHook(hook);
     }
 }
 */
@@ -365,23 +375,24 @@ CObjectHookGuard<T>::CObjectHookGuard(CReadContainerElementHook& hook)
 template <class T>
 CObjectHookGuard<T>::~CObjectHookGuard(void)
 {
+    Type<T> type;
     switch (m_HookType) {
     case eHook_Object:
         switch (m_HookMode) {
         case eHook_Read:
             if ( m_Stream ) {
-                CObjectTypeInfo(Type<T>()).ResetLocalReadHook(*static_cast<CObjectIStream*>(m_Stream));
+                CObjectTypeInfo(type).ResetLocalReadHook(*static_cast<CObjectIStream*>(m_Stream));
             }
             else {
-                CObjectTypeInfo(Type<T>()).ResetGlobalReadHook();
+                CObjectTypeInfo(type).ResetGlobalReadHook();
             }
             break;
         case eHook_Write:
             if ( m_Stream ) {
-                CObjectTypeInfo(Type<T>()).ResetLocalWriteHook(*static_cast<CObjectOStream*>(m_Stream));
+                CObjectTypeInfo(type).ResetLocalWriteHook(*static_cast<CObjectOStream*>(m_Stream));
             }
             else {
-                CObjectTypeInfo(Type<T>()).ResetGlobalWriteHook();
+                CObjectTypeInfo(type).ResetGlobalWriteHook();
             }
             break;
         case eHook_Copy:
@@ -392,20 +403,20 @@ CObjectHookGuard<T>::~CObjectHookGuard(void)
         switch (m_HookMode) {
         case eHook_Read:
             if ( m_Stream ) {
-                CObjectTypeInfo(Type<T>()).FindMember(m_Id).ResetLocalReadHook
+                CObjectTypeInfo(type).FindMember(m_Id).ResetLocalReadHook
                     (*static_cast<CObjectIStream*>(m_Stream));
             }
             else {
-                CObjectTypeInfo(Type<T>()).FindMember(m_Id).ResetGlobalReadHook();
+                CObjectTypeInfo(type).FindMember(m_Id).ResetGlobalReadHook();
             }
             break;
         case eHook_Write:
             if ( m_Stream ) {
-                CObjectTypeInfo(Type<T>()).FindMember(m_Id).ResetLocalWriteHook
+                CObjectTypeInfo(type).FindMember(m_Id).ResetLocalWriteHook
                     (*static_cast<CObjectOStream*>(m_Stream));
             }
             else {
-                CObjectTypeInfo(Type<T>()).FindMember(m_Id).ResetGlobalWriteHook();
+                CObjectTypeInfo(type).FindMember(m_Id).ResetGlobalWriteHook();
             }
             break;
         case eHook_Copy:
@@ -416,20 +427,20 @@ CObjectHookGuard<T>::~CObjectHookGuard(void)
         switch (m_HookMode) {
         case eHook_Read:
             if ( m_Stream ) {
-                CObjectTypeInfo(Type<T>()).FindVariant(m_Id).ResetLocalReadHook
+                CObjectTypeInfo(type).FindVariant(m_Id).ResetLocalReadHook
                     (*static_cast<CObjectIStream*>(m_Stream));
             }
             else {
-                CObjectTypeInfo(Type<T>()).FindVariant(m_Id).ResetGlobalReadHook();
+                CObjectTypeInfo(type).FindVariant(m_Id).ResetGlobalReadHook();
             }
             break;
         case eHook_Write:
             if ( m_Stream ) {
-                CObjectTypeInfo(Type<T>()).FindVariant(m_Id).ResetLocalWriteHook
+                CObjectTypeInfo(type).FindVariant(m_Id).ResetLocalWriteHook
                     (*static_cast<CObjectOStream*>(m_Stream));
             }
             else {
-                CObjectTypeInfo(Type<T>()).FindVariant(m_Id).ResetGlobalWriteHook();
+                CObjectTypeInfo(type).FindVariant(m_Id).ResetGlobalWriteHook();
             }
             break;
         case eHook_Copy:
