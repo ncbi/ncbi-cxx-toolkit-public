@@ -59,15 +59,8 @@ void CID1Client::Ask(const CID1Client::TRequest& request,
     if (reply.Which() == wanted) {
         return; // ok
     } else if (reply.IsError()) {
-        CNcbiOstrstream oss;
-        oss << "CID1Client: server error: " << reply.GetError();
-        switch (reply.GetError()) {
-        case 1:  oss << " [withdrawn by submitter's request]";  break;
-        case 2:  oss << " [confidential]";                      break;
-        case 10: oss << " [not found]";                         break;
-        default: break;
-        }
-        NCBI_THROW(CException, eUnknown, CNcbiOstrstreamToString(oss));
+        NCBI_THROW(CException, eUnknown,
+                   "CID1Client: server error: " + reply.GetErrorString());
     } else {
         reply.ThrowInvalidSelection(wanted);
     }
@@ -133,6 +126,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/07/01 15:58:29  ucko
+* Error decoding moved to base ID1 library.
+*
 * Revision 1.5  2004/07/01 15:46:01  ucko
 * Overload Ask to add descriptive text to known error codes, using
 * information from Michael Kimelman.
