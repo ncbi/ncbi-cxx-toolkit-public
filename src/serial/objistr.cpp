@@ -173,6 +173,7 @@ static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 
 void CObjectIStream::SetVerifyDataThread(ESerialVerifyData verify)
 {
+    x_GetVerifyDataDefault();
     ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
@@ -183,6 +184,7 @@ void CObjectIStream::SetVerifyDataThread(ESerialVerifyData verify)
 
 void CObjectIStream::SetVerifyDataGlobal(ESerialVerifyData verify)
 {
+    x_GetVerifyDataDefault();
     if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
         ms_VerifyDataDefault != eSerialVerifyData_Always &&
         ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
@@ -226,22 +228,7 @@ ESerialVerifyData CObjectIStream::x_GetVerifyDataDefault(void)
             verify = ms_VerifyDataDefault;
         }
     }
-    switch (verify) {
-    default:
-    case eSerialVerifyData_Default:
-        return ms_VerifyDataDefault;
-    case eSerialVerifyData_No:
-    case eSerialVerifyData_Never:
-        return eSerialVerifyData_No;
-        break;
-    case eSerialVerifyData_Yes:
-    case eSerialVerifyData_Always:
-        return eSerialVerifyData_Yes;
-        break;
-    case eSerialVerifyData_DefValue:
-    case eSerialVerifyData_DefValueAlways:
-        return eSerialVerifyData_DefValue;
-    }
+    return verify;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1469,6 +1456,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.125  2004/02/09 18:22:34  gouriano
+* enforced checking environment vars when setting initialization
+* verification parameters
+*
 * Revision 1.124  2004/01/22 20:46:41  gouriano
 * Added new exception error code (eMissingValue)
 *

@@ -576,10 +576,10 @@ protected:
     CIStreamBuffer m_Input;
     bool m_DiscardCurrObject;
     ESerialDataFormat   m_DataFormat;
-    ESerialVerifyData   m_VerifyData;
-    static ESerialVerifyData ms_VerifyDataDefault;
     
 private:
+    ESerialVerifyData   m_VerifyData;
+    static ESerialVerifyData ms_VerifyDataDefault;
     static ESerialVerifyData x_GetVerifyDataDefault(void);
 
     AutoPtr<CReadObjectList> m_Objects;
@@ -661,6 +661,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.100  2004/02/09 18:21:52  gouriano
+* enforced checking environment vars when setting initialization
+* verification parameters
+*
 * Revision 1.99  2004/01/22 20:47:25  gouriano
 * Added new exception error code (eMissingValue)
 *

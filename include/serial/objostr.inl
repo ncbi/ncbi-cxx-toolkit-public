@@ -353,30 +353,32 @@ void CObjectOStream::SetAutoSeparator(bool value)
 inline
 void CObjectOStream::SetVerifyData(ESerialVerifyData verify)
 {
-    switch (verify) {
-    default:
-    case eSerialVerifyData_Default:
-        m_VerifyData = x_GetVerifyDataDefault();
-        break;
-    case eSerialVerifyData_No:
-    case eSerialVerifyData_Never:
-        m_VerifyData = eSerialVerifyData_No;
-        break;
-    case eSerialVerifyData_Yes:
-    case eSerialVerifyData_Always:
-        m_VerifyData = eSerialVerifyData_Yes;
-        break;
-    case eSerialVerifyData_DefValue:
-    case eSerialVerifyData_DefValueAlways:
-        m_VerifyData = eSerialVerifyData_DefValue;
-        break;
+    if (m_VerifyData == eSerialVerifyData_Never ||
+        m_VerifyData == eSerialVerifyData_Always ||
+        m_VerifyData == eSerialVerifyData_DefValueAlways) {
+        return;
     }
+    m_VerifyData = (verify == eSerialVerifyData_Default) ?
+                   x_GetVerifyDataDefault() : verify;
 }
 
 inline
 ESerialVerifyData CObjectOStream::GetVerifyData(void) const
 {
-    return m_VerifyData;
+    switch (m_VerifyData) {
+    default:
+        break;
+    case eSerialVerifyData_No:
+    case eSerialVerifyData_Never:
+        return eSerialVerifyData_No;
+    case eSerialVerifyData_Yes:
+    case eSerialVerifyData_Always:
+        return eSerialVerifyData_Yes;
+    case eSerialVerifyData_DefValue:
+    case eSerialVerifyData_DefValueAlways:
+        return eSerialVerifyData_DefValue;
+    }
+    return ms_VerifyDataDefault;
 }
 
 
@@ -386,6 +388,10 @@ ESerialVerifyData CObjectOStream::GetVerifyData(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/02/09 18:21:53  gouriano
+* enforced checking environment vars when setting initialization
+* verification parameters
+*
 * Revision 1.23  2003/11/26 19:59:38  vasilche
 * GetPosition() and GetDataFormat() methods now are implemented
 * in parent classes CObjectIStream and CObjectOStream to avoid

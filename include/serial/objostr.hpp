@@ -496,10 +496,10 @@ protected:
     string m_Separator;
     bool   m_AutoSeparator;
     ESerialDataFormat   m_DataFormat;
-    ESerialVerifyData   m_VerifyData;
-    static ESerialVerifyData ms_VerifyDataDefault;
 
 private:
+    ESerialVerifyData   m_VerifyData;
+    static ESerialVerifyData ms_VerifyDataDefault;
     static ESerialVerifyData x_GetVerifyDataDefault(void);
     CStreamObjectPathHook<CWriteObjectHook*>                m_PathWriteObjectHooks;
     CStreamPathHook<CMemberInfo*, CWriteClassMemberHook*>   m_PathWriteMemberHooks;
@@ -526,6 +526,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.83  2004/02/09 18:21:53  gouriano
+* enforced checking environment vars when setting initialization
+* verification parameters
+*
 * Revision 1.82  2004/01/05 14:24:09  gouriano
 * Added possibility to set serialization hooks by stack path
 *

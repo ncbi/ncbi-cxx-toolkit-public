@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2004/02/09 18:22:35  gouriano
+* enforced checking environment vars when setting initialization
+* verification parameters
+*
 * Revision 1.21  2004/01/16 19:56:09  gouriano
 * Added I/O stream manipulators for serializable objects
 *
@@ -175,6 +179,7 @@ static CSafeStaticRef< CTls<int> > s_VerifyTLS;
 
 void CSerialObject::SetVerifyDataThread(ESerialVerifyData verify)
 {
+    x_GetVerifyData();
     ESerialVerifyData tls_verify = ESerialVerifyData(long(s_VerifyTLS->GetValue()));
     if (tls_verify != eSerialVerifyData_Never &&
         tls_verify != eSerialVerifyData_Always &&
@@ -185,6 +190,7 @@ void CSerialObject::SetVerifyDataThread(ESerialVerifyData verify)
 
 void CSerialObject::SetVerifyDataGlobal(ESerialVerifyData verify)
 {
+    x_GetVerifyData();
     if (ms_VerifyDataDefault != eSerialVerifyData_Never &&
         ms_VerifyDataDefault != eSerialVerifyData_Always &&
         ms_VerifyDataDefault != eSerialVerifyData_DefValueAlways) {
