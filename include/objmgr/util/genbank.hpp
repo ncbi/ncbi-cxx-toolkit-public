@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/11/01 16:32:23  ucko
+* Rework qualifier handling to support appropriate reordering
+*
 * Revision 1.3  2001/10/12 15:34:16  ucko
 * Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
 *
@@ -54,6 +57,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <serial/serialbase.hpp>
 #include <objects/objmgr/objmgr.hpp>
+#include <objects/util/gbqual.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -104,8 +108,9 @@ private:
     bool WriteLocus     (const CBioseqHandle& handle);
     bool WriteDefinition(const CBioseqHandle& handle);
     bool WriteAccession (const CBioseqHandle& handle);
-    bool WriteVersion   (const CBioseqHandle& handle);
     bool WriteID        (const CBioseqHandle& handle);
+    bool WriteVersion   (const CBioseqHandle& handle);
+    bool WriteDBSource  (const CBioseqHandle& handle);
     bool WriteKeywords  (const CBioseqHandle& handle);
     bool WriteSegment   (const CBioseqHandle& handle);
     bool WriteSource    (const CBioseqHandle& handle);
@@ -120,11 +125,6 @@ private:
                               const CBioseq& default_seq);
     void WriteFeatureLocation(const string& name, const string& location);
     void WriteFeatureQualifier(const string& qual);
-    void WriteFeatureQualifier(const string& name, const string& value,
-                               bool quote);
-    void WriteProteinQualifiers(const CProt_ref& prot);
-    void WriteSourceQualifiers(const COrg_ref& org);
-    void WriteSourceQualifiers(const CBioSource& source);
 
     void FormatIDPrefix(const CSeq_id& id, const CBioseq& default_seq,
                         CNcbiOstream& dest);

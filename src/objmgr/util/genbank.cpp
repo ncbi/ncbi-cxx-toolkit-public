@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/11/01 16:32:24  ucko
+* Rework qualifier handling to support appropriate reordering
+*
 * Revision 1.10  2001/10/30 20:27:04  ucko
 * Force ASCII from Seq_vectors.
 * Take advantage of new seqfeat functionality.
@@ -169,6 +172,82 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CFeature
+{
+public:
+    CFeature(const CSeq_feat& asn) : m_ASN(asn) {}
+
+    typedef set<CGBQual> TQuals;
+    const TQuals& GetQuals(void);
+    void          AddQual(CGBQual::EType type, string value = kEmptyStr);
+private:
+    const CSeq_feat& m_ASN;
+    TQuals           m_Quals;
+};
+
+inline
+const CFeature::TQuals& CFeature::GetQuals(void)
+{
+    return m_Quals;
+}
+
+
+void CFeature::AddQual(CGBQual::EType type, string value)
+{
+    // Tweak qualifier type according to feature type to ensure proper
+    // ordering.  Could also check appropriateness.
+
+    CSeqFeatData::E_Choice asn_type = m_ASN.GetData().Which();
+
+    switch (type) {
+    case CGBQual::eType_product:
+        if (asn_type == CSeqFeatData::e_Cdregion) {
+            type = CGBQual::eType_cds_product;
+#if 0
+        } else if (asn_type == CSeqFeatData::e_Prot) {
+            type = CGBQual::eType_prot_name;
+#endif
+        }
+        break;
+
+    case CGBQual::eType_allele:
+        if (asn_type == CSeqFeatData::e_Gene) {
+            type = CGBQual::eType_gene_allele;
+        }
+        break;
+
+    case CGBQual::eType_map:
+        if (asn_type == CSeqFeatData::e_Gene) {
+            type = CGBQual::eType_gene_map;
+        }
+        break;
+
+    case CGBQual::eType_db_xref:
+        if (asn_type == CSeqFeatData::e_Gene) {
+            type = CGBQual::eType_gene_xref;
+        }
+        break;
+
+    case CGBQual::eType_EC_number:
+        if (asn_type == CSeqFeatData::e_Prot) {
+            type = CGBQual::eType_prot_EC_number;
+        }
+        break;
+
+    default: // make compiler happy
+        break;
+    }
+
+    m_Quals.insert(CGBQual(type, value));
+}
+
+
+typedef set<CGBSQual> TGBSQuals;
+
+static void s_AddProteinQualifiers(CFeature &feature, const CProt_ref& prot);
+static TGBSQuals s_SourceQualifiers(const COrg_ref& org);
+static TGBSQuals s_SourceQualifiers(const CBioSource& source);
+
 static string s_Pad(const string& s, SIZE_TYPE width)
 {
     if (s.size() >= width) {
@@ -194,8 +273,9 @@ bool CGenbankWriter::Write(const CSeq_entry& entry)
         = { &CGenbankWriter::WriteLocus,
             &CGenbankWriter::WriteDefinition,
             &CGenbankWriter::WriteAccession,
-            &CGenbankWriter::WriteVersion,
             &CGenbankWriter::WriteID,
+            &CGenbankWriter::WriteVersion,
+            &CGenbankWriter::WriteDBSource,
             &CGenbankWriter::WriteKeywords,
             &CGenbankWriter::WriteSegment,
             &CGenbankWriter::WriteSource,
@@ -521,6 +601,23 @@ bool CGenbankWriter::WriteAccession(const CBioseqHandle& handle)
 }
 
 
+bool CGenbankWriter::WriteID(const CBioseqHandle& handle)
+{
+    if (m_Format == eFormat_Genbank) {
+        return true;
+    }
+
+    iterate (CBioseq::TId, it, m_Scope.GetBioseq(handle).GetId()) {
+        if ((*it)->IsGi()) {
+            m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << (*it)->GetGi()
+                     << NcbiEndl;
+            break;
+        }
+    }
+    return true;
+}
+
+
 bool CGenbankWriter::WriteVersion(const CBioseqHandle& handle)
 {
     const CBioseq& seq = m_Scope.GetBioseq(handle);
@@ -545,19 +642,13 @@ bool CGenbankWriter::WriteVersion(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteID(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteDBSource(const CBioseqHandle& handle)
 {
     if (m_Format == eFormat_Genbank) {
         return true;
     }
 
-    iterate (CBioseq::TId, it, m_Scope.GetBioseq(handle).GetId()) {
-        if ((*it)->IsGi()) {
-            m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << (*it)->GetGi()
-                     << NcbiEndl;
-            break;
-        }
-    }
+    // Implement!
     return true;
 }
 
@@ -1324,19 +1415,6 @@ static bool s_CompareFeats(CConstRef<CSeq_feat> f1, CConstRef<CSeq_feat> f2)
 }
 
 
-static bool s_QuotedQualifierP(const string& name)
-{
-    static const char* const unquoted[] = { // keep in order!
-        "anticodon", "codon", "codon_start", "cons_splice", "direction",
-        "evidence", "label", "mod_base", "number", "rpt_type", "rpt_unit",
-        "transl_except", "transl_table", "usedin" };
-    static const size_t num_unquoted
-        = sizeof(unquoted) / sizeof(*unquoted);
-
-    return ! binary_search(unquoted, unquoted + num_unquoted, name);
-}
-
-
 // Amino acid abbreviations for feature table.  Differ from Iupac3aa
 // in that unknown is Xaa or OTHER instead of Xxx and termination is TERM
 // rather than Ter.
@@ -1393,7 +1471,10 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         bool found_source = false;
         for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Source);
              it;  ++it) {
-            WriteSourceQualifiers(it->GetSource());
+            TGBSQuals quals = s_SourceQualifiers(it->GetSource());
+            iterate (TGBSQuals, qual, quals) {
+                WriteFeatureQualifier(qual->ToString());
+            }
             found_source = true;
             BREAK(it);
         }
@@ -1417,6 +1498,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
     sort(v.begin(), v.end(), s_CompareFeats);
 
     iterate (TFeatVect, feat, v) {
+        CFeature gbfeat(**feat);
+
         string name
             = (*feat)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
         if ((*feat)->IsSetProduct()) {
@@ -1427,7 +1510,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
             string product  = CNcbiOstrstreamToString(prod_stream);
             if (location.find(':') != NPOS  &&  product.find(':') == NPOS) {
                 WriteFeatureLocation(name, (*feat)->GetProduct(), seq);
-                WriteFeatureQualifier("coded_by", location, true);
+                gbfeat.AddQual(CGBQual::eType_coded_by, location);
             } else {
                 // What if both contain colons (because both are segmented)?
                 WriteFeatureLocation(name, location);
@@ -1441,54 +1524,50 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         {
             const CGene_ref& gene = (*feat)->GetData().GetGene();
             if (gene.IsSetAllele()) {
-                WriteFeatureQualifier("allele", gene.GetAllele(), true);
+                gbfeat.AddQual(CGBQual::eType_allele, gene.GetAllele());
             }
             if (gene.IsSetDesc()) {
-                WriteFeatureQualifier("function", gene.GetAllele(), true);
+                gbfeat.AddQual(CGBQual::eType_function, gene.GetDesc());
             }
             if (gene.IsSetMaploc()) {
-                WriteFeatureQualifier("map", gene.GetAllele(), true);
+                gbfeat.AddQual(CGBQual::eType_map, gene.GetMaploc());
             }
             if (gene.GetPseudo()) {
-                WriteFeatureQualifier("/pseudo");
+                gbfeat.AddQual(CGBQual::eType_pseudo);
             }
             if (gene.IsSetDb()) {
                 iterate (CGene_ref::TDb, it, gene.GetDb()) {
-                    WriteFeatureQualifier("db_xref", s_FormatDbtag(**it),
-                                          true);
+                    gbfeat.AddQual(CGBQual::eType_db_xref, s_FormatDbtag(**it));
                 }
             }
             if (gene.IsSetSyn()) {
                 iterate (CGene_ref::TSyn, it, gene.GetSyn()) {
-                    WriteFeatureQualifier("standard_name", *it, true);
+                    gbfeat.AddQual(CGBQual::eType_standard_name, *it);
                 }
             }
             break;
         }
 
         case CSeqFeatData::e_Org:
-            WriteSourceQualifiers((*feat)->GetData().GetOrg());
+            // WriteSourceQualifiers((*feat)->GetData().GetOrg());
             break;
 
         case CSeqFeatData::e_Cdregion: // CDS
         {
             if (m_Format != eFormat_Genbank) {
-                continue;
+                break;
             }
             const CCdregion& region = (*feat)->GetData().GetCdregion();
             if (region.IsSetFrame()) {
-                WriteFeatureQualifier("codon_start",
-                                      NStr::IntToString(region.GetFrame()),
-                                      false);
+                gbfeat.AddQual(CGBQual::eType_codon_start,
+                               NStr::IntToString(region.GetFrame()));
             }
             if (region.IsSetCode()) {
                 iterate (CGenetic_code::Tdata, it, region.GetCode().Get()) {
-                    if ((*it)->IsId()) {
+                    if ((*it)->IsId()  &&  (*it)->GetId() != 1) {
                         // XXX -- deal with other types
-                        WriteFeatureQualifier("transl_table",
-                                              NStr::IntToString
-                                              ((*it)->GetId()),
-                                              false);
+                        gbfeat.AddQual(CGBQual::eType_transl_table,
+                                       NStr::IntToString((*it)->GetId()));
                     }
                 }
             }
@@ -1510,10 +1589,11 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                         break;
                     }
                     CNcbiOstrstream oss;
-                    oss << "/transl_except=(pos:";
+                    oss << "(pos:";
                     FormatFeatureLocation((*it)->GetLoc(), seq, oss);
                     oss << ",aa:" << abbrev << ')';
-                    WriteFeatureQualifier(CNcbiOstrstreamToString(oss));
+                    gbfeat.AddQual(CGBQual::eType_transl_except,
+                                   CNcbiOstrstreamToString(oss));
                 }
             }
             break;
@@ -1521,7 +1601,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
 
         case CSeqFeatData::e_Prot: // Protein
             if (m_Format == eFormat_Genpept) {
-                WriteProteinQualifiers((*feat)->GetData().GetProt());
+                s_AddProteinQualifiers(gbfeat, (*feat)->GetData().GetProt());
             }
             break;
 
@@ -1529,8 +1609,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         {
             const CRNA_ref& rna = (*feat)->GetData().GetRna();
             if (rna.IsSetExt()  &&  rna.GetExt().IsName()) {
-                WriteFeatureQualifier("note", rna.GetExt().GetName(),
-                                      true);
+                gbfeat.AddQual(CGBQual::eType_note, rna.GetExt().GetName());
             }
 
             switch (rna.GetType()) {
@@ -1561,20 +1640,21 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                     break;
                 }
                 CNcbiOstrstream oss;
-                oss << "/anticodon=(pos:";
+                oss << "(pos:";
                 FormatFeatureLocation(trna.GetAnticodon(), seq, oss);
                 oss << ",aa:" << abbrev << ')';
-                WriteFeatureQualifier(CNcbiOstrstreamToString(oss));
+                gbfeat.AddQual(CGBQual::eType_anticodon,
+                               CNcbiOstrstreamToString(oss));
                 break;
             }
             case CRNA_ref::eType_snoRNA:
-                WriteFeatureQualifier("/note=\"snoRNA\"");
+                gbfeat.AddQual(CGBQual::eType_note, "snoRNA");
                 break;
             default:
                 break;
             }
             if (rna.IsSetPseudo()  &&  rna.GetPseudo()) {
-                WriteFeatureQualifier("/pseudo");
+                gbfeat.AddQual(CGBQual::eType_pseudo);
             }
             break;
         }
@@ -1584,10 +1664,10 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                      = ConstBegin((*feat)->GetData().GetPub());
                  it;  ++it) {
                 if (it->IsSetSerial_number()) {
-                    WriteFeatureQualifier("/citation=["
-                                          + (NStr::IntToString
-                                             (it->GetSerial_number()))
-                                          + ']');
+                    gbfeat.AddQual(CGBQual::eType_citation,
+                                   '[' +
+                                   (NStr::IntToString(it->GetSerial_number()))
+                                   + ']');
                 }
                 // XXX - try to find citation if no serial number
             }
@@ -1598,29 +1678,27 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
             CNcbiOstrstream oss;
             oss << "origin: ";
             FormatFeatureLocation((*feat)->GetData().GetSeq(), seq, oss);
-            WriteFeatureQualifier("note", CNcbiOstrstreamToString(oss), true);
+            gbfeat.AddQual(CGBQual::eType_note, CNcbiOstrstreamToString(oss));
             break;
         }
         
         case CSeqFeatData::e_Imp:
             if ((*feat)->GetData().GetImp().IsSetDescr()) {
-                WriteFeatureQualifier("note",
-                                      (*feat)->GetData().GetImp().GetDescr(),
-                                      true);
+                gbfeat.AddQual(CGBQual::eType_note,
+                                     (*feat)->GetData().GetImp().GetDescr());
             }
             break;
 
         case CSeqFeatData::e_Region:
             // XXX -- some of these (LTR) should be feature names
-            WriteFeatureQualifier("note", (*feat)->GetData().GetRegion(),
-                                  true);
+            gbfeat.AddQual(CGBQual::eType_note, (*feat)->GetData().GetRegion());
             break;
 
         case CSeqFeatData::e_Bond:
         {
             string type = CSeqFeatData::GetTypeInfo_enum_EBond()
                 ->FindName((*feat)->GetData().GetBond(), true);
-            WriteFeatureQualifier("note", type + " bond", true);
+            gbfeat.AddQual(CGBQual::eType_note, type + " bond");
             break;
         }
 
@@ -1633,16 +1711,16 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
             case CSeqFeatData::eSite_transit_peptide:
                 break;
             case CSeqFeatData::eSite_metal_binding:
-                WriteFeatureQualifier("/bound_moiety=\"metal\"");
+                gbfeat.AddQual(CGBQual::eType_bound_moiety, "metal");
                 break;
             case CSeqFeatData::eSite_lipid_binding:
-                WriteFeatureQualifier("/bound_moiety=\"lipid\"");
+                gbfeat.AddQual(CGBQual::eType_bound_moiety, "lipid");
                 break;
             default:
             {
                 string type = CSeqFeatData::GetTypeInfo_enum_ESite()
                     ->FindName((*feat)->GetData().GetSite(), true);
-                WriteFeatureQualifier("note", type + " site", true);
+                gbfeat.AddQual(CGBQual::eType_note, type + " site");
                 break;
             }
             }
@@ -1653,17 +1731,16 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
             const CRsite_ref& rsite = (*feat)->GetData().GetRsite();
             switch (rsite.Which()) {
             case CRsite_ref::e_Str:
-                WriteFeatureQualifier("note",
-                                      "Restriction site: " + rsite.GetStr(),
-                                      true);
+                gbfeat.AddQual(CGBQual::eType_note,
+                               "Restriction site: " + rsite.GetStr());
                 break;
             case CRsite_ref::e_Db:
-                WriteFeatureQualifier("/note=\"Restriction site\"");
-                WriteFeatureQualifier("db_xref", s_FormatDbtag(rsite.GetDb()),
-                                      true);
+                gbfeat.AddQual(CGBQual::eType_note, "Restriction site");
+                gbfeat.AddQual(CGBQual::eType_db_xref,
+                               s_FormatDbtag(rsite.GetDb()));
                 break;
             default:
-                WriteFeatureQualifier("/note=\"Restriction site\"");
+                gbfeat.AddQual(CGBQual::eType_note, "Restriction site");
             }
             break;
         }
@@ -1671,7 +1748,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         case CSeqFeatData::e_Txinit: // promoter
         {
             const CTxinit& txinit = (*feat)->GetData().GetTxinit();
-            WriteFeatureQualifier("function", txinit.GetName(), true);
+            gbfeat.AddQual(CGBQual::eType_function, txinit.GetName());
             // XXX - should turn rest of data into notes
             break;
         }
@@ -1684,25 +1761,24 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         {
             string type = CSeqFeatData::GetTypeInfo_enum_EPsec_str()
                 ->FindName((*feat)->GetData().GetPsec_str(), true);
-            WriteFeatureQualifier("note", "secondary structure: " + type,
-                                  true);
+            gbfeat.AddQual(CGBQual::eType_note,
+                           "secondary structure: " + type);
             break;
         }
 
         case CSeqFeatData::e_Non_std_residue:
-            WriteFeatureQualifier("note",
-                                  "non-standard residue: "
-                                  + (*feat)->GetData().GetNon_std_residue(),
-                                  true);
+            gbfeat.AddQual(CGBQual::eType_note,
+                           "non-standard residue: "
+                           + (*feat)->GetData().GetNon_std_residue());
             break;
 
         case CSeqFeatData::e_Het:
-            WriteFeatureQualifier("bound_moiety",
-                                  (*feat)->GetData().GetHet().Get(), true);
+            gbfeat.AddQual(CGBQual::eType_bound_moiety,
+                           (*feat)->GetData().GetHet().Get());
             break;
 
         case CSeqFeatData::e_Biosrc:
-            WriteSourceQualifiers((*feat)->GetData().GetBiosrc());
+            // WriteSourceQualifiers((*feat)->GetData().GetBiosrc());
             break;
 
         default:
@@ -1717,10 +1793,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                                                        CSeqFeatData::e_Gene);
                      gene;  ++gene) {
                     if (gene->GetData().GetGene().IsSetLocus()) {
-                        WriteFeatureQualifier("gene",
-                                              gene->GetData().GetGene()
-                                              .GetLocus(),
-                                              true);
+                        gbfeat.AddQual(CGBQual::eType_gene,
+                                       gene->GetData().GetGene().GetLocus());
                     }
                 }
             } catch (exception& e) {
@@ -1737,12 +1811,12 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                 BREAK(it);
             }
             if (!fuzzy) {
-                WriteFeatureQualifier("/partial");
+                gbfeat.AddQual(CGBQual::eType_partial);
             }
         }
 
         if ((*feat)->IsSetComment()) {
-            WriteFeatureQualifier("note", (*feat)->GetComment(), true);
+            gbfeat.AddQual(CGBQual::eType_note, (*feat)->GetComment());
         }
 
         if ((*feat)->IsSetProduct()  &&  m_Format != eFormat_Genpept) {
@@ -1751,7 +1825,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                 for (CFeat_CI prot = m_Scope.BeginFeat((*feat)->GetProduct(),
                                                        CSeqFeatData::e_Prot);
                      prot;  ++prot) {
-                    WriteProteinQualifiers(prot->GetData().GetProt());
+                    s_AddProteinQualifiers(gbfeat, prot->GetData().GetProt());
                 }
             } catch (exception& e) {
                 ERR_POST(Warning << e.what());
@@ -1763,17 +1837,13 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                 const CTextseq_id* tsid;
                 iterate(CBioseq::TId, it, prot_seq.GetId()) {
                     if ((tsid = (*it)->GetTextseq_Id()) != NULL) {
-                        WriteFeatureQualifier("protein_id",
-                                              tsid->GetAccession() + '.'
-                                              + (NStr::IntToString
-                                                 (tsid->GetVersion())),
-                                              true);
+                        gbfeat.AddQual(CGBQual::eType_protein_id,
+                                       tsid->GetAccession() + '.' +
+                                       (NStr::IntToString(tsid->GetVersion())));
                     } else if ((*it)->IsGi()) {
-                        WriteFeatureQualifier("db_xref",
-                                              "GI:"
-                                              + (NStr::IntToString
-                                                 ((*it)->GetGi())),
-                                              true);
+                        gbfeat.AddQual(CGBQual::eType_db_xref,
+                                       "GI:" +
+                                       (NStr::IntToString((*it)->GetGi())));
                     }
                 }
                 {{
@@ -1784,20 +1854,22 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                     for (SIZE_TYPE n = 0; n < vec.size(); n++) {
                         data[n] = vec[n];
                     }
-                    WriteFeatureQualifier("translation", data, true);
+                    gbfeat.AddQual(CGBQual::eType_translation, data);
                 }}
             }}
         }
 
         if ((*feat)->IsSetQual()) {
             iterate (CSeq_feat::TQual, it, (*feat)->GetQual()) {
-                WriteFeatureQualifier((*it)->GetQual(), (*it)->GetVal(),
-                                      s_QuotedQualifierP((*it)->GetQual()));
+                gbfeat.AddQual(static_cast<CGBQual::EType>
+                               (CGBQual::GetTypeInfo_enum_EType()
+                                ->FindValue((*it)->GetQual())),
+                               (*it)->GetVal());
             }
         }
 
         if ((*feat)->IsSetTitle()) {
-            WriteFeatureQualifier("label", (*feat)->GetTitle(), false);
+            gbfeat.AddQual(CGBQual::eType_label, (*feat)->GetTitle());
         }
 
         if ((*feat)->IsSetCit()) {
@@ -1805,10 +1877,10 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                      = ConstBegin((*feat)->GetCit());
                  it;  ++it) {
                 if (it->IsSetSerial_number()) {
-                    WriteFeatureQualifier("/citation=["
-                                          + (NStr::IntToString
-                                             (it->GetSerial_number()))
-                                          + ']');
+                    gbfeat.AddQual(CGBQual::eType_citation,
+                                  '[' +
+                                   (NStr::IntToString(it->GetSerial_number()))
+                                   + ']');
                 }
                 // otherwise, track down...could be in descs OR
                 // elsewhere in the feature table. :-/
@@ -1818,27 +1890,30 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         if ((*feat)->IsSetExp_ev()) {
             switch ((*feat)->GetExp_ev()) {
             case CSeq_feat::eExp_ev_experimental:
-                WriteFeatureQualifier("/evidence=experimental");
+                gbfeat.AddQual(CGBQual::eType_evidence, "experimental");
                 break;
             case CSeq_feat::eExp_ev_not_experimental:
-                WriteFeatureQualifier("/evidence=not_experimental");
+                gbfeat.AddQual(CGBQual::eType_evidence, "not_experimental");
                 break;
             }
         }
 
         if ((*feat)->IsSetDbxref()) {
             iterate (CSeq_feat::TDbxref, it, (*feat)->GetDbxref()) {
-                WriteFeatureQualifier("db_xref", s_FormatDbtag(**it), true);
+                gbfeat.AddQual(CGBQual::eType_db_xref, s_FormatDbtag(**it));
             }
         }
 
         if ((*feat)->IsSetPseudo()  &&  (*feat)->GetPseudo()) {
-            WriteFeatureQualifier("/pseudo");
+            gbfeat.AddQual(CGBQual::eType_pseudo);
         }
 
         if ((*feat)->IsSetExcept_text()) {
-            WriteFeatureQualifier("exception", (*feat)->GetExcept_text(),
-                                  true);
+            gbfeat.AddQual(CGBQual::eType_exception, (*feat)->GetExcept_text());
+        }
+
+        iterate (CFeature::TQuals, qual, gbfeat.GetQuals()) {
+            WriteFeatureQualifier(qual->ToString());
         }
     }
 
@@ -1846,245 +1921,259 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
 }
 
 
-void CGenbankWriter::WriteProteinQualifiers(const CProt_ref& prot)
+static void s_AddProteinQualifiers(CFeature& gbfeat, const CProt_ref& prot)
 {
     if (prot.IsSetName()) {
         iterate (CProt_ref::TName, it, prot.GetName()) {
-            WriteFeatureQualifier("product", *it, true);
+            gbfeat.AddQual(CGBQual::eType_product, *it);
         }
     }
     
     if (prot.IsSetDesc()) {
-        WriteFeatureQualifier("function", prot.GetDesc(), true);
+        gbfeat.AddQual(CGBQual::eType_function, prot.GetDesc());
     }
     
     if (prot.IsSetEc()) {
         iterate (CProt_ref::TEc, it, prot.GetEc()) {
-            WriteFeatureQualifier("EC_number", *it, true);
+            gbfeat.AddQual(CGBQual::eType_EC_number, *it);
         }
     }
 
     if (prot.IsSetActivity()) {
         iterate (CProt_ref::TActivity, it, prot.GetActivity()) {
-            WriteFeatureQualifier("function", *it, true);
+            gbfeat.AddQual(CGBQual::eType_prot_activity, *it);
         }
     }
 
     if (prot.IsSetDb()) {
         iterate (CProt_ref::TDb, it, prot.GetDb()) {
-            WriteFeatureQualifier("db_xref", s_FormatDbtag(**it), true);
+            gbfeat.AddQual(CGBQual::eType_db_xref, s_FormatDbtag(**it));
         }
     }
 }
 
 
-void CGenbankWriter::WriteSourceQualifiers(const COrg_ref& org)
+static TGBSQuals s_SourceQualifiers(const COrg_ref& org)
 {
+    TGBSQuals quals;
+
     if (org.IsSetTaxname()) {
-        WriteFeatureQualifier("organism", org.GetTaxname(), true);
+        quals.insert(CGBSQual(CGBSQual::eType_organism, org.GetTaxname()));
     } else if (org.IsSetCommon()) {
-        WriteFeatureQualifier("organism", org.GetCommon(), true);
+        quals.insert(CGBSQual(CGBSQual::eType_organism, org.GetCommon()));
     }
     
 
     if (org.IsSetMod()) {
         iterate (COrg_ref::TMod, it, org.GetMod()) {
-            WriteFeatureQualifier("note", *it, true);
+            quals.insert(CGBSQual(CGBSQual::eType_note, *it));
         }
     }
 
     if (org.IsSetDb()) {
         iterate (COrg_ref::TDb, it, org.GetDb()) {
-            WriteFeatureQualifier("db_xref", s_FormatDbtag(**it), true);
+            quals.insert(CGBSQual(CGBSQual::eType_db_xref,
+                                  s_FormatDbtag(**it)));
         }
     }
 
     if (org.IsSetOrgname() && org.GetOrgname().IsSetMod()) {
         iterate (COrgName::TMod, it, org.GetOrgname().GetMod()) {
+            CGBSQual::EType qual_type;
+            string tag;
             switch ((*it)->GetSubtype()) {
             case COrgMod::eSubtype_strain:
-                WriteFeatureQualifier("strain", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_strain;
                 break;
             case COrgMod::eSubtype_substrain:
-                WriteFeatureQualifier("sub_strain", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_sub_strain;
                 break;
             case COrgMod::eSubtype_variety:
-                WriteFeatureQualifier("variety", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_variety;
                 break;
             case COrgMod::eSubtype_serotype:
-                WriteFeatureQualifier("serotype", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_serotype;
                 break;
             case COrgMod::eSubtype_cultivar:
-                WriteFeatureQualifier("cultivar", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_cultivar;
                 break;
             case COrgMod::eSubtype_isolate:
-                WriteFeatureQualifier("isolate", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_isolate;
                 break;
             case COrgMod::eSubtype_nat_host:
-                WriteFeatureQualifier("specific_host", (*it)->GetSubname(),
-                                      true);
+                qual_type = CGBSQual::eType_specific_host;
                 break;
             case COrgMod::eSubtype_sub_species:
-                WriteFeatureQualifier("sub_species", (*it)->GetSubname(),
-                                      true);
+                qual_type = CGBSQual::eType_sub_species;
                 break;
             case COrgMod::eSubtype_specimen_voucher:
-                WriteFeatureQualifier("specimen_voucher", (*it)->GetSubname(),
-                                      true);
+                qual_type = CGBSQual::eType_specimen_voucher;
                 break;
             case COrgMod::eSubtype_other:
-                WriteFeatureQualifier("note", (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_note;
                 break;
             default:
-                string type = COrgMod::GetTypeInfo_enum_ESubtype()
-                    ->FindName((*it)->GetSubtype(), true);
-                WriteFeatureQualifier("note",
-                                      type + ": " + (*it)->GetSubname(), true);
+                qual_type = CGBSQual::eType_note;
+                tag = (COrgMod::GetTypeInfo_enum_ESubtype()
+                       ->FindName((*it)->GetSubtype(), true)) + ": ";
             }
+            quals.insert(CGBSQual(qual_type, tag + (*it)->GetSubname()));
         }
     }
+    return quals;
 }
 
 
-void CGenbankWriter::WriteSourceQualifiers(const CBioSource& source)
+static TGBSQuals s_SourceQualifiers(const CBioSource& source)
 {
-    WriteSourceQualifiers(source.GetOrg());
+    TGBSQuals quals = s_SourceQualifiers(source.GetOrg());
 
     if (source.IsSetGenome()) {
         switch (source.GetGenome()) {
         case CBioSource::eGenome_chloroplast:
-            WriteFeatureQualifier("/organelle=\"plastid:chloroplast\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "plastid:chloroplast"));
             break;
         case CBioSource::eGenome_chromoplast:
-            WriteFeatureQualifier("/organelle=\"plastid:chromoplast\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "plastid:chromoplast"));
             break;
         case CBioSource::eGenome_kinetoplast:
-            WriteFeatureQualifier("/organelle=\"mitochondrion:kinetoplast\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "mitochondrion:kinetoplast"));
             break;
         case CBioSource::eGenome_mitochondrion:
-            WriteFeatureQualifier("/organelle=\"mitochondrion\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle, "mitochondrion"));
             break;
         case CBioSource::eGenome_plastid:
-            WriteFeatureQualifier("/organelle=\"plastid\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle, "plastid"));
             break;
         case CBioSource::eGenome_macronuclear:
-            WriteFeatureQualifier("/macronuclear");
+            quals.insert(CGBSQual(CGBSQual::eType_macronuclear));
             break;
         case CBioSource::eGenome_cyanelle:
-            WriteFeatureQualifier("/organelle=\"plastid:cyanelle\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "plastid:cyanelle"));
             break;
         case CBioSource::eGenome_proviral:
-            WriteFeatureQualifier("/proviral");
+            quals.insert(CGBSQual(CGBSQual::eType_proviral));
             break;
         case CBioSource::eGenome_virion:
-            WriteFeatureQualifier("/virion");
+            quals.insert(CGBSQual(CGBSQual::eType_virion));
             break;
         case CBioSource::eGenome_nucleomorph:
-            WriteFeatureQualifier("/organelle=\"nucleomorph\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle, "nucleomorph"));
             break;
         case CBioSource::eGenome_apicoplast:
-            WriteFeatureQualifier("/organelle=\"plastid:apicoplast\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "plastid:apicoplast"));
             break;
         case CBioSource::eGenome_leucoplast:
-            WriteFeatureQualifier("/organelle=\"plastid:leucoplast\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "plastid:leucoplast"));
             break;
         case CBioSource::eGenome_proplastid:
-            WriteFeatureQualifier("/organelle=\"plastid:proplastid\"");
+            quals.insert(CGBSQual(CGBSQual::eType_organelle,
+                                  "plastid:proplastid"));
             break;
         case CBioSource::eGenome_plasmid:
         case CBioSource::eGenome_transposon:
+        case CBioSource::eGenome_insertion_seq:
             break;
             // tag requires a value; hope for corresponding subsource.
         default:
             string type = CBioSource::GetTypeInfo_enum_EGenome()
                 ->FindName(source.GetGenome(), true);
-            WriteFeatureQualifier("note", "genome: " + type, true);
+            quals.insert(CGBSQual(CGBSQual::eType_note, "genome: " + type));
             break;
         }
     }
     
     if (source.IsSetSubtype()) {
         iterate (CBioSource::TSubtype, it, source.GetSubtype()) {
+            CGBSQual::EType qual_type;
+            string tag;
             switch ((*it)->GetSubtype()) {
             case CSubSource::eSubtype_chromosome:
-                WriteFeatureQualifier("chromosome", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_chromosome;
                 break;
             case CSubSource::eSubtype_map:
-                WriteFeatureQualifier("map", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_map;
                 break;
             case CSubSource::eSubtype_clone:
-                WriteFeatureQualifier("clone", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_clone;
                 break;
             case CSubSource::eSubtype_subclone:
-                WriteFeatureQualifier("sub_clone", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_sub_clone;
                 break;
             case CSubSource::eSubtype_haplotype:
-                WriteFeatureQualifier("haplotype", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_haplotype;
                 break;
             case CSubSource::eSubtype_sex:
-                WriteFeatureQualifier("sex", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_sex;
                 break;
             case CSubSource::eSubtype_cell_line:
-                WriteFeatureQualifier("cell_line", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_cell_line;
                 break;
             case CSubSource::eSubtype_cell_type:
-                WriteFeatureQualifier("cell_type", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_cell_type;
                 break;
             case CSubSource::eSubtype_tissue_type:
-                WriteFeatureQualifier("tissue_type", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_tissue_type;
                 break;
             case CSubSource::eSubtype_clone_lib:
-                WriteFeatureQualifier("clone_lib", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_clone_lib;
                 break;
             case CSubSource::eSubtype_dev_stage:
-                WriteFeatureQualifier("dev_stage", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_dev_stage;
                 break;
             case CSubSource::eSubtype_frequency:
-                WriteFeatureQualifier("frequency", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_frequency;
                 break;
             case CSubSource::eSubtype_germline:
-                WriteFeatureQualifier("/germline");
-                break;
+                quals.insert(CGBSQual(CGBSQual::eType_germline));
+                continue;
             case CSubSource::eSubtype_rearranged:
-                WriteFeatureQualifier("/rearranged");
-                break;
+                quals.insert(CGBSQual(CGBSQual::eType_rearranged));
+                continue;
             case CSubSource::eSubtype_lab_host:
-                WriteFeatureQualifier("lab_host", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_lab_host;
                 break;
             case CSubSource::eSubtype_pop_variant:
-                WriteFeatureQualifier("pop_variant", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_pop_variant;
                 break;
             case CSubSource::eSubtype_tissue_lib:
-                WriteFeatureQualifier("tissue_lib", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_tissue_lib;
                 break;
             case CSubSource::eSubtype_plasmid_name:
-                WriteFeatureQualifier("plasmid", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_plasmid;
                 break;
             case CSubSource::eSubtype_transposon_name:
-                WriteFeatureQualifier("transposon", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_transposon;
                 break;
             case CSubSource::eSubtype_insertion_seq_name:
-                WriteFeatureQualifier("insertion_seq", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_insertion_seq;
                 break;
             case CSubSource::eSubtype_country:
-                WriteFeatureQualifier("country", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_country;
                 break;
-                // ...
             case COrgMod::eSubtype_other:
-                WriteFeatureQualifier("note", (*it)->GetName(), true);
+                qual_type = CGBSQual::eType_note;
                 break;
             default:
-                string type = CSubSource::GetTypeInfo_enum_ESubtype()
-                    ->FindName((*it)->GetSubtype(), true);
-                WriteFeatureQualifier("note", type + ": " + (*it)->GetName(),
-                                      true);
+                qual_type = CGBSQual::eType_note;
+                tag = (CSubSource::GetTypeInfo_enum_ESubtype()
+                       ->FindName((*it)->GetSubtype(), true)) + ": ";
             }
+            quals.insert(CGBSQual(qual_type, tag + (*it)->GetName()));
         }
     }
 
     if (source.IsSetIs_focus()) {
-        WriteFeatureQualifier("/focus");
+        quals.insert(CGBSQual(CGBSQual::eType_focus));
     }
+
+    return quals;
 }
 
 
@@ -2536,24 +2625,6 @@ void CGenbankWriter::WriteFeatureLocation(const string& name,
 void CGenbankWriter::WriteFeatureQualifier(const string& qual)
 {
     Wrap("", qual, sm_FeatureNameIndent + sm_FeatureNameWidth);
-}
-
-
-void CGenbankWriter::WriteFeatureQualifier(const string& name,
-                                           const string& value, bool quote)
-{
-    if (quote) {
-        // surround with double-quotes; double all internal double-quotes.
-        string text = '/' + name + "=\"";
-        SIZE_TYPE pos = 0, quote_pos;
-        while ((quote_pos = value.find('\"', pos)) != NPOS) {
-            text += value.substr(pos, quote_pos - pos) + '\"';
-            pos = quote_pos;
-        }
-        WriteFeatureQualifier(text + value.substr(pos) + '\"');
-    } else {
-        WriteFeatureQualifier('/' + name + '=' + value);
-    }
 }
 
 
