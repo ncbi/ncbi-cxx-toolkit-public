@@ -121,6 +121,7 @@ struct SThreadData
     string      request;
     string      auth;
     string      queue;
+    string      answer;
 
     SJS_Request req;
 };
@@ -170,6 +171,8 @@ public:
     void ProcessSubmit(CSocket& sock, SThreadData& tdata);
     void ProcessCancel(CSocket& sock, SThreadData& tdata);
     void ProcessStatus(CSocket& sock, SThreadData& tdata);
+    void ProcessGet(CSocket& sock, SThreadData& tdata);
+    void ProcessPut(CSocket& sock, SThreadData& tdata);
 
 private:
 
@@ -322,14 +325,6 @@ void CNetScheduleServer::Process(SOCK sock)
             if (req.req_type == eQuitSession) {
                 break;
             }
-/*
-            CNetSchedule_Key jkey;
-            if (req.req_type != eSubmitJob ||
-                req.req_type != eError) {
-
-                CNetSchedule_ParseJobKey(&jkey, req.job_key_str);
-            }
-*/
             
             switch (req.req_type) {
             case eSubmitJob:
@@ -342,7 +337,11 @@ void CNetScheduleServer::Process(SOCK sock)
                 ProcessStatus(socket, *tdata);
                 break;
             case eGetJob:
+                ProcessGet(socket, *tdata);
+                break;
             case ePutJobResult:
+                ProcessPut(socket, *tdata);
+                break;
             case eReturnJob:
             case eShutdown:
                 SetShutdownFlag();
@@ -364,11 +363,8 @@ void CNetScheduleServer::Process(SOCK sock)
 
         // read trailing input (see netcached.cpp for more comments on "why?")
         STimeout to; to.sec = to.usec = 0;
-        char buf[1024];
         socket.SetTimeout(eIO_Read, &to);
-        size_t n_read;
-        socket.Read(buf, sizeof(buf), &n_read);
-
+        socket.Read(NULL, 1024);
     } 
     catch (CNetScheduleException &ex)
     {
@@ -420,11 +416,58 @@ void CNetScheduleServer::ProcessStatus(CSocket& sock, SThreadData& tdata)
 
     unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
     CNetScheduleClient::EJobStatus status = m_QueueDB->GetStatus(job_id);
+    char szBuf[kNetScheduleMaxDataSize * 2];
     int st = (int) status;
-    char szBuf[256];
+
+    if (status == CNetScheduleClient::eDone) {
+        CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+        int ret_code;
+        bool b = queue.GetOutput(job_id, &ret_code, &tdata.req.output);
+
+        if (b) {
+            char szBuf[kNetScheduleMaxDataSize * 2];
+            sprintf(szBuf, 
+                    "%i %i \"%s\"", st, ret_code, tdata.req.output.c_str());
+            WriteMsg(sock, "OK:", szBuf);
+        } else {
+            st = (int)CNetScheduleClient::eJobNotFound;
+        }
+    }
+
     sprintf(szBuf, "%i", st);
     WriteMsg(sock, "OK:", szBuf);
 }
+
+void CNetScheduleServer::ProcessGet(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+    unsigned job_id;
+    unsigned client_address;
+    sock.GetPeerAddress(&client_address, 0, eNH_HostByteOrder);
+    queue.GetJob(client_address, &job_id, &req.input);
+    if (job_id) {
+        CNetSchedule_GenerateJobKey(&req.job_key_str, job_id, m_Host, GetPort());
+        tdata.answer = req.job_key_str;
+        tdata.answer.append(" \"");
+        tdata.answer.append(req.input);
+        tdata.answer.append("\"");
+        WriteMsg(sock, "OK:", tdata.answer);
+    } else {
+        WriteMsg(sock, "OK:", kEmptyStr);
+    }
+}
+
+void CNetScheduleServer::ProcessPut(CSocket& sock, SThreadData& tdata)
+{
+    SJS_Request& req = tdata.req;
+    CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
+
+    unsigned job_id = CNetSchedule_GetJobId(req.job_key_str);
+    queue.PutResult(job_id, req.job_return_code, req.output);
+    WriteMsg(sock, "OK:", kEmptyStr);
+}
+
 
 void CNetScheduleServer::x_WriteBuf(CSocket& sock,
                                     char*    buf,
@@ -486,9 +529,9 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         if (*s !='"') {
             NS_RETURN_ERROR("Misformed SUBMIT request")
         }
-        while (*s != '"') {
+        for (++s; *s != '"'; ++s) {
             NS_CHECKEND(s, "Misformed SUBMIT request")
-            req->job_key_str += *s;
+            req->input += *s;
         }
         return;
     }
@@ -556,7 +599,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
         if (*s !='"') {
             NS_RETURN_ERROR("Misformed PUT request")
         }
-        while (*s != '"') {
+        for (++s; *s != '"'; ++s) {
             NS_CHECKEND(s, "Misformed PUT request")
             req->output.push_back(*s);
         }
@@ -870,6 +913,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2005/02/10 19:59:40  kuznets
+ * Implemented GET and PUT
+ *
  * Revision 1.2  2005/02/09 18:56:42  kuznets
  * Implemented SUBMIT, CANCEL, STATUS, SHUTDOWN
  *
