@@ -305,8 +305,9 @@ public:
                  CArgKey ("PhiQuery"),      
                  COptDesc("Pattern Hit Initiated search expression."));
         
-        op.Local(m_FilterString,
+        op.Same (m_FilterString,
                  CUserOpt("filter_string"),
+                 CNetName("filter"),
                  CArgKey ("FilterString"),
                  COptDesc("Specifies the types of filtering to do."));
         
@@ -330,23 +331,6 @@ public:
                 
                 op.Remote(cutoff_opt, CNetName("cutoff"));
             }
-            
-            // Three cases:
-            // 1. User argument has a meaningful value: filter is used.
-            // 2. User argument is present, but empty: no filter is used.
-            // 3. User argument is not present: default to "L;"
-            
-            TOptString filter_string;
-            
-            if (m_FilterString.Exists()) {
-                if (! m_FilterString.GetValue().empty()) {
-                    filter_string = m_FilterString;
-                }
-            } else {
-                filter_string = TOptString("L;");
-            }
-            
-            op.Remote(filter_string, CNetName("filter"));
         }
     }
     
@@ -391,6 +375,10 @@ private:
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2003/11/13 22:59:18  bealer
+ * - Remove 'default' handling from filter string option - convert into a
+ *   type 'Same' parameter.
+ *
  * Revision 1.2  2003/11/10 23:10:10  bealer
  * - Add filter_string option w/ default to "L;"
  *
