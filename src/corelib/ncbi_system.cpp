@@ -29,26 +29,25 @@
  *
  */
 
+#include <connect/ncbi_core.h>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_system.hpp>
-#include <corelib/ncbifile.hpp>
 
-#ifdef NCBI_OS_MAC
+#if defined(NCBI_OS_MAC)
 #  include <OpenTransport.h>
 #endif
 
-#ifdef NCBI_OS_UNIX
+#if defined(NCBI_OS_UNIX)
 #  include <sys/time.h>
 #  include <sys/resource.h>
 #  include <sys/times.h>
-#  include <errno.h>
 #  include <limits.h>
 #  include <unistd.h>
 #  define USE_SETHEAPLIMIT
 #  define USE_SETCPULIMIT
 #endif
 
-#ifdef NCBI_OS_DARWIN
+#if defined(NCBI_OS_DARWIN)
 extern "C" {
 #  if defined(NCBI_COMPILER_MW_MSL)
 #    include <ncbi_mslextras.h>
@@ -59,14 +58,13 @@ extern "C" {
 }
 #endif
 
-#ifdef USE_SETCPULIMIT
+#if defined(USE_SETCPULIMIT)
 #  include <signal.h>
 #endif
 
 
 BEGIN_NCBI_SCOPE
 
-//---------------------------------------------------------------------------
 
 // MIPSpro 7.3 workarounds:
 //   1) it declares set_new_handler() in both global and std:: namespaces;
@@ -79,9 +77,6 @@ extern "C" {
     static void s_SignalHandler(int sig);
 }
 #endif  /* NCBI_COMPILER_MIPSPRO */
-
-
-//---------------------------------------------------------------------------
 
 
 #ifdef NCBI_OS_UNIX
@@ -102,8 +97,8 @@ static TLimitsPrintParameter s_PrintHandlerParam = 0;
 #endif
 
 
-/* Routine to be called at the exit from application
- */
+// Routine to be called at the exit from application
+//
 static void s_ExitHandler(void)
 {
     CFastMutexGuard LOCK(s_ExitHandler_Mutex);
@@ -120,13 +115,13 @@ static void s_ExitHandler(void)
 
         switch ( s_ExitCode ) {
         case eLEC_Memory: {
-                limit_size = s_HeapLimit;
-                break;
-            }
+            limit_size = s_HeapLimit;
+            break;
+        }
         case eLEC_Cpu: {
-                limit_size = s_CpuTimeLimit;
-                break;
-            }
+            limit_size = s_CpuTimeLimit;
+            break;
+        }
         default:
             return;
         }
@@ -138,14 +133,14 @@ static void s_ExitHandler(void)
 
     // Standard dump
     switch ( s_ExitCode ) {
-
+        
     case eLEC_Memory:
         {
             ERR_POST("Memory heap limit exceeded in allocating memory " \
                      "with operator new (" << s_HeapLimit << " bytes)");
             break;
         }
-
+        
     case eLEC_Cpu: 
         {
             ERR_POST("CPU time limit exceeded (" << s_CpuTimeLimit << " sec)");
@@ -179,8 +174,8 @@ static void s_ExitHandler(void)
 }
 
 
-/* Set routine to be called at the exit from application
- */
+// Set routine to be called at the exit from application
+//
 static bool s_SetExitHandler(TLimitsPrintHandler handler, 
                              TLimitsPrintParameter parameter)
 
@@ -210,9 +205,8 @@ static bool s_SetExitHandler(TLimitsPrintHandler handler,
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  SetHeapLimit
+// SetHeapLimit
 //
-
 
 #ifdef USE_SETHEAPLIMIT
 
@@ -269,18 +263,15 @@ bool SetHeapLimit(size_t max_heap_size,
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  SetCpuTimeLimit
+// SetCpuTimeLimit
 //
-
 
 #ifdef USE_SETCPULIMIT
 
 static void s_SignalHandler(int _DEBUG_ARG(sig))
 {
     _ASSERT(sig == SIGXCPU);
-
     _VERIFY(signal(SIGXCPU, SIG_IGN) != SIG_ERR);
-
     s_ExitCode = eLEC_Cpu;
     exit(-1);
 }
@@ -336,10 +327,8 @@ bool SetCpuTimeLimit(size_t max_cpu_time,
 
 /////////////////////////////////////////////////////////////////////////////
 //
-//  GetCpuCount
+// GetCpuCount
 //
-
-/*  Return number of active CPUs */
 
 unsigned int GetCpuCount(void)
 {
@@ -411,96 +400,15 @@ void SleepSec(unsigned long sec)
 }
 
 
-TPid GetPID(void)
-{
-#ifdef NCBI_OS_UNIX
-    return getpid();
-#elif defined(NCBI_OS_MSWIN)
-    return GetCurrentProcessId();
-#else
-#  error How do I get my PID?
-#endif
-}
-
-
-CPIDGuard::CPIDGuard(const string& filename, const string& dir)
-    : m_OldPID(0)
-{
-    string real_dir;
-    CDirEntry::SplitPath(filename, &real_dir, 0, 0);
-    if (real_dir.empty()) {
-        if (dir.empty()) {
-#ifdef NCBI_OS_UNIX
-            real_dir = "/tmp";
-#else
-            real_dir = CDir::GetHome();
-#endif
-        } else {
-            real_dir = dir;
-        }
-        m_Path = CDirEntry::MakePath(real_dir, filename);
-    } else {
-        m_Path = filename;
-    }
-
-    {{
-        CNcbiIfstream in(m_Path.c_str());
-        if (in.good()) {
-            in >> m_OldPID;
-            bool alive = true; // be conservative
-#ifdef NCBI_OS_UNIX
-            if ( kill(m_OldPID, 0) < 0  &&  errno != EPERM ) {
-                alive = false;
-            }
-#elif defined(NCBI_OS_MSWIN)
-            DWORD status;
-            HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, m_OldPID);
-            GetExitCodeProcess(h, &status);
-            CloseHandle(h);
-            if (status != STILL_ACTIVE) {
-                alive = false;
-            }
-#endif
-            if (alive) {
-                NCBI_THROW2(CPIDGuardException, eStillRunning,
-                            "Process is still running", m_OldPID);
-            }
-        }
-    }}
-    UpdatePID();
-}
-
-
-void CPIDGuard::Release(void)
-{
-    if ( !m_Path.empty() ) {
-        CDirEntry(m_Path).Remove();
-        m_Path.erase();
-    }
-}
-
-
-void CPIDGuard::UpdatePID(TPid pid) {
-    if (pid == 0) {
-        pid = GetPID();
-    }
-    CNcbiOfstream out(m_Path.c_str(), IOS_BASE::out | IOS_BASE::trunc);
-    if (out.good()) {
-        out << pid << endl;
-    } else {
-        NCBI_THROW(CPIDGuardException, eCouldntOpen,
-                   "Unable to open PID file " + m_Path + " for writing: "
-                   + strerror(errno));
-    }
-}
-
-
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/09/25 16:54:07  ivanov
+ * CPIDGuard class moved to ncbi_process.cpp.
+ *
  * Revision 1.32  2003/09/23 21:13:53  ucko
  * +CPIDGuard::UpdatePID (code mostly factored out of constructor)
  *
