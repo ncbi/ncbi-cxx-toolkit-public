@@ -88,6 +88,12 @@ void CTestApp::Init(void)
                             "GI id of the Seq-Entry to fetch",
                             CArgDescriptions::eInteger,
                             "29791621");
+    arg_desc->AddDefaultKey("cycles", "RandomCycles",
+                            "repeat random test 'cycles' times",
+                            CArgDescriptions::eInteger, "20");
+    arg_desc->AddDefaultKey("seed", "RandomSeed",
+                            "Force random seed",
+                            CArgDescriptions::eInteger, "0");
 
     // Program description
     string prog_description = "Test for CSeqVector_CI\n";
@@ -416,29 +422,31 @@ int CTestApp::Run(void)
 
     // Random access tests
     cout << "Testing random access" << endl;
-    srand((unsigned)time( NULL ));
+    unsigned int rseed = args["seed"].AsInteger();
+    int cycles = args["cycles"].AsInteger();
+    if (rseed == 0) {
+        rseed = (unsigned)time( NULL );
+    }
+    cout << "Testing random reading (seed: " << rseed
+         << ", cycles: " << cycles << ")... " << endl;
+    srand(rseed);
     vit = CSeqVector_CI(m_Vect);
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < cycles; ++i) {
         TSeqPos start = random(m_Vect.size());
         TSeqPos stop = random(m_Vect.size());
         switch (i % 3) {
         case 0:
-            cout << i << " - using iterator, "
-                 << start << " - " << stop << endl;
             x_TestIterate(vit, start, stop);
             break;
         case 1:
-            cout << i << " - using GetSeqData()"
-                 << start << " - " << stop << endl;
             x_TestGetData(vit, start, stop);
             break;
         case 2:
-            cout << i << " - using operator[]"
-                 << start << " - " << stop << endl;
             x_TestVector(start, stop);
             break;
         }
     }
+    cout << "OK" << endl;
 
     NcbiCout << "All tests passed" << NcbiEndl;
     return 0;
@@ -463,6 +471,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/07/09 18:49:33  grichenk
+* Added arguments (seed and cycles), default random cycles set to 20.
+*
 * Revision 1.2  2003/06/26 17:02:52  grichenk
 * Simplified output, decreased number of cycles.
 *
