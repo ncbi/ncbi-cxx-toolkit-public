@@ -25,6 +25,9 @@
  * Authors:  Anton Butanayev, Denis Vakatov
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/09/27 18:02:45  ivanov
+ * Fixed division at zero in test of speed CTime class on fast computers.
+ *
  * Revision 6.9  2001/07/23 15:51:46  ivanov
  * Changed test for work with DB-time formats
  *
@@ -564,18 +567,15 @@ static void s_TestGMTSpeedRun(string comment, CTime::ETimeZone tz,
     t = "03/31/2001 00:00:00"; 
 
     cout << "Minute add, "<< comment << endl;
+    cout << "Iterations  = " << kCount << endl;
 
     start = clock();
     for (long i = 0; i < kCount; i++) {
         t.AddMinute();
     }
-    cout << "End time    = " << t.AsString() << endl;
-//    _ASSERT(th.AsString() == "04/03/2001 00:01:00"); 
     finish = clock();
     duration = (double) (finish - start) / CLOCKS_PER_SEC;
     cout << "Duration    = " << duration << " sec." << endl;
-    cout << "Speed       = " << kCount/duration 
-         << " operations per second" << endl;
     cout << endl;
 }
 
