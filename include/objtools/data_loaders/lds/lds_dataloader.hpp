@@ -48,7 +48,7 @@ class CLDS_Database;
 // CDataLoader implementation for LDS.
 //
 
-class NCBI_XOBJMGR_DL_LDS_EXPORT CLDS_DataLoader : public CDataLoader
+class NCBI_XLOADER_LDS_EXPORT CLDS_DataLoader : public CDataLoader
 {
 public:
     // Construct dataloader, attach the external LDS database
@@ -78,6 +78,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/07/30 16:35:38  kuznets
+ * Fixed export macro NCBI_XLOADER_LDS_EXPORT
+ *
  * Revision 1.3  2003/06/18 18:47:53  kuznets
  * Minor change: LDS Dataloader can now own the LDS database.
  *
