@@ -156,34 +156,49 @@ Int4 LookupTableNew(const LookupTableOptions* opt,
 {
    BlastLookupTable* lookup = *lut = 
       (BlastLookupTable*) calloc(1, sizeof(BlastLookupTable));
+   const Int4 kAlphabetSize = ((is_protein == TRUE) ? BLASTAA_SIZE : BLASTNA_SIZE);
+   const Int4 kMinAGWordSize = 13;
 
    ASSERT(lookup != NULL);
 
-  if (is_protein) {
+ lookup->ag_scanning_mode = FALSE;  /* Set to TRUE if appropriate below. */ 
+ if (is_protein)
+ {
     Int4 i;
-
-    lookup->charsize = ilog2(opt->alphabet_size) + 1;
+    lookup->charsize = ilog2(kAlphabetSize) + 1;
     lookup->wordsize = opt->word_size;
 
     lookup->backbone_size = 0;
     for(i=0;i<lookup->wordsize;i++)
-        lookup->backbone_size |= (opt->alphabet_size - 1) << (i * lookup->charsize);
+        lookup->backbone_size |= (kAlphabetSize - 1) << (i * lookup->charsize);
     lookup->backbone_size += 1;
 
     lookup->mask = makemask(opt->word_size * lookup->charsize);
   } else {
      lookup->word_length = opt->word_size;
-     lookup->scan_step = opt->scan_step;
-     lookup->charsize = ilog2(opt->alphabet_size / COMPRESSION_RATIO); 
-     lookup->wordsize = 
-        (opt->word_size - MIN(lookup->scan_step,COMPRESSION_RATIO) + 1) 
-        / COMPRESSION_RATIO;
+     lookup->charsize = ilog2(kAlphabetSize/COMPRESSION_RATIO); 
+     if (!is_protein && opt->word_size >= kMinAGWordSize)  
+     {
+          lookup->scan_step = CalculateBestStride(opt->word_size, opt->variable_wordsize, 
+               opt->lut_type);
+          lookup->wordsize = (opt->word_size - MIN(lookup->scan_step,COMPRESSION_RATIO) + 1) 
+               / COMPRESSION_RATIO;
+          lookup->ag_scanning_mode = TRUE;
+     }
+     else
+     {    
+          lookup->scan_step = 0;
+          lookup->wordsize = (opt->word_size - COMPRESSION_RATIO + 1) / COMPRESSION_RATIO;
+     }
+
+
      lookup->reduced_wordsize = (lookup->wordsize >= 2) ? 2 : 1;
      lookup->backbone_size = 
        iexp(2,lookup->reduced_wordsize*lookup->charsize*COMPRESSION_RATIO);
+
      lookup->mask = lookup->backbone_size - 1;
   }
-  lookup->alphabet_size = opt->alphabet_size;
+  lookup->alphabet_size = kAlphabetSize;
   lookup->exact_matches=0;
   lookup->neighbor_matches=0;
   lookup->threshold = opt->threshold;
@@ -920,8 +935,9 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    PV_ARRAY_TYPE *pv_array = lookup->pv;
    Int4 total_hits = 0;
    Int4 compressed_wordsize, compressed_scan_step;
-   Boolean full_byte_scan = (lookup->scan_step % COMPRESSION_RATIO == 0);
    Int4 i;
+
+   ASSERT(lookup->scan_step > 0);
 
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;
@@ -932,7 +948,7 @@ Int4 BlastNaScanSubject_AG(const LookupTableWrap* lookup_wrap,
    
    /* NB: s in this function always points to the start of the word!
     */
-   if (full_byte_scan) {
+   if (lookup->scan_step % COMPRESSION_RATIO == 0) {  /* scan step is a multiple of four letters that fit into one byte. */
       Uint1* s_end = abs_start + subject->length/COMPRESSION_RATIO - 
          compressed_wordsize;
       for ( ; s <= s_end; s += compressed_scan_step) {

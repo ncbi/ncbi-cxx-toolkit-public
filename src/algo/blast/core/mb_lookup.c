@@ -40,6 +40,7 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_options.h>
 #include <algo/blast/core/blast_def.h>
 #include <algo/blast/core/mb_lookup.h>
+#include <algo/blast/core/lookup_util.h>
 #include "blast_inline.h"
 
 
@@ -539,14 +540,21 @@ Int2 MB_LookupTableNew(BLAST_SequenceBlk* query, BlastSeqLoc* location,
    }
 
 
-   /* Scan step must be set in lookup_options; even if it is not, still 
-      try to set it reasonably in mb_lt - it can't remain 0 */
-   if (lookup_options->scan_step)
-      mb_lt->scan_step = lookup_options->scan_step;
+   if (lookup_options->mb_template_length)
+   {
+        mb_lt->full_byte_scan = lookup_options->full_byte_scan;  /* Only applies to discontiguous megablast. */
+        /* The next two are not allowed in discontiguous megablast. */
+        mb_lt->ag_scanning_mode = FALSE;
+        mb_lt->variable_wordsize = FALSE; 
+        mb_lt->scan_step = 0;
+   }
    else
-      mb_lt->scan_step = COMPRESSION_RATIO;
-
-   mb_lt->full_byte_scan = (mb_lt->scan_step % COMPRESSION_RATIO == 0);
+   {
+        mb_lt->ag_scanning_mode = TRUE; /* FIXME, are there wordsize where this should be FALSE? */
+        mb_lt->scan_step = CalculateBestStride(lookup_options->word_size, lookup_options->variable_wordsize, 
+                  lookup_options->lut_type);
+        mb_lt->variable_wordsize = lookup_options->variable_wordsize;
+   }
 
    if ((mb_lt->hashtable = (Int4*) 
         calloc(mb_lt->hashsize, sizeof(Int4))) == NULL) {
@@ -597,7 +605,6 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
    PV_ARRAY_TYPE *pv_array = mb_lt->pv_array;
    Int4 total_hits = 0;
    Int4 compressed_wordsize, compressed_scan_step, word_size;
-   Boolean full_byte_scan = mb_lt->full_byte_scan;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
    
    /* Since the test for number of hits here is done after adding them, 
@@ -614,7 +621,7 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
    
    /* NB: s in this function always points to the start of the word!
     */
-   if (full_byte_scan) {
+   if (mb_lt->scan_step % COMPRESSION_RATIO == 0) {
       Uint1* s_end = abs_start + subject->length/COMPRESSION_RATIO - 
          compressed_wordsize;
       for ( ; s <= s_end; s += compressed_scan_step) {
@@ -731,7 +738,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    Int4 word, index, index2=0;
    BlastMBLookupTable* mb_lt = (BlastMBLookupTable*) lookup->lut;
    Uint4* q_ptr = q_offsets,* s_ptr = s_offsets;
-   Boolean full_byte_scan = mb_lt->full_byte_scan;
    Boolean two_templates = mb_lt->two_templates;
    Uint1 template_type = mb_lt->template_type;
    Uint1 second_template_type = mb_lt->second_template_type;
@@ -740,7 +746,6 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    Int4 compressed_wordsize = mb_lt->compressed_wordsize;
    Uint4 word_end_offset = start_offset + mb_lt->word_length;
    Uint4 last_end_offset = *end_offset;
-   Uint4 scan_step = mb_lt->scan_step;
 
    /* Since the test for number of hits here is done after adding them, 
       subtract the longest chain length from the allowed offset array size. */
@@ -752,7 +757,7 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    s = BlastNaLookupInitIndex(mb_lt->compressed_wordsize, s_start, &word);
 
    /* s now points to the byte right after the end of the current word */
-   if (full_byte_scan) {
+   if (mb_lt->full_byte_scan) {
 
      while (word_end_offset <= last_end_offset) {
        index = ComputeDiscontiguousIndex(s, word, template_type);
@@ -790,7 +795,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
        word_end_offset += COMPRESSION_RATIO;
      }
    } else {
-      Int4 scan_shift = 2*mb_lt->scan_step;
+      const Int4 kScanStep = 1; /* scan one letter at a time. */
+      const Int4 kScanShift = 2; /* scan 2 bits (that is, one letter) at a time. */
       Uint1 bit = 2*(start_offset % COMPRESSION_RATIO);
       Int4 adjusted_word;
 
@@ -833,8 +839,8 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
                query_offset = mb_lt->next_pos2[query_offset];
             }
          }
-         bit += scan_shift;
-         word_end_offset += scan_step;
+         bit += kScanShift;
+         word_end_offset += kScanStep;
 
          if (bit >= FULL_BYTE_SHIFT) {
             /* Advance to the next full byte */
