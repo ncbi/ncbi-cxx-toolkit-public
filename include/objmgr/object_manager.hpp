@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2003/06/30 18:41:05  vasilche
+* Removed unused commented code.
+*
 * Revision 1.15  2003/06/19 18:23:44  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.
@@ -177,28 +180,6 @@ protected:
     void AcquireDefaultDataSources(TDataSourcesLock& sources);
     bool ReleaseDataSource(TDataSourceLock& data_source);
 
-#if 0
-    void AcquireDefaultDataSources(CPriorityNode& sources,
-                                   CPriorityNode::TPriority priority);
-
-    void AddDataLoader(
-        CPriorityNode& sources, const string& loader_name,
-        CPriorityNode::TPriority priority);
-    void AddDataLoader(
-        CPriorityNode& sources, CDataLoader& loader,
-        CPriorityNode::TPriority priority);
-    void AddTopLevelSeqEntry(
-        CPriorityNode& sources, CSeq_entry& top_entry,
-        CPriorityNode::TPriority priority);
-    void AddScope(
-        CPriorityNode& sources, CScope& scope,
-        CPriorityNode::TPriority priority);
-    void RemoveTopLevelSeqEntry(
-        CPriorityNode& sources, CSeq_entry& top_entry);
-
-    void ReleaseDataSources(CPriorityNode& sources);
-#endif
-
 private:
 
 // these are for Object Manager itself
@@ -211,13 +192,6 @@ private:
     TDataSourceLock x_FindDataSource(const CObject* key);
     TDataSourceLock x_RevokeDataLoader(CDataLoader* loader);
     
-    /*
-    void x_AddDataSource(
-        CPriorityNode& sources, CDataSource* source,
-        CPriorityNode::TPriority priority) const;
-    void x_ReleaseDataSource(CDataSource* source);
-    */
-
 private:
 
     typedef set< TDataSourceLock >             TSetDefaultSource;
