@@ -35,6 +35,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 
+#include <algo/blast/api/blast_aux.hpp>
 // NewBlast includes
 #include <algo/blast/core/blast_options.h>
 
@@ -45,8 +46,7 @@ BEGIN_NCBI_SCOPE
 
 int
 BLAST_SetUpQuery(Uint1 program_number, 
-    vector< CConstRef<CSeq_loc> > &query_slp, CRef<CScope> &scope, 
-    const QuerySetUpOptions* query_options, 
+    TSeqLocVector &query_slp, const QuerySetUpOptions* query_options, 
     BlastQueryInfo** query_info, BLAST_SequenceBlk* *query_blk);
 
 
@@ -56,6 +56,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/12 19:18:45  dondosha
+* Use TSeqLocVector type in functions
+*
 * Revision 1.1  2003/08/11 15:19:59  dondosha
 * Headers for preparation of database BLAST search
 *

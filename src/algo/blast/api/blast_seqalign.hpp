@@ -48,10 +48,6 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-#ifndef BLAST_SMALL_GAPS
-#define BLAST_SMALL_GAPS 0
-#endif
-
 /** Converts BlastResults structure into CSeq_align_set class (handles 
  * query concatenation).
  * @param results results from running the BLAST algorithm [in]
@@ -69,7 +65,7 @@ BLAST_Results2CppSeqAlign(const BlastResults* results,
                           CBlastOption::EProgram prog,
                           vector< CConstRef<CSeq_id> >& query_seqids, 
                           const BlastSeqSrc* bssp, 
-                          CConstRef<CSeq_id>& subject_seqid,
+                          const CSeq_id* subject_seqid,
                           const BlastScoringOptions* score_options, 
                           const BlastScoreBlk* sbp);
 
@@ -80,6 +76,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2003/08/12 19:18:45  dondosha
+* Use TSeqLocVector type in functions
+*
 * Revision 1.9  2003/08/11 19:55:04  camacho
 * Early commit to support query concatenation and the use of multiple scopes.
 * Compiles, but still needs work.
