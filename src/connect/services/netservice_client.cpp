@@ -47,7 +47,7 @@ BEGIN_NCBI_SCOPE
 
 
 static 
-STimeout s_DefaultCommTimeout = {6, 0};
+STimeout s_DefaultCommTimeout = {12, 0};
 
 
 
@@ -266,6 +266,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2005/03/24 16:42:17  didenko
+ * Changed connection timeout defualt value
+ *
  * Revision 1.7  2005/03/22 18:54:07  kuznets
  * Changed project tree layout
  *
