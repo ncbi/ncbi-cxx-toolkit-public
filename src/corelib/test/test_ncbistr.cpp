@@ -119,11 +119,13 @@ static const SStrCompare s_StrCompare[] = {
     { "ba1", "ba",  1, 1,  NPOS,  1,  1 }
 };
 
+
 typedef struct {
     const char* pchar;  // String input
     int base;           // Radix base 
     Uint8 expected;     // Expected value
 } SRadixTest;
+
 
 /////////////////////////////////
 // Test application
@@ -271,7 +273,7 @@ int CTestApplication::Run(void)
 
     // Writing separate tests for StringToUInt8 because we
     // need to test for different radix values such as 2, 8, and 16
-    // and s_Strings presents string samples with radix of 10 only
+    // and s_Strings presents string samples with radix of 10 only.
     //
     static const SRadixTest s_RadixTests[] = {
         {"A", 16, 10},
@@ -307,7 +309,8 @@ int CTestApplication::Run(void)
         const string& str = s_RadixTests[i].pchar;
         int base = s_RadixTests[i].base;
         Uint8 expected = s_RadixTests[i].expected;
-        NcbiCout << "Checking numeric string: '" << str << "': with base " << base << NcbiEndl;
+        NcbiCout << "Checking numeric string: '" << str 
+            << "': with base " << base << NcbiEndl;
         try {
             Uint8 value = NStr::StringToUInt8(str, base);
             NcbiCout << "Uint8 value: " << ((unsigned)value)
@@ -605,6 +608,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2003/02/26 20:35:13  siyan
+ * Added/deleted whitespaces to conform to existing code style.
+ *
  * Revision 6.14  2003/02/26 16:47:36  siyan
  * Added test cases to test new version of NStr::StringToUInt8.
  *
