@@ -61,8 +61,7 @@ class CSeqDBAliasNode : public CObject {
 public:
     CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                     const string   & name_list,
-                    char             prot_nucl,
-                    bool             use_mmap);
+                    char             prot_nucl);
     
     // Add our volumes and our subnode's volumes to the end of "vols".
     void GetVolumeNames(vector<string> & vols) const;
@@ -91,13 +90,12 @@ private:
                     const string   & dbpath,
                     const string   & dbname,
                     char             prot_nucl,
-                    bool             use_mmap,
                     set<string>      recurse,
                     CSeqDBLockHold & locked);
     
     // Actual construction of the node
     // Reads file as a list of values.
-    void x_ReadValues(const string & fn, bool use_mmap, CSeqDBLockHold & locked);
+    void x_ReadValues(const string & fn, CSeqDBLockHold & locked);
     
     // Reads one line, if it is a value pair it is added to the list.
     void x_ReadLine(const char * bp, const char * ep);
@@ -105,7 +103,6 @@ private:
     // Expand all DB members as aliases if they exist.
     void x_ExpandAliases(const string   & this_name,
                          char             ending,
-                         bool             use_mmap,
                          set<string>    & recurse,
                          CSeqDBLockHold & locked);
     
@@ -139,9 +136,8 @@ class CSeqDBAliasFile {
 public:
     CSeqDBAliasFile(CSeqDBAtlas    & atlas,
                     const string   & name_list,
-                    char             prot_nucl,
-                    bool             use_mmap)
-        : m_Node (atlas, name_list, prot_nucl, use_mmap)
+                    char             prot_nucl)
+        : m_Node (atlas, name_list, prot_nucl)
     {
         m_Node.GetVolumeNames(m_VolumeNames);
     }

@@ -76,7 +76,7 @@ public:
         return success;
     }
     
-    const char * GetRegion(CSeqDBMemLease & lease, Uint8 start, Uint8 end, CSeqDBLockHold & locked) const
+    const char * GetRegion(CSeqDBMemLease & lease, TIndx start, TIndx end, CSeqDBLockHold & locked) const
     {
         _ASSERT(! m_FileName.empty());
         _ASSERT(start    <  end);
@@ -91,7 +91,7 @@ public:
         return lease.GetPtr(start);
     }
     
-    const char * GetRegion(Uint8 start, Uint8 end, CSeqDBLockHold & locked) const
+    const char * GetRegion(TIndx start, TIndx end, CSeqDBLockHold & locked) const
     {
         _ASSERT(! m_FileName.empty());
         _ASSERT(start    <  end);
@@ -100,19 +100,19 @@ public:
         return m_Atlas.GetRegion(m_FileName, start, end, locked);
     }
     
-    Uint8 GetFileLength(void) const
+    TIndx GetFileLength(void) const
     {
         return m_Length;
     }
     
-    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4  * z, CSeqDBLockHold & locked) const;
-    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint8  * z, CSeqDBLockHold & locked) const;
-    Uint8 ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, string * z, CSeqDBLockHold & locked) const;
+    TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4  * z, CSeqDBLockHold & locked) const;
+    TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint8  * z, CSeqDBLockHold & locked) const;
+    TIndx ReadSwapped(CSeqDBMemLease & lease, TIndx offset, string * z, CSeqDBLockHold & locked) const;
     
     bool ReadBytes(CSeqDBMemLease & lease,
                    char           * buf,
-                   Uint8            start,
-                   Uint8            end,
+                   TIndx            start,
+                   TIndx            end,
                    CSeqDBLockHold & locked) const;
     
 private:
@@ -135,6 +135,8 @@ private:
 
 class CSeqDBExtFile : public CObject {
 public:
+    typedef CSeqDBAtlas::TIndx TIndx;
+    
     CSeqDBExtFile(CSeqDBAtlas   & atlas,
                   const string  & dbfilename,
                   char            prot_nucl);
@@ -173,7 +175,7 @@ protected:
     }
     
     template<class T>
-    Uint8 x_ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, T * value, CSeqDBLockHold & locked)
+    TIndx x_ReadSwapped(CSeqDBMemLease & lease, TIndx offset, T * value, CSeqDBLockHold & locked)
     {
         return m_File.ReadSwapped(lease, offset, value, locked);
     }
@@ -346,6 +348,8 @@ CSeqDBIdxFile::GetSeqStartEnd(Uint4 oid, Uint4 & start, Uint4 & end) const
 
 class CSeqDBSeqFile : public CSeqDBExtFile {
 public:
+    typedef CSeqDBAtlas::TIndx TIndx;
+    
     CSeqDBSeqFile(CSeqDBAtlas   & atlas,
                   const string  & dbname,
                   char            prot_nucl)
@@ -358,14 +362,14 @@ public:
     }
     
     void ReadBytes(char           * buf,
-                   Uint8            start,
-                   Uint8            end,
+                   TIndx            start,
+                   TIndx            end,
                    CSeqDBLockHold & locked) const
     {
         x_ReadBytes(buf, start, end, locked);
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end, bool keep, CSeqDBLockHold & locked) const
+    const char * GetRegion(TIndx start, TIndx end, bool keep, CSeqDBLockHold & locked) const
     {
         return x_GetRegion(start, end, keep, locked);
     }
@@ -374,6 +378,8 @@ public:
 
 class CSeqDBHdrFile : public CSeqDBExtFile {
 public:
+    typedef CSeqDBAtlas::TIndx TIndx;
+    
     CSeqDBHdrFile(CSeqDBAtlas   & atlas,
                   const string  & dbname,
                   char            prot_nucl)
@@ -386,14 +392,14 @@ public:
     }
     
     void ReadBytes(char           * buf,
-                   Uint8            start,
-                   Uint8            end,
+                   TIndx            start,
+                   TIndx            end,
                    CSeqDBLockHold & locked) const
     {
         x_ReadBytes(buf, start, end, locked);
     }
     
-    const char * GetRegion(Uint4 start, Uint4 end, CSeqDBLockHold & locked) const
+    const char * GetRegion(TIndx start, TIndx end, CSeqDBLockHold & locked) const
     {
         return x_GetRegion(start, end, false, locked);
     }

@@ -47,8 +47,7 @@ public:
     typedef Uint4 TOID;
     
     CSeqDBOIDList(CSeqDBAtlas  & atlas,
-                  CSeqDBVolSet & volumes,
-                  bool           use_mmap);
+                  CSeqDBVolSet & volumes);
     
     ~CSeqDBOIDList();
     
@@ -73,18 +72,15 @@ private:
     void x_SetBit  (TOID   oid);
     bool x_FindNext(TOID & oid) const;
     
-    void x_Setup(const string & filename,
-                 bool use_mmap,
+    void x_Setup(const string   & filename,
                  CSeqDBLockHold & locked);
     
-    void x_Setup(CSeqDBVolSet & volset,
-                 bool use_mmap,
+    void x_Setup(CSeqDBVolSet   & volset,
                  CSeqDBLockHold & locked);
     
-    void x_OrFileBits(const string & mask_fname,
-                      Uint4 oid_start,
-                      Uint4 oid_end,
-                      bool use_mmap,
+    void x_OrFileBits(const string   & mask_fname,
+                      Uint4            oid_start,
+                      Uint4            oid_end,
                       CSeqDBLockHold & locked);
     
     void x_SetBitRange(Uint4 oid_start, Uint4 oid_end);

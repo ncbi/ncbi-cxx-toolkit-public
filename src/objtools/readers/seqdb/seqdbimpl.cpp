@@ -40,7 +40,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
                        bool           use_mmap)
     : m_Atlas        (use_mmap),
       m_DBNames      (db_name_list),
-      m_Aliases      (m_Atlas, db_name_list, prot_nucl, use_mmap),
+      m_Aliases      (m_Atlas, db_name_list, prot_nucl),
       m_VolSet       (m_Atlas, m_Aliases.GetVolumeNames(), prot_nucl),
       m_RestrictBegin(oid_begin),
       m_RestrictEnd  (oid_end),
@@ -51,7 +51,7 @@ CSeqDBImpl::CSeqDBImpl(const string & db_name_list,
     m_Aliases.SetMasks(m_VolSet);
     
     if ( m_VolSet.HasMask() ) {
-        m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet, use_mmap) );
+        m_OIDList.Reset( new CSeqDBOIDList(m_Atlas, m_VolSet) );
     }
     
     if ((oid_begin == 0) && (oid_end == 0)) {

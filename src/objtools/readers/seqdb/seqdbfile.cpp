@@ -63,6 +63,8 @@ BEGIN_NCBI_SCOPE
 // 2. Const: no changes to any fields.
 // 3. Const: modifies mutable fields while holding m_FileLock.
 
+typedef CSeqDBAtlas::TIndx TIndx;
+
 Uint8 BytesToUint8(char * bytes_sc)
 {
     unsigned char * bytes = (unsigned char *) bytes_sc;
@@ -79,7 +81,7 @@ Uint8 BytesToUint8(char * bytes_sc)
 }
 
 
-Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4 * buf, CSeqDBLockHold & locked) const
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4 * buf, CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
     
@@ -92,8 +94,8 @@ Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, Uint8 offset, Uint4 * b
     return offset + sizeof(*buf);
 }
 
-Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
-                                 Uint8            offset,
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+                                 TIndx            offset,
                                  Uint8          * buf,
                                  CSeqDBLockHold & locked) const
 {
@@ -108,8 +110,8 @@ Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
     return offset + sizeof(*buf);
 }
 
-Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
-                                 Uint8            offset,
+TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
+                                 TIndx            offset,
                                  string         * v,
                                  CSeqDBLockHold & locked) const
 {
@@ -139,8 +141,8 @@ Uint8 CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
 
 bool CSeqDBRawFile::ReadBytes(CSeqDBMemLease & lease,
                               char           * buf,
-                              Uint8            start,
-                              Uint8            end,
+                              TIndx            start,
+                              TIndx            end,
                               CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
@@ -198,7 +200,7 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
                    "Error: Invalid sequence type requested.");
     }
     
-    Uint8 offset = 0;
+    TIndx offset = 0;
     
     Uint4 f_format_version = 0;
     Uint4 f_db_seqtype = 0;
@@ -221,9 +223,9 @@ CSeqDBIdxFile::CSeqDBIdxFile(CSeqDBAtlas    & atlas,
     offset = x_ReadSwapped(lease, offset, & m_TotLen,     locked);
     offset = x_ReadSwapped(lease, offset, & m_MaxLen,     locked);
     
-    Uint8 region_bytes = 4 * (m_NumSeqs + 1);
+    TIndx region_bytes = 4 * (m_NumSeqs + 1);
     
-    Uint8 off1, off2, off3, offend;
+    TIndx off1, off2, off3, offend;
     
     off1   = offset;
     off2   = off1 + region_bytes;

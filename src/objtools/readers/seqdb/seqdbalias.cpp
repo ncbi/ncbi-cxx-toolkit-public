@@ -52,8 +52,7 @@ BEGIN_NCBI_SCOPE
 
 CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbname_list,
-                                 char             prot_nucl,
-                                 bool             use_mmap)
+                                 char             prot_nucl)
     : m_Atlas(atlas)
 {
     CSeqDBLockHold locked(atlas);
@@ -69,7 +68,7 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     
     m_Values["DBLIST"] = new_names;
     
-    x_ExpandAliases("-", prot_nucl, use_mmap, recurse, locked);
+    x_ExpandAliases("-", prot_nucl, recurse, locked);
     
     m_Atlas.Unlock(locked);
 }
@@ -94,7 +93,6 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
                                  const string   & dbpath,
                                  const string   & dbname,
                                  char             prot_nucl,
-                                 bool             use_mmap,
                                  set<string>      recurse,
                                  CSeqDBLockHold & locked)
     : m_Atlas(atlas),
@@ -117,8 +115,8 @@ CSeqDBAliasNode::CSeqDBAliasNode(CSeqDBAtlas    & atlas,
     string full_filename( x_MkPath(m_DBPath, dbname, prot_nucl) );
     recurse.insert(full_filename);
     
-    x_ReadValues(full_filename, use_mmap, locked);
-    x_ExpandAliases(dbname, prot_nucl, use_mmap, recurse, locked);
+    x_ReadValues(full_filename, locked);
+    x_ExpandAliases(dbname, prot_nucl, recurse, locked);
 }
 
 // This takes the names in dbname_list, finds the path for each name,
@@ -235,7 +233,6 @@ void CSeqDBAliasNode::x_ReadLine(const char * bp,
 }
 
 void CSeqDBAliasNode::x_ReadValues(const string   & fname,
-                                   bool             use_mmap,
                                    CSeqDBLockHold & locked)
 {
     CSeqDBAtlas::TIndx file_length(0);
@@ -272,7 +269,6 @@ void CSeqDBAliasNode::x_ReadValues(const string   & fname,
 
 void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
                                       char             prot_nucl,
-                                      bool             use_mmap,
                                       set<string>    & recurse,
                                       CSeqDBLockHold & locked)
 {
@@ -314,7 +310,6 @@ void CSeqDBAliasNode::x_ExpandAliases(const string   & this_name,
                                              newpath,
                                              newfile,
                                              prot_nucl,
-                                             use_mmap,
                                              recurse,
                                              locked) );
             

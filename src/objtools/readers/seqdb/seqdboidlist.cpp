@@ -35,8 +35,7 @@
 BEGIN_NCBI_SCOPE
 
 CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas  & atlas,
-                             CSeqDBVolSet & volset,
-                             bool           use_mmap)
+                             CSeqDBVolSet & volset)
     : m_Atlas   (atlas),
       m_Lease   (atlas),
       m_NumOIDs (0),
@@ -48,9 +47,9 @@ CSeqDBOIDList::CSeqDBOIDList(CSeqDBAtlas  & atlas,
     _ASSERT( volset.HasMask() );
     
     if (volset.HasSimpleMask()) {
-        x_Setup( volset.GetSimpleMask(), use_mmap, locked );
+        x_Setup( volset.GetSimpleMask(), locked );
     } else {
-        x_Setup( volset, use_mmap, locked );
+        x_Setup( volset, locked );
     }
 }
 
@@ -65,7 +64,6 @@ CSeqDBOIDList::~CSeqDBOIDList()
 }
 
 void CSeqDBOIDList::x_Setup(const string   & filename,
-                            bool             use_mmap,
                             CSeqDBLockHold & locked)
 {
     CSeqDBAtlas::TIndx file_length = 0;
@@ -81,7 +79,7 @@ void CSeqDBOIDList::x_Setup(const string   & filename,
 // The general rule I am following in these methods is to use byte
 // computations except during actual looping.
 
-void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap, CSeqDBLockHold & locked)
+void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, CSeqDBLockHold & locked)
 {
     _ASSERT(volset.HasMask() && (! volset.HasSimpleMask()));
     
@@ -117,7 +115,7 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap, CSeqDBLockHold
                 mask_iter != mask_files.end();
                 ++mask_iter) {
                 
-                x_OrFileBits(*mask_iter, oid_start, oid_end, use_mmap, locked);
+                x_OrFileBits(*mask_iter, oid_start, oid_end, locked);
             }
         }
     }
@@ -169,7 +167,6 @@ void CSeqDBOIDList::x_Setup(CSeqDBVolSet & volset, bool use_mmap, CSeqDBLockHold
 void CSeqDBOIDList::x_OrFileBits(const string   & mask_fname,
                                  Uint4            oid_start,
                                  Uint4            /*oid_end*/,
-                                 bool             use_mmap,
                                  CSeqDBLockHold & locked)
 {
     // Open file and get pointers

@@ -58,7 +58,7 @@ Int4 CSeqDBVol::GetSeqLength(Uint4 oid, bool approx, CSeqDBLockHold & locked) co
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
     
-    Int8 length = -1;
+    Int4 length = -1;
     
     if (! m_Idx.GetSeqStartEnd(oid, start_offset, end_offset /*, locked*/))
         return -1;
