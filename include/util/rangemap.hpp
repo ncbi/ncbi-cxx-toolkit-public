@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/01/03 18:58:39  vasilche
+* Some typedefs are missing on MSVC.
+*
 * Revision 1.3  2001/01/03 16:39:18  vasilche
 * Added CAbstractObjectManager - stub for object manager.
 * CRange extracted to separate file.
@@ -55,11 +58,12 @@ BEGIN_NCBI_SCOPE
 // forward template declarations
 template<typename Mapped, typename Position> class CRangeMap;
 template<typename Mapped, typename Position,
-    typename LevelIter, typename SelectIter> class CRangeMapIterator;
+    typename LevelIter, typename SelectIter,
+	typename Value> class CRangeMapIterator;
 
 // iterator
 template<typename Mapped, typename Position,
-    typename LevelIter, typename SelectIter>
+    typename LevelIter, typename SelectIter, typename Value>
 class CRangeMapIterator
 {
 public:
@@ -67,9 +71,9 @@ public:
     typedef Position position_type;
     typedef CRange<position_type> range_type;
     typedef Mapped mapped_type;
-    typedef typename LevelIter::value_type value_type;
-    typedef typename LevelIter::reference reference;
-    typedef typename LevelIter::pointer pointer;
+    typedef Value value_type;
+    typedef Value& reference;
+    typedef Value* pointer;
 
     // internal typedefs
     typedef map<range_type, mapped_type> TNCLevelType;
@@ -79,9 +83,9 @@ public:
     typedef SelectIter TSelectIter;
     typedef typename TNCSelectType::iterator TNCSelectIter;
     typedef CRangeMapIterator<mapped_type, position_type,
-        TLevelIter, TSelectIter> TThisType;
+        TLevelIter, TSelectIter, value_type> TThisType;
     typedef CRangeMapIterator<mapped_type, position_type,
-        TNCLevelIter, TNCSelectIter> TNCThisType;
+        TNCLevelIter, TNCSelectIter, mapped_type> TNCThisType;
 
     // constructors
     // singular
@@ -276,9 +280,9 @@ public:
     
     // iterators
     typedef CRangeMapIterator<mapped_type, position_type,
-        TLevelMapI, TSelectMapI> iterator;
+        TLevelMapI, TSelectMapI, mapped_type> iterator;
     typedef CRangeMapIterator<mapped_type, position_type,
-        TLevelMapCI, TSelectMapCI> const_iterator;
+        TLevelMapCI, TSelectMapCI, const mapped_type> const_iterator;
 
     // constructor
     explicit CRangeMap(void)
