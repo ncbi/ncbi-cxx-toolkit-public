@@ -181,6 +181,18 @@ void CLDS_Database::Create()
 }
 
 
+void CLDS_Database::Sync()
+{
+    m_db.annot2obj_db.Sync();
+    m_db.annot_db.Sync();
+    m_db.file_db.Sync();
+    m_db.object_attr_db.Sync();
+    m_db.object_db.Sync();
+    m_db.object_type_db.Sync();
+    m_db.seq_id_list.Sync();    
+}
+
+
 void CLDS_Database::Open()
 {
     string fname;
@@ -262,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/10/09 16:48:33  kuznets
+ * Sync() implemented
+ *
  * Revision 1.10  2003/10/08 18:19:52  kuznets
  * Changes to support multi instance databases
  *
