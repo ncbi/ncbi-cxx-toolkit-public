@@ -115,7 +115,9 @@ public:
                             const string&                  options) const
     {
         static 
-        const string kCFParam_timeout   = "timeout";
+        const string kCFParam_timeout       = "timeout";
+        static 
+        const string kCFParam_max_timeout   = "max_timeout";
 
         static 
         const string kCFParam_timestamp_onread   = "onread";
@@ -127,6 +129,9 @@ public:
         const string kCFParam_timestamp_purge_on_startup   = "purge_on_startup";
         static 
         const string kCFParam_timestamp_check_expiration   = "check_expiration";
+        static 
+        const string kCFParam_timestamp_individual_timing_priority 
+            = "individual_timing_priority";
 
         list<string> opt;
         NStr::Split(options, " \t", opt);
@@ -158,17 +163,24 @@ public:
                 ts_flag |= ICache::fCheckExpirationAlways;
                 continue;
             }
+            if (NStr::CompareNocase(opt_value, 
+                          kCFParam_timestamp_individual_timing_priority)==0) {
+                ts_flag |= ICache::fIndividualTimingPriority;
+                continue;
+            }
             LOG_POST(Warning 
                       << "ICache::ClassFactory: Unknown timeout policy parameter: "
                       << opt_value);
         } // ITERATE
 
 
-        int timeout = 60 * 60; // timeout in seconds
+        int timeout = 
             this->GetParamInt(params, kCFParam_timeout, false, 60 * 60);
+        int max_timeout = 
+            this->GetParamInt(params, kCFParam_max_timeout, false, 0);
 
         if (ts_flag) {
-            icache->SetTimeStampPolicy(ts_flag, timeout);
+            icache->SetTimeStampPolicy(ts_flag, timeout, max_timeout);
         }
 
     }
@@ -181,6 +193,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/11/03 17:07:05  kuznets
+ * ICache revision2. Add individual timeouts
+ *
  * Revision 1.3  2004/09/21 15:28:45  kuznets
  * Use this-> instead of TParent:: when calling parent functions
  *

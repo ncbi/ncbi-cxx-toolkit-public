@@ -66,7 +66,7 @@ public:
     /// This enum defines the policy how it is managed.
     /// Different policies can be combined by OR (|)
     /// @sa SetTimeStampPolicy
-    enum ETimeStampPolicy {
+    enum ETimeStampFlags {
 
         /// Timestamp management disabled
         fNoTimeStamp       = 0,
@@ -90,15 +90,29 @@ public:
         fPurgeOnStartup             = (1 << 4),
 
         /// Expiration timeout is checked on any access to cache element
-        fCheckExpirationAlways      = (1 << 5)
+        fCheckExpirationAlways      = (1 << 5),
+        
+        /// Individual time-to-live may exceed the cache wide settings
+        /// (Used to allow long term storage of important information)
+        fIndividualTimingPriority      = (1 << 6)
     };
+
+    typedef ETimeStampFlags ETimeStampPolicy;
 
     typedef int TTimeStampFlags;
 
     /// Set timestamp update policy
     /// @param policy
     ///   ORed combination of TimeStampUpdatePolicy masks.
-    virtual void SetTimeStampPolicy(TTimeStampFlags policy, int timeout) = 0;
+    /// @param timeout
+    ///   Global expiration timeout (in seconds)
+    ///   (can be changed on the individual BLOB basis)
+    /// @param max_timeout
+    ///   Maximum value for individually set BLOB timeouts. 
+    ///   Zero means it is equal to the default "timeout".
+    virtual void SetTimeStampPolicy(TTimeStampFlags policy, 
+                                    int             timeout,
+                                    int             max_timeout=0) = 0;
 
     /// Get timestamp policy
     /// @return
@@ -151,13 +165,14 @@ public:
     ///    pointer on data buffer
     /// @param size 
     ///    data buffer size in bytes (chars)
-    /// @param flag 
-    ///    indicator to keep old BLOBs or drop it from the cache
+    /// @param time_to_live
+    ///    Individual timeout
     virtual void Store(const string&  key,
                        int            version,
                        const string&  subkey,
                        const void*    data,
-                       size_t         size) = 0;
+                       size_t         size,
+                       int            time_to_live = 0) = 0;
 
     /// Check if BLOB exists, return BLOB size.
     ///
@@ -217,10 +232,13 @@ public:
     ///    BLOB identification subkey
     /// @param version 
     ///    BLOB version
+    /// @param time_to_live
+    ///    Individual timeout
     /// @return Interface pointer or NULL if BLOB does not exist
     virtual IWriter* GetWriteStream(const string&    key,
                                     int              version,
-                                    const string&    subkey) = 0;
+                                    const string&    subkey,
+                                    int              time_to_live = 0) = 0;
 
     /// Remove all versions of the specified BLOB
     ///
@@ -289,7 +307,7 @@ public:
 };
 
 
-NCBI_DECLARE_INTERFACE_VERSION(ICache,  "icache", 1, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(ICache,  "icache", 2, 1, 0);
 
 
 END_NCBI_SCOPE
@@ -298,6 +316,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/03 17:07:05  kuznets
+ * ICache revision2. Add individual timeouts
+ *
  * Revision 1.8  2004/09/21 14:40:14  kuznets
  * Cosmetics
  *

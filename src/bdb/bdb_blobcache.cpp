@@ -460,6 +460,8 @@ CBDB_Cache::CBDB_Cache()
   m_Env(0),
   m_CacheDB(0),
   m_CacheAttrDB(0),
+  m_Timeout(0),
+  m_MaxTimeout(0),
   m_VersionFlag(eDropOlder),
   m_PageSizeHint(eLarge),
   m_WSync(eWriteNoSync),
@@ -804,11 +806,13 @@ void CBDB_Cache::x_Close()
 }
 
 void CBDB_Cache::SetTimeStampPolicy(TTimeStampFlags policy, 
-                                    int             timeout)
+                                    int             timeout,
+                                    int             max_timeout)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
     m_TimeStampFlag = policy;
     m_Timeout = timeout;
+    m_MaxTimeout = max_timeout;
 }
 
 CBDB_Cache::TTimeStampFlags CBDB_Cache::GetTimeStampPolicy() const
@@ -836,7 +840,8 @@ void CBDB_Cache::Store(const string&  key,
                        int            version,
                        const string&  subkey,
                        const void*    data,
-                       size_t         size)
+                       size_t         size,
+                       int            time_to_live)
 {
     if (IsReadOnly()) {
         return;
@@ -1088,7 +1093,8 @@ IReader* CBDB_Cache::GetReadStream(const string&  key,
 
 IWriter* CBDB_Cache::GetWriteStream(const string&    key,
                                     int              version,
-                                    const string&    subkey)
+                                    const string&    subkey,
+                                    int              time_to_live)
 {
     if (IsReadOnly()) {
         return 0;
@@ -1905,11 +1911,9 @@ const char* kBDBCacheDriverName = "bdbcache";
 /// @internal
 ///
 class CBDB_CacheReaderCF : public CICacheCF<CBDB_Cache>
-    //CSimpleClassFactoryImpl<ICache, CBDB_Cache>
 {
 public:
     typedef CICacheCF<CBDB_Cache> TParent;
-      //CSimpleClassFactoryImpl<ICache, CBDB_Cache> TParent;
 public:
     CBDB_CacheReaderCF() : TParent(kBDBCacheDriverName, 0)
     {
@@ -2095,6 +2099,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.89  2004/11/03 17:07:45  kuznets
+ * ICache revision2. Add individual timeouts
+ *
  * Revision 1.88  2004/10/27 17:02:53  kuznets
  * Added option to run a background cleaning(Purge) thread
  *
