@@ -282,27 +282,8 @@ void CAlnMrgApp::PrintMergedAlignment(void)
 {
     auto_ptr<CObjectOStream> asn_out 
         (CObjectOStream::Open(eSerial_AsnText, cout));
-        
+
     *asn_out << m_Mix->GetDenseg();
-
-    View4(40);
-    return;
-
-    CAlnVec av(m_Mix->GetDenseg());
-    cout << ",";
-    for (int seg=0; seg<av.GetNumSegs(); seg++) {
-        cout << "," << av.GetLen(seg) << ",";
-    }
-    cout << endl;
-    for (int row=0; row<av.GetNumRows(); row++) {
-        cout << row << ",";
-        for (int seg=0; seg<av.GetNumSegs(); seg++) {
-            cout << av.GetStart(row, seg) << "," 
-                 << av.GetStop(row, seg) << ",";
-        }
-        cout << endl;
-    }
-
 }
 
 
@@ -382,6 +363,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2003/09/04 19:05:46  todorov
+* Removed view. Should be optional
+*
 * Revision 1.8  2003/08/20 14:43:01  todorov
 * Support for NA2AA Densegs
 *
