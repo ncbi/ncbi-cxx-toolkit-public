@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.17  2001/04/26 20:20:01  lavr
+ * Better way of choosing local server with a tiny (e.g. penalized) status
+ *
  * Revision 6.16  2001/04/24 21:35:46  lavr
  * Treatment of new bonus coefficient for local servers
  *
@@ -108,7 +111,7 @@ extern "C" {
 #endif
 
     static SSERV_Info* s_GetNextInfo(SERV_ITER iter);
-    static int/*bool*/ s_Update(SERV_ITER iter, const char *text);
+    static int/*bool*/ s_Update(SERV_ITER iter, const char* text);
     static void s_Close(SERV_ITER iter);
 
     static const SSERV_VTable s_op = {
@@ -190,7 +193,7 @@ static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
 
 #ifdef __cplusplus
 extern "C" {
-    static int s_ParseHeader(const char *, void *, int);
+    static int s_ParseHeader(const char*, void*, int);
 }
 #endif /* __cplusplus */
 
@@ -249,7 +252,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
     /* Now the entire user header is ready, take it out of the buffer */
     buflen = BUF_Size(buf);
     assert(buflen != 0);
-    if ((s = (char *)malloc(buflen + 1)) != 0) {
+    if ((s = (char*) malloc(buflen + 1)) != 0) {
         if (BUF_Read(buf, s, buflen) != buflen) {
             free(s);
             s = 0;
@@ -313,10 +316,10 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
         } else if (strncasecmp(b, HTTP_REQUEST_FAILED,
                                sizeof(HTTP_REQUEST_FAILED) - 1) == 0) {
             n = 0;
+#if defined(_DEBUG) && !defined(NDEBUG)
             b += sizeof(HTTP_REQUEST_FAILED) - 1;
             while (*b && isspace((unsigned char)(*b)))
                 b++;
-#if defined(_DEBUG) && !defined(NDEBUG)
             if (!(p = strchr(b, '\r')))
                 p = c;
             else
@@ -362,10 +365,9 @@ static int/*bool*/ s_IsUpdateNeeded(SDISPD_Data *data)
 
 static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
 {
+    double total = 0.0, point = -1.0, access = 0.0, status;
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
-    double total = 0.0, point = -1.0;
     SSERV_Info* info;
-    double status;
     size_t i;
     
     if (!data)
@@ -378,21 +380,25 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter)
     for (i = 0; i < data->n_node; i++) {
         info = data->s_node[i].info;
         status = info->rate;
+        assert(status != 0.0);
         if (info->host == iter->preferred_host) {
             if (info->coef <= 0.0) {
                 status *=SERV_DISPD_LOCAL_SVC_BONUS;
-                if (info->coef < 0.0)
-                    point = total;      /* Choose this local server */
+                if (info->coef < 0.0 && access < status) {
+                    access = status;
+                    point  = total; /* Latch this local server */
+                }
             } else
                 status *= info->coef;
         }
         total                 += status;
         data->s_node[i].status = total;
-        if (point >= 0.0)
-            break;                      /* Local server has been chosen */
     }
-    
-    if (point < 0.0)
+
+    /* We will take pre-chosen local server only if its status is not less
+       than 20% of the average rest status; otherwise, we ignore the server,
+       and apply the general procedure by seeding a random point. */
+    if (point < 0.0 || access < 0.2*(total - access)/data->n_node)
         point = (total * rand()) / (double) RAND_MAX;
     for (i = 0; i < data->n_node; i++) {
         if (point < data->s_node[i].status)
