@@ -2040,7 +2040,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                                      "read/write with some output pending",
                                      s_ID(sock, _id)));
         }
-        how = SOCK_SHUTDOWN_RDWR;
+        x_how = SOCK_SHUTDOWN_RDWR;
         sock->eof = 0/*false*/;
         sock->r_status = sock->w_status = eIO_Closed;
         break;
@@ -3598,6 +3598,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.105  2003/05/14 15:48:54  lavr
+ * Typo fix in s_Shutdown() for MSVC (x_how should be used instead of how)
+ *
  * Revision 6.104  2003/05/14 14:51:27  lavr
  * BUGFIX: Connection stall in s_Connect()
  *
