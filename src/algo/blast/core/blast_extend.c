@@ -880,6 +880,7 @@ BlastNaExactMatchExtend(Uint1Ptr q_start, Uint1Ptr s_start,
    Int4 length = 0, extended_left = 0;
    Uint1Ptr q, s;
    
+   *extended_right = 0;
 
    /* Extend to the left; start with previous byte */
    q = q_start - COMPRESSION_RATIO;
