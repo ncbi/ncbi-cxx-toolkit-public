@@ -62,6 +62,7 @@ class CSimpleClassFactoryImpl : public IClassFactory<IFace>
 public:
 
     typedef TDriver                        TImplementation;
+    typedef IFace                          TInterface;
     typedef IClassFactory<IFace>           TParent;
     typedef typename TParent::SDriverInfo  TDriverInfo;
     typedef typename TParent::TDriverList  TDriverList;
@@ -262,6 +263,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/02 16:16:26  ssikorsk
+ * Fixed GCC compilation issues
+ *
  * Revision 1.15  2005/03/02 16:03:33  ssikorsk
  * Removed duplicated typedefs
  *

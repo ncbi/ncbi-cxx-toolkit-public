@@ -204,7 +204,7 @@ public:
     /// @param
     /// @return
     ///  NULL on any error (not found entry point, version mismatch, etc.)
-    virtual TInterface* CreateInstance
+    virtual TClass* CreateInstance
       (const string&  driver  = kEmptyStr,
        CVersionInfo   version = CVersionInfo(TIfVer::eMajor, TIfVer::eMinor,
                                              TIfVer::ePatchLevel),
@@ -926,6 +926,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2005/03/02 16:16:26  ssikorsk
+ * Fixed GCC compilation issues
+ *
  * Revision 1.40  2005/03/02 16:03:33  ssikorsk
  * Removed duplicated typedefs
  *
