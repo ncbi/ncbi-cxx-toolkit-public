@@ -1315,6 +1315,7 @@ bool StructureWindow::LoadData(const char *filename, bool force, CNcbi_mime_asn1
     if (glCanvas->structureSet) {
         DestroyNonModalDialogs();
         GlobalMessenger()->RemoveAllHighlights(false);
+        GlobalMessenger()->CacheHighlights();   // copy empty highlights list, e.g. clear cache
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer->AttachStructureSet(NULL);
@@ -1618,6 +1619,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/09/27 22:02:09  thiessen
+* add highlight cache
+*
 * Revision 1.35  2004/08/19 16:22:48  thiessen
 * change network load hotkey on mac
 *
