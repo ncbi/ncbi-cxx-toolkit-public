@@ -35,6 +35,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/02/05 17:16:23  kholodov
+* Put into right scope, invalidobjex retired
+*
 * Revision 1.1  2002/01/30 14:51:22  kholodov
 * User DBAPI implementation, first commit
 *
@@ -43,7 +46,6 @@
 */
 
 #include <corelib/ncbiobj.hpp>
-#include "invalidobjex.hpp"
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -98,7 +100,7 @@ public:
   void RemoveListener(IEventListener* obj);
   void Notify(const CDbapiEvent& e);
 
-  void CheckValid() const;
+  void CheckValid() const; // Disabled, not used anymore
   void SetValid(bool v);
 
 

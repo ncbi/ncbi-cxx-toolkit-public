@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/02/05 17:16:23  kholodov
+* Put into right scope, invalidobjex retired
+*
 * Revision 1.1  2002/01/30 14:51:20  kholodov
 * User DBAPI implementation, first commit
 *
@@ -41,6 +44,7 @@
 #include "active_obj.hpp"
 #include <corelib/ncbistre.hpp>
 #include <typeinfo>
+//#include "invalidobjex.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -75,8 +79,9 @@ void CActiveObject::Notify(const CDbapiEvent& e)
   
 void CActiveObject::CheckValid() const
 {
-  if( !m_valid ) 
-    throw CInvalidObjEx("CActiveObject::CheckValid(): invalid object state");
+  // Disable check, not used anymore
+  //    if( !m_valid ) 
+  //throw CInvalidObjEx("CActiveObject::CheckValid(): invalid object state");
 }
 
 void CActiveObject::SetValid(bool v)
