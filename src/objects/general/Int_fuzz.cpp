@@ -42,6 +42,7 @@
 #include <objects/general/Int_fuzz.hpp>
 
 #include <algorithm>
+#include <set>
 #include <math.h>
 
 // generated classes
@@ -360,6 +361,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.10  2004/01/06 14:36:06  dicuccio
+ * Removed unnecessary #include of ncbiapp.hpp and ncbireg.hpp.  Added <set> where
+ * needed.
+ *
  * Revision 6.9  2003/10/15 19:07:09  ucko
  * Fix some logic errors with lt/gt limits in CInt_fuzz::Add
  *

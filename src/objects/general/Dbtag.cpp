@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2004/01/06 14:36:06  dicuccio
+ * Removed unnecessary #include of ncbiapp.hpp and ncbireg.hpp.  Added <set> where
+ * needed.
+ *
  * Revision 6.9  2003/10/01 13:12:24  shomrat
  * REBASE is legal refseq dbxref
  *
@@ -68,15 +72,13 @@
  */
 
 // standard includes
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbireg.hpp>
-
-#include <algorithm>
 
 // generated includes
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
 #include <corelib/ncbistd.hpp>
+
+#include <algorithm>
 
 // generated classes
 
