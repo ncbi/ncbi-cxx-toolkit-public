@@ -29,52 +29,18 @@
 * Author:  Denis Vakatov
 *
 * File Description:
-*   The NCBI C++/STL use hints
+*   The NCBI C++ standards
 *
 * --------------------------------------------------------------------------
 * $Log$
-* Revision 1.3  1998/10/07 23:05:18  vakatov
-* Do not "using namespace std;" here. -- Instead, provide NCBI_USING_STL
-* macro to be included(only when neceassary) in the user modules
-*
-* Revision 1.2  1998/10/05 21:04:34  vakatov
-* Introduced #NCBI_SGI_STL_PORT and #NCBI_NO_NAMESPACES flags
-*
-* Revision 1.1  1998/10/05 19:43:38  vakatov
-* Initial revision
+* Revision 1.4  1998/10/21 19:24:43  vakatov
+* Moved all STL-related code to "ncbistl.hpp"
+* Import NCBI typedefs and limits from "ncbitype.h"
 *
 * ==========================================================================
 */
 
-/////////////////////////////////////////////////////////////////////////////
-// Effective preprocessor switches:
-//
-//   NCBI_SGI_STL_PORT  -- use the STLport package based on SGI STL
-//                         ("http://corp.metabyte.com/~fbp/stl/effort.html")
-//   NCBI_NO_NAMESPACES -- assume no namespace support
-//
-/////////////////////////////////////////////////////////////////////////////
-
-
-
-// Use of the STLport package("http://corp.metabyte.com/~fbp/stl/effort.html")
-#ifdef NCBI_SGI_STL_PORT
-#include <stl_config.h>
-
-#if !defined(NCBI_NO_NAMESPACES)  &&  (!defined(__STL_NAMESPACES)  ||  defined(__STL_NO_NAMESPACES))
-#define NCBI_NO_NAMESPACES
-#endif
-#endif
-
-
-// Using the STL namespace
-// Provide at least quasi-namespace(based on "struct") functionality
-#if defined(NCBI_NO_NAMESPACES)
-#define namespace struct
-#define NCBI_USING_STL
-#else
-#define NCBI_USING_STL using namespace std
-#endif
-
+#include <ncbitype.h>
+#include <ncbistl.hpp>
 
 #endif /* NCBISTD__HPP */
