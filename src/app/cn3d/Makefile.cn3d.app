@@ -8,8 +8,7 @@ REQUIRES = objects wxWindows ctools OpenGL C-Toolkit
 
 APP = cn3d
 
-SRC = \
-	aaa_dummy_pch \
+SRC =	aaa_dummy_pch \
 	alignment_manager \
 	alignment_set \
 	animation_controls \
@@ -69,10 +68,9 @@ SRC = \
 	viewer_window_base \
 	wx_tools
 
-LIB = \
-	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode \
+LIB =	xstruct_dp xblast \
+	cdd ncbimime cn3d mmdb scoremat seqset seq seqcode sequtil \
 	pub medline biblio general taxon1 \
-	xstruct_dp xblast sequtil \
 	xser xutil xctools xconnect xncbi
 
 CPPFLAGS = \
@@ -82,8 +80,7 @@ CPPFLAGS = \
 
 NCBI_C_LIBS = -lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi
 
-LIBS = \
-	$(WXWIN_LIBS) $(WXWIN_GL_LIBS) \
+LIBS =	$(WXWIN_LIBS) $(WXWIN_GL_LIBS) \
 	$(NCBI_C_LIBPATH) \
 	$(NCBI_C_LIBS) \
 	$(ORIG_LIBS)
