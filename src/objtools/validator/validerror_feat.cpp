@@ -1130,6 +1130,12 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
     
     EDiagSev sev = (aa == 'U') ? eDiag_Warning : eDiag_Error;
 
+    bool modified_codon_recognition = false;
+    if ( feat.CanGetExcept_text()  &&
+         NStr::FindNoCase(feat.GetExcept_text(), "modified codon recognition") != NPOS ) {
+        modified_codon_recognition = true;
+    }
+
     ITERATE( CTrna_ext::TCodon, iter, trna.GetCodon() ) {
         // test that codon value is in range 0 - 63
         if ( *iter < 0  ||  *iter > 63 ) {
@@ -1139,10 +1145,18 @@ void CValidError_feat::ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat
             continue;
         }
 
-        unsigned char taa = ncbieaa[*iter];
-        if ( taa != aa ) {
-            PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
-                "tRNA codon does not match genetic code", feat);
+        if ( !modified_codon_recognition ) {
+            unsigned char taa = ncbieaa[*iter];
+            if ( taa != aa ) {
+                if ( (aa == 'U')  &&  (taa == '*')  &&  (*iter == 14) ) {
+                    // selenocysteine normally uses TGA (14), so ignore without requiring exception in record
+                    // TAG (11) is used for pyrrolysine in archaebacteria
+                    // TAA (10) is not yet known to be used for an exceptional amino acid
+                } else {
+                    PostErr(sev, eErr_SEQ_FEAT_TrnaCodonWrong,
+                        "tRNA codon does not match genetic code", feat);
+                }
+            }
         }
     }
 }
@@ -2668,6 +2682,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/06/17 17:04:37  shomrat
+* TGA can be used for Selenocysteine without needing modified codon recognition exception
+*
 * Revision 1.56  2004/05/26 14:53:30  shomrat
 * removed non-preferred variants ribosome slippage, trans splicing, alternate processing, and non-consensus splice site
 *
