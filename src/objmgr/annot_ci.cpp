@@ -151,6 +151,11 @@ bool CAnnot_CI::x_IsValid(void) const
         }
     }
 
+    // Check location/product flag and use corresponding map
+    if ( m_Selector.m_FeatProduct ) {
+        return obj.GetProductMap()  &&
+            x_ValidLocation(*obj.GetProductMap());
+    }
     return x_ValidLocation(obj.GetRangeMap());
 }
 
@@ -194,6 +199,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/12/20 20:54:24  grichenk
+* Added optional location/product switch to CFeat_CI
+*
 * Revision 1.9  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

@@ -53,11 +53,16 @@ struct SAnnotSelector
     typedef CSeqFeatData::E_Choice       TFeatChoice;
 
     SAnnotSelector(TAnnotChoice annot = CSeq_annot::C_Data::e_not_set,
-                   TFeatChoice  feat  = CSeqFeatData::e_not_set)
-        : m_AnnotChoice(annot), m_FeatChoice(feat) {}
+                   TFeatChoice  feat  = CSeqFeatData::e_not_set,
+                   bool feat_product = false)
+        : m_AnnotChoice(annot),
+          m_FeatChoice(feat),
+          m_FeatProduct(feat_product)
+    {}
 
     TAnnotChoice m_AnnotChoice;  // Annotation type
     TFeatChoice  m_FeatChoice;   // Seq-feat subtype
+    bool         m_FeatProduct;  // set to "true" for searching products
 };
 
 
@@ -153,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2002/12/20 20:54:23  grichenk
+* Added optional location/product switch to CFeat_CI
+*
 * Revision 1.12  2002/12/06 15:35:57  grichenk
 * Added overlap type for annot-iterators
 *

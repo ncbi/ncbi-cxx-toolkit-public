@@ -75,6 +75,7 @@ public:
     const CSeq_graph& GetGraph(void) const;
 
     const CHandleRangeMap& GetRangeMap(void) const;
+    const CHandleRangeMap* GetProductMap(void) const; // may be null
 
     // Get Seq-annot, containing the element
     const CSeq_annot& GetSeq_annot(void) const;
@@ -105,6 +106,7 @@ private:
     CConstRef<CSeq_annot>        m_Annot;
     CConstRef<CSeq_entry>        m_Entry;    // seq-entry, containing the annot.
     auto_ptr<CHandleRangeMap>    m_RangeMap; // may be null for fake objects
+    auto_ptr<CHandleRangeMap>    m_ProductMap; // non-null for features with product
 };
 
 
@@ -126,11 +128,14 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Object(dynamic_cast<const CObject*>(&feat)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
+      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper())),
+      m_ProductMap(0)
 {
     m_RangeMap->AddLocation(feat.GetLocation());
-    if ( feat.IsSetProduct() )
-        m_RangeMap->AddLocation(feat.GetProduct());
+    if ( feat.IsSetProduct() ) {
+        m_ProductMap.reset(new CHandleRangeMap(data_source.GetIdMapper()));
+        m_ProductMap->AddLocation(feat.GetProduct());
+    }
     return;
 }
 
@@ -144,7 +149,8 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Object(dynamic_cast<const CObject*>(&align)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
+      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper())),
+      m_ProductMap(0)
 {
     x_ProcessAlign(align);
     return;
@@ -160,7 +166,8 @@ CAnnotObject::CAnnotObject(CDataSource& data_source,
       m_Object(dynamic_cast<const CObject*>(&graph)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper()))
+      m_RangeMap(new CHandleRangeMap(data_source.GetIdMapper())),
+      m_ProductMap(0)
 {
     m_RangeMap->AddLocation(graph.GetLoc());
     return;
@@ -233,6 +240,12 @@ const CHandleRangeMap& CAnnotObject::GetRangeMap(void) const
 }
 
 inline
+const CHandleRangeMap* CAnnotObject::GetProductMap(void) const
+{
+    return m_ProductMap.get();
+}
+
+inline
 const CSeq_annot& CAnnotObject::GetSeq_annot(void) const
 {
     return *m_Annot;
@@ -254,7 +267,8 @@ CAnnotObject::CAnnotObject(const CSeq_feat& feat,
       m_Object(dynamic_cast<const CObject*>(&feat)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(0)
+      m_RangeMap(0),
+      m_ProductMap(0)
 {
     return;
 }
@@ -268,7 +282,8 @@ CAnnotObject::CAnnotObject(const CSeq_align& align,
       m_Object(dynamic_cast<const CObject*>(&align)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(0)
+      m_RangeMap(0),
+      m_ProductMap(0)
 {
     return;
 }
@@ -282,7 +297,8 @@ CAnnotObject::CAnnotObject(const CSeq_graph& graph,
       m_Object(dynamic_cast<const CObject*>(&graph)),
       m_Annot(&annot),
       m_Entry(entry),
-      m_RangeMap(0)
+      m_RangeMap(0),
+      m_ProductMap(0)
 {
     return;
 }
@@ -295,6 +311,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/12/20 20:54:24  grichenk
+* Added optional location/product switch to CFeat_CI
+*
 * Revision 1.10  2002/12/06 15:36:00  grichenk
 * Added overlap type for annot-iterators
 *

@@ -1157,6 +1157,15 @@ void CDataSource::x_MapFeature(const CSeq_feat& feat,
             mapit->second.GetOverlappingRange(),
             CRef<CAnnotObject>(aobj)));
     }
+    if ( aobj->GetProductMap() ) {
+        iterate ( CHandleRangeMap::TLocMap,
+            mapit, aobj->GetProductMap()->GetMap() ) {
+            m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
+            tse.m_AnnotMap[mapit->first].insert(TRangeMap::value_type(
+                mapit->second.GetOverlappingRange(),
+                CRef<CAnnotObject>(aobj)));
+        }
+    }
 }
 
 
@@ -1588,6 +1597,45 @@ void CDataSource::x_DropFeature(const CSeq_feat& feat,
                 m_TSE_ref.erase(tse_set);
             }
             break;
+        }
+    }
+    if ( aobj->GetProductMap() ) {
+        // Repeat it for product if any
+        iterate ( CHandleRangeMap::TLocMap,
+            mapit, aobj->GetProductMap()->GetMap() ) {
+            // Find TSEs containing references to the id
+            // The whole DS should be locked by DropTSE()
+            TTSEMap::iterator tse_set = m_TSE_ref.find(mapit->first);
+            if (tse_set == m_TSE_ref.end())
+                continue; // The referenced ID is not currently loaded
+            // Find the TSE containing the feature
+            TTSESet::iterator tse_info = tse_set->second.begin();
+            for ( ; tse_info != tse_set->second.end(); ++tse_info) {
+                TAnnotMap::iterator annot_it =
+                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).find(
+                    mapit->first);
+                if (annot_it ==
+                    const_cast<TAnnotMap&>((*tse_info)->m_AnnotMap).end())
+                    continue;
+                TRangeMap::iterator rg = annot_it->second.begin(
+                    mapit->second.GetOverlappingRange());
+                for ( ; rg != annot_it->second.end(); ++rg) {
+                    if (rg->second->IsFeat()  &&
+                        &(rg->second->GetFeat()) == &feat)
+                        break;
+                }
+                if (rg == annot_it->second.end())
+                    continue;
+                // Delete the feature from all indexes
+                annot_it->second.erase(rg);
+                if (annot_it->second.size() == 0) {
+                    tse_set->second.erase(tse_info);
+                }
+                if (tse_set->second.size() == 0) {
+                    m_TSE_ref.erase(tse_set);
+                }
+                break;
+            }
         }
     }
 }
@@ -2029,6 +2077,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2002/12/20 20:54:24  grichenk
+* Added optional location/product switch to CFeat_CI
+*
 * Revision 1.72  2002/12/19 20:16:39  grichenk
 * Fixed locations on minus strand
 *

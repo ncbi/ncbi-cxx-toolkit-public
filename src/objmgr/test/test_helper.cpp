@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2002/12/20 20:54:25  grichenk
+* Added optional location/product switch to CFeat_CI
+*
 * Revision 1.19  2002/12/19 20:18:57  grichenk
 * Fixed test case for minus strand location
 *
@@ -714,15 +717,10 @@ CSeq_entry& CDataGenerator::CreateConstructedEntry(int idx, int index)
 
     CRef<CSeq_interval> int_ref(new CSeq_interval);
     int_ref->SetId().SetGi(11+idx*1000);
-    if (index == 2)
-    {
-        int_ref->SetFrom(10);
-        int_ref->SetTo(5);
+    int_ref->SetFrom(5);
+    int_ref->SetTo(10);
+    if (index == 2) {
         int_ref->SetStrand(eNa_strand_minus);
-    }
-    else {
-        int_ref->SetFrom(5);
-        int_ref->SetTo(10);
     }
     int_list.push_back(int_ref);
 
@@ -941,9 +939,31 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
+        // Get products
+        for (CFeat_CI feat_it(scope, loc,
+                              CSeqFeatData::e_not_set,
+                              CAnnot_CI::eOverlap_Intervals,
+                              CFeat_CI::eResolve_TSE,
+                              CFeat_CI::e_Product);
+            feat_it;  ++feat_it) {
+            count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
+            //### _ASSERT(feat_it->
+        }
     }
     else {
         for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
+            feat_it;  ++feat_it) {
+            count++;
+            annot_set.insert(&feat_it.GetSeq_annot());
+            //### _ASSERT(feat_it->
+        }
+        // Get products
+        for (CFeat_CI feat_it(handle, 0, 0,
+                              CSeqFeatData::e_not_set,
+                              CAnnot_CI::eOverlap_Intervals,
+                              CFeat_CI::eResolve_TSE,
+                              CFeat_CI::e_Product);
             feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
@@ -1052,7 +1072,7 @@ void CTestHelper::TestDataRetrieval( CScope& scope, int idx,
     ProcessBioseq(scope, id, 40,
         "CAATAACCTCAGCAGCAACAAGTGGCTTCCAGCGCCCTCC",
         "GTTATTGGAGTCGTCGTTGTTCACCGAAGGTCGCGGGAGG",
-        1, 3, 2, 1, 1, 2, 2, 1, 1);
+        1, 3, 1, 1, 1, 2, 1, 1, 1); //1, 3, 2, 1, 1, 2, 2, 1, 1);
     // segmented sequence
     id.SetGi(21+idx*1000);
     ProcessBioseq(scope, id, 62,

@@ -43,6 +43,10 @@ BEGIN_SCOPE(objects)
 class CFeat_CI : public CAnnotTypes_CI
 {
 public:
+    enum EFeat_Location {
+        e_Location,
+        e_Product
+    };
     CFeat_CI(void);
     // Search all TSEs in all datasources. By default search sequence segments
     // (for constructed sequences) only if the referenced sequence is in the
@@ -54,7 +58,8 @@ public:
              SAnnotSelector::TFeatChoice feat_choice,
              CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
              CAnnotTypes_CI::EResolveMethod resolve =
-             CAnnotTypes_CI::eResolve_TSE);
+             CAnnotTypes_CI::eResolve_TSE,
+             EFeat_Location loc_type = e_Location);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
     // the whole bioseq is searched. References are resolved depending on the
     // "resolve" flag (see above).
@@ -65,6 +70,7 @@ public:
              SAnnotSelector::TFeatChoice feat_choice,
              CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
              EResolveMethod resolve = eResolve_TSE,
+             EFeat_Location loc_type = e_Location,
              const CSeq_entry* entry = 0);
     CFeat_CI(const CFeat_CI& iter);
     virtual ~CFeat_CI(void);
@@ -91,9 +97,12 @@ CFeat_CI::CFeat_CI(CBioseq_Handle& bioseq,
                    SAnnotSelector::TFeatChoice feat_choice,
                    CAnnot_CI::EOverlapType overlap_type,
                    EResolveMethod resolve,
+                   EFeat_Location loc_type,
                    const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice),
+          SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
+                         feat_choice,
+                         loc_type == e_Product),
           overlap_type, resolve, entry)
 {
     return;
@@ -139,6 +148,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/12/20 20:54:23  grichenk
+* Added optional location/product switch to CFeat_CI
+*
 * Revision 1.14  2002/12/06 15:35:57  grichenk
 * Added overlap type for annot-iterators
 *
