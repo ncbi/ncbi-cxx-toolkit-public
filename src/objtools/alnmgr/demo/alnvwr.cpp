@@ -118,7 +118,7 @@ void CAlnMgrTestApp::Init(void)
          "Anchor row (zero based)",
          CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey
+    arg_desc->AddKey
         ("v", "",
          "View format:\n"
          "1. CSV table\n"
@@ -700,6 +700,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/07/17 21:06:44  todorov
+* -v is now required param
+*
 * Revision 1.5  2003/07/14 20:25:18  todorov
 * Added another, even faster viewer
 *
