@@ -558,8 +558,7 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs) const
 const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 {
     if ( !m_MsvcRegSettings.get() ) {
-        m_MsvcRegSettings = 
-            auto_ptr<CMsvc7RegSettings>(new CMsvc7RegSettings());
+        m_MsvcRegSettings.reset(new CMsvc7RegSettings());
     
         m_MsvcRegSettings->m_Version = 
             GetConfig().GetString("msvc7", "Version", "7.10");
@@ -588,7 +587,7 @@ const CMsvc7RegSettings& CProjBulderApp::GetRegSettings(void)
 const CMsvcSite& CProjBulderApp::GetSite(void)
 {
     if ( !m_MsvcSite.get() ) 
-        m_MsvcSite = auto_ptr<CMsvcSite>(new CMsvcSite(GetConfig()));
+        m_MsvcSite.reset(new CMsvcSite(GetConfig()));
     
     return *m_MsvcSite;
 }
@@ -598,9 +597,7 @@ const CMsvcMetaMakefile& CProjBulderApp::GetMetaMakefile(void)
 {
     if ( !m_MsvcMetaMakefile.get() ) {
         //Metamakefile must be in RootSrc directory
-        m_MsvcMetaMakefile = 
-            auto_ptr<CMsvcMetaMakefile>
-                (new CMsvcMetaMakefile
+        m_MsvcMetaMakefile.reset(new CMsvcMetaMakefile
                     (CDirEntry::ConcatPath(GetProjectTreeInfo().m_Src,
                                            GetRegSettings().m_MetaMakefile)));
         
@@ -618,7 +615,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
 {
     if ( !m_ProjectTreeInfo.get() ) {
         
-        m_ProjectTreeInfo = auto_ptr<SProjectTreeInfo> (new SProjectTreeInfo);
+        m_ProjectTreeInfo.reset(new SProjectTreeInfo);
         
         CArgs args = GetArgs();
         
@@ -704,6 +701,10 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
         m_ProjectTreeInfo->m_Projects = 
             CDirEntry::AddTrailingPathSeparator
                        (m_ProjectTreeInfo->m_Compilers);
+
+        /// impl part if include project node
+        m_ProjectTreeInfo->m_Impl = 
+            GetConfig().GetString("ProjectTree", "impl", "");
     }
     return *m_ProjectTreeInfo;
 }
@@ -714,7 +715,7 @@ const CBuildType& CProjBulderApp::GetBuildType(void)
     if ( !m_BuildType.get() ) {
         CArgs args = GetArgs();
         bool dll_build = args["dll"];
-        m_BuildType = auto_ptr<CBuildType>(new CBuildType(dll_build));
+        m_BuildType.reset(new CBuildType(dll_build));
     }    
     return *m_BuildType;
 }
@@ -733,8 +734,7 @@ const CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
         string dll_info_file_name = GetRegSettings().m_DllInfo;
         dll_info_file_name =
             CDirEntry::ConcatPath(site_ini_dir, dll_info_file_name);
-        m_DllsInfo = 
-            auto_ptr<CMsvcDllsInfo>(new CMsvcDllsInfo(dll_info_file_name));
+        m_DllsInfo.reset(new CMsvcDllsInfo(dll_info_file_name));
     }    
     return *m_DllsInfo;
 }
@@ -743,8 +743,7 @@ const CMsvcDllsInfo& CProjBulderApp::GetDllsInfo(void)
 const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
 {
     if ( !m_WholeTree.get() ) {
-        m_WholeTree = 
-            auto_ptr<CProjectItemsTree>(new CProjectItemsTree);
+        m_WholeTree.reset(new CProjectItemsTree);
 
         CProjectDummyFilter pass_all_filter;
         CProjectTreeBuilder::BuildProjectTree(&pass_all_filter, 
@@ -812,6 +811,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.41  2004/06/07 19:14:54  gorelenk
+ * Changed CProjBulderApp::GetProjectTreeInfo .
+ *
  * Revision 1.40  2004/06/07 13:57:43  gorelenk
  * Changed implementation of CProjBulderApp::GetRegSettings and
  * CProjBulderApp::GetDllsInfo.
