@@ -35,6 +35,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2001/04/13 02:59:31  vakatov
+* Do not apply R1.4 for non-UNIX platforms where we cannot configure
+* HAVE_NCBI_C yet
+*
 * Revision 1.4  2001/04/12 22:56:58  vakatov
 * [HAVE_NCBI_C]  Handle #GetProgramName and #SetProgramName to avoid
 *                name clash with the NCBI C Toolkit
@@ -58,7 +62,7 @@
 #include <deque>
 
 // Avoid name clash with the NCBI C Toolkit
-#if defined(HAVE_NCBI_C)
+#if !defined(NCBI_OS_UNIX)  ||  defined(HAVE_NCBI_C)
 #  if defined(GetProgramName)
 #    undef GetProgramName
 #  endif
