@@ -216,6 +216,23 @@ public:
     void SetOptionalAttribute(const char* name, const string& value);
     void SetOptionalAttribute(const char* name, bool set);
 
+    // Exception handling.
+
+    /// Flags defining how to catch and process exceptions.
+    /// Note that without the fCatchAll flag only CHTMLExceptions and
+    /// all derived exceptons can be traced.
+    enum EExceptionFlags {
+        fAddTrace = 0x1,         ///< Enable trace.
+        fCatchAll = 0x2,         ///< Catch all other exceptions and
+                                 ///< rethrow CHTMLException.
+        fDefault  = fAddTrace
+    };
+    typedef int TExceptionFlags; ///< Binary OR of "EExceptionFlags"
+
+    // Set/get global exception handling flags.
+    static void SetExceptionFlags(TExceptionFlags flags = fDefault);
+    static TExceptionFlags GetExceptionFlags(void);
+
 protected:
     virtual void DoAppendChild(CNCBINode* child);
     virtual void DoSetAttribute(const string& name,
@@ -254,6 +271,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/12/23 17:58:51  ivanov
+ * Added exception tracing
+ *
  * Revision 1.22  2003/11/05 18:41:06  dicuccio
  * Added export specifiers
  *

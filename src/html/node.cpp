@@ -27,11 +27,18 @@
  *
  */
 
-#include <html/node.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+#include <html/node.hpp>
+#include <html/html_exception.hpp>
 
 
 BEGIN_NCBI_SCOPE
+
+
+// Store global exception handling flags in TLS
+static CSafeStaticRef< CTls<CNCBINode::TExceptionFlags> > s_TlsExceptionFlags;
 
 
 CNCBINode::CNCBINode(void)
@@ -204,17 +211,49 @@ CNodeRef CNCBINode::MapTagAll(const string& tagname, const TMode& mode)
 CNcbiOstream& CNCBINode::Print(CNcbiOstream& out, TMode prev)
 {
     Initialize();
-
     TMode mode(&prev, this);
-    PrintBegin(out, mode);
 
     try {
+        PrintBegin(out, mode);
         PrintChildren(out, mode);
     }
-    catch (...) {
-        ERR_POST("CNCBINode::Print: exception in PrintChildren, trying to PrintEnd");
+    catch (CHTMLException& e) {
         PrintEnd(out, mode);
+        e.AddTraceInfo(GetName());
         throw;
+    }
+    catch (CException& e) {
+        PrintEnd(out, mode);
+        TExceptionFlags flags = GetExceptionFlags();
+        if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+            throw;
+        }
+        CHTMLException new_e(__FILE__, __LINE__, 0, CHTMLException::eUnknown,
+                             e.GetMsg());
+        new_e.AddTraceInfo(GetName());
+        throw new_e;
+    }
+    catch (exception& e) {
+        PrintEnd(out, mode);
+        TExceptionFlags flags = GetExceptionFlags();
+        if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+            throw;
+        }
+        CHTMLException new_e(__FILE__, __LINE__, 0, CHTMLException::eUnknown,
+                             string("CNCBINode::Print: ") + e.what());
+        new_e.AddTraceInfo(GetName());
+        throw new_e;
+    }
+    catch (...) {
+        PrintEnd(out, mode);
+        TExceptionFlags flags = GetExceptionFlags();
+        if ( (flags  &  CNCBINode::fCatchAll) == 0 ) {
+            throw;
+        }
+        CHTMLException new_e(__FILE__, __LINE__, 0, CHTMLException::eUnknown,
+                             "CNCBINode::Print: unknown exception");
+        new_e.AddTraceInfo(GetName());
+        throw new_e;
     }
     PrintEnd(out, mode);
     return out;
@@ -259,12 +298,28 @@ void CNCBINode::CreateSubNodes(void)
 }
 
 
+void CNCBINode::SetExceptionFlags(TExceptionFlags flags)
+{
+    s_TlsExceptionFlags->SetValue(reinterpret_cast<TExceptionFlags*> (flags));
+}
+
+
+CNCBINode::TExceptionFlags CNCBINode::GetExceptionFlags()
+{
+    // Some 64 bit compilers refuse to cast from int* to EExceptionFlags
+    return EExceptionFlags(long(s_TlsExceptionFlags->GetValue()));
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/12/23 17:58:11  ivanov
+ * Added exception tracing
+ *
  * Revision 1.28  2003/11/03 17:03:08  ivanov
  * Some formal code rearrangement. Move log to end.
  *
