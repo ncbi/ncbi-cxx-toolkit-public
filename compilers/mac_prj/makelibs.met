@@ -4,7 +4,7 @@
 	An AppleScript to compile the NCBI C++ Toolkit base libraries with
 	Metrowerks CodeWarrior.
 
-	$Id: makelibs.met,v 1.4 2000/11/17 00:32:40 vakatov Exp $
+	$Id: makelibs.met,v 1.5 2000/12/26 23:33:18 vakatov Exp $
 	
 	Revision History:
 	----------------
@@ -383,7 +383,7 @@ on DoCreateProjects()
 		
 		my DoCreateDefaultProject("corelib", "corelib", Â
 			{"ncbiapp", "ncbiargs", "ncbidiag", "ncbienv", "ncbiexpt", Â
-				"ncbiobj", "ncbireg", "ncbistd", "ncbistre", "ncbithr"})
+				"ncbiobj", "ncbireg", "ncbistd", "ncbistre", "ncbithr", "ncbitime"})
 		
 		my DoCreateDefaultProject("serial", "serial", Â
 			{"asntypes", "autoptrinfo", "bytesrc", "choice", Â
