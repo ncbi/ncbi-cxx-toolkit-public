@@ -42,6 +42,7 @@
 #include "seqdbfile.hpp"
 #include "seqdbvol.hpp"
 #include "seqdbvolset.hpp"
+#include "seqdbgeneral.hpp"
 
 BEGIN_NCBI_SCOPE
 

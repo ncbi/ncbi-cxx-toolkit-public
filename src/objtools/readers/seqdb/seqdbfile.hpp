@@ -36,6 +36,7 @@
 /// files, such as name.pin, name.phr, name.psq, and so on.
 
 #include "seqdbmempool.hpp"
+#include "seqdbgeneral.hpp"
 
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
@@ -215,13 +216,13 @@ private:
 void inline CSeqDBExtFile::x_SetFileType(char prot_nucl)
 {
     m_ProtNucl = prot_nucl;
-        
+    
     _ASSERT((m_ProtNucl == kSeqTypeProt) ||
             (m_ProtNucl == kSeqTypeNucl) ||
             (m_ProtNucl == kSeqTypeUnkn));
-        
+    
     _ASSERT(m_FileName.size() >= 5);
-        
+    
     m_FileName[m_FileName.size() - 3] = m_ProtNucl;
 }
 
