@@ -245,16 +245,17 @@ static CDB_Object* s_GenericGetItem(EDB_Type data_type, CDB_Object* item_buff,
             throw CDB_ClientEx(eDB_Error, 130020, "s_GenericGetItem",
                                "wrong type of CDB_Object");
         }
-        DBFLT8* v = (DBFLT8*) d_ptr;
+        DBFLT8 v;
+        if(d_ptr) memcpy((void*)&v, d_ptr, sizeof(DBFLT8));
         if (item_buff) {
-            if (v)
-                *((CDB_Double*) item_buff) = (double) *v;
+            if (d_ptr)
+                *((CDB_Double*) item_buff) = (double) v;
             else
                 item_buff->AssignNULL();
             return item_buff;
         }
 
-        return v ? new CDB_Double((double)*v) : new CDB_Double;
+        return d_ptr ? new CDB_Double((double)v) : new CDB_Double;
     }
 
     case eDB_Float: {
@@ -1377,6 +1378,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2002/06/13 21:10:18  soussov
+ * freeTDS does not place doubles properly in memory, patch added
+ *
  * Revision 1.6  2002/06/08 06:18:43  vakatov
  * Ran through 64-bit compilation (tests were successful on Solaris/Forte6u2).
  * Fixed a return type in CTDS_CursorResult::ItemMaxSize, eliminated a couple
