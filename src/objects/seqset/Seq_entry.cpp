@@ -107,11 +107,13 @@ SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
         return NPOS; // bad
     }
 
-    switch (CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str())) {
+    CSeq_id::E_Choice choice =
+        CSeq_id::WhichInverseSeqId(str.substr(pos, vbar - pos).c_str());
+    switch (choice) {
     case CSeq_id::e_Patent: case CSeq_id::e_Other: // 3 args
         vbar = str.find('|', vbar + 1);
         // intentional fall-through - this allows us to correctly
-        // calculate the number of '|' spearations for FastA IDs
+        // calculate the number of '|' separations for FastA IDs
 
     case CSeq_id::e_Genbank:   case CSeq_id::e_Embl:    case CSeq_id::e_Pir:
     case CSeq_id::e_Swissprot: case CSeq_id::e_General: case CSeq_id::e_Ddbj:
@@ -123,12 +125,16 @@ SIZE_TYPE s_EndOfFastaID(const string& str, SIZE_TYPE pos)
         }
         vbar = str.find('|', vbar + 1);
         // intentional fall-through - this allows us to correctly
-        // calculate the number of '|' spearations for FastA IDs
+        // calculate the number of '|' separations for FastA IDs
 
     case CSeq_id::e_Local: case CSeq_id::e_Gibbsq: case CSeq_id::e_Gibbmt:
     case CSeq_id::e_Giim:  case CSeq_id::e_Gi:
         // 1 arg
         if (vbar == NPOS) {
+            if (choice == CSeq_id::e_Other) {
+                // this is acceptable - member is optional
+                break;
+            }
             return NPOS; // bad
         }
         vbar = str.find('|', vbar + 1);
@@ -342,6 +348,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.12  2003/01/10 19:34:50  gouriano
+ * corrected s_EndOfFastaID in case of incomplete CSeq_id::e_Other
+ *
  * Revision 6.11  2003/01/06 16:14:04  gouriano
  * corrected ReadFasta: set sequence's molecule class
  *
