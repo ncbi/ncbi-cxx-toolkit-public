@@ -86,7 +86,8 @@ protected:
     virtual char* ReadCString(void);
     TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
-    void ReadAnyContentTo(string& value, const CLightString& tagName);
+    void ReadAnyContentTo(const string& ns_prefix, string& value,
+                          const CLightString& tagName);
     virtual void ReadAnyContentObject(CAnyContentObject& obj);
     virtual void SkipAnyContentObject(void);
 
@@ -207,6 +208,7 @@ private:
     CLightString RejectedName(void);
     CLightString ReadAttributeName(void);
     void ReadAttributeValue(string& value, bool skipClosing=false);
+    char ReadUndefinedAttributes(void);
 
     void SkipAttributeValue(char c);
     void SkipQDecl(void);
@@ -251,6 +253,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/01/22 20:47:55  gouriano
+* Corrected reading of AnyContent object attributes
+*
 * Revision 1.32  2004/01/08 17:38:23  gouriano
 * Added encoding Windows-1252
 *
