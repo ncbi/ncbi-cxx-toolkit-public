@@ -36,7 +36,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_namedpipe.hpp>
-#include <connect/ncbi_namedpipe_connector.h>
+#include <connect/ncbi_namedpipe_connector.hpp>
 #include "../ncbi_priv.h"
 #include "ncbi_conntest.h"
 #include "test_assert.h"  // This header must go last
@@ -74,10 +74,10 @@ static void Client(STimeout timeout)
     connector = NAMEDPIPE_CreateConnector(kPipeName);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBouncePrint);
 
-    connector = NAMEDPIPE_CreateConnectorEx(kPipeName, 0);
+    connector = NAMEDPIPE_CreateConnector(kPipeName, 0);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBounceCheck);
 
-    connector = NAMEDPIPE_CreateConnectorEx(kPipeName, kBufferSize);
+    connector = NAMEDPIPE_CreateConnector(kPipeName, kBufferSize);
     CONN_TestConnector(connector, &timeout, log_file, fTC_Everything);
 
     // Cleanup
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/09/03 13:59:44  ivanov
+ * Renamed ncbi_namedpipe_connector.h -> ncbi_namedpipe_connector.hpp. Removed NAMEDPIPE_CreateConnectorEx().
+ *
  * Revision 1.6  2003/09/02 21:01:49  ivanov
  * + #include <corelib/ncbifile.hpp>
  *
