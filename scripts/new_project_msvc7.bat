@@ -7,13 +7,13 @@ SET TREE_ROOT=%CD%\..\
 
 SET PROJ_DIR=%TREE_ROOT%src\%1\
 SET COMPILERS_DIR=%TREE_ROOT%compilers\
-SET PTB_EXE_PATH=%COMPILERS_DIR%msvc7_prj\static\bin\debug\
-SET PTB_INI_PATH=%COMPILERS_DIR%msvc7_prj\
+SET PTB_EXE_PATH=%COMPILERS_DIR%msvc710_prj\static\bin\debug\
+SET PTB_INI_PATH=%COMPILERS_DIR%msvc710_prj\
 
 IF EXIST %PTB_EXE_PATH%project_tree_builder.exe GOTO START_PTB
 :BUILD_PTB
 ECHO "Building project_tree_builder ..."
-devenv %COMPILERS_DIR%msvc7_prj\static\app\project_tree_builder\project_tree_builder.sln /build Debug /project "-BUILD-ALL-" > Debug.log
+devenv %COMPILERS_DIR%msvc710_prj\static\app\project_tree_builder\project_tree_builder.sln /build Debug /project "-BUILD-ALL-" > Debug.log
 IF ERRORLEVEL 1 GOTO ABORT
 ECHO "Completed."
 GOTO START_PTB
