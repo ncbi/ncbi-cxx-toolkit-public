@@ -105,6 +105,8 @@ const unsigned char kMaskEc  = 0x0002;
 const unsigned char kMaskE   = 0x0004;
 const unsigned char kMaskD   = 0x0008;
 
+DEFINE_STATIC_FAST_MUTEX (masterlist_mutex);
+
 void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     list<ETranscriptSymbol>::iterator translist_pos,
     bool left_top, bool right_bottom )
@@ -121,7 +123,6 @@ void CMMAligner::x_DoSubmatrix( const SCoordRect& submatr,
     bool top_level = submatr.i1 == 0 && submatr.j1 == 0 &&
         submatr.i2 == m_SeqLen1-1 && submatr.j2 == m_SeqLen2-1;
 
-    DEFINE_STATIC_FAST_MUTEX (masterlist_mutex);
 
     if(dimI < 3 || dimJ < 3) { // terminal case
         CFastMutexGuard guard (masterlist_mutex);
@@ -954,6 +955,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/06/03 18:19:06  rsmith
+ * Move static mutex initialization to file from function scope, because of MW compiler choking (wrongly) over complex initialization.
+ *
  * Revision 1.10  2003/06/02 14:04:49  kapustin
  * Progress indication-related updates
  *
