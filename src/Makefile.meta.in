@@ -30,15 +30,12 @@ if test ! -z "$(USR_PROJ)"  ||  test ! -z "@UNIX_USR_PROJ@" ; then \
    x_project="$(USR_PROJ) @UNIX_USR_PROJ@" ; \
    for i in $$x_project ; do \
       if test -f "Makefile.$$i" ; then \
-        x_mfile="Makefile.$$i" ; \
-      else x_mfile="$(srcdir)/Makefile.$$i" ; \
-      fi ; \
-      if $(MAKE) -f "$$x_mfile" status_dir="$(status_dir)" $(MFLAGS) requirements ; then \
-         $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
-USRP_KET = ||  exit 1 ; \
+         x_mfile="Makefile.$$i" ; \
       else \
-        echo "Skipping $$i due to unmet requirements"; \
-      fi; \
+         x_mfile="$(srcdir)/Makefile.$$i" ; \
+      fi ; \
+      $(MAKE) -f "$$x_mfile" builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)
+USRP_KET = ||  exit 1 ; \
    done ; \
 fi
 
@@ -50,7 +47,7 @@ if test ! -z "$(LIB_PROJ)"  ||  test ! -z "@UNIX_LIB_PROJ@" ; then \
         $(MAKE) -f "$(builddir)/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
 LIBP_KET = ||  exit 2 ; \
      else \
-       echo "Skipping $$i due to unmet requirements"; \
+       echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
      fi; \
    done ; \
 fi
@@ -64,7 +61,7 @@ if test ! -z "$(APP_PROJ)"  ||  test ! -z "@UNIX_APP_PROJ@" ; then \
         $(MAKE) -f "$(builddir)/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" @APP_NOCOPY@ $(MFLAGS)
 APPP_KET = ||  exit 3 ; \
      else \
-       echo "Skipping $$i due to unmet requirements"; \
+       echo "NOTE:  skipping project \"$$i\" due to unmet requirements"; \
      fi; \
    done ; \
 fi
