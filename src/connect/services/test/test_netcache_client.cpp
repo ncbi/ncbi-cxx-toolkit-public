@@ -91,10 +91,17 @@ bool s_CheckExists(const string&  host,
         buf_size = sizeof(dataBuf);
     }
 
-    CNetCacheClient::EReadResult rres = nc_client.GetData(key, buf, buf_size);
+    try {
+        CNetCacheClient::EReadResult rres = 
+            nc_client.GetData(key, buf, buf_size);
 
-    if (rres == CNetCacheClient::eNotFound)
+        if (rres == CNetCacheClient::eNotFound)
+            return false;
+    } 
+    catch (CNetCacheException&)
+    {
         return false;
+    }
 
     return true;
 }
@@ -309,6 +316,14 @@ int CTestNetCacheClient::Run(void)
     bool exists;
     exists = s_CheckExists(host, port, key);
     assert(exists);
+
+    CNetCacheClient nc_client(host, port);
+    nc_client.Remove(key);
+
+    exists = s_CheckExists(host, port, key);
+    assert(!exists);
+
+
 /*
     unsigned delay = 70;
     cout << "Sleeping for " << delay << " seconds. Please wait...." << flush;
@@ -331,8 +346,12 @@ int CTestNetCacheClient::Run(void)
     s_ReportStatistics(log);
     NcbiCout << NcbiEndl;
 
+    s_StressTest(host, port, 1024 * 100, repeats/2, &log);
+    s_ReportStatistics(log);
+    NcbiCout << NcbiEndl;
 
-    s_StressTest(host, port, 1024 * 1024 * 5, repeats/10, &log);
+
+    s_StressTest(host, port, 1024 * 1024 * 5, repeats/50, &log);
     s_ReportStatistics(log);
     NcbiCout << NcbiEndl;
 
@@ -357,6 +376,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/10/28 16:16:53  kuznets
+ * +test for Remove
+ *
  * Revision 1.8  2004/10/27 14:17:15  kuznets
  * Cosmetics
  *
