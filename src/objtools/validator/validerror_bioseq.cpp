@@ -2605,6 +2605,11 @@ void CValidError_bioseq::ValidateGraphsOnBioseq(const CBioseq& seq)
 
     const CSeq_inst& inst = seq.GetInst();  
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    CGraph_CI grp(bsh, 0, 0);
+    if ( !grp ) {
+        return;
+    }
+
     for ( CGraph_CI grp(bsh, 0, 0); grp; ++grp ) {
         const CSeq_graph& graph = grp->GetOriginalGraph();
         if ( !IsSuportedGraphType(graph) ) {
@@ -2962,6 +2967,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/03/31 14:25:39  shomrat
+* Bail if no graphs present
+*
 * Revision 1.26  2003/03/28 18:03:20  shomrat
 * dropped call to min due to compilation error on some platforms
 *
