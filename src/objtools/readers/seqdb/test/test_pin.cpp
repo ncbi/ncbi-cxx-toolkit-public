@@ -60,10 +60,6 @@ volatile int gnum = 0;
 
 USING_NCBI_SCOPE;
 
-struct charbox {
-    char xyz[10234];
-};
-
 static void
 s_TokenizeKeepDelims(const string   & input,
                      const string   & delim,
