@@ -52,7 +52,7 @@ bool CAnnotObject_Less::x_CompareAnnot(const CAnnotObject& x,
     if ( x.IsFeat()  &&  y.IsFeat() ) {
         // CSeq_feat::operator<() may report x == y while the features
         // are different. In this case compare pointers too.
-        int diff = Compare(x.GetFeat(), y.GetFeat());
+        int diff = x.GetFeat().Compare(y.GetFeat());
         if ( diff != 0 )
             return diff < 0;
     }
@@ -623,6 +623,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/02/06 22:31:02  vasilche
+* Use CSeq_feat::Compare().
+*
 * Revision 1.37  2003/02/05 17:59:16  dicuccio
 * Moved formerly private headers into include/objects/objmgr/impl
 *
