@@ -559,8 +559,9 @@ void CValidError_feat::ValidateCdregion (
     if ( !pseudo && !cdregion.GetConflict() ) {
         ValidateCdTrans(feat);
         ValidateSplice(feat, false);
+        ValidateCdsProductId(feat);
     }
-    
+
     ITERATE( CCdregion::TCode_break, codebreak, cdregion.GetCode_break() ) {
         ECompare comp = sequence::Compare((**codebreak).GetLoc (),
             feat.GetLocation (), m_Scope );
@@ -621,6 +622,37 @@ void CValidError_feat::ValidateCdregion (
     ValidateCommonCDSProduct(feat);
 }
 
+
+// non-pseudo CDS must have product
+void CValidError_feat::ValidateCdsProductId(const CSeq_feat& feat)
+{
+    // bail if product exists
+    if ( feat.CanGetProduct() ) {
+        return;
+    }
+    
+    // bail if location has just stop
+    if ( feat.CanGetLocation() ) {
+        const CSeq_loc& loc = feat.GetLocation();
+        if ( loc.IsPartialLeft()  &&  !loc.IsPartialRight() ) {
+            if ( GetLength(loc, m_Scope) <= 5 ) {
+                return;
+            }
+        }
+    }
+    
+    // supress in case of the appropriate exception
+    if ( feat.CanGetExcept()  &&  feat.CanGetExcept_text()  &&
+        !IsBlankString(feat.GetExcept_text()) ) {
+        if ( NStr::Find(feat.GetExcept_text(),
+                        "rearrangement required for product") != NPOS ) {
+            return;
+        }
+    }
+    
+    PostErr(eDiag_Warning, eErr_SEQ_FEAT_MissingCDSproduct,
+        "Expected CDS product absent", feat);
+}
 
 
 void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
@@ -868,7 +900,7 @@ void CValidError_feat::ValidateRnaProductType
         break;
 
     case CRNA_ref::eType_rRNA:
-        if ( biomol == CMolInfo::eBiomol_snRNA ) {
+        if ( biomol == CMolInfo::eBiomol_rRNA ) {
             return;
         }
         break;
@@ -1228,6 +1260,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         "reasons given in citation",
         "artificial frameshift",
         "unclassified transcription discrepancy",
+        "rearrangement required for product"
     };
 
     if ( feat.GetPseudo() ) {
@@ -1469,13 +1502,21 @@ void CValidError_feat::ValidateBadMRNAOverlap(const CSeq_feat& feat)
     }
 
     EDiagSev sev = eDiag_Error;
-    if ( m_Imp.IsNC()  ||  m_Imp.IsNT()  ||  feat.GetExcept() ) {
+    if ( m_Imp.IsNC()  ||  m_Imp.IsNT()  ||  
+         (feat.CanGetExcept()  &&  feat.GetExcept()) ) {
         sev = eDiag_Warning;
     }
     if ( mrna ) {
-        PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
-            "mRNA contains CDS but internal intron-exon boundaries "
-            "do not match", feat);
+        // ribosomal slippage exception suppresses CDSmRNArange warning
+        if ( feat.CanGetExcept_text() ) {
+            const CSeq_feat::TExcept_text& text = feat.GetExcept_text();
+            if ( NStr::FindNoCase(text, "ribosomal slippage") != NPOS  ||
+                 NStr::FindNoCase(text, "ribosome slippage") != NPOS ) {
+                PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
+                    "mRNA contains CDS but internal intron-exon boundaries "
+                    "do not match", feat);
+            }
+        }
     } else {
         PostErr(sev, eErr_SEQ_FEAT_CDSmRNArange,
             "mRNA overlaps or contains CDS but does not completely "
@@ -1549,6 +1590,7 @@ static const string s_LegalExceptionStrings[] = {
   "artificial frameshift",
   "non-consensus splice site",
   "nonconsensus splice site",
+  "rearrangement required for product"
 };
 
 
@@ -2189,6 +2231,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2003/05/05 15:36:15  shomrat
+* Implemented ValidateCdsProductId
+*
 * Revision 1.26  2003/04/24 16:16:00  vasilche
 * Added missing includes and forward class declarations.
 *
