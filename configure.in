@@ -203,12 +203,14 @@ case "$host:$compiler" in
    ;;
 
  *:MIPSpro73 )
-   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared -n32"
+   compiler_extra=`echo $ARCH_FLAG | sed 's/-/_/g'`
+   COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared $ARCH_FLAG"
    CFLAGS="$COMMON_FLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
-   CPPFLAGS="-D__LONGLONG $CPPFLAGS"
-   LDFLAGS="-LANG:std $LDFLAGS"
-   AR=${AR:="$CXX -ar -WR,-v -o"}
+   CPPFLAGS="$ARCH_FLAG -D__LONGLONG $CPPFLAGS"
+   LDFLAGS="$ARCH_FLAG -LANG:std $LDFLAGS"
+   AR=${AR:="$CXX $ARCH_FLAG -ar -WR,-v -o"}
+   NETWORK_LIBS=" "
    ;;
 
  i*86*-pc-cygwin32:GCC )
