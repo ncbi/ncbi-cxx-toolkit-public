@@ -1,5 +1,5 @@
 --
--- $Id: seqtest.asn,v 1.1 2004/08/19 16:28:10 jcherry Exp $
+-- $Id: seqtest.asn,v 1.2 2004/10/28 19:13:03 jcherry Exp $
 --
 
 
@@ -17,7 +17,7 @@ IMPORTS Date, User-object FROM NCBI-General
 
 SeqTestResults ::= SEQUENCE {
     source CHOICE {
-        seq-id VisibleString,
+        seq-id Seq-id,
         seq-feat Seq-feat,
         seq-align Seq-align
     },
@@ -37,6 +37,9 @@ END
 
 --
 -- $Log: seqtest.asn,v $
+-- Revision 1.2  2004/10/28 19:13:03  jcherry
+-- Made seq-id in SeqTestResults a Seq-id rather than a string
+--
 -- Revision 1.1  2004/08/19 16:28:10  jcherry
 -- Initial version
 --
