@@ -196,61 +196,66 @@ private:
     void x_Initialize(const CHandleRangeMap& master_loc);
     void x_Initialize(void);
     void x_GetTSE_Info(void);
-    bool x_SearchMapped(const CSeqMap_CI& seg,
-                        CSeq_loc& master_loc_empty,
+    bool x_SearchMapped(const CSeqMap_CI&     seg,
+                        CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& master_id,
-                        const CHandleRange& master_hr);
+                        const CHandleRange&   master_hr,
+                        TSeqPos               master_shift);
     bool x_Search(const CHandleRangeMap& loc,
-                  CSeq_loc_Conversion* cvt);
+                  CSeq_loc_Conversion*   cvt);
 /*
     bool x_Search(const CSeq_id_Handle& id,
                   const CBioseq_Handle& bh,
                   const CHandleRange& hr,
                   CSeq_loc_Conversion* cvt);
 */
-    bool x_Search(const TTSE_Lock& tse_lock,
+    bool x_Search(const TTSE_Lock&      tse_lock,
                   const CSeq_id_Handle& id,
-                  const CHandleRange& hr,
-                  CSeq_loc_Conversion* cvt);
-    void x_Search(const CTSE_Info& tse_info,
-                  const SIdAnnotObjs* objs,
-                  CReadLockGuard& guard,
-                  const CAnnotName& name,
+                  const CHandleRange&   hr,
+                  CSeq_loc_Conversion*  cvt);
+    void x_Search(const CTSE_Info&      tse_info,
+                  const SIdAnnotObjs*   objs,
+                  CReadLockGuard&       guard,
+                  const CAnnotName&     name,
                   const CSeq_id_Handle& id,
-                  const CHandleRange& hr,
-                  CSeq_loc_Conversion* cvt);
-    void x_SearchRange(const CTSE_Info& tse_info,
-                       const SIdAnnotObjs* objs,
-                       CReadLockGuard& guard,
-                       const CAnnotName& name,
+                  const CHandleRange&   hr,
+                  CSeq_loc_Conversion*  cvt);
+    void x_SearchRange(const CTSE_Info&      tse_info,
+                       const SIdAnnotObjs*   objs,
+                       CReadLockGuard&       guard,
+                       const CAnnotName&     name,
                        const CSeq_id_Handle& id,
-                       const CHandleRange& hr,
-                       CSeq_loc_Conversion* cvt,
-                       size_t from_idx, size_t to_idx);
+                       const CHandleRange&   hr,
+                       CSeq_loc_Conversion*  cvt,
+                       size_t                from_idx,
+                       size_t                to_idx);
     void x_SearchAll(void);
     void x_SearchAll(const CSeq_entry_Info& entry_info);
     void x_SearchAll(const CSeq_annot_Info& annot_info);
     void x_Sort(void);
     
-    bool x_AddObjectMapping(CAnnotObject_Ref& object_ref,
+    bool x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
                             CSeq_loc_Conversion* cvt,
-                            unsigned int loc_index);
+                            unsigned int         loc_index);
     bool x_AddObject(CAnnotObject_Ref& object_ref);
-    bool x_AddObject(CAnnotObject_Ref& object_ref,
+    bool x_AddObject(CAnnotObject_Ref&    object_ref,
                      CSeq_loc_Conversion* cvt,
-                     unsigned int loc_index);
+                     unsigned int         loc_index);
 
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
 
     bool x_NeedSNPs(void) const;
     bool x_MatchLimitObject(const CAnnotObject_Info& annot_info) const;
-    bool x_MatchRange(const CHandleRange& hr,
-                      const CRange<TSeqPos>& range,
+    bool x_MatchRange(const CHandleRange&       hr,
+                      const CRange<TSeqPos>&    range,
                       const SAnnotObject_Index& index) const;
     bool x_MatchLocIndex(const SAnnotObject_Index& index) const;
 
     size_t x_GetAnnotCount(void) const;
+
+    // Set of processed annot-locs to avoid duplicates
+    typedef set< CConstRef<CSeq_loc> > TAnnotLocsSet;
 
     SAnnotSelector                   m_Selector;
     CHeapScope                       m_Scope;
@@ -268,6 +273,7 @@ private:
     CRef<CSeq_loc>       m_CreatedMappedSeq_loc;
     CRef<CSeq_point>     m_CreatedMappedSeq_point;
     CRef<CSeq_interval>  m_CreatedMappedSeq_interval;
+    auto_ptr<TAnnotLocsSet> m_AnnotLocsSet;
 
     friend class CAnnotTypes_CI;
     friend class CMappedFeat;
@@ -577,6 +583,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.7  2004/06/03 18:33:48  grichenk
 * Modified annot collector to better resolve synonyms
 * and matching IDs. Do not add id to scope history when

@@ -126,6 +126,8 @@ protected:
                            const CSeq_annot::C_Data::TAlign& objs);
     void x_MapAnnotObjects(CTSE_Info& tse,
                            const CSeq_annot::C_Data::TGraph& objs);
+    void x_MapAnnotObjects(CTSE_Info& tse,
+                           const CSeq_annot& annot); // locs case
     void x_UnmapAnnotObjects(CTSE_Info& tse);
     void x_DropAnnotObjects(CTSE_Info& tse);
 
@@ -188,6 +190,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.13  2004/04/05 15:56:13  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

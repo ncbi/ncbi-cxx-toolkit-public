@@ -506,11 +506,26 @@ void CTSE_Info::x_MapAnnotObject(SIdAnnotObjs& objs,
                                  const SAnnotObject_Key& key,
                                  const SAnnotObject_Index& annotRef)
 {
-    size_t index = CAnnotType_Index::GetTypeIndex(key);
-    if ( index >= objs.m_AnnotSet.size() ) {
-        objs.m_AnnotSet.resize(index+1);
+    if ( key.m_AnnotObject_Info->IsLocs() ) {
+        // Locs may contain multiple indexes
+        CAnnotObject_Info::TTypeIndexSet idx_set;
+        key.m_AnnotObject_Info->GetLocsTypes(idx_set);
+        ITERATE(CAnnotObject_Info::TTypeIndexSet, idx_rg, idx_set) {
+            for (size_t idx = idx_rg->first; idx < idx_rg->second; ++idx) {
+                if ( idx >= objs.m_AnnotSet.size() ) {
+                    objs.m_AnnotSet.resize(idx+1);
+                }
+                x_MapAnnotObject(objs.m_AnnotSet[idx], key, annotRef);
+            }
+        }
     }
-    x_MapAnnotObject(objs.m_AnnotSet[index], key, annotRef);
+    else {
+        size_t index = CAnnotType_Index::GetTypeIndex(key);
+        if ( index >= objs.m_AnnotSet.size() ) {
+            objs.m_AnnotSet.resize(index+1);
+        }
+        x_MapAnnotObject(objs.m_AnnotSet[index], key, annotRef);
+    }
 }
 
 
@@ -713,6 +728,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.44  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

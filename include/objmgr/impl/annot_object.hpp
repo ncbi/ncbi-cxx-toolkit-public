@@ -40,6 +40,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <objmgr/impl/annot_type_index.hpp>
 
 #include <memory>
 #include <vector>
@@ -74,6 +75,8 @@ public:
     CAnnotObject_Info(const CSeq_align& align,
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(const CSeq_graph& graph,
+                      CSeq_annot_Info& annot);
+    CAnnotObject_Info(const CSeq_loc& loc,
                       CSeq_annot_Info& annot);
     CAnnotObject_Info(CTSE_Chunk_Info& chunk_info,
                       const SAnnotTypeSelector& sel);
@@ -113,6 +116,13 @@ public:
     const CSeq_graph& GetGraph(void) const;
     const CSeq_graph* GetGraphFast(void) const; // unchecked & unsafe
 
+    typedef CAnnotType_Index::TIndexRange TIndexRange;
+    typedef vector<TIndexRange> TTypeIndexSet;
+
+    bool IsLocs(void) const;
+    const CSeq_loc& GetLocs(void) const;
+    void GetLocsTypes(TTypeIndexSet& idx_set) const;
+
     void GetMaps(vector<CHandleRangeMap>& hrmaps) const;
 
     // split support
@@ -137,6 +147,9 @@ private:
     void x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                         const CSeq_align& align,
                         int loc_index_shift) const;
+    void x_Locs_AddFeatSubtype(int ftype,
+                               int subtype,
+                               TTypeIndexSet& idx_set) const;
 
     CSeq_annot_Info*             m_Annot_Info;
     CConstRef<CObject>           m_Object;         // annot object itself
@@ -249,6 +262,13 @@ const CSeq_align* CAnnotObject_Info::GetAlignFast(void) const
 
 
 inline
+bool CAnnotObject_Info::IsLocs(void) const
+{
+    return m_AnnotType == CSeq_annot::C_Data::e_Locs;
+}
+
+
+inline
 const CSeq_annot_Info& CAnnotObject_Info::GetSeq_annot_Info(void) const
 {
     _ASSERT(!IsChunkStub());
@@ -270,6 +290,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.18  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

@@ -274,6 +274,9 @@ void CSeq_annot_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
     case CSeq_annot::C_Data::e_Graph:
         x_MapAnnotObjects(tse, data.GetGraph());
         break;
+    case CSeq_annot::C_Data::e_Locs:
+        x_MapAnnotObjects(tse, *m_Object);
+        break;
     default:
         break;
     }
@@ -405,6 +408,46 @@ void CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
 }
 
 
+void
+CSeq_annot_Info::x_MapAnnotObjects(CTSE_Info& tse,
+                                   const CSeq_annot& annot)
+{
+    m_ObjectInfos.Reserve(1);
+
+    CTSE_Info::TAnnotObjs& index = tse.x_SetAnnotObjs(GetName());
+
+    _ASSERT(annot.GetData().IsLocs());
+    // Only one referenced location per annot is allowed
+    _ASSERT(annot.GetData().GetLocs().size() == 1);
+    SAnnotObject_Key key;
+    SAnnotObject_Index annotRef;
+    vector<CHandleRangeMap> hrmaps;
+    const CSeq_loc& loc = *annot.GetData().GetLocs().front();
+
+    CAnnotObject_Info* info =
+        m_ObjectInfos.AddInfo(CAnnotObject_Info(loc, *this));
+    key.m_AnnotObject_Info = annotRef.m_AnnotObject_Info = info;
+
+    info->GetMaps(hrmaps);
+    annotRef.m_AnnotLocationIndex = 0;
+    ITERATE ( vector<CHandleRangeMap>, hrmit, hrmaps ) {
+        ITERATE ( CHandleRangeMap, hrit, *hrmit ) {
+            key.m_Handle = hrit->first;
+            const CHandleRange& hr = hrit->second;
+            key.m_Range = hr.GetOverlappingRange();
+            if ( hr.HasGaps() ) {
+                annotRef.m_HandleRange.Reset(new CObjectFor<CHandleRange>);
+                annotRef.m_HandleRange->GetData() = hr;
+            }
+            else {
+                annotRef.m_HandleRange.Reset();
+            }
+            tse.x_MapAnnotObject(index, key, annotRef, m_ObjectInfos);
+        }
+    }
+}
+
+
 void CSeq_annot_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
 {
     if ( m_SNP_Info ) {
@@ -429,6 +472,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/06/07 17:01:17  grichenk
+ * Implemented referencing through locs annotations
+ *
  * Revision 1.16  2004/05/21 21:42:13  gorelenk
  * Added PCH ncbi_pch.hpp
  *

@@ -39,6 +39,8 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annotdesc.hpp>
+#include <objects/seq/Annot_descr.hpp>
 
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -53,6 +55,10 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 
 #include <objects/seqres/Seq_graph.hpp>
+
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -107,6 +113,19 @@ CAnnotObject_Info::CAnnotObject_Info(const CSeq_graph& graph,
       m_FeatSubtype(CSeqFeatData::eSubtype_any),
       m_FeatType(CSeqFeatData::e_not_set),
       m_AnnotType(CSeq_annot::C_Data::e_Graph),
+      m_MultiId(0)
+{
+    _ASSERT(!IsChunkStub());
+}
+
+
+CAnnotObject_Info::CAnnotObject_Info(const CSeq_loc& loc,
+                                     CSeq_annot_Info& annot)
+    : m_Annot_Info(&annot),
+      m_Object(&loc),
+      m_FeatSubtype(CSeqFeatData::eSubtype_any),
+      m_FeatType(CSeqFeatData::e_not_set),
+      m_AnnotType(CSeq_annot::C_Data::e_Locs),
       m_MultiId(0)
 {
     _ASSERT(!IsChunkStub());
@@ -178,6 +197,24 @@ void CAnnotObject_Info::GetMaps(vector<CHandleRangeMap>& hrmaps) const
         x_ProcessAlign(hrmaps, align, 0);
         break;
     }
+    case CSeq_annot::C_Data::e_Locs:
+    {
+        // Index by location in region descriptor, not by referenced one
+        const CSeq_annot& annot = *GetSeq_annot_Info().GetCompleteSeq_annot();
+        _ASSERT(annot.IsSetDesc());
+        CConstRef<CSeq_loc> region;
+        ITERATE(CSeq_annot::TDesc::Tdata, desc_it, annot.GetDesc().Get()) {
+            if ( (*desc_it)->IsRegion() ) {
+                region.Reset(&(*desc_it)->GetRegion());
+                break;
+            }
+        }
+        _ASSERT(region);
+        hrmaps.resize(1);
+        hrmaps[0].clear();
+        hrmaps[0].AddLocation(*region);
+        break;
+    }
     default:
         break;
     }
@@ -232,6 +269,93 @@ const CSeq_graph& CAnnotObject_Info::GetGraph(void) const
 }
 
 
+const CSeq_loc& CAnnotObject_Info::GetLocs(void) const
+{
+    _ASSERT(!IsChunkStub() && IsLocs());
+    const CObject& obj = *m_Object;
+    return dynamic_cast<const CSeq_loc&>(obj);
+}
+
+
+const string kAnnotTypePrefix = "Seq-annot.data.";
+
+void CAnnotObject_Info::GetLocsTypes(TTypeIndexSet& idx_set) const
+{
+    const CSeq_annot& annot = *GetSeq_annot_Info().GetCompleteSeq_annot();
+    _ASSERT(annot.IsSetDesc());
+    ITERATE(CSeq_annot::TDesc::Tdata, desc_it, annot.GetDesc().Get()) {
+        if ( !(*desc_it)->IsUser() ) {
+            continue;
+        }
+        const CUser_object& obj = (*desc_it)->GetUser();
+        if ( !obj.GetType().IsStr() ) {
+            continue;
+        }
+        string type = obj.GetType().GetStr();
+        if (type.substr(0, kAnnotTypePrefix.size()) != kAnnotTypePrefix) {
+            continue;
+        }
+        type.erase(0, kAnnotTypePrefix.size());
+        if (type == "align") {
+            idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
+                CSeq_annot::C_Data::e_Align));
+        }
+        else if (type == "graph") {
+            idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
+                CSeq_annot::C_Data::e_Graph));
+        }
+        else if (type == "ftable") {
+            if ( obj.GetData().size() == 0 ) {
+                // Feature type/subtype not set
+                idx_set.push_back(CAnnotType_Index::GetAnnotTypeRange(
+                    CSeq_annot::C_Data::e_Ftable));
+                continue;
+            }
+            // Parse feature types and subtypes
+            ITERATE(CUser_object::TData, data_it, obj.GetData()) {
+                const CUser_field& field = **data_it;
+                if ( !field.GetLabel().IsId() ) {
+                    continue;
+                }
+                int ftype = field.GetLabel().GetId();
+                switch (field.GetData().Which()) {
+                case CUser_field::C_Data::e_Int:
+                    x_Locs_AddFeatSubtype(ftype,
+                        field.GetData().GetInt(), idx_set);
+                    break;
+                case CUser_field::C_Data::e_Ints:
+                    {
+                        ITERATE(CUser_field::C_Data::TInts, it,
+                            field.GetData().GetInts()) {
+                            x_Locs_AddFeatSubtype(ftype, *it, idx_set);
+                        }
+                        break;
+                    }
+                default:
+                    break;
+                }
+            }
+        }
+    }
+}
+
+
+void CAnnotObject_Info::x_Locs_AddFeatSubtype(int ftype,
+                                              int subtype,
+                                              TTypeIndexSet& idx_set) const
+{
+    if (subtype != CSeqFeatData::eSubtype_any) {
+        size_t idx =
+            CAnnotType_Index::GetSubtypeIndex(CSeqFeatData::ESubtype(subtype));
+        idx_set.push_back(TIndexRange(idx, idx+1));
+    }
+    else {
+        idx_set.push_back(
+            CAnnotType_Index::GetFeatTypeRange(CSeqFeatData::E_Choice(ftype)));
+    }
+}
+
+
 void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                                        const CSeq_align& align,
                                        int loc_index_shift) const
@@ -262,7 +386,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     ERR_POST(Warning << "Invalid 'strands' size in dendiag");
                     dim = min(dim, (int)diag.GetStrands().size());
                 }
-                if (hrmaps.size() < loc_index_shift + dim) {
+                if ((int)hrmaps.size() < loc_index_shift + dim) {
                     hrmaps.resize(loc_index_shift + dim);
                 }
                 TSeqPos len = (*it)->GetLen();
@@ -308,7 +432,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                 ERR_POST(Warning << "Invalid 'strands' size in denseg");
                 dim = min(dim*numseg, (int)denseg.GetStrands().size()) / numseg;
             }
-            if (hrmaps.size() < loc_index_shift + dim) {
+            if ((int)hrmaps.size() < loc_index_shift + dim) {
                 hrmaps.resize(loc_index_shift + dim);
             }
             for (int seg = 0;  seg < numseg;  seg++) {
@@ -334,13 +458,13 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             const CSeq_align::C_Segs::TStd& std =
                 align.GetSegs().GetStd();
             ITERATE ( CSeq_align::C_Segs::TStd, it, std ) {
-                if (hrmaps.size() < loc_index_shift + (*it)->GetDim()) {
+                if ((int)hrmaps.size() < loc_index_shift + (*it)->GetDim()) {
                     hrmaps.resize(loc_index_shift + (*it)->GetDim());
                 }
                 ITERATE ( CStd_seg::TLoc, it_loc, (*it)->GetLoc() ) {
                     CSeq_loc_CI row_it(**it_loc);
                     for (int row = 0; row_it; ++row_it, ++row) {
-                        if (loc_index_shift + row >= hrmaps.size()) {
+                        if (loc_index_shift + row >= (int)hrmaps.size()) {
                             hrmaps.resize(loc_index_shift + row + 1);
                         }
                         CSeq_loc loc;
@@ -372,7 +496,7 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
             if (dim > (int)packed.GetLens().size()) {
                 dim = packed.GetLens().size();
             }
-            if (hrmaps.size() < loc_index_shift + dim) {
+            if ((int)hrmaps.size() < loc_index_shift + dim) {
                 hrmaps.resize(loc_index_shift + dim);
             }
             for (int seg = 0;  seg < numseg;  seg++) {
@@ -411,6 +535,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.39  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

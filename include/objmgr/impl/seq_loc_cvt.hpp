@@ -74,14 +74,15 @@ class CSeq_loc_Conversion : public CObject
 public:
     typedef CRange<TSeqPos> TRange;
 
-    CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
+    CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
                         const CSeq_id_Handle& dst_id,
-                        const CSeqMap_CI& seg,
+                        const CSeqMap_CI&     seg,
+                        TSeqPos               master_shift,
                         const CSeq_id_Handle& src_id,
-                        CScope* scope);
+                        CScope*               scope);
     // Create conversion, mapping an ID to itself
     CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
-                        CScope* scope);
+                        CScope*               scope);
 
     ~CSeq_loc_Conversion(void);
 
@@ -125,7 +126,7 @@ public:
         {
             m_Src_id_Handle = src;
         }
-    void SetConversion(const CSeqMap_CI& seg);
+    void SetConversion(const CSeqMap_CI& seg, TSeqPos master_shift);
 
     const TRange& GetTotalRange(void) const
         {
@@ -317,6 +318,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.17  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.

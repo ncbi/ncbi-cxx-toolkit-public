@@ -50,6 +50,7 @@
 #include <objmgr/impl/seq_loc_cvt.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
+#include <objmgr/impl/bioseq_info.hpp>
 #include <objmgr/impl/scope_impl.hpp>
 #include <objmgr/objmgr_exception.hpp>
 
@@ -514,7 +515,7 @@ public:
 
 
 CAnnot_Collector::CAnnot_Collector(const SAnnotSelector& selector,
-                                         CScope&               scope)
+                                   CScope&               scope)
     : m_Selector(selector),
       m_Scope(scope),
       m_MappingCollector(new CAnnotMappingCollector)
@@ -549,7 +550,8 @@ void CAnnot_Collector::x_Clear(void)
 
 
 void CAnnot_Collector::x_Initialize(const CBioseq_Handle& bioseq,
-                                       TSeqPos start, TSeqPos stop)
+                                    TSeqPos               start,
+                                    TSeqPos               stop)
 {
     try {
         if ( start == 0 && stop == 0 ) {
@@ -620,7 +622,8 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                     found = x_SearchMapped(smit,
                                            *master_loc_empty,
                                            idit->first,
-                                           idit->second);
+                                           idit->second,
+                                           0);
                     deeper = !(found && m_Selector.m_AdaptiveDepth);
                     smit.Next(deeper);
                 }
@@ -740,9 +743,9 @@ bool CAnnot_Collector::x_MatchLocIndex(const SAnnotObject_Index& index) const
 
 
 inline
-bool CAnnot_Collector::x_MatchRange(const CHandleRange& hr,
-                                       const CRange<TSeqPos>& range,
-                                       const SAnnotObject_Index& index) const
+bool CAnnot_Collector::x_MatchRange(const CHandleRange&       hr,
+                                    const CRange<TSeqPos>&    range,
+                                    const SAnnotObject_Index& index) const
 {
     if ( m_Selector.m_OverlapType == SAnnotSelector::eOverlap_Intervals ) {
         if ( index.m_HandleRange ) {
@@ -866,37 +869,6 @@ void CAnnot_Collector::x_GetTSE_Info(void)
 }
 
 
-/*
-bool CAnnot_Collector::x_Search(const CSeq_id_Handle& id,
-                                const CBioseq_Handle& bh,
-                                const CHandleRange& hr,
-                                CSeq_loc_Conversion* cvt)
-{
-    if ( cvt )
-        cvt->SetSrcId(id);
-
-    bool found = false;
-    if ( m_Selector.m_LimitObjectType == SAnnotSelector::eLimit_None ) {
-        // any data source
-        CConstRef<CScope_Impl::TAnnotRefMap> tse_set;
-        if ( bh ) {
-            tse_set = m_Scope->GetTSESetWithAnnots(bh);
-        }
-        else {
-            tse_set = m_Scope->GetTSESetWithAnnots(id);
-        }
-        if ( tse_set ) {
-            found = x_Search(*tse_set, id, hr, cvt) || found;
-        }
-    }
-    else {
-        found = x_Search(m_TSE_LockMap, id, hr, cvt) || found;
-    }
-    return found;
-}
-*/
-
-
 static CSeqFeatData::ESubtype s_DefaultAdaptiveTriggers[] = {
     CSeqFeatData::eSubtype_gene,
     CSeqFeatData::eSubtype_cdregion,
@@ -904,10 +876,10 @@ static CSeqFeatData::ESubtype s_DefaultAdaptiveTriggers[] = {
 };
 
 
-bool CAnnot_Collector::x_Search(const TTSE_Lock& tse_lock,
+bool CAnnot_Collector::x_Search(const TTSE_Lock&      tse_lock,
                                 const CSeq_id_Handle& id,
-                                const CHandleRange& hr,
-                                CSeq_loc_Conversion* cvt)
+                                const CHandleRange&   hr,
+                                CSeq_loc_Conversion*  cvt)
 {
     bool found = false;
     const CTSE_Info& tse = *tse_lock;
@@ -994,9 +966,9 @@ bool CAnnot_Collector::x_Search(const TTSE_Lock& tse_lock,
 }
 
 
-bool CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref& object_ref,
+bool CAnnot_Collector::x_AddObjectMapping(CAnnotObject_Ref&    object_ref,
                                           CSeq_loc_Conversion* cvt,
-                                          unsigned int loc_index)
+                                          unsigned int         loc_index)
 {
     _ASSERT(object_ref.GetAnnotObject_Info().GetMultiIdFlags()
             || cvt->IsPartial()
@@ -1022,9 +994,9 @@ bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref& object_ref)
 
 
 inline
-bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref& object_ref,
+bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref&    object_ref,
                                    CSeq_loc_Conversion* cvt,
-                                   unsigned int loc_index)
+                                   unsigned int         loc_index)
 {
     // Always map aligns through conv. set
     return ( cvt && (cvt->IsPartial() || object_ref.IsAlign()) )?
@@ -1033,13 +1005,13 @@ bool CAnnot_Collector::x_AddObject(CAnnotObject_Ref& object_ref,
 }
 
 
-void CAnnot_Collector::x_Search(const CTSE_Info& tse,
-                                const SIdAnnotObjs* objs,
-                                CReadLockGuard& guard,
-                                const CAnnotName& annot_name,
+void CAnnot_Collector::x_Search(const CTSE_Info&      tse,
+                                const SIdAnnotObjs*   objs,
+                                CReadLockGuard&       guard,
+                                const CAnnotName&     annot_name,
                                 const CSeq_id_Handle& id,
-                                const CHandleRange& hr,
-                                CSeq_loc_Conversion* cvt)
+                                const CHandleRange&   hr,
+                                CSeq_loc_Conversion*  cvt)
 {
     if (m_Selector.m_AnnotTypesSet.size() == 0) {
         pair<size_t, size_t> range =
@@ -1105,14 +1077,15 @@ void CAnnot_Collector::x_Search(const CTSE_Info& tse,
 }
 
 
-void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
-                                        const SIdAnnotObjs* objs,
-                                        CReadLockGuard& guard,
-                                        const CAnnotName& annot_name,
-                                        const CSeq_id_Handle& id,
-                                        const CHandleRange& hr,
-                                        CSeq_loc_Conversion* cvt,
-                                        size_t from_idx, size_t to_idx)
+void CAnnot_Collector::x_SearchRange(const CTSE_Info&      tse,
+                                     const SIdAnnotObjs*   objs,
+                                     CReadLockGuard&       guard,
+                                     const CAnnotName&     annot_name,
+                                     const CSeq_id_Handle& id,
+                                     const CHandleRange&   hr,
+                                     CSeq_loc_Conversion*  cvt,
+                                     size_t                from_idx,
+                                     size_t                to_idx)
 {
     _ASSERT(objs);
 
@@ -1132,8 +1105,6 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
               aoit; ++aoit ) {
             const CAnnotObject_Info& annot_info =
                 *aoit->second.m_AnnotObject_Info;
-
-            _ASSERT(m_Selector.MatchType(annot_info));
 
             if ( annot_info.IsChunkStub() ) {
                 const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
@@ -1169,6 +1140,60 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
                     continue;
                 }
             }
+
+            if ( annot_info.IsLocs() ) {
+                const CSeq_loc& ref_loc = annot_info.GetLocs();
+
+                // Check if the stub has been already processed
+                if ( m_AnnotLocsSet.get() ) {
+                    CConstRef<CSeq_loc> ploc(&ref_loc);
+                    TAnnotLocsSet::const_iterator found =
+                        m_AnnotLocsSet->find(ploc);
+                    if (found != m_AnnotLocsSet->end()) {
+                        continue;
+                    }
+                }
+                else {
+                    m_AnnotLocsSet.reset(new TAnnotLocsSet);
+                }
+                m_AnnotLocsSet->insert(ConstRef(&ref_loc));
+
+                // Search annotations on the referenced location
+                const CSeq_id* ref_id = 0;
+                ref_loc.CheckId(ref_id);
+                _ASSERT(ref_id);
+                CRef<CSeq_loc> master_loc_empty(new CSeq_loc);
+                master_loc_empty->SetEmpty(
+                    const_cast<CSeq_id&>(*id.GetSeqId()));
+                CHandleRange master_hr;
+                master_hr.AddRange(aoit->first, eNa_strand_unknown);
+                CConstRef<CSeqMap> seqMap =
+                    CSeqMap::CreateSeqMapForSeq_loc(ref_loc, m_Scope);
+                CSeqMap_CI smit(seqMap->FindResolved(0,
+                                                     m_Scope,
+                                                     m_Selector.m_ResolveDepth-1,
+                                                     CSeqMap::fFindRef));
+                while ( smit  &&
+                    smit.GetPosition() <= aoit->first.GetToOpen() ) {
+                    _ASSERT(smit.GetType() == CSeqMap::eSeqRef);
+                    if ( m_Selector.m_ResolveMethod ==
+                        SAnnotSelector::eResolve_TSE &&
+                        !tse.FindBioseq(smit.GetRefSeqid()) ) {
+                        smit.Next(false);
+                        continue;
+                    }
+                    bool found = x_SearchMapped(smit,
+                        *master_loc_empty,
+                        id,
+                        master_hr,
+                        aoit->first.GetFrom());
+                    bool deeper = !(found && m_Selector.m_AdaptiveDepth);
+                    smit.Next(deeper);
+                }
+                continue;
+            }
+
+            _ASSERT(m_Selector.MatchType(annot_info));
 
             if ( !x_MatchLimitObject(annot_info) ) {
                 continue;
@@ -1211,7 +1236,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Info& tse,
 
 
 bool CAnnot_Collector::x_Search(const CHandleRangeMap& loc,
-                                CSeq_loc_Conversion* cvt)
+                                CSeq_loc_Conversion*   cvt)
 {
     bool found = false;
     ITERATE ( CHandleRangeMap, idit, loc ) {
@@ -1354,13 +1379,15 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 }
 
 
-bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI& seg,
-                                      CSeq_loc& master_loc_empty,
+bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI&     seg,
+                                      CSeq_loc&             master_loc_empty,
                                       const CSeq_id_Handle& master_id,
-                                      const CHandleRange& master_hr)
+                                      const CHandleRange&   master_hr,
+                                      TSeqPos               master_shift)
 {
-    CHandleRange::TOpenRange master_seg_range(seg.GetPosition(),
-                                              seg.GetEndPosition());
+    CHandleRange::TOpenRange master_seg_range(
+        seg.GetPosition() + master_shift,
+        seg.GetEndPosition() + master_shift);
     CHandleRange::TOpenRange ref_seg_range(seg.GetRefPosition(),
                                            seg.GetRefEndPosition());
     bool reversed = seg.GetRefMinusStrand();
@@ -1402,6 +1429,7 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI& seg,
         CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_loc_empty,
                                                               master_id,
                                                               seg,
+                                                              master_shift,
                                                               ref_id,
                                                               m_Scope));
         return x_Search(ref_loc, &*cvt);
@@ -1415,6 +1443,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.8  2004/06/03 18:33:48  grichenk
 * Modified annot collector to better resolve synonyms
 * and matching IDs. Do not add id to scope history when

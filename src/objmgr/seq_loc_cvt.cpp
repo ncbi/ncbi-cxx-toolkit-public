@@ -52,11 +52,12 @@ BEGIN_SCOPE(objects)
 // CSeq_loc_Conversion
 /////////////////////////////////////////////////////////////////////////////
 
-CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
+CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc&             master_loc_empty,
                                          const CSeq_id_Handle& dst_id,
-                                         const CSeqMap_CI& seg,
+                                         const CSeqMap_CI&     seg,
+                                         TSeqPos               master_shift,
                                          const CSeq_id_Handle& src_id,
-                                         CScope* scope)
+                                         CScope*               scope)
     : m_Src_id_Handle(src_id),
       m_Src_from(0),
       m_Src_to(0),
@@ -69,13 +70,13 @@ CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
       m_LastStrand(eNa_strand_unknown),
       m_Scope(scope)
 {
-    SetConversion(seg);
+    SetConversion(seg, master_shift);
     Reset();
 }
 
 
 CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
-                                         CScope* scope)
+                                         CScope*               scope)
     : m_Src_id_Handle(master_id),
       m_Src_from(0),
       m_Src_to(kInvalidSeqPos - 1),
@@ -100,16 +101,17 @@ CSeq_loc_Conversion::~CSeq_loc_Conversion(void)
 }
 
 
-void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg)
+void CSeq_loc_Conversion::SetConversion(const CSeqMap_CI& seg,
+                                        TSeqPos           master_shift)
 {
     m_Src_from = seg.GetRefPosition();
     m_Src_to = m_Src_from + seg.GetLength() - 1;
     m_Reverse = seg.GetRefMinusStrand();
     if ( !m_Reverse ) {
-        m_Shift = seg.GetPosition() - m_Src_from;
+        m_Shift = seg.GetPosition() + master_shift - m_Src_from;
     }
     else {
-        m_Shift = seg.GetPosition() + m_Src_to;
+        m_Shift = seg.GetPosition() + master_shift + m_Src_to;
     }
 }
 
@@ -848,6 +850,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/06/07 17:01:17  grichenk
+* Implemented referencing through locs annotations
+*
 * Revision 1.29  2004/05/26 14:29:20  grichenk
 * Redesigned CSeq_align_Mapper: preserve non-mapping intervals,
 * fixed strands handling, improved performance.
