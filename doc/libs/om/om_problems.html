@@ -190,6 +190,9 @@ To store sequence entry in an ASN file, use the following code:
   <li>
     CSeqMap can specify that a segment was a reference to another sequence. Still,
 	there is no way to learn to <b>what</b> sequence it refers to.
+<blockquote>
+Done. See <tt>CSeqMap::CSegmentInfo::GetRefSeqid</tt> method.
+</blockquote>
   </li>
   <li>
     Implement some sort of "Seq_loc algebra" - to be able to create unions, intersections,
@@ -231,6 +234,9 @@ for (CSeq_loc_CI loc_it(loc); loc_it; loc_it++) {
   <li>
   Method <tt>CSeq_loc::GetTotalRange</tt> returns incorrect data in case of Seq_loc
   being a mix.
+<blockquote>
+Fixed.
+</blockquote>
   </li>
 </ol>
 
