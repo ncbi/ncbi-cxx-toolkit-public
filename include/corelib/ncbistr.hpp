@@ -374,12 +374,12 @@ inline
 size_t NStr::strftime (char *s, size_t maxsize, const char *format, 
                        const struct tm *timeptr)
 {
-#if defined NCBI_OS_MSWIN
+#if defined(NCBI_COMPILER_MSVC)
     string x_format;
     x_format = Replace(format,   "%T", "%H:%M:%S");
     x_format = Replace(x_format, "%D", "%m/%d/%y");
     return ::strftime(s, maxsize, x_format.c_str(), timeptr);
-#elif defined NCBI_OS_UNIX
+#else
     return ::strftime(s, maxsize, format, timeptr);
 #endif
 }
@@ -530,6 +530,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.17  2002/06/18 16:03:49  ivanov
+ * Fixed #ifdef clause in NStr::strftime()
+ *
  * Revision 1.16  2002/06/18 15:19:36  ivanov
  * Added NStr::strftime() -- correct handling %D and %T time formats on MS Windows
  *
