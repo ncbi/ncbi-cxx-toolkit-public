@@ -62,6 +62,8 @@
 #include <objtools/format/context.hpp>
 #include "utils.hpp"
 
+#include <algorithm>
+
 
 
 BEGIN_NCBI_SCOPE
@@ -764,6 +766,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.27  2005/03/15 20:09:12  dicuccio
+* +algorithm for replace
+*
 * Revision 1.26  2005/03/02 16:31:27  shomrat
 * Supress MEDLINE if has PUBMED
 *
