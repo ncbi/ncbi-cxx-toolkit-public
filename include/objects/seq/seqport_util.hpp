@@ -35,6 +35,7 @@
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seqcode/Seq_code_type.hpp>
 #include <util/random_gen.hpp>
+#include <memory>
 #include <vector>
 
 
@@ -333,6 +334,9 @@ END_NCBI_SCOPE
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/09/13 20:43:01  ucko
+ * +#include <memory> (for auto_ptr<>)
+ *
  * Revision 1.6  2002/09/13 18:35:33  dicuccio
  * Fixed problem with static object initialization and type information.
  * First pass at reformatting code.
