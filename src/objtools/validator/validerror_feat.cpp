@@ -107,36 +107,7 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     }
     
     if ( feat.IsSetProduct() ) {
-        bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
-        if ( bsh ) {
-            m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");
-        }
-        
-        const CSeq_id* sid = bsh.GetSeqId();
-        if ( sid ) {
-            switch ( sid->Which() ) {
-            case CSeq_id::e_Genbank:
-            case CSeq_id::e_Embl:
-            case CSeq_id::e_Ddbj:
-            case CSeq_id::e_Tpg:
-            case CSeq_id::e_Tpe:
-            case CSeq_id::e_Tpd:
-                {
-                    const CTextseq_id* tsid = sid->GetTextseq_Id();
-                    if (tsid != NULL) {
-                        if ( (!tsid->IsSetAccession() || tsid->GetAccession().empty()) &&
-                            (!tsid->IsSetName() || tsid->GetName().empty()) ) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
-                                "Feature product should have accession", feat);
-                        }
-                    }
-                }
-                break;
-                
-            default:
-                break;
-            }
-        }
+        ValidateSeqFeatProduct(feat.GetProduct(), feat);
     }
     
     ValidateFeatPartialness(feat);
@@ -249,6 +220,46 @@ void CValidError_feat::ValidateSeqFeatData
             NStr::IntToString(data.Which ()) +
             "]", feat);
         break;
+    }
+}
+
+
+void CValidError_feat::ValidateSeqFeatProduct
+(const CSeq_loc& prod, const CSeq_feat& feat)
+{
+    CBioseq_Handle bsh;
+    bsh = m_Scope->GetBioseqHandle(feat.GetProduct());
+    if ( bsh ) {
+        m_Imp.ValidateSeqLoc(feat.GetProduct(), bsh.GetBioseq(), "Product");    
+    }
+    
+    if ( IsOneBioseq(prod, m_Scope) ) {
+        const CSeq_id& sid = GetId(prod, m_Scope);
+    
+        switch ( sid.Which() ) {
+        case CSeq_id::e_Genbank:
+        case CSeq_id::e_Embl:
+        case CSeq_id::e_Ddbj:
+        case CSeq_id::e_Tpg:
+        case CSeq_id::e_Tpe:
+        case CSeq_id::e_Tpd:
+            {
+                const CTextseq_id* tsid = sid.GetTextseq_Id();
+                if ( tsid != NULL ) {
+                    if ( !tsid->IsSetAccession()  &&  tsid->IsSetName() ) {
+                        if ( m_Imp.IsNucAcc(tsid->GetName()) ) {
+                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadProductSeqId,
+                                "Feature product should not use "
+                                "Textseq-id 'name' slot", feat);
+                        }
+                    }
+                }
+            }
+            break;
+            
+        default:
+            break;
+        }
     }
 }
 
@@ -2162,6 +2173,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/03/21 21:15:27  shomrat
+* Implemented ValidateSeqFeatProduct
+*
 * Revision 1.20  2003/03/20 18:56:44  shomrat
 * Supress error in case of Seq-annot validation
 *
