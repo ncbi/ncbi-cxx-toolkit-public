@@ -2404,29 +2404,28 @@ Int2 BLAST_MbGetGappedScore(EBlastProgramType program_number,
 static GapEditScript*
 MBToGapEditScript (MBGapEditScript* ed_script)
 {
-/** Get extent of the editing operation from the greedy alignment edit script. */
-#define EDIT_VAL(op) (op >> 2)
-/** Get type of editing operation from the greedy alignment edit script */
-#define EDIT_OPC(op) (op & 0x3) /* EDIT_OP_MASK == 0x3 */
-
    GapEditScript* esp_start = NULL,* esp,* esp_prev = NULL;
    Uint4 i;
 
-   if (ed_script==NULL || ed_script->num == 0)
+   if (ed_script==NULL || ed_script->num_ops == 0)
       return NULL;
 
-   for (i=0; i<ed_script->num; i++) {
+   for (i=0; i < ed_script->num_ops; i++) {
       esp = (GapEditScript*) calloc(1, sizeof(GapEditScript));
-      esp->num = EDIT_VAL(ed_script->op[i]);
-      switch (EDIT_OPC(ed_script->op[i])) {
-      case 1: 
-         esp->op_type = eGapAlignDel; break;
-      case 2:
-         esp->op_type = eGapAlignIns; break;
-      case 3:
-         esp->op_type = eGapAlignSub; break;
+      esp->num = ed_script->edit_ops[i].num_ops;
+
+      switch (ed_script->edit_ops[i].op_type) {
+      case eEditOpInsert: 
+          esp->op_type = eGapAlignDel; 
+          break;
+      case eEditOpDelete: 
+          esp->op_type = eGapAlignIns; 
+          break;
+      case eEditOpReplace: 
+          esp->op_type = eGapAlignSub; 
+          break;
       default:
-         fprintf(stderr, "op_type = 3\n"); break;
+         fprintf(stderr, "invalid op_type encountered\n"); break;
       }
       if (i==0)
          esp_start = esp_prev = esp;
