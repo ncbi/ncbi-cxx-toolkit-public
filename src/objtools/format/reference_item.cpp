@@ -81,21 +81,34 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 
 
-void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
+void CReferenceItem::FormatAffil(const CAffil& affil, string& result, bool gen_sub)
 {
     if (affil.IsStr()) {
         result = affil.GetStr();
     } else {
         result.erase();
         const CAffil::C_Std& std = affil.GetStd();
-        if (std.IsSetDiv()) {
-            result = std.GetDiv();
-        }
-        if (std.IsSetAffil()) {
-            if (!result.empty()) {
-                result += ", ";
+        if (gen_sub) {
+            if (std.IsSetDiv()) {
+                result = std.GetDiv();
             }
-            result += std.GetAffil();
+            if (std.IsSetAffil()) {
+                if (!result.empty()) {
+                    result += ", ";
+                }
+                result += std.GetAffil();
+            }
+            
+        } else {
+            if (std.IsSetAffil()) {
+                result = std.GetAffil();
+            }
+            if (std.IsSetDiv()) {
+                if (!result.empty()) {
+                    result += ", ";
+                }
+                result = std.GetDiv();
+            } 
         }
         if (std.IsSetStreet()) {
             if (!result.empty()) {
@@ -115,9 +128,9 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
             }
             result += std.GetSub();
         }
-        if (std.IsSetPostal_code()) {
+        if (gen_sub  &&  std.IsSetPostal_code()) {
             if (!result.empty()) {
-                result += " ";
+                result += ' ';
             }
             result += std.GetPostal_code();
         }
@@ -127,6 +140,9 @@ void CReferenceItem::FormatAffil(const CAffil& affil, string& result)
             }
             result += std.GetCountry();
         }
+    }
+    if (gen_sub) {
+        ConvertQuotes(result);
     }
 }
 
@@ -162,8 +178,9 @@ static void s_FixPages(string& pages)
 
 
 CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished), m_Serial(0),
-    m_JustUids(false), m_Prepub(CImprint::ePrepub_other)
+    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished),
+    m_Serial(kMax_Int), m_JustUids(false), m_Prepub(CImprint::ePrepub_other),
+    m_UseDate(true)
 {
     _ASSERT(desc.IsPub());
     
@@ -181,8 +198,9 @@ CReferenceItem::CReferenceItem(const CSeqdesc& desc, CBioseqContext& ctx) :
 
 
 CReferenceItem::CReferenceItem(const CSeq_feat& feat, CBioseqContext& ctx) :
-    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished), m_Serial(0),
-    m_JustUids(false), m_Prepub(CImprint::ePrepub_other)
+    CFlatItem(&ctx), m_PMID(0), m_MUID(0), m_Category(eUnpublished),
+    m_Serial(kMax_Int), m_JustUids(false), m_Prepub(CImprint::ePrepub_other),
+    m_UseDate(true)
 {
     _ASSERT(feat.GetData().IsPub());
 
@@ -202,8 +220,8 @@ CReferenceItem::CReferenceItem
  CBioseqContext& ctx,
  const CSeq_loc* loc) :
     CFlatItem(&ctx), m_Pubdesc(&pub), m_Loc(loc), m_PMID(0), m_MUID(0),
-    m_Category(eUnpublished), m_Serial(0), m_JustUids(false),
-    m_Prepub(CImprint::ePrepub_other)
+    m_Category(eUnpublished), m_Serial(kMax_Int), m_JustUids(false),
+    m_Prepub(CImprint::ePrepub_other), m_UseDate(true)
 {
     x_SetObject(pub);
 
@@ -263,7 +281,7 @@ static void s_MergeDuplicates
             } else if (curr_ref.GetMUID() == prev_ref.GetMUID()  &&  curr_ref.GetMUID() != 0) {
                 remove = true;
             } else if (curr_ref.GetUniqueStr() == prev_ref.GetUniqueStr()  &&
-                !IsBlankString(curr_ref.GetUniqueStr())) {
+                !NStr::IsBlank(curr_ref.GetUniqueStr())) {
                 const CSeq_loc* curr_loc = curr_ref.GetLoc();
                 const CSeq_loc* prev_loc = prev_ref.GetLoc();
                 if (curr_loc != NULL  &&  prev_loc != NULL) {
@@ -398,11 +416,11 @@ bool CReferenceItem::x_Matches(const CPub& pub) const
 
 void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    if ( !m_Pubdesc->CanGetPub() ) {
+    if (!m_Pubdesc->CanGetPub()) {
         x_SetSkip();
     }
 
-    if ( ctx.GetSubmitBlock() != 0 ) {
+    if (ctx.GetSubmitBlock() != NULL) {
         m_Title = "Direct Submission";
         m_Category = eSubmission;
     }
@@ -410,23 +428,22 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
     ITERATE (CPub_equiv::Tdata, it, m_Pubdesc->GetPub().Get()) {
         x_Init(**it, ctx);
 
-        // set unique str
-        // skip over just serial number
-        if ( (*it)->IsGen()  &&  it != last ) {
+        // set unique str (skip over just serial number)
+        if ((*it)->IsGen()  &&  it != last) {
             const CCit_gen& gen = (*it)->GetGen();
 
-            if ( !gen.CanGetCit()  ||
-                 !NStr::StartsWith(gen.GetCit(), "BackBone id_pub", NStr::eNocase) ) {
-                if ( !gen.CanGetCit()  &&
-                      !gen.CanGetJournal()  &&
-                      !gen.CanGetDate()  &&
-                      gen.CanGetSerial_number()  &&
-                      gen.GetSerial_number() > 0 ) {
-                     continue;
+            if (!gen.CanGetCit()  ||
+                !NStr::StartsWith(gen.GetCit(), "BackBone id_pub", NStr::eNocase) ) {
+                if (!gen.CanGetCit()           &&
+                    !gen.CanGetJournal()       &&
+                    !gen.CanGetDate()          &&
+                    gen.CanGetSerial_number()  &&
+                    gen.GetSerial_number() > 0 ) {
+                    continue;
                 }
             }
         }
-        if ( m_UniqueStr.empty() ) {
+        if (m_UniqueStr.empty()) {
             (*it)->GetLabel(&m_UniqueStr, CPub::eContent, true);
         }
     }
@@ -507,7 +524,7 @@ void CReferenceItem::x_Init(const CPub& pub, CBioseqContext& ctx)
 void CReferenceItem::x_Init(const CCit_gen& gen, CBioseqContext& ctx)
 {
     // serial
-    if ( gen.CanGetSerial_number()  &&  m_Serial == 0 ) {
+    if ( gen.CanGetSerial_number()  &&  m_Serial == kMax_Int ) {
         m_Serial = gen.GetSerial_number();
     }
 
@@ -577,7 +594,7 @@ void CReferenceItem::x_Init(const CCit_sub& sub, CBioseqContext& ctx)
     // Authors
     x_AddAuthors(sub.GetAuthors());
     if ( sub.GetAuthors().CanGetAffil() ) {
-        FormatAffil(sub.GetAuthors().GetAffil(), m_Journal);
+        FormatAffil(sub.GetAuthors().GetAffil(), m_Journal, true);
     }
 
     // Date
@@ -666,16 +683,15 @@ void CReferenceItem::x_Init(const CCit_art& art, CBioseqContext& ctx)
 
 void CReferenceItem::x_Init(const CCit_jour& jour, CBioseqContext& ctx)
 {
-    if (jour.IsSetTitle()) {
-        x_SetJournal(jour.GetTitle(), ctx);
-    }
     if (jour.IsSetImp()) {
         x_AddImprint(jour.GetImp(), ctx);
     }
+    if (m_Category != eUnpublished) {
+        if (jour.IsSetTitle()) {
+            x_SetJournal(jour.GetTitle(), ctx);
+        }
+    }
 }
-
-
-
 
 
 void CReferenceItem::x_Init
@@ -717,15 +733,15 @@ void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
     CNcbiOstrstream journal;
     journal << (embl ? "Patent number " : "Patent: ");
 
-    if (pat.IsSetCountry()  &&  !IsBlankString(pat.GetCountry())) {
+    if (pat.IsSetCountry()  &&  !NStr::IsBlank(pat.GetCountry())) {
         journal << pat.GetCountry() << ' ';
     }
-    if (pat.CanGetNumber()  &&  !IsBlankString(pat.GetNumber())) {
+    if (pat.CanGetNumber()  &&  !NStr::IsBlank(pat.GetNumber())) {
         journal << pat.GetNumber();
-    } else if (pat.IsSetApp_number()  &&  !IsBlankString(pat.GetApp_number())) {
+    } else if (pat.IsSetApp_number()  &&  !NStr::IsBlank(pat.GetApp_number())) {
         journal << '(' << pat.GetApp_number() << ')';
     }
-    if (pat.CanGetDoc_type()  &&  !IsBlankString(pat.GetDoc_type())) {
+    if (pat.CanGetDoc_type()  &&  !NStr::IsBlank(pat.GetDoc_type())) {
         journal << '-' << pat.GetDoc_type();
     }
 
@@ -750,7 +766,7 @@ void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
     } else if (pat.IsSetApp_date()) {
         DateToString(pat.GetApp_date(), date);
     }
-    if (!IsBlankString(date)) {
+    if (!NStr::IsBlank(date)) {
         journal << date;
     }
     journal << (embl ? '.' : ';');
@@ -758,43 +774,43 @@ void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
     // add affiliation field
     if (pat.IsSetAuthors()  &&  pat.GetAuthors().IsSetAffil()) {
         const CAffil& affil = pat.GetAuthors().GetAffil();
-        if (affil.IsStr()  &&  !IsBlankString(affil.GetStr())) {
+        if (affil.IsStr()  &&  !NStr::IsBlank(affil.GetStr())) {
             journal << endl << affil.GetStr();
         } else if (affil.IsStd()) {
             const CAffil::TStd& std = affil.GetStd();
 
             // if affiliation fields are non-blank, put them on a new line.
-            if ((std.IsSetAffil()    &&  !IsBlankString(std.GetAffil()))   ||
-                (std.IsSetStreet()   &&  !IsBlankString(std.GetStreet()))  ||
-                (std.IsSetDiv()      &&  !IsBlankString(std.GetDiv()))     ||
-                (std.IsSetCity()     &&  !IsBlankString(std.GetCity()))    ||
-                (std.IsSetSub()      &&  !IsBlankString(std.GetSub()))     ||
-                (std.IsSetCountry()  &&  !IsBlankString(std.GetCountry()))) {
+            if ((std.IsSetAffil()    &&  !NStr::IsBlank(std.GetAffil()))   ||
+                (std.IsSetStreet()   &&  !NStr::IsBlank(std.GetStreet()))  ||
+                (std.IsSetDiv()      &&  !NStr::IsBlank(std.GetDiv()))     ||
+                (std.IsSetCity()     &&  !NStr::IsBlank(std.GetCity()))    ||
+                (std.IsSetSub()      &&  !NStr::IsBlank(std.GetSub()))     ||
+                (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry()))) {
                 journal << endl;
             }
 
             // Write out the affiliation fields
             string prefix;
-            if (std.IsSetAffil()  &&  !IsBlankString(std.GetAffil())) {
+            if (std.IsSetAffil()  &&  !NStr::IsBlank(std.GetAffil())) {
                 journal << std.GetAffil() << ';';
                 prefix = ' ';
             }
-            if (std.IsSetStreet()  &&  !IsBlankString(std.GetStreet())) {
+            if (std.IsSetStreet()  &&  !NStr::IsBlank(std.GetStreet())) {
                 journal << prefix << std.GetStreet() << ';';
                 prefix = ' ';
             }
-            if (std.IsSetDiv()  &&  !IsBlankString(std.GetDiv())) {
+            if (std.IsSetDiv()  &&  !NStr::IsBlank(std.GetDiv())) {
                 journal << prefix << std.GetDiv() << ';';
                 prefix = ' ';
             }
-            if (std.IsSetCity()  &&  !IsBlankString(std.GetCity())) {
+            if (std.IsSetCity()  &&  !NStr::IsBlank(std.GetCity())) {
                 journal << prefix << std.GetCity();
                 prefix = ", ";
             }
-            if (std.IsSetSub()  &&  !IsBlankString(std.GetSub())) {
+            if (std.IsSetSub()  &&  !NStr::IsBlank(std.GetSub())) {
                 journal << prefix << std.GetSub();
             }
-            if (std.IsSetCountry()  &&  !IsBlankString(std.GetCountry())) {
+            if (std.IsSetCountry()  &&  !NStr::IsBlank(std.GetCountry())) {
                 journal << ';' << endl << std.GetCountry() << ';';
             }
         }
@@ -827,7 +843,7 @@ void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
             ConvertQuotes(affil);
             m_Journal += ' ' + affil;
         }
-        m_Date.Reset();
+        m_UseDate = false;
     }
 }
 
@@ -911,7 +927,7 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CBioseqContext& ctx)
 
         if (gen.CanGetAuthors()  &&  gen.GetAuthors().CanGetAffil()) {
             string affil;
-            FormatAffil(gen.GetAuthors().GetAffil(), affil);
+            FormatAffil(gen.GetAuthors().GetAffil(), affil, true);
             if (!affil.empty()) {
                 m_Category = eUnpublished;
                 m_Journal = "Unpublished " + affil;
@@ -973,17 +989,17 @@ void s_DoSup
 {
     string str;
 
-    if (!IsBlankString(part_sup)) {
+    if (!NStr::IsBlank(part_sup)) {
         str += ' ';
         str += part_sup;
     }
-    if (IsBlankString(issue)  &&  IsBlankString(part_supi)) {
+    if (NStr::IsBlank(issue)  &&  NStr::IsBlank(part_supi)) {
         retval += str;
         return;
     }
     
    
-    if (!IsBlankString(part_supi)) {
+    if (!NStr::IsBlank(part_supi)) {
         issue += ' ';
         issue += part_supi;
     }
@@ -997,10 +1013,10 @@ void CReferenceItem::x_AddImprint(const CImprint& imp, CBioseqContext& ctx)
     if (!m_Date) {
         m_Date.Reset(&imp.GetDate());
     }
-    if (imp.IsSetVolume()  &&  !IsBlankString(imp.GetVolume())) {
+    if (imp.IsSetVolume()  &&  !NStr::IsBlank(imp.GetVolume())) {
         m_Volume = imp.GetVolume();
     }
-    if (imp.IsSetIssue()  &&  !IsBlankString(imp.GetIssue())) {
+    if (imp.IsSetIssue()  &&  !NStr::IsBlank(imp.GetIssue())) {
         m_Issue = imp.GetIssue();
     }
     if ( imp.IsSetPages()  &&  !imp.GetPages().empty() ) {
@@ -1168,22 +1184,21 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
         // Figure
         if ( m_Pubdesc->IsSetFig()  &&  !m_Pubdesc->GetFig().empty()) {
             l.push_back("This sequence comes from " + m_Pubdesc->GetFig());
-            if (!NStr::EndsWith(l.back(), ".")) {
-                l.back().append(".");
+            if (!NStr::EndsWith(l.back(), '.')) {
+                AddPeriod(l.back());
             }
         }
 
         // Poly_a
         if ( m_Pubdesc->IsSetPoly_a()  &&  m_Pubdesc->GetPoly_a() ) {
-        l.push_back("Polyadenylate residues occurring in the figure were \
-            omitted from the sequence.");
+            l.push_back("Polyadenylate residues occurring in the figure were omitted from the sequence.");
         }
 
         // Maploc
         if ( m_Pubdesc->IsSetMaploc()  &&  !m_Pubdesc->GetMaploc().empty()) {
             l.push_back("Map location: " + m_Pubdesc->GetMaploc());
-            if (!NStr::EndsWith(l.back(), ".")) {
-                l.back().append(".");
+            if (!NStr::EndsWith(l.back(), '.')) {
+                AddPeriod(l.back());
             }
         }
     }
@@ -1287,7 +1302,7 @@ bool LessEqual::operator()
         return false;
     }
     if ( (d1 != 0)  &&  (d2 != 0) ) {
-        CDate::ECompare status = ref1->GetDate()->Compare(*ref2->GetDate());
+        CDate::ECompare status = d1->Compare(*d2);
         if ( status == CDate::eCompare_unknown  &&
              d1->IsStd()  &&  d2->IsStd() ) {
             // one object is more specific than the other.
@@ -1324,10 +1339,8 @@ bool LessEqual::operator()
     }
 
     // put sites after pubs that refer to all or a range of bases
-    if ( ref1->GetReftype() != CPubdesc::eReftype_seq ) {
-        return true;
-    } else if ( ref2->GetReftype() != CPubdesc::eReftype_seq ) {
-        return false;
+    if (ref1->GetReftype() != ref2->GetReftype()) {
+        return ref1->GetReftype() > ref2->GetReftype();
     }
 
     // next use AUTHOR string
@@ -1363,6 +1376,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2004/10/05 15:47:57  shomrat
+* Fixed reference formatting
+*
 * Revision 1.20  2004/08/30 13:43:36  shomrat
 * fixed reference sorting
 *
