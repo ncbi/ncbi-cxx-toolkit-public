@@ -296,7 +296,7 @@ property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property algo_gnomon : {name:"algo_gnomon", libs:{gui_algo_gnomon}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property algo_init : {name:"algo_init", libs:{gui_ncbi_init}, dep:"gui_core gui_utils gui_dialogs gui_widgets_seq ncbi_bdb ncbi_core ncbi_lds ncbi_seq ncbi_seqext ncbi_xloader_genbank ncbi_xloader_lds ncbi_xreader ncbi_xreader_id1 ncbi_xreader_id2 ncbi_xreader_pubseqos" & gui2link, bundle:true, req:true}
-property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_linkout : {name:"algo_linkout", libs:{gui_algo_linkout}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_web ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property algo_phylo : {name:"algo_phylo", libs:{gui_algo_phylo}, dep:"gui_core gui_utils ncbi_algo ncbi_core ncbi_seq ncbi_misc ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property algo_validator : {name:"algo_validator", libs:{gui_algo_validator}, dep:"gui_core ncbi_core ncbi_seq ncbi_seqext ncbi_validator ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property dload_basic : {name:"dload_basic", libs:{gui_doc_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_bdb ncbi_core ncbi_lds ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
@@ -361,8 +361,8 @@ property demo_gl3d : {name:"demo_gl3d", path:"gui:opengl:demo", inc:{"gl3d_demo.
 property demo_spline : {name:"demo_spline", path:"gui:opengl:demo", inc:{"spline_demo.cpp", "spline_demo_ui.cpp", "spline_window.cpp"}, dep:"ncbi_core gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 property demo_tex : {name:"demo_texture", path:"gui:opengl:demo", inc:{"tex_demo.cpp", "tex_demo_ui.cpp", "tex_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 property demo_tex_font : {name:"demo_texture_fonts", path:"gui:opengl:demo", inc:{"tex_font_demo.cpp", "tex_font_demo_ui.cpp", "tex_font_window.cpp"}, dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
-property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:true}
-
+property demo_gltest : {name:"demo_gltest", path:"gui:opengl:test", dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
+property demo_wcontrols : {name:"demo_wcontrols", path:"gui:widgets:controls:demo", dep:"ncbi_core ncbi_image gui_core gui_utils gui_widgets ncbi_xloader_genbank" & gui2link, req:false}
 
 property gbench : {name:"Genome Workbench", path:"gui:gbench", exc:{"windows_registry.cpp"}, dep:"ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_genbank gui_core gui_utils gui_dialogs gui_widgets gui_widgets_aln gui_config" & gui2link, gbench:true, req:true}
 property gbench_plugin_scan : {name:"gbench_plugin_scan", path:"gui:gbench:gbench_plugin_scan", dep:"ncbi_core ncbi_xloader_genbank ncbi_seq ncbi_seqext gui_core gui_utils" & FLTK_LIBS & Z_LIBS & IMG_LIBS, req:true}
@@ -380,7 +380,7 @@ property allCTools : {datatool, gbench_plugin_scan, test_ncbi_tree, test_plugins
 
 
 -- Application packs
-property allApps : {gbench, demo_seqgraphic, demo_crossaln, demo_hitmatrix, demo_workspace, demo_win_manager, demo_phylo_tree, demo_serial_browse, demo_tooltip, demo_treebrowser, demo_table, demo_taxtree, demo_font, demo_gl3d, demo_spline, demo_tex, demo_tex_font, demo_gltest}
+property allApps : {gbench, demo_seqgraphic, demo_crossaln, demo_hitmatrix, demo_workspace, demo_win_manager, demo_phylo_tree, demo_serial_browse, demo_tooltip, demo_treebrowser, demo_table, demo_taxtree, demo_font, demo_gl3d, demo_spline, demo_tex, demo_tex_font, demo_gltest, demo_wcontrols}
 --property allApps : {gui_demos}
 
 
@@ -399,6 +399,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2005/03/01 19:35:17  lebedev
+ * w_controls added to gui_widgets
+ *
  * Revision 1.43  2005/02/15 12:45:04  lebedev
  * xblastformat added to ncbi_seqext
  *
