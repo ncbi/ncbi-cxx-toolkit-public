@@ -3966,7 +3966,7 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 
     if ( host ) {
         int x_errno;
-#if defined(HAVE_GETNAMEINFO)
+#if defined(HAVE_GETNAMEINFO) && defined(EAI_SYSTEM)
         struct sockaddr_in addr;
 
         memset(&addr, 0, sizeof(addr));
@@ -4066,6 +4066,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.149  2004/09/08 15:12:43  ucko
+ * SOCK_gethostbyaddr: use getnameinfo only if EAI_SYSTEM is defined.
+ * (OSF headers provide it conditionally.)
+ *
  * Revision 6.148  2004/08/20 21:24:29  lavr
  * Fix CORE_LOGF_ERRNO_EX() in conditional branches we never compiled :-)
  *
