@@ -891,7 +891,7 @@ bool CAnnotTypes_CI::x_Search(const TTSE_LockSet& tse_set,
                             s_DefaultAdaptiveTriggers[i];
                         size_t index = CTSE_Info::x_GetSubtypeIndex(subtype);
                         if ( index ) {
-                            indexes.resize(max(indexes.size(), index));
+                            indexes.resize(max(indexes.size(), index + 1));
                             indexes[index] = 1;
                         }
                     }
@@ -1236,6 +1236,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.95  2003/10/10 12:47:24  dicuccio
+* Fixed off-by-one error in x_Search() - allocate correct size for array
+*
 * Revision 1.94  2003/10/09 20:20:58  vasilche
 * Added possibility to include and exclude Seq-annot names to annot iterator.
 * Fixed adaptive search. It looked only on selected set of annot names before.
