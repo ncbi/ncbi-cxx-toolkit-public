@@ -175,7 +175,7 @@ public:
     typedef typename LevelIterator::TObjectInfo TObjectInfo;
     typedef typename LevelIterator::TBeginInfo TBeginInfo;
     typedef set<TConstObjectPtr> TVisitedObjects;
-    typedef list< pair< TTypeInfo, const CItemInfo*> > TIteratorContext;
+    typedef list< pair< typename LevelIterator::TObjectInfo, const CItemInfo*> > TIteratorContext;
 
     // construct object iterator
     CTreeIteratorTmpl(void)
@@ -272,8 +272,7 @@ public:
             stack< AutoPtr<LevelIterator> > tmp;
             while ( !stk.empty() ) {
                 AutoPtr<LevelIterator>& t = stk.top();
-                stk_info.push_front(
-                    make_pair( t->Get().GetTypeInfo(), t->GetItemInfo()));
+                stk_info.push_front( make_pair( t->Get(), t->GetItemInfo()));
                 tmp.push(t);
                 stk.pop();
             }
@@ -291,7 +290,7 @@ public:
             TIteratorContext stk_info = GetContextData();
             TIteratorContext::const_iterator i;
             for (i = stk_info.begin(); i != stk_info.end(); ++i) {
-                TTypeInfo tt = i->first;
+                TTypeInfo tt = i->first.GetTypeInfo();
                 const CItemInfo* ii = i->second;
                 string name;
                 if (ii) {
@@ -925,6 +924,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/07/28 16:55:57  gouriano
+* Changed definition of TIteratorContext to add more info
+*
 * Revision 1.31  2004/07/27 17:11:48  gouriano
 * Give access to the context of tree iterator
 *
