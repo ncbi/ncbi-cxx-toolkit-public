@@ -71,6 +71,14 @@
 /* #define HAVE_GETHOSTBYADDR_R 8 */
 
 
+/* Uncomment this (or specify "-DHAVE_SIN_LEN") only if:
+ * 0) you are compiling this outside of the NCBI C or C++ Toolkits
+ *    (USE_NCBICONF is not #define'd), and
+ * 1) on your platform, struct sockaddr_in contains a field called "sin_len"
+ */
+
+/* #define HAVE_SIN_LEN 1 */
+
 
 /* Platform-specific system headers
  */
@@ -590,6 +598,9 @@ extern EIO_Status LSOCK_Create(unsigned short port,
 
     /* Bind */
     memset(&addr, 0, sizeof(addr));
+#if defined(HAVE_SIN_LEN)
+    addr.sin_len         = sizeof(addr);
+#endif
     addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.sin_port        = htons(port);
@@ -744,6 +755,9 @@ static EIO_Status s_Connect(SOCK            sock,
 
     struct sockaddr_in server;
     memset(&server, 0, sizeof(server));
+#if defined(HAVE_SIN_LEN)
+    server.sin_len         = sizeof(server);
+#endif
 
     /* Initialize internals */
     verify(s_Initialized  ||  SOCK_InitializeAPI() == eIO_Success);
@@ -1766,6 +1780,10 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
     if (host  &&  name  &&  namelen) {
 #if defined(HAVE_GETNAMEINFO)
         struct sockaddr_in addr;
+        memset(&addr, 0, sizeof(addr));
+# if defined(HAVE_SIN_LEN)
+        addr.sin_len = sizeof(addr);
+# endif
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = host;
         if (getnameinfo((struct sockaddr *) &addr, sizeof(addr), name, namelen,
@@ -1820,6 +1838,11 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.49  2002/06/10 21:14:22  ucko
+ * [SOCK_gethostbyaddr] When using getnameinfo, properly initialize the
+ * sockaddr_in; in particular, set sin_len when present.
+ * Also set sin_len in other functions that build a struct sockaddr_in.
+ *
  * Revision 6.48  2002/06/10 19:52:45  lavr
  * Additional failsafe check whether the socket actually connected (Solaris)
  *
