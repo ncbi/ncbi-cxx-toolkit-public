@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/12/15 15:38:44  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.15  2000/11/07 17:25:40  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -553,28 +557,28 @@ char CObjectIStreamXml::ReadChar(void)
     return c;
 }
 
-int CObjectIStreamXml::ReadInt(void)
+Int4 CObjectIStreamXml::ReadInt4(void)
 {
     BeginData();
-    return m_Input.GetInt();
+    return m_Input.GetInt4();
 }
 
-unsigned CObjectIStreamXml::ReadUInt(void)
+Uint4 CObjectIStreamXml::ReadUint4(void)
 {
     BeginData();
-    return m_Input.GetUInt();
+    return m_Input.GetUint4();
 }
 
-long CObjectIStreamXml::ReadLong(void)
+Int8 CObjectIStreamXml::ReadInt8(void)
 {
     BeginData();
-    return m_Input.GetLong();
+    return m_Input.GetInt8();
 }
 
-unsigned long CObjectIStreamXml::ReadULong(void)
+Uint8 CObjectIStreamXml::ReadUint8(void)
 {
     BeginData();
-    return m_Input.GetULong();
+    return m_Input.GetUint8();
 }
 
 double CObjectIStreamXml::ReadDouble(void)
@@ -623,7 +627,7 @@ void CObjectIStreamXml::ReadTagData(string& str)
     }
 }
 
-long CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
+TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 {
     const string& enumName = values.GetName();
     if ( !enumName.empty() ) {
@@ -631,7 +635,7 @@ long CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
         OpenTag(enumName);
         _ASSERT(InsideOpeningTag());
     }
-    long value;
+    TEnumValueType value;
     if ( InsideOpeningTag() ) {
         // try to read attribute 'value'
         if ( SkipWS() == '>' ) {
@@ -641,7 +645,7 @@ long CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
             m_Input.SkipChar();
             Found_gt();
             BeginData();
-            value = m_Input.GetLong();
+            value = m_Input.GetInt4();
         }
         else {
             CLightString attr = ReadAttributeName();
@@ -653,7 +657,7 @@ long CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
             if ( !EndOpeningTagSelfClosed() && values.IsInteger() ) {
                 // read integer value
                 SkipWSAndComments();
-                if ( value != m_Input.GetLong() )
+                if ( value != m_Input.GetInt4() )
                     ThrowError(eFormatError,
                                "incompatible name and value of enum");
             }
@@ -664,7 +668,7 @@ long CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
         if ( !values.IsInteger() )
             ThrowError(eFormatError, "attribute 'value' expected");
         BeginData();
-        value = m_Input.GetLong();
+        value = m_Input.GetInt4();
     }
     if ( !enumName.empty() ) {
         // global enum
@@ -1156,12 +1160,53 @@ void CObjectIStreamXml::SkipChar(void)
 
 void CObjectIStreamXml::SkipSNumber(void)
 {
-    ReadLong();
+    BeginData();
+    size_t i;
+    char c = SkipWSAndComments();
+    switch ( c ) {
+    case '+':
+    case '-':
+        c = m_Input.PeekChar(1);
+        // next char
+        i = 2;
+        break;
+    default:
+        // next char
+        i = 1;
+        break;
+    }
+    if ( c < '0' || c > '9' ) {
+        ThrowError(eFormatError, "bad number");
+    }
+    while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
+        ++i;
+    }
+    m_Input.SkipChars(i);
 }
 
 void CObjectIStreamXml::SkipUNumber(void)
 {
-    ReadULong();
+    BeginData();
+    size_t i;
+    char c = SkipWSAndComments();
+    switch ( c ) {
+    case '+':
+        c = m_Input.PeekChar(1);
+        // next char
+        i = 2;
+        break;
+    default:
+        // next char
+        i = 1;
+        break;
+    }
+    if ( c < '0' || c > '9' ) {
+        ThrowError(eFormatError, "bad number");
+    }
+    while ( (c = m_Input.PeekCharNoEOF(i)) >= '0' && c <= '9' ) {
+        ++i;
+    }
+    m_Input.SkipChars(i);
 }
 
 void CObjectIStreamXml::SkipFNumber(void)

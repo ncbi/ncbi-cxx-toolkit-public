@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/15 15:37:59  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.11  2000/09/18 20:00:01  vasilche
 * Separated CVariantInfo and CMemberInfo.
 * Implemented copy hooks.
@@ -110,12 +114,21 @@ public:
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
     virtual bool IsSigned(void) const;
-    virtual long GetValueLong(TConstObjectPtr objectPtr) const;
-    virtual unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
-    virtual void SetValueLong(TObjectPtr objectPtr, long value) const;
-    virtual void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
-    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const;
+
+    virtual Int4 GetValueInt4(TConstObjectPtr objectPtr) const;
+    virtual Uint4 GetValueUint4(TConstObjectPtr objectPtr) const;
+    virtual void SetValueInt4(TObjectPtr objectPtr, Int4 value) const;
+    virtual void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const;
+
+    virtual Int8 GetValueInt8(TConstObjectPtr objectPtr) const;
+    virtual Uint8 GetValueUint8(TConstObjectPtr objectPtr) const;
+    virtual void SetValueInt8(TObjectPtr objectPtr, Int8 value) const;
+    virtual void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const;
+
+    virtual void GetValueString(TConstObjectPtr objectPtr,
+                                string& value) const;
+    virtual void SetValueString(TObjectPtr objectPtr,
+                                const string& value) const;
 
 protected:
     static TObjectPtr CreateEnum(TTypeInfo objectType);

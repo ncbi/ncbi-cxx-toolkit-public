@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/12/15 15:38:01  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.15  2000/11/07 17:25:12  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -175,21 +179,17 @@ enum EContainerType {
 typedef size_t TMemberIndex;
 
 //type used for memory offsets/addresses
-#if SIZEOF_VOIDP == SIZEOF_INT
-typedef unsigned TPointerValueType;
-typedef int TPointerOffsetType;
-#elif SIZEOF_VOIDP == SIZEOF_SHORT
-typedef unsigned short TPointerValueType;
-typedef short TPointerOffsetType;
-#elif SIZEOF_VOIDP == SIZEOF_LONG
-typedef unsigned long TPointerValueType;
-typedef long TPointerOffsetType;
-#elif SIZEOF_VOIDP == SIZEOF_LONG_LONG
-typedef unsigned long long TPointerValueType;
-typedef long long TPointerOffsetType;
+#if SIZEOF_VOIDP == 4
+typedef Uint4 TPointerValueType;
+typedef Int4 TPointerOffsetType;
+#elif SIZEOF_VOIDP == 8
+typedef Uint8 TPointerValueType;
+typedef Int8 TPointerOffsetType;
 #else
 # error "Invalid pointer size"
 #endif
+
+typedef int TEnumValueType;
 
 // start if member indexing
 const TMemberIndex kFirstMemberIndex = 1;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/12/15 15:38:01  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.31  2000/10/20 15:51:27  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -187,7 +191,8 @@ public:
 
     virtual string GetPosition(void) const;
 
-    virtual void WriteEnum(const CEnumeratedTypeValues& values, long value);
+    virtual void WriteEnum(const CEnumeratedTypeValues& values, 
+                           TEnumValueType value);
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in);
 
@@ -211,10 +216,10 @@ public:
 protected:
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
-    virtual void WriteInt(int data);
-    virtual void WriteUInt(unsigned data);
-    virtual void WriteLong(long data);
-    virtual void WriteULong(unsigned long data);
+    virtual void WriteInt4(Int4 data);
+    virtual void WriteUint4(Uint4 data);
+    virtual void WriteInt8(Int8 data);
+    virtual void WriteUint8(Uint8 data);
     virtual void WriteFloat(float data);
     virtual void WriteDouble(double data);
     void WriteDouble2(double data, size_t digits);

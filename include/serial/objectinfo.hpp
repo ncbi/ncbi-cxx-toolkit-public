@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 15:37:59  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.1  2000/10/20 15:51:24  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -218,11 +222,21 @@ public:
     // primitive type interface
     bool GetPrimitiveValueBool(void) const;
     char GetPrimitiveValueChar(void) const;
+
+    Int4 GetPrimitiveValueInt4(void) const;
+    Uint4 GetPrimitiveValueUint4(void) const;
+    Int8 GetPrimitiveValueInt8(void) const;
+    Uint8 GetPrimitiveValueUint8(void) const;
+    int GetPrimitiveValueInt(void) const;
+    unsigned GetPrimitiveValueUInt(void) const;
     long GetPrimitiveValueLong(void) const;
     unsigned long GetPrimitiveValueULong(void) const;
+
     double GetPrimitiveValueDouble(void) const;
+
     void GetPrimitiveValueString(string& value) const;
     string GetPrimitiveValueString(void) const;
+
     void GetPrimitiveValueOctetString(vector<char>& value) const;
 
     // class interface
@@ -283,10 +297,20 @@ public:
     // primitive type interface
     void SetPrimitiveValueBool(bool value);
     void SetPrimitiveValueChar(char value);
+
+    void SetPrimitiveValueInt4(Int4 value);
+    void SetPrimitiveValueUint4(Uint4 value);
+    void SetPrimitiveValueInt8(Int8 value);
+    void SetPrimitiveValueUint8(Uint8 value);
+    void SetPrimitiveValueInt(int value);
+    void SetPrimitiveValueUInt(unsigned value);
     void SetPrimitiveValueLong(long value);
     void SetPrimitiveValueULong(unsigned long value);
+
     void SetPrimitiveValueDouble(double value);
+
     void SetPrimitiveValueString(const string& value);
+
     void SetPrimitiveValueOctetString(const vector<char>& value);
 
     // class interface

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/12/15 15:38:43  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.1  2000/10/20 15:51:39  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -140,6 +144,16 @@ char CConstObjectInfo::GetPrimitiveValueChar(void) const
     return GetPrimitiveTypeInfo()->GetValueChar(GetObjectPtr());
 }
 
+int CConstObjectInfo::GetPrimitiveValueInt(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueInt(GetObjectPtr());
+}
+
+unsigned CConstObjectInfo::GetPrimitiveValueUInt(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueUInt(GetObjectPtr());
+}
+
 long CConstObjectInfo::GetPrimitiveValueLong(void) const
 {
     return GetPrimitiveTypeInfo()->GetValueLong(GetObjectPtr());
@@ -148,6 +162,26 @@ long CConstObjectInfo::GetPrimitiveValueLong(void) const
 unsigned long CConstObjectInfo::GetPrimitiveValueULong(void) const
 {
     return GetPrimitiveTypeInfo()->GetValueULong(GetObjectPtr());
+}
+
+Int4 CConstObjectInfo::GetPrimitiveValueInt4(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueInt4(GetObjectPtr());
+}
+
+Uint4 CConstObjectInfo::GetPrimitiveValueUint4(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueUint4(GetObjectPtr());
+}
+
+Int8 CConstObjectInfo::GetPrimitiveValueInt8(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueInt8(GetObjectPtr());
+}
+
+Uint8 CConstObjectInfo::GetPrimitiveValueUint8(void) const
+{
+    return GetPrimitiveTypeInfo()->GetValueUint8(GetObjectPtr());
 }
 
 double CConstObjectInfo::GetPrimitiveValueDouble(void) const

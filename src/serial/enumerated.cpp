@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/12/15 15:38:42  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.17  2000/11/07 17:25:40  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -115,18 +119,17 @@ void CEnumeratedTypeValues::SetModuleName(const string& name)
     m_ModuleName = name;
 }
 
-long CEnumeratedTypeValues::FindValue(const CLightString& name) const
+TEnumValueType CEnumeratedTypeValues::FindValue(const CLightString& name) const
 {
     const TNameToValue& m = NameToValue();
     TNameToValue::const_iterator i = m.find(name);
     if ( i == m.end() ) {
-        THROW1_TRACE(runtime_error,
-                     "invalid value of enumerated type");
+        THROW1_TRACE(runtime_error, "invalid value of enumerated type");
     }
     return i->second;
 }
 
-const string& CEnumeratedTypeValues::FindName(long value,
+const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
                                               bool allowBadValue) const
 {
     const TValueToName& m = ValueToName();
@@ -136,14 +139,13 @@ const string& CEnumeratedTypeValues::FindName(long value,
             return NcbiEmptyString;
         }
         else {
-            THROW1_TRACE(runtime_error,
-                         "invalid value of enumerated type");
+            THROW1_TRACE(runtime_error, "invalid value of enumerated type");
         }
     }
     return *i->second;
 }
 
-void CEnumeratedTypeValues::AddValue(const string& name, long value)
+void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)
 {
     if ( name.empty() )
         THROW1_TRACE(runtime_error, "empty enum value name");
@@ -183,7 +185,7 @@ CEnumeratedTypeValues::NameToValue(void) const
     return *m;
 }
 
-void CEnumeratedTypeValues::AddValue(const char* name, long value)
+void CEnumeratedTypeValues::AddValue(const char* name, TEnumValueType value)
 {
     AddValue(string(name), value);
 }
@@ -230,41 +232,88 @@ bool CEnumeratedTypeInfo::IsSigned(void) const
     return m_ValueType->IsSigned();
 }
 
-long CEnumeratedTypeInfo::GetValueLong(TConstObjectPtr objectPtr) const
+Int4 CEnumeratedTypeInfo::GetValueInt4(TConstObjectPtr objectPtr) const
 {
-    return m_ValueType->GetValueLong(objectPtr);
+    return m_ValueType->GetValueInt4(objectPtr);
 }
 
-unsigned long CEnumeratedTypeInfo::GetValueULong(TConstObjectPtr objectPtr) const
+Uint4 CEnumeratedTypeInfo::GetValueUint4(TConstObjectPtr objectPtr) const
 {
-    return m_ValueType->GetValueULong(objectPtr);
+    return m_ValueType->GetValueUint4(objectPtr);
 }
 
-void CEnumeratedTypeInfo::SetValueLong(TObjectPtr objectPtr, long value) const
+void CEnumeratedTypeInfo::SetValueInt4(TObjectPtr objectPtr, Int4 value) const
 {
-    Values().FindName(value, Values().IsInteger());
-    m_ValueType->SetValueLong(objectPtr, value);
+    if ( !Values().IsInteger() ) {
+        // check value for acceptance
+        _ASSERT(sizeof(TEnumValueType) == sizeof(value));
+        TEnumValueType v = TEnumValueType(value);
+        Values().FindName(v, false);
+    }
+    m_ValueType->SetValueInt4(objectPtr, value);
 }
 
-void CEnumeratedTypeInfo::SetValueULong(TObjectPtr objectPtr,
-                                        unsigned long value) const
+void CEnumeratedTypeInfo::SetValueUint4(TObjectPtr objectPtr,
+                                        Uint4 value) const
 {
-    if ( long(value) < 0 )
-        THROW1_TRACE(runtime_error, "overflow error");
-    Values().FindName(long(value), Values().IsInteger());
-    m_ValueType->SetValueULong(objectPtr, value);
+    if ( !Values().IsInteger() ) {
+        // check value for acceptance
+        _ASSERT(sizeof(TEnumValueType) == sizeof(value));
+        TEnumValueType v = TEnumValueType(value);
+        if ( v < 0 )
+            THROW1_TRACE(runtime_error, "overflow error");
+        Values().FindName(v, false);
+    }
+    m_ValueType->SetValueUint4(objectPtr, value);
+}
+
+Int8 CEnumeratedTypeInfo::GetValueInt8(TConstObjectPtr objectPtr) const
+{
+    return m_ValueType->GetValueInt8(objectPtr);
+}
+
+Uint8 CEnumeratedTypeInfo::GetValueUint8(TConstObjectPtr objectPtr) const
+{
+    return m_ValueType->GetValueUint8(objectPtr);
+}
+
+void CEnumeratedTypeInfo::SetValueInt8(TObjectPtr objectPtr, Int8 value) const
+{
+    if ( !Values().IsInteger() ) {
+        // check value for acceptance
+        _ASSERT(sizeof(TEnumValueType) < sizeof(value));
+        TEnumValueType v = TEnumValueType(value);
+        if ( v != value )
+            THROW1_TRACE(runtime_error, "overflow error");
+        Values().FindName(v, false);
+    }
+    m_ValueType->SetValueInt8(objectPtr, value);
+}
+
+void CEnumeratedTypeInfo::SetValueUint8(TObjectPtr objectPtr,
+                                        Uint8 value) const
+{
+    if ( !Values().IsInteger() ) {
+        // check value for acceptance
+        _ASSERT(sizeof(TEnumValueType) < sizeof(value));
+        TEnumValueType v = TEnumValueType(value);
+        if ( v < 0 || Uint8(v) != value )
+            THROW1_TRACE(runtime_error, "overflow error");
+        Values().FindName(v, false);
+    }
+    m_ValueType->SetValueUint8(objectPtr, value);
 }
 
 void CEnumeratedTypeInfo::GetValueString(TConstObjectPtr objectPtr,
                                          string& value) const
 {
-    value = Values().FindName(m_ValueType->GetValueLong(objectPtr), false);
+    value = Values().FindName(m_ValueType->GetValueInt(objectPtr), false);
 }
 
 void CEnumeratedTypeInfo::SetValueString(TObjectPtr objectPtr,
                                          const string& value) const
 {
-    m_ValueType->SetValueLong(objectPtr, Values().FindValue(value));
+    m_ValueType->SetValueInt(objectPtr, Values().FindValue(value));
 }
 
 TObjectPtr CEnumeratedTypeInfo::CreateEnum(TTypeInfo objectType)
@@ -281,8 +330,8 @@ void CEnumeratedTypeInfo::ReadEnum(CObjectIStream& in,
     const CEnumeratedTypeInfo* enumType =
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
     try {
-        enumType->m_ValueType->SetValueLong(objectPtr,
-                                            in.ReadEnum(enumType->Values()));
+        enumType->m_ValueType->SetValueInt(objectPtr,
+                                           in.ReadEnum(enumType->Values()));
     }
     catch ( ... ) {
         in.ThrowError(in.eFormatError, "invalid enum value");
@@ -298,7 +347,7 @@ void CEnumeratedTypeInfo::WriteEnum(CObjectOStream& out,
         CTypeConverter<CEnumeratedTypeInfo>::SafeCast(objectType);
     try {
         out.WriteEnum(enumType->Values(),
-                      enumType->m_ValueType->GetValueLong(objectPtr));
+                      enumType->m_ValueType->GetValueInt(objectPtr));
     }
     catch ( ... ) {
         out.ThrowError(out.eInvalidData, "invalid enum value");

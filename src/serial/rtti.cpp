@@ -1,3 +1,4 @@
+#include <corelib/ncbistd.hpp>
 #include <typeinfo>
 #include <string>
 
@@ -22,6 +23,10 @@ int initRTTI(void)
 	r += typeid(unsigned long).name()[0];
     r += typeid(char).name()[0];
     r += typeid(unsigned char).name()[0];
+#if SIZEOF_LONG_LONG != 0
+    r += typeid(signed long long).name()[0];
+    r += typeid(unsigned long long).name()[0];
+#endif
     r += typeid(char*).name()[0];
     r += typeid(unsigned char*).name()[0];
     r += typeid(const char*).name()[0];

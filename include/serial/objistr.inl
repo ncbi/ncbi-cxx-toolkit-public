@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.11  2000/10/20 15:51:26  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -165,5 +169,244 @@ size_t CObjectIStream::AsnIo::Read(char* data, size_t length)
     return GetStream().AsnRead(*this, data, length);
 }
 #endif
+
+// standard readers
+// bool
+inline
+void CObjectIStream::ReadStd(bool& data)
+{
+    data = ReadBool();
+}
+
+inline
+void CObjectIStream::SkipStd(const bool &)
+{
+    SkipBool();
+}
+
+// char
+inline
+void CObjectIStream::ReadStd(char& data)
+{
+    data = ReadChar();
+}
+
+inline
+void CObjectIStream::SkipStd(const char& )
+{
+    SkipChar();
+}
+
+// integer numbers
+#if SIZEOF_CHAR == 1
+inline
+void CObjectIStream::ReadStd(signed char& data)
+{
+    data = ReadInt1();
+}
+
+inline
+void CObjectIStream::ReadStd(unsigned char& data)
+{
+    data = ReadUint1();
+}
+
+inline
+void CObjectIStream::SkipStd(const signed char& )
+{
+    SkipInt1();
+}
+
+inline
+void CObjectIStream::SkipStd(const unsigned char& )
+{
+    SkipUint1();
+}
+#else
+#  error Unsupported size of char - must be 1
+#endif
+
+#if SIZEOF_SHORT == 2
+inline
+void CObjectIStream::ReadStd(short& data)
+{
+    data = ReadInt2();
+}
+
+inline
+void CObjectIStream::ReadStd(unsigned short& data)
+{
+    data = ReadUint2();
+}
+
+inline
+void CObjectIStream::SkipStd(const short& )
+{
+    SkipInt2();
+}
+
+inline
+void CObjectIStream::SkipStd(const unsigned short& )
+{
+    SkipUint2();
+}
+#else
+#  error Unsupported size of short - must be 2
+#endif
+
+#if SIZEOF_INT == 4
+inline
+void CObjectIStream::ReadStd(int& data)
+{
+    data = ReadInt4();
+}
+
+inline
+void CObjectIStream::ReadStd(unsigned& data)
+{
+    data = ReadUint4();
+}
+
+inline
+void CObjectIStream::SkipStd(const int& )
+{
+    SkipInt4();
+}
+
+inline
+void CObjectIStream::SkipStd(const unsigned& )
+{
+    SkipUint4();
+}
+#else
+#  error Unsupported size of int - must be 4
+#endif
+
+#if SIZEOF_LONG == 4
+inline
+void CObjectIStream::ReadStd(long& data)
+{
+    data = ReadInt4();
+}
+
+inline
+void CObjectIStream::ReadStd(unsigned long& data)
+{
+    data = ReadUint4();
+}
+
+inline
+void CObjectIStream::SkipStd(const long& )
+{
+    SkipInt4();
+}
+
+inline
+void CObjectIStream::SkipStd(const unsigned long& )
+{
+    SkipUint4();
+}
+#endif
+
+inline
+void CObjectIStream::ReadStd(Int8& data)
+{
+    data = ReadInt8();
+}
+
+inline
+void CObjectIStream::ReadStd(Uint8& data)
+{
+    data = ReadUint8();
+}
+
+inline
+void CObjectIStream::SkipStd(const Int8& )
+{
+    SkipInt8();
+}
+
+inline
+void CObjectIStream::SkipStd(const Uint8& )
+{
+    SkipUint8();
+}
+
+// float numbers
+inline
+void CObjectIStream::ReadStd(float& data)
+{
+    data = ReadFloat();
+}
+
+inline
+void CObjectIStream::ReadStd(double& data)
+{
+    data = ReadDouble();
+}
+
+inline
+void CObjectIStream::SkipStd(const float& )
+{
+    SkipFloat();
+}
+
+inline
+void CObjectIStream::SkipStd(const double& )
+{
+    SkipDouble();
+}
+
+#if SIZEOF_LONG_DOUBLE != 0
+inline
+void CObjectIStream::ReadStd(long double& data)
+{
+    data = ReadLDouble();
+}
+
+inline
+void CObjectIStream::SkipStd(const long double& )
+{
+    SkipLDouble();
+}
+#endif
+
+// string
+inline
+void CObjectIStream::ReadStd(string& data)
+{
+    ReadString(data);
+}
+
+inline
+void CObjectIStream::SkipStd(const string& )
+{
+    SkipString();
+}
+
+// C string
+inline
+void CObjectIStream::ReadStd(char* & data)
+{
+    data = ReadCString();
+}
+
+inline
+void CObjectIStream::ReadStd(const char* & data)
+{
+    data = ReadCString();
+}
+
+inline
+void CObjectIStream::SkipStd(char* const& )
+{
+    SkipCString();
+}
+
+inline
+void CObjectIStream::SkipStd(const char* const& )
+{
+    SkipCString();
+}
 
 #endif /* def OBJISTR__HPP  &&  ndef OBJISTR__INL */

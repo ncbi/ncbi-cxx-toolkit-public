@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/12/15 15:38:46  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.25  2000/11/07 17:25:41  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -156,8 +160,40 @@
 
 BEGIN_NCBI_SCOPE
 
+class CPrimitiveTypeFunctionsBase
+{
+public:
+    static bool IsNegative(Int4 value)
+        {
+            return value < 0;
+        }
+    static bool IsNegative(Uint4 /*value*/)
+        {
+            return false;
+        }
+#if SIZEOF_LONG == 4
+    // add variants with long to avoid ambiguity
+    static bool IsNegative(long value)
+        {
+            return value < 0;
+        }
+    static bool IsNegative(unsigned long /*value*/)
+        {
+            return false;
+        }
+#endif
+    static bool IsNegative(Int8 value)
+        {
+            return value < 0;
+        }
+    static bool IsNegative(Uint8 /*value*/)
+        {
+            return false;
+        }
+};
+
 template<typename T>
-class CPrimitiveTypeFunctions
+class CPrimitiveTypeFunctions : public CPrimitiveTypeFunctionsBase
 {
 public:
     typedef T TObjectType;
@@ -394,25 +430,50 @@ void CPrimitiveTypeInfo::SetValueChar(TObjectPtr /*objectPtr*/, char /*value*/) 
     ThrowIncompatibleValue();
 }
 
-long CPrimitiveTypeInfo::GetValueLong(TConstObjectPtr /*objectPtr*/) const
+Int4 CPrimitiveTypeInfo::GetValueInt4(TConstObjectPtr /*objectPtr*/) const
 {
     ThrowIncompatibleValue();
     return 0;
 }
 
-void CPrimitiveTypeInfo::SetValueLong(TObjectPtr /*objectPtr*/, long /*value*/) const
+void CPrimitiveTypeInfo::SetValueInt4(TObjectPtr /*objectPtr*/,
+                                      Int4 /*value*/) const
 {
     ThrowIncompatibleValue();
 }
 
-unsigned long CPrimitiveTypeInfo::GetValueULong(TConstObjectPtr /*objectPtr*/) const
+Uint4 CPrimitiveTypeInfo::GetValueUint4(TConstObjectPtr /*objectPtr*/) const
 {
     ThrowIncompatibleValue();
     return 0;
 }
 
-void CPrimitiveTypeInfo::SetValueULong(TObjectPtr /*objectPtr*/,
-                                       unsigned long /*value*/) const
+void CPrimitiveTypeInfo::SetValueUint4(TObjectPtr /*objectPtr*/,
+                                       Uint4 /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+Int8 CPrimitiveTypeInfo::GetValueInt8(TConstObjectPtr /*objectPtr*/) const
+{
+    ThrowIncompatibleValue();
+    return 0;
+}
+
+void CPrimitiveTypeInfo::SetValueInt8(TObjectPtr /*objectPtr*/,
+                                      Int8 /*value*/) const
+{
+    ThrowIncompatibleValue();
+}
+
+Uint8 CPrimitiveTypeInfo::GetValueUint8(TConstObjectPtr /*objectPtr*/) const
+{
+    ThrowIncompatibleValue();
+    return 0;
+}
+
+void CPrimitiveTypeInfo::SetValueUint8(TObjectPtr /*objectPtr*/,
+                                       Uint8 /*value*/) const
 {
     ThrowIncompatibleValue();
 }
@@ -428,6 +489,19 @@ void CPrimitiveTypeInfo::SetValueDouble(TObjectPtr /*objectPtr*/,
 {
     ThrowIncompatibleValue();
 }
+
+#if SIZEOF_LONG_DOUBLE != 0
+long double CPrimitiveTypeInfo::GetValueLDouble(TConstObjectPtr objectPtr) const
+{
+    return GetValueDouble(objectPtr);
+}
+
+void CPrimitiveTypeInfo::SetValueLDouble(TObjectPtr objectPtr,
+                                         long double value) const
+{
+    SetValueDouble(objectPtr, value);
+}
+#endif
 
 void CPrimitiveTypeInfo::GetValueString(TConstObjectPtr /*objectPtr*/,
                                         string& /*value*/) const
@@ -567,25 +641,36 @@ CTypeInfo* CStdTypeInfo<char>::CreateTypeInfo(void)
 }
 
 template<typename T>
-class CPrimitiveTypeInfoLongFunctions : public CPrimitiveTypeFunctions<T>
+class CPrimitiveTypeInfoIntFunctions : public CPrimitiveTypeFunctions<T>
 {
 public:
     typedef T TObjectType;
     
-    static CPrimitiveTypeInfoLong* CreateTypeInfo(void)
+    static CPrimitiveTypeInfoInt* CreateTypeInfo(void)
         {
-            CPrimitiveTypeInfoLong* info =
-                new CPrimitiveTypeInfoLong(sizeof(TObjectType), x_IsSigned());
+            CPrimitiveTypeInfoInt* info =
+                new CPrimitiveTypeInfoInt(sizeof(TObjectType), IsSigned());
 
             info->SetMemFunctions(&Create,
                                   &IsDefault, &SetDefault, &Equals, &Assign);
 
             info->SetIOFunctions(&Read, &Write, &Copy, &Skip);
 
-            info->SetLongFunctions(&GetValueLong, &SetValueLong,
-                                   &GetValueULong, &SetValueULong);
-
+            SetInt4Functions(info);
+            SetInt8Functions(info);
             return info;
+        }
+
+    static void SetInt4Functions(CPrimitiveTypeInfoInt* info)
+        {
+            info->SetInt4Functions(&GetValueInt4, &SetValueInt4,
+                                  &GetValueUint4, &SetValueUint4);
+        }
+
+    static void SetInt8Functions(CPrimitiveTypeInfoInt* info)
+        {
+            info->SetInt8Functions(&GetValueInt8, &SetValueInt8,
+                                  &GetValueUint8, &SetValueUint8);
         }
 
     static bool IsDefault(TConstObjectPtr objectPtr)
@@ -605,107 +690,221 @@ public:
             Get(dst) = Get(src);
         }
 
-    static bool x_IsSigned(void)
+    static bool IsSigned(void)
         {
             return TObjectType(-1) < 0;
         }
-    static void x_CheckNoSign(long value)
+    static bool IsUnsigned(void)
         {
-            if ( value < 0 ) // value doesn't fit
-                ThrowIntegerOverflow();
+            return TObjectType(-1) > 0;
         }
 
-    static long GetValueLong(TConstObjectPtr objectPtr)
+    static Int4 GetValueInt4(TConstObjectPtr objectPtr)
         {
             TObjectType value = Get(objectPtr);
-            if ( sizeof(TObjectType) == sizeof(long) && !x_IsSigned() ) {
-                // type is unsigned long
-                x_CheckNoSign(long(value));
+            Int4 result = Int4(value);
+            if ( IsUnsigned() ) {
+                // unsigned -> signed
+                if ( sizeof(value) == sizeof(result) ) {
+                    // same size - check for sign change only
+                    if ( IsNegative(result) )
+                        ThrowIntegerOverflow();
+                }
             }
-            return long(value);
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != TObjectType(result) )
+                    ThrowIntegerOverflow();
+            }
+            return result;
         }
-    static unsigned long GetValueULong(TConstObjectPtr objectPtr)
+    static Uint4 GetValueUint4(TConstObjectPtr objectPtr)
         {
             TObjectType value = Get(objectPtr);
-            if ( sizeof(TObjectType) == sizeof(long) && x_IsSigned() ) {
-                // type is signed long
-                x_CheckNoSign(long(value));
-            }
-            return static_cast<unsigned long>(value);
-        }
-    static void SetValueLong(TObjectPtr objectPtr, long value)
-        {
-            TObjectType newValue = TObjectType(value);
-            if ( sizeof(TObjectType) == sizeof(long) ) {
-                if ( !x_IsSigned() ) {
-                    // type is unsigned long
-                    x_CheckNoSign(value);
-                }
-            }
-            else {
-                // type is smaller than long
-                if ( long(newValue) != value )
+            Uint4 result = Uint4(value);
+            if ( IsSigned() ) {
+                // signed -> unsigned
+                // check for negative value
+                if ( IsNegative(value) )
                     ThrowIntegerOverflow();
             }
-            Get(objectPtr) = newValue;
-        }
-    static void SetValueULong(TObjectPtr objectPtr, unsigned long value)
-        {
-            TObjectType newValue = TObjectType(value);
-            if ( sizeof(TObjectType) == sizeof(long) ) {
-                if ( x_IsSigned() ) {
-                    // type is signed long
-                    x_CheckNoSign(long(newValue));
-                }
-            }
-            else {
-                // type is smaller than long
-                if ( static_cast<unsigned long>(newValue) != value )
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != TObjectType(result) )
                     ThrowIntegerOverflow();
             }
-            Get(objectPtr) = newValue;
+            return result;
+        }
+    static void SetValueInt4(TObjectPtr objectPtr, Int4 value)
+        {
+            TObjectType result = TObjectType(value);
+            if ( IsUnsigned() ) {
+                // signed -> unsigned
+                // check for negative value
+                if ( IsNegative(value) )
+                    ThrowIntegerOverflow();
+            }
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != Int4(result) )
+                    ThrowIntegerOverflow();
+            }
+            Get(objectPtr) = result;
+        }
+    static void SetValueUint4(TObjectPtr objectPtr, Uint4 value)
+        {
+            TObjectType result = TObjectType(value);
+            if ( IsSigned() ) {
+                // unsigned -> signed
+                if ( sizeof(value) == sizeof(result) ) {
+                    // same size - check for sign change only
+                    if ( IsNegative(result) )
+                        ThrowIntegerOverflow();
+                }
+            }
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != Uint4(result) )
+                    ThrowIntegerOverflow();
+            }
+            Get(objectPtr) = result;
+        }
+    static Int8 GetValueInt8(TConstObjectPtr objectPtr)
+        {
+            TObjectType value = Get(objectPtr);
+            Int8 result = Int8(value);
+            if ( IsUnsigned() ) {
+                // unsigned -> signed
+                if ( sizeof(value) == sizeof(result) ) {
+                    // same size - check for sign change only
+                    if ( IsNegative(result) )
+                        ThrowIntegerOverflow();
+                }
+            }
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != TObjectType(result) )
+                    ThrowIntegerOverflow();
+            }
+            return result;
+        }
+    static Uint8 GetValueUint8(TConstObjectPtr objectPtr)
+        {
+            TObjectType value = Get(objectPtr);
+            Uint8 result = Uint8(value);
+            if ( IsSigned() ) {
+                // signed -> unsigned
+                // check for negative value
+                if ( IsNegative(value) )
+                    ThrowIntegerOverflow();
+            }
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != TObjectType(result) )
+                    ThrowIntegerOverflow();
+            }
+            return result;
+        }
+    static void SetValueInt8(TObjectPtr objectPtr, Int8 value)
+        {
+            TObjectType result = TObjectType(value);
+            if ( IsUnsigned() ) {
+                // signed -> unsigned
+                // check for negative value
+                if ( IsNegative(value) )
+                    ThrowIntegerOverflow();
+            }
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != Int8(result) )
+                    ThrowIntegerOverflow();
+            }
+            Get(objectPtr) = result;
+        }
+    static void SetValueUint8(TObjectPtr objectPtr, Uint8 value)
+        {
+            TObjectType result = TObjectType(value);
+            if ( IsSigned() ) {
+                // unsigned -> signed
+                if ( sizeof(value) == sizeof(result) ) {
+                    // same size - check for sign change only
+                    if ( IsNegative(result) )
+                        ThrowIntegerOverflow();
+                }
+            }
+            if ( sizeof(value) > sizeof(result) ) {
+                if ( value != Uint8(result) )
+                    ThrowIntegerOverflow();
+            }
+            Get(objectPtr) = result;
         }
 };
 
-CPrimitiveTypeInfoLong::CPrimitiveTypeInfoLong(size_t size, bool isSigned)
+CPrimitiveTypeInfoInt::CPrimitiveTypeInfoInt(size_t size, bool isSigned)
     : CParent(size, ePrimitiveValueInteger, isSigned)
 {
 }
 
-void CPrimitiveTypeInfoLong::SetLongFunctions(TGetLongFunction getLong,
-                                              TSetLongFunction setLong,
-                                              TGetULongFunction getULong,
-                                              TSetULongFunction setULong)
+void CPrimitiveTypeInfoInt::SetInt4Functions(TGetInt4Function getInt4,
+                                             TSetInt4Function setInt4,
+                                             TGetUint4Function getUint4,
+                                             TSetUint4Function setUint4)
 {
-    m_GetLong = getLong;
-    m_SetLong = setLong;
-    m_GetULong = getULong;
-    m_SetULong = setULong;
+    m_GetInt4 = getInt4;
+    m_SetInt4 = setInt4;
+    m_GetUint4 = getUint4;
+    m_SetUint4 = setUint4;
 }
 
-long CPrimitiveTypeInfoLong::GetValueLong(TConstObjectPtr objectPtr) const
+void CPrimitiveTypeInfoInt::SetInt8Functions(TGetInt8Function getInt8,
+                                             TSetInt8Function setInt8,
+                                             TGetUint8Function getUint8,
+                                             TSetUint8Function setUint8)
 {
-    return m_GetLong(objectPtr);
+    m_GetInt8 = getInt8;
+    m_SetInt8 = setInt8;
+    m_GetUint8 = getUint8;
+    m_SetUint8 = setUint8;
 }
 
-unsigned long CPrimitiveTypeInfoLong::GetValueULong(TConstObjectPtr objectPtr) const
+Int4 CPrimitiveTypeInfoInt::GetValueInt4(TConstObjectPtr objectPtr) const
 {
-    return m_GetULong(objectPtr);
+    return m_GetInt4(objectPtr);
 }
 
-void CPrimitiveTypeInfoLong::SetValueLong(TObjectPtr objectPtr,
-                                          long value) const
+Uint4 CPrimitiveTypeInfoInt::GetValueUint4(TConstObjectPtr objectPtr) const
 {
-    m_SetLong(objectPtr, value);
+    return m_GetUint4(objectPtr);
 }
 
-void CPrimitiveTypeInfoLong::SetValueULong(TObjectPtr objectPtr,
-                                           unsigned long value) const
+void CPrimitiveTypeInfoInt::SetValueInt4(TObjectPtr objectPtr,
+                                         Int4 value) const
 {
-    m_SetULong(objectPtr, value);
+    m_SetInt4(objectPtr, value);
 }
 
-#define DECLARE_STD_LONG_TYPE(Type) \
+void CPrimitiveTypeInfoInt::SetValueUint4(TObjectPtr objectPtr,
+                                          Uint4 value) const
+{
+    m_SetUint4(objectPtr, value);
+}
+
+Int8 CPrimitiveTypeInfoInt::GetValueInt8(TConstObjectPtr objectPtr) const
+{
+    return m_GetInt8(objectPtr);
+}
+
+Uint8 CPrimitiveTypeInfoInt::GetValueUint8(TConstObjectPtr objectPtr) const
+{
+    return m_GetUint8(objectPtr);
+}
+
+void CPrimitiveTypeInfoInt::SetValueInt8(TObjectPtr objectPtr,
+                                         Int8 value) const
+{
+    m_SetInt8(objectPtr, value);
+}
+
+void CPrimitiveTypeInfoInt::SetValueUint8(TObjectPtr objectPtr,
+                                          Uint8 value) const
+{
+    m_SetUint8(objectPtr, value);
+}
+
+#define DECLARE_STD_INT_TYPE(Type) \
 TTypeInfo CStdTypeInfo<Type>::GetTypeInfo(void) \
 { \
     static TTypeInfo info = CreateTypeInfo(); \
@@ -713,20 +912,21 @@ TTypeInfo CStdTypeInfo<Type>::GetTypeInfo(void) \
 } \
 CTypeInfo* CStdTypeInfo<Type>::CreateTypeInfo(void) \
 { \
-    return CPrimitiveTypeInfoLongFunctions<Type>::CreateTypeInfo(); \
+    return CPrimitiveTypeInfoIntFunctions<Type>::CreateTypeInfo(); \
 }
-DECLARE_STD_LONG_TYPE(signed char)
-DECLARE_STD_LONG_TYPE(unsigned char)
-DECLARE_STD_LONG_TYPE(short)
-DECLARE_STD_LONG_TYPE(unsigned short)
-DECLARE_STD_LONG_TYPE(int)
-DECLARE_STD_LONG_TYPE(unsigned)
-DECLARE_STD_LONG_TYPE(long)
-DECLARE_STD_LONG_TYPE(unsigned long)
-#if HAVE_LONG_LONG
-DECLARE_STD_LONG_TYPE(long long)
-DECLARE_STD_LONG_TYPE(unsigned long long)
+
+DECLARE_STD_INT_TYPE(signed char)
+DECLARE_STD_INT_TYPE(unsigned char)
+DECLARE_STD_INT_TYPE(short)
+DECLARE_STD_INT_TYPE(unsigned short)
+DECLARE_STD_INT_TYPE(int)
+DECLARE_STD_INT_TYPE(unsigned)
+#if SIZEOF_LONG == 4
+DECLARE_STD_INT_TYPE(long)
+DECLARE_STD_INT_TYPE(unsigned long)
 #endif
+DECLARE_STD_INT_TYPE(Int8)
+DECLARE_STD_INT_TYPE(Uint8)
 
 const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size)
 {
@@ -737,8 +937,8 @@ const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size)
         info = CStdTypeInfo<short>::GetTypeInfo();
     else if ( size == sizeof(signed char) )
         info = CStdTypeInfo<signed char>::GetTypeInfo();
-    else if ( size == sizeof(long) )
-        info = CStdTypeInfo<long>::GetTypeInfo();
+    else if ( size == sizeof(Int8) )
+        info = CStdTypeInfo<Int8>::GetTypeInfo();
     else {
         string message("Illegal enum size: ");
         message += NStr::UIntToString(size);
@@ -762,7 +962,8 @@ double CPrimitiveTypeInfoDouble::GetValueDouble(TConstObjectPtr objectPtr) const
     return CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr);
 }
 
-void CPrimitiveTypeInfoDouble::SetValueDouble(TObjectPtr objectPtr, double value) const
+void CPrimitiveTypeInfoDouble::SetValueDouble(TObjectPtr objectPtr,
+                                              double value) const
 {
     CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr) = value;
 }
@@ -790,7 +991,8 @@ double CPrimitiveTypeInfoFloat::GetValueDouble(TConstObjectPtr objectPtr) const
     return CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr);
 }
 
-void CPrimitiveTypeInfoFloat::SetValueDouble(TObjectPtr objectPtr, double value) const
+void CPrimitiveTypeInfoFloat::SetValueDouble(TObjectPtr objectPtr,
+                                             double value) const
 {
 #if defined(FLT_MIN) && defined(FLT_MAX)
     if ( value < FLT_MIN || value > FLT_MAX )
@@ -809,6 +1011,48 @@ CTypeInfo* CStdTypeInfo<float>::CreateTypeInfo(void)
 {
     return new CPrimitiveTypeInfoFloat();
 }
+
+#if SIZEOF_LONG_DOUBLE != 0
+CPrimitiveTypeInfoLongDouble::CPrimitiveTypeInfoLongDouble(void)
+    : CParent(sizeof(TObjectType), ePrimitiveValueReal, true)
+{
+    CPrimitiveTypeFunctions<TObjectType>::SetMemFunctions(this);
+    CPrimitiveTypeFunctions<TObjectType>::SetIOFunctions(this);
+}
+
+double CPrimitiveTypeInfoLongDouble::GetValueDouble(TConstObjectPtr objectPtr) const
+{
+    return CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr);
+}
+
+void CPrimitiveTypeInfoLongDouble::SetValueDouble(TObjectPtr objectPtr,
+                                               double value) const
+{
+    CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr) = TObjectType(value);
+}
+
+long double CPrimitiveTypeInfoLongDouble::GetValueLDouble(TConstObjectPtr objectPtr) const
+{
+    return CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr);
+}
+
+void CPrimitiveTypeInfoLongDouble::SetValueLDouble(TObjectPtr objectPtr,
+                                                   long double value) const
+{
+    CPrimitiveTypeFunctions<TObjectType>::Get(objectPtr) = TObjectType(value);
+}
+
+TTypeInfo CStdTypeInfo<long double>::GetTypeInfo(void)
+{
+    static TTypeInfo info = CreateTypeInfo();
+    return info;
+}
+
+CTypeInfo* CStdTypeInfo<long double>::CreateTypeInfo(void)
+{
+    return new CPrimitiveTypeInfoLongDouble();
+}
+#endif
 
 class CStringFunctions : public CPrimitiveTypeFunctions<string>
 {

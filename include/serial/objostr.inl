@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/12/15 15:38:01  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.8  2000/10/20 15:51:27  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -77,6 +81,18 @@
 */
 
 inline
+void CObjectOStream::FlushBuffer(void)
+{
+    m_Output.FlushBuffer();
+}
+
+inline
+void CObjectOStream::Flush(void)
+{
+    m_Output.Flush();
+}
+
+inline
 void CObjectOStream::WriteObject(TConstObjectPtr objectPtr,
                                  TTypeInfo objectType)
 {
@@ -102,6 +118,129 @@ void CObjectOStream::WriteClassSequential(const CClassTypeInfo* classType,
                                           TConstObjectPtr classPtr)
 {
     WriteClass(classType, classPtr);
+}
+
+// std C types readers
+// bool
+inline
+void CObjectOStream::WriteStd(const bool& data)
+{
+    WriteBool(data);
+}
+
+// char
+inline
+void CObjectOStream::WriteStd(const char& data)
+{
+    WriteChar(data);
+}
+
+// integer numbers
+inline
+void CObjectOStream::WriteStd(const signed char& data)
+{
+    WriteInt4(data);
+}
+
+inline
+void CObjectOStream::WriteStd(const unsigned char& data)
+{
+    WriteUint4(data);
+}
+
+inline
+void CObjectOStream::WriteStd(const short& data)
+{
+    WriteInt4(data);
+}
+
+inline
+void CObjectOStream::WriteStd(const unsigned short& data)
+{
+    WriteUint4(data);
+}
+
+#if SIZEOF_INT == 4
+inline
+void CObjectOStream::WriteStd(const int& data)
+{
+    WriteInt4(data);
+}
+
+inline
+void CObjectOStream::WriteStd(const unsigned int& data)
+{
+    WriteUint4(data);
+}
+#else
+#  error Unsupported size of int - must be 4
+#endif
+
+#if SIZEOF_LONG == 4
+inline
+void CObjectOStream::WriteStd(const long& data)
+{
+    WriteInt4(Int4(data));
+}
+
+inline
+void CObjectOStream::WriteStd(const unsigned long& data)
+{
+    WriteUint4(Uint4(data));
+}
+#endif
+
+inline
+void CObjectOStream::WriteStd(const Int8& data)
+{
+    WriteInt8(data);
+}
+
+inline
+void CObjectOStream::WriteStd(const Uint8& data)
+{
+    WriteUint8(data);
+}
+
+// float numbers
+inline
+void CObjectOStream::WriteStd(const float& data)
+{
+    WriteFloat(data);
+}
+
+inline
+void CObjectOStream::WriteStd(const double& data)
+{
+    WriteDouble(data);
+}
+
+#if SIZEOF_LONG_DOUBLE != 0
+inline
+void CObjectOStream::WriteStd(const long double& data)
+{
+    WriteLDouble(data);
+}
+#endif
+
+// string
+inline
+void CObjectOStream::WriteStd(const string& data)
+{
+    WriteString(data);
+}
+
+// C string
+inline
+void CObjectOStream::WriteStd(const char* const& data)
+{
+    WriteCString(data);
+}
+
+inline
+void CObjectOStream::WriteStd(char* const& data)
+{
+    WriteCString(data);
 }
 
 inline

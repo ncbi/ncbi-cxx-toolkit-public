@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/12/15 15:38:46  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.20  2000/10/20 15:51:44  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -474,7 +478,7 @@ void CIStreamBuffer::BadNumber(void)
     THROW1_TRACE(runtime_error, "bad number");
 }
 
-int CIStreamBuffer::GetInt(void)
+Int4 CIStreamBuffer::GetInt4(void)
 {
     bool sign;
     char c = GetChar();
@@ -494,7 +498,7 @@ int CIStreamBuffer::GetInt(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
-    int n = c - '0';
+    Int4 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
@@ -510,7 +514,7 @@ int CIStreamBuffer::GetInt(void)
         return n;
 }
 
-unsigned CIStreamBuffer::GetUInt(void)
+Uint4 CIStreamBuffer::GetUint4(void)
 {
     char c = GetChar();
     if ( c == '+' )
@@ -518,7 +522,7 @@ unsigned CIStreamBuffer::GetUInt(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
-    unsigned n = c - '0';
+    Uint4 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
@@ -531,13 +535,9 @@ unsigned CIStreamBuffer::GetUInt(void)
     return n;
 }
 
-// code reduction if long and int have the same size
-long CIStreamBuffer::GetLong(void)
+Int8 CIStreamBuffer::GetInt8(void)
     THROWS1((CSerialIOException))
 {
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    return GetInt();
-#else
     bool sign;
     char c = GetChar();
     switch ( c ) {
@@ -556,7 +556,7 @@ long CIStreamBuffer::GetLong(void)
     if ( c < '0' || c > '9' )
         BadNumber();
 
-    long n = c - '0';
+    Int8 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
@@ -570,22 +570,18 @@ long CIStreamBuffer::GetLong(void)
         return -n;
     else
         return n;
-#endif
 }
 
-unsigned long CIStreamBuffer::GetULong(void)
+Uint8 CIStreamBuffer::GetUint8(void)
     THROWS1((CSerialIOException))
 {
-#if ULONG_MAX == UINT_MAX
-    return GetUInt();
-#else
     char c = GetChar();
     if ( c == '+' )
         c = GetChar();
     if ( c < '0' || c > '9' )
         BadNumber();
 
-    unsigned long n = c - '0';
+    Uint8 n = c - '0';
     for ( ;; ) {
         c = PeekCharNoEOF();
         if  ( c < '0' || c > '9' )
@@ -596,7 +592,6 @@ unsigned long CIStreamBuffer::GetULong(void)
         n = n * 10 + (c - '0');
     }
     return n;
-#endif
 }
 
 COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
@@ -700,56 +695,9 @@ char* COStreamBuffer::DoReserve(size_t count)
     return m_CurrentPos;
 }
 
-void COStreamBuffer::PutInt(int v)
+void COStreamBuffer::PutInt4(Int4 v)
     THROWS1((CSerialIOException, bad_alloc))
 {
-    const size_t BSIZE = (sizeof(int)*CHAR_BIT) / 3 + 2;
-    char b[BSIZE];
-    char* pos = b + BSIZE;
-    if ( v == 0 ) {
-        *--pos = '0';
-    }
-    else {
-        bool sign = v < 0;
-        if ( sign )
-            v = -v;
-        
-        do {
-            *--pos = char('0' + (v % 10));
-            v /= 10;
-        } while ( v );
-        
-        if ( sign )
-            *--pos = '-';
-    }
-    PutString(pos, b + BSIZE - pos);
-}
-
-void COStreamBuffer::PutUInt(unsigned v)
-    THROWS1((CSerialIOException, bad_alloc))
-{
-    const size_t BSIZE = (sizeof(unsigned)*CHAR_BIT) / 3 + 2;
-    char b[BSIZE];
-    char* pos = b + BSIZE;
-    if ( v == 0 ) {
-        *--pos = '0';
-    }
-    else {
-        do {
-            *--pos = char('0' + (v % 10));
-            v /= 10;
-        } while ( v );
-    }
-    PutString(pos, b + BSIZE - pos);
-}
-
-// code reduction if long and int have the same size
-void COStreamBuffer::PutLong(long v)
-    THROWS1((CSerialIOException, bad_alloc))
-{
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    PutInt(int(v));
-#else
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
     char* pos = b + BSIZE;
@@ -770,15 +718,11 @@ void COStreamBuffer::PutLong(long v)
             *--pos = '-';
     }
     PutString(pos, b + BSIZE - pos);
-#endif
 }
 
-void COStreamBuffer::PutULong(unsigned long v)
+void COStreamBuffer::PutUint4(Uint4 v)
     THROWS1((CSerialIOException, bad_alloc))
 {
-#if ULONG_MAX == UINT_MAX
-    PutUInt(unsigned(v));
-#else
     const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
     char b[BSIZE];
     char* pos = b + BSIZE;
@@ -792,7 +736,49 @@ void COStreamBuffer::PutULong(unsigned long v)
         } while ( v );
     }
     PutString(pos, b + BSIZE - pos);
-#endif
+}
+
+void COStreamBuffer::PutInt8(Int8 v)
+    THROWS1((CSerialIOException, bad_alloc))
+{
+    const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
+    char b[BSIZE];
+    char* pos = b + BSIZE;
+    if ( v == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        bool sign = v < 0;
+        if ( sign )
+            v = -v;
+        
+        do {
+            *--pos = char('0' + (v % 10));
+            v /= 10;
+        } while ( v );
+        
+        if ( sign )
+            *--pos = '-';
+    }
+    PutString(pos, b + BSIZE - pos);
+}
+
+void COStreamBuffer::PutUint8(Uint8 v)
+    THROWS1((CSerialIOException, bad_alloc))
+{
+    const size_t BSIZE = (sizeof(v)*CHAR_BIT) / 3 + 2;
+    char b[BSIZE];
+    char* pos = b + BSIZE;
+    if ( v == 0 ) {
+        *--pos = '0';
+    }
+    else {
+        do {
+            *--pos = char('0' + (v % 10));
+            v /= 10;
+        } while ( v );
+    }
+    PutString(pos, b + BSIZE - pos);
 }
 
 void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)

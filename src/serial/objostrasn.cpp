@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/12/15 15:38:45  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.57  2000/12/04 19:02:41  beloslyu
 * changes for FreeBSD
 *
@@ -336,16 +340,17 @@ void CObjectOStreamAsn::WriteFileHeader(TTypeInfo type)
 }
 
 inline
-void CObjectOStreamAsn::WriteEnum(long value, const string& valueName)
+void CObjectOStreamAsn::WriteEnum(TEnumValueType value,
+                                  const string& valueName)
 {
     if ( !valueName.empty() )
 		m_Output.PutString(valueName);
     else
-        m_Output.PutLong(value);
+        m_Output.PutInt4(value);
 }
 
 void CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
-                                  long value)
+                                  TEnumValueType value)
 {
     WriteEnum(value, values.FindName(value, values.IsInteger()));
 }
@@ -353,7 +358,7 @@ void CObjectOStreamAsn::WriteEnum(const CEnumeratedTypeValues& values,
 void CObjectOStreamAsn::CopyEnum(const CEnumeratedTypeValues& values,
                                  CObjectIStream& in)
 {
-    long value = in.ReadEnum(values);
+    TEnumValueType value = in.ReadEnum(values);
     WriteEnum(value, values.FindName(value, values.IsInteger()));
 }
 
@@ -372,24 +377,24 @@ void CObjectOStreamAsn::WriteChar(char data)
     m_Output.PutChar('\'');
 }
 
-void CObjectOStreamAsn::WriteInt(int data)
+void CObjectOStreamAsn::WriteInt4(Int4 data)
 {
-    m_Output.PutInt(data);
+    m_Output.PutInt4(data);
 }
 
-void CObjectOStreamAsn::WriteUInt(unsigned data)
+void CObjectOStreamAsn::WriteUint4(Uint4 data)
 {
-    m_Output.PutUInt(data);
+    m_Output.PutUint4(data);
 }
 
-void CObjectOStreamAsn::WriteLong(long data)
+void CObjectOStreamAsn::WriteInt8(Int8 data)
 {
-    m_Output.PutLong(data);
+    m_Output.PutInt8(data);
 }
 
-void CObjectOStreamAsn::WriteULong(unsigned long data)
+void CObjectOStreamAsn::WriteUint8(Uint8 data)
 {
-    m_Output.PutULong(data);
+    m_Output.PutUint8(data);
 }
 
 void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
@@ -435,7 +440,7 @@ void CObjectOStreamAsn::WriteDouble2(double data, size_t digits)
     m_Output.PutString(buffer, dotPos - buffer);
     m_Output.PutString(dotPos + 1, fractDigits);
     m_Output.PutString(", 10, ");
-    m_Output.PutInt(exp - fractDigits);
+    m_Output.PutInt4(exp - fractDigits);
     m_Output.PutString(" }");
 }
 
@@ -527,10 +532,10 @@ void CObjectOStreamAsn::WriteNullPointer(void)
 void CObjectOStreamAsn::WriteObjectReference(TObjectIndex index)
 {
     m_Output.PutChar('@');
-    if ( sizeof(TObjectIndex) == sizeof(int) )
-        m_Output.PutInt(int(index));
-    else if ( sizeof(TObjectIndex) == sizeof(long) )
-        m_Output.PutLong(long(index));
+    if ( sizeof(TObjectIndex) == sizeof(Int4) )
+        m_Output.PutInt4(Int4(index));
+    else if ( sizeof(TObjectIndex) == sizeof(Int8) )
+        m_Output.PutInt8(index);
     else
         ThrowError(eIllegalCall, "invalid size of TObjectIndex");
 }

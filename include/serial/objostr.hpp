@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.53  2000/11/20 17:24:36  vasilche
 * Added prototypes of internal functions.
 *
@@ -310,15 +314,10 @@ public:
     virtual ESerialDataFormat GetDataFormat(void) const = 0;
 
     // USER INTERFACE
-    // flush
-    void FlushBuffer(void)
-        {
-            m_Output.FlushBuffer();
-        }
-    void Flush(void)
-        {
-            m_Output.Flush();
-        }
+    // flush buffer
+    void FlushBuffer(void);
+    // flush buffer and underlying stream
+    void Flush(void);
 
     // root writer
     void Write(const CConstObjectInfo& object);
@@ -349,82 +348,79 @@ public:
     virtual void EndOfWrite(void);
 
     // std C types readers
-    void WriteStd(const bool& data)
-        {
-            WriteBool(data);
-        }
-    void WriteStd(const char& data)
-        {
-            WriteChar(data);
-        }
-    void WriteStd(const signed char& data)
-        {
-            WriteInt(data);
-        }
-    void WriteStd(const unsigned char& data)
-        {
-            WriteUInt(data);
-        }
-    void WriteStd(const short& data)
-        {
-            WriteInt(data);
-        }
-    void WriteStd(const unsigned short& data)
-        {
-            WriteUInt(data);
-        }
-    void WriteStd(const int& data)
-        {
-            WriteInt(data);
-        }
-    void WriteStd(const unsigned int& data)
-        {
-            WriteUInt(data);
-        }
-    void WriteStd(const long& data)
-        {
-            WriteLong(data);
-        }
-    void WriteStd(const unsigned long& data)
-        {
-            WriteULong(data);
-        }
-    void WriteStd(const float& data)
-        {
-            WriteFloat(data);
-        }
-    void WriteStd(const double& data)
-        {
-            WriteDouble(data);
-        }
-    void WriteStd(const char* const& data)
-        {
-            WriteCString(data);
-        }
-    void WriteStd(char* const& data)
-        {
-            WriteCString(data);
-        }
-    void WriteStd(const string& data)
-        {
-            WriteString(data);
-        }
+    // bool
+    void WriteStd(const bool& data);
+
+    // char
+    void WriteStd(const char& data);
+
+    // integer number
+    void WriteStd(const signed char& data);
+    void WriteStd(const unsigned char& data);
+    void WriteStd(const short& data);
+    void WriteStd(const unsigned short& data);
+    void WriteStd(const int& data);
+    void WriteStd(const unsigned int& data);
+#if SIZEOF_LONG == 4
+    void WriteStd(const long& data);
+    void WriteStd(const unsigned long& data);
+#endif
+    void WriteStd(const Int8& data);
+    void WriteStd(const Uint8& data);
+
+    // float number
+    void WriteStd(const float& data);
+    void WriteStd(const double& data);
+#if SIZEOF_LONG_DOUBLE != 0
+    void WriteStd(const long double& data);
+#endif
+
+    // string
+    void WriteStd(const string& data);
+
+    // C string
+    void WriteStd(const char* const& data);
+    void WriteStd(char* const& data);
+
+    // primitive writers
+    // bool
+    virtual void WriteBool(bool data) = 0;
+
+    // char
+    virtual void WriteChar(char data) = 0;
+
+    // integer numbers
+    virtual void WriteInt4(Int4 data) = 0;
+    virtual void WriteUint4(Uint4 data) = 0;
+    virtual void WriteInt8(Int8 data) = 0;
+    virtual void WriteUint8(Uint8 data) = 0;
+
+    // float numbers
+    virtual void WriteFloat(float data);
+    virtual void WriteDouble(double data) = 0;
+#if SIZEOF_LONG_DOUBLE != 0
+    virtual void WriteLDouble(long double data);
+#endif
+
+    // string
+    virtual void WriteString(const string& str) = 0;
+    virtual void CopyString(CObjectIStream& in) = 0;
+
+    // StringStore
+    virtual void WriteStringStore(const string& data) = 0;
+    virtual void CopyStringStore(CObjectIStream& in) = 0;
+
+    // C string
+	virtual void WriteCString(const char* str) = 0;
 
     // NULL
     virtual void WriteNull(void) = 0;
 
     // enum
     virtual void WriteEnum(const CEnumeratedTypeValues& values,
-                           long value) = 0;
+                           TEnumValueType value) = 0;
     virtual void CopyEnum(const CEnumeratedTypeValues& values,
                           CObjectIStream& in) = 0;
-
-    // strings
-	virtual void WriteCString(const char* str) = 0;
-    virtual void WriteString(const string& str) = 0;
-    virtual void WriteStringStore(const string& data) = 0;
-    virtual void CopyString(CObjectIStream& in) = 0;
-    virtual void CopyStringStore(CObjectIStream& in) = 0;
 
     // delayed buffer
     virtual bool Write(const CRef<CByteSource>& source);
@@ -618,15 +614,6 @@ protected:
     virtual void WriteOtherBegin(TTypeInfo typeInfo) = 0;
     virtual void WriteOtherEnd(TTypeInfo typeInfo);
     virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
-
-    virtual void WriteBool(bool data) = 0;
-    virtual void WriteChar(char data) = 0;
-    virtual void WriteInt(int data) = 0;
-    virtual void WriteUInt(unsigned int data) = 0;
-    virtual void WriteLong(long data) = 0;
-    virtual void WriteULong(unsigned long data) = 0;
-    virtual void WriteFloat(float data) = 0;
-    virtual void WriteDouble(double data) = 0;
 
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TConstObjectPtr object, TTypeInfo typeInfo);

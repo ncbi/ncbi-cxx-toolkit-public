@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2000/12/15 15:38:44  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.46  2000/10/20 15:51:41  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -663,42 +667,34 @@ char CObjectIStreamAsnBinary::ReadChar(void)
     return ret;
 }
 
-int CObjectIStreamAsnBinary::ReadInt(void)
+Int4 CObjectIStreamAsnBinary::ReadInt4(void)
 {
     ExpectSysTag(eInteger);
-    int data;
+    Int4 data;
     ReadStdSigned(*this, data);
     return data;
 }
 
-unsigned CObjectIStreamAsnBinary::ReadUInt(void)
+Uint4 CObjectIStreamAsnBinary::ReadUint4(void)
 {
     ExpectSysTag(eInteger);
-    unsigned data;
+    Uint4 data;
     ReadStdUnsigned(*this, data);
     return data;
 }
 
-long CObjectIStreamAsnBinary::ReadLong(void)
+Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 {
     ExpectSysTag(eInteger);
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    int data;
-#else
-    long data;
-#endif
+    Uint8 data;
     ReadStdSigned(*this, data);
     return data;
 }
 
-unsigned long CObjectIStreamAsnBinary::ReadULong(void)
+Uint8 CObjectIStreamAsnBinary::ReadUint8(void)
 {
     ExpectSysTag(eInteger);
-#if ULONG_MAX == UINT_MAX
-    unsigned data;
-#else
-    unsigned long data;
-#endif
+    Uint8 data;
     ReadStdUnsigned(*this, data);
     return data;
 }
@@ -1074,13 +1070,9 @@ CObjectIStream::EPointerType CObjectIStreamAsnBinary::ReadPointerType(void)
     return eThisPointer;
 }
 
-long CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
+TEnumValueType CObjectIStreamAsnBinary::ReadEnum(const CEnumeratedTypeValues& values)
 {
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-    int value;
-#else
-    long value;
-#endif
+    TEnumValueType value;
     if ( values.IsInteger() ) {
         // allow any integer
         ExpectSysTag(eInteger);
@@ -1171,6 +1163,12 @@ void CObjectIStreamAsnBinary::SkipChar(void)
 }
 
 void CObjectIStreamAsnBinary::SkipSNumber(void)
+{
+    ExpectSysTag(eInteger);
+    SkipTagData();
+}
+
+void CObjectIStreamAsnBinary::SkipUNumber(void)
 {
     ExpectSysTag(eInteger);
     SkipTagData();

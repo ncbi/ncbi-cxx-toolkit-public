@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2000/12/15 15:38:45  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.52  2000/12/04 19:02:41  beloslyu
 * changes for FreeBSD
 *
@@ -572,22 +576,46 @@ void CObjectOStreamAsnBinary::WriteNull(void)
 }
 
 static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, int data)
+void WriteNumberValue(CObjectOStreamAsnBinary& out, Int4 data)
 {
     size_t length;
-    if ( data >= int(-0x80) && data <= int(0x7f) ) {
+    if ( data >= Int4(-0x80) && data <= Int4(0x7f) ) {
         // one byte
         length = 1;
     }
-    else if ( data >= int(-0x8000) && data <= int(0x7fff) ) {
+    else if ( data >= Int4(-0x8000) && data <= Int4(0x7fff) ) {
         // two bytes
         length = 2;
     }
-    else if ( data >= int(-0x800000) && data <= int(0x7fffff) ) {
+    else if ( data >= Int4(-0x800000) && data <= Int4(0x7fffff) ) {
         // three bytes
         length = 3;
     }
-    else if ( data >= int(-0x80000000) && data <= int(0x7fffffff) ) {
+    else {
+        // full length signed
+        length = sizeof(data);
+    }
+    out.WriteShortLength(length);
+    WriteBytesOf(out, data, length);
+}
+
+static
+void WriteNumberValue(CObjectOStreamAsnBinary& out, Int8 data)
+{
+    size_t length;
+    if ( data >= -Int8(0x80) && data <= Int8(0x7f) ) {
+        // one byte
+        length = 1;
+    }
+    else if ( data >= Int8(-0x8000) && data <= Int8(0x7fff) ) {
+        // two bytes
+        length = 2;
+    }
+    else if ( data >= Int8(-0x800000) && data <= Int8(0x7fffff) ) {
+        // three bytes
+        length = 3;
+    }
+    else if ( data >= Int8(-0x80000000L) && data <= Int8(0x7fffffffL) ) {
         // four bytes
         length = 4;
     }
@@ -599,44 +627,8 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, int data)
     WriteBytesOf(out, data, length);
 }
 
-#if LONG_MIN == INT_MIN && LONG_MAX == INT_MAX
-static inline
-void WriteNumberValue(CObjectOStreamAsnBinary& out, long data)
-{
-    WriteNumberValue(out, int(data));
-}
-#else
 static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, long data)
-{
-    size_t length;
-    if ( data >= -long(0x80) && data <= long(0x7f) ) {
-        // one byte
-        length = 1;
-    }
-    else if ( data >= long(-0x8000) && data <= long(0x7fff) ) {
-        // two bytes
-        length = 2;
-    }
-    else if ( data >= long(-0x800000) && data <= long(0x7fffff) ) {
-        // three bytes
-        length = 3;
-    }
-    else if ( data >= long(-0x80000000L) && data <= long(0x7fffffffL) ) {
-        // four bytes
-        length = 4;
-    }
-    else {
-        // full length signed
-        length = sizeof(data);
-    }
-    out.WriteShortLength(length);
-    WriteBytesOf(out, data, length);
-}
-#endif
-
-static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned data)
+void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint4 data)
 {
     size_t length;
     if ( data <= 0x7fU ) {
@@ -651,12 +643,12 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned data)
         length = 3;
     }
     else if ( data <= 0x7fffffffU ) {
-        // three bytes
+        // four bytes
         length = 4;
     }
     else {
         // check for high bit to avoid storing unsigned data as negative
-        if ( (data & (1 << (sizeof(data) * 8 - 1))) != 0 ) {
+        if ( (data & (Uint4(1) << (sizeof(data) * 8 - 1))) != 0 ) {
             // full length unsigned - and doesn't fit in signed place
             out.WriteShortLength(sizeof(data) + 1);
             out.WriteByte(0);
@@ -672,15 +664,8 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned data)
     WriteBytesOf(out, data, length);
 }
 
-#if ULONG_MAX == UINT_MAX
-static inline
-void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned long data)
-{
-    WriteNumberValue(out, unsigned(data));
-}
-#else
 static
-void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned long data)
+void WriteNumberValue(CObjectOStreamAsnBinary& out, Uint8 data)
 {
     size_t length;
     if ( data <= 0x7fUL ) {
@@ -695,12 +680,12 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned long data)
         length = 3;
     }
     else if ( data <= 0x7fffffffUL ) {
-        // three bytes
+        // four bytes
         length = 4;
     }
     else {
         // check for high bit to avoid storing unsigned data as negative
-        if ( (data & (1 << (sizeof(data) * 8 - 1))) != 0 ) {
+        if ( (data & (Uint8(1) << (sizeof(data) * 8 - 1))) != 0 ) {
             // full length unsigned - and doesn't fit in signed place
             out.WriteShortLength(sizeof(data) + 1);
             out.WriteByte(0);
@@ -715,7 +700,6 @@ void WriteNumberValue(CObjectOStreamAsnBinary& out, unsigned long data)
     out.WriteShortLength(length);
     WriteBytesOf(out, data, length);
 }
-#endif
 
 void CObjectOStreamAsnBinary::WriteBool(bool data)
 {
@@ -731,25 +715,25 @@ void CObjectOStreamAsnBinary::WriteChar(char data)
     WriteByte(data);
 }
 
-void CObjectOStreamAsnBinary::WriteInt(int data)
+void CObjectOStreamAsnBinary::WriteInt4(Int4 data)
 {
     WriteSysTag(eInteger);
     WriteNumberValue(*this, data);
 }
 
-void CObjectOStreamAsnBinary::WriteUInt(unsigned data)
+void CObjectOStreamAsnBinary::WriteUint4(Uint4 data)
 {
     WriteSysTag(eInteger);
     WriteNumberValue(*this, data);
 }
 
-void CObjectOStreamAsnBinary::WriteLong(long data)
+void CObjectOStreamAsnBinary::WriteInt8(Int8 data)
 {
     WriteSysTag(eInteger);
     WriteNumberValue(*this, data);
 }
 
-void CObjectOStreamAsnBinary::WriteULong(unsigned long data)
+void CObjectOStreamAsnBinary::WriteUint8(Uint8 data)
 {
     WriteSysTag(eInteger);
     WriteNumberValue(*this, data);
@@ -877,7 +861,7 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
 }
 
 void CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
-                                        long value)
+                                        TEnumValueType value)
 {
     if ( values.IsInteger() ) {
         WriteSysTag(eInteger);
@@ -892,7 +876,7 @@ void CObjectOStreamAsnBinary::WriteEnum(const CEnumeratedTypeValues& values,
 void CObjectOStreamAsnBinary::CopyEnum(const CEnumeratedTypeValues& values,
                                        CObjectIStream& in)
 {
-    long value = in.ReadEnum(values);
+    TEnumValueType value = in.ReadEnum(values);
     if ( values.IsInteger() )
         WriteSysTag(eInteger);
     else

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.44  2000/10/20 15:51:26  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -250,7 +254,7 @@ public:
     virtual string GetPosition(void) const;
 
     virtual string ReadFileHeader(void);
-    virtual long ReadEnum(const CEnumeratedTypeValues& values);
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
 
@@ -272,10 +276,10 @@ protected:
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
-    virtual int ReadInt(void);
-    virtual unsigned ReadUInt(void);
-    virtual long ReadLong(void);
-    virtual unsigned long ReadULong(void);
+    virtual Int4 ReadInt4(void);
+    virtual Uint4 ReadUint4(void);
+    virtual Int8 ReadInt8(void);
+    virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadString(string& s);
 

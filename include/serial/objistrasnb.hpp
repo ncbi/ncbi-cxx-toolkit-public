@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.31  2000/10/17 18:45:25  vasilche
 * Added possibility to turn off object cross reference detection in
 * CObjectIStream and CObjectOStream.
@@ -185,17 +189,17 @@ public:
 
     virtual string GetPosition(void) const;
 
-    virtual long ReadEnum(const CEnumeratedTypeValues& values);
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void ReadNull(void);
 
 protected:
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
-    virtual int ReadInt(void);
-    virtual unsigned ReadUInt(void);
-    virtual long ReadLong(void);
-    virtual unsigned long ReadULong(void);
+    virtual Int4 ReadInt4(void);
+    virtual Uint4 ReadUint4(void);
+    virtual Int8 ReadInt8(void);
+    virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadString(string& s);
     virtual char* ReadCString(void);
@@ -204,6 +208,7 @@ protected:
     virtual void SkipBool(void);
     virtual void SkipChar(void);
     virtual void SkipSNumber(void);
+    virtual void SkipUNumber(void);
     virtual void SkipFNumber(void);
     virtual void SkipString(void);
     virtual void SkipStringStore(void);

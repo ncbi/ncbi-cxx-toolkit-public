@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/12/15 15:38:45  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.21  2000/12/04 19:02:41  beloslyu
 * changes for FreeBSD
 *
@@ -223,7 +227,8 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
 }
 
 void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
-                                  long value, const string& valueName)
+                                  TEnumValueType value,
+                                  const string& valueName)
 {
     if ( !values.GetName().empty() ) {
         // global enum
@@ -236,7 +241,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
         }
         if ( values.IsInteger() ) {
             OpenTagEnd();
-            m_Output.PutLong(value);
+            m_Output.PutInt4(value);
             CloseTagStart();
             m_Output.PutString(values.GetName());
             CloseTagEnd();
@@ -251,7 +256,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
         // local enum (member, variant or element)
         if ( valueName.empty() ) {
             _ASSERT(values.IsInteger());
-            m_Output.PutLong(value);
+            m_Output.PutInt4(value);
         }
         else {
             OpenTagEndBack();
@@ -260,7 +265,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
             m_Output.PutChar('"');
             if ( values.IsInteger() ) {
                 OpenTagEnd();
-                m_Output.PutLong(value);
+                m_Output.PutInt4(value);
             }
             else {
                 SelfCloseTagEnd();
@@ -270,7 +275,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
 }
 
 void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
-                                  long value)
+                                  TEnumValueType value)
 {
     WriteEnum(values, value, values.FindName(value, values.IsInteger()));
 }
@@ -278,7 +283,7 @@ void CObjectOStreamXml::WriteEnum(const CEnumeratedTypeValues& values,
 void CObjectOStreamXml::CopyEnum(const CEnumeratedTypeValues& values,
                                  CObjectIStream& in)
 {
-    long value = in.ReadEnum(values);
+    TEnumValueType value = in.ReadEnum(values);
     WriteEnum(values, value, values.FindName(value, values.IsInteger()));
 }
 
@@ -321,24 +326,24 @@ void CObjectOStreamXml::WriteChar(char data)
     WriteEscapedChar(data);
 }
 
-void CObjectOStreamXml::WriteInt(int data)
+void CObjectOStreamXml::WriteInt4(Int4 data)
 {
-    m_Output.PutInt(data);
+    m_Output.PutInt4(data);
 }
 
-void CObjectOStreamXml::WriteUInt(unsigned data)
+void CObjectOStreamXml::WriteUint4(Uint4 data)
 {
-    m_Output.PutUInt(data);
+    m_Output.PutUint4(data);
 }
 
-void CObjectOStreamXml::WriteLong(long data)
+void CObjectOStreamXml::WriteInt8(Int8 data)
 {
-    m_Output.PutLong(data);
+    m_Output.PutInt8(data);
 }
 
-void CObjectOStreamXml::WriteULong(unsigned long data)
+void CObjectOStreamXml::WriteUint8(Uint8 data)
 {
-    m_Output.PutULong(data);
+    m_Output.PutUint8(data);
 }
 
 void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
@@ -439,10 +444,10 @@ void CObjectOStreamXml::WriteNullPointer(void)
 void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 {
     m_Output.PutString("<object index=");
-    if ( sizeof(TObjectIndex) == sizeof(int) )
-        m_Output.PutInt(int(index));
-    else if ( sizeof(TObjectIndex) == sizeof(long) )
-        m_Output.PutLong(long(index));
+    if ( sizeof(TObjectIndex) == sizeof(Int4) )
+        m_Output.PutInt4(Int4(index));
+    else if ( sizeof(TObjectIndex) == sizeof(Int8) )
+        m_Output.PutInt8(index);
     else
         ThrowError(eIllegalCall, "invalid size of TObjectIndex");
     m_Output.PutString("/>");

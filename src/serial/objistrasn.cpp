@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2000/12/15 15:38:44  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.60  2000/11/20 17:25:36  vasilche
 * Added prototypes of functions.
 *
@@ -586,7 +590,7 @@ string CObjectIStreamAsn::ReadFileHeader()
     return s;
 }
 
-long CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
+TEnumValueType CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
 {
     // not integer
     CLightString id = ReadLCaseId(SkipWhiteSpace());
@@ -595,7 +599,7 @@ long CObjectIStreamAsn::ReadEnum(const CEnumeratedTypeValues& values)
         return values.FindValue(id);
     }
     // enum element by value
-    long value = m_Input.GetLong();
+    TEnumValueType value = m_Input.GetInt4();
     if ( !values.IsInteger() ) // check value
         values.FindName(value, false);
     
@@ -640,28 +644,28 @@ char CObjectIStreamAsn::ReadChar(void)
     return s[0];
 }
 
-int CObjectIStreamAsn::ReadInt(void)
+Int4 CObjectIStreamAsn::ReadInt4(void)
 {
     SkipWhiteSpace();
-    return m_Input.GetInt();
+    return m_Input.GetInt4();
 }
 
-unsigned CObjectIStreamAsn::ReadUInt(void)
+Uint4 CObjectIStreamAsn::ReadUint4(void)
 {
     SkipWhiteSpace();
-    return m_Input.GetUInt();
+    return m_Input.GetUint4();
 }
 
-long CObjectIStreamAsn::ReadLong(void)
+Int8 CObjectIStreamAsn::ReadInt8(void)
 {
     SkipWhiteSpace();
-    return m_Input.GetLong();
+    return m_Input.GetInt8();
 }
 
-unsigned long CObjectIStreamAsn::ReadULong(void)
+Uint8 CObjectIStreamAsn::ReadUint8(void)
 {
     SkipWhiteSpace();
-    return m_Input.GetULong();
+    return m_Input.GetUint8();
 }
 
 double CObjectIStreamAsn::ReadDouble(void)
@@ -679,9 +683,9 @@ double CObjectIStreamAsn::ReadDouble(void)
     if ( *endptr != 0 )
         ThrowError(eFormatError, "bad number");
     Expect(',', true);
-    unsigned base = ReadUInt();
+    unsigned base = ReadUint4();
     Expect(',', true);
-    int exp = ReadInt();
+    int exp = ReadInt4();
     Expect('}', true);
     if ( base != 2 && base != 10 )
         ThrowError(eFormatError, "illegal REAL base (must be 2 or 10)");
@@ -852,7 +856,7 @@ void CObjectIStreamAsn::SkipFNumber(void)
     Expect('{', true);
     SkipSNumber();
     Expect(',', true);
-    unsigned base = ReadUInt();
+    unsigned base = ReadUint4();
     Expect(',', true);
     SkipSNumber();
     Expect('}', true);
@@ -1296,10 +1300,10 @@ CObjectIStream::EPointerType CObjectIStreamAsn::ReadPointerType(void)
 
 CObjectIStream::TObjectIndex CObjectIStreamAsn::ReadObjectPointer(void)
 {
-    if ( sizeof(TObjectIndex) == sizeof(int) )
-        return TObjectIndex(ReadInt());
-    else if ( sizeof(TObjectIndex) == sizeof(long) )
-        return TObjectIndex(ReadLong());
+    if ( sizeof(TObjectIndex) == sizeof(Int4) )
+        return ReadInt4();
+    else if ( sizeof(TObjectIndex) == sizeof(Int8) )
+        return TObjectIndex(ReadInt8());
     else
         ThrowError(eIllegalCall, "invalid size of TObjectIndex");
     return 0;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/12/15 15:38:01  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.23  2000/11/07 17:25:13  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -167,16 +171,38 @@ public:
     virtual char GetValueChar(TConstObjectPtr objectPtr) const;
     virtual void SetValueChar(TObjectPtr objectPtr, char value) const;
 
-    virtual long GetValueLong(TConstObjectPtr objectPtr) const;
-    virtual void SetValueLong(TObjectPtr objectPtr, long value) const;
-    virtual unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
-    virtual void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
+    virtual Int4 GetValueInt4(TConstObjectPtr objectPtr) const;
+    virtual void SetValueInt4(TObjectPtr objectPtr, Int4 value) const;
+    virtual Uint4 GetValueUint4(TConstObjectPtr objectPtr) const;
+    virtual void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const;
+
+    virtual Int8 GetValueInt8(TConstObjectPtr objectPtr) const;
+    virtual void SetValueInt8(TObjectPtr objectPtr, Int8 value) const;
+    virtual Uint8 GetValueUint8(TConstObjectPtr objectPtr) const;
+    virtual void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const;
+
+    int GetValueInt(TConstObjectPtr objectPtr) const;
+    void SetValueInt(TObjectPtr objectPtr, int value) const;
+    unsigned GetValueUInt(TConstObjectPtr objectPtr) const;
+    void SetValueUInt(TObjectPtr objectPtr, unsigned value) const;
+
+    long GetValueLong(TConstObjectPtr objectPtr) const;
+    void SetValueLong(TObjectPtr objectPtr, long value) const;
+    unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
+    void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
 
     virtual double GetValueDouble(TConstObjectPtr objectPtr) const;
     virtual void SetValueDouble(TObjectPtr objectPtr, double value) const;
+#if SIZEOF_LONG_DOUBLE != 0
+    virtual long double GetValueLDouble(TConstObjectPtr objectPtr) const;
+    virtual void SetValueLDouble(TObjectPtr objectPtr,
+                                 long double value) const;
+#endif
 
-    virtual void GetValueString(TConstObjectPtr objectPtr, string& value) const;
-    virtual void SetValueString(TObjectPtr objectPtr, const string& value) const;
+    virtual void GetValueString(TConstObjectPtr objectPtr,
+                                string& value) const;
+    virtual void SetValueString(TObjectPtr objectPtr,
+                                const string& value) const;
 
     virtual void GetValueOctetString(TConstObjectPtr objectPtr,
                                      vector<char>& value) const;
@@ -282,6 +308,7 @@ public:
     static CTypeInfo* CreateTypeInfo(void);
 };
 
+#if SIZEOF_LONG == 4
 template<>
 class CStdTypeInfo<long>
 {
@@ -297,24 +324,23 @@ public:
     static TTypeInfo GetTypeInfo(void);
     static CTypeInfo* CreateTypeInfo(void);
 };
-
-#if HAVE_LONG_LONG
-template<>
-class CStdTypeInfo<long long>
-{
-public:
-    static TTypeInfo GetTypeInfo(void);
-    static CTypeInfo* CreateTypeInfo(void);
-};
-
-template<>
-class CStdTypeInfo<unsigned long long>
-{
-public:
-    static TTypeInfo GetTypeInfo(void);
-    static CTypeInfo* CreateTypeInfo(void);
-};
 #endif
+
+template<>
+class CStdTypeInfo<Int8>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
+
+template<>
+class CStdTypeInfo<Uint8>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
 
 template<>
 class CStdTypeInfo<float>
@@ -331,6 +357,16 @@ public:
     static TTypeInfo GetTypeInfo(void);
     static CTypeInfo* CreateTypeInfo(void);
 };
+
+#if SIZEOF_LONG_DOUBLE != 0
+template<>
+class CStdTypeInfo<long double>
+{
+public:
+    static TTypeInfo GetTypeInfo(void);
+    static CTypeInfo* CreateTypeInfo(void);
+};
+#endif
 
 template<>
 class CStdTypeInfo<string>

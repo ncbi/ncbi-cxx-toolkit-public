@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/12/15 15:37:59  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.4  2000/11/07 17:25:11  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -66,9 +70,9 @@ BEGIN_NCBI_SCOPE
 class CEnumeratedTypeValues
 {
 public:
-    typedef list< pair<string, long> > TValues;
-    typedef map<CLightString, long> TNameToValue;
-    typedef map<long, const string*> TValueToName;
+    typedef list< pair<string, TEnumValueType> > TValues;
+    typedef map<CLightString, TEnumValueType> TNameToValue;
+    typedef map<TEnumValueType, const string*> TValueToName;
 
     CEnumeratedTypeValues(const char* name, bool isInteger);
     CEnumeratedTypeValues(const string& name, bool isInteger);
@@ -89,19 +93,19 @@ public:
             return m_Integer;
         }
 
-    void AddValue(const string& name, long value);
-    void AddValue(const char* name, long value);
+    void AddValue(const string& name, TEnumValueType value);
+    void AddValue(const char* name, TEnumValueType value);
 
     // returns value of enum element, if found
     // otherwise, throws exception
-    long FindValue(const CLightString& name) const;
+    TEnumValueType FindValue(const CLightString& name) const;
 
     // returns name of enum element, if found
     // otherwise, if (allowBadValue == true) returns empty string,
     // otherwise, throws exception
-    const string& FindName(long value, bool allowBadValue) const;
+    const string& FindName(TEnumValueType value, bool allowBadValue) const;
 
-    TTypeInfo GetTypeInfoForSize(size_t size, long /* dummy */) const;
+    TTypeInfo GetTypeInfoForSize(size_t size, TEnumValueType /*dummy*/) const;
 
     const TNameToValue& NameToValue(void) const;
     const TValueToName& ValueToName(void) const;

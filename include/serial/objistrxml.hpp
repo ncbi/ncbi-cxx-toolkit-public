@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/12/15 15:38:00  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.10  2000/11/07 17:25:12  vasilche
 * Fixed encoding of XML:
 *     removed unnecessary apostrophes in OCTET STRING
@@ -118,15 +122,15 @@ protected:
 
     virtual bool ReadBool(void);
     virtual char ReadChar(void);
-    virtual int ReadInt(void);
-    virtual unsigned ReadUInt(void);
-    virtual long ReadLong(void);
-    virtual unsigned long ReadULong(void);
+    virtual Int4 ReadInt4(void);
+    virtual Uint4 ReadUint4(void);
+    virtual Int8 ReadInt8(void);
+    virtual Uint8 ReadUint8(void);
     virtual double ReadDouble(void);
     virtual void ReadNull(void);
     virtual void ReadString(string& s);
     virtual char* ReadCString(void);
-    long ReadEnum(const CEnumeratedTypeValues& values);
+    TEnumValueType ReadEnum(const CEnumeratedTypeValues& values);
 
     virtual void SkipBool(void);
     virtual void SkipChar(void);

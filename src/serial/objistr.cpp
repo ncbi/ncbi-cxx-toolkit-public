@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.69  2000/12/15 15:38:43  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.68  2000/11/01 20:38:37  vasilche
 * Removed ECanDelete enum and related constructors.
 *
@@ -1103,52 +1107,58 @@ void CObjectIStream::EndBytes(const ByteBlock& /*b*/)
 {
 }
 
-signed char CObjectIStream::ReadSChar(void)
+Int1 CObjectIStream::ReadInt1(void)
 {
-    int data = ReadInt();
-    if ( data < SCHAR_MIN || data > SCHAR_MAX )
+    Int4 data = ReadInt4();
+    Int1 ret = Int1(data);
+    if ( ret != data )
         ThrowError(eOverflow, "integer overflow");
-    return (signed char)data;
+    return ret;
 }
 
-unsigned char CObjectIStream::ReadUChar(void)
+Uint1 CObjectIStream::ReadUint1(void)
 {
-    unsigned data = ReadUInt();
-    if ( data > UCHAR_MAX )
+    Uint4 data = ReadUint4();
+    Uint1 ret = Uint1(data);
+    if ( ret != data )
         ThrowError(eOverflow, "integer overflow");
-    return (unsigned char)data;
+    return ret;
 }
 
-short CObjectIStream::ReadShort(void)
+Int2 CObjectIStream::ReadInt2(void)
 {
-    int data = ReadInt();
-    if ( data < SHRT_MIN || data > SHRT_MAX )
+    Int4 data = ReadInt4();
+    Int2 ret = Int2(data);
+    if ( ret != data )
         ThrowError(eOverflow, "integer overflow");
-    return short(data);
+    return ret;
 }
 
-unsigned short CObjectIStream::ReadUShort(void)
+Uint2 CObjectIStream::ReadUint2(void)
 {
-    unsigned data = ReadUInt();
-    if ( data > USHRT_MAX )
+    Uint4 data = ReadUint4();
+    Uint2 ret = Uint2(data);
+    if ( ret != data )
         ThrowError(eOverflow, "integer overflow");
-    return (unsigned short)data;
+    return ret;
 }
 
-int CObjectIStream::ReadInt(void)
+Int4 CObjectIStream::ReadInt4(void)
 {
-    long data = ReadLong();
-    if ( data < INT_MIN || data > INT_MAX )
+    Int8 data = ReadInt8();
+    Int4 ret = Int4(data);
+    if ( ret != data )
         ThrowError(eOverflow, "integer overflow");
-    return int(data);
+    return ret;
 }
 
-unsigned CObjectIStream::ReadUInt(void)
+Uint4 CObjectIStream::ReadUint4(void)
 {
-    unsigned long data = ReadULong();
-    if ( data > UINT_MAX )
+    Uint8 data = ReadUint8();
+    Uint4 ret = Uint4(data);
+    if ( ret != data )
         ThrowError(eOverflow, "integer overflow");
-    return unsigned(data);
+    return ret;
 }
 
 float CObjectIStream::ReadFloat(void)
@@ -1160,6 +1170,13 @@ float CObjectIStream::ReadFloat(void)
 #endif
     return float(data);
 }
+
+#if SIZEOF_LONG_DOUBLE != 0
+long double CObjectIStream::ReadLDouble(void)
+{
+    return ReadDouble();
+}
+#endif
 
 char* CObjectIStream::ReadCString(void)
 {
@@ -1173,47 +1190,42 @@ void CObjectIStream::ReadStringStore(string& s)
     ReadString(s);
 }
 
-void CObjectIStream::SkipUNumber(void)
+void CObjectIStream::SkipInt1(void)
 {
     SkipSNumber();
 }
 
-void CObjectIStream::SkipSChar(void)
-{
-    SkipSNumber();
-}
-
-void CObjectIStream::SkipUChar(void)
+void CObjectIStream::SkipUint1(void)
 {
     SkipUNumber();
 }
 
-void CObjectIStream::SkipShort(void)
+void CObjectIStream::SkipInt2(void)
 {
     SkipSNumber();
 }
 
-void CObjectIStream::SkipUShort(void)
+void CObjectIStream::SkipUint2(void)
 {
     SkipUNumber();
 }
 
-void CObjectIStream::SkipInt(void)
+void CObjectIStream::SkipInt4(void)
 {
     SkipSNumber();
 }
 
-void CObjectIStream::SkipUInt(void)
+void CObjectIStream::SkipUint4(void)
 {
     SkipUNumber();
 }
 
-void CObjectIStream::SkipLong(void)
+void CObjectIStream::SkipInt8(void)
 {
     SkipSNumber();
 }
 
-void CObjectIStream::SkipULong(void)
+void CObjectIStream::SkipUint8(void)
 {
     SkipUNumber();
 }
@@ -1227,6 +1239,13 @@ void CObjectIStream::SkipDouble(void)
 {
     SkipFNumber();
 }
+
+#if SIZEOF_LONG_DOUBLE != 0
+void CObjectIStream::SkipLDouble(void)
+{
+    SkipFNumber();
+}
+#endif
 
 void CObjectIStream::SkipCString(void)
 {

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/12/15 15:38:02  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.7  2000/10/13 16:28:32  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -87,18 +91,29 @@ void ThrowIllegalCall(void);
     SERIAL_ENUMERATE_STD_TYPE(signed char, schar) \
     SERIAL_ENUMERATE_STD_TYPE(unsigned char, uchar)
 
+#if SIZEOF_LONG == 4
 #define SERIAL_ENUMERATE_ALL_INTEGRAL_TYPES \
     SERIAL_ENUMERATE_STD_TYPE1(short) \
     SERIAL_ENUMERATE_STD_TYPE(unsigned short, ushort) \
     SERIAL_ENUMERATE_STD_TYPE1(int) \
     SERIAL_ENUMERATE_STD_TYPE1(unsigned) \
     SERIAL_ENUMERATE_STD_TYPE1(long) \
-    SERIAL_ENUMERATE_STD_TYPE(unsigned long, ulong)
+    SERIAL_ENUMERATE_STD_TYPE(unsigned long, ulong) \
+    SERIAL_ENUMERATE_STD_TYPE1(Int8) \
+    SERIAL_ENUMERATE_STD_TYPE1(Uint8)
+#else
+#define SERIAL_ENUMERATE_ALL_INTEGRAL_TYPES \
+    SERIAL_ENUMERATE_STD_TYPE1(short) \
+    SERIAL_ENUMERATE_STD_TYPE(unsigned short, ushort) \
+    SERIAL_ENUMERATE_STD_TYPE1(int) \
+    SERIAL_ENUMERATE_STD_TYPE1(unsigned) \
+    SERIAL_ENUMERATE_STD_TYPE1(Int8) \
+    SERIAL_ENUMERATE_STD_TYPE1(Uint8)
+#endif
 
 #define SERIAL_ENUMERATE_ALL_FLOAT_TYPES \
     SERIAL_ENUMERATE_STD_TYPE1(float) \
     SERIAL_ENUMERATE_STD_TYPE1(double)
-
 
 #define SERIAL_ENUMERATE_ALL_STD_TYPES \
     SERIAL_ENUMERATE_STD_TYPE1(bool) \
@@ -132,30 +147,44 @@ public:
     void SetValueString(TObjectPtr object, const string& value) const;
 };
 
-class CPrimitiveTypeInfoLong : public CPrimitiveTypeInfo
+class CPrimitiveTypeInfoInt : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
 public:
-    typedef long (*TGetLongFunction)(TConstObjectPtr objectPtr);
-    typedef unsigned long (*TGetULongFunction)(TConstObjectPtr objectPtr);
-    typedef void (*TSetLongFunction)(TObjectPtr objectPtr, long v);
-    typedef void (*TSetULongFunction)(TObjectPtr objectPtr, unsigned long v);
+    typedef Int4 (*TGetInt4Function)(TConstObjectPtr objectPtr);
+    typedef Uint4 (*TGetUint4Function)(TConstObjectPtr objectPtr);
+    typedef void (*TSetInt4Function)(TObjectPtr objectPtr, Int4 v);
+    typedef void (*TSetUint4Function)(TObjectPtr objectPtr, Uint4 v);
+    typedef Int8 (*TGetInt8Function)(TConstObjectPtr objectPtr);
+    typedef Uint8 (*TGetUint8Function)(TConstObjectPtr objectPtr);
+    typedef void (*TSetInt8Function)(TObjectPtr objectPtr, Int8 v);
+    typedef void (*TSetUint8Function)(TObjectPtr objectPtr, Uint8 v);
 
-    CPrimitiveTypeInfoLong(size_t size, bool isSigned);
+    CPrimitiveTypeInfoInt(size_t size, bool isSigned);
 
-    void SetLongFunctions(TGetLongFunction, TSetLongFunction,
-                          TGetULongFunction, TSetULongFunction);
+    void SetInt4Functions(TGetInt4Function, TSetInt4Function,
+                          TGetUint4Function, TSetUint4Function);
+    void SetInt8Functions(TGetInt8Function, TSetInt8Function,
+                          TGetUint8Function, TSetUint8Function);
 
-    long GetValueLong(TConstObjectPtr objectPtr) const;
-    unsigned long GetValueULong(TConstObjectPtr objectPtr) const;
-    void SetValueLong(TObjectPtr objectPtr, long value) const;
-    void SetValueULong(TObjectPtr objectPtr, unsigned long value) const;
+    Int4 GetValueInt4(TConstObjectPtr objectPtr) const;
+    Uint4 GetValueUint4(TConstObjectPtr objectPtr) const;
+    void SetValueInt4(TObjectPtr objectPtr, Int4 value) const;
+    void SetValueUint4(TObjectPtr objectPtr, Uint4 value) const;
+    Int8 GetValueInt8(TConstObjectPtr objectPtr) const;
+    Uint8 GetValueUint8(TConstObjectPtr objectPtr) const;
+    void SetValueInt8(TObjectPtr objectPtr, Int8 value) const;
+    void SetValueUint8(TObjectPtr objectPtr, Uint8 value) const;
     
 protected:
-    TGetLongFunction m_GetLong;
-    TSetLongFunction m_SetLong;
-    TGetULongFunction m_GetULong;
-    TSetULongFunction m_SetULong;
+    TGetInt4Function m_GetInt4;
+    TSetInt4Function m_SetInt4;
+    TGetUint4Function m_GetUint4;
+    TSetUint4Function m_SetUint4;
+    TGetInt8Function m_GetInt8;
+    TSetInt8Function m_SetInt8;
+    TGetUint8Function m_GetUint8;
+    TSetUint8Function m_SetUint8;
 };
 
 class CPrimitiveTypeInfoDouble : public CPrimitiveTypeInfo
@@ -182,7 +211,7 @@ public:
     void SetValueDouble(TObjectPtr objectPtr, double value) const;
 };
 
-#if HAVE_LONG_DOUBLE
+#if SIZEOF_LONG_DOUBLE != 0
 class CPrimitiveTypeInfoLongDouble : public CPrimitiveTypeInfo
 {
     typedef CPrimitiveTypeInfo CParent;
@@ -193,6 +222,10 @@ public:
 
     double GetValueDouble(TConstObjectPtr objectPtr) const;
     void SetValueDouble(TObjectPtr objectPtr, double value) const;
+
+    virtual long double GetValueLDouble(TConstObjectPtr objectPtr) const;
+    virtual void SetValueLDouble(TObjectPtr objectPtr,
+                                 long double value) const;
 };
 #endif
 

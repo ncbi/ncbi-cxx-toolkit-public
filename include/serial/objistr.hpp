@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2000/12/15 15:37:59  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.57  2000/10/20 19:29:15  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -370,131 +374,120 @@ public:
     virtual void EndOfRead(void);
     
     // try to read enum value name, "" if none
-    virtual long ReadEnum(const CEnumeratedTypeValues& values) = 0;
+    virtual TEnumValueType ReadEnum(const CEnumeratedTypeValues& values) = 0;
 
     // std C types readers
-    void ReadStd(bool& data)
-        {
-            data = ReadBool();
-        }
-    void ReadStd(char& data)
-        {
-            data = ReadChar();
-        }
-    void ReadStd(signed char& data)
-        {
-            data = ReadSChar();
-        }
-    void ReadStd(unsigned char& data)
-        {
-            data = ReadUChar();
-        }
-    void ReadStd(short& data)
-        {
-            data = ReadShort();
-        }
-    void ReadStd(unsigned short& data)
-        {
-            data = ReadUShort();
-        }
-    void ReadStd(int& data)
-        {
-            data = ReadInt();
-        }
-    void ReadStd(unsigned& data)
-        {
-            data = ReadUInt();
-        }
-    void ReadStd(long& data)
-        {
-            data = ReadLong();
-        }
-    void ReadStd(unsigned long& data)
-        {
-            data = ReadULong();
-        }
-    void ReadStd(float& data)
-        {
-            data = ReadFloat();
-        }
-    void ReadStd(double& data)
-        {
-            data = ReadDouble();
-        }
-    void ReadStd(char* & data)
-        {
-            data = ReadCString();
-        }
-    void ReadStd(const char* & data)
-        {
-            data = ReadCString();
-        }
-    void ReadStd(string& data)
-        {
-            ReadString(data);
-        }
-    virtual void ReadStringStore(string& s);
-    
-    // std C types readers
-    void SkipStd(const bool &)
-        {
-            SkipBool();
-        }
-    void SkipStd(const char& )
-        {
-            SkipChar();
-        }
-    void SkipStd(const signed char& )
-        {
-            SkipSChar();
-        }
-    void SkipStd(const unsigned char& )
-        {
-            SkipUChar();
-        }
-    void SkipStd(const short& )
-        {
-            SkipShort();
-        }
-    void SkipStd(const unsigned short& )
-        {
-            SkipUShort();
-        }
-    void SkipStd(const int& )
-        {
-            SkipInt();
-        }
-    void SkipStd(const unsigned& )
-        {
-            SkipUInt();
-        }
-    void SkipStd(const long& )
-        {
-            SkipLong();
-        }
-    void SkipStd(const unsigned long& )
-        {
-            SkipULong();
-        }
-    void SkipStd(const float& )
-        {
-            SkipFloat();
-        }
-    void SkipStd(const double& )
-        {
-            SkipDouble();
-        }
-    void SkipStd(char* const& )
-        {
-            SkipCString();
-        }
-    void SkipStd(const char* const& )
-        {
-            SkipCString();
-        }
+    // bool
+    void ReadStd(bool& data);
+    void SkipStd(const bool &);
+
+    // char
+    void ReadStd(char& data);
+    void SkipStd(const char& );
+
+    // integer numbers
+    void ReadStd(signed char& data);
+    void ReadStd(unsigned char& data);
+    void SkipStd(const signed char& );
+    void SkipStd(const unsigned char& );
+    void ReadStd(short& data);
+    void ReadStd(unsigned short& data);
+    void SkipStd(const short& );
+    void SkipStd(const unsigned short& );
+    void ReadStd(int& data);
+    void ReadStd(unsigned& data);
+    void SkipStd(const int& );
+    void SkipStd(const unsigned& );
+#if SIZEOF_LONG == 4
+    void ReadStd(long& data);
+    void ReadStd(unsigned long& data);
+    void SkipStd(const long& );
+    void SkipStd(const unsigned long& );
+#endif
+    void ReadStd(Int8& data);
+    void ReadStd(Uint8& data);
+    void SkipStd(const Int8& );
+    void SkipStd(const Uint8& );
+
+    // float numbers
+    void ReadStd(float& data);
+    void ReadStd(double& data);
+    void SkipStd(const float& );
+    void SkipStd(const double& );
+#if SIZEOF_LONG_DOUBLE != 0
+    virtual void ReadStd(long double& data);
+    virtual void SkipStd(const long double& );
+#endif
+
+    // string
+    void ReadStd(string& data);
+    void SkipStd(const string& );
+
+    // C string
+    void ReadStd(char* & data);
+    void ReadStd(const char* & data);
+    void SkipStd(char* const& );
+    void SkipStd(const char* const& );
+
+    // primitive readers
+    // bool
+    virtual bool ReadBool(void) = 0;
+    virtual void SkipBool(void) = 0;
+
+    // char
+    virtual char ReadChar(void) = 0;
+    virtual void SkipChar(void) = 0;
+
+    // integer numbers
+    virtual Int1 ReadInt1(void);
+    virtual Uint1 ReadUint1(void);
+    virtual Int2 ReadInt2(void);
+    virtual Uint2 ReadUint2(void);
+    virtual Int4 ReadInt4(void);
+    virtual Uint4 ReadUint4(void);
+    virtual Int8 ReadInt8(void) = 0;
+    virtual Uint8 ReadUint8(void) = 0;
+
+    virtual void SkipInt1(void);
+    virtual void SkipUint1(void);
+    virtual void SkipInt2(void);
+    virtual void SkipUint2(void);
+    virtual void SkipInt4(void);
+    virtual void SkipUint4(void);
+    virtual void SkipInt8(void);
+    virtual void SkipUint8(void);
+
+    virtual void SkipSNumber(void) = 0;
+    virtual void SkipUNumber(void) = 0;
+
+    // float numbers
+    virtual float ReadFloat(void);
+    virtual double ReadDouble(void) = 0;
+    virtual void SkipFloat(void);
+    virtual void SkipDouble(void);
+#if SIZEOF_LONG_DOUBLE != 0
+    virtual long double ReadLDouble(void);
+    virtual void SkipLDouble(void);
+#endif
+    virtual void SkipFNumber(void) = 0;
+
+    // string
+    virtual void ReadString(string& s) = 0;
     virtual void SkipString(void) = 0;
-    virtual void SkipNull(void) = 0;
+
+    // StringStore
+    virtual void ReadStringStore(string& s);
     virtual void SkipStringStore(void);
+    
+    // C string
+    virtual char* ReadCString(void);
+    virtual void SkipCString(void);
+
+    // null
+    virtual void ReadNull(void) = 0;
+    virtual void SkipNull(void) = 0;
+
+    // octet string
     virtual void SkipByteBlock(void) = 0;
 
     // reads type info
@@ -508,8 +501,6 @@ public:
 
     void SkipPointer(TTypeInfo declaredType);
     void SkipObjectInfo(void);
-
-    virtual void ReadNull(void) = 0;
 
     // low level readers:
     enum EFailFlags {
@@ -700,38 +691,6 @@ protected:
     virtual TObjectIndex ReadObjectPointer(void) = 0;
     virtual string ReadOtherPointer(void) = 0;
     virtual void ReadOtherPointerEnd(void);
-
-    virtual bool ReadBool(void) = 0;
-    virtual char ReadChar(void) = 0;
-    virtual signed char ReadSChar(void);
-    virtual unsigned char ReadUChar(void);
-    virtual short ReadShort(void);
-    virtual unsigned short ReadUShort(void);
-    virtual int ReadInt(void);
-    virtual unsigned ReadUInt(void);
-    virtual long ReadLong(void) = 0;
-    virtual unsigned long ReadULong(void) = 0;
-    virtual float ReadFloat(void);
-    virtual double ReadDouble(void) = 0;
-    virtual void ReadString(string& s) = 0;
-    virtual char* ReadCString(void);
-
-    virtual void SkipBool(void) = 0;
-    virtual void SkipChar(void) = 0;
-    virtual void SkipSNumber(void) = 0;
-    virtual void SkipUNumber(void);
-    virtual void SkipSChar(void);
-    virtual void SkipUChar(void);
-    virtual void SkipShort(void);
-    virtual void SkipUShort(void);
-    virtual void SkipInt(void);
-    virtual void SkipUInt(void);
-    virtual void SkipLong(void);
-    virtual void SkipULong(void);
-    virtual void SkipFNumber(void) = 0;
-    virtual void SkipFloat(void);
-    virtual void SkipDouble(void);
-    virtual void SkipCString(void);
 
     void RegisterObject(TTypeInfo typeInfo);
     void RegisterObject(TObjectPtr object, TTypeInfo typeInfo);

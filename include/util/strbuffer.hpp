@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/12/15 15:38:02  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.19  2000/10/20 15:51:28  vasilche
 * Fixed data error processing.
 * Added interface for costructing container objects directly into output stream.
@@ -243,13 +247,13 @@ public:
     size_t ReadLine(char* buff, size_t size)
         THROWS1((CSerialIOException));
 
-    int GetInt(void)
+    Int4 GetInt4(void)
         THROWS1((CSerialIOException));
-    unsigned GetUInt(void)
+    Uint4 GetUint4(void)
         THROWS1((CSerialIOException));
-    long GetLong(void)
+    Int8 GetInt8(void)
         THROWS1((CSerialIOException));
-    unsigned long GetULong(void)
+    Uint8 GetUint8(void)
         THROWS1((CSerialIOException));
 
     void StartSubSource(void);
@@ -464,13 +468,13 @@ public:
         }
 
 
-    void PutInt(int v)
+    void PutInt4(Int4 v)
         THROWS1((CSerialIOException, bad_alloc));
-    void PutUInt(unsigned v)
+    void PutUint4(Uint4 v)
         THROWS1((CSerialIOException, bad_alloc));
-    void PutLong(long v)
+    void PutInt8(Int8 v)
         THROWS1((CSerialIOException, bad_alloc));
-    void PutULong(unsigned long v)
+    void PutUint8(Uint8 v)
         THROWS1((CSerialIOException, bad_alloc));
 
     void Write(const char* data, size_t dataLength)

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/12/15 15:38:44  vasilche
+* Added support of Int8 and long double.
+* Enum values now have type Int4 instead of long.
+*
 * Revision 1.54  2000/10/20 19:29:36  vasilche
 * Adapted for MSVC which doesn't like explicit operator templates.
 *
@@ -566,6 +570,18 @@ void CObjectOStream::WriteThis(TConstObjectPtr object, TTypeInfo typeInfo)
 {
     WriteObject(object, typeInfo);
 }
+
+void CObjectOStream::WriteFloat(float data)
+{
+    WriteDouble(data);
+}
+
+#if SIZEOF_LONG_DOUBLE != 0
+void CObjectOStream::WriteLDouble(long double data)
+{
+    WriteDouble(data);
+}
+#endif
 
 void CObjectOStream::BeginNamedType(TTypeInfo /*namedTypeInfo*/)
 {
