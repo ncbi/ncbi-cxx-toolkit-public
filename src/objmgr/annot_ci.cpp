@@ -61,7 +61,7 @@ CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
 
 CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+    : CAnnotTypes_CI(sel.GetAnnotType(),
                      scope, loc,
                      SAnnotSelector(sel)
                      .SetNoMapping(true)
@@ -75,7 +75,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
 CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      TSeqPos start, TSeqPos stop,
                      const SAnnotSelector& sel)
-    : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
+    : CAnnotTypes_CI(sel.GetAnnotType(),
                      bioseq, start, stop,
                      SAnnotSelector(sel)
                      .SetNoMapping(true)
@@ -159,6 +159,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2004/06/09 20:15:07  grichenk
+* Fixed type argument in CAnnot_CI constructor
+*
 * Revision 1.32  2004/05/21 21:42:12  gorelenk
 * Added PCH ncbi_pch.hpp
 *
