@@ -1,2 +1,0 @@
-LIB = $(TMPL)
-LIBOBJ = $(LIB)__ $(LIB)___
