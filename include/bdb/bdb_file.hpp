@@ -99,6 +99,10 @@ public:
     /// file opening.
     void SetEnv(CBDB_Env& env);
 
+    /// Get pointer on file environment
+    /// Return NULL if no environment has been set
+    CBDB_Env* GetEnv() { return m_Env; }
+
     /// Open file with specified access mode
     void Open(const char* filename, EOpenMode open_mode);
     /// Open file with specified filename and database name.
@@ -176,6 +180,8 @@ protected:
 
     // Create m_DB member, set page, cache parameters
     void x_CreateDB();
+
+    void x_RemoveTransaction(CBDB_Transaction* trans);
     
     /// Get transaction handler.
     ///
@@ -431,6 +437,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/12/16 13:42:58  kuznets
+ * Added internal method to close association between transaction object
+ * and BDB file object when transaction goes out of scope.
+ *
  * Revision 1.24  2003/12/10 19:13:27  kuznets
  * Added support of berkeley db transactions
  *
