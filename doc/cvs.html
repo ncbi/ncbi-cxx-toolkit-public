@@ -158,7 +158,7 @@ of internal user projects. There are also numerous platform-specific
 files (and even whole sub-trees) which you will never need unless you
 work on other platforms.  Therefore it is frequently sufficient (and in fact, usually
 advisable) to retrieve only those files of direct interest using the shell scripts
-in the <tt>c++/scripts</tt> directory.
+in the $NCBI<tt>/c++/scripts</tt> directory.
 
 <p>
 The auxiliary scripts <a href="#ref_CVS_Core"><tt>cvs_core.sh</tt></a> and
@@ -182,7 +182,7 @@ directly as a demonstration.
 
 <dl>
     <dd>
-<a href="scripts_usage.html#ref_CVS_CoreUsage">Usage</a> Summary:<br>
+<a href="scripts_usage.html#ref_CVS_CoreUsage">Usage</a> Summary <font size="-1"><a href="#ref_PathNote">(path note)</a></font>:<br>
 <h5><tt>cvs_core.sh &lt;dir&gt; [--with-&lt;feature&gt;]... [--without-&lt;feature&gt]... [--&lt;platform&gt;]</tt></h5>
 
 Default settings:<br>
@@ -205,6 +205,13 @@ range of supported platforms.  Options to the basic command allow the developer 
 the retrieved source by including (or excluding) portions of the Toolkit not checked out by default.
 
 <p>
+<dl>
+    <dt> <a name="ref_PathNote"></a><i>Path note for scripts:</i>
+    <dd> If the Toolkit is installed on your machine at $NCBI, these scripts should
+        be invoked as:<br>$NCBI<tt>/c++/scripts/<i>&lt;script_name&gt;</i></tt> if
+        that directory is not in your $PATH.</dd>
+</dl>
+
 <p>
 <a name="ref_CVS_CoreFlags"></a>
 <h4><tt>cvs_core.sh</tt> Arguments <font size=-2><span class=nava>[<a href="#ref_CVSTop">Top</a>]</span></font></h4>
@@ -468,8 +475,8 @@ be taken as relative to the common root $CVSROOT/<tt>internal/c++</tt>.
 <dl>
     <dt>
     <dd>
-<a href="scripts_usage.html#ref_Import_ProjectUsage">Usage</a> Summary:<br>
-<h5><tt>scripts/import_project.sh &lt;cvs_tree_path&gt; [builddir]</tt></h5>
+<a href="scripts_usage.html#ref_Import_ProjectUsage">Usage</a> Summary <font size="-1"><a href="#ref_PathNote">(path note)</a></font>:<br>
+<h5><tt>import_project.sh &lt;cvs_tree_path&gt; [builddir]</tt></h5>
     </dd>
 </dl>
 
@@ -518,8 +525,8 @@ Now you can just go to the created working directory
 <dl>
     <dt>
     <dd>
-<a href="scripts_usage.html#ref_Update_CoreUsage">Usage</a> Summary:<br>
-<h5><tt>scripts/update_core.sh [--no-projects] [&lt;dirs&gt;]</tt></h5>
+<a href="scripts_usage.html#ref_Update_CoreUsage">Usage</a> Summary <font size="-1"><a href="#ref_PathNote">(path note)</a></font>:<br>
+<h5><tt>update_core.sh [--no-projects] [&lt;dirs&gt;]</tt></h5>
     </dd>
 </dl>
 
@@ -564,8 +571,8 @@ Note that the default list is not pushed onto a user-supplied list of directorie
 <dl>
     <dt>
     <dd>
-<a href="scripts_usage.html#ref_Update_ProjectsUsage">Usage</a> Summary:<br>
-<h5><tt>scripts/update_projects.sh &lt;project-list&gt;</tt></h5>
+<a href="scripts_usage.html#ref_Update_ProjectsUsage">Usage</a> Summary <font size="-1"><a href="#ref_PathNote">(path note)</a></font>:<br>
+<h5><tt>update_projects.sh &lt;project-list&gt;</tt></h5>
     </dd>
 </dl>
 
@@ -629,8 +636,8 @@ A more complete discussion of how to begin a new project can be found on the <a 
 <dl>
     <dt>
     <dd>
-<a href="scripts_usage.html#ref_Update_ProjectsUsage">Usage</a> Summary:<br>
-<h5><tt>scripts/new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></h5>
+<a href="scripts_usage.html#ref_Update_ProjectsUsage">Usage</a> Summary <font size="-1"><a href="#ref_PathNote">(path note)</a></font>:<br>
+<h5><tt>new_project.sh &lt;name&gt; &lt;type&gt; [builddir]</tt></h5>
     </dd>
 </dl>
 
