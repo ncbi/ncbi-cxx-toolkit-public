@@ -85,7 +85,7 @@ enum EHTML_PM_Attribute {
     eHTML_PM_titleColor,             //   K       "#FFFFFF"
     eHTML_PM_borderColor,            //   K       "black"
     eHTML_PM_alignH,                 //   K       "left" or "right"
-    eHTML_PM_alignV,                 //   K       "bottom" or "top"
+    eHTML_PM_alignV                  //   K       "bottom" or "top"
 };
 
 
@@ -137,27 +137,27 @@ public:
     EType  GetType(void) const;
 
 
-    // Add new item to current menu
-    //
-    // NOTE: action - can be also URL type like "http://..."
-    // NOTE: Parameters have some restrictions according to menu type:
-    //       title  - can be text or HTML-code (for eSmith menu type only)
-    //       color  - will be ignored for eKurdin menu type
+    /// Add new item to current menu.
+    ///
+    /// NOTE: action - can be also URL type like "http://...".
+    /// NOTE: Parameters have some restrictions according to menu type:
+    ///       title  - can be text or HTML-code (for eSmith menu type only);
+    ///       color  - will be ignored for eKurdin menu type.
 
-    void AddItem(const string& title,                  // Text or HTML-code
-                 const string& action    = kEmptyStr,  // JS code
+    void AddItem(const string& title,                  ///< Text or HTML-code
+                 const string& action    = kEmptyStr,  ///< JS code
                  const string& color     = kEmptyStr,
-                 const string& mouseover = kEmptyStr,  // JS code
-                 const string& mouseout  = kEmptyStr); // JS code
+                 const string& mouseover = kEmptyStr,  ///< JS code
+                 const string& mouseout  = kEmptyStr); ///< JS code
 
-    void AddItem(const char*   title,                  // Text or HTML-code
-                 const string& action    = kEmptyStr,  // JS code
+    void AddItem(const char*   title,                  ///< Text or HTML-code
+                 const string& action    = kEmptyStr,  ///< JS code
                  const string& color     = kEmptyStr,
-                 const string& mouseover = kEmptyStr,  // JS code
-                 const string& mouseout  = kEmptyStr); // JS code
+                 const string& mouseover = kEmptyStr,  ///< JS code
+                 const string& mouseout  = kEmptyStr); ///< JS code
 
-    // NOTE: The "node" will be convert to a string inside function, so
-    //       the node's Print() method must not change a node structure.
+    /// NOTE: The "node" will be convert to a string inside function, so
+    ///       the node's Print() method must not change a node structure.
     void AddItem(CNCBINode& node,
                  const string& action    = kEmptyStr,  // JS code
                  const string& color     = kEmptyStr,
@@ -166,7 +166,7 @@ public:
 
     /// Add item's separator.
     ///
-    /// NOTE: do nothing for eKurdin menu type
+    /// NOTE: do nothing for eKurdin menu type.
     void AddSeparator(void); 
 
     /// Set menu attribute.
@@ -214,7 +214,7 @@ private:
     /// Get attribute value.
     string GetMenuAttributeValue(EHTML_PM_Attribute attribute) const;
 
-    /// Get attribute name
+    /// Get attribute name.
     string GetMenuAttributeName(EHTML_PM_Attribute attribute) const;
 
     string       m_Name;   ///< Menu name
@@ -232,8 +232,10 @@ END_NCBI_SCOPE
 
 /*
  * ===========================================================================
- *
  * $Log$
+ * Revision 1.12  2003/10/02 18:16:46  ivanov
+ * Get rid of compilation warnings; some formal code rearrangement
+ *
  * Revision 1.11  2003/10/01 15:55:04  ivanov
  * Added support for Sergey Kurdin's side menu
  *

@@ -1,5 +1,5 @@
-#ifndef HTML__PAGE__HPP
-#define HTML__PAGE__HPP
+#ifndef HTML___PAGE__HPP
+#define HTML___PAGE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -32,6 +32,12 @@
  *
  */
 
+/// @file page.hpp 
+/// The HTML page.
+///
+/// Defines class to generate HTML code from template file.
+
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_limits.hpp>
@@ -49,23 +55,36 @@
 
 BEGIN_NCBI_SCOPE
 
+
+// Forward declarations.
 class CCgiApplication;
 
 
-/////////////////////////////////////////////////////////////
-// CHTMLBasicPage is the virtual base class.  The main functionality is
-// the turning on and off of sub HTML components via style bits and a
-// creation function that orders sub components on the page.  The ability
-// to hold children and print HTML is inherited from CHTMLNode.
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CHTMLBasicPage --
+///
+/// The virtual base class.
+///
+/// The main functionality is the turning on and off of sub HTML components
+/// via style bits and a creation function that orders sub components on
+/// the page. The ability to hold children and print HTML is inherited from
+/// CHTMLNode.
 
 class CHTMLBasicPage: public CNCBINode
 {
-    typedef CNCBINode CParent; // parent class
+    /// Parent class.
+    typedef CNCBINode CParent;
     typedef map<string, BaseTagMapper*> TTagMap;
 
 public: 
+    /// Default constructor.
     CHTMLBasicPage(void);
+
+    /// Constructor.
     CHTMLBasicPage(CCgiApplication* app, int style = 0);
+
+    /// Dectructor.
     virtual ~CHTMLBasicPage(void);
 
     virtual CCgiApplication* GetApplication(void) const;
@@ -74,41 +93,44 @@ public:
     int GetStyle(void) const;
     void SetStyle(int style);
 
-    // Resolve <@XXX@> tag
+    /// Resolve <@XXX@> tag.
     virtual CNCBINode* MapTag(const string& name);
 
-    // Add tag resolver
+    /// Add tag resolver.
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
 
 protected:
-    CCgiApplication* m_CgiApplication;  // pointer to runtime information
+    CCgiApplication* m_CgiApplication;  ///< Pointer to runtime information
     int m_Style;
 
-    // Tag resolvers (as registered by AddTagMap)
+    /// Tag resolvers (as registered by AddTagMap).
     TTagMap m_TagMap;
 };
 
 
-////////////////////////////////////
-//  This is the basic 3 section NCBI page
-
+/////////////////////////////////////////////////////////////////////////////
+///
+/// CHTMLPage --
+///
+/// This is the basic 3 section NCBI page.
 
 class CHTMLPage : public CHTMLBasicPage
 {
-    // Parent class
+    /// Parent class.
     typedef CHTMLBasicPage CParent;
 
 public:
-    // Style flags
+    /// Style flags.
     enum EFlags {
         fNoTITLE      = 0x1,
         fNoVIEW       = 0x2,
         fNoTEMPLATE   = 0x4
     };
-    typedef int TFlags;  // binary AND of "EFlags"
+    /// Binary AND of "EFlags".
+    typedef int TFlags;  
 
-    // 'tors
+    /// Constructors.
     CHTMLPage(const string& title = kEmptyStr);
     CHTMLPage(const string& title, const string&  template_file);
     CHTMLPage(const string& title, const istream& template_stream);
@@ -123,64 +145,75 @@ public:
 
     static CHTMLBasicPage* New(void);
 
-    // Create the individual sub pages
+    /// Create the individual sub pages.
     virtual void CreateSubNodes(void);
 
-    // Create the static part of the page(here - read it from <m_TemplateFile>)
+    /// Create the static part of the page
+    /// (here - read it from <m_TemplateFile>).
     virtual CNCBINode* CreateTemplate(CNcbiOstream* out = 0,
                                       TMode mode = eHTML);
 
-    // Tag substitution callbacks
+    /// Tag substitution callbacks.
     virtual CNCBINode* CreateTitle(void);  // def for tag "@TITLE@" - <m_Title>
     virtual CNCBINode* CreateView(void);   // def for tag "@VIEW@"  - none
 
-    // To set title or template outside(after) the constructor
+    /// To set title or template outside(after) the constructor.
     void SetTitle(const string&  title);
-    // Set source that contain the template
-    // Each function assign new template source and annihilate any other
-    // installed before.
+    /// Set source that contain the template.
+    ///
+    /// Each function assign new template source and annihilate any other.
+    /// installed before.
     void SetTemplateFile  (const string&  template_file);
     void SetTemplateStream(const istream& template_stream);
     void SetTemplateString(const char*    template_string);
     void SetTemplateBuffer(const void*    template_buffer, size_t size);
 
-    // Enable using popup menus, set URL for popup menu library.
-    // If "menu_lib_url" is not defined, then using default URL.
-    // use_dynamic_menu - enable/disable using dynamic popup menus 
-    // (default it is disabled).
-    // NOTE: 1) If we not change value "menu_script_url", namely use default
-    //          value for it, then we can skip call this function.
-    //       2) Dynamic menu work only in new browsers. They use one container
-    //          for all menus instead of separately container for each menu in 
-    //          nondynamic mode. This parameter have effect only with eSmith menu type.
+    /// Enable using popup menus. Set URL for popup menu library.
+    ///
+    /// @param type
+    ///   Menu type to enable
+    /// @param menu_script_url
+    ///   An URL for popup menu library.
+    ///   If "menu_lib_url" is not defined, then using default URL.
+    /// @param use_dynamic_menu
+    ///   Enable/disable using dynamic popup menus (eSmith menu only)
+    ///   (default it is disabled).
+    /// Note:
+    ///   - If we not change value "menu_script_url", namely use default
+    ///     value for it, then we can skip call this function.
+    ///   - Dynamic menues work only in new browsers. They use one container
+    ///     for all menus instead of separately container for each menu in 
+    ///     nondynamic mode. This parameter have effect only with eSmith
+    ///     menu type.
     void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
-                         const string& menu_script_url = kEmptyStr,
+                         const string& menu_script_url= kEmptyStr,
                          bool use_dynamic_menu = false);
 
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
 
-    // overridden to reduce latency
+    // Overridden to reduce latency
     CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
 
 private:
     void Init(void);
 
-    // Create the static part of the page(here - read it from <m_TemplateFile>)
-    // this is an internal version that gets around some issues with local
-    // versus externally-supplied streams
+    /// Create the static part of the page (here - read it from
+    /// <m_TemplateFile>). This is an internal version that gets around some
+    /// issues with local versus externally-supplied streams.
     CNCBINode* x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                                 TMode mode);
 
     string   m_Title;
 
-    // Template sources
-    string      m_TemplateFile;   // file name
-    istream*    m_TemplateStream; // stream
-    const void* m_TemplateBuffer; // some buffer...
-    size_t      m_TemplateSize;   // size of input, if known (0 otherwise)
+    /// Template sources.
+    string      m_TemplateFile;   ///< File name
+    istream*    m_TemplateStream; ///< Stream
+    const void* m_TemplateBuffer; ///< Some buffer
 
-    // The popup menu info structure
+    size_t      m_TemplateSize;   ///< Size of input, if known (0 otherwise)
+
+    /// Popup menu info structure.
     struct SPopupMenuInfo {
         SPopupMenuInfo() {
             m_UseDynamicMenu = false;
@@ -189,10 +222,10 @@ private:
             m_Url = url;
             m_UseDynamicMenu = use_dynamic_menu;
         }
-        string m_Url;
-        bool   m_UseDynamicMenu; // Only for eSmith menu type
+        string m_Url;             ///< Menu library URL 
+        bool   m_UseDynamicMenu;  ///< Dynamic/static. Only for eSmith type.
     };
-    // The popup menus usage info
+    /// Popup menus usage info.
     typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
     TPopupMenus m_PopupMenus;
     bool        m_UsePopupMenus;
@@ -256,7 +289,7 @@ inline void CHTMLPage::SetTemplateFile(const string& template_file)
                        "CHTMLPage: input template " + template_file
                        + " too big to handle");
         } else {
-            m_TemplateSize = size;
+            m_TemplateSize = (size_t)size;
         }
     }}
 }
@@ -277,7 +310,8 @@ inline void CHTMLPage::SetTemplateString(const char* template_string)
     m_TemplateSize   = strlen(template_string);
 }
 
-inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer, size_t size)
+inline void CHTMLPage::SetTemplateBuffer(const void* template_buffer,
+                                         size_t size)
 {
     m_TemplateFile   = kEmptyStr;
     m_TemplateStream = 0;
@@ -292,8 +326,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/10/02 18:16:46  ivanov
+ * Get rid of compilation warnings; some formal code rearrangement
+ *
  * Revision 1.31  2003/10/01 15:53:11  ivanov
- * *** empty log message ***
+ * Formal code rearrangement
  *
  * Revision 1.30  2003/07/08 17:12:40  gouriano
  * changed thrown exceptions to CException-derived ones
@@ -387,7 +424,8 @@ END_NCBI_SCOPE
  *
  * Revision 1.2  1998/12/01 19:09:06  lewisg
  * uses CCgiApplication and new page factory
+ *
  * ===========================================================================
  */
 
-#endif  /* HTML__PAGE__HPP */
+#endif  /* HTML___PAGE__HPP */
