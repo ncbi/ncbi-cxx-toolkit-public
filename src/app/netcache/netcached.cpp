@@ -236,9 +236,9 @@ public:
         eRemove,
         eLogging
     } ERequestType;
+        
+    void SetShutdownFlag() { m_Shutdown = true; }
 
-    /// Process "SHUTDOWN" request
-    void ProcessShutdown();
 
 private:
     struct Request
@@ -267,6 +267,9 @@ private:
 
     /// Process "REMOVE" request
     void ProcessRemove(CSocket& sock, const Request& req);
+
+    /// Process "SHUTDOWN" request
+    void ProcessShutdown();
 
     /// Returns FALSE when socket is closed or cannot be read
     bool ReadStr(CSocket& sock, string* str);
@@ -1163,27 +1166,31 @@ int CNetCacheDApp::Run(void)
 extern "C" void Threaded_Server_SignalHandler( int )
 {
     if (s_netcache_server) {
-        ERR_POST("Interrupt signal. Trying to shutdown.");
-        s_netcache_server->ProcessShutdown();
+        s_netcache_server->SetShutdownFlag();
+        LOG_POST("Interrupt signal. Shutdown flag has been set.");
     }
 }
 
 
 
 int main(int argc, const char* argv[])
-{    
+{
+/*
 #if defined(NCBI_OS_UNIX)
     // attempt to get server gracefully shutdown on signal
      signal( SIGINT, Threaded_Server_SignalHandler);
      signal( SIGTERM, Threaded_Server_SignalHandler);    
 #endif
-
+*/
     return CNetCacheDApp().AppMain(argc, argv, 0, eDS_Default, "netcached.ini");
 }
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.34  2005/01/04 18:55:30  kuznets
+ * Commented out signal handlers
+ *
  * Revision 1.33  2005/01/04 17:33:34  kuznets
  * Added graceful shutdown on SIGTERM(unix)
  *
