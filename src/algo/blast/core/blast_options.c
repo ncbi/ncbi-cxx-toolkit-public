@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.58  2003/09/10 19:48:08  dondosha
+ * Removed dependency on mb_lookup.h
+ *
  * Revision 1.57  2003/09/09 22:12:02  dondosha
  * Minor correction for ungapped cutoff calculation; added freeing of PHI pattern
  *
@@ -884,6 +887,32 @@ BLAST_FillLookupTableOptions(LookupTableOptions* options,
    return 0;
 }
 
+/** Validate options for the discontiguous word megablast
+ * Word size must be 11 or 12; template length 16, 18 or 21; 
+ * template type 0, 1 or 2.
+ * @param word_size Word size option [in]
+ * @param template_length Discontiguous template length [in]
+ * @param template_type Discontiguous template type [in]
+ * @return TRUE if options combination valid.
+ */
+static Boolean 
+DiscWordOptionsValidate(Int2 word_size, Uint1 template_length,
+                        Uint1 template_type)
+{
+   if (template_length == 0)
+      return TRUE;
+
+   if (word_size != 11 && word_size != 12)
+      return FALSE;
+   if (template_length != 16 && template_length != 18 && 
+       template_length != 21)
+      return FALSE;
+   if (template_type > 2)
+      return FALSE;
+
+   return TRUE;
+}
+
 Int2 
 LookupTableOptionsValidate(Uint1 program_number, 
    const LookupTableOptions* options, Blast_Message* *blast_msg)
@@ -927,11 +956,8 @@ LookupTableOptionsValidate(Uint1 program_number,
 
    if (program_number == blast_type_blastn && 
        options->mb_template_length > 0) {
-      DiscTemplateType template_type = 
-         GetDiscTemplateType(options->word_size,
-            options->mb_template_length, options->mb_template_type);
-
-      if (template_type == TEMPL_CONTIGUOUS) {
+      if (!DiscWordOptionsValidate(options->word_size,
+            options->mb_template_length, options->mb_template_type)) {
          Blast_MessageWrite(blast_msg, 2, code, subcode, 
             "Invalid discontiguous template parameters");
          return (Int2) code;
