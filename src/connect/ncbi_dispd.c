@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2001/10/01 19:53:39  lavr
+ * -s_FreeData(), -s_ResetData() - do evrthng in s_Close() and s_Reset() instead
+ *
  * Revision 6.32  2001/09/29 19:33:04  lavr
  * BUGFIX: SERV_Update() requires VT bound (was not the case in constructor)
  *
@@ -185,32 +188,6 @@ typedef struct {
     size_t        n_node;
     size_t        n_max_node;
 } SDISPD_Data;
-
-
-static int/*bool*/ s_ResetData(SDISPD_Data* data)
-{
-    if (!data)
-        return 0/*false*/;
-    if (data->s_node) {
-        size_t i;
-        assert(data->n_max_node);
-        for (i = 0; i < data->n_node; i++)
-            free(data->s_node[i].info);
-        data->n_node = 0;
-    }
-    return 1/*true*/;
-}
-
-
-static void s_FreeData(SDISPD_Data* data)
-{
-    if (!s_ResetData(data))
-        return;
-    if (data->s_node)
-        free(data->s_node);
-    ConnNetInfo_Destroy(data->net_info);
-    free(data);
-}
 
 
 static int/*bool*/ s_AddServerInfo(SDISPD_Data* data, SSERV_Info* info)
@@ -446,13 +423,25 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
 
 static void s_Reset(SERV_ITER iter)
 {
-    s_ResetData((SDISPD_Data*) iter->data);
+    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    if (data && data->s_node) {
+        size_t i;
+        assert(data->n_max_node);
+        for (i = 0; i < data->n_node; i++)
+            free(data->s_node[i].info);
+        data->n_node = 0;
+    }
 }
 
 
 static void s_Close(SERV_ITER iter)
 {
-    s_FreeData((SDISPD_Data*) iter->data);
+    SDISPD_Data* data = (SDISPD_Data*) iter->data;
+    assert(data->n_node == 0); /* s_Reset() had to be called before */
+    if (data->s_node)
+        free(data->s_node);
+    ConnNetInfo_Destroy(data->net_info);
+    free(data);
     iter->data = 0;
 }
 
@@ -481,9 +470,10 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     data->s_node = 0;
     iter->data = data;
 
-    iter->op = &s_op;
+    iter->op = &s_op; /* SERV_Update() - from HTTP callback - expects this */
     if (!s_Resolve(iter)) {
         iter->op = 0;
+        s_Reset(iter);
         s_Close(iter);
         return 0;
     }
