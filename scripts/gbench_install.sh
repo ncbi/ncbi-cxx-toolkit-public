@@ -9,6 +9,10 @@ script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 
+
+DYLD_BIND_AT_LAUNCH=1
+export DYLD_BIND_AT_LAUNCH
+
 . ${script_dir}/common.sh
 
 
