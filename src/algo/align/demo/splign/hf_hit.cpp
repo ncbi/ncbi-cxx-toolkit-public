@@ -50,6 +50,7 @@ void CHit::x_InitDefaults()
 {
     m_Score = m_Value = 0;
     m_GroupID = -1;
+    m_MaxDistClustID = -1;
     m_an[0] = m_an[1] = m_an[2] = m_an[3] = 0;
     m_ai[0] = m_ai[1] = m_ai[2] = m_ai[3] = 0;
 }
