@@ -184,7 +184,7 @@ case "$host:$compiler" in
         exit 1
       fi
       compiler_extra="_64"
-      with_internal="no"
+      no_internal="yes"
    else
       compiler_extra="_32"
    fi
@@ -936,11 +936,10 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 
 ## Optional projects
-if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" ; then
-  with_internal="no"
-fi
-
 if test "$with_internal" = "yes" ; then
+   if test "$with_sybase" = "no" || test "$with_ncbi_c" = "no" || test "$with_sss" = "no" || test "$with_pubmed" = "no" || test "$no_internal" = "yes" ; then
+      AC_MSG_ERROR(["--with-internal:  Cannot build internal projects"])
+   fi
    internal="internal"
 else
    internal=
