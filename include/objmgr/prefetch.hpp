@@ -50,14 +50,18 @@ class CPrefetchToken
 public:
     typedef CPrefetchToken_Impl::TIds TIds;
 
+    enum ENon_locking_prefetch {
+        eNon_locking_prefetch,
+    };
+
     CPrefetchToken(void);
     // Find the first loader in the scope, request prefetching from
     // this loader. Scope may be destroyed after creating token, but
     // the scope used in NextBioseqHandle() should contain the same
     // loader. Depth limits number of TSEs to be prefetched.
-    CPrefetchToken(CScope& scope, const CSeq_id& id);
-    CPrefetchToken(CScope& scope, const CSeq_id_Handle& id);
     CPrefetchToken(CScope& scope, const TIds& ids, unsigned int depth = 2);
+    // Do not lock prefetched TSEs, prefetch depth is ignored.
+    CPrefetchToken(CScope& scope, const TIds& ids, ENon_locking_prefetch);
     ~CPrefetchToken(void);
 
     CPrefetchToken(const CPrefetchToken& token);
@@ -90,18 +94,10 @@ CPrefetchToken::~CPrefetchToken(void)
 
 
 inline
-CPrefetchToken::CPrefetchToken(CScope& scope, const CSeq_id& id)
-    : m_Impl(new CPrefetchToken_Impl(id))
-{
-    m_Impl->AddTokenReference();
-    m_Impl->x_InitPrefetch(scope);
-    return;
-}
-
-
-inline
-CPrefetchToken::CPrefetchToken(CScope& scope, const CSeq_id_Handle& id)
-    : m_Impl(new CPrefetchToken_Impl(id))
+CPrefetchToken::CPrefetchToken(CScope& scope,
+                               const TIds& ids,
+                               unsigned int depth)
+    : m_Impl(new CPrefetchToken_Impl(ids, depth))
 {
     m_Impl->AddTokenReference();
     m_Impl->x_InitPrefetch(scope);
@@ -112,10 +108,11 @@ CPrefetchToken::CPrefetchToken(CScope& scope, const CSeq_id_Handle& id)
 inline
 CPrefetchToken::CPrefetchToken(CScope& scope,
                                const TIds& ids,
-                               unsigned int depth)
-    : m_Impl(new CPrefetchToken_Impl(ids, depth))
+                               ENon_locking_prefetch)
+    : m_Impl(new CPrefetchToken_Impl(ids, 2))
 {
     m_Impl->AddTokenReference();
+    m_Impl->x_SetNon_locking();
     m_Impl->x_InitPrefetch(scope);
     return;
 }
@@ -165,6 +162,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/07 13:47:34  grichenk
+* Removed single-id constructors.
+* Added non-locking prefetch mode.
+*
 * Revision 1.3  2004/04/21 15:34:28  gorelenk
 * Removed export prefix from inline class CPrefetchToken.
 *

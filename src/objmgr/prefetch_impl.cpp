@@ -45,25 +45,10 @@ BEGIN_SCOPE(objects)
 // NOTE: Max. value for semaphore must be prefetch depth + 1, because
 // one extra-Post will be called when the token impl. is released.
 
-CPrefetchToken_Impl::CPrefetchToken_Impl(const CSeq_id& id)
-    : m_TokenCount(0),
-      m_TSESemaphore(1, 2)
-{
-    m_Ids.push_back(CSeq_id_Handle::GetHandle(id));
-}
-
-
-CPrefetchToken_Impl::CPrefetchToken_Impl(const CSeq_id_Handle& id)
-    : m_TokenCount(0),
-      m_TSESemaphore(1, 2)
-{
-    m_Ids.push_back(id);
-}
-
-
 CPrefetchToken_Impl::CPrefetchToken_Impl(const TIds& ids, unsigned int depth)
     : m_TokenCount(0),
-      m_TSESemaphore(depth, max(depth+1, depth))
+      m_TSESemaphore(depth, max(depth+1, depth)),
+      m_Non_locking(false)
 {
     m_Ids = ids;
 }
@@ -87,9 +72,19 @@ void CPrefetchToken_Impl::x_InitPrefetch(CScope& scope)
 }
 
 
+void CPrefetchToken_Impl::x_SetNon_locking(void)
+{
+    m_Non_locking = true;
+}
+
+
 void CPrefetchToken_Impl::AddResolvedId(size_t id_idx, TTSE_Lock tse)
 {
     CFastMutexGuard guard(m_Lock);
+    if ( m_Non_locking ) {
+        m_TSESemaphore.Post();
+        return;
+    }
     if (m_Ids.empty()  ||  id_idx < m_CurrentId) {
         // Token has been cleaned or id already passed, do not lock the TSE
         return;
@@ -226,12 +221,12 @@ void* CPrefetchThread::Main(void)
                 // m_Ids may be cleaned up by the token, check size
                 // on every iteration.
                 CFastMutexGuard guard(token->m_Lock);
+                i = max(i, token->m_CurrentId);
                 if (i >= token->m_Ids.size()) {
                     // Can not release token now - mutex is still locked
                     release_token = true;
                     break;
                 }
-                i = max(i, token->m_CurrentId);
                 id = token->m_Ids[i];
             }}
             try {
@@ -260,6 +255,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/07 13:47:35  grichenk
+* Removed single-id constructors.
+* Added non-locking prefetch mode.
+*
 * Revision 1.3  2004/04/26 14:15:33  grichenk
 * Catch exceptions in the prefetching thread
 *

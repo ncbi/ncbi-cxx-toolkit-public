@@ -63,11 +63,10 @@ private:
     friend class CPrefetchToken;
     friend class CPrefetchThread;
 
-    CPrefetchToken_Impl(const CSeq_id& id);
-    CPrefetchToken_Impl(const CSeq_id_Handle& id);
     CPrefetchToken_Impl(const TIds& ids, unsigned int depth);
 
     void x_InitPrefetch(CScope& scope);
+    void x_SetNon_locking(void);
 
     // Hide copy methods
     CPrefetchToken_Impl(const CPrefetchToken_Impl&);
@@ -95,6 +94,7 @@ private:
     TTSE_Map       m_TSEMap;        // Map TSE to number of related IDs
     int            m_PrefetchDepth; // Max. number of TSEs to prefetch
     CSemaphore     m_TSESemaphore;  // Signal to fetch next TSE
+    bool           m_Non_locking;   // Do not lock TSEs (used for caching)
     mutable CFastMutex m_Lock;
 };
 
@@ -133,6 +133,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/07 13:47:34  grichenk
+* Removed single-id constructors.
+* Added non-locking prefetch mode.
+*
 * Revision 1.3  2004/04/21 15:35:06  gorelenk
 * Added export prefix to class CPrefetchToken_Impl .
 *
