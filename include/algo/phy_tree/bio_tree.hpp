@@ -40,10 +40,13 @@
 #include <map>
 #include <string>
 #include <memory>
+#include <vector>
+#include <list>
 
 #include <corelib/ncbi_tree.hpp>
 
 BEGIN_NCBI_SCOPE
+
 
 /// Feature Id. All bio tree dynamic features are encoded by feature ids.
 /// Ids are shared among the tree nodes. Feature id to feature name map is 
@@ -52,6 +55,8 @@ typedef unsigned int TBioTreeFeatureId;
 
 /// Tree node id. Every node has its unique id in the tree.
 typedef unsigned int TBioTreeNodeId;
+
+
 
 
 /// Tree node feature pair (id to string)
@@ -69,6 +74,24 @@ struct NCBI_XALGOPHYTREE_EXPORT CBioTreeFeaturePair
     : id(0)
     {}
 };
+
+/// Base node interface used for dynamic access to the node properties
+struct NCBI_XALGOPHYTREE_EXPORT IBioTreeNode
+{
+    virtual ~IBioTreeNode();
+
+    /// Get feature by name
+    virtual void Get(const string& fetaure_name, string* value) const = 0;
+    /// Get feature by value
+    virtual void Get(TBioTreeFeatureId feature_id, string* value) const = 0;
+    /// Check if feature id is supported
+    virtual bool HasFeature(const string& fetaure_name) const = 0;
+    /// Check if feature id is supported
+    virtual bool HasFeature(TBioTreeFeatureId id) const = 0;
+    /// Get list of supported features
+    virtual void GetFeatures(list<CBioTreeFeaturePair>* features) const = 0;
+};
+
 
 /// Features storage for the bio tree node
 ///
@@ -113,12 +136,48 @@ struct CBioTreeEmptyNodeData
 {
 };
 
+
+class NCBI_XALGOPHYTREE_EXPORT CBioTreeNode
+{
+public:
+    CBioTreeNode(IBioTreeNode* inode = 0, TBioTreeNodeId id = 0)
+    : m_INode(inode), m_Id(id) 
+    {}
+
+    ~CBioTreeNode() { delete m_INode; }
+
+    CBioTreeNode(const CBioTreeNode& node) 
+    : m_INode(node.m_INode),
+      m_Id(node.m_Id)
+    {}
+
+    CBioTreeNode& operator=(const CBioTreeNode& node)
+    {
+        delete m_INode;
+        m_INode = node.m_INode;
+        m_Id = node. m_Id;
+        return *this;
+    }
+
+    /// Return interface to access node properties dynamically
+    const IBioTreeNode* GetDynamicNode() const { return m_INode; }
+
+    TBioTreeNodeId GetId() const { return m_Id; }
+    void SetId(TBioTreeNodeId id) { m_Id = id; }
+
+private:
+    IBioTreeNode*       m_INode;
+    TBioTreeNodeId      m_Id;      ///< Unique node Id
+};
+
+
 /// Basic data contained in every bio-tree node
 ///
 /// Template parameter NodeData allows to extend list of 
 /// compile-time (non-dynamic attributes in the tree)
 /// NodeFeatures - extends node with dynamic list of node attributes
 ///
+/*
 template<class TNodeData     = CBioTreeEmptyNodeData, 
          class TNodeFeatures = CBioTreeFeatureList>
 struct BioTreeBaseNode
@@ -149,8 +208,10 @@ struct BioTreeBaseNode
         features = node.features;
         return *this;
     }
-};
 
+    TBioTreeNodeId GetId() const { return uid; }
+};
+*/
 
 /// Feature dictionary. 
 /// Used for mapping between feature ids and feature names.
@@ -195,6 +256,44 @@ protected:
 };
 
 
+class NCBI_XALGOPHYTREE_EXPORT CBioTree
+{
+public:
+    typedef CTreeNode<CBioTreeNode> TBioTreeNode;
+
+public:
+    CBioTree() 
+     : m_NodeIdCounter(0),
+       m_TreeNode(0)
+    {}
+
+    CBioTreeFeatureDictionary& GetFeatureDictionary()
+    {
+        return m_FeatureDict;
+    }
+
+    const CBioTreeFeatureDictionary& GetFeatureDictionary() const
+    {
+        return m_FeatureDict;
+    }
+
+    const TBioTreeNode* GetTopNode() const { return m_TreeNode.get(); }
+
+    void SetTopNode(TBioTreeNode* node) { m_TreeNode = auto_ptr<TBioTreeNode>(node); }
+
+private:
+    CBioTree(const CBioTree& btr);
+    CBioTree& operator=(const CBioTree& btr);
+
+protected:
+    CBioTreeFeatureDictionary  m_FeatureDict;
+    TBioTreeNodeId             m_NodeIdCounter;
+    auto_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
+};
+
+
+/*
+
 /// Basic tree structure for biological applications
 template<class TBioNode>
 class CBioTree
@@ -229,15 +328,6 @@ public:
     }
 
 
-    CBioTreeFeatureDictionary& GetFeatureDictionary()
-    {
-        return m_FeatureDict;
-    }
-
-    const CBioTreeFeatureDictionary& GetFeatureDictionary() const
-    {
-        return m_FeatureDict;
-    }
 
     /// Finds node by id.
     /// @return 
@@ -355,6 +445,7 @@ protected:
     auto_ptr<TBioTreeNode>     m_TreeNode;      ///< Top level node
 };
 
+*/
 
 END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 
@@ -362,6 +453,9 @@ END_NCBI_SCOPE // ALGO_PHY_TREE___BIO_TREE__HPP
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/05/10 15:45:46  kuznets
+ * Redesign. Added dynamic interface for UI viewer compatibility.
+ *
  * Revision 1.3  2004/04/06 20:32:42  ucko
  * +<memory> for auto_ptr<>
  *
