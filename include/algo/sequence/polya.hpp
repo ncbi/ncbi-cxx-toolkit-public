@@ -73,12 +73,13 @@ public:
     }
 
     char operator*(void) const {
-        switch (*m_Base) {
+        Iterator tmp = m_Base;
+        switch (*--tmp) {
         case 'A': return 'T';
         case 'T': return 'A';
         case 'C': return 'G';
         case 'G': return 'C';
-        default: return *m_Base;
+        default: return *tmp;
         }
     }
     CRevComp_It& operator++(void) {
@@ -193,7 +194,8 @@ TSignedSeqPos FindPolyA(Iterator begin, Iterator end)
             uStrmMotif += 6; // skip over upstream motif
             pos = uStrmMotif;
 
-            Iterator maxCleavage = min(pos + 30, end);
+            Iterator maxCleavage = (end - pos < 30) ? end : pos + 30;
+
             unsigned int aRun = 0;
             for (pos += 10;  pos < maxCleavage  &&  aRun < 3;  ++pos) {
                 if (*pos == 'A') {
@@ -243,9 +245,9 @@ EPolyTail FindPolyTail(Iterator begin, Iterator end,
         return ePolyTail_A3;
     } else {
         int seqLen = end - begin;
-        
-        cleavageSite = FindPolyA(CRevComp_It<Iterator>(end - 1),
-                                 CRevComp_It<Iterator>(begin - 1));
+
+        cleavageSite = FindPolyA(CRevComp_It<Iterator>(end),
+                                 CRevComp_It<Iterator>(begin));
 
         if (cleavageSite >= 0) {
             cleavageSite = seqLen - cleavageSite - 1;
@@ -262,6 +264,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2004/05/11 18:36:56  johnson
+* made reverse iterator more standard (== base-1); avoid add a value to the
+* iterator that could potentially take it past the end
+*
 * Revision 1.4  2004/04/28 15:19:46  johnson
 * Uses templated iterators; no longer accepts user suggestion for cleavage
 * site
