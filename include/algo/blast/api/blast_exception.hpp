@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 /// Defines Blast specific exceptional error codes
-class CBlastException : public CException
+class NCBI_XBLAST_EXPORT CBlastException : public CException
 {
 public:
     enum EErrCode {
@@ -79,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/12/09 12:40:22  camacho
+* Added windows export specifiers
+*
 * Revision 1.4  2003/11/26 18:22:14  camacho
 * +Blast Option Handle classes
 *

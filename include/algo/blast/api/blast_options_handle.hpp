@@ -70,7 +70,7 @@ class CBlastOptionsHandle;
 * \endcode
 */
 
-class CBlastOptionsFactory
+class NCBI_XBLAST_EXPORT CBlastOptionsFactory
 {
 public:
     static CBlastOptionsHandle* Create(EProgram program) 
@@ -87,7 +87,7 @@ private:
 /// Derived classes define options that are applicable only to those programs
 /// whose options they manipulate.
 
-class CBlastOptionsHandle : public CObject
+class NCBI_XBLAST_EXPORT CBlastOptionsHandle : public CObject
 {
 public:
     CBlastOptionsHandle();
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/09 12:40:22  camacho
+ * Added windows export specifiers
+ *
  * Revision 1.2  2003/11/26 18:36:44  camacho
  * Renaming blast_option*pp -> blast_options*pp
  *

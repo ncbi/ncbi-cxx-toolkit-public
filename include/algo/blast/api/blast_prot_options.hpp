@@ -50,7 +50,8 @@ BEGIN_SCOPE(blast)
 /// Exposes an interface to allow manipulation the options that are relevant to
 /// this type of search.
 
-class CBlastProteinOptionsHandle : public CBlastOptionsHandle
+class NCBI_XBLAST_EXPORT CBlastProteinOptionsHandle : 
+                                            public CBlastOptionsHandle
 {
 public:
     
@@ -118,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/12/09 12:40:22  camacho
+ * Added windows export specifiers
+ *
  * Revision 1.1  2003/11/26 18:22:16  camacho
  * +Blast Option Handle classes
  *

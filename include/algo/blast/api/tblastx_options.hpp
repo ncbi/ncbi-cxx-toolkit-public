@@ -52,7 +52,8 @@ BEGIN_SCOPE(blast)
 /// Exposes an interface to allow manipulation the options that are relevant to
 /// this type of search.
 
-class CTBlastxOptionsHandle : public CBlastProteinOptionsHandle
+class NCBI_XBLAST_EXPORT CTBlastxOptionsHandle : 
+                                            public CBlastProteinOptionsHandle
 {
 public:
 
@@ -97,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/12/09 12:40:23  camacho
+ * Added windows export specifiers
+ *
  * Revision 1.2  2003/12/03 16:34:59  dondosha
  * SetDbGeneticCode now fills both integer and string option
  *
