@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2002/04/22 14:16:28  lavr
+ * Add #undef assert, seems not to work otherwise on SGIs
+ *
  * Revision 1.2  2002/04/18 14:16:07  lavr
  * Work around MSVC compiler bug treating formal parameter as a class name
  *
@@ -72,7 +75,9 @@
 #include <ncbiconf.h>
 
 #ifdef NCBI_OS_MSWIN
-#  undef _ASSERT
+#  ifdef   _ASSERT
+#    undef _ASSERT
+#  endif
 #  define Type aType
 #  include <crtdbg.h>
 #  include <stdio.h>
@@ -116,8 +121,11 @@ static void (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #endif
 
 
-#if defined(NDEBUG)
-#  undef  NDEBUG
+#ifdef   NDEBUG
+#  undef NDEBUG
+#endif
+#ifdef   assert
+#  undef assert
 #endif
 #include <assert.h>
 
