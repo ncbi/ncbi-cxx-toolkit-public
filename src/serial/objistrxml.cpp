@@ -1186,16 +1186,20 @@ bool CObjectIStreamXml::ThisTagIsSelfClosed(void)
 
 void CObjectIStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
+/*
     if (!x_IsStdXml()) {
         OpenTagIfNamed(containerType);
     }
+*/
 }
 
 void CObjectIStreamXml::EndContainer(void)
 {
+/*
     if (!x_IsStdXml()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
+*/
 }
 
 bool CObjectIStreamXml::BeginContainerElement(TTypeInfo elementType)
@@ -2102,6 +2106,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2005/01/26 18:54:28  gouriano
+* Changed BeginContainer / EndContainer
+*
 * Revision 1.69  2004/12/10 15:14:32  gouriano
 * Corrected BeginClassMember for empty tags
 *
