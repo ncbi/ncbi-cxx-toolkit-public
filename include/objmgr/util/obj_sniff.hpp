@@ -102,7 +102,7 @@ public:
 
     // Return stream offset of the most recently found top object.
     // Note: If the top object has not been found return value is undefined.
-    size_t GetStreamOffset() const { return m_StreamOffset; }
+    size_t GetTopStreamOffset() const { return m_StreamOffset; }
 
     // Event handling virtual function, called when candidate is found but 
     // before deserialization. This function can be overloaded in child
@@ -135,6 +135,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/29 20:40:26  kuznets
+ * GetStreamOffset() method name renamed as misleading and become GetTopStreamOffset()
+ *
  * Revision 1.5  2003/05/27 16:48:16  kuznets
  * Added virtual destructor.
  *
