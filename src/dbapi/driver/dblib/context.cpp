@@ -52,47 +52,49 @@ BEGIN_NCBI_SCOPE
 extern "C" {
 
 #ifdef MS_DBLIB_IN_USE
-    static int s_DBLIB_err_callback(
-        DBPROCESS* dblink,   int   severity,
-        int        dberr,    int   oserr,
-        const char*  dberrstr, const char* oserrstr)
+    static int s_DBLIB_err_callback
+    (DBPROCESS* dblink,   int   severity,
+     int        dberr,    int   oserr,
+     const char*  dberrstr, const char* oserrstr)
     {
         return CDBLibContext::DBLIB_dberr_handler
             (dblink, severity, dberr, oserr, dberrstr? dberrstr : "",
-	     oserrstr? oserrstr : "");
+             oserrstr? oserrstr : "");
     }
 
-    static int s_DBLIB_msg_callback(
-        DBPROCESS* dblink,   DBINT msgno,
-        int        msgstate, int   severity,
-        const char*      msgtxt,   const char* srvname,
-        const char*      procname, unsigned short   line)
+    static int s_DBLIB_msg_callback
+    (DBPROCESS* dblink,   DBINT msgno,
+     int        msgstate, int   severity,
+     const char*      msgtxt,   const char* srvname,
+     const char*      procname, unsigned short   line)
     {
         CDBLibContext::DBLIB_dbmsg_handler
             (dblink, msgno,   msgstate, severity,
              msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "",
-	     line);
+             line);
         return 0;
     }
 #else
-    static int CS_PUBLIC s_DBLIB_err_callback(DBPROCESS* dblink,   int   severity,
-                                    int        dberr,    int   oserr,
-                                    char*      dberrstr, char* oserrstr)
+    static int CS_PUBLIC s_DBLIB_err_callback
+    (DBPROCESS* dblink,   int   severity,
+     int        dberr,    int   oserr,
+     char*      dberrstr, char* oserrstr)
     {
         return CDBLibContext::DBLIB_dberr_handler
             (dblink, severity, dberr, oserr, dberrstr? dberrstr : "",
-	     oserrstr? oserrstr : "");
+             oserrstr? oserrstr : "");
     }
 
-    static int CS_PUBLIC s_DBLIB_msg_callback(DBPROCESS* dblink,   DBINT msgno,
-                                    int        msgstate, int   severity,
-                                    char*      msgtxt,   char* srvname,
-                                    char*      procname, int   line)
+    static int CS_PUBLIC s_DBLIB_msg_callback
+    (DBPROCESS* dblink,   DBINT msgno,
+     int        msgstate, int   severity,
+     char*      msgtxt,   char* srvname,
+     char*      procname, int   line)
     {
         CDBLibContext::DBLIB_dbmsg_handler
             (dblink, msgno,   msgstate, severity,
              msgtxt? msgtxt : "", srvname? srvname : "", procname? procname : "",
-	     line);
+             line);
         return 0;
     }
 #endif
@@ -117,12 +119,12 @@ CDBLibContext::CDBLibContext(DBINT version) :
 #ifdef MS_DBLIB_IN_USE
     if (dbinit() == NULL || version == 31415)
 #else
-    if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
+        if (dbinit() != SUCCEED || dbsetversion(version) != SUCCEED)
 #endif
-    {
-        throw CDB_ClientEx(eDB_Fatal, 200001, "CDBLibContext::CDBLibContext",
-                           "dbinit failed");
-    }
+            {
+                throw CDB_ClientEx(eDB_Fatal, 200001, "CDBLibContext::CDBLibContext",
+                                   "dbinit failed");
+            }
 
     dberrhandle(s_DBLIB_err_callback);
     dbmsghandle(s_DBLIB_msg_callback);
@@ -254,9 +256,9 @@ bool CDBLibContext::IsAbleTo(ECapability cpb) const
     case fBcp:
     case fReturnITDescriptors:
     case fReturnComputeResults:
-	return true;
+        return true;
     default:
-	break;
+        break;
     }
     return false;
 }
@@ -443,22 +445,21 @@ DBPROCESS* CDBLibContext::x_ConnectToServer(const string&   srv_name,
 ///////////////////////////////////////////////////////////////////////
 // Driver manager related functions
 //
+#ifndef MS_DBLIB_IN_USE
 
 I_DriverContext* DBLIB_CreateContext(map<string,string>* attr = 0)
 {
     DBINT version= DBVERSION_46;
 
-#ifndef MS_DBLIB_IN_USE
     if(attr) {
-	string vers= (*attr)["version"];
-	if(vers.find("46") != string::npos)
-	    version= DBVERSION_46;
-	else if(vers.find("100") != string::npos)
-	    version= DBVERSION_100;
+        string vers= (*attr)["version"];
+        if(vers.find("46") != string::npos)
+            version= DBVERSION_46;
+        else if(vers.find("100") != string::npos)
+            version= DBVERSION_100;
 
     }
 
-#endif
     return new CDBLibContext(version);
 }
 
@@ -470,9 +471,32 @@ void DBAPI_RegisterDriver_DBLIB(I_DriverMgr& mgr)
 extern "C" {
     void* DBAPI_E_dblib()
     {
-	return (void*)DBAPI_RegisterDriver_DBLIB;
+        return (void*)DBAPI_RegisterDriver_DBLIB;
     }
 }
+
+#else
+
+I_DriverContext* MSDBLIB_CreateContext(map<string,string>* attr = 0)
+{
+    DBINT version= DBVERSION_46;
+
+    return new CDBLibContext(version);
+}
+
+void DBAPI_RegisterDriver_MSDBLIB(I_DriverMgr& mgr)
+{
+    mgr.RegisterDriver("msdblib", DBLIB_CreateContext);
+}
+
+extern "C" {
+    void* DBAPI_E_msdblib()
+    {
+        return (void*)DBAPI_RegisterDriver_MSDBLIB;
+    }
+}
+
+#endif
 
 END_NCBI_SCOPE
 
@@ -481,6 +505,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2002/07/09 17:01:53  soussov
+ * the register functions for msdblib was renamed
+ *
  * Revision 1.16  2002/07/02 16:05:49  soussov
  * splitting Sybase dblib and MS dblib
  *
