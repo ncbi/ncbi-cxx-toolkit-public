@@ -60,6 +60,7 @@ typedef struct SBufChunkTag {
 typedef struct BUF_tag {
     size_t     chunk_size; /* this is actually a chunk size unit */
     SBufChunk* list;
+    SBufChunk* last;
 } BUF_struct;
 
 
@@ -71,7 +72,7 @@ extern size_t BUF_SetChunkSize(BUF* pBuf, size_t chunk_size)
         *pBuf = (BUF_struct*) malloc(sizeof(BUF_struct));
         if ( !*pBuf )
             return 0;
-        (*pBuf)->list = 0;
+        (*pBuf)->list = (*pBuf)->last = 0;
     }
 
     /* and set the min. mem. chunk size */
@@ -125,8 +126,7 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
         return 0 /* false */;
 
     /* find the last allocated chunk */
-    for (pTail = (*pBuf)->list;  pTail  &&  pTail->next;  pTail = pTail->next)
-        continue;
+    pTail = (*pBuf)->last;
 
     /* write to an unfilled space of the last allocated chunk, if any */
     if (pTail  &&  pTail->size != pTail->alloc_size) {
@@ -153,6 +153,7 @@ extern int/*bool*/ BUF_Write(BUF* pBuf, const void* data, size_t size)
             pTail->next = pChunk;
         else
             (*pBuf)->list = pChunk;
+        (*pBuf)->last = pChunk;
     }
     return 1 /* true */;
 }
@@ -178,6 +179,9 @@ extern int/*bool*/ BUF_PushBack(BUF* pBuf, const void* data, size_t size)
         pChunk->n_skip = pChunk->size = pChunk->alloc_size;
         pChunk->next  = (*pBuf)->list;
         (*pBuf)->list = pChunk;
+        if ( !(*pBuf)->last ) {
+            (*pBuf)->last = pChunk;
+        }
     }
 
     /* write data */
@@ -258,6 +262,9 @@ extern size_t BUF_Read(BUF buf, void* data, size_t size)
         size_t     n_avail = pHead->size - pHead->n_skip;
         if (n_todo >= n_avail) { /* discard the whole chunk */
             buf->list = pHead->next;
+            if ( !buf->list ) {
+                buf->last = 0;
+            }
             free(pHead);
             n_todo -= n_avail;
         } else { /* discard some of the chunk data */
@@ -289,6 +296,10 @@ extern void BUF_Destroy(BUF buf)
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2003/12/05 17:31:04  ucko
+ * Add a tail pointer to BUF_struct to avoid having to walk the entire
+ * list in BUF_Write.
+ *
  * Revision 6.12  2003/05/14 03:49:53  lavr
  * Some indentation; added comment on chunk_size being a chunk size unit
  *
