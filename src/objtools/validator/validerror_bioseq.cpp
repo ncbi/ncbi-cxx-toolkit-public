@@ -434,8 +434,16 @@ void CValidError_bioseq::ValidateSeqIds
 
 bool CValidError_bioseq::IsHistAssemblyMissing(const CBioseq& seq)
 {
-    return (seq.GetInst().IsSetHist()  &&
-           seq.GetInst().GetHist().IsSetAssembly());
+    const CSeq_inst& inst = seq.GetInst();
+    CSeq_inst::TRepr repr = inst.CanGetRepr() ?
+        inst.GetRepr() : CSeq_inst::eRepr_not_set;
+
+    if ( !inst.CanGetHist()  ||  !inst.GetHist().CanGetAssembly() ) {
+        if ( seq.IsNa()  &&  repr != CSeq_inst::eRepr_seg ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1210,23 +1218,32 @@ void CValidError_bioseq::ValidateNs(const CBioseq& seq)
             
             CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             
-            EDiagSev sev;
+            EDiagSev sev = eDiag_Warning;
             string sequence;
             
+            // check for Ns at the beginning of the sequence
             if ( (vec[0] == 'N')  ||  (vec[0] == 'n') ) {
-                // if 10 or more Ns flag as error, otherwise just warning
+                // if 10 or more Ns flag as error (except for NC), 
+                // otherwise just warning
                 vec.GetSeqData(0, 10, sequence);
-                sev = (NStr::CompareNocase(sequence, "NNNNNNNNNN") == 0) ? 
-                    eDiag_Error : eDiag_Warning;
+                if ( !m_Imp.IsNC()  &&
+                     (NStr::CompareNocase(sequence, "NNNNNNNNNN") == 0) ) {
+                    sev = eDiag_Error;
+                }
                 PostErr(sev, eErr_SEQ_INST_TerminalNs, 
                     "N at beginning of sequence", seq);
             }
             
+            // check for Ns at the end of the sequence
+            sev = eDiag_Warning;
             if ( (vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n') ) {
-                // if 10 or more Ns flag as error, otherwise just warning
+                // if 10 or more Ns flag as error (except for NC), 
+                // otherwise just warning
                 vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
-                sev = (NStr::CompareNocase(sequence, "NNNNNNNNNN") == 0) ? 
-                    eDiag_Error : eDiag_Warning;
+                if ( !m_Imp.IsNC()  &&
+                     (NStr::CompareNocase(sequence, "NNNNNNNNNN") == 0) ) {
+                    sev = eDiag_Error;
+                }
                 PostErr(sev, eErr_SEQ_INST_TerminalNs, 
                     "N at end of sequence", seq);
             }
@@ -1888,7 +1905,7 @@ void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     
     for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
-        const CSeq_loc& loc = fi->GetLocation();
+        const CSeq_loc& loc = fi->GetOriginalFeature().GetLocation();
         if ( !IsOneBioseq(loc) ) {  // skip segmented 
             continue;
         }
@@ -1913,14 +1930,22 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     EDiagSev sev = eDiag_Warning;
     bool full_length_prot_ref = false;
-    bool found_cds = false;
     TSeqPos x5UTR_to = 0, cds_from = 0, cds_to = 0, x3UTR_from = 0;
 
-    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
-        
-        CSeqFeatData::E_Choice ftype = fi->GetData().Which();
+    bool is_mrna = IsMrna(bsh);
+    bool is_prerna = IsPrerna(bsh);
+    bool is_aa = seq.IsAa();
 
-        if ( seq.IsAa() ) {                // protein
+    auto_ptr<CMappedFeat> utr5;
+    auto_ptr<CMappedFeat> cds;
+    auto_ptr<CMappedFeat> utr3;
+
+    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_not_set); fi; ++fi ) {
+        const CSeq_feat& feat = fi->GetOriginalFeature();
+        
+        CSeqFeatData::E_Choice ftype = feat.GetData().Which();
+
+        if ( is_aa ) {                // protein
             switch ( ftype ) {
             case CSeqFeatData::e_Prot:
                 {
@@ -1940,8 +1965,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             case CSeqFeatData::e_Rsite:
             case CSeqFeatData::e_Txinit:
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                    "Invalid feature for a protein Bioseq.",
-                        fi->GetOriginalFeature());
+                    "Invalid feature for a protein Bioseq.", feat);
                 break;
 
             default:
@@ -1952,8 +1976,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             case CSeqFeatData::e_Prot:
             case CSeqFeatData::e_Psec_str:
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                    "Invalid feature for a nucleotide Bioseq.",
-                        fi->GetOriginalFeature());
+                    "Invalid feature for a nucleotide Bioseq.", feat);
                 break;
                 
             default:
@@ -1961,40 +1984,38 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
         
-        if ( IsMrna(bsh) ) {              // mRNA
-            const CSeq_loc& loc = fi->GetLocation();
-
+        if ( is_mrna ) {              // mRNA
             switch ( ftype ) {
             case CSeqFeatData::e_Cdregion:
-                if ( !found_cds ) {
-                    found_cds = true;
-                    if ( NumOfIntervals(fi->GetLocation()) > 1 ) {
-                        bool excpet = fi->IsSetExcept()  &&  !fi->GetExcept();
-                        string except_text;
-                        if ( fi->IsSetExcept_text() ) {
-                            except_text = fi->GetExcept_text();
-                        }
-                        if ( excpet  ||
-                            (NStr::FindNoCase(except_text, "ribosomal slippage") == string::npos  &&
-                            NStr::FindNoCase(except_text, "ribosome slippage") == string::npos) ) {
-                            PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
-                                "Multi-interval CDS feature is invalid on an mRNA "
-                                "(cDNA) Bioseq.",
-                                fi->GetOriginalFeature());
-                        }
+                cds.reset(new CMappedFeat(*fi));
+
+                // Test for Multi interval CDS feature
+                if ( NumOfIntervals(cds->GetLocation()) > 1 ) {
+                    bool excpet = cds->IsSetExcept()  &&  cds->GetExcept();
+                    bool slippage_except = false;
+                    if ( cds->IsSetExcept_text() ) {
+                        const string& text = cds->GetExcept_text();
+                        slippage_except = 
+                            (NStr::FindNoCase(text, "ribosomal slippage") != NPOS)  ||
+                            (NStr::FindNoCase(text, "ribosome slippage") != NPOS);
                     }
-                    cds_from = loc.GetStart(kInvalidSeqPos);
-                    cds_to = loc.GetEnd(kInvalidSeqPos);
-                    if ( x5UTR_to > 0 ) {
-                        if ( x5UTR_to + 1 != cds_from ) {
-                            PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                                "5'UTR does not abut CDS", fi->GetOriginalFeature());
-                        }
+                    if ( !excpet  || !slippage_except ) {
+                        PostErr(sev, eErr_SEQ_FEAT_InvalidForType,
+                            "Multi-interval CDS feature is invalid on an mRNA "
+                            "(cDNA) Bioseq.",
+                            feat);
                     }
-                } else {
-                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_MultipleCdsOnMrna,
-                        "more than one CDS is annotated on the mRNA bioseq",
-                        fi->GetOriginalFeature());
+                }
+
+                // Test that 5'UTR abut CDS (if exists)
+                if ( utr5.get() != 0 ) {
+                    TSeqPos utr5_to = utr5->GetLocation().GetEnd(kInvalidSeqPos);
+                    TSeqPos cds_from = cds->GetLocation().GetStart(kInvalidSeqPos);
+                    if ( utr5_to + 1 != cds_from ) {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
+                            "5'UTR does not abut CDS", feat);
+                    }
+                    utr5.reset();  // only use once
                 }
                 break;
                 
@@ -2004,7 +2025,7 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     if ( rref.GetType() == CRNA_ref::eType_mRNA ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
                             "mRNA feature is invalid on an mRNA (cDNA) Bioseq.",
-                            fi->GetOriginalFeature());
+                            feat);
                     }
                 }
                 break;
@@ -2015,20 +2036,25 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     if ( imp.GetKey() == "intron"  ||
                         imp.GetKey() == "CAAT_signal" ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                            "Invalid feature for an mRNA Bioseq.",
-                                fi->GetOriginalFeature());
+                            "Invalid feature for an mRNA Bioseq.", feat);
                     }
 
                     CSeqFeatData::ESubtype fsubtype = fi->GetData().GetSubtype();
                     if ( fsubtype == CSeqFeatData::eSubtype_5UTR ) {
-                        x5UTR_to = loc.GetEnd(kInvalidSeqPos);
+                        utr5.reset(new CMappedFeat(*fi));
                     }
                     if ( fsubtype == CSeqFeatData::eSubtype_3UTR ) {
-                        x3UTR_from = loc.GetStart(kInvalidSeqPos);
-                        if ( cds_to + 1 != x3UTR_from ) {
+                        utr3.reset(new CMappedFeat(*fi));
+                        TSeqPos cds_to = (cds.get() != 0) ? 
+                            cds->GetLocation().GetEnd(kInvalidSeqPos) : 0;
+                        TSeqPos utr3_from = 
+                            utr3->GetLocation().GetStart(kInvalidSeqPos);
+                        if ( cds_to + 1 != utr3_from ) {
                             PostErr(eDiag_Warning, eErr_SEQ_FEAT_UTRdoesNotAbutCDS,
-                                "CDS does not abut 3'UTR", fi->GetOriginalFeature());
+                                "CDS does not abut 3'UTR", feat);
                         }
+                        cds.reset();
+                        utr3.reset();
                     }
                 }
                 break;
@@ -2036,15 +2062,14 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             default:
                 break;
             }
-        } else if ( IsPrerna(bsh) ) { // preRNA
+        } else if ( is_prerna ) { // preRNA
             switch ( ftype ) {
             case CSeqFeatData::e_Imp:
                 {
                     const CImp_feat& imp = fi->GetData().GetImp();
                     if ( imp.GetKey() == "CAAT_signal" ) {
                         PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidForType,
-                            "Invalid feature for a pre-RNA Bioseq.",
-                                fi->GetOriginalFeature());
+                            "Invalid feature for a pre-RNA Bioseq.", feat);
                     }
                 }
                 break;
@@ -2054,10 +2079,10 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
 
-        if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(fi->GetLocation()) ) {
+        if ( !m_Imp.IsNC()  &&  m_Imp.IsFarLocation(feat.GetLocation()) ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_FarLocation,
                 "Feature has 'far' location - accession not packaged in record",
-                fi->GetOriginalFeature());
+                feat);
         }
 
         if ( seq.GetInst().GetRepr() == CSeq_inst::eRepr_seg ) {
@@ -2066,14 +2091,14 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                     sev = m_Imp.IsNC() ? eDiag_Warning : eDiag_Error;
                     PostErr(sev, eErr_SEQ_FEAT_LocOnSegmentedBioseq,
                         "Feature location on segmented bioseq, not on parts",
-                            fi->GetOriginalFeature());
+                        feat);
                 }
             }
         }
 
     }  // end of for loop
 
-    if ( seq.IsAa()  && !full_length_prot_ref  &&  !m_Imp.IsPDB() ) {
+    if ( is_aa  && !full_length_prot_ref  &&  !m_Imp.IsPDB() ) {
         m_Imp.AddProtWithoutFullRef(seq);
     }
 }
@@ -3358,6 +3383,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2003/12/15 20:42:16  shomrat
+* segmented bioseq doesn't need TPA user object; Terminal Ns set to warning if NC record
+*
 * Revision 1.56  2003/11/20 15:56:47  ucko
 * Update for new (saner) treatment of ASN.1 NULLs.
 *
