@@ -1,0 +1,10 @@
+[Author]
+_class = CGBAuthor
+
+[GBInterval]
+from._type  = TSeqPos
+to._type    = TSeqPos
+point._type = TSeqPos
+
+[GBSeq]
+length._type = TSeqPos
