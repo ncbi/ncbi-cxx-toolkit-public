@@ -68,6 +68,7 @@
 #include <objtools/format/formatter.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/format/context.hpp>
+#include <objtools/format/items/qualifiers.hpp>
 #include "utils.hpp"
 
 
@@ -402,91 +403,27 @@ void CFeatHeaderItem::x_GatherInfo(CBioseqContext& ctx)
 
 // -- FeatureItem
 
-string CFeatureItem::GetKey(void) const
-{
-    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
-    if ( m_Mapped == eMapped_from_prot  &&  GetContext()->IsProt()  &&
-         m_Feat->GetData().IsProt()) {
-        if ( subtype == CSeqFeatData::eSubtype_preprotein         ||
-             subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
-             subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
-             subtype == CSeqFeatData::eSubtype_transit_peptide_aa ) {
-            return "Precursor";
-        }
-    }
-    if ( GetContext()->IsProt() ) {
-        switch ( subtype ) {
-        case CSeqFeatData::eSubtype_region:
-            return "Region";
-        case CSeqFeatData::eSubtype_bond:
-            return "Bond";
-        case CSeqFeatData::eSubtype_site:
-            return "Site";
-        default:
-            break;
-        }
-    } else if ( subtype == CSeqFeatData::eSubtype_preprotein  &&
-                !GetContext()->IsRefSeq() ) {
-        return "misc_feature";
-    }
-
-    // deal with unmappable impfeats
-    if ( subtype == CSeqFeatData::eSubtype_imp  &&
-        m_Feat->GetData().IsImp() ) {
-        const CSeqFeatData::TImp& imp = m_Feat->GetData().GetImp();
-        if ( imp.CanGetKey() ) {
-            return imp.GetKey();
-        }
-    }
-
-    return CFeatureItemBase::GetKey();
-}
-
-
-void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
-{
-    if ( s_SkipFeature(GetFeat(), ctx) ) {
-        x_SetSkip();
-        return;
-    }
-    m_Type = m_Feat->GetData().GetSubtype();
-    x_AddQuals(ctx);
-}
 
 
 // constructor
 CFeatureItemBase::CFeatureItemBase
 (const CSeq_feat& feat,
  CBioseqContext& ctx,
- const CSeq_loc* loc) 
-    :   CFlatItem(&ctx), m_Feat(&feat), m_Loc(loc)
+ const CSeq_loc* loc) :
+    CFlatItem(&ctx), m_Feat(&feat), m_Loc(loc != 0 ? loc : &feat.GetLocation())
 {
-    if ( !m_Loc.Empty()  &&  ctx.IsSegmented()  &&
-         ctx.Config().IsStyleMaster() ) {
-        if ( m_Loc->IsMix() ) {
-            // !!! correct the mapping of the location
-            /*
-            CSeq_loc_Mapper mapper(ctx.GetHandle());
-            mapper.SetMergeAbutting();
-            m_Loc = mapper.Map(*m_Loc);
-            */
-        }
-    }
 }
 
 
-
-CRef<CFlatFeature> CFeatureItemBase::Format(void) const
+CConstRef<CFlatFeature> CFeatureItemBase::Format(void) const
 {
-    // extremely rough cut for now -- qualifiers still in progress!
-    if (m_FF) {
-        return m_FF;
+    CRef<CFlatFeature> ff(new CFlatFeature(GetKey(),
+                          *new CFlatSeqLoc(GetLoc(), *GetContext()),
+                          *m_Feat));
+    if ( ff ) {
+        x_FormatQuals(*ff);
     }
-
-    m_FF.Reset(new CFlatFeature(GetKey(),
-        *new CFlatSeqLoc(GetLoc(), *GetContext()), *m_Feat));
-    x_FormatQuals();
-    return m_FF;
+    return ff;
 }
 
 
@@ -553,6 +490,114 @@ static bool s_LocIsFuzz(const CSeq_feat& feat, const CSeq_loc& loc)
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  CFeatureItem
+
+string CFeatureItem::GetKey(void) const
+{
+    CBioseqContext& ctx = *GetContext();
+
+    CSeqFeatData::E_Choice type = m_Feat->GetData().Which();
+    CSeqFeatData::ESubtype subtype = m_Feat->GetData().GetSubtype();
+
+    if ( GetContext()->IsProt() ) {
+        if ( IsMappedFromProt()  &&  type == CSeqFeatData::e_Prot ) {
+            if ( subtype == CSeqFeatData::eSubtype_preprotein         ||
+                 subtype == CSeqFeatData::eSubtype_mat_peptide_aa     ||
+                subtype == CSeqFeatData::eSubtype_sig_peptide_aa     ||
+                subtype == CSeqFeatData::eSubtype_transit_peptide_aa ) {
+                return "Precursor";
+            } 
+        }
+        switch ( subtype ) {
+        case CSeqFeatData::eSubtype_region:
+            return "Region";
+        case CSeqFeatData::eSubtype_bond:
+            return "Bond";
+        case CSeqFeatData::eSubtype_site:
+            return "Site";
+        default:
+            break;
+        }
+    } else if ( subtype == CSeqFeatData::eSubtype_preprotein  &&  !ctx.IsRefSeq() ) {
+        return "misc_feature";
+    }
+
+    // deal with unmappable impfeats
+    if ( subtype == CSeqFeatData::eSubtype_imp  &&  type == CSeqFeatData::e_Imp ) {
+        const CSeqFeatData::TImp& imp = m_Feat->GetData().GetImp();
+        if ( imp.CanGetKey() ) {
+            return imp.GetKey();
+        }
+    }
+
+    return CFeatureItemBase::GetKey();
+}
+
+
+// constructor from CSeq_feat
+CFeatureItem::CFeatureItem
+(const CSeq_feat& feat,
+ CBioseqContext& ctx,
+ const CSeq_loc* loc,
+ EMapped mapped) :
+    CFeatureItemBase(feat, ctx, loc), m_Mapped(mapped)
+{
+    x_GatherInfo(ctx);
+}
+
+// constructor from CMappedFeat
+/*
+CFeatureItem::CFeatureItem
+(const CMappedFeat& mfeat,
+ CBioseqContext& ctx,
+ const CSeq_loc* loc,
+ EMapped mapped) :
+    CFeatureItemBase(mfeat.GetOriginalFeature(), ctx), m_Mapped(mapped)
+{
+    if ( loc != 0 ) {
+        m_Loc.Reset(loc);
+    } else {
+        if ( ctx.IsPart() ) {
+            m_Loc.Reset(&mfeat.GetOriginalFeature().GetLocation());
+        } else {
+            m_Loc.Reset(&mfeat.GetLocation());
+        }
+    }
+    x_GatherInfo(ctx);
+}
+*/
+
+void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
+{
+    if ( s_SkipFeature(GetFeat(), ctx) ) {
+        x_SetSkip();
+        return;
+    }
+    m_Type = m_Feat->GetData().GetSubtype();
+    //x_FixLocation(ctx);
+    x_AddQuals(ctx);
+}
+
+/*
+void CFeatureItem::x_FixLocation(CBioseqContext& ctx)
+{
+    if (! m_Loc->IsMix() ) {
+        return;
+    }
+
+    bool partial5 = m_Loc->IsPartialLeft();
+    bool partial3 = m_Loc->IsPartialRight();
+
+    CRef<CSeq_loc> loc(SeqLocMerge(ctx.GetHandle(), m_Loc->GetMix().Get(),
+        fFuseAbutting | fAddNulls));
+    loc->SetPartialLeft(partial5);
+    loc->SetPartialRight(partial3);
+
+    m_Loc.Reset(loc);
+}
+*/
+
 void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
 {
     if ( ctx.Config().IsFormatFTable() ) {
@@ -577,7 +622,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
          !ctx.Config().HideUnclassPartial() ) {
         if ( m_Feat->CanGetPartial()  &&  m_Feat->GetPartial() ) {
             if ( !s_LocIsFuzz(*m_Feat, loc) ) {
-                int partial = SeqLocPartialCheck(loc, &scope);
+                int partial = SeqLocPartialCheck(m_Feat->GetLocation(), &scope);
                 if ( partial == eSeqlocPartial_Complete ) {
                     x_AddQual(eFQ_partial, new CFlatBoolQVal(true));
                 }
@@ -1642,7 +1687,7 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
             // XXX -- each of these should really get its own class
             // (to verify correct syntax)
             x_AddQual(slot, new CFlatStringQVal((*it)->GetVal(),
-                CFlatQual::eUnquoted));
+                CFormatQual::eUnquoted));
             break;
         case eFQ_label:
             x_AddQual(slot, new CFlatLabelQVal((*it)->GetVal()));
@@ -1660,16 +1705,16 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals) const
 }
 
 
-void CFeatureItem::x_FormatQuals(void) const
+void CFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 {
     if ( GetContext()->Config().IsFormatFTable() ) {
-        m_FF->SetQuals() = m_FTableQuals;
+        ff.SetQuals() = m_FTableQuals;
         return;
     }
-    m_FF->SetQuals().reserve(m_Quals.Size());
-    CFlatFeature::TQuals& qvec = m_FF->SetQuals();
+    ff.SetQuals().reserve(m_Quals.Size());
+    CFlatFeature::TQuals& qvec = ff.SetQuals();
 
-#define DO_QUAL(x) x_FormatQual(eFQ_##x, #x, m_FF->SetQuals())
+#define DO_QUAL(x) x_FormatQual(eFQ_##x, #x, qvec)
     DO_QUAL(partial);
     DO_QUAL(gene);
 
@@ -1702,7 +1747,7 @@ void CFeatureItem::x_FormatQuals(void) const
         DO_QUAL(go_process);
     }
 
-    x_FormatNoteQuals();
+    x_FormatNoteQuals(ff);
         
     DO_QUAL(citation);
 
@@ -1758,7 +1803,7 @@ void CFeatureItem::x_FormatQuals(void) const
 }
 
 
-void CFeatureItem::x_FormatNoteQuals(void) const
+void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 {
     CFlatFeature::TQuals qvec;
 
@@ -1816,9 +1861,9 @@ void CFeatureItem::x_FormatNoteQuals(void) const
         if ( add_period  &&  !NStr::EndsWith(notestr, ".") ) {
             notestr += ".";
         }
-        CRef<CFlatQual> note(new CFlatQual("note", 
+        CRef<CFormatQual> note(new CFormatQual("note", 
             ExpandTildes(notestr, eTilde_newline)));
-        m_FF->SetQuals().push_back(note);
+        ff.SetQuals().push_back(note);
     }
 }
 
@@ -2539,10 +2584,10 @@ void CSourceFeatureItem::x_AddQuals(const CBioSource& src, CBioseqContext& ctx) 
 }
 
 
-void CSourceFeatureItem::x_FormatQuals(void) const
+void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
 {
-    m_FF->SetQuals().reserve(m_Quals.Size());
-    CFlatFeature::TQuals& qvec = m_FF->SetQuals();
+    ff.SetQuals().reserve(m_Quals.Size());
+    CFlatFeature::TQuals& qvec = ff.SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
     DO_QUAL(organism);
@@ -2601,7 +2646,7 @@ void CSourceFeatureItem::x_FormatQuals(void) const
 
     if ( !GetContext()->Config().SrcQualsToNote() ) {
         // some note qualifiers appear as regular quals in GBench or Dump mode
-        x_FormatGBNoteQuals();
+        x_FormatGBNoteQuals(ff);
     }
 
     DO_QUAL(sequenced_mol);
@@ -2612,14 +2657,14 @@ void CSourceFeatureItem::x_FormatQuals(void) const
 
     // Format the rest of the note quals (ones that weren't formatted above)
     // as a single note qualifier
-    x_FormatNoteQuals();
+    x_FormatNoteQuals(ff);
 }
 
 
-void CSourceFeatureItem::x_FormatGBNoteQuals(void) const
+void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
 {
     _ASSERT(!GetContext()->Config().SrcQualsToNote());
-    CFlatFeature::TQuals& qvec = m_FF->SetQuals();
+    CFlatFeature::TQuals& qvec = ff.SetQuals();
 
 #define DO_QUAL(x) x_FormatQual(eSQ_##x, #x, qvec)
     DO_QUAL(type);
@@ -2656,13 +2701,14 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(void) const
 }
 
 
-void CSourceFeatureItem::x_FormatNoteQuals() const
+void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 {
     CFlatFeature::TQuals qvec;
+    bool add_period = false;
 
-#define DO_NOTE(x) x_FormatNoteQual(eSQ_##x, #x, qvec)
+#define DO_NOTE(x) x_FormatNoteQual(eSQ_##x, #x, qvec, add_period)
     if (m_WasDesc) {
-        x_FormatNoteQual(eSQ_seqfeat_note, "note", qvec);
+        x_FormatNoteQual(eSQ_seqfeat_note, "note", qvec, add_period);
         DO_NOTE(orgmod_note);
         DO_NOTE(subsource_note);
     } else {
@@ -2693,17 +2739,17 @@ void CSourceFeatureItem::x_FormatNoteQuals() const
         DO_NOTE(breed);
         
         DO_NOTE(genotype);
-        x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
+        x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec, add_period);
         
-        x_FormatNoteQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec);
+        x_FormatNoteQual(eSQ_endogenous_virus_name, "endogenous_virus", qvec, add_period);
     }
 
-    x_FormatNoteQual(eSQ_common_name, "common", qvec);
+    x_FormatNoteQual(eSQ_common_name, "common", qvec, add_period);
 
     if ( GetContext()->Config().SrcQualsToNote() ) {
-        x_FormatNoteQual(eSQ_zero_orgmod, "?", qvec);
-        x_FormatNoteQual(eSQ_one_orgmod,  "?", qvec);
-        x_FormatNoteQual(eSQ_zero_subsrc, "?", qvec);
+        x_FormatNoteQual(eSQ_zero_orgmod, "?", qvec, add_period);
+        x_FormatNoteQual(eSQ_one_orgmod,  "?", qvec, add_period);
+        x_FormatNoteQual(eSQ_zero_subsrc, "?", qvec, add_period);
     }
 #undef DO_NOTE
 
@@ -2723,15 +2769,17 @@ void CSourceFeatureItem::x_FormatNoteQuals() const
     for ( ; it != end; ++it ) {
         string note = (*it)->GetValue();
         if ( NStr::EndsWith(note, ".")  &&  !NStr::EndsWith(note, "...") ) {
-            note.erase(note.length() - 1);
+            if ( !add_period ) {
+                note.erase(note.length() - 1);
+            }
         }
         const string& prefix = *suffix + (*it)->GetPrefix();
         JoinNoRedund(notestr, prefix, note);
         suffix = &(*it)->GetSuffix();
     }
     if ( !notestr.empty() ) {
-        CRef<CFlatQual> note(new CFlatQual("note", notestr));
-        m_FF->SetQuals().push_back(note);
+        CRef<CFormatQual> note(new CFormatQual("note", notestr));
+        ff.SetQuals().push_back(note);
     }
 }
 
@@ -2762,12 +2810,18 @@ void CSourceFeatureItem::x_FormatQual
 (ESourceQualifier slot,
  const string& name,
  CFlatFeature::TQuals& qvec,
+ bool& add_period,
  IFlatQVal::TFlags flags) const
 {
     pair<TQCI, TQCI> range = const_cast<const TQuals&>(m_Quals).GetQuals(slot);
     for (TQCI it = range.first;  it != range.second;  ++it) {
-        it->second->Format(qvec, name, *GetContext(),
-                           flags | IFlatQVal::fIsSource);
+        const IFlatQVal* qual = it->second;
+        qual->Format(qvec, name, *GetContext(),
+                     flags | IFlatQVal::fIsSource);
+        const CFlatOrgModQVal* orgmod = dynamic_cast<const CFlatOrgModQVal*>(qual);
+        const CFlatSubSourceQVal* subsource = dynamic_cast<const CFlatSubSourceQVal*>(qual);
+
+        add_period = add_period  ||  (orgmod != 0)  ||  (subsource != 0);
     }
 }
 
@@ -2779,6 +2833,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.20  2004/05/06 17:49:59  shomrat
+* Fixed feature formatting
+*
 * Revision 1.19  2004/04/22 15:56:47  shomrat
 * Changes in context
 *
