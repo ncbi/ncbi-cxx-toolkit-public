@@ -112,7 +112,7 @@ void ViewerBase::Save(void)
     // clear out any data in the stack above the current position (deletes "redo" list)
     if (nRedosStored > 0) {
         TRACEMSG("deleting " << nRedosStored << " redo elements from the stack");
-        for (; nRedosStored>0; nRedosStored--) {
+        for (; nRedosStored>0; --nRedosStored) {
             DELETE_ALL_AND_CLEAR(alignmentStack.back(), AlignmentList);
             alignmentStack.pop_back();
             delete displayStack.back();
@@ -133,7 +133,7 @@ void ViewerBase::Save(void)
     alignmentStack.resize(alignmentStack.size() + 1);
     Old2NewAlignmentMap newAlignmentMap;
     AlignmentList::const_iterator a, ae = currentAlignments.end();
-    for (a=currentAlignments.begin(); a!=ae; a++) {
+    for (a=currentAlignments.begin(); a!=ae; ++a) {
         BlockMultipleAlignment *newAlignment = (*a)->Clone();
         alignmentStack.back().push_back(newAlignment);
         newAlignmentMap[*a] = newAlignment;
@@ -152,7 +152,7 @@ void ViewerBase::Undo(void)
         return;
     }
 
-    nRedosStored++;
+    ++nRedosStored;
     CopyDataFromStack();
     SetUndoRedoMenuStates();
 }
@@ -164,7 +164,7 @@ void ViewerBase::Redo(void)
         return;
     }
 
-    nRedosStored--;
+    --nRedosStored;
     CopyDataFromStack();
     SetUndoRedoMenuStates();
 }
@@ -186,15 +186,15 @@ void ViewerBase::CopyDataFromStack(void)
     // move to appropriate stack object
     AlignmentStack::reverse_iterator as = alignmentStack.rbegin();
     DisplayStack::reverse_iterator ds = displayStack.rbegin();
-    for (int i=0; i<nRedosStored; i++) {
-        as++;
-        ds++;
+    for (int i=0; i<nRedosStored; ++i) {
+        ++as;
+        ++ds;
     }
 
     // clone alignments into current
     Old2NewAlignmentMap newAlignmentMap;
     AlignmentList::const_iterator a, ae = as->end();
-    for (a=as->begin(); a!=ae; a++) {
+    for (a=as->begin(); a!=ae; ++a) {
         BlockMultipleAlignment *newAlignment = (*a)->Clone();
         currentAlignments.push_back(newAlignment);
         newAlignmentMap[*a] = newAlignment;
@@ -313,6 +313,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2004/03/15 18:11:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.20  2004/02/19 17:05:22  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

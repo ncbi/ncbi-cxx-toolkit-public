@@ -136,7 +136,7 @@ ShowHideDialog::ShowHideDialog(
 
     // set initial item selection (kludge: reverse order, so scroll bar is initially at the top)
     originalItemsEnabled.resize(itemsEnabled->size());
-    for (int i=itemsEnabled->size()-1; i>=0; i--) {
+    for (int i=itemsEnabled->size()-1; i>=0; --i) {
         listBox->SetSelection(i, true);
         listBox->SetSelection(i, (*itemsEnabled)[i]);
         originalItemsEnabled[i] = (*itemsEnabled)[i];
@@ -149,17 +149,17 @@ void ShowHideDialog::OnSelection(wxCommandEvent& event)
     int i;
 
     // get states as they are before this selection
-    for (i=0; i<listBox->GetCount(); i++) tempItemsEnabled[i] = (*itemsEnabled)[i];
+    for (i=0; i<listBox->GetCount(); ++i) tempItemsEnabled[i] = (*itemsEnabled)[i];
 
     // update from current listbox selections
-    for (i=0; i<listBox->GetCount(); i++) (*itemsEnabled)[i] = listBox->Selected(i);
+    for (i=0; i<listBox->GetCount(); ++i) (*itemsEnabled)[i] = listBox->Selected(i);
 
     // do the selection changed callback, and adjust selections according to what's changed
     if (callbackObject && callbackObject->SelectionChangedCallback(tempItemsEnabled, *itemsEnabled)) {
 
         // apply changes
         int pV = listBox->GetScrollPos(wxVERTICAL);
-        for (i=0; i<listBox->GetCount(); i++) listBox->SetSelection(i, (*itemsEnabled)[i]);
+        for (i=0; i<listBox->GetCount(); ++i) listBox->SetSelection(i, (*itemsEnabled)[i]);
 
         // horrible kludge to keep vertical scroll at same position...
         if (pV >= 0 && pV < listBox->GetCount()) {
@@ -180,7 +180,7 @@ void ShowHideDialog::OnButton(wxCommandEvent& event)
 
     if (event.GetId() == B_CANCEL) {
         // restore item list to original state
-        for (int i=0; i<originalItemsEnabled.size(); i++) (*itemsEnabled)[i] = originalItemsEnabled[i];
+        for (int i=0; i<originalItemsEnabled.size(); ++i) (*itemsEnabled)[i] = originalItemsEnabled[i];
         doCallback = haveApplied;
     }
 
@@ -211,6 +211,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/03/15 18:11:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.12  2004/02/19 17:05:11  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *

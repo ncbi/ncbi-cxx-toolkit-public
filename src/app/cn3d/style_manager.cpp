@@ -1102,7 +1102,7 @@ bool StyleManager::GetObjectStyle(const StructureObject *object, const Object3D&
     // check to see if any residue covered by the object is visible
     bool anyResidueVisible = false;
     const Molecule *molecule = object->graph->molecules.find(object3D.moleculeID)->second;
-    for (int r=object3D.fromResidueID; r<=object3D.toResidueID; r++) {
+    for (int r=object3D.fromResidueID; r<=object3D.toResidueID; ++r) {
         if (object->parentSet->showHideManager->IsVisible(molecule->residues.find(r)->second)) {
             anyResidueVisible = true;
             break;
@@ -1219,7 +1219,7 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
     // that also covers this residue
     const StyleSettings *style = &globalStyle;
 
-    for (int d=0; d<userAnnotationsDisplayed.size(); d++) {
+    for (int d=0; d<userAnnotationsDisplayed.size(); ++d) {
         // check to see if the annotation covers this residue
         ResidueMap::const_iterator
             residues = userAnnotationsDisplayed[d]->residues.find(molecule->identifier);
@@ -1258,12 +1258,12 @@ CCn3d_style_dictionary * StyleManager::CreateASNStyleDictionary(void) const
         typedef list < int > IntList;
         IntList keys;
         StyleMap::const_iterator s, se = userStyles.end();
-        for (s=userStyles.begin(); s!=se; s++) keys.push_back(s->first);
+        for (s=userStyles.begin(); s!=se; ++s) keys.push_back(s->first);
         keys.sort();
 
         // create a new style table entry for each user style
         IntList::const_iterator i, ie = keys.end();
-        for (i=keys.begin(); i!=ie; i++) {
+        for (i=keys.begin(); i!=ie; ++i) {
             CRef < CCn3d_style_table_item > entry(new CCn3d_style_table_item());
             entry->SetId().Set(*i);
             if (!userStyles.find(*i)->second.SaveSettingsToASN(&(entry->SetStyle()))) return NULL;
@@ -1281,7 +1281,7 @@ bool StyleManager::LoadFromASNStyleDictionary(const CCn3d_style_dictionary& styl
     userStyles.clear();
     if (styleDictionary.IsSetStyle_table()) {
         CCn3d_style_dictionary::TStyle_table::const_iterator t, te = styleDictionary.GetStyle_table().end();
-        for (t=styleDictionary.GetStyle_table().begin(); t!=te; t++) {
+        for (t=styleDictionary.GetStyle_table().begin(); t!=te; ++t) {
             int id = (*t)->GetId().Get();
             if (userStyles.find(id) != userStyles.end()) {
                 ERRORMSG("repeated style table id in style dictionary");
@@ -1304,7 +1304,7 @@ void StyleManager::GetUserAnnotations(AnnotationPtrList *annotationList)
 {
     annotationList->resize(userAnnotations.size());
     AnnotationList::iterator a = userAnnotations.begin();
-    for (int i=0; i<userAnnotations.size(); i++)
+    for (int i=0; i<userAnnotations.size(); ++i)
         (*annotationList)[i] = &(*(a++));
 }
 
@@ -1312,7 +1312,7 @@ bool StyleManager::AddUserStyle(int *id, StyleSettings **newStyle)
 {
     // create a style with the lowest integer id (above zero) available
     static const int max = 10000;
-    for (int i=1; i<max; i++) {
+    for (int i=1; i<max; ++i) {
         if (userStyles.find(i) == userStyles.end()) {
             *newStyle = &(userStyles[i]);
             *id = i;
@@ -1343,7 +1343,7 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
 {
     // remove annotation from displayed list
     AnnotationPtrList::iterator d, de = userAnnotationsDisplayed.end();
-    for (d=userAnnotationsDisplayed.begin(); d!=de; d++) {
+    for (d=userAnnotationsDisplayed.begin(); d!=de; ++d) {
         if (annotation == *d) {
             userAnnotationsDisplayed.erase(d);
             GlobalMessenger()->PostRedrawAllStructures();
@@ -1355,7 +1355,7 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
     // remove annotation from available list
     AnnotationList::iterator u, ue = userAnnotations.end();
     int removedStyleID = -1;
-    for (u=userAnnotations.begin(); u!=ue; u++) {
+    for (u=userAnnotations.begin(); u!=ue; ++u) {
         if (annotation == &(*u)) {
             removedStyleID = u->styleID;
             userAnnotations.erase(u);
@@ -1365,7 +1365,7 @@ bool StyleManager::RemoveUserAnnotation(UserAnnotation *annotation)
     if (u == ue) return false;
 
     // also remove the style if it's not used by any other annotation
-    for (u=userAnnotations.begin(); u!=ue; u++)
+    for (u=userAnnotations.begin(); u!=ue; ++u)
         if (u->styleID == removedStyleID) break;
     if (u == ue) RemoveUserStyle(removedStyleID);
 
@@ -1377,13 +1377,13 @@ bool StyleManager::DisplayAnnotation(UserAnnotation *annotation, bool display)
 {
     // first check to make sure this annotation is known
     AnnotationList::const_iterator a, ae = userAnnotations.end();
-    for (a=userAnnotations.begin(); a!=ae; a++)
+    for (a=userAnnotations.begin(); a!=ae; ++a)
         if (annotation == &(*a)) break;
     if (a == ae) return false;
 
     // then look for it in the list of displayed annotations
     AnnotationPtrList::iterator d, de = userAnnotationsDisplayed.end();
-    for (d=userAnnotationsDisplayed.begin(); d!=de; d++)
+    for (d=userAnnotationsDisplayed.begin(); d!=de; ++d)
         if (annotation == *d) break;
 
     // finally, add or remove it from the displayed annotations
@@ -1408,7 +1408,7 @@ bool StyleManager::ReprioritizeDisplayOrder(UserAnnotation *annotation, bool mov
 {
     // look for the annotation in the list of displayed annotations
 	int d;
-    for (d=0; d<userAnnotationsDisplayed.size(); d++)
+    for (d=0; d<userAnnotationsDisplayed.size(); ++d)
         if (annotation == userAnnotationsDisplayed[d]) break;
     if (d == userAnnotationsDisplayed.size()) return false;
 
@@ -1438,11 +1438,11 @@ static bool CreateObjectLocation(
     residuesASN->clear();
 
     StyleManager::ResidueMap::const_iterator r, re = residueMap.end();
-    for (r=residueMap.begin(); r!=re; r++) {
+    for (r=residueMap.begin(); r!=re; ++r) {
 
         // find an existing object location that matches this MMDB ID
         CCn3d_user_annotation::TResidues::iterator l, le = residuesASN->end();
-        for (l=residuesASN->begin(); l!=le; l++)
+        for (l=residuesASN->begin(); l!=le; ++l)
             if ((*l)->GetStructure_id().GetMmdb_id().Get() == r->first->mmdbID) break;
 
         // if necessary, create new object location, with Biostruc-id from MMDB ID
@@ -1458,7 +1458,7 @@ static bool CreateObjectLocation(
             }
             residuesASN->push_back(loc);
             l = residuesASN->end();
-            l--;    // set iterator to the new object location
+            --l;    // set iterator to the new object location
         }
 
         // set molecule location
@@ -1468,7 +1468,7 @@ static bool CreateObjectLocation(
 
         // check if covers whole molecule; if so, leave 'residues' field of Cn3d_molecule_location blank
         int i;
-        for (i=0; i<r->second.size(); i++)
+        for (i=0; i<r->second.size(); ++i)
             if (!r->second[i]) break;
 
         // else break list down into individual contiguous residue ranges
@@ -1476,11 +1476,11 @@ static bool CreateObjectLocation(
             int first = 0, last = 0;
             while (first < r->second.size()) {
                 // find first included residue
-                while (first < r->second.size() && !r->second[first]) first++;
+                while (first < r->second.size() && !r->second[first]) ++first;
                 if (first >= r->second.size()) break;
                 // find last in contiguous stretch of included residues
                 last = first;
-                while (last + 1 < r->second.size() && r->second[last + 1]) last++;
+                while (last + 1 < r->second.size() && r->second[last + 1]) ++last;
                 CRef < CCn3d_residue_range > range(new CCn3d_residue_range());
                 range->SetFrom().Set(first + 1);    // assume moleculeID = index + 1
                 range->SetTo().Set(last + 1);
@@ -1505,7 +1505,7 @@ bool StyleManager::SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotation
 
     AnnotationList::const_iterator a, ae = userAnnotations.end();
     AnnotationPtrList::const_iterator d, de = userAnnotationsDisplayed.end();
-    for (a=userAnnotations.begin(); a!=ae; a++) {
+    for (a=userAnnotations.begin(); a!=ae; ++a) {
 
         // fill out individual annotations
         CRef < CCn3d_user_annotation > annotation(new CCn3d_user_annotation());
@@ -1514,7 +1514,7 @@ bool StyleManager::SaveToASNUserAnnotations(ncbi::objects::CCn3d_user_annotation
         annotation->SetStyle_id().Set(a->styleID);
 
         // is this annotation on? check displayed annotations list
-        for (d=userAnnotationsDisplayed.begin(); d!=de; d++)
+        for (d=userAnnotationsDisplayed.begin(); d!=de; ++d)
             if (*d == &(*a)) break;
         annotation->SetIs_on(d != de);
 
@@ -1535,7 +1535,7 @@ static bool ExtractObjectLocation(
     const CCn3d_user_annotation::TResidues& residuesASN)
 {
     CCn3d_user_annotation::TResidues::const_iterator o, oe = residuesASN.end();
-    for (o=residuesASN.begin(); o!=oe; o++) {
+    for (o=residuesASN.begin(); o!=oe; ++o) {
         int mmdbID;
         if ((*o)->GetStructure_id().IsMmdb_id()) {
             mmdbID = (*o)->GetStructure_id().GetMmdb_id().Get();
@@ -1546,7 +1546,7 @@ static bool ExtractObjectLocation(
 
         // extract molecules
         CCn3d_object_location::TResidues::const_iterator m, me = (*o)->GetResidues().end();
-        for (m=(*o)->GetResidues().begin(); m!=me; m++) {
+        for (m=(*o)->GetResidues().begin(); m!=me; ++m) {
             int moleculeID = (*m)->GetMolecule_id().Get();
 
             // get identifier for this molecule
@@ -1566,8 +1566,8 @@ static bool ExtractObjectLocation(
             if ((*m)->IsSetResidues()) {
                 // parse individual ranges
                 CCn3d_molecule_location::TResidues::const_iterator r, re = (*m)->GetResidues().end();
-                for (r=(*m)->GetResidues().begin(); r!=re; r++) {
-                    for (i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); i++) {
+                for (r=(*m)->GetResidues().begin(); r!=re; ++r) {
+                    for (i=(*r)->GetFrom().Get(); i<=(*r)->GetTo().Get(); ++i) {
                         if (i > 0 && i <= residueFlags.size()) {
                             residueFlags[i - 1] = true;     // assume index = residue id - 1
                         } else {
@@ -1578,7 +1578,7 @@ static bool ExtractObjectLocation(
                 }
             } else {
                 // assume all residues are included if none specified
-                for (i=0; i<residueFlags.size(); i++) residueFlags[i] = true;
+                for (i=0; i<residueFlags.size(); ++i) residueFlags[i] = true;
             }
         }
     }
@@ -1590,7 +1590,7 @@ bool StyleManager::LoadFromASNUserAnnotations(const ncbi::objects::CCn3d_user_an
     if (!annotations.IsSetAnnotations()) return true;
 
     CCn3d_user_annotations::TAnnotations::const_iterator a, ae = annotations.GetAnnotations().end();
-    for (a=annotations.GetAnnotations().begin(); a!=ae; a++) {
+    for (a=annotations.GetAnnotations().begin(); a!=ae; ++a) {
         UserAnnotation *userAnnot = AddUserAnnotation();
 
         // fill out annotation parameters
@@ -1638,6 +1638,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.80  2004/03/15 18:11:01  thiessen
+* prefer prefix vs. postfix ++/-- operators
+*
 * Revision 1.79  2004/02/19 17:05:19  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
