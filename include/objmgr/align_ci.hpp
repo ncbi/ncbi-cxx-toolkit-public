@@ -44,6 +44,10 @@ class NCBI_XOBJMGR_EXPORT CAlign_CI : public CAnnotTypes_CI
 {
 public:
     CAlign_CI(void);
+    CAlign_CI(CScope& scope, const CSeq_loc& loc,
+              SAnnotSelector sel);
+    CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
+              SAnnotSelector sel);
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
               EOverlapType overlap_type = eOverlap_Intervals,
@@ -84,6 +88,25 @@ CAlign_CI::CAlign_CI(const CAlign_CI& iter)
 }
 
 inline
+CAlign_CI::CAlign_CI(CScope& scope, const CSeq_loc& loc,
+                     SAnnotSelector sel)
+    : CAnnotTypes_CI(scope, loc,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+{
+}
+
+
+inline
+CAlign_CI::CAlign_CI(const CBioseq_Handle& bioseq,
+                     TSeqPos start, TSeqPos stop,
+                     SAnnotSelector sel)
+    : CAnnotTypes_CI(bioseq, start, stop,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Align))
+{
+}
+
+
+inline
 CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
 {
     CAnnotTypes_CI::operator=(iter);
@@ -117,6 +140,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/21 14:50:51  vasilche
+* Added constructors of CAlign_CI and CGraph_CI taking generic
+* SAnnotSelector parameters.
+*
 * Revision 1.17  2003/03/05 20:56:42  vasilche
 * SAnnotSelector now holds all parameters of annotation iterators.
 *
