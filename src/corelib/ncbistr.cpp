@@ -53,12 +53,14 @@ std::string::size_type s_DiffPtr(const char* end, const char* start)
 
 const char *const kEmptyCStr = "";
 
+#ifndef NCBI_OS_MSWIN
 const string* CNcbiEmptyString::m_Str = 0;
 const string& CNcbiEmptyString::FirstGet(void) {
     static const string s_Str = "";
     m_Str = &s_Str;
     return s_Str;
 }
+#endif // NCBI_OS_MSWIN
 
 
 int NStr::CompareCase(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
@@ -1480,6 +1482,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.107  2004/03/11 18:49:48  gorelenk
+ * Removed(condionaly) implementation of class CNcbiEmptyString.
+ *
  * Revision 1.106  2004/03/05 12:26:43  ivanov
  * Moved CDirEntry::MatchesMask() to NStr class.
  *
