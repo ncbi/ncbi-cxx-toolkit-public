@@ -793,6 +793,9 @@ CCgiRequest::CCgiRequest
  int                     ifd,
  size_t                  errbuf_size)
     : m_Env(0),
+      m_Entries(PNocase_Conditional(
+           (flags & fCaseInsensitiveArgs) ? 
+                    NStr::eNocase : NStr::eCase)),
       m_ErrBufSize(errbuf_size)
 {
     x_Init(args, env, istr, flags, ifd);
@@ -808,6 +811,9 @@ CCgiRequest::CCgiRequest
  int                ifd,
  size_t             errbuf_size)
     : m_Env(0),
+      m_Entries(PNocase_Conditional(
+           (flags & fCaseInsensitiveArgs) ? 
+                    NStr::eNocase : NStr::eCase)),
       m_ErrBufSize(errbuf_size)
 {
     CNcbiArguments args(argc, argv);
@@ -1260,6 +1266,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.79  2004/12/08 12:49:31  kuznets
+* Optional case sensitivity when processing CGI args
+*
 * Revision 1.78  2004/09/07 19:14:09  vakatov
 * Better structurize (and use) CGI exceptions to distinguish between user-
 * and server- errors

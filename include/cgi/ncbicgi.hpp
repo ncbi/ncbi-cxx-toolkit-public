@@ -435,11 +435,11 @@ CNcbiOstream& operator <<(CNcbiOstream& o, const CCgiEntry& e)
 
 
 // Typedefs
-typedef map<string, string>         TCgiProperties;
-typedef multimap<string, CCgiEntry> TCgiEntries;
-typedef TCgiEntries::iterator       TCgiEntriesI;
-typedef TCgiEntries::const_iterator TCgiEntriesCI;
-typedef list<string>                TCgiIndexes;
+typedef map<string, string>                              TCgiProperties;
+typedef multimap<string, CCgiEntry, PNocase_Conditional> TCgiEntries;
+typedef TCgiEntries::iterator                            TCgiEntriesI;
+typedef TCgiEntries::const_iterator                      TCgiEntriesCI;
+typedef list<string>                                     TCgiIndexes;
 
 // Forward class declarations
 class CNcbiArguments;
@@ -450,26 +450,29 @@ class CNcbiEnvironment;
 class NCBI_XCGI_EXPORT CCgiRequest
 {
 public:
-    // Startup initialization:
-    //   retrieve request's properties and cookies from environment;
-    //   retrieve request's entries from "$QUERY_STRING".
-    // If "$REQUEST_METHOD" == "POST" and "$CONTENT_TYPE" is empty or either
-    // "application/x-www-form-urlencoded" or "multipart/form-data",
-    // and "fDoNotParseContent" flag is not set,
-    // then retrieve and parse entries from the input stream "istr".
-    // If "$REQUEST_METHOD" is undefined then try to retrieve the request's
-    // entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
-    // and "istr" at all.
+    /// Startup initialization:
+    ///   retrieve request's properties and cookies from environment;
+    ///   retrieve request's entries from "$QUERY_STRING".
+    /// If "$REQUEST_METHOD" == "POST" and "$CONTENT_TYPE" is empty or either
+    /// "application/x-www-form-urlencoded" or "multipart/form-data",
+    /// and "fDoNotParseContent" flag is not set,
+    /// then retrieve and parse entries from the input stream "istr".
+    /// If "$REQUEST_METHOD" is undefined then try to retrieve the request's
+    /// entries from the 1st cmd.-line argument, and do not use "$QUERY_STRING"
+    /// and "istr" at all.
     typedef int TFlags;
     enum Flags {
-        // do not handle indexes as regular FORM entries with empty value
-        fIndexesNotEntries  = 0x1,
-        // do not parse $QUERY_STRING
-        fIgnoreQueryString  = 0x2,
-        // own the passed "env" (and destroy it in the destructor)
-        fOwnEnvironment     = 0x4,
-        // do not automatically parse the request's content body (from "istr")
-        fDoNotParseContent  = 0x8
+        /// do not handle indexes as regular FORM entries with empty value
+        fIndexesNotEntries   = (1 << 0),
+        /// do not parse $QUERY_STRING
+        fIgnoreQueryString   = (1 << 1),
+        /// own the passed "env" (and destroy it in the destructor)
+        fOwnEnvironment      = (1 << 2),
+        /// do not automatically parse the request's content body (from "istr")
+        fDoNotParseContent   = (1 << 3),
+        /// use case insensitive CGI arguments
+        fCaseInsensitiveArgs = (1 << 4)
+
     };
     CCgiRequest(const         CNcbiArguments*   args = 0,
                 const         CNcbiEnvironment* env  = 0,
@@ -752,6 +755,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.64  2004/12/08 12:48:36  kuznets
+* Optional case sensitivity when processing CGI args
+*
 * Revision 1.63  2003/11/05 18:40:55  dicuccio
 * Added export specifiers
 *
