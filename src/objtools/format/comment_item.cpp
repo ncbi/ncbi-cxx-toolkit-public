@@ -83,10 +83,9 @@ CCommentItem::CCommentItem
 (const string& comment,
  CBioseqContext& ctx,
  const CSerialObject* obj) :
-    CFlatItem(&ctx), m_Comment(comment)
+    CFlatItem(&ctx), m_Comment(ExpandTildes(comment, eTilde_comment))
 {
     swap(m_First, sm_FirstComment);
-    TrimSpacesAndJunkFromEnds(m_Comment);
     if ( obj != 0 ) {
         x_SetObject(*obj);
     }
@@ -99,7 +98,6 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
     swap(m_First, sm_FirstComment);
     x_SetObject(desc);
     x_GatherInfo(ctx);
-    TrimSpacesAndJunkFromEnds(m_Comment);
     if ( m_Comment.empty() ) {
         x_SetSkip();
     }
@@ -580,7 +578,7 @@ string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
         text << "Method: " << GetTechString(tech) << ".";
     }
 
-    string comment = ExpandTildes(CNcbiOstrstreamToString(text), eTilde_newline);
+    string comment = CNcbiOstrstreamToString(text);
     ConvertQuotes(comment);
     ncbi::objects::AddPeriod(comment);
 
@@ -612,9 +610,8 @@ string CCommentItem::GetStringForModelEvidance(const SModelEvidance& me)
         text << "evidence";
     }
 
-    text << "." << ExpandTildes("~Also see:~    ", eTilde_newline) 
-         << "Documentation" 
-         << ExpandTildes(" of NCBI's Annotation Process~    ", eTilde_newline);
+    text << ".~Also see:~    " << 
+            "Documentation of NCBI's Annotation Process~    ";
 
     return CNcbiOstrstreamToString(text);
 }
@@ -650,6 +647,10 @@ void CCommentItem::x_GatherDescInfo(const CSeqdesc& desc)
     case CSeqdesc::e_Comment:
         {{
             str = desc.GetComment();
+            TrimSpacesAndJunkFromEnds(str);
+            if (!str.empty()  &&  !NStr::EndsWith(str, '.')) {
+                str += '.';
+            }
         }}
         break;
 
@@ -692,7 +693,7 @@ void CCommentItem::x_GatherFeatInfo(const CSeq_feat& feat, CBioseqContext& ctx)
 {
     if (!feat.GetData().IsComment()  ||
         !feat.CanGetComment()        ||
-        IsBlankString(feat.GetComment())) {
+        NStr::IsBlank(feat.GetComment())) {
         return;
     }
 
@@ -707,6 +708,12 @@ void CCommentItem::x_SetSkip(void)
 }
 
 
+void CCommentItem::x_SetComment(const string& comment)
+{
+    m_Comment = ExpandTildes(comment, eTilde_comment);;
+}
+
+
 void CCommentItem::x_SetCommentWithURLlinks
 (const string& prefix,
  const string& str,
@@ -714,12 +721,17 @@ void CCommentItem::x_SetCommentWithURLlinks
 {
     // !!! test for html - find links within the comment string
     string comment = ExpandTildes(prefix + str + suffix, eTilde_comment);
-    size_t pos = comment.find_last_not_of(" \n\t\r");
-    if ( pos != NPOS ) {
-        comment.erase(pos + 1);
+    if (comment.empty()) {
+        return;
     }
-    if (!NStr::EndsWith(str, "...")) {
-        ncbi::objects::AddPeriod(comment);
+
+    size_t pos = comment.find_last_not_of(" \n\t\r.~");
+    if (pos != comment.length() - 1) {
+        size_t period = comment.find_last_of('.');
+        bool add_period = period > pos;
+        if (add_period  &&  !NStr::EndsWith(str, "...")) {
+            ncbi::objects::AddPeriod(comment);
+        }
     }
     
     m_Comment = comment;
@@ -756,7 +768,7 @@ void CGenomeAnnotComment::x_GatherInfo(CBioseqContext&)
              << " of NCBI's Annotation Process~ ";
     }
     
-    x_SetComment(ExpandTildes(CNcbiOstrstreamToString(text), eTilde_newline));
+    x_SetComment(CNcbiOstrstreamToString(text));
 }
 
 
@@ -808,7 +820,7 @@ string s_CreateHistCommentString
         }
         text << " gi:" << NStr::IntToString(gis[count]);
     }
-    text << '.';
+    text << '.' << endl;
 
     return CNcbiOstrstreamToString(text);
 }
@@ -845,7 +857,12 @@ CGsdbComment::CGsdbComment(const CDbtag& dbtag, CBioseqContext& ctx) :
 
 void CGsdbComment::x_GatherInfo(CBioseqContext&)
 {
-    x_SetComment("GSDB:S:" + m_Dbtag->GetTag().GetId());
+    if (m_Dbtag->IsSetTag()  &&  m_Dbtag->GetTag().IsId()) {
+        string id = NStr::IntToString(m_Dbtag->GetTag().GetId());
+        x_SetComment("GSDB:S:" + id);
+    } else {
+        x_SetSkip();
+    }
 }
 
 
@@ -888,6 +905,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/10/05 15:36:56  shomrat
+* Fixed comment generation
+*
 * Revision 1.11  2004/08/30 13:36:01  shomrat
 * fixed comment formatting
 *
