@@ -55,7 +55,6 @@ BlastCoreAuxStructFree(BlastCoreAuxStruct* aux_struct)
    BlastHSPListFree(aux_struct->hsp_list);
    sfree(aux_struct->query_offsets);
    sfree(aux_struct->subject_offsets);
-   BlastSeqSrcFree(aux_struct->bssp);
    
    sfree(aux_struct);
    return NULL;
@@ -399,6 +398,8 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
 /** Setup of the auxiliary BLAST structures; 
  * also calculates internally used parameters from options. 
  * @param program_number blastn, blastp, blastx, etc. [in]
+ * @param bssp Sequence source information, with callbacks to get 
+ *             sequences, their lengths, etc. [in]
  * @param scoring_options options for scoring. [in]
  * @param eff_len_options  used to calc. eff len. [in]
  * @param lookup_wrap Lookup table, already constructed. [in]
@@ -419,7 +420,7 @@ Int2 BLAST_CalcEffLengths (Uint1 program_number,
  */
 static Int2 
 BLAST_SetUpAuxStructures(Uint1 program_number,
-   const BlastSeqSrcNewInfo* bssn_info,
+   const BlastSeqSrc* bssp,
    const BlastScoringOptions* scoring_options,
    const BlastEffectiveLengthsOptions* eff_len_options,
    LookupTableWrap* lookup_wrap,	
@@ -448,9 +449,8 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
       calloc(1, sizeof(BlastCoreAuxStruct));
 
    /* Initialize the BlastSeqSrc */
-   if (bssn_info) {
-      aux_struct->bssp = BlastSeqSrcNew(bssn_info);
-      max_subject_length = BLASTSeqSrcGetMaxSeqLen(aux_struct->bssp);
+   if (bssp) {
+      max_subject_length = BLASTSeqSrcGetMaxSeqLen(bssp);
    } else {
       max_subject_length = subject_length;
    }
@@ -642,7 +642,7 @@ static void BLAST_ThrInfoFree(BlastThrInfo* thr_info)
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
    BLAST_SequenceBlk* query, BlastQueryInfo* query_info,
-   const BlastSeqSrcNewInfo* bssn_info,  BlastScoreBlk* sbp,
+   const BlastSeqSrc* bssp,  BlastScoreBlk* sbp,
    const BlastScoringOptions* score_options, 
    LookupTableWrap* lookup_wrap,
    const BlastInitialWordOptions* word_options, 
@@ -670,7 +670,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    Int2 status = 0;
    
    if ((status = 
-       BLAST_SetUpAuxStructures(program_number, bssn_info,
+       BLAST_SetUpAuxStructures(program_number, bssp,
           score_options, eff_len_options, lookup_wrap, word_options, 
           ext_options, hit_options, query, query_info, sbp, 
           0, &gap_align, &word_params, &ext_params, 
@@ -701,7 +701,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       seq_arg.oid = (use_oid_list ? oid_list[index] : index);
       seq_arg.encoding = BLASTP_ENCODING; /* shouldn't use a different encoding?*/
       BlastSequenceBlkClean(seq_arg.seq);
-      if (BLASTSeqSrcGetSequence(aux_struct->bssp, (void*) &seq_arg) < 0)
+      if (BLASTSeqSrcGetSequence(bssp, (void*) &seq_arg) < 0)
           continue;
  
       BLAST_SearchEngineCore(program_number, query, query_info,
@@ -714,7 +714,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
          /* Save the HSPs into a hit list */
          BLAST_SaveHitlist(program_number, query, seq_arg.seq, results, 
             hsp_list, hit_params, query_info, gap_align->sbp, 
-            score_options, aux_struct->bssp, thr_info);
+            score_options, bssp, thr_info);
       }
          /*BlastSequenceBlkClean(subject);*/
    }
@@ -733,7 +733,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    if (hit_options->is_gapped) {
       status = 
          BLAST_ComputeTraceback(program_number, results, query, query_info,
-            aux_struct->bssp, gap_align, score_options, ext_params, hit_params,
+            bssp, gap_align, score_options, ext_params, hit_params,
             db_options);
    }
 
