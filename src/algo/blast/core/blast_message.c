@@ -86,6 +86,12 @@ Blast_Perror(Int2 error_code)
                                  "parameters");
         retval->severity = BLAST_SEV_ERROR;
         break;
+    case BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED:
+        retval->message = strdup("Composition based statistics or "
+                                 "Smith-Waterman not supported for your "
+                                 "program type");
+        retval->severity = BLAST_SEV_ERROR;
+        break;
     case 0:
         retval = Blast_MessageFree(retval);
         break;
@@ -106,6 +112,9 @@ Blast_Perror(Int2 error_code)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.16  2004/11/26 20:28:38  camacho
+ * + BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED
+ *
  * Revision 1.15  2004/11/23 21:48:10  camacho
  * Added default handler for undefined error codes in Blast_Perror.
  *

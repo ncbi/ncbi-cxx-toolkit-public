@@ -95,7 +95,10 @@ Blast_Message* Blast_Perror(Int2 error_code);
  */
 
 /** Could not compute the ideal Karlin-Altschul parameters */
-#define BLASTERR_IDEALSTATPARAMCALC         100
+#define BLASTERR_IDEALSTATPARAMCALC                 100
+/** Composition based statistics/Smith-Waterman not supported for a program 
+ * type */
+#define BLASTERR_REDOALIGNMENTCORE_NOTSUPPORTED     101
 
 #ifdef __cplusplus
 }
