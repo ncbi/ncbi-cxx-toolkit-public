@@ -120,18 +120,17 @@ int CSampleAlnmgrApplication::Run(void)
     CNcbiOstream& out = args["out"].AsOutputFile();
 
     CAlnMix mix;
-    for (CTypeIterator<CSeq_align> sa_it = Begin(in_se); sa_it; ++sa_it) {
-        mix.Add(&*sa_it);
+    for (CTypeIterator<CDense_seg> sa_it = Begin(in_se); sa_it; ++sa_it) {
+        mix.Add(*sa_it);
     }
     mix.Merge(CAlnMix::fGen2EST |
               CAlnMix::fNegativeStrand |
               CAlnMix::fTruncateOverlaps);
-    *asn_out << *mix.Get();
+    *asn_out << mix.GetDenseg();
     *asn_out << Separator;
     asn_out->Flush();
 
-    CTypeConstIterator<CDense_seg> ds = ConstBegin(*mix.Get());
-    CAlnVec av(*ds);
+    CAlnVec av(mix.GetDenseg());
 
     av.SetAnchor(0);
 
@@ -193,6 +192,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2002/10/25 02:54:09  ucko
+* Update for more alnmgr API changes.
+*
 * Revision 1.3  2002/09/26 20:14:27  ucko
 * Update for replacement of fAlignedToSeqOnAnchor by fNotAlignedToSeqOnAnchor.
 *
