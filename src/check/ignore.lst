@@ -1,4 +1,4 @@
-# $Id: ignore.lst,v 1.8 2003/03/27 21:54:49 grichenk Exp $
+# $Id: ignore.lst,v 1.9 2003/11/04 04:36:59 lavr Exp $
 #
 # List of pairs "test/signature" that will not be checked
 #
@@ -17,9 +17,6 @@ corelib/test/test_ncbidll  ICC_500-Release--i686-pc-linux-gnu
 
 corelib/test/test_ncbiexec  ICC_500-Debug--i686-pc-linux-gnu
 corelib/test/test_ncbiexec  ICC_500-Release--i686-pc-linux-gnu
-
-corelib/test/test_ncbipipe  ICC_500-Debug--i686-pc-linux-gnu
-corelib/test/test_ncbipipe  ICC_500-Release--i686-pc-linux-gnu
 
 
 ; Connect
