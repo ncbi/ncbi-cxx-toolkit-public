@@ -2831,6 +2831,20 @@ void CValidError_impl::ValidateSeqDescr(const CBioseq& seq, bool isTpa)
             }
         }
     }
+    
+    CConstObjectInfo dinfo(&seq.GetDescr(), CSeq_descr::GetTypeInfo());
+    
+    // Validate CBioSource
+    CTypeConstIterator<CBioSource> bsit(ConstBegin(seq.GetDescr()));
+    for (; bsit; ++bsit) {
+        ValidateBioSource(*bsit, dinfo);
+    }
+    
+    // Validate CPub
+    CTypeConstIterator<CPub> pit(ConstBegin(seq.GetDescr()));
+    for (;pit; ++pit) {
+        ValidatePub(*pit, dinfo);
+    }
 }
 
 
@@ -2909,7 +2923,19 @@ void CValidError_impl::ValidateSeqFeatContext(const CBioseq& seq)
 
 void CValidError_impl::ValidateSeqFeat(const CSeq_feat& feat)
 {
-
+    CConstObjectInfo finfo(&feat, CSeq_feat::GetTypeInfo());
+    
+    // Validate CBioSource
+    CTypeConstIterator<CBioSource> bsit(ConstBegin(feat));
+    for (; bsit; ++bsit) {
+        ValidateBioSource(*bsit, finfo);
+    }
+    
+    // Validate CPub
+    CTypeConstIterator<CPub> pit(ConstBegin(feat));
+    for (;pit; ++pit) {
+        ValidatePub(*pit, finfo);
+    }
 }
 
 
@@ -4098,6 +4124,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.7  2002/10/08 14:35:42  clausen
+* Added calls to ValidateBiosource() & ValidatePub()
+*
 * Revision 1.6  2002/10/07 18:14:22  clausen
 * Fixed error in CNoCaseCompare that prevent compile on Mac
 *
