@@ -82,7 +82,7 @@ bool CSeq_id_Which_Tree::IsBetterVersion(const CSeq_id_Handle& /*h1*/,
 inline
 CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(void)
 {
-    return new CSeq_id_Info(this);
+    return new CSeq_id_Info();
 }
 
 
@@ -104,7 +104,7 @@ CSeq_id_Info* CSeq_id_Which_Tree::CreateInfo(const CSeq_id& id)
 {
     CRef<CSeq_id> id_ref(new CSeq_id);
     id_ref->Assign(id);
-    return new CSeq_id_Info(this, id_ref);
+    return new CSeq_id_Info(id_ref);
 }
 
 
@@ -121,8 +121,6 @@ void CSeq_id_Which_Tree::DropInfo(const CSeq_id_Info* info)
         }
         x_Unindex(info);
     }}
-
-    delete info;
 }
 
 
@@ -408,10 +406,8 @@ int CSeq_id_Gi_Tree::x_Get(const CSeq_id& id) const
 }
 
 
-void CSeq_id_Gi_Tree::DropInfo(const CSeq_id_Info* info)
+void CSeq_id_Gi_Tree::DropInfo(const CSeq_id_Info* /*info*/)
 {
-    _ASSERT(!m_Info);
-    delete info;
 }
 
 
@@ -1615,6 +1611,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/06/16 19:21:56  grichenk
+* Fixed locking of CSeq_id_Info
+*
 * Revision 1.13  2004/05/21 21:42:13  gorelenk
 * Added PCH ncbi_pch.hpp
 *

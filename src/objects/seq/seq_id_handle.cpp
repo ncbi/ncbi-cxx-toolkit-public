@@ -53,22 +53,28 @@ DEFINE_STATIC_FAST_MUTEX(sx_GetSeqIdMutex);
 #endif
 
 
-CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree)
-    : m_Tree(tree),
-      m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
+CSeq_id_Info::CSeq_id_Info(void)
+    : m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
 {
-    _ASSERT(tree);
     m_Counter.Set(0);
 }
 
 
-CSeq_id_Info::CSeq_id_Info(CSeq_id_Which_Tree* tree, const CConstRef<CSeq_id>& seq_id)
-    : m_Tree(tree),
-      m_Seq_id(seq_id),
+CSeq_id_Info::CSeq_id_Info(const CConstRef<CSeq_id>& seq_id)
+    : m_Seq_id(seq_id),
       m_Mapper(CSeq_id_Mapper::GetSeq_id_Mapper())
 {
-    _ASSERT(tree);
     m_Counter.Set(0);
+}
+
+
+CSeq_id_Which_Tree* CSeq_id_Info::GetTree(void) const
+{
+    _ASSERT(m_Mapper);
+    if ( !m_Seq_id ) {
+        return m_Mapper->m_Trees[CSeq_id::e_Gi];
+    }
+    return &m_Mapper->x_GetTree(*m_Seq_id);
 }
 
 
@@ -97,14 +103,13 @@ CConstRef<CSeq_id> CSeq_id_Info::GetGiSeqId(int gi) const
 
 CSeq_id_Info::~CSeq_id_Info(void)
 {
-    _ASSERT(m_Counter.Get() == 0 && m_Tree);
-    m_Tree = 0;
+    _ASSERT(m_Counter.Get() == 0);
 }
 
 
-void CSeq_id_Info::x_RemoveLastReference(void) const
+void CSeq_id_Info::x_RemoveLastLock(void) const
 {
-    m_Tree->DropInfo(this);
+    GetTree()->DropInfo(this);
 }
 
 
@@ -311,6 +316,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/06/16 19:21:56  grichenk
+* Fixed locking of CSeq_id_Info
+*
 * Revision 1.23  2004/06/14 13:57:09  grichenk
 * CSeq_id_Info locks CSeq_id_Mapper with a CRef
 *

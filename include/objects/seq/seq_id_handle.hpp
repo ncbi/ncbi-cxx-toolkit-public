@@ -56,11 +56,11 @@ class CSeq_id_Mapper;
 class CSeq_id_Which_Tree;
 
 
-class NCBI_XOBJMGR_EXPORT CSeq_id_Info
+class NCBI_XOBJMGR_EXPORT CSeq_id_Info : public CObject
 {
 public:
-    explicit CSeq_id_Info(CSeq_id_Which_Tree* tree);
-    CSeq_id_Info(CSeq_id_Which_Tree* tree, const CConstRef<CSeq_id>& seq_id);
+    explicit CSeq_id_Info(void);
+    CSeq_id_Info(const CConstRef<CSeq_id>& seq_id);
     ~CSeq_id_Info(void);
 
     CConstRef<CSeq_id> GetSeqId(void) const
@@ -69,26 +69,24 @@ public:
         }
     CConstRef<CSeq_id> GetGiSeqId(int gi) const;
 
-    void AddReference(void) const;
-    void RemoveReference(void) const;
+    void AddLock(void) const;
+    void RemoveLock(void) const;
 
     int GetCounter(void) const;
 
-    CSeq_id_Which_Tree* GetTree(void) const;
-
     CSeq_id_Mapper& GetSeq_id_Mapper(void) const;
-
-protected:
-    void x_RemoveLastReference(void) const;
-
-    mutable CAtomicCounter       m_Counter;
-    CSeq_id_Which_Tree*          m_Tree;
-    CConstRef<CSeq_id>           m_Seq_id;
-    mutable CRef<CSeq_id_Mapper> m_Mapper;
+    CSeq_id_Which_Tree* GetTree(void) const;
 
 private:
     CSeq_id_Info(const CSeq_id_Info&);
     const CSeq_id_Info& operator=(const CSeq_id_Info&);
+
+    void x_RemoveLastLock(void) const;
+
+    mutable CAtomicCounter       m_Counter;
+    CConstRef<CSeq_id>           m_Seq_id;
+    mutable CRef<CSeq_id_Mapper> m_Mapper;
+
 };
 
 
@@ -97,7 +95,11 @@ class NCBI_XOBJMGR_EXPORT CSeq_id_Handle
 public:
     // 'ctors
     CSeq_id_Handle(void);
+    ~CSeq_id_Handle(void);
     explicit CSeq_id_Handle(const CSeq_id_Info* info, int gi = 0);
+
+    CSeq_id_Handle(const CSeq_id_Handle& handle);
+    CSeq_id_Handle& operator=(const CSeq_id_Handle& handle);
 
     static CSeq_id_Handle GetGiHandle(int gi);
     static CSeq_id_Handle GetHandle(const CSeq_id& id);
@@ -161,17 +163,17 @@ private:
 
 
 inline
-void CSeq_id_Info::AddReference(void) const
+void CSeq_id_Info::AddLock(void) const
 {
     _VERIFY(m_Counter.Add(1) > 0);
 }
 
 
 inline
-void CSeq_id_Info::RemoveReference(void) const
+void CSeq_id_Info::RemoveLock(void) const
 {
     if ( m_Counter.Add(-1) <= 0 ) {
-        x_RemoveLastReference();
+        x_RemoveLastLock();
     }
 }
 
@@ -182,14 +184,6 @@ int CSeq_id_Info::GetCounter(void) const
     int counter = m_Counter.Get();
     _ASSERT(counter >= 0);
     return counter;
-}
-
-
-inline
-CSeq_id_Which_Tree* CSeq_id_Info::GetTree(void) const
-{
-    _ASSERT(m_Tree);
-    return m_Tree;
 }
 
 
@@ -223,13 +217,54 @@ inline
 CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Info* info, int gi)
     : m_Info(info), m_Gi(gi)
 {
+    m_Info->AddLock();
     _ASSERT(info);
+}
+
+
+inline
+CSeq_id_Handle::~CSeq_id_Handle(void)
+{
+    if ( m_Info ) {
+        m_Info->RemoveLock();
+    }
+}
+
+
+inline
+CSeq_id_Handle::CSeq_id_Handle(const CSeq_id_Handle& handle)
+{
+    m_Info = handle.m_Info;
+    m_Gi = handle.m_Gi;
+    if ( m_Info ) {
+        m_Info->AddLock();
+    }
+}
+
+
+inline
+CSeq_id_Handle& CSeq_id_Handle::operator=(const CSeq_id_Handle& handle)
+{
+    if (this != &handle) {
+        if ( m_Info ) {
+            m_Info->RemoveLock();
+        }
+        m_Info = handle.m_Info;
+        m_Gi = handle.m_Gi;
+        if ( m_Info ) {
+            m_Info->AddLock();
+        }
+    }
+    return *this;
 }
 
 
 inline
 void CSeq_id_Handle::Reset(void)
 {
+    if ( m_Info ) {
+        m_Info->RemoveLock();
+    }
     m_Info.Reset();
     m_Gi = 0;
 }
@@ -289,6 +324,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2004/06/16 19:21:56  grichenk
+* Fixed locking of CSeq_id_Info
+*
 * Revision 1.23  2004/06/14 13:57:09  grichenk
 * CSeq_id_Info locks CSeq_id_Mapper with a CRef
 *
