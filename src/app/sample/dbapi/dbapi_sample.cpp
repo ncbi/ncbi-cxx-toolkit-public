@@ -173,10 +173,10 @@ int CDbapiTest::Run()
         IStatement *stmt = conn->GetStatement();
         string sql;
         // Begin transaction
-
+#if 0
         sql = "begin transaction";
         stmt->ExecuteUpdate(sql);
-#if 0
+
         // Get trancount
         sql = "select @@trancount";
         IResultSet *tc = stmt->ExecuteQuery(sql);
@@ -256,7 +256,7 @@ int CDbapiTest::Run()
         } 
 
 
-        stmt->PurgeResults();
+        //stmt->PurgeResults();
 
         conn->MsgToEx(false);
 /*
@@ -602,7 +602,6 @@ end";
 	id int null, \
 	blob text null, unique (id))";
         stmt->ExecuteUpdate(sql);
-        delete stmt;
 
         // Write BLOB several times
         const int COUNT = 5;
@@ -665,12 +664,12 @@ end";
         //blobCur->Close();
         delete blobCur;
 
-#ifndef WIN32 // Not supported by ODBC driver
+#if 0 // Not supported by ODBC driver
         NcbiCout << "Writing BLOB using resultset..." << endl;
 
         sql = "select id, blob from BlobSample";
-        if( NStr::CompareNocase(driver, "ctlib") == 0 )
-            sql += " at isolation read uncommitted";
+        //if( NStr::CompareNocase(driver, "ctlib") == 0 )
+        //    sql += " at isolation read uncommitted";
 
         stmt->Execute(sql);
     
@@ -696,7 +695,7 @@ end";
         NcbiCout << "Checking BLOB size..." << endl;
         stmt->Execute("select 'Written blob size' as size, datalength(blob) \
 from BlobSample where id = 1");
-    
+        
         while( stmt->HasMoreResults() ) {
             if( stmt->HasRows() ) {
                 IResultSet *rs = stmt->GetResultSet();
@@ -711,15 +710,16 @@ from BlobSample where id = 1");
         NcbiCout << "Reading text BLOB..." << endl;
         IResultSet *brs = stmt->ExecuteQuery("select id, blob from BlobSample");
         brs->BindBlobToVariant(true);
-        char bbuf[1024];
+        char *bbuf = new char[50000];
         while(brs->Next()) {
             NcbiCout << brs->GetVariant(1).GetString() << "  ";
             const CVariant &v = brs->GetVariant(2);
             v.Read(bbuf, v.GetBlobSize());
             bbuf[v.GetBlobSize()] = '\0';
-            NcbiCout << bbuf << endl;
+            //NcbiCout << bbuf << endl;
 
         }
+        delete[] bbuf;
 
         // Cursor test (remove blob)
         NcbiCout << "Cursor test, removing blobs" << endl;
@@ -775,6 +775,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2004/07/21 18:35:44  kholodov
+* Fixed: now works with ctlib driver
+*
 * Revision 1.13  2004/07/21 16:17:59  kholodov
 * Added: IReader/IWriter sample code
 *
