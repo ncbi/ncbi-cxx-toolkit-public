@@ -114,7 +114,8 @@ void CArgTestApplication::Init(void)
     arg_desc->AddOptionalKey
         ("ko", "OptionalKey",
          "This is another optional key argument, without default value",
-         CArgDescriptions::eBoolean);
+         CArgDescriptions::eBoolean,
+         CArgDescriptions::fAllowMultiple);
 
     arg_desc->AddFlag
         ("f2",
@@ -170,6 +171,10 @@ int CArgTestApplication::Run(void)
     if ( args["ko"] ) {
         lg << "ko:        " << NStr::BoolToString(args["ko"].AsBoolean())
            << endl;
+
+        const CArgValue::TStringArray& ko_values = 
+            args["ko"].GetStringList();
+
     } else {
         lg << "ko:        not provided" << endl;
         bool is_thrown = false;
@@ -237,6 +242,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.8  2004/12/03 14:31:27  kuznets
+ * Use multiple args
+ *
  * Revision 6.7  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
