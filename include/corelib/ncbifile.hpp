@@ -1190,21 +1190,6 @@ public:
     ///   - FALSE, if not mapped or if an error occurs.
     bool Flush(void) const;
 
-    /// What type of data access pattern will be used for mapped region.
-    ///
-    /// Advises the VM system that the a certain region of user mapped memory 
-    /// will be accessed following a type of pattern. The VM system uses this 
-    /// information to optimize work with mapped memory.
-    ///
-    /// NOTE: Now works on UNIX platform only.
-    typedef enum {
-        eMMA_Normal,      ///< No further special treatment.
-        eMMA_Random,      ///< Expect random page references.
-        eMMA_Sequential,  ///< Expect sequential page references.
-        eMMA_WillNeed,    ///< Will need these pages.
-        eMMA_DontNeed     ///< Don't need these pages.
-    } EMemMapAdvise;
-
     /// Advise on memory map usage.
     ///
     /// @param advise
@@ -1417,6 +1402,13 @@ bool CMemoryFile::Flush(void) const
     return m_Segment->Flush();
 }
 
+inline
+bool CMemoryFile::MemMapAdvise(EMemMapAdvise advise)
+{
+    x_Verify();
+    return m_Segment->MemMapAdvise(advise);
+}
+
 
 END_NCBI_SCOPE
 
@@ -1424,6 +1416,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.45  2004/07/29 18:20:40  ivanov
+ * Added missed implementation for CMemoryFile::MemMapAdvise()
+ *
  * Revision 1.44  2004/07/28 16:22:52  ivanov
  * Renamed CMemoryFileMap -> CMemoryFileSegment
  *
