@@ -1582,6 +1582,14 @@ Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
           <span class="ncbi_dir">internal/c++</span>. This can be done right on your
           PC, if you have installed CVS client there:
           <br> <span class="ncbi_cmd">cvs checkout -d cxx internal/c++</span></li>
+			 <br> <span class="ncbi_note">NOTE: in this (and only this case)
+			 you will have to manually copy
+			 <span class="ncbi_file">cxx\compilers\ncbiconf.ms6</span> to 
+			 <span class="ncbi_file">cxx\include\ncbiconf.h</span>;
+			 you can also call script
+          <span class="ncbi_file">c++/compilers/msvc_nt.bat</span>
+			 which does just the same.
+		  </span> 
         <li> checkout only the core sources on your UNIX workstation by running (<a href="cvs_core_msvc.html">notes here</a>)
           <br> <span class="ncbi_cmd">$NCBI/c++/scripts/cvs_core.sh cxx --msvc --without-cvs --with-objects</span>
           <br> and then copy the whole resultant directory
