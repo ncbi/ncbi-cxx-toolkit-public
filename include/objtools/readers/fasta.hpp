@@ -47,7 +47,8 @@ enum EReadFastaFlags {
     fReadFasta_ParseGaps  = 0x10, // make a delta sequence if gaps found
     fReadFasta_OneSeq     = 0x20, // just read the first sequence found
     fReadFasta_AllSeqIds  = 0x40, // read Seq-ids past the first ^A (see note)
-    fReadFasta_NoSeqData  = 0x80  // parse the deflines but skip the data
+    fReadFasta_NoSeqData  = 0x80, // parse the deflines but skip the data
+    fReadFasta_RequireID  = 0x100 // reject deflines that lack IDs
 };
 typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 
@@ -99,6 +100,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/11/24 19:27:42  ucko
+* +fReadFasta_RequireID
+*
 * Revision 1.5  2004/01/20 16:27:53  ucko
 * Fix a stray reference to sequence.hpp's old location.
 *

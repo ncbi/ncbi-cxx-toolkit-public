@@ -280,6 +280,10 @@ static CSeq_inst::EMol s_ParseFastaDefline(CBioseq::TId& ids, string& title,
     } while (start != NPOS  &&  (flags & fReadFasta_AllSeqIds));
 
     if (ids.empty()) {
+        if (flags & fReadFasta_RequireID) {
+            NCBI_THROW2(CObjReaderParseException, eFormat,
+                        "s_ParseFastaDefline: no ID present", 0);
+        }
         CRef<CSeq_id> id(new CSeq_id);
         id->SetLocal().SetId(++*counter);
         ids.push_back(id);
@@ -546,6 +550,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2004/11/24 19:28:05  ucko
+* +fReadFasta_RequireID
+*
 * Revision 1.12  2004/05/21 21:42:55  gorelenk
 * Added PCH ncbi_pch.hpp
 *
