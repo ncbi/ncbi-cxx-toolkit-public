@@ -2031,13 +2031,14 @@ Binary(PyObject *self, PyObject *args)
 class CDBAPIModule
 {
 public:
-    static Declare(const char* name, PyMethodDef* methods);
+    static void Declare(const char* name, PyMethodDef* methods);
 
 private:
     static PyObject* m_Module;
 };
 PyObject* CDBAPIModule::m_Module = NULL;
 
+void
 CDBAPIModule::Declare(const char* name, PyMethodDef* methods)
 {
     m_Module = Py_InitModule(const_cast<char*>(name), methods);
@@ -2170,6 +2171,9 @@ END_NCBI_SCOPE
 /* ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/02/08 19:27:53  ssikorsk
+* Fixed compilation error with GCC
+*
 * Revision 1.5  2005/02/08 19:18:19  ssikorsk
 * Added a "simple mode" database interface
 *
