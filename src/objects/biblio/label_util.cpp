@@ -169,7 +169,7 @@ void GetLabelContent(string*            label,
         string tag;
         if (titleunique  &&  !titleunique->empty()) {
             CNcbiIstrstream is(titleunique->c_str(), titleunique->size());
-            string tag, word;
+            string word;
             int cnt = 0;
             while ( (is >> word) && (cnt++ < 40) ) {
                 tag += word[0];
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.6  2004/10/22 17:54:49  shomrat
+ * Bug fix
+ *
  * Revision 1.5  2004/10/22 14:16:27  shomrat
  * fixed generation of unique label
  *
