@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/03/27 23:39:16  lavr
+ * Explicit cast to (char) added in buffer filling
+ *
  * Revision 6.9  2001/03/24 00:50:06  lavr
  * Log typo correction
  *
@@ -208,7 +211,7 @@ int main(void)
     LOG_POST("Test 3 of 3: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
-        buf1[i] = 255/*rand()%256*/;
+        buf1[i] = (char)(255/*rand()%256*/);
 
     ios.write(buf1, kBufferSize);
     
