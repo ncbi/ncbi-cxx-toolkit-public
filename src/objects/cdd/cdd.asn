@@ -1,4 +1,4 @@
---$Revision: 1.2 $
+--$Revision: 1.3 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -12,7 +12,8 @@
 --  October 1999
 --
 --  asntool -m cdd.asn -w 100 -o cdd.h
---  asntool -B objcdd -m cdd.asn -G -w 100 -I objseq.h objsset.h -K cdd.h -M asn.all
+--  asntool -B objcdd -m cdd.asn -G -w 100 -I objseq.h objsset.h -K cdd.h \
+--          -M asn.all
 --**********************************************************************
 
 NCBI-Cdd DEFINITIONS ::=
@@ -30,24 +31,30 @@ IMPORTS  Date                 FROM NCBI-General
          Seq-annot            FROM NCBI-Sequence
          Seq-entry            FROM NCBI-Seqset
          Org-ref              FROM NCBI-Organism
+	 Seq-id               FROM NCBI-Seqloc
          Seq-interval         FROM NCBI-Seqloc
+	 Seq-loc              FROM NCBI-Seqloc
+	 Seq-feat             FROM NCBI-Seqfeat
          Score-set            FROM NCBI-Seqalign;
 
--- Cdd's should not exist without a unique integer id, but alternative 
--- id's may be present as well.
+-- Cdd's should not exist without a unique accession, but alternative id's may
+-- be present as well. It is conceivable that a CD which is created as a merged
+-- product of two highly redundant CDs will retain the source ids in addition 
+-- to its new unique id
 
 Global-id ::= SEQUENCE {
-             accession      VisibleString,
-             release        VisibleString OPTIONAL,
-             version        INTEGER       OPTIONAL, -- version 0 is the seed
-             database       VisibleString OPTIONAL  -- this is NOT the source!
-             }                                      -- rather the database the
-                                                    -- object resides in
+  accession     VisibleString,          -- SMART, Pfam, LOAD or CD accession
+  release       VisibleString OPTIONAL, -- to hold CD-Database release number
+  version       INTEGER       OPTIONAL, -- version 0 is the seed, version
+                                        -- numbers increase with update/curate
+					-- cycles
+  database      VisibleString OPTIONAL  -- this is NOT the source!, rather the
+}                                       -- database the object resides in
 
 Cdd-id ::= CHOICE {
-             uid            INTEGER,
-             gid            Global-id
-             }
+  uid           INTEGER,                -- for snychronization with Entrez?
+  gid           Global-id
+}
 
 Cdd-id-set ::= SEQUENCE OF Cdd-id
 
@@ -59,37 +66,49 @@ Cdd-id-set ::= SEQUENCE OF Cdd-id
 -- Crosslinks to reference papers available in PubMed are possible as well.
 -- There can be as many of these as you want in the CDD.
 
+
 Cdd-descr ::= CHOICE {
-                othername   VisibleString, -- alternative names for the CDD
-                category    VisibleString, -- intracellular, extracellular, etc.
-                comment     VisibleString, -- this is where annotations go
-                reference   Pub,           -- a citation 
-                create-date Date,          -- valid for the current version
-                tax-source  Org-ref,       -- holds the highest common node
-                source      VisibleString, -- the database the seeds were created
-                                           -- from, e.g. SMART, PFAM, etc..
-                status      INTEGER { unassigned(0),
-                                      finished-ok(1),     -- to indicate
-                                      pending-release(2), -- processing status
-                                      other-asis(3),      -- or final type
-                                      matrix-only(4),     -- 
-                                      other(255) }        -- for CD production
-              }
+  othername     VisibleString,          -- alternative names for the CDD
+                                        -- if domain has several common names
+  category      VisibleString,          -- intracellular, extracellular, etc.
+		                        -- to record spatial and or temporal
+					-- expression in free-text format
+  comment       VisibleString,          -- this is where long names go
+  reference     Pub,                    -- a citation describing the domain
+  create-date   Date,                   -- valid for the current version
+  tax-source    Org-ref,                -- holds the highest common tax node
+  source        VisibleString,          -- the database the seeds were created
+                                        -- from, e.g. SMART, PFAM, etc..
+  status        INTEGER { unassigned(0),
+                          finished-ok(1),     -- a public curated CD
+                          pending-release(2), -- needs work done
+                          other-asis(3),      -- imported as-is
+                          matrix-only(4),     -- CD holds a Psi-Blast
+				              -- PSSM, no alignment
+			  update-running(5),  -- has been flagged for
+				              -- update (in queue)
+			  auto-updated(6),    -- update finished, no
+				              -- work necessary
+			  claimed(7),         -- is earmarked for curation
+                          other(255) }        -- for CD production?
+}
 
 Cdd-descr-set ::= SET OF Cdd-descr
 
--- the Cdd-tree contains the hierarchy of CDDs.  This object is separate from
--- the Cdd's themselves to allow it to be retrieved separately and to
--- operate as an index.
+-- the Cdd-tree stores the hierarchy of CDDs. These objects are stored separate
+-- from the CDs to allow for fast retrieval and use as an 'index' into CDs
+-- all the components in a CD-tree match components in the full-sized CD
+-- and should be synchronized
 
 Cdd-tree ::= SEQUENCE {
-            name          VisibleString,
-            id            Cdd-id-set,
-            description   Cdd-descr-set OPTIONAL,
-            parents       Cdd-id-set OPTIONAL,
-            children      Cdd-id-set OPTIONAL,
-            siblings      Cdd-id-set OPTIONAL
-            }
+  name          VisibleString,
+  id            Cdd-id-set,
+  description   Cdd-descr-set OPTIONAL,
+  parents       Cdd-id-set OPTIONAL,    -- CD is the result of a split/merge
+  children      Cdd-id-set OPTIONAL,    -- this CD has been split
+  siblings      Cdd-id-set OPTIONAL,    -- related CDs (have common hits)
+  neighbors     Cdd-id-set OPTIONAL     -- co-occuring CDs
+}
 
 Cdd-tree-set ::= SEQUENCE OF Cdd-tree
 
@@ -116,31 +135,103 @@ Triangle ::= SEQUENCE {
   scores        Score-set
 }
 
--- the Cdd is the basic ASN.1 object storing an annotated and curated
--- set of alignments (formulated as a set of pairwise master-slave
--- alignments). 
--- The alignment data are contained in Seq-align-sets and Biostruc-feature-sets.
--- Version numbers in Global-ids are meant to be updated every time the Cdd is changed
--- in a way that does not require Global-ids to be changed (sequences added in update
--- cycle, annotation changed)
+-- Update-align is supposed to contain alignments that still need some work
+-- done to fit into the CD-proper alignment. These originate from the
+-- CD update process (generated by Blast, for example) or may be created in
+-- an editing session to save its state
+
+Update-comment ::= CHOICE {
+  comment       VisibleString,          -- free text to describe nature of
+                                        -- Update-align
+  addthis       Seq-loc,                -- suggestion for inclusion in the CD
+                                        -- without corresponding alignment
+  replaces      Seq-loc,                -- if one or several alignment rows are
+                                        -- to be replaced by the Update-align
+  reject-loc    Seq-loc,                -- if used with Reject-id, specify a
+                                        -- location on a sequence which should
+					-- not be used
+  reference     Pub                     -- if update alignment imported from
+                                        -- citation and for whenever it seems
+					-- necessary to cite
+}
+
+-- Both fields are optional, as the Update-align may be a Seq-annot without
+-- description, or a suggestion to add a sequence without the corresponding
+-- alignment
+
+Update-align ::= SEQUENCE {
+  description   SEQUENCE OF Update-comment OPTIONAL,  
+  seqannot      SEQUENCE OF Seq-annot OPTIONAL       -- contains the SeqAlign
+}
+
+Reject-id ::= SEQUENCE {
+  description   SEQUENCE OF Update-comment OPTIONAL,
+  ids           SET OF Seq-id
+}
+
+Feature-evidence ::= CHOICE {
+  comment       VisibleString,          -- so we can spell out what doesn't
+                                        -- fit in any other category
+  reference     Pub,                    -- evidence via a literature reference
+  bsannot       Biostruc-annot-set,     -- evidence via Biostruc-features, such
+                                        -- as structure superpositions 
+  seqfeat       Seq-feat                -- evidence is a Sequence feature found
+}                                       -- elsewhere
+
+Align-annot ::= SEQUENCE {
+  location      Seq-loc,                -- points to a location in one of the
+                                        -- aligned sequences, usually the
+					-- master/representative
+  description   VisibleString OPTIONAL, -- to hold descriptions/names like
+                                        -- "Heme binding site" or "catalytic
+					-- triad" etc., something that should
+					-- be used for labels in visualization
+  evidence      SEQUENCE OF Feature-evidence OPTIONAL -- evidence we can
+                                                      -- compute with
+}
+
+Align-annot-set ::= SEQUENCE OF Align-annot
+
+-- the Cdd is the basic ASN.1 object storing an annotated and curated set of
+-- alignments (formulated as a set of pairwise master-slave alignments). 
+-- The alignment data are contained in Seq-annots, and a special type of
+-- object, the Update-align, contains additional alignment data from unfinished
+-- editing sessions and update processes. The Biostruc-annot-set holds 
+-- structure superposition information for multiple structure-derived rows in
+-- the alignment.
+-- Version numbers in Global-ids are meant to be updated every time the Cdd is
+-- changed in a way that does not require Global-ids to be changed (sequences
+-- added in update cycle, annotation changed, alignment errors fixed)
 
 Cdd ::= SEQUENCE {
-  name          VisibleString,
-  id            Cdd-id-set,
-  description   Cdd-descr-set OPTIONAL,
-  seqannot      SEQUENCE OF Seq-annot OPTIONAL, -- contains the alignment
-  features      Biostruc-annot-set OPTIONAL, -- contains structure alignments
-                                             -- or "core" definitions
-  sequences     Seq-entry OPTIONAL,          -- store as bioseq-set inside seq-entry
-  profile-range Seq-interval OPTIONAL,       -- profile for this region only
-                                             -- also stores the Seq-id of the master
-  trunc-master  Bioseq OPTIONAL,             -- holds the truncated master
-                                             -- which may be something like a
-                                             -- consensus, but still refers to the
-                                             -- sequence coord. frame in profile-range
-  posfreq       Matrix OPTIONAL,             -- relative residue frequencies
-  scoremat      Matrix OPTIONAL,             -- Position dependent score matrix
-  distance      Triangle OPTIONAL            -- pairwise distances for all seqs.
+  name          VisibleString,          -- a short name (can be the accession)
+  id            Cdd-id-set,             -- this CD's Ids
+  description   Cdd-descr-set OPTIONAL, -- status, references, etc.
+  seqannot      SEQUENCE OF Seq-annot OPTIONAL,    -- contains the CD alignment
+  features      Biostruc-annot-set OPTIONAL,       -- contains structure
+                                                   -- alignment data
+                                                   -- or "core" definitions
+  sequences     Seq-entry OPTIONAL,     -- store as bioseq-set inside seq-entry
+  profile-range Seq-interval OPTIONAL,  -- profile for this region only
+                                        -- also stores the Seq-id of the master
+  trunc-master  Bioseq OPTIONAL,        -- holds the truncated master, which
+                                        -- may be something like a consensus,
+                                        -- uses the same sequence coordinate
+                                        -- frame as the profile-range
+  posfreq       Matrix OPTIONAL,        -- relative residue frequencies
+  scoremat      Matrix OPTIONAL,        -- Position dependent score matrix
+  distance      Triangle OPTIONAL,      -- pairwise distances for all seqs.
+  parents       Cdd-id-set OPTIONAL,    -- this CD is the result of
+                                        -- a split (or merge)
+  children      Cdd-id-set OPTIONAL,    -- this CD has been split
+  siblings      Cdd-id-set OPTIONAL,    -- related CDs (common hits)
+  neighbors     Cdd-id-set OPTIONAL,    -- co-occuring CDs
+  pending       SEQUENCE OF Update-align OPTIONAL, -- contains alignments from
+                                                   -- update or "lower panel"
+  rejects       SEQUENCE OF Reject-id OPTIONAL,    -- SeqIds of rejected CD-
+                                                   -- members, ignore in update
+  master3d      SET OF Seq-id OPTIONAL, -- record if CD has a 3D representative
+  alignannot    Align-annot-set OPTIONAL           -- alignment annotation
 }
 
 Cdd-set ::= SET OF Cdd
