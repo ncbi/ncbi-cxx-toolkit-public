@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.124  2002/12/19 18:52:28  thiessen
+* rms -> rmsd
+*
 * Revision 1.123  2002/11/21 17:48:12  thiessen
 * fix yet another user style bug
 *
@@ -1572,21 +1575,21 @@ void StructureObject::RealignStructure(int nCoords,
     SetTranslationMatrix(&single, masterCOM);
     ComposeInto(transformToMaster, single, combined);
 
-    // print out RMS
+    // print out RMSD
     Vector x;
-    double rms = 0.0, d;
+    double rmsd = 0.0, d;
     int n = 0;
     for (int c=0; c<nCoords; c++) {
         if (!slaveCoords[c] || !masterCoords[c]) continue;
         x = *(slaveCoords[c]);
         ApplyTransformation(&x, *transformToMaster);
         d = (*(masterCoords[c]) - x).length();
-        rms += d * d;
+        rmsd += d * d;
         n++;
     }
-    rms = sqrt(rms / n);
-    TESTMSG("RMS of aligned alpha coordinates between master structure and " << pdbID << ": "
-        << setprecision(3) << rms << setprecision(6) << " A");
+    rmsd = sqrt(rmsd / n);
+    TESTMSG("RMSD of aligned alpha coordinates between master structure and " << pdbID << ": "
+        << setprecision(3) << rmsd << setprecision(6) << " A");
 
     // create a new Biostruc-feature that contains this alignment
     CBiostruc_feature *feature = new CBiostruc_feature();
