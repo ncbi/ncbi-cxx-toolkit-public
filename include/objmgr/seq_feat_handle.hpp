@@ -38,6 +38,7 @@
 #include <util/range.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 #include <objmgr/impl/seq_annot_info.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
@@ -99,6 +100,10 @@ public:
     bool GetPseudo(void) const;
     bool IsSetExcept_text(void) const;
     const string& GetExcept_text(void) const;
+
+    // Access to some methods of CSeq_feat members
+    CSeqFeatData::E_Choice GetFeatType(void) const;
+    CSeqFeatData::ESubtype GetFeatSubtype(void) const;
 
     // Table SNP only types and methods
     typedef SSNP_Info::TSNPId TSNPId;
@@ -366,12 +371,29 @@ const string& CSeq_feat_Handle::GetExcept_text(void) const
 }
 
 
+inline
+CSeqFeatData::E_Choice CSeq_feat_Handle::GetFeatType(void) const
+{
+    return x_GetSeq_feat().GetData().Which();
+}
+
+
+inline
+CSeqFeatData::ESubtype CSeq_feat_Handle::GetFeatSubtype(void) const
+{
+    return x_GetSeq_feat().GetData().GetSubtype();
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.1  2004/05/04 18:06:06  grichenk
 * Initial revision
 *

@@ -278,6 +278,12 @@ bool CBioseq_set_Info::IsSetDescr(void) const
 }
 
 
+bool CBioseq_set_Info::CanGetDescr(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetDescr();
+}
+
+
 const CSeq_descr& CBioseq_set_Info::GetDescr(void) const
 {
     return m_Object->GetDescr();
@@ -415,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/05/06 17:32:37  grichenk
+ * Added CanGetXXXX() methods
+ *
  * Revision 1.5  2004/03/31 17:08:07  vasilche
  * Implemented ConvertSeqToSet and ConvertSetToSeq.
  *

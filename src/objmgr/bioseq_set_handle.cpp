@@ -97,6 +97,12 @@ bool CBioseq_set_Handle::IsSetId(void) const
 }
 
 
+bool CBioseq_set_Handle::CanGetId(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetId();
+}
+
+
 const CBioseq_set::TId& CBioseq_set_Handle::GetId(void) const
 {
     return x_GetInfo().GetId();
@@ -106,6 +112,12 @@ const CBioseq_set::TId& CBioseq_set_Handle::GetId(void) const
 bool CBioseq_set_Handle::IsSetColl(void) const
 {
     return x_GetInfo().IsSetColl();
+}
+
+
+bool CBioseq_set_Handle::CanGetColl(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetColl();
 }
 
 
@@ -121,6 +133,12 @@ bool CBioseq_set_Handle::IsSetLevel(void) const
 }
 
 
+bool CBioseq_set_Handle::CanGetLevel(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetLevel();
+}
+
+
 CBioseq_set::TLevel CBioseq_set_Handle::GetLevel(void) const
 {
     return x_GetInfo().GetLevel();
@@ -130,6 +148,12 @@ CBioseq_set::TLevel CBioseq_set_Handle::GetLevel(void) const
 bool CBioseq_set_Handle::IsSetClass(void) const
 {
     return x_GetInfo().IsSetClass();
+}
+
+
+bool CBioseq_set_Handle::CanGetClass(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetClass();
 }
 
 
@@ -145,6 +169,12 @@ bool CBioseq_set_Handle::IsSetRelease(void) const
 }
 
 
+bool CBioseq_set_Handle::CanGetRelease(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetRelease();
+}
+
+
 const CBioseq_set::TRelease& CBioseq_set_Handle::GetRelease(void) const
 {
     return x_GetInfo().GetRelease();
@@ -157,6 +187,12 @@ bool CBioseq_set_Handle::IsSetDate(void) const
 }
 
 
+bool CBioseq_set_Handle::CanGetDate(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetDate();
+}
+
+
 const CBioseq_set::TDate& CBioseq_set_Handle::GetDate(void) const
 {
     return x_GetInfo().GetDate();
@@ -166,6 +202,12 @@ const CBioseq_set::TDate& CBioseq_set_Handle::GetDate(void) const
 bool CBioseq_set_Handle::IsSetDescr(void) const
 {
     return x_GetInfo().IsSetDescr();
+}
+
+
+bool CBioseq_set_Handle::CanGetDescr(void) const
+{
+    return bool(m_Info)  &&  x_GetInfo().CanGetDescr();
 }
 
 
@@ -357,6 +399,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.7  2004/04/29 15:44:30  grichenk
 * Added GetTopLevelEntry()
 *

@@ -74,11 +74,13 @@ public:
     // Bioseq-set access
     typedef TObject::TId TId;
     bool IsSetId(void) const;
+    bool CanGetId(void) const;
     const TId& GetId(void) const;
     void SetId(TId& v);
     void ResetId(void);
 
     bool IsSetDescr(void) const;
+    bool CanGetDescr(void) const;
     const TDescr& GetDescr(void) const;
     void SetDescr(TDescr& v);
     TDescr& x_SetDescr(void);
@@ -86,36 +88,42 @@ public:
 
     typedef TObject::TColl TColl;
     bool IsSetColl(void) const;
+    bool CanGetColl(void) const;
     const TColl& GetColl(void) const;
     void SetColl(TColl& v);
     void ResetColl(void);
 
     typedef TObject::TLevel TLevel;
     bool IsSetLevel(void) const;
+    bool CanGetLevel(void) const;
     TLevel GetLevel(void) const;
     void SetLevel(TLevel v);
     void ResetLevel(void);
 
     typedef TObject::TClass TClass;
     bool IsSetClass(void) const;
+    bool CanGetClass(void) const;
     TClass GetClass(void) const;
     void SetClass(TClass v);
     void ResetClass(void);
 
     typedef TObject::TRelease TRelease;
     bool IsSetRelease(void) const;
+    bool CanGetRelease(void) const;
     const TRelease& GetRelease(void) const;
     void SetRelease(TRelease& v);
     void ResetRelease(void);
 
     typedef TObject::TDate TDate;
     bool IsSetDate(void) const;
+    bool CanGetDate(void) const;
     const TDate& GetDate(void) const;
     void SetDate(TDate& v);
     void ResetDate(void);
 
     typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
     bool IsSetSeq_set(void) const;
+    bool CanGetSeq_set(void) const;
     const TSeq_set& GetSeq_set(void) const;
     TSeq_set& SetSeq_set(void);
 
@@ -220,6 +228,13 @@ bool CBioseq_set_Info::IsSetId(void) const
 
 
 inline
+bool CBioseq_set_Info::CanGetId(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetId();
+}
+
+
+inline
 void CBioseq_set_Info::ResetId(void)
 {
     m_Object->ResetId();
@@ -244,6 +259,13 @@ inline
 bool CBioseq_set_Info::IsSetColl(void) const
 {
     return m_Object->IsSetColl();
+}
+
+
+inline
+bool CBioseq_set_Info::CanGetColl(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetColl();
 }
 
 
@@ -276,6 +298,13 @@ bool CBioseq_set_Info::IsSetLevel(void) const
 
 
 inline
+bool CBioseq_set_Info::CanGetLevel(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetLevel();
+}
+
+
+inline
 void CBioseq_set_Info::ResetLevel(void)
 {
     m_Object->ResetLevel();
@@ -300,6 +329,13 @@ inline
 bool CBioseq_set_Info::IsSetClass(void) const
 {
     return m_Object->IsSetClass();
+}
+
+
+inline
+bool CBioseq_set_Info::CanGetClass(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetClass();
 }
 
 
@@ -332,6 +368,13 @@ bool CBioseq_set_Info::IsSetRelease(void) const
 
 
 inline
+bool CBioseq_set_Info::CanGetRelease(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetRelease();
+}
+
+
+inline
 void CBioseq_set_Info::ResetRelease(void)
 {
     m_Object->ResetRelease();
@@ -356,6 +399,13 @@ inline
 bool CBioseq_set_Info::IsSetDate(void) const
 {
     return m_Object->IsSetDate();
+}
+
+
+inline
+bool CBioseq_set_Info::CanGetDate(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetDate();
 }
 
 
@@ -388,6 +438,13 @@ bool CBioseq_set_Info::IsSetSeq_set(void) const
 
 
 inline
+bool CBioseq_set_Info::CanGetSeq_set(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetSeq_set();
+}
+
+
+inline
 const CBioseq_set_Info::TSeq_set& CBioseq_set_Info::GetSeq_set(void) const
 {
     return m_Seq_set;
@@ -407,6 +464,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.3  2004/03/31 17:08:06  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

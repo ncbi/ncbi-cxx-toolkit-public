@@ -89,30 +89,37 @@ public:
     // member access
     typedef CBioseq_set::TId TId;
     bool IsSetId(void) const;
+    bool CanGetId(void) const;
     const TId& GetId(void) const;
 
     typedef CBioseq_set::TColl TColl;
     bool IsSetColl(void) const;
+    bool CanGetColl(void) const;
     const TColl& GetColl(void) const;
 
     typedef CBioseq_set::TLevel TLevel;
     bool IsSetLevel(void) const;
+    bool CanGetLevel(void) const;
     TLevel GetLevel(void) const;
 
     typedef CBioseq_set::TClass TClass;
     bool IsSetClass(void) const;
+    bool CanGetClass(void) const;
     TClass GetClass(void) const;
 
     typedef CBioseq_set::TRelease TRelease;
     bool IsSetRelease(void) const;
+    bool CanGetRelease(void) const;
     const TRelease& GetRelease(void) const;
 
     typedef CBioseq_set::TDate TDate;
     bool IsSetDate(void) const;
+    bool CanGetDate(void) const;
     const TDate& GetDate(void) const;
 
     typedef CBioseq_set::TDescr TDescr;
     bool IsSetDescr(void) const;
+    bool CanGetDescr(void) const;
     const TDescr& GetDescr(void) const;
 
     // Utility methods/operators
@@ -324,6 +331,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.6  2004/04/29 15:44:30  grichenk
 * Added GetTopLevelEntry()
 *

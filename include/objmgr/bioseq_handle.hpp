@@ -111,51 +111,63 @@ public:
     // id
     typedef vector<CSeq_id_Handle> TId;
     bool IsSetId(void) const;
+    bool CanGetId(void) const;
     const TId& GetId(void) const;
     // descr
     typedef CSeq_descr TDescr;
     bool IsSetDescr(void) const;
+    bool CanGetDescr(void) const;
     const TDescr& GetDescr(void) const;
     // inst
     typedef CSeq_inst TInst;
     bool IsSetInst(void) const;
+    bool CanGetInst(void) const;
     const TInst& GetInst(void) const;
     // inst.repr
     typedef TInst::TRepr TInst_Repr;
     bool IsSetInst_Repr(void) const;
+    bool CanGetInst_Repr(void) const;
     TInst_Repr GetInst_Repr(void) const;
     // inst.mol
     typedef TInst::TMol TInst_Mol;
     bool IsSetInst_Mol(void) const;
+    bool CanGetInst_Mol(void) const;
     TInst_Mol GetInst_Mol(void) const;
     // inst.length
     typedef TInst::TLength TInst_Length;
     bool IsSetInst_Length(void) const;
+    bool CanGetInst_Length(void) const;
     TInst_Length GetInst_Length(void) const;
     TSeqPos GetBioseqLength(void) const; // try to calculate it if not set
     // inst.fuzz
     typedef TInst::TFuzz TInst_Fuzz;
     bool IsSetInst_Fuzz(void) const;
+    bool CanGetInst_Fuzz(void) const;
     const TInst_Fuzz& GetInst_Fuzz(void) const;
     // inst.topology
     typedef TInst::TTopology TInst_Topology;
     bool IsSetInst_Topology(void) const;
+    bool CanGetInst_Topology(void) const;
     TInst_Topology GetInst_Topology(void) const;
     // inst.strand
     typedef TInst::TStrand TInst_Strand;
     bool IsSetInst_Strand(void) const;
+    bool CanGetInst_Strand(void) const;
     TInst_Strand GetInst_Strand(void) const;
     // inst.seq-data
     typedef TInst::TSeq_data TInst_Seq_data;
     bool IsSetInst_Seq_data(void) const;
+    bool CanGetInst_Seq_data(void) const;
     const TInst_Seq_data& GetInst_Seq_data(void) const;
     // inst.ext
     typedef TInst::TExt TInst_Ext;
     bool IsSetInst_Ext(void) const;
+    bool CanGetInst_Ext(void) const;
     const TInst_Ext& GetInst_Ext(void) const;
     // inst.hist
     typedef TInst::THist TInst_Hist;
     bool IsSetInst_Hist(void) const;
+    bool CanGetInst_Hist(void) const;
     const TInst_Hist& GetInst_Hist(void) const;
     // annot
     bool HasAnnots(void) const;
@@ -404,6 +416,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.56  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.55  2004/03/31 19:23:13  vasilche
 * Fixed scope in CBioseq_Handle::GetEditHandle().
 *

@@ -257,6 +257,12 @@ bool CBioseq_Info::IsSetId(void) const
 }
 
 
+bool CBioseq_Info::CanGetId(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetId();
+}
+
+
 const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
 {
     return m_Id;
@@ -266,6 +272,12 @@ const CBioseq_Info::TId& CBioseq_Info::GetId(void) const
 bool CBioseq_Info::IsSetDescr(void) const
 {
     return m_Object->IsSetDescr();
+}
+
+
+bool CBioseq_Info::CanGetDescr(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetDescr();
 }
 
 
@@ -311,6 +323,12 @@ bool CBioseq_Info::IsSetInst(void) const
 }
 
 
+bool CBioseq_Info::CanGetInst(void) const
+{
+    return bool(m_Object)  &&  m_Object->CanGetInst();
+}
+
+
 const CBioseq_Info::TInst& CBioseq_Info::GetInst(void) const
 {
     return m_Object->GetInst();
@@ -320,6 +338,12 @@ const CBioseq_Info::TInst& CBioseq_Info::GetInst(void) const
 bool CBioseq_Info::IsSetInst_Repr(void) const
 {
     return IsSetInst() && GetInst().IsSetRepr();
+}
+
+
+bool CBioseq_Info::CanGetInst_Repr(void) const
+{
+    return CanGetInst() && GetInst().CanGetRepr();
 }
 
 
@@ -335,6 +359,12 @@ bool CBioseq_Info::IsSetInst_Mol(void) const
 }
 
 
+bool CBioseq_Info::CanGetInst_Mol(void) const
+{
+    return CanGetInst() && GetInst().CanGetMol();
+}
+
+
 CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
 {
     return GetInst().GetMol();
@@ -344,6 +374,12 @@ CBioseq_Info::TInst_Mol CBioseq_Info::GetInst_Mol(void) const
 bool CBioseq_Info::IsSetInst_Length(void) const
 {
     return IsSetInst() && GetInst().IsSetLength();
+}
+
+
+bool CBioseq_Info::CanGetInst_Length(void) const
+{
+    return CanGetInst() && GetInst().CanGetLength();
 }
 
 
@@ -370,6 +406,12 @@ bool CBioseq_Info::IsSetInst_Fuzz(void) const
 }
 
 
+bool CBioseq_Info::CanGetInst_Fuzz(void) const
+{
+    return CanGetInst() && GetInst().CanGetFuzz();
+}
+
+
 const CBioseq_Info::TInst_Fuzz& CBioseq_Info::GetInst_Fuzz(void) const
 {
     return GetInst().GetFuzz();
@@ -379,6 +421,12 @@ const CBioseq_Info::TInst_Fuzz& CBioseq_Info::GetInst_Fuzz(void) const
 bool CBioseq_Info::IsSetInst_Topology(void) const
 {
     return IsSetInst() && GetInst().IsSetTopology();
+}
+
+
+bool CBioseq_Info::CanGetInst_Topology(void) const
+{
+    return CanGetInst() && GetInst().CanGetTopology();
 }
 
 
@@ -394,6 +442,12 @@ bool CBioseq_Info::IsSetInst_Strand(void) const
 }
 
 
+bool CBioseq_Info::CanGetInst_Strand(void) const
+{
+    return CanGetInst() && GetInst().CanGetStrand();
+}
+
+
 CBioseq_Info::TInst_Strand CBioseq_Info::GetInst_Strand(void) const
 {
     return GetInst().GetStrand();
@@ -403,6 +457,12 @@ CBioseq_Info::TInst_Strand CBioseq_Info::GetInst_Strand(void) const
 bool CBioseq_Info::IsSetInst_Seq_data(void) const
 {
     return IsSetInst() && GetInst().IsSetSeq_data();
+}
+
+
+bool CBioseq_Info::CanGetInst_Seq_data(void) const
+{
+    return CanGetInst() && GetInst().CanGetSeq_data();
 }
 
 
@@ -418,6 +478,12 @@ bool CBioseq_Info::IsSetInst_Ext(void) const
 }
 
 
+bool CBioseq_Info::CanGetInst_Ext(void) const
+{
+    return CanGetInst() && GetInst().CanGetExt();
+}
+
+
 const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
 {
     return GetInst().GetExt();
@@ -427,6 +493,12 @@ const CBioseq_Info::TInst_Ext& CBioseq_Info::GetInst_Ext(void) const
 bool CBioseq_Info::IsSetInst_Hist(void) const
 {
     return IsSetInst() && GetInst().IsSetHist();
+}
+
+
+bool CBioseq_Info::CanGetInst_Hist(void) const
+{
+    return CanGetInst() && GetInst().CanGetHist();
 }
 
 
@@ -676,6 +748,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.18  2004/03/31 17:08:07  vasilche
 * Implemented ConvertSeqToSet and ConvertSetToSeq.
 *

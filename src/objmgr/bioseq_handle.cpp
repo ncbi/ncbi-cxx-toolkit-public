@@ -153,6 +153,12 @@ bool CBioseq_Handle::IsSetId(void) const
 }
 
 
+bool CBioseq_Handle::CanGetId(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetId();
+}
+
+
 const CBioseq_Handle::TId& CBioseq_Handle::GetId(void) const
 {
     return x_GetInfo().GetId();
@@ -162,6 +168,12 @@ const CBioseq_Handle::TId& CBioseq_Handle::GetId(void) const
 bool CBioseq_Handle::IsSetDescr(void) const
 {
     return x_GetInfo().IsSetDescr();
+}
+
+
+bool CBioseq_Handle::CanGetDescr(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetDescr();
 }
 
 
@@ -177,6 +189,12 @@ bool CBioseq_Handle::IsSetInst(void) const
 }
 
 
+bool CBioseq_Handle::CanGetInst(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst();
+}
+
+
 const CSeq_inst& CBioseq_Handle::GetInst(void) const
 {
     return x_GetInfo().GetInst();
@@ -186,6 +204,12 @@ const CSeq_inst& CBioseq_Handle::GetInst(void) const
 bool CBioseq_Handle::IsSetInst_Repr(void) const
 {
     return x_GetInfo().IsSetInst_Repr();
+}
+
+
+bool CBioseq_Handle::CanGetInst_Repr(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Repr();
 }
 
 
@@ -201,6 +225,12 @@ bool CBioseq_Handle::IsSetInst_Mol(void) const
 }
 
 
+bool CBioseq_Handle::CanGetInst_Mol(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Mol();
+}
+
+
 CBioseq_Handle::TInst_Mol CBioseq_Handle::GetInst_Mol(void) const
 {
     return x_GetInfo().GetInst_Mol();
@@ -210,6 +240,12 @@ CBioseq_Handle::TInst_Mol CBioseq_Handle::GetInst_Mol(void) const
 bool CBioseq_Handle::IsSetInst_Length(void) const
 {
     return x_GetInfo().IsSetInst_Length();
+}
+
+
+bool CBioseq_Handle::CanGetInst_Length(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Length();
 }
 
 
@@ -231,6 +267,12 @@ bool CBioseq_Handle::IsSetInst_Fuzz(void) const
 }
 
 
+bool CBioseq_Handle::CanGetInst_Fuzz(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Fuzz();
+}
+
+
 const CBioseq_Handle::TInst_Fuzz& CBioseq_Handle::GetInst_Fuzz(void) const
 {
     return x_GetInfo().GetInst_Fuzz();
@@ -240,6 +282,12 @@ const CBioseq_Handle::TInst_Fuzz& CBioseq_Handle::GetInst_Fuzz(void) const
 bool CBioseq_Handle::IsSetInst_Topology(void) const
 {
     return x_GetInfo().IsSetInst_Topology();
+}
+
+
+bool CBioseq_Handle::CanGetInst_Topology(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Topology();
 }
 
 
@@ -255,6 +303,12 @@ bool CBioseq_Handle::IsSetInst_Strand(void) const
 }
 
 
+bool CBioseq_Handle::CanGetInst_Strand(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Strand();
+}
+
+
 CBioseq_Handle::TInst_Strand CBioseq_Handle::GetInst_Strand(void) const
 {
     return x_GetInfo().GetInst_Strand();
@@ -264,6 +318,12 @@ CBioseq_Handle::TInst_Strand CBioseq_Handle::GetInst_Strand(void) const
 bool CBioseq_Handle::IsSetInst_Seq_data(void) const
 {
     return x_GetInfo().IsSetInst_Seq_data();
+}
+
+
+bool CBioseq_Handle::CanGetInst_Seq_data(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Seq_data();
 }
 
 
@@ -280,6 +340,12 @@ bool CBioseq_Handle::IsSetInst_Ext(void) const
 }
 
 
+bool CBioseq_Handle::CanGetInst_Ext(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Ext();
+}
+
+
 const CBioseq_Handle::TInst_Ext& CBioseq_Handle::GetInst_Ext(void) const
 {
     return x_GetInfo().GetInst_Ext();
@@ -289,6 +355,12 @@ const CBioseq_Handle::TInst_Ext& CBioseq_Handle::GetInst_Ext(void) const
 bool CBioseq_Handle::IsSetInst_Hist(void) const
 {
     return x_GetInfo().IsSetInst_Hist();
+}
+
+
+bool CBioseq_Handle::CanGetInst_Hist(void) const
+{
+    return bool(m_Bioseq_Info)  &&  x_GetInfo().CanGetInst_Hist();
 }
 
 
@@ -755,6 +827,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2004/05/06 17:32:37  grichenk
+* Added CanGetXXXX() methods
+*
 * Revision 1.61  2004/04/20 20:34:40  shomrat
 * fix GetExactComplexityLevel
 *
