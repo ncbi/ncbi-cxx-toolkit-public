@@ -523,13 +523,14 @@ int CTestApplication::Run(void)
         "ab+cd+ef",
         "aaAAabBbbb",
         "-abc-def--ghijk---",
-        "a12c3ba45acb678bc"
+        "a12c3ba45acb678bc",
         "nodelim",
         "emptydelim",
+        ";",
         ""
     };
     static const string s_SplitDelim[] = {
-        "+", "AB", "-", "abc", "*", "", "*"
+        "+", "AB", "-", "abc", "*", "", ";", "*"
     };
     static const string split_result[] = {
         "ab", "cd", "ef",
@@ -549,6 +550,7 @@ int CTestApplication::Run(void)
     {{
         int i = 0;
         ITERATE(list<string>, it, split) {
+            assert(i < sizeof(split_result) / sizeof(split_result[0]));
             assert(NStr::Compare(*it, split_result[i++]) == 0);
         }
     }}
@@ -592,6 +594,19 @@ int CTestApplication::Run(void)
         }
     }}
     
+    tok.clear();
+
+    for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
+        NStr::Tokenize(s_SplitStr[i], s_SplitDelim[i], tok,
+                       NStr::eMergeDelims);
+    }
+
+    {{
+        int i = 0;
+        ITERATE(vector<string>, it, tok) {
+            assert(NStr::Compare(*it, split_result[i++]) == 0);
+        }
+    }}
     NcbiCout << " completed successfully!" << NcbiEndl;
 
 
@@ -834,6 +849,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.29  2004/07/20 18:47:29  ucko
+ * Use the Split test-cases for Tokenize(..., eMergeDelims).
+ *
  * Revision 6.28  2004/05/26 20:46:54  ucko
  * Add tests for Equal{Case,Nocase}.
  *
