@@ -133,7 +133,7 @@ void CCachedId1Reader::PrintStatistics(void) const
     PrintStat("Cache resolution: resolved",
                 resolve_gi_count, "gis", resolve_gi_time);
     PrintStat("Cache resolution: resolved",
-              resolve_ver_count, "blob ver", resolve_ver_time);
+              resolve_ver_count, "blob vers", resolve_ver_time);
     PrintBlobStat("Cache main: loaded",
                   main_blob_count, main_bytes, main_time);
     PrintBlobStat("Cache chunk: loaded",
@@ -216,9 +216,9 @@ const char* CCachedId1Reader::GetGiSubkey(void) const
 }
 
 
-const char* CCachedId1Reader::GetSNPVerSubkey(void) const
+const char* CCachedId1Reader::GetBlobVersionSubkey(void) const
 {
-    return "snpver";
+    return "ver";
 }
 
 
@@ -252,20 +252,14 @@ void CCachedId1Reader::PurgeSeqrefs(const TSeqrefs& srs, const CSeq_id& id)
         m_IdCache->Remove(GetIdKey(id));
         ITERATE ( TSeqrefs, it, srs ) {
             const CSeqref& sr = **it;
-            if ( IsSNPSeqref(sr) ) {
-                m_IdCache->Remove(GetIdKey(sr.GetGi()));
-            }
+            m_IdCache->Remove(GetBlobKey(sr));
         }
     }
     else if ( m_OldIdCache ) {
-        int gi = -1;
         ITERATE ( TSeqrefs, it, srs ) {
             const CSeqref& sr = **it;
-            if ( gi != sr.GetGi() ) {
-                gi = sr.GetGi();
-                m_OldIdCache->Remove(gi, 0);
-                m_OldIdCache->Remove(gi, 1);
-            }
+            m_OldIdCache->Remove(sr.GetGi(), 0);
+            m_OldIdCache->Remove(sr.GetSatKey(), sr.GetSat());
         }
     }
 }
@@ -516,14 +510,13 @@ void CCachedId1Reader::StoreSeqrefs(const CSeq_id& id, const TSeqrefs& srs)
 }
 
 
-int CCachedId1Reader::GetSNPBlobVersion(int gi)
+int CCachedId1Reader::GetBlobVersion(const CSeqref& seqref)
 {
     if ( m_IdCache ) {
         int version = 0;
-        if ( !x_GetIdCache(GetIdKey(gi), GetSNPVerSubkey(), version) ) {
-            return 0;
-        }
-        else {
+        if ( x_GetIdCache(GetBlobKey(seqref),
+                          GetBlobVersionSubkey(),
+                          version) ) {
             return version;
         }
     }
@@ -534,10 +527,11 @@ int CCachedId1Reader::GetSNPBlobVersion(int gi)
         }
 
         vector<int> data;
-        if ( !m_OldIdCache->Read(gi, 1, data) ) {
+        if ( !m_OldIdCache->Read(seqref.GetSatKey(), seqref.GetSat(), data) ) {
             if ( CollectStatistics() ) {
                 double time = sw.Elapsed();
-                LogStat("CId1Cache: failed to get SNP ver", gi, time);
+                LogStat("CId1Cache: failed to get blob version",
+                        seqref.printTSE(), time);
                 resolve_ver_count++;
                 resolve_ver_time += time;
             }
@@ -548,23 +542,23 @@ int CCachedId1Reader::GetSNPBlobVersion(int gi)
 
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
-            LogStat("CId1Cache: got SNP ver", gi, time);
+            LogStat("CId1Cache: got blob version", seqref.printTSE(), time);
             resolve_ver_count++;
             resolve_ver_time += time;
         }
 
         return data[0];
     }
-    else {
-        return 0;
-    }
+    return 0;
 }
 
 
-void CCachedId1Reader::StoreSNPBlobVersion(int gi, int version)
+void CCachedId1Reader::StoreBlobVersion(const CSeqref& seqref, int version)
 {
     if ( m_IdCache ) {
-        x_StoreIdCache(GetIdKey(gi), GetSNPVerSubkey(), version);
+        x_StoreIdCache(GetBlobKey(seqref),
+                       GetBlobVersionSubkey(),
+                       version);
     }
     else if ( m_OldIdCache ) {
         CStopWatch sw;
@@ -577,11 +571,11 @@ void CCachedId1Reader::StoreSNPBlobVersion(int gi, int version)
 
         _ASSERT(data.size() == 1);
 
-        m_OldIdCache->Store(gi, 1, data);
+        m_OldIdCache->Store(seqref.GetSatKey(), seqref.GetSat(), data);
 
         if ( CollectStatistics() ) {
             double time = sw.Elapsed();
-            LogStat("CId1Cache: saved SNP ver", gi, time);
+            LogStat("CId1Cache: saved blob version", seqref.printTSE(), time);
             resolve_ver_count++;
             resolve_ver_time += time;
         }
@@ -658,13 +652,11 @@ void CCachedId1Reader::GetTSEChunk(const CSeqref& seqref,
 
 int CCachedId1Reader::x_GetVersion(const CSeqref& seqref, TConn conn)
 {
-    _ASSERT(IsSNPSeqref(seqref));
-    _ASSERT(seqref.GetSatKey() == seqref.GetGi());
-    int version = GetSNPBlobVersion(seqref.GetGi());
+    int version = GetBlobVersion(seqref);
     if ( version == 0 ) {
         version = CId1Reader::x_GetVersion(seqref, conn);
         _ASSERT(version != 0);
-        StoreSNPBlobVersion(seqref.GetGi(), version);
+        StoreBlobVersion(seqref, version);
     }
     return version;
 }
@@ -1310,6 +1302,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.20  2004/01/20 16:56:04  vasilche
+ * Allow storing version of any blob (not only SNP).
+ *
  * Revision 1.19  2004/01/13 21:54:50  vasilche
  * Requrrected new version
  *

@@ -81,12 +81,15 @@ public:
     /// Return Id cache key string based on CSeq_id of gi
     string GetIdKey(const CSeq_id& id) const;
     string GetIdKey(int gi) const;
+
     /// Id cache subkeys:
     const char* GetSeqrefsSubkey(void) const; //Seq-id/gi -> seqrefs (5*N ints)
     const char* GetGiSubkey(void) const;      //Seq-id -> gi (1 int)
-    const char* GetSNPVerSubkey(void) const;  //gi->SNP annot version (1 int)
 
-    int GetSNPBlobVersion(int gi);
+    // seqref -> blob version (1 int)
+    const char* GetBlobVersionSubkey(void) const;
+
+    int GetBlobVersion(const CSeqref& seqref);
 
     void GetTSEChunk(const CSeqref& seqref, CTSE_Chunk_Info& chunk_info,
                      TConn conn);
@@ -131,7 +134,7 @@ protected:
     bool GetSeqrefs(const string& key, TSeqrefs& srs);
     void StoreSeqrefs(const string& key, const TSeqrefs& srs);
 
-    void StoreSNPBlobVersion(int gi, int version);
+    void StoreBlobVersion(const CSeqref& seqref, int version);
 
     bool LoadBlob(CID1server_back& id1_reply,
                   CRef<CID2S_Split_Info>& split_info,
@@ -188,6 +191,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.15  2004/01/20 16:56:04  vasilche
+* Allow storing version of any blob (not only SNP).
+*
 * Revision 1.14  2004/01/13 21:58:42  vasilche
 * Requrrected new version
 *
