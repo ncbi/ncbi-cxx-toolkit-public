@@ -75,8 +75,42 @@ CNCBINode::~CNCBINode(void)
     return;
 }
 
+
+static bool s_CheckEndlessRecursion(const CNCBINode* parent,
+                                    const CNCBINode* child)
+{
+    if ( !parent  ||  !child  ||  !child->HaveChildren() ) {
+        return false;
+    }
+    ITERATE ( CNCBINode::TChildren, i, child->Children() ) {
+        const CNCBINode* cnode = parent->Node(i);
+        if ( parent == cnode ) {
+            return true;
+        }
+        if ( cnode->HaveChildren()  &&
+             s_CheckEndlessRecursion(parent, cnode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 void CNCBINode::DoAppendChild(CNCBINode* child)
 {
+    // Check endless recursion
+    TExceptionFlags flags = GetExceptionFlags();
+    if ( (flags  &  CNCBINode::fDisableCheckRecursion) == 0 ) {
+        if ( this == child ) {
+            NCBI_THROW(CHTMLException, eEndlessRecursion,
+                "Endless recursion: current and child nodes are identical");
+        }
+        if ( s_CheckEndlessRecursion(this, child) ) {
+            NCBI_THROW(CHTMLException, eEndlessRecursion,
+                "Endless recursion: appended node contains current node " \
+                "in the child nodes list");
+        }
+    }
     GetChildren().push_back(CRef<ncbi::CNCBINode>(child));
 }
 
@@ -327,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/03/10 20:12:53  ivanov
+ * DoAppendChild(): added check on endless recursion
+ *
  * Revision 1.31  2004/02/04 17:17:57  ivanov
  * CNCBINode::Print(). Removed PrintEnd() calls from exception catch blocks.
  *
