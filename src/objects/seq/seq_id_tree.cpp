@@ -711,43 +711,51 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
     bool v = orig_tid.IsSetVersion();
     bool r = orig_tid.IsSetRelease();
 
-    // Need to add:
-    // A - if v or r is set
-    // N   - if both A and N are set
-    //   N.v - if v is also set
-    // A.r - if both v and r are set
-    //   N.r - if N is also set
-    if ( A  &&  (v  ||  r) ) {
+    if ( A  &&  (N  ||  v  ||  r) ) {
         // A only
         tid.Reset();
         tid.SetAccession(orig_tid.GetAccession());
         id_list.insert(FindOrCreate(*tmp));
-        if ( v ) {
+        if ( v  &&  (N  ||  r) ) {
+            // A.v
             tid.SetVersion(orig_tid.GetVersion());
             id_list.insert(FindOrCreate(*tmp));
         }
-        if ( v && r ) {
-            // A.r (without v)
-            tid.ResetVersion();
-            tid.SetRelease(orig_tid.GetRelease());
+        if ( N ) {
+            // N only
+            tid.Reset();
+            tid.SetName(orig_tid.GetName());
             id_list.insert(FindOrCreate(*tmp));
+            if ( v  ||  r ) {
+                if ( r ) {
+                    // N.r
+                    tid.SetRelease(orig_tid.GetRelease());
+                    id_list.insert(FindOrCreate(*tmp));
+                    tid.ResetRelease();
+                }
+                // A + N
+                tid.SetAccession(orig_tid.GetAccession());
+                id_list.insert(FindOrCreate(*tmp));
+                if ( v  &&  r ) {
+                    // A.v + N
+                    tid.SetVersion(orig_tid.GetVersion());
+                    id_list.insert(FindOrCreate(*tmp));
+                    // A + N.r
+                    tid.ResetVersion();
+                    tid.SetRelease(orig_tid.GetRelease());
+                    id_list.insert(FindOrCreate(*tmp));
+                }
+            }
         }
     }
-    if ( A && N ) {
+    else if ( N  &&  (v  ||  r) ) {
         // N only
         tid.Reset();
         tid.SetName(orig_tid.GetName());
         id_list.insert(FindOrCreate(*tmp));
-        if ( 0 && v ) {
-            // N.v
-            tid.SetVersion(orig_tid.GetVersion());
+        if ( v  &&  r ) {
+            tid.SetRelease(orig_tid.GetRelease());
             id_list.insert(FindOrCreate(*tmp));
-            if ( r ) {
-                // N.r (without v)
-                tid.ResetVersion();
-                tid.SetRelease(orig_tid.GetRelease());
-                id_list.insert(FindOrCreate(*tmp));
-            }
         }
     }
 }
@@ -1606,6 +1614,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2004/04/29 13:17:51  grichenk
+* Fixed reverse ID matching
+*
 * Revision 1.11  2004/04/21 19:55:05  grichenk
 * Fixed textseq-id matching.
 *
