@@ -33,7 +33,6 @@
 #include <ncbi_pch.hpp>
 #include "../../util/test/pbacktest.hpp"
 #include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
 #include <connect/ncbi_util.h>
 /* This header must go last */
 #include "test_assert.h"
@@ -46,7 +45,6 @@ int main(int argc, char* argv[])
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
     SetDiagPostFlag(eDPF_All);
-    CONNECT_Init(0);
 
     string host = "yar.ncbi.nlm.nih.gov";
     string path = "/Service/bounce.cgi";
@@ -59,10 +57,6 @@ int main(int argc, char* argv[])
     int n = TEST_StreamPushback(ios,
                                 argc > 1 ? (unsigned int) atoi(argv[1]) : 0,
                                 false/*no rewind*/);
-
-    CORE_SetREG(0);
-    // Do not delete lock and log here 'cause destructors may need them
-
     return n;
 }
 
@@ -70,6 +64,9 @@ int main(int argc, char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.13  2004/09/09 16:46:57  lavr
+ * Do not use explicit CONNECT_Init(): rely on implicit init from now on
+ *
  * Revision 1.12  2004/05/17 20:58:22  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
