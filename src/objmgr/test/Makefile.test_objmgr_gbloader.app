@@ -11,4 +11,5 @@ LIB = xobjmgr id1 submit seqset $(SEQ_LIBS) pub medline biblio \
 
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-#CHECK_CMD = test_objmgr_gbloader
+CHECK_CMD = test_objmgr_loaders.sh test_objmgr_gbloader
+CHECK_COPY = test_objmgr_loaders.sh
