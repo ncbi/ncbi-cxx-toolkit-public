@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqalign/Std_seg_.hpp>
+#include <util/range.hpp>
 
 // generated classes
 
@@ -96,6 +97,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/08/19 13:04:37  dicuccio
+* Added missing include for CRange
+*
 * Revision 1.1  2003/09/16 16:16:56  todorov
 * Added validation methods. Added seq range methods
 *
