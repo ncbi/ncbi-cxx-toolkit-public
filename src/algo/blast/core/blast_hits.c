@@ -822,7 +822,7 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
                                 BlastHSPListPtr hsp_list, 
                                 BlastThrInfoPtr thr_info)
 {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
    /* For MP BLAST we check that no other thread is attempting to insert 
       results. */
    if (thr_info && thr_info->results_mutex)
@@ -851,7 +851,7 @@ static Int2 BLAST_UpdateHitList(BlastHitListPtr hit_list,
       InsertBlastHSPListInHeap(hit_list, hsp_list);
    }
 
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
    if (thr_info && thr_info->results_mutex)
       NlmMutexUnlock(thr_info->results_mutex);
 #endif

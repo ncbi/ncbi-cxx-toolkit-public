@@ -131,7 +131,7 @@ static edit_op_t *edit_script_next(MBGapEditScript *es, edit_op_t *op)
 static Int4 edit_script_more(MBGapEditScript *data, Uint4 op, Uint4 k)
 {
     if (op == EDIT_OP_ERR) {
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
         ErrPostEx(SEV_FATAL, 1, 0, 
                   "edit_script_more: bad opcode %d:%d", op, k);
 #endif
@@ -253,7 +253,7 @@ static ThreeValPtr get_mb_space(MBSpacePtr S, Int4 amount)
     while (S->used+amount > S->size) {
        if (S->next == NULL)
           if ((S->next = MBSpaceNew()) == NULL) {
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
 	     ErrPostEx(SEV_WARNING, 0, 0, "Cannot get new space for greedy extension");
 #endif
 	     return NULL;

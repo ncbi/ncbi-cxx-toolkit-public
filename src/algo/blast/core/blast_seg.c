@@ -543,9 +543,9 @@ static FloatHi getprob(Int4Ptr sv, Int4 total, AlphaPtr palpha)
    }
    else
    {
-        /*ErrPostEx (SEV_ERROR, 0, 0, "Illegal value returned by lnass");*/
-       /* FIXME: Use error reporting facility */
-       fprintf(stderr, "Illegal value returned by lnass\n");
+#ifdef ERR_POST_EX_DEFINED
+        ErrPostEx (SEV_ERROR, 0, 0, "Illegal value returned by lnass");
+#endif
    }
    ans = ans1 + ans2 - totseq;
 /*
@@ -930,10 +930,10 @@ Int2 SeqBufferSeg (Uint1Ptr sequence, Int4 length, Int4 offset,
       sparamsp = SegParametersNewAa();
       SegParametersCheck (sparamsp);
       if (!sparamsp) {
-         /*ErrPostEx (SEV_WARNING, 0, 0, "null parameters object");*/
-         /*ErrShow();*/
-         /* FIXME: Use error reporting facility */
-         fprintf(stderr, "null parameters object\n");
+#ifdef ERR_POST_EX_DEFINED
+         ErrPostEx (SEV_WARNING, 0, 0, "null parameters object");
+         ErrShow();
+#endif
          return -1;
       }
    }

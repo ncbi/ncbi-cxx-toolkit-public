@@ -516,7 +516,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    return status;
 }
 
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
 static Boolean 
 BLAST_GetDbChunk(ReadDBFILEPtr rdfp, Int4Ptr start, Int4Ptr stop, 
    Int4Ptr id_list, Int4Ptr id_list_number, BlastThrInfoPtr thr_info)
@@ -628,33 +628,19 @@ static BlastThrInfoPtr BLAST_ThrInfoNew(ReadDBFILEPtr rdfp)
    
    return thr_info;
 }
-#endif
-
-#define BLAST_DB_CHUNK_SIZE 1024
-static BlastThrInfoPtr BLAST_ThrInfoNew(Int4 last_oid2search)
-{
-   BlastThrInfoPtr thr_info;
-   
-   thr_info = (BlastThrInfoPtr) calloc(1, sizeof(BlastThrInfo));
-   thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
-   thr_info->final_db_seq = last_oid2search;
-   
-   return thr_info;
-}
 
 static void BLAST_ThrInfoFree(BlastThrInfoPtr thr_info)
 {
     if (thr_info == NULL)
 	return;
-#if THREADS_IMPLEMENTED
     NlmMutexDestroy(thr_info->db_mutex);
     NlmMutexDestroy(thr_info->results_mutex);
     NlmMutexDestroy(thr_info->callback_mutex);
-#endif
     sfree(thr_info);
     
     return;
 }
+#endif /* THREADS_IMPLEMENTED */
 
 Int4 
 BLAST_DatabaseSearchEngine(Uint1 program_number, 
@@ -675,7 +661,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    Int4 start = 0, stop = 0, index;
    Int4Ptr oid_list = NULL;
    Boolean use_oid_list = FALSE;
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
    Int4 oid, oid_list_length = 0; /* Subject ordinal id in the database */
 #endif
    BlastHSPListPtr hsp_list; 
@@ -697,11 +683,13 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    FillReturnXDropoffsInfo(return_stats, word_params, ext_params);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
 
+#ifdef THREADS_IMPLEMENTED
    /* FIXME: will only work for full databases */
-   /*thr_info = BLAST_ThrInfoNew(eff_len_options->dbseq_num);*/
+   thr_info = BLAST_ThrInfoNew(eff_len_options->dbseq_num);
+#endif
    stop = eff_len_options->dbseq_num;
 
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
    while (!BLAST_GetDbChunk(rdfp, &start, &stop, oid_list, 
                             &oid_list_length, thr_info)) {
       use_oid_list = (oid_list && (oid_list_length > 0));
@@ -733,11 +721,12 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
       }
          /*BlastSequenceBlkClean(subject);*/
    }
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
    }    /* end while!(BLAST_GetDbChunk...) */
-#endif
 
    BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
+#endif
+
    sfree(oid_list);
    BlastSequenceBlkFree(seq_arg.seq);
 

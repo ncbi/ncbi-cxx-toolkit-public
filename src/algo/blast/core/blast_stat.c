@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.17  2003/07/30 17:15:00  dondosha
+ * Minor fixes for very strict compiler warnings
+ *
  * Revision 1.16  2003/07/30 17:06:40  camacho
  * Removed old cvs log
  *
@@ -1058,7 +1061,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
     CharPtr matrix_dir = NULL;
     Int2 status = 0;
     FILE *fp = NULL;
-    int i, len;
+    Uint4 i, len;
     
     if (sbp->read_in_matrix) {
         ASSERT(matrix_name != NULL);
@@ -1131,7 +1134,7 @@ BlastScoreBlkMatFill(BLAST_ScoreBlkPtr sbp, CharPtr matrix_name)
         }
 #endif
         if (fp == NULL) {
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
             ErrPostEx(SEV_WARNING, 0, 0, "Unable to open %s", matrix);
 #endif
             return 4;
@@ -1318,13 +1321,13 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     BLAST_ScorePtr PNTR	matrix;
     BLAST_ScorePtr	m;
     BLAST_Score	score;
-    Int2		a1cnt = 0, a2cnt = 0;
+    Uint4	a1cnt = 0, a2cnt = 0;
     Char    a1chars[BLAST_MAX_ALPHABET], a2chars[BLAST_MAX_ALPHABET];
     long	lineno = 0;
     FloatHi	xscore;
     register int	index1, index2;
     Int2 status;
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
     static TNlmMutex read_matrix_mutex;
     NlmMutexInit(&read_matrix_mutex);
     NlmMutexLock(read_matrix_mutex);
@@ -1341,7 +1344,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         status=BlastScoreBlkMatCreate(sbp); 
         if(status != 0)
 	{
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
         	NlmMutexUnlock(read_matrix_mutex); 
 #endif
         	return status;
@@ -1352,7 +1355,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     while (fgets(buf, sizeof(buf), fp) != NULL) {
         ++lineno;
         if (strchr(buf, '\n') == NULL) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
             return 2;
@@ -1385,7 +1388,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     }
     
     if (a2cnt <= 1) { 
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
         NlmMutexUnlock(read_matrix_mutex); 
 #endif
         return 2;
@@ -1397,7 +1400,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     while (fgets(buf, sizeof(buf), fp) != NULL)  {
         ++lineno;
         if ((cp = strchr(buf, '\n')) == NULL) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
             return 2;
@@ -1409,13 +1412,13 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         ch = *lp;
         cp = (CharPtr) lp;
         if ((cp = strtok(NULL, TOKSTR)) == NULL) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
             return 2;
         }
         if (a1cnt >= DIM(a1chars)) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
             NlmMutexUnlock(read_matrix_mutex); 
 #endif
             return 2;
@@ -1432,8 +1435,8 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         m = &matrix[(int)ch][0];
         index2 = 0;
         while (cp != NULL) {
-            if (index2 >= a2cnt) {
-#if THREADS_IMPLEMENTED
+            if (index2 >= (int) a2cnt) {
+#ifdef THREADS_IMPLEMENTED
                 NlmMutexUnlock(read_matrix_mutex); 
 #endif
                 return 2;
@@ -1444,14 +1447,14 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
                 score = BLAST_SCORE_1MIN;
             } else  {
                 if (sscanf(temp, "%lg", &xscore) != 1) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
                     NlmMutexUnlock(read_matrix_mutex); 
 #endif
                     return 2;
                 }
 				/*xscore = MAX(xscore, BLAST_SCORE_1MIN);*/
                 if (xscore > BLAST_SCORE_1MAX || xscore < BLAST_SCORE_1MIN) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
                     NlmMutexUnlock(read_matrix_mutex); 
 #endif
                     return 2;
@@ -1467,7 +1470,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
     }
     
     if (a1cnt <= 1) {
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
         NlmMutexUnlock(read_matrix_mutex); 
 #endif
         return 2;
@@ -1477,7 +1480,7 @@ BlastScoreBlkMatRead(BLAST_ScoreBlkPtr sbp, FILE *fp)
         sbp->mat_dim1 = a1cnt;
     }
     
-#if THREADS_IMPLEMENTED
+#ifdef THREADS_IMPLEMENTED
     NlmMutexUnlock(read_matrix_mutex); 
 #endif
     return 0;
@@ -1794,9 +1797,6 @@ typedef struct {
 		FloatHi	p;
 	} BLAST_LetterProb;
 
-#define STD_AMINO_ACID_FREQS Robinson_prob
-
-#if STD_AMINO_ACID_FREQS == Dayhoff_prob
 /*  M. O. Dayhoff amino acid background frequencies   */
 static BLAST_LetterProb	Dayhoff_prob[] = {
 		{ 'A', 87.13 },
@@ -1820,9 +1820,7 @@ static BLAST_LetterProb	Dayhoff_prob[] = {
 		{ 'W', 10.49 },
 		{ 'Y', 29.92 }
 	};
-#endif
 
-#if STD_AMINO_ACID_FREQS == Altschul_prob
 /* Stephen Altschul amino acid background frequencies */
 static BLAST_LetterProb Altschul_prob[] = {
 		{ 'A', 81.00 },
@@ -1846,9 +1844,7 @@ static BLAST_LetterProb Altschul_prob[] = {
 		{ 'W', 13.00 },
 		{ 'Y', 32.00 }
 	};
-#endif
 
-#if STD_AMINO_ACID_FREQS == Robinson_prob
 /* amino acid background frequencies from Robinson and Robinson */
 static BLAST_LetterProb Robinson_prob[] = {
 		{ 'A', 78.05 },
@@ -1872,7 +1868,8 @@ static BLAST_LetterProb Robinson_prob[] = {
 		{ 'W', 13.30 },
 		{ 'Y', 32.16 }
 	};
-#endif
+
+#define STD_AMINO_ACID_FREQS Robinson_prob
 
 static BLAST_LetterProb	nt_prob[] = {
 		{ 'A', 25.00 },
@@ -1961,7 +1958,7 @@ BlastResFreqNormalize(BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp, FloatHi norm)
 */
 
 Int2
-BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Int4 residues_size)
+BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Uint4 residues_size)
 
 {
 	Int2 index;
@@ -1969,7 +1966,7 @@ BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Int4 residues_size)
 	if (residues_size < DIM(STD_AMINO_ACID_FREQS))
 		return -2;
 
-	for (index=0; index<DIM(STD_AMINO_ACID_FREQS); index++) 
+	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
 	{
 		if (alphabet_code == BLASTAA_SEQ_CODE)
 		{
@@ -1988,7 +1985,8 @@ BlastGetStdAlphabet (Uint1 alphabet_code, Uint1Ptr residues, Int4 residues_size)
 Int2
 BlastResFreqStdComp(BLAST_ScoreBlkPtr sbp, BLAST_ResFreqPtr rfp)
 {
-	Int2 index, retval;
+	Int2 retval;
+   Uint4 index;
 	Uint1Ptr residues;
 
 	if (sbp->protein_alphabet == TRUE)
@@ -2027,7 +2025,7 @@ BlastRepresentativeResidues(Int2 length)
 	Int4 number;
 	total=0;
 
-	for (index=0; index<DIM(STD_AMINO_ACID_FREQS); index++) 
+	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
 	{
 		total += (Int2) STD_AMINO_ACID_FREQS[index].p;
 	}
@@ -2035,7 +2033,7 @@ BlastRepresentativeResidues(Int2 length)
 	buffer = (CharPtr) calloc((length+1), sizeof(Char));
 
 	ptr = buffer;
-	for (index=0; index<DIM(STD_AMINO_ACID_FREQS); index++) 
+	for (index=0; index<(int)DIM(STD_AMINO_ACID_FREQS); index++) 
 	{
 		number = Nint((STD_AMINO_ACID_FREQS[index].p)*((FloatHi) length)/((FloatHi) total));
 		while (number > 0)

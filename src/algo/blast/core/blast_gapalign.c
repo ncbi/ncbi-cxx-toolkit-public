@@ -327,7 +327,7 @@ GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
       }
    }
 
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
    if (retval->state_array == NULL)
       ErrPostEx(SEV_ERROR, 0, 0, "state array is NULL");
 #endif
@@ -459,7 +459,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       gamp->flast_d[0] = 
          (Int4Ptr) malloc((max_d + max_d + 6) * sizeof(Int4) * 2);
       if (gamp->flast_d[0] == NULL) {
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
 	 ErrPostEx(SEV_WARNING, 0, 0, 
               "Failed to allocate %ld bytes for greedy alignment", 
               (max_d + max_d + 6) * sizeof(Int4) * 2);
@@ -1844,7 +1844,7 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
   else
      dyn_prog = (BlastGapDPPtr)malloc(j);
   if (!dyn_prog) {
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
      ErrPostEx(SEV_ERROR, 0, 0, 
                "Cannot allocate %ld bytes for dynamic programming", j);
 #endif
@@ -1995,7 +1995,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
             realloc(hsp_list->hsp_array, hsp_list->allocated*2*sizeof(BlastHSPPtr));
          if (hsp_array == NULL)
          {
-#if ERR_POST_EX_DEFINED
+#ifdef ERR_POST_EX_DEFINED
             ErrPostEx(SEV_WARNING, 0, 0, 
                "UNABLE to reallocate in BLAST_SaveHsp,"
                " continuing with fixed array of %ld HSP's", 

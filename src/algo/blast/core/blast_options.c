@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.44  2003/07/30 17:15:00  dondosha
+ * Minor fixes for very strict compiler warnings
+ *
  * Revision 1.43  2003/07/30 16:32:02  madden
  * Use ansi functions when possible
  *
@@ -738,8 +741,7 @@ BlastEffectiveLengthsOptionsNew(BlastEffectiveLengthsOptionsPtr *options)
 
 Int2 
 BLAST_FillEffectiveLengthsOptions(BlastEffectiveLengthsOptionsPtr options, 
-   CharPtr database, Boolean is_protein, Int4 dbseq_num, Int8 db_length,
-   Int8 searchsp_eff)
+   Int4 dbseq_num, Int8 db_length, Int8 searchsp_eff)
 {
    if (!options)
       return 1;
