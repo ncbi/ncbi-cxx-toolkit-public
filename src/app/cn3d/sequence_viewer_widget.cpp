@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/09/14 14:55:35  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.7  2000/09/12 01:47:39  thiessen
 * fix minor but obscure bug
 *
@@ -82,13 +85,13 @@ SequenceViewerWidget::SequenceViewerWidget(
         const wxString& name
     ) :
     wxScrolledWindow(parent, -1, pos, size, style, name),
-    alignment(NULL)
+    alignment(NULL), currentFont(NULL)
 {
     // set default background color
     currentBackgroundColor = *wxWHITE;
 
     // set default font
-	SetCharacterFont(wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
+    SetCharacterFont(new wxFont(10, wxROMAN, wxNORMAL, wxNORMAL));
 
     // set default highlight color
     currentHighlightColor.Set(255,255,0);   // yellow
@@ -100,7 +103,12 @@ SequenceViewerWidget::SequenceViewerWidget(
     currentRubberbandColor = *wxRED;
 }
 
-bool SequenceViewerWidget::AttachAlignment(const ViewableAlignment *newAlignment)
+SequenceViewerWidget::~SequenceViewerWidget(void)
+{
+    if (currentFont) delete currentFont;
+}
+
+bool SequenceViewerWidget::AttachAlignment(ViewableAlignment *newAlignment)
 {
     alignment = newAlignment;
 
@@ -119,7 +127,8 @@ bool SequenceViewerWidget::AttachAlignment(const ViewableAlignment *newAlignment
 
     } else {
         // remove scrollbars
-        //SetScrollbars(1, 1, 1, 1, 0, 0, true);   can't do this without crash on win98... ?
+//        areaWidth = areaHeight = 2;
+//        SetScrollbars(10, 10, 2, 2, 0, 0);   //can't do this without crash on win98... ?
     }
 
     return true;
@@ -135,12 +144,17 @@ void SequenceViewerWidget::SetBackgroundColor(const wxColor& backgroundColor)
     currentBackgroundColor = backgroundColor;
 }
 
-void SequenceViewerWidget::SetCharacterFont(const wxFont& font)
+void SequenceViewerWidget::SetCharacterFont(wxFont *font)
 {
-    currentFont = font;
+    if (!font) return;
 
     wxClientDC dc(this);
-    dc.SetFont(currentFont);
+    dc.SetFont(wxNullFont);
+
+    if (currentFont) delete currentFont;
+    currentFont = font;
+
+    dc.SetFont(*currentFont);
     wxCoord chW, chH;
     dc.SetMapMode(wxMM_TEXT);
     dc.GetTextExtent("A", &chW, &chH);
@@ -174,7 +188,7 @@ void SequenceViewerWidget::OnPaint(wxPaintEvent& event)
     dc.SetBackgroundMode(wxTRANSPARENT);
 
     // set font for characters
-    if (alignment) dc.SetFont(currentFont);
+    if (alignment) dc.SetFont(*currentFont);
 
     // get the update rect list, so that we can draw *only* the cells 
     // in the part of the window that needs redrawing; update region
@@ -502,7 +516,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
         dragging = false;
         wxClientDC dc(this);
         dc.BeginDrawing();
-        dc.SetFont(currentFont);
+        dc.SetFont(*currentFont);
 
         // remove rubberband
         if (mouseMode == eSelect)
@@ -529,7 +543,7 @@ void SequenceViewerWidget::OnMouseEvent(wxMouseEvent& event)
     else if (dragging && (cellX != prevToX || cellY != prevToY)) {
         wxClientDC dc(this);
         dc.BeginDrawing();
-        dc.SetFont(currentFont);
+        dc.SetFont(*currentFont);
         currentRubberbandType = eDot;
         if (mouseMode == eSelect) {
             MoveRubberband(dc, fromX, fromY, prevToX, prevToY, cellX, cellY, vsX, vsY);

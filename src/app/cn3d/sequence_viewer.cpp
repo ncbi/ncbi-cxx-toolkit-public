@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/14 14:55:34  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.9  2000/09/12 01:47:38  thiessen
 * fix minor but obscure bug
 *
@@ -78,7 +81,92 @@ USING_NCBI_SCOPE;
 
 BEGIN_SCOPE(Cn3D)
 
-class SequenceViewerWindow;
+
+////////////////////////////////////////////////////////////////////////////////
+// SequenceViewerWindow is the top-level window that contains the
+// SequenceViewerWidget.
+////////////////////////////////////////////////////////////////////////////////
+
+class SequenceViewerWindow : public wxFrame
+{
+public:
+    SequenceViewerWindow(SequenceViewer *parent);
+    ~SequenceViewerWindow(void);
+
+    void NewAlignment(ViewableAlignment *newAlignment);
+
+    void OnMouseMode(wxCommandEvent& event);
+
+    DECLARE_EVENT_TABLE()
+
+private:
+    SequenceViewerWidget *viewerWidget;
+    SequenceViewer *viewer;
+
+public:
+    // scroll over to a given column
+    void ScrollToColumn(int column) { viewerWidget->Scroll(column, 0); };
+
+    void Refresh(void) { viewerWidget->Refresh(false); }
+};
+
+enum {
+    MID_SELECT,
+    MID_MOVE_ROW
+};
+
+BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
+    EVT_MENU_RANGE(MID_SELECT,   MID_MOVE_ROW,      SequenceViewerWindow::OnMouseMode)
+END_EVENT_TABLE()
+
+SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
+    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(500,200)),
+    viewerWidget(NULL), viewer(parent)
+{
+    // status bar with a single field
+    CreateStatusBar(2);
+    int widths[2] = { 150, -1 };
+    SetStatusWidths(2, widths);
+
+    viewerWidget = new SequenceViewerWidget(this);
+    viewerWidget->SetMouseMode(SequenceViewerWidget::eSelect);
+
+    wxMenuBar *menuBar = new wxMenuBar;
+    wxMenu *menu = new wxMenu;
+    menu->Append(MID_SELECT, "&Select");
+    menu->Append(MID_MOVE_ROW, "Move &Row");
+    menuBar->Append(menu, "&Mouse Mode");
+
+    SetMenuBar(menuBar);
+}
+
+SequenceViewerWindow::~SequenceViewerWindow(void)
+{
+    viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
+    viewerWidget->Destroy();
+}
+
+void SequenceViewerWindow::NewAlignment(ViewableAlignment *newAlignment)
+{
+    viewerWidget->AttachAlignment(newAlignment);
+    Show(true);
+}
+
+void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
+{
+    switch (event.GetId()) {
+        case MID_SELECT:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelect); break;
+        case MID_MOVE_ROW:
+            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragVertical); break;
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// The sequence view is composed of rows which can be from sequence, alignment,
+// or any string - anything derived from DisplayRow, implemented below.
+////////////////////////////////////////////////////////////////////////////////
 
 class DisplayRow
 {
@@ -141,6 +229,27 @@ public:
     void SelectedRange(int from, int to) const;
 };
 
+class DisplayRowFromString : public DisplayRow
+{
+public:
+    const std::string theString;
+    const Vector stringColor;
+
+    DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5)) : 
+        theString(s), stringColor(color) { }
+
+    int Size() const { return theString.size(); }
+    
+    bool GetCharacterTraitsAt(int column,
+        char *character, Vector *color, bool *isHighlighted) const;
+
+    bool GetSequenceAndIndexAt(int column,
+        const Sequence **sequenceHandle, int *index) const { return false; }
+
+    void SelectedRange(int from, int to) const { } // do nothing
+};
+
+
 bool DisplayRowFromSequence::GetCharacterTraitsAt(int column,
     char *character, Vector *color, bool *isHighlighted) const
 {    
@@ -184,26 +293,6 @@ void DisplayRowFromSequence::SelectedRange(int from, int to) const
     messenger->AddHighlights(sequence, from, to);
 }
 
-class DisplayRowFromString : public DisplayRow
-{
-public:
-    const std::string theString;
-    const Vector stringColor;
-
-    DisplayRowFromString(const std::string& s, const Vector color = Vector(0,0,0.5)) : 
-        theString(s), stringColor(color) { }
-
-    int Size() const { return theString.size(); }
-    
-    bool GetCharacterTraitsAt(int column,
-        char *character, Vector *color, bool *isHighlighted) const;
-
-    bool GetSequenceAndIndexAt(int column,
-        const Sequence **sequenceHandle, int *index) const { return false; }
-
-    void SelectedRange(int from, int to) const { } // do nothing
-};
-
 bool DisplayRowFromString::GetCharacterTraitsAt(int column,
     char *character, Vector *color, bool *isHighlighted) const
 {
@@ -215,7 +304,15 @@ bool DisplayRowFromString::GetCharacterTraitsAt(int column,
     return true;
 }
 
-// this is the class that interfaces between the alignment viewer and the underlying data. 
+
+////////////////////////////////////////////////////////////////////////////////
+// The SequenceDisplay is the structure that holds the DisplayRows of the view.
+// It's also derived from ViewableAlignment, in order to be plugged into a
+// SequenceViewerWidget.
+////////////////////////////////////////////////////////////////////////////////
+
+class SequenceViewerWindow;
+
 class SequenceDisplay : public ViewableAlignment
 {
 public:
@@ -256,110 +353,10 @@ public:
     
     // callbacks for ViewableAlignment
     void MouseOver(int column, int row) const;
-    void MouseDown(int column, int row, unsigned int controls) const;
-    void SelectedRectangle(int columnLeft, int rowTop, int columnRight, int rowBottom) const;
-    void DraggedCell(int columnFrom, int rowFrom, int columnTo, int rowTo) const;
+    void MouseDown(int column, int row, unsigned int controls);
+    void SelectedRectangle(int columnLeft, int rowTop, int columnRight, int rowBottom);
+    void DraggedCell(int columnFrom, int rowFrom, int columnTo, int rowTo);
 };
-
-class SequenceViewerWindow : public wxFrame
-{
-public:
-    SequenceViewerWindow(SequenceViewer *parent);
-    ~SequenceViewerWindow(void);
-
-    void NewAlignment(const ViewableAlignment *newAlignment);
-
-    void OnMouseMode(wxCommandEvent& event);
-
-    DECLARE_EVENT_TABLE()
-
-private:
-    SequenceViewerWidget *viewerWidget;
-    SequenceViewer *viewer;
-
-public:
-    // scroll over to a given column
-    void ScrollToColumn(int column) { viewerWidget->Scroll(column, 0); };
-
-    void Refresh(void) { viewerWidget->Refresh(false); }
-};
-
-
-SequenceViewer::SequenceViewer(Messenger *mesg) :
-    viewerWindow(NULL), display(NULL), messenger(mesg)
-{
-}
-
-SequenceViewer::~SequenceViewer(void)
-{
-    DestroyGUI();
-    if (display) delete display;
-}
-
-void SequenceViewer::ClearGUI(void)
-{
-    if (viewerWindow) viewerWindow->NewAlignment(NULL);
-    if (display) {
-        delete display;
-        display = NULL;
-    }
-}
-
-void SequenceViewer::DestroyGUI(void)
-{
-    if (viewerWindow) {
-        viewerWindow->Destroy();
-        viewerWindow = NULL;
-    }
-}
-
-void SequenceViewer::Refresh(void)
-{
-    if (viewerWindow)
-        viewerWindow->Refresh();
-    else
-        NewAlignment(display);
-}
-
-void SequenceViewer::NewAlignment(const SequenceDisplay *display)
-{
-    if (display) {
-        if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
-        viewerWindow->NewAlignment(display);
-        viewerWindow->ScrollToColumn(display->GetStartingColumn());
-        messenger->PostRedrawSequenceViewers();
-    }
-}
-
-void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
-{
-    if (display) delete display;
-    display = new SequenceDisplay(&viewerWindow, messenger);
-    
-    for (int row=0; row<multiple->NRows(); row++)
-        display->AddRowFromAlignment(row, multiple);
-
-    // set starting scroll to a few residues left of the first aligned block
-    display->SetStartingColumn(multiple->GetFirstAlignedBlockPosition() - 5);
-
-    NewAlignment(display);
-}
-
-void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
-{
-    if (display) delete display;
-    display = new SequenceDisplay(&viewerWindow, messenger);
-
-    // populate each line of the display with one sequence, with blank lines inbetween
-    SequenceList::const_iterator s, se = sequenceList->end();
-    for (s=sequenceList->begin(); s!=se; s++) {
-        if (s != sequenceList->begin()) display->AddRowFromString("");
-        display->AddRowFromSequence(*s, messenger);
-    }
-
-    NewAlignment(display);
-}
-
 
 SequenceDisplay::SequenceDisplay(SequenceViewerWindow * const *parentViewerWindow,
     Messenger *mesg) : 
@@ -462,18 +459,17 @@ void SequenceDisplay::MouseOver(int column, int row) const
     }
 }
 
-void SequenceDisplay::MouseDown(int column, int row, unsigned int controls) const
+void SequenceDisplay::MouseDown(int column, int row, unsigned int controls)
 {
     TESTMSG("got MouseDown");
-    (const_cast<SequenceDisplay*>(this))->
-        controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
+    controlDown = ((controls & ViewableAlignment::eControlDown) > 0);
 
     if (!controlDown && column == -1)
         messenger->RemoveAllHighlights(true);
 }
 
 void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop, 
-    int columnRight, int rowBottom) const
+    int columnRight, int rowBottom)
 {
     TESTMSG("got SelectedRectangle " << columnLeft << ',' << rowTop << " to "
         << columnRight << ',' << rowBottom);
@@ -486,70 +482,106 @@ void SequenceDisplay::SelectedRectangle(int columnLeft, int rowTop,
 }
 
 void SequenceDisplay::DraggedCell(int columnFrom, int rowFrom,
-    int columnTo, int rowTo) const
+    int columnTo, int rowTo)
 {
     TESTMSG("got DraggedCell " << columnFrom << ',' << rowFrom << " to "
         << columnTo << ',' << rowTo);
+    if (rowFrom == rowTo || columnFrom != columnTo) return; // ignore all but vertical drag
+
+    // only allow reordering of alignment rows
+    DisplayRowFromAlignment *alnRow;
+    if (dynamic_cast<DisplayRowFromAlignment*>(rows[rowTo]) == NULL) return;
+    if ((alnRow = dynamic_cast<DisplayRowFromAlignment*>(rows[rowFrom])) == NULL) return;
+
+    // use vertical drag to reorder row; move row so that it ends up in the 'rowTo' row
+    RowVector::iterator r = rows.begin();
+    int i;
+    for (i=0; i<rowFrom; i++) r++; // get iterator for position rowFrom
+    rows.erase(r);
+    for (r=rows.begin(), i=0; i<rowTo; i++) r++; // get iterator for position rowTo
+    rows.insert(r, alnRow);
+
+    messenger->PostRedrawSequenceViewers();
 }
 
 
-enum {
-    MID_SELECT,
-    MID_DRAG,
-    MID_DRAG_H,
-    MID_DRAG_V
-};
+////////////////////////////////////////////////////////////////////////////////
+// the implementation of the SequenceViewer, the interface to the viewer GUI
+////////////////////////////////////////////////////////////////////////////////
 
-BEGIN_EVENT_TABLE(SequenceViewerWindow, wxFrame)
-    EVT_MENU_RANGE(MID_SELECT,   MID_DRAG_V,      SequenceViewerWindow::OnMouseMode)
-END_EVENT_TABLE()
-
-SequenceViewerWindow::SequenceViewerWindow(SequenceViewer *parent) :
-    wxFrame(NULL, -1, "Cn3D++ Sequence Viewer", wxPoint(0,500), wxSize(500,200)),
-    viewerWidget(NULL), viewer(parent)
+SequenceViewer::SequenceViewer(Messenger *mesg) :
+    viewerWindow(NULL), display(NULL), messenger(mesg)
 {
-    // status bar with a single field
-    CreateStatusBar(2);
-    int widths[2] = { 150, -1 };
-    SetStatusWidths(2, widths);
-
-    viewerWidget = new SequenceViewerWidget(this);
-
-    wxMenuBar *menuBar = new wxMenuBar;
-    wxMenu *menu = new wxMenu;
-    menu->Append(MID_SELECT, "&Select");
-    menu->Append(MID_DRAG, "&Drag");
-    menu->Append(MID_DRAG_H, "Drag &Horizontal");
-    menu->Append(MID_DRAG_V, "Drag &Vertical");
-    menuBar->Append(menu, "&Mouse Mode");
-
-    SetMenuBar(menuBar);
 }
 
-SequenceViewerWindow::~SequenceViewerWindow(void)
+SequenceViewer::~SequenceViewer(void)
 {
-    viewer->viewerWindow = NULL; // make sure SequenceViewer knows the GUI is gone
-    viewerWidget->Destroy();
+    DestroyGUI();
+    if (display) delete display;
 }
 
-void SequenceViewerWindow::NewAlignment(const ViewableAlignment *newAlignment)
+void SequenceViewer::ClearGUI(void)
 {
-    viewerWidget->AttachAlignment(newAlignment);
-    Show(true);
-}
-
-void SequenceViewerWindow::OnMouseMode(wxCommandEvent& event)
-{
-    switch (event.GetId()) {
-        case MID_SELECT:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eSelect); break;
-        case MID_DRAG:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eDrag); break;
-        case MID_DRAG_H:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragHorizontal); break;
-        case MID_DRAG_V:
-            viewerWidget->SetMouseMode(SequenceViewerWidget::eDragVertical); break;
+    if (viewerWindow) viewerWindow->NewAlignment(NULL);
+    if (display) {
+        delete display;
+        display = NULL;
     }
+}
+
+void SequenceViewer::DestroyGUI(void)
+{
+    if (viewerWindow) {
+        viewerWindow->Destroy();
+        viewerWindow = NULL;
+    }
+}
+
+void SequenceViewer::Refresh(void)
+{
+    if (viewerWindow)
+        viewerWindow->Refresh();
+    else
+        NewAlignment(display);
+}
+
+void SequenceViewer::NewAlignment(SequenceDisplay *display)
+{
+    if (display) {
+        if (!viewerWindow) viewerWindow = new SequenceViewerWindow(this);
+        viewerWindow->NewAlignment(display);
+        viewerWindow->ScrollToColumn(display->GetStartingColumn());
+        messenger->PostRedrawSequenceViewers();
+    }
+}
+
+void SequenceViewer::DisplayAlignment(const BlockMultipleAlignment *multiple)
+{
+    if (display) delete display;
+    display = new SequenceDisplay(&viewerWindow, messenger);
+    
+    for (int row=0; row<multiple->NRows(); row++)
+        display->AddRowFromAlignment(row, multiple);
+
+    // set starting scroll to a few residues left of the first aligned block
+    display->SetStartingColumn(multiple->GetFirstAlignedBlockPosition() - 5);
+
+    NewAlignment(display);
+}
+
+void SequenceViewer::DisplaySequences(const SequenceList *sequenceList)
+{
+    if (display) delete display;
+    display = new SequenceDisplay(&viewerWindow, messenger);
+
+    // populate each line of the display with one sequence, with blank lines inbetween
+    SequenceList::const_iterator s, se = sequenceList->end();
+    for (s=sequenceList->begin(); s!=se; s++) {
+        if (s != sequenceList->begin()) display->AddRowFromString("");
+        display->AddRowFromSequence(*s, messenger);
+    }
+
+    NewAlignment(display);
 }
 
 END_SCOPE(Cn3D)

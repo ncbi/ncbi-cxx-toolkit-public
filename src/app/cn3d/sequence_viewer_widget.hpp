@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/09/14 14:55:26  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.4  2000/09/11 22:57:55  thiessen
 * working highlighting
 *
@@ -101,19 +104,19 @@ public:
     // this is called when the mouse-down event occurs (i.e., at the
     // beginning of selection), saying where the mouse was at the time and
     // with what control keys (see eControlKeys above)
-    virtual void MouseDown(int column, int row, unsigned int controls) const { }
+    virtual void MouseDown(int column, int row, unsigned int controls) { }
 
     // this is the callback when the the widget is in eSelect mode; it gives the
     // corners of the rectangle of cells selected.
     virtual void SelectedRectangle(
         int columnLeft, int rowTop, 
-        int columnRight, int rowBottom) const { }
+        int columnRight, int rowBottom) { }
 
     // this is the callback when the widget is in eDrag mode; it gives two cells,
     // one where the mouse button-down occurred, and one where mouse-up occurred.
     virtual void DraggedCell(
         int columnFrom, int rowFrom,
-        int columnTo, int rowTo) const { }
+        int columnTo, int rowTo) { }
 };
 
 
@@ -148,10 +151,13 @@ public:
         const wxString& name = "scrolledWindow"
     );
 
+    // destructor
+    ~SequenceViewerWidget(void);
+
     // to provide a ViewableAlignment to show. It is passed as a pointer, but
     // is not "owned" by the SequenceViewerWidget, and will not be deconstructed
     // even if the SequenceViewerWidget is destroyed. Returns false on error.
-    bool AttachAlignment(const ViewableAlignment *newAlignment);
+    bool AttachAlignment(ViewableAlignment *newAlignment);
 
     // sets mouse mode. If eSelect, dragging the mouse with the left button
     // down will cause a rubberband to be drawn around a block of characters,
@@ -175,8 +181,9 @@ public:
     // set the background color for highlighted characters after refresh
     void SetHighlightColor(const wxColor& highlightColor);
 
-    // set the font for the characters; refreshes automatically
-    void SetCharacterFont(const wxFont& font);
+    // set the font for the characters; refreshes automatically. This font
+    // object will be owned and destroyed by the SequenceViewerWidget
+    void SetCharacterFont(wxFont *font);
 
     // set the rubber band color after refresh
     void SetRubberbandColor(const wxColor& rubberbandColor);
@@ -187,9 +194,9 @@ private:
     void OnPaint(wxPaintEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
-    const ViewableAlignment *alignment;
+    ViewableAlignment *alignment;
 
-    wxFont currentFont;             // character font
+    wxFont *currentFont;            // character font
     wxColor currentBackgroundColor; // background for whole window
     wxColor currentHighlightColor;  // background for highlighted chars
     wxColor currentRubberbandColor; // color of rubber band

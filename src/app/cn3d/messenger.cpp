@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/09/14 14:55:34  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.3  2000/09/11 22:57:32  thiessen
 * working highlighting
 *
@@ -62,7 +65,7 @@ BEGIN_SCOPE(Cn3D)
 void Messenger::PostRedrawAllStructures(void)
 {
     redrawAllStructures = true;
-    redrawMolecules.empty();
+    redrawMolecules.clear();
 }
 
 void Messenger::PostRedrawMolecule(const StructureObject *object, int moleculeID)

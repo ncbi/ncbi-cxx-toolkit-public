@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/09/14 14:55:26  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.9  2000/08/27 18:50:55  thiessen
 * extract sequence information
 *
@@ -74,6 +77,11 @@
 
 BEGIN_SCOPE(Cn3D)
 
+// to create and delete dictionary - should be called on program init/exit
+void LoadStandardDictionary(void);
+void DeleteStandardDictionary(void);
+
+
 // The ChemicalGraph is the set of bonds that link the atoms (from CoordSets).
 // The graph is divided into essentially physically separate molecules (e.g.,
 // protein chains, hets, solvents), occasionally joined by inter-molecule
@@ -87,7 +95,6 @@ class ChemicalGraph : public StructureBase
 {
 public:
     ChemicalGraph(StructureBase *parent, const ncbi::objects::CBiostruc_graph& graph);
-    //~ChemicalGraph(void);
 
     // public data
     typedef std::map < int, const Molecule * > MoleculeMap;

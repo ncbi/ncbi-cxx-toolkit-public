@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/09/14 14:55:34  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.13  2000/09/11 01:46:14  thiessen
 * working messenger for sequence<->structure window communication
 *
@@ -92,33 +95,46 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+static const CBiostruc_residue_graph_set* standardDictionary = NULL;
+
+void LoadStandardDictionary(void)
+{
+    standardDictionary = new CBiostruc_residue_graph_set;
+
+    // initialize the binary input stream 
+    auto_ptr<CNcbiIstream> inStream;
+    inStream.reset(new CNcbiIfstream("bstdt.val", IOS_BASE::in | IOS_BASE::binary));
+    if (!(*inStream))
+        ERR_POST(Fatal << "Cannot open dictionary file 'bstdt.val'");
+
+    // Associate ASN.1 binary serialization methods with the input 
+    auto_ptr<CObjectIStream> inObject;
+    inObject.reset(new CObjectIStreamAsnBinary(*inStream));
+
+    // Read the dictionary data 
+    *inObject >> *(const_cast<CBiostruc_residue_graph_set *>(standardDictionary));
+
+    // make sure it's the right thing
+    if (!standardDictionary->IsSetId() ||
+        !standardDictionary->GetId().front().GetObject().IsOther_database() ||
+        standardDictionary->GetId().front().GetObject().GetOther_database().GetDb() != "Standard residue dictionary" ||
+        !standardDictionary->GetId().front().GetObject().GetOther_database().GetTag().IsId() ||
+        standardDictionary->GetId().front().GetObject().GetOther_database().GetTag().GetId() != 1)
+        ERR_POST(Fatal << "file 'bstdt.val' does not contain expected dictionary data");
+}
+
+void DeleteStandardDictionary(void)
+{
+    if (standardDictionary) delete standardDictionary;
+}
+
+
 ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph) :
     StructureBase(parent), displayListOtherStart(OpenGLRenderer::NO_LIST)
 {
-    static const CBiostruc_residue_graph_set* standardDictionary = NULL;
     if (!standardDictionary) {
-        standardDictionary = new CBiostruc_residue_graph_set;
-
-        // initialize the binary input stream 
-        auto_ptr<CNcbiIstream> inStream;
-        inStream.reset(new CNcbiIfstream("bstdt.val", IOS_BASE::in | IOS_BASE::binary));
-        if (!(*inStream))
-            ERR_POST(Fatal << "Cannot open dictionary file 'bstdt.val'");
-
-        // Associate ASN.1 binary serialization methods with the input 
-        auto_ptr<CObjectIStream> inObject;
-        inObject.reset(new CObjectIStreamAsnBinary(*inStream));
-
-        // Read the dictionary data 
-        *inObject >> *(const_cast<CBiostruc_residue_graph_set *>(standardDictionary));
-
-        // make sure it's the right thing
-        if (!standardDictionary->IsSetId() ||
-            !standardDictionary->GetId().front().GetObject().IsOther_database() ||
-            standardDictionary->GetId().front().GetObject().GetOther_database().GetDb() != "Standard residue dictionary" ||
-            !standardDictionary->GetId().front().GetObject().GetOther_database().GetTag().IsId() ||
-            standardDictionary->GetId().front().GetObject().GetOther_database().GetTag().GetId() != 1)
-            ERR_POST(Fatal << "file 'bstdt.val' does not contain expected dictionary data");
+        ERR_POST(Fatal << "need to load standard dictionary first");
+        return;
     }
 
     // figure out what models we'll be drawing, based on contents of parent 

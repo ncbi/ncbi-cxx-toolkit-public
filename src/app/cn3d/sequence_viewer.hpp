@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/09/14 14:55:26  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.5  2000/09/11 14:06:02  thiessen
 * working alignment coloring
 *
@@ -75,7 +78,7 @@ public:
     SequenceViewer(Messenger *messenger);
     ~SequenceViewer(void);
 
-    void NewAlignment(const SequenceDisplay *display);
+    void NewAlignment(SequenceDisplay *display);
 
     // to create displays from unaligned sequence(s), or multiple alignment
     typedef std::list < const Sequence * > SequenceList;

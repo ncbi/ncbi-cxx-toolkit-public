@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/09/14 14:55:34  thiessen
+* add row reordering; misc fixes
+*
 * Revision 1.8  2000/09/12 01:47:38  thiessen
 * fix minor but obscure bug
 *
@@ -133,6 +136,7 @@
 #include "cn3d/style_manager.hpp"
 #include "cn3d/sequence_viewer.hpp"
 #include "cn3d/messenger.hpp"
+#include "cn3d/chemical_graph.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -199,6 +203,9 @@ bool Cn3DApp::OnInit(void)
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
 
+    // read dictionary
+    LoadStandardDictionary();
+
     // create the messenger; tell it about sequence & structure windows
     messenger = new Messenger();
 
@@ -225,7 +232,10 @@ bool Cn3DApp::OnInit(void)
 
 int Cn3DApp::OnExit(void)
 {
-    // delete messenger;  // causes crash on win98 for some reason...
+    // delete dictionary
+    DeleteStandardDictionary();
+
+    delete messenger;
 	return 0;
 }
 
@@ -466,6 +476,7 @@ Cn3DGLCanvas::Cn3DGLCanvas(Messenger *mesg,
 Cn3DGLCanvas::~Cn3DGLCanvas(void)
 {
     if (structureSet) delete structureSet;
+    if (font) delete font;
 }
 
 void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
