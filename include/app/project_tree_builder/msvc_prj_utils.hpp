@@ -208,11 +208,18 @@ void AddCustomBuildFileToFilter(CRef<CFilter>&          filter,
 /// Get components from site
 void GetComponents(const string& entry, list<string>* components);
 
+
+/// Checks if 2 dirs has the same root
+bool SameRootDirs(const string& dir1, const string& dir2);
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/02/04 23:17:58  gorelenk
+ * Added declarations of functions GetComponents and SameRootDirs.
+ *
  * Revision 1.6  2004/02/03 17:09:46  gorelenk
  * Changed declaration of class CMsvc7RegSettings.
  * Added declaration of function GetComponents.
