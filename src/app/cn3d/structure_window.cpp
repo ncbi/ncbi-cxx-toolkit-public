@@ -33,6 +33,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
 
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 #include <objects/cdd/Cdd.hpp>
@@ -1390,6 +1391,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/03/13 22:55:29  thiessen
+* another Solaris/workshop fix
+*
 * Revision 1.4  2003/03/13 22:48:43  thiessen
 * fixes for Mac/OSX/gcc
 *
