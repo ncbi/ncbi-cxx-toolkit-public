@@ -130,11 +130,11 @@ void CDebugDumpContext::SetFrame(const string& frame)
 
 
 void CDebugDumpContext::Log(const string& name, const string& value,
-    bool is_string, const string& comment)
+    CDebugDumpFormatter::EValueType type, const string& comment)
 {
     x_VerifyFrameStarted();
     if (m_Started) {
-        m_Formatter.PutValue(m_Level, name, value, is_string, comment);
+        m_Formatter.PutValue(m_Level, name, value, type, comment);
     }
 }
 
@@ -142,35 +142,35 @@ void CDebugDumpContext::Log(const string& name, const string& value,
 void CDebugDumpContext::Log(const string& name, bool value,
     const string& comment)
 {
-    Log(name, NStr::BoolToString(value), false, comment);
+    Log(name,NStr::BoolToString(value),CDebugDumpFormatter::eValue,comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, long value,
     const string& comment)
 {
-    Log(name, NStr::IntToString(value), false, comment);
+    Log(name,NStr::IntToString(value),CDebugDumpFormatter::eValue,comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, unsigned long value,
     const string& comment)
 {
-    Log(name, NStr::UIntToString(value), false, comment);
+    Log(name,NStr::UIntToString(value),CDebugDumpFormatter::eValue,comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, double value,
     const string& comment)
 {
-    Log(name, NStr::DoubleToString(value), false, comment);
+    Log(name,NStr::DoubleToString(value),CDebugDumpFormatter::eValue,comment);
 }
 
 
 void CDebugDumpContext::Log(const string& name, const void* value,
     const string& comment)
 {
-    Log(name, NStr::PtrToString(value), false, comment);
+    Log(name,NStr::PtrToString(value),CDebugDumpFormatter::eValue,comment);
 }
 
 
@@ -181,7 +181,8 @@ void CDebugDumpContext::Log(const string& name, const CDebugDumpable* value,
         CDebugDumpContext ddc(*this,name);
         value->DebugDump(ddc, depth-1);
     } else {
-        Log(name, static_cast<const void*>(value));
+        Log(name,NStr::PtrToString(static_cast<const void*>(value)),
+            CDebugDumpFormatter::ePointer);
     }
 }
 
@@ -263,13 +264,18 @@ void CDebugDumpFormatterText::EndFrame( unsigned int level,
 
 void CDebugDumpFormatterText::PutValue(unsigned int level,
     const string& name, const string& value,
-    bool is_string, const string& comment)
+    EValueType type, const string& comment)
 {
     m_Out << endl;
     x_IndentLine(level+1);
-    m_Out << name << " = " <<
-        (is_string ? "\"" : "") << value <<
-        (is_string ? "\"" : "");
+    string tb,te;
+    switch (type) {
+    default:
+    case eValue:   break;
+    case eString:  tb = te = "\""; break;
+    case ePointer: break;
+    }
+    m_Out << name << " = " << tb << value << te;
     if (!comment.empty()) {
         m_Out << " (" << comment << ")";
     }
@@ -281,7 +287,7 @@ void CDebugDumpFormatterText::x_IndentLine(
     unsigned int level, char c, int len)
 {
     string tmp;
-    for (int i=1; i<level; ++i) {
+    for (unsigned int i=1; i<level; ++i) {
         for (int l=0; l<len; ++l) {
             tmp+=c;
         }
@@ -318,6 +324,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/05/29 21:17:32  gouriano
+ * changed formatter interface: added value type
+ *
  * Revision 1.2  2002/05/28 17:59:24  gouriano
  * all DebugDump-related classes were put in one header
  * templates adjusted and debugged on multiple platforms

@@ -44,6 +44,12 @@ BEGIN_NCBI_SCOPE
 class CDebugDumpFormatter
 {
 public:
+    enum EValueType {
+        eValue,
+        eString,
+        ePointer
+    };
+public:
     virtual bool StartBundle(unsigned int level, const string& bundle) = 0;
     virtual void EndBundle(  unsigned int level, const string& bundle) = 0;
 
@@ -51,7 +57,7 @@ public:
     virtual void EndFrame(   unsigned int level, const string& frame) = 0;
 
     virtual void PutValue(   unsigned int level, const string& name,
-                             const string& value, bool is_string,
+                             const string& value, EValueType type,
                              const string& comment) = 0;
 };
 
@@ -78,7 +84,8 @@ public:
     // Log data in the form [name, data, comment]
     // All data is passed to a formatter as string, still sometimes
     // it is probably worth to emphasize that the data is REALLY a string
-    void Log(const string& name, const string& value, bool is_string = true,
+    void Log(const string& name, const string& value, 
+             CDebugDumpFormatter::EValueType type=CDebugDumpFormatter::eValue,
              const string& comment = kEmptyStr);
     void Log(const string& name, bool value,
              const string& comment = kEmptyStr);
@@ -151,7 +158,7 @@ public:
     virtual void EndFrame(   unsigned int level, const string& frame);
 
     virtual void PutValue(   unsigned int level, const string& name,
-                             const string& value, bool is_string,
+                             const string& value, EValueType type,
                              const string& comment);
 
 private:
@@ -179,7 +186,7 @@ void DebugDumpValue( CDebugDumpContext& _this, const string& name,
 {
     ostrstream os;
     os << value << '\0';
-    _this.Log(name, os.str(), false, comment);
+    _this.Log(name, string(os.str()), CDebugDumpFormatter::eValue, comment);
 }
 
 
@@ -324,6 +331,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/05/29 21:15:08  gouriano
+ * changed formatter interface: added value type
+ *
  * Revision 1.2  2002/05/28 17:57:11  gouriano
  * all DebugDump-related classes were put in one header
  * templates adjusted and debugged on multiple platforms
