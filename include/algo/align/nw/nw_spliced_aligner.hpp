@@ -53,8 +53,6 @@ public:
     void SetIntronMinSize( size_t s )  { m_IntronMinSize  = s; }
 
     // Getters
-    static TScore GetDefaultWi  (unsigned char splice_type);
-
     static size_t GetDefaultIntronMinSize () {
         return 50;
     }
@@ -91,6 +89,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/10/27 20:56:50  kapustin
+ * Move static GetDefaultWi to descendants
+ *
  * Revision 1.4  2003/09/30 19:49:32  kapustin
  * Make use of standard score matrix interface
  *
