@@ -356,7 +356,7 @@ void CValidError_bioseqset::ValidateGenProdSet(const CBioseq_set& seqset)
 
     CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Rna);
     for (; fi; ++fi) {
-        if (fi->GetData().GetSubtype() == CRNA_ref::eType_mRNA) {
+        if ( fi->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA ) {
             if ( fi->IsSetProduct() ) {
                 CBioseq_Handle cdna = 
                     m_Scope->GetBioseqHandle(fi->GetProduct());
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/06 17:37:19  shomrat
+* Fixed mismatch types
+*
 * Revision 1.3  2003/01/02 21:54:33  shomrat
 * Implemented IsMrnaProductInGPS
 *
