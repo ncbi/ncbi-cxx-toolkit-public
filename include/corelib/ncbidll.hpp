@@ -133,8 +133,8 @@ public:
     ///
     /// The absolute file path to the DLL will be formed using the "path"
     /// and "name" parameters in the following way:
-    /// - UNIX:    <path>/lib<name>.so ; <path>/<name> if "name" is not basename
-    /// - MS-Win:  <path>\<name>.dll   ; <path>\<name> if "name" is not basename
+    /// - UNIX:   <path>/lib<name>.so ; <path>/<name> if "name" is not basename
+    /// - MS-Win: <path>\<name>.dll   ; <path>\<name> if "name" is not basename
     ///
     /// @param path
     ///   Path to DLL.
@@ -157,8 +157,8 @@ public:
 
     /// Destructor.
     ///
-    /// Unload DLL if constructor was passed "eAutoUnload". Destructor does not
-    /// throw any exceptions.
+    /// Unload DLL if constructor was passed "eAutoUnload".
+    /// Destructor does not throw any exceptions.
     NCBI_XNCBI_EXPORT ~CDll(void);
 
     /// Load DLL.
@@ -173,7 +173,7 @@ public:
     /// Do nothing and do not generate errors if the DLL is not loaded.
     NCBI_XNCBI_EXPORT void Unload(void);
 
-    /// Get the DLLs entry point.
+    /// Get DLLs entry point.
     ///
     /// Get the entry point (e.g. a function) with name "name" in the DLL and
     /// return the entry point's address on success, or return NULL on error.
@@ -238,7 +238,7 @@ protected:
 private:
     string      m_Name;       ///< DLL name
     SDllHandle* m_Handle;     ///< DLL handle
-    bool        m_AutoUnload; ///< Whether to unload the DLL in the destructor
+    bool        m_AutoUnload; ///< Whether to unload DLL in the destructor
 };
 
 
@@ -251,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/09/11 16:17:33  ivanov
+ * Fixed lines wrapped at 79th column
+ *
  * Revision 1.10  2003/07/28 19:07:04  siyan
  * Documentation changes.
  *
