@@ -47,7 +47,10 @@ Detailed Contents:
 #include <math.h>
 #include <ctype.h>
 #include <assert.h>
+
+#ifndef NCBI_C_TOOLKIT
 #include <corelib/ncbitype.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,21 +69,21 @@ extern "C" {
 #define strdup _strdup
 #endif
 
+#ifndef NCBI_C_TOOLKIT
 typedef void Void;
 typedef void * VoidPtr;
 typedef double FloatHi, Nlm_FloatHi;
 typedef double * FloatHiPtr;
 typedef Uint1 Boolean, Nlm_Boolean;
+typedef Boolean* BooleanPtr;
 #define TRUE 1
 #define FALSE 0
-typedef int (*FnPtr)(void);
-#define PNTR *
 typedef Uint1 * Uint1Ptr;
 typedef Int4 * Int4Ptr;
 typedef Uint4 * Uint4Ptr;
 typedef Int8 * Int8Ptr;
 typedef Char * CharPtr;
-typedef Boolean* BooleanPtr;
+#endif
 
 #ifndef ASSERT
 #define ASSERT assert
@@ -104,6 +107,7 @@ typedef Boolean* BooleanPtr;
 
 /* low-level ANSI-style functions */
 
+#ifndef NCBI_C_TOOLKIT
 #define INT4_MAX    2147483647
 #define INT4_MIN    (-2147483647-1)
 #define NCBIMATH_LN2      0.69314718055994530941723212145818
@@ -124,6 +128,8 @@ typedef Boolean* BooleanPtr;
 
 /* blastkar.c needs these to read matrix files */
 Int8 FileLength(CharPtr fileName);
+
+#endif /* NCBI_C_TOOLKIT */
 
 /****************************** Functions from ncbimath ***********************/
 /* Round a floating point number to the nearest integer */
@@ -185,6 +191,7 @@ Return the greatest common divisor of a and b.
 Adapted 8-15-90 by WRG from code by S. Altschul.
 */
 long Gcd(register long a, register long b);
+
 /******************************************************************************/
 
 /** A generic linked list node structure */
