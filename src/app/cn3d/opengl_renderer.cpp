@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.43  2001/08/08 02:26:18  thiessen
 * fixes for gnu ; make DrawHelix more logical
 *
@@ -908,7 +911,7 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
     transparentSpheresToRender.clear();
 }
 
-void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, double alpha)
+void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
 {
     if (atomStyle.style == StyleManager::eNotDisplayed || atomStyle.radius <= 0.0)
         return;
@@ -923,7 +926,7 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, do
     }
     // need to delay rendering of transparent spheres
     else {
-        AddTransparentSphere(atomStyle.color, atomStyle.name, site, atomStyle.radius, alpha);
+        AddTransparentSphere(atomStyle.color, atomStyle.name, site, atomStyle.radius, atomStyle.alpha);
         // but can put labels on now
         if (atomStyle.centerLabel.size() > 0)
             Label(atomStyle.centerLabel, site, Vector(1,1,1)); // always white

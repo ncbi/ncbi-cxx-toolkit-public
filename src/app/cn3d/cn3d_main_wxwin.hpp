@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2001/08/09 19:07:19  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.33  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -208,6 +211,7 @@ private:
     DECLARE_EVENT_TABLE()
 };
 
+
 class Cn3DGLCanvas;
 
 class Cn3DMainFrame: public wxFrame
@@ -230,10 +234,14 @@ public:
             MID_LIMIT_STRUCT,
             MID_EXIT,
         // View menu
-            MID_TRANSLATE,
             MID_ZOOM_IN,
             MID_ZOOM_OUT,
             MID_RESET,
+            MID_NEXT_FRAME,
+            MID_PREV_FRAME,
+            MID_FIRST_FRAME,
+            MID_LAST_FRAME,
+            MID_ALL_FRAMES,
             MID_PREFERENCES,
         // Show/Hide menu
             MID_SHOW_HIDE,
@@ -300,6 +308,7 @@ private:
     DECLARE_EVENT_TABLE()
 };
 
+
 class Cn3DGLCanvas: public wxGLCanvas
 {
 public:
@@ -315,7 +324,6 @@ public:
     void OnPaint(wxPaintEvent& event);
     void OnSize(wxSizeEvent& event);
     void OnEraseBackground(wxEraseEvent& event);
-    void OnChar(wxKeyEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
 
 private:

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/08/09 19:07:20  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.31  2001/08/03 13:41:24  thiessen
 * add registry and style favorites
 *
@@ -187,6 +190,8 @@ public:
         eMolecule = 3,
         eDomain = 4,
         eSecondaryStructure = 5,
+        eTemperature = 13,
+        eHydrophobicity = 14,
         eUserSelect = 6,
 
         // different alignment conservation coloring (currently only used for proteins)
@@ -260,10 +265,15 @@ public:
     bool LoadSettingsFromASN(const ncbi::objects::CCn3d_style_settings& styleASN);
 };
 
+// for hydrophobicity coloring
+extern const double UNKNOWN_HYDROPHOBICITY;
+extern double GetHydrophobicity(char code);
+
 class StructureSet;
 class StructureObject;
 class Residue;
 class AtomPntr;
+class AtomCoord;
 class Bond;
 class BondStyle;
 class AtomStyle;
@@ -298,11 +308,13 @@ public:
     const Vector& GetBackgroundColor(void) const { return globalStyle.backgroundColor; }
 
     // style accessors for individual objects
-    bool GetAtomStyle(const Residue *residue, const AtomPntr& atom, AtomStyle *atomStyle,
+    bool GetAtomStyle(const Residue *residue, const AtomPntr& atom,
+        const AtomCoord *coord, AtomStyle *atomStyle,
         const StyleSettings::BackboneStyle* *saveBackboneStyle = NULL,
         const StyleSettings::GeneralStyle* *saveGeneralStyle = NULL) const;
     bool GetBondStyle(const Bond *bond,
-            const AtomPntr& atom1, const AtomPntr& atom2,
+            const AtomPntr& atom1, const AtomCoord *coord1,
+            const AtomPntr& atom2, const AtomCoord *coord2,
             double bondLength, BondStyle *bondStyle) const;
     bool GetHelixStyle(const StructureObject *object,
         const Helix3D& helix, HelixStyle *helixStyle) const;
@@ -420,7 +432,7 @@ class AtomStyle
 public:
     StyleManager::eDisplayStyle style;
     Vector color;
-    double radius;
+    double radius, alpha;
     unsigned int name;
     std::string centerLabel;
     bool isHighlighted;
@@ -435,7 +447,6 @@ public:
         double radius;
         bool atomCap;
         unsigned int name;
-        bool isHighlighted;
     } EndStyle;
     EndStyle end1, end2;
     bool midCap;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/08/09 19:07:19  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.7  2001/07/12 17:34:22  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -57,6 +60,10 @@
 #ifndef CN3D_COLORS__HPP
 #define CN3D_COLORS__HPP
 
+#include <corelib/ncbistl.hpp>
+
+#include <vector>
+
 #include "cn3d/vector_math.hpp"
 
 
@@ -73,6 +80,7 @@ class Colors
 public:
     Colors(void);
 
+    // individual colors
     enum eColor {
         // sequence viewer colors
         eHighlight = 0,
@@ -87,26 +95,39 @@ public:
 
         // misc other colors
         eNoDomain,
+        eNoTemperature,
+        eNoHydrophobicity,
 
-        eNumColors,
-
-        // color cycles
-        eCycle1
+        eNumColors
     };
+    const Vector& Get(eColor which) const;
+
+    // color cycles
+    enum eColorCycle {
+        eCycle1 = 0,    // for molecule, domain, object coloring
+
+        eNumColorCycles
+    };
+    const Vector& Get(eColorCycle which, int n) const;
+
+    // color maps
+    enum eColorMap {
+        eTemperatureMap = 0,
+        eHydrophobicityMap,
+
+        eNumColorMaps
+    };
+    Vector Get(eColorMap which, double f) const;
 
 private:
     // storage for individual colors
     Vector colors[eNumColors];
 
     // storage for color cycles
-    enum {
-        nCycle1 = 10
-    };
-    Vector cycle1[nCycle1];
+    std::vector < std::vector < Vector > > cycleColors;
 
-public:
-    // color accessors
-    const Vector& Get(eColor which, int n = 0) const;
+    // storage for color maps
+    std::vector < std::vector < Vector > > mapColors;
 };
 
 END_SCOPE(Cn3D)

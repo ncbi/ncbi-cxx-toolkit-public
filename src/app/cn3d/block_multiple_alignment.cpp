@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.25  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -339,14 +342,28 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
     else
         *character = tolower(*character);
 
-    if (sequence->molecule && seqIndex >= 0) {
-        *color = sequence->molecule->GetResidueColor(seqIndex);
-    } else {
+    static const Vector gray(.4, .4, .4);  // dark gray
+    // try to color by molecule first
+    if (sequence->molecule) {
+        *color = (seqIndex >= 0) ? sequence->molecule->GetResidueColor(seqIndex) : gray;
+    }
+    // or color by hydrophobicity
+    else if (sequence->isProtein &&
+             sequence->parentSet->styleManager->GetGlobalStyle().
+                proteinBackbone.colorScheme == StyleSettings::eHydrophobicity) {
+        double hydrophobicity = GetHydrophobicity(toupper(*character));
+        *color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
+            GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
+            GlobalColors()->Get(Colors::eNoHydrophobicity);
+    }
+    // else, color by alignment color
+    else {
         const Vector *aColor;
         if (isAligned && (aColor = GetAlignmentColor(row, seqIndex)) != NULL) {
             *color = *aColor;
-        } else
-            color->Set(.4, .4, .4);  // dark gray
+        } else {
+            *color = gray;
+        }
     }
 
     if (seqIndex >= 0)

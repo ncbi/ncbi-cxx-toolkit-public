@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.36  2001/07/24 15:02:59  thiessen
 * use ProSite syntax for pattern searches
 *
@@ -671,7 +674,7 @@ bool Sequence::HighlightPattern(const std::string& prositePattern) const
             }
 
             // parse the match registers, highlight ranges
-            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
+//            TESTMSG("found match starting at " << identifier->ToString() << " loc " << result+1);
             int lastMatched = result;
             for (i=1; i<registers->num_regs; i++) {
                 int from = registers->start[i], to = registers->end[i] - 1;
@@ -679,7 +682,7 @@ bool Sequence::HighlightPattern(const std::string& prositePattern) const
                     if (to > lastMatched) lastMatched = to;
 
                     // highlight this ranage
-                    TESTMSG("register " << i << ": from " << from+1 << " to " << to+1);
+//                    TESTMSG("register " << i << ": from " << from+1 << " to " << to+1);
                     GlobalMessenger()->AddHighlights(this, from, to);
                 }
             }

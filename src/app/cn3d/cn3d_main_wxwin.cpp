@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.61  2001/08/06 20:22:00  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -607,7 +610,7 @@ BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
     EVT_MENU      (MID_OPEN,                                Cn3DMainFrame::OnOpen)
     EVT_MENU      (MID_SAVE,                                Cn3DMainFrame::OnSave)
     EVT_MENU      (MID_LIMIT_STRUCT,                        Cn3DMainFrame::OnLimit)
-    EVT_MENU_RANGE(MID_TRANSLATE,  MID_RESET,               Cn3DMainFrame::OnAdjustView)
+    EVT_MENU_RANGE(MID_ZOOM_IN,  MID_ALL_FRAMES,            Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SHOW_HIDE,  MID_SHOW_SELECTED,       Cn3DMainFrame::OnShowHide)
     EVT_MENU      (MID_REFIT_ALL,                           Cn3DMainFrame::OnAlignStructures)
     EVT_MENU_RANGE(MID_EDIT_STYLE, MID_ANNOTATE,            Cn3DMainFrame::OnSetStyle)
@@ -651,10 +654,15 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
 
     // View menu
     menu = new wxMenu;
-    menu->Append(MID_TRANSLATE, "&Translate");
-    menu->Append(MID_ZOOM_IN, "Zoom &In");
-    menu->Append(MID_ZOOM_OUT, "Zoom &Out");
+    menu->Append(MID_ZOOM_IN, "Zoom &In\tz");
+    menu->Append(MID_ZOOM_OUT, "Zoom &Out\tx");
     menu->Append(MID_RESET, "&Reset");
+    menu->AppendSeparator();
+    menu->Append(MID_NEXT_FRAME, "&Next Frame\tRight");
+    menu->Append(MID_PREV_FRAME, "Pre&vious Frame\tLeft");
+    menu->Append(MID_FIRST_FRAME, "&First Frame\tDown");
+    menu->Append(MID_LAST_FRAME, "&Last Frame\tUp");
+    menu->Append(MID_ALL_FRAMES, "&All Frames\ta");
     menu->AppendSeparator();
     menu->Append(MID_PREFERENCES, "&Preferences...");
     menuBar->Append(menu, "&View");
@@ -711,6 +719,15 @@ Cn3DMainFrame::Cn3DMainFrame(const wxString& title, const wxPoint& pos, const wx
     menu->Append(MID_EDIT_CDD_NOTES, "Edit &Notes");
     menu->Append(MID_ANNOT_CDD, "&Annotate");
     menuBar->Append(menu, "&CDD");
+
+    // accelerators for special keys
+    wxAcceleratorEntry entries[4];
+    entries[0].Set(wxACCEL_NORMAL, WXK_RIGHT, MID_NEXT_FRAME);
+    entries[1].Set(wxACCEL_NORMAL, WXK_LEFT, MID_PREV_FRAME);
+    entries[2].Set(wxACCEL_NORMAL, WXK_DOWN, MID_FIRST_FRAME);
+    entries[3].Set(wxACCEL_NORMAL, WXK_UP, MID_LAST_FRAME);
+    wxAcceleratorTable accel(4, entries);
+    SetAcceleratorTable(accel);
 
     SetMenuBar(menuBar);
     menuBar->EnableTop(menuBar->FindMenu("&CDD"), false);
@@ -935,19 +952,16 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
 {
     glCanvas->SetCurrent();
     switch (event.GetId()) {
-        case MID_TRANSLATE:
-            glCanvas->renderer->ChangeView(OpenGLRenderer::eXYTranslateHV, 25, 25);
+        case MID_ZOOM_IN:       glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomIn); break;
+        case MID_ZOOM_OUT:      glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomOut); break;
+        case MID_RESET:         glCanvas->renderer->ResetCamera(); break;
+        case MID_FIRST_FRAME:   glCanvas->renderer->ShowFirstFrame(); break;
+        case MID_LAST_FRAME:    glCanvas->renderer->ShowLastFrame(); break;
+        case MID_NEXT_FRAME:    glCanvas->renderer->ShowNextFrame(); break;
+        case MID_PREV_FRAME:    glCanvas->renderer->ShowPreviousFrame(); break;
+        case MID_ALL_FRAMES:    glCanvas->renderer->ShowAllFrames(); break;
+        default:
             break;
-        case MID_ZOOM_IN:
-            glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomIn);
-            break;
-        case MID_ZOOM_OUT:
-            glCanvas->renderer->ChangeView(OpenGLRenderer::eZoomOut);
-            break;
-        case MID_RESET:
-            glCanvas->renderer->ResetCamera();
-            break;
-        default: ;
     }
     glCanvas->Refresh(false);
 }
@@ -1176,7 +1190,6 @@ void Cn3DMainFrame::OnLimit(wxCommandEvent& event)
 BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
     EVT_SIZE                (Cn3DGLCanvas::OnSize)
     EVT_PAINT               (Cn3DGLCanvas::OnPaint)
-    EVT_CHAR                (Cn3DGLCanvas::OnChar)
     EVT_MOUSE_EVENTS        (Cn3DGLCanvas::OnMouseEvent)
     EVT_ERASE_BACKGROUND    (Cn3DGLCanvas::OnEraseBackground)
 END_EVENT_TABLE()
@@ -1246,21 +1259,6 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         unsigned int name;
         if (structureSet && renderer->GetSelected(event.GetX(), event.GetY(), &name))
             structureSet->SelectedAtom(name);
-    }
-}
-
-void Cn3DGLCanvas::OnChar(wxKeyEvent& event)
-{
-    if (!GetContext() || !renderer) return;
-    SetCurrent();
-
-    switch (event.KeyCode()) {
-        case 'a': case 'A': renderer->ShowAllFrames(); Refresh(false); break;
-        case WXK_DOWN: renderer->ShowFirstFrame(); Refresh(false); break;
-        case WXK_UP: renderer->ShowLastFrame(); Refresh(false); break;
-        case WXK_RIGHT: renderer->ShowNextFrame(); Refresh(false); break;
-        case WXK_LEFT: renderer->ShowPreviousFrame(); Refresh(false); break;
-        default: event.Skip();
     }
 }
 

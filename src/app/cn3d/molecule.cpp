@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.28  2001/07/16 15:35:37  thiessen
 * fix unaligned chain identifier ommission
 *
@@ -132,6 +135,7 @@
 #include "cn3d/atom_set.hpp"
 #include "cn3d/chemical_graph.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/show_hide_manager.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -294,7 +298,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
 
 Vector Molecule::GetResidueColor(int sequenceIndex) const
 {
-    static Vector gray(.5,.5,.5);
+    static const Vector gray(.5,.5,.5);
 
     // this assumes that the "index" - the position of the residue in the sequence,
     // starting from zero, is always one less than the residueID from the ASN1
@@ -306,10 +310,17 @@ Vector Molecule::GetResidueColor(int sequenceIndex) const
 
     // if no known alpha atom, just use gray
     if (residue->alphaID == Residue::NO_ALPHA_ID) return gray;
+    AtomPntr atom(id, residue->id, residue->alphaID);
+
+    // just use the first AtomSet (e.g. first model) of this object
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) return gray;
+    const AtomCoord *atomCoord = object->coordSets.front()->atomSet->
+        GetAtom(atom, parentSet->showHideManager->OverlayConfEnsembles(), true);
+    if (!atomCoord) return gray;
 
     AtomStyle style;
-    AtomPntr atom(id, residue->id, residue->alphaID);
-    if (!parentSet->styleManager->GetAtomStyle(residue, atom, &style)) return gray;
+    if (!parentSet->styleManager->GetAtomStyle(residue, atom, atomCoord, &style)) return gray;
     return style.color;
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.8  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -57,6 +60,8 @@
 * ===========================================================================
 */
 
+#include <math.h>
+
 #include "cn3d/cn3d_colors.hpp"
 
 USING_NCBI_SCOPE;
@@ -73,6 +78,18 @@ const Colors * GlobalColors(void)
 }
 
 
+// # colors for color cycles
+static enum {
+    nCycle1 = 10
+};
+
+// # colors for color maps (must be >1)
+static enum {
+    nTemperatureMap = 5,
+    nHydrophobicityMap = 3
+};
+
+
 Colors::Colors(void)
 {
     // default colors
@@ -86,33 +103,73 @@ Colors::Colors(void)
     colors[eCoil].Set(.3, .9, .9);
 
     colors[eNoDomain].Set(.4, .4, .4);
+    colors[eNoTemperature].Set(.4, .4, .4);
+    colors[eNoHydrophobicity].Set(.4, .4, .4);
 
-    // colors for cycle1 (basically copied from Cn3D 3.0)
-    cycle1[0].Set(1, 0, 1);
-    cycle1[1].Set(0, 0, 1);
-    cycle1[2].Set(139.0/255, 87.0/255, 66.0/255);
-    cycle1[3].Set(0, 1, .5);
-    cycle1[4].Set(.7, .7, .7);
-    cycle1[5].Set(1, 165.0/255, 0);
-    cycle1[6].Set(1, 114.0/255, 86.0/255);
-    cycle1[7].Set(0, 1, 0);
-    cycle1[8].Set(0, 1, 1);
-    cycle1[9].Set(1, 236.0/255, 139.0/255);
+    // cycles and maps
+    cycleColors.resize(eNumColorCycles);
+    mapColors.resize(eNumColorMaps);
+
+    // colors for cycle1
+    cycleColors[eCycle1].resize(nCycle1);
+    cycleColors[eCycle1][0].Set(1, 0, 1);
+    cycleColors[eCycle1][1].Set(0, 0, 1);
+    cycleColors[eCycle1][2].Set(139.0/255, 87.0/255, 66.0/255);
+    cycleColors[eCycle1][3].Set(0, 1, .5);
+    cycleColors[eCycle1][4].Set(.7, .7, .7);
+    cycleColors[eCycle1][5].Set(1, 165.0/255, 0);
+    cycleColors[eCycle1][6].Set(1, 114.0/255, 86.0/255);
+    cycleColors[eCycle1][7].Set(0, 1, 0);
+    cycleColors[eCycle1][8].Set(0, 1, 1);
+    cycleColors[eCycle1][9].Set(1, 236.0/255, 139.0/255);
+
+    // colors for temperature map
+    mapColors[eTemperatureMap].resize(nTemperatureMap);
+    mapColors[eTemperatureMap][0].Set(0.2, 0.2, 0.7);
+    mapColors[eTemperatureMap][1].Set(0.1, 0.6, 0.2);
+    mapColors[eTemperatureMap][2].Set(0.9, 0.8, 0.2);
+    mapColors[eTemperatureMap][3].Set(0.9, 0.2, 0.2);
+    mapColors[eTemperatureMap][4].Set(0.9, 0.9, 0.9);
+
+    // colors for hydrophobicity map
+    mapColors[eHydrophobicityMap].resize(nHydrophobicityMap);
+    mapColors[eHydrophobicityMap][0].Set(0.2, 0.2, 0.7);
+    mapColors[eHydrophobicityMap][1].Set(0.2, 0.5, 0.6);
+    mapColors[eHydrophobicityMap][2].Set(0.7, 0.4, 0.3);
 }
 
-const Vector& Colors::Get(eColor which, int n) const
+const Vector& Colors::Get(eColor which) const
 {
-    if (which >= 0 && n >= 0) {
-
-        if (which < eNumColors)
-            return colors[which];
-
-        else if (which == eCycle1)
-            return cycle1[n % nCycle1];
-    }
-
-    ERR_POST(Warning << "Colors::Get() - bad color #");
+    if (which >= 0 && which < eNumColors) return colors[which];
+    ERR_POST(Error << "Colors::Get() - bad eColor " << which);
     return colors[0];
+}
+
+const Vector& Colors::Get(eColorCycle which, int n) const
+{
+    if (which >= 0 && which < eNumColorCycles && n >= 0)
+        return cycleColors[which][n % cycleColors[which].size()];
+    ERR_POST(Warning << "Colors::Get() - bad eColorCycle " << which);
+    return cycleColors[0][0];
+}
+
+Vector Colors::Get(eColorMap which, double f) const
+{
+    if (which >= 0 && which < eNumColorMaps && f >= 0.0 && f <= 1.0) {
+        const std::vector < Vector >& colorMap = mapColors[which];
+        if (f == 1.0) return colorMap[colorMap.size() - 1];
+        double bin = 1.0 / (colorMap.size() - 1);
+        int low = (int) (f / bin);
+        double fraction = fmod(f, bin) / bin;
+        const Vector &color1 = colorMap[low], &color2 = colorMap[low + 1];
+        return Vector(
+            color1[0] + fraction * (color2[0] - color1[0]),
+            color1[1] + fraction * (color2[1] - color1[1]),
+            color1[2] + fraction * (color2[2] - color1[2])
+        );
+    }
+    ERR_POST(Warning << "Colors::Get() - bad eColorMap " << which << " at " << f);
+    return mapColors[0][0];
 }
 
 END_SCOPE(Cn3D)

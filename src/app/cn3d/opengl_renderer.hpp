@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2001/08/09 19:07:19  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.29  2001/08/06 20:22:48  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -224,7 +227,7 @@ public:
     void ShowPreviousFrame(void);
 
     // drawing methods
-    void DrawAtom(const Vector& site, const AtomStyle& atomStyle, double alpha);
+    void DrawAtom(const Vector& site, const AtomStyle& atomStyle);
     void DrawBond(const Vector& site1, const Vector& site2, const BondStyle& style,
         const Vector *site0, const Vector* site3);
     void DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& helixStyle);

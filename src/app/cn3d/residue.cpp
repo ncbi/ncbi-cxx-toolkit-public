@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.23  2001/05/17 18:34:26  thiessen
 * spelling fixes; change dialogs to inherit from wxDialog
 *
@@ -357,38 +360,28 @@ bool Residue::Draw(const AtomSet *atomSet) const
     bool overlayEnsembles = parentSet->showHideManager->OverlayConfEnsembles();
     AtomStyle atomStyle;
     const AtomCoord *atom;
-    double alpha;
 
     // iterate atoms; key is atomID
     AtomInfoMap::const_iterator a, ae = atomInfos.end();
     for (a=atomInfos.begin(); a!=ae; a++) {
 
+        // get AtomCoord* for appropriate altConf
         if (!a->second->isPresentInAllCoordSets) continue;
         AtomPntr ap(molecule->id, id, a->first);
+        atom = atomSet->GetAtom(ap, overlayEnsembles);
+        if (!atom) continue;
 
         // get Style
-        if (!parentSet->styleManager->GetAtomStyle(this, ap, &atomStyle))
+        if (!parentSet->styleManager->GetAtomStyle(this, ap, atom, &atomStyle))
             return false;
 
-        // use highlighting color if necessary
+        // highlight atom if necessary
         if (atomStyle.isHighlighted)
             atomStyle.color = GlobalColors()->Get(Colors::eHighlight);
 
-        // get AtomCoord* for appropriate altConf and draw the atom
-        if (atomStyle.style != StyleManager::eNotDisplayed &&
-            atomStyle.radius > 0.0 &&
-            (atom = atomSet->GetAtom(ap, overlayEnsembles)) != NULL) {
-
-            // add transparency; scale by occupancy if transparent
-            if (atomStyle.style == StyleManager::eTransparentAtom) {
-                alpha = 0.6;
-                if (atom->occupancy < 1 && atom->occupancy > 0)
-                    alpha *= atom->occupancy;
-            } else
-                alpha = 1.0;
-
-            parentSet->renderer->DrawAtom(atom->site, atomStyle, alpha);
-        }
+        // draw the atom
+        if (atomStyle.style != StyleManager::eNotDisplayed && atomStyle.radius > 0.0)
+            parentSet->renderer->DrawAtom(atom->site, atomStyle);
     }
 
     return true;

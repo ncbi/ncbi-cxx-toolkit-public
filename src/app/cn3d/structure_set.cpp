@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.73  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.72  2001/07/19 19:14:38  thiessen
 * working CDD alignment annotator ; misc tweaks
 *
@@ -249,6 +252,14 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbistre.hpp>
+#include <corelib/ncbi_limits.h>
+#include <connect/ncbi_util.h>
+#include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_core_cxx.hpp>
+#include <serial/serial.hpp>
+#include <serial/objistrasnb.hpp>
+
 #include <objects/ncbimime/Biostruc_seq.hpp>
 #include <objects/ncbimime/Biostruc_seqs.hpp>
 #include <objects/ncbimime/Biostruc_align.hpp>
@@ -274,13 +285,6 @@
 #include <objects/cn3d/Cn3d_user_annotations.hpp>
 #include <objects/cdd/Cdd_descr_set.hpp>
 #include <objects/cdd/Cdd_descr.hpp>
-
-#include <corelib/ncbistre.hpp>
-#include <connect/ncbi_util.h>
-#include <connect/ncbi_conn_stream.hpp>
-#include <connect/ncbi_core_cxx.hpp>
-#include <serial/serial.hpp>
-#include <serial/objistrasnb.hpp>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/coord_set.hpp"
@@ -1195,7 +1199,7 @@ bool StructureSet::SetCDDAnnotSet(ncbi::objects::CAlign_annot_set *newAnnotSet)
 ///// StructureObject stuff /////
 
 const int StructureObject::NO_MMDB_ID = -1;
-const double StructureObject::NO_TEMPERATURE = -1.0;
+const double StructureObject::NO_TEMPERATURE = kMin_Double;
 
 StructureObject::StructureObject(StructureBase *parent,
     const CBiostruc& biostruc, bool master, bool isRawBiostrucFromMMDB) :
@@ -1254,6 +1258,8 @@ StructureObject::StructureObject(StructureBase *parent,
             }
         }
     }
+
+    TESTMSG("temperature range: " << minTemperature << " to " << maxTemperature);
 
     // get graph - must be done after atom coordinates are loaded, so we can
     // avoid storing graph nodes for atoms not present in the model

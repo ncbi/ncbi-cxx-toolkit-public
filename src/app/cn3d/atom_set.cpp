@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.13  2001/06/02 17:22:45  thiessen
 * fixes for GCC
 *
@@ -87,9 +90,11 @@
 #include "cn3d/atom_set.hpp"
 #include "cn3d/vector_math.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/structure_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
 
 BEGIN_SCOPE(Cn3D)
 
@@ -176,6 +181,10 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
         }
     }
 
+    const StructureObject *constObject;
+    if (!GetParentOfType(&constObject)) return;
+    StructureObject *object = const_cast<StructureObject*>(constObject);
+
     // actually do the work of unpacking serial atom data into Atom objects
     for (int i=0; i<nAtoms; i++) {
         AtomCoord *atom = new AtomCoord(this);
@@ -200,6 +209,13 @@ AtomSet::AtomSet(StructureBase *parent, const CAtomic_coordinates& coords) :
                     (static_cast<double>(*(i_tempA23++))) +
                     (static_cast<double>(*(i_tempA33++)))) / (tempScale * 6.0);
             }
+            // track min and max temperatures over whole object
+            if (object->minTemperature == StructureObject::NO_TEMPERATURE ||
+                atom->averageTemperature < object->minTemperature)
+                object->minTemperature = atom->averageTemperature;
+            if (object->maxTemperature == StructureObject::NO_TEMPERATURE ||
+                atom->averageTemperature > object->maxTemperature)
+                object->maxTemperature = atom->averageTemperature;
         }
 
         // store pointer in map - key+altConfID must be unique

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2001/08/09 19:07:13  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.16  2001/06/29 18:13:57  thiessen
 * initial (incomplete) user annotation system
 *
@@ -170,7 +173,7 @@ bool Bond::Draw(const AtomSet *atomSet) const
 
     // get Style
     BondStyle bondStyle;
-    if (!parentSet->styleManager->GetBondStyle(this, atom1, atom2,
+    if (!parentSet->styleManager->GetBondStyle(this, atom1, a1, atom2, a2,
             (a1->site - a2->site).length(), &bondStyle))
         return false;
 

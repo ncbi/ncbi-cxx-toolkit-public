@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2001/08/09 19:07:14  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.6  2001/08/06 20:22:01  thiessen
 * add preferences dialog ; make sure OnCloseWindow get wxCloseEvent
 *
@@ -217,6 +220,8 @@ void StyleDialog::SetupStyleStrings(void)
         ColorSchemeStrings.Associate(StyleSettings::eWeightedVariety, "Weighted Variety");
         ColorSchemeStrings.Associate(StyleSettings::eInformationContent, "Information Content");
         ColorSchemeStrings.Associate(StyleSettings::eFit, "Fit");
+        ColorSchemeStrings.Associate(StyleSettings::eTemperature, "Temperature");
+        ColorSchemeStrings.Associate(StyleSettings::eHydrophobicity, "Hydrophobicity");
     }
 }
 
@@ -652,6 +657,8 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Molecule",
         "Domain",
         "Secondary Structure",
+        "Temperature",
+        "Hydrophobicity",
         "User Selection",
         "Aligned",
         "Identity",
@@ -660,7 +667,7 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Information Content",
         "Fit"
     };
-    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 12, strs12, 0 );
+    wxChoice *item12 = new wxChoice( parent, ID_PBB_COLOR, wxDefaultPosition, wxDefaultSize, 14, strs12, 0 );
     item3->Add( item12, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item13 = new wxButton( parent, ID_PBB_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
@@ -688,6 +695,8 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Object",
         "Molecule",
         "Domain",
+        "Temperature",
+        "Hydrophobicity",
         "User Selection",
         "Aligned",
         "Identity",
@@ -696,7 +705,7 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Information Content",
         "Fit"
     };
-    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 11, strs17, 0 );
+    wxChoice *item17 = new wxChoice( parent, ID_PSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 13, strs17, 0 );
     item3->Add( item17, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item18 = new wxButton( parent, ID_PSIDE_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
@@ -733,9 +742,10 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Object",
         "Molecule",
         "Domain",
+        "Temperature",
         "User Selection"
     };
-    wxChoice *item22 = new wxChoice( parent, ID_NUC_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs22, 0 );
+    wxChoice *item22 = new wxChoice( parent, ID_NUC_COLOR, wxDefaultPosition, wxDefaultSize, 6, strs22, 0 );
     item3->Add( item22, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item23 = new wxButton( parent, ID_NUC_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
@@ -763,9 +773,10 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Object",
         "Molecule",
         "Domain",
+        "Temperature",
         "User Selection"
     };
-    wxChoice *item27 = new wxChoice( parent, ID_NSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs27, 0 );
+    wxChoice *item27 = new wxChoice( parent, ID_NSIDE_COLOR, wxDefaultPosition, wxDefaultSize, 6, strs27, 0 );
     item3->Add( item27, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item28 = new wxButton( parent, ID_NSIDE_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
@@ -792,9 +803,10 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Element",
         "Object",
         "Molecule",
+        "Temperature",
         "User Selection"
     };
-    wxChoice *item32 = new wxChoice( parent, ID_HET_COLOR, wxDefaultPosition, wxDefaultSize, 4, strs32, 0 );
+    wxChoice *item32 = new wxChoice( parent, ID_HET_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs32, 0 );
     item3->Add( item32, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item33 = new wxButton( parent, ID_HET_USER, "", wxDefaultPosition, wxDefaultSize, 0 );
@@ -821,9 +833,10 @@ wxSizer *LayoutPage1( wxPanel *parent, bool call_fit, bool set_sizer )
         "Element",
         "Object",
         "Molecule",
+        "Temperature",
         "User Selection"
     };
-    wxChoice *item37 = new wxChoice( parent, ID_SOLV_COLOR, wxDefaultPosition, wxDefaultSize, 4, strs37, 0 );
+    wxChoice *item37 = new wxChoice( parent, ID_SOLV_COLOR, wxDefaultPosition, wxDefaultSize, 5, strs37, 0 );
     item3->Add( item37, 0, wxGROW|wxALIGN_CENTER_VERTICAL|wxALL, 5 );
 
     wxButton *item38 = new wxButton( parent, ID_SOLV_USER, "", wxDefaultPosition, wxDefaultSize, 0 );

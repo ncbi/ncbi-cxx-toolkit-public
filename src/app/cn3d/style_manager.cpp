@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/08/09 19:07:14  thiessen
+* add temperature and hydrophobicity coloring
+*
 * Revision 1.47  2001/08/03 13:41:33  thiessen
 * add registry and style favorites
 *
@@ -208,6 +211,7 @@
 #include "cn3d/style_dialog.hpp"
 #include "cn3d/annotate_dialog.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/atom_set.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -491,6 +495,40 @@ bool StyleManager::CheckStyleSettings(StyleSettings *settings)
     return true;
 }
 
+const double UNKNOWN_HYDROPHOBICITY = -1.0;
+
+// return a hydrophobicity value from [0..1]
+double GetHydrophobicity(char code)
+{
+    // Amino acid scale: Normalized consensus hydrophobicity scale.
+    // Author(s): Eisenberg D., Schwarz E., Komarony M., Wall R.
+    // Reference: J. Mol. Biol. 179:125-142(1984).
+    // Amino acid scale values: (normalized to [0..1])
+    switch (code) {
+        case 'A': return ( 0.620 + 2.530) / (1.380 + 2.530);
+        case 'R': return (-2.530 + 2.530) / (1.380 + 2.530);
+        case 'N': return (-0.780 + 2.530) / (1.380 + 2.530);
+        case 'D': return (-0.900 + 2.530) / (1.380 + 2.530);
+        case 'C': return ( 0.290 + 2.530) / (1.380 + 2.530);
+        case 'Q': return (-0.850 + 2.530) / (1.380 + 2.530);
+        case 'E': return (-0.740 + 2.530) / (1.380 + 2.530);
+        case 'G': return ( 0.480 + 2.530) / (1.380 + 2.530);
+        case 'H': return (-0.400 + 2.530) / (1.380 + 2.530);
+        case 'I': return ( 1.380 + 2.530) / (1.380 + 2.530);
+        case 'L': return ( 1.060 + 2.530) / (1.380 + 2.530);
+        case 'K': return (-1.500 + 2.530) / (1.380 + 2.530);
+        case 'M': return ( 0.640 + 2.530) / (1.380 + 2.530);
+        case 'F': return ( 1.190 + 2.530) / (1.380 + 2.530);
+        case 'P': return ( 0.120 + 2.530) / (1.380 + 2.530);
+        case 'S': return (-0.180 + 2.530) / (1.380 + 2.530);
+        case 'T': return (-0.050 + 2.530) / (1.380 + 2.530);
+        case 'W': return ( 0.810 + 2.530) / (1.380 + 2.530);
+        case 'Y': return ( 0.260 + 2.530) / (1.380 + 2.530);
+        case 'V': return ( 1.080 + 2.530) / (1.380 + 2.530);
+    }
+    return UNKNOWN_HYDROPHOBICITY;
+}
+
 #define ATOM_NOT_DISPLAYED do { \
     atomStyle->style = eNotDisplayed; \
     return true; } while (0)
@@ -500,7 +538,8 @@ bool StyleManager::CheckStyleSettings(StyleSettings *settings)
 // particular atom's style may be queried several times per render (once for
 // drawing atoms, and once for each bond to the atom).
 bool StyleManager::GetAtomStyle(const Residue *residue,
-    const AtomPntr& atom, AtomStyle *atomStyle,
+    const AtomPntr& atom, const AtomCoord *coord,
+    AtomStyle *atomStyle,
     const StyleSettings::BackboneStyle* *saveBackboneStyle,
     const StyleSettings::GeneralStyle* *saveGeneralStyle) const
 {
@@ -674,6 +713,24 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
                 atomStyle->color = GlobalColors()->Get(Colors::eCoil);
             break;
 
+        case StyleSettings::eTemperature:
+            atomStyle->color =
+                (coord && coord->averageTemperature != AtomCoord::NO_TEMPERATURE) ?
+                    GlobalColors()->Get(Colors::eTemperatureMap,
+                        (coord->averageTemperature - object->minTemperature) /
+                        (object->maxTemperature - object->minTemperature)) :
+                    GlobalColors()->Get(Colors::eNoTemperature);
+            break;
+
+        case StyleSettings::eHydrophobicity: {
+            double hydrophobicity = (residue->type == Residue::eAminoAcid) ?
+                GetHydrophobicity(residue->code) : UNKNOWN_HYDROPHOBICITY;
+            atomStyle->color = (hydrophobicity != UNKNOWN_HYDROPHOBICITY) ?
+                GlobalColors()->Get(Colors::eHydrophobicityMap, hydrophobicity) :
+                GlobalColors()->Get(Colors::eNoHydrophobicity);
+            break;
+        }
+
         case StyleSettings::eUserSelect:
             if (backboneStyle)
                 atomStyle->color = backboneStyle->userColor;
@@ -699,7 +756,17 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     } else
         atomStyle->style = eSolidAtom;
 
-    // determine whether it's highlighted
+    // add transparency; scale by occupancy if transparent
+    if (atomStyle->style == eTransparentAtom) {
+        atomStyle->alpha = 0.6;
+        if (coord && coord->occupancy < 1 && coord->occupancy > 0)
+            atomStyle->alpha *= coord->occupancy;
+    } else
+        atomStyle->alpha = 1.0;
+
+    // determine whether it's highlighted, but *don't* set the color to the highlight
+    // color yet, since this is used by the sequence viewer where the residue letter is
+    // colored independently of the highlighted background
     atomStyle->isHighlighted = GlobalMessenger()->IsHighlighted(molecule, residue->id);
 
     atomStyle->name = info->glName;
@@ -749,8 +816,9 @@ static bool SetBondStyleFromResidueStyle(StyleSettings::eDrawingStyle style,
 // style pointers (backboneStyle, generalStyle). Show/hide status is taken
 // from the atoms - if either is hidden, the bond isn't shown either.
 bool StyleManager::GetBondStyle(const Bond *bond,
-        const AtomPntr& atom1, const AtomPntr& atom2, double bondLength,
-        BondStyle *bondStyle) const
+        const AtomPntr& atom1, const AtomCoord *coord1,
+        const AtomPntr& atom2, const AtomCoord *coord2,
+        double bondLength, BondStyle *bondStyle) const
 {
     const StructureObject *object;
     if (!bond->GetParentOfType(&object)) return false;
@@ -763,8 +831,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     AtomStyle atomStyle1, atomStyle2;
     const StyleSettings::BackboneStyle *backboneStyle1, *backboneStyle2;
     const StyleSettings::GeneralStyle *generalStyle1, *generalStyle2;
-    if (!GetAtomStyle(info1->residue, atom1, &atomStyle1, &backboneStyle1, &generalStyle1) ||
-        !GetAtomStyle(info2->residue, atom2, &atomStyle2, &backboneStyle2, &generalStyle2))
+    if (!GetAtomStyle(info1->residue, atom1, coord1, &atomStyle1, &backboneStyle1, &generalStyle1) ||
+        !GetAtomStyle(info2->residue, atom2, coord2, &atomStyle2, &backboneStyle2, &generalStyle2))
         return false;
 
     // if either atom is hidden, don't display bond
@@ -883,7 +951,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
                     (!bond->previousVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->previousVirtual->atom1)) ||
                     !infoV->isPresentInAllCoordSets ||
-                    !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1,
+                    !GetAtomStyle(infoV->residue, bond->previousVirtual->atom1, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
                     backboneStyleV->style != style1))
@@ -893,7 +961,7 @@ bool StyleManager::GetBondStyle(const Bond *bond,
                     (!bond->nextVirtual ||
                     !(infoV = object->graph->GetAtomInfo(bond->nextVirtual->atom2)) ||
                     !infoV->isPresentInAllCoordSets ||
-                    !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2,
+                    !GetAtomStyle(infoV->residue, bond->nextVirtual->atom2, NULL,
                         &atomStyleV, &backboneStyleV, &generalStyleV) ||
                     atomStyleV.style == StyleManager::eNotDisplayed ||
                     backboneStyleV->style != style2))
@@ -921,10 +989,8 @@ bool StyleManager::GetBondStyle(const Bond *bond,
     }
 
     // set highlighting color if necessary
-    if (atomStyle1.isHighlighted)
-        bondStyle->end1.color = GlobalColors()->Get(Colors::eHighlight);
-    if (atomStyle2.isHighlighted)
-        bondStyle->end2.color = GlobalColors()->Get(Colors::eHighlight);
+    if (atomStyle1.isHighlighted) bondStyle->end1.color = GlobalColors()->Get(Colors::eHighlight);
+    if (atomStyle2.isHighlighted) bondStyle->end2.color = GlobalColors()->Get(Colors::eHighlight);
 
     return true;
 }
