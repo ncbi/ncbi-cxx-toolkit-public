@@ -557,6 +557,12 @@ CS_CONNECTION* CTLibContext::x_ConnectToServer(const string&   srv_name,
     if (ct_con_alloc(m_Context, &con) != CS_SUCCEED)
         return 0;
 
+    ct_callback(NULL, con, CS_SET, CS_CLIENTMSG_CB,
+                (CS_VOID*) s_CTLIB_cterr_callback);
+    
+    ct_callback(NULL, con, CS_SET, CS_SERVERMSG_CB,
+                (CS_VOID*) s_CTLIB_srverr_callback);
+
     char hostname[256];
     if(gethostname(hostname, 256)) {
       strcpy(hostname, "UNKNOWN");
@@ -858,6 +864,14 @@ I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
 		CS_INT s= atoi(page_size.c_str());
 		cntx->CTLIB_SetPacketSize(s);
 	  }
+     string prog_name= (*attr)["prog_name"];
+     if(!prog_name.empty()) {
+         cntx->CTLIB_SetApplicationName(prog_name);
+     }
+     string host_name= (*attr)["host_name"];
+     if(!host_name.empty()) {
+         cntx->CTLIB_SetHostName(host_name);
+     }
 	}
     return cntx;
 }
@@ -882,6 +896,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/11/19 22:47:20  soussov
+ * adds code to setup client/server msg callbacks for each connection; adds 'prog_name' and 'host_name' attributes for create context
+ *
  * Revision 1.29  2003/11/14 20:46:13  soussov
  * implements DoNotConnect mode
  *
