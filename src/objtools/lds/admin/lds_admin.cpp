@@ -91,12 +91,55 @@ CLDS_Management::OpenCreateDB(const string&      dir_name,
     return db;
 }
 
+void CLDS_Management::Create() 
+{ 
+    m_lds_db.Create(); 
+
+    SLDS_TablesCollection& db = m_lds_db.GetTables();
+
+    //
+    // Upload the object type DB
+    //
+    LOG_POST(Info << "Uploading " << "objecttype");
+
+    CLDS_CoreObjectsReader  core_reader;
+
+    const CLDS_CoreObjectsReader::TCandidates& cand 
+                                = core_reader.GetCandidates();
+    
+    int id = 1;
+    db.object_type_db.object_type = id;
+    db.object_type_db.type_name = "FastaEntry";
+    db.object_type_db.Insert();
+
+    LOG_POST(Info << "  " << "FastaEntry");
+
+    ++id;
+    ITERATE(CLDS_CoreObjectsReader::TCandidates, it, cand) {
+        string type_name = it->type_info.GetTypeInfo()->GetName();
+
+        db.object_type_db.object_type = id;
+        db.object_type_db.type_name = type_name;
+        db.object_type_db.Insert();
+
+        LOG_POST(Info << "  " << type_name);
+
+        ++id;
+    }
+
+    m_lds_db.LoadTypeMap();
+
+}
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/10/09 18:12:27  kuznets
+ * Some functionality of lds migrated into lds_admin
+ *
  * Revision 1.7  2003/10/09 16:45:28  kuznets
  * + explicit Sync() call
  *

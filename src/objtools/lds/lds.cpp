@@ -34,7 +34,6 @@
 #include <bdb/bdb_cursor.hpp>
 
 #include <objtools/lds/lds.hpp>
-#include <objtools/lds/admin/lds_coreobjreader.hpp>
 #include <objtools/lds/admin/lds_object.hpp>
 #include <objtools/lds/admin/lds_files.hpp>
 
@@ -115,39 +114,6 @@ void CLDS_Database::Create()
     m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eCreate);
-
-    //
-    // Upload the object type DB
-    //
-    LOG_POST(Info << "Uploading " << "objecttype");
-
-    CLDS_CoreObjectsReader  core_reader;
-
-    const CLDS_CoreObjectsReader::TCandidates& cand 
-                                = core_reader.GetCandidates();
-    
-    int id = 1;
-    m_db.object_type_db.object_type = id;
-    m_db.object_type_db.type_name = "FastaEntry";
-    m_db.object_type_db.Insert();
-
-    LOG_POST(Info << "  " << "FastaEntry");
-
-    m_ObjTypeMap.insert(pair<string, int>("FastaEntry", id));
-    ++id;
-    ITERATE(CLDS_CoreObjectsReader::TCandidates, it, cand) {
-        string type_name = it->type_info.GetTypeInfo()->GetName();
-
-        m_db.object_type_db.object_type = id;
-        m_db.object_type_db.type_name = type_name;
-        m_db.object_type_db.Insert();
-
-        LOG_POST(Info << "  " << type_name);
-
-        m_ObjTypeMap.insert(pair<string, int>(type_name, id));
-        ++id;
-    }
-
     LOG_POST(Info << "Creating LDS table: " << "object");
 
     fname = m_LDS_DirName + "lds_object.db"; 
@@ -213,7 +179,7 @@ void CLDS_Database::Open()
     m_db.object_type_db.Open(fname.c_str(),
                              "objecttype",
                              CBDB_RawFile::eReadWrite);
-    x_LoadTypeMap();
+    LoadTypeMap();
 
     fname = m_LDS_DirName + "lds_object.db"; 
     m_db.object_db.Open(fname.c_str(),
@@ -241,7 +207,7 @@ void CLDS_Database::Open()
                            CBDB_RawFile::eReadWrite);
 }
 
-void CLDS_Database::x_LoadTypeMap()
+void CLDS_Database::LoadTypeMap()
 {
     CBDB_FileCursor cur(m_db.object_type_db); 
     cur.SetCondition(CBDB_FileCursor::eFirst); 
@@ -249,7 +215,7 @@ void CLDS_Database::x_LoadTypeMap()
         m_ObjTypeMap.insert(pair<string, int>(string(m_db.object_type_db.type_name), 
                                               m_db.object_type_db.object_type)
                            );
-    }    
+    }
 }
 
 
@@ -274,6 +240,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/10/09 18:12:26  kuznets
+ * Some functionality of lds migrated into lds_admin
+ *
  * Revision 1.11  2003/10/09 16:48:33  kuznets
  * Sync() implemented
  *
