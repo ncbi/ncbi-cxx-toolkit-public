@@ -58,10 +58,11 @@ typedef int TReadFastaFlags; // binary OR of EReadFastaFlags
 
 // keeps going until EOF or parse error (-> CParseException) unless
 // fReadFasta_OneSeq is set
-// see also CFastaOstream in <objects/util/sequence.hpp> (-lxobjutil)
+// see also CFastaOstream in <objmgr/util/sequence.hpp> (-lxobjutil)
 NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
-                           int* counter = 0, vector<CConstRef<CSeq_loc> >* lcv = 0);
+                           int* counter = 0,
+                           vector<CConstRef<CSeq_loc> >* lcv = 0);
 
 
 
@@ -98,6 +99,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/01/20 16:27:53  ucko
+* Fix a stray reference to sequence.hpp's old location.
+*
 * Revision 1.4  2003/08/08 21:31:37  dondosha
 * Changed type of lcase_mask in ReadFasta to vector of CConstRefs
 *
