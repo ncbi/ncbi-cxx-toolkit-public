@@ -86,12 +86,21 @@ typedef char* (*GetStrFnPtr) (void*, void*);
  * argument is passed to user-defined implementation. */
 typedef Boolean (*GetBoolFnPtr) (void*, void*);
 
+/** Types of objects returned by generic data functions */
+typedef enum {
+   BLAST_SEQSRC_C_SEQID = 0,  /**< C ASN.1 generated SeqId structure */
+   BLAST_SEQSRC_CPP_SEQID,    /**< C++ ASN.1 generated CSeq_id class */ 
+   BLAST_SEQSRC_C_SEQLOC,
+   BLAST_SEQSRC_CPP_SEQLOC, 
+   BLAST_SEQSRC_MESSAGE
+} BlastSeqSrcDataType;
 
-/** Function pointer typedef to return a sequence identifier. The returned SeqId
- * is cast to a void pointer.
+/** Function pointer typedef to return pointer to some generic data. 
+ * Any returned data pointer is cast to a void pointer; the caller would have
+ * to know what data it expects to receive.
  * First argument is the BlastSeqSrc structure used, second
  * argument is passed to user-defined implementation. */
-typedef void* (*GetSeqIdFnPtr) (void*, void*);
+typedef ListNode* (*GetGenDataFnPtr) (void*, void*);
 
 /** Function pointer typedef to retrieve sequences from data structure embedded
  * in the BlastSeqSrc structure.
@@ -229,10 +238,15 @@ BlastSeqSrc* BlastSeqSrcFree(BlastSeqSrc* bssp);
     (*GetGetSeqIdStr(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqId(bssp, arg) \
     (*GetGetSeqId(bssp))(GetDataStructure(bssp), arg)
+#define BLASTSeqSrcGetSeqLoc(bssp, arg) \
+    (*GetGetSeqLoc(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetSeqLen(bssp, arg) \
     (*GetGetSeqLen(bssp))(GetDataStructure(bssp), arg)
 #define BLASTSeqSrcGetNextChunk(bssp, iterator) \
     (*GetGetNextChunk(bssp))(GetDataStructure(bssp), iterator)
+#define BLASTSeqSrcGetError(bssp) \
+    (*GetGetError(bssp))(GetDataStructure(bssp), NULL)
+
 
 #define DECLARE_MEMBER_FUNCTIONS(member_type, member, data_structure_type) \
 DECLARE_ACCESSOR(member_type, member, data_structure_type); \
@@ -258,10 +272,12 @@ DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetDate, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetStrFnPtr, GetSeqIdStr, BlastSeqSrc*);
-DECLARE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqId, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqId, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqLoc, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*);
 DECLARE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*);
+DECLARE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetError, BlastSeqSrc*);
 
 #ifdef __cplusplus
 }

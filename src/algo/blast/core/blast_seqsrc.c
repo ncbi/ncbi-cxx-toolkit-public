@@ -55,15 +55,17 @@ struct BlastSeqSrc {
    /* Functions to get information about individual sequences */
     GetSeqBlkFnPtr    GetSequence;    /**< Retrieve individual sequence */
     GetStrFnPtr  GetSeqIdStr;  /**< Retrieve sequence identifier string */
-    GetSeqIdFnPtr     GetSeqId;       /**< Retrieve sequence identifier */
+    GetGenDataFnPtr     GetSeqId;       /**< Retrieve sequence identifier */
+    GetGenDataFnPtr     GetSeqLoc;       /**< Retrieve sequence identifier */
     GetInt4FnPtr      GetSeqLen;      /**< Retrieve given sequence length */
 
    /* Functions to iterate over sequences in the database */
     GetNextChunkFnPtr GetNextChunk;   /**< Get next chunk of seq indices */
     AdvanceIteratorFnPtr IterNext;    /**< Gets next oid from the iterator */
+    GetGenDataFnPtr       GetError;        /**< Gets a saved error message, if
+                                          supported. */
    
     void*             DataStructure;  /**< ADT holding the sequence data */
-
 };
 
 BlastSeqSrc* BlastSeqSrcNew(const BlastSeqSrcNewInfo* bssn_info)
@@ -188,7 +190,9 @@ DEFINE_MEMBER_FUNCTIONS(GetBoolFnPtr, GetIsProt, BlastSeqSrc*)
 
 DEFINE_MEMBER_FUNCTIONS(GetSeqBlkFnPtr, GetSequence, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetStrFnPtr, GetSeqIdStr, BlastSeqSrc*)
-DEFINE_MEMBER_FUNCTIONS(GetSeqIdFnPtr, GetSeqId, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqId, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetSeqLoc, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetInt4FnPtr, GetSeqLen, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(GetNextChunkFnPtr, GetNextChunk, BlastSeqSrc*)
 DEFINE_MEMBER_FUNCTIONS(AdvanceIteratorFnPtr, IterNext, BlastSeqSrc*)
+DEFINE_MEMBER_FUNCTIONS(GetGenDataFnPtr, GetError, BlastSeqSrc*)
