@@ -38,6 +38,7 @@
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/Seq_hist.hpp>
 
 #include <vector>
 
@@ -174,12 +175,41 @@ public:
     const TInst_Hist& GetInst_Hist(void) const;
     void SetInst_Hist(TInst_Hist& v);
 
+    // inst.hist.assembly
+    typedef TInst::THist::TAssembly TInst_Hist_Assembly;
+    bool IsSetInst_Hist_Assembly(void) const;
+    bool CanGetInst_Hist_Assembly(void) const;
+    const TInst_Hist_Assembly& GetInst_Hist_Assembly(void) const;
+    void SetInst_Hist_Assembly(const TInst_Hist_Assembly& v);
+
+    // inst.hist.replaces
+    typedef TInst::THist::TReplaces TInst_Hist_Replaces;
+    bool IsSetInst_Hist_Replaces(void) const;
+    bool CanGetInst_Hist_Replaces(void) const;
+    const TInst_Hist_Replaces& GetInst_Hist_Replaces(void) const;
+    void SetInst_Hist_Replaces(TInst_Hist_Replaces& v);
+
+    // inst.hist.replaced-by
+    typedef TInst::THist::TReplaced_by TInst_Hist_Replaced_by;
+    bool IsSetInst_Hist_Replaced_by(void) const;
+    bool CanGetInst_Hist_Replaced_by(void) const;
+    const TInst_Hist_Replaced_by& GetInst_Hist_Replaced_by(void) const;
+    void SetInst_Hist_Replaced_by(TInst_Hist_Replaced_by& v);
+
+    // inst.hist.deleted
+    typedef TInst::THist::TDeleted TInst_Hist_Deleted;
+    bool IsSetInst_Hist_Deleted(void) const;
+    bool CanGetInst_Hist_Deleted(void) const;
+    const TInst_Hist_Deleted& GetInst_Hist_Deleted(void) const;
+    void SetInst_Hist_Deleted(TInst_Hist_Deleted& v);
+
     // Get some values from core:
     const CSeqMap& GetSeqMap(void) const;
 
     void x_AttachMap(CSeqMap& seq_map);
 
     void x_AddSeq_dataChunkId(TChunkId chunk_id);
+    void x_AddAssemblyChunkId(TChunkId chunk_id);
     void x_DoUpdate(TNeedUpdateFlags flags);
 
 protected:
@@ -240,6 +270,7 @@ private:
     mutable CFastMutex          m_SeqMap_Mtx;
 
     TChunkIds               m_Seq_dataChunks;
+    TChunkId                m_AssemblyChunk;
 };
 
 
@@ -271,6 +302,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.22  2004/10/18 13:56:36  vasilche
+ * Added support for split assembly.
+ *
  * Revision 1.21  2004/07/12 16:57:32  vasilche
  * Fixed loading of split Seq-descr and Seq-data objects.
  * They are loaded correctly now when GetCompleteXxx() method is called.
