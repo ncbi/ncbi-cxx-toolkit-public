@@ -44,49 +44,42 @@
 
 
 typedef struct SServiceConnectorTag {
-    const char*        name;            /* Verbal connector type             */
-    const char*        service;         /* Service name (final) to use       */
-    TSERV_Type         types;           /* Server types, record keeping only */
-    SConnNetInfo*      net_info;        /* Connection information            */
-    const char*        user_header;     /* User header currently set         */
-    SERV_ITER          iter;            /* Dispatcher information            */
-    SMetaConnector     meta;            /* Low level comm.conn and its VT    */
-    EIO_Status         status;          /* Status of last op                 */
-    unsigned int       host;            /* Parsed connection info...         */
-    unsigned short     port;
-    ticket_t           ticket;
-    SSERVICE_Extra     params;
-    char               args[1];         /* Additional CGI parameters         */
+    const char*     name;               /* Verbal connector type             */
+    const char*     service;            /* Service name (final) to use       */
+    TSERV_Type      types;              /* Server types, record keeping only */
+    SConnNetInfo*   net_info;           /* Connection information            */
+    const char*     user_header;        /* User header currently set         */
+    SERV_ITER       iter;               /* Dispatcher information            */
+    SMetaConnector  meta;               /* Low level comm.conn and its VT    */
+    EIO_Status      status;             /* Status of last op                 */
+    unsigned int    host;               /* Parsed connection info...         */
+    unsigned short  port;
+    ticket_t        ticket;
+    SSERVICE_Extra  params;
+    char            args[1];            /* Additional CGI parameters         */
 } SServiceConnector;
 
 
-/*
- * INTERNALS: Implementation of virtual functions
- */
+/***********************************************************************
+ *  INTERNAL -- "s_VT_*" functions for the "virt. table" of connector methods
+ ***********************************************************************/
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
-    static const char* s_VT_GetType(CONNECTOR       connector);
-    static EIO_Status  s_VT_Open   (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static EIO_Status  s_VT_Status (CONNECTOR       connector,
-                                    EIO_Event       dir);
-    static EIO_Status  s_VT_Close  (CONNECTOR       connector,
-                                    const STimeout* timeout);
-    static void        s_Setup     (SMetaConnector* meta,
-                                    CONNECTOR       connector);
-    static void        s_Destroy   (CONNECTOR       connector);
+    static const char* s_VT_GetType (CONNECTOR       connector);
+    static EIO_Status  s_VT_Open    (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static EIO_Status  s_VT_Status  (CONNECTOR       connector,
+                                     EIO_Event       dir);
+    static EIO_Status  s_VT_Close   (CONNECTOR       connector,
+                                     const STimeout* timeout);
+    static void        s_Setup      (SMetaConnector* meta,
+                                     CONNECTOR       connector);
+    static void        s_Destroy    (CONNECTOR       connector);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
-
-
-static const char* s_VT_GetType(CONNECTOR connector)
-{
-    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    return uuu->name ? uuu->name : "SERVICE";
-}
 
 
 static char* s_GetArgs(const char* client_host)
@@ -95,12 +88,21 @@ static char* s_GetArgs(const char* client_host)
     static const char address[]  = "address=";
     size_t nodelen, archlen, buflen;
     const char* arch;
+    unsigned int ip;
+    char addr[80];
     char* p;
 
     buflen = 0;
     if (*client_host) {
         nodelen = strlen(client_host);
         buflen += sizeof(address) - 1 + nodelen;
+        if ((ip = SOCK_gethostbyname(client_host)) != 0 &&
+            SOCK_ntoa(ip, addr, sizeof(addr))      != 0) {
+            size_t addrlen = strlen(addr) + 2;
+            nodelen += addrlen;
+            buflen  += addrlen;
+        } else
+            *addr = 0;
     } else
         nodelen = 0;
     if ((arch = CORE_GetPlatform()) != 0 && *arch) {
@@ -116,6 +118,8 @@ static char* s_GetArgs(const char* client_host)
         buflen += sizeof(address) - 1;
         strcpy(&p[buflen], client_host);
         buflen += nodelen;
+        if (*addr)
+            buflen += sprintf(&p[buflen], "[%s]", addr);
     }
     if (archlen) {
         strcpy(&p[buflen], nodelen ? platform : platform + 1);
@@ -153,13 +157,14 @@ static void s_CloseDispatcher(SServiceConnector* uuu)
  */
 static void s_Reset(SMetaConnector *meta)
 {
-    CONN_SET_METHOD(meta, wait,       0,           0);
-    CONN_SET_METHOD(meta, write,      0,           0);
-    CONN_SET_METHOD(meta, flush,      0,           0);
-    CONN_SET_METHOD(meta, read,       0,           0);
-    CONN_SET_METHOD(meta, status,     s_VT_Status, 0);
+    CONN_SET_METHOD(meta, descr,      0,             0);
+    CONN_SET_METHOD(meta, wait,       0,             0);
+    CONN_SET_METHOD(meta, write,      0,             0);
+    CONN_SET_METHOD(meta, flush,      0,             0);
+    CONN_SET_METHOD(meta, read,       0,             0);
+    CONN_SET_METHOD(meta, status,     s_VT_Status,   0);
 #ifdef IMPLEMENTED__CONN_WaitAsync
-    CONN_SET_METHOD(meta, wait_async, 0,           0);
+    CONN_SET_METHOD(meta, wait_async, 0,             0);
 #endif
 }
 
@@ -644,6 +649,13 @@ static EIO_Status s_Close(CONNECTOR       connector,
 }
 
 
+static const char* s_VT_GetType(CONNECTOR connector)
+{
+    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    return uuu->name ? uuu->name : "SERVICE";
+}
+
+
 static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
@@ -681,12 +693,14 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         }
 
         /* Setup the new connector on a temporary meta-connector... */
+        memset(&uuu->meta, 0, sizeof(uuu->meta));
         METACONN_Add(&uuu->meta, conn);
         /* ...then link the new connector in using current connection's meta */
         conn->meta = meta;
         conn->next = meta->list;
         meta->list = conn;
 
+        CONN_SET_METHOD(meta, descr,  uuu->meta.descr,  uuu->meta.c_descr);
         CONN_SET_METHOD(meta, wait,   uuu->meta.wait,   uuu->meta.c_wait);
         CONN_SET_METHOD(meta, write,  uuu->meta.write,  uuu->meta.c_write);
         CONN_SET_METHOD(meta, flush,  uuu->meta.flush,  uuu->meta.c_flush);
@@ -833,6 +847,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2003/05/14 03:55:28  lavr
+ * Arguments to include host address (for statistics purposes on backends)
+ *
  * Revision 6.52  2002/12/19 17:34:58  lavr
  * Do not initiate STATEFUL_CAPABLE challenge with HTTP servers in relay mode
  *
