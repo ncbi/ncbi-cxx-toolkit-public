@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2002/04/02 16:02:33  kimelman
+* MT testing
+*
 * Revision 1.11  2002/03/30 19:37:07  kimelman
 * gbloader MT test
 *
@@ -122,12 +125,13 @@ int CTestApplication::Run()
         if ( !h ) {
             LOG_POST("Gi (" << i << "):: not found in ID");
         } else {
-           iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
-               //oos << **it;
-               //NcbiCout << NcbiEndl;
-               ;
-           }
-           LOG_POST("Gi (" << i << "):: OK");
+          scope.ResetHistory();
+          iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
+            //oos << **it;
+            //NcbiCout << NcbiEndl;
+            ;
+          }
+          LOG_POST("Gi (" << i << "):: OK");
         }
     }
 

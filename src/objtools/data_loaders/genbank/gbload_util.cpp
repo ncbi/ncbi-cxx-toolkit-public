@@ -111,6 +111,7 @@ CMutexPool::CMutexPool()
 {
   m_size =0;
   m_Locks=0;
+  spread =0;
 }
 
 void
@@ -119,35 +120,17 @@ CMutexPool::SetSize(int size)
   _VERIFY(m_size==0 && !m_Locks);
   m_size=size;
   m_Locks = new CMutex[m_size];
+  spread  = new int[m_size];
 }
 
 CMutexPool::~CMutexPool(void)
 {
-  if(m_size>0 && m_Locks)
-    delete [] m_Locks;
+  if(m_Locks) delete [] m_Locks;
+  if(spread)  {
+    for(int i=0;i<m_size;++i) GBLOG_POST("PoolMutex " << i << " used "<< spread[i] << "times");
+    delete [] spread;
+  }
 }
-
-#if 0
-void
-CMutexPool::Lock(void *p)
-{
-  int i = ((long)p/8) % m_size;
-  m_Locks[i].Lock();
-}
-
-void
-CMutexPool::Unlock(void *p)
-{
-  int i = ((long)p/8) % m_size;
-  m_Locks[i].Unlock();
-}
-
-CMutex& CMutexPool::GetMutex(int x)
-{
-  return m_Locks[x];
-}
-
-#endif
 
 /*=========================================================================== */
 // CTSEUpload
@@ -157,6 +140,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/04/02 16:02:30  kimelman
+* MT testing
+*
 * Revision 1.5  2002/03/29 02:47:03  kimelman
 * gbloader: MT scalability fixes
 *

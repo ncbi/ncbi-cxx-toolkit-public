@@ -48,6 +48,12 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+#if !defined(_NDEBUG) && defined(DEBUG_SYNC)
+#define GBLOG_POST(x) LOG_POST(CThread::GetSelf() << ":: " << x)
+#else
+#define GBLOG_POST(x)
+#endif
+  
 /////////////////////////////////////////////////////////////////////////////////
 //
 // GBDataLoader
@@ -104,19 +110,23 @@ public:
 
   template<class A> void Lock  (A* a)
     {
-      //LOG_POST("PoolLock  ("<< Select(a) <<") tried  by " << CThread::GetSelf());
-      GetMutex(a).Lock();
-      //LOG_POST("PoolLock  ("<< Select(a) <<") locked by " << CThread::GetSelf() );
+      int x = Select(a);
+      GBLOG_POST("PoolLock  ("<< x <<") tried");
+      spread[x]++;
+      GetMutex(x).Lock();
+      GBLOG_POST("PoolLock  ("<< x <<") locked");
     }
   template<class A> void Unlock(A* a)
     {
-      //LOG_POST("PoolUnlock("<< Select(a) <<") unlocked  " << CThread::GetSelf() );
-      GetMutex(a).Unlock();
+      int x = Select(a);
+      GBLOG_POST("PoolUnlock("<< x <<") unlocked");
+      GetMutex(x).Unlock();
     }
 
 private:
   int             m_size;
   CMutex         *m_Locks;
+  int            *spread;
 };
 
 class CTSEUpload {
@@ -182,13 +192,13 @@ private:
     ~MyMutex(void) {};
     void Lock(const string& loc)
       {
-        //LOG_POST("MyLock  tried  by " << CThread::GetSelf() << " at "  << loc);
+        GBLOG_POST("MyLock  tried  at "  << loc);
         m_.Lock();
-        //LOG_POST("MyLock  locked by " << CThread::GetSelf());
+        GBLOG_POST("MyLock  locked");
       }
     void Unlock(void)
       {
-        //LOG_POST("MyLock unlocked   " << CThread::GetSelf());
+        GBLOG_POST("MyLock unlocked");
         m_.Unlock();
       }
   };
@@ -229,6 +239,9 @@ END_NCBI_SCOPE
 /* ---------------------------------------------------------------------------
  *
  * $Log$
+ * Revision 1.10  2002/04/02 16:02:28  kimelman
+ * MT testing
+ *
  * Revision 1.9  2002/03/30 19:37:05  kimelman
  * gbloader MT test
  *

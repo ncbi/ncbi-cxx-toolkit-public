@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/04/02 16:02:33  kimelman
+* MT testing
+*
 * Revision 1.1  2002/03/30 19:37:08  kimelman
 * gbloader MT test
 *
@@ -94,8 +97,7 @@ protected:
     virtual void* Main(void);
 
 private:
-
-  int m_Idx;
+  int m_mode;
   CRef<CScope> m_Scope;
   CRef<CObjectManager> m_ObjMgr;
   int m_Start;
@@ -103,35 +105,53 @@ private:
 };
 
 CTestThread::CTestThread(int id, CObjectManager& objmgr, CScope& scope,int start,int stop)
-    : m_Idx(id), m_ObjMgr(&objmgr), m_Scope(&scope), m_Start(start), m_Stop(stop)
+    : m_mode(id), m_ObjMgr(&objmgr), m_Scope(&scope), m_Start(start), m_Stop(stop)
 {
     //### Initialize the thread
 }
 
 void* CTestThread::Main(void)
 {
+  CObjectManager om;
+  om.RegisterDataLoader(*new CGBDataLoader("ID", new CId1Reader(1),2),CObjectManager::eDefault);
+  CObjectManager *pom=0;
+  switch((m_mode>>2)&1) {
+  case 0: pom =  &*m_ObjMgr; break;
+  case 1: pom =  &om;        break;
+  }
+  
+  CScope scope1(*pom);
+  scope1.AddDefaults();
+  
   for (int i = m_Start;  i < m_Stop;  i++) {
-    CScope scope(*m_ObjMgr);
-    scope.AddDefaults();
-    int gi = i ; // (i + m_Idx)/2+3;
+    CScope scope2(*pom);
+    scope2.AddDefaults();
+
+    CScope *s;
+    switch(m_mode&3) {
+    case 0: s =  &*m_Scope; break;
+    case 1: s =  &scope1;   break;
+    case 2: s =  &scope2;   break;
+    default:
+      throw runtime_error("unexpected mode");
+    }
     
+    int gi = i ; // (i + m_Idx)/2+3;
     CSeq_id x;
     x.SetGi(gi);
-    CObjectOStreamAsn oos(NcbiCout);
-    CScope *s = (m_Idx) % 2 ? &scope: &*m_Scope ;
     CBioseq_Handle h = s->GetBioseqHandle(x);
     if ( !h ) {
-      LOG_POST("Thread(" << m_Idx << ") :: gi=" << gi << " :: not found in ID");
+      GBLOG_POST(" gi=" << gi << " :: not found in ID");
     } else {
+      //CObjectOStreamAsn oos(NcbiCout);
       iterate (list<CRef<CSeq_id> >, it, h.GetBioseq().GetId()) {
         //oos << **it;
         //NcbiCout << NcbiEndl;
                ;
       }
-      LOG_POST("Thread(" << m_Idx << ") :: gi=" << gi << " OK");
+      GBLOG_POST(" gi=" << gi << " OK");
     }
-    //    if(i%10==0)
-    //  m_Scope->ResetHistory();
+    s->ResetHistory();
   }
   return 0;
 }
@@ -153,7 +173,7 @@ const unsigned c_TestFrom = 1;
 const unsigned c_TestTo   = 21;
 const unsigned c_GI_count = c_TestTo - c_TestFrom;
 
-int CTestApplication::Test(const int test_id,const int thread_count)
+int CTestApplication::Test(const int test_mode,const int thread_count)
 {
   CRef<CTestThread>  *thr = new CRef<CTestThread>[thread_count];
   int step= c_GI_count/thread_count;
@@ -171,7 +191,7 @@ int CTestApplication::Test(const int test_id,const int thread_count)
   
   for (int i=0; i<thread_count; ++i)
     {
-      thr[i] = new CTestThread(i, *pOm, *scope,c_TestFrom+i*step,c_TestTo+(i+1)*step);
+      thr[i] = new CTestThread(test_mode, *pOm, *scope,c_TestFrom+i*step,c_TestTo+(i+1)*step);
       thr[i]->Run();
     }
   
@@ -186,35 +206,39 @@ int CTestApplication::Test(const int test_id,const int thread_count)
     thr[i].Reset();
   }
   
-  delete thr;
+  delete [] thr;
   return 0;
 }
 
 int CTestApplication::Run()
 {
-  int timing[4];
-  int tc = sizeof(timing)/sizeof(*timing)+1;
-  int cnt = ( c_GI_count/5 > tc ? tc : c_GI_count/5);
+  int timing[5/*threads*/][2/*om*/][3/*scope*/];
+  int tc = sizeof(timing)/sizeof(*timing);
   
   LOG_POST("START: " << time(0) );;
-
-  for(int i=cnt ; i > 0 ; --i)
-    {
-      LOG_POST("Test(" << i << ") # threads = " << i );
-      time_t start=time(0);
-      Test(i,i);
   
-      timing[i-1] = time(0)-start ;
-      LOG_POST("==================================================");
-      LOG_POST("Test(" << i << ") completed  ===============");
-    }
+  for(int thr=tc-1,i=0 ; thr >= 0 ; --thr)
+    for(int global_om=0;global_om<=1 ; ++global_om)
+      for(int global_scope=0;global_scope<=2 ; ++global_scope)
+        {
+          int mode = global_om<<2 + global_scope ;
+          LOG_POST("Test(" << i << ") # threads = " << thr );
+          time_t start=time(0);
+          Test(mode,thr);
+          timing[thr][global_om][global_scope] = time(0)-start ;
+          LOG_POST("==================================================");
+          LOG_POST("Test(" << i++ << ") completed  ===============");
+        }
   
-  for(int i=1 ; i <= cnt ; ++i)
-    {
-      LOG_POST("TEST #" << i << "   completed in " << timing[i-1] << " sec");
-    }
+  for(int thr=tc-1 ; thr >= 0 ; --thr)
+    for(int global_om=0;global_om<=1 ; ++global_om)
+      for(int global_scope=0;global_scope<=2 ; ++global_scope)
+        {
+          LOG_POST("TEST: threads:" << thr << ", om=" << (global_om?"global":"local") <<
+                   ", scope=" << (global_scope==0?"auto":(global_scope==1?"per thread":"global")) <<
+                   " ==>> " << timing[thr][global_om][global_scope] << " sec");
+        }
   
-  LOG_POST("STOP : " << time(0) );;
   LOG_POST("Tests completed");
   return 0;
 }
