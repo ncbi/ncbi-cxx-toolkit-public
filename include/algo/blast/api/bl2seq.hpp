@@ -143,7 +143,7 @@ private:
 
     BlastSeqSrc*                        mi_pSeqSrc; // Subject sequences source
     BlastScoreBlk*                      mi_pScoreBlock;
-    LookupTableWrap*                    mi_pLookupTable; // one for all queries
+    CLookupTableWrap                    mi_pLookupTable; // one for all queries
     ListNode*                           mi_pLookupSegments;
 
     CBlastInitialWordParameters         mi_clsInitWordParams;
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2004/03/24 19:12:48  dondosha
+* Use auto class wrapper for lookup tabl wrap field
+*
 * Revision 1.30  2004/03/19 18:56:04  camacho
 * Move to doxygen AlgoBlast group
 *
