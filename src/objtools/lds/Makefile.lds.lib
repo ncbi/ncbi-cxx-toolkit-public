@@ -3,6 +3,10 @@
 # Build library "lds"
 ###############################
 
+REQUIRES = bdb
+
 LIB = lds
-SRC = lds.cpp lds_coreobjreader.cpp lds_files.cpp \
-      lds_object.cpp
+SRC = lds.cpp lds_reader lds_query 
+
+# Dependencies for shared library
+DLL_LIB = bdb
