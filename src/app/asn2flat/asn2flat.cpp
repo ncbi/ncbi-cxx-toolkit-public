@@ -36,16 +36,22 @@
 #include <serial/serial.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
+#include <objects/seqloc/Seq_loc.hpp>
+#include <objects/seqloc/Seq_interval.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 #include <objtools/format/flat_expt.hpp>
 
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+
 
 class CAsn2FlatApp : public CNcbiApplication
 {
@@ -54,15 +60,26 @@ public:
     int  Run (void);
 
 private:
+    // types
+    typedef CFlatFileConfig::TFormat    TFormat;
+    typedef CFlatFileConfig::TMode      TMode;
+    typedef CFlatFileConfig::TStyle     TStyle;
+    typedef CFlatFileConfig::TFlags     TFlags;
+    typedef CFlatFileConfig::TView      TView;
+
     CObjectIStream* x_OpenIStream(const CArgs& args);
 
-    CFlatFileGenerator* x_CreateFlatFileGenerator(CScope& scope, 
-        const CArgs& args);
+    CFlatFileGenerator* x_CreateFlatFileGenerator(const CArgs& args);
     TFormat         x_GetFormat(const CArgs& args);
     TMode           x_GetMode(const CArgs& args);
     TStyle          x_GetStyle(const CArgs& args);
-    TFlatFileFlags  x_GetFlags(const CArgs& args);
+    TFlags          x_GetFlags(const CArgs& args);
     TView           x_GetView(const CArgs& args);
+    TSeqPos x_GetFrom(const CArgs& args);
+    TSeqPos x_GetTo  (const CArgs& args);
+    void x_GetLocation(const CSeq_entry_Handle& entry,
+        const CArgs& args, CSeq_loc& loc);
+    CBioseq_Handle x_DeduceTarget(const CSeq_entry_Handle& entry);
 };
 
 
@@ -175,7 +192,7 @@ int CAsn2FlatApp::Run(void)
     }
 
     CRef<CScope> scope(new CScope(*objmgr));
-    if ( !scope) {
+    if ( !scope ) {
         NCBI_THROW(CFlatException, eInternal, "Could not create scope");
     }
     scope->AddDefaults();
@@ -184,9 +201,15 @@ int CAsn2FlatApp::Run(void)
     auto_ptr<CObjectIStream> in(x_OpenIStream(args));
 
     // read in the seq-entry
-    // !!! differ batch processing handling 
     CRef<CSeq_entry> se(new CSeq_entry);
+    if ( !se ) {
+        NCBI_THROW(CFlatException, eInternal, 
+            "Could not allocate Seq-entry object");
+    }
     in->Read(ObjectInfo(*se));
+    if ( se->Which() == CSeq_entry::e_not_set ) {
+        NCBI_THROW(CFlatException, eInternal, "Invalid Seq-entry");
+    }
 
     // add entry to scope    
     CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
@@ -196,12 +219,21 @@ int CAsn2FlatApp::Run(void)
 
     // open the output stream
     CNcbiOstream* os = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
-
+    if ( os == 0 ) {
+        NCBI_THROW(CFlatException, eInternal, "Could not open output stream");
+    }
+    
     // create the flat-file generator
-    CRef<CFlatFileGenerator> ffg(x_CreateFlatFileGenerator(*scope, args));
+    CRef<CFlatFileGenerator> ffg(x_CreateFlatFileGenerator(args));
     
     // generate flat file
-    ffg->Generate(entry, *os);
+    if ( args["from"]  ||  args["to"] ) {
+        CSeq_loc loc;
+        x_GetLocation(entry, args, loc);
+        ffg->Generate(loc, *scope, *os);
+    } else {
+        ffg->Generate(entry, *os);
+    }
 
     return 0;
 }
@@ -222,108 +254,197 @@ CObjectIStream* CAsn2FlatApp::x_OpenIStream(const CArgs& args)
         }
     }
 
-    if ( args["i"] ) {
-        return CObjectIStream::Open(args["i"].AsString(), format);
-    } else {
-        return CObjectIStream::Open(format, cin);
-    }
-
-    return 0;
+    return args["i"] ?
+        CObjectIStream::Open(args["i"].AsString(), format) :
+        CObjectIStream::Open(format, cin);
 }
 
 
-CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator
-(CScope& scope,
- const CArgs& args)
+CFlatFileGenerator* CAsn2FlatApp::x_CreateFlatFileGenerator(const CArgs& args)
 {
-    // !!! need to get format, style. mode etc. currently using defaults
-    TFormat         format = x_GetFormat(args);
-    TMode           mode   = x_GetMode(args);
-    TStyle          style  = x_GetStyle(args);
-    TFlatFileFlags  flags  = x_GetFlags(args);
-    TView           view   = x_GetView(args);
+    TFormat    format = x_GetFormat(args);
+    TMode      mode   = x_GetMode(args);
+    TStyle     style  = x_GetStyle(args);
+    TFlags     flags  = x_GetFlags(args);
+    TView      view   = x_GetView(args);
 
-    return new CFlatFileGenerator(scope, format, mode, style, view, flags);
+    CFlatFileConfig cfg(format, mode, style, flags, view);
+    return new CFlatFileGenerator(cfg);
 }
 
 
-TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
+CAsn2FlatApp::TFormat CAsn2FlatApp::x_GetFormat(const CArgs& args)
 {
     const string& format = args["format"].AsString();
     if ( format == "genbank" ) {
-        return eFormat_GenBank;
+        return CFlatFileConfig::eFormat_GenBank;
     } else if ( format == "embl" ) {
-        return eFormat_EMBL;
+        return CFlatFileConfig::eFormat_EMBL;
     } else if ( format == "ddbj" ) {
-        return eFormat_DDBJ;
+        return CFlatFileConfig::eFormat_DDBJ;
     } else if ( format == "gbseq" ) {
-        return eFormat_GBSeq;
+        return CFlatFileConfig::eFormat_GBSeq;
     } else if ( format == "ftable" ) {
-        return eFormat_FTable;
+        return CFlatFileConfig::eFormat_FTable;
     } else if ( format == "gff" ) {
-        return eFormat_GFF;
+        return CFlatFileConfig::eFormat_GFF;
     }
 
     // default
-    return eFormat_GenBank;
+    return CFlatFileConfig::eFormat_GenBank;
 }
 
 
-TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
+CAsn2FlatApp::TMode CAsn2FlatApp::x_GetMode(const CArgs& args)
 {
     const string& mode = args["mode"].AsString();
     if ( mode == "release" ) {
-        return eMode_Release;
+        return CFlatFileConfig::eMode_Release;
     } else if ( mode == "entrez" ) {
-        return eMode_Entrez;
+        return CFlatFileConfig::eMode_Entrez;
     } else if ( mode == "gbench" ) {
-        return eMode_GBench;
+        return CFlatFileConfig::eMode_GBench;
     } else if ( mode == "dump" ) {
-        return eMode_Dump;
+        return CFlatFileConfig::eMode_Dump;
     } 
 
     // default
-    return eMode_GBench;
+    return CFlatFileConfig::eMode_GBench;
 }
 
 
-TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
+CAsn2FlatApp::TStyle CAsn2FlatApp::x_GetStyle(const CArgs& args)
 {
     const string& style = args["style"].AsString();
     if ( style == "normal" ) {
-        return eStyle_Normal;
+        return CFlatFileConfig::eStyle_Normal;
     } else if ( style == "segment" ) {
-        return eStyle_Segment;
+        return CFlatFileConfig::eStyle_Segment;
     } else if ( style == "master" ) {
-        return eStyle_Master;
+        return CFlatFileConfig::eStyle_Master;
     } else if ( style == "contig" ) {
-        return eStyle_Contig;
+        return CFlatFileConfig::eStyle_Contig;
     } 
 
     // default
-    return eStyle_Normal;
+    return CFlatFileConfig::eStyle_Normal;
 }
 
 
-TFlatFileFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
+CAsn2FlatApp::TFlags CAsn2FlatApp::x_GetFlags(const CArgs& args)
 {
     return args["flags"].AsInteger();
 }
 
 
-TView CAsn2FlatApp::x_GetView(const CArgs& args)
+CAsn2FlatApp::TView CAsn2FlatApp::x_GetView(const CArgs& args)
 {
     const string& view = args["view"].AsString();
     if ( view == "all" ) {
-        return fViewAll;
+        return CFlatFileConfig::fViewAll;
     } else if ( view == "prot" ) {
-        return fViewProteins;
+        return CFlatFileConfig::fViewProteins;
     } else if ( view == "nuc" ) {
-        return fViewNucleotides;
+        return CFlatFileConfig::fViewNucleotides;
     } 
 
     // default
-    return fViewNucleotides;
+    return CFlatFileConfig::fViewNucleotides;
+}
+
+
+TSeqPos CAsn2FlatApp::x_GetFrom(const CArgs& args)
+{
+    return args["from"] ? 
+        static_cast<TSeqPos>(args["from"].AsInteger() - 1) :
+        CRange<TSeqPos>::GetWholeFrom(); 
+}
+
+
+TSeqPos CAsn2FlatApp::x_GetTo(const CArgs& args)
+{
+    return args["to"] ? 
+        static_cast<TSeqPos>(args["to"].AsInteger() - 1) :
+        CRange<TSeqPos>::GetWholeTo();
+}
+
+
+void CAsn2FlatApp::x_GetLocation
+(const CSeq_entry_Handle& entry,
+ const CArgs& args,
+ CSeq_loc& loc)
+{
+    _ASSERT(entry);
+        
+    CBioseq_Handle h = x_DeduceTarget(entry);
+    if ( !h ) {
+        NCBI_THROW(CFlatException, eInvalidParam,
+            "Cannot deduce target bioseq.");
+    }
+    TSeqPos length = h.GetInst_Length();
+    TSeqPos from   = x_GetFrom(args);
+    TSeqPos to     = min(x_GetTo(args), length);
+    
+    if ( from == CRange<TSeqPos>::GetWholeFrom()  &&  to == length ) {
+        // whole
+        loc.SetWhole().Assign(*h.GetSeqId());
+    } else {
+        // interval
+        loc.SetInt().SetId().Assign(*h.GetSeqId());
+        loc.SetInt().SetFrom(from);
+        loc.SetInt().SetTo(to);
+    }
+}
+
+
+// if the 'from' or 'to' flags are specified try to guess the bioseq.
+CBioseq_Handle CAsn2FlatApp::x_DeduceTarget(const CSeq_entry_Handle& entry)
+{
+    if ( entry.IsSeq() ) {
+        return entry.GetSeq();
+    }
+
+    _ASSERT(entry.IsSet());
+    CBioseq_set_Handle bsst = entry.GetSet();
+    if ( !bsst.IsSetClass() ) {
+        NCBI_THROW(CFlatException, eInvalidParam,
+            "Cannot deduce target bioseq.");
+    }
+    _ASSERT(bsst.IsSetClass());
+    switch ( bsst.GetClass() ) {
+    case CBioseq_set::eClass_nuc_prot:
+        // return the nucleotide
+        for ( CSeq_entry_CI it(entry); it; ++it ) {
+            if ( it->IsSeq() ) {
+                CBioseq_Handle h = it->GetSeq();
+                if ( h  &&  CSeq_inst::IsNa(h.GetInst_Mol()) ) {
+                    return h;
+                }
+            }
+        }
+        break;
+    case CBioseq_set::eClass_gen_prod_set:
+        // return the genomic
+        for ( CSeq_entry_CI it(bsst); it; ++it ) {
+            if ( it->IsSeq()  &&
+                 it->GetSeq().GetInst_Mol() == CSeq_inst::eMol_dna ) {
+                 return it->GetSeq();
+            }
+        }
+        break;
+    case CBioseq_set::eClass_segset:
+        // return the segmented bioseq
+        for ( CSeq_entry_CI it(bsst); it; ++it ) {
+            if ( it->IsSeq() ) {
+                return it->GetSeq();
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    NCBI_THROW(CFlatException, eInvalidParam,
+            "Cannot deduce target bioseq.");
 }
 
 
@@ -331,15 +452,23 @@ END_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Main
+
 int main(int argc, const char** argv)
 {
-    return CAsn2FlatApp().AppMain(argc, argv);
+    return CAsn2FlatApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
 /*
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/22 16:04:37  shomrat
+* Support partial region
+*
 * Revision 1.6  2004/03/31 19:23:47  shomrat
 * name changes
 *
