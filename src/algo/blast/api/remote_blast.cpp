@@ -81,6 +81,50 @@ s_SearchPending(CRef<CBlast4_reply> reply)
     return false;
 }
 
+static string
+s_SearchErrors(CRef<CBlast4_reply> reply)
+{
+    string err_str;
+    
+    const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
+    
+    TErrorList::const_iterator i;
+    
+    for(i = errors.begin(); i != errors.end(); i++) {
+        switch((*i)->GetCode()) {
+        case eBlast4_error_code_conversion_warning:
+            err_str += "\nError: conversion_warning";
+            break;
+
+        case eBlast4_error_code_internal_error:
+            err_str += "\nError: internal_error";
+            break;
+
+        case eBlast4_error_code_not_implemented:
+            err_str += "\nError: not_implemented";
+            break;
+
+        case eBlast4_error_code_not_allowed:
+            err_str += "\nError: not_allowed";
+            break;
+
+        case eBlast4_error_code_bad_request:
+            err_str += "\nError: bad_request";
+            break;
+
+        case eBlast4_error_code_bad_request_id:
+            err_str += "\nError: bad_request_id";
+            break;
+        }
+    }
+    
+    if ((!err_str.empty()) && (err_str[0] == '\n')) {
+        err_str.erase(0,1);
+    }
+    
+    return err_str;
+}
+
 
 
 // CBlast4Option methods
@@ -431,8 +475,9 @@ void CRemoteBlast::x_CheckResults(void)
         m_Pending = false;
     }
     
-    if (! m_Pending)
+    if (! m_Pending) {
         return;
+    }
     
     CRef<CBlast4_reply> r;
     
@@ -457,8 +502,11 @@ void CRemoteBlast::x_CheckResults(void)
     }
     
     if (! m_Pending) {
-        if (r->CanGetBody() &&
-            r->GetBody().IsGet_search_results()) {
+        m_Err += s_SearchErrors(r);
+        
+        if (! m_Err.empty()) {
+            return;
+        } else if (r->CanGetBody() && r->GetBody().IsGet_search_results()) {
             m_Reply = r;
         } else {
             m_Err = "Results were not a get-search-results reply";
@@ -548,9 +596,22 @@ void CRemoteBlast::x_PollUntilDone(EImmediacy immed, int timeout)
 }
 
 void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
-                            const char          * program,
-                            const char          * service)
+                          const char          * program,
+                          const char          * service)
 {
+    if (! (opts_handle && program && service)) {
+        if (! opts_handle) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "NULL argument specified: options handle");
+        }
+        if (! program) {
+            NCBI_THROW(CBlastException, eBadParameter,
+                       "NULL argument specified: program");
+        }
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "NULL argument specified: service");
+    }
+    
     m_CBOH.Reset( opts_handle );
     m_ErrIgn     = 5;
     m_Pending    = false;
@@ -568,11 +629,23 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
         // This happens if you do not specify eRemote for the
         // CBlastOptions subclass constructor.
         
-        string errmsg("CRemoteBlast: No remote API options.");
-        
-        ERR_POST(errmsg);
-        throw runtime_error(errmsg);
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "CRemoteBlast: No remote API options.");
     }
+}
+
+void CRemoteBlast::x_Init(const string & RID)
+{
+    if (RID.empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty RID string specified");
+    }
+    
+    m_RID        = RID;
+    m_ErrIgn     = 5;
+    m_Pending    = true;
+    m_Verbose    = eSilent;
+    m_NeedConfig = eNoConfig;
 }
 
 void CRemoteBlast::x_SetAlgoOpts(void)
@@ -581,15 +654,6 @@ void CRemoteBlast::x_SetAlgoOpts(void)
         m_CBOH->SetOptions().GetBlast4AlgoOpts();
     
     m_QSR->SetAlgorithm_options().Set() = *algo_opts;
-}
-
-void CRemoteBlast::x_Init(const string & RID)
-{
-    m_RID        = RID;
-    m_ErrIgn     = 5;
-    m_Pending    = true;
-    m_Verbose    = eSilent;
-    m_NeedConfig = eNoConfig;
 }
 
 // the "int" version is not actually used (no program options need it.)
@@ -650,6 +714,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/04/12 16:35:25  bealer
+* - Fix CheckDone problem in CRemoteBlast.
+* - Add more parameter checking and exception throwing.
+*
 * Revision 1.7  2004/03/23 22:29:42  bealer
 * - Verify that CRemoteBlast objects are configured properly.
 *
