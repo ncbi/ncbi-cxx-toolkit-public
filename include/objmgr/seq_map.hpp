@@ -224,8 +224,7 @@ public:
     static CConstRef<CSeqMap> CreateSeqMapForBioseq(CBioseq& seq,
                                                     CDataSource* source = 0);
     static CConstRef<CSeqMap> CreateSeqMapForSeq_loc(const CSeq_loc& loc,
-                                                     CScope* scope = 0,
-                                                     CDataSource* source = 0);
+                                                     CScope* scope);
     static CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                                     ENa_strand strand);
 
@@ -236,7 +235,7 @@ protected:
     CSeqMap(CSeqMap* parent, size_t index);
     CSeqMap(CDataSource* source = 0);
     CSeqMap(CSeq_data& data, TSeqPos len, CDataSource* source = 0);
-    CSeqMap(CSeq_loc& ref, CScope* scope = 0, CDataSource* source = 0);
+    CSeqMap(CSeq_loc& ref, CDataSource* source = 0);
     CSeqMap(TSeqPos len, CDataSource* source = 0); // gap
 
     void x_AddEnd(void);
@@ -348,6 +347,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/06/24 14:22:46  vasilche
+* Fixed CSeqMap constructor from CSeq_loc.
+*
 * Revision 1.37  2003/06/11 19:32:53  grichenk
 * Added molecule type caching to CSeqMap, simplified
 * coding and sequence type calculations in CSeqVector.

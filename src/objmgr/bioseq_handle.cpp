@@ -193,9 +193,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
 {
     CConstRef<CSeqMap> ret;
     if ( mode == eViewConstructed ) {
-        ret = CSeqMap::CreateSeqMapForSeq_loc(loc,
-                                              &GetScope(),
-                                              &x_GetDataSource());
+        ret = CSeqMap::CreateSeqMapForSeq_loc(loc, &GetScope());
     }
     else {
         // Parse the location
@@ -256,9 +254,7 @@ CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
             seg_loc->SetInt().SetTo(rit->first.GetTo());
             view_loc->SetMix().Set().push_back(seg_loc);
         }
-        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc,
-                                              &GetScope(),
-                                              &x_GetDataSource());
+        ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, &GetScope());
     }
     return ret;
 }
@@ -345,6 +341,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2003/06/24 14:22:46  vasilche
+* Fixed CSeqMap constructor from CSeq_loc.
+*
 * Revision 1.41  2003/06/19 18:23:45  vasilche
 * Added several CXxx_ScopeInfo classes for CScope related information.
 * CBioseq_Handle now uses reference to CBioseq_ScopeInfo.

@@ -96,7 +96,7 @@ CSeqMap::CSeqMap(CSeqMap* parent, size_t /*index*/)
 }
 
 
-CSeqMap::CSeqMap(CSeq_loc& ref, CScope* scope, CDataSource* source)
+CSeqMap::CSeqMap(CSeq_loc& ref, CDataSource* source)
     : m_Resolved(0),
       m_Source(source),
       m_Mol(CSeq_inst::eMol_not_set)
@@ -562,7 +562,7 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
                                            source));
             break;
         case CSeq_ext::e_Ref:
-            ret = CreateSeqMapForSeq_loc(ext.SetRef().Set(), 0, source);
+            ret.Reset(new CSeqMap(ext.SetRef(), source));
             break;
         case CSeq_ext::e_Delta:
             ret.Reset(new CSeqMap_Delta_seqs(ext.SetDelta(), source));
@@ -599,11 +599,9 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
 
 
 CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
-                                                   CScope* scope,
-                                                   CDataSource* source)
+                                                   CScope* scope)
 {
-    CConstRef<CSeqMap> ret(
-        new CSeqMap(const_cast<CSeq_loc&>(loc), scope, source));
+    CConstRef<CSeqMap> ret(new CSeqMap(const_cast<CSeq_loc&>(loc)));
     if ( scope ) {
         CSeqMap::const_iterator i(
             ret->BeginResolved(scope, size_t(-1), fFindData));
@@ -830,6 +828,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/06/24 14:22:46  vasilche
+* Fixed CSeqMap constructor from CSeq_loc.
+*
 * Revision 1.39  2003/06/12 17:04:55  vasilche
 * Fixed creation of CSeqMap for sequences with repr == not_set.
 *
