@@ -253,7 +253,7 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 #endif
 
     if(!m_terminate) {
-        x_DoBackTrace(backtrace_matrix, N1, N2, &data->m_transcript);
+        x_DoBackTrace(backtrace_matrix, data);
     }
 
     return V;
@@ -261,14 +261,24 @@ CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 
 
 void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
-                                 size_t N1, size_t N2,
-                                 vector<ETranscriptSymbol>* transcript)
+                                 CNWAligner::SAlignInOut* data)
 {
-    transcript->clear();
-    transcript->reserve(N1 + N2);
+    const size_t N1 = data->m_len1 + 1;
+    const size_t N2 = 2*(m_band + 1) + 1;
+
+    data->m_transcript.clear();
+    data->m_transcript.reserve(N1 + N2);
 
     size_t k = N1*N2 - 1, k_end = m_band + 1;
-    while(backtrace[k] == kVoid) {--k;}
+
+    size_t i1 = data->m_offset1 + data->m_len1 - 1;
+    size_t i2 = data->m_offset2 + data->m_len2 - 1;
+
+    while(backtrace[k] == kVoid) {
+        --k;
+        --i2;
+    }
+
     while (k != k_end) {
 
         unsigned char Key = backtrace[k];
@@ -280,23 +290,28 @@ void CBandAligner::x_DoBackTrace(const unsigned char* backtrace,
         }
 
         if (Key & kMaskD) {
-            transcript->push_back(eTS_Match);
+            data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));
             k -= N2;
         }
         else if (Key & kMaskE) {
-            transcript->push_back(eTS_Insert); --k;
+            data->m_transcript.push_back(eTS_Insert);
+            --k;
+            --i2;
             while(k != k_end && (Key & kMaskEc)) {
-                transcript->push_back(eTS_Insert);
+                data->m_transcript.push_back(eTS_Insert);
                 Key = backtrace[k--];
+                --i2;
             }
         }
         else {
-            transcript->push_back(eTS_Delete);
+            data->m_transcript.push_back(eTS_Delete);
             k -= (N2-1);
+            --i1;
             while(k != k_end && (Key & kMaskFc)) {
-                transcript->push_back(eTS_Delete);
+                data->m_transcript.push_back(eTS_Delete);
                 Key = backtrace[k];
                 k -= (N2-1);
+                --i1;
             }
         }
     }
@@ -347,6 +362,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/04 16:34:13  kapustin
+ * Specify precise type of diags in raw alignment transcripts where feasible
+ *
  * Revision 1.5  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *

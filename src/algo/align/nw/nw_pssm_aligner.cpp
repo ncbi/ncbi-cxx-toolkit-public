@@ -163,6 +163,18 @@ CPSSMAligner::TScore CPSSMAligner::Run()
 }
 
 
+CNWAligner::ETranscriptSymbol CPSSMAligner::x_GetDiagTS(size_t i1, size_t i2) 
+const
+{
+    if (m_Freq1 || m_Pssm1) {
+        return eTS_Match; // makes no differences for profile alignments
+    }
+    else {
+        return CNWAligner::x_GetDiagTS(i1, i2);
+    }
+}
+
+
 CNWAligner::TScore CPSSMAligner::x_Align(SAlignInOut* data)
 {
     if (m_Freq1 || m_Pssm1)
@@ -181,10 +193,10 @@ CNWAligner::TScore CPSSMAligner::x_Align(SAlignInOut* data)
 // Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
 //
 
-const unsigned char kMaskFc  = 0x0001;
-const unsigned char kMaskEc  = 0x0002;
-const unsigned char kMaskE   = 0x0004;
-const unsigned char kMaskD   = 0x0008;
+const unsigned char kMaskFc  = 0x01;
+const unsigned char kMaskEc  = 0x02;
+const unsigned char kMaskE   = 0x04;
+const unsigned char kMaskD   = 0x08;
 
 CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
 {
@@ -341,7 +353,7 @@ CNWAligner::TScore CPSSMAligner::x_AlignProfile(SAlignInOut* data)
     }
 
     if(!m_terminate) {
-        x_DoBackTrace(backtrace_matrix, N1, N2, &data->m_transcript);
+        x_DoBackTrace(backtrace_matrix, data);
     }
     return V;
 }
@@ -477,6 +489,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2005/04/04 16:34:13  kapustin
+ * Specify precise type of diags in raw alignment transcripts where feasible
+ *
  * Revision 1.4  2004/12/27 19:42:41  papadopo
  * revert to two-sequences version of ScoreFromTranscript if aligning two sequences
  *

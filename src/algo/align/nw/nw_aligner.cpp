@@ -58,6 +58,7 @@ CNWAligner::CNWAligner()
       m_prg_callback(0),
       m_Seq1(0), m_SeqLen1(0),
       m_Seq2(0), m_SeqLen2(0),
+      m_PositivesAsMatches(false),
       m_score(kInfMinus),
       m_mt(false),
       m_maxthreads(1)
@@ -79,6 +80,7 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
       m_prg_callback(0),
       m_Seq1(seq1), m_SeqLen1(len1),
       m_Seq2(seq2), m_SeqLen2(len2),
+      m_PositivesAsMatches(false),
       m_score(kInfMinus),
       m_mt(false),
       m_maxthreads(1)
@@ -103,7 +105,6 @@ CNWAligner::CNWAligner(const string& seq1,
       m_score(kInfMinus),
       m_mt(false),
       m_maxthreads(1)
-
 {
     SetScoreMatrix(scoremat);
     SetSequences(seq1, seq2);
@@ -178,10 +179,10 @@ void CNWAligner::SetEndSpaceFree(bool Left1, bool Right1,
 // Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
 //
 
-const unsigned char kMaskFc  = 0x0001;
-const unsigned char kMaskEc  = 0x0002;
-const unsigned char kMaskE   = 0x0004;
-const unsigned char kMaskD   = 0x0008;
+const unsigned char kMaskFc  = 0x01;
+const unsigned char kMaskEc  = 0x02;
+const unsigned char kMaskE   = 0x04;
+const unsigned char kMaskD   = 0x08;
 
 CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 {
@@ -323,7 +324,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     }
 
     if(!m_terminate) {
-        x_DoBackTrace(backtrace_matrix, N1, N2, &data->m_transcript);
+        x_DoBackTrace(backtrace_matrix, data);
     }
 
     return V;
@@ -521,35 +522,67 @@ CNWAligner::TScore CNWAligner::x_Run()
 }
 
 
+CNWAligner::ETranscriptSymbol CNWAligner::x_GetDiagTS(size_t i1, size_t i2)
+const
+{
+    const unsigned char c1 = m_Seq1[i1--];
+    const unsigned char c2 = m_Seq2[i2--];
+    
+    ETranscriptSymbol ts;
+    if(m_PositivesAsMatches) {
+        ts = m_ScoreMatrix.s[c1][c2] > 0? eTS_Match: eTS_Replace;
+    }
+    else {
+        ts = (c1 == c2)? eTS_Match: eTS_Replace;
+    }
+    return ts;
+}
+
+
 // perform backtrace step;
 void CNWAligner::x_DoBackTrace(const unsigned char* backtrace,
-                               size_t N1, size_t N2,
-                               TTranscript* transcript)
+                               SAlignInOut* data)
 {
-    transcript->clear();
-    transcript->reserve(N1 + N2);
+    const size_t N1 = data->m_len1 + 1;
+    const size_t N2 = data->m_len2 + 1;
+
+    data->m_transcript.clear();
+    data->m_transcript.reserve(N1 + N2);
 
     size_t k = N1*N2 - 1;
+    size_t i1 = data->m_offset1 + data->m_len1 - 1;
+    size_t i2 = data->m_offset2 + data->m_len2 - 1;
     while (k != 0) {
+
         unsigned char Key = backtrace[k];
         if (Key & kMaskD) {
-            transcript->push_back(eTS_Match);
+
+            data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
-            transcript->push_back(eTS_Insert); --k;
+
+            data->m_transcript.push_back(eTS_Insert);
+            --k;
+            --i2;
             while(k > 0 && (Key & kMaskEc)) {
-                transcript->push_back(eTS_Insert);
+
+                data->m_transcript.push_back(eTS_Insert);
                 Key = backtrace[k--];
+                --i2;
             }
         }
         else {
-            transcript->push_back(eTS_Delete);
+
+            data->m_transcript.push_back(eTS_Delete);
             k -= N2;
+            --i1;
             while(k > 0 && (Key & kMaskFc)) {
-                transcript->push_back(eTS_Delete);
+
+                data->m_transcript.push_back(eTS_Delete);
                 Key = backtrace[k];
                 k -= N2;
+                --i1;
             }
         }
     }
@@ -640,16 +673,17 @@ string CNWAligner::GetTranscriptString(void) const
     s.resize(dim);
     size_t i1 = 0, i2 = 0, i = 0;
 
-    for (int k = dim - 1; k >= 0;  --k) {
+    for (int k = dim - 1; k >= 0; --k) {
 
         ETranscriptSymbol c0 = m_Transcript[k];
         char c = 0;
         switch ( c0 ) {
 
             case eTS_Match: {
+
                 if(m_Seq1 && m_Seq2) {
-                    // always verify when sequences are available
-                    c = (m_Seq1[i1++] == m_Seq2[i2++])? 'M': 'R';
+                    ETranscriptSymbol ts = x_GetDiagTS(i1++, i2++);
+                    c = ts == eTS_Match? 'M': 'R';
                 }
                 else {
                     c = 'M';
@@ -658,9 +692,10 @@ string CNWAligner::GetTranscriptString(void) const
             break;
 
             case eTS_Replace: {
+
                 if(m_Seq1 && m_Seq2) {
-                    // always verify when sequences are available
-                    c = (m_Seq1[i1++] == m_Seq2[i2++])? 'M': 'R';
+                    ETranscriptSymbol ts = x_GetDiagTS(i1++, i2++);
+                    c = ts == eTS_Match? 'M': 'R';
                 }
                 else {
                     c = 'R';
@@ -1200,6 +1235,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.64  2005/04/04 16:34:13  kapustin
+ * Specify precise type of diags in raw alignment transcripts where feasible
+ *
  * Revision 1.63  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *

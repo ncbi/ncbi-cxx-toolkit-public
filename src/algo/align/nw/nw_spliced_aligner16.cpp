@@ -112,10 +112,10 @@ CNWAligner::TScore CSplicedAligner16::GetDefaultWi(unsigned char splice_type)
 // [2]    E:       1 if space in 1st sequence; 0 if space in 2nd sequence
 // [1]    D:       1 if diagonal; 0 - otherwise
 
-const unsigned char kMaskFc       = 0x0001;
-const unsigned char kMaskEc       = 0x0002;
-const unsigned char kMaskE        = 0x0004;
-const unsigned char kMaskD        = 0x0008;
+const unsigned char kMaskFc       = 0x01;
+const unsigned char kMaskEc       = 0x02;
+const unsigned char kMaskE        = 0x04;
+const unsigned char kMaskD        = 0x08;
 
 // Evaluate dynamic programming matrix. Create transcript.
 CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
@@ -339,7 +339,7 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
     }
 
     try {
-        x_DoBackTrace(backtrace_matrix, N1, N2, &data->m_transcript);
+        x_DoBackTrace(backtrace_matrix, data);
     }
     catch(exception&) { // GCC hack
         throw;
@@ -350,15 +350,21 @@ CNWAligner::TScore CSplicedAligner16::x_Align (SAlignInOut* data)
 
 
 // perform backtrace step;
-void CSplicedAligner16::x_DoBackTrace ( const Uint2* backtrace_matrix,
-                                         size_t N1, size_t N2,
-                                         vector<ETranscriptSymbol>* transcript)
+void CSplicedAligner16::x_DoBackTrace (const Uint2* backtrace_matrix,
+                                       CNWAligner::SAlignInOut* data)
 {
-    transcript->clear();
-    transcript->reserve(N1 + N2);
+    const size_t N1 = data->m_len1 + 1;
+    const size_t N2 = data->m_len2 + 1;
+
+    data->m_transcript.clear();
+    data->m_transcript.reserve(N1 + N2);
 
     size_t k = N1*N2 - 1;
+    size_t i1 = data->m_offset1 + data->m_len1 - 1;
+    size_t i2 = data->m_offset2 + data->m_len2 - 1;
+
     while (k != 0) {
+
         Uint2 Key = backtrace_matrix[k];
         while(Key & 0x0070) {  // acceptor
 
@@ -366,8 +372,9 @@ void CSplicedAligner16::x_DoBackTrace ( const Uint2* backtrace_matrix,
             Uint2 dnr_mask = 0x0040 << acc_type;
             ETranscriptSymbol ets = eTS_Intron;
             do {
-                transcript->push_back(ets);
+                data->m_transcript.push_back(ets);
                 Key = backtrace_matrix[--k];
+                --i2;
             }
             while(!(Key & dnr_mask));
 
@@ -381,23 +388,28 @@ void CSplicedAligner16::x_DoBackTrace ( const Uint2* backtrace_matrix,
         if(k == 0) continue;
         
         if (Key & kMaskD) {
-            transcript->push_back(eTS_Match);  // or eTS_Replace
+            data->m_transcript.push_back(x_GetDiagTS(i1--, i2--));
             k -= N2 + 1;
         }
         else if (Key & kMaskE) {
-            transcript->push_back(eTS_Insert); --k;
+            data->m_transcript.push_back(eTS_Insert);
+            --k;
+            --i2;
             while(k > 0 && (Key & kMaskEc)) {
-                transcript->push_back(eTS_Insert);
+                data->m_transcript.push_back(eTS_Insert);
                 Key = backtrace_matrix[k--];
+                --i2;
             }
         }
         else {
-            transcript->push_back(eTS_Delete);
+            data->m_transcript.push_back(eTS_Delete);
             k -= N2;
+            --i1;
             while(k > 0 && (Key & kMaskFc)) {
-                transcript->push_back(eTS_Delete);
+                data->m_transcript.push_back(eTS_Delete);
                 Key = backtrace_matrix[k];
                 k -= N2;
+                --i1;
             }
         }
     }
@@ -574,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/04/04 16:34:13  kapustin
+ * Specify precise type of diags in raw alignment transcripts where feasible
+ *
  * Revision 1.19  2005/03/16 15:48:26  jcherry
  * Allow use of std::string for specifying sequences
  *
