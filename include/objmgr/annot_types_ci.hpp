@@ -45,6 +45,7 @@
 
 #include <set>
 #include <vector>
+#include <memory>
 
 BEGIN_NCBI_SCOPE
 
@@ -657,6 +658,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2004/03/16 18:09:29  vasilche
+* Include <memory> for auto_ptr
+*
 * Revision 1.67  2004/03/16 15:47:25  vasilche
 * Added CBioseq_set_Handle and set of EditHandles
 *
