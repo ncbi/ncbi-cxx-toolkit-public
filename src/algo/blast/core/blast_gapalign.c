@@ -3017,7 +3017,7 @@ static Int4 BLAST_GetStartForGappedAlignment (BlastGapAlignStruct* gap_align,
     }
     max_score = score;
     max_offset = hsp_end - 1;
-    hsp_end = uhsp->q_start + uhsp->length - 1;
+    hsp_end = uhsp->q_start + uhsp->length;
     for (index1=uhsp->q_start + HSP_MAX_WINDOW; index1<hsp_end; index1++) {
         if (!(gap_align->positionBased)) {
             score -= gap_align->sbp->matrix[*(query_var-HSP_MAX_WINDOW)][*(subject_var-HSP_MAX_WINDOW)];
@@ -3169,9 +3169,9 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
          s_start = s_end = init_hsp->s_off;
       } else {
          q_start = init_hsp->ungapped_data->q_start;
-         q_end = q_start + init_hsp->ungapped_data->length - 1;
+         q_end = q_start + init_hsp->ungapped_data->length;
          s_start = init_hsp->ungapped_data->s_start;
-         s_end = s_start + init_hsp->ungapped_data->length - 1;
+         s_end = s_start + init_hsp->ungapped_data->length;
       }
 
       hsp1 = NULL;
