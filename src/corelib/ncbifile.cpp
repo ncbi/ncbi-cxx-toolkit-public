@@ -160,6 +160,31 @@ CDirEntry::~CDirEntry(void)
 }
 
 
+CDirEntry* CDirEntry::CreateObject(EType type, const string& path)
+{
+    CDirEntry *ptr = 0;
+    switch ( type ) {
+        case eFile:
+            ptr = new CFile(path);
+            break;
+        case eDir:
+            ptr = new CDir(path);
+            break;
+        case eLink:
+            ptr = new CSymLink(path);
+            break;
+        default:
+            ptr = new CDirEntry(path);
+            break;
+    }
+    if ( !ptr ) {
+        NCBI_THROW(CCoreException, eNullPtr,
+            "CDirEntry::CreateObject(): Cannot allocate memory for object");
+    }
+    return ptr;
+}
+
+
 void CDirEntry::Reset(const string& path)
 {
     m_Path = path;
@@ -809,16 +834,35 @@ bool CDirEntry::GetTime(CTime* modification,
     if (stat(GetPath().c_str(), &st) != 0) {
         return false;
     }
-    if (modification) {
+    if ( modification ) {
         modification->SetTimeT(st.st_mtime);
     }
-    if (creation) {
+    if ( creation ) {
         creation->SetTimeT(st.st_ctime);
     }
-    if (last_access) {
+    if ( last_access ) {
         last_access->SetTimeT(st.st_atime);
     }
+    return true;
+}
 
+
+bool CDirEntry::GetTimeT(time_t* modification,
+                         time_t* creation, time_t* last_access) const
+{
+    struct stat st;
+    if (stat(GetPath().c_str(), &st) != 0) {
+        return false;
+    }
+    if ( modification ) {
+        *modification = st.st_mtime;
+    }
+    if ( creation ) {
+        *creation = st.st_ctime;
+    }
+    if ( last_access ) {
+        *last_access = st.st_atime;
+    }
     return true;
 }
 
@@ -829,6 +873,16 @@ bool CDirEntry::SetTime(CTime* modification, CTime* last_access) const
 
     times.modtime = modification ? modification->GetTimeT() : time(0);
     times.actime = last_access ? last_access->GetTimeT() : time(0);
+    return utime(GetPath().c_str(), &times) == 0;
+}
+
+
+bool CDirEntry::SetTimeT(time_t* modification, time_t* last_access) const
+{
+    struct utimbuf times;
+
+    times.modtime = modification ? *modification : time(0);
+    times.actime = last_access   ? *last_access  : time(0);
     return utime(GetPath().c_str(), &times) == 0;
 }
 
@@ -939,7 +993,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
             return false;
         }
         // Can overwrite entry?
-        if ( !F_ISSET(flags, fRF_Overwrite)  &&  !F_ISSET(flags, fRF_Backup) ) {
+        if ( !F_ISSET(flags, fRF_Overwrite) ) {
             return false;
         }
         // Rename only if destination is older, otherwise just remove source
@@ -998,7 +1052,12 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
                          (suffix.empty() ? GetBackupSuffix() : suffix);
     switch (mode) {
         case eBackup_Copy:
-            return Copy(backup_name, copyflags | fCF_Overwrite, copybufsize);
+            {
+                TCopyFlags flags = copyflags;
+                flags &= ~(fCF_Update | fCF_Backup);
+                flags |=  (fCF_Overwrite | fCF_TopDirOnly);
+                return Copy(backup_name, flags, copybufsize);
+            }
         case eBackup_Rename:
             return Rename(backup_name, fRF_Overwrite);
         default:
@@ -1010,12 +1069,12 @@ bool CDirEntry::Backup(const string& suffix, EBackupMode mode,
 
 bool CDirEntry::IsNewer(const string& entry_name) const
 {
-    CTime current, other;
-    if ( !GetTime(&current) ) {
+    time_t current, other;
+    if ( !GetTimeT(&current) ) {
         return false;
     }
     CDirEntry entry(entry_name);
-    if ( !entry.GetTime(&other) ) {
+    if ( !entry.GetTimeT(&other) ) {
         return true;
     }
     return current > other;
@@ -1432,9 +1491,9 @@ static bool s_CopyAttrs(const char* from, const char* to,
     }
     // Date/time
     if ( F_ISSET(flags, CDirEntry::fCF_PreserveTime) ) {
-        CTime modification, last_access;
-        if ( !efrom.GetTime(&modification, 0, &last_access)  ||
-            !eto.SetTime(&modification, &last_access) ) {
+        time_t modification, last_access;
+        if ( !efrom.GetTimeT(&modification, 0, &last_access)  ||
+            !eto.SetTimeT(&modification, &last_access) ) {
             return false;
         }
     }
@@ -1557,7 +1616,7 @@ bool CFile::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
             return false;
         }
         // Can overwrite entry?
-        if ( !F_ISSET(flags, fCF_Overwrite) && !F_ISSET(flags, fCF_Backup) ) {
+        if ( !F_ISSET(flags, fCF_Overwrite) ) {
             return false;
         }
         // Copy only if destination is older, otherwise just remove source
@@ -1919,22 +1978,11 @@ CDir::~CDir(void)
 
 
 // Helper function for GetEntries(). Add entry to the list.
-void s_AddDirEntry(CDir::TEntries& contents, const string& path)
+static void s_AddDirEntry(CDir::TEntries& contents, const string& path)
 {
-    switch ( CDirEntry(path).GetType() ) {
-        case CDir::eFile:
-            contents.push_back(new CFile(path));
-            break;
-        case CDir::eDir:
-            contents.push_back(new CDir(path));
-            break;
-        case CDir::eLink:
-            contents.push_back(new CSymLink(path));
-            break;
-        default:
-            contents.push_back(new CDirEntry(path));
-            break;
-    }
+    contents.push_back(
+        CDirEntry::CreateObject(CDirEntry(path).GetType(), path)
+    );
 }
 
 
@@ -2165,8 +2213,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
 
         if ( F_ISSET(flags, fCF_TopDirOnly) ) {
             // Can overwrite entry?
-            if ( !F_ISSET(flags, fCF_Overwrite)  &&
-                 !F_ISSET(flags, fCF_Backup) ) {
+            if ( !F_ISSET(flags, fCF_Overwrite) ) {
                 return false;
             }
             // Copy only if destination is older, otherwise just remove source
@@ -2186,7 +2233,7 @@ bool CDir::Copy(const string& newname, TCopyFlags flags, size_t buf_size)
                     return false;
                 }
             }
-            // Remove needless flags.
+            // Remove unneeded flags.
             // All dir entries can be overwritten.
             flags &= ~(fCF_TopDirOnly | fCF_Update | fCF_Backup);
         }
@@ -2329,7 +2376,7 @@ bool CSymLink::Copy(const string& new_path, TCopyFlags flags, size_t buf_size)
             return false;
         }
         // Can overwrite entry?
-        if ( !F_ISSET(flags, fCF_Overwrite) && !F_ISSET(flags, fCF_Backup) ) {
+        if ( !F_ISSET(flags, fCF_Overwrite) ) {
             return false;
         }
         // Copy only if destination is older, otherwise just remove source
@@ -2911,6 +2958,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.92  2005/03/23 15:37:13  ivanov
+ * + CDirEntry:: CreateObject, Get/SetTimeT
+ * Changed Copy/Rename in accordance that flags "Update" and "Backup"
+ * also means "Overwrite".
+ *
  * Revision 1.91  2005/03/22 15:58:53  ivanov
  * Fixed MSVC compilation error
  *

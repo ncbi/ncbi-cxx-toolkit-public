@@ -276,28 +276,30 @@ public:
     /// modification time.
     enum ECopyFlags {
         /// Next flags say what to do if the destination entry already exists.
-        fCF_Update          = (1<< 1),  ///< Update older entries only
-        fCF_Backup          = (1<< 2),  ///< Backup destination
-        fCF_Overwrite       = (1<< 3),  ///< Remove destination
-
+        /// Destination entry can be changed/replaced/overwritten.
+        fCF_Overwrite       = (1<< 1), 
+        /// Update older entries only (compare modification times).
+        fCF_Update          = (1<< 2) | fCF_Overwrite,
+        /// Backup destination if it exists.
+        fCF_Backup          = (1<< 3) | fCF_Overwrite,
         /// All previous flags can be applied to top directory only,
         /// to process directory wholly, as single entry (for dir only).
         fCF_TopDirOnly      = (1<< 6),
-
-        fCF_EqualTypes      = (1<< 7),  ///< If destination entry exists, it
-                                        ///< must have the same type as source
-        fCF_FollowLinks     = (1<< 8),  ///< Copy entries instead of sym.links
-        fCF_Verify          = (1<< 9),  ///< Verify data after copy
+        /// If destination entry exists, it must have the same type as source.
+        fCF_EqualTypes      = (1<< 7),
+        /// Copy entries which sym.links points, instead of sym.links itself.
+        fCF_FollowLinks     = (1<< 8),
+        fCF_Verify          = (1<< 9),  ///< Verify data after copying
         fCF_PreserveOwner   = (1<<10),  ///< Preserve owner/group
         fCF_PreservePerm    = (1<<11),  ///< Preserve permissions/attributes
         fCF_PreserveTime    = (1<<12),  ///< Preserve date/times
         fCF_PreserveAll     = fCF_PreserveOwner | fCF_PreservePerm |
                               fCF_PreserveTime,
         fCF_Recursive       = (1<<14),  ///< Copy recursively (for dir only)
-        fCF_SkipUnsupported = (1<<15),  ///< Skip all entries for which we
-                                        ///< do not have Copy() method
+        /// Skip all entries for which we don't have Copy() method.
+        fCF_SkipUnsupported = (1<<15),
+        /// Default flags.
         fCF_Default         = fCF_Recursive | fCF_FollowLinks
-                                        ///< Default flags
     };
     typedef unsigned int TCopyFlags;    ///< Binary OR of "ECopyFlags"
 
@@ -342,15 +344,20 @@ public:
 
     /// Rename flags
     enum ERenameFlags {
-        fRF_Update      = (1<<1),  ///< Update changed entries only
-        fRF_Backup      = (1<<2),  ///< Backup destination if it exists
-        fRF_Overwrite   = (1<<3),  ///< Remove destination if it exists
-        fRF_EqualTypes  = (1<<4),  ///< If destination entry exists, it must
-                                   ///< have the same type as source
-        fRF_FollowLinks = (1<<5),  ///< Copy entries instead of sym.links
-        fRF_Default     = 0        ///< Default flags
+        /// Remove destination if it exists.
+        fRF_Overwrite   = (1<<1),
+        /// Update older entries only (compare modification times).
+        fRF_Update      = (1<<2) | fCF_Overwrite,
+        /// Backup destination if it exists before renaming.
+        fRF_Backup      = (1<<3) | fCF_Overwrite,
+        /// If destination entry exists, it must have the same type as source.
+        fRF_EqualTypes  = (1<<4),
+        /// Rename entries which sym.links points, instead of sym.links itself.
+        fRF_FollowLinks = (1<<5),
+        /// Default flags
+        fRF_Default     = 0
     };
-    typedef int TRenameFlags;      ///< Binary OR of "ERenameFlags"
+    typedef int TRenameFlags;   ///< Binary OR of "ERenameFlags"
 
     /// Rename entry.
     ///
@@ -440,6 +447,20 @@ public:
         eUnknown       ///< Unknown type
     };
 
+    /// Construct dir entry object of specified type.
+    ///
+    /// The object of specified type will be constucted in memory only,
+    /// file sytem will not changed.
+    /// @param type
+    ///   Define a type of object to create.
+    /// @return
+    ///   Pointer to new created entry. If class for specified type
+    ///   is not defined, common CDirEntry will be used. Do not forget
+    ///   to frees returned pointer to deallocate object memory.
+    /// @sa
+    ///   CFile, CDir, CSymLink
+    static CDirEntry* CreateObject(EType type, const string& path = kEmptyStr);
+
     /// Get type of directory entry.
     ///
     /// @return
@@ -490,9 +511,18 @@ public:
     /// @return
     ///   TRUE if time was acquired or FALSE otherwise.
     /// @sa
-    ///   SetTime
+    ///   GetTimeT, SetTime
     bool GetTime(CTime* modification, CTime* creation = 0, 
                  CTime* last_access = 0) const;
+
+    /// Get time stamp of directory entry.
+    ///
+    /// @return
+    ///   TRUE if time was acquired or FALSE otherwise.
+    /// @sa
+    ///   GetTime, SetTimeT
+    bool GetTimeT(time_t* modification, time_t* creation = 0, 
+                  time_t* last_access = 0) const;
 
     /// Set time stamp on directory entry.
     ///
@@ -509,8 +539,21 @@ public:
     /// @return
     ///   TRUE if time was changed or FALSE otherwise.
     /// @sa
-    ///   GetTime
+    ///   SetTimeT, GetTime
     bool SetTime(CTime* modification = 0 , CTime* last_access = 0) const;
+
+    /// Set time stamp on directory entry.
+    ///
+    /// @param modification
+    ///   New file modification time.
+    /// @param last_access
+    ///   New last file access time. It cannot be less than the file
+    ///   creation time. In last case it will be set equal to creation time.
+    /// @return
+    ///   TRUE if time was changed or FALSE otherwise.
+    /// @sa
+    ///   SetTime, GetTimeT
+    bool SetTimeT(time_t* modification = 0 , time_t* last_access = 0) const;
 
     /// Check if current entry is newer than some other.
     ///
@@ -2102,6 +2145,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.53  2005/03/23 15:37:13  ivanov
+ * + CDirEntry:: CreateObject, Get/SetTimeT
+ * Changed Copy/Rename in accordance that flags "Update" and "Backup"
+ * also means "Overwrite".
+ *
  * Revision 1.52  2005/03/22 14:20:48  ivanov
  * + CDirEntry:: operator=, Copy, CopyToDir, Get/SetBackupSuffix, Backup,
  *               IsLink, LookupLink, DereferenceLink, IsNewer, Get/SetOwner
