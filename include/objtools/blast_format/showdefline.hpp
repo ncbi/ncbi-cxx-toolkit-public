@@ -56,7 +56,7 @@ BEGIN_SCOPE(objects)
 
 
 
-class NCBI_XBLASTFORMAT_EXPORT CShowBlastDefline 
+class CShowBlastDefline 
 {
 
 public:
@@ -81,7 +81,7 @@ public:
     ///
     CShowBlastDefline(const CSeq_align_set& seqalign,                       
                       CScope& scope,
-                      unsigned int line_length = 65,
+                      size_t line_length = 65,
                       int num_defline_to_show = 100);
     
     ~CShowBlastDefline();
@@ -205,7 +205,7 @@ private:
     CRef<CScope> m_ScopeRef;
 
     ///Line length
-    unsigned int  m_LineLen;
+    size_t  m_LineLen;
 
     ///Number of seqalign hits to show
     int m_NumToShow;
@@ -223,8 +223,8 @@ private:
     string  m_ImagePath;
 
     ///Internal configure file, i.e. .ncbirc
-    CNcbiIfstream *m_ConfigFile;
-    CNcbiRegistry *m_Reg;
+    auto_ptr<CNcbiIfstream> m_ConfigFile;
+    auto_ptr<CNcbiRegistry> m_Reg;
 
     ///query number
     int m_QueryNumber;
@@ -269,6 +269,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.3  2005/01/31 17:43:02  jianye
+change unsigned int to size_t
+
 Revision 1.2  2005/01/25 17:34:13  jianye
 add NCBI_XBLASTFORMAT_EXPORT label
 

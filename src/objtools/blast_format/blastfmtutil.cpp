@@ -128,13 +128,13 @@ s_GetBlastScore(const container&  scoreList,
 ///@param line_len: length of each line desired
 ///@param out: stream to ouput
 ///
-void static WrapOutputLine(string str, unsigned int line_len, 
+void static WrapOutputLine(string str, size_t line_len, 
                                       CNcbiOstream& out) 
 {
     bool do_wrap = false;
-    unsigned int length = str.size();
+    size_t length = str.size();
     if (length > line_len) {
-        for (unsigned int i = 0; i < length; i ++) {
+        for (size_t i = 0; i < length; i ++) {
             if (i > 0 && i % line_len == 0) {
                 do_wrap = true;
             }   
@@ -191,7 +191,7 @@ void CBlastFormatUtil::BlastPrintVersionInfo(string program, bool html,
     }
 }
 
-void CBlastFormatUtil::BlastPrintReference(bool html, unsigned int line_len, 
+void CBlastFormatUtil::BlastPrintReference(bool html, size_t line_len, 
                                            CNcbiOstream& out) 
 {
 
@@ -203,7 +203,7 @@ void CBlastFormatUtil::BlastPrintReference(bool html, unsigned int line_len,
     out << endl;
 }
 
-void  CBlastFormatUtil::PrintTildeSepLines(string str, unsigned int line_len,
+void  CBlastFormatUtil::PrintTildeSepLines(string str, size_t line_len,
                                            CNcbiOstream& out) {
     
     list<string> split_line;
@@ -243,7 +243,7 @@ void CBlastFormatUtil::PrintDbReport(list<CBlastFormatUtil::SDbInfo>&
 }
 
 void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h, 
-                                         unsigned int line_len, 
+                                         size_t line_len, 
                                          CNcbiOstream& out, bool gapped, 
                                          float c) 
 {
@@ -272,7 +272,7 @@ void CBlastFormatUtil::PrintKAParameters(float lambda, float k, float h,
 }
 
 void CBlastFormatUtil::AcknowledgeBlastQuery(CBioseq& cbs, 
-                                             unsigned int line_len,
+                                             size_t line_len,
                                              CNcbiOstream& out,
                                              bool believe_query,
                                              bool html) 

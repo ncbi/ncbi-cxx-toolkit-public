@@ -532,7 +532,7 @@ void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,
 //Constructor
 CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
                                      CScope& scope,
-                                     unsigned int line_length,
+                                     size_t line_length,
                                      int num_defline_to_show):
     m_AlnSetRef(&seqalign), 
     m_ScopeRef(&scope),
@@ -543,8 +543,6 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
     m_Option = 0;
     m_EntrezTerm = NcbiEmptyString;
     m_QueryNumber = 0;
-    m_ConfigFile = NULL;
-    m_Reg = NULL;
     m_Rid = NcbiEmptyString;
     m_CddRid = NcbiEmptyString;
     m_IsDbNa = true;
@@ -557,13 +555,7 @@ CShowBlastDefline::CShowBlastDefline(const CSeq_align_set& seqalign,
 
 CShowBlastDefline::~CShowBlastDefline()
 {
-    if (m_ConfigFile) {
-        delete m_ConfigFile;
-    } 
-    if (m_Reg) {
-        delete m_Reg;
-    }
-
+   
     ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
         delete *iter;
     }
@@ -577,12 +569,12 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     bool is_first_aln = true;
     int num_align = 0;
     CConstRef<CSeq_id> previous_id, subid;
-    unsigned int max_score_len = kBits.size(), max_evalue_len = kValue.size();
-    unsigned int max_sum_n_len =1;
+    size_t max_score_len = kBits.size(), max_evalue_len = kValue.size();
+    size_t max_sum_n_len =1;
 
     if(m_Option & eHtml){
-        m_ConfigFile = new CNcbiIfstream(".ncbirc");
-        m_Reg = new CNcbiRegistry(*m_ConfigFile);  
+        m_ConfigFile.reset(new CNcbiIfstream(".ncbirc"));
+        m_Reg.reset(new CNcbiRegistry(*m_ConfigFile));  
     }
     //prepare defline
     for (CSeq_align_set::Tdata::const_iterator 
@@ -683,7 +675,7 @@ void CShowBlastDefline::DisplayBlastDefline(CNcbiOstream & out)
     
     bool first_new =true;
     ITERATE(list<SDeflineInfo*>, iter, m_DeflineList){
-        unsigned int line_length = 0;
+        size_t line_length = 0;
         string line_component;
         if ((m_Option & eHtml) && ((*iter)->gi > 0)){
             if((m_Option & eShowNewSeqGif)) { 
@@ -838,6 +830,9 @@ CShowBlastDefline::x_GetDeflineInfo(const CSeq_align& aln)
 END_NCBI_SCOPE
 /*===========================================
 *$Log$
+*Revision 1.3  2005/01/31 17:42:37  jianye
+*change unsigned int to size_t
+*
 *Revision 1.2  2005/01/25 22:14:10  ucko
 *#include <stdio.h> due to use of sprintf()
 *

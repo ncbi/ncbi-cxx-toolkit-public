@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE (objects);
 
 
-class NCBI_XBLASTFORMAT_EXPORT CBlastFormatUtil 
+class CBlastFormatUtil 
 {
     
 public:
@@ -85,7 +85,7 @@ public:
     ///@param line_len: length of each line desired
     ///@param out: stream to ouput
     ///
-    static void BlastPrintReference(bool html, unsigned int line_len, 
+    static void BlastPrintReference(bool html, size_t line_len, 
                                     CNcbiOstream& out);
 
     ///Print out misc information separated by "~"
@@ -93,7 +93,7 @@ public:
     ///@param line_len: length of each line desired
     ///@param out: stream to ouput
     ///
-    static void PrintTildeSepLines(string str, unsigned int line_len, 
+    static void PrintTildeSepLines(string str, size_t line_len, 
                                    CNcbiOstream& out);
 
     ///Print out blast database information
@@ -114,7 +114,7 @@ public:
     ///@param c
     ///
     static void PrintKAParameters(float lambda, float k, float h,
-                                  unsigned int line_len, CNcbiOstream& out, 
+                                  size_t line_len, CNcbiOstream& out, 
                                   bool gapped, float c = 0.0);
     
     ///Print out blast query info
@@ -123,7 +123,7 @@ public:
     ///@param: use user's id
     ///@param html: in html format or not
     ///
-    static void AcknowledgeBlastQuery(CBioseq& cbs, unsigned int line_len,
+    static void AcknowledgeBlastQuery(CBioseq& cbs, size_t line_len,
                                       CNcbiOstream& out, bool believe_query,
                                       bool html);
     
@@ -171,6 +171,9 @@ END_NCBI_SCOPE
 
 /*===========================================
 $Log$
+Revision 1.3  2005/01/31 17:43:02  jianye
+change unsigned int to size_t
+
 Revision 1.2  2005/01/25 17:34:13  jianye
 add NCBI_XBLASTFORMAT_EXPORT label
 
