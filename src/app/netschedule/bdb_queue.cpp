@@ -632,7 +632,11 @@ CQueueDataBase::CQueue::CQueue(CQueueDataBase& db, const string& queue_name)
 {
 }
 
-unsigned int CQueueDataBase::CQueue::Submit(const string& input)
+unsigned int 
+CQueueDataBase::CQueue::Submit(const string& input,
+                               unsigned      host_addr,
+                               unsigned      port,
+                               unsigned      wait_timeout)
 {
     unsigned int job_id = m_Db.GetNextId();
 
@@ -660,9 +664,9 @@ unsigned int CQueueDataBase::CQueue::Submit(const string& input)
     db.timeout = 0;
     db.run_timeout = 0;
 
-    db.subm_addr = 0;
-    db.subm_port = 0;
-    db.subm_timeout = 0;
+    db.subm_addr = host_addr;
+    db.subm_port = port;
+    db.subm_timeout = wait_timeout;
 
     db.worker_node1 = 0;
     db.worker_node2 = 0;
@@ -768,6 +772,9 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
                            CBDB_Transaction::eTransASync,
                            CBDB_Transaction::eNoAssociation);
 
+    unsigned subm_addr, subm_port, subm_timeout, time_submit;
+    time_t curr = time(0);
+
     {{
     CFastMutexGuard guard(m_LQueue.lock);
     db.SetTransaction(&trans);
@@ -782,10 +789,16 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
         // TODO: Integrity error or job just expired?
         return;
     }
+    
+    time_submit = db.time_submit;
+    subm_addr = db.subm_addr;
+    subm_port = db.subm_port;
+    subm_timeout = db.subm_timeout;
+
     db.status = (int) CNetScheduleClient::eDone;
     db.ret_code = ret_code;
     db.output = output;
-    db.time_done = time(0);
+    db.time_done = curr;
 
     cur.Update();
 
@@ -795,6 +808,21 @@ void CQueueDataBase::CQueue::PutResult(unsigned int  job_id,
     js_guard.Release();
 
     RemoveFromTimeLine(job_id);
+
+    // check if we need to send a UDP notification
+
+    if ( subm_addr && subm_timeout &&
+        (time_submit + subm_timeout >= (unsigned)curr)) {
+
+        char msg[1024];
+        sprintf(msg, "DONE %u", job_id);
+
+        CFastMutexGuard guard(m_LQueue.us_lock);
+
+        //EIO_Status status = 
+            m_LQueue.udp_socket.Send(msg, strlen(msg)+1, 
+                                     CSocketAPI::ntoa(subm_addr), subm_port);
+    }
 }
 
 void CQueueDataBase::CQueue::SetJobRunTimeout(unsigned job_id, unsigned tm)
@@ -1433,6 +1461,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/03/15 20:14:30  kuznets
+ * Implemented notification to client waiting for job
+ *
  * Revision 1.15  2005/03/15 14:52:39  kuznets
  * Better datagram socket management, DropJob implemenetation
  *

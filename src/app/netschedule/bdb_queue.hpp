@@ -285,7 +285,11 @@ public:
     public:
         CQueue(CQueueDataBase& db, const string& queue_name);
 
-        unsigned int Submit(const string& input);
+        unsigned int Submit(const string& input,
+                            unsigned      host_addr = 0,
+                            unsigned      port = 0,
+                            unsigned      wait_timeout = 0);
+
         void Cancel(unsigned int job_id);
         void PutResult(unsigned int  job_id,
                        int           ret_code,
@@ -417,6 +421,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/15 20:14:30  kuznets
+ * Implemented notification to client waiting for job
+ *
  * Revision 1.11  2005/03/15 14:52:39  kuznets
  * Better datagram socket management, DropJob implemenetation
  *

@@ -453,9 +453,14 @@ void CNetScheduleServer::Process(SOCK sock)
 void CNetScheduleServer::ProcessSubmit(CSocket& sock, SThreadData& tdata)
 {
     SJS_Request& req = tdata.req;
+    unsigned client_address = 0;
+    if (req.timeout) {
+        sock.GetPeerAddress(&client_address, 0, eNH_NetworkByteOrder);
+    }
 
     CQueueDataBase::CQueue queue(*m_QueueDB, tdata.queue);
-    unsigned job_id = queue.Submit(req.input);
+    unsigned job_id =
+        queue.Submit(req.input, client_address, req.port, req.timeout);
 
     char buf[1024];
     sprintf(buf, NETSCHEDULE_JOBMASK, 
@@ -660,7 +665,7 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
 {
     // Request formats and types:
     //
-    // 1. SUBMIT "NCID_01_1..." 
+    // 1. SUBMIT "NCID_01_1..." [udp_port notif_wait]
     // 2. CANCEL JSID_01_1
     // 3. STATUS JSID_01_1
     // 4. GET udp_port
@@ -702,7 +707,35 @@ void CNetScheduleServer::ParseRequest(const string& reqstr, SJS_Request* req)
             NS_CHECKEND(s, "Misformed SUBMIT request")
             *ptr++ = *s;
         }
+        ++s;
         *ptr = 0;
+
+        NS_SKIPSPACE(s)
+
+        // optional UDP notification parameters
+
+        if (!*s) {
+            return;
+        }
+
+        int port = atoi(s);
+        if (port > 0) {
+            req->port = (unsigned)port;
+        }
+
+        for (; *s && isdigit(*s); ++s) {}
+
+        NS_SKIPSPACE(s)
+
+        if (!*s) {
+            return;
+        }
+
+        int timeout = atoi(s);
+        if (timeout > 0) {
+            req->timeout = timeout;
+        }
+
         return;
     }
 
@@ -1239,6 +1272,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2005/03/15 20:14:30  kuznets
+ * Implemented notification to client waiting for job
+ *
  * Revision 1.12  2005/03/15 14:52:39  kuznets
  * Better datagram socket management, DropJob implemenetation
  *
