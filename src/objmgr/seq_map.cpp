@@ -583,7 +583,15 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForBioseq(CBioseq& seq,
         ret.Reset(new CSeqMap(inst.GetLength()));
     }
     else {
-        _ASSERT(inst.GetRepr() == CSeq_inst::eRepr_not_set);
+        if ( inst.GetRepr() != CSeq_inst::eRepr_not_set ) {
+            THROW1_TRACE(runtime_error,
+                         "CSeq_inst.repr of sequence without data should be not_set");
+        }
+        if ( inst.IsSetLength() && inst.GetLength() != 0 ) {
+            THROW1_TRACE(runtime_error,
+                         "CSeq_inst.length of sequence without data should be 0");
+        }
+        ret.Reset(new CSeqMap(TSeqPos(0)));
     }
     const_cast<CSeqMap&>(*ret).m_Mol = inst.GetMol();
     return ret;
@@ -822,6 +830,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/06/12 17:04:55  vasilche
+* Fixed creation of CSeqMap for sequences with repr == not_set.
+*
 * Revision 1.38  2003/06/11 19:32:55  grichenk
 * Added molecule type caching to CSeqMap, simplified
 * coding and sequence type calculations in CSeqVector.
