@@ -124,7 +124,7 @@ x_safe_memcmp(const void* a, const void* b, size_t size)
 {
     if (a != b) {
         if (a != NULL && b != NULL) {
-            return std::memcmp(a, b, size);
+            return memcmp(a, b, size);
         } else {
             return 1;
         }
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2003/11/26 19:37:59  camacho
+* Fix windows problem with std::memcmp
+*
 * Revision 1.29  2003/11/26 18:36:45  camacho
 * Renaming blast_option*pp -> blast_options*pp
 *
