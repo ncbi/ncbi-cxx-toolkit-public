@@ -82,7 +82,7 @@ static void TranslateHSPsToDNAPCoord(Uint1 program,
 
       if (program == blast_type_blastx) {
          context = 
-            BinarySearchInt4(init_hsp->q_off, context_offsets,
+            BSearchInt4(init_hsp->q_off, context_offsets,
                              query_info->last_context+1);
          frame = context % 3;
       

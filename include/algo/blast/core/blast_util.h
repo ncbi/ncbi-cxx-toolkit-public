@@ -250,7 +250,8 @@ Int2 FrameToContext(Int2 frame);
 
 
 /** The following binary search routine assumes that array A is filled. */
-Int4 BinarySearchInt4(Int4 n, Int4Ptr A, Int4 size);
+Int4 BSearchInt4(Int4 n, Int4Ptr A, Int4 size);
+
 #ifdef __cplusplus
 }
 #endif

@@ -66,7 +66,7 @@ BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list,
    for (index=0; index<hsp_list->hspcnt; index++) {
       hsp = hsp_list->hsp_array[index];
       context = hsp->context = 
-         BinarySearchInt4(hsp->query.gapped_start, 
+         BSearchInt4(hsp->query.gapped_start, 
             query_info->context_offsets, 
             (Int4) (query_info->last_context+1));   
       if (is_ooframe && program_number == blast_type_blastx) {
