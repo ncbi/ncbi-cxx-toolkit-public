@@ -380,6 +380,7 @@ const string CValidErrItem::sm_Terse [] = {
     "SEQ_DESCR_MultipleTitles",
     "SEQ_DESCR_Obsolete",
     "SEQ_DESCR_UnnecessaryBioSourceFocus",
+    "SEQ_DESCR_RefGeneTrackingWithoutStatus",
 
     "GENERIC_NonAsciiAsn",
     "GENERIC_Spell",
@@ -728,6 +729,8 @@ The data should probably be put into the appropriate field instead.",
 //  SEQ_DESCR_UnnecessaryBioSourceFocus
 "Focus should not be set on a BioSource descriptor in records where there is no \
 BioSource feature.",
+//  SEQ_DESCR_RefGeneTrackingWithoutStatus
+"The RefGeneTracking user object does not have the required Status field set.",
 
 /* SEQ_GENERIC */
 
@@ -1118,6 +1121,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/09/03 18:24:46  shomrat
+* added SEQ_DESCR_RefGeneTrackingWithoutStatus
+*
 * Revision 1.27  2003/08/06 15:04:30  shomrat
 * Added SEQ_INST_InternalNsInSeqLit
 *

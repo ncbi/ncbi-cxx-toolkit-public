@@ -164,6 +164,7 @@ enum EErrType {
     eErr_SEQ_DESCR_MultipleTitles,
     eErr_SEQ_DESCR_Obsolete,
     eErr_SEQ_DESCR_UnnecessaryBioSourceFocus,
+    eErr_SEQ_DESCR_RefGeneTrackingWithoutStatus,
 
     eErr_GENERIC_NonAsciiAsn,
     eErr_GENERIC_Spell,
@@ -880,6 +881,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.38  2003/09/03 18:25:09  shomrat
+* added SEQ_DESCR_RefGeneTrackingWithoutStatus
+*
 * Revision 1.37  2003/08/06 15:05:42  shomrat
 * Added test for adjacent Ns in Seq-literal
 *
