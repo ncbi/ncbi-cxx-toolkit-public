@@ -74,6 +74,7 @@ typedef struct {
 
 
 typedef struct {
+    int/*bool*/   disp_fail;
     SConnNetInfo* net_info;
     SDISPD_Node*  s_node;
     size_t        n_node;
@@ -122,11 +123,27 @@ extern "C" {
 }
 #endif /* __cplusplus */
 
-static int/*bool*/ s_ParseHeader(const char* header, void *data,
+static int/*bool*/ s_ParseHeader(const char* header, void *iter,
                                  int/*ignored*/ server_error)
 {
-    SERV_Update((SERV_ITER) data, header);
+    SERV_Update((SERV_ITER) iter, header);
     return 1/*header parsed okay*/;
+}
+
+
+#ifdef __cplusplus
+extern "C" {
+    static int s_Adjust(SConnNetInfo*, void*, unsigned int);
+}
+#endif /* __cplusplus */
+
+/* This callback is only for services called via direct HTTP */
+static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
+                            void*         iter,
+                            unsigned int  n)
+{
+    SDISPD_Data* data = (SDISPD_Data*)(((SERV_ITER) iter)->data);
+    return data->disp_fail ? 0/*failed*/ : 1/*try again*/;
 }
 
 
@@ -174,7 +191,7 @@ static int/*bool*/ s_Resolve(SERV_ITER iter)
              "\r\n");
         /* All the rest in the net_info structure is fine with us */
         conn = HTTP_CreateConnectorEx(net_info, fHCC_SureFlush, s_ParseHeader,
-                                      0/*adjust*/, iter/*data*/, 0/*cleanup*/);
+                                      s_Adjust, iter/*data*/, 0/*cleanup*/);
     }
     if (s) {
         ConnNetInfo_DeleteUserHeader(net_info, s);
@@ -222,6 +239,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, TNCBI_Time now, const char* text)
         if (data->net_info->debug_printout)
             CORE_LOGF(eLOG_Warning, ("[DISPATCHER]  %s", p));
 #endif
+        data->disp_fail = 1;
         return 1/*updated*/;
     }
 
@@ -372,6 +390,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         s_RandomSeed = (int) time(0) + (int) SOCK_gethostbyname(0);
         srand(s_RandomSeed);
     }
+    data->disp_fail = 0;
     data->net_info = ConnNetInfo_Clone(net_info); /*called with non-NULL*/
     if (iter->type & fSERV_StatelessOnly)
         data->net_info->stateless = 1/*true*/;
@@ -399,6 +418,9 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.53  2003/02/04 22:02:44  lavr
+ * Introduce adjustment routine and disp_fail member to avoid MAX_TRY retrying
+ *
  * Revision 6.52  2003/01/31 21:17:37  lavr
  * Implementation of perference for preferred host
  *
