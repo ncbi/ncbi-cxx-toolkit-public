@@ -34,6 +34,7 @@
 /// Implementation of the BlastSeqSrc interface using the C++ BLAST databases
 /// API
 
+#include <objtools/readers/seqdb/seqdb.hpp>
 
 #include <algo/blast/core/blast_seqsrc.h>
 #include <algo/blast/core/blast_def.h>
@@ -90,6 +91,13 @@ BlastSeqSrc*
 SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot, 
                      Uint4 first_seq = 0, Uint4 last_seq = 0, void* extra_arg = NULL);
 
+/** Initialize the sequence source structure using an existing SeqDB object.
+ * @param seqdb CSeqDB object [in]
+ */
+NCBI_XBLAST_EXPORT
+BlastSeqSrc*
+SeqDbBlastSeqSrcInit(CSeqDB * seqdb);
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -98,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/12/20 17:02:10  bealer
+ * - New SeqSrc construction function to share existing SeqDB object.
+ *
  * Revision 1.9  2004/11/17 20:24:27  camacho
  * 1. Moved and renamed SSeqDbSrcNewArgs to implementation file
  * 2. Made initialization function name consistent with other BlastSeqSrc

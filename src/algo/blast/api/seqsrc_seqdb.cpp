@@ -326,17 +326,54 @@ private:
     Uint4 m_FinalDbSeq;     /**< Ordinal id of the last sequence to search */
 };
 
+static void s_InitNewSeqDbSrc(BlastSeqSrc* retval, CRef<CSeqDB> * seqdb)
+{
+    ASSERT(retval);
+    ASSERT(seqdb);
+    
+    /* Initialize the BlastSeqSrc structure fields with user-defined function
+     * pointers and seqdb */
+    SetDeleteFnPtr   (retval, & SeqDbSrcFree);
+    SetCopyFnPtr     (retval, & SeqDbSrcCopy);
+    SetDataStructure (retval, (void*) seqdb);
+    SetGetNumSeqs    (retval, & SeqDbGetNumSeqs);
+    SetGetMaxSeqLen  (retval, & SeqDbGetMaxLength);
+    SetGetAvgSeqLen  (retval, & SeqDbGetAvgLength);
+    SetGetTotLen     (retval, & SeqDbGetTotLen);
+    SetGetName       (retval, & SeqDbGetName);
+    SetGetIsProt     (retval, & SeqDbGetIsProt);
+    SetGetSequence   (retval, & SeqDbGetSequence);
+    SetGetSeqLen     (retval, & SeqDbGetSeqLen);
+    SetGetNextChunk  (retval, & SeqDbGetNextChunk);
+    SetIterNext      (retval, & SeqDbIteratorNext);
+    SetRetSequence   (retval, & SeqDbRetSequence);
+}
+
 extern "C" {
+
+BlastSeqSrc* SeqDbSrcSharedNew(BlastSeqSrc* retval, void* args)
+{
+    if ( !retval ) {
+        return (BlastSeqSrc*) NULL;
+    }
+    
+    CRef<CSeqDB> * seqdb = (CRef<CSeqDB> *) args;
+    CRef<CSeqDB> * cref  = new CRef<CSeqDB>(*seqdb);
+    
+    s_InitNewSeqDbSrc(retval, cref);
+    
+    return retval;
+}
 
 BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
 {
     if ( !retval ) {
         return (BlastSeqSrc*) NULL;
     }
-
+    
     CSeqDbSrcNewArgs* seqdb_args = (CSeqDbSrcNewArgs*) args;
     ASSERT(seqdb_args);
-
+    
     CRef<CSeqDB>* seqdb = new CRef<CSeqDB>(NULL);
     try {
         seqdb->Reset(new CSeqDB(seqdb_args->GetDbName(), 
@@ -353,24 +390,12 @@ BlastSeqSrc* SeqDbSrcNew(BlastSeqSrc* retval, void* args)
         SetInitErrorStr(retval, strdup("Caught unknown exception from CSeqDB"
                                        " constructor"));
     }
-
+    
     /* Initialize the BlastSeqSrc structure fields with user-defined function
      * pointers and seqdb */
-    SetDeleteFnPtr(retval, &SeqDbSrcFree);
-    SetCopyFnPtr(retval, &SeqDbSrcCopy);
-    SetDataStructure(retval, (void*) seqdb);
-    SetGetNumSeqs(retval, &SeqDbGetNumSeqs);
-    SetGetMaxSeqLen(retval, &SeqDbGetMaxLength);
-    SetGetAvgSeqLen(retval, &SeqDbGetAvgLength);
-    SetGetTotLen(retval, &SeqDbGetTotLen);
-    SetGetName(retval, &SeqDbGetName);
-    SetGetIsProt(retval, &SeqDbGetIsProt);
-    SetGetSequence(retval, &SeqDbGetSequence);
-    SetGetSeqLen(retval, &SeqDbGetSeqLen);
-    SetGetNextChunk(retval, &SeqDbGetNextChunk);
-    SetIterNext(retval, &SeqDbIteratorNext);
-    SetRetSequence(retval, &SeqDbRetSequence);
-
+    
+    s_InitNewSeqDbSrc(retval, seqdb);
+    
     return retval;
 }
 
@@ -412,6 +437,19 @@ SeqDbBlastSeqSrcInit(const string& dbname, bool is_prot,
     return seq_src;
 }
 
+BlastSeqSrc* 
+SeqDbBlastSeqSrcInit(CSeqDB * seqdb)
+{
+    BlastSeqSrcNewInfo bssn_info;
+    BlastSeqSrc * seq_src = NULL;
+    CRef<CSeqDB> db(seqdb);
+    
+    bssn_info.constructor = & SeqDbSrcSharedNew;
+    bssn_info.ctor_argument = (void*) & db;
+    seq_src = BlastSeqSrcNew(& bssn_info);
+    return seq_src;
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -423,6 +461,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.23  2004/12/20 17:02:10  bealer
+ * - New SeqSrc construction function to share existing SeqDB object.
+ *
  * Revision 1.22  2004/11/24 00:31:40  camacho
  * Construct error initialization string with error code explanation only
  *
