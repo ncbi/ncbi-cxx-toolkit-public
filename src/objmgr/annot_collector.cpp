@@ -596,7 +596,7 @@ void CAnnot_Collector::x_Initialize(const CHandleRangeMap& master_loc)
                         smit.Next(false);
                         continue;
                     }
-                    found = x_SearchMapped(smit, idit->first,
+                    found = x_SearchMapped(smit,
                                            *master_loc_empty,
                                            idit->second);
                     deeper = !(found && m_Selector.m_AdaptiveDepth);
@@ -1294,9 +1294,8 @@ void CAnnot_Collector::x_SearchAll(const CSeq_annot_Info& annot_info)
 
 
 bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI& seg,
-                                         const CSeq_id_Handle& master_id,
-                                         CSeq_loc& master_loc_empty,
-                                         const CHandleRange& master_hr)
+                                      CSeq_loc& master_loc_empty,
+                                      const CHandleRange& master_hr)
 {
     CHandleRange::TOpenRange master_seg_range(seg.GetPosition(),
                                               seg.GetEndPosition());
@@ -1338,8 +1337,7 @@ bool CAnnot_Collector::x_SearchMapped(const CSeqMap_CI& seg,
         return x_Search(ref_loc, 0);
     }
     else {
-        CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_id,
-                                                              master_loc_empty,
+        CRef<CSeq_loc_Conversion> cvt(new CSeq_loc_Conversion(master_loc_empty,
                                                               seg,
                                                               ref_id,
                                                               m_Scope));
@@ -1354,6 +1352,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.4  2004/05/03 17:01:03  grichenk
 * Invalidate total range before reusing seq-loc.
 *

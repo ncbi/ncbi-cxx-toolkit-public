@@ -74,8 +74,7 @@ class CSeq_loc_Conversion : public CObject
 public:
     typedef CRange<TSeqPos> TRange;
 
-    CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
-                        CSeq_loc& master_loc_empty,
+    CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
                         const CSeqMap_CI& seg,
                         const CSeq_id_Handle& src_id,
                         CScope* scope);
@@ -306,6 +305,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.15  2004/03/30 21:21:09  grichenk
 * Reduced number of includes.
 *

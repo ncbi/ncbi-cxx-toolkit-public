@@ -1139,7 +1139,7 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
     TSeqPos dst_from = 0;
     TSeqPos dst_len = 0;
     CConstRef<CSeq_id> dst_id;
-    ENa_strand dst_strand;
+    ENa_strand dst_strand = eNa_strand_unknown;
 
     for ( ; seg_it; ++seg_it) {
         _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
@@ -1833,6 +1833,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.16  2004/05/07 13:53:18  grichenk
 * Preserve fuzz from original location.
 * Better detection of partial locations.

@@ -62,7 +62,7 @@ CAnnot_CI::CAnnot_CI(CScope& scope, const CSeq_loc& loc,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      scope, loc,
-                     SAnnotSelector()
+                     SAnnotSelector(sel)
                      .SetNoMapping(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
@@ -76,7 +76,7 @@ CAnnot_CI::CAnnot_CI(const CBioseq_Handle& bioseq,
                      const SAnnotSelector& sel)
     : CAnnotTypes_CI(CSeq_annot::C_Data::e_not_set,
                      bioseq, start, stop,
-                     SAnnotSelector()
+                     SAnnotSelector(sel)
                      .SetNoMapping(true)
                      .SetSortOrder(SAnnotSelector::eSortOrder_None))
 {
@@ -158,6 +158,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.30  2004/04/05 15:56:14  grichenk
 * Redesigned CAnnotTypes_CI: moved all data and data collecting
 * functions to CAnnotDataCollector. CAnnotTypes_CI is no more

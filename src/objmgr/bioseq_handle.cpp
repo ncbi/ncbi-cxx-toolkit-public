@@ -630,7 +630,6 @@ CRef<CSeq_loc> CBioseq_Handle::MapLocation(const CSeq_loc& loc) const
     for ( ; it; ++it) {
         _ASSERT(it.GetType() == CSeqMap::eSeqRef);
         CSeq_loc_Conversion def_cvt(
-            GetSeq_id_Handle(),
             *master_loc_empty,
             it,
             it.GetRefSeqid(),
@@ -827,6 +826,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.62  2004/05/06 17:32:37  grichenk
 * Added CanGetXXXX() methods
 *

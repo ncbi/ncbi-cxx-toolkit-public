@@ -51,8 +51,7 @@ BEGIN_SCOPE(objects)
 // CSeq_loc_Conversion
 /////////////////////////////////////////////////////////////////////////////
 
-CSeq_loc_Conversion::CSeq_loc_Conversion(const CSeq_id_Handle& master_id,
-                                         CSeq_loc& master_loc_empty,
+CSeq_loc_Conversion::CSeq_loc_Conversion(CSeq_loc& master_loc_empty,
                                          const CSeqMap_CI& seg,
                                          const CSeq_id_Handle& src_id,
                                          CScope* scope)
@@ -833,6 +832,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.26  2004/04/13 15:59:35  grichenk
 * Added CScope::GetBioseqHandle() with id resolving flag.
 *

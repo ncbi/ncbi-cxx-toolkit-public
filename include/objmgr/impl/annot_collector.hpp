@@ -196,7 +196,6 @@ private:
     void x_Initialize(void);
     void x_GetTSE_Info(void);
     bool x_SearchMapped(const CSeqMap_CI& seg,
-                        const CSeq_id_Handle& master_id,
                         CSeq_loc& master_loc_empty,
                         const CHandleRange& master_hr);
     bool x_Search(const CHandleRangeMap& loc,
@@ -569,6 +568,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/05/10 18:26:37  grichenk
+* Fixed 'not used' warnings
+*
 * Revision 1.3  2004/04/13 21:14:27  vasilche
 * Fixed wrong order of object deletion causing "tse is locked" error.
 *
