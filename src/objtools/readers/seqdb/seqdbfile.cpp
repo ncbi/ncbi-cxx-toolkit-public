@@ -69,22 +69,6 @@ BEGIN_NCBI_SCOPE
 
 typedef CSeqDBAtlas::TIndx TIndx;
 
-Uint8 BytesToUint8(char * bytes_sc)
-{
-    unsigned char * bytes = (unsigned char *) bytes_sc;
-    Uint8 value;
-    Int4 i;
-
-    value = 0;
-    for(i = 7; i >= 0; i--) {
-        value += bytes[i];
-        if(i) value <<= 8;
-    }
-    
-    return value;
-}
-
-
 TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease, TIndx offset, Uint4 * buf, CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
@@ -139,7 +123,6 @@ TIndx CSeqDBRawFile::ReadSwapped(CSeqDBMemLease & lease,
     
     return offset + len;
 }
-
 
 CSeqDBExtFile::CSeqDBExtFile(CSeqDBAtlas   & atlas,
                              const string  & dbfilename,
