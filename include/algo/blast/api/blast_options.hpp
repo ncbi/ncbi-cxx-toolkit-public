@@ -912,8 +912,6 @@ inline void
 CBlastOptions::SetFrameShiftPenalty(int p)
 {
     m_ScoringOpts->shift_pen = p;
-    if (p > 0)
-        m_ScoringOpts->is_ooframe = TRUE;
 }
 
 inline int 
@@ -1056,6 +1054,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/10/21 15:36:25  camacho
+* Remove unnecessary side effect when setting frame shift penalty
+*
 * Revision 1.27  2003/10/17 18:43:14  dondosha
 * Use separate variables for different initial word extension options
 *
