@@ -34,6 +34,7 @@ static char const rcsid[] =
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
 #include <algo/blast/core/aa_ungapped.h>
+#include "blast_extend_priv.h"
 
 Int2 BlastAaWordFinder(BLAST_SequenceBlk* subject,
                        BLAST_SequenceBlk* query,
@@ -169,7 +170,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
                sequences, do the ungapped extension */
 
             right_extend = TRUE;
-            if ((Int4)(subject_offsets[i] + diag_offset) > 
+            if ((Int4)(subject_offsets[i] + diag_offset) >= 
                 diag_array[diag_coord].diag_level) {
 
                /* Extend this pair of hits. The extension to the left must 
@@ -212,7 +213,7 @@ Int2 BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk* subject,
    } /* end while - done with the entire sequence. */
  
    /* increment the offset in the diagonal array */
-   DiagUpdate(diag, subject->length + window); 
+   BlastDiagUpdate(diag, subject->length + window); 
  
    Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended, 
                              ungapped_hsps->total);
@@ -287,7 +288,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
 
          /* do an extension, but only if we have not already extended
             this far */
-         if (diff > 0) {
+         if (diff >= 0) {
             ++hits_extended;
             score=BlastAaExtendOneHit(matrix, subject, query,
                      subject_offsets[i], query_offsets[i], dropoff,
@@ -305,7 +306,7 @@ Int2 BlastAaWordFinder_OneHit(const BLAST_SequenceBlk* subject,
    } /* end while */
 
    /* increment the offset in the diagonal array (no windows used) */
-   DiagUpdate(diag, subject->length); 
+   BlastDiagUpdate(diag, subject->length); 
  
    Blast_UngappedStatsUpdate(ungapped_stats, totalhits, hits_extended, 
                              ungapped_hsps->total);
@@ -555,14 +556,14 @@ BlastAaExtendTwoHit(Int4 ** matrix,
    return MAX(left_score,right_score);
 }
 
-Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length)
+Int4 BlastDiagUpdate(BLAST_DiagTable* diag, Int4 length)
 {
   if (diag == NULL)
     return 0;
 
   if (diag->offset >= INT4_MAX/2)
     {
-      DiagClear(diag);
+      BlastDiagClear(diag);
     }
   else
     {
@@ -572,7 +573,7 @@ Int4 DiagUpdate(BLAST_DiagTable* diag, Int4 length)
 }
 
 
-Int4 DiagClear(BLAST_DiagTable* diag)
+Int4 BlastDiagClear(BLAST_DiagTable* diag)
 {
   Int4 i,n;
   DiagStruct* diag_struct_array;
@@ -581,6 +582,8 @@ Int4 DiagClear(BLAST_DiagTable* diag)
     return 0;
 
   n=diag->diag_array_length;
+
+  diag->offset = diag->window;
 
   diag_struct_array = diag->hit_level_array;
 
