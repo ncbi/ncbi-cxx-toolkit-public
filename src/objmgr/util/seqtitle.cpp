@@ -256,6 +256,11 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         }
     }
 
+    // originally further down, but moved up to match the C version
+    while (NStr::EndsWith(title, ".")  ||  NStr::EndsWith(title, " ")) {
+        title.erase(title.end() - 1);
+    }
+
     if (title.empty()  &&  pdb_id.NotEmpty()) {
         CSeqdesc_CI it(hnd, CSeqdesc::e_Pdb);
         for (;  it;  ++it) {
@@ -292,10 +297,6 @@ string GetTitle(const CBioseq_Handle& hnd, TGetTitleFlags flags)
         if (title.empty()) {
             title = "No definition line found";
         }
-    }
-
-    while (NStr::EndsWith(title, ".")) {
-        title.erase(title.end() - 1);
     }
 
     if (third_party  &&  !title.empty()
@@ -814,6 +815,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.14  2003/01/30 20:01:38  ucko
+* Move dot-stripping code up to match the C Toolkit's (arguably broken)
+* behavior; extend it to handle spaces too.
+*
 * Revision 1.13  2002/12/24 16:11:29  ucko
 * Simplify slightly now that CFeat_CI takes a const handle.
 *
