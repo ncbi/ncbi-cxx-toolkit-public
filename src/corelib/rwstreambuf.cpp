@@ -230,10 +230,11 @@ streamsize CRWStreambuf::xsgetn(CT_CHAR_TYPE* buf, streamsize m)
             memcpy(m_ReadBuf,buf+x_read-xx_read,xx_read*sizeof(CT_CHAR_TYPE));
             setg(m_ReadBuf, m_ReadBuf + xx_read, m_ReadBuf + xx_read);
         }
-        n      -= x_read;
         n_read += x_read;
         if (result != eRW_Success)
             break;
+        buf    += x_read;
+        n      -= x_read;
     } while ( n );
     return (streamsize) n_read;
 }
@@ -273,6 +274,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.3  2003/11/04 03:09:29  lavr
+ * xsgetn() fixed to advance buffer pointer when reading
+ *
  * Revision 1.2  2003/11/03 20:05:55  lavr
  * CRWStreambuf::xsgetn() made standard-conforming
  *
