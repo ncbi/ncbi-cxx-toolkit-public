@@ -154,9 +154,9 @@ CBlastOption::SetBlastn()
     // ag_blast is the default; variable word sizes can only be used for word
     // sizes divisible by COMPRESSION_RATIO (4)
     if (m_LutOpts->word_size % COMPRESSION_RATIO == 0)
-        m_LutOpts->scan_step = m_LutOpts->word_size - 8 + 1;
-    else
         m_LutOpts->scan_step = m_LutOpts->word_size - 8 + COMPRESSION_RATIO;
+    else
+        m_LutOpts->scan_step = m_LutOpts->word_size - 8 + 1;
     SetMatrixName(NULL);
 
     // Query setup options
@@ -460,6 +460,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/07/15 19:22:04  camacho
+* Fix setting of scan step in blastn
+*
 * Revision 1.1  2003/07/10 18:34:19  camacho
 * Initial revision
 *
