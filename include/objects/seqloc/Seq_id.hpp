@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.12  2001/08/31 15:59:59  clausen
+ * Added new constructors for FastA construction and added tpg, tpd, and tpe id types
+ *
  * Revision 1.11  2001/07/25 19:11:09  grichenk
  * Equals() and Assign() re-declared as protected
  *
@@ -87,8 +90,8 @@
 // generated classes
 
 BEGIN_NCBI_SCOPE
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
+
 
 class CBioseq;
 class CAbstractObjectManager;
@@ -99,32 +102,71 @@ class CSeq_id : public CSeq_id_Base,
                 public CSerialUserOp
 {
     typedef CSeq_id_Base Tparent;
+
 public:
-    // constructor
-    CSeq_id(void);
-    // destructor
-    ~CSeq_id(void);
+    // Default constructor
+    CSeq_id( void );
+
+    // FastA constructors
+    CSeq_id( const string& the_id );  // Entire Fast A SeqId as a string
+
+    // With proper choice
+    CSeq_id(CSeq_id_Base::E_Choice the_type,
+            const string&          acc_in,  // see explanation in x_Init below
+            const string&          name_in,
+            // force not optional; if not given, use the constructor below 
+            const string&          version_in,
+            const string&          release_in = kEmptyStr);
+
+    CSeq_id(CSeq_id_Base::E_Choice the_type,
+            const string&          acc_in,  // see explanation in x_Init below
+            const string&          name_in,
+            int                    version    = 0,
+            const string&          release_in = kEmptyStr);
+
+    // Need to lookup choice
+    CSeq_id(const string& the_type,
+            const string& acc_in,     // see explanation in x_Init below
+            const string& name_in,
+            // force not optional; if not given, use the constructor below 
+            const string& version_in,
+            const string& release_in = kEmptyStr);
+
+    CSeq_id(const string& the_type,
+            const string& acc_in,   // see explanation in x_Init below
+            const string& name_in,
+            int           version    = 0 ,
+            const string& release_in = kEmptyStr);
+
+    // Destructor
+    virtual ~CSeq_id(void);
+
+    // Converts a string to a choice, no need to require a member.
+    static CSeq_id::E_Choice WhichInverseSeqId(const char* SeqIdCode);
 
     // Match() - TRUE if SeqIds are equivalent
     bool Match(const CSeq_id& sid2) const;
 
+    // Compare return values
+    enum E_SIC { 
+        e_error = 0,  // some problem
+        e_DIFF,       // different SeqId types-can't compare
+        e_NO,         // SeqIds compared, but are different
+        e_YES         // SeqIds compared, are equivalent
+    };
+
     // Compare() - more general
-    enum E_SIC {   // Compare return values
-      e_error = 0 ,    // some problem
-      e_DIFF,          // different SeqId types-can't compare
-      e_NO,            // SeqIds compared, but are different
-      e_YES };         // SeqIds compared, are equivalent
     E_SIC Compare(const CSeq_id& sid2) const;
 
-    // return compatible CTextseq_id
+    // Return compatible CTextseq_id
     const CTextseq_id* GetTextseq_Id(void) const;
 
-    // setup object manager
-    void SetObjectManager(const CRef<CAbstractObjectManager>& objMgr);
-    void ResetObjectManager(const CRef<CAbstractObjectManager>& objMgr);
+    // Setup object manager
+    void SetObjectManager   (CAbstractObjectManager* objMgr);
+    void ResetObjectManager (CAbstractObjectManager* objMgr);
 
-    // use object manager to resolve sequence
-    CConstRef<CBioseq> Resolve(void) const;
+    // Use object manager to resolve sequence
+    const CBioseq* Resolve(void) const;
 
     // Implement serializable interface
     virtual void WriteAsFasta(ostream& out) const;
@@ -136,6 +178,15 @@ protected:
     virtual bool Equals(const CSerialUserOp& object) const;
 
 private:
+    void x_Init 
+    (CSeq_id_Base::E_Choice the_type,
+     // Just first string, as in text seqid, for unusual
+     // cases (patents, pdb) not really an acc
+     const string&          acc_in,
+     const string&          name_in    = kEmptyStr,
+     int                    version    = 0,
+     const string&          release_in = kEmptyStr);
+
     // Prohibit copy constructor & assignment operator
     CSeq_id(const CSeq_id&);
     CSeq_id& operator= (const CSeq_id&);
@@ -159,7 +210,6 @@ bool CSeq_id::Match (const CSeq_id& sid2) const
 
 
 END_objects_SCOPE // namespace ncbi::objects::
-
 END_NCBI_SCOPE
 
 
