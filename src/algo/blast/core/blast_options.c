@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.22  2003/06/03 15:50:39  coulouri
+ * correct function pointer argument
+ *
  * Revision 1.21  2003/05/30 15:52:11  coulouri
  * various lint-induced cleanups
  *
@@ -1072,7 +1075,7 @@ BlastHitSavingParametersFree(BlastHitSavingParametersPtr parmameters)
 
 Int2
 BlastHitSavingParametersNew(BlastHitSavingOptionsPtr options, 
-   int handle_results(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
+   int (*handle_results)(VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, VoidPtr, 
            VoidPtr), BLAST_ScoreBlkPtr sbp, BlastQueryInfoPtr query_info, 
    BlastHitSavingParametersPtr *parameters)
 {
