@@ -1,4 +1,4 @@
---$Revision: 1.12 $
+--$Revision: 1.13 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -19,6 +19,8 @@ IMPORTS Date, Int-fuzz, Dbtag, Object-id, User-object FROM NCBI-General
         Org-ref FROM NCBI-Organism
         Seq-id, Seq-loc FROM NCBI-Seqloc
         Link-set FROM NCBI-Access
+		GB-block FROM GenBank-General
+		PIR-block FROM PIR-General
         EMBL-block FROM EMBL-General
 		SP-block FROM SP-General;
 
@@ -147,30 +149,6 @@ Pubdesc ::= SEQUENCE {              -- how sequence presented in pub
 		accepted (3) ,
 		published (4) } OPTIONAL }
 
-PIR-block ::= SEQUENCE {          -- PIR specific descriptions
-    had-punct BOOLEAN OPTIONAL ,      -- had punctuation in sequence ?
-    host VisibleString OPTIONAL ,
-    source VisibleString OPTIONAL ,     -- source line
-    summary VisibleString OPTIONAL ,
-    genetic VisibleString OPTIONAL ,
-    includes VisibleString OPTIONAL ,
-    placement VisibleString OPTIONAL ,
-    superfamily VisibleString OPTIONAL ,
-    keywords SEQUENCE OF VisibleString OPTIONAL ,
-    cross-reference VisibleString OPTIONAL ,
-    date VisibleString OPTIONAL ,
-	seq-raw VisibleString OPTIONAL }  -- seq with punctuation
-
-GB-block ::= SEQUENCE {          -- GenBank specific descriptions
-    extra-accessions SEQUENCE OF VisibleString OPTIONAL ,
-    source VisibleString OPTIONAL ,     -- source line
-    keywords SEQUENCE OF VisibleString OPTIONAL ,
-    origin VisibleString OPTIONAL,
-    date VisibleString OPTIONAL ,       -- old form Entry Date
-    entry-date Date OPTIONAL ,          -- replaces date
-    div VisibleString OPTIONAL ,        -- GenBank division
-    taxonomy VisibleString OPTIONAL }   -- continuation line of organism
-
 --*** Instances of sequences *******************************
 --*
 
@@ -277,61 +255,6 @@ NCBIpaa ::= OCTET STRING      -- 25 octets/aa, prob for IUPAC aas in order:
                               -- probabilities are coded 0-255 = 0.0-1.0
 NCBIstdaa ::= OCTET STRING    -- codes 0-25, 1 per byte
 
---  *********************************************************************
---
---  Seq-map-table and Seq-code-table REQUIRE that codes start with 0
---    and increase continuously.  So IUPAC codes, which are upper case
---    letters will always have 65 0 cells before the codes begin.  This
---    allows all codes to do indexed lookups for things
---
---  Valid names for code tables are:
---    IUPACna
---    IUPACaa
---    IUPACeaa
---    IUPACaa3     3 letter amino acid codes : parallels IUPACeaa
---                   display only, not a data exchange type
---    NCBI2na
---    NCBI4na
---    NCBI8na
---    NCBI8aa
---    NCBIstdaa
---     probability types map to IUPAC types for display as characters
-
-Seq-code-type ::= ENUMERATED {              -- sequence representations
-    iupacna (1) ,              -- IUPAC 1 letter nuc acid code
-    iupacaa (2) ,              -- IUPAC 1 letter amino acid code
-    ncbi2na (3) ,              -- 2 bit nucleic acid code
-    ncbi4na (4) ,              -- 4 bit nucleic acid code
-    ncbi8na (5) ,              -- 8 bit extended nucleic acid code
-    ncbipna (6) ,              -- nucleic acid probabilities
-    ncbi8aa (7) ,              -- 8 bit extended amino acid codes
-    ncbieaa (8) ,              -- extended ASCII 1 letter aa codes
-    ncbipaa (9) ,              -- amino acid probabilities
-    iupacaa3 (10) ,            -- 3 letter code only for display
-    ncbistdaa (11) }           -- consecutive codes for std aas, 0-25
-
-Seq-map-table ::= SEQUENCE { -- for tables of sequence mappings 
-    from Seq-code-type ,      -- code to map from
-    to Seq-code-type ,        -- code to map to
-    num INTEGER ,             -- number of rows in table
-    start-at INTEGER DEFAULT 0 ,   -- index offset of first element
-    table SEQUENCE OF INTEGER }  -- table of values, in from-to order
-
-Seq-code-table ::= SEQUENCE { -- for names of coded values
-    code Seq-code-type ,      -- name of code
-    num INTEGER ,             -- number of rows in table
-    one-letter BOOLEAN ,   -- symbol is ALWAYS 1 letter?
-    start-at INTEGER DEFAULT 0 ,   -- index offset of first element
-    table SEQUENCE OF
-        SEQUENCE {
-            symbol VisibleString ,      -- the printed symbol or letter
-            name VisibleString } ,      -- an explanatory name or string
-    comps SEQUENCE OF INTEGER OPTIONAL } -- pointers to complement nuc acid
-
-Seq-code-set ::= SEQUENCE {    -- for distribution
-    codes SET OF Seq-code-table OPTIONAL ,
-    maps SET OF Seq-map-table OPTIONAL }
-
 --*** Sequence Annotation *************************************
 --*
 
@@ -347,101 +270,5 @@ Seq-annot ::= SEQUENCE {
 
 END
 
---*********************************************************************
---
---  This block of specifications was developed by Reiner Fuchs of EMBL
---
---*********************************************************************
 
-EMBL-General DEFINITIONS ::=
-BEGIN
 
-EXPORTS EMBL-dbname, EMBL-xref, EMBL-block;
-
-IMPORTS Date, Object-id FROM NCBI-General;
-
-EMBL-dbname ::= CHOICE {
-	code ENUMERATED {
-		embl(0),
-		genbank(1),
-		ddbj(2),
-		geninfo(3),
-		medline(4),
-		swissprot(5),
-		pir(6),
-		pdb(7),
-		epd(8),
-		ecd(9),
-		tfd(10),
-		flybase(11),
-		prosite(12),
-		enzyme(13),
-		mim(14),
-		ecoseq(15),
-		hiv(16) },
-	name	VisibleString }
-
-EMBL-xref ::= SEQUENCE {
-	dbname EMBL-dbname,
-	id SEQUENCE OF Object-id }
-
-EMBL-block ::= SEQUENCE {
-	class ENUMERATED {
-		not-set(0),
-		standard(1),
-		unannotated(2),
-		other(255) } DEFAULT standard,
-	div ENUMERATED {
-		fun(0),
-		inv(1),
-		mam(2),
-		org(3),
-		phg(4),
-		pln(5),
-		pri(6),
-		pro(7),
-		rod(8),
-		syn(9),
-		una(10),
-		vrl(11),
-		vrt(12) } OPTIONAL,
-	creation-date Date,
-	update-date Date,
-	extra-acc SEQUENCE OF VisibleString OPTIONAL,
-	keywords SEQUENCE OF VisibleString OPTIONAL,
-	xref SEQUENCE OF EMBL-xref OPTIONAL }
-
-END
-
---*********************************************************************
---
---  This block of specifications was developed by Mark Cavanaugh of
---		NCBI working with Amos Bairoch of SWISSPROT
---
---*********************************************************************
-
-SP-General DEFINITIONS ::=
-BEGIN
-
-EXPORTS SP-block;
-
-IMPORTS Date, Dbtag FROM NCBI-General
-		Seq-id FROM NCBI-SeqLoc;
-
-SP-block ::= SEQUENCE {         -- SWISSPROT specific descriptions
-	class ENUMERATED {
-		not-set (0) ,
-		standard (1) ,      -- conforms to all SWISSPROT checks
-		prelim (2) ,        -- only seq and biblio checked
-		other (255) } ,
-	extra-acc SET OF VisibleString OPTIONAL ,  -- old SWISSPROT ids
-	imeth BOOLEAN DEFAULT FALSE ,  -- seq known to start with Met
-	plasnm SET OF VisibleString OPTIONAL,  -- plasmid names carrying gene
-	seqref SET OF Seq-id OPTIONAL,         -- xref to other sequences
-	dbref SET OF Dbtag OPTIONAL ,          -- xref to non-sequence dbases
-	keywords SET OF VisibleString OPTIONAL , -- keywords
-	created Date OPTIONAL ,			-- creation date
-	sequpd Date OPTIONAL ,			-- sequence update
-	annotupd Date OPTIONAL }		-- annotation update
-
-END
