@@ -288,6 +288,45 @@ CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_loc& loc,
                                             EOverlapType overlap_type,
                                             CScope& scope);
 
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
+                                        CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& mrna_feat,
+                                       CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
+                                       CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
+                                       CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+void GetMrnasForGene(const CSeq_feat& gene_feat,
+                     CScope& scope,
+                     list< CConstRef<CSeq_feat> >& mrna_feats);
+
+NCBI_XOBJUTIL_EXPORT
+void GetCdssForGene(const CSeq_feat& gene_feat,
+                    CScope& scope,
+                    list< CConstRef<CSeq_feat> >& cds_feats);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
+                                            CSeqFeatData::E_Choice feat_type,
+                                            sequence::EOverlapType overlap_type,
+                                            CScope& scope);
+
+NCBI_XOBJUTIL_EXPORT
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
+                                            CSeqFeatData::ESubtype feat_type,
+                                            sequence::EOverlapType overlap_type,
+                                            CScope& scope);
+
+
 // Convenience functions for popular overlapping types
 
 NCBI_XOBJUTIL_EXPORT
@@ -684,6 +723,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.46  2004/10/12 13:57:21  dicuccio
+* Added convenience routines for finding: best mRNA for CDS feature; best gene
+* for mRNA; best gene for CDS; all mRNAs for a gene; all CDSs for a gene.  Added
+* new variant of GetBestOverlappingFeat() that takes a feature and uses the
+* convenience routines above.
+*
 * Revision 1.45  2004/10/01 15:33:46  grichenk
 * TestForOverlap -- try to get bioseq's length for whole locations.
 * Perform all calculations with Int8, check for overflow when

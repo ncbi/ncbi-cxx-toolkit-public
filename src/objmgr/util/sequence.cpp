@@ -42,6 +42,8 @@
 #include <objmgr/impl/synonyms.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
@@ -2353,6 +2355,577 @@ CConstRef<CSeq_feat> GetOverlappingOperon(const CSeq_loc& loc, CScope& scope)
 }
 
 
+CConstRef<CSeq_feat> GetBestMrnaForCds(const CSeq_feat& cds_feat,
+                                       CScope& scope)
+{
+    _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
+    CConstRef<CSeq_feat> mrna_feat;
+
+    // search for a best overlapping mRNA
+    // we start with a scan through the product accessions because we need
+    // to insure that the chosen transcript does indeed match what we want
+
+    SAnnotSelector sel;
+    sel.SetOverlapIntervals()
+        .ExcludeNamedAnnots("SNP")
+        .SetResolveAll()
+        .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
+
+    // check for transcript_id; this is a fast check
+    string transcript_id = cds_feat.GetNamedQual("transcript_id");
+    if ( !transcript_id.empty() ) {
+        CFeat_CI feat_iter(scope, cds_feat.GetLocation(), sel);
+        for ( ;  feat_iter;  ++feat_iter) {
+            // make sure the feature contains our feature of interest
+            sequence::ECompare comp =
+                sequence::Compare(feat_iter->GetLocation(),
+                                  cds_feat.GetLocation());
+            if (comp != sequence::eContains  &&
+                comp != sequence::eSame) {
+                continue;
+            }
+            string other_transcript_id =
+                feat_iter->GetOriginalFeature().GetNamedQual("transcript_id");
+            if (transcript_id == other_transcript_id) {
+                mrna_feat.Reset(&feat_iter->GetOriginalFeature());
+                return mrna_feat;
+            }
+        }
+    }
+
+    if (cds_feat.IsSetProduct()) {
+        try {
+            // this may throw, if the product spans multiple sequences
+            // this would be extremely unlikely, but we catch anyway
+            const CSeq_id& product_id =
+                sequence::GetId(cds_feat.GetProduct());
+
+            CFeat_CI feat_iter(scope, cds_feat.GetLocation(), sel);
+            for ( ;  feat_iter  &&  !mrna_feat;  ++feat_iter) {
+
+                // we grab the mRNA product, if available, and scan it for
+                // a CDS feature.  the CDS feature should point to the same
+                // product as our current feature.
+                const CSeq_feat& mrna = feat_iter->GetOriginalFeature();
+                if ( !mrna.IsSetProduct() ) {
+                    continue;
+                }
+
+                string label;
+
+                // make sure the feature contains our feature of interest
+                sequence::ECompare comp =
+                    sequence::Compare(mrna.GetLocation(),
+                                      cds_feat.GetLocation());
+                if (comp != sequence::eContains  &&
+                    comp != sequence::eSame) {
+                    continue;
+                }
+
+                CBioseq_Handle handle =
+                    scope.GetBioseqHandle(mrna.GetProduct());
+                if ( !handle ) {
+                    continue;
+                }
+
+                SAnnotSelector cds_sel(sel);
+                cds_sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+                CFeat_CI other_iter(scope, mrna.GetProduct(), cds_sel);
+                for ( ;  other_iter  &&  !mrna_feat;  ++other_iter) {
+                    const CSeq_feat& cds = other_iter->GetOriginalFeature();
+                    if ( !cds.IsSetProduct() ) {
+                        continue;
+                    }
+
+                    CBioseq_Handle prot_handle =
+                        scope.GetBioseqHandle(cds.GetProduct());
+                    if ( !prot_handle ) {
+                        continue;
+                    }
+
+                    if (prot_handle.IsSynonym(product_id)) {
+                        // got it!
+                        mrna_feat.Reset(&mrna);
+                        return mrna_feat;
+                    }
+                }
+            }
+        }
+        catch (...) {
+        }
+    }
+
+    //
+    // try to find the best by overlaps alone
+    //
+
+    if ( !mrna_feat ) {
+        mrna_feat =
+            sequence::GetBestOverlappingFeat(cds_feat.GetLocation(),
+                                             CSeqFeatData::eSubtype_mRNA,
+                                             sequence::eOverlap_CheckIntervals,
+                                             scope);
+    }
+
+    return mrna_feat;
+}
+
+
+CConstRef<CSeq_feat> GetBestCdsForMrna(const CSeq_feat& mrna_feat,
+                                       CScope& scope)
+{
+    _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
+    CConstRef<CSeq_feat> cds_feat;
+
+    // search for a best overlapping mRNA
+    // we start with a scan through the product accessions because we need
+    // to insure that the chosen transcript does indeed match what we want
+
+    SAnnotSelector sel;
+    sel.SetOverlapIntervals()
+        .ExcludeNamedAnnots("SNP")
+        .SetResolveAll()
+        .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
+
+    if (mrna_feat.IsSetProduct()) {
+        do {
+            try {
+                // this may throw, if the product spans multiple sequences
+                // this would be extremely unlikely, but we catch anyway
+                const CSeq_id& mrna_product  =
+                    sequence::GetId(mrna_feat.GetProduct());
+                CBioseq_Handle mrna_handle =
+                    scope.GetBioseqHandle(mrna_product);
+
+                // find the ID of the protein accession we're looking for
+                CConstRef<CSeq_id> protein_id;
+                {{
+                     CFeat_CI iter(mrna_handle, 0, 0, sel);
+                     for ( ;  iter;  ++iter) {
+                         if (iter->IsSetProduct()) {
+                             protein_id.Reset
+                                 (&sequence::GetId(iter->GetProduct()));
+                             break;
+                         }
+                     }
+                 }}
+
+                if ( !protein_id ) {
+                    break;
+                }
+
+                CFeat_CI feat_iter(scope, mrna_feat.GetLocation(), sel);
+                for ( ;  feat_iter  &&  !cds_feat;  ++feat_iter) {
+                    /// look for all contained CDS features; for each, check
+                    /// to see if the protein product is the expected protein
+                    /// product
+                    const CSeq_feat& cds = feat_iter->GetOriginalFeature();
+                    if ( !cds.IsSetProduct() ) {
+                        continue;
+                    }
+
+                    // make sure the feature contains our feature of interest
+                    sequence::ECompare comp =
+                        sequence::Compare(mrna_feat.GetLocation(),
+                                          cds.GetLocation(),
+                                          &scope);
+                    if (comp != sequence::eContains  &&
+                        comp != sequence::eSame) {
+                        continue;
+                    }
+
+                    CBioseq_Handle prot_handle =
+                        scope.GetBioseqHandle(cds.GetProduct());
+                    if ( !prot_handle ) {
+                        continue;
+                    }
+
+                    if (prot_handle.IsSynonym(*protein_id)) {
+                        // got it!
+                        cds_feat.Reset(&cds);
+                        break;
+                    }
+                }
+            }
+            catch (...) {
+            }
+        }
+        while (false);
+    }
+
+    //
+    // check for transcript_id
+    //
+    string transcript_id = mrna_feat.GetNamedQual("transcript_id");
+    if ( !transcript_id.empty() ) {
+        CFeat_CI feat_iter(scope, mrna_feat.GetLocation(), sel);
+        for ( ;  feat_iter;  ++feat_iter) {
+            // make sure the feature contains our feature of interest
+            sequence::ECompare comp =
+                sequence::Compare(feat_iter->GetLocation(),
+                                  mrna_feat.GetLocation());
+            if (comp != sequence::eContained  &&
+                comp != sequence::eSame) {
+                continue;
+            }
+            string other_transcript_id =
+                feat_iter->GetOriginalFeature().GetNamedQual("transcript_id");
+            if (transcript_id == other_transcript_id) {
+                cds_feat.Reset(&feat_iter->GetOriginalFeature());
+                return cds_feat;
+            }
+        }
+    }
+
+    //
+    // try to find the best by overlaps alone
+    //
+
+    if ( !cds_feat ) {
+        cds_feat =
+            sequence::GetBestOverlappingFeat(mrna_feat.GetLocation(),
+                                             CSeqFeatData::eSubtype_cdregion,
+                                             sequence::eOverlap_CheckIntervals,
+                                             scope);
+    }
+
+    return cds_feat;
+}
+
+
+CConstRef<CSeq_feat> GetBestGeneForMrna(const CSeq_feat& mrna_feat,
+                                        CScope& scope)
+{
+    _ASSERT(mrna_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA);
+    CConstRef<CSeq_feat> gene_feat;
+
+    if (mrna_feat.IsSetDbxref()) {
+        int gene_id = 0;
+        ITERATE (CSeq_feat::TDbxref, dbxref, mrna_feat.GetDbxref()) {
+            if ((*dbxref)->GetDb() == "GeneID"  ||
+                (*dbxref)->GetDb() == "LocusID") {
+                gene_id = (*dbxref)->GetTag().GetId();
+                break;
+            }
+        }
+
+        if (gene_id != 0) {
+            CFeat_CI feat_it(scope, mrna_feat.GetLocation(),
+                             SAnnotSelector()
+                             .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                             .SetOverlapIntervals()
+                             .SetResolveTSE());
+
+            for ( ;  feat_it;  ++feat_it) {
+                // make sure the feature contains our feature of interest
+                sequence::ECompare comp =
+                    sequence::Compare(mrna_feat.GetLocation(),
+                                      feat_it->GetLocation(),
+                                      &scope);
+                if (comp != sequence::eContained  &&
+                    comp != sequence::eSame) {
+                    continue;
+                }
+
+                ITERATE (CSeq_feat::TDbxref, dbxref, feat_it->GetDbxref()) {
+                    if (((*dbxref)->GetDb() == "GeneID"  ||
+                         (*dbxref)->GetDb() == "LocusID")  &&
+                        (*dbxref)->GetTag().GetId() == gene_id) {
+                        gene_feat = &feat_it->GetOriginalFeature();
+                        return gene_feat;
+                    }
+                }
+            }
+        }
+    }
+
+    const CGene_ref* ref = mrna_feat.GetGeneXref();
+    if (ref) {
+        string ref_str;
+        ref->GetLabel(&ref_str);
+        CFeat_CI feat_it(scope, mrna_feat.GetLocation(),
+                         SAnnotSelector()
+                         .SetFeatSubtype(CSeqFeatData::eSubtype_gene)
+                         .SetOverlapIntervals()
+                         .SetResolveTSE());
+        for ( ;  feat_it;  ++feat_it) {
+            // make sure the feature contains our feature of interest
+            sequence::ECompare comp =
+                sequence::Compare(mrna_feat.GetLocation(),
+                                  feat_it->GetLocation(),
+                                  &scope);
+            if (comp != sequence::eContained  &&
+                comp != sequence::eSame) {
+                continue;
+            }
+
+            string ref_str;
+            ref->GetLabel(&ref_str);
+
+            const CGene_ref& other_ref = feat_it->GetData().GetGene();
+            string other_ref_str;
+            other_ref.GetLabel(&other_ref_str);
+            if (ref_str == other_ref_str) {
+                gene_feat = &feat_it->GetOriginalFeature();
+                return gene_feat;
+            }
+        }
+    }
+
+    if ( !gene_feat ) {
+        gene_feat =
+            sequence::GetBestOverlappingFeat(mrna_feat.GetLocation(),
+                                             CSeqFeatData::eSubtype_gene,
+                                             sequence::eOverlap_Contained,
+                                             scope);
+    }
+
+    return gene_feat;
+}
+
+
+CConstRef<CSeq_feat> GetBestGeneForCds(const CSeq_feat& cds_feat,
+                                       CScope& scope)
+{
+    _ASSERT(cds_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
+    CConstRef<CSeq_feat> feat = GetBestMrnaForCds(cds_feat, scope);
+    if (feat) {
+        feat = GetBestGeneForMrna(*feat, scope);
+    } else {
+        feat =
+            sequence::GetBestOverlappingFeat(cds_feat.GetLocation(),
+                                             CSeqFeatData::eSubtype_gene,
+                                             sequence::eOverlap_Contained,
+                                             scope);
+    }
+    return feat;
+}
+
+
+void GetMrnasForGene(const CSeq_feat& gene_feat, CScope& scope,
+                     list< CConstRef<CSeq_feat> >& mrna_feats)
+{
+    _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
+    int gene_id = 0;
+    if (gene_feat.IsSetDbxref()) {
+        ITERATE (CSeq_feat::TDbxref, dbxref, gene_feat.GetDbxref()) {
+            if ((*dbxref)->GetDb() == "GeneID"  ||
+                (*dbxref)->GetDb() == "LocusID") {
+                gene_id = (*dbxref)->GetTag().GetId();
+                break;
+            }
+        }
+    }
+
+    CFeat_CI feat_it(scope, gene_feat.GetLocation(),
+                     SAnnotSelector()
+                     .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA)
+                     .SetOverlapTotalRange()
+                     .SetResolveAll());
+
+    /// first, check to see if we can match based on gene_id
+    if (gene_id) {
+        size_t count = 0;
+        for ( ;  feat_it;  ++feat_it) {
+            CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
+
+            ECompare comp = sequence::Compare(gene_feat.GetLocation(),
+                                              feat_it->GetLocation(),
+                                              &scope);
+            if (comp != eSame  &&  comp != eContains) {
+                continue;
+            }
+
+            if (feat_it->IsSetDbxref()) {
+                ITERATE (CSeq_feat::TDbxref, dbxref, feat_it->GetDbxref()) {
+                    if (((*dbxref)->GetDb() == "GeneID"  ||
+                         (*dbxref)->GetDb() == "LocusID")  &&
+                        (*dbxref)->GetTag().GetId() == gene_id) {
+                        mrna_feats.push_back(ref);
+                        ++count;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (count) {
+            return;
+        }
+    }
+
+    /// gene_id not found, look for gene ref
+    {{
+         const CGene_ref& ref = gene_feat.GetData().GetGene();
+         string ref_str;
+         ref.GetLabel(&ref_str);
+         size_t count = 0;
+         for ( ;  feat_it;  ++feat_it) {
+
+             const CGene_ref* other_ref =
+                 feat_it->GetOriginalFeature().GetGeneXref();
+             if ( !other_ref ) {
+                 continue;
+             }
+
+             ECompare comp = sequence::Compare(gene_feat.GetLocation(),
+                                               feat_it->GetLocation(),
+                                               &scope);
+             if (comp != eSame  &&  comp != eContains) {
+                 continue;
+             }
+
+             string other_ref_str;
+             other_ref->GetLabel(&other_ref_str);
+             if (other_ref_str != ref_str) {
+                 continue;
+             }
+
+             CConstRef<CSeq_feat> feat_ref(&feat_it->GetOriginalFeature());
+             mrna_feats.push_back(feat_ref);
+             ++count;
+         }
+
+         if (count) {
+             return;
+         }
+     }}
+
+    // gene doesn't have a gene_id or a gene ref
+    for ( ;  feat_it;  ++feat_it) {
+        CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
+        ECompare comp = sequence::Compare(gene_feat.GetLocation(),
+                                          feat_it->GetLocation(),
+                                          &scope);
+        if (comp == eSame  ||  comp == eContains) {
+            mrna_feats.push_back(ref);
+        }
+    }
+}
+
+
+void GetCdssForGene(const CSeq_feat& gene_feat, CScope& scope,
+                    list< CConstRef<CSeq_feat> >& cds_feats)
+{
+    _ASSERT(gene_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_gene);
+    list< CConstRef<CSeq_feat> > mrna_feats;
+    GetMrnasForGene(gene_feat, scope, mrna_feats);
+    if (mrna_feats.size()) {
+        ITERATE (list< CConstRef<CSeq_feat> >, iter, mrna_feats) {
+            CConstRef<CSeq_feat> cds = GetBestCdsForMrna(**iter, scope);
+            if (cds) {
+                cds_feats.push_back(cds);
+            }
+        }
+    } else {
+        CFeat_CI feat_it(scope, gene_feat.GetLocation(),
+                         SAnnotSelector()
+                         .SetFeatSubtype(CSeqFeatData::eSubtype_cdregion)
+                         .SetOverlapIntervals()
+                         .SetResolveAll());
+        for ( ;  feat_it;  ++feat_it) {
+            CConstRef<CSeq_feat> ref(&feat_it->GetOriginalFeature());
+            ECompare comp = sequence::Compare(gene_feat.GetLocation(),
+                                              feat_it->GetLocation(),
+                                              &scope);
+            if (comp == eSame  ||  comp == eContains) {
+                cds_feats.push_back(ref);
+            }
+        }
+    }
+}
+
+
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
+                                            CSeqFeatData::E_Choice feat_type,
+                                            sequence::EOverlapType overlap_type,
+                                            CScope& scope)
+{
+    CConstRef<CSeq_feat> feat_ref;
+    switch (feat_type) {
+    case CSeqFeatData::e_Gene:
+        feat_ref = GetBestOverlappingFeat(feat,
+                                          CSeqFeatData::eSubtype_gene,
+                                          overlap_type, scope);
+        break;
+
+    case CSeqFeatData::e_Rna:
+        feat_ref = GetBestOverlappingFeat(feat,
+                                          CSeqFeatData::eSubtype_mRNA,
+                                          overlap_type, scope);
+        break;
+
+    case CSeqFeatData::e_Cdregion:
+        feat_ref = GetBestOverlappingFeat(feat,
+                                          CSeqFeatData::eSubtype_cdregion,
+                                          overlap_type, scope);
+        break;
+
+    default:
+        break;
+    }
+
+    if ( !feat_ref ) {
+        feat_ref = sequence::GetBestOverlappingFeat
+            (feat.GetLocation(), feat_type, overlap_type, scope);
+    }
+
+    return feat_ref;
+}
+
+
+CConstRef<CSeq_feat> GetBestOverlappingFeat(const CSeq_feat& feat,
+                                            CSeqFeatData::ESubtype subtype,
+                                            sequence::EOverlapType overlap_type,
+                                            CScope& scope)
+{
+    CConstRef<CSeq_feat> feat_ref;
+    switch (feat.GetData().GetSubtype()) {
+    case CSeqFeatData::eSubtype_mRNA:
+        switch (subtype) {
+        case CSeqFeatData::eSubtype_gene:
+            feat_ref = GetBestGeneForMrna(feat, scope);
+            break;
+
+        case CSeqFeatData::eSubtype_cdregion:
+            feat_ref = GetBestCdsForMrna(feat, scope);
+            break;
+
+        default:
+            break;
+        }
+        break;
+
+    case CSeqFeatData::eSubtype_cdregion:
+        switch (subtype) {
+        case CSeqFeatData::eSubtype_mRNA:
+            feat_ref = GetBestMrnaForCds(feat, scope);
+            break;
+
+        case CSeqFeatData::eSubtype_gene:
+            feat_ref = GetBestGeneForCds(feat, scope);
+            break;
+
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    if ( !feat_ref ) {
+        feat_ref = sequence::GetBestOverlappingFeat
+            (feat.GetLocation(), subtype, overlap_type, scope);
+    }
+
+    return feat_ref;
+}
+
+
+
+
 int SeqLocPartialCheck(const CSeq_loc& loc, CScope* scope)
 {
     unsigned int retval = 0;
@@ -4174,6 +4747,12 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.95  2004/10/12 13:57:21  dicuccio
+* Added convenience routines for finding: best mRNA for CDS feature; best gene
+* for mRNA; best gene for CDS; all mRNAs for a gene; all CDSs for a gene.  Added
+* new variant of GetBestOverlappingFeat() that takes a feature and uses the
+* convenience routines above.
+*
 * Revision 1.94  2004/10/07 16:01:22  ucko
 * Fix "invalid conversion" error brought on by last commit.
 *
