@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/08/24 23:39:54  thiessen
+* add 'atomic ion' labels
+*
 * Revision 1.17  2000/08/21 17:22:45  thiessen
 * add primitive highlighting for testing
 *
@@ -160,7 +163,7 @@ public:
     void PopMatrix(void);
 
     // display list management
-    static const unsigned int NO_LIST, FIRST_LIST;
+    static const unsigned int NO_LIST, FIRST_LIST, FONT_BASE;
     void StartDisplayList(unsigned int list);
     void EndDisplayList(void);
 
@@ -178,6 +181,17 @@ public:
     void DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& helixStyle);
     void DrawStrand(const Vector& Nterm, const Vector& Cterm, 
         const Vector& unitNormal, const StrandStyle& strandStyle);
+
+    // font methods (some platform-specific, until glCanvas can do fonts...)
+    bool MeasureText(const std::string& text, int *width, int *height);
+    void Label(const std::string& text, const Vector& center, const Vector& color);
+
+#ifdef __WXMSW__
+    // must be same as return type (WXHFONT) of wxFont::GetHFONT()
+    bool SetFont_Windows(unsigned long newFontHandle);
+private:
+    unsigned long fontHandle;
+#endif
 
 private:
     StructureSet *structureSet;

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/08/24 23:40:19  thiessen
+* add 'atomic ion' labels
+*
 * Revision 1.19  2000/08/21 17:22:37  thiessen
 * add primitive highlighting for testing
 *
@@ -384,6 +387,11 @@ Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, wxWindowID id,
     structureSet(NULL)
 {
     SetCurrent();
+    font = new wxFont(12, wxSWISS, wxNORMAL, wxBOLD);
+
+#ifdef __WXMSW__
+    renderer.SetFont_Windows(font->GetHFONT());
+#endif
 }
 
 Cn3DGLCanvas::~Cn3DGLCanvas(void)

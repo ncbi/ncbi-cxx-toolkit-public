@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2000/08/24 23:39:54  thiessen
+* add 'atomic ion' labels
+*
 * Revision 1.8  2000/08/17 18:32:37  thiessen
 * minor fixes to StyleManager
 *
@@ -93,6 +96,7 @@ public:
     // public data
     Cn3D::StructureSet *structureSet;
     Cn3D::OpenGLRenderer renderer;
+    wxFont *font;
 
     // public methods
     void OnPaint(wxPaintEvent& event);

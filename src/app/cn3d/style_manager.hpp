@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/08/24 23:39:54  thiessen
+* add 'atomic ion' labels
+*
 * Revision 1.11  2000/08/24 18:43:15  thiessen
 * tweaks for transparent sphere display
 *
@@ -68,6 +71,8 @@
 
 #ifndef CN3D_STYLE_MANAGER__HPP
 #define CN3D_STYLE_MANAGER__HPP
+
+#include <string>
 
 #include "cn3d/vector_math.hpp"
 
@@ -229,6 +234,7 @@ public:
     Vector color;
     double radius;
     unsigned int name;
+    std::string centerLabel;
 };
 
 class BondStyle

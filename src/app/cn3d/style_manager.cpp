@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/24 23:40:19  thiessen
+* add 'atomic ion' labels
+*
 * Revision 1.10  2000/08/24 18:43:52  thiessen
 * tweaks for transparent sphere display
 *
@@ -372,12 +375,14 @@ bool StyleManager::GetAtomStyle(const Residue *residue,
     }
 
     // determine transparency
+    atomStyle->centerLabel.erase();
     if (molecule->IsSolvent())
         atomStyle->style = eTransparentAtom;
     else if (IsMetal(info->atomicNumber) ||
              (molecule->NResidues() == 1 && residue->NAtoms() == 1)) {
         atomStyle->style = eTransparentAtom;
         atomStyle->radius = element->vdWRadius;  // always big spheres for metals or isolated atoms
+        atomStyle->centerLabel = element->symbol;
     } else
         atomStyle->style = eSolidAtom;
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/08/24 23:40:19  thiessen
+* add 'atomic ion' labels
+*
 * Revision 1.22  2000/08/24 18:43:52  thiessen
 * tweaks for transparent sphere display
 *
@@ -131,6 +134,7 @@ static inline double RadToDegrees(double rad) { return rad*180.0/PI; }
 
 const unsigned int OpenGLRenderer::NO_LIST = 0;
 const unsigned int OpenGLRenderer::FIRST_LIST = 1;
+const unsigned int OpenGLRenderer::FONT_BASE = 1000;
 
 static const unsigned int ALL_FRAMES = 4294967295;
 
@@ -384,6 +388,11 @@ void OpenGLRenderer::PopMatrix(void)
 // display list management stuff
 void OpenGLRenderer::StartDisplayList(unsigned int list)
 {
+    if (list >= FONT_BASE) {
+        ERR_POST(Error << "OpenGLRenderer::StartDisplayList() - too many display lists;\n"
+            << "increase OpenGLRenderer::FONT_BASE");
+        return;
+    }
     ClearTransparentSpheresForList(list);
     SetColor(GL_NONE); // reset color caches in SetColor
     TESTMSG("creating display list " << list);
@@ -798,6 +807,9 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle, do
     // need to delay rendering of transparent spheres
     else {
         AddTransparentSphere(atomStyle.color, atomStyle.name, site, atomStyle.radius, alpha);
+        // but can put labels on now
+        if (atomStyle.centerLabel.size() > 0)
+            Label(atomStyle.centerLabel, site, Vector(1,1,1)); // always white
     }
 }
 
@@ -1311,6 +1323,48 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     }
 
     glEnd();
+}
+
+#ifdef __WXMSW__
+bool OpenGLRenderer::SetFont_Windows(unsigned long newFontHandle)
+{
+    HDC hdc = wglGetCurrentDC();
+    fontHandle = newFontHandle;
+    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(fontHandle));
+    BOOL okay = wglUseFontBitmaps(hdc, 0, 255, FONT_BASE);
+    SelectObject(hdc, currentFont);
+    if (!okay) {
+        ERR_POST(Error << "OpenGLRenderer::SetFont_Windows() - wglUseFontBitmaps() failed");
+        return false;
+    }
+	return true;
+}
+
+bool OpenGLRenderer::MeasureText(const std::string& text, int *width, int *height)
+{
+    HDC hdc = wglGetCurrentDC();
+    HGDIOBJ currentFont = SelectObject(hdc, reinterpret_cast<HGDIOBJ>(fontHandle));
+    SIZE textSize;
+    BOOL okay = GetTextExtentPoint32(hdc, text.data(), text.size(), &textSize);
+    SelectObject(hdc, currentFont);
+    *width = textSize.cx;
+    *height = 0.65 * textSize.cy; // windows' text heights seem a little off...
+    return (okay != 0);
+}
+#endif
+
+void OpenGLRenderer::Label(const std::string& text, const Vector& center, const Vector& color)
+{
+    int width, height;
+
+    if (text.empty() || !MeasureText(text, &width, &height)) return;
+
+    SetColor(GL_AMBIENT, color[0], color[1], color[2]); // all center labels white
+    glListBase(FONT_BASE);
+    glRasterPos3d(center.x, center.y, center.z);
+    glBitmap(0, 0, 0.0, 0.0, -0.5 * width, -0.5 * height, NULL);
+    glCallLists(text.size(), GL_UNSIGNED_BYTE, text.data());
+    glListBase(0);
 }
 
 END_SCOPE(Cn3D)
