@@ -65,6 +65,8 @@ class CDBSourceItem;
 class CBioseqContext;
 class COriginItem;
 class CGapItem;
+class CBarcodeComment;
+
 
 
 class CGenbankFormatter : public CFlatItemFormatter
@@ -111,6 +113,10 @@ private:
     void x_Medline(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Pubmed(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
     void x_Remark(list<string>& l, const CReferenceItem& ref, CBioseqContext& ctx) const;
+
+    // comment
+    void x_FormatBarcodeComment(const CBarcodeComment& barcode, IFlatTextOStream& text_os) const;
+    void x_AddOneBarCodeElement(list<string>& l, const string& label, const string& value) const;
 };
 
 
@@ -122,6 +128,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2005/03/29 18:15:25  shomrat
+* Added barcode comment formatting
+*
 * Revision 1.5  2004/11/24 16:48:02  shomrat
 * Handle gap items
 *
