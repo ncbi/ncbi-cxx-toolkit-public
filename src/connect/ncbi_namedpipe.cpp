@@ -570,40 +570,60 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
         addr.sun_family = AF_UNIX;
         strcpy(addr.sun_path, pipename.c_str());
         
-        if (connect(sock, (struct sockaddr*) &addr, sizeof(addr)) != 0
-            &&  errno != EINTR  &&  errno != EINPROGRESS
-            &&  errno != EWOULDBLOCK) {
-            throw "Failed connect() to socket";
-        }
-        // If timeout value is specified
-        if (!timeout  ||  timeout->sec  ||  timeout->usec) {
-            // Auto-resume if interrupted by a signal
-            for (;;) {
-                struct timeval tm;
-                tm.tv_sec = timeout->sec;
-                tm.tv_usec = timeout->usec;
-                int n = select(0, 0, 0, 0, &tm);
-                if (n < 0) {
-                    if (errno == EINTR) {
-                        continue;
-                    }
-                    throw "Listening socket: select() failed";
-                }
+        int x_errno;
+        int n;
+        // Auto-resume if interrupted by a signal
+        for (n = 0; ; n = 1) {
+            if (connect(sock, (struct sockaddr*) &addr, sizeof(addr)) == 0) {
+                x_errno = 0;
                 break;
             }
-            // Check connection
-            int x_errno = 0;
-            socklen_t x_len   = sizeof(x_errno);
-            if ((getsockopt(sock, SOL_SOCKET, SO_ERROR, &x_errno, &x_len) != 0
-                 ||  x_errno != 0)) {
-                throw "Checking socket status: getsockopt() failed";
-            }
-            if (x_errno == ECONNREFUSED) {
-                status = eIO_Closed;
-                throw "Connection has been refused";
+            x_errno = errno;
+            if (x_errno != EINTR) { 
+                break;
             }
         }
-
+        // If not connected
+        if (x_errno) {
+            if ((n != 0 || x_errno != EINPROGRESS)  &&
+                (n == 0 || x_errno != EALREADY)     &&
+                x_errno != EWOULDBLOCK) {
+                if (x_errno == EINTR) {
+                    status = eIO_Interrupt;
+                }
+                throw "Failed connect() to socket";
+            }
+            
+            // Wait some time if a timeout value is specified
+            if (!timeout  ||  timeout->sec  ||  timeout->usec) {
+                // Auto-resume if interrupted by a signal
+                for (;;) {
+                    struct timeval tm;
+                    tm.tv_sec = timeout->sec;
+                    tm.tv_usec = timeout->usec;
+                    int n = select(0, 0, 0, 0, &tm);
+                    if (n < 0) {
+                        if (errno == EINTR) {
+                            continue;
+                        }
+                        throw "Listening socket: select() failed";
+                    }
+                    break;
+                }
+                // Check connection
+                x_errno = 0;
+                socklen_t x_len = sizeof(x_errno);
+                if ((getsockopt(sock, SOL_SOCKET, SO_ERROR, &x_errno, 
+                                &x_len) != 0  ||  x_errno != 0)) {
+                    throw "Checking socket status: getsockopt() failed";
+                }
+                if (x_errno == ECONNREFUSED) {
+                    status = eIO_Closed;
+                    throw "Connection has been refused";
+                }
+            }
+        }
+        
         // Create I/O socket
         if (SOCK_CreateOnTop(&sock, sizeof(sock), &m_IoSocket) !=
             eIO_Success) {
@@ -1090,6 +1110,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/08/18 20:51:56  ivanov
+ * Retry 'connect()' syscall if interrupted and allowed to restart
+ * (by Anton Lavrentiev)
+ *
  * Revision 1.1  2003/08/18 19:18:23  ivanov
  * Initial revision
  *
