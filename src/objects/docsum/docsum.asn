@@ -1,5 +1,8 @@
--- $Id: docsum.asn,v 1.19 2001/06/08 14:18:59 sherry Exp $
+-- $Id: docsum.asn,v 1.20 2001/07/11 13:08:05 sherry Exp $
 -- $Log: docsum.asn,v $
+-- Revision 1.20  2001/07/11 13:08:05  sherry
+-- typo correction and clarification of fxn-class names to fxn-class-contig and fxn-class-mrna
+--
 -- Revision 1.19  2001/06/08 14:18:59  sherry
 --  added exception value (9) to fxn-set
 --
@@ -370,11 +373,11 @@ NSE-FxnSet ::= SEQUENCE {
 	symbol VisibleString OPTIONAL,		-- symbol (official if present in LocusLink) of gene		SNPContigLocusId.locus_symbol
 	mrna-acc VisibleString OPTIONAL,	-- mRNA accession if variation in transcript			SNPContigLocusId.mrna_acc
 	prot-acc VisibleString OPTIONAL,	-- protein accession if variation in coding region interval	SNPContigLocusId.protein_acc
-	fxn-class ENUMERATED {
+	fxn-class-contig ENUMERATED {
 		locus-region (1),		-- variation in region of gene, but not in transcript		SNPContigLocusId.fxn_class
 		coding (2),				-- variation in coding region of gene, assigned if allele-specific class unknown 
 		coding-synon (3),		-- no change in peptide for allele with respect to contig seq 	**allele-specific class**
-		coding-nonysynon (4),	-- change in peptide with respect to contig sequence 			**allele-specific class**
+		coding-nonsynon (4),	-- change in peptide with respect to contig sequence 			**allele-specific class**
 		mrna-utr (5),			-- variation in transcript, but not in coding region interval
 		intron (6),				-- variation in intron, but not in first 2 or last 2 bases of intron
 		splice-site (7), 		-- variation in first 2 or last to bases of intron
@@ -424,7 +427,7 @@ NSE-rsLocusID ::= SEQUENCE {
 	locus-id INTEGER,
 	url-id INTEGER DEFAULT 3,
 	symbol VisibleString OPTIONAL,
-	fxn-class ENUMERATED {			-- these values are the same encoding as Fxn-Set.fxn-class (above)
+	fxn-class-mrna ENUMERATED {			-- these values are the same encoding as Fxn-Set.fxn-class (above)
 		locus-region	(1),
 		coding		(2),
 		coding-synon	(3),
@@ -432,7 +435,8 @@ NSE-rsLocusID ::= SEQUENCE {
 		mrna-UTR	(5),
 		intron		(6),
 		splice-site	(7),
-		reference	(8) 
+		reference	(8),
+		exception       (9) 
 	} OPTIONAL
 }
 
