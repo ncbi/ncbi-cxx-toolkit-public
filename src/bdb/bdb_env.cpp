@@ -98,9 +98,13 @@ void CBDB_Env::OpenConcurrentDB(const char* db_home)
     Open(db_home, DB_INIT_CDB|DB_INIT_MPOOL);
 }
 
-void CBDB_Env::JoinEnv(const char* db_home)
+void CBDB_Env::JoinEnv(const char* db_home, unsigned int opt)
 {
-    Open(db_home, DB_JOINENV);
+    int flag = DB_JOINENV;
+    if (opt & eThreaded) {
+        flag |= DB_THREAD;
+    }
+    Open(db_home, flag);
 
     // Check if we joined the transactional environment
 
@@ -114,7 +118,7 @@ void CBDB_Env::JoinEnv(const char* db_home)
 
         if (ret == 0) {
             m_Transactional = true;
-            ret = txn->discard(txn, 0);
+            ret = txn->abort(txn);
         }
         ::free(txn_statp);
     }
@@ -147,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/12/29 18:45:41  kuznets
+ * JoinEnv changed to support thread safe join
+ *
  * Revision 1.11  2003/12/29 17:24:07  kuznets
  * Created fake transaction when joining environment to check if it supports
  * transactions.
