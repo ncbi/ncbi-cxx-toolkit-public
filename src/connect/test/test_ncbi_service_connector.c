@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.18  2002/03/21 22:02:16  lavr
+ * Change default server from "ray" into "www.ncbi.nlm.nih.gov"
+ *
  * Revision 6.17  2002/02/05 21:45:55  lavr
  * Included header files rearranged
  *
@@ -98,7 +101,7 @@ int main(int argc, const char* argv[])
 {
     static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
     const char* service = argc > 1 ? argv[1] : "bounce";
-    const char* host = argc > 2 ? argv[2] : "ray";
+    const char* host = argc > 2 ? argv[2] : "www.ncbi.nlm.nih.gov";
     CONNECTOR connector;
     SConnNetInfo *info;
     STimeout  timeout;
