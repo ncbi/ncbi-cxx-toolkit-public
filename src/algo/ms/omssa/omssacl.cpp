@@ -32,30 +32,27 @@
  * ===========================================================================
  */
 
-#include <stdio.h>
-#include <readdb.h>
-
-#include <fstream>
-#include <string>
-#include <list>
-
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbistre.hpp>
-
 #include <serial/serial.hpp>
 #include <serial/objistrasn.hpp>
 #include <serial/objistrasnb.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/iterator.hpp>
-
-#include <msms.hpp>
-#include <mspeak.hpp>
-#include <omssa.hpp>
 #include <objects/omssa/omssa__.hpp>
+
+#include <fstream>
+#include <string>
+#include <list>
+#include <stdio.h>
+
+#include <omssa.hpp>
 #include <SpectrumSet.hpp>
+#include <readdb.h>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -244,6 +241,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.2  2003/10/21 21:12:17  lewisg
+  reorder headers
+
   Revision 1.1  2003/10/20 21:32:13  lewisg
   ommsa toolkit version
 

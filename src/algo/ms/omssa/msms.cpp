@@ -31,8 +31,11 @@
  * ===========================================================================
  */
 
-#include <msms.hpp>
+#include <corelib/ncbistd.hpp>
+
 #include <fstream>
+
+#include <msms.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -232,6 +235,9 @@ CMassArray::CMassArray(bool Average)
 
 /*
   $Log$
+  Revision 1.2  2003/10/21 21:12:16  lewisg
+  reorder headers
+
   Revision 1.1  2003/10/20 21:32:13  lewisg
   ommsa toolkit version
 

@@ -34,14 +34,13 @@
 #ifndef OMSSA__HPP
 #define OMSSA__HPP
 
-#include <readdb.h>
-
-#include <corelib/ncbistd.hpp>
+#include <objects/omssa/omssa__.hpp>
 
 #include <msms.hpp>
 #include <msladder.hpp>
 #include <mspeak.hpp>
-#include <objects/omssa/omssa__.hpp>
+
+#include <readdb.h>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -171,6 +170,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.2  2003/10/21 21:12:17  lewisg
+  reorder headers
+
   Revision 1.1  2003/10/20 21:32:13  lewisg
   ommsa toolkit version
 

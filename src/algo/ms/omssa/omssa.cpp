@@ -31,7 +31,11 @@
  * ===========================================================================
  */
 
-#include <nrutil.h>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbiargs.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <corelib/ncbienv.hpp>
+#include <corelib/ncbidiag.hpp>
 
 #include <fstream>
 #include <string>
@@ -39,14 +43,10 @@
 #include <deque>
 #include <limits>
 
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbidiag.hpp>
-
 #include <SpectrumSet.hpp>
-#include <mspeak.hpp>
 #include <omssa.hpp>
+
+#include <nrutil.h>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -717,6 +717,9 @@ CSearch::~CSearch()
 
 /*
   $Log$
+  Revision 1.2  2003/10/21 21:12:17  lewisg
+  reorder headers
+
   Revision 1.1  2003/10/20 21:32:13  lewisg
   ommsa toolkit version
 

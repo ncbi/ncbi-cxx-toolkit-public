@@ -35,14 +35,15 @@
  */
 
 // standard includes
-#include <sstream>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbistd.hpp>
 #include <util/regexp.hpp>
+#include <objects/omssa/MSSpectrum.hpp>
+
+#include <sstream>
 
 // generated includes
 #include <SpectrumSet.hpp>
-#include <objects/omssa/MSSpectrum.hpp>
 
 // added includes
 #include <msms.hpp>
@@ -165,6 +166,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2003/10/21 21:12:16  lewisg
+ * reorder headers
+ *
  * Revision 1.1  2003/10/20 21:32:13  lewisg
  * ommsa toolkit version
  *

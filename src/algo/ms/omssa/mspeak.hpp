@@ -34,8 +34,7 @@
 #ifndef MSPEAK__HPP
 #define MSPEAK__HPP
 
-#include <msms.hpp>
-#include <msladder.hpp>
+#include <objects/omssa/omssa__.hpp>
 
 #include <set>
 #include <iostream>
@@ -43,8 +42,8 @@
 #include <deque>
 #include <map>
 
-#include <corelib/ncbistd.hpp>
-#include <objects/omssa/omssa__.hpp>
+#include <msms.hpp>
+#include <msladder.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -657,6 +656,9 @@ END_NCBI_SCOPE
 
 /*
   $Log$
+  Revision 1.3  2003/10/21 21:12:17  lewisg
+  reorder headers
+
   Revision 1.2  2003/10/21 03:43:20  lewisg
   fix double default
 

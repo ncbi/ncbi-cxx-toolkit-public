@@ -32,13 +32,13 @@
  * ===========================================================================
  */
 
-#include <msms.hpp>
-#include <mspeak.hpp>
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_limits.h>
 
 #include <algorithm>
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbi_limits.h>
+#include <mspeak.hpp>
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

@@ -31,15 +31,13 @@
  * ===========================================================================
  */
 
-#include <math.h>
-
-#include <algorithm>
-
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.h>
 
-#include <msms.hpp>
-#include <mspeak.hpp>
+#include <algorithm>
+
+#include <math.h>
+
 #include <msladder.hpp>
 
 USING_NCBI_SCOPE;
