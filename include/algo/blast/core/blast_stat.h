@@ -235,6 +235,15 @@ Int2 Blast_KarlinBlkGappedCalc (Blast_KarlinBlk* kbp, Int4 gap_open,
         Int4 gap_extend, Int4 decline_align, char* matrix_name, 
         Blast_Message** error_return);
 
+
+/** Calculates the standard Karlin parameters.  This is used
+ *       if the query is translated and the calculated (real) Karlin
+ *       parameters are bad, as they're calculated for non-coding regions.
+ * @param sbp ScoreBlk used to calculate "ideal" values. [in]
+*/
+Blast_KarlinBlk* Blast_KarlinBlkIdealCalc(BlastScoreBlk* sbp);
+
+
 Int2 Blast_KarlinBlkStandardCalc(BlastScoreBlk* sbp, Int4 context_start, 
                                  Int4 context_end);
 
