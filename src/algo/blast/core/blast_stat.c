@@ -51,6 +51,9 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.42  2003/11/26 19:12:13  madden
+ * code to simplify some routines and use NlmKarlinLambdaNR in place of BlastKarlinLambdaBis (following Mike Gertzs changes to blastkar.c )
+ *
  * Revision 1.41  2003/11/24 23:18:32  dondosha
  * Added gap_decay_rate argument to BLAST_Cutoffs; removed BLAST_Cutoffs_simple
  *
@@ -1823,6 +1826,7 @@ BlastScoreFreqCalc(BlastScoreBlk* sbp, BLAST_ScoreFreq* sfp, BLAST_ResFreq* rfp1
 #define DIMOFP0	(iter*range + 1)
 #define DIMOFP0_MAX (BLAST_KARLIN_K_ITER_MAX*BLAST_SCORE_RANGE_MAX+1)
 
+
 static double
 BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 {
@@ -1841,8 +1845,8 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 	double	Sum, av, oldsum, oldsum2, score_avg;
 	int		iter;
 	double	sumlimit;
-	double* p,* ptrP,* ptr1,* ptr2,* ptr1e;
-	double	etolami, etolam;
+	double* p, * ptrP, * ptr1, * ptr2, * ptr1e;
+	double	x;
         Boolean         bi_modal_score = FALSE;
 
 	if (lambda <= 0. || H <= 0.) {
@@ -1871,7 +1875,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
 	range = high - low;
 
 	av = H/lambda;
-	etolam = exp((double)lambda);
+	x = exp((double) -lambda);
 
 	if (low == -1 || high == 1) {
            if (high == 1)
@@ -1880,7 +1884,7 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
               score_avg = sfp->score_avg / d;
               K = (score_avg * score_avg) / av;
            }
-           return K * (1.0 - 1./etolam);
+           return K * (1.0 - x);
 	}
 
 	sumlimit = BLAST_KARLIN_K_SUMLIMIT_DEFAULT;
@@ -1923,11 +1927,13 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
               if (ptrP - P0 <= range)
                  --last;
            }
-           etolami = BLAST_Powi((double)etolam, lo - 1);
-           for (sum = 0., i = lo; i != 0; ++i) {
-              etolami *= etolam;
-              sum += *++ptrP * etolami;
-           }
+					 /* Horner's rule */
+					 sum = *++ptrP;
+					 for( i = lo + 1; i < 0; i++ ) {
+						 sum = *++ptrP + sum * x;
+					 }
+					 sum *= x;
+
            for (; i <= hi; ++i)
               sum += *++ptrP;
            oldsum2 = oldsum;
@@ -1948,157 +1954,168 @@ BlastKarlinLHtoK(BLAST_ScoreFreq* sfp, double	lambda, double H)
            }
         }
 
-	if (etolam > 0.05) 
-	{
-           etolami = 1 / etolam;
-           K = exp((double)-2.0*Sum) / (av*(1.0 - etolami));
+	if (x <  1.0 / 0.05 ) {
+		K = exp((double)-2.0*Sum) / (av*(1.0 - x));
+	} else {
+		K = -exp((double)-2.0*Sum) / (av*BLAST_Expm1(-(double)lambda));
 	}
-	else
-           K = -exp((double)-2.0*Sum) / (av*BLAST_Expm1(-(double)lambda));
 
 CleanUp:
 #ifndef BLAST_KARLIN_K_STACKP
 	if (P0 != NULL)
 		sfree(P0);
 #endif
+
 	return K;
 }
 
-/******************* Fast Lambda Calculation Subroutine ************************
-	Version 1.0	May 16, 1991
-	Program by:	Stephen Altschul
+/**
+ * Find positive solution to sum_{i=low}^{high} exp(i lambda) = 1.
+ * 
+ * @param probs probabilities of a score occuring 
+ * @param d the gcd of the possible scores. This equals 1 if the scores
+ * are not a lattice
+ * @param low the lowest possible score
+ * @param high the highest possible score
+ * @param lambda0 an initial value for lambda
+ * @param tolx the tolerance to which lambda must be computed
+ * @param itmax the maximum number of times the function may be
+ * evaluated
+ * @param maxNewton the maximum permissible number of Newton
+ * iteration. After that the computation will proceed by bisection.
+ * @param itn a pointer to an integer that will receive the actually
+ * number of iterations performed.
+ *
+ * Let phi(lambda) =  sum_{i=low}^{high} exp(i lambda) - 1. Then phi(lambda)
+ * may be written
+ *
+ *     phi(lamdba) = exp(u lambda) p( exp(-lambda) )
+ *
+ * where p(x) is a polynomial that has exactly two zeros, one at x = 1
+ * and one at y = exp(-lamdba). It is simpler, more numerically
+ * efficient and stable to apply Newton's method to p(x) than to
+ * phi(lambda).
+ *
+ * We define a safeguarded Newton iteration as follows. Let the
+ * initial interval of uncertainty be [0,1]. If p'(x) >= 0, we bisect
+ * the interval. Otherwise we try a Newton step. If the Newton iterate
+ * lies in the current interval of uncertainty and it reduces the
+ * value of | p(x) | by at least 10%, we accept the new
+ * point. Otherwise, we bisect the current interval of uncertainty.
+ * It is clear that this method converges to a zero of p(x).  Since
+ * p'(x) > 0 in an interval containing x = 1, the method cannot
+ * converge to x = 1 and therefore converges to the only other zero,
+ * y.
+ */
 
-	Uses Newton-Raphson method (fast) to solve for Lambda, given an initial
-	guess (lambda0) obtained perhaps by the bisection method.
-*******************************************************************************/
-
-/*
-	BlastKarlinLambdaBis
-
-	Calculate Lambda using the bisection method (slow).
-*/
-static double
-BlastKarlinLambdaBis(BLAST_ScoreFreq* sfp)
+double 
+NlmKarlinLambdaNR( double* probs, Int4 d, Int4 low, Int4 high, double lambda0, double tolx,
+									 Int4 itmax, Int4 maxNewton, Int4 * itn ) 
 {
-	register double* sprob;
-	double	lambda, up, newval;
-	Int4	i, low, high, d;
-	int		j;
-	register double	sum, x0, x1;
+  Int4 k;
+  double x0, x, a = 0, b = 1;
+  double f = 4;  /* Larger than any possible value of the poly in [0,1] */
+  Int4 isNewton = 0; /* we haven't yet taken a Newton step. */
 
-	if (sfp->score_avg >= 0.) {
-		return -1.;
-	}
-	low = sfp->obs_min;
-	high = sfp->obs_max;
-	if (BlastScoreChk(low, high) != 0)
-		return -1.;
+  assert( d > 0 );
 
-	sprob = sfp->sprob;
+	x0 = exp( -lambda0 );
+  x = ( 0 < x0 && x0 < 1 ) ? x0 : .5;
+  
+  for( k = 0; k < itmax; k++ ) { /* all iteration indices k */
+    Int4 i;
+    double g, fold = f;
+    Int4 wasNewton = isNewton; /* If true, then the previous step was a */
+                              /* Newton step */
+    isNewton  = 0;            /* Assume that this step is not */
+    
+    /* Horner's rule for evaluating a polynomial and its derivative */
+    g = 0;
+    f = probs[low];
+    for( i = low + d; i < 0; i += d ) {
+      g = x * g + f;
+      f = f * x + probs[i];
+    }
+    g = x * g + f;
+    f = f * x + probs[0] - 1;
+    for( i = d; i <= high; i += d ) {
+      g = x * g + f;
+      f = f * x + probs[i];
+    }
+    /* End Horner's rule */
 
-        /* Find greatest common divisor of all scores */
-    	for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
-           if (sprob[i+low] != 0)
-              d = BLAST_Gcd(d, i);
-        }
+    if( f > 0 ) {
+      a = x; /* move the left endpoint */
+    } else if( f < 0 ) { 
+      b = x; /* move the right endpoint */
+    } else { /* f == 0 */
+      break; /* x is an exact solution */
+    }
+    if( b - a < 2 * a * ( 1 - b ) * tolx ) {
+      /* The midpoint of the interval converged */
+      x = (a + b) / 2; break;
+    }
 
-        high = high / d;
-        low = low / d;
-
-	up = BLAST_KARLIN_LAMBDA0_DEFAULT;
-	for (lambda=0.; ; ) {
-		up *= 2;
-		x0 = exp((double)up);
-		x1 = BLAST_Powi((double)x0, low - 1);
-		if (x1 > 0.) {
-			for (sum=0., i=low; i<=high; ++i)
-				sum += sprob[i*d] * (x1 *= x0);
-		}
-		else {
-			for (sum=0., i=low; i<=high; ++i)
-				sum += sprob[i*d] * exp(up * i);
-		}
-		if (sum >= 1.0)
-			break;
-		lambda = up;
-	}
-
-	for (j=0; j<BLAST_KARLIN_LAMBDA_ITER_DEFAULT; ++j) {
-		newval = (lambda + up) / 2.;
-		x0 = exp((double)newval);
-		x1 = BLAST_Powi((double)x0, low - 1);
-		if (x1 > 0.) {
-			for (sum=0., i=low; i<=high; ++i)
-				sum += sprob[i*d] * (x1 *= x0);
-		}
-		else {
-			for (sum=0., i=low; i<=high; ++i)
-				sum += sprob[i*d] * exp(newval * i);
-		}
-		if (sum > 1.0)
-			up = newval;
-		else
-			lambda = newval;
-	}
-	return (lambda + up) / (2. * d);
+    if( k >= maxNewton ||
+        /* If convergence of Newton's method appears to be failing; or */
+				( wasNewton && fabs( f ) > .9 * fabs(fold) ) ||  
+        /* if the previous iteration was a Newton step but didn't decrease 
+         * f sufficiently; or */
+        g >= 0 
+        /* if a Newton step will move us away from the desired solution */
+        ) { /* then */
+      /* bisect */
+      x = (a + b)/2;
+    } else {
+      /* try a Newton step */
+      double p = - f/g;
+      double y = x + p;
+      if( y <= a || y >= b ) { /* The proposed iterate is not in (a,b) */
+        x = (a + b)/2;
+      } else { /* The proposed iterate is in (a,b). Accept it. */
+        isNewton = 1;
+        x = y;
+        if( fabs( p ) < tolx * x * (1-x) ) break; /* Converged */
+      } /* else the proposed iterate is in (a,b) */
+    } /* else try a Newton step. */ 
+  } /* end for all iteration indices k */
+	*itn = k; 
+  return -log(x)/d;
 }
+
 
 static double
 BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 {
 	Int4	low;			/* Lowest score (must be negative)  */
 	Int4	high;			/* Highest score (must be positive) */
-	int		j;
+	Int4		itn;
 	Int4	i, d;
-	double*	sprob;
-	double	lambda0, sum, slope, temp, x0, x1, amt;
+	double* 	sprob;
+	double	returnValue;
 
 	low = sfp->obs_min;
 	high = sfp->obs_max;
 	if (sfp->score_avg >= 0.) {	/* Expected score must be negative */
 		return -1.0;
 	}
-	if (BlastScoreChk(low, high) != 0)
-		return -1.;
-
-	lambda0 = BLAST_KARLIN_LAMBDA0_DEFAULT;
-
+	if (BlastScoreChk(low, high) != 0) return -1.;
+	
 	sprob = sfp->sprob;
-        /* Find greatest common divisor of all scores */
-    	for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
-           if (sprob[i+low] != 0)
-              d = BLAST_Gcd(d, i);
-        }
-
-        high = high / d;
-        low = low / d;
-	/* Calculate lambda */
-
-	for (j=0; j<20; ++j) { /* limit of 20 should never be close-approached */
-		sum = -1.0;
-		slope = 0.0;
-		if (lambda0 < 0.01)
-			break;
-		x0 = exp((double)lambda0);
-		x1 = BLAST_Powi((double)x0, low - 1);
-		if (x1 == 0.)
-			break;
-		for (i=low; i<=high; i++) {
-			sum += (temp = sprob[i*d] * (x1 *= x0));
-			slope += temp * i;
-		}
-		lambda0 -= (amt = sum/slope);
-		if (ABS(amt/lambda0) < BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT) {
-			/*
-			Does it appear that we may be on the verge of converging
-			to the ever-present, zero-valued solution?
-			*/
-			if (lambda0 > BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT)
-				return lambda0 / d;
-			break;
+	/* Find greatest common divisor of all scores */
+	for (i = 1, d = -low; i <= high-low && d > 1; ++i) {
+		if (sprob[i+low] != 0) {
+			d = BLAST_Gcd(d, i);
 		}
 	}
-	return BlastKarlinLambdaBis(sfp);
+	returnValue =
+		NlmKarlinLambdaNR( sprob, d, low, high,
+											 BLAST_KARLIN_LAMBDA0_DEFAULT,
+											 BLAST_KARLIN_LAMBDA_ACCURACY_DEFAULT,
+											 20, 20 + BLAST_KARLIN_LAMBDA_ITER_DEFAULT, &itn );
+
+
+	return returnValue;
 }
 
 /*
@@ -2106,34 +2123,33 @@ BlastKarlinLambdaNR(BLAST_ScoreFreq* sfp)
 
 	Calculate H, the relative entropy of the p's and q's
 */
-static double
+double 
 BlastKarlinLtoH(BLAST_ScoreFreq* sfp, double	lambda)
 {
 	Int4	score;
-	double	av, etolam, etolami;
+	double	H, etonlam, sum, scale;
+
+	double *probs = sfp->sprob;
+	Int4 low   = sfp->obs_min,  high  = sfp->obs_max;
 
 	if (lambda < 0.) {
 		return -1.;
 	}
-	if (BlastScoreChk(sfp->obs_min, sfp->obs_max) != 0)
-		return -1.;
+	if (BlastScoreChk(low, high) != 0) return -1.;
 
-	etolam = exp((double)lambda);
-	etolami = BLAST_Powi((double)etolam, sfp->obs_min - 1);
-	if (etolami > 0.) 
-	{
-	    av = 0.0;
-	    for (score=sfp->obs_min; score<=sfp->obs_max; score++)
-   			av += sfp->sprob[score] * score * (etolami *= etolam);
-	}
-	else 
-	{
-	    av = 0.0;
-	    for (score=sfp->obs_min; score<=sfp->obs_max; score++)
-   			av += sfp->sprob[score] * score * exp(lambda * score);
-	}
+	etonlam = exp( - lambda );
+  sum = low * probs[low];
+  for( score = low + 1; score <= high; score++ ) {
+    sum = score * probs[score] + etonlam * sum;
+  }
 
-    	return lambda * av;
+  scale = BLAST_Powi( etonlam, high );
+  if( scale > 0 ) {
+    H = lambda * sum/scale;
+  } else { /* Underflow of exp( -lambda * high ) */
+    H = lambda * exp( lambda * high + log(sum) );
+  }
+	return H;
 }
 
 /**************** Statistical Significance Parameter Subroutine ****************
