@@ -81,48 +81,46 @@ s_SearchPending(CRef<CBlast4_reply> reply)
     return false;
 }
 
-static string
-s_SearchErrors(CRef<CBlast4_reply> reply)
+void CRemoteBlast::x_SearchErrors(CRef<CBlast4_reply> reply)
 {
-    string err_str;
-    
     const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
     
     TErrorList::const_iterator i;
     
     for(i = errors.begin(); i != errors.end(); i++) {
+        string msg;
+        
+        if ((*i)->GetMessage().size()) {
+            msg = ": ";
+            msg += (*i)->GetMessage();
+        }
+        
         switch((*i)->GetCode()) {
         case eBlast4_error_code_conversion_warning:
-            err_str += "\nError: conversion_warning";
+            m_Warn.push_back(string("Warning: conversion_warning") + msg);
             break;
-
+            
         case eBlast4_error_code_internal_error:
-            err_str += "\nError: internal_error";
+            m_Errs.push_back(string("Error: internal_error") + msg);
             break;
-
+            
         case eBlast4_error_code_not_implemented:
-            err_str += "\nError: not_implemented";
+            m_Errs.push_back(string("Error: not_implemented") + msg);
             break;
-
+            
         case eBlast4_error_code_not_allowed:
-            err_str += "\nError: not_allowed";
+            m_Errs.push_back(string("Error: not_allowed") + msg);
             break;
-
+            
         case eBlast4_error_code_bad_request:
-            err_str += "\nError: bad_request";
+            m_Errs.push_back(string("Error: bad_request") + msg);
             break;
-
+            
         case eBlast4_error_code_bad_request_id:
-            err_str += "\nError: bad_request_id";
+            m_Errs.push_back(string("Error: bad_request_id") + msg);
             break;
         }
     }
-    
-    if ((!err_str.empty()) && (err_str[0] == '\n')) {
-        err_str.erase(0,1);
-    }
-    
-    return err_str;
 }
 
 
@@ -181,8 +179,9 @@ CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
         CBlast4Client().Ask(*request, *reply);
     }
     catch(const CEofException&) {
-        ERR_POST(Error << "Unexpected EOF when contacting netblast server"
-                 " - unable to complete request.");
+        ERR_POST(Error << "No response from server, cannot "
+                 "complete request.");
+        
 #if defined(NCBI_OS_UNIX)
         // Use _exit() to avoid coredump.
         _exit(-1);
@@ -227,7 +226,7 @@ bool CRemoteBlast::SubmitSync(int seconds)
     switch(x_GetState()) {
     case eStart:
         x_SubmitSearch();
-        if (! m_Err.empty()) {
+        if (! m_Errs.empty()) {
             break;
         }
         immed = ePollImmed;
@@ -255,7 +254,7 @@ bool CRemoteBlast::Submit(void)
         x_SubmitSearch();
     }
     
-    return m_Err.empty();
+    return m_Errs.empty();
 }
 
 // Pre:  start, wait or done
@@ -281,116 +280,96 @@ bool CRemoteBlast::CheckDone(void)
     return (x_GetState() == eDone);
 }
 
+CRemoteBlast::TGSRR * CRemoteBlast::x_GetGSRR(void)
+{
+    TGSRR * rv(0);
+    
+    if (SubmitSync() &&
+        m_Reply.NotEmpty() &&
+        m_Reply->CanGetBody() &&
+        m_Reply->GetBody().IsGet_search_results()) {
+        
+        rv = & (m_Reply->SetBody().SetGet_search_results());
+    }
+    
+    return rv;
+}
+
 CRef<objects::CSeq_align_set> CRemoteBlast::GetAlignments(void)
 {
     CRef<objects::CSeq_align_set> rv;
     
-    if (! SubmitSync()) {
-        return rv;
+    TGSRR * gsrr = x_GetGSRR();
+    
+    if (gsrr && gsrr->CanGetAlignments()) {
+        rv = & (gsrr->SetAlignments());
     }
     
-    if (m_Reply.NotEmpty() &&
-        m_Reply->CanGetBody() &&
-        m_Reply->GetBody().IsGet_search_results()) {
-            
-        objects::CBlast4_get_search_results_reply & gsr =
-            m_Reply->SetBody().SetGet_search_results();
-            
-        if (gsr.CanGetAlignments()) {
-            rv = & gsr.SetAlignments();
-        }
-    }
-        
     return rv;
 }
 
 CRef<objects::CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
 {
     CRef<objects::CBlast4_phi_alignments> rv;
-        
-    if (! SubmitSync()) {
-        return rv;
+    
+    TGSRR * gsrr = x_GetGSRR();
+    
+    if (gsrr && gsrr->CanGetPhi_alignments()) {
+        rv = & (gsrr->SetPhi_alignments());
     }
     
-    if (m_Reply.NotEmpty() &&
-        m_Reply->CanGetBody() &&
-        m_Reply->GetBody().IsGet_search_results()) {
-            
-        objects::CBlast4_get_search_results_reply & gsr =
-            m_Reply->SetBody().SetGet_search_results();
-            
-        if (gsr.CanGetPhi_alignments()) {
-            rv = & gsr.SetPhi_alignments();
-        }
-    }
-        
     return rv;
 }
-    
+
 CRef<objects::CBlast4_mask> CRemoteBlast::GetMask(void)
 {
     CRef<objects::CBlast4_mask> rv;
-        
-    if (! SubmitSync()) {
-        return rv;
+    
+    TGSRR * gsrr = x_GetGSRR();
+    
+    if (gsrr && gsrr->CanGetMask()) {
+        rv = & (gsrr->SetMask());
     }
     
-    if (m_Reply.NotEmpty() &&
-        m_Reply->CanGetBody() &&
-        m_Reply->GetBody().IsGet_search_results()) {
-            
-        objects::CBlast4_get_search_results_reply & gsr =
-            m_Reply->SetBody().SetGet_search_results();
-            
-        if (gsr.CanGetMask()) {
-            rv = & gsr.SetMask();
-        }
-    }
-        
     return rv;
 }
-    
+
 list< CRef<objects::CBlast4_ka_block > > CRemoteBlast::GetKABlocks(void)
 { 
     list< CRef<objects::CBlast4_ka_block > > rv;
         
-    if (! SubmitSync()) {
-        return rv;
+    TGSRR * gsrr = x_GetGSRR();
+    
+    if (gsrr && gsrr->CanGetKa_blocks()) {
+        rv = (gsrr->SetKa_blocks());
     }
     
-    if (m_Reply.NotEmpty() &&
-        m_Reply->CanGetBody() &&
-        m_Reply->GetBody().IsGet_search_results()) {
-        objects::CBlast4_get_search_results_reply & gsr =
-            m_Reply->SetBody().SetGet_search_results();
-            
-        if (gsr.CanGetKa_blocks()) {
-            rv = gsr.SetKa_blocks();
-        }
-    }
-        
     return rv;
 }
-    
+
 list< string > CRemoteBlast::GetSearchStats(void)
-{ 
+{
     list< string > rv;
-        
-    if (! SubmitSync()) {
-        return rv;
+    
+    TGSRR * gsrr = x_GetGSRR();
+    
+    if (gsrr && gsrr->CanGetSearch_stats()) {
+        rv = (gsrr->SetSearch_stats());
     }
     
-    if (m_Reply.NotEmpty() &&
-        m_Reply->CanGetBody() &&
-        m_Reply->GetBody().IsGet_search_results()) {
-        objects::CBlast4_get_search_results_reply & gsr =
-            m_Reply->SetBody().SetGet_search_results();
-            
-        if (gsr.CanGetSearch_stats()) {
-            rv = gsr.SetSearch_stats();
-        }
+    return rv;
+}
+
+CRef<objects::CScore_matrix_parameters> CRemoteBlast::GetPSSM(void)
+{
+    CRef<objects::CScore_matrix_parameters> rv;
+    
+    TGSRR * gsrr = x_GetGSRR();
+    
+    if (gsrr && gsrr->CanGetPssm()) {
+        rv = & (gsrr->SetPssm());
     }
-        
+    
     return rv;
 }
 
@@ -408,7 +387,7 @@ int CRemoteBlast::x_GetState(void)
     
     int rv = 0;
     
-    if (! m_Err.empty()) {
+    if (! m_Errs.empty()) {
         rv = eFailed;
     } else if (m_RID.empty()) {
         rv = eStart;
@@ -424,7 +403,7 @@ int CRemoteBlast::x_GetState(void)
 void CRemoteBlast::x_SubmitSearch(void)
 {
     if (m_QSR.Empty()) {
-        m_Err = "No request exists and no RID was specified.";
+        m_Errs.push_back("No request exists and no RID was specified.");
         return;
     }
     
@@ -439,7 +418,7 @@ void CRemoteBlast::x_SubmitSearch(void)
         reply = x_SendRequest(body);
     }
     catch(const CEofException&) {
-        m_Err = "Unexpected EOF when contacting netblast server - unable to submit request.";
+        m_Errs.push_back("No response from server, cannot complete request.");
         return;
     }
     
@@ -449,29 +428,16 @@ void CRemoteBlast::x_SubmitSearch(void)
         m_RID = reply->GetBody().GetQueue_search().GetRequest_id();
     }
     
-    if (reply->CanGetErrors()) {
-        const CBlast4_reply::TErrors & errs = reply->GetErrors();
-        
-        CBlast4_reply::TErrors::const_iterator i;
-        
-        for (i = errs.begin(); i != errs.end(); i++) {
-            if ((*i)->GetMessage().size()) {
-                if (m_Err.size()) {
-                    m_Err += "\n";
-                }
-                m_Err += (*i)->GetMessage();
-            }
-        }
-    }
+    x_SearchErrors(reply);
     
-    if (m_Err.empty()) {
+    if (m_Errs.empty()) {
         m_Pending = true;
     }
 }
 
 void CRemoteBlast::x_CheckResults(void)
 {
-    if (!m_Err.empty()) {
+    if (! m_Errs.empty()) {
         m_Pending = false;
     }
     
@@ -493,7 +459,8 @@ void CRemoteBlast::x_CheckResults(void)
             --m_ErrIgn;
             
             if (m_ErrIgn == 0) {
-                m_Err = "Unexpected EOF when contacting netblast server - unable to submit request.";
+                m_Errs.push_back("No response from server, "
+                                 "cannot complete request.");
                 return;
             }
             
@@ -502,14 +469,14 @@ void CRemoteBlast::x_CheckResults(void)
     }
     
     if (! m_Pending) {
-        m_Err += s_SearchErrors(r);
+        x_SearchErrors(r);
         
-        if (! m_Err.empty()) {
+        if (! m_Errs.empty()) {
             return;
         } else if (r->CanGetBody() && r->GetBody().IsGet_search_results()) {
             m_Reply = r;
         } else {
-            m_Err = "Results were not a get-search-results reply";
+            m_Errs.push_back("Results were not a get-search-results reply");
         }
     }
 }
@@ -705,6 +672,93 @@ void CRemoteBlast::x_SetOneParam(const char * name, objects::CScore_matrix_param
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
+void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
+{
+    if (bioseqs.Empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty reference for query.");
+    }
+    
+    CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
+    queries_p->SetBioseq_set(*bioseqs);
+    
+    m_QSR->SetQueries(*queries_p);
+    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
+}
+
+void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
+{
+    if (seqlocs.empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty list for query.");
+    }
+    
+    CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
+    queries_p->SetSeq_loc_list() = seqlocs;
+    
+    m_QSR->SetQueries(*queries_p);
+    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
+}
+
+void CRemoteBlast::SetQueries(CRef<objects::CScore_matrix_parameters> pssm)
+{
+    if (pssm.Empty()) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "Empty reference for query.");
+    }
+    
+    CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
+    queries_p->SetPssm(*pssm);
+    
+    m_QSR->SetQueries(*queries_p);
+    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
+}
+
+void CRemoteBlast::SetDatabase(const char * x)
+{
+    if (!x) {
+        NCBI_THROW(CBlastException, eBadParameter,
+                   "NULL specified for database.");
+    }
+        
+    CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
+    subject_p->SetDatabase(x);
+    m_QSR->SetSubject(*subject_p);
+    m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
+}
+
+string CRemoteBlast::GetErrors(void)
+{
+    if (m_Errs.empty()) {
+        return string();
+    }
+    
+    string rvalue = m_Errs[0];
+    
+    for(unsigned i = 1; i<m_Errs.size(); i++) {
+        rvalue += "\n";
+        rvalue += m_Errs[i];
+    }
+    
+    return rvalue;
+}
+
+string CRemoteBlast::GetWarnings(void)
+{
+    if (m_Warn.empty()) {
+        return string();
+    }
+    
+    string rvalue = m_Warn[0];
+    
+    for(unsigned i = 1; i<m_Warn.size(); i++) {
+        rvalue += "\n";
+        rvalue += m_Warn[i];
+    }
+    
+    return rvalue;
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 
@@ -714,6 +768,22 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/05/05 15:35:30  bealer
+* - Features:
+*   - Add PSSM queries (for PSI-Blast) and seq-loc-list.
+*   - Add GetWarnings() mechanism.
+*   - Add PSSM queries (for PSI-Blast).
+*   - Add seq-loc-list queries (allows multiple identifier base queries, or
+*     one query based on identifier plus interval.
+*   - Add GetPSSM() to retrieve results of PSI-Blast run.
+*
+* - Other changes:
+*   - Move some static functions into class.
+*   - Rework error processing to split out warnings.
+*   - Changes to error text formats.
+*   - Seperate some common code into x_GetGSSR() util method.
+*   - De-inlined several methods.
+*
 * Revision 1.8  2004/04/12 16:35:25  bealer
 * - Fix CheckDone problem in CRemoteBlast.
 * - Add more parameter checking and exception throwing.
