@@ -2956,9 +2956,11 @@ extern char* SOCK_GetPeerAddressString(SOCK   sock,
 {
     if (!buf  ||  !buflen)
         return 0;
+#ifdef NCBI_OS_UNIX
     if (sock->file[0])
         strncpy0(buf, sock->file, buflen - 1);
     else
+#endif
         HostPortToString(sock->host, ntohs(sock->port), buf, buflen);
     return buf;
 }
@@ -3685,7 +3687,7 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 #    endif /*NCBI_OS_MAC*/
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
-        if (he  &&  he->addrtype == AF_INET  &&  he->length == sizeof(host)) {
+        if (he && he->h_addrtype == AF_INET && he->h_length == sizeof(host)) {
             memcpy(&host, he->h_addr, sizeof(host));
         } else {
             host = 0;
@@ -3819,6 +3821,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.117  2003/07/15 18:09:07  lavr
+ * Fix MS-Win compilation
+ *
  * Revision 6.116  2003/07/15 16:50:20  lavr
  * Allow to build on-top SOCKs from UNIX socket fds (on UNIX only)
  * +SOCK_GetPeerAddressString()
