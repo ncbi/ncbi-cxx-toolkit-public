@@ -520,7 +520,7 @@ public:
 
         TSet ancestor_set;
 
-        ITERATE(TNodeList, it, src_nlist) {
+        ITERATE(typename TNodeList, it, src_nlist) {
             TNode* snode = *it;
 
             ancestor_set.clear();
@@ -549,6 +549,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/04/21 13:27:18  kuznets
+ * Bug fix: typename in templates
+ *
  * Revision 1.2  2004/04/21 12:56:34  kuznets
  * Added tree related algorithms and utilities based on sets algebra
  * (TreeListToSet, TreeMakeParentsSet, TreeMakeSet, TreeSetToNodeList
