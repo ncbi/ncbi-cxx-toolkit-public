@@ -205,6 +205,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
          stop = 1;
       }
 
+      if (done)
+         break;
+
       /* iterate over all subject sequences */
       for (index = start; index < stop; index++) {
          oid = (use_oid_list ? oid_list[index] : index);
