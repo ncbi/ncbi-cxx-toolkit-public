@@ -270,7 +270,7 @@ public:
     virtual ~CPipeStreambuf();
 
     // Set handle of the child process for reading by default (eStdOut/eStdErr)
-    void SetReadHandle(const CPipe::EChildIOHandle handle) const;
+    void SetReadHandle(CPipe::EChildIOHandle handle);
 
 protected:
     virtual CT_INT_TYPE overflow(CT_INT_TYPE c);
@@ -283,7 +283,7 @@ private:
     CT_CHAR_TYPE*   m_WriteBuf;  // m_Buf
     CT_CHAR_TYPE*   m_ReadBuf;   // m_Buf + m_BufSize
     streamsize      m_BufSize;   // of m_WriteBuf, m_ReadBuf
-    mutable CPipe::EChildIOHandle
+    CPipe::EChildIOHandle
                     m_ReadHandle;// handle for reading by default
 };
 
@@ -303,14 +303,14 @@ CPipeStreambuf::CPipeStreambuf(const CPipe& pipe, streamsize buf_size)
 }
 
 
-CPipeStreambuf::~CPipeStreambuf(void)
+CPipeStreambuf::~CPipeStreambuf()
 {
     sync();
     delete[] m_Buf;
 }
 
 
-void CPipeStreambuf::SetReadHandle(const CPipe::EChildIOHandle handle) const
+void CPipeStreambuf::SetReadHandle(CPipe::EChildIOHandle handle)
 {
     m_ReadHandle = handle;
 }
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2002/06/12 14:20:44  ivanov
+ * Fixed some bugs in CPipeStreambuf class.
+ *
  * Revision 1.4  2002/06/12 13:48:56  ivanov
  * Fixed contradiction in types of constructor CPipeStreambuf and it realization
  *
