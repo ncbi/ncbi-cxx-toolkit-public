@@ -748,6 +748,16 @@ const CProjectItemsTree& CProjBulderApp::GetWholeTree(void)
 }
 
 
+const CDllSrcFilesDistr& CProjBulderApp::GetDllFilesDistr(void)
+{
+    if (m_DllSrcFilesDistr.get())
+        return *m_DllSrcFilesDistr;
+
+    m_DllSrcFilesDistr.reset ( new CDllSrcFilesDistr() );
+    return *m_DllSrcFilesDistr;
+}
+
+
 string CProjBulderApp::GetDatatoolId(void) const
 {
     return GetConfig().GetString("Datatool", "datatool", "datatool");
@@ -794,6 +804,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.37  2004/05/17 16:21:38  gorelenk
+ * Implemeted CProjBulderApp::GetDllFilesDistr .
+ *
  * Revision 1.36  2004/04/13 17:09:39  gorelenk
  * Changed implementation of CProjBulderApp::Run .
  *
