@@ -97,10 +97,10 @@ public:
     /// @return
     ///   A reference to the specified GI list.
     TListRef GetNodeGiList(const string    & filename,
-                                            const CSeqDBVol * volp,
-                                            int               vol_start,
-                                            int               vol_end,
-                                            CSeqDBLockHold  & locked);
+                           const CSeqDBVol * volp,
+                           int               vol_start,
+                           int               vol_end,
+                           CSeqDBLockHold  & locked);
     
 private:
     void x_TranslateFromUserList(CSeqDBGiList & gilist);
