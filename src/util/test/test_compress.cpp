@@ -209,7 +209,8 @@ void CTestCompressor<TCompression, TCompressionFile,
 
         // Compression input stream test 
         CNcbiIstrstream is_str(src_buf, kDataLen);
-        CCompressionIStream ics_zip(is_str, new TStreamCompressor());
+        CCompressionIStream ics_zip(is_str, new TStreamCompressor(),
+                                    CCompressionStream::fOwnProcessor);
         // Read as much as possible
         ics_zip.read(dst_buf, kBufLen);
         dst_len = ics_zip.gcount();
@@ -255,7 +256,8 @@ void CTestCompressor<TCompression, TCompressionFile,
         CNcbiIstrstream is_str(dst_buf, out_len);
         size_t ids_zip_len;
         {{
-            CCompressionIStream ids_zip(is_str, new TStreamDecompressor());
+            CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),
+                                    CCompressionStream::fOwnReader);
             ids_zip.read(cmp_buf, kDataLen);
             ids_zip_len = ids_zip.gcount();
             // Finalize decompression stream in the destructor
@@ -280,7 +282,8 @@ void CTestCompressor<TCompression, TCompressionFile,
         // Write data to compressing stream
         CNcbiOstrstream os_str;
         {{
-            CCompressionOStream os_zip(os_str, new TStreamCompressor());
+            CCompressionOStream os_zip(os_str, new TStreamCompressor(),
+                                       CCompressionStream::fOwnWriter);
             os_zip.write(src_buf, kDataLen);
             // Finalize compression stream in the destructor
         }}
@@ -321,7 +324,8 @@ void CTestCompressor<TCompression, TCompressionFile,
         // Write compressed data to decompressing stream
         CNcbiOstrstream os_str;
 
-        CCompressionOStream os_zip(os_str, new TStreamDecompressor());
+        CCompressionOStream os_zip(os_str, new TStreamDecompressor(),
+                                   CCompressionStream::fOwnProcessor);
 
         os_zip.write(dst_buf, out_len);
         // Finalize a compression stream via direct call Finalize()
@@ -349,7 +353,8 @@ void CTestCompressor<TCompression, TCompressionFile,
 
             CNcbiStrstream stm(dst_buf, kBufLen);
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
-                                          new TStreamCompressor());
+                                          new TStreamCompressor(),
+                                          CCompressionStream::fOwnProcessor);
             zip.write(src_buf, kDataLen);
             assert(zip.good()  &&  stm.good());
             zip.Finalize(CCompressionStream::eWrite);
@@ -384,7 +389,8 @@ void CTestCompressor<TCompression, TCompressionFile,
 
             CNcbiStrstream stm(dst_buf, kBufLen);
             CCompressionIOStream zip(stm, new TStreamDecompressor(),
-                                          new TStreamCompressor());
+                                          new TStreamCompressor(),
+                                          CCompressionStream::fOwnProcessor);
 
             int v;
             for (int i = 0; i < 1000; i++) {
@@ -417,7 +423,8 @@ void CTestCompressor<TCompression, TCompressionFile,
         // Compress output
         CNcbiOstrstream os_str;
         {{
-            CCompressionOStream ocs_zip(os_str, new TStreamCompressor());
+            CCompressionOStream ocs_zip(os_str, new TStreamCompressor(),
+                                        CCompressionStream::fOwnWriter);
             for (int i = 0; i < 1000; i++) {
                 v = i * 2;
                 ocs_zip << v << endl;
@@ -429,7 +436,8 @@ void CTestCompressor<TCompression, TCompressionFile,
 
         // Decompress input
         CNcbiIstrstream is_str(str, os_str_len);
-        CCompressionIStream ids_zip(is_str, new TStreamDecompressor());
+        CCompressionIStream ids_zip(is_str, new TStreamDecompressor(),
+                                    CCompressionStream::fOwnReader);
         for (int i = 0; i < 1000; i++) {
             ids_zip >> v;
             assert(!ids_zip.eof());
@@ -544,6 +552,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/04/09 11:48:26  ivanov
+ * Added ownership parameter to CCompressionStream constructors.
+ *
  * Revision 1.5  2003/07/15 15:54:43  ivanov
  * GetLastError() -> GetErrorCode() renaming
  *
