@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2002/05/07 20:22:47  thiessen
+* fix for BLAST/PSSM
+*
 * Revision 1.7  2002/05/02 18:40:25  thiessen
 * do BLAST/PSSM for debug builds only, for testing
 *
@@ -134,16 +137,15 @@ static BLAST_Matrix * CreateBLASTMatrix(const BlockMultipleAlignment *multipleFo
 #ifdef PRINT_PSSM
         fprintf(f, "matrix %i : ", i);
 #endif
+        // initialize all rows with BLAST_SCORE_MIN
+        for (j=0; j<matrix->columns; j++)
+            matrix->matrix[i][j] = BLAST_SCORE_MIN;
+        // set scores from threader matrix
         if (i < seqMtf->n) {
             for (j=0; j<seqMtf->AlphabetSize; j++) {
                 matrix->matrix[i][LookupBLASTResidueNumberFromThreaderResidueNumber(j)] =
                     seqMtf->ww[i][j] / Threader::SCALING_FACTOR;
             }
-            matrix->matrix[i][25] = BLAST_SCORE_MIN;
-        } else {
-            // fill in last row with BLAST_SCORE_MIN
-            for (j=0; j<matrix->columns; j++)
-                matrix->matrix[i][j] = BLAST_SCORE_MIN;
         }
 #ifdef PRINT_PSSM
         for (j=0; j<seqMtf->AlphabetSize; j++)

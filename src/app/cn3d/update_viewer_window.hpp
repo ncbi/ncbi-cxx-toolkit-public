@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/05/07 20:22:47  thiessen
+* fix for BLAST/PSSM
+*
 * Revision 1.22  2002/05/02 18:40:25  thiessen
 * do BLAST/PSSM for debug builds only, for testing
 *
@@ -141,9 +144,7 @@ private:
         MID_THREAD_ONE,
         MID_THREAD_ALL,
         MID_BLAST_ONE,
-#ifdef _DEBUG
         MID_BLAST_PSSM_ONE,
-#endif
         MID_MERGE_ONE,
         MID_MERGE_ALL,
         MID_DELETE_ONE,
@@ -168,13 +169,11 @@ private:
         menuBar->Check(MID_BLAST_ONE, false);
         SetCursor(wxNullCursor);
     }
-#ifdef _DEBUG
     void BlastPSSMSingleOff(void)
     {
         menuBar->Check(MID_BLAST_PSSM_ONE, false);
         SetCursor(wxNullCursor);
     }
-#endif
     void MergeSingleOff(void)
     {
         menuBar->Check(MID_MERGE_ONE, false);
@@ -196,9 +195,7 @@ private:
 public:
     bool DoThreadSingle(void) const { return menuBar->IsChecked(MID_THREAD_ONE); }
     bool DoBlastSingle(void) const { return menuBar->IsChecked(MID_BLAST_ONE); }
-#ifdef _DEBUG
     bool DoBlastPSSMSingle(void) const { return menuBar->IsChecked(MID_BLAST_PSSM_ONE); }
-#endif
     bool DoMergeSingle(void) const { return menuBar->IsChecked(MID_MERGE_ONE); }
     bool DoDeleteSingle(void) const { return menuBar->IsChecked(MID_DELETE_ONE); }
 
@@ -206,9 +203,7 @@ public:
     {
         if (DoThreadSingle()) ThreadSingleOff();
         if (DoBlastSingle()) BlastSingleOff();
-#ifdef _DEBUG
         if (DoBlastPSSMSingle()) BlastPSSMSingleOff();
-#endif
         if (DoDeleteSingle()) DeleteSingleOff();
         if (DoMergeSingle()) MergeSingleOff();
     }
