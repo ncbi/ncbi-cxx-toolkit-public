@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/01/25 17:04:43  lavr
+ * Reversed:: DESTROY method calls free() to delete connector structure
+ *
  * Revision 6.7  2001/01/23 23:09:19  lavr
  * Flags added to 'Ex' constructor
  *
@@ -232,8 +235,9 @@ extern "C" {
 static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                                 unsigned int n)
 {
-    static const char header[] = "Connection-Mode: STATELESS\r\n";
+    static const char stateless[] = "Connection-Mode: STATELESS\r\n";
     SServiceConnector* uuu = (SServiceConnector*) data;
+    const char* header = 0;
     const SSERV_Info* info;
     
     if (!n || !(info = SERV_GetNextInfo(uuu->iter)))
@@ -245,6 +249,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
                         NCBID_NAME,
                         SERV_NCBID_ARGS(&info->u.ncbid),
                         "service", uuu->serv);
+        header = stateless;
         break;
     case fSERV_Http:
     case fSERV_HttpGet:
@@ -261,12 +266,20 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
         s_AdjustNetInfo(net_info, eReqMethod_Post,
                         uuu->info->path, 0,
                         "service", uuu->serv);
+        header = stateless;
         break;
     default:
         return 0;
     }
-    ConnNetInfo_SetUserHeader(net_info, header);
-    assert(strcmp(net_info->http_user_header, header) == 0);
+
+    if (header) {
+        ConnNetInfo_SetUserHeader(net_info, header);
+        assert(strcmp(net_info->http_user_header, header) == 0);
+    }
+
+    if (net_info->http_proxy_adjusted)
+        net_info->http_proxy_adjusted = 0/*false*/;
+
     return 1;
 }
 
@@ -320,9 +333,7 @@ static EIO_Status s_VT_Open
         case fSERV_Http:
         case fSERV_HttpGet:
         case fSERV_HttpPost:
-            /* Connection request with data - no addtl HTTP tags required,
-               but we put one here to distinguish our requests */
-            header = "Connection-Mode: STATELESS\r\n";
+            header = "";
             req_method =
                 info->type == fSERV_HttpGet
                 ? eReqMethod_Get :
@@ -364,7 +375,7 @@ static EIO_Status s_VT_Open
         
         if (user_header /*NB: <CR><LF>-terminated*/) {
             if ((n = strlen(header)) > 0) {
-                user_header = (char *)realloc(user_header,
+                user_header = (char*) realloc(user_header,
                                               strlen(user_header) + n + 1);
                 strcat(user_header, header);
             }
@@ -517,6 +528,7 @@ static void s_Destroy(CONNECTOR connector)
         free((void*) uuu->name);
     free((void*) uuu->serv);
     free(uuu);
+    free(connector);
 }
 
 

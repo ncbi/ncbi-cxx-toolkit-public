@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/25 17:04:43  lavr
+ * Reversed:: DESTROY method calls free() to delete connector structure
+ *
  * Revision 6.4  2001/01/23 23:11:20  lavr
  * Status virtual method implemented
  *
@@ -283,6 +286,7 @@ static void s_Destroy
     free(xxx->inp_file_name);
     free(xxx->out_file_name);
     free(xxx);
+    free(connector);
 }
 
 

@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/01/25 17:04:44  lavr
+ * Reversed:: DESTROY method calls free() to delete connector structure
+ *
  * Revision 6.4  2001/01/23 23:09:47  lavr
  * Flags added to 'Ex' constructor
  *
@@ -277,6 +280,7 @@ static void s_Destroy
     if (xxx->init_data)
         free(xxx->init_data);
     free(xxx);
+    free(connector);
 }
 
 
