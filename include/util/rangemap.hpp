@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/09/17 18:26:32  grichenk
+* Fixed processing of "Whole" ranges in the range map iterator.
+*
 * Revision 1.13  2001/06/28 12:44:56  grichenk
 * Added some comments
 *
@@ -322,6 +325,8 @@ private:
             else {
                 // get maximum length of ranges in the level
                 position_type maxLength = m_SelectIter->first;
+                if ( maxLength == range_type::GetWholeLength() )
+                    return m_SelectIter->second.begin();
                 // Skip all ranges, which can NOT intersect with the
                 // range to search, return the first one that CAN
                 // (but not always does).
