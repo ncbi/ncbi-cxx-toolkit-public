@@ -118,12 +118,14 @@ public:
     const CCit_book*    GetBook      (void) const { return m_Book;       }
     bool                JustUids     (void) const { return m_JustUids;   }
     const string&       GetUniqueStr (void) const { return m_UniqueStr;  }
-
+    
     static string GetAuthString(const CAuth_list* alp);
     static void GetAuthNames(list<string>& authors, const CAuth_list* alp);
-    static void FormatAffil(const CAffil& affil, string& result);
+    static void FormatAffil(const CAffil& affil, string& result, bool gen_sub = false);
 
     void SetLoc(const CConstRef<CSeq_loc>& loc);
+    bool UseDate(void) const { return m_UseDate; }
+
 private:
     
     void x_GatherInfo(CBioseqContext& ctx);
@@ -169,6 +171,7 @@ private:
     CConstRef<CCit_book>  m_Book;
     CImprint::TPrepub     m_Prepub;
     string                m_UniqueStr;
+    bool                  m_UseDate;
 };
 
 
@@ -191,6 +194,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/10/05 15:30:41  shomrat
+* + UseData()
+*
 * Revision 1.10  2004/08/30 13:33:18  shomrat
 * + GetUniqueStr()
 *
