@@ -332,11 +332,6 @@ finish_params()
     
     smp->SetMatrix(*matrix);
     
-    CRef<CBlast4_ka_block> ka(new CBlast4_ka_block);
-    ka->SetK(0.112);
-    
-    smp->SetKablk(*ka);
-    
     list<CRef<CBlast4_parameter> > & l = q->SetParams();
     
     setp(l, "matrix", smp);
