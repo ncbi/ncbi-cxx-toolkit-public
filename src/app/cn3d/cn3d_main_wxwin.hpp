@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2001/12/14 14:52:45  thiessen
+* add apple event handler for open document
+*
 * Revision 1.52  2001/10/24 22:02:02  thiessen
 * fix wxGTK concurrent rendering problem
 *
@@ -272,6 +275,9 @@ public:
 
 private:
     void InitRegistry(void);
+#ifdef __WXMAC__
+	OSErr MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply);
+#endif
 
     // used for processing display updates when system is idle
     void OnIdle(wxIdleEvent& event);

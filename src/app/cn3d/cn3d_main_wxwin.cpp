@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.110  2001/12/14 14:52:38  thiessen
+* add apple event handler for open document
+*
 * Revision 1.109  2001/12/07 19:33:32  thiessen
 * fix extra path sep. in save file name
 *
@@ -834,6 +837,87 @@ void Cn3DApp::OnIdle(wxIdleEvent& event)
     // call base class OnIdle to continue processing any other system idle-time stuff
     wxApp::OnIdle(event);
 }
+
+#ifdef __WXMAC__
+// borrowed from vibwndws.c
+static void ConvertFilename ( FSSpec *fss, char *filename )
+{
+    register char *src;
+    register char *dst;
+    register int i;
+    char buffer [256];
+
+    Str255 dirname;
+    DirInfo dinfo;
+
+    src = buffer;
+    dinfo.ioDrParID = fss->parID;
+    dinfo.ioNamePtr = dirname;
+    do {
+        dinfo.ioVRefNum = fss->vRefNum;
+        dinfo.ioFDirIndex = -1;
+        dinfo.ioDrDirID = dinfo.ioDrParID;
+        PBGetCatInfo ((CInfoPBPtr) &dinfo, 0);
+
+        *src++ = ':';
+        for ( i=dirname[0]; i; i-- )
+        *src++ = dirname [i];
+    } while ( dinfo.ioDrDirID != 2 );
+
+    /* Reverse the file path! */
+    dst = filename;
+    while ( src != buffer )
+    *dst++ = *(--src);
+    for( i = 1; i <= fss->name [0]; i++ )
+    *dst++ = fss->name [i];
+    *dst = '\0';
+}
+
+// special handler for open file apple event
+OSErr Cn3DApp::MacHandleAEODoc(const AppleEvent *event , AppleEvent *reply)
+{
+    // borrowed from HandleAEOpenDoc() in vibwndws.c
+    register OSErr stat;
+    register long i;
+    AEDescList list;
+    AEKeyword keywd;
+    DescType dtype;
+    FSSpec fss;
+    long count;
+    Size size;
+    char filename [256];
+
+    stat = AEGetParamDesc (event, keyDirectObject, typeAEList, &list);
+    if ( stat ) return ( stat );
+
+    stat = AEGetAttributePtr (event, keyMissedKeywordAttr, typeWildCard, &dtype, 0, 0, &size );
+    if ( stat != errAEDescNotFound ) {   
+        AEDisposeDesc( &list );
+        return ( stat? stat : errAEEventNotHandled );
+    }
+
+    // try to extract a file name to open
+    *filename = '\0';
+    AECountItems ( &list, &count );
+    for ( i = 1; i <= count; i++ ) {   
+        stat = AEGetNthPtr (&list, i, typeFSS, &keywd, &dtype, (Ptr) &fss, sizeof (fss), &size);
+        if ( !stat ) {   
+            ConvertFilename (&fss, filename);
+            break;
+        }
+    }
+    
+    // actually open the file
+    if (*filename) structureWindow->LoadFile(filename);
+    
+    // borrowed from wxApp::MacHandleAEODoc
+    ProcessSerialNumber PSN ;
+    PSN.highLongOfPSN = 0 ;
+    PSN.lowLongOfPSN = kCurrentProcess ;
+    SetFrontProcess( &PSN ) ;
+    return noErr ;
+}
+#endif
 
 
 // data and methods for the main program window (a Cn3DMainFrame)
