@@ -40,8 +40,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 void CAlnMap::x_Init(void)
 {
-    m_SeqStartSegs.resize(GetNumRows(), -1);
-    m_SeqStopSegs.resize(GetNumRows(), -1);
+    m_SeqLeftSegs.resize(GetNumRows(), -1);
+    m_SeqRightSegs.resize(GetNumRows(), -1);
 }
 
 
@@ -496,7 +496,7 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
 TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 {
     if (IsPositiveStrand(row)) {
-        TNumseg& seg = m_SeqStartSegs[row];
+        TNumseg& seg = m_SeqLeftSegs[row];
         if (seg < 0) {
             TSignedSeqPos start;
             while (++seg < m_NumSegs) {
@@ -509,7 +509,7 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
             return m_Starts[seg * m_NumRows + row];
         }
     } else {
-        TNumseg& seg = m_SeqStopSegs[row];
+        TNumseg& seg = m_SeqRightSegs[row];
         if (seg < 0) {
             TSignedSeqPos start;
             seg = m_NumSegs;
@@ -530,7 +530,7 @@ TSignedSeqPos CAlnMap::GetSeqStart(TNumrow row) const
 TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
 {
     if (IsPositiveStrand(row)) {
-        TNumseg& seg = m_SeqStopSegs[row];
+        TNumseg& seg = m_SeqRightSegs[row];
         if (seg < 0) {
             TSignedSeqPos start;
             seg = m_NumSegs;
@@ -544,7 +544,7 @@ TSignedSeqPos CAlnMap::GetSeqStop(TNumrow row) const
             return m_Starts[seg * m_NumRows + row] + m_Lens[seg] - 1;
         }
     } else {
-        TNumseg& seg = m_SeqStartSegs[row];
+        TNumseg& seg = m_SeqLeftSegs[row];
         if (seg < 0) {
             TSignedSeqPos start;
             seg = -1;
@@ -898,6 +898,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/07/17 22:47:13  todorov
+* name change
+*
 * Revision 1.34  2003/07/08 20:26:34  todorov
 * Created seq end segments cache
 *
