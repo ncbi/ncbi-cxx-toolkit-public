@@ -575,7 +575,7 @@ void CId1FetchApp::Exit(void)
 int CId1FetchApp::LookUpFastaSeqID(const string& s)
 {
     CSeq_id id(s);
-    return m_ID1Client.AskGetgi(s);
+    return m_ID1Client.AskGetgi(id);
 }
 
 
@@ -748,6 +748,9 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.49  2004/04/26 20:46:11  ucko
+* Fix typo that accidentally introduced an implicit temporary CSeq_id.
+*
 * Revision 1.48  2004/04/26 16:53:17  ucko
 * Don't try to pass temporary CSeq_id objects, even by const reference,
 * as CSeq_id has no public copy constructor.
