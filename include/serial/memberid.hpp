@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/11/14 20:49:01  gouriano
+* added Attlist and Notag flags
+*
 * Revision 1.14  2002/09/25 19:38:25  gouriano
 * added the possibility of having no tag prefix in XML I/O streams
 *
@@ -134,12 +137,20 @@ public:
     void SetNoPrefix(void);
     bool HaveNoPrefix(void) const;
 
+    void SetAttlist(void);
+    bool IsAttlist(void) const;
+
+    void SetNotag(void);
+    bool HasNotag(void) const;
+
 private:
     // identification
     string m_Name;
     TTag m_Tag;
     bool m_ExplicitTag;
     bool m_NoPrefix;
+    bool m_Attlist;
+    bool m_Notag;
 };
 
 #include <serial/memberid.inl>
