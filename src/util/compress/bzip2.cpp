@@ -31,9 +31,13 @@
 
 #include <ncbi_pch.hpp>
 #include <util/compress/bzip2.hpp>
-
+#include <bzlib.h>
 
 BEGIN_NCBI_SCOPE
+
+
+// Get compression stream pointer
+#define STREAM ((bz_stream*)m_Stream)
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -48,13 +52,17 @@ CBZip2Compression::CBZip2Compression(ELevel level, int verbosity,
       m_SmallDecompress(small_decompress)
 {
     // Initialize the compressor stream structure
-    memset(&m_Stream, 0, sizeof(m_Stream));
+    m_Stream = new bz_stream;
+    if ( m_Stream ) {
+        memset(m_Stream, 0, sizeof(bz_stream));
+    }
     return;
 }
 
 
 CBZip2Compression::~CBZip2Compression(void)
 {
+    delete m_Stream;
     return;
 }
 
@@ -204,8 +212,8 @@ string CBZip2Compression::FormatErrorMessage(string where,
         str += ";  error code = " +
             NStr::IntToString(GetErrorCode()) +
             ", number of processed bytes = " +
-            NStr::UInt8ToString(((Uint8)m_Stream.total_in_hi32 << 32) +
-                                (Uint8)m_Stream.total_in_lo32);
+            NStr::UInt8ToString(((Uint8)STREAM->total_in_hi32 << 32) +
+                                 (Uint8)STREAM->total_in_lo32);
     }
     return str + ".";
 }
@@ -365,9 +373,9 @@ CCompressionProcessor::EStatus CBZip2Compressor::Init(void)
     Reset();
     SetBusy();
     // Initialize the compressor stream structure
-    memset(&m_Stream, 0, sizeof(m_Stream));
+    memset(STREAM, 0, sizeof(bz_stream));
     // Create a compressor stream
-    int errcode = BZ2_bzCompressInit(&m_Stream, GetLevel(), m_Verbosity,
+    int errcode = BZ2_bzCompressInit(STREAM, GetLevel(), m_Verbosity,
                                      m_WorkFactor);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
@@ -385,15 +393,15 @@ CCompressionProcessor::EStatus CBZip2Compressor::Process(
                       /* out */            unsigned long* in_avail,
                       /* out */            unsigned long* out_avail)
 {
-    m_Stream.next_in   = const_cast<char*>(in_buf);
-    m_Stream.avail_in  = in_len;
-    m_Stream.next_out  = out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = const_cast<char*>(in_buf);
+    STREAM->avail_in  = in_len;
+    STREAM->next_out  = out_buf;
+    STREAM->avail_out = out_size;
 
-    int errcode = BZ2_bzCompress(&m_Stream, BZ_RUN);
+    int errcode = BZ2_bzCompress(STREAM, BZ_RUN);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
-    *in_avail  = m_Stream.avail_in;
-    *out_avail = out_size - m_Stream.avail_out;
+    *in_avail  = STREAM->avail_in;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseProcessedSize(in_len - *in_avail);
     IncreaseOutputSize(*out_avail);
 
@@ -412,14 +420,14 @@ CCompressionProcessor::EStatus CBZip2Compressor::Flush(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    m_Stream.next_in   = 0;
-    m_Stream.avail_in  = 0;
-    m_Stream.next_out  = out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = 0;
+    STREAM->avail_in  = 0;
+    STREAM->next_out  = out_buf;
+    STREAM->avail_out = out_size;
 
-    int errcode = BZ2_bzCompress(&m_Stream, BZ_FLUSH);
+    int errcode = BZ2_bzCompress(STREAM, BZ_FLUSH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
-    *out_avail = out_size - m_Stream.avail_out;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseOutputSize(*out_avail);
 
     if ( errcode == BZ_RUN_OK ) {
@@ -440,14 +448,14 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    m_Stream.next_in   = 0;
-    m_Stream.avail_in  = 0;
-    m_Stream.next_out  = out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = 0;
+    STREAM->avail_in  = 0;
+    STREAM->next_out  = out_buf;
+    STREAM->avail_out = out_size;
 
-    int errcode = BZ2_bzCompress(&m_Stream, BZ_FINISH);
+    int errcode = BZ2_bzCompress(STREAM, BZ_FINISH);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
-    *out_avail = out_size - m_Stream.avail_out;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseOutputSize(*out_avail);
 
     switch (errcode) {
@@ -463,7 +471,7 @@ CCompressionProcessor::EStatus CBZip2Compressor::Finish(
 
 CCompressionProcessor::EStatus CBZip2Compressor::End(void)
 {
-    int errcode = BZ2_bzCompressEnd(&m_Stream);
+    int errcode = BZ2_bzCompressEnd(STREAM);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
     SetBusy(false);
 
@@ -499,9 +507,9 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Init(void)
     Reset();
     SetBusy();
     // Initialize the decompressor stream structure
-    memset(&m_Stream, 0, sizeof(m_Stream));
+    memset(STREAM, 0, sizeof(bz_stream));
     // Create a compressor stream
-    int errcode = BZ2_bzDecompressInit(&m_Stream, m_Verbosity,
+    int errcode = BZ2_bzDecompressInit(STREAM, m_Verbosity,
                                        m_SmallDecompress);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
@@ -522,16 +530,16 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Process(
     if ( !out_size ) {
         return eStatus_Overflow;
     }
-    m_Stream.next_in   = const_cast<char*>(in_buf);
-    m_Stream.avail_in  = in_len;
-    m_Stream.next_out  = out_buf;
-    m_Stream.avail_out = out_size;
+    STREAM->next_in   = const_cast<char*>(in_buf);
+    STREAM->avail_in  = in_len;
+    STREAM->next_out  = out_buf;
+    STREAM->avail_out = out_size;
 
-    int errcode = BZ2_bzDecompress(&m_Stream);
+    int errcode = BZ2_bzDecompress(STREAM);
     SetError(errcode, GetBZip2ErrorDescription(errcode));
 
-    *in_avail  = m_Stream.avail_in;
-    *out_avail = out_size - m_Stream.avail_out;
+    *in_avail  = STREAM->avail_in;
+    *out_avail = out_size - STREAM->avail_out;
     IncreaseProcessedSize(in_len - *in_avail);
     IncreaseOutputSize(*out_avail);
 
@@ -562,7 +570,7 @@ CCompressionProcessor::EStatus CBZip2Decompressor::Finish(
 
 CCompressionProcessor::EStatus CBZip2Decompressor::End(void)
 {
-    int errcode = BZ2_bzDecompressEnd(&m_Stream);
+    int errcode = BZ2_bzDecompressEnd(STREAM);
     SetBusy(false);
     if ( errcode == BZ_OK ) {
         return eStatus_Success;
@@ -578,6 +586,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/17 17:59:36  ivanov
+ * cvs commit bzip2.hpp
+ *
  * Revision 1.9  2004/05/17 21:07:25  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *
