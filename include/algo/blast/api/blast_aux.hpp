@@ -150,6 +150,11 @@ public: \
     C##struct_name(struct_name* p) : m_Ptr(p) {} \
     void Reset(struct_name* p) { if (m_Ptr) { free_func(m_Ptr); } m_Ptr = p; } \
     ~C##struct_name() { if (m_Ptr) { free_func(m_Ptr); m_Ptr = NULL; } } \
+    struct_name* Release() { \
+        struct_name* retval = m_Ptr; \
+        m_Ptr = NULL; \
+        return retval; \
+    } \
     operator struct_name *() { return m_Ptr; } \
     operator struct_name *() const { return m_Ptr; } \
     struct_name* operator->() { return m_Ptr; } \
@@ -202,6 +207,7 @@ DECLARE_AUTO_CLASS_WRAPPER(PSIMatrix, PSIMatrixFree);
 DECLARE_AUTO_CLASS_WRAPPER(PSIDiagnosticsResponse, PSIDiagnosticsResponseFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastSeqSrc, BlastSeqSrcFree);
+DECLARE_AUTO_CLASS_WRAPPER(Blast_Message, Blast_MessageFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastMaskLoc, BlastMaskLocFree);
 
@@ -216,6 +222,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.52  2004/12/29 15:11:24  camacho
+* Add Release method to C structure RAII wrapper classes
+*
 * Revision 1.51  2004/12/28 18:47:38  dondosha
 * Added auto class wrapper for BlastMaskLoc
 *
