@@ -233,7 +233,7 @@ AC_DEFINE_UNQUOTED(NCBI_COMPILER_VERSION, $ncbi_compiler_ver)
 
 #### Additional check for pre-defined compilers
 case "$compiler" in
-  MIPSpro73 | MSVC )
+  MSVC )
     if test -z "$NCBI_COMPILER" ; then
        echo
        echo "Compiler \"${compiler}\" requires a special tuning, so you"
@@ -315,6 +315,7 @@ case "$host:$compiler" in
    COMMON_FLAGS="-fullwarn -brief_diagnostics -use_readonly_const -G0 -rdata_shared"
    CFLAGS="$COMMON_FLAGS"
    CXXFLAGS="$COMMON_FLAGS -ansiW -ptused -LANG:std -LANG:ansi-for-init-scope -woff 1460,1521,1429,1169,1209,1107,1424"
+   CXXCPP=${CXXCPP:="$CXX -E -LANG:std"}
    LDFLAGS="-LANG:std $LDFLAGS"
    CPPFLAGS="-D__LONGLONG $CPPFLAGS"
    NETWORK_LIBS=" "

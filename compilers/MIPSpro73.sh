@@ -37,7 +37,6 @@ fi
 # Tools
 CC="cc"
 CXX="CC"
-CXXCPP="$CXX -E -LANG:std"
 
 
 ## Configure
