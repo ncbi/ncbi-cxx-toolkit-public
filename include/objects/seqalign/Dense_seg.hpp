@@ -82,6 +82,9 @@ public:
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop(TDim row) const;
 
+    // Get strand (the first one if segments have different strands).
+    ENa_strand      GetSeqStrand(TDim row) const;
+
     /// Reverse the segments' orientation
     void Reverse(void);
 
@@ -185,6 +188,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.9  2004/06/14 22:09:02  johnson
+* Added GetSeqStrand method (analogous to GetSeq_id)
+*
 * Revision 1.8  2004/05/06 18:23:35  todorov
 * + optional ignore_strand param to RemapToLoc
 *

@@ -67,6 +67,10 @@ public:
     CRange<TSeqPos> GetSeqRange(TDim row) const;
     TSeqPos         GetSeqStart(TDim row) const;
     TSeqPos         GetSeqStop (TDim row) const;
+
+    // Get strand (the first one if segments have different strands).
+    ENa_strand      GetSeqStrand(TDim row) const;
+
     // Get seq-id (the first one if segments have different ids).
     // Throw exception if row is invalid.
     const CSeq_id&  GetSeq_id(TDim row) const;
@@ -138,6 +142,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/06/14 22:09:02  johnson
+* Added GetSeqStrand method (analogous to GetSeq_id)
+*
 * Revision 1.13  2004/05/05 19:16:25  johnson
 * Added SwapRows method for 'disc' seq-align / seq-align-set
 *

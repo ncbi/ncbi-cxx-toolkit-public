@@ -181,6 +181,19 @@ TSeqPos CSeq_align::GetSeqStop (TDim row) const
 }
 
 
+ENa_strand CSeq_align::GetSeqStrand(TDim row) const
+{
+    switch (GetSegs().Which()) {
+    case C_Segs::e_Denseg:
+        return GetSegs().GetDenseg().GetSeqStrand(row);
+    default:
+        NCBI_THROW(CSeqalignException, eUnsupported,
+                   "CSeq_align::GetSeqStrand() currently does not handle "
+                   "this type of alignment.");
+    }
+}
+
+
 const CSeq_id& CSeq_align::GetSeq_id(TDim row) const
 {
     switch (GetSegs().Which()) {
@@ -614,6 +627,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/06/14 22:09:03  johnson
+* Added GetSeqStrand method (analogous to GetSeq_id)
+*
 * Revision 1.16  2004/05/19 17:25:43  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *

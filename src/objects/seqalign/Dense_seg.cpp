@@ -166,6 +166,25 @@ TSeqPos CDense_seg::GetSeqStop(TDim row) const
 }
 
 
+ENa_strand CDense_seg::GetSeqStrand(TDim row) const
+{
+    if (row < 0  ||  row >= GetDim()) {
+        NCBI_THROW(CSeqalignException, eInvalidRowNumber,
+                   "CDense_seg::GetSeqStrand():"
+                   " Invalid row number");
+    }
+
+
+    if (!CanGetStrands()  ||  GetStrands().size() < row) {
+        NCBI_THROW(CSeqalignException, eInvalidInputData,
+                   "CDense_seg::GetSeqStrand():"
+                   " Strand doesn't exist for this row.");
+    }
+
+    return GetStrands()[row];
+}
+
+
 void CDense_seg::Validate(bool full_test) const
 {
     const CDense_seg::TStarts&  starts  = GetStarts();
@@ -485,6 +504,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/06/14 22:09:03  johnson
+* Added GetSeqStrand method (analogous to GetSeq_id)
+*
 * Revision 1.13  2004/05/19 17:25:43  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
