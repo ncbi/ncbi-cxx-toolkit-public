@@ -350,15 +350,18 @@ struct SSystemMutex
     volatile int m_Count; ///< # of recursive (in the same thread) locks
 
     /// Acquire mutex for the current thread.
+    NCBI_XNCBI_EXPORT
     void Lock(void);
 
     /// Release mutex.
+    NCBI_XNCBI_EXPORT
     void Unlock(void);
 
     /// Try to lock.
     /// 
     /// @return
     ///   TRUE on success; FALSE, otherwise.
+    NCBI_XNCBI_EXPORT
     bool TryLock(void);
 
     // Methods for throwing exceptions, to make inlined methods lighter
@@ -1127,6 +1130,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.35  2004/03/10 20:00:24  gorelenk
+ * Added NCBI_XNCBI_EXPORT prefix to SSystemMutex struct members Lock, Unlock,
+ * Trylock.
+ *
  * Revision 1.34  2004/03/10 18:40:21  gorelenk
  * Added/Removed NCBI_XNCBI_EXPORT prefixes.
  *
