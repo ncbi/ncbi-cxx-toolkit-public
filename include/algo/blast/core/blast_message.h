@@ -41,8 +41,7 @@ Detailed Contents:
 #ifndef __BLASTMESSAGES__
 #define __BLASTMESSAGES__
 
-#include <ncbi.h>
-
+#include <blast_def.h>
 
 #ifdef __cplusplus
 extern "C" {
