@@ -11,6 +11,7 @@ APP = cn3d
 SRC = \
 	alignment_manager \
 	alignment_set \
+	animation_controls \
 	annotate_dialog \
 	atom_set \
 	block_multiple_alignment \
