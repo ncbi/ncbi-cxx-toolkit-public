@@ -294,8 +294,7 @@ int CTestNetCacheClient::Run(void)
     }}
 
     {{
-        CSocket sock(host, port);
-        CNetCacheClient nc_client(&sock);
+        CNetCacheClient nc_client;
 
         char dataBuf[1024] = {0};
         CNetCacheClient::EReadResult rres = 
@@ -304,7 +303,6 @@ int CTestNetCacheClient::Run(void)
 
         int res = strcmp(dataBuf, test_data);
         assert(res == 0);
-        sock.Close();
     }}
 
     // update existing BLOB
@@ -400,6 +398,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/02 17:30:56  kuznets
+ * +test for extraction host name and port from the key
+ *
  * Revision 1.11  2004/11/01 16:02:44  kuznets
  * Test for BLOB size" test_netcache_client.cpp
  *
