@@ -96,7 +96,7 @@
 
 
 /*
- * Definitions for NCBI_SEQ.DLL
+ * Definitions for NCBI_SEQEXT.DLL
  */
 #ifdef NCBI_SEQEXT_EXPORTS
 #  define NCBI_BLAST_EXPORTS
@@ -105,6 +105,7 @@
 #  define NCBI_SCOREMAT_EXPORTS
 #  define NCBI_XALNMGR_EXPORTS
 #  define NCBI_XOBJMGR_EXPORTS
+#  define NCBI_XOBJREAD_EXPORTS
 #  define NCBI_XOBJUTIL_EXPORTS
 #endif
 
@@ -366,6 +367,15 @@
 #  define NCBI_XOBJMGR_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XOBJMGR_EXPORT       __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library objtools_xobjread
+ */
+#ifdef NCBI_XOBJREAD_EXPORTS
+#  define NCBI_XOBJREAD_EXPORT      __declspec(dllexport)
+#else
+#  define NCBI_XOBJREAD_EXPORT      __declspec(dllimport)
 #endif
 
 /*
@@ -748,6 +758,7 @@
 #  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
+#  define NCBI_XOBJREAD_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
@@ -762,6 +773,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.27  2003/06/04 17:05:35  ucko
+ * +NCBI_XOBJREAD_EXPORT(S), under NCBI_SEQEXT_EXPORTS.
+ *
  * Revision 1.26  2003/06/03 19:22:20  dicuccio
  * Fixed specification of MMDB lib exports
  *
