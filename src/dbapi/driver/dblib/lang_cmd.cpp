@@ -145,6 +145,9 @@ bool CDBL_LangCmd::WasCanceled() const
 CDB_Result* CDBL_LangCmd::Result()
 {
     if (m_Res) {
+        if(m_RowCount < 0) {
+            m_RowCount = DBCOUNT(m_Cmd);
+        }
         delete m_Res;
         m_Res = 0;
     }
@@ -166,6 +169,7 @@ CDB_Result* CDBL_LangCmd::Result()
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
         m_Res = new CDBL_ComputeResult(m_Cmd, &m_Status);
+        m_RowCount= 1;
         return Create_Result(*m_Res);
     }
 
@@ -175,6 +179,7 @@ CDB_Result* CDBL_LangCmd::Result()
             int n;
             if ((n = dbnumrets(m_Cmd)) > 0) {
                 m_Res = new CDBL_ParamResult(m_Cmd, n);
+                m_RowCount= 1;
                 return Create_Result(*m_Res);
             }
         }
@@ -183,6 +188,7 @@ CDB_Result* CDBL_LangCmd::Result()
             m_Status ^= 0x40;
             if (dbhasretstat(m_Cmd)) {
                 m_Res = new CDBL_StatusResult(m_Cmd);
+                m_RowCount= 1;
                 return Create_Result(*m_Res);
             }
         }
@@ -202,6 +208,7 @@ CDB_Result* CDBL_LangCmd::Result()
 #endif
                 if (!m_Res)
                     m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
+                m_RowCount= -1;
                 return Create_Result(*m_Res);
             } else {
                 m_RowCount = DBCOUNT(m_Cmd);
@@ -237,7 +244,7 @@ bool CDBL_LangCmd::HasFailed() const
 
 int CDBL_LangCmd::RowCount() const
 {
-    return m_RowCount;
+    return (m_RowCount < 0)? DBCOUNT(m_Cmd) : m_RowCount;
 }
 
 
@@ -440,6 +447,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/07/22 20:02:59  soussov
+ * fixes the RowCount calculations
+ *
  * Revision 1.10  2002/07/02 16:05:49  soussov
  * splitting Sybase dblib and MS dblib
  *

@@ -134,6 +134,9 @@ bool CDBL_RPCCmd::WasCanceled() const
 CDB_Result* CDBL_RPCCmd::Result()
 {
     if (m_Res) {
+        if(m_RowCount < 0) {
+            m_RowCount = DBCOUNT(m_Cmd);
+        }
         delete m_Res;
         m_Res = 0;
     }
@@ -155,6 +158,7 @@ CDB_Result* CDBL_RPCCmd::Result()
 
     if ((m_Status & 0x10) != 0) { // we do have a compute result
         m_Res = new CDBL_ComputeResult(m_Cmd, &m_Status);
+        m_RowCount= 1;
         return Create_Result(*m_Res);
     }
 
@@ -173,6 +177,7 @@ CDB_Result* CDBL_RPCCmd::Result()
 #endif
                 if (!m_Res)
                     m_Res = new CDBL_RowResult(m_Cmd, &m_Status);
+                m_RowCount= -1;
                 return Create_Result(*m_Res);
             } else {
                 m_RowCount = DBCOUNT(m_Cmd);
@@ -196,6 +201,7 @@ CDB_Result* CDBL_RPCCmd::Result()
         int n = dbnumrets(m_Cmd);
         if (n > 0) {
             m_Res = new CDBL_ParamResult(m_Cmd, n);
+            m_RowCount= 1;
             return Create_Result(*m_Res);
         }
     }
@@ -204,6 +210,7 @@ CDB_Result* CDBL_RPCCmd::Result()
         m_Status = 6;
         if (dbhasretstat(m_Cmd)) {
             m_Res = new CDBL_StatusResult(m_Cmd);
+            m_RowCount= 1;
             return Create_Result(*m_Res);
         }
     }
@@ -227,7 +234,7 @@ bool CDBL_RPCCmd::HasFailed() const
 
 int CDBL_RPCCmd::RowCount() const
 {
-    return m_RowCount;
+    return (m_RowCount < 0)? DBCOUNT(m_Cmd) : m_RowCount;
 }
 
 
@@ -388,6 +395,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/07/22 20:02:59  soussov
+ * fixes the RowCount calculations
+ *
  * Revision 1.8  2002/07/02 16:05:50  soussov
  * splitting Sybase dblib and MS dblib
  *
