@@ -296,11 +296,13 @@ BlastHSPResults* BLAST_ResultsFree(BlastHSPResults* results);
   * a single subject sequence.
   *
   *   BEFORE THIS CALL      AFTER THIS CALL
-  *  - many HSP lists       - one HSP list
-  *  - each list has the    - each HSP has its own
-  *    same subject OID       subject OID
-  *  - each list has a      - the list has one context
-  *    different context
+  *  - many HitLists        - one HitList
+  *  - each HitList has     - the HitList has
+  *    one HSPList            many HSPLists
+  *  - each HSPList has     - each HSPList has its
+  *    subject OID zero       own subject OID
+  *  - each HSPList has a   - all HSPlists have
+  *    different context      context zero
   *
   * @param init_results The input result list [in]
   * @param results The modified results (in new format) [out]
