@@ -134,6 +134,7 @@ CValidError_imp::CValidError_imp
       m_RemoteFetch((options & CValidator::eVal_remote_fetch) != 0),
       m_FarFetchMRNAproducts((options & CValidator::eVal_far_fetch_mrna_products) != 0),
       m_FarFetchCDSproducts((options & CValidator::eVal_far_fetch_cds_products) != 0),
+      m_LocusTagGeneralMatch((options & CValidator::eVal_locus_tag_general_match) != 0),
       m_PerfBottlenecks((options & CValidator::eVal_perf_bottlenecks) != 0),
       m_IsStandaloneAnnot(false),
       m_NoPubs(false),
@@ -2557,6 +2558,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/09/21 18:36:30  shomrat
+* initialization for m_LocusTagGeneralMatch
+*
 * Revision 1.59  2004/09/21 15:47:37  shomrat
 * Fixed page numbering test
 *
