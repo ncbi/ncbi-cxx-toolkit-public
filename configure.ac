@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.214 2003/09/04 19:08:24 ucko Exp $
+#  $Id: configure.ac,v 1.215 2003/09/08 18:45:20 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2317,6 +2317,32 @@ if test "$with_bdb" != "no" ; then
           [ncbi_cv_lib_berkeley_db=yes], [ncbi_cv_lib_berkeley_db=no])])
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
       with_bdb="no"
+   else
+      AC_CACHE_CHECK([Berkeley DB version (4.1 or newer required)],
+         ncbi_cv_lib_berkeley_db_version,
+         [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
+#include <db.h>
+ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
+          ]])])
+          eval "$ac_cpp conftest.$ac_ext" 2>&AS_MESSAGE_LOG_FD \
+             | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+          . ./conftest.sh
+          rm -f contest*
+         ])
+      case "$ncbi_cv_lib_berkeley_db_version" in
+         1.* | 2.* | 3.* | 4.0.* )
+            AC_MSG_WARN(
+               [Your Berkeley DB version is too old to use.  (Needed 4.1.)])
+            with_bdb=no
+            ;;
+         4.1.* ) ;;
+         * )
+            AC_MSG_WARN(
+               [Untested Berkeley DB version; may prove incompatible.])
+            AC_MSG_WARN(
+               [If so, please re-run this script with the flag --without-bdb.])
+            ;;
+      esac
    fi
 fi
 if test "$with_bdb" = "no" ; then

@@ -10151,6 +10151,46 @@ echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db" >&5
 echo "${ECHO_T}$ncbi_cv_lib_berkeley_db" >&6
    if test "$ncbi_cv_lib_berkeley_db" = "no"; then
       with_bdb="no"
+   else
+      echo "$as_me:$LINENO: checking Berkeley DB version (4.1 or newer required)" >&5
+echo $ECHO_N "checking Berkeley DB version (4.1 or newer required)... $ECHO_C" >&6
+if test "${ncbi_cv_lib_berkeley_db_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#include <db.h>
+ncbi_cv_lib_berkeley_db_version=DB_VERSION_MAJOR.DB_VERSION_MINOR.DB_VERSION_PATCH
+
+_ACEOF
+          eval "$ac_cpp conftest.$ac_ext" 2>&5 \
+             | grep '^ncbi_cv_' | tr -d ' 	' > conftest.sh
+          . ./conftest.sh
+          rm -f contest*
+
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_berkeley_db_version" >&5
+echo "${ECHO_T}$ncbi_cv_lib_berkeley_db_version" >&6
+      case "$ncbi_cv_lib_berkeley_db_version" in
+         1.* | 2.* | 3.* | 4.0.* )
+            { echo "$as_me:$LINENO: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.1.)" >&5
+echo "$as_me: WARNING: Your Berkeley DB version is too old to use.  (Needed 4.1.)" >&2;}
+            with_bdb=no
+            ;;
+         4.1.* ) ;;
+         * )
+            { echo "$as_me:$LINENO: WARNING: Untested Berkeley DB version; may prove incompatible." >&5
+echo "$as_me: WARNING: Untested Berkeley DB version; may prove incompatible." >&2;}
+            { echo "$as_me:$LINENO: WARNING: If so, please re-run this script with the flag --without-bdb." >&5
+echo "$as_me: WARNING: If so, please re-run this script with the flag --without-bdb." >&2;}
+            ;;
+      esac
    fi
 fi
 if test "$with_bdb" = "no" ; then
