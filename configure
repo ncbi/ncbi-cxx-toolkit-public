@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe set_P THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CCACHE TAIL AMQ CXXCPP EGREP Z_INCLUDE Z_LIBS BZ2_INCLUDE BZ2_LIBS PCRE_INCLUDE PCRE_LIBS FTDS8_INCLUDE FTDS8_LIBS FTDS8_LIB FTDS_INCLUDE FTDS_LIBS FTDS_LIB freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS LIBXML_INCLUDE LIBXML_LIBS SQLITE_INCLUDE SQLITE_LIBS OECHEM_INCLUDE OECHEM_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK TAIL_N FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS GCCPCH D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm serial bdb dbapi objects gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS Z_LIB BZ2_LIB PCREPOSIX_LIBS PCRE_LIB SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_INCLUDE OSMESA_LIBS GLUT_INCLUDE GLUT_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_LIBS_IMAGES FLTK_LIBS_ALL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB sss ssssrv stax NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB geo SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER AR_FILTER LINK_FILTER CC_WRAPPER CXX_WRAPPER AR_WRAPPER LINK_WRAPPER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1019,24 +1019,23 @@ case $srcdir in
     fi ;;
   [\\/]* | ?:[\\/]* )  # Absolute path.
     ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir ;;
+    ac_top_srcdir=$srcdir
+    ac_abs_srcdir=$real_srcdir$ac_dir_suffix;
+    ac_abs_top_srcdir=$real_srcdir ;;
   *) # Relative path.
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_builddir$srcdir ;;
+    ac_top_srcdir=$ac_top_builddir$srcdir
+    ac_abs_srcdir=$ac_top_builddir$real_srcdir$ac_dir_suffix
+    ac_abs_top_srcdir=$ac_top_builddir$real_srcdir ;;
 esac
 # Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-if (set -P 2>/dev/null); then
-    set_P='set -P'
-else
-    set_P=:
-fi
-ac_abs_builddir=`$set_P; cd "$ac_dir" && $smart_pwd`
-ac_abs_top_builddir=`$set_P; cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
+ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
 #ac_builddir=$ac_top_builddir/build # Much more useful than "."!
 ac_builddir=$builddir
-ac_abs_srcdir=`$set_P; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`$set_P; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+#ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+#ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
     cd $ac_dir
     # Check for guested configure; otherwise get Cygnus style configure.
@@ -5165,6 +5164,7 @@ case "${srcdir}" in
    ;;
    * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
 esac
+real_srcdir=$srcdir
 if test -n "$with_fake_root"; then
    srcdir=$build_root/..
 fi
@@ -15227,7 +15227,7 @@ if test "$with_ftds" != "no" ; then
    fi
    if test "$with_ftds" = 8 ; then
       FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
-      if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
+      if test -f ${real_srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
          FTDS8_LIB="sybdb_ftds${STATIC} tds_ftds${STATIC}"
          FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
          FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
@@ -17834,7 +17834,7 @@ case "$host_os:$compiler:$compiler_version" in
 esac
 
 if test "$with_sss" != "no" ; then
-   local_sss=${srcdir}/src/internal/sss
+   local_sss=${real_srcdir}/src/internal/sss
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
        -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
@@ -18036,8 +18036,8 @@ fi
 if test "$with_geo" != "no" ; then
    local_geo='<internal/geo>'
    if test "${with_included_geo-no}" = "yes" \
-       -a -f "${srcdir}/include/internal/geo/geodb/geo_api.hpp" \
-       -a -f "${srcdir}/src/internal/geo/geodb/utils.cpp"; then
+       -a -f "${real_srcdir}/include/internal/geo/geodb/geo_api.hpp" \
+       -a -f "${real_srcdir}/src/internal/geo/geodb/utils.cpp"; then
       with_included_geo=yes
       NCBI_GEO_PATH=$local_geo
       NCBI_GEO_INCLUDE='$(includedir)/internal/geo/geodb -I$(includedir0)/internal/geo/geodb'
@@ -18093,7 +18093,7 @@ echo $ECHO_N "checking for the NCBI GEO DB library... $ECHO_C" >&6
 if test "${ncbi_cv_lib_geodb+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$srcdir/include $orig_CPPFLAGS"
+  CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$real_srcdir/include $orig_CPPFLAGS"
       LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
       cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -19425,7 +19425,7 @@ local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
 
 for fff in $local_lbsm ; do
-   if test ! -f ${srcdir}/src/connect/${fff}.c ; then
+   if test ! -f ${real_srcdir}/src/connect/${fff}.c ; then
       if test "$with_local_lbsm" = "yes" ; then
          { { echo "$as_me:$LINENO: error: \"--with-local-lbsm:  src/connect/${fff}.c is  missing\"" >&5
 echo "$as_me: error: \"--with-local-lbsm:  src/connect/${fff}.c is  missing\"" >&2;}
@@ -19455,8 +19455,8 @@ if test "$with_serial" = "no" ; then
    NoConfProjects="$NoConfProjects serial"
 fi
 
-if test ! -f ${srcdir}/src/serial/Makefile.in  -o  \
-        ! -d ${srcdir}/include/serial ; then
+if test ! -f ${real_srcdir}/src/serial/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/serial ; then
    if test "$with_serial" = "yes" ; then
       { { echo "$as_me:$LINENO: error: \"--with-serial:  SERIAL sources are missing\"" >&5
 echo "$as_me: error: \"--with-serial:  SERIAL sources are missing\"" >&2;}
@@ -19480,8 +19480,8 @@ if test "$with_objects" = "no" ; then
    NoConfProjects="$NoConfProjects objects"
 fi
 
-if test ! -f ${srcdir}/src/objects/Makefile.in  -o  \
-        ! -d ${srcdir}/include/objects ; then
+if test ! -f ${real_srcdir}/src/objects/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/objects ; then
    if test "$with_objects" = "yes" ; then
       { { echo "$as_me:$LINENO: error: \"--with-objects:  OBJECTS sources are missing\"" >&5
 echo "$as_me: error: \"--with-objects:  OBJECTS sources are missing\"" >&2;}
@@ -19505,7 +19505,7 @@ if test "$with_bdb" = "no" ; then
    NoConfProjects="$NoConfProjects bdb"
 fi
 
-if test ! -f ${srcdir}/src/bdb/Makefile.in  -o  ! -d ${srcdir}/include/bdb
+if test ! -f ${real_srcdir}/src/bdb/Makefile.in  -o  ! -d ${real_srcdir}/include/bdb
 then
    if test "$with_bdb" = "yes" ; then
       { { echo "$as_me:$LINENO: error: \"--with-bdb:  BDB sources are missing\"" >&5
@@ -19530,8 +19530,8 @@ if test "$with_dbapi" = "no" ; then
    NoConfProjects="$NoConfProjects dbapi"
 fi
 
-if test ! -f ${srcdir}/src/dbapi/Makefile.in  -o  \
-        ! -d ${srcdir}/include/dbapi ; then
+if test ! -f ${real_srcdir}/src/dbapi/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/dbapi ; then
    if test "$with_dbapi" = "yes" ; then
       { { echo "$as_me:$LINENO: error: \"--with-dbapi:  DBAPI sources are missing\"" >&5
 echo "$as_me: error: \"--with-dbapi:  DBAPI sources are missing\"" >&2;}
@@ -19555,8 +19555,8 @@ if test "$with_app" = "no" ; then
    NoConfProjects="$NoConfProjects app"
 fi
 
-if test ! -f ${srcdir}/src/app/Makefile.in  -o  \
-        ! -d ${srcdir}/include/app ; then
+if test ! -f ${real_srcdir}/src/app/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/app ; then
    if test "$with_app" = "yes" ; then
       { { echo "$as_me:$LINENO: error: \"--with-app:  APP sources are missing\"" >&5
 echo "$as_me: error: \"--with-app:  APP sources are missing\"" >&2;}
@@ -19580,8 +19580,8 @@ if test "$with_ctools" = "no" ; then
    NoConfProjects="$NoConfProjects ctools"
 fi
 
-if test ! -f ${srcdir}/src/ctools/Makefile.in  -o  \
-        ! -d ${srcdir}/include/ctools  -o  "$with_ncbi_c" = "no"
+if test ! -f ${real_srcdir}/src/ctools/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/ctools  -o  "$with_ncbi_c" = "no"
 then
    if test "$with_ctools" = "yes" ; then
       if test "$with_ncbi_c" = "no" ; then
@@ -19610,7 +19610,7 @@ if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
-if test ! -f ${srcdir}/src/gui/Makefile.in  -o  ! -d ${srcdir}/include/gui \
+if test ! -f ${real_srcdir}/src/gui/Makefile.in  -o  ! -d ${real_srcdir}/include/gui \
     -o  "$with_fltk" = "no"
 then
    if test "$with_gui" = "yes" ; then
@@ -19642,7 +19642,7 @@ if test "$with_algo" = "no" ; then
    NoConfProjects="$NoConfProjects algo"
 fi
 
-if test ! -f ${srcdir}/src/algo/Makefile.in  -o  ! -d ${srcdir}/include/algo
+if test ! -f ${real_srcdir}/src/algo/Makefile.in  -o  ! -d ${real_srcdir}/include/algo
 then
    if test "$with_algo" = "yes" ; then
       { { echo "$as_me:$LINENO: error: \"--with-algo:  ALGO sources are missing\"" >&5
@@ -19663,8 +19663,8 @@ fi
 
 ## `internal' project cluster
 
-if test "$with_internal" = "no"  -o  ! -f ${srcdir}/src/internal/Makefile.in \
-    -o  ! -d ${srcdir}/include/internal; then
+if test "$with_internal" = "no"  -o  ! -f ${real_srcdir}/src/internal/Makefile.in \
+    -o  ! -d ${real_srcdir}/include/internal; then
    NoConfProjects="$NoConfProjects internal"
    internal=
 else
@@ -19822,22 +19822,17 @@ esac
 ### Compose their target counterparts
 ### Configure
 
-{ echo "$as_me:$LINENO: looking for configurables below $srcdir..." >&5
-echo "$as_me: looking for configurables below $srcdir..." >&6;}
+{ echo "$as_me:$LINENO: looking for configurables below $real_srcdir..." >&5
+echo "$as_me: looking for configurables below $real_srcdir..." >&6;}
 excl_file="`pwd`/config.tmp.$$"
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
-if (set -P 2>/dev/null); then
-    set_P='set -P'
-else
-    set_P=:
-fi
-configurables=`$set_P; cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
-  { { echo "$as_me:$LINENO: error: cannot find any configurables below \"${srcdir}\"!" >&5
-echo "$as_me: error: cannot find any configurables below \"${srcdir}\"!" >&2;}
+  { { echo "$as_me:$LINENO: error: cannot find any configurables below \"${real_srcdir}\"!" >&5
+echo "$as_me: error: cannot find any configurables below \"${real_srcdir}\"!" >&2;}
    { (exit 1); exit 1; }; }
 else
   { echo "$as_me:$LINENO: ...done" >&5
@@ -19853,7 +19848,7 @@ eval ncbi_runpath=`echo $pure_runpath`
 
 
 
-
+#AC_SUBST(real_srcdir)
 
 
 
@@ -20594,6 +20589,7 @@ WithoutProjects='$WithoutProjects'
 with_extra_action='$with_extra_action'
 with_projects='$with_projects'
 smart_pwd='$smart_pwd'
+real_srcdir='$real_srcdir'
 
 
 _ACEOF
@@ -20826,7 +20822,6 @@ s,@f_outlib@,$f_outlib,;t t
 s,@f_libpath@,$f_libpath,;t t
 s,@f_runpath@,$f_runpath,;t t
 s,@f_outexe@,$f_outexe,;t t
-s,@set_P@,$set_P,;t t
 s,@THREAD_LIBS@,$THREAD_LIBS,;t t
 s,@NETWORK_LIBS@,$NETWORK_LIBS,;t t
 s,@NETWORK_PURE_LIBS@,$NETWORK_PURE_LIBS,;t t
@@ -21051,24 +21046,23 @@ case $srcdir in
     fi ;;
   [\\/]* | ?:[\\/]* )  # Absolute path.
     ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir ;;
+    ac_top_srcdir=$srcdir
+    ac_abs_srcdir=$real_srcdir$ac_dir_suffix;
+    ac_abs_top_srcdir=$real_srcdir ;;
   *) # Relative path.
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_builddir$srcdir ;;
+    ac_top_srcdir=$ac_top_builddir$srcdir
+    ac_abs_srcdir=$ac_top_builddir$real_srcdir$ac_dir_suffix
+    ac_abs_top_srcdir=$ac_top_builddir$real_srcdir ;;
 esac
 # Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-if (set -P 2>/dev/null); then
-    set_P='set -P'
-else
-    set_P=:
-fi
-ac_abs_builddir=`$set_P; cd "$ac_dir" && $smart_pwd`
-ac_abs_top_builddir=`$set_P; cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
+ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
 #ac_builddir=$ac_top_builddir/build # Much more useful than "."!
 ac_builddir=$builddir
-ac_abs_srcdir=`$set_P; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`$set_P; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+#ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+#ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
 
   case $INSTALL in
@@ -21426,24 +21420,23 @@ case $srcdir in
     fi ;;
   [\\/]* | ?:[\\/]* )  # Absolute path.
     ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir ;;
+    ac_top_srcdir=$srcdir
+    ac_abs_srcdir=$real_srcdir$ac_dir_suffix;
+    ac_abs_top_srcdir=$real_srcdir ;;
   *) # Relative path.
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_builddir$srcdir ;;
+    ac_top_srcdir=$ac_top_builddir$srcdir
+    ac_abs_srcdir=$ac_top_builddir$real_srcdir$ac_dir_suffix
+    ac_abs_top_srcdir=$ac_top_builddir$real_srcdir ;;
 esac
 # Don't blindly perform a `cd "$ac_dir"/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-if (set -P 2>/dev/null); then
-    set_P='set -P'
-else
-    set_P=:
-fi
-ac_abs_builddir=`$set_P; cd "$ac_dir" && $smart_pwd`
-ac_abs_top_builddir=`$set_P; cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
+ac_abs_builddir=`cd "$ac_dir" && $smart_pwd`
+ac_abs_top_builddir=`cd "$ac_dir" && cd ${ac_top_builddir}. && $smart_pwd`
 #ac_builddir=$ac_top_builddir/build # Much more useful than "."!
 ac_builddir=$builddir
-ac_abs_srcdir=`$set_P; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`$set_P; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+#ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+#ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 
 
   { echo "$as_me:$LINENO: executing $ac_dest commands" >&5

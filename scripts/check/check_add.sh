@@ -24,8 +24,6 @@
 #
 ###########################################################################
 
-(set -P 2>/dev/null)  &&  set -P
-
 # Parameters
 x_out=$CHECK_RUN_LIST
 x_srcdir=`(cd "$1"; pwd)`

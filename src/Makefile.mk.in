@@ -19,10 +19,11 @@
 
 ### Configurable paths
 
-top_srcdir  = @top_srcdir@
-build_root  = @build_root@
-builddir    = @builddir@
-status_dir  = @status_dir@
+top_srcdir     = @top_srcdir@
+abs_top_srcdir = @abs_top_srcdir@
+build_root     = @build_root@
+builddir       = @builddir@
+status_dir     = @status_dir@
 
 
 ### Other paths

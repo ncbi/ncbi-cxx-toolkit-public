@@ -8,4 +8,4 @@
 builddir=@builddir@
 export builddir
 
-exec @top_srcdir@/scripts/reconfigure.sh "$@"
+exec @abs_top_srcdir@/scripts/reconfigure.sh "$@"

@@ -4,8 +4,6 @@
 # GBENCH installation script.
 # Author: Anatoliy Kuznetsov, Denis Vakatov
 
-(set -P 2>/dev/null)  &&  set -P
-
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`

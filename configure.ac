@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.309 2004/07/19 17:00:30 ucko Exp $
+#  $Id: configure.ac,v 1.310 2004/07/20 22:35:11 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1538,6 +1538,7 @@ case "${srcdir}" in
    ;;
    * ) srcdir="`(cd ${srcdir}; $smart_pwd)`" ;;
 esac
+real_srcdir=$srcdir
 if test -n "$with_fake_root"; then
    srcdir=$build_root/..
 fi
@@ -2529,7 +2530,7 @@ if test "$with_ftds" != "no" ; then
    fi
    if test "$with_ftds" = 8 ; then
       FTDS8_LOCAL_PATH="dbapi/driver/ftds8/freetds"
-      if test -f ${srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
+      if test -f ${real_srcdir}/src/$FTDS8_LOCAL_PATH/Makefile.in ; then
          FTDS8_LIB="sybdb_ftds${STATIC} tds_ftds${STATIC}"
          FTDS8_PATH="<$FTDS8_LOCAL_PATH>"
          FTDS8_INCLUDE="-I\$(includedir)/$FTDS8_LOCAL_PATH -I\$(includedir0)/$FTDS8_LOCAL_PATH"
@@ -3076,7 +3077,7 @@ case "$host_os:$compiler:$compiler_version" in
 esac
 
 if test "$with_sss" != "no" ; then
-   local_sss=${srcdir}/src/internal/sss
+   local_sss=${real_srcdir}/src/internal/sss
    if test "${with_included_sss-no}" = "yes" \
        -a -f "$local_sss/utils/sssdebug.hpp" \
        -a -f "${local_sss}srv/cli/sssconnection.cpp"; then
@@ -3190,8 +3191,8 @@ fi
 if test "$with_geo" != "no" ; then
    local_geo='<internal/geo>'
    if test "${with_included_geo-no}" = "yes" \
-       -a -f "${srcdir}/include/internal/geo/geodb/geo_api.hpp" \
-       -a -f "${srcdir}/src/internal/geo/geodb/utils.cpp"; then
+       -a -f "${real_srcdir}/include/internal/geo/geodb/geo_api.hpp" \
+       -a -f "${real_srcdir}/src/internal/geo/geodb/utils.cpp"; then
       with_included_geo=yes
       NCBI_GEO_PATH=$local_geo
       NCBI_GEO_INCLUDE='$(includedir)/internal/geo/geodb -I$(includedir0)/internal/geo/geodb'
@@ -3239,7 +3240,7 @@ else
       *)         test "$with_included_sss" = yes  &&  ncbi_cv_lib_geodb=yes ;;
    esac
    AC_CACHE_CHECK([for the NCBI GEO DB library], ncbi_cv_lib_geodb,
-     [CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$srcdir/include $orig_CPPFLAGS"
+     [CPPFLAGS="$NCBI_GEO_INCLUDE $NCBI_SSS_INCLUDE $SYBASE_INCLUDE -I$real_srcdir/include $orig_CPPFLAGS"
       LIBS="$NCBI_GEO_LIBPATH $LIBGEODB $NCBI_SSS_LIBPATH $LIBSSSDB $LIBSSSUTILS $SYBASE_LIBS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
       AC_LINK_IFELSE([AC_LANG_PROGRAM(
          [[#define FORWARDING_NCBICONF_H
@@ -3521,7 +3522,7 @@ local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
 
 for fff in $local_lbsm ; do
-   if test ! -f ${srcdir}/src/connect/${fff}.c ; then
+   if test ! -f ${real_srcdir}/src/connect/${fff}.c ; then
       if test "$with_local_lbsm" = "yes" ; then
          AC_MSG_ERROR(["--with-local-lbsm:  src/connect/${fff}.c is  missing"])
       fi
@@ -3546,8 +3547,8 @@ if test "$with_serial" = "no" ; then
    NoConfProjects="$NoConfProjects serial"
 fi
 
-if test ! -f ${srcdir}/src/serial/Makefile.in  -o  \
-        ! -d ${srcdir}/include/serial ; then
+if test ! -f ${real_srcdir}/src/serial/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/serial ; then
    if test "$with_serial" = "yes" ; then
       AC_MSG_ERROR(["--with-serial:  SERIAL sources are missing"])
    fi
@@ -3569,8 +3570,8 @@ if test "$with_objects" = "no" ; then
    NoConfProjects="$NoConfProjects objects"
 fi
 
-if test ! -f ${srcdir}/src/objects/Makefile.in  -o  \
-        ! -d ${srcdir}/include/objects ; then
+if test ! -f ${real_srcdir}/src/objects/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/objects ; then
    if test "$with_objects" = "yes" ; then
       AC_MSG_ERROR(["--with-objects:  OBJECTS sources are missing"])
    fi
@@ -3592,7 +3593,7 @@ if test "$with_bdb" = "no" ; then
    NoConfProjects="$NoConfProjects bdb"
 fi
 
-if test ! -f ${srcdir}/src/bdb/Makefile.in  -o  ! -d ${srcdir}/include/bdb
+if test ! -f ${real_srcdir}/src/bdb/Makefile.in  -o  ! -d ${real_srcdir}/include/bdb
 then
    if test "$with_bdb" = "yes" ; then
       AC_MSG_ERROR(["--with-bdb:  BDB sources are missing"])
@@ -3615,8 +3616,8 @@ if test "$with_dbapi" = "no" ; then
    NoConfProjects="$NoConfProjects dbapi"
 fi
 
-if test ! -f ${srcdir}/src/dbapi/Makefile.in  -o  \
-        ! -d ${srcdir}/include/dbapi ; then
+if test ! -f ${real_srcdir}/src/dbapi/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/dbapi ; then
    if test "$with_dbapi" = "yes" ; then
       AC_MSG_ERROR(["--with-dbapi:  DBAPI sources are missing"])
    fi
@@ -3638,8 +3639,8 @@ if test "$with_app" = "no" ; then
    NoConfProjects="$NoConfProjects app"
 fi
 
-if test ! -f ${srcdir}/src/app/Makefile.in  -o  \
-        ! -d ${srcdir}/include/app ; then
+if test ! -f ${real_srcdir}/src/app/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/app ; then
    if test "$with_app" = "yes" ; then
       AC_MSG_ERROR(["--with-app:  APP sources are missing"])
    fi
@@ -3661,8 +3662,8 @@ if test "$with_ctools" = "no" ; then
    NoConfProjects="$NoConfProjects ctools"
 fi
 
-if test ! -f ${srcdir}/src/ctools/Makefile.in  -o  \
-        ! -d ${srcdir}/include/ctools  -o  "$with_ncbi_c" = "no"
+if test ! -f ${real_srcdir}/src/ctools/Makefile.in  -o  \
+        ! -d ${real_srcdir}/include/ctools  -o  "$with_ncbi_c" = "no"
 then
    if test "$with_ctools" = "yes" ; then
       if test "$with_ncbi_c" = "no" ; then
@@ -3687,7 +3688,7 @@ if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
-if test ! -f ${srcdir}/src/gui/Makefile.in  -o  ! -d ${srcdir}/include/gui \
+if test ! -f ${real_srcdir}/src/gui/Makefile.in  -o  ! -d ${real_srcdir}/include/gui \
     -o  "$with_fltk" = "no"
 then
    if test "$with_gui" = "yes" ; then
@@ -3715,7 +3716,7 @@ if test "$with_algo" = "no" ; then
    NoConfProjects="$NoConfProjects algo"
 fi
 
-if test ! -f ${srcdir}/src/algo/Makefile.in  -o  ! -d ${srcdir}/include/algo
+if test ! -f ${real_srcdir}/src/algo/Makefile.in  -o  ! -d ${real_srcdir}/include/algo
 then
    if test "$with_algo" = "yes" ; then
       AC_MSG_ERROR(["--with-algo:  ALGO sources are missing"])
@@ -3734,8 +3735,8 @@ fi
 
 ## `internal' project cluster
 
-if test "$with_internal" = "no"  -o  ! -f ${srcdir}/src/internal/Makefile.in \
-    -o  ! -d ${srcdir}/include/internal; then
+if test "$with_internal" = "no"  -o  ! -f ${real_srcdir}/src/internal/Makefile.in \
+    -o  ! -d ${real_srcdir}/include/internal; then
    NoConfProjects="$NoConfProjects internal"
    internal=
 else
@@ -3882,22 +3883,17 @@ esac
 ### Compose their target counterparts
 ### Configure
 
-AC_MSG_NOTICE([looking for configurables below $srcdir...])
+AC_MSG_NOTICE([looking for configurables below $real_srcdir...])
 excl_file="`pwd`/config.tmp.$$"
 changequote(<<, >>)dnl
 echo "NoConfProjects $NoConfProjects" | sed 's% \([^ ][^ ]*\)%\
 ^\\./\1/%g' > $excl_file
 changequote([, ])dnl
-if (set -P 2>/dev/null); then
-    set_P='set -P'
-else
-    set_P=:
-fi
-configurables=`$set_P; cd "${srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
+configurables=`cd "${real_srcdir}/src"  &&  find . -name '*.in' -print | $EGREP -v -f $excl_file | sed "s%\.\(.*\)\.in%$builddir\1:\./src\1\.in%g"`
 rm $excl_file
 
 if test -z "$configurables" ; then
-  AC_MSG_ERROR([cannot find any configurables below "${srcdir}"!])
+  AC_MSG_ERROR([cannot find any configurables below "${real_srcdir}"!])
 else
   AC_MSG_NOTICE([...done])
 fi
@@ -3912,6 +3908,7 @@ AC_SUBST(build_root)
 
 AC_SUBST(top_srcdir)
 AC_SUBST(srcdir)
+#AC_SUBST(real_srcdir)
 AC_SUBST(includedir)
 AC_SUBST(status_dir)
 AC_SUBST(builddir)
@@ -3982,7 +3979,6 @@ AC_SUBST(f_outlib)
 AC_SUBST(f_libpath)
 AC_SUBST(f_runpath)
 AC_SUBST(f_outexe)
-AC_SUBST(set_P)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NETWORK_LIBS)
@@ -4224,6 +4220,7 @@ WithoutProjects='$WithoutProjects'
 with_extra_action='$with_extra_action'
 with_projects='$with_projects'
 smart_pwd='$smart_pwd'
+real_srcdir='$real_srcdir'
 ])
 
 AC_OUTPUT

@@ -1,7 +1,5 @@
-# autoconf 2.53+'s version of this breaks our (unorthodox) usage of
-# CONFIG_FILES and certain substvars; substitute a tame version.
-# (Also, we favor amq -w over pwd because we don't want to end up with
-# /net paths.)
+# Hacked up in various ways, since Autoconf's version doesn't quite
+# suit our (elaborate) needs.
 m4_define([_AC_SRCPATHS],
 [#ac_builddir=. # Useless!
 dnl Base source directories on path to *input* file.
@@ -29,24 +27,23 @@ case $srcdir in
     fi ;;
   [[\\/]]* | ?:[[\\/]]* )  # Absolute path.
     ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir ;;
+    ac_top_srcdir=$srcdir
+    ac_abs_srcdir=$real_srcdir$ac_dir_suffix;
+    ac_abs_top_srcdir=$real_srcdir ;;
   *) # Relative path.
     ac_srcdir=$ac_top_builddir$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_builddir$srcdir ;;
+    ac_top_srcdir=$ac_top_builddir$srcdir
+    ac_abs_srcdir=$ac_top_builddir$real_srcdir$ac_dir_suffix
+    ac_abs_top_srcdir=$ac_top_builddir$real_srcdir ;;
 esac
 # Don't blindly perform a `cd $1/$ac_foo && $smart_pwd` since $ac_foo can be
 # absolute.
-if (set -P 2>/dev/null); then
-    set_P='set -P'
-else
-    set_P=:
-fi
-ac_abs_builddir=`$set_P; cd $1 && $smart_pwd`
-ac_abs_top_builddir=`$set_P; cd $1 && cd ${ac_top_builddir}. && $smart_pwd`
+ac_abs_builddir=`cd $1 && $smart_pwd`
+ac_abs_top_builddir=`cd $1 && cd ${ac_top_builddir}. && $smart_pwd`
 #ac_builddir=$ac_top_builddir/build # Much more useful than "."!
 ac_builddir=$builddir
-ac_abs_srcdir=`$set_P; cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
-ac_abs_top_srcdir=`$set_P; cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
+#ac_abs_srcdir=`cd $ac_dir_in && cd $ac_srcdir && $smart_pwd`
+#ac_abs_top_srcdir=`cd $ac_dir_in && cd $ac_top_srcdir && $smart_pwd`
 ])# _AC_SRCPATHS
 
 

@@ -11,5 +11,6 @@ SUB_PROJ = omssa tinyseq general biblio medline pub pubmed \
            cdd cn3d scoremat ncbimime access objprt docsum taxon1 mim \
            entrezgene blast blastdb pcsubstance pcassay
 
-srcdir = @srcdir@
+# Use abs_srcdir here to avoid trouble from fake-root setups...
+srcdir = @abs_srcdir@
 include @builddir@/Makefile.meta

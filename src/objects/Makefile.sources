@@ -5,7 +5,6 @@
 include $(builddir)/Makefile.mk
 
 all all_r all_p:
-	if (set -P 2>/dev/null); then set -P; else :; fi; \
-	    cd "$(srcdir)" || exit 2; $(MAKE) all_files
+	cd "$(srcdir)" || exit 2; $(MAKE) all_files
 
 clean clean_r clean_p purge purge_r purge_p:
