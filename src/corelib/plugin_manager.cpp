@@ -34,6 +34,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/plugin_manager.hpp>
 #include <corelib/ncbidll.hpp>
+#include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -296,11 +297,242 @@ CDllResolver* CPluginManager_DllResolver::GetCreateDllResolver()
 }
 
 
+/////////////////////////////////////////////////////////////////////////////
+//  PluginManager_ConvertRegToTree
+//
+
+
+static const string kSubNode    = ".SubNode";
+static const string kSubSection = ".SubSection";
+static const string kNodeName   = ".NodeName";
+
+
+
+
+/// @internal
+void PluginManager_ConvertSubNodes(const CNcbiRegistry&     reg,
+                                   const list<string>&      sub_nodes,
+                                   TPluginManagerParamTree* node);
+/// @internal
+void PluginManager_SplitConvertSubNodes(const CNcbiRegistry&     reg,
+                                        const string&            sub_nodes,
+                                        TPluginManagerParamTree* node);
+
+/// @internal
+static
+void s_List2Set(const list<string>& src, set<string>* dst)
+{
+    ITERATE(list<string>, it, src) {
+        dst->insert(*it);
+    }
+}
+
+
+static 
+bool s_IsSubNode(const string& str)
+{
+    const string* aliases[] = { &kSubNode, &kSubSection };
+
+    for (int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
+        const string& element_name = *aliases[i];
+        if (NStr::CompareNocase(element_name, str) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static
+void s_GetSubNodes(const CNcbiRegistry&   reg, 
+                   const string&          section, 
+                   set<string>*           dst)
+{
+    const string* aliases[] = { &kSubNode, &kSubSection };
+
+    for (int i = 0; i < (sizeof(aliases)/sizeof(aliases[0])); ++i) {
+        const string& element_name = *aliases[i];
+        const string& element = reg.Get(section, element_name);
+        if (!element.empty()) {
+            list<string> sub_node_list;
+            NStr::Split(element, ",; ", sub_node_list);
+            s_List2Set(sub_node_list, dst);
+        }
+    }
+}
+
+
+/// @internal
+static
+void PluginManager_ConvertSubNode(const CNcbiRegistry&      reg,
+                                  const string&             sub_node_name,
+                                  TPluginManagerParamTree*  node)
+{
+    const string& section_name = sub_node_name;
+    const string& alias_name = reg.Get(section_name, kNodeName);
+
+    string node_name(alias_name.empty() ? section_name : alias_name);
+
+    // Check if this node is an ancestor (circular reference)
+
+    TPluginManagerParamTree* parent_node =  node;
+    while (parent_node) {
+        const string& id = parent_node->GetId();
+        if (NStr::CompareNocase(node_name, id) == 0) {
+            _TRACE(Error << "PluginManger: circular section reference " 
+                            << node->GetId() << "->" << node_name);
+            return; // skip the offending subnode
+        }
+        parent_node = (TPluginManagerParamTree*)parent_node->GetParent();
+
+    } // while
+
+    list<string> entries;
+    reg.EnumerateEntries(section_name, &entries);
+    if (entries.empty())
+        return;
+
+
+    TPluginManagerParamTree* sub_node_ptr;
+    {{
+    auto_ptr<TPluginManagerParamTree> sub_node(new TPluginManagerParamTree);
+    sub_node->SetId(node_name);
+    sub_node_ptr = sub_node.release();
+    node->AddNode(sub_node_ptr);
+    }}
+
+    // convert elements
+
+    ITERATE(list<string>, eit, entries) {
+        const string& element_name = *eit;
+
+        if (NStr::CompareNocase(element_name, kNodeName) == 0) {
+            continue;
+        }
+        const string& element_value = reg.Get(section_name, element_name);
+
+        if (s_IsSubNode(element_name)) {
+            PluginManager_SplitConvertSubNodes(reg, element_value, sub_node_ptr);
+            continue;
+        }
+
+        sub_node_ptr->AddNode(element_name, element_value);
+
+    } // ITERATE eit
+
+}
+
+/// @internal
+static
+void PluginManager_SplitConvertSubNodes(const CNcbiRegistry&     reg,
+                                        const string&            sub_nodes,
+                                        TPluginManagerParamTree* node)
+{
+    list<string> sub_node_list;
+    NStr::Split(sub_nodes, ",; ", sub_node_list);
+
+    PluginManager_ConvertSubNodes(reg, sub_node_list, node);
+}
+
+/// @internal
+static
+void PluginManager_ConvertSubNodes(const CNcbiRegistry&     reg,
+                                   const list<string>&      sub_nodes,
+                                   TPluginManagerParamTree* node)
+{
+    _ASSERT(node);
+
+    ITERATE(list<string>, it, sub_nodes) {
+        const string& sub_node = *it;
+        PluginManager_ConvertSubNode(reg, sub_node, node);
+    }
+}
+
+
+
+
+TPluginManagerParamTree* 
+PluginManager_ConvertRegToTree(const CNcbiRegistry& reg)
+{
+    auto_ptr<TPluginManagerParamTree> tree_root(new TPluginManagerParamTree);
+
+    list<string> sections;
+    reg.EnumerateSections(&sections);
+
+
+    // find the non-redundant set of top level sections
+
+    set<string> all_sections;
+    set<string> sub_sections;
+    set<string> top_sections;
+
+    s_List2Set(sections, &all_sections);
+
+    {{
+        ITERATE(list<string>, it, sections) {
+            const string& section_name = *it;
+            s_GetSubNodes(reg, section_name, &sub_sections);            
+        }
+        insert_iterator<set<string> > ins(top_sections, top_sections.begin());
+        set_difference(all_sections.begin(), all_sections.end(),
+                       sub_sections.begin(), sub_sections.end(),
+                       ins);
+    }}
+
+
+    ITERATE(set<string>, sit, top_sections) {
+        const string& section_name = *sit;
+
+        TPluginManagerParamTree* node_ptr;
+        {{
+        auto_ptr<TPluginManagerParamTree> node(new TPluginManagerParamTree);
+        node->SetId(section_name);
+
+        tree_root->AddNode(node_ptr = node.release());
+        }}
+
+        // Get section components
+
+        list<string> entries;
+        reg.EnumerateEntries(section_name, &entries);
+
+        ITERATE(list<string>, eit, entries) {
+            const string& element_name = *eit;
+            const string& element_value = reg.Get(section_name, element_name);
+            
+            if (NStr::CompareNocase(element_name, kNodeName) == 0) {
+                node_ptr->SetId(element_value);
+                continue;
+            }
+
+            if (s_IsSubNode(element_name)) {
+                const string& value = reg.Get(section_name, element_name);
+
+                PluginManager_SplitConvertSubNodes(reg,
+                                                   element_value,
+                                                   node_ptr);
+                continue;
+            }
+
+            node_ptr->AddNode(element_name, element_value);
+
+        } // ITERATE eit
+
+
+    } // ITERATE sit
+
+    return tree_root.release();
+}
+
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/07/29 13:14:57  kuznets
+ * + PluginManager_ConvertRegToTree
+ *
  * Revision 1.7  2004/06/23 17:13:56  ucko
  * Centralize plugin naming in ncbidll.hpp.
  *

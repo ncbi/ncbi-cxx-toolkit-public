@@ -159,7 +159,23 @@ CVersionInfo(ncbi::CInterfaceVersion<iface>::eMajor, \
 
 
 /// Instantiation parameters tree.
+/// 
+/// Plugin manager's intantiation model is based on class factories.
+/// Recursive class factory calls are modeled as tree, where specific
+/// subtree is responsible for CF parameters
+///
 typedef CTreePairNode<string, string>  TPluginManagerParamTree;
+
+class CNcbiRegistry;
+
+/// Reconstruct param tree from the application registry
+/// @param reg
+///     Application registry (loaded from the INI file)
+/// @return 
+///     Reconstructed tree (caller is responsible for deletion)
+///
+TPluginManagerParamTree* NCBI_XNCBI_EXPORT
+PluginManager_ConvertRegToTree(const CNcbiRegistry&  reg);
 
 
 /// IClassFactory<> --
@@ -821,6 +837,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/07/29 13:14:49  kuznets
+ * + PluginManager_ConvertRegToTree
+ *
  * Revision 1.24  2004/07/26 16:09:13  kuznets
  * GetName implementation moved to IClassFactory
  *
