@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/12/03 14:51:29  juran
+* Heed warning.
+*
 * Revision 1.22  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -148,7 +151,7 @@ struct CAnyTypeChoice {
         }
 };
 
-TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
+static TObjectPtr CreateAnyTypeChoice(TTypeInfo /*typeInfo*/)
 {
     return new CAnyTypeChoice();
 }
