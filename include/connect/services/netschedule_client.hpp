@@ -513,12 +513,13 @@ protected:
 
     struct SServiceAddress
     {
-        unsigned int     host; ///< host address in network bo
-        unsigned short   port;
+        unsigned int     host;           ///< host address in network bo
+        unsigned short   port;           ///< port (host bo)
+        time_t           conn_fail_time; ///< conn failure timestamp
 
         SServiceAddress() : host(0), port(0) {}
         SServiceAddress(unsigned int host_addr, unsigned short port_num)
-            : host(host_addr), port(port_num)
+            : host(host_addr), port(port_num), conn_fail_time(0)
         {}
     };
 
@@ -528,11 +529,11 @@ private:
 
     void x_GetServerList(const string& service_name);
 
-    bool x_TryGetJob(const SServiceAddress& sa,
+    bool x_TryGetJob(SServiceAddress& sa,
                      string* job_key, 
                      string* input, 
                      unsigned short udp_port);
-    bool x_GetJobWaitNotify(const SServiceAddress& sa,
+    bool x_GetJobWaitNotify(SServiceAddress& sa,
                             string*    job_key, 
                             string*    input, 
                             unsigned   wait_time,
@@ -552,6 +553,8 @@ private:
     bool          m_LB_ServiceDiscovery;
 
     TServiceList  m_ServList;
+
+    unsigned      m_ConnFailPenalty; ///< Conn fail penalty in seconds
 };
 
 
@@ -643,6 +646,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2005/04/01 14:21:27  kuznets
+ * Added penalty to unavailable service
+ *
  * Revision 1.20  2005/03/28 15:31:37  didenko
  * Made destructors virtual
  *
