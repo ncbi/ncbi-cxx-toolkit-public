@@ -44,7 +44,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
-#include <objects/seq/IUPACaa.hpp>
+#include <objects/seq/NCBIeaa.hpp>
 #include <objects/seq/IUPACna.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -60,6 +60,8 @@
 #include <objects/seqloc/Seq_point.hpp>
 
 #include <objects/seqset/Bioseq_set.hpp>
+
+#include <ctype.h>
 
 
 BEGIN_NCBI_SCOPE
@@ -152,7 +154,7 @@ static void s_FixSeqData(CBioseq* seq)
                     lit.SetLength(data.GetIupacna().Get().size());
                     CSeqportUtil::Pack(&data);
                 } else {
-                    string& s = data.SetIupacaa().Set();
+                    string& s = data.SetNcbieaa().Set();
                     lit.SetLength(s.size());
                     s.reserve(s.size()); // free extra allocation
                 }
@@ -168,7 +170,7 @@ static void s_FixSeqData(CBioseq* seq)
             inst.SetLength(data.GetIupacna().Get().size());
             CSeqportUtil::Pack(&data);
         } else {
-            string& s = data.SetIupacaa().Set();
+            string& s = data.SetNcbieaa().Set();
             inst.SetLength(s.size());
             s.reserve(s.size()); // free extra allocation
         }        
@@ -198,10 +200,10 @@ void s_AddData(CSeq_inst& inst, const string& residues)
 
     string* s = 0;
     if (inst.GetMol() == CSeq_inst::eMol_aa) {
-        if (data->IsIupacaa()) {
-            s = &data->SetIupacaa().Set();
+        if (data->IsNcbieaa()) {
+            s = &data->SetNcbieaa().Set();
         } else {
-            data->SetIupacaa().Set(residues);
+            data->SetNcbieaa().Set(residues);
         }
     } else {
         if (data->IsIupacna()) {
@@ -470,8 +472,15 @@ CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                         d.push_back(gap);
                     }}
                     res_count = 0;
+                } else if (c == '-'  ||  c == '*') {
+                    // valid, at least for proteins
+                    res_data[res_count++] = c;
                 } else if (c == ';') {
                     continue; // skip rest of line
+                } else if ( !isspace(c) ) {
+                    ERR_POST(Warning << "ReadFasta: Ignoring invalid residue "
+                             << c << " at position "
+                             << (in.tellg() - CT_POS_TYPE(0)));
                 }
             }
 
@@ -550,6 +559,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/02/07 19:03:05  ucko
+* Improve handling of non-IUPAC residues.
+*
 * Revision 1.13  2004/11/24 19:28:05  ucko
 * +fReadFasta_RequireID
 *
