@@ -347,7 +347,8 @@ const CSeq_id& GetId(const CBioseq_Handle& handle,
 int GetGiForAccession(const string& acc, CScope& scope)
 {
     try {
-        return GetId(acc, scope, eGetId_ForceGi).GetGi();
+        CSeq_id acc_id(acc);
+        return GetId(acc_id, scope, eGetId_ForceGi).GetGi();
     } catch (CException& e) {
          ERR_POST(Warning << e.what());
     }
@@ -4884,6 +4885,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.102  2004/11/02 15:44:55  ucko
+* Tweak GetGiForAccession to compile on WorkShop.
+*
 * Revision 1.101  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *
