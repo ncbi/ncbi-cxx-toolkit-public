@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/08/16 19:21:16  thiessen
+* add face name info to fonts
+*
 * Revision 1.7  2001/08/14 17:17:48  thiessen
 * add user font selection, store in registry
 *
@@ -96,11 +99,15 @@ extern bool IsAMatch(const Sequence *seq, const ncbi::objects::CSeq_id& sid);
 // global program registry (cn3d.ini) (implemented in cn3d_main_wxwin.cpp)
 extern bool RegistryIsValidInteger(const std::string& section, const std::string& name);
 extern bool RegistryIsValidBoolean(const std::string& section, const std::string& name);
+extern bool RegistryIsValidString(const std::string& section, const std::string& name);
 extern bool RegistryGetInteger(const std::string& section, const std::string& name, int *value);
 extern bool RegistryGetBoolean(const std::string& section, const std::string& name, bool *value);
+extern bool RegistryGetString(const std::string& section, const std::string& name, std::string *value);
 extern bool RegistrySetInteger(const std::string& section, const std::string& name, int value);
 extern bool RegistrySetBoolean(const std::string& section, const std::string& name, bool value,
     bool useYesOrNo = false);
+extern bool RegistrySetString(const std::string& section, const std::string& name,
+    const std::string& value);
 
 // registry section/entry names
 static const std::string
@@ -123,7 +130,9 @@ static const std::string
     REG_FONT_FAMILY = "FontFamily",
     REG_FONT_STYLE = "FontStyle",
     REG_FONT_WEIGHT = "FontWeight",
-    REG_FONT_UNDERLINED = "FontUnderlined";
+    REG_FONT_UNDERLINED = "FontUnderlined",
+    REG_FONT_FACENAME = "FontFaceName",
+    FONT_FACENAME_UNKNOWN = "unknown";
 
 END_SCOPE(Cn3D)
 

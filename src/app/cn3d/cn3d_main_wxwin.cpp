@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2001/08/16 19:21:02  thiessen
+* add face name info to fonts
+*
 * Revision 1.67  2001/08/15 20:32:26  juran
 * Define attribList for Mac OS.
 *
@@ -514,6 +517,10 @@ Cn3DApp::Cn3DApp() : wxApp()
     if (!RegistryIsValidBoolean((section), (name))) \
         RegistrySetBoolean((section), (name), (defval), true);
 
+#define SET_DEFAULT_STRING_REGISTRY_VALUE(section, name, defval) \
+    if (!RegistryIsValidString((section), (name))) \
+        RegistrySetString((section), (name), (defval));
+
 bool Cn3DApp::OnInit(void)
 {
     // setup the diagnostic stream
@@ -572,6 +579,7 @@ bool Cn3DApp::OnInit(void)
     SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
     SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, wxBOLD);
     SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, false);
+    SET_DEFAULT_STRING_REGISTRY_VALUE(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
 
     // initial font for sequence viewers
 #if defined(__WXMSW__)
@@ -583,6 +591,7 @@ bool Cn3DApp::OnInit(void)
     SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, wxNORMAL);
     SET_DEFAULT_INTEGER_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, wxNORMAL);
     SET_DEFAULT_BOOLEAN_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, false);
+    SET_DEFAULT_STRING_REGISTRY_VALUE(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, FONT_FACENAME_UNKNOWN);
 
     // read dictionary
     wxString dictFile = wxString(dataDir.c_str()) + "bstdt.val";
@@ -827,7 +836,7 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 
 void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
 {
-    std::string section;
+    std::string section, faceName;
     if (event.GetId() == MID_OPENGL_FONT)
         section = REG_OPENGL_FONT_SECTION;
     else if (event.GetId() == MID_SEQUENCE_FONT)
@@ -842,12 +851,14 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
         !RegistryGetInteger(section, REG_FONT_FAMILY, &family) ||
         !RegistryGetInteger(section, REG_FONT_STYLE, &style) ||
         !RegistryGetInteger(section, REG_FONT_WEIGHT, &weight) ||
-        !RegistryGetBoolean(section, REG_FONT_UNDERLINED, &underlined))
+        !RegistryGetBoolean(section, REG_FONT_UNDERLINED, &underlined) ||
+        !RegistryGetString(section, REG_FONT_FACENAME, &faceName))
     {
         ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting up initial font");
         return;
     }
-    wxFont initialFont(size, family, style, weight, underlined);
+    wxFont initialFont(size, family, style, weight, underlined,
+        (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str());
     wxFontData initialFontData;
     initialFontData.SetInitialFont(initialFont);
 
@@ -865,7 +876,8 @@ void Cn3DMainFrame::OnSetFont(wxCommandEvent& event)
             !RegistrySetInteger(section, REG_FONT_FAMILY, font.GetFamily()) ||
             !RegistrySetInteger(section, REG_FONT_STYLE, font.GetStyle()) ||
             !RegistrySetInteger(section, REG_FONT_WEIGHT, font.GetWeight()) ||
-            !RegistrySetBoolean(section, REG_FONT_UNDERLINED, font.GetUnderlined(), true))
+            !RegistrySetBoolean(section, REG_FONT_UNDERLINED, font.GetUnderlined(), true) ||
+            !RegistrySetString(section, REG_FONT_FACENAME, font.GetFaceName().c_str()))
         {
             ERR_POST(Error << "Cn3DMainFrame::OnSetFont() - error setting registry data");
             return;
@@ -1338,12 +1350,15 @@ void Cn3DGLCanvas::SetupFontFromRegistry(void)
     // get font info from registry, and create wxFont
     int size, family, style, weight;
     bool underlined;
+    std::string faceName;
     if (!RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_SIZE, &size) ||
         !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_FAMILY, &family) ||
         !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_STYLE, &style) ||
         !RegistryGetInteger(REG_OPENGL_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
         !RegistryGetBoolean(REG_OPENGL_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
-        !(font = new wxFont(size, family, style, weight, underlined)))
+        !RegistryGetString(REG_OPENGL_FONT_SECTION, REG_FONT_FACENAME, &faceName) ||
+        !(font = new wxFont(size, family, style, weight, underlined,
+            (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str())))
     {
         ERR_POST(Error << "Cn3DGLCanvas::SetGLFont() - error setting up font");
         return;
@@ -1441,6 +1456,12 @@ bool RegistryIsValidBoolean(const std::string& section, const std::string& name)
         toupper(regStr[0]) == 'Y' || toupper(regStr[0]) == 'N'));
 }
 
+bool RegistryIsValidString(const std::string& section, const std::string& name)
+{
+    std::string regStr = registry.Get(section, name);
+    return (regStr.size() > 0);
+}
+
 bool RegistryGetInteger(const std::string& section, const std::string& name, int *value)
 {
     wxString regStr = registry.Get(section, name).c_str();
@@ -1466,6 +1487,17 @@ bool RegistryGetBoolean(const std::string& section, const std::string& name, boo
     return true;
 }
 
+bool RegistryGetString(const std::string& section, const std::string& name, std::string *value)
+{
+    std::string regStr = registry.Get(section, name);
+    if (regStr.size() == 0) {
+        ERR_POST(Warning << "Can't get string from registry: " << section << ", " << name);
+        return false;
+    }
+    *value = regStr;
+    return true;
+}
+
 bool RegistrySetInteger(const std::string& section, const std::string& name, int value)
 {
     wxString regStr;
@@ -1486,6 +1518,16 @@ bool RegistrySetBoolean(const std::string& section, const std::string& name, boo
     else
         regStr = value ? "true" : "false";
     bool okay = registry.Set(section, name, regStr, CNcbiRegistry::ePersistent);
+    if (!okay)
+        ERR_POST(Error << "registry Set() failed");
+    else
+        registryChanged = true;
+    return okay;
+}
+
+bool RegistrySetString(const std::string& section, const std::string& name, const std::string& value)
+{
+    bool okay = registry.Set(section, name, value, CNcbiRegistry::ePersistent);
     if (!okay)
         ERR_POST(Error << "registry Set() failed");
     else

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/08/16 19:21:02  thiessen
+* add face name info to fonts
+*
 * Revision 1.22  2001/08/14 17:18:22  thiessen
 * add user font selection, store in registry
 *
@@ -190,13 +193,16 @@ void ViewerWindowBase::SetupFontFromRegistry(void)
     // get font info from registry, and create wxFont
     int size, family, style, weight;
     bool underlined;
+    std::string faceName;
     wxFont *font;
     if (!RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_SIZE, &size) ||
         !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_FAMILY, &family) ||
         !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_STYLE, &style) ||
         !RegistryGetInteger(REG_SEQUENCE_FONT_SECTION, REG_FONT_WEIGHT, &weight) ||
         !RegistryGetBoolean(REG_SEQUENCE_FONT_SECTION, REG_FONT_UNDERLINED, &underlined) ||
-        !(font = new wxFont(size, family, style, weight, underlined)))
+        !RegistryGetString(REG_SEQUENCE_FONT_SECTION, REG_FONT_FACENAME, &faceName) ||
+        !(font = new wxFont(size, family, style, weight, underlined,
+            (faceName == FONT_FACENAME_UNKNOWN) ? "" : faceName.c_str())))
     {
         ERR_POST(Error << "ViewerWindowBase::SetupFontFromRegistry() - error setting up font");
         return;
