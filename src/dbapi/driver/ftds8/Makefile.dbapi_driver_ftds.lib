@@ -11,5 +11,5 @@ REQUIRES = FreeTDS
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = dbapi_driver
+DLL_LIB = $(FTDS8_LIB) dbapi_driver
 LIBS = $(FTDS8_LIBS) $(NETWORK_LIBS) $(ICONV_LIBS) $(ORIG_LIBS)
