@@ -69,7 +69,8 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
       m_UsePublicId( true),
       m_Attlist( false), m_StdXml( false), m_EnforcedStdXml( false),
       m_RealFmt( eRealScientificFormat ), m_Encoding( eEncoding_Unknown ),
-      m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true )
+      m_UseSchemaRef( false ), m_UseSchemaLoc( true ), m_UseDTDRef( true ),
+      m_SkipIndent( false )
 {
     m_Output.SetBackLimit(1);
 }
@@ -190,9 +191,9 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         break;
     }
     m_Output.PutString("\"?>");
-    m_Output.PutEol();
 
     if (!m_UseSchemaRef && m_UseDTDRef) {
+        m_Output.PutEol();
         m_Output.PutString("<!DOCTYPE ");
         m_Output.PutString(type->GetName());
     
@@ -212,9 +213,14 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_Output.PutString(" \"");
         m_Output.PutString(GetDTDFilePrefix() + GetModuleName(type));
         m_Output.PutString(".dtd\">");
-        m_Output.PutEol();
     }
     m_LastTagAction = eTagClose;
+}
+
+void CObjectOStreamXml::EndOfWrite(void)
+{
+    m_Output.PutEol(false);
+    CObjectOStream::EndOfWrite();
 }
 
 void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
@@ -598,7 +604,7 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
         x_EndNamespace(ns_name);
         return;
     }
-    bool was_open = true;
+    bool was_open = true, was_close=true;
     for (string::const_iterator is=value.begin(); is != value.end(); ++is) {
         if (*is == '/' && *(is+1) == '>') {
             m_Output.DecIndentLevel();
@@ -607,12 +613,14 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
         if (*is == '<') {
             if (*(is+1) == '/') {
                 m_Output.DecIndentLevel();
-                if (!was_open) {
+                if (!was_open && was_close) {
                     m_Output.PutEol();
                 }
                 was_open = false;
             } else {
-                m_Output.PutEol();
+                if (was_close) {
+                    m_Output.PutEol();
+                }
                 m_Output.IncIndentLevel();
                 was_open = true;
             }
@@ -627,13 +635,14 @@ void CObjectOStreamXml::WriteAnyContentObject(const CAnyContentObject& obj)
                 m_Output.PutChar(':');
             }
         }
+        was_close = (*is == '>');
     }
 
 // close tag
     if (!was_open) {
-        m_Output.PutEol(false);
         m_EndTag = true;
     }
+    m_SkipIndent = !was_close;
     CloseTag(obj.GetName());
     x_EndNamespace(ns_name);
 }
@@ -736,9 +745,12 @@ void CObjectOStreamXml::OpenTagStart(void)
             m_LastTagAction = eAttlistTag;
         }
     } else {
-        if (!m_EndTag)
+        if (m_SkipIndent) {
+            m_SkipIndent = false;
+        } else {
             m_Output.PutEol(false);
-        m_Output.PutIndent();
+            m_Output.PutIndent();
+        }
         m_Output.PutChar('<');
         m_LastTagAction = eTagOpen;
     }
@@ -772,16 +784,15 @@ void CObjectOStreamXml::SelfCloseTagEnd(void)
 {
     _ASSERT(m_LastTagAction == eTagOpen);
     m_Output.PutString("/>");
-    m_Output.PutEol(false);
     m_LastTagAction = eTagSelfClosed;
     m_EndTag = true;
+    m_SkipIndent = false;
 }
 
 void CObjectOStreamXml::EolIfEmptyTag(void)
 {
     _ASSERT(m_LastTagAction != eTagSelfClosed);
     if ( m_LastTagAction == eTagOpen ) {
-        m_Output.PutEol(false);
         m_LastTagAction = eTagClose;
     }
 }
@@ -790,8 +801,10 @@ void CObjectOStreamXml::CloseTagStart(void)
 {
     _ASSERT(m_LastTagAction != eTagSelfClosed);
     m_Output.DecIndentLevel();
-    if (m_EndTag)
+    if (m_EndTag && !m_SkipIndent) {
+        m_Output.PutEol(false);
         m_Output.PutIndent();
+    }
     m_Output.PutString("</");
     m_LastTagAction = eTagOpen;
 }
@@ -799,9 +812,9 @@ void CObjectOStreamXml::CloseTagStart(void)
 void CObjectOStreamXml::CloseTagEnd(void)
 {
     m_Output.PutChar('>');
-    m_Output.PutEol(false);
     m_LastTagAction = eTagClose;
     m_EndTag = true;
+    m_SkipIndent = false;
 }
 
 void CObjectOStreamXml::PrintTagName(size_t level)
@@ -877,6 +890,15 @@ void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
     bool needNs = x_ProcessTypeNamespace(containerType);
     if (!x_IsStdXml()) {
+        if (TopFrame().GetFrameType() == CObjectStackFrame::eFrameArray &&
+            FetchFrameFromTop(1).GetFrameType() == CObjectStackFrame::eFrameNamed) {
+            const CClassTypeInfo* clType =
+                dynamic_cast<const CClassTypeInfo*>(FetchFrameFromTop(1).GetTypeInfo());
+            if (clType && clType->Implicit()) {
+                TopFrame().SetNotag();
+                return;
+            }
+        }
         OpenTagIfNamed(containerType);
     }
     if (needNs) {
@@ -886,7 +908,7 @@ void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 
 void CObjectOStreamXml::EndContainer(void)
 {
-    if (!x_IsStdXml()) {
+    if (!x_IsStdXml() && !TopFrame().GetNotag()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
     x_EndTypeNamespace();
@@ -1140,6 +1162,9 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
             } else {
                 TopFrame().SetNotag();
             }
+            if (type == eTypeFamilyPrimitive) {
+                m_SkipIndent = id.HasNotag();
+            }
         }
     } else {
         OpenStackTag(0);
@@ -1338,6 +1363,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.79  2005/02/09 14:32:11  gouriano
+* Implemented serialization of mixed content elements
+*
 * Revision 1.78  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *

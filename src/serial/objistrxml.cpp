@@ -1185,23 +1185,27 @@ bool CObjectIStreamXml::ThisTagIsSelfClosed(void)
 
 
 void
-CObjectIStreamXml::
-BeginContainer(const CContainerTypeInfo* /* containerType */)
+CObjectIStreamXml::BeginContainer(const CContainerTypeInfo*  containerType)
 {
-/*
     if (!x_IsStdXml()) {
+        if (TopFrame().GetFrameType() == CObjectStackFrame::eFrameArray &&
+            FetchFrameFromTop(1).GetFrameType() == CObjectStackFrame::eFrameNamed) {
+            const CClassTypeInfo* clType =
+                dynamic_cast<const CClassTypeInfo*>(FetchFrameFromTop(1).GetTypeInfo());
+            if (clType && clType->Implicit()) {
+                TopFrame().SetNotag();
+                return;
+            }
+        }
         OpenTagIfNamed(containerType);
     }
-*/
 }
 
 void CObjectIStreamXml::EndContainer(void)
 {
-/*
-    if (!x_IsStdXml()) {
+    if (!x_IsStdXml() && !TopFrame().GetNotag()) {
         CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
-*/
 }
 
 bool CObjectIStreamXml::BeginContainerElement(TTypeInfo elementType)
@@ -1675,6 +1679,15 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
             }
             if ( ThisTagIsSelfClosed() || NextTagIsClosing() )
                 return kInvalidMember;
+            if (pos <= classType->GetItems().LastIndex()) {
+                const CMemberInfo* mem_info = classType->GetMemberInfo(pos);
+                if (mem_info->GetId().HasNotag()) {
+                    if (GetRealTypeFamily(mem_info->GetTypeInfo()) == eTypeFamilyPrimitive) {
+                        TopFrame().SetNotag();
+                        return pos;
+                    }
+                }
+            }
             tagName = ReadName(BeginOpeningTag());
         }
     } else {
@@ -1794,6 +1807,18 @@ TMemberIndex CObjectIStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choice
                 TopFrame().SetNotag();
             }
             return ind;
+        }
+        if (!NextIsTag()) {
+            const CItemsInfo& items = choiceType->GetItems();
+            for (TMemberIndex i = items.FirstIndex(); i <= items.LastIndex(); ++i) {
+                if (items.GetItemInfo(i)->GetId().HasNotag()) {
+                    if (GetRealTypeFamily(items.GetItemInfo(i)->GetTypeInfo()) == eTypeFamilyPrimitive) {
+                        TopFrame().SetNotag();
+                        return i;
+                    }
+                }
+            }
+            
         }
         tagName = ReadName(BeginOpeningTag());
     } else {
@@ -2108,6 +2133,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.72  2005/02/09 14:28:38  gouriano
+* Implemented serialization of mixed content elements
+*
 * Revision 1.71  2005/02/01 21:47:14  grichenk
 * Fixed warnings
 *
