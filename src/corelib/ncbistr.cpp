@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/11/26 19:29:09  golikov
+* fix
+*
 * Revision 1.20  1999/11/26 18:45:17  golikov
 * NStr::Replace added
 *
@@ -206,8 +209,7 @@ string& NStr::Replace(const string& src, const string& search, const string& rep
 {
     dst = src;
 
-    if( start_pos < 0 ||
-        start_pos + search.size() > src.size() ||
+    if( start_pos + search.size() > src.size() ||
         search == replace)
         return dst;
 
