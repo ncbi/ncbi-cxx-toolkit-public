@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/12/14 17:58:53  gouriano
+* changed GetValidateAction so it never returns Default
+*
 * Revision 1.1  2001/12/13 19:46:58  gouriano
 * added xxValidateAction functions
 *
@@ -60,7 +63,16 @@ extern void xncbi_SetValidateAction(EValidateAction action)
 extern EValidateAction xncbi_GetValidateAction(void)
 {
 // some 64 bit compilers refuse to reinterpret_cast from int* to EValidateAction
-    return (EValidateAction) (long) s_ValidateTLS->GetValue();
+    EValidateAction action = (EValidateAction) (long) s_ValidateTLS->GetValue();
+// we may store Default, but we may not return Default
+    if (action == eValidate_Default) {
+#if defined(_DEBUG)
+        action = eValidate_Abort;
+#else
+        action = eValidate_Throw;
+#endif
+    }
+    return action;
 }
 
 

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/12/14 17:58:53  gouriano
+* changed GetValidateAction so it never returns Default
+*
 * Revision 1.1  2001/12/13 19:46:59  gouriano
 * added xxValidateAction functions
 *
@@ -59,7 +62,7 @@ BEGIN_NCBI_SCOPE
 #define xncbi_Validate(expression, message) \
 do { \
     EValidateAction action = xncbi_GetValidateAction(); \
-    if ((action == eValidate_Throw) || (action == eValidate_Default)) { \
+    if (action == eValidate_Throw) { \
         if ( !(expression) ) { \
             throw runtime_error( message ); \
         } \
