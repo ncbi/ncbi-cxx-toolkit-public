@@ -66,6 +66,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/01/23 23:07:30  lavr
+ * A make-up change
+ *
  * Revision 6.6  2001/01/11 16:41:18  lavr
  * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
  *
@@ -260,7 +263,6 @@ typedef enum {
     eLOG_Warning,
     eLOG_Error,
     eLOG_Critical,
-
     eLOG_Fatal
 } ELOG_Level;
 
@@ -319,7 +321,7 @@ extern void LOG_Reset
  void*        user_data,  /* new user data */
  FLOG_Handler handler,    /* new handler */
  FLOG_Cleanup cleanup,    /* new cleanup */
- int/*bool*/  do_cleanup  /* call cleanup(if any specified) for the old data */
+ int/*bool*/  do_cleanup  /* call old cleanup (if any) for the old data */
  );
 
 
