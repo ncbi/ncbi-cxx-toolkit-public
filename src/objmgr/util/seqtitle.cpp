@@ -747,7 +747,7 @@ static string s_TitleFromProtein(const CBioseq_Handle& handle, CScope& scope,
         }
         if (NStr::CompareNocase(result, "hypothetical protein") == 0) {
             // XXX - gene_feat might not always be exactly what we want
-            if (gene->IsSetLocus_tag()) {
+            if (bool(gene) && gene->IsSetLocus_tag()) {
                 result += ' ' + gene->GetLocus_tag();
             }
         }
@@ -873,6 +873,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.28  2003/08/20 20:28:12  vasilche
+* Fixed null pointer exception when there is no gene in s_TitleFromSegment().
+*
 * Revision 1.27  2003/08/04 21:17:31  ucko
 * For complete chromosome title, if > 3 clones (by counting semicolons)
 * then just display count, not full text of clones
