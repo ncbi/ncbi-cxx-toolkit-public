@@ -30,6 +30,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2000/03/31 17:19:11  kans
+ * added continue statement to for loop to suppress missing body warning
+ *
  * Revision 6.2  2000/03/24 23:12:09  vakatov
  * Starting the development quasi-branch to implement CONN API.
  * All development is performed in the NCBI C++ tree only, while
@@ -299,7 +302,8 @@ extern char* MessagePlusErrno
             neg = 0/*false*/;
         }
 
-        for (len = 1, mod = 1;  (x_errno / mod) > 9;  len++, mod *= 10);
+        for (len = 1, mod = 1;  (x_errno / mod) > 9;  len++, mod *= 10)
+        	continue;
         if ( neg )
             len++;
 
