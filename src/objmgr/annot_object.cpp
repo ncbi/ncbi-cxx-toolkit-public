@@ -73,15 +73,15 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                 }
                 while (it_id != (*it)->GetIds().end()) {
                     // Create CHandleRange from an align element
-                    CSeq_loc* loc = new CSeq_loc;
-                    loc->SetInt().SetId().Assign(**it_id);
-                    loc->SetInt().SetFrom(*it_start);
-                    loc->SetInt().SetTo(*it_start + len);
+                    CSeq_loc loc;
+                    loc.SetInt().SetId().Assign(**it_id);
+                    loc.SetInt().SetFrom(*it_start);
+                    loc.SetInt().SetTo(*it_start + len);
                     if ( (*it)->IsSetStrands() ) {
-                        loc->SetInt().SetStrand(*it_strand);
+                        loc.SetInt().SetStrand(*it_strand);
                         ++it_strand;
                     }
-                    m_RangeMap->AddLocation(*loc);
+                    m_RangeMap->AddLocation(loc);
                     ++it_id;
                     ++it_start;
                 }
@@ -178,17 +178,17 @@ void CAnnotObject::x_ProcessAlign(const CSeq_align& align)
                     packed.GetIds().begin();
                 for (int seq = 0;  seq < dim;  seq++, ++it_pres) {
                     if ( *it_pres ) {
-                        CSeq_loc* loc = new CSeq_loc;
-                        loc->SetInt().SetId().Assign(**it_id);
-                        loc->SetInt().SetFrom(*it_start);
-                        loc->SetInt().SetTo(*it_start + *it_len);
+                        CSeq_loc loc;
+                        loc.SetInt().SetId().Assign(**it_id);
+                        loc.SetInt().SetFrom(*it_start);
+                        loc.SetInt().SetTo(*it_start + *it_len);
                         if ( packed.IsSetStrands() ) {
-                            loc->SetInt().SetStrand(*it_strand);
+                            loc.SetInt().SetStrand(*it_strand);
                             ++it_strand;
                         }
                         ++it_id;
                         ++it_start;
-                        m_RangeMap->AddLocation(*loc);
+                        m_RangeMap->AddLocation(loc);
                     }
                 }
             }
@@ -284,6 +284,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/09/13 15:20:30  dicuccio
+* Fix memory leak (static deleted before termination).
+*
 * Revision 1.13  2002/09/11 16:08:26  dicuccio
 * Fixed memory leak in x_PrepareAlign().
 *
