@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --**********************************************************************
 --
 --  NCBI General Data elements
@@ -52,7 +52,10 @@ Date-std ::= SEQUENCE {        -- NOTE: this is NOT a unix tm struct
     year INTEGER ,             -- full year (including 1900)
     month INTEGER OPTIONAL ,   -- month (1-12)
     day INTEGER OPTIONAL ,     -- day of month (1-31)
-    season VisibleString OPTIONAL }  -- for "spring", "may-june", etc
+    season VisibleString OPTIONAL ,  -- for "spring", "may-june", etc
+    hour INTEGER OPTIONAL ,    -- hour of day (0-23)
+    minute INTEGER OPTIONAL ,  -- minute of hour (0-59)
+    second INTEGER OPTIONAL }  -- second of minute (0-59)
 
 -- Dbtag is generalized for tagging
 -- eg. { "Social Security", str "023-79-8841" }
