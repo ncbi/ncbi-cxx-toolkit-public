@@ -36,7 +36,7 @@
 #include <corelib/ncbiexpt.hpp>
 
 
-/** @addtogroup AlgoExcep
+/** @addtogroup AlgoAlignExcep
  *
  * @{
  */
@@ -45,12 +45,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class NCBI_XALGOALIGN_EXPORT CAlgoException : public CException
-{
-    NCBI_EXCEPTION_DEFAULT(CAlgoException,CException);
-};
-
-class NCBI_XALGOALIGN_EXPORT CAlgoAlignException : public CAlgoException 
+class NCBI_XALGOALIGN_EXPORT CAlgoAlignException : public CException
 {
 public:
     enum EErrCode {
@@ -59,7 +54,8 @@ public:
         eMemoryLimit,
         eInvalidCharacter,
         eIncorrectSequenceOrder,
-        eInvalidSpliceTypeIndex
+        eInvalidSpliceTypeIndex,
+	eMatrixTypeNotSet
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
@@ -75,11 +71,13 @@ public:
             return "mRna should go first";
         case eInvalidSpliceTypeIndex:
             return "Splice type index out of range";
+	case eMatrixTypeNotSet:
+	    return "Matrix type not set";
         default:
             return CException::GetErrCodeString();
         }
     }
-    NCBI_EXCEPTION_DEFAULT(CAlgoAlignException, CAlgoException);
+    NCBI_EXCEPTION_DEFAULT(CAlgoAlignException, CException);
 };
 
 
@@ -92,8 +90,8 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.6  2003/08/04 15:43:19  dicuccio
- * Modified export specifiers to be more flexible
+ * Revision 1.7  2003/09/02 22:28:44  kapustin
+ * Get rid of CAlgoException
  *
  * Revision 1.5  2003/06/17 17:20:28  kapustin
  * CNWAlignerException -> CAlgoAlignException
