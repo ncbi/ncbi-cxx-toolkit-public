@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/01 17:55:16  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.2  1999/06/30 18:54:53  vasilche
 * Fixed some errors under MSVS
 *
@@ -46,6 +49,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/typeref.hpp>
 #include <serial/memberid.hpp>
+#include <serial/memberlist.hpp>
 #include <vector>
 
 BEGIN_NCBI_SCOPE
@@ -124,6 +128,8 @@ class CSequenceOfTypeInfo : public CSequenceTypeInfo {
 public:
     CSequenceOfTypeInfo(const CTypeRef& typeRef);
 
+    virtual bool RandomOrder(void) const;
+
     virtual TObjectPtr Create(void) const;
 
     virtual bool Equals(TConstObjectPtr object1,
@@ -147,10 +153,21 @@ protected:
 class CSetOfTypeInfo : public CSequenceOfTypeInfo {
 public:
     CSetOfTypeInfo(const CTypeRef& typeRef);
+
+    virtual bool RandomOrder(void) const;
 };
 
 class CChoiceTypeInfo : public CTypeInfo {
 public:
+    static TObjectPtr& Get(TObjectPtr object)
+        {
+            return *static_cast<TObjectPtr*>(object);
+        }
+    static const TConstObjectPtr& Get(TConstObjectPtr object)
+        {
+            return *static_cast<const TObjectPtr*>(object);
+        }
+
     CChoiceTypeInfo(const CTypeRef& choices);
     ~CChoiceTypeInfo(void);
 
@@ -162,6 +179,9 @@ public:
 
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
 
+    TTypeInfo GetChoiceTypeInfo(void) const
+        { return m_ChoiceTypeInfo.Get(); }
+
 protected:
     
     void CollectExternalObjects(COObjectList& list,
@@ -170,6 +190,10 @@ protected:
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
 
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
+
+private:
+    
+    CTypeRef m_ChoiceTypeInfo;
 };
 
 class CChoiceValNodeInfo : public CTypeInfo {
@@ -187,6 +211,12 @@ public:
 
     virtual bool Equals(TConstObjectPtr obj1, TConstObjectPtr obj2) const;
 
+    size_t GetVariantsCount(void) const
+        { return m_VariantTypes.size(); }
+
+    TTypeInfo GetVariantTypeInfo(TMemberIndex index) const
+        { return m_VariantTypes[index].Get(); }
+
 protected:
     
     void CollectExternalObjects(COObjectList& list,
@@ -197,7 +227,8 @@ protected:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
 
 private:
-    vector< pair<CMemberId, CTypeRef> > m_Variants;
+    CMembers m_Variants;
+    vector<CTypeRef> m_VariantTypes;
 };
 
 //#include <serial/asntypes.inl>

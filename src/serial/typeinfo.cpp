@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/07/01 17:55:36  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.8  1999/06/30 16:05:06  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -188,17 +191,26 @@ TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const
     return this;
 }
 
-const CMemberInfo* CTypeInfo::FindMember(const string& ) const
+CTypeInfo::TMemberIndex CTypeInfo::FindMember(const string& ) const
+{
+    return -1;
+}
+
+CTypeInfo::TMemberIndex CTypeInfo::LocateMember(TConstObjectPtr ,
+                                                TConstObjectPtr ,
+                                                TTypeInfo ) const
+{
+    return -1;
+}
+
+const CMemberId* CTypeInfo::GetMemberId(TMemberIndex ) const
 {
     return 0;
 }
 
-pair<const CMemberId*, const CMemberInfo*>
-CTypeInfo::LocateMember(TConstObjectPtr ,
-                        TConstObjectPtr ,
-                        TTypeInfo ) const
+const CMemberInfo* CTypeInfo::GetMemberInfo(TMemberIndex ) const
 {
-    return pair<const CMemberId*, const CMemberInfo*>(0, 0);
+    return 0;
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/01 17:55:35  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.2  1999/06/30 16:05:01  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -316,12 +319,6 @@ void CObjectOStreamAsnBinary::WriteStd(char* const& data)
     WriteString(data);
 }
 
-void CObjectOStreamAsnBinary::WriteMember(const CMemberId& member)
-{
-    WriteTag(eContextSpecific, true, member.GetTag());
-    WriteIndefiniteLength();
-}
-
 void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)
 {
     if ( info.IsMember() ) {
@@ -360,17 +357,22 @@ void CObjectOStreamAsnBinary::WriteOtherTypeReference(TTypeInfo typeInfo)
 
 void CObjectOStreamAsnBinary::VBegin(Block& block)
 {
-    WriteTag(eUniversal, true, block.Sequence()? eSequence: eSet);
+    WriteTag(eUniversal, true, block.RandomOrder()? eSet: eSequence);
     WriteIndefiniteLength();
 }
 
-void CObjectOStreamAsnBinary::VNext(const Block& block)
+void CObjectOStreamAsnBinary::VEnd(const Block& )
 {
-    if ( !block.First() )
-        WriteEndOfContent();
+    WriteEndOfContent();
 }
 
-void CObjectOStreamAsnBinary::VEnd(const Block& )
+void CObjectOStreamAsnBinary::StartMember(Member& , const CMemberId& id)
+{
+    WriteTag(eContextSpecific, true, id.GetTag());
+    WriteIndefiniteLength();
+}
+
+void CObjectOStreamAsnBinary::EndMember(const Member& )
 {
     WriteEndOfContent();
 }

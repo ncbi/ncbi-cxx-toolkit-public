@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/01 17:55:32  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.7  1999/06/30 16:04:57  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -159,11 +162,12 @@ bool COObjectList::CheckMember(TConstObjectPtr owner, TTypeInfo ownerTypeInfo,
                                TConstObjectPtr member, TTypeInfo memberTypeInfo)
 {
     while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
-        const CMemberInfo* memberInfo =
-            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo).second;
-        if ( memberInfo == 0 ) {
+        CTypeInfo::TMemberIndex index =
+            ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
+        if ( index < 0 ) {
             return false;
         }
+        const CMemberInfo* memberInfo = ownerTypeInfo->GetMemberInfo(index);
         ownerTypeInfo = memberInfo->GetTypeInfo();
         owner = memberInfo->GetMember(owner);
     }
@@ -204,14 +208,16 @@ void COObjectList::SetObject(COObjectInfo& info,
     TTypeInfo ownerTypeInfo = info.GetRootObjectInfo().GetTypeInfo();
 
     while ( owner != member || ownerTypeInfo != memberTypeInfo ) {
-        pair<const CMemberId*, const CMemberInfo*> memberInfo =
+        CTypeInfo::TMemberIndex index =
             ownerTypeInfo->LocateMember(owner, member, memberTypeInfo);
-        if ( memberInfo.second == 0 ) {
+        if ( index < 0 ) {
             THROW1_TRACE(runtime_error, "object is not collected");
         }
-        info.m_Members.push_back(memberInfo);
-        ownerTypeInfo = memberInfo.second->GetTypeInfo();
-        owner = memberInfo.second->GetMember(owner);
+        const CMemberInfo* memberInfo = ownerTypeInfo->GetMemberInfo(index);
+        info.m_Members.push_back(make_pair(ownerTypeInfo->GetMemberId(index),
+                                           memberInfo));
+        ownerTypeInfo = memberInfo->GetTypeInfo();
+        owner = memberInfo->GetMember(owner);
     }
 }
 

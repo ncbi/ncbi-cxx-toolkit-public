@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/07/01 17:55:34  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.6  1999/06/30 16:05:00  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -233,11 +236,6 @@ void CObjectOStreamAsn::WriteId(const string& str)
 	}
 }
 
-void CObjectOStreamAsn::WriteMember(const CMemberId& member)
-{
-    m_Output << member.GetName() << ' ';
-}
-
 void CObjectOStreamAsn::WriteMemberSuffix(COObjectInfo& info)
 {
     string memberName = info.GetMemberId().GetName();
@@ -290,6 +288,11 @@ void CObjectOStreamAsn::VEnd(const Block& )
 {
     --m_Ident;
     m_Output << " }";
+}
+
+void CObjectOStreamAsn::StartMember(Member& , const CMemberId& id)
+{
+    m_Output << id.GetName() << ' ';
 }
 
 END_NCBI_SCOPE

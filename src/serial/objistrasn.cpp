@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  1999/07/01 17:55:30  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.7  1999/06/30 16:04:55  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -107,6 +110,7 @@ char CObjectIStreamAsn::GetChar(void)
 	if ( unget >= 0 ) {
 	    m_UngetChar = -1;
 		m_GetChar = unget;
+        _TRACE("GetChar(): '" << char(unget) << "'");
 		return char(unget);
 	}
 	else {
@@ -115,6 +119,7 @@ char CObjectIStreamAsn::GetChar(void)
 			throw runtime_error("unexpected EOF");
 		}
 		m_GetChar = (unsigned char)c;
+        _TRACE("GetChar(): '" << c << "'");
 		return c;
 	}
 }
@@ -124,6 +129,7 @@ char CObjectIStreamAsn::GetChar0(void)
 {
 	int unget = m_UngetChar;
 	if ( unget >= 0 ) {
+        _TRACE("GetChar0(): '" << char(unget) << "'");
 	    m_UngetChar = -1;
 		m_GetChar = unget;
 		return char(unget);
@@ -139,6 +145,7 @@ void CObjectIStreamAsn::UngetChar(void)
     if ( m_UngetChar >= 0 || m_GetChar < 0 ) {
         throw runtime_error("cannot unget");
     }
+    _TRACE("UngetChar(): '" << char(m_GetChar) << "'");
 	m_UngetChar = m_GetChar;
 	m_GetChar = -1;
 }
@@ -357,7 +364,7 @@ void CObjectIStreamAsn::ReadStd(unsigned int& data)
 
 void CObjectIStreamAsn::ReadStd(long& data)
 {
-    SkipWhiteSpace();
+    //    SkipWhiteSpace();
     m_Input >> data;
     if ( !m_Input )
         THROW1_TRACE(runtime_error, "overflow error");
@@ -500,12 +507,14 @@ TObjectPtr CObjectIStreamAsn::ReadPointer(TTypeInfo declaredType)
     while ( GetChar('.', true) ) {
         string memberName = ReadId();
         _TRACE("CObjectIStreamAsn::ReadObjectPointer: member " << memberName);
-        const CMemberInfo* memberInfo =
+        CTypeInfo::TMemberIndex index =
             info.GetTypeInfo()->FindMember(memberName);
-        if ( memberInfo == 0 ) {
+        if ( index < 0 ) {
             THROW1_TRACE(runtime_error, "member not found: " +
                          info.GetTypeInfo()->GetName() + "." + memberName);
         }
+        const CMemberInfo* memberInfo =
+            info.GetTypeInfo()->GetMemberInfo(index);
         info = CIObjectInfo(memberInfo->GetMember(info.GetObject()),
                             memberInfo->GetTypeInfo());
     }

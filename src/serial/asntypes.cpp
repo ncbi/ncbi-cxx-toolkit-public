@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  1999/07/01 17:55:25  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.2  1999/06/30 18:54:58  vasilche
 * Fixed some errors under MSVS
 *
@@ -41,6 +44,8 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/asntypes.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objistr.hpp>
 #include <asn.h>
 
 BEGIN_NCBI_SCOPE
@@ -57,7 +62,9 @@ size_t CSequenceTypeInfo::GetSize(void) const
 
 TObjectPtr CSequenceTypeInfo::Create(void) const
 {
-    return new TObjectPtr(GetDataTypeInfo()->Create());
+    TObjectPtr object = calloc(sizeof(TObjectPtr), 1);
+    Get(object) = GetDataTypeInfo()->Create();
+    return object;
 }
 
 bool CSequenceTypeInfo::Equals(TConstObjectPtr object1,
@@ -65,29 +72,24 @@ bool CSequenceTypeInfo::Equals(TConstObjectPtr object1,
 {
     TConstObjectPtr obj1 = Get(object1);
     TConstObjectPtr obj2 = Get(object2);
-    if ( obj1 == 0 ) {
-        return obj2 == 0;
-    }
-    else if ( obj2 == 0 ) {
-        return false;
-    }
-    else {
-        return GetDataTypeInfo()->Equals(obj1, obj2);
-    }
+    if ( obj1 == 0 || obj2 == 0 )
+        THROW1_TRACE(runtime_error, "null sequence pointer");
+
+    return GetDataTypeInfo()->Equals(obj1, obj2);
 }
 
 void CSequenceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
     TConstObjectPtr srcObj = Get(src);
-    TObjectPtr dstObj;
-    if ( srcObj == 0 ) {
-        dstObj = 0;
+    if ( srcObj == 0 )
+        THROW1_TRACE(runtime_error, "null sequence pointer");
+
+    TObjectPtr dstObj = Get(dst);
+    if ( dstObj == 0 ) {
+        ERR_POST("null sequence pointer");
+        dstObj = Get(dst) = GetDataTypeInfo()->Create();
     }
-    else {
-        dstObj = calloc(GetDataTypeInfo()->GetSize(), 1);
-        GetDataTypeInfo()->Assign(dstObj, srcObj);
-    }
-    Get(dst) = dstObj;
+    GetDataTypeInfo()->Assign(dstObj, srcObj);
 }
 
 void CSequenceTypeInfo::CollectExternalObjects(COObjectList& list,
@@ -96,7 +98,7 @@ void CSequenceTypeInfo::CollectExternalObjects(COObjectList& list,
     TConstObjectPtr obj = Get(object);
     if ( obj == 0 )
         THROW1_TRACE(runtime_error, "null sequence pointer"); 
-    GetDataTypeInfo()->CollectExternalObjects(list, obj);
+    GetDataTypeInfo()->CollectObjects(list, obj);
 }
 
 void CSequenceTypeInfo::WriteData(CObjectOStream& out,
@@ -105,7 +107,7 @@ void CSequenceTypeInfo::WriteData(CObjectOStream& out,
     TConstObjectPtr obj = Get(object);
     if ( obj == 0 )
         THROW1_TRACE(runtime_error, "null sequence pointer"); 
-    GetDataTypeInfo()->WriteData(out, obj);
+    out.WriteExternalObject(obj, GetDataTypeInfo());
 }
 
 void CSequenceTypeInfo::ReadData(CObjectIStream& in,
@@ -116,7 +118,7 @@ void CSequenceTypeInfo::ReadData(CObjectIStream& in,
         ERR_POST("null sequence pointer"); 
         obj = Get(object) = GetDataTypeInfo()->Create();
     }
-    GetDataTypeInfo()->ReadData(in, obj);
+    in.ReadExternalObject(obj, GetDataTypeInfo());
 }
 
 CSetTypeInfo::CSetTypeInfo(const CTypeRef& typeRef)
@@ -129,9 +131,14 @@ CSequenceOfTypeInfo::CSequenceOfTypeInfo(const CTypeRef& typeRef)
 {
 }
 
+bool CSequenceOfTypeInfo::RandomOrder(void) const
+{
+    return false;
+}
+
 TObjectPtr CSequenceOfTypeInfo::Create(void) const
 {
-    return new TObjectPtr(0);
+    return calloc(sizeof(TObjectPtr), 1);
 }
 
 bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
@@ -152,21 +159,43 @@ bool CSequenceOfTypeInfo::Equals(TConstObjectPtr object1,
 
 void CSequenceOfTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
+    while ( (src = Get(src)) != 0 ) {
+        dst = Get(dst) = GetDataTypeInfo()->Create();
+        GetDataTypeInfo()->Assign(dst, src);
+    }
 }
 
 void CSequenceOfTypeInfo::CollectExternalObjects(COObjectList& list,
                                                  TConstObjectPtr object) const
 {
+    while ( (object = Get(object)) != 0 ) {
+        GetDataTypeInfo()->CollectObjects(list, object);
+    }
 }
 
 void CSequenceOfTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr obejct) const
+                                    TConstObjectPtr object) const
 {
+    CObjectOStream::Block block(out, RandomOrder());
+    while ( (object = Get(object)) != 0 ) {
+        block.Next();
+        out.WriteExternalObject(object, GetDataTypeInfo());
+    }
 }
 
 void CSequenceOfTypeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
+    CObjectIStream::Block block(in, RandomOrder());
+    while ( block.Next() ) {
+        TObjectPtr obj = Get(object);
+        if ( obj == 0 ) {
+            ERR_POST("null sequence pointer"); 
+            obj = Get(object) = GetDataTypeInfo()->Create();
+        }
+        in.ReadExternalObject(obj, GetDataTypeInfo());
+        object = obj;
+    }
 }
 
 CSetOfTypeInfo::CSetOfTypeInfo(const CTypeRef& typeRef)
@@ -174,7 +203,14 @@ CSetOfTypeInfo::CSetOfTypeInfo(const CTypeRef& typeRef)
 {
 }
 
+bool CSetOfTypeInfo::RandomOrder(void) const
+{
+    return true;
+}
+
+
 CChoiceTypeInfo::CChoiceTypeInfo(const CTypeRef& typeRef)
+    : m_ChoiceTypeInfo(typeRef)
 {
 }
 
@@ -184,49 +220,86 @@ CChoiceTypeInfo::~CChoiceTypeInfo(void)
 
 size_t CChoiceTypeInfo::GetSize(void) const
 {
-    return sizeof(void*);
+    return sizeof(valnode*);
 }
 
 TObjectPtr CChoiceTypeInfo::Create(void) const
 {
-    throw runtime_error("illegal operation");
+    return calloc(sizeof(valnode*), 1);
 }
 
 bool CChoiceTypeInfo::Equals(TConstObjectPtr object1,
-                                 TConstObjectPtr object2) const
+                             TConstObjectPtr object2) const
 {
-    return false;
+    TConstObjectPtr obj1 = Get(object1);
+    TConstObjectPtr obj2 = Get(object2);
+    if ( obj1 == 0 || obj2 == 0 )
+        THROW1_TRACE(runtime_error, "null valnode pointer");
+
+    return GetChoiceTypeInfo()->Equals(obj1, obj2);
 }
 
 void CChoiceTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
+    TConstObjectPtr srcObj = Get(src);
+    if ( srcObj == 0 )
+        THROW1_TRACE(runtime_error, "null valnode pointer");
+
+    TObjectPtr dstObj = Get(dst);
+    if ( dstObj == 0 ) {
+        ERR_POST("null valnode pointer");
+        dstObj = Get(dst) = GetChoiceTypeInfo()->Create();
+    }
+
+    GetChoiceTypeInfo()->Assign(dstObj, srcObj);
 }
 
 void CChoiceTypeInfo::CollectExternalObjects(COObjectList& list,
-                                                 TConstObjectPtr object) const
+                                             TConstObjectPtr object) const
 {
+    TConstObjectPtr obj = Get(object);
+    if ( obj == 0 )
+        THROW1_TRACE(runtime_error, "null valnode pointer");
+
+    GetChoiceTypeInfo()->CollectObjects(list, obj);
 }
 
 void CChoiceTypeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr obejct) const
+                                TConstObjectPtr object) const
 {
+    TConstObjectPtr obj = Get(object);
+    if ( obj == 0 )
+        THROW1_TRACE(runtime_error, "null valnode pointer");
+
+    out.WriteExternalObject(obj, GetChoiceTypeInfo());
 }
 
 void CChoiceTypeInfo::ReadData(CObjectIStream& in,
-                                   TObjectPtr object) const
+                               TObjectPtr object) const
 {
+    TObjectPtr obj = Get(object);
+    if ( obj == 0 ) {
+        ERR_POST("null valnode pointer");
+        obj = Get(object) = GetChoiceTypeInfo()->Create();
+    }
+
+    in.ReadExternalObject(obj, GetChoiceTypeInfo());
 }
+
 
 CChoiceValNodeInfo::CChoiceValNodeInfo(void)
 {
 }
 
-void CChoiceValNodeInfo::AddVariant(const CMemberId& id, const CTypeRef& typeRef)
+void CChoiceValNodeInfo::AddVariant(const CMemberId& id,
+                                    const CTypeRef& typeRef)
 {
-    m_Variants.push_back(pair<CMemberId, CTypeRef>(id, typeRef));
+    m_Variants.AddMember(id);
+    m_VariantTypes.push_back(typeRef);
 }
 
-void CChoiceValNodeInfo::AddVariant(const string& name, const CTypeRef& typeRef)
+void CChoiceValNodeInfo::AddVariant(const string& name,
+                                    const CTypeRef& typeRef)
 {
     AddVariant(CMemberId(name), typeRef);
 }
@@ -246,11 +319,13 @@ bool CChoiceValNodeInfo::Equals(TConstObjectPtr object1,
 {
     const valnode* val1 = static_cast<const valnode*>(object1);
     const valnode* val2 = static_cast<const valnode*>(object2);
-    int choice = val1->choice;
+    TMemberIndex choice = val1->choice;
     if ( choice != val2->choice )
         return false;
-    if ( choice > 0 && choice <= m_Variants.size() )
-        return m_Variants[choice - 1].second.Get()->Equals(&val1->data, &val2->data);
+    TMemberIndex index = choice - 1;
+    if ( index >= 0 && index < GetVariantsCount() ) {
+        return GetVariantTypeInfo(index)->Equals(&val1->data, &val2->data);
+    }
     return choice == 0;
 }
 
@@ -258,27 +333,56 @@ void CChoiceValNodeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
     valnode* valDst = static_cast<valnode*>(dst);
     const valnode* valSrc = static_cast<const valnode*>(src);
-    int choice = valSrc->choice;
+    TMemberIndex choice = valSrc->choice;
     valDst->choice = choice;
-    if ( choice > 0 && choice <= m_Variants.size() )
-        m_Variants[choice - 1].second.Get()->Assign(&valDst->data, &valSrc->data);
-    else
+    TMemberIndex index = choice;
+    if ( index >= 0 && index < GetVariantsCount() ) {
+        GetVariantTypeInfo(index)->Assign(&valDst->data, &valSrc->data);
+    }
+    else {
         valDst->data.ptrvalue = 0;
+    }
 }
 
 void CChoiceValNodeInfo::CollectExternalObjects(COObjectList& list,
                                                  TConstObjectPtr object) const
 {
+    const valnode* node = static_cast<const valnode*>(object);
+    TMemberIndex index = node->choice - 1;
+    if ( index < 0 || index >= GetVariantsCount() ) {
+        THROW1_TRACE(runtime_error,
+                     "illegal choice value: " +
+                     NStr::IntToString(node->choice));
+    }
+    GetVariantTypeInfo(index)->CollectExternalObjects(list, &node->data);
 }
 
 void CChoiceValNodeInfo::WriteData(CObjectOStream& out,
-                                    TConstObjectPtr obejct) const
+                                    TConstObjectPtr object) const
 {
+    const valnode* node = static_cast<const valnode*>(object);
+    TMemberIndex index = node->choice - 1;
+    if ( index < 0 || index >= GetVariantsCount() ) {
+        THROW1_TRACE(runtime_error,
+                     "illegal choice value: " +
+                     NStr::IntToString(node->choice));
+    }
+    CObjectOStream::Member m(out, m_Variants.GetCompleteMemberId(index));
+    GetVariantTypeInfo(index)->WriteData(out, &node->data);
 }
 
 void CChoiceValNodeInfo::ReadData(CObjectIStream& in,
                                    TObjectPtr object) const
 {
+    CMemberId id = in.ReadMember();
+    TMemberIndex index = m_Variants.FindMember(id);
+    if ( index < 0 ) {
+        THROW1_TRACE(runtime_error,
+                     "illegal choice variant: " + id.ToString());
+    }
+    valnode* node = static_cast<valnode*>(object);
+    node->choice = index + 1;
+    GetVariantTypeInfo(index)->ReadData(in, &node->data);
 }
 
 END_NCBI_SCOPE

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:23  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 18:54:55  vasilche
 * Fixed some errors under MSVS
 *
@@ -93,6 +96,8 @@ struct CTypeInfoOrder
 class CTypeInfo
 {
 public:
+    typedef int TMemberIndex;
+
     string GetName(void) const
         { return m_Name; }
 
@@ -126,11 +131,13 @@ public:
 
     virtual ~CTypeInfo(void);
 
-    virtual const CMemberInfo* FindMember(const string& name) const;
-    virtual pair<const CMemberId*, const CMemberInfo*>
-        LocateMember(TConstObjectPtr object,
-                     TConstObjectPtr member,
-                     TTypeInfo memberTypeInfo) const;
+    virtual TMemberIndex FindMember(const string& name) const;
+    virtual TMemberIndex LocateMember(TConstObjectPtr object,
+                                      TConstObjectPtr member,
+                                      TTypeInfo memberTypeInfo) const;
+
+    virtual const CMemberId* GetMemberId(TMemberIndex index) const;
+    virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
     
     // collect info about all memory chunks for writing
     void CollectObjects(COObjectList& objectList,

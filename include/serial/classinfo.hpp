@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:17  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 16:04:20  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -68,6 +71,7 @@
 #include <serial/typeinfo.hpp>
 #include <serial/memberlist.hpp>
 #include <map>
+#include <vector>
 
 BEGIN_NCBI_SCOPE
 
@@ -80,10 +84,13 @@ class CMemberInfo;
 class CClassInfoTmpl : public CTypeInfo {
     typedef CTypeInfo CParent;
 public:
-    typedef map<size_t, pair<const CMemberId*, const CMemberInfo*> >
-        TMembersByOffset;
+    typedef CMembers::TIndex TIndex;
+    typedef vector<CMemberInfo*> TMembersInfo;
+    typedef map<size_t, TIndex> TMembersByOffset;
 
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void));
+    CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
+                   bool randomOrder);
     CClassInfoTmpl(const type_info& ti, size_t size, void* (*creator)(void),
                    const CTypeRef& parent, size_t offset);
     virtual ~CClassInfoTmpl(void);
@@ -112,11 +119,13 @@ public:
 
     const TMembersByOffset& GetMembersByOffset(void) const;
 
-    virtual const CMemberInfo* FindMember(const string& name) const;
-    virtual pair<const CMemberId*, const CMemberInfo*>
-        LocateMember(TConstObjectPtr object,
-                     TConstObjectPtr member,
-                     TTypeInfo memberTypeInfo) const;
+    virtual TMemberIndex FindMember(const string& name) const;
+    virtual TMemberIndex LocateMember(TConstObjectPtr object,
+                                      TConstObjectPtr member,
+                                      TTypeInfo memberTypeInfo) const;
+
+    virtual const CMemberId* GetMemberId(TMemberIndex index) const;
+    virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
 
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
@@ -132,6 +141,7 @@ private:
     TObjectPtr (*m_Creator)(void);
 
     CMembers m_Members;
+    TMembersInfo m_MembersInfo;
     mutable auto_ptr<TMembersByOffset> m_MembersByOffset;
 
     bool m_RandomOrder;
@@ -159,11 +169,13 @@ public:
     // AddMember will take ownership of member
     CClassInfoAlias* AddMember(const string& name, const string& realName);
 
-    virtual const CMemberInfo* FindMember(const string& name) const;
-    virtual pair<const CMemberId*, const CMemberInfo*>
-        LocateMember(TConstObjectPtr object,
-                     TConstObjectPtr member,
-                     TTypeInfo memberTypeInfo) const;
+    virtual TMemberIndex FindMember(const string& name) const;
+    virtual TMemberIndex LocateMember(TConstObjectPtr object,
+                                      TConstObjectPtr member,
+                                      TTypeInfo memberTypeInfo) const;
+
+    virtual const CMemberId* GetMemberId(TMemberIndex index) const;
+    virtual const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
 
 protected:
     virtual void ReadData(CObjectIStream& in, TObjectPtr object) const;
@@ -186,8 +198,16 @@ template<class CLASS, class PCLASS = CLASS>
 class CClassInfo : public CClassInfoTmpl
 {
 public:
+    enum ERandomOrder {
+        eRandomOrder
+    };
+
     CClassInfo(void)
         : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create)
+        {
+        }
+    CClassInfo(ERandomOrder)
+        : CClassInfoTmpl(typeid(CLASS), sizeof(CLASS), &sx_Create, true)
         {
         }
     CClassInfo(const CTypeRef& pTypeRef)

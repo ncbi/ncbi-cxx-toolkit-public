@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:20  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 16:04:30  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -104,20 +107,28 @@ public:
     void WriteExternalObject(TConstObjectPtr object, TTypeInfo typeInfo);
     // type info writers
     virtual void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
-    // write member name
-    virtual void WriteMember(const CMemberId& member);
 
-    enum ESequence {
-        eSequence
+    class Member {
+    public:
+        Member(CObjectOStream& out, const CMemberId& member)
+            : m_Out(out)
+            {
+                out.StartMember(*this, member);
+            }
+        ~Member(void)
+            {
+                m_Out.EndMember(*this);
+            }
+    private:
+        CObjectOStream& m_Out;
     };
     // block interface
-    class Block
-    {
+    class Block {
     public:
         Block(CObjectOStream& out);
         Block(CObjectOStream& out, unsigned size);
-        Block(CObjectOStream& out, ESequence sequence);
-        Block(CObjectOStream& out, ESequence sequence, unsigned size);
+        Block(CObjectOStream& out, bool randomOrder);
+        Block(CObjectOStream& out, bool randomOrder, unsigned size);
         ~Block(void);
 
         void Next(void);
@@ -126,9 +137,9 @@ public:
             {
                 return m_Fixed;
             }
-        bool Sequence(void) const
+        bool RandomOrder(void) const
             {
-                return m_Sequence;
+                return m_RandomOrder;
             }
 
         unsigned GetNextIndex(void) const
@@ -168,7 +179,7 @@ public:
         friend class CObjectOStream;
 
         bool m_Fixed;
-        bool m_Sequence;
+        bool m_RandomOrder;
         unsigned m_NextIndex;
         unsigned m_Size;
     };
@@ -176,6 +187,7 @@ public:
 protected:
     // block interface
     friend class Block;
+    friend class Member;
     static void SetNonFixed(Block& block)
         {
             block.m_Fixed = false;
@@ -187,6 +199,9 @@ protected:
     virtual void VNext(const Block& block);
     virtual void FEnd(const Block& block);
     virtual void VEnd(const Block& block);
+    // write member name
+    virtual void StartMember(Member& member, const CMemberId& id);
+    virtual void EndMember(const Member& member);
 
     // low level writers
     virtual void WriteMemberPrefix(COObjectInfo& info);

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1999/07/01 17:55:20  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.5  1999/06/30 16:04:32  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -89,8 +92,6 @@ public:
     virtual void WriteStd(char* const& data);
     virtual void WriteStd(const char* const& data);
 
-    virtual void WriteMember(const CMemberId& member);
-
 protected:
 
     virtual void WriteMemberSuffix(COObjectInfo& info);
@@ -107,6 +108,7 @@ protected:
     virtual void VBegin(Block& block);
     virtual void VNext(const Block& block);
     virtual void VEnd(const Block& block);
+    virtual void StartMember(Member& member, const CMemberId& id);
 
     void WriteNewLine(void);
 

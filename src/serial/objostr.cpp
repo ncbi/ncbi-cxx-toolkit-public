@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:33  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 16:04:59  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -181,9 +184,13 @@ void CObjectOStream::WriteId(const string& id)
     WriteString(id);
 }
 
-void CObjectOStream::WriteMember(const CMemberId& member)
+void CObjectOStream::StartMember(Member& , const CMemberId& id)
 {
-    WriteId(member.GetName());
+    WriteId(id.GetName());
+}
+
+void CObjectOStream::EndMember(const Member& )
+{
 }
 
 void CObjectOStream::FBegin(Block& block)
@@ -213,28 +220,28 @@ void CObjectOStream::VEnd(const Block& )
 }
 
 CObjectOStream::Block::Block(CObjectOStream& out)
-    : m_Out(out), m_Fixed(false), m_Sequence(false),
+    : m_Out(out), m_Fixed(false), m_RandomOrder(false),
       m_NextIndex(0), m_Size(0)
 {
     out.VBegin(*this);
 }
 
 CObjectOStream::Block::Block(CObjectOStream& out, unsigned size)
-    : m_Out(out), m_Fixed(true), m_Sequence(false),
+    : m_Out(out), m_Fixed(true), m_RandomOrder(false),
       m_NextIndex(0), m_Size(size)
 {
     out.FBegin(*this);
 }
 
-CObjectOStream::Block::Block(CObjectOStream& out, ESequence )
-    : m_Out(out), m_Fixed(false), m_Sequence(true),
+CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder)
+    : m_Out(out), m_Fixed(false), m_RandomOrder(randomOrder),
       m_NextIndex(0), m_Size(0)
 {
     out.VBegin(*this);
 }
 
-CObjectOStream::Block::Block(CObjectOStream& out, ESequence , unsigned size)
-    : m_Out(out), m_Fixed(true), m_Sequence(true),
+CObjectOStream::Block::Block(CObjectOStream& out, bool randomOrder, unsigned size)
+    : m_Out(out), m_Fixed(true), m_RandomOrder(randomOrder),
       m_NextIndex(0), m_Size(size)
 {
     out.FBegin(*this);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/01 17:55:29  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.1  1999/06/30 16:04:52  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -38,7 +41,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/memberlist.hpp>
-#include <serial/member.hpp>
+#include <serial/memberid.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -48,17 +51,31 @@ CMembers::CMembers(void)
 
 CMembers::~CMembers(void)
 {
-    for ( TMembers::iterator i = m_Members.begin(); i != m_Members.end(); ++i ) {
-        delete const_cast<CMemberInfo*>(i->second);
-    }
 }
 
-CMemberInfo* CMembers::AddMember(const CMemberId& id, CMemberInfo* member)
+void CMembers::AddMember(const CMemberId& id)
 {
     m_MembersByName.reset(0);
     m_MembersByTag.reset(0);
-    m_Members.push_back(TMembers::value_type(id, member));
-    return member;
+    m_Members.push_back(id);
+}
+
+CMemberId CMembers::GetCompleteMemberId(TIndex index) const
+{
+    const CMemberId& id = GetMemberId(index);
+    if ( id.GetTag() >= 0 )
+        return id;
+    // regenerate tag
+    TTag tag = 0;
+    while ( --index >= 0 ) {
+        TTag baseTag = GetMemberId(index).GetTag();
+        if ( baseTag >= 0 ) {
+            tag += baseTag;
+            break;
+        }
+        ++tag;
+    }
+    return CMemberId(id.GetName(), tag);
 }
 
 const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
@@ -66,11 +83,10 @@ const CMembers::TMembersByName& CMembers::GetMembersByName(void) const
     TMembersByName* members = m_MembersByName.get();
     if ( !members ) {
         m_MembersByName.reset(members = new TMembersByName);
-        for ( TMembers::const_iterator i = m_Members.begin();
-              i != m_Members.end(); ++i ) {
-            const string& name = i->first.GetName();
+        for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
+            const string& name = m_Members[i].GetName();
             if ( !members->insert(TMembersByName::
-                                  value_type(name, i->second)).second ) {
+                      value_type(name, i)).second ) {
                 THROW1_TRACE(runtime_error, "duplicated member name: " + name);
             }
         }
@@ -83,24 +99,20 @@ const CMembers::TMembersByTag& CMembers::GetMembersByTag(void) const
     TMembersByTag* members = m_MembersByTag.get();
     if ( !members ) {
         m_MembersByTag.reset(members = new TMembersByTag);
-        TTag nextTag = 0;
-        for ( TMembers::const_iterator i = m_Members.begin();
-              i != m_Members.end(); ++i ) {
-            TTag tag = i->first.GetTag();
-            if ( tag < 0 )
-                tag = nextTag;
+        CMemberId currentId;
+        for ( TIndex i = 0, size = m_Members.size(); i < size; ++i ) {
+            currentId.SetNext(m_Members[i]);
             if ( !members->insert(TMembersByTag::
-                                  value_type(tag, i->second)).second ) {
+                      value_type(currentId.GetTag(), i)).second ) {
                 THROW1_TRACE(runtime_error,
-                             "duplicated member tag: " + NStr::UIntToString(tag));
+                             "duplicated member tag: " + currentId.ToString());
             }
-            nextTag = tag + 1;
         }
     }
     return *members;
 }
 
-const CMemberInfo* CMembers::FindMember(const string& name) const
+CMembers::TIndex CMembers::FindMember(const string& name) const
 {
     const TMembersByName& members = GetMembersByName();
     TMembersByName::const_iterator i = members.find(name);
@@ -109,7 +121,7 @@ const CMemberInfo* CMembers::FindMember(const string& name) const
     return i->second;
 }
 
-const CMemberInfo* CMembers::FindMember(TTag tag) const
+CMembers::TIndex CMembers::FindMember(TTag tag) const
 {
     const TMembersByTag& members = GetMembersByTag();
     TMembersByTag::const_iterator i = members.find(tag);
@@ -118,7 +130,7 @@ const CMemberInfo* CMembers::FindMember(TTag tag) const
     return i->second;
 }
 
-const CMemberInfo* CMembers::FindMember(const CMemberId& id) const
+CMembers::TIndex CMembers::FindMember(const CMemberId& id) const
 {
     if ( id.GetTag() < 0 ) {
         return FindMember(id.GetName());

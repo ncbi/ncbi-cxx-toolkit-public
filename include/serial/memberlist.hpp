@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/01 17:55:18  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.1  1999/06/30 16:04:26  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -41,7 +44,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/memberid.hpp>
-#include <list>
+#include <vector>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -51,9 +54,10 @@ class CMemberInfo;
 class CMembers {
 public:
     typedef CMemberId::TTag TTag;
-    typedef list<pair<CMemberId, const CMemberInfo*> > TMembers;
-    typedef map<string, const CMemberInfo*> TMembersByName;
-    typedef map<TTag, const CMemberInfo*> TMembersByTag;
+    typedef unsigned TIndex;
+    typedef vector<CMemberId> TMembers;
+    typedef map<string, TIndex> TMembersByName;
+    typedef map<TTag, TIndex> TMembersByTag;
 
     CMembers(void);
     ~CMembers(void);
@@ -73,11 +77,15 @@ public:
     const TMembersByName& GetMembersByName(void) const;
     const TMembersByTag& GetMembersByTag(void) const;
 
-    CMemberInfo* AddMember(const CMemberId& id, CMemberInfo* memberInfo);
+    void AddMember(const CMemberId& id);
 
-    const CMemberInfo* FindMember(const string& name) const;
-    const CMemberInfo* FindMember(TTag tag) const;
-    const CMemberInfo* FindMember(const CMemberId& id) const;
+    const CMemberId& GetMemberId(TIndex index) const
+        { return m_Members[index]; }
+    CMemberId GetCompleteMemberId(TIndex index) const;
+
+    TIndex FindMember(const string& name) const;
+    TIndex FindMember(TTag tag) const;
+    TIndex FindMember(const CMemberId& id) const;
 
 private:
     TMembers m_Members;

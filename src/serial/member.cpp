@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/01 17:55:28  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.1  1999/06/30 16:04:50  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -76,10 +79,11 @@ const CMemberInfo* CMemberAliasInfo::GetBaseMember(void) const
 {
     const CMemberInfo* baseMember = m_BaseMember;
     if ( !baseMember ) {
-        m_BaseMember = baseMember =
-            m_ContainerType.Get()->FindMember(m_MemberName);
-        if ( !baseMember )
+        TTypeInfo contTypeInfo = m_ContainerType.Get();
+        CTypeInfo::TMemberIndex index = contTypeInfo->FindMember(m_MemberName);
+        if ( index < 0 )
             THROW1_TRACE(runtime_error, "member not found: " + m_MemberName);
+        m_BaseMember = baseMember = contTypeInfo->GetMemberInfo(index);
     }
     return baseMember;
 }

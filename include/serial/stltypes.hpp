@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:22  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 16:04:38  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -178,8 +181,7 @@ protected:
         {
             const TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectOStream::Block block(out, CObjectOStream::eSequence,
-                                        l.size());
+            CObjectOStream::Block block(out, l.size());
             for ( TObjectType::const_iterator i = l.begin();
                   i != l.end(); ++i ) {
                 block.Next();
@@ -191,8 +193,7 @@ protected:
         {
             TObjectType& l = Get(object);
             TTypeInfo dataTypeInfo = GetDataTypeInfo();
-            CObjectIStream::Block block(in, CObjectIStream::eSequence,
-                                        CObjectIStream::eFixed);
+            CObjectIStream::Block block(in, CObjectIStream::eFixed);
             while ( block.Next() ) {
                 l.push_back(TDataType());
                 in.ReadExternalObject(&l.back(), dataTypeInfo);

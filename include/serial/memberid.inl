@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/07/01 17:55:18  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.1  1999/06/30 16:04:25  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -48,6 +51,12 @@ CMemberId::CMemberId(void)
 inline
 CMemberId::CMemberId(const string& name)
     : m_Name(name), m_Tag(-1)
+{
+}
+
+inline
+CMemberId::CMemberId(const string& name, TTag tag)
+    : m_Name(name), m_Tag(tag)
 {
 }
 

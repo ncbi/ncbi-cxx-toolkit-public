@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/07/01 17:55:31  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.11  1999/06/30 16:04:57  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -576,12 +579,14 @@ TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
             const string& memberName = ReadId();
             _TRACE("CObjectIStreamBinary::ReadPointer: member " << memberName);
             CIObjectInfo info = ReadObjectPointer();
-            const CMemberInfo* memberInfo =
+            CTypeInfo::TMemberIndex index =
                 info.GetTypeInfo()->FindMember(memberName);
-            if ( memberInfo == 0 ) {
+            if ( index < 0 ) {
                 THROW1_TRACE(runtime_error, "member not found: " +
                              info.GetTypeInfo()->GetName() + "." + memberName);
             }
+            const CMemberInfo* memberInfo =
+                info.GetTypeInfo()->GetMemberInfo(index);
             if ( memberInfo->GetTypeInfo() != declaredType ) {
                 THROW1_TRACE(runtime_error, "incompatible member type");
             }
@@ -617,14 +622,17 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
     case CObjectStreamBinaryDefs::eMemberReference:
         {
             const string& memberName = ReadId();
-            _TRACE("CObjectIStreamBinary::ReadObjectPointer: member " << memberName);
+            _TRACE("CObjectIStreamBinary::ReadObjectPointer: member " <<
+                   memberName);
             CIObjectInfo info = ReadObjectPointer();
-            const CMemberInfo* memberInfo =
+            CTypeInfo::TMemberIndex index =
                 info.GetTypeInfo()->FindMember(memberName);
-            if ( memberInfo == 0 ) {
+            if ( index < 0 ) {
                 THROW1_TRACE(runtime_error, "member not found: " +
                              info.GetTypeInfo()->GetName() + "." + memberName);
             }
+            const CMemberInfo* memberInfo =
+                info.GetTypeInfo()->GetMemberInfo(index);
             return CIObjectInfo(memberInfo->GetMember(info.GetObject()),
                                 memberInfo->GetTypeInfo());
         }

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:19  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 16:04:27  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -132,16 +135,13 @@ public:
     enum EFixed {
         eFixed
     };
-    enum ESequence {
-        eSequence
-    };
     class Block
     {
     public:
         Block(CObjectIStream& in);
         Block(CObjectIStream& in, EFixed eFixed);
-        Block(CObjectIStream& in, ESequence sequence);
-        Block(CObjectIStream& in, ESequence sequence, EFixed eFixed);
+        Block(CObjectIStream& in, bool randomOrder);
+        Block(CObjectIStream& in, bool randomOrder, EFixed eFixed);
         ~Block(void);
 
         bool Next(void);
@@ -150,9 +150,9 @@ public:
             {
                 return m_Fixed;
             }
-        bool Sequence(void) const
+        bool RandomOrder(void) const
             {
-                return m_Sequence;
+                return m_RandomOrder;
             }
 
         bool Finished(void) const
@@ -197,7 +197,7 @@ public:
         friend class CObjectIStream;
 
         bool m_Fixed;
-        bool m_Sequence;
+        bool m_RandomOrder;
         bool m_Finished;
         unsigned m_Size;
         unsigned m_NextIndex;

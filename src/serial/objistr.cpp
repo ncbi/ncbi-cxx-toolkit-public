@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/01 17:55:29  vasilche
+* Implemented ASN.1 binary write.
+*
 * Revision 1.9  1999/06/30 16:04:53  vasilche
 * Added support for old ASN.1 structures.
 *
@@ -120,28 +123,28 @@ void CObjectIStream::VEnd(const Block& )
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in)
-    : m_In(in), m_Fixed(false), m_Sequence(false),
+    : m_In(in), m_Fixed(false), m_RandomOrder(false),
       m_Finished(false), m_NextIndex(0), m_Size(0)
 {
     in.VBegin(*this);
 }
 
 CObjectIStream::Block::Block(CObjectIStream& in, EFixed )
-    : m_In(in), m_Fixed(true), m_Sequence(false),
+    : m_In(in), m_Fixed(true), m_RandomOrder(false),
       m_Finished(false), m_NextIndex(0), m_Size(0)
 {
     in.FBegin(*this);
 }
 
-CObjectIStream::Block::Block(CObjectIStream& in, ESequence )
-    : m_In(in), m_Fixed(false), m_Sequence(true),
+CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder)
+    : m_In(in), m_Fixed(false), m_RandomOrder(randomOrder),
       m_Finished(false), m_NextIndex(0), m_Size(0)
 {
     in.VBegin(*this);
 }
 
-CObjectIStream::Block::Block(CObjectIStream& in, ESequence , EFixed )
-    : m_In(in), m_Fixed(true), m_Sequence(true),
+CObjectIStream::Block::Block(CObjectIStream& in, bool randomOrder , EFixed )
+    : m_In(in), m_Fixed(true), m_RandomOrder(randomOrder),
       m_Finished(false), m_NextIndex(0), m_Size(0)
 {
     in.FBegin(*this);
