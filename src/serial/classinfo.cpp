@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.68  2003/05/14 14:33:02  gouriano
+* added using "setflag" for implicit members
+*
 * Revision 1.67  2003/04/29 18:30:36  gouriano
 * object data member initialization verification
 *
@@ -551,6 +554,9 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
     in.ReadNamedType(classType,
                      memberInfo->GetTypeInfo(),
                      memberInfo->GetItemPtr(objectPtr));
+    if( memberInfo->HaveSetFlag()) {
+        memberInfo->UpdateSetFlag(objectPtr,CMemberInfo::eSetYes);
+    }
 }
 
 void CClassTypeInfo::WriteClassRandom(CObjectOStream& out,
@@ -581,6 +587,16 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
         CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
 
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    if (memberInfo->HaveSetFlag() &&
+        memberInfo->GetSetFlag(objectPtr) == CMemberInfo::eSetNo ) {
+        if (memberInfo->Optional()) {
+            return;
+        }
+        if (out.GetVerifyData()) {
+            out.ThrowError(CObjectOStream::fUnassigned,
+                string("Unassigned member: ")+memberInfo->GetId().GetName());
+        }
+    }
     out.WriteNamedType(classType,
                        memberInfo->GetTypeInfo(),
                        memberInfo->GetItemPtr(objectPtr));
