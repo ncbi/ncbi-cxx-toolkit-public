@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2002/04/26 19:01:00  thiessen
+* fix display delete bug
+*
 * Revision 1.21  2002/02/28 19:11:52  thiessen
 * wrap sequences in single-structure mode
 *
@@ -289,6 +292,9 @@ public:
 
     // create a new copy of this object
     SequenceDisplay * Clone(const Old2NewAlignmentMap& newAlignments) const;
+
+    // clear out all rows from this display
+    void Empty(void);
 
 private:
     const bool isEditable;

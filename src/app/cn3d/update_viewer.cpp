@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/04/26 19:01:00  thiessen
+* fix display delete bug
+*
 * Revision 1.32  2002/03/28 14:06:02  thiessen
 * preliminary BLAST/PSSM ; new CD startup style
 *
@@ -279,8 +282,7 @@ void UpdateViewer::ReplaceAlignments(const AlignmentList& alignmentList)
     for (a=alignmentStack.back().begin(); a!=ae; a++) delete *a;
     alignmentStack.back().clear();
 
-    delete displayStack.back();
-    displayStack.back() = new SequenceDisplay(true, viewerWindow);
+    displayStack.back()->Empty();
 
     AddAlignments(alignmentList);
 }
@@ -839,8 +841,7 @@ void UpdateViewer::BlastUpdate(BlockMultipleAlignment *alignment, bool usePSSMFr
     // recreate alignment display with new alignment
     AlignmentList copy = alignmentStack.back();
     alignmentStack.back().clear();
-    delete displayStack.back();
-    displayStack.back() = new SequenceDisplay(true, viewerWindow);
+    displayStack.back()->Empty();
     AddAlignments(copy);
     (*viewerWindow)->ScrollToColumn(displayStack.back()->GetStartingColumn());
 }
@@ -891,8 +892,7 @@ void UpdateViewer::SortUpdates(void)
 
     // replace window contents with sorted list
     alignmentStack.back().clear();
-    delete displayStack.back();
-    displayStack.back() = new SequenceDisplay(true, viewerWindow);
+    displayStack.back()->Empty();
 
     AlignmentList sortedList;
     for (i=0; i<sortedVector.size(); i++) sortedList.push_back(sortedVector[i]);

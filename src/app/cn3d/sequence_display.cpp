@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2002/04/26 19:01:00  thiessen
+* fix display delete bug
+*
 * Revision 1.46  2002/04/26 13:46:36  thiessen
 * comment out all blast/pssm methods
 *
@@ -345,6 +348,14 @@ SequenceDisplay::~SequenceDisplay(void)
 {
     for (int i=0; i<rows.size(); i++) delete rows[i];
 }
+
+void SequenceDisplay::Empty(void)
+{
+    for (int i=0; i<rows.size(); i++) delete rows[i];
+    rows.clear();
+    startingColumn = maxRowWidth = 0;
+}
+
 
 SequenceDisplay * SequenceDisplay::Clone(const Old2NewAlignmentMap& newAlignments) const
 {
