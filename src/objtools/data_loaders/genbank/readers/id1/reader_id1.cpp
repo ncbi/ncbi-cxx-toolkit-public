@@ -376,6 +376,9 @@ void CId1Reader::x_RetrieveSeqrefs(TSeqrefs& srs,
 
     const CID1blob_info& info = id1_reply.GetGotblobinfo();
     CRef<CSeqref> ref(new CSeqref(gi, info.GetSat(), info.GetSat_key()));
+    if ( info.GetWithdrawn() > 0 || info.GetConfidential() > 0 ) {
+        ref->SetFlags(ref->GetFlags() | CSeqref::fPrivate);
+    }
     ref->SetVersion(x_GetVersion(info));
     srs.push_back(ref);
    
@@ -464,6 +467,9 @@ void CId1Reader::x_ResolveId(CID1server_back& id1_reply,
 CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
                                         TConn conn)
 {
+    if ( seqref.GetFlags() & CSeqref::fPrivate ) {
+        NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
+    }
     CID1server_back id1_reply;
     x_GetBlob(id1_reply, seqref, conn);
 
@@ -480,7 +486,10 @@ CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
     case CID1server_back::e_Error:
         switch ( id1_reply.GetError() ) {
         case 1:
+        case 2:
             NCBI_THROW(CLoaderException, ePrivateData, "gi is private");
+        case 10:
+            NCBI_THROW(CLoaderException, eNoData, "invalid args");
         }
         ERR_POST("CId1Reader::GetMainBlob: ID1server-back.error "<<
                  id1_reply.GetError());
@@ -489,10 +498,6 @@ CRef<CTSE_Info> CId1Reader::GetMainBlob(const CSeqref& seqref,
         break;
     default:
         // no data
-    {{
-        CObjectOStreamAsn out(NcbiCout);
-        out << id1_reply;
-    }}
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "bad ID1server-back type");
     }
@@ -709,6 +714,10 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.58  2003/10/27 18:50:49  vasilche
+ * Detect 'private' blobs in ID1 reader.
+ * Avoid reconnecting after ID1 server replied with error packet.
+ *
  * Revision 1.57  2003/10/27 15:05:41  vasilche
  * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
  * Added recognition of ID1 error codes: private, etc.

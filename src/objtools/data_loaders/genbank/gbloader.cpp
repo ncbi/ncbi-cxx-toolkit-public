@@ -656,11 +656,33 @@ void CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
                 try {
                     x_GetData(tse, conn);
                 }
+                catch ( CLoaderException& e ) {
+                    g.Lock();
+                    g.Lock(&*tse);
+                    tse->locked--;
+                    x_UpdateDropList(&*tse); // move up as just checked
+                    switch ( e.GetErrCode() ) {
+                    case CLoaderException::eNoConnection:
+                        throw;
+                    case CLoaderException::ePrivateData:
+                        // no need to reconnect
+                        // no need to wait more
+                        break;
+                    case CLoaderException::eNoData:
+                        // no need to reconnect
+                        throw;
+                    default:
+                        ERR_POST("GenBank connection failed: Reconnecting...");
+                        m_Driver->Reconnect(conn);
+                        throw;
+                    }
+                }
                 catch ( ... ) {
                     g.Lock();
                     g.Lock(&*tse);
                     tse->locked--;
                     x_UpdateDropList(&*tse); // move up as just checked
+                    ERR_POST("GenBank connection failed: Reconnecting...");
                     m_Driver->Reconnect(conn);
                     throw;
                 }
@@ -690,7 +712,6 @@ void CGBDataLoader::x_GetRecords(const CSeq_id_Handle& sih,
             throw;
         }
         // something is not loaded
-        ERR_POST("GenBank connection failed: Reconnecting...");
         // in case of any error we'll force reloading seqrefs
         
         CGBLGuard g(m_Locks,CGBLGuard::eMain,"x_ResolveHandle");
@@ -736,23 +757,14 @@ void CGBDataLoader::x_GetChunk(CRef<STSEinfo> tse,
             LOG_POST("GenBank connection failed: Reconnecting....");
             m_Driver->Reconnect(conn);
         }
-        catch(const CIOException &e) {
-            LOG_POST(e.what());
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
-        }
-        catch(const CDB_Exception &e) {
-            LOG_POST(e.what());
-            LOG_POST("GenBank connection failed: Reconnecting....");
-            m_Driver->Reconnect(conn);
-        }
         catch(const exception &e) {
             LOG_POST(e.what());
             LOG_POST("GenBank connection failed: Reconnecting....");
             m_Driver->Reconnect(conn);
         }
         catch (...) {
-            LOG_POST(CThread::GetSelf()<<":: Data request failed....");
+            LOG_POST("GenBank connection failed: Reconnecting....");
+            m_Driver->Reconnect(conn);
             g.Lock();
             g.Lock(&*tse);
             tse->locked--;
@@ -822,7 +834,7 @@ CGBDataLoader::x_ResolveHandle(const CSeq_id_Handle& h)
     if( !sr->m_Timer.NeedRefresh(m_Timer) )
         return sr;
     g.Local();
-    //GBLOG_POST( "ResolveHandle-before(" << h << ") " << sr->m_Sr.size() );
+    LOG_POST( "ResolveHandle-before("<< h.AsString()<<") "<<sr->m_Sr.size());
   
     SSeqrefs::TSeqrefs osr;
     bool got = false;
@@ -952,11 +964,13 @@ void CGBDataLoader::x_GetData(CRef<STSEinfo> tse,
             tse->m_LoadState = STSEinfo::eLoadStateDone;
         }
         else if ( e.GetErrCode() == e.eNoData ) {
-            if ( !(tse->seqref->GetFlags() & CSeqref::fPossible) ) {
-                // TODO log message
-                LOG_POST("ERROR: can not retrive sequence: "<<TSE(*tse));
+            if ( (tse->seqref->GetFlags() & CSeqref::fPossible) ) {
+                tse->m_LoadState   = STSEinfo::eLoadStateDone;
             }
-            tse->m_LoadState   = STSEinfo::eLoadStateDone;
+            else {
+                LOG_POST("ERROR: can not retrive sequence: "<<TSE(*tse));
+                throw;
+            }
         }
         else {
             throw;
@@ -1000,6 +1014,10 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.89  2003/10/27 18:50:49  vasilche
+* Detect 'private' blobs in ID1 reader.
+* Avoid reconnecting after ID1 server replied with error packet.
+*
 * Revision 1.88  2003/10/27 15:05:41  vasilche
 * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
 * Added recognition of ID1 error codes: private, etc.

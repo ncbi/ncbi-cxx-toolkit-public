@@ -74,7 +74,8 @@ public:
         fHasAll      = (1 << 16)-1,
         fHasAllLocal = fHasCore | fHasDescr | fHasSeqMap | fHasSeqData,
 
-        fPossible    = 1 << 16
+        fPossible    = 1 << 16,
+        fPrivate     = 1 << 17
     };
     typedef int TFlags;
 
@@ -218,6 +219,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.32  2003/10/27 18:50:48  vasilche
+* Detect 'private' blobs in ID1 reader.
+* Avoid reconnecting after ID1 server replied with error packet.
+*
 * Revision 1.31  2003/10/27 15:05:41  vasilche
 * Added correct recovery of cached ID1 loader if gi->sat/satkey cache is invalid.
 * Added recognition of ID1 error codes: private, etc.
