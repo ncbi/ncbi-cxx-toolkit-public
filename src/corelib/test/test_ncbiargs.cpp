@@ -406,12 +406,21 @@ static STest s_Test[] =
 
 class CArgTestApplication : public CNcbiApplication
 {
+public:
+    CArgTestApplication();
 private:
     virtual void Init(void);
     virtual int  Run(void);
     virtual void Exit(void);
     size_t m_TestNo;
 };
+
+
+// Constructor -- setting version test
+CArgTestApplication::CArgTestApplication()
+{
+    SetVersion(CVersionInfo(1,2,3,"NcbiArgTest"));
+} 
 
 
 // Choose the test to run, and
@@ -508,6 +517,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.21  2002/12/26 17:13:28  ivanov
+ * Added version info test
+ *
  * Revision 6.20  2002/07/15 18:17:25  gouriano
  * renamed CNcbiException and its descendents
  *
