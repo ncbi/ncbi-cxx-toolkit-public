@@ -31,11 +31,11 @@
  */
 
 #include "ncbi_conntest.h"
+#include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"
 #include <connect/ncbi_socket_connector.h>
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
-#include <string.h>
 /* This header must go last */
 #include "test_assert.h"
 
@@ -146,6 +146,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/12/04 19:50:31  lavr
+ * #include "../ncbi_ansi_ext.h" instead of <string.h> to define strcasecmp()
+ *
  * Revision 6.6  2002/12/04 16:57:11  lavr
  * Toggle verbose logging from environment; move change log to end
  *
