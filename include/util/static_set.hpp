@@ -36,7 +36,7 @@
  *
  */
 
-
+#include <corelib/ncbistd.hpp>
 #include <utility>
 #include <algorithm>
 #include <functional>
@@ -275,6 +275,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/08/19 13:10:09  dicuccio
+ * Added include for ncbistd.hpp for standard definitions
+ *
  * Revision 1.1  2004/01/23 18:02:23  vasilche
  * Cleaned implementation of CStaticArraySet & CStaticArrayMap.
  * Added test utility test_staticmap.
