@@ -463,6 +463,13 @@ int CTestApplication::Run(void)
     assert(NStr::PrintableString("A\020B" + string(1, '\0') + "CD").
            compare("A\\x10B\\x00CD") == 0);
 
+    // NStr::ParseEscapes
+    assert(NStr::ParseEscapes(kEmptyStr).empty());
+    assert(NStr::ParseEscapes("AB\\\\CD\\nAB\\rCD\\vAB\\tCD'AB\\\"").
+           compare("AB\\CD\nAB\rCD\vAB\tCD\'AB\"") == 0);
+    assert(NStr::ParseEscapes("A\\x10B\\x00CD").
+           compare("A\020B" + string(1, '\0') + "CD") == 0);
+
 
     // NStr::Compare()
     NcbiCout << NcbiEndl << "NStr::Compare() tests...";
@@ -809,6 +816,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 6.25  2003/12/02 15:23:25  ucko
+ * Add tests for NStr::ParseEscapes (inverted from tests for PrintableString)
+ *
  * Revision 6.24  2003/10/01 20:43:30  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *
