@@ -124,6 +124,106 @@ void Blast_HSPPHIGetEvalue(BlastHSP* hsp, BlastScoreBlk* sbp)
                     exp(-Lambda*hsp->score);
 }
 
+/** Update HSP data after reevaluation with ambiguities. In particular this 
+ * function calculates number of identities and checks if the percent identity
+ * criterion is satisfied.
+ * @param hsp HSP to update [in] [out]
+ * @param cutoff_score Cutoff score for saving the HSP [in]
+ * @param score New score [in]
+ * @param query_start Start of query sequence [in]
+ * @param subject_start Start of subject sequence [in]
+ * @param best_q_start Pointer to start of the new alignment in query [in]
+ * @param best_q_end Pointer to end of the new alignment in query [in]
+ * @param best_s_start Pointer to start of the new alignment in subject [in]
+ * @param best_s_end Pointer to end of the new alignment in subject [in]
+ * @param best_start_esp Link in the edit script chain where the new alignment
+ *                       starts. [in]
+ * @param best_prev_esp Link in the edit script chain immediately preceding
+ *                      best_start_esp. [in]
+ * @param best_end_esp Link in the edit script chain where the new alignment 
+ *                     ends. [in]
+ * @param best_end_esp_num Number of edit operations in the last edit script,
+ *                         that are included in the alignment. [in]
+ * @return TRUE if HSP is scheduled to be deleted.
+ */
+static Boolean
+s_UpdateReevaluatedHSP(BlastHSP* hsp, Boolean gapped,
+                       Int4 cutoff_score,
+                       Int4 score, Uint1* query_start, Uint1* subject_start, 
+                       Uint1* best_q_start, Uint1* best_q_end, 
+                       Uint1* best_s_start, Uint1* best_s_end, 
+                       GapEditScript* best_start_esp, 
+                       GapEditScript* best_prev_esp, GapEditScript* best_end_esp,
+                       Int4 best_end_esp_num)
+{
+    Boolean delete_hsp = TRUE;
+
+    hsp->score = score;
+
+    /* Make corrections in edit block and free any parts that are no longer
+       needed */
+    if (gapped && best_start_esp != hsp->gap_info->esp) {
+        /* best_prev_esp is the link in the chain exactly preceding the starting
+           edit script of the best part of the alignment. If best alignment does
+           not start from the original start, best_prev_esp cannot be NULL. */
+        ASSERT(best_prev_esp);
+        /* Unlink the good part of the alignment from the previous 
+           (negative-scoring) part that is being deleted. */
+        best_prev_esp->next = NULL;
+        GapEditScriptDelete(hsp->gap_info->esp);
+        hsp->gap_info->esp = best_start_esp;
+    }
+    
+    if (hsp->score >= cutoff_score) {
+        /* Update all HSP offsets. */
+        hsp->query.length = best_q_end - best_q_start;
+        hsp->subject.length = best_s_end - best_s_start;
+        hsp->query.offset = best_q_start - query_start;
+        hsp->query.end = hsp->query.offset + hsp->query.length;
+        hsp->subject.offset = best_s_start - subject_start;
+        hsp->subject.end = hsp->subject.offset + hsp->subject.length;
+
+        if (gapped) {
+            hsp->gap_info->start1 = hsp->query.offset;
+            hsp->gap_info->start2 = hsp->subject.offset;
+            if (best_end_esp->next != NULL) {
+                GapEditScriptDelete(best_end_esp->next);
+                best_end_esp->next = NULL;
+            }
+            best_end_esp->num = best_end_esp_num;
+        }
+        delete_hsp = FALSE;
+    }
+
+    return delete_hsp;
+}
+                               
+/** Calculates number of identities in an HSP and checks if the percentage of
+ * identities passes the cutoff threshold.
+ * @param hsp HSP to calculate identities for [in] [out]
+ * @param percent_identity Cutoff threshold for percent identity [in]
+ * @param query_start Query sequence buffer [in]
+ * @param subject_start Subject sequence buffer [in]
+ * @return TRUE if HSP is to be deleted, i.e. it has not passed the percent 
+ *         identity cutoff; FALSE otherwise.
+ */
+static Boolean
+s_HSPCheckPercentIdentity(BlastHSP* hsp, Int4 percent_identity,
+                          Uint1* query_start, Uint1* subject_start)
+{
+    Int4 align_length = 0;
+
+    /* Calculate number of identities. */
+    Blast_HSPGetNumIdentities(query_start, subject_start, hsp, 
+                              &hsp->num_ident, &align_length);
+    /* Check if this HSP passes the percent identity test */
+    return 
+        (((double)hsp->num_ident) / align_length * 100 < 
+         percent_identity);
+}
+
+
+
 Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp, 
            Uint1* query_start, Uint1* subject_start, 
            const BlastHitSavingParameters* hit_params, 
@@ -131,18 +231,45 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
            BlastScoreBlk* sbp)
 {
    Int4 sum, score, gap_open, gap_extend;
-   GapEditScript* esp,* last_esp = NULL,* prev_esp,* first_esp = NULL;
-   Int4 last_esp_num = 0;
+
+   GapEditScript* best_start_esp; /* Starting edit script for the best scoring
+                                     piece of the alignment. */
+   GapEditScript* best_end_esp; /* Ending edit script for the best scoring piece
+                                   of the alignment. */
+   GapEditScript* best_prev_esp; /* Previous link in the edit script chain 
+                                    before best_end_esp. */
+   Int4 best_end_esp_num; /* Number of operations inside the ending edit script
+                             for the best scoring piece. */
+
+   Uint1* best_q_start; /* Start of the best scoring part in query. */
+   Uint1* best_s_start; /* Start of the best scoring part in subject. */
+   Uint1* best_q_end;   /* End of the best scoring part in query. */
+   Uint1* best_s_end;   /* End of the best scoring part in subject. */
+   
+   GapEditScript* current_start_esp; /* Starting edit script for the current 
+                                        part of the alignment. */
+   GapEditScript* current_esp; /* Ending edit script for the current part
+                          of the alignment. */
+   GapEditScript* current_prev_esp; /* Previous link in the edit script chain 
+                                       before current_esp. */
+   GapEditScript* current_start_prev_esp; /* Previous link in the edit script 
+                                             chain before current_start_esp. */
+
+   Uint1* current_q_start; /* Start of the current part of the alignment in 
+                           query. */
+   Uint1* current_s_start; /* Start of the current part of the alignment in 
+                           subject. */
+   Int4 op_index; /* Index of an operation within a single edit script. */
+
    Uint1* query,* subject;
-   Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
    Int4** matrix;
-   Int4 index;
    Int2 factor = 1;
    const Uint1 kResidueMask = 0x0f;
-   Boolean delete_hsp;
 
    matrix = sbp->matrix;
 
+   /* For a non-affine greedy case, calculate the real value of the gap 
+      extension penalty. Multiply all scores by 2 if it is not integer. */
    if (score_params->gap_open == 0 && score_params->gap_extend == 0) {
       if (score_params->reward % 2 == 1) 
          factor = 2;
@@ -158,111 +285,135 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    subject = subject_start + hsp->subject.offset;
    score = 0;
    sum = 0;
-   new_q_start = new_q_end = query;
-   new_s_start = new_s_end = subject;
-   index = 0;
-   
-   esp = hsp->gap_info->esp;
-   prev_esp = NULL;
-   last_esp = first_esp = esp;
-   last_esp_num = 0;
-   
-   while (esp) {
-      if (esp->op_type == eGapAlignSub) {
-         sum += factor*matrix[*query & kResidueMask][*subject];
-         query++;
-         subject++;
-         index++;
-      } else if (esp->op_type == eGapAlignDel) {
-         sum -= gap_open + gap_extend * esp->num;
-         subject += esp->num;
-         index += esp->num;
-      } else if (esp->op_type == eGapAlignIns) {
-         sum -= gap_open + gap_extend * esp->num;
-         query += esp->num;
-         index += esp->num;
-      }
-      
-      if (sum < 0) {
-         if (score < hit_params->cutoff_score) {
-            /* Start from new offset */
-            new_q_start = query;
-            new_s_start = subject;
-            score = sum = 0;
-            if (index < esp->num) {
-               esp->num -= index;
-               first_esp = esp;
-               index = 0;
-            } else {
-               first_esp = esp->next;
-            }
-            /* Unlink the bad part of the esp chain 
-               so it can be freed later */
-            if (prev_esp)
-               prev_esp->next = NULL;
-            last_esp = NULL;
-         } else {
-            /* Stop here */
-            break;
-         }
-      } else if (sum > score) {
-         /* Remember this point as the best scoring end point */
-         score = sum;
-         last_esp = esp;
-         last_esp_num = index;
-         new_q_end = query;
-         new_s_end = subject;
-      }
-      if (index >= esp->num) {
-         index = 0;
-         prev_esp = esp;
-         esp = esp->next;
-      }
-   } /* loop on edit scripts */
 
+   /* Point all pointers to the beginning of the alignment. */
+   best_q_start = best_q_end = current_q_start = query;
+   best_s_start = best_s_end = current_s_start = subject;
+   best_start_esp = best_end_esp = current_start_esp = current_esp =
+       hsp->gap_info->esp;
+   /* There are no previous edit scripts at the beginning. */
+   best_prev_esp = current_prev_esp = current_start_prev_esp = NULL;
+   best_end_esp_num = 0;
+   op_index = 0;
+   
+   while (current_esp) {
+       /* Process substitutions one operation at a time, full gaps in one 
+          step. */
+       if (current_esp->op_type == eGapAlignSub) {
+           sum += factor*matrix[*query & kResidueMask][*subject];
+           query++;
+           subject++;
+           op_index++;
+       } else if (current_esp->op_type == eGapAlignDel) {
+           sum -= gap_open + gap_extend * current_esp->num;
+           subject += current_esp->num;
+           op_index += current_esp->num;
+       } else if (current_esp->op_type == eGapAlignIns) {
+           sum -= gap_open + gap_extend * current_esp->num;
+           query += current_esp->num;
+           op_index += current_esp->num;
+       }
+      
+       if (sum < 0) {
+           /* Point current edit script chain start to the new place.
+              If we are in the middle of an edit script, reduce its length and
+              point operation index to the beginning of a modified edit script;
+              if we are at the end, move to the next edit script. */
+           if (op_index < current_esp->num) {
+               current_esp->num -= op_index;
+               current_start_esp = current_esp;
+               current_start_prev_esp = current_prev_esp;
+               op_index = 0;
+           } else {
+               current_start_esp = current_esp->next;
+               current_start_prev_esp = current_esp;
+           }
+           /* Set sum to 0, to start a fresh count. */
+           sum = 0;
+           /* Set current starting positions in sequences to the new start. */
+           current_q_start = query;
+           current_s_start = subject;
+
+           /* If score has passed the cutoff at some point, leave the best score
+              and edit scripts positions information untouched, otherwise reset
+              the best score to 0 and point the best edit script positions to
+              the new start. */
+           if (score < hit_params->cutoff_score) {
+               /* Start from new offset; discard all previous information. */
+               best_q_start = query;
+               best_s_start = subject;
+               score = 0; 
+               
+               /* Set best start and end edit script pointers to new start. */
+               best_start_esp = current_start_esp;
+               best_end_esp = current_start_esp;
+               best_prev_esp = current_prev_esp;
+           }
+       } else if (sum > score) {
+           /* Remember this point as the best scoring end point, and the current
+              start of the alignment as the start of the best alignment. */
+           score = sum;
+           
+           best_q_start = current_q_start;
+           best_s_start = current_s_start;
+           best_q_end = query;
+           best_s_end = subject;
+           
+           best_start_esp = current_start_esp;
+           best_end_esp = current_esp;
+           best_prev_esp = current_start_prev_esp;
+           best_end_esp_num = op_index;
+       }
+       /* If operation index has reached the end of the current edit script, 
+          move on to the next link in the edit script chain. */
+       if (op_index >= current_esp->num) {
+           op_index = 0;
+           current_prev_esp = current_esp;
+           current_esp = current_esp->next;
+       }
+   } /* loop on edit scripts */
+   
    score /= factor;
    
-   delete_hsp = FALSE;
-   hsp->score = score;
-
-   if (hsp->score < hit_params->cutoff_score) {
-      delete_hsp = TRUE;
-   } else {
-      Int4 align_length;
+   /* Update HSP data. */
+   if (s_UpdateReevaluatedHSP(hsp, TRUE, hit_params->cutoff_score, score, 
+                              query_start, subject_start, best_q_start, 
+                              best_q_end, best_s_start, best_s_end, 
+                              best_start_esp, best_prev_esp, best_end_esp, 
+                              best_end_esp_num))
+       return TRUE;
    
-      hsp->query.length = new_q_end - new_q_start;
-      hsp->subject.length = new_s_end - new_s_start;
-      hsp->query.offset = new_q_start - query_start;
-      hsp->query.end = hsp->query.offset + hsp->query.length;
-      hsp->subject.offset = new_s_start - subject_start;
-      hsp->subject.end = hsp->subject.offset + hsp->subject.length;
-      /* Make corrections in edit block and free any parts that
-         are no longer needed */
-      if (first_esp != hsp->gap_info->esp) {
-         GapEditScriptDelete(hsp->gap_info->esp);
-         hsp->gap_info->esp = first_esp;
-      }
-      if (last_esp->next != NULL) {
-         GapEditScriptDelete(last_esp->next);
-         last_esp->next = NULL;
-      }
-      last_esp->num = last_esp_num;
+   /* If HSP passed the score threshold, calculate identities and check against
+      the percent identity cutoff. */
+   return 
+       s_HSPCheckPercentIdentity(hsp, hit_params->options->percent_identity,
+                                 query_start, subject_start);
+}
 
-      Blast_HSPGetNumIdentities(query_start, subject_start, hsp, 
-                                &hsp->num_ident, &align_length);
-      /* Check if this HSP passes the percent identity test */
-      if (((double)hsp->num_ident) / align_length * 100 < 
-          hit_params->options->percent_identity)
-         delete_hsp = TRUE;
-   }
-   
-   if (delete_hsp) { /* This HSP is now below the cutoff */
-      if (first_esp != NULL && first_esp != hsp->gap_info->esp)
-         GapEditScriptDelete(first_esp);
-   }
-  
-   return delete_hsp;
-
+/** Update HSP data after reevaluation with ambiguities for an ungapped search.
+ * In particular this function calculates number of identities and checks if the
+ * percent identity criterion is satisfied.
+ * @param hsp HSP to update [in] [out]
+ * @param cutoff_score Cutoff score for saving the HSP [in]
+ * @param score New score [in]
+ * @param query_start Start of query sequence [in]
+ * @param subject_start Start of subject sequence [in]
+ * @param best_q_start Pointer to start of the new alignment in query [in]
+ * @param best_q_end Pointer to end of the new alignment in query [in]
+ * @param best_s_start Pointer to start of the new alignment in subject [in]
+ * @param best_s_end Pointer to end of the new alignment in subject [in]
+ * @return TRUE if HSP is scheduled to be deleted.
+ */
+static Boolean
+s_UpdateReevaluatedHSPUngapped(BlastHSP* hsp, Int4 cutoff_score, Int4 score, 
+                               Uint1* query_start, Uint1* subject_start, 
+                               Uint1* best_q_start, Uint1* best_q_end, 
+                               Uint1* best_s_start, Uint1* best_s_end)
+{
+    return
+        s_UpdateReevaluatedHSP(hsp, FALSE, cutoff_score, score, query_start, 
+                               subject_start, best_q_start, best_q_end, 
+                               best_s_start, best_s_end, NULL, NULL, NULL, 0);
 }
 
 Boolean 
@@ -274,10 +425,10 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    Int4 sum, score;
    Int4** matrix;
    Uint1* query,* subject;
-   Uint1* new_q_start,* new_s_start,* new_q_end,* new_s_end;
+   Uint1* best_q_start,* best_s_start,* best_q_end,* best_s_end;
+   Uint1* current_q_start, * current_s_start;
    Int4 index;
    const Uint1 kResidueMask = (translated ? 0xff : 0x0f);
-   Boolean delete_hsp;
 
    matrix = sbp->matrix;
 
@@ -285,8 +436,8 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
    subject = subject_start + hsp->subject.offset;
    score = 0;
    sum = 0;
-   new_q_start = new_q_end = query;
-   new_s_start = new_s_end = subject;
+   best_q_start = best_q_end = current_q_start = query;
+   best_s_start = best_s_end = current_s_start = subject;
    index = 0;
    
    for (index = 0; index < hsp->subject.length; ++index) {
@@ -294,46 +445,41 @@ Blast_HSPReevaluateWithAmbiguitiesUngapped(BlastHSP* hsp, Uint1* query_start,
       query++;
       subject++;
       if (sum < 0) {
+          /* Start from new offset */
+          sum = 0;
+          current_q_start = query;
+          current_s_start = subject;
+          /* If previous top score never reached the cutoff, discard the front
+             part of the alignment completely. Otherwise keep pointer to the 
+             top-scoring front part. */
          if (score < word_params->cutoff_score) {
-            /* Start from new offset */
-            new_q_start = query;
-            new_s_start = subject;
-            score = sum = 0;
-         } else {
-            /* Stop here */
-            break;
+            best_q_start = best_q_end = query;
+            best_s_start = best_s_end = subject;
+            score = 0;
          }
       } else if (sum > score) {
          /* Remember this point as the best scoring end point */
          score = sum;
-         new_q_end = query;
-         new_s_end = subject;
+         best_q_end = query;
+         best_s_end = subject;
+         /* Set start of alignment to the current start, dismissing the 
+            previous top-scoring piece. */
+         best_q_start = current_q_start;
+         best_s_start = current_s_start;
       }
    }
 
-   delete_hsp = FALSE;
-   hsp->score = score;
+   /* Update HSP data. */
+   if (s_UpdateReevaluatedHSPUngapped(hsp, word_params->cutoff_score, score, 
+                                      query_start, subject_start, best_q_start,
+                                      best_q_end, best_s_start, best_s_end))
+       return TRUE;
 
-   if (hsp->score < word_params->cutoff_score) {
-      delete_hsp = TRUE;
-   } else {
-      Int4 align_length;
-
-      hsp->query.length = new_q_end - new_q_start;
-      hsp->subject.length = new_s_end - new_s_start;
-      hsp->query.offset = new_q_start - query_start;
-      hsp->query.end = hsp->query.offset + hsp->query.length;
-      hsp->subject.offset = new_s_start - subject_start;
-      hsp->subject.end = hsp->subject.offset + hsp->subject.length;
-      Blast_HSPGetNumIdentities(query_start, subject_start, hsp, 
-                                &hsp->num_ident, &align_length);
-      /* Check if this HSP passes the percent identity test */
-      if (((double)hsp->num_ident) / align_length * 100 < 
-          hit_params->options->percent_identity)
-         delete_hsp = TRUE;
-   }
-   
-   return delete_hsp;
+   /* If HSP passed the score threshold, calculate identities and check against
+      the percent identity cutoff. */
+   return
+       s_HSPCheckPercentIdentity(hsp, hit_params->options->percent_identity,
+                                 query_start, subject_start);
 } 
 
 Int2
