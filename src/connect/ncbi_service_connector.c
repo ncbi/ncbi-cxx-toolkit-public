@@ -96,11 +96,14 @@ static char* s_GetArgs(const char* client_host)
     if (*client_host) {
         nodelen = strlen(client_host);
         buflen += sizeof(address) - 1 + nodelen;
-        if ((ip = SOCK_gethostbyname(client_host)) != 0 &&
+        if (!strchr(client_host, '.')                   &&
+            (ip = SOCK_gethostbyname(client_host)) != 0 &&
             SOCK_ntoa(ip, addr, sizeof(addr))      == 0) {
-            size_t addrlen = strlen(addr) + 2;
-            nodelen += addrlen;
-            buflen  += addrlen;
+            buflen += strlen(addr) + 1;
+            for (p = addr; *p; p++) {
+                if (*p == '.')
+                    *p = '_';
+            }
         } else
             *addr = 0;
     } else
@@ -119,7 +122,7 @@ static char* s_GetArgs(const char* client_host)
         strcpy(&p[buflen], client_host);
         buflen += nodelen;
         if (*addr)
-            buflen += sprintf(&p[buflen], "[%s]", addr);
+            buflen += sprintf(&p[buflen], "_%s", addr);
     }
     if (archlen) {
         strcpy(&p[buflen], nodelen ? platform : platform + 1);
@@ -847,6 +850,9 @@ extern CONNECTOR SERVICE_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2003/05/14 13:55:06  lavr
+ * BUGFIX: Buffer overrun in s_GetArgs()
+ *
  * Revision 6.54  2003/05/14 04:19:48  lavr
  * BUGFIX: Actually add IP address in "address=" CGI argument
  *
