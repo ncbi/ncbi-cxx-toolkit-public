@@ -652,12 +652,13 @@ void CPluginManager<TClass>::Resolve(const string&       /*driver*/,
             if (entry.entry_points.empty()) {
                 continue;
             }
-            SNamedEntryPoint& epoint = entry.entry_points[0];
+            CDllResolver::SNamedEntryPoint& epoint = entry.entry_points[0];
             // TODO:
             // check if entry point provides the required interface-driver-version
             // and do not register otherwise...
-            if (epoint.func) {
-                FNCBI_EntryPoint ep = (FNCBI_EntryPoint)epoint.func;
+            if (epoint.entry_point.func) {
+                FNCBI_EntryPoint ep = 
+                   (FNCBI_EntryPoint)epoint.entry_point.func;
                 RegisterWithEntryPoint(ep);
                 m_RegisteredEntries.push_back(entry);
             }
@@ -706,6 +707,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2003/12/02 12:44:39  kuznets
+ * Fixed minor compilation issue.
+ *
  * Revision 1.17  2003/12/01 19:53:06  kuznets
  * Reflecting changes in CDllResolver
  *
