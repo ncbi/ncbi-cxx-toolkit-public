@@ -3,6 +3,7 @@
 SUB_PROJ = driver
 #SUB_PROJ = driver kholodov_dbapi butanaev_dbapi cslink
 
+LIB_PROJ = dbapi
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
