@@ -192,7 +192,7 @@ environment variables:
 <ul>
   <li> <b>CPP</b> -- C preprocessor;  "$CXX -E" or "$CC -E" by default
   <li> <b>AR</b> -- "ar" by default
-  <li> <b>RANLIB</b> -- "ranlib"(":" if not "ranlib" not found) by default
+  <li> <b>RANLIB</b> -- "ranlib"(":" if "ranlib" not found) by default
   <li> <b>CFLAGS</b> -- C compiler flags
   <li> <b>CXXFLAGS</b> -- C++ compiler flags
   <li> <b>CPPFLAGS</b> -- C preprocessor flags
@@ -200,10 +200,10 @@ environment variables:
   <li> <b>LIBS</b> -- standard libraries to be linked to every executable
 </ul>
 
-They will then be used to:
+They will be used to:
 <ul>
-  <li> Compile C++ sources:  <b><i>$CC -c $CFLAGS $CPPFLAGS ...</i></b>
-  <li> Compile C sources:  <b><i>$CXX -c $CXXFLAGS $CPPFLAGS ...</i></b>
+  <li> Compile C sources:  <b><i>$CC -c $CFLAGS $CPPFLAGS ...</i></b>
+  <li> Compile C++ sources:  <b><i>$CXX -c $CXXFLAGS $CPPFLAGS ...</i></b>
   <li> Link:  <b><i>$CXX $LDFLAGS ... $LIBS</i></b>
 </ul>
 
