@@ -489,6 +489,9 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
         }
 
     case 1:
+        if (main_size == 6  &&  isalpha(acc[2])) {
+            return eAcc_swissprot; // alpha digit ALPHA alnum alnum digit
+        }
         switch (pfx[0]) {
         case 'A':                                return eAcc_embl_patent;
         case 'B':                                return eAcc_gb_gss;
@@ -1512,6 +1515,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.87  2004/08/04 17:36:00  ucko
+ * Recognize extended Swissprot/Uniprot accessions.
+ *
  * Revision 6.86  2004/07/14 19:02:40  ucko
  * CP is now specifically assigned to GenBank genomes.
  *
