@@ -208,8 +208,10 @@ void CBioseqContext::x_SetLocation(const CSeq_loc* user_loc)
 void CBioseqContext::x_SetId(void)
 {
     m_PrimaryId.Reset(new CSeq_id);
-    m_PrimaryId->Assign(GetId(m_Handle, eGetId_Best));
-    m_Accession = m_PrimaryId->GetSeqIdString(true);
+    m_PrimaryId->Assign(sequence::GetId(m_Handle, sequence::eGetId_Best));
+
+    m_Accession.erase();
+    m_PrimaryId->GetLabel(&m_Accession, CSeq_id::eContent);
 
     ITERATE (CBioseq::TId, id_iter, m_Handle.GetBioseqCore()->GetId()) {
         const CSeq_id& id = **id_iter;
@@ -503,6 +505,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.17  2004/05/08 12:11:39  dicuccio
+* Use CSeq_id::GetLabel() instead of GetSeqIdString()
+*
 * Revision 1.16  2004/05/06 17:48:49  shomrat
 * + IsEMBL and IsInNucProt
 *
