@@ -131,6 +131,7 @@ BlastMaskLoc* BlastMaskLocFree(BlastMaskLoc* mask_loc)
       if (mask_loc->seqloc_array != NULL)
          BlastSeqLocFree(mask_loc->seqloc_array[index]);
    }
+   sfree(mask_loc->seqloc_array);
    sfree(mask_loc);
    return NULL;
 }
@@ -205,7 +206,7 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
 {
    Int2 status=0;		/* return value. */
    Int4 start, stop;	/* USed to merge overlapping SeqLoc's. */
-   SSeqRange* di = NULL,* di_next = NULL;
+   SSeqRange* ssr = NULL;
    BlastSeqLoc* loc_head=NULL,* last_loc=NULL,* loc_var=NULL;
    BlastSeqLoc* new_loc = NULL,* new_loc_last = NULL;
    
@@ -228,39 +229,36 @@ CombineMaskLocations(BlastSeqLoc* mask_loc, BlastSeqLoc* *mask_loc_out,
    loc_head = (BlastSeqLoc*)   
       BlastSeqLocSort (loc_head, SSeqRangeSortByStartPosition);
    
-   di = (SSeqRange*) loc_head->ssr;
-   start = di->left;
-   stop = di->right;
+   ssr = (SSeqRange*) loc_head->ssr;
+   start = ssr->left;
+   stop = ssr->right;
    loc_var = loc_head;
-   
+   ssr = NULL;
+
    while (loc_var) {
-      di = loc_var->ssr;  /* FIXME, why is this set at all? */
       if (loc_var->next)
-         di_next = loc_var->next->ssr;
-      if (di_next && ((stop + link_value) > di_next->left)) {
-         stop = MAX(stop, di_next->right);
+         ssr = loc_var->next->ssr;
+      if (ssr && ((stop + link_value) > ssr->left)) {
+         stop = MAX(stop, ssr->right);
       } else {
          if (!new_loc)
             new_loc_last = BlastSeqLocNew(&new_loc, start, stop);
          else
             new_loc_last = BlastSeqLocNew(&new_loc_last, start, stop);
          if (loc_var->next) {
-             start = di_next->left;
-             stop = di_next->right;
+             start = ssr->left;
+             stop = ssr->right;
          }
       }
       loc_var = loc_var->next;
-      di_next = NULL;
+      ssr = NULL;
    }
 
    *mask_loc_out = new_loc;
       
    /* Free memory allocated for the temporary list of SeqLocs */
-   while (loc_head) {
-      loc_var = loc_head->next;
-      sfree(loc_head);
-      loc_head = loc_var;
-   }
+   BlastSeqLocFree(loc_head);
+
    return status;
 }
 
