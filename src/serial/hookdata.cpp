@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2004/08/10 14:45:42  vakatov
+* Fixed sign/unsign warn on MSVC
+*
 * Revision 1.10  2004/05/17 21:03:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -102,10 +105,10 @@ CHookDataBase::~CHookDataBase(void)
 void CHookDataBase::SetLocalHook(TLocalHooks& key, THook* hook)
 {
     _ASSERT(hook);
-    _ASSERT(m_HookCount.Get() >= (m_GlobalHook? 1: 0));
+    _ASSERT(m_HookCount.Get() >= (TNCBIAtomicValue)(m_GlobalHook? 1: 0));
     key.SetHook(this, hook);
     m_HookCount.Add(1);
-    _ASSERT(m_HookCount.Get() > (m_GlobalHook? 1: 0));
+    _ASSERT(m_HookCount.Get() > (TNCBIAtomicValue)(m_GlobalHook? 1: 0));
     _ASSERT(!Empty());
 }
 
@@ -113,20 +116,20 @@ void CHookDataBase::SetLocalHook(TLocalHooks& key, THook* hook)
 void CHookDataBase::ResetLocalHook(TLocalHooks& key)
 {
     _ASSERT(!Empty());
-    _ASSERT(m_HookCount.Get() > (m_GlobalHook? 1: 0));
+    _ASSERT(m_HookCount.Get() > (TNCBIAtomicValue)(m_GlobalHook? 1: 0));
     key.ResetHook(this);
     m_HookCount.Add(-1);
-    _ASSERT(m_HookCount.Get() >= (m_GlobalHook? 1: 0));
+    _ASSERT(m_HookCount.Get() >= (TNCBIAtomicValue)(m_GlobalHook? 1: 0));
 }
 
 
 void CHookDataBase::ForgetLocalHook(TLocalHooks& _DEBUG_ARG(key))
 {
     _ASSERT(!Empty());
-    _ASSERT(m_HookCount.Get() > (m_GlobalHook? 1: 0));
+    _ASSERT(m_HookCount.Get() > (TNCBIAtomicValue)(m_GlobalHook? 1: 0));
     _ASSERT(key.GetHook(this) != 0);
     m_HookCount.Add(-1);
-    _ASSERT(m_HookCount.Get() >= (m_GlobalHook? 1: 0));
+    _ASSERT(m_HookCount.Get() >= (TNCBIAtomicValue)(m_GlobalHook? 1: 0));
 }
 
 
