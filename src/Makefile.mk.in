@@ -111,6 +111,8 @@ LIBS     = $(CONF_LIBS)
 
 ### Use automatic auto-dependencies (SunOS make, .KEEP_STATE:)
 @KeepStateTarget@
+### Kludge module to workaround an RTTI bug (Sun WorkShop only)
+serial_ws50_rtti_kludge=@serial_ws50_rtti_kludge@
 
 
 #################################

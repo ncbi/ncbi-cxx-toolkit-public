@@ -163,6 +163,7 @@ case "$host:$compiler" in
    LDFLAGS="-xildoff $WS64_CFLAGS $LDFLAGS"
    AR="$CXX -xar -o"
    RANLIB=":"
+   serial_ws50_rtti_kludge="rtti"
    ;;
 
  *:MIPSpro73 )
@@ -781,6 +782,7 @@ AC_SUBST(NCBI_C_ncbi)
 AC_SUBST(BINCOPY)
 
 AC_SUBST(KeepStateTarget)
+AC_SUBST(serial_ws50_rtti_kludge)
 
 
 #############################################################################

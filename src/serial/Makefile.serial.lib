@@ -8,8 +8,8 @@ LIBOBJ = \
   member memberid memberlist classinfo \
   stltypes enumerated choice asntypes \
   objistr objostr objlist \
-  objistrb objostrb objostrasn objistrasn objostrasnb objistrasnb \
-  rtti
+  objistrb objostrb \
+  objostrasn objistrasn objostrasnb objistrasnb $(serial_ws50_rtti_kludge)
 LIB    = xser
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
