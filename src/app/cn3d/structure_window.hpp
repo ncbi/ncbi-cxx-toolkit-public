@@ -57,6 +57,7 @@ class CDDAnnotateDialog;
 class MultiTextDialog;
 class CDDRefDialog;
 class CDDSplashDialog;
+class CommandProcessor;
 
 class StructureWindow: public wxFrame, public MultiTextDialogOwner, public ncbi::MessageResponder
 {
@@ -241,6 +242,8 @@ private:
     ncbi::FileMessenger *fileMessenger;
     void OnFileMessagingTimer(wxTimerEvent& event);
 
+    CommandProcessor *commandProcessor;
+
     DECLARE_EVENT_TABLE()
 };
 
@@ -251,6 +254,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2003/03/14 19:22:59  thiessen
+* add CommandProcessor to handle file-message commands; fixes for GCC 2.9
+*
 * Revision 1.1  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

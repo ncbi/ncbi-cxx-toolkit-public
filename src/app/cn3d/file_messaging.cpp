@@ -33,6 +33,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
+#include <util/stream_utils.hpp>
 
 #include <memory>
 
@@ -187,7 +188,7 @@ void FileMessenger::PollMessageFile(void)
     }
     char lockWord[4];
     lockStream->seekg(0);
-    if (lockStream->readsome(lockWord, 4) == 4 &&
+    if (CStreamUtils::Readsome(*lockStream, lockWord, 4) == 4 &&
             lockWord[0] == 'L' && lockWord[1] == 'O' &&
             lockWord[2] == 'C' && lockWord[3] == 'K') {
         ERRORMSG("lock file opened for writing but apparently already LOCKed!");
@@ -222,10 +223,10 @@ static const string COMMAND_END = "### END COMMAND ###";
 static bool ReadSingleLine(CNcbiIfstream& inStream, string *str)
 {
     str->erase();
-    CNcbiIfstream::char_type ch;
+    CT_CHAR_TYPE ch;
     do {
         ch = inStream.get();
-        if (ch == CNcbiIfstream::traits_type::eof())
+        if (CT_EQ_INT_TYPE(CT_TO_INT_TYPE(ch), CT_EOF))
             return false;
         else if (ch == '\n')
             break;
@@ -274,7 +275,7 @@ void FileMessenger::ReceiveCommands(void)
     do {
 
         // get To: (ignore if not this app)
-        if (!ReadSingleLine(*inStream, &line)) return;
+        if (!ReadSingleLine(*inStream, &line) || line.size() == 0) return;
         GET_ITEM("To: ")
         if (item != manager->applicationName) {
             SKIP_THROUGH_END_OF_COMMAND;
@@ -432,6 +433,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/03/14 19:22:59  thiessen
+* add CommandProcessor to handle file-message commands; fixes for GCC 2.9
+*
 * Revision 1.2  2003/03/13 18:55:04  thiessen
 * add messenger destroy function
 *

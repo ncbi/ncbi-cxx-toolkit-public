@@ -73,6 +73,7 @@
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule_identifier.hpp"
 #include "cn3d/cdd_splash_dialog.hpp"
+#include "cn3d/command_processor.hpp"
 
 // the application icon (under Windows it is in resources)
 #if defined(__WXGTK__) || defined(__WXMAC__)
@@ -152,6 +153,8 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     animationTimer.SetOwner(this, MID_ANIMATE);
     SetSizeHints(150, 150); // min size
     SetIcon(wxICON(cn3d));
+
+    commandProcessor = new CommandProcessor(this);
 
     // File menu
     menuBar = new wxMenuBar;
@@ -351,6 +354,7 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
 
 StructureWindow::~StructureWindow(void)
 {
+    delete commandProcessor;
 }
 
 void StructureWindow::OnCloseWindow(wxCloseEvent& event)
@@ -399,14 +403,24 @@ void StructureWindow::OnFileMessagingTimer(wxTimerEvent& event)
 void StructureWindow::ReceivedCommand(const std::string& fromApp, unsigned long id,
     const std::string& command, const std::string& data)
 {
-    INFOMSG("received command " << id << " from " << fromApp << ": " << command << ", data:\n" << data);
-    fileMessenger->SendReply(fromApp, id,
-        MessageResponder::REPLY_ERROR, "Unrecognized command");
+    INFOMSG("received command " << id << " from " << fromApp << ": " << command);
+
+    // default reply - should be changed by CommandProcessor
+    MessageResponder::ReplyStatus replyStatus = MessageResponder::REPLY_ERROR;
+    string replyData = "failed to process";
+
+    // actually perform the command functions
+    commandProcessor->ProcessCommand(command, data, &replyStatus, &replyData);
+
+    // reply
+    TRACEMSG("reply data: " << replyData);
+    fileMessenger->SendReply(fromApp, id, replyStatus, replyData);
 }
 
 void StructureWindow::ReceivedReply(const std::string& fromApp, unsigned long id,
     MessageResponder::ReplyStatus status, const std::string& data)
 {
+    // just post a message for now; eventually may pass on to CommandProcessor
     if (status == MessageResponder::REPLY_OKAY)
         INFOMSG(fromApp << ": got OKAY from " << fromApp << " (command " << id << "), data: " << data);
     else
@@ -1391,6 +1405,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2003/03/14 19:22:59  thiessen
+* add CommandProcessor to handle file-message commands; fixes for GCC 2.9
+*
 * Revision 1.5  2003/03/13 22:55:29  thiessen
 * another Solaris/workshop fix
 *
