@@ -427,8 +427,9 @@ HSPSetScores(BlastQueryInfo* query_info, Uint1* query,
                }
             }
 
-            if (hsp->num_ident * 100 < 
-                align_length * hit_options->percent_identity) {
+            if ((hsp->num_ident * 100 < 
+                align_length * hit_options->percent_identity) ||
+                align_length < hit_options->min_hit_length) {
                keep = FALSE;
             }
             
