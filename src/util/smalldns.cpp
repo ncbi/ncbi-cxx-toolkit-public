@@ -25,7 +25,7 @@
 *
 * Author: Anton Golikov
 *
-* File Description: Resolve host name to ip address using preset ini-file
+* File Description: Resolve host name to ip address and back using preset ini-file
 *
 * ===========================================================================
 */
@@ -34,18 +34,52 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbireg.hpp>
 
+#include <sys/utsname.h>
+#include <errno.h>
+
 BEGIN_NCBI_SCOPE
 
-static const string s_FileDNS("./hosts.ini");
+string CSmallDNS::sm_localHostName;
 
-bool IsValidIP(const string& ipname)
+CSmallDNS::CSmallDNS(const string& local_hosts_file /* = "./hosts.ini" */)
+{
+    const string section("LOCAL_DNS");
+    
+    CNcbiIfstream is(local_hosts_file.c_str());
+    if( !is.good() ) {
+        ERR_POST(Error << "CSmallDNS: cannot open file: " << local_hosts_file);
+        return;
+    }
+    CNcbiRegistry reg(is);
+    list<string> items;
+    
+    reg.EnumerateEntries( section, &items );
+    for(list<string>::const_iterator it = items.begin(); it != items.end(); ++it ) {
+        string val = reg.Get( section, *it );
+        if( !IsValidIP(val) ) {
+            ERR_POST(Warning << "CSmallDNS: Bad IP address '" << val
+                     << "' for " << *it);
+        } else {
+            m_map[*it] = val;
+            m_map[val] = *it;
+        }
+    }
+    is.close();
+}
+    
+CSmallDNS::~CSmallDNS()
+{
+}
+
+// static
+bool CSmallDNS::IsValidIP(const string& ip)
 {
     list<string> dig;
     
-    NStr::Split(ipname, ".", dig);
+    NStr::Split(ip, ".", dig);
     if( dig.size() != 4 )
         return false;
-
+    
     for(list<string>::const_iterator it = dig.begin(); it != dig.end(); ++it) {
         try {
             unsigned long i = NStr::StringToULong(*it);
@@ -58,23 +92,49 @@ bool IsValidIP(const string& ipname)
     return true;
 }
 
-string LocalResolveDNS(const string& hostname,
-                       const string& local_hosts_file /* = kEmptyStr */)
+string CSmallDNS::GetLocalIP(void) const
 {
-    if( IsValidIP(hostname) )
-        return hostname;
+    return LocalResolveDNS(GetLocalHost());
+}
 
-    CNcbiIfstream is( local_hosts_file.empty() ?
-                      s_FileDNS.c_str() :
-                      local_hosts_file.c_str());
-    if( !is.good() ) {
-        _TRACE("LocalResolveDNS: cannot open hosts file: "
-               << (local_hosts_file.empty() ? s_FileDNS : local_hosts_file));
+// static
+string CSmallDNS::GetLocalHost(void)
+{
+    if( sm_localHostName.empty() ) {
+        struct utsname unm;
+        errno = 0;
+        if( uname(&unm) != -1 ) {
+            sm_localHostName = unm.nodename;
+        } else {
+            ERR_POST(Warning << "CSmallDNS: Cannot detect host name, errno:" << errno);
+        }
+    }
+    return sm_localHostName;
+}
+
+string CSmallDNS::LocalResolveDNS(const string& host) const
+{
+    if( IsValidIP(host) ) {
+        return host;
+    }
+    
+    map<string, string>::const_iterator it = m_map.find(host);
+    if( it != m_map.end() ) {
+        return it->second;
+    }
+    return kEmptyStr;
+}
+
+string CSmallDNS::LocalBackResolveDNS(const string& ip) const
+{
+    if( !IsValidIP(ip) ) {
         return kEmptyStr;
     }
     
-    CNcbiRegistry reg(is);
-    return reg.Get("LOCAL_DNS", hostname);
+    map<string, string>::const_iterator it = m_map.find(ip);
+    if( it != m_map.end() ) {
+        return it->second;
+    }
+    return kEmptyStr;
 }
-
 END_NCBI_SCOPE

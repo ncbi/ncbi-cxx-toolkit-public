@@ -25,7 +25,7 @@
 *
 * Author: Anton Golikov
 *
-* File Description: Resolve host name to ip address using preset ini-file
+* File Description: Resolve host name to ip address and back using preset ini-file
 *
 * ===========================================================================
 */
@@ -33,21 +33,44 @@
 #define SMALLDNS__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
-// Validate if "ipname" contains a legal IP address in a dot notation
-// (a la "255.255.255.255").
-extern bool IsValidIP(const string& ipname);
+class CSmallDNS
+{
+public:
+    // creates small DNS service from the registry-like file
+    // named by "local_hosts_file" using section "[LOCAL_DNS]"
+    CSmallDNS(const string& local_hosts_file = "./hosts.ini");
+    
+    ~CSmallDNS();
+    
+    // Validate if "ip" contains a legal IP address in a dot notation
+    // (a la "255.255.255.255")
+    static bool IsValidIP(const string& ip);
 
-// Given host name "hostname", return its IP address in dot notation.
-// If the "hostname" is not in the dot notation, then look it up in
-// the registry-like file named by "local_hosts_file" (default -- './hosts.ini')
-// in section "[LOCAL_DNS]".
-// Return empty string if "hostname" cannot be resolved
-// using the "local_hosts_file" file.
-extern string LocalResolveDNS(const string& hostname,
-                              const string& local_hosts_file = kEmptyStr);
+    // Get local (current) host name (uname call)
+    static string GetLocalHost(void);
+    
+    // Get local (current) host ip address from registry
+    string GetLocalIP(void) const;
+    
+    // Given host name "hostname", return its IP address in dot notation.
+    // If the "hostname" is not in the dot notation, then look it up in
+    // the registry. Return empty string if "hostname" cannot be resolved.
+    string LocalResolveDNS(const string& hostname) const;
+
+    // Given ip address in dot notation, return host name by look up in
+    // the registry. Return empty string if "ip" cannot be resolved to hostname.
+    string LocalBackResolveDNS(const string& ip) const;
+
+protected:
+
+    static string sm_localHostName;
+    
+    map<string, string> m_map;
+};
 
 END_NCBI_SCOPE
 
