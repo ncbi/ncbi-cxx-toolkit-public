@@ -908,7 +908,7 @@ static EIO_Status s_StripToPattern
     /* check args */
     if ( n_discarded )
         *n_discarded = 0;
-    if (!stream  ||  (!!pattern ^ !!pattern_size))
+    if (!stream  ||  (pattern != 0) != (pattern_size != 0))
         return eIO_InvalidArg;
 
     /* allocate a temporary read buffer */
@@ -1476,6 +1476,9 @@ extern size_t HostPortToString(unsigned int   host,
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.58  2003/05/31 05:13:38  lavr
+ * Replace bitwise XOR with inequality [of the same effect]
+ *
  * Revision 6.57  2003/05/20 21:25:24  lavr
  * Limit SConnNetInfo::max_try by reasonable "short" value
  *
