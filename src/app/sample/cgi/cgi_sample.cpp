@@ -26,7 +26,7 @@
  * Author:  Denis Vakatov, Anatoliy Kuznetsov
  *
  * File Description:
- *   Plain example of a CGI application.
+ *   Plain example of a CGI/FastCGI application.
  *
  *   USAGE:  sample.cgi?message=Some+Message
  *
@@ -46,29 +46,36 @@
 #include <html/html.hpp>
 #include <html/page.hpp>
 
+// To get CGI client API (in-house only, optional)
 // #include <connect/ext/ncbi_localnet.h>
+
 
 using namespace ncbi;
 
 
 /////////////////////////////////////////////////////////////////////////////
-//  CSampleCgiApplication::
+//  CCgiSampleApplication::
 //
 
-class CSampleCgiApplication : public CCgiApplication
+class CCgiSampleApplication : public CCgiApplication
 {
 public:
     virtual void Init(void);
     virtual int  ProcessRequest(CCgiContext& ctx);
+
+private:
+    // These 2 functions just demonstrate the use of cmd-line argument parsing
+    // mechanism in CGI application -- for the processing of both cmd-line
+    // arguments and HTTP entries
+    void x_SetupArgs(void);
+    void x_LookAtArgs(void);
 };
 
 
-void CSampleCgiApplication::Init()
+void CCgiSampleApplication::Init()
 {
     // Standard CGI framework initialization
     CCgiApplication::Init();
-
-    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
 
     // Allows CGI client to put the diagnostics to:
     //   HTML body (as comments) -- using CGI arg "&diag-destination=comments"
@@ -77,68 +84,34 @@ void CSampleCgiApplication::Init()
     RegisterDiagFactory("email",    new CEmailDiagFactory);
 
 
-    // Create CGI argument descriptions class
-    //  (For CGI applications only keys can be used)
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "CGI sample application");
-        
-    arg_desc->AddOptionalKey("message",
-                             "message",
-                             "Message passed to CGI application",
-                             CArgDescriptions::eString,
-                             CArgDescriptions::fAllowMultiple);
-
-
-
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
+    // Describe possible cmd-line and HTTP entries
+    // (optional)
+    x_SetupArgs();
 }
 
 
-int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
+int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
 {
-     // you can catch CArgException& here to process argument errors
-     // or handle it in OnException
-     const CArgs& args = GetArgs();
-
-     // args now contains both command line arguments and arguments 
-     // passed throught the CGI call
-
-     if (args["message"]) {
-         // get the first "message" argument only...
-         const string& m = args["message"].AsString();
-         (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
-
-         // ...or get the whole list of "message" arguments
-         const CArgValue::TStringArray& values = 
-             args["message"].GetStringList();
-
-         ITERATE(CArgValue::TStringArray, it, values) {
-             // do something with the message
-             // (void) it->c_str(); // eg
-         } 
-     } else {
-         // no "message" argument is present
-     }
+    // Parse, verify, and look at cmd-line and CGI parameters via "CArgs"
+    // (optional)
+    x_LookAtArgs();
 
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     const CCgiRequest& request  = ctx.GetRequest();
     CCgiResponse&      response = ctx.GetResponse();
 
-    /* Get CGI client API (in-house only)
+    /*
+    // To get CGI client API (in-house only, optional)
     const char* const* client_tracking_env = request.GetClientTrackingEnv();
     unsigned int client_ip = NcbiGetCgiClientIP(eCgiClientIP_TryAll,
                                                 client_tracking_env);
     int is_local_client = NcbiIsLocalCgiClient(client_tracking_env);
     */
 
-    // Try to retrieve the message ('message=...') from the URL args
-    // (case sensitivity was turned off)
-    bool   is_message = false;
+    // Try to retrieve the message ('message=...') from the HTTP request.
+    // NOTE:  the case sensitivity was turned off in Init().
+    bool is_message = false;
     string message    = request.GetEntry("Message", &is_message);
     if ( is_message ) {
         message = "'" + message + "'";
@@ -192,13 +165,66 @@ int CSampleCgiApplication::ProcessRequest(CCgiContext& ctx)
 
 
 
+void CCgiSampleApplication::x_SetupArgs()
+{
+    // Disregard the case of CGI arguments
+    SetRequestFlags(CCgiRequest::fCaseInsensitiveArgs);
+
+    // Create CGI argument descriptions class
+    //  (For CGI applications only keys can be used)
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+
+    // Specify USAGE context
+    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
+                              "CGI sample application");
+        
+    arg_desc->AddOptionalKey("message",
+                             "message",
+                             "Message passed to CGI application",
+                             CArgDescriptions::eString,
+                             CArgDescriptions::fAllowMultiple);
+
+    // Setup arg.descriptions for this application
+    SetupArgDescriptions(arg_desc.release());
+}
+
+
+void CCgiSampleApplication::x_LookAtArgs()
+{
+    // You can catch CArgException& here to process argument errors,
+    // or you can handle it in OnException()
+    const CArgs& args = GetArgs();
+
+    // "args" now contains both command line arguments and the arguments 
+    // extracted from the HTTP request
+
+    if ( args["message"] ) {
+        // get the first "message" argument only...
+        const string& m = args["message"].AsString();
+        (void) m.c_str(); // just get rid of compiler warning "unused 'm'"
+
+        // ...or get the whole list of "message" arguments
+        const CArgValue::TStringArray& values = 
+            args["message"].GetStringList();
+
+        ITERATE(CArgValue::TStringArray, it, values) {
+            // do something with the message
+            // (void) it->c_str(); // eg
+        } 
+    } else {
+        // no "message" argument is present
+    }
+}
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
 //
 
 int main(int argc, const char* argv[])
 {
-    int result = CSampleCgiApplication().AppMain(argc, argv, 0, eDS_Default);
+    int result = CCgiSampleApplication().AppMain(argc, argv, 0, eDS_Default);
     _TRACE("back to normal diags");
     return result;
 }
@@ -208,6 +234,10 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2005/03/10 17:57:00  vakatov
+ * Move the CArgs demo code to separate methods to avoid cluttering the
+ * mainstream demo code
+ *
  * Revision 1.14  2005/02/25 17:30:34  didenko
  * Add (inhouse-only, thus commented out) example of code to determine
  * if the client is local (i.e. Web request came from inside NCBI)
