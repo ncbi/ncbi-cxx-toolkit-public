@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/15 21:02:13  vasilche
+* Fixed error.
+*
 * Revision 1.5  2000/11/15 20:34:40  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -88,7 +91,7 @@ public:
     void FillComments(void)
         {
             if ( !TokenStarted() )
-                return LookupComments();
+                LookupComments();
         }
     bool CheckSymbol(char symbol);
 
