@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2002/05/13 19:10:29  kholodov
+* Modified: indented, if index is out of range, aborts in debug mode, throws exception in release
+*
 * Revision 1.2  2002/02/06 17:48:43  kholodov
 * Added correct virtual destructor for GCC 3.0.3
 *
@@ -41,6 +44,8 @@
 */
 
 #include "array.hpp"
+
+BEGIN_NCBI_SCOPE
 
 CArrayOutOfBoundsException::CArrayOutOfBoundsException(const string& msg)
  : m_msg(msg) 
@@ -59,3 +64,5 @@ const char* CArrayOutOfBoundsException::what() const throw()
 }
 
 //======================================================
+
+END_NCBI_SCOPE
