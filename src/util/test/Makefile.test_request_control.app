@@ -1,8 +1,8 @@
 #################################
 # $Id$
 
-APP = test_request_throttler
-SRC = test_request_throttler
+APP = test_request_control
+SRC = test_request_control
 LIB = xutil xncbi
 
 CHECK_CMD =
