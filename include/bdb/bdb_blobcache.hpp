@@ -65,18 +65,20 @@ struct NCBI_BDB_EXPORT SBLOB_CacheDB : public CBDB_BLobFile
 
 /// BLOB access time file structure
 
-struct NCBI_BDB_EXPORT SBLOB_Cache_AccessTimeDB : public CBDB_File
+struct NCBI_BDB_EXPORT SBLOB_Cache_AttrDB : public CBDB_File
 {
     CBDB_FieldString       key;
     CBDB_FieldInt4         version;
     CBDB_FieldInt4         time_stamp;
+    CBDB_FieldInt4         overflow;
 
-    SBLOB_Cache_AccessTimeDB()
+    SBLOB_Cache_AttrDB()
     {
         BindKey("key",     &key);
         BindKey("version", &version);
 
         BindData("time_stamp", &time_stamp);
+        BindData("overflow",   &overflow);
     }
 };
 
@@ -135,15 +137,17 @@ private:
                             int              version);
 
     void x_DropBLOB(const char*    key,
-                    int            version);
+                    int            version,
+                    int            overflow);
 
 private:
     CBDB_BLOB_Cache(const CBDB_BLOB_Cache&);
     CBDB_BLOB_Cache& operator=(const CBDB_BLOB_Cache);
 private:
+    string                     m_Path; //!< Path to storage
     CBDB_Env                   m_Env;
     SBLOB_CacheDB              m_BlobDB;
-    SBLOB_Cache_AccessTimeDB   m_TimeDB;
+    SBLOB_Cache_AttrDB         m_AttrDB;
 };
 
 
@@ -155,6 +159,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/10/15 18:12:49  kuznets
+ * Implemented new cache architecture based on combination of BDB tables
+ * and plain files. Fixes the performance degradation in Berkeley DB
+ * when it has to work with a lot of overflow pages.
+ *
  * Revision 1.5  2003/10/02 20:14:16  kuznets
  * Minor code cleanup
  *

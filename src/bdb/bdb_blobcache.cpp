@@ -30,9 +30,12 @@
  */
 
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbifile.hpp>
 #include <bdb/bdb_blobcache.hpp>
 #include <bdb/bdb_cursor.hpp>
 #include <corelib/ncbimtx.hpp>
+
+#include <corelib/ncbitime.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -42,18 +45,36 @@ BEGIN_NCBI_SCOPE
 static CFastMutex x_BDB_BLOB_CacheMutex;
 
 
+static void s_MakeOverflowFileName(char* buf,
+                                   const char* path, 
+                                   const char* blob_key,
+                                   int         version)
+{
+    sprintf(buf, "%s%s_%i.ov_", path, blob_key, version);
+}
+
+
 class CBDB_BLOB_CacheIReader : public IReader
 {
 public:
 
     CBDB_BLOB_CacheIReader(CBDB_BLobStream* blob_stream)
-    : m_BlobStream(blob_stream)
+    : m_BlobStream(blob_stream),
+      m_OverflowFile(0)
+    {}
+
+    CBDB_BLOB_CacheIReader(CNcbiIfstream* overflow_file)
+    : m_BlobStream(0),
+      m_OverflowFile(overflow_file)
     {}
 
     virtual ~CBDB_BLOB_CacheIReader()
     {
         delete m_BlobStream;
+        delete m_OverflowFile;
     }
+
+
 
     virtual ERW_Result Read(void*   buf, 
                             size_t  count,
@@ -61,12 +82,28 @@ public:
     {
         if (count == 0)
             return eRW_Success;
+
+        // Check if BLOB is file based...
+        if (m_OverflowFile) {
+            CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+            m_OverflowFile->read((char*)buf, count);
+            *bytes_read = m_OverflowFile->gcount();
+            if (*bytes_read == 0) {
+                return eRW_Eof;
+            }
+            return eRW_Success;
+        }
         
+        // Reading from the BDB stream
+
         size_t br;
 
         {{
+
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
         m_BlobStream->Read(buf, count, &br);
+
         }}
 
         if (bytes_read)
@@ -89,20 +126,62 @@ private:
 
 private:
     CBDB_BLobStream* m_BlobStream;
+    CNcbiIfstream*   m_OverflowFile;
+
 };
 
+
+static const s_WriterBufferSize = 2 * (1024 * 1024);
 
 class CBDB_BLOB_CacheIWriter : public IWriter
 {
 public:
 
-    CBDB_BLOB_CacheIWriter(CBDB_BLobStream* blob_stream)
-    : m_BlobStream(blob_stream)
-    {}
+    CBDB_BLOB_CacheIWriter(const char*         path,
+                           const string&       blob_key,
+                           int                 version,
+                           CBDB_BLobStream*    blob_stream,
+                           SBLOB_CacheDB&      blob_db,
+                           SBLOB_Cache_AttrDB& attr_db)
+    : m_Path(path),
+      m_BlobKey(blob_key),
+      m_Version(version),
+      m_BlobStream(blob_stream),
+      m_BlobDB(blob_db),
+      m_AttrDB(attr_db),
+      m_Buffer(0),
+      m_BytesInBuffer(0),
+      m_OverflowFile(0)
+    {
+        m_Buffer = new unsigned char[s_WriterBufferSize];
+    }
 
     virtual ~CBDB_BLOB_CacheIWriter()
     {
+        // Dumping the buffer
+        CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+        if (m_Buffer) {
+            LOG_POST(Info << "LC: Dumping BDB BLOB size=" << m_BytesInBuffer);
+            m_BlobStream->Write(m_Buffer, m_BytesInBuffer);
+            m_BlobDB.Sync();
+            delete m_Buffer;
+        }
         delete m_BlobStream;
+
+        m_AttrDB.key = m_BlobKey.c_str();
+        m_AttrDB.version = m_Version;
+        m_AttrDB.overflow = 0;
+
+        CTime time_stamp(CTime::eCurrent);
+        m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+
+        if (m_OverflowFile) {
+            m_AttrDB.overflow = 1;
+            delete m_OverflowFile;
+        }
+        m_AttrDB.UpdateInsert();
+        m_AttrDB.Sync();
     }
 
     virtual ERW_Result Write(const void* buf, size_t count,
@@ -111,15 +190,58 @@ public:
         if (count == 0)
             return eRW_Success;
 
-        {{
         CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-        m_BlobStream->Write(buf, count);
-        }}
 
-        if (bytes_written)
+        unsigned int new_buf_length = m_BytesInBuffer + count;
+
+        if (m_Buffer) {
+            // Filling the buffer while we can
+            if (new_buf_length < s_WriterBufferSize) {
+                ::memcpy(m_Buffer + m_BytesInBuffer, buf, count);
+                m_BytesInBuffer = new_buf_length;
+                *bytes_written = count;
+                return eRW_Success;
+            } else {
+                // Buffer overflow. Writing to file.
+                OpenOverflowFile();
+                if (m_OverflowFile) {
+                    if (m_BytesInBuffer) {
+                        m_OverflowFile->write((char*)m_Buffer, 
+                                              m_BytesInBuffer);
+                        m_OverflowFile->write((char*)buf, count);
+                        delete m_Buffer;
+                        m_Buffer = 0;
+                        *bytes_written = count;
+                        return eRW_Success;
+                    }
+                }
+            }
+        }
+
+        if (m_OverflowFile) {
+            m_OverflowFile->write((char*)buf, count);
             *bytes_written = count;
+            return eRW_Success;
+        }
 
         return eRW_Success;
+    }
+private:
+    void OpenOverflowFile()
+    {
+        m_OverflowFile = new CNcbiOfstream();
+        char path[2048];
+        s_MakeOverflowFileName(path, m_Path, m_BlobKey.c_str(), m_Version);
+        LOG_POST(Info << "LC: Making overflow file " << path);
+        m_OverflowFile->open(path, 
+                             ios_base::out | 
+                             ios_base::trunc | 
+                             ios_base::binary);
+        if (!m_OverflowFile->is_open()) {
+            LOG_POST(Info << "LC Error:Cannot create overflow file " << path);
+            delete m_OverflowFile;
+            m_OverflowFile = 0;
+        }
     }
 
 private:
@@ -127,7 +249,17 @@ private:
     CBDB_BLOB_CacheIWriter& operator=(const CBDB_BLOB_CacheIWriter&);
 
 private:
-    CBDB_BLobStream* m_BlobStream;
+    const char*           m_Path;
+    string                m_BlobKey;
+    int                   m_Version;
+    CBDB_BLobStream*      m_BlobStream;
+
+    SBLOB_CacheDB&        m_BlobDB;
+    SBLOB_Cache_AttrDB&   m_AttrDB;
+
+    unsigned char*        m_Buffer;
+    unsigned int          m_BytesInBuffer;
+    CNcbiOfstream*        m_OverflowFile;
 };
 
 
@@ -144,14 +276,19 @@ CBDB_BLOB_Cache::~CBDB_BLOB_Cache()
 
 void CBDB_BLOB_Cache::Open(const char* path)
 {
+    m_Path = CDirEntry::AddTrailingPathSeparator(path);
+
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
     m_Env.OpenWithLocks(path);
     m_BlobDB.SetEnv(m_Env);
-    m_TimeDB.SetEnv(m_Env);
+    m_AttrDB.SetEnv(m_Env);
 
-    m_BlobDB.Open("lc_blob.db", CBDB_RawFile::eReadWriteCreate);
-    m_TimeDB.Open("lc_time.db", CBDB_RawFile::eReadWriteCreate);
+    m_BlobDB.SetPageSize(32 * 1024);
+    m_BlobDB.SetCacheSize(2 * s_WriterBufferSize);
+
+    m_BlobDB.Open("lc_blob.db",      CBDB_RawFile::eReadWriteCreate);
+    m_AttrDB.Open("lc_blob_attr.db", CBDB_RawFile::eReadWriteCreate);
 }
 
 void CBDB_BLOB_Cache::Store(const string& key,
@@ -187,42 +324,91 @@ void CBDB_BLOB_Cache::Store(const string& key,
 
     x_UpdateAccessTime(key, version);
 
-    m_TimeDB.key = key;
-    m_TimeDB.version = version;
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
 
     CTime time_stamp(CTime::eCurrent);
-    m_TimeDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+    m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+    m_AttrDB.overflow = 0;
 
-    m_TimeDB.UpdateInsert();
+    m_AttrDB.UpdateInsert();
 }
 
 
 size_t CBDB_BLOB_Cache::GetSize(const string& key,
-                               int           version)
+                               int            version)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
+
+    EBDB_ErrCode ret = m_AttrDB.Fetch();
+    if (ret != eBDB_Ok) {
+        return 0;
+    }
+
+    int overflow = m_AttrDB.overflow;
+
+    if (overflow) {
+        char path[2048];
+        s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
+        CFile entry(path);
+
+        if (entry.Exists()) {
+            return (size_t) entry.GetLength();
+        }
+
+    }
+
+    // Regular inline BLOB
+
     m_BlobDB.key = key;
     m_BlobDB.version = version;
-    EBDB_ErrCode ret = m_BlobDB.Fetch();
+    ret = m_BlobDB.Fetch();
 
     if (ret != eBDB_Ok) {
         return 0;
     }
     return m_BlobDB.LobSize();
+
+
 }
 
 
 bool CBDB_BLOB_Cache::Read(const string& key, 
-                          int           version, 
-                          void*         buf, 
-                          size_t        buf_size)
+                           int           version, 
+                           void*         buf, 
+                           size_t        buf_size)
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
+
+    EBDB_ErrCode ret = m_AttrDB.Fetch();
+    if (ret != eBDB_Ok) {
+        return false;
+    }
+
+    int overflow = m_AttrDB.overflow;
+
+    if (overflow) {
+        char path[2048];
+        s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
+
+        auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
+        overflow_file->open(path, ios_base::in | ios_base::binary);
+        if (!overflow_file->is_open()) {
+            return false;
+        }
+        overflow_file->read((char*)buf, buf_size);
+    }
+
+
     m_BlobDB.key = key;
     m_BlobDB.version = version;
-    EBDB_ErrCode ret = m_BlobDB.Fetch();
+    ret = m_BlobDB.Fetch();
     if (ret != eBDB_Ok) {
         return false;
     }
@@ -246,13 +432,18 @@ void CBDB_BLOB_Cache::Remove(const string& key)
 void CBDB_BLOB_Cache::x_UpdateAccessTime(const string&  key,
                                          int            version)
 {
-    m_TimeDB.key = key;
-    m_TimeDB.version = version;
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
+
+    EBDB_ErrCode ret = m_AttrDB.Fetch();
+    if (ret != eBDB_Ok) {
+        m_AttrDB.overflow = 0;
+    }
 
     CTime time_stamp(CTime::eCurrent);
-    m_TimeDB.time_stamp = (unsigned)time_stamp.GetTimeT();
+    m_AttrDB.time_stamp = (unsigned)time_stamp.GetTimeT();
 
-    m_TimeDB.UpdateInsert();
+    m_AttrDB.UpdateInsert();
 }
 
 
@@ -261,12 +452,12 @@ time_t CBDB_BLOB_Cache::GetAccessTime(const string& key,
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
-    m_TimeDB.key = key;
-    m_TimeDB.version = version;
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
 
-    EBDB_ErrCode ret = m_TimeDB.Fetch();
+    EBDB_ErrCode ret = m_AttrDB.Fetch();
     if (ret == eBDB_Ok) {
-        time_t t = m_TimeDB.time_stamp;
+        time_t t = m_AttrDB.time_stamp;
         return t;
     }
 
@@ -281,22 +472,39 @@ void CBDB_BLOB_Cache::Purge(time_t           access_time,
     if (keep_last_version == eDropAll && access_time == 0) {
         LOG_POST(Info << "CBDB_BLOB_Cache:: cache truncated");
         m_BlobDB.Truncate();
-        m_TimeDB.Truncate();
+        m_AttrDB.Truncate();
+
+        // Scan the directory, delete overflow BLOBs
+        CDir dir(m_Path);
+        string ext;
+        string ov_("ov_");
+        if (dir.Exists()) {
+            CDir::TEntries  content(dir.GetEntries());
+            ITERATE(CDir::TEntries, it, content) {
+                if (!(*it)->IsFile()) {
+                    if (ext == ov_) {
+                        (*it)->Remove();
+                    }
+                }
+            }            
+        }
+
         return;
     }
 
     // Search the records
 
-    CBDB_FileCursor cur(m_TimeDB);
+    CBDB_FileCursor cur(m_AttrDB);
     cur.SetCondition(CBDB_FileCursor::eFirst);
 
     while (cur.Fetch() == eBDB_Ok) {
-        time_t t = m_TimeDB.time_stamp;
-        int version = m_TimeDB.version;
-        const char* key = m_TimeDB.key;
+        time_t t = m_AttrDB.time_stamp;
+        int version = m_AttrDB.version;
+        const char* key = m_AttrDB.key;
+        int overflow = m_AttrDB.overflow;
 
         if (t < access_time) {
-            x_DropBLOB(key, version);
+            x_DropBLOB(key, version, overflow);
         }
     }
 }
@@ -309,21 +517,22 @@ void CBDB_BLOB_Cache::Purge(const string&    key,
 
     // Search the records
 
-    CBDB_FileCursor cur(m_TimeDB);
+    CBDB_FileCursor cur(m_AttrDB);
     cur.SetCondition(CBDB_FileCursor::eEQ);
 
     cur.From << key;
 
     while (cur.Fetch() == eBDB_Ok) {
-        time_t t = m_TimeDB.time_stamp;
+        time_t t = m_AttrDB.time_stamp;
 
-        const char* key_str = m_TimeDB.key;
-        int version = m_TimeDB.version;
+        const char* key_str = m_AttrDB.key;
+        int version = m_AttrDB.version;
+        int overflow = m_AttrDB.overflow;
 
         if (access_time == 0 || 
             keep_last_version == eDropAll ||
             t < access_time) {
-            x_DropBLOB(key_str, version);
+            x_DropBLOB(key_str, version, overflow);
         }
     }    
 }
@@ -334,10 +543,36 @@ IReader* CBDB_BLOB_Cache::GetReadStream(const string& key,
 {
     CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
 
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
+
+    EBDB_ErrCode ret = m_AttrDB.Fetch();
+    if (ret != eBDB_Ok) {
+        return 0;
+    }
+
+    int overflow = m_AttrDB.overflow;
+
+    // Check if it's an overflow BLOB (external file)
+
+    if (overflow) {
+        char path[2048];
+        s_MakeOverflowFileName(path, m_Path.c_str(), key.c_str(), version);
+        auto_ptr<CNcbiIfstream>  overflow_file(new CNcbiIfstream());
+        overflow_file->open(path, ios_base::in | ios_base::binary);
+        if (!overflow_file->is_open()) {
+            return 0;
+        }
+        return new CBDB_BLOB_CacheIReader(overflow_file.release());
+
+    }
+
+    // Inline BLOB, reading from BDB storage
+
     m_BlobDB.key = key;
     m_BlobDB.version = version;
     
-    EBDB_ErrCode ret = m_BlobDB.Fetch();
+    ret = m_BlobDB.Fetch();
     if (ret != eBDB_Ok) {
         return 0;
     }
@@ -360,16 +595,37 @@ IWriter* CBDB_BLOB_Cache::GetWriteStream(const string&    key,
     m_BlobDB.version = version;
 
     CBDB_BLobStream* bstream = m_BlobDB.CreateStream();
-    return new CBDB_BLOB_CacheIWriter(bstream);
+    return 
+        new CBDB_BLOB_CacheIWriter(m_Path.c_str(), 
+                                   key, 
+                                   version,
+                                   bstream, 
+                                   m_BlobDB,
+                                   m_AttrDB);
 }
 
 void CBDB_BLOB_Cache::x_DropBLOB(const char*    key,
-                                 int            version)
+                                 int            version,
+                                 int            overflow)
 {
+    if (overflow == 1) {
+        char path[2048];
+        s_MakeOverflowFileName(path, m_Path.c_str(), key, version);
+
+        CDirEntry entry(path);
+        if (entry.Exists()) {
+            entry.Remove();
+        }
+    }
     m_BlobDB.key = key;
     m_BlobDB.version = version;
 
-    m_BlobDB.Delete();
+    m_BlobDB.Delete(CBDB_RawFile::eIgnoreError);
+
+    m_AttrDB.key = key;
+    m_AttrDB.version = version;
+
+    m_AttrDB.Delete(CBDB_RawFile::eIgnoreError);
 }
 
 
@@ -378,6 +634,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/10/15 18:13:16  kuznets
+ * Implemented new cache architecture based on combination of BDB tables
+ * and plain files. Fixes the performance degradation in Berkeley DB
+ * when it has to work with a lot of overflow pages.
+ *
  * Revision 1.6  2003/10/06 16:24:19  kuznets
  * Fixed bug in Purge function
  * (truncated cache files with some parameters combination).
