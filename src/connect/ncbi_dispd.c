@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2001/05/11 15:30:31  lavr
+ * Protocol change: REQUEST_FAILED -> DISP_FAILURES
+ *
  * Revision 6.19  2001/05/03 16:58:16  lavr
  * FIX: Percent is taken of local bonus coef instead of the value itself
  *
@@ -96,7 +99,9 @@
  */
 
 #include "ncbi_comm.h"
+#if defined(_DEBUG) && !defined(NDEBUG)
 #include "ncbi_priv.h"
+#endif
 #include "ncbi_servicep_dispd.h"
 #include <connect/ncbi_ansi_ext.h>
 #include <connect/ncbi_connection.h>
@@ -290,12 +295,10 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
     SDISPD_Data* data = (SDISPD_Data*) iter->data;
     char* buf = (char*) malloc(strlen(text) + 1);
     time_t t = time(0);
-    char* b = buf;
-    int n = -1;
-    char* c;
+    char *b, *c;
 
     if (!buf)
-        return 0;
+        return 0/*failure*/;
     strcpy(buf, text);
     for (b = buf; (c = strchr(b, '\n')) != 0; b = c + 1) {
         SSERV_Info* info;
@@ -303,11 +306,9 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
         char* p;
         int d2;
 
-        *c = '\0';
+        *c = 0;
         if (strncasecmp(b, server_info,
                         sizeof(server_info) - 1) == 0) {
-            if (n < 0)
-                n = 0;
             b += sizeof(server_info) - 1;
             if ((p = strchr(b, '\r')) != 0)
                 *p = 0;
@@ -318,30 +319,25 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char* text)
             info->time += t;        /* Set 'expiration time' */
             if (!s_AddServerInfo(data, info))
                 continue;
-            n++;
-        } else if (strncasecmp(b, HTTP_REQUEST_FAILED,
-                               sizeof(HTTP_REQUEST_FAILED) - 1) == 0) {
-            n = 0;
+        } else if (strncasecmp(b, HTTP_DISP_FAILURES,
+                               sizeof(HTTP_DISP_FAILURES) - 1) == 0) {
 #if defined(_DEBUG) && !defined(NDEBUG)
-            b += sizeof(HTTP_REQUEST_FAILED) - 1;
+            b += sizeof(HTTP_DISP_FAILURES) - 1;
             while (*b && isspace((unsigned char)(*b)))
                 b++;
             if (!(p = strchr(b, '\r')))
                 p = c;
             else
-                *p = '\0';
-            if (b >= p)
-                CORE_LOG(eLOG_Warning, "[UNKNOWN DISPATCHER ERROR]");
-            else
-                CORE_LOGF(eLOG_Warning, ("[DISPATCHER ERROR] = %.*s",
-                                         (int)(p - b), b));
+                *p = 0;
+            assert(b <= p);
+            if (data->net_info->debug_printout)
+                CORE_LOGF(eLOG_Warning, ("[DISPATCHER] %s", b));
 #endif
-            break;
         }
     }
     free(buf);
-
-    return n != 0;
+    
+    return 1/*success*/;
 }
 
 

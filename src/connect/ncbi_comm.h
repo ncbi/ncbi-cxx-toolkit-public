@@ -34,6 +34,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2001/05/11 15:28:46  lavr
+ * Protocol change: REQUEST_FAILED -> DISP_FAILURES
+ *
  * Revision 6.2  2001/01/08 22:34:45  lavr
  * Request-Failed added to protocol
  *
@@ -45,7 +48,7 @@
 
 #define NCBID_NAME              "/Service/ncbid.cgi"
 #define HTTP_CONNECTION_INFO    "Connection-Info:"
-#define HTTP_REQUEST_FAILED     "Request-Failed:"
+#define HTTP_DISP_FAILURES      "Dispatcher-Failures:"
 
 typedef unsigned int ticket_t;
 
