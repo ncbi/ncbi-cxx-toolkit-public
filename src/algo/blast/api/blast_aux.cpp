@@ -200,7 +200,9 @@ CPSIBlastOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
     if (!m_Ptr)
         return;
 
+    ddc.Log("pseudo_count", m_Ptr->pseudo_count);
 }
+
 void
 CBlastGapAlignStruct::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
@@ -390,6 +392,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.46  2004/08/13 22:33:26  camacho
+ * Added DebugDump for PSIBlastOptions
+ *
  * Revision 1.45  2004/08/11 14:24:50  camacho
  * Move FindGeneticCode
  *
