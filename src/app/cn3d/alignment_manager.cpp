@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.59  2001/05/24 13:32:15  thiessen
+* fix merge status reporting bug
+*
 * Revision 1.58  2001/05/15 23:48:35  thiessen
 * minor adjustments to compile under Solaris/wxGTK
 *
@@ -700,21 +703,24 @@ void AlignmentManager::MergeUpdates(const AlignmentManager::UpdateMap& updatesTo
     ViewerBase::AlignmentList updatesToKeep;
     ViewerBase::AlignmentList::const_iterator u, ue = currentUpdates->end();
     for (u=currentUpdates->begin(); u!=ue; u++) {
-        bool mergeOK = false;
+        bool merged = false;
         if (updatesToMerge.find(*u) != updatesToMerge.end()) {
-            mergeOK = multiple->MergeAlignment(*u);
-            if (mergeOK) nSuccessfulMerges += (*u)->NRows() - 1;
-        }
-        if (!mergeOK) {
-            BlockMultipleAlignment *keep =(*u)->Clone();
-            for (int i=0; i<keep->NRows(); i++) {
-                std::string status = keep->GetRowStatusLine(i);
-                if (status.size() > 0)
-                    status += "; merge failed!";
-                else
-                    status = "Merge failed!";
-                keep->SetRowStatusLine(i, status);
+            merged = multiple->MergeAlignment(*u);
+            if (merged) {
+                nSuccessfulMerges += (*u)->NRows() - 1;
+            } else {
+                for (int i=0; i<(*u)->NRows(); i++) {
+                    std::string status = (*u)->GetRowStatusLine(i);
+                    if (status.size() > 0)
+                        status += "; merge failed!";
+                    else
+                        status = "Merge failed!";
+                    (*u)->SetRowStatusLine(i, status);
+                }
             }
+        }
+        if (!merged) {
+            BlockMultipleAlignment *keep =(*u)->Clone();
             updatesToKeep.push_back(keep);
         }
     }
