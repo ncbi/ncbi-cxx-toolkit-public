@@ -81,8 +81,9 @@ public:
          **/
         enum EErrCode
         {
-            eLstatStreamIpenFail,       /**< Error opening the length statistics file */
+            eLstatStreamIpenFail,   /**< Error opening the length statistics file */
             eLstatSyntax,           /**< Error parsing the length statistics file */
+            eLstatParam,            /**< Error deducing parameters from lstat or command line */
             eScoreAllocFail,        /**< Error allocating the score function object */
             eScoreP3AllocFail       /**< Error allocating the score function object for merging pass */
         };
@@ -122,7 +123,7 @@ public:
      **\param arg_window_size the window size in bps
      **\param arg_window_step the window step
      **\param arg_unit_step the unit step
-     **\param arg_xdrop how much the score is allowed to drop to keep masking
+     **\param arg_textend the score above which it is allowed to keep masking
      **\param arg_cutoff_score the unit score triggering the masking
      **\param arg_max_score maximum allowed unit score
      **\param arg_min_score minimum allowed unit score
@@ -151,7 +152,7 @@ public:
                 Uint1 arg_window_size,
                 Uint4 arg_window_step,
                 Uint1 arg_unit_step,
-                Uint4 arg_xdrop,
+                Uint4 arg_textend,
                 Uint4 arg_cutoff_score,
                 Uint4 arg_max_score,
                 Uint4 arg_min_score,
@@ -191,6 +192,8 @@ public:
      **/
     class LStat
     {
+        friend class CSeqMasker;
+
     public:
 
         /**
@@ -207,9 +210,10 @@ public:
          **\param arg_set_min_score score to use for units below min_score
          **
          **/
-        LStat( const string & name, Uint4 arg_max_score,
-               Uint4 arg_min_score, Uint4 arg_set_max_score,
-               Uint4 arg_set_min_score );
+        LStat(  const string & name, 
+                Uint4 arg_cutoff_score, Uint4 arg_textend,
+                Uint4 arg_max_score, Uint4 arg_min_score, 
+                Uint4 arg_set_max_score, Uint4 arg_set_min_score );
 
         /**
          **\brief Access by index operator.
@@ -246,6 +250,16 @@ public:
          **\brief Unit scores corresponding to values in units.
          **/
         vector< Uint4 > lengths;
+
+        /**\internal
+        **\brief Score that triggers masking.
+        **/
+        Uint4 cutoff_score;
+
+        /**\internal
+        **\brief The score above which it is allowed to extend masking.
+        **/
+        Uint4 textend;
 
         /**\internal
          **\brief Maximum allowed unit score.
@@ -386,17 +400,6 @@ private:
     Uint1 unit_step;
 
     /**\internal
-     **\brief How much the score is allowed to drop before
-     **       further extension is impossible.
-     **/
-    Uint4 xdrop;
-
-    /**\internal
-     **\brief Score that triggers masking.
-     **/
-    Uint4 cutoff_score;
-
-    /**\internal
      **\brief Flag indicating whether the merging pass is required.
      **/
     bool merge_pass;
@@ -455,6 +458,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.4  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.3  2005/02/14 12:15:17  dicuccio
  * More typedef changes: mlist -> TMList.  Use exlicit bracing to scope if/else
  * statements

@@ -51,34 +51,49 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
             ? new CNcbiOfstream( args["output"].AsString().c_str() )
             : static_cast<CNcbiOstream*>(&NcbiCout) ) : NULL ), writer( NULL ),
       lstat_name( args["lstat"].AsString() ),
-      xdrop( args["xdrop"].AsInteger() ), 
-      cutoff_score( args["score"].AsInteger() ),
-      max_score( args["highscore"].AsInteger() ),
-      has_min_score( args["lowscore"] ? true : false ),
-      min_score( args["lowscore"] ? args["lowscore"].AsInteger() : 1 ),
+      textend( args["t_extend"] ? args["t_extend"].AsInteger() : 0 ), 
+      cutoff_score( args["t_thres"] ? args["t_thres"].AsInteger() : 0 ),
+      max_score( args["t_high"] ? args["t_high"].AsInteger() : 0 ),
+      min_score( args["t_low"] ? args["t_low"].AsInteger() : 0 ),
       window_size( args["window"].AsInteger() ),
-      merge_pass( args["mpass"].AsBoolean() ),
-      merge_cutoff_score( args["mscore"].AsInteger() ),
-      abs_merge_cutoff_dist( args["mabs"].AsInteger() ),
-      mean_merge_cutoff_dist( args["mmean"].AsInteger() ),
-      trigger( args["trigger"].AsString() ),
-      tmin_count( args["tmin_count"].AsInteger() ),
-      discontig( args["discontig"].AsBoolean() ),
-      pattern( args["pattern"].AsInteger() ),
-      window_step( args["wstep"].AsInteger() ),
-      unit_step( args["ustep"].AsInteger() ),
-      merge_unit_step( args["mustep"].AsInteger() ),
+      // merge_pass( args["mpass"].AsBoolean() ),
+      // merge_cutoff_score( args["mscore"].AsInteger() ),
+      // abs_merge_cutoff_dist( args["mabs"].AsInteger() ),
+      // mean_merge_cutoff_dist( args["mmean"].AsInteger() ),
+      merge_pass( false ),
+      merge_cutoff_score( 50 ),
+      abs_merge_cutoff_dist( 8 ),
+      mean_merge_cutoff_dist( 50 ),
+      // trigger( args["trigger"].AsString() ),
+      trigger( "mean" ),
+      // tmin_count( args["tmin_count"].AsInteger() ),
+      tmin_count( 0 ),
+      // discontig( args["discontig"].AsBoolean() ),
+      // pattern( args["pattern"].AsInteger() ),
+      discontig( false ),
+      pattern( 0 ),
+      // window_step( args["wstep"].AsInteger() ),
+      // unit_step( args["ustep"].AsInteger() ),
+      window_step( 1 ),
+      unit_step( 1 ),
+      // merge_unit_step( args["mustep"].AsInteger() ),
+      merge_unit_step( 1 ),
       mk_counts( args["mk_counts"].AsBoolean() ),
       fa_list( args["fa_list"].AsBoolean() ),
       mem( args["mem"].AsInteger() ),
-      unit_size( args["unit"].AsInteger() ),
+      unit_size( args["unit"] ? args["unit"].AsInteger() : 0 ),
+      genome_size( args["genome_size"] ? args["genome_size"].AsInt8() : 0 ),
       input( args["input"].AsString() ),
       output( args["output"].AsString() ),
-      th( args["th"].AsString() ),
+      // th( args["th"].AsString() ),
+      th( "90,99,99.5,99.8" ),
       use_dust( args["dust"].AsBoolean() ),
-      dust_window( args["dust_window"].AsInteger() ),
-      dust_level( args["dust_level"].AsInteger() ),
-      dust_linker( args["dust_linker"].AsInteger() ),
+      // dust_window( args["dust_window"].AsInteger() ),
+      // dust_level( args["dust_level"].AsInteger() ),
+      // dust_linker( args["dust_linker"].AsInteger() ),
+      dust_window( 64 ),
+      dust_level( 20 ),
+      dust_linker( 1 ),
       checkdup( args["checkdup"].AsBoolean() )
 {
     _TRACE( "Entering CWinMaskConfig::CWinMaskConfig()" );
@@ -106,10 +121,10 @@ CWinMaskConfig::CWinMaskConfig( const CArgs & args )
                         eReaderAllocFail, "" );
         }
 
-        set_max_score = args["sethighscore"] ? args["sethighscore"].AsInteger()
-            : max_score;
-        set_min_score = args["setlowscore"] ? args["setlowscore"].AsInteger()
-            : min_score;
+        set_max_score = args["set_t_high"]  ? args["set_t_high"].AsInteger()
+                                            : 0;
+        set_min_score = args["set_t_low"]   ? args["set_t_low"].AsInteger()
+                                            : 0;
 
         string ids_file_name( args["ids"].AsString() );
         string exclude_ids_file_name( args["exclude_ids"].AsString() );
@@ -178,6 +193,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.3  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.2  2005/03/01 18:18:25  ucko
  * Make a couple of casts explicit for the sake of GCC 2.95.
  *

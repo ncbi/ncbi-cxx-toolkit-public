@@ -124,11 +124,11 @@ public:
     CWinMaskWriter & Writer() { return *writer; }
 
     /**
-     **\brief Get the x-drop value.
+     **\brief Get the t_extend value.
      **
-     **\return the current x-drop value.
+     **\return the current t_extend value.
      **/
-    Uint4 XDrop() const { return xdrop; }
+    Uint4 Textend() const { return textend; }
 
     /**
      **\brief Get the average unit score threshold.
@@ -149,15 +149,6 @@ public:
      **
      **/
     Uint4 MaxScore() const { return max_score; }
-
-    /**
-     **\brief Check if the "-lowscore" argument was given on 
-     **       command line.
-     **
-     **\return true if -lowscore appeared on the command line;
-     **        false otherwise
-     **/
-    bool HasMinScore() const { return has_min_score; }
 
     /**
      **\brief Get the minimum unit score.
@@ -367,6 +358,12 @@ public:
      **
      **/
     Uint1 UnitSize() const { return unit_size; }
+
+    /**\brief Total genome length
+     **
+     **\return genome length as supplied on command line
+     **/
+    Uint8 GenomeSize() const { return genome_size; }
 
     /**
      **\brief Value of the -input parameter.
@@ -621,44 +618,44 @@ private:
     /**\name Window based masker configuration.
      **/
     //@{
-    CIstreamProxy is;           /**< input file resource manager */
+    CIstreamProxy is;               /**< input file resource manager */
     CWinMaskReader * reader;        /**< input reader object */
-    COstreamProxy os;           /**< output file resource manager */
+    COstreamProxy os;               /**< output file resource manager */
     CWinMaskWriter * writer;        /**< output writer object */
-    string lstat_name;          /**< name of the file containing unit length statitsics */
-    Uint4 xdrop;            /**< x-drop value for extension of masked intervals */
-    Uint4 cutoff_score;         /**< window score that triggers masking */
-    Uint4 max_score;            /**< maximum allowed unit score */
-    bool has_min_score;         /**< true if -lowscore was given on the command line */
-    Uint4 min_score;            /**< minimum allowed unit score */
-    Uint4 set_max_score;        /**< score to use for high scoring units */
-    Uint4 set_min_score;        /**< score to use for low scoring units */
-    Uint1 window_size;          /**< length of a window in base pairs */
-    bool merge_pass;            /**< perform extra interval merging passes or not */
+    string lstat_name;              /**< name of the file containing unit length statitsics */
+    Uint4 textend;                  /**< t_extend value for extension of masked intervals */
+    Uint4 cutoff_score;             /**< window score that triggers masking */
+    Uint4 max_score;                /**< maximum allowed unit score */
+    Uint4 min_score;                /**< minimum allowed unit score */
+    Uint4 set_max_score;            /**< score to use for high scoring units */
+    Uint4 set_min_score;            /**< score to use for low scoring units */
+    Uint1 window_size;              /**< length of a window in base pairs */
+    bool merge_pass;                /**< perform extra interval merging passes or not */
     Uint4 merge_cutoff_score;       /**< average unit score triggering interval merging */
     Uint4 abs_merge_cutoff_dist;    /**< distance triggering unconditional interval merging */
     Uint4 mean_merge_cutoff_dist;   /**< distance at which intervals are considered for merging */
-    string trigger;         /**< type of the event that triggers masking */
-    Uint1 tmin_count;           /**< number of units to count for min trigger */
-    bool discontig;         /**< true, if using discontiguous units */
-    Uint4 pattern;          /**< base pattern to use for discontiguous units */
-    Uint4 window_step;          /**< window step */
-    Uint1 unit_step;            /**< unit step */
-    Uint1 merge_unit_step;      /**< unit step to use when merging intervals */
-    bool mk_counts;         /**< generate unit counts */
-    bool fa_list;           /**< indicates whether input is a list of fasta file names */
-    Uint4 mem;              /**< memory available for unit counts generator */
-    Uint1 unit_size;            /**< unit size (used in unit counts generator */
-    string input;           /**< input file name */
-    string output;          /**< output file name (may be empty to indicate stdout) */
-    string th;              /**< percetages to compute winmask thresholds */
-    bool use_dust;          /**< perform dusting in addition to the winmasking */
-    Uint4 dust_window;          /**< window size for dusting */
-    Uint4 dust_level;           /**< level value for dusting */
-    Uint4 dust_linker;          /**< number of bases to use for linking */
-    bool checkdup;          /**< check for duplicate contigs */
-    set< string > ids;      /**< list of ids to process */
-    set< string > exclude_ids;  /**< list of ids to exclude from processing */
+    string trigger;                 /**< type of the event that triggers masking */
+    Uint1 tmin_count;               /**< number of units to count for min trigger */
+    bool discontig;                 /**< true, if using discontiguous units */
+    Uint4 pattern;                  /**< base pattern to use for discontiguous units */
+    Uint4 window_step;              /**< window step */
+    Uint1 unit_step;                /**< unit step */
+    Uint1 merge_unit_step;          /**< unit step to use when merging intervals */
+    bool mk_counts;                 /**< generate unit counts */
+    bool fa_list;                   /**< indicates whether input is a list of fasta file names */
+    Uint4 mem;                      /**< memory available for unit counts generator */
+    Uint1 unit_size;                /**< unit size (used in unit counts generator */
+    Uint8 genome_size;              /**< total size of the genome in bases */
+    string input;                   /**< input file name */
+    string output;                  /**< output file name (may be empty to indicate stdout) */
+    string th;                      /**< percetages to compute winmask thresholds */
+    bool use_dust;                  /**< perform dusting in addition to the winmasking */
+    Uint4 dust_window;              /**< window size for dusting */
+    Uint4 dust_level;               /**< level value for dusting */
+    Uint4 dust_linker;              /**< number of bases to use for linking */
+    bool checkdup;                  /**< check for duplicate contigs */
+    set< string > ids;              /**< list of ids to process */
+    set< string > exclude_ids;      /**< list of ids to exclude from processing */
     //@}
 };
 
@@ -667,6 +664,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

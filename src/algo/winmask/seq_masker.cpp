@@ -34,6 +34,8 @@
 #include <algorithm>
 #include <memory>
 
+#include <corelib/ncbi_limits.h>
+
 #include <algo/winmask/seq_masker_window.hpp>
 #include <algo/winmask/seq_masker_window_ambig.hpp>
 #include <algo/winmask/seq_masker_window_pattern.hpp>
@@ -51,7 +53,7 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                         Uint1 arg_window_size,
                         Uint4 arg_window_step,
                         Uint1 arg_unit_step,
-                        Uint4 arg_xdrop,
+                        Uint4 arg_textend,
                         Uint4 arg_cutoff_score,
                         Uint4 arg_max_score,
                         Uint4 arg_min_score,
@@ -66,12 +68,12 @@ CSeqMasker::CSeqMasker( const string & lstat_name,
                         Uint1 tmin_count,
                         bool arg_discontig,
                         Uint4 arg_pattern )
-    : lstat( lstat_name, arg_max_score, arg_min_score,
+    : lstat( lstat_name, arg_cutoff_score, arg_textend,
+             arg_max_score, arg_min_score,
              arg_set_max_score, arg_set_min_score ),
       score( NULL ), score_p3( NULL ), trigger_score( NULL ),
       window_size( arg_window_size ), window_step( arg_window_step ),
-      unit_step( arg_unit_step ), xdrop( arg_xdrop ), 
-      cutoff_score( arg_cutoff_score ),
+      unit_step( arg_unit_step ),
       merge_pass( arg_merge_pass ),
       merge_cutoff_score( arg_merge_cutoff_score ),
       abs_merge_cutoff_dist( arg_abs_merge_cutoff_dist ),
@@ -119,6 +121,8 @@ CSeqMasker::~CSeqMasker()
 CSeqMasker::TMaskList *
 CSeqMasker::operator()( const string & data ) const
 {
+    Uint4 cutoff_score = lstat.cutoff_score;
+    Uint4 textend = lstat.textend;
     auto_ptr<TMaskList> mask(new TMaskList);
 
     if( window_size > data.size() )
@@ -142,7 +146,7 @@ CSeqMasker::operator()( const string & data ) const
     if( trigger == eTrigger_Min ) trigger_score->SetWindow( window );
 
     Uint4 start = 0, end = 0, cend = 0;
-    Uint4 limit = cutoff_score - xdrop;
+    Uint4 limit = textend;
 
     while( window )
     {
@@ -213,11 +217,6 @@ CSeqMasker::operator()( const string & data ) const
                                        unit_size, data, *this ) );
         }
 
-        /*
-           masked.push_back( mitem( (--mask->end())->first,
-           (--mask->end())->second, 
-           unit_size, data, *this ) );
-           */
         masked.push_back( mitem( (mask->rbegin())->first,
                                  (mask->rbegin())->second, 
                                  unit_size, data, *this ) );
@@ -366,12 +365,15 @@ void CSeqMasker::Merge( TMList & m, TMList::iterator mi,
 }
 
 //-------------------------------------------------------------------------
-CSeqMasker::LStat::LStat( const string & name, Uint4 arg_max_score,
-                          Uint4 arg_min_score, Uint4 arg_set_max_score,
-                          Uint4 arg_set_min_score )
-: max_score( arg_max_score ), min_score( arg_min_score ),
-    set_max_score( arg_set_max_score ), set_min_score( arg_set_min_score ),
-ambig_unit( 0 )
+CSeqMasker::LStat::LStat(   const string & name, 
+                            Uint4 arg_cutoff_score, Uint4 arg_textend,
+                            Uint4 arg_max_score, Uint4 arg_min_score, 
+                            Uint4 arg_set_max_score, Uint4 arg_set_min_score )
+    :   cutoff_score( arg_cutoff_score ), textend( arg_textend ),
+        max_score( arg_max_score ), min_score( arg_min_score ),
+        set_max_score( arg_set_max_score ), 
+        set_min_score( arg_set_min_score ),
+        ambig_unit( 0 )
 {
     CNcbiIfstream lstat_stream( name.c_str() );
 
@@ -384,7 +386,7 @@ ambig_unit( 0 )
 
     bool start = true;
     Uint4 linenum = 0UL;
-    Uint4 ambig_len = set_max_score;
+    Uint4 ambig_len = kMax_UI4;
 
     units.reserve(1024*1024);
     lengths.reserve(1024*1024);
@@ -397,6 +399,42 @@ ambig_unit( 0 )
         ++linenum;
 
         if( !line.length() || line[0] == '#' ) continue;
+
+        // Check if we have a precomputed parameter.
+        if( line[0] == '>' )
+        {
+            SIZE_TYPE name_end = line.find_first_of( " \t", 0 );
+            SIZE_TYPE val_start = line.find_first_not_of( " \t", name_end );
+
+            if( name_end == NPOS || val_start == NPOS )
+            {
+                CNcbiOstrstream str;
+                str << "at line " << linenum;
+                string msg = CNcbiOstrstreamToString(str);
+                NCBI_THROW( CSeqMaskerException,
+                            eLstatSyntax, msg);
+            }
+
+            string name = line.substr( 1, name_end - 1 );
+
+            if( name == "t_threshold" && cutoff_score == 0 )
+                cutoff_score 
+                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
+
+            if( name == "t_extend" && textend == 0 )
+                textend
+                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
+
+            if( name == "t_low" && min_score == 0 )
+                min_score
+                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
+
+            if( name == "t_high" && max_score == 0 )
+                max_score
+                    = NStr::StringToUInt( line.substr( val_start, NPOS ), 0 );
+
+            continue;
+        }
 
         if( start )
         {
@@ -431,12 +469,35 @@ ambig_unit( 0 )
 
         if( len >= min_score ) 
         {
-            if( len > max_score ) len = set_max_score;
-
             units.push_back( unit );
             lengths.push_back( len );
         }
     }
+
+    string bad_param;
+
+    if( cutoff_score == 0 )
+        bad_param += "t_threhold ";
+
+    if( textend == 0 )
+        bad_param += "t_extend ";
+
+    if( max_score == 0 )
+        bad_param += "t_high ";
+
+    if( min_score == 0 )
+        bad_param += "t_low ";
+
+    if( !bad_param.empty() )
+    {
+        NCBI_THROW( CSeqMaskerException, eLstatParam, bad_param );
+    }
+
+    if( set_min_score == 0 )
+      set_min_score = (min_score + 1)/2;
+
+    if( set_max_score == 0 )
+      set_max_score = max_score;
 }
 
 //----------------------------------------------------------------------------
@@ -447,7 +508,11 @@ Uint4 CSeqMasker::LStat::operator[]( Uint4 target ) const
                                                        target );
 
     if( res == units.end() || *res != target ) return set_min_score;
-    else return lengths[res - units.begin()];
+    else
+    {
+        Uint4 result = lengths[res - units.begin()];
+        return (result > max_score) ? set_max_score : result;
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -462,6 +527,11 @@ const char * CSeqMasker::CSeqMaskerException::GetErrCodeString() const
     case eLstatSyntax:
 
         return "syntax error";
+
+    case eLstatParam:
+
+        return  "the following parameters could not be determined"
+                " from the unit frequency database or command line: ";
 
     case eScoreAllocFail:
 
@@ -568,6 +638,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.7  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.6  2005/03/01 16:07:53  ucko
  * +<memory> for auto_ptr<>
  *

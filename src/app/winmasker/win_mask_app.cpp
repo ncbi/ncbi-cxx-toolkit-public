@@ -90,36 +90,41 @@ void CWinMaskApplication::Init(void)
                              CArgDescriptions::eBoolean, "false" );
     arg_desc->AddDefaultKey( "window", "window_size", "window size",
                              CArgDescriptions::eInteger, "19" );
+#if 0
     arg_desc->AddDefaultKey( "wstep", "window_step", "window step",
                              CArgDescriptions::eInteger, "1" );
     arg_desc->AddDefaultKey( "ustep", "unit_step", "unit step",
                              CArgDescriptions::eInteger, "1" );
-    arg_desc->AddDefaultKey( "xdrop", "X_drop", 
-                             "value of X-drop parameter",
-                             CArgDescriptions::eInteger, "50" );
-    arg_desc->AddDefaultKey( "score", "score_threshold",
-                             "window score threshold",
-                             CArgDescriptions::eInteger, "100" );
-    arg_desc->AddDefaultKey( "highscore", "max_score",
-                             "maximum useful unit score",
-                             CArgDescriptions::eInteger, "500" );
-    arg_desc->AddOptionalKey( "lowscore", "min_score",
+#endif
+    arg_desc->AddOptionalKey( "t_extend", "T_extend", 
+                              "window score above which it is allowed to extend masking",
+                              CArgDescriptions::eInteger );
+    arg_desc->AddOptionalKey( "t_thres", "T_threshold",
+                              "window score threshold used to trigger masking",
+                              CArgDescriptions::eInteger );
+    arg_desc->AddOptionalKey( "t_high", "T_high",
+                              "maximum useful unit score",
+                              CArgDescriptions::eInteger );
+    arg_desc->AddOptionalKey( "t_low", "T_low",
                               "minimum useful unit score",
                               CArgDescriptions::eInteger );
-    arg_desc->AddOptionalKey( "sethighscore", "score_value",
+    arg_desc->AddOptionalKey( "set_t_high", "score_value",
                               "alternative high score for a unit if the"
                               "original unit score is more than highscore",
                               CArgDescriptions::eInteger );
-    arg_desc->AddOptionalKey( "setlowscore", "score_value",
+    arg_desc->AddOptionalKey( "set_t_low", "score_value",
                               "alternative low score for a unit if the"
                               "original unit score is lower than lowscore",
                               CArgDescriptions::eInteger );
+#if 0
     arg_desc->AddDefaultKey( "ambig", "ambiguity_handler",
                              "the way to handle ambiguity characters",
                              CArgDescriptions::eString, "break" );
+#endif
     arg_desc->AddDefaultKey( "oformat", "output_format",
                              "controls the format of the masker output",
                              CArgDescriptions::eString, "interval" );
+#if 0
     arg_desc->AddDefaultKey( "mpass", "merge_pass_flag",
                              "true if separate merging pass is needed",
                              CArgDescriptions::eBoolean, "false" );
@@ -151,6 +156,7 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "dbg", "debug_output",
                              "enable debug output",
                              CArgDescriptions::eBoolean, "false" );
+#endif
     arg_desc->AddDefaultKey( "mk_counts", "generate_counts",
                              "generate frequency counts for a database",
                              CArgDescriptions::eBoolean, "false" );
@@ -162,17 +168,23 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "mem", "available_memory",
                              "memory available for mk_counts option in megabytes",
                              CArgDescriptions::eInteger, "1536" );
-    arg_desc->AddDefaultKey( "unit", "unit_length",
-                             "number of bases in a unit",
-                             CArgDescriptions::eInteger, "15" );
+    arg_desc->AddOptionalKey( "unit", "unit_length",
+                              "number of bases in a unit",
+                              CArgDescriptions::eInteger );
+    arg_desc->AddOptionalKey( "genome_size", "genome_size",
+                              "total size of the genome",
+                              CArgDescriptions::eInteger );
+#if 0
     arg_desc->AddDefaultKey( "th", "thresholds",
                              "4 percentage values used to determine "
                              "masking thresholds (4 floating point numbers "
                              "separated by commas)", 
                              CArgDescriptions::eString, "90,99,99.5,99.8" );
+#endif
     arg_desc->AddDefaultKey( "dust", "use_dust",
                              "combine window masking with dusting",
                              CArgDescriptions::eBoolean, "F" );
+#if 0
     arg_desc->AddDefaultKey( "dust_window", "dust_window",
                              "window size for dusting",
                              CArgDescriptions::eInteger, "64" );
@@ -182,6 +194,7 @@ void CWinMaskApplication::Init(void)
     arg_desc->AddDefaultKey( "dust_linker", "dust_linker",
                              "link windows by this many basepairs",
                              CArgDescriptions::eInteger, "1" );
+#endif
     arg_desc->AddDefaultKey( "exclude_ids", "exclude_id_list",
                              "file containing the list of ids to exclude from processing",
                              CArgDescriptions::eString, "" );
@@ -192,22 +205,25 @@ void CWinMaskApplication::Init(void)
     // Set some constraints on command line parameters
     arg_desc->SetConstraint( "window",
                              new CArgAllow_Integers( 1, kMax_Int ) );
+#if 0
     arg_desc->SetConstraint( "wstep",
                              new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "ustep",
                              new CArgAllow_Integers( 1, 256 ) );
-    arg_desc->SetConstraint( "xdrop",
+#endif
+    arg_desc->SetConstraint( "t_extend",
                              new CArgAllow_Integers( 0, kMax_Int ) );
-    arg_desc->SetConstraint( "score",
+    arg_desc->SetConstraint( "t_thres",
                              new CArgAllow_Integers( 1, kMax_Int ) );
-    arg_desc->SetConstraint( "highscore",
+    arg_desc->SetConstraint( "t_high",
                              new CArgAllow_Integers( 1, kMax_Int ) );
-    arg_desc->SetConstraint( "lowscore",
+    arg_desc->SetConstraint( "t_low",
                              new CArgAllow_Integers( 1, kMax_Int ) );
-    arg_desc->SetConstraint( "sethighscore",
+    arg_desc->SetConstraint( "set_t_high",
                              new CArgAllow_Integers( 1, kMax_Int ) );
-    arg_desc->SetConstraint( "setlowscore",
+    arg_desc->SetConstraint( "set_t_low",
                              new CArgAllow_Integers( 1, kMax_Int ) );
+#if 0
     arg_desc->SetConstraint( "mscore",
                              new CArgAllow_Integers( 0, kMax_Int ) );
     arg_desc->SetConstraint( "mabs",
@@ -218,14 +234,17 @@ void CWinMaskApplication::Init(void)
                              new CArgAllow_Integers( 0, 256 ) );
     arg_desc->SetConstraint( "ambig",
                              (new CArgAllow_Strings())->Allow( "break" ) );
+#endif
     arg_desc->SetConstraint( "oformat",
                              (new CArgAllow_Strings())->Allow( "interval" )
                              ->Allow( "fasta" ) );
+#if 0
     arg_desc->SetConstraint( "trigger",
                              (new CArgAllow_Strings())->Allow( "mean" )
                              ->Allow( "min" ) );
     arg_desc->SetConstraint( "tmin_count",
                              new CArgAllow_Integers( 0, kMax_Int ) );
+#endif
     arg_desc->SetConstraint( "mem", new CArgAllow_Integers( 1, kMax_Int ) );
     arg_desc->SetConstraint( "unit", new CArgAllow_Integers( 1, 16 ) );
 
@@ -238,8 +257,10 @@ int CWinMaskApplication::Run (void)
 {
     CRef<CObjectManager> om(CObjectManager::GetInstance());
 
+#if 0
     if( GetArgs()["dbg"].AsBoolean() )
         SetDiagTrace( eDT_Enable );
+#endif
 
     // Read and validate configuration values.
     CWinMaskConfig aConfig( GetArgs() );
@@ -252,9 +273,9 @@ int CWinMaskApplication::Run (void)
                                     aConfig.Th(),
                                     aConfig.Mem(),
                                     aConfig.UnitSize(),
+                                    aConfig.GenomeSize(),
                                     aConfig.MinScore(),
                                     aConfig.MaxScore(),
-                                    aConfig.HasMinScore(),
                                     aConfig.CheckDup(),
                                     aConfig.FaList() );
         cg();
@@ -267,7 +288,7 @@ int CWinMaskApplication::Run (void)
                           aConfig.WindowSize(),
                           aConfig.WindowStep(),
                           aConfig.UnitStep(),
-                          aConfig.XDrop(),
+                          aConfig.Textend(),
                           aConfig.CutoffScore(),
                           aConfig.MaxScore(),
                           aConfig.MinScore(),
@@ -360,6 +381,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

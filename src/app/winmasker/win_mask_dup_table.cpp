@@ -40,8 +40,13 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_entry_handle.hpp>
+
 #include "win_mask_fasta_reader.hpp"
 #include "win_mask_dup_table.hpp"
+#include "win_mask_seq_title.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -500,7 +505,13 @@ void tracker::operator()( const string & index,
  **/
 static const string GetIdString( const CSeq_entry & entry )
 {
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
     const CBioseq & seq = entry.GetSeq();
+    CRef<CScope> scope(new CScope(*om));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry( 
+        const_cast< CSeq_entry & >( entry ) );
+    return CWinMaskSeqTitle::GetId( seh, seq );
+/*
     list< CRef< CSeq_id > > idlist = seq.GetId();
 
     if( idlist.empty() ) 
@@ -511,6 +522,7 @@ static const string GetIdString( const CSeq_entry & entry )
         (*idlist.begin())->WriteAsFasta( os );
         return CNcbiOstrstreamToString(os);
     }
+*/
 }
 
 //------------------------------------------------------------------------------
@@ -560,6 +572,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

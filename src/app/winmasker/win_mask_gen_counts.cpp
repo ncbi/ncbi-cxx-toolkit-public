@@ -90,6 +90,23 @@ string mkdata( const CSeq_entry & entry )
 }
 
 //------------------------------------------------------------------------------
+Uint8 fastalen( const string & fname )
+{
+    CNcbiIfstream input_stream( fname.c_str() );
+    CWinMaskFastaReader reader( input_stream );
+    CRef< CSeq_entry > entry( 0 );
+    Uint8 result = 0;
+
+    while( (entry = reader.GetNextSequence()).NotEmpty() )
+    {
+        string data( mkdata( *entry ) );
+        result += data.length();
+    }
+
+    return result;
+}
+
+//------------------------------------------------------------------------------
 static Uint4 reverse_complement( Uint4 seq, Uint1 size )
 {
     Uint4 result( 0 );
@@ -109,17 +126,20 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator( const string & arg_input,
                                                   const string & arg_th,
                                                   Uint4 mem_avail,
                                                   Uint1 arg_unit_size,
+                                                  Uint8 arg_genome_size,
                                                   Uint4 arg_min_count,
                                                   Uint4 arg_max_count,
-                                                  bool arg_has_min_count,
                                                   bool arg_check_duplicates,
                                                   bool arg_use_list )
 :   input( arg_input ), out_stream( &NcbiCout ),
     max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
-    min_count( arg_min_count ), max_count( arg_max_count ),
-    has_min_count( arg_has_min_count ),
+    genome_size( arg_genome_size ),
+    min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
+    max_count( arg_max_count == 0 ? 500 : arg_max_count ),
+    has_min_count( arg_min_count != 0 ),
     check_duplicates( arg_check_duplicates ),use_list( arg_use_list ), 
-    total_ecodes( 0 ), score_counts( arg_max_count, 0 )
+    total_ecodes( 0 ), 
+    score_counts( arg_max_count == 0 ? 500 : arg_max_count, 0 )
 {
     if( !output.empty() )
         out_stream = new CNcbiOfstream( output.c_str() );
@@ -168,6 +188,32 @@ void CWinMaskCountsGenerator::operator()()
         cerr << "." << flush;
     }
 
+    if( unit_size == 0 )
+    {
+        if( genome_size == 0 )
+        {
+            cerr << "Computing the genome length" << flush;
+            Uint8 total = 0;
+
+            for(    vector< string >::const_iterator i = file_list.begin();
+                    i != file_list.end(); ++i )
+            {
+                total += fastalen( *i );
+                cerr << "." << flush;
+            }
+
+            cerr << "done." << endl;
+            genome_size = total;
+        }
+
+        for( unit_size = 15; unit_size >= 0; --unit_size )
+            if(   (genome_size>>(2*unit_size)) >= 5 )
+                break;
+
+        ++unit_size;
+        cerr << "Unit size is: " << unit_size << endl;
+    }
+
     // Estimate the length of the prefix. 
     // Prefix length is unit_size - suffix length, where suffix length
     // is max N: (4**N) < max_mem.
@@ -185,9 +231,14 @@ void CWinMaskCountsGenerator::operator()()
 
     // Now process for each prefix.
     Uint4 prefix_exp( 1<<(2*prefix_size) );
+    Uint4 passno = 1;
+    cerr << "Pass " << passno << flush;
 
     for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
         process( prefix, prefix_size, file_list, has_min_count );
+
+    ++passno;
+    cerr << endl;
 
     // Now put the final statistics as comments at the end of the output.
     for( Uint4 i( 1 ); i < max_count; ++i )
@@ -227,8 +278,12 @@ void CWinMaskCountsGenerator::operator()()
         for( Uint4 i( 0 ); i < max_count; ++i )
             score_counts[i] = 0;
 
+        cerr << "Pass " << passno << flush;
+
         for( Uint4 prefix( 0 ); prefix < prefix_exp; ++prefix )
             process( prefix, prefix_size, file_list, true );
+
+        cerr << endl;
 
         for( Uint4 i( 1 ); i < max_count; ++i )
             score_counts[i] += score_counts[i-1];
@@ -253,6 +308,12 @@ void CWinMaskCountsGenerator::operator()()
         *out_stream << "# " << th[i]
             << "%% threshold at " << index[i] << endl;
 
+    *out_stream << endl;
+    *out_stream << ">t_low       " << index[0] << endl;
+    *out_stream << ">t_extend    " << index[1] << endl;
+    *out_stream << ">t_threshold " << index[2] << endl;
+    *out_stream << ">t_high      " << index[3] << endl;
+    *out_stream << endl;
     cerr << endl;
 }
 
@@ -342,6 +403,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)

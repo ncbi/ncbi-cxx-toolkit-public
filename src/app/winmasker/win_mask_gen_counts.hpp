@@ -80,9 +80,9 @@ public:
                              const string & th,
                              Uint4 mem_avail,
                              Uint1 unit_size,
+                             Uint8 genome_size,
                              Uint4 min_count,
                              Uint4 max_count,
-                             bool has_min_count,
                              bool check_duplicates,
                              bool use_list );
 
@@ -115,19 +115,20 @@ private:
                   const vector< string > & input,
                   bool do_output );
 
-    string input;      /**<\internal input file (or list of input files) */
-    CNcbiOstream * out_stream;  /**<\internal output stream (standard C++ ostream) */
-    Uint4 max_mem;      /**<\internal available memory in bytes */
-    Uint4 unit_size;        /**<\internal n-mer length in base pairs */
-    Uint4 min_count;        /**<\internal minimal n-mer count to consider */
-    Uint4 max_count;        /**<\internal maximal n-mer count to consider */
-    bool has_min_count;     /**<\internal user has provided the min_count value */
-    bool check_duplicates;  /**<\internal whether to check input for duplicates */
-    bool use_list;      /**<\internal whether input is a fasta file or a file list */
+    string input;                   /**<\internal input file (or list of input files) */
+    CNcbiOstream * out_stream;      /**<\internal output stream (standard C++ ostream) */
+    Uint4 max_mem;                  /**<\internal available memory in bytes */
+    Uint4 unit_size;                /**<\internal n-mer length in base pairs */
+    Uint8 genome_size;              /**<\internal genome size in bases */
+    Uint4 min_count;                /**<\internal minimal n-mer count to consider */
+    Uint4 max_count;                /**<\internal maximal n-mer count to consider */
+    bool has_min_count;             /**<\internal true iff -t_low was given on a command line */
+    bool check_duplicates;          /**<\internal whether to check input for duplicates */
+    bool use_list;                  /**<\internal whether input is a fasta file or a file list */
 
-    Uint8 total_ecodes;         /**<\internal total number of different n-mers found */
+    Uint8 total_ecodes;             /**<\internal total number of different n-mers found */
     vector< Uint4 > score_counts;   /**<\internal counts table for each suffix */
-    double th[4];           /**<\internal percentages used to determine threshold scores */
+    double th[4];                   /**<\internal percentages used to determine threshold scores */
 };
 
 END_NCBI_SCOPE
@@ -135,6 +136,14 @@ END_NCBI_SCOPE
 /*
  * ========================================================================
  * $Log$
+ * Revision 1.2  2005/03/08 17:02:30  morgulis
+ * Changed unit counts file to include precomputed threshold values.
+ * Changed masking code to pick up threshold values from the units counts file.
+ * Unit size is computed automatically from the genome length.
+ * Added extra option for specifying genome length.
+ * Removed all experimental command line options.
+ * Fixed id strings in duplicate sequence checking code.
+ *
  * Revision 1.1  2005/02/25 21:32:54  dicuccio
  * Rearranged winmasker files:
  * - move demo/winmasker to a separate app directory (src/app/winmasker)
