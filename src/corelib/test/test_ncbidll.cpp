@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  2002/01/17 15:50:48  ivanov
+ * Added #include <windows.h> on MS Windows platform
+ *
  * Revision 6.2  2002/01/16 18:47:44  ivanov
  * Added new constructor and related "basename" rules for DLL names. Polished source code.
  *
@@ -47,6 +50,9 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbidll.hpp>
 
+#if defined(NCBI_OS_MSWIN)
+#  include <windows.h>
+#endif
 
 USING_NCBI_SCOPE;
 
