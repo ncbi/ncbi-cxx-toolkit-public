@@ -82,7 +82,9 @@ protected:
 
     // features
     void x_GatherFeatures  (void) const;
-    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CBioseqContext& ctx) const;
+    void x_GetFeatsOnCdsProduct(const CSeq_feat& feat, CBioseqContext& ctx,
+        CRef<CSeq_loc_Mapper>& mapper) const;
+    void x_CopyCDSFromCDNA(const CSeq_feat& feat, CBioseqContext& ctx) const;
     bool x_SkipFeature(const CSeq_feat& feat, const CBioseqContext& ctx) const;
     void x_GatherFeaturesOnLocation(const CSeq_loc& loc, SAnnotSelector& sel,
         CBioseqContext& ctx) const;
@@ -145,6 +147,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2004/05/06 17:45:08  shomrat
+* private methods changes
+*
 * Revision 1.11  2004/04/27 15:10:30  shomrat
 * use TRange instead of CRange<TSeqPos>
 *
