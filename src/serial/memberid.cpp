@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/11/14 20:57:50  gouriano
+* added Attlist and Notag flags
+*
 * Revision 1.14  2002/09/25 19:37:36  gouriano
 * added the possibility of having no tag prefix in XML I/O streams
 *
@@ -101,38 +104,38 @@ BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(void)
     : m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
 {
 }
 
 CMemberId::CMemberId(TTag tag, bool explicitTag)
     : m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
 {
 }
 
 CMemberId::CMemberId(const string& name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
 {
 }
 
 CMemberId::CMemberId(const char* name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
-    m_NoPrefix(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
 {
     _ASSERT(name);
 }
 
 CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
-    m_NoPrefix(false)
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false)
 {
     _ASSERT(name);
 }
@@ -168,5 +171,24 @@ bool CMemberId::HaveNoPrefix(void) const
 {
     return m_NoPrefix;
 }
+
+void CMemberId::SetAttlist(void)
+{
+    m_Attlist = true;
+}
+bool CMemberId::IsAttlist(void) const
+{
+    return m_Attlist;
+}
+
+void CMemberId::SetNotag(void)
+{
+    m_Notag = true;
+}
+bool CMemberId::HasNotag(void) const
+{
+    return m_Notag;
+}
+
 
 END_NCBI_SCOPE
