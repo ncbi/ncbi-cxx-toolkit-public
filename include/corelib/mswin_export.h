@@ -134,6 +134,14 @@
 #endif
 
 
+/*
+ * Definitsions for GUI_CORE.DLL
+ */
+#ifdef NCBI_GUICORE_EXPORTS
+#  define NCBI_XGBPLUGIN_EXPORTS
+#endif
+
+
 /* ------------------------------------------------- */
 
 /*
@@ -167,6 +175,15 @@
 #  define NCBI_XSERIAL_EXPORT       __declspec(dllexport)
 #else
 #  define NCBI_XSERIAL_EXPORT       __declspec(dllimport)
+#endif
+
+/*
+ * Export specifier for library xalgo
+ */
+#ifdef NCBI_XALGO_EXPORTS
+#  define NCBI_XALGO_EXPORT       __declspec(dllexport)
+#else
+#  define NCBI_XALGO_EXPORT       __declspec(dllimport)
 #endif
 
 /*
@@ -533,6 +550,15 @@
 #endif
 
 /*
+ * Export specifier for library xgbplugin
+ */
+#ifdef NCBI_XGBPLUGIN_EXPORTS
+#  define NCBI_XGBPLUGIN_EXPORT     __declspec(dllexport)
+#else
+#  define NCBI_XGBPLUGIN_EXPORT     __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library gui_utils
  */
 #ifdef NCBI_GUIUTILS_EXPORTS
@@ -588,9 +614,9 @@
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
-#  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
+#  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
 #  define NCBI_DOCSUM_EXPORT
@@ -626,13 +652,15 @@
 #  define NCBI_SUBMIT_EXPORT
 #  define NCBI_TAXON1_EXPORT
 #  define NCBI_TINYSEQ_EXPORT
+#  define NCBI_VALIDATOR_EXPORT
+#  define NCBI_XALGO_EXPORT
 #  define NCBI_XALNMGR_EXPORT
+#  define NCBI_XGBPLUGIN_EXPORT
 #  define NCBI_XNCBI_EXPORT
 #  define NCBI_XOBJMGR_EXPORT
 #  define NCBI_XOBJUTIL_EXPORT
 #  define NCBI_XSERIAL_EXPORT
 #  define NCBI_XUTIL_EXPORT
-#  define NCBI_VALIDATOR_EXPORT
 
 
 #endif
@@ -643,6 +671,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.12  2003/02/21 16:42:16  dicuccio
+ * Added export specifiers for XALGO, XGBPLUGIN
+ *
  * Revision 1.11  2003/02/12 22:02:29  coremake
  * Added export specifiers NCBI_DBAPIDRIVER_*_EXPORT for ctlib, dblib, msdblib and odbc DBAI driver libraries
  *
