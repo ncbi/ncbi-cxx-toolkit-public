@@ -23,10 +23,10 @@
 *
 * ===========================================================================
 *
-* Author: Eugene Vasilchenko
+* Author: Eugene Vasilchenko, Anton Golikov
 *
-* File Description:
-*   Common pager box
+* File Description: Common pager with 2 views
+*
 */
 
 #include <corelib/ncbistd.hpp>
@@ -41,11 +41,15 @@ const string CPager::KParam_DisplayPage = "page";
 const string CPager::KParam_Page = "page ";
 const string CPager::KParam_PreviousPages = "previous pages";
 const string CPager::KParam_NextPages = "next pages";
+const string CPager::KParam_InputPage = "inputpage";
 
-CPager::CPager(const CCgiRequest& request, int pageBlockSize, int defaultPageSize)
+CPager::CPager(const CCgiRequest& request,
+               int pageBlockSize,
+               int defaultPageSize,
+               EPagerView view /* = eImage */)
     : m_PageSize(GetPageSize(request, defaultPageSize)),
       m_PageBlockSize(max(1, pageBlockSize)),
-      m_PageChanged(false)
+      m_PageChanged(false), m_view(view)
 {
     const TCgiEntries& entries = request.GetEntries();
 
@@ -76,13 +80,22 @@ CPager::CPager(const CCgiRequest& request, int pageBlockSize, int defaultPageSiz
                     m_PageChanged = true;
                 } catch (exception& _DEBUG_ARG(e)) {
                     _TRACE( "Exception in CPager::CPager: " << e.what() );
-                    // ignore exception right now
                     m_PageChanged = false;
                 }
             }
         }
-    }
-    else {
+        i = entries.find(KParam_InputPage);
+        if ( i != entries.end() ) {
+            try {
+                m_DisplayPage = NStr::StringToInt(i->second) - 1;
+                m_DisplayPage = max(m_DisplayPage, 0);
+                m_PageChanged = true;
+            } catch (exception& _DEBUG_ARG(e)) {
+                _TRACE( "Exception in CPager::IsPagerCommand: " << e.what() );
+                m_PageChanged = false;
+            }
+        }
+    } else {
         try {
             m_PageChanged = true;
             int page = GetDisplayedPage(request);
@@ -128,13 +141,19 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
                 NStr::StringToInt(page);
                 return true;
             } catch (exception& _DEBUG_ARG(e)) {
-                _TRACE( "Exception in CPager::IsPagerCommand: "
-                        << e.what() );
-                // ignore exception right now
+                _TRACE( "Exception in CPager::IsPagerCommand: " << e.what() );
             }
         }
     }
-
+    i = entries.find(KParam_InputPage);
+    if ( i != entries.end() ) {
+        try {
+            NStr::StringToInt(i->second);
+            return true;
+        } catch (exception& _DEBUG_ARG(e)) {
+            _TRACE( "Exception in CPager::IsPagerCommand: " << e.what() );
+        }
+    }
     return false;
 }
 
@@ -221,19 +240,25 @@ CNCBINode* CPager::GetPageInfo(void) const
 CNCBINode* CPager::GetItemInfo(void) const
 {
     if( m_ItemCount == 0 )
-        return new CHTMLText("0 items found");
+        return new CHTMLText("<div class=pager>0 items found</div>");
     int firstItem = m_DisplayPage * m_PageSize + 1;
     int endItem = min((m_DisplayPage + 1) * m_PageSize, m_ItemCount);
     return new CHTMLText(
-        "Items " + NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
-        " of " + NStr::IntToString(m_ItemCount));
+        "<div class=pager>Items " + NStr::IntToString(firstItem) + "-" + NStr::IntToString(endItem) +
+        " of " + NStr::IntToString(m_ItemCount) + "</div>");
 }
 
 CNCBINode* CPager::GetPagerView(const string& imgDir,
-                                const int imgX, const int imgY) const
+                                const int imgX, const int imgY,
+                                const string& js_suffix /* = kEmptyStr */) const
 {
-    if ( m_ItemCount <= m_PageSize )
+    if ( m_ItemCount <= m_PageSize ) {
         return 0;
+    }
+    switch(m_view) {
+        case eButtons: return new CPagerViewButtons(*this, js_suffix);
+    }
+    // default old behavor
     return new CPagerView(*this, imgDir, imgX, imgY);
 }
 
@@ -327,98 +352,80 @@ void CPagerView::CreateSubNodes()
     }
 }
 
-END_NCBI_SCOPE
+// pager view with buttons, see header for description
 
-/*
-* ===========================================================================
-* $Log$
-* Revision 1.27  2002/07/10 18:43:27  ucko
-* Adapt slightly for CCgiEntry.
-* Move CVS log to end.
-*
-* Revision 1.26  2001/06/05 14:20:36  golikov
-* alt text for page numbers added
-*
-* Revision 1.25  2001/05/17 15:05:42  lavr
-* Typos corrected
-*
-* Revision 1.24  2001/03/06 21:35:26  golikov
-* some const changes
-*
-* Revision 1.23  2000/08/31 18:45:08  golikov
-* GetDisplayPage renamed to GetDisplayedPage
-* GetDisplayPage return now current page, not previous shown as before
-*
-* Revision 1.22  2000/05/24 20:57:14  vasilche
-* Use new macro _DEBUG_ARG to avoid warning about unused argument.
-*
-* Revision 1.21  2000/01/11 20:10:23  golikov
-* Text modified on graybar
-*
-* Revision 1.20  1999/09/15 21:09:03  vasilche
-* Fixed bug with lost const_iterator
-*
-* Revision 1.19  1999/09/15 18:28:32  vasilche
-* Fixed coredump occurred in jrbrowser.
-*
-* Revision 1.18  1999/09/13 15:37:39  golikov
-* Image sizes in page numbers added
-*
-* Revision 1.17  1999/06/25 20:02:38  golikov
-* "Show:" transferred to pager
-*
-* Revision 1.16  1999/06/11 20:30:30  vasilche
-* We should catch exception by reference, because catching by value
-* doesn't preserve comment string.
-*
-* Revision 1.15  1999/06/07 15:21:05  vasilche
-* Fixed some warnings.
-*
-* Revision 1.14  1999/06/04 16:35:29  golikov
-* Fix
-*
-* Revision 1.13  1999/06/04 13:38:46  golikov
-* Items counter shown always
-*
-* Revision 1.12  1999/05/11 02:53:56  vakatov
-* Moved CGI API from "corelib/" to "cgi/"
-*
-* Revision 1.11  1999/04/16 17:45:36  vakatov
-* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
-*
-* Revision 1.10  1999/04/15 22:11:32  vakatov
-* "min/max" --> "NcbiMin/Max"
-*
-* Revision 1.9  1999/04/15 19:48:24  vasilche
-* Fixed several warnings detected by GCC
-*
-* Revision 1.8  1999/04/14 19:50:28  vasilche
-* Fixed coredump. One more bug with map::const_iterator
-*
-* Revision 1.7  1999/04/14 17:29:01  vasilche
-* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
-* As a result special parameter is added with empty name: "=cmd"
-*
-* Revision 1.6  1999/04/06 19:33:41  vasilche
-* Added defalut page size.
-*
-* Revision 1.5  1999/02/17 22:03:17  vasilche
-* Assed AsnMemoryRead & AsnMemoryWrite.
-* Pager now may return NULL for some components if it contains only one
-* page.
-*
-* Revision 1.4  1999/01/21 21:13:00  vasilche
-* Added/used descriptions for HTML submit/select/text.
-* Fixed some bugs in paging.
-*
-* Revision 1.3  1999/01/21 16:18:06  sandomir
-* minor changes due to NStr namespace to contain string utility functions
-*
-* Revision 1.2  1999/01/20 21:41:36  vasilche
-* Fixed bug with lost current page.
-*
-* Revision 1.1  1999/01/19 21:17:42  vasilche
-* Added CPager class
-*
-* ===========================================================================
-*/
+CPagerViewButtons::CPagerViewButtons(const CPager& pager, const string& js_suffix)
+    : m_Pager(pager), m_jssuffix(js_suffix)
+{
+}
+
+void CPagerViewButtons::CreateSubNodes()
+{
+    int column = 0;
+    int pageSize = m_Pager.m_PageSize;
+    int blockSize = m_Pager.m_PageBlockSize;
+
+    int currentPage = m_Pager.m_DisplayPage;
+    int itemCount = m_Pager.m_ItemCount;
+
+    int firstBlockPage = currentPage - currentPage % blockSize;
+    int lastPage = max(0, (itemCount + pageSize - 1) / pageSize - 1);
+    int lastBlockPage = min(firstBlockPage + blockSize - 1, lastPage);
+
+    if ( currentPage > 0 ) {
+        CHTML_a* prev = new CHTML_a("javascript:var frm = document.frmQueryBox; "
+                                    "frm.cmd.value=''; frm.inputpage.value=" +
+                                    NStr::IntToString(currentPage) + 
+                                    "; frm.submit();", "Previous");
+        prev->SetAttribute("class", "pager");
+        InsertAt(0, column, prev);
+        InsertAt(0, column++, new CHTMLText("&nbsp;"));
+    }
+        
+    CHTML_input* butt = new CHTML_input("BUTTON", "GoToPage");
+    butt->SetAttribute("class", "pager");
+    butt->SetAttribute("value", "Page");
+    butt->SetAttribute("onClick", "javascript:form.cmd.value='';form." + CPager::KParam_InputPage +
+                                  ".value=form.textpage" + m_jssuffix +
+                                  ".value;document.frmQueryBox.submit();");
+    InsertAt(0, column, butt);
+    InsertAt(0, column, new CHTMLText("&nbsp;"));
+
+    CHTML_input* textpage =  new CHTML_text("textpage" + m_jssuffix, 4,
+                                         NStr::IntToString(currentPage + 1));
+    textpage->SetAttribute("class", "pager");
+    
+    string suffix = kEmptyStr;
+    if ( m_jssuffix == "" ) {
+       suffix = "1";
+    }
+                               
+    textpage->SetAttribute("onChange", "javascript:document.frmQueryBox.textpage" +
+                                       suffix +".value=" + "this.value;");
+
+    textpage->SetAttribute("onKeyPress", "javascript:document.frmQueryBox." +
+                                         CPager::KParam_InputPage +
+                                         ".value=" + "this.value; KeyPress('',event);");
+                                         
+    InsertAt(0, column++, textpage);
+
+    InsertAt(0, column++, new CHTMLText("<div class=pager>&nbsp;of&nbsp;" +
+                                        NStr::IntToString(lastPage + 1) +
+                                        "</div>" ));
+    
+    // place holder for page num, to explicitly tell about new page num
+    InsertAt(0, column++, new CHTML_hidden(CPager::KParam_InputPage + m_jssuffix, kEmptyStr));
+    
+    
+    if ( currentPage < lastPage ) {
+        CHTML_a* next = new CHTML_a("javascript:var frm = document.frmQueryBox;"
+                                    "frm.cmd.value=''; frm.inputpage.value=" +
+                                    NStr::IntToString(currentPage + 2) + 
+                                    ";frm.submit();", "Next");
+        next->SetAttribute("class", "pager");
+        InsertAt(0, column, next);
+        InsertAt(0, column++, new CHTMLText("&nbsp;&nbsp;"));
+    }
+}
+
+END_NCBI_SCOPE
