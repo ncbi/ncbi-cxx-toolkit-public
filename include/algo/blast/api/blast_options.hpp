@@ -133,6 +133,8 @@ public:
     int GetGapExtnAlgorithm() const;
     void SetGapExtnAlgorithm(int a);
 
+    void SetSkipTraceback();
+
     /******************* Hit saving options *************************/
     int GetHitlistSize() const;
     void SetHitlistSize(int s);
@@ -234,13 +236,12 @@ public:
     void SetUseRealDbSize(bool u = true);
 
     int GetDbGeneticCode() const;
-    void SetDbGeneticCode(int gc);
 
-    const unsigned char* GetDbGeneticCodeStr() const;
-    void SetDbGeneticCodeStr(const unsigned char* gc_str);
+   //const unsigned char* GetDbGeneticCodeStr() const;
+   //void SetDbGeneticCodeStr(const unsigned char* gc_str);
 
     // Set both integer and string genetic code in one call
-    void SetDbGeneticCodeAndStr(int gc);
+    void SetDbGeneticCode(int gc);
 
     /// @todo PSI-Blast options could go on their own subclass?
     const char* GetPHIPattern() const;
@@ -290,6 +291,7 @@ private:
     CBlastOptions& operator=(const CBlastOptions& bo);
 
     friend class CBl2Seq;
+    friend class CDbBlast;
     friend bool operator==(const CBlastOptions& lhs, const CBlastOptions& rhs);
     friend bool operator!=(const CBlastOptions& lhs, const CBlastOptions& rhs);
 };
@@ -615,6 +617,12 @@ inline void
 CBlastOptions::SetGapExtnAlgorithm(int a)
 {
     m_ExtnOpts->algorithm_type = a;
+}
+
+inline void 
+CBlastOptions::SetSkipTraceback()
+{
+    m_ExtnOpts->skip_traceback = TRUE;
 }
 
 /******************* Hit saving options *************************/
@@ -952,35 +960,6 @@ CBlastOptions::GetDbGeneticCode() const
     return m_DbOpts->genetic_code;
 }
 
-inline void 
-CBlastOptions::SetDbGeneticCode(int gc)
-{
-    m_DbOpts->genetic_code = gc;
-}
-
-inline const unsigned char* 
-CBlastOptions::GetDbGeneticCodeStr() const
-{
-    return m_DbOpts->gen_code_string;
-}
-
-#define GENCODE_STRLEN 64
-
-inline void 
-CBlastOptions::SetDbGeneticCodeStr(const unsigned char* gc_str)
-{
-    if (!gc_str)
-        return;
-
-    if (m_DbOpts->gen_code_string) 
-        sfree(m_DbOpts->gen_code_string);
-
-    m_DbOpts->gen_code_string =
-        (Uint1*) malloc(sizeof(Uint1)*GENCODE_STRLEN);
-
-    copy(gc_str, gc_str+GENCODE_STRLEN, m_DbOpts->gen_code_string);
-}
-
 inline const char* 
 CBlastOptions::GetPHIPattern() const
 {
@@ -1010,6 +989,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2003/12/03 16:34:09  dondosha
+* Added setter for skip_traceback option; changed SetDbGeneticCode so it fills both integer and string
+*
 * Revision 1.34  2003/11/26 18:22:14  camacho
 * +Blast Option Handle classes
 *
