@@ -203,12 +203,10 @@ property w_flu : {name:"w_flu", path:"gui:widgets:FLU"}
 property w_fltk : {name:"w_fltk", path:"gui:widgets:fl"}
 property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
-property w_toplevel : {name:"w_toplevel", path:"gui:widgets:toplevel"}
 property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data"}
 property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic"}
 property w_hit_matrix : {name:"w_hit_matrix", path:"gui:widgets:hit_matrix"}
 property w_aln_crossaln : {name:"w_aln_crossaln", path:"gui:widgets:aln_crossaln"}
-property w_aln_textaln : {name:"w_aln_textaln", path:"gui:widgets:aln_textaln"}
 property w_aln_multi : {name:"w_aln_multi", path:"gui:widgets:aln_multiple"}
 property w_aln_table : {name:"w_aln_table", path:"gui:widgets:aln_table"}
 property w_taxtree : {name:"w_taxtree", path:"gui:widgets:tax_tree"}
@@ -276,15 +274,15 @@ property ncbi_xloader_trace : {name:"ncbi_xloader_trace", libs:{xloader_trace}, 
 property gui_utils : {name:"gui_utils", libs:{gui__utils, gui_objutils, gui_opengl, gui_print, gui_math}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_image ncbi_general", req:true}
 property gui_config : {name:"gui_config", libs:{gui__config}, dep:"gui_utils ncbi_core ncbi_seq ncbi_seqext", req:true}
 property gui_graph : {name:"gui_graph", libs:{gui__graph}, dep:"gui_utils ncbi_core", req:true}
-property gui_widgets : {name:"gui_widgets", libs:{w_toplevel, w_workspace, w_fltk, w_gl, w_flu, w_fltable}, dep:"gui_utils ncbi_image ncbi_core", req:true}
+property gui_widgets : {name:"gui_widgets", libs:{w_workspace, w_fltk, w_gl, w_flu, w_fltable}, dep:"gui_utils ncbi_image ncbi_core", req:true}
 property gui_dialogs : {name:"gui_dialogs", libs:{gui_dlg_entry_form, gui_dlg_basic, gui_dlg_config, gui_dlg_featedit, gui_dlg_edit}, dep:"gui_config gui_utils gui_widgets ncbi_core ncbi_seq ncbi_seqext", req:true} -- gui_dlg_registry
 property gui_core : {name:"gui_core", libs:{gui__core, xgbplugin, gui_project}, dep:"gui_config gui_dialogs gui_utils gui_widgets ncbi_core ncbi_general ncbi_seq ncbi_seqext", req:true}
 property gui_widgets_misc : {name:"gui_widgets_misc", libs:{w_phylo_tree, w_taxplot3d}, dep:"ncbi_algo ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_utils gui_graph gui_widgets", req:true}
 property gui_widgets_seq : {name:"gui_widgets_seq", libs:{w_seq_graphic, w_taxtree, w_seq, w_serial_browse, w_feat_compare, w_feat_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_graph gui_config gui_utils gui_widgets", req:true}
-property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_textaln, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq", req:true} --gui_core
+property gui_widgets_aln : {name:"gui_widgets_aln", libs:{w_aln_crossaln, w_aln_multi, w_aln_data, w_hit_matrix, w_aln_table}, dep:"ncbi_core ncbi_seq ncbi_seqext ncbi_general gui_config gui_utils gui_graph gui_dialogs gui_widgets gui_widgets_seq", req:true} --gui_core
 -- PLUG-INS
 property algo_align : {name:"algo_align", libs:{gui_algo_align}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_general ncbi_misc ncbi_seq ncbi_seqext ncbi_bdb ncbi_core ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
-property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
+property algo_basic : {name:"algo_basic", libs:{gui_algo_basic}, dep:"gui_core gui_dialogs gui_utils gui_widgets gui_widgets_seq ncbi_algo ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_xloader_cdd ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 
 property algo_cn3d : {name:"algo_cn3d", libs:{gui_algo_cn3d}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_mmdb ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
 property algo_external : {name:"algo_external", libs:{gui_algo_external, gui_algo_external_out}, dep:"gui_core gui_utils ncbi_core ncbi_general ncbi_seq ncbi_seqext ncbi_web ncbi_xloader_genbank" & gui2link, bundle:true, req:true}
@@ -390,6 +388,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2004/11/26 15:50:57  lebedev
+ * algo_basic += gui_widgets
+ *
  * Revision 1.32  2004/11/24 15:20:04  lebedev
  * GBench link += gui_widgets_aln
  *
