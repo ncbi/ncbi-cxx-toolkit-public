@@ -319,6 +319,8 @@ string CNetCacheClient::ServerVersion()
         NCBI_THROW(CNetCacheException, eCommunicationError, msg);
     }
 
+    m_Sock->Close();
+
     version.erase(0, 3);
     return version;
 }
@@ -531,6 +533,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/11/16 17:01:35  kuznets
+ * Close connection after receiving server version
+ *
  * Revision 1.24  2004/11/16 14:00:04  kuznets
  * Code cleanup: made use of CSocket::ReadLine() instead of ad-hoc code
  *
