@@ -70,9 +70,9 @@ LIB = \
 	xctools \
 	xconnect
 
-WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wx-config
+WX_CONFIG = $(HOME)/Programs/wxWindows/install/bin/wxgtk-2.3-config
 WX_CPPFLAGS = $(shell $(WX_CONFIG) --cppflags)
-WX_LIBS = $(shell $(WX_CONFIG) --libs)
+WX_LIBS = $(shell $(WX_CONFIG) --libs) $(shell $(WX_CONFIG) --gl-libs)
 
 GTK_CONFIG = $(HOME)/Programs/GTK-1.2/install/bin/gtk-config
 GTK_CFLAGS = $(shell $(GTK_CONFIG) --cflags)
@@ -84,6 +84,5 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 
 LIBS = $(ORIG_LIBS) \
 	$(WX_LIBS) \
-        -lwx_gtk_gl -lGL -lGLU \
 	$(NCBI_C_LIBPATH) \
 	-lncbimmdb -lncbiid1 -lnetcli -lncbitool -lncbiobj -lncbi -lm
