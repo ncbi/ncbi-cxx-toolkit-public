@@ -230,7 +230,7 @@ void CGFFFormatter::FormatFeature
     }
 
     x_AddFeature(l, *feat_loc, source, key, "." /*score*/, frame, attrs,
-                 gtf, ctx, tentative_stop);
+                 gtf, ctx, tentative_stop.NotEmpty());
 
     if (gtf  &&  seqfeat.GetData().IsCdregion()) {
         const CCdregion& cds = seqfeat.GetData().GetCdregion();
@@ -614,6 +614,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.13  2005/01/12 21:29:46  shomrat
+* Avoid performance warning on MSVC.
+*
 * Revision 1.12  2004/12/06 17:54:10  grichenk
 * Replaced calls to deprecated methods
 *
