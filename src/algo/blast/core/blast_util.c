@@ -40,6 +40,9 @@ Contents: Various BLAST utilities
 
 static char const rcsid[] = "$Id$";
 
+extern Uint1Ptr
+GetPrivatTranslationTable PROTO((CharPtr genetic_code,
+                                 Boolean reverse_complement));
 extern OIDListPtr LIBCALL 
 BlastGetVirtualOIDList PROTO((ReadDBFILEPtr rdfp_chain));
 
@@ -167,7 +170,7 @@ Int2 BlastNumber2Program(Uint1 number, CharPtr *program)
 	return 0;
 }
 
-Int2 LIBCALL
+Int4 LIBCALL
 BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev, 
    Int4 nt_length, Int2 frame, Uint1Ptr prot_seq, CharPtr genetic_code)
 {
@@ -175,11 +178,11 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
 	Int4 index, index_prot;
 	SeqMapTablePtr smtp;
 	Uint1 residue, new_residue;
-        Uint1Ptr nucl_seq;
+   Uint1Ptr nucl_seq;
 
 	smtp = SeqMapTableFind(Seq_code_ncbistdaa, Seq_code_ncbieaa);
 
-        nucl_seq = (frame >= 0 ? query_seq : query_seq_rev);
+   nucl_seq = (frame >= 0 ? query_seq : query_seq_rev+1);
 
 	/* The first character in the protein is the NULLB sentinel. */
 	prot_seq[0] = NULLB;
@@ -199,7 +202,7 @@ BLAST_GetTranslation(Uint1Ptr query_seq, Uint1Ptr query_seq_rev,
 	}
 	prot_seq[index_prot] = NULLB;
 	
-	return 0;
+	return index_prot - 1;
 }
 
 
@@ -396,7 +399,6 @@ BLAST_TranslateCompressedSequence(Uint1Ptr translation, Int4 length,
          *prot_seq = translation[codon];
          prot_seq++;
       }
-      *prot_seq = NULLB;
    } else {
       nt_seq_start = nt_seq;
       nt_seq += length/4;
@@ -556,7 +558,7 @@ Int2 GetReverseNuclSequence(Uint1Ptr sequence, Int4 length,
       rev_sequence[length-index] = conversion_table[sequence[index]];
    }
 
-   *rev_sequence_ptr = rev_sequence + 1;
+   *rev_sequence_ptr = rev_sequence;
    return 0;
 }
 
@@ -825,3 +827,92 @@ Int2 BLAST_InitDNAPSequence(BLAST_SequenceBlkPtr query_blk,
    return 0;
 }
 
+Int2 BLAST_GetAllTranslations(Uint1Ptr nucl_seq, Uint1 encoding,
+        Int4 nucl_length, CharPtr genetic_code,
+        Uint1Ptr PNTR translation_buffer_ptr, Int4Ptr PNTR frame_offsets_ptr,
+        Uint1Ptr PNTR mixed_seq_ptr)
+{
+   Uint1Ptr translation_buffer, mixed_seq;
+   Uint1Ptr translation_table, translation_table_rc;
+   Uint1Ptr nucl_seq_rev;
+   Int4 offset = 0, length;
+   Int2 context, frame;
+   Int4Ptr frame_offsets;
+   
+   if (encoding != NCBI2NA_ENCODING && encoding != NCBI4NA_ENCODING)
+      return -1;
+
+   if ((*translation_buffer_ptr = translation_buffer = 
+        (Uint1Ptr) Malloc(2*(nucl_length+1)+1)) == NULL)
+      return -1;
+
+   if (encoding == NCBI4NA_ENCODING) {
+      /* First produce the reverse strand of the nucleotide sequence */
+      GetReverseNuclSequence(nucl_seq, nucl_length, 
+                             &nucl_seq_rev);
+   } else {
+      translation_table = GetPrivatTranslationTable(genetic_code, FALSE);
+      translation_table_rc = GetPrivatTranslationTable(genetic_code, TRUE);
+   } 
+
+   *frame_offsets_ptr = frame_offsets = (Int4Ptr) Malloc(7*sizeof(Int4));
+   frame_offsets[0] = 0;
+   
+   for (context = 0; context < 6; ++context) {
+      frame = BLAST_ContextToFrame(blast_type_blastx, context);
+      if (encoding == NCBI2NA_ENCODING) {
+         if (frame > 0) {
+            length = 
+               BLAST_TranslateCompressedSequence(translation_table,
+                  nucl_length, nucl_seq, frame, translation_buffer+offset);
+         } else {
+            length = 
+               BLAST_TranslateCompressedSequence(translation_table_rc,
+                  nucl_length, nucl_seq, frame, translation_buffer+offset);
+         }
+      } else {
+         length = 
+            BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
+               nucl_length, frame, translation_buffer+offset, genetic_code);
+      }
+
+      /* Increment offset by 1 extra byte for the sentinel NULLB 
+         between frames. */
+      offset += length + 1;
+      frame_offsets[context+1] = offset;
+   }
+
+   if (encoding == NCBI4NA_ENCODING) {
+      nucl_seq_rev = (Uint1Ptr) MemFree(nucl_seq_rev);
+   } else { 
+      translation_table = (Uint1Ptr) MemFree(translation_table);
+      translation_table_rc = (Uint1Ptr) MemFree(translation_table_rc);
+   }
+
+   /* All frames are ready. For the out-of-frame gapping option, allocate 
+      and fill buffer with the mixed frame sequence */
+   if (mixed_seq_ptr) {
+      Uint1Ptr seq;
+      Int4 index, i;
+
+      *mixed_seq_ptr = mixed_seq = (Uint1Ptr) Malloc(2*(nucl_length+1));
+      seq = mixed_seq;
+      for (index = 0; index < 6; index += CODON_LENGTH) {
+         for (i = 0; i <= nucl_length; ++i) {
+            context = i % 3;
+            offset = i / 3;
+            *seq++ = translation_buffer[frame_offsets[index+context]+offset];
+         }
+      }      
+   }
+
+   return 0;
+}
+
+Int2 FrameToContext(Int2 frame) 
+{
+   if (frame > 0)
+      return frame - 1;
+   else
+      return 2 - frame;
+}
