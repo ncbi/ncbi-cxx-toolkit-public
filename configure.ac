@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.264 2004/02/02 15:16:40 ucko Exp $
+#  $Id: configure.ac,v 1.265 2004/02/03 19:11:49 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1596,7 +1596,7 @@ fi
 
 AC_CHECK_TYPES(socklen_t,,,[#include <sys/types.h>
 #include <sys/socket.h>])
-AC_CHECK_HEADERS(dlfcn.h sys/sockio.h sys/sysinfo.h)
+AC_CHECK_HEADERS(dlfcn.h sys/poll.h sys/sockio.h sys/sysinfo.h)
 # for FreeTDS 0.60
 AC_CHECK_HEADERS(arpa/inet.h malloc.h netinet/in.h sys/socket.h)
 
@@ -1894,22 +1894,6 @@ if test "$ncbi_cv_type_ios_base" = no; then
 fi
 
 
-# Avoid false negatives due to split.
-test "$ncbi_cv_func_ios_xalloc" = no \
-  -a -z "${ncbi_cv_func_ios_register_callback+set}"  &&  \
-    unset ncbi_cv_func_ios_xalloc
-AC_CACHE_CHECK([for ios(_base)::xalloc],
-   ncbi_cv_func_ios_xalloc,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <iostream>]],
-       [[std::cout.pword(std::ios::xalloc());]])],
-       [ncbi_cv_func_ios_xalloc=yes], [ncbi_cv_func_ios_xalloc=no])])
-if test "$ncbi_cv_func_ios_xalloc" = yes; then
-   AC_DEFINE(HAVE_IOS_XALLOC, 1,
-             [Define to 1 if you have `ios(_base)::xalloc'.])
-fi
-
-
 AC_CACHE_CHECK([for ios(_base)::register_callback],
    ncbi_cv_func_ios_register_callback,
    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
@@ -1967,9 +1951,22 @@ if test "$ncbi_cv_type_char_traits" = no; then
 fi
 
 
+
+AC_CACHE_CHECK([for POSIX/SysV semaphores], ncbi_cv_sys_semaphores,
+   AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <sys/types.h>
+#include <sys/sem.h>],
+      [struct sembuf buf; int id = semget(0x1234, 0, IPC_CREAT);
+       buf.sem_op = SEM_UNDO;])],
+      [ncbi_cv_sys_semaphores=yes], [ncbi_cv_sys_semaphores=no]))
+if test "$ncbi_cv_sys_semaphores" = yes; then
+   AC_DEFINE(HAVE_POSIX_SEMAPHORES, 1,
+             [Define to 1 if you have POSIX/SysV semaphores.])
+fi
+
 AC_CHECK_TYPE([union semun],
    AC_DEFINE(HAVE_SEMUN, 1, [Define to 1 if you have `union semun'.]),
-   [], [#include <sys/sem.h>])
+   [], [#include <sys/types.h>
+#include <sys/sem.h>])
 
 
 AC_CACHE_CHECK([which way the stack grows], ncbi_cv_sys_stack_dir,
@@ -3230,10 +3227,8 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 
-# The IPC stuff doesn't build on Cygwin or Darwin.
-case "$host_os" in
-  cygwin* | darwin* ) with_local_lbsm="no" ;;
-esac
+## requires semaphores (lacking on older versions of Cygwin and Darwin)
+test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
 
 for fff in $local_lbsm ; do
    if test ! -f ${srcdir}/src/connect/${fff}.c ; then
@@ -3250,14 +3245,17 @@ if test "$with_local_lbsm" = "no" ; then
    local_lbsm="ncbi_lbsmd_stub"
 else
    WithProjects="$WithProjects local_lbsm"
+   AC_DEFINE(HAVE_LOCAL_LBSM, 1,
+             [Define to 1 if local LBSM support is available.])
 fi
 
 
-## daemons under 'connect' don't build on Darwin (MacOS X)
-case "$host_os" in
-  darwin* ) daemons= ;;
-  *)        daemons="daemons" ;;
-esac
+## many daemons under 'connect' require <sys/poll.h>
+if test $ac_cv_header_sys_poll_h = yes; then
+   daemons=daemons
+else
+   daemons=
+fi
 
 
 ## `serial' projects

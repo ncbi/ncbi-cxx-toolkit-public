@@ -6507,7 +6507,8 @@ fi
 
 
 
-for ac_header in dlfcn.h sys/sockio.h sys/sysinfo.h
+
+for ac_header in dlfcn.h sys/poll.h sys/sockio.h sys/sysinfo.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -12621,63 +12622,6 @@ _ACEOF
 fi
 
 
-# Avoid false negatives due to split.
-test "$ncbi_cv_func_ios_xalloc" = no \
-  -a -z "${ncbi_cv_func_ios_register_callback+set}"  &&  \
-    unset ncbi_cv_func_ios_xalloc
-echo "$as_me:$LINENO: checking for ios(_base)::xalloc" >&5
-echo $ECHO_N "checking for ios(_base)::xalloc... $ECHO_C" >&6
-if test "${ncbi_cv_func_ios_xalloc+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <iostream>
-int
-main ()
-{
-std::cout.pword(std::ios::xalloc());
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_func_ios_xalloc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ncbi_cv_func_ios_xalloc=no
-fi
-rm -f conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ncbi_cv_func_ios_xalloc" >&5
-echo "${ECHO_T}$ncbi_cv_func_ios_xalloc" >&6
-if test "$ncbi_cv_func_ios_xalloc" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_IOS_XALLOC 1
-_ACEOF
-
-fi
-
-
 echo "$as_me:$LINENO: checking for ios(_base)::register_callback" >&5
 echo $ECHO_N "checking for ios(_base)::register_callback... $ECHO_C" >&6
 if test "${ncbi_cv_func_ios_register_callback+set}" = set; then
@@ -12862,6 +12806,61 @@ _ACEOF
 fi
 
 
+
+echo "$as_me:$LINENO: checking for POSIX/SysV semaphores" >&5
+echo $ECHO_N "checking for POSIX/SysV semaphores... $ECHO_C" >&6
+if test "${ncbi_cv_sys_semaphores+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sys/types.h>
+#include <sys/sem.h>
+int
+main ()
+{
+struct sembuf buf; int id = semget(0x1234, 0, IPC_CREAT);
+       buf.sem_op = SEM_UNDO;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_sys_semaphores=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_sys_semaphores=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_sys_semaphores" >&5
+echo "${ECHO_T}$ncbi_cv_sys_semaphores" >&6
+if test "$ncbi_cv_sys_semaphores" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_POSIX_SEMAPHORES 1
+_ACEOF
+
+fi
+
 echo "$as_me:$LINENO: checking for union semun" >&5
 echo $ECHO_N "checking for union semun... $ECHO_C" >&6
 if test "${ac_cv_type_union_semun+set}" = set; then
@@ -12874,6 +12873,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+#include <sys/types.h>
 #include <sys/sem.h>
 
 int
@@ -18562,10 +18562,8 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_lbsmd"
 
-# The IPC stuff doesn't build on Cygwin or Darwin.
-case "$host_os" in
-  cygwin* | darwin* ) with_local_lbsm="no" ;;
-esac
+## requires semaphores (lacking on older versions of Cygwin and Darwin)
+test $ncbi_cv_sys_semaphores = no  &&  with_local_lbsm=no
 
 for fff in $local_lbsm ; do
    if test ! -f ${srcdir}/src/connect/${fff}.c ; then
@@ -18584,14 +18582,20 @@ if test "$with_local_lbsm" = "no" ; then
    local_lbsm="ncbi_lbsmd_stub"
 else
    WithProjects="$WithProjects local_lbsm"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LOCAL_LBSM 1
+_ACEOF
+
 fi
 
 
-## daemons under 'connect' don't build on Darwin (MacOS X)
-case "$host_os" in
-  darwin* ) daemons= ;;
-  *)        daemons="daemons" ;;
-esac
+## many daemons under 'connect' require <sys/poll.h>
+if test $ac_cv_header_sys_poll_h = yes; then
+   daemons=daemons
+else
+   daemons=
+fi
 
 
 ## `serial' projects
