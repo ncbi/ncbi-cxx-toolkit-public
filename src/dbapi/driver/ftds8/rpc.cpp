@@ -450,6 +450,7 @@ bool CTDS_RPCCmd::x_AssignOutputParams()
 bool CTDS_RPCCmd::x_AssignParams()
 {
     for (unsigned int i = 0;  i < m_Params.NofParams();  i++) {
+      if(!m_Params.GetParamStatus(i)) continue;
         CDB_Object& param = *m_Params.GetParam(i);
         bool is_output =
             (m_Params.GetParamStatus(i) & CDB_Params::fOutput) != 0;
@@ -482,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/11/20 20:36:09  soussov
+ * fixed bug in parameters assignment
+ *
  * Revision 1.7  2002/07/22 20:11:07  soussov
  * fixes the RowCount calculations
  *
