@@ -14,12 +14,13 @@ include ./Makefile.mk
 MANDATORY_PROJ  = corelib util connect cgi html hello
 
 OPTIONAL_PROJ   = @serial@ @dbapi@ @objects@ @ctools@ @app@ @algo@ \
-   @internal@ @check@
+   @internal@
 X_OPTIONAL_PROJ =  serial dbapi objects ctools app algo \
-   internal check
-POTENTIAL_PROJ = @gui@
+   internal
+CHECK_SUB_PROJ = @check@
+POTENTIAL_SUB_PROJ = @gui@
 
-SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ)
+SUB_PROJ = $(MANDATORY_PROJ) $(OPTIONAL_PROJ) $(CHECK_SUB_PROJ)
 include ./Makefile.meta
 
 
@@ -40,7 +41,7 @@ dbindir = $(bindir)/.DEATH-ROW
 dlibdir = $(libdir)/.DEATH-ROW
 strip_for_install:
 	test "$(COMPILER)-$(DEBUG_SFX)" = "workshop-Debug" || \
-	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) Makefile
+	  rm -rf $(MANDATORY_PROJ) $(X_OPTIONAL_PROJ) check $(POTENTIAL_SUB_PROJ) Makefile
 	@test \! -f "$(apps_to_drop)" || \
 	  while read app; do \
 	    test -f "$(bindir)/$$app" && mkdir -p $(dbindir) && \
