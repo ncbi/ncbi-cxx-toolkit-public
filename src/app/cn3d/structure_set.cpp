@@ -97,6 +97,17 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
+const unsigned int
+    StructureSet::ePSSMData                   = 0x01,
+    StructureSet::eRowOrderData               = 0x02,
+    StructureSet::eStructureAlignmentData     = 0x04,
+    StructureSet::eSequenceData               = 0x08,
+    StructureSet::eUpdateData                 = 0x10,
+    StructureSet::eStyleData                  = 0x20,
+    StructureSet::eUserAnnotationData         = 0x40,
+    StructureSet::eCDDData                    = 0x80,
+    StructureSet::eOtherData                  = 0x100;
+
 StructureSet::StructureSet(CNcbi_mime_asn1 *mime, int structureLimit, OpenGLRenderer *r) :
     StructureBase(NULL), renderer(r)
 {
@@ -662,7 +673,7 @@ void StructureSet::InitStructureAlignments(int masterMMDBID)
     structureAlignments->SetFeatures().resize(1, featSet);
 
     // flag a change in data
-    dataManager->SetDataChanged(eStructureAlignmentData);
+    SetDataChanged(eStructureAlignmentData);
 }
 
 void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
@@ -697,14 +708,14 @@ void StructureSet::AddStructureAlignment(CBiostruc_feature *feature,
         structureAlignments->GetFeatures().front().GetObject().GetFeatures().size() + 1, featureRef);
 
     // flag a change in data
-    dataManager->SetDataChanged(eStructureAlignmentData);
+    SetDataChanged(eStructureAlignmentData);
 }
 
 void StructureSet::RemoveStructureAlignments(void)
 {
     dataManager->SetStructureAlignments(NULL);
     // flag a change in data
-    dataManager->SetDataChanged(eStructureAlignmentData);
+    SetDataChanged(eStructureAlignmentData);
 }
 
 void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
@@ -730,7 +741,7 @@ void StructureSet::ReplaceAlignmentSet(AlignmentSet *newAlignmentSet)
     for (n=alignmentSet->newAsnAlignmentData->begin(); n!=ne; n++, o++)
         o->Reset(n->GetPointer());   // copy each Seq-annot CRef
 
-    dataManager->SetDataChanged(eAlignmentData);
+    // don't set data changed flags here; done by AlignmentManager::SavePairwiseFromMultiple()
 }
 
 void StructureSet::ReplaceUpdates(ncbi::objects::CCdd::TPending& newUpdates)
@@ -745,7 +756,7 @@ void StructureSet::RemoveUnusedSequences(void)
     dataManager->RemoveUnusedSequences(alignmentSet, updateSequences);
 }
 
-bool StructureSet::SaveASNData(const char *filename, bool doBinary)
+bool StructureSet::SaveASNData(const char *filename, bool doBinary, unsigned int *changeFlags)
 {
     // force a save of any edits to alignment and updates first (it's okay if this has already been done)
     GlobalMessenger()->SequenceWindowsSave(true);
@@ -772,6 +783,7 @@ bool StructureSet::SaveASNData(const char *filename, bool doBinary)
     dataManager->RemoveUserAnnotations();
 
     if (writeOK) {
+        *changeFlags = dataManager->GetDataChanged();
         dataManager->SetDataUnchanged();
     } else {
         ERRORMSG("Write failed: " << err);
@@ -989,7 +1001,7 @@ const Sequence * StructureSet::CreateNewSequence(ncbi::objects::CBioseq& bioseq)
         dataManager->GetSequences()->push_back(CRef<CSeq_entry>(se));
     } else
         ERRORMSG("StructureSet::CreateNewSequence() - no sequence list in asn data");
-    dataManager->SetDataChanged(eSequenceData);
+    SetDataChanged(eSequenceData);
 
     return newSeq;
 }
@@ -1040,7 +1052,7 @@ void StructureSet::ShowRejects(void) const
 // trivial methods...
 bool StructureSet::IsMultiStructure(void) const { return !dataManager->IsSingleStructure(); }
 bool StructureSet::HasDataChanged(void) const { return dataManager->HasDataChanged(); }
-void StructureSet::SetDataChanged(eDataChanged what) const { dataManager->SetDataChanged(what); }
+void StructureSet::SetDataChanged(unsigned int what) const { dataManager->SetDataChanged(what); }
 bool StructureSet::IsCDD(void) const { return dataManager->IsCDD(); }
 bool StructureSet::IsCDDInMime(void) const { return dataManager->IsCDDInMime(); }
 const string& StructureSet::GetCDDName(void) const { return dataManager->GetCDDName(); }
@@ -1462,6 +1474,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.133  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.132  2003/07/14 18:37:08  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

@@ -73,6 +73,7 @@ void AlignmentManager::Init(void)
     threader = new Threader();
     blaster = new BLASTer();
     blockAligner = new BlockAligner();
+    originalMultiple = NULL;
 }
 
 AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet)
@@ -147,6 +148,7 @@ AlignmentManager::~AlignmentManager(void)
     delete threader;
     delete blaster;
     delete blockAligner;
+    if (originalMultiple) delete originalMultiple;
 }
 
 void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet)
@@ -161,9 +163,14 @@ void AlignmentManager::NewAlignments(const SequenceSet *sSet, const AlignmentSet
 
     // all slaves start out visible
     slavesVisible.resize(alignmentSet->alignments.size());
-    for (int i=0; i<slavesVisible.size(); i++) slavesVisible[i] = true;
+    for (int i=0; i<slavesVisible.size(); i++)
+        slavesVisible[i] = true;
 
     NewMultipleWithRows(slavesVisible);
+    originalMultiple = GetCurrentMultipleAlignment()->Clone();
+    originalRowOrder.resize(originalMultiple->NRows());
+    for (int r=0; r<originalMultiple->NRows(); r++)
+        originalRowOrder[r] = r;
 }
 
 void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *multiple,
@@ -178,6 +185,61 @@ void AlignmentManager::SavePairwiseFromMultiple(const BlockMultipleAlignment *mu
     } else {
         ERRORMSG("Couldn't create pairwise alignments from the current multiple!\n"
             << "Alignment data in output file will be left unchanged.");
+        return;
+    }
+
+    // see whether PSSM and/or row order have changed
+    if (!originalMultiple) {
+        originalMultiple = multiple->Clone();
+        originalRowOrder = rowOrder;
+        alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
+        alignmentSet->parentSet->SetDataChanged(StructureSet::eRowOrderData);
+    } else {
+
+        // check for row order change
+        TRACEMSG("checking for alignment changes..." << originalMultiple << ' ' << multiple);
+        if (originalMultiple->NRows() != multiple->NRows()) {
+            TRACEMSG("row order changed");
+            alignmentSet->parentSet->SetDataChanged(StructureSet::eRowOrderData);
+        } else {
+            for (int row=0; row<originalMultiple->NRows(); row++) {
+                if (originalMultiple->GetSequenceOfRow(originalRowOrder[row]) !=
+                        multiple->GetSequenceOfRow(rowOrder[row]))
+                {
+                    TRACEMSG("row order changed");
+                    alignmentSet->parentSet->SetDataChanged(StructureSet::eRowOrderData);
+                    break;
+                }
+            }
+        }
+
+        // check for PSSM change
+        const BLAST_Matrix *originalPSSM = originalMultiple->GetPSSM(), *currentPSSM = multiple->GetPSSM();
+        if (originalPSSM->rows != currentPSSM->rows ||
+            originalPSSM->columns != currentPSSM->columns ||
+            originalPSSM->karlinK != currentPSSM->karlinK)
+        {
+            TRACEMSG("PSSM changed");
+            alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
+        } else {
+            int i, j;
+            for (i=0; i<originalPSSM->rows; i++) {
+                for (j=0; j<originalPSSM->columns; j++) {
+                    if (originalPSSM->matrix[i][j] != currentPSSM->matrix[i][j]) {
+                        TRACEMSG("PSSM changed");
+                        alignmentSet->parentSet->SetDataChanged(StructureSet::ePSSMData);
+                        i = originalPSSM->rows;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // keep for comparison on next save
+        delete originalMultiple;
+        originalMultiple = multiple->Clone();
+        originalMultiple->RemovePSSM();
+        originalRowOrder = rowOrder;
     }
 }
 
@@ -879,6 +941,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.85  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.84  2003/07/14 18:37:07  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

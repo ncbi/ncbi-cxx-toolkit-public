@@ -1405,7 +1405,24 @@ void StructureWindow::OnSave(wxCommandEvent& event)
     INFOMSG("save file: '" << outputFilename.c_str() << "'");
 
     if (!outputFilename.IsEmpty()) {
-        glCanvas->structureSet->SaveASNData(outputFilename.c_str(), (outputFilename.Right(4) == ".val"));
+
+        // save and send FileSaved command to CDTree
+        unsigned int changeFlags;
+        if (glCanvas->structureSet->SaveASNData(
+                outputFilename.c_str(), (outputFilename.Right(4) == ".val"), &changeFlags) &&
+            IsFileMessengerActive())
+        {
+            string data(outputFilename.c_str());
+            data += '\n';
+            TRACEMSG("changeFlags: " << changeFlags);
+            if ((changeFlags & StructureSet::eRowOrderData) > 0)
+                data += "RowOrderChanged\n";
+            if ((changeFlags & StructureSet::ePSSMData) > 0)
+                data += "PSSMChanged\n";
+            if ((changeFlags & StructureSet::eCDDData) > 0)
+                data += "DescriptionChanged\n";
+            SendCommand("CDTree2", "FileSaved", data);
+        }
 
 #ifdef __WXMAC__
         // set mac file type and creator
@@ -1433,6 +1450,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.13  2003/07/14 18:37:08  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

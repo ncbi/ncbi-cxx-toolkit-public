@@ -209,21 +209,21 @@ void ViewerWindowBase::OnEditMenu(wxCommandEvent& event)
 
         case MID_ENABLE_EDIT:
             if (turnEditorOn) {
+                TRACEMSG("turning on editor");
                 if (!RequestEditorEnable(true)) {
                     menuBar->Check(MID_ENABLE_EDIT, false);
                     break;
                 }
-                TRACEMSG("turning on editor");
                 EnableBaseEditorMenuItems(true);
                 viewer->GetCurrentDisplay()->AddBlockBoundaryRows();    // add before push!
                 viewer->EnableStacks();     // start up undo/redo stack system
                 Command(MID_DRAG_HORIZ);    // switch to drag mode
             } else {
+                TRACEMSG("turning off editor");
                 if (!RequestEditorEnable(false)) {   // cancelled
                     menuBar->Check(MID_ENABLE_EDIT, true);
                     break;
                 }
-                TRACEMSG("turning off editor");
                 EnableBaseEditorMenuItems(false);
                 viewer->GetCurrentDisplay()->RemoveBlockBoundaryRows();
                 if (!menuBar->IsChecked(MID_SELECT_COLS) || !menuBar->IsChecked(MID_SELECT_ROWS))
@@ -387,6 +387,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.45  2003/02/03 19:20:09  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

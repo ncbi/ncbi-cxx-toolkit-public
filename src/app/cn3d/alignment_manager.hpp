@@ -76,7 +76,6 @@ public:
     BLASTer *blaster;
     BlockAligner *blockAligner;
 
-    void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
     void ReplaceUpdatesInASN(ncbi::objects::CCdd::TPending& newUpdates) const;
 
     // creates the current multiple alignment from the given pairwise alignments (which are
@@ -143,6 +142,7 @@ public:
 
 private:
     void Init(void);
+    void NewAlignments(const SequenceSet *sSet, const AlignmentSet *aSet);
 
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
@@ -154,6 +154,10 @@ private:
 
     // viewer for updates (grab-bag of pairwise alignments)
     UpdateViewer *updateViewer;
+
+    // for change-type comparison
+    BlockMultipleAlignment *originalMultiple;
+    std::vector < int > originalRowOrder;
 };
 
 END_SCOPE(Cn3D)
@@ -163,6 +167,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.47  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.46  2003/02/03 19:20:00  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

@@ -128,6 +128,8 @@ public:
 
     // public methods
 
+    bool IsMultiStructure(void) const;
+
     // set screen and rotation center of model (coordinate relative to Master);
     // if NULL, will calculate average geometric center
     void SetCenter(const Vector *setTo = NULL);
@@ -159,8 +161,36 @@ public:
     // replace the ASN update list with the current updates
     void ReplaceUpdates(ncbi::objects::CCdd::TPending& newUpdates);
 
+    // bit flags to tell whether various parts of the data have been changed
+    static const unsigned int
+        ePSSMData,
+        eRowOrderData,
+        eStructureAlignmentData,
+        eSequenceData,
+        eUpdateData,
+        eStyleData,
+        eUserAnnotationData,
+        eCDDData,
+        eOtherData;
+
+    bool HasDataChanged(void) const;
+    void SetDataChanged(unsigned int what) const;
+
+    // CDD-specific data accessors
+    bool IsCDD(void) const;
+    bool IsCDDInMime(void) const;
+    const std::string& GetCDDName(void) const;
+    bool SetCDDName(const std::string& name);
+    const std::string& GetCDDDescription(void) const;
+    bool SetCDDDescription(const std::string& descr);
+    typedef std::vector < std::string > TextLines;
+    bool GetCDDNotes(TextLines *lines) const;
+    bool SetCDDNotes(const TextLines& lines);
+    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
+    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
+
     // writes data to a file; returns true on success
-    bool SaveASNData(const char *filename, bool doBinary);
+    bool SaveASNData(const char *filename, bool doBinary, unsigned int *changeFlags);
 
     // adds a new Sequence to the SequenceSet
     const Sequence * CreateNewSequence(ncbi::objects::CBioseq& bioseq);
@@ -210,36 +240,6 @@ private:
     // for printing out distances between successively picked atoms
     Vector prevPickedAtomCoord;
     bool havePrevPickedAtomCoord;
-
-public:
-    bool IsMultiStructure(void) const;
-
-    // flags to tell whether various parts of the data have been changed
-    enum eDataChanged {
-        eAlignmentData              = 0x01,
-        eStructureAlignmentData     = 0x02,
-        eSequenceData               = 0x04,
-        eUpdateData                 = 0x08,
-        eStyleData                  = 0x100,
-        eUserAnnotationData         = 0x200,
-        eCDDData                    = 0x400,
-        eOtherData                  = 0x800
-    };
-    bool HasDataChanged(void) const;
-    void SetDataChanged(eDataChanged what) const;
-
-    // CDD-specific data accessors
-    bool IsCDD(void) const;
-    bool IsCDDInMime(void) const;
-    const std::string& GetCDDName(void) const;
-    bool SetCDDName(const std::string& name);
-    const std::string& GetCDDDescription(void) const;
-    bool SetCDDDescription(const std::string& descr);
-    typedef std::vector < std::string > TextLines;
-    bool GetCDDNotes(TextLines *lines) const;
-    bool SetCDDNotes(const TextLines& lines);
-    ncbi::objects::CCdd_descr_set * GetCDDDescrSet(void);
-    ncbi::objects::CAlign_annot_set * GetCDDAnnotSet(void);
 };
 
 class StructureObject : public StructureBase
@@ -301,6 +301,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.76  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.75  2003/07/14 18:37:08  thiessen
 * change GetUngappedAlignedBlocks() param types; other syntax changes
 *

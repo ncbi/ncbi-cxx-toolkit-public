@@ -161,8 +161,9 @@ public:
 
     // to flag data changes
     bool HasDataChanged(void) const { return (dataChanged > 0); }
-    void SetDataChanged(StructureSet::eDataChanged what) const { dataChanged |= what; }
+    void SetDataChanged(unsigned int what) const { dataChanged |= what; }
     void SetDataUnchanged(void) const { dataChanged = 0; }
+    unsigned int GetDataChanged(void) const { return dataChanged; }
 };
 
 END_SCOPE(Cn3D)
@@ -172,6 +173,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/07/17 16:52:34  thiessen
+* add FileSaved message with edit typing
+*
 * Revision 1.11  2003/02/03 19:20:04  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
