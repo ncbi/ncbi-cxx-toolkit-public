@@ -90,7 +90,7 @@ typedef struct SConnectionTag {
 
     /* "[c|r|w|l]_timeout" is either 0 (means infinite), CONN_DEFAULT_TIMEOUT
        (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
-    const STimeout*        o_timeout;  /* timeout on connect                 */
+    const STimeout*        o_timeout;  /* timeout on open                    */
     const STimeout*        r_timeout;  /* timeout on reading                 */
     const STimeout*        w_timeout;  /* timeout on writing                 */
     const STimeout*        c_timeout;  /* timeout on close                   */
@@ -99,7 +99,7 @@ typedef struct SConnectionTag {
     STimeout               ww_timeout; /* storage for "w_timeout"            */
     STimeout               cc_timeout; /* storage for "c_timeout"            */
 
-    SCONN_Callback         callback[CONN_N_CALLBACKS];
+    SCONN_Callback         cbs[CONN_N_CALLBACKS];
 } SConnection;
 
 
@@ -247,42 +247,48 @@ extern EIO_Status CONN_SetTimeout
 
     CONN_NOT_NULL(SetTimeout);
 
-    if (event == eIO_Open) {
+    switch (event) {
+    case eIO_Open:
         if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->oo_timeout = *new_timeout;
             conn->o_timeout  = &conn->oo_timeout;
         } else {
             conn->o_timeout  = new_timeout;
         }
-    }
-    else if (event == eIO_Close) {
+        break;
+    case eIO_Close:
         if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->cc_timeout = *new_timeout;
             conn->c_timeout  = &conn->cc_timeout;
         } else {
             conn->c_timeout  = new_timeout;
         }
-    }
-    else if (event == eIO_ReadWrite  ||  event == eIO_Read) {
+        break;
+    case eIO_Read:
+    case eIO_ReadWrite:
         if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->rr_timeout = *new_timeout;
             conn->r_timeout  = &conn->rr_timeout;
         } else {
             conn->r_timeout  = new_timeout;
         }
-    }
-    else if (event == eIO_ReadWrite  ||  event == eIO_Write) {
+        if (event != eIO_ReadWrite)
+            break;
+        /*FALLTHRU*/
+    case eIO_Write:
         if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
             conn->ww_timeout = *new_timeout;
             conn->w_timeout  = &conn->ww_timeout;
         } else {
             conn->w_timeout  = new_timeout;
         }
-    } else {
+        break;
+    default:
         CONN_LOG(eLOG_Error,
                  "[CONN_SetTimeout]  Unknown event to set timeout for");
         status = eIO_InvalidArg;
         assert(0);
+        break;
     }
 
     return status;
@@ -577,16 +583,20 @@ extern EIO_Status CONN_Status(CONN conn, EIO_Event dir)
 
 extern EIO_Status CONN_Close(CONN conn)
 {
+    FConnCallback func = 0;
+    void*         data = 0;
+
     CONN_NOT_NULL(Close);
 
     if (conn->state != eCONN_Unusable) {
-        /* callback established? call it first, if so */
-        if (conn->callback[eCONN_OnClose].func) {
-            conn->callback[eCONN_OnClose].func
-                (conn, eCONN_OnClose, conn->callback[eCONN_OnClose].data);
-        }
+        func = conn->cbs[eCONN_OnClose].func;
+        data = conn->cbs[eCONN_OnClose].data;
     }
-    conn->callback[eCONN_OnClose].func = 0; /* allow close CB only once */
+    /* allow close CB only once */
+    memset(&conn->cbs[eCONN_OnClose], 0, sizeof(conn->cbs[eCONN_OnClose]));
+    /* call it! */
+    if ( func )
+        (*func)(conn, eCONN_OnClose, data);
     /* now close the connection - this also makes it "eCONN_Unusable" */
     if ( conn->meta.list )
         CONN_ReInit(conn, 0);
@@ -628,9 +638,9 @@ extern EIO_Status CONN_SetCallback
     CONN_NOT_NULL(SetCallback);
 
     if ( old_cb )
-        *old_cb = conn->callback[i];
+        *old_cb = conn->cbs[i];
     if ( new_cb )
-        conn->callback[i] = *new_cb;
+        conn->cbs[i] = *new_cb;
     return eIO_Success;
 }
 
@@ -705,6 +715,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.33  2003/05/19 16:43:40  lavr
+ * Bugfix in CONN_SetTimeout();  better close callback sequence
+ *
  * Revision 6.32  2003/05/14 03:51:16  lavr
  * +CONN_Description()
  *
