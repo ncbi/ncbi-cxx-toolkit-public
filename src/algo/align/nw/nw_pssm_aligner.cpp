@@ -354,6 +354,10 @@ CNWAligner::TScore CPSSMAligner::ScoreFromTranscript(
                        const TTranscript& transcript,
                        size_t start1, size_t start2) const
 {
+    if (m_Freq1 == 0 && m_Pssm1 == 0) {
+        return CNWAligner::ScoreFromTranscript(transcript, start1, start2);
+    }
+
     TScore score = 0;
 
     int state1;   // 0 = normal, 1 = gap, 2 = intron
@@ -473,6 +477,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/12/27 19:42:41  papadopo
+ * revert to two-sequences version of ScoreFromTranscript if aligning two sequences
+ *
  * Revision 1.3  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *
