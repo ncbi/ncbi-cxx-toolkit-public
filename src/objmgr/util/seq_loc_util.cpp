@@ -151,15 +151,17 @@ bool IsValid(const CSeq_interval& interval, CScope* scope)
 }
 
 
-bool IsSameBioseq (const CSeq_id& id1, const CSeq_id& id2, CScope* scope)
+bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope,
+                  CScope::EGetBioseqFlag get_flag)
 {
     return IsSameBioseq(CSeq_id_Handle::GetHandle(id1),
                         CSeq_id_Handle::GetHandle(id2),
-                        scope);
+                        scope, get_flag);
 }
 
 
-bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* scope)
+bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* scope,
+                  CScope::EGetBioseqFlag get_flag)
 {
     // Compare CSeq_ids directly
     if (id1 == id2) {
@@ -169,10 +171,8 @@ bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* 
     // Compare handles
     if (scope != NULL) {
         try {
-            CBioseq_Handle hnd1 =
-                scope->GetBioseqHandle(id1, CScope::eGetBioseq_Loaded);
-            CBioseq_Handle hnd2 =
-                scope->GetBioseqHandle(id2, CScope::eGetBioseq_Loaded);
+            CBioseq_Handle hnd1 = scope->GetBioseqHandle(id1, get_flag);
+            CBioseq_Handle hnd2 = scope->GetBioseqHandle(id2, get_flag);
             return hnd1  &&  hnd2  &&  (hnd1 == hnd2);
         } catch (CException& e) {
             ERR_POST(e.what() << ": CSeq_id1: " << id1.GetSeqId()->DumpAsFasta()
@@ -2607,6 +2607,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.13  2004/12/10 16:53:23  shomrat
+* Restore previous semantics for IsSameBioseq()
+*
 * Revision 1.12  2004/12/07 15:20:47  ucko
 * Restore GetLength adjustment from R1.10.
 *

@@ -36,13 +36,14 @@
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objmgr/objmgr_exception.hpp>
+#include <objmgr/scope.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 // Forward declarations
 class CSeq_loc;
-class CScope;
 class CSeq_id_Handle;
 class CSeq_id;
 class CBioseq_Handle;
@@ -89,9 +90,11 @@ bool IsValid(const CSeq_interval& interval, CScope* scope);
 
 /// Determines if two CSeq_ids represent the same CBioseq
 NCBI_XOBJUTIL_EXPORT
-bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope);
+bool IsSameBioseq(const CSeq_id& id1, const CSeq_id& id2, CScope* scope,
+                  CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_All);
 NCBI_XOBJUTIL_EXPORT
-bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* scope);
+bool IsSameBioseq(const CSeq_id_Handle& id1, const CSeq_id_Handle& id2, CScope* scope,
+                  CScope::EGetBioseqFlag get_flag = CScope::eGetBioseq_All);
 
 /// Returns true if all embedded CSeq_ids represent the same CBioseq, else false
 NCBI_XOBJUTIL_EXPORT
@@ -325,6 +328,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2004/12/10 16:52:55  shomrat
+* Restore previous semantics for IsSameBioseq()
+*
 * Revision 1.7  2004/12/06 14:54:39  shomrat
 * Added GetIdHandle and IsSameBioseq for CSeq_id_Handles
 *
