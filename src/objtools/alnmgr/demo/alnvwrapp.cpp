@@ -208,6 +208,17 @@ void CAlnVwrApp::LoadDenseg(void)
         *in >> *ds;
         ds->Validate();
         m_AV = new CAlnVec(*ds, *m_Scope);
+    } else if (asn_type == "Seq-align") {
+        CRef<CSeq_align> sa(new CSeq_align);
+        *in >> *sa;
+        if ( !sa->GetSegs().IsDenseg() ) {
+            NCBI_THROW(CAlnException, eMergeFailure,
+                       "CAlnMix::LoadDenseg(): "
+                       "Seq-align segs must be of type Dense-seg.");
+        } 
+        const CDense_seg& ds = sa->GetSegs().GetDenseg();
+        ds.Validate();
+        m_AV = new CAlnVec(ds, *m_Scope);
     } else if (asn_type == "Seq-submit") {
         CRef<CSeq_submit> ss(new CSeq_submit);
         *in >> *ss;
@@ -442,6 +453,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/10/04 16:12:25  todorov
+* Added Seq-align as input type. It's segs must be of type Dense-seg
+*
 * Revision 1.4  2004/09/20 15:03:23  todorov
 * Invclude a demo view using the new CAlnPos_CI class
 *
