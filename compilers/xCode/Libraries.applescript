@@ -188,7 +188,7 @@ property gui_project : {name:"gui_project", path:"gui:core", inc:{"gui_project__
 property xgbplugin : {name:"xgbplugin", path:"gui:core", inc:{"plugin__.cpp", "plugin___.cpp"}, asn1:true, asn1Name:"plugin"}
 property gui__utils : {name:"gui__utils", path:"gui:utils"}
 property gui_objutils : {name:"gui_objutils", path:"gui:objutils"}
-property gui__config : {name:"gui__config", path:"gui:config", inc:{"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"}, asn1:true}
+property gui__config : {name:"gui__config", path:"gui:config", inc:{"settings.cpp", "settings_set.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp"}}
 property gui_opengl : {name:"gui_opengl", path:"gui:opengl"}
 property gui__graph : {name:"gui__graph", path:"gui:graph"}
 property gui_print : {name:"gui_print", path:"gui:print"}
@@ -211,7 +211,7 @@ property w_fltk : {name:"w_fltk", path:"gui:widgets:fl"}
 property w_gl : {name:"w_gl", path:"gui:widgets:gl"}
 property w_seq : {name:"w_seq", path:"gui:widgets:seq"}
 property w_aln_data : {name:"w_aln_data", path:"gui:widgets:aln_data"}
-property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic"}
+property w_seq_graphic : {name:"w_seq_graphic", path:"gui:widgets:seq_graphic", exc:{"font_conf.cpp", "layout_conf.cpp", "render_policy_conf.cpp", "spacing_conf.cpp"}}
 property w_hit_matrix : {name:"w_hit_matrix", path:"gui:widgets:hit_matrix"}
 property w_aln_crossaln : {name:"w_aln_crossaln", path:"gui:widgets:aln_crossaln"}
 property w_aln_multi : {name:"w_aln_multi", path:"gui:widgets:aln_multiple"}
@@ -404,6 +404,9 @@ end script
 (*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/03/29 15:13:40  rsmith
+ * Changes in config libraries.
+ *
  * Revision 1.48  2005/03/24 15:36:15  lebedev
  * gif lib added
  *
