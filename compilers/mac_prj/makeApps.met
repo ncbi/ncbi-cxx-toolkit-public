@@ -306,9 +306,9 @@ on SetProjectData()
 		AddAppProject("test_density_map", {"libdl"}, "gui:utils:demo:test_density_map", Â
 			{"gui_utils", "xalnmgr", "tables"} & objMgrLibs, {})
 		
-		AddAppProject("demo_config_dlg", {"fltk"}, "gui:dialogs:config:demo", {"w_seq_graphic", "gui_dlg_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils"} & objMgrLibs, {})
+		AddAppProject("demo_config_dlg", {"fltk"}, "gui:dialogs:config:demo", {"w_seq_graphic", "gui_dlg_config", "gui_config", "gui_opengl", "w_fltk", "fltk", "w_gl", "gui_utils", "gui_objutils"} & objMgrLibs, {})
 		
-		AddAppProject("demo_seqgraphic", {"fltk", "libdl"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
+		AddAppProject("demo_seqgraphic", {"fltk", "libdl"}, "gui:widgets:seq_graphic:demo", {"w_seq_graphic", "w_gl", "w_flu", "gui_graph", "gui_config", "gui_opengl", "gui_print", "gui_utils", "gui_objutils", "w_fltk", "fltk", "ximage", "xalnmgr", "xregexp", "regexp", "tables"} & objMgrLibs, {})
 		
 		AddAppProject("demo_regedit", {"fltk"}, "gui:dialogs:registry:demo", Â
 			{"gui_dlg_registry", "gui_utils", "w_flu", "w_fltk", "w_fltable", "xncbi", "fltk"}, {})
