@@ -570,6 +570,8 @@ Int4 BlastAaLookupIndexQuery(BlastLookupTable* lookup,
 			       BlastSeqLoc* locations)
 {
 
+    /** @todo: why not pass query unconditionally here? PSSMs should be handled
+     * in a different code path for clarity */
 return _BlastAaLookupIndexQuery(lookup,
                                matrix, 
                                (lookup->use_pssm == TRUE) ? NULL : query, 

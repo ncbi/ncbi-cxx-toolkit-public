@@ -54,10 +54,17 @@ static Int4 trueCharPositions[PRO_TRUE_ALPHABET_SIZE] =
 
 /** Structure used to pass data into the scaling routines */
 typedef struct Kappa_posSearchItems {
+    /** PSSM */
     int**               posMatrix;
-    int**               posPrivateMatrix;       /* this is only an alias */
-    double**            posFreqs;               /* this is only an alias */
+    /** Scaled PSSM, this is only an alias, it's not owned by this structure */
+    int**               posPrivateMatrix;       
+    /* PSSM's frequency ratios, this is only an alias, it's not owned by this
+     * structure */
+    double**            posFreqs;               
+    /** Frequecy ratios for underlying scoring matrix */
     SFreqRatios*        stdFreqRatios;
+    /** Length of the query sequence, specifies the number of columns in the
+     * matrices in this structure */
     unsigned int        queryLength;
 } Kappa_posSearchItems;
 
@@ -79,20 +86,42 @@ typedef struct Kappa_compactSearchItems {
 
 } Kappa_compactSearchItems;
 
+/** Allocates a new Kappa_posSearchItems structure
+ * @param queryLength length of the query sequence [in]
+ * @param matrix_name name of the underlying matrix name to use [in]
+ * @param posPrivateMatrix scaled pssm, allocated with dimensions queryLength
+ * by BLASTAA_SIZE. This is owned by the caller [in|out]
+ * @param posFreqs PSSM's frequency ratios, allocated with dimensions
+ * queryLength by BLASTAA_SIZE. This is owned by the caller [in|out]
+ * @return newly allocated structure or NULL if out of memory
+ */
 Kappa_posSearchItems*
 Kappa_posSearchItemsNew(unsigned int queryLenth,
                         const char* matrix_name,
                         int** posPrivateMatrix,
                         double** posFreqs);
 
+/** Deallocates the Kappa_posSearchItems structure.
+ * @param posSearchItems data structure to deallocate [in] 
+ * @return NULL
+ */
 Kappa_posSearchItems*
 Kappa_posSearchItemsFree(Kappa_posSearchItems* posSearchItems);
 
+/** Creates a new Kappa_compactSearchItems structure
+ * @param query query sequence data in ncbistdaa format [in]
+ * @param queryLength length of the sequence above [in]
+ * @param sbp BLAST scoring block structure [in]
+ * @return newly allocated structure or NULL if out of memory
+ */
 Kappa_compactSearchItems*
-Kappa_compactSearchItemsNew(Uint1* query, unsigned int queryLength, 
-                            int** standardSubstitutionMatrix, 
+Kappa_compactSearchItemsNew(const Uint1* query, unsigned int queryLength, 
                             BlastScoreBlk* sbp);
 
+/** Deallocates the Kappa_compactSearchItems structure.
+ * @param compactSearchItems data structure to deallocate [in] 
+ * @return NULL
+ */
 Kappa_compactSearchItems*
 Kappa_compactSearchItemsFree(Kappa_compactSearchItems* compactSearchItems);
 
@@ -113,6 +142,9 @@ int Kappa_impalaScaling(Kappa_posSearchItems* posSearch,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.2  2005/02/22 22:48:30  camacho
+ * doxygen fixes
+ *
  * Revision 1.1  2005/02/14 14:05:53  camacho
  * Initial revision
  *
