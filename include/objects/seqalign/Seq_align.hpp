@@ -40,6 +40,7 @@
 
 // generated includes
 #include <objects/seqalign/Seq_align_.hpp>
+#include <objects/seqloc/Na_strand.hpp>
 #include <util/range.hpp>
 
 // generated classes
@@ -142,6 +143,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/06/15 01:55:32  ucko
+* Actually include Na_strand.hpp due to use of ENa_strand.
+*
 * Revision 1.14  2004/06/14 22:09:02  johnson
 * Added GetSeqStrand method (analogous to GetSeq_id)
 *
