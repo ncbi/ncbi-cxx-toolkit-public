@@ -24,9 +24,13 @@
  * ===========================================================================
  *
  * Authors:  Vladimir Ivanov
+ *           Jean-loup Gailly, Mark AdlerUsed
+ *           (used a part of zlib library code from files gzio.c, uncompr.c)
  *
  * File Description:  ZLib Compression API
  *
+ * NOTE: The zlib documentation can be found here: 
+ *       http://zlib.org   or   http://www.gzip.org/zlib/manual.html
  */
 
 #include <util/compress/zlib.hpp>
@@ -84,6 +88,67 @@ bool CZipCompression::CompressBuffer(
 }
 
 
+// gzip magic header
+const int gz_magic[2] = {0x1f, 0x8b};
+
+// gzip flag byte
+#define ASCII_FLAG   0x01 // bit 0 set: file probably ascii text
+#define HEAD_CRC     0x02 // bit 1 set: header CRC present
+#define EXTRA_FIELD  0x04 // bit 2 set: extra field present
+#define ORIG_NAME    0x08 // bit 3 set: original file name present
+#define COMMENT      0x10 // bit 4 set: file comment present
+#define RESERVED     0xE0 // bits 5..7: reserved/
+
+// Returns length of the .gz header if it exist or 0 otherwise.
+unsigned int s_CheckGZipHeader(const void* src_buf, unsigned int src_len)
+{
+    unsigned char* buf = (unsigned char*)src_buf;
+    // .gz header cannot be less than 10 bytes
+    if (src_len < 10) {
+        return 0;
+    }
+    // Check the gzip magic header
+    if (buf[0] != gz_magic[0]  ||
+        buf[1] != gz_magic[1]) {
+        return 0;
+    }
+    int method = buf[2];
+    int flags  = buf[3];
+    if (method != Z_DEFLATED  ||  (flags & RESERVED) != 0) {
+        return 0;
+    }
+    // Header length: 
+    // gz_magic (2) + methos (1) + flags (1) + time, xflags and OS code (6)
+    unsigned int header_len = 10; 
+
+    // Skip the extra fields
+    if ((flags & EXTRA_FIELD) != 0) {
+        if (header_len + 2 > src_len) {
+            return 0;
+        }
+        unsigned int len = buf[header_len++];
+        len += ((unsigned int)buf[header_len++])<<8;
+        header_len += len;
+    }
+    // Skip the original file name
+    if ((flags & ORIG_NAME) != 0) {
+        while (header_len < src_len  &&  buf[header_len++] != 0);
+    }
+    // Skip the file comment
+    if ((flags & COMMENT) != 0) {
+        while (header_len < src_len  &&  buf[header_len++] != 0);
+    }
+    // Skip the header CRC
+    if ((flags & HEAD_CRC) != 0) {
+        header_len += 2;
+    }
+    if (header_len > src_len) {
+        return 0;
+    }
+    return header_len;
+}
+
+
 bool CZipCompression::DecompressBuffer(
                       const void* src_buf, unsigned int  src_len,
                       void*       dst_buf, unsigned int  dst_size,
@@ -99,27 +164,83 @@ bool CZipCompression::DecompressBuffer(
         SetLastError(Z_STREAM_ERROR);
         return false;
     }
-    // Destination buffer size
-    unsigned long out_len = dst_size;
-    // Decompress buffer
-    int errcode = uncompress((unsigned char*)dst_buf, &out_len,
-                             (unsigned char*)src_buf, src_len);
+
+    // Check gzip header in the buffer
+    unsigned int header_len = s_CheckGZipHeader(src_buf, src_len);
+    int          errcode = Z_OK;
+    z_stream     stream;
+
+    // If gzip header found, skip it
+    if ( header_len ) {
+        src_buf = (char*)src_buf + header_len;
+        src_len -= (header_len + 3);
+    }
+    stream.next_in  = (unsigned char*)src_buf;
+    stream.avail_in = src_len;
+    // Check for source > 64K on 16-bit machine:
+    if ( stream.avail_in != src_len ) {
+        SetLastError(Z_BUF_ERROR);
+        return false;
+    }
+    stream.next_out = (unsigned char*)dst_buf;
+    stream.avail_out = dst_size;
+    if ( stream.avail_out != dst_size ) {
+        SetLastError(Z_BUF_ERROR);
+        return false;
+    }
+
+    stream.zalloc = (alloc_func)0;
+    stream.zfree  = (free_func)0;
+
+    // "window bits" is passed < 0 to tell that there is no zlib header.
+    // Note that in this case inflate *requires* an extra "dummy" byte
+    // after the compressed stream in order to complete decompression and
+    // return Z_STREAM_END. Here the gzip CRC32 ensures that 4 bytes are
+    // present after the compressed stream.
+        
+    errcode = inflateInit2(&stream, header_len ? -MAX_WBITS : MAX_WBITS);
+
+    if (errcode == Z_OK) {
+        errcode = inflate(&stream, Z_FINISH);
+        if (errcode == Z_STREAM_END) {
+            *dst_len = stream.total_out;
+            errcode = inflateEnd(&stream);
+        } else {
+            if ( errcode == Z_OK ) {
+                errcode = Z_BUF_ERROR;
+            }
+            inflateEnd(&stream);
+        }
+    }
     SetLastError(errcode);
-    *dst_len = out_len;
 
     return errcode == Z_OK;
 }
 
 
-bool CZipCompression::CompressFile(const string&, const string&)
+bool CZipCompression::CompressFile(const string& src_file,
+                                   const string& dst_file,
+                                   size_t        buf_size)
 {
-    return false;
+    CZipCompressionFile cf(dst_file,
+                           CCompressionFile::eMode_Write, GetLevel(),
+                           m_WindowBits, m_MemLevel, m_Strategy);
+    bool result = CCompression::x_CompressFile(src_file, cf, buf_size) &&
+                  cf.Close();
+    return result;
 }
 
 
-bool CZipCompression::DecompressFile(const string&, const string&)
+bool CZipCompression::DecompressFile(const string& src_file,
+                                     const string& dst_file,
+                                     size_t        buf_size)
 {
-    return false;
+    CZipCompressionFile cf(src_file,
+                           CCompressionFile::eMode_Read, GetLevel(),
+                           m_WindowBits, m_MemLevel, m_Strategy);
+    bool result = CCompression::x_DecompressFile(cf, dst_file, buf_size) &&
+                  cf.Close();
+    return result;
 }
 
 
@@ -461,6 +582,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/07/10 16:30:30  ivanov
+ * Implemented CompressFile/DecompressFile functions.
+ * Added ability to skip a gzip file headers into DecompressBuffer().
+ *
  * Revision 1.4  2003/06/17 15:43:58  ivanov
  * Minor cosmetics and comments changes
  *
