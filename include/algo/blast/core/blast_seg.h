@@ -42,24 +42,39 @@ extern "C" {
 #endif
 
 
+/** Structure to hold parameters for seg search.
+ */
 typedef struct SegParameters
   {
-   Int4 window;
-   double locut;
+   Int4 window;         /**< initial window size to trigger further work. */
+   double locut;        
    double hicut;
    Int4 period;
    Int4 hilenmin;
    Boolean overlaps;	/* merge overlapping pieces if TRUE. */
    Int4 maxtrim;
    Int4 maxbogus;
-/*
-   Alpha* palpha;
-*/
   } SegParameters;
 
+/** Allocated SeqParameter struct for proteins and fills with default values.
+ * @return pointer to SegParameters
+ */
 SegParameters* SegParametersNewAa (void);
+
+/** Free SegParameters structure
+ * @param sparamsp object to be freed [in]
+ */
 void SegParametersFree(SegParameters* sparamsp);
 
+/** Runs seg on a protein sequence in ncbistdaa.
+ * @param sequence the protein residues in ncbistdaa [in]
+ * @param length number of redidues [in]
+ * @param offset amount to shift over resulting locations 
+ *    (if full sequence not passed in) [in]
+ * @param sparamsp the seg parameters created with SegParametersNewAa [in]
+ * @params seg_locs resulting locations for filtering [out]
+ * @return zero on success
+ */
 Int2 SeqBufferSeg (Uint1* sequence, Int4 length, Int4 offset,
                    SegParameters* sparamsp, BlastSeqLoc** seg_locs);
 
