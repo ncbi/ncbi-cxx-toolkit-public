@@ -26,6 +26,7 @@
  * Author:  Vladimir Soussov
  *
  * This simple program illustartes how to use the RPC command
+ *
  */
 
 #include <dbapi/driver/exception.hpp>
@@ -56,6 +57,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/24 16:37:19  lavr
+ * Finish log with horizontal rule
+ *
  * Revision 1.1  2001/10/23 20:52:11  lavr
  * Initial revision (derived from former sample programs)
  *
@@ -68,4 +72,5 @@ int main()
  * Revision 1.1  2001/10/02 20:34:28  soussov
  * Initial revision
  *
+ * ===========================================================================
  */

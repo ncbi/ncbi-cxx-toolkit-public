@@ -26,6 +26,7 @@
  * Author:  Vladimir Soussov
  *
  * This simple program illustartes how to use the language command
+ *
  */
 
 #include <dbapi/driver/exception.hpp>
@@ -56,10 +57,14 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/10/24 16:37:26  lavr
+ * Finish log with horizontal rule
+ *
  * Revision 1.1  2001/10/23 20:52:14  lavr
  * Initial revision (derived from former sample programs)
  *
  * Revision 1.1  2001/10/22 15:23:04  lavr
  * Initial revision derived from corresponding CTLib version
  *
+ * ===========================================================================
  */    
