@@ -56,11 +56,11 @@ protected:
     /// Return IReader interface if BLOB described by the seqref 
     /// exists in cache. If IBLOB_Cache is not set or 
     /// BLOB does not exist function returns NULL
-    IReader* OpenBlob(const CSeqref& seqref);
+    IReader* OpenBlob(const CSeqref& seqref, int version);
 
     /// Return IWriter interface to store BLOB described by the seqref
     /// Function returns NULL if IBLOB_Cache interface is not set.
-    IWriter* StoreBlob(const CSeqref& seqref);
+    IWriter* StoreBlob(const CSeqref& seqref, int version);
 
 protected:
     void x_ReadBlob(CID1server_back& id1_reply,
@@ -68,8 +68,9 @@ protected:
                                   TConn conn);
 
     void x_ReadBlob(CID1server_back& id1_reply,
-                    const CSeqref& seqref,
-                    CNcbiIstream& stream);
+                    const CSeqref&   seqref,
+                    int              version,
+                    CNcbiIstream&    stream);
 
 
 
@@ -101,6 +102,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.5  2003/10/08 18:57:49  kuznets
+* Implemeneted correct ID1 BLOB versions.
+*
 * Revision 1.4  2003/10/03 17:41:33  kuznets
 * Added an option, that cache is owned by the ID1 reader.
 * Cache destroyed with the reader.
