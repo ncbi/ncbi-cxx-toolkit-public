@@ -1828,7 +1828,7 @@ static void s_TEST_ICache(void)
 
     vector<int> data3;
 
-    bdb_cache.OpenReadOnly(".", "bcache");
+    bdb_cache.OpenReadOnly("cache", "bcache");
 
     sz = bdb_cache.GetSize("test_key1", 1, "");
     assert(sz);
@@ -1887,7 +1887,7 @@ int CBDB_Test::Run(void)
     cout << "Run BDB test" << endl << endl;
 
     try
-    {
+    {        
         s_TEST_BDB_Types();
 
         s_TEST_BDB_IdTable_Fill();
@@ -1951,6 +1951,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2004/08/24 14:20:14  kuznets
+ * Fixed opening a read-only cache(wrong path)
+ *
  * Revision 1.51  2004/08/24 14:08:29  kuznets
  * Cache test improved
  *
