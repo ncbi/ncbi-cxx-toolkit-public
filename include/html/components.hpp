@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/01/14 21:25:16  vasilche
+* Changed CPageList to work via form image input elements.
+*
 * Revision 1.13  1999/01/07 17:06:32  vasilche
 * Added default query text in CQueryBox.
 * Added query text width in CQueryBox.
@@ -160,10 +163,10 @@ protected:
 
 // makes a set of pagination links
 
-class CPageList: public CNCBINode
+class CPageList: public CHTML_table
 {
     // parent class
-    typedef CHTML_form CParent;
+    typedef CHTML_table CParent;
 
 public:
     CPageList(void);
@@ -178,6 +181,12 @@ public:
 protected:
     // cloning
     virtual CNCBINode* CloneSelf() const;
+
+private:
+    void x_AddInactiveImageString(CNCBINode* node, const string& name, int number,
+                     const string& imageStart, const string& imageEnd);
+    void x_AddImageString(CNCBINode* node, const string& name, int number,
+                     const string& imageStart, const string& imageEnd);
 };
 
 

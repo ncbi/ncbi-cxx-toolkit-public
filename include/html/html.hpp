@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  1999/01/14 21:25:16  vasilche
+* Changed CPageList to work via form image input elements.
+*
 * Revision 1.19  1999/01/11 22:05:48  vasilche
 * Fixed CHTML_font size.
 * Added CHTML_image input element.
@@ -600,6 +603,7 @@ class CHTML_hidden : public CHTML_input
 
 public:
     CHTML_hidden(const string& name, const string& value);
+    CHTML_hidden(const string& name, int value);
 
     static const string& s_GetInputType(void);
 };
@@ -611,6 +615,7 @@ class CHTML_image : public CHTML_input
 
 public:
     CHTML_image(const string& name, const string& src);
+    CHTML_image(const string& name, const string& src, int border);
 
     static const string& s_GetInputType(void);
 };

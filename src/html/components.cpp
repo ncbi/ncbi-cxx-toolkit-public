@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/01/14 21:25:19  vasilche
+* Changed CPageList to work via form image input elements.
+*
 * Revision 1.16  1999/01/07 17:06:35  vasilche
 * Added default query text in CQueryBox.
 * Added query text width in CQueryBox.
@@ -183,8 +186,9 @@ void CButtonList::CreateSubNodes()
 
 
 CPageList::CPageList(void)
-    : m_Current(1)
+    : m_Current(-1)
 {
+    SetCellSpacing(2);
 }
 
 CNCBINode* CPageList::CloneSelf(void) const
@@ -192,25 +196,46 @@ CNCBINode* CPageList::CloneSelf(void) const
     return new CPageList(*this);
 }
 
+void CPageList::x_AddImageString(CNCBINode* node, const string& name, int number,
+                            const string& imageStart, const string& imageEnd)
+{
+    string s = IntToString(number);
+
+    for ( int i = 0; i < s.size(); ++i ) {
+        node->AppendChild(new CHTML_image(name, imageStart + s[i] + imageEnd, 0));
+    }
+}
+
+void CPageList::x_AddInactiveImageString(CNCBINode* node, const string& name, int number,
+                            const string& imageStart, const string& imageEnd)
+{
+    string s = IntToString(number);
+
+    for ( int i = 0; i < s.size(); ++i ) {
+        node->AppendChild(new CHTML_img(imageStart + s[i] + imageEnd));
+    }
+}
+
 void CPageList::CreateSubNodes()
 {
+    int column = 0;
     if ( !m_Backward.empty() )
-        AppendChild(new CHTML_a(m_Backward, "&lt;&lt;"));
+        InsertAt(0, column++, new CHTML_image(m_Backward, "/images/prev.gif", 0));
 
     for (map<int, string>::iterator i = m_Pages.begin();
          i != m_Pages.end(); ++i ) {
         if ( i->first == m_Current ) {
             // current link
-            AppendChild(new CHTML_color("red", new CHTML_u(IntToString(i->first))));
+            x_AddInactiveImageString(Cell(0, column++), i->second, i->first, "/images/black_", ".gif");
         }
         else {
             // normal link
-            AppendChild(new CHTML_a(i->second, IntToString(i->first)));
+            x_AddImageString(Cell(0, column++), i->second, i->first, "/images/", ".gif");
         }
     }
 
     if ( !m_Forward.empty() )
-        AppendChild(new CHTML_a(m_Forward, "&gt;&gt;"));
+        InsertAt(0, column++, new CHTML_image(m_Forward, "/images/next.gif", 0));
 }
 
 // Pager box

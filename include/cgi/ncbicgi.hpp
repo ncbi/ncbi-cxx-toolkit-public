@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  1999/01/14 21:25:14  vasilche
+* Changed CPageList to work via form image input elements.
+*
 * Revision 1.31  1999/01/07 21:15:19  vakatov
 * Changed prototypes for URL_DecodeString() and URL_EncodeString()
 *
@@ -284,6 +287,7 @@ enum ECgiProp {
 typedef map<string, string>      TCgiProperties;
 typedef multimap<string, string> TCgiEntries;
 typedef TCgiEntries::iterator    TCgiEntriesI;
+typedef TCgiEntries::const_iterator    TCgiEntriesCI;
 typedef list<string>             TCgiIndexes;
 
 

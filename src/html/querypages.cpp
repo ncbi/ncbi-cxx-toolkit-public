@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/01/14 21:25:20  vasilche
+* Changed CPageList to work via form image input elements.
+*
 * Revision 1.8  1998/12/28 23:29:10  vakatov
 * New CVS and development tree structure for the NCBI C++ projects
 *
@@ -156,19 +159,21 @@ CNCBINode* CPmDocSumPage::CreatePager(void)
     Pager->m_LeftButton->m_Name = "Order";
     Pager->m_LeftButton->m_Select = "order";
     Pager->m_LeftButton->m_List["m_o"] = "Left";
-    Pager->m_PageList->m_Pages[1] = "http://one";
-    Pager->m_PageList->m_Pages[2] = "http://one";
-    Pager->m_PageList->m_Pages[3] = "http://one";
-    Pager->m_PageList->m_Pages[4] = "http://one";
-    Pager->m_PageList->m_Pages[5] = "http://one";
-    Pager->m_PageList->m_Pages[6] = "http://one";
-    Pager->m_PageList->m_Pages[7] = "http://one";
-    Pager->m_PageList->m_Forward = "http://forward";
-    Pager->m_PageList->m_Backward = "http://backward";
+    Pager->m_PageList->m_Pages[1] = "page_one";
+    Pager->m_PageList->m_Pages[2] = "page_two";
+    Pager->m_PageList->m_Pages[3] = "page_three";
+    Pager->m_PageList->m_Pages[4] = "page_four";
+    Pager->m_PageList->m_Pages[5] = "page_five";
+    Pager->m_PageList->m_Pages[6] = "page_six";
+    Pager->m_PageList->m_Pages[7] = "page_seven";
+    Pager->m_PageList->m_Pages[10] = "page_ten";
+    Pager->m_PageList->m_Pages[11] = "page_eleven";
+    Pager->m_PageList->m_Forward = "page_next";
+    Pager->m_PageList->m_Backward = "page_prev";
 
     CHTML_form* Form = new CHTML_form;
     Form->AppendChild(Pager);
-    return Form;
+    return new CHTML_font(1, false, Form);
 }
 
 

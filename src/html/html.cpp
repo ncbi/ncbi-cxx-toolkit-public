@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  1999/01/14 21:25:20  vasilche
+* Changed CPageList to work via form image input elements.
+*
 * Revision 1.22  1999/01/11 22:05:52  vasilche
 * Fixed CHTML_font size.
 * Added CHTML_image input element.
@@ -195,6 +198,7 @@ const string KHTMLTagName_area = "AREA";
 const string KHTMLAttributeName_action = "ACTION";
 const string KHTMLAttributeName_align = "ALIGN";
 const string KHTMLAttributeName_bgcolor = "BGCOLOR";
+const string KHTMLAttributeName_border = "BORDER";
 const string KHTMLAttributeName_cellpadding = "CELLPADDING";
 const string KHTMLAttributeName_cellspacing = "CELLSPACING";
 const string KHTMLAttributeName_checked = "CHECKED";
@@ -863,6 +867,13 @@ CHTML_image::CHTML_image(const string& name, const string& src)
     SetAttribute(KHTMLAttributeName_src, src);
 }
 
+CHTML_image::CHTML_image(const string& name, const string& src, int border)
+    : CParent(s_GetInputType(), name)
+{
+    SetAttribute(KHTMLAttributeName_src, src);
+    SetAttribute(KHTMLAttributeName_border, border);
+}
+
 // radio tag 
 
 CHTML_radio::CHTML_radio(const string& name, const string& value)
@@ -882,6 +893,12 @@ CHTML_radio::CHTML_radio(const string& name, const string& value, bool checked, 
 // hidden tag 
 
 CHTML_hidden::CHTML_hidden(const string& name, const string& value)
+    : CParent(s_GetInputType(), name)
+{
+    SetAttribute(KHTMLAttributeName_value, value);
+}
+
+CHTML_hidden::CHTML_hidden(const string& name, int value)
     : CParent(s_GetInputType(), name)
 {
     SetAttribute(KHTMLAttributeName_value, value);
