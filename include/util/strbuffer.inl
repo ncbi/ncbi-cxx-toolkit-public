@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/05/24 18:12:44  gouriano
+* In text output files make indentation optional
+*
 * Revision 1.4  2001/08/15 20:53:09  juran
 * Heed warnings.
 *
@@ -303,8 +306,10 @@ inline
 void COStreamBuffer::PutIndent(void)
     THROWS1((CIOException, bad_alloc))
 {
-    size_t count = m_IndentLevel;
-    memset(Skip(count), ' ', count);
+    if (GetUseIndentation()) {
+        size_t count = m_IndentLevel;
+        memset(Skip(count), ' ', count);
+    }
 }
 
 inline
@@ -351,5 +356,18 @@ size_t COStreamBuffer::GetBufferSize(void) const
 {
     return static_cast<size_t>(m_BufferEnd - m_Buffer);
 }
+
+inline
+void COStreamBuffer::SetUseIndentation(bool set)
+{
+    m_UseIndentation = set;
+}
+
+inline
+bool COStreamBuffer::GetUseIndentation(void) const
+{
+    return m_UseIndentation;
+}
+
 
 #endif /* def STRBUFFER__HPP  &&  ndef STRBUFFER__INL */

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2004/05/24 18:12:44  gouriano
+* In text output files make indentation optional
+*
 * Revision 1.30  2003/12/31 20:52:17  gouriano
 * added possibility to seek (when possible) in CByteSourceReader
 *
@@ -305,6 +308,9 @@ public:
     void FlushBuffer(bool fullBuffer = true) THROWS1((CIOException));
     void Flush(void) THROWS1((CIOException));
 
+    void SetUseIndentation(bool set);
+    bool GetUseIndentation(void) const;
+
 protected:
     // flush contents of buffer to underlying stream
     // make sure 'reserve' char area is available in buffer
@@ -382,6 +388,7 @@ private:
     size_t m_Line;            // current line counter
     size_t m_LineLength;
     size_t m_BackLimit;
+    bool m_UseIndentation;
 };
 
 

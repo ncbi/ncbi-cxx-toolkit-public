@@ -104,6 +104,9 @@ public:
     // for streams created by the current process
     static  void SetVerifyDataGlobal(ESerialVerifyData verify);
 
+    void SetUseIndentation(bool set);
+    bool GetUseIndentation(void) const;
+
     // constructors
 protected:
     CObjectOStream(ESerialDataFormat format,
@@ -523,6 +526,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.86  2004/05/24 18:12:24  gouriano
+* In text output files make indentation optional
+*
 * Revision 1.85  2004/04/30 13:28:40  gouriano
 * Remove obsolete function declarations
 *

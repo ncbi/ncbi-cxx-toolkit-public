@@ -381,6 +381,18 @@ ESerialVerifyData CObjectOStream::GetVerifyData(void) const
     return ms_VerifyDataDefault;
 }
 
+inline
+void CObjectOStream::SetUseIndentation(bool set)
+{
+    m_Output.SetUseIndentation(set);
+}
+
+inline
+bool CObjectOStream::GetUseIndentation(void) const
+{
+    return m_Output.GetUseIndentation();
+}
+
 
 #endif /* def OBJOSTR__HPP  &&  ndef OBJOSTR__INL */
 
@@ -388,6 +400,9 @@ ESerialVerifyData CObjectOStream::GetVerifyData(void) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2004/05/24 18:12:24  gouriano
+* In text output files make indentation optional
+*
 * Revision 1.24  2004/02/09 18:21:53  gouriano
 * enforced checking environment vars when setting initialization
 * verification parameters

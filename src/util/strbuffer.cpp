@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/05/24 18:13:01  gouriano
+* In text output files make indentation optional
+*
 * Revision 1.41  2004/05/17 21:06:02  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
@@ -694,7 +697,7 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
       m_CurrentPos(m_Buffer),
       m_BufferEnd(m_Buffer + KInitialBufferSize),
       m_Line(1), m_LineLength(0),
-      m_BackLimit(0)
+      m_BackLimit(0), m_UseIndentation(true)
 {
 }
 
