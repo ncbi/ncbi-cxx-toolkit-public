@@ -150,7 +150,6 @@ typedef struct BlastCoreAuxStruct {
                                      strand */
 } BlastCoreAuxStruct;
 
-
 #ifdef __cplusplus
 }
 #endif
