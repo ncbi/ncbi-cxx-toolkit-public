@@ -72,7 +72,13 @@ CConstRef<CSeq_graph> CSeq_graph_Handle::GetSeq_graph(void) const
 }
 
 
-CSeq_annot_Handle CSeq_graph_Handle::GetAnnot(void) const
+CScope& CSeq_graph_Handle::GetScope(void) const
+{
+    return GetAnnot().GetScope();
+}
+
+
+const CSeq_annot_Handle& CSeq_graph_Handle::GetAnnot(void) const
 {
     return m_Annot;
 }
@@ -84,6 +90,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/28 18:40:30  vasilche
+ * Added GetScope() method.
+ *
  * Revision 1.5  2004/12/22 15:56:12  vasilche
  * Used CSeq_annot_Handle in annotations' handles.
  *

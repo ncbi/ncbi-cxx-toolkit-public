@@ -75,8 +75,11 @@ public:
     ///    operator bool()
     bool operator !(void) const;
 
+    /// Get scope this handle belongs to
+    CScope& GetScope(void) const;
+
     /// Get an annotation handle for the current seq-graph
-    CSeq_annot_Handle GetAnnot(void) const;
+    const CSeq_annot_Handle& GetAnnot(void) const;
 
     /// Get constant reference to the current seq-graph
     CConstRef<CSeq_graph> GetSeq_graph(void) const;
@@ -254,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/12/28 18:40:30  vasilche
+* Added GetScope() method.
+*
 * Revision 1.4  2004/12/22 15:56:12  vasilche
 * Used CSeq_annot_Handle in annotations' handles.
 *

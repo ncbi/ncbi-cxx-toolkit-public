@@ -97,7 +97,13 @@ CConstRef<CSeq_feat> CSeq_feat_Handle::GetSeq_feat(void) const
 }
 
 
-CSeq_annot_Handle CSeq_feat_Handle::GetAnnot(void) const
+CScope& CSeq_feat_Handle::GetScope(void) const
+{
+    return GetAnnot().GetScope();
+}
+
+
+const CSeq_annot_Handle& CSeq_feat_Handle::GetAnnot(void) const
 {
     return m_Annot;
 }
@@ -159,6 +165,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/12/28 18:40:30  vasilche
+ * Added GetScope() method.
+ *
  * Revision 1.5  2004/12/22 15:56:12  vasilche
  * Used CSeq_annot_Handle in annotations' handles.
  *
