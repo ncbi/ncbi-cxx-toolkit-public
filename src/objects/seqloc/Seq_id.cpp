@@ -547,10 +547,10 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const string& acc)
             case 'A': case 'B': case 'D': case 'F':
             case 'K':                               return eAcc_gb_est;
             case 'C': case 'E': case 'G': case 'L': return eAcc_gb_gss;
-            case 'H':                               return eAcc_gb_con;
+            case 'H': case 'M':                     return eAcc_gb_con;
             case 'I': case 'J':                     return eAcc_ddbj_est;
-                // no specific assignment for CM-CP yet
-            case 'M': case 'N': case 'O': case 'P': return eAcc_gb_other_nuc;
+                // no specific assignment for CN-CP yet
+            case 'N': case 'O': case 'P':           return eAcc_gb_other_nuc;
             case 'Q':                               return eAcc_embl_patent;
             case 'R':                               return eAcc_embl_genome;
             case 'S': case 'T': case 'U':           return eAcc_embl_other_nuc;
@@ -1355,6 +1355,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 6.67  2004/01/16 15:58:19  ucko
+ * CM now specifically assigned to eAcc_gb_con.
+ *
  * Revision 6.66  2003/12/18 18:55:59  ucko
  * CSeq_id::IdentifyAccession: CQ is EMBL patents, CR is EMBL genomes,
  * CS-CU are reserved for future EMBL nucleotide use.
