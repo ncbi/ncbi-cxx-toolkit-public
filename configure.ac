@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.344 2005/01/31 15:31:38 ucko Exp $
+#  $Id: configure.ac,v 1.345 2005/01/31 16:32:40 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -1781,7 +1781,7 @@ AC_CHECK_HEADERS(iostream  iostream.h)
 AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
 
-AC_CHECK_HEADERS(limits)
+AC_CHECK_HEADERS(inttypes.h limits)
 
 ### Check for the platform (very roughly)
 AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
@@ -2054,6 +2054,7 @@ AC_CHECK_SIZEOF(__int64)
 AC_CHECK_SIZEOF(float)
 AC_CHECK_SIZEOF(double)
 AC_CHECK_SIZEOF(long double)
+AC_CHECK_TYPES(intptr_t)
 
 AC_CHECK_MEMBER(struct sockaddr_in.sin_len,
    [AC_DEFINE(HAVE_SIN_LEN, 1,
