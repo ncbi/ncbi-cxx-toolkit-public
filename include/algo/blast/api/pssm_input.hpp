@@ -49,8 +49,9 @@ BEGIN_SCOPE(blast)
 /// structure and options that it can use to build the PSSM.
 /// This class is meant to provide a uniform interface that the PSSM engine can
 /// use to obtain its data to create a PSSM, allowing subclasses to provide
-/// implemetations to obtain this data from disparate sources (e.g.:
+/// implementations to obtain this data from disparate sources (e.g.:
 /// Seq-aligns, Cdd models, multiple sequence alignments, etc).
+/// @note Might need to add the PSIDiagnosticsRequest structure
 /// @sa CPsiBlastInputData
 class IPssmInputData
 {
@@ -81,6 +82,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/08/04 20:52:37  camacho
+ * Documentation changes
+ *
  * Revision 1.3  2004/08/04 20:21:07  camacho
  * Renamed multiple sequence alignment data structure
  *

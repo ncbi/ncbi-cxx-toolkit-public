@@ -59,7 +59,8 @@ BEGIN_SCOPE(blast)
 
 /// This class is a concrete strategy for IPssmInputData, and it
 /// implements the traditional PSI-BLAST algorithm for building a multiple
-/// sequence alignment from a list of pairwise alignments.
+/// sequence alignment from a list of pairwise alignments using the C++ object
+/// manager.
 class CPsiBlastInputData : public IPssmInputData
 {
 public:
@@ -81,27 +82,6 @@ public:
     unsigned int GetQueryLength();
     PSIMsa* GetData();
     const PSIBlastOptions* GetOptions();
-
-protected:
-    /// Populates the multiple alignment data structure
-    void x_ExtractAlignmentData();
-    // First implementation of use_best_align option from old toolkit. Should
-    // be implemented as a subclass of this one?
-    //void x_ExtractAlignmentDataUseBestAlign();
-
-    /// Copies query sequence data to multiple alignment data structure
-    void x_CopyQueryToMsa();
-
-    unsigned int GetNumAlignedSequences() const;
-
-    /// Iterates over the Dense-seg passed in and extracts alignment 
-    /// information to multiple alignment data structure.
-    /// @param denseg source alignment segment (HSP) [in]
-    /// @param msa_index index of the sequence aligned with the query in the
-    ///        desc_matrix field of the m_AlignmentData data member [in]
-    /// @param e_value E-value for the HSP corresponding to denseg [in]
-    void x_ProcessDenseg(const objects::CDense_seg& denseg, 
-                         unsigned int msa_index, double e_value);
 
 private:
 
@@ -138,6 +118,26 @@ private:
     unsigned int
     x_CountAndSelectQualifyingAlignments();
 
+    /// Populates the multiple alignment data structure
+    void x_ExtractAlignmentData();
+    // First implementation of use_best_align option from old toolkit. Should
+    // be implemented as a subclass of this one?
+    //void x_ExtractAlignmentDataUseBestAlign();
+
+    /// Copies query sequence data to multiple alignment data structure
+    void x_CopyQueryToMsa();
+
+    unsigned int GetNumAlignedSequences() const;
+
+    /// Iterates over the Dense-seg passed in and extracts alignment 
+    /// information to multiple alignment data structure.
+    /// @param denseg source alignment segment (HSP) [in]
+    /// @param msa_index index of the sequence aligned with the query in the
+    ///        desc_matrix field of the m_AlignmentData data member [in]
+    /// @param e_value E-value for the HSP corresponding to denseg [in]
+    void x_ProcessDenseg(const objects::CDense_seg& denseg, 
+                         unsigned int msa_index, double e_value);
+
     friend class ::CPssmEngineTest;     // unit test class
 };
 
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2004/08/04 20:52:37  camacho
+ * Documentation changes
+ *
  * Revision 1.3  2004/08/04 20:21:37  camacho
  * Renamed multiple sequence alignment data structure
  *

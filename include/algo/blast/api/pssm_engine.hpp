@@ -31,19 +31,7 @@
  */
 
 /** @file blast_psi.hpp
- * C++ API for the PSI-BLAST PSSM generation engine.
- *
- * Notes:
- * Variants of PSI-BLAST:
- *     PSI-BLAST: protein/pssm vs. protein db/sequence
- *     PSI-TBLASTN: protein/pssm vs. translated nucleotide db/sequence
- *
- * Binaries which run the variants mentioned above as implemented in C toolkit:
- *     blastpgp runs PSI-BLAST (-j 1 = blastp; -j n, n>1 = PSI-BLAST)
- *     blastall runs PSI-TBLASTN and it is only possible to run with a PSSM 
- *     from checkpoint file via the -R option and for only one iteration.
- *     PSI-TBLASTN cannot be run from just an iteration, it is always product
- *     of a restart with a checkpoint file.
+ * C++ API for the PSI-BLAST PSSM engine. 
  */
  
 #include <corelib/ncbiobj.hpp>
@@ -66,6 +54,23 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
+
+/// Computes a PSSM as specified in PSI-BLAST.
+///
+/// This class must be configured with a concrete strategy for it to obtain 
+/// its input data.
+/// The following example uses the CPsiBlastInputData concrete strategy:
+/// @sa CPsiBlastInputData
+///
+/// @code
+/// ...
+/// auto_ptr<CPsiBlastInputData> psi_strategy(
+///     new CPsiBlastInputData(query, query_length, alignment, scope,
+///                            psi_blast_options));
+/// CPssmEngine pssm_engine(psi_strategy.get());
+/// CRef<CScore_matrix_parameters> scoremat = pssm_engine.Run();
+/// ...
+/// @endcode
 
 class CPssmEngine
 {
@@ -139,6 +144,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/08/04 20:52:37  camacho
+ * Documentation changes
+ *
  * Revision 1.8  2004/08/04 20:20:34  camacho
  * 1. Use CBlastScoreBlk instead of bare BlastScoreBlk pointer.
  * 2. Pass matrix name to properly populate Score_matrix::freq-Ratios field.
