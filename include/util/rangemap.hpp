@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2001/09/18 16:22:21  grichenk
+* Fixed problem with the default constructor for CRangeMapIterator
+* (Valid() returned unpredictable value)
+*
 * Revision 1.14  2001/09/17 18:26:32  grichenk
 * Fixed processing of "Whole" ranges in the range map iterator.
 *
@@ -221,6 +225,7 @@ public:
     // singular
     CRangeMapIterator(void)
         {
+            m_SelectIter = m_SelectIterEnd;
         }
     // copy from non const iterator
     CRangeMapIterator(const typename TTraits::non_const_iterator& iter)
