@@ -83,6 +83,14 @@ CBlobWriter::CBlobWriter(CDB_CursorCmd* curCmd,
     dataCmd = curCmd->SendDataCmd(item_num, datasize, log_it);
 }
 
+CBlobWriter::CBlobWriter(CDB_Connection* conn,
+                         CDB_ITDescriptor &d,
+                         size_t blobsize, 
+                         bool log_it) 
+{
+    dataCmd = conn->SendDataCmd(d, blobsize, log_it);
+}
+
 ERW_Result CBlobWriter::Write(const void* buf,
                               size_t      count,
                               size_t*     bytes_written)
@@ -112,6 +120,9 @@ CBlobWriter::~CBlobWriter()
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.2  2005/01/31 14:21:46  kholodov
+* Added: use of CDB_ITDescriptor for writing BLOBs
+*
 * Revision 1.1  2004/07/20 17:49:17  kholodov
 * Added: IReader/IWriter support for BLOB I/O
 *

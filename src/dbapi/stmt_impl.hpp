@@ -77,6 +77,8 @@ public:
 
     virtual IConnection* GetParentConn();
 
+    virtual IWriter* GetBlobWriter(CDB_ITDescriptor &d, size_t blob_size, EAllowLog log_it);
+
     CConnection* GetConnection() {
         return m_conn;
     }
@@ -112,6 +114,7 @@ private:
     //typedef set<CDB_Result*> RequestedRsList;
     //RequestedRsList m_requestedRsList;
     class CResultSet *m_irs;
+    class IWriter *m_wr;
 
 };
 
@@ -121,6 +124,9 @@ END_NCBI_SCOPE
 #endif // _STMT_IMPL_HPP_
 /*
 * $Log$
+* Revision 1.16  2005/01/31 14:21:46  kholodov
+* Added: use of CDB_ITDescriptor for writing BLOBs
+*
 * Revision 1.15  2004/09/27 23:48:41  vakatov
 * Warning fix:  added missing EOL
 *

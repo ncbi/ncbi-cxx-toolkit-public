@@ -60,9 +60,16 @@ private:
     CResultSet *m_rs;
 };
 
+class CDB_ITDescriptor;
+
 class CBlobWriter : public IWriter
 {
 public:
+
+    CBlobWriter(CDB_Connection* conn,
+                CDB_ITDescriptor &d,
+                size_t blobsize, 
+                bool log_it);
 
     CBlobWriter(CDB_CursorCmd* curCmd,
                 unsigned int item_num,
@@ -88,6 +95,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2005/01/31 14:21:46  kholodov
+* Added: use of CDB_ITDescriptor for writing BLOBs
+*
 * Revision 1.2  2004/07/20 20:23:33  ucko
 * Place forward declarations outside classes to avoid confusing WorkShop.
 *

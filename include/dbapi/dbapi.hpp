@@ -269,6 +269,8 @@ public:
 ///
 ///  Interface for a SQL statement
 
+class CDB_ITDescriptor;
+
 class NCBI_DBAPI_EXPORT IStatement
 {
 public:
@@ -356,6 +358,18 @@ public:
     ///
     /// Valid only after all rows are retrieved from a resultset
     virtual int GetRowCount() = 0;
+
+    /// Get a writer for writing BLOBs using previously created
+    /// CDB_ITDescriptor
+    /// @param d
+    ///   Descriptor
+    /// @param blob_size
+    ///   Size of BLOB to write
+    /// @param log_it
+    ///   Enable or disable logging
+    virtual IWriter* GetBlobWriter(CDB_ITDescriptor &d, 
+                                   size_t blob_size, 
+                                   EAllowLog log_it) = 0;
 
     /// Get the parent connection.
     ///
@@ -738,6 +752,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/01/31 14:22:07  kholodov
+ * Added: use of CDB_ITDescriptor for writing BLOBs
+ *
  * Revision 1.35  2005/01/13 15:30:03  dicuccio
  * Adjusted comment for GetVariant(): note that column index is 1-based, not
  * 0-based

@@ -38,6 +38,7 @@
 #include "conn_impl.hpp"
 #include "stmt_impl.hpp"
 #include "rs_impl.hpp"
+#include "rw_impl.hpp"
 #include <dbapi/driver/public.hpp>
 
 
@@ -46,7 +47,7 @@ BEGIN_NCBI_SCOPE
 // implementation
 CStatement::CStatement(CConnection* conn)
     : m_conn(conn), m_cmd(0), m_rowCount(-1), m_failed(false),
-      m_irs(0)
+      m_irs(0), m_wr(0)
 {
     SetIdent("CStatement");
 }
@@ -178,6 +179,13 @@ bool CStatement::HasRows()
     return m_irs != 0;
 }
 
+IWriter* CStatement::GetBlobWriter(CDB_ITDescriptor &d, size_t blob_size, EAllowLog log_it)
+{
+    delete m_wr;
+    m_wr = new CBlobWriter(GetConnection()->GetCDB_Connection(), d, blob_size, log_it == eEnableLog);
+    return m_wr;
+}
+
 CDB_Result* CStatement::GetCDB_Result() {
     return m_irs == 0 ? 0 : m_irs->GetCDB_Result();
 }
@@ -212,6 +220,9 @@ void CStatement::FreeResources()
 	    m_conn = 0;
 	    Notify(CDbapiAuxDeletedEvent(this));
     }
+
+    delete m_wr;
+    m_wr = 0;
 
     ClearParamList();
 }
@@ -270,6 +281,9 @@ void CStatement::Action(const CDbapiEvent& e)
 END_NCBI_SCOPE
 /*
 * $Log$
+* Revision 1.27  2005/01/31 14:21:46  kholodov
+* Added: use of CDB_ITDescriptor for writing BLOBs
+*
 * Revision 1.26  2004/11/16 19:59:46  kholodov
 * Added: GetBlobOStream() with explicit connection
 *
