@@ -1902,13 +1902,16 @@ void CValidError_impl::ValidateSeqIds
         // Fall thru
         case CSeq_id::e_Other:
             try{
-                const string& name = s_GetName(**k);
-                iterate (string, s, name) {
-                    if (isspace(*s)) {
-                        ValidErr(eDiag_Critical, eErr_SEQ_INST_SeqIdNameHasSpace,
-                                 "Seq-id.name " + name + " should be a single "
-                                 "word without any spaces", seq);
-                        break;
+                const CTextseq_id& ti = s_GetTextseq_id(**k);
+                if (ti.IsSetName()) {
+                    const string& name = s_GetName(**k);
+                    iterate (string, s, name) {
+                        if (isspace(*s)) {
+                            ValidErr(eDiag_Critical, eErr_SEQ_INST_SeqIdNameHasSpace,
+                                     "Seq-id.name " + name + " should be a single "
+                                     "word without any spaces", seq);
+                            break;
+                        }
                     }
                 }
             } catch (CValidException& e) {
@@ -4225,17 +4228,28 @@ void CValidError_impl::ValidateRna(const CRNA_ref &rna, const CSeq_feat& feat)
 
 }
 
-static CBioseq_Handle GetBioseqHandleByLoc (CScope & scope, const CSeq_loc& loc)
-
-{
-    for (CSeq_loc_CI citer (loc); citer; ++citer) {
-        const CSeq_id & id = citer.GetSeq_id ();
-        CBioseq_Handle bsh = scope.GetBioseqHandle (id);
-        return bsh;
-    }
-
-    NCBI_THROW(CValidException, eSeqId, "GetBioseqHandleByLoc failed");
-}
+static char * plastidtxt [] = {
+  "",
+  "",
+  "chloroplast",
+  "chromoplast",
+  "",
+  "",
+  "plastid",
+  "",
+  "",
+  "",
+  "",
+  "",
+  "cyanelle",
+  "",
+  "",
+  "",
+  "apicoplast",
+  "leucoplast",
+  "proplastid",
+  "",
+};
 
 void CValidError_impl::ValidateCdregion (
     const CCdregion& cdregion, 
@@ -4277,72 +4291,69 @@ void CValidError_impl::ValidateCdregion (
             "A pseudo coding region should not have a product", feat);
     }
 
-    const CBioseq_Handle & bsh = GetBioseqHandleByLoc (*m_Scope, feat.GetLocation ());
-    /*
-    for (CDesc_CI diter (bsh); diter; ++diter) {
-        const CSeq_descr & desc = *diter;
-        if (desc.IsSource ()) {
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle (feat.GetLocation ());
+    for (CSeqdesc_CI diter (bsh, CSeqdesc::e_Source); diter; ++diter) {
+        const CBioSource& src = diter->GetSource ();
+        int genome = 0;
+        int biopgencode = 0;
+        int cdsgencode = 0;
+        bool plastid = false;
+        if (src.IsSetGenome ()) {
+            genome = src.GetGenome ();
         }
-    }
-    */
-
-    /*
-      biopgencode = 0;
-      cdsgencode = 0;
-      bsp = GetBioseqGivenSeqLoc (sfp->location, gcp->entityID);
-      if (bsp != NULL) {
-        vnp = NULL;
-        if (vsp->useSeqMgrIndexes) {
-          vnp = SeqMgrGetNextDescriptor (bsp, NULL, Seq_descr_source, &context);
-        } else {
-          bcp = BioseqContextNew (bsp);
-          vnp = BioseqContextGetSeqDescr (bcp, Seq_descr_source, NULL, NULL);
-        }
-        if (vnp != NULL && vnp->data.ptrvalue != NULL) {
-          plastid = FALSE;
-          biop = (BioSourcePtr) vnp->data.ptrvalue;
-          orp = biop->org;
-          if (orp != NULL && orp->orgname != NULL) {
-            onp = orp->orgname;
-            if (biop->genome == 4 || biop->genome == 5) {
-              biopgencode = onp->mgcode;
-            } else if (biop->genome == GENOME_chloroplast ||
-                       biop->genome == GENOME_chromoplast ||
-                       biop->genome == GENOME_plastid ||
-                       biop->genome == GENOME_cyanelle ||
-                       biop->genome == GENOME_apicoplast ||
-                       biop->genome == GENOME_leucoplast ||
-                       biop->genome == GENOME_proplastid) {
-              biopgencode = 11;
-              plastid = TRUE;
-            } else {
-              biopgencode = onp->gcode;
-            }
-            gc = crp->genetic_code;
-            if (gc != NULL) {
-              for (vnp = gc->data.ptrvalue; vnp != NULL; vnp = vnp->next) {
-                if (vnp->choice == 2) {
-                  cdsgencode = (Int2) vnp->data.intvalue;
+        const COrg_ref& org = src.GetOrg ();
+        if (org.IsSetOrgname ()) {
+            const COrgName& orn = org.GetOrgname ();
+            if (genome == CBioSource::eGenome_kinetoplast ||
+                genome == CBioSource::eGenome_mitochondrion) {
+                if (orn.IsSetMgcode ()) {
+                    biopgencode = orn.GetMgcode ();
                 }
-              }
+            } else if (genome == CBioSource::eGenome_chloroplast ||
+                       genome == CBioSource::eGenome_chromoplast ||
+                       genome == CBioSource::eGenome_plastid ||
+                       genome == CBioSource::eGenome_cyanelle ||
+                       genome == CBioSource::eGenome_apicoplast ||
+                       genome == CBioSource::eGenome_leucoplast ||
+                       genome == CBioSource::eGenome_proplastid) {
+              biopgencode = 11;
+              plastid = true;
+            } else {
+                if (orn.IsSetGcode ()) {
+                    biopgencode = orn.GetGcode ();
+                }
+            }
+        }
+        if (cdregion.IsSetCode ()) {
+            const CGenetic_code& gc = cdregion.GetCode ();
+            iterate (CGenetic_code::Tdata, gcd, gc.Get ()) {
+                switch ((*gcd)->Which ()) {
+                    case CGenetic_code::C_E::e_Id :
+                        cdsgencode = (*gcd)->GetId ();
+                        break;
+                }
             }
             if (biopgencode != cdsgencode) {
-              if (plastid) {
-                ValidErr (vsp, SEV_WARNING, ERR_SEQ_FEAT_GenCodeMismatch,
-                          "Genetic code conflict between CDS (code %d) and BioSource.genome biological context (%s) (uses code 11)", (int) cdsgencode, plastidtxt [biop->genome]);
-              } else {
-                ValidErr (vsp, SEV_WARNING, ERR_SEQ_FEAT_GenCodeMismatch,
-                          "Genetic code conflict between CDS (code %d) and BioSource (code %d)", (int) cdsgencode, (int) biopgencode);
-              }
+                if (plastid) {
+                    ValidErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                              "Genetic code conflict between CDS (code " +
+                              NStr::IntToString (cdsgencode) +
+                              ") and BioSource.genome biological context (" +
+                              plastidtxt [genome] + ") (uses code 11)", feat);
+                } else {
+                    ValidErr (eDiag_Warning, eErr_SEQ_FEAT_GenCodeMismatch,
+                              "Genetic code conflict between CDS (code " +
+                              NStr::IntToString (cdsgencode) +
+                              ") and BioSource (code " +
+                              NStr::IntToString (biopgencode) + ")", feat);
+                }
             }
-          }
         }
-        if (!vsp->useSeqMgrIndexes) {
-          BioseqContextFree (bcp);
-        }
-      }
+
+        // only need closest one, not all, so break
+        break;
     }
-    */
+
     CheckForBothStrands (feat);
     CheckForBadGeneOverlap (feat);
     CheckForBadMRNAOverlap (feat);
@@ -5202,6 +5213,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.21  2002/10/31 22:27:36  kans
+* GetBioseqHandleByLoc moved to objmgr/scope, used in ValidateCdregion to look for genetic code conflicts, which relies on CSeqdesc_CI up-the-hierarchy descriptor indexing
+*
 * Revision 1.20  2002/10/30 22:44:50  kans
 * fixes to a few functions, first pass at GetBioseqHandleByLoc
 *
