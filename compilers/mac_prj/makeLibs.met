@@ -405,7 +405,6 @@ on SetProjectData()
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProjectExceptFiles("id2_split", {}, "objmgr:split", {"split_cache.cpp"})
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
-		AddSimpleProject("xalnutil", {}, "objtools:alnmgr:util")
 		AddSimpleProject("xalntool", {}, "objtools:align")
 		AddSimpleProject("xobjedit", {}, "objtools:edit")
 		AddSimpleProject("xobjwrite", {}, "objtools:writers")
@@ -498,7 +497,7 @@ on SetProjectData()
 		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil", "seqsplit"}
 		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
-			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2"}
+			{"dbapi_driver", "id1", "id2", "xobjmgr", "ncbi_xloader_genbank", "xobjutil", "ncbi_xreader_id1", "ncbi_xreader_id2", "biotree"}
 		set ObjTools to {"xconnect", "xncbi", "xser", "xutil", "xobjread", "creaders", "xalnmgr", "regexp", "tables"}
 		set LdsLibs to {"bdb", "lds", "lds_admin", "libdb"}
 		
@@ -519,7 +518,7 @@ on SetProjectData()
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
-			{"xflat", "ncbi_xloader_lds", "gbseq", "entrezgene", "xalgophytree", "fastme", "biotree", "xobjwrite"})
+			{"xflat", "ncbi_xloader_lds", "gbseq", "entrezgene", "xalgophytree", "fastme", "xobjwrite"})
 		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"}) -- "ncbi_xreader_id1c",
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
