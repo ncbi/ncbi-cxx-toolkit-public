@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2000/11/29 17:42:44  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.15  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -92,9 +96,10 @@
 * ===========================================================================
 */
 
-#include <serial/datatool/fileutil.hpp>
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
+#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE
@@ -216,23 +221,6 @@ string DirName(const string& path)
     else {
         return NcbiEmptyString;
     }
-}
-
-string Identifier(const string& typeName, bool capitalize)
-{
-    string s;
-    s.reserve(typeName.size());
-    string::const_iterator i = typeName.begin();
-    if ( i != typeName.end() ) {
-        s += capitalize? toupper(*i): *i;
-        while ( ++i != typeName.end() ) {
-            char c = *i;
-            if ( c == '-' || c == '.' )
-                c = '_';
-            s += c;
-        }
-    }
-    return s;
 }
 
 class SSubString
@@ -478,129 +466,6 @@ CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
             size -= lineSize;
         }
     }
-    return out;
-}
-
-CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
-                          const char* tab)
-{
-    size_t size = code.size();
-    if ( size != 0 ) {
-        if ( !tab )
-            tab = "    ";
-        const char* ptr = code.data();
-        while ( size > 0 ) {
-            out << tab;
-            const char* endl =
-                reinterpret_cast<const char*>(memchr(ptr, '\n', size));
-            if ( !endl ) { // no more '\n'
-                out.write(ptr, size) << '\n';
-                break;
-            }
-            ++endl; // skip '\n'
-            size_t lineSize = endl - ptr;
-            out.write(ptr, lineSize);
-            ptr = endl;
-            size -= lineSize;
-        }
-    }
-    return out;
-}
-
-string Tabbed(const string& code, const char* tab)
-{
-    string out;
-    size_t size = code.size();
-    if ( size != 0 ) {
-        if ( !tab )
-            tab = "    ";
-        const char* ptr = code.data();
-        while ( size > 0 ) {
-            out += tab;
-            const char* endl =
-                reinterpret_cast<const char*>(memchr(ptr, '\n', size));
-            if ( !endl ) { // no more '\n'
-                out.append(ptr, ptr + size);
-                out += '\n';
-                break;
-            }
-            ++endl; // skip '\n'
-            size_t lineSize = endl - ptr;
-            out.append(ptr, ptr + lineSize);
-            ptr = endl;
-            size -= lineSize;
-        }
-    }
-    return out;
-}
-
-CNcbiOstream& PrintDTDComments(CNcbiOstream& out,
-                               const list<string>& comments,
-                               int flags)
-{
-    if ( comments.empty() ) // no comments
-        return out;
-
-    if ( (flags & eCommentsDoNotWriteBlankLine) == 0 ) {
-        // prepend comments by empty line to separate from previous comments
-        out << '\n';
-    }
-
-    // comments start
-    out <<
-        "<!--";
-
-    if ( (flags & eCommentsAlwaysMultiline) == 0 && comments.size() == 1 ) {
-        // one line comment
-        out << comments.front() << ' ';
-    }
-    else {
-        // multiline comments
-        out << '\n';
-        iterate ( list<string>, i, comments ) {
-            out << *i << '\n';
-        }
-    }
-
-    // comments end
-    out << "-->";
-    
-    if ( (flags & eCommentsNoEOL) == 0 )
-        out << '\n';
-
-    return out;
-}
-
-CNcbiOstream& PrintASNComments(CNcbiOstream& out,
-                               const list<string>& comments,
-                               int indent,
-                               int flags)
-{
-    if ( comments.empty() ) // no comments
-        return out;
-
-    bool newLine = (flags & eCommentsDoNotWriteBlankLine) == 0;
-    // prepend comments by empty line to separate from previous comments
-
-    iterate ( list<string>, i, comments ) {
-        if ( newLine )
-            PrintASNNewLine(out, indent);
-        out << "--" << *i;
-        newLine = true;
-    }
-
-    if ( (flags & eCommentsNoEOL) == 0 )
-        PrintASNNewLine(out, indent);
-
-    return out;
-}
-
-CNcbiOstream& PrintASNNewLine(CNcbiOstream& out, int indent)
-{
-    out <<
-        '\n';
-    for ( int i = 0; i < indent; ++i )
-        out << "  ";
     return out;
 }
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/29 17:42:30  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.7  2000/11/15 20:34:43  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -88,7 +92,6 @@
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
 #include <memory>
-#include <list>
 
 BEGIN_NCBI_SCOPE
 
@@ -179,33 +182,6 @@ string BaseName(const string& path);
 
 // return dir name of file
 string DirName(const string& path);
-
-// return valid C name
-string Identifier(const string& typeName, bool capitalize = true);
-
-bool Empty(const CNcbiOstrstream& code);
-CNcbiOstream& Write(CNcbiOstream& out, const CNcbiOstrstream& code);
-CNcbiOstream& WriteTabbed(CNcbiOstream& out, const CNcbiOstrstream& code,
-                          const char* tab = 0);
-CNcbiOstream& WriteTabbed(CNcbiOstream& out, const string& code,
-                          const char* tab = 0);
-string Tabbed(const string& code, const char* tab = 0);
-
-CNcbiOstream& PrintASNNewLine(CNcbiOstream& out, int indent);
-
-enum {
-    eCommentsAlwaysMultiline = 1,
-    eCommentsDoNotWriteBlankLine = 2,
-    eCommentsNoEOL = 4
-};
-
-CNcbiOstream& PrintDTDComments(CNcbiOstream& out,
-                               const list<string>& comments,
-                               int flags = 0);
-CNcbiOstream& PrintASNComments(CNcbiOstream& out,
-                               const list<string>& comments,
-                               int indent,
-                               int flags = 0);
 
 END_NCBI_SCOPE
 

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/29 17:42:43  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.28  2000/11/07 17:26:25  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -177,7 +181,8 @@
 
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/code.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
+#include <serial/datatool/comments.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -376,7 +381,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 {
     bool delayed = false;
     bool generateDoNotDeleteThisObject = false;
-    bool wrapperClass = (m_Members.size() == 1) &&
+    bool wrapperClass = SizeIsOne(m_Members) &&
         m_Members.front().cName.empty();
     // generate member methods
     {

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/11/29 17:42:29  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.5  2000/11/15 20:34:40  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -68,6 +72,8 @@
 #include <list>
 
 BEGIN_NCBI_SCOPE
+
+class CComments;
 
 class AbstractParser {
 public:
@@ -186,7 +192,7 @@ public:
             return '\0';
         }
     
-    void CopyComments(list<string>& comments)
+    void CopyComments(CComments& comments)
         {
             Lexer().FlushCommentsTo(comments);
         }
@@ -194,7 +200,7 @@ public:
         eNoFetchNext = 1,
         eCombineNext = 2
     };
-    void CopyLineComment(int line, list<string>& comments, int flags = 0);
+    void CopyLineComment(int line, CComments& comments, int flags = 0);
 
 private:
     AbstractLexer& m_Lexer;

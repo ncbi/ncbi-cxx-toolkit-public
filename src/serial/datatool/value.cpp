@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/29 17:42:46  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.13  2000/11/15 20:34:56  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -63,7 +67,7 @@
 #include <corelib/ncbidiag.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/module.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

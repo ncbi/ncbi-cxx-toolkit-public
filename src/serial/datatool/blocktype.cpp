@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2000/11/29 17:42:42  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.31  2000/11/20 17:26:31  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -157,7 +161,7 @@
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/classstr.hpp>
 #include <serial/datatool/module.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <typeinfo>
@@ -215,8 +219,7 @@ void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
     }
     --indent;
     PrintASNNewLine(out, indent);
-    PrintASNComments(out, m_LastComments, indent,
-                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
+    m_LastComments.PrintASN(out, indent, CComments::eMultiline);
     out << "}";
 }
 
@@ -247,8 +250,7 @@ void CDataMemberContainerType::PrintDTDExtra(CNcbiOstream& out) const
         const CDataMember& member = **i;
         member.PrintDTD(out);
     }
-    PrintDTDComments(out, m_LastComments,
-                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
 void CDataMemberContainerType::FixTypeTree(void) const
@@ -287,16 +289,16 @@ CTypeInfo* CDataContainerType::CreateTypeInfo(void)
 
 CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
 {
-    size_t count = GetMembers().size();
+    size_t itemCount = 0;
     // add place for 'isSet' flags
-    for ( TMembers::const_iterator i = GetMembers().begin();
-          i != GetMembers().end(); ++i ) {
+    iterate ( TMembers, i, GetMembers() ) {
+        ++itemCount;
         CDataMember* mem = i->get();
         if ( mem->Optional() )
-            ++count;
+            ++itemCount;
     }
     auto_ptr<CAnyTypeClassInfo> typeInfo(new CAnyTypeClassInfo(GlobalName(),
-                                                               count));
+                                                               itemCount));
     size_t index = 0;
     for ( TMembers::const_iterator i = GetMembers().begin();
           i != GetMembers().end(); ++i ) {
@@ -488,9 +490,9 @@ CDataMember::~CDataMember(void)
 void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
 {
     GetType()->PrintASNTypeComments(out, indent);
-    bool oneLineComment = m_Comments.size() == 1;
+    bool oneLineComment = m_Comments.OneLine();
     if ( !oneLineComment )
-        PrintASNComments(out, m_Comments, indent);
+        m_Comments.PrintASN(out, indent);
     out << GetName() << ' ';
     GetType()->PrintASN(out, indent);
     if ( GetDefault() ) {
@@ -503,8 +505,7 @@ void CDataMember::PrintASN(CNcbiOstream& out, int indent, bool last) const
         out << ',';
     if ( oneLineComment ) {
         out << ' ';
-        PrintASNComments(out, m_Comments, indent,
-                         eCommentsDoNotWriteBlankLine | eCommentsNoEOL);
+        m_Comments.PrintASN(out, indent, CComments::eOneLine);
     }
 }
 

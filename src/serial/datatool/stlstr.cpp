@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/11/29 17:42:45  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.11  2000/08/25 15:59:24  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -109,8 +113,8 @@
 
 #include <serial/datatool/stlstr.hpp>
 #include <serial/datatool/classctx.hpp>
-#include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/namespace.hpp>
+#include <serial/datatool/srcutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

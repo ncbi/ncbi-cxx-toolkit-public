@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/11/29 17:42:44  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.18  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -105,8 +109,8 @@
 #include <serial/datatool/enumtype.hpp>
 #include <serial/datatool/value.hpp>
 #include <serial/datatool/enumstr.hpp>
-#include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/module.hpp>
+#include <serial/datatool/srcutil.hpp>
 #include <serial/enumerated.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -137,20 +141,18 @@ void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
         TValues::const_iterator next = i;
         bool last = ++next == m_Values.end();
 
-        bool oneLineComment = i->GetComments().size() == 1;
+        bool oneLineComment = i->GetComments().OneLine();
         if ( !oneLineComment )
-            PrintASNComments(out, i->GetComments(), indent);
+            i->GetComments().PrintASN(out, indent);
         out << i->GetName() << " (" << i->GetValue() << ")";
         if ( !last )
             out << ',';
         if ( oneLineComment )
-            PrintASNComments(out, i->GetComments(), indent,
-                             eCommentsDoNotWriteBlankLine | eCommentsNoEOL);
+            i->GetComments().PrintASN(out, indent, CComments::eOneLine);
     }
     --indent;
     PrintASNNewLine(out, indent);
-    PrintASNComments(out, m_LastComments, indent,
-                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
+    m_LastComments.PrintASN(out, indent, CComments::eMultiline);
     out << "}";
 }
 
@@ -173,7 +175,7 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
         if ( i != m_Values.begin() )
             out << " |\n";
         out << "               " << i->GetName();
-        if ( !i->GetComments().empty() )
+        if ( !i->GetComments().Empty() )
             haveComments = true;
     }
     out << " ) ";
@@ -183,21 +185,16 @@ void CEnumDataType::PrintDTDExtra(CNcbiOstream& out) const
         out << "#REQUIRED";
     out << " >\n";
     if ( haveComments ) {
-        out << "<--\n";
+        out << "<!--\n";
         iterate ( TValues, i, m_Values ) {
-            if ( !i->GetComments().empty() ) {
-                out << "    " << i->GetName() << " - ";
-                iterate ( list<string>, j, i->GetComments() ) {
-                    if ( j != i->GetComments().begin() )
-                        out << "        ";
-                    out << *j << '\n';
-                }
+            if ( !i->GetComments().Empty() ) {
+                i->GetComments().Print(out, "    "+i->GetName()+" - ",
+                                       "\n        ", "\n");
             }
         }
         out << "-->\n";
     }
-    PrintDTDComments(out, m_LastComments,
-                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
 bool CEnumDataType::CheckValue(const CDataValue& value) const

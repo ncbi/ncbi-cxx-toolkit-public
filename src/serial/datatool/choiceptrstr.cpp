@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/11/29 17:42:42  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.1  2000/09/26 17:38:25  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -39,10 +43,10 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
-#include <serial/datatool/fileutil.hpp>
 #include <serial/datatool/choiceptrstr.hpp>
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/namespace.hpp>
+#include <serial/datatool/srcutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

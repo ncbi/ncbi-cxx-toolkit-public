@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2000/11/29 17:42:42  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.13  2000/11/20 17:26:31  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -69,6 +73,7 @@
 
 #include <serial/datatool/alexer.hpp>
 #include <serial/datatool/atoken.hpp>
+#include <serial/datatool/comments.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -230,10 +235,10 @@ void AbstractLexer::FlushComments(void)
     m_Comments.clear();
 }
 
-void AbstractLexer::FlushCommentsTo(list<string>& comments)
+void AbstractLexer::FlushCommentsTo(CComments& comments)
 {
     iterate ( list<CComment>, i, m_Comments ) {
-        comments.push_back(i->GetValue());
+        comments.Add(i->GetValue());
     }
     FlushComments();
 }

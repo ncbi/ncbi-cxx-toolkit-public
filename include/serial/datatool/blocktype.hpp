@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/29 17:42:29  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.7  2000/11/15 20:34:41  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -118,7 +122,7 @@ public:
     void SetOptional(void);
     void SetDefault(const AutoPtr<CDataValue>& value);
 
-    list<string>& Comments(void)
+    CComments& Comments(void)
         {
             return m_Comments;
         }
@@ -128,7 +132,7 @@ private:
     AutoPtr<CDataType> m_Type;
     bool m_Optional;
     AutoPtr<CDataValue> m_Default;
-    list<string> m_Comments;
+    CComments m_Comments;
 };
 
 class CDataMemberContainerType : public CDataType {
@@ -155,14 +159,14 @@ public:
             return m_Members;
         }
 
-    list<string>& LastComments(void)
+    CComments& LastComments(void)
         {
             return m_LastComments;
         }
 
 private:
     TMembers m_Members;
-    list<string> m_LastComments;
+    CComments m_LastComments;
 };
 
 class CDataContainerType : public CDataMemberContainerType {

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/29 17:42:29  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.7  2000/11/20 17:26:10  vasilche
 * Fixed warnings on 64 bit platforms.
 *
@@ -78,6 +82,8 @@
 #include <serial/datatool/atoken.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CComments;
 
 class AbstractLexer {
 public:
@@ -153,7 +159,7 @@ public:
     void SkipNextComment(void);
 
     void FlushComments(void);
-    void FlushCommentsTo(list<string>& comments);
+    void FlushCommentsTo(CComments& comments);
 
 protected:
     virtual TToken LookupToken(void) = 0;

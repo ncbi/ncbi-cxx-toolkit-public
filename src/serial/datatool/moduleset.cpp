@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/29 17:42:45  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.28  2000/11/15 20:34:55  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -149,8 +153,7 @@ void CFileModules::PrintASN(CNcbiOstream& out) const
     iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintASN(out);
     }
-    PrintASNComments(out, m_LastComments, 0,
-                     eCommentsAlwaysMultiline | eCommentsAlwaysMultiline);
+    m_LastComments.PrintASN(out, 0, CComments::eMultiline);
 }
 
 void CFileModules::PrintDTD(CNcbiOstream& out) const
@@ -158,8 +161,7 @@ void CFileModules::PrintDTD(CNcbiOstream& out) const
     iterate ( TModules, mi, m_Modules ) {
         (*mi)->PrintDTD(out);
     }
-    PrintDTDComments(out, m_LastComments,
-                     eCommentsAlwaysMultiline | eCommentsAlwaysMultiline);
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
 }
 
 void CFileModules::PrintDTDModular(void) const

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2000/11/29 17:42:31  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.9  2000/11/15 20:34:44  vasilche
 * Added user comments to ENUMERATED types.
 * Added storing of user comments to ASN.1 module definition.
@@ -100,6 +104,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/typeref.hpp>
+#include <serial/datatool/comments.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -177,7 +182,7 @@ public:
     void PrintASNTypeComments(CNcbiOstream& out, int indent) const;
     virtual void PrintASN(CNcbiOstream& out, int indent) const = 0;
     void PrintDTD(CNcbiOstream& out) const;
-    void PrintDTD(CNcbiOstream& out, const list<string>& extraComments) const;
+    void PrintDTD(CNcbiOstream& out, const CComments& extra) const;
     virtual void PrintDTDElement(CNcbiOstream& out) const = 0;
     virtual void PrintDTDExtra(CNcbiOstream& out) const;
 
@@ -253,7 +258,7 @@ public:
     virtual bool CheckValue(const CDataValue& value) const = 0;
     virtual TObjectPtr CreateDefault(const CDataValue& value) const = 0;
     
-    list<string>& Comments(void)
+    CComments& Comments(void)
         {
             return m_Comments;
         }
@@ -263,7 +268,7 @@ private:
     const CDataTypeModule* m_Module;
     string m_MemberName;
     int m_SourceLine;
-    list<string> m_Comments;
+    CComments m_Comments;
 
     // tree info
     const CUniSequenceDataType* m_Set;

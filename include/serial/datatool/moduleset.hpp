@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/11/29 17:42:30  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.6  2000/11/14 21:41:14  vasilche
 * Added preserving of ASN.1 definition comments.
 *
@@ -82,6 +86,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/datatool/mcontainer.hpp>
+#include <serial/datatool/comments.hpp>
 #include <list>
 #include <map>
 
@@ -123,7 +128,7 @@ public:
     CDataType* ResolveInAnyModule(const string& fullName,
                                   bool allowInternal = false) const;
 
-    list<string>& LastComments(void)
+    CComments& LastComments(void)
         {
             return m_LastComments;
         }
@@ -132,7 +137,7 @@ private:
     TModules m_Modules;
     TModulesByName m_ModulesByName;
     string m_SourceFileName;
-    list<string> m_LastComments;
+    CComments m_LastComments;
     mutable string m_PrefixFromSourceFileName;
 
     friend class CFileSet;

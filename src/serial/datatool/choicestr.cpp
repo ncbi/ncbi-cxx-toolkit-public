@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2000/11/29 17:42:42  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.24  2000/11/07 17:26:24  vasilche
 * Added module names to CTypeInfo and CEnumeratedTypeValues
 * Added possibility to set include directory for whole module
@@ -159,7 +163,8 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/datatool/choicestr.hpp>
 #include <serial/datatool/code.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
+#include <serial/serialdef.hpp>
 
 BEGIN_NCBI_SCOPE
 

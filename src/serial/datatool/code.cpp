@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2000/11/29 17:42:43  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.33  2000/11/01 20:38:59  vasilche
 * OPTIONAL and DEFAULT are not permitted in CHOICE.
 * Fixed code generation for DEFAULT.
@@ -88,7 +92,7 @@
 
 #include <serial/datatool/code.hpp>
 #include <serial/datatool/type.hpp>
-#include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
 
 BEGIN_NCBI_SCOPE
 

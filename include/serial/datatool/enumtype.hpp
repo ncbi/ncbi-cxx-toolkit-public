@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/11/29 17:42:30  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.7  2000/11/20 17:26:11  vasilche
 * Fixed warnings on 64 bit platforms.
 *
@@ -93,11 +97,11 @@ public:
             return m_Value;
         }
 
-    list<string>& GetComments(void)
+    CComments& GetComments(void)
         {
             return m_Comments;
         }
-    const list<string>& GetComments(void) const
+    const CComments& GetComments(void) const
         {
             return m_Comments;
         }
@@ -105,7 +109,7 @@ public:
 private:
     string m_Name;
     AnyType::TInteger m_Value;
-    list<string> m_Comments;
+    CComments m_Comments;
 };
 
 class CEnumDataType : public CDataType
@@ -143,7 +147,7 @@ public:
     string DefaultEnumName(void) const;
     SEnumCInfo GetEnumCInfo(void) const;
 
-    list<string>& LastComments(void)
+    CComments& LastComments(void)
         {
             return m_LastComments;
         }
@@ -157,7 +161,7 @@ public:
 
 private:
     TValues m_Values;
-    list<string> m_LastComments;
+    CComments m_LastComments;
 };
 
 class CIntEnumDataType : public CEnumDataType {

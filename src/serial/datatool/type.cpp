@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2000/11/29 17:42:45  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.56  2000/11/20 17:26:33  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -153,6 +157,7 @@
 #include <serial/datatool/unitype.hpp>
 #include <serial/datatool/choicetype.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <serial/datatool/srcutil.hpp>
 #include <algorithm>
 
 BEGIN_NCBI_SCOPE
@@ -198,29 +203,28 @@ void CDataType::Warning(const string& mess) const
 
 void CDataType::PrintASNTypeComments(CNcbiOstream& out, int indent) const
 {
-    PrintASNComments(out, m_Comments, indent);
+    m_Comments.PrintASN(out, indent);
 }
 
 void CDataType::PrintDTD(CNcbiOstream& out) const
 {
-    PrintDTDComments(out, m_Comments);
+    m_Comments.PrintDTD(out);
     PrintDTDElement(out);
     out << '\n';
     PrintDTDExtra(out);
 }
 
 void CDataType::PrintDTD(CNcbiOstream& out,
-                         const list<string>& extraComments) const
+                         const CComments& extra) const
 {
-    PrintDTDComments(out, m_Comments);
-    bool oneLineComment = extraComments.size() == 1;
+    m_Comments.PrintDTD(out);
+    bool oneLineComment = extra.OneLine();
     if ( !oneLineComment )
-        PrintDTDComments(out, extraComments);
+        extra.PrintDTD(out);
     PrintDTDElement(out);
     if ( oneLineComment ) {
         out << ' ';
-        PrintDTDComments(out, extraComments,
-                         eCommentsDoNotWriteBlankLine | eCommentsNoEOL);
+        extra.PrintDTD(out, CComments::eOneLine);
     }
     out << '\n';
     PrintDTDExtra(out);

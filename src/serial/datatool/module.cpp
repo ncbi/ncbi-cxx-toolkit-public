@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2000/11/29 17:42:44  vasilche
+* Added CComment class for storing/printing ASN.1/XML module comments.
+* Added srcutil.hpp file to reduce file dependancy.
+*
 * Revision 1.28  2000/11/20 17:26:32  vasilche
 * Fixed warnings on 64 bit platforms.
 * Updated names of config variables.
@@ -107,11 +111,12 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
-#include <typeinfo>
 #include <serial/datatool/module.hpp>
 #include <serial/datatool/exceptions.hpp>
 #include <serial/datatool/type.hpp>
+#include <serial/datatool/srcutil.hpp>
 #include <serial/datatool/fileutil.hpp>
+#include <typeinfo>
 
 BEGIN_NCBI_SCOPE
 
@@ -160,8 +165,7 @@ void CDataTypeModule::AddImports(const string& module, const list<string>& types
 
 void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 {
-    PrintASNComments(out, m_Comments, 0,
-                     eCommentsAlwaysMultiline | eCommentsDoNotWriteBlankLine);
+    m_Comments.PrintASN(out, 0, CComments::eMultiline);
 
     out <<
         GetName() << " DEFINITIONS ::=\n"
@@ -210,8 +214,7 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
             "\n";
     }
 
-    PrintASNComments(out, m_LastComments, 0,
-                     eCommentsAlwaysMultiline);
+    m_LastComments.PrintASN(out, 0, CComments::eMultiline);
 
     out <<
         "END\n"
@@ -225,7 +228,7 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
         "<!-- This section mapped from ASN.1 module "<<GetName()<<" -->\n"
         "\n";
 
-    PrintDTDComments(out, m_Comments, eCommentsAlwaysMultiline);
+    m_Comments.PrintDTD(out, CComments::eMultiline);
 
     if ( !m_Exports.empty() ) {
         out <<
@@ -275,8 +278,7 @@ void CDataTypeModule::PrintDTD(CNcbiOstream& out) const
             "\n";
     }
 
-    PrintDTDComments(out, m_LastComments,
-                     eCommentsDoNotWriteBlankLine | eCommentsAlwaysMultiline);
+    m_LastComments.PrintDTD(out, CComments::eMultiline);
 
     out <<
         "\n"
