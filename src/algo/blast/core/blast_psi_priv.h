@@ -152,10 +152,9 @@ typedef struct PsiSequenceWeights {
 
     double* std_prob;   /**< standard amino acid probabilities */
 
-    /* These fields are required for important diagnostic output */
+    /* These fields are required for important diagnostic output, they are
+     * copied into diagnostics structure */
     double* gapless_column_weights; /**< FIXME */
-    double* info_content;       /**< position information content (query_sz)*/
-
 } PsiSequenceWeights;
 
 PsiSequenceWeights*
@@ -310,7 +309,44 @@ _PSIComputeScoreProbabilities(const int** pssm,             /* [in] */
 PsiDiagnostics*
 _PSISaveDiagnostics(const PsiAlignmentData* alignment,
                     const PsiAlignedBlock* aligned_block,
-                    const PsiSequenceWeights* seq_weights);
+                    const PsiSequenceWeights* seq_weights,
+                    const PsiMatrix* score_mat);
+
+/* Calculates the information content from the scoring matrix
+ * @param query query sequence [in]
+ * @param query_sz length of the query [in]
+ * @param alphabet_sz length of the alphabet used by the query [in]
+ * @param lambda lambda parameter [in] FIXME documentation
+ * @param score_mat alphabet by alphabet_sz matrix of scores (const) [in]
+ * @param std_prob standard residue probabilities [in]
+ * @return array of length query_sz containing the information content per
+ * query position or NULL on error (e.g.: out-of-memory or NULL parameters)
+ */
+double*
+_PSICalculateInformationContentFromScoreMatrix(
+    const Uint1* query,
+    Uint4 query_sz,
+    Uint4 alphabet_sz,
+    double lambda,
+    Int4** score_mat,
+    const double* std_prob);
+
+/* Calculates the information content from the residue frequencies calculated
+ * in stage 5 of the PSSM creation algorithm 
+ * @param query_sz length of the query [in]
+ * @param alphabet_sz length of the alphabet used by the query [in]
+ * @param res_freqs query_sz by alphabet_sz matrix of residue frequencies
+ * (const) [in]
+ * @param std_prob standard residue probabilities [in]
+ * @return array of length query_sz containing the information content per
+ * query position or NULL on error (e.g.: out-of-memory or NULL parameters)
+ */
+double*
+_PSICalculateInformationContentFromResidueFreqs(
+    Uint4 query_sz,
+    Uint4 alphabet_sz,
+    double** res_freqs,
+    const double* std_prob);
 
 #ifdef __cplusplus
 }
@@ -321,6 +357,10 @@ _PSISaveDiagnostics(const PsiAlignmentData* alignment,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/07/22 19:05:58  camacho
+ * 1. Removed information content from PsiSequenceWeights structure.
+ * 2. Added functions to calculate information content.
+ *
  * Revision 1.8  2004/07/02 17:57:57  camacho
  * Made _PSIUpdatePositionCounts non-static
  *
