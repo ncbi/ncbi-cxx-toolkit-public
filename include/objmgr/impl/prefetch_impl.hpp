@@ -51,7 +51,7 @@ class CBioseq_Handle;
 class CPrefetchThread;
 class CDataSource;
 
-class CPrefetchToken_Impl : public CObject
+class NCBI_XOBJMGR_EXPORT CPrefetchToken_Impl : public CObject
 {
 public:
     typedef vector<CSeq_id_Handle> TIds;
@@ -133,6 +133,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/04/21 15:35:06  gorelenk
+* Added export prefix to class CPrefetchToken_Impl .
+*
 * Revision 1.2  2004/04/19 14:52:29  grichenk
 * Added prefetch depth limit, redesigned prefetch queue.
 *
