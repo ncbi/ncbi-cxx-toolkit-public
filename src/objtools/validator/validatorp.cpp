@@ -521,6 +521,12 @@ bool CValidError_imp::Validate
             return true;
         }
     }
+    if ( feat_validator.GetNumGenes() == 0  &&  
+         feat_validator.GetNumGeneXrefs() > 0 ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_OnlyGeneXrefs,
+            "There are " + NStr::IntToString(feat_validator.GetNumGeneXrefs()) +
+            " gene xrefs and no gene features in this record.", se);
+    }
 
     // Descriptors:
 
@@ -2318,6 +2324,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/10/20 16:12:32  shomrat
+* Added SEQ_FEAT_OnlyGeneXrefs test
+*
 * Revision 1.39  2003/07/24 20:16:18  vasilche
 * Fixed typedefs for dbxref: list<CRef<CDbtag>> -> vector<CRef<CDbtag>>
 *
