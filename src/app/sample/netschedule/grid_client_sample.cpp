@@ -80,13 +80,13 @@ int CGridClientSampleApp::Run(void)
 
     NcbiCout << "Submit a job..." << NcbiEndl;
 
-    /// Get a job submiter
+    // Get a job submiter
     CGridJobSubmiter& job_submiter = GetGridClient().GetJobSubmiter();
 
-    /// Get an ouptut stream
+    // Get an ouptut stream
     CNcbiOstream& os = job_submiter.GetOStream();
 
-    /// Send jobs input data
+    // Send jobs input data
     os << vsize << ' ';
     srand( (unsigned)time( NULL ) );
     for (int j = 0; j < vsize; ++j) {
@@ -94,7 +94,7 @@ int CGridClientSampleApp::Run(void)
         os << d << ' ';
     }
 
-    /// Submit a job
+    // Submit a job
     string job_key = job_submiter.Submit();
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
 
@@ -104,18 +104,18 @@ int CGridClientSampleApp::Run(void)
     while (1) {
         SleepMilliSec(100);
 
-        /// Get a job status
+        // Get a job status
         CGridJobStatus& job_status = GetGridClient().GetJobStatus(job_key);
         CNetScheduleClient::EJobStatus status;
         status = job_status.GetStatus();
 
-        /// A job is done here
+        // A job is done here
         if (status == CNetScheduleClient::eDone) {
-            /// Get an input stream
+            // Get an input stream
             CNcbiIstream& is = job_status.GetIStream();
             int count;
 
-            /// Get the result
+            // Get the result
             is >> count;
             vector<double> resvec;
             for (int i = 0; i < count; ++i) {
@@ -131,10 +131,14 @@ int CGridClientSampleApp::Run(void)
             break;
         }
 
-        /// A job has failed
-        else if (status == CNetScheduleClient::eFailed) {
-            LOG_POST( "Job " << job_key << " failed : " 
+        // A job has failed
+        if (status == CNetScheduleClient::eFailed) {
+            ERR_POST( "Job " << job_key << " failed : " 
                              << job_status.GetErrorMessage() );
+            break;
+        }
+        if (status == CNetScheduleClient::eCanceled) {
+            LOG_POST( "Job " << job_key << " is canceled.");
             break;
         }
         if (++cnt % 1000 == 0) {
@@ -154,6 +158,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/28 14:54:01  didenko
+ * Added job cancelation check
+ *
  * Revision 1.3  2005/03/25 16:29:38  didenko
  * Rewritten to use new Grid Client framework
  *
