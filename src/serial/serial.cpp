@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2003/03/06 21:48:41  grichenk
+* Removed type-info cleanup code
+*
 * Revision 1.22  2002/11/14 21:01:11  gouriano
 * modified AddMember to use CClassTypeInfoBase
 *
@@ -500,6 +503,7 @@ void SetPostRead(CChoiceTypeInfo* info, TPostReadFunction func)
 
 void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object)
 {
+/*
     typedef AutoPtr<CEnumeratedTypeValues> TEnumTypePtr;
     typedef list<TEnumTypePtr>             TEnumTypeList;
 
@@ -507,10 +511,12 @@ void RegisterEnumTypeValuesObject(CEnumeratedTypeValues* object)
 
     TEnumTypePtr ap(object);
     s_EnumTypeList.Get().push_back(ap);
+*/
 }
 
 void RegisterTypeInfoObject(CTypeInfo* object)
 {
+/*
     typedef AutoPtr<CTypeInfo> TTypeInfoPtr;
     typedef list<TTypeInfoPtr> TTypeInfoList;
 
@@ -518,6 +524,7 @@ void RegisterTypeInfoObject(CTypeInfo* object)
 
     TTypeInfoPtr ap(object);
     s_TypeInfoList.Get().push_back(ap);
+*/
 }
 
 END_NCBI_SCOPE
