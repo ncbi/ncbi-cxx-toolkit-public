@@ -83,7 +83,6 @@ BEGIN_SCOPE(objects)
 /////////////////////////////////////////////////////////////////////////////
 
 
-inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
     : m_Object(&object.GetSeq_annot_Info()),
       m_AnnotObject_Index(object.GetSeq_annot_Info()
@@ -102,7 +101,6 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CAnnotObject_Info& object)
 }
 
 
-inline
 CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
                                    TSeqPos index)
     : m_Object(&snp_annot),
@@ -112,6 +110,25 @@ CAnnotObject_Ref::CAnnotObject_Ref(const CSeq_annot_SNP_Info& snp_annot,
       m_MappedObjectType(eMappedObjType_not_set),
       m_MappedStrand(eNa_strand_unknown)
 {
+}
+
+
+void CAnnotObject_Ref::ResetLocation(void)
+{
+    m_TotalRange = TRange::GetEmpty();
+    m_MappedObject.Reset();
+    m_MappedObjectType = eMappedObjType_not_set;
+    m_MappedStrand = eNa_strand_unknown;
+    m_MappedFlags = 0;
+    if ( !IsSNPFeat() ) {
+        const CAnnotObject_Info& object = GetAnnotObject_Info();
+        if ( object.IsFeat() ) {
+            const CSeq_feat& feat = *object.GetFeatFast();
+            if ( feat.IsSetPartial() ) {
+                SetPartial(feat.GetPartial());
+            }
+        }
+    }
 }
 
 
@@ -1802,6 +1819,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2004/10/27 19:29:23  vasilche
+* Reset partial flag in CAnnotObject_Ref::ResetLocation().
+* Several methods of CAnnotObject_Ref made non-inline.
+*
 * Revision 1.35  2004/10/26 17:13:38  grichenk
 * Filter duplicates of circular features
 *

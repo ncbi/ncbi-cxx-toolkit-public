@@ -581,16 +581,6 @@ void CAnnotObject_Ref::SetAnnotObjectRange(const TRange& range, bool product)
 
 
 inline
-void CAnnotObject_Ref::ResetLocation(void)
-{
-    m_TotalRange = TRange::GetEmpty();
-    m_MappedObject.Reset();
-    m_MappedObjectType = eMappedObjType_not_set;
-    m_MappedStrand = eNa_strand_unknown;
-}
-
-
-inline
 bool CAnnotObject_Ref::operator<(const CAnnotObject_Ref& ref) const
 {
     if ( m_Object != ref.m_Object ) {
@@ -665,6 +655,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2004/10/27 19:29:23  vasilche
+* Reset partial flag in CAnnotObject_Ref::ResetLocation().
+* Several methods of CAnnotObject_Ref made non-inline.
+*
 * Revision 1.18  2004/10/26 15:46:59  vasilche
 * Fixed processing of partial intervals in feature mapping.
 *
