@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/12/26 22:00:19  vasilche
+* Fixed error check for case CObject constructor never called.
+*
 * Revision 1.11  2000/11/01 21:20:55  vasilche
 * Fixed missing new[] and delete[] on MSVC.
 *
@@ -120,7 +123,8 @@ void* CObject::operator new[](size_t size)
 void CObject::operator delete(void* ptr)
 {
     CObject* objectPtr = static_cast<CObject*>(ptr);
-    _ASSERT(objectPtr->m_Counter == TCounter(eCounterDeleted));
+    _ASSERT(objectPtr->m_Counter == TCounter(eCounterDeleted) ||
+            objectPtr->m_Counter == TCounter(eCounterNew));
     ::operator delete(ptr);
 }
 
