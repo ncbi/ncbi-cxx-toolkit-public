@@ -36,6 +36,7 @@
 *
 */
 
+#include <corelib/ncbiobj.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_limits.hpp>
 #include <algo/align/align_exception.hpp>
@@ -57,7 +58,7 @@ BEGIN_NCBI_SCOPE
 // Needleman Wunsch algorithm encapsulation
 //
 
-class NCBI_XALGOALIGN_EXPORT CNWAligner
+class NCBI_XALGOALIGN_EXPORT CNWAligner: public CObject
 {
 public:
     typedef int TScore;
@@ -112,6 +113,11 @@ public:
     static TScore GetDefaultWms (void) { return -2; }
     static TScore GetDefaultWg  (void) { return -5; }
     static TScore GetDefaultWs  (void) { return -2; }
+
+    TScore GetWm  (void) const { return m_Wm; }
+    TScore GetWms (void) const { return m_Wms; }
+    TScore GetWg  (void) const { return m_Wg; }
+    TScore GetWs  (void) const { return m_Ws; }
 
     const char*   GetSeq1(void) const { return m_Seq1; }
     size_t        GetSeqLen1(void) const { return m_SeqLen1; }
@@ -174,10 +180,8 @@ protected:
     mutable  bool             m_terminate;
 
     // Source sequences
-    string                    m_Seq1Id;
     const char*               m_Seq1;
     size_t                    m_SeqLen1;
-    string                    m_Seq2Id;
     const char*               m_Seq2;
     size_t                    m_SeqLen2;
     size_t x_CheckSequence(const char* seq, size_t len) const;
@@ -222,6 +226,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/10/27 20:46:21  kapustin
+ * Derive from CObject. Add more getters.
+ *
  * Revision 1.30  2003/10/14 18:43:37  kapustin
  * Run() is not iteslf polymorphic
  *
