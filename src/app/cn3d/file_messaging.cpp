@@ -102,6 +102,12 @@ FileMessenger::~FileMessenger(void)
 void FileMessenger::SendCommand(const std::string& targetApp, unsigned long id,
         const std::string& command, const std::string& data)
 {
+    if (readOnly) {
+        WARNINGMSG("command '" << command << "' to " << targetApp
+            << " received but not written to read-only message file");
+        return;
+    }
+
     // check against record of commands already sent
     CommandOriginators::iterator c = commandsSent.find(id);
     if (c != commandsSent.end() && c->second.find(targetApp) != c->second.end()) {
@@ -440,6 +446,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/10 18:47:29  thiessen
+* add CDTree->Select command
+*
 * Revision 1.4  2003/03/19 14:44:36  thiessen
 * fix char/traits problem
 *

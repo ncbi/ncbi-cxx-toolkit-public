@@ -141,6 +141,7 @@ BEGIN_EVENT_TABLE(StructureWindow, wxFrame)
     EVT_MENU      (MID_ABOUT,                               StructureWindow::OnHelp)
     EVT_TIMER     (MID_ANIMATE,                             StructureWindow::OnAnimationTimer)
     EVT_TIMER     (MID_MESSAGING,                           StructureWindow::OnFileMessagingTimer)
+    EVT_MENU      (MID_CDTREE_SELECT,                       StructureWindow::OnCDTreeSelect)
 END_EVENT_TABLE()
 
 StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, const wxSize& size) :
@@ -280,14 +281,14 @@ StructureWindow::StructureWindow(const wxString& title, const wxPoint& pos, cons
     menuBar->Append(menu, "&Style");
 
     // Window menu
-    menu = new wxMenu;
-    menu->Append(MID_SHOW_SEQ_V, "Show &Sequence Viewer");
-    menu->Append(MID_SHOW_LOG, "Show Message &Log");
-    menu->Append(MID_SHOW_LOG_START, "Show Log on Start&up", "", true);
+    windowMenu = new wxMenu;
+    windowMenu->Append(MID_SHOW_SEQ_V, "Show &Sequence Viewer");
+    windowMenu->Append(MID_SHOW_LOG, "Show Message &Log");
+    windowMenu->Append(MID_SHOW_LOG_START, "Show Log on Start&up", "", true);
     bool showLog = false;
     RegistryGetBoolean(REG_CONFIG_SECTION, REG_SHOW_LOG_ON_START, &showLog);
-    menu->Check(MID_SHOW_LOG_START, showLog);
-    menuBar->Append(menu, "&Window");
+    windowMenu->Check(MID_SHOW_LOG_START, showLog);
+    menuBar->Append(windowMenu, "&Window");
 
     // CDD menu
     bool readOnly;
@@ -391,9 +392,15 @@ void StructureWindow::OnExit(wxCommandEvent& event)
 void StructureWindow::SetupFileMessenger(const std::string& messageFilename, bool readOnly)
 {
     if (fileMessenger) return;
+
+    // create messenger
     fileMessenger = fileMessagingManager.CreateNewFileMessenger(messageFilename, this, readOnly);
     fileMessagingTimer.SetOwner(this, MID_MESSAGING);
     fileMessagingTimer.Start(200, false);
+
+    // add menu item for CDTree selection
+    windowMenu->AppendSeparator();
+    windowMenu->Append(MID_CDTREE_SELECT, "Send Selection to &CDTree");
 }
 
 void StructureWindow::OnFileMessagingTimer(wxTimerEvent& event)
@@ -445,6 +452,18 @@ void StructureWindow::SendCommand(const std::string& toApp,
     static unsigned long nextCommandID = 1;
     INFOMSG("sending command " << nextCommandID << " to " << toApp << ": " << command);
     fileMessenger->SendCommand(toApp, nextCommandID++, command, data);
+}
+
+void StructureWindow::OnCDTreeSelect(wxCommandEvent& event)
+{
+    if (!fileMessenger) {
+        ERRORMSG("Can't send messages when return messaging is off");
+        return;
+    }
+
+    string data;
+    if (GlobalMessenger()->GetHighlightsForCDTree(&data))
+        SendCommand("CDTree2", "Select", data);
 }
 
 void StructureWindow::SetWindowTitle(void)
@@ -1413,6 +1432,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2003/07/10 18:47:29  thiessen
+* add CDTree->Select command
+*
 * Revision 1.11  2003/07/10 13:47:22  thiessen
 * add LoadFile command
 *

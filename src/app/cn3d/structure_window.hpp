@@ -165,6 +165,7 @@ public:
             MID_SHOW_LOG,
             MID_SHOW_LOG_START,
             MID_SHOW_SEQ_V,
+            MID_CDTREE_SELECT,
         // CDD menu
             MID_CDD_OVERVIEW,
             MID_EDIT_CDD_NAME,
@@ -223,9 +224,10 @@ private:
     void OnAnimate(wxCommandEvent& event);
     void OnAnimationTimer(wxTimerEvent& event);
     void OnHelp(wxCommandEvent& event);
+    void OnCDTreeSelect(wxCommandEvent& event);
 
     wxMenuBar *menuBar;
-    wxMenu *favoritesMenu;
+    wxMenu *favoritesMenu, *windowMenu;
     void SetupFavoritesMenu(void);
 
     wxTimer animationTimer;
@@ -254,6 +256,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/07/10 18:47:29  thiessen
+* add CDTree->Select command
+*
 * Revision 1.3  2003/07/10 13:47:22  thiessen
 * add LoadFile command
 *

@@ -165,6 +165,10 @@ public:
     // (for cdd annotations) - returns NULL if highlights aren't from one structure
     ncbi::objects::CBiostruc_annot_set * CreateBiostrucAnnotSetForHighlightsOnSingleObject(void) const;
 
+    // formats list of highlighted residues for CDTree's Select command; returns true if
+    // there are any highlights
+    bool GetHighlightsForCDTree(std::string *data) const;
+
     // to register sequence and structure viewers for redraw postings
     void AddSequenceViewer(ViewerBase *sequenceViewer)
         { sequenceViewers.push_back(sequenceViewer); }
@@ -191,6 +195,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/07/10 18:47:29  thiessen
+* add CDTree->Select command
+*
 * Revision 1.25  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *

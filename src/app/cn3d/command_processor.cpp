@@ -227,8 +227,9 @@ IMPLEMENT_COMMAND_FUNCTION(LoadFile)
         structureWindow->SaveDialog(true, false);   // can't cancel
     }
 
-    if (!structureWindow->LoadFile((wxString(dataIn.c_str())).Strip(wxString::both).c_str()))
-        ADD_REPLY_ERROR(string("Error loading file '") + dataIn + "'");
+    wxString stripped(wxString(dataIn.c_str()).Strip(wxString::both));
+    if (!structureWindow->LoadFile(stripped.c_str()))
+        ADD_REPLY_ERROR(string("Error loading file '") + stripped.c_str() + "'");
 }
 
 END_SCOPE(Cn3D)
@@ -236,6 +237,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/07/10 18:47:29  thiessen
+* add CDTree->Select command
+*
 * Revision 1.4  2003/07/10 13:47:22  thiessen
 * add LoadFile command
 *

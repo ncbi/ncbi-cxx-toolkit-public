@@ -34,6 +34,8 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <memory>
+
 #include <objects/mmdb1/Biostruc_id.hpp>
 #include <objects/mmdb1/Mmdb_id.hpp>
 #include <objects/mmdb3/Biostruc_feature_set.hpp>
@@ -464,6 +466,59 @@ CBiostruc_annot_set * Messenger::CreateBiostrucAnnotSetForHighlightsOnSingleObje
     return bas.Release();
 }
 
+bool Messenger::GetHighlightsForCDTree(string *data) const
+{
+    data->erase();
+    if (!IsAnythingHighlighted()) return false;
+
+    CNcbiOstrstream oss;
+
+    MoleculeHighlightMap::const_iterator h, he = highlights.end();
+    for (h=highlights.begin(); h!=he; h++) {
+
+        // add identifier
+        if (h->first->pdbID.size() > 0) {
+            oss << "pdb " << h->first->pdbID;
+            if (h->first->pdbChain != ' ')
+                oss << '_' << (char) h->first->pdbChain;
+        } else if (h->first->gi != MoleculeIdentifier::VALUE_NOT_SET) {
+            oss << "gi " << h->first->gi;
+        } else if (h->first->accession.size() > 0) {
+            oss << "acc " << h->first->accession;
+        } else {
+            WARNINGMSG("Messenger::GetHighlightsForCDTree() - unimplemented identifier type");
+            continue;
+        }
+
+        // add range(s)
+        int first = 0, last = 0;
+        while (first < h->second.size()) {
+
+            // find first highlighted residue
+            while (first < h->second.size() && !h->second[first]) first++;
+            if (first >= h->second.size()) break;
+
+            // find last in contiguous stretch of highlighted residues
+            last = first;
+            while (last + 1 < h->second.size() && h->second[last + 1]) last++;
+
+            // add new interval to list
+            oss << ' ' << first;
+            if (last > first)
+                oss << '-' << last;
+
+            first = last + 2;
+        }
+
+        oss << '\n';
+    }
+
+    oss << '\0';
+    auto_ptr<char> d(oss.str());
+    *data = d.get();
+    return true;
+}
+
 void Messenger::SetAllWindowTitles(void) const
 {
     SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
@@ -489,6 +544,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.37  2003/07/10 18:47:29  thiessen
+* add CDTree->Select command
+*
 * Revision 1.36  2003/03/13 14:26:18  thiessen
 * add file_messaging module; split cn3d_main_wxwin into cn3d_app, cn3d_glcanvas, structure_window, cn3d_tools
 *
