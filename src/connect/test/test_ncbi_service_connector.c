@@ -28,8 +28,112 @@
  * File Description:
  *   Standard test for the service connector
  *
+ */
+
+#include "../ncbi_priv.h"
+#include <connect/ncbi_service_connector.h>
+#include <stdlib.h>
+#include <string.h>
+/* This header must go last */
+#include "test_assert.h"
+
+
+int main(int argc, const char* argv[])
+{
+    static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
+    const char* service = argc > 1 ? argv[1] : "bounce";
+    const char* host = argc > 2 ? argv[2] : "www.ncbi.nlm.nih.gov";
+    CONNECTOR connector;
+    SConnNetInfo *info;
+    STimeout  timeout;
+    char ibuf[1024];
+    CONN conn;
+    size_t n;
+
+    CORE_SetLOGFILE(stderr, 0/*false*/);
+
+    info = ConnNetInfo_Create(service);
+    strcpy(info->host, host);
+    if (argc > 3) {
+        strncpy(obuf, argv[3], sizeof(obuf) - 2);
+        obuf[sizeof(obuf) - 2] = 0;
+        obuf[n = strlen(obuf)] = '\n';
+        obuf[++n]              = 0;
+    }
+
+    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info, 0);
+    ConnNetInfo_Destroy(info);
+
+    if (!connector)
+        CORE_LOG(eLOG_Fatal, "Failed to create service connector");
+
+    if (CONN_Create(connector, &conn) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Failed to create connection");
+
+    timeout.sec  = 5;
+    timeout.usec = 123456;
+
+    CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
+
+    if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success ||
+        n != strlen(obuf)) {
+        CONN_Close(conn);
+        CORE_LOG(eLOG_Fatal, "Error writing to connection");
+    }
+
+    if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
+        CONN_Close(conn);
+        CORE_LOG(eLOG_Fatal, "Error waiting for reading");
+    }
+
+    if (CONN_Read(conn, ibuf, n, &n, eIO_ReadPersist) != eIO_Success) {
+        CONN_Close(conn);
+        CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Error reading from connection");
+    }
+
+    CORE_LOGF(eLOG_Note,
+              ("%d bytes read from service (%s):\n%.*s",
+               (int)n, CONN_GetType(conn), (int)n, ibuf));
+    CONN_Close(conn);
+
+#if 0
+    CORE_LOG(eLOG_Note, "Trying ID1 service");
+
+    info = ConnNetInfo_Create(service);
+    connector = SERVICE_CreateConnectorEx("ID1", fSERV_Any, info);
+    ConnNetInfo_Destroy(info);
+
+    if (!connector)
+        CORE_LOG(eLOG_Fatal, "Service ID1 not available");
+
+    if (CONN_Create(connector, &conn) != eIO_Success)
+        CORE_LOG(eLOG_Fatal, "Failed to create connection");
+
+    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00\x00", 7, &n) !=
+        eIO_Success || n != 7) {
+        CONN_Close(conn);
+        CORE_LOG(eLOG_Fatal, "Error writing to service ID1");
+    }
+
+    if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_ReadPlain) != eIO_Success){
+        CONN_Close(conn);
+        CORE_LOG(eLOG_Fatal, "Error reading from service ID1");
+    }
+
+    CORE_LOGF(eLOG_Note, ("%d bytes read from service ID1", n));
+    CONN_Close(conn);
+#endif
+
+    return 0/*okay*/;
+}
+
+
+/*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.20  2002/08/07 16:38:08  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
  * Revision 6.19  2002/03/22 19:47:41  lavr
  * Test_assert.h made last among the include files
  *
@@ -89,100 +193,3 @@
  *
  * ==========================================================================
  */
-
-#include "../ncbi_priv.h"
-#include <connect/ncbi_service_connector.h>
-#include <stdlib.h>
-#include <string.h>
-/* This header must go last */
-#include "test_assert.h"
-
-
-int main(int argc, const char* argv[])
-{
-    static char obuf[128] = "UUUUUZZZZZZUUUUUUZUZUZZUZUZUZUZUZ\n";
-    const char* service = argc > 1 ? argv[1] : "bounce";
-    const char* host = argc > 2 ? argv[2] : "www.ncbi.nlm.nih.gov";
-    CONNECTOR connector;
-    SConnNetInfo *info;
-    STimeout  timeout;
-    char ibuf[1024];
-    CONN conn;
-    size_t n;
-
-    CORE_SetLOGFILE(stderr, 0/*false*/);
-
-    info = ConnNetInfo_Create(service);
-    strcpy(info->host, host);
-    if (argc > 3) {
-        strncpy(obuf, argv[3], sizeof(obuf) - 2);
-        obuf[sizeof(obuf) - 2] = 0;
-        obuf[n = strlen(obuf)] = '\n';
-        obuf[++n]              = 0;
-    }
-
-    connector = SERVICE_CreateConnectorEx(service, fSERV_Any, info, 0);
-    ConnNetInfo_Destroy(info);
-
-    if (!connector)
-        CORE_LOG(eLOG_Fatal, "Failed to create service connector");
-
-    if (CONN_Create(connector, &conn) != eIO_Success)
-        CORE_LOG(eLOG_Fatal, "Failed to create connection");
-
-    timeout.sec  = 5;
-    timeout.usec = 123456;
-
-    CONN_SetTimeout(conn, eIO_ReadWrite, &timeout);
-
-    if (CONN_Write(conn, obuf, strlen(obuf), &n) != eIO_Success ||
-        n != strlen(obuf)) {
-        CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error writing to connection");
-    }
-
-    if (CONN_Wait(conn, eIO_Read, &timeout) != eIO_Success) {
-        CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error waiting for reading");
-    }
-
-    if (CONN_Read(conn, ibuf, n, &n, eIO_Persist) != eIO_Success) {
-        CONN_Close(conn);
-        CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Error reading from connection");
-    }
-
-    CORE_LOGF(eLOG_Note,
-              ("%d bytes read from service (%s):\n%.*s",
-               (int)n, CONN_GetType(conn), (int)n, ibuf));
-    CONN_Close(conn);
-
-#if 0
-    CORE_LOG(eLOG_Note, "Trying ID1 service");
-
-    info = ConnNetInfo_Create(service);
-    connector = SERVICE_CreateConnectorEx("ID1", fSERV_Any, info);
-    ConnNetInfo_Destroy(info);
-
-    if (!connector)
-        CORE_LOG(eLOG_Fatal, "Service ID1 not available");
-
-    if (CONN_Create(connector, &conn) != eIO_Success)
-        CORE_LOG(eLOG_Fatal, "Failed to create connection");
-
-    if (CONN_Write(conn, "\xA4\x80\x02\x01\x02\x00\x00", 7, &n) !=
-        eIO_Success || n != 7) {
-        CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error writing to service ID1");
-    }
-
-    if (CONN_Read(conn, ibuf, sizeof(ibuf), &n, eIO_Plain) != eIO_Success) {
-        CONN_Close(conn);
-        CORE_LOG(eLOG_Fatal, "Error reading from service ID1");
-    }
-
-    CORE_LOGF(eLOG_Note, ("%d bytes read from service ID1", n));
-    CONN_Close(conn);
-#endif
-
-    return 0/*okay*/;
-}

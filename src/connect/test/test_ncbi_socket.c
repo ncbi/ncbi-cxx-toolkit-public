@@ -28,57 +28,6 @@
  * File Description:
  *   Test suite for "ncbi_socket.[ch]", the portable TCP/IP socket API
  *
- * ---------------------------------------------------------------------------
- * $Log$
- * Revision 6.14  2002/03/22 19:47:48  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.13  2002/02/11 20:36:45  lavr
- * Use "ncbi_config.h"
- *
- * Revision 6.12  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.11  2001/07/11 00:44:33  vakatov
- * Added TEST_gethostby***() -- tests for SOCK_gethostby{addr,name}()
- *
- * Revision 6.10  2001/05/21 15:11:13  ivanov
- * Added test for automatic read on write data from the socket
- * (stall protection).
- *
- * Revision 6.9  2001/01/26 23:55:10  vakatov
- * [NCBI_OS_MAC]  Do not do server write shutdown for MAC client
- *
- * Revision 6.8  2000/11/15 18:51:44  vakatov
- * Add tests for SOCK_Shutdown() and SOCK_Status().
- * Use SOCK_Status() instead of SOCK_Eof().
- *
- * Revision 6.7  2000/06/23 19:39:22  vakatov
- * Test the logging of socket I/O (incl. binary data)
- *
- * Revision 6.6  2000/03/24 23:12:13  vakatov
- * Starting the development quasi-branch to implement CONN API.
- * All development is performed in the NCBI C++ tree only, while
- * the NCBI C tree still contains "frozen" (see the last revision) code.
- *
- * Revision 6.5  2000/02/24 23:09:42  vakatov
- * Use C++ Toolkit specific wrapper "test_ncbi_socket_.c" for
- * "test_ncbi_socket.c"
- *
- * Revision 6.4  2000/02/23 22:34:37  vakatov
- * Can work both "standalone" and as a part of NCBI C++ or C toolkits
- *
- * Revision 6.3  1999/11/26 19:05:21  vakatov
- * Initialize "log_fp" in "main()"...
- *
- * Revision 6.2  1999/10/19 16:16:03  vakatov
- * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
- * not #define'd
- *
- * Revision 6.1  1999/10/18 15:40:21  vakatov
- * Initial revision
- *
- * ===========================================================================
  */
 
 #include "../ncbi_config.h"
@@ -173,8 +122,8 @@ static void TEST__client_1(SOCK sock)
     SOCK_SetDataLoggingAPI(eOff);
     SOCK_SetDataLogging(sock, eOn);
     n_io = strlen(s_S1) + 1;
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Peek);
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
+    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPeek);
+    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPlain);
     if (status == eIO_Closed) {
         fprintf(log_fp, "[WARNING] TC1:: connection closed\n");
         assert(0);
@@ -183,7 +132,7 @@ static void TEST__client_1(SOCK sock)
     assert(strcmp(buf, s_S1) == 0);
     assert(SOCK_PushBack(sock, buf, n_io_done) == eIO_Success);
     memset(buf, '\xFF', n_io_done);
-    assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eIO_Plain)
+    assert(SOCK_Read(sock, buf, n_io_done, &n_io_done, eIO_ReadPlain)
            == eIO_Success);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Success);
     assert(strcmp(buf, s_S1) == 0);
@@ -224,7 +173,7 @@ static void TEST__client_1(SOCK sock)
         memset(blob,0,BIG_BLOB_SIZE);
         for (i = 0;  i < 10;  i++) {
             status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                               &n_io_done, eIO_Persist);
+                               &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
         }
         for (n_io = 0;  n_io < BIG_BLOB_SIZE;  n_io++)
@@ -234,10 +183,10 @@ static void TEST__client_1(SOCK sock)
 
     /* Try to read more data (must hit EOF as the peer is shutdown) */
 #if !defined(NCBI_OS_MAC)
-    assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Peek)
+    assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_ReadPeek)
            == eIO_Closed);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
-    assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_Plain)
+    assert(SOCK_Read(sock, buf, 1, &n_io_done, eIO_ReadPlain)
            == eIO_Closed);
     assert(SOCK_Status(sock, eIO_Read) == eIO_Closed);
 #endif
@@ -246,12 +195,12 @@ static void TEST__client_1(SOCK sock)
     assert(SOCK_Shutdown(sock, eIO_Read)  == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
-    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_Plain) == eIO_Closed);
-    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_Peek)  == eIO_Closed);
+    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_ReadPlain) == eIO_Closed);
+    assert(SOCK_Read    (sock, 0, 0, &n_io_done, eIO_ReadPeek)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
-    assert(SOCK_Read    (sock, buf, 1, &n_io_done, eIO_Plain) == eIO_Closed);
-    assert(SOCK_Read    (sock, buf, 1, &n_io_done, eIO_Peek)  == eIO_Closed);
+    assert(SOCK_Read    (sock, buf, 1,&n_io_done,eIO_ReadPlain) == eIO_Closed);
+    assert(SOCK_Read    (sock, buf, 1,&n_io_done,eIO_ReadPeek)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Read)  == eIO_Closed);
     assert(SOCK_Status  (sock, eIO_Write) == eIO_Success);
 
@@ -284,7 +233,7 @@ static void TEST__server_1(SOCK sock)
     /* Receive and send back a short string */
     SOCK_SetDataLogging(sock, eOn);
     n_io = strlen(s_C1) + 1;
-    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
+    status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPlain);
     assert(status == eIO_Success  &&  n_io == n_io_done);
     assert(strcmp(buf, s_C1) == 0  ||  strcmp(buf, s_M1) == 0);
 
@@ -305,12 +254,12 @@ static void TEST__server_1(SOCK sock)
 #define DONT_LOG_SIZE  BIG_BLOB_SIZE - DO_LOG_SIZE
         unsigned char* blob = (unsigned char*) malloc(BIG_BLOB_SIZE);
 
-        status = SOCK_Read(sock, blob, DONT_LOG_SIZE, &n_io_done, eIO_Persist);
+        status = SOCK_Read(sock,blob,DONT_LOG_SIZE,&n_io_done,eIO_ReadPersist);
         assert(status == eIO_Success  &&  n_io_done == DONT_LOG_SIZE);
 
         SOCK_SetDataLogging(sock, eOn);
         status = SOCK_Read(sock, blob + DONT_LOG_SIZE, DO_LOG_SIZE,
-                           &n_io_done, eIO_Persist);
+                           &n_io_done, eIO_ReadPersist);
         assert(status == eIO_Success  &&  n_io_done == DO_LOG_SIZE);
         SOCK_SetDataLogging(sock, eDefault);
         SOCK_SetDataLoggingAPI(eDefault);
@@ -329,7 +278,7 @@ static void TEST__server_1(SOCK sock)
         for (i = 0;  i < 10;  i++) {
             /*            X_SLEEP(1);*/
             status = SOCK_Read(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
-                               &n_io_done, eIO_Persist);
+                               &n_io_done, eIO_ReadPersist);
             assert(status == eIO_Success  &&  n_io_done == SUB_BLOB_SIZE);
             status = SOCK_Write(sock, blob + i * SUB_BLOB_SIZE, SUB_BLOB_SIZE,
                                 &n_io_done);
@@ -464,14 +413,14 @@ static void TEST__client_2(SOCK sock)
                 char   xx_buf1[128], xx_buf2[128];
                 size_t xx_io_done1, xx_io_done2;
                 if (SOCK_Read(sock, xx_buf1, sizeof(xx_buf1), &xx_io_done1,
-                              eIO_Peek) == eIO_Success  &&
+                              eIO_ReadPeek) == eIO_Success  &&
                     SOCK_Read(sock, xx_buf2, xx_io_done1, &xx_io_done2,
-                              eIO_Peek) == eIO_Success) {
+                              eIO_ReadPeek) == eIO_Success) {
                     assert(xx_io_done1 >= xx_io_done2);
                     assert(memcmp(xx_buf1, xx_buf2, xx_io_done2) == 0);
                 }
             }
-            status = SOCK_Read(sock, x_buf, n_io, &n_io_done, eIO_Plain);
+            status = SOCK_Read(sock, x_buf, n_io, &n_io_done, eIO_ReadPlain);
             if (status == eIO_Closed) {
                 fprintf(log_fp,
                         "[ERROR] TC2::read: connection closed\n");
@@ -534,7 +483,7 @@ static void TEST__server_2(SOCK sock, LSOCK lsock)
 
         /* read data from socket */
         n_io = sizeof(buf);
-        status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_Plain);
+        status = SOCK_Read(sock, buf, n_io, &n_io_done, eIO_ReadPlain);
         switch ( status ) {
         case eIO_Success:
             fprintf(log_fp, "[INFO] TS2::read: "
@@ -966,3 +915,61 @@ extern int main(int argc, char** argv)
     CORE_SetLOCK(0);
     return 1;
 }
+
+
+/*
+ * ---------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.15  2002/08/07 16:38:08  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
+ * Revision 6.14  2002/03/22 19:47:48  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.13  2002/02/11 20:36:45  lavr
+ * Use "ncbi_config.h"
+ *
+ * Revision 6.12  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.11  2001/07/11 00:44:33  vakatov
+ * Added TEST_gethostby***() -- tests for SOCK_gethostby{addr,name}()
+ *
+ * Revision 6.10  2001/05/21 15:11:13  ivanov
+ * Added test for automatic read on write data from the socket
+ * (stall protection).
+ *
+ * Revision 6.9  2001/01/26 23:55:10  vakatov
+ * [NCBI_OS_MAC]  Do not do server write shutdown for MAC client
+ *
+ * Revision 6.8  2000/11/15 18:51:44  vakatov
+ * Add tests for SOCK_Shutdown() and SOCK_Status().
+ * Use SOCK_Status() instead of SOCK_Eof().
+ *
+ * Revision 6.7  2000/06/23 19:39:22  vakatov
+ * Test the logging of socket I/O (incl. binary data)
+ *
+ * Revision 6.6  2000/03/24 23:12:13  vakatov
+ * Starting the development quasi-branch to implement CONN API.
+ * All development is performed in the NCBI C++ tree only, while
+ * the NCBI C tree still contains "frozen" (see the last revision) code.
+ *
+ * Revision 6.5  2000/02/24 23:09:42  vakatov
+ * Use C++ Toolkit specific wrapper "test_ncbi_socket_.c" for
+ * "test_ncbi_socket.c"
+ *
+ * Revision 6.4  2000/02/23 22:34:37  vakatov
+ * Can work both "standalone" and as a part of NCBI C++ or C toolkits
+ *
+ * Revision 6.3  1999/11/26 19:05:21  vakatov
+ * Initialize "log_fp" in "main()"...
+ *
+ * Revision 6.2  1999/10/19 16:16:03  vakatov
+ * Try the NCBI C and C++ headers only if NCBI_OS_{UNIX, MSWIN, MAC} is
+ * not #define'd
+ *
+ * Revision 6.1  1999/10/18 15:40:21  vakatov
+ * Initial revision
+ *
+ * ===========================================================================
+ */

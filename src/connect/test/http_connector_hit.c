@@ -28,30 +28,6 @@
  * File Description:
  *   Hit an arbitrary URL using HTTP-based CONNECTOR
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.7  2002/03/22 19:45:55  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.6  2002/01/16 21:23:14  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.5  2001/01/11 16:42:45  lavr
- * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
- *
- * Revision 6.4  2000/11/15 17:27:29  vakatov
- * Fixed path to the test CGI application.
- *
- * Revision 6.3  2000/09/27 16:00:24  lavr
- * Registry entries adjusted
- *
- * Revision 6.2  2000/05/30 23:24:40  vakatov
- * Cosmetic fix for the C++ compilation
- *
- * Revision 6.1  2000/04/21 19:56:28  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_http_connector.h>
@@ -197,7 +173,7 @@ int main(int argc, const char* argv[])
     /* Read reply from connection, write it to standard output */
     fprintf(stdout, "\n\n----- [BEGIN] HTTP Content -----\n");
     for (;;) {
-        status = CONN_Read(conn, buffer, sizeof(buffer), &n_read, eIO_Plain);
+        status = CONN_Read(conn,buffer,sizeof(buffer),&n_read,eIO_ReadPlain);
         if (status != eIO_Success)
             break;
 
@@ -217,3 +193,34 @@ int main(int argc, const char* argv[])
     CORE_SetLOG(0);
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.8  2002/08/07 16:38:08  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
+ * Revision 6.7  2002/03/22 19:45:55  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.6  2002/01/16 21:23:14  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.5  2001/01/11 16:42:45  lavr
+ * Registry Get/Set methods got the 'user_data' argument, forgotten earlier
+ *
+ * Revision 6.4  2000/11/15 17:27:29  vakatov
+ * Fixed path to the test CGI application.
+ *
+ * Revision 6.3  2000/09/27 16:00:24  lavr
+ * Registry entries adjusted
+ *
+ * Revision 6.2  2000/05/30 23:24:40  vakatov
+ * Cosmetic fix for the C++ compilation
+ *
+ * Revision 6.1  2000/04/21 19:56:28  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

@@ -28,18 +28,6 @@
  * File Description:
  *   Standard test for the FILE-based CONNECTOR
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2002/03/22 19:47:09  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.2  2002/01/16 21:23:15  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.1  2000/04/12 15:22:43  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_connection.h>
@@ -102,7 +90,7 @@ int main(int argc, const char* argv[])
         size_t n_read, n_written;
 
         /* read */
-        status = CONN_Read(conn, buf, sizeof(buf), &n_read, eIO_Plain);
+        status = CONN_Read(conn, buf, sizeof(buf), &n_read, eIO_ReadPlain);
         if (status != eIO_Success) {
             fprintf(stderr, "CONN_Read() failed (status: %s)\n",
                     IO_StatusStr(status));
@@ -127,3 +115,22 @@ int main(int argc, const char* argv[])
     CORE_SetLOG(0);
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.4  2002/08/07 16:38:08  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
+ * Revision 6.3  2002/03/22 19:47:09  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.2  2002/01/16 21:23:15  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.1  2000/04/12 15:22:43  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

@@ -29,18 +29,6 @@
  *   A simple test program to listen on a socket and just bounce all
  *   incoming data (e.g., can be used to test "ncbi_socket_connector.[ch]")
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.3  2002/03/22 19:46:11  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.2  2002/01/16 21:23:14  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.1  2000/04/07 20:04:37  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_socket.h>
@@ -88,7 +76,7 @@ static void s_DoServer(unsigned short port, int n_cycle)
         assert(status == eIO_Success);
 
         /* Bounce all incoming data back to the client */
-        while ((status = SOCK_Read(sock, buf, sizeof(buf), &n_io, eIO_Plain))
+        while ((status = SOCK_Read(sock,buf,sizeof(buf),&n_io,eIO_ReadPlain))
                == eIO_Success) {
             status = SOCK_Write(sock, buf, n_io, &n_io_done);
             if (status != eIO_Success) {
@@ -155,3 +143,22 @@ int main(int argc, const char* argv[])
     fclose(s_LogFile);
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.4  2002/08/07 16:38:08  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
+ * Revision 6.3  2002/03/22 19:46:11  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.2  2002/01/16 21:23:14  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.1  2000/04/07 20:04:37  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */

@@ -28,19 +28,6 @@
  * File Description:
  *     Build C Toolkit ASN streams on top of CONN (connection).
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 1.3  2001/09/24 20:32:44  lavr
- * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
- *
- * Revision 1.2  2001/06/29 14:04:17  lavr
- * Close callback removes itself when called; fixes not to add callbacks
- * in CreateAsnConn_ServiceEx, because they are already there!
- *
- * Revision 1.1  2001/06/28 21:58:23  lavr
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include <connect/ncbi_service_connector.h>
@@ -63,7 +50,7 @@ extern "C" {
 static Int2 LIBCALLBACK s_AsnRead(Pointer p, CharPtr buff, Uint2 len)
 {
     size_t n_read = 0;
-    CONN_Read((CONN) p, buff, len, &n_read, eIO_Plain);
+    CONN_Read((CONN) p, buff, len, &n_read, eIO_ReadPlain);
     return (Int2) n_read;
 }
 
@@ -182,3 +169,23 @@ CONN CreateAsnConn_Service(const char*     service,
     return CreateAsnConn_ServiceEx(service, input_fmt, input,
                                    output_fmt, output, fSERV_Any, 0, 0);
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 1.4  2002/08/07 16:38:18  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
+ * Revision 1.3  2001/09/24 20:32:44  lavr
+ * +SSERVICE_Extra* parameter in CreateAsnConn_ServiceEx()
+ *
+ * Revision 1.2  2001/06/29 14:04:17  lavr
+ * Close callback removes itself when called; fixes not to add callbacks
+ * in CreateAsnConn_ServiceEx, because they are already there!
+ *
+ * Revision 1.1  2001/06/28 21:58:23  lavr
+ * Initial revision
+ *
+ * ==========================================================================
+ */

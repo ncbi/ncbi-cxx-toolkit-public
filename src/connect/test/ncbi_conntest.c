@@ -29,27 +29,6 @@
  *   Test suite for NCBI connector (CONNECTOR)
  *   (see also "ncbi_connection.[ch]", "ncbi_connector.h")
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.6  2002/03/22 19:46:02  lavr
- * Test_assert.h made last among the include files
- *
- * Revision 6.5  2002/01/16 21:23:14  vakatov
- * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
- *
- * Revision 6.4  2001/03/02 20:03:34  lavr
- * Typos fixed
- *
- * Revision 6.3  2000/12/29 18:25:06  lavr
- * CONN Reconnect replaced with ReInit.
- *
- * Revision 6.2  2000/04/21 19:53:11  vakatov
- * Minor cosmetic changes
- *
- * Revision 6.1  2000/04/07 20:03:01  vakatov
- * Initial revision
- *
- * ==========================================================================
  */
 
 #include "ncbi_conntest.h"
@@ -98,7 +77,7 @@ static void s_SingleBouncePrint
 
 
     /* READ the "bounced" data from the connection */
-    status = CONN_Read(conn, buf, sizeof(buf) - 1, &n_read, eIO_Persist);
+    status = CONN_Read(conn, buf, sizeof(buf) - 1, &n_read, eIO_ReadPersist);
     TEST_LOG(status, "[s_SingleBouncePrint] after READ");
 
     /* Printout to LOG file, if any */
@@ -208,7 +187,7 @@ static void s_SingleBounceCheck
         n_to_read = TEST_BUF_SIZE/3;
 
         do {
-            status = CONN_Read(conn, x_buf, n_to_read, &n_read, eIO_Peek);
+            status = CONN_Read(conn, x_buf, n_to_read, &n_read, eIO_ReadPeek);
             if (status != eIO_Success) {
                 TEST_LOG(status, "The 1/3 PEEK failed. Retrying...");
                 assert(n_read < n_to_read);
@@ -222,7 +201,7 @@ static void s_SingleBounceCheck
 
         /* READ 1st 1/3 of "bounced" data, compare it with the PEEKed data */
         status = CONN_Read(conn, x_buf + n_to_read, n_to_read, &n_read,
-                           eIO_Plain);
+                           eIO_ReadPlain);
         assert(status == eIO_Success);
         assert(n_read == n_to_read);
         assert(memcmp(x_buf, x_buf + n_to_read, n_to_read) == 0);
@@ -241,7 +220,7 @@ static void s_SingleBounceCheck
 
         while ( n_to_read ) {
             TEST_LOG(status, "2/3 READ...");
-            status = CONN_Read(conn, x_buf, n_to_read, &n_read, eIO_Plain);
+            status = CONN_Read(conn, x_buf, n_to_read, &n_read, eIO_ReadPlain);
             if (status != eIO_Success) {
                 TEST_LOG(status, "The 2/3 READ failed. Retrying...");
                 assert(n_read < n_to_read);
@@ -257,7 +236,7 @@ static void s_SingleBounceCheck
         /* Persistently READ the 3rd 1/3 of "bounced" data */
         n_to_read = TEST_BUF_SIZE - (x_buf - buf);
 
-        status = CONN_Read(conn, x_buf, n_to_read, &n_read, eIO_Persist);
+        status = CONN_Read(conn, x_buf, n_to_read, &n_read, eIO_ReadPersist);
         if (status != eIO_Success) {
             TEST_LOG(status, "The 3/3 (persistent) READ failed!");
             assert(n_read < n_to_read);
@@ -294,7 +273,7 @@ static void s_SingleBounceCheck
     for (;;) {
         size_t n_read;
 
-        status = CONN_Read(conn, buf, sizeof(buf), &n_read, eIO_Persist);
+        status = CONN_Read(conn, buf, sizeof(buf), &n_read, eIO_ReadPersist);
         TEST_LOG(status, "s_SingleBounceCheck(The extra data READ...)");
         if ( n_read )
             assert(fwrite(buf, n_read, 1, data_file) == 1);
@@ -364,3 +343,31 @@ extern void CONN_TestConnector
      */
     assert(CONN_Close(conn) == eIO_Success);
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.7  2002/08/07 16:38:08  lavr
+ * EIO_ReadMethod enums changed accordingly; log moved to end
+ *
+ * Revision 6.6  2002/03/22 19:46:02  lavr
+ * Test_assert.h made last among the include files
+ *
+ * Revision 6.5  2002/01/16 21:23:14  vakatov
+ * Utilize header "test_assert.h" to switch on ASSERTs in the Release mode too
+ *
+ * Revision 6.4  2001/03/02 20:03:34  lavr
+ * Typos fixed
+ *
+ * Revision 6.3  2000/12/29 18:25:06  lavr
+ * CONN Reconnect replaced with ReInit.
+ *
+ * Revision 6.2  2000/04/21 19:53:11  vakatov
+ * Minor cosmetic changes
+ *
+ * Revision 6.1  2000/04/07 20:03:01  vakatov
+ * Initial revision
+ *
+ * ==========================================================================
+ */
