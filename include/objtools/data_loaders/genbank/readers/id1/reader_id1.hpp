@@ -126,6 +126,7 @@ private:
 
 END_SCOPE(objects)
 
+extern NCBI_XOBJMGR_EXPORT const string kId1ReaderDriverName;
 
 extern "C" 
 {
@@ -141,6 +142,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.28  2003/12/03 14:28:22  kuznets
+* Added driver name constant.
+*
 * Revision 1.27  2003/12/02 16:17:42  kuznets
 * Added plugin manager support for CReader interface and implementaions
 * (id1 reader, pubseq reader)
