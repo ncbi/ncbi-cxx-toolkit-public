@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.57  2003/09/09 22:12:02  dondosha
+ * Minor correction for ungapped cutoff calculation; added freeing of PHI pattern
+ *
  * Revision 1.56  2003/09/08 12:55:57  madden
  * Allow use of PSSM to construct lookup table
  *
@@ -433,7 +436,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
 {
    Int4 context = query_info->first_context;
    Int4 cutoff_score = 0, s2 = 0;
-   double e2 = UNGAPPED_CUTOFF_EVALUE;
+   double e2;
    BLAST_KarlinBlk* kbp;
    double qlen;
    double avglen;
@@ -462,6 +465,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    avglen = ((double) eff_len_options->db_length) / 
       eff_len_options->dbseq_num;
 
+   e2 = MAX(UNGAPPED_CUTOFF_EVALUE, hit_params->options->expect_value);
    BLAST_Cutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
 
    cutoff_score = MIN(hit_params->cutoff_score, s2);
@@ -801,6 +805,8 @@ LookupTableOptions*
 LookupTableOptionsFree(LookupTableOptions* options)
 
 {
+      sfree(options->phi_pattern);
+   
 	sfree(options);
 	return NULL;
 }
@@ -1102,9 +1108,6 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
 
 PSIBlastOptions* PSIBlastOptionsFree(PSIBlastOptions* psi_options)
 {
-   if (psi_options->isPatternSearch)
-      sfree(psi_options->phi_pattern);
-   
    sfree(psi_options);
    return NULL;
 }
