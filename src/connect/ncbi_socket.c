@@ -1388,6 +1388,18 @@ static EIO_Status s_Write(SOCK        sock,
 }
 
 
+#ifdef SOCK_Create
+#  undef SOCK_Create
+#endif
+extern EIO_Status SOCK_Create(const char*     host,
+                              unsigned short  port, 
+                              const STimeout* timeout,
+                              SOCK*           sock)
+{
+    return SOCK_CreateEx(host, port, timeout, sock, eDefault);
+}
+
+
 extern EIO_Status SOCK_CreateEx(const char*     host,
                                 unsigned short  port,
                                 const STimeout* timeout,
@@ -2062,6 +2074,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.72  2002/12/05 16:31:14  lavr
+ * Define SOCK_Create() as a call
+ *
  * Revision 6.71  2002/12/04 21:01:05  lavr
  * -CORE_LOG[F]_SYS_ERRNO()
  *
