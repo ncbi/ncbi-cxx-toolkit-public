@@ -323,13 +323,18 @@ private:
     };
 
 public:
-    CCgiEntry(const string& value, const string& filename = kEmptyStr,
-              unsigned int position = 0, const string& type = kEmptyStr)
+    CCgiEntry(const string& value,
+              const string& filename = kEmptyStr,
+              unsigned int position = 0,
+              const string& type = kEmptyStr)
         : m_Data(new SData(value, filename, position, type)) { }
-    CCgiEntry(const char* value, const string& filename = kEmptyStr,
-              unsigned int position = 0, const string& type = kEmptyStr)
+    CCgiEntry(const char* value,
+              const string& filename = kEmptyStr,
+              unsigned int position = 0,
+              const string& type = kEmptyStr)
         : m_Data(new SData(value, filename, position, type)) { }
-    CCgiEntry(const CCgiEntry& e) : m_Data(e.m_Data) { }
+    CCgiEntry(const CCgiEntry& e)
+        : m_Data(e.m_Data) { }
 
     const string& GetValue() const
         { return m_Data->m_Value; }
@@ -384,6 +389,41 @@ public:
     SIZE_TYPE find_first_of(const char* s, SIZE_TYPE pos = 0) const
         { return GetValue().find_first_of(s, pos); }
 
+
+    bool operator ==(const CCgiEntry& e2) const
+        {
+            // conservative; some may be irrelevant in many cases
+            return (GetValue() == e2.GetValue() 
+                    &&  GetFilename() == e2.GetFilename()
+                    &&  GetPosition() == e2.GetPosition()
+                    &&  GetContentType() == e2.GetContentType());
+        }
+    
+    bool operator !=(const CCgiEntry& v) const
+        {
+            return !(*this == v);
+        }
+    
+    bool operator ==(const string& v) const
+        {
+            return GetValue() == v;
+        }
+    
+    bool operator !=(const string& v) const
+        {
+            return !(*this == v);
+        }
+    
+    bool operator ==(const char* v) const
+        {
+            return GetValue() == v;
+        }
+    
+    bool operator !=(const char* v) const
+        {
+            return !(*this == v);
+        }
+
 private:
     void x_ForceUnique()
         { if (!m_Data->ReferencedOnlyOnce()) { m_Data = new SData(*m_Data); } }
@@ -393,35 +433,6 @@ private:
 
 
 /* @} */
-
-
-inline
-bool operator ==(const CCgiEntry& e1, const CCgiEntry& e2)
-{
-    // conservative; some may be irrelevant in many cases
-    return (e1.GetValue() == e2.GetValue() 
-            &&  e1.GetFilename() == e2.GetFilename()
-            &&  e1.GetPosition() == e2.GetPosition()
-            &&  e1.GetContentType() == e2.GetContentType());
-}
-
-inline
-bool operator !=(const CCgiEntry& e1, const CCgiEntry& e2)
-{
-    return !(e1 == e2);
-}
-
-inline
-bool operator ==(const CCgiEntry& e, const string& s)
-{
-    return e.GetValue() == s;
-}
-
-inline
-bool operator ==(const CCgiEntry& e, const char* s)
-{
-    return e.GetValue() == s;
-}
 
 inline
 string operator +(const CCgiEntry& e, const string& s)
@@ -770,6 +781,10 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.66  2005/01/06 17:58:42  vasilche
+* Added missing operators !=.
+* All operators == and != moved into class.
+*
 * Revision 1.65  2004/12/13 21:43:38  ucko
 * CCgiEntry: support Content-Type headers from POST submissions.
 *
