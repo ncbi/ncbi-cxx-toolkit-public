@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/09/29 21:45:56  vakatov
+* *** empty log message ***
+*
 * Revision 1.5  1998/09/29 20:26:02  vakatov
 * Redesigning #1
 *
@@ -55,7 +58,7 @@ inline CErr::CErr(EErrSeverity sev, const char* message, bool flush)
 }
 
 inline CErr::~CErr(void) {
-    err.m_Buffer.f_Detach(this);
+    m_Buffer.f_Detach(this);
 }
 
 inline EErrSeverity CErr::f_GetSeverity(void) {
@@ -67,26 +70,8 @@ template<class X> CErr& CErr::operator << (X& x) {
     return *this;
 }
 
-inline CErr& EndMess(CErr& err)  {
-    err.m_Buffer.f_Flush(err);
-    return err;
-}
-
-inline CErr& Info(CErr& err)  {
-    err.m_Buffer.f_Severity(err);
-    return err;
-}
-inline CErr& Warning(CErr& err)  {
-    err.m_Buffer.f_Severity(err);
-    return err;
-}
-inline CErr& Error(CErr& err)  {
-    err.m_Buffer.f_Severity(err);
-    return err;
-}
-inline CErr& Fatal(CErr& err)  {
-    err.m_Buffer.f_Severity(err);
-    return err;
+inline CErr& operator << (CErr& (*f)(CErr&)) {
+    return f(*this);
 }
 
 inline CErr& Reset(CErr& err)  {
@@ -94,42 +79,74 @@ inline CErr& Reset(CErr& err)  {
     return err;
 }
 
+inline CErr& EndMess(CErr& err)  {
+    err.m_Buffer.f_EndMess(err);
+    return err;
+}
+
+inline CErr& Info(CErr& err)  {
+    err.m_Severity = eE_Info;
+    return err << EndMess;
+}
+inline CErr& Warning(CErr& err)  {
+    err.m_Severity = eE_Warning;
+    return err << EndMess;
+}
+inline CErr& Error(CErr& err)  {
+    err.m_Severity = eE_Error;
+    return err << EndMess;
+}
+inline CErr& Fatal(CErr& err)  {
+    err.m_Severity = eE_Fatal;
+    return err << EndMess;
+}
 
 
 
 ///////////////////////////////////////////////////////
 //  CErrBuffer::
 
-CErrBuffer::CErrBuffer(void) {
-    m_Severity = sev;
-    if ( message )
-        m_Buffer << sev;
-    if ( flush )
-        f_Flush();
+inline CErrBuffer::CErrBuffer(void) {
+    m_Err = 0;
 }
 
-template<class X> CErrBuffer& CErrBuffer::operator << (X& x) {
-    m_Buffer << x;
-    return *this;
+inline CErrBuffer::~CErrBuffer(void) {
+    ASSERT( !m_Err );
+    ASSERT( !m_Stream.pcount() );
 }
 
-CErrBuffer& CErrBuffer::f_Clear(void) {
-    VERIFY( !m_Buffer.rdbuf()->seekpos(0); );
-};
-
-CErrBuffer& CErrBuffer::f_Flush(void) {
-    if ( m_Buffer.pcount() ) {
-        VERIFY( f_FlushHook(m_Severity, m_Buffer.str(), m_Buffer.pcount()) );
-        m_Buffer.freeze(false);
-        f_Clear();
+template<class X> void CErrBuffer::f_Put(const CErr& err, X& x) {
+    if (m_Err != &err) {
+        if ( m_Stream.pcount() )
+            f_Flush();
+        m_Err = &err;
     }
-    if (m_Severity == eE_Fatal)
+    m_Stream << x;
+}
+
+inline void CErrBuffer::f_Flush(void) {
+    if ( !m_Err )
+        return;
+
+    EErrSeverity sev = m_Err->f_GetSeverity();
+    if ( m_Stream.pcount() ) {
+        VERIFY( f_FlushHook(sev, m_Stream.str(), m_Stream.pcount()) );
+        m_Stream.freeze(false);
+        f_Reset(m_Err);
+    }
+    if (sev == eE_Fatal)
         abort();
 }
 
-CErrBuffer& CErrBuffer::f_Severity(EErrSeverity sev) {
-    f_Flush();
-    m_Severity = sev;
+inline void CErrBuffer::f_Reset(const CErr& err) {
+    if (&err == m_Err)
+        VERIFY( !m_Stream.rdbuf()->seekpos(0); );
 }
+
+inline void CErrBuffer::f_EndMess(const CErr& err) {
+    if (&err == m_Err)
+        f_Flush();
+}
+
 
 #endif /* def NCBIERR__HPP  &&  ndef NCBIERR__INL */

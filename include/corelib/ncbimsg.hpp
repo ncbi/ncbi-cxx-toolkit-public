@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/09/29 21:45:55  vakatov
+* *** empty log message ***
+*
 * Revision 1.5  1998/09/29 20:26:01  vakatov
 * Redesigning #1
 *
@@ -58,13 +61,16 @@ namespace ncbi_err {
     } EErrSeverity;
 
 
+    //////////////////////////////////////////////////////////////////
+    //
     class CErr {
     public:
         CErr(EErrSeverity sev=eE_Error, const char* message=0,
              bool flush=false);
         ~CErr(void);
 
-        template<class X> CErr& operator << (X& x);  // formatted output
+        template<class X> CErr& operator << (X& x) const;  // formatted output
+        CErr& operator << (CErr& (*f)(CErr&));       // manipulators
 
         // write the error diagnostics to output stream "os"
         static void f_SetStream(ostream& os=cerr);
@@ -73,10 +79,7 @@ namespace ncbi_err {
         // abrupt the application if severity is >= "max_sev"
         static void f_SetDieLevel(EErrSeverity max_sev=eE_Fatal);
 
-        // (for the error stream manipulators)
-        CErr& operator << (CErr& (*f)(CErr&)) { return f(*this); }
-        
-        EErrSeverity f_GetSeverity(void);
+        EErrSeverity f_GetSeverity(void) const;
 
     private:
         EErrSeverity m_Severity;  // severity level for the current message
@@ -85,43 +88,37 @@ namespace ncbi_err {
 
     // Set of output manipulators for CErr
     //
-    inline CErr& Reset  (CErr& e);  // reset the content of current message
-    inline CErr& EndMess(CErr& e);  // write out current message, start new one
+    inline CErr& Reset  (const CErr& err); // reset content of curr. message
+    inline CErr& EndMess(const CErr& err); // flush curr.message, start new one
 
-    inline CErr& Info   (CErr& e);  ///  these 4 manipulators first do a flush 
-    inline CErr& Warning(CErr& e);  ///  and then set severity for the next
-    inline CErr& Error  (CErr& e);  ///  message
-    inline CErr& Fatal  (CErr& e);  ///
+    inline CErr& Info   (CErr& err);  ///  these 4 manipulators first do a
+    inline CErr& Warning(CErr& err);  ///  flush;  then they set severity
+    inline CErr& Error  (CErr& err);  ///  for the next message
+    inline CErr& Fatal  (CErr& err);  ///
+
 
 
     //////////////////////////////////////////////////////////////////
     //
     class CErrBuffer {
         friend class CErr;
-    public:
+        friend CErrBuffer& g_GetErrBuffer(void);
+    private:
+        const CErr* m_Err;     // present user
+        ostrstream  m_Stream;  // content of the current message
+
         CErrBuffer(void);
-        CErrBuffer(EErrSeverity sev, const char* message, bool flush=true);
         ~CErrBuffer(void);
 
-        template<class X> CErrBuffer& operator << (X& x);  // formatted output
-        void f_Clear(void);  // reset current message
-        void f_Flush(void);  // flush out current message
-        // flush curr. message;  then start new one with the specified severity
-        void f_Severity(EErrSeverity sev);
+        // formatted output
+        template<class X> void f_Put(const CErr& err, X& x);
 
-        // write the error diagnostics to output stream "os"
-        extern void f_SetStream(ostream& os=cerr);
-        // do not post messages which severity is less than "min_sev"
-        extern void f_SetPostLevel(EErrSeverity min_sev=eE_Error);
-        // abrupt the application if severity is >= "max_sev"
-        extern void f_SetDieLevel(EErrSeverity max_sev=eE_Fatal);
+        void f_Flush  (void);
+        void f_Reset  (const CErr& err);  // reset current message
+        void f_EndMess(const CErr& err);  // flush out current message
 
-        // (for the error stream manipulators)
-        CErrBuffer& operator << (CErrBuffer& (*f)(CErrBuffer&)) { return f(*this); }
-
-    private:
-        const CErr* m_Err;     // 
-        ostrstream  m_Stream;  // content of the current message
+        // flush & detach the current user
+        void f_Detach(const CErr* err);
     };
 
 
