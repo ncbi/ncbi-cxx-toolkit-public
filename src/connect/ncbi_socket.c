@@ -127,9 +127,8 @@
  */
 #include "ncbi_ansi_ext.h"
 #include "ncbi_priv.h"
-#include <connect/ncbi_buffer.h>
+/* The next header implicitly includes <connect/ncbi_socket.h> */
 #include <connect/ncbi_connutil.h>
-#include <connect/ncbi_socket.h>
 
 
 /* Portable standard C headers
@@ -3920,6 +3919,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.127  2003/09/02 20:59:21  lavr
+ * -<connect/ncbi_buffer.h> [expilictly]
+ *
  * Revision 6.126  2003/08/25 14:51:13  lavr
  * Change log:  typos fixed
  *
