@@ -58,7 +58,7 @@ where:
 </dl>
 Pre-built C++ Toolkit libraries are available for various platforms and compilers, in both
 <i> debug</i> and <i> release </i> mode. To see a list of the available libraries for
-the platform you are working on, consult <i>$NCBI/c++</i>. On the command line, you should
+the platform you are working on, consult <i>$NCBI/c++</i>. On the shell script command line, you should
 follow the library name with the subdirectory <i>/build</i>. For example, on <i>Solaris</i>, 
 the following libraries are currently available:
 
@@ -141,7 +141,8 @@ libraries at NCBI:
 </ul>
 
 <a name="CNcbiApplication">
-<i><b>CNcbiApplication </i></b> is an abstract class used to define the basic functionality and
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbiapp.hpp">
+<i>CNcbiApplication </i></a> is an abstract class used to define the basic functionality and
 behavior of an NCBI application. Because this application class effectively supercedes the
 C-style <i>main()</i> function, minimally, it must provide the same functionality, i.e.
 
@@ -159,8 +160,11 @@ the C Toolkit, namely:
 				application's registry (configuration) file
 </ul>
 
-The <i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> classes are
-included as data members in the application class.<p>
+The mechansim to execute the application is provided by <i>CNcbiApplication</i>'s member
+function <i>Run()</i> - which you must write your own implementation of. The <i>Run()</i> function
+will be automatically invoked by <i>CNcbiApplication::AppMain()</i>, 
+after it has initialized its
+<i> CNcbiArguments, CNcbiEnvironment, CNcbiRegistry</i>, and <i> CNcbiDiag</i> data members.<p>
 
 <a name="CNcbiArguments"> The 
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbienv.hpp">
@@ -280,7 +284,9 @@ now ready to build your first application using:
 <p>
 <center><pre>make -f Makefile.justApp_app </pre></center>
 <p>
-The <i> SCOPE</i> statements are actually macros defined in <i>corelib/ncbistl.hpp</i>: 
+The <i> SCOPE</i> statements are actually macros defined in 
+<a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/lxr/http/source/include/corelib/ncbistl.hpp">
+<i>corelib/ncbistl.hpp</i></a>: 
 <font color = "#000080"><pre>
 #define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
 #define END_NCBI_SCOPE }

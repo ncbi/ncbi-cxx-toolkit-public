@@ -68,7 +68,7 @@ The <i>CRef</i> class essentially provides a pointer interface to a <i>CObject</
 <i>CObject</i> actually stores the data and maintains the reference count to it.  The
 constructor used to create a new <i>CRef</i> pointing to a particular <i>CObject</i>
 automatically increments the object's reference count. Similarly, the <i>CRef</i> destructor
-automatically decrements the reference count. In both cases however, the mutation of the
+automatically decrements the reference count. In both cases however, the modification of the
 reference count is implemented by a member function of the <i>CObject</i>.  The <i>CRef</i>
 class itself does not have direct access to the reference count and contains only a single data
 member --the pointer to the <i>CObject</i>. In addition to the <i>CRef</i> class's constructors and
@@ -125,7 +125,7 @@ the <i>CObject</i> class, that provide the necessary richness in representation 
 allocation required for the widely diverse set of objects implemented in the NCBI
 C++ Toolkit. Nevertheless, it is often necessary to use smart pointers on simple data types,
 suchs as <i>int</i>, <i>string</i> etc. The <i>CObjectFor</i> class, described below, was
-defined for this purpose.
+designed for this purpose.
 
 <p>
 <a name="exmpl"> <h3>Using smart pointers for standard types: The <i>CObjectFor</i> class</h3>
