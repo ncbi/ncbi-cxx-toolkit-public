@@ -33,10 +33,6 @@
 
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
-#include <html/commentdiag.hpp>
-
-#include <serial/objistrxml.hpp>
-#include <serial/objostrxml.hpp>
 #include <serial/soap/soap_message.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -52,7 +48,7 @@ typedef bool (CSoapServerApplication::*TSoapServerCallback)(
 class CSoapServerApplication : public CCgiApplication
 {
 public:
-    typedef vector<TSoapServerCallback> TListeners;
+    typedef vector<TSoapServerCallback*> TListeners;
 
     CSoapServerApplication(const string& wsdl_filename,
                            const string& namespace_name);
@@ -62,9 +58,10 @@ public:
     const string& GetDefaultNamespaceName(void) const;
     void SetWsdlFilename(const string& wsdl_filename);
 
-    void AddMessageListener(const string& message_name,
-                            const string& namespace_name,
-                            TSoapServerCallback listener);
+    void RegisterObjectType(TTypeInfoGetter type_getter);
+    void AddMessageListener(TSoapServerCallback* listener,
+                            const string& message_name,
+                            const string& namespace_name = kEmptyStr);
 
 private:
     bool x_ProcessWsdlRequest(CCgiResponse& response,
@@ -78,6 +75,7 @@ private:
 
     string m_DefNamespace;
     string m_Wsdl;
+    vector< TTypeInfoGetter >  m_Types;
     multimap<string, pair<string, TListeners > > m_Listeners;
 };
 

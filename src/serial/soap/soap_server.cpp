@@ -33,6 +33,10 @@
 
 #include <ncbi_pch.hpp>
 #include <serial/soap/soap_server.hpp>
+#include <html/commentdiag.hpp>
+
+#include <serial/objistrxml.hpp>
+#include <serial/objostrxml.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -103,6 +107,10 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
 {
 // read request
     CSoapMessage soap_in;
+    vector< TTypeInfoGetter >::iterator types_in;
+    for (types_in = m_Types.begin(); types_in != m_Types.end(); ++types_in) {
+        soap_in.RegisterObjectType(*types_in);
+    }
     CObjectIStream *is = CObjectIStream::Open(eSerial_Xml,*request.GetInputStream());
     *is >> soap_in;
 
@@ -115,7 +123,7 @@ CSoapServerApplication::x_ProcessSoapRequest(CCgiResponse& response,
     if (listeners) {
         TListeners::const_iterator it;
         for (it = listeners->begin(); it != listeners->end(); ++it) {
-        const TSoapServerCallback listener = *it;
+        const TSoapServerCallback listener = **it;
             if (!(this->*listener)(soap_out, soap_in)) {
                 break;
             }
@@ -172,9 +180,17 @@ CSoapServerApplication::x_FindListenersByName(const string& message_name,
 }
 
 void
-CSoapServerApplication::AddMessageListener(const string& message_name,
-                                           const string& namespace_name,
-                                           TSoapServerCallback listener)
+CSoapServerApplication::RegisterObjectType(TTypeInfoGetter type_getter)
+{
+    if (find(m_Types.begin(), m_Types.end(), type_getter) == m_Types.end()) {
+        m_Types.push_back(type_getter);
+    }
+}
+
+void
+CSoapServerApplication::AddMessageListener(TSoapServerCallback* listener,
+                                           const string& message_name,
+                                           const string& namespace_name)
 {
     string ns(namespace_name);
     if (ns.empty()) {
@@ -187,8 +203,7 @@ CSoapServerApplication::AddMessageListener(const string& message_name,
         TListeners new_listeners;
         new_listeners.push_back(listener);
         m_Listeners.insert(
-            pair<string const, pair<string, TListeners > >(message_name,
-                pair<string, TListeners >(ns,new_listeners)));
+            pair<string const, pair<string,TListeners> >(message_name, make_pair(ns,new_listeners)));
     }
 }
 
@@ -198,6 +213,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/06/25 17:24:00  gouriano
+* Added incoming object types registration. Corrected for GCC 2.95
+*
 * Revision 1.2  2004/06/24 20:53:10  gouriano
 * Set default namespace in SoapMessage
 *
