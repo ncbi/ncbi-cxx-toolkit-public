@@ -78,6 +78,17 @@ bool CByteSourceReader::EndOfData(void) const
 }
 
 
+bool CByteSourceReader::Pushback(const char* /*data*/, size_t size)
+{
+    if ( size ) {
+        ERR_POST("CByteSourceReader::Pushback: "
+                 "cannot push back " << size << " bytes");
+        return false;
+    }
+    return true;
+}
+
+
 CRef<CSubSourceCollector>
 CByteSourceReader::SubSource(size_t /*prevent*/,
                              CRef<CSubSourceCollector> parent)
@@ -170,6 +181,13 @@ size_t CStreamByteSourceReader::Read(char* buffer, size_t bufferLength)
 bool CStreamByteSourceReader::EndOfData(void) const
 {
     return m_Stream->eof();
+}
+
+
+bool CStreamByteSourceReader::Pushback(const char* data, size_t size)
+{
+    CStreamUtils::Pushback(*m_Stream, data, size);
+    return true;
 }
 
 
@@ -637,6 +655,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2003/11/19 15:40:09  vasilche
+ * Added possibility to pushback data to CByteSourceReader.
+ *
  * Revision 1.30  2003/10/20 21:18:18  ivanov
  * Get rid of compilation warning
  *

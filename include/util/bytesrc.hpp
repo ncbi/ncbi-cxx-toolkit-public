@@ -80,6 +80,9 @@ public:
     virtual CRef<CSubSourceCollector> 
         SubSource(size_t prepend, CRef<CSubSourceCollector> parent);
 
+    // push back some data in source, return true if successful
+    virtual bool Pushback(const char* data, size_t size);
+
 private:
     CByteSourceReader(const CByteSourceReader&);
     CByteSourceReader& operator=(const CByteSourceReader&);
@@ -180,6 +183,7 @@ public:
 
     size_t Read(char* buffer, size_t bufferLength);
     bool EndOfData(void) const;
+    bool Pushback(const char* data, size_t size);
 
 protected:
     CConstRef<CByteSource> m_Source;
@@ -462,6 +466,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.22  2003/11/19 15:40:09  vasilche
+ * Added possibility to pushback data to CByteSourceReader.
+ *
  * Revision 1.21  2003/10/14 18:28:33  vasilche
  * Added full set of explicit constructors/destructors to all readers and sources.
  * Added CWriterCopyByteSourceReader for copying data from another reader object.
