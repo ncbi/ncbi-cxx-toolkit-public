@@ -82,7 +82,7 @@ bool CMySQL_LangCmd::Send()
     
     int nof_Rows = mysql_affected_rows(&this->m_Connect->m_MySQL);
     m_HasResults = nof_Rows == -1 || nof_Rows > 0;
-    return ! HasFailed();
+    return true;
 }
 
 
@@ -160,6 +160,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/06/06 16:02:53  butanaev
+ * Fixed return value of Send - it should return true.
+ *
  * Revision 1.6  2003/06/05 16:02:48  soussov
  * adds code for DumpResults and for the dumped results processing
  *
