@@ -88,6 +88,12 @@ CNcbiOstream& operator<<(CNcbiOstream& os, const TPhyTreeNode& tree);
 NCBI_XALGOPHYTREE_EXPORT
 void PrintNode(CNcbiOstream& os, const TPhyTreeNode& node);
 
+/// Newick format input.
+///
+/// Uses flex/bison lexer/parser.
+NCBI_XALGOPHYTREE_EXPORT
+TPhyTreeNode *ReadNewickTree(CNcbiIstream& is);
+
 END_NCBI_SCOPE
 
 
@@ -95,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/02/11 17:54:43  jcherry
+ * Added parser for Newick format tree files
+ *
  * Revision 1.2  2004/02/10 17:02:29  dicuccio
  * Formatting changes.  Added export specifiers
  *

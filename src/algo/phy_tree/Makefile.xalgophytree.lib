@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = phy_node dist_methods phy_tree_serial
+SRC = phy_node dist_methods phy_tree_serial lex.newick newick.tab
 LIB = xalgophytree
 
 CXXFLAGS = $(FAST_CXXFLAGS)
