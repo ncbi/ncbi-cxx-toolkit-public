@@ -223,7 +223,7 @@ void CAlignShadow<TId>::x_InitFromString(const char* str)
 //////////////////////////////////////////////////////////////////////////////
 // getters and  setters
 
-template<class TId> inline
+template<class TId>
 const TId& CAlignShadow<TId>::GetId(unsigned char where) const
 {
     if(0 != where && where != 1) {
@@ -234,21 +234,21 @@ const TId& CAlignShadow<TId>::GetId(unsigned char where) const
 }
 
 
-template<class TId> inline
+template<class TId>
 const TId& CAlignShadow<TId>::GetQueryId(void) const
 {
     return m_Id[0];
 }
 
 
-template<class TId> inline
+template<class TId>
 const TId& CAlignShadow<TId>::GetSubjId(void) const
 {
     return m_Id[1];
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetId(unsigned char where, const TId& id)
 {
     if(0 != where && where != 1) {
@@ -259,21 +259,21 @@ void CAlignShadow<TId>::SetId(unsigned char where, const TId& id)
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetQueryId(const TId& id)
 {
     m_Id[0] = id;
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetSubjId(const TId& id)
 {
     m_Id[1] = id;
 }
 
 
-template<class TId> inline
+template<class TId>
 bool  CAlignShadow<TId>::GetStrand(unsigned char where) const
 {
     if(0 != where && where != 1) {
@@ -284,21 +284,21 @@ bool  CAlignShadow<TId>::GetStrand(unsigned char where) const
 }
 
 
-template<class TId> inline
+template<class TId>
 bool CAlignShadow<TId>::GetQueryStrand(void) const
 {
     return m_Strand[0];
 }
 
 
-template<class TId> inline
+template<class TId>
 bool CAlignShadow<TId>::GetSubjStrand(void) const
 {
     return m_Strand[1];
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetStrand(unsigned char where, bool strand)
 {
     if(0 != where && where != 1) {
@@ -309,28 +309,28 @@ void CAlignShadow<TId>::SetStrand(unsigned char where, bool strand)
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetQueryStrand(bool strand)
 {
     m_Strand[0] = strand;
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetSubjStrand(bool strand)
 {
     m_Strand[1] = strand;
 }
 
 
-template<class TId> inline
+template<class TId>
 const Uint4* CAlignShadow<TId>::GetBox(void) const
 {
     return m_Box;
 }
  
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetMin(unsigned char where) const
 {
     if(0 != where && where != 1) {
@@ -341,7 +341,7 @@ Uint4 CAlignShadow<TId>::GetMin(unsigned char where) const
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetMax(unsigned char where) const
 {
     if(0 != where && where != 1) {
@@ -352,42 +352,42 @@ Uint4 CAlignShadow<TId>::GetMax(unsigned char where) const
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetQueryMin(void) const
 {
     return m_Box[0];
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetQueryMax(void) const
 {
     return m_Box[1];
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetSubjMin(void) const
 {
     return m_Box[2];
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetSubjMax(void) const
 {
     return m_Box[3];
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetBox(const Uint4 box [4])
 {
     copy(box, box + 4, m_Box);
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetMax(unsigned char where, Uint4 val)
 {
     if(0 != where && where != 1) {
@@ -398,7 +398,7 @@ void CAlignShadow<TId>::SetMax(unsigned char where, Uint4 val)
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetMin(unsigned char where, Uint4 val)
 {
     if(0 != where && where != 1) {
@@ -409,112 +409,112 @@ void CAlignShadow<TId>::SetMin(unsigned char where, Uint4 val)
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetQueryMin(Uint4 val)
 {
     m_Box[0] = val;
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetQueryMax(Uint4 val)
 {
      m_Box[1] = val;
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetSubjMin(Uint4 val)
 {
     m_Box[2] = val;
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetSubjMax(Uint4 val)
 {
     m_Box[3] = val;
 }
 
 
-template<class TId> inline
+template<class TId>
 void  CAlignShadow<TId>::SetLength(Uint4 length)
 {
     m_Length = length;
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetLength(void) const
 {
     return m_Length;
 }
 
 
-template<class TId> inline
+template<class TId>
 void  CAlignShadow<TId>::SetMismatches(Uint4 mismatches)
 {
     m_Mismatches = mismatches;
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetMismatches(void) const
 {
     return m_Mismatches;
 }
 
 
-template<class TId> inline
+template<class TId>
 void  CAlignShadow<TId>::SetGaps(Uint4 gaps)
 {
     m_Gaps = gaps;
 }
 
 
-template<class TId> inline
+template<class TId>
 Uint4 CAlignShadow<TId>::GetGaps(void) const
 {
     return m_Gaps;
 }
 
 
-template<class TId> inline
+template<class TId>
 void CAlignShadow<TId>::SetEValue(double evalue)
 {
     m_EValue = evalue;
 }
  
 
-template<class TId> inline
+template<class TId>
 double CAlignShadow<TId>::GetEValue(void) const
 {
     return m_EValue;
 }
 
 
-template<class TId> inline
+template<class TId>
 void   CAlignShadow<TId>::SetIdentity(float identity)
 {
     m_Identity = identity;
 }
 
 
-template<class TId> inline
+template<class TId>
 float CAlignShadow<TId>::GetIdentity(void) const
 {
     return m_Identity;
 }
 
 
-template<class TId> inline
+template<class TId>
 void   CAlignShadow<TId>::SetScore(float score)
 {
     m_Score = score;
 }
 
 
-template<class TId> inline
+template<class TId>
 float CAlignShadow<TId>::GetScore(void) const
 {
     return m_Score;
@@ -578,6 +578,10 @@ END_NCBI_SCOPE
 
 /* 
  * $Log$
+ * Revision 1.7  2005/03/07 19:05:45  ucko
+ * Don't mark methods that should be visible elsewhere as inline.
+ * (In that case, their definitions would need to be in the header.)
+ *
  * Revision 1.6  2004/12/22 22:14:18  kapustin
  * Move static messages to CSimpleMessager to satisfy Solaris/forte6u2
  *
