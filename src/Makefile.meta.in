@@ -28,7 +28,7 @@ if test ! -z "$(USR_PROJ)" ; then \
    x_project="$(USR_PROJ)" ; \
    for i in $$x_project ; do \
 		$(MAKE) -f "Makefile.$$i" builddir="@builddir@" srcdir="$(srcdir)" $(MFLAGS)
-USRP_KET = ; \
+USRP_KET = ||  exit 1 ; \
    done ; \
 fi
 
@@ -37,7 +37,7 @@ if test ! -z "$(LIB_PROJ)" ; then \
    x_project="$(LIB_PROJ)" ; \
    for i in $$x_project ; do \
 		$(MAKE) -f "@builddir@/Makefile.lib.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
-LIBP_KET = ; \
+LIBP_KET = ||  exit 2 ; \
    done ; \
 fi
 
@@ -46,7 +46,7 @@ if test ! -z "$(APP_PROJ)" ; then \
    x_project="$(APP_PROJ)" ; \
    for i in $$x_project ; do \
 		$(MAKE) -f "@builddir@/Makefile.app.tmpl" srcdir="$(srcdir)" TMPL="$$i" $(MFLAGS)
-APPP_KET = ; \
+APPP_KET = ||  exit 3 ; \
    done ; \
 fi
 
@@ -64,7 +64,7 @@ purge:
 	@$(APPP_BRA) purge $(APPP_KET)
 
 
-### Recursive build -- in the [SUBPROJ] directories
+### Recursive build -- in the [SUB_PROJ] directories
 
 SUB_BRA = \
 if test ! -z "$(SUB_PROJ)" ; then \
@@ -73,9 +73,10 @@ if test ! -z "$(SUB_PROJ)" ; then \
 		( if test -d $$i ; then \
           cd $$i  &&  $(MAKE) $(MFLAGS)
 
-SUB_KET = ; else \
+SUB_KET = ||  exit 4 ; \
+        else \
           echo "Warning:  non-existent sub-project \"$$i\"" ; \
-        fi ) ; \
+        fi ) ||  exit 5 ; \
 	done ; \
 fi
 
