@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  1999/06/11 20:30:26  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.13  1999/06/03 21:47:20  vakatov
 * CCgiApplication::LoadConfig():  patch for R1.12
 *
@@ -115,7 +119,7 @@ int CCgiApplication::Run(void)
                 try {
                     iterations = NStr::StringToInt(param);
                 }
-                catch ( exception e ) {
+                catch ( exception& e ) {
                     ERR_POST("\
 CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                     iterations = 2;
@@ -165,7 +169,7 @@ CCgiApplication::Run: bad FastCGI:Iterations value: " << param);
                 _TRACE("CCgiApplication::Run: calling ProcessRequest");
                 FCGX_SetExitStatus(ProcessRequest(*ctx), pfout);
             }
-            catch (exception e) {
+            catch (exception& e) {
                 ERR_POST("CCgiApplication::ProcessCGIRequest() failed: "
                          << e.what());
                 // ignore for next iteration

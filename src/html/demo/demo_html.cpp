@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1999/06/11 20:30:32  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.6  1999/06/09 16:32:34  vasilche
 * Fixed warning under MS VS
 *
@@ -97,7 +101,7 @@ int Demo(void)
         return 0;  
     }
     // check to see if there were any errors
-    catch (exception exc) { 
+    catch (exception& exc) { 
         // deallocate memory in case of error
         delete Html;
         delete Body;

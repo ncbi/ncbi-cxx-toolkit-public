@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1999/06/11 20:30:34  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.11  1999/05/11 02:54:01  vakatov
 * Moved CGI API from "corelib/" to "cgi/"
 *
@@ -120,7 +124,7 @@ int CMyApp::ProcessRequest(CCgiContext& ctx)
         Page->Print(ctx.GetResponse().out());
         return 0;
     }
-    catch (exception exc) {
+    catch (exception& exc) {
         NcbiCerr << "\n" << exc.what() << NcbiEndl;
         return 1;
     }

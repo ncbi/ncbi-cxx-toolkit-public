@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/06/11 20:30:30  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.15  1999/06/07 15:21:05  vasilche
 * Fixed some warnings.
 *
@@ -126,7 +130,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
             try {
                 m_DisplayPage = NStr::StringToInt(page) - 1;
                 m_PageChanged = true;
-            } catch (exception e) {
+            } catch (exception& e) {
                 _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
                         << e.what() );
                 // ignore exception right now
@@ -142,7 +146,7 @@ CPager::CPager(CCgiRequest& request, int pageBlockSize, int defaultPageSize)
         if ( page != entries.end() ) {
             try {
                 m_DisplayPage = NStr::StringToInt(page->second);
-            } catch (exception e) {
+            } catch (exception& e) {
                 _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
                         << e.what() );
                 m_DisplayPage = 0;
@@ -183,7 +187,7 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
             try {
                 NStr::StringToInt(page);
                 return true;
-            } catch (exception e) {
+            } catch (exception& e) {
                 _TRACE( "Exception in CQSearchCommand::GetDisplayRange: "
                         << e.what() );
                 // ignore exception right now
@@ -206,7 +210,7 @@ int CPager::GetDisplayPage(CCgiRequest& request)
                 return displayPage;
 
             _TRACE( "Negative page start in CQSearchCommand::GetDisplayRange: " << displayPage );
-        } catch (exception e) {
+        } catch (exception& e) {
             _TRACE( "Exception in CQSearchCommand::GetPageSize " << e.what() );
         }
     }
@@ -225,7 +229,7 @@ int CPager::GetPageSize(CCgiRequest& request, int defaultPageSize)
             if ( pageSize > 0 )
                 return pageSize;
             _TRACE( "Nonpositive page size in CQSearchCommand::GetDisplayRange: " << pageSize );
-        } catch (exception e) {
+        } catch (exception& e) {
             _TRACE( "Exception in CQSearchCommand::GetPageSize " << e.what() );
         }
     }

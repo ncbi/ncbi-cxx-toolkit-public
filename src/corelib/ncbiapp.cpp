@@ -32,6 +32,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  1999/06/11 20:30:37  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.17  1999/05/04 00:03:12  vakatov
 * Removed the redundant severity arg from macro ERR_POST()
 *
@@ -141,7 +145,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
     try {
         Init();
     }
-    catch (exception e) {
+    catch (exception& e) {
         ERR_POST("CCgiApplication::Init() failed: " << e.what());
         return -1;
     }
@@ -151,7 +155,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
     try {
         res = Run();
     }
-    catch (exception e) {
+    catch (exception& e) {
         ERR_POST("CCgiApplication::Run() failed: " << e.what());
         res = -1;
     }
@@ -160,7 +164,7 @@ int CNcbiApplication::AppMain(int argc, char** argv)
     try {
         Exit();
     }
-    catch (exception e) {
+    catch (exception& e) {
         ERR_POST("CCgiApplication::Exit() failed: " << e.what());
     }
 

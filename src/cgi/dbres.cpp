@@ -31,6 +31,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/06/11 20:30:27  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.3  1999/05/24 15:14:56  golikov
 * class CNcbiRelocateCommand added
 *
@@ -211,7 +215,7 @@ void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
         ctx.GetResponse().SetHeaderValue("Location", url);
         ctx.GetResponse().WriteHeader();
     }
-    catch (exception e) {
+    catch (exception& e) {
         ERR_POST("CNcbiRelocateCommand::Execute error getting url");
         throw;
     }

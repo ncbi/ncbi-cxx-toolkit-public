@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.45  1999/06/11 20:30:29  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
 * Revision 1.44  1999/06/09 20:57:58  golikov
 * RowSpan fixed by Vasilche
 *
@@ -567,7 +571,7 @@ CHTML_table::TIndex CHTML_table::sx_GetSpan(const CNCBINode* node,
     try {
         span = NStr::StringToUInt(node->GetAttribute(attributeName));
     }
-    catch ( runtime_error err ) {
+    catch ( runtime_error& err ) {
         if ( info )
             info->m_BadSpan = true;
         return 1;
