@@ -253,8 +253,8 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,int/*bool*/ drop_unread)
 
         if (status == eIO_Success) {
             assert(uuu->pending == 0);
-            /* shutdown the socket for writing */
-            SOCK_Shutdown(uuu->sock, eIO_Write);
+            /* shutdown the socket for writing      */
+            /* SOCK_Shutdown(uuu->sock, eIO_Write); */
             break;
         }
 
@@ -935,6 +935,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.48  2003/05/19 21:03:50  lavr
+ * Remove SOCK_Shutdown() temporarily
+ *
  * Revision 6.47  2003/05/19 16:48:39  lavr
  * Pending HTTP body write implemented ({0,0}-timeout tolerant)
  *
