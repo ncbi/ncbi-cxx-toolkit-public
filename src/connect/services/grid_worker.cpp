@@ -252,9 +252,16 @@ CGridWorkerNode::~CGridWorkerNode()
 
 void CGridWorkerNode::Start()
 {
-    m_NSReadClient.reset(CreateClient());
-    m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_MaxThreads));
-    m_ThreadsPool->Spawn(m_InitThreads);
+    try {
+        m_NSReadClient.reset(CreateClient());
+        m_ThreadsPool.reset(new CStdPoolOfThreads(m_MaxThreads, m_MaxThreads));
+        m_ThreadsPool->Spawn(m_InitThreads);
+    }
+    catch (exception& ex) {
+        LOG_POST(Error << ex.what());
+        RequestShutdown(CNetScheduleClient::eShutdownImmidiate);
+        return;
+    }
 
     string    job_key;
     string    input;
@@ -341,6 +348,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2005/04/05 15:16:20  didenko
+ * Fixed a bug that in some cases can lead to a core dump
+ *
  * Revision 1.5  2005/03/28 14:40:17  didenko
  * Cosmetics
  *

@@ -33,6 +33,7 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_config.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <connect/services/netcache_client.hpp>
 #include <connect/services/netschedule_client.hpp>
 #include <connect/services/grid_worker_app.hpp>
@@ -250,15 +251,19 @@ int CGridWorkerApp::Run(void)
     CRef<CGridWorkerNodeThread> worker_thread(
                                 new CGridWorkerNodeThread(*m_WorkerNode));
     worker_thread->Run();
-    LOG_POST(Info 
-        << "Grid Worker Node \"" << GetJobFactory().GetJobVersion() 
-        << "\" is started.\n"
-        << "Waiting for jobs on UDP port " << udp_port << "\n"
-        << "Waiting for control commands on TCP port " << control_port << "\n"
-        << "Maximum job threads is " << max_threads << "\n");
+    // give sometime the thread to run
+    SleepMilliSec(500);
+    if (m_WorkerNode->GetShutdownLevel() == CNetScheduleClient::eNoShutdown) {
+        LOG_POST(Info 
+                 << "Grid Worker Node \"" << GetJobFactory().GetJobVersion() 
+                 << "\" is started.\n"
+                 << "Waiting for jobs on UDP port " << udp_port << "\n"
+                 << "Waiting for control commands on TCP port " << control_port << "\n"
+                 << "Maximum job threads is " << max_threads << "\n");
 
-    CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
-    control_server.Run();
+        CWorkerNodeThreadedServer control_server(control_port, *m_WorkerNode);
+        control_server.Run();
+    }
     worker_thread->Join();
     }}
 
@@ -278,6 +283,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2005/04/05 15:16:20  didenko
+ * Fixed a bug that in some cases can lead to a core dump
+ *
  * Revision 1.6  2005/03/28 14:39:43  didenko
  * Removed signal handling
  *
