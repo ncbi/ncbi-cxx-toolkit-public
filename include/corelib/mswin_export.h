@@ -162,6 +162,7 @@
 #  define NCBI_XALGOGNOMON_EXPORTS
 #  define NCBI_XALGOPHYTREE_EXPORTS
 #  define NCBI_XALGOSEQQA_EXPORTS
+#  define NCBI_XALGOWINMASK_EXPORTS
 #endif
 
 /*
@@ -764,6 +765,15 @@
 #endif
 
 /*
+ * Export specifier for library xalgoseqqa
+ */
+#ifdef NCBI_XALGOWINMASK_EXPORTS
+#  define NCBI_XALGOWINMASK_EXPORT __declspec(dllexport)
+#else
+#  define NCBI_XALGOWINMASK_EXPORT __declspec(dllimport)
+#endif
+
+/*
  * Export specifier for library xalnmgr
  */
 #ifdef NCBI_XALNMGR_EXPORTS
@@ -1034,24 +1044,24 @@
  */
 
 #  define NCBI_ACCESS_EXPORT
-#  define NCBI_BDB_EXPORT
 #  define NCBI_BDB_CACHE_EXPORT
+#  define NCBI_BDB_EXPORT
 #  define NCBI_BIBLIO_EXPORT
 #  define NCBI_BIOTREE_EXPORT
 #  define NCBI_BLASTDB_EXPORT
 #  define NCBI_BLAST_EXPORT
 #  define NCBI_CDD_EXPORT
 #  define NCBI_CN3D_EXPORT
-#  define NCBI_DBAPIDRIVER_EXPORT
 #  define NCBI_DBAPIDRIVER_CTLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_DBLIB_EXPORT
+#  define NCBI_DBAPIDRIVER_EXPORT
+#  define NCBI_DBAPIDRIVER_FTDS_EXPORT
 #  define NCBI_DBAPIDRIVER_MSDBLIB_EXPORT
 #  define NCBI_DBAPIDRIVER_MYSQL_EXPORT
 #  define NCBI_DBAPIDRIVER_ODBC_EXPORT
-#  define NCBI_DBAPIDRIVER_FTDS_EXPORT
-#  define NCBI_DBAPI_EXPORT
-#  define NCBI_DBAPI_CACHE_EXPORT
 #  define NCBI_DBAPIUTIL_BLOBSTORE_EXPORT
+#  define NCBI_DBAPI_CACHE_EXPORT
+#  define NCBI_DBAPI_EXPORT
 #  define NCBI_DOCSUM_EXPORT
 #  define NCBI_ENTREZ2_EXPORT
 #  define NCBI_ENTREZGENE_EXPORT
@@ -1096,9 +1106,9 @@
 #  define NCBI_XALGOALIGN_EXPORT
 #  define NCBI_XALGOGNOMON_EXPORT
 #  define NCBI_XALGOPHYTREE_EXPORT
-#  define NCBI_XALGOSEQ_EXPORT
 #  define NCBI_XALGOSEQQA_EXPORT
-#  define NCBI_XALGO_EXPORT
+#  define NCBI_XALGOSEQ_EXPORT
+#  define NCBI_XALGOWINMASK_EXPORT
 #  define NCBI_XALNMGR_EXPORT
 #  define NCBI_XALNUTIL_EXPORT
 #  define NCBI_XBLASTFORMAT_EXPORT
@@ -1153,6 +1163,9 @@
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.93  2005/02/12 19:14:34  dicuccio
+ * Added export specifiers for xalgowinmask.
+ *
  * Revision 1.92  2005/01/25 17:37:29  jianye
  * Added NCBI_XBLASTFORMAT_EXPORT
  *
