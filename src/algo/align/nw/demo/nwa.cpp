@@ -43,15 +43,17 @@ void CAppNWA::Init()
     auto_ptr<CArgDescriptions> argdescr(new CArgDescriptions);
     argdescr->SetUsageContext(GetArguments().GetProgramName(),
                               "Global alignment application.\n"
-                              "Build 1.00.13 - 03/17/03");
+                              "Build 1.00.14 - 04/14/03");
 
     argdescr->AddDefaultKey
         ("matrix", "matrix", "scoring matrix",
          CArgDescriptions::eString, "nucl");
 
     argdescr->AddFlag("mrna2dna",
-                      "mRna vs. Dna alignment with free end gaps on the "
-                      "first (mRna) sequence" );
+                      "mRna vs. Dna alignment "
+                      "(consider also specifying -esf zzxx)" );
+
+    argdescr->AddFlag("guides", "Use guides during mRna2Dna alignment" );
 
     argdescr->AddKey
         ("seq1", "seq1",
@@ -180,6 +182,7 @@ void CAppNWA::x_RunOnPair() const
     const bool bMM = args["mm"];
     const bool bMT = args["mt"];
     const bool bMrna2Dna = args["mrna2dna"];
+    const bool bGuides = args["guides"];
 
     bool   output_type1  ( args["o1"] );
     bool   output_type2  ( args["o2"] );
@@ -205,6 +208,12 @@ void CAppNWA::x_RunOnPair() const
                    eInconsistentParameters,
                    "Linear memory approach is not yet supported for the "
                    "spliced alignment algorithm");
+    }
+     
+    if(!bMrna2Dna && bGuides) {
+        NCBI_THROW(CAppNWAException,
+                   eInconsistentParameters,
+                   "Guides are only supported in mRna2Dna mode" );
     }
      
     if(bMT && !bMM) {
@@ -258,6 +267,10 @@ void CAppNWA::x_RunOnPair() const
         aligner_mrna2dna->SetWi (2, args["Wi2"]. AsInteger());
 
         aligner_mrna2dna->SetIntronMinSize(args["IntronMinSize"]. AsInteger());
+
+        if(bGuides) {
+            aligner_mrna2dna->MakeGuides();
+        }
     }
 
     if(bMT && bMM) {
@@ -332,7 +345,9 @@ void CAppNWA::x_RunOnPair() const
         *pofsExons << s;
     }
     
-    if(!output_type1 && !output_type2 && !output_asn && !output_fasta) {
+    if(!output_type1 && !output_type2
+       && !output_asn && !output_fasta
+       && !output_exons) {
         aligner->FormatAsText(&s, CNWAligner::eFormatType2, line_width);
         cout << s;
     }
@@ -345,11 +360,8 @@ void CAppNWA::Exit()
 }
 
 
-bool CAppNWA::x_ReadFastaFile
-(const string& filename,
- string*       seqname,
- vector<char>* sequence)
-    const
+bool CAppNWA::x_ReadFastaFile (const string& filename, string* seqname,
+                               vector<char>* sequence) const
 {
     vector<char>& vOut = *sequence;
     vOut.clear();
@@ -384,6 +396,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/04/14 19:00:55  kapustin
+ * Add guide creation facility.  x_Run() -> x_Align()
+ *
  * Revision 1.16  2003/04/02 20:53:31  kapustin
  * Add exon table output format
  *

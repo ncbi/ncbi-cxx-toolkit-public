@@ -118,23 +118,6 @@ CNWAligner::CNWAligner( const char* seq1, size_t len1,
                    eBadParameter,
                    "NULL sequence pointer(s) passed");
     }
-    /*
-    if(!len1 || !len2) {
-        NCBI_THROW(
-                   CNWAlignerException,
-                   eBadParameter,
-                   "Zero length specified for sequence(s)");
-    }
-    */
-
-    if(!x_CheckMemoryLimit()) {
-        NCBI_THROW(
-                   CNWAlignerException,
-                   eMemoryLimit,
-                   "Memory limit exceeded");
-    }
-
-    x_LoadScoringMatrix();
 
     size_t iErrPos1 = x_CheckSequence(seq1, len1);
     if(iErrPos1 < len1) {
@@ -192,9 +175,9 @@ const unsigned char kMaskEc  = 0x0002;
 const unsigned char kMaskE   = 0x0004;
 const unsigned char kMaskD   = 0x0008;
 
-CNWAligner::TScore CNWAligner::x_Run(const char* seg1, size_t len1,
-                                     const char* seg2, size_t len2,
-                                     vector<ETranscriptSymbol>* transcript)
+CNWAligner::TScore CNWAligner::x_Align(const char* seg1, size_t len1,
+                                       const char* seg2, size_t len2,
+                                       vector<ETranscriptSymbol>* transcript)
 {
     const size_t N1 = len1 + 1;
     const size_t N2 = len2 + 1;
@@ -337,37 +320,49 @@ CNWAligner::TScore CNWAligner::x_Run(const char* seg1, size_t len1,
 
 CNWAligner::TScore CNWAligner::Run()
 {
+    
+    if(!x_CheckMemoryLimit()) {
+        NCBI_THROW(
+                   CNWAlignerException,
+                   eMemoryLimit,
+                   "Memory limit exceeded");
+    }
     x_LoadScoringMatrix();
+    m_score = x_Run();
+
+    return m_score;
+}
+
+
+CNWAligner::TScore CNWAligner::x_Run()
+{
     if(m_guides.size() == 0) {
-        m_score = x_Run(m_Seq1, m_SeqLen1, m_Seq2, m_SeqLen2, &m_Transcript);
+        m_score = x_Align(m_Seq1, m_SeqLen1, m_Seq2, m_SeqLen2, &m_Transcript);
     }
     else {
         m_Transcript.clear();
         // run the algorithm for every segment between hits
-        size_t guides_dim = m_guides.size();
-        size_t guides_half = guides_dim / 2;
+        size_t guides_dim = m_guides.size() / 4;
         size_t q1 = m_SeqLen1, q0, s1 = m_SeqLen2, s0;
         vector<ETranscriptSymbol> trans;
-        for(size_t i = guides_half; i != 0; i -= 2) {
-            q0 = m_guides[i - 1] + 1;
-            s0 = m_guides[i + guides_half - 1] + 1;
+        for(size_t i = 4*guides_dim; i != 0; i -= 4) {
+            q0 = m_guides[i - 3] + 1;
+            s0 = m_guides[i - 1] + 1;
             size_t dim_query = q1 - q0, dim_subj = s1 - s0;
-            x_Run(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
+            x_Align(m_Seq1 + q0, dim_query, m_Seq2 + s0, dim_subj, &trans);
             copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
-            size_t dim_hit = m_guides[i - 1] - m_guides[i - 2] + 1;
+            size_t dim_hit = m_guides[i - 3] - m_guides[i - 4] + 1;
             for(size_t k = 0; k < dim_hit; ++k) {
                 m_Transcript.push_back(eMatch);
             }
-            q1 = m_guides[i - 2];
-            s1 = m_guides[i + guides_half - 2];
+            q1 = m_guides[i - 4];
+            s1 = m_guides[i - 2];
             trans.clear();
         }
-        x_Run(m_Seq1, q1, m_Seq2, s1, &trans);
+        x_Align(m_Seq1, q1, m_Seq2, s1, &trans);
         copy(trans.begin(), trans.end(), back_inserter(m_Transcript));
         m_score = x_ScoreByTranscript();
     }
-
-    cerr << "x_ScoreByTranscript() = " << x_ScoreByTranscript() << endl;
 
     return m_score;
 }
@@ -408,41 +403,48 @@ void CNWAligner::x_DoBackTrace(const unsigned char* backtrace,
 }
 
 
-void  CNWAligner::SetGuides(const vector<size_t>& v1, const vector<size_t>& v2)
+void  CNWAligner::SetGuides(const vector<size_t>& guides)
     throw (CNWAlignerException)
 {
-    size_t dim1 = v1.size(), dim2 = v2.size();
+    size_t dim = guides.size();
     const char* err = 0;
-    if(dim1 == dim2 && dim1 % 2 == 0) {
-        for(size_t i = 0; i < dim1; i += 2) {
+    if(dim % 4 == 0) {
+        for(size_t i = 0; i < dim; i += 4) {
 
-            if( v1[i] > v1[i+1] ||
-                (i > 0 && (v1[i] <= v1[i-1] || v2[i] <= v2[i-1])) ) {
-                err = "Coordinates must be sorted";
+            if( guides[i] > guides[i+1] || guides[i+2] > guides[i+3] ) {
+                err = "Guides should be specified in plus strand";
                 break;
             }
 
-            if( v1[i+1] - v1[i] != v2[i+1] - v2[i] ) {
+            if(i > 4) {
+                if(guides[i] <= guides[i-3] || guides[i+2] <= guides[i-2]){
+                    err = "Guides coordinates must be sorted";
+                    break;
+                }
+            }
+
+            size_t dim1 = guides[i + 1] - guides[i];
+            size_t dim2 = guides[i + 3] - guides[i + 2];
+            if( dim1 != dim2) {
                 err = "Guiding hits must have equal length on both sequences";
                 break;
             }
 
-            if(v1[i+1] >= m_SeqLen1 || v2[i+1] >= m_SeqLen2) {
+            if(guides[i+1] >= m_SeqLen1 || guides[i+3] >= m_SeqLen2) {
                 err = "One or more guiding hits are out of range";
                 break;
             }
         }
     }
     else {
-        err = "Incorrect hit vector dimension";
+        err = "Guides vector must have a dimension multiple of four";
     }
+
     if(err) {
         NCBI_THROW( CNWAlignerException, eBadParameter, err );
     }
     else {
-        m_guides.resize(dim1 + dim2);
-        copy(v1.begin(), v1.end(), m_guides.begin());
-        copy(v2.begin(), v2.end(), m_guides.begin() + dim1);
+        m_guides = guides;
     }
 }
 
@@ -837,9 +839,31 @@ size_t CNWAligner::x_CheckSequence(const char* seq, size_t len) const
 
 bool CNWAligner::x_CheckMemoryLimit()
 {
-    return double(m_SeqLen1 + 1)*(m_SeqLen2 + 1) < kMax_UInt;
-}
+    size_t gdim = m_guides.size();
+    if(gdim) {
+        size_t dim1 = m_guides[0], dim2 = m_guides[2];
+        if(double(dim1)*dim2 >= kMax_UInt) {
+            return false;
+        }
+        for(size_t i = 4; i < gdim; i += 4) {
+            size_t dim1 = m_guides[i] - m_guides[i-3] + 1;
+            size_t dim2 = m_guides[i + 2] - m_guides[i-1] + 1;
+            if(double(dim1)*dim2 >= kMax_UInt) {
+                return false;
+            }
+        }
+        dim1 = m_SeqLen1 - m_guides[gdim-3];
+        dim2 = m_SeqLen2 - m_guides[gdim-1];
+        if(double(dim1)*dim2 >= kMax_UInt) {
+            return false;
+        }
 
+        return true;
+    }
+    else {
+        return double(m_SeqLen1 + 1)*(m_SeqLen2 + 1) < kMax_UInt;
+    }
+}
 
 
 CNWAligner::TScore CNWAligner::x_ScoreByTranscript() const
@@ -964,6 +988,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2003/04/14 19:00:55  kapustin
+ * Add guide creation facility.  x_Run() -> x_Align()
+ *
  * Revision 1.22  2003/04/10 19:15:16  kapustin
  * Introduce guiding hits approach
  *

@@ -34,7 +34,7 @@
 *   This class implements a special case of the global alignment where 
 *   one of the sequences is mRna and the other is Dna.
 *   The algorithm accounts for introns and splice sites on the Dna
-*   filling out its dynamic programming table.
+*   while filling out its dynamic programming table.
 *   
 */
 
@@ -67,6 +67,8 @@ public:
         m_IntronMinSize  = s;
     }
 
+    size_t MakeGuides(const size_t guide_size = 30);
+
     // Getters
     static TScore GetDefaultWi  (unsigned char splice_type)
         throw(CNWAlignerException);
@@ -82,11 +84,11 @@ public:
 protected:
 
     TScore   m_Wi [splice_type_count];  // intron weights
-    size_t   m_IntronMinSize; // intron min size
+    size_t   m_IntronMinSize;           // intron min size
 
-    virtual TScore x_Run (const char* seg1, size_t len1,
-                          const char* seg2, size_t len2,
-                          vector<ETranscriptSymbol>* transcript);
+    virtual TScore x_Align (const char* seg1, size_t len1,
+                            const char* seg2, size_t len2,
+                            vector<ETranscriptSymbol>* transcript);
 
     virtual void   x_DoBackTrace(const unsigned char* backtrace_matrix,
                           size_t N1, size_t N2,
@@ -95,6 +97,12 @@ protected:
     virtual TScore x_ScoreByTranscript() const
         throw(CNWAlignerException);
 
+    // guiding hits
+    unsigned char x_CalcFingerPrint64( const char* beg, const char* end,
+                                       size_t& err_index);
+    const char*   x_FindFingerPrint64( const char* beg, const char* end,
+                                       unsigned char fingerprint,
+                                       size_t size, size_t& err_index);
 };
 
 
@@ -107,6 +115,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/04/14 18:59:31  kapustin
+ * Add guide creation facility.  x_Run() -> x_Align()
+ *
  * Revision 1.8  2003/04/10 19:14:04  kapustin
  * Introduce guiding hits approach
  *
