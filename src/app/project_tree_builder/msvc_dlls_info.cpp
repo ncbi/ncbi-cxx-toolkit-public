@@ -231,6 +231,8 @@ static void s_InitalizeDllProj(const string&                  dll_id,
 
     dll->m_SourcesBaseDir = dll_project_dir;
 
+    dll->m_Sources.clear();
+    dll->m_Sources.push_back("..\\dll_main");
 }
 
 
@@ -254,7 +256,6 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
                                           abs_source_path);
         dll->m_Sources.push_back(new_rel_path);
     }
-    dll->m_Sources.push_back("..\\dll_main");
     dll->m_Sources.sort();
     dll->m_Sources.unique();
 
@@ -464,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/03/16 17:43:33  gorelenk
+ * Addition of dllmain moved from s_AddProjItemToDll to s_InitalizeDllProj .
+ *
  * Revision 1.8  2004/03/16 16:37:33  gorelenk
  * Changed msvc7_prj subdirs structure: Separated "static" and "dll" branches.
  *
