@@ -4502,12 +4502,21 @@ if   test "$with_runpath" = "no" ; then
    pure_runpath=
 elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
    root_base=`basename $build_root`
-   runpath="${CONF_f_runpath}`echo ${with_runpath} | sed s/{}/$root_base/`"
-   pure_runpath=$with_runpath
+   pure_runpath=`echo ${with_runpath} | sed s/{}/$root_base/`
+   runpath="${CONF_f_runpath}${pure_runpath}"
    case "$host_os:$compiler" in
     linux*:GCC | *bsd*:GCC | cygwin*:GCC )
       runpath="$runpath -Wl,-rpath-link,\$(libdir)"
       ;;
+    darwin* )
+      # Needed for a few gui projects, including gbench_plugin_scan;
+      # harmless elsewhere, since it only affects projects that indirectly
+      # need one of these libraries.  (There seems to be no general
+      # equivalent of -rpath-link.)
+      for l in dbapi_driver gui_utils; do
+         ll=lib$l.dylib
+         LDFLAGS="$LDFLAGS -dylib_file ${pure_runpath}/$ll:\$(libdir)/$ll"
+      done
    esac
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
    runpath="${CONF_f_runpath}\$(libdir)"
@@ -19189,24 +19198,24 @@ cat >>$CONFIG_STATUS <<_ACEOF
 #
 
 
-SAVE_status_dir="$status_dir"
-SAVE_builddir="$builddir"
-SAVE_build_root="$build_root"
-SAVE_x_configurables="$x_configurables"
-SAVE_ncbiconf="$ncbiconf"
-SAVE_CFLAGS="$CFLAGS"
-SAVE_CXXFLAGS="$CXXFLAGS"
-SAVE_CPPFLAGS="$CPPFLAGS"
-SAVE_LDFLAGS="$LDFLAGS"
-SAVE_LIB_OR_DLL="$LIB_OR_DLL"
-SAVE_with_dll="$with_dll"
-SAVE_WithFeatures="$WithFeatures"
-SAVE_WithPackages="$WithPackages"
-SAVE_WithoutPackages="$WithoutPackages"
-SAVE_WithProjects="$WithProjects $OPT_GROUPS"
-SAVE_WithoutProjects="$WithoutProjects"
-SAVE_with_extra_action="$with_extra_action"
-SAVE_with_projects="$with_projects"
+SAVE_status_dir='$status_dir'
+SAVE_builddir='$builddir'
+SAVE_build_root='$build_root'
+SAVE_x_configurables='$x_configurables'
+SAVE_ncbiconf='$ncbiconf'
+SAVE_CFLAGS='$CFLAGS'
+SAVE_CXXFLAGS='$CXXFLAGS'
+SAVE_CPPFLAGS='$CPPFLAGS'
+SAVE_LDFLAGS='$LDFLAGS'
+SAVE_LIB_OR_DLL='$LIB_OR_DLL'
+SAVE_with_dll='$with_dll'
+SAVE_WithFeatures='$WithFeatures'
+SAVE_WithPackages='$WithPackages'
+SAVE_WithoutPackages='$WithoutPackages'
+SAVE_WithProjects='$WithProjects $OPT_GROUPS'
+SAVE_WithoutProjects='$WithoutProjects'
+SAVE_with_extra_action='$with_extra_action'
+SAVE_with_projects='$with_projects'
 
 
 _ACEOF
