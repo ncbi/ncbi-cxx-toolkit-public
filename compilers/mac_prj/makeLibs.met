@@ -1,4 +1,3 @@
-
 -- C++ libs --
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
@@ -27,6 +26,7 @@ property pAlwaysCreateProjects : false
 property pUpdateExistingProjects : true
 
 -- Whether to have the projects use CVS or not.
+
 property pProjectsCVSEnabled : true
 
 -- But profiling doesn't work for Mach-O Codewarrior projects currently.
@@ -340,7 +340,7 @@ on SetProjectData()
 		-- my HideFolder(gSourceDir & "connect:mitsock")
 		
 		AddSimpleProjectExceptFiles("xconnect", {}, "connect", Â
-			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp"})
+			{"ncbi_lbsm_ipc.c", "ncbi_lbsm.c", "ncbi_lbsmd.c", "threaded_server.cpp", "netcache_client_lb.cpp"})
 		AddSimpleProjectListFiles("xthrserv", {}, "connect", {"threaded_server.cpp"})
 	end if
 	
@@ -423,9 +423,8 @@ on SetProjectData()
 		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
 		AddSimpleProject("ncbi_xloader_trace", {}, "objtools:data_loaders:trace")
 		AddSimpleProject("ncbi_xloader_genbank", {}, "objtools:data_loaders:genbank")
-		AddSimpleProjectListFiles("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1.cpp"})
+		AddSimpleProject("ncbi_xreader_id1", {}, "objtools:data_loaders:genbank:readers:id1")
 		AddSimpleProject("ncbi_xreader_id2", {}, "objtools:data_loaders:genbank:readers:id2")
-		AddSimpleProjectListFiles("ncbi_xreader_id1c", {}, "objtools:data_loaders:genbank:readers:id1", {"reader_id1_cache.cpp"})
 		AddSimpleProject("ncbi_xreader_pubseqos", {}, "objtools:data_loaders:genbank:readers:pubseqos")
 		
 		-- AddSimpleProject("ncbi_xloader_blastdb", {}, "objtools:data_loaders:blastdb") 	-- needs bsd? ctools?
@@ -443,8 +442,10 @@ on SetProjectData()
 			{GuiFileDataList("config", {"feat_config.cpp", "settings.cpp", "settings_set.cpp", "feat_color.cpp", "feat_config_list.cpp", "feat_show.cpp", "theme_set.cpp", "layout_chooser.cpp", "config___.cpp", "config__.cpp"})}))
 		
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
-		AddGuiProject("gui_dlg_config", {}, "dialogs:config")
 		AddGuiProject("gui_dlg_edit", {}, "dialogs:edit")
+		AddGuiProject("gui_dlg_feat_search", {}, "dialogs:feat_search")
+		AddGuiProject("gui_dlg_seq_goto", {}, "dialogs:seq_goto")
+		
 		AddProject(ProjectData("gui_dlg_seq_feat_edit", {"fltk"}, Â
 			{GuiFileDataList("dialogs:edit:feature", {"gui_dlg_seq_feat_edit__.cpp", "gui_dlg_seq_feat_edit___.cpp", "seq_feat_edit_dlg.cpp", "edit_form_browser.cpp", "edit_form_bin.cpp", "edit_form_widget.cpp", "seq_feat_edit_handler.cpp", "edit_form_builder.cpp", "edit_form_content.cpp", "edit_form_ds.cpp", "edit_form_rc.cpp", "seq_feat_location.cpp"})}))
 		AddGuiProject("gui_opengl", {}, "opengl")
@@ -452,6 +453,7 @@ on SetProjectData()
 		AddGuiProject("gui_print", {}, "print")
 		
 		-- widgets
+		AddGuiProject("w_config", {}, "widgets:config")
 		AddGuiProject("w_fltk", {}, "widgets:fl")
 		AddGuiProject("w_gl", {}, "widgets:gl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
@@ -500,8 +502,6 @@ on SetProjectData()
 	
 	if pCreatePluginLibs then
 		
-		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
-		
 		-- Plugin's automatically have fltk and plugin features.
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
@@ -515,19 +515,22 @@ on SetProjectData()
 		set CompressLibs to {"z", "bz2", "xcompress"}
 		set UsualStatics to MostObjects & ObjTools
 		
+		
+		AddSimpleProjectListFiles("gui_project", {}, "gui:core", {"gui_project__.cpp", "gui_project___.cpp"})
+		
 		-- gui_core ( contains:  xgbplugin, gui_core)
 		set gui_core_files to {Â
-			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "context_factory", "data_store", "dload_factory", "doc_manager", "docmgr_view", "document", "message_history", "message_queue", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "selection_buffer", "version", "view", "obj_menu", "plugin_dlg", "project_manager"})}
+			GuiFileDataList("gui:core", {"plugin__.cpp", "plugin___.cpp", "algo_factory", "data_store", "doc_manager", "docmgr_view", "document", "obj_browse_other", "obj_browser", "obj_convert", "plugin", "plugin_arg_dialog", "plugin_arg_form", "plugin_factory", "plugin_handle", "plugin_handle_impl", "plugin_registry", "plugin_thread", "plugin_utils", "selection_buffer", "version", "view", "obj_menu", "plugin_dlg", "project_manager", "task_manager", "task_queue"})}
 		set gui_core_data to ProjectData("gui_core", {"DLL", "fltk", "libdl", "images"}, gui_core_files)
 		
-		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "gui_dlg_config", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
+		AddProject(DataPlusLibs(gui_core_data, UsualStatics & LdsLibs & CompressLibs & {"gui_project", "gui_dlg_entry_form", "gui_utils", "gui_objutils", "gui_config", "w_config", "w_gl", "gui_opengl", "ximage", "submit", "w_fltk", "w_flu", "w_fltable", "gui_print", "fltk"}, {}))
 		
 		-- PLUGINS --
 		
 		-- Basic/Required plugins
 		AddPlugin("gui_doc_basic", {}, "plugins:doc:basic", Â
 			{"xflat", "ncbi_xloader_lds", "gbseq", "xalgophytree", "fastme", "biotree", "xobjwrite"})
-		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xreader_id1c", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"})
+		AddPlugin("gui_ncbi_init", {}, "plugins:algo:init", {"id1cli", "ncbi_xloader_lds", "ncbi_xloader_trace", "gui_dlg_edit", "gui_dlg_seq_feat_edit", "w_serial_browse"}) -- "ncbi_xreader_id1c",
 		AddPlugin("gui_algo_basic", {}, "plugins:algo:basic", Â
 			{"xalgoseq", "xloader_cdd", "cdd", "scoremat", "cn3d", "mmdb"})
 		
@@ -552,9 +555,10 @@ on SetProjectData()
 		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_gl", "w_hit_matrix", "w_seq_graphic"})
+			{"w_aln_crossaln", "w_aln_multi", "w_aln_data", "gui_graph", "w_hit_matrix", "w_seq_graphic"})
+		
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			{"gui_dlg_feature", "w_seq_graphic", "w_gl", "gui_graph"})
+			{"gui_dlg_feature", "w_seq_graphic", "gui_graph", "gui_dlg_feat_search", "gui_dlg_seq_goto"})
 		-- AddPlugin("gui_view_sequence", {}, "plugins:view:sequence",  {}) -- empty
 		AddPlugin("gui_view_taxplot", {}, "plugins:view:taxplot", {"w_taxplot3d", "gui_graph"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", {"w_aln_table", "w_feat_compare", "w_feat_table"})
@@ -1443,7 +1447,6 @@ on BuildProject(projName, targetSpecs)
 			-- do we want to build this target?
 			set thisTarget to name of target i of project document 1
 			if my OkaytoBuild(thisTarget, targetSpecs) then
-				
 				set the current target of project document 1 to target i of project document 1
 				if pSaveContinueOnErrors then
 					try
@@ -1541,6 +1544,3 @@ with timeout of 60000 seconds
 	SignalCompletion()
 	
 end timeout
-
-
-
