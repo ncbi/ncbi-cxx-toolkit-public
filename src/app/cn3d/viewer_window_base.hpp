@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2001/06/04 14:33:55  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.12  2001/05/25 19:08:14  thiessen
 * fix GTK window redraw bug
 *
@@ -113,6 +116,7 @@ public:
 
     // scroll to specific column
     void ScrollToColumn(int column) { viewerWidget->ScrollTo(column, -1); }
+    void ScrollToRow(int row) { viewerWidget->ScrollTo(-1, row); }
 
     // communicates to the derived class that the user wants to turn on/off the editor;
     // should return true if derived class wants to allow the state change

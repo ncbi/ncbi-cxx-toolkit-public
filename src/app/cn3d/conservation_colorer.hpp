@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2001/06/04 14:33:54  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.7  2001/06/02 17:22:58  thiessen
 * fixes for GCC
 *
@@ -68,6 +71,11 @@
 
 
 BEGIN_SCOPE(Cn3D)
+
+// for convenience, allow access to the Blosum62 map, keyed on a pair of uppercase aa characters:
+// e.g. score = Blosum62Map['A']['V']; filled out when first ConservationColorer is constructed
+extern std::map < char, std::map < char, int > > Blosum62Map;
+
 
 class UngappedAlignedBlock;
 

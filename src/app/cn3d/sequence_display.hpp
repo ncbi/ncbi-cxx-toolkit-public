@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2001/06/04 14:33:54  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.13  2001/06/01 18:07:38  thiessen
 * fix display clone bug
 *
@@ -249,6 +252,9 @@ public:
     void SortRowsByIdentifier(void);
     void SortRowsByThreadingScore(double weightPSSM);
     void FloatPDBRowsToTop(void);
+
+    // a sort of clustering of similar sequences around a particular row
+    bool ProximitySort(int displayRow);
 
     // create a new copy of this object
     SequenceDisplay * Clone(const Old2NewAlignmentMap& newAlignments) const;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/06/04 14:33:55  thiessen
+* add proximity sort; highlight sequence on browser launch
+*
 * Revision 1.11  2001/06/01 14:04:54  thiessen
 * add float PDB sort
 *
@@ -102,6 +105,7 @@ private:
             MID_SORT_IDENT,
             MID_SORT_THREADER,
             MID_FLOAT_PDBS,
+            MID_PROXIMITY_SORT,
         // mouse mode
         MID_MOVE_ROW,
         // update menu
@@ -144,6 +148,11 @@ private:
         menuBar->Check(MID_MARK_BLOCK, false);
         SetCursor(wxNullCursor);
     }
+    void ProximitySortOff(void)
+    {
+        menuBar->Check(MID_PROXIMITY_SORT, false);
+        SetCursor(wxNullCursor);
+    }
 
     SequenceViewerWidget::eMouseMode GetMouseModeForCreateAndMerge(void)
     {
@@ -163,12 +172,14 @@ public:
     bool DoDeleteRow(void) const { return menuBar->IsChecked(MID_DELETE_ROW); }
     bool DoRealignRow(void) const { return menuBar->IsChecked(MID_REALIGN_ROW); }
     bool DoMarkBlock(void) const { return menuBar->IsChecked(MID_MARK_BLOCK); }
+    bool DoProximitySort(void) const { return menuBar->IsChecked(MID_PROXIMITY_SORT); }
 
     void CancelDerivedSpecialModes(void)
     {
         if (DoDeleteRow()) DeleteRowOff();
         if (DoRealignRow()) RealignRowOff();
         if (DoMarkBlock()) MarkBlockOff();
+        if (DoProximitySort()) ProximitySortOff();
     }
 };
 
