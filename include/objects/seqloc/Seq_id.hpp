@@ -48,6 +48,9 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CBioseq;
+
+
 class CSeq_id : public CSeq_id_Base,
                 public CSerializable
 {
@@ -251,6 +254,16 @@ public:
     //Return seqid string with optional version for text seqid type
     const string GetSeqIdString(bool with_version = false) const;
 
+    // Get a string representation of the sequence IDs of a given bioseq.  This
+    // function produces strings in a number of possible formats.
+    enum EStringFormat {
+        eFormat_FastA,              // FastA format
+        eFormat_ForceGI,            // GI only, in FastA format
+        eFormat_BestWithoutVersion, // 'Best' accession, without the version
+        eFormat_BestWithVersion     // 'Best' accession, with version
+    };
+    static string GetStringDescr(const CBioseq& bioseq, EStringFormat fmt);
+
     // For use with FindBestChoice from <corelib/ncbiutil.hpp>
     static int Score(const CRef<CSeq_id>& id);
     static int BestRank(const CRef<CSeq_id>& id);
@@ -347,6 +360,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.28  2002/11/26 15:12:15  dicuccio
+ * Added general processing function to retrieve sequence id descriptions in a
+ * number of formats.
+ *
  * Revision 1.27  2002/10/23 18:22:57  ucko
  * Add self-classification (using known type information) and expand
  * EAccessionInfo accordingly.
