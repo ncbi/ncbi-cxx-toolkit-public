@@ -5,6 +5,7 @@ property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
 property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
+property pSqliteRootFolder : "" -- full path of the Sqlite source folder. Optional
 property pDLRootFolder : "sw:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 
 property pSaveContinueOnErrors : false
@@ -20,6 +21,9 @@ property pDynaLibExt : ".dylib"
 
 -- Whether to recreate existing project files.
 property pAlwaysCreateProjects : false
+
+-- whether to refresh the files and libraries in existing projects
+property pUpdateExistingProjects : true
 
 -- Whether to have the projects use CVS or not.
 property pProjectsCVSEnabled : true
@@ -59,6 +63,7 @@ global gMakeDir
 global gLibsDir
 global gFLTKRootFolder
 global gBdbRootFolder
+global gSqliteRootFolder -- sqlite install folder.  (not source).
 
 
 global gProjectData
@@ -278,7 +283,7 @@ on SetProjectData()
 		
 		AddSimpleProject("xalgoalign", {}, "algo:align")
 		AddSimpleProject("xalgoseq", {}, "algo:sequence")
-		-- AddSimpleProject("xalgognomon", {}, "algo:gnomon")
+		AddSimpleProject("xalgognomon", {}, "algo:gnomon")
 		set xblastfiles to {Â
 			mkFileData(gSourceDir & "algo:blast:api"), Â
 			mkFileData(gSourceDir & "algo:blast:core") Â
@@ -286,7 +291,7 @@ on SetProjectData()
 		AddProject(ProjectData("xblast", {}, xblastfiles))
 		AddSimpleProject("blast", {}, "algo:blast:core")
 		
-		-- AddSimpleProject("xsqlite", {}, "sqlite") -- until sqlite
+		AddSimpleProject("xsqlite", {"sqlite"}, "sqlite")
 		
 		set libdbFiles to {Â
 			mkFileData(gBdbRootFolder & "btree"), Â
@@ -368,7 +373,6 @@ on SetProjectData()
 	
 	if pCreateObjToolsLibs then
 		AddSimpleProject("xobjmgr", {}, "objmgr")
-		--AddSimpleProjectExceptFiles("xobjmgr", {}, "objmgr", {"reader_id1_cache.cpp"})
 		AddSimpleProject("xobjutil", {}, "objmgr:util")
 		AddSimpleProject("xalnmgr", {}, "objtools:alnmgr")
 		AddSimpleProject("xcddalignview", {}, "objtools:cddalignview")
@@ -378,9 +382,10 @@ on SetProjectData()
 		AddSimpleProject("xvalidate", {}, "objtools:validator")
 		AddSimpleProject("xobjmanip", {}, "objtools:manip")
 		AddSimpleProject("xobjread", {}, "objtools:readers")
+		
 		AddSimpleProject("ncbi_xloader_lds", {}, "objtools:data_loaders:lds")
 		AddSimpleProject("ncbi_xloader_table", {}, "objtools:data_loaders:table")
-		-- AddSimpleProject("ncbi_xloader_blastdb", {}, "objtools:data_loaders:blastdb") -- until sqlite
+		-- AddSimpleProject("ncbi_xloader_blastdb", {}, "objtools:data_loaders:blastdb") 	-- needs bsd? ctools?
 		AddSimpleProject("xloader_cdd", {}, "objtools:data_loaders:cdd")
 	end if
 	
@@ -396,6 +401,7 @@ on SetProjectData()
 		AddGuiProject("gui_dlg_entry_form", {}, "dialogs:entry_form")
 		AddGuiProject("gui_dlg_feature", {}, "dialogs:feature")
 		AddGuiProject("gui_multi_col_dlg", {}, "dialogs:col")
+		AddGuiProject("gui_dlg_registry", {}, "dialogs:registry")
 		-- AddGuiProject("gui_dlg_general", {}, "dialogs:general") -- currently empty?
 		AddGuiProject("gui_opengl", {}, "opengl")
 		AddGuiProject("gui_graph", {}, "graph")
@@ -403,6 +409,7 @@ on SetProjectData()
 		
 		-- widgets
 		AddGuiProject("w_fltk", {}, "widgets:fl")
+		AddGuiProject("w_gl", {}, "widgets:gl")
 		AddGuiProject("w_aln_crossaln", {}, "widgets:aln_crossaln")
 		AddGuiProject("w_aln_dotmatrix", {}, "widgets:aln_dotmatrix")
 		-- AddGuiProject("w_aln_multi", {}, "widgets:aln_multiple")
@@ -441,7 +448,7 @@ on SetProjectData()
 		-- Plugin's automatically have fltk and plugin features.
 		-- Plugins and DLL's must be after statics and DLL's they depend on.
 		
-		set SeqObjects to {"seq", "seqcode", "seqset"}
+		set SeqObjects to {"seq", "seqcode", "seqset", "sequtil"}
 		set SomeObjects to {"biblio", "general", "medline", "pub", "entrez2", "entrez2cli"}
 		set MostObjects to SeqObjects & SomeObjects & Â
 			{"dbapi_driver", "id1", "id2", "xobjmgr", "xobjutil"}
@@ -475,20 +482,22 @@ on SetProjectData()
 			{mkFileData(gSourceDir & "gui:plugins:algo:external"), Â
 				mkFileDataListFiles(gSourceDir & "gui:plugins:algo:basic", {"output_dlg.cpp"})}), Â
 			{"xalgoseq", "xcgi"}, {"gui_core"}))
-		-- AddPlugin("gui_algo_gnomon", {}, "plugins:algo:gnomon", {"xalgognomon"})
+		AddPlugin("gui_algo_gnomon", {}, "plugins:algo:gnomon", Â
+			{"xalgognomon", "gui_multi_col_dlg", "w_fltable", "w_table"})
 		-- AddPlugin("gui_algo_blast", {}, "plugins:algo:blast", {"xblast"}) -- empty.
 		-- AddPlugin("gui_net_blast", {}, "plugins:algo:net_blast", {"scoremat", "xalgoalign", "xnetblast", "xnetblastcli"}) - empty
 		-- AddPlugin("gui_algo_external", {}, "plugins:algo:external", {"xalgoseq", "xcgi"})
 		
 		-- Document plugins
-		-- until we have sqlite 
-		-- AddPlugin("gui_doc_table", {}, "plugins:doc:table", {})
+		--  
+		AddPlugin("gui_doc_table", {"sqlitelib"}, "plugins:doc:table", Â
+			{"xsqlite", "ncbi_xloader_table", "xobjmanip"})
 		
 		-- View plugins
 		AddPlugin("gui_view_align", {}, "plugins:view:align", Â
-			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table"})
+			{"w_aln_crossaln", "w_aln_dotmatrix", "w_flek", "w_seq_info", "w_fltable", "w_aln_multi", "w_aln_data", "gui_graph", "w_table", "w_gl"})
 		AddPlugin("gui_view_graphic", {}, "plugins:view:graphic", Â
-			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_graphic", "w_fltable"})
+			{"gui_dlg_feature", "w_flek", "w_seq_icon", "w_seq_graphic", "w_fltable", "w_gl"})
 		AddPlugin("gui_view_sequence", {}, "plugins:view:sequence", Â
 			{"w_seq", "w_seq_icon", "w_seq_info"})
 		AddPlugin("gui_view_table", {}, "plugins:view:table", Â
@@ -586,6 +595,32 @@ on FindSpecialFolder(default, pattern)
 	return aSpecialFolder
 end FindSpecialFolder
 
+on BuildSqlite()
+	set sqliteSrcFolder to my FindSpecialFolder(pSqliteRootFolder, "src/sqlite.h.in")
+	if sqliteSrcFolder is "" then
+		return ""
+	end if
+	-- shell script command name
+	set makeCommand to "sh " & POSIX path of (gMakeDir & "makesqlite")
+	-- command arguments:
+	-- source directory
+	set makeCommand to makeCommand & " " & (POSIX path of sqliteSrcFolder)
+	-- build directory
+	set makeCommand to makeCommand & " " & (POSIX path of (gLibsDir & "sqlite-build"))
+	-- install directory
+	set sqliteLibsFolder to (gLibsDir & "sqlite:")
+	set makeCommand to makeCommand & " " & (POSIX path of sqliteLibsFolder)
+	
+	--try
+	do shell script makeCommand
+	--on error
+	--return ""
+	--end try
+	-- return the standard output of the script which should be the install directory.
+	return sqliteLibsFolder -- ((POSIX file result) as string) & ":"
+end BuildSqlite
+
+
 on GetMyPath()
 	set myPath to path to me as string
 	if myPath contains "Script Editor" or Â
@@ -593,10 +628,10 @@ on GetMyPath()
 		myPath contains "Smile.app" then
 		-- Oops! running under script editor. 'me' is Script Editor not this script.
 		-- use the location this script is supposed to be in.
-		return gDistribRoot & "compilers:mac_prj"
+		return gDistribRoot & "compilers:mac_prj:"
 	else
 		tell application "Finder"
-			return container of myPath as string
+			return (container of myPath as string) & ":"
 		end tell
 	end if
 end GetMyPath
@@ -619,11 +654,15 @@ on SetGlobals()
 		if gFLTKRootFolder is "" and pCreateGuiLibs then
 			set pCreateGuiLibs to false
 			set pCreatePluginLibs to false
-			display dialog "Warning: Can't find FLTK. (download from www.fltk.org into your home directory). Not creating Gui libraries." with icon caution
+			display dialog "Warning: Can't find FLTK. (download from www.fltk.org into your home directory or C++ toolkit directory). Not creating Gui libraries." with icon caution
 		end if
 		set gBdbRootFolder to my FindSpecialFolder(pBdbRootFolder, "dbinc/db_int.in")
 		if gBdbRootFolder is "" then
-			display dialog "Can't find bdb. (download from http://www.sleepycat.com/ into your home directory). Some libraries will fail to build." with icon caution
+			display dialog "Can't find bdb. (download from http://www.sleepycat.com/ into your home directory or C++ toolkit directory). Some libraries will fail to build." with icon caution
+		end if
+		set gSqliteRootFolder to my BuildSqlite()
+		if gSqliteRootFolder is "" then
+			display dialog "Can't find sqlite. (download from http://www.sqlite.org/ into your home or C++ toolkit directory). Some plugins may fail to build." with icon caution
 		end if
 	end tell
 end SetGlobals
@@ -846,6 +885,12 @@ on SetupTarget(proj, targetIndex)
 		if projFeatures contains "bdb" then
 			my PushAccessPath(gDistribRoot & "include:", false, false)
 		end if
+		if projFeatures contains "sqlite" then
+			my AppendAccessPath(gSqliteRootFolder & "include:", false, false)
+		end if
+		if projFeatures contains "sqlitelib" then
+			my AppendAccessPath(gSqliteRootFolder & "lib:", false, false)
+		end if
 		
 		-- Are we assuming a .c or a .cpp extension?
 		if projFeatures contains "C++" then
@@ -914,20 +959,34 @@ on SetupTarget(proj, targetIndex)
 			end if
 		end if
 		
-		-- try
+		--try
 		Add Files filesToAdd
-		-- on error errmsg number errnum
+		--on error errmsg number errnum
 		-- ignore errors when none of those libraries exist.
 		-- happens when populating a target when we haven't built any of the libraries for that target spec.
-		-- 	if errnum is not 9393 then error errmsg number errnum
-		-- end try
-		
-		-- Add resources.
+		--if errnum is not 9393 then error errmsg number errnum
+		--end try
+	end tell
+	
+	-- add sqlite libraries.
+	if projFeatures contains "sqlitelib" and Â
+		projFeatures contains "DLL" or projFeatures contains "plugin" then
 		set filesToAdd to {}
-		repeat with i in projRsrcs
-			copy gRsrcsDir & i to end of filesToAdd
-		end repeat
-		
+		copy "/usr/lib/libcc_dynamic.a" to end of filesToAdd
+		copy gSqliteRootFolder & "lib:libsqlite.a" to end of filesToAdd
+		-- display dialog filesToAdd
+		tell application "CodeWarrior IDE"
+			Add Files filesToAdd
+		end tell
+	end if
+	
+	-- Add resources.
+	set filesToAdd to {}
+	repeat with i in projRsrcs
+		copy gRsrcsDir & i to end of filesToAdd
+	end repeat
+	
+	tell application "CodeWarrior IDE"
 		Add Files filesToAdd
 		
 		Reset File Paths
@@ -1115,6 +1174,7 @@ on CreateProject(proj)
 		
 		set projFilename to proj's name & pProjectFileExt
 		set projPathname to gProjectsDir & projFilename
+		set openedProject to false
 		if pAlwaysCreateProjects or not (exists file projPathname of application "Finder") then
 			
 			try
@@ -1127,6 +1187,7 @@ on CreateProject(proj)
 				tell application "Finder" to delete file (gProjectsDir & ".DS_Store")
 			end try
 			Create Project projPathname from stationery alias stationeryName
+			set openedProject to false
 			if the name of window 1 is "Project Messages" then
 				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
@@ -1134,9 +1195,10 @@ on CreateProject(proj)
 			repeat with i from 1 to (count targets of project document 1)
 				my SetupTarget(proj, i)
 			end repeat
-		else
+		else if pUpdateExistingProjects then
 			-- project already exists. Make sure it has all right files.
 			open (projPathname)
+			set openedProject to false
 			if the name of window 1 is "Project Messages" then
 				close first window -- "close window 1" becomes "Close Window 1" (different event)
 			end if
@@ -1144,14 +1206,15 @@ on CreateProject(proj)
 				my UpdateTarget(proj, i)
 			end repeat
 		end if
-		if pProjectsCVSEnabled then
-			--try
-			Set Preferences of panel "VCS Setup" to {VCS Active:true, Connection Method:"mwCVS"}
-			--end try
+		if openedProject then
+			if pProjectsCVSEnabled then
+				--try
+				Set Preferences of panel "VCS Setup" to {VCS Active:true, Connection Method:"mwCVS"}
+				--end try
+			end if
+			set the current target of project document 1 to target 1 of project document 1
+			Close Project
 		end if
-		set the current target of project document 1 to target 1 of project document 1
-		Close Project
-		
 	end tell
 end CreateProject
 
