@@ -209,7 +209,7 @@ protected:
     /// If client is not already connected to the primary server it 
     /// tries to connect to the server specified in the BLOB key
     /// (all infomation is encoded in there)
-    void CheckConnect(const string key);
+    void CheckConnect(const string& key);
 private:
     CNetCacheClient(const CNetCacheClient&);
     CNetCacheClient& operator=(const CNetCacheClient&);
@@ -229,6 +229,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/11/04 21:49:51  kuznets
+ * CheckConnect() fixed
+ *
  * Revision 1.11  2004/11/02 17:29:55  kuznets
  * Implemented reconnection mode and no-default server mode
  *
