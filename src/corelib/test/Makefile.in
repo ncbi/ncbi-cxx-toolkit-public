@@ -1,12 +1,9 @@
-#################################
 # $Id$
 # Author:  Denis Vakatov (vakatov@ncbi.nlm.nih.gov)
-#################################
 
 # Meta-makefile
-#################################
 
-APP_PROJ = coretest
+APP_PROJ = coretest test_ncbi_socket test_ncbi_buffer
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
