@@ -94,6 +94,19 @@ bool CAlnMix::x_CompareAlnSegIndexes(const CAlnMixSegment* aln_seg1,
 }
 
 
+void CAlnMix::x_Reset() {
+    if (m_DS) {
+        m_DS->Reset();
+    }
+    if (m_Aln) {
+        m_Aln->Reset();
+    }
+    m_Segments.clear();
+    m_Rows.clear();
+    m_ExtraRows.clear();
+}
+
+
 void CAlnMix::x_CreateScope() {
     m_ObjMgr = new CObjectManager;
     
@@ -214,9 +227,12 @@ void CAlnMix::x_InitBlosum62Map()
 
 void CAlnMix::Add(const CDense_seg &ds)
 {
-    m_DS.Reset();
-    m_InputDSs.push_back(CConstRef<CDense_seg>(&ds));
+    if (m_InputDSs.find((void *)&ds) != m_InputDSs.end()) {
+        return; // it has already been added
+    }
+    x_Reset();
 
+    m_InputDSs[(void *)&ds] = &ds;
 
     vector<CRef<CAlnMixSeq> > ds_seq;
 
@@ -955,6 +971,10 @@ void CAlnMix::x_CreateDenseg()
     m_DS->SetDim(numrows);
     m_DS->SetNumseg(numsegs);
 
+    m_Aln = new CSeq_align();
+    m_Aln->SetSegs().SetDenseg(*m_DS);
+    m_Aln->SetDim(numrows);
+
     CDense_seg::TIds&     ids     = m_DS->SetIds();
     CDense_seg::TStarts&  starts  = m_DS->SetStarts();
     CDense_seg::TStrands& strands = m_DS->SetStrands();
@@ -1002,6 +1022,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2002/12/23 18:03:51  todorov
+* Support for putting in and getting out Seq-aligns
+*
 * Revision 1.6  2002/12/19 00:09:23  todorov
 * Added optional consolidation of segments that are gapped on the query.
 *

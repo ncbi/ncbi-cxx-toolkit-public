@@ -35,6 +35,7 @@
 
 #include <objects/alnmgr/alnvec.hpp>
 #include <objects/seqalign/Seq_align.hpp>
+#include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -53,9 +54,6 @@ class CAlnMix : public CObject
 {
 public:
 
-    typedef vector< CConstRef< CDense_seg > > TConstDSs;
-    
-
     // constructor
     CAlnMix(void);
     CAlnMix(CScope& scope);
@@ -64,6 +62,7 @@ public:
     ~CAlnMix(void);
 
     void Add(const CDense_seg& ds);
+    void Add(const CSeq_align& aln);
 
     enum EMergeFlags {
         fGen2EST              = 0x01, // otherwise Nucl2Nucl
@@ -75,19 +74,23 @@ public:
     typedef int TMergeFlags; // binary OR of EMergeFlags
     void Merge(TMergeFlags flags = 0);
 
-    CScope&            GetScope(void)  const;
-    const CDense_seg&  GetDenseg(void) const;
+    CScope&            GetScope   (void) const;
+    const CDense_seg&  GetDenseg  (void) const;
+    const CSeq_align&  GetSeqAlign(void) const;
 
 private:
     // Prohibit copy constructor and assignment operator
     CAlnMix(const CAlnMix& value);
     CAlnMix& operator=(const CAlnMix& value);
 
+    typedef map<void *, CConstRef<CDense_seg> >    TConstDSs;
+    typedef map<void *, CConstRef<CSeq_align> >    TConstAlns;
     typedef vector<CAlnMixSeq*>                    TSeqs;
     typedef map<CBioseq_Handle, CRef<CAlnMixSeq> > TBioseqHandleMap;
     typedef vector<CRef<CAlnMixMatch> >            TMatches;
     typedef vector<CAlnMixSegment*>                TSegments;
 
+    void x_Reset               (void);
     void x_InitBlosum62Map     (void);
     void x_CreateScope         (void);
     void x_Merge               (void);
@@ -110,7 +113,9 @@ private:
     CRef<CObjectManager>        m_ObjMgr;
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
+    TConstAlns                  m_InputAlns;
     CRef<CDense_seg>            m_DS;
+    CRef<CSeq_align>            m_Aln;
     TMergeFlags                 m_MergeFlags;
     TSeqs                       m_Seqs;
     TMatches                    m_Matches;
@@ -223,6 +228,31 @@ const CDense_seg& CAlnMix::GetDenseg() const
 }
 
 
+inline
+const CSeq_align& CAlnMix::GetSeqAlign() const
+{
+    if (!m_Aln) {
+        NCBI_THROW(CAlnException, eMergeFailure,
+                   "CAlnMix::GetSeqAlign(): "
+                   "Seq_align is not available until after Merge()");
+    }
+    return *m_Aln;
+}
+
+
+inline
+void CAlnMix::Add(const CSeq_align& aln)
+{
+    if (m_InputAlns.find((void *)&aln) == m_InputAlns.end()) {
+        // add only if not already added
+        CTypeConstIterator<CDense_seg> i;
+        for (i = Begin(aln); i; ++i) {
+            Add(*i);
+        }
+    }
+}
+
+
 ///////////////////////////////////////////////////////////
 ////////////////// end of inline methods //////////////////
 ///////////////////////////////////////////////////////////
@@ -235,6 +265,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2002/12/23 18:03:41  todorov
+* Support for putting in and getting out Seq-aligns
+*
 * Revision 1.9  2002/12/19 15:09:07  ucko
 * Reorder some definitions to make Compaq's C++ compiler happy.
 *
