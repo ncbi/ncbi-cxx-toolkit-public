@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/03/22 21:53:07  kimelman
+* bugfix: skip missed gi's
+*
 * Revision 1.4  2002/03/21 19:15:53  kimelman
 * GB related bugfixes
 *
@@ -84,9 +87,9 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
 //            pOm->RegisterDataLoader( *pLoader, CObjectManager::eDefault);
             pOm->RegisterDataLoader( *(new CGBDataLoader("ID",new CId1Reader,2)), CObjectManager::eDefault);
             
-            int i = 16;
+            int i=1;
             while(i<1800)
-            {
+              {
                 CScope scope(*pOm);
                 scope.AddDefaults();
                 NcbiCout << "gi " << i << NcbiEndl;
@@ -94,21 +97,25 @@ NcbiCout << "      Reading Data    ==============================" << NcbiEndl;
                 x.SetGi(i);
                 CObjectOStreamAsn oos(NcbiCout);
                 try
-                {
-                    iterate(list< CRef< CSeq_id > >, it, scope.GetBioseqHandle(x).GetBioseq().GetId())
-                    {
-                        oos << **it;
-                        NcbiCout << NcbiEndl;
-                    }
+                  {
+                    CBioseq_Handle h = scope.GetBioseqHandle(x);
+                    if(!h)
+                      NcbiCout << "Gi " << i << "):: not found in ID" << endl;
+                    else 
+                      iterate(list< CRef< CSeq_id > >, it, h.GetBioseq().GetId())
+                      {
+                        //oos << **it;
+                        ;//NcbiCout << NcbiEndl;
+                      }
                     NcbiCout << NcbiEndl;
-                }
+                  }
                 catch (exception e)
-                {
-                    cout << e.what();
-                }
+                  {
+                    NcbiCout << "TROUBLE(" << i << "):: " << e.what() << endl;
+                  }
                 NcbiCout << NcbiEndl;
                 i++;
-            }
+              }
         }
     }
 }
