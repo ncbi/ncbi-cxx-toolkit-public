@@ -311,7 +311,7 @@ int CSeqVecBench::Run(void)
         string str;
         vec.GetSeqData(0, vec.size(), str);
         const int mul1 = 1;
-        const int mul2 = 3;
+        const int mul2 = 1;
         for (i = iters*mul1;  i;  --i) {
             start_iter();
             for ( int j = 0; j < mul2; ++j ) {
@@ -356,6 +356,47 @@ int CSeqVecBench::Run(void)
     }
     end();
 
+    //
+    // test 7: chunks
+    start("GetSeqData()/ch + string::operator[]");
+    for (i = 0;  i < iters;  ++i) {
+        start_iter();
+        CSeqVector vec = handle.GetSeqVector(coding, strand);
+        static const TSeqPos chunk_size = 4096;
+        string buf;
+        for ( TSeqPos start = 0, size = vec.size();
+              start < size;  start += chunk_size ) {
+            TSeqPos count = min(chunk_size, size - start);
+            vec.GetSeqData(start, start + count, buf);
+            for (size_t j = 0;  j < buf.size();  ++j, ++counter) {
+                mask ^= buf[j];
+            }
+        }
+        end_iter();
+    }
+    end();
+
+    //
+    // test 8: chunks
+    start("GetSeqData()/ch + string::const_iterator");
+    for (i = 0;  i < iters;  ++i) {
+        start_iter();
+        CSeqVector vec = handle.GetSeqVector(coding, strand);
+        static const TSeqPos chunk_size = 4096;
+        string buf;
+        for ( TSeqPos start = 0, size = vec.size();
+              start < size;  start += chunk_size ) {
+            TSeqPos count = min(chunk_size, size - start);
+            vec.GetSeqData(start, start + count, buf);
+            ITERATE(string, iter, buf) {
+                mask ^= *iter;
+                ++counter;
+            }
+        }
+        end_iter();
+    }
+    end();
+
     end_all();
 
     result_mask ^= mask;
@@ -378,6 +419,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/09/07 14:25:48  vasilche
+ * Test for "block" fetching with GetSeqData().
+ *
  * Revision 1.3  2004/07/21 15:51:26  grichenk
  * CObjectManager made singleton, GetInstance() added.
  * CXXXXDataLoader constructors made private, added
