@@ -87,7 +87,8 @@ enum EFlags {
     fLatestGeneRIFs       = 0x800000,
     fShowContigAndSeq     = 0x1000000,
     fHideSourceFeats      = 0x2000000,
-    fShowFtableRefs       = 0x4000000
+    fShowFtableRefs       = 0x4000000,
+    fOldFeatsOrder        = 0x8000000
 };
 
 enum EFilterFlags {
@@ -111,6 +112,9 @@ typedef EFilterFlags    TFilter;
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/03/25 20:30:17  shomrat
+* new flag fOldFeatsOrder
+*
 * Revision 1.4  2004/03/18 15:30:13  shomrat
 * + new flag fShowFtableRefs
 *
