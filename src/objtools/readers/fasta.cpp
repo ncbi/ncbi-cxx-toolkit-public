@@ -457,7 +457,7 @@ void ReadFastaFileMap(SFastaFileMap* fasta_map, CNcbiIfstream& input)
 
         const CSeq_entry::TSeq& bioseq = se->GetSeq();
         const CSeq_id* sid = bioseq.GetFirstId();
-        fasta_entry.seq_id = sid->GetSeqIdString();
+        fasta_entry.seq_id = sid->AsFastaString();
         if (bioseq.CanGetDescr()) {
             const CSeq_descr& d = bioseq.GetDescr();
             if (d.CanGet()) {
@@ -487,6 +487,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/06/23 20:49:11  kuznets
+* Changed to use Seq_id::AsFastaString() when reading fasta file map.
+*
 * Revision 1.2  2003/06/08 16:17:00  lavr
 * Heed MSVC int->bool performance warning
 *
