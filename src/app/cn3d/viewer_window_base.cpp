@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/07/24 15:02:59  thiessen
+* use ProSite syntax for pattern searches
+*
 * Revision 1.18  2001/07/23 20:24:23  thiessen
 * need redraw if no matches found
 *
@@ -366,16 +369,7 @@ void ViewerWindowBase::OnShowGeomVltns(wxCommandEvent& event)
 void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
 {
     // get pattern from user
-    static const wxString messageWithHelp =
-        "Enter a pattern string, which may include these characters:\n\n"
-        "    A-Z : 1-letter residue names\n"
-        "    *   : any number of residues (including zero)\n"
-        "    ?  : any single residue\n"
-        "    ^  : N-terminus\n"
-        "    $  : C-terminus\n"
-        "    []  : matching lists\n"
-        "    [^] : non-matching lists";
-    wxString pattern = wxGetTextFromUser(messageWithHelp, "Input pattern", "", this);
+    wxString pattern = wxGetTextFromUser("Enter a valid ProSite pattern:", "Input pattern", "", this);
     if (pattern.size() == 0) return;
 
     GlobalMessenger()->RemoveAllHighlights(true);

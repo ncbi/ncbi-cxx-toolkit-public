@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/07/24 15:02:59  thiessen
+* use ProSite syntax for pattern searches
+*
 * Revision 1.35  2001/07/23 20:09:23  thiessen
 * add regex pattern search
 *
@@ -522,11 +525,87 @@ void Sequence::LaunchWebBrowserWithInfo(void) const
     delete oss.str();
 }
 
-bool Sequence::HighlightPattern(const std::string& rawPattern) const
+static bool Prosite2Regex(const std::string& prosite, std::string *regex, int *nGroups)
+{
+    try {
+        // check allowed characters
+        static const std::string allowed = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[],(){}<>.";
+        int i;
+        for (i=0; i<prosite.size(); i++)
+            if (allowed.find(toupper(prosite[i])) == std::string::npos) break;
+        if (i != prosite.size()) throw "invalid ProSite character";
+        if (prosite[prosite.size() - 1] != '.') throw "ProSite pattern must end with '.'";
+
+        // translate into real regex syntax;
+        regex->erase();
+        *nGroups = 0;
+
+        bool inGroup = false;
+        for (int i=0; i<prosite.size(); i++) {
+
+            // handle grouping and termini
+            bool characterHandled = true;
+            switch (prosite[i]) {
+                case '-': case '.': case '>':
+                    if (inGroup) {
+                        *regex += ')';
+                        inGroup = false;
+                    }
+                    if (prosite[i] == '>') *regex += '$';
+                    break;
+                case '<':
+                    *regex += '^';
+                    break;
+                default:
+                    characterHandled = false;
+                    break;
+            }
+            if (characterHandled) continue;
+            if (!inGroup && (
+                    (isalpha(prosite[i]) && toupper(prosite[i]) != 'X') ||
+                    prosite[i] == '[' || prosite[i] == '{')) {
+                *regex += '(';
+                (*nGroups)++;
+                inGroup = true;
+            }
+
+            // translate syntax
+            switch (prosite[i]) {
+                case '(':
+                    *regex += '{';
+                    break;
+                case ')':
+                    *regex += '}';
+                    break;
+                case '{':
+                    *regex += "[^";
+                    break;
+                case '}':
+                    *regex += ']';
+                    break;
+                case 'X': case 'x':
+                    *regex += '.';
+                    break;
+                default:
+                    *regex += toupper(prosite[i]);
+                    break;
+            }
+        }
+    }
+
+    catch (const char *err) {
+        ERR_POST(Error << "Prosite2Regex() - " << err);
+        return false;
+    }
+
+    return true;
+}
+
+bool Sequence::HighlightPattern(const std::string& prositePattern) const
 {
     // setup regex syntax
-    reg_syntax_t newSyntax = RE_CONTEXT_INDEP_ANCHORS | RE_CONTEXT_INVALID_OPS | RE_LIMITED_OPS |
-        RE_NO_BK_PARENS | RE_NO_EMPTY_RANGES;
+    reg_syntax_t newSyntax = RE_CONTEXT_INDEP_ANCHORS | RE_CONTEXT_INVALID_OPS | RE_INTERVALS |
+        RE_LIMITED_OPS | RE_NO_BK_BRACES | RE_NO_BK_PARENS | RE_NO_EMPTY_RANGES;
     reg_syntax_t oldSyntax = re_set_syntax(newSyntax);
 
     bool retval = true;
@@ -546,59 +625,15 @@ bool Sequence::HighlightPattern(const std::string& rawPattern) const
         }
 
         // update pattern buffer if not the same pattern as before
-        static std::string previousRawPattern;
+        static std::string previousPrositePattern;
+        static int nGroups;
         int i;
-        if (rawPattern != previousRawPattern) {
+        if (prositePattern != previousPrositePattern) {
 
-            // check syntax
-            static const std::string allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ*?^$[]-,";
-            for (i=0; i<rawPattern.size(); i++)
-                if (allowed.find(toupper(rawPattern[i])) == std::string::npos) break;
-            if (i != rawPattern.size()) throw "invalid pattern character";
-
-            // translate into real regex syntax;
-            static std::string regexPattern;
-            static int nGroups;
-            regexPattern.erase();
-            nGroups = 0;
-            bool openParen = false, openBracket = false;
-            for (i=0; i<rawPattern.size(); i++) {
-
-                // close parentheses when non-alpha character found
-                if (!isalpha(rawPattern[i]) && openParen && !openBracket) {
-                    regexPattern += ')';
-                    openParen = false;
-                }
-
-                // translate characters
-                if (rawPattern[i] == '?') {
-                    regexPattern += '.';
-                } else if (rawPattern[i] == '*') {
-                    regexPattern += "[A-Z]*";
-                } else if (rawPattern[i] == '^' || rawPattern[i] == '$' || rawPattern[i] == '-' ||
-                           rawPattern[i] == ',') {
-                    regexPattern += rawPattern[i];
-                } else if (rawPattern[i] == '[') {
-                    regexPattern += "([";
-                    openBracket = openParen = true;
-                    nGroups++;
-                } else if (rawPattern[i] == ']') {
-                    regexPattern += "])";
-                    openBracket = openParen = false;
-                }
-
-                // open parentheses for consecutive alpha characters; grouping
-                // makes parsing of result ranges easier
-                else if (isalpha(rawPattern[i])) {
-                    if (!openParen && !openBracket) {
-                        regexPattern += '(';
-                        openParen = true;
-                        nGroups++;
-                    }
-                    regexPattern += toupper(rawPattern[i]);
-                }
-            }
-            if (openParen) regexPattern += ')';
+            // convert from ProSite syntax
+            std::string regexPattern;
+            if (!Prosite2Regex(prositePattern, &regexPattern, &nGroups))
+                throw "error converting ProSite to regex syntax";
 
             // create pattern buffer
             TESTMSG("compiling pattern '" << regexPattern << "'");
@@ -609,7 +644,7 @@ bool Sequence::HighlightPattern(const std::string& rawPattern) const
             int err = re_compile_fastmap(patternBuffer);
             if (err) throw "re_compile_fastmap internal error";
 
-            previousRawPattern = rawPattern;
+            previousPrositePattern = prositePattern;
         }
 
         // do the search, finding all non-overlapping matches
@@ -653,7 +688,7 @@ bool Sequence::HighlightPattern(const std::string& rawPattern) const
         }
 
     } catch (const char *err) {
-        ERR_POST(Warning << "Sequence::HighlightPattern() - " << err);
+        ERR_POST(Error << "Sequence::HighlightPattern() - " << err);
         retval = false;
     }
 
