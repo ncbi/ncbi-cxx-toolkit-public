@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2001/05/23 17:45:00  thiessen
+* fix merge bug where unaligned block needs to be added
+*
 * Revision 1.18  2001/05/11 02:10:41  thiessen
 * add better merge fail indicators; tweaks to windowing/taskbar
 *
@@ -355,7 +358,7 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
                 unmergeable = true;
 
             // block boundaries in this inside aligned block of multiple
-            else if (isAligned) {
+            else if (row > 0 && isAligned) {
                 const Block::Range *range = block->GetRangeOfRow(row);
                 bool
                     isLeftEdge = (seqIndex == range->from),
@@ -379,10 +382,13 @@ bool BlockMultipleAlignment::GetCharacterTraitsAt(
             else if (row > 0 && !isAligned) {
                 const Block
                     *blockBefore = GetBlockBefore(block),
-                    *blockAfter = GetBlockAfter(block);
+                    *blockAfter = GetBlockAfter(block),
+                    *refBlock;
                 if (blockBefore && blockBefore->IsAligned() && blockAfter && blockAfter->IsAligned() &&
-                    referenceAlignment->GetBlock(0, blockBefore->GetRangeOfRow(0)->to) ==
-                    referenceAlignment->GetBlock(0, blockAfter->GetRangeOfRow(0)->from))
+                        referenceAlignment->GetBlock(0, blockBefore->GetRangeOfRow(0)->to) ==
+                        (refBlock=referenceAlignment->GetBlock(0, blockAfter->GetRangeOfRow(0)->from)) &&
+                        refBlock->IsAligned()
+                    )
                     unmergeable = true;
             }
 
@@ -1298,10 +1304,10 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
     // the new alignment that intersect with the aligned blocks from this object are added, so
     // that this object's block structure is unchanged
 
-    // resize all blocks
+    // resize all aligned blocks
     for (b=blocks.begin(); b!=be; b++) (*b)->AddRows(nNewRows);
 
-    // set ranges of aligned blocks
+    // set ranges of aligned blocks, and add them to the list
     AlignedBlockMap::const_iterator ab, abe = correspondingNewBlocks.end();
     const Block::Range *thisMaster, *newMaster;
     for (ab=correspondingNewBlocks.begin(); ab!=abe; ab++) {
@@ -1315,36 +1321,24 @@ bool BlockMultipleAlignment::MergeAlignment(const BlockMultipleAlignment *newAli
         }
     }
 
-    // then set unaligned block ranges, widths
-    Block *prevBlock = NULL, *nextBlock = NULL;
-    UnalignedBlock *thisUBlock;
-    const Block::Range *prevRange, *nextRange;
-    int from, to, width;
-    for (b=blocks.begin(); b!=be; b++) {
-
-        thisUBlock = dynamic_cast<UnalignedBlock*>(*b);
-        if (thisUBlock) {
-            BlockList::iterator nx(b);
-            nx++;
-            nextBlock = (nx != be) ? *nx : NULL;
-
-            for (i=0; i<nNewRows; i++) {
-                prevRange = prevBlock ? prevBlock->GetRangeOfRow(NRows() + i - nNewRows) : NULL;
-                nextRange = nextBlock ? nextBlock->GetRangeOfRow(NRows() + i - nNewRows) : NULL;
-                from = prevRange ? prevRange->to + 1 : 0;
-                to = nextRange ? nextRange->from - 1 :
-                        GetSequenceOfRow(NRows() + i - nNewRows)->Length() - 1;
-                thisUBlock->SetRangeOfRow(NRows() + i - nNewRows, from , to);
-                width = to - from + 1;
-                if (width > thisUBlock->width) thisUBlock->width = width;
-            }
-        }
-
-        prevBlock = *b;
+    // delete then recreate the unaligned blocks, in case a merge requires the
+    // creation of a new unaligned block
+    for (b=blocks.begin(); b!=be; ) {
+        if (!(*b)->IsAligned()) {
+            BlockList::iterator bb(b);
+            bb++;
+            delete *b;
+            blocks.erase(b);
+            b = bb;
+        } else
+            b++;
     }
 
     // update this alignment, but leave row scores/status alone
-    UpdateBlockMapAndColors(false);
+    if (!AddUnalignedBlocks() || !UpdateBlockMapAndColors(false)) {
+        ERR_POST(Error << "BlockMultipleAlignment::MergeAlignment() - internal update after merge failed");
+        return false;
+    }
     return true;
 }
 
