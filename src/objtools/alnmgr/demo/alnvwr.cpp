@@ -79,10 +79,15 @@ class CAlnMgrTestApp : public CNcbiApplication
     void             LoadDenseg(void);
     void             View1();
     void             View2(int screen_width);
+    void             View3(int screen_width);
+    void             View4();
+    void             View5();
+    void             View6();
+    void             GetSeqPosFromAlnPosDemo();
 private:
     CRef<CAlnVec> m_AV;
-    CRef<CScope>  m_Scope;
     CRef<CObjectManager> m_ObjMgr;
+    CRef<CScope>  m_Scope;
 };
 
 void CAlnMgrTestApp::Init(void)
@@ -119,6 +124,26 @@ void CAlnMgrTestApp::Init(void)
     arg_desc->AddDefaultKey
         ("v2", "",
          "View2: Prints in popset viewer style.",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("v3", "",
+         "View3: Prints in popset viewer style. Alternative.",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("v4", "",
+         "View4: Prints segments",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("v5", "",
+         "View5: Prints chunks.",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
+        ("v6", "",
+         "View6: Alternative ways to get the sequence.",
          CArgDescriptions::eBoolean, "f");
 
     arg_desc->AddDefaultKey
@@ -211,7 +236,6 @@ void CAlnMgrTestApp::View2(int screen_width)
 
     do {
         // create range
-
         rng.Set(aln_pos, aln_pos + screen_width - 1);
 
         string aln_seq_str;
@@ -234,41 +258,88 @@ void CAlnMgrTestApp::View2(int screen_width)
     } while (aln_pos < m_AV->GetAlnStop());
 }
 
-int CAlnMgrTestApp::Run(void)
+void CAlnMgrTestApp::View3(int screen_width)
 {
-    CArgs args = GetArgs();
+    TSeqPos aln_len = m_AV->GetAlnStop();
+    const CAlnMap::TNumrow nrows = m_AV->GetNumRows();
+    const CAlnMap::TNumseg nsegs = m_AV->GetNumSegs();
+    const CDense_seg::TStarts& starts = m_AV->GetDenseg().GetStarts();
+    const CDense_seg::TLens& lens = m_AV->GetDenseg().GetLens();
 
-    if ( args["log"] ) {
-        SetDiagStream( &args["log"].AsOutputFile() );
+    vector<string> buffer(nrows);
+    for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
+
+        // allocate space for the row
+        buffer[row].reserve(aln_len + 1);
+        string buff;
+
+        int seg, pos, left_seg = -1, right_seg = -1;
+        TSignedSeqPos start;
+        TSeqPos len;
+
+        // determine the ending right seg
+        for (seg = nsegs - 1, pos = seg * nrows + row;
+             seg >= 0; --seg, pos -= nrows) {
+            if (starts[pos] >= 0) {
+                right_seg = seg;
+                break;
+            }
+        }
+            
+        for (seg = 0, pos = row;  seg < nsegs; ++seg, pos += nrows) {
+            len = lens[seg];
+            if ((start = starts[pos]) >= 0) {
+
+                left_seg = seg; // ending left seg is at most here
+
+                m_AV->GetSeqString(buff, row, start, start + len - 1);
+                buffer[row] += buff;
+            } else {
+                // add appropriate number of gap/end chars
+                char* ch_buff = new char[len+1];
+                char fill_ch;
+                if (left_seg < 0  ||  seg > right_seg  &&  right_seg > 0) {
+                    fill_ch = m_AV->GetEndChar();
+                } else {
+                    fill_ch = m_AV->GetGapChar(row);
+                }
+                memset(ch_buff, fill_ch, len);
+                ch_buff[len] = 0;
+                buffer[row] += ch_buff;
+                delete[] ch_buff;
+            }
+        }
     }
 
+    TSeqPos pos = 0;
+    do {
+        for (CAlnMap::TNumrow row = 0; row < nrows; row++) {
+            cout << m_AV->GetSeqId(row)
+                 << "\t" 
+                 << m_AV->GetSeqPosFromAlnPos(row, pos, CAlnMap::eLeft)
+                 << "\t"
+                 << buffer[row].substr(pos, screen_width)
+                 << "\t"
+                 << m_AV->GetSeqPosFromAlnPos(row, pos + screen_width - 1,
+                                              CAlnMap::eLeft)
+                 << endl;
+        }
+        cout << endl;
+        pos += screen_width;
+        if (pos + screen_width > aln_len) {
+            screen_width = aln_len - pos;
+        }
+    } while (pos < aln_len);
+}
+
+
+
+// print segments
+
+void CAlnMgrTestApp::View4()
+{
     CAlnMap::TNumrow row;
-    CAlnMap::TNumseg seg;
 
-    LoadDenseg();
-
-    cout << "-----";
-
-    if (args["a"]) {
-        m_AV->SetAnchor(args["a"].AsInteger());
-    }
-
-    if (args["v1"]  &&  args["v1"].AsBoolean()) {
-        View1();
-    }
-    if (args["v2"]  &&  args["v2"].AsBoolean()) {
-        m_AV->SetGapChar('-');
-        m_AV->SetEndChar('.');
-        View2(40);
-    }
-
-    return 0;
-
-    string buff;
-
-    //////////////////////
-    // print segments
-    //////////////////////
     for (row=0; row<m_AV->GetNumRows(); row++) {
         cout << "Row: " << row << endl;
         for (int seg=0; seg<m_AV->GetNumSegs(); seg++) {
@@ -301,11 +372,17 @@ int CAlnMgrTestApp::Run(void)
         }
     }
     cout << "---------" << endl;
-    /////////////////////
+}
 
-    /////////////////////
-    // print chunks
-    /////////////////////
+
+
+// print chunks
+
+void CAlnMgrTestApp::View5()
+{
+    CArgs args = GetArgs();
+    CAlnMap::TNumrow row;
+
     CAlnMap::TSignedRange range(-1, m_AV->GetAlnStop()+1);
 
     for (row=0; row<m_AV->GetNumRows(); row++) {
@@ -341,8 +418,18 @@ int CAlnMgrTestApp::Run(void)
         }
     }
     cout << "---------" << endl;
+}
 
-    // GetSequence
+
+
+// alternative ways to get the sequence
+
+void CAlnMgrTestApp::View6()
+{
+    string buff;
+    CAlnMap::TNumseg seg;
+    CAlnMap::TNumrow row;
+
     m_AV->SetGapChar('-');
     m_AV->SetEndChar('.');
     for (seg=0; seg<m_AV->GetNumSegs(); seg++) {
@@ -370,17 +457,60 @@ int CAlnMgrTestApp::Run(void)
             cout << NcbiEndl;
         }
     }
+}
 
 
-    //////
-    // GetSeqPosFromAlnPos
+//////
+// GetSeqPosFromAlnPos
+void CAlnMgrTestApp::GetSeqPosFromAlnPosDemo()
+{
     cout << "["
         << m_AV->GetSeqPosFromAlnPos(2, 1390, CAlnMap::eForward, false)
         << "-" 
         << m_AV->GetSeqPosFromAlnPos(2, 1390, (CAlnMap::ESearchDirection)7, false)
         << "]"
         << NcbiEndl;
+}
 
+
+int CAlnMgrTestApp::Run(void)
+{
+    CArgs args = GetArgs();
+
+    if ( args["log"] ) {
+        SetDiagStream( &args["log"].AsOutputFile() );
+    }
+
+    LoadDenseg();
+
+    cout << "-----" << endl;
+
+    if (args["a"]) {
+        m_AV->SetAnchor(args["a"].AsInteger());
+    }
+
+    if (args["v1"]  &&  args["v1"].AsBoolean()) {
+        View1();
+    }
+    if (args["v2"]  &&  args["v2"].AsBoolean()) {
+        m_AV->SetGapChar('-');
+        m_AV->SetEndChar('.');
+        View2(40);
+    }
+    if (args["v3"]  &&  args["v3"].AsBoolean()) {
+        m_AV->SetGapChar('-');
+        m_AV->SetEndChar('.');
+        View3(40);
+    }
+    if (args["v4"]  &&  args["v4"].AsBoolean()) {
+        View4();
+    }
+    if (args["v5"]  &&  args["v5"].AsBoolean()) {
+        View5();
+    }
+    if (args["v6"]  &&  args["v6"].AsBoolean()) {
+        View6();
+    }
     return 0;
 }
 
@@ -399,6 +529,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/07/08 19:27:46  todorov
+* Added an speed-optimized viewer
+*
 * Revision 1.3  2003/06/04 18:20:40  todorov
 * read seq-submit
 *
