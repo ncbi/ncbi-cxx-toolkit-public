@@ -59,11 +59,11 @@ class IFlattishFeature;
 class CContigItem;
 class CWGSItem;
 class CGenomeItem;
-//class CEndSectionItem;
 class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
 class CFFContext;
+class COriginItem;
 
 
 class CGenbankFormatter : public CFlatItemFormatter
@@ -85,7 +85,6 @@ public:
     virtual void FormatComment(const CCommentItem& keys, IFlatTextOStream& text_os);
     virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os);
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os);
-    //virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os);
     virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os);
     virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os);
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os);
@@ -94,6 +93,7 @@ public:
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os);
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os);
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os);
+    virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os);
 
 private:
     // source
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2004/02/19 17:58:41  shomrat
+* Added method to format Origin item
+*
 * Revision 1.2  2004/01/14 15:54:28  shomrat
 * const removed
 *

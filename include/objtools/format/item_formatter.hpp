@@ -66,6 +66,7 @@ class CGenomeItem;
 class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
+class COriginItem;
 
 
 class CFlatItemFormatter : public IFormatter
@@ -105,6 +106,7 @@ public:
     virtual void FormatContig    (const CContigItem&, IFlatTextOStream&)      {}
     virtual void FormatWGS       (const CWGSItem&, IFlatTextOStream&)         {}
     virtual void FormatGenome    (const CGenomeItem&, IFlatTextOStream&)      {}
+    virtual void FormatOrigin    (const COriginItem&, IFlatTextOStream&)      {}
 
     // Context
     void SetContext(CFFContext& ctx) { m_Ctx.Reset(&ctx); }
@@ -164,6 +166,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2004/02/19 17:58:53  shomrat
+* Added method to format Origin item
+*
 * Revision 1.3  2004/02/11 16:48:14  shomrat
 * removed variable names to supress compiler warnings
 *

@@ -64,6 +64,7 @@ class CEndSectionItem;
 class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
+class COriginItem;
 
 
 class IFormatter : public CObject
@@ -89,7 +90,6 @@ public:
     virtual void FormatComment(const CCommentItem& comment, IFlatTextOStream& text_os) = 0;
     virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) = 0;
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) = 0;
-    //virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os) = 0;
     virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) = 0;
     virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) = 0;
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) = 0;
@@ -99,7 +99,8 @@ public:
     virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) = 0;
     virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) = 0;
     virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) = 0;
-
+    virtual void FormatOrigin(const COriginItem& origin, IFlatTextOStream& text_os) = 0;
+    
     virtual ~IFormatter(void) {}
 };
 
@@ -112,6 +113,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/02/19 17:58:23  shomrat
+* Added method to format Origin item
+*
 * Revision 1.4  2004/02/12 20:24:22  shomrat
 * removed unnecessary include
 *
