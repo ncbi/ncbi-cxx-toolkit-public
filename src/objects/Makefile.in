@@ -5,7 +5,7 @@
 
 USR_PROJ = sources
 
-SUB_PROJ = tinyseq gbseq docsum taxon1 mim entrez2 general seqcode biblio medline pub pubmed seqloc seqalign seqblock seqfeat seqres seqset featdef seq asn2asn medlars mla submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime cddalignview access objprt id1 objmgr util alnmgr flat entrezgene validator blast
+SUB_PROJ = tinyseq general seqcode biblio medline pub pubmed seqloc seqalign seqblock seqfeat seqres seqset featdef seq id1 gbseq entrez2 objmgr util alnmgr flat validator asn2asn medlars mla submit proj mmdb1 mmdb2 mmdb3 cdd cn3d ncbimime cddalignview access objprt docsum taxon1 mim entrezgene blast
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
