@@ -34,9 +34,6 @@
 #ifndef CN3D_OPENGL_RENDERER__HPP
 #define CN3D_OPENGL_RENDERER__HPP
 
-// do not include GL headers here, so that other modules can more easily
-// access this without potential name conflicts
-
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
 
@@ -52,6 +49,15 @@
 #include "style_manager.hpp"
 
 class wxFont;
+
+// do not include GL headers here, so that other modules can more easily
+// access this without potential name conflicts; use these instead by default,
+// but will be set to proper types in opengl_renderer.cpp
+#ifndef GL_ENUM_TYPE
+#define GL_ENUM_TYPE int
+#define GL_INT_TYPE int
+#define GL_DOUBLE_TYPE double
+#endif
 
 
 BEGIN_SCOPE(Cn3D)
@@ -172,13 +178,20 @@ private:
         eUseCachedValues,           // set color with cached values
         eSetColorIfDifferent        // set color IFF values are different from cached values (+ set cache to new values)
     };
-    void SetColor(EColorAction action, int type = 0, double red = 0.0, double green = 0.0, double blue = 0.0, double alpha = 1.0);
+    void SetColor(EColorAction action, GL_ENUM_TYPE = 0,
+        GL_DOUBLE_TYPE red = 0.0, GL_DOUBLE_TYPE green = 0.0, GL_DOUBLE_TYPE blue = 0.0, GL_DOUBLE_TYPE alpha = 1.0);
 
-	void DrawHalfBond(const Vector& site1, const Vector& midpoint,
-		StyleManager::eDisplayStyle style, double radius, bool cap1, bool cap2);
-	void DrawHalfWorm(const Vector *p0, const Vector& p1,
-		const Vector& p2, const Vector *p3, double radius, bool cap1, bool cap2, double tension);
-	
+    // only defined #if USE_MY_GLU_QUADS (in opengl_renderer.cpp)
+    void MyGluDisk(GL_DOUBLE_TYPE innerRadius, GL_DOUBLE_TYPE outerRadius, GL_INT_TYPE slices, GL_INT_TYPE loops);
+    void MyGluCylinder(GL_DOUBLE_TYPE baseRadius, GL_DOUBLE_TYPE topRadius,
+        GL_DOUBLE_TYPE height, GL_INT_TYPE slices, GL_INT_TYPE stacks);
+    void MyGluSphere(GL_DOUBLE_TYPE radius, GL_INT_TYPE slices, GL_INT_TYPE stacks);
+
+    void DrawHalfBond(const Vector& site1, const Vector& midpoint,
+        StyleManager::eDisplayStyle style, double radius, bool cap1, bool cap2);
+    void DrawHalfWorm(const Vector *p0, const Vector& p1,
+        const Vector& p2, const Vector *p3, double radius, bool cap1, bool cap2, double tension);
+
     void ConstructLogo(void);
 
     // camera data
@@ -244,6 +257,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2004/08/13 18:26:45  thiessen
+* continue with Mac GL optimization, as well as adding local GLU quadric equivalents (disk, cylinder, sphere)
+*
 * Revision 1.45  2004/08/12 17:28:55  thiessen
 * begin mac gl optimization process
 *

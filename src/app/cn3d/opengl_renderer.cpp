@@ -39,6 +39,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbitime.hpp> // avoids some 'CurrentTime' conflict later on...
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_limits.h>
 
 #if defined(__WXMSW__)
 #include <windows.h>
@@ -63,6 +64,10 @@
 #include <objects/cn3d/Cn3d_GL_matrix.hpp>
 #include <objects/cn3d/Cn3d_vector.hpp>
 
+#define GL_ENUM_TYPE GLenum
+#define GL_INT_TYPE GLint
+#define GL_DOUBLE_TYPE GLdouble
+
 #include "opengl_renderer.hpp"
 #include "structure_window.hpp"
 #include "cn3d_glcanvas.hpp"
@@ -79,9 +84,40 @@ USING_SCOPE(objects);
 
 BEGIN_SCOPE(Cn3D)
 
-// enables "uniform data" gl calls - e.g. glMaterial for every vertex, not just when color changes
+// whether to use my (limited) GLU quadric functions, or the native ones
+#define USE_MY_GLU_QUADS 1
+
+// enables "uniform data" gl calls - e.g. glMaterial and normal for every vertex, not just when the values change
 #ifdef __WXMAC__
+
 #define MAC_GL_OPTIMIZE 1
+#define MAC_GL_SETCOLOR SetColor(eUseCachedValues);
+#define MAC_GL_SETCOLOR_NORMAL(x, y, z) \
+            SetColor(eUseCachedValues); \
+            glNormal3d((x), (y), (z));
+#define MAC_GL_SETCOLOR_NORMAL_V(n) \
+            SetColor(eUseCachedValues); \
+            glNormal3dv(n);
+#define NON_MAC_GL_NORMAL(x, y, z)
+#define NON_MAC_GL_NORMAL_V(n)
+
+#ifndef USE_MY_GLU_QUADS
+#define USE_MY_GLU_QUADS 1    // necessary for mac GL optimization
+#endif
+
+#else // !__WXMAC__
+
+#define NON_MAC_GL_NORMAL(x, y, z) glNormal3d((x), (y), (z));
+#define NON_MAC_GL_NORMAL_V(n) glNormal3dv(n);
+#define MAC_GL_SETCOLOR
+#define MAC_GL_SETCOLOR_NORMAL(x, y, z)
+#define MAC_GL_SETCOLOR_NORMAL_V(n)
+
+#endif // __WXMAC__
+
+#ifndef USE_MY_GLU_QUADS
+// it's easier to keep one global qobj for now
+static GLUquadricObj *qobj = NULL;
 #endif
 
 static const double PI = acos(-1.0);
@@ -92,10 +128,7 @@ const unsigned int OpenGLRenderer::NO_LIST = 0;
 const unsigned int OpenGLRenderer::FIRST_LIST = 1;
 const unsigned int OpenGLRenderer::FONT_BASE = 1000;
 
-static const unsigned int ALL_FRAMES = 4294967295;
-
-// it's easier to keep one global qobj for now
-static GLUquadricObj *qobj = NULL;
+static const unsigned int ALL_FRAMES = kMax_UInt;
 
 // pick buffer
 const unsigned int OpenGLRenderer::NO_NAME = 0;
@@ -135,6 +168,184 @@ static void GL2Matrix(GLdouble *g, Matrix *m)
     m->m[8]=g[2];  m->m[9]=g[6];  m->m[10]=g[10]; m->m[11]=g[14];
     m->m[12]=g[3]; m->m[13]=g[7]; m->m[14]=g[11]; m->m[15]=g[15];
 }
+
+// my (limited) replacements for glu functions - these only do solid smooth objects
+#if USE_MY_GLU_QUADS
+
+static const GLdouble origin[] = { 0.0, 0.0, 0.0 }, unitZ[] = { 0.0, 0.0, 1.0 };
+
+#define GLU_DISK(q, i, o, s, l) MyGluDisk((i), (o), (s), (l))
+
+void OpenGLRenderer::MyGluDisk(GLdouble innerRadius, GLdouble outerRadius, GLint slices, GLint loops)
+{
+    if (slices < 3 || loops < 1 || innerRadius < 0.0 || innerRadius >= outerRadius) {
+        ERRORMSG("MyGluDisk() - bad parameters");
+        return;
+    }
+
+    // calculate all the x,y coordinates (at radius 1)
+    vector < GLdouble > x(slices), y(slices);
+    int l = 0, s, i;
+    GLdouble f, f2, a;
+    for (s=0; s<slices; ++s) {
+        a = PI * 2 * s / slices;
+        x[s] = cos(a);
+        y[s] = sin(a);
+    }
+
+    // if innerRadius is zero, then make the center a triangle fan
+    if (innerRadius == 0.0) {
+        f = innerRadius + (outerRadius - innerRadius) / loops;
+        glBegin(GL_TRIANGLE_FAN);
+        MAC_GL_SETCOLOR
+        glNormal3dv(unitZ);
+        glVertex3dv(origin);
+        for (s=0; s<=slices; ++s) {
+            i = (s == slices) ? 0 : s;
+            MAC_GL_SETCOLOR_NORMAL_V(unitZ)
+            glVertex3d(x[i] * f, y[i] * f, 0.0);
+        }
+        glEnd();
+        ++l;
+    }
+
+    // outer loops (or all if innerRadius > zero) get quad strips
+    for (; l<loops; ++l) {
+        f = innerRadius + (outerRadius - innerRadius) * l / loops;
+        f2 = innerRadius + (outerRadius - innerRadius) * (l + 1) / loops;
+        glBegin(GL_QUAD_STRIP);
+        NON_MAC_GL_NORMAL_V(unitZ)
+        for (s=0; s<=slices; ++s) {
+            i = (s == slices) ? 0 : s;
+            MAC_GL_SETCOLOR_NORMAL_V(unitZ)
+            glVertex3d(x[i] * f, y[i] * f, 0.0);
+            MAC_GL_SETCOLOR_NORMAL_V(unitZ)
+            glVertex3d(x[i] * f2, y[i] * f2, 0.0);
+        }
+        glEnd();
+    }
+}
+
+#define GLU_CYLINDER(q, b, t, h, l, k) MyGluCylinder((b), (t), (h), (l), (k))
+
+void OpenGLRenderer::MyGluCylinder(GLdouble baseRadius, GLdouble topRadius, GLdouble height, GLint slices, GLint stacks)
+{
+    if (slices < 3 || stacks < 1 || height <= 0.0 || baseRadius < 0.0 || topRadius < 0.0 ||
+            (baseRadius == 0.0 && topRadius == 0.0)) {
+        ERRORMSG("MyGluCylinder() - bad parameters");
+        return;
+    }
+
+    // calculate all the x,y coordinates (at radius 1)
+    vector < GLdouble > x(slices), y(slices);
+    vector < Vector > N(slices);
+    int k, s, i;
+    GLdouble f, f2, a;
+    Matrix r;
+    for (s=0; s<slices; ++s) {
+        a = PI * 2 * s / slices;
+        x[s] = cos(a);
+        y[s] = sin(a);
+        a += PI / 2;
+        SetRotationMatrix(&r, Vector(cos(a), sin(a), 0.0), atan((topRadius - baseRadius) / height));
+        N[s].Set(x[s], y[s], 0.0);
+        ApplyTransformation(&(N[s]), r);
+    }
+
+    // create each stack out of a quad strip
+    for (k=0; k<stacks; ++k) {
+        f = baseRadius + (topRadius - baseRadius) * k / stacks;
+        f2 = baseRadius + (topRadius - baseRadius) * (k + 1) / stacks;
+        glBegin(GL_QUAD_STRIP);
+        for (s=0; s<=slices; ++s) {
+            i = (s == slices) ? 0 : s;
+            MAC_GL_SETCOLOR
+            glNormal3d(N[i].x, N[i].y, N[i].z);
+            glVertex3d(x[i] * f2, y[i] * f2, height * (k + 1) / stacks);
+            MAC_GL_SETCOLOR_NORMAL(N[i].x, N[i].y, N[i].z)
+            glVertex3d(x[i] * f, y[i] * f, height * k / stacks);
+        }
+        glEnd();
+    }
+}
+
+#define GLU_SPHERE(q, r, l, k) MyGluSphere((r), (l), (k))
+
+void OpenGLRenderer::MyGluSphere(GLdouble radius, GLint slices, GLint stacks)
+{
+    if (slices < 3 || stacks < 2 || radius <= 0.0) {
+        ERRORMSG("MyGluSphere() - bad parameters");
+        return;
+    }
+
+    // calculate all the x,y coordinates (at radius 1)
+    vector < vector < Vector > > N(stacks - 1);
+    int k, s, i;
+    GLdouble z, a, r;
+    for (k=0; k<stacks-1; ++k) {
+        N[k].resize(slices);
+        a = PI * (-0.5 + (1.0 + k) / stacks);
+        z = sin(a);
+        r = cos(a);
+        for (s=0; s<slices; ++s) {
+            a = PI * 2 * s / slices;
+            N[k][s].Set(cos(a) * r, sin(a) * r, z);
+        }
+    }
+
+    // bottom triangle fan
+    glBegin(GL_TRIANGLE_FAN);
+    MAC_GL_SETCOLOR
+    glNormal3d(0.0, 0.0, -1.0);
+    glVertex3d(0.0, 0.0, -radius);
+    for (s=slices; s>=0; --s) {
+        i = (s == slices) ? 0 : s;
+        const Vector& n = N[0][i];
+        MAC_GL_SETCOLOR
+        glNormal3d(n.x, n.y, n.z);
+        glVertex3d(n.x * radius, n.y * radius, n.z * radius);
+    }
+    glEnd();
+
+    // middle quad strips
+    for (k=0; k<stacks-2; ++k) {
+        glBegin(GL_QUAD_STRIP);
+        for (s=slices; s>=0; --s) {
+            i = (s == slices) ? 0 : s;
+            const Vector& n1 = N[k][i];
+            MAC_GL_SETCOLOR
+            glNormal3d(n1.x, n1.y, n1.z);
+            glVertex3d(n1.x * radius, n1.y * radius, n1.z * radius);
+            const Vector& n2 = N[k + 1][i];
+            MAC_GL_SETCOLOR
+            glNormal3d(n2.x, n2.y, n2.z);
+            glVertex3d(n2.x * radius, n2.y * radius, n2.z * radius);
+        }
+        glEnd();
+    }
+
+    // top triangle fan
+    glBegin(GL_TRIANGLE_FAN);
+    MAC_GL_SETCOLOR
+    glNormal3dv(unitZ);
+    glVertex3d(0.0, 0.0, radius);
+    for (s=0; s<=slices; ++s) {
+        i = (s == slices) ? 0 : s;
+        const Vector& n = N[stacks - 2][i];
+        MAC_GL_SETCOLOR
+        glNormal3d(n.x, n.y, n.z);
+        glVertex3d(n.x * radius, n.y * radius, n.z * radius);
+    }
+    glEnd();
+}
+
+#else   // !USE_MY_GLU_QUADS
+
+#define GLU_DISK gluDisk
+#define GLU_CYLINDER gluCylinder
+#define GLU_SPHERE gluSphere
+
+#endif  // USE_MY_GLU_QUADS
 
 // OpenGLRenderer methods - initialization and setup
 
@@ -639,6 +850,7 @@ void OpenGLRenderer::AttachStructureSet(StructureSet *targetStructureSet)
 
 void OpenGLRenderer::RecreateQuadric(void) const
 {
+#ifndef USE_MY_GLU_QUADS
     if (qobj)
         gluDeleteQuadric(qobj);
     if (!(qobj = gluNewQuadric())) {
@@ -649,6 +861,7 @@ void OpenGLRenderer::RecreateQuadric(void) const
     gluQuadricNormals(qobj, (GLenum) GLU_SMOOTH);
     gluQuadricOrientation(qobj, (GLenum) GLU_OUTSIDE);
     gluQuadricTexture(qobj, GL_FALSE);
+#endif
 }
 
 void OpenGLRenderer::Construct(void)
@@ -680,9 +893,10 @@ void OpenGLRenderer::Construct(void)
     GlobalMessenger()->UnPostStructureRedraws();
 }
 
-void OpenGLRenderer::SetColor(OpenGLRenderer::EColorAction action, int type, double red, double green, double blue, double alpha)
+void OpenGLRenderer::SetColor(OpenGLRenderer::EColorAction action,
+    GLenum type, GLdouble red, GLdouble green, GLdouble blue, GLdouble alpha)
 {
-    static double cr, cg, cb, ca;
+    static GLdouble cr, cg, cb, ca;
     static GLenum cachedType = GL_NONE, lastType = GL_NONE;
 
     if (action == eResetCache) {
@@ -899,7 +1113,6 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
     // render spheres in order (farthest first)
     SpherePtrList::reverse_iterator i, ie=transparentSpheresToRender.rend();
     for (i=transparentSpheresToRender.rbegin(); i!=ie; ++i) {
-        SetColor(eSetColorIfDifferent, GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
         glLoadName(static_cast<GLuint>(i->ptr->name));
         glPushMatrix();
         glTranslated(i->siteGL.x, i->siteGL.y, i->siteGL.z);
@@ -909,7 +1122,12 @@ void OpenGLRenderer::RenderTransparentSpheres(void)
         glRotated(360.0*rand()/RAND_MAX,
             1.0*rand()/RAND_MAX - 0.5, 1.0*rand()/RAND_MAX - 0.5, 1.0*rand()/RAND_MAX - 0.5);
 
-        gluSphere(qobj, i->ptr->radius, atomSlices, atomStacks);
+#if MAC_GL_OPTIMIZE
+        SetColor(eSetCacheValues, GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
+#else
+        SetColor(eSetColorIfDifferent, GL_DIFFUSE, i->ptr->color[0], i->ptr->color[1], i->ptr->color[2], i->ptr->alpha);
+#endif
+        GLU_SPHERE(qobj, i->ptr->radius, atomSlices, atomStacks);
         glPopMatrix();
     }
 
@@ -926,11 +1144,15 @@ void OpenGLRenderer::DrawAtom(const Vector& site, const AtomStyle& atomStyle)
         return;
 
     if (atomStyle.style == StyleManager::eSolidAtom) {
+#if MAC_GL_OPTIMIZE
+        SetColor(eSetCacheValues, GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
+#else
         SetColor(eSetColorIfDifferent, GL_DIFFUSE, atomStyle.color[0], atomStyle.color[1], atomStyle.color[2]);
+#endif
         glLoadName(static_cast<GLuint>(atomStyle.name));
         glPushMatrix();
         glTranslated(site.x, site.y, site.z);
-        gluSphere(qobj, atomStyle.radius, atomSlices, atomStacks);
+        GLU_SPHERE(qobj, atomStyle.radius, atomSlices, atomStacks);
         glPopMatrix();
     }
     // need to delay rendering of transparent spheres
@@ -1021,13 +1243,9 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
         if (radius == 0.0) {
             if (i > 0) {
                 glBegin(GL_LINES);
-#if MAC_GL_OPTIMIZE
-				SetColor(eUseCachedValues);
-#endif
+                MAC_GL_SETCOLOR
                 glVertex3d(p.x, p.y, p.z);
-#if MAC_GL_OPTIMIZE
-				SetColor(eUseCachedValues);
-#endif
+                MAC_GL_SETCOLOR
                 glVertex3d(Qt.x, Qt.y, Qt.z);
                 glEnd();
             }
@@ -1117,25 +1335,17 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
                 for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
-#if MAC_GL_OPTIMIZE
-					SetColor(eUseCachedValues);
-#endif
+                    MAC_GL_SETCOLOR
                     glNormal3d(Nx[k], Ny[k], Nz[k]);
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
-#if MAC_GL_OPTIMIZE
-					SetColor(eUseCachedValues);
-#endif
+                    MAC_GL_SETCOLOR
                     glNormal3d(pNx[j], pNy[j], pNz[j]);
                     glVertex3d(pCx[j], pCy[j], pCz[j]);
                 }
-#if MAC_GL_OPTIMIZE
-				SetColor(eUseCachedValues);
-#endif
+                MAC_GL_SETCOLOR
                 glNormal3d(Nx[offset], Ny[offset], Nz[offset]);
                 glVertex3d(Cx[offset], Cy[offset], Cz[offset]);
-#if MAC_GL_OPTIMIZE
-				SetColor(eUseCachedValues);
-#endif
+                MAC_GL_SETCOLOR
                 glNormal3d(pNx[0], pNy[0], pNz[0]);
                 glVertex3d(pCx[0], pCy[0], pCz[0]);
                 glEnd();
@@ -1145,14 +1355,9 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
             if (cap1 && i == 0) {
                 dQt.normalize();
                 glBegin(GL_POLYGON);
-#ifndef MAC_GL_OPTIMIZE
-                glNormal3d(-dQt.x, -dQt.y, -dQt.z);
-#endif
+                NON_MAC_GL_NORMAL(-dQt.x, -dQt.y, -dQt.z)
                 for (j = wormSides - 1; j >= 0; --j) {
-#if MAC_GL_OPTIMIZE
-					SetColor(eUseCachedValues);
-					glNormal3d(-dQt.x, -dQt.y, -dQt.z);
-#endif
+                    MAC_GL_SETCOLOR_NORMAL(-dQt.x, -dQt.y, -dQt.z)
                     glVertex3d(Cx[j], Cy[j], Cz[j]);
                 }
                 glEnd();
@@ -1160,16 +1365,11 @@ void OpenGLRenderer::DrawHalfWorm(const Vector *p0, const Vector& p1,
             else if (cap2 && i == wormSegments) {
                 dQt.normalize();
                 glBegin(GL_POLYGON);
-#ifndef MAC_GL_OPTIMIZE
-                glNormal3d(dQt.x, dQt.y, dQt.z);
-#endif
+                NON_MAC_GL_NORMAL(dQt.x, dQt.y, dQt.z)
                 for (j = 0; j < wormSides; ++j) {
                     k = j + offset;
                     if (k >= wormSides) k -= wormSides;
-#if MAC_GL_OPTIMIZE
-					SetColor(eUseCachedValues);
-					glNormal3d(dQt.x, dQt.y, dQt.z);
-#endif
+                    MAC_GL_SETCOLOR_NORMAL(dQt.x, dQt.y, dQt.z)
                     glVertex3d(Cx[k], Cy[k], Cz[k]);
                 }
                 glEnd();
@@ -1209,14 +1409,12 @@ void OpenGLRenderer::DrawHalfBond(const Vector& site1, const Vector& midpoint,
     StyleManager::eDisplayStyle style, double radius,
     bool cap1, bool cap2)
 {
-#if MAC_GL_OPTIMIZE
-        SetColor(eUseCachedValues);
-#endif
-
     // straight line bond
     if (style == StyleManager::eLineBond || (style == StyleManager::eCylinderBond && radius <= 0.0)) {
         glBegin(GL_LINES);
+        MAC_GL_SETCOLOR
         glVertex3d(site1.x, site1.y, site1.z);
+        MAC_GL_SETCOLOR
         glVertex3d(midpoint.x, midpoint.y, midpoint.z);
         glEnd();
     }
@@ -1227,17 +1425,17 @@ void OpenGLRenderer::DrawHalfBond(const Vector& site1, const Vector& midpoint,
         if (length <= 0.000001 || bondSides <= 1) return;
         glPushMatrix();
         DoCylinderPlacementTransform(site1, midpoint, length);
-        gluCylinder(qobj, radius, radius, length, bondSides, 1);
+        GLU_CYLINDER(qobj, radius, radius, length, bondSides, 1);
         if (cap1) {
             glPushMatrix();
             glRotated(180.0, 0.0, 1.0, 0.0);
-            gluDisk(qobj, 0.0, radius, bondSides, 1);
+            GLU_DISK(qobj, 0.0, radius, bondSides, 1);
             glPopMatrix();
         }
         if (cap2) {
             glPushMatrix();
             glTranslated(0.0, 0.0, length);
-            gluDisk(qobj, 0.0, radius, bondSides, 1);
+            GLU_DISK(qobj, 0.0, radius, bondSides, 1);
             glPopMatrix();
         }
         glPopMatrix();
@@ -1303,7 +1501,11 @@ void OpenGLRenderer::DrawBond(const Vector& site1, const Vector& site2,
 
 void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const HelixStyle& style)
 {
+#if MAC_GL_OPTIMIZE
+    SetColor(eSetCacheValues, GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+#else
     SetColor(eSetColorIfDifferent, GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+#endif
     glLoadName(static_cast<GLuint>(NO_NAME));
 
     double wholeLength = (Nterm - Cterm).length();
@@ -1317,12 +1519,12 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     double shaftLength =
         (style.style == StyleManager::eObjectWithArrow && style.arrowLength < wholeLength) ?
             wholeLength - style.arrowLength : wholeLength;
-    gluCylinder(qobj, style.radius, style.radius, shaftLength, helixSides, 1);
+    GLU_CYLINDER(qobj, style.radius, style.radius, shaftLength, helixSides, 1);
 
     // Nterm cap
     glPushMatrix();
     glRotated(180.0, 0.0, 1.0, 0.0);
-    gluDisk(qobj, 0.0, style.radius, helixSides, 1);
+    GLU_DISK(qobj, 0.0, style.radius, helixSides, 1);
     glPopMatrix();
 
     // Cterm Arrow
@@ -1332,20 +1534,20 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
             glPushMatrix();
             glTranslated(0.0, 0.0, shaftLength);
             glRotated(180.0, 0.0, 1.0, 0.0);
-            gluDisk(qobj, style.radius, style.radius * style.arrowBaseWidthProportion, helixSides, 1);
+            GLU_DISK(qobj, style.radius, style.radius * style.arrowBaseWidthProportion, helixSides, 1);
             glPopMatrix();
         }
         // arrow body
         glPushMatrix();
         glTranslated(0.0, 0.0, shaftLength);
-        gluCylinder(qobj, style.radius * style.arrowBaseWidthProportion,
+        GLU_CYLINDER(qobj, style.radius * style.arrowBaseWidthProportion,
             style.radius * style.arrowTipWidthProportion, style.arrowLength, helixSides, 10);
         glPopMatrix();
         // arrow tip
         if (style.arrowTipWidthProportion > 0.0) {
             glPushMatrix();
             glTranslated(0.0, 0.0, wholeLength);
-            gluDisk(qobj, 0.0, style.radius * style.arrowTipWidthProportion, helixSides, 1);
+            GLU_DISK(qobj, 0.0, style.radius * style.arrowTipWidthProportion, helixSides, 1);
             glPopMatrix();
         }
     }
@@ -1354,7 +1556,7 @@ void OpenGLRenderer::DrawHelix(const Vector& Nterm, const Vector& Cterm, const H
     else {
         glPushMatrix();
         glTranslated(0.0, 0.0, wholeLength);
-        gluDisk(qobj, 0.0, style.radius, helixSides, 1);
+        GLU_DISK(qobj, 0.0, style.radius, helixSides, 1);
         glPopMatrix();
     }
 
@@ -1370,7 +1572,11 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     Vector a, h;
     int i;
 
+#if MAC_GL_OPTIMIZE
+    SetColor(eSetCacheValues, GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+#else
     SetColor(eSetColorIfDifferent, GL_DIFFUSE, style.color[0], style.color[1], style.color[2]);
+#endif
     glLoadName(static_cast<GLuint>(NO_NAME));
 
     /* in this brick's world coordinates, the long axis (N-C direction) is
@@ -1399,46 +1605,70 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
     glBegin(GL_QUADS);
 
     for (i=0; i<3; ++i) n[i] = unitNormal[i];
+    MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c010);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c011);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c111);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c110);
 
     for (i=0; i<3; ++i) n[i] = -unitNormal[i];
+    MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c000);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c100);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c101);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c001);
 
     for (i=0; i<3; ++i) n[i] = h[i];
+    MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c100);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c110);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c111);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c101);
 
     for (i=0; i<3; ++i) n[i] = -h[i];
+    MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c000);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c001);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c011);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c010);
 
     for (i=0; i<3; ++i) n[i] = -a[i];
+    MAC_GL_SETCOLOR
     glNormal3dv(n);
     glVertex3dv(c000);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c010);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c110);
+    MAC_GL_SETCOLOR_NORMAL_V(n);
     glVertex3dv(c100);
 
     if (style.style == StyleManager::eObjectWithoutArrow) {
         for (i=0; i<3; ++i) n[i] = a[i];
+        MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(c001);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(c101);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(c111);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(c011);
 
     } else {
@@ -1461,15 +1691,23 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 
         // the back-facing rectangles on the base of the arrow
         for (i=0; i<3; ++i) n[i] = -a[i];
+        MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(c111);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(LT);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(LB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(c101);
 
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(c011);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(c001);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(RB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(RT);
 
         // the left side of the arrow
@@ -1477,10 +1715,14 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         Vector nL = vector_cross(unitNormal, h);
         nL.normalize();
         for (i=0; i<3; ++i) n[i] = nL[i];
+        MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FT);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(FB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(LB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(LT);
 
         // the right side of the arrow
@@ -1488,10 +1730,14 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
         Vector nR = vector_cross(h, unitNormal);
         nR.normalize();
         for (i=0; i<3; ++i) n[i] = nR[i];
+        MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FT);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(RT);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(RB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(FB);
 
         glEnd();
@@ -1499,15 +1745,21 @@ void OpenGLRenderer::DrawStrand(const Vector& Nterm, const Vector& Cterm,
 
         // the top and bottom arrow triangles
         for (i=0; i<3; ++i) n[i] = unitNormal[i];
+        MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FT);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(LT);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(RT);
 
         for (i=0; i<3; ++i) n[i] = -unitNormal[i];
+        MAC_GL_SETCOLOR
         glNormal3dv(n);
         glVertex3dv(FB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(RB);
+        MAC_GL_SETCOLOR_NORMAL_V(n);
         glVertex3dv(LB);
     }
 
@@ -1682,6 +1934,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.82  2004/08/13 18:26:45  thiessen
+* continue with Mac GL optimization, as well as adding local GLU quadric equivalents (disk, cylinder, sphere)
+*
 * Revision 1.81  2004/08/12 17:28:55  thiessen
 * begin mac gl optimization process
 *
