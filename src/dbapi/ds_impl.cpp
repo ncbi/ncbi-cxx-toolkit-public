@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/04/15 19:11:42  kholodov
+* Changed GetContext() -> GetDriverContext
+*
 * Revision 1.3  2002/02/08 17:38:26  kholodov
 * Moved listener registration to parent objects
 *
@@ -79,6 +82,13 @@ void CDataSource::SetLogStream(CNcbiOstream* out)
         delete h;
     }
 }
+
+I_DriverContext* CDataSource::GetDriverContext() {
+    if( m_context == 0 )
+      throw CDbapiException("CDataSource::GetDriverContext(): no valid context");
+
+    return m_context;
+  }
 
 IConnection* CDataSource::CreateConnection()
 {

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/04/15 19:08:55  kholodov
+* Changed GetContext() -> GetDriverContext
+*
 * Revision 1.6  2002/02/08 22:43:10  kholodov
 * Set/GetDataBase() renamed to Set/GetDatabase() respectively
 *
@@ -87,11 +90,11 @@ void CConnection::Connect(const string& user,
 {
 
     m_connection = m_ds->
-        GetContext()->Connect(server.c_str(),
-                              user.c_str(),
-                              password.c_str(),
-                              0,
-                              m_ds->IsPoolUsed());
+        GetDriverContext()->Connect(server.c_str(),
+                                    user.c_str(),
+                                    password.c_str(),
+                                    0,
+                                    m_ds->IsPoolUsed());
     SetDbName(database);
 					   
 }
@@ -136,7 +139,7 @@ void CConnection::SetDbName(const string& name,
 CDB_Connection* CConnection::GetConnAux()
 {
     CDB_Connection *temp = m_ds->
-        GetContext()->Connect(GetConnection()->ServerName(),
+   GetDriverContext()->Connect(GetConnection()->ServerName(),
                               GetConnection()->UserName(),
                               GetConnection()->Password(),
                               0,

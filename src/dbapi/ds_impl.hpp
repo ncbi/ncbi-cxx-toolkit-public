@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.2  2002/04/15 19:11:42  kholodov
+* Changed GetContext() -> GetDriverContext
+*
 * Revision 1.1  2002/01/30 14:51:23  kholodov
 * User DBAPI implementation, first commit
 *
@@ -50,48 +53,43 @@ BEGIN_NCBI_SCOPE
 
 //=================================================================
 class CDataSource : public CActiveObject, 
-		    public IEventListener, 
-		    public IDataSource
+                    public IEventListener, 
+                    public IDataSource
 {
 public:
-  CDataSource(I_DriverContext *ctx,
-	      CNcbiOstream *out);
+    CDataSource(I_DriverContext *ctx,
+                CNcbiOstream *out);
 
 public:
-  virtual ~CDataSource();
+    virtual ~CDataSource();
 
 
-  virtual void SetLoginTimeout(unsigned int i);
-  virtual void SetLogStream(CNcbiOstream* out);
+    virtual void SetLoginTimeout(unsigned int i);
+    virtual void SetLogStream(CNcbiOstream* out);
 
-  int GetLoginTimeout() const {
-    return m_loginTimeout;
-  }
+    int GetLoginTimeout() const {
+        return m_loginTimeout;
+    }
 
-  I_DriverContext* GetContext() {
-    if( m_context == 0 )
-      throw CDbapiException("CDataSource::GetContext(): no valid context");
+    virtual I_DriverContext* GetDriverContext();
 
-    return m_context;
-  }
+    void UsePool(bool use) {
+        m_poolUsed = use;
+    }
 
-  void UsePool(bool use) {
-    m_poolUsed = use;
-  }
+    bool IsPoolUsed() {
+        return m_poolUsed;
+    }
 
-  bool IsPoolUsed() {
-    return m_poolUsed;
-  }
+    virtual IConnection* CreateConnection();
 
-  virtual IConnection* CreateConnection();
-
-  // Implement IEventListener interface
-  virtual void Action(const CDbapiEvent& e);
+    // Implement IEventListener interface
+    virtual void Action(const CDbapiEvent& e);
 
 private:
-  int m_loginTimeout;
-  I_DriverContext *m_context;
-  bool m_poolUsed;
+    int m_loginTimeout;
+    I_DriverContext *m_context;
+    bool m_poolUsed;
 };
 
 //====================================================================
