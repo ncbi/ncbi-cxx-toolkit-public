@@ -256,12 +256,15 @@ int CSplignApp::Run()
   while(x_GetNextQuery(ifs_hits, &hits, &first_line)) {
 
     string query (hits[0].m_Query);
-    string subj (hits[0].m_Subj);
 
     // select the best groups among all subjects
     CSubjMixer mixer (&hits); // mix subjects
     DoFilter(&hits);          // filter and select the best group
     mixer.UnMix(&hits);
+    string subj;
+    if(hits.size()) {
+      subj = hits[0].m_Subj;
+    }
 
     bool error = false;
     try {
@@ -567,6 +570,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/11/26 16:13:21  kapustin
+ * Determine subject after filtering for more accurate log reporting
+ *
  * Revision 1.7  2003/11/21 16:04:18  kapustin
  * Enable RLE for Poly(A) tail.
  *
