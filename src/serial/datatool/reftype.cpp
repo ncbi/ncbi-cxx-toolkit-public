@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2000/11/01 20:38:59  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.17  2000/09/26 17:38:27  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -171,6 +175,11 @@ CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
 TObjectPtr CReferenceDataType::CreateDefault(const CDataValue& value) const
 {
     return ResolveOrThrow()->CreateDefault(value);
+}
+
+string CReferenceDataType::GetDefaultString(const CDataValue& value) const
+{
+    return ResolveOrThrow()->GetDefaultString(value);
 }
 
 AutoPtr<CTypeStrings> CReferenceDataType::GenerateCode(void) const

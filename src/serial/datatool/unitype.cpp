@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2000/11/01 20:38:59  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.14  2000/10/13 16:28:45  vasilche
 * Reduced header dependency.
 * Avoid use of templates with virtual methods.
@@ -132,7 +136,7 @@ void CUniSequenceDataType::PrintDTD(CNcbiOstream& out) const
         out << ref->UserTypeXmlTagName();
     else
         out << data->XmlTagName();
-    out << "+ ) >\n";
+    out << "* ) >\n";
     if ( !ref ) {
         // array of internal type, we should generate tag for element type
         if ( GetParentType() == 0 )

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2000/11/01 20:38:59  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.32  2000/08/25 15:59:20  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -224,14 +228,18 @@ CNcbiOstream& CClassCode::GenerateHPP(CNcbiOstream& header) const
     header <<
         "public:\n";
     Write(header, m_ClassPublic);
-    header << 
-        "\n"
-        "protected:\n";
-    Write(header, m_ClassProtected);
-    header << 
-        "\n"
-        "private:\n";
-    Write(header, m_ClassPrivate);
+    if ( !Empty(m_ClassProtected) ) {
+        header << 
+            "\n"
+            "protected:\n";
+        Write(header, m_ClassProtected);
+    }
+    if ( !Empty(m_ClassPrivate) ) {
+        header << 
+            "\n"
+            "private:\n";
+        Write(header, m_ClassPrivate);
+    }
     header <<
         "};\n";
     return header;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/01 20:36:12  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.4  2000/08/25 15:58:48  vasilche
 * Renamed directory tool -> datatool.
 *
@@ -80,6 +84,7 @@ public:
     bool CheckType(void) const;
     bool CheckValue(const CDataValue& value) const;
     TObjectPtr CreateDefault(const CDataValue& value) const;
+    string GetDefaultString(const CDataValue& value) const;
 
     const CTypeInfo* GetRealTypeInfo(void);
     CTypeInfo* CreateTypeInfo(void);

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/11/01 20:38:58  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.25  2000/09/26 17:38:25  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -262,7 +266,7 @@ string CClassTypeStrings::GetRef(const CNamespace& /*ns*/) const
 
 string CClassTypeStrings::NewInstance(const string& init) const
 {
-    return GetCType(CNamespace::KEmptyNamespace)+"::New("+init+')';
+    return "new "+GetCType(CNamespace::KEmptyNamespace)+"("+init+')';
 }
 
 string CClassTypeStrings::GetResetCode(const string& var) const
@@ -280,21 +284,11 @@ void CClassTypeStrings::SetParentClass(const string& className,
 }
 
 static
-CNcbiOstream& DeclareStaticConstructor(CNcbiOstream& out,
-                                       const string className)
+CNcbiOstream& DeclareConstructor(CNcbiOstream& out, const string className)
 {
     return out <<
-        "    // constructor for static/automatic objects\n"
+        "    // constructor\n"
         "    "<<className<<"(void);\n";
-}
-
-static
-CNcbiOstream& DeclareHeapConstructor(CNcbiOstream& out, const string className)
-{
-    return out <<
-        "    // hidden constructor for dynamic objects\n"
-        "    "<<className<<"(ECanDelete);\n"
-        "\n";
 }
 
 static
@@ -307,18 +301,6 @@ CNcbiOstream& DeclareDestructor(CNcbiOstream& out, const string className,
     if ( virt )
         out << "virtual ";
     return out << '~'<<className<<"(void);\n"
-        "\n";
-}
-
-static
-CNcbiOstream& GenerateNewMethod(CNcbiOstream& out, const string& className)
-{
-    return out <<
-        "    // create dynamically allocated object\n"
-        "    static "<<className<<"* New(void)\n"
-        "        {\n"
-        "            return new "<<className<<"(eCanDelete);\n"
-        "        }\n"
         "\n";
 }
 
@@ -339,13 +321,8 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
     }
     string methodPrefix = code.GetMethodPrefix();
 
-    DeclareStaticConstructor(code.ClassPublic(), codeClassName);
-    DeclareHeapConstructor(code.ClassProtected(), codeClassName);
+    DeclareConstructor(code.ClassPublic(), codeClassName);
     DeclareDestructor(code.ClassPublic(), codeClassName, haveUserClass);
-
-    if ( !haveUserClass ) {
-        GenerateNewMethod(code.ClassPublic(), codeClassName);
-    }
 
     string ncbiNamespace =
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
@@ -361,7 +338,7 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
 
     // constructors/destructor code
     code.Methods() <<
-        "// constructor for static/automatic objects\n"<<
+        "// constructor\n"<<
         methodPrefix<<codeClassName<<"(void)\n";
     if ( code.HaveInitializers() ) {
         code.Methods() <<
@@ -370,21 +347,6 @@ void CClassTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         code.Methods() << '\n';
     }
     code.Methods() <<
-        "{\n"
-        "}\n"
-        "\n";
-
-    code.Methods() <<
-        "// constructor for dynamic objects\n"<<
-        methodPrefix<<codeClassName<<"(NCBI_NS_NCBI::CObject::ECanDelete)\n";
-    code.Methods() <<
-        "    : Tparent(NCBI_NS_NCBI::CObject::eCanDelete)";
-    if ( code.HaveInitializers() ) {
-        code.Methods() << ", ";
-        code.WriteInitializers(code.Methods());
-    }
-    code.Methods() <<
-        "\n"
         "{\n"
         "}\n"
         "\n";
@@ -406,6 +368,9 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                                           const string& classPrefix) const
 {
     bool delayed = false;
+    bool generateDoNotDeleteThisObject = false;
+    bool wrapperClass = (m_Members.size() == 1) &&
+        m_Members.front().cName.empty();
     // generate member methods
     {
         iterate ( TMembers, i, m_Members ) {
@@ -414,11 +379,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             else {
                 i->type->GenerateTypeCode(code);
+                if ( i->type->GetKind() == eKindObject )
+                    generateDoNotDeleteThisObject = true;
             }
             if ( i->delayed )
                 delayed = true;
         }
     }
+    if ( GetKind() != eKindObject )
+        generateDoNotDeleteThisObject = false;
     if ( delayed )
         code.HPPIncludes().insert("serial/delaybuf");
 
@@ -441,7 +410,33 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     CNcbiOstream& methods = code.Methods();
     CNcbiOstream& inlineMethods = code.InlineMethods();
 
-    bool generateMainReset = true;
+    if ( wrapperClass ) {
+        const SMemberInfo& info = m_Members.front();
+        if ( info.type->CanBeCopied() ) {
+            string cType = info.type->GetCType(code.GetNamespace());
+            code.ClassPublic() <<
+                "    // data copy constructor\n"
+                "    "<<code.GetClassName()<<"(const "<<cType<<"& value);\n"
+                "\n"
+                "    // data assignment operator\n"
+                "    void operator=(const "<<cType<<"& value);\n"
+                "\n";
+            inlineMethods <<
+                "inline\n"<<
+                methodPrefix<<code.GetClassName()<<"(const "<<info.tName<<"& value)\n"
+                "    : "<<info.mName<<"(value)\n"
+                "{\n"
+                "}\n"
+                "\n"
+                "inline\n"
+                "void "<<methodPrefix<<"operator=(const "<<info.tName<<"& value)\n"
+                "{\n"
+                "    "<<info.mName<<" = value;\n"
+                "}\n"
+                "\n";
+        }
+    }
+
     // generate member getters & setters
     {
         code.ClassPublic() <<
@@ -493,17 +488,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 if ( resetCode.empty() )
                     assignValue = i->type->GetInitializer();
             }
-            if ( i->cName.empty() ) {
-                if ( m_Members.size() != 1 ) {
-                    THROW1_TRACE(runtime_error,
-                                 "unnamed member is not the only member");
-                }
-                generateMainReset = false;
-            }
-            else {
-                setters <<
-                    "    void Reset"<<i->cName<<"(void);\n";
-            }
+            setters <<
+                "    void Reset"<<i->cName<<"(void);\n";
             // inline only when non reference and doesn't have reset code
             bool inl = !i->ref && resetCode.empty();
             code.MethodStart(inl) <<
@@ -792,18 +778,37 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     code.ClassPublic() <<
         "    // reset whole object\n"
         "    ";
-    if ( HaveUserClass() )
-        code.ClassPublic() << "virtual ";
-    code.ClassPublic() <<
-        "void Reset(void);\n"
-        "\n";
-    if ( generateMainReset ) {
+    if ( !wrapperClass ) {
+        if ( HaveUserClass() )
+            code.ClassPublic() << "virtual ";
+        code.ClassPublic() <<
+            "void Reset(void);\n"
+            "\n";
         methods <<
             "void "<<methodPrefix<<"Reset(void)\n"
             "{\n";
         iterate ( TMembers, i, m_Members ) {
             methods <<
                 "    Reset"<<i->cName<<"();\n";
+        }
+        methods <<
+            "}\n"
+            "\n";
+    }
+
+    if ( generateDoNotDeleteThisObject ) {
+        code.ClassPublic() <<
+            "virtual void DoNotDeleteThisObject(void);\n"
+            "\n";
+        methods <<
+            "void "<<methodPrefix<<"DoNotDeleteThisObject(void)\n"
+            "{\n"
+            "    "<<code.GetParentClassNamespace()<<code.GetParentClassName()<<"::DoNotDeleteThisObject();\n";
+        iterate ( TMembers, i, m_Members ) {
+            if ( !i->ref && i->type->GetKind() == eKindObject ) {
+                methods <<
+                    "    "<<i->mName<<".DoNotDeleteThisObject();\n";
+            }
         }
         methods <<
             "}\n"
@@ -924,36 +929,72 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 
 void CClassTypeStrings::GenerateUserHPPCode(CNcbiOstream& out) const
 {
+    bool wrapperClass = (m_Members.size() == 1) &&
+        m_Members.front().cName.empty();
+    bool generateCopy = wrapperClass && m_Members.front().type->CanBeCopied();
+
     out <<
         "class "<<GetClassName()<<" : public "<<GetClassName()<<"_Base\n"
         "{\n"
         "    typedef "<<GetClassName()<<"_Base Tparent;\n"
         "public:\n";
-    DeclareStaticConstructor(out, GetClassName());
+    DeclareConstructor(out, GetClassName());
     DeclareDestructor(out, GetClassName(), false);
-    GenerateNewMethod(out, GetClassName());
-    out <<
-        "protected:\n";
-    DeclareHeapConstructor(out, GetClassName());
+
+    if ( generateCopy ) {
+        const SMemberInfo& info = m_Members.front();
+        string cType = info.type->GetCType(GetNamespace());
+        out <<
+            "    // data copy constructor\n"
+            "    "<<GetClassName()<<"(const "<<cType<<"& value);\n"
+            "\n"
+            "    // data assignment operator\n"
+            "    "<<GetClassName()<<"& operator=(const "<<cType<<"& value);\n"
+            "\n";
+    }
+
     out <<
         "};\n"
+        "\n"
+        "\n"
+        "\n"
+        "/////////////////// "<<GetClassName()<<" inline methods\n"
+        "\n"
+        "// constructor\n"
+        "inline\n"<<
+        GetClassName()<<"::"<<GetClassName()<<"(void)\n"
+        "{\n"
+        "}\n"
+        "\n";
+    if ( generateCopy ) {
+        const SMemberInfo& info = m_Members.front();
+        out <<
+            "// data copy constructors\n"
+            "inline\n"<<
+            GetClassName()<<"::"<<GetClassName()<<"(const "<<info.tName<<"& value)\n"
+            "    : Tparent(value)\n"
+            "{\n"
+            "}\n"
+            "\n"
+            "// data assignment operators\n"
+            "inline\n"<<
+            GetClassName()<<"& "<<GetClassName()<<"::operator=(const "<<info.tName<<"& value)\n"
+            "{\n"
+            "    Set(value);\n"
+            "    return *this;\n"
+            "}\n"
+            "\n";
+    }
+    out <<
+        "\n"
+        "/////////////////// end of "<<GetClassName()<<" inline methods\n"
+        "\n"
         "\n";
 }
 
 void CClassTypeStrings::GenerateUserCPPCode(CNcbiOstream& out) const
 {
     out <<
-        "// constructor for static/automatic objects\n"<<
-        GetClassName()<<"::"<<GetClassName()<<"(void)\n"
-        "{\n"
-        "}\n"
-        "\n"
-        "// constructor for dynamic objects\n"<<
-        GetClassName()<<"::"<<GetClassName()<<"(ECanDelete)\n"
-        "    : Tparent(eCanDelete)\n"
-        "{\n"
-        "}\n"
-        "\n"
         "// destructor\n"<<
         GetClassName()<<"::~"<<GetClassName()<<"(void)\n"
         "{\n"
@@ -1003,7 +1044,7 @@ string CClassRefTypeStrings::GetRef(const CNamespace& ns) const
 
 string CClassRefTypeStrings::NewInstance(const string& init) const
 {
-    return GetCType(CNamespace::KEmptyNamespace)+"::New("+init+')';
+    return "new "+GetCType(CNamespace::KEmptyNamespace)+"("+init+')';
 }
 
 string CClassRefTypeStrings::GetResetCode(const string& var) const

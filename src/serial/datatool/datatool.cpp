@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/11/01 20:38:59  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.41  2000/09/29 16:18:28  vasilche
 * Fixed binary format encoding/decoding on 64 bit compulers.
 * Implemented CWeakMap<> for automatic cleaning map entries.
@@ -295,6 +299,7 @@ int main(int argc, const char*argv[])
 {
     SetDiagStream(&NcbiCerr);
     SetDiagPostLevel(eDiag_Warning);
+    IOS_BASE::sync_with_stdio(false);
 
     string modulesDir;
     list<FileInfo> mainModules;

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/11/01 20:36:11  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.4  2000/09/26 17:38:17  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -98,8 +102,9 @@ public:
     void ModuleBody(CDataTypeModule& module);
     AutoPtr<CDataType> Type(void);
     CDataType* x_Type(void);
-    CDataType* TypesBlock(CDataMemberContainerType* containerType);
-    AutoPtr<CDataMember> NamedDataType(void);
+    CDataType* TypesBlock(CDataMemberContainerType* containerType,
+                          bool allowDefaults);
+    AutoPtr<CDataMember> NamedDataType(bool allowDefaults);
     CEnumDataType* EnumeratedBlock(CEnumDataType* enumType);
     void EnumeratedValue(CEnumDataType& enumType);
     void TypeList(list<string>& ids);

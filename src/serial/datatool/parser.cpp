@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2000/11/01 20:38:59  vasilche
+* OPTIONAL and DEFAULT are not permitted in CHOICE.
+* Fixed code generation for DEFAULT.
+*
 * Revision 1.22  2000/09/26 17:38:26  vasilche
 * Fixed incomplete choiceptr implementation.
 * Removed temporary comments.
@@ -210,16 +214,16 @@ CDataType* ASNParser::x_Type(void)
         if ( ConsumeIf(K_OF) )
             return new CUniSequenceDataType(Type());
         else
-            return TypesBlock(new CDataSequenceType());
+            return TypesBlock(new CDataSequenceType(), true);
     case K_SET:
         Consume();
         if ( ConsumeIf(K_OF) )
             return new CUniSetDataType(Type());
         else
-            return TypesBlock(new CDataSetType());
+            return TypesBlock(new CDataSetType(), true);
     case K_CHOICE:
         Consume();
-        return TypesBlock(new CChoiceDataType());
+        return TypesBlock(new CChoiceDataType(), false);
     case K_VisibleString:
         Consume();
         return new CStringDataType();
@@ -234,18 +238,19 @@ CDataType* ASNParser::x_Type(void)
 	return 0;
 }
 
-CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType)
+CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
+                                 bool allowDefaults)
 {
     AutoPtr<CDataMemberContainerType> container(containerType);
     ConsumeSymbol('{');
     do {
-        container->AddMember(NamedDataType());
+        container->AddMember(NamedDataType(allowDefaults));
     } while ( ConsumeIfSymbol(',') );
     ConsumeSymbol('}');
     return container.release();
 }
 
-AutoPtr<CDataMember> ASNParser::NamedDataType(void)
+AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
 {
     string name;
     if ( Next() == T_IDENTIFIER )
@@ -253,15 +258,17 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(void)
     AutoPtr<CDataType> type(Type());
 
     AutoPtr<CDataMember> member(new CDataMember(name, type));
-    switch ( Next() ) {
-    case K_OPTIONAL:
-        Consume();
-        member->SetOptional();
-        break;
-    case K_DEFAULT:
-        Consume();
-        member->SetDefault(Value());
-        break;
+    if ( allowDefaults ) {
+        switch ( Next() ) {
+        case K_OPTIONAL:
+            Consume();
+            member->SetOptional();
+            break;
+        case K_DEFAULT:
+            Consume();
+            member->SetDefault(Value());
+            break;
+        }
     }
     return member;
 }
