@@ -14,7 +14,7 @@ be there. I hope. */
 /* Have to include stdlib.h in order to ensure that size_t is defined. */
 
 #include <stdlib.h>
-#include <corelib/mswin_export.hpp>
+#include <corelib/mswin_export.h>
 
 /* Allow for C++ users */
 
