@@ -44,19 +44,21 @@ CMetaRegistry::~CMetaRegistry()
 {
     ITERATE (vector<SEntry>, it, m_Contents) {
         // optionally save if modified?
-        delete it->registry;
+        if ( !(it->flags & fDontOwn) ) {
+            delete it->registry;
+        }
     }
 }
 
 CMetaRegistry::SEntry
 CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                       CMetaRegistry::TFlags flags,
-                      CNcbiRegistry::TFlags reg_flags, const string& name0,
-                      CMetaRegistry::ENameStyle style0)
+                      CNcbiRegistry::TFlags reg_flags, CNcbiRegistry* reg,
+                      const string& name0, CMetaRegistry::ENameStyle style0)
 {
     _TRACE("CMetaRegistry::Load: looking for " << name);
     CMutexGuard GUARD(sm_Mutex);
-    if (flags && fPrivate) {
+    if (flags & fPrivate) {
         GUARD.Release();
     } else { // see if we already have it
         ITERATE (vector<SEntry>, it, m_Contents) {
@@ -75,8 +77,8 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
     CDirEntry::SplitPath(name, &dir, 0, 0);
     if (dir.empty()) {
         iterate (TSearchPath, it, m_SearchPath) {
-            SEntry result = x_Load(CDirEntry::MakePath(*it, name),
-                                   style, flags, reg_flags, name0, style0);
+            SEntry result = x_Load(CDirEntry::MakePath(*it, name), style,
+                                   flags, reg_flags, reg, name0, style0);
             if (result.registry) {
                 return result;
             }
@@ -94,7 +96,15 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
                 result.style          = style0;
                 result.flags          = flags;
                 result.reg_flags      = reg_flags;
-                result.registry       = new CNcbiRegistry(in, reg_flags);
+                if (reg) {
+                    if ( !reg->Empty() ) { // shouldn't share
+                        result.flags  = fPrivate;
+                    }
+                    result.registry   = reg;
+                    reg->Read(in, reg_flags);
+                } else {
+                    result.registry   = new CNcbiRegistry(in, reg_flags);
+                }
                 if (CDirEntry::IsAbsolutePath(name)) {
                     result.actual_name = name;
                 } else {
@@ -116,7 +126,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             string name2(name);
             for (;;) {
                 SEntry result = x_Load(name2 + ".ini", eName_AsIs, flags,
-                                       reg_flags, name0, style0);
+                                       reg_flags, reg, name0, style0);
                 if (result.registry) {
                     return result;
                 }
@@ -135,7 +145,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
             string base, ext;
             CDirEntry::SplitPath(name, 0, &base, &ext);
             return x_Load(CDirEntry::MakePath(dir, '.' + base, ext + "rc"),
-                          eName_AsIs, flags, reg_flags, name0, style0);
+                          eName_AsIs, flags, reg_flags, reg, name0, style0);
             break;
         }
         }
@@ -148,6 +158,9 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
     result.flags          = flags;
     result.reg_flags      = reg_flags;
     result.registry       = 0;
+    if (reg  &&  !(flags & fDontOwn) ) {
+        delete reg;
+    }
     return result;
 }
 
@@ -183,6 +196,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.3  2003/08/06 20:26:17  ucko
+* Allow Load to take an existing registry to reuse; properly handle flags.
+*
 * Revision 1.2  2003/08/05 20:28:51  ucko
 * CMetaRegistry::GetDefaultSearchPath: don't add the program's directory
 * if it's empty.
