@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/03 22:56:17  vakatov
+* + #define I/O manipulators like "flush" --> "NcbiFlush"
+*
 * Revision 1.5  1998/11/03 20:48:18  vakatov
 * + <iostream>
 * + SEEKOFF
@@ -84,7 +87,7 @@
 #  error "Cannot find neither <iostream> nor <iostream.h>!"
 #endif
 
-
+// I/O classes
 typedef IO_PREFIX::streampos     CNcbiStreampos;
 typedef IO_PREFIX::streamoff     CNcbiStreamoff;
 
@@ -105,11 +108,19 @@ typedef IO_PREFIX::ifstream      CNcbiIfstream;
 typedef IO_PREFIX::ofstream      CNcbiOfstream;
 typedef IO_PREFIX::fstream       CNcbiFstream;
 
-
+// Standard I/O streams
 #define NcbiCin   IO_PREFIX::cin
 #define NcbiCout  IO_PREFIX::cout
 #define NcbiCerr  IO_PREFIX::cerr
 #define NcbiClog  IO_PREFIX::clog
 
+// I/O manipulators
+#define NcbiEndl   IO_PREFIX::endl
+#define NcbiEnds   IO_PREFIX::ends
+#define NcbiFlush  IO_PREFIX::flush
+#define NcbiDec    IO_PREFIX::dec
+#define NcbiHex    IO_PREFIX::hex
+#define NcbiOct    IO_PREFIX::oct
+#define NcbiWs     IO_PREFIX::ws
 
 #endif /* NCBISTRE__HPP */
