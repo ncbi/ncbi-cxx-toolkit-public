@@ -565,6 +565,70 @@ static void s_TEST_BDB_LOB_File(void)
 //////////////////////////////////////////////////////////////////
 //
 // 
+// LOB test
+//
+//
+
+struct BLobTestDBF1 : public CBDB_BLobFile
+{
+    CBDB_FieldInt4        i1;
+    CBDB_FieldInt4        i2;
+
+    BLobTestDBF1()
+    {
+        BindKey("i1", &i1);
+        BindKey("i2", &i2);
+    }
+};
+
+
+static void s_TEST_BDB_BLOB_File(void)
+{
+    cout << "======== BLob file test." << endl;    
+
+    BLobTestDBF1 blob;
+    blob.Open("blobtest.db", "blob", CBDB_LobFile::eCreate);
+
+    const char* test_data = "This is a BLOB test data";
+    unsigned lob_len = ::strlen(test_data)+1;
+
+    blob.i1 = 1;
+    blob.i2 = 2;
+
+    EBDB_ErrCode ret = blob.Insert(test_data, lob_len);
+    assert(ret == eBDB_Ok);
+
+    cout << "Testing two-phase read." << endl;
+    blob.Reopen(CBDB_LobFile::eReadOnly);
+    
+    blob.i1 = 1;
+    blob.i2 = 2;
+
+    ret = blob.Fetch();
+    assert(ret == eBDB_Ok);
+    unsigned len1 = blob.LobSize();
+    assert(len1 == lob_len);
+
+    char buf[256] = {0,};
+    ret = blob.GetData(buf, sizeof(buf));
+    assert(ret == eBDB_Ok);
+
+    if (strcmp(buf, test_data) != 0) {
+        cout << "BLOB content comparison error!" << endl;
+        cout << "BLobData:" << buf << endl;
+        assert(0);
+    }
+
+    buf[0] = 0;
+
+    cout << "======== BLob file test ok." << endl;
+}
+
+
+
+//////////////////////////////////////////////////////////////////
+//
+// 
 // Id table record delete test
 //
 //
@@ -723,6 +787,8 @@ int CBDB_Test::Run(void)
 
         s_TEST_BDB_LOB_File();
 
+        s_TEST_BDB_BLOB_File();
+
         s_TEST_BDB_StrTable_Fill();
 
     }
@@ -757,6 +823,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/05/05 20:15:35  kuznets
+ * Added CBDB_BLobFile
+ *
  * Revision 1.4  2003/05/02 14:10:57  kuznets
  * Added test for UpdateInsert
  *

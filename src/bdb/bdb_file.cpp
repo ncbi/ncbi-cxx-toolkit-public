@@ -292,7 +292,8 @@ CBDB_File::CBDB_File()
     : CBDB_RawFile(),
       m_KeyBuf(new CBDB_BufferManager),
       m_BufsAttached(false),
-      m_BufsCreated(false)
+      m_BufsCreated(false),
+      m_DataBufDisabled(false)
 {
 }
 
@@ -380,6 +381,9 @@ EBDB_ErrCode CBDB_File::Fetch()
                         );
     if (ret == DB_NOTFOUND)
         return eBDB_NotFound;
+    // Disable error reporting for custom m_DBT_data management
+    if (ret == ENOMEM && m_DataBufDisabled && m_DBT_Data.data == 0)
+        ret = 0;
     BDB_CHECK(ret, FileName().c_str());
 
     x_EndRead();
@@ -465,13 +469,16 @@ void CBDB_File::x_StartRead()
 {
     m_KeyBuf->Pack();
     m_KeyBuf->PrepareDBT_ForRead(&m_DBT_Key);
-    if ( m_DataBuf.get() ) {
-        m_DataBuf->PrepareDBT_ForRead(&m_DBT_Data);
-    }
-    else {
-        m_DBT_Data.size  = 0;
-        m_DBT_Data.flags = 0;
-        m_DBT_Data.data  = 0;
+
+    if (!m_DataBufDisabled) {
+        if ( m_DataBuf.get() ) {
+            m_DataBuf->PrepareDBT_ForRead(&m_DBT_Data);
+        }
+        else {
+            m_DBT_Data.size  = 0;
+            m_DBT_Data.flags = 0;
+            m_DBT_Data.data  = 0;
+        }
     }
 }
 
@@ -488,10 +495,11 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
 {
     m_KeyBuf->PrepareDBT_ForWrite(&m_DBT_Key);
 
-    if ( m_DataBuf.get() ) {
-        m_DataBuf->PrepareDBT_ForWrite(&m_DBT_Data);
+    if (!m_DataBufDisabled) {
+        if ( m_DataBuf.get() ) {
+            m_DataBuf->PrepareDBT_ForWrite(&m_DBT_Data);
+        }
     }
-
     int ret = m_DB->put(m_DB,
                         0,     // DB_TXN*
                         &m_DBT_Key,
@@ -518,6 +526,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/05/05 20:15:32  kuznets
+ * Added CBDB_BLobFile
+ *
  * Revision 1.5  2003/05/02 14:11:59  kuznets
  * + UpdateInsert method
  *

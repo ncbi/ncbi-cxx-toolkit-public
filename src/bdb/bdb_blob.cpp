@@ -35,6 +35,68 @@ BEGIN_NCBI_SCOPE
 
 
 /////////////////////////////////////////////////////////////////////////////
+//  CBDB_BLobFile::
+//
+
+CBDB_BLobFile::CBDB_BLobFile() 
+{ 
+    DisableDataBufProcessing(); 
+}
+
+
+EBDB_ErrCode CBDB_BLobFile::Fetch()
+{
+    return Fetch(0, 0, eReallocForbidden);
+}
+
+EBDB_ErrCode CBDB_BLobFile::Fetch(void**       buf, 
+                                  size_t       buf_size, 
+                                  EReallocMode allow_realloc)
+{
+    m_DBT_Data.data = buf ? *buf : 0;
+    m_DBT_Data.ulen = buf_size;
+    m_DBT_Data.size = 0;
+
+    if (allow_realloc == eReallocForbidden) {
+        m_DBT_Data.flags = DB_DBT_USERMEM;
+    } else {
+        if (m_DBT_Data.data == 0) {
+            m_DBT_Data.flags = DB_DBT_MALLOC;
+        } else {
+            m_DBT_Data.flags = DB_DBT_REALLOC;
+        }
+    }
+
+    EBDB_ErrCode ret = CBDB_File::Fetch();
+
+    if ( buf )
+        *buf = m_DBT_Data.data;
+
+    if (ret == eBDB_NotFound)
+        return eBDB_NotFound;
+
+    return eBDB_Ok;
+}
+
+
+EBDB_ErrCode CBDB_BLobFile::GetData(void* buf, size_t size)
+{
+    return Fetch(&buf, size, eReallocForbidden);
+}
+
+
+EBDB_ErrCode CBDB_BLobFile::Insert(const void* data, size_t size)
+{
+    m_DBT_Data.data = const_cast<void*> (data);
+    m_DBT_Data.size = m_DBT_Data.ulen = size;
+
+    EBDB_ErrCode ret = CBDB_File::Insert();
+    return ret;
+}
+
+
+
+/////////////////////////////////////////////////////////////////////////////
 //  CBDB_LobFile::
 //
 
@@ -77,7 +139,7 @@ EBDB_ErrCode CBDB_LobFile::Insert(unsigned int lob_id,
                         0,     // DB_TXN*
                         &m_DBT_Key,
                         &m_DBT_Data,
-                        DB_NOOVERWRITE
+                        DB_NOOVERWRITE | DB_NODUPDATA
                         );
     if (ret == DB_KEYEXIST)
         return eBDB_KeyDup;
@@ -188,6 +250,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/05/05 20:15:32  kuznets
+ * Added CBDB_BLobFile
+ *
  * Revision 1.3  2003/04/29 19:07:22  kuznets
  * Cosmetics..
  *
