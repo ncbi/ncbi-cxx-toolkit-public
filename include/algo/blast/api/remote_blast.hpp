@@ -45,6 +45,7 @@
 #include <objects/blast/Blast4_queue_search_reques.hpp>
 #include <objects/blast/Blast4_reply.hpp>
 #include <objects/blast/Blast4_reply_body.hpp>
+#include <objects/blast/Blast4_request_body.hpp>
 #include <objects/blast/Blas_get_searc_resul_reply.hpp>
 #include <objects/blast/Blast4_subject.hpp>
 #include <objects/blast/Blast4_phi_alignments.hpp>
@@ -146,6 +147,7 @@ public:
         CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
         subject_p->SetDatabase(x);
         m_QSR->SetSubject(*subject_p);
+        m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
     }
     
     /******************* Entrez Query *******************/
@@ -158,6 +160,7 @@ public:
     void SetQueries(CRef<objects::CBioseq_set> bioseqs)
     {
         m_QSR->SetQueries(*bioseqs);
+        m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
     }
     
     /******************* Queries *******************/
@@ -235,16 +238,29 @@ public:
     }
     
 private:
-    CRef<blast::CBlastOptionsHandle>            m_CBOH;
-    CRef<objects::CBlast4_queue_search_request> m_QSR;
-    CRef<objects::CBlast4_reply>                m_Reply;
+    // State helpers (for readability)
+    enum EState {
+        eStart = 0,
+        eFailed,
+        eWait,
+        eDone
+    };
     
-    string m_Err;
-    string m_RID;
+    // Immediacy flag
+    enum EImmediacy {
+        ePollAsync = 0,
+        ePollImmed
+    };
     
-    int        m_ErrIgn;
-    bool       m_Pending;
-    EDebugMode m_Verbose;
+    // Required Parameters
+    enum ENeedConfig {
+        eNoConfig = 0x0,
+        eProgram  = 0x1,
+        eService  = 0x2,
+        eQueries  = 0x4,
+        eSubject  = 0x8,
+        eNeedAll  = 0xF
+    };
     
     // Initialize request (called by constructors)
     
@@ -267,26 +283,34 @@ private:
     void x_SetOneParam(const char * name, 
                        objects::CScore_matrix_parameters * matrix);
     
-    // State helpers (for readability)
-    enum EState {
-        eStart = 0,
-        eFailed,
-        eWait,
-        eDone
-    };
-    
-    // Immediacy flag
-    enum EImmediacy {
-        ePollAsync = 0,
-        ePollImmed
-    };
-    
     int x_GetState(void);
     
     // Submission/Result progression
+    CRef<objects::CBlast4_reply>
+    x_SendRequest(CRef<objects::CBlast4_request_body> body);
+    
+    CRef<objects::CBlast4_reply>
+    x_GetSearchResults(void);
+    
+    void x_CheckConfig(void);
     void x_SubmitSearch(void);
     void x_CheckResults(void);
     void x_PollUntilDone(EImmediacy poll_immed, int seconds);
+    
+    
+    // Data
+    
+    CRef<blast::CBlastOptionsHandle>            m_CBOH;
+    CRef<objects::CBlast4_queue_search_request> m_QSR;
+    CRef<objects::CBlast4_reply>                m_Reply;
+    
+    string m_Err;
+    string m_RID;
+    
+    int         m_ErrIgn;
+    bool        m_Pending;
+    EDebugMode  m_Verbose;
+    ENeedConfig m_NeedConfig;
 };
 
 
@@ -299,6 +323,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/03/23 22:30:27  bealer
+ * - Verify that CRemoteBlast objects are configured properly.
+ *
  * Revision 1.2  2004/03/19 18:56:17  camacho
  * Correct use of namespaces
  *

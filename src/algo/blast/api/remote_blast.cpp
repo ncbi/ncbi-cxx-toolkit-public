@@ -64,16 +64,67 @@ s_Output(CNcbiOstream & os, CRef<T> t)
     os.flush();
 }
 
-static CRef<CBlast4_reply>
-s_SendRequest(CRef<CBlast4_request_body> body,
-              CRemoteBlast::EDebugMode   echo = CRemoteBlast::eSilent)
+typedef list< CRef<CBlast4_error> > TErrorList;
+
+static bool
+s_SearchPending(CRef<CBlast4_reply> reply)
 {
+    const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
+    
+    TErrorList::const_iterator i;
+    
+    for(i = errors.begin(); i != errors.end(); i++) {
+        if ((*i)->GetCode() == eBlast4_error_code_search_pending) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+
+// CBlast4Option methods
+
+void CRemoteBlast::x_CheckConfig(void)
+{
+    // If not configured, throw an exception - the associated string
+    // will contain a list of the missing pieces.
+    
+    if (0 != m_NeedConfig) {
+        string cfg("Configuration required:");
+        
+        if (eProgram & m_NeedConfig) {
+            cfg += " <program>";
+        }
+        
+        if (eService & m_NeedConfig) {
+            cfg += " <service>";
+        }
+        
+        if (eQueries & m_NeedConfig) {
+            cfg += " <queries>";
+        }
+        
+        if (eSubject & m_NeedConfig) {
+            cfg += " <subject>";
+        }
+        
+        NCBI_THROW(CBlastException, eInternal, cfg.c_str());
+    }
+}
+
+CRef<CBlast4_reply>
+CRemoteBlast::x_SendRequest(CRef<CBlast4_request_body> body)
+{
+    // If not configured, throw.
+    x_CheckConfig();
+    
     // Create the request; optionally echo it
     
     CRef<CBlast4_request> request(new CBlast4_request);
     request->SetBody(*body);
     
-    if (CRemoteBlast::eDebug == echo) {
+    if (eDebug == m_Verbose) {
         s_Output(NcbiCout, request);
     }
     
@@ -96,48 +147,26 @@ s_SendRequest(CRef<CBlast4_request_body> body,
 #endif
     }
     
-    if (CRemoteBlast::eDebug == echo) {
+    if (eDebug == m_Verbose) {
         s_Output(NcbiCout, reply);
     }
     
     return reply;
 }
 
-static CRef<CBlast4_reply>
-s_GetSearchResults(const string & RID, CRemoteBlast::EDebugMode echo = CRemoteBlast::eSilent)
+CRef<CBlast4_reply>
+CRemoteBlast::x_GetSearchResults(void)
 {
     CRef<CBlast4_get_search_results_request>
         gsrr(new CBlast4_get_search_results_request);
     
-    gsrr->SetRequest_id(RID);
+    gsrr->SetRequest_id(m_RID);
     
     CRef<CBlast4_request_body> body(new CBlast4_request_body);
     body->SetGet_search_results(*gsrr);
     
-    return s_SendRequest(body, echo);
+    return x_SendRequest(body);
 }
-
-typedef list< CRef<CBlast4_error> > TErrorList;
-
-static bool
-s_SearchPending(CRef<CBlast4_reply> reply)
-{
-    const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
-    
-    TErrorList::const_iterator i;
-    
-    for(i = errors.begin(); i != errors.end(); i++) {
-        if ((*i)->GetCode() == eBlast4_error_code_search_pending) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-
-// CBlast4Option methods
-
 
 // Pre:  start, wait, or done
 // Post: failed or done
@@ -363,7 +392,7 @@ void CRemoteBlast::x_SubmitSearch(void)
     CRef<CBlast4_reply> reply;
     
     try {
-        reply = s_SendRequest(body, m_Verbose);
+        reply = x_SendRequest(body);
     }
     catch(const CEofException&) {
         m_Err = "Unexpected EOF when contacting netblast server - unable to submit request.";
@@ -411,7 +440,7 @@ void CRemoteBlast::x_CheckResults(void)
     
     while(try_again) {
         try {
-            r = s_GetSearchResults(m_RID, m_Verbose);
+            r = x_GetSearchResults();
             m_Pending = s_SearchPending(r);
             try_again = false;
         }
@@ -523,13 +552,17 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
                             const char          * service)
 {
     m_CBOH.Reset( opts_handle );
-    m_ErrIgn    = 5;
-    m_Pending   = false;
-    m_Verbose   = eSilent;
+    m_ErrIgn     = 5;
+    m_Pending    = false;
+    m_Verbose    = eSilent;
+    m_NeedConfig = eNeedAll;
     
     m_QSR.Reset(new objects::CBlast4_queue_search_request);
+    
     m_QSR->SetProgram(program);
     m_QSR->SetService(service);
+    
+    m_NeedConfig = ENeedConfig(m_NeedConfig & ~(eProgram | eService));
     
     if (! (opts_handle && opts_handle->SetOptions().GetBlast4AlgoOpts())) {
         // This happens if you do not specify eRemote for the
@@ -552,10 +585,11 @@ void CRemoteBlast::x_SetAlgoOpts(void)
 
 void CRemoteBlast::x_Init(const string & RID)
 {
-    m_ErrIgn    = 5;
-    m_Pending   = true;
-    m_Verbose   = eSilent;
-    m_RID       = RID;
+    m_RID        = RID;
+    m_ErrIgn     = 5;
+    m_Pending    = true;
+    m_Verbose    = eSilent;
+    m_NeedConfig = eNoConfig;
 }
 
 // the "int" version is not actually used (no program options need it.)
@@ -616,6 +650,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/03/23 22:29:42  bealer
+* - Verify that CRemoteBlast objects are configured properly.
+*
 * Revision 1.6  2004/03/19 19:22:55  camacho
 * Move to doxygen group AlgoBlast, add missing CVS logs at EOF
 *
