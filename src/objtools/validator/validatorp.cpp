@@ -39,6 +39,8 @@
 #include <serial/iterator.hpp>
 
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/Name_std.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 
@@ -49,6 +51,7 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include <objects/seq/Pubdesc.hpp>
 
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
@@ -75,7 +78,17 @@
 #include <objects/objmgr/scope.hpp>
 
 #include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
 
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/biblio/Cit_jour.hpp>
+#include <objects/biblio/Cit_gen.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/PubMedId.hpp>
+#include <objects/biblio/PubStatus.hpp>
+#include <objects/biblio/Title.hpp>
+#include <objects/biblio/Imprint.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -405,7 +418,7 @@ void CValidError_imp::Validate(const CSeq_entry& se, const CCit_sub* cs)
 void CValidError_imp::Validate(const CSeq_submit& ss)
 {
     // Check that ss is type e_Entrys
-    if (ss.GetData().Which() != CSeq_submit::C_Data::e_Entrys) {
+    if ( ss.GetData().Which() != CSeq_submit::C_Data::e_Entrys ) {
         return;
     }
 
@@ -421,10 +434,248 @@ void CValidError_imp::Validate(const CSeq_submit& ss)
 
 
 void CValidError_imp::ValidatePubdesc
-(const CPubdesc& pub,
+(const CPubdesc& pubdesc,
  const CSerialObject& obj)
 {
-    // !!!
+    int uid = 0;
+
+    iterate( CPub_equiv::Tdata, pub, pubdesc.GetPub().Get() ) {
+        switch( (*pub)->Which() ) {
+        case CPub::e_Gen:
+            ValidatePubGen((*pub)->GetGen(), obj);
+            break;
+
+        case CPub::e_Muid:
+            uid = (*pub)->GetMuid();
+            break;
+
+        case CPub::e_Pmid:
+            uid = (*pub)->GetPmid().Get();
+            break;
+            
+        case CPub::e_Article:
+            ValidatePubArticle((*pub)->GetArticle(), obj);
+            break;
+
+        case CPub::e_Equiv:
+            PostErr(eDiag_Warning, eErr_GENERIC_UnnecessaryPubEquiv,
+                "Publication has unexpected internal Pub-equiv", obj);
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+
+void CValidError_imp::ValidatePubGen
+(const CCit_gen& gen,
+ const CSerialObject& obj)
+{
+    if ( gen.IsSetCit()  &&  !gen.GetCit().empty() ) {
+        const string& cit = gen.GetCit();
+        if ( (NStr::CompareNocase(cit, 0, 8,  "submitted") != 0)          &&
+             (NStr::CompareNocase(cit, 0, 11, "unpublished") != 0)        &&
+             (NStr::CompareNocase(cit, 0, 18, "Online Publication") == 0) &&
+             (NStr::CompareNocase(cit, 0, 26, "Published Only in DataBase") != 0) ) {
+            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                "Unpublished citation text invalid", obj);
+        }
+    }
+}
+
+
+void CValidError_imp::ValidatePubArticle
+(const CCit_art& art,
+ const CSerialObject& obj)
+{
+    if ( !art.IsSetTitle()  ||  !HasTitle(art.GetTitle()) ) { 
+        PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Publication has no title", obj);
+    }
+    
+    if ( art.IsSetAuthors() ) {
+        const CAuth_list::C_Names& names = art.GetAuthors().GetNames();
+
+        bool has_name = false;
+        if ( names.IsStd() ) {
+            has_name = HasName(names.GetStd());
+        } 
+        if ( names.IsMl() ) {
+            has_name = !IsBlankStringList(names.GetMl());
+        }
+        if ( names.IsStr() ) {
+            has_name = !IsBlankStringList(names.GetStr());
+        }
+
+        if ( !has_name ) {
+            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+                "Publication has no author names", obj);
+        }
+    }
+    
+    
+    if ( art.GetFrom().IsJournal() ) {
+        const CCit_jour& jour = art.GetFrom().GetJournal();
+        
+        bool has_iso_jta = HasIsoJTA(jour.GetTitle());
+        bool in_press = false;
+
+        if ( !HasTitle(jour.GetTitle()) ) {
+            PostErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Journal title missing", obj);
+        }
+
+        const CImprint& imp = jour.GetImp();
+        if ( imp.IsSetPrepub() ) {
+            if ( imp.GetPrepub() == CImprint::ePrepub_in_press ) {
+                in_press = true;
+            }
+
+            if ( !imp.IsSetPrepub()   &&  
+                 imp.IsSetPubstatus() && 
+                 imp.GetPubstatus() != ePubStatus_aheadofprint ) {
+                bool no_vol = imp.IsSetVolume()  &&  
+                    !IsBlankString(imp.GetVolume());
+                bool no_pages = imp.IsSetPages()  &&
+                    !IsBlankString(imp.GetPages());
+
+                EDiagSev sev = IsNC() ? eDiag_Warning : eDiag_Error;
+
+                if ( no_vol  &&  no_pages ) {
+                    PostErr(sev, eErr_GENERIC_MissingPubInfo, 
+                        "Journal volume and pages missing", obj);
+                } else if ( no_vol ) {
+                    PostErr(sev, eErr_GENERIC_MissingPubInfo,
+                        "Journal volume missing", obj);
+                } else if ( no_pages ) {
+                    PostErr(sev, eErr_GENERIC_MissingPubInfo,
+                        "Journal pages missing", obj);
+                }
+                
+                if ( !no_pages ) {
+                    string pages = imp.GetPages();
+                    size_t pos = pages.find('-');
+                    if ( pos != string::npos ) {
+                        try {
+                            int start = NStr::StringToInt(pages.substr(0, pos));
+                            
+                            try {
+                                int stop = NStr::StringToInt(
+                                    pages.substr(pos + 1, pages.length()));
+                                
+                                if ( start == 0  ||  stop == 0 ) {
+                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                        "Page numbering has zero value", obj);
+                                } else if ( start < 0  ||  stop < 0 ) {
+                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                        "Page numbering has negative value", obj);
+                                } else if ( start > stop ) {
+                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                        "Page numbering out of order", obj);
+                                } else if ( stop - start > 50 ) {
+                                    PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                        "Page numbering greater than 50", obj);
+                                }
+                            } catch ( CStringException e ) {
+                                PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                    "Page numbering stop looks strange", obj);
+                            }
+                        } catch ( CStringException e ) {
+                            PostErr(sev, eErr_GENERIC_BadPageNumbering,
+                                "Page numbering start looks strange", obj);
+                        }
+                    }
+                }
+            }
+        }
+        if ( !has_iso_jta  &&  (in_press  ||  IsRequireISOJTA()) ) {
+            PostErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                "ISO journal title abbreviation missing", obj);
+        }
+    }
+}
+
+
+bool CValidError_imp::HasTitle(const CTitle& title)
+{
+    iterate (CTitle::Tdata, item, title.Get() ) {
+        const string *str = 0;
+        switch ( (*item)->Which() ) {
+        case CTitle::C_E::e_Name:
+            str = &(*item)->GetName();
+            break;
+
+        case CTitle::C_E::e_Tsub:
+            str = &(*item)->GetTsub();
+            break;
+
+        case CTitle::C_E::e_Trans:
+            str = &(*item)->GetTrans();
+            break;
+
+        case CTitle::C_E::e_Jta:
+            str = &(*item)->GetJta();
+            break;
+
+        case CTitle::C_E::e_Iso_jta:
+            str = &(*item)->GetIso_jta();
+            break;
+
+        case CTitle::C_E::e_Ml_jta:
+            str = &(*item)->GetMl_jta();
+            break;
+
+        case CTitle::C_E::e_Coden:
+            str = &(*item)->GetCoden();
+            break;
+
+        case CTitle::C_E::e_Issn:
+            str = &(*item)->GetIssn();
+            break;
+
+        case CTitle::C_E::e_Abr:
+            str = &(*item)->GetAbr();
+            break;
+
+        case CTitle::C_E::e_Isbn:
+            str = &(*item)->GetIsbn();
+            break;
+
+        default:
+            break;
+        };
+        if ( IsBlankString(*str) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool CValidError_imp::HasIsoJTA(const CTitle& title)
+{
+    iterate (CTitle::Tdata, item, title.Get() ) {
+        if ( (*item)->IsIso_jta() ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CValidError_imp::HasName(const list< CRef< CAuthor > >& authors)
+{
+    iterate ( list< CRef< CAuthor > >, auth, authors ) {
+        const CPerson_id& pid = (*auth)->GetName();
+        if ( pid.IsName() ) {
+            if ( !IsBlankString(pid.GetName().GetLast()) ) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -639,8 +890,24 @@ void CValidError_imp::ValidateBioSource
 		}
 	}
 
-    if (orgref.IsSetDb ()) {
+    if ( orgref.IsSetDb() ) {
         ValidateDbxref(orgref.GetDb(), obj);
+    }
+
+    if ( IsRequireTaxonID() ) {
+        bool found = false;
+        if ( orgref.IsSetDb() ) {
+            iterate( COrg_ref::TDb, dbt, orgref.GetDb() ) {
+                if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") == 0 ) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if ( !found ) {
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
+                "BioSource is missing taxon ID", obj);
+        }
     }
 }
 
@@ -988,7 +1255,33 @@ const CSeq_entry* CValidError_imp::GetAncestor
 
 bool CValidError_imp::IsMixedStrands(const CBioseq& seq, const CSeq_loc& loc)
 {
-    // !!!
+    if ( SeqLocCheck(loc, m_Scope) == eSeqLocCheck_warning ) {
+        return false;
+    }
+
+    CSeq_loc_CI curr(loc);
+    if ( !curr ) {
+        return false;
+    }
+    CSeq_loc_CI prev = curr;
+    ++curr;
+    
+
+    while ( curr ) {
+        ENa_strand curr_strand = curr.GetStrand();
+        ENa_strand prev_strand = prev.GetStrand();
+
+        if ( (prev_strand == eNa_strand_minus  &&  
+              curr_strand != eNa_strand_minus)   ||
+             (prev_strand != eNa_strand_minus  &&  
+              curr_strand == eNa_strand_minus) ) {
+            return true;
+        }
+
+        prev = curr;
+        ++curr;
+    }
+
     return true;
 }
 
@@ -1332,6 +1625,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2003/01/21 20:19:07  shomrat
+* Implemented ValidatePubDesc
+*
 * Revision 1.5  2003/01/08 18:35:39  shomrat
 * Added mapping features to their enclosing annotation
 *
