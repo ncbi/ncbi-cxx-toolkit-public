@@ -54,6 +54,7 @@ public:
         eLib,
         eApp,
         eDll,
+        eMsvc,
         eLast 
     } TProjType;
 
@@ -157,6 +158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2004/05/10 19:46:22  gorelenk
+ * + eMsvc in CProjKey.
+ *
  * Revision 1.16  2004/03/18 17:41:03  gorelenk
  * Aligned classes member-functions parameters inside declarations.
  *
