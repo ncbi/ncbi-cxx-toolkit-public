@@ -144,7 +144,7 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, const Uint1* query,
 {
     Int4 index, score, start, end, width;
     Uint1* query_var,* subject_var;
-    Boolean positionBased = (sbp->posMatrix != NULL);
+    Boolean positionBased = (sbp->psi_matrix != NULL);
     
     width = MIN((hsp->query.gapped_start-hsp->query.offset), HSP_MAX_WINDOW/2);
     start = hsp->query.gapped_start - width;
@@ -159,9 +159,9 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp, const Uint1* query,
     score=0;
     for (index = start; index < end; index++) {
         if (!positionBased)
-            score += sbp->matrix[*query_var][*subject_var];
+            score += sbp->matrix->data[*query_var][*subject_var];
         else
-            score += sbp->posMatrix[index][*subject_var];
+            score += sbp->psi_matrix->pssm->data[index][*subject_var];
         query_var++; subject_var++;
     }
     if (score <= 0) {
@@ -856,6 +856,33 @@ s_BlastPruneExtraHits(BlastHSPResults* results, Int4 hitlist_size)
    }
 }
 
+void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm)
+{
+    ASSERT(sbp);
+
+    /* Create a dummy PSI-BLAST matrix structure, only to then free it as we'd
+     * like to piggy back on the already created structure to use the gapped
+     * alignment routines */
+    sbp->psi_matrix = (SPsiBlastScoreMatrix*) 
+        calloc(1, sizeof(SPsiBlastScoreMatrix));
+    ASSERT(sbp->psi_matrix);
+
+    sbp->psi_matrix->pssm = (SBlastScoreMatrix*)
+        calloc(1, sizeof(SBlastScoreMatrix));
+    ASSERT(sbp->psi_matrix->pssm);
+
+    /* The only data field that RPS-BLAST really needs */
+    sbp->psi_matrix->pssm->data = rps_pssm;
+}
+
+void RPSPsiMatrixDetach(BlastScoreBlk* sbp)
+{
+    ASSERT(sbp);
+    sbp->psi_matrix->pssm->data = NULL;
+    sfree(sbp->psi_matrix->pssm);
+    sfree(sbp->psi_matrix);
+}
+
 /** Prepares an auxiliary BlastQueryInfo structure for the concatenated 
  * database and creates a memory mapped PSSM for RPS BLAST traceback.
  * @param concat_db_info BlastQueryInfo structure to fill. [out]
@@ -901,7 +928,7 @@ s_RPSGapAlignDataPrepare(BlastQueryInfo* concat_db_info,
    }
 
    gap_align->positionBased = TRUE;
-   gap_align->sbp->posMatrix = rps_pssm;
+   RPSPsiMatrixAttach(gap_align->sbp, rps_pssm);
 
    return 0;
 }
@@ -954,7 +981,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
    Int2 status = 0;
    BlastHSPList* hsp_list;
    BlastScoreBlk* sbp;
-   Int4 **orig_pssm;
+   Int4 **rpsblast_pssms = NULL;
    Int4 db_seq_start;
    Uint1 encoding;
    GetSeqArg seq_arg;
@@ -972,7 +999,7 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
       return status;
       
    sbp = gap_align->sbp;
-   orig_pssm = gap_align->sbp->posMatrix;
+   rpsblast_pssms = gap_align->sbp->psi_matrix->pssm->data;
 
    encoding = Blast_TracebackGetEncoding(program_number);
    memset((void*) &seq_arg, 0, sizeof(seq_arg));
@@ -1005,22 +1032,22 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
          (if not a translated search) */
       
       if (program_number == eBlastTypeRpsTblastn) {
-         sbp->posMatrix = orig_pssm + db_seq_start;
+         sbp->psi_matrix->pssm->data = rpsblast_pssms + db_seq_start;
       } else {
          const double* karlin_k = rps_info->aux_info.karlin_k;
          /* replace the PSSM and the Karlin values for this DB sequence
             and this query sequence. */
-         sbp->posMatrix = 
-            RPSCalculatePSSM(score_params->scale_factor,
-                             one_query->length, one_query->sequence, 
-                             seq_arg.seq->length,
-                             orig_pssm + db_seq_start,
-                             sbp->name);
+         sbp->psi_matrix->pssm->data = 
+            RPSRescalePssm(score_params->scale_factor,
+                           one_query->length, one_query->sequence, 
+                           seq_arg.seq->length,
+                           rpsblast_pssms + db_seq_start,
+                           sbp->name);
          /* The composition of the query could have caused this one
             subject sequence to produce a bad PSSM. This should
             not be a fatal error, so just go on to the next subject
             sequence */
-         if (sbp->posMatrix == NULL) {
+         if (sbp->psi_matrix->pssm->data == NULL) {
             /** @todo FIXME Results should not be silently skipped,
              *        need a warning here
              */
@@ -1043,8 +1070,10 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
 
       BLASTSeqSrcRetSequence(seq_src, (void*)&seq_arg);
 
-      if (program_number != eBlastTypeRpsTblastn)
-         _PSIDeallocateMatrix((void**)sbp->posMatrix, seq_arg.seq->length);
+      if (program_number != eBlastTypeRpsTblastn) {
+         _PSIDeallocateMatrix((void**)sbp->psi_matrix->pssm->data, 
+                              seq_arg.seq->length);
+      }
 
       if (hsp_list->hspcnt == 0) {
          hsp_list = Blast_HSPListFree(hsp_list);
@@ -1071,9 +1100,9 @@ Int2 s_RPSTraceback(EBlastProgramType program_number,
 
    /* Free the allocated array of memory mapped matrix columns and restore
       the original settings in the gapped alignment structure. */
-   sfree(orig_pssm);
+   sfree(rpsblast_pssms);
    gap_align->positionBased = FALSE;
-   gap_align->sbp->posMatrix = NULL;
+   RPSPsiMatrixDetach(sbp);
 
    return status;
 }
