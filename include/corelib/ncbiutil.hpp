@@ -224,7 +224,7 @@ FindBestChoice(const C& container, F score_func)
 {
     typedef typename C::value_type T;
     CBestChoiceTracker<T, F> tracker(score_func);
-    iterate (typename C, it, container) {
+    ITERATE (typename C, it, container) {
         tracker(*it);
     }
     return tracker.GetBestChoice();
@@ -237,6 +237,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.30  2003/03/10 17:43:45  kuznets
+ * iterate -> ITERATE cleanup
+ *
  * Revision 1.29  2003/03/06 19:33:27  rsmith
  * in p_equal_to change NCBI_OS_MAC to NCBI_COMPILER_METROWERKS to more accurately reflect when the fix is needed.
  *

@@ -266,8 +266,8 @@ extern char* strdup(const char* str);
 
 
 
-//  iterate
-//  non_const_iterate
+//  ITERATE
+//  NON_CONST_ITERATE
 //
 // Useful macro to write 'for' statements with the STL container iterator as
 // a variable.
@@ -277,6 +277,13 @@ extern char* strdup(const char* str);
     for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
 
 #define non_const_iterate(Type, Var, Cont) \
+    for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
+
+
+#define ITERATE(Type, Var, Cont) \
+    for ( Type::const_iterator Var = (Cont).begin(), NCBI_NAME2(Var,_end) = (Cont).end();  Var != NCBI_NAME2(Var,_end);  ++Var )
+
+#define NON_CONST_ITERATE(Type, Var, Cont) \
     for ( Type::iterator Var = (Cont).begin();  Var != (Cont).end();  ++Var )
 
 
@@ -308,6 +315,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.62  2003/03/10 17:43:45  kuznets
+ * iterate -> ITERATE cleanup
+ *
  * Revision 1.61  2003/02/04 18:15:54  gouriano
  * removed reference to ncbifloat.h
  *
