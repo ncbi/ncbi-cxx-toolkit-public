@@ -429,6 +429,22 @@ list<string>& NStr::Split(const string& str, const string& delim,
 }
 
 
+string NStr::Join(const list<string>& arr, const string& delim)
+{
+    if (arr.empty()) {
+        return kEmptyStr;
+    }
+
+    string                       result = arr.front();
+    list<string>::const_iterator it     = arr.begin();
+    while (++it != arr.end()) {
+        result += delim;
+        result += *it;
+    }
+    return result;
+}
+
+
 string NStr::PrintableString(const string& str)
 {
     string s;
@@ -460,6 +476,133 @@ string NStr::PrintableString(const string& str)
 }
 
 
+list<string>& NStr::Wrap(const string& str, SIZE_TYPE width,
+                         list<string>& arr, NStr::TWrapFlags flags,
+                         const string& prefix, const string& prefix1)
+{
+#ifdef _DEBUG
+    if ( !prefix1.empty()  &&  !(flags & fWrap_UsePrefix1) ) {
+        ERR_POST(Warning << "NStr::Wrap: non-empty prefix1 will be ignored"
+                 " without fWrap_UsePrefix1");
+    }
+#endif
+
+    const string* pfx = (flags & fWrap_UsePrefix1) ? &prefix1 : &prefix;
+    SIZE_TYPE     pos = 0, len = str.size();
+    string        hyphen; // "-" or empty
+
+    enum EScore { // worst to best
+        eForced,
+        ePunct,
+        eSpace,
+        ePunctSpace,
+        eNewline
+    };
+
+    while (pos < len) {
+        SIZE_TYPE raw_limit  = pos + width - pfx->size();
+        SIZE_TYPE limit      = min(raw_limit, len - 1);
+        SIZE_TYPE best_pos   = limit; // will start the next line
+        EScore    best_score = eForced;
+        for (SIZE_TYPE pos2 = pos;  pos2 <= limit;  pos2++) {
+            char c = str[pos2];
+            if (c == '\n') {
+                best_pos   = pos2;
+                best_score = eNewline;
+                break;
+            } else if (isspace(c)) {
+                EScore score = eSpace;
+                if (pos2 > 0) {
+                    char c0 = str[pos2 - 1];
+                    if ((flags & fWrap_FavorPunct)  &&  ispunct(c0)) {
+                        score = ePunctSpace;
+                    } else if (isspace(c0)) {
+                        continue; // take the first space of a group
+                    }
+                }
+                if (score >= best_score) {
+                    best_pos   = pos2;
+                    best_score = score;
+                }
+            } else if (best_score <= ePunct  &&  ispunct(c)) {
+                best_pos   = pos2;
+                best_score = ePunct;
+            }
+        }
+
+        if (len < raw_limit) {
+            best_pos = len;
+        } else if (best_score == eForced  &&  (flags & fWrap_Hyphenate)) {
+            hyphen = "-";
+            --best_pos;
+        }
+        arr.push_back(*pfx);
+        arr.back() += str.substr(pos, best_pos - pos);
+        arr.back() += hyphen;
+        pos    = best_pos;
+        pfx    = &prefix;
+        hyphen = kEmptyStr;
+
+        if (best_score == eSpace  ||  best_score == ePunctSpace) {
+            // If breaking at a group of spaces, skip over the whole group
+            while (pos < len  &&  isspace(str[pos])  &&  str[pos] != '\n') {
+                ++pos;
+            }
+        } else if (best_score == eNewline) {
+            ++pos;
+        }
+    }
+
+    return arr;
+}
+
+
+list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
+                             const string& delim, list<string>& arr,
+                             NStr::TWrapFlags flags, const string& prefix,
+                             const string& prefix1)
+{
+#ifdef _DEBUG
+    if ( !prefix1.empty()  &&  !(flags & fWrap_UsePrefix1) ) {
+        ERR_POST(Warning << "NStr::Wrap: non-empty prefix1 will be ignored"
+                 " without fWrap_UsePrefix1");
+    }
+#endif
+
+    const string* pfx      = (flags & fWrap_UsePrefix1) ? &prefix1 : &prefix;
+    string        s        = *pfx;
+    bool          at_start = true;
+    iterate (list<string>, it, l) {
+        if (at_start) {
+            if (s.size() + it->size() <= width) {
+                s += *it;
+                at_start = false;
+            } else {
+                // Can't fit, even on its own line; break separately.
+                Wrap(*it, width, arr, flags, prefix, *pfx);
+                pfx      = &prefix;
+                s        = prefix;
+                at_start = true;
+            }
+        } else if (s.size() + delim.size() + it->size() <= width) {
+            s += delim;
+            s += *it;
+            at_start = false;
+        } else {
+            // Can't fit on this line; break here and try again.
+            arr.push_back(s);
+            pfx      = &prefix;
+            s        = prefix;
+            at_start = true;
+            --it;
+        }
+    }
+
+    arr.push_back(s);
+    return arr;
+}
+
+
 #if !defined(HAVE_STRDUP)
 extern char* strdup(const char* str)
 {
@@ -479,6 +622,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.52  2002/10/02 20:15:09  ucko
+ * Add Join, Wrap, and WrapList functions to NStr::.
+ *
  * Revision 1.51  2002/09/04 15:16:57  lavr
  * Backslashed double quote (\") in PrintableString()
  *

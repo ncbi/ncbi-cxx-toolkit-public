@@ -242,10 +242,41 @@ public:
                                const string& delim,
                                list<string>& arr);
 
+    /// Join the strings in "arr" into a single string, separating
+    /// each pair with "delim".
+    static string Join(const list<string>& arr, const string& delim);
+
     /// Make a printable version of "str". The non-printable characters will
     /// be represented as "\r", "\n", "\v", "\t", "\0", "\\", or
     /// "\xDD" where DD is the character's code in hexadecimal.
     static string PrintableString(const string& str);
+
+    enum EWrapFlags {
+        fWrap_FavorPunct = 0x1, // prefer to break after punctuation?
+        fWrap_UsePrefix1 = 0x2, // use prefix1 for first line?
+        fWrap_Hyphenate  = 0x4  // add a hyphen when breaking words?
+    };
+    typedef int TWrapFlags; // binary OR of "EWrapFlags"
+
+    /// Split string "str" into lines of width "width" and add the
+    /// resulting lines to the list "arr" (returned).  Normally, all
+    /// lines will begin with "prefix" (counted against "width"),
+    /// but the first line will instead begin with "prefix1" if
+    /// "eWrap_UsePrefix1" is set in "flags".
+    static list<string>& Wrap(const string& str, SIZE_TYPE width,
+                              list<string>& arr, TWrapFlags flags = 0,
+                              const string& prefix = kEmptyStr,
+                              const string& prefix1 = kEmptyStr);
+
+    /// Similar to the above, but tries to avoid splitting any elements of l.
+    /// Delim only applies between elements on the same line; if you want
+    /// everything to end with commas or such, add them first or join
+    /// the lines with ",\n".
+    static list<string>& WrapList(const list<string>& l, SIZE_TYPE width,
+                                  const string& delim, list<string>& arr,
+                                  TWrapFlags flags = 0,
+                                  const string& prefix = kEmptyStr,
+                                  const string& prefix1 = kEmptyStr);
 }; // class NStr
 
 
@@ -553,6 +584,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.21  2002/10/02 20:14:52  ucko
+ * Add Join, Wrap, and WrapList functions to NStr::.
+ *
  * Revision 1.20  2002/07/17 16:49:03  gouriano
  * added ncbiexpt.hpp include
  *
