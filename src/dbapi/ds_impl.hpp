@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/09/30 19:16:27  kholodov
+* Added: public GetHandler() method
+*
 * Revision 1.4  2002/09/23 18:35:24  kholodov
 * Added: GetErrorInfo() and GetErrorAsEx() methods.
 *
@@ -96,6 +99,8 @@ public:
 
     // Implement IEventListener interface
     virtual void Action(const CDbapiEvent& e);
+
+    class CToMultiExHandler* GetHandler();
 
 private:
     int m_loginTimeout;

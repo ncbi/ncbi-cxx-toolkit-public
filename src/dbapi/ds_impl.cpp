@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/09/30 19:16:27  kholodov
+* Added: public GetHandler() method
+*
 * Revision 1.7  2002/09/23 18:35:24  kholodov
 * Added: GetErrorInfo() and GetErrorAsEx() methods.
 *
@@ -111,17 +114,26 @@ void CDataSource::SetLogStream(CNcbiOstream* out)
     }
 }
 
+CToMultiExHandler* CDataSource::GetHandler()
+{
+    return m_multiExH;
+}
+    
 CDB_MultiEx* CDataSource::GetErrorAsEx()
 {
-    return m_multiExH->GetMultiEx();
+    return GetHandler() == 0 ? 0 : GetHandler()->GetMultiEx();
 }
 
 string CDataSource::GetErrorInfo()
 {
-    CNcbiOstrstream out;
-    CDB_UserHandler_Stream h(&out);
-    h.HandleIt(m_multiExH->GetMultiEx());
-    return CNcbiOstrstreamToString(out);
+    if( GetHandler() != 0 ) {
+        CNcbiOstrstream out;
+        CDB_UserHandler_Stream h(&out);
+        h.HandleIt(GetHandler()->GetMultiEx());
+        return CNcbiOstrstreamToString(out);
+    }
+    else
+        return kEmptyStr;
 }
 
 
