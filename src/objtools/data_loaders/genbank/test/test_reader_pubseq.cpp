@@ -60,7 +60,7 @@ int main()
                 " SatKey=" << blob_id.GetSatKey() << endl;
       
             CLoadLockBlob blob(request, blob_id);
-            reader.LoadBlob(request, ids, i);
+            reader.LoadBlob(request, blob_id);
             if ( !blob.IsLoaded() ) {
                 cout << "blob is not available\n";
                 continue;
@@ -73,6 +73,9 @@ int main()
 
 /*
 * $Log$
+* Revision 1.8  2004/12/22 15:56:41  vasilche
+* Updated for changed in readers API.
+*
 * Revision 1.7  2004/09/08 16:28:35  vasilche
 * Use CStandaloneRequestResult.
 *
