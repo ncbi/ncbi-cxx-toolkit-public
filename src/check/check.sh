@@ -49,7 +49,11 @@ script_args="$*"
 summary_res="check.sh.log"
 error_res="check.sh.out"
 
-sendmail="/usr/lib/sendmail -oi"
+if test -x /usr/sbin/sendmail; then
+    sendmail="/usr/sbin/sendmail -oi"
+else
+    sendmail="/usr/lib/sendmail -oi"
+fi
 
 
 ####  ERROR REPORT
