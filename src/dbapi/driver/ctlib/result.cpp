@@ -581,8 +581,8 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
                 else {
                     if (b_type == eDB_Numeric) {
                         ((CDB_Numeric*) item_buf)->Assign
-                            ((unsigned int)         v.scale,
-                             (unsigned int)         v.precision,
+                            ((unsigned int)         v.precision,
+                             (unsigned int)         v.scale,
                              (const unsigned char*) v.array);
                     }
                     else {
@@ -602,8 +602,8 @@ static CDB_Object* s_GetItem(CS_COMMAND* cmd, CS_INT item_no, CS_DATAFMT& fmt,
             } else {
                 return  (outlen == 0)
                     ? new CDB_Numeric
-                    : new CDB_Numeric((unsigned int)         v.scale,
-                                      (unsigned int)         v.precision,
+                    : new CDB_Numeric((unsigned int)         v.precision,
+                                      (unsigned int)         v.scale,
                                       (const unsigned char*) v.array);
             }
         }
@@ -918,6 +918,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2002/02/06 22:24:43  soussov
+ * fixes the arguments order in numeric assign
+ *
  * Revision 1.11  2002/01/04 19:41:46  soussov
  * allows usage ReadItem(0, 0)
  *

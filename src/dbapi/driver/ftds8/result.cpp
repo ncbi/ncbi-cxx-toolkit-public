@@ -417,8 +417,8 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
             if (v) {
                 if (b_type == eDB_Numeric) {
                     ((CDB_Numeric*) item_buff)->Assign
-                        ((unsigned int)   v->scale,
-                         (unsigned int)   v->precision,
+                        ((unsigned int)   v->precision,
+                         (unsigned int)   v->scale,
                          (unsigned char*) v->array);
                 } else if (b_type == eDB_BigInt) {
                     *((CDB_BigInt*) item_buff) = numeric_to_longlong
@@ -443,8 +443,8 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                 if (v) {
                     if (b_type == eDB_Numeric) {
                         ((CDB_Numeric*) item_buff)->Assign
-                            ((unsigned int)   v->scale,
-                             (unsigned int)   v->precision,
+                            ((unsigned int)   v->precision,
+                             (unsigned int)   v->scale,
                              (unsigned char*) v->array);
                     } else {
                         throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
@@ -456,8 +456,8 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
         }
 
         return v ?
-            new CDB_Numeric((unsigned int)   v->scale,
-                            (unsigned int)   v->precision,
+            new CDB_Numeric((unsigned int)   v->precision,
+                            (unsigned int)   v->scale,
                             (unsigned char*) v->array) : new CDB_Numeric;
     }
 
@@ -526,7 +526,7 @@ size_t CTDS_RowResult::ReadItem(void* buffer, size_t buffer_size,bool* is_null)
         buffer_size = d_len - m_Offset;
     }
 
-    memcpy(buffer, d_ptr + m_Offset, buffer_size);
+    if(buffer) memcpy(buffer, d_ptr + m_Offset, buffer_size);
     m_Offset += buffer_size;
     if (m_Offset >= d_len) {
         m_Offset = 0;
@@ -1302,6 +1302,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/02/06 22:30:56  soussov
+ * fixes the arguments order in numeric assign
+ *
  * Revision 1.2  2001/11/06 18:00:02  lavr
  * Formatted uniformly as the rest of the library
  *

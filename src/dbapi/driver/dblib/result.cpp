@@ -426,8 +426,8 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
             if (v) {
                 if (b_type == eDB_Numeric) {
                     ((CDB_Numeric*) item_buff)->Assign
-                        ((unsigned int)   v->scale,
-                         (unsigned int)   v->precision,
+                        ((unsigned int)   v->precision,
+                         (unsigned int)   v->scale,
                          (unsigned char*) DBNUMERIC_val(v));
                 } else if (b_type == eDB_BigInt) {
                     *((CDB_BigInt*) item_buff) = numeric_to_longlong
@@ -452,8 +452,8 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
                 if (v) {
                     if (b_type == eDB_Numeric) {
                         ((CDB_Numeric*) item_buff)->Assign
-                            ((unsigned int)   v->scale,
-                             (unsigned int)   v->precision,
+                            ((unsigned int)   v->precision,
+                             (unsigned int)   v->scale,
                              (unsigned char*) DBNUMERIC_val(v));
                     } else {
                         throw CDB_ClientEx(eDB_Error, 230020, "s_GetItem",
@@ -465,8 +465,8 @@ static CDB_Object* s_GetItem(DBPROCESS* cmd, int item_no,
         }
 
         return v ?
-            new CDB_Numeric((unsigned int)   v->scale,
-                            (unsigned int)   v->precision,
+            new CDB_Numeric((unsigned int)   v->precision,
+                            (unsigned int)   v->scale,
                             (unsigned char*) DBNUMERIC_val(v)) : new CDB_Numeric;
     }
 
@@ -1418,6 +1418,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/02/06 22:27:54  soussov
+ * fixes the arguments order in numeric assign
+ *
  * Revision 1.10  2002/01/11 20:11:43  vakatov
  * Fixed CVS logs from prev. revision that messed up the compilation
  *
