@@ -26,13 +26,13 @@
  * Author:  Anton Lavrentiev
  *
  * File Description:
- *   Test UTIL_PushbackStream() interface.
+ *   Test CStreamUtils::Pushback() interface.
  *
  */
 
 #include "pbacktest.hpp"
 #include <corelib/ncbidbg.hpp>
-#include <util/stream_pushback.hpp>
+#include <util/stream_utils.hpp>
 #include <stdlib.h>
 #include <time.h>
 
@@ -78,7 +78,7 @@ static size_t s_Read(iostream& ios, char* buffer, size_t size)
  * the standard, thus allowing at least one-char backup after a read.
  *
  * So, if you plan to do a portable backup, which can possibly follow
- * an unformatted read, do so by using UTIL_StreamPushback() instead of
+ * an unformatted read, do so by using CStreamUtils::Pushback() instead of
  * standard means, as the latter may be broken.
  */
 
@@ -174,7 +174,7 @@ extern int TEST_StreamPushback(iostream&    ios,
         if (i != j || --i) {
             buflen -= i;
             LOG_POST(Info << "Pushing back " << i << " byte(s)");
-            UTIL_StreamPushback(ios, &buf2[buflen], i);
+            CStreamUtils::Pushback(ios, &buf2[buflen], i);
             c = buf2[buflen];
 #ifdef NCBI_COMPILER_MSVC
             first_pushback_done = true;
@@ -216,6 +216,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2002/11/27 21:10:33  lavr
+ * Change Pushback() methods to be CStreamUtils', not standalone
+ *
  * Revision 1.7  2002/07/16 15:08:34  lavr
  * Use ANSI-compliant stringizing
  *
