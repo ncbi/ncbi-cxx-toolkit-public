@@ -89,15 +89,17 @@ void CSoapMessage::AddObject(const CSerialObject& obj,
                              EMessagePart destination)
 {
 // verify namespace
-    CSerialObject* ser = const_cast<CSerialObject*>(&obj);
-    CAnyContentObject* any = dynamic_cast<CAnyContentObject*>(ser);
-    if (any) {
-        if ((any->GetNamespaceName()).empty()) {
-            any->SetNamespaceName(m_DefNamespaceName);
-        }
-    } else {
-        if (!ser->HasNamespaceName()) {
-            ser->SetNamespaceName(m_DefNamespaceName);
+    if (!m_DefNamespaceName.empty()) {
+        CSerialObject* ser = const_cast<CSerialObject*>(&obj);
+        CAnyContentObject* any = dynamic_cast<CAnyContentObject*>(ser);
+        if (any) {
+            if ((any->GetNamespaceName()).empty()) {
+                any->SetNamespaceName(m_DefNamespaceName);
+            }
+        } else {
+            if (!ser->HasNamespaceName()) {
+                ser->SetNamespaceName(m_DefNamespaceName);
+            }
         }
     }
 
@@ -275,6 +277,9 @@ END_NCBI_SCOPE
 
 /* --------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/06/24 20:52:33  gouriano
+* Check if default namespace was set before using it
+*
 * Revision 1.6  2004/06/24 20:39:13  gouriano
 * Added default object namespace name
 *
