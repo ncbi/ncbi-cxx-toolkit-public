@@ -82,6 +82,22 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
                                    const Uint1* query, 
                                    const Uint1* subject, 
                                    const BlastScoreBlk* sbp);
+
+/** Modify a BlastScoreBlk structure so that it can be used in RPS-BLAST. This
+ * involves allocating a SPsiBlastScoreMatrix structure so that the PSSMs 
+ * memory mapped from the RPS-BLAST database files can be assigned to that
+ * structure.
+ * @param sbp BlastScoreBlk structure to modify [in|out]
+ * @param rps_pssm PSSMs in RPS-BLAST database to use [in]
+ */
+void RPSPsiMatrixAttach(BlastScoreBlk* sbp, Int4** rps_pssm);
+
+/** Remove the artificially built SPsiBlastScoreMatrix structure allocated by
+ * RPSPsiMatrixAttach
+ * @param sbp BlastScoreBlk structure to modify [in|out]
+ */
+void RPSPsiMatrixDetach(BlastScoreBlk* sbp);
+
 #ifdef __cplusplus
 }
 #endif
@@ -91,6 +107,9 @@ BLAST_CheckStartForGappedAlignment(const BlastHSP* hsp,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2005/02/14 14:07:15  camacho
+ * Added RPSPsiMatrixAttach and RPSPsiMatrixDetach
+ *
  * Revision 1.5  2005/01/18 14:53:47  camacho
  * Change in tie-breakers for score comparison, suggestion by Mike Gertz
  *
