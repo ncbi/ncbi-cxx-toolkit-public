@@ -245,6 +245,8 @@ CDB_Connection* CTLibContext::Connect(const string&   srv_name,
         }
     }
 
+    if((mode & fDoNotConnect) != 0) return 0;
+
     // new connection needed
     if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
         throw CDB_ClientEx(eDB_Error, 100010, "CTLibContext::Connect",
@@ -880,6 +882,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.29  2003/11/14 20:46:13  soussov
+ * implements DoNotConnect mode
+ *
  * Revision 1.28  2003/10/29 21:45:54  soussov
  * adds code which prevents repeated timeouts if server is hanging
  *

@@ -204,6 +204,8 @@ CDB_Connection* CDBLibContext::Connect(const string&   srv_name,
         }
     }
 
+
+    if((mode & fDoNotConnect) != 0) return 0;
     // new connection needed
     if (srv_name.empty()  ||  user_name.empty()  ||  passwd.empty()) {
         throw CDB_ClientEx(eDB_Error, 200010, "CDBLibContext::Connect",
@@ -497,6 +499,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2003/11/14 20:46:21  soussov
+ * implements DoNotConnect mode
+ *
  * Revision 1.26  2003/10/27 17:00:29  soussov
  * adds code to prevent the return of broken connection from the pool
  *
