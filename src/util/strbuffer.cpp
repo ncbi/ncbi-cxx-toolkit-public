@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2003/11/19 15:41:11  vasilche
+* Pushback unused data in destructor of CIStreamBuffer.
+*
 * Revision 1.37  2003/09/25 12:49:14  kuznets
 * Change to allowed more than one subsource collector
 *
@@ -204,18 +207,33 @@ CIStreamBuffer::CIStreamBuffer(void)
 
 CIStreamBuffer::~CIStreamBuffer(void)
 {
+    try {
+        Close();
+    }
+    catch ( exception& exc ) {
+        ERR_POST(Warning <<
+                 "~CIStreamBuffer: exception while closing: " << exc.what());
+    }
     delete[] m_Buffer;
+    
 }
 
 void CIStreamBuffer::Open(CByteSourceReader& reader)
 {
+    Close();
     m_Input = &reader;
     m_Error = 0;
 }
 
 void CIStreamBuffer::Close(void)
 {
-    m_Input.Reset();
+    if ( m_Input ) {
+        size_t unused = m_DataEndPos - m_CurrentPos;
+        if ( unused ) {
+            m_Input->Pushback(m_CurrentPos, unused);
+        }
+        m_Input.Reset();
+    }
     m_BufferOffset = 0;
     m_CurrentPos = m_Buffer;
     m_DataEndPos = m_Buffer;
@@ -666,18 +684,21 @@ COStreamBuffer::~COStreamBuffer(void)
     try {
         Close();
     }
-    catch (CIOException& e) {
-        ERR_POST(Warning << e.what());
+    catch ( exception& exc ) {
+        ERR_POST(Warning <<
+                 "~COStreamBuffer: exception while closing: " << exc.what());
     }
     delete[] m_Buffer;
 }
 
 void COStreamBuffer::Close(void)
 {
-    Flush();
-    if ( m_DeleteOutput )
-        delete &m_Output;
-    m_DeleteOutput = false;
+    if ( m_Output ) {
+        Flush();
+        if ( m_DeleteOutput )
+            delete &m_Output;
+        m_DeleteOutput = false;
+    }
     m_Error = 0;
     m_IndentLevel = 0;
     m_CurrentPos = m_Buffer;
@@ -726,10 +747,11 @@ void COStreamBuffer::Flush(void)
     IOS_BASE::iostate state = m_Output.rdstate();
     m_Output.clear();
     try {
-        if ( !m_Output.flush() )
-//            THROW1_TRACE(CIOException, "COStreamBuffer::Flush() failed");
+        if ( !m_Output.flush() ) {
             NCBI_THROW(CIOException,eFlush,"COStreamBuffer::Flush: failed");
-    } catch (...) {
+        }
+    }
+    catch (...) {
         m_Output.clear(state);
         throw;
     }
