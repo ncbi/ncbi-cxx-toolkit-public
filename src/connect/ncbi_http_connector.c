@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.27  2002/06/10 19:51:20  lavr
+ * Small prettifying
+ *
  * Revision 6.26  2002/05/06 19:13:48  lavr
  * Output to stderr replaced with calls to logger
  *
@@ -284,9 +287,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu)
 
             SOCK_SetTimeout(uuu->sock, eIO_Write, uuu->w_timeout);
             do {
-                char       buf[4096];
-                size_t     n_written;
-                size_t     len = BUF_PeekAt(uuu->obuf, off, buf, sizeof(buf));
+                char   buf[4096];
+                size_t n_written;
+                size_t len = BUF_PeekAt(uuu->obuf, off, buf, sizeof(buf));
 
                 status = SOCK_Write(uuu->sock, buf, len, &n_written);
                 if (status != eIO_Success)
