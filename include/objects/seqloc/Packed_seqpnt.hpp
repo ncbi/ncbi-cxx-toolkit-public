@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2002/06/06 20:46:16  clausen
+ * Moved IsValid to objects/util/sequence.hpp
+ *
  * Revision 1.1  2002/01/10 19:15:00  clausen
  * Added IsValid
  *
@@ -55,8 +58,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class CScope;
-
 class CPacked_seqpnt : public CPacked_seqpnt_Base
 {
     typedef CPacked_seqpnt_Base Tparent;
@@ -66,10 +67,6 @@ public:
     // destructor
     ~CPacked_seqpnt(void);
     
-    // Checks that all points >=0 and < length of CBioseq. If scope is 
-    // 0, assumes length is the maximum value of an int
-    bool IsValid(CScope* scope = 0) const;
-
 private:
     // Prohibit copy constructor and assignment operator
     CPacked_seqpnt(const CPacked_seqpnt& value);
