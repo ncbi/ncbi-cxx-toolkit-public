@@ -95,10 +95,16 @@
 /* NCBI SSS UTILS library is available */
 #undef HAVE_LIBSSSUTILS
 
+/* NCBI GEO DB library is available */
+#undef HAVE_LIBGEODB
+
+/* SP library is available */
+#undef HAVE_LIBSP
+
 /* NCBI PubMed libraries are available */
 #undef HAVE_LIBPUBMED
 
-/* New C++ streams dont have ios_base:: */
+/* New C++ streams do not have ios_base:: */
 #undef HAVE_NO_IOS_BASE
 
 /* Have union semun */
