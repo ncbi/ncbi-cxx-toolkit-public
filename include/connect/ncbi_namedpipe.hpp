@@ -158,7 +158,7 @@ public:
     ///   eIO_InvalidArg -- if "direction" is not one of:  eIO_Read, eIO_Write;
     ///   eIO_Timeout    -- if the timeout was on last I/O;
     ///   eIO_Success    -- otherwise.
-    EIO_Status Status(EIO_Event direction);
+    EIO_Status Status(EIO_Event direction) const;
 
     /// Specify timeout for the pipe I/O (see Open|Read|Write functions).
     ///
@@ -330,6 +330,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/12/02 17:48:48  ivanov
+ * Made Status() const
+ *
  * Revision 1.6  2003/09/23 21:01:44  lavr
  * Slightly reworked to fit in CConn_...Streams better
  *
