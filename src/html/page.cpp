@@ -216,6 +216,11 @@ CNCBINode* CHTMLPage::x_CreateTemplate(CNcbiIstream& is, CNcbiOstream* out,
                 str.erase(0, pos);
             }
         }
+        if ( !str.empty() ) {
+            CHTMLText* child = new CHTMLText(str);
+            child->Print(*out, mode);
+            node->AppendChild(child);
+        }
 
         if ( !is.eof() ) {
             THROW1_TRACE(runtime_error, "CHTMLPage::CreateTemplate():  \
@@ -408,6 +413,10 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.37  2003/05/15 13:07:32  ucko
+ * Fix a more serious (and correctly diagnosed ;-)) logic error: include
+ * the last line of streamed templates that don't end in newlines.
+ *
  * Revision 1.36  2003/05/15 13:00:24  ucko
  * When breaking large templates into chunks, be sure to include the
  * relevant newline in each chunk to avoid accidentally repeating it if a
