@@ -26,21 +26,25 @@
  *
  * ===========================================================================
  *
- * Author:  Clifford Clausen, Denis Vakatov, Jim Ostel, Jonathan Kans,
+ * Authors: Clifford Clausen, Denis Vakatov, Jim Ostell, Jonathan Kans,
  *          Greg Schuler
  * Contact: Clifford Clausen
  *
  * File Description:
  *   CRandom implements a lagged Fibonacci (LFG) random number generator (RNG)
  *   with lags 33 and 13, modulus 2^31, and operation '+'. It is a slightly
- *   modified version of Nlm_Random() found in the NCBI C toolkit. It 
- *   generates uniform random numbers between 0 and 2^31 - 1.
+ *   modified version of Nlm_Random() found in the NCBI C toolkit.
+ *   It generates uniform random numbers between 0 and 2^31 - 1 (inclusive).
  *
  *   More details and literature refs are provided in "random_gen.cpp".
  *
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/07/05 16:55:40  vakatov
+ * Added typedef CRandom::TValue and CRandom::GetMax() to allow for
+ * seamless extension of this API in the future
+ *
  * Revision 1.1  2001/07/03 18:36:07  clausen
  * Initial check in
  *
@@ -59,30 +63,36 @@ BEGIN_NCBI_SCOPE
 class CRandom
 {
 public:
+    // Type of the generated integer value and/or the seed value
+    typedef Uint4 TValue;
+
     // Constructors
     CRandom(void);
-    CRandom(Uint4 seed);
+    CRandom(TValue seed);
 
     // Initialize and Seed the random number generator
-    void  SetSeed(Uint4 seed);
-    Uint4 GetSeed(void);
+    void   SetSeed(TValue seed);
+    TValue GetSeed(void);
 
     // Reset random number generator to initial startup condition
     void Reset(void);
 
-    // Get the next random number
-    Uint4 GetRand(void);
+    // Get the next random number in the interval [0..GetMax()] (inclusive)
+    TValue GetRand(void);
+
+    // The max. value GetRand() returns
+    static TValue GetMax(void);
 
 private:
     // Static array used to initialize "m_State", and its size
-    static const Uint4  sm_State[33];
+    static const TValue sm_State[33];
     static const size_t kStateSize;
 
-    // Instance members
-    Uint4  m_State[sizeof(sm_State) / sizeof(sm_State[0])];
-    Uint4* m_RJ;
-    Uint4* m_RK;
-    Uint4  m_Seed;
+    // Instance data members
+    TValue  m_State[sizeof(sm_State) / sizeof(sm_State[0])];
+    TValue* m_RJ;
+    TValue* m_RK;
+    TValue  m_Seed;
 };
 
 
@@ -97,15 +107,15 @@ private:
 //  CRandom::
 //
 
-inline Uint4 CRandom::GetSeed(void)
+inline CRandom::TValue CRandom::GetSeed(void)
 {
     return m_Seed;
 }
 
 
-inline Uint4 CRandom::GetRand(void)
+inline CRandom::TValue CRandom::GetRand(void)
 {
-    register Uint4 r;
+    register TValue r;
 
     r = *m_RK;
     r += *(m_RJ--);
@@ -119,6 +129,12 @@ inline Uint4 CRandom::GetRand(void)
     }
 
     return (r >> 1) & 0x7fffffff;  // discard the least-random bit
+}
+
+
+inline CRandom::TValue CRandom::GetMax(void)
+{
+    return 0x7fffffff;
 }
 
 

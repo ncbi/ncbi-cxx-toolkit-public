@@ -23,15 +23,15 @@
  *
  * ===========================================================================
  *
- * Author:  Clifford Clausen, Denis Vakatov, Jim Ostel, Jonathan Kans,
+ * Authors: Clifford Clausen, Denis Vakatov, Jim Ostell, Jonathan Kans,
  *          Greg Schuler
  * Contact: Clifford Clausen
  *
  * File Description:
  *   CRandom is a lagged Fibonacci (LFG) random number generator (RNG)
  *   with lags 33 and 13, modulus 2^31, and operation '+'. It is a slightly
- *   modified version of Nlm_Random() found in the NCBI C toolkit. It 
- *   generates uniform random numbers between 0 and 2^31 - 1.
+ *   modified version of Nlm_Random() found in the NCBI C toolkit.
+ *   It generates uniform random numbers between 0 and 2^31 - 1 (inclusive).
  *
  *   CRandom has been tested using the Diehard RNG test package
  *   developed by George Marsaglia, Prof., Dept of Statistics, Florida
@@ -39,7 +39,7 @@
  *   cannot pass all of the Diehard RNG tests. Specifically, it fails the
  *   "Birthday" test as do other LFG RNGs. CRandom performs as well as
  *   other LFG RNGS, as provided in the Diehard test package. The LFG
- *   class of RNGs was chosen as the RNG for the NCBI C++ toolkit as it 
+ *   class of RNGs was chosen as the RNG for the NCBI C++ Toolkit as it
  *   provides the best tradeoff between time to generate a random number
  *   and performance on tests for randomness.
  *   
@@ -49,7 +49,7 @@
  *   For further information also see
  *   http://random.mat.sbg.ac.at/,  
  *   http://csep1.phy.ornl.gov/rn/rn.html, and
- *   http://www.agner.org/random/. 
+ *   http://www.agner.org/random/.
  *
  *   Some relevant papers are:
  *   1. Hellekalek, P.: "Inversive pseudorandom number generators: concepts
@@ -58,20 +58,24 @@
  *   Conference, pp 255-262, 1995.
  *   2. Leeb, H: "Random Numbers for Computer Simulation", Master's thesis,
  *   University of Salzburg, 1995.
- *   3. Marsaglia, G., "A Current View of Random Number Generators", 
+ *   3. Marsaglia, G., "A Current View of Random Number Generators",
  *   Proceedings of 16th Symposium on the Interface, Atlanta, 1984, Elsevier
  *   Press.
  *   4. Marsaglia, G. "Monkey Tests for Random Number Generators", Computers
  *   & Mathematics with Applications, Vol 9, pp. 1-10, 1993.
  *
  *   For a list of other published papers, see
- *   http://random.mat.sbg.ac.at/literature and 
- *   http://www.evensen.org/marsaglia/. 
+ *   http://random.mat.sbg.ac.at/literature and
+ *   http://www.evensen.org/marsaglia/.
  *
  *   class CRandom:: 
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/07/05 16:55:41  vakatov
+ * Added typedef CRandom::TValue and CRandom::GetMax() to allow for
+ * seamless extension of this API in the future
+ *
  * Revision 1.1  2001/07/03 18:35:30  clausen
  * Initial check in
  *
@@ -89,8 +93,7 @@ const size_t CRandom::kStateSize = sizeof(CRandom::sm_State)
 
 const size_t kStateOffset = 12;
 
-
-const Uint4 CRandom::sm_State[kStateSize] = {
+const CRandom::TValue CRandom::sm_State[kStateSize] = {
     0xd53f1852,  0xdfc78b83,  0x4f256096,  0xe643df7,
     0x82c359bf,  0xc7794dfa,  0xd5e9ffaa,  0x2c8cb64a,
     0x2f07b334,  0xad5a7eb5,  0x96dc0cde,  0x6fc24589,
@@ -103,19 +106,19 @@ const Uint4 CRandom::sm_State[kStateSize] = {
 };
 
 
-CRandom::CRandom()
+CRandom::CRandom(void)
 {
     Reset();
 }
 
 
-CRandom::CRandom(Uint4 seed)
+CRandom::CRandom(TValue seed)
 {
     SetSeed(seed);
 }
 
 
-void CRandom::Reset()
+void CRandom::Reset(void)
 {
     _ASSERT(sizeof(sm_State) / sizeof(sm_State[0]) == kStateSize);
     _ASSERT(kStateOffset < kStateSize);
@@ -129,7 +132,7 @@ void CRandom::Reset()
 }
 
 
-void CRandom::SetSeed(Uint4 seed)
+void CRandom::SetSeed(TValue seed)
 {
     _ASSERT(kStateOffset < kStateSize);
 
@@ -150,3 +153,4 @@ void CRandom::SetSeed(Uint4 seed)
 
 
 END_NCBI_SCOPE
+
