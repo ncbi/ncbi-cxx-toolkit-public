@@ -49,9 +49,9 @@ class CSeqDBImpl {
 public:
     CSeqDBImpl(const string & db_name_list,
                char           prot_nucl,
-               bool           use_mmap,
                Uint4          oid_begin,
-               Uint4          oid_end);
+               Uint4          oid_end,
+               bool           use_mmap);
     
     ~CSeqDBImpl(void);
     
