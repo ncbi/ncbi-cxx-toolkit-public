@@ -105,6 +105,8 @@ void CSeqTestManager::RegisterStandardTests()
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_CdsFlags);
     RegisterTest(CSeq_id::GetTypeInfo(),
+                 new CTestTranscript_Code_break);
+    RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_CdsStartCodon);
     RegisterTest(CSeq_id::GetTypeInfo(),
                  new CTestTranscript_CdsStopCodon);
@@ -208,6 +210,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2004/10/21 21:02:03  jcherry
+ * Added test for code-breaks in CDS feature and recording of
+ * lengths of protein product and translation.
+ *
  * Revision 1.5  2004/10/18 21:07:46  jcherry
  * Added premature stop codon test
  *

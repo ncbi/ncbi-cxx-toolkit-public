@@ -568,6 +568,11 @@ static void s_CompareProtProdToTrans(const CSeq_id& id,
         }
     }
     
+    result.SetOutput_data().AddField("length_annotated_prot_prod",
+                                     int(prod_vec.size()));
+    result.SetOutput_data().AddField("length_translation",
+                                     int(translation.size()));
+
     result.SetOutput_data()
         .AddField("fraction_identity",
                   double(ident_count)
@@ -661,12 +666,40 @@ CTestTranscript_Orfs::RunTest(const CSerialObject& obj,
 }
 
 
+static void s_Code_break(const CSeq_id& id, const CSeqTestContext* ctx,
+                         CFeat_CI feat_iter, CSeq_test_result& result)
+{
+    int count;
+    if (feat_iter->GetData().GetCdregion().IsSetCode_break()) {
+        count = feat_iter->GetData().GetCdregion().GetCode_break().size();
+    } else {
+        count = 0;
+    }
+
+    result.SetOutput_data()
+        .AddField("code_break_count", count);
+}
+
+
+CRef<CSeq_test_result_set>
+CTestTranscript_Code_break::RunTest(const CSerialObject& obj,
+                                    const CSeqTestContext* ctx)
+{
+    return x_TestAllCdregions(obj, ctx, "code_break",
+                              s_Code_break);
+}
+
+
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/10/21 21:02:03  jcherry
+ * Added test for code-breaks in CDS feature and recording of
+ * lengths of protein product and translation.
+ *
  * Revision 1.7  2004/10/18 21:07:46  jcherry
  * Added premature stop codon test
  *

@@ -130,6 +130,10 @@ DECLARE_TRANSCRIPT_TEST(PolyA);
 ///
 DECLARE_TRANSCRIPT_TEST(Orfs);
 
+///
+/// Count code-breaks on CDS
+///
+DECLARE_TRANSCRIPT_TEST(Code_break);
 
 END_NCBI_SCOPE
 
@@ -137,6 +141,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/21 21:02:03  jcherry
+ * Added test for code-breaks in CDS feature and recording of
+ * lengths of protein product and translation.
+ *
  * Revision 1.2  2004/10/18 21:07:46  jcherry
  * Added premature stop codon test
  *
