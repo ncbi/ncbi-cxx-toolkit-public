@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2001/06/07 20:36:31  grichenk
+* Fixed location of m_FixMethod member
+*
 * Revision 1.35  2001/06/07 17:12:46  grichenk
 * Redesigned checking and substitution of non-printable characters
 * in VisibleString
@@ -322,12 +325,12 @@ private:
     size_t m_CurrentTagLength;
     size_t m_CurrentTagLimit;
     stack<size_t> m_Limits;
-    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 
     void StartTag(Uint1 code);
     void EndTag(void);
     void SetTagLength(size_t length);
 #endif
+    EFixNonPrint m_FixMethod; // method of fixing non-printable chars
 };
 
 #include <serial/objostrasnb.inl>
