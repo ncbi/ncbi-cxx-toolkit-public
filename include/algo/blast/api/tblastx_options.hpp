@@ -75,8 +75,15 @@ public:
     int GetDbGeneticCode() const {
         return m_Opts->GetDbGeneticCode();
     }
-    void SetDbGeneticCodeStr(int gc) {
+    void SetDbGeneticCode(int gc) {
         m_Opts->SetDbGeneticCode(gc);
+    }
+
+    int GetQueryGeneticCode() const {
+        return m_Opts->GetQueryGeneticCode();
+    }
+    void SetQueryGeneticCode(int gc) {
+        m_Opts->SetQueryGeneticCode(gc);
     }
 
 protected:
@@ -98,6 +105,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/02/17 18:43:05  bealer
+ * - Change *GeneticCodeStr(*) to *GeneticCode(*)
+ *
  * Revision 1.4  2004/01/16 20:42:57  bealer
  * - Add locality flag for blast options handle classes.
  *
