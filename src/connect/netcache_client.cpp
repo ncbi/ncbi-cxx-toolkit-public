@@ -318,7 +318,7 @@ void CNetCacheClient::Remove(const string& key)
 }
 
 
-IReader* CNetCacheClient::GetData(const string& key)
+IReader* CNetCacheClient::GetData(const string& key, size_t* blob_size)
 {
     string request;
     
@@ -332,12 +332,24 @@ IReader* CNetCacheClient::GetData(const string& key)
     WriteStr(request.c_str(), request.length() + 1);
 
     s_WaitForServer(*m_Sock);
+
+    unsigned int bs = 0;
     
     string answer;
     bool res = ReadStr(*m_Sock, &answer);
     if (res) {
         if (NStr::strncmp(answer.c_str(), "OK:", 3) != 0) {
             NCBI_THROW(CNetCacheException, eCommunicationError, answer);
+        }
+        if (blob_size) {
+            string::size_type pos = answer.find("SIZE=");
+            if (pos != string::npos) {
+                const char* ch = answer.c_str() + pos + 5;
+                bs = atoi(ch);
+                *blob_size = (size_t) bs;
+            } else {
+                *blob_size = 0;
+            }
         }
     }
 
@@ -350,11 +362,12 @@ CNetCacheClient::EReadResult
 CNetCacheClient::GetData(const string&  key,
                          void*          buf, 
                          size_t         buf_size, 
-                         size_t*        n_read)
+                         size_t*        n_read,
+                         size_t*        blob_size)
 {
     _ASSERT(buf && buf_size);
 
-    auto_ptr<IReader> reader(GetData(key));
+    auto_ptr<IReader> reader(GetData(key, blob_size));
     if (reader.get() == 0)
         return CNetCacheClient::eNotFound;
 
@@ -454,6 +467,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2004/11/01 16:02:26  kuznets
+ * GetData now returns BLOB size
+ *
  * Revision 1.14  2004/11/01 14:39:45  kuznets
  * Implemented BLOB update
  *

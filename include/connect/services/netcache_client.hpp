@@ -157,7 +157,8 @@ public:
     /// @return
     ///    IReader* (caller must delete this). 
     ///    When NULL BLOB was not found (expired).
-    IReader* GetData(const string& key);
+    IReader* GetData(const string& key, 
+                     size_t*       blob_size = 0);
 
     /// Remove BLOB
     void Remove(const string& key);
@@ -175,7 +176,8 @@ public:
     EReadResult GetData(const string&  key,
                         void*          buf, 
                         size_t         buf_size, 
-                        size_t*        n_read = 0);
+                        size_t*        n_read = 0,
+                        size_t*        blob_size = 0);
 
     /// Shutdown the server daemon.
     void ShutdownServer();
@@ -212,6 +214,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/11/01 16:02:17  kuznets
+ * GetData now returns BLOB size
+ *
  * Revision 1.9  2004/11/01 14:39:30  kuznets
  * Implemented BLOB update
  *
