@@ -382,6 +382,26 @@ static Int4 gdb3(Int4Ptr a, Int4Ptr b, Int4Ptr c)
     return g;
 }
 
+/** Deallocate the memory for greedy gapped alignment */
+static GreedyAlignMemPtr BLAST_GreedyAlignMemFree(GreedyAlignMemPtr abmp)
+{
+   if (abmp->flast_d) {
+      MemFree(abmp->flast_d[0]);
+      MemFree(abmp->flast_d);
+   } else {
+      if (abmp->flast_d_affine) {
+         MemFree(abmp->flast_d_affine[0]);
+         MemFree(abmp->flast_d_affine);
+      }
+      MemFree(abmp->uplow_free);
+   }
+   MemFree(abmp->max_row_free);
+   if (abmp->space)
+      free_mb_space(abmp->space);
+   abmp = MemFree(abmp);
+   return abmp;
+}
+
 /** Allocate memory for the greedy gapped alignment algorithm
  * @param score_options Options related to scoring [in]
  * @param ext_params Options and parameters related to the extension [in]
@@ -390,7 +410,7 @@ static Int4 gdb3(Int4Ptr a, Int4Ptr b, Int4Ptr c)
  * @return The allocated GreedyAlignMem structure
  */
 static GreedyAlignMemPtr 
-MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
+BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
 		       BlastExtensionParametersPtr ext_params,
 		       Int4 max_dbseq_length)
 {
@@ -438,7 +458,7 @@ MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       gamp->flast_d[0] = Malloc((max_d + max_d + 6) * sizeof(Int4) * 2);
       if (gamp->flast_d[0] == NULL) {
 	 ErrPostEx(SEV_WARNING, 0, 0, "Failed to allocate %ld bytes for greedy alignment", (max_d + max_d + 6) * sizeof(Int4) * 2);
-         gamp = GreedyAlignMemFree(gamp);
+         gamp = BLAST_GreedyAlignMemFree(gamp);
          return NULL;
       }
 
@@ -458,7 +478,7 @@ MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       gamp->flast_d_affine = (ThreeValPtr PNTR) 
 	 Malloc((MAX(max_d, max_cost) + 2) * sizeof(ThreeValPtr));
       if (!gamp->uplow_free || !gamp->flast_d_affine) {
-         gamp = GreedyAlignMemFree(gamp);
+         gamp = BLAST_GreedyAlignMemFree(gamp);
          return NULL;
       }
       gamp->flast_d_affine[0] = 
@@ -467,7 +487,7 @@ MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
 	 gamp->flast_d_affine[i] = 
 	    gamp->flast_d_affine[i-1] + 2*max_d_1 + 6;
       if (!gamp->flast_d_affine || !gamp->flast_d_affine[0])
-         gamp = GreedyAlignMemFree(gamp);
+         gamp = BLAST_GreedyAlignMemFree(gamp);
    }
    gamp->max_row_free = Malloc(sizeof(Int4) * (max_d + 1 + d_diff));
 
@@ -475,7 +495,7 @@ MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       gamp->space = new_mb_space();
    if (!gamp->max_row_free || (do_traceback && !gamp->space))
       /* Failure in one of the memory allocations */
-      gamp = GreedyAlignMemFree(gamp);
+      gamp = BLAST_GreedyAlignMemFree(gamp);
 
    return gamp;
 }
@@ -487,7 +507,7 @@ BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
    GapEditBlockDelete(gap_align->edit_block);
    MemFree(gap_align->dyn_prog);
    if (gap_align->greedy_align_mem)
-      GreedyAlignMemFree(gap_align->greedy_align_mem);
+      BLAST_GreedyAlignMemFree(gap_align->greedy_align_mem);
    GapStateFree(gap_align->state_struct);
 
    MemFree(gap_align);
@@ -537,7 +557,7 @@ BLAST_GapAlignStructNew(BlastScoringOptionsPtr score_options,
    } else {
       max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
       gap_align->greedy_align_mem = 
-         MB_GreedyAlignMemAlloc(score_options, ext_params, 
+         BLAST_GreedyAlignMemAlloc(score_options, ext_params, 
                                 max_subject_length);
       if (!gap_align->greedy_align_mem)
          gap_align = BLAST_GapAlignStructFree(gap_align);
