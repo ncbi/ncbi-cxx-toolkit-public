@@ -104,7 +104,6 @@ esac
 
 
 # Run
-
 count_ok=0
 count_err=0
 count_absent=0
@@ -124,8 +123,16 @@ result=$?
 # Write make result 
 echo "----------------------------------------------------------------------"
 
-if test ${result} -eq 0 ; then
-    cat >> ${CHECK_RUN_FILE} <<EOF
+if test ${result} -ne 0 ; then
+   echo "Error in compiling tests"
+   exit ${result}
+fi
+
+if test `tail -2 ${CHECK_RUN_FILE} | grep -c res_log` -ne 0 ; then
+   echo "Cannot run tests: none found"
+   exit 255
+else
+   cat >> ${CHECK_RUN_FILE} <<EOF
 echo
 echo "Succeded : \${count_ok}"
 echo "Failed   : \${count_err}"
@@ -138,25 +145,32 @@ if test \${count_err} -eq 0 ; then
    echo
 fi
 
-exit \`expr \${count_absent} + \${count_err}\`
+exit \${count_err}
 EOF
 
-else
-   echo "Error in compiling tests"
-   exit ${result}
 fi
 
 chmod a+x ${CHECK_RUN_FILE}
 
 
-cat <<EOF
-The test script was successfully built.
-
-Do you want to run the tests right now? [y/n]
-EOF
-
-read answer
+echo "The test script was successfully built."
 echo
+
+
+# Run tests after build flag (Y - run, N - not run, other - ask)
+run_check=`echo "${cmd}" | tr '[a-z]' '[A-Z]' | sed -e 's/^.*RUN_CHECK=//' -e 's/^\(.\).*/\1/g'`
+
+case "$run_check" in
+  Y )
+    answer='Y' ;;
+  N )
+    answer='N' ;;
+  * )
+    echo "Do you want to run the tests right now? [y/n]"
+    read answer
+    echo ;;
+esac
+
 case "$answer" in
  n | N )  echo "Run \"${CHECK_RUN_FILE} run\" to launch the tests." ; exit 0 ;;
 esac
