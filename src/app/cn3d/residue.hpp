@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/30 19:49:04  thiessen
+* working sequence window
+*
 * Revision 1.10  2000/08/24 18:43:15  thiessen
 * tweaks for transparent sphere display
 *
@@ -67,6 +70,7 @@
 #define CN3D_RESIDUE__HPP
 
 #include <map>
+#include <string>
 
 #include <objects/mmdb1/Residue_graph.hpp>
 #include <objects/mmdb1/Residue.hpp>

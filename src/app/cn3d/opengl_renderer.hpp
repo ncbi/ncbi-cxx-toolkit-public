@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
 * Revision 1.19  2000/08/25 14:21:32  thiessen
 * minor tweaks
 *
@@ -96,9 +99,9 @@
 // do not include GL headers here, so that other modules can more easily
 // access this without potential name conflicts
 
-//#include <deque>
 #include <list>
 #include <map>
+#include <string>
 
 #include "cn3d/vector_math.hpp"
 

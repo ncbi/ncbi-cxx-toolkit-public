@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
 * Revision 1.2  2000/08/27 18:50:55  thiessen
 * extract sequence information
 *
@@ -71,57 +74,40 @@
 #ifndef CN3D_MAIN__HPP
 #define CN3D_MAIN__HPP
 
+// this header should only be #included from cn3d_main_wxwin.cpp. The first
+// include file in cn3d_main_wxwin.cpp is <wx/wx.h>, so this should already
+// have been set up before this header is read. This also (intentionally)
+// prevents this header from being used by other modules.
+
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
-
-#include <wx/wx.h>
-
-#if !wxUSE_GLCANVAS
-#error Please set wxUSE_GLCANVAS to 1 in setup.h.
-#endif
-#include <wx/glcanvas.h>
 
 #include "cn3d/structure_set.hpp"
 #include "cn3d/opengl_renderer.hpp"
 
 
 class Cn3DMainFrame;
+class Cn3D::SequenceViewer;
 
 // Define a new application type
 class Cn3DApp: public wxApp
 {
 public:
     bool OnInit(void);
-    Cn3DMainFrame *frame;
+
+    Cn3DMainFrame *structureWindow;
+
+    // for now, there is only one sequence viewer
+	Cn3D::SequenceViewer *sequenceViewer;
 };
 
-class Cn3DGLCanvas: public wxGLCanvas
-{
-public:
-    Cn3DGLCanvas(wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
-        const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
-        int *gl_attrib = NULL);
-    ~Cn3DGLCanvas(void);
-
-    // public data
-    Cn3D::StructureSet *structureSet;
-    Cn3D::OpenGLRenderer renderer;
-    wxFont *font;
-
-    // public methods
-    void OnPaint(wxPaintEvent& event);
-    void OnSize(wxSizeEvent& event);
-    void OnEraseBackground(wxEraseEvent& event);
-    void OnChar(wxKeyEvent& event);
-    void OnMouseEvent(wxMouseEvent& event);
-
-DECLARE_EVENT_TABLE()
-};
+class Cn3DGLCanvas;
 
 class Cn3DMainFrame: public wxFrame
 {
 public:
-    Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos, const wxSize& size,
-        long style = wxDEFAULT_FRAME_STYLE);
+    Cn3DMainFrame(Cn3DApp *app, Cn3D::SequenceViewer **seqViewer,
+        wxFrame *frame, const wxString& title,
+        const wxPoint& pos, const wxSize& size, long style = wxDEFAULT_FRAME_STYLE);
     ~Cn3DMainFrame();
 
     // public data
@@ -148,11 +134,41 @@ public:
             MID_QMED,
             MID_QHIGH
     };
-    void OnOpen(wxCommandEvent& event);
+
     void OnExit(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
+
+    void OnOpen(wxCommandEvent& event);
     void OnAdjustView(wxCommandEvent& event);
     void OnSetStyle(wxCommandEvent& event);
     void OnSetQuality(wxCommandEvent& event);
+
+DECLARE_EVENT_TABLE()
+
+private:
+    Cn3DApp *parentApp;
+    Cn3D::SequenceViewer **sequenceViewer;
+};
+
+class Cn3DGLCanvas: public wxGLCanvas
+{
+public:
+    Cn3DGLCanvas(wxWindow *parent, const wxWindowID id = -1, const wxPoint& pos = wxDefaultPosition,
+        const wxSize& size = wxDefaultSize, long style = 0, const wxString& name = "Cn3DGLCanvas",
+        int *gl_attrib = NULL);
+    ~Cn3DGLCanvas(void);
+
+    // public data
+    Cn3D::StructureSet *structureSet;
+    Cn3D::OpenGLRenderer renderer;
+    wxFont *font;
+
+    // public methods
+    void OnPaint(wxPaintEvent& event);
+    void OnSize(wxSizeEvent& event);
+    void OnEraseBackground(wxEraseEvent& event);
+    void OnChar(wxKeyEvent& event);
+    void OnMouseEvent(wxMouseEvent& event);
 
 DECLARE_EVENT_TABLE()
 };

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
 * Revision 1.2  2000/08/29 04:34:15  thiessen
 * working alignment manager, IBM
 *
@@ -42,6 +45,7 @@
 #ifndef CN3D_ALIGNMENT_SET__HPP
 #define CN3D_ALIGNMENT_SET__HPP
 
+#include <list>
 #include <vector>
 
 #include <objects/seq/Seq_annot.hpp>
@@ -62,7 +66,7 @@ class AlignmentSet : public StructureBase
 public:
     AlignmentSet(StructureBase *parent, const SeqAnnotList& seqAnnots);
 
-    typedef std::vector < const MasterSlaveAlignment * > AlignmentList;
+    typedef std::list < const MasterSlaveAlignment * > AlignmentList;
     AlignmentList alignments;
 
     // pointer to the master sequence for each pairwise master/slave alignment in this set

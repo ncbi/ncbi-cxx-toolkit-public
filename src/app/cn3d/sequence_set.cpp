@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/30 19:48:41  thiessen
+* working sequence window
+*
 * Revision 1.3  2000/08/28 23:47:19  thiessen
 * functional denseg and dendiag alignment parsing
 *
@@ -113,19 +116,19 @@ static void StringFrom4na(const std::vector< char >& vec, std::string *str, bool
     // first, extract 4-bit values
     int i;
     for (i=0; i<vec.size(); i++) {
-        (*str)[2*i] = FIRSTOF2(vec[i]);
-        if (SECONDOF2(vec[i]) > 0) (*str)[2*i + 1] = SECONDOF2(vec[i]);
+        str->at(2*i) = FIRSTOF2(vec[i]);
+        if (SECONDOF2(vec[i]) > 0) str->at(2*i + 1) = SECONDOF2(vec[i]);
     }
 
     // then convert 4-bit values to ascii characters
     for (i=0; i<str->size(); i++) {
-        switch ((*str)[i]) {
-            case 1: (*str)[i] = 'A'; break;
-            case 2: (*str)[i] = 'C'; break;
-            case 4: (*str)[i] = 'G'; break;
-            case 8: isDNA ? (*str)[i] = 'T' : (*str)[i] = 'U'; break;
+        switch (str->at(i)) {
+            case 1: str->at(i) = 'A'; break;
+            case 2: str->at(i) = 'C'; break;
+            case 4: str->at(i) = 'G'; break;
+            case 8: isDNA ? str->at(i) = 'T' : str->at(i) = 'U'; break;
             default:
-                (*str)[i] = 'X';
+                str->at(i) = 'X';
         }
     }
 }
@@ -142,19 +145,19 @@ static void StringFrom2na(const std::vector< char >& vec, std::string *str, bool
     // first, extract 4-bit values
     int i;
     for (i=0; i<vec.size(); i++) {
-        (*str)[4*i] = FIRSTOF4(vec[i]);
-        (*str)[4*i + 1] = SECONDOF4(vec[i]);
-        (*str)[4*i + 2] = THIRDOF4(vec[i]);
-        (*str)[4*i + 3] = FOURTHOF4(vec[i]);
+        str->at(4*i) = FIRSTOF4(vec[i]);
+        str->at(4*i + 1) = SECONDOF4(vec[i]);
+        str->at(4*i + 2) = THIRDOF4(vec[i]);
+        str->at(4*i + 3) = FOURTHOF4(vec[i]);
     }
 
     // then convert 4-bit values to ascii characters
     for (i=0; i<str->size(); i++) {
-        switch ((*str)[i]) {
-            case 0: (*str)[i] = 'A'; break;
-            case 1: (*str)[i] = 'C'; break;
-            case 2: (*str)[i] = 'G'; break;
-            case 3: isDNA ? (*str)[i] = 'T' : (*str)[i] = 'U'; break;
+        switch (str->at(i)) {
+            case 0: str->at(i) = 'A'; break;
+            case 1: str->at(i) = 'C'; break;
+            case 2: str->at(i) = 'G'; break;
+            case 3: isDNA ? str->at(i) = 'T' : str->at(i) = 'U'; break;
         }
     }
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2000/08/30 19:49:04  thiessen
+* working sequence window
+*
 * Revision 1.4  2000/08/29 04:34:15  thiessen
 * working alignment manager, IBM
 *
@@ -48,6 +51,9 @@
 #ifndef CN3D_SEQUENCE_SET__HPP
 #define CN3D_SEQUENCE_SET__HPP
 
+#include <string>
+#include <list>
+
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
 
@@ -56,7 +62,7 @@
 
 BEGIN_SCOPE(Cn3D)
 
-typedef list< ncbi::CRef< ncbi::objects::CSeq_entry > > SeqEntryList;
+typedef std::list < ncbi::CRef < ncbi::objects::CSeq_entry > > SeqEntryList;
 
 class Sequence;
 class Molecule;

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2000/08/30 19:48:43  thiessen
+* working sequence window
+*
 * Revision 1.25  2000/08/29 04:34:27  thiessen
 * working alignment manager, IBM
 *
@@ -232,11 +235,12 @@ void StructureSet::MatchSequencesToMolecules(void)
     }
 }
 
-StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
+StructureSet::StructureSet(const CNcbi_mime_asn1& mime, SequenceViewer * const *seqViewer) :
     StructureBase(NULL), renderer(NULL), lastAtomName(OpenGLRenderer::NO_NAME),
     lastDisplayList(OpenGLRenderer::NO_LIST),
     isMultipleStructure(mime.IsAlignstruc()),
-    sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL)
+    sequenceSet(NULL), alignmentSet(NULL), alignmentManager(NULL),
+    sequenceViewer(seqViewer)
 {
     StructureObject *object;
     parentSet = this;
@@ -253,6 +257,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         objects.push_back(object);
         sequenceSet = new SequenceSet(this, mime.GetStrucseq().GetSequences());
         MatchSequencesToMolecules();
+        alignmentManager = new AlignmentManager(sequenceSet, NULL, sequenceViewer);
 
     } else if (mime.IsStrucseqs()) {
         object = new StructureObject(this, mime.GetStrucseqs().GetStructure(), true);
@@ -260,7 +265,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         sequenceSet = new SequenceSet(this, mime.GetStrucseqs().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetStrucseqs().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, sequenceViewer);
 
     } else if (mime.IsAlignstruc()) {
         TESTMSG("Master:");
@@ -281,7 +286,7 @@ StructureSet::StructureSet(const CNcbi_mime_asn1& mime) :
         sequenceSet = new SequenceSet(this, mime.GetAlignstruc().GetSequences());
         MatchSequencesToMolecules();
         alignmentSet = new AlignmentSet(this, mime.GetAlignstruc().GetSeqalign());
-        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet);
+        alignmentManager = new AlignmentManager(sequenceSet, alignmentSet, sequenceViewer);
 
     } else if (mime.IsEntrez() && mime.GetEntrez().GetData().IsStructure()) {
         object = new StructureObject(this, mime.GetEntrez().GetData().GetStructure(), true);

@@ -29,6 +29,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/08/30 19:48:41  thiessen
+* working sequence window
+*
 * Revision 1.3  2000/08/28 18:52:41  thiessen
 * start unpacking alignments
 *
@@ -105,6 +108,7 @@
 */
 
 #include <wx/string.h> // kludge for now to fix weird namespace conflict
+
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbienv.hpp>
 #include <serial/serial.hpp>            
@@ -112,9 +116,16 @@
 #include <serial/objistrasnb.hpp>       
 #include <objects/ncbimime/Ncbi_mime_asn1.hpp>
 
+#include <wx/wx.h>
+#if !wxUSE_GLCANVAS
+#error Please set wxUSE_GLCANVAS to 1 in setup.h.
+#endif
+#include <wx/glcanvas.h>
+
 // For now, this module will contain a simple wxWindows + wxGLCanvas interface
 #include "cn3d/cn3d_main_wxwin.hpp"
 #include "cn3d/style_manager.hpp"
+#include "cn3d/sequence_viewer.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -122,8 +133,8 @@ USING_SCOPE(Cn3D);
 
 
 // Set the NCBI diagnostic streams to go to this method, which then pastes them
-// into a wxWindow. This log window can be closed anytime, and will be recreated
-// if necessary. More serious errors will bring up a dialog, so that the user
+// into a wxWindow. This log window can be closed anytime, but will be hidden,
+// not destroyed. More serious errors will bring up a dialog, so that the user
 // will get a chance to see the error before the program halts upon a fatal error.
 
 class MsgFrame;
@@ -163,10 +174,9 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
         // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
         if (logText->GetLastPosition() > 30000) logText->Clear();
         *logText << wxString(errMsg.data(), errMsg.size());
-        logFrame->Show(TRUE);
+        logFrame->Show(true);
     }
 }
-
 
 // `Main program' equivalent, creating GUI framework
 IMPLEMENT_APP(Cn3DApp)
@@ -177,38 +187,38 @@ bool Cn3DApp::OnInit(void)
     SetDiagHandler(DisplayDiagnostic, NULL, NULL);
     SetDiagPostLevel(eDiag_Info); // report all messages
 
-    // Create the main frame window
-    frame = new Cn3DMainFrame(NULL, "Cn3D++", wxPoint(0,0), wxSize(500,500),
-        wxDEFAULT_FRAME_STYLE);
+    // create the sequence viewer
+    sequenceViewer = new SequenceViewer();
 
-    // get file name from command line for now
+    // create the main frame window
+    structureWindow = new Cn3DMainFrame(this, &sequenceViewer, NULL, "Cn3D++",
+        wxPoint(0,0), wxSize(500,500), wxDEFAULT_FRAME_STYLE);
+
+    // get file name from command line, if present
     if (argc > 2)
         ERR_POST(Fatal << "\nUsage: cn3d [filename]");
     else if (argc == 2) {
-        frame->LoadFile(argv[1]);
+        structureWindow->LoadFile(argv[1]);
     }
 
-    // Create another main frame window
-    //frame = new Cn3DMainFrame(NULL, "Cn3D++ (2)", wxPoint(450, 450), wxSize(300, 300),
-    //    wxDEFAULT_FRAME_STYLE);
-
-    return TRUE;
+    return true;
 }
-
 
 // data and methods for the main program window (a Cn3DMainFrame)
 
 BEGIN_EVENT_TABLE(Cn3DMainFrame, wxFrame)
-    EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
+    EVT_CLOSE(Cn3DMainFrame::OnCloseWindow)
     EVT_MENU(MID_EXIT,      Cn3DMainFrame::OnExit)
+    EVT_MENU(MID_OPEN,      Cn3DMainFrame::OnOpen)
     EVT_MENU_RANGE(MID_TRANSLATE,   MID_RESET,      Cn3DMainFrame::OnAdjustView)
     EVT_MENU_RANGE(MID_SECSTRUC,    MID_WIREFRAME,  Cn3DMainFrame::OnSetStyle)
     EVT_MENU_RANGE(MID_QLOW,        MID_QHIGH,      Cn3DMainFrame::OnSetQuality)
 END_EVENT_TABLE()
 
-Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoint& pos,
-    const wxSize& size, long style) :
-    wxFrame(frame, -1, title, pos, size, style | wxTHICK_FRAME)
+Cn3DMainFrame::Cn3DMainFrame(Cn3DApp *app, Cn3D::SequenceViewer **seqViewer,
+    wxFrame *frame, const wxString& title, const wxPoint& pos, const wxSize& size, long style) :
+    wxFrame(frame, -1, title, pos, size, style | wxTHICK_FRAME),
+    glCanvas(NULL), parentApp(app), sequenceViewer(seqViewer)
 {
     SetSizeHints(150, 150); // min size
 
@@ -256,23 +266,29 @@ Cn3DMainFrame::Cn3DMainFrame(wxFrame *frame, const wxString& title, const wxPoin
         new Cn3DGLCanvas(this, -1, wxPoint(0, 0), wxSize(400, 400), 0, "Cn3DGLCanvas", gl_attrib);
     glCanvas->SetCurrent();
 
-    Show(TRUE);
+    Show(true);
 }
 
 Cn3DMainFrame::~Cn3DMainFrame(void)
 {
-    delete glCanvas;
+    glCanvas->Destroy();
     if (logFrame) {
-        delete logText;
-        delete logFrame;
+        logText->Destroy();
+        logFrame->Destroy();
         logText = NULL;
         logFrame = NULL;
     }
+    (*sequenceViewer)->DestroyGUI();
+}
+
+void Cn3DMainFrame::OnCloseWindow(wxCloseEvent& event)
+{
+    Destroy();
 }
 
 void Cn3DMainFrame::OnExit(wxCommandEvent& event)
 {
-	Destroy();
+    Destroy();
 }
 
 void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
@@ -293,7 +309,7 @@ void Cn3DMainFrame::OnAdjustView(wxCommandEvent& event)
             break;
         default: ;
     }
-    glCanvas->Refresh(FALSE);
+    glCanvas->Refresh(false);
 }
 
 void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
@@ -310,7 +326,7 @@ void Cn3DMainFrame::OnSetStyle(wxCommandEvent& event)
             default: ;
         }
         glCanvas->renderer.Construct();
-        glCanvas->Refresh(FALSE);
+        glCanvas->Refresh(false);
     }
 }
 
@@ -323,7 +339,7 @@ void Cn3DMainFrame::LoadFile(const char *filename)
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer.AttachStructureSet(NULL);
-        glCanvas->Refresh(FALSE);
+        glCanvas->Refresh(false);
     }
 
     // initialize the binary input stream 
@@ -359,9 +375,9 @@ void Cn3DMainFrame::LoadFile(const char *filename)
     }
 
     // Create StructureSet from mime data
-    glCanvas->structureSet = new StructureSet(mime);
+    glCanvas->structureSet = new StructureSet(mime, sequenceViewer);
     glCanvas->renderer.AttachStructureSet(glCanvas->structureSet);
-    glCanvas->Refresh(FALSE);
+    glCanvas->Refresh(false);
 }
 
 void Cn3DMainFrame::OnOpen(wxCommandEvent& event)
@@ -380,7 +396,7 @@ void Cn3DMainFrame::OnSetQuality(wxCommandEvent& event)
         default: ;
     }
     glCanvas->renderer.Construct();
-    glCanvas->Refresh(FALSE);
+    glCanvas->Refresh(false);
 }
 
 
@@ -455,7 +471,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         } else {
             renderer.ChangeView(OpenGLRenderer::eXYRotateHV,
                 event.GetX()-last_x, event.GetY()-last_y);
-            Refresh(FALSE);
+            Refresh(false);
         }
         last_x = event.GetX();
         last_y = event.GetY();
@@ -466,7 +482,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
         unsigned int name;
         if (structureSet && renderer.GetSelected(event.GetX(), event.GetY(), &name)) {
             structureSet->SelectedAtom(name);
-            Refresh(FALSE);
+            Refresh(false);
         }
     }
 }
@@ -479,11 +495,11 @@ void Cn3DGLCanvas::OnChar(wxKeyEvent& event)
     SetCurrent();
 
     switch (event.KeyCode()) {
-        case 'a': case 'A': renderer.ShowAllFrames(); Refresh(FALSE); break;
-        case WXK_DOWN: renderer.ShowFirstFrame(); Refresh(FALSE); break;
-        case WXK_UP: renderer.ShowLastFrame(); Refresh(FALSE); break;
-        case WXK_RIGHT: renderer.ShowNextFrame(); Refresh(FALSE); break;
-        case WXK_LEFT: renderer.ShowPreviousFrame(); Refresh(FALSE); break;
+        case 'a': case 'A': renderer.ShowAllFrames(); Refresh(false); break;
+        case WXK_DOWN: renderer.ShowFirstFrame(); Refresh(false); break;
+        case WXK_UP: renderer.ShowLastFrame(); Refresh(false); break;
+        case WXK_RIGHT: renderer.ShowNextFrame(); Refresh(false); break;
+        case WXK_LEFT: renderer.ShowPreviousFrame(); Refresh(false); break;
         default: event.Skip();
     }
 }

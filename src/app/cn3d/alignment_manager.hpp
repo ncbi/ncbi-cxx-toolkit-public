@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/30 19:49:02  thiessen
+* working sequence window
+*
 * Revision 1.1  2000/08/29 04:34:14  thiessen
 * working alignment manager, IBM
 *
@@ -51,23 +54,32 @@ class SequenceSet;
 class AlignmentSet;
 class MasterSlaveAlignment;
 class MultipleAlignment;
+class SequenceViewer;
 
 class AlignmentManager
 {
 public:
-    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet);
+    AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet,
+        SequenceViewer * const *seqViewer);
+    ~AlignmentManager(void);
 
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
 
-    // creates a multiple alignment from the given pairwise alignments (which are
+    // creates the current multiple alignment from the given pairwise alignments (which are
     // assumed to be members of the AlignmentSet).
     typedef std::list < const MasterSlaveAlignment * > AlignmentList;
-    MultipleAlignment * CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments) const;
+    const MultipleAlignment * CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments);
 
 private:
-    bool AlignedToAllSlaves(int masterResidue, const AlignmentList& alignments) const;
-    bool NoSlaveInsertionsBetween(int masterFrom, int masterTo, const AlignmentList& alignments) const;
+    // for now, will own the current multiple alignment
+    MultipleAlignment *currentMultipleAlignment;
+
+    SequenceViewer * const *sequenceViewer;
+
+public:
+    const MultipleAlignment * GetCurrentMultipleAlignment(void) const
+        { return currentMultipleAlignment; }
 };
 
 class MultipleAlignment

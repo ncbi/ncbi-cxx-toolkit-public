@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/08/30 19:48:41  thiessen
+* working sequence window
+*
 * Revision 1.1  2000/08/29 04:34:35  thiessen
 * working alignment manager, IBM
 *
@@ -41,50 +44,65 @@
 #include "cn3d/alignment_manager.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/alignment_set.hpp"
+#include "cn3d/sequence_viewer.hpp"
 
 USING_NCBI_SCOPE;
 
 
 BEGIN_SCOPE(Cn3D)
 
-AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet) :
-    sequenceSet(sSet), alignmentSet(aSet)
+AlignmentManager::AlignmentManager(const SequenceSet *sSet, const AlignmentSet *aSet,
+    SequenceViewer * const *seqViewer) :
+    sequenceSet(sSet), alignmentSet(aSet), currentMultipleAlignment(NULL),
+    sequenceViewer(seqViewer)
 {
+    if (!alignmentSet) {
+        (*sequenceViewer)->DisplaySequences(&(sequenceSet->sequences));
+        return;
+    }
+
     // for testing, make a multiple with all rows
     AlignmentList alignments;
     AlignmentSet::AlignmentList::const_iterator a, ae=alignmentSet->alignments.end();
     for (a=alignmentSet->alignments.begin(); a!=ae; a++) alignments.push_back(*a);
-    MultipleAlignment *multiple = CreateMultipleFromPairwiseWithIBM(alignments);
+    CreateMultipleFromPairwiseWithIBM(alignments);
 
     // crudely print out blocks
-    MultipleAlignment::BlockList::const_iterator block, be = multiple->blocks.end();
+    MultipleAlignment::BlockList::const_iterator block, be = currentMultipleAlignment->blocks.end();
     MultipleAlignment::Block::const_iterator range, re;
     MultipleAlignment::SequenceList::const_iterator seq;
     TESTMSG("MultipleAlignment:");
-    for (block=multiple->blocks.begin(); block!=be; block++) {
+    for (block=currentMultipleAlignment->blocks.begin(); block!=be; block++) {
         TESTMSG("block:");
         re = block->end();
-        for (range=block->begin(), seq=multiple->sequences->begin(); range!=re; range++, seq++)
+        for (range=block->begin(), seq=currentMultipleAlignment->sequences->begin();
+             range!=re;
+             range++, seq++)
             TESTMSG((*seq)->sequenceString.substr(range->from, range->to - range->from + 1)); 
     }
 
-    delete multiple;
+    (*sequenceViewer)->DisplaySequences(currentMultipleAlignment->sequences);
 }
 
-bool AlignmentManager::AlignedToAllSlaves(int masterResidue,
-    const AlignmentList& alignments) const
+AlignmentManager::~AlignmentManager(void)
 {
-    AlignmentList::const_iterator a, ae = alignments.end();
+    if (currentMultipleAlignment) delete currentMultipleAlignment;
+}
+
+static bool AlignedToAllSlaves(int masterResidue,
+    const AlignmentManager::AlignmentList& alignments)
+{
+	AlignmentManager::AlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; a++) {
         if ((*a)->masterToSlave[masterResidue] == -1) return false;
     }
     return true;
 }
 
-bool AlignmentManager::NoSlaveInsertionsBetween(int masterFrom, int masterTo,
-    const AlignmentList& alignments) const
+static bool NoSlaveInsertionsBetween(int masterFrom, int masterTo,
+    const AlignmentManager::AlignmentList& alignments)
 {
-    AlignmentList::const_iterator a, ae = alignments.end();
+	AlignmentManager::AlignmentList::const_iterator a, ae = alignments.end();
     for (a=alignments.begin(); a!=ae; a++) {
         if (((*a)->masterToSlave[masterTo] - (*a)->masterToSlave[masterFrom]) !=
             (masterTo - masterFrom)) return false;
@@ -92,9 +110,11 @@ bool AlignmentManager::NoSlaveInsertionsBetween(int masterFrom, int masterTo,
     return true;
 }
 
-MultipleAlignment *
-AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments) const
+const MultipleAlignment *
+AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignments)
 {
+    if (currentMultipleAlignment) delete currentMultipleAlignment;
+
     AlignmentList::const_iterator a, ae = alignments.end();
 
     // create sequence list; fill with sequences of master + slaves
@@ -103,7 +123,7 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
     MultipleAlignment::SequenceList::iterator s = sequenceList->begin();
     *(s++) = alignmentSet->master;
     for (a=alignments.begin(); a!=ae; a++, s++) *s = (*a)->slave;
-    MultipleAlignment *multiple = new MultipleAlignment(sequenceList);
+    currentMultipleAlignment = new MultipleAlignment(sequenceList);
 
     // each block is a continuous region on the master, over which each master
     // residue is aligned to a residue of each slave, and where there are no
@@ -131,22 +151,22 @@ AlignmentManager::CreateMultipleFromPairwiseWithIBM(const AlignmentList& alignme
 		MultipleAlignment::Block newBlock(alignments.size() + 1);
         newBlock.front().from = masterFrom;
         newBlock.front().to = masterTo;
-        TESTMSG("masterFrom " << masterFrom+1 << ", masterTo " << masterTo+1);
+        //TESTMSG("masterFrom " << masterFrom+1 << ", masterTo " << masterTo+1);
         b = newBlock.begin(), be = newBlock.end();
         for (b++, a=alignments.begin(); b!=be; b++, a++) {
             b->from = (*a)->masterToSlave[masterFrom];
             b->to = (*a)->masterToSlave[masterTo];
-            TESTMSG("slave->from " << b->from+1 << ", slave->to " << b->to+1);
+            //TESTMSG("slave->from " << b->from+1 << ", slave->to " << b->to+1);
         }
 
         // copy new block into alignment
-        multiple->AddBlockAtEnd(newBlock);
+        currentMultipleAlignment->AddBlockAtEnd(newBlock);
 
         // start looking for next block
         masterFrom = masterTo + 1;
     }
 
-    return multiple;
+    return currentMultipleAlignment;
 }
 
 MultipleAlignment::MultipleAlignment(const SequenceList *sequenceList) :
@@ -165,9 +185,9 @@ bool MultipleAlignment::AddBlockAtEnd(const Block& newBlock)
     Block::const_iterator range, re = newBlock.end(), prevRange;
     if (blocks.size() > 0) prevRange = blocks.back().begin();
     SequenceList::const_iterator sequence = sequences->begin();
-    int blockWidth = newBlock.front().to - newBlock.front().from + 1;
+    int blockWidthM1 = newBlock.front().to - newBlock.front().from;
     for (range=newBlock.begin(); range!=re; range++, sequence++) {
-        if (range->to - range->from + 1 != blockWidth ||            // check block width
+        if (range->to - range->from != blockWidthM1 ||            // check block width
             (blocks.size() > 0 && range->from <= prevRange->to) ||  // check for range overlap
             range->from > range->to ||                              // check range values
             range->to >= (*sequence)->Length()) {                   // check bounds of end

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/08/30 19:49:03  thiessen
+* working sequence window
+*
 * Revision 1.10  2000/08/28 23:46:46  thiessen
 * functional denseg and dendiag alignment parsing
 *
@@ -67,6 +70,7 @@
 #define CN3D_MOLECULE__HPP
 
 #include <map>
+#include <string>
 
 #include <objects/mmdb1/Molecule_graph.hpp>
 #include <objects/mmdb1/Residue_graph.hpp>

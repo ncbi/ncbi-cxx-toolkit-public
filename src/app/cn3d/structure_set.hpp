@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2000/08/30 19:49:05  thiessen
+* working sequence window
+*
 * Revision 1.21  2000/08/29 04:34:15  thiessen
 * working alignment manager, IBM
 *
@@ -123,11 +126,12 @@ class Residue;
 class SequenceSet;
 class AlignmentSet;
 class AlignmentManager;
+class SequenceViewer;
 
 class StructureSet : public StructureBase
 {
 public:
-    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime);
+    StructureSet(const ncbi::objects::CNcbi_mime_asn1& mime, SequenceViewer * const *seqViewer);
     ~StructureSet(void);
 
     // public data
@@ -141,6 +145,9 @@ public:
     const SequenceSet *sequenceSet;
     const AlignmentSet *alignmentSet;
     AlignmentManager *alignmentManager;
+
+    // handle to SequenceViewer - is owned by wxApp
+    SequenceViewer * const *sequenceViewer;
 
     OpenGLRenderer *renderer;
     ShowHideManager *showHideManager;
