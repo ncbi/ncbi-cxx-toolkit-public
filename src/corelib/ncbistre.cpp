@@ -41,31 +41,39 @@ BEGIN_NCBI_SCOPE
 static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
                                    char delim, char delim2)
 {
-    int ch;
+    CT_INT_TYPE ch;
 
+    IOS_BASE::fmtflags f = is.flags();
+    is.unsetf(IOS_BASE::skipws);
 #ifdef NO_PUBSYNC
-    if ( !is.ipfx(1) )
+    if ( !is.ipfx(1) ) {
+        is.flags(f);
         return is;
+    }
 #else
     CNcbiIstream::sentry s(is);
-    if ( !s )
+    if ( !s ) {
+        is.clear(NcbiFailbit | is.rdstate());
+        is.flags(f);
         return is;
+    }
 #endif
 
     str.erase();
 
     SIZE_TYPE end = str.max_size();
     SIZE_TYPE i = 0;
-    for (ch = is.rdbuf()->sbumpc();  ch != EOF;  ch = is.rdbuf()->sbumpc()) {
+    for (ch = is.rdbuf()->sbumpc();  !CT_EQ_INT_TYPE(ch, CT_EOF);
+         ch = is.rdbuf()->sbumpc()) {
         i++;
-        if ((char) ch == delim  ||  (char) ch == delim2)
+        if (CT_TO_CHAR_TYPE(ch) == delim  ||  CT_TO_CHAR_TYPE(ch) == delim2)
             break;
         if (i == end) {
             is.clear(NcbiFailbit | is.rdstate());      
             break;
         }
         
-        str.append(1, (char) ch);
+        str.append(1, CT_TO_CHAR_TYPE(ch));
     }
     if (ch == EOF) 
         is.clear(NcbiEofbit | is.rdstate());      
@@ -76,6 +84,7 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str,
     is.isfx();
 #endif
 
+    is.flags(f);
     return is;
 }
 
@@ -321,6 +330,9 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/03/31 21:34:01  ucko
+ * s_NCBIGetline: avoid eating initial whitespace, and use portability macros.
+ *
  * Revision 1.21  2003/03/27 23:10:43  vakatov
  * Identation
  *
