@@ -34,6 +34,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.21  2000/11/13 20:31:07  vakatov
+ * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
+ *
  * Revision 1.20  2000/11/09 21:02:58  vakatov
  * USAGE to show default value for optional arguments
  *
@@ -351,7 +354,7 @@ void CArg_InputFile::Open(void) const
     if (AsString() == "-") {
         m_InputFile  = &cin;
         m_DeleteFlag = false;
-    } else {
+    } else if ( !AsString().empty() ) {
         m_InputFile  = new CNcbiIfstream(AsString().c_str(),
                                          IOS_BASE::in | m_OpenMode);
         m_DeleteFlag = true;
@@ -431,7 +434,7 @@ void CArg_OutputFile::Open(void) const
     if (AsString() == "-") {
         m_OutputFile = &cout;
         m_DeleteFlag = false;
-    } else {
+    } else if ( !AsString().empty() ) {
         m_OutputFile = new CNcbiOfstream(AsString().c_str(),
                                          IOS_BASE::out | m_OpenMode);
         m_DeleteFlag = true;
@@ -509,7 +512,7 @@ class CArgDesc_Flag : public CArgDesc
 {
 public:
     // 'ctors
-    CArgDesc_Flag(const string& comment);
+    CArgDesc_Flag(const string& comment, bool set_value=true);
     virtual ~CArgDesc_Flag(void);
 
     virtual string GetUsageSynopsis   (const string& name,
@@ -524,12 +527,13 @@ public:
     const string& GetComment(void) const { return m_Comment; }
 
 private:
-    string m_Comment;  // help (what this arg. is about)
+    string m_Comment;   // help (what this arg. is about)
+    bool   m_SetValue;  // value to set if the arg is provided  
 };
 
 
-inline CArgDesc_Flag::CArgDesc_Flag(const string& comment)
-    : m_Comment(comment)
+inline CArgDesc_Flag::CArgDesc_Flag(const string& comment, bool set_value)
+    : m_Comment(comment), m_SetValue(set_value)
 {
     return;
 }
@@ -550,7 +554,7 @@ string CArgDesc_Flag::GetUsageSynopsis(const string& name, bool /*optional*/)
 
 string CArgDesc_Flag::GetUsageCommentAttr(bool /*optional*/) const
 {
-    return "Flag";
+    return kEmptyStr;
 }
 
 
@@ -569,7 +573,8 @@ string CArgDesc_Flag::GetUsageConstraint(void) const
 CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/,
                                           bool          is_default) const
 {
-    return new CArg_Boolean(true, is_default);
+    return new CArg_Boolean((is_default ? !m_SetValue : m_SetValue),
+                            is_default);
 }
 
 
@@ -592,12 +597,13 @@ public:
     CArgDesc_Plain(const string&            comment,
                    CArgDescriptions::EType  type,
                    CArgDescriptions::TFlags flags,
-                   const string&            default_value = kEmptyStr);
+                   const string&            default_value = kEmptyStr,
+                   bool                     is_extra      = false);
     virtual ~CArgDesc_Plain(void);
 
     virtual string GetUsageSynopsis   (const string& name,
-                                       bool optional=false) const;
-    virtual string GetUsageCommentAttr(bool optional=false) const;
+                                       bool optional = false) const;
+    virtual string GetUsageCommentAttr(bool optional = false) const;
     virtual string GetUsageConstraint(void) const;
     virtual CArgValue* ProcessArgument(const string& value,
                                        bool          is_default = false) const;
@@ -606,11 +612,13 @@ public:
     CArgDescriptions::EType  GetType   (void) const { return m_Type; }
     CArgDescriptions::TFlags GetFlags  (void) const { return m_Flags; }
     const string&            GetDefault(void) const { return m_DefaultValue; }
+
 private:
     CArgDescriptions::EType  m_Type;
     CArgDescriptions::TFlags m_Flags;
     string                   m_DefaultValue;
     CRef<CArgAllow>          m_Constraint;
+    bool                     m_IsExtra;
 };
 
 
@@ -618,14 +626,22 @@ CArgDesc_Plain::CArgDesc_Plain
 (const string&            comment,
  CArgDescriptions::EType  type,
  CArgDescriptions::TFlags flags,
- const string&            default_value)
+ const string&            default_value,
+ bool                     is_extra)
     : CArgDesc_Flag(comment),
       m_Type(type),
       m_Flags(flags),
-      m_DefaultValue(default_value)
+      m_DefaultValue(default_value),
+      m_IsExtra(is_extra)
 {
     // verify if "flags" "type" are matching
     switch ( type ) {
+    case CArgDescriptions::eBoolean:
+        if ( m_DefaultValue.empty() ) {
+            static const string s_False("false");
+            m_DefaultValue = s_False;
+        }
+        return;
     case CArgDescriptions::eOutputFile:
         return;
     case CArgDescriptions::eInputFile:
@@ -666,23 +682,26 @@ string CArgDesc_Plain::GetUsageSynopsis(const string& name, bool optional)
 
 string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const
 {
-    if ( optional ) {
-        return CArgDescriptions::GetTypeName(GetType());
-    } else {
-        return CArgDescriptions::GetTypeName(GetType())
-            + ",  default=`" + GetDefault() + "'";
+    string str = CArgDescriptions::GetTypeName(GetType());
+    if ( m_IsExtra ) {
+        return str;
     }
+    if ( optional ) {
+        str += ";  default=`" + GetDefault() + "'";
+    } else {
+        str += ";  mandatory";
+    }
+    return str;
 }
 
 
 string CArgDesc_Plain::GetUsageConstraint(void) const
 {
-    if ( !m_Constraint )
+    if ( !m_Constraint ) {
         return kEmptyStr;
-
+    }
     return m_Constraint->GetUsage();
 }
-
 
 
 CArgValue* CArgDesc_Plain::ProcessArgument(const string& value,
@@ -795,7 +814,7 @@ string CArgDesc_OptionalKey::GetUsageSynopsis(const string& name,
 
 string CArgDesc_OptionalKey::GetUsageCommentAttr(bool /*optional*/) const
 {
-    return CArgDesc_Plain::GetUsageCommentAttr();
+    return CArgDesc_Plain::GetUsageCommentAttr(true);
 }
 
 
@@ -849,7 +868,7 @@ string CArgDesc_Key::GetUsageSynopsis(const string& name, bool /*optional*/)
 
 string CArgDesc_Key::GetUsageCommentAttr(bool /*optional*/) const
 {
-    return CArgDescriptions::GetTypeName(GetType()) + ", mandatory";
+    return CArgDesc_Plain::GetUsageCommentAttr(false);
 }
 
 
@@ -871,7 +890,7 @@ CArgs::~CArgs(void)
 }
 
 
-static string s_ComposeNameExtra(unsigned idx)
+static string s_ComposeNameExtra(size_t idx)
 {
     static const string s_PoundSign = "#";
     return s_PoundSign + NStr::UIntToString(idx);
@@ -891,7 +910,7 @@ void CArgs::Add(const string& name, CArgValue* arg)
         ARG_THROW("CArgs::  invalid argument name", name);
     }
     if ( Exist(name) ) {
-        ARG_THROW("CArgs::  argument with this name already exists", name);
+        ARG_THROW("CArgs::  argument with this name already defined", name);
     }
 
     // add
@@ -907,7 +926,7 @@ bool CArgs::Exist(const string& name) const
 
 bool CArgs::IsProvided(const string& name) const
 {
-  return Exist(name) && ! (*this)[name].m_IsDefaultValue;
+  return Exist(name)  &&  !(*this)[name].m_IsDefaultValue;
 }
 
 
@@ -915,34 +934,63 @@ const CArgValue& CArgs::operator [](const string& name) const
 {
     TArgs::const_iterator arg = m_Args.find(name);
     if (arg == m_Args.end()) {
+        // Special diagnostics for "extra" args
+        if (!name.empty()  &&  name[0] == '#') {
+            size_t idx;
+            try {
+                idx = NStr::StringToULong(name.c_str() + 1);
+            } catch (...) {
+                idx = kMax_UInt;
+            }
+            if (idx == kMax_UInt) {
+                ARG_THROW("CArgs::  argument of invalid name requested", name);
+            }
+            if (m_nExtra == 0) {
+                ARG_THROW("CArgs::  no \"extra\" (unnamed positional) args "
+                          "provided, cannot get", s_ComposeNameExtra(idx));
+            }
+            if (idx == 0  ||  idx >= m_nExtra) {
+                ARG_THROW("CArgs::  \"extra\" (unnamed positional) arg is "
+                          "out-of-range (#1..#" + NStr::UIntToString(m_nExtra)
+                          + ")", s_ComposeNameExtra(idx));
+            }
+        }
+        // Diagnostics for all other argument classes
         ARG_THROW("CArgs::  undefined argument requested", name);
     }
+
+    // Found the arg with name "name"
     return *arg->second;
 }
 
 
-const CArgValue& CArgs::operator [](unsigned idx) const
+const CArgValue& CArgs::operator [](size_t idx) const
 {
-    static const string s_PoundSign = "#";
-    if (idx >= m_nExtra) {
-        ARG_THROW("CArgs::  \"extra\" position argument index overrun",
-                  NStr::UIntToString(idx));
-    }
     return (*this)[ s_ComposeNameExtra(idx) ];
 }
 
 
-void CArgs::Print(string& str) const
+string& CArgs::Print(string& str) const
 {
     for (TArgsCI arg = m_Args.begin();  arg != m_Args.end();  ++arg) {
-        if (arg->first[0] != '#') {
-            str += '-';
+        // Arg. name
+        const string& arg_name = arg->first;
+
+        // Indicate whether the argument value was provided
+        // in the command-line or was obtained from the arg.description
+        if ( (*this)[arg_name].m_IsDefaultValue ) {
+            str += "[default]  ";
+        } else {
+            str += "[cmdline]  ";
         }
-        str += arg->first;
-        str += ' ';
+
+        // Arg. name and value
+        str += arg_name;
+        str += " = `";
         str += arg->second->AsString();
-        str += '\n';
+        str += "'\n";
     }
+    return str;
 }
 
 
@@ -972,11 +1020,11 @@ const string& CArgDescriptions::GetTypeName(EType type)
 {
     static const string s_TypeName[N_ARG_TYPE] = {
         "String",
-        "AlNum",
+        "AlphaNum",
         "Boolean",
         "Integer",
         "Double",
-        "InpFile",
+        "InpFule",
         "OutFile"
     };
 
@@ -1018,10 +1066,11 @@ void CArgDescriptions::AddOptionalKey
 
 void CArgDescriptions::AddFlag
 (const string& name,
- const string& comment)
+ const string& comment,
+ bool          set_value)
 {
     auto_ptr<CArgDesc_Flag> arg
-        (new CArgDesc_Flag(comment));
+        (new CArgDesc_Flag(comment, set_value));
 
     x_AddDesc(name, *arg);
     arg.release();
@@ -1052,7 +1101,7 @@ void CArgDescriptions::AddExtra
  TFlags        flags)
 {
     auto_ptr<CArgDesc_Plain> arg
-        (new CArgDesc_Plain(comment, type, flags));
+        (new CArgDesc_Plain(comment, type, flags, kEmptyStr, true/*extra*/));
 
     x_AddDesc(kEmptyStr, *arg);
     arg.release();
@@ -1232,15 +1281,29 @@ bool CArgDescriptions::x_CreateArg
         value = &arg1;
     }
 
-    // Process argument value and add it to the "args"
-    args.Add(tag, desc->ProcessArgument(*value));
+    // Process the "raw" argument value into "CArgValue"
+    CRef<CArgValue>  arg_value;
+    auto_ptr<string> err_msg;
+    try {
+        arg_value = desc->ProcessArgument(*value);
+    } catch (exception& e) {
+        err_msg.reset(new string(e.what()));
+    }
+    if ( err_msg.get() ) {
+        ARG_THROW("Argument \"" + tag + "\"", *err_msg);
+    }
+
+    // Add the argument value to "args"
+    args.Add(tag, arg_value);
+
+    // Success (also indicate whether one or two "raw" args have been used)
     return arg2_used;
 }
 
 
 void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
 {
-    // Check if all mandatory position arguments are passed in
+    // Check if all mandatory positional arguments are provided
     unsigned n_policy_args = m_ConstrArgs ?
         m_ConstrArgs : (unsigned) m_PlainArgs.size();
     switch ( m_Constraint ) {
@@ -1252,32 +1315,62 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
     case eEqual:
         _ASSERT(n_plain <= n_policy_args);  // (due to checks in x_CreateArg)
         if (n_plain != n_policy_args) {
-            ARG_THROW("Too few position arguments specified, must be exactly",
+            ARG_THROW("Too few position arguments -- must provide exactly",
                       NStr::UIntToString(n_policy_args));
         }
         break;
     case eMoreOrEqual:
         if (n_plain < n_policy_args) {
-            ARG_THROW("Too few position arguments specified, must be at least",
+            ARG_THROW("Too few position arguments -- must provide at least",
                       NStr::UIntToString(n_policy_args));
         }
         break;
     }
 
-    // Check if all mandatory "<key> <value>" arguments are passed in
+    // Check for unset mandatory args;  set unset optional args and flags
     for (TArgsCI it = m_Args.begin();  it != m_Args.end();  ++it) {
-        CArgDesc_Key* arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
-        if (arg  &&  !args.Exist(it->first))
-            ARG_THROW("Must specify mandatory argument",
-                      arg->GetUsageSynopsis(it->first, false));
-
-        // Default optional arguments (if not provided in a command line)
-        CArgDesc_OptionalKey* optArg =
-            dynamic_cast<CArgDesc_OptionalKey*>(it->second.get());
-        if (optArg  &&  !args.Exist(it->first)) {
-            args.Add(it->first,
-                     optArg->ProcessArgument(optArg->GetDefault(), true));
+        // Nothing to do if the argument was provided in the command-line
+        if ( args.Exist(it->first) ) {
+            continue;
         }
+
+        // No mandatory "-<key> <value>" argument:   error
+        CArgDesc_Key* key_arg = dynamic_cast<CArgDesc_Key*> (it->second.get());
+        if ( key_arg ) {
+            ARG_THROW("Must specify mandatory argument",
+                      key_arg->GetUsageSynopsis(it->first, false));
+        }
+
+        // No optional "[-<key> <value>]" argument:  set to the default value
+        CArgDesc_OptionalKey* opt_arg =
+            dynamic_cast<CArgDesc_OptionalKey*> (it->second.get());
+        if ( opt_arg ) {
+            args.Add(it->first,
+                     opt_arg->ProcessArgument(opt_arg->GetDefault(), true));
+            continue;
+        }
+
+        // No optional plain "[value]" argument:  set to the default value
+        CArgDesc_Plain* pl_arg =
+            dynamic_cast<CArgDesc_Plain*> (it->second.get());
+        if ( pl_arg ) {
+            if ( !it->first.empty() ) {
+                args.Add(it->first,
+                         pl_arg->ProcessArgument(pl_arg->GetDefault(), true));
+            }
+            continue;
+        }
+
+        // No flag "-<flag>" argument:  set to the "no-show" value
+        CArgDesc_Flag* flag_arg =
+            dynamic_cast<CArgDesc_Flag*> (it->second.get());
+        if ( flag_arg ) {
+            args.Add(it->first,
+                     flag_arg->ProcessArgument(kEmptyStr/*dummy*/, true));
+            continue;
+        }
+
+        _TROUBLE;
     }
 }
 
@@ -1346,14 +1439,15 @@ static void s_PrintSynopsis(string& str, const CArgUsage& arg,
                             SIZE_TYPE* pos, SIZE_TYPE width)
 {
     const static string s_NewLine("\n   ");
+    const static string s_Space(" ");
 
-    string s = arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
+    string s =
+        s_Space + arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
 
     if (*pos + s.length() > width) {
         str += s_NewLine;
         *pos = s_NewLine.length();
     }
-    str  += " ";
     str  += s;
     *pos += s.length();
 }
@@ -1374,15 +1468,38 @@ static void s_PrintCommentBody(string& str, const string& s, SIZE_TYPE width)
         // start new line
         str += s_NewLine;
 
+        SIZE_TYPE endl_pos = pos + width;
+        if (endl_pos > s.length()) {
+            endl_pos = s.length();
+        }
+
+        // explicit '\n'?
+        SIZE_TYPE break_pos;
+        for (break_pos = pos;
+             break_pos < endl_pos  &&  s[break_pos] != '\n';
+             break_pos++) {
+            continue;
+        }
+        if (break_pos < endl_pos) {
+            _ASSERT(s[break_pos] == '\n');
+            str.append(s, pos, break_pos - pos);
+            pos = break_pos + 1;
+            continue;
+        }
+
         // last line?
-        if (s.length() <= pos + width) {
+        if (s.length() <= endl_pos) {
             str.append(s, pos, NPOS);
             break;
         }
 
         // break a line off the string
-        SIZE_TYPE break_pos = s.find_last_of("\t\n\r ", pos, pos + width);
-        if (break_pos == NPOS  ||  (break_pos - pos) + 5 < width) {
+        for (break_pos = endl_pos - 1;
+             break_pos != pos  &&  !isspace(s[break_pos]);
+             break_pos--) {
+            continue;
+        }
+        if (break_pos == pos  ||  break_pos + 4 < endl_pos) {
             str.append(s, pos, width - 1);
             str += '-';
             pos += width - 1;
@@ -1396,19 +1513,25 @@ static void s_PrintCommentBody(string& str, const string& s, SIZE_TYPE width)
 
 static void s_PrintComment(string& str, const CArgUsage& arg, SIZE_TYPE width)
 {
-    // print synopsis, plus type and other attributes
+    // Print synopsis
     str += "\n ";
     str += arg.m_Desc->GetUsageSynopsis(*arg.m_Name, arg.m_Optional);
-    str += "    ";
-    str += arg.m_Desc->GetUsageCommentAttr(arg.m_Optional);
 
-    // print constraint info, if any
+    // Print type and other attributes, if any
+    string attr = arg.m_Desc->GetUsageCommentAttr(arg.m_Optional);
+    if ( !attr.empty() ) {
+        str += "      /";
+        str += attr;
+        str += "/";
+    }
+
+    // Print constraint info, if any
     string constr = arg.m_Desc->GetUsageConstraint();
     if ( !constr.empty() ) {
         str += constr.insert(0, "\n    * constraint:  ");
     }
 
-    // print description
+    // Print description
     s_PrintCommentBody(str, arg.m_Desc->GetUsageCommentBody(), width);
 }
 
@@ -1482,7 +1605,6 @@ string& CArgDescriptions::PrintUsage(string& str) const
     TListCI it;
 
     // SYNOPSYS
-    str.erase();
     str += "SYNOPSYS\n   ";
     str += m_UsageName;
     SIZE_TYPE pos = 3 + m_UsageName.length();

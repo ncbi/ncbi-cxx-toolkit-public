@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Author:  Denis Vakatov
  *
  * File Description:
  *   Command-line arguments' processing:
@@ -37,6 +37,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.11  2000/11/13 20:31:05  vakatov
+ * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
+ *
  * Revision 1.10  2000/10/20 22:23:26  vakatov
  * CArgAllow_Strings customization;  MSVC++ fixes;  better diagnostic messages
  *
@@ -138,7 +141,8 @@ class CArgValue : public CObject
 {
     friend class CArgs;
 public:
-    // Get the argument's value
+    // Get the argument's string value.
+    // (If it is a value of flag argument, then return one of "true", "false".)
     const string&  AsString(void) const { return m_String; }
 
     // These functions throw an exception if you requested the wrong
@@ -197,12 +201,12 @@ public:
     const CArgValue& operator [](const string& name) const;
 
     // Get the number of passed unnamed (extra) position args
-    unsigned GetNExtra(void) const { return m_nExtra; }
+    size_t GetNExtra(void) const { return m_nExtra; }
     // Return N-th extra (unnamed) position arg value,  N = 1..GetNExtra()
-    const CArgValue& operator [](unsigned idx) const;
+    const CArgValue& operator [](size_t idx) const;
 
-    // Print all agruments to the string "str"
-    void Print(string& str) const;
+    // Print (add to the end) all arguments to the string "str". Return "str".
+    string& Print(string& str) const;
 
     // Add new argument name + value.
     // Throw an exception if the "name" is not an empty string, and if
@@ -216,8 +220,8 @@ private:
     typedef TArgs::iterator                 TArgsI;
     typedef TArgs::const_iterator           TArgsCI;
 
-    TArgs    m_Args;    // assoc.map of arguments' name/value
-    unsigned m_nExtra;  // cached # of unnamed arguments 
+    TArgs  m_Args;    // assoc.map of arguments' name/value
+    size_t m_nExtra;  // cached # of unnamed arguments 
 };
 
 
@@ -297,12 +301,15 @@ public:
                         const string& comment,
                         EType         type,
                         TFlags        flags         = 0,
-                        const string& default_value = NcbiEmptyString);
+                        const string& default_value = kEmptyStr);
 
     /////  arg_flag  := -<flag>,     <flag> := "name"
+    // If the flag is provided (in the command-line), then its value
+    // will be set to "set_value"; else it will be set to "!set_value".
     // Throw an exception if description with name "name" already exists.
     void AddFlag(const string& name,
-                 const string& comment);
+                 const string& comment,
+                 bool          set_value = true);
 
     /////  arg_plain := <value>
     // The order is important! -- the N-th plain argument passed in
@@ -314,7 +321,7 @@ public:
                   const string& comment,
                   EType         type,
                   TFlags        flags         = 0,
-                  const string& default_value = NcbiEmptyString);
+                  const string& default_value = kEmptyStr);
 
     // Provide description for the extra position args -- the ones
     // that have not been described by AddPlain().
@@ -358,8 +365,8 @@ public:
                          const string& usage_description,
                          SIZE_TYPE     usage_width = 78);
 
-    // Printout USAGE to the string "str" using provided arg. descriptions
-    // and usage context. Return "str".
+    // Printout (add to the end of) USAGE to the string "str" using
+    // provided arg. descriptions and usage context. Return "str".
     string& PrintUsage(string& str) const;
 
     // Check if the "name" is syntaxically correct: it can contain only
@@ -420,7 +427,7 @@ public:
         for (TSize i = 1;  i < argc;  i++) {
             bool have_arg2 = (i + 1 < argc);
             if ( x_CreateArg(argv[i], have_arg2,
-                             have_arg2 ? (string)argv[i+1] : NcbiEmptyString,
+                             have_arg2 ? (string)argv[i+1] : kEmptyStr,
                              &n_plain, *args) )
                 i++;
         }

@@ -23,13 +23,16 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Butanayev
+ * Authors:  Anton Butanayev, Denis Vakatov
  *
  * File Description:
  *   Test for the command-line arguments' processing ("ncbiargs.[ch]pp"):
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2000/11/13 20:31:09  vakatov
+ * Wrote new test, fixed multiple bugs, ugly "features", and the USAGE.
+ *
  * Revision 6.8  2000/10/20 20:26:11  butanaev
  * Modified example #9.
  *
@@ -60,243 +63,381 @@
  * ===========================================================================
  */
 
-#include <stdio.h>
 #include <corelib/ncbiargs.hpp>
-
 
 USING_NCBI_SCOPE;
 
 
-// Allowing
-void Example9(CArgDescriptions& m, int argc, const char* argv[])
+// Extended test for all different types of arguments  [default test]
+static CArgs* s_Test0(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-  m.AddKey("a", "alphaNumericKey",
-           "This is a test alpha-num argument",
-           CArgDescriptions::eAlnum);
+    // Describe the expected command-line arguments
+    arg_desc.AddKey
+        ("k", "MandatoryKey",
+         "This is a mandatory alpha-num key argument",
+         CArgDescriptions::eAlnum);
 
-  m.AddKey("i", "integerKey",
-           "This is a test integer argument",
-           CArgDescriptions::eInteger);
+    arg_desc.AddOptionalKey
+        ("ko", "OptionalKey",
+         "This is an optional integer key argument",
+         CArgDescriptions::eInteger, 0/*no flags*/,
+         "123");
+    arg_desc.SetConstraint
+        ("ko", new CArgAllow_Integers(0, 200));
 
-  m.SetConstraint("a", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
-  m.SetConstraint("i", new CArgAllow_Integers(-3, 34));
+    arg_desc.AddOptionalKey
+        ("ko2", "OptionalKey2",
+         "This is another optional key argument",
+         CArgDescriptions::eBoolean, 0/*no flags*/,
+         "True");
 
-  auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    arg_desc.AddFlag
+        ("f1",
+         "This is a flag argument:  TRUE if set, FALSE if not set");
 
-  cout << "a=" << (*a)["a"].AsString() << endl;
-  cout << "i=" << (*a)["i"].AsInteger() << endl;
+    arg_desc.AddFlag
+        ("f2",
+         "This is another flag argument:  FALSE if set, TRUE if not set",
+         false);
+
+    arg_desc.AddPlain
+        ("p",
+         "This is a mandatory plain (named positional) argument",
+         CArgDescriptions::eString);
+    arg_desc.SetConstraint
+        ("p", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+
+    arg_desc.AddPlain
+        ("po",
+         "This is an optional plain (named positional) argument",
+         CArgDescriptions::eOutputFile,
+         CArgDescriptions::fPreOpen | CArgDescriptions::fBinary,
+         "-");
+
+    arg_desc.AddExtra
+        ("These are the optional extra (unnamed positional) arguments. "
+         "They will be printed out to the file specified by the "
+         "2nd positional argument, \"po\"",
+         CArgDescriptions::eBoolean);
+
+
+    // Put constraint on the # of positional arguments (named and unnamed)
+    arg_desc.SetConstraint(CArgDescriptions::eMoreOrEqual, 1);
+
+
+    // Parse command-line arguments ("args", "argv[]") into "CArgs"
+    CArgs& args = *arg_desc.CreateArgs(argc, argv);
+
+
+    // Print all extra (unnamed positional) arguments
+    cout << "Printing unnamed positional arguments to file `"
+         << args["po"].AsString() << "'..." << endl;
+    
+    ostream& os = args["po"].AsOutputFile();
+    if ( args.GetNExtra() ) {
+        for (size_t extra = 1;  extra <= args.GetNExtra();  extra++) {
+            os << "#" << extra << ":  "
+               << NStr::BoolToString(args[extra].AsBoolean())
+               << "   (passed as `" << args[extra].AsString() << "')"
+               << endl;
+        }
+    } else {
+        os << "...no unnamed positional arguments provided in the cmd-line"
+           << endl;
+    }
+
+
+    // Return to Main
+    return &args;
+}
+
+
+// Allowing
+static CArgs* s_Test9(CArgDescriptions& arg_desc, int argc, const char* argv[])
+{
+    arg_desc.AddKey("a",
+                    "alphaNumericKey",
+                    "This is a test alpha-num argument",
+                    CArgDescriptions::eAlnum);
+
+    arg_desc.AddKey("i",
+                    "integerKey",
+                    "This is a test integer argument",
+                    CArgDescriptions::eInteger);
+
+    arg_desc.SetConstraint("a", &(*new CArgAllow_Strings, "foo", "bar", "qq"));
+    arg_desc.SetConstraint("i", new CArgAllow_Integers(-3, 34));
+
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
+
+    cout << "a=" << (*args)["a"].AsString() << endl;
+    cout << "i=" << (*args)["i"].AsInteger() << endl;
+
+    return args;
 }
 
 
 // Argument with default walue
-void Example8(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test8(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddOptionalKey("k",
-                     "alphaNumericKey",
-                     "This is an optional argument",
-                     CArgDescriptions::eAlnum,
-                     0,
-                     "CORELIB");
+    arg_desc.AddOptionalKey("k",
+                            "alphaNumericKey",
+                            "This is an optional argument",
+                            CArgDescriptions::eAlnum,
+                            0,
+                            "CORELIB");
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    if(a->IsProvided("k"))
+    if(args->IsProvided("k"))
         cout << "argument value was provided" << endl;
     else
         cout << "default argument value used" << endl;
 
-    cout << "k=" << (*a)["k"].AsString()  << endl;
+    cout << "k=" << (*args)["k"].AsString()  << endl;
+
+    return args;
 }
 
 
 // Position arguments - advanced
-void Example7(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test7(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddPlain("p1", "This is a plain argument", CArgDescriptions::eAlnum);
-    m.AddPlain("p2", "This is a plain argument", CArgDescriptions::eAlnum);
-    m.AddExtra("This is an extra argument",      CArgDescriptions::eInteger);
+    arg_desc.AddPlain("p1",
+                      "This is a plain argument",  CArgDescriptions::eAlnum);
+    arg_desc.AddPlain("p2",
+                      "This is a plain argument",  CArgDescriptions::eAlnum);
+    arg_desc.AddExtra("This is an extra argument", CArgDescriptions::eInteger);
 
-    m.SetConstraint(CArgDescriptions::eMoreOrEqual, 4);
+    arg_desc.SetConstraint(CArgDescriptions::eMoreOrEqual, 4);
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    cout << "p1=" << (*a)["p1"].AsString()  << endl;
-    cout << "p2=" << (*a)["p2"].AsString()  << endl;
-    cout << "#1=" << (*a)["#1"].AsInteger() << endl;
-    cout << "#2=" << (*a)["#2"].AsInteger() << endl;
+    cout << "p1=" << (*args)["p1"].AsString()  << endl;
+    cout << "p2=" << (*args)["p2"].AsString()  << endl;
+    cout << "#1=" << (*args)["#1"].AsInteger() << endl;
+    cout << "#2=" << (*args)["#2"].AsInteger() << endl;
+
+    return args;
 }
 
 
 // Position arguments
-void Example6(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test6(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddPlain("p1", "This is a plain argument", CArgDescriptions::eAlnum);
-    m.AddPlain("p2", "This is a plain argument", CArgDescriptions::eAlnum);
+    arg_desc.AddPlain("p1",
+                      "This is a plain argument", CArgDescriptions::eAlnum);
+    arg_desc.AddPlain("p2",
+                      "This is a plain argument", CArgDescriptions::eAlnum);
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    cout << "p1=" << (*a)["p1"].AsString() << endl;
-    cout << "p2=" << (*a)["p2"].AsString() << endl;
+    cout << "p1=" << (*args)["p1"].AsString() << endl;
+    cout << "p2=" << (*args)["p2"].AsString() << endl;
+
+    return args;
 }
 
 
 // Files - advanced
-void Example5(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test5(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddKey("if", "inputFile", "This is an input file argument",
-             CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
+    arg_desc.AddKey("if",
+                    "inputFile", "This is an input file argument",
+                    CArgDescriptions::eInputFile, CArgDescriptions::fPreOpen);
 
-    m.AddKey("of", "outputFile", "This is an output file argument",
-             CArgDescriptions::eOutputFile,
-             CArgDescriptions::fAppend);
+    arg_desc.AddKey("of",
+                    "outputFile", "This is an output file argument",
+                    CArgDescriptions::eOutputFile, CArgDescriptions::fAppend);
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    while(! (*a)["if"].AsInputFile().eof()) {
+    while ( !(*args)["if"].AsInputFile().eof() ) {
         string tmp;
-        (*a)["if"].AsInputFile () >> tmp;
-        (*a)["of"].AsOutputFile() << tmp << endl;
+        (*args)["if"].AsInputFile () >> tmp;
+        (*args)["of"].AsOutputFile() << tmp << endl;
     }
+
+    return args;
 }
 
 
 // Files
-void Example4(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test4(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddKey("if", "inputFile", "This is an input file argument",
-             CArgDescriptions::eInputFile);
+    arg_desc.AddKey("if",
+                    "inputFile", "This is an input file argument",
+                    CArgDescriptions::eInputFile);
 
-    m.AddKey("of", "outputFile", "This is an output file argument",
-             CArgDescriptions::eOutputFile);
+    arg_desc.AddKey("of",
+                    "outputFile", "This is an output file argument",
+                    CArgDescriptions::eOutputFile);
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    while( !(*a)["if"].AsInputFile().eof() ) {
+    while( !(*args)["if"].AsInputFile().eof() ) {
         string tmp;
-        (*a)["if"].AsInputFile () >> tmp;
-        (*a)["of"].AsOutputFile() << tmp << endl;
+        (*args)["if"].AsInputFile () >> tmp;
+        (*args)["of"].AsOutputFile() << tmp << endl;
     }
+
+    return args;
 }
 
 
 // Optionals
-void Example3(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test3(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddOptionalKey("k1", "fistOptionalKey",
-                     "This is an optional argument", CArgDescriptions::eAlnum);
-    m.AddOptionalKey("k2", "secondOptionalKey",
-                     "This is an optional argument", CArgDescriptions::eAlnum);
+    arg_desc.AddOptionalKey("k1",
+                            "fistOptionalKey",
+                            "This is an optional argument",
+                            CArgDescriptions::eAlnum);
+    arg_desc.AddOptionalKey("k2",
+                            "secondOptionalKey",
+                            "This is an optional argument",
+                            CArgDescriptions::eAlnum);
 
-    m.AddFlag("f1", "Flag 1");
-    m.AddFlag("f2", "Flag 2");
+    arg_desc.AddFlag("f1", "Flag 1");
+    arg_desc.AddFlag("f2", "Flag 2");
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    if (a->Exist("k1"))
-        cout << "k1=" << (*a)["k1"].AsString() << endl;
-    if (a->Exist("k2"))
-        cout << "k2=" << (*a)["k2"].AsString() << endl;
+    if (args->Exist("k1"))
+        cout << "k1=" << (*args)["k1"].AsString() << endl;
+    if (args->Exist("k2"))
+        cout << "k2=" << (*args)["k2"].AsString() << endl;
 
-    if (a->Exist("f1"))
+    if (args->Exist("f1"))
         cout << "f1 was provided" << endl;
-    if (a->Exist("f2"))
+    if (args->Exist("f2"))
         cout << "f2 was provided" << endl;
+
+    return args;
 }
 
 
 // Data types
-void Example2(CArgDescriptions& m, int argc, const char* argv[])
+static CArgs* s_Test2(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddKey("ka", "alphaNumericKey", "This is a test alpha-num key argument",
-             CArgDescriptions::eAlnum);
+    arg_desc.AddKey("ka",
+                    "alphaNumericKey", "This is a test alpha-num key argument",
+                    CArgDescriptions::eAlnum);
 
-    m.AddKey("kb", "booleanKey", "This is a test boolean key argument",
-             CArgDescriptions::eBoolean);
+    arg_desc.AddKey("kb",
+                    "booleanKey", "This is a test boolean key argument",
+                    CArgDescriptions::eBoolean);
 
-    m.AddKey("ki", "integerKey", "This is a test integer key argument",
-             CArgDescriptions::eInteger);
+    arg_desc.AddKey("ki",
+                    "integerKey", "This is a test integer key argument",
+                    CArgDescriptions::eInteger);
 
-    m.AddKey("kd", "doubleKey", "This is a test double key argument",
-             CArgDescriptions::eDouble);
+    arg_desc.AddKey("kd",
+                    "doubleKey", "This is a test double key argument",
+                    CArgDescriptions::eDouble);
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    cout << "ka=" << (*a)["ka"].AsString() << endl;
-    cout << "kb=" << ((*a)["kb"].AsBoolean() ? "True" : "Flase") << endl;
-    cout << "ki=" << (*a)["ki"].AsInteger() << endl;
-    cout << "kd=" << (*a)["kd"].AsDouble() << endl;
+    cout << "ka=" << (*args)["ka"].AsString() << endl;
+    cout << "kb=" << NStr::BoolToString( (*args)["kb"].AsBoolean() ) << endl;
+    cout << "ki=" << (*args)["ki"].AsInteger() << endl;
+    cout << "kd=" << (*args)["kd"].AsDouble() << endl;
+
+    return args;
 }
 
 
-// The simplest example
-void Example1(CArgDescriptions& m, int argc, const char* argv[])
+// The simplest test
+static CArgs* s_Test1(CArgDescriptions& arg_desc, int argc, const char* argv[])
 {
-    m.AddKey("k", "key", "This is a key argument", CArgDescriptions::eAlnum);
+    arg_desc.AddKey("k",
+                    "key", "This is a key argument", CArgDescriptions::eAlnum);
 
-    auto_ptr<CArgs> a(m.CreateArgs(argc, argv));
+    CArgs* args = arg_desc.CreateArgs(argc, argv);
 
-    cout << "k=" << (*a)["k"].AsString() << endl;
+    cout << "k=" << (*args)["k"].AsString() << endl;
+
+    return args;
 }
 
-// Tests' array
-typedef void (*FTest)(CArgDescriptions& m, int argc, const char* argv[]);
 
+
+/////////////////////////////////////////////////////////////////////////////
+//  Tests' array
+
+typedef CArgs* (*FTest)(CArgDescriptions& arg_desc,
+                        int argc, const char* argv[]);
 
 static FTest s_Test[] =
 {
-    Example1,
-    Example2,
-    Example3,
-    Example4,
-    Example5,
-    Example6,
-    Example7,
-    Example8,
-    Example9
+    s_Test0,  // default
+    s_Test1,
+    s_Test2,
+    s_Test3,
+    s_Test4,
+    s_Test5,
+    s_Test6,
+    s_Test7,
+    s_Test8,
+    s_Test9
 };
 
 
-// Main
+
+/////////////////////////////////////////////////////////////////////////////
+//  MAIN
+
 int main(int argc, const char* argv[])
 {
-    char* errorMsg =
-        "To run example number N environment variable EXAMPLE_NUM "
-        "must be set to N, where N in 1 .. %lu interval";
+    // Set err.-posting and tracing to maximum
+    SetDiagTrace(eDT_Enable);
+    SetDiagPostFlag(eDPF_All);
+    SetDiagPostLevel(eDiag_Info);
 
-    size_t size = sizeof(s_Test) / sizeof(s_Test[0]);
-    char tmp[1000];
-    sprintf(tmp, errorMsg, (unsigned int) size);
+    // Get test # from env.variable $TEST_NO, if the latter is set
+    size_t test     = 0;
+    size_t max_test = sizeof(s_Test) / sizeof(s_Test[0]) - 1;
 
-    char* exampleNum = getenv("EXAMPLE_NUM");
-    if( !exampleNum) {
-        cerr << tmp << endl;
-        return 0;
+    const char* test_str = getenv("TEST_NO");
+    if ( test_str ) {
+        try {
+            test = NStr::StringToULong(test_str);
+        } catch (...) {
+            test = 0;
+        }
+
+        if (test < 0  ||  test > max_test) {
+            test = 0;
+        }
     }
+    
+    // Run the selected test
+    CArgDescriptions arg_desc;
 
-    size_t i;
+    // Setup USAGE context
+    string prog_description =
+        "This is a test program for command-line argument processing.\n"
+        "TEST #" + NStr::UIntToString(test) +
+        "    (To run another test, set env.variable $TEST_NO to 0.." +
+        NStr::UIntToString(max_test) + ")";
+    arg_desc.SetUsageContext(argv[0], prog_description);
+
+    // Run the selected test
     try {
-        i = NStr::StringToULong(exampleNum);
-    } catch (...) {
-        i = 0;
+        // Run test
+        auto_ptr<CArgs> args( s_Test[test](arg_desc, argc, argv) );
+
+        // Printout obtained argument values
+        cout << string(72, '=') << endl;
+        string str;
+        cout << args->Print(str) << endl;
     }
+    catch (exception& e) {
+        // Print USAGE
+        string str;
+        cerr << string(72, '~') << endl << arg_desc.PrintUsage(str) << endl;
 
-    if (i < 1  ||  i > size) {
-        cerr << tmp << endl;
-        return 0;
-    }
-
-    i--;
-
-    CArgDescriptions m;
-    try {
-        m.SetUsageContext(argv[0], "Program for argument testing, #" +
-                          NStr::UIntToString(i + 1));
-        s_Test[i] (m, argc, argv);
-    } catch (exception& e) {
-        string a;
-        cerr << e.what() << endl;
-        cerr << string(72, '=') << endl;
-        cerr << m.PrintUsage(a) << endl;
+        // Print the exception error message
+        cerr << string(72, '=') << endl << "ERROR:  " << e.what() << endl;
     }
 
     return 0;
