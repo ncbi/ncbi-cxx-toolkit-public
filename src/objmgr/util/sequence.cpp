@@ -2207,7 +2207,12 @@ CConstRef<CSeq_feat> x_GetBestOverlappingFeat(const CSeq_loc& loc,
     TSeqPos circular_length = kInvalidSeqPos;
     try {
         const CSeq_id* single_id = 0;
-        loc.CheckId(single_id);
+        try {
+            loc.CheckId(single_id);
+        }
+        catch (CException) {
+            single_id = 0;
+        }
         if ( single_id ) {
             CBioseq_Handle h = scope.GetBioseqHandle(*single_id);
             if ( h
@@ -4137,6 +4142,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.90  2004/09/03 19:03:34  grichenk
+* Catch exceptions from CSeq_loc::CheckId()
+*
 * Revision 1.89  2004/09/03 16:56:38  dicuccio
 * Wrap test for circularity in a try/catch to trap errors in which a location
 * spans multiple IDs
