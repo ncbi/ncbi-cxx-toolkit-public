@@ -1,4 +1,4 @@
---$Revision: 2.0 $
+--$Revision: 2.1 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -97,6 +97,7 @@ GIBB-mod ::= ENUMERATED {        -- GenInfo Backbone modifiers
 	no-right (17) ,   -- missing right end (3' or COOH)
 	macronuclear (18) ,
 	proviral (19) ,
+	est (20) ,        -- expressed sequence tag
     other (255) }
 
 GIBB-method ::= ENUMERATED {        -- sequencing methods
