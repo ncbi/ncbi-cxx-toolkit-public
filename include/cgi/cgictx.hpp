@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  1999/12/23 17:16:11  golikov
+* CtxMsgs made not HTML lib depended
+*
 * Revision 1.12  1999/11/15 15:53:20  sandomir
 * Registry support moved from CCgiApplication to CNcbiApplication
 *
@@ -106,9 +109,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <cgi/ncbicgir.hpp>
-#include <html/html.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -123,6 +126,41 @@ class CCgiServerContext
 public:
     virtual ~CCgiServerContext( void )
         { }
+};
+
+
+class CCtxMsg
+{
+public:
+
+    virtual ~CCtxMsg()
+        {}
+
+    virtual CNcbiOstream& Write( CNcbiOstream& ) const = 0;
+};
+
+inline CNcbiOstream& operator<<(CNcbiOstream& os, const CCtxMsg& msg) {
+    return msg.Write(os);
+}
+
+class CCtxMsgString : public CCtxMsg
+{
+
+public:
+
+    CCtxMsgString( const string& str)
+        : m_s(str) {}
+
+    virtual ~CCtxMsgString()
+        {}
+
+    virtual CNcbiOstream& Write( CNcbiOstream& os ) const
+        { return os << m_s << sm_nl; }
+
+    static string sm_nl;
+
+private:
+    string m_s;
 };
 
 //
@@ -163,12 +201,11 @@ public:
     const CCgiServerContext& GetServCtx(void) const;
     CCgiServerContext& GetServCtx(void);
 
-    //message tree functions
-    const CNCBINode& GetMsg(void) const;
-    CNCBINode& GetMsg(void);
+    //message buffer functions
+    CNcbiOstream& PrintMsg( CNcbiOstream& os );
 
     void PutMsg(const string& msg);
-    void PutMsg(CNCBINode* msg);
+    void PutMsg(CCtxMsg* msg);
 
     bool EmptyMsg(void);
     void ClearMsg(void);
@@ -196,8 +233,8 @@ private:
     auto_ptr<CCgiRequest> m_request; // CGI request information
     CCgiResponse m_response; // CGI response information
 
-    //head of message tree
-    CNodeRef m_msg;
+    //message buffer
+    list<CCtxMsg*> m_lmsg;
 
     // server context will be obtained from CCgiApp::LoadServerContext()
     auto_ptr<CCgiServerContext> m_srvCtx; // application defined context

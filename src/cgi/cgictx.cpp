@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/12/23 17:16:18  golikov
+* CtxMsgs made not HTML lib depended
+*
 * Revision 1.16  1999/12/15 19:19:10  golikov
 * fixes
 *
@@ -92,6 +95,9 @@
 
 BEGIN_NCBI_SCOPE
 
+
+string CCtxMsgString::sm_nl = "\n";
+
 //
 // class CCgiContext
 //
@@ -99,7 +105,7 @@ BEGIN_NCBI_SCOPE
 CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
                           CNcbiIstream* in, CNcbiOstream* out,
                           int argc, char** argv )
-    : m_app(app), m_request( 0 ),  m_response(out), m_msg(new CNCBINode)
+    : m_app(app), m_request( 0 ),  m_response(out)
 {
     try {
         m_request.reset( new CCgiRequest(argc, argv, env, in) );
@@ -114,7 +120,9 @@ CCgiContext::CCgiContext( CCgiApplication& app, CNcbiEnvironment* env,
 }
 
 CCgiContext::~CCgiContext( void )
-{}
+{
+    DeleteElements( m_lmsg );
+}
 
 const CNcbiRegistry& CCgiContext::GetConfig(void) const
 {
