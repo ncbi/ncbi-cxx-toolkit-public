@@ -78,22 +78,22 @@ public:
     /// 
     /// Returns the currently held sequence and gets pointers to the
     /// next sequence.
-    CSeqDBIter & operator++(void);
+    CSeqDBIter & operator++();
     
     /// Get the OID of the currently held sequence.
-    TOID GetOID(void)
+    TOID GetOID()
     {
         return m_OID;
     }
     
     /// Get the sequence data for the currently held sequence.
-    const char * GetData(void)
+    const char * GetData()
     {
         return m_Data;
     }
     
     /// Get the length (in base pairs) of the currently held sequence.
-    Uint4 GetLength(void)
+    Uint4 GetLength()
     {
         return m_Length;
     }
@@ -112,10 +112,10 @@ public:
     
 private:
     /// Get data pointer and length for the current sequence.
-    inline void x_GetSeq(void);
+    inline void x_GetSeq();
     
     /// Release hold on current sequence.
-    inline void x_RetSeq(void);
+    inline void x_RetSeq();
     
     /// CSeqDB is a friend so it alone can create objects of this type.
     friend class CSeqDB;
@@ -339,34 +339,34 @@ public:
     /// Returns the type of database opened - protein or nucleotide.
     /// 
     /// This uses the same constants as the constructor.
-    char GetSeqType(void) const;
+    char GetSeqType() const;
     
     /// Returns the database title.
     ///
     /// This is usually read from database volumes or alias files.  If
     /// multiple databases were passed to the constructor, this will
     /// be a concatenation of those databases' titles.
-    string GetTitle(void) const;
+    string GetTitle() const;
     
     /// Returns the construction date of the database.
     /// 
     /// This is encoded in the database.  If multiple databases or
     /// multiple volumes were accessed, the first available date will
     /// be used.
-    string GetDate(void) const;
+    string GetDate() const;
     
     /// Returns the number of sequences available.
-    Uint4 GetNumSeqs(void) const;
+    Uint4 GetNumSeqs() const;
     
     /// Returns the size of the (possibly sparse) OID range.
-    Uint4 GetNumOIDs(void) const;
+    Uint4 GetNumOIDs() const;
     
     /// Returns the sum of the lengths of all available sequences.
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  It provides an exact value, without iterating
     /// over individual sequences.
-    Uint8 GetTotalLength(void) const;
+    Uint8 GetTotalLength() const;
     
     /// Returns the sum of the lengths of all volumes.
     ///
@@ -375,19 +375,19 @@ public:
     /// without iterating over individual sequences.  It includes all
     /// OIDs regardless of inclusion by the filtering mechanisms of
     /// the alias files.
-    Uint8 GetVolumeLength(void) const;
+    Uint8 GetVolumeLength() const;
     
     /// Returns the length of the largest sequence in the database.
     ///
     /// This uses summary information stored in the database volumes
     /// or alias files.  This might be used to chose buffer sizes.
-    Uint4 GetMaxLength(void) const;
+    Uint4 GetMaxLength() const;
     
     /// Returns a sequence iterator.
     ///
     /// This gets an iterator designed to allow traversal of the
     /// database from beginning to end.
-    CSeqDBIter Begin(void) const;
+    CSeqDBIter Begin() const;
     
     /// Find an included OID, incrementing next_oid if necessary.
     ///
@@ -440,7 +440,7 @@ public:
     /// This returns the database name list used at construction.
     /// @return
     ///   List of database names.
-    const string & GetDBNameList(void) const;
+    const string & GetDBNameList() const;
 
     /// Set upper limit on memory and mapping slice size.
     /// 
@@ -574,13 +574,13 @@ public:
     }
     
     /// Get pointer to sequence data.
-    const char * GetData(void)
+    const char * GetData()
     {
         return m_Data;
     }
     
     /// Get sequence length.
-    Uint4 GetLength(void)
+    Uint4 GetLength()
     {
         return m_Length;
     }
@@ -604,12 +604,12 @@ private:
 
 // Inline methods for CSeqDBIter
 
-void CSeqDBIter::x_GetSeq(void)
+void CSeqDBIter::x_GetSeq()
 {
     m_Length = m_DB->GetSequence(m_OID, & m_Data);
 }
 
-void CSeqDBIter::x_RetSeq(void)
+void CSeqDBIter::x_RetSeq()
 {
     if (m_Data)
         m_DB->RetSequence(& m_Data);
