@@ -118,6 +118,11 @@ void CAlnMrgApp::Init(void)
          CArgDescriptions::eOutputFile, CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
+        ("dsout", "bool",
+         "Output in Dense-seg format",
+         CArgDescriptions::eBoolean, "f");
+
+    arg_desc->AddDefaultKey
         ("gen2est", "bool",
          "Perform Gen2EST Merge",
          CArgDescriptions::eBoolean, "f");
@@ -371,7 +376,11 @@ void CAlnMrgApp::PrintMergedAlignment(void)
           args["asnoutb"] ?
           args["asnoutb"].AsOutputFile() : args["asnout"].AsOutputFile()));
 
-    *asn_out << m_Mix->GetDenseg();
+    if (args["dsout"]  &&  args["dsout"].AsBoolean()) {
+        *asn_out << m_Mix->GetDenseg();
+    } else {
+        *asn_out << m_Mix->GetSeqAlign();
+    }
 }
 
 
@@ -451,6 +460,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2004/10/19 18:54:16  todorov
+* Default output now is Seq-align, Dense-seg can be chosen by the dsout param.
+*
 * Revision 1.29  2004/10/18 15:07:53  todorov
 * Do not construct CAlnMix with a scope if noobjmgr was requested.
 *
