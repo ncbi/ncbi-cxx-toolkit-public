@@ -35,6 +35,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.10  2002/04/22 20:09:56  grichenk
+ * -ConstructExcludedSequence() -- use
+ * CBioseq_Handle::GetSequenceView() instead
+ *
  * Revision 1.9  2002/03/18 21:46:11  grichenk
  * +ConstructExcludedSequence()
  *
@@ -109,13 +113,6 @@ public:
     // ext::delta.
     CBioseq(const CSeq_loc& loc, string str_id = "");
 
-    // Create a segmented bioseq including all ranges from a source
-    // sequence except those included in "loc". The "loc" must contain
-    // ranges from a single sequence only. "len" is the total length
-    // of the source sequence.
-    static CBioseq& ConstructExcludedSequence(const CSeq_loc& loc,
-                                              int len,
-                                              string str_id = "");
 protected:
     // From CSerialUserOp
     virtual void Assign(const CSerialUserOp& source);
@@ -131,19 +128,6 @@ private:
     CSeq_entry* m_ParentEntry;
 
     static void x_SeqLoc_To_DeltaExt(const CSeq_loc& loc, CDelta_ext& ext);
-
-    // Map included interval start to the interval end
-    enum EPointType {
-        eStart,
-        eStop
-    };
-    typedef map<int, EPointType> TRanges;
-    static void x_ExcludeRange(TRanges& ranges, int start, int stop);
-    // Ranges are filled with intervals not covered by loc,
-    // id is set to the source bioseq id (the only id mentioned by loc).
-    static void x_ExcludeSeqLoc(const CSeq_loc& loc, TRanges& ranges, CSeq_id& id);
-    // Convert a range into seq-interval or seq-point
-    static void x_RangeToSeqLoc(CSeq_loc& loc, CSeq_id& id, int start, int stop);
 
     static int sm_ConstructedId;
 
