@@ -3,7 +3,8 @@
 # Build library "XSER"
 #################################
 
-LIBOBJ = typeref typeinfo stdtypes ptrinfo \
+LIBOBJ = typeref typeinfo stdtypes \
+	ptrinfo autoptrinfo choiceptr \
 	member memberid memberlist \
 	stltypes \
 	asntypes classinfo \

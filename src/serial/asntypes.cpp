@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/08/31 17:50:08  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.18  1999/08/16 16:08:30  vasilche
 * Added ENUMERATED type.
 *
@@ -95,7 +100,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <serial/asntypes.hpp>
 #include <serial/classinfo.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/autoptrinfo.hpp>
 #include <serial/objostr.hpp>
 #include <serial/objistr.hpp>
 #include <asn.h>
@@ -297,8 +302,9 @@ void CSequenceOfTypeInfo::Init(void)
     }
 	else {
 		THROW1_TRACE(runtime_error,
-			"CSequenceOfTypeInfo: incompatible type: " +
-			type->GetName() + ": " + typeid(*type).name());
+                     "CSequenceOfTypeInfo: incompatible type: " +
+                     type->GetName() + ": " + typeid(*type).name() +
+                     " size: " + NStr::IntToString(type->GetSize()));
 	}
 }
 

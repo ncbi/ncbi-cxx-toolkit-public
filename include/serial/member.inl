@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/08/31 17:50:04  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.3  1999/08/13 15:53:42  vasilche
 * C++ analog of asntool: datatool
 *
@@ -47,8 +52,14 @@
 
 inline
 CMemberInfo::CMemberInfo(void)
-    : m_Optional(false), m_Default(0)
+    : m_Implicit(false), m_Optional(false), m_Default(0)
 {
+}
+
+inline
+bool CMemberInfo::Implicit(void) const
+{
+    return m_Implicit;
 }
 
 inline

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  1999/08/31 17:50:04  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.24  1999/08/13 15:53:45  vasilche
 * C++ analog of asntool: datatool
 *
@@ -118,6 +123,7 @@
 #include <serial/stdtypes.hpp>
 #include <serial/stltypes.hpp>
 #include <serial/ptrinfo.hpp>
+#include <serial/autoptrinfo.hpp>
 #include <serial/asntypes.hpp>
 
 struct valnode;
@@ -127,6 +133,74 @@ BEGIN_NCBI_SCOPE
 class CObjectIStream;
 class CObjectOStream;
 class CMemberInfo;
+
+#define JOIN(Name1,Name2) Name1##Name2
+#define TYPE(Name) JOIN(Name,_TYPE)
+#define REF(Name) JOIN(Name,_REF)
+
+#define CLASS_TYPE(Name) Name
+#define CLASS_REF(Name) CTypeRef(Name::GetTypeInfo)
+
+#define STD_TYPE(Name) Name
+#define STD_REF(Name) CTypeRef(CStdTypeInfo<Name>::GetTypeInfo)
+
+#define POINTER_TYPE(Type,Args) TYPE(Type)Args*
+#define POINTER_REF(Type,Args) \
+    CTypeRef(CPointerTypeInfo::GetTypeInfo,REF(Type)Args)
+
+#define STL_SET_TYPE(Type,Args) set<TYPE(Type)Args>
+#define STL_SET_REF(Type,Args) \
+    CTypeRef(new CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args))
+
+#define STL_MULTIMAP_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
+    multimap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
+#define STL_MULTIMAP_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
+    CTypeRef(new CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs))
+
+#define STL_MAP_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
+    map<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
+#define STL_MAP_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
+    CTypeRef(new CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs))
+
+#define STL_LIST_TYPE(Type,Args) list<TYPE(Type)Args>
+#define STL_LIST_REF(Type,Args) \
+    CTypeRef(CStlClassInfoList<TYPE(Type)Args>::GetTypeInfo)
+
+#define STL_VECTOR_TYPE(Type,Args) vector<TYPE(Type)Args>
+#define STL_VECTOR_REF(Type,Args) \
+    CTypeRef(CStlClassInfoVector<TYPE(Type)Args>::GetTypeInfo)
+
+#define STL_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
+#define STL_AUTO_PTR_REF(Type,Args) \
+    CTypeRef(CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo)
+
+#define STL_CHOICE_AUTO_PTR_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
+#define STL_CHOICE_AUTO_PTR_REF(Type,Args) \
+    CTypeRef(CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo)
+
+template<typename T>
+struct Check
+{
+    static CMemberInfo* Member(const T* member, const CTypeRef& type)
+        {
+            return new CRealMemberInfo(size_t(member), type);
+        }
+};
+
+template<typename T>
+CMemberInfo* Member(const T* member)
+{
+    return Check<T>::Member(member, GetTypeRef(member));
+}
+
+#define MEMBER_PTR(Name) &static_cast<const CClass*>(0)->Name
+#define M(Name,Type,Args) Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
+#define STD_M(Name) Member(&static_cast<const CClass*>(0)->Name)
+
+#define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
+#define ADD_N_STD_M(Name,Mem) info->AddMember(Name,STD_M(Mem))
+#define ADD_M(Name,Type,Args) ADD_N_M(#Name,Name,Type,Args)
+#define ADD_STD_M(Name) ADD_N_STD_M(#Name,Name)
 
 // define type info getter for standard classes
 template<typename T>
@@ -193,11 +267,25 @@ CTypeRef GetStlTypeRef(const vector<Data>* )
     return CTypeRef(CStlClassInfoVector<Data>::GetTypeInfo);
 }
 
+template<typename Data>
+inline
+CTypeRef GetStlTypeRef(const set<Data>* )
+{
+    return CTypeRef(CStlClassInfoSet<Data>::GetTypeInfo);
+}
+
 template<typename Key, typename Value>
 inline
 CTypeRef GetStlTypeRef(const map<Key, Value>* )
 {
     return CTypeRef(CStlClassInfoMap<Key, Value>::GetTypeInfo);
+}
+
+template<typename Key, typename Value>
+inline
+CTypeRef GetStlTypeRef(const multimap<Key, Value>* )
+{
+    return CTypeRef(CStlClassInfoMultiMap<Key, Value>::GetTypeInfo);
 }
 
 // ASN
@@ -225,18 +313,18 @@ CTypeRef GetSequenceTypeRef(const T* const* )
 
 template<typename T>
 inline
-CTypeRef GetSetOfTypeRef(const T* const* )
+CTypeRef GetSetOfTypeRef(const T* const* p)
 {
-    const T* p = 0;
-    return CTypeRef(CSetOfTypeInfo::GetTypeInfo, GetTypeRef(p));
+    //    const T* p = 0;
+    return CTypeRef(CSetOfTypeInfo::GetTypeInfo, GetSetTypeRef(p));
 }
 
 template<typename T>
 inline
-CTypeRef GetSequenceOfTypeRef(const T* const* )
+CTypeRef GetSequenceOfTypeRef(const T* const* p)
 {
-    const T* p = 0;
-    return CTypeRef(CSequenceOfTypeInfo::GetTypeInfo, GetTypeRef(p));
+    //    const T* p = 0;
+    return CTypeRef(CSequenceOfTypeInfo::GetTypeInfo, GetSetTypeRef(p));
 }
 
 inline
@@ -369,9 +457,23 @@ CTypeRef GetTypeRef(const vector<Data>* object)
     return GetStlTypeRef(object);
 }
 
+template<typename Data>
+inline
+CTypeRef GetTypeRef(const set<Data>* object)
+{
+    return GetStlTypeRef(object);
+}
+
 template<typename Key, typename Value>
 inline
 CTypeRef GetTypeRef(const map<Key, Value>* object)
+{
+    return GetStlTypeRef(object);
+}
+
+template<typename Key, typename Value>
+inline
+CTypeRef GetTypeRef(const multimap<Key, Value>* object)
 {
     return GetStlTypeRef(object);
 }
@@ -513,6 +615,10 @@ const CTypeInfo* Method(void) \
  
 #define BEGIN_CLASS_INFO(Class) \
 BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
+#define END_CLASS_INFO END_TYPE_INFO
+
+#define BEGIN_ABSTRACT_CLASS_INFO(Class) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CAbstractClassInfo<CClass>, ())
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \

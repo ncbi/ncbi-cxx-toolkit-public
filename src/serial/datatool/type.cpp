@@ -7,7 +7,7 @@
 #include <serial/classinfo.hpp>
 #include <serial/member.hpp>
 #include <serial/asntypes.hpp>
-#include <serial/ptrinfo.hpp>
+#include <serial/autoptrinfo.hpp>
 
 class CTypeSource : public CTypeInfoSource
 {

@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/08/31 17:50:04  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.8  1999/08/13 15:53:44  vasilche
 * C++ analog of asntool: datatool
 *
@@ -72,13 +77,6 @@ BEGIN_NCBI_SCOPE
 class CPointerTypeInfo : public CTypeInfo
 {
 public:
-    typedef void* TObjectType;
-
-    static TObjectPtr& GetObject(TObjectPtr object)
-        { return *static_cast<TObjectPtr*>(object); }
-    static const TConstObjectPtr& GetObject(TConstObjectPtr object)
-        { return *static_cast<const TConstObjectPtr*>(object); }
-
     CPointerTypeInfo(TTypeInfo type)
         : CTypeInfo(type->GetName() + '*'), m_DataType(type)
         { }
@@ -95,6 +93,11 @@ public:
         {
             return m_DataType;
         }
+
+    pair<TConstObjectPtr, TTypeInfo> GetSource(TConstObjectPtr object) const;
+    
+    virtual TConstObjectPtr GetObjectPointer(TConstObjectPtr object) const;
+    virtual void SetObjectPointer(TObjectPtr object, TObjectPtr pointer) const;
 
     virtual size_t GetSize(void) const;
 
@@ -118,27 +121,6 @@ private:
     TTypeInfo m_DataType;
 
     static CTypeInfoMap<CPointerTypeInfo> sm_Map;
-};
-
-class CAutoPointerTypeInfo : public CPointerTypeInfo {
-public:
-    CAutoPointerTypeInfo(TTypeInfo type)
-        : CPointerTypeInfo(type->GetName(), type)
-        { }
-
-    static TTypeInfo GetTypeInfo(TTypeInfo base)
-        {
-            return sm_Map.GetTypeInfo(base);
-        }
-
-protected:
-    
-    void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
-
-    void ReadData(CObjectIStream& in, TObjectPtr object) const;
-
-private:
-    static CTypeInfoMap<CAutoPointerTypeInfo> sm_Map;
 };
 
 //#include <ptrinfo.inl>

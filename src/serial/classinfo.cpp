@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  1999/08/31 17:50:08  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.18  1999/08/13 15:53:50  vasilche
 * C++ analog of asntool: datatool
 *
@@ -243,13 +248,13 @@ CMemberInfo* CClassInfoTmpl::AddMember(const string& name, CMemberInfo* member)
     return AddMember(CMemberId(name), member);
 }
 
-CClassInfoTmpl* CClassInfoTmpl::AddSubClass(const CMemberId& id,
-                                            const CTypeRef& type)
+void CClassInfoTmpl::AddSubClass(const CMemberId& id,
+                                 const CTypeRef& type)
 {
-    m_SubClassesById.reset(0);
-    m_SubClasses.AddMember(id);
-    m_SubClassesInfo.push_back(type);
-    return this;
+    TSubClasses* subclasses = m_SubClasses.get();
+    if ( !subclasses )
+        m_SubClasses.reset(subclasses = new TSubClasses);
+    subclasses->push_back(make_pair(id, type));
 }
 
 void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
@@ -266,6 +271,14 @@ void CClassInfoTmpl::CollectExternalObjects(COObjectList& objectList,
 void CClassInfoTmpl::WriteData(CObjectOStream& out,
                                TConstObjectPtr object) const
 {
+    if ( m_MembersInfo.size() == 1 && m_MembersInfo[0]->Implicit() ) {
+        // special case: class contains only one implicit member
+        // we'll behave as this one member
+        const CMemberInfo& info = *m_MembersInfo[0];
+        TConstObjectPtr member = info.GetMember(object);
+        info.GetTypeInfo()->WriteData(out, member);
+        return;
+    }
     CObjectOStream::Block block(out, RandomOrder());
     CMemberId currentId;
     for ( TMemberIndex i = 0, size = m_MembersInfo.size(); i < size; ++i ) {
@@ -283,6 +296,14 @@ void CClassInfoTmpl::WriteData(CObjectOStream& out,
 
 void CClassInfoTmpl::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
+    if ( m_MembersInfo.size() == 1 && m_MembersInfo[0]->Implicit() ) {
+        // special case: class contains only one implicit member
+        // we'll behave as this one member
+        const CMemberInfo& info = *m_MembersInfo[0];
+        TObjectPtr member = info.GetMember(object);
+        info.GetTypeInfo()->ReadData(in, member);
+        return;
+    }
     CObjectIStream::Block block(in, RandomOrder());
     if ( RandomOrder() ) {
         set<TMemberIndex> read;
@@ -464,100 +485,6 @@ void CClassInfoTmpl::Assign(TObjectPtr dst, TConstObjectPtr src) const
         const CMemberInfo& member = *m_MembersInfo[i];
         member.GetTypeInfo()->Assign(member.GetMember(dst),
                                      member.GetMember(src));
-    }
-}
-
-CClassInfoTmpl::TSubClassesById& CClassInfoTmpl::SubClassesById(void) const
-{
-    TSubClassesById* subclasses = m_SubClassesById.get();
-    if ( !subclasses ) {
-        m_SubClassesById.reset(subclasses = new TSubClassesById);
-
-        for ( TMemberIndex i = 0, size = m_SubClassesInfo.size();
-              i != size; ++i ) {
-            TTypeInfo info = m_SubClassesInfo[i].Get();
-            const type_info& id =
-                dynamic_cast<const CClassInfoTmpl*>(info)->GetId();
-            if ( !subclasses->insert(TSubClassesById::
-                                     value_type(&id, i)).second ) {
-                THROW1_TRACE(runtime_error,
-                             "conflict subclasses: " + string(id.name()));
-            }
-        }
-    }
-    return *subclasses;
-}
-
-void CClassInfoTmpl::CollectPointer(COObjectList& objectList,
-                                    TConstObjectPtr object) const
-{
-    if ( m_SubClasses.Empty() ) {
-        GetRealTypeInfo(object)->CollectObjects(objectList, object);
-    }
-    else {
-        if ( !object )
-            THROW1_TRACE(runtime_error, "null is not allowed");
-
-        TSubClassesById& subclasses = SubClassesById();
-        const type_info* id = GetCPlusPlusTypeInfo(object);
-        TTypeInfo typeInfo;
-        if ( id == 0 )
-            typeInfo = this;
-        else {
-            TSubClassesById::const_iterator p = subclasses.find(id);
-            if ( p == subclasses.end() ) {
-                THROW1_TRACE(runtime_error,
-                             "incompatible type: " + string(id->name()));
-            }
-            typeInfo = m_SubClassesInfo[p->second].Get();
-        }
-        typeInfo->CollectObjects(objectList, object);
-    }
-}
-
-void CClassInfoTmpl::WritePointer(CObjectOStream& out,
-                                  TConstObjectPtr object) const
-{
-    if ( m_SubClasses.Empty() ) {
-        out.WritePointer(object, GetRealTypeInfo(object));
-    }
-    else {
-        if ( !object )
-            THROW1_TRACE(runtime_error, "null is not allowed");
-
-        TSubClassesById& subclasses = SubClassesById();
-        const type_info* id = GetCPlusPlusTypeInfo(object);
-        TTypeInfo typeInfo;
-        CMemberId tag;
-        if ( id == 0 ) {
-            typeInfo = this;
-            tag.SetTag(0);
-        }
-        else {
-            TSubClassesById::const_iterator p = subclasses.find(id);
-            if ( p == subclasses.end() )
-                THROW1_TRACE(runtime_error,
-                             "incompatible type: " + string(id->name()));
-            typeInfo = m_SubClassesInfo[p->second].Get();
-            tag = m_SubClasses.GetCompleteMemberId(p->second);
-        }
-        CObjectOStream::Member m(out, tag);
-        out.WritePointer(object, typeInfo);
-    }
-}
-
-TObjectPtr CClassInfoTmpl::ReadPointer(CObjectIStream& in) const
-{
-    if ( m_SubClasses.Empty() ) {
-        return in.ReadPointer(this);
-    }
-    else {
-        CObjectIStream::Member m(in);
-        TIndex index = m_SubClasses.FindMember(m);
-        if ( index < 0 )
-            THROW1_TRACE(runtime_error, "incompatible type: " + m.ToString());
-        TTypeInfo realType = m_SubClassesInfo[index].Get();
-        return in.ReadPointer(realType);
     }
 }
 

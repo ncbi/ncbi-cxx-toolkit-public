@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/08/31 17:50:03  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.3  1999/08/13 15:53:42  vasilche
 * C++ analog of asntool: datatool
 *
@@ -56,6 +61,8 @@ public:
     CMemberInfo(void);
     virtual ~CMemberInfo(void);
 
+    bool Implicit(void) const;
+    CMemberInfo* SetImplicit(void);
     bool Optional(void) const;
     CMemberInfo* SetOptional(void);
     TConstObjectPtr GetDefault(void) const;
@@ -75,6 +82,7 @@ public:
     size_t GetEndOffset(void) const;
 
 private:
+    bool m_Implicit;
     bool m_Optional;
     // default value
     TConstObjectPtr m_Default;

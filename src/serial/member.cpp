@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  1999/08/31 17:50:08  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.3  1999/08/13 15:53:50  vasilche
 * C++ analog of asntool: datatool
 *
@@ -57,15 +62,23 @@ size_t CMemberInfo::GetSize(void) const
     return GetTypeInfo()->GetSize();
 }
 
+CMemberInfo* CMemberInfo::SetImplicit(void)
+{
+    _ASSERT(!Optional());
+    m_Implicit = true;
+    return this;
+}
+
 CMemberInfo* CMemberInfo::SetOptional(void)
 {
+    _ASSERT(!Implicit());
     m_Optional = true;
     return this;
 }
 
 CMemberInfo* CMemberInfo::SetDefault(TConstObjectPtr def)
 {
-    m_Optional = true;
+    SetOptional();
     m_Default = def;
     return this;
 }

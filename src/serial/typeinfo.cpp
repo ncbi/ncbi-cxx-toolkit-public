@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/08/31 17:50:09  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.14  1999/07/20 18:23:14  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -152,23 +157,6 @@ const CMemberId* CTypeInfo::GetMemberId(TMemberIndex ) const
 const CMemberInfo* CTypeInfo::GetMemberInfo(TMemberIndex ) const
 {
     return 0;
-}
-
-void CTypeInfo::CollectPointer(COObjectList& objectList,
-                               TConstObjectPtr object) const
-{
-    GetRealTypeInfo(object)->CollectObjects(objectList, object);
-}
-
-void CTypeInfo::WritePointer(CObjectOStream& out,
-                             TConstObjectPtr object) const
-{
-    out.WritePointer(object, GetRealTypeInfo(object));
-}
-
-TObjectPtr CTypeInfo::ReadPointer(CObjectIStream& in) const
-{
-    return in.ReadPointer(this);
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/08/31 17:50:09  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.9  1999/08/13 15:53:52  vasilche
 * C++ analog of asntool: datatool
 *
@@ -72,6 +77,27 @@ BEGIN_NCBI_SCOPE
 
 CTypeInfoMap<CPointerTypeInfo> CPointerTypeInfo::sm_Map;
 
+pair<TConstObjectPtr, TTypeInfo>
+CPointerTypeInfo::GetSource(TConstObjectPtr object) const
+{
+    TConstObjectPtr source = GetObjectPointer(object);
+    TTypeInfo dataTypeInfo = GetDataTypeInfo();
+    if ( source )
+        dataTypeInfo = dataTypeInfo->GetRealTypeInfo(source);
+    return make_pair(source, dataTypeInfo);
+}
+    
+TConstObjectPtr CPointerTypeInfo::GetObjectPointer(TConstObjectPtr object) const
+{
+    return *static_cast<const TConstObjectPtr*>(object);
+}
+
+void CPointerTypeInfo::SetObjectPointer(TObjectPtr object,
+                      TObjectPtr pointer) const
+{
+    *static_cast<TObjectPtr*>(object) = pointer;
+}
+
 size_t CPointerTypeInfo::GetSize(void) const
 {
     return sizeof(void*);
@@ -92,84 +118,46 @@ TConstObjectPtr CPointerTypeInfo::GetDefault(void) const
 bool CPointerTypeInfo::Equals(TConstObjectPtr object1,
                               TConstObjectPtr object2) const
 {
-    TConstObjectPtr data1 = GetObject(object1);
-    TConstObjectPtr data2 = GetObject(object2);
-    if ( data1 == 0 ) {
-        return data2 == 0;
+    pair<TConstObjectPtr, TTypeInfo> data1 = GetSource(object1);
+    pair<TConstObjectPtr, TTypeInfo> data2 = GetSource(object2);
+    if ( data1.first == 0 ) {
+        return data2.first == 0;
     }
     else {
-        if ( data2 == 0 )
+        if ( data2.first == 0 )
             return false;
-        TTypeInfo dataTypeInfo = GetDataTypeInfo();
-        TTypeInfo typeInfo1 = dataTypeInfo->GetRealTypeInfo(data1);
-        TTypeInfo typeInfo2 = dataTypeInfo->GetRealTypeInfo(data2);
-        return typeInfo1 == typeInfo2 &&
-            typeInfo1->Equals(data1, data2);
+        return data1.second == data2.second &&
+            data1.second->Equals(data1.first, data2.first);
     }
 }
 
 void CPointerTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    TConstObjectPtr srcObject = GetObject(src);
-    if ( srcObject == 0 ) {
-        GetObject(dst) = 0;
-        return;
-    }
-    
-    TTypeInfo srcTypeInfo = GetDataTypeInfo()->GetRealTypeInfo(srcObject);
-    TObjectPtr dstObject = GetObject(dst) = srcTypeInfo->Create();
-    srcTypeInfo->Assign(dstObject, GetObject(src));
+    pair<TConstObjectPtr, TTypeInfo> data = GetSource(src);
+    if ( data.first == 0 )
+        SetObjectPointer(dst, 0);
+    else
+        SetObjectPointer(dst, data.second->Clone(data.first));
 }
 
 void CPointerTypeInfo::CollectExternalObjects(COObjectList& objectList,
                                               TConstObjectPtr object) const
 {
-    TConstObjectPtr externalObject = GetObject(object);
-    _TRACE("CPointerTypeInfo::CollectExternalObjects: " << unsigned(externalObject) << " type: " << GetDataTypeInfo()->GetName());
-    if ( externalObject ) {
-        GetDataTypeInfo()->CollectPointer(objectList, externalObject);
-    }
+    pair<TConstObjectPtr, TTypeInfo> data = GetSource(object);
+    if ( data.first )
+        data.second->CollectObjects(objectList, data.first);
 }
 
 void CPointerTypeInfo::WriteData(CObjectOStream& out,
                                  TConstObjectPtr object) const
 {
-    TConstObjectPtr externalObject = GetObject(object);
-    _TRACE("CPointerTypeInfo::WriteData: " << unsigned(externalObject) << " type: " << GetDataTypeInfo()->GetName());
-    GetDataTypeInfo()->WritePointer(out, externalObject);
+    pair<TConstObjectPtr, TTypeInfo> data = GetSource(object);
+    out.WritePointer(data.first, data.second);
 }
 
 void CPointerTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    _TRACE("CPointerTypeInfo::ReadData: " << unsigned(GetObject(object)) << " type: " << GetDataTypeInfo()->GetName());
-    GetObject(object) = GetDataTypeInfo()->ReadPointer(in);
-}
-
-CTypeInfoMap<CAutoPointerTypeInfo> CAutoPointerTypeInfo::sm_Map;
-
-void CAutoPointerTypeInfo::WriteData(CObjectOStream& out,
-                                     TConstObjectPtr object) const
-{
-    object = GetObject(object);
-    if ( object == 0 )
-        THROW1_TRACE(runtime_error, "null auto pointer");
-    TTypeInfo dataType = GetDataTypeInfo()->GetRealTypeInfo(object);
-    out.WriteExternalObject(object, dataType);
-}
-
-void CAutoPointerTypeInfo::ReadData(CObjectIStream& in,
-                                    TObjectPtr object) const
-{
-    TTypeInfo dataType = GetDataTypeInfo();
-    TObjectPtr objData = GetObject(object);
-    if ( objData == 0 ) {
-        _TRACE("null auto pointer");
-        objData = GetObject(object) = dataType->Create();
-        _TRACE("new " << dataType->GetName() << ": " << unsigned(objData));
-    }
-    object = objData;
-
-    in.ReadExternalObject(object, dataType);
+    SetObjectPointer(object, in.ReadPointer(GetDataTypeInfo()));
 }
 
 END_NCBI_SCOPE

@@ -18,8 +18,12 @@ int initRTTI()
 	r += typeid(unsigned short).name()[0];
 	r += typeid(long).name()[0];
 	r += typeid(unsigned long).name()[0];
+    r += typeid(char).name()[0];
+    r += typeid(unsigned char).name()[0];
     r += typeid(char*).name()[0];
+    r += typeid(unsigned char*).name()[0];
     r += typeid(const char*).name()[0];
+    r += typeid(const unsigned char*).name()[0];
 	r += typeid(float).name()[0];
 	r += typeid(double).name()[0];
 	return r;

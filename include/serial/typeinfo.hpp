@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/08/31 17:50:05  vasilche
+* Implemented several macros for specific data types.
+* Added implicit members.
+* Added multimap and set.
+*
 * Revision 1.15  1999/07/20 18:22:57  vasilche
 * Added interface to old ASN.1 routines.
 * Added fixed choice of subclasses to use for pointers.
@@ -98,6 +103,19 @@ class CTypeRef;
 class CMemberId;
 class CMemberInfo;
 
+struct CTypeInfoOrder
+{
+    // to avoid warning under MSVS, where type_info::before() erroneously
+    // returns int, we'll define overloaded functions:
+    static bool ToBool(bool b)
+        { return b; }
+    static bool ToBool(int i)
+        { return i != 0; }
+
+    bool operator()(const type_info* i1, const type_info* i2) const
+		{ return ToBool(i1->before(*i2)); }
+};
+
 class CTypeInfo
 {
 public:
@@ -121,6 +139,13 @@ public:
     virtual TConstObjectPtr CreateDefault(void) const;
 
     virtual void Assign(TObjectPtr dst, TConstObjectPtr src) const = 0;
+    
+    TObjectPtr Clone(TConstObjectPtr src) const
+        {
+            TObjectPtr object = Create();
+            Assign(object, src);
+            return object;
+        }
 
     virtual bool Equals(TConstObjectPtr object1,
                         TConstObjectPtr object2) const = 0;
@@ -159,15 +184,6 @@ public:
     // write object
     virtual void WriteData(CObjectOStream& out,
                            TConstObjectPtr object) const = 0;
-
-    // collect pointer to object
-    virtual void CollectPointer(COObjectList& objectList,
-                                TConstObjectPtr object) const;
-    // write pointer to object
-    virtual void WritePointer(CObjectOStream& out,
-                              TConstObjectPtr object) const;
-    // read pointer to object
-    virtual TObjectPtr ReadPointer(CObjectIStream& in) const;
 
 private:
     string m_Name;
