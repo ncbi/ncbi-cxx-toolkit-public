@@ -83,104 +83,6 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
    return NULL;
 }
 
-BlastMaskPtr BlastMaskFromSeqLoc(SeqLocPtr mask_slp, Int4 index)
-{
-   BlastMaskPtr new_mask = (BlastMaskPtr) MemNew(sizeof(BlastMask));
-   BlastSeqLocPtr loc, last_loc = NULL, head_loc = NULL;
-   SeqIntPtr si;
-
-   new_mask->index = index;
-
-   if (mask_slp->choice == SEQLOC_PACKED_INT)
-      mask_slp = (SeqLocPtr) mask_slp->data.ptrvalue;
-
-   for ( ; mask_slp; mask_slp = mask_slp->next) {
-      si = (SeqIntPtr) mask_slp->data.ptrvalue;
-      loc = BlastSeqLocNew(si->from, si->to);
-      if (!last_loc) {
-         last_loc = head_loc = loc;
-      } else {
-         last_loc->next = loc;
-         last_loc = last_loc->next;
-      }
-   }
-   new_mask->loc_list = head_loc;
-   return new_mask;
-}
-
-SeqLocPtr BlastMaskToSeqLoc(Uint1 program_number, BlastMaskPtr mask_loc, 
-                            SeqLocPtr slp)
-{
-   BlastSeqLocPtr loc;
-   SeqIntPtr si;
-   SeqLocPtr mask_head = NULL, last_mask = NULL;
-   SeqLocPtr mask_slp_last, mask_slp_head, new_mask_slp;
-   SeqIdPtr seqid;
-   DoubleIntPtr di;
-   Int4 index;
-   Boolean translated_query;
-   Uint1 num_frames;
-   
-   translated_query = (program_number == blast_type_blastx || 
-                       program_number == blast_type_tblastx);
-
-   num_frames = (translated_query ? NUM_FRAMES : 1);
-
-   for (index = 0; slp; ++index, slp = slp->next) {
-      /* Find the mask locations for this query */
-      for ( ; mask_loc && (mask_loc->index/num_frames < index); 
-            mask_loc = mask_loc->next);
-      if (!mask_loc)
-         /* No more masks */
-         break;
-
-      if (mask_loc->index != index)
-         /* There is no mask for this sequence */
-         continue;
-
-      seqid = SeqLocId(slp);
-      while (mask_loc && (mask_loc->index/num_frames == index)) {
-      
-         mask_slp_head = mask_slp_last = NULL;
-         for (loc = mask_loc->loc_list; loc; loc = loc->next) {
-            di = (DoubleIntPtr) loc->data.ptrvalue;
-            si = SeqIntNew();
-            si->from = di->i1;
-            si->to = di->i2;
-            si->id = SeqIdDup(seqid);
-            if (!mask_slp_last)
-               mask_slp_last = 
-                  ValNodeAddPointer(&mask_slp_head, SEQLOC_INT, si);
-            else 
-               mask_slp_last = 
-                  ValNodeAddPointer(&mask_slp_last, SEQLOC_INT, si);
-         }
-
-         if (mask_slp_head) {
-            Uint1 frame_index;
-            new_mask_slp = ValNodeAddPointer(NULL, SEQLOC_PACKED_INT, 
-                                             mask_slp_head);
-
-            frame_index = 
-               (translated_query ? (mask_loc->index % num_frames) + 1 : 0);
-
-            /* The 'choice' of the SeqLoc in masks should show the frame,
-               with values 1..6 when queries are translated; otherwise
-               it does not matter. */
-            if (!last_mask) {
-               last_mask = ValNodeAddPointer(&mask_head, 
-                              frame_index, new_mask_slp);
-            } else {
-               last_mask = ValNodeAddPointer(&last_mask, 
-                              frame_index, new_mask_slp);
-            }
-         }
-         mask_loc = mask_loc->next;
-      }
-   }
-   return mask_head;
-}
-
 /** Used for HeapSort, compares two SeqLoc's by starting position. */
 static int LIBCALLBACK DoubleIntSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
 
@@ -279,7 +181,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
    BlastMaskPtr mask_loc, BlastSeqLocPtr *complement_mask) 
 {
    Int4 start_offset, end_offset, filter_start, filter_end;
-   Int4 context;
+   Int4 context, index;
    BlastSeqLocPtr loc, last_loc = NULL;
    DoubleIntPtr double_int = NULL, di;
    Boolean first;	/* Specifies beginning of query. */
@@ -293,15 +195,16 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
         context <= query_info->last_context; ++context) {
       start_offset = query_info->context_offsets[context];
       end_offset = query_info->context_offsets[context+1] - 2;
+      index = (is_na ? context / 2 : context);
       reverse = (is_na && ((context & 1) != 0));
       first = TRUE;
 
       if (!reverse) {
-         for ( ; mask_loc && mask_loc->index < context; 
+         for ( ; mask_loc && mask_loc->index < index; 
                mask_loc = mask_loc->next);
       }
 
-      if (!mask_loc || (mask_loc->index > context) ||
+      if (!mask_loc || (mask_loc->index > index) ||
           !mask_loc->loc_list) {
          /* No masks for this context */
          double_int = MemNew(sizeof(DoubleInt));
@@ -344,6 +247,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             true and the following "if" statement moves 
             everything to the canonical state. */
          if (first) {
+            last_interval_open = TRUE;
             first = FALSE;
             double_int = MemNew(sizeof(DoubleInt));
             
@@ -356,7 +260,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
                continue;
             }
          }
+
          double_int->i2 = filter_start - 1;
+
          if (!last_loc)
             last_loc = ValNodeAddPointer(complement_mask, 0, double_int);
          else 
@@ -365,9 +271,9 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             /* last masked region at end of sequence */
             last_interval_open = FALSE;
             break;
-         }	else {
+         } else {
             double_int = MemNew(sizeof(DoubleInt));
-            double_int->i1 = filter_end + 1;
+               double_int->i1 = filter_end + 1;
          }
       }
 
@@ -377,11 +283,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       
       if (last_interval_open) {
          /* Need to finish DoubleIntPtr for last interval. */
-         if (reverse) {
-            double_int->i1 = start_offset;
-         } else {
-            double_int->i2 = end_offset;
-         }
+         double_int->i2 = end_offset;
          if (!last_loc)
             last_loc = ValNodeAddPointer(complement_mask, 0, double_int);
          else 
@@ -900,120 +802,4 @@ one strand).  In that case we make up a double-stranded one as we wish to look a
 	}
 
 	return status;
-}
-
-Int2 BlastMaskDNAToProtein(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
-{
-   Int2 status = 0;
-   BlastMaskPtr last_mask = NULL, head_mask = NULL, mask_loc; 
-   Int4 dna_length;
-   BlastSeqLocPtr dna_loc, prot_loc_head, prot_loc_last;
-   DoubleIntPtr dip;
-   Int4 index, context;
-   Int2 frame;
-   Int4 from, to;
-
-   if (!mask_loc_ptr)
-      return -1;
-
-   mask_loc = *mask_loc_ptr;
-
-   for (index = 0; slp && mask_loc; ++index, slp = slp->next) {
-      if (index < mask_loc->index)
-         /* Advance to the next nucleotide sequence */
-         continue;
-
-      dna_length = SeqLocLen(slp);
-      /* Reproduce this mask for all 6 frames, with translated 
-         coordinates */
-      for (context = 0; context < NUM_FRAMES; ++context) {
-         if (!last_mask) {
-            head_mask = last_mask = MemNew(sizeof(BlastMask));
-         } else {
-            last_mask->next = MemNew(sizeof(BlastMask));
-            last_mask = last_mask->next;
-         }
-         
-         last_mask->index = NUM_FRAMES * index + context;
-         prot_loc_last = prot_loc_head = NULL;
-         
-         frame = BLAST_ContextToFrame(blast_type_blastx, context);
-
-         for (dna_loc = mask_loc->loc_list; dna_loc; 
-              dna_loc = dna_loc->next) {
-            dip = (DoubleIntPtr) dna_loc->data.ptrvalue;
-            if (frame < 0) {
-               from = (dna_length + frame - dip->i2)/CODON_LENGTH;
-               to = (dna_length + frame - dip->i1)/CODON_LENGTH;
-            } else {
-               from = (dip->i1 - frame + 1)/CODON_LENGTH;
-               to = (dip->i2 - frame + 1)/CODON_LENGTH;
-            }
-            if (!prot_loc_last) {
-               prot_loc_head = prot_loc_last = BlastSeqLocNew(from, to);
-            } else { 
-               prot_loc_last->next = BlastSeqLocNew(from, to);
-               prot_loc_last = prot_loc_last->next; 
-            }
-         }
-         last_mask->loc_list = prot_loc_head;
-      }
-      /* Go to the next nucleotide mask */
-      mask_loc = mask_loc->next;
-   }
-
-   /* Free the mask with nucleotide coordinates */
-   BlastMaskFree(*mask_loc_ptr);
-   /* Return the new mask with protein coordinates */
-   *mask_loc_ptr = head_mask;
-
-   return status;
-}
-
-
-Int2 BlastMaskProteinToDNA(BlastMaskPtr PNTR mask_loc_ptr, SeqLocPtr slp)
-{
-   Int2 status = 0;
-   Int4 index;
-   BlastMaskPtr mask_loc;
-   BlastSeqLocPtr loc;
-   DoubleIntPtr dip;
-   Int4 dna_length;
-   Int2 frame;
-   Int4 from, to;
-
-   if (!mask_loc_ptr) 
-      return -1;
-
-   mask_loc = *mask_loc_ptr;
-
-   index = NUM_FRAMES;
-
-   while (slp && mask_loc) {
-      if (index <= mask_loc->index) {
-         /* Advance to the next nucleotide sequence */
-         index += NUM_FRAMES;
-         slp = slp->next;
-      } else {
-         dna_length = SeqLocLen(slp);
-         frame = BLAST_ContextToFrame(blast_type_blastx, 
-                                mask_loc->index % NUM_FRAMES);
-
-         for (loc = mask_loc->loc_list; loc; loc = loc->next) {
-            dip = (DoubleIntPtr) loc->data.ptrvalue;
-            if (frame < 0)	{
-               to = dna_length - CODON_LENGTH*dip->i1 + frame;
-               from = dna_length - CODON_LENGTH*dip->i2 + frame + 1;
-            } else {
-               from = CODON_LENGTH*dip->i1 + frame - 1;
-               to = CODON_LENGTH*dip->i2 + frame - 1;
-            }
-            dip->i1 = from;
-            dip->i2 = to;
-         }
-         /* Advance to the next mask */
-         mask_loc = mask_loc->next;
-      }
-   }
-   return status;
 }
