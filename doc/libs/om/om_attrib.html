@@ -155,10 +155,32 @@ to compare Bioseq   handles created by different Scopes.
     // The resulting map should contain regions of literals, gaps
     // and references to literals only (but no gaps or refs) to other
     // sequences.
-    const CSeqMap&amp GetResolvedSeqMap(void) const;
+    const CSeqMap&amp; GetResolvedSeqMap(void) const;
 
-    // construct SeqVector
-    CSeqVector GetSeqVector(bool plus_strand = true);
+    // construct SeqVector.
+	// Data encoding is  Iupacna or Iupacaa if use_iupac_coding equals true,
+	// otherwise the data representation is same as in the database
+    virtual CSeqVector GetSeqVector(bool use_iupac_coding = false,
+        bool plus_strand = true) const;
+
+    // construct SeqVector.
+    // Sequence filtering: get a SeqVector for a part of the sequence.
+    // The part shown depends on the mode selected. If the location
+    // contains references to other sequences, they are ignored (unlike
+    // CBioseq constructor, which constructs a bioseq using all references
+    // from a location). Strand information from "location" is ingored
+    // when creating merged or excluded views. If "minus_strand" is true,
+    // the result is reverse-complement.
+    enum ESequenceViewMode {
+        e_ViewConstructed,    // Do not merge or reorder intervals
+        e_ViewMerged,         // Merge overlapping intervals, sort by location
+        e_ViewExcluded        // Show intervals not included in the seq-loc
+    };
+    virtual CSeqVector GetSequenceView(const CSeq_loc&amp; location,
+                                       ESequenceViewMode mode,
+                                       bool use_iupac_coding = false,
+                                       bool plus_strand = true) const;
+
     // Get sequence's title (used in various flat-file formats.)
     string GetTitle(TGetTitleFlags flags = 0);
 </pre>
@@ -196,6 +218,8 @@ the same   Scope. It may not access other Scopes.
     void SetCoding(TCoding coding);
     // Set coding to either Iupacaa or Iupacna depending on molecule type
     void SetIupacCoding(void);
+    // Return gap symbol corresponding to the selected coding
+    TResidue GetGapChar(void);
 </pre>
 
 
