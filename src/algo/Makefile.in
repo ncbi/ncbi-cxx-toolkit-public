@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-SUB_PROJ = align sequence structure blast ms gnomon
+SUB_PROJ = align sequence structure blast ms gnomon phy_tree
 
 REQUIRES = objects
 
