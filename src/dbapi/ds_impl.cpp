@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/09/23 18:35:24  kholodov
+* Added: GetErrorInfo() and GetErrorAsEx() methods.
+*
 * Revision 1.6  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -61,17 +64,18 @@
 #include "dbexception.hpp"
 
 
-CDataSource::CDataSource(I_DriverContext *ctx, CNcbiOstream *out)
-    : m_loginTimeout(30), m_context(ctx), m_poolUsed(false)
+CDataSource::CDataSource(I_DriverContext *ctx)
+    : m_loginTimeout(30), m_context(ctx), m_poolUsed(false),
+      m_multiExH(0)
 {
     SetIdent("CDataSource");
-    SetLogStream(out);
 }
 
 CDataSource::~CDataSource()
 {
     Notify(CDbapiDeletedEvent(this));
     delete m_context;
+    delete m_multiExH;
 }
 
 void CDataSource::SetLoginTimeout(unsigned int i) 
@@ -85,11 +89,42 @@ void CDataSource::SetLoginTimeout(unsigned int i)
 void CDataSource::SetLogStream(CNcbiOstream* out) 
 {
     if( out != 0 ) {
+        // Clear the previous handlers if present
+        if( m_multiExH != 0 ) {
+            m_context->PopCntxMsgHandler(m_multiExH);
+            m_context->PopDefConnMsgHandler(m_multiExH);
+            delete m_multiExH;
+            m_multiExH = 0;
+        }
+            
         CDB_UserHandler *newH = new CDB_UserHandler_Stream(out);
         CDB_UserHandler *h = CDB_UserHandler::SetDefault(newH);
         delete h;
     }
+    else {
+        if( m_multiExH == 0 ) {
+            m_multiExH = new CToMultiExHandler;
+
+            m_context->PushCntxMsgHandler(m_multiExH);
+            m_context->PushDefConnMsgHandler(m_multiExH);
+        }
+    }
 }
+
+CDB_MultiEx* CDataSource::GetErrorAsEx()
+{
+    return m_multiExH->GetMultiEx();
+}
+
+string CDataSource::GetErrorInfo()
+{
+    CNcbiOstrstream out;
+    CDB_UserHandler_Stream h(&out);
+    h.HandleIt(m_multiExH->GetMultiEx());
+    return CNcbiOstrstreamToString(out);
+}
+
+
 
 I_DriverContext* CDataSource::GetDriverContext() {
     if( m_context == 0 )
@@ -116,3 +151,21 @@ void CDataSource::Action(const CDbapiEvent& e)
     }
 }
 
+//====================================================================
+CToMultiExHandler::CToMultiExHandler()
+    : m_ex(0)
+{
+    m_ex = new CDB_MultiEx("DBAPI message collector");
+}
+
+CToMultiExHandler::~CToMultiExHandler()
+{
+    delete m_ex;
+}
+
+bool CToMultiExHandler::HandleIt(CDB_Exception* ex)
+{
+    m_ex->Push(*ex);
+       
+    return true;
+}

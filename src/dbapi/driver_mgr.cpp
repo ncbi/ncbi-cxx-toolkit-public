@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2002/09/23 18:35:24  kholodov
+* Added: GetErrorInfo() and GetErrorAsEx() methods.
+*
 * Revision 1.7  2002/09/04 22:18:57  vakatov
 * CDriverManager::CreateDs() -- Get rid of comp.warning, improve diagnostics
 *
@@ -150,7 +153,7 @@ IDataSource* CDriverManager::CreateDsFrom(const string& drivers,
 IDataSource* CDriverManager::RegisterDs(const string& driver_name,
                                         I_DriverContext* ctx)
 {
-    IDataSource *ds = new CDataSource(ctx, 0);
+    IDataSource *ds = new CDataSource(ctx);
     m_ds_list[driver_name] = ds;
     return ds;
 }

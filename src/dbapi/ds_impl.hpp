@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/09/23 18:35:24  kholodov
+* Added: GetErrorInfo() and GetErrorAsEx() methods.
+*
 * Revision 1.3  2002/09/18 18:49:27  kholodov
 * Modified: class declaration and Action method to reflect
 * direct inheritance of CActiveObject from IEventListener
@@ -60,8 +63,10 @@ class CDataSource : public CActiveObject,
                     public IDataSource
 {
 public:
-    CDataSource(I_DriverContext *ctx,
-                CNcbiOstream *out);
+
+    enum EAllowParse { eNoParse, eDoParse };
+
+    CDataSource(I_DriverContext *ctx);
 
 public:
     virtual ~CDataSource();
@@ -69,6 +74,9 @@ public:
 
     virtual void SetLoginTimeout(unsigned int i);
     virtual void SetLogStream(CNcbiOstream* out);
+
+    virtual CDB_MultiEx* GetErrorAsEx();
+    virtual string GetErrorInfo();
 
     int GetLoginTimeout() const {
         return m_loginTimeout;
@@ -93,6 +101,27 @@ private:
     int m_loginTimeout;
     I_DriverContext *m_context;
     bool m_poolUsed;
+    class CToMultiExHandler *m_multiExH;
+};
+
+//=================================================================
+// 
+class CToMultiExHandler : public CDB_UserHandler
+{
+public:
+    CToMultiExHandler();
+    virtual ~CToMultiExHandler();
+
+    // Return TRUE (i.e. always process the "ex").
+    virtual bool HandleIt(CDB_Exception* ex);
+    
+    CDB_MultiEx* GetMultiEx() {
+        return m_ex;
+    }
+
+private:
+    bool m_parse;
+    CDB_MultiEx *m_ex;
 };
 
 //====================================================================
