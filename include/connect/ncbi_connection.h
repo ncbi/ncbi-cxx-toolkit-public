@@ -46,6 +46,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/08/20 20:00:22  vakatov
+ * CONN_SetTimeout() to return "EIO_Status".
+ *
  * Revision 6.8  2001/06/28 22:00:31  lavr
  * Added function: CONN_SetCallback
  * Added callback: eCONN_OnClose
@@ -124,7 +127,7 @@ extern EIO_Status CONN_ReInit
  * NOTE: if "new_timeout" is CONN_DEFAULT_TIMEOUT then underlying
  *       connector-specific value is used (this is the default).
  */
-extern void CONN_SetTimeout
+extern EIO_Status CONN_SetTimeout
 (CONN            conn,        /* [in] connection handle */
  EIO_Event       event,       /* [in] i/o direction     */
  const STimeout* new_timeout  /* [in] new timeout       */
