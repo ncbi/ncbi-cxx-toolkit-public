@@ -88,7 +88,7 @@ Usage() {
 
 USAGE:  $x_script_name {run | clean | concat | concat_err}
 
- run         Run the tests. Create output file ("*.test_out") for each tests, 
+ run         Run the tests. Create output file ("*.test_out") for each test, 
              plus journal and log files. 
  clean       Remove all files created during the last "run" and this script 
              itself.
