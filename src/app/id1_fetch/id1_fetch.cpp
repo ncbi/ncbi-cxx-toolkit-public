@@ -574,7 +574,8 @@ void CId1FetchApp::Exit(void)
 
 int CId1FetchApp::LookUpFastaSeqID(const string& s)
 {
-    return m_ID1Client.AskGetgi(CSeq_id(s));
+    CSeq_id id(s);
+    return m_ID1Client.AskGetgi(s);
 }
 
 
@@ -590,7 +591,10 @@ int CId1FetchApp::LookUpFlatSeqID(const string& s)
     switch (s[pos]) {
     case ':':
     case '=':
-        return m_ID1Client.AskGetgi(CSeq_id(type, data, kEmptyStr));
+    {
+        CSeq_id id(type, data, kEmptyStr);
+        return m_ID1Client.AskGetgi(id);
+    }
     case '(':
     {
         data.erase(data.end() - 1);
@@ -599,8 +603,8 @@ int CId1FetchApp::LookUpFlatSeqID(const string& s)
         NStr::Tokenize(data, ",", pieces);
         pieces.resize(4, kEmptyStr);
         // name acc rel ver -> acc name ver rel
-        return m_ID1Client.AskGetgi(CSeq_id(type, pieces[1], pieces[0],
-                                            pieces[3], pieces[2]));
+        CSeq_id id(type, pieces[1], pieces[0], pieces[3], pieces[2]);
+        return m_ID1Client.AskGetgi(id);
     }
     default: // can't happen, but shut the compiler up
         return -1;
@@ -744,6 +748,10 @@ int main(int argc, const char* argv[])
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2004/04/26 16:53:17  ucko
+* Don't try to pass temporary CSeq_id objects, even by const reference,
+* as CSeq_id has no public copy constructor.
+*
 * Revision 1.47  2004/01/05 17:59:32  vasilche
 * Moved genbank loader and its readers sources to new location in objtools.
 * Genbank is now in library libncbi_xloader_genbank.
