@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/03/14 14:43:10  vasilche
+* All OPTIONAL members implemented via CRef<> by default.
+*
 * Revision 1.7  2000/03/08 14:40:00  vasilche
 * Renamed NewInstance() -> New().
 *
@@ -129,6 +132,12 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
       type(t), ptrType(pType),
       optional(opt), defaultValue(defValue)
 {
+    if ( optional && defValue.empty() ) {
+        // true optional type should be implemented as CRef
+        if ( type->IsObject() && ptrType.empty() ) {
+            ptrType = "Ref";
+        }
+    }
     if ( cName.empty() ) {
         mName = "m_data";
         tName = "Tdata";
@@ -326,66 +335,17 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         iterate ( TMembers, i, m_Members ) {
             string valueName;
             bool ref = !i->ptrType.empty();
-            if ( !ref ) {
-                valueName = i->mName;
-            }
-            else {
+            bool haveFlag;
+            if ( ref ) {
                 valueName = "(*"+i->mName+")";
-            }
-            // generate getter
-            getters <<
-                "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
-            code.InlineMethods() <<
-                "inline\n"
-                "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
-                "{\n"
-                "    return "<<valueName<<";\n"
-                "}\n"
-                "\n";
-            // generate setter
-            if ( i->type->CanBeInSTL() ) {
-                getters <<
-                    "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
-                code.InlineMethods() <<
-                    "inline\n"
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
-                    "{\n"
-                    "    "<<valueName<<" = value;\n";
-                if ( i->optional && i->type->NeedSetFlag() ) {
-                    code.InlineMethods() <<
-                        "    m_set_"<<i->cName<<" = true;\n";
-                }
-                code.InlineMethods() <<
-                    "}\n"
-                    "\n";
+                haveFlag = false;
             }
             else {
-                getters <<
-                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
-                code.InlineMethods() <<
-                    "inline\n"<<
-                    methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
-                    "{\n";
-                if ( i->optional && i->type->NeedSetFlag() ) {
-                    code.InlineMethods() <<
-                        "    m_set_"<<i->cName<<" = true;\n";
-                }
-                code.InlineMethods() <<
-                    "    return "<<valueName<<";\n"
-                    "}\n"
-                    "\n";
+                valueName = i->mName;
+                haveFlag = i->optional && i->type->NeedSetFlag();
             }
-            // generate reference setter
-            if ( !i->ptrType.empty() ) {
-                getters <<
-                    "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value);\n";
-                code.Methods() <<
-                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
-                    "{\n"
-                    "    "<<i->mName<<" = value;\n"
-                    "}\n"
-                    "\n";
-            }
+            if ( !i->defaultValue.empty() ) // cannot detect DEFAULT value
+                haveFlag = true;
 
             // generate IsSet... method
             if ( i->optional ) {
@@ -395,20 +355,20 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "inline\n"
                     "bool "<<methodPrefix<<"IsSet"<<i->cName<<"(void)\n"
                     "{\n";
-                if ( !i->ptrType.empty() ) {
+                if ( haveFlag ) {
+                    // use special boolean flag
+                    code.InlineMethods() <<
+                        "    return m_set_"<<i->cName<<";\n";
+                }
+                else if ( ref ) {
+                    // CRef
                     code.InlineMethods() <<
                         "    return "<<i->mName<<";\n";
                 }
                 else {
-                    if ( i->type->NeedSetFlag() ) {
-                        code.InlineMethods() <<
-                            "    return m_set_"<<i->cName<<";\n";
-                    }
-                    else {
-                        // doesn't need set flag -> use special code
-                        code.InlineMethods() <<
-                            "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
-                    }
+                    // doesn't need set flag -> use special code
+                    code.InlineMethods() <<
+                        "    return "<<i->type->GetIsSetCode(i->mName)<<";\n";
                 }
                 code.InlineMethods() <<
                     "}\n"
@@ -435,7 +395,8 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 getters <<
                     "    void Reset"<<i->cName<<"(void);\n";
             }
-            bool inl = resetCode.empty() && i->ptrType.empty();
+            // inline only when non reference and doesn't have reset code
+            bool inl = !ref && resetCode.empty();
             code.MethodStart(inl) <<
                 "void "<<methodPrefix<<"Reset"<<i->cName<<"(void)\n"
                 "{\n";
@@ -453,7 +414,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                 }
                 else if ( assignValue.empty() ) {
-                    // no default value
+                    // plain OPTIONAL
                     code.Methods(inl) <<
                         "    "<<i->mName<<".Reset();\n";
                 }
@@ -475,14 +436,113 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     // no default value
                     WriteTabbed(code.Methods(inl), resetCode);
                 }
-                if ( i->optional && i->type->NeedSetFlag() ) {
-                    code.Methods(inl) <<
-                        "    m_set_"<<i->cName<<" = false;\n";
-                }
+            }
+            if ( haveFlag ) {
+                code.Methods(inl) <<
+                    "    m_set_"<<i->cName<<" = false;\n";
             }
             code.Methods(inl) <<
                 "}\n"
                 "\n";
+
+            // generate getter
+            getters <<
+                "    const "<<i->tName<<"& Get"<<i->cName<<"(void) const;\n";
+            code.InlineMethods() <<
+                "inline\n"
+                "const "<<methodPrefix<<i->tName<<"& "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
+                "{\n"
+                "    return "<<valueName<<";\n"
+                "}\n"
+                "\n";
+
+            // generate setter
+            if ( ref ) {
+                // generate reference setter
+                bool canBeNull = i->optional && !haveFlag;
+                getters <<
+                    "    void Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value);\n";
+                code.Methods() <<
+                    "void "<<methodPrefix<<"Set"<<i->cName<<"(const NCBI_NS_NCBI::CRef< "<<i->tName<<" >& value)\n"
+                    "{\n";
+                if ( !canBeNull ) {
+                    code.Methods() <<
+                        "    "<<i->mName<<".Reset(&*value); // assure non null value\n";
+                }
+                else {
+                    code.Methods() <<
+                        "    "<<i->mName<<" = value;\n";
+                }
+                if ( haveFlag ) {
+                    code.Methods() <<
+                        "    m_set_"<<i->cName<<" = true;\n";
+                }
+                code.Methods() <<
+                    "}\n"
+                    "\n";
+                getters <<
+                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                if ( canBeNull ) {
+                    // we have to init ref before returning
+                    _ASSERT(!haveFlag);
+                    code.Methods() <<
+                        methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                        "{\n"
+                        "    if ( !"<<i->mName<<" )\n"
+                        "        "<<i->mName<<".Reset("<<i->type->NewInstance(NcbiEmptyString)<<");\n"
+                        "    return "<<valueName<<";\n"
+                        "}\n"
+                        "\n";
+                }
+                else {
+                    // value already not null -> simple inline method
+                    code.InlineMethods() <<
+                        "inline\n"<<
+                        methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                        "{\n";
+                    if ( haveFlag ) {
+                        code.InlineMethods() <<
+                            "    m_set_"<<i->cName<<" = true;\n";
+                    }
+                    code.InlineMethods() <<
+                        "    return "<<valueName<<";\n"
+                        "}\n"
+                        "\n";
+                }
+            }
+            else {
+                if ( i->type->CanBeInSTL() ) {
+                    getters <<
+                        "    void Set"<<i->cName<<"(const "<<i->tName<<"& value);\n";
+                    code.InlineMethods() <<
+                        "inline\n"
+                        "void "<<methodPrefix<<"Set"<<i->cName<<"(const "<<i->tName<<"& value)\n"
+                        "{\n"
+                        "    "<<valueName<<" = value;\n";
+                    if ( haveFlag ) {
+                        code.InlineMethods() <<
+                            "    m_set_"<<i->cName<<" = true;\n";
+                    }
+                    code.InlineMethods() <<
+                        "}\n"
+                        "\n";
+                }
+                getters <<
+                    "    "<<i->tName<<"& Set"<<i->cName<<"(void);\n";
+                code.InlineMethods() <<
+                    "inline\n"<<
+                    methodPrefix<<i->tName<<"& "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
+                    "{\n";
+                if ( haveFlag ) {
+                    code.InlineMethods() <<
+                        "    m_set_"<<i->cName<<" = true;\n";
+                }
+                code.InlineMethods() <<
+                    "    return "<<valueName<<";\n"
+                    "}\n"
+                    "\n";
+            }
+
 
             // generate conversion operators
             if ( i->cName.empty() ) {
@@ -519,7 +579,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 		{
 	        iterate ( TMembers, i, m_Members ) {
                 bool ref = !i->ptrType.empty();
-		        if ( i->optional && i->type->NeedSetFlag() && !ref ) {
+                bool haveFlag;
+                if ( ref ) {
+                    haveFlag = false;
+                }
+                else {
+                    haveFlag = i->optional && i->type->NeedSetFlag();
+                }
+                if ( !i->defaultValue.empty() ) // cannot detect DEFAULT value
+                    haveFlag = true;
+		        if ( haveFlag ) {
 			        code.ClassPrivate() <<
 				        "    bool m_set_"<<i->cName<<";\n";
 				}
@@ -545,7 +614,16 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
 		{
 	        iterate ( TMembers, i, m_Members ) {
                 bool ref = !i->ptrType.empty();
-                if ( i->optional && i->type->NeedSetFlag() && !ref ) {
+                bool haveFlag;
+                if ( ref ) {
+                    haveFlag = false;
+                }
+                else {
+                    haveFlag = i->optional && i->type->NeedSetFlag();
+                }
+                if ( !i->defaultValue.empty() ) // cannot detect DEFAULT value
+                    haveFlag = true;
+                if ( haveFlag ) {
                     code.AddInitializer("m_set_"+i->cName, "false");
                 }
 			}
@@ -553,15 +631,22 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         {
             iterate ( TMembers, i, m_Members ) {
                 bool ref = !i->ptrType.empty();
+                bool haveFlag;
                 if ( ref ) {
-                    string init = i->defaultValue;
-                    if ( !init.empty() ) {
-                        code.AddInitializer(i->mName,
-                                            i->type->NewInstance(init));
-                    }
-                    else if ( !i->optional ) {
-                        if ( init.empty() )
+                    haveFlag = false;
+                }
+                else {
+                    haveFlag = i->optional && i->type->NeedSetFlag();
+                }
+                if ( !i->defaultValue.empty() ) // cannot detect DEFAULT value
+                    haveFlag = true;
+                if ( ref ) {
+                    bool canBeNull = i->optional && !haveFlag;
+                    if ( !canBeNull ) {
+                        string init = i->defaultValue;
+                        if ( init.empty() ) {
                             init = i->type->GetInitializer();
+                        }
                         code.AddInitializer(i->mName,
                                             i->type->NewInstance(init));
                     }
@@ -616,6 +701,15 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
     {
         iterate ( TMembers, i, m_Members ) {
             bool ref = !i->ptrType.empty();
+            bool haveFlag;
+            if ( ref ) {
+                haveFlag = false;
+            }
+            else {
+                haveFlag = i->optional && i->type->NeedSetFlag();
+            }
+            if ( !i->defaultValue.empty() ) // cannot detect DEFAULT value
+                haveFlag = true;
             if ( ref ) {
                 code.Methods() <<
                     "        NCBI_NS_NCBI::AddMember("
@@ -624,25 +718,31 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "NCBI_NS_NCBI::Check< NCBI_NS_NCBI::CRef< "+i->tName+" > >::Ptr(MEMBER_PTR("+i->mName+")), "
                     "&NCBI_NS_NCBI::CRefTypeInfo< "+i->tName+" >::GetTypeInfo, "
                     +i->type->GetRef()+')';
+                if ( !i->defaultValue.empty() ) {
+                    code.Methods() <<
+                        "->SetDefault(new NCBI_NS_NCBI::CRef< "+i->tName+" >(new "<<i->tName<<"("<<i->defaultValue<<")))";
+                }
+                else if ( i->optional ) {
+                    code.Methods() <<
+                        "->SetOptional()";
+                }
             }
             else {
                 code.Methods() <<
                     "        "<<i->type->GetTypeInfoCode(i->externalName,
                                                          i->mName);
-            }
-            if ( i->optional ) {
                 if ( !i->defaultValue.empty() ) {
                     code.Methods() <<
                         "->SetDefault(new "<<i->tName<<"("<<i->defaultValue<<"))";
                 }
-                else {
+                else if ( i->optional ) {
                     code.Methods() <<
                         "->SetOptional()";
                 }
-                if ( i->type->NeedSetFlag() ) {
-                    code.Methods() <<
-                        "->SetSetFlag(MEMBER_PTR(m_set_"<<i->cName<<"))";
-                }
+            }
+            if ( haveFlag ) {
+                code.Methods() <<
+                    "->SetSetFlag(MEMBER_PTR(m_set_"<<i->cName<<"))";
             }
             code.Methods() <<
                 ";\n";

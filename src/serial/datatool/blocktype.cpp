@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2000/03/14 14:43:10  vasilche
+* All OPTIONAL members implemented via CRef<> by default.
+*
 * Revision 1.11  2000/03/10 15:00:45  vasilche
 * Fixed OPTIONAL members reading.
 *
@@ -199,6 +202,7 @@ AutoPtr<CTypeStrings> CDataContainerType::GetFullCType(void) const
         const CDataValue* defaultValue = (*i)->GetDefault();
         if ( defaultValue ) {
             defaultCode = (*i)->GetType()->GetDefaultString(*defaultValue);
+            _ASSERT(!defaultCode.empty());
         }
 
         code->AddMember((*i)->GetName(), (*i)->GetType()->GetFullCType(),
