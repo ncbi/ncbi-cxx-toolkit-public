@@ -160,10 +160,13 @@ enum ESeqLocCheck {
     eSeqLocCheck_error
 };
 
-// Checks that a CSeq_loc is all on one strand. For embedded points, checks
-// that the point location is <= length of sequence of point. For packed
-// points, checks that all points are within length of sequence. For
-// intervals, ensures from <= to and interval is within length of sequence.
+// Checks that a CSeq_loc is all on one strand on one CBioseq. For embedded 
+// points, checks that the point location is <= length of sequence of point. 
+// For packed points, checks that all points are within length of sequence. 
+// For intervals, ensures from <= to and interval is within length of sequence.
+// If no mixed strands and lengths are valid, returns eSeqLocCheck_ok. If
+// only mixed strands/CBioseq error, then returns eSeqLocCheck_warning. If 
+// length error, then returns eSeqLocCheck_error.
 ESeqLocCheck SeqLocCheck(const CSeq_loc& loc, CScope* scope);
 
 // Returns true if the order of Seq_locs is bad, otherwise, false
@@ -243,6 +246,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2002/10/08 12:34:18  clausen
+* Improved comments
+*
 * Revision 1.7  2002/10/03 18:45:45  clausen
 * Removed extra whitespace
 *
