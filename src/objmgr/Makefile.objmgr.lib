@@ -6,6 +6,7 @@
 SRC = align_ci annot_ci annot_object annot_types_ci bioseq_handle \
       data_loader data_source desc_ci feat_ci graph_ci handle_range \
       handle_range_map object_manager reader reader_id1 scope \
-      scope2 seq_id_mapper_real seq_map seq_vector seqdesc_ci
+      scope2 seq_id_mapper_real seq_map seq_vector seqdesc_ci \
+      id_handles
 
 LIB    = xobjmgr1
