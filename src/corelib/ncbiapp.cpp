@@ -44,7 +44,8 @@
 
 #if defined(NCBI_OS_UNIX)
 #  include <unistd.h>
-#elif defined(NCBI_OS_DARWIN)
+#endif
+#if defined(NCBI_OS_DARWIN)
 #  define __NOEXTENSIONS__
 #  include <Carbon/Carbon.h>
 #endif
@@ -875,6 +876,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.71  2003/09/25 13:33:58  rsmith
+ * NCBI_OS_DARWIN and NCBI_OS_UNIX are not mutually exclusive.
+ *
  * Revision 1.70  2003/09/22 13:43:41  ivanov
  * Include <corelib/ncbidll.hpp> only on MSWin. + include <corelib/ncbi_os_mswin.hpp>
  *
