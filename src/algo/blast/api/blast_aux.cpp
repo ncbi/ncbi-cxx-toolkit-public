@@ -148,7 +148,8 @@ CBlastExtensionOptions::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/)
     ddc.Log("gap_x_dropoff", m_Ptr->gap_x_dropoff);
     ddc.Log("gap_x_dropoff_final", m_Ptr->gap_x_dropoff_final);
     ddc.Log("gap_trigger", m_Ptr->gap_trigger);
-    ddc.Log("algorithm_type", m_Ptr->algorithm_type);
+    ddc.Log("ePrelimGapExt", m_Ptr->ePrelimGapExt);
+    ddc.Log("eTbackExt", m_Ptr->eTbackExt);
 }
 
 void
@@ -405,6 +406,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.39  2004/05/17 15:33:14  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt
+ *
  * Revision 1.38  2004/05/14 16:01:10  madden
  * Rename BLAST_ExtendWord to Blast_ExtendWord in order to fix conflicts with C toolkit
  *

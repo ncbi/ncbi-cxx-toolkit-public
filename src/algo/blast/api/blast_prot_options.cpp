@@ -83,7 +83,7 @@ CBlastProteinOptionsHandle::SetGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_PROT);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_PROT);
     SetGapTrigger(BLAST_GAP_TRIGGER_PROT);
-    m_Opts->SetGapExtnAlgorithm(EXTEND_DYN_PROG);
+    m_Opts->SetGapExtnAlgorithm(eDynProgExt);
 }
 
 
@@ -150,6 +150,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/05/17 15:32:39  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt
+ *
  * Revision 1.7  2004/04/07 03:06:15  camacho
  * Added blast_encoding.[hc], refactoring blast_stat.[hc]
  *

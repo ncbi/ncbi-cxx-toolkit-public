@@ -80,7 +80,7 @@ CDiscNucleotideOptionsHandle::SetMBGappedExtensionDefaults()
     SetGapXDropoff(BLAST_GAP_X_DROPOFF_NUCL);
     SetGapXDropoffFinal(BLAST_GAP_X_DROPOFF_FINAL_NUCL);
     SetGapTrigger(BLAST_GAP_TRIGGER_NUCL);
-    SetGapExtnAlgorithm(EXTEND_DYN_PROG);
+    SetGapExtnAlgorithm(eDynProgExt);
 }
 
 void
@@ -106,6 +106,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/05/17 15:32:39  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt
+ *
  * Revision 1.6  2004/03/22 20:14:22  dondosha
  * Make dynamic programming gapped extension default for discontiguous megablast
  *

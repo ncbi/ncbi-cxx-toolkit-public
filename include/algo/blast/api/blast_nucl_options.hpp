@@ -140,8 +140,8 @@ public:
     }
     void SetGapXDropoffFinal(double x) { m_Opts->SetGapXDropoffFinal(x); }
 
-    int GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
-    void SetGapExtnAlgorithm(int algo) { m_Opts->SetGapExtnAlgorithm(algo); }
+    EBlastPrelimGapExt GetGapExtnAlgorithm() const { return m_Opts->GetGapExtnAlgorithm(); }
+    void SetGapExtnAlgorithm(EBlastPrelimGapExt algo) { m_Opts->SetGapExtnAlgorithm(algo); }
 
     /************************ Scoring options ************************/
     int GetMatchReward() const { return m_Opts->GetMatchReward(); }
@@ -205,6 +205,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2004/05/17 15:28:54  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt
+ *
  * Revision 1.9  2004/05/04 13:09:20  camacho
  * Made copy-ctor & assignment operator private
  *

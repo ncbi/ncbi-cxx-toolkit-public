@@ -579,7 +579,7 @@ Blast_TracebackFromHSPList(Uint1 program_number, BlastHSPList* hsp_list,
    Int4* frame_offsets = NULL;
    Boolean partial_translation = FALSE;
    const Boolean k_is_ooframe = score_options->is_ooframe;
-   const Boolean kGreedyTraceback = (ext_options->algorithm_type == EXTEND_GREEDY_NO_TRACEBACK);
+   const Boolean kGreedyTraceback = (ext_options->ePrelimGapExt == eGreedyExt);
    const Boolean kTranslateSubject = 
       (program_number == blast_type_tblastn ||
        program_number == blast_type_rpstblastn); 

@@ -430,7 +430,7 @@ BLAST_GreedyAlignMemAlloc(const BlastScoringParameters* score_params,
       return NULL;
    
    do_traceback = 
-      (ext_params->options->algorithm_type != EXTEND_GREEDY_NO_TRACEBACK);
+      (ext_params->options->ePrelimGapExt != eGreedyExt);
 
    if (score_params->reward % 2 == 1) {
       reward = 2*score_params->reward;
@@ -549,7 +549,7 @@ BLAST_GapAlignStructNew(const BlastScoringParameters* score_params,
 
    gap_align->gap_x_dropoff = ext_params->gap_x_dropoff;
 
-   if (ext_params->options->algorithm_type != EXTEND_DYN_PROG) {
+   if (ext_params->options->ePrelimGapExt != eDynProgExt) {
       max_subject_length = MIN(max_subject_length, MAX_DBSEQ_LEN);
       gap_align->greedy_align_mem = 
          BLAST_GreedyAlignMemAlloc(score_params, ext_params, 
@@ -2304,7 +2304,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
          BLAST_GreedyGappedAlignment(query_tmp.sequence, 
             subject->sequence, query_tmp.length, subject->length, gap_align, 
             score_params, init_hsp->q_off, init_hsp->s_off, 
-            (Boolean) TRUE, (ext_options->algorithm_type == EXTEND_GREEDY));
+            (Boolean) TRUE, (ext_options->ePrelimGapExt == eGreedyWithTracebackExt));
          /* For neighboring we have a stricter criterion to keep an HSP */
          if (hit_options->is_neighboring) {
             Int4 hsp_length;
@@ -2332,7 +2332,7 @@ Int2 BLAST_MbGetGappedScore(Uint1 program_number,
       }
    }
 
-   if (ext_options->algorithm_type != EXTEND_GREEDY_NO_TRACEBACK)
+   if (ext_options->ePrelimGapExt != eGreedyExt)
       /* Set the flag that traceback is already done for this HSP list */
       hsp_list->traceback_done = TRUE;
 

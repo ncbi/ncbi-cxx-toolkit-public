@@ -333,15 +333,15 @@ CBlast2seqApplication::ProcessCommandLineArgs() THROWS((CBlastException))
 
     switch (args["greedy"].AsInteger()) {
     case 1: /* Immediate greedy gapped extension with traceback */
-        opt.SetGapExtnAlgorithm(EXTEND_GREEDY);
+        opt.SetGapExtnAlgorithm(eGreedyWithTracebackExt);
         opt.SetUngappedExtension(false);
         break;
     case 2: /* Two-step greedy extension, no ungapped extension */
-        opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        opt.SetGapExtnAlgorithm(eGreedyExt);
         opt.SetUngappedExtension(false);
         break;
     case 3: /* Two-step greedy extension after ungapped extension*/
-        opt.SetGapExtnAlgorithm(EXTEND_GREEDY_NO_TRACEBACK);
+        opt.SetGapExtnAlgorithm(eGreedyExt);
         break;
     default: break;
     }
@@ -492,6 +492,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.44  2004/05/17 15:33:57  madden
+ * Int algorithm_type replaced with enum EBlastPrelimGapExt
+ *
  * Revision 1.43  2004/04/30 15:56:31  papadopo
  * Plus/minus/both strands are acceptable for any blast program
  * that takes a nucleotide query

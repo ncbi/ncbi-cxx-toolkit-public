@@ -205,8 +205,8 @@ public:
     double GetGapTrigger() const;
     void SetGapTrigger(double g);
 
-    int GetGapExtnAlgorithm() const;
-    void SetGapExtnAlgorithm(int a);
+    EBlastPrelimGapExt GetGapExtnAlgorithm() const;
+    void SetGapExtnAlgorithm(EBlastPrelimGapExt a);
 
     void SetSkipTraceback(bool skip);
 
@@ -1000,14 +1000,14 @@ public:
         }
     }
 
-    int GetGapExtnAlgorithm() const
+    EBlastPrelimGapExt GetGapExtnAlgorithm() const
     {
         if (! m_Local) {
             x_Throwx("Error: GetGapExtnAlgorithm() not available.");
         }
         return m_Local->GetGapExtnAlgorithm();
     }
-    void SetGapExtnAlgorithm(int a)
+    void SetGapExtnAlgorithm(EBlastPrelimGapExt a)
     {
         if (m_Local) {
             m_Local->SetGapExtnAlgorithm(a);
@@ -1991,16 +1991,16 @@ CBlastOptionsLocal::SetGapTrigger(double g)
     m_ExtnOpts->gap_trigger = g;
 }
 
-inline int
+inline EBlastPrelimGapExt
 CBlastOptionsLocal::GetGapExtnAlgorithm() const
 {
-    return m_ExtnOpts->algorithm_type;
+    return m_ExtnOpts->ePrelimGapExt;
 }
 
 inline void
-CBlastOptionsLocal::SetGapExtnAlgorithm(int a)
+CBlastOptionsLocal::SetGapExtnAlgorithm(EBlastPrelimGapExt a)
 {
-    m_ExtnOpts->algorithm_type = a;
+    m_ExtnOpts->ePrelimGapExt = a;
 }
 
 inline void
@@ -2363,6 +2363,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.57  2004/05/17 15:28:24  madden
+* Int algorithm_type replaced with enum EBlastPrelimGapExt
+*
 * Revision 1.56  2004/04/07 15:11:33  papadopo
 * add RPS unit test as friend class
 *

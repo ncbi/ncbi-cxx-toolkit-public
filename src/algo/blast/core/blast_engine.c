@@ -442,7 +442,7 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    /* Pick which gapped alignment algorithm to use. */
    if (phi_lookup)
       aux_struct->GetGappedScore = PHIGetGappedScore;
-   else if (ext_options->algorithm_type == EXTEND_DYN_PROG)
+   else if (ext_options->ePrelimGapExt == eDynProgExt)
       aux_struct->GetGappedScore = BLAST_GetGappedScore;
    else
       aux_struct->GetGappedScore = BLAST_MbGetGappedScore;
