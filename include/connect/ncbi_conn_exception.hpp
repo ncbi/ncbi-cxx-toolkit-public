@@ -35,7 +35,7 @@
 
 #include <connect/connect_export.h>
 #include <corelib/ncbiexpt.hpp>
-
+#include <connect/ncbi_core.h>
 
 /** @addtogroup ConnExcep
  *
@@ -62,6 +62,53 @@ public:
     NCBI_EXCEPTION_DEFAULT(CConnException, CException);
 };
 
+/// IO exception. 
+/// Thrown if error is specific to the NCBI BDB C++ library.
+///
+/// @sa EIO_Status
+class CIO_Exception : public CException
+{
+public:
+    /// @sa EIO_Status
+    enum EErrCode {
+        eTimeout      = eIO_Timeout,
+        eClosed       = eIO_Closed,
+        eInterrupt    = eIO_Interrupt,
+        eInvalidArg   = eIO_InvalidArg,
+        eNotSupported = eIO_NotSupported,
+        eUnknown      = eIO_Unknown
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode())
+        {
+        case eTimeout:      return "eIO_Timeout";
+        case eClosed:       return "eIO_Closed";
+        case eInterrupt:    return "eIO_Interrupt";
+        case eInvalidArg:   return "eIO_InvalidArg";
+        case eNotSupported: return "eIO_NotSupported";
+        case eUnknown:      return "eIO_Unknown";
+        default:            return  CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CIO_Exception, CException);
+};
+
+/// Check EIO_Status, throw an exception if something is wrong
+///
+/// @sa EIO_Status
+#define NCBI_IO_CHECK(errnum) \
+    do { \
+        if ( errnum != eIO_Success) { \
+            throw CIO_Exception(DIAG_COMPILE_INFO, \
+               0, (CIO_Exception::EErrCode)errnum, "IO error."); \
+        } \
+    } while (0)
+
+
+
 
 END_NCBI_SCOPE
 
@@ -72,6 +119,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2004/10/01 16:06:25  kuznets
+ * CIO_Exception placed in ncbi_conn_exception.hpp
+ *
  * Revision 6.7  2004/08/19 12:43:21  dicuccio
  * Dropped unnecessary export specifier
  *
