@@ -348,7 +348,7 @@ void CCdd::EraseSequences() {
 // erase sequences not in alignment
 //-------------------------------------------------------------------------
   int  i, NumSequences;
-  CRef<CSeq_id>  ID(new CSeq_id);
+  CRef< CSeq_id >  ID;
 
   NumSequences = GetNumSequences();
   for (i=NumSequences-1; i>=0; i--) {
@@ -386,7 +386,7 @@ void CCdd::EraseSequence(int SeqIndex) {
 }
 
 
-bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID) {
+bool CCdd::IsAMatchFor(CRef< CSeq_id >& ID) {
 //-------------------------------------------------------------------------
 // look through each row of the alignment for a matching ID
 //-------------------------------------------------------------------------
@@ -395,12 +395,53 @@ bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID) {
 }
 
 
-bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID, int& RowIndex) {
+int CCdd::GetNthMatchFor(CRef< CSeq_id >& ID, int N) {
+//-------------------------------------------------------------------------
+// get the row index for the Nth match of ID.
+// N is 1-based.
+// return -1 if no match is found.
+//-------------------------------------------------------------------------
+  int  k, Count, NumRows=GetNumRows();
+  CRef< CSeq_id > TestID;
+
+  Count = 0;
+  for (k=0; k<NumRows; k++) {
+    GetSeqIDFromAlignment(k, TestID);
+    if (SeqIdsMatch(ID, TestID)) {
+      Count++;
+      if (Count == N) {
+        return(k);
+      }
+    }
+  }
+  return(-1);
+}
+
+
+int CCdd::GetNumMatches(CRef< CSeq_id >& ID) {
+//-------------------------------------------------------------------------
+// count the number of rows that have a matching ID
+//-------------------------------------------------------------------------
+  int  k, Count, NumRows=GetNumRows();
+  CRef< CSeq_id > TestID;
+
+  Count = 0;
+  for (k=0; k<NumRows; k++) {
+    GetSeqIDFromAlignment(k, TestID);
+    if (SeqIdsMatch(ID, TestID)) {
+      Count++;
+    }
+  }
+  return(Count);
+}
+
+
+bool CCdd::IsAMatchFor(CRef< CSeq_id >& ID, int& RowIndex) {
 //-------------------------------------------------------------------------
 // look through each row of the alignment for a matching ID
 //-------------------------------------------------------------------------
   int  k, Pair, DenDiagRow, NumRows=GetNumRows();
-  CRef< CSeq_id >  TestID(new CSeq_id);
+  CRef< CSeq_id >  TestID;
 
   for (k=0; k<NumRows; k++) {
     Pair = (k <= 1) ? 0 : k-1;
@@ -415,7 +456,7 @@ bool CCdd::IsAMatchFor(CRef<CSeq_id>& ID, int& RowIndex) {
 }
 
 
-bool CCdd::SeqIdsMatch(CRef<CSeq_id>& ID1, CRef<CSeq_id>& ID2) {
+bool CCdd::SeqIdsMatch(CRef< CSeq_id >& ID1, CRef< CSeq_id >& ID2) {
 //-------------------------------------------------------------------------
 // return true if the 2 sequence-id's match
 //-------------------------------------------------------------------------
@@ -694,7 +735,7 @@ bool CCdd::ReMaster(int Row) {
     SetMaster3d().clear();
   }
   // if the new master has a pdb-id
-  CRef<CSeq_id>  SeqID(new CSeq_id);
+  CRef< CSeq_id >  SeqID(new CSeq_id);
   if (GetSeqID(0, 0, SeqID)) {
     if (SeqID->IsPdb()) {
       // make it the master3d
@@ -847,7 +888,7 @@ bool CCdd::SetDenDiagSet(int Row, TDendiag*& pDenDiagSet) {
 }
 
 
-bool CCdd::GetDenDiag(int Row, bool First, CRef<CDense_diag>& DenDiag) {
+bool CCdd::GetDenDiag(int Row, bool First, CRef< CDense_diag >& DenDiag) {
 //-------------------------------------------------------------------------
 // get either the first or last dense-diag of Row
 //-------------------------------------------------------------------------
@@ -869,12 +910,12 @@ bool CCdd::GetDenDiag(int Row, bool First, CRef<CDense_diag>& DenDiag) {
 }
 
 
-int CCdd::GetSeqIndex(CRef<CSeq_id>& SeqID) {
+int CCdd::GetSeqIndex(CRef< CSeq_id >& SeqID) {
 //-------------------------------------------------------------------------
 //  get the sequence index with given SeqID
 //-------------------------------------------------------------------------
   int  i, NumSequences = GetNumSequences();
-  CRef<CSeq_id> TrialSeqID(new CSeq_id);
+  CRef< CSeq_id > TrialSeqID;
 
   for (i=0; i<NumSequences; i++) {
     GetSeqID(i, TrialSeqID);
@@ -921,7 +962,7 @@ bool CCdd::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str, bo
 //-------------------------------------------------------------------
   int  Pair = (RowIndex <= 1) ? 0 : RowIndex-1;
   int  DenDiagRow = (RowIndex == 0) ? 0 : 1;
-  CRef<CSeq_id> SeqID;
+  CRef< CSeq_id > SeqID;
 
   GetSeqID(Pair, DenDiagRow, SeqID);
   Make_GI_or_PDB_String(SeqID, Str, Pad, Len);
@@ -929,7 +970,7 @@ bool CCdd::Get_GI_or_PDB_String_FromAlignment(int RowIndex, std::string& Str, bo
 }
 
 
-void CCdd::Make_GI_or_PDB_String(CRef<CSeq_id> SeqID, std::string& Str, bool Pad, int Len) {
+void CCdd::Make_GI_or_PDB_String(CRef< CSeq_id > SeqID, std::string& Str, bool Pad, int Len) {
 //-------------------------------------------------------------------
 // make a string for a seq-id
 //-------------------------------------------------------------------
@@ -997,7 +1038,7 @@ int CCdd::GetGIFromSequenceList(int SeqIndex) {
 }
 
 
-bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
+bool CCdd::GetSeqID(int SeqIndex, CRef< CSeq_id >& SeqID) {
 //-------------------------------------------------------------------------
 // get a SeqID from a list of sequences.
 // each sequence can have multiple id's.
@@ -1049,12 +1090,12 @@ bool CCdd::GetSeqID(int SeqIndex, CRef<CSeq_id>& SeqID) {
 }
 
 
-bool CCdd::GetSeqID(int Pair, int DenDiagRow, CRef<CSeq_id>& SeqID) {
+bool CCdd::GetSeqID(int Pair, int DenDiagRow, CRef< CSeq_id >& SeqID) {
 //-------------------------------------------------------------------------
 // get a SeqID.
 // first get the Pair'th DenDiag, then the DenDiagRow'th SeqID.
 //-------------------------------------------------------------------------
-  CRef< CDense_diag > DenDiag(new CDense_diag);
+  CRef< CDense_diag > DenDiag;
   CDense_diag::TIds IdsSet;
   CDense_diag::TIds::iterator i;
   int  Row;
@@ -1076,7 +1117,7 @@ bool CCdd::GetGI(int Row, int& GI) {
 //-------------------------------------------------------------------------
 // get the GI for Row
 //-------------------------------------------------------------------------
-  CRef< CSeq_id >  SeqID(new CSeq_id);
+  CRef< CSeq_id >  SeqID;
   int  Pair, DenDiagRow;
 
   Pair = (Row <= 1) ? 0 : Row-1;
@@ -1094,7 +1135,7 @@ bool CCdd::GetPDB(int Row, const CPDB_seq_id*& pPDB) {
 //-------------------------------------------------------------------------
 // get the PDB ID for Row
 //-------------------------------------------------------------------------
-  CRef< CSeq_id >  SeqID(new CSeq_id);
+  CRef< CSeq_id >  SeqID;
   int  Pair, DenDiagRow;
 
   Pair = (Row <= 1) ? 0 : Row-1;
@@ -1112,7 +1153,7 @@ int CCdd::GetLowerBound(int Row) {
 //-------------------------------------------------------------------------
 // get the lower alignment boundary for Row
 //-------------------------------------------------------------------------
-  CRef< CDense_diag > DenDiag(new CDense_diag);
+  CRef< CDense_diag > DenDiag;
   list< TSeqPos >::const_iterator  i;
 
   // get the first den-diag for row
@@ -1128,7 +1169,7 @@ int CCdd::GetUpperBound(int Row) {
 //-------------------------------------------------------------------------
 // get the upper alignment boundary for Row
 //-------------------------------------------------------------------------
-  CRef< CDense_diag > DenDiag(new CDense_diag);
+  CRef< CDense_diag > DenDiag;
   list< TSeqPos >::const_iterator  i;
 
   // get the last den-diag for row
@@ -1149,8 +1190,8 @@ int CCdd::ConvertSequences(std::deque< std::string >& ConvertedSequences) {
 // and the converted sequences)
 //------------------------------------------------------------------------------
   list< CRef< CSeq_entry > >::const_iterator  i;
-  CRef< CSeq_id >  MasterSeqID(new CSeq_id);
-  CRef< CSeq_id >  SeqID(new CSeq_id);
+  CRef< CSeq_id >  MasterSeqID;
+  CRef< CSeq_id >  SeqID;
   std::string      String, err;
   int              RetVal=-1, SeqIndex=0;
 
@@ -1571,7 +1612,7 @@ bool CCdd::UsesConsensusSequence() {
 //-------------------------------------------------------------------------
 // check if this CD uses consensus sequence for master
 //-------------------------------------------------------------------------
-  CRef<CSeq_id>  SeqID;
+  CRef< CSeq_id >  SeqID;
 
   if (GetSeqIDFromAlignment(0, SeqID)) {
     if (SeqID->IsLocal()) {
@@ -1594,6 +1635,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2002/11/20 17:34:27  hurwitz
+ * added functions for getting multiple row indices that match a seq-id,
+ * got rid of "new" for some CRef's where not needed
+ *
  * Revision 1.23  2002/11/07 02:01:54  hurwitz
  * added GetGIFromSequenceList
  *
