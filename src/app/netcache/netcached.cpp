@@ -58,6 +58,8 @@
 # include <signal.h>
 #endif
 
+#define NETCACHED_VERSION \
+      "NCBI NetCache server version=1.2.4  " __DATE__ " " __TIME__
 
 
 USING_NCBI_SCOPE;
@@ -558,8 +560,7 @@ void CNetCacheServer::ProcessShutdown()
 
 void CNetCacheServer::ProcessVersion(CSocket& sock, const Request& req)
 {
-    WriteMsg(sock, "OK:", 
-      "NCBI NetCache server version=1.2.4 __DATE__ __TIME__");
+    WriteMsg(sock, "OK:", NETCACHED_VERSION); 
 }
 
 void CNetCacheServer::ProcessRemove(CSocket& sock, const Request& req)
@@ -1084,6 +1085,8 @@ int CNetCacheDApp::Run(void)
     CBDB_Cache* bdb_cache = 0;
     CArgs args = GetArgs();
 
+    LOG_POST(NETCACHED_VERSION);
+
     try {
         const CNcbiRegistry& reg = GetConfig();
 
@@ -1250,6 +1253,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2005/03/31 19:31:15  kuznets
+ * Corrected use of preprocessor
+ *
  * Revision 1.49  2005/03/31 19:16:49  kuznets
  * Added build date to the version string
  *
