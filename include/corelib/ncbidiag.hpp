@@ -74,6 +74,7 @@ class CDiagCompileInfo
 public:
     // DO NOT create CDiagCompileInfo directly
     // use macro DIAG_COMPILE_INFO instead!
+    NCBI_XNCBI_EXPORT
     CDiagCompileInfo(const char* file, int line, const char* module = 0);
 
     const char* GetFile  () const { return m_File   ? m_File   : ""; }
@@ -1096,6 +1097,9 @@ END_NCBI_SCOPE
  * ==========================================================================
  *
  * $Log$
+ * Revision 1.77  2004/09/22 14:59:49  kononenk
+ * Fix for VC++ export
+ *
  * Revision 1.76  2004/09/22 13:32:16  kononenk
  * "Diagnostic Message Filtering" functionality added.
  * Added function SetDiagFilter()
