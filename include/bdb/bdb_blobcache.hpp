@@ -37,8 +37,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <util/cache/icache.hpp>
-//#include <util/cache/blob_cache.hpp>
-//#include <util/cache/int_cache.hpp>
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_env.hpp>
@@ -186,167 +184,8 @@ private:
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
 };
 
-/*
-/// BLOB storage file structure
 
-struct NCBI_BDB_EXPORT SBLOB_CacheDB : public CBDB_BLobFile
-{
-    CBDB_FieldString       key;
-    CBDB_FieldInt4         version;
 
-    SBLOB_CacheDB()
-    {
-        BindKey("key",     &key);
-        BindKey("version", &version);
-    }
-};
-*/
-
-		/*
-/// BLOB attributes file structure
-
-struct NCBI_BDB_EXPORT SBLOB_Cache_AttrDB : public CBDB_File
-{
-    CBDB_FieldString       key;
-    CBDB_FieldInt4         version;
-    CBDB_FieldInt4         time_stamp;
-    CBDB_FieldInt4         overflow;
-
-    SBLOB_Cache_AttrDB()
-    {
-        BindKey("key",     &key);
-        BindKey("version", &version);
-
-        BindData("time_stamp", &time_stamp);
-        BindData("overflow",   &overflow);
-    }
-};
-
-/// Int cache file structure
-
-struct NCBI_BDB_EXPORT SIntCacheDB : public CBDB_BLobFile
-{
-    CBDB_FieldInt4     key1;
-    CBDB_FieldInt4     key2;
-    CBDB_FieldUint4    time_stamp;
-
-    SIntCacheDB()
-    {
-        BindKey("key1",       &key1);
-        BindKey("key2",       &key2);
-        BindKey("time_stamp", &time_stamp);
-    }
-};
-*/
-
-/*
-/// Int cache implementation
-///
-/// Class implements IIntCache interface
-
-class NCBI_BDB_EXPORT CBDB_IntCache : public IIntCache
-{
-public:
-    CBDB_IntCache(SIntCacheDB& cache_db);
-    virtual ~CBDB_IntCache();
-
-    // IIntCache interface
-
-    virtual void Store(int key1, int key2, const vector<int>& value);
-    virtual size_t GetSize(int key1, int key2);
-    virtual bool Read(int key1, int key2, vector<int>& value);
-    virtual void Remove(int key1, int key2);
-    virtual void SetExpirationTime(time_t expiration_timeout);
-    virtual void Purge(time_t           time_point,
-                       EKeepVersions    keep_last_version = eDropAll) ;
-
-private:
-    SIntCacheDB&   m_IntCacheDB;
-    time_t         m_ExpirationTime;
-};
-*/
-		
-/*
-/// BDB cache implementation.
-///
-/// Class implements IBLOB_Cache interface using local Berkeley DB
-/// database.
-
-class NCBI_BDB_EXPORT CBDB_BLOB_Cache : public IBLOB_Cache
-{
-public:
-    CBDB_BLOB_Cache();
-    virtual ~CBDB_BLOB_Cache();
-
-    enum ELockMode 
-    {
-        eNoLock,     //!< Do not lock-protect cache instance
-        ePidLock     //!< Create PID lock on cache (exception if failed) 
-    };
-
-    void Open(const char* cache_path, ELockMode lm = eNoLock);
-
-    IIntCache* GetIntCache() { return &m_IntCacheInstance; }
-
-    // IBLOB_Cache interface
-
-    virtual void Store(const string& key,
-                       int           version,
-                       const void*   data,
-                       size_t        size,
-                       EKeepVersions keep_versions = eDropOlder);
-
-    virtual size_t GetSize(const string& key,
-                           int           version);
-
-    virtual bool Read(const string& key, 
-                      int           version, 
-                      void*         buf, 
-                      size_t        buf_size);
-
-    virtual IReader* GetReadStream(const string& key, 
-                                   int   version);
-
-    virtual IWriter* GetWriteStream(const string&    key, 
-                                    int              version,
-                                    EKeepVersions    keep_versions = eDropOlder);
-
-    virtual void Remove(const string& key);
-
-    virtual time_t GetAccessTime(const string& key,
-                                 int           version);
-
-    virtual void Purge(time_t           access_time,
-                       EKeepVersions keep_last_version = eDropAll);
-
-    virtual void Purge(const string&    key,
-                       time_t           access_time,
-                       EKeepVersions keep_last_version = eDropAll);
-private:
-    void x_UpdateAccessTime(const string&    key,
-                            int              version);
-
-    void x_DropBLOB(const char*    key,
-                    int            version,
-                    int            overflow);
-
-private:
-    CBDB_BLOB_Cache(const CBDB_BLOB_Cache&);
-    CBDB_BLOB_Cache& operator=(const CBDB_BLOB_Cache);
-private:
-    string                  m_Path;    //!< Path to storage
-    CPIDGuard*              m_PidGuard;//!< Cache lock
-
-    CBDB_Env                m_Env;        //!< Common environment for cache DBs
-    SBLOB_CacheDB           m_BlobDB;     //!< In database BLOB storage
-    SBLOB_Cache_AttrDB      m_AttrDB;     //!< BLOB attributes storage
-    
-    SIntCacheDB             m_IntCacheDB; //!< Int cache storage
-    CBDB_IntCache           m_IntCacheInstance; //!< Interface instance
-};
-*/
-
-//extern NCBI_BDB_EXPORT const string kBDBCacheDriverName;
 extern NCBI_BDB_EXPORT const char* kBDBCacheDriverName;
 
 extern "C" 
@@ -392,6 +231,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2004/04/28 12:21:46  kuznets
+ * Cleaned up dead code
+ *
  * Revision 1.15  2004/04/28 12:11:08  kuznets
  * Replaced static string with char* (fix crash on Linux)
  *
