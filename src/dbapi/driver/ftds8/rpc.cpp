@@ -412,8 +412,8 @@ bool CTDS_RPCCmd::x_AddParamValue(string& cmd, const CDB_Object& param)
             break;
         }
         case eDB_DateTime: {
-            const CDB_SmallDateTime& val =
-                dynamic_cast<const CDB_SmallDateTime&> (param);
+            const CDB_DateTime& val =
+                dynamic_cast<const CDB_DateTime&> (param);
             sprintf(val_buffer, "'%s:%.3d'\n",
 		    val.Value().AsString("M/D/Y h:m:s").c_str(),
 		    (int)(val.Value().NanoSecond()/1000000));
@@ -544,6 +544,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/08/13 18:04:05  soussov
+ * fixes copy/paste bug for DateTime
+ *
  * Revision 1.10  2003/06/05 16:01:40  soussov
  * adds code for DumpResults and for the dumped results processing
  *
