@@ -29,7 +29,7 @@
  *     NCBI Taxonomy information retreival library implementation
  *
  */
-#include <algorithm>
+
 #include <corelib/ncbistr.hpp>
 #include <objects/taxon1/taxon1.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
@@ -38,6 +38,8 @@
 #include <serial/enumvalues.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
+
+#include <algorithm>
 
 #include "cache.hpp"
 
@@ -1789,6 +1791,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 6.20  2003/11/18 17:50:51  dicuccio
+ * Rearranged #include statements to avoid warning on MSVC
+ *
  * Revision 6.19  2003/10/23 18:52:47  domrach
  * Unique name bug fixed
  *
