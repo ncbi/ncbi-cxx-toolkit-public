@@ -54,9 +54,9 @@ CRPSTBlastnOptionsHandle::CRPSTBlastnOptionsHandle(EAPILocality locality)
 }
 
 void
-CRPSTBlastnOptionsHandle::SetSubjectSequenceOptionsDefaults()
+CRPSTBlastnOptionsHandle::SetQueryOptionDefaults()
 {
-    SetDbGeneticCode(BLAST_GENETIC_CODE);
+    m_Opts->SetQueryGeneticCode(BLAST_GENETIC_CODE);
 }
 
 END_SCOPE(blast)
@@ -68,6 +68,9 @@ END_NCBI_SCOPE
 /*
  * =======================================================================
  * $Log$
+ * Revision 1.4  2004/09/21 13:51:21  dondosha
+ * Set query genetic code; no need to set database genetic code
+ *
  * Revision 1.3  2004/05/21 21:41:02  gorelenk
  * Added PCH ncbi_pch.hpp
  *
