@@ -18,198 +18,52 @@
 
 
 cmd=$*
+make_check_script="`dirname $0`/check_make_unix.sh"
 
 # Define name for the check script file
 script_name="check.sh"
 CHECK_RUN_FILE="`pwd`/$script_name"
 export CHECK_RUN_FILE
+CHECK_RUN_LIST="`pwd`/$script_name.list"
+export CHECK_RUN_LIST
 
-
-# Prepare file for test script
-if test -f "${CHECK_RUN_FILE}" ; then
-   rm -f ${CHECK_RUN_FILE}
-fi
-
-cat >> ${CHECK_RUN_FILE} <<EOF
-#! /bin/sh
-
-res_journal="${CHECK_RUN_FILE}.journal"
-res_log="${CHECK_RUN_FILE}.log"
-res_log="${CHECK_RUN_FILE}.log"
-res_concat="${CHECK_RUN_FILE}.out"
-
-
-##  Printout USAGE info and exit
-
-Usage() {
-  cat <<EOF_usage
-
-USAGE:  ./$script_name {run | clean | concat | concat_err}
-
- run         Run the tests. Create output file ("*.test_out") for each tests, 
-             plus journal and log files. 
- clean       Remove all files created during the last "run" and this script 
-             itself.
- concat      Concatenate all files created during the last "run" into one big 
-             file "\$res_log".
- concat_err  Like previous. But into the file "\$res_concat" 
-             will be added outputs of failed tests only.
-
-ERROR:  \$1
-EOF_usage
-
-    exit 1
-}
-
-
-if test \$# -ne 1 ; then
-  Usage "Invalid number of arguments."
-fi
-
-
-###  What to do (cmd-line arg)
-
-method="\$1"
-
-
-### Action
-
-case "\$method" in
-#----------------------------------------------------------
-  run )
-    ;;
-#----------------------------------------------------------
-  clean )
-    x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
-    for x_file in \${x_files} ; do
-      x_file=\`echo "\${x_file}" | sed -e 's/%gj_s4%/ /g'\`
-    done
-    rm -f \$res_journal \$res_log \$res_concat
-    rm -f ${CHECK_RUN_FILE} 
-    exit 0
-    ;;
-#----------------------------------------------------------
-  concat )
-    rm -f "\$res_concat"
-    ( 
-    cat \$res_log
-    x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
-    for x_file in \${x_files} ; do
-      x_file=\`echo "\${x_file}" | sed -e 's/%gj_s4%/ /g'\`
-      echo 
-      echo 
-      cat \$x_file
-    done
-    ) >> \$res_concat
-    exit 0
-    ;;
-#----------------------------------------------------------
-  concat_err )
-    rm -f "\$res_concat"
-    ( 
-    cat \$res_log | grep 'ERR \['
-    x_files=\`cat \$res_journal | sed -e 's/ /%gj_s4%/g'\`
-    for x_file in \${x_files} ; do
-      x_file=\`echo "\${x_file}" | sed -e 's/%gj_s4%/ /g'\`
-      x_code=\`cat \$x_file | grep -c '@@@ EXIT CODE:'\`
-      test \$x_code -ne 0 || continue
-      x_good=\`cat \$x_file | grep -c '@@@ EXIT CODE: 0'\`
-      if test \$x_good -ne 1 ; then
-         echo 
-         echo 
-         cat \$x_file
-      fi
-    done
-    ) >> \$res_concat
-    exit 0
-    ;;
-#----------------------------------------------------------
-  * )
-    Usage "Invalid method name."
-    ;;
-esac
-
-
-# Adjust PATH and LD_LIBRARY_PATH for running tests
-PATH=".:\$PATH"
-builddir=\`pwd\`
-while test ! -f "\$builddir/inc/ncbiconf.h"
-do
-   up_dir=\`dirname "\$builddir"\`
-   if test "\$up_dir" = "\$builddir" ; then
-      builddir=""
-      break
-   fi
-   builddir="\$up_dir"
-done
-if test -n "\$builddir"  -a  -d "\$builddir/lib";  then
-    if test -n "\$LD_LIBRARY_PATH" ; then
-       LD_LIBRARY_PATH="\$builddir/lib:\$LD_LIBRARY_PATH"
-    else
-       LD_LIBRARY_PATH="\$builddir/lib"
-    fi
-    export LD_LIBRARY_PATH
-else
-    echo "WARNING:  cannot find path to the library dir"
-fi
-
-
-# Run
-count_ok=0
-count_err=0
-count_absent=0
-
-rm -f "\$res_journal"
-rm -f "\$res_log"
-
-EOF
-
+# Delete all test file list
+rm -f "$CHECK_RUN_FILE" > /dev/null
+rm -f "$CHECK_RUN_LIST" > /dev/null
 
 # Run make
 echo "======================================================================"
-${cmd}
+$cmd
 result=$?
-
-
-# Write make result 
 echo "----------------------------------------------------------------------"
 
-if test ${result} -ne 0 ; then
-   echo "Error in compiling tests"
-   exit ${result}
+# Check tests list build result 
+if test $result -ne 0 ; then
+   echo "Error in collecting tests."
+   exit $result
 fi
 
-if test `tail -2 ${CHECK_RUN_FILE} | grep -c res_log` -ne 0 ; then
-   echo "Cannot run tests: none found"
+# Check script build result
+if test ! -f "$CHECK_RUN_LIST"; then
+   echo "Cannot run tests: none found."
    exit 255
-else
-   cat >> ${CHECK_RUN_FILE} <<EOF
-echo
-echo "Succeded : \${count_ok}"
-echo "Failed   : \${count_err}"
-echo "Absent   : \${count_absent}"
-echo
-
-if test \${count_err} -eq 0 ; then
-   echo
-   echo "******** ALL TESTS COMPLETED SUCCESSFULLY ********"
-   echo
 fi
 
-exit \${count_err}
-EOF
+# Build script on base of check-list
+echo "Build check script..."
+$make_check_script $CHECK_RUN_LIST $CHECK_RUN_FILE
 
+# Check script build result
+if test $? -ne 0 -o `tail -2 $CHECK_RUN_FILE | grep -c res_log` -ne 0 ; then
+   echo "Error in compiling check script."
+   exit 255
 fi
 
-chmod a+x ${CHECK_RUN_FILE}
-
-
-echo "The test script was successfully built."
+echo "Done."
 echo
 
-
-# Run tests after build flag (Y - run, N - not run, other - ask)
-run_check=`echo ${RUN_CHECK} | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
+# Run tests after build flag (Y - run, N - don't run, other - ask)
+run_check=`echo $RUN_CHECK | tr '[a-z]' '[A-Z]' | sed -e 's/^\(.\).*/\1/g'`
 
 case "$run_check" in
   Y )
@@ -223,12 +77,12 @@ case "$run_check" in
 esac
 
 case "$answer" in
- n | N )  echo "Run \"${CHECK_RUN_FILE} run\" to launch the tests." ; exit 0 ;;
+ n | N )  echo "Run \"$CHECK_RUN_FILE run\" to launch the tests." ; exit 0 ;;
 esac
 
 
 # Launch the tests
-${CHECK_RUN_FILE} run
+$CHECK_RUN_FILE run
 
 
 # Exit
