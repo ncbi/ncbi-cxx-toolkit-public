@@ -27,15 +27,16 @@
  * File Description:
  *         C++ wrappers for Perl Compatible Regular Expression (pcre) library
  *
- * ===========================================================================
  */
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_limits.h>
+#include <corelib/ncbistl.hpp>
 #include <util/regexp.hpp>
+#include <pcre.h>
+
 #include <memory>
 #include <stdlib.h>
-#include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,12 +50,14 @@ class CRegexpException : public CException
 {
 public:
     enum EErrCode {
-        eCompile
+        eCompile,
+        eBadFlags
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
-        case eCompile:         return "eCompile";
-        default:               return CException::GetErrCodeString();
+        case eCompile:    return "eCompile";
+        case eBadFlags:   return "eBadFlags";
+        default:          return CException::GetErrCodeString();
         }
     }
     NCBI_EXCEPTION_DEFAULT(CRegexpException,CException);
@@ -66,12 +69,59 @@ public:
 //  CRegexp
 //
 
+// Macro to check bits
+#define F_ISSET(flags, mask) ((flags & (mask)) == (mask)))
+
+// Auxiliary functions to convert CRegexp flags to real flags.
+static int s_GetRealCompileFlags(CRegexp::TCompile compile_flags)
+{
+    int flags = 0;
+
+    if ( !F_ISSET(compile_flags, CRegexp::eCompile_default ) {
+        NCBI_THROW(CRegexpException, eBadFlags,
+                   "Bad regular expression compilation flags");
+    }
+    if ( F_ISSET(compile_flags, CRegexp::eCompile_ignore_case ) {
+        flags |= PCRE_CASELESS;
+    }
+    if ( F_ISSET(compile_flags, CRegexp::eCompile_dotall ) {
+        flags |= PCRE_DOTALL;
+    }
+    if ( F_ISSET(compile_flags, CRegexp::eCompile_newline ) {
+        flags |= PCRE_MULTILINE;
+    }
+    if ( F_ISSET(compile_flags, CRegexp::eCompile_ungreedy ) {
+        flags |= PCRE_UNGREEDY;
+    }
+    return flags;
+}
+
+static int s_GetRealMatchFlags(CRegexp::TMatch match_flags)
+{
+    int flags = 0;
+
+    if ( !F_ISSET(match_flags, CRegexp::eMatch_default ) {
+        NCBI_THROW(CRegexpException, eBadFlags,
+                   "Bad regular expression match flags");
+    }
+    if ( F_ISSET(match_flags, CRegexp::eMatch_not_begin ) {
+        flags |= PCRE_NOTBOL;
+    }
+    if ( F_ISSET(match_flags, CRegexp::eMatch_not_end ) {
+        flags |= PCRE_NOTEOL;
+    }
+    return flags;
+}
+
+
 CRegexp::CRegexp(const string& pattern, TCompile flags)
     : m_NumFound(0)
 {
     const char *err;
     int err_offset;
-    m_PReg = pcre_compile(pattern.c_str(), flags, &err, &err_offset, NULL);
+    int x_flags = s_GetRealCompileFlags(flags);
+
+    m_PReg = pcre_compile(pattern.c_str(), x_flags, &err, &err_offset, NULL);
     if (m_PReg == NULL) {
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
                    pattern + "' failed: " + err);
@@ -92,7 +142,9 @@ void CRegexp::Set(const string& pattern, TCompile flags)
     }
     const char *err;
     int err_offset;
-    m_PReg = pcre_compile(pattern.c_str(), flags, &err, &err_offset, NULL);
+    int x_flags = s_GetRealCompileFlags(flags);
+
+    m_PReg = pcre_compile(pattern.c_str(), x_flags, &err, &err_offset, NULL);
     if (m_PReg == NULL) {
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
                    pattern + "' failed: " + err);
@@ -119,8 +171,9 @@ string CRegexp::GetMatch(
     TMatch        flags,
     bool          noreturn)
 {
-    m_NumFound = pcre_exec(m_PReg, NULL, str.c_str(), (int)str.length(),
-                           (int)offset, flags, m_Results,
+    int x_flags = s_GetRealMatchFlags(flags);
+    m_NumFound = pcre_exec((pcre*)m_PReg, NULL, str.c_str(), (int)str.length(),
+                           (int)offset, x_flags, m_Results,
                            (int)(kRegexpMaxSubPatterns +1) * 3);
     if ( noreturn ) {
         return kEmptyStr;
@@ -276,7 +329,7 @@ size_t CRegexpUtil::ReplaceRange(
         // Check beginning of block [addr_re_start:addr_re_end]
         if ( !inside  &&  !m_RangeStart.empty() ) {
             CRegexp re(m_RangeStart.c_str());
-            re.GetMatch(line.c_str(), 0, 0, 0, true);
+            re.GetMatch(line.c_str(), 0, 0, CRegexp::eMatch_default, true);
             inside = (re.NumFound() > 0);
         } else {
             inside = true;
@@ -295,7 +348,7 @@ size_t CRegexpUtil::ReplaceRange(
         if ( inside  &&  !m_RangeEnd.empty() ) {
             // Two addresses
             CRegexp re(m_RangeEnd.c_str());
-            re.GetMatch(line.c_str(), 0, 0, 0, true);
+            re.GetMatch(line.c_str(), 0, 0, CRegexp::eMatch_default, true);
             inside = (re.NumFound() <= 0);
         } else {
             // One address -- process one current string only
@@ -353,6 +406,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/11/22 16:45:40  ivanov
+ * Moved #include <pcre.h> from .hpp to .cpp.
+ * Do not assume that default compile and match flags are equal 0,
+ * use enum values. Added runtime flags check.
+ *
  * Revision 1.8  2004/07/20 12:18:01  jcherry
  * Guard against endless loop in Replace() when regular expression
  * can match the empty string.
