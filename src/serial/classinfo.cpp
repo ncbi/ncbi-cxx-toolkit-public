@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2002/11/14 20:56:21  gouriano
+* moved AddMember method into the base class
+*
 * Revision 1.62  2002/05/22 14:03:42  grichenk
 * CSerialUserOp -- added prefix UserOp_ to Assign() and Equals()
 *
@@ -354,28 +357,6 @@ CClassTypeInfo* CClassTypeInfo::SetImplicit(void)
     m_ClassType = eImplicit;
     UpdateFunctions();
     return this;
-}
-
-CMemberInfo* CClassTypeInfo::AddMember(const char* memberId,
-                                       const void* memberPtr,
-                                       const CTypeRef& memberType)
-{
-    CMemberInfo* memberInfo = new CMemberInfo(this, memberId,
-                                              TPointerOffsetType(memberPtr),
-                                              memberType);
-    GetItems().AddItem(memberInfo);
-    return memberInfo;
-}
-
-CMemberInfo* CClassTypeInfo::AddMember(const CMemberId& memberId,
-                                       const void* memberPtr,
-                                       const CTypeRef& memberType)
-{
-    CMemberInfo* memberInfo = new CMemberInfo(this, memberId,
-                                              TPointerOffsetType(memberPtr),
-                                              memberType);
-    GetItems().AddItem(memberInfo);
-    return memberInfo;
 }
 
 void CClassTypeInfo::AddSubClass(const CMemberId& id,
