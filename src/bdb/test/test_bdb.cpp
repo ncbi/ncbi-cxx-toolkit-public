@@ -847,7 +847,7 @@ static void s_TEST_BDB_Duplicates(void)
             unsigned idata = dbf.idata;
             assert(idata == 1);
 
-            string str = dbf.str;
+            string str = (const char*)dbf.str;
             assert(str == "Str1" || str == "Str11");
 
             ++recs_fetched;
@@ -1056,6 +1056,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/07/22 16:38:30  kuznets
+ * Polishing test
+ *
  * Revision 1.10  2003/07/22 15:21:17  kuznets
  * Sketched two tet cases for db_map and db_multimap
  *
