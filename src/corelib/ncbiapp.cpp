@@ -212,7 +212,11 @@ int CNcbiApplication::AppMain
 #  define MAX_ARGC 256
 #  define MAX_ARG_LEN 1024
     if (argc <= 1) {
+#if defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS)
+        string argsName = "../../../ncbi.args";
+#else
         string argsName = appname + ".args";
+#endif
 
         CNcbiIfstream in(argsName.c_str());
         if ( in ) {
@@ -722,6 +726,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.54  2003/03/13 22:16:11  rsmith
+ * on Metrowerks, Mac OSX, always use ncbi.args as the file name for arguments.
+ *
  * Revision 1.53  2003/03/13 22:04:27  rsmith
  * Changes to AppMain so MacOSX can find out the appname and arguments.
  *
