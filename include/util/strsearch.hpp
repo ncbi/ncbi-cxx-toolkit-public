@@ -43,6 +43,7 @@
 
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbistr.hpp>
 #include <string>
 #include <vector>
 
@@ -68,6 +69,14 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CBoyerMooreMatcher 
 {
 public:
+    enum EWordMatch
+    {
+        eSubstrMatch = 0,
+        ePrefixMatch = (1 << 0),
+        eSuffixMatch = (1 << 1),
+        eWholeWordMatch = (ePrefixMatch | eSuffixMatch)
+    };
+public:
     /// Initialize a matcher with the pattern to be matched.
     ///
     /// @param pattern
@@ -76,10 +85,10 @@ public:
     ///    should the search be case sensitive (false by default).
     /// @param whole_word 
     ///    a match is found ony if the pattern was found to 
-    ///    be between whitespaces (false by default).
+    ///    be between delimiting characters (whitespaces)
     CBoyerMooreMatcher(const string& pattern,        
-                       bool          case_sensitive = false,
-                       bool          whole_word = false);     
+                       NStr::ECase   case_sensitive = NStr::eNocase,
+                       unsigned int  whole_word = eSubstrMatch);
 
     
     /// Initialize a matcher with the pattern to be matched.
@@ -97,7 +106,7 @@ public:
     ///    word_delimeters are to be used
     CBoyerMooreMatcher(const string& pattern,
                        const string& word_delimeters,
-                       bool          case_sensitive = false,
+                       NStr::ECase   case_sensitive = NStr::eNocase,
                        bool          invert_delimiters = false);
 
 
@@ -112,6 +121,14 @@ public:
                            bool          invert_delimiters = false);
     
 
+    /// Set word matching mode
+    ///
+    /// @param whole_word 
+    ///    word matching mode. Can be OR combination of EWordMatch values
+    void SetWordMatching(unsigned int whole_word = eWholeWordMatch)
+    {
+        m_WholeWord = whole_word;
+    }
 
     /// Search for the pattern over text starting at position pos.
     ///
@@ -157,8 +174,8 @@ private:
 private:    
     string                  m_Pattern;  
     string::size_type       m_PatLen;
-    bool                    m_CaseSensitive;
-    bool                    m_WholeWord;
+    NStr::ECase             m_CaseSensitive;
+    unsigned int            m_WholeWord;
     vector<size_t>          m_LastOccurance;
     vector<bool>            m_WordDelimiters;
     
@@ -500,6 +517,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2004/03/03 17:55:47  kuznets
+* Code cleane up (CBoyerMooreMatcher) to use enums instead of bools,
+* better coverage or different types of whole word matchers
+*
 * Revision 1.13  2004/03/02 19:59:57  kuznets
 * Changes in CBoyerMooreMatcher:
 *   - added work with memory areas

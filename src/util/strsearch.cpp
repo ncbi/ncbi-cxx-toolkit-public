@@ -34,8 +34,6 @@
 *
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistr.hpp>
 #include <util/strsearch.hpp>
 #include <algorithm>
 #include <vector>
@@ -53,8 +51,8 @@ BEGIN_NCBI_SCOPE
 // =======
 
 CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern, 
-                                       bool          case_sensitive,
-                                       bool          whole_word)
+                                       NStr::ECase   case_sensitive,
+                                       unsigned int  whole_word)
 : m_Pattern(pattern), 
   m_PatLen(pattern.length()), 
   m_CaseSensitive(case_sensitive), 
@@ -73,7 +71,7 @@ CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
 
 CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
                                        const string& word_delimeters,
-                                       bool          case_sensitive,
+                                       NStr::ECase   case_sensitive,
                                        bool          invert_delimiters)
 : m_Pattern(pattern), 
   m_PatLen(pattern.length()), 
@@ -89,10 +87,10 @@ CBoyerMooreMatcher::CBoyerMooreMatcher(const string& pattern,
 void CBoyerMooreMatcher::SetWordDelimiters(const string& word_delimeters,
                                            bool          invert_delimiters)
 {
-    m_WholeWord = true;
+    m_WholeWord = eWholeWordMatch;
 
     string word_d = word_delimeters;
-    if (!m_CaseSensitive) {
+    if (m_CaseSensitive == NStr::eNocase) {
         NStr::ToUpper(word_d);
     }
 
@@ -107,7 +105,7 @@ void CBoyerMooreMatcher::SetWordDelimiters(const string& word_delimeters,
 
 void CBoyerMooreMatcher::x_InitPattern(void)
 {
-    if ( !m_CaseSensitive ) {
+    if ( m_CaseSensitive == NStr::eNocase) {
         NStr::ToUpper(m_Pattern);
     }
     
@@ -135,7 +133,7 @@ int CBoyerMooreMatcher::Search(const char*  text,
     // Case sensitivity check has been taken out of loop. 
     // Code size for performance optimization. (We generally choose speed).
     // (Anatoliy)
-    if (m_CaseSensitive) {
+    if (m_CaseSensitive == NStr::eCase) {
         while (shift + m_PatLen <= text_len) {
             int j = (int)m_PatLen - 1;
 
@@ -149,7 +147,7 @@ int CBoyerMooreMatcher::Search(const char*  text,
                 shift += (unsigned int)m_LastOccurance[text[shift + j]];
             }
         }
-    } else { // case insensitive
+    } else { // case insensitive NStr::eNocase
         while (shift + m_PatLen <= text_len) {
             int j = (int)m_PatLen - 1;
 
@@ -180,21 +178,26 @@ bool CBoyerMooreMatcher::IsWholeWord(const char*  text,
                                      unsigned int pos,
                                      unsigned int text_len) const
 {
-    if ( !m_WholeWord ) 
-        return true;
+    int left, right;
+    left = right = 1;
 
     // Words at the begging and end of text are also considered "whole"
 
     // check on the left  
-    bool left = (pos == 0) ||
-                ((pos > 0) && m_WordDelimiters[text[pos - 1]]);
+    if (m_WholeWord & ePrefixMatch) {
+        left = (pos == 0) ||
+               ((pos > 0) && m_WordDelimiters[text[pos - 1]]);
+    }
 
     // check on the right
-    pos += (unsigned int)m_PatLen;
-    bool right = (pos == text_len) || 
-                 ((pos < text_len) && m_WordDelimiters[text[pos]]);
+    if (m_WholeWord & eSuffixMatch) {
+        pos += (unsigned int)m_PatLen;
+        right = (pos == text_len) || 
+                ((pos < text_len) && m_WordDelimiters[text[pos]]);
+    }
 
-    return (right && left);
+
+    return (left && right);
 }
 
 
@@ -205,6 +208,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/03 17:56:02  kuznets
+* Code cleane up (CBoyerMooreMatcher) to use enums instead of bools,
+* better coverage or different types of whole word matchers
+*
 * Revision 1.7  2004/03/03 14:37:14  kuznets
 * bug fix: CBoyerMooreMatcher::IsWholeWord added case when
 * the tested token is at the very beggining or end of the text.
