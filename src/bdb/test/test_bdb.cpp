@@ -204,7 +204,8 @@ void s_TEST_BDB_Transaction(void)
     cout << "======== Transactions test." << endl;
 
     CBDB_Env env;
-    env.OpenWithTrans(".");
+    env.OpenWithTrans(".", CBDB_Env::eThreaded | CBDB_Env::eRunRecovery);
+    env.OpenErrFile("err_test.txt");
     
     TestDBF3  dbf3;
     
@@ -1912,6 +1913,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.48  2004/06/21 15:11:15  kuznets
+ * Added recovery flag to the transactional test
+ *
  * Revision 1.47  2004/06/14 16:11:15  kuznets
  * Test for read-only cache
  *
