@@ -2,7 +2,7 @@
 
 property pRootFolderName : "ncbi_cxx" -- name of the toolkit directory
 property pRootFolderPath : "" -- full path of the parent of the toolkit directory. Optional
-property pFLTKRootFolder : "Users:rsmith:fltk-1.1.5rc3" -- full path of the FLTK directory. Optional.
+property pFLTKRootFolder : "" -- full path of the FLTK directory. Optional.
 property pBdbRootFolder : "" -- full path of the BDB source folder. Optional.
 property pDLRootFolder : "usr:" -- root folder for the dlcompat library & header file. Usually sw: or usr:.
 property pImageLibsFolder : "sw:" -- root folder for the image libraries and headers.
@@ -74,7 +74,7 @@ on ProjectData(projName, features, aFileData)
 		set myFeatures to features
 		
 		return {name:projName, features:myFeatures, rsrcs:{}, settings:Â
-			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, sysPaths:{}, fileData:Â
+			{Prefix File:"", ppcProject:{}}, projLibs:{}, dynaLibs:{}, syspaths:{}, fileData:Â
 			aFileData}
 		
 	end tell
@@ -602,7 +602,7 @@ on SetupTarget(proj, targetIndex)
 		-- initialize variables
 		set projRsrcs to {}
 		set projFeatures to {}
-		set sysPaths to {}
+		set syspaths to {}
 		
 		-- Grab the fields of our project record and store them in local variables.
 		set projName to proj's name
@@ -611,7 +611,7 @@ on SetupTarget(proj, targetIndex)
 			set projFeatures to proj's features
 		end try
 		try
-			set sysPaths to proj's sysPaths
+			set syspaths to proj's syspaths
 		end try
 		try
 			set projRsrcs to proj's rsrcs
