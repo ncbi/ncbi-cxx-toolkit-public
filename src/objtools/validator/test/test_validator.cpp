@@ -117,11 +117,11 @@ void CTest_validatorApplication::Init(void)
     
     arg_desc->AddDefaultKey
         ("e", "SeqEntry", "Input is Seq-entry [T/F]",
-        CArgDescriptions::eString, "false");
+        CArgDescriptions::eBoolean, "false");
     
     arg_desc->AddDefaultKey
         ("b", "SeqSubmit", "Input is Seq-submit [T/F]",
-        CArgDescriptions::eString, "false");
+        CArgDescriptions::eBoolean, "false");
 
     // Program description
     string prog_description = "Test driver for Validate()\n";
@@ -170,7 +170,7 @@ int CTest_validatorApplication::Run(void)
     auto_ptr<CObjectIStream> in(CObjectIStream::Open(fname, eSerial_AsnText));
     auto_ptr<CValidError> eval;
 
-    if ( args["e"] ) {
+    if ( args["e"].AsBoolean() ) {
         // Create CSeq_entry to be validated from file
         CRef<CSeq_entry> se(new CSeq_entry);
         
@@ -179,7 +179,7 @@ int CTest_validatorApplication::Run(void)
         
         // Validae Seq-entry
         eval.reset(new CValidError(*obj_mgr, *se, options));
-    } else if ( args["s"] ) {
+    } else if ( args["b"].AsBoolean() ) {
         
         // Create CSeq_submit to be validated from file
         CRef<CSeq_submit> ss(new CSeq_submit);
@@ -221,6 +221,9 @@ int main(int argc, const char* argv[])
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2003/01/28 16:01:22  shomrat
+ * Bug fixes
+ *
  * Revision 1.4  2003/01/24 22:04:33  shomrat
  * Added flags to specify input format (Seq-entry or Seq-submit)
  *
