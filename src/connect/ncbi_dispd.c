@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.29  2001/09/24 20:30:01  lavr
+ * Reset() VT method added and utilized
+ *
  * Revision 6.28  2001/09/10 21:23:53  lavr
  * "Relay-Mode:" tag eliminated from the dispatcher protocol
  *
@@ -145,12 +148,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    static void s_Reset(SERV_ITER iter);
     static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env);
     static int/*bool*/ s_Update(SERV_ITER iter, const char* text);
     static void s_Close(SERV_ITER iter);
 
     static const SSERV_VTable s_op = {
-        s_GetNextInfo, s_Update, 0, s_Close, "DISPD"
+        s_Reset, s_GetNextInfo, s_Update, 0, s_Close, "DISPD"
     };
 #ifdef __cplusplus
 } /* extern "C" */
@@ -174,21 +178,28 @@ typedef struct {
 } SDISPD_Data;
 
 
-static void s_FreeData(SDISPD_Data* data)
+static int/*bool*/ s_ResetData(SDISPD_Data* data)
 {
     if (!data)
-        return;
-
+        return 0/*false*/;
     if (data->s_node) {
         size_t i;
-
+        assert(data->n_max_node);
         for (i = 0; i < data->n_node; i++)
             free(data->s_node[i].info);
-        free(data->s_node);
+        data->n_node = 0;
     }
+    return 1/*true*/;
+}
 
+
+static void s_FreeData(SDISPD_Data* data)
+{
+    if (!s_ResetData(data))
+        return;
+    if (data->s_node)
+        free(data->s_node);
     ConnNetInfo_Destroy(data->net_info);
-
     free(data);
 }
 
@@ -444,12 +455,16 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, char** env)
 }
 
 
+static void s_Reset(SERV_ITER iter)
+{
+    s_ResetData((SDISPD_Data*) iter->data);
+}
+
+
 static void s_Close(SERV_ITER iter)
 {
-    if (iter->data) {
-        s_FreeData((SDISPD_Data*) iter->data);
-        iter->data = 0;
-    }
+    s_FreeData((SDISPD_Data*) iter->data);
+    iter->data = 0;
 }
 
 
@@ -478,8 +493,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
     iter->data = data;
 
     if (!s_Resolve(iter)) {
-        iter->data = 0;
-        s_FreeData(data);
+        s_Close(iter);
         return 0;
     }
 
