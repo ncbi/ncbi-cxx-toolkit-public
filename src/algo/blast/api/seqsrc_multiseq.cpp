@@ -209,11 +209,14 @@ static Int2 MultiSeqGetSequence(void* multiseq_handle, void* args)
     BlastSequenceBlkCopy(&seq_args->seq, seq_info->GetSeqBlk(index));
     /* If this is a nucleotide sequence, and it is the traceback stage, 
        we need the uncompressed buffer, stored in the 'sequence_start' 
-       pointer. */
-    if (seq_args->encoding != BLASTP_ENCODING &&
-        seq_args->encoding != NCBI2NA_ENCODING) {
+       pointer. That buffer has an extra sentinel byte for blastn, but
+       no sentinel byte for translated programs. */
+    if (seq_args->encoding == BLASTNA_ENCODING) {
         seq_args->seq->sequence = seq_args->seq->sequence_start + 1;
+    } else if (seq_args->encoding == NCBI4NA_ENCODING) {
+        seq_args->seq->sequence = seq_args->seq->sequence_start;
     }
+
     seq_args->seq->oid = index;
     return BLAST_SEQSRC_SUCCESS;
 }
@@ -442,6 +445,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.13  2004/03/26 19:18:40  dondosha
+ * Minor correction in assigning sequence pointer in returned sequence block
+ *
  * Revision 1.12  2004/03/24 22:12:46  dondosha
  * Fixed memory leaks
  *
