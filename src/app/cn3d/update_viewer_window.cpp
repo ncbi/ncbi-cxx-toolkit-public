@@ -66,7 +66,7 @@ BEGIN_EVENT_TABLE(UpdateViewerWindow, wxFrame)
     EVT_MENU_RANGE(MID_DELETE_ONE, MID_DELETE_ALL,      UpdateViewerWindow::OnDelete)
     EVT_MENU_RANGE(MID_IMPORT_SEQUENCES, MID_IMPORT_STRUCTURE,  UpdateViewerWindow::OnImport)
     EVT_MENU_RANGE(MID_BLAST_ONE, MID_BLAST_NEIGHBOR,   UpdateViewerWindow::OnRunBlast)
-    EVT_MENU      (MID_SET_REGION,                      UpdateViewerWindow::OnSetRegion)
+    EVT_MENU_RANGE(MID_SET_REGION, MID_RESET_REGIONS,   UpdateViewerWindow::OnSetRegion)
     EVT_MENU_RANGE(MID_BLOCKALIGN_ONE, MID_BLOCKALIGN_ALL,  UpdateViewerWindow::OnBlockAlign)
 END_EVENT_TABLE()
 
@@ -103,6 +103,7 @@ UpdateViewerWindow::UpdateViewerWindow(UpdateViewer *thisUpdateViewer) :
     menu->Append(MID_THREAD_ALL, "Thread &All");
     menu->AppendSeparator();
     menu->Append(MID_SET_REGION, "Set &Region", "", true);
+    menu->Append(MID_RESET_REGIONS, "Reset All Re&gions");
     menuBar->Append(menu, "Al&gorithms");
 
     // Alignments menu
@@ -324,6 +325,14 @@ void UpdateViewerWindow::OnSetRegion(wxCommandEvent& event)
             SetCursor(*wxCROSS_CURSOR);
         else
             SetRegionOff();
+    }
+
+    else if (event.GetId() == MID_RESET_REGIONS) {
+		UpdateViewer::AlignmentList::const_iterator a, ae = updateViewer->GetCurrentAlignments().end();
+        for (a=updateViewer->GetCurrentAlignments().begin(); a!=ae; a++) {
+            (*a)->alignSlaveFrom = -1;
+            (*a)->alignSlaveTo = -1;
+        }
     }
 }
 
@@ -611,6 +620,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.58  2003/09/25 15:14:09  thiessen
+* add Reset All Regions command
+*
 * Revision 1.57  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *

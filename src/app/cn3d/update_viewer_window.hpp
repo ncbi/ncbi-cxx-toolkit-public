@@ -76,6 +76,7 @@ private:
         MID_BLOCKALIGN_ONE,
         MID_BLOCKALIGN_ALL,
         MID_SET_REGION,
+        MID_RESET_REGIONS,
         MID_MERGE_ONE,
         MID_MERGE_NEIGHBOR,
         MID_MERGE_ALL,
@@ -233,6 +234,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2003/09/25 15:14:09  thiessen
+* add Reset All Regions command
+*
 * Revision 1.35  2003/02/03 19:20:08  thiessen
 * format changes: move CVS Log to bottom of file, remove std:: from .cpp files, and use new diagnostic macros
 *
