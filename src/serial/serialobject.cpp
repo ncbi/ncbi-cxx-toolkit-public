@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/01/06 17:14:15  gouriano
+* corrected CSerialObject::DebugDump: disabled autoseparator in output stream
+*
 * Revision 1.4  2002/07/30 20:24:58  grichenk
 * Fixed error messages in Assign() and Equals()
 *
@@ -84,6 +87,7 @@ void CSerialObject::DebugDump(CDebugDumpContext ddc, unsigned int depth) const
     ostrstream ostr;
     ostr << endl << "****** begin ASN dump ******" << endl;
     auto_ptr<CObjectOStream> oos(CObjectOStream::Open(eSerial_AsnText, ostr));
+    oos->SetAutoSeparator(false);
     oos->Write(this, GetThisTypeInfo());
     ostr << endl << "****** end   ASN dump ******" << endl;
     ostr << '\0';
