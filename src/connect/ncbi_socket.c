@@ -1094,7 +1094,6 @@ static EIO_Status s_Recv(SOCK        sock,
 
     *n_read = 0;
 
-    /* Check against an invalid socket */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error, "[SOCK::Read]  Invalid socket");
         assert(0);
@@ -1242,6 +1241,7 @@ static EIO_Status s_WriteWhole(SOCK        sock,
         assert(0);
         return eIO_Unknown;
     }
+
     /* Check against already shutdown socket */
     if (sock->w_status == eIO_Closed) {
         CORE_LOG(eLOG_Warning,
@@ -1407,11 +1407,13 @@ extern EIO_Status SOCK_Shutdown(SOCK      sock,
                                 EIO_Event how)
 {
     int x_how;
+
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error, "[SOCK::Shutdown]  Invalid socket");
         assert(0);
         return eIO_Unknown;
     }
+
     switch ( how ) {
     case eIO_Read:
         if ( sock->is_eof ) {
@@ -1454,7 +1456,6 @@ extern EIO_Status SOCK_Close(SOCK sock)
 {
     EIO_Status status;
 
-    /* Check against an invalid socket */
     if (sock->sock == SOCK_INVALID) {
         CORE_LOG(eLOG_Error, "[SOCK::Close]  Invalid socket");
         assert(0);
@@ -1686,6 +1687,7 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
         assert(0);
         return eIO_Unknown;
     }
+
     return BUF_PushBack(&sock->buf, buf, size) ? eIO_Success : eIO_Unknown;
 }
 
@@ -1749,7 +1751,8 @@ extern EIO_Status SOCK_Write(SOCK            sock,
 extern void SOCK_GetPeerAddress(SOCK            sock,
                                 unsigned int*   host,
                                 unsigned short* port,
-                                ENH_ByteOrder   byte_order) {
+                                ENH_ByteOrder   byte_order)
+{
     if ( host ) {
         *host = (unsigned int)
             (byte_order != eNH_HostByteOrder ? sock->host : ntohl(sock->host));
@@ -1998,6 +2001,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.64  2002/09/13 19:26:46  lavr
+ * Few style-conforming changes
+ *
  * Revision 6.63  2002/09/06 15:45:03  lavr
  * Return eIO_InvalidArg instead of generic eIO_Unknown where appropriate
  *
