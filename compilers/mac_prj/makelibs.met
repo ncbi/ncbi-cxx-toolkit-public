@@ -137,7 +137,7 @@ on SetProjectData()
 	--		"types", "handle_stack", "pointer_pot"})
 	
 	AddSimpleProject("util", {"C++"}, "util", ¬
-		{"bytesrc", "strbuffer", "checksum", "ddump_viewer", "itree", "stream_pushback", "thread_pool", "utf8", "random_gen", "smalldns"})
+		{"bytesrc", "strbuffer", "checksum", "ddump_viewer", "itree", "stream_pushback", "thread_pool", "utf8", "random_gen", "smalldns", "strsearch"})
 		
 	AddSimpleProject("pbacktest", {"C++"}, "util:test", {"pbacktest"})
 	

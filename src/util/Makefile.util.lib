@@ -1,6 +1,6 @@
 # $Id$
 
 SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
-         stream_pushback thread_pool ddump_viewer
+         stream_pushback thread_pool ddump_viewer strsearch
 
 LIB    = xutil
