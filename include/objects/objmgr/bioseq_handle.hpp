@@ -95,6 +95,9 @@ public:
     // The resulting map should contain regions of literals, gaps
     // and references to literals only (but not gaps or refs) of other
     // sequences.
+    // WARNING: the returned object should be stored as a CRef<> or
+    // deleted manually. Do not assign the returned value to a simple
+    // reference.
     virtual const CSeqMap& CreateResolvedSeqMap(void) const;
 
     // Get sequence: Iupacna or Iupacaa if use_iupac_coding is true
@@ -249,6 +252,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/08/23 16:49:06  grichenk
+* Added warning about using CreateResolvedSeqMap()
+*
 * Revision 1.22  2002/07/08 20:50:56  grichenk
 * Moved log to the end of file
 * Replaced static mutex (in CScope, CDataSource) with the mutex
