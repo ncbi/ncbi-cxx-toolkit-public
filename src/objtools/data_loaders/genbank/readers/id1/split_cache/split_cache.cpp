@@ -592,7 +592,10 @@ void CSplitCacheApp::ProcessSeqId(const CSeq_id& id)
                 CLevelGuard level(m_RecursionLevel);
                 set<CSeq_id_Handle> ids;
                 // collect referenced sequences
-                for ( CSeqMap_CI it(bh.GetSeqMap().BeginResolved(m_Scope, 0, CSeqMap::fFindRef)); it; ++it ) {
+                for ( CSeqMap_CI it(bh.GetSeqMap().
+                    BeginResolved(m_Scope, SSeqMapSelector()
+                    .SetResolveCount(0)
+                    .SetFlags(CSeqMap::fFindRef))); it; ++it ) {
                     ids.insert(it.GetRefSeqid());
                 }
                 bh = CBioseq_Handle();
@@ -809,6 +812,10 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.29  2004/09/07 14:28:36  vasilche
 * Reset scope history before processing segments.
 *

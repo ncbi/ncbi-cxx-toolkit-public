@@ -92,7 +92,7 @@ struct SSeqMapSelector;
 class NCBI_XOBJMGR_EXPORT CSeqMap : public CObject
 {
 public:
-    // typedefs
+    // SeqMap segment type
     enum ESegmentType {
         eSeqGap,              ///< gap
         eSeqData,             ///< real sequence data
@@ -148,9 +148,6 @@ protected:
     };
 
 public:
-    // typedef CSeqMap_CI CSegmentInfo; // for compatibility
-    // typedef CSeqMap_CI TSegment_CI;
-
     typedef CSeqMap_CI const_iterator;
     
     ~CSeqMap(void);
@@ -159,15 +156,17 @@ public:
     TMol GetMol(void) const;
 
     // new interface
-    // STL style methods
+    /// STL style methods
     const_iterator begin(CScope* scope) const;
     const_iterator end(CScope* scope) const;
 
-    // NCBI style methods
+    /// NCBI style methods
     CSeqMap_CI Begin(CScope* scope) const;
     CSeqMap_CI End(CScope* scope) const;
+    /// Find segment containing the position
     CSeqMap_CI FindSegment(TSeqPos pos, CScope* scope) const;
 
+    /// Segment type flags
     enum EFlags {
         fFindData     = (1<<0),
         fFindGap      = (1<<1),
@@ -180,34 +179,24 @@ public:
     };
     typedef int TFlags;
 
-    // resolved iterators
-    CSeqMap_CI BeginResolved(CScope* scope,
-                             size_t maxResolveCount = size_t(-1),
-                             TFlags flags = fDefaultFlags) const;
-    CSeqMap_CI FindResolved(CScope* scope,
-                            SSeqMapSelector& selector) const;
-    CSeqMap_CI FindResolved(CScope* scope,
-                            TSeqPos pos,
-                            SSeqMapSelector& selector) const;
-    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
-                            size_t maxResolveCount = size_t(-1),
-                            TFlags flags = fDefaultFlags) const;
-    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
-                            ENa_strand strand,
-                            size_t maxResolveCount = size_t(-1),
-                            TFlags flags = fDefaultFlags) const;
-    CSeqMap_CI EndResolved(CScope* scope,
-                           size_t maxResolveCount = size_t(-1),
-                           TFlags flags = fDefaultFlags) const;
+    CSeqMap_CI BeginResolved(CScope* scope) const;
+    CSeqMap_CI BeginResolved(CScope*                scope,
+                             const SSeqMapSelector& selector) const;
+    CSeqMap_CI EndResolved(CScope* scope) const;
+    CSeqMap_CI EndResolved(CScope*                scope,
+                           const SSeqMapSelector& selector) const;
+    CSeqMap_CI FindResolved(CScope*                scope,
+                            TSeqPos                pos,
+                            const SSeqMapSelector& selector) const;
 
-    // iterate range with specified strand coordinates
+    /// Iterate segments in the range with specified strand coordinates
     CSeqMap_CI ResolvedRangeIterator(CScope* scope,
                                      TSeqPos from,
                                      TSeqPos length,
                                      ENa_strand strand = eNa_strand_plus,
                                      size_t maxResolve = size_t(-1),
                                      TFlags flags = fDefaultFlags) const;
-    
+
     bool CanResolveRange(CScope* scope,
                          TSeqPos from,
                          TSeqPos length,
@@ -320,6 +309,36 @@ protected:
     
     friend class CSeqMap_CI;
     friend class CSeqMap_CI_SegmentInfo;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    /// @deprecated
+    /// Get iterator for resolved SeqMap
+    CSeqMap_CI BeginResolved(CScope* scope,
+                             size_t maxResolveCount,
+                             TFlags flags = fDefaultFlags) const;
+    /// @deprecated
+    /// Get iterator for resolved SeqMap starting from segment containing pos.
+    CSeqMap_CI FindResolved(CScope* scope,
+                            const SSeqMapSelector& selector) const;
+    /// @deprecated
+    /// Get iterator for resolved SeqMap starting from segment containing pos.
+    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
+                            size_t maxResolveCount = size_t(-1),
+                            TFlags flags = fDefaultFlags) const;
+    /// @deprecated
+    /// Get iterator for resolved SeqMap starting from segment containing pos.
+    CSeqMap_CI FindResolved(TSeqPos pos, CScope* scope,
+                            ENa_strand strand,
+                            size_t maxResolveCount = size_t(-1),
+                            TFlags flags = fDefaultFlags) const;
+    /// @deprecated
+    /// Get end iterator for resolved SeqMap
+    CSeqMap_CI EndResolved(CScope* scope,
+                           size_t maxResolveCount,
+                           TFlags flags = fDefaultFlags) const;
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -335,6 +354,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2004/12/14 17:41:02  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.54  2004/11/22 16:04:47  grichenk
 * Added IsUnknownLength()
 *

@@ -242,7 +242,11 @@ TSeqPos CSeqVector_CI::x_GetSize(void) const
 inline
 void CSeqVector_CI::x_InitSeg(TSeqPos pos)
 {
-    m_Seg = m_SeqMap->FindResolved(pos, m_Scope.GetScopeOrNull(), m_Strand);
+    m_Seg = m_SeqMap->FindResolved(m_Scope.GetScopeOrNull(),
+                                   pos,
+                                   SSeqMapSelector()
+                                   .SetResolveCount(size_t(-1))
+                                   .SetStrand(m_Strand));
 }
 
 
@@ -766,6 +770,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.37  2004/10/27 16:36:28  vasilche
 * Added methods for working with gaps.
 *

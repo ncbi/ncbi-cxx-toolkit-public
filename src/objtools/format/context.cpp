@@ -568,7 +568,10 @@ void CMasterContext::x_SetBaseName(void)
     CScope* scope = &m_Handle.GetScope();
     CBioseq_Handle segment;
     const CSeqMap& seqmap = m_Handle.GetSeqMap();
-    CSeqMap_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+    CSeqMap_CI it = seqmap.BeginResolved(scope,
+                                         SSeqMapSelector()
+                                         .SetResolveCount(1)
+                                         .SetFlags(CSeqMap::fFindRef));
     while (it) {
         CSeq_id_Handle id = it.GetRefSeqid();
         segment = scope->GetBioseqHandleFromTSE(id, m_Handle);
@@ -603,6 +606,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.29  2004/11/24 16:50:21  shomrat
 * + IsGenbank
 *

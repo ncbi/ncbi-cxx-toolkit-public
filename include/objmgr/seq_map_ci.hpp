@@ -96,11 +96,12 @@ private:
 };
 
 
+/// Selector used in CSeqMap methods returning iterators.
 struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
 {
     typedef CSeqMap::TFlags TFlags;
 
-    SSeqMapSelector()
+    SSeqMapSelector(void)
         : m_Position(0),
           m_Length(kInvalidSeqPos),
           m_MinusStrand(false),
@@ -109,12 +110,14 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
         {
         }
 
+    /// Find segment containing the position
     SSeqMapSelector& SetPosition(TSeqPos pos)
         {
             m_Position = pos;
             return *this;
         }
 
+    /// Set range for iterator
     SSeqMapSelector& SetRange(TSeqPos start, TSeqPos length)
         {
             m_Position = start;
@@ -122,20 +125,25 @@ struct NCBI_XOBJMGR_EXPORT SSeqMapSelector
             return *this;
         }
 
+    /// Set strand to iterate over
     SSeqMapSelector& SetStrand(ENa_strand strand)
         {
             m_MinusStrand = IsReverse(strand);
             return *this;
         }
+
+    /// Set max depth of resolving seq-map
     SSeqMapSelector& SetResolveCount(size_t res_cnt)
         {
             m_MaxResolveCount = res_cnt;
             return *this;
         }
 
+    /// Limit TSE to resolve references
     SSeqMapSelector& SetLimitTSE(const CSeq_entry* tse);
     SSeqMapSelector& SetLimitTSE(const CSeq_entry_Handle& tse);
 
+    /// Select segment type(s)
     SSeqMapSelector& SetFlags(TFlags flags)
         {
             m_Flags = flags;
@@ -177,7 +185,7 @@ private:
 };
 
 
-// iterator through CSeqMap
+/// Iterator over CSeqMap
 class NCBI_XOBJMGR_EXPORT CSeqMap_CI
 {
 public:
@@ -185,23 +193,9 @@ public:
 
     CSeqMap_CI(void);
     CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
-               CScope* scope,
-               TSeqPos position,
-               size_t maxResolveCount = 0,
-               TFlags flags = CSeqMap::fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-               CScope* scope,
-               TSeqPos position,
-               ENa_strand strand,
-               size_t maxResolveCount,
-               TFlags flags = CSeqMap::fDefaultFlags);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
-               CScope* scope,
-               const SSeqMapSelector& selector);
-    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
-               CScope* scope,
-               TSeqPos pos,
-               const SSeqMapSelector& selector);
+               CScope*                   scope,
+               const SSeqMapSelector&    selector,
+               TSeqPos                   pos = 0);
 
     ~CSeqMap_CI(void);
 
@@ -302,6 +296,24 @@ private:
     CHeapScope           m_Scope;
     // iterator parameters
     SSeqMapSelector      m_Selector;
+
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+public:
+    /// @deprecated
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqmap,
+               CScope* scope,
+               TSeqPos position,
+               size_t maxResolveCount = 0,
+               TFlags flags = CSeqMap::fDefaultFlags);
+    /// @deprecated
+    CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+               CScope* scope,
+               TSeqPos position,
+               ENa_strand strand,
+               size_t maxResolveCount,
+               TFlags flags = CSeqMap::fDefaultFlags);
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
 };
 
 
@@ -317,6 +329,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2004/12/14 17:41:02  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.19  2004/11/22 16:04:47  grichenk
 * Added IsUnknownLength()
 *

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.13  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.12  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *
@@ -344,9 +348,9 @@ bool CTestOM::Thread_Run(int idx)
                 if ( !m_no_seq_map ) {
                     CSeqMap_CI it(ConstRef(&handle.GetSeqMap()),
                                   &scope,
-                                  0,
-                                  kMax_Int,
-                                  CSeqMap::fFindRef);
+                                  SSeqMapSelector()
+                                  .SetFlags(CSeqMap::fFindRef),
+                                  0);
                     while ( it ) {
                         _ASSERT(it.GetType() == CSeqMap::eSeqRef);
                         ++it;

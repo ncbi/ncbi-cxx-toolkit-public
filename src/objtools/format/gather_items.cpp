@@ -254,7 +254,10 @@ void CFlatGatherer::x_DoMultipleSections(const CBioseq_Handle& seq) const
     CScope* scope = &seq.GetScope();
     const CSeqMap& seqmap = seq.GetSeqMap();
 
-    CSeqMap_CI it = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+    CSeqMap_CI it = seqmap.BeginResolved(scope,
+                                         SSeqMapSelector()
+                                         .SetResolveCount(1)
+                                         .SetFlags(CSeqMap::fFindRef));
     while ( it ) {
         CSeq_id_Handle id = it.GetRefSeqid();
         CBioseq_Handle part = scope->GetBioseqHandleFromTSE(id, seq);
@@ -747,7 +750,10 @@ void CFlatGatherer::x_CollectSourceDescriptors
     if ( ctx.IsSegmented() ) {
         const CSeqMap& seqmap = bh.GetSeqMap();
 
-        CSeqMap_CI smit = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+        CSeqMap_CI smit = seqmap.BeginResolved(scope,
+                                               SSeqMapSelector()
+                                               .SetResolveCount(1)
+                                               .SetFlags(CSeqMap::fFindRef));
         for (; smit; ++smit) {
             // biosource descriptors only on parts within TSE
             CBioseq_Handle segh = scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(), bh);
@@ -1446,6 +1452,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.34  2004/11/24 16:50:53  shomrat
 * Generate gaps from delta bioseqs
 *

@@ -1209,8 +1209,8 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
                                    const CSeq_id* top_id)
 {
     CSeqMap::const_iterator seg_it =
-        seq_map.BeginResolved(m_Scope.GetPointerOrNull(), size_t(-1),
-        CSeqMap::fFindRef);
+        seq_map.BeginResolved(m_Scope.GetPointerOrNull(),
+                              SSeqMapSelector().SetFlags(CSeqMap::fFindRef));
 
     TSeqPos top_start = kInvalidSeqPos;
     TSeqPos top_stop = kInvalidSeqPos;
@@ -1258,8 +1258,9 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
                                    const CSeq_id* top_id)
 {
     CSeqMap::const_iterator seg_it =
-        seq_map.BeginResolved(m_Scope.GetPointerOrNull(), depth,
-        CSeqMap::fFindRef);
+        seq_map.BeginResolved(m_Scope.GetPointerOrNull(),
+                              SSeqMapSelector().SetResolveCount(depth)
+                              .SetFlags(CSeqMap::fFindRef));
 
     TSeqPos top_start = kInvalidSeqPos;
     TSeqPos top_stop = kInvalidSeqPos;
@@ -2017,6 +2018,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.31  2004/11/24 16:21:36  grichenk
 * Check iterator when merging abutting ranges
 *

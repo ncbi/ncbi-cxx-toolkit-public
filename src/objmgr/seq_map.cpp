@@ -385,19 +385,28 @@ bool CSeqMap::x_GetRefMinusStrand(const CSegment& seg) const
 
 CSeqMap_CI CSeqMap::Begin(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, 0);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector(),
+                      0);
 }
 
 
 CSeqMap_CI CSeqMap::End(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, GetLength(scope));
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector(),
+                      GetLength(scope));
 }
 
 
 CSeqMap_CI CSeqMap::FindSegment(TSeqPos pos, CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, pos);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector(),
+                      pos);
 }
 
 
@@ -413,59 +422,45 @@ CSeqMap::const_iterator CSeqMap::end(CScope* scope) const
 }
 
 
-CSeqMap_CI CSeqMap::BeginResolved(CScope* scope,
-                                  size_t maxResolveCount,
-                                  TFlags flags) const
-{
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, 0,
-                      maxResolveCount, flags);
-}
-
-
-CSeqMap_CI CSeqMap::EndResolved(CScope* scope,
-                                size_t maxResolveCount,
-                                TFlags flags) const
-{
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
-                      GetLength(scope),
-                      maxResolveCount, flags);
-}
-
-
-CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
-                                 SSeqMapSelector& selector) const
+CSeqMap_CI CSeqMap::BeginResolved(CScope*                scope,
+                                  const SSeqMapSelector& selector) const
 {
     return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, selector);
 }
 
 
-CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
-                                 TSeqPos pos,
-                                 SSeqMapSelector& selector) const
+CSeqMap_CI CSeqMap::BeginResolved(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, pos, selector);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector().SetResolveCount(size_t(-1)));
 }
 
 
-CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
-                                 CScope* scope,
-                                 size_t maxResolveCount,
-                                 TFlags flags) const
+CSeqMap_CI CSeqMap::EndResolved(CScope* scope) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, pos,
-                      maxResolveCount, flags);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector().SetResolveCount(size_t(-1)),
+                      GetLength(scope));
 }
 
 
-CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
-                                 CScope* scope,
-                                 ENa_strand strand,
-                                 size_t maxResolveCount,
-                                 TFlags flags) const
+CSeqMap_CI CSeqMap::EndResolved(CScope*                scope,
+                                const SSeqMapSelector& selector) const
 {
-    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope,
-                      pos, strand,
-                      maxResolveCount, flags);
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      selector,
+                      GetLength(scope));
+}
+
+
+CSeqMap_CI CSeqMap::FindResolved(CScope*                scope,
+                                 TSeqPos                pos,
+                                 const SSeqMapSelector& selector) const
+{
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, selector, pos);
 }
 
 
@@ -594,7 +589,8 @@ CConstRef<CSeqMap> CSeqMap::CreateSeqMapForSeq_loc(const CSeq_loc& loc,
     CConstRef<CSeqMap> ret(new CSeqMap(loc));
     if ( scope ) {
         CSeqMap::const_iterator i(
-            ret->BeginResolved(scope, size_t(-1), fFindData));
+            ret->BeginResolved(scope,
+                               SSeqMapSelector().SetFlags(fFindData)));
         for ( ; i; ++i ) {
             _ASSERT(i.GetType() == eSeqData);
             switch ( i.GetRefData().Which() ) {
@@ -861,12 +857,110 @@ void CSeqMap::SetRegionInChunk(CTSE_Chunk_Info& chunk,
 }
 
 
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+CSeqMap_CI CSeqMap::BeginResolved(CScope* scope,
+                                  size_t maxResolveCount,
+                                  TFlags flags) const
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI CSeqMap::BeginResolved(CScope* scope,\n"
+        "                                size_t maxResolveCount,\n"
+        "                                TFlags flags) const\n");
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector()
+                      .SetResolveCount(maxResolveCount)
+                      .SetFlags(flags));
+}
+
+
+CSeqMap_CI CSeqMap::EndResolved(CScope* scope,
+                                size_t maxResolveCount,
+                                TFlags flags) const
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI CSeqMap::EndResolved(CScope* scope,\n"
+        "                                size_t maxResolveCount,\n"
+        "                                TFlags flags) const\n");
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector()
+                      .SetResolveCount(maxResolveCount)
+                      .SetFlags(flags),
+                      GetLength(scope));
+}
+
+
+CSeqMap_CI CSeqMap::FindResolved(CScope* scope,
+                                 const SSeqMapSelector& selector) const
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI CSeqMap::FindResolved(CScope* scope,\n"
+        "                                const SSeqMapSelector& selector) const\n");
+    return CSeqMap_CI(CConstRef<CSeqMap>(this), scope, selector);
+}
+
+
+CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
+                                 CScope* scope,
+                                 size_t maxResolveCount,
+                                 TFlags flags) const
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,\n"
+        "                                CScope* scope,\n"
+        "                                size_t maxResolveCount,\n"
+        "                                TFlags flags) const\n");
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector()
+                      .SetResolveCount(maxResolveCount)
+                      .SetFlags(flags),
+                      pos);
+}
+
+
+CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,
+                                 CScope* scope,
+                                 ENa_strand strand,
+                                 size_t maxResolveCount,
+                                 TFlags flags) const
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI CSeqMap::FindResolved(TSeqPos pos,\n"
+        "                                CScope* scope,\n"
+        "                                ENa_strand strand,\n"
+        "                                size_t maxResolveCount,\n"
+        "                                TFlags flags) const\n");
+    return CSeqMap_CI(CConstRef<CSeqMap>(this),
+                      scope,
+                      SSeqMapSelector()
+                      .SetResolveCount(maxResolveCount)
+                      .SetFlags(flags)
+                      .SetStrand(strand),
+                      pos);
+}
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.63  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.62  2004/11/22 16:04:47  grichenk
 * Added IsUnknownLength()
 *

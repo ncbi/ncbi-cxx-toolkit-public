@@ -114,51 +114,11 @@ CSeqMap_CI::CSeqMap_CI(void)
         .SetFlags(CSeqMap::fDefaultFlags);
 }
 
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       TSeqPos pos,
-                       size_t maxResolveCount,
-                       TFlags flags)
-    : m_Scope(scope)
-{
-    x_Select(seqMap,
-             SSeqMapSelector().
-             SetResolveCount(maxResolveCount).
-             SetFlags(flags),
-             pos);
-}
-
 
 CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       TSeqPos pos,
-                       ENa_strand strand,
-                       size_t maxResolveCount,
-                       TFlags flags)
-    : m_Scope(scope)
-{
-    x_Select(seqMap,
-             SSeqMapSelector().
-             SetStrand(strand).
-             SetResolveCount(maxResolveCount).
-             SetFlags(flags),
-             pos);
-}
-
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       const SSeqMapSelector& selector)
-    : m_Scope(scope)
-{
-    x_Select(seqMap, selector, 0);
-}
-
-
-CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
-                       CScope* scope,
-                       TSeqPos pos,
-                       const SSeqMapSelector& selector)
+                       CScope*                   scope,
+                       const SSeqMapSelector&    selector,
+                       TSeqPos                   pos)
     : m_Scope(scope)
 {
     x_Select(seqMap, selector, pos);
@@ -543,6 +503,59 @@ void CSeqMap_CI::SetFlags(TFlags flags)
 }
 
 
+#if !defined REMOVE_OBJMGR_DEPRECATED_METHODS
+// !!!!! Deprecated methods !!!!!
+
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       TSeqPos pos,
+                       size_t maxResolveCount,
+                       TFlags flags)
+    : m_Scope(scope)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,\n"
+        "                    CScope* scope,\n"
+        "                    TSeqPos pos,\n"
+        "                    size_t maxResolveCount,\n"
+        "                    TFlags flags)\n");
+    x_Select(seqMap,
+             SSeqMapSelector().
+             SetResolveCount(maxResolveCount).
+             SetFlags(flags),
+             pos);
+}
+
+
+CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,
+                       CScope* scope,
+                       TSeqPos pos,
+                       ENa_strand strand,
+                       size_t maxResolveCount,
+                       TFlags flags)
+    : m_Scope(scope)
+{
+    ERR_POST_ONCE(Warning<<
+        "Deprecated method:\n"
+        "CSeqMap_CI::CSeqMap_CI(const CConstRef<CSeqMap>& seqMap,\n"
+        "                    CScope* scope,\n"
+        "                    TSeqPos pos,\n"
+        "                    ENa_strand strand,\n"
+        "                    size_t maxResolveCount,\n"
+        "                    TFlags flags)\n");
+    x_Select(seqMap,
+             SSeqMapSelector().
+             SetStrand(strand).
+             SetResolveCount(maxResolveCount).
+             SetFlags(flags),
+             pos);
+}
+
+
+#endif // REMOVE_OBJMGR_DEPRECATED_METHODS
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
@@ -550,6 +563,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2004/12/14 17:41:03  grichenk
+* Reduced number of CSeqMap::FindResolved() methods, simplified
+* BeginResolved and EndResolved. Marked old methods as deprecated.
+*
 * Revision 1.31  2004/11/22 16:04:47  grichenk
 * Added IsUnknownLength()
 *
