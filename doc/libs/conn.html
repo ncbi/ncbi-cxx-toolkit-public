@@ -54,7 +54,7 @@ Functionality of the library includes:
 <u>Note:</u>
 The most lower-level SOCK interface is not covered in this document.
 Well-commented API can be found in
-<a href="../lxr/source/include/connect/ncbi_socket.h"><i><b>include/connect/ncbi_socket.h</b></i></a>.
+<a href="../lxr/source/include/connect/ncbi_socket.h"><i><b>connect/ncbi_socket.h</b></i></a>.
 
 <p>
 <hr>
@@ -67,7 +67,7 @@ There are 3 simple types of connections: <i>socket</i>, <i>file</i> and
 
 <p>
 A connection is created with a call to <a href="../lxr/ident?i=CONN_Create"><i><b>CONN_Create()</b></i></a>,
-declared in <a href="../lxr/source/include/connect/ncbi_connection.h"><i><b>include/connect/ncbi_connection.h</b></i></a>,
+declared in <a href="../lxr/source/include/connect/ncbi_connection.h"><i><b>connect/ncbi_connection.h</b></i></a>,
 and returned by a pointer to <i><b>CONN</b></i> passed as a second argument:
 <pre>
 CONN conn;          /* connection handle */
@@ -78,9 +78,9 @@ a special object implementing functionality of the connection being built.
 Above, for each type of connection there is a special connector in the
 library. For each connector, one or more "constructors" defined, each
 returning the connector's handle. Connectors' constructors are defined in individual
-header files, like <a href="../lxr/source/include/connect/ncbi_socket_connector.h"><i><b>include/connect/ncbi_socket_connector.h</b></i></a>,
-<a href="../lxr/source/include/connect/ncbi_http_connector.h"><i><b>include/connect/ncbi_http_connector.h</b></i></a>,
-<a href="../lxr/source/include/connect/ncbi_service_connector.h"><i><b>include/connect/ncbi_service_connector.h</b></i></a>, etc.
+header files, like <a href="../lxr/source/include/connect/ncbi_socket_connector.h"><i><b>connect/ncbi_socket_connector.h</b></i></a>,
+<a href="../lxr/source/include/connect/ncbi_http_connector.h"><i><b>connect/ncbi_http_connector.h</b></i></a>,
+<a href="../lxr/source/include/connect/ncbi_service_connector.h"><i><b>connect/ncbi_service_connector.h</b></i></a>, etc.
 <b><i>CONN_Create</i></b> resets all timeouts (<a href="#CONN_SetTimeout">see
 below</a>) to the default value <tt>CONN_DEFAULT_TIMEOUT</tt>.
 
@@ -316,7 +316,7 @@ a custom HTTP tag-value (so-called "user-header", in the form "HTTP-Tag: Tag-val
 corresponding field in <tt>info</tt> (see below).
 
 <p>
-Network information structure (from <a href="../lxr/source/include/connect/ncbi_connutil.h"><i><b>include/connect/ncbi_connutil.h</b></i></a>)
+Network information structure (from <a href="../lxr/source/include/connect/ncbi_connutil.h"><i><b>connect/ncbi_connutil.h</b></i></a>)
 defines parameters of the connection point,
 where the HTTP server is running. Not all parameters of the structure,
 depicted below, apply to this connector.
@@ -356,7 +356,7 @@ like <tt>strdup</tt>).
 <p>
 The user code may use this structure by direct filling out the fields. There is,
 however, a better way (and interface!) to deal with
-(defined in <a href="../lxr/source/include/connect/ncbi_connutil.h"><i><b>include/connect/ncbi_connutil.h</b></i></a>):
+(defined in <a href="../lxr/source/include/connect/ncbi_connutil.h"><i><b>connect/ncbi_connutil.h</b></i></a>):
 
 <ul>
 <li> <a href="../lxr/ident?i=ConnNetInfo_Create"><i><b>ConnNetInfo_Create</b></i></a>&nbsp;<tt>(const char* service)</tt><br>
@@ -615,7 +615,7 @@ The named service facility uses the following distinction of server types:
 </ul>
 
 Formal description of these types is given in
-<a href="../lxr/source/include/connect/ncbi_server_info.h"><i><b>include/connect/ncbi_server_info.h</b></i></a>:
+<a href="../lxr/source/include/connect/ncbi_server_info.h"><i><b>connect/ncbi_server_info.h</b></i></a>:
 <pre>
 /* Server types
  */
