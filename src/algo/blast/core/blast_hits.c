@@ -573,7 +573,9 @@ static Boolean Blast_HSPContained(BlastHSP* hsp1, BlastHSP* hsp2)
    return (hsp_start_is_contained && hsp_end_is_contained);
 }
 
-/** Comparison callback function for sorting HSPs by score */
+/** Comparison callback function for sorting HSPs by score. Assumes that both 
+ * HSPs being compared are not NULL.
+ */
 static int
 score_compare_hsps(const void* v1, const void* v2)
 {
@@ -582,10 +584,6 @@ score_compare_hsps(const void* v1, const void* v2)
    h1 = *((BlastHSP**) v1);
    h2 = *((BlastHSP**) v2);
 
-   /* No need to check e-values, because for the same subject sequence e-value
-      is always inverse proportional to score. However e-values are less 
-      sensitive, since they both can be 0, when scores are large but 
-      different. */
    if (h1->score > h2->score)
       return -1;
    else if (h1->score < h2->score)
@@ -629,8 +627,8 @@ static int fuzzy_evalue_comp(double evalue1, double evalue2)
     because lower scoring HSPs might have lower e-values, if they are linked
     with sum statistics.
     E-values are compared only up to a certain precision. */
-static int
-evalue_compare_hsps(const void* v1, const void* v2)
+int
+Blast_HSPEvalueCompareCallback(const void* v1, const void* v2)
 {
    BlastHSP* h1,* h2;
    int retval = 0;
@@ -638,6 +636,14 @@ evalue_compare_hsps(const void* v1, const void* v2)
    h1 = *((BlastHSP**) v1);
    h2 = *((BlastHSP**) v2);
    
+   /* Check if one or both of these are null. Those HSPs should go to the end */
+   if (!h1 && !h2)
+      return 0;
+   else if (!h1)
+      return 1;
+   else if (!h2)
+      return -1;
+
    if ((retval = fuzzy_evalue_comp(h1->evalue, h2->evalue)) != 0)
       return retval;
 
@@ -1682,6 +1688,26 @@ void Blast_HSPListAdjustOffsets(BlastHSPList* hsp_list, Int4 offset)
    }
 }
 
+Boolean Blast_HSPListCheckIfSorted(BlastHSPList* hsp_list)
+{
+   Boolean retval = TRUE;
+   if (hsp_list->hspcnt > 1) {
+      Int4 index;
+      for (index=0; index < hsp_list->hspcnt - 1; ++index) {
+	 if (Blast_HSPEvalueCompareCallback(&hsp_list->hsp_array[index],
+					    &hsp_list->hsp_array[index+1]) > 0) {
+	    retval = FALSE;
+	    break;
+	 }
+      }
+      if (!retval) {
+	 qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
+	       Blast_HSPEvalueCompareCallback);
+      }
+   }
+   return retval;
+}
+
 /** Callback for sorting hsp lists by their best evalue/score;
  * Evalues are compared only up to a relative error of 
  * FUZZY_EVALUE_COMPARE_FACTOR. 
@@ -2078,7 +2104,14 @@ Int2 Blast_HSPResultsSaveRPSHSPList(EBlastProgramType program, BlastHSPResults* 
    /* Purge the NULL HSPLists from the resulting HitList. */
    hit_list->hsplist_count = hit_list->hsplist_max;
    Blast_HitListPurgeNullHSPLists(hit_list);
-   /* Sort the HSPList's by e-value. */
+   /* Sort HSPs in each HSPList by score. Note that e-values are not yet 
+      available here. */
+   for (index = 0; index < hit_list->hsplist_count; ++index) {
+      hsp_list = hit_list->hsplist_array[index];
+      qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
+	    score_compare_hsps);
+   }
+   /* Sort the HSPList's by score (e-values are not yet available). */
    qsort(hit_list->hsplist_array, hit_list->hsplist_count,
          sizeof(BlastHSPList*), evalue_compare_hsp_lists);
    /* Leave only the number of HSPList's allowed by the hitlist size 
@@ -2114,14 +2147,8 @@ Int2 Blast_HSPResultsSaveHSPList(EBlastProgramType program, BlastHSPResults* res
    if (!results || !hit_options)
       return -1;
 
-   /* Sort the HSPs by e-value/score. E-value has a priority here, because
-      lower scoring HSPs in linked sets might have lower e-values, and must
-      be moved higher in the list. */
-   if (hsp_list->hspcnt > 1) {
-      qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
-            evalue_compare_hsps);
-   }
-
+   Blast_HSPListCheckIfSorted(hsp_list);
+   
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
       BlastHSPList* tmp_hsp_list;
