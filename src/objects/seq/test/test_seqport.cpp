@@ -410,7 +410,7 @@ void CSeqportTestApp::IsCodeAvailableESeq()
 void CSeqportTestApp::GetCodeIndexFromToEChoice()
 {
     CSeq_data::E_Choice code_type = GetEChoice();
-    pair<int, int> from_to = 
+    CSeqportUtil::TPair from_to = 
         CSeqportUtil::GetCodeIndexFromTo(code_type);
     cout << "From is " << from_to.first
          << ": To is " << from_to.second << endl;
@@ -419,7 +419,7 @@ void CSeqportTestApp::GetCodeIndexFromToEChoice()
 void CSeqportTestApp::GetCodeIndexFromToESeq()
 {
     ESeq_code_type code_type = GetESeqCodeType();
-    pair<int, int> from_to = 
+    CSeqportUtil::TPair from_to = 
         CSeqportUtil::GetCodeIndexFromTo(code_type);
     cout << "From is " << from_to.first
          << ": To is " << from_to.second << endl;
@@ -1591,6 +1591,9 @@ int main(int argc, const char* argv[])
  /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.7  2002/05/14 17:42:32  ucko
+ * Fix type of from_to.
+ *
  * Revision 1.6  2002/05/14 15:17:15  clausen
  * Reorganized code and added tests for new CSeqportUtil methods
  *
