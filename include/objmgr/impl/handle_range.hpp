@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:20  gouriano
 * restructured objmgr
 *
@@ -42,13 +45,13 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <objects/seqloc/Na_strand.hpp>
-
-#include <objects/objmgr1/object_manager.hpp>
+#include <util/range.hpp>
 
 #include <list>
 #include <map>
 #include <memory>
 
+#include <objects/objmgr1/bioseq_handle.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:24  gouriano
 * restructured objmgr
 *
@@ -55,6 +58,7 @@
 
 #include <objects/objmgr1/seq_vector.hpp>
 #include <objects/objmgr1/scope.hpp>
+#include "data_source.hpp"
 #include "annot_object.hpp"
 #include "seq_id_mapper.hpp"
 
@@ -137,9 +141,8 @@ size_t CSeqVector::size(void)
                         CSeq_id* id =
                             CSeqIdMapper::HandleToSeqId(
                             (*m_SeqMap)[i].second.m_RefSeq);
-                        CDataSource::TBioseqCore ref_seq =
-                            m_Scope->GetBioseqCore(
-                            m_Scope->GetBioseqHandle(*id));
+                        CBioseqHandle::TBioseqCore ref_seq =
+                            (m_Scope->GetBioseqHandle(*id)).GetBioseqCore();
                         if (ref_seq.GetPointer()  &&
                             ref_seq->GetInst().IsSetLength()) {
                             m_Size += ref_seq->GetInst().GetLength();

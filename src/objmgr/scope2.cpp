@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:22  gouriano
 * restructured objmgr
 *
@@ -69,8 +72,10 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/SeqFeatData.hpp>
 
 #include <objects/objmgr1/seqdesc_ci.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -88,7 +93,7 @@ string CScope::GetTitle(const CBioseqHandle& handle, TGetTitleFlags flags)
 {
     string                    prefix, title, suffix;
     string                    organism;
-    TBioseqCore               core        = GetBioseqCore(handle);
+    CBioseqHandle::TBioseqCore core        = handle.GetBioseqCore();
     CConstRef<CTextseq_id>    tsid        = NULL;
     CConstRef<CPDB_seq_id>    pdb_id      = NULL;
     CConstRef<CPatent_seq_id> pat_id      = NULL;
@@ -513,7 +518,7 @@ static CConstRef<CSeq_feat> s_FindLongestFeature(const CSeq_loc& location,
 {
     CConstRef<CSeq_feat> result;
     int best_length = 0;
-    for (CFeat_CI it = scope.BeginFeat(location, type);  it;  ++it) {
+    for (CFeat_CI it(scope, location, type);  it;  ++it) {
         if (it->GetLocation().IsWhole()) {
             // kludge; length only works on a Seq-loc of type "whole"
             // if its Seq-id points to an object manager, which may not
@@ -534,7 +539,7 @@ static string s_TitleFromProtein(const CBioseqHandle& handle, CScope& scope,
     CConstRef<CProt_ref> prot;
     CConstRef<CSeq_loc>  cds_loc;
     CConstRef<CGene_ref> gene;
-    CScope::TBioseqCore  core = scope.GetBioseqCore(handle);
+    CBioseqHandle::TBioseqCore  core = handle.GetBioseqCore();
     string               result;
 
     CSeq_loc everywhere;
@@ -617,7 +622,7 @@ static string s_TitleFromSegment(const CBioseqHandle& handle, CScope& scope)
 {
     string              organism, product, locus;
     string              completeness = "complete";
-    CScope::TBioseqCore core = scope.GetBioseqCore(handle);
+    CBioseqHandle::TBioseqCore core = handle.GetBioseqCore();
 
     CSeq_loc everywhere;
     everywhere.SetMix().Set() = core->GetInst().GetExt().GetSeg();
@@ -633,7 +638,7 @@ static string s_TitleFromSegment(const CBioseqHandle& handle, CScope& scope)
         organism = "Unknown";
     }
 
-    for (CFeat_CI it = scope.BeginFeat(everywhere, CSeqFeatData::e_Cdregion);
+    for (CFeat_CI it(scope, everywhere, CSeqFeatData::e_Cdregion);
          it;  ++it) {
         if ( !it->IsSetProduct() ) {
             continue;

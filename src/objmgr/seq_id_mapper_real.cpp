@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:23  gouriano
 * restructured objmgr
 *
@@ -39,14 +42,13 @@
 */
 
 
-#include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/data_source.hpp>
+#include <corelib/ncbithr.hpp>
+#include <algorithm>
+
+#include "data_source.hpp"
 #include "seq_id_mapper_real.hpp"
 #include "seq_id_mapper.hpp"
 
-#include <corelib/ncbithr.hpp>
-
-#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE

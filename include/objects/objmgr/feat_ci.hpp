@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:35  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:02  gouriano
 * restructured objmgr
 *
@@ -51,8 +54,7 @@ class CFeat_CI : public CAnnotTypes_CI
 {
 public:
     CFeat_CI(void);
-    CFeat_CI(TDataSources::iterator      source,
-             TDataSources*               sources,
+    CFeat_CI(CScope& scope,
              const CSeq_loc&             loc,
              SAnnotSelector::TFeatChoice feat_choice);
     CFeat_CI(const CFeat_CI& iter);

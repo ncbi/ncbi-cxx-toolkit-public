@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:28:47  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:29  gouriano
 * restructured objmgr
 *
@@ -225,8 +228,8 @@ void* CTestThread::Main(void)
         "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
         0, 0, 0, 0, 0);
 
-    m_Scope->DropTSE(*entry1);
-    m_Scope->DropTSE(*entry2);
+    m_Scope->DropTopLevelSeqEntry(*entry1);
+    m_Scope->DropTopLevelSeqEntry(*entry2);
 
     // Test local scope
     CScope scope(*m_ObjMgr);
@@ -302,7 +305,7 @@ void* CTestThread::Main(void)
         id.SetLocal().SetStr("constructed");
         ProcessBioseq(scope, id,
             27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-        scope.DropTSE(*constr_entry);
+        scope.DropTopLevelSeqEntry(*constr_entry);
     }}
     {{
         CSeq_loc constr_loc;
@@ -328,11 +331,11 @@ void* CTestThread::Main(void)
         id.SetLocal().SetStr("constructed");
         ProcessBioseq(scope, id,
             27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-        scope.DropTSE(*constr_entry);
+        scope.DropTopLevelSeqEntry(*constr_entry);
     }}
 
     // Drop entry 1 and re-process entry 2
-    scope.DropTSE(*entry1);
+    scope.DropTopLevelSeqEntry(*entry1);
     CRef<CScope> scope2 = new CScope(*m_ObjMgr); // to drop entry2 later
     id.SetGi(21+m_Idx*1000);
     ProcessBioseq(scope, id,
@@ -806,10 +809,10 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         return;
     }
 
-    scope.GetTSE(handle);
-    CScope::TBioseqCore seq_core = scope.GetBioseqCore(handle);
+    handle.GetTopLevelSeqEntry();
+    CBioseqHandle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
-        CSeqMap seq_map = scope.GetSeqMap(handle);
+        CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
@@ -857,7 +860,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     {{
         // Get another seq-map - some lengths may have been resolved
-        CSeqMap seq_map = scope.GetSeqMap(handle);
+        CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
@@ -882,12 +885,12 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
         _ASSERT(len == seq_len_resolved);
     }}
 
-    CConstRef<CBioseq> bioseq = &scope.GetBioseq(handle);
+    CConstRef<CBioseq> bioseq = &handle.GetBioseq();
 
     int count = 0;
 
     // Test CSeq_descr iterator
-    for (CDesc_CI desc_it = scope.BeginDescr(handle);
+    for (CDesc_CI desc_it(handle);
          desc_it;  ++desc_it) {
         count++;
         //### _ASSERT(desc_it->
@@ -898,7 +901,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(&id);
     count = 0;
-    for (CFeat_CI feat_it = scope.BeginFeat(loc, CSeqFeatData::e_not_set);
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
         feat_it;  ++feat_it) {
         count++;
         //### _ASSERT(feat_it->
@@ -911,7 +914,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
-    for (CFeat_CI feat_it = scope.BeginFeat(loc, CSeqFeatData::e_not_set);
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
         feat_it;  ++feat_it) {
         count++;
         //### _ASSERT(feat_it->
@@ -921,7 +924,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_align iterator
     loc.SetWhole(&id);
     count = 0;
-    for (CAlign_CI align_it = scope.BeginAlign(loc);
+    for (CAlign_CI align_it(scope,loc);
         align_it;  ++align_it) {
         count++;
         //### _ASSERT(align_it->
@@ -934,7 +937,7 @@ void CTestThread::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;
-    for (CAlign_CI align_it = scope.BeginAlign(loc);
+    for (CAlign_CI align_it(scope,loc);
         align_it;  ++align_it) {
         count++;
         //### _ASSERT(align_it->

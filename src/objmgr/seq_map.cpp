@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:24  gouriano
 * restructured objmgr
 *
@@ -38,17 +41,17 @@
 */
 
 
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbithr.hpp>
+#include <algorithm>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 
-#include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/seq_map.hpp>
-#include "annot_object.hpp"
 #include "seq_id_mapper.hpp"
 
-#include <corelib/ncbithr.hpp>
-
-#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -110,8 +113,8 @@ CSeqMap::TSeqSegment& CSeqMap::x_Resolve(int pos, CScope& scope)
             continue; // resolved reference, known length
         CRef<CSeq_id> id(
             CSeqIdMapper::HandleToSeqId(m_SeqMap[i].second.m_RefSeq));
-        CScope::TBioseqCore seq =
-            scope.GetBioseqCore(scope.GetBioseqHandle(*id));
+        CBioseqHandle::TBioseqCore seq =
+            scope.GetBioseqHandle(*id).GetBioseqCore();
         if ( seq->GetInst().IsSetLength() ) {
             m_SeqMap[i].second.m_RefLen = seq->GetInst().GetLength();
             shift += m_SeqMap[i].second.m_RefLen;

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:18  gouriano
 * restructured objmgr
 *
@@ -44,7 +47,6 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objects/objmgr1/desc_ci.hpp>
-#include <objects/objmgr1/data_source.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -60,8 +62,7 @@ CDesc_CI::CDesc_CI(void)
 CDesc_CI::CDesc_CI(const CBioseqHandle& handle)
     : m_Handle(handle)
 {
-    const CBioseq* seq =
-        &handle.x_GetDataSource().GetBioseq(handle);
+    const CBioseq* seq = &(handle.GetBioseq());
     m_NextEntry = seq->GetParentEntry();
     if ( seq->IsSetDescr() ) {
         m_Current = &seq->GetDescr();

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:03:59  gouriano
 * restructured objmgr
 *
@@ -50,11 +53,10 @@ class CAlign_CI : public CAnnotTypes_CI
 {
 public:
     CAlign_CI(void);
-    CAlign_CI(TDataSources::iterator source,
-              TDataSources*          sources,
-              const CSeq_loc& loc);
+    CAlign_CI(CScope& scope, const CSeq_loc& loc);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
+
     CAlign_CI& operator= (const CAlign_CI& iter);
 
     CAlign_CI& operator++ (void);

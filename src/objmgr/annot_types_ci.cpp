@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:17  gouriano
 * restructured objmgr
 *
@@ -37,7 +40,11 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbithr.hpp>
+
+#include <objects/objmgr1/scope.hpp>
 #include <objects/objmgr1/annot_types_ci.hpp>
+#include "data_source.hpp"
 #include "handle_range_map.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -51,24 +58,23 @@ CAnnotTypes_CI::CAnnotTypes_CI(void)
 }
 
 
-CAnnotTypes_CI::CAnnotTypes_CI(TDataSources::iterator source,
-                               TDataSources* sources,
+CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                SAnnotSelector selector)
-    : m_CurrentSource(source),
-      m_Sources(sources),
-      m_Selector(selector),
+    : m_Selector(selector),
       m_Location(new CHandleRangeMap())
 {
     m_Location->AddLocation(loc);
+    scope.x_CopyDataSources( m_Sources);
+    m_CurrentSource = m_Sources.begin();
     // Protect datasources list
     CMutexGuard guard(CScope::sm_Scope_Mutex);
-    for (TDataSources::iterator it = source; it != m_Sources->end(); ++it) {
+    for (set<CDataSource*>::iterator it = m_Sources.begin();
+        it != m_Sources.end(); ++it) {
         (*it)->x_ResloveLocationHandles(*m_Location);
     }
-    for ( ; m_CurrentSource != m_Sources->end(); ++m_CurrentSource ) {
-        m_CurrentAnnot = (*m_CurrentSource)->
-            BeginAnnot(*m_Location, m_Selector);
+    for ( ; m_CurrentSource != m_Sources.end(); ++m_CurrentSource ) {
+        m_CurrentAnnot = CAnnot_CI( **m_CurrentSource, *m_Location, m_Selector);
         if ( m_CurrentAnnot )
             break;
     }
@@ -77,11 +83,13 @@ CAnnotTypes_CI::CAnnotTypes_CI(TDataSources::iterator source,
 
 CAnnotTypes_CI::CAnnotTypes_CI(const CAnnotTypes_CI& it)
     : m_CurrentSource(it.m_CurrentSource),
-      m_Sources(it.m_Sources),
       m_Selector(it.m_Selector),
       m_Location(new CHandleRangeMap(*it.m_Location)),
       m_CurrentAnnot(it.m_CurrentAnnot)
 {
+    iterate (set<CDataSource*>, itr, it.m_Sources) {
+        m_Sources.insert( *itr);
+    }
 }
 
 
@@ -94,7 +102,9 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
     m_CurrentSource = it.m_CurrentSource;
-    m_Sources = it.m_Sources;
+    iterate (set<CDataSource*>, itr, it.m_Sources) {
+        m_Sources.insert( *itr);
+    }
     m_Selector = it.m_Selector;
     m_Location.reset(new CHandleRangeMap(*it.m_Location));
     m_CurrentAnnot = it.m_CurrentAnnot;
@@ -104,7 +114,7 @@ CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 
 bool CAnnotTypes_CI::IsValid(void) const
 {
-    return (m_CurrentSource != m_Sources->end()  &&  m_CurrentAnnot);
+    return (m_CurrentSource != m_Sources.end()  &&  m_CurrentAnnot);
 }
 
 
@@ -113,16 +123,15 @@ void CAnnotTypes_CI::Walk(void)
     _ASSERT(m_CurrentAnnot);
     CMutexGuard guard(CScope::sm_Scope_Mutex);
     ++m_CurrentAnnot;
-    if ( m_CurrentAnnot  ||  m_CurrentSource == m_Sources->end() )
+    if ( m_CurrentAnnot  ||  m_CurrentSource == m_Sources.end() )
         // Got the next annot or no more annots and data sources
         return;
     while ( !m_CurrentAnnot ) {
         // Search for the next data source with annots
         ++m_CurrentSource;
-        if (m_CurrentSource == m_Sources->end())
+        if (m_CurrentSource == m_Sources.end())
             return;
-        m_CurrentAnnot = (*m_CurrentSource)->
-            BeginAnnot(*m_Location, m_Selector);
+        m_CurrentAnnot = CAnnot_CI( **m_CurrentSource, *m_Location, m_Selector);
     }
 }
 

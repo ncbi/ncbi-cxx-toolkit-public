@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:35  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:03:59  gouriano
 * restructured objmgr
 *
@@ -48,15 +51,15 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-typedef set<CDataSource*> TDataSources;
+class CScope;
+class CAnnot_CI;
 
 // Base class for specific annotation iterators
 class CAnnotTypes_CI
 {
 public:
     CAnnotTypes_CI(void);
-    CAnnotTypes_CI(TDataSources::iterator source,
-                   TDataSources* sources,
+    CAnnotTypes_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector selector);
     CAnnotTypes_CI(const CAnnotTypes_CI& it);
@@ -73,8 +76,8 @@ protected:
     CAnnotObject* Get(void) const;
 
 private:
-    TDataSources::iterator    m_CurrentSource;
-    TDataSources*             m_Sources;
+    set<CDataSource*>         m_Sources;
+    set<CDataSource*>::const_iterator    m_CurrentSource;
     SAnnotSelector            m_Selector;
     auto_ptr<CHandleRangeMap> m_Location;
     CAnnot_CI                 m_CurrentAnnot;

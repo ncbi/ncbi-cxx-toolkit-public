@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:03:59  gouriano
 * restructured objmgr
 *
@@ -45,13 +48,14 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <util/rangemap.hpp>
 
+#include <objects/objmgr1/bioseq_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CAnnotObject;
-class CBioseqHandle;
+class CDataSource;
 
 // Structure to select type of Seq-annot
 struct SAnnotSelector

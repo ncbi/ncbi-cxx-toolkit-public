@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:55  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:19  gouriano
 * restructured objmgr
 *
@@ -52,10 +55,9 @@ CGraph_CI::CGraph_CI(void)
 }
 
 
-CGraph_CI::CGraph_CI(TDataSources::iterator source,
-                     TDataSources* sources,
+CGraph_CI::CGraph_CI(CScope& scope,
                      const CSeq_loc& loc)
-    : CAnnotTypes_CI(source, sources, loc,
+    : CAnnotTypes_CI(scope, loc,
       SAnnotSelector(CSeq_annot::C_Data::e_Graph))
 {
     return;

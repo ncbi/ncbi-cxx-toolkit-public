@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:15  gouriano
 * restructured objmgr
 *
@@ -52,11 +55,10 @@ CAlign_CI::CAlign_CI(void)
 }
 
 
-CAlign_CI::CAlign_CI(TDataSources::iterator source,
-                     TDataSources* sources,
+CAlign_CI::CAlign_CI(CScope& scope,
                      const CSeq_loc& loc)
-    : CAnnotTypes_CI(source, sources, loc,
-      SAnnotSelector(CSeq_annot::C_Data::e_Align))
+    : CAnnotTypes_CI(scope, loc,
+        SAnnotSelector(CSeq_annot::C_Data::e_Align))
 {
     return;
 }

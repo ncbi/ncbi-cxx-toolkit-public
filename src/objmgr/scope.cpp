@@ -37,6 +37,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:22  gouriano
 * restructured objmgr
 *
@@ -45,12 +48,15 @@
 */
 
 
-#include <objects/objmgr1/object_manager.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <algorithm>
+
+#include <objects/objmgr1/object_manager.hpp>
+#include <objects/objmgr1/scope.hpp>
+#include "data_source.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -100,20 +106,32 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry)
 }
 
 
-/*
-void CScope::x_AddDataSource(CDataSource& source)
+void CScope::DropTopLevelSeqEntry(CSeq_entry& top_entry)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    // There may be no other CRef-s to the source -- we don't want it to be
-    // deleted after "find".
-    CRef<CDataSource> src(&source);
-    TDataSources::iterator found = find
-        (m_setDataSrc.begin(), m_setDataSrc.end(), src);
-    if (found != m_setDataSrc.end())
-        return;
-    m_setDataSrc.push_back(src);
+    set<CDataSource*>::iterator found_ds = m_setDataSrc.end();
+    non_const_iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->DropTSE(top_entry) ) {
+            found_ds = it;
+            break;
+        }
+    }
+    if ( found_ds != m_setDataSrc.end()  &&  (*found_ds)->IsEmpty() ) {
+        m_pObjMgr->RemoveTopLevelSeqEntry( m_setDataSrc, top_entry);
+    }
 }
-*/
+
+
+bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
+{
+    CMutexGuard guard(sm_Scope_Mutex);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        if ( (*it)->AttachAnnot(entry, annot) ) {
+            return true;
+        }
+    }
+    return false;
+}
 
 
 CBioseqHandle CScope::GetBioseqHandle(const CSeq_id& id)
@@ -151,36 +169,6 @@ CBioseqHandle CScope::GetBioseqHandle(const CSeq_id& id)
 }
 
 
-const CBioseq& CScope::GetBioseq(const CBioseqHandle& handle)
-{
-    return handle.x_GetDataSource().GetBioseq(handle);
-}
-
-
-const CSeq_entry& CScope::GetTSE(const CBioseqHandle& handle)
-{
-    return handle.x_GetDataSource().GetTSE(handle);
-}
-
-
-CScope::TBioseqCore CScope::GetBioseqCore(const CBioseqHandle& handle)
-{
-    return handle.x_GetDataSource().GetBioseqCore(handle);
-}
-
-
-const CSeqMap& CScope::GetSeqMap(const CBioseqHandle& handle)
-{
-    return handle.x_GetDataSource().GetSeqMap(handle);
-}
-
-
-CDesc_CI CScope::BeginDescr(const CBioseqHandle& handle)
-{
-    return handle.x_GetDataSource().BeginDescr(handle);
-}
-
-
 CSeqVector CScope::GetSequence(const CBioseqHandle& handle,
                                 bool plus_strand)
 {
@@ -188,38 +176,19 @@ CSeqVector CScope::GetSequence(const CBioseqHandle& handle,
 }
 
 
-CFeat_CI CScope::BeginFeat(const CSeq_loc& loc,
-                           CSeqFeatData::E_Choice feat_choice)
+void CScope::x_CopyDataSources(set<CDataSource*>& sources)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    return CFeat_CI(m_setDataSrc.begin(),
-                    &m_setDataSrc,
-                    loc, feat_choice);
-}
-
-
-CGraph_CI CScope::BeginGraph(const CSeq_loc& loc)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    return CGraph_CI(m_setDataSrc.begin(),
-                     &m_setDataSrc,
-                     loc);
-}
-
-
-CAlign_CI CScope::BeginAlign(const CSeq_loc& loc)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    return CAlign_CI(m_setDataSrc.begin(),
-                     &m_setDataSrc,
-                     loc);
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
+        sources.insert( *it);
+    }
 }
 
 
 bool CScope::x_AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    iterate (TDataSources, it, m_setDataSrc) {
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachEntry(parent, entry) ) {
             return true;
         }
@@ -231,7 +200,7 @@ bool CScope::x_AttachEntry(const CSeq_entry& parent, CSeq_entry& entry)
 bool CScope::x_AttachMap(const CSeq_entry& bioseq, CSeqMap& seqmap)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    iterate (TDataSources, it, m_setDataSrc) {
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachMap(bioseq, seqmap) ) {
             return true;
         }
@@ -244,20 +213,8 @@ bool CScope::x_AttachSeqData(const CSeq_entry& bioseq, CSeq_data& seq,
                              TSeqPosition start, TSeqLength length)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    iterate (TDataSources, it, m_setDataSrc) {
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->AttachSeqData(bioseq, seq, start, length) ) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    iterate (TDataSources, it, m_setDataSrc) {
-        if ( (*it)->AttachAnnot(entry, annot) ) {
             return true;
         }
     }
@@ -267,10 +224,10 @@ bool CScope::AttachAnnot(const CSeq_entry& entry, CSeq_annot& annot)
 
 bool CScope::x_GetSequence(const CBioseqHandle& handle,
                            TSeqPosition point,
-                           CDataSource::SSeqData* seq_piece)
+                           SSeqData* seq_piece)
 {
     CMutexGuard guard(sm_Scope_Mutex);
-    iterate (TDataSources, it, m_setDataSrc) {
+    iterate (set<CDataSource*>, it, m_setDataSrc) {
         if ( (*it)->GetSequence(handle, point, seq_piece, *this) ) {
             return true;
         }
@@ -282,23 +239,6 @@ bool CScope::x_GetSequence(const CBioseqHandle& handle,
 void CScope::SetFindMode(EFindMode mode)
 {
     m_FindMode = mode;
-}
-
-
-void CScope::DropTSE(CSeq_entry& tse)
-{
-    CMutexGuard guard(sm_Scope_Mutex);
-    TDataSources::iterator found_ds = m_setDataSrc.end();
-    non_const_iterate (TDataSources, it, m_setDataSrc) {
-        if ( (*it)->DropTSE(tse) ) {
-            found_ds = it;
-            break;
-        }
-    }
-    if ( found_ds != m_setDataSrc.end()  &&  (*found_ds)->IsEmpty() ) {
-//        m_setDataSrc.erase(found_ds);
-        m_pObjMgr->RemoveTopLevelSeqEntry( m_setDataSrc, tse);
-    }
 }
 
 

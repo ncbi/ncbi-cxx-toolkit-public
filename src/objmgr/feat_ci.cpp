@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:18  gouriano
 * restructured objmgr
 *
@@ -51,11 +54,10 @@ CFeat_CI::CFeat_CI(void)
 }
 
 
-CFeat_CI::CFeat_CI(TDataSources::iterator source,
-                   TDataSources* sources,
+CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector::TFeatChoice feat_choice)
-    : CAnnotTypes_CI(source, sources, loc,
+    : CAnnotTypes_CI(scope, loc,
     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice))
 {
     return;

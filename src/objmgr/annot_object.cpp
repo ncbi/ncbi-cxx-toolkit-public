@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:16  gouriano
 * restructured objmgr
 *
@@ -46,7 +49,6 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <serial/iterator.hpp>
 
-#include <objects/objmgr1/object_manager.hpp>
 #include "annot_object.hpp"
 #include "seq_id_mapper.hpp"
 

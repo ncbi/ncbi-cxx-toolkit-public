@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:56  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:15  gouriano
 * restructured objmgr
 *
@@ -41,6 +44,7 @@
 
 #include <objects/objmgr1/bioseq_handle.hpp>
 #include <objects/objmgr1/annot_ci.hpp>
+#include "data_source.hpp"
 #include "annot_object.hpp"
 
 

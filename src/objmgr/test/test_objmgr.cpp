@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:28:46  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:28  gouriano
 * restructured objmgr
 *
@@ -572,10 +575,10 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         return;
     }
 
-    scope.GetTSE(handle);
-    CScope::TBioseqCore seq_core = scope.GetBioseqCore(handle);
+    handle.GetTopLevelSeqEntry();
+    CBioseqHandle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
-        CSeqMap seq_map = scope.GetSeqMap(handle);
+        CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
@@ -623,7 +626,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
 
     {{
         // Get another seq-map - some lengths may have been resolved
-        CSeqMap seq_map = scope.GetSeqMap(handle);
+        CSeqMap seq_map = handle.GetSeqMap();
         // Iterate seq-map except the last element
         int len = 0;
         for (size_t i = 0; i < seq_map.size(); i++) {
@@ -648,13 +651,13 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
         _ASSERT(len == seq_len_resolved);
     }}
 
-    CConstRef<CBioseq> bioseq = &(scope.GetBioseq(handle));
+    CConstRef<CBioseq> bioseq = &(handle.GetBioseq());
 
     int count = 0;
 
     // Test CSeq_descr iterator
-    for (CDesc_CI desc_it = scope.BeginDescr(handle);
-         desc_it;  ++desc_it) {
+    for (CDesc_CI desc_it(handle);
+        desc_it;  ++desc_it) {
         count++;
         //### _ASSERT(desc_it->
     }
@@ -664,7 +667,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     CSeq_loc loc;
     loc.SetWhole(&id);
     count = 0;
-    for (CFeat_CI feat_it = scope.BeginFeat(loc, CSeqFeatData::e_not_set);
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
         feat_it;  ++feat_it) {
         count++;
         //### _ASSERT(feat_it->
@@ -677,7 +680,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(0);
     loc.GetInt().SetTo(10);
     count = 0;
-    for (CFeat_CI feat_it = scope.BeginFeat(loc, CSeqFeatData::e_not_set);
+    for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
         feat_it;  ++feat_it) {
         count++;
         //### _ASSERT(feat_it->
@@ -687,7 +690,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     // Test CSeq_align iterator
     loc.SetWhole(&id);
     count = 0;
-    for (CAlign_CI align_it = scope.BeginAlign(loc);
+    for (CAlign_CI align_it( scope, loc);
         align_it;  ++align_it) {
         count++;
         //### _ASSERT(align_it->
@@ -700,7 +703,7 @@ void CTestApp::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.GetInt().SetFrom(10);
     loc.GetInt().SetTo(20);
     count = 0;
-    for (CAlign_CI align_it = scope.BeginAlign(loc);
+    for (CAlign_CI align_it(scope, loc);
         align_it;  ++align_it) {
         count++;
         //### _ASSERT(align_it->
@@ -784,8 +787,8 @@ int CTestApp::Run(void)
             "\\x03\\0\\x01\\x02\\x03\\x01\\x02\\0\\x01\\0\\x03\\x02\\x01",
             0, 0, 0, 0, 0);
 
-        pScope->DropTSE(*entry1);
-        pScope->DropTSE(*entry2);
+        pScope->DropTopLevelSeqEntry(*entry1);
+        pScope->DropTopLevelSeqEntry(*entry2);
 
         // Test local scope
         pScope->AddTopLevelSeqEntry(*entry1);
@@ -860,7 +863,7 @@ int CTestApp::Run(void)
             id.SetLocal().SetStr("constructed");
             ProcessBioseq(*pScope, id,
                 27, 27, "GCGGTACAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-            pScope->DropTSE(*constr_entry);
+            pScope->DropTopLevelSeqEntry(*constr_entry);
         }}
         {{
             CSeq_loc constr_loc;
@@ -886,11 +889,11 @@ int CTestApp::Run(void)
             id.SetLocal().SetStr("constructed");
             ProcessBioseq(*pScope, id,
                 27, 27, "TACCGCCAATAACCTCAGCAGCAACAA", "", 0, 0, 0, 0, 0);
-            pScope->DropTSE(*constr_entry);
+            pScope->DropTopLevelSeqEntry(*constr_entry);
         }}
 
         // Drop entry 1 and re-process entry 2
-        pScope->DropTSE(*entry1);
+        pScope->DropTopLevelSeqEntry(*entry1);
         CRef<CScope> pScope2 = new CScope(*m_ObjMgr);
         pScope2->AddTopLevelSeqEntry(*entry2); // to drop entry2 later
         id.SetGi(21+idx*1000);
@@ -911,9 +914,9 @@ int CTestApp::Run(void)
             "TTTTTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATTTTTAAAAAAAAAAAA",
             1, 1, 1, 0, 0);
 
-        pScope->DropTSE(*entry1a);
-        pScope->DropTSE(*entry2);
-        pScope2->DropTSE(*entry2);
+        pScope->DropTopLevelSeqEntry(*entry1a);
+        pScope->DropTopLevelSeqEntry(*entry2);
+        pScope2->DropTopLevelSeqEntry(*entry2);
         delete pScope;
     }
 

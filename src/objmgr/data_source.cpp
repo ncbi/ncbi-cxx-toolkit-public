@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:18  gouriano
 * restructured objmgr
 *
@@ -69,8 +72,8 @@
 #include <objects/seq/seqport_util.hpp>
 #include <serial/iterator.hpp>
 
-#include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/data_source.hpp>
+#include <objects/objmgr1/scope.hpp>
+#include "data_source.hpp"
 #include "annot_object.hpp"
 #include "seq_id_mapper.hpp"
 
@@ -207,7 +210,7 @@ const CSeq_entry& CDataSource::GetTSE(const CBioseqHandle& handle)
 }
 
 
-CDataSource::TBioseqCore CDataSource::GetBioseqCore
+CBioseqHandle::TBioseqCore CDataSource::GetBioseqCore
     (const CBioseqHandle& handle)
 {
     CMutexGuard guard(s_DataSource_Mutex);
@@ -314,23 +317,6 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseqHandle& handle)
 }
 
 
-CDesc_CI CDataSource::BeginDescr(const CBioseqHandle& handle)
-{
-/*
-    //### Call loader first
-    if ( m_Loader ) {
-        // Send request to the loader
-        CSeq_loc loc;
-        CRef<CSeq_id> id = CSeqIdMapper::HandleToSeqId(handle.m_Value);
-        SerialAssign<CSeq_id>(loc.SetWhole(), *id);
-        m_Loader->GetRecords(loc, CDataLoader::eBioseq);
-    }
-*/
-    CMutexGuard guard(s_DataSource_Mutex);
-    return CDesc_CI(handle);
-}
-
-
 bool CDataSource::GetSequence(const CBioseqHandle& handle,
                               TSeqPosition point,
                               SSeqData* seq_piece,
@@ -421,40 +407,6 @@ bool CDataSource::GetSequence(const CBioseqHandle& handle,
         }
     }
     return false;
-}
-
-
-CAnnot_CI CDataSource::BeginAnnot(CHandleRangeMap& loc,
-                                  SAnnotSelector selector)
-{
-/*
-    //### Use CHandleRangeMap, not CSeq_loc
-    if ( m_Loader ) {
-        // Send request to the loader
-        switch ( selector.m_AnnotChoice ) {
-        case CSeq_annot::C_Data::e_Ftable:
-            {
-                m_Loader->GetRecords(loc, CDataLoader::eFeatures);
-                break;
-                }
-        case CSeq_annot::C_Data::e_Graph:
-            {
-                m_Loader->GetRecords(loc, CDataLoader::eGraph);
-                break;
-            }
-        // case CSeq_annot::C_Data::e_not_set:
-        // case CSeq_annot::C_Data::e_Align:
-        // case CSeq_annot::C_Data::e_Ids:
-        // case CSeq_annot::C_Data::e_Locs:
-        default:
-            {
-                m_Loader->GetRecords(loc, CDataLoader::eAll);
-            }
-        }
-    }
-*/
-    CMutexGuard guard(s_DataSource_Mutex);
-    return CAnnot_CI(*this, loc, selector);
 }
 
 

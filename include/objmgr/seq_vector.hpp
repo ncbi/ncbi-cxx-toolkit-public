@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:04  gouriano
 * restructured objmgr
 *
@@ -41,19 +44,19 @@
 */
 
 
-#include <objects/objmgr1/data_source.hpp>
 #include <objects/seq/Seq_data.hpp>
+
+#include <objects/objmgr1/seq_map.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
+class CScope;
 
 class CSeqVector : public CObject
 {
 public:
-    typedef CDataSource::SSeqData TSeqData;
     typedef unsigned char         TResidue;
     typedef CSeq_data::E_Choice   TCoding;
 
@@ -85,7 +88,7 @@ private:
     CScope*            m_Scope;
     CBioseqHandle      m_Handle;
     bool               m_PlusStrand;
-    TSeqData           m_CurData;
+    SSeqData           m_CurData;
     CConstRef<CSeqMap> m_SeqMap;
     int                m_Size;
     string             m_CachedData;

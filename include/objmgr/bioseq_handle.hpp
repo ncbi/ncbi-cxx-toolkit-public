@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:00  gouriano
 * restructured objmgr
 *
@@ -41,23 +44,30 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <objects/seqset/Seq_entry.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 class CDataSource;
-class CSeq_id;
-class CSeq_entry;
+class CSeqMap;
 
 // Bioseq handle -- must be a copy-safe const type.
 class CBioseqHandle
 {
 public:
     typedef int THandle;
+    // Bioseq core -- using partially populated CBioseq
+    typedef CConstRef<CBioseq> TBioseqCore;
+
+
     CBioseqHandle(void)
         : m_Value(0),
           m_DataSource(0),
           m_Entry(0) {}
-
     CBioseqHandle(const CBioseqHandle& h);
     CBioseqHandle& operator= (const CBioseqHandle& h);
     ~CBioseqHandle(void) {}
@@ -73,6 +83,22 @@ public:
   
     const CSeq_id* GetSeqId(void)  const;
     const THandle  GetHandle(void) const;
+
+    // Get the complete bioseq (as loaded by now)
+    // Declared "virtual" to avoid circular dependencies with seqloc
+    virtual const CBioseq& GetBioseq(void) const;
+
+    // Get top level seq-entry for a bioseq
+    virtual const CSeq_entry& GetTopLevelSeqEntry(void) const;
+
+    // Get bioseq core structure
+    // Declared "virtual" to avoid circular dependencies with seqloc
+    virtual TBioseqCore GetBioseqCore(void) const;
+
+    // Get sequence map. References to the whole bioseqs may have
+    // length of 0 unless GetSequence() has been called for the handle.
+    virtual const CSeqMap& GetSeqMap(void) const;
+
 private:
     CBioseqHandle(THandle value);
 

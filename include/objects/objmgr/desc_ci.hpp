@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:37  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:01  gouriano
 * restructured objmgr
 *
@@ -48,8 +51,6 @@
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
-
-class CDataSource;
 
 class CDesc_CI
 {

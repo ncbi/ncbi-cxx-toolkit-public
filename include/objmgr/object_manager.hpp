@@ -38,6 +38,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:02  gouriano
 * restructured objmgr
 *
@@ -47,12 +50,19 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr1/scope.hpp>
-#include "objects/objmgr1/data_loader.hpp"
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <map>
 #include <set>
+
+#include <objects/objmgr1/scope.hpp>
+#include "objects/objmgr1/data_loader.hpp"
+#include <objects/objmgr1/seq_vector.hpp>
+#include <objects/objmgr1/seq_map.hpp>
+#include <objects/objmgr1/desc_ci.hpp>
+#include <objects/objmgr1/feat_ci.hpp>
+#include <objects/objmgr1/graph_ci.hpp>
+#include <objects/objmgr1/align_ci.hpp>
 
 
 BEGIN_NCBI_SCOPE

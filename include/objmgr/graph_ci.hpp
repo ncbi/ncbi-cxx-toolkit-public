@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:36  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:02  gouriano
 * restructured objmgr
 *
@@ -49,9 +52,7 @@ class CGraph_CI : public CAnnotTypes_CI
 {
 public:
     CGraph_CI(void);
-    CGraph_CI(TDataSources::iterator source,
-              TDataSources*          sources,
-              const CSeq_loc& loc);
+    CGraph_CI(CScope& scope, const CSeq_loc& loc);
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);

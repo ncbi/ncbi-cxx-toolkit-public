@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:58  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:21  gouriano
 * restructured objmgr
 *
@@ -43,10 +46,10 @@
 * ===========================================================================
 */
 
+#include <corelib/ncbithr.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/objmgr1/object_manager.hpp>
-#include <objects/objmgr1/data_source.hpp>
-#include <corelib/ncbithr.hpp>
+#include "data_source.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -400,7 +403,7 @@ void CObjectManager::x_ReleaseDataSource(CDataSource* pSource)
 CConstRef<CBioseq> CObjectManager::GetBioseq(const CSeq_id& id)
 {
     CScope* pScope = *(m_setScope.begin());
-    return &(pScope->GetBioseq(pScope->GetBioseqHandle(id)));
+    return &((pScope->GetBioseqHandle(id)).GetBioseq());
 }
 
 

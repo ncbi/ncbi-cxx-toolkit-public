@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:26:37  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:04:04  gouriano
 * restructured objmgr
 *
@@ -41,31 +44,33 @@
 
 
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr1/bioseq_handle.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <vector>
+
+#include <objects/objmgr1/bioseq_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-
-// fwd decl
-class CSeq_loc;
-class CSeq_data;
-class CInt_fuzz;
-
 // Position in the sequence
 typedef int TSeqPosition;
 
-
 // Length of the sequence
 typedef int TSeqLength;
-
 
 // Interval in the sequence
 struct SSeqInterval {
     TSeqPosition start;
     TSeqLength   length;
+};
+
+// Sequence data
+struct SSeqData {
+    TSeqLength           length;      /// Length of the sequence data piece
+    TSeqPosition         dest_start;  /// Starting pos in the dest. Bioseq
+    TSeqPosition         src_start;   /// Starting pos in the source Bioseq
+    CConstRef<CSeq_data> src_data;    /// Source sequence data
 };
 
 
@@ -103,11 +108,10 @@ public:
         ESegmentType GetType(void) const;
 
     private:
-        typedef CBioseqHandle::THandle THandle;
 
         ESegmentType m_SegType;      // Type of map segment
         // Referenced bioseq information
-        THandle      m_RefSeq;
+        CBioseqHandle::THandle      m_RefSeq;
         // Seq-data (m_RefPos and m_RefLen must be also set)
         CConstRef<CSeq_data> m_RefData;
         // Referenced location

@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/16 16:25:57  gouriano
+* restructured objmgr
+*
 * Revision 1.1  2002/01/11 19:06:16  gouriano
 * restructured objmgr
 *
@@ -48,6 +51,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 
+#include <objects/objmgr1/annot_ci.hpp>
 #include "handle_range_map.hpp"
 
 BEGIN_NCBI_SCOPE
