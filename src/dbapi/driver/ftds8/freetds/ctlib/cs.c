@@ -229,7 +229,7 @@ CS_RETCODE ret;
 	}
     
     tdsdump_log(TDS_DBG_FUNC, "%L inside cs_convert() calling tds_convert\n");
-    len = tds_convert(ctx->tds_ctx, src_type, srcdata, src_len, desttype, destlen, &cres);
+    len = tds_convert(ctx->tds_ctx, src_type, srcdata, src_len, desttype, &cres);
 
     if (len == TDS_FAIL)
        return CS_FAIL;
