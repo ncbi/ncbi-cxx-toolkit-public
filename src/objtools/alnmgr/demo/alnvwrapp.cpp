@@ -449,7 +449,7 @@ int CAlnVwrApp::Run(void)
             break;
         case 11:
             printer.ClustalStyle(screen_width,
-                                 CAlnVecPrinter::eUseWholeAlnSeqString);
+                                 CAlnVecPrinter::eUseAlnSeqString);
             break;
         default:
             NcbiCout << "Unknown view format." << NcbiEndl;
@@ -473,6 +473,9 @@ int main(int argc, const char* argv[])
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2005/03/16 19:30:08  todorov
+* Use CAlnVecPrinter::eUseAlnSeqString for Clustal
+*
 * Revision 1.7  2005/03/15 17:45:10  todorov
 * Use the new printer class
 *
