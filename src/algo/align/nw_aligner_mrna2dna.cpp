@@ -44,13 +44,7 @@ CNWAlignerMrna2Dna::CNWAlignerMrna2Dna(const char* seq1, size_t len1,
     m_Wi(GetDefaultWi()),  
     m_IntronMinSize(GetDefaultIntronMinSize())
 {
-    // the shorter sequence is assumed to be mRna
-    if(len2 < len1) {
-        NCBI_THROW(
-                   CNWAlignerException,
-                   eIncorrectSequenceOrder,
-                   "mRna must be the first of two sequences");
-    }
+    // the first sequence is assumed to be mRna
 }
 
 
@@ -288,6 +282,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2002/12/24 18:29:06  kapustin
+ * Remove sequence size verification since a part of Dna could be submitted
+ *
  * Revision 1.2  2002/12/17 21:50:05  kapustin
  * Remove unnecesary seq type parameter from the constructor
  *
