@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/09/02 21:52:14  vakatov
+* CNcbiRegistry::Read() -- fixed to accept if underscore is the 1st
+* symbol in the section/entry name;
+* Allow '-' and '.' in the section/entry name
+*
 * Revision 1.8  1999/08/30 16:00:41  vakatov
 * CNcbiRegistry:: Get()/Set() -- force the "name" and "section" to
 * consist of alphanumeric and '_' only;  ignore leading and trailing
@@ -99,6 +104,15 @@ static CNcbiIstream& s_NcbiGetline(CNcbiIstream& is, string& str)
     return is;
 }
 
+
+/* Valid symbols for a section/entry name
+ */
+inline bool s_IsNameSectionSymbol(char ch)
+{
+    return (isalnum(ch)  ||  ch == '_'  ||  ch == '-'  ||  ch == '.');
+}
+
+
 /* Check if "str" consists of alphanumeric and '_' only
  */
 static bool s_IsNameSection(const string& str)
@@ -107,7 +121,7 @@ static bool s_IsNameSection(const string& str)
         return false;
 
     for (string::const_iterator it = str.begin();  it != str.end();  it++) {
-        if (!isalnum(*it)  &&  *it != '_')
+        if ( !s_IsNameSectionSymbol(*it) )
             return false;
     }
 
@@ -173,7 +187,7 @@ Invalid registry section(']' is missing): `" + str + "'", line);
 Unnamed registry section: `" + str + "'", line);
             }
             
-            for (end = beg;  isalnum(str[end])  ||  str[end] == '_';  end++);
+            for (end = beg;  s_IsNameSectionSymbol(str[end]);  end++);
             section = str.substr(beg, end - beg);
 
             // an extra validity check
@@ -187,12 +201,13 @@ Invalid registry section name: `" + str + "'", line);
         }
 
         default:  { // regular entry
-            if (!isalnum(str[beg])  ||  str.find_first_of('=') == NPOS)
+            if (!s_IsNameSectionSymbol(str[beg])  ||
+                str.find_first_of('=') == NPOS)
                 throw CParseException("\
 Invalid registry entry format: '" + str + "'", line);
             // name
             SIZE_TYPE mid;
-            for (mid = beg;  isalnum(str[mid])  ||  str[mid] == '_';  mid++);
+            for (mid = beg;  s_IsNameSectionSymbol(str[mid]);  mid++);
             string name = str.substr(beg, mid);
 
             // '=' and surrounding spaces
