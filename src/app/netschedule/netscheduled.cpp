@@ -66,7 +66,8 @@
 USING_NCBI_SCOPE;
 
 
-#define NETSCHEDULED_VERSION "NCBI NetSchedule server version=1.0.0 __DATE__ __TIME__"
+#define NETSCHEDULED_VERSION \
+    "NCBI NetSchedule server version=1.0.0  " __DATE__ " " __TIME__
 
 class CNetScheduleServer;
 static CNetScheduleServer* s_netschedule_server = 0;
@@ -1137,6 +1138,8 @@ void CNetScheduleDApp::Init(void)
 
 int CNetScheduleDApp::Run(void)
 {
+    LOG_POST(NETSCHEDULED_VERSION);
+
     CArgs args = GetArgs();
 
     try {
@@ -1334,6 +1337,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.23  2005/03/31 19:28:34  kuznets
+ * Corrected use of prep macros
+ *
  * Revision 1.22  2005/03/31 19:18:29  kuznets
  * Added build date to version string" netscheduled.cpp
  *
