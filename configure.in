@@ -412,10 +412,13 @@ case "$compiler" in
 esac
 
 case "$host:$compiler" in
- *-linux*:GCC | *:WorkShop* )
+ *:WorkShop* )
    CONF_f_runpath="-R"
    ;;
- mips-sgi-irix6\.*:GCC | *:MIPSpro73 )
+ *-linux*:GCC )
+   CONF_f_runpath="-Xlinker -rpath "
+   ;;
+   mips-sgi-irix6\.*:GCC | *:MIPSpro73 )
    CONF_f_runpath="-rpath "
    ;;
 esac
@@ -1035,17 +1038,21 @@ if test "$with_wxwin" != "no" ; then
       WXWIN_LIBPATH="$WXWIN_LIBPATH/lib"
    fi
 
-   WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
-   WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
+   if test -x "$WXWIN_BINPATH/wx-config" ; then
+      WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
+      WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
 
-   CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
-   LIBS="$WXWIN_LIBS $orig_LIBS"
-   AC_TRY_LINK(
-      [#include <wx/wx.h>],
-      [ wxExit(); ],
-      [AC_DEFINE_UNQUOTED(HAVE_WXWINDOWS, 1)],
-      [with_wxwin="no"]
-   )
+      CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
+      LIBS="$WXWIN_LIBS $orig_LIBS"
+      AC_TRY_LINK(
+         [#include <wx/wx.h>],
+         [ wxExit(); ],
+         [AC_DEFINE_UNQUOTED(HAVE_WXWINDOWS, 1)],
+         [with_wxwin="no"]
+      )
+   else
+      with_wxwin="no"
+   fi
 fi
 
 if test "$with_wxwin" = "no" ; then
