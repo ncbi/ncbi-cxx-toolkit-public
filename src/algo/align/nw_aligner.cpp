@@ -183,6 +183,7 @@ void CNWAligner::SetSequences(const char* seq1, size_t len1,
     m_SeqLen1 = len1;
     m_Seq2 = seq2;
     m_SeqLen2 = len2;
+    m_Transcript.clear();
 }
 
 
@@ -1060,6 +1061,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2003/09/15 20:49:11  kapustin
+ * Clear the transcript when setting new sequences
+ *
  * Revision 1.35  2003/09/04 16:07:38  kapustin
  * Use STL vectors for exception-safe dynamic arrays and matrices
  *
