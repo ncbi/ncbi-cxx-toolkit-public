@@ -35,6 +35,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2000/11/30 21:53:39  ostell
+ * typo fixed
+ *
  * Revision 1.1  2000/11/30 18:40:23  ostell
  * added Textseq_id.Match
  *
@@ -65,7 +68,7 @@ public:
     ~CTextseq_id(void);
 
     // comaprison function
-    bool CTextseq_id::Match(const CTextseq_id& tsip2) const;
+    bool Match(const CTextseq_id& tsip2) const;
 
 };
 
