@@ -58,7 +58,7 @@ class CBlastOptionsHandle;
 * @code
 * ...
 * CRef<CBlastOptionsHandle> opts(CBlastOptionsFactory::Create(eBlastn));
-* CBl2Seq blaster(query, subject, opts);
+* CBl2Seq blaster(query, subject, *opts);
 * TSeqAlignVector results = blaster.Run();
 * ...
 * opts.Reset(CBlastOptionsFactory::Create(eMegablast));
@@ -186,6 +186,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2004/03/25 17:24:49  camacho
+ * Minor change in sample code
+ *
  * Revision 1.12  2004/03/25 17:18:44  camacho
  * Update documentation
  *
