@@ -29,13 +29,15 @@
  * Author:  Viatcheslav Gorelenkov
  *
  */
-
+#include <app/project_tree_builder/msvc_prj_utils.hpp>
 #include <corelib/ncbireg.hpp>
 #include <list>
 #include <set>
+#include <app/project_tree_builder/proj_tree.hpp>
 
 #include <corelib/ncbienv.hpp>
 BEGIN_NCBI_SCOPE
+
 
 class CMsvcDllsInfo
 {
@@ -43,26 +45,24 @@ public:
     CMsvcDllsInfo(const CNcbiRegistry& registry);
     ~CMsvcDllsInfo(void);
     
-    void GetDllsList(list<string>* dlls_ids) const;
+    void GetDllsList      (list<string>*      dlls_ids) const;
+    void GetBuildConfigs  (list<SConfigInfo>* config)   const;
+    string GetBuildDefine (void) const;
 
     struct SDllInfo
     {
         list<string> m_Hosting;
         list<string> m_Depends;
+        string       m_DllDefine;
 
         bool IsEmpty(void) const;
         void Clear  (void);
     };
+    void GetDllInfo(const string& dll_id, SDllInfo* dll_info) const;
 
-    void GelDllInfo(const string& dll_id, SDllInfo* dll_info) const;
+    bool   IsDllHosted(const string& lib_id) const;
+    string GetDllHost (const string& lib_id) const; 
 
-    
-    bool IsDllHosted (const string& lib_id) const;
-    
-    string GetDllHost(const string& lib_id) const;
-    
-    void GetLibPrefixes(const string& lib_id, list<string>* prefixes) const;
-    
 private:
     const CNcbiRegistry& m_Registry;
 
@@ -74,11 +74,26 @@ private:
 };
 
 
+void FilterOutDllHostedProjects(const CProjectItemsTree& tree_src, 
+                                CProjectItemsTree*       tree_dst);
+
+void CreateDllBuildTree(const CProjectItemsTree& tree_src, 
+                        CProjectItemsTree*       tree_dst);
+
+
+void CreateDllsList(const CProjectItemsTree& tree_src,
+                    list<string>*            dll_ids);
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/03/10 16:36:03  gorelenk
+ * Added definition of functions FilterOutDllHostedProjects,
+ * CreateDllBuildTree and CreateDllsList.
+ *
  * Revision 1.3  2004/03/08 23:27:40  gorelenk
  * Added declarations of member-functions  IsDllHosted,
  * GetDllHost, GetLibPrefixes to class CMsvcDllsInfo.
