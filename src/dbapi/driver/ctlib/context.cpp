@@ -820,7 +820,15 @@ I_DriverContext* CTLIB_CreateContext(map<string,string>* attr = 0)
     if(vers.find("100") != string::npos) 
         version= CS_VERSION_100;
     }
-    return new CTLibContext(reuse_context, version);
+    CTLibContext* cntx= new CTLibContext(reuse_context, version);
+    if(cntx && attr) {
+      string page_size= (*attr)["packet"];
+      if(!page_size.empty()) {
+	CS_INT s= atoi(page_size.c_str());
+	cntx->CTLIB_SetPacketSize(s);
+      }
+    }
+    return cntx;
 }
 
 void DBAPI_RegisterDriver_CTLIB(I_DriverMgr& mgr)
@@ -843,6 +851,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2003/04/01 21:49:55  soussov
+ * new attribute 'packet=XXX' (where XXX is a packet size) added to CTLIB_CreateContext
+ *
  * Revision 1.20  2003/03/18 14:34:20  ivanov
  * Fix for Rev 1.18-1.19 -- #include's for gethostname() on NCBI_OS_MSWIN platform
  *
