@@ -1,0 +1,10 @@
+# $Id$
+
+# Build library "XASN"
+#################################
+
+LIBOBJ = asnio asnwrite
+LIB    = xasn
+
+CPPFLAGS = $(ORIG_CPPFLAGS) \
+  -I$(NCBI_C_INCLUDE)
