@@ -31,11 +31,11 @@
 
 #include <corelib/ncbistd.hpp>
 
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/bioseq_handle.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/seq_vector_ci.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
@@ -47,7 +47,7 @@
 
 #include <objects/seqloc/Seq_loc.hpp>
 
-#include <objects/util/weight.hpp>
+#include <objmgr/util/weight.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -191,6 +191,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.25  2003/06/02 18:58:25  dicuccio
+* Fixed #include directives
+*
 * Revision 1.24  2003/06/02 18:53:32  dicuccio
 * Fixed bungled commit
 *

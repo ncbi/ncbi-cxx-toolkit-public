@@ -29,7 +29,7 @@
 *   
 */
 
-#include <objects/util/obj_sniff.hpp>
+#include <objmgr/util/obj_sniff.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/serial.hpp>
@@ -201,6 +201,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.8  2003/06/02 18:58:25  dicuccio
+* Fixed #include directives
+*
 * Revision 1.7  2003/06/02 18:52:17  dicuccio
 * Fixed bungled commit
 *

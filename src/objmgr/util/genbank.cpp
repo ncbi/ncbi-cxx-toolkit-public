@@ -29,12 +29,12 @@
 *   Code to write Genbank/Genpept flat-file records.
 */
 
-#include <objects/util/genbank.hpp>
-#include <objects/util/sequence.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/seq_vector_ci.hpp>
+#include <objmgr/util/genbank.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 
 #include <numeric>
 #include <algorithm>
@@ -2851,6 +2851,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.41  2003/06/02 18:58:25  dicuccio
+* Fixed #include directives
+*
 * Revision 1.40  2003/06/02 18:48:45  dicuccio
 * Fixed bungled commit
 *

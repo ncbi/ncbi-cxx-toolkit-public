@@ -31,12 +31,12 @@
 
 #include <serial/iterator.hpp>
 
-#include <objects/objmgr/object_manager.hpp>
-#include <objects/objmgr/scope.hpp>
-#include <objects/objmgr/seq_vector.hpp>
-#include <objects/objmgr/seq_vector_ci.hpp>
-#include <objects/objmgr/seqdesc_ci.hpp>
-#include <objects/objmgr/feat_ci.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/feat_ci.hpp>
 
 #include <objects/general/Int_fuzz.hpp>
 
@@ -66,7 +66,7 @@
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 
-#include <objects/util/sequence.hpp>
+#include <objmgr/util/sequence.hpp>
 #include <util/strsearch.hpp>
 
 #include <algorithm>
@@ -2907,6 +2907,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.55  2003/06/02 18:58:25  dicuccio
+* Fixed #include directives
+*
 * Revision 1.54  2003/06/02 18:53:32  dicuccio
 * Fixed bungled commit
 *
