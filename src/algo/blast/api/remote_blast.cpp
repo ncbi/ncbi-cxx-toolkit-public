@@ -306,9 +306,9 @@ CRemoteBlast::TGSRR * CRemoteBlast::x_GetGSRR(void)
     return rv;
 }
 
-CRef<objects::CSeq_align_set> CRemoteBlast::GetAlignments(void)
+CRef<CSeq_align_set> CRemoteBlast::GetAlignments(void)
 {
-    CRef<objects::CSeq_align_set> rv;
+    CRef<CSeq_align_set> rv;
     
     TGSRR * gsrr = x_GetGSRR();
     
@@ -319,9 +319,9 @@ CRef<objects::CSeq_align_set> CRemoteBlast::GetAlignments(void)
     return rv;
 }
 
-CRef<objects::CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
+CRef<CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
 {
-    CRef<objects::CBlast4_phi_alignments> rv;
+    CRef<CBlast4_phi_alignments> rv;
     
     TGSRR * gsrr = x_GetGSRR();
     
@@ -332,9 +332,9 @@ CRef<objects::CBlast4_phi_alignments> CRemoteBlast::GetPhiAlignments(void)
     return rv;
 }
 
-CRef<objects::CBlast4_mask> CRemoteBlast::GetMask(void)
+CRef<CBlast4_mask> CRemoteBlast::GetMask(void)
 {
-    CRef<objects::CBlast4_mask> rv;
+    CRef<CBlast4_mask> rv;
     
     TGSRR * gsrr = x_GetGSRR();
     
@@ -345,9 +345,9 @@ CRef<objects::CBlast4_mask> CRemoteBlast::GetMask(void)
     return rv;
 }
 
-list< CRef<objects::CBlast4_ka_block > > CRemoteBlast::GetKABlocks(void)
+list< CRef<CBlast4_ka_block > > CRemoteBlast::GetKABlocks(void)
 { 
-    list< CRef<objects::CBlast4_ka_block > > rv;
+    list< CRef<CBlast4_ka_block > > rv;
         
     TGSRR * gsrr = x_GetGSRR();
     
@@ -371,9 +371,9 @@ list< string > CRemoteBlast::GetSearchStats(void)
     return rv;
 }
 
-CRef<objects::CScore_matrix_parameters> CRemoteBlast::GetPSSM(void)
+CRef<CScore_matrix_parameters> CRemoteBlast::GetPSSM(void)
 {
-    CRef<objects::CScore_matrix_parameters> rv;
+    CRef<CScore_matrix_parameters> rv;
     
     TGSRR * gsrr = x_GetGSRR();
     
@@ -594,7 +594,7 @@ void CRemoteBlast::x_Init(CBlastOptionsHandle * opts_handle,
     m_Verbose    = eSilent;
     m_NeedConfig = eNeedAll;
     
-    m_QSR.Reset(new objects::CBlast4_queue_search_request);
+    m_QSR.Reset(new CBlast4_queue_search_request);
     
     m_QSR->SetProgram(program);
     m_QSR->SetService(service);
@@ -635,10 +635,10 @@ void CRemoteBlast::x_SetAlgoOpts(void)
 // the "int" version is not actually used (no program options need it.)
 void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
 {
-    CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+    CRef<CBlast4_value> v(new CBlast4_value);
     v->SetInteger(*x);
         
-    CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
     p->SetName(name);
     p->SetValue(*v);
         
@@ -647,10 +647,10 @@ void CRemoteBlast::x_SetOneParam(const char * name, const int * x)
 
 void CRemoteBlast::x_SetOneParam(const char * name, const list<int> * x)
 {
-    CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+    CRef<CBlast4_value> v(new CBlast4_value);
     v->SetInteger_list() = *x;
         
-    CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
     p->SetName(name);
     p->SetValue(*v);
         
@@ -659,57 +659,57 @@ void CRemoteBlast::x_SetOneParam(const char * name, const list<int> * x)
 
 void CRemoteBlast::x_SetOneParam(const char * name, const char ** x)
 {
-    CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+    CRef<CBlast4_value> v(new CBlast4_value);
     v->SetString().assign((x && (*x)) ? (*x) : "");
         
-    CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
     p->SetName(name);
     p->SetValue(*v);
         
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::x_SetOneParam(const char * name, objects::CScore_matrix_parameters * matrix)
+void CRemoteBlast::x_SetOneParam(const char * name, CScore_matrix_parameters * matrix)
 {
-    CRef<objects::CBlast4_value> v(new objects::CBlast4_value);
+    CRef<CBlast4_value> v(new CBlast4_value);
     v->SetMatrix(*matrix);
         
-    CRef<objects::CBlast4_parameter> p(new objects::CBlast4_parameter);
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
     p->SetName(name);
     p->SetValue(*v);
         
     m_QSR->SetProgram_options().Set().push_back(p);
 }
 
-void CRemoteBlast::SetQueries(CRef<objects::CBioseq_set> bioseqs)
+void CRemoteBlast::SetQueries(CRef<CBioseq_set> bioseqs)
 {
     if (bioseqs.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
                    "Empty reference for query.");
     }
     
-    CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
+    CRef<CBlast4_queries> queries_p(new CBlast4_queries);
     queries_p->SetBioseq_set(*bioseqs);
     
     m_QSR->SetQueries(*queries_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
-void CRemoteBlast::SetQueries(list< CRef<objects::CSeq_loc> > & seqlocs)
+void CRemoteBlast::SetQueries(list< CRef<CSeq_loc> > & seqlocs)
 {
     if (seqlocs.empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
                    "Empty list for query.");
     }
     
-    CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
+    CRef<CBlast4_queries> queries_p(new CBlast4_queries);
     queries_p->SetSeq_loc_list() = seqlocs;
     
     m_QSR->SetQueries(*queries_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eQueries));
 }
 
-void CRemoteBlast::SetQueries(CRef<objects::CScore_matrix_parameters> pssm)
+void CRemoteBlast::SetQueries(CRef<CScore_matrix_parameters> pssm)
 {
     if (pssm.Empty()) {
         NCBI_THROW(CBlastException, eBadParameter,
@@ -745,7 +745,7 @@ void CRemoteBlast::SetQueries(CRef<objects::CScore_matrix_parameters> pssm)
                    m_QSR->GetService() + ".");
     }
     
-    CRef<objects::CBlast4_queries> queries_p(new objects::CBlast4_queries);
+    CRef<CBlast4_queries> queries_p(new CBlast4_queries);
     queries_p->SetPssm(*pssm);
     
     m_QSR->SetQueries(*queries_p);
@@ -761,7 +761,7 @@ void CRemoteBlast::SetDatabase(const char * x)
                    "NULL specified for database.");
     }
         
-    CRef<objects::CBlast4_subject> subject_p(new objects::CBlast4_subject);
+    CRef<CBlast4_subject> subject_p(new CBlast4_subject);
     subject_p->SetDatabase(x);
     m_QSR->SetSubject(*subject_p);
     m_NeedConfig = ENeedConfig(m_NeedConfig & (~ eSubject));
@@ -808,6 +808,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2004/06/21 16:34:09  bealer
+* - Make scope usage more consistent for doxygen's sake.
+*
 * Revision 1.15  2004/06/09 15:56:06  bealer
 * - Fix return type of x_GetState
 *
