@@ -75,21 +75,27 @@ protected:
 bool CTestObjectManager::Thread_Run(int idx)
 {
     ++idx;
-    // Test global scope
-    // read data from a scope, which is shared by all threads
-    CTestHelper::TestDataRetrieval(*m_Scope, 0, 0);
-    // add more data to the global scope
-    CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
-    CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
-    m_Scope->AddTopLevelSeqEntry(*entry1);
-    m_Scope->AddTopLevelSeqEntry(*entry2);
-    CTestHelper::TestDataRetrieval(*m_Scope, idx, 0);
+    if ( m_Scope ) {
+        // Test global scope
+        // read data from a scope, which is shared by all threads
+        CTestHelper::TestDataRetrieval(*m_Scope, 0, 0);
+        // add more data to the global scope
+        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
+        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
+        m_Scope->AddTopLevelSeqEntry(*entry1);
+        m_Scope->AddTopLevelSeqEntry(*entry2);
+        CTestHelper::TestDataRetrieval(*m_Scope, idx, 0);
+    }
+    for ( int i = 0; i < 1000; ++i ) {
+        CObjectManager::GetInstance();
+    }
 
     // Test local scope
     // 1.2.5 add annotation to one sequence
     // verify that others did not change
     {
-        CScope scope(*m_ObjMgr);
+        CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+        CScope scope(*objmgr);
         // create new seq.entries - to be able to check unresolved lengths
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
@@ -123,8 +129,9 @@ bool CTestObjectManager::Thread_Run(int idx)
 
     // 1.2.7. one entry in two scopes
     {
-        CScope Scope1(*m_ObjMgr);
-        CRef<CScope> pScope2(new CScope(*m_ObjMgr));
+        CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+        CScope Scope1(*objmgr);
+        CRef<CScope> pScope2(new CScope(*objmgr));
         CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(idx));
         CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(idx));
         Scope1.AddTopLevelSeqEntry(*entry1);
@@ -169,13 +176,15 @@ bool CTestObjectManager::TestApp_Init(void)
 
     NcbiCout << "Testing ObjectManager (" << s_NumThreads << " threads)..." << NcbiEndl;
 
-    m_ObjMgr = CObjectManager::GetInstance();
-    // Scope shared by all threads
-    m_Scope = new CScope(*m_ObjMgr);
-    CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(0));
-    CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(0));
-    m_Scope->AddTopLevelSeqEntry(*entry1);
-    m_Scope->AddTopLevelSeqEntry(*entry2);
+    if ( !args["no_global"] ) {
+        m_ObjMgr = CObjectManager::GetInstance();
+        // Scope shared by all threads
+        m_Scope = new CScope(*m_ObjMgr);
+        CRef<CSeq_entry> entry1(&CDataGenerator::CreateTestEntry1(0));
+        CRef<CSeq_entry> entry2(&CDataGenerator::CreateTestEntry2(0));
+        m_Scope->AddTopLevelSeqEntry(*entry1);
+        m_Scope->AddTopLevelSeqEntry(*entry2);
+    }
     return true;
 }
 
@@ -190,6 +199,7 @@ bool CTestObjectManager::TestApp_Args(CArgDescriptions& args)
     // Prepare command line descriptions
     args.AddFlag("dump_entries", "print all generated seq entries");
     args.AddFlag("dump_features", "print all found features");
+    args.AddFlag("no_global", "do not create and test global scope");
     return true;
 }
 
@@ -209,6 +219,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/09/30 18:39:31  vasilche
+* Added check for thread safety of CObjectManager::GetInstance().
+*
 * Revision 1.27  2004/07/21 15:51:25  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added
