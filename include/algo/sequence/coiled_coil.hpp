@@ -101,7 +101,7 @@ private:
                          vector<CRef<objects::CSeq_loc> >& regions,
                          vector<double>& max_scores, TSeqPos win_len);
 
-    static const double CCoiledCoil::sm_Propensities[26][7];
+    static const double sm_Propensities[26][7];
 };
 
 
@@ -113,6 +113,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/09/10 14:22:11  ucko
+ * Remove a redundant occurrence of CCoiledCoil::.
+ *
  * Revision 1.3  2003/09/09 18:30:48  ucko
  * Fixes for WorkShop, which (still) doesn't let templates access
  * anything file-static.
