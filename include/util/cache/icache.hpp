@@ -297,6 +297,10 @@ public:
                                  int            version,
                                  const string&  subkey) = 0;
 
+    /// Check if any BLOB exists (any version)
+    ///
+    virtual bool HasBlobs(const string&  key,
+                          const string&  subkey) = 0;
     /// Delete all BLOBs older than specified
     ///
     /// @param access_timeout
@@ -328,7 +332,7 @@ public:
 };
 
 
-NCBI_DECLARE_INTERFACE_VERSION(ICache,  "xcache", 2, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(ICache,  "xcache", 3, 1, 0);
 
 template<>
 class CDllResolver_Getter<ICache>
@@ -351,6 +355,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2005/02/22 13:01:29  kuznets
+ * +HasBlobs()
+ *
  * Revision 1.13  2004/12/22 19:32:34  grichenk
  * +CDllResolver_Getter<ICache>
  * Changed interface name from icache to xcache

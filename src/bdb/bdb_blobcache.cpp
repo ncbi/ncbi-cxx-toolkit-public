@@ -1032,6 +1032,34 @@ size_t CBDB_Cache::GetSize(const string&  key,
     return m_CacheDB->LobSize();
 }
 
+bool CBDB_Cache::HasBlobs(const string&  key,
+                          const string&  subkey)
+{
+	EBDB_ErrCode ret;
+    time_t curr = time(0); 
+    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
+
+    CBDB_FileCursor cur(*m_CacheAttrDB);
+    cur.SetCondition(CBDB_FileCursor::eGE);
+    cur.From << key;
+    if (!subkey.empty()) {
+        cur.From << subkey;
+    }
+    if (cur.FetchFirst() != eBDB_Ok) {
+        return false;
+    }
+
+    const char* key = m_CacheAttrDB->key;
+    int overflow = m_CacheAttrDB->overflow;
+    const char* subkey = m_CacheAttrDB->subkey;
+
+    if (x_CheckTimestampExpired(key, version, subkey, curr)) {
+        return false;
+    }
+
+    return true;
+}
+
 
 bool CBDB_Cache::Read(const string& key, 
                       int           version, 
@@ -1521,8 +1549,7 @@ void CBDB_Cache::Purge(time_t           access_timeout,
             cur.SetCondition(CBDB_FileCursor::eGE);
             cur.From << last_key;
         
-            //CTime time_stamp(CTime::eCurrent);
-            time_t curr = time(0); //(int)time_stamp.GetTimeT();
+            time_t curr = time(0); 
 
             for (unsigned i = 0; i < batch_size; ++i) {
                 if (cur.Fetch() != eBDB_Ok) {
@@ -2267,6 +2294,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.104  2005/02/22 13:02:05  kuznets
+ * +HasBlobs()
+ *
  * Revision 1.103  2005/02/17 15:53:15  kuznets
  * CBDB_CacheIWriter: protection from double Flush()
  *

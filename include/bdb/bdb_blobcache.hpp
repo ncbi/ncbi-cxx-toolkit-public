@@ -287,6 +287,8 @@ public:
                                     int              version,
                                     const string&    subkey,
                                     unsigned int     time_to_live = 0);
+    virtual bool HasBlobs(const string&  key,
+                          const string&  subkey);
 
     virtual void Remove(const string& key);
 
@@ -530,6 +532,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.49  2005/02/22 13:01:53  kuznets
+ * +HasBlobs()
+ *
  * Revision 1.48  2005/02/02 19:49:53  grichenk
  * Fixed more warnings
  *

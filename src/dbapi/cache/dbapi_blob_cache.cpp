@@ -729,6 +729,14 @@ size_t CDBAPI_Cache::GetSize(const string&  key,
     return blob_size;
 }
 
+bool CDBAPI_Cache::HasBlobs(const string&  key,
+                            const string&  subkey)
+{
+    _ASSERT(0); // TODO: implement this!
+    return false;
+}
+
+
 bool CDBAPI_Cache::Read(const string& key, 
                         int           version, 
                         const string& subkey,
@@ -1230,6 +1238,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.16  2005/02/22 13:02:35  kuznets
+ * +HasBlobs()
+ *
  * Revision 1.15  2005/02/02 19:49:54  grichenk
  * Fixed more warnings
  *
