@@ -110,6 +110,8 @@ static const char k_PSymbol[CDisplaySeqalign::kPMatrixSize+1] = "ARNDCQEGHILKMFP
 /* url for linkout*/
 static const string k_EntrezUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/query.fcgi?cmd=Retrieve&db=%s&list_uids=%d&dopt=%s\" %s>";
 
+static const string k_EntrezSubseqUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/entrez/viewer.fcgi?list_uids=%d&db=%s&__from=%d&__to=%d\">";
+
 static const string k_TraceUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/Traces/trace.cgi?cmd=retrieve&dopt=fasta&val=%s\">";
 
 static const string k_LocusLinkUrl = "<a href=\"http://www.ncbi.nlm.nih.gov/LocusLink/list.cgi?Q=%d%s\"><img border=0 height=16 width=16 src=\"/blast/images/L.gif\" alt=\"LocusLink info\"></a>";
@@ -428,7 +430,7 @@ string CDisplaySeqalign::getUrl(const list<CRef<CSeq_id> >& ids, int gi, int row
       strcpy(db, "Protein");
     }    
  
-    char urlBuf[1024];
+    char urlBuf[2048];
     if (gi > 0) {
       sprintf(urlBuf, k_EntrezUrl.c_str(), db, gi, dopt, (m_AlignOption & eNewTargetWindow) ? "TARGET=\"EntrezView\"" : "");
       urlLink = urlBuf;
@@ -2066,7 +2068,10 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) {
     }
     string id_str;
     subject_seqid.GetLabel(&id_str, CSeq_id::eBoth);
-    
+    const CBioseq_Handle& subject_handle=m_AV->GetBioseqHandle(1);
+    int subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
+    char urlBuf[2048];
+   
     SFeatInfo* feat5 = NULL;
     SFeatInfo* feat3 = NULL;
     vector<SFeatInfo*>& feat_list =  m_DynamicFeature->GetFeatInfo(id_str, actual_range, feat5, feat3, 2);
@@ -2074,17 +2079,50 @@ void CDisplaySeqalign::x_PrintDynamicFeatures(CNcbiOstream& out) {
     if(feat_list.size() > 0) { //has feature in this range
         out << " Features in this part of subject sequence:" << endl;
         ITERATE(vector<SFeatInfo*>, iter, feat_list){
-            out << "   " << (*iter)->feat_str << endl;
+            out << "   ";
+            if(m_AlignOption&eHtml && subject_gi > 0){
+                sprintf(urlBuf, k_EntrezSubseqUrl.c_str(), subject_gi,
+                        m_IsDbNa ? "Nucleotide" : "Protein",  
+                        (*iter)->range.GetFrom(), (*iter)->range.GetTo());
+                out << urlBuf;
+            }  
+            out << (*iter)->feat_str;
+            if(m_AlignOption&eHtml && subject_gi > 0){
+                out << "</a>";
+            }  
+            out << endl;
         }
     } else {  //show flank features
         if(feat5 || feat3){   
-        out << " Features flanking this part of subject sequence:" << endl;
+            out << " Features flanking this part of subject sequence:" << endl;
         }
         if(feat5){
-            out << "   " << actual_range.GetFrom() - feat5->range.GetTo() << " bp at 5' side: " << feat5->feat_str << endl;
+            out << "   ";
+            if(m_AlignOption&eHtml && subject_gi > 0){
+                sprintf(urlBuf, k_EntrezSubseqUrl.c_str(), subject_gi,
+                        m_IsDbNa ? "Nucleotide" : "Protein",  
+                        feat5->range.GetFrom(), feat5->range.GetTo());
+                out << urlBuf;
+            }  
+            out << actual_range.GetFrom() - feat5->range.GetTo() << " bp at 5' side: " << feat5->feat_str;
+            if(m_AlignOption&eHtml && subject_gi > 0){
+                out << "</a>";
+            }  
+            out << endl;
         }
         if(feat3){
-            out << "   " << feat3->range.GetFrom() - actual_range.GetTo() << " bp at 3' side: " << feat3->feat_str << endl;
+            out << "   ";
+            if(m_AlignOption&eHtml && subject_gi > 0){
+                sprintf(urlBuf, k_EntrezSubseqUrl.c_str(), subject_gi,
+                        m_IsDbNa ? "Nucleotide" : "Protein",  
+                        feat3->range.GetFrom(), feat3->range.GetTo());
+                out << urlBuf;
+            }
+            out << feat3->range.GetFrom() - actual_range.GetTo() << " bp at 3' side: " << feat3->feat_str;
+            if(m_AlignOption&eHtml){
+                out << "</a>";
+            }  
+            out << endl;
         }
     }
     if(feat_list.size() > 0 || feat5 || feat3 ){
@@ -2098,6 +2136,9 @@ END_NCBI_SCOPE
 /* 
 *============================================================
 *$Log$
+*Revision 1.42  2004/08/10 17:27:08  jianye
+*Added dynamic feature link
+*
 *Revision 1.41  2004/08/05 19:16:50  jianye
 *checking dynamic feature better
 *
