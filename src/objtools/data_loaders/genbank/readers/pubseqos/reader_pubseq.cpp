@@ -189,10 +189,14 @@ streambuf *CPubseqReader::SeqrefStreamBuf(const CSeq_id &seqId, unsigned conn)
 streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
 {
   CNcbiOstrstream oss;
-  CObjectOStreamAsn ooss(oss);
-  ooss << seqId;
-  CDB_VarChar asnIn(oss.str());
+  {
+    CObjectOStreamAsn ooss(oss);
+    ooss << seqId;
+  }
+  oss << " " ;
   oss.freeze(false);
+  oss.str()[oss.pcount()-1]=0;
+  CDB_VarChar asnIn(oss.str());
 
   int gi = 0;
   {
@@ -220,7 +224,8 @@ streambuf *CPubseqReader::x_SeqrefStreamBuf(const CSeq_id &seqId, unsigned con)
       }
 
       gi = giFound.Value();
-      // cout << "gi=" << gi << "\n";
+      
+      //LOG_POST(setw(3) << CThread::GetSelf() << ":: " << "id_gi_by_seqid_asn => gi("<<gi << ")");
     }
   }
 
@@ -287,7 +292,7 @@ struct CPubseqStreamBuf : public streambuf
 {
   CPubseqStreamBuf(CPubseqSeqref &pubseqSeqref, CDB_Connection *conn);
   virtual ~CPubseqStreamBuf() {}
-  CT_INT_TYPE underflow();
+  virtual CT_INT_TYPE underflow();
 
   enum EStatus {eInit, eNewRow, eBlob};
   CPubseqSeqref &m_Seqref;
@@ -329,17 +334,25 @@ CT_INT_TYPE CPubseqStreamBuf::underflow()
   {
     CDB_VarChar descrOut("-");
     CDB_Int classOut(0);
-
+    CDB_Int confidential(0),withdrawn(0);
+    
     while(m_Cmd->HasMoreResults())
     {
+      if(m_Cmd->HasFailed() && confidential.Value()>0 || withdrawn.Value()>0)
+        {
+          LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
+          return CT_EOF;
+        }
+      
       m_Result.reset(m_Cmd->Result());
       if (m_Result.get() == 0  ||  m_Result->ResultType() != eDB_RowResult)
         continue;
 
       while(m_Result->Fetch())
+      {
         for(unsigned pos = 0; pos < m_Result->NofItems(); ++pos)
         {
-          string name = m_Result->ItemName(pos);
+          const string name = m_Result->ItemName(pos);
           if(name == "asn1")
           {
             CStringStreamable descr(descrOut.Value());
@@ -353,10 +366,20 @@ CT_INT_TYPE CPubseqStreamBuf::underflow()
             m_Status = eBlob;
             return CT_TO_INT_TYPE(m_Buffer[0]);
           }
+          else if(name == "confidential")
+            m_Result->GetItem(&confidential);
+          else if(name == "override")
+            m_Result->GetItem(&withdrawn);
           else
             m_Result->SkipItem();
         }
+      }
     }
+    if(confidential.Value()>0 || withdrawn.Value()>0)
+      {
+        LOG_POST("GI(" << m_Seqref.Gi() <<") is private");
+        return CT_EOF;
+      }
     throw runtime_error("id_get_asn: asn not found");
   }
   else if(m_Status == eBlob)
@@ -415,6 +438,10 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.15  2002/07/22 22:55:55  kimelman
+* bugfixes: a) null termination added for text seqid strstream.
+*           b) processing of failed request.
+*
 * Revision 1.14  2002/07/10 16:49:59  grichenk
 * Removed CRef<CSeq_entry>, use pointer instead
 *
