@@ -74,7 +74,7 @@ public:
     virtual ~CNWAligner(void) {}
 
     // Compute the alignment
-    TScore Run();
+    TScore Run(void);
 
     // Setters
     void SetSequences(const char* seq1, size_t len1,
@@ -97,7 +97,7 @@ public:
     // progress reporting
     struct SProgressInfo
     {
-        SProgressInfo(): m_iter_done(0), m_iter_total(0), m_data(0) {}
+        SProgressInfo(void): m_iter_done(0), m_iter_total(0), m_data(0) {}
         size_t m_iter_done;
         size_t m_iter_total;
         void*  m_data;
@@ -144,7 +144,7 @@ public:
         return &m_Transcript;
     }
     // converted transcript vector
-    void GetTranscriptString(vector<char>* out) const;
+    string GetTranscriptString(void) const;
 
     // transcript parsers
     size_t        GetLeftSeg(size_t* q0, size_t* q1,
@@ -155,6 +155,10 @@ public:
                               size_t min_size) const;
     size_t        GetLongestSeg(size_t* q0, size_t* q1,
                                 size_t* s0, size_t* s1) const;
+    // returns the size of a single backtrace matrix element
+    virtual size_t GetElemSize(void) const {
+        return 1;
+    }
 
 protected:
     // Bonuses and penalties
@@ -209,11 +213,6 @@ protected:
     void x_DoBackTrace(const unsigned char* backtrace_matrix,
                        size_t N1, size_t N2,
                        vector<ETranscriptSymbol>* transcript);
-  
-    // returns the size of a single backtrace matrix element
-    virtual size_t x_GetElemSize(void) const {
-        return 1;
-    }
 };
 
 
@@ -226,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/12/29 13:02:39  kapustin
+ * Make x_GetElemSize() public and rename. Return string from GetTranscriptString().
+ *
  * Revision 1.31  2003/10/27 20:46:21  kapustin
  * Derive from CObject. Add more getters.
  *
