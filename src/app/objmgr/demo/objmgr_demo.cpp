@@ -839,7 +839,7 @@ int CDemoApp::Run(void)
                     auto_ptr<CObjectOStream>
                         out(CObjectOStream::Open(eSerial_AsnText, NcbiCout));
                     *out << it->GetMappedFeature();
-                    if ( 0 ) {
+                    if ( 1 ) {
                         NcbiCout << "Original location:\n";
                         *out << it->GetOriginalFeature().GetLocation();
                     }
@@ -981,6 +981,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2003/09/30 20:13:38  vasilche
+* Print original feature location if requested.
+*
 * Revision 1.38  2003/09/30 16:22:05  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
