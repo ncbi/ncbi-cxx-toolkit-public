@@ -1814,8 +1814,8 @@ Kappa_MatchingSequenceInitialize(Kappa_MatchingSequence * self,
   /* All buffers have been copied, so the ones returned from seqSrc are no 
      longer needed. */
   BLASTSeqSrcRetSequence(seqSrc, (void*)&seq_arg);
+  sfree(seq_arg.seq);
   return;
-
 }
 
 
