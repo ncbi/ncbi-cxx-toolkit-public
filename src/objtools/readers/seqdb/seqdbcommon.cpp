@@ -44,7 +44,7 @@ int seqdb_debug_class = 0; // debug_mvol | debug_alias;
 
 string SeqDB_GetFileName(string s)
 {
-    size_t off = s.find_last_of("/");
+    size_t off = s.find_last_of(CFile::GetPathSeparator());
     
     if (off != s.npos) {
         s.erase(0, off + 1);
@@ -55,7 +55,7 @@ string SeqDB_GetFileName(string s)
 
 string SeqDB_GetDirName(string s)
 {
-    size_t off = s.find_last_of("/");
+    size_t off = s.find_last_of(CFile::GetPathSeparator());
     
     if (off != s.npos) {
         s.erase(off);
@@ -106,12 +106,48 @@ string SeqDB_CombinePath(const string & one, const string & two)
     return result;
 }
 
+/// Test whether an index or alias file exists
+///
+/// The provide filename is combined with both of the extensions
+/// appropriate to the database sequence type, and the resulting
+/// strings are checked for existence in the file system.
+///
+/// @param dbname
+///   Input path and filename
+/// @param dbtype
+///   Database type, either protein or nucleotide
+/// @return
+///   true if either of the index or alias files is found
 static bool s_SeqDB_DBExists(const string & dbname, char dbtype)
 {
     return (CFile(dbname + "." + dbtype + "al").Exists() ||
             CFile(dbname + "." + dbtype + "in").Exists());
 }
 
+/// Search for a file in a provided set of paths
+/// 
+/// This function takes a search path as a ":" delimited set of path
+/// names, and searches in those paths for the given database
+/// component.  The component name may include path components.  If
+/// the exact_name flag is set, the path is assumed to contain any
+/// required extension; otherwise extensions for index and alias files
+/// will be tried.  Each element of the search path is tried in
+/// sequential order for both index or alias files (if exact_name is
+/// not set), before moving to the next element of the search path.
+/// The path returned from this function will not contain a file
+/// extension unless the provided filename did (in which case,
+/// exact_name is normally set).
+/// 
+/// @param blast_paths
+///   List of filesystem paths seperated by ":".
+/// @param dbname
+///   Base name of the database index or alias file to search for.
+/// @param dbtype
+///   Type of database, either protein or nucleotide.
+/// @param exact_name
+///   Set to true if dbname already contains any needed extension.
+/// @return
+///   Full pathname, minus extension, or empty string if none found.
 static string s_SeqDB_TryPaths(const string & blast_paths,
                                const string & dbname,
                                char           dbtype,
@@ -122,8 +158,8 @@ static string s_SeqDB_TryPaths(const string & blast_paths,
     
     string result;
     
-    for(Uint4 i = 0; i < roads.size(); i++) {
-        string attempt = SeqDB_CombinePath(roads[i], dbname);
+    ITERATE(vector<string>, road, roads) {
+        string attempt = SeqDB_CombinePath(*road, dbname);
         
         if (exact_name) {
             if (CFile(attempt).Exists()) {

@@ -157,38 +157,129 @@ inline T SeqDB_GetBroken(const T * stdord_obj)
 
 #endif
 
-// Combine two paths, trying a little to avoid duplicated delimiters.
-// If either string is empty, the other is returned.  Conceptually,
-// the first path is "cwd" and the second path is the filename.  So,
-// if the second path starts with "/", the first path is ignored.
-
+/// Combine a filesystem path and file name
+///
+/// Combine a provided filesystem path and a file name.  This function
+/// tries to avoid duplicated delimiters.  If either string is empty,
+/// the other is returned.  Conceptually, the first path might be the
+/// current working directory and the second path is a filename.  So,
+/// if the second path starts with "/", the first path is ignored.
+/// Also, care is taken to avoid duplicated delimiters.  If the first
+/// path ends with the delimiter character, another delimiter will not
+/// be added between the strings.  The delimiter used will vary from
+/// operating system to operating system, and is adjusted accordingly.
+///
+/// @param path
+///   The filesystem path to use
+/// @param file
+///   The name of the file (may include path components)
+/// @return
+///   A combination of the path and the file name
 string SeqDB_CombinePath(const string & path, const string & file);
 
-// Returns a path minus filename (actually, last component).
+/// Returns a path minus filename.
+///
+/// This returns the part of a file path before the last path
+/// delimiter, or the whole path if no delimiter was found.
+///
+/// @param s
+///   Input path
+/// @return
+///   Path minus file extension
+string SeqDB_GetDirName(string s);
 
-string SeqDB_GetDirName (string s);
-
-// Returns a filename minus greedy path.
-
+/// Returns a filename minus greedy path.
+///
+/// This returns the part of a file name after the last path
+/// delimiter, or the whole path if no delimiter was found.
+///
+/// @param s
+///   Input path
+/// @return
+///   Filename portion of path
 string SeqDB_GetFileName(string s);
 
-// Returns a filename minus non-greedy extension.
-
+/// Returns a filename minus greedy path.
+///
+/// This returns the part of a file name after the last path
+/// delimiter, or the whole path if no delimiter was found.
+///
+/// @param s
+///   Input path
+/// @return
+///   Path minus file extension
 string SeqDB_GetBasePath(string s);
 
-// Composition of the above two functions; returns a filename minus
-// greedy path and non-greedy extension.
-
+/// Returns a filename minus greedy path.
+///
+/// This is just the composition of the SeqDB_GetDirName and
+/// SeqDB_GetFileName functions; it returns a filename minus greedy
+/// path and non-greedy extension.
+///
+/// @param s
+///   Input path
+/// @return
+///   Filename portion of path, minus extension
 string SeqDB_GetBaseName(string s);
 
 // Find the full name, minus extension, of a ".?al" or ".?in" file,
 // and return it.  If not found, return null.
 
+/// Finds a file in the search path.
+///
+/// This function resolves the full name of a file.  It searches for a
+/// file of the provided base name and returns the provided name with
+/// the full path attached.  If the exact_name flag is set, the file
+/// is assumed to have any extension it may need, and none is added
+/// for searching or stripped from the return value.  If exact_name is
+/// not set, the file is assumed to end in ".pin", ".nin", ".pal", or
+/// ".nal", and if such a file is found, that extension is stripped
+/// from the returned string.  Furthermore, in the exact_name == false
+/// case, only file extensions relevant to the dbtype are considered.
+/// Thus, if dbtype is set to 'p' for protein, only ".pin" and ".pal"
+/// are checked for; if it is set to nucleotide, only ".nin" and
+/// ".nal" are considered.  The places where the file may be found are
+/// dependant on the search path.  The search path consists of the
+/// current working directory, the contents of the BLASTDB environment
+/// variable, the BLASTDB member of the BLAST group of settings in the
+/// NCBI meta-registry.  This registry is an interface to settings
+/// found in (for example) a ".ncbirc" file found in the user's home
+/// directory (but several paths are usually checked).  Finally, if
+/// the provided file_name starts with the default path delimiter
+/// (which is OS dependant, but for example, "/" on Linux), the path
+/// will be taken to be absolute, and the search path will not affect
+/// the results.
+/// 
+/// @param file_name
+///   File base name for which to search
+/// @param dbtype
+///   Input file base name
+/// @param sp
+///   If non-null, the ":" delimited search path is returned here
+/// @param exact_name
+///   If true, the file_name already includes any needed extension
+/// @return
+///   Fully qualified filename and path, minus extension
 string SeqDB_FindBlastDBPath(const string & file_name,
                              char           dbtype,
                              string       * sp,
                              bool           exact_name);
 
+/// Join two strings with a delimiter
+///
+/// This function returns whichever of two provided strings is
+/// non-empty.  If both are non-empty, they are joined with a
+/// delimiter placed between them.  It is intended for use when
+/// combining strings, such as a space delimited list of database
+/// volumes.  It is probably not suitable for joining file system
+/// paths with filenames (use something like SeqDB_CombinePaths).
+///
+/// @param a
+///   First component and returned path
+/// @param b
+///   Second component
+/// @param delim
+///   The delimiter to use when joining elements
 void SeqDB_JoinDelim(string & a, const string & b, const string & delim);
 
 
