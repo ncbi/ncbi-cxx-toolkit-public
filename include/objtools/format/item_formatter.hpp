@@ -37,6 +37,7 @@
 #include <corelib/ncbiobj.hpp>
 
 #include <objtools/format/formatter.hpp>
+#include <objtools/format/context.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -62,7 +63,6 @@ class CFeatHeaderItem;
 class CContigItem;
 class CWGSItem;
 class CGenomeItem;
-class CEndSectionItem;
 class CFlatTextOStream;
 class CDateItem;
 class CDBSourceItem;
@@ -77,28 +77,38 @@ public:
     
     virtual ~CFlatItemFormatter(void);
 
-    void Format(const IFlatItem& item, IFlatTextOStream& text_os);
 
-    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) const {}
-    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) const {}
-    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) const {}
-    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) const {}
-    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) const {}
-    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) const {}
-    virtual void FormatSource(const CSourceItem& keys, IFlatTextOStream& text_os) const {}
-    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) const {}
-    virtual void FormatComment(const CCommentItem& comment, IFlatTextOStream& text_os) const {}
-    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) const {}
-    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) const {}
-    virtual void FormatEndSection(const CEndSectionItem& end, IFlatTextOStream& text_os) const {}
-    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) const {}
-    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) const {}
-    virtual void FormatDate(const CDateItem& seg, IFlatTextOStream& text_os) const {}
-    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) const {}
-    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) const {}
-    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) const {}
-    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) const {}
-    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) const {}
+    // control methods
+    virtual void Start       (IFlatTextOStream& text_os) {}
+    virtual void StartSection(IFlatTextOStream& text_os) {}
+    virtual void EndSection  (IFlatTextOStream& text_os) {}
+    virtual void End         (IFlatTextOStream& text_os) {}
+
+    // Format methods
+    void Format(const IFlatItem& item, IFlatTextOStream& text_os);
+    virtual void FormatLocus(const CLocusItem& locus, IFlatTextOStream& text_os) {}
+    virtual void FormatDefline(const CDeflineItem& defline, IFlatTextOStream& text_os) {}
+    virtual void FormatAccession(const CAccessionItem& acc, IFlatTextOStream& text_os) {}
+    virtual void FormatVersion(const CVersionItem& version, IFlatTextOStream& text_os) {}
+    virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) {}
+    virtual void FormatKeywords(const CKeywordsItem& keys, IFlatTextOStream& text_os) {}
+    virtual void FormatSource(const CSourceItem& keys, IFlatTextOStream& text_os) {}
+    virtual void FormatReference(const CReferenceItem& keys, IFlatTextOStream& text_os) {}
+    virtual void FormatComment(const CCommentItem& comment, IFlatTextOStream& text_os) {}
+    virtual void FormatBasecount(const CBaseCountItem& bc, IFlatTextOStream& text_os) {}
+    virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) {}
+    virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) {}
+    virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) {}
+    virtual void FormatDate(const CDateItem& seg, IFlatTextOStream& text_os) {}
+    virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) {}
+    virtual void FormatPrimary(const CPrimaryItem& prim, IFlatTextOStream& text_os) {}
+    virtual void FormatContig(const CContigItem& contig, IFlatTextOStream& text_os) {}
+    virtual void FormatWGS(const CWGSItem& wgs, IFlatTextOStream& text_os) {}
+    virtual void FormatGenome(const CGenomeItem& genome, IFlatTextOStream& text_os) {}
+
+    // Context
+    void SetContext(CFFContext& ctx) { m_Ctx.Reset(&ctx); }
+    CFFContext& GetContext(void) { return *m_Ctx; }
 
 protected:
     CFlatItemFormatter(void) {} // !!!
@@ -114,7 +124,7 @@ protected:
 
     static const string s_GenbankMol[];
 
-    virtual SIZE_TYPE GetWidth(void) const = 0;
+    virtual SIZE_TYPE GetWidth(void) const { return 0; }
 
     static  string& x_Pad(const string& s, string& out, SIZE_TYPE width,
                         const string& indent = kEmptyStr);
@@ -140,8 +150,9 @@ protected:
 
 private:
     // data
-    string m_Indent;
-    string m_FeatIndent;
+    string           m_Indent;
+    string           m_FeatIndent;
+    CRef<CFFContext> m_Ctx;
 };
 
 
@@ -153,6 +164,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:56:18  shomrat
+* const removed; added control methods
+*
 * Revision 1.1  2003/12/17 19:53:37  shomrat
 * Initial revision (adapted from flat lib)
 *
