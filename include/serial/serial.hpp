@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2002/08/26 18:32:28  grichenk
+* Added Get/SetAutoSeparator() to CObjectOStream to control
+* output of separators.
+*
 * Revision 1.43  2002/08/23 16:50:39  grichenk
 * Write separator after every object
 *
@@ -240,7 +244,7 @@ template<typename T>
 inline
 CObjectOStream& operator<<(CObjectOStream& out, const T& object)
 {
-    return Separator(Write(out, object));
+    return Write(out, object);
 }
 
 template<typename T>

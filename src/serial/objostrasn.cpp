@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.70  2002/08/26 18:32:30  grichenk
+* Added Get/SetAutoSeparator() to CObjectOStream to control
+* output of separators.
+*
 * Revision 1.69  2002/08/23 16:52:37  grichenk
 * Set separator to line-break by default
 *
@@ -345,6 +349,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 {
     m_Output.SetBackLimit(80);
     SetSeparator("\n");
+    SetAutoSeparator(true);
 }
 
 CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
@@ -354,6 +359,7 @@ CObjectOStreamAsn::CObjectOStreamAsn(CNcbiOstream& out,
 {
     m_Output.SetBackLimit(80);
     SetSeparator("\n");
+    SetAutoSeparator(true);
 }
 
 CObjectOStreamAsn::~CObjectOStreamAsn(void)

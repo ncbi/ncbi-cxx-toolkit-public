@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.64  2002/08/26 18:32:29  grichenk
+* Added Get/SetAutoSeparator() to CObjectOStream to control
+* output of separators.
+*
 * Revision 1.63  2002/03/07 22:02:01  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -361,7 +365,8 @@ CObjectOStream* CObjectOStream::Open(ESerialDataFormat format,
 }
 
 CObjectOStream::CObjectOStream(CNcbiOstream& out, bool deleteOut)
-    : m_Output(out, deleteOut), m_Fail(eNoError), m_Flags(eFlagNone)
+    : m_Output(out, deleteOut), m_Fail(eNoError), m_Flags(eFlagNone),
+      m_Separator(""), m_AutoSeparator(false)
 {
 }
 
@@ -490,6 +495,9 @@ void CObjectOStream::Write(const CConstObjectInfo& object)
     EndOfWrite();
     
     END_OBJECT_FRAME();
+
+    if ( GetAutoSeparator() )
+        Separator(*this);
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
@@ -504,6 +512,9 @@ void CObjectOStream::Write(TConstObjectPtr object, TTypeInfo typeInfo)
     EndOfWrite();
     
     END_OBJECT_FRAME();
+
+    if ( GetAutoSeparator() )
+        Separator(*this);
 }
 
 void CObjectOStream::Write(TConstObjectPtr object, const CTypeRef& type)

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/08/26 18:32:28  grichenk
+* Added Get/SetAutoSeparator() to CObjectOStream to control
+* output of separators.
+*
 * Revision 1.14  2002/03/07 22:01:59  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -422,6 +426,18 @@ inline
 void CObjectOStream::SetSeparator(const string sep)
 {
     m_Separator = sep;
+}
+
+inline
+bool CObjectOStream::GetAutoSeparator(void)
+{
+    return m_AutoSeparator;
+}
+
+inline
+void CObjectOStream::SetAutoSeparator(bool value)
+{
+    m_AutoSeparator = value;
 }
 
 

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.62  2002/08/26 18:32:24  grichenk
+* Added Get/SetAutoSeparator() to CObjectOStream to control
+* output of separators.
+*
 * Revision 1.61  2002/03/07 22:01:59  grichenk
 * Added "Separator" modifier for CObjectOStream
 *
@@ -363,6 +367,10 @@ public:
     // Separator management
     string GetSeparator(void) const;
     void SetSeparator(const string sep);
+    // Controls auto-output of the separator after each object. By default
+    // this flag is true for text ASN.1 streams only.
+    bool GetAutoSeparator(void);
+    void SetAutoSeparator(bool value);
 
     CObjectOStream& operator<< (CObjectOStream& (*mod)(CObjectOStream& os));
     friend CObjectOStream& Separator(CObjectOStream& os);
@@ -693,6 +701,7 @@ protected:
     // Write current separator to the stream
     virtual void WriteSeparator(void);
     string m_Separator;
+    bool   m_AutoSeparator;
 
 public:
     // hook support
