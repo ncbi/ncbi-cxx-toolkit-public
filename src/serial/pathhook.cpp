@@ -89,6 +89,9 @@ bool CPathHook::SetHook(CObjectStack* stk, const string& path, CObject* hook)
 
 CObject* CPathHook::GetHook(CObjectStack& stk) const
 {
+    if ( IsEmpty() ) {
+        return 0;
+    }
     CObject* hook;
     if (m_All) {
         hook = x_Get(stk,s_AllStr);
@@ -198,6 +201,7 @@ bool CPathHook::Match(const string& mask, const string& path)
 
 CStreamPathHookBase::CStreamPathHookBase(void)
 {
+    m_Empty = true;
     m_Regular = m_All = m_Member = m_Wildcard = false;
 }
 
@@ -232,6 +236,9 @@ bool CStreamPathHookBase::SetHook(const string& path, CObject* hook)
 
 CObject* CStreamPathHookBase::GetHook(CObjectStack& stk) const
 {
+    if ( IsEmpty() ) {
+        return 0;
+    }
     CObject* hook;
     if (m_All) {
         hook = x_Get(s_AllStr);
@@ -293,6 +300,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/08/11 16:40:32  vasilche
+* Fast check if there are no path hooks.
+*
 * Revision 1.2  2004/05/17 21:03:03  gorelenk
 * Added include of PCH ncbi_pch.hpp
 *
