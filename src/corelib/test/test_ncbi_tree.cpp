@@ -147,15 +147,53 @@ static void s_TEST_Tree()
 
     TTree* str = tr = new TTree(0);
     
-    tr->AddNode(2)->AddNode(4);
+    //
+    // 0 - 2 
+    //       - 4
+    //   - 3 
+    //       - 5
+    //       - 6
+    //
+
+    TTree* tr4 = tr->AddNode(2)->AddNode(4);
     tr = tr->AddNode(3);
-    tr->AddNode(5);
-    tr->AddNode(6);
+    TTree* tr5 = tr->AddNode(5);
+    TTree* tr6 = tr->AddNode(6);
 
     cout << "Test Tree: " << endl;
 
     TreeDepthFirstTraverse(*str, TestFunctor1);
     cout << endl;
+
+    vector<const TTree*> trace_vec;
+    TreeTraceToRoot(*tr6, trace_vec);
+
+    assert(trace_vec.size() == 3);
+
+    {{
+    cout << "Trace to root: ";
+
+    ITERATE(vector<const TTree*>, it, trace_vec) {
+        cout << (*it)->GetValue() << "; ";
+    }
+
+    cout << endl;
+
+    }}
+
+    const TTree* parent_node = TreeFindCommonParent(*tr4, *tr6);
+
+    assert(parent_node);
+
+    cout << "parent: " << parent_node->GetValue() << endl;
+
+    assert(parent_node->GetValue() == 0);
+
+    parent_node = TreeFindCommonParent(*tr5, *tr6);
+    assert(parent_node);
+    assert(parent_node->GetValue() == 3);
+
+    delete tr;
 }
 
 
@@ -275,6 +313,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.8  2004/04/08 11:48:22  kuznets
+ * + TreeTraceToRoot test
+ *
  * Revision 1.7  2004/01/14 17:38:27  kuznets
  * Reflecting changed in ncbi_tree
  *
