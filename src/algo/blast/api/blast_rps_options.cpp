@@ -125,7 +125,7 @@ void
 CBlastRPSOptionsHandle::SetEffectiveLengthsOptionsDefaults()
 {
     SetDbLength(0);
-    SetDbSeqNum(1);
+    SetDbSeqNum(0);
     SetEffectiveSearchSpace(0);
     SetUseRealDbSize();
 }
@@ -144,6 +144,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/03 21:10:42  dondosha
+ * Set DbSeqNum option to 0 by default - the real value is set in parameter structure
+ *
  * Revision 1.7  2004/06/08 15:20:23  dondosha
  * Skip traceback option has been moved to the traceback extension method enum
  *

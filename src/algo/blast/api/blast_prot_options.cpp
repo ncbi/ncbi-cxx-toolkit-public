@@ -132,7 +132,7 @@ void
 CBlastProteinOptionsHandle::SetEffectiveLengthsOptionsDefaults()
 {
     SetDbLength(0);
-    SetDbSeqNum(1);
+    SetDbSeqNum(0);
     SetEffectiveSearchSpace(0);
     SetUseRealDbSize();
 }
@@ -151,6 +151,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2004/08/03 21:10:42  dondosha
+ * Set DbSeqNum option to 0 by default - the real value is set in parameter structure
+ *
  * Revision 1.11  2004/06/22 16:27:19  dondosha
  * Do not set sum statistics mode to false: it is decided automatically in the engine
  *
