@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2001/06/01 21:48:02  thiessen
+* add terminal cutoff to threading
+*
 * Revision 1.9  2001/04/12 18:54:22  thiessen
 * fix memory leak for PSSM-only threading
 *
@@ -100,6 +103,7 @@ public:
     double loopLengthMultiplier;
     int nRandomStarts;
 	int nResultAlignments;
+    int terminalResidueCutoff;
 
     ThreaderOptions(void);
 };
@@ -161,7 +165,7 @@ private:
     Seq_Mtf_fwddecl * CreateSeqMtf(const BlockMultipleAlignment *multiple, double weightPSSM);
     Cor_Def_fwddecl * CreateCorDef(const BlockMultipleAlignment *multiple, double loopLengthMultiplier);
     Qry_Seq_fwddecl * CreateQrySeq(const BlockMultipleAlignment *multiple,
-        const BlockMultipleAlignment *pairwise);
+        const BlockMultipleAlignment *pairwise, int terminalCutoff);
     Rcx_Ptl_fwddecl * CreateRcxPtl(double weightContacts);
     Gib_Scd_fwddecl * CreateGibScd(bool fast, int nRandomStarts);
     Fld_Mtf_fwddecl * CreateFldMtf(const Sequence *masterSequence);

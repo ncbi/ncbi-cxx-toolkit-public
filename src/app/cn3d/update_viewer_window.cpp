@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2001/06/01 21:48:26  thiessen
+* add terminal cutoff to threading
+*
 * Revision 1.17  2001/05/31 18:47:10  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -325,6 +328,16 @@ ThreaderOptionsDialog::ThreaderOptionsDialog(wxWindow* parent, const ThreaderOpt
     grid->Add(iResults->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
     grid->Add(iResults->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
 
+    // terminal residue cutoff
+    wxStaticText *item16 = new wxStaticText(this, -1, "Terminal residue cutoff? [-1..N], -1 = unrestricted", wxDefaultPosition, wxDefaultSize, 0);
+    grid->Add(item16, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
+    iCutoff = new IntegerSpinCtrl(this,
+        -1, 100000, 1, initialOptions.terminalResidueCutoff,
+        wxDefaultPosition, wxSize(80, SPIN_CTRL_HEIGHT), 0,
+        wxDefaultPosition, wxSize(-1, SPIN_CTRL_HEIGHT));
+    grid->Add(iCutoff->GetTextCtrl(), 0, wxALIGN_CENTRE|wxLEFT|wxTOP|wxBOTTOM, 5);
+    grid->Add(iCutoff->GetSpinButton(), 0, wxALIGN_CENTER_VERTICAL|wxRIGHT|wxTOP|wxBOTTOM, 5);
+
     // merge results
     wxStaticText *item17 = new wxStaticText(this, -1, "Merge results after each row is threaded?", wxDefaultPosition, wxDefaultSize, 0);
     grid->Add(item17, 0, wxALIGN_RIGHT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
@@ -368,7 +381,8 @@ bool ThreaderOptionsDialog::GetValues(ThreaderOptions *options)
         fpWeight->GetDouble(&options->weightPSSM) &&
         fpLoops->GetDouble(&options->loopLengthMultiplier) &&
         iStarts->GetInteger(&options->nRandomStarts) &&
-        iResults->GetInteger(&options->nResultAlignments)
+        iResults->GetInteger(&options->nResultAlignments) &&
+        iCutoff->GetInteger(&options->terminalResidueCutoff)
     );
 }
 

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.20  2001/06/01 21:48:26  thiessen
+* add terminal cutoff to threading
+*
 * Revision 1.19  2001/05/31 18:47:07  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -134,6 +137,7 @@ ThreaderOptions::ThreaderOptions(void) :
     loopLengthMultiplier(1.5),
     nRandomStarts(1),
     nResultAlignments(1),
+    terminalResidueCutoff(-1),
     mergeAfterEachSequence(true),
     freezeIsolatedBlocks(true)
 {
@@ -383,7 +387,7 @@ Cor_Def * Threader::CreateCorDef(const BlockMultipleAlignment *multiple, double 
 }
 
 Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
-        const BlockMultipleAlignment *pairwise)
+        const BlockMultipleAlignment *pairwise, int terminalCutoff)
 {
     const Sequence *slaveSeq = pairwise->GetSequenceOfRow(1);
     auto_ptr<BlockMultipleAlignment::UngappedAlignedBlockList>
@@ -416,6 +420,25 @@ Qry_Seq * Threader::CreateQrySeq(const BlockMultipleAlignment *multiple,
                 qrySeq->sac.mn[i] = qrySeq->sac.mx[i] = pairwiseRange->from + offset;
                 break;
             }
+        }
+    }
+
+    // if a terminal block is unconstrained (mn,mx == -1), set limits for how far from the edge of
+    // the next block in the new (religned) block is allowed to go
+    if (pairwiseABlocks->size() > 0 && terminalCutoff >= 0) {
+        if (qrySeq->sac.mn[0] == -1) {
+            const Block::Range *nextQryBlock = pairwiseABlocks->front()->GetRangeOfRow(1);
+            qrySeq->sac.mn[0] = nextQryBlock->from - 1 - terminalCutoff;
+            if (qrySeq->sac.mn[0] < 0) qrySeq->sac.mn[0] = 0;
+            TESTMSG("new N-terminal block constrained to query loc >= " << qrySeq->sac.mn[0] + 1);
+        }
+        if (qrySeq->sac.mx[multipleABlocks->size() - 1] == -1) {
+            const Block::Range *prevQryBlock = pairwiseABlocks->back()->GetRangeOfRow(1);
+            qrySeq->sac.mx[multipleABlocks->size() - 1] = prevQryBlock->to + 1 + terminalCutoff;
+            if (qrySeq->sac.mx[multipleABlocks->size() - 1] >= qrySeq->n)
+                qrySeq->sac.mx[multipleABlocks->size() - 1] = qrySeq->n - 1;
+            TESTMSG("new C-terminal block constrained to query loc <= "
+                << qrySeq->sac.mx[multipleABlocks->size() - 1] + 1);
         }
     }
 
@@ -1023,7 +1046,7 @@ bool Threader::Realign(const ThreaderOptions& options, BlockMultipleAlignment *m
         int success;
 
         // create query sequence
-        if (!(qrySeq = CreateQrySeq(masterMultiple, *p))) goto cleanup2;
+        if (!(qrySeq = CreateQrySeq(masterMultiple, *p, options.terminalResidueCutoff))) goto cleanup2;
 #ifdef DEBUG_THREADER
         pFile = fopen("Qry_Seq.debug.txt", "w");
         PrintQrySeq(qrySeq, pFile);

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2001/06/01 21:48:02  thiessen
+* add terminal cutoff to threading
+*
 * Revision 1.10  2001/05/31 18:46:28  thiessen
 * add preliminary style dialog; remove LIST_TYPE; add thread single and delete all; misc tweaks
 *
@@ -165,7 +168,7 @@ private:
     wxStaticBox *box;
     wxButton *bOK, *bCancel;
     FloatingPointSpinCtrl *fpWeight, *fpLoops;
-    IntegerSpinCtrl *iStarts, *iResults;
+    IntegerSpinCtrl *iStarts, *iResults, *iCutoff;
     wxCheckBox *bMerge, *bFreeze;
 
     void OnCloseWindow(wxCommandEvent& event);
