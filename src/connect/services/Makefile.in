@@ -9,7 +9,7 @@
 #  - daemons:    "daemons/*.*"
 #################################
 
-LIB_PROJ = connect xconnect
+LIB_PROJ = connect mghbn xconnect
 SUB_PROJ = test daemons
 
 srcdir = @srcdir@
