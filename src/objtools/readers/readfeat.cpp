@@ -40,6 +40,8 @@
 // Objects includes
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -82,12 +84,18 @@ public:
     enum EQual {
         eQual_allele,
         eQual_anticodon,
+        eQual_bac_ends,
         eQual_bond_type,
         eQual_bound_moiety,
+        eQual_chrcnt,
         eQual_citation,
         eQual_clone,
+        eQual_clone_id,
+        eQual_codon_recognized,
         eQual_codon_start,
+        eQual_compare,
         eQual_cons_splice,
+        eQual_ctgcnt,
         eQual_db_xref,
         eQual_direction,
         eQual_EC_number,
@@ -103,14 +111,17 @@ public:
         eQual_go_process,
         eQual_insertion_seq,
         eQual_label,
+        eQual_loccnt,
         eQual_locus_tag,
         eQual_macronuclear,
         eQual_map,
         eQual_MEDLINE,
+        eQual_method,
         eQual_mod_base,
         eQual_muid,
         eQual_note,
         eQual_number,
+        eQual_old_locus_tag,
         eQual_operon,
         eQual_organism,
         eQual_partial,
@@ -128,14 +139,27 @@ public:
         eQual_rpt_family,
         eQual_rpt_type,
         eQual_rpt_unit,
+        eQual_secondary_accession,
+        eQual_sequence,
         eQual_site_type,
+        eQual_snp_class,
+        eQual_snp_gtype,
+        eQual_snp_het,
+        eQual_snp_het_se,
+        eQual_snp_linkout,
+        eQual_snp_maxrate,
+        eQual_snp_valid,
         eQual_standard_name,
+        eQual_STS,
+        eQual_sts_aliases,
+        eQual_sts_dsegs,
         eQual_transcript_id,
         eQual_transl_except,
         eQual_transl_table,
         eQual_translation,
         eQual_transposon,
-        eQual_usedin
+        eQual_usedin,
+        eQual_weight
     };
 
     enum EOrgRef {
@@ -341,12 +365,19 @@ typedef struct qualinit {
 static QualInit qual_key_to_subtype [] = {
     { "allele",               CFeature_table_reader_imp::eQual_allele               },
     { "anticodon",            CFeature_table_reader_imp::eQual_anticodon            },
+    { "bac_ends",             CFeature_table_reader_imp::eQual_bac_ends             },
     { "bond_type",            CFeature_table_reader_imp::eQual_bond_type            },
     { "bound_moiety",         CFeature_table_reader_imp::eQual_bound_moiety         },
+    { "chrcnt",               CFeature_table_reader_imp::eQual_chrcnt               },
     { "citation",             CFeature_table_reader_imp::eQual_citation             },
     { "clone",                CFeature_table_reader_imp::eQual_clone                },
+    { "clone_id",             CFeature_table_reader_imp::eQual_clone_id             },
+    { "codon_recognized",     CFeature_table_reader_imp::eQual_codon_recognized     },
+    { "codons_recognized",    CFeature_table_reader_imp::eQual_codon_recognized     },
     { "codon_start",          CFeature_table_reader_imp::eQual_codon_start          },
+    { "compare",              CFeature_table_reader_imp::eQual_compare              },
     { "cons_splice",          CFeature_table_reader_imp::eQual_cons_splice          },
+    { "ctgcnt",               CFeature_table_reader_imp::eQual_ctgcnt               },
     { "db_xref",              CFeature_table_reader_imp::eQual_db_xref              },
     { "direction",            CFeature_table_reader_imp::eQual_direction            },
     { "EC_number",            CFeature_table_reader_imp::eQual_EC_number            },
@@ -362,12 +393,15 @@ static QualInit qual_key_to_subtype [] = {
     { "go_process",           CFeature_table_reader_imp::eQual_go_process           },
     { "insertion_seq",        CFeature_table_reader_imp::eQual_insertion_seq        },
     { "label",                CFeature_table_reader_imp::eQual_label                },
+    { "loccnt",               CFeature_table_reader_imp::eQual_loccnt               },
     { "locus_tag",            CFeature_table_reader_imp::eQual_locus_tag            },
     { "macronuclear",         CFeature_table_reader_imp::eQual_macronuclear         },
     { "map",                  CFeature_table_reader_imp::eQual_map                  },
+    { "method",               CFeature_table_reader_imp::eQual_method               },
     { "mod_base",             CFeature_table_reader_imp::eQual_mod_base             },
     { "note",                 CFeature_table_reader_imp::eQual_note                 },
     { "number",               CFeature_table_reader_imp::eQual_number               },
+    { "old_locus_tag",        CFeature_table_reader_imp::eQual_old_locus_tag        },
     { "operon",               CFeature_table_reader_imp::eQual_operon               },
     { "organism",             CFeature_table_reader_imp::eQual_organism             },
     { "partial",              CFeature_table_reader_imp::eQual_partial              },
@@ -381,13 +415,27 @@ static QualInit qual_key_to_subtype [] = {
     { "rpt_family",           CFeature_table_reader_imp::eQual_rpt_family           },
     { "rpt_type",             CFeature_table_reader_imp::eQual_rpt_type             },
     { "rpt_unit",             CFeature_table_reader_imp::eQual_rpt_unit             },
+    { "secondary_accession",  CFeature_table_reader_imp::eQual_secondary_accession  },
+    { "secondary_accessions", CFeature_table_reader_imp::eQual_secondary_accession  },
+    { "sequence",             CFeature_table_reader_imp::eQual_sequence             },
+    { "snp_class",            CFeature_table_reader_imp::eQual_snp_class            },
+    { "snp_gtype",            CFeature_table_reader_imp::eQual_snp_gtype            },
+    { "snp_het",              CFeature_table_reader_imp::eQual_snp_het              },
+    { "snp_het_se",           CFeature_table_reader_imp::eQual_snp_het_se           },
+    { "snp_linkout",          CFeature_table_reader_imp::eQual_snp_linkout          },
+    { "snp_maxrate",          CFeature_table_reader_imp::eQual_snp_maxrate          },
+    { "snp_valid",            CFeature_table_reader_imp::eQual_snp_valid            },
     { "standard_name",        CFeature_table_reader_imp::eQual_standard_name        },
+    { "STS",                  CFeature_table_reader_imp::eQual_STS                  },
+    { "sts_aliases",          CFeature_table_reader_imp::eQual_sts_aliases          },
+    { "sts_dsegs",            CFeature_table_reader_imp::eQual_sts_dsegs            },
     { "transcript_id",        CFeature_table_reader_imp::eQual_transcript_id        },
     { "transl_except",        CFeature_table_reader_imp::eQual_transl_except        },
     { "transl_table",         CFeature_table_reader_imp::eQual_transl_table         },
     { "translation",          CFeature_table_reader_imp::eQual_translation          },
     { "transposon",           CFeature_table_reader_imp::eQual_transposon           },
-    { "usedin",               CFeature_table_reader_imp::eQual_usedin               }
+    { "usedin",               CFeature_table_reader_imp::eQual_usedin               },
+    { "weight",               CFeature_table_reader_imp::eQual_weight               }
 };
 
 typedef struct orgrefinit {
@@ -498,6 +546,8 @@ static OrgModInit orgmod_key_to_subtype [] = {
     { "group",            COrgMod::eSubtype_group            },
     { "isolate",          COrgMod::eSubtype_isolate          },
     { "nat_host",         COrgMod::eSubtype_nat_host         },
+    { "old_lineage",      COrgMod::eSubtype_old_lineage      },
+    { "old_name",         COrgMod::eSubtype_old_name         },
     { "pathovar",         COrgMod::eSubtype_pathovar         },
     { "serogroup",        COrgMod::eSubtype_serogroup        },
     { "serotype",         COrgMod::eSubtype_serotype         },
@@ -567,34 +617,60 @@ typedef struct trnainit {
 } TrnaInit;
 
 static TrnaInit trna_key_to_subtype [] = {
-    { "Ala",   'A' },
-    { "Asx",   'B' },
-    { "Cys",   'C' },
-    { "Asp",   'D' },
-    { "Glu",   'E' },
-    { "Phe",   'F' },
-    { "Gly",   'G' },
-    { "His",   'H' },
-    { "Ile",   'I' },
-    { "Lys",   'K' },
-    { "Leu",   'L' },
-    { "Met",   'M' },
-    { "fMet",  'M' },
-    { "Asn",   'N' },
-    { "Pro",   'P' },
-    { "Gln",   'Q' },
-    { "Arg",   'R' },
-    { "Ser",   'S' },
-    { "Thr",   'T' },
-    { "Val",   'V' },
-    { "Trp",   'W' },
-    { "Xxx",   'X' },
-    { "OTHER", 'X' },
-    { "Tyr",   'Y' },
-    { "Glx",   'Z' },
-    { "Sec",   'U' },
-    { "Ter",   '*' },
-    { "TERM",  '*' }
+    { "Ala",            'A' },
+    { "Alanine",        'A' },
+    { "Asp or Asn",     'B' },
+    { "Asx",            'B' },
+    { "Cys",            'C' },
+    { "Cysteine",       'C' },
+    { "Asp",            'D' },
+    { "Aspartate",      'D' },
+    { "Aspartic Acid",  'D' },
+    { "Glu",            'E' },
+    { "Glutamate",      'E' },
+    { "Glutamic Acid",  'E' },
+    { "Phe",            'F' },
+    { "Phenylalanine",  'F' },
+    { "Gly",            'G' },
+    { "Glycine",        'G' },
+    { "His",            'H' },
+    { "Histidine",      'H' },
+    { "Ile",            'I' },
+    { "Isoleucine",     'I' },
+    { "Lys",            'K' },
+    { "Lysine",         'K' },
+    { "Leu",            'L' },
+    { "Leucine",        'L' },
+    { "fMet",           'M' },
+    { "Met",            'M' },
+    { "Methionine",     'M' },
+    { "Asn",            'N' },
+    { "Asparagine",     'N' },
+    { "Pro",            'P' },
+    { "Proline",        'P' },
+    { "Gln",            'Q' },
+    { "Glutamine",      'Q' },
+    { "Arg",            'R' },
+    { "Arginine",       'R' },
+    { "Ser",            'S' },
+    { "Serine",         'S' },
+    { "Thr",            'T' },
+    { "Threonine",      'T' },
+    { "Sec",            'U' },
+    { "Selenocysteine", 'U' },
+    { "Val",            'V' },
+    { "Valine",         'V' },
+    { "Trp",            'W' },
+    { "Tryptophan",     'W' },
+    { "OTHER",          'X' },
+    { "Xxx",            'X' },
+    { "Tyr",            'Y' },
+    { "Tyrosine",       'Y' },
+    { "Glu or Gln",     'Z' },
+    { "Glx",            'Z' },
+    { "Ter",            '*' },
+    { "TERM",           '*' },
+    { "Termination",    '*' }
 };
 
 typedef struct singleinit {
@@ -932,6 +1008,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (CSeqFeatData& sfdata,
                         }
                     }
                     break;
+                case eQual_anticodon:
+                    break;
+                case eQual_codon_recognized:
+                    break;
                 default:
                     break;
             }
@@ -951,6 +1031,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
         case eQual_allele:
         case eQual_bound_moiety:
         case eQual_clone:
+		case eQual_compare:
         case eQual_cons_splice:
         case eQual_direction:
         case eQual_EC_number:
@@ -960,6 +1041,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
         case eQual_label:
         case eQual_map:
         case eQual_number:
+		case eQual_old_locus_tag:
         case eQual_operon:
         case eQual_organism:
         case eQual_PCR_conditions:
@@ -983,6 +1065,81 @@ bool CFeature_table_reader_imp::x_AddQualifierToImp (CRef<CSeq_feat> sfp, CSeqFe
         default:
             break;
     }
+
+    CSeqFeatData::ESubtype subtype = sfdata.GetSubtype ();
+    switch (subtype) {
+        case CSeqFeatData::eSubtype_variation:
+            {
+                switch (qtype) {
+                    case eQual_chrcnt:
+                    case eQual_ctgcnt:
+                    case eQual_loccnt:
+                    case eQual_snp_class:
+                    case eQual_snp_gtype:
+                    case eQual_snp_het:
+                    case eQual_snp_het_se:
+                    case eQual_snp_linkout:
+                    case eQual_snp_maxrate:
+                    case eQual_snp_valid:
+                    case eQual_weight:
+                        {
+                            CSeq_feat::TExt& ext = sfp->SetExt ();
+                            CObject_id& obj = ext.SetType ();
+                            if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
+                                obj.SetStr ("dbSnpSynonymyData");
+                            }
+                            ext.AddField (qual, val, CUser_object::eParse_Number);
+                            return true;
+                        }
+                    default:
+                        break;
+                }
+            }
+        case CSeqFeatData::eSubtype_STS:
+            {
+                switch (qtype) {
+                    case eQual_sts_aliases:
+                    case eQual_sts_dsegs:
+                    case eQual_weight:
+                        {
+                            CSeq_feat::TExt& ext = sfp->SetExt ();
+                            CObject_id& obj = ext.SetType ();
+                            if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
+                                obj.SetStr ("stsUserObject");
+                            }
+                            ext.AddField (qual, val, CUser_object::eParse_Number);
+                            return true;
+                        }
+                    default:
+                        break;
+                }
+            }
+        case CSeqFeatData::eSubtype_misc_feature:
+            {
+                switch (qtype) {
+                    case eQual_bac_ends:
+                    case eQual_clone_id:
+                    case eQual_method:
+                    case eQual_sequence:
+                    case eQual_STS:
+                    case eQual_weight:
+                        {
+                            CSeq_feat::TExt& ext = sfp->SetExt ();
+                            CObject_id& obj = ext.SetType ();
+                            if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
+                                obj.SetStr ("cloneUserObject");
+                            }
+                            ext.AddField (qual, val, CUser_object::eParse_Number);
+                            return true;
+                        }
+                    default:
+                        break;
+                }
+            }
+        default:
+            break;
+    }
+
     return false;
 }
 
@@ -1176,6 +1333,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
             case eQual_allele:
             case eQual_bound_moiety:
             case eQual_clone:
+			case eQual_compare:
             case eQual_cons_splice:
             case eQual_direction:
             case eQual_EC_number:
@@ -1185,6 +1343,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
             case eQual_label:
             case eQual_map:
             case eQual_number:
+			case eQual_old_locus_tag:
             case eQual_operon:
             case eQual_organism:
             case eQual_PCR_conditions:
@@ -1256,6 +1415,20 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
                         return true;
                     }
                     return true;
+                }
+            case eQual_go_component:
+            case eQual_go_function:
+            case eQual_go_process:
+                {
+                    /*
+                    CSeq_feat::TExt& ext = sfp->SetExt ();
+                    CObject_id& obj = ext.SetType ();
+                    if ((! obj.IsStr ()) || obj.GetStr ().empty ()) {
+                        obj.SetStr ("GeneOntology");
+                    }
+                    (need more implementation here)
+                    return true;
+                    */
                 }
             default:
                 break;
