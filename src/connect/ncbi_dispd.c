@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.8  2001/01/08 23:48:14  lavr
+ * (unsigned char) conversion in isspace
+ *
  * Revision 6.7  2001/01/08 22:40:23  lavr
  * Further development of service-mapping protocol: stateless/stateful
  * is now separated from firewall/direct mode (see also in few more files)
@@ -275,7 +278,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
                                sizeof(HTTP_REQUEST_FAILED) - 1) == 0) {
             n = 0;
             b += sizeof(HTTP_REQUEST_FAILED) - 1;
-            while (*b && isspace(*b))
+            while (*b && isspace((unsigned char)(*b)))
                 b++;
             if (!(p = strchr(b, '\r')))
                 p = c;

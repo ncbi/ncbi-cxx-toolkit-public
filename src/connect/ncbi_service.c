@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/01/08 23:47:29  lavr
+ * (unsigned char) conversion in isspace
+ *
  * Revision 6.9  2001/01/08 22:38:34  lavr
  * Numerous patches to code after debugging
  *
@@ -276,7 +279,7 @@ char* SERV_Print(SERV_ITER iter)
         /* Remove ugly " T=[0-9]*" (no harm to be there, however) */
         if ((s1 = strstr(str, " T=")) != 0) {
             s2 = s1 + 1;
-            while (*s2 && !isspace(*s2))
+            while (*s2 && !isspace((unsigned char)(*s2)))
                 s2++;
             memmove(s1, s2, strlen(s2) + 1);
         }
