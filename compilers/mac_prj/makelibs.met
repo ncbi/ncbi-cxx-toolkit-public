@@ -111,12 +111,12 @@ on SetProjectData()
 		
 		-- can't do "ncbi_lbsm_ipc", "ncbi_server_info", "ncbi_service_lbsmd", "ncbi_lbsm"
 		set myFiles to {"ncbi_conn_streambuf.cpp", "ncbi_conn_stream.cpp", "ncbi_core_cxx.cpp", ¬
-			"email_diag_handler.cpp", "ncbi_ansi_ext", "ncbi_buffer", "ncbi_connection", ¬
-			"ncbi_connutil", "ncbi_core", "ncbi_file_connector", "ncbi_heapmgr", ¬
-			"ncbi_http_connector", "ncbi_priv", "ncbi_service", "ncbi_service_dispd", ¬
-			"ncbi_socket", "ncbi_socket_connector", "ncbi_util", ¬
-			"ncbi_connector", "ncbi_service_connector", "ncbi_service_lbsmd_stub", ¬
-			"ncbi_server_info", "ncbi_sendmail"}
+			"email_diag_handler.cpp", "ncbi_ansi_ext.c", "ncbi_buffer.c", "ncbi_connection.c", ¬
+			"ncbi_connutil.c", "ncbi_core.c", "ncbi_file_connector.c", "ncbi_heapmgr.c", ¬
+			"ncbi_http_connector.c", "ncbi_priv.c", "ncbi_service.c", "ncbi_service_dispd.c", ¬
+			"ncbi_socket.c", "ncbi_socket_connector.c", "ncbi_util.c", ¬
+			"ncbi_connector.c", "ncbi_service_connector.c", "ncbi_service_lbsmd_stub.c", ¬
+			"ncbi_server_info.c", "ncbi_sendmail.c"}
 		
 		AddProject(DataPlusSysPaths(SimpleProjectData("connect", {"C++"}, "connect", myFiles), ¬
 			{CToolkitRoot() & "include:", CToolkitRoot() & "corelib:"}))
