@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2001/03/07 20:49:29  lavr
+ * Forgotten #include <string.h> added
+ *
  * Revision 6.4  2001/03/06 04:32:31  lavr
  * Custom header test added
  *
@@ -49,6 +52,7 @@
 #include <connect/ncbi_sendmail.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 
