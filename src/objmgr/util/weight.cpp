@@ -68,19 +68,21 @@ static const int kNumSe[] =
 static const size_t kMaxRes = sizeof(kNumC) / sizeof(*kNumC) - 1;
 
 
-double GetProteinWeight(CSeqVector& v, TSeqPos start, TSeqPos end)
+double GetProteinWeight(CBioseq_Handle& handle, const CSeq_loc* location)
     THROWS((CBadResidueException))
 {
+    CSeqVector v = (location
+                    ? handle.GetSequenceView(*location,
+                                             CBioseq_Handle::e_ViewConstructed)
+                    : handle.GetSeqVector());
     v.SetCoding(CSeq_data::e_Ncbistdaa);
 
-    if (end >= v.size()) {
-        end = v.size() - 1;
-    }
+    TSeqPos size = v.size();
 
     // Start with water (H2O)
     TSeqPos c = 0, h = 2, n = 0, o = 1, s = 0, se = 0;
 
-    for (TSeqPos i = start;  i <= end;  i++) {
+    for (TSeqPos i = 0;  i < size;  i++) {
         CSeqVector::TResidue res = v[i];
         if ( res >= kMaxRes  ||  !kNumC[res] ) {
             THROW1_TRACE(CBadResidueException,
@@ -107,7 +109,6 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
     weights.clear();
 
     set<CConstRef<CSeq_loc> > locations;
-    CSeqVector v = handle.GetSeqVector();
     CSeq_loc* whole = new CSeq_loc;
     whole->SetWhole(*handle.GetSeqId());
 
@@ -156,14 +157,14 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
     }
 
     if (locations.empty()) {
-        v.SetCoding(CSeq_data::e_Ncbistdaa); // so check for Met will work
+        CSeqVector v = handle.GetSeqVector(true);
         if ( signal.NotEmpty() ) {
             // Expects to see at beginning; is this assumption safe?
             CSeq_interval& interval = whole->SetInt();
             interval.SetFrom(signal->GetLocation().GetTotalRange().GetTo() + 1);
             interval.SetTo(v.size() - 1);
             interval.SetId(*core->GetId().front());                
-        } else if (v[0] == 12) { // Treat initial methionine as start codon
+        } else if (v[0] == 'M') { // Treat initial methionine as start codon
             CSeq_interval& interval = whole->SetInt();
             interval.SetFrom(1);
             interval.SetTo(v.size() - 1);
@@ -173,10 +174,8 @@ void GetProteinWeights(CBioseq_Handle& handle, TWeights& weights)
     }
 
     iterate(set<CConstRef<CSeq_loc> >, it, locations) {
-        // Assumes contiguous
-        CSeq_loc::TRange range = (*it)->GetTotalRange();
         try {
-            weights[*it] = GetProteinWeight(v, range.GetFrom(), range.GetTo());
+            weights[*it] = GetProteinWeight(handle, *it);
         } catch (CBadResidueException) {
             // Silently elide
         }
@@ -190,6 +189,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.10  2002/06/07 18:19:54  ucko
+* Reworked to take advantage of CBioseq_Handle::GetSequenceView.
+*
 * Revision 1.9  2002/06/06 18:38:11  clausen
 * Added include for object_manager.hpp
 *

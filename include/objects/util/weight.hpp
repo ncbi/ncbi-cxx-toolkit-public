@@ -51,8 +51,7 @@ public:
 
 // Handles the standard 20 amino acids and Sec; treats Asx as Asp and
 // Glx as Glu; throws CBadResidueException on anything else.
-double GetProteinWeight(CSeqVector& v, TSeqPos start = 0,
-                        TSeqPos end = numeric_limits<TSeqPos>::max())
+double GetProteinWeight(CBioseq_Handle& handle, const CSeq_loc* location = 0)
     THROWS((CBadResidueException));
 
 
@@ -70,6 +69,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.5  2002/06/07 18:19:59  ucko
+* Reworked to take advantage of CBioseq_Handle::GetSequenceView.
+*
 * Revision 1.4  2002/05/06 16:11:55  ucko
 * Update for new OM; move CVS log to end.
 *
