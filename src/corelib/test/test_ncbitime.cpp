@@ -32,6 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbi_system.hpp>
 #include <stdio.h>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -208,23 +209,67 @@ static void s_TestMisc(void)
             }
         }}
         cout << endl;
+        {{
+            cout << "Adding time span:" << endl;
+            CTime t0(1999, 12, 31, 23, 59, 5);
+            CTimeSpan ts(1, 2, 3, 4, 555555555);
+
+            for (int i=0; i<10; i++) {
+                 t0.AddTimeSpan(ts);
+                 cout << "[" << t0.AsString() << "] " << endl;
+            }
+            assert(t0.AsString() == "01/11/2000 20:29:50");
+
+            CTime t1;
+            t1 = t0 + ts;
+            cout << "[" << t1.AsString() << "] " << endl;
+            assert(t0.AsString() == "01/11/2000 20:29:50");
+            assert(t1.AsString() == "01/12/2000 22:32:55");
+            t1 = ts + t0;
+            cout << "[" << t1.AsString() << "] " << endl;
+            assert(t0.AsString() == "01/11/2000 20:29:50");
+            assert(t1.AsString() == "01/12/2000 22:32:55");
+            t1 = t0; t1 += ts;
+            cout << "[" << t1.AsString() << "] " << endl;
+            assert(t0.AsString() == "01/11/2000 20:29:50");
+            assert(t1.AsString() == "01/12/2000 22:32:55");
+            t1 = t0 - ts;
+            cout << "[" << t1.AsString() << "] " << endl;
+            assert(t0.AsString() == "01/11/2000 20:29:50");
+            assert(t1.AsString() == "01/10/2000 18:26:45");
+            t1 = t0; t1 -= ts;
+            cout << "[" << t1.AsString() << "] " << endl;
+            assert(t0.AsString() == "01/11/2000 20:29:50");
+            assert(t1.AsString() == "01/10/2000 18:26:45");
+            ts = t0 - t1;
+            cout << "[" << ts.AsString() << "] " << endl;
+            assert(ts.AsString() == "93784.555555555");
+            ts = t1 - t0;
+            cout << "[" << ts.AsString() << "] " << endl;
+            assert(ts.AsString() == "-93784.555555555");
+        }}
+        cout << endl;
     }}
 
     // Difference
     {{
-        CTime t7(2000, 10, 1, 12, 3, 45,1);
-        CTime t8(2000, 10, 2, 14, 55, 1,2);
+        CTime t1(2000, 10, 1, 12, 3, 45,1);
+        CTime t2(2000, 10, 2, 14, 55, 1,2);
+        CTimeSpan ts(1,2,51,16,1);
 
-        cout << "[" << t7.AsString() << " - " << t8.AsString() << "]" << endl;
-        printf("DiffDay        = %.2f\n", t8.DiffDay   (t7));
-        assert((t8.DiffDay(t7)-1.12) < 0.01);
-        printf("DiffHour       = %.2f\n", t8.DiffHour  (t7));
-        assert((t8.DiffHour(t7)-26.85) < 0.01);
-        printf("DiffMinute     = %.2f\n", t8.DiffMinute(t7));
-        assert((t8.DiffMinute(t7)-1611.27) < 0.01);
-        printf("DiffSecond     = %d\n",   t8.DiffSecond(t7));
-        assert(t8.DiffSecond(t7) == 96676);
-        printf("DiffNanoSecond = %.0f\n", t8.DiffNanoSecond(t7));
+        cout << "[" << t1.AsString() << " - " << t2.AsString() << "]" << endl;
+        printf("DiffDay        = %.2f\n", t2.DiffDay   (t1));
+        assert((t2.DiffDay(t1)-1.12) < 0.01);
+        printf("DiffHour       = %.2f\n", t2.DiffHour  (t1));
+        assert((t2.DiffHour(t1)-26.85) < 0.01);
+        printf("DiffMinute     = %.2f\n", t2.DiffMinute(t1));
+        assert((t2.DiffMinute(t1)-1611.27) < 0.01);
+        printf("DiffSecond     = %d\n",   t2.DiffSecond(t1));
+        assert(t2.DiffSecond(t1) == 96676);
+        printf("DiffNanoSecond = %.0f\n", t2.DiffNanoSecond(t1));
+        printf("DiffTimeSpan   = %s\n", ts.AsString().c_str());
+        assert(t2.DiffTimeSpan(t1) == ts);
+        assert(t1.DiffTimeSpan(t2) == -ts);
     }}
 
     // Datebase formats conversion
@@ -359,6 +404,7 @@ static void s_TestFormats(void)
         "yDM   h:ms",
         "yMD   h:ms",
         "D B Y h:m:s",
+        "B d, Y h:m:s",
         "D b Y h:m:s",
         "M/D/Y h:m:s z",
         "M/D/Y Z h:m:s",
@@ -474,10 +520,10 @@ static void s_TestGMT(void)
 
         CTime t;
         t.SetFormat("M/D/Y h:m:s Z");
-        t="03/12/2001 11:22:33 GMT";
+        t = "03/12/2001 11:22:33 GMT";
         cout << "[" << t.AsString() << "]" << endl;
         assert(t.AsString() == "03/12/2001 11:22:33 GMT");
-        t="03/12/2001 11:22:33 ";
+        t = "03/12/2001 11:22:33 ";
         cout << "[" << t.AsString() << "]" << endl;
         assert(t.AsString() == "03/12/2001 11:22:33 ");
         cout << endl;
@@ -752,6 +798,173 @@ static void s_TestGMTSpeed(void)
 
 //============================================================================
 //
+// TestTimeSpan
+//
+//============================================================================
+
+static void s_TestTimeSpan(void)
+{
+    cout << "---------------------------" << endl;
+    cout << "Test TimeSpan"               << endl;
+    cout << "---------------------------" << endl << endl;
+
+    // Common constructors
+    {{
+        CTimeSpan t1(0,0,0,1,-2);
+        cout << t1.AsString() << endl;
+        assert(t1.AsString() == "0.999999998");
+        CTimeSpan t2(0,0,0,-1,2);
+        cout << t2.AsString() << endl;
+        assert(t2.AsString() == "-0.999999998");
+        CTimeSpan t3(0,0,0,0,-2);
+        cout << t3.AsString() << endl;
+        assert(t3.AsString() == "-0.000000002");
+        CTimeSpan t4(0,0,0,0,2);
+        cout << t4.AsString() << endl;
+        assert(t4.AsString() == "0.000000002");
+    }}
+    {{
+        CTimeSpan t1(2,3,4,5,6);
+        assert(t1.GetTotalHours()   == 51);
+        assert(t1.GetTotalMinutes() == (51*60+4));
+        assert(t1.GetTotalSeconds() == ((51*60+4)*60+5));
+        assert(t1.GetNanoSecondsAfterSecond() == 6);
+        cout << t1.AsString() << endl;
+        assert(t1.AsString() == "183845.000000006");
+
+        CTimeSpan t2(-2,-3,-4,-5,-6);
+        assert(t2.GetTotalHours()   == -51);
+        assert(t2.GetTotalMinutes() == -(51*60+4));
+        assert(t2.GetTotalSeconds() == -((51*60+4)*60+5));
+        assert(t2.GetNanoSecondsAfterSecond() == -6);
+        cout << t2.AsString() << endl;
+        assert(t2.AsString() == "-183845.000000006");
+
+        CTimeSpan t3(-2,+3,-4,-5,+6);
+        assert(t3.GetTotalHours()   == -45);
+        assert(t3.GetTotalMinutes() == -(45*60+4));
+        assert(t3.GetTotalSeconds() == -((45*60+4)*60+4));
+        assert(t3.GetNanoSecondsAfterSecond() == -999999994);
+        cout << t3.AsString() << endl;
+        assert(t3.AsString() == "-162244.999999994");
+    }}
+
+    // Comparison
+    {{
+        CTimeSpan t0;
+        CTimeSpan t1(123.4);
+        CTimeSpan t2(123.45);
+        CTimeSpan t3(123.4);
+
+        assert(t0.GetSign() == eZero);
+        assert(t1.GetSign() == ePositive);
+        assert(t0 == CTimeSpan(0,0,0,0,0));
+        assert(t1 != t2);
+        assert(t1 == t3);
+        assert(t1 <  t2);
+        assert(t2 >  t1);
+        assert(t1 <= t2);
+        assert(t2 >= t2);
+    }}
+
+    // Assignment
+    {{
+        CTimeSpan t0;
+        CTimeSpan t1(-123.4);
+        CTimeSpan t2(123.45);
+
+        t1 = t2;
+        assert(t1 == t2);
+        t1 = "-123.450000000";
+        assert(t1 == -t2);
+    }}
+
+    // Arithmetics
+    {{
+        CTimeSpan t;
+        t = CTimeSpan("100.3") - CTimeSpan("123.4");
+        assert(t == CTimeSpan("-23.1"));
+        t = CTimeSpan("63.7")  + CTimeSpan("2.3");
+        assert(t == CTimeSpan("65.10"));
+        t = CTimeSpan("63.7")  - CTimeSpan("72.6");
+        assert(t == CTimeSpan("-8.999999999"));
+
+        t = "-123.4";
+        t += CTimeSpan("1.0");  
+        assert(t == CTimeSpan("-122.4"));
+        t += CTimeSpan("222.4");  
+        assert(t == CTimeSpan("100.0") );
+        t -= CTimeSpan("50.1");  
+        assert(t == CTimeSpan("49.999999999"));
+        t += CTimeSpan("0.1");  
+        assert(t == CTimeSpan("50.0"));
+        t += CTimeSpan("3.7");  
+        assert(t == CTimeSpan("53.7"));
+        t -= CTimeSpan("3.8");  
+        assert(t == CTimeSpan("49.999999999"));
+    }}
+
+    // Formats
+    {{
+        static const char* s_Fmt[] = {
+            "d h:m:s.n",
+            "H m:s",
+            "S",
+            "H",
+            "M",
+            "d",
+            "-d h:m:s.n",
+            "-H m:s",
+            "-S",
+            "-H",
+            "-M",
+            "-d",
+            0
+        };
+
+        for (const char** fmt = s_Fmt;  *fmt;  fmt++) {
+            CTimeSpan t1(-123456789.987654321);
+
+            CTimeSpan::SetFormat(*fmt);
+            string t1_str = t1.AsString();
+            cout << "[" << t1_str << "]";
+            CTimeSpan::SetFormat("_s_");
+
+            CTimeSpan t2(t1_str, *fmt);
+            CTimeSpan::SetFormat(*fmt);
+            string t2_str = t2;
+            cout << " --> [" << t2_str << "]" << endl;
+            assert(t1_str.compare(t2_str) == 0);
+        }
+    }}
+
+    cout << endl;
+}
+
+
+//============================================================================
+//
+// DemoStopWatch
+//
+//============================================================================
+
+static void s_DemoStopWatch(void)
+{
+    cout << "---------------------------" << endl;
+    cout << "Demo StopWatch"            << endl;
+    cout << "---------------------------" << endl << endl;
+    
+    CStopWatch sw;
+    sw.SetFormat("S.n");
+    sw.Start();
+    for (int i=0; i<10; i++) {
+        cout << sw << endl;
+    }
+}
+
+
+//============================================================================
+//
 // MAIN
 //
 //============================================================================
@@ -765,17 +978,18 @@ int main()
 
     // Reinit global timezone variables
     tzset();
-    
+
     // Run tests
     try {
         s_TestMisc();
         s_TestFormats();
         s_TestGMT();
         s_TestGMTSpeed();
+        s_TestTimeSpan();
+        s_DemoStopWatch();
     } catch (CException& e) {
         ERR_POST(Fatal << e);
     }
-
     // Success
     return 0;
 }
@@ -784,6 +998,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.23  2004/09/07 16:33:19  ivanov
+ * + s_TestTimeSpan(), s_DemoStopWatch()
+ *
  * Revision 6.22  2004/05/14 13:59:51  gorelenk
  * Added include of ncbi_pch.hpp
  *
