@@ -30,6 +30,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.3  1999/10/18 18:01:43  vakatov
+ * Use double-quotes (rather than angles) to #include ncbi_buffer.h
+ * (this kludge is to ease compilation in the NCBI C++ tree).
+ *
  * Revision 6.2  1999/10/12 16:32:14  vakatov
  * Moved all TEST suite code from "ncbi_buffer.c" to "test/test_ncbi_buffer.c"
  *
@@ -41,7 +45,7 @@
  * ===========================================================================
  */
 
-#include <ncbi_buffer.h>
+#include "ncbi_buffer.h"
 
 #include <stdlib.h>
 #include <string.h>
