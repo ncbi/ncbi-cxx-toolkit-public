@@ -1,4 +1,4 @@
---$Revision: 1.7 $
+--$Revision: 1.8 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -35,7 +35,8 @@ IMPORTS  Date                 FROM NCBI-General
          Seq-interval         FROM NCBI-Seqloc
          Seq-loc              FROM NCBI-Seqloc
          Seq-feat             FROM NCBI-Seqfeat
-         Score-set            FROM NCBI-Seqalign;
+         Score-set            FROM NCBI-Seqalign
+	 Cn3d-style-dictionary FROM NCBI-Cn3d;
 
 -- Cdd's should not exist without a unique accession, but alternative id's may
 -- be present as well. It is conceivable that a CD which is created as a merged
@@ -92,7 +93,8 @@ Cdd-descr ::= CHOICE {
                           claimed(7),         -- is earmarked for curation
                           other(255) },       -- for CD production?
   update-date   Date,                         -- Date of last change
-  scrapbook     SEQUENCE OF VisibleString     -- for storing curation notes
+  scrapbook     SEQUENCE OF VisibleString,    -- for storing curation notes
+  source-id     Cdd-id-set                    -- for linking back to source db
 }
 
 Cdd-descr-set ::= SET OF Cdd-descr
@@ -240,7 +242,8 @@ Cdd ::= SEQUENCE {
   rejects       SEQUENCE OF Reject-id OPTIONAL,    -- SeqIds of rejected CD-
                                                    -- members, ignore in update
   master3d      SET OF Seq-id OPTIONAL, -- record if CD has a 3D representative
-  alignannot    Align-annot-set OPTIONAL           -- alignment annotation
+  alignannot    Align-annot-set OPTIONAL,          -- alignment annotation
+  style-dictionary Cn3d-style-dictionary OPTIONAL  -- record rendering styles
 }
 
 Cdd-set ::= SET OF Cdd
