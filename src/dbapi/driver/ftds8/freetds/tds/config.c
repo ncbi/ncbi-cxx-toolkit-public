@@ -634,7 +634,7 @@ static void lookup_host(
    /* Storage for reentrant getaddrby* calls */
    struct hostent result;
    char buffer[4096];
-   int h_errnop;
+   int h_errnop = 0;
 
    /* Storage for reentrant getservbyname */
    struct servent serv_result;
@@ -660,7 +660,7 @@ static void lookup_host(
 	}
 /* end froy */ 
 #endif
-   if (!host) {
+   if (!host  ||  h_errnop) {
       /* if servername is ip, copy to ip. */
       if (INADDR_NONE != ip_addr)
          strncpy(ip, servername, 17); 
