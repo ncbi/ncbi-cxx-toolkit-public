@@ -275,8 +275,7 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
         } else {
 
             LOG_POST(Warning << "Project: " + 
-                      project.m_ProjectName + " is dependend of " + id.Id() + 
-                      ". But no such project");
+                      project.m_ProjectName + " depends on missing project: " + id.Id());
         }
     }
     ofs << '\t' << "EndProjectSection" << endl;
@@ -413,6 +412,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/17 19:55:14  gouriano
+ * Corrected warning message
+ *
  * Revision 1.18  2004/05/21 21:41:41  gorelenk
  * Added PCH ncbi_pch.hpp
  *
