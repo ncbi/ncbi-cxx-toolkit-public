@@ -72,24 +72,18 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                      CHandleRangeMap& loc,
                      SAnnotSelector selector,
                      EOverlapType overlap_type)
-    : m_TSEInfo(&tse),
-      m_Selector(selector),
+    : SAnnotSelector(selector.SetOverlapType(overlap_type)),
+      m_TSEInfo(&tse),
       m_RangeMap(0),
-      m_HandleRangeMap(&loc),
-      m_OverlapType(overlap_type)
+      m_HandleRangeMap(&loc)
 {
     CTSE_Guard guard(tse);
     iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
         if ( !it->second.Empty() ) {
-            TAnnotMap::const_iterator ait =
-                m_TSEInfo->m_AnnotMap.find(it->first);
-            if (ait == m_TSEInfo->m_AnnotMap.end())
+            m_RangeMap = m_TSEInfo->x_GetRangeMap(it->first, selector);
+            if ( !m_RangeMap ) {
                 continue;
-            TAnnotSelectorMap::const_iterator sit =
-                ait->second.find(selector);
-            if ( sit == ait->second.end() )
-                continue;
-            m_RangeMap = &sit->second;
+            }
             m_CurrentHandle = it->first;
             m_CoreRange = it->second.GetOverlappingRange();
             m_Current = m_RangeMap->begin(m_CoreRange);
@@ -97,45 +91,40 @@ CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
                 break;
         }
     }
-    //_TRACE("Looking for " << m_Selector << " in " << loc);
     if ( !x_IsValid() )
         x_Walk();
 }
 
 
-CAnnot_CI::CAnnot_CI(const CAnnot_CI& iter)
-    : m_TSEInfo(iter.m_TSEInfo),
-      m_Selector(iter.m_Selector),
-      m_RangeMap(iter.m_RangeMap),
-      m_CoreRange(iter.m_CoreRange),
-      m_Current(iter.m_Current),
-      m_HandleRangeMap(iter.m_HandleRangeMap),
-      m_CurrentHandle(iter.m_CurrentHandle),
-      m_OverlapType(iter.m_OverlapType)
+CAnnot_CI::CAnnot_CI(CTSE_Info& tse,
+                     CHandleRangeMap& loc,
+                     const SAnnotSelector& selector)
+    : SAnnotSelector(selector),
+      m_TSEInfo(&tse),
+      m_RangeMap(0),
+      m_HandleRangeMap(&loc)
 {
-    //### Prevent TSE destruction between "if" and "lock"
-    return;
-}
-
-
-CAnnot_CI& CAnnot_CI::operator= (const CAnnot_CI& iter)
-{
-    m_TSEInfo = iter.m_TSEInfo;
-    m_Selector = iter.m_Selector;
-    m_RangeMap = iter.m_RangeMap;
-    m_CoreRange = iter.m_CoreRange;
-    m_Current = iter.m_Current;
-    m_HandleRangeMap = iter.m_HandleRangeMap;
-    m_CurrentHandle = iter.m_CurrentHandle;
-    m_OverlapType = iter.m_OverlapType;
-    //### Prevent TSE destruction between "if" and "lock"
-    return *this;
+    CTSE_Guard guard(tse);
+    iterate ( CHandleRangeMap::TLocMap, it, m_HandleRangeMap->GetMap() ) {
+        if ( !it->second.Empty() ) {
+            m_RangeMap = m_TSEInfo->x_GetRangeMap(it->first, selector);
+            if ( !m_RangeMap ) {
+                continue;
+            }
+            m_CurrentHandle = it->first;
+            m_CoreRange = it->second.GetOverlappingRange();
+            m_Current = m_RangeMap->begin(m_CoreRange);
+            if ( m_Current )
+                break;
+        }
+    }
+    if ( !x_IsValid() )
+        x_Walk();
 }
 
 
 CAnnot_CI::~CAnnot_CI(void)
 {
-    return;
 }
 
 
@@ -155,25 +144,24 @@ bool CAnnot_CI::x_IsValid(void) const
 {
     if ( !bool(m_TSEInfo)  ||  !bool(m_Current))
         return true; // Do not need to walk ahead
-    if (m_Selector.m_AnnotChoice == CSeq_annot::C_Data::e_not_set)
+    if (m_AnnotChoice == CSeq_annot::C_Data::e_not_set)
         return true;
     const CAnnotObject_Info& obj = *m_Current->second.m_AnnotObject;
     //_TRACE("found annot: " << obj.Which() << " at " << obj.GetRangeMap());
-    if (m_Selector.m_AnnotChoice != obj.Which())
+    if (m_AnnotChoice != obj.Which())
         return false;
 
     if ( obj.IsFeat() ) {
         //_TRACE("found feat: " << obj.GetFeat().GetData().Which());
-        if (m_Selector.m_FeatChoice != obj.GetFeat().GetData().Which()  &&
-            m_Selector.m_FeatChoice != CSeqFeatData::e_not_set) {
+        if ( m_FeatChoice != obj.GetFeat().GetData().Which()  &&
+             m_FeatChoice != CSeqFeatData::e_not_set ) {
             return false; // bad feature type
         }
     }
 
     // Check location/product flag and use corresponding map
-    if ( m_Selector.m_FeatProduct ) {
-        return obj.GetProductMap()  &&
-            x_ValidLocation(*obj.GetProductMap());
+    if ( m_FeatProduct ) {
+        return obj.GetProductMap()  &&  x_ValidLocation(*obj.GetProductMap());
     }
     return x_ValidLocation(obj.GetRangeMap());
 }
@@ -195,15 +183,10 @@ void CAnnot_CI::x_Walk(void)
         m_HandleRangeMap->GetMap().find(m_CurrentHandle);
     for (++h; h != m_HandleRangeMap->GetMap().end(); ++h) {
         if ( !h->second.Empty() ) {
-            TAnnotMap::const_iterator ait =
-                m_TSEInfo->m_AnnotMap.find(h->first);
-            if (ait == m_TSEInfo->m_AnnotMap.end())
+            m_RangeMap = m_TSEInfo->x_GetRangeMap(h->first, *this);
+            if ( !m_RangeMap ) {
                 continue;
-            TAnnotSelectorMap::const_iterator sit =
-                ait->second.find(m_Selector);
-            if ( sit == ait->second.end() )
-                continue;
-            m_RangeMap = &sit->second;
+            }
             m_CurrentHandle = h->first;
             m_CoreRange = h->second.GetOverlappingRange();
             m_Current = m_RangeMap->begin(m_CoreRange);
@@ -224,6 +207,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2003/03/05 20:56:43  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.20  2003/02/26 18:00:01  vasilche
 * Removed unused variable.
 *

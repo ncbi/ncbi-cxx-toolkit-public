@@ -87,8 +87,9 @@ CDataSource::~CDataSource(void)
 }
 
 
-CTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
-                                     const CScope::TRequestHistory& history) const
+CTSE_Lock
+CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
+                           const CScope::TRequestHistory& history) const
 {
 //### Don't forget to unlock TSE in the calling function!
     TTSESet* p_tse_set = 0;
@@ -113,7 +114,8 @@ CTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
         if (hst != history.end()) {
             if ( from_history ) {
                 THROW1_TRACE(runtime_error,
-                    "CDataSource::x_FindBestTSE() -- Multiple history matches");
+                             "CDataSource::x_FindBestTSE() -- "
+                             "Multiple history matches");
             }
             from_history.Set(*tse);
         }
@@ -140,7 +142,8 @@ CTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
             return CTSE_Lock(*p_tse_set->find(best));
         }
         THROW1_TRACE(runtime_error,
-            "CDataSource::x_FindBestTSE() -- Multiple seq-id matches found");
+                     "CDataSource::x_FindBestTSE() -- "
+                     "Multiple seq-id matches found");
     }
     // Multiple live TSEs -- try to resolve the conflict (the status of some
     // TSEs may change)
@@ -149,7 +152,8 @@ CTSE_Lock CDataSource::x_FindBestTSE(const CSeq_id_Handle& handle,
         return CTSE_Lock(*p_tse_set->find(best));
     }
     THROW1_TRACE(runtime_error,
-        "CDataSource::x_FindBestTSE() -- Multiple live entries found");
+                 "CDataSource::x_FindBestTSE() -- "
+                 "Multiple live entries found");
 }
 
 
@@ -160,7 +164,8 @@ CBioseq_Handle CDataSource::GetBioseqHandle(CScope& scope,
     CSeq_entry* se = 0;
     {{
         //### CMutexGuard guard(sm_DataSource_Mtx);
-        TBioseqMap::iterator found = info->m_BioseqMap.find(info.GetIdHandle());
+        TBioseqMap::iterator found =
+            info->m_BioseqMap.find(info.GetIdHandle());
         _ASSERT(found != info->m_BioseqMap.end());
         se = found->second->m_Entry;
     }}
@@ -197,7 +202,8 @@ const CBioseq& CDataSource::GetBioseq(const CBioseq_Handle& handle)
     if ( m_Loader ) {
         // Send request to the loader
         CHandleRangeMap hrm;
-        hrm.AddRange(handle.m_Value, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
+        hrm.AddRange(handle.m_Value,
+                     CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseq);
     }
     //### CMutexGuard guard(sm_DataSource_Mtx);
@@ -247,7 +253,8 @@ CSeqMap& CDataSource::x_GetSeqMap(const CBioseq_Handle& handle)
         if ( m_Loader ) {
             // Send request to the loader
             CHandleRangeMap hrm;
-            hrm.AddRange(handle.m_Value, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
+            hrm.AddRange(handle.m_Value,
+                         CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
             m_Loader->GetRecords(hrm, CDataLoader::eBioseq); //### or eCore???
         }
 
@@ -378,7 +385,8 @@ bool CDataSource::GetSequence(const CBioseq_Handle& handle,
         case CSeqMap::eSeqEnd:
             {
                 THROW1_TRACE(runtime_error,
-                    "CDataSource::GetSequence() -- Attempt to read beyond sequence end");
+                             "CDataSource::GetSequence() -- "
+                             "Attempt to read beyond sequence end");
             }
 #endif
         }
@@ -522,7 +530,8 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
                 // match for the new segment start. The start should be
                 // in a gap, not in a real literal.
                 THROW1_TRACE(runtime_error,
-                    "CDataSource::AttachSeqData() -- Can not insert segment into a literal");
+                             "CDataSource::AttachSeqData() -- "
+                             "Can not insert segment into a literal");
             }
             else {
                 // No data exist - treat it like a gap
@@ -553,7 +562,8 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
             }
             // ex_cur > start
             THROW1_TRACE(runtime_error,
-                "CDataSource::AttachSeqData() -- Segment position conflict");
+                         "CDataSource::AttachSeqData() -- "
+                         "Segment position conflict");
         }
         else {
             THROW1_TRACE(runtime_error,
@@ -582,7 +592,8 @@ bool CDataSource::AttachSeqData(const CSeq_entry& bioseq,
                 (*gap)->SetLiteral().SetLength(ex_upper - start - length);
             }
             // Insert new_seg before gap, and gap_dup before new_seg
-            delta.insert(delta.insert(gap, CRef<CDelta_seq>(&seq_seg)), gap_dup);
+            delta.insert(delta.insert(gap, CRef<CDelta_seq>(&seq_seg)),
+                         gap_dup);
         }
     }
     else {
@@ -773,7 +784,8 @@ CTSE_Info* CDataSource::x_IndexEntry(CSeq_entry& entry, CSeq_entry& tse,
                 string sid1, sid2, si_conflict;
                 {{
                     CNcbiOstrstream os;
-                    iterate (CBioseq::TId, id_it, found->second->m_Entry->GetSeq().GetId()) {
+                    iterate ( CBioseq::TId, id_it,
+                              found->second->m_Entry->GetSeq().GetId() ) {
                         os << (*id_it)->DumpAsFasta() << " | ";
                     }
                     sid1 = CNcbiOstrstreamToString(os);
@@ -881,7 +893,7 @@ void CDataSource::x_AddToAnnotMap(CSeq_entry& entry, CTSE_Info* info)
 }
 
 
-void PrintSeqMap(const string& id, const CSeqMap& smap)
+void PrintSeqMap(const string& /*id*/, const CSeqMap& /*smap*/)
 {
 #if _DEBUG && 0
     _TRACE("CSeqMap("<<id<<"):");
@@ -894,7 +906,9 @@ void PrintSeqMap(const string& id, const CSeqMap& smap)
             _TRACE("    data: "<<it.GetLength());
             break;
         case CSeqMap::eSeqRef:
-            _TRACE("    ref: "<<it.GetRefSeqid().AsString()<<' '<<it.GetRefPosition()<<' '<<it.GetLength()<<' '<<it.GetRefMinusStrand());
+            _TRACE("    ref: "<<it.GetRefSeqid().AsString()<<' '<<
+                   it.GetRefPosition()<<' '<<it.GetLength()<<' '<<
+                   it.GetRefMinusStrand());
             break;
         default:
             _TRACE("    bad: "<<it.GetType()<<' '<<it.GetLength());
@@ -935,7 +949,7 @@ void CDataSource::x_AppendDelta(const CDelta_ext& delta,
 #endif
 
 
-void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& scope)
+void CDataSource::x_CreateSeqMap(const CBioseq& seq, CScope& /*scope*/)
 {
     //### Make sure the bioseq is not deleted while creating the seq-map
     CConstRef<CBioseq> guard(&seq);
@@ -1074,12 +1088,14 @@ void CDataSource::x_LocToSeqMap(const CSeq_loc& loc,
     case CSeq_loc::e_Bond:
         {
             THROW1_TRACE(runtime_error,
-                "CDataSource::x_LocToSeqMap() -- e_Bond is not allowed as a reference type");
+                         "CDataSource::x_LocToSeqMap() -- "
+                         "e_Bond is not allowed as a reference type");
         }
     case CSeq_loc::e_Feat:
         {
             THROW1_TRACE(runtime_error,
-                "CDataSource::x_LocToSeqMap() -- e_Feat is not allowed as a reference type");
+                         "CDataSource::x_LocToSeqMap() -- "
+                         "e_Feat is not allowed as a reference type");
         }
     }
 }
@@ -1139,7 +1155,8 @@ inline
 void CDataSource::x_AppendRef(const CSeq_interval& interval,
                               vector<CSeqMap::CSegment>& segments)
 {
-    x_AppendRef(GetSeq_id_Mapper().GetHandle(interval.GetId()), interval, segments);
+    x_AppendRef(GetSeq_id_Mapper().GetHandle(interval.GetId()), interval,
+                segments);
 }
 
 
@@ -1158,7 +1175,8 @@ void CDataSource::x_AppendLoc(const CSeq_loc& loc,
         // Reference to the whole sequence - do not check its
         // length, use 0 instead.
         const CSeq_id& ref = loc.GetWhole();
-        segments.push_back(CSeqMap::CSegment(GetSeq_id_Mapper().GetHandle(ref)));
+        segments.push_back(CSeqMap::
+                           CSegment(GetSeq_id_Mapper().GetHandle(ref)));
         break;
     }
     case CSeq_loc::e_Int:
@@ -1307,73 +1325,79 @@ void CDataSource::GetTSESetWithAnnots(const CSeq_id_Handle& idh,
     TTSESet non_history;
     CMutexGuard guard(m_DataSource_Mtx);    
 
-    TTSEMap::const_iterator tse_it = m_TSE_ref.find(idh);
-    if (tse_it != m_TSE_ref.end()) {
-        _ASSERT(tse_it->second.size() > 0);
-        TTSESet selected_with_ref;
-        TTSESet selected_with_seq;
-        iterate(TTSESet, tse, tse_it->second) {
-            if ( (*tse)->m_BioseqMap.find(idh) != (*tse)->m_BioseqMap.end() ) {
-                selected_with_seq.insert(*tse); // with sequence
+    {{
+        TTSEMap::const_iterator tse_it = m_TSE_ref.find(idh);
+        if (tse_it != m_TSE_ref.end()) {
+            _ASSERT(tse_it->second.size() > 0);
+            TTSESet selected_with_ref;
+            TTSESet selected_with_seq;
+            iterate(TTSESet, tse, tse_it->second) {
+                if ( (*tse)->m_BioseqMap.find(idh) !=
+                     (*tse)->m_BioseqMap.end() ) {
+                    selected_with_seq.insert(*tse); // with sequence
+                }
+                else
+                    selected_with_ref.insert(*tse); // with reference
             }
-            else
-                selected_with_ref.insert(*tse); // with reference
-        }
 
-        CRef<CTSE_Info> unique_from_history;
-        CRef<CTSE_Info> unique_live;
-        iterate (TTSESet, with_seq, selected_with_seq) {
-            if ( scope.m_History.find(CTSE_Lock(*with_seq)) !=
-                 scope.m_History.end() ) {
-                if ( unique_from_history ) {
-                    THROW1_TRACE(runtime_error,
-                        "CDataSource::GetTSESetWithAnnots() -- "
-                        "Ambiguous request: multiple history matches");
+            CRef<CTSE_Info> unique_from_history;
+            CRef<CTSE_Info> unique_live;
+            iterate (TTSESet, with_seq, selected_with_seq) {
+                if ( scope.m_History.find(CTSE_Lock(*with_seq)) !=
+                     scope.m_History.end() ) {
+                    if ( unique_from_history ) {
+                        THROW1_TRACE(runtime_error,
+                                     "CDataSource::GetTSESetWithAnnots() -- "
+                                     "Ambiguous request: "
+                                     "multiple history matches");
+                    }
+                    unique_from_history = *with_seq;
                 }
-                unique_from_history = *with_seq;
-            }
-            else if ( !unique_from_history ) {
-                if ((*with_seq)->m_Dead)
-                    continue;
-                if ( unique_live ) {
-                    THROW1_TRACE(runtime_error,
-                        "CDataSource::GetTSESetWithAnnots() -- "
-                        "Ambiguous request: multiple live TSEs");
-                }
-                unique_live = *with_seq;
-            }
-        }
-        if ( unique_from_history ) {
-            tmp_tse_set.insert(unique_from_history);
-        }
-        else if ( unique_live ) {
-            non_history.insert(unique_live);
-        }
-        else if (selected_with_seq.size() == 1) {
-            non_history.insert(*selected_with_seq.begin());
-        }
-        else if (selected_with_seq.size() > 1) {
-            //### Try to resolve the conflict with the help of loader
-            THROW1_TRACE(runtime_error,
-                "CDataSource::GetTSESetWithAnnots() -- "
-                "Ambigous request: multiple TSEs found");
-        }
-        iterate(TTSESet, tse, selected_with_ref) {
-            bool in_history =
-                scope.m_History.find(CTSE_Lock(*tse)) != scope.m_History.end();
-            if ( !(*tse)->m_Dead  || in_history ) {
-                // Select only TSEs present in the history and live TSEs
-                // Different sets for in-history and non-history TSEs for
-                // the future filtering.
-                if ( in_history ) {
-                    tmp_tse_set.insert(*tse); // in-history TSE
-                }
-                else {
-                    non_history.insert(*tse); // non-history TSE
+                else if ( !unique_from_history ) {
+                    if ((*with_seq)->m_Dead)
+                        continue;
+                    if ( unique_live ) {
+                        THROW1_TRACE(runtime_error,
+                                     "CDataSource::GetTSESetWithAnnots() -- "
+                                     "Ambiguous request: multiple live TSEs");
+                    }
+                    unique_live = *with_seq;
                 }
             }
+            if ( unique_from_history ) {
+                tmp_tse_set.insert(unique_from_history);
+            }
+            else if ( unique_live ) {
+                non_history.insert(unique_live);
+            }
+            else if (selected_with_seq.size() == 1) {
+                non_history.insert(*selected_with_seq.begin());
+            }
+            else if (selected_with_seq.size() > 1) {
+                //### Try to resolve the conflict with the help of loader
+                THROW1_TRACE(runtime_error,
+                             "CDataSource::GetTSESetWithAnnots() -- "
+                             "Ambigous request: multiple TSEs found");
+            }
+            iterate(TTSESet, tse, selected_with_ref) {
+                bool in_history =
+                    scope.m_History.find(CTSE_Lock(*tse)) !=
+                    scope.m_History.end();
+                if ( !(*tse)->m_Dead  || in_history ) {
+                    // Select only TSEs present in the history and live TSEs
+                    // Different sets for in-history and non-history TSEs for
+                    // the future filtering.
+                    if ( in_history ) {
+                        tmp_tse_set.insert(*tse); // in-history TSE
+                    }
+                    else {
+                        non_history.insert(*tse); // non-history TSE
+                    }
+                }
+            }
         }
-    }
+    }}
+
     // Filter out TSEs not in the history yet and conflicting with any
     // history TSE. The conflict may be caused by any seq-id, even not
     // mentioned in the searched location.
@@ -1438,7 +1462,8 @@ void CDataSource::x_DropEntry(CSeq_entry& entry)
             key = GetSeq_id_Mapper().GetHandle(**id);
             TTSEMap::iterator tse_set = m_TSE_seq.find(key);
             _ASSERT(tse_set != m_TSE_seq.end());
-            //### No need to lock the TSE since the whole DS is locked by DropTSE()
+            //### No need to lock the TSE
+            //### since the whole DS is locked by DropTSE()
             //### CMutexGuard guard(sm_TSESet_MP.GetMutex(&tse_set->second));
             TTSESet::iterator tse_it = tse_set->second.begin();
             for ( ; tse_it != tse_set->second.end(); ++tse_it) {
@@ -1571,12 +1596,11 @@ void CDataSource::x_MapAnnot(CTSE_Info& tse,
         annotRef.m_HandleRange = mapit;
         m_TSE_ref[mapit->first].insert(CRef<CTSE_Info>(&tse));
 
-        CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMap = tse.m_AnnotMap[mapit->first];
 
         // repeat for more generic types of selector
         do {
-            x_MapAnnot(selMapTotal[annotSelector], 
+            x_MapAnnot(tse.x_SetRangeMap(selMap, annotSelector), 
                        mapit->second.GetOverlappingRange(),
                        annotRef);
         } while ( x_MakeGenericSelector(annotSelector) );
@@ -1606,19 +1630,18 @@ void CDataSource::x_DropAnnot(CTSE_Info& tse,
 {
     // Iterate id handles
     iterate ( CHandleRangeMap::TLocMap, mapit, hrm.GetMap() ) {
-        CTSE_Info::TAnnotSelectorMap& selMapTotal =
-            tse.m_AnnotMap[mapit->first];
+        CTSE_Info::TAnnotSelectorMap& selMap = tse.m_AnnotMap[mapit->first];
 
         // repeat for more generic types of selector
         do {
-            if ( x_DropAnnot(selMapTotal[annotSelector],
+            if ( x_DropAnnot(tse.x_SetRangeMap(selMap, annotSelector),
                              mapit->second.GetOverlappingRange(),
                              annotObj) ) {
-                selMapTotal.erase(annotSelector);
+                tse.x_DropRangeMap(selMap, annotSelector);
             }
         } while ( x_MakeGenericSelector(annotSelector) );
 
-        if ( selMapTotal.empty() ) {
+        if ( selMap.empty() ) {
             tse.m_AnnotMap.erase(mapit->first);
             m_TSE_ref[mapit->first].erase(CRef<CTSE_Info>(&tse));
             if (m_TSE_ref[mapit->first].empty()) {
@@ -1702,24 +1725,24 @@ void CDataSource::x_MapGraph(const CSeq_graph& graph,
 
 
 void CDataSource::x_DropFeature(const CSeq_feat& feat,
-                                const CSeq_annot& annot,
-                                const CSeq_entry* entry)
+                                const CSeq_annot& /*annot*/,
+                                const CSeq_entry* /*entry*/)
 {
     x_DropAnnot(&feat);
 }
 
 
 void CDataSource::x_DropAlign(const CSeq_align& align,
-                              const CSeq_annot& annot,
-                              const CSeq_entry* entry)
+                              const CSeq_annot& /*annot*/,
+                              const CSeq_entry* /*entry*/)
 {
     x_DropAnnot(&align);
 }
 
 
 void CDataSource::x_DropGraph(const CSeq_graph& graph,
-                              const CSeq_annot& annot,
-                              const CSeq_entry* entry)
+                              const CSeq_annot& /*annot*/,
+                              const CSeq_entry* /*entry*/)
 {
     x_DropAnnot(&graph);
 }
@@ -1763,7 +1786,8 @@ CSeqMatch_Info CDataSource::BestResolve(const CSeq_id& id, CScope& scope)
         //### Need a better interface to request just a set of IDs
         CSeq_id_Handle idh = GetSeq_id_Mapper().GetHandle(id);
         CHandleRangeMap hrm;
-        hrm.AddRange(idh, CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
+        hrm.AddRange(idh,
+                     CHandleRange::TRange::GetWhole(), eNa_strand_unknown);
         m_Loader->GetRecords(hrm, CDataLoader::eBioseqCore, &loaded_tse_set);
     }
     CSeqMatch_Info match;
@@ -1886,7 +1910,8 @@ void CDataSource::x_AppendResolved(const CSeq_id_Handle& seqid,
                                    vector<CSeqMap::CSegment>& segments,
                                    CScope& scope)
 {
-    _TRACE("x_AppendResolved("<<seqid.AsString()<<','<<ref_pos<<','<<ref_len<<','<<minus_strand<<')');
+    _TRACE("x_AppendResolved("<<seqid.AsString()<<','<<ref_pos<<','<<
+           ref_len<<','<<minus_strand<<')');
     CBioseq_Handle rbsh =
         scope.GetBioseqHandle(GetSeq_id_Mapper().GetSeq_id(seqid));
     if ( !rbsh ) {
@@ -1895,9 +1920,11 @@ void CDataSource::x_AppendResolved(const CSeq_id_Handle& seqid,
                      "Can not resolve sequence reference.");
     }
     const CSeqMap& rmap = rbsh.GetSeqMap();
-    PrintSeqMap(GetSeq_id_Mapper().GetHandle(*rbsh.GetSeqId()).AsString(), rmap);
+    PrintSeqMap(GetSeq_id_Mapper().GetHandle(*rbsh.GetSeqId()).AsString(),
+                rmap);
     TSeqPos ref_end = ref_pos + ref_len;
-    for ( CSeqMap::const_iterator it = rmap.find(minus_strand? ref_end-1: ref_pos);; ) {
+    for ( CSeqMap::const_iterator it = rmap.find(minus_strand?
+                                                 ref_end-1: ref_pos);; ) {
         // intersection of current segment and referenced region
         TSeqPos pos = max(ref_pos, it.GetPosition());
         TSeqPos end = min(ref_pos+ref_len, it.GetPosition()+it.GetLength());
@@ -1907,7 +1934,8 @@ void CDataSource::x_AppendResolved(const CSeq_id_Handle& seqid,
             ref_pos+ref_len-end:
             pos - it.GetPosition();
         TSeqPos len = end - pos;
-        _TRACE("  segment: "<<it.GetPosition()<<' '<<it.GetLength()<<"  pos="<<pos<<" end="<<end<<" len="<<len<<" shift="<<shift);
+        _TRACE("  segment: "<<it.GetPosition()<<' '<<it.GetLength()<<
+               "  pos="<<pos<<" end="<<end<<" len="<<len<<" shift="<<shift);
         switch ( it.GetType() ) {
         case CSeqMap::eSeqData:
             x_AppendRef(seqid, pos, len,
@@ -2002,7 +2030,8 @@ bool CDataSource::IsSynonym(const CSeq_id& id1, CSeq_id& id2) const
     TTSEMap::const_iterator tse_set = m_TSE_seq.find(h1);
     if (tse_set == m_TSE_seq.end())
         return false; // Could not find id1 in the datasource
-    non_const_iterate (TTSESet, tse_it, const_cast<TTSESet&>(tse_set->second) ) {
+    non_const_iterate (TTSESet, tse_it,
+                       const_cast<TTSESet&>(tse_set->second) ) {
         const CBioseq_Info& bioseq =
             *const_cast<TBioseqMap&>((*tse_it)->m_BioseqMap)[h1];
         if (bioseq.m_Synonyms.find(h2) != bioseq.m_Synonyms.end())
@@ -2033,15 +2062,16 @@ bool CDataSource::GetTSEHandles(CScope& scope,
     typedef map<CSeq_entry*, CBioseq_Info*> TEntryToInfo;
     TEntryToInfo bioseq_map;
     // Populate the map
-    non_const_iterate (CTSE_Info::TBioseqMap, bit, found->second->m_BioseqMap) {
+    non_const_iterate ( CTSE_Info::TBioseqMap, bit,
+                        found->second->m_BioseqMap ) {
         if (filter != CSeq_inst::eMol_not_set) {
             // Filter sequences
             _ASSERT(bit->second->m_Entry->IsSeq());
             if (bit->second->m_Entry->GetSeq().GetInst().GetMol() != filter)
                 continue;
         }
-        bioseq_map[const_cast<CSeq_entry*>(bit->second->m_Entry.GetPointer())] =
-            bit->second;
+        bioseq_map[const_cast<CSeq_entry*>(bit->second->m_Entry.GetPointer())]
+            = bit->second;
     }
     // Convert each map entry into bioseq handle
     iterate (TEntryToInfo, eit, bioseq_map) {
@@ -2125,6 +2155,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.87  2003/03/05 20:56:43  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.86  2003/03/03 20:31:08  vasilche
 * Removed obsolete method PopulateTSESet().
 *

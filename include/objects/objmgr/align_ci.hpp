@@ -46,17 +46,13 @@ public:
     CAlign_CI(void);
     // Search all TSEs in all datasources
     CAlign_CI(CScope& scope, const CSeq_loc& loc,
-              CAnnot_CI::EOverlapType overlap_type =
-              CAnnot_CI::eOverlap_Intervals,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE,
+              EOverlapType overlap_type = eOverlap_Intervals,
+              EResolveMethod resolve = eResolve_TSE,
               const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq
     CAlign_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              CAnnot_CI::EOverlapType overlap_type =
-              CAnnot_CI::eOverlap_Intervals,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE,
+              EOverlapType overlap_type = eOverlap_Intervals,
+              EResolveMethod resolve = eResolve_TSE,
               const CSeq_entry* entry = 0);
     CAlign_CI(const CAlign_CI& iter);
     virtual ~CAlign_CI(void);
@@ -64,9 +60,13 @@ public:
     CAlign_CI& operator= (const CAlign_CI& iter);
 
     CAlign_CI& operator++ (void);
+    CAlign_CI& operator-- (void);
     operator bool (void) const;
     const CSeq_align& operator* (void) const;
     const CSeq_align* operator-> (void) const;
+private:
+    CAlign_CI operator++ (int);
+    CAlign_CI operator-- (int);
 };
 
 
@@ -93,7 +93,14 @@ CAlign_CI& CAlign_CI::operator= (const CAlign_CI& iter)
 inline
 CAlign_CI& CAlign_CI::operator++ (void)
 {
-    Walk();
+    Next();
+    return *this;
+}
+
+inline
+CAlign_CI& CAlign_CI::operator-- (void)
+{
+    Prev();
     return *this;
 }
 
@@ -110,6 +117,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2003/03/05 20:56:42  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.16  2003/02/24 18:57:20  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

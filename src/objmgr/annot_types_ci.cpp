@@ -98,6 +98,38 @@ bool CFeat_Less::operator ()(const CAnnotObject_Ref& x,
 }
 
 
+bool CFeat_Reverse_Less::operator ()(const CAnnotObject_Ref& x,
+                                     const CAnnotObject_Ref& y) const
+{
+    CAnnotObject_Ref::TRange x_range = x.GetTotalRange();
+    CAnnotObject_Ref::TRange y_range = y.GetTotalRange();
+    // smallest left extreme first
+    if ( x_range.GetToOpen() != y_range.GetToOpen() ) {
+        return x_range.GetToOpen() > y_range.GetToOpen();
+    }
+
+    // longest feature first
+    if ( x_range.GetFrom() != y_range.GetFrom() ) {
+        return x_range.GetFrom() < y_range.GetFrom();
+    }
+
+    const CAnnotObject_Info* x_info = x.m_Object.GetPointerOrNull();
+    const CAnnotObject_Info* y_info = y.m_Object.GetPointerOrNull();
+    _ASSERT(x_info && y_info);
+    const CSeq_feat* x_feat = x_info->GetFeatFast();
+    const CSeq_feat* y_feat = y_info->GetFeatFast();
+    _ASSERT(x_feat && y_feat);
+    const CSeq_loc* x_loc = x.m_MappedLoc.GetPointerOrNull();
+    const CSeq_loc* y_loc = y.m_MappedLoc.GetPointerOrNull();
+    if ( !x_loc )
+        x_loc = &x_feat->GetLocation();
+    if ( !y_loc )
+        y_loc = &y_feat->GetLocation();
+    int diff = x_feat->CompareNonLocation(*y_feat, *x_loc, *y_loc);
+    return diff? diff < 0: x_info < y_info;
+}
+
+
 bool CAnnotObject_Less::operator()(const CAnnotObject_Ref& x,
                                    const CAnnotObject_Ref& y) const
 {
@@ -119,23 +151,44 @@ bool CAnnotObject_Less::operator()(const CAnnotObject_Ref& x,
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(void)
-    : m_ResolveMethod(eResolve_None)
 {
-    return;
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
+                               const CSeq_loc& loc,
+                               const SAnnotSelector& params)
+    : SAnnotSelector(params),
+      m_Scope(&scope)
+{
+    CHandleRangeMap master_loc;
+    master_loc.AddLocation(loc);
+    x_Initialize(master_loc);
+}
+
+
+CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
+                               TSeqPos start, TSeqPos stop,
+                               const SAnnotSelector& params)
+    : SAnnotSelector(params),
+      m_Scope(bioseq.m_Scope)
+{
+    SetLimitTSE(static_cast<CTSE_Info*>(bioseq.m_TSE));
+    x_Initialize(bioseq, start, stop);
 }
 
 
 CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
                                const CSeq_loc& loc,
                                SAnnotSelector selector,
-                               CAnnot_CI::EOverlapType overlap_type,
-                               EResolveMethod resolve,
+                               EOverlapType overlap_type,
+                               EResolveMethod resolve_method,
                                const CSeq_entry* entry)
-    : m_Selector(selector),
-      m_Scope(&scope),
-      m_SingleEntry(entry),
-      m_ResolveMethod(resolve),
-      m_OverlapType(overlap_type)
+    : SAnnotSelector(selector
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve_method)
+                     .SetLimitSeqEntry(entry)),
+      m_Scope(&scope)
 {
     CHandleRangeMap master_loc;
     master_loc.AddLocation(loc);
@@ -146,15 +199,22 @@ CAnnotTypes_CI::CAnnotTypes_CI(CScope& scope,
 CAnnotTypes_CI::CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                                TSeqPos start, TSeqPos stop,
                                SAnnotSelector selector,
-                               CAnnot_CI::EOverlapType overlap_type,
-                               EResolveMethod resolve,
+                               EOverlapType overlap_type,
+                               EResolveMethod resolve_method,
                                const CSeq_entry* entry)
-    : m_Selector(selector),
-      m_Scope(bioseq.m_Scope),
-      m_NativeTSE(static_cast<CTSE_Info*>(bioseq.m_TSE)),
-      m_SingleEntry(entry),
-      m_ResolveMethod(resolve),
-      m_OverlapType(overlap_type)
+    : SAnnotSelector(selector
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve_method)
+                     .SetLimitSeqEntry(entry)
+                     .SetLimitTSE(static_cast<CTSE_Info*>(bioseq.m_TSE))),
+      m_Scope(bioseq.m_Scope)
+{
+    x_Initialize(bioseq, start, stop);
+}
+
+
+void CAnnotTypes_CI::x_Initialize(const CBioseq_Handle& bioseq,
+                                  TSeqPos start, TSeqPos stop)
 {
     if ( start == 0 && stop == 0 ) {
         CBioseq_Handle::TBioseqCore core = bioseq.GetBioseqCore();
@@ -184,9 +244,8 @@ CAnnotTypes_CI::~CAnnotTypes_CI(void)
 
 CAnnotTypes_CI& CAnnotTypes_CI::operator= (const CAnnotTypes_CI& it)
 {
-    m_Selector = it.m_Selector;
+    static_cast<SAnnotSelector&>(*this) = it;
     m_Scope = it.m_Scope;
-    m_ResolveMethod = it.m_ResolveMethod;
     m_AnnotSet = it.m_AnnotSet;
     m_CurAnnot = m_AnnotSet.begin()+(it.m_CurAnnot - it.m_AnnotSet.begin());
     // Copy TSE list, set TSE locks
@@ -592,7 +651,7 @@ void CAnnotTypes_CI::x_Initialize(const CHandleRangeMap& master_loc)
             }
         }
     }
-    if ( m_Selector.m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
+    if ( m_AnnotChoice == CSeq_annot::C_Data::e_Ftable ) {
         sort(m_AnnotSet.begin(), m_AnnotSet.end(), CFeat_Less());
     }
     else {
@@ -612,46 +671,43 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
     TTSESet entries;
     m_Scope->GetTSESetWithAnnots(id, entries);
 
+    CHandleRange::TRange range = hr.GetOverlappingRange();
+
     iterate ( TTSESet, tse_it, entries ) {
-        if ( m_NativeTSE  &&  *tse_it != m_NativeTSE ) {
+        if ( m_LimitTSE  &&  *tse_it != m_LimitTSE ) {
             continue;
         }
         m_TSESet.insert(*tse_it);
         const CTSE_Info& tse_info = **tse_it;
         CTSE_Guard guard(tse_info);
 
-        CTSE_Info::TAnnotMap::const_iterator amit =
-            tse_info.m_AnnotMap.find(id);
-        if (amit == tse_info.m_AnnotMap.end()) {
+        const CTSE_Info::TRangeMap* rmap = tse_info.x_GetRangeMap(id, *this);
+        if ( !rmap ) {
             continue;
         }
 
-        CTSE_Info::TAnnotSelectorMap::const_iterator sit =
-            amit->second.find(m_Selector);
-        if ( sit == amit->second.end() ) {
-            continue;
-        }
-
-        for ( CTSE_Info::TRangeMap::const_iterator aoit =
-                  sit->second.begin(hr.GetOverlappingRange());
+        for ( CTSE_Info::TRangeMap::const_iterator aoit = rmap->begin(range);
               aoit; ++aoit ) {
             const SAnnotObject_Index& annot_index = aoit->second;
             const CAnnotObject_Info& annot_info =
                 *annot_index.m_AnnotObject;
-            if ( bool(m_SingleEntry)  &&
-                 (m_SingleEntry != &annot_info.GetSeq_entry())) {
+            if ( bool(m_LimitSeqEntry)  &&
+                 &annot_info.GetSeq_entry() != m_LimitSeqEntry ) {
+                continue;
+            }
+            if ( bool(m_LimitSeqAnnot)  &&
+                 &annot_info.GetSeq_annot() != m_LimitSeqAnnot ) {
                 continue;
             }
 
-            if ( m_OverlapType == CAnnot_CI::eOverlap_Intervals &&
+            if ( m_OverlapType == eOverlap_Intervals &&
                  !hr.IntersectingWith(annot_index.m_HandleRange->second) ) {
                 continue;
             }
                 
             m_AnnotSet.push_back(CAnnotObject_Ref(annot_info));
             if ( cvt ) {
-                cvt->Convert(m_AnnotSet.back(),
-                             m_Selector.m_FeatProduct);
+                cvt->Convert(m_AnnotSet.back(), m_FeatProduct);
             }
         }
     }
@@ -661,7 +717,7 @@ void CAnnotTypes_CI::x_Search(const CSeq_id_Handle& id,
 void CAnnotTypes_CI::x_Search(const CHandleRangeMap& loc,
                               CSeq_loc_Conversion* cvt)
 {
-    m_Scope->UpdateAnnotIndex(loc, m_Selector.m_AnnotChoice);
+    m_Scope->UpdateAnnotIndex(loc, m_AnnotChoice);
 
     iterate ( CHandleRangeMap, idit, loc ) {
         if ( idit->second.Empty() ) {
@@ -733,6 +789,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.51  2003/03/05 20:56:43  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.50  2003/03/03 20:32:24  vasilche
 * Use cached synonyms.
 *

@@ -52,7 +52,7 @@ class CTSE_Info;
 
 // General annotation iterator. Public interfaces should use
 // CFeat_CI, CGraph_CI and CAlign_CI instead.
-class NCBI_XOBJMGR_EXPORT CAnnot_CI
+class NCBI_XOBJMGR_EXPORT CAnnot_CI : public SAnnotSelector
 {
 public:
     typedef CRange<TSeqPos>                                          TRange;
@@ -60,19 +60,15 @@ public:
     typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
     typedef map<CSeq_id_Handle, TAnnotSelectorMap>                   TAnnotMap;
 
-    enum EOverlapType {
-        eOverlap_Intervals,  // default - check overlapping of individual intervals
-        eOverlap_TotalRange  // check overlapping of total ranges only
-    };
-
     CAnnot_CI(void);
     CAnnot_CI(CTSE_Info& tse,
               CHandleRangeMap& loc,
+              const SAnnotSelector& selector);
+    CAnnot_CI(CTSE_Info& tse,
+              CHandleRangeMap& loc,
               SAnnotSelector selector,
-              EOverlapType overlap_type = eOverlap_Intervals);
-    CAnnot_CI(const CAnnot_CI& iter);
+              EOverlapType overlap_type);
     ~CAnnot_CI(void);
-    CAnnot_CI& operator= (const CAnnot_CI& iter);
 
     CAnnot_CI& operator++ (void);
     operator bool (void) const;
@@ -96,13 +92,11 @@ private:
 
     // The TSEInfo is locked by CAnnotTypes_CI, not here.
     CTSE_Lock         m_TSEInfo;
-    SAnnotSelector    m_Selector;
     const TRangeMap*  m_RangeMap;
     TRange            m_CoreRange;
     TRangeIter        m_Current;
     CHandleRangeMap*  m_HandleRangeMap;
     CSeq_id_Handle    m_CurrentHandle;
-    EOverlapType      m_OverlapType;
 };
 
 inline
@@ -146,6 +140,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/05 20:56:42  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.17  2003/02/24 18:57:20  vasilche
 * Make feature gathering in one linear pass using CSeqMap iterator.
 * Do not use feture index by sub locations.

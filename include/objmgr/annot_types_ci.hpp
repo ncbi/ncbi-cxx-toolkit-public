@@ -85,6 +85,7 @@ public:
 
 private:
     friend class CFeat_Less;
+    friend class CFeat_Reverse_Less;
     friend class CAnnotObject_Less;
 
     TRange x_UpdateTotalRange(void) const;
@@ -106,8 +107,16 @@ private:
 class NCBI_XOBJMGR_EXPORT CFeat_Less
 {
 public:
-    // Compare CRef-s: if at least one is NULL, compare as pointers,
-    // otherwise call non-inline x_CompareAnnot() method
+    // Compare CRef-s: both must be features
+    bool operator ()(const CAnnotObject_Ref& x,
+                     const CAnnotObject_Ref& y) const;
+};
+
+
+class NCBI_XOBJMGR_EXPORT CFeat_Reverse_Less
+{
+public:
+    // Compare CRef-s: both must be features
     bool operator ()(const CAnnotObject_Ref& x,
                      const CAnnotObject_Ref& y) const;
 };
@@ -116,31 +125,32 @@ public:
 class NCBI_XOBJMGR_EXPORT CAnnotObject_Less
 {
 public:
-    // Compare CRef-s: if at least one is NULL, compare as pointers,
-    // otherwise call non-inline x_CompareAnnot() method
+    // Compare CRef-s: if at least one is NULL, compare as pointers
     bool operator ()(const CAnnotObject_Ref& x,
                      const CAnnotObject_Ref& y) const;
 };
 
 
 // Base class for specific annotation iterators
-class NCBI_XOBJMGR_EXPORT CAnnotTypes_CI
+class NCBI_XOBJMGR_EXPORT CAnnotTypes_CI : public SAnnotSelector
 {
 public:
-    // Flag to indicate references resolution method
-    enum EResolveMethod {
-        eResolve_None, // Do not search annotations on segments
-        eResolve_TSE,  // Search annotations only on sequences in the same TSE
-        eResolve_All   // Search annotations for all referenced sequences
-    };
-
     CAnnotTypes_CI(void);
+
+    // short methods
+    CAnnotTypes_CI(CScope& scope,
+                   const CSeq_loc& loc,
+                   const SAnnotSelector& params);
+    CAnnotTypes_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   const SAnnotSelector& params);
+
     // Search all TSEs in all datasources, by default get annotations defined
     // on segments in the same TSE (eResolve_TSE method).
     CAnnotTypes_CI(CScope& scope,
                    const CSeq_loc& loc,
                    SAnnotSelector selector,
-                   CAnnot_CI::EOverlapType overlap_type,
+                   EOverlapType overlap_type,
                    EResolveMethod resolve,
                    const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq, by default get annotations
@@ -150,7 +160,7 @@ public:
     CAnnotTypes_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
                    SAnnotSelector selector,
-                   CAnnot_CI::EOverlapType overlap_type,
+                   EOverlapType overlap_type,
                    EResolveMethod resolve,
                    const CSeq_entry* entry = 0);
     CAnnotTypes_CI(const CAnnotTypes_CI& it);
@@ -166,13 +176,16 @@ protected:
     // Check if a datasource and an annotation are selected.
     bool IsValid(void) const;
     // Move to the next valid position
-    void Walk(void);
+    void Next(void);
+    void Prev(void);
     // Return current annotation
     const CAnnotObject_Ref& Get(void) const;
 
 private:
     typedef vector<CAnnotObject_Ref> TAnnotSet;
 
+    void x_Initialize(const CBioseq_Handle& bioseq,
+                      TSeqPos start, TSeqPos stop);
     void x_Initialize(const CHandleRangeMap& master_loc);
     void x_SearchMapped(const CSeqMap_CI& seg,
                         CHandleRangeMap::const_iterator master_loc);
@@ -184,32 +197,14 @@ private:
     
     // Release all locked resources TSE etc
     void x_ReleaseAll(void);
-    // Convert seq-loc to the master location coordinates, return ePartial
-    // if any location was adjusted (used as Partial flag for features),
-    // eMapped if a location was recalculated but not truncated, eNone
-    // if no convertions were necessary.
-    enum EConverted {
-        eConverted_None,
-        eConverted_Mapped,
-        eConverted_Partial
-    };
 
-    SAnnotSelector               m_Selector;
     // Set of all the annotations found
     TAnnotSet                    m_AnnotSet;
-    // TSE set to keep all the TSEs locked
-    TTSESet                      m_TSESet;
     // Current annotation
     TAnnotSet::const_iterator    m_CurAnnot;
+    // TSE set to keep all the TSEs locked
+    TTSESet                      m_TSESet;
     mutable CRef<CScope>         m_Scope;
-    // If non-zero, search annotations in the "native" TSE only
-    CTSE_Lock                    m_NativeTSE;
-    // Search only within this seq-entry if set
-    CConstRef<CSeq_entry>        m_SingleEntry;
-    // Reference resolving method
-    EResolveMethod               m_ResolveMethod;
-    // Overlap type for CAnnot_CI
-    CAnnot_CI::EOverlapType      m_OverlapType;
 };
 
 
@@ -325,9 +320,16 @@ bool CAnnotTypes_CI::IsValid(void) const
 
 
 inline
-void CAnnotTypes_CI::Walk(void)
+void CAnnotTypes_CI::Next(void)
 {
     ++m_CurAnnot;
+}
+
+
+inline
+void CAnnotTypes_CI::Prev(void)
+{
+    --m_CurAnnot;
 }
 
 
@@ -352,6 +354,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.34  2003/03/05 20:56:42  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.33  2003/02/28 19:27:20  vasilche
 * Cleaned Seq_loc conversion class.
 *

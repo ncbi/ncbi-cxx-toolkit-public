@@ -982,11 +982,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             NcbiCout << "-------------------- CFeat_CI resolve-all over "<<
                 id.AsFastaString()<<" --------------------\n";
         }
-        for (CFeat_CI feat_it(scope, loc,
-                              CSeqFeatData::e_not_set,
-                              CAnnot_CI::eOverlap_Intervals,
-                              CAnnotTypes_CI::eResolve_All);
-             feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(scope, loc, SAnnotSelector().SetResolveAll());
+              feat_it;  ++feat_it) {
             count++;
             if ( sm_DumpFeatures ) {
                 auto_ptr<CObjectOStream>
@@ -1010,8 +1007,7 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
             NcbiCout << "-------------------- CFeat_CI over "<<
                 id.AsFastaString()<<" --------------------\n";
         }
-        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-             feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(scope, loc); feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             if ( sm_DumpFeatures ) {
@@ -1026,12 +1022,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
                 "product CFeat_CI --------------------\n";
         }
         // Get products
-        for (CFeat_CI feat_it(scope, loc,
-                              CSeqFeatData::e_not_set,
-                              CAnnot_CI::eOverlap_Intervals,
-                              CFeat_CI::eResolve_TSE,
-                              CFeat_CI::e_Product);
-            feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(scope, loc, SAnnotSelector().SetByProduct());
+              feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             if ( sm_DumpFeatures ) {
@@ -1047,19 +1039,14 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
         }
     }
     else {
-        for (CFeat_CI feat_it(handle, 0, 0, CSeqFeatData::e_not_set);
-             feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(handle, 0, 0); feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
         // Get products
-        for (CFeat_CI feat_it(handle, 0, 0,
-                              CSeqFeatData::e_not_set,
-                              CAnnot_CI::eOverlap_Intervals,
-                              CFeat_CI::eResolve_TSE,
-                              CFeat_CI::e_Product);
-            feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(handle, 0, 0, SAnnotSelector().SetByProduct());
+              feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
@@ -1079,16 +1066,16 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     loc.SetInt().SetFrom(0);
     loc.SetInt().SetTo(10);
     if ( !tse_feat_test ) {
-        for (CFeat_CI feat_it(scope, loc, CSeqFeatData::e_not_set);
-             feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(scope, loc);
+              feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
         }
     }
     else {
-        for (CFeat_CI feat_it(handle, 0, 10, CSeqFeatData::e_not_set);
-             feat_it;  ++feat_it) {
+        for ( CFeat_CI feat_it(handle, 0, 10);
+              feat_it;  ++feat_it) {
             count++;
             annot_set.insert(&feat_it.GetSeq_annot());
             //### _ASSERT(feat_it->
@@ -1202,6 +1189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.28  2003/03/05 20:56:44  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.27  2003/03/04 16:43:53  grichenk
 * +Test CFeat_CI with eResolve_All flag
 *

@@ -34,6 +34,7 @@
 #include <objects/objmgr/impl/tse_info.hpp>
 
 #include <objects/objmgr/impl/annot_object.hpp>
+#include <objects/objmgr/annot_selector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -70,6 +71,65 @@ void CTSE_Info::CounterUnderflow(void) const
 {
     THROW1_TRACE(runtime_error,
                  "CTSE_Info::Unlock() -- The TSE is not locked");
+}
+
+
+inline
+CTSE_Info::TAnnotSelectorKey
+CTSE_Info::x_GetAnnotSelectorKey(const SAnnotSelector& sel)
+{
+    _ASSERT(size_t(sel.m_AnnotChoice) < 0x100);
+    _ASSERT(size_t(sel.m_FeatChoice) < 0x100);
+    _ASSERT(size_t(sel.m_FeatProduct) < 0x10000);
+    return (sel.m_AnnotChoice) | (sel.m_FeatChoice << 8) |
+        (sel.m_FeatProduct << 16);
+}
+
+const CTSE_Info::TRangeMap*
+CTSE_Info::x_GetRangeMap(const CSeq_id_Handle& id,
+                         const SAnnotSelector& sel) const
+{
+    TAnnotMap::const_iterator amit = m_AnnotMap.find(id);
+    if (amit == m_AnnotMap.end()) {
+        return 0;
+    }
+    
+    
+    TAnnotSelectorMap::const_iterator sit =
+        amit->second.find(x_GetAnnotSelectorKey(sel));
+    if ( sit == amit->second.end() ) {
+        return 0;
+    }
+
+    return &sit->second;
+}
+
+
+CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(TAnnotSelectorMap& selMap,
+                                               const SAnnotSelector& sel)
+{
+    return selMap[x_GetAnnotSelectorKey(sel)];
+}
+
+
+CTSE_Info::TRangeMap& CTSE_Info::x_SetRangeMap(const CSeq_id_Handle& id,
+                                               const SAnnotSelector& sel)
+{
+    return x_SetRangeMap(m_AnnotMap[id], sel);
+}
+
+
+void CTSE_Info::x_DropRangeMap(TAnnotSelectorMap& selMap,
+                               const SAnnotSelector& sel)
+{
+    selMap.erase(x_GetAnnotSelectorKey(sel));
+}
+
+
+void CTSE_Info::x_DropRangeMap(const CSeq_id_Handle& id,
+                               const SAnnotSelector& sel)
+{
+    x_DropRangeMap(m_AnnotMap[id], sel);
 }
 
 
@@ -147,6 +207,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/03/05 20:56:43  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.17  2003/02/25 20:10:40  grichenk
 * Reverted to single total-range index for annotations
 *

@@ -179,6 +179,18 @@ public:
         e_Product
     };
     CFeat_CI(void);
+
+    CFeat_CI(CScope& scope,
+             const CSeq_loc& loc);
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop);
+    CFeat_CI(CScope& scope,
+             const CSeq_loc& loc,
+             SAnnotSelector sel);
+    CFeat_CI(const CBioseq_Handle& bioseq,
+             TSeqPos start, TSeqPos stop,
+             SAnnotSelector sel);
+
     // Search all TSEs in all datasources. By default search sequence segments
     // (for constructed sequences) only if the referenced sequence is in the
     // same TSE as the master one. Use CFeat_CI::eResolve_All flag to search
@@ -186,10 +198,9 @@ public:
     // disable references resolving.
     CFeat_CI(CScope& scope,
              const CSeq_loc& loc,
-             SAnnotSelector::TFeatChoice feat_choice,
-             CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
-             CAnnotTypes_CI::EResolveMethod resolve =
-             CAnnotTypes_CI::eResolve_TSE,
+             TFeatChoice feat_choice,
+             EOverlapType overlap_type = eOverlap_Intervals,
+             EResolveMethod resolve = eResolve_TSE,
              EFeat_Location loc_type = e_Location,
              const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq. If both start & stop are 0,
@@ -199,8 +210,8 @@ public:
     // (but no its sub-entries or parent entry).
     CFeat_CI(const CBioseq_Handle& bioseq,
              TSeqPos start, TSeqPos stop,
-             SAnnotSelector::TFeatChoice feat_choice,
-             CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
+             TFeatChoice feat_choice,
+             EOverlapType overlap_type = eOverlap_Intervals,
              EResolveMethod resolve = eResolve_TSE,
              EFeat_Location loc_type = e_Location,
              const CSeq_entry* entry = 0);
@@ -208,13 +219,15 @@ public:
     virtual ~CFeat_CI(void);
     CFeat_CI& operator= (const CFeat_CI& iter);
 
-    CFeat_CI& operator++ (void);
+    CFeat_CI& operator++(void);
+    CFeat_CI& operator--(void);
     operator bool (void) const;
     const CMappedFeat& operator* (void) const;
     const CMappedFeat* operator-> (void) const;
 
 private:
     CFeat_CI& operator++ (int);
+    CFeat_CI& operator-- (int);
 
     mutable CMappedFeat m_Feat; // current feature object returned by operator->()
 };
@@ -246,36 +259,74 @@ CFeat_CI::~CFeat_CI(void)
 inline
 CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
                    TSeqPos start, TSeqPos stop,
-                   SAnnotSelector::TFeatChoice feat_choice,
-                   CAnnot_CI::EOverlapType overlap_type,
+                   TFeatChoice feat_choice,
+                   EOverlapType overlap_type,
                    EResolveMethod resolve,
                    EFeat_Location loc_type,
                    const CSeq_entry* entry)
     : CAnnotTypes_CI(bioseq, start, stop,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                         feat_choice,
-                         loc_type == e_Product),
-          overlap_type, resolve, entry)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve)
+                     .SetLimitSeqEntry(entry))
 {
-    return;
 }
 
 
 inline
 CFeat_CI::CFeat_CI(CScope& scope,
                    const CSeq_loc& loc,
-                   SAnnotSelector::TFeatChoice feat_choice,
-                   CAnnot_CI::EOverlapType overlap_type,
+                   TFeatChoice feat_choice,
+                   EOverlapType overlap_type,
                    EResolveMethod resolve,
                    EFeat_Location loc_type,
                    const CSeq_entry* entry)
     : CAnnotTypes_CI(scope, loc,
-          SAnnotSelector(CSeq_annot::C_Data::e_Ftable,
-                         feat_choice,
-                         loc_type == e_Product),
-          overlap_type, resolve, entry)
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable, feat_choice)
+                     .SetByProduct(loc_type == e_Product)
+                     .SetOverlapType(overlap_type)
+                     .SetResolveMethod(resolve)
+                     .SetLimitSeqEntry(entry))
 {
-    return;
+}
+
+
+inline
+CFeat_CI::CFeat_CI(CScope& scope,
+                   const CSeq_loc& loc)
+    : CAnnotTypes_CI(scope, loc,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop)
+    : CAnnotTypes_CI(bioseq, start, stop,
+                     SAnnotSelector(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
+CFeat_CI::CFeat_CI(CScope& scope,
+                   const CSeq_loc& loc,
+                   SAnnotSelector sel)
+    : CAnnotTypes_CI(scope, loc,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+{
+}
+
+
+inline
+CFeat_CI::CFeat_CI(const CBioseq_Handle& bioseq,
+                   TSeqPos start, TSeqPos stop,
+                   SAnnotSelector sel)
+    : CAnnotTypes_CI(bioseq, start, stop,
+                     sel.SetAnnotChoice(CSeq_annot::C_Data::e_Ftable))
+{
 }
 
 
@@ -290,7 +341,15 @@ CFeat_CI& CFeat_CI::operator= (const CFeat_CI& iter)
 inline
 CFeat_CI& CFeat_CI::operator++ (void)
 {
-    Walk();
+    Next();
+    return *this;
+}
+
+
+inline
+CFeat_CI& CFeat_CI::operator-- (void)
+{
+    Prev();
     return *this;
 }
 
@@ -315,6 +374,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/03/05 20:56:42  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.23  2003/02/25 14:24:19  dicuccio
 * Added Win32 export specifier to CMappedFeat
 *

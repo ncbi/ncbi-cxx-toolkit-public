@@ -35,8 +35,6 @@
 
 
 #include <objects/objmgr/impl/bioseq_info.hpp>
-//#include <objects/objmgr/annot_ci.hpp>
-#include <objects/objmgr/annot_selector.hpp>
 #include <objects/objmgr/impl/handle_range_map.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <util/rangemap.hpp>
@@ -61,7 +59,7 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 class CBioseq;
 class CAnnotObject_Info;
-
+struct SAnnotSelector;
 
 struct NCBI_XOBJMGR_EXPORT SAnnotObject_Index {
     CRef<CAnnotObject_Info>                   m_AnnotObject;
@@ -88,8 +86,22 @@ public:
 
     typedef CRange<TSeqPos>                                  TRange;
     typedef CRangeMultimap<SAnnotObject_Index, TRange::position_type> TRangeMap;
-    typedef map<SAnnotSelector, TRangeMap>                   TAnnotSelectorMap;
+
+    typedef unsigned TAnnotSelectorKey;
+    typedef map<TAnnotSelectorKey, TRangeMap>                TAnnotSelectorMap;
     typedef map<CSeq_id_Handle, TAnnotSelectorMap>           TAnnotMap;
+
+    static TAnnotSelectorKey x_GetAnnotSelectorKey(const SAnnotSelector& sel);
+    const TRangeMap* x_GetRangeMap(const CSeq_id_Handle& id,
+                                   const SAnnotSelector& selector) const;
+    TRangeMap& x_SetRangeMap(const CSeq_id_Handle& id,
+                             const SAnnotSelector& selector);
+    void x_DropRangeMap(const CSeq_id_Handle& id,
+                        const SAnnotSelector& sel);
+    static TRangeMap& x_SetRangeMap(TAnnotSelectorMap& selMap,
+                                    const SAnnotSelector& selector);
+    static void x_DropRangeMap(TAnnotSelectorMap& selMap,
+                               const SAnnotSelector& selector);
 
     // Reference to the TSE
     CRef<CSeq_entry> m_TSE;
@@ -396,6 +408,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/03/05 20:56:43  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.21  2003/02/25 20:10:38  grichenk
 * Reverted to single total-range index for annotations
 *

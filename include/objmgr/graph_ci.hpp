@@ -186,26 +186,26 @@ public:
     CGraph_CI(void);
     // Search all TSEs in all datasources
     CGraph_CI(CScope& scope, const CSeq_loc& loc,
-              CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE,
+              EOverlapType overlap_type = eOverlap_Intervals,
+              EResolveMethod resolve = eResolve_TSE,
               const CSeq_entry* entry = 0);
     // Search only in TSE, containing the bioseq
     CGraph_CI(const CBioseq_Handle& bioseq, TSeqPos start, TSeqPos stop,
-              CAnnot_CI::EOverlapType overlap_type = CAnnot_CI::eOverlap_Intervals,
-              CAnnotTypes_CI::EResolveMethod resolve =
-              CAnnotTypes_CI::eResolve_TSE,
+              EOverlapType overlap_type = eOverlap_Intervals,
+              EResolveMethod resolve = eResolve_TSE,
               const CSeq_entry* entry = 0);
     CGraph_CI(const CGraph_CI& iter);
     virtual ~CGraph_CI(void);
     CGraph_CI& operator= (const CGraph_CI& iter);
 
     CGraph_CI& operator++ (void);
+    CGraph_CI& operator-- (void);
     operator bool (void) const;
     const CMappedGraph& operator* (void) const;
     const CMappedGraph* operator-> (void) const;
 private:
     CGraph_CI operator++ (int);
+    CGraph_CI operator-- (int);
 
     mutable CMappedGraph m_Graph; // current graph object returned by operator->()
 };
@@ -234,7 +234,14 @@ CGraph_CI& CGraph_CI::operator= (const CGraph_CI& iter)
 inline
 CGraph_CI& CGraph_CI::operator++ (void)
 {
-    Walk();
+    Next();
+    return *this;
+}
+
+inline
+CGraph_CI& CGraph_CI::operator-- (void)
+{
+    Prev();
     return *this;
 }
 
@@ -251,6 +258,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.22  2003/03/05 20:56:42  vasilche
+* SAnnotSelector now holds all parameters of annotation iterators.
+*
 * Revision 1.21  2003/02/25 14:48:06  vasilche
 * Added Win32 export modifier to object manager classes.
 *
