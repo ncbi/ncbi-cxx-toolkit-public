@@ -91,6 +91,12 @@ public:
     /// @param p FrameShiftPenalty [in]
     void SetFrameShiftPenalty(int p) { m_Opts->SetFrameShiftPenalty(p); }
 
+    /// Returns LongestIntronLength
+    int GetLongestIntronLength() const { return m_Opts->GetLongestIntronLength(); }
+    /// Sets LongestIntronLength
+    /// @param l LongestIntronLength [in]
+    void SetLongestIntronLength(int l) { m_Opts->SetLongestIntronLength(l); }
+
 protected:
     /// Overrides LookupTableDefaults for blastx options
     void SetLookupTableDefaults();
@@ -118,6 +124,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/08/16 19:46:34  dondosha
+ * Added setting of longest intron length
+ *
  * Revision 1.7  2004/06/08 22:41:04  camacho
  * Add missing doxygen comments
  *
