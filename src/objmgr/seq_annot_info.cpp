@@ -224,6 +224,9 @@ void CSeq_annot_Info::x_SetObject(const TObject& obj)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object.Reset(&obj);
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     x_UpdateName();
     x_SetDirtyAnnotIndex();
 }
@@ -233,6 +236,9 @@ void CSeq_annot_Info::x_SetObject(const CSeq_annot_Info& info)
 {
     _ASSERT(!m_SNP_Info && !m_Object);
     m_Object = info.m_Object;
+    if ( HasDataSource() ) {
+        x_DSMapObject(m_Object, GetDataSource());
+    }
     m_Name = info.m_Name;
     if ( info.m_SNP_Info ) {
         m_SNP_Info.Reset(new CSeq_annot_SNP_Info(*info.m_SNP_Info));
@@ -523,6 +529,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2004/08/17 15:56:08  vasilche
+ * Added mapping and unmapping CSeq_annot -> CSeq_annot_Info in x_SetObject().
+ *
  * Revision 1.21  2004/08/16 18:00:40  grichenk
  * Added detection of circular locations, improved annotation
  * indexing by strand.
