@@ -1,2 +1,6 @@
 corelib$
+util$
+util/compress$
+util/regexp$
+util/unicode_plans$
 dbapi
