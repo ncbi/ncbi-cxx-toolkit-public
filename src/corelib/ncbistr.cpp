@@ -31,6 +31,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/01/20 16:24:42  vakatov
+* Kludging around the "NcbiEmptyString" to ensure its initialization when
+* it is used by the constructor of a statically allocated object
+* (I believe that it is actually just another Sun WorkShop compiler "feature")
+*
 * Revision 1.23  1999/12/28 18:55:43  vasilche
 * Reduced size of compiled object files:
 * 1. avoid inline or implicit virtual methods (especially destructors).
@@ -115,8 +120,14 @@
 
 BEGIN_NCBI_SCOPE
 
-const char   NcbiEmptyCStr[] = "";
-const string NcbiEmptyString;
+
+const string* CNcbiEmptyString::m_Str = 0;
+const string& CNcbiEmptyString::FirstGet(void) {
+    static const string s_str;
+    m_Str = &s_str;
+    return s_str;
+}
+
 
 int NStr::Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern) {

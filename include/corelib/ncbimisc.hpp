@@ -33,6 +33,11 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/01/20 16:24:20  vakatov
+* Kludging around the "NcbiEmptyString" to ensure its initialization when
+* it is used by the constructor of a statically allocated object
+* (I believe that it is actually just another Sun WorkShop compiler "feature")
+*
 * Revision 1.34  1999/12/28 19:04:22  vakatov
 * #HAVE_NO_MINMAX_TEMPLATE
 *
@@ -137,8 +142,23 @@
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
 
-extern const char   NcbiEmptyCStr[];
-extern const string NcbiEmptyString;
+
+const char NcbiEmptyCStr[] = "";
+
+
+class CNcbiEmptyString {
+public:
+    const string& Get(void) {
+        return m_Str ? *m_Str : FirstGet();
+    }
+private:
+    static const string& FirstGet(void);
+    static const string *m_Str;
+};
+#define NcbiEmptyString CNcbiEmptyString().Get()
+
+
+
 // tools
 struct NStr {
 
@@ -161,7 +181,7 @@ struct NStr {
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern);
     static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const string& pattern);
+                       const string& pattern);
     
     static inline bool StartsWith(const string& str, const string& start) {
         return str.size() >= start.size()  &&
@@ -172,6 +192,7 @@ struct NStr {
         return str.size() >= end.size()  &&
             Compare(str, str.size() - end.size(), end.size(), end) == 0;
     }
+
     enum ETrunc {
         eTrunc_Begin,
         eTrunc_End,
