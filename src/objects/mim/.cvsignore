@@ -6,5 +6,17 @@
 .cvsignore
 Makefile.*.lib
 Makefile.in
+Mim_allelic_variant.cpp
+Mim_author.cpp
+Mim_cit.cpp
+Mim_date.cpp
+Mim_edit_item.cpp
+Mim_entry.cpp
+Mim_index_term.cpp
+Mim_link.cpp
+Mim_page.cpp
+Mim_reference.cpp
+Mim_set.cpp
+Mim_text.cpp
 gmon.out
 gprof.out

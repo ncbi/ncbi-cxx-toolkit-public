@@ -1,2 +1,14 @@
 .cvsignore
+Mim_allelic_variant.hpp
+Mim_author.hpp
+Mim_cit.hpp
+Mim_date.hpp
+Mim_edit_item.hpp
+Mim_entry.hpp
+Mim_index_term.hpp
+Mim_link.hpp
+Mim_page.hpp
+Mim_reference.hpp
+Mim_set.hpp
+Mim_text.hpp
 [A-Z]*_.hpp
