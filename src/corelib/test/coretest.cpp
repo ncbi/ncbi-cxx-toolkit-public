@@ -30,6 +30,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  1999/11/26 18:45:30  golikov
+* NStr::Replace tests added
+*
 * Revision 1.53  1999/11/12 17:33:24  vakatov
 * To be more careful with _DEBUG to suit some ugly MSVC++ features
 *
@@ -713,6 +716,50 @@ static void TestUtilities(void)
         }
         STD_CATCH("TestUtilities");
     }
+
+    string src("aaabbbaaccczzcccXX");
+    string dst;
+    string search("ccc");
+    string replace("RrR");
+
+    NcbiCout << NcbiEndl << "src: \"" << src << "\"" << NcbiEndl << NcbiEndl;
+
+    NStr::Replace(src, search, replace, dst);
+    NcbiCout << "Replace \"" << search << "\" on \"" << replace << "\"" << NcbiEndl
+             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+
+    search = "a";
+    replace = "W";
+    NStr::Replace(src, search, replace, dst, 6, 1);
+    NcbiCout << "Replace \"" << search << "\" on \"" << replace
+             << "\" once from 6 position" << NcbiEndl
+             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+
+    search = "bbb";
+    replace = "BBB";
+    NStr::Replace(src, search, replace, dst, 50);
+    NcbiCout << "Replace \"" << search << "\" on \"" << replace
+             << "\" from 50 position" << NcbiEndl
+             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+
+    search = "ggg";
+    replace = "no";
+    dst = NStr::Replace(src, search, replace);
+    NcbiCout << "Replace \"" << search << "\" on \"" << replace << "\"" << NcbiEndl
+             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+
+    search = "a";
+    replace = "A";
+    dst = NStr::Replace(src, search, replace);
+    NcbiCout << "Replace \"" << search << "\" on \"" << replace << "\"" << NcbiEndl
+             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
+
+    search = "X";
+    replace = "x";
+    dst = NStr::Replace(src, search, replace, src.size() - 1);
+    NcbiCout << "Replace \"" << search << "\" on \"" << replace
+             << "\" the last one only" << NcbiEndl
+             << "dst: \"" << dst << "\"" << NcbiEndl << NcbiEndl;
 
     NcbiCout << "TestUtilities finished" << NcbiEndl;
 }
