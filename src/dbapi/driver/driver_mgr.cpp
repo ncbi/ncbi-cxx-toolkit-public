@@ -34,35 +34,36 @@
 
 BEGIN_NCBI_SCOPE
 
+
 class C_xDriverMgr : public I_DriverMgr
 {
 public:
     C_xDriverMgr(unsigned int nof_drivers= 16) {
-	m_NofRoom= nof_drivers? nof_drivers : 16;
-	m_Drivers= new SDrivers[m_NofRoom];
-	m_NofDrvs= 0;
+        m_NofRoom= nof_drivers? nof_drivers : 16;
+        m_Drivers= new SDrivers[m_NofRoom];
+        m_NofDrvs= 0;
     }
-
+    
     FDBAPI_CreateContext GetDriver(const string& driver_name, 
-				   string* err_msg= 0);
-
+                                   string* err_msg= 0);
+    
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
     virtual ~C_xDriverMgr() {
-	delete [] m_Drivers;
+        delete [] m_Drivers;
     }
-
+    
 protected:
     bool LoadDriverDll(const string& driver_name, string* err_msg);
-
+    
 private:
     typedef void            (*FDriverRegister) (I_DriverMgr& mgr);
     typedef FDriverRegister (*FDllEntryPoint)  (void);
 
     struct SDrivers {
-	string               drv_name;
-	FDBAPI_CreateContext drv_func;
+        string               drv_name;
+        FDBAPI_CreateContext drv_func;
     } *m_Drivers;
 
     unsigned int m_NofDrvs;
@@ -71,8 +72,9 @@ private:
     CFastMutex m_Mutex2;
 };
 
+
 void C_xDriverMgr::RegisterDriver(const string&        driver_name,
-                                 FDBAPI_CreateContext driver_ctx_func)
+                                  FDBAPI_CreateContext driver_ctx_func)
 {
     if(m_NofDrvs < m_NofRoom) {
         CFastMutexGuard mg(m_Mutex2);
@@ -94,7 +96,7 @@ void C_xDriverMgr::RegisterDriver(const string&        driver_name,
 
 
 FDBAPI_CreateContext C_xDriverMgr::GetDriver(const string& driver_name,
-					    string* err_msg)
+                                             string* err_msg)
 {
     CFastMutexGuard mg(m_Mutex1);
     unsigned int i;
@@ -135,46 +137,61 @@ bool C_xDriverMgr::LoadDriverDll(const string& driver_name, string* err_msg)
         return true;
     }
     catch (exception& e) {
-	if(err_msg) *err_msg= e.what();
+        if(err_msg) *err_msg= e.what();
         return false;
     }
 }
 
 
-static C_xDriverMgr* xDrvMgr= 0;
-static int xCount= 0;
-static CFastMutex xMutex;
+static C_xDriverMgr* s_DrvMgr= 0;
+static int           s_DrvCount= 0;
+static CFastMutex    s_DrvMutex;
 
 C_DriverMgr::C_DriverMgr(unsigned int nof_drivers)
 {
-    CFastMutexGuard mg(xMutex); // lock the mutex
-    if(!xDrvMgr) { // There is no driver manager yet
-	xDrvMgr= new C_xDriverMgr(nof_drivers);
+    CFastMutexGuard mg(s_DrvMutex); // lock the mutex
+    if(!s_DrvMgr) { // There is no driver manager yet
+        s_DrvMgr= new C_xDriverMgr(nof_drivers);
     }
-    ++xCount;
+    ++s_DrvCount;
 }
+
     
 C_DriverMgr::~C_DriverMgr()
 {
-    CFastMutexGuard mg(xMutex); // lock the mutex
-    if(--xCount <= 0) { // this is a last one
-	delete xDrvMgr;
-	xDrvMgr= 0;
-	xCount= 0;
+    CFastMutexGuard mg(s_DrvMutex); // lock the mutex
+    if(--s_DrvCount <= 0) { // this is a last one
+        delete s_DrvMgr;
+        s_DrvMgr= 0;
+        s_DrvCount= 0;
     }
 }
 
 
 FDBAPI_CreateContext C_DriverMgr::GetDriver(const string& driver_name,
-					    string* err_msg)
+                                            string* err_msg)
 {
-    return xDrvMgr->GetDriver(driver_name, err_msg);
+    return s_DrvMgr->GetDriver(driver_name, err_msg);
 }
 
+
 void C_DriverMgr::RegisterDriver(const string&        driver_name,
-				 FDBAPI_CreateContext driver_ctx_func)
+                                 FDBAPI_CreateContext driver_ctx_func)
 {
-    xDrvMgr->RegisterDriver(driver_name, driver_ctx_func);
+    s_DrvMgr->RegisterDriver(driver_name, driver_ctx_func);
+}
+
+I_DriverContext* C_DriverMgr::GetDriverContext(const string&       driver_name,
+                                               string*             err_msg,
+                                               map<string,string>* attr)
+{
+    FDBAPI_CreateContext create_context_func= GetDriver(driver_name, err_msg);
+
+    if(!create_context_func) 
+        return 0;
+        
+    return create_context_func(attr);
+
 }
 
 END_NCBI_SCOPE
@@ -184,6 +201,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2002/04/23 16:46:17  soussov
+ * GetDriverContext added
+ *
  * Revision 1.10  2002/04/12 18:48:30  soussov
  * makes driver_mgr working properly in mt environment
  *

@@ -49,8 +49,13 @@ public:
     virtual void RegisterDriver(const string&        driver_name,
                                 FDBAPI_CreateContext driver_ctx_func);
 
+    I_DriverContext* GetDriverContext(const string&       driver_name, 
+                                      string*             err_msg = 0,
+                                      map<string,string>* attr    = 0);
+
     virtual ~C_DriverMgr();
 };
+
 
 
 END_NCBI_SCOPE
@@ -60,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2002/04/23 16:45:28  soussov
+ * GetDriverContext added
+ *
  * Revision 1.8  2002/04/12 18:44:34  soussov
  * makes driver_mgr working properly in mt environment
  *
