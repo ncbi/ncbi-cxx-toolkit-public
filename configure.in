@@ -1657,7 +1657,7 @@ CPPFLAGS="$orig_CPPFLAGS"
 local_lbsm="ncbi_lbsm ncbi_lbsm_ipc ncbi_service_lbsmd"
 
 for fff in $local_lbsm ; do
-   if test ! -f src/connect/${fff}.c ; then
+   if test ! -f ${srcdir}/src/connect/${fff}.c ; then
       if test "$with_local_lbsm" = "yes" ; then
          AC_MSG_ERROR(["--with-local-lbsm:  src/connect/${fff}.c is  missing"])
       fi
@@ -1680,7 +1680,8 @@ if test "$with_serial" = "no" ; then
    NoConfProjects="$NoConfProjects serial"
 fi
 
-if test ! -f src/serial/Makefile.in  -o  ! -d include/serial ; then
+if test ! -f ${srcdir}/src/serial/Makefile.in  -o  \
+        ! -d ${srcdir}/include/serial ; then
    if test "$with_serial" = "yes" ; then
       AC_MSG_ERROR(["--with-serial:  SERIAL sources are missing"])
    fi
@@ -1703,7 +1704,8 @@ if test "$with_objects" = "no"  || \
    NoConfProjects="$NoConfProjects objects"
 fi
 
-if test ! -f src/objects/Makefile.in  -o  ! -d include/objects ; then
+if test ! -f ${srcdir}/src/objects/Makefile.in  -o  \
+        ! -d ${srcdir}/include/objects ; then
    if test "$with_objects" = "yes" ; then
       AC_MSG_ERROR(["--with-objects:  OBJECTS sources are missing"])
    fi
@@ -1729,7 +1731,8 @@ if test "$with_app" != "yes" ; then
    NoConfProjects="$NoConfProjects app"
 fi
 
-if test ! -f src/app/Makefile.in  -o  ! -d include/app ; then
+if test ! -f ${srcdir}/src/app/Makefile.in  -o  \
+        ! -d ${srcdir}/include/app ; then
    if test "$with_app" = "yes" ; then
       AC_MSG_ERROR(["--with-app:  APP sources are missing"])
    fi
@@ -1751,8 +1754,8 @@ if test "$with_ctools" = "no" ; then
    NoConfProjects="$NoConfProjects ctools"
 fi
 
-if test ! -f src/ctools/Makefile.in  -o  \
-        ! -d include/ctools  -o  "$with_ncbi_c" = "no"
+if test ! -f ${srcdir}/src/ctools/Makefile.in  -o  \
+        ! -d ${srcdir}/include/ctools  -o  "$with_ncbi_c" = "no"
 then
    if test "$with_ctools" = "yes" ; then
       if test "$with_ncbi_c" = "no" ; then
@@ -1777,8 +1780,8 @@ if test "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui"
 fi
 
-if test ! -f src/gui/Makefile.in  -o  \
-        ! -d include/gui  -o  "$with_wxwin" = "no"
+if test ! -f ${srcdir}/src/gui/Makefile.in  -o  \
+        ! -d ${srcdir}/include/gui  -o  "$with_wxwin" = "no"
 then
    if test "$with_gui" = "yes" ; then
       if test "$with_wxwin" = "no" ; then
@@ -1803,8 +1806,8 @@ if test "$with_tools" = "no"  -o  "$with_gui" = "no" ; then
    NoConfProjects="$NoConfProjects gui_ctools"
 fi
 
-if test -f src/gui_ctools/Makefile.in  -a  \
-        -d include/gui_ctools  -a  \
+if test -f ${srcdir}/src/gui_ctools/Makefile.in  -a  \
+        -d ${srcdir}/include/gui_ctools  -a  \
         "$with_tools" != "no"  -a  "$with_gui" != "no" ; then
    OPT_GROUPS="$OPT_GROUPS gui_ctools"
 else
