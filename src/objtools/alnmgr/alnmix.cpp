@@ -1917,54 +1917,13 @@ void CAlnMix::ChooseSeqId(CSeq_id& id1, const CSeq_id& id2)
             " Dense-seg cannot be performed.";
         NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
     }
-    if (x_RankSeqId(id1) > x_RankSeqId(id2)) {
+    CRef<CSeq_id> id1cref(&id1);
+    CRef<CSeq_id> id2cref(&(const_cast<CSeq_id&>(id2)));
+    if (CSeq_id::BestRank(id1cref) > CSeq_id::BestRank(id2cref)) {
         id1.Reset();
         SerialAssign<CSeq_id>(id1, id2);
     }
 }    
-
-
-int CAlnMix::x_RankSeqId(const CSeq_id& id)
-{
-    switch (id.Which()) {
-    case CSeq_id::e_Gi:
-        return 51;
-
-    case CSeq_id::e_Genbank:
-    case CSeq_id::e_Embl:
-    case CSeq_id::e_Pir:
-    case CSeq_id::e_Swissprot:
-    case CSeq_id::e_Ddbj:
-    case CSeq_id::e_Prf:
-    case CSeq_id::e_Pdb:
-    case CSeq_id::e_Tpg:
-    case CSeq_id::e_Tpe:
-    case CSeq_id::e_Tpd:
-        return 60;
-
-    case CSeq_id::e_Other:
-        return 65;
-
-    case CSeq_id::e_Patent:
-        return 55;
-
-    case CSeq_id::e_Gibbsq:
-    case CSeq_id::e_Gibbmt:
-    case CSeq_id::e_Giim:
-        return 70;
-
-    case CSeq_id::e_General:
-    case CSeq_id::e_Local:
-        return 80;
-
-    case CSeq_id::e_not_set:
-        return 83;
-
-    default:
-        NCBI_THROW(CAlnException, eInvalidSeqId,
-                   "CAlnMix::x_RankSeqId: Invalid Seq-id choice");
-    }
-}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -1974,6 +1933,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.91  2004/03/30 23:27:32  todorov
+* Switch from CAlnMix::x_RankSeqId() to CSeq_id::BestRank()
+*
 * Revision 1.90  2004/03/30 20:41:29  todorov
 * Rearranged the rank of seq-ids according to the C toolkit rearrangement
 *

@@ -156,7 +156,6 @@ private:
                                         const CRef<CAlnMixMatch>& aln_match2);
     static bool x_CompareAlnSegIndexes (const CAlnMixSegment* aln_seg1,
                                         const CAlnMixSegment* aln_seg2);
-    static int  x_RankSeqId            (const CSeq_id& id);
         
     mutable CRef<CScope>        m_Scope;
     TConstDSs                   m_InputDSs;
@@ -325,6 +324,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.37  2004/03/30 23:27:32  todorov
+* Switch from CAlnMix::x_RankSeqId() to CSeq_id::BestRank()
+*
 * Revision 1.36  2004/03/15 17:46:03  todorov
 * Avoid multiple inheritance since Workshop has problems placing the vtables.
 * Now CAlnMix inherits from SSeqIdChooser which inherits from CObject
