@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/01/08 22:38:34  lavr
+ * Numerous patches to code after debugging
+ *
  * Revision 6.8  2000/12/29 18:01:27  lavr
  * SERV_Print introduced; pool of skipped services now follows
  * expiration times of services and is updated on that basis.
@@ -65,6 +68,7 @@
 #include "ncbi_servicep_lbsmd.h"
 #include "ncbi_servicep_dispd.h"
 #include <assert.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -109,6 +113,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
                       const SSERV_Info *const skip[], size_t n_skip)
 {
     const SSERV_VTable *op;
+    time_t t = time(0);
     SERV_ITER iter;
     size_t i;
 
@@ -132,7 +137,7 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
             return 0;
         }
         memcpy(info, skip[i], infolen);
-        info->time = (time_t)(-1);
+        info->time = t + 3600*24*60 /* 2 months - long enough :-) */;
         if (!s_AddSkipInfo(iter, info)) {
             free(info);
             SERV_Close(iter);
@@ -163,16 +168,15 @@ SERV_ITER SERV_OpenEx(const char* service, TSERV_Type type,
 static void s_SkipSkip(SERV_ITER iter)
 {
     size_t i;
-    time_t t;
+    time_t t = time(0);
 
-    t = time(0);
     i = 0;
     while (i < iter->n_skip) {
         SSERV_Info *info = iter->skip[i];
         if (info->time < t) {
-            iter->n_skip--;
-            memmove(iter->skip + i, iter->skip + i + 1,
-                    sizeof(*iter->skip)*(iter->n_skip - i));
+            if (i < --iter->n_skip)
+                memmove(iter->skip + i, iter->skip + i + 1,
+                        sizeof(*iter->skip)*(iter->n_skip - i));
             free(info);
         } else
             i++;
@@ -240,39 +244,51 @@ char* SERV_Print(SERV_ITER iter)
         if (type & t) {
             const char *name = SERV_TypeStr((ESERV_Type)t);
             size_t namelen = strlen(name);
-            
+
             if (namelen) {
                 if (buflen + namelen < sizeof(buffer) - 1) {
                     buffer[buflen++] = ' ';
                     strcpy(&buffer[buflen], name);
                     buflen += namelen;
-                }
+                } else
+                    return 0;
             } else
                 break;
         }
     }
     assert(buflen < sizeof(buffer));
-    if (buffer[buflen - 1] != ':' && buflen < sizeof(buffer) - 2)
+    if (buffer[buflen - 1] != ':') {
+        if (buflen >= sizeof(buffer) - 2)
+            return 0;
         strcpy(&buffer[buflen - 1], "\r\n");
-    else
-        buffer[0] = '\0';
-    if (!BUF_Write(&buf, buffer, strlen(buffer))) {
-        BUF_Destroy(buf);
-        return 0;
+        if (!BUF_Write(&buf, buffer, strlen(buffer))) {
+            BUF_Destroy(buf);
+            return 0;
+        }
     }
     /* Drop any outdated skip entries */
     s_SkipSkip(iter);
     /* Put all the rest into rejection list */
     for (i = 0; i < iter->n_skip; i++) {
-        char skip_info[128], *skip_str;
-        
-        if (!(skip_str = SERV_WriteInfo(iter->skip[i], 0)))
+        char *s1, *s2;
+        if (!(str = SERV_WriteInfo(iter->skip[i], 0)))
             break;
-        buflen = sprintf(skip_info, "Skip-Info-%d: ", i + 1); 
-        if (!BUF_Write(&buf, skip_info, buflen) ||
-            !BUF_Write(&buf, skip_str, strlen(skip_str)) ||
-            !BUF_Write(&buf, "\r\n", 2))
+        /* Remove ugly " T=[0-9]*" (no harm to be there, however) */
+        if ((s1 = strstr(str, " T=")) != 0) {
+            s2 = s1 + 1;
+            while (*s2 && !isspace(*s2))
+                s2++;
+            memmove(s1, s2, strlen(s2) + 1);
+        }
+        buflen = sprintf(buffer, "Skip-Info-%u: ", i + 1); 
+        assert(buflen < sizeof(buffer)-1);
+        if (!BUF_Write(&buf, buffer, buflen) ||
+            !BUF_Write(&buf, str, strlen(str)) ||
+            !BUF_Write(&buf, "\r\n", 2)) {
+            free(str);
             break;
+        }
+        free(str);
     }
     if (i >= iter->n_skip) {
         /* Ok then, we have filled the entire header, <CR><LF> terminated */
