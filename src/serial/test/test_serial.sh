@@ -12,16 +12,16 @@ else
     testprefix=cpp
 fi
 
-for f in webenv.ent webenv.bin ${testprefix}test.asn ${testprefix}test.asb ; do
+for f in webenv.ent webenv.bin ${testprefix}test_serial.asn ${testprefix}test_serial.asb ; do
     cp @srcdir@/$f ./
 done
 
-mv ${testprefix}test.asn test.asn
-mv ${testprefix}test.asb test.asb
+mv ${testprefix}test_serial.asn test_serial.asn
+mv ${testprefix}test_serial.asb test_serial.asb
 
-@build_root@/bin/serialtest > test.out 2> test.err
+@build_root@/bin/test_serial > test_serial.out 2> test_serial.err
 
-for f in webenv.ent webenv.bin test.asn test.asb ; do
+for f in webenv.ent webenv.bin test_serial.asn test_serial.asb ; do
     tr -d "\n " < ${f}  > ${f}.$$.tmp
     tr -d "\n " < ${f}o > ${f}o.$$.tmp
     cmp -s ${f}.$$.tmp ${f}o.$$.tmp
