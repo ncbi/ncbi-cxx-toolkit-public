@@ -48,6 +48,7 @@ LIB = \
 	mmdb1 \
 	mmdb2 \
 	mmdb3 \
+	cn3d \
 	pub \
 	seq \
 	seqalign \
