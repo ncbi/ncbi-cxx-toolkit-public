@@ -32,6 +32,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  2002/04/02 16:40:55  grichenk
+* Fixed literal segments handling
+*
 * Revision 1.9  2002/03/08 21:36:21  gouriano
 * *** empty log message ***
 *
@@ -82,19 +85,24 @@ void CSeqMap::Add(CSegmentInfo& interval)
 {
     // Check for existing intervals
     vector< CRef<CSegmentInfo> >::iterator it;
+    bool same_pos_found = false;
     for ( it = m_Data.begin(); it != m_Data.end(); ++it) {
         if (**it == interval) {
-            break;
+            // Equal intervals may appear just because there are many
+            // unresolved references so that segment position does not
+            // increase through several segments.
+            same_pos_found = true;
         }
+        if ((*it)->GetLength() > 0  &&  same_pos_found)
+            break;
     }
     if (it != m_Data.end() ) {
         throw runtime_error
             ("CSeqMap::Add() -- duplicate interval in the seq-map");
     }
-//    m_Data.push_back(&interval);
-    // Sort intervals by starting position
-//    sort(m_Data.begin(), m_Data.end());
-// insertion sort
+    // The new interval will be added AFTER all other intervals with
+    // the same position. This will make the map work correctly in case
+    // of multiple segments of unknown (zero) lengths.
     for ( it = m_Data.begin(); it != m_Data.end(); ++it) {
         if ((**it).GetPosition() > interval.GetPosition()) {
             m_Data.insert(it, &interval);
@@ -109,11 +117,11 @@ void CSeqMap::Add(CSegmentInfo& interval)
 
 int CSeqMap::x_FindSegment(int pos)
 {
-    int seg_idx = 0;
+    size_t seg_idx = 0;
     // Ignore eSeqEnd
     for ( ; seg_idx+1 < m_Data.size(); seg_idx++) {
-        int cur_pos = m_Data[seg_idx]->m_position;
-        int next_pos = m_Data[seg_idx+1]->m_position;
+        int cur_pos = m_Data[seg_idx]->m_Position;
+        int next_pos = m_Data[seg_idx+1]->m_Position;
         if (next_pos > pos  || (next_pos == pos  &&  cur_pos == pos))
             break;
     }
@@ -130,17 +138,17 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
         // Resolve map segments
         int iStillUnresolved = -1;
         int shift = 0;
-        for (int i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
-            if (m_Data[i]->m_position+shift > pos  ||
+        for (size_t i = m_FirstUnresolvedPos; i < m_Data.size(); i++) {
+            if (m_Data[i]->m_Position+shift > pos  ||
                 m_Data[i]->m_SegType == CSeqMap::eSeqEnd)
                 break;
             seg_idx = i;
-            m_Data[i]->m_position += shift;
+            m_Data[i]->m_Position += shift;
             if (m_Data[i]->m_SegType != CSeqMap::eSeqRef) {
                 m_Data[i]->m_Resolved = true;
                 continue; // not a reference - nothing to resolve
             }
-            if (m_Data[i]->m_RefLen != 0) {
+            if (m_Data[i]->m_Length != 0) {
                 m_Data[i]->m_Resolved = true;
                 continue; // resolved reference, known length
             }
@@ -151,8 +159,8 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
                 seq = bh.GetBioseqCore();
                 if ( seq->GetInst().IsSetLength() ) {
                     m_Data[i]->m_Resolved = true;
-                    m_Data[i]->m_RefLen = seq->GetInst().GetLength();
-                    shift += m_Data[i]->m_RefLen;
+                    m_Data[i]->m_Length = seq->GetInst().GetLength();
+                    shift += m_Data[i]->m_Length;
                 }
             }
             if ((iStillUnresolved < 0) && !(m_Data[i]->m_Resolved)) {
@@ -163,8 +171,8 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
         m_FirstUnresolvedPos = (iStillUnresolved >=0) ?
             iStillUnresolved : (seg_idx + 1);
         if (shift > 0) {
-            for (int i = seg_idx+1; i < m_Data.size(); i++) {
-                m_Data[i]->m_position += shift;
+            for (size_t i = seg_idx+1; i < m_Data.size(); i++) {
+                m_Data[i]->m_Position += shift;
             }
         }
         // now find again
@@ -187,6 +195,8 @@ CSeqMap::CSegmentInfo CSeqMap::x_Resolve(int pos, CScope& scope)
     return seg;
 }
 
+/* Obsolete function - the positions are calculated from the lengths,
+not the lengths from the positions.
 void CSeqMap::x_CalculateSegmentLengths(void)
 {
     for (size_t i = 0; i < m_Data.size()-1; i++) {
@@ -203,6 +213,7 @@ void CSeqMap::x_CalculateSegmentLengths(void)
         }
     }
 }
+*/
 
 
 END_SCOPE(objects)

@@ -35,6 +35,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2002/04/02 16:40:53  grichenk
+* Fixed literal segments handling
+*
 * Revision 1.10  2002/03/27 15:07:53  grichenk
 * Fixed CSeqMap::CSegmentInfo::operator==()
 *
@@ -138,16 +141,19 @@ public:
         TSeqLength   GetLength(void) const;
 
     private:
-        ESegmentType         m_SegType; // Type of map segment
-        TSeqPosition         m_position;
-        TSeqLength           m_length;
+        // Type of map segment
+        ESegmentType         m_SegType;
+        // Position of the segment
+        TSeqPosition         m_Position;
+        // Length of the segment or 0 for unknown length
+        TSeqLength           m_Length;
         // Referenced bioseq information
         CSeq_id_Handle       m_RefSeq;
         // Seq-data (m_RefPos and m_RefLen must be also set)
         CConstRef<CSeq_data> m_RefData;
-        // Referenced location
+        // Referenced location -- position on the source sequence
         TSeqPosition m_RefPos;
-        TSeqLength   m_RefLen;
+        // TSeqLength   m_RefLen; // use m_Length instead
         bool         m_MinusStrand;
         bool         m_Resolved;
 
@@ -180,7 +186,9 @@ private:
     // Try to resolve segment lengths up to the "pos". Return index of the
     // segment containing "pos".
     CSegmentInfo x_Resolve(int pos, CScope& scope);
-    void x_CalculateSegmentLengths(void);
+    //### This is an obsolete function since segments positions are calculated
+    //### from their lengths, not the lengths from the  positions.
+    //### void x_CalculateSegmentLengths(void);
 
     vector< CRef<CSegmentInfo> > m_Data;
     // Segment lengths are resolved up to this position (not index)
@@ -208,11 +216,10 @@ inline
 CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type,
     TSeqPosition position, TSeqLength length, bool minus_strand)
     : m_SegType(seg_type),
-      m_position(position),
-      m_length(length),
+      m_Position(position),
+      m_Length(length),
       m_RefData(0),
       m_RefPos(0),
-      m_RefLen(0),
       m_MinusStrand(minus_strand),
       m_Resolved(false)
 {
@@ -221,12 +228,11 @@ CSeqMap::CSegmentInfo::CSegmentInfo(ESegmentType seg_type,
 inline
 CSeqMap::CSegmentInfo::CSegmentInfo(const CSegmentInfo& seg)
     : m_SegType(seg.m_SegType),
-      m_position(seg.m_position),
-      m_length(seg.m_length),
+      m_Position(seg.m_Position),
+      m_Length(seg.m_Length),
       m_RefSeq(seg.m_RefSeq),
       m_RefData(seg.m_RefData),
       m_RefPos(seg.m_RefPos),
-      m_RefLen(seg.m_RefLen),
       m_MinusStrand(seg.m_MinusStrand),
       m_Resolved(seg.m_Resolved)
 {
@@ -242,12 +248,11 @@ CSeqMap::CSegmentInfo&
 CSeqMap::CSegmentInfo::operator= (const CSegmentInfo& seg)
 {
     m_SegType  = seg.m_SegType;
-    m_position = seg.m_position;
-    m_length   = seg.m_length;
+    m_Position = seg.m_Position;
+    m_Length   = seg.m_Length;
     m_RefSeq   = seg.m_RefSeq;
     m_RefData  = seg.m_RefData;
     m_RefPos   = seg.m_RefPos;
-    m_RefLen   = seg.m_RefLen;
     m_Resolved = seg.m_Resolved;
     m_MinusStrand = seg.m_MinusStrand;
     return *this;
@@ -256,15 +261,15 @@ CSeqMap::CSegmentInfo::operator= (const CSegmentInfo& seg)
 inline
 bool CSeqMap::CSegmentInfo::operator== (const CSegmentInfo& seg) const
 {
+    //### Some segments may still look the same although they are not
     return
-        m_position == seg.m_position &&
+        m_Position == seg.m_Position &&
         m_SegType == seg.m_SegType  &&
         m_RefSeq == seg.m_RefSeq  &&
         m_RefData == seg.m_RefData  &&
         m_RefPos == seg.m_RefPos  &&
-        m_RefLen == seg.m_RefLen  &&
         m_MinusStrand == seg.m_MinusStrand;
-    // Do not check m_Resolved
+    // Do not check m_Resolved and m_Length
 }
 
 inline
@@ -286,9 +291,9 @@ bool CSeqMap::CSegmentInfo::operator< (const CSegmentInfo& seg) const
         return true;
     if (m_RefPos > seg.m_RefPos)
         return false;
-    if (m_RefLen < seg.m_RefLen)
+    if (m_Length < seg.m_Length)
         return true;
-    if (m_RefLen > seg.m_RefLen)
+    if (m_Length > seg.m_Length)
         return false;
     if (m_MinusStrand < seg.m_MinusStrand)
         return true;
@@ -304,13 +309,13 @@ CSeqMap::ESegmentType CSeqMap::CSegmentInfo::GetType(void) const
 inline
 TSeqPosition CSeqMap::CSegmentInfo::GetPosition(void) const
 {
-    return m_position;
+    return m_Position;
 }
 
 inline
 TSeqLength   CSeqMap::CSegmentInfo::GetLength(void) const
 {
-    return m_length;
+    return m_Length;
 }
 
 /////////////////////////////////////////////////////////////////////

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2002/04/02 16:40:55  grichenk
+* Fixed literal segments handling
+*
 * Revision 1.8  2002/03/28 18:34:58  grichenk
 * Fixed convertions bug
 *
@@ -137,9 +140,9 @@ size_t CSeqVector::size(void)
         // Calculate sequence size only once
         m_Size = 0;
         for (size_t i = 0; i < m_SeqMap->size(); i++) {
-            if ((*m_SeqMap)[i].m_RefLen > 0) {
+            if ((*m_SeqMap)[i].m_Length > 0) {
                 // Use explicit segment size
-                m_Size += (*m_SeqMap)[i].m_RefLen;
+                m_Size += (*m_SeqMap)[i].m_Length;
             }
             else {
                 switch ((*m_SeqMap)[i].m_SegType) {
