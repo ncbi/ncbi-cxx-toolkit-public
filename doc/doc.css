@@ -1,2 +1,3 @@
-PRE   { font-family: monospace; font-size: 12pt; color: #008080; }
-XMP   { font-family: monospace; font-size: 12pt; color: #008080; }
+PRE     { font-family: Courier; font-size: 11pt; color: #008080; }
+XMP     { font-family: Courier; font-size: 11pt; color: #008080; }
+TT.code { font-family: Courier; font-size: 11pt; color: #008080; }

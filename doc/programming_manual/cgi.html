@@ -35,8 +35,8 @@ to the discussion of
 
 <a name="overview"></a><h3> Overview of the CGI classes </h3>
 Figure 1 illustrates the layered design of the CGI classes. 
-
-<center><img SRC="cgi.gif"><br>Figure 1</center><br>
+<br><br>
+<center><img SRC="cgi.gif"><br><br>Figure 1</center><br>
 
 This design is best described by starting with a consideration of the capabilities 
 one might need to implement a CGI program, including:
@@ -72,8 +72,8 @@ illustrates the adaptation of the <i>Init()</i> and <i>Run</i> member functions 
 which it participates. The program arguments and environmental variables are passed along to the
 context, where they will be stored, thus freeing the application to be restarted in a new context,
 as in Fast-CGI.
-
-<center><img SRC="cgirun.gif"> <br> Figure 2</center><p>
+<br>
+<center><img SRC="cgirun.gif"><br>Figure 2</center><p>
 
 The application's <i>ProcessRequest</i> member function is an abstract function that
 must be implemented for each application project. In most cases, this
@@ -386,7 +386,8 @@ public:
     CCgiCookies& Cookies(void);		        // Get cookies set
     CNcbiOstream* SetOutput(CNcbiOstream* out); // Set default output stream
     CNcbiOstream* GetOutput(void) const;        // Query output stream
-    CNcbiOstream& out(void) const;	        // Conversion to ostream to enable <<
+    CNcbiOstream& out(void) const;              // Conversion to ostream 
+                                                // to enable <<
     void Flush() const;			        
 
     CNcbiOstream& WriteHeader(void) const;      // Write HTTP response header
@@ -527,7 +528,9 @@ public:
     typedef pair&lt;TCIter, TCIter>   TCRange;
 
     CCgiCookies(void);		     // create empty set of cookies
-    CCgiCookies(const string& str);  // str = "name1=value1; name2=value2; ..."
+    CCgiCookies(const string& str);  
+    // str = "name1=value1; name2=value2; ..."
+
     bool Empty(void) const;
 
     CCgiCookie* Add(const string& name, const string& value,
@@ -536,7 +539,8 @@ public:
 
     CCgiCookie* Add(const CCgiCookie& cookie);  
     void Add(const CCgiCookies& cookies); 
-    void Add(const string& str);		// "name1=value1; name2=value2; ..."
+    void Add(const string& str);
+    // "name1=value1; name2=value2; ..."
 
     CCgiCookie* Find(const string& name, const string& domain, const string& path);
     CCgiCookie* Find(const string& name, TRange*  range=0);
@@ -606,7 +610,8 @@ private:
     mutable string	  m_selfURL;
     list&lt;CCtxMsg*>        m_lmsg;		// message buffer
 
-    auto_ptr&lt;CCgiServerContext> m_srvCtx;	// defined by CCgiApplication::LoadServerContext()
+    auto_ptr&lt;CCgiServerContext> m_srvCtx;
+    // defined by CCgiApplication::LoadServerContext()
 
     friend class CCgiApplication;
 }; 

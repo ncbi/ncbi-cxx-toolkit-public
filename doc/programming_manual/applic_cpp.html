@@ -25,41 +25,42 @@ public:
 &nbsp;&nbsp;&nbsp; auto_ptr&lt;CArgs> args;
 
 </font><font color="#FF0000">&nbsp;&nbsp;&nbsp; // create a CArgDescriptions object to constrain the input arguments;
-&nbsp;&nbsp;&nbsp; // Argument descriptions are added using:
+    // Argument descriptions are added using:
 
-&nbsp;&nbsp;&nbsp; //&nbsp; void AddKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType, TFlags);&nbsp;
-&nbsp;&nbsp;&nbsp; //&nbsp; void AddOptionalKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType,
-&nbsp;&nbsp;&nbsp; //&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string&amp; default, TFlags);
-&nbsp;&nbsp;&nbsp; //&nbsp; void AddFlag(string&amp; name, string&amp; comment);
+    // void AddKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType, TFlags);
+    // void AddOptionalKey(string&amp; name, string&amp; synopsis, string&amp; comment, EType,
+    //                     string&amp; default, TFlags);
+    // void AddFlag(string&amp; name, string&amp; comment);
 
 </font><font color="#000000">&nbsp;&nbsp;&nbsp; {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDesc;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CArgDescriptions argDesc;
 
-</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Required arguments:
-</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("n", "integer", "integer between 1 and 10", argDesc.eInteger);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("f", "float", "float between 0.0 and 1.0", argDesc.eDouble);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("i", "inputFile", "data file in", ArgDescriptions::eInputFile);
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Required arguments:
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("n","integer","integer between 1 and 10",argDesc.eInteger);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("f","float","float between 0.0 and 1.0",argDesc.eDouble);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddKey("i","inputFile","data file in",ArgDescriptions::eInputFile);
 
-</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional arguments:
-</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddOptionalKey("l", "logFile", "log errors to &lt;logFile>",
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.eOutputFile);
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional arguments:
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddOptionalKey("l","logFile","log errors to &lt;logFile>",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.eOutputFile);
 
-</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional flags
-</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddFlag("it", "input text");
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddFlag("ib", "input binary");
+</font><font color="#FF0000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // optional flags
+</font><font color="#000000">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddFlag("it", "input text");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.AddFlag("ib", "input binary");
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; args.reset(argDesc.CreateArgs(GetArguments()));
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; catch (exception&amp; e) {
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string a;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.SetUsageContext(GetArguments()[0], "CArgDescriptions demo program");
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; try {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; args.reset(argDesc.CreateArgs(GetArguments()));
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; catch (exception&amp; e) {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; string a;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; argDesc.SetUsageContext(GetArguments()[0], 
+                                   "CArgDescriptions demo program");
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; e.what() &lt;&lt; endl;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; argDesc.PrintUsage(a);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return (-1);
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
-&nbsp;&nbsp;&nbsp; }
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; e.what() &lt;&lt; endl;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; cerr &lt;&lt; argDesc.PrintUsage(a);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return (-1);
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }
+    }
 
 &nbsp;&nbsp;&nbsp; int&nbsp;&nbsp; intIn&nbsp;&nbsp; = (*args)["n"].AsInteger();
 &nbsp;&nbsp;&nbsp; float floatIn = (*args)["f"].AsDouble();
@@ -84,8 +85,8 @@ public:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; InputType = "binary";
 &nbsp;&nbsp;&nbsp; }
 
-&nbsp;&nbsp;&nbsp; ERR_POST(Info &lt;&lt; "intIn = " &lt;&lt; intIn &lt;&lt; " floatIn = " &lt;&lt; floatIn &lt;&lt; " inFile = "
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; inFile &lt;&lt; " input type = " &lt;&lt; InputType);
+&nbsp;&nbsp;&nbsp; ERR_POST(Info &lt;&lt; "intIn = " &lt;&lt; intIn &lt;&lt; " floatIn = " &lt;&lt; floatIn 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;&lt; " inFile = " &lt;&lt; inFile &lt;&lt; " input type = " &lt;&lt; InputType);
 &nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp; return 0;
 }</font></pre>

@@ -480,13 +480,13 @@ can be stored, and includes access routines in its public interface:
 {
 public:
 
-&nbsp;&nbsp;&nbsp; bool Exist(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // TRUE if name has a description
-&nbsp;&nbsp;&nbsp; unsigned GetNExtra(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // number of extra arguments
+    bool Exist(string& name) const;             // TRUE if name has a description
+    unsigned GetNExtra(void) const;             // number of extra arguments
 
-&nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](string&amp; name);&nbsp;&nbsp;&nbsp;&nbsp; // retrieve value by argument name
-&nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](unsigned idx);&nbsp;&nbsp;&nbsp;&nbsp; // retrieve value by unnamed arg's index
-
-&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Print all arguments to "str"
+    const CArgValue& operator [](string& name); // retrieve value by argument name
+    const CArgValue& operator [](unsigned idx); // retrieve value by
+                                                // unnamed arg's index
+    void Print(string& str) const;              // Print all arguments to "str"
 };</font></pre>
 One of the most important capabilities of this class is not shown here
 however, as it is a public method implemented by private data members of

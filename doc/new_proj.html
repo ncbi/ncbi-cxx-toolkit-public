@@ -194,11 +194,13 @@ and recursive builds.
 A typical <i>meta-makefile</i> template(e.g. <i><b>Makefile.in</b></i> in your
 <b><i>foo/c++/src/bar_proj/</i></b> dir) looks like that:
 <pre>
-USR_PROJ = bar_u1 bar_u2 ...  # Makefile.bar_u1,     Makefile.bar_u1     ...
-LIB_PROJ = bar_l1 bar_l2 ...  # Makefile.bar_l1.lib, Makefile.bar_l1.lib ...
-APP_PROJ = bar_a1 bar_l2 ...  # Makefile.bar_a1.app, Makefile.bar_a1.app ...
+# Makefile.bar_u1, Makefile.bar_u1 ...
+USR_PROJ = bar_u1 bar_u2 ...  
+# Makefile.bar_l1.lib, Makefile.bar_l1.lib ...
+LIB_PROJ = bar_l1 bar_l2 ...  
+# Makefile.bar_a1.app, Makefile.bar_a1.app ...
+APP_PROJ = bar_a1 bar_l2 ...  
 SUB_PROJ = app sub_proj1 sub_proj2
-
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
 </pre>
@@ -806,7 +808,8 @@ And, of course, it provides build rules for all the
 File $(top_srcdir)/src/internal/humchrom/Makefile.hc_gen_obj:
 
 # Build a code generator for hard-coding the chrom data into an obj file
-# Generate header and source "humchrom_dat.[ch]" from data file "humchrom.dat"
+# Generate header and source "humchrom_dat.[ch]" from data file 
+# "humchrom.dat"
 # Deploy the header to the compiler-specific include dir
 # Compile source code
 #################################
@@ -835,13 +838,16 @@ build_hc_gen_obj:
 	$(BUILD__HC_GEN_OBJ) all
 
 humchrom_dat.dep: $(srcdir)/data/humchrom.dat $(bindir)/hc_gen_obj
-	-cp -p humchrom_dat.c humchrom_dat.save.c
-	$(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat -f humchrom_dat
-	$(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h $(incdir)/humchrom_dat.h
-	-rm humchrom_dat.h
-	$(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c humchrom_dat.save.c
-	mv humchrom_dat.save.c humchrom_dat.c
-	touch humchrom_dat.dep
+    -cp -p humchrom_dat.c humchrom_dat.save.c
+    $(bindir)/hc_gen_obj -d $(srcdir)/data/humchrom.dat
+        -f humchrom_dat
+    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.h  
+        $(incdir)/humchrom_dat.h
+    -rm humchrom_dat.h
+    $(top_srcdir)/scripts/if_diff.sh "mv" humchrom_dat.c 
+        humchrom_dat.save.c
+    mv humchrom_dat.save.c humchrom_dat.c
+    touch humchrom_dat.dep
 </pre>
 
 

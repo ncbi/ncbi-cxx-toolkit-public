@@ -273,10 +273,12 @@ For each <b><i>proj_name</i></b> listed in <i><a href="#musr">USR_PROJ</a></i>,
 <i>Makefile.meta</i> first tests to see if <i>Makefile.proj_name</i> is
 available in the current <i>build</i> directory, and if so, executes:</li>
 
-<pre><font size=-1>&nbsp;&nbsp; make -f Makefile.proj_name builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)</font></pre>
+<pre><font size=-1>   make -f Makefile.proj_name builddir="$(builddir)" 
+      srcdir="$(srcdir)" $(MFLAGS)</font></pre>
 Otherwise, <i>Makefile.meta</i> assumes the required makefile is in the
 project's source directory, and executes:
-<pre><font size=-1>&nbsp;&nbsp; make -f $(srcdir)/Makefile.proj_name builddir="$(builddir)" srcdir="$(srcdir)" $(MFLAGS)</font></pre>
+<pre><font size=-1>   make -f $(srcdir)/Makefile.proj_name builddir="$(builddir)" 
+      srcdir="$(srcdir)" $(MFLAGS)</font></pre>
 In either case, the important thing to note here is that the commands contained
 in the project's makefiles are executed directly and are <i>not</i> combined
 with additional makefiles in the top-level <i>build</i> directory. The

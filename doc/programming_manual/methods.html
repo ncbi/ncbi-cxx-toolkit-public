@@ -109,10 +109,12 @@ echo "**** Edit the application's makefile:"
 
 cd testmod
 
-sed "s/LOCAL_CPPFLAGS = -I./LOCAL_CPPFLAGS = -I..\/internal\/c++\/include\//" Makefile.testmod_app > tmp
-
+sed "s/LOCAL_CPPFLAGS = -I./LOCAL_CPPFLAGS = -I..\/internal\/c++\/include\//" 
+    Makefile.testmod_app > tmp
+</pre>
+<tt class=code>
 sed "s/LIB        = xncbi/LIB = seqset seq seqres seqloc seqalign seqfeat seqblock pub medline biblio general xser xncbi/" tmp > tmp2
-
+	</tt><pre>
 NEWLIBS=../internal/c++/src/objects
 
 cat >tmp <<EOF

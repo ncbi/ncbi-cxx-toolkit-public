@@ -654,11 +654,12 @@ be displayed in <i>ePlainText</i> mode. The first argument of these constructors
 expects HTML text or pointer to an object of (or inherited from) CNCBINode
 class. It will be appended to the node using <i>AppendChild()</i> method,
 and printed out in <i>eHTML</i> mode. For example:
-<pre>(new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout);</pre>
+<pre>(new CHTMLDualNode(new CHTML_p("text"),"\nTEXT \n"))->Print(cout);</pre>
 will generate the output:
-<pre> &lt;p>text&lt;/p></pre>
+<pre>&lt;p>text&lt;/p></pre>
 whereas:
-<pre> (new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, CNCBINode::ePlainText);</pre>
+<pre>(new CHTMLDualNode(new CHTML_p("text"),"\n TEXT \n"))->Print(cout, 
+   CNCBINode::ePlainText);</pre>
 will generate:
 <pre>\n TEXT \n</pre>
 <a NAME="cgiapp"></a>
@@ -740,7 +741,7 @@ In the first top-level call to <i>Print()</i>, <i>prev</i> is the default
 and <i>m_Node</i>. In the body of the <i>Print()</i> method however, a
 new <i>TMode</i> is created for subsequent recursion, with the following
 constructor used to create the new <i>TMode</i> at that level:
-<pre>TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode), m_Node(N), m_Previous(M) {}</pre>
+<pre>TMode(const TMode* M, CNCBINode* N) : m_Mode(M->m_Mode),m_Node(N),m_Previous(M) {}</pre>
 where <i>M</i> is the <i>TMode</i> input parameter, and <i>N</i> is the
 <i>current</i> node.
 <p><a NAME="createsub"></a>Thus, the output encoding specified at the top

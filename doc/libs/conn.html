@@ -243,23 +243,24 @@ as in the following example:
 #include &lt;connect/ncbi_socket_connector.h&gt;
 #include &lt;connect/ncbi_connection.h&gt;
 
-#define MAX_TRY	3 /* Try to connect this many times before giving up */
+#define MAX_TRY 3 /* Try to connect this many times before giving up */
 
 unsigned short port = 1234;
 CONNECTOR socket_connector = <a href="../lxr/ident?i=SOCK_CreateConnector">SOCK_CreateConnector</a>("host.foo.com", port, MAX_TRY);
 
 if (!socket_connector)
-	fprintf(stderr, "Cannot create SOCKET connector");
+    fprintf(stderr, "Cannot create SOCKET connector");
 else {
-	CONN conn;
+    CONN conn;
   
-	if (CONN_Create(socket_connector, &conn) != eIO_Success)
-		fprintf(stderr, "CONN_Create failed");
-	else {
-		/* Connection created ok, use CONN_... function to access the network */
-		...
-  		CONN_Close(conn);
-	}
+    if (CONN_Create(socket_connector, &conn) != eIO_Success)
+        fprintf(stderr, "CONN_Create failed");
+    else {
+        /* Connection created ok, use CONN_... function */
+        /* to access the network */
+        ...
+        CONN_Close(conn);
+    }
 }
 </pre>
 
@@ -335,22 +336,38 @@ where the HTTP server is running.<br>
 /* Network connection related configurable info struct
  */
 typedef struct {
-  char           client_host[64];  /* effective client hostname            */
-  char           host[64];         /* host to connect to                   */
-  unsigned short port;             /* port to connect to, host byte order  */
-  char           path[1024];       /* service: path(e.g. to  a CGI script) */
-  char           args[1024];       /* service: args(e.g. for a CGI script) */
-  <a href="../lxr/ident?i=EReqMethod">EReqMethod</a>     req_method;       /* method to use in the request         */
-  <a href="../lxr/ident?i=STimeout">STimeout</a>       timeout;          /* i/o timeout                          */
-  unsigned int   max_try;          /* max. # of attempts to establish conn */
-  char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
-  unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
-  char           <a name="ref_ProxyHost"></a>proxy_host[64];   /* host of CERN-like firewall proxy srv */
-  <a href="../lxr/ident?i=EDebugPrintout">EDebugPrintout</a> debug_printout;   /* printout some debug info             */
-  int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
-  int/*bool*/    firewall;         /* to use firewall/relay in connects    */
-  int/*bool*/    <a name="ref_LbDisable"></a>lb_disable;       /* to disable local load-balancing      */
-  const char*    <a name="ref_HttpUserHeader"></a>http_user_header; /* user header to add to HTTP request   */
+  char           client_host[64];  
+                 /* effective client hostname            */
+  char           host[64];         
+                 /* host to connect to                   */
+  unsigned short port;             
+                 /* port to connect to, host byte order  */
+  char           path[1024];       
+                 /* service: path(e.g. to  a CGI script) */
+  char           args[1024];       
+                 /* service: args(e.g. for a CGI script) */
+  <a href="../lxr/ident?i=EReqMethod">EReqMethod</a>     req_method;
+                 /* method to use in the request         */
+  <a href="../lxr/ident?i=STimeout">STimeout</a>       timeout;          
+                 /* i/o timeout                          */
+  unsigned int   max_try;
+                 /* max. # of attempts to establish conn */
+  char           http_proxy_host[64];
+                 /* hostname of HTTP proxy server        */
+  unsigned short http_proxy_port;
+                 /* port #   of HTTP proxy server        */
+  char           <a name="ref_ProxyHost"></a>proxy_host[64];
+                 /* host of CERN-like firewall proxy srv */
+  <a href="../lxr/ident?i=EDebugPrintout">EDebugPrintout</a> debug_printout;
+                 /* printout some debug info             */
+  int/*bool*/    stateless;
+                 /* to connect in HTTP-like fashion only */
+  int/*bool*/    firewall;
+                 /* to use firewall/relay in connects    */
+  int/*bool*/    <a name="ref_LbDisable"></a>lb_disable;
+                 /* to disable local load-balancing      */
+  const char*    <a name="ref_HttpUserHeader"></a>http_user_header;
+                 /* user header to add to HTTP request   */
   
   /* the following field(s) are for the internal use only! */
   int/*bool*/    http_proxy_adjusted;
@@ -404,8 +421,8 @@ to deal with this structure:
   copy of the passed structure. This function is aware of dynamic nature of the HTTP
   <a href="#ref_HttpUserHeader">user header field</a>.
 </ul>
+</ol>
 
-<ol>
 <a name="ref_Registry"></a><b><u>Note about the registry</u></b>. The registry used by <tt>connect</tt> library is
 separate from <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a> class.
 To learn more about the difference, and how to use both objects together in 
@@ -490,10 +507,10 @@ typedef void (*FHttpAdjustCleanup)
 extern CONNECTOR <a href="../lxr/ident?i=HTTP_CreateConnectorEx">HTTP_CreateConnectorEx</a>
 (const SConnNetInfo*  net_info,
  THCC_Flags           flags,
- FHttpParseHTTPHeader parse_http_hdr, /* may be NULL, then no addtl. parsing  */
- FHttpAdjustInfo      adjust_info,    /* may be NULL, then no adjustments     */
- void*                adjust_data,    /* for "adjust_info" & "adjust_cleanup" */
- FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                          */
+ FHttpParseHTTPHeader parse_http_hdr, /* may be NULL, then no addtl.parsing */
+ FHttpAdjustInfo      adjust_info,    /* may be NULL, then no adjustments   */
+ void*                adjust_data,    /* for "adjust_info"& "adjust_cleanup"*/
+ FHttpAdjustCleanup   adjust_cleanup  /* may be NULL                        */
  );
 </pre>
 This form is assumed to be rarely used by the users directly, but it provides rich access to the internal management of HTTP connections.
@@ -555,10 +572,14 @@ The library provides two forms of connector's constructor:
 <a href="../lxr/ident?i=SERVICE_CreateConnector">SERVICE_CreateConnector</a>(const char* service_name);
 
 <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>
-(const char*           service_name, /* The registered name of an NCBI service */
- <a href="../../lxr/ident?i=TSERV_Type">TSERV_Type</a>            types,        /* Accepted server types, bitmask         */
- const <a href="../../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>*   net_info,     /* Connection parameters                  */
- const <a href="../../lxr/ident?i=SSERVICE_Extra">SSERVICE_Extra</a>* params        /* Addtl set of parameters, may be NULL   */
+(const char*           service_name, 
+                       /* The registered name of an NCBI service */
+ <a href="../../lxr/ident?i=TSERV_Type">TSERV_Type</a>            types,
+                       /* Accepted server types, bitmask         */
+ const <a href="../../lxr/ident?i=SConnNetInfo">SConnNetInfo</a>*   net_info,
+                       /* Connection parameters                  */
+ const <a href="../../lxr/ident?i=SSERVICE_Extra">SSERVICE_Extra</a>* params
+                       /* Addtl set of parameters, may be NULL   */
  );
 </pre>
 The first form is equivalent to <i><b>SERVICE_CreateConnectorEx(</b></i><tt>service_name, fSERV_Any, 0, 0</tt><i><b>)</b></i>.
@@ -657,20 +678,20 @@ please refer to a <a href="#ref_ServiceAPI">later section</a>.
 The following code fragment establishes service connection to
 the named service <tt>"io_bounce"</tt>, using only stateless servers:
 <pre>
-  CONNECTOR c;
-  CONN conn;
+CONNECTOR c;
+CONN conn;
 
-  if (!(c = SERVICE_CreateConnectorEx("io_bounce", fSERV_StatelessOnly, 0, 0)))
+if (!(c = SERVICE_CreateConnectorEx("io_bounce", fSERV_StatelessOnly, 0, 0)))
     fprintf(stderr, "No such service available");
-  else if (CONN_Create(c, &conn) != eIO_Success)
+else if (CONN_Create(c, &conn) != eIO_Success)
     fprintf(stderr, "Failed to create connection");
-  else {
+else {
     static const char buffer[] = "Data to pass to the server";
     size_t n_written;
     
     CONN_Write(conn, buffer, sizeof(buffer) - 1, &n_written);
     ...
-  }
+}
 </pre>
 
 The real type of the data channel can be obtained via call to
@@ -944,8 +965,10 @@ static void s_CleanupData(void* data)
 }
 
 
-/* 'Iter' is an internal service iterator used by service connector; it must remain open.
- * 'Data' is what we supplied among extra-parameters in connector's constructor.
+/* 'Iter' is an internal service iterator used by service connector; it must
+ *  remain open.
+ * 'Data' is what we supplied among extra-parameters in connector's 
+    constructor.
  */
 static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_ITER</a> iter, void* data)
 {
@@ -959,8 +982,10 @@ static const SSERV_Info* s_GetNextInfo(<a href="../lxr/ident?i=SERV_ITER">SERV_I
         while ((info = <a href="../lxr/ident?i=SERV_GetNextInfoEx">SERV_GetNextInfoEx</a>(iter, &amp;env)) != 0) {
             const char* c;
             for (c = env; c; c = strchr(c, '\n')) {
-                if (strncmp(c == env ? c : ++c, ENV_DB_KEY, sizeof(ENV_DB_KEY)-1) == 0) {
-                    /* Our keyword has been detected in environment for this host */
+                if (strncmp(c == env ? c : ++c, ENV_DB_KEY, 
+                            sizeof(ENV_DB_KEY)-1) == 0) {
+                    /* Our keyword has been detected in environment */
+                    /* for this host */
                     c += sizeof(ENV_DB_KEY) - 1;
                     while (*c && isspace(*c))
                         c++;
@@ -991,10 +1016,11 @@ int main(int argc, char* argv[])
     <a href="../lxr/ident?i=CONN">CONN</a> conn;
 
     memset(&params, 0, sizeof(params));
-    params.data = db_name;                /* custom data, anything        */
-    params.cleanup = s_CleanupData;       /* cleanup routine, may be NULL */
-    params.get_net_info = s_GetNextInfo;  /* custom iterator routine      */
-    if (!(c = <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>("my_service", fSERV_Any, NULL, &amp;params))) {
+    params.data = db_name;                /* custom data, anything       */
+    params.cleanup = s_CleanupData;       /* cleanup routine, may be NULL*/
+    params.get_net_info = s_GetNextInfo;  /* custom iterator routine     */
+    if (!(c = <a href="../lxr/ident?i=SERVICE_CreateConnectorEx">SERVICE_CreateConnectorEx</a>("my_service",
+          fSERV_Any, NULL, &amp;params))) {
         fprintf(stderr, "Cannot create connector");
         exit(1);
     }
@@ -1004,13 +1030,15 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    /* Now we can use <a href="../lxr/ident?i=CONN_Read">CONN_Read()</a>, <a href="../lxr/ident?i=CONN_Write">CONN_Write()</a> etc to operate with connection,
-     * and we are assured that the connection is made only to the server on such a host,
-     * which has "db_name" specified in configuration file of <a href="../tools/dispatcher/LBSMD.html">LBSMD</a>.
+    /* Now we can use <a href="../lxr/ident?i=CONN_Read">CONN_Read()</a>, <a href="../lxr/ident?i=CONN_Write">CONN_Write()</a> etc to operate with
+     * connection, and we are assured that the connection is made only
+     * to the server on such a host which has "db_name" specified in 
+     * configuration file of <a href="../tools/dispatcher/LBSMD.html">LBSMD</a>.
      */
 
     ...
-    <a href="../lxr/ident?i=CONN_Close">CONN_Close</a>(conn); /* this also calls cleanup of user data provided in params */
+    <a href="../lxr/ident?i=CONN_Close">CONN_Close</a>(conn); 
+    /* this also calls cleanup of user data provided in params */
 
     return 0;
 }

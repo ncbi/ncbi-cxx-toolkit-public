@@ -96,7 +96,10 @@ might not build shared libraries properly on Solaris without
 	 end() does not return an iterator to the last element of a container,
 	 rather it returns a iterator just beyond the last element of the container.
 	 This is so you can do constructs like
-	 <pre>for (iterator = container.begin();  iterator != container.end();  iterator++)</pre>
+<pre>
+for (iterator = container.begin();  
+     iterator != container.end();  iterator++)
+</pre>
 	 If you want to access the end element, use "--<i>container.end()</i>".
 	 <p>
 	 Iterator misuse causes the same problems as pointer misuse.

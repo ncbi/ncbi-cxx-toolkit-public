@@ -176,7 +176,8 @@ to objects, we will actually need to dereference <i>twice</i> to get to
 the objects themselves.</font>
 
 <pre>
-for (CBiostruc::TDescr::const_iterator i = descList.begin(); i != descList.end(); ++i) {
+for (CBiostruc::TDescr::const_iterator i = descList.begin(); 
+     i != descList.end(); ++i) {
 
     const CBiostruc_descr&amp; thisDescr = **i;
     // ...

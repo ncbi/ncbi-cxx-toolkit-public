@@ -164,7 +164,8 @@ void VisitWithIterator (const CBiostruc::TDescr& descList) {
 
         const CBiostruc_descr& thisDescr = **i1;
 
-        for (CStdTypeConstIterator&lt;NCBI_NS_STD::string> i = ConstBegin(thisDescr); i; ++i) {
+        for (CStdTypeConstIterator&lt;NCBI_NS_STD::string> 
+             i = ConstBegin(thisDescr); i; ++i) {
             cout << "next descriptor" << *i << endl;
         }
     }

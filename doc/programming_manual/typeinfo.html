@@ -538,8 +538,8 @@ take a
 files between different formats; for example:
 
 <pre>
-auto_ptr&lt;CObjectIStream>&nbsp; in(CObjectIStream::Open("mydata.xml", eSerial_Xml));
-auto_ptr&lt;CObjectOStream> out(CObjectOStream::Open("mydata.asn", eSerial_AsnBinary));
+auto_ptr&lt;CObjectIStream>  in(CObjectIStream::Open("mydata.xml",eSerial_Xml));
+auto_ptr&lt;CObjectOStream> out(CObjectOStream::Open("mydata.asn",eSerial_AsnBinary));
 CObjectStreamCopier copier(*in, *out);
 copier.Copy (CBioseq_set::GetTypeInfo());
 </pre>

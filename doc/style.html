@@ -278,7 +278,8 @@ public:
 
     // Members and Methods
     float PublicFunc(void);
-    // (NOTE:  the use of public data members is strictly discouraged!)
+    // (NOTE:  the use of public data members is strictly
+    // discouraged!)
     int   m_PublicData;
 
 protected:
@@ -293,8 +294,9 @@ private:
     friend bool  SomeFriendFunc(void);
     friend class CSomeFriendClass;
 private:
-    // Prohibit default initialization and assignment -- e.g. when the
-    // member-by-member copying is dangerous.
+    // Prohibit default initialization and assignment
+    // -- e.g. when the member-by-member copying is 
+    // dangerous.
     // (These two methods are not even implemented.)
     CFooClass(const CFooClass&);
     CFooClass& operator= (const CFooClass&);
@@ -333,8 +335,9 @@ bool MyFunc2
 }
 
 
-// For static function, put all comments on what the function does
-// and what it returns right here, at the point of the function definition
+// For static function, put all comments on what the function
+// does and what it returns right here, at the point of the 
+// function definition
 static long s_MyFunc3(void)
 {
     .......

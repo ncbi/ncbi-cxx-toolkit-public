@@ -277,10 +277,8 @@ advertizes one standalone stateful server, and one <tt>NCBID</tt> service, both 
 service, and one local HTTP service.
 
 <pre>
-#         This is a configuration file of new NCBI service dispatcher
 #
-# Documentation:
-# <a href="LBSMD.html">http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html</a>
+#    This is a configuration file of new NCBI service dispatcher
 #
 
 # This goes to host environment (rather practical)
@@ -292,8 +290,10 @@ my_entry="some very important value as a quoted string"
 TestService STANDALONE :9999 S=yes R=2000
 
 # NCBID server (Note empty quotes to prevent treating of Regular as
-# an argument. Also note bar (|) followed by path and parameters of the executable.)
-TestService NCBID '' Regular | /home/webuser/TestService/a.out "parameter 1"
+# an argument. Also note bar (|) followed by path and parameters of
+# the executable.)
+TestService NCBID '' Regular | 
+   /home/webuser/TestService/a.out "parameter 1"
 
 # Local HTTP service w/o checks (note [0])
 LocalService [0] HTTP /LocalService.cgi?param=somevalue L=yes

@@ -551,7 +551,7 @@ The printed <i>USAGE</i> message shows a synopsis of the program and its
 arguments, a description of the program, and a summary of each argument,
 as obtained from its description. In this example, the input file argument's
 description was registered as:
-<pre><font color="#008080">argDesc.AddKey("i", "MyInputFile", "Input data file", CArgDescriptions::eInputFile);</font></pre>
+<pre><font color="#008080">argDesc.AddKey("i","MyInputFile","Input data file",CArgDescriptions::eInputFile);</font></pre>
 The information generated for each argument is displayed in the format:
 <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>-name
 [synopsis]&nbsp;&nbsp;&nbsp; &lt;type [, constraint]&nbsp; ></i>
@@ -568,14 +568,16 @@ can be stored, and includes access routines in its public interface:
 <pre><font color="#008080">class CArgs
 {
 public:
-&nbsp;&nbsp;&nbsp; bool Exist(string&amp; name) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // true if name has a description
-
-&nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](string&amp; name);&nbsp; // retrieve value by argument name
-
-&nbsp;&nbsp;&nbsp; unsigned GetNExtra(void) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // number of passed unnamed(extra) arguments
-&nbsp;&nbsp;&nbsp; const CArgValue&amp; operator [](unsigned idx);&nbsp; // retrieve value by unnamed arg's index
-
-&nbsp;&nbsp;&nbsp; void Print(string&amp; str) const;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // print all arguments to "str"
+    bool Exist(string&amp; name) const;
+                   // true if name has a description
+    const CArgValue&amp; operator [](string&amp; name);
+                   // retrieve value by argument name
+    unsigned GetNExtra(void) const;
+                   // number of passed unnamed(extra) arguments
+    const CArgValue&amp; operator [](unsigned idx); 
+                   // retrieve value by unnamed arg's index
+    void Print(string&amp; str) const;
+                   // print all arguments to "str"
 };</font></pre>
 As a result of executing <i>CArgDescriptions::CreateArgs()</i>, the command
 line's arguments are validated against the registered descriptions, and

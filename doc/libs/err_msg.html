@@ -212,14 +212,16 @@ Error: [in SomeFunc(qqq,888)] Exception: Invalid Arg2
 <pre>
 THROW_TRACE(CParseException, ("Failed parsing(at pos. 123)", 123));
 
-"coretest.cpp", line 708: Trace: CParseException: {123} Failed parsing(at pos. 123)
+"coretest.cpp", line 708: Trace: CParseException: {123}
+Failed parsing(at pos. 123)
 
 ---------------------------------
 
 strtod("1e-999999", 0);
 THROW1_TRACE(CErrnoException, "Failed strtod('1e-999999', 0)");
 
-"coretest.cpp", line 718: Trace: CErrnoException: Failed strtod('1e-999999', 0): Result too large
+"coretest.cpp", line 718: Trace: CErrnoException:
+Failed strtod('1e-999999', 0): Result too large
 </pre>
 
 
@@ -411,11 +413,15 @@ extern void SetDiagHandler(FDiagHandler func,
 int iii = 1234;
 CNcbiDiag diag1;
 
-diag1 << "Message1_Start " << iii;  // message 1 is started but not ready yet
-{ CNcbiDiag diag2;  diag2 << Info << "Message2"; } // message 2 flushed in destructor
-diag1 << "Message1_End" << Endm;  // message 1 finished and flushed by "Endm"
+diag1 << "Message1_Start " << iii;  
+         // message 1 is started but not ready yet
+{ CNcbiDiag diag2;  diag2 << Info << "Message2"; } 
+         // message 2 flushed in destructor
+diag1 << "Message1_End" << Endm;  
+         // message 1 finished and flushed by "Endm"
 diag1 << "Message1_1";  // will be flushed by the following "Warning"
-diag1 << Warning << "Discard this warning" << ++iii << Reset; // message discarded
+diag1 << Warning << "Discard this warning" << ++iii << Reset; 
+         // message discarded
 diag1 << "This is a warning " << iii;
 diag1 << Endm; </pre>
 	 will write to the diagnostic stream(if the latter was set with

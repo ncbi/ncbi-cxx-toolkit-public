@@ -74,13 +74,14 @@ CNcbiCommand* CCgiReplyCommand::Clone(void) const
 void ShowCommands (const TCmdList& cmds, CCgiContext& ctx)
 {
     cerr << "Commands defined for this application are: \n";
-    for (TCmdList::const_iterator it = cmds.begin(); it != cmds.end(); it++) {
-        cerr << (*it)->GetName();
-        if ((*it)->IsRequested(ctx)) {
-	    cerr << " (requested)" << endl;
-	} else {
-  	    cerr << " (not requested)" << endl;
-	}
+    for (TCmdList::const_iterator it = cmds.begin(); 
+         it != cmds.end(); it++) {
+         cerr << (*it)->GetName();
+         if ((*it)->IsRequested(ctx)) {
+            cerr << " (requested)" << endl;
+         } else {
+            cerr << " (not requested)" << endl;
+         }
     }
 }
 
@@ -88,11 +89,11 @@ void ShowCommands (const TCmdList& cmds, CCgiContext& ctx)
 void ShowEntries (const TCgiEntries& entries)
 {
     cerr << "The entries in the request string were: \n";
-    for (TCgiEntries::const_iterator it = entries.begin(); it != entries.end(); it++)
-      {
-	if (! (it->first.empty() && it->second.empty()))
-	  cerr << it->first << "=" << it->second << endl;
-      }
+    for (TCgiEntries::const_iterator it = entries.begin(); 
+         it != entries.end(); it++) {
+         if (! (it->first.empty() && it->second.empty()))
+            cerr << it->first << "=" << it->second << endl;
+    }
 }
 
 static CCgiApp theCgiApp;

@@ -34,8 +34,8 @@ int CTestApp::Run()
         if ( !orig_ap.get() ) {
             cout << "orig_ap no longer exists - copy_ap = " << *copy_ap << endl;
         } else {
-            cout  << "orig_ap = " << *orig_ap << ", copy_ap = "
-				    << *copy_ap << endl;
+            cout << "orig_ap = " << *orig_ap << ", copy_ap = "
+                 << *copy_ap << endl;
         }
     }
     if ( orig_ap.get() ) {
@@ -50,7 +50,8 @@ int CTestApp::Run()
         if ( !orig ) {
             cout << "orig no longer exists - copy = " << (int&) *copy << endl;
         } else {
-            cout  << "orig = " << (int&) *orig << ", copy = " << (int&) *copy << endl;
+            cout << "orig = " << (int&) *orig << ", copy = " 
+                 << (int&) *copy << endl;
         }
     }
     if ( orig ) {
