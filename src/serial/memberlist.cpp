@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/08/20 20:23:19  vakatov
+* Workaround for the SUN Forte 6 Update 1 compiler internal bug.
+*
 * Revision 1.22  2000/10/03 17:22:43  vasilche
 * Reduced header dependency.
 * Reduced size of debug libraries on WorkShop by 3 times.
@@ -143,6 +146,11 @@ CItemsInfo::CItemsInfo(void)
 
 CItemsInfo::~CItemsInfo(void)
 {
+#if defined(NCBI_COMPILER_WORKSHOP)  &&  (NCBI_COMPILER_VERSION == 520)
+    // BW_010::  to workaround (already reported to SUN, CASE ID 62563729)
+    //           internal bug of the SUN Forte 6 Update 1 compiler
+    (void) atoi("5");
+#endif
 }
 
 void CItemsInfo::AddItem(CItemInfo* item)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.61  2001/08/20 20:23:20  vakatov
+* Workaround for the SUN Forte 6 Update 1 compiler internal bug.
+*
 * Revision 1.60  2001/06/11 14:35:02  grichenk
 * Added support for numeric tags in ASN.1 specifications and data streams.
 *
@@ -201,6 +204,11 @@ CDataType::CDataType(void)
 
 CDataType::~CDataType()
 {
+#if defined(NCBI_COMPILER_WORKSHOP)  &&  (NCBI_COMPILER_VERSION == 520)
+    // BW_010::  to workaround (already reported to SUN, CASE ID 62563729)
+    //           internal bug of the SUN Forte 6 Update 1 compiler
+    (void) atoi("5");
+#endif
 }
 
 void CDataType::SetSourceLine(int line)
