@@ -1098,23 +1098,23 @@ static const CDirEntry MacGetIndexedItem(const CDir& container, SInt16 index)
 CDir::TEntries CDir::GetEntries(const string& mask) const
 {
     TEntries contents;
-    string x_mask = mask.empty() ? string("*") : mask;
+    string x_mask    = mask.empty() ? string("*") : mask;
+    string path_base = GetPath();
+    if ( path_base[path_base.size() - 1] != GetPathSeparator() ) {
+        path_base += GetPathSeparator();
+    }
 
 #if defined(NCBI_OS_MSWIN)
     // Append to the "path" mask for all files in directory
-    string pattern = GetPath();
-    if ( pattern[pattern.size()-1] != GetPathSeparator() ) {
-        pattern += GetPathSeparator();
-    }
-    pattern += x_mask;
+    string pattern = path_base + x_mask;
 
     // Open directory stream and try read info about first entry
     struct _finddata_t entry;
     long desc = _findfirst(pattern.c_str(), &entry);  // get first entry's name
     if (desc != -1) {
-        contents.push_back(new CDirEntry(entry.name));
+        contents.push_back(new CDirEntry(path_base + entry.name));
         while ( _findnext(desc, &entry) != -1 ) {
-            contents.push_back(new CDirEntry(entry.name));
+            contents.push_back(new CDirEntry(path_base + entry.name));
         }
     }
     _findclose(desc);
@@ -1124,7 +1124,7 @@ CDir::TEntries CDir::GetEntries(const string& mask) const
     if ( dir ) {
         while (struct dirent* entry = readdir(dir)) {
             if ( MatchesMask(entry->d_name, x_mask.c_str()) ) {
-                contents.push_back(new CDirEntry(entry->d_name));
+                contents.push_back(new CDirEntry(path_base + entry->d_name));
             }
         }
     }
@@ -1404,6 +1404,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2002/11/05 15:46:49  dicuccio
+ * Changed CDir::GetEntries() to store fully qualified path names - this permits
+ * CDirEntry::GetType() to work on files outside of the local directory.
+ *
  * Revision 1.35  2002/10/01 17:23:57  gouriano
  * more fine-tuning of ConvertToOSPath
  *
