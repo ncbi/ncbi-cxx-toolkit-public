@@ -1,0 +1,34 @@
+
+<!-- FILE LIST FORM START -->
+
+<h2><@BOOK_INFO_TYPE@></h2>   
+
+
+<input type="hidden" name="cmd" value="file_list">
+<@BOOK_ATTR@>
+<!--
+<input type="hidden" name="bname" value="<@BOOK_NAME@>">
+<input type="hidden" name="img_id" value="<@IMG_ID@>">
+-->
+
+<table border="1" cellspacing="0" bgcolor="#E8E8E8" cellpadding="10">
+  <tr>
+  <td align="center" valign="center"><@BOOK_ICON@></td>
+  <td>
+    <input type="submit" name="button" value="General Info">
+    <input type="submit" name="button" value="XML Files">
+    <input type="submit" name="button" value="Pictures">
+  </td>
+  </tr>
+  <tr><td colspan=2>
+    <div align="center">
+    <@FILE_LIST@>
+    </div>
+    <hr noshade>    
+    <@BOOK_INFO_BUTTONS@>
+    <input type="submit" name="button" value="Back">
+   </td></tr>
+</table>	 
+
+	 
+<!-- FILE LIST FORM END -->

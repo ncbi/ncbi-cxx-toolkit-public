@@ -1,0 +1,38 @@
+
+<!-- BOOK LIST FORM START -->
+
+<h2>Book List for <i><@UNAME@></i></h2>    
+
+<table border="1" cellspacing="0" bgcolor="#E8E8E8" cellpadding="10"><tr><td>
+
+    <table border="0" width="0" cellspacing="0" cellpadding="5">
+      <tr>
+        <th><br></th>
+        <th align=left><br></th>
+        <th>Book ID</th>
+        <th align=left>Title</th>
+      </tr>
+      <@BOOK_LIST@>
+    </table> 
+    <hr noshade>
+    
+    <input type="hidden" name="cmd" value="book_list">
+    <input type="hidden" name="opt" value="">
+    <input type="submit" name="button" value="Create Book">&nbsp;
+    <script>
+        function is_ok()
+        {
+             return confirm('This will mark selected books as deleted.\nData will be removed from the database later.\nContinue?');
+        }
+    </script>
+    <input type="button" value="Delete" onclick="if(is_ok()) {this.form.opt.value='del'; this.form.submit();} " >&nbsp;
+    <input type="submit" name="button" value="Back">
+
+</td></tr>
+</table>	 
+
+<br><small>* Click on Book's ID or Title to view Book Info.</small>
+<br><small>** Delete button works only if your browser supports JavaScript.</small>
+	 
+	 
+<!-- BOOK LIST FORM END -->
