@@ -27,92 +27,12 @@
 *
 * File Description:
 *   Code to write Genbank/Genpept flat-file records.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.18  2002/03/07 16:45:22  ucko
-* Add missing call to CPubMedId::Get needed on Windows.
-*
-* Revision 1.17  2002/03/06 22:18:25  ucko
-* Whoops, accidentally committed old unfinished publication-ordering
-* changes; clarify their status in a comment.
-*
-* Revision 1.16  2002/03/06 22:08:40  ucko
-* Add code to calculate protein weights.
-*
-* Revision 1.15  2002/01/16 18:56:33  grichenk
-* Removed CRef<> argument from choice variant setter, updated sources to
-* use references instead of CRef<>s
-*
-* Revision 1.14  2001/11/13 15:40:34  ucko
-* Use Idx2Codon to report genetic code variations.
-*
-* Revision 1.13  2001/11/02 20:54:51  ucko
-* Make gbqual.hpp private; clean up cruft from genbank.hpp.
-*
-* Revision 1.12  2001/11/02 20:32:28  ucko
-* Cope better with references to unavailable sequences.
-*
-* Revision 1.11  2001/11/01 16:32:24  ucko
-* Rework qualifier handling to support appropriate reordering
-*
-* Revision 1.10  2001/10/30 20:27:04  ucko
-* Force ASCII from Seq_vectors.
-* Take advantage of new seqfeat functionality.
-* Take advantage of CSeq_loc::GetTotalRange.
-*
-* Revision 1.9  2001/10/18 18:25:38  ucko
-* Fix off-by-one keyword-formatting error.
-* Remove unnecessary code to force use of GI IDs.
-* Take advantage of SerialAssign<CSeq_id>.
-*
-* Revision 1.8  2001/10/17 21:17:49  ucko
-* Seq_vector now properly starts from zero rather than one; adjust code
-* that uses it accordingly.
-*
-* Revision 1.7  2001/10/12 19:49:08  ucko
-* Whoops, use break rather than BREAK for STL iterators.
-*
-* Revision 1.6  2001/10/12 19:32:58  ucko
-* move BREAK to a central location; move CBioseq::GetTitle to object manager
-*
-* Revision 1.5  2001/10/12 15:34:12  ucko
-* Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
-*
-* Revision 1.4  2001/10/12 15:29:07  ucko
-* Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
-* Rewrite GenBank output code to take fuller advantage of the object manager.
-*
-* Revision 1.3  2001/10/04 19:11:55  ucko
-* Centralize (rudimentary) code to get a sequence's title.
-*
-* Revision 1.2  2001/10/02 19:23:30  ucko
-* Avoid dereferencing NULL pointers.
-*
-* Revision 1.1  2001/09/25 20:12:06  ucko
-* More cleanups from Denis.
-* Put utility code in the objects namespace.
-* Moved utility code to {src,include}/objects/util (to become libxobjutil).
-* Moved static members of CGenbankWriter to above their first use.
-*
-* ---------------------------------------------------------------------------
-* old log:
-* Revision 1.4  2001/09/24 14:37:55  ucko
-* Comment out names of unused args to WriteXxx.
-*
-* Revision 1.3  2001/09/21 22:39:07  ucko
-* Fix MSVC build.
-*
-* Revision 1.2  2001/09/05 14:44:59  ucko
-* Use NStr::IntToString instead of Stringify.
-*
-* Revision 1.1  2001/09/04 16:20:53  ucko
-* Dramatically fleshed out id1_fetch
-*
-* ===========================================================================
 */
 
 #include <objects/util/genbank.hpp>
+#include <objects/objmgr/seqdesc_ci.hpp>
+#include <objects/objmgr/feat_ci.hpp>
+#include <objects/objmgr/seq_vector.hpp>
 
 #include <algorithm>
 
@@ -298,7 +218,7 @@ const unsigned int CGenbankWriter::sm_FeatureNameWidth = 16;
 
 bool CGenbankWriter::Write(const CSeq_entry& entry)
 {
-    typedef bool (CGenbankWriter::*TFun)(const CBioseqHandle&);
+    typedef bool (CGenbankWriter::*TFun)(const CBioseq_Handle&);
     static const TFun funlist[]
         = { &CGenbankWriter::WriteLocus,
             &CGenbankWriter::WriteDefinition,
@@ -350,7 +270,7 @@ bool CGenbankWriter::Write(const CSeq_entry& entry)
             }
         }}
 
-        CBioseqHandle handle = m_Scope.GetBioseqHandle(*seq.GetId().front());
+        CBioseq_Handle handle = m_Scope.GetBioseqHandle(*seq.GetId().front());
         for (unsigned int i = 0;  funlist[i];  ++i) {
             if (!(this->*funlist[i])(handle)) {
                 return false;
@@ -422,15 +342,15 @@ static string s_StripDot(const string& s) {
 }
 
 
-bool CGenbankWriter::WriteLocus(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteLocus(const CBioseq_Handle& handle)
 {
-    const CBioseq& seq = m_Scope.GetBioseq(handle);
+    const CBioseq& seq = handle.GetBioseq();
     const CSeq_inst& inst = seq.GetInst();
 
     {{
         string name;
-        for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
-             it;  ++it) {
+        CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
+        for ( ; it;  ++it) {
             if (it->IsSetName()) {
                 name = it->GetName();
             } else {
@@ -538,7 +458,8 @@ bool CGenbankWriter::WriteLocus(const CBioseqHandle& handle)
         string division;
         // Deal with translating EMBL divisions?
 
-        for (CSeqdesc_CI it = m_Scope.BeginDescr(handle);  it;  ++it) {
+        CSeqdesc_CI it(handle);
+        for (;  it;  ++it) {
             if (it->IsOrg()  &&  it->GetOrg().IsSetOrgname()) {
                 const COrgName& info = it->GetOrg().GetOrgname();
                 if (info.IsSetDiv()) {
@@ -565,9 +486,8 @@ bool CGenbankWriter::WriteLocus(const CBioseqHandle& handle)
 
     {{
         const CDate* date = NULL;
-        for (CSeqdesc_CI it(m_Scope.BeginDescr(handle),
-                            CSeqdesc::e_Update_date);
-             it;  ++it) {
+        CSeqdesc_CI it(handle, CSeqdesc::e_Update_date);
+        for (; it;  ++it) {
             date = &it->GetUpdate_date();
             BREAK(it);
         }
@@ -581,9 +501,9 @@ bool CGenbankWriter::WriteLocus(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteDefinition(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteDefinition(const CBioseq_Handle& handle)
 {
-    string definition = m_Scope.GetTitle(handle);
+    string definition = handle.GetTitle();
     if (definition.empty()  ||  definition[definition.size()-1] != '.') {
         definition += '.';
     }
@@ -592,13 +512,16 @@ bool CGenbankWriter::WriteDefinition(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteAccession(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteAccession(const CBioseq_Handle& handle)
 {
-    const CBioseq& seq = m_Scope.GetBioseq(handle);
+    const CBioseq& seq = handle.GetBioseq();
     string accessions;
-    for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);  it;  ++it) {
-        accessions = it->GetAccession();
-        BREAK(it);
+    {
+        CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
+        for (;  it;  ++it) {
+            accessions = it->GetAccession();
+            BREAK(it);
+        }
     }
 
     CTypesConstIterator it;
@@ -631,13 +554,13 @@ bool CGenbankWriter::WriteAccession(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteID(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteID(const CBioseq_Handle& handle)
 {
     if (m_Format == eFormat_Genbank) {
         return true;
     }
 
-    iterate (CBioseq::TId, it, m_Scope.GetBioseq(handle).GetId()) {
+    iterate (CBioseq::TId, it, handle.GetBioseq().GetId()) {
         if ((*it)->IsGi()) {
             m_Stream << s_Pad("PID", sm_KeywordWidth) << 'g' << (*it)->GetGi()
                      << NcbiEndl;
@@ -648,22 +571,28 @@ bool CGenbankWriter::WriteID(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteVersion(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteVersion(const CBioseq_Handle& handle)
 {
-    const CBioseq& seq = m_Scope.GetBioseq(handle);
+    const CBioseq& seq = handle.GetBioseq();
     string accession;
     int version;
-    for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);  it;  ++it) {
-        accession = it->GetAccession();
-        version = it->GetVersion();
-        BREAK(it);
+    {
+        CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
+        for (;  it;  ++it) {
+            accession = it->GetAccession();
+            version = it->GetVersion();
+            BREAK(it);
+        }
     }
 
     int gi = 0;
-    for (CTypeConstIterator<CSeq_id> it = ConstBegin(seq);  it;  ++it) {
-        if (it->IsGi()) {
-            gi = it->GetGi();
-            BREAK(it);
+    {
+        CTypeConstIterator<CSeq_id> it = ConstBegin(seq);
+        for (;  it;  ++it) {
+            if (it->IsGi()) {
+                gi = it->GetGi();
+                BREAK(it);
+            }
         }
     }
     m_Stream << s_Pad("VERSION", sm_KeywordWidth) << accession
@@ -672,7 +601,7 @@ bool CGenbankWriter::WriteVersion(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteDBSource(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteDBSource(const CBioseq_Handle& handle)
 {
     if (m_Format == eFormat_Genbank) {
         return true;
@@ -683,11 +612,11 @@ bool CGenbankWriter::WriteDBSource(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteKeywords(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteKeywords(const CBioseq_Handle& handle)
 {
     vector<string> keywords;
 
-    for (CSeqdesc_CI it = m_Scope.BeginDescr(handle);  it;  ++it) {
+    for (CSeqdesc_CI it(handle);  it;  ++it) {
         switch (it->Which()) {
         case CSeqdesc::e_Genbank:
         {
@@ -766,9 +695,9 @@ bool CGenbankWriter::WriteKeywords(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteSegment(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteSegment(const CBioseq_Handle& handle)
 {
-    const CBioseq& seq = m_Scope.GetBioseq(handle);
+    const CBioseq& seq = handle.GetBioseq();
     const CSeq_entry* parent_entry = seq.GetParentEntry()->GetParentEntry();
     if (parent_entry == NULL  ||  !parent_entry->IsSet()) {
         return true; // nothing to do
@@ -795,10 +724,10 @@ bool CGenbankWriter::WriteSegment(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteSource(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteSource(const CBioseq_Handle& handle)
 {
     string source, taxname, lineage;
-    for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Genbank);
+    for (CSeqdesc_CI it(handle, CSeqdesc::e_Genbank);
          it;  ++it) {
         const CGB_block& gb = it->GetGenbank();
         if (gb.IsSetSource()  &&  source.empty()) {
@@ -809,7 +738,7 @@ bool CGenbankWriter::WriteSource(const CBioseqHandle& handle)
         }
     }            
 
-    for (CDesc_CI desc_it = m_Scope.BeginDescr(handle);  desc_it;  ++desc_it) {
+    for (CDesc_CI desc_it(handle);  desc_it;  ++desc_it) {
         for (CTypeConstIterator<COrg_ref> it = ConstBegin(*desc_it);
              it;  ++it) {
             if (it->IsSetCommon()  &&  source.empty()) {
@@ -1077,9 +1006,12 @@ CReference::CReference(const CPubdesc& pub, const CSeq_loc& loc)
     }
         
 
-    for (CTypeConstIterator<CDate_std> it = ConstBegin(pub);  it;  ++it) {
-        m_Date = &*it;
-        BREAK(it);
+    {
+        CTypeConstIterator<CDate_std> it = ConstBegin(pub);
+        for (;  it;  ++it) {
+            m_Date = &*it;
+            BREAK(it);
+        }
     }
 
     {{
@@ -1239,9 +1171,9 @@ bool CRefLess::operator()(CConstRef<CReference> ref1,
 }
 
 
-bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteReference(const CBioseq_Handle& handle)
 {
-    const CBioseq& seq = m_Scope.GetBioseq(handle);
+    const CBioseq& seq = handle.GetBioseq();
     CSeq_loc everywhere;
     vector< CConstRef<CReference> > v;
 
@@ -1256,13 +1188,13 @@ bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
             SerialAssign<CSeq_id>(si.SetId(), *id);
         }}
 
-        for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Pub);
+        for (CSeqdesc_CI it(handle, CSeqdesc::e_Pub);
              it;  ++it) {
             v.push_back(new CReference(it->GetPub(), everywhere));
         }
 
         // get references from features
-        for (CFeat_CI pub = m_Scope.BeginFeat(everywhere, CSeqFeatData::e_Pub);
+        for (CFeat_CI pub(m_Scope, everywhere, CSeqFeatData::e_Pub);
              pub;  ++pub) {
             v.push_back(new CReference(pub->GetData().GetPub(),
                                        pub->GetLocation()));
@@ -1486,10 +1418,10 @@ bool CGenbankWriter::WriteReference(const CBioseqHandle& handle)
 }
 
 
-bool CGenbankWriter::WriteComment(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteComment(const CBioseq_Handle& handle)
 {
     string comments;
-    for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Comment);
+    for (CSeqdesc_CI it(handle, CSeqdesc::e_Comment);
          it;  ++it) {
         if (!comments.empty()) {
             comments += "~~"; // blank line between comments
@@ -1596,9 +1528,9 @@ static const char* s_ASCIIToAbbrev(char aa)
 }
 
 
-bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteFeatures(const CBioseq_Handle& handle)
 {
-    const CBioseq& seq = m_Scope.GetBioseq(handle);
+    const CBioseq& seq = handle.GetBioseq();
     CSeq_loc everywhere;
     everywhere.SetWhole(*seq.GetId().front());
 
@@ -1608,8 +1540,8 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
     {{
         WriteFeatureLocation("source", everywhere, seq);
         bool found_source = false;
-        for (CSeqdesc_CI it(m_Scope.BeginDescr(handle), CSeqdesc::e_Source);
-             it;  ++it) {
+        CSeqdesc_CI it(handle, CSeqdesc::e_Source);
+        for (; it;  ++it) {
             TGBSQuals quals = s_SourceQualifiers(it->GetSource());
             iterate (TGBSQuals, qual, quals) {
                 WriteFeatureQualifier(qual->ToString());
@@ -1624,8 +1556,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
 
     typedef vector< CConstRef<CSeq_feat> > TFeatVect;
     TFeatVect v;
-    for (CFeat_CI feat
-             = m_Scope.BeginFeat(everywhere, CSeqFeatData::e_not_set);
+    for (CFeat_CI feat(m_Scope,everywhere, CSeqFeatData::e_not_set);
          feat;  ++feat) {
         if ((feat->GetData().Which() == CSeqFeatData::e_Prot
              &&  m_Format != eFormat_Genpept)
@@ -1970,7 +1901,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         if ((*feat)->GetData().Which() != CSeqFeatData::e_Biosrc) {
             try {
                 // handle "CAnnot_CI::CAnnot_CI() -- unsupported location type"
-                for (CFeat_CI gene = m_Scope.BeginFeat((*feat)->GetLocation(),
+                for (CFeat_CI gene(m_Scope,(*feat)->GetLocation(),
                                                        CSeqFeatData::e_Gene);
                      gene;  ++gene) {
                     if (gene->GetData().GetGene().IsSetLocus()) {
@@ -1985,9 +1916,9 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
 
         if ((*feat)->IsSetPartial()  &&  (*feat)->GetPartial()) {
             bool fuzzy = false;
-            for (CTypeConstIterator<CInt_fuzz> it
+            CTypeConstIterator<CInt_fuzz> it
                      = ConstBegin((*feat)->GetLocation());
-                 it;  ++it) {
+            for (; it;  ++it) {
                 fuzzy = true;
                 BREAK(it);
             }
@@ -2003,7 +1934,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
         if ((*feat)->IsSetProduct()  &&  m_Format != eFormat_Genpept) {
             try {
                 // handle "CAnnot_CI::CAnnot_CI() -- unsupported location type"
-                for (CFeat_CI prot = m_Scope.BeginFeat((*feat)->GetProduct(),
+                for (CFeat_CI prot(m_Scope,(*feat)->GetProduct(),
                                                        CSeqFeatData::e_Prot);
                      prot;  ++prot) {
                     s_AddProteinQualifiers(gbfeat, prot->GetData().GetProt());
@@ -2012,9 +1943,9 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                 ERR_POST(Warning << e.what());
             } 
             {{
-                const CBioseqHandle& prot_handle
+                const CBioseq_Handle& prot_handle
                     = m_Scope.GetBioseqHandle(s_GetID((*feat)->GetProduct()));
-                const CBioseq& prot_seq = m_Scope.GetBioseq(prot_handle);
+                const CBioseq& prot_seq = prot_handle.GetBioseq();
                 const CTextseq_id* tsid;
                 iterate(CBioseq::TId, it, prot_seq.GetId()) {
                     if ((tsid = (*it)->GetTextseq_Id()) != NULL) {
@@ -2028,7 +1959,7 @@ bool CGenbankWriter::WriteFeatures(const CBioseqHandle& handle)
                     }
                 }
                 {{
-                    CSeq_vector vec = m_Scope.GetSequence(prot_handle);
+                    CSeqVector vec = prot_handle.GetSeqVector();
                     vec.SetIupacCoding();
                     string data;
                     data.resize(vec.size());
@@ -2358,13 +2289,13 @@ static TGBSQuals s_SourceQualifiers(const CBioSource& source)
 }
 
 
-bool CGenbankWriter::WriteSequence(const CBioseqHandle& handle)
+bool CGenbankWriter::WriteSequence(const CBioseq_Handle& handle)
 {
-    CSeq_vector vec = m_Scope.GetSequence(handle);
+    CSeqVector vec = handle.GetSeqVector();
     vec.SetIupacCoding();
     if (m_Format == eFormat_Genbank) {
-        size_t a = 0, c = 0, g = 0, t = 0, other = 0;
-        for (size_t pos = 0;  pos < vec.size();  ++pos) {
+        TSeqPos a = 0, c = 0, g = 0, t = 0, other = 0;
+        for (TSeqPos pos = 0;  pos < vec.size();  ++pos) {
             switch (vec[pos]) {
             case 'A': ++a;     break;
             case 'C': ++c;     break;
@@ -2385,7 +2316,7 @@ bool CGenbankWriter::WriteSequence(const CBioseqHandle& handle)
         m_Stream << NcbiEndl;
     }
     m_Stream << s_Pad("ORIGIN", sm_KeywordWidth);
-    for (size_t n = 0;  n < vec.size();  ++n) {
+    for (TSeqPos n = 0;  n < vec.size();  ++n) {
         if (n % 60 == 0) {
             m_Stream << NcbiEndl << setw(9) << n + 1 << ' ';
         } else if (n % 10 == 0) {
@@ -2453,9 +2384,9 @@ void CGenbankWriter::FormatIDPrefix(const CSeq_id& id,
     if (tsid == NULL) {
         try {
             const CBioseq& seq
-                = m_Scope.GetBioseq(m_Scope.GetBioseqHandle(id));
-            for (CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
-                 it;  ++it) {
+                = m_Scope.GetBioseqHandle(id).GetBioseq();
+            CTypeConstIterator<CTextseq_id> it = ConstBegin(seq);
+            for (; it;  ++it) {
                 tsid = &*it;
                 BREAK(it);
             }
@@ -2471,12 +2402,13 @@ void CGenbankWriter::FormatIDPrefix(const CSeq_id& id,
 }
 
 
-static void s_FormatFuzzyInt(const CInt_fuzz& fuzz, int n, CNcbiOstream& dest)
+static void s_FormatFuzzyPoint(const CInt_fuzz& fuzz, TSeqPos n,
+                               CNcbiOstream& dest)
 {
     switch (fuzz.Which()) {
     case CInt_fuzz::e_P_m:
     {
-        int delta = fuzz.GetP_m();
+        TSeqPos delta = fuzz.GetP_m();
         dest << '(' << (n - delta) << '.' << (n + delta) << ')';
         break;
     }
@@ -2490,7 +2422,7 @@ static void s_FormatFuzzyInt(const CInt_fuzz& fuzz, int n, CNcbiOstream& dest)
 
     case CInt_fuzz::e_Pct:
     {
-        int delta = n * fuzz.GetPct() / 1000;
+        TSeqPos delta = n * fuzz.GetPct() / 1000;
         dest << '(' << (n - delta) << '.' << (n + delta) << ')';
         break;
     }
@@ -2547,14 +2479,14 @@ void CGenbankWriter::FormatFeatureInterval(const CSeq_interval& interval,
     dest << StrandPrefix(interval);
     FormatIDPrefix(interval.GetId(), default_seq, dest);
     if (interval.IsSetFuzz_from()) {
-        s_FormatFuzzyInt(interval.GetFuzz_from(), interval.GetFrom() + 1,
-                         dest);
+        s_FormatFuzzyPoint(interval.GetFuzz_from(), interval.GetFrom() + 1,
+                           dest);
     } else {
         dest << (interval.GetFrom() + 1);
     }
     dest << "..";
     if (interval.IsSetFuzz_to()) {
-        s_FormatFuzzyInt(interval.GetFuzz_to(), interval.GetTo() + 1, dest);
+        s_FormatFuzzyPoint(interval.GetFuzz_to(), interval.GetTo() + 1, dest);
     } else {
         dest << (interval.GetTo() + 1);
     }
@@ -2574,8 +2506,8 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         const CSeq_id& id = location.GetWhole();
         FormatIDPrefix(id, default_seq, dest);
         try {
-            const CBioseqHandle& handle = m_Scope.GetBioseqHandle(id);
-            const CScope::TBioseqCore core = m_Scope.GetBioseqCore(handle);
+            const CBioseq_Handle& handle = m_Scope.GetBioseqHandle(id);
+            const CBioseq_Handle::TBioseqCore core = handle.GetBioseqCore();
             if (core) {
                 dest << "1.." << (core->GetInst().GetLength());
             } else {
@@ -2614,7 +2546,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         dest << StrandPrefix(pnt);
         FormatIDPrefix(pnt.GetId(), default_seq, dest);
         if (pnt.IsSetFuzz()) {
-            s_FormatFuzzyInt(pnt.GetFuzz(), pnt.GetPoint() + 1, dest);
+            s_FormatFuzzyPoint(pnt.GetFuzz(), pnt.GetPoint() + 1, dest);
         } else {
             dest << pnt.GetPoint();
         }
@@ -2632,7 +2564,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
                 dest << ',';
             }
             if (pp.IsSetFuzz()) {
-                s_FormatFuzzyInt(pp.GetFuzz(), *it + 1, dest);
+                s_FormatFuzzyPoint(pp.GetFuzz(), *it + 1, dest);
             } else {
                 dest << *it;
             }
@@ -2672,7 +2604,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
         dest << StrandPrefix(a);
         FormatIDPrefix(a.GetId(), default_seq, dest);
         if (a.IsSetFuzz()) {
-            s_FormatFuzzyInt(a.GetFuzz(), a.GetPoint() + 1, dest);
+            s_FormatFuzzyPoint(a.GetFuzz(), a.GetPoint() + 1, dest);
         } else {
             dest << a.GetPoint();
         }
@@ -2682,7 +2614,7 @@ void CGenbankWriter::FormatFeatureLocation(const CSeq_loc& location,
             dest << ',' << StrandPrefix(b);
             FormatIDPrefix(b.GetId(), default_seq, dest);
             if (b.IsSetFuzz()) {
-                s_FormatFuzzyInt(b.GetFuzz(), b.GetPoint() + 1, dest);
+                s_FormatFuzzyPoint(b.GetFuzz(), b.GetPoint() + 1, dest);
             } else {
                 dest << b.GetPoint();
             }
@@ -2707,8 +2639,8 @@ const CSeq_feat& CGenbankWriter::FindFeature(const CFeat_id& id,
                                              const CBioseq& default_seq)
 {
     static CSeq_feat dummy;
-    const CSeq_entry& tse = m_Scope.GetTSE(m_Scope.GetBioseqHandle
-                                           (*default_seq.GetId().front()));
+    const CSeq_entry& tse =
+        m_Scope.GetBioseqHandle(*default_seq.GetId().front()).GetTopLevelSeqEntry();
     CTypeConstIterator<CSeq_feat> it = ConstBegin(tse);
     // declared outside loop to avoid WorkShop bug. :-/
     for (;  it;  ++it) {
@@ -2827,3 +2759,108 @@ void CGenbankWriter::WriteFeatureQualifier(const string& qual)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.19  2002/05/06 16:11:01  ucko
+* Merge in Andrei Gourianov's changes to use the new OM (thanks!)
+* Move CVS log to end.
+*
+*
+* *** These four entries are from src/app/id1_fetch1/genbank1.cpp ***
+* Revision 1.4  2002/05/06 03:31:52  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.3  2002/05/03 21:28:21  ucko
+* Introduce T(Signed)SeqPos.
+*
+* Revision 1.2  2002/04/10 21:02:22  gouriano
+* moved construction of iterators out of "for" loop initialization:
+* Sun Workshop compiler does not call destructors of such objects
+* in case we use break to exit the loop
+*
+* Revision 1.1  2002/04/04 16:31:36  gouriano
+* id1_fetch1 - modified version of id1_fetch, which uses objmgr1
+*
+* Revision 1.18  2002/03/07 16:45:22  ucko
+* Add missing call to CPubMedId::Get needed on Windows.
+*
+* Revision 1.17  2002/03/06 22:18:25  ucko
+* Whoops, accidentally committed old unfinished publication-ordering
+* changes; clarify their status in a comment.
+*
+* Revision 1.16  2002/03/06 22:08:40  ucko
+* Add code to calculate protein weights.
+*
+* Revision 1.15  2002/01/16 18:56:33  grichenk
+* Removed CRef<> argument from choice variant setter, updated sources to
+* use references instead of CRef<>s
+*
+* Revision 1.14  2001/11/13 15:40:34  ucko
+* Use Idx2Codon to report genetic code variations.
+*
+* Revision 1.13  2001/11/02 20:54:51  ucko
+* Make gbqual.hpp private; clean up cruft from genbank.hpp.
+*
+* Revision 1.12  2001/11/02 20:32:28  ucko
+* Cope better with references to unavailable sequences.
+*
+* Revision 1.11  2001/11/01 16:32:24  ucko
+* Rework qualifier handling to support appropriate reordering
+*
+* Revision 1.10  2001/10/30 20:27:04  ucko
+* Force ASCII from Seq_vectors.
+* Take advantage of new seqfeat functionality.
+* Take advantage of CSeq_loc::GetTotalRange.
+*
+* Revision 1.9  2001/10/18 18:25:38  ucko
+* Fix off-by-one keyword-formatting error.
+* Remove unnecessary code to force use of GI IDs.
+* Take advantage of SerialAssign<CSeq_id>.
+*
+* Revision 1.8  2001/10/17 21:17:49  ucko
+* Seq_vector now properly starts from zero rather than one; adjust code
+* that uses it accordingly.
+*
+* Revision 1.7  2001/10/12 19:49:08  ucko
+* Whoops, use break rather than BREAK for STL iterators.
+*
+* Revision 1.6  2001/10/12 19:32:58  ucko
+* move BREAK to a central location; move CBioseq::GetTitle to object manager
+*
+* Revision 1.5  2001/10/12 15:34:12  ucko
+* Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
+*
+* Revision 1.4  2001/10/12 15:29:07  ucko
+* Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
+* Rewrite GenBank output code to take fuller advantage of the object manager.
+*
+* Revision 1.3  2001/10/04 19:11:55  ucko
+* Centralize (rudimentary) code to get a sequence's title.
+*
+* Revision 1.2  2001/10/02 19:23:30  ucko
+* Avoid dereferencing NULL pointers.
+*
+* Revision 1.1  2001/09/25 20:12:06  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
+*
+* ---------------------------------------------------------------------------
+* old log:
+* Revision 1.4  2001/09/24 14:37:55  ucko
+* Comment out names of unused args to WriteXxx.
+*
+* Revision 1.3  2001/09/21 22:39:07  ucko
+* Fix MSVC build.
+*
+* Revision 1.2  2001/09/05 14:44:59  ucko
+* Use NStr::IntToString instead of Stringify.
+*
+* Revision 1.1  2001/09/04 16:20:53  ucko
+* Dramatically fleshed out id1_fetch
+*
+* ===========================================================================
+*/

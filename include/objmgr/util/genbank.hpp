@@ -30,42 +30,14 @@
 *
 * File Description:
 *   Code to write Genbank/Genpept flat-file records.
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.7  2002/05/06 03:40:19  vakatov
-* OM/OM1 renaming
-*
-* Revision 1.6  2001/12/07 18:52:02  grichenk
-* Updated "#include"-s and forward declarations to work with the
-* new datatool version.
-*
-* Revision 1.5  2001/11/02 20:54:50  ucko
-* Make gbqual.hpp private; clean up cruft from genbank.hpp.
-*
-* Revision 1.4  2001/11/01 16:32:23  ucko
-* Rework qualifier handling to support appropriate reordering
-*
-* Revision 1.3  2001/10/12 15:34:16  ucko
-* Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
-*
-* Revision 1.2  2001/10/12 15:29:04  ucko
-* Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
-* Rewrite GenBank output code to take fuller advantage of the object manager.
-*
-* Revision 1.1  2001/09/25 20:12:04  ucko
-* More cleanups from Denis.
-* Put utility code in the objects namespace.
-* Moved utility code to {src,include}/objects/util (to become libxobjutil).
-* Moved static members of CGenbankWriter to above their first use.
-*
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <objects/objmgr_old/objmgr.hpp>
+
+#include <objects/objmgr/object_manager.hpp>
+#include <objects/objmgr/scope.hpp>
+#include <objects/objmgr/bioseq_handle.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -113,19 +85,19 @@ private:
 
     void SetParameters(void); // sets formatting parameters (below)
 
-    bool WriteLocus     (const CBioseqHandle& handle);
-    bool WriteDefinition(const CBioseqHandle& handle);
-    bool WriteAccession (const CBioseqHandle& handle);
-    bool WriteID        (const CBioseqHandle& handle);
-    bool WriteVersion   (const CBioseqHandle& handle);
-    bool WriteDBSource  (const CBioseqHandle& handle);
-    bool WriteKeywords  (const CBioseqHandle& handle);
-    bool WriteSegment   (const CBioseqHandle& handle);
-    bool WriteSource    (const CBioseqHandle& handle);
-    bool WriteReference (const CBioseqHandle& handle);
-    bool WriteComment   (const CBioseqHandle& handle);
-    bool WriteFeatures  (const CBioseqHandle& handle);
-    bool WriteSequence  (const CBioseqHandle& handle);
+    bool WriteLocus     (const CBioseq_Handle& handle);
+    bool WriteDefinition(const CBioseq_Handle& handle);
+    bool WriteAccession (const CBioseq_Handle& handle);
+    bool WriteID        (const CBioseq_Handle& handle);
+    bool WriteVersion   (const CBioseq_Handle& handle);
+    bool WriteDBSource  (const CBioseq_Handle& handle);
+    bool WriteKeywords  (const CBioseq_Handle& handle);
+    bool WriteSegment   (const CBioseq_Handle& handle);
+    bool WriteSource    (const CBioseq_Handle& handle);
+    bool WriteReference (const CBioseq_Handle& handle);
+    bool WriteComment   (const CBioseq_Handle& handle);
+    bool WriteFeatures  (const CBioseq_Handle& handle);
+    bool WriteSequence  (const CBioseq_Handle& handle);
 
     void Wrap(const string& keyword, const string& contents,
               unsigned int indent = sm_KeywordWidth);
@@ -163,4 +135,43 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.8  2002/05/06 16:11:12  ucko
+* Merge in Andrei Gourianov's changes to use the new OM (thanks!)
+* Move CVS log to end.
+*
+*
+* *** These two entries are from src/app/id1_fetch1/genbank1.hpp ***
+* Revision 1.2  2002/05/06 03:31:52  vakatov
+* OM/OM1 renaming
+*
+* Revision 1.1  2002/04/04 16:31:36  gouriano
+* id1_fetch1 - modified version of id1_fetch, which uses objmgr1
+*
+* Revision 1.6  2001/12/07 18:52:02  grichenk
+* Updated "#include"-s and forward declarations to work with the
+* new datatool version.
+*
+* Revision 1.5  2001/11/02 20:54:50  ucko
+* Make gbqual.hpp private; clean up cruft from genbank.hpp.
+*
+* Revision 1.4  2001/11/01 16:32:23  ucko
+* Rework qualifier handling to support appropriate reordering
+*
+* Revision 1.3  2001/10/12 15:34:16  ucko
+* Edit in-source version of CVS log to avoid end-of-comment marker.  (Oops.)
+*
+* Revision 1.2  2001/10/12 15:29:04  ucko
+* Drop {src,include}/objects/util/asciiseqdata.* in favor of CSeq_vector.
+* Rewrite GenBank output code to take fuller advantage of the object manager.
+*
+* Revision 1.1  2001/09/25 20:12:04  ucko
+* More cleanups from Denis.
+* Put utility code in the objects namespace.
+* Moved utility code to {src,include}/objects/util (to become libxobjutil).
+* Moved static members of CGenbankWriter to above their first use.
+* ===========================================================================
+*/
 #endif  /* GENBANK__HPP */
