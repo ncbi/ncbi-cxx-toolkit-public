@@ -30,8 +30,8 @@
 * ===========================================================================
 */
 
+#include <algo/nw_aligner.hpp>
 #include "nwa.hpp"
-#include <algorithm>
 
 USING_NCBI_SCOPE;
 
@@ -44,6 +44,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2002/12/12 18:01:33  kapustin
+ * Update the headers list
+ *
  * Revision 1.1  2002/12/06 17:44:26  ivanov
  * Initial revision
  *
