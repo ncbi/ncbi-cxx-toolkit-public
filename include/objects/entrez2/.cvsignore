@@ -8,6 +8,9 @@ Entrez2_boolean_term.hpp
 Entrez2_db_id.hpp
 Entrez2_db_info.hpp
 Entrez2_docsum.hpp
+Entrez2_docsum_data.hpp
+Entrez2_docsum_field_info.hpp
+Entrez2_docsum_field_type.hpp
 Entrez2_docsum_list.hpp
 Entrez2_dt.hpp
 Entrez2_dt_filter.hpp

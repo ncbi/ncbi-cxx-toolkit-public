@@ -13,6 +13,9 @@ Entrez2_boolean_term.cpp
 Entrez2_db_id.cpp
 Entrez2_db_info.cpp
 Entrez2_docsum.cpp
+Entrez2_docsum_data.cpp
+Entrez2_docsum_field_info.cpp
+Entrez2_docsum_field_type.cpp
 Entrez2_docsum_list.cpp
 Entrez2_dt.cpp
 Entrez2_dt_filter.cpp
