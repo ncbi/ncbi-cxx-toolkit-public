@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.9  2004/02/26 18:52:34  kholodov
+* Added: more trace messages
+*
 * Revision 1.8  2002/12/05 17:37:23  kholodov
 * Fixed: potential memory leak in CStatement::HasMoreResults() method
 * Modified: getter and setter name for the internal CDB_Result pointer.
@@ -95,23 +98,27 @@ CDB_RPCCmd* CCallableStatement::GetRpcCmd()
 
 bool CCallableStatement::HasMoreResults()
 {
+    _TRACE("CCallableStatement::HasMoreResults(): Calling parent method");
+    bool more = CStatement::HasMoreResults();
+    if( more 
+        && GetCDB_Result() != 0 
+        && GetCDB_Result()->ResultType() == eDB_StatusResult ) {
+      
+        _TRACE("CCallableStatement::HasMoreResults(): Status result received");
+        CDB_Int *res = 0;
+        while( GetCDB_Result()->Fetch() ) {
+            res = dynamic_cast<CDB_Int*>(GetCDB_Result()->GetItem());
+        }
+        if( res != 0 ) {
+            m_status = res->Value();
+            _TRACE("CCallableStatement::HasMoreResults(): Return status " 
+                   << m_status );
+            delete res;
+        }
 
-  bool more = CStatement::HasMoreResults();
-  if( more 
-      && GetCDB_Result() != 0 
-      && GetCDB_Result()->ResultType() == eDB_StatusResult ) {
-
-    CDB_Int *res = 0;
-    while( GetCDB_Result()->Fetch() ) {
-      res = dynamic_cast<CDB_Int*>(GetCDB_Result()->GetItem());
+        more = CStatement::HasMoreResults();
     }
-    if( res != 0 )
-      m_status = res->Value();
-    delete res;
-
-    more = CStatement::HasMoreResults();
-  }
-  return more;
+    return more;
 }
   
 void CCallableStatement::SetParam(const CVariant& v, 

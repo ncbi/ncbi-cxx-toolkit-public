@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.15  2004/02/26 18:52:34  kholodov
+* Added: more trace messages
+*
 * Revision 1.14  2004/02/26 16:56:01  kholodov
 * Added: Trace message to HasMoreResults()
 *
@@ -140,7 +143,7 @@ IResultSet* CStatement::GetResultSet()
         return 0;
 
     if( m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() != m_rs) ) {
-        _TRACE(GetIdent() << "::GetResultSet(): CDB_Result " << (void*)m_rs << " requested");
+        _TRACE("CStatement::GetResultSet(): CDB_Result " << (void*)m_rs << " requested");
         CResultSet *ri = new CResultSet(m_conn, m_rs);
         ri->AddListener(this);
         AddListener(ri);
@@ -162,7 +165,7 @@ bool CStatement::HasMoreResults()
             return false;
         }
         SetCDB_Result(GetBaseCmd()->Result()); 
-        _TRACE(GetIdent() << "::HasMoreResults(): CDB_Result " 
+        _TRACE("CStatement::HasMoreResults(): CDB_Result " 
                << (void*)m_rs << " obtained");
         if( m_rs == 0 )
             m_rowCount = GetBaseCmd()->RowCount();
@@ -284,7 +287,7 @@ void CStatement::Action(const CDbapiEvent& e)
         }
         else if((rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
             if( rs->GetCDB_Result() == m_rs ) {
-                _TRACE("Clearing cached CDB_Result " << (void*)rs); 
+                _TRACE("Clearing cached CDB_Result " << (void*)m_rs); 
                 m_rs = 0;
             }
         }
