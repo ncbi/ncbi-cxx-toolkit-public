@@ -27,94 +27,6 @@
 *
 * File Description:
 *   Common pager box
-*
-* ---------------------------------------------------------------------------
-* $Log$
-* Revision 1.26  2001/06/05 14:20:36  golikov
-* alt text for page numbers added
-*
-* Revision 1.25  2001/05/17 15:05:42  lavr
-* Typos corrected
-*
-* Revision 1.24  2001/03/06 21:35:26  golikov
-* some const changes
-*
-* Revision 1.23  2000/08/31 18:45:08  golikov
-* GetDisplayPage renamed to GetDisplayedPage
-* GetDisplayPage return now current page, not previous shown as before
-*
-* Revision 1.22  2000/05/24 20:57:14  vasilche
-* Use new macro _DEBUG_ARG to avoid warning about unused argument.
-*
-* Revision 1.21  2000/01/11 20:10:23  golikov
-* Text modified on graybar
-*
-* Revision 1.20  1999/09/15 21:09:03  vasilche
-* Fixed bug with lost const_iterator
-*
-* Revision 1.19  1999/09/15 18:28:32  vasilche
-* Fixed coredump occurred in jrbrowser.
-*
-* Revision 1.18  1999/09/13 15:37:39  golikov
-* Image sizes in page numbers added
-*
-* Revision 1.17  1999/06/25 20:02:38  golikov
-* "Show:" transferred to pager
-*
-* Revision 1.16  1999/06/11 20:30:30  vasilche
-* We should catch exception by reference, because catching by value
-* doesn't preserve comment string.
-*
-* Revision 1.15  1999/06/07 15:21:05  vasilche
-* Fixed some warnings.
-*
-* Revision 1.14  1999/06/04 16:35:29  golikov
-* Fix
-*
-* Revision 1.13  1999/06/04 13:38:46  golikov
-* Items counter shown always
-*
-* Revision 1.12  1999/05/11 02:53:56  vakatov
-* Moved CGI API from "corelib/" to "cgi/"
-*
-* Revision 1.11  1999/04/16 17:45:36  vakatov
-* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
-*
-* Revision 1.10  1999/04/15 22:11:32  vakatov
-* "min/max" --> "NcbiMin/Max"
-*
-* Revision 1.9  1999/04/15 19:48:24  vasilche
-* Fixed several warnings detected by GCC
-*
-* Revision 1.8  1999/04/14 19:50:28  vasilche
-* Fixed coredump. One more bug with map::const_iterator
-*
-* Revision 1.7  1999/04/14 17:29:01  vasilche
-* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
-* As a result special parameter is added with empty name: "=cmd"
-*
-* Revision 1.6  1999/04/06 19:33:41  vasilche
-* Added defalut page size.
-*
-* Revision 1.5  1999/02/17 22:03:17  vasilche
-* Assed AsnMemoryRead & AsnMemoryWrite.
-* Pager now may return NULL for some components if it contains only one
-* page.
-*
-* Revision 1.4  1999/01/21 21:13:00  vasilche
-* Added/used descriptions for HTML submit/select/text.
-* Fixed some bugs in paging.
-*
-* Revision 1.3  1999/01/21 16:18:06  sandomir
-* minor changes due to NStr namespace to contain string utility functions
-*
-* Revision 1.2  1999/01/20 21:41:36  vasilche
-* Fixed bug with lost current page.
-*
-* Revision 1.1  1999/01/19 21:17:42  vasilche
-* Added CPager class
-*
-* ===========================================================================
 */
 
 #include <corelib/ncbistd.hpp>
@@ -141,23 +53,24 @@ CPager::CPager(const CCgiRequest& request, int pageBlockSize, int defaultPageSiz
         // look in preprocessed IMAGE values with empty string key
         TCgiEntriesCI i = entries.find(NcbiEmptyString);
         if ( i != entries.end() ) {
-            if ( i->second == KParam_PreviousPages ) {
+            const string& value = i->second;
+            if ( value == KParam_PreviousPages ) {
                 // previous pages
                 // round to previous page block
                 m_PageChanged = true;
                 int page = GetDisplayedPage(request);
                 m_DisplayPage = page - page % m_PageBlockSize - 1;
             }
-            else if ( i->second == KParam_NextPages ) {
+            else if ( value == KParam_NextPages ) {
                 // next pages
                 // round to next page block
                 m_PageChanged = true;
                 int page = GetDisplayedPage(request);
                 m_DisplayPage = page - page % m_PageBlockSize + m_PageBlockSize;
             }
-            else if ( NStr::StartsWith(i->second, KParam_Page) ) {
+            else if ( NStr::StartsWith(value, KParam_Page) ) {
                 // look for params like: "page 2"
-                string page = i->second.substr(KParam_Page.size());
+                string page = value.substr(KParam_Page.size());
                 try {
                     m_DisplayPage = NStr::StringToInt(page) - 1;
                     m_PageChanged = true;
@@ -199,17 +112,18 @@ bool CPager::IsPagerCommand(const CCgiRequest& request)
     // look in preprocessed IMAGE values with empty string key
     TCgiEntriesI i = entries.find(NcbiEmptyString);
     if ( i != entries.end() ) {
-        if ( i->second == KParam_PreviousPages ) {
+        const string& value = i->second;
+        if ( value == KParam_PreviousPages ) {
             // previous pages
             return true;
         }
-        else if ( i->second == KParam_NextPages ) {
+        else if ( value == KParam_NextPages ) {
             // next pages
             return true;
         }
-        else if ( NStr::StartsWith(i->second, KParam_Page) ) {
+        else if ( NStr::StartsWith(value, KParam_Page) ) {
             // look for params like: "page 2"
-            string page = i->second.substr(KParam_Page.size());
+            string page = value.substr(KParam_Page.size());
             try {
                 NStr::StringToInt(page);
                 return true;
@@ -414,3 +328,97 @@ void CPagerView::CreateSubNodes()
 }
 
 END_NCBI_SCOPE
+
+/*
+* ===========================================================================
+* $Log$
+* Revision 1.27  2002/07/10 18:43:27  ucko
+* Adapt slightly for CCgiEntry.
+* Move CVS log to end.
+*
+* Revision 1.26  2001/06/05 14:20:36  golikov
+* alt text for page numbers added
+*
+* Revision 1.25  2001/05/17 15:05:42  lavr
+* Typos corrected
+*
+* Revision 1.24  2001/03/06 21:35:26  golikov
+* some const changes
+*
+* Revision 1.23  2000/08/31 18:45:08  golikov
+* GetDisplayPage renamed to GetDisplayedPage
+* GetDisplayPage return now current page, not previous shown as before
+*
+* Revision 1.22  2000/05/24 20:57:14  vasilche
+* Use new macro _DEBUG_ARG to avoid warning about unused argument.
+*
+* Revision 1.21  2000/01/11 20:10:23  golikov
+* Text modified on graybar
+*
+* Revision 1.20  1999/09/15 21:09:03  vasilche
+* Fixed bug with lost const_iterator
+*
+* Revision 1.19  1999/09/15 18:28:32  vasilche
+* Fixed coredump occurred in jrbrowser.
+*
+* Revision 1.18  1999/09/13 15:37:39  golikov
+* Image sizes in page numbers added
+*
+* Revision 1.17  1999/06/25 20:02:38  golikov
+* "Show:" transferred to pager
+*
+* Revision 1.16  1999/06/11 20:30:30  vasilche
+* We should catch exception by reference, because catching by value
+* doesn't preserve comment string.
+*
+* Revision 1.15  1999/06/07 15:21:05  vasilche
+* Fixed some warnings.
+*
+* Revision 1.14  1999/06/04 16:35:29  golikov
+* Fix
+*
+* Revision 1.13  1999/06/04 13:38:46  golikov
+* Items counter shown always
+*
+* Revision 1.12  1999/05/11 02:53:56  vakatov
+* Moved CGI API from "corelib/" to "cgi/"
+*
+* Revision 1.11  1999/04/16 17:45:36  vakatov
+* [MSVC++] Replace the <windef.h>'s min/max macros by the hand-made templates.
+*
+* Revision 1.10  1999/04/15 22:11:32  vakatov
+* "min/max" --> "NcbiMin/Max"
+*
+* Revision 1.9  1999/04/15 19:48:24  vasilche
+* Fixed several warnings detected by GCC
+*
+* Revision 1.8  1999/04/14 19:50:28  vasilche
+* Fixed coredump. One more bug with map::const_iterator
+*
+* Revision 1.7  1999/04/14 17:29:01  vasilche
+* Added parsing of CGI parameters from IMAGE input tag like "cmd.x=1&cmd.y=2"
+* As a result special parameter is added with empty name: "=cmd"
+*
+* Revision 1.6  1999/04/06 19:33:41  vasilche
+* Added defalut page size.
+*
+* Revision 1.5  1999/02/17 22:03:17  vasilche
+* Assed AsnMemoryRead & AsnMemoryWrite.
+* Pager now may return NULL for some components if it contains only one
+* page.
+*
+* Revision 1.4  1999/01/21 21:13:00  vasilche
+* Added/used descriptions for HTML submit/select/text.
+* Fixed some bugs in paging.
+*
+* Revision 1.3  1999/01/21 16:18:06  sandomir
+* minor changes due to NStr namespace to contain string utility functions
+*
+* Revision 1.2  1999/01/20 21:41:36  vasilche
+* Fixed bug with lost current page.
+*
+* Revision 1.1  1999/01/19 21:17:42  vasilche
+* Added CPager class
+*
+* ===========================================================================
+*/
