@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2001/04/20 18:02:41  thiessen
+* don't open update viewer right away
+*
 * Revision 1.8  2001/04/19 12:58:32  thiessen
 * allow merge and delete of individual updates
 *
@@ -96,7 +99,7 @@ UpdateViewer::~UpdateViewer(void)
 void UpdateViewer::CreateUpdateWindow(void)
 {
     if (updateWindow) {
-        updateWindow->Refresh();
+        GlobalMessenger()->PostRedrawSequenceViewer(this);
     } else {
         SequenceDisplay *display = GetCurrentDisplay();
         if (display) {
@@ -147,10 +150,8 @@ void UpdateViewer::AddAlignments(const AlignmentList& newAlignments)
         }
     }
 
-    if (alignments.size() > 0) {
+    if (alignments.size() > 0)
         display->SetStartingColumn(alignments.front()->GetFirstAlignedBlockPosition() - 5);
-        if (!updateWindow) CreateUpdateWindow();
-    }
 
     PushAlignment();    // make this an undoable operation
 }

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.54  2001/04/20 18:02:57  thiessen
+* don't open update viewer right away
+*
 * Revision 1.53  2001/04/19 12:58:32  thiessen
 * allow merge and delete of individual updates
 *
@@ -617,6 +620,7 @@ void AlignmentManager::RealignSlaveSequences(
         updateViewer->AddAlignments(alignments);
         SetDiagPostLevel(eDiag_Info);
         TESTMSG("done");
+        updateViewer->CreateUpdateWindow();
     }
 }
 
