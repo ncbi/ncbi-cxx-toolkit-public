@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2000/06/23 15:12:57  thiessen
+* minor change to _ASSERT macro to avoid frequent Mac warnings about semicolons
+*
 * Revision 1.20  2000/05/24 20:01:07  vasilche
 * Added _DEBUG_ARG macro for arguments used only in debug mode.
 *
@@ -114,7 +117,7 @@ BEGIN_NCBI_SCOPE
       << "Trouble!" << NCBI_NS_NCBI::Endm )
 
 #  define _ASSERT(expr) \
-    if ( expr ) ; else \
+    if (!( expr )) \
     ( NCBI_NS_NCBI::CNcbiDiag(__FILE__, __LINE__, \
       NCBI_NS_NCBI::eDiag_Fatal, NCBI_NS_NCBI::eDPF_Trace) \
       << "Assertion failed: (" #expr ")" << NCBI_NS_NCBI::Endm )
