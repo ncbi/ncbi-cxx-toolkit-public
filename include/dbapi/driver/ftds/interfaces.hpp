@@ -75,9 +75,9 @@ BEGIN_NCBI_SCOPE
 #endif
 #ifndef EXTIME
 #  define EXTIME          6       /* We have exceeded our timeout period while
-                                 * waiting for a response from the Server -
-                                 * the DBPROCESS is still alive.
-                                 */
+                                   * waiting for a response from the Server -
+                                   * the DBPROCESS is still alive.
+                                   */
 #endif
 #ifndef EXPROGRAM
 #  define EXPROGRAM       7       /* coding error in user program */
@@ -141,7 +141,6 @@ const unsigned int kTDSMaxNameLen = 128 + 4;
 class CTDSContext : public I_DriverContext
 {
     friend class CDB_Connection;
-
 public:
     CTDSContext(DBINT version = DBVERSION_UNKNOWN);
 
@@ -182,7 +181,7 @@ public:
     virtual bool TDS_SetMaxNofConns(int n);
 
     unsigned int TDS_GetTimeout(void) {
-	return m_Timeout;
+        return m_Timeout;
     }
 
     static  int  TDS_dberr_handler(DBPROCESS*    dblink,   int     severity,
@@ -268,14 +267,13 @@ protected:
 
     void DropCmd(CDB_BaseEnt& cmd);
 
-    
 
 private:
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     I_ITDescriptor* x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in);
 
     void TDS_SetTimeout(void) {
-	m_Link->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
+        m_Link->tds_socket->timeout= (TDS_INT)(m_Context->TDS_GetTimeout());
     }
 
     DBPROCESS*      m_Link;
@@ -401,9 +399,9 @@ protected:
     virtual CDB_Result* Open();
     virtual bool Update(const string& table_name, const string& upd_query);
     virtual bool UpdateTextImage(unsigned int item_num, CDB_Stream& data, 
-				 bool log_it = true);
+                                 bool log_it = true);
     virtual CDB_SendDataCmd* SendDataCmd(unsigned int item_num, size_t size, 
-					 bool log_it = true);
+                                         bool log_it = true);
     virtual bool Delete(const string& table_name);
     virtual int  RowCount() const;
     virtual bool Close();
@@ -729,6 +727,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.10  2003/01/06 20:09:01  vakatov
+ * cosmetics (identation)
+ *
  * Revision 1.9  2002/12/13 21:56:41  vakatov
  * Use the newly defined #NCBI_FTDS value "7"
  *
