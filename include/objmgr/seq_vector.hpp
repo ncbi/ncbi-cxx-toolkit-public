@@ -107,7 +107,7 @@ public:
 
 private:
     enum {
-        kTypeUnknown = 1 << 30
+        kTypeUnknown = 1 << 10
     };
 
     friend class CBioseq_Handle;
@@ -181,6 +181,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.26  2003/02/20 17:01:20  vasilche
+* Changed value of kTypeUnknown to fit in 16 bit enums on Mac.
+*
 * Revision 1.25  2003/02/06 19:05:39  vasilche
 * Fixed old cache data copying.
 * Delayed sequence type (protein/dna) resolution.
