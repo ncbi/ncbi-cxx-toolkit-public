@@ -153,7 +153,7 @@ void CAlnMix::Merge(TMergeFlags flags)
 }
 
 
-void CAlnMix::Add(const CDense_seg &ds)
+void CAlnMix::Add(const CDense_seg &ds, TAddFlags flags)
 {
     if (m_InputDSsMap.find((void *)&ds) != m_InputDSsMap.end()) {
         return; // it has already been added
@@ -269,7 +269,7 @@ void CAlnMix::Add(const CDense_seg &ds)
 
 
                         //Determine the score
-                        {{
+                        if (flags & fCalcScore) {
                             // calc the score by seq comp
                             string s1, s2;
 
@@ -318,7 +318,9 @@ void CAlnMix::Add(const CDense_seg &ds)
                             match->m_Score = 
                                 CAlnVec::CalculateScore
                                 (s1, s2, aln_seq1->m_IsAA, aln_seq2->m_IsAA);
-                        }}
+                        } else {
+                            match->m_Score = len;
+                        }
                         
                         aln_seq1->m_Score += match->m_Score;
                         aln_seq2->m_Score += match->m_Score;
@@ -1335,6 +1337,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.40  2003/03/28 16:47:28  todorov
+* Introduced TAddFlags (fCalcScore for now)
+*
 * Revision 1.39  2003/03/26 16:38:24  todorov
 * mix independent densegs
 *

@@ -61,8 +61,14 @@ public:
     // destructor
     ~CAlnMix(void);
 
-    void Add(const CDense_seg& ds);
-    void Add(const CSeq_align& aln);
+    enum EAddFlags {
+        // Determine score of each aligned segment in the process of mixing
+        fCalcScore            = 0x01
+    };
+    typedef int TAddFlags; // binary OR of EMergeFlags
+
+    void Add(const CDense_seg& ds, TAddFlags flags = 0);
+    void Add(const CSeq_align& aln, TAddFlags flags = 0);
 
     enum EMergeFlags {
         fGen2EST              = 0x01, // otherwise Nucl2Nucl
@@ -74,6 +80,7 @@ public:
         fSortSeqsByScore      = 0x40  // Seqs with better scoring aligns on top
     };
     typedef int TMergeFlags; // binary OR of EMergeFlags
+
     void Merge(TMergeFlags flags = 0);
 
     typedef vector<CConstRef<CDense_seg> >         TConstDSs;
@@ -263,7 +270,7 @@ const CSeq_align& CAlnMix::GetSeqAlign() const
 
 
 inline
-void CAlnMix::Add(const CSeq_align& aln)
+void CAlnMix::Add(const CSeq_align& aln, TAddFlags flags)
 {
     if (m_InputAlnsMap.find((void *)&aln) == m_InputAlnsMap.end()) {
         // add only if not already added
@@ -271,7 +278,7 @@ void CAlnMix::Add(const CSeq_align& aln)
         m_InputAlns.push_back(CConstRef<CSeq_align>(&aln));
         CTypeConstIterator<CDense_seg> i;
         for (i = ConstBegin(aln); i; ++i) {
-            Add(*i);
+            Add(*i, flags);
         }
     }
 }
@@ -289,6 +296,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.21  2003/03/28 16:47:22  todorov
+* Introduced TAddFlags (fCalcScore for now)
+*
 * Revision 1.20  2003/03/26 16:38:31  todorov
 * mix independent densegs
 *
