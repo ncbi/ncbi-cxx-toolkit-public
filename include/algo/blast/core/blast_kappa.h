@@ -52,28 +52,32 @@ extern "C" {
  *  secondary alignments. Ties in sorted order are much rarer than
  *  for the standard BLAST method, but are broken deterministically
  *  based on the index of the matching sequences in the database.
+ * @param program_number the type of blast search being performed [in]
  * @param queryBlk query sequence [in]
  * @param query_info query information [in]
  * @param sbp (Karlin-Altschul) information for search [in]
  * @param seqSrc used to fetch database/match sequences [in]
+ * @param gen_code_string the genetic code for translated queries [in]
  * @param hsp_stream used to fetch hits for further processing [in]
  * @param scoringParams parameters used for scoring (matrix, gap costs etc.) [in]
  * @param extendParams parameters used for extension [in]
- * @param hitsavingParams parameters used for saving hits [in]
+ * @param hitParams parameters used for saving hits [in]
  * @param psiOptions options related to psi-blast [in]
  * @param results All HSP results from previous stages of the search [in] [out]
  * @return 0 on success, otherwise failure.
 */
 
 Int2
-Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
+Kappa_RedoAlignmentCore(EBlastProgramType program_number,
+                  BLAST_SequenceBlk * queryBlk,
                   BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
                   BlastHSPStream* hsp_stream,
                   const BlastSeqSrc* seqSrc,
+                  const Uint1* gen_code_string,
                   BlastScoringParameters* scoringParams,
                   const BlastExtensionParameters* extendParams,
-                  const BlastHitSavingParameters* hitsavingParams,
+                  const BlastHitSavingParameters* hitParams,
                   const PSIBlastOptions* psiOptions,
                   BlastHSPResults* results);
 
@@ -86,6 +90,9 @@ Kappa_RedoAlignmentCore(BLAST_SequenceBlk * queryBlk,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.9  2004/11/23 21:46:03  camacho
+ * Brought up to date with current version of kappa.c [by Mike Gertz]
+ *
  * Revision 1.8  2004/06/21 14:53:09  madden
  * Doxygen fixes
  *
