@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  1999/10/15 13:58:43  vasilche
+* Added namespace specificators in defenition of all macros.
+*
 * Revision 1.32  1999/10/04 19:39:45  vasilche
 * Fixed bug in CObjectOStreamBinary.
 * Start using of BSRead/BSWrite.
@@ -171,49 +174,49 @@ class CMemberInfo;
 #define CLASS_REF(Name) Name::GetTypeInfo
 
 #define STD_TYPE(Name) Name
-#define STD_REF(Name) CStdTypeInfo<Name>::GetTypeInfo
+#define STD_REF(Name) NCBI_NS_NCBI::CStdTypeInfo<Name>::GetTypeInfo
 
 #define POINTER_TYPE(Type,Args) TYPE(Type)Args*
 #define POINTER_REF(Type,Args) \
-    CTypeRef(CPointerTypeInfo::GetTypeInfo,REF(Type)Args)
+    NCBI_NS_NCBI::CTypeRef(NCBI_NS_NCBI::CPointerTypeInfo::GetTypeInfo,REF(Type)Args)
 
-#define STL_multiset_TYPE(Type,Args) multiset<TYPE(Type)Args>
+#define STL_multiset_TYPE(Type,Args) NCBI_NS_STD::multiset<TYPE(Type)Args>
 #define STL_multiset_REF(Type,Args) \
-    new CStlClassInfoMultiSet<TYPE(Type)Args>(REF(Type)Args)
+    new NCBI_NS_NCBI::CStlClassInfoMultiSet<TYPE(Type)Args>(REF(Type)Args)
 
-#define STL_set_TYPE(Type,Args) set<TYPE(Type)Args>
+#define STL_set_TYPE(Type,Args) NCBI_NS_STD::set<TYPE(Type)Args>
 #define STL_set_REF(Type,Args) \
-    new CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args)
+    new NCBI_NS_NCBI::CStlClassInfoSet<TYPE(Type)Args>(REF(Type)Args)
 
 #define STL_multimap_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
-    multimap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
+    NCBI_NS_STD::multimap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
 #define STL_multimap_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
-    new CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
+    new NCBI_NS_NCBI::CStlClassInfoMultiMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
 
 #define STL_map_TYPE(KeyType,KeyArgs,ValueType,ValueArgs) \
-    map<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
+    NCBI_NS_STD::map<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>
 #define STL_map_REF(KeyType,KeyArgs,ValueType,ValueArgs) \
-    new CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
+    new NCBI_NS_NCBI::CStlClassInfoMap<TYPE(KeyType)KeyArgs,TYPE(ValueType)ValueArgs>(REF(KeyType)KeyArgs,REF(ValueType)ValueArgs)
 
-#define STL_list_TYPE(Type,Args) list<TYPE(Type)Args>
+#define STL_list_TYPE(Type,Args) NCBI_NS_STD::list<TYPE(Type)Args>
 #define STL_list_REF(Type,Args) \
-    new CStlClassInfoList<TYPE(Type)Args>(REF(Type)Args)
+    new NCBI_NS_NCBI::CStlClassInfoList<TYPE(Type)Args>(REF(Type)Args)
 
-#define STL_vector_TYPE(Type,Args) vector<TYPE(Type)Args>
+#define STL_vector_TYPE(Type,Args) NCBI_NS_STD::vector<TYPE(Type)Args>
 #define STL_vector_REF(Type,Args) \
-    new CStlClassInfoVector<TYPE(Type)Args>(REF(Type)Args)
+    new NCBI_NS_NCBI::CStlClassInfoVector<TYPE(Type)Args>(REF(Type)Args)
 
-#define STL_CHAR_vector_TYPE(Type) vector<Type>
+#define STL_CHAR_vector_TYPE(Type) NCBI_NS_STD::vector<Type>
 #define STL_CHAR_vector_REF(Type) \
-    CStlClassInfoCharVector<Type>::GetTypeInfo
+    NCBI_NS_NCBI::CStlClassInfoCharVector<Type>::GetTypeInfo
 
-#define STL_auto_ptr_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
+#define STL_auto_ptr_TYPE(Type,Args) NCBI_NS_STD::auto_ptr<TYPE(Type)Args>
 #define STL_auto_ptr_REF(Type,Args) \
-    CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo
+    NCBI_NS_NCBI::CStlClassInfoAutoPtr<TYPE(Type)Args>::GetTypeInfo
 
-#define STL_CHOICE_auto_ptr_TYPE(Type,Args) auto_ptr<TYPE(Type)Args>
+#define STL_CHOICE_auto_ptr_TYPE(Type,Args) NCBI_NS_STD::auto_ptr<TYPE(Type)Args>
 #define STL_CHOICE_auto_ptr_REF(Type,Args) \
-    CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo
+    NCBI_NS_NCBI::CStlClassInfoChoiceAutoPtr<TYPE(Type)Args>::GetTypeInfo
 
 template<typename T>
 struct Check
@@ -235,8 +238,8 @@ CMemberInfo* Member(const T* member)
 #define CLASS_PTR(Class) static_cast<const Class*>(kObject)
 
 #define M(Name,Type,Args) \
-    Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
-#define STD_M(Name) Member(MEMBER_PTR(Name))
+    NCBI_NS_NCBI::Check<TYPE(Type)Args>::Member(MEMBER_PTR(Name),REF(Type)Args)
+#define STD_M(Name) NCBI_NS_NCBI::Member(MEMBER_PTR(Name))
 
 #define ADD_N_M(Name,Mem,Type,Args) info->AddMember(Name,M(Mem,Type,Args))
 #define ADD_N_STD_M(Name,Mem) info->AddMember(Name,STD_M(Mem))
@@ -659,7 +662,7 @@ ASN_TYPE_INFO_GETTER_DECL(name)
 
 // type info definition
 #define BEGIN_TYPE_INFO(Class, Method, Info, Args) \
-const CTypeInfo* Method(void) \
+const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 { \
     typedef Class CClass; \
     static Info* info = 0; \
@@ -673,67 +676,67 @@ const CTypeInfo* Method(void) \
 }
  
 #define BEGIN_CLASS_INFO3(Name, Class, OwnerClass) \
-BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, CClassInfo<CClass>, (Name))
+BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Name))
 #define BEGIN_CLASS_INFO2(Name, Class) \
 BEGIN_CLASS_INFO3(Name, Class, Class)
 #define BEGIN_CLASS_INFO(Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ())
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, ())
 
 #define END_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, OwnerClass) \
-BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, CAbstractClassInfo<CClass>, (Name))
+BEGIN_TYPE_INFO(Class, OwnerClass::GetTypeInfo, NCBI_NS_NCBI::CAbstractClassInfo<CClass>, (Name))
 #define BEGIN_ABSTRACT_CLASS_INFO2(Name, Class) \
 BEGIN_ABSTRACT_CLASS_INFO3(Name, Class, Class)
 #define BEGIN_ABSTRACT_CLASS_INFO(Class) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CAbstractClassInfo<CClass>, ())
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CAbstractClassInfo<CClass>, ())
 
 #define SET_PARENT_CLASS(BaseClass) \
-    info->AddMember(NcbiEmptyString, MemberInfo(CLASS_PTR(BaseClass)))
+    info->AddMember(NCBI_NS_NCBI::NcbiEmptyString, NCBI_NS_NCBI::MemberInfo(CLASS_PTR(BaseClass)))
 
 #define BEGIN_DERIVED_CLASS_INFO(Class, BaseClass) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, ()) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, ()) \
     SET_PARENT_CLASS(BaseClass);
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_DERIVED_CLASS_INFO2(Name, Class, BaseClass) \
-BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, CClassInfo<CClass>, (Name)) \
+BEGIN_TYPE_INFO(Class, Class::GetTypeInfo, NCBI_NS_NCBI::CClassInfo<CClass>, (Name)) \
     SET_PARENT_CLASS(BaseClass);
 #define END_DERIVED_CLASS_INFO END_TYPE_INFO
 
 #define BEGIN_STRUCT_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(NAME2(struct_, Class), NAME2(GetTypeInfo_struct_, Class), \
-                CStructInfo<CClass>, (Name))
+                NCBI_NS_NCBI::CStructInfo<CClass>, (Name))
 #define BEGIN_STRUCT_INFO(Class) BEGIN_STRUCT_INFO2(#Class, Class)
 #define END_STRUCT_INFO END_TYPE_INFO
 
 #define BEGIN_CHOICE_INFO2(Name, Class) \
 BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
-                CChoiceTypeInfo, (Name))
+                NCBI_NS_NCBI::CChoiceTypeInfo, (Name))
 #define BEGIN_CHOICE_INFO(Class) BEGIN_CHOICE_INFO2(#Class, Class)
 #define END_CHOICE_INFO END_TYPE_INFO
 
 // adding members
 #define MEMBER(Member, Type) \
-    MemberInfo(MEMBER_PTR(Member), Type)
+    NCBI_NS_NCBI::MemberInfo(MEMBER_PTR(Member), Type)
 #define ADD_MEMBER2(Name, Member, Type) \
     info->AddMember(Name, MEMBER(Member, Type))
 #define ADD_MEMBER(Member, Type) ADD_MEMBER2(#Member, Member, Type)
 
 #define CLASS_MEMBER(Member) \
-	MemberInfo(MEMBER_PTR(Member))
+	NCBI_NS_NCBI::MemberInfo(MEMBER_PTR(Member))
 #define ADD_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, CLASS_MEMBER(Member))
 #define ADD_CLASS_MEMBER(Member) ADD_CLASS_MEMBER2(#Member, Member)
 
 #define PTR_CLASS_MEMBER(Member) \
-	PtrMemberInfo(MEMBER_PTR(Member))
+	NCBI_NS_NCBI::PtrMemberInfo(MEMBER_PTR(Member))
 #define ADD_PTR_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, PTR_CLASS_MEMBER(Member))
 #define ADD_PTR_CLASS_MEMBER(Member) ADD_PTR_CLASS_MEMBER2(#Member, Member)
 
 #define STL_CLASS_MEMBER(Member) \
-	StlMemberInfo(MEMBER_PTR(Member))
+	NCBI_NS_NCBI::StlMemberInfo(MEMBER_PTR(Member))
 #define ADD_STL_CLASS_MEMBER2(Name, Member) \
 	info->AddMember(Name, STL_CLASS_MEMBER(Member))
 #define ADD_STL_CLASS_MEMBER(Member) ADD_STL_CLASS_MEMBER2(#Member, Member)
@@ -745,7 +748,7 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
 #define ADD_ASN_MEMBER(Member, Type) ADD_ASN_MEMBER2(#Member, Member, Type)
 
 #define OLD_ASN_MEMBER(Member, Name, Type) \
-    OldAsnMemberInfo(MEMBER_PTR(Member), Name, \
+    NCBI_NS_NCBI::OldAsnMemberInfo(MEMBER_PTR(Member), Name, \
                      &NAME2(Type, New), &NAME2(Type, Free), \
                      &NAME2(Type, AsnRead), &NAME2(Type, AsnWrite))
 #define ADD_OLD_ASN_MEMBER2(Name, Member, TypeName, Type) \
@@ -754,7 +757,7 @@ BEGIN_TYPE_INFO(valnode, NAME2(GetTypeInfo_struct_, Class), \
     ADD_OLD_ASN_MEMBER2(#Member, Member, #Type, Type)
 
 #define CHOICE_MEMBER(Member, Choices) \
-    ChoiceMemberInfo(MEMBER_PTR(Member), \
+    NCBI_NS_NCBI::ChoiceMemberInfo(MEMBER_PTR(Member), \
                      NAME2(GetTypeInfo_struct_, Choices))
 #define ADD_CHOICE_MEMBER2(Name, Member, Choices) \
     info->AddMember(Name, CHOICE_MEMBER(Member, Choices))
