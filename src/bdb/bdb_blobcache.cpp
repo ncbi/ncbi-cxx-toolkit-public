@@ -333,18 +333,6 @@ void CBDB_BLOB_Cache::Store(const string& key,
                            size_t        size,
                            EKeepVersions keep_versions)
 {
-    {{
-
-    CFastMutexGuard guard(x_BDB_BLOB_CacheMutex);
-
-    m_BlobDB.key = key;
-    m_BlobDB.version = version;
-
-    if (m_BlobDB.Fetch() == eBDB_Ok) {   // BLOB exists, nothing to do
-        return;
-    }
-
-    }}
 
     if (keep_versions == eDropAll || keep_versions == eDropOlder) {
         Purge(key, 0, keep_versions);
@@ -836,6 +824,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/10/20 17:53:03  kuznets
+ * Dismissed blob cache entry overwrite protection.
+ *
  * Revision 1.13  2003/10/20 16:34:20  kuznets
  * BLOB cache Store operation reimplemented to use external files.
  * BDB cache shared between tables by using common environment.
