@@ -179,6 +179,7 @@ public:
                             bool use_objmgr   = true,
                             bool insert_ctrlA = false);
     
+
     /// Get a pointer to raw sequence data.
     ///
     /// Get the raw sequence (strand data).  When done, resources
@@ -189,6 +190,19 @@ public:
     ///   value is the sequence length (in base pairs or residues).
     Int4 GetSequence(TOID oid, const char ** buffer);
     
+    /// Get a pointer to sequence data with embedded ambiguities.
+    ///
+    /// In the protein case, this is identical to GetSequence().  In
+    /// the nucleotide case, it stores 2 bases per byte instead of 4.
+    /// The third parameter indicates the encoding for nucleotide
+    /// data, either kSeqDBNucl4NA or kSeqDBNuclBlastNA, ignored if
+    /// the sequence is a protein sequence.  When done, resources
+    /// should be returned with RetSequence.
+    /// @return
+    ///   In case of an error, -1 is returned; otherwise the return
+    ///   value is the sequence length (in base pairs or residues).
+    Int4 GetAmbigSeq(TOID oid, const char ** buffer, bool nucl_code);
+    
     /// Returns any resources associated with the sequence.
     /// 
     /// Note that if memory mapping was successful, the sequence data
@@ -197,6 +211,7 @@ public:
     /// allocated memory and this method frees that memory.
     void RetSequence(const char ** buffer);
     
+
     /// Returns the type of database opened - protein or nucleotide.
     /// 
     /// This uses the same constants as the constructor.
@@ -238,14 +253,15 @@ public:
     /// database from beginning to end.
     CSeqDBIter Begin(void);
     
-    /// Gets next OID in list.
+    /// Find an included OID, incrementing next_oid if necessary.
     ///
-    /// If the specified oid is not included in the set (i.e. it was
-    /// not in the OID list), it is incremented until the end of the
-    /// database is reached or an OID in the set is found.
+    /// If the specified OID is not included in the set (i.e. the OID
+    /// mask), the input parameter is incremented until one is found
+    /// that is.  The user will probably want to increment between
+    /// calls, if iterating over the db.
     /// @return
     ///   True if a valid OID was found, false otherwise.
-    bool GetNextOID(TOID & next_oid);
+    bool CheckOrFindOID(TOID & next_oid);
     
 private:
     /// Implementation details are hidden.  (See seqdbimpl.hpp).

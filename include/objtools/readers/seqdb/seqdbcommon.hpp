@@ -58,6 +58,11 @@ const char kSeqTypeProt = 'p';
 const char kSeqTypeNucl = 'n';
 const char kSeqTypeUnkn = '-';
 
+// Protein / Nucleotide / Unknown are represented by 'p', 'n', and '-'.
+
+const int kSeqDBNuclNcbi4NA = false;
+const int kSeqDBNuclBlastNA = true;
+
 // Flag specifying whether to use memory mapping.
 
 const bool kSeqDBMMap   = true;
