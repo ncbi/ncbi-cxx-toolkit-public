@@ -306,7 +306,7 @@ typedef struct SOCK_tag {
     unsigned/*bool*/     eof:1; /* Stream sockets: 'End of file' seen on read
                                    Datagram socks: 'End of message' written  */
     EBIO_Status     w_status:3; /* write status:  eIO_Closed if was shut down*/
-    unsigned/*bool*/ connect:1; /* used only if pending != 0 and [!]connected*/
+    unsigned/*bool*/ pending:1; /* != 0 if connection is still pending       */
 
     /* timeouts */
     const struct timeval* r_timeout;/* NULL if infinite, or points to "r_tv" */
@@ -322,7 +322,7 @@ typedef struct SOCK_tag {
     /* aux I/O data */
     BUF             r_buf;      /* read  buffer                              */
     BUF             w_buf;      /* write buffer                              */
-    long            pending;    /* SOCK: how much data is pending for output */
+    size_t          w_len;      /* SOCK: how much data is pending for output */
 
     /* statistics */
     size_t          n_read;     /* DSOCK: total #; SOCK: last connect/ only  */
@@ -732,7 +732,7 @@ static void s_ShowDataLayout(void)
                           "\tc_to:      %u\n"
                           "\tr_buf:     %u\n"
                           "\tw_buf:     %u\n"
-                          "\tpending:   %u\n"
+                          "\tw_len:     %u\n"
                           "\tn_read:    %u\n"
                           "\tn_written: %u\n"
                           "\tn_in:      %u\n"
@@ -753,7 +753,7 @@ static void s_ShowDataLayout(void)
                           offsetof(SOCK_struct, c_to),
                           offsetof(SOCK_struct, r_buf),
                           offsetof(SOCK_struct, w_buf),
-                          offsetof(SOCK_struct, pending),
+                          offsetof(SOCK_struct, w_len),
                           offsetof(SOCK_struct, n_read),
                           offsetof(SOCK_struct, n_written),
                           offsetof(SOCK_struct, n_in),
@@ -990,11 +990,12 @@ static EIO_Status s_Select(size_t                n,
                             polls[i].sock->w_status != eIO_Closed) {
                             read_only = 0;
                             FD_SET(polls[i].sock->sock, &w_fds);
-                            if (polls[i].sock->type == eSOCK_Datagram)
+                            if (polls[i].sock->type == eSOCK_Datagram  ||
+                                polls[i].sock->pending)
                                 break;
-                            if (polls[i].event == eIO_Write
-                                &&  (polls[i].sock->r_on_w == eOff  ||
-                                     (polls[i].sock->r_on_w == eDefault
+                            if (polls[i].event == eIO_Write  &&
+                                (polls[i].sock->r_on_w == eOff
+                                 ||  (polls[i].sock->r_on_w == eDefault
                                       &&  s_ReadOnWrite != eOn)))
                                 break;
                         } else if (polls[i].event == eIO_Write)
@@ -1010,7 +1011,8 @@ static EIO_Status s_Select(size_t                n,
                         if (polls[i].sock->type == eSOCK_Datagram  ||
                             polls[i].event != eIO_Read             ||
                             polls[i].sock->w_status == eIO_Closed  ||
-                            n == 1  ||  polls[i].sock->pending == 0)
+                            n == 1  ||  (!polls[i].sock->pending  &&
+                                         !polls[i].sock->w_len))
                             break;
                         read_only = 0;
                         FD_SET(polls[i].sock->sock, &w_fds);
@@ -1282,7 +1284,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
     (*sock)->r_status = eIO_Success;
     (*sock)->eof      = 0/*false*/;
     (*sock)->w_status = eIO_Success;
-    (*sock)->connect  = 1/*true*/;
+    (*sock)->pending  = 0/*connected*/;
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&(*sock)->r_buf, SOCK_BUF_CHUNK_SIZE);
     /* w_buf is unused for accepted sockets */
@@ -1383,14 +1385,12 @@ static EIO_Status s_IsConnected(SOCK                  sock,
     SSOCK_Poll     poll;
 
     *x_errno = 0;
+    assert(sock->pending);
     if ( !writeable ) {
-        ESwitch r_on_w = sock->r_on_w;
         poll.sock      = sock;
         poll.event     = eIO_Write;
         poll.revent    = eIO_Open;
-        sock->r_on_w   = eOff;
         status         = s_Select(1, &poll, tv);
-        sock->r_on_w   = r_on_w;
     } else {
         status         = eIO_Success;
         poll.revent    = eIO_Write;
@@ -1493,7 +1493,8 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->r_status  = eIO_Success;
     sock->eof       = 0/*false*/;
     sock->w_status  = eIO_Success;
-    assert(sock->pending == 0);
+    sock->pending   = 1/*not yet connected*/;
+    assert(sock->w_len == 0);
     if (connect(x_sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
         if (SOCK_ERRNO != SOCK_EINTR  &&  SOCK_ERRNO != SOCK_EINPROGRESS  &&
             SOCK_ERRNO != SOCK_EWOULDBLOCK) {
@@ -1529,20 +1530,17 @@ static EIO_Status s_Connect(SOCK            sock,
                 SOCK_CLOSE(x_sock);
                 return status;
             }
-            sock->connect = 1;
-        } else
-            sock->connect = 0;
+            sock->pending = 0/*connected*/;
+        }
     } else
-        sock->connect = 1;
+        sock->pending = 0/*connected*/;
 
     /* success: do not change any timeouts */
     sock->host      = x_host;
     sock->port      = x_port;
     sock->n_read    = 0;
     sock->n_written = 0;
-    sock->pending   = (long) BUF_Size(sock->w_buf);
-    if (sock->pending == 0  &&  !sock->connect)
-        sock->pending = -1;
+    sock->w_len     = BUF_Size(sock->w_buf);
     return eIO_Success;
 }
 
@@ -1561,7 +1559,7 @@ static int s_Recv(SOCK        sock,
     char   xx_buffer[4096];
     size_t n_read;
 
-    assert(sock->type != eSOCK_Datagram  &&  sock->connect);
+    assert(sock->type != eSOCK_Datagram  &&  !sock->pending);
     if ( !size ) {
         /* internal upread use only */
         assert(peek  &&  !buffer  &&  sock->r_status != eIO_Closed);
@@ -1698,7 +1696,8 @@ static EIO_Status s_SelectStallsafe(size_t                n,
         for (i = j; i < n; i++) {
             /* try to push pending writes */
             if (polls[i].event == eIO_Read  &&  polls[i].revent == eIO_Write) {
-                assert(n != 1  &&  polls[i].sock->pending);
+                assert(n != 1);
+                assert(polls[i].sock->pending  ||  polls[i].sock->w_len);
                 status = s_WritePending(polls[i].sock, tv, 1);
                 if (status != eIO_Success  &&  status != eIO_Timeout) {
                     polls[i].revent = eIO_Close;
@@ -1710,14 +1709,16 @@ static EIO_Status s_SelectStallsafe(size_t                n,
             if (polls[i].event != eIO_Write)
                 continue;
             while (polls[i].revent == eIO_Read) {
-                assert(polls[i].sock                         &&
-                       polls[i].sock->type != eSOCK_Datagram &&
-                       polls[i].sock->w_status != eIO_Closed &&
-                       polls[i].sock->r_status != eIO_Closed &&
-                       !polls[i].sock->eof                   &&
-                       (polls[i].sock->r_on_w == eOn ||
-                        (polls[i].sock->r_on_w == eDefault
-                         && s_ReadOnWrite == eOn)));
+                assert(polls[i].sock                          &&
+                       polls[i].sock->sock != SOCK_INVALID    &&
+                       polls[i].sock->type != eSOCK_Datagram  &&
+                       polls[i].sock->w_status != eIO_Closed  &&
+                       polls[i].sock->r_status != eIO_Closed  &&
+                       !polls[i].sock->eof                    &&
+                       !polls[i].sock->pending                &&
+                       (polls[i].sock->r_on_w == eOn
+                        ||  (polls[i].sock->r_on_w == eDefault
+                             &&  s_ReadOnWrite == eOn)));
 
                 /* try upread as mush as possible data into internal buffer */
                 s_Recv(polls[i].sock, 0, 0/*infinite*/, 1/*peek*/);
@@ -1907,15 +1908,12 @@ static EIO_Status s_WritePending(SOCK                  sock,
     size_t off;
 
     assert(sock->type != eSOCK_Datagram  &&  sock->sock != SOCK_INVALID);
-    if (sock->w_status == eIO_Closed)
-        return eIO_Success;
-
-    if ( !sock->connect ) {
+    if ( sock->pending ) {
         status = s_IsConnected(sock, tv, &x_errno, writeable);
         if (status != eIO_Success) {
             if (status != eIO_Timeout) {
                 char addr[80];
-                char _id[32];
+                char  _id[32];
                 if (SOCK_ntoa(sock->host, addr, sizeof(addr)) != 0)
                     strcpy(addr, "???");
                 CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
@@ -1926,16 +1924,14 @@ static EIO_Status s_WritePending(SOCK                  sock,
             }
             return status;
         }
-        sock->connect = 1;
+        sock->pending = 0/*connected*/;
     }
-    if (sock->pending < 0)
-        sock->pending = 0;
-    if (sock->pending == 0)
+    if (sock->w_len == 0  ||  sock->w_status == eIO_Closed)
         return eIO_Success;
 
     x_tv = sock->w_timeout;
     sock->w_timeout = tv;
-    off = BUF_Size(sock->w_buf) - sock->pending;
+    off = BUF_Size(sock->w_buf) - sock->w_len;
     do {
         char   buf[4096];
         size_t n_written = 0;
@@ -1943,12 +1939,12 @@ static EIO_Status s_WritePending(SOCK                  sock,
         status = s_WriteSliced(sock, buf, n_write, &n_written);
         if (status != eIO_Success)
             break;
-        sock->pending -= n_written;
-        off           += n_written;
-    } while ( sock->pending );
+        sock->w_len -= n_written;
+        off         += n_written;
+    } while ( sock->w_len );
     sock->w_timeout = x_tv;
 
-    assert(sock->pending  ||  status == eIO_Success);
+    assert((sock->w_len != 0)  ==  (status != eIO_Success));
     return status;
 }
 
@@ -1978,7 +1974,8 @@ static EIO_Status s_Read(SOCK        sock,
         return sock->r_status;
     }
 
-    if ((status = s_WritePending(sock, sock->r_timeout, 0)) != eIO_Success)
+    status = s_WritePending(sock, sock->r_timeout, 0);
+    if (sock->pending)
         return status;
 
     for (;;) { /* retry if either blocked or interrupted (optional) */
@@ -2073,7 +2070,7 @@ static EIO_Status s_Write(SOCK        sock,
             sock->w_status = status;
         return status;
     }
-    assert(sock->pending == 0);
+    assert(sock->w_len == 0);
 
     return s_WriteSliced(sock, buf, size, n_written);
 }
@@ -2164,7 +2161,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     defined(NCBI_OS_OSF1)
             x_errno != SOCK_ENOTCONN
 #else
-            x_errno != SOCK_ENOTCONN  ||  sock->connect
+            x_errno != SOCK_ENOTCONN  ||  sock->pending
 #endif
             )
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
@@ -2228,7 +2225,7 @@ static EIO_Status s_Close(SOCK sock)
                                    s_ID(sock, _id), IO_StatusStr(status)));
         }
     }
-    sock->pending = 0;
+    sock->w_len = 0;
 
     /* statistics & logging */
     if (sock->type != eSOCK_Datagram) {
@@ -2396,11 +2393,11 @@ extern EIO_Status SOCK_CreateOnTopEx(const void*   handle,
     x_sock->r_status = eIO_Success;
     x_sock->eof      = 0/*false*/;
     x_sock->w_status = eIO_Success;
-    x_sock->connect  = 0/*have to check at the nearest I/O*/;
+    x_sock->pending  = 1/*have to check at the nearest I/O*/;
     /* all timeouts zeroed - infinite */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     x_sock->w_buf    = w_buf;
-    x_sock->pending  = datalen ? (long) datalen : -1;
+    x_sock->w_len    = datalen;
 
     /* set to non-blocking mode */
     if ( !s_SetNonblock(xx_sock, 1/*true*/) ) {
@@ -2568,16 +2565,14 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         EIO_Status     status;
         const struct timeval* x_tv = s_to2tv(timeout, &tv);
 
-        if (event == eIO_Write) {
-            status = s_WritePending(sock, x_tv, 0);
-            if (status != eIO_Success)
+        if ((status = s_WritePending(sock, x_tv, 0)) != eIO_Success) {
+            if (event == eIO_Write  ||  sock->pending)
                 return status;
         }
         poll.sock   = sock;
         poll.event  = event;
         poll.revent = eIO_Open;
-        status = s_SelectStallsafe(1, &poll, x_tv, 0);
-        if (status != eIO_Success)
+        if ((status = s_SelectStallsafe(1, &poll, x_tv, 0)) != eIO_Success)
             return status;
         if (poll.revent == eIO_Close)
             return eIO_Unknown;
@@ -2822,7 +2817,7 @@ extern EIO_Status SOCK_Abort(SOCK sock)
     }
 
     sock->eof = 0;
-    sock->pending = 0;
+    sock->w_len = 0;
     sock->r_status = sock->w_status = eIO_Closed;
     return eIO_Success;
 }
@@ -3706,6 +3701,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.109  2003/05/20 16:47:56  lavr
+ * More accurate checks for pending connections/data
+ *
  * Revision 6.108  2003/05/19 21:04:37  lavr
  * Fix omission to make listening sockets "connected"
  *
