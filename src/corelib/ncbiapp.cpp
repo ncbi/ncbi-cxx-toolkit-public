@@ -382,36 +382,27 @@ int CNcbiApplication::AppMain
                    string(e.what()));
     }
 
-    // Load registry from the config file
-    try {
-        if ( conf ) {
-            string x_conf(conf);
-            LoadConfig(*m_Config, &x_conf);
-        } else {
-            LoadConfig(*m_Config, NULL);
-        }
-    } catch (CException& e) {
-        NCBI_RETHROW(e, CAppException, eLoadConfig,
-                     "Registry data cannot be loaded");
-    } catch (exception& e) {
-        NCBI_THROW(CAppException, eLoadConfig,
-                   "Registry data cannot be loaded:  " + string(e.what()));
-    }
-
-    // Setup the debugging features from the config file.
-    // Don't call till after LoadConfig()
-    // NOTE: this will override environment variables, 
-    // except DIAG_POST_LEVEL which is Set*Fixed*.
-    
-    HonorDebugSettings();
-    
     // Call:  Init() + Run() + Exit()
     int exit_code = 1;
 
     try {
         // Init application
         try {
+			// Load registry from the config file
+			if ( conf ) {
+				string x_conf(conf);
+				LoadConfig(*m_Config, &x_conf);
+			} else {
+				LoadConfig(*m_Config, NULL);
+			}
+			// Setup the debugging features from the config file.
+			// Don't call till after LoadConfig()
+			// NOTE: this will override environment variables, 
+			// except DIAG_POST_LEVEL which is Set*Fixed*.
+			HonorDebugSettings();
+
             Init();
+
             // If the app still has no arg description - provide default one
             if (!m_DisableArgDesc  &&  !m_ArgDesc.get()) {
                 auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -913,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.87  2004/06/15 16:12:47  ivanov
+ * Moved loading registry from the config file into general try/catch block
+ *
  * Revision 1.86  2004/06/15 14:20:31  lavr
  * Spelling fix for "caught"
  *
