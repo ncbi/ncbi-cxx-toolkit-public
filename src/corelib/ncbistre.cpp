@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2000/12/12 14:39:50  vasilche
+* Added class Locase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.7  2000/12/12 14:20:36  vasilche
 * Added operator bool to CArgValue.
 * Various NStr::Compare() methods made faster.
@@ -118,6 +121,14 @@ CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s)
 {
     iterate ( string, c, s.m_String ) {
         out.put(char(toupper(*c)));
+    }
+    return out;
+}
+
+CNcbiOstream& operator<<(CNcbiOstream& out, Locase s)
+{
+    iterate ( string, c, s.m_String ) {
+        out.put(char(tolower(*c)));
     }
     return out;
 }

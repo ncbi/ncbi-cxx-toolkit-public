@@ -34,6 +34,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2000/12/12 14:39:46  vasilche
+* Added class Locase for printing strings to ostream with automatic conversion.
+*
 * Revision 1.18  2000/12/12 14:20:14  vasilche
 * Added operator bool to CArgValue.
 * Added standard typedef element_type to CRef<> and CConstRef<>.
@@ -244,10 +247,10 @@ private:
     CNcbiOstrstream& m_Out;
 };
 
-// utility class for qutomatic conversion of strings to uppercase letters
+// utility class for automatic conversion of strings to uppercase letters
 // sample usage:
 //    out << "Original:  \"" << str << "\"\n";
-//    out << "Upparcase: \"" << Upcase(str) << "\"\n";
+//    out << "Uppercase: \"" << Upcase(str) << "\"\n";
 class Upcase
 {
 public:
@@ -256,6 +259,19 @@ public:
 };
 
 CNcbiOstream& operator<<(CNcbiOstream& out, Upcase s);
+
+// utility class for automatic conversion of strings to lowercase letters
+// sample usage:
+//    out << "Original:  \"" << str << "\"\n";
+//    out << "Lowercase: \"" << Locase(str) << "\"\n";
+class Locase
+{
+public:
+    Locase(const string& s) : m_String(s) { }
+    const string& m_String;
+};
+
+CNcbiOstream& operator<<(CNcbiOstream& out, Locase s);
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
