@@ -1312,7 +1312,7 @@ Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
             ErrPostEx(SEV_WARNING, 0, 0, "Frozen block %i can't start < %i", i+1, startQueryRegion+1);
             return FALSE;
         }
-        if (frozenBlocks[i] + blockLength > endQueryRegion) {
+        if ((frozenBlocks[i] + blockLength) > endQueryRegion) {
             ErrPostEx(SEV_WARNING, 0, 0, "Frozen block %i can't end >= %i", i+1, endQueryRegion+1);
             return FALSE;
         }
@@ -1321,7 +1321,7 @@ Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
         if (prevFrozenBlockEnd >= startQueryRegion) {
 
             /* check for adequate room for unfrozen blocks between frozen blocks */
-            if (frozenBlocks[i] <= prevFrozenBlockEnd + unfrozenBlocksLength) {
+            if (frozenBlocks[i] <= (prevFrozenBlockEnd + unfrozenBlocksLength)) {
                 ErrPostEx(SEV_WARNING, 0, 0,
                     "Frozen block %i starts before end of prior frozen block, "
 		    "or doesn't leave room for intervening unfrozen block(s)", i+1);
@@ -1329,7 +1329,7 @@ Boolean ValidateFrozenBlockPositions(Int4 *frozenBlocks,
             }
 
             /* check for too much gap space since last frozen block */
-            if (frozenBlocks[i] > prevFrozenBlockEnd + 1 + unfrozenBlocksLength + maxGapsLength) {
+            if (frozenBlocks[i] > (prevFrozenBlockEnd + 1 + unfrozenBlocksLength + maxGapsLength)) {
                 ErrPostEx(SEV_WARNING, 0, 0,
                     "Frozen block %i is too far away from prior frozen block"
 		    " given allowed gap length(s) (%i)", i+1, maxGapsLength);
