@@ -1998,9 +1998,9 @@ CConstRef<CSeq_feat> CValidError_imp::GetCDSGivenProduct(const CBioseq& seq)
 
     // In case of a NT bioseq limit the search to features packaged on the 
     // NT (we assume features have been pulled from the segments to the NT).
-    const CSeq_entry* limit = 0;
-    if ( IsNT() ) {
-        limit = m_TSE.GetPointerOrNull();
+    CSeq_entry_Handle limit;
+    if ( IsNT()  &&  bool(m_TSE) ) {
+        limit = m_Scope->GetSeq_entryHandle(*m_TSE);
     }
 
     if ( bsh ) {
@@ -2591,6 +2591,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.63  2005/01/05 21:38:04  grichenk
+* Replaced calls to deprecated methods (SetLimit...)
+*
 * Revision 1.62  2004/11/01 19:33:10  grichenk
 * Removed deprecated methods
 *
