@@ -111,7 +111,7 @@ public:
     SIZE_TYPE GetPartNumber   (void) const { return m_PartNumber; }
     SIZE_TYPE GetTotalNumParts(void) const;
     CMasterContext& GetMaster (void) { return *m_Master; }
-    void SetMaster(CMasterContext& mctx) { m_Master.Reset(&mctx); }
+    void SetMaster(CMasterContext& mctx);
 
     // delta sequence
     bool IsDelta(void) const { return m_Repr == CSeq_inst::eRepr_delta; }
@@ -325,6 +325,11 @@ SIZE_TYPE CBioseqContext::GetTotalNumParts(void) const
 }
 
 inline
+void CBioseqContext::SetMaster(CMasterContext& mctx) {
+    m_Master.Reset(&mctx);
+}
+
+inline
 bool CBioseqContext::IsRSCompleteGenomic(void)  const
 {
     return m_RefseqInfo == CSeq_id::eAcc_refseq_chromosome;  // NC_
@@ -474,6 +479,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.15  2004/04/22 16:11:24  ucko
+* Move CBioseqContext::SetMaster's body to the end of the file, as some
+* compilers insist on seeing CMasterContext's full definition first.
+*
 * Revision 1.14  2004/04/22 15:41:38  shomrat
 * Refactoring of context
 *
