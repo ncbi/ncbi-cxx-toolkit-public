@@ -58,14 +58,12 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CRWStreambuf : public CRWStreambufBase
 {
 public:
-    static const streamsize kDefaultBufferSize;
-
     CRWStreambuf(IReaderWriter* rw = 0,
-                 streamsize     buf_size = kDefaultBufferSize,
+                 streamsize     buf_size = 0,
                  CT_CHAR_TYPE*  buf = 0);
     CRWStreambuf(IReader*       r,
                  IWriter*       w,
-                 streamsize     buf_size = kDefaultBufferSize,
+                 streamsize     buf_size = 0,
                  CT_CHAR_TYPE*  buf = 0);
     virtual ~CRWStreambuf();
 
@@ -99,6 +97,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/01/15 20:04:39  lavr
+ * kDefaultBufferSize removed from class delcaration
+ *
  * Revision 1.4  2004/01/09 17:38:36  lavr
  * Define internal 1-byte buffer used for unbuffered streams
  *
