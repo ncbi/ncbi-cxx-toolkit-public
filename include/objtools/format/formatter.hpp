@@ -52,6 +52,7 @@ class CSourceItem;
 class CReferenceItem;
 class CCommentItem;
 class CFeatHeaderItem;
+class CAlignmentItem;
 class CBaseCountItem;
 class CSequenceItem;
 class CPrimaryItem;
@@ -94,6 +95,7 @@ public:
     virtual void FormatSequence(const CSequenceItem& seq, IFlatTextOStream& text_os) = 0;
     virtual void FormatFeatHeader(const CFeatHeaderItem& fh, IFlatTextOStream& text_os) = 0;
     virtual void FormatFeature(const CFeatureItemBase& feat, IFlatTextOStream& text_os) = 0;
+    virtual void FormatAlignment(const CAlignmentItem& aln, IFlatTextOStream& text_os) {}
     virtual void FormatSegment(const CSegmentItem& seg, IFlatTextOStream& text_os) = 0;
     virtual void FormatDate(const CDateItem& date, IFlatTextOStream& text_os) = 0;
     virtual void FormatDBSource(const CDBSourceItem& dbs, IFlatTextOStream& text_os) = 0;
@@ -115,6 +117,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/06/21 18:50:03  ucko
+* Add a virtual FormatAlignment method, defined to do nothing by
+* default because most formats can't represent them anyway.
+*
 * Revision 1.6  2004/04/22 15:43:27  shomrat
 * End/Start section changed
 *
