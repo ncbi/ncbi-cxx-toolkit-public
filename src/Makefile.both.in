@@ -65,11 +65,14 @@ $(XLIB): $(XLIBOBJ)
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) `pwd` $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
-	$(BINCOPY) $(XLIB) $(libdir)
-	@$(BINCOPY) $(XLIBDEP) $(status_dir)
-	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP)
 	@if [ -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+	    echo $(BINCOPY) $(XLIB) $(libdir) && \
+	    $(BINCOPY) $(XLIB) $(libdir) && \
 	    cd $(libdir) && $(RM) $(XLIBLINK) && $(LN_S) $(XLIB) $(XLIBLINK); \
+	fi
+	@if [ -d $(status_dir) -a -w $(status_dir) -a $(srcdir) != . ]; then \
+	    $(BINCOPY) $(XLIBDEP) $(status_dir) && \
+	    $(BINTOUCH) -r $(libdir)/$(XLIB) $(status_dir)/$(XLIBDEP); \
 	fi
 
 
@@ -91,8 +94,15 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP); \
 	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
 	fi
-	$(BINCOPY) $(XDLL) $(libdir)
-	@has_dll_loadable@$(BINCOPY) $(XDLL_LOADABLE) $(libdir)
+	@if [ -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+	    echo $(BINCOPY) $(XLIB) $(libdir) && \
+	    $(BINCOPY) $(XDLL) $(libdir); \
+	fi
+	@has_dll_loadable@@if [ -d $(libdir) -a -w $(libdir) \
+                                -a $(srcdir) != . ]; then \
+	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
+	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir); \
+	fi
 	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
 	    $(BINCOPY) $(XDLLDEP) $(status_dir); \
 	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \

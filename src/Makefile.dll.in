@@ -60,8 +60,15 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 	    echo $(srcdir) `pwd` $(TMPL) > $(XDLLDEP); \
 	    $(TOUCH) -r $(XDLL) $(XDLLDEP); \
 	fi
-	$(BINCOPY) $(XDLL) $(libdir)
-	@has_dll_loadable@$(BINCOPY) $(XDLL_LOADABLE) $(libdir)
+	@if [ -d $(libdir) -a -w $(libdir) -a $(srcdir) != . ]; then \
+	    echo $(BINCOPY) $(XLIB) $(libdir) && \
+	    $(BINCOPY) $(XDLL) $(libdir); \
+	fi
+	@has_dll_loadable@@if [ -d $(libdir) -a -w $(libdir) \
+                                -a $(srcdir) != . ]; then \
+	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
+	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir); \
+	fi
 	@if [ '$(BINCOPY)' != '@:' -a -w $(status_dir) -a ! -r $(status_dir)/$(XDLLDEP) ]; then \
 	    $(BINCOPY) $(XDLLDEP) $(status_dir); \
 	    $(BINTOUCH) -r $(libdir)/$(XDLL) $(status_dir)/$(XDLLDEP); \

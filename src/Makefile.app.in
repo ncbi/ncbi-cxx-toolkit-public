@@ -67,7 +67,10 @@ $(XAPP): $(XOBJ) $(XLIBDEP)
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
-	$(BINCOPY) $(XAPP) $(bindir)/$(XAPP)
+	@if [ -d $(bindir) -a -w $(bindir) -a $(srcdir) != . ]; then \
+	    echo $(BINCOPY) $(XAPP) $(bindir) && \
+	    $(BINCOPY) $(XAPP) $(bindir); \
+	fi
 
 
 ### Standard targets (non-recursive)
