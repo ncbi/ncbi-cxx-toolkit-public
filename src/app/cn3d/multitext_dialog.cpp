@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2002/06/12 15:09:15  thiessen
+* kludge to avoid initial selected-all state
+*
 * Revision 1.4  2001/10/16 21:49:07  thiessen
 * restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
 *
@@ -119,6 +122,22 @@ MultiTextDialog::~MultiTextDialog(void)
 void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
 {
     Destroy();
+}
+
+// these two are possibly temporary kludges to keep text area from coming up initially all selected
+int MultiTextDialog::ShowModal(void)
+{
+    textCtrl->SetSelection(0, 0);
+    textCtrl->SetInsertionPointEnd();
+    return wxDialog::ShowModal();
+}
+
+bool MultiTextDialog::Show(bool show)
+{
+    bool retval = wxDialog::Show(show);
+    textCtrl->SetSelection(0, 0);
+    textCtrl->SetInsertionPointEnd();
+    return retval;
 }
 
 void MultiTextDialog::OnButton(wxCommandEvent& event)

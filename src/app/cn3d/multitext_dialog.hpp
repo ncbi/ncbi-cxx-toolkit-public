@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/06/12 15:09:15  thiessen
+* kludge to avoid initial selected-all state
+*
 * Revision 1.5  2001/10/18 14:48:46  thiessen
 * remove class name from member function
 *
@@ -94,6 +97,9 @@ public:
 
     bool GetLines(TextLines *lines) const;
     bool GetLine(std::string *singleString) const;  // collapse all lines to single string
+
+    bool Show(bool);
+    int ShowModal(void);
 
 private:
     MultiTextDialogOwner *myOwner;
