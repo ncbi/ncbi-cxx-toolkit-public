@@ -141,13 +141,13 @@ typedef struct Blast_ExtendWord {
 /** Initializes the word extension structure
  * @param is_na Is this a nucleotide-nucleotide (blastn) search? [in]
  * @param query_length Length of the query sequence [in]
- * @param word_options Options for initial word extension [in]
+ * @param word_params Parameters for initial word extension [in]
  * @param subject_length Average length of a subject sequence, used to 
  *                       calculate average search space. [in]
  * @param ewp_ptr Pointer to the word extension structure [out]
  */
 Int2 BlastExtendWordNew(Boolean is_na, Uint4 query_length,
-   const BlastInitialWordOptions* word_options,
+   const BlastInitialWordParameters* word_params,
    Uint4 subject_length, Blast_ExtendWord** ewp_ptr);
 
 /** Allocate memory for the BlastInitHitList structure */
