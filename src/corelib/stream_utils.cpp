@@ -377,36 +377,10 @@ void CStreamUtils::Pushback(CNcbiIstream&       is,
 }
 
 
-static inline streamsize s_Readsome(CNcbiIstream& is,
-                                    CT_CHAR_TYPE* buf,
-                                    streamsize    buf_size)
-{
-#ifdef NCBI_COMPILER_WORKSHOP
-    /* Rogue Wave does not always return correct value from is.readsome() :-/
-     * In particular, when streambuf::showmanyc() returns 1 followed by
-     * a failed read() [which implements extraction from the stream], which
-     * encounters the EOF, the readsome() will blindly return 1, and in
-     * general, always exactly the number of bytes showmanyc() reported,
-     * regardless of actually extracted by subsequent read operation.  Bug!
-     * NOTE that showmanyc() does not guarantee the number of bytes that can
-     * be read, but returns a best guess estimate [C++ Standard, footnote 275].
-     */
-    is.readsome(buf, buf_size);
-    return is.gcount();
-#else
-    return is.readsome(buf, buf_size);
-#endif
-}
-
-
-static streamsize s_DoReadsome(CNcbiIstream& is,
-                               CT_CHAR_TYPE* buf,
-                               streamsize    buf_size)
-{
-    _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME
 #endif /*NCBI_NO_READSOME*/
+
 #if defined(NCBI_COMPILER_GCC)
 #  if NCBI_COMPILER_VERSION < 300
 #    define NCBI_NO_READSOME 1
@@ -426,6 +400,36 @@ static streamsize s_DoReadsome(CNcbiIstream& is,
 #  define NCBI_NO_READSOME 1
 #endif /*NCBI_COMPILER*/
 
+
+#ifndef NCBI_NO_READSOME
+static inline streamsize s_Readsome(CNcbiIstream& is,
+                                    CT_CHAR_TYPE* buf,
+                                    streamsize    buf_size)
+{
+#  ifdef NCBI_COMPILER_WORKSHOP
+    /* Rogue Wave does not always return correct value from is.readsome() :-/
+     * In particular, when streambuf::showmanyc() returns 1 followed by
+     * a failed read() [which implements extraction from the stream], which
+     * encounters the EOF, the readsome() will blindly return 1, and in
+     * general, always exactly the number of bytes showmanyc() reported,
+     * regardless of actually extracted by subsequent read operation.  Bug!
+     * NOTE that showmanyc() does not guarantee the number of bytes that can
+     * be read, but returns a best guess estimate [C++ Standard, footnote 275].
+     */
+    is.readsome(buf, buf_size);
+    return is.gcount();
+#  else
+    return is.readsome(buf, buf_size);
+#  endif /*NCBI_COMPILER_WORKSHOP*/
+}
+#endif /*NCBI_NO_READSOME*/
+
+
+static streamsize s_DoReadsome(CNcbiIstream& is,
+                               CT_CHAR_TYPE* buf,
+                               streamsize    buf_size)
+{
+    _ASSERT(buf  &&  buf_size);
 #ifdef NCBI_NO_READSOME
 #  undef NCBI_NO_READSOME
     // Special case: GCC had no readsome() prior to ver 3.0;
@@ -483,6 +487,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.37  2003/12/31 15:31:20  lavr
+ * Fix wrong use of istream::readsome() on platforms that lack it
+ *
  * Revision 1.36  2003/12/30 17:28:39  lavr
  * Work around buggy implementation of istream::readsome() in Rogue Wave STL
  *
