@@ -1,4 +1,3 @@
---$Revision: 4.2 $
 --**********************************************************************
 --
 --  Biological Macromolecule 3-D Structure Data Types for MMDB,
@@ -252,18 +251,19 @@ RealValue ::= SEQUENCE {
 -- their origin to that of the reference frame.
 
 Rot-trans-matrix ::= SEQUENCE {
-	rot-11			RealValue,
-	rot-12			RealValue,
-	rot-13			RealValue,
-	rot-21			RealValue,
-	rot-22			RealValue,
-	rot-23			RealValue,
-	rot-31			RealValue,
-	rot-32			RealValue,
-	rot-33			RealValue,
-	tran-1			RealValue,
-	tran-2			RealValue,
-	tran-3			RealValue }
+	scale-factor            INTEGER,
+	rot-11			INTEGER,
+	rot-12			INTEGER,
+	rot-13			INTEGER,
+	rot-21			INTEGER,
+	rot-22			INTEGER,
+	rot-23			INTEGER,
+	rot-31			INTEGER,
+	rot-32			INTEGER,
+	rot-33			INTEGER,
+	tran-1			INTEGER,
+	tran-2			INTEGER,
+	tran-3			INTEGER }
 
 
 Color-prop ::= SEQUENCE {
