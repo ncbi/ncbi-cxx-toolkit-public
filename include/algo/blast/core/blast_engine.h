@@ -57,7 +57,9 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastInitialWordParametersPtr word_params, 
         BlastExtensionParametersPtr ext_params, 
         BlastHitSavingParametersPtr hit_params, 
-        BlastResultsPtr PNTR results_ptr, CharPtr logname);
+        BlastResultsPtr PNTR results_ptr,
+	BlastReturnStatPtr return_stats,
+	CharPtr logname);
 #else
 /** The high level function performing the BLAST search after all the setup
  * has been done.
@@ -83,7 +85,8 @@ BLAST_SearchEngineCore(BLAST_SequenceBlkPtr query,
         BlastInitialWordParametersPtr word_params, 
         BlastExtensionParametersPtr ext_params, 
         BlastHitSavingParametersPtr hit_params, 
-        BlastResultsPtr PNTR results_ptr);
+        BlastResultsPtr PNTR results_ptr,
+	BlastReturnStatPtr return_stats);
 #endif
 
 #ifdef __cplusplus
