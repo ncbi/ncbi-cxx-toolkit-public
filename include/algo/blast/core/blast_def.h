@@ -63,9 +63,10 @@ typedef struct BLAST_SequenceBlk {
    Int2	context; /**< Context of the query, needed for multi-query searches */
    Int2	frame; /**< Frame of the query, needed for translated searches */
    Int4 oid; /**< The ordinal id of the current sequence */
-   Boolean sequence_allocated; /**< TRUE only when this block contains the 
-                                  query sequence, or an uncompressed 
-                                  nucleotide database sequence */
+   Boolean sequence_allocated; /**< TRUE if memory has been allocated for 
+                                  sequence */
+   Boolean sequence_start_allocated; /**< TRUE if memory has been allocated 
+                                        for sequence_start */
 } BLAST_SequenceBlk, *BLAST_SequenceBlkPtr;
 
 /** The query related information 
