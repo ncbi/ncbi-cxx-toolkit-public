@@ -3,7 +3,7 @@
 # Build library "xobjmgr1"
 #################################
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
+REQUIRES = dbapi
 
 SRC = align_ci annot_ci annot_object annot_types_ci bioseq_handle \
       data_loader data_source desc_ci feat_ci graph_ci handle_range \

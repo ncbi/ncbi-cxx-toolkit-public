@@ -6,11 +6,13 @@
 # Build serialization test application "serialtest"
 #################################
 
+REQUIRES = dbapi
+
 APP = reader_pubseq_test
 SRC = reader_pubseq_test
 
 LIB = id1 seqset $(SEQ_LIBS) pub medline biblio general \
-      dbapi_driver_ctlib dbapi_driver \
+      dbapi_driver \
       xser xconnect xutil xncbi 
 
 PRE_LIBS =  -L.. -lxobjmgr1
