@@ -302,12 +302,16 @@ static void s_MergeDuplicates
 
         if (remove) {
             if (merge) {
-                CRef<CSeq_loc> merged_loc(new CSeq_loc);
-                merged_loc->Assign(curr_ref.GetLoc());
+                CRef<CSeq_loc> merged_loc = Seq_loc_Add(
+                    curr_ref.GetLoc(),
+                    (*prev)->GetLoc(),
+                    CSeq_loc::fSort | CSeq_loc::fMerge_All,
+                    &ctx.GetScope());
+                /*merged_loc->Assign(curr_ref.GetLoc());
                 merged_loc->Add((*prev)->GetLoc());
 
                 merged_loc =
-                    Seq_loc_Merge(*merged_loc, CSeq_loc::fMerge_All, &ctx.GetScope());
+                    Seq_loc_Merge(*merged_loc, CSeq_loc::fMerge_All, &ctx.GetScope());*/
                 (*prev)->SetLoc(merged_loc);
             }
             curr = refs.erase(curr);
@@ -964,6 +968,7 @@ static void s_RemovePeriod(string& title)
 void CReferenceItem::x_CleanData(void)
 {
     // title
+    ExpandTildes(m_Title, eTilde_space);
     NStr::TruncateSpacesInPlace(m_Title);
     StripSpaces(m_Title);   // internal spaces
     ConvertQuotes(m_Title);
@@ -1243,6 +1248,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.30  2005/03/29 18:18:09  shomrat
+* Expand tildes in title; Fixed reference merging
+*
 * Revision 1.29  2005/02/09 14:47:16  shomrat
 * Set date for patent
 *
