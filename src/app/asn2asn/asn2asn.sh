@@ -27,6 +27,8 @@ do_test() {
     fi
     if cmp out $r/$2; then
         :
+    elif test -f $r/$2.2 && cmp out $r/$2.2; then
+        :
     else
         echo "wrong result!"
         exit 1
