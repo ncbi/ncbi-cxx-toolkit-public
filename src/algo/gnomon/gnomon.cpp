@@ -40,6 +40,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objmgr/util/sequence.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -288,6 +289,8 @@ void CGnomon::Run(void)
 
     CSeq_annot::C_Data::TFtable& ftable = m_Annot->SetData().SetFtable();
 
+	size_t counter = 0;
+	string locus_tag_base("GNOMON_");
     ITERATE (list<Gene>, it, genes) {
         const Gene& igene = *it;
         int strand = igene.Strand();
@@ -339,6 +342,24 @@ void CGnomon::Run(void)
             (*s_ExonDataToLoc(cds_vec,
                               (strand == Plus ? eNa_strand_plus : eNa_strand_minus), *id));
 
+		//
+		// create a dummy gene feature as well
+		CRef<CSeq_feat> feat_gene(new CSeq_feat());
+
+		char buf[32];
+		sprintf(buf, "%04d", ++counter);
+		string name(locus_tag_base);
+		name += buf;
+		feat_gene->SetData().SetGene().SetLocus_tag(name);
+		feat_gene->SetLocation().SetInt()
+			.SetFrom(feat_mrna->GetLocation().GetTotalRange().GetFrom());
+		feat_gene->SetLocation().SetInt()
+			.SetTo(feat_mrna->GetLocation().GetTotalRange().GetTo());
+		feat_gene->SetLocation().SetInt().SetStrand
+			(strand == Plus ? eNa_strand_plus : eNa_strand_minus);
+		feat_gene->SetLocation().SetId(sequence::GetId(feat_mrna->GetLocation()));
+
+        ftable.push_back(feat_gene);
         ftable.push_back(feat_mrna);
         ftable.push_back(feat_cds);
     }
@@ -356,6 +377,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/16 12:00:57  dicuccio
+ * Create dummy gene features to go with GNOMON mRNA features
+ *
  * Revision 1.4  2004/05/21 21:41:03  gorelenk
  * Added PCH ncbi_pch.hpp
  *
