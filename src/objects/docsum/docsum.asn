@@ -1,4 +1,4 @@
--- $Id: docsum.asn,v 1.44 2004/08/16 14:15:14 kholodov Exp $
+-- $Id: docsum.asn,v 1.45 2004/09/30 19:16:39 kholodov Exp $
 
 NSE DEFINITIONS ::=
 BEGIN
@@ -323,7 +323,8 @@ NSE-rsContigHit ::= SEQUENCE {		-- data from SNPContigLoc, ContigInfo tables, & 
 	accession VisibleString OPTIONAL,	-- Accession number of the contig
 	version INTEGER OPTIONAL,		-- version number of the contig	
 	chromosome VisibleString OPTIONAL,	-- Chromosome number
-	assembly VisibleString OPTIONAL     -- Genomic assembly
+	assembly VisibleString OPTIONAL,     -- Genomic assembly
+	build-id VisibleString OPTIONAL      -- Genomic build id
 }
 	
 
@@ -482,6 +483,9 @@ NSE-Date-std ::= SEQUENCE {        		-- NOTE: this is NOT a unix tm struct
 END
 
 -- $Log: docsum.asn,v $
+-- Revision 1.45  2004/09/30 19:16:39  kholodov
+-- Added: genomic build id
+--
 -- Revision 1.44  2004/08/16 14:15:14  kholodov
 -- Added: wgs source-db code
 --
