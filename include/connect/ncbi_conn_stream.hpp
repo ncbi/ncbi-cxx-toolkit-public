@@ -50,6 +50,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 6.4  2001/01/12 23:48:51  lavr
+* GetCONN method added
+*
 * Revision 6.3  2001/01/11 23:04:04  lavr
 * Bugfixes; tie is now done at streambuf level, not in iostream
 *
@@ -90,9 +93,11 @@ const streamsize kConn_DefBufSize = 4096;
 class CConn_IOStream : public iostream
 {
 public:
-    CConn_IOStream(CONNECTOR  connector,
-                   streamsize buf_size = kConn_DefBufSize,
-                   bool       do_tie   = true);
+    CConn_IOStream(CONNECTOR       connector,
+                   const STimeout* timeout  = 0, /* means infinite */
+                   streamsize      buf_size = kConn_DefBufSize,
+                   bool            do_tie   = true);
+    CONN GetCONN() const;
     virtual ~CConn_IOStream(void);
 };
 
@@ -108,10 +113,11 @@ public:
 class CConn_SocketStream : public CConn_IOStream
 {
 public:
-    CConn_SocketStream(const string&  host,         /* host to connect to  */
-                       unsigned short port,         /* ... and port number */
-                       unsigned int   max_try  = 3, /* number of attempts  */
-                       streamsize     buf_size = kConn_DefBufSize);
+    CConn_SocketStream(const string&   host,         /* host to connect to  */
+                       unsigned short  port,         /* ... and port number */
+                       unsigned int    max_try  = 3, /* number of attempts  */
+                       const STimeout* timeout  = 0,
+                       streamsize      buf_size = kConn_DefBufSize);
 };
 
 
@@ -138,17 +144,19 @@ public:
 class CConn_HttpStream : public CConn_IOStream
 {
 public:
-    CConn_HttpStream(const string&  host,
-                     const string&  path,
-                     const string&  args        = kEmptyStr,
-                     const string&  user_header = kEmptyStr,
-                     unsigned short port        = 80,
-                     THCC_Flags     flags       = fHCC_AutoReconnect,
-                     streamsize     buf_size    = kConn_DefBufSize);
+    CConn_HttpStream(const string&   host,
+                     const string&   path,
+                     const string&   args        = kEmptyStr,
+                     const string&   user_header = kEmptyStr,
+                     unsigned short  port        = 80,
+                     THCC_Flags      flags       = fHCC_AutoReconnect,
+                     const STimeout* timeout     = 0,
+                     streamsize      buf_size    = kConn_DefBufSize);
     
     CConn_HttpStream(const SConnNetInfo* info        = 0,
                      const string&       user_header = kEmptyStr,
                      THCC_Flags          flags       = fHCC_AutoReconnect,
+                     const STimeout*     timeout     = 0,
                      streamsize          buf_size    = kConn_DefBufSize);
 };
 
@@ -170,6 +178,7 @@ public:
     CConn_ServiceStream(const string&       service,
                         TSERV_Type          types    = fSERV_Any,
                         const SConnNetInfo* info     = 0,
+                        const STimeout*     timeout  = 0,
                         streamsize          buf_size = kConn_DefBufSize);
 };
 
