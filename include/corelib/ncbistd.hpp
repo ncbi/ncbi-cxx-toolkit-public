@@ -33,6 +33,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/10/05 20:01:10  vakatov
+* auto_ptr -- no "const" in constructor and assignment
+*
 * Revision 1.41  2000/08/03 20:21:10  golikov
 * Added predicate PCase for AStrEquiv
 * PNocase, PCase goes through NStr::Compare now
@@ -309,8 +312,8 @@ private:
 
 public:
     explicit auto_ptr(X* p = 0) : m_Ptr(p) {}
-    auto_ptr(const auto_ptr<X>& a) : m_Ptr(a.release()) {}
-    auto_ptr<X>& operator=(const auto_ptr<X>& a) {
+    auto_ptr(auto_ptr<X>& a) : m_Ptr(a.release()) {}
+    auto_ptr<X>& operator=(auto_ptr<X>& a) {
         if (this != &a) {
             if (m_Ptr  &&  m_Ptr != a.m_Ptr) {
                 delete m_Ptr;
