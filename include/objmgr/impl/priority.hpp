@@ -45,11 +45,49 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class CPriorityIterator;
+class CPriority_I;
 class CTSE_Info;
 class CDataSource;
 class CDataLoader;
 struct CDataSource_ScopeInfo;
+
+class CPriorityTree;
+class CPriorityNode;
+
+class NCBI_XOBJMGR_EXPORT CPriorityTree : public CObject
+{
+public:
+    typedef CDataSource_ScopeInfo TLeaf;
+
+    CPriorityTree(void);
+    CPriorityTree(const CPriorityTree& node);
+    ~CPriorityTree(void);
+
+    const CPriorityTree& operator=(const CPriorityTree& node);
+
+    typedef int TPriority;
+    typedef CPriority_I iterator;
+    typedef multimap<TPriority, CPriorityNode> TPriorityMap;
+
+    TPriorityMap& GetTree(void);
+    const TPriorityMap& GetTree(void) const;
+
+    bool Insert(const CPriorityNode& node, TPriority priority);
+    bool Insert(const CPriorityTree& tree, TPriority priority);
+    bool Insert(CDataSource& ds, TPriority priority);
+
+    bool Erase(const TLeaf& leaf);
+
+    bool IsEmpty(void) const;
+    void Clear(void);
+
+private:
+
+    void x_CopySubTree(const CPriorityNode& node);
+
+    TPriorityMap m_Map;
+};
+
 
 class NCBI_XOBJMGR_EXPORT CPriorityNode
 {
@@ -57,17 +95,15 @@ public:
     typedef CDataSource_ScopeInfo TLeaf;
 
     CPriorityNode(void);
-    CPriorityNode(TLeaf& leaf);
+    explicit CPriorityNode(CDataSource& ds);
+    explicit CPriorityNode(TLeaf& leaf);
+    explicit CPriorityNode(const CPriorityTree& tree);
 
     CPriorityNode(const CPriorityNode& node);
     CPriorityNode& operator=(const CPriorityNode& node);
 
-    typedef int TPriority;
-    typedef CPriorityIterator iterator;
-    typedef set<CPriorityNode> TPrioritySet;
-    typedef map<TPriority, TPrioritySet> TPriorityMap;
-
-    bool operator<(const CPriorityNode& node) const;
+    typedef CPriorityTree::TPriority TPriority;
+    typedef CPriorityTree::TPriorityMap TPriorityMap;
 
     // true if the node is a tree, not a leaf
     bool IsTree(void) const;
@@ -75,16 +111,16 @@ public:
 
     TLeaf& GetLeaf(void);
     const TLeaf& GetLeaf(void) const;
-    TPriorityMap& GetTree(void);
-    const TPriorityMap& GetTree(void) const;
+    CPriorityTree& GetTree(void);
+    const CPriorityTree& GetTree(void) const;
 
     // Set node type to "tree"
-    TPriorityMap& SetTree(void);
+    CPriorityTree& SetTree(void);
     // Set node type to "leaf"
     void SetLeaf(TLeaf& leaf);
 
-    bool Insert(const CPriorityNode& node, TPriority priority);
-    bool Insert(CDataSource& ds, TPriority priority);
+    //bool Insert(const CPriorityNode& node, TPriority priority);
+    //bool Insert(CDataSource& ds, TPriority priority);
     bool Erase(const TLeaf& leaf);
     bool IsEmpty(void) const;
     void Clear(void);
@@ -93,8 +129,8 @@ private:
 
     void x_CopySubTree(const CPriorityNode& node);
 
-    auto_ptr<TPriorityMap> m_SubTree;
-    CRef<TLeaf>            m_Leaf;
+    CRef<CPriorityTree> m_SubTree;
+    CRef<TLeaf>         m_Leaf;
 };
 
 
@@ -102,44 +138,58 @@ class CPriority_I
 {
 public:
     CPriority_I(void);
-    CPriority_I(CPriorityNode& node);
+    CPriority_I(CPriorityTree& tree);
 
-    operator bool(void);
-    CPriorityNode::TLeaf& operator*(void);
-    CPriorityNode::TLeaf* operator->(void);
+    typedef CPriorityNode::TLeaf TLeaf;
+    typedef TLeaf value_type;
 
-    CPriority_I& operator++(void);
+    operator bool(void) const;
+    value_type& operator*(void) const;
+    value_type* operator->(void) const;
+
+    const CPriority_I& operator++(void);
 
 private:
     CPriority_I(const CPriority_I&);
     CPriority_I& operator= (const CPriority_I&);
 
-    friend class CPriorityNode;
-    typedef CPriorityNode::TPriorityMap TPriorityMap;
+    typedef CPriorityTree::TPriorityMap TPriorityMap;
     typedef TPriorityMap::iterator      TMap_I;
-    typedef CPriorityNode::TPrioritySet TPrioritySet;
-    typedef TPrioritySet::iterator      TSet_I;
 
     TPriorityMap*           m_Map;
     TMap_I                  m_Map_I;
-    TSet_I                  m_Set_I;
     CPriorityNode*          m_Node;
     auto_ptr<CPriority_I>   m_Sub_I;
 };
 
 
-// CPriorityNode inline methods
+// CPriorityTree inline methods
 
 inline
-bool CPriorityNode::operator<(const CPriorityNode& node) const
+CPriorityTree::TPriorityMap& CPriorityTree::GetTree(void)
 {
-    return (m_SubTree.get() < node.m_SubTree.get()) || (m_Leaf < node.m_Leaf);
+    return m_Map;
 }
+
+inline
+const CPriorityTree::TPriorityMap& CPriorityTree::GetTree(void) const
+{
+    return m_Map;
+}
+
+inline
+bool CPriorityTree::IsEmpty(void) const
+{
+    return m_Map.empty();
+}
+
+
+// CPriorityNode inline methods
 
 inline
 bool CPriorityNode::IsTree(void) const
 {
-    return m_SubTree.get() != 0;
+    return m_SubTree;
 }
 
 inline
@@ -163,14 +213,14 @@ const CDataSource_ScopeInfo& CPriorityNode::GetLeaf(void) const
 }
 
 inline
-CPriorityNode::TPriorityMap& CPriorityNode::GetTree(void)
+CPriorityTree& CPriorityNode::GetTree(void)
 {
     _ASSERT(IsTree());
     return *m_SubTree;
 }
 
 inline
-const CPriorityNode::TPriorityMap& CPriorityNode::GetTree(void) const
+const CPriorityTree& CPriorityNode::GetTree(void) const
 {
     _ASSERT(IsTree());
     return *m_SubTree;
@@ -179,30 +229,30 @@ const CPriorityNode::TPriorityMap& CPriorityNode::GetTree(void) const
 inline
 bool CPriorityNode::IsEmpty(void) const
 {
-    return !IsLeaf()  &&  (!IsTree()  ||  m_SubTree->empty());
+    return !IsLeaf()  &&  (!IsTree()  ||  m_SubTree->IsEmpty());
 }
 
 
 // CPriority_I inline methods
 
 inline
-CPriority_I::operator bool(void)
+CPriority_I::operator bool(void) const
 {
     return m_Node != 0;
 }
 
 inline
-CPriorityNode::TLeaf& CPriority_I::operator*(void)
+CPriority_I::value_type& CPriority_I::operator*(void) const
 {
     _ASSERT(m_Node  &&  (m_Node->IsTree()  ||  m_Node->IsLeaf()));
-    if (m_Sub_I.get() != 0) {
+    if (m_Sub_I.get()) {
         return **m_Sub_I;
     }
     return m_Node->GetLeaf();
 }
 
 inline
-CPriorityNode::TLeaf* CPriority_I::operator->(void)
+CPriority_I::value_type* CPriority_I::operator->(void) const
 {
     return &this->operator *();
 }
@@ -213,6 +263,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  2003/06/30 18:42:09  vasilche
+* CPriority_I made to use less memory allocations/deallocations.
+*
 * Revision 1.8  2003/06/19 18:34:07  vasilche
 * Fixed compilation on Windows.
 *

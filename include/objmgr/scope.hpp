@@ -187,7 +187,13 @@ private:
     // Find the best possible resolution for the Seq-id
     CRef<CBioseq_ScopeInfo> x_ResolveSeq_id(const CSeq_id_Handle& id);
     // Iterate over priorities, find all possible data sources
+    void x_FindBioseqInfo(const CPriorityTree& tree,
+                          const CSeq_id_Handle& idh,
+                          TSeqMatchSet& sm_set);
     void x_FindBioseqInfo(const CPriorityNode& node,
+                          const CSeq_id_Handle& idh,
+                          TSeqMatchSet& sm_set);
+    void x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
                           const CSeq_id_Handle& idh,
                           TSeqMatchSet& sm_set);
 
@@ -226,7 +232,7 @@ private:
 
 
     CObjectManager* m_pObjMgr;
-    CPriorityNode   m_setDataSrc; // Data sources ordered by priority
+    CPriorityTree   m_setDataSrc; // Data sources ordered by priority
 
     CInitMutexPool  m_MutexPool;
 
@@ -271,6 +277,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.53  2003/06/30 18:42:09  vasilche
+* CPriority_I made to use less memory allocations/deallocations.
+*
 * Revision 1.52  2003/06/19 18:34:07  vasilche
 * Fixed compilation on Windows.
 *

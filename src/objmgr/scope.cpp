@@ -83,7 +83,6 @@ void CScope::x_AttachToOM(CObjectManager& objmgr)
     if ( m_pObjMgr != &objmgr ) {
         x_DetachFromOM();
         
-        m_setDataSrc.SetTree();
         m_pObjMgr = &objmgr;
         m_pObjMgr->RegisterScope(*this);
     }
@@ -106,7 +105,7 @@ void CScope::x_DetachFromOM(void)
 }
 
 
-void CScope::AddDefaults(CPriorityNode::TPriority priority)
+void CScope::AddDefaults(CPriorityTree::TPriority priority)
 {
     CObjectManager::TDataSourcesLock ds_set;
     m_pObjMgr->AcquireDefaultDataSources(ds_set);
@@ -120,7 +119,7 @@ void CScope::AddDefaults(CPriorityNode::TPriority priority)
 
 
 void CScope::AddDataLoader (const string& loader_name,
-                            CPriorityNode::TPriority priority)
+                            CPriorityTree::TPriority priority)
 {
     CRef<CDataSource> ds = m_pObjMgr->AcquireDataLoader(loader_name);
 
@@ -131,7 +130,7 @@ void CScope::AddDataLoader (const string& loader_name,
 
 
 void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
-                                 CPriorityNode::TPriority priority)
+                                 CPriorityTree::TPriority priority)
 {
     CRef<CDataSource> ds = m_pObjMgr->AcquireTopLevelSeqEntry(top_entry);
 
@@ -141,14 +140,14 @@ void CScope::AddTopLevelSeqEntry(CSeq_entry& top_entry,
 }
 
 
-void CScope::AddScope(CScope& scope, CPriorityNode::TPriority priority)
+void CScope::AddScope(CScope& scope, CPriorityTree::TPriority priority)
 {
     TReadLockGuard src_guard(scope.m_Scope_Conf_RWLock);
-    CPriorityNode node(scope.m_setDataSrc);
+    CPriorityTree tree(scope.m_setDataSrc);
     src_guard.Release();
     
     TWriteLockGuard guard(m_Scope_Conf_RWLock);
-    m_setDataSrc.Insert(node, priority);
+    m_setDataSrc.Insert(tree, priority);
     x_ClearCacheOnNewData();
 }
 
@@ -429,53 +428,71 @@ void CScope::FindSeqid(set< CRef<const CSeq_id> >& setId,
 }
 
 
+void CScope::x_FindBioseqInfo(const CPriorityTree& tree,
+                              const CSeq_id_Handle& idh,
+                              TSeqMatchSet& sm_set)
+{
+    // Process sub-tree
+    CPriorityTree::TPriority last_priority = 0;
+    ITERATE( CPriorityTree::TPriorityMap, mit, tree.GetTree() ) {
+        // Search in all nodes of the same priority regardless
+        // of previous results
+        CPriorityTree::TPriority new_priority = mit->first;
+        if ( new_priority != last_priority ) {
+            if ( !sm_set.empty() )
+                return;
+            last_priority = new_priority;
+        }
+        x_FindBioseqInfo(mit->second, idh, sm_set);
+        // Don't process lower priority nodes if something
+        // was found
+    }
+}
+
+
+void CScope::x_FindBioseqInfo(CDataSource_ScopeInfo& ds_info,
+                              const CSeq_id_Handle& idh,
+                              TSeqMatchSet& sm_set)
+{
+    CSeqMatch_Info info;
+    {{
+        CFastMutexGuard guard(ds_info.GetMutex());
+        ITERATE(TTSE_LockSet, tse_it, ds_info.GetTSESet()) {
+            CTSE_Info::TBioseqs::const_iterator seq =
+                (*tse_it)->m_Bioseqs.find(idh);
+            if (seq != (*tse_it)->m_Bioseqs.end()) {
+                // Use cached TSE (same meaning as from history). If info
+                // is set but not in the history just ignore it.
+                if ( info ) {
+                    CSeqMatch_Info new_info(idh, **tse_it);
+                    // Both are in the history -
+                    // can not resolve the conflict
+                    x_ThrowConflict(eConflict_History, info, new_info);
+                }
+                info = CSeqMatch_Info(idh, **tse_it);
+            }
+        }
+    }}
+    if ( !info ) {
+        // Try to load the sequence from the data source
+        info = ds_info.GetDataSource().BestResolve(idh);
+    }
+    if ( info ) {
+        sm_set.insert(TSeqMatchSet::value_type(info, &ds_info));
+    }
+}
+
 void CScope::x_FindBioseqInfo(const CPriorityNode& node,
                               const CSeq_id_Handle& idh,
                               TSeqMatchSet& sm_set)
 {
     if ( node.IsTree() ) {
         // Process sub-tree
-        ITERATE(CPriorityNode::TPriorityMap, mit, node.GetTree()) {
-            // Search in all nodes of the same priority regardless
-            // of previous results
-            ITERATE(CPriorityNode::TPrioritySet, sit, mit->second) {
-                x_FindBioseqInfo(*sit, idh, sm_set);
-            }
-            // Don't process lower priority nodes if something
-            // was found
-            if ( !sm_set.empty() )
-                return;
-        }
+        x_FindBioseqInfo(node.GetTree(), idh, sm_set);
     }
     else if ( node.IsLeaf() ) {
-        CDataSource_ScopeInfo& ds_info =
-            const_cast<CDataSource_ScopeInfo&>(node.GetLeaf());
-        CSeqMatch_Info info;
-        {{
-            CFastMutexGuard guard(ds_info.GetMutex());
-            ITERATE(TTSE_LockSet, tse_it, ds_info.GetTSESet()) {
-                CTSE_Info::TBioseqs::const_iterator seq =
-                    (*tse_it)->m_Bioseqs.find(idh);
-                if (seq != (*tse_it)->m_Bioseqs.end()) {
-                    // Use cached TSE (same meaning as from history). If info
-                    // is set but not in the history just ignore it.
-                    if ( info ) {
-                        CSeqMatch_Info new_info(idh, **tse_it);
-                        // Both are in the history -
-                        // can not resolve the conflict
-                        x_ThrowConflict(eConflict_History, info, new_info);
-                    }
-                    info = CSeqMatch_Info(idh, **tse_it);
-                }
-            }
-        }}
-        if ( !info ) {
-            // Try to load the sequence from the data source
-            info = ds_info.GetDataSource().BestResolve(idh);
-        }
-        if ( info ) {
-            sm_set.insert(TSeqMatchSet::value_type(info, &ds_info));
-        }
+        x_FindBioseqInfo(const_cast<CDataSource_ScopeInfo&>(node.GetLeaf()),
+                         idh, sm_set);
     }
 }
 
@@ -766,6 +783,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.74  2003/06/30 18:42:10  vasilche
+* CPriority_I made to use less memory allocations/deallocations.
+*
 * Revision 1.73  2003/06/24 14:25:18  vasilche
 * Removed obsolete CTSE_Guard class.
 * Used separate mutexes for bioseq and annot maps.
