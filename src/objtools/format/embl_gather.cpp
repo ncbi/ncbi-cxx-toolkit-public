@@ -66,8 +66,6 @@ void CEmblGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
-    ctx.SetActiveBioseq(seq);
-
     ItemOS() << new CStartSectionItem(ctx);
 
     // The ID Line
@@ -115,6 +113,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.8  2004/03/31 17:17:04  shomrat
+* Active bioseq set outside method
+*
 * Revision 1.7  2004/03/25 20:36:56  shomrat
 * Use handles
 *

@@ -90,8 +90,6 @@ void CGenbankGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
-    ctx.SetActiveBioseq(seq);
-
     ItemOS() << new CStartSectionItem(ctx);
 
     ItemOS() << new CLocusItem(ctx);
@@ -197,6 +195,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.10  2004/03/31 17:17:25  shomrat
+* Active bioseq set outside method
+*
 * Revision 1.9  2004/03/25 20:40:17  shomrat
 * Use handles
 *

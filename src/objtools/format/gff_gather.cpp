@@ -55,15 +55,6 @@ void CGFFGatherer::x_DoSingleSection(const CBioseq_Handle& seq) const
 {
     CFFContext& ctx = Context();
 
-    ctx.SetActiveBioseq(seq);
-
-    if ( (ctx.IsNa()  &&  
-          ((ctx.GetFilterFlags() & fSkipNucleotides) != 0))  ||
-         (ctx.IsProt()  &&
-          ((ctx.GetFilterFlags() & fSkipProteins) != 0)) ) {
-        return;
-    }
-
     ItemOS() << new CStartSectionItem(ctx);
 
     ItemOS() << new CDateItem(ctx);  // for UpdateDate
@@ -88,6 +79,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.6  2004/03/31 17:17:47  shomrat
+* Active bioseq set outside method
+*
 * Revision 1.5  2004/03/25 20:43:28  shomrat
 * Use handles
 *
