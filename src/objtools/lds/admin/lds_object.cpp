@@ -42,6 +42,10 @@
 #include <objtools/lds/lds_set.hpp>
 #include <objtools/lds/lds_util.hpp>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -52,9 +56,17 @@ CLDS_Object::CLDS_Object(SLDS_TablesCollection& db,
 : m_db(db),
   m_ObjTypeMap(obj_map),
   m_MaxObjRecId(0),
-  m_MaxAnnRecId(0)
+  m_MaxAnnRecId(0),
+  m_TSE_Manager(0),
+  m_Scope(0)
 {}
 
+
+CLDS_Object::~CLDS_Object()
+{
+    delete m_Scope;
+    delete m_TSE_Manager;
+}
 
 void CLDS_Object::DeleteCascadeFiles(const CLDS_Set& file_ids, 
                                      CLDS_Set* objects_deleted,
@@ -220,19 +232,24 @@ int CLDS_Object::SaveObject(int file_id,
 {
     ++m_MaxObjRecId;
 
+    m_db.object_attr_db.object_attr_id = m_MaxObjRecId;
+    m_db.object_attr_db.object_title = description;
+    EBDB_ErrCode err = m_db.object_attr_db.Insert();
+    BDB_CHECK(err, "LDS::ObjectAttribute");
+
     m_db.object_db.object_id = m_MaxObjRecId;
     m_db.object_db.file_id = file_id;
-    m_db.object_db.seqlist_id = 0;  // TODO:
+    m_db.object_db.seqlist_id = 0;
     m_db.object_db.object_type = type_id;
     m_db.object_db.file_offset = offset;
-    m_db.object_db.object_attr_id = 0; // TODO
+    m_db.object_db.object_attr_id = m_MaxObjRecId;
     m_db.object_db.TSE_object_id = 0;
     m_db.object_db.parent_object_id = 0;
     m_db.object_db.primary_seqid = seq_id;
 
     LOG_POST(Info << "Saving Fasta object: " << seq_id);
 
-    EBDB_ErrCode err = m_db.object_db.Insert();
+    err = m_db.object_db.Insert();
     BDB_CHECK(err, "LDS::Object");
 
     return m_MaxObjRecId;
@@ -293,7 +310,8 @@ int CLDS_Object::SaveObject(int file_id,
 
 
     string id_str;
-    bool is_object = IsObject(*obj_info, &id_str);
+    string molecule_title;
+    bool is_object = IsObject(*obj_info, &id_str, &molecule_title);
     if (is_object) {
         m_db.object_db.primary_seqid = id_str;
 
@@ -301,18 +319,23 @@ int CLDS_Object::SaveObject(int file_id,
 
         obj_info->ext_id = m_MaxObjRecId; // Keep external id for the next scan
 
+        m_db.object_attr_db.object_attr_id = m_MaxObjRecId;
+        m_db.object_attr_db.object_title = molecule_title;
+        EBDB_ErrCode err = m_db.object_attr_db.Insert();
+        BDB_CHECK(err, "LDS::ObjectAttr");
+
         m_db.object_db.object_id = m_MaxObjRecId;
         m_db.object_db.file_id = file_id;
         m_db.object_db.seqlist_id = 0;  // TODO:
         m_db.object_db.object_type = type_id;
         m_db.object_db.file_offset = obj_info->offset;
-        m_db.object_db.object_attr_id = 0; // TODO
+        m_db.object_db.object_attr_id = m_MaxObjRecId; 
         m_db.object_db.TSE_object_id = top_level_id;
         m_db.object_db.parent_object_id = parent_id;
 
 //        LOG_POST(Info << "Saving object: " << type_name << " " << id_str);
 
-        EBDB_ErrCode err = m_db.object_db.Insert();
+        err = m_db.object_db.Insert();
         BDB_CHECK(err, "LDS::Object");
 
     } else {
@@ -344,13 +367,46 @@ int CLDS_Object::SaveObject(int file_id,
 
 
 bool CLDS_Object::IsObject(const CLDS_CoreObjectsReader::SObjectDetails& parse_info,
-                           string* object_str_id)
+                           string* object_str_id,
+                           string* object_title)
 {
+    *object_title = "";
+    *object_str_id = "";
+
+    if (parse_info.is_top_level) {
+        delete m_Scope; m_Scope = 0;
+        delete m_TSE_Manager; m_TSE_Manager = 0;
+
+        CSeq_entry* seq_entry = CType<CSeq_entry>().Get(parse_info.info);
+
+        if (seq_entry) {
+            m_TSE_Manager = new CObjectManager;
+            m_Scope = new CScope(*m_TSE_Manager);
+
+            m_Scope->AddTopLevelSeqEntry(*seq_entry);
+            return true;
+        }
+    }
+
     const CBioseq* bioseq = CType<CBioseq>().Get(parse_info.info);
     if (bioseq) {
         const CSeq_id* seq_id = bioseq->GetFirstId();
         _ASSERT(seq_id);
         *object_str_id = seq_id->AsFastaString();
+
+        if (m_Scope) { // we are under OM here
+            CBioseq_Handle bio_handle = m_Scope->GetBioseqHandle(*bioseq);
+            if (bio_handle) {
+                *object_title = sequence::GetTitle(bio_handle);
+                //LOG_POST(Info << "object title: " << *object_title);
+            } else {
+                // the last resort
+                bioseq->GetLabel(object_title, CBioseq::eBoth);
+            }
+            
+        } else {  // non-OM controlled object
+            bioseq->GetLabel(object_title, CBioseq::eBoth);
+        }
     } else {
         const CSeq_annot* annot = 
             CType<CSeq_annot>().Get(parse_info.info);
@@ -398,6 +454,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/06/04 16:38:45  kuznets
+ * Implemented OM-based bioseq title extraction (should work better than
+ * CBioseq::GetTitle())
+ *
  * Revision 1.1  2003/06/03 14:13:25  kuznets
  * Initial revision
  *
