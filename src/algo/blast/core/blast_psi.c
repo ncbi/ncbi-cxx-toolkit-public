@@ -112,7 +112,7 @@ PSICreatePssmWithDiagnostics(const PSIMsa* msap,                    /* [in] */
 
     /*** Enable structure group customization if needed ***/
     if (options->nsg_compatibility_mode) {
-        int i;
+        Uint4 i;
         for (i = 0; i < msa->dimensions->query_length; i++) {
             msa->cell[kQueryIndex][i].letter = 0;
             msa->cell[kQueryIndex][i].is_aligned = FALSE;
