@@ -11,6 +11,7 @@ SRC = \
 
 LIB = \
 	xstruct_dp \
-	xncbi
+	xncbi \
+	tables
 
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir)/../..
