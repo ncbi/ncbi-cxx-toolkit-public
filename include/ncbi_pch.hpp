@@ -37,21 +37,21 @@
 //TODO - define file content
 #include <corelib/ddumpable.hpp>
 #include <corelib/metareg.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
+///#include <corelib/ncbiapp.hpp>
+///#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbiatomic.hpp>
 #include <corelib/ncbicntr.hpp>
 #include <corelib/ncbidbg.hpp>
 #include <corelib/ncbidiag.hpp>
-#include <corelib/ncbidll.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbiexec.hpp>
+//#include <corelib/ncbidll.hpp>
+///#include <corelib/ncbienv.hpp>
+//#include <corelib/ncbiexec.hpp>
 #include <corelib/ncbiexpt.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbireg.hpp>
+///#include <corelib/ncbireg.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbistr.hpp>
@@ -60,19 +60,22 @@
 #include <corelib/ncbithr_conf.hpp>
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbiutil.hpp>
-#include <corelib/ncbi_bswap.hpp>
+//#include <corelib/ncbi_bswap.hpp>
 #include <corelib/ncbi_limits.hpp>
-#include <corelib/ncbi_process.hpp>
+//#include <corelib/ncbi_process.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_tree.hpp>
-#include <corelib/plugin_manager.hpp>
-#include <corelib/plugin_manager_impl.hpp>
-#include <corelib/test_mt.hpp>
-#include <corelib/version.hpp>
+//#include <corelib/plugin_manager.hpp>
+//#include <corelib/plugin_manager_impl.hpp>
+//#include <corelib/test_mt.hpp>
+//#include <corelib/version.hpp>
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/05/14 16:46:02  gorelenk
+ * Comment some rarely used includes
+ *
  * Revision 1.2  2004/05/14 14:14:14  gorelenk
  * Changed ifdef
  *
