@@ -524,7 +524,6 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
                          lookup_wrap->lut_type == PHI_NA_LOOKUP);
    Int4 offset_array_size = GetOffsetArraySize(lookup_wrap);
    Uint4 avg_subj_length;
-   Boolean is_na = mb_lookup || (lookup_wrap->lut_type == NA_LOOKUP_TABLE);
 
    ASSERT(seq_src);
 
@@ -533,8 +532,8 @@ s_BlastSetUpAuxStructures(const BlastSeqSrc* seq_src,
 
    avg_subj_length = BLASTSeqSrcGetAvgSeqLen(seq_src);
      
-   if ((status = BlastExtendWordNew(is_na, query->length, word_params, 
-                    avg_subj_length, &aux_struct->ewp)) != 0)
+   if ((status = BlastExtendWordNew(lookup_wrap, query->length, word_params, 
+                                    avg_subj_length, &aux_struct->ewp)) != 0)
       return status;
 
    if (mb_lookup) {
@@ -642,9 +641,7 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
       concatenated DB */
    avg_subj_length = (Uint4) (dbsize / num_db_seqs);
    BlastExtendWordFree(aux_struct->ewp);
-   /* First argument in BlastExtendWordNew is false because RPS search is 
-      never a blastn search. */
-   BlastExtendWordNew(FALSE, concat_db.length, word_params, 
+   BlastExtendWordNew(lookup_wrap, concat_db.length, word_params, 
                       avg_subj_length, &aux_struct->ewp);
 
    /* Run the search; the input query is what gets scanned
