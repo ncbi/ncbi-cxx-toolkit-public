@@ -295,6 +295,29 @@ public:
 
     /// Set C-str detection
     void SetLegacyStringsCheck(bool value);
+
+    /// CBDB_File keeps data in two buffers (key buffer and data buffer).
+    /// TUnifiedFieldIndex is used to address fields in a non-ambigiuos manner.
+    /// Negative index addresses fields in the key buffer, positive - data buffer
+    /// Numbers are 1 based, 0 - means non-existing field
+    typedef int TUnifiedFieldIndex;
+
+    /// Get field index by name.
+    /// @param
+    ///   name field name to find (case insensitive)
+    /// @return 
+    ///   Field index (0 if not found)
+    /// @sa TUnifiedFieldIndex
+    TUnifiedFieldIndex GetFieldIdx(const string& name) const;
+
+    /// Return field by field index
+    /// @param
+    ///    idx field index
+    /// @return field reference
+    const CBDB_Field& GetField(TUnifiedFieldIndex idx) const;
+    CBDB_Field& GetField(TUnifiedFieldIndex idx);
+
+
 protected:
     /// Unpack internal record buffers
     void Discard();
@@ -440,6 +463,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2004/02/13 15:00:12  kuznets
+ * + typedef TUnifiedFieldIndex plus methods to work with fields in CBDB_File
+ *
  * Revision 1.27  2003/12/29 13:23:01  kuznets
  * Added support for transaction protected cursors.
  *
