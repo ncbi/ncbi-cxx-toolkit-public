@@ -96,7 +96,7 @@ CT_INT_TYPE CConn_Streambuf::overflow(CT_INT_TYPE c)
         // send buffer
         size_t n_write = pptr() - pbase();
         if ( !n_write ) {
-            _ASSERT(c == CT_EOF);
+            _ASSERT(CT_EQ_INT_TYPE(c, CT_EOF));
             return CT_NOT_EOF(CT_EOF);
         }
 
@@ -288,6 +288,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.35  2003/10/07 19:59:40  lavr
+ * Replace '==' with (better) 'CT_EQ_INT_TYPE'
+ *
  * Revision 6.34  2003/09/23 21:05:50  lavr
  * Rearranged included headers
  *
