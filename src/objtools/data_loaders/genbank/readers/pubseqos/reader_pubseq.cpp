@@ -380,8 +380,9 @@ streambuf *CPubseqSeqref::BlobStreamBuf(int start, int stop, const CBlobClass &c
 CSeq_entry *CPubseqBlob::Seq_entry()
 {
   CObjectIStreamAsnBinary ois(m_IStream);
-  CRef<CSeq_entry> se = new CSeq_entry;
+  CSeq_entry *se = new CSeq_entry;
   m_Seq_entry = se;
+  
   try
   {
     ois >> *se;
@@ -414,6 +415,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.14  2002/07/10 16:49:59  grichenk
+* Removed CRef<CSeq_entry>, use pointer instead
+*
 * Revision 1.13  2002/06/04 17:18:33  kimelman
 * memory cleanup :  new/delete/Cref rearrangements
 *
