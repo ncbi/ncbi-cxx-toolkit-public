@@ -185,7 +185,7 @@ public:
     // or equals to CBioseq_set::eClass_not_set,
     // the class field of new Bioseq-set object will not be initialized.
     // Returns new Bioseq-set handle.
-    TSeq ConvertSeqToSet(TClass set_class = CBioseq_set::eClass_not_set) const;
+    TSet ConvertSeqToSet(TClass set_class = CBioseq_set::eClass_not_set) const;
 
     // Collapse one level of Bioseq-set.
     // The Bioseq-set should originally contain only one sub-entry.
@@ -325,6 +325,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/25 20:06:41  vasilche
+* Fixed typo TSet -> TSeq.
+*
 * Revision 1.6  2004/03/24 18:30:28  vasilche
 * Fixed edit API.
 * Every *_Info object has its own shallow copy of original object.
