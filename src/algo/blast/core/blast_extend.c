@@ -952,7 +952,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
    q_start = query->sequence;
    word_length = mb_lt->word_length;
    reduced_word_length = COMPRESSION_RATIO*mb_lt->compressed_wordsize;
-   ag_blast = (Boolean) (word_options->container_type == eRightAndLeft);
+   ag_blast = (Boolean) (word_options->extension_method == eRightAndLeft);
    variable_wordsize = word_options->variable_wordsize;
 
    start_offset = 0;
