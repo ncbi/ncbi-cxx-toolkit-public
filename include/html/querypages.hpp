@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 16:48:06  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.5  1998/12/22 16:39:13  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -74,33 +79,23 @@ public:
 
 class CPmDocSumPage: public CHTMLPage
 {
- public:
-    static const int kNoQUERYBOX = 0x8;
+public:
+    CPmDocSumPage();
 
-    virtual CNCBINode* CreateView(void);
+    static const int kNoQUERYBOX = 0x8;
     // only one pager for now until I make copy constructor.
     static const int kNoPAGER = 0x16;
-    virtual void CreateSubNodes(void);
-    virtual CNCBINode* CreatePager(void);
 
-    CPmDocSumPage();
+    virtual CNCBINode* CreateView(void);
+    virtual CNCBINode* CreatePager(void);
+    virtual CNCBINode* CreateQueryBox(void);
+
     static CHTMLBasicPage * New(void) { return new CPmDocSumPage;}
 
+protected:
+    CNCBINode* CloneSelf(void) const;
 };
-
-#if 0
-CPmReportPage: public CPmDocSumPage
-{
- public:
-    virtual void InitMembers(int);
-    virtual void InitSubPages(int Style);
-    virtual void Finish(int Style);
-    virtual CHTMLNode * CreateView(void);
-
-    CPmReportPage();
-    static CHTMLBasicPage * New(void) { return new CPmReportPage;}
-};
-#endif /* 0 */
 
 END_NCBI_SCOPE
+
 #endif

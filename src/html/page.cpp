@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 16:48:09  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.6  1998/12/22 16:39:15  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -152,7 +157,7 @@ CNCBINode* CHTMLPage::CreateView(void)
     if ( GetStyle() & kNoVIEW)
         return 0;
 
-    return new CQueryBox();
+    return 0;
 }
 
 END_NCBI_SCOPE

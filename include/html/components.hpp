@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/28 16:48:04  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.8  1998/12/23 21:20:56  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -76,7 +81,7 @@ public:
 
     //////// 'tors
 
-    CQueryBox(const string& URL = NcbiEmptyString);
+    CQueryBox(const string& URL);
 
     ////////  members
 
@@ -86,12 +91,12 @@ public:
     int m_Width; // in pixels
     string m_BgColor;
     string m_DbName;  // name of the database field
-    map < string, string > m_Databases;  // the list of databases
-    map < string, string > m_HiddenValues;
+    map<string, string> m_Databases;  // the list of databases
+    map<string, string> m_HiddenValues;
     string m_TermName;
     string m_DispMax;  // name of dispmax field
     string m_DefaultDispMax;
-    list < string > m_Disp;  // the values in dispmax field
+    list<string> m_Disp;  // the values in dispmax field
     string m_URL;
 
     //////// subpages
@@ -107,7 +112,7 @@ protected:
 
 // makes a button followed by a drop down
 
-class CButtonList: public CHTML_form
+class CButtonList: public CNCBINode
 {
     // parent class
     typedef CHTML_form CParent;
@@ -115,9 +120,10 @@ class CButtonList: public CHTML_form
 public:
     CButtonList(void);
 
+    string m_Name;
     string m_Select;  // select tag name
-    map < string, string > m_List;
-
+    map<string, string> m_List;
+    
     virtual void CreateSubNodes(void);
 
 protected:
@@ -128,7 +134,7 @@ protected:
 
 // makes a set of pagination links
 
-class CPageList: public CHTML_form
+class CPageList: public CNCBINode
 {
     // parent class
     typedef CHTML_form CParent;
@@ -136,7 +142,7 @@ class CPageList: public CHTML_form
 public:
     CPageList(void);
 
-    map < int, string > m_Pages; // number, href
+    map<int, string> m_Pages; // number, href
     string m_Forward; // forward url
     string m_Backward; // backward url
 
@@ -148,7 +154,7 @@ protected:
 };
 
 
-class CPagerBox: public CHTML_form
+class CPagerBox: public CNCBINode
 {
     // parent class
     typedef CHTML_form CParent;
@@ -157,10 +163,10 @@ public:
     CPagerBox(void);
 
     int m_Width; // in pixels
-    CButtonList * m_TopButton;  // display button
-    CButtonList * m_LeftButton; // save button
-    CButtonList * m_RightButton; // order button
-    CPageList * m_PageList;  // the pager
+    CButtonList* m_TopButton;  // display button
+    CButtonList* m_LeftButton; // save button
+    CButtonList* m_RightButton; // order button
+    CPageList* m_PageList;  // the pager
     int m_NumResults;  // the number of results to display
 
     virtual void CreateSubNodes(void);
@@ -171,7 +177,7 @@ protected:
 };
 
 
-class CSmallPagerBox: public CHTML_form
+class CSmallPagerBox: public CNCBINode
 {
     // parent class
     typedef CHTML_form CParent;

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1998/12/28 16:48:08  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.8  1998/12/23 21:21:03  vasilche
 * Added more HTML tags (almost all).
 * Importent ones: all lists (OL, UL, DIR, MENU), fonts (FONT, BASEFONT).
@@ -74,10 +79,7 @@ CNCBINode* CQueryBox::CloneSelf(void) const
 }
 
 void CQueryBox::CreateSubNodes()
-{ 
-    list < string >::iterator iList;
-    map < string, string, less <string> >::iterator iMap;
-
+{
     for ( map<string, string>::iterator i = m_HiddenValues.begin();
           i != m_HiddenValues.end(); ++i ) {
         AddHidden(i->first, i->second);
@@ -95,7 +97,8 @@ void CQueryBox::CreateSubNodes()
         AppendHTMLText(" for<p>");
     }
    
-    CHTML_table* table = new CHTML_table(m_BgColor, IntToString(m_Width), "0", "5", 1, 1);
+    CHTML_table* table = new CHTML_table(1, 1);
+    table->SetCellSpacing(0)->SetCellPadding(5)->SetBgColor(m_BgColor)->SetWidth(m_Width);
     AppendChild(table);
 
     table->InsertInTable(0, 0, new CHTML_text(m_TermName, (int)(m_Width*0.075))); // todo: the width calculation
@@ -105,8 +108,8 @@ void CQueryBox::CreateSubNodes()
         
     CHTML_select * selectpage = new CHTML_select(m_DispMax);
     table->InsertInTable(0, 0, selectpage); 
-    for ( iList = m_Disp.begin(); iList != m_Disp.end(); iList++ )
-        selectpage->AppendOption(*iList, *iList == m_DefaultDispMax);
+    for ( list<string>::iterator i = m_Disp.begin(); i != m_Disp.end(); ++i )
+        selectpage->AppendOption(*i, *i == m_DefaultDispMax);
         
     table->InsertTextInTable(0, 0, "documents per page");
 }
@@ -130,18 +133,13 @@ CNCBINode* CButtonList::CloneSelf(void) const
 
 void CButtonList::CreateSubNodes()
 {
-    CHTML_select * Select = new CHTML_select(m_Select);
-    map < string, string >::iterator iMap;
+    AppendChild(new CHTML_submit(m_Name));
 
-    try {
-        AppendChild(new CHTML_input("submit", m_Name));
-        AppendChild(Select);
-        for ( iMap = m_List.begin(); iMap != m_List.end(); iMap++ )
-            Select->AppendOption(iMap->second, iMap->first, iMap == m_List.begin());
-    }
-    catch (...) {
-        delete Select;
-    }
+    CHTML_select * Select = new CHTML_select(m_Select);
+    AppendChild(Select);
+    for (map<string, string>::iterator i = m_List.begin();
+         i != m_List.end(); ++i )
+        Select->AppendOption(i->second, i->first, i == m_List.begin());
 }
 
 
@@ -156,48 +154,51 @@ CNCBINode* CPageList::CloneSelf(void) const
 
 void CPageList::CreateSubNodes()
 {
-    map < int, string >::iterator iMap;
-
     AppendChild(new CHTML_a(m_Backward, "&lt;&lt;"));
-    for ( iMap = m_Pages.begin(); iMap != m_Pages.end(); iMap++ )
-        AppendChild(new CHTML_a((*iMap).second, IntToString((*iMap).first)));
+
+    for (map<int, string>::iterator i = m_Pages.begin();
+         i != m_Pages.end(); ++i )
+        AppendChild(new CHTML_a(i->second, IntToString(i->first)));
+
     AppendChild(new CHTML_a(m_Forward, "&gt;&gt;"));
 }
 
 // Pager box
 
-CPagerBox::CPagerBox()
+CPagerBox::CPagerBox(void)
     : m_NumResults(0), m_Width(460)
-    , m_TopButton(0), m_LeftButton(0), m_RightButton(0)
-    , m_PageList(0)
+    , m_TopButton(new CButtonList), m_LeftButton(new CButtonList), m_RightButton(new CButtonList)
+    , m_PageList(new CPageList)
+{
+}
+
+void CPagerBox::CreateSubNodes(void)
 {
     CHTML_table* table;
     CHTML_table* tableTop;
     CHTML_table* tableBot;
 
-    table = new CHTML_table("#CCCCCC", IntToString(m_Width), "0", "0", 2, 1);
-    table->SetAttribute("border", "0");
+    table = new CHTML_table(2, 1);
+    table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width)->SetAttribute("border", "0");
     AppendChild(table);
 
-    tableTop = new CHTML_table("#CCCCCC", IntToString(m_Width), "0", "0", 1, 2);
-    tableBot = new CHTML_table("#CCCCCC", IntToString(m_Width), "0", "0", 1, 3);
+    tableTop = new CHTML_table(1, 2);
+    tableTop->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width);
+    tableBot = new CHTML_table(1, 3);
+    tableBot->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width);
 
     table->InsertInTable(0, 0, tableTop);
     table->InsertInTable(1, 0, tableBot);
-    tableTop->InsertInTable(0, 0, new CButtonList);
-    tableTop->InsertInTable(0, 1, new CPageList);
-    tableBot->InsertInTable(0, 0, new CButtonList);
-    tableBot->InsertInTable(0, 1, new CButtonList);
+    tableTop->InsertInTable(0, 0, m_TopButton);
+    tableTop->InsertInTable(0, 1, m_PageList);
+    tableBot->InsertInTable(0, 0, m_LeftButton);
+    tableBot->InsertInTable(0, 1, m_RightButton);
     tableBot->InsertInTable(0, 2, new CHTMLText(IntToString(m_NumResults) + ((m_NumResults==1)?" result":" results")));
 }
 
 CNCBINode* CPagerBox::CloneSelf(void) const
 {
     return new CPagerBox(*this);
-}
-
-void CPagerBox::CreateSubNodes(void)
-{
 }
 
 CSmallPagerBox::CSmallPagerBox()
@@ -215,8 +216,8 @@ void CSmallPagerBox::CreateSubNodes()
     CHTML_table * Table;
 
     try {
-        Table = new CHTML_table("#CCCCCC", IntToString(m_Width), "0", "0", 1, 2);
-        Table->SetAttribute("border", "0");
+        Table = new CHTML_table(1, 2);
+        Table->SetCellSpacing(0)->SetCellPadding(0)->SetBgColor("#CCCCCC")->SetWidth(m_Width)->SetAttribute("border", "0");
         AppendChild(Table);
         
         Table->InsertInTable(0, 0, new CPageList);

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  1998/12/28 16:48:12  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.6  1998/12/24 16:15:43  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -106,14 +111,14 @@ int CMyApp::Run(void)
         CHTMLBasicPage * Page = (PageList[i].pFactory)();
         Page->SetApplication(this);
         Page->SetStyle(PageList[i].Style);
-        Page->AppendChild(new CHTML_p(new CHTML_b("bold paragraph")));
+/*        Page->AppendChild(new CHTML_p(new CHTML_b("bold paragraph")));
         CHTML_form* form;
         Page->AppendChild(form = new CHTML_form("FORM"));
         form->AppendChild(new CHTML_textarea("area", 10, 10));
         form->AppendChild(new CHTML_textarea("area1", 10, 10, "area1"));
         form->AppendChild(new CHTML_select("Select")->AppendOption("One", "ONE")->AppendOption("Two")->AppendOption("THREE", "Three"));
         Page->AppendChild(new CHTML_ol("A")->AppendItem("item 1")->AppendItem("item 2")->AppendItem("Item 3")->AppendItem("Fourth item"));
-        Page->AppendChild(new CHTMLComment("this is comment"));
+        Page->AppendChild(new CHTMLComment("this is comment"));*/
         Page->Print(NcbiCout);  // serialize it
         delete Page;
     }

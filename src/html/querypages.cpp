@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/12/28 16:48:10  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.5  1998/12/22 16:39:16  vasilche
 * Added ReadyTagMapper to map tags to precreated nodes.
 *
@@ -125,12 +130,18 @@ CPmDocSumPage::CPmDocSumPage()
 {
     m_PageName = "Search Results";
     m_TemplateFile = "template.html";
+    AddTagMap("PAGER", CreateTagMapper(this, &CreatePager));
+    AddTagMap("QUERYBOX", CreateTagMapper(this, &CreateQueryBox));
 }
 
-void CPmDocSumPage::CreateSubNodes(void)
+CNCBINode* CPmDocSumPage::CloneSelf(void) const
 {
-    AddTagMap("PAGER", CreatePager());
-    CHTMLPage::CreateSubNodes();
+    return new CPmDocSumPage(*this);
+}
+
+CNCBINode* CPmDocSumPage::CreateView(void) 
+{
+    return 0;
 }
 
 CNCBINode* CPmDocSumPage::CreatePager(void) 
@@ -143,13 +154,13 @@ CNCBINode* CPmDocSumPage::CreatePager(void)
     //
     CPagerBox * Pager = new CPagerBox;
     Pager->m_Width = 600;
-    Pager->m_TopButton->SetName("Display");
+    Pager->m_TopButton->m_Name = "Display";
     Pager->m_TopButton->m_Select = "display";
     Pager->m_TopButton->m_List["dopt"] = "Top";
-    Pager->m_RightButton->SetName("Save");
+    Pager->m_RightButton->m_Name = "Save";
     Pager->m_RightButton->m_Select = "save";
     Pager->m_RightButton->m_List["m_s"] = "Right";
-    Pager->m_LeftButton->SetName("Order");
+    Pager->m_LeftButton->m_Name = "Order";
     Pager->m_LeftButton->m_Select = "order";
     Pager->m_LeftButton->m_List["m_o"] = "Left";
     Pager->m_PageList->m_Pages[1] = "http://one";
@@ -168,7 +179,7 @@ CNCBINode* CPmDocSumPage::CreatePager(void)
 }
 
 
-CNCBINode* CPmDocSumPage::CreateView(void) 
+CNCBINode* CPmDocSumPage::CreateQueryBox(void) 
 {
     if ( GetStyle() & kNoQUERYBOX ) 
         return 0;
@@ -191,11 +202,13 @@ CNCBINode* CPmDocSumPage::CreateView(void)
     QueryBox->m_Disp.push_back("1000");
     QueryBox->m_Disp.push_back("2000");
     QueryBox->m_Disp.push_back("5000");
+/*
     QueryBox->m_Databases["m"] = "Medline";
     QueryBox->m_Databases["n"] = "GenBank DNA Sequences";
     QueryBox->m_Databases["p"] = "GenBank Protein Sequences";
     QueryBox->m_Databases["t"] = "Biomolecule 3D Structures";
     QueryBox->m_Databases["c"] = "Complete Genomes";
+*/
     QueryBox->m_HiddenValues["form"] = "4";
     return QueryBox;
 }

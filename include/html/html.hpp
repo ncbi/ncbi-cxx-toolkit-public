@@ -33,6 +33,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  1998/12/28 16:48:05  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.11  1998/12/24 16:15:36  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -477,13 +482,16 @@ public:
     CHTML_table(int row, int column);
     CHTML_table(const string & bgcolor, int row, int column);
     CHTML_table(const string & bgcolor, const string & width, int row, int column);
-    CHTML_table(const string & bgcolor, const string & width, const string & cellspacing, const string & cellpadding, int row, int column);
+    CHTML_table(const string & bgcolor, const string & width, int cellspacing, int cellpadding, int row, int column);
 
     CNCBINode* Cell(int row, int column);
     CNCBINode* InsertInTable(int row, int column, CNCBINode *);
     CNCBINode* InsertTextInTable(int row, int column, const string &);
 
     void ColumnWidth(CHTML_table*, int column, const string & width);
+
+    CHTML_table* SetCellSpacing(int spacing);
+    CHTML_table* SetCellPadding(int padding);
 
 protected:
     void MakeTable(int, int);

@@ -30,6 +30,11 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1998/12/28 16:48:09  vasilche
+* Removed creation of QueryBox in CHTMLPage::CreateView()
+* CQueryBox extends from CHTML_form
+* CButtonList, CPageList, CPagerBox, CSmallPagerBox extend from CNCBINode.
+*
 * Revision 1.14  1998/12/24 16:15:41  vasilche
 * Added CHTMLComment class.
 * Added TagMappers from static functions.
@@ -537,13 +542,25 @@ CHTML_table::CHTML_table(const string & bgcolor, const string & width, int row, 
 }
 
 
-CHTML_table::CHTML_table(const string & bgcolor, const string & width, const string & cellspacing, const string & cellpadding, int row, int column)
+CHTML_table::CHTML_table(const string & bgcolor, const string & width, int cellspacing, int cellpadding, int row, int column)
 {
     SetBgColor(bgcolor);
     SetWidth(width);
-    SetOptionalAttribute(KHTMLAttributeName_cellspacing, cellspacing);
-    SetOptionalAttribute(KHTMLAttributeName_cellpadding, cellpadding);
+    SetCellSpacing(cellspacing);
+    SetCellPadding(cellpadding);
     MakeTable(row, column);
+}
+
+CHTML_table* CHTML_table::SetCellSpacing(int spacing)
+{
+    SetAttribute(KHTMLAttributeName_cellspacing, spacing);
+    return this;
+}
+
+CHTML_table* CHTML_table::SetCellPadding(int padding)
+{
+    SetAttribute(KHTMLAttributeName_cellpadding, padding);
+    return this;
 }
 
 /*
@@ -749,8 +766,9 @@ CHTML_hidden::CHTML_hidden(const string& name, const string& value)
 }
 
 CHTML_submit::CHTML_submit(const string& name)
-    : CParent(KHTMLInputTypeName_submit, name)
+    : CParent(KHTMLInputTypeName_submit, NcbiEmptyString)
 {
+    SetOptionalAttribute(KHTMLAttributeName_value, name);
 }
 
 CHTML_submit::CHTML_submit(const string& name, const string& label)
