@@ -84,7 +84,7 @@ AutoPtr<CDataTypeModule> DTDParser::Module(const string& name)
 
     BuildDocumentTree();
 
-#ifdef _DEBUG
+#if defined(NCBI_DTDPARSER_TRACE)
     PrintDocumentTree();
 #endif
 
@@ -144,14 +144,13 @@ void DTDParser::BuildDocumentTree(void)
                     return;
                 }
             default:
-                ERR_POST("LINE " << Location() <<
-                    " invalid keyword: \"") <<
-                    NextToken().GetText() << "\"";
+                ParseError("Invalid keyword", "keyword");
                 return;
             }
         }
         catch (exception& e) {
             ERR_POST(e.what());
+            throw;
         }
     }
 }
@@ -172,8 +171,10 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
     DTDElement& node = m_MapElement[ name];
     node.SetName(name);
     switch (Next()) {
+    default:
     case T_IDENTIFIER:
-        _ASSERT(0);
+        ParseError("incorrect format","element category");
+//        _ASSERT(0);
         break;
     case K_ANY:     // category
         node.SetType(DTDElement::eAny);
@@ -183,15 +184,12 @@ void DTDParser::ParseElementContent(const string& name, bool embedded)
         node.SetType(DTDElement::eEmpty);
         Consume();
         break;
-    case T_SYMBOL:     // content. the symbol must be '('
+    case T_SYMBOL:     // contents. the symbol must be '('
         ConsumeElementContent(node);
         if (embedded) {
             node.SetEmbedded();
             return;
         }
-        break;
-    default:           // ???
-        _ASSERT(0);
         break;
     }
     // element description is ended
@@ -208,7 +206,10 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
     int emb=0;
     bool skip;
 
-    _ASSERT(NextToken().GetSymbol() == '(');
+    if(NextToken().GetSymbol() != '(') {
+        ParseError("Incorrect format","(");
+    }
+//    _ASSERT(NextToken().GetSymbol() == '(');
 
     for (skip = false; ;) {
         if (skip) {
@@ -218,11 +219,15 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
         }
         switch (Next()) {
         default:
-            _ASSERT(0);
+            ParseError("Unrecognized token","token");
+//            _ASSERT(0);
             break;
         case T_IDENTIFIER:
             id_name = NextToken().GetText();
-            _ASSERT(!id_name.empty());
+            if(id_name.empty()) {
+                ParseError("Incorrect format","identifier");
+            }
+//            _ASSERT(!id_name.empty());
             break;
         case K_PCDATA:
             node.SetType(DTDElement::eString);
@@ -248,14 +253,18 @@ void DTDParser::ConsumeElementContent(DTDElement& node)
             case '+':
             case '*':
             case '?':
-                _ASSERT(!id_name.empty());
+                if(id_name.empty()) {
+                    ParseError("Incorrect format","identifier");
+                }
+//                _ASSERT(!id_name.empty());
                 node.SetOccurrence(id_name,
                     symbol == '+' ? DTDElement::eOneOrMore :
                         (symbol == '*' ? DTDElement::eZeroOrMore :
                             DTDElement::eZeroOrOne));
                 break;
             default:
-                _ASSERT(0);
+                ParseError("Unrecognized symbol","symbol");
+//                _ASSERT(0);
                 break;
             }
             break;
@@ -291,7 +300,10 @@ void DTDParser::AddElementContent(DTDElement& node, string& id_name,
 
 void DTDParser::EndElementContent(DTDElement& node)
 {
-    _ASSERT(NextToken().GetSymbol() == ')');
+    if (NextToken().GetSymbol() != ')') {
+        ParseError("Incorrect format", ")");
+    }
+//    _ASSERT(NextToken().GetSymbol() == ')');
     Consume();
 // occurence
     char symbol;
@@ -343,12 +355,18 @@ void DTDParser::BeginEntityContent(void)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-entity-decl
 
     TToken tok = Next();
-    _ASSERT(tok == T_SYMBOL);
-    _ASSERT(NextToken().GetSymbol() == '%');
+    if (tok != T_SYMBOL || NextToken().GetSymbol() != '%') {
+        ParseError("Incorrect format", "%");
+    }
+//    _ASSERT(tok == T_SYMBOL);
+//    _ASSERT(NextToken().GetSymbol() == '%');
 
     Consume();
     tok = Next();
-    _ASSERT(tok == T_IDENTIFIER);
+    if (tok == T_IDENTIFIER) {
+        ParseError("identifier");
+    }
+//    _ASSERT(tok == T_IDENTIFIER);
     // entity name
     string name = NextToken().GetText();
     Consume();
@@ -367,12 +385,18 @@ void DTDParser::ParseEntityContent(const string& name)
         if (tok==K_PUBLIC) {
             // skip public id
             tok = Next();
-            _ASSERT(tok==T_STRING);
+            if (tok!=T_STRING) {
+                ParseError("string");
+            }
+//            _ASSERT(tok==T_STRING);
             Consume();
         }
         tok = Next();
     }
-    _ASSERT(tok==T_STRING);
+    if (tok!=T_STRING) {
+        ParseError("string");
+    }
+//    _ASSERT(tok==T_STRING);
     node.SetData(NextToken().GetText());
     Consume();
     // entity description is ended
@@ -382,15 +406,24 @@ void DTDParser::ParseEntityContent(const string& name)
 void DTDParser::PushEntityLexer(const string& name)
 {
     map<string,DTDEntity>::iterator i = m_MapEntity.find(name);
-    _ASSERT (i != m_MapEntity.end());
+    if (i == m_MapEntity.end()) {
+        ParseError("Undefined entity","entity");
+    }
+//    _ASSERT (i != m_MapEntity.end());
     CNcbiIstream* in;
     if (m_MapEntity[name].IsExternal()) {
         string filename(m_MapEntity[name].GetData());
         string fullname = CDirEntry::MakePath(m_StackPath.top(), filename);
         CFile  file(fullname);
-        _ASSERT(file.Exists());
+        if (!file.Exists()) {
+            ParseError("file not found", fullname.c_str());
+        }
+//        _ASSERT(file.Exists());
         in = new CNcbiIfstream(fullname.c_str());
-        _ASSERT(((CNcbiIfstream*)in)->is_open());
+        if (!((CNcbiIfstream*)in)->is_open()) {
+            ParseError("cannot access file",fullname.c_str());
+        }
+//        _ASSERT(((CNcbiIfstream*)in)->is_open());
         m_StackPath.push(file.GetDir());
     } else {
         in = new CNcbiIstrstream(m_MapEntity[name].GetData().c_str());
@@ -449,7 +482,8 @@ void DTDParser::ConsumeAttributeContent(DTDElement& node,
     for (bool done=false; !done;) {
         switch(Next()) {
         default:
-            _ASSERT(0);
+            ParseError("Unknown token", "token");
+//            _ASSERT(0);
             break;
         case T_IDENTIFIER:
             done = true;
@@ -522,7 +556,8 @@ void DTDParser::ParseEnumeratedList(DTDAttribute& attrib)
     for (;;) {
         switch(Next()) {
         default:
-            _ASSERT(0);
+            ParseError("Unknown token", "token");
+//            _ASSERT(0);
             break;
         case T_IDENTIFIER:
             attrib.AddEnumValue(NextToken().GetText());
@@ -631,7 +666,8 @@ CDataType* DTDParser::x_Type(
             type = new CNullDataType();
             break;
         default:
-            _ASSERT(0);
+            ParseError("Unknown element", "element");
+//            _ASSERT(0);
             break;
         }
     }
@@ -684,9 +720,6 @@ CDataType* DTDParser::CompositeNode(
     AutoPtr<CDataType> type(Type(node, DTDElement::eOne, false, true));
     AutoPtr<CDataMember> member(new CDataMember(node.GetName(),
         uniseq ? (AutoPtr<CDataType>(new CUniSequenceDataType(type))) : type));
-//    AutoPtr<CDataType> type(Type(node, occ, false, true));
-//    AutoPtr<CDataMember> member(new CDataMember(node.GetName(), type));
-
 
     member->SetNoPrefix();
     member->SetNotag();
@@ -738,6 +771,7 @@ CDataType* DTDParser::x_AttribType(const DTDAttribute& att)
     CDataType* type=0;
     switch (att.GetType()) {
     case DTDAttribute::eUnknown:
+        ParseError("Unknown attribute", "attribute");
         _ASSERT(0);
         break;
     case DTDAttribute::eId:
@@ -774,7 +808,7 @@ CDataType* DTDParser::EnumeratedBlock(const DTDAttribute& att,
 /////////////////////////////////////////////////////////////////////////////
 // debug printing
 
-#ifdef _DEBUG
+#if defined(NCBI_DTDPARSER_TRACE)
 void DTDParser::PrintDocumentTree(void)
 {
     PrintEntities();
@@ -928,6 +962,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.7  2002/12/17 16:24:43  gouriano
+ * replaced _ASSERTs by throwing an exception
+ *
  * Revision 1.6  2002/11/26 22:00:29  gouriano
  * added unnamed lists of sequences (or choices) as container elements
  *

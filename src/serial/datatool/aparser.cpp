@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  2002/12/17 16:24:43  gouriano
+* replaced _ASSERTs by throwing an exception
+*
 * Revision 1.14  2002/10/18 14:33:14  gouriano
 * added possibility to replace lexer "on the fly"
 *
@@ -97,7 +100,7 @@ void AbstractParser::ParseError(const char* error, const char* expected,
                  "LINE " + NStr::IntToString(token.GetLine())+
                  ", TOKEN " + token.GetText() +
                  " -- parse error: " + error +
-                 (error == "" ? ": " : "") + expected + " expected");
+                 (error != "" ? ": " : "") + expected + " expected");
 }
 
 string AbstractParser::Location(void) const

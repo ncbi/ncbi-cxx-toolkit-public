@@ -108,7 +108,7 @@ protected:
     CDataType* EnumeratedBlock(const DTDAttribute& att,
                                CEnumDataType* enumType);
 
-#ifdef _DEBUG
+#if defined(NCBI_DTDPARSER_TRACE)
     void PrintDocumentTree(void);
     void PrintEntities(void);
     void PrintDocumentNode(const string& name, const DTDElement& node);
@@ -128,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.6  2002/12/17 16:25:08  gouriano
+ * replaced _ASSERTs by throwing an exception
+ *
  * Revision 1.5  2002/11/26 21:59:37  gouriano
  * added unnamed lists of sequences (or choices) as container elements
  *

@@ -59,17 +59,21 @@ TToken DTDLexer::LookupToken(void)
             if (isalpha(Char())) {
                 return LookupIdentifier();
             } else {
-                // name must start with a letter (alpha)
-                _ASSERT(0);
+                LexerError("name must start with a letter (alpha)");
+//                _ASSERT(0);
             }
         } else {
              // not allowed in DTD
-            _ASSERT(0);
+             LexerError("Incorrect format");
+//             _ASSERT(0);
         }
         break;
     case '#':
         tok = LookupIdentifier();
-        _ASSERT(tok != T_IDENTIFIER);
+        if (tok == T_IDENTIFIER) {
+            LexerError("Unknown keyword");
+        }
+//        _ASSERT(tok != T_IDENTIFIER);
         return tok;
     case '%':
         tok = LookupEntity();
@@ -227,7 +231,10 @@ TToken DTDLexer::LookupEntity(void)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-entity-decl
 
     char c = Char();
-    _ASSERT(c == '%');
+    if (c != '%') {
+        LexerError("Unexpected symbol: %");
+    }
+//    _ASSERT(c == '%');
     if (isspace(Char(1))) {
         return T_SYMBOL;
     } else if (isalpha(Char(1))) {
@@ -238,7 +245,7 @@ TToken DTDLexer::LookupEntity(void)
         }
         m_CharsToSkip = 1;
     } else {
-        _ASSERT(0);
+        LexerError("Unexpected symbol");
     }
     return T_ENTITY;
 }
@@ -250,7 +257,10 @@ TToken DTDLexer::LookupString(void)
 
     _ASSERT(m_CharsToSkip==0);
     char c0 = Char();
-    _ASSERT(c0 == '\"' || c0 == '\'');
+    if(c0 != '\"' && c0 != '\'') {
+        LexerError("Unexpected symbol");
+    }
+//    _ASSERT(c0 == '\"' || c0 == '\'');
     SkipChar();
     StartToken();
     m_CharsToSkip = 1;
@@ -277,6 +287,9 @@ END_NCBI_SCOPE
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.5  2002/12/17 16:24:43  gouriano
+ * replaced _ASSERTs by throwing an exception
+ *
  * Revision 1.4  2002/11/14 21:05:27  gouriano
  * added support of XML attribute lists
  *
