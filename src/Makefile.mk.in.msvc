@@ -86,7 +86,19 @@ PreprocessorDefinitions=
 
 [UsePch]
 UsePch         = TRUE
+
+bdb            = ncbi_pch.hpp
+cgi            = ncbi_pch.hpp
+connect        = ncbi_pch.hpp
 corelib        = ncbi_pch.hpp
+ctools         = ncbi_pch.hpp
+dbapi          = ncbi_pch.hpp
+html           = ncbi_pch.hpp
+misc           = ncbi_pch.hpp
+serial         = ncbi_pch.hpp
+sqlite         = ncbi_pch.hpp
+util           = ncbi_pch.hpp
+
 DoNotUsePch    = test_mt
 PchUsageDefine = NCBI_USE_PCH
 
