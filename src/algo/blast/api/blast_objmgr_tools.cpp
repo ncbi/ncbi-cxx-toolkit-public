@@ -61,14 +61,16 @@ CSeq_align_set*
 x_CreateEmptySeq_align_set(CSeq_align_set* sas);
 
 CRef<CSeq_align>
-BLASTUngappedHspListToSeqAlign(EProgram program, 
-    BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, Int4 query_length, Int4 subject_length);
+BLASTUngappedHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
+                               const CSeq_id *query_id, 
+                               const CSeq_id *subject_id, Int4 query_length, 
+                               Int4 subject_length);
 
 CRef<CSeq_align>
-BLASTHspListToSeqAlign(EProgram program, 
-    BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, bool is_ooframe);
+BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
+                       const CSeq_id *query_id, const CSeq_id *subject_id,
+                       Int4 query_length, Int4 subject_length,
+                       bool is_ooframe);
 
 /** Set field values for one element of the context array of a
  * concatenated query.  All previous contexts should have already been
@@ -118,7 +120,7 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
         NCBI_THROW(CBlastException, eOutOfMemory, "Query info");
     }
 
-    EProgram prog = options.GetProgram();
+    EBlastProgramType prog = options.GetProgramType();
     unsigned int nframes = GetNumberOfFrames(prog);
     query_info->num_queries = static_cast<int>(queries.size());
     query_info->first_context = 0;
@@ -134,9 +136,10 @@ SetupQueryInfo(const TSeqLocVector& queries, const CBlastOptions& options,
         NCBI_THROW(CBlastException, eOutOfMemory, "Context offsets array");
     }
     
-    bool is_na = (prog == eBlastn) ? true : false;
+    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
     bool translate = 
-        ((prog == eBlastx) || (prog == eTblastx) || (prog == eRPSTblastn));
+        ((prog == eBlastTypeBlastx) || (prog == eBlastTypeTblastx) || 
+         (prog == eBlastTypeRpsTblastn));
 
     // Adjust first context depending on the first query strand
     // Unless the strand option is set to single strand, the actual
@@ -297,7 +300,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
     ASSERT(blast_msg);
     ASSERT(queries.size() != 0);
 
-    EProgram prog = options.GetProgram();
+    EBlastProgramType prog = options.GetProgramType();
 
     // Determine sequence encoding
     Uint1 encoding = GetQueryEncoding(prog);
@@ -309,9 +312,10 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
         NCBI_THROW(CBlastException, eOutOfMemory, "Query sequence buffer");
     }
 
-    bool is_na = (prog == eBlastn) ? true : false;
+    bool is_na = (prog == eBlastTypeBlastn) ? true : false;
     bool translate = 
-       ((prog == eBlastx) || (prog == eTblastx) || (prog == eRPSTblastn));
+       ((prog == eBlastTypeBlastx) || (prog == eBlastTypeTblastx) || 
+        (prog == eBlastTypeRpsTblastn));
 
     unsigned int ctx_index = 0;      // index into context_offsets array
     unsigned int nframes = GetNumberOfFrames(prog);
@@ -452,7 +456,7 @@ SetupQueries(const TSeqLocVector& queries, const CBlastOptions& options,
 
 void
 SetupSubjects(const TSeqLocVector& subjects, 
-              EProgram prog,
+              EBlastProgramType prog,
               vector<BLAST_SequenceBlk*>* seqblk_vec, 
               unsigned int* max_subjlen)
 {
@@ -463,12 +467,12 @@ SetupSubjects(const TSeqLocVector& subjects,
     // Nucleotide subject sequences are stored in ncbi2na format, but the
     // uncompressed format (ncbi4na/blastna) is also kept to re-evaluate with
     // the ambiguities
-    bool subj_is_na = (prog == eBlastn  ||
-                       prog == eTblastn ||
-                       prog == eTblastx);
+    bool subj_is_na = (prog == eBlastTypeBlastn  ||
+                       prog == eBlastTypeTblastn ||
+                       prog == eBlastTypeTblastx);
 
     ESentinelType sentinels = eSentinels;
-    if (prog == eTblastn || prog == eTblastx) {
+    if (prog == eBlastTypeTblastn || prog == eBlastTypeTblastx) {
         sentinels = eNoSentinels;
     }
 
@@ -802,7 +806,7 @@ Blast_RemapToSubjectLoc(TSeqAlignVector& seqalignv,
 /// BlastHitList to CSeq_align_set
 CSeq_align_set*
 BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
-    EProgram prog, SSeqLoc &query,
+    EBlastProgramType prog, SSeqLoc &query,
     const IBlastSeqInfoSrc* seqinfo_src, bool is_gapped, bool is_ooframe)
 {
     CSeq_align_set* seq_aligns = new CSeq_align_set();
@@ -835,7 +839,8 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
         if (is_gapped) {
             hit_align =
                 BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                       subject_id, is_ooframe);
+                                       subject_id, query_length, subj_length,
+                                       is_ooframe);
         } else {
             hit_align =
                 BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
@@ -849,7 +854,7 @@ BLAST_HitList2CSeqAlign(const BlastHitList* hit_list,
 
 TSeqAlignVector
 BLAST_Results2CSeqAlign(const BlastHSPResults* results,
-        EProgram prog,
+        EBlastProgramType prog,
         TSeqLocVector &query,
         const IBlastSeqInfoSrc* seqinfo_src,
         bool is_gapped, bool is_ooframe)
@@ -878,7 +883,7 @@ BLAST_Results2CSeqAlign(const BlastHSPResults* results,
 
 TSeqAlignVector
 BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
-                                  EProgram prog, TSeqLocVector &query, 
+                                  EBlastProgramType prog, TSeqLocVector &query, 
                                   const IBlastSeqInfoSrc* seqinfo_src,
                                   Uint4 subject_index, bool is_gapped, 
                                   bool is_ooframe)
@@ -923,14 +928,15 @@ BLAST_OneSubjectResults2CSeqAlign(const BlastHSPResults* results,
                 query_id(&sequence::GetId(*query[index].seqloc, 
                                           query[index].scope));
 
+            TSeqPos query_length = 
+                sequence::GetLength(*query[index].seqloc, 
+                                    query[index].scope);
             if (is_gapped) {
                 hit_align =
                     BLASTHspListToSeqAlign(prog, hsp_list, query_id,
-                                           subject_id, is_ooframe);
+                                           subject_id, query_length, 
+                                           subj_length, is_ooframe);
             } else {
-                TSeqPos query_length = 
-                    sequence::GetLength(*query[index].seqloc, 
-                                        query[index].scope);
                 hit_align =
                     BLASTUngappedHspListToSeqAlign(prog, hsp_list, query_id,
                         subject_id, query_length, subj_length);
@@ -956,6 +962,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.41  2005/04/06 21:04:55  dondosha
+* GapEditBlock structure removed, use BlastHSP which contains GapEditScript
+*
 * Revision 1.40  2005/03/31 16:15:03  dondosha
 * Some doxygen fixes
 *

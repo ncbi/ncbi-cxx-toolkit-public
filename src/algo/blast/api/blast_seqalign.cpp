@@ -61,7 +61,7 @@ BEGIN_SCOPE(blast)
 
 /// Converts a frame into the appropriate strand
 static ENa_strand
-x_Frame2Strand(short frame)
+s_Frame2Strand(short frame)
 {
     if (frame > 0)
         return eNa_strand_plus;
@@ -76,7 +76,7 @@ x_Frame2Strand(short frame)
 /// @param pos2advance How much the position should be advanced? [in]
 /// @return Current position.
 static int 
-x_GetCurrPos(int& pos, int pos2advance)
+s_GetCurrPos(int& pos, int pos2advance)
 {
     int retval;
 
@@ -101,7 +101,7 @@ x_GetCurrPos(int& pos, int pos2advance)
 /// @param frame Translating frame [in]
 /// @return Start position of the current alignment segment.
 static TSeqPos
-x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp, 
+s_GetAlignmentStart(int& curr_pos, const GapEditScript* esp, 
         ENa_strand strand, bool translate, int length, int original_length, 
         short frame)
 {
@@ -111,115 +111,117 @@ x_GetAlignmentStart(int& curr_pos, const GapEditScript* esp,
 
         if (translate)
             retval = original_length - 
-                CODON_LENGTH*(x_GetCurrPos(curr_pos, esp->num) + esp->num)
+                CODON_LENGTH*(s_GetCurrPos(curr_pos, esp->num) + esp->num)
                 + frame + 1;
         else
-            retval = length - x_GetCurrPos(curr_pos, esp->num) - esp->num;
+            retval = length - s_GetCurrPos(curr_pos, esp->num) - esp->num;
 
     } else {
 
         if (translate)
-            retval = frame - 1 + CODON_LENGTH*x_GetCurrPos(curr_pos, esp->num);
+            retval = frame - 1 + CODON_LENGTH*s_GetCurrPos(curr_pos, esp->num);
         else
-            retval = x_GetCurrPos(curr_pos, esp->num);
+            retval = s_GetCurrPos(curr_pos, esp->num);
 
     }
 
     return retval;
 }
 
+/// Finds length of a protein frame given a nucleotide length and a frame 
+/// number.
+/// @param nuc_length Nucleotide sequence length [in]
+/// @param frame Translation frame [in]
+/// @return Length of the translated sequence.
+static Int4
+s_GetProteinFrameLength(Int4 nuc_length, Int2 frame)
+{
+    return (nuc_length - (ABS(frame)-1)%CODON_LENGTH) / CODON_LENGTH;
+}
+
 /// Fills vectors of start positions, lengths and strands for all alignment segments.
 /// Note that even though the edit_block is passed in, data for seqalign is
 /// collected from the esp_head argument for nsegs segments. This editing script may
 /// not be the full editing scripg if a discontinuous alignment is being built.
-/// @param edit_block Traceback editing block. [in]
+/// @param edit_script Traceback editing script. [in]
 /// @param esp_head Traceback editing script linked list [in]
 /// @param nsegs Number of alignment segments [in]
 /// @param starts Vector of starting positions to fill [out]
 /// @param lengths Vector of segment lengths to fill [out]
 /// @param strands Vector of segment strands to fill [out]
+/// @param query_length Length of query sequence [in]
+/// @param subject_length Length of subject sequence [in]
+/// @param translate1 Is query translated? [in]
+/// @param translate2 Is subject translated? [in]
 static void
-x_CollectSeqAlignData(const GapEditBlock* edit_block, 
-        const GapEditScript* esp_head, unsigned int nsegs,
-        vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-        vector<ENa_strand>& strands)
+s_CollectSeqAlignData(const BlastHSP* hsp, const GapEditScript* esp_head, 
+                      unsigned int nsegs, vector<TSignedSeqPos>& starts, 
+                      vector<TSeqPos>& lengths, vector<ENa_strand>& strands,
+                      Int4 query_length, Int4 subject_length,
+                      bool translate1, bool translate2)
 {
-    ASSERT(edit_block != NULL);
+    ASSERT(hsp != NULL);
 
     GapEditScript* esp = const_cast<GapEditScript*>(esp_head);
-    ENa_strand m_strand, s_strand;      // strands of alignment
-    TSignedSeqPos m_start, s_start;     // running starts of alignment
-    int start1 = edit_block->start1;    // start of alignment on master sequence
-    int start2 = edit_block->start2;    // start of alignment on slave sequence
+    ENa_strand m_strand, s_strand;    // strands of alignment
+    TSignedSeqPos m_start, s_start;   // running starts of alignment
+    int start1 = hsp->query.offset;   // start of alignment on master sequence
+    int start2 = hsp->subject.offset; // start of alignment on slave sequence
+    int length1 = query_length;
+    int length2 = subject_length;
 
-    m_strand = x_Frame2Strand(edit_block->frame1);
-    s_strand = x_Frame2Strand(edit_block->frame2);
+    if (translate1)
+        length1 = s_GetProteinFrameLength(length1, hsp->query.frame);
+    if (translate2)
+        length2 = s_GetProteinFrameLength(length2, hsp->subject.frame);
+
+    m_strand = s_Frame2Strand(hsp->query.frame);
+    s_strand = s_Frame2Strand(hsp->subject.frame);
 
     for (unsigned int i = 0; esp && i < nsegs; esp = esp->next, i++) {
         switch (esp->op_type) {
         case eGapAlignDecline:
         case eGapAlignSub:
-            m_start = x_GetAlignmentStart(start1, esp, m_strand,
-                    edit_block->translate1 != 0, edit_block->length1,
-                    edit_block->original_length1, edit_block->frame1);
+            m_start = 
+                s_GetAlignmentStart(start1, esp, m_strand, translate1, length1,
+                                    query_length, hsp->query.frame);
 
-            s_start = x_GetAlignmentStart(start2, esp, s_strand,
-                    edit_block->translate2 != 0, edit_block->length2,
-                    edit_block->original_length2, edit_block->frame2);
+            s_start = 
+                s_GetAlignmentStart(start2, esp, s_strand, translate2, length2,
+                                    subject_length, hsp->subject.frame);
 
-            if (edit_block->reverse) {
-                strands.push_back(s_strand);
-                strands.push_back(m_strand);
-                starts.push_back(s_start);
-                starts.push_back(m_start);
-            } else {
-                strands.push_back(m_strand);
-                strands.push_back(s_strand);
-                starts.push_back(m_start);
-                starts.push_back(s_start);
-            }
+            strands.push_back(m_strand);
+            strands.push_back(s_strand);
+            starts.push_back(m_start);
+            starts.push_back(s_start);
             break;
 
         // Insertion on the master sequence (gap on slave)
         case eGapAlignIns:
-            m_start = x_GetAlignmentStart(start1, esp, m_strand,
-                    edit_block->translate1 != 0, edit_block->length1,
-                    edit_block->original_length1, edit_block->frame1);
+            m_start = 
+                s_GetAlignmentStart(start1, esp, m_strand, translate1, length1,
+                                    query_length, hsp->query.frame);
 
             s_start = GAP_VALUE;
 
-            if (edit_block->reverse) {
-                strands.push_back(i == 0 ? eNa_strand_unknown : s_strand);
-                strands.push_back(m_strand);
-                starts.push_back(s_start);
-                starts.push_back(m_start);
-            } else {
-                strands.push_back(m_strand);
-                strands.push_back(i == 0 ? eNa_strand_unknown : s_strand);
-                starts.push_back(m_start);
-                starts.push_back(s_start);
-            }
+            strands.push_back(m_strand);
+            strands.push_back(i == 0 ? eNa_strand_unknown : s_strand);
+            starts.push_back(m_start);
+            starts.push_back(s_start);
             break;
 
         // Deletion on master sequence (gap; insertion on slave)
         case eGapAlignDel:
             m_start = GAP_VALUE;
 
-            s_start = x_GetAlignmentStart(start2, esp, s_strand,
-                    edit_block->translate2 != 0, edit_block->length2,
-                    edit_block->original_length2, edit_block->frame2);
+            s_start = 
+                s_GetAlignmentStart(start2, esp, s_strand, translate2, length2,
+                                    subject_length, hsp->subject.frame);
 
-            if (edit_block->reverse) {
-                strands.push_back(s_strand);
-                strands.push_back(i == 0 ? eNa_strand_unknown : m_strand);
-                starts.push_back(s_start);
-                starts.push_back(m_start);
-            } else {
-                strands.push_back(i == 0 ? eNa_strand_unknown : m_strand);
-                strands.push_back(s_strand);
-                starts.push_back(m_start);
-                starts.push_back(s_start);
-            }
+            strands.push_back(i == 0 ? eNa_strand_unknown : m_strand);
+            strands.push_back(s_strand);
+            starts.push_back(m_start);
+            starts.push_back(s_start);
             break;
 
         default:
@@ -249,9 +251,9 @@ x_CollectSeqAlignData(const GapEditBlock* edit_block,
 /// @param strands Vector of alignment segments strands [in]
 /// @return The Dense-seg object.
 static CRef<CDense_seg>
-x_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
-        vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-        vector<ENa_strand>& strands)
+s_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
+               vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
+               vector<ENa_strand>& strands)
 {
     ASSERT(master);
     ASSERT(slave);
@@ -284,15 +286,14 @@ x_CreateDenseg(const CSeq_id* master, const CSeq_id* slave,
 /// @param starts Vector of start positions for alignment segments [in]
 /// @param lengths Vector of alignment segments lengths [in]
 /// @param strands Vector of alignment segments strands [in]
-/// @param reverse Is order of sequences reversed? [in]
 /// @param translate_master Is query sequence translated? [in]
 /// @param translate_slave Is subject sequenec translated? [in]
 /// @return The Std-seg object.
 static CSeq_align::C_Segs::TStd
-x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave, 
-        vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
-        vector<ENa_strand>& strands, bool reverse, bool translate_master, bool
-        translate_slave)
+s_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave, 
+                vector<TSignedSeqPos>& starts, vector<TSeqPos>& lengths, 
+                vector<ENa_strand>& strands, bool translate_master, 
+                bool translate_slave)
 {
     ASSERT(master);
     ASSERT(slave);
@@ -317,7 +318,7 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
         if ( (m_start = starts[2*i]) != GAP_VALUE) {
             master_loc->SetInt().SetId(*master_id);
             master_loc->SetInt().SetFrom(m_start);
-            if (translate_master || (reverse && translate_slave))
+            if (translate_master)
                 m_stop = m_start + CODON_LENGTH*lengths[i] - 1;
             else
                 m_stop = m_start + lengths[i] - 1;
@@ -331,7 +332,7 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
         if ( (s_start = starts[2*i+1]) != GAP_VALUE) {
             slave_loc->SetInt().SetId(*slave_id);
             slave_loc->SetInt().SetFrom(s_start);
-            if (translate_slave || (reverse && translate_master))
+            if (translate_slave)
                 s_stop = s_start + CODON_LENGTH*lengths[i] - 1;
             else
                 s_stop = s_start + lengths[i] - 1;
@@ -341,17 +342,10 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
             slave_loc->SetEmpty(*slave_id);
         }
 
-        if (reverse) {
-            std_seg->SetIds().push_back(slave_id);
-            std_seg->SetIds().push_back(master_id);
-            std_seg->SetLoc().push_back(slave_loc);
-            std_seg->SetLoc().push_back(master_loc);
-        } else {
-            std_seg->SetIds().push_back(master_id);
-            std_seg->SetIds().push_back(slave_id);
-            std_seg->SetLoc().push_back(master_loc);
-            std_seg->SetLoc().push_back(slave_loc);
-        }
+        std_seg->SetIds().push_back(master_id);
+        std_seg->SetIds().push_back(slave_id);
+        std_seg->SetLoc().push_back(master_loc);
+        std_seg->SetLoc().push_back(slave_loc);
 
         retval.push_back(std_seg);
     }
@@ -364,14 +358,14 @@ x_CreateStdSegs(const CSeq_id* master, const CSeq_id* slave,
 /// the decline-to-align segments.
 /// @param edit_block Traceback editing block [in] [out]
 static void 
-x_CorrectUASequence(GapEditBlock* edit_block)
+s_CorrectUASequence(BlastHSP* hsp)
 {
     GapEditScript* curr = NULL,* curr_last = NULL;
     GapEditScript* indel_prev = NULL; // pointer to node before the last
             // insertion or deletion followed immediately by GAPALIGN_DECLINE
     bool last_indel = false;    // last operation was an insertion or deletion
 
-    for (curr = edit_block->esp; curr; curr = curr->next) {
+    for (curr = hsp->gap_info; curr; curr = curr->next) {
 
         // if GAPALIGN_DECLINE immediately follows an insertion or deletion
         if (curr->op_type == eGapAlignDecline && last_indel) {
@@ -381,7 +375,7 @@ x_CorrectUASequence(GapEditBlock* edit_block)
             if (indel_prev != NULL)
                 indel_prev->next = curr;
             else
-                edit_block->esp = curr; /* First element in a list */
+                hsp->gap_info = curr; /* First element in a list */
 
             // CC: If flaking gaps are allowed, curr_last could be NULL and the
             // following statement would core dump...
@@ -414,10 +408,9 @@ x_CorrectUASequence(GapEditBlock* edit_block)
 /// @param reverse Is order of sequences reversed? [in]
 /// @return Resulting Seq-align object.
 static CRef<CSeq_align>
-x_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
+s_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
     vector<TSignedSeqPos> starts, vector<TSeqPos> lengths,
-    vector<ENa_strand> strands, bool translate_master, bool translate_slave,
-    bool reverse)
+    vector<ENa_strand> strands, bool translate_master, bool translate_slave)
 {
     CRef<CSeq_align> sar(new CSeq_align());
     sar->SetType(CSeq_align::eType_partial);
@@ -425,11 +418,11 @@ x_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
 
     if (translate_master || translate_slave) {
         sar->SetSegs().SetStd() =
-            x_CreateStdSegs(master, slave, starts, lengths, strands,
-                    reverse, translate_master, translate_slave);
+            s_CreateStdSegs(master, slave, starts, lengths, strands,
+                            translate_master, translate_slave);
     } else {
         CRef<CDense_seg> dense_seg = 
-            x_CreateDenseg(master, slave, starts, lengths, strands);
+            s_CreateDenseg(master, slave, starts, lengths, strands);
         sar->SetSegs().SetDenseg(*dense_seg);
     }
 
@@ -438,26 +431,34 @@ x_CreateSeqAlign(const CSeq_id* master, const CSeq_id* slave,
 
 /// Converts a traceback editing block to a Seq-align, provided the 2 sequence 
 /// identifiers.
-/// @param edit_block Traceback editing block [in]
+/// @param hsp Internal HSP structure [in]
 /// @param id1 Query sequence identifier [in]
 /// @param id2 Subject sequence identifier [in]
+/// @param query_length Length of query sequence [in]
+/// @param subject_length Length of subject sequence [in]
 /// @return Resulting Seq-align object.
 static CRef<CSeq_align>
-x_GapEditBlock2SeqAlign(GapEditBlock* edit_block, 
-        const CSeq_id* id1, const CSeq_id* id2)
+s_BlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp, 
+                    const CSeq_id* id1, const CSeq_id* id2,
+                    Int4 query_length, Int4 subject_length)
 {
-    ASSERT(edit_block != NULL);
+    ASSERT(hsp != NULL);
 
     vector<TSignedSeqPos> starts;
     vector<TSeqPos> lengths;
     vector<ENa_strand> strands;
     bool is_disc_align = false;
     int nsegs = 0;      // number of segments in edit_block->esp
+    bool translate1, translate2;
 
-    for (GapEditScript* t = edit_block->esp; t; t = t->next, nsegs++) {
+    for (GapEditScript* t = hsp->gap_info; t; t = t->next, nsegs++) {
         if (t->op_type == eGapAlignDecline)
             is_disc_align = true;
     }
+
+    translate1 = (program == eBlastTypeBlastx || program == eBlastTypeTblastx ||
+                  program == eBlastTypeRpsTblastn);
+    translate2 = (program == eBlastTypeTblastn || program == eBlastTypeTblastx);
 
     if (is_disc_align) {
 
@@ -465,14 +466,14 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
            the unaligned part being to the left if it is adjacent to the
            gap (insertion or deletion) - so this function will do
            shuffeling */
-        x_CorrectUASequence(edit_block);
+        s_CorrectUASequence(hsp);
 
         CRef<CSeq_align> seqalign(new CSeq_align());
         seqalign->SetType(CSeq_align::eType_partial);
         seqalign->SetDim(2);         // BLAST only creates pairwise alignments
 
         bool skip_region;
-        GapEditScript* curr = NULL,* curr_head = edit_block->esp;
+        GapEditScript* curr = NULL,* curr_head = hsp->gap_info;
 
         while (curr_head) {
             skip_region = false;
@@ -495,12 +496,13 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
             // build seqalign for required regions only
             if (!skip_region) {
 
-                x_CollectSeqAlignData(edit_block, curr_head, nsegs, starts,
-                        lengths, strands);
+                s_CollectSeqAlignData(hsp, curr_head, nsegs, starts, lengths, 
+                                      strands, query_length, subject_length,
+                                      translate1, translate2);
 
-                CRef<CSeq_align> sa_tmp = x_CreateSeqAlign(id1, id2, starts,
-                        lengths, strands, edit_block->translate1 !=0,
-                        edit_block->translate2 != 0, edit_block->reverse != 0);
+                CRef<CSeq_align> sa_tmp = 
+                    s_CreateSeqAlign(id1, id2, starts, lengths, strands, 
+                                     translate1, translate2);
 
                 // Add this seqalign to the list
                 if (sa_tmp)
@@ -513,12 +515,12 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
 
     } else {
 
-        x_CollectSeqAlignData(edit_block, edit_block->esp, nsegs, 
-                starts, lengths, strands);
+        s_CollectSeqAlignData(hsp, hsp->gap_info, nsegs, starts, lengths, 
+                              strands, query_length, subject_length,
+                              translate1, translate2);
 
-        return x_CreateSeqAlign(id1, id2, starts, lengths, strands,
-                edit_block->translate1 != 0, edit_block->translate2 != 0,
-                edit_block->reverse != 0);
+        return s_CreateSeqAlign(id1, id2, starts, lengths, strands,
+                                translate1, translate2);
     }
 }
 
@@ -529,12 +531,14 @@ x_GapEditBlock2SeqAlign(GapEditBlock* edit_block,
 ///                   gapped extension [in]
 /// @param query_id Query sequence identifier [in]
 /// @param subject_id Subject sequence identifier [in]
+/// @param query_length Length of query sequence [in]
+/// @param subject_length Length of subject sequence [in]
 static CRef<CSeq_align>
-x_OOFEditBlock2SeqAlign(EProgram program, 
-    GapEditBlock* edit_block, 
-    const CSeq_id* query_id, const CSeq_id* subject_id)
+s_OOFBlastHSP2SeqAlign(EBlastProgramType program, BlastHSP* hsp,
+                       const CSeq_id* query_id, const CSeq_id* subject_id,
+                       Int4 query_length, Int4 subject_length)
 {
-    ASSERT(edit_block != NULL);
+    ASSERT(hsp != NULL);
 
     CRef<CSeq_align> seqalign(new CSeq_align());
 
@@ -553,37 +557,35 @@ x_OOFEditBlock2SeqAlign(EProgram program,
     Int4 from1, from2, to1, to2;
     CRef<CSeq_id> tmp;
 
-    if (program == eBlastx) {
+    if (program == eBlastTypeBlastx) {
        reverse = TRUE;
-       start1 = edit_block->start2;
-       start2 = edit_block->start1;
-       frame1 = edit_block->frame2;
-       frame2 = edit_block->frame1;
-       original_length1 = edit_block->original_length2;
-       original_length2 = edit_block->original_length1;
+       start1 = hsp->subject.offset;
+       start2 = hsp->query.offset;
+       frame1 = hsp->subject.frame;
+       frame2 = hsp->query.frame;
+       original_length1 = subject_length;
+       original_length2 = query_length;
        id1.Reset(subject_id);
        id2.Reset(query_id);
     } else { 
-       start1 = edit_block->start1;
-       start2 = edit_block->start2;
-       frame1 = edit_block->frame1;
-       frame2 = edit_block->frame2;
-       original_length1 = edit_block->original_length1;
-       original_length2 = edit_block->original_length2;
+       start1 = hsp->query.offset;
+       start2 = hsp->subject.offset;
+       frame1 = hsp->query.frame;
+       frame2 = hsp->subject.frame;
+       original_length1 = query_length;
+       original_length2 = subject_length;
        id1.Reset(query_id);
        id2.Reset(subject_id);
     }
  
-    strand1 = x_Frame2Strand(frame1);
-    strand2 = x_Frame2Strand(frame2);
+    strand1 = s_Frame2Strand(frame1);
+    strand2 = s_Frame2Strand(frame2);
     
-    esp = edit_block->esp;
+    esp = hsp->gap_info;
     
     seqalign->SetDim(2); /**only two dimention alignment**/
     
     seqalign->SetType(CSeq_align::eType_partial); /**partial for gapped translating search. */
-
-    esp = edit_block->esp;
 
     first_shift = false;
 
@@ -597,7 +599,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             
             first_shift = false;
 
-            slp1->SetInt().SetFrom(x_GetCurrPos(start1, curr->num));
+            slp1->SetInt().SetFrom(s_GetCurrPos(start1, curr->num));
             slp1->SetInt().SetTo(MIN(start1,original_length1) - 1);
             tmp.Reset(new CSeq_id(id1->AsFastaString()));
             slp1->SetInt().SetId(*tmp);
@@ -619,7 +621,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             
             if(first_shift) { /* Second frameshift in a row */
                 /* Protein coordinates */
-                slp1->SetInt().SetFrom(x_GetCurrPos(start1, 1));
+                slp1->SetInt().SetFrom(s_GetCurrPos(start1, 1));
                 to1 = MIN(start1,original_length1) - 1;
                 slp1->SetInt().SetTo(to1);
                 tmp.Reset(new CSeq_id(id1->AsFastaString()));
@@ -627,7 +629,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                 slp1->SetInt().SetStrand(strand1);
                 
                 /* Nucleotide scale shifted by op_type */
-                from2 = x_GetCurrPos(start2, 3);
+                from2 = s_GetCurrPos(start2, 3);
                 to2 = MIN(start2,original_length2) - 1;
                 slp2->SetInt().SetFrom(from2);
                 slp2->SetInt().SetTo(to2);
@@ -676,7 +678,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             slp1->SetEmpty(*tmp);
             
             /* Nucleotide scale shifted by 3, protein gapped */
-            from2 = x_GetCurrPos(start2, curr->num*3);
+            from2 = s_GetCurrPos(start2, curr->num*3);
             to2 = MIN(start2,original_length2) - 1;
             slp2->SetInt().SetFrom(from2);
             slp2->SetInt().SetTo(to2);
@@ -700,11 +702,11 @@ x_OOFEditBlock2SeqAlign(EProgram program,
             first_shift = false;
 
             /* Protein coordinates */
-            from1 = x_GetCurrPos(start1, curr->num);
+            from1 = s_GetCurrPos(start1, curr->num);
             to1 = MIN(start1, original_length1) - 1;
             /* Adjusting last segment and new start point in
                nucleotide coordinates */
-            from2 = x_GetCurrPos(start2, curr->num*((Uint1)curr->op_type));
+            from2 = s_GetCurrPos(start2, curr->num*((Uint1)curr->op_type));
             to2 = start2 - 1;
             /* Chop off three bases and one residue at a time.
                Why does this happen, seems like a bug?
@@ -744,11 +746,11 @@ x_OOFEditBlock2SeqAlign(EProgram program,
 
             if(first_shift) { /* Second frameshift in a row */
                 /* Protein coordinates */
-                from1 = x_GetCurrPos(start1, 1);
+                from1 = s_GetCurrPos(start1, 1);
                 to1 = MIN(start1,original_length1) - 1;
 
                 /* Nucleotide scale shifted by op_type */
-                from2 = x_GetCurrPos(start2, (Uint1)curr->op_type);
+                from2 = s_GetCurrPos(start2, (Uint1)curr->op_type);
                 to2 = start2 - 1;
                 if (to2 >= original_length2) {
                     to2 = original_length2 -1;
@@ -786,7 +788,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                old one */
 
             if(seq_int2_last) {
-                x_GetCurrPos(start2, curr->num*((Uint1)curr->op_type-3));
+                s_GetCurrPos(start2, curr->num*((Uint1)curr->op_type-3));
                 if(strand2 != eNa_strand_minus) {
                     seq_int2_last->SetTo(start2 - 1);
                 } else {
@@ -814,7 +816,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
                 tmp.Reset(new CSeq_id(id1->AsFastaString()));
                 slp1->SetEmpty(*tmp);
                 /* Simulating insertion of nucleotides */
-                from2 = x_GetCurrPos(start2, 
+                from2 = s_GetCurrPos(start2, 
                                      curr->num*((Uint1)curr->op_type-3));
                 to2 = MIN(start2,original_length2) - 1;
 
@@ -880,7 +882,7 @@ x_OOFEditBlock2SeqAlign(EProgram program,
 /// @param i Integer value of the score. [in]
 /// @return Resulting CScore object.
 static CRef<CScore> 
-x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
+s_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 {
     CRef<CScore> retval(new CScore());
 
@@ -902,7 +904,7 @@ x_MakeScore(const string& ident_string, double d = 0.0, int i = 0)
 /// @param hsp Structure containing HSP information [in]
 /// @param scores Linked list of score objects to put into a Seq-align [out]
 static void
-x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
+s_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 {
     string score_type;
 
@@ -911,28 +913,28 @@ x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 
     score_type = "score";
     if (hsp->score)
-        scores.push_back(x_MakeScore(score_type, 0.0, hsp->score));
+        scores.push_back(s_MakeScore(score_type, 0.0, hsp->score));
 
     score_type = "sum_n";
     if (hsp->num > 1)
-        scores.push_back(x_MakeScore(score_type, 0.0, hsp->num));
+        scores.push_back(s_MakeScore(score_type, 0.0, hsp->num));
 
     // Set the E-Value
     double evalue = (hsp->evalue < SMALLEST_EVALUE) ? 0.0 : hsp->evalue;
     score_type = (hsp->num <= 1) ? "e_value" : "sum_e";
     if (evalue >= 0.0)
-        scores.push_back(x_MakeScore(score_type, evalue));
+        scores.push_back(s_MakeScore(score_type, evalue));
 
     // Calculate the bit score from the raw score
     score_type = "bit_score";
 
     if (hsp->bit_score >= 0.0)
-        scores.push_back(x_MakeScore(score_type, hsp->bit_score));
+        scores.push_back(s_MakeScore(score_type, hsp->bit_score));
 
     // Set the identity score
     score_type = "num_ident";
     if (hsp->num_ident > 0)
-        scores.push_back(x_MakeScore(score_type, 0.0, hsp->num_ident));
+        scores.push_back(s_MakeScore(score_type, 0.0, hsp->num_ident));
 
     return;
 }
@@ -943,11 +945,11 @@ x_BuildScoreList(const BlastHSP* hsp, CSeq_align::TScore& scores)
 /// @param seqalign Seq-align object to fill [in] [out]
 /// @param hsp An HSP structure [in]
 static void
-x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
+s_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 {
     // Add the scores for this HSP
     CSeq_align::TScore& score_list = seqalign->SetScore();
-    x_BuildScoreList(hsp, score_list);
+    s_BuildScoreList(hsp, score_list);
 }
 
 
@@ -961,8 +963,8 @@ x_AddScoresToSeqAlign(CRef<CSeq_align>& seqalign, const BlastHSP* hsp)
 /// @return Resulting Dense-diag object.
 CRef<CDense_diag>
 x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id, 
-    const CSeq_id *subject_id,
-    Int4 query_length, Int4 subject_length)
+                         const CSeq_id *subject_id,
+                         Int4 query_length, Int4 subject_length)
 {
     CRef<CDense_diag> retval(new CDense_diag());
     
@@ -977,26 +979,25 @@ x_UngappedHSPToDenseDiag(BlastHSP* hsp, const CSeq_id *query_id,
     ids.push_back(tmp);
     ids.resize(retval->GetDim());
 
-    retval->SetLen(hsp->query.length);
+    retval->SetLen(hsp->query.end - hsp->query.offset);
 
     CDense_diag::TStrands& strands = retval->SetStrands();
-    strands.push_back(x_Frame2Strand(hsp->query.frame));
-    strands.push_back(x_Frame2Strand(hsp->subject.frame));
+    strands.push_back(s_Frame2Strand(hsp->query.frame));
+    strands.push_back(s_Frame2Strand(hsp->subject.frame));
     CDense_diag::TStarts& starts = retval->SetStarts();
     if (hsp->query.frame >= 0) {
        starts.push_back(hsp->query.offset);
     } else {
-       starts.push_back(query_length - hsp->query.offset - hsp->query.length);
+       starts.push_back(query_length - hsp->query.end);
     }
     if (hsp->subject.frame >= 0) {
        starts.push_back(hsp->subject.offset);
     } else {
-       starts.push_back(subject_length - hsp->subject.offset - 
-                        hsp->subject.length);
+       starts.push_back(subject_length - hsp->subject.end);
     }
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    x_BuildScoreList(hsp, score_list);
+    s_BuildScoreList(hsp, score_list);
 
     return retval;
 }
@@ -1032,41 +1033,36 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     ids.push_back(tmp);
     ids.resize(retval->GetDim());
 
-    query_loc->SetInt().SetStrand(x_Frame2Strand(hsp->query.frame));
-    subject_loc->SetInt().SetStrand(x_Frame2Strand(hsp->subject.frame));
+    query_loc->SetInt().SetStrand(s_Frame2Strand(hsp->query.frame));
+    subject_loc->SetInt().SetStrand(s_Frame2Strand(hsp->subject.frame));
 
     if (hsp->query.frame == 0) {
        query_loc->SetInt().SetFrom(hsp->query.offset);
-       query_loc->SetInt().SetTo(hsp->query.offset + hsp->query.length - 1);
+       query_loc->SetInt().SetTo(hsp->query.end - 1);
     } else if (hsp->query.frame > 0) {
        query_loc->SetInt().SetFrom(CODON_LENGTH*(hsp->query.offset) + 
                                    hsp->query.frame - 1);
-       query_loc->SetInt().SetTo(CODON_LENGTH*(hsp->query.offset+
-                                               hsp->query.length)
-                                 + hsp->query.frame - 2);
+       query_loc->SetInt().SetTo(CODON_LENGTH*(hsp->query.end) +
+                                 hsp->query.frame - 2);
     } else {
        query_loc->SetInt().SetFrom(query_length -
-           CODON_LENGTH*(hsp->query.offset+hsp->query.length) +
-           hsp->query.frame + 1);
+           CODON_LENGTH*(hsp->query.end) + hsp->query.frame + 1);
        query_loc->SetInt().SetTo(query_length - CODON_LENGTH*hsp->query.offset
                                  + hsp->query.frame);
     }
 
     if (hsp->subject.frame == 0) {
        subject_loc->SetInt().SetFrom(hsp->subject.offset);
-       subject_loc->SetInt().SetTo(hsp->subject.offset + 
-                                   hsp->subject.length - 1);
+       subject_loc->SetInt().SetTo(hsp->subject.end - 1);
     } else if (hsp->subject.frame > 0) {
        subject_loc->SetInt().SetFrom(CODON_LENGTH*(hsp->subject.offset) + 
                                    hsp->subject.frame - 1);
-       subject_loc->SetInt().SetTo(CODON_LENGTH*(hsp->subject.offset+
-                                               hsp->subject.length) +
+       subject_loc->SetInt().SetTo(CODON_LENGTH*(hsp->subject.end) +
                                    hsp->subject.frame - 2);
 
     } else {
        subject_loc->SetInt().SetFrom(subject_length -
-           CODON_LENGTH*(hsp->subject.offset+hsp->subject.length) +
-           hsp->subject.frame + 1);
+           CODON_LENGTH*(hsp->subject.end) + hsp->subject.frame + 1);
        subject_loc->SetInt().SetTo(subject_length - 
            CODON_LENGTH*hsp->subject.offset + hsp->subject.frame);
     }
@@ -1075,7 +1071,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
     retval->SetLoc().push_back(subject_loc);
 
     CSeq_align::TScore& score_list = retval->SetScores();
-    x_BuildScoreList(hsp, score_list);
+    s_BuildScoreList(hsp, score_list);
 
     return retval;
 }
@@ -1090,7 +1086,7 @@ x_UngappedHSPToStdSeg(BlastHSP* hsp, const CSeq_id *query_id,
 /// @param query_length Length of the query [in]
 /// @param subject_length Length of the subject [in]
 CRef<CSeq_align>
-BLASTUngappedHspListToSeqAlign(EProgram program, 
+BLASTUngappedHspListToSeqAlign(EBlastProgramType program, 
     BlastHSPList* hsp_list, const CSeq_id *query_id, 
     const CSeq_id *subject_id, Int4 query_length, Int4 subject_length)
 {
@@ -1105,9 +1101,9 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
     /* All HSPs are put in one seqalign, containing a list of 
      * DenseDiag for same molecule search, or StdSeg for translated searches.
      */
-    if (program == eBlastn || 
-        program == eBlastp ||
-        program == eRPSBlast) {
+    if (program == eBlastTypeBlastn || 
+        program == eBlastTypeBlastp ||
+        program == eBlastTypeRpsBlast) {
         for (index=0; index<hsp_list->hspcnt; index++) { 
             BlastHSP* hsp = hsp_array[index];
             seqalign->SetSegs().SetDendiag().push_back(
@@ -1140,12 +1136,14 @@ BLASTUngappedHspListToSeqAlign(EProgram program,
 /// @param hsp_list HSP list structure [in]
 /// @param query_id Query sequence identifier [in]
 /// @param subject_id Subject sequence identifier [in]
+/// @param query_length Length of query sequence [in]
+/// @param subject_length Length of subject sequence [in]
 /// @param is_ooframe Was this a search with out-of-frame gapping? [in]
 /// @return Resulting Seq-align object. 
 CRef<CSeq_align>
-BLASTHspListToSeqAlign(EProgram program, 
-    BlastHSPList* hsp_list, const CSeq_id *query_id, 
-    const CSeq_id *subject_id, bool is_ooframe)
+BLASTHspListToSeqAlign(EBlastProgramType program, BlastHSPList* hsp_list, 
+                       const CSeq_id *query_id, const CSeq_id *subject_id, 
+                       Int4 query_length, Int4 subject_length, bool is_ooframe)
 {
     CRef<CSeq_align> retval(new CSeq_align()); 
     retval->SetType(CSeq_align::eType_disc);
@@ -1162,15 +1160,15 @@ BLASTHspListToSeqAlign(EProgram program,
 
         if (is_ooframe) {
             seqalign = 
-                x_OOFEditBlock2SeqAlign(program, hsp->gap_info, 
-                    query_id, subject_id);
+                s_OOFBlastHSP2SeqAlign(program, hsp, query_id, subject_id,
+                                       query_length, subject_length);
         } else {
             seqalign = 
-                x_GapEditBlock2SeqAlign(hsp->gap_info, 
-                    query_id, subject_id);
+                s_BlastHSP2SeqAlign(program, hsp, query_id, subject_id, 
+                                    query_length, subject_length);
         }
         
-        x_AddScoresToSeqAlign(seqalign, hsp);
+        s_AddScoresToSeqAlign(seqalign, hsp);
         retval->SetSegs().SetDisc().Set().push_back(seqalign);
     }
     
@@ -1211,6 +1209,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.55  2005/04/06 21:04:55  dondosha
+* GapEditBlock structure removed, use BlastHSP which contains GapEditScript
+*
 * Revision 1.54  2005/03/31 16:15:03  dondosha
 * Some doxygen fixes
 *
