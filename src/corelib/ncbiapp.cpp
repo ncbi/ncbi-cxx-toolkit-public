@@ -38,10 +38,12 @@
 #include <corelib/ncbiapp.hpp>
 
 /* take this out for now, since #include <Processes.h> doesn' work on Mac OS 10.2 */
-#if 0 && defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
+/*
+#if defined(NCBI_OS_MAC) || (defined(NCBI_OS_DARWIN)  && defined(NCBI_COMPILER_METROWERKS))
 #include <Processes.h>
 #include <Files.h>
 #endif
+*/
 
 BEGIN_NCBI_SCOPE
 
@@ -731,6 +733,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.56  2003/03/14 21:01:06  kans
+ * commented out include Processes because Mac OS 10.2 libraries give an undefined symbol error
+ *
  * Revision 1.55  2003/03/14 20:35:24  rsmith
  * Comment out previous changes for Mac OSX since on 10.2 the header files do not compile properly.
  *
