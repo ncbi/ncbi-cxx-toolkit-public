@@ -7,7 +7,7 @@
 <h1> Writing a Simple Application Project </h1>
 
 This page describes what you will need to know to write the simplest possible
-NCBI application using the C++ toolkit and libraries. The program simply 
+NCBI application using the C++ Toolkit and libraries. The program simply 
 prints a message to the screen.  Following this exercise however, will introduce
 you to the foundation classes of the library and explicitly describe how
 to set up your work environment and makefiles.
@@ -34,12 +34,10 @@ There are three topics relevant to writing your first C++ project:
 What you put in your makefile will depend on where you define your
 working directory. In this first example, we assume you will be
 working <i><b> outside </i></b> the NCBI C++ tree, say in a directory called
-"NewProj". This is where you will write both your source and header
+<i>NewProj</i>. This is where you will write both your source and header
 files.  The first step then, is to create the new working directory
 and use the <i> new_project.sh </i> script to install a makefile there:<p>
-
-<pre>
-<font size="-1">
+<pre><font size="-1">
 birch% mkdir NewProj
 
 birch% $NCBI/c++/scripts/new_project.sh NewProj app /netopt/ncbi_tools/c++/GCC-Debug/build
@@ -53,13 +51,28 @@ new_project.sh  project_name  <app | lib>  [builddir]
 </xmp></center>
 where:
 <dl>
-  <dt> - <i> project_name </i> is the name of directory you will be working in;
+  <dt> - <i> project_name </i> is the name of the directory you will be working in;
   <dt> - <i> app (lib) </i> is used to indicate you will be building an application (library);
-  <dt> - <i> builddir </i>  optionally specifies which libraries should be linked to;
+  <dt> - <i> builddir </i>  (optional) specifies what version of the pre-built NCBI C++ Toolkit
+		  libraries to link to;
 </dl>
+Pre-built C++ Toolkit libraries are available for various platforms and compilers, in both
+<i> debug</i> and <i> release </i> mode. To see a list of the available libraries for
+the platform you are working on, consult <i>$NCBI/c++</i>. On the command line, you should
+follow the library name with the subdirectory <i>/build</i>. For example, on <i>Solaris</i>, 
+the following libraries are currently available:
 
-Running the <i>new_project.sh</i> script will generate a ready-to-use makefile in
-the directory you just created.
+<ul>
+ <li> <i> Release, Debug </i> - for Sun Workshop
+ <li> <i> GCC-Release, GCC-Debug </i> - for GCC
+</ul>
+So in this example, we specified the GNU compiler debugger version: <i>GCC-Debug/build</i>.<p>
+For a list of currently supported compilers, see the Reference Manual's <a
+href="../config.html#ref_Compilers"> Installation and configuration </a> page.  Running the
+<i>new_project.sh</i> script will generate a ready-to-use makefile in the directory you just
+created.  For a more detailed description of this and other scripts to assist you in the set-up
+of your working environment, see the Reference Manual page <a href="../new_proj.html"> Starting a
+new C++ project</a>.
 
 <a name="makefiles">
 <h3> The Project's Makefile </h3>
@@ -72,24 +85,25 @@ at it. In addition to other things, you should see definitions for:
   <dt> - <i> srcdir </i> - your current working directory (".")
   <dt> - <i> the application name </i> (APP) 
   <dt> - <i> the object name(s) </i> (OBJ)
-  <dt> - <i> specific libraries to link to </i> (LIB)
+  <dt> - <i> specific libraries to link to in the NCBI C++ Toolkit</i> (LIB)
+  <dt> - <i> all other libraries to link to (outside the C++ Toolkit)</i> (LIBS)
 </dl>
 
-The <i> builddir </i> specifies make's library path (-L) - which in this case points to
-the debug versions containing symbol tables for the <i> gdb </i> debugger. LIB lists the
-individual libraries in this path that you will be linking to. Minimally, this should include
-xncbi - the library which implements the foundational classes for the C++ tools. Additional
-library names (e.g. <i>xhtml, xcgi, </i> etc.) can be added here. <br><br>
+The <i> builddir </i> specifies make's library path (-L), which in this case points to the
+debug versions of the NCBI C++ Toolkit libraries containing symbol tables for <i> gdb </i>. LIB
+lists the individual libraries in this path that you will be linking to. Minimally, this should
+include <i>xncbi</i> - the library which implements the foundational classes for the C++
+tools. Additional library names (e.g. <i>xhtml, xcgi, </i> etc.) can be added here. <p>
 
 Since the shell script assumes you will be building a single executable with the same name
-as your working directory, the application is defined simply as "NewProj". Additional
+as your working directory, the application is defined simply as <i>NewProj</i>. Additional
 targets to build can be added in the area indicated towards the end of the file. The list
 of objects (OBJ) should include the names (without extensions) of all source files for the
-application "APP". Again the script makes the simplest assumption, i.e. that there is a
-single source file named NewProj.cpp. Additional source names can be added here.
+application (APP). Again the script makes the simplest assumption, i.e. that there is a
+single source file named <i>NewProj.cpp</i>. Additional source names can be added here.
 
 For a very simple application, this makefile is ready to be run. Try it out now, by creating
-the file NewProj.cpp:
+the file <i>NewProj.cpp</i>:
 
 <font color = "#008080"> 
 <pre>
@@ -105,37 +119,44 @@ int main () {
 
 and running: <i> make -f Makefile.NewProj_app</i>. <p>
 
-Of course, it wasn't necessary to set up the directories and makefiles to accomplish this
-much, as this example does not use any of the C++ classes or resources defined at
-NCBI. The next example however, demonstrates a minimal application class that does require
+Of course, it wasn't necessary to set up the directories and makefiles to accomplish this much,
+as this example does not use any of the C++ classes or resources defined in the NCBI C++
+Toolkit. The next example however, demonstrates a minimal application class that does require
 this type of set up.
 
 
 <a name="using">
 <h3> Using the NCBI Application Class </h3>
 
-Four fundmental classes form the foundation of the C++
-toolkit and more generally, the C++ libraries at NCBI:
+Five fundmental classes form the foundation of the C++ toolkit and more generally, the C++
+libraries at NCBI:
 
 <ul>
  <li> class CNcbiApplication
  <li> class CNcbiArguments
  <li> class CNcbiEnvironment
  <li> class CNcbiRegistry
+ <li> class CNcbiDiag
 </ul>
 
-<i><b>CNcbiApplication </i></b> is an abstract class used to define the basic functionality and behavior
-of an NCBI application. Because this application class effectively supercedes the
-c-style "main" routine, minimally, it must provide the same functionality, i.e.
+<i><b>CNcbiApplication </i></b> is an abstract class used to define the basic functionality and
+behavior of an NCBI application. Because this application class effectively supercedes the
+C-style <i>main()</i> function, minimally, it must provide the same functionality, i.e.
 
 <ul>
  <li> A mechanism to execute the actual application
  <li> A data structure for holding program arguments ("argv")
- <li> A means for specifiying where errors should be reported
  <li> A data structure for holding environmental variables
 </ul>
 
-The remaining three classes are used to implement a layered design for the application
+In addition, the application class provides the same features previously implemented in 
+the C Toolkit, namely:
+<ul>
+ <li> Mechanisms for specifiying where, when, and how errors should be reported
+ <li> Methods for reading, modifying, and accessing the information stored in the
+				application's registry (configuration) file
+</ul>
+The remaining four classes are used to implement a layered design for the application
 class. That is, each of these classes is in turn included as a data member in the
 application class's specification. <p>
 
@@ -151,10 +172,10 @@ storing, accessing, and modifying the environment variables accessed by the c li
 routine <i>getenv()</i>. In this case the data structure is an associative array - a
 C++ map container, that allows <i>[]</i> access with string rather than integer indexes. <p>
 
-The <i><b> CNcbiRegistry </i></b> class is used to store runtime information read from a
-configuration file. Previously, these files were by convention named ".*rc" files on <i>
-unix </i> systems. The convention for all platforms now is to name such files <i>*.ini</i>
-(where * is by default the application name). <p>
+The <i><b> CNcbiRegistry </i></b> class is used to store, access, and modify runtime
+information read from a configuration file. Previously, these files were by convention named
+".*rc" files on <i> unix </i> systems. The convention for all platforms now is to name such
+files <i>*.ini</i> (where * is by default the application name). <p>
 
 Like the environments class, the registry class uses map structures to associate keys with
 values. A configuration file entails more structure than environment variables however, as
@@ -162,6 +183,20 @@ the key-value pairs must be associated with specific sections. Accordingly, the 
 class's main data structure uses a map of maps, where the "containing" map is indexed by
 sections while the "contained" map is indexed by keywords. <p>
 
+The <i><b> CNcbiDiag </i></b> class implements much of the functionality of the C Toolkit error
+processing mechanisms, and in addition, supports multi-threaded applications by allowing
+thread-specific error streams and flags. Each instance of <i>CNcbiDiag</i> has a private buffer to
+handle a <i>single</i> message, along with private severity level and post flags and their
+associated get/set methods.<p>
+
+The <i>CNcbiDiag</i> message buffer is initialized when the class is first instantiated. Additional
+information can then be appended to the message using the overloaded stream operator <i><<</i>. Messages
+can then be terminated explicitly using <i>CNcbiDiag's</i> member function <i>Endm</i>, or implicitly,
+when the <i>CNcbiDiag</i> object exits scope. When the message is finally posted, a user-installed
+callback function may be invoked to handle the message. The default is to post errors to <i>stderr</i>,
+with the action determined by the severity level of the message. See also the discussion in the Reference Manual
+section on <a href="../libs/err_msg.html#ref_Message"> message posting</a> for a more in-depth coverage.
+<p>
 <a name="creating">
 <h3> Creating a Simple Application Class </h3>
 
@@ -190,16 +225,17 @@ public:
 
 END_NCBI_SCOPE
 
-#endif
+#endif // NCBI_APP__HPP
 </pre>
 <font color = black> 
 
 <b>Step 2.</b> Include a call to <i> main()</i> in one of your <i> cpp </i> files. <p>
 
 In that call, create an instance of your subclass, and call the inherited function,
-"AppMain" on that class. This is also a good place to put the implementation of the
+<i>AppMain()</i> on that class. This is also a good place to put the implementation of the
 <i>Run()</i> function. Enclose the <i> Run() </i> implementation with <i> BEGIN_NCBI_SCOPE
-</i> and <i> END_NCBI_SCOPE </i> statements, and precede <i>main()</i> with a <i>
+</i> and <i> END_NCBI_SCOPE </i> statements, and precede <i>main() </i>(as well as any other 
+code using the NCBI C++ Toolkit) with a <i>
 USING_NCBI_SCOPE </i> statement: 
 
 <font color = "#008080"> 
@@ -232,9 +268,20 @@ int main(int argc, const char* argv[])
 "justApp", and have already run the new_project script to create the makefile, you are
 now ready to build your first application using:
 <p>
-<center>
-make -f Makefile.justApp_app 
-</center>
+<center><pre>make -f Makefile.justApp_app </pre></center>
+<p>
+The <i> SCOPE</i> statements are actually macros defined in <i>corelib/ncbistl.hpp</i>: 
+<font color = "#000080"><pre>
+#define BEGIN_NCBI_SCOPE namespace NCBI_NS_NCBI {
+#define END_NCBI_SCOPE }
+#define USING_NCBI_SCOPE using namespace NCBI_NS_NCBI
+</pre> <font color = black>
+
+All code occurring between the <i>BEGIN</i> and <i> END</i> statements will be added to a
+namespace called <i>NCBI_NS_NCBI</i>. The <i>USiNG</i> macro allows you to access everything
+currently defined in the namespace without requiring the :: scope operator.
+
+
 
 <a name="inside">
 <h3> Inside the NCBI Application Class </h3>
@@ -243,8 +290,8 @@ To review what we've done so far:
 
 <ol>
  <li> We defined a subclass of  <i>CNcbiApplication </i> with an implementation of <i>Run()</i>.
- <li> We declared an instance of this class in <i>main()</i>.
- <li> We invoked the class member function <i> AppMain() </i> on main's input arguments.
+ <li> We created an instance of this class in <i>main()</i>.
+ <li> We invoked the class member function <i> AppMain() </i> using <i>argc, argv</i>.
 </ol>
 
 Here is a somewhat simplified view of the application class's definition:
@@ -288,16 +335,16 @@ set up error posting. This function defines the file stream for error messages, 
 default severity levels.  <i> LoadConfig() </i> reads the program's <i>.ini </i> configuration
 file to load the application's parameters into the registry's map structures.<p>
 
-With the declaration of the <i>CTestApp</i> class in <i> main</i>, the constructor for
+With the creation of an instance of the <i>CTestApp</i> class in <i> main</i>, the constructor for
 the class is automatically invoked. Because <i>CTestApp</i> is a subclass of <i>
 CNcbiApplication</i>, that constructor is inherited from the parent class. The
 constructor simply resets (clears) the values of the private data members, and sets
-<i>m_Instance</i> to point to the newly created class.<p>
+<i>m_Instance</i> to point to the newly created object.<p>
 
 The <i> AppMain() </i> function is also inherited from the parent class. Although this
 function accepts up to six arguments, this example passes only the first two, with missing
 values supplied by defaults.  <i> AppMain() </i> begins by resetting the internal data
-members with the actual values provided by the arguments to main(). Once these internal data
+members with the actual values provided by the arguments of <i>main()</i>. Once these internal data
 structures have been loaded,  <i> AppMain() </i> calls <i> Init(), Run (), </i> and <i> Exit() </i>
 in succession to execute the application. <p>
 
