@@ -35,6 +35,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbithr.hpp>
 
 #include <util/bytesrc.hpp>
 
@@ -999,6 +1000,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.98  2004/11/30 15:06:04  dicuccio
+* Added #include for ncbithr.hpp
+*
 * Revision 1.97  2004/09/22 13:32:17  kononenk
 * "Diagnostic Message Filtering" functionality added.
 * Added function SetDiagFilter()

@@ -34,6 +34,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbithr.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 
@@ -249,6 +250,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2004/11/30 15:06:04  dicuccio
+* Added #include for ncbithr.hpp
+*
 * Revision 1.4  2004/07/21 15:51:26  grichenk
 * CObjectManager made singleton, GetInstance() added.
 * CXXXXDataLoader constructors made private, added

@@ -28,6 +28,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/ncbithr.hpp>
 #include <html/jsmenu.hpp>
 #include <html/html_exception.hpp>
 #include <corelib/ncbi_safe_static.hpp>
@@ -609,6 +610,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2004/11/30 15:06:04  dicuccio
+ * Added #include for ncbithr.hpp
+ *
  * Revision 1.31  2004/05/17 20:59:50  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2004/11/30 15:06:04  dicuccio
+* Added #include for ncbithr.hpp
+*
 * Revision 1.27  2004/10/06 18:05:02  vasilche
 * Thread-safe initialization in s_SerFlags().
 *
@@ -119,6 +122,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbithr.hpp>
 #include <serial/serialbase.hpp>
 #include <serial/typeinfo.hpp>
 
