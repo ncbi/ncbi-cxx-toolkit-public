@@ -47,130 +47,40 @@
  */
  
 #include <corelib/ncbiobj.hpp>
-#include <corelib/ncbimisc.hpp>
-#include <algo/blast/core/blast_psi.h>
-#include <algo/blast/api/blast_exception.hpp>
-#include <objects/seqalign/Seq_align_set.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objmgr/scope.hpp>
+#include <algo/blast/api/pssm_input.hpp>
 
-class CPssmCreate;   // forward declaration of unit test class
+class CPssmEngineTest;   // forward declaration of unit test class
 
 BEGIN_NCBI_SCOPE
 
-// Forward declarations in objects scope
 BEGIN_SCOPE(objects)
-    class CDense_seg;
-    class CSeq_loc;
-    class CScore;
+    // forward declaration of ASN.1 object containing PSSM
+    class CScore_matrix_parameters;
 END_SCOPE(objects)
-
-// specialization of CDeleter template for PsiAlignmentData structure
-// to be used when initializing an AutoPtr with the return value of
-// PsiAlignmentDataNew
-template <>
-struct CDeleter<PsiAlignmentData> {
-    static void Delete(PsiAlignmentData* p)
-    { PSIAlignmentDataFree(p); }
-};
-
-#ifndef GAP_IN_ALIGNMENT
-    /** Representation of GAP in Seq-align */
-#   define GAP_IN_ALIGNMENT     ((Uint4)-1)
-#endif
 
 BEGIN_SCOPE(blast)
 
-class CScoreMatrixBuilder
+class CPssmEngine
 {
 public:
-    // C-tor
-    // @param query query or consensus sequence for the alignment. The data
-    // query points to is *not* copied.
-    CScoreMatrixBuilder(const Uint1* query,
-                        TSeqPos query_sz,
-                        CRef<objects::CSeq_align_set> sset,
-                        CRef<objects::CScope> scope,
-                        const PSIBlastOptions& opts);
+    /// Does not take ownership of input
+    CPssmEngine(IPssmInputData* input);
 
-    // N.B.:
-    // Only two types of Seq-aligns are supported: those for protein-protein
-    // comparison (Dense-seg) and those for protein-translated nucleotide
-    // comparison (Std-seg).
-    // Dense-diag?
-    // FIXME: need to return Score-matrix ASN.1 structure with PSSM
-    void Run();
-
-    unsigned int GetNumAlignedSequences() const;
-    unsigned int GetQuerySeqLen() const;
+    CRef<objects::CScore_matrix_parameters> Run();
 
 protected:
-    // Convenience for debugging
-    friend ostream& operator<<(ostream& out, const CScoreMatrixBuilder& smb);
-
-    void SelectSequencesForProcessing();
-    void ExtractAlignmentData();
-
-    /// Process each segment in the alignment to extract information about
-    /// matching letters, evalues, and extents of the matching regions
-    /// @param s abstraction of an aligned segment [in]
-    /// @param seq_index index of the sequence aligned with the query in the
-    ///        desc_matrix field of the m_AlignmentData data member [in]
-    /// @param e_value E-value for this subject alignment.
-    void x_ProcessDenseg(const objects::CDense_seg& denseg, TSeqPos seq_index,
-                         double e_value);
-
-    void x_Init(const Uint1* query, TSeqPos query_size, 
-                CRef<objects::CSeq_align_set> sset);
-
-    /// Member function that selects those sequences in the alignment which
-    /// have an evalue lower than the threshold specified in PsiInfo structure
-    void x_SelectByEvalue();
-
-    /// Allow specification of seq-ids for considering sequences to process
-    void x_SelectBySeqId(const std::vector< CRef<objects::CSeq_id> >& ids);
-
-    // Convenience typedefs
-    typedef AutoPtr<PsiAlignmentData, CDeleter<PsiAlignmentData> > 
-        TPsiAlignDataSmartPtr;
-    typedef pair<AutoPtr<Uint1, ArrayDeleter<Uint1> >, TSeqPos> TSeqPair;
-
-    CRef<objects::CScope>           m_Scope;
-    TPsiAlignDataSmartPtr           m_AlignmentData;
-    PSIBlastOptions                 m_Opts;
-    CRef<objects::CSeq_align_set>   m_SeqAlignSet;
-    PsiInfo                         m_PssmDimensions;
+    /// Handle to strategy to process raw PSSM input data
+    IPssmInputData*         m_PssmInput;
 
     /// Default constructor available for derived test classes
-    CScoreMatrixBuilder() {}
+    CPssmEngine() {}
     /// Prohibit copy constructor
-    CScoreMatrixBuilder(const CScoreMatrixBuilder& rhs);
+    CPssmEngine(const CPssmEngine& rhs);
     /// Prohibit assignment operator
-    CScoreMatrixBuilder& operator=(const CScoreMatrixBuilder& rhs);
+    CPssmEngine& operator=(const CPssmEngine& rhs);
 
-    friend class ::CPssmCreate; // unit test class
-
-    // Auxiliary functions
-    static TSeqPair 
-    x_GetSubjectSequence(const objects::CDense_seg& ds, objects::CScope& scope);
-
+    friend class ::CPssmEngineTest; // unit test class
 };
-
-inline unsigned int
-CScoreMatrixBuilder::GetNumAlignedSequences() const
-{
-    return m_PssmDimensions.num_seqs;
-}
-
-inline unsigned int
-CScoreMatrixBuilder::GetQuerySeqLen() const
-{
-    return m_PssmDimensions.query_sz;
-}
-
-/// Used for debugging purposes
-std::string
-PsiAlignmentData2String(const PsiAlignmentData* alignment);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE
@@ -179,6 +89,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.6  2004/07/29 17:53:16  camacho
+ * Redesigned to use strategy pattern
+ *
  * Revision 1.5  2004/06/16 18:44:00  ucko
  * Make sure to supply full declarations for C(Const)Refs' parameters,
  * as forward declarations are not sufficient for all compilers.
