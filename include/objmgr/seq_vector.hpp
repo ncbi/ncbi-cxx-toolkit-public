@@ -159,6 +159,13 @@ CSeqVector::TResidue CSeqVector::operator[] (TSeqPos pos) const
 
 
 inline
+bool CSeqVector::empty(void) const
+{
+    return m_Size == 0;
+}
+
+
+inline
 TSeqPos CSeqVector::size(void) const
 {
     return m_Size;
@@ -250,6 +257,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.46  2003/10/24 19:28:12  vasilche
+* Added implementation of CSeqVector::empty().
+*
 * Revision 1.45  2003/10/08 14:16:54  vasilche
 * Removed circular reference CSeqVector <-> CSeqVector_CI.
 *
