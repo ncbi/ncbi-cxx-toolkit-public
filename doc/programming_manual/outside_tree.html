@@ -78,19 +78,19 @@ href="../new_proj.html"> Starting a new C++ project</a>.
 <h3> The Project's Makefile </h3>
 
 The file you just created with the above script will be called <i>Makefile.NewProj.app</i>. In
-addition to other things, you should see definitions for:
+addition to other things, you will see definitions for:
 
 <dl>
-  <dt> - <i> $builddir </i> - a path to the build directory specified in the last argument to the above script 
-  <dt> - <i> $srcdir </i> - the path to your current working directory (".")
-  <dt> - <i> $APP </i> - the application name 
-  <dt> - <i> $OBJ </i> - the names of the object modules to build and link to the application
-  <dt> - <i> $LIB</i> - specific libraries to link to in the NCBI C++ Toolkit
-  <dt> - <i> $LIBS </i> - all other libraries to link to (outside the C++ Toolkit)
+  <dt> - <i> $(builddir) </i> - a path to the build directory specified in the last argument to the above script 
+  <dt> - <i> $(srcdir) </i> - the path to your current working directory (".")
+  <dt> - <i> $(APP) </i> - the application name 
+  <dt> - <i> $(OBJ) </i> - the names of the object modules to build and link to the application
+  <dt> - <i> $(LIB)</i> - specific libraries to link to in the NCBI C++ Toolkit
+  <dt> - <i> $(LIBS) </i> - all other libraries to link to (outside the C++ Toolkit)
 </dl>
 
-<i>$builddir/lib</i> specifies make's library path (-L), which in this case points to the
-GNU debug versions of the NCBI C++ Toolkit libraries. LIB
+<i>$(builddir)/lib</i> specifies the library path (-L), which in this case points to the
+GNU debug versions of the NCBI C++ Toolkit libraries. $(LIB)
 lists the individual libraries in this path that you will be linking to. Minimally, this should
 include <i>xncbi</i> - the library which implements the foundational classes for the C++
 tools. Additional library names (e.g. <i>xhtml, xcgi, </i> etc.) can be added here. <p>
