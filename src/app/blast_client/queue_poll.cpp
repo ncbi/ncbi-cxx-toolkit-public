@@ -76,6 +76,7 @@ typedef list< CRef<CBlast4_error> > TErrorList;
 //
 
 #define BLAST4_POLL_DELAY_SEC 15
+#define BLAST4_IGNORE_ERRS    5
 
 static inline bool
 s_IsAmino(const string & program)
@@ -198,6 +199,8 @@ class some_kind_of_nothing : public CEofException {
 static CRef<CBlast4_reply>
 s_Submit(CRef<CBlast4_request_body> body, bool echo = true)
 {
+    static int errors_ignored = 0;
+    
     // Create the request; optionally echo it
 
     CRef<CBlast4_request> request(new CBlast4_request);
@@ -208,7 +211,7 @@ s_Submit(CRef<CBlast4_request_body> body, bool echo = true)
     }
     
     // submit to server, get reply; optionally echo it
-        
+    
     CRef<CBlast4_reply> reply(new CBlast4_reply);
     
     try {
@@ -216,14 +219,23 @@ s_Submit(CRef<CBlast4_request_body> body, bool echo = true)
         CBlast4Client().Ask(*request, *reply);
     }
     catch(CEofException & e) {
-        ERR_POST(Error << "Unexpected EOF when contacting netblast server"
-                 " - unable to complete request.");
+        if (errors_ignored >= BLAST4_IGNORE_ERRS) {
+            ERR_POST(Error << "Unexpected EOF when contacting netblast server"
+                     " - unable to complete request.");
 #if defined(NCBI_OS_UNIX)
-        // Use _exit() avoid coredump.
-        _exit(-1);
+            // Use _exit() avoid coredump.
+            _exit(-1);
 #else
-        exit(-1);
+            exit(-1);
 #endif
+        } else {
+            errors_ignored ++;
+//             ERR_POST(Error << "Unexpected EOF when contacting netblast server"
+//                      " ::: ignoring (" << errors_ignored << "/" << BLAST4_IGNORE_ERRS << ").");
+            
+            CRef<CBlast4_reply> empty_result;
+            return empty_result;
+        }
     }
     
     if (echo) {
@@ -329,19 +341,22 @@ s_QueueSearch(string              & program,
     
     CRef<CBlast4_reply> reply = s_Submit(body, verbose);
     
-    if (reply->CanGetBody()  &&
+    if (reply.NotEmpty() &&
+        reply->CanGetBody() &&
         reply->GetBody().GetQueue_search().CanGetRequest_id()) {
         
         returned_rid = reply->GetBody().GetQueue_search().GetRequest_id();
     }
     
-    if (reply->CanGetErrors()) {
+    if (reply.NotEmpty() &&
+        reply->CanGetErrors()) {
         const CBlast4_reply::TErrors & errs = reply->GetErrors();
         
         CBlast4_reply::TErrors::const_iterator i;
         
         for (i = errs.begin(); i != errs.end(); i++) {
-            if ((*i)->GetMessage().size()) {
+            if ((*i)->CanGetMessage() &&
+                (*i)->GetMessage().size()) {
                 if (err.size()) {
                     err += "\n";
                 }
@@ -370,8 +385,12 @@ s_GetSearchResults(const string & RID, bool echo = true)
 static bool
 s_SearchPending(CRef<CBlast4_reply> reply)
 {
-    const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
+    // The reply can be empty on certain types of errors.
+    if (reply.Empty())
+        return true;
     
+    const list< CRef<CBlast4_error> > & errors = reply->GetErrors();
+   
     TErrorList::const_iterator i;
     for(i = errors.begin(); i != errors.end(); i++) {
         if ((*i)->GetCode() == eBlast4_error_code_search_pending) {
@@ -391,7 +410,7 @@ s_ShowAlign(CNcbiOstream       & os,
     CBlast4_get_search_results_reply & cgsrr(reply.SetGet_search_results());
     
     if (! cgsrr.CanGetAlignments()) {
-        os << "ERROR: Could not get an alignment from reply.\n";
+        os << "This search did not find any matches.\n";
         return;
     }
     
@@ -550,6 +569,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.7  2004/01/30 23:49:59  bealer
+ * - Add better handling for results-not-found case.
+ *
  * Revision 1.6  2004/01/05 17:59:31  vasilche
  * Moved genbank loader and its readers sources to new location in objtools.
  * Genbank is now in library libncbi_xloader_genbank.
