@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.38  2001/08/21 01:10:31  thiessen
+* fix lit. launch for nucleotides
+*
 * Revision 1.37  2001/08/09 19:07:13  thiessen
 * add temperature and hydrophobicity coloring
 *
@@ -512,13 +515,15 @@ void LaunchWebPage(const char *url)
 
 void Sequence::LaunchWebBrowserWithInfo(void) const
 {
+    char dbChar = isProtein ? 'P' : 'N';
     CNcbiOstrstream oss;
-    oss << "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?form=6&db=p&Dopt=g&uid=";
+    oss << "http://www.ncbi.nlm.nih.gov/entrez/utils/qmap.cgi?form=6&Dopt=g&db="
+        << dbChar << "&uid=";
     if (identifier->pdbID.size() > 0) {
         oss << identifier->pdbID.c_str();
         if (identifier->pdbChain != ' ')
             oss << (char) identifier->pdbChain;
-        oss << "[PACC]";
+        oss << "%5B" << dbChar << "ACC%5D";
     } else if (identifier->gi != MoleculeIdentifier::VALUE_NOT_SET)
         oss << identifier->gi;
     else if (identifier->accession.size() > 0)
