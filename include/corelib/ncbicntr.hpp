@@ -181,7 +181,7 @@ BEGIN_NCBI_SCOPE
 /// Provide basic counter operations for an atomic counter represented
 /// internally by TNCBIAtomicValue. 
 
-class NCBI_XNCBI_EXPORT CAtomicCounter
+class CAtomicCounter
 {
 public:
     typedef TNCBIAtomicValue TValue;  ///< Alias TValue for TNCBIAtomicValue
@@ -369,6 +369,10 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.24  2004/05/14 16:15:41  dicuccio
+* Remove unneeded export specifier for CAtomicCounter - the class is entirely
+* inline for MSVC
+*
 * Revision 1.23  2004/04/26 14:31:46  ucko
 * GCC 3.4 has moved __exchange_and_add to the __gnu_cxx namespace.
 * Split up "+m" constraints for GCC assembly, as versions 3.4 and up
