@@ -215,13 +215,34 @@ void CGFFFormatter::FormatFeature
                 if (s != "*") {
                     tentative_stop.Reset();
                 } else {
-                    // valid stop, we can trim the CDS
-                    SRelLoc::TRange range;
-                    range.SetFrom(0);
-                    range.SetTo(frame + 3 * prod_len - 1);
-                    SRelLoc::TRanges ranges;
-                    ranges.push_back(CRef<SRelLoc::TRange>(&range));
-                    feat_loc = SRelLoc(f.GetLoc(), ranges).Resolve(scope);
+                    // valid stop, we may be able to trim the CDS
+                    if (loc_len > frame + 3 * prod_len + 3) {
+                        // truncation error
+                        string msg("truncation error: ");
+                        feature::GetLabel(seqfeat, &msg, feature::eBoth);
+                        msg += "; protein: ";
+                        seqfeat.GetProduct().GetLabel(&msg);
+
+                        if (seqfeat.IsSetExcept()  &&
+                            seqfeat.GetExcept()) {
+                            msg = "warning: " + msg +
+                                " (translation exception";
+                            if (seqfeat.IsSetExcept_text()) {
+                                msg += ' ' + seqfeat.GetExcept_text();
+                            }
+                            msg += ")";
+                        } else {
+                            msg = "error: " + msg;
+                        }
+                        LOG_POST(Error << msg);
+                    } else {
+                        SRelLoc::TRange range;
+                        range.SetFrom(0);
+                        range.SetTo(frame + 3 * prod_len - 1);
+                        SRelLoc::TRanges ranges;
+                        ranges.push_back(CRef<SRelLoc::TRange>(&range));
+                        feat_loc = SRelLoc(f.GetLoc(), ranges).Resolve(scope);
+                    }
                 }
             } else {
                 tentative_stop.Reset();
@@ -351,30 +372,41 @@ void CGFFFormatter::FormatSequence
 }
 
 
+
 // Private
 
-string CGFFFormatter::x_GetGeneID
-(const CFlatFeature& feat,
- const string& gene,
- CBioseqContext& ctx) const
+string CGFFFormatter::x_GetGeneID(const CFlatFeature& feat,
+                                  const string& gene,
+                                  CBioseqContext& ctx) const
 {
     const CSeq_feat& seqfeat = feat.GetFeat();
 
-    string               main_acc;
+    string main_acc = ctx.GetAccession();
     if (ctx.IsPart()) {
         const CSeq_id& id = *(ctx.GetMaster().GetHandle().GetSeqId());
         main_acc = ctx.GetPreferredSynonym(id).GetSeqIdString(true);
-    } else {
-        main_acc = ctx.GetAccession();
     }
 
-    string               gene_id   = main_acc + ':' + gene;
-    CConstRef<CSeq_feat> gene_feat = sequence::GetBestOverlappingFeat
-        (seqfeat.GetLocation(), CSeqFeatData::e_Gene,
-         sequence::eOverlap_Interval, ctx.GetScope());
+    string gene_id = main_acc + ':' + gene;
+    if (seqfeat.GetData().IsGene()) {
+        return gene_id;
+    }
+
+    CConstRef<CSeq_feat> gene_feat =
+        GetBestOverlappingFeat(seqfeat, CSeqFeatData::e_Gene,
+                               sequence::eOverlap_Interval, ctx.GetScope());
+    if (gene_feat) {
+        gene_id = main_acc + ':';
+        feature::GetLabel(*gene_feat, &gene_id, feature::eContent);
+    } else {
+        string msg;
+        feature::GetLabel(seqfeat, &msg, feature::eBoth);
+        LOG_POST(Info << "info: no best overlapping feature for " << msg);
+    }
 
     return gene_id;
 }
+
 
 
 string CGFFFormatter::x_GetTranscriptID
@@ -386,91 +418,17 @@ string CGFFFormatter::x_GetTranscriptID
 
     // if our feature already is an mRNA, we need look no further
     CConstRef<CSeq_feat> mrna_feat;
-    if (seqfeat.GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+    switch (seqfeat.GetData().GetSubtype()) {
+    case CSeqFeatData::eSubtype_mRNA:
         mrna_feat.Reset(&seqfeat);
-    } else {
+        break;
 
-        // search for a best overlapping mRNA
-        // we start with a scan through the product accessions because we need
-        // to insure that the chosen transcript does indeed match what we want
+    case CSeqFeatData::eSubtype_cdregion:
+        mrna_feat = sequence::GetBestMrnaForCds(seqfeat, ctx.GetScope());
+        break;
 
-        if (seqfeat.IsSetProduct()) {
-            try {
-                // this may throw, if the product spans multiple sequences
-                // this would be extremely unlikely, but we catch anyway
-                const CSeq_id& product_id =
-                    sequence::GetId(seqfeat.GetProduct(), 0);
-
-                SAnnotSelector sel;
-                sel.SetOverlapIntervals()
-                    .ExcludeNamedAnnots("SNP")
-                    .SetResolveAll()
-                    .SetFeatSubtype(CSeqFeatData::eSubtype_mRNA);
-
-                CFeat_CI feat_iter(ctx.GetScope(), seqfeat.GetLocation(), sel);
-                for ( ;  feat_iter  &&  !mrna_feat;  ++feat_iter) {
-                    // we grab the mRNA product, if available, and scan it for
-                    // a CDS feature.  the CDS feature should point to the same
-                    // product as our current feature.
-                    const CSeq_feat& mrna = feat_iter->GetOriginalFeature();
-                    if ( !mrna.IsSetProduct() ) {
-                        continue;
-                    }
-
-                    // make sure the feature contains our feature of interest
-                    sequence::ECompare comp =
-                        sequence::Compare(mrna.GetLocation(),
-                                          seqfeat.GetLocation(),
-                                          0);
-                    if (comp != sequence::eContains  &&
-                        comp != sequence::eSame) {
-                        continue;
-                    }
-
-                    CBioseq_Handle handle =
-                        ctx.GetScope().GetBioseqHandle(mrna.GetProduct());
-                    if ( !handle ) {
-                        continue;
-                    }
-
-                    SAnnotSelector cds_sel(sel);
-                    cds_sel.SetFeatSubtype(CSeqFeatData::eSubtype_cdregion);
-                    CFeat_CI other_iter(ctx.GetScope(),
-                                        mrna.GetProduct(),
-                                        cds_sel);
-                    for ( ;  other_iter  &&  !mrna_feat;  ++other_iter) {
-                        const CSeq_feat& cds = other_iter->GetOriginalFeature();
-                        if ( !cds.IsSetProduct() ) {
-                            continue;
-                        }
-
-                        CBioseq_Handle prot_handle =
-                            ctx.GetScope().GetBioseqHandle(cds.GetProduct());
-                        if ( !prot_handle ) {
-                            continue;
-                        }
-
-                        if (prot_handle.IsSynonym(product_id)) {
-                            // got it!
-                            mrna_feat.Reset(&mrna);
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (...) {
-            }
-        }
-
-        //
-        // try to find the best by overlaps alone
-        //
-
-        if ( !mrna_feat ) {
-            mrna_feat = sequence::GetBestOverlappingFeat
-                (seqfeat.GetLocation(), CSeqFeatData::eSubtype_mRNA,
-                 sequence::eOverlap_CheckIntervals, ctx.GetScope());
-        }
+    default:
+        break;
     }
 
     //
@@ -614,6 +572,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2005/01/13 15:27:04  dicuccio
+* Handle CDS truncation reversibly.  Provide better gene_id labels.
+*
 * Revision 1.13  2005/01/12 21:29:46  shomrat
 * Avoid performance warning on MSVC.
 *
