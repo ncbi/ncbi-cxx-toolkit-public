@@ -153,7 +153,7 @@ private:
     void x_AddQuals(CBioseqContext& ctx);
     void x_AddQuals(const CCdregion& cds)  const;
     void x_AddQuals(const CProt_ref& prot) const;
-    void x_AddGeneQuals(const CSeq_feat& gene, CScope& scope) const;
+    void x_AddGeneQuals(const CSeq_feat& gene, bool& pseudo, CScope& scope) const;
     void x_AddCdregionQuals(const CSeq_feat& cds, CBioseqContext& ctx,
         bool& pseudo, bool& had_prot_desc) const;
     const CProt_ref* x_AddProteinQuals(CBioseq_Handle& prot) const;
@@ -163,7 +163,8 @@ private:
     void x_AddProtQuals(const CSeq_feat& feat, CBioseqContext& ctx,
         bool& pseudo, bool& had_prot_desc, string& precursor_comment) const;
     void x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
-    void x_AddQuals(const CGene_ref& gene, bool gene_feat) const;
+    void x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const;
+    void x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_feat) const;
     void x_AddExtQuals(const CSeq_feat::TExt& ext) const;
     void x_AddGoQuals(const CUser_object& uo) const;
     void x_AddExceptionQuals(CBioseqContext& ctx) const;
@@ -302,6 +303,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.18  2004/08/30 13:34:37  shomrat
+* Add site feature qualifiers
+*
 * Revision 1.17  2004/08/19 16:24:04  shomrat
 * indicate gene feature when doing gene_ref quals
 *
