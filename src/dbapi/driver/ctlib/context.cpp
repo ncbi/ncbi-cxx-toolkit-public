@@ -42,30 +42,27 @@ BEGIN_NCBI_SCOPE
 //  CTLibContext::
 //
 
+CS_START_EXTERN_C
+	CS_RETCODE CS_PUBLIC s_CTLIB_cserr_callback(CS_CONTEXT* context, CS_CLIENTMSG* msg)
+	{
+		return CTLibContext::CTLIB_cserr_handler(context, msg)
+			? CS_SUCCEED : CS_FAIL;
+	}
 
-extern "C" {
-    CS_RETCODE s_CTLIB_cserr_callback(CS_CONTEXT* context, CS_CLIENTMSG* msg)
-    {
-        return CTLibContext::CTLIB_cserr_handler(context, msg)
-            ? CS_SUCCEED : CS_FAIL;
-    }
+	CS_RETCODE CS_PUBLIC s_CTLIB_cterr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
+									  CS_CLIENTMSG* msg)
+	{
+		return CTLibContext::CTLIB_cterr_handler(context, con, msg)
+			? CS_SUCCEED : CS_FAIL;
+	}
 
-    CS_RETCODE s_CTLIB_cterr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
-                                      CS_CLIENTMSG* msg)
-    {
-        return CTLibContext::CTLIB_cterr_handler(context, con, msg)
-            ? CS_SUCCEED : CS_FAIL;
-    }
-
-    CS_RETCODE s_CTLIB_srverr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
-                                       CS_SERVERMSG* msg)
-    {
-        return CTLibContext::CTLIB_srverr_handler(context, con, msg)
-            ? CS_SUCCEED : CS_FAIL;
-    }
-
-}
-
+	CS_RETCODE CS_PUBLIC s_CTLIB_srverr_callback(CS_CONTEXT* context, CS_CONNECTION* con,
+									   CS_SERVERMSG* msg)
+	{
+		return CTLibContext::CTLIB_srverr_handler(context, con, msg)
+			? CS_SUCCEED : CS_FAIL;
+	}
+CS_END_EXTERN_C
 
 CTLibContext::CTLibContext(bool reuse_context, CS_INT version)
 {
@@ -831,6 +828,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2002/06/28 22:49:02  garrett
+ * CTLIB now connects under Windows.
+ *
  * Revision 1.13  2002/04/19 15:01:28  soussov
  * adds static mutex to Connect
  *
