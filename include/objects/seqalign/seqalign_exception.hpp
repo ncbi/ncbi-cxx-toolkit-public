@@ -42,14 +42,16 @@ class NCBI_SEQALIGN_EXPORT CSeqalignException :
 {
 public:
     enum EErrCode {
-        eUnsupported
+        eUnsupported,
+        eInvalidInputAlignment
     };
 
     virtual const char* GetErrCodeString(void) const
     {
         switch (GetErrCode()) {
-        case eUnsupported: return "eUnsupported";
-        default:           return CException::GetErrCodeString();
+        case eUnsupported:           return "eUnsupported";
+        case eInvalidInputAlignment: return "eInvalidInputAlignment";
+        default:                     return CException::GetErrCodeString();
         }
     }
 
@@ -64,6 +66,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2003/08/19 21:09:39  todorov
+* +eInvalidInputAlignment
+*
 * Revision 1.1  2003/08/13 18:11:03  johnson
 * initial revision; created so CSeq_align::Reverse can throw if asked to
 * reverse an (as yet) unsupported segment type
