@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.21  2001/05/31 21:30:57  vakatov
+ * MIME_ParseContentTypeEx() -- a more accurate parsing
+ *
  * Revision 6.20  2001/05/29 21:15:43  vakatov
  * + eMIME_Plain
  *
@@ -986,29 +989,35 @@ extern int/*bool*/ MIME_ParseContentTypeEx
 
     if ( type ) {
         for (i = 0;  i < (int) eMIME_T_Unknown;  i++) {
-            if ( !strncmp(x_type, s_MIME_Type[i], strlen(s_MIME_Type[i])) ) {
+            if ( !strcmp(x_type, s_MIME_Type[i]) ) {
                 *type = (EMIME_Type) i;
+                break;
             }
         }
     }
 
-    if ( subtype ) {
-        for (i = 0;  i < (int) eMIME_Unknown;  i++) {
-            if ( !strncmp(x_subtype, s_MIME_SubType[i],
-                          strlen(s_MIME_SubType[i])) ) {
-                *subtype = (EMIME_SubType) i;
-            }
-        }
-    }
-
-    if ( encoding ) {
-        for (i = 0;  i < (int) eENCOD_None;  i++) {
-            if (strstr(x_subtype, s_MIME_Encoding[i]) != 0) {
+    for (i = 0;  i < (int) eENCOD_None;  i++) {
+        char* x_encoding = strstr(x_subtype, s_MIME_Encoding[i]);
+        if (x_encoding  &&
+            x_encoding != x_subtype  &&  *(x_encoding - 1) == '-'  &&
+            strcmp(x_encoding, s_MIME_Encoding[i]) == 0) {
+            if ( encoding ) {
                 *encoding = (EMIME_Encoding) i;
             }
+            *(x_encoding - 1) = '\0';
+            break;
         }
     }
   
+    if ( subtype ) {
+        for (i = 0;  i < (int) eMIME_Unknown;  i++) {
+            if ( !strcmp(x_subtype, s_MIME_SubType[i]) ) {
+                *subtype = (EMIME_SubType) i;
+                break;
+            }
+        }
+    }
+
     free(x_buf);
     return 1/*true*/;
 }
