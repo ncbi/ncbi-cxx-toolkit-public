@@ -117,7 +117,7 @@ CDate::CDate(void)
 inline
 void CDate::GetDate(string* label, bool year_only) const
 {
-    return GetDate(label, year_only ? "%Y" : "%{%2M-%2D-%}%Y");
+    GetDate(label, year_only ? "%Y" : "%{%2M-%2D-%}%Y");
 }
 
 
@@ -132,6 +132,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.4  2002/10/04 17:32:45  ucko
+ * Drop spurious "return" from GetDate wrapper.
+ *
  * Revision 1.3  2002/10/04 14:45:07  ucko
  * Add a generic date formatter with flexible support for missing fields.
  *
