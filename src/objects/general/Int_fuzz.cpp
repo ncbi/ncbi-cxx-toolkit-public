@@ -100,7 +100,7 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
     }
 
     if (right) {
-        (*label) += NStr::IntToString(pos);
+        (*label) += NStr::IntToString(pos + 1);
     }
 
     if (lim == 'r') {
@@ -108,7 +108,7 @@ void CInt_fuzz::GetLabel(string* label, TSeqPos pos, bool right) const
     }
 
     if (!right) {
-        (*label) += NStr::IntToString(pos);
+        (*label) += NStr::IntToString(pos + 1);
     }
 }
 
@@ -120,6 +120,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.3  2002/10/08 18:52:21  clausen
+ * Changed TSeqPos from 0 based to 1 based in GetLabel()
+ *
  * Revision 6.2  2002/10/03 19:11:02  clausen
  * Removed extra whitespace
  *
