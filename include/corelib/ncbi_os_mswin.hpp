@@ -77,6 +77,16 @@ inline int DrawText(HDC hDC,
 }
 #endif
 
+// Yield
+#ifdef Yield
+#undef Yield
+inline void Yield(void)
+{
+}
+#endif
+
+
+
 
 
 #endif  /* CORELIB___NCBI_OS_MSWIN__HPP */
