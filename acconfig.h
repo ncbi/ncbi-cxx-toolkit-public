@@ -9,3 +9,6 @@
 
 /* Microsoft C++ specific */
 #undef SIZEOF___INT64
+
+/* Does not give enough support to the in-class template functions */
+#undef NO_INCLASS_TMPL

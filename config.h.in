@@ -27,6 +27,9 @@
 /* Define if C++ namespaces are supported */
 #undef HAVE_NAMESPACE
 
+/* Does not give enough support to the in-class template functions */
+#undef NO_INCLASS_TMPL
+
 /* The number of bytes in a __int64.  */
 #undef SIZEOF___INT64
 
