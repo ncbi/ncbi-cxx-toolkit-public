@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2000/06/26 16:34:27  vakatov
+* CCgiCookies::Add(const string&) -- maimed to workaround MS IE bug
+* (it sent empty cookies w/o "=" in versions prior to 5.5)
+*
 * Revision 1.42  2000/05/04 16:29:12  vakatov
 * s_ParsePostQuery():  do not throw on an unknown Content-Type
 *
@@ -401,9 +405,20 @@ void CCgiCookies::Add(const string& str)
         SIZE_TYPE pos_beg = str.find_first_not_of(' ', pos);
         if (pos_beg == NPOS)
             return; // done
-        SIZE_TYPE pos_mid = str.find_first_of('=', pos_beg);
-        if (pos_mid == NPOS)
-            break; // error
+
+        SIZE_TYPE pos_mid = str.find_first_of("=;\r\n", pos_beg);
+        if (pos_mid == NPOS) {
+            Add(str.substr(pos_beg), NcbiEmptyString);
+            return; // done
+        }
+        if (str[pos_mid] != '=') {
+            Add(str.substr(pos_beg, pos_mid-pos_beg), NcbiEmptyString);
+            if (str[pos_mid] != ';'  ||  ++pos_mid == str.length()) 
+                return; // done
+            pos = pos_mid;
+            continue;
+        }
+
         SIZE_TYPE pos_end = str.find_first_of(';', pos_mid);
         if (pos_end != NPOS) {
             pos = pos_end + 1;
@@ -421,6 +436,7 @@ void CCgiCookies::Add(const string& str)
 
     throw CParseException("Invalid cookie string: `" + str + "'", pos);
 }
+
 
 CNcbiOstream& CCgiCookies::Write(CNcbiOstream& os)
 const
