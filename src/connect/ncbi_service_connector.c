@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.15  2001/04/25 15:49:54  lavr
+ * Memory leaks in Open (when unsuccessul) fixed
+ *
  * Revision 6.14  2001/04/24 21:36:50  lavr
  * More structured code to re-try abrupted connection/mapping attempts
  *
@@ -272,7 +275,7 @@ static int/*bool*/ s_AdjustInfo(SConnNetInfo* net_info, void* data,
         if (!info->sful)
             break;
     }
-    
+
     SOCK_ntoa(info->host, net_info->host, sizeof(net_info->host));
     net_info->port = info->port;
     
@@ -457,6 +460,36 @@ static CONNECTOR s_Open
 }
 
 
+static EIO_Status s_Close
+(CONNECTOR       connector,
+ const STimeout* timeout,
+ int/*bool*/     close_dispatcher)
+{
+    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    EIO_Status status = eIO_Success;
+
+    if (uuu->meta.close)
+        status = (*uuu->meta.close)(uuu->meta.c_close, timeout);
+
+    if (uuu->name) {
+        free((void*) uuu->name);
+        uuu->name = 0;
+    }
+
+    if (close_dispatcher)
+        s_CloseDispatcher(uuu);
+    
+    if (uuu->conn) {
+        SMetaConnector* meta = connector->meta;
+        METACONN_Remove(meta, uuu->conn);
+        uuu->conn = 0;
+        s_Reset(meta);
+    }
+
+    return status;
+}
+
+
 static EIO_Status s_VT_Open
 (CONNECTOR       connector,
  const STimeout* timeout)
@@ -476,17 +509,17 @@ static EIO_Status s_VT_Open
         if (uuu->info->firewall)
             info = 0;
         else if (!(info = SERV_GetNextInfo(uuu->iter)))
-            return eIO_Unknown;
+            break;
         
         if (!(net_info = ConnNetInfo_Clone(uuu->info)))
-            return eIO_Unknown;
+            break;
         
         conn = s_Open(uuu, timeout, info, net_info);
         
         ConnNetInfo_Destroy(net_info);
         
         if (uuu->info->firewall)
-            return eIO_Unknown;
+            break;
         
         if (!conn)
             continue;
@@ -521,7 +554,7 @@ static EIO_Status s_VT_Open
         if (uuu->meta.open) {
             EIO_Status status = (*uuu->meta.open)(uuu->meta.c_open, timeout);
             if (status != eIO_Success) {
-                s_VT_Close(connector, timeout);
+                s_Close(connector, timeout, 0/*close_dispatcher*/);
                 continue;
             }
         }
@@ -532,7 +565,7 @@ static EIO_Status s_VT_Open
     s_CloseDispatcher(uuu);
     return eIO_Unknown;
 }
-    
+
 
 static EIO_Status s_VT_Status
 (CONNECTOR connector,
@@ -546,27 +579,7 @@ static EIO_Status s_VT_Close
 (CONNECTOR       connector,
  const STimeout* timeout)
 {
-    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    EIO_Status status = eIO_Success;
-
-    if (uuu->meta.close)
-        status = (*uuu->meta.close)(uuu->meta.c_close, timeout);
-
-    if (uuu->name) {
-        free((void*) uuu->name);
-        uuu->name = 0;
-    }
-
-    s_CloseDispatcher(uuu);
-    
-    if (uuu->conn) {
-        SMetaConnector* meta = connector->meta;
-        METACONN_Remove(meta, uuu->conn);
-        uuu->conn = 0;
-        s_Reset(meta);
-    }
-
-    return status;
+    return s_Close(connector, timeout, 1/*close_dispatcher*/);
 }
 
 
