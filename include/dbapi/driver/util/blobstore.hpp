@@ -62,7 +62,7 @@ class CBlobReader : public IReader {
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
                             size_t* bytes_read = 0);
-    
+
     /// Return the number of bytes ready to be read from input
     /// device without blocking.  Return 0 if no such number is
     /// available (in case of an error or EOF).
@@ -91,16 +91,16 @@ class CBlobWriter : public IWriter
 public:
     enum EFlags {
         fLogBlobs = 0x1,
-        fOwnDescr= 0x2, 
+        fOwnDescr= 0x2,
         fOwnCon= 0x4,
         fOwnAll= fOwnDescr + fOwnCon
     };
 
     typedef int TFlags;
-        
-    CBlobWriter(CDB_Connection* con, 
-                ItDescriptorMaker*    desc_func, 
-                size_t          image_limit= 0x7FFFFFFF, 
+
+    CBlobWriter(CDB_Connection* con,
+                ItDescriptorMaker*    desc_func,
+                size_t          image_limit= 0x7FFFFFFF,
                 TFlags          flags= 0);
     /// Write up to count bytes from the buffer pointed to by
     /// buf argument onto output device.  Store the number
@@ -130,7 +130,7 @@ public:
 class CBlobRetriever {
  public:
     CBlobRetriever(I_DriverContext* pCntxt,
-                   const string& server, 
+                   const string& server,
                    const string& user,
                    const string& passwd,
                    const string& query);
@@ -150,7 +150,7 @@ class CBlobRetriever {
 class CBlobLoader {
  public:
     CBlobLoader(I_DriverContext* pCntxt,
-                const string& server, 
+                const string& server,
                 const string& user,
                 const string& passwd,
                 ItDescriptorMaker* d_maker
@@ -158,7 +158,7 @@ class CBlobLoader {
     bool IsReady() const {
         return m_IsGood;
     }
-    bool Load(istream& s, ECompressMethod cm= eNone, 
+    bool Load(istream& s, ECompressMethod cm= eNone,
               size_t image_limit= 0, bool log_it= false);
     ~CBlobLoader() {
         if(m_Conn) delete m_Conn;
@@ -175,13 +175,13 @@ class CBlobLoader {
  * it uses a table of the form:
  * create table TABLE_NAME (
  * ID varchar(n),
- * NUM int,240-271-8512
+ * NUM int,
  * DATA1 image NULL, ... DATAn image NULL)
  *
  */
 class CMY_ITDescriptor : public CDB_ITDescriptor {
  public:
-    CMY_ITDescriptor(const string& table_name) : 
+    CMY_ITDescriptor(const string& table_name) :
         CDB_ITDescriptor(table_name, kEmptyStr, kEmptyStr)
     {};
     void SetColumn(const string& col_name) {
@@ -224,46 +224,139 @@ class CSimpleBlobStore : public ItDescriptorMaker {
 };
 
 /***************************************************************************************
- * CBlobStore - the simple interface to deal with reading and writing the image/text data
- * from a C++ application
+ * CBlobStoreBase - the abstract base interface to deal with reading and writing
+ * the image/text data from a C++ application.
  */
 
-class CBlobStore {
- public:
-    CBlobStore(I_DriverContext* pCntxt,
-               const string& server, 
-               const string& user,
-               const string& passwd,
-               const string& table_name,
-               ECompressMethod cm= eNone, 
-               size_t image_limit= 0, 
-               bool log_it= false);
+
+class CBlobStoreBase {
+public:
 
     bool Exists(const string& blob_id);
-    //user has to delete istream240-271-8512
+    //user has to delete istream
     istream* OpenForRead(const string& blob_id);
     // user has to delete ostream
     ostream* OpenForWrite(const string& blob_id);
     void Delete(const string& blob_id);
-    ~CBlobStore();
- protected:
-    I_DriverContext* m_Cntxt;
-    string m_Server;
-    string m_User;
-    string m_Passwd;
+
+    size_t GetImageLimit() const { return m_Limit; }
+
+    ECompressMethod getCM() const { return m_Cm; }
+    void setCM(ECompressMethod cm) { m_Cm = cm; }
+
+    const string& getTableName() const { return m_Table; }
+
+    virtual ~CBlobStoreBase();
+
+    static const size_t g_16MB;
+
+protected:
+
+    CBlobStoreBase(const string& table_name,
+                   ECompressMethod cm = eNone,
+                   size_t image_limit = g_16MB,
+                   bool log_it = false);
+
+    void ReadTableDescr();
+    void SetTableDescr(const string& tableName,
+                       const string& keyColName,
+                       const string& numColName,
+                       const string* blobColNames,
+                       unsigned nofBC,
+                       bool isText = false);
+    virtual void GenReadQuery();
+    virtual CDB_Connection* GetConn() = 0;
+    // Returns true if connection should be deleted.
+    virtual bool ReleaseConn(CDB_Connection*) = 0;
+
+private:
+
     string m_Table;
     ECompressMethod m_Cm;
     size_t m_Limit;
     bool m_LogIt;
     bool m_IsText;
-    string m_Pool;
     string m_KeyColName;
     string m_NumColName;
     string m_ReadQuery;
     string* m_BlobColumn;
-    int m_NofBC;
+    unsigned m_NofBC;
 };
-    
+
+
+/***************************************************************************************
+ * CBlobStoreStatic - the simple interface to deal with reading and writing
+ * the image/text data from a C++ application.
+ * It uses connection to DB from an external pool.
+ */
+
+class CBlobStoreStatic : public CBlobStoreBase
+{
+public:
+    CBlobStoreStatic(CDB_Connection* pConn,
+                     const string& table_name,
+                     ECompressMethod cm = eNone,
+                     size_t image_limit = g_16MB,
+                     bool log_it = false);
+
+    CBlobStoreStatic(CDB_Connection* pConn,
+                     const string& tableName,
+                     const string& keyColName,
+                     const string& numColName,
+                     const string* blobColNames,
+                     unsigned nofBC,
+                     bool isText = false,
+                     ECompressMethod cm = eNone,
+                     size_t image_limit = g_16MB,
+                     bool log_it = false);
+
+    virtual ~CBlobStoreStatic();
+
+protected:
+
+    virtual CDB_Connection* GetConn();
+    virtual bool ReleaseConn(CDB_Connection*) { return false; }
+
+private:
+    CDB_Connection* m_pConn;
+};
+
+/***************************************************************************************
+ * CBlobStoreDynamic - the simple interface to deal with reading and writing
+ * the image/text data from a C++ application.
+ * It uses an internal connections pool and ask pool for a connection each time before
+ * connection use.
+ */
+
+class CBlobStoreDynamic : public CBlobStoreBase
+{
+public:
+    CBlobStoreDynamic(I_DriverContext* pCntxt,
+                      const string& server,
+                      const string& user,
+                      const string& passwd,
+                      const string& table_name,
+                      ECompressMethod cm = eNone,
+                      size_t image_limit = g_16MB,
+                      bool log_it = false);
+
+    virtual ~CBlobStoreDynamic();
+
+protected:
+
+    virtual CDB_Connection* GetConn();
+    virtual bool ReleaseConn(CDB_Connection*);
+
+private:
+
+    I_DriverContext* m_Cntxt;
+    string m_Server;
+    string m_User;
+    string m_Passwd;
+    string m_Pool;
+};
+
+
 END_NCBI_SCOPE
 
 
@@ -271,6 +364,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/18 23:17:28  ivanovsk
+ * Rename class CBlobStore to CBlobStoreBase and make it abstract. Add two descendants CBlobStoreStatic and CBlobStoreDynamic for different types of DB connection usage.
+ *
  * Revision 1.2  2004/05/24 19:40:47  soussov
  * adds CBlobStore implementation
  *
