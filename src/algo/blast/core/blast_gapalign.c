@@ -483,14 +483,11 @@ MB_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
 BlastGapAlignStructPtr 
 BLAST_GapAlignStructFree(BlastGapAlignStructPtr gap_align)
 {
-#if 0   
-   BLAST_ScoreBlkDestruct(gap_align->sbp);
-#endif
    GapXEditBlockDelete(gap_align->edit_block);
    MemFree(gap_align->dyn_prog);
    if (gap_align->greedy_align_mem)
       GreedyAlignMemFree(gap_align->greedy_align_mem);
-   MemFree(gap_align->state_struct);
+   GapXDropStateDestroy(gap_align->state_struct);
 
    MemFree(gap_align);
    return NULL;
@@ -2218,6 +2215,7 @@ Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
          init_hsp_array[index]->ungapped_data = 
             MemFree(init_hsp_array[index]->ungapped_data);
       }
+      MemFree(init_hsp_array);
       return 0;
    }
    
@@ -2305,8 +2303,10 @@ Int2 BLAST_GetGappedScore (BLAST_SequenceBlkPtr query,
                          score_options, init_hsp);
          }
 
-         if (status)
+         if (status) {
+            MemFree(init_hsp_array);
             return status;
+         }
 
          if (!is_prot) {
             /* Check if the alignment has crossed the strand boundary */

@@ -182,7 +182,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
 {
    Int4 start_offset, end_offset, filter_start, filter_end;
    Int4 context, index;
-   BlastSeqLocPtr loc, last_loc = NULL;
+   BlastSeqLocPtr loc, last_loc = NULL, start_loc;
    DoubleIntPtr double_int = NULL, di;
    Boolean first;	/* Specifies beginning of query. */
    Boolean last_interval_open=TRUE; /* if TRUE last interval needs to be closed. */
@@ -218,14 +218,16 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
       
       if (reverse) {
-         BlastSeqLocPtr prev_loc = NULL, tmp_loc;
+         BlastSeqLocPtr prev_loc = NULL;
          /* Reverse the order of the locations */
-         for (tmp_loc = mask_loc->loc_list; tmp_loc; 
-              tmp_loc = tmp_loc->next) {
-            loc = MemDup(tmp_loc, sizeof(BlastSeqLoc));
+         for (start_loc = mask_loc->loc_list; start_loc; 
+              start_loc = start_loc->next) {
+            loc = MemDup(start_loc, sizeof(BlastSeqLoc));
             loc->next = prev_loc;
             prev_loc = loc;
          }
+         /* Save where this list starts, so it can be freed later */
+         start_loc = loc;
       } else {
          loc = mask_loc->loc_list;
       }
@@ -278,7 +280,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       }
 
       if (reverse) {
-         loc = ValNodeFree(loc);
+         start_loc = ValNodeFree(start_loc);
       }
       
       if (last_interval_open) {

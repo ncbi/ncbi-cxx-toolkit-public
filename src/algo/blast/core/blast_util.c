@@ -717,3 +717,11 @@ Int4 BLAST_GetQueryLength(BlastQueryInfoPtr query_info, Int4 context)
    return query_info->context_offsets[context+1] -
       query_info->context_offsets[context] - 1;
 }
+
+BlastQueryInfoPtr BlastQueryInfoFree(BlastQueryInfoPtr query_info)
+{
+   MemFree(query_info->context_offsets);
+   MemFree(query_info->length_adjustments);
+   MemFree(query_info->eff_searchsp_array);
+   return (BlastQueryInfoPtr) MemFree(query_info);
+}

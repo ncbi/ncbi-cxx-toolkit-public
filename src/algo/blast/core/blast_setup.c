@@ -242,7 +242,7 @@ Int2 BLAST_MainSetUp(const Uint1 program_number,
          
          filter_slp_combined = NULL;
          CombineMaskLocations(filter_slp, &filter_slp_combined);
-         /*filter_slp = SeqLocSetFree(filter_slp);*/
+         filter_slp = BlastSeqLocFree(filter_slp);
          
          /* NB: for translated searches filter locations are returned in 
             protein coordinates, because the DNA lengths of sequences are 

@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.29  2003/06/20 15:20:21  dondosha
+ * Memory leak fixes
+ *
  * Revision 1.28  2003/06/18 12:21:01  camacho
  * Added proper return value
  *
@@ -215,10 +218,10 @@ QuerySetUpOptionsPtr
 BlastQuerySetUpOptionsFree(QuerySetUpOptionsPtr options)
 
 {
+   BlastMaskFree(options->lcase_mask);
+   MemFree(options->filter_string);
 
-	MemFree(options);
-
-	return NULL;
+   return (QuerySetUpOptionsPtr) MemFree(options);
 }
 
 Int2

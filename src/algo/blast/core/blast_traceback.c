@@ -137,9 +137,7 @@ static void BLASTCheckHSPInclusion(BlastHSPPtr *hsp_array, Int4 hspcnt,
                      mean, that current HSP should be removed. */
                   
                   if(hsp_array[index] != NULL) {
-                     hsp_array[index]->gap_info = 
-                        GapXEditBlockDelete(hsp_array[index]->gap_info);
-                     hsp_array[index] = MemFree(hsp_array[index]);
+                     hsp_array[index] = BlastHSPFree(hsp_array[index]);
                      break;
                   }
                }
@@ -602,9 +600,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
                      break;
                   } else {
                      new_hspcnt--;
-                     hsp_array[index2]->gap_info = 
-                        GapXEditBlockDelete(hsp_array[index2]->gap_info);
-                     hsp_array[index2] = MemFree(hsp_array[index2]);
+                     hsp_array[index2] = BlastHSPFree(hsp_array[index2]);
                   }
                }
             }
@@ -612,16 +608,13 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
             if (keep) {
                new_hspcnt++;
             } else {
-               hsp_array[index] = MemFree(hsp_array[index]);
-               gap_align->edit_block = GapXEditBlockDelete(gap_align->edit_block);
+               hsp_array[index] = BlastHSPFree(hsp_array[index]);
             }
          } else {	/* Should be kept? */
-                hsp_array[index] = MemFree(hsp_array[index]);
-                gap_align->edit_block = GapXEditBlockDelete(gap_align->edit_block);
+            hsp_array[index] = BlastHSPFree(hsp_array[index]);
          }
       } else { /* Contained within another HSP, delete. */
-         hsp_array[index]->gap_info = GapXEditBlockDelete(hsp_array[index]->gap_info);
-         hsp_array[index] = MemFree(hsp_array[index]);
+         hsp_array[index] = BlastHSPFree(hsp_array[index]);
       }
    } /* End loop on HSPs */
 
@@ -654,9 +647,7 @@ BlastHSPListGetTraceback(BlastHSPListPtr hsp_list,
        of HSPs per database sequence */
     if (hit_options->hsp_num_max > new_hspcnt) {
        for (index=new_hspcnt; index<hit_options->hsp_num_max; ++index) {
-          hsp_array[index]->gap_info = 
-             GapXEditBlockDelete(hsp_array[index]->gap_info);
-          hsp_array[index] = MemFree(hsp_array[index]);
+          hsp_array[index] = BlastHSPFree(hsp_array[index]);
        }
        new_hspcnt = MIN(new_hspcnt, hit_options->hsp_num_max);
     }

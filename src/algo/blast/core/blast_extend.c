@@ -1164,5 +1164,5 @@ BLAST_ExtendWordPtr BlastExtendWordFree(BLAST_ExtendWordPtr ewp)
 {
    BlastDiagTableFree(ewp->diag_table);
    MBStackTableFree(ewp->stack_table);
-   return NULL;
+   return (BLAST_ExtendWordPtr) MemFree(ewp);
 }
