@@ -278,7 +278,8 @@ static void s_MergeDuplicates
             CConstRef<CSeq_loc> merged_loc;
             if ( merge  &&  (curr_ref.GetLoc() != 0) ) {
                 merged_loc.Reset(SeqLocMerge(ctx.GetHandle(),
-                    *(*prev)->GetLoc(), *curr_ref.GetLoc(), fFuseAbutting));
+                    *(*prev)->GetLoc(), *curr_ref.GetLoc(),
+                    fFuseAbutting | fMergeIntervals));
             }
             (*prev)->SetLoc(merged_loc);
             curr = refs.erase(curr);
@@ -684,20 +685,30 @@ void CReferenceItem::x_Init
 void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
 {
     bool embl = ctx.Config().IsFormatEMBL();
+
     m_Category = ePublished;
 
-    m_Title = pat.GetTitle();
-    x_AddAuthors(pat.GetAuthors());
-
-    m_Journal = (embl ? "Patent number " : "Patent: ") + pat.GetCountry() + ' ';
-    if ( pat.CanGetNumber()  &&  !pat.GetNumber().empty() ) {
-        m_Journal += pat.GetNumber();
-    } else if ( pat.CanGetApp_number()  &&  !pat.GetApp_number().empty() ) {
-        m_Journal += pat.GetApp_number();
+    if (pat.IsSetTitle()) {
+        m_Title = pat.GetTitle();
     }
-    if ( pat.CanGetDoc_type()  &&  !pat.GetDoc_type().empty() ) {
-        m_Journal += '-';
-        m_Journal += pat.GetDoc_type();
+    if (pat.IsSetAuthors()) {
+        x_AddAuthors(pat.GetAuthors());
+    }
+
+    // journal
+    CNcbiOstrstream journal;
+    journal << (embl ? "Patent number " : "Patent: ");
+
+    if (pat.IsSetCountry()  &&  !IsBlankString(pat.GetCountry())) {
+        journal << pat.GetCountry() << ' ';
+    }
+    if (pat.CanGetNumber()  &&  !IsBlankString(pat.GetNumber())) {
+        journal << pat.GetNumber();
+    } else if (pat.IsSetApp_number()  &&  !IsBlankString(pat.GetApp_number())) {
+        journal << '(' << pat.GetApp_number() << ')';
+    }
+    if (pat.CanGetDoc_type()  &&  !IsBlankString(pat.GetDoc_type())) {
+        journal << '-' << pat.GetDoc_type();
     }
 
     CPatent_seq_id::TSeqid seqid = 0;
@@ -706,23 +717,72 @@ void CReferenceItem::x_Init(const CCit_pat& pat, CBioseqContext& ctx)
             seqid = (*it)->GetPatent().GetSeqid();
         }
     }
-    if ( seqid > 0 ) {
-        m_Journal += embl ? '/' : ' ';
-        m_Journal += NStr::IntToString(seqid);
-        if ( embl ) {
-            m_Journal += ", ";
+    if (seqid > 0) {
+        if (embl) {
+            journal << '/' << seqid << ", ";
+        } else {
+            journal << ' ' << seqid << ' ';
         }
     } else {
-        m_Journal += ' ';
+        journal << ' ';
     }
-    if ( pat.CanGetDate_issue() ) {
-        m_Journal += ' ';
-        DateToString(pat.GetDate_issue(), m_Journal);
-    } else if ( pat.CanGetApp_date() ) {
-        m_Journal += ' ';
-        DateToString(pat.GetApp_date(), m_Journal);
+    string date;
+    if (pat.IsSetDate_issue()) {
+        DateToString(pat.GetDate_issue(), date);        
+    } else if (pat.IsSetApp_date()) {
+        DateToString(pat.GetApp_date(), date);
     }
-    m_Journal += (embl ? '.' : ';');
+    if (!IsBlankString(date)) {
+        journal << date;
+    }
+    journal << (embl ? '.' : ';');
+
+    // add affiliation field
+    if (pat.IsSetAuthors()  &&  pat.GetAuthors().IsSetAffil()) {
+        const CAffil& affil = pat.GetAuthors().GetAffil();
+        if (affil.IsStr()  &&  !IsBlankString(affil.GetStr())) {
+            journal << endl << affil.GetStr();
+        } else if (affil.IsStd()) {
+            const CAffil::TStd& std = affil.GetStd();
+
+            // if affiliation fields are non-blank, put them on a new line.
+            if ((std.IsSetAffil()    &&  !IsBlankString(std.GetAffil()))   ||
+                (std.IsSetStreet()   &&  !IsBlankString(std.GetStreet()))  ||
+                (std.IsSetDiv()      &&  !IsBlankString(std.GetDiv()))     ||
+                (std.IsSetCity()     &&  !IsBlankString(std.GetCity()))    ||
+                (std.IsSetSub()      &&  !IsBlankString(std.GetSub()))     ||
+                (std.IsSetCountry()  &&  !IsBlankString(std.GetCountry()))) {
+                journal << endl;
+            }
+
+            // Write out the affiliation fields
+            string prefix;
+            if (std.IsSetAffil()  &&  !IsBlankString(std.GetAffil())) {
+                journal << std.GetAffil() << ';';
+                prefix = ' ';
+            }
+            if (std.IsSetStreet()  &&  !IsBlankString(std.GetStreet())) {
+                journal << prefix << std.GetStreet() << ';';
+                prefix = ' ';
+            }
+            if (std.IsSetDiv()  &&  !IsBlankString(std.GetDiv())) {
+                journal << prefix << std.GetDiv() << ';';
+                prefix = ' ';
+            }
+            if (std.IsSetCity()  &&  !IsBlankString(std.GetCity())) {
+                journal << prefix << std.GetCity();
+                prefix = ", ";
+            }
+            if (std.IsSetSub()  &&  !IsBlankString(std.GetSub())) {
+                journal << prefix << std.GetSub();
+            }
+            if (std.IsSetCountry()  &&  !IsBlankString(std.GetCountry())) {
+                journal << ';' << endl << std.GetCountry() << ';';
+            }
+        }
+    }
+
+    m_Journal = CNcbiOstrstreamToString(journal);
 }
 
 
@@ -746,7 +806,7 @@ void CReferenceItem::x_Init(const CCit_let& man, CBioseqContext& ctx)
         if (imp.CanGetPub()) {
             string affil;
             FormatAffil(imp.GetPub(), affil);
-            replace(affil.begin(), affil.end(), '\"', '\'');
+            ConvertQuotes(affil);
             m_Journal += ' ' + affil;
         }
         m_Date.Reset();
@@ -831,10 +891,10 @@ void CReferenceItem::x_SetJournal(const CCit_gen& gen, CBioseqContext& ctx)
             return;
         }
 
-        if ( gen.CanGetAuthors()  &&  gen.GetAuthors().CanGetAffil() ) {
+        if (gen.CanGetAuthors()  &&  gen.GetAuthors().CanGetAffil()) {
             string affil;
-            (gen.GetAuthors().GetAffil(), affil);
-            if ( !affil.empty() ) {
+            FormatAffil(gen.GetAuthors().GetAffil(), affil);
+            if (!affil.empty()) {
                 m_Category = eUnpublished;
                 m_Journal = "Unpublished " + affil;
                 return;
@@ -990,8 +1050,8 @@ string CReferenceItem::GetAuthString(const CAuth_list* alp)
 
 void CReferenceItem::x_CleanData(void)
 {
-    // !!!
-    // remove spaces from title etc.
+    StripSpaces(m_Journal);
+    NStr::TruncateSpaces(m_Journal);
 }
 
 
@@ -1020,6 +1080,7 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
     list<string> l;
 
     // comment
+
     if ( m_Pubdesc->IsSetComment()  &&  !m_Pubdesc->GetComment().empty() ) {
         const string& comment = m_Pubdesc->GetComment();
         
@@ -1052,6 +1113,9 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
         // Figure
         if ( m_Pubdesc->IsSetFig()  &&  !m_Pubdesc->GetFig().empty()) {
             l.push_back("This sequence comes from " + m_Pubdesc->GetFig());
+            if (!NStr::EndsWith(l.back(), ".")) {
+                l.back().append(".");
+            }
         }
 
         // Poly_a
@@ -1063,6 +1127,9 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
         // Maploc
         if ( m_Pubdesc->IsSetMaploc()  &&  !m_Pubdesc->GetMaploc().empty()) {
             l.push_back("Map location: " + m_Pubdesc->GetMaploc());
+            if (!NStr::EndsWith(l.back(), ".")) {
+                l.back().append(".");
+            }
         }
     }
     
@@ -1094,7 +1161,9 @@ void CReferenceItem::x_GatherRemark(CBioseqContext& ctx)
         }
     }
 
-    m_Remark = NStr::Join(l, "\n");
+    if (!l.empty()) {
+        m_Remark = NStr::Join(l, "\n");
+    }
 }
 
 
@@ -1230,6 +1299,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.19  2004/08/19 16:38:21  shomrat
+* Fixed patent format
+*
 * Revision 1.18  2004/05/21 21:42:54  gorelenk
 * Added PCH ncbi_pch.hpp
 *
