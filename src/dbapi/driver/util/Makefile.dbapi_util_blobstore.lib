@@ -4,7 +4,7 @@ SRC = blobstore
 
 LIB    = dbapi_driver_blobstore
 
-CPPFLAGS = $(ORIG_CPPFLAGS)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
 
 # Build shared version when possible
 LIB_OR_DLL = both
