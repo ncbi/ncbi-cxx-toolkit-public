@@ -1,4 +1,4 @@
---$Revision: 6.0 $
+--$Revision: 6.1 $
 --****************************************************************
 --
 --  NCBI MIME type (chemical/ncbi-asn1-ascii and chemical/ncbi-asn1-binary)
@@ -12,12 +12,26 @@ BEGIN
 EXPORTS Ncbi-mime-asn1;
 IMPORTS Biostruc, Biostruc-annot-set FROM MMDB
 	Seq-entry FROM NCBI-Seqset
+	Seq-annot FROM NCBI-Sequence
 	Medline-entry FROM NCBI-Medline;
 	
 Ncbi-mime-asn1 ::= CHOICE {
-	entrez Entrez-general
+	entrez	Entrez-general,			-- just a structure
+	alignstruc	Biostruc-align,			-- structure alignment
+	alignseq	Biostruc-align-seq	-- sequence alignment
 	-- others may be added here in the future
 }
+
+Biostruc-align ::= SEQUENCE {
+	master	Biostruc,
+	slaves	SET OF Biostruc,
+	alignments	Biostruc-annot-set,	-- structure alignments
+	sequences	Seq-entry,	-- sequences
+	seqalign SET OF Seq-annot }
+
+Biostruc-align-seq ::= SEQUENCE {	-- display seq structure align only
+	sequences	Seq-entry,	-- sequences
+	seqalign SET OF Seq-annot }	
 
 Entrez-style ::= ENUMERATED {
 	docsum (1),
