@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.52  2003/08/01 17:26:19  dondosha
+ * Use renamed versions of functions from local blastkar.h
+ *
  * Revision 1.51  2003/07/31 17:45:17  dondosha
  * Made use of const qualifier consistent throughout the library
  *
@@ -411,7 +414,7 @@ Int2
 BlastInitialWordParametersNew(Uint1 program_number, 
    const BlastInitialWordOptions* word_options, 
    BlastHitSavingParameters* hit_params, 
-   BlastExtensionParameters* ext_params, BLAST_ScoreBlk* sbp, 
+   BlastExtensionParameters* ext_params, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, 
    const BlastEffectiveLengthsOptions* eff_len_options, 
    BlastInitialWordParameters* *parameters)
@@ -447,7 +450,7 @@ BlastInitialWordParametersNew(Uint1 program_number,
    avglen = ((double) eff_len_options->db_length) / 
       eff_len_options->dbseq_num;
 
-   BlastCutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
+   BLAST_Cutoffs(&s2, &e2, kbp, MIN(avglen, qlen), avglen, TRUE);
 
    cutoff_score = MIN(hit_params->cutoff_score, s2);
 
@@ -553,7 +556,7 @@ BlastExtensionOptionsValidate(Uint1 program_number,
 }
 
 Int2 BlastExtensionParametersNew(Uint1 program_number, 
-        const BlastExtensionOptions* options, BLAST_ScoreBlk* sbp,
+        const BlastExtensionOptions* options, BlastScoreBlk* sbp,
         BlastQueryInfo* query_info, BlastExtensionParameters* *parameters)
 {
    BLAST_KarlinBlk* kbp,* kbp_gap;
@@ -695,7 +698,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 	{
 		Int2 status=0;
 
-		if ((status=BlastKarlinkGapBlkFill(NULL, options->gap_open, options->gap_extend, options->decline_align, options->matrix)) != 0)
+		if ((status=BLAST_KarlinkGapBlkFill(NULL, options->gap_open, options->gap_extend, options->decline_align, options->matrix)) != 0)
 		{
 			if (status == 1)
 			{
@@ -703,7 +706,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 				Int4 code=2;
 				Int4 subcode=1;
 
-				buffer = PrintMatrixMessage(options->matrix); 
+				buffer = BLAST_PrintMatrixMessage(options->matrix); 
                                 Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
 				sfree(buffer);
 				return (Int2) code;
@@ -715,7 +718,7 @@ BlastScoringOptionsValidate(Uint1 program_number,
 				Int4 code=2;
 				Int4 subcode=1;
 
-				buffer = PrintAllowedValuesMessage(options->matrix, options->gap_open, options->gap_extend, options->decline_align); 
+				buffer = BLAST_PrintAllowedValues(options->matrix, options->gap_open, options->gap_extend, options->decline_align); 
                                 Blast_MessageWrite(blast_msg, 2, code, subcode, buffer);
 				sfree(buffer);
 				return (Int2) code;
@@ -946,7 +949,7 @@ Int2 BlastHitSavingOptionsNew(Uint1 program_number,
    (*options)->hitlist_size = 500;
    (*options)->expect_value = BLAST_EXPECT_VALUE;
 
-   if (program_number == blast_type_tblastn)
+   if (program_number != blast_type_blastn)
       (*options)->do_sum_stats = TRUE;
 
    /* other stuff?? */
@@ -1021,7 +1024,7 @@ Int2
 BlastHitSavingParametersNew(Uint1 program_number, 
    const BlastHitSavingOptions* options, 
    int (*handle_results)(void*, void*, void*, void*, void*, void*, void*), 
-   BLAST_ScoreBlk* sbp, BlastQueryInfo* query_info, 
+   BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
    BlastHitSavingParameters* *parameters)
 {
    BlastHitSavingParameters* params;
@@ -1049,7 +1052,7 @@ BlastHitSavingParametersNew(Uint1 program_number,
    if (options->cutoff_score > 0) {
       params->cutoff_score = options->cutoff_score;
    } else {
-      BlastCutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
+      BLAST_Cutoffs_simple(&(params->cutoff_score), &evalue, kbp, 
          (double)query_info->eff_searchsp_array[query_info->first_context], 
          FALSE);
    }
@@ -1062,6 +1065,9 @@ BlastHitSavingParametersNew(Uint1 program_number,
       params->gap_decay_rate = BLAST_GAP_DECAY_RATE_GAPPED;
    }
    params->gap_size = BLAST_GAP_SIZE;
+   params->cutoff_big_gap = 0;
+   params->cutoff_small_gap = params->cutoff_score;
+
       
    return 0;
 }

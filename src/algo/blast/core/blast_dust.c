@@ -208,7 +208,7 @@ dust_triplet_find (Uint1* seq_start, Int4 icur, Int4 max, Uint1* s1)
    Int2 c;
    Boolean flagVD;
    Uint1* seq = &seq_start[icur];
-   Uint1 end_byte = ncbi4na_to_blastna[NULLB];
+   Uint1 end_byte = NCBI4NA_TO_BLASTNA[NULLB];
    
    n = 0;
    

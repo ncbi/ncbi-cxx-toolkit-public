@@ -637,10 +637,10 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
             ((buffer[index+2]&PACK_MASK)<<2) | (buffer[index+3]&PACK_MASK);
       else
          new_buffer[new_index] = 
-            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<6) | 
-            ((ncbi4na_to_blastna[buffer[index+1]]&PACK_MASK)<<4) |
-            ((ncbi4na_to_blastna[buffer[index+2]]&PACK_MASK)<<2) | 
-            (ncbi4na_to_blastna[buffer[index+3]]&PACK_MASK);
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<6) | 
+            ((NCBI4NA_TO_BLASTNA[buffer[index+1]]&PACK_MASK)<<4) |
+            ((NCBI4NA_TO_BLASTNA[buffer[index+2]]&PACK_MASK)<<2) | 
+            (NCBI4NA_TO_BLASTNA[buffer[index+3]]&PACK_MASK);
    }
 
    /* Handle the last byte of the compressed sequence */
@@ -651,10 +651,10 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
             ((buffer[index+2]&PACK_MASK)<<2) | (buffer[index+3]&PACK_MASK);
        else
           new_buffer[new_index] =
-            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<6) |
-            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<4) |
-            ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<2) |
-            (ncbi4na_to_blastna[buffer[index]]&PACK_MASK);
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<6) |
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<4) |
+            ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<2) |
+            (NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK);
    } else {
        new_buffer[new_index] = 0;
        for (; index < length; index++) {
@@ -668,7 +668,7 @@ Int2 BLAST_PackDNA(Uint1* buffer, Int4 length, Uint1 encoding,
               new_buffer[new_index] |= ((buffer[index]&PACK_MASK)<<shift);
            else
               new_buffer[new_index] |=
-                  ((ncbi4na_to_blastna[buffer[index]]&PACK_MASK)<<shift);
+                  ((NCBI4NA_TO_BLASTNA[buffer[index]]&PACK_MASK)<<shift);
        }
        new_buffer[new_index] |= remainder;
    }

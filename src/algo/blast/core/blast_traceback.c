@@ -148,7 +148,7 @@ static void BLASTCheckHSPInclusion(BlastHSP* *hsp_array, Int4 hspcnt,
 */
 static Boolean
 BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
-                                    Uint1* subject, BLAST_ScoreBlk* sbp)
+                                    Uint1* subject, BlastScoreBlk* sbp)
 {
    Int4 index1, score, start, end, width;
    Uint1* query_var,* subject_var;
@@ -184,7 +184,7 @@ BLAST_CheckStartForGappedAlignment (BlastHSP* hsp, Uint1* query,
 */
 static Int4 
 BLAST_GetStartForGappedAlignment (BlastHSP* hsp, Uint1* query, 
-                                  Uint1* subject, BLAST_ScoreBlk* sbp)
+                                  Uint1* subject, BlastScoreBlk* sbp)
 {
    Int4 index1, max_offset, score, max_score, hsp_end;
    Uint1* query_var,* subject_var;
@@ -384,7 +384,7 @@ static Int2
 BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list, 
    BLAST_SequenceBlk* query_blk, BLAST_SequenceBlk* subject_blk, 
    BlastQueryInfo* query_info,
-   BlastGapAlignStruct* gap_align, BLAST_ScoreBlk* sbp, 
+   BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
    const BlastScoringOptions* score_options,
    BlastHitSavingParameters* hit_params,
    const BlastDatabaseOptions* db_options)
@@ -617,7 +617,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                   kbp = sbp->kbp;
 
                hsp->evalue = 
-                  BlastKarlinStoE_simple(hsp->score, kbp[hsp->context],
+                  BLAST_KarlinStoE_simple(hsp->score, kbp[hsp->context],
                      (double)query_info->eff_searchsp_array[hsp->context]);
                if (hsp->evalue > hit_options->expect_value) 
                   /* put in for comp. based stats. */
@@ -636,7 +636,8 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
                  program_number == blast_type_psitblastn) && 
                 hit_options->longest_intron > 0) {
                hsp->evalue = 
-                  BlastKarlinStoE_simple(hsp->score, sbp->kbp_gap[hsp->context],
+                  BLAST_KarlinStoE_simple(hsp->score, 
+                     sbp->kbp_gap[hsp->context],
                      (double) query_info->eff_searchsp_array[hsp->context]);
             }
 
@@ -691,7 +692,7 @@ BlastHSPListGetTraceback(Uint1 program_number, BlastHSPList* hsp_list,
         hsp_list->hspcnt = BlastHSPArrayPurge(hsp_array, hsp_list->hspcnt);
         
         if (hit_options->do_sum_stats == TRUE) {
-           BlastLinkHsps(program_number, hsp_list, query_info, subject_blk,
+           BLAST_LinkHsps(program_number, hsp_list, query_info, subject_blk,
                          sbp, hit_params, score_options->gapped_calculation);
         } else {
            BLAST_GetNonSumStatsEvalue(program_number, query_info, hsp_list, 
@@ -758,7 +759,7 @@ Int2 BLAST_ComputeTraceback(Uint1 program_number, BlastResults* results,
    Int4 query_index, subject_index;
    BlastHitList* hit_list;
    BlastHSPList* hsp_list;
-   BLAST_ScoreBlk* sbp;
+   BlastScoreBlk* sbp;
    Uint1 encoding;
    GetSeqArg seq_arg;
    
@@ -825,7 +826,7 @@ Int2 BLAST_TwoSequencesTraceback(Uint1 program_number,
    Int4 query_index;
    BlastHitList* hit_list;
    BlastHSPList* hsp_list;
-   BLAST_ScoreBlk* sbp;
+   BlastScoreBlk* sbp;
    Uint1 encoding=ERROR_ENCODING;
    Boolean db_is_na;
    

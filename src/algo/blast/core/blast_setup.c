@@ -42,7 +42,7 @@ $Revision$
 /* BlastScoreBlkGappedFill, fills the ScoreBlkPtr for a gapped search.  
 */
 Int2 
-BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp, 
+BlastScoreBlkGappedFill(BlastScoreBlk* sbp, 
    const BlastScoringOptions* scoring_options, Uint1 program)
 {
    Int2 status;
@@ -59,26 +59,29 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp,
          sbp->read_in_matrix = TRUE;
       else
          sbp->read_in_matrix = FALSE;
-      BlastScoreSetAmbigRes(sbp, 'N');
+      BLAST_ScoreSetAmbigRes(sbp, 'N');
 		sbp->penalty = scoring_options->penalty;
 		sbp->reward = scoring_options->reward;
       sprintf(buffer, "blastn matrix:%ld %ld", 
               (long) sbp->reward, (long) sbp->penalty);
       sbp->name = strdup(buffer);
-      status = BlastScoreBlkMatFill(sbp, scoring_options->matrix);
+      status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix);
 	}
 	else
 	{
 		Int2 tmp_index;	/* loop variable. */
 
 		sbp->read_in_matrix = TRUE;
-      BlastScoreSetAmbigRes(sbp, 'X');
+      BLAST_ScoreSetAmbigRes(sbp, 'X');
       if (!scoring_options->matrix)
-          sbp->name = strdup("BLOSUM62");
+         sbp->name = strdup("BLOSUM62");
+      else
+         sbp->name = strdup(scoring_options->matrix);
+
 		if (scoring_options->matrix_path) {
-			status = BlastScoreBlkMatFill(sbp, scoring_options->matrix_path);
+			status = BLAST_ScoreBlkMatFill(sbp, scoring_options->matrix_path);
 		} else {
-			status = BlastScoreBlkMatFill(sbp, sbp->name);
+			status = BLAST_ScoreBlkMatFill(sbp, sbp->name);
       }
 
       if (status)
@@ -86,8 +89,8 @@ BlastScoreBlkGappedFill(BLAST_ScoreBlk* sbp,
 
 		for (tmp_index=0; tmp_index<sbp->number_of_contexts; tmp_index++)
 		{
-			sbp->kbp_gap_std[tmp_index] = BlastKarlinBlkCreate();
-			BlastKarlinBlkGappedCalcEx(sbp->kbp_gap_std[tmp_index], 
+			sbp->kbp_gap_std[tmp_index] = BLAST_KarlinBlkCreate();
+			BLAST_KarlinBlkGappedCalc(sbp->kbp_gap_std[tmp_index], 
 				scoring_options->gap_open, scoring_options->gap_extend, 
 				scoring_options->decline_align, sbp->name, NULL);
 		}
@@ -147,11 +150,11 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
         const LookupTableOptions* lookup_options,	
         const BlastHitSavingOptions* hit_options,
         BLAST_SequenceBlk* query_blk,
-        BlastQueryInfo* query_info, BlastSeqLoc* *lookup_segments,
+        BlastQueryInfo* query_info, BlastSeqLoc **lookup_segments,
         BlastMask* *filter_out,
-        BLAST_ScoreBlk* *sbpp, Blast_Message* *blast_message)
+        BlastScoreBlk* *sbpp, Blast_Message* *blast_message)
 {
-   BLAST_ScoreBlk* sbp;
+   BlastScoreBlk* sbp;
    Boolean mask_at_hash;/* mask only for making lookup table? */
    Boolean is_na;	/* Is this nucleotide? */
    Int2 context=0, index;/* Loop variables. */
@@ -188,9 +191,9 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
    sbp = *sbpp;
    if (!sbp) {
       if (is_na)
-         sbp = BLAST_ScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
+         sbp = BlastScoreBlkNew(BLASTNA_SEQ_CODE, total_num_contexts);
       else
-         sbp = BLAST_ScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
+         sbp = BlastScoreBlkNew(BLASTAA_SEQ_CODE, total_num_contexts);
       
       /* Fills in block for gapped blast. */
       status = BlastScoreBlkGappedFill(sbp, scoring_options, program_number);
@@ -271,7 +274,7 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
                   return status;
          }
             
-         if ((status=BlastScoreBlkFill(sbp, (char*) buffer, 
+         if ((status=BLAST_ScoreBlkFill(sbp, (char*) buffer, 
                                        query_length, context)))
             return status;
       }
@@ -295,10 +298,10 @@ Int2 BLAST_MainSetUp(Uint1 program_number,
    if (program_number == blast_type_blastx || 
        program_number == blast_type_tblastx) {
       sbp->kbp = sbp->kbp_std;
-      BlastKarlinBlkStandardCalc(sbp, 0, total_num_contexts-1);
+      BLAST_KarlinBlkStandardCalc(sbp, 0, total_num_contexts-1);
       /* Adjust the Karlin parameters for ungapped blastx/tblastx. */
       sbp->kbp = sbp->kbp_gap;
-      BlastKarlinBlkStandardCalc(sbp, 0, sbp->number_of_contexts-1);
+      BLAST_KarlinBlkStandardCalc(sbp, 0, sbp->number_of_contexts-1);
    }
 
    /* Why are there so many Karlin block names?? */

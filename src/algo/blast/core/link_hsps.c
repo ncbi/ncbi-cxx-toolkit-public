@@ -42,7 +42,7 @@ static char const rcsid[] = "$Id$";
 
 #define WINDOW_SIZE 20
 static double 
-SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlk* sbp, 
+SumHSPEvalue(Uint1 program_number, BlastScoreBlk* sbp, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
    BlastHitSavingParameters* hit_params, 
    BlastHSP* head_hsp, BlastHSP* hsp, Int4* sumscore)
@@ -75,7 +75,7 @@ SumHSPEvalue(Uint1 program_number, BLAST_ScoreBlk* sbp,
    score_prime = *sumscore * sbp->kbp_gap[context]->Lambda;
 
    sum_evalue =  
-      BlastUnevenGapSumE(sbp->kbp_gap[context], 2*WINDOW_SIZE, 
+      BLAST_UnevenGapSumE(sbp->kbp_gap[context], 2*WINDOW_SIZE, 
          hit_params->options->longest_intron + WINDOW_SIZE, 
          gap_prob, gap_decay_rate, num, score_prime, 
          query_eff_length, subject_eff_length);
@@ -320,7 +320,7 @@ rev_compare_hsps_cfj(const void *v1, const void *v2)
 static Int2
 link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
-   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
 	BlastHSP* H,* H2,* best[2],* first_hsp,* last_hsp,* hp_frame_start[3*2];
@@ -397,8 +397,8 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
         H->prev= index ? hsp_array[index-1] : NULL;
         H->next= index<(number_of_hsps-1) ? hsp_array[index+1] : NULL;
         if (H->prev != NULL && 
-            ((H->context/3) != (H->prev->context/3))
-            || (SIGN(H->subject.frame) != SIGN(H->prev->subject.frame)))
+            ((H->context/3) != (H->prev->context/3) ||
+             (SIGN(H->subject.frame) != SIGN(H->prev->subject.frame))))
         { /* If frame switches, then start new list. */
            hp_frame_number[cur_frame]--;
            hp_frame_number[++cur_frame]++;
@@ -775,11 +775,11 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
             best[0]->hsp_link.sum[0] += 
                (best[0]->hsp_link.num[0])*cutoff[0];
             
-            prob[0] = BlastSmallGapSumE(kbp[query_context], 
+            prob[0] = BLAST_SmallGapSumE(kbp[query_context], 
                          gap_size, gap_prob, gap_decay_rate, 
                          best[0]->hsp_link.num[0], best[0]->hsp_link.sum[0], 
                          query_length, subject_length);
-            prob[1] = BlastLargeGapSumE(kbp[query_context], 
+            prob[1] = BLAST_LargeGapSumE(kbp[query_context], 
                          gap_prob, gap_decay_rate, best[1]->hsp_link.num[1],
                          best[1]->hsp_link.sum[1], 
                          query_length, subject_length);
@@ -793,7 +793,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
                (best[1]->hsp_link.num[1])*cutoff[1];
             /* gap_prob=0 here as small gaps are NOT considered. */
             
-            prob[1] = BlastLargeGapSumE(kbp[query_context], 0.0, 
+            prob[1] = BLAST_LargeGapSumE(kbp[query_context], 0.0, 
                          gap_decay_rate, best[1]->hsp_link.num[1],
                          best[1]->hsp_link.sum[1], 
                          query_length, subject_length);
@@ -927,7 +927,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 static Int2
 new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject,
-   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params)
+   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params)
 {
    BlastHSP** hsp_array;
    BlastHSP** score_hsp_array,** offset_hsp_array,** end_hsp_array;
@@ -1124,7 +1124,7 @@ new_link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
 Int2 
 BLAST_LinkHsps(Uint1 program_number, BlastHSPList* hsp_list, 
    BlastQueryInfo* query_info, BLAST_SequenceBlk* subject, 
-   BLAST_ScoreBlk* sbp, BlastHitSavingParameters* hit_params,
+   BlastScoreBlk* sbp, BlastHitSavingParameters* hit_params,
    Boolean gapped_calculation)
 {
 	if (hsp_list && hsp_list->hspcnt > 0)
