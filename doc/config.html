@@ -825,6 +825,29 @@ Now when the installation is complete you can load workspace
 </ul>
 
 <p>
+All projects are built in <b><i>MT-safe</i></b> mode
+(i.e. with <b>/MT</b> flag), so you have to make sure that your
+projects are using this flag as well.
+In <i>"Project"/"Settings..."</i> form, folder <i>"C/C++"</i>, you must:
+<ul>
+  <li> Category <i>"C++ Language"</i>: Enable RTTI
+  <li> Category <i>"Code generation"</i>:  Use run-time library:
+    <ul>
+      <li> <i>"Multithreaded"</i> for the <b>Release</b> configuration
+      <li> <i>"Debug Multithreaded"</i> for the <b>Debug</b> configuration
+    </ul>
+</ul>
+
+
+<p>
+As for now, you can build <i>any</i> project in <b>Debug</b> mode,
+while <b>Release</b> versions are guranteed to build for <b>core_all</b>
+projects only.
+To switch from <b>Debug</b> to <b>Release</b> configuration use
+<i>"Build"/"Set active configuration"</i>.
+
+
+<p>
 There are also projects(such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>)
 that engage the
 <a href="http://sunweb.ncbi.nlm.nih.gov:6224/IEB/ncbi_toolbox/README.htm">
