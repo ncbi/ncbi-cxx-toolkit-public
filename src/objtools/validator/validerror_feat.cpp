@@ -51,8 +51,10 @@
 #include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Genetic_code_table.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
@@ -62,6 +64,9 @@
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_set.hpp>
 
 #include <objects/util/sequence.hpp>
 
@@ -129,59 +134,21 @@ void CValidError_feat::ValidateSeqFeat(const CSeq_feat& feat)
     }
     
     ValidateFeatPartialness(feat);
+
+    ValidateExcept(feat);
     
-    switch ( feat.GetData ().Which () ) {
-    case CSeqFeatData::e_Gene:
-        // Validate CGene_ref
-        ValidateGene(feat.GetData ().GetGene (), feat);
-        break;
-    case CSeqFeatData::e_Cdregion:
-        // Validate CCdregion
-        ValidateCdregion(feat.GetData ().GetCdregion (), feat);
-        break;
-    case CSeqFeatData::e_Prot:
-        // Validate CProt_ref
-        ValidateProt(feat.GetData ().GetProt (), feat);
-        break;
-    case CSeqFeatData::e_Rna:
-        // Validate CRNA_ref
-        ValidateRna(feat.GetData ().GetRna (), feat);
-        break;
-    case CSeqFeatData::e_Pub:
-        // Validate CPubdesc
-        m_Imp.ValidatePubdesc(feat.GetData ().GetPub (), feat);
-        break;
-    case CSeqFeatData::e_Imp:
-        // Validate CPubdesc
-        ValidateImp(feat.GetData ().GetImp (), feat);
-        break;
-    case CSeqFeatData::e_Biosrc:
-        // Validate CBioSource
-        m_Imp.ValidateBioSource(feat.GetData ().GetBiosrc (), feat);
-        break;
-    default:
-        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
-            "Invalid SeqFeat type [" + 
-            NStr::IntToString(feat.GetData ().Which ()) +
-            "]", feat);
-        break;
-    }
+    ValidateSeqFeatData(feat.GetData(), feat);
+
     if (feat.IsSetDbxref ()) {
         m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
     }
-    ValidateExcept(feat);
-    
-    if ( feat.GetData ().Which () != CSeqFeatData::e_Gene ) {
-        ValidateGeneXRef(feat);
-    }
     
     if ( feat.IsSetComment() ) {
-        if ( SerialNumberInComment(feat.GetComment()) ) {
-            PostErr(eDiag_Info, eErr_SEQ_FEAT_SerialInComment,
-                "Feature comment may refer to reference by serial number - "
-                "attach reference specific comments to the reference "
-                "REMARK instead.", feat);
-        }
+        ValidateFeatComment(feat.GetComment(), feat);
+    }
+
+    if ( feat.IsSetCit() ) {
+        ValidateFeatCit(feat.GetCit(), feat);
     }
 }
 
@@ -236,6 +203,49 @@ static string s_LegalConsSpliceStrings[] = {
 
 
 // private member functions:
+
+void CValidError_feat::ValidateSeqFeatData
+(const CSeqFeatData& data,
+ const CSeq_feat& feat)
+{
+    switch ( data.Which () ) {
+    case CSeqFeatData::e_Gene:
+        // Validate CGene_ref
+        ValidateGene(data.GetGene (), feat);
+        break;
+    case CSeqFeatData::e_Cdregion:
+        // Validate CCdregion
+        ValidateCdregion(data.GetCdregion (), feat);
+        break;
+    case CSeqFeatData::e_Prot:
+        // Validate CProt_ref
+        ValidateProt(data.GetProt (), feat);
+        break;
+    case CSeqFeatData::e_Rna:
+        // Validate CRNA_ref
+        ValidateRna(data.GetRna (), feat);
+        break;
+    case CSeqFeatData::e_Pub:
+        // Validate CPubdesc
+        m_Imp.ValidatePubdesc(data.GetPub (), feat);
+        break;
+    case CSeqFeatData::e_Imp:
+        // Validate CPubdesc
+        ValidateImp(data.GetImp (), feat);
+        break;
+    case CSeqFeatData::e_Biosrc:
+        // Validate CBioSource
+        ValidateFeatBioSource(data.GetBiosrc(), feat);
+        break;
+    default:
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidType,
+            "Invalid SeqFeat type [" + 
+            NStr::IntToString(data.Which ()) +
+            "]", feat);
+        break;
+    }
+}
+
 
 bool CValidError_feat::SerialNumberInComment(const string& comment)
 {
@@ -492,7 +502,7 @@ void CValidError_feat::ValidateFeatPartialness(const CSeq_feat& feat)
 }
 
 
-void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSerialObject& obj)
+void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSeq_feat& feat)
 {
     if ( gene.GetLocus().empty()      &&
          gene.GetAllele().empty()     &&
@@ -502,11 +512,12 @@ void CValidError_feat::ValidateGene(const CGene_ref& gene, const CSerialObject& 
          gene.GetSyn().empty()        &&
          gene.GetLocus_tag().empty()  ) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneRefHasNoData,
-                  "There is a gene feature where all fields are empty", obj);
+                  "There is a gene feature where all fields are empty", feat);
     }
     if (gene.IsSetDb ()) {
-        m_Imp.ValidateDbxref(gene.GetDb(), obj);
+        m_Imp.ValidateDbxref(gene.GetDb(), feat);
     }
+    ValidateGeneXRef(feat);
 }
 
 
@@ -1892,6 +1903,92 @@ bool CValidError_feat::IsPartialAtSpliceSite
 }
 
 
+void CValidError_feat::ValidateFeatCit
+(const CPub_set& cit,
+ const CSeq_feat& feat)
+{
+    if ( !feat.IsSetCit() ) {
+        return;
+    }
+
+    if ( cit.IsPub() ) {
+        iterate ( CPub_set::TPub, pi, cit.GetPub() ) {
+            if ( (*pi)->IsEquiv() ) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryCitPubEquiv,
+                    "Citation on feature has unexpected internal Pub-equiv",
+                    feat);
+                return;
+            }
+        }
+    }
+}
+
+void CValidError_feat::ValidateFeatComment
+(const string& comment,
+ const CSeq_feat& feat)
+{
+    if ( SerialNumberInComment(comment) ) {
+        PostErr(eDiag_Info, eErr_SEQ_FEAT_SerialInComment,
+            "Feature comment may refer to reference by serial number - "
+            "attach reference specific comments to the reference "
+            "REMARK instead.", feat);
+    }
+}
+
+
+void CValidError_feat::ValidateFeatBioSource
+(const CBioSource& bsrc,
+ const CSeq_feat& feat)
+{
+    if ( bsrc.IsSetIs_focus() ) {
+        PostErr(eDiag_Error, eErr_SEQ_FEAT_FocusOnBioSourceFeature,
+            "Focus must be on BioSource descriptor, not BioSource feature.",
+            feat);
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if ( !bsh ) {
+        return;
+    }
+    CSeqdesc_CI dbsrc_i(bsh, CSeqdesc::e_Source);
+    if ( !dbsrc_i ) {
+        return;
+    }
+    
+    const COrg_ref& org = bsrc.GetOrg();           
+    const CBioSource& dbsrc = dbsrc_i->GetSource();
+    const COrg_ref& dorg = dbsrc.GetOrg(); 
+
+    if ( org.IsSetTaxname()  &&  !org.GetTaxname().empty()  &&
+            dorg.IsSetTaxname() ) {
+        string taxname = org.GetTaxname();
+        string dtaxname = dorg.GetTaxname();
+        if ( NStr::CompareNocase(taxname, dtaxname) != 0 ) {
+            if ( !dbsrc.IsSetIs_focus()  &&  !IsTransgenic(dbsrc) ) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceNeedsFocus,
+                    "BioSource descriptor must have focus or transgenic "
+                    "when BioSource feature with different taxname is "
+                    "present.", feat);
+            }
+        }
+    }
+    m_Imp.ValidateBioSource(bsrc, feat);
+}
+
+
+bool CValidError_feat::IsTransgenic(const CBioSource& bsrc)
+{
+    if ( bsrc.IsSetSubtype() ) {
+        iterate( CBioSource::TSubtype, sub, bsrc.GetSubtype() ) {
+            if ( (*sub)->GetSubtype() == CSubSource::eSubtype_transgenic ) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
@@ -1901,6 +1998,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/10 16:29:51  shomrat
+* Added Checks for eErr_SEQ_FEAT_UnnecessaryCitPubEquiv and eErr_SEQ_DESCR_BioSourceNeedsFocus
+*
 * Revision 1.4  2003/01/06 16:43:01  shomrat
 * naming convention
 *
