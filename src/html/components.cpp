@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/11/23 23:44:28  lewisg
+* toolpages.cpp
+*
 * Revision 1.1  1998/10/29 16:13:07  lewisg
 * version 2
 *
@@ -37,9 +40,12 @@
 */
 
 
-
+#include <ncbistd.hpp>
 #include <html.hpp>
 #include <components.hpp>
+BEGIN_NCBI_SCOPE
+
+
 
 CQueryBox::CQueryBox()
 {
@@ -47,18 +53,14 @@ CQueryBox::CQueryBox()
 }
 
 
-CHTMLNode * CQueryBox::CreateComments()
+CHTMLNode * CQueryBox::CreateComments(void)
 {
     return new CHTMLNode; // new CHTMLNode;
 }
 
 
-void CQueryBox::Init(int style)
+void CQueryBox::InitMembers(int style)
 {  
-
-        if(!(style & kNoCOMMENTS))
-	if (!m_Comments) m_Comments = CreateComments();
-
     m_Width = "400";
     m_BgColor = "#CCCCCFF";
     m_DispMax = "dispmax";
@@ -80,49 +82,65 @@ void CQueryBox::Init(int style)
     m_HiddenValues["form"] = "4";
     m_TermName = "term";
     m_URL = "http://www.ncbi.nlm.nih.gov/htbin-post/Entrez/query";
-    
 }
+
+
+void CQueryBox::InitSubPages(int style)
+{  
+    if(!(style & kNoCOMMENTS))
+	if (!m_Comments) m_Comments = CreateComments();
+}
+
 
 void CQueryBox::Draw(int style)
 { 
 
     list < string >::iterator iList;
     map < string, string, less <string> >::iterator iMap;
+    CHTML_form * form;
 
-    CHTML_form * form = new CHTML_form(m_URL, "GET");
+    try {
+	form = new CHTML_form(m_URL, "GET");
 
-    for(iMap = m_HiddenValues.begin(); iMap != m_HiddenValues.end(); iMap++)
-	form->AppendChild(new CHTML_input("hidden", (*iMap).first, (*iMap).second));
+	for(iMap = m_HiddenValues.begin(); iMap != m_HiddenValues.end(); iMap++)
+	    form->AppendChild(new CHTML_input("hidden", (*iMap).first, (*iMap).second));
      
-    form->AppendText("Search ");
+	form->AppendText("Search ");
 
-    CHTML_select * select = new CHTML_select(m_DbName);
-    for(iMap = m_Databases.begin(); iMap != m_Databases.end(); iMap++)
-          select->AppendOption((*iMap).second, iMap == m_Databases.begin(), (*iMap).first);
+	CHTML_select * select = new CHTML_select(m_DbName);
+	form->AppendChild(select);
+	for(iMap = m_Databases.begin(); iMap != m_Databases.end(); iMap++)
+	    select->AppendOption((*iMap).second, iMap == m_Databases.begin(), (*iMap).first);
 	 
-    form->AppendChild(select);
 
-    form->AppendText(" for<p>");
+	form->AppendText(" for<p>");
 
    
 
-    CHTML_table * table = new CHTML_table(m_BgColor, m_Width, "0", "5", 1, 1);
-    form->AppendChild(table);
+	CHTML_table * table = new CHTML_table(m_BgColor, m_Width, "0", "5", 1, 1);
+	form->AppendChild(table);
     
-    table->InsertInTable(1, 1, new CHTML_input("text", m_TermName, "", "30")); // todo: the width calculation
+	table->InsertInTable(1, 1, new CHTML_input("text", m_TermName, "", "30")); // todo: the width calculation
 
-    table->InsertInTable(1, 1, new CHTML_input("submit", "Search"));
+	table->InsertInTable(1, 1, new CHTML_input("submit", "Search"));
     
-    table->InsertInTable(1, 1, new CHTML_br);
+	table->InsertInTable(1, 1, new CHTML_br);
 
-    CHTML_select * selectpage = new CHTML_select(m_DispMax);
-    for(iList = m_Disp.begin(); iList != m_Disp.end(); iList++)
-      selectpage->AppendOption(*iList, *iList == m_DefaultDispMax);
-    table->InsertInTable(1, 1, selectpage);
+	CHTML_select * selectpage = new CHTML_select(m_DispMax);
+	table->InsertInTable(1, 1, selectpage);
+	for(iList = m_Disp.begin(); iList != m_Disp.end(); iList++)
+	    selectpage->AppendOption(*iList, *iList == m_DefaultDispMax);
 
-    table->InsertTextInTable(1, 1, "documents per page");
+	table->InsertTextInTable(1, 1, "documents per page");
 
-    AppendChild(form);
+	AppendChild(form);
 
-    AppendChild(m_Comments);
+	AppendChild(m_Comments);
+    }
+    catch (...) {
+        delete form;
+        throw;
+    }
 }
+
+END_NCBI_SCOPE
