@@ -40,6 +40,7 @@
 #include <bdb/bdb_file.hpp>
 #include <bdb/bdb_blob.hpp>
 #include <bdb/bdb_env.hpp>
+#include <bdb/bdb_trans.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -84,6 +85,7 @@ struct NCBI_BDB_EXPORT SCache_AttrDB : public CBDB_File
 };
 
 class CPIDGuard;
+
 
 /// BDB cache implementation.
 ///
@@ -133,6 +135,16 @@ public:
 
     /// Return TRUE if cache is read-only
     bool IsReadOnly() const { return m_ReadOnly; }
+
+    /// Set update attribute limit (0 by default)
+    ///
+    /// When cache is configured to update BLOB time stamps on read
+    /// it can cause delays because it needs to initiate a transaction 
+    /// every time you read. This method configures a delayed update.
+    /// Cache keeps all updates until it reaches the limit and saves it 
+    /// all in one transaction.
+    ///
+    void SetReadUpdateLimit(unsigned limit) { m_MemAttr.SetLimit(limit); }
 
 
     // ICache interface 
@@ -188,7 +200,13 @@ public:
 
 private:
     /// Return TRUE if cache item expired according to the current timestamp
-    bool x_CheckTimestampExpired();
+    bool x_CheckTimestampExpired(const string&  key,
+                                 int            version,
+                                 const string&  subkey);
+
+    void x_UpdateReadAccessTime(const string&  key,
+                                int            version,
+                                const string&  subkey);
 
 	/// Transactional update of access time attributes
     void x_UpdateAccessTime(const string&  key,
@@ -199,6 +217,12 @@ private:
     void x_UpdateAccessTime_NonTrans(const string&  key,
                                      int            version,
                                      const string&  subkey);
+
+	/// Non transactional update of access time
+    void x_UpdateAccessTime_NonTrans(const string&  key,
+                                     int            version,
+                                     const string&  subkey,
+                                     int            timeout);
 
 	/// 1. Retrive overflow attributes for the BLOB (using subkey)
 	/// 2. If required retrive empty subkey attribute record 
@@ -217,22 +241,99 @@ private:
 
     void x_TruncateDB();
 
+    /// Save in-memory attributes
+    void x_SaveAttrStorage();
+    void x_SaveAttrStorage_NonTrans();
+
 private:
     CBDB_Cache(const CBDB_Cache&);
     CBDB_Cache& operator=(const CBDB_Cache);
+private:
+
+    /// Derivative from general purpose transaction
+    /// Connects all cache tables automatically
+    ///
+    /// @internal
+    class CCacheTransaction : public CBDB_Transaction
+    {
+    public: 
+        CCacheTransaction(CBDB_Cache& cache)
+            : CBDB_Transaction(*(cache.m_Env))
+        {
+            cache.m_CacheDB->SetTransaction(this);
+            cache.m_CacheAttrDB->SetTransaction(this);
+        }
+    };
+
+    friend CCacheTransaction;
+
+    /// Cache accession for internal in-memory storage
+    ///
+    /// @internal
+    struct CacheKey
+    {
+        string key;
+        int    version;
+        string subkey;
+
+        CacheKey(const string& x_key, int x_version, const string& x_subkey);         
+        bool operator < (const CacheKey& cache_key) const;
+    };
+
+    /// @internal
+    class CMemAttrStorage
+    {
+    public:
+        CMemAttrStorage();
+        void UpdateAccessTime(const CacheKey& cache_key, int timeout)
+        {
+            m_Attr[cache_key] = timeout;
+        }
+        void SetLimit(unsigned limit) { m_Limit = limit; }
+
+        void Remove(const CacheKey& cache_key)
+        {
+            m_Attr.erase(cache_key);
+        }
+
+        /// Save all attributes (non-transactional)
+        void DumpToStorage(CBDB_Cache& cache);
+
+        /// Forget all records
+        void Clear() { m_Attr.clear(); }
+
+        unsigned Size() const { return (unsigned)m_Attr.size(); }
+        unsigned Limit() const { return m_Limit; }
+        /// Return TRUE when storage accumulated above the limits
+        bool IsLimitReached() const { return Size() > Limit(); }
+        /// TRUE if storage was configured to work
+        bool IsActive() const { return Limit() != 0; }
+
+        /// Return access time or 0 if key is not in the storage
+        int GetAccessTime(const CacheKey& cache_key) const;
+
+    private:
+        typedef map<CacheKey, int>  TAttrMap;
+    private:
+        unsigned   m_Limit;    ///< limit for in-memory storage
+        TAttrMap   m_Attr;     ///< in-memory attributes
+    };
+
+    friend class MemAttrStorage;
 
 private:
     string                  m_Path;       ///< Path to storage
     string                  m_Name;       ///< Cache name
     CPIDGuard*              m_PidGuard;   ///< Cache lock
     bool                    m_ReadOnly;   ///< read-only flag
-
     CBDB_Env*               m_Env;          ///< Common environment for cache DBs
     SCacheDB*               m_CacheDB;      ///< Cache BLOB storage
     SCache_AttrDB*          m_CacheAttrDB;  ///< Cache attributes database
     TTimeStampFlags         m_TimeStampFlag;///< Time stamp flag
     int                     m_Timeout;      ///< Timeout expiration policy
     EKeepVersions           m_VersionFlag;  ///< Version retention policy
+
+    CMemAttrStorage         m_MemAttr;      ///< In-memory cache for attributes
 };
 
 
@@ -299,6 +400,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2004/08/09 14:26:33  kuznets
+ * Add delayed attribute update (performance opt.)
+ *
  * Revision 1.24  2004/07/27 14:04:58  kuznets
  * +IsOpen
  *
