@@ -499,7 +499,11 @@ Int4 MB_AG_ScanSubject(const LookupTableWrap* lookup_wrap,
    Int4 compressed_wordsize, compressed_scan_step, word_size;
    Boolean full_byte_scan = mb_lt->full_byte_scan;
    Uint1 pv_array_bts = mb_lt->pv_array_bts;
-   
+
+   /* Since the test for number of hits here is done after adding them, 
+      subtract the longest chain length from the allowed offset array size. */
+   max_hits -= mb_lt->longest_chain;
+
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;
    compressed_scan_step = mb_lt->scan_step / COMPRESSION_RATIO;
@@ -752,6 +756,10 @@ Int4 MB_ScanSubject(const LookupTableWrap* lookup,
    FILE *logfp0 = fopen("new0.log", "a");
 #endif   
 
+   /* Since the test for number of hits here is done after adding them, 
+      subtract the longest chain length from the allowed offset array size. */
+   max_hits -= mb_lt->longest_chain;
+
    abs_start = subject->sequence;
    s = abs_start + start_offset/COMPRESSION_RATIO;
    s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
@@ -813,6 +821,10 @@ Int4 MB_DiscWordScanSubject(const LookupTableWrap* lookup,
    FILE *logfp0 = fopen("new0.log", "a");
 #endif   
    
+   /* Since the test for number of hits here is done after adding them, 
+      subtract the longest chain length from the allowed offset array size. */
+   max_hits -= mb_lt->longest_chain;
+
    abs_start = subject->sequence;
    s_start = abs_start + start_offset/COMPRESSION_RATIO;
    s_end = abs_start + (*end_offset)/COMPRESSION_RATIO;
