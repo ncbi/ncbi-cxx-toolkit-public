@@ -1,4 +1,4 @@
---$Revision: 1.11 $
+--$Revision: 1.12 $
 --**********************************************************************
 --
 --  Definitions for CDD's 
@@ -102,6 +102,8 @@ Cdd-descr ::= CHOICE {
                           auto-updated(6),    -- update finished, no
                                               -- work necessary
                           claimed(7),         -- is earmarked for curation
+                          curated-complete(8),-- public curated member of a
+                                              -- completed family
                           other(255) },       -- for CD production?
   update-date   Date,                         -- Date of last version change
   scrapbook     SEQUENCE OF VisibleString,    -- for storing curation notes
