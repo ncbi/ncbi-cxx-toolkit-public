@@ -331,6 +331,7 @@ void CDistMethods::Divergence(const CAlnVec& avec_in, TMatrix& result)
     // so effectively copy in a round-about way
     CAlnVec avec(avec_in.GetDenseg(), avec_in.GetScope());
     avec.SetGapChar('-');
+    avec.SetEndChar('-');
 
     int nseqs = avec.GetNumRows();
     result.Resize(nseqs, nseqs);
@@ -447,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/02/28 20:19:46  jcherry
+ * Treat gaps at ends the same as internal gaps when calculating divergence
+ *
  * Revision 1.11  2005/02/16 17:52:17  jcherry
  * Re-add math.h
  *
