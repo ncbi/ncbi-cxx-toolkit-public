@@ -1,0 +1,95 @@
+<!--#set var="TITLE" value="GBENCH -- Genome Workbench application (NCBI C++)" -->
+<!--#set var="DOCROOT" value="../.." -->
+<!--#include virtual="../../ssi/header.shtml" -->
+
+<h1>NCBI Genome Workbench tutorial</h1>
+
+<ul>
+  <li> <a href="#ref_Intro">Introduction</a>
+  <li> <a href="gbench_install.html">Installation</a>
+  <li> <a href="#ref_Run">Running Genome Workbench</a>
+	<ul>
+		<li><a href="#ref_GBArgs">Gbench command line arguments</a>		
+	</ul>
+</ul>
+<p><br>
+
+<a name="ref_Run"></a>
+<h3>Introduction</h3>
+
+GBench is a visualization application for biomolecular structures, 
+sequences, and sequence alignments.
+
+<br><br>
+
+<table border cellspacing=0>
+<tr VALIGN=BASELINE>
+<th ALIGN=RIGHTE>Location:</th>
+
+<td><span class="ncbi_dir">c++/src/gui/gbench</span></td>
+</tr>
+</table>
+
+
+<a name="ref_Run"></a>
+<h3>Running Genome Workbench</h3>
+
+When installation is complete you can run GBench application.
+On <span class="ncbi_os">Windows</span> all you need to do is execute
+<span class="ncbi_app">gbench.exe</span> program. The program is located 
+in <span class="ncbi_dir">Gbench Home/bin</span> directory.
+<br><br>
+
+On <span class="ncbi_os">Unix</span> GBench required presence of certain
+environment variables and cannot be run as a bare Unix application.
+Instead you need to run <span class="ncbi_script">run_gbench.sh</span> shell
+script. Typical <span class="ncbi_os">Unix</span> installation includes 
+a symbolic link or alias named <span class="ncbi_script">gbench</span> that
+can also be used.
+<br><br>
+
+<a name="ref_GBArgs"></a>
+<h3>Command line arguments</h3>
+
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+   <th>argument</th>
+   <th>effect</th>
+   <th>comment</th>
+</tr>
+
+<tr>
+   <td><span class="ncbi_app_a">-v</span></td>
+   <td>display version information</a></td>
+   <td>&nbsp;</td>
+</tr
+</table>
+
+
+
+
+
+<p>&nbsp;</p>
+<!--#include virtual="../../ssi/navlinks.shtml" -->
+
+
+<!-- Begin footer content -->
+
+<table BORDER=0 CELLSPACING=0 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT>
+<address>
+<a NAME="copyright"></a><a href="mailto:cpp-core@ncbi.nlm.nih.gov">Anatoliy
+Kuznetsov</a>&nbsp;</address>
+</td>
+
+<td>
+
+<!-- <td align=center><span class="ncbi_cvs_rev">$Revision$</span></td> --></td>
+
+<td ALIGN=RIGHT><span class="ncbi_cvs_date">$Date$</span></td>
+</tr>
+</table>
+
+<!--#include virtual="../../ssi/footer.shtml" -->
+
