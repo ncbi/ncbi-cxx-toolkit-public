@@ -461,6 +461,7 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
    Int4 incrementedQueryPos; /*index for moving down quey diagonal*/
    Int4 score; /*total score*/
    alignPiece *newPiece;
+   Int4 candidateQueryEnd; /*candidate for end of match in query*/
 
    for(blockIndex = 0; blockIndex < numBlocks; blockIndex++) {
      for(queryPos = startQueryPosition; queryPos < endQueryPosition; queryPos++) {
@@ -470,11 +471,11 @@ void findAlignPieces(Uint1Ptr convertedQuery, Int4 queryLength,
 	    dbPos++, incrementedQueryPos++) {
 	 score += posMatrix[dbPos][convertedQuery[incrementedQueryPos]];
        }
-       if (score >= scoreThreshold) {
+       candidateQueryEnd = queryPos + blockEnds[blockIndex] -   blockStarts[blockIndex];
+       if ((score >= scoreThreshold) && (candidateQueryEnd < endQueryPosition)) {
 	 newPiece = (alignPiece *) MemNew(1 * sizeof(alignPiece));
 	 newPiece->queryStart = queryPos;
-	 newPiece->queryEnd = queryPos + blockEnds[blockIndex] -
-	                      blockStarts[blockIndex];
+	 newPiece->queryEnd = candidateQueryEnd;
 	 newPiece->blockNumber = blockIndex;
 	 newPiece->score = score;
 	 newPiece->index = recordIndex;

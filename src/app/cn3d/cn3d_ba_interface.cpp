@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/07/29 19:22:46  thiessen
+* another blockalign bug fix; set better parameters to block aligner
+*
 * Revision 1.3  2002/07/29 13:25:42  thiessen
 * add range restriction to block aligner
 *
@@ -214,11 +217,11 @@ void BlockAligner::CreateNewPairwiseAlignmentsByBlockAlignment(const BlockMultip
     SeqAlignPtr results;
     SeqAlignPtr listOfSeqAligns;
     // the following would be command-line arguments to Alejandro's standalone program
-    BLAST_Score scoreThresholdSingleBlock = 11;
-    BLAST_Score scoreThresholdMultipleBlock = 11;
+    BLAST_Score scoreThresholdSingleBlock = 7;
+    BLAST_Score scoreThresholdMultipleBlock = 7;
     Nlm_FloatHi Lambda = 0.0;
     Nlm_FloatHi K = 0.0;
-    Nlm_FloatHi percentile = 0.9;
+    Nlm_FloatHi percentile = 0.6;
     Int4 gapAddition = 10;
     Nlm_FloatHi scaleMult = 1.0;
     Int4 startQueryPosition;
