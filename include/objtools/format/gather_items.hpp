@@ -84,7 +84,7 @@ protected:
 
     void x_GatherReferences(void) const;
     void x_GatherSourceFeatures(void) const;
-    void x_GatherFeatures  (void) const;
+    void x_GatherFeatures  (bool source = true) const;
 
     // comments
     void x_GatherComments  (void) const;
@@ -125,6 +125,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/01/14 15:54:06  shomrat
+* added source indicator to x_GatherFeatures (temporary)
+*
 * Revision 1.1  2003/12/17 19:52:53  shomrat
 * Initial revision (adapted from flat lib)
 *
