@@ -120,7 +120,7 @@ bool CSeqDBVolFilter::IsSimple() const
     return (m_OIDMask.empty() == false     &&
             m_GIList.empty()  == true      &&
             m_BeginOID        == 0         &&
-            m_EndOID          == ULONG_MAX);
+            m_EndOID          == UINT_MAX);
 }
 
 void CSeqDBVolEntry::AddMask(const string & mask_file, Uint4 begin, Uint4 end)

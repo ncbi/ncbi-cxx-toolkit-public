@@ -803,7 +803,7 @@ void CSeqDBAliasNode::SetMasks(CSeqDBVolSet & volset)
             l_oid_iter != m_Values.end()) {
             
             Uint4 first_oid = 0;
-            Uint4 last_oid  = ULONG_MAX;
+            Uint4 last_oid  = UINT_MAX;
             
             if (f_oid_iter != m_Values.end()) {
                 first_oid = NStr::StringToUInt(f_oid_iter->second);

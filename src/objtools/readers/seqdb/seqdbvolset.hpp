@@ -71,7 +71,7 @@ public:
     /// @param start
     ///     First OID to consider
     /// @param end
-    ///     OID past the last OID to consider, or ULONG_MAX
+    ///     OID past the last OID to consider, or UINT_MAX
     CSeqDBVolFilter(const string & oid_fn,
                     const string & gi_fn,
                     Uint4          start,
@@ -139,7 +139,7 @@ public:
     ///
     /// This method returns the ending offset of the range (which is
     /// not part of the range).  (If no range restriction was
-    /// provided, this will be ULONG_MAX.)
+    /// provided, this will be UINT_MAX.)
     ///
     /// @return
     ///   The ending OID of the range.
@@ -158,7 +158,7 @@ private:
     /// First OID to consider
     Uint4 m_BeginOID;
     
-    /// OID past the last OID to consider, or ULONG_MAX
+    /// OID past the last OID to consider, or UINT_MAX
     Uint4 m_EndOID;
 };
 
