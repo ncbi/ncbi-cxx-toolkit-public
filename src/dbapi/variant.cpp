@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.21  2003/08/12 21:08:39  kholodov
+* Added: AsNotNullString() method
+*
 * Revision 1.20  2003/07/17 18:34:11  kholodov
 * Modified: operator=(CVariant& ) uses now CDB_Object::AssignValue() method
 *
@@ -539,6 +542,14 @@ const CTime& CVariant::GetCTime() const
     default:
         throw CVariantException("CVariant::GetCTime(): invalid type");
     }
+}
+
+string CVariant::AsNotNullString(const string& v) const 
+{
+    if( IsNull() )
+        return v;
+    else
+        return GetString();
 }
 
 bool CVariant::IsNull() const

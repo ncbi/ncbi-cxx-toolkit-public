@@ -152,6 +152,8 @@ public:
     string        GetNumeric(void) const;
     const CTime&  GetCTime(void) const;
 
+    // Get the argument, if the column is NULL
+    string AsNotNullString(const string& v) const;
 
     // Status info
     bool IsNull() const;
@@ -234,6 +236,9 @@ END_NCBI_SCOPE
 
 /*
  * $Log$
+ * Revision 1.14  2003/08/12 21:11:22  kholodov
+ * Added: AsNotNullString() method
+ *
  * Revision 1.13  2003/08/01 20:33:02  vakatov
  * Explicitly qualify "exception" with "std::" to avoid a silly name conflict
  * with <math.h> for SUN Forte6u2 compiler
