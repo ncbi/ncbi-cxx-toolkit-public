@@ -47,6 +47,8 @@ test2 19172277 "" "test gi 19172277"
 
 test1 multiple_row_inserts "" "multiple row inserts"
 
+test2 iterator_minus_minus "" "iterator minus minus"
+
 rm $tmp_out
 echo "Done!"
 exit $return_status
