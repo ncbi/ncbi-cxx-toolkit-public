@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/07/21 20:02:57  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+* Fixed bugs with storing pointers into binary ASN.1
+*
 * Revision 1.9  1999/07/21 14:20:08  vasilche
 * Added serialization of bool.
 *
@@ -350,6 +354,8 @@ void CObjectOStreamAsnBinary::WriteCString(const char* str)
 
 void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)
 {
+    THROW1_TRACE(runtime_error, "not implemented");
+/*
     if ( info.IsMember() ) {
         WriteSysTag(eObjectIdentifier);
         WriteIndefiniteLength();
@@ -358,11 +364,13 @@ void CObjectOStreamAsnBinary::WriteMemberPrefix(COObjectInfo& info)
         WriteMemberPrefix(info);
         WriteEndOfContent();
     }
+*/
 }
 
 void CObjectOStreamAsnBinary::WriteObjectReference(TIndex index)
 {
     WriteSysTag(eObjectIdentifier);
+    WriteShortLength(sizeof(index));
     WriteBytesOf(*this, index);
 }
 
@@ -374,8 +382,10 @@ void CObjectOStreamAsnBinary::WriteNullPointer(void)
 
 void CObjectOStreamAsnBinary::WriteThisTypeReference(TTypeInfo typeInfo)
 {
+/*
     WriteClassTag(typeInfo);
     WriteIndefiniteLength();
+*/
 }
 
 void CObjectOStreamAsnBinary::WriteOtherTypeReference(TTypeInfo typeInfo)

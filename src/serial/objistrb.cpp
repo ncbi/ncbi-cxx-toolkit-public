@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/07/21 20:02:55  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+* Fixed bugs with storing pointers into binary ASN.1
+*
 * Revision 1.20  1999/07/21 14:20:06  vasilche
 * Added serialization of bool.
 *
@@ -100,6 +104,7 @@
 #include <serial/objstrb.hpp>
 #include <serial/member.hpp>
 #include <serial/classinfo.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -397,12 +402,12 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data)
 {
     CObjectIStreamBinary::TByte code = in.ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         data = 0;
         return;
-    case CObjectStreamBinaryDefs::eStd_sbyte:
+    case eStd_sbyte:
         data = static_cast<signed char>(in.ReadByte());
-    case CObjectStreamBinaryDefs::eStd_ubyte:
+    case eStd_ubyte:
         {
             unsigned char value = in.ReadByte();
             if ( sizeof(T) == 1 && value > 0x7f )
@@ -412,10 +417,10 @@ void ReadStdSigned(CObjectIStreamBinary& in, T& data)
             return;
         }
         return;
-    case CObjectStreamBinaryDefs::eStd_sordinal:
+    case eStd_sordinal:
         ReadStdSigned(in, data, true);
         return;
-    case CObjectStreamBinaryDefs::eStd_uordinal:
+    case eStd_uordinal:
         ReadStdSigned(in, data, false);
         return;
     default:
@@ -429,10 +434,10 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data)
 {
     CObjectIStreamBinary::TByte code = in.ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         data = 0;
         return;
-    case CObjectStreamBinaryDefs::eStd_sbyte:
+    case eStd_sbyte:
         {
             signed char value = in.ReadByte();
             if ( value < 0 )
@@ -441,13 +446,13 @@ void ReadStdUnsigned(CObjectIStreamBinary& in, T& data)
             data = value;
             return;
         }
-    case CObjectStreamBinaryDefs::eStd_ubyte:
+    case eStd_ubyte:
         data = in.ReadByte();
         return;
-    case CObjectStreamBinaryDefs::eStd_sordinal:
+    case eStd_sordinal:
         ReadStdUnsigned(in, data, true);
         return;
-    case CObjectStreamBinaryDefs::eStd_uordinal:
+    case eStd_uordinal:
         ReadStdUnsigned(in, data, false);
         return;
     default:
@@ -470,10 +475,10 @@ void CObjectIStreamBinary::ReadStd(bool& data)
 {
     CObjectIStreamBinary::TByte code = ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eStd_false:
+    case eStd_false:
         data = false;
         return;
-    case CObjectStreamBinaryDefs::eStd_true:
+    case eStd_true:
         data = true;
         return;
     default:
@@ -486,10 +491,10 @@ void CObjectIStreamBinary::ReadStd(char& data)
 {
     CObjectIStreamBinary::TByte code = ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         data = 0;
         return;
-    case CObjectStreamBinaryDefs::eStd_char:
+    case eStd_char:
         data = ReadByte();
         return;
     default:
@@ -502,13 +507,13 @@ void CObjectIStreamBinary::ReadStd(signed char& data)
 {
     CObjectIStreamBinary::TByte code = ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         data = 0;
         return;
-    case CObjectStreamBinaryDefs::eStd_sbyte:
+    case eStd_sbyte:
         data = ReadByte();
         return;
-    case CObjectStreamBinaryDefs::eStd_ubyte:
+    case eStd_ubyte:
         if ( (data = ReadByte()) & 0x80 ) {
             // unsigned -> signed overflow
             THROW1_TRACE(runtime_error,
@@ -525,13 +530,13 @@ void CObjectIStreamBinary::ReadStd(unsigned char& data)
 {
     CObjectIStreamBinary::TByte code = ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         data = 0;
         return;
-    case CObjectStreamBinaryDefs::eStd_ubyte:
+    case eStd_ubyte:
         data = ReadByte();
         return;
-    case CObjectStreamBinaryDefs::eStd_sbyte:
+    case eStd_sbyte:
         if ( (data = ReadByte()) & 0x80 ) {
             // signed -> unsigned overflow
             THROW1_TRACE(runtime_error,
@@ -601,9 +606,9 @@ unsigned CObjectIStreamBinary::ReadSize(void)
 string CObjectIStreamBinary::ReadString(void)
 {
     switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         return string();
-    case CObjectStreamBinaryDefs::eStd_string:
+    case eStd_string:
         return ReadStringValue();
     default:
         THROW1_TRACE(runtime_error, "invalid string code");
@@ -637,11 +642,11 @@ void CObjectIStreamBinary::FBegin(Block& block)
 {
     TByte code = ReadByte();
     switch ( code ) {
-    case CObjectStreamBinaryDefs::eBlock:
+    case eBlock:
         SetFixed(block, ReadSize());
         break;
-    case CObjectStreamBinaryDefs::eElement:
-    case CObjectStreamBinaryDefs::eEndOfElements:
+    case eElement:
+    case eEndOfElements:
         m_Input.unget();
         SetNonFixed(block);
         break;
@@ -653,9 +658,9 @@ void CObjectIStreamBinary::FBegin(Block& block)
 bool CObjectIStreamBinary::VNext(const Block& )
 {
     switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eElement:
+    case eElement:
         return true;
-    case CObjectStreamBinaryDefs::eEndOfElements:
+    case eEndOfElements:
         return false;
     default:
         THROW1_TRACE(runtime_error, "invalid element type");
@@ -685,10 +690,10 @@ TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStreamBinary::ReadPointer(" << declaredType->GetName() << ")");
     switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         _TRACE("CObjectIStreamBinary::ReadPointer: null");
         return 0;
-    case CObjectStreamBinaryDefs::eMemberReference:
+    case eMemberReference:
         {
             string memberName = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadPointer: member " << memberName);
@@ -706,7 +711,7 @@ TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
             }
             return memberInfo->GetMember(info.GetObject());
         }
-    case CObjectStreamBinaryDefs::eObjectReference:
+    case eObjectReference:
         {
             TIndex index = ReadIndex();
             _TRACE("CObjectIStreamBinary::ReadPointer: @" << index);
@@ -716,7 +721,7 @@ TObjectPtr CObjectIStreamBinary::ReadPointer(TTypeInfo declaredType)
             }
             return info.GetObject();
         }
-    case CObjectStreamBinaryDefs::eThisClass:
+    case eThisClass:
         {
             _TRACE("CObjectIStreamBinary::ReadPointer: new");
             TObjectPtr object = declaredType->Create();
@@ -733,7 +738,7 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
 {
     _TRACE("CObjectIStreamBinary::ReadObjectPointer()");
     switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eMemberReference:
+    case eMemberReference:
         {
             string memberName = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadObjectPointer: member " <<
@@ -750,13 +755,13 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
             return CIObjectInfo(memberInfo->GetMember(info.GetObject()),
                                 memberInfo->GetTypeInfo());
         }
-    case CObjectStreamBinaryDefs::eObjectReference:
+    case eObjectReference:
         {
             TIndex index = ReadIndex();
             _TRACE("CObjectIStreamBinary::ReadObjectPointer: @" << index);
             return GetRegisteredObject(index);
         }
-    case CObjectStreamBinaryDefs::eOtherClass:
+    case eOtherClass:
         {
             const string& className = ReadStringValue();
             _TRACE("CObjectIStreamBinary::ReadPointer: new " << className);
@@ -774,45 +779,45 @@ CIObjectInfo CObjectIStreamBinary::ReadObjectPointer(void)
 void CObjectIStreamBinary::SkipValue()
 {
     switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eNull:
+    case eNull:
         return;
-    case CObjectStreamBinaryDefs::eStd_char:
-    case CObjectStreamBinaryDefs::eStd_ubyte:
-    case CObjectStreamBinaryDefs::eStd_sbyte:
+    case eStd_char:
+    case eStd_ubyte:
+    case eStd_sbyte:
         ReadByte();
         return;
-    case CObjectStreamBinaryDefs::eStd_sordinal:
+    case eStd_sordinal:
         {
             long dummy;
             ReadStdSigned(*this, dummy, true);
         }
         return;
-    case CObjectStreamBinaryDefs::eStd_uordinal:
+    case eStd_uordinal:
         {
             unsigned long dummy;
             ReadStdUnsigned(*this, dummy, false);
         }
         return;
-    case CObjectStreamBinaryDefs::eStd_float:
+    case eStd_float:
         THROW1_TRACE(runtime_error, "floating point numbers are not supported");
         return;
-    case CObjectStreamBinaryDefs::eObjectReference:
+    case eObjectReference:
         ReadIndex();
         return;
-    case CObjectStreamBinaryDefs::eMemberReference:
+    case eMemberReference:
         ReadStringValue();
         SkipObjectPointer();
         return;
-    case CObjectStreamBinaryDefs::eThisClass:
+    case eThisClass:
         RegisterInvalidObject();
         SkipObjectData();
         return;
-    case CObjectStreamBinaryDefs::eOtherClass:
+    case eOtherClass:
         ReadStringValue();
         RegisterInvalidObject();
         SkipObjectData();
         return;
-    case CObjectStreamBinaryDefs::eBlock:
+    case eBlock:
         SkipBlock();
         return;
     default:
@@ -823,14 +828,14 @@ void CObjectIStreamBinary::SkipValue()
 void CObjectIStreamBinary::SkipObjectPointer(void)
 {
     switch ( ReadByte() ) {
-    case CObjectStreamBinaryDefs::eObjectReference:
+    case eObjectReference:
         ReadIndex();
         return;
-    case CObjectStreamBinaryDefs::eMemberReference:
+    case eMemberReference:
         ReadStringValue();
         SkipObjectPointer();
         return;
-    case CObjectStreamBinaryDefs::eOtherClass:
+    case eOtherClass:
         ReadStringValue();
         RegisterInvalidObject();
         SkipObjectData();
@@ -854,6 +859,21 @@ void CObjectIStreamBinary::SkipBlock(void)
     unsigned count = ReadSize();
     for ( unsigned i = 0; i < count; ++i )
         SkipValue();
+}
+
+unsigned CObjectIStreamBinary::GetAsnFlags(void)
+{
+    return ASNIO_BIN;
+}
+
+void CObjectIStreamBinary::AsnOpen(AsnIo& )
+{
+}
+
+size_t CObjectIStreamBinary::AsnRead(AsnIo& , char* data, size_t )
+{
+    *data = ReadByte();
+    return 1;
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/21 20:02:53  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+* Fixed bugs with storing pointers into binary ASN.1
+*
 * Revision 1.14  1999/07/21 18:05:09  vasilche
 * Fixed OPTIONAL attribute for ASN.1 structures.
 *
@@ -699,12 +703,13 @@ void COldAsnTypeInfo::WriteData(CObjectOStream& out,
                                 TConstObjectPtr object) const
 {
     if ( !m_WriteProc(Get(object), CObjectOStream::AsnIo(out), 0) )
-        THROW1_TRACE(runtime_error, "read fault");
+        THROW1_TRACE(runtime_error, "write fault");
 }
 
 void COldAsnTypeInfo::ReadData(CObjectIStream& in, TObjectPtr object) const
 {
-    Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0);
+    if ( (Get(object) = m_ReadProc(CObjectIStream::AsnIo(in), 0)) == 0 )
+        THROW1_TRACE(runtime_error, "read fault");
 }
 
 END_NCBI_SCOPE

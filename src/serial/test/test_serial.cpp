@@ -120,6 +120,7 @@ int CTestSerial::Run(void)
             read.Dump(NcbiCerr);
             read.m_Next->Dump(NcbiCerr);
         }
+        NcbiCerr << "OK" << endl;
     }
     catch (exception& e) {
         ERR_POST(typeid(e).name() << ": " << e.what());

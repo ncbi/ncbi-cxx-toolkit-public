@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  1999/07/21 20:02:54  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+* Fixed bugs with storing pointers into binary ASN.1
+*
 * Revision 1.4  1999/07/21 14:20:05  vasilche
 * Added serialization of bool.
 *
@@ -47,6 +51,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/objistrasnb.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -278,7 +283,6 @@ void CObjectIStreamAsnBinary::ExpectEndOfContent(void)
 template<typename T>
 void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
 {
-    in.ExpectSysTag(eInteger);
     size_t length = in.ReadShortLength();
     if ( length == 0 )
         THROW1_TRACE(runtime_error, "zero length of number");
@@ -309,7 +313,6 @@ void ReadStdSigned(CObjectIStreamAsnBinary& in, T& data)
 template<typename T>
 void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
 {
-    in.ExpectSysTag(eInteger);
     size_t length = in.ReadShortLength();
     if ( length == 0 )
         THROW1_TRACE(runtime_error, "zero length of number");
@@ -340,12 +343,20 @@ void ReadStdUnsigned(CObjectIStreamAsnBinary& in, T& data)
 
 template<typename T>
 inline
-void ReadStdNumber(CObjectIStreamAsnBinary& in, T& data)
+void ReadStdNumberValue(CObjectIStreamAsnBinary& in, T& data)
 {
     if ( T(-1) < T(0) )
         ReadStdSigned(in, data);
     else
         ReadStdUnsigned(in, data);
+}
+
+template<typename T>
+inline
+void ReadStdNumber(CObjectIStreamAsnBinary& in, T& data)
+{
+    in.ExpectSysTag(eInteger);
+    ReadStdNumberValue(in, data);
 }
 
 void CObjectIStreamAsnBinary::ReadStd(bool& data)
@@ -501,7 +512,38 @@ size_t CObjectIStreamAsnBinary::ReadBytes(const ByteBlock& , char* dst, size_t l
 TObjectPtr CObjectIStreamAsnBinary::ReadPointer(TTypeInfo declaredType)
 {
     _TRACE("CObjectIStreamAsnBinary::ReadPointer:" << declaredType->GetName());
-    THROW1_TRACE(runtime_error, "not implemented");
+    ETag tag = ReadSysTag(true);
+    if ( LastTagWas(eUniversal, false) ) {
+        switch ( tag ) {
+        case eNull:
+            ExpectShortLength(0);
+            _TRACE("CObjectIStreamAsnBinary::ReadPointer: null");
+            return 0;
+        case eObjectIdentifier:
+            {
+                TIndex index;
+                ReadStdNumberValue(*this, index);
+                _TRACE("CObjectIStreamBinary::ReadPointer: @" << index);
+                const CIObjectInfo& info = GetRegisteredObject(index);
+                if ( info.GetTypeInfo() != declaredType ) {
+                    THROW1_TRACE(runtime_error, "incompatible object type");
+                }
+                return info.GetObject();
+            }
+        case eLongTag:
+            {
+                // other class
+                THROW1_TRACE(runtime_error, "not implemented");
+            }
+        }
+    }
+    // this class
+    BackSysTag();
+    _TRACE("CObjectIStreamAsnBinary::ReadPointer: new");
+    TObjectPtr object = declaredType->Create();
+    RegisterObject(object, declaredType);
+    Read(object, declaredType);
+    return object;
 }
 
 CIObjectInfo CObjectIStreamAsnBinary::ReadObjectPointer(void)
@@ -518,6 +560,21 @@ void CObjectIStreamAsnBinary::SkipValue()
 void CObjectIStreamAsnBinary::SkipObjectPointer(void)
 {
     THROW1_TRACE(runtime_error, "not implemented");
+}
+
+unsigned CObjectIStreamAsnBinary::GetAsnFlags(void)
+{
+    return ASNIO_BIN;
+}
+
+void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
+{
+}
+
+size_t CObjectIStreamAsnBinary::AsnRead(AsnIo& , char* data, size_t )
+{
+    *data = ReadByte();
+    return 1;
 }
 
 END_NCBI_SCOPE

@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/07/21 20:02:58  vasilche
+* Added embedding of ASN.1 binary output from ToolKit to our binary format.
+* Fixed bugs with storing pointers into binary ASN.1
+*
 * Revision 1.14  1999/07/21 14:20:09  vasilche
 * Added serialization of bool.
 *
@@ -80,6 +84,7 @@
 #include <serial/objostrb.hpp>
 #include <serial/objstrb.hpp>
 #include <serial/memberid.hpp>
+#include <asn.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -385,6 +390,16 @@ void CObjectOStreamBinary::WriteBytes(const ByteBlock& ,
                                       const char* bytes, size_t length)
 {
 	WriteBytes(bytes, length);
+}
+
+unsigned CObjectOStreamBinary::GetAsnFlags(void)
+{
+    return ASNIO_BIN;
+}
+
+void CObjectOStreamBinary::AsnWrite(AsnIo& , const char* data, size_t length)
+{
+    WriteBytes(data, length);
 }
 
 END_NCBI_SCOPE
