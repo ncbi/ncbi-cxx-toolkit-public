@@ -101,11 +101,18 @@ CFastMutex CAtomicCounter::sm_Mutex;
 static CSafeStaticPtr< list<const void*> > s_heap_obj;
 #endif
 
+#if USE_COMPLEX_MASK
+static inline CAtomicCounter* GetSecondCounter(CObject* ptr)
+{
+  return reinterpret_cast<CAtomicCounter*>(ptr+1);
+}
+#endif
+
 // CObject local new operator to mark allocation in heap
 void* CObject::operator new(size_t size)
 {
     _ASSERT(size >= sizeof(CObject));
-    size = max(size, 2*sizeof(TCounter));
+    size = max(size, sizeof(CObject)+sizeof(TCounter));
     void* ptr = ::operator new(size);
 
 #if USE_HEAPOBJ_LIST
@@ -116,10 +123,7 @@ void* CObject::operator new(size_t size)
 #else// USE_HEAPOBJ_LIST
     memset(ptr, 0, size);
 #  if USE_COMPLEX_MASK
-    TCounter* ttt = &(static_cast<CObject*>(ptr)->m_Counter);
-    if (size >= 2*sizeof(TCounter)) {
-        (++ttt)->Set(eCounterNew);
-    }
+    GetSecondCounter(static_cast<CObject*>(ptr))->Set(eCounterNew);
 #  endif// USE_COMPLEX_MASK
 #endif// USE_HEAPOBJ_LIST
     static_cast<CObject*>(ptr)->m_Counter.Set(eCounterNew);
@@ -181,9 +185,7 @@ void CObject::InitCounter(void)
         }}
 #else // USE_HEAPOBJ_LIST
 #  if USE_COMPLEX_MASK
-        TCounter* ttt = &m_Counter;
-        ++ttt;
-        inStack = (ttt->Get() != eCounterNew);
+        inStack = GetSecondCounter(this)->Get() != eCounterNew;
 #  endif // USE_COMPLEX_MASK
         // m_Counter == eCounterNew -> possibly in heap
         if (!inStack) {
@@ -359,6 +361,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.31  2002/08/28 17:05:50  vasilche
+ * Remove virtual inheritance, fixed heap detection
+ *
  * Revision 1.30  2002/07/15 18:17:24  gouriano
  * renamed CNcbiException and its descendents
  *

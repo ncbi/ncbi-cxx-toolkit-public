@@ -76,7 +76,7 @@ public:
 };
 
 
-class CObject : virtual public CDebugDumpable
+class CObject : public CDebugDumpable
 {
 public:
     // constructors
@@ -714,6 +714,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2002/08/28 17:05:50  vasilche
+ * Remove virtual inheritance, fixed heap detection
+ *
  * Revision 1.35  2002/07/15 18:17:51  gouriano
  * renamed CNcbiException and its descendents
  *
