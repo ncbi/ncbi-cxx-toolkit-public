@@ -494,6 +494,9 @@ TSignedSeqPos CAlnMap::GetSeqPosFromSeqPos(TNumrow for_row,
                                            TNumrow row, TSeqPos seq_pos) const
 {
     TNumseg raw_seg = GetRawSeg(row, seq_pos);
+    if (raw_seg < 0) {
+        return -1;
+    }
     unsigned offset = raw_seg * m_NumRows;
     TSignedSeqPos start = m_Starts[offset + for_row];
     if (start >= 0) {
@@ -897,6 +900,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.43  2004/01/14 22:32:16  todorov
+* Check for out of range seq_pos in GetSeqPosFromSeqPos
+*
 * Revision 1.42  2004/01/14 21:32:40  todorov
 * Swapped aln range coords for insert chunks to insure proper range arithmetics
 *
