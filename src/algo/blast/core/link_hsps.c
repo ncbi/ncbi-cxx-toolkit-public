@@ -497,6 +497,7 @@ link_hsps(Uint1 program_number, BlastHSPList* hsp_list,
      for (index=0;index<number_of_hsps;index++) 
      {
         H=hsp_array[index];
+        H->start_of_chain = FALSE;
         hp_frame_number[cur_frame]++;
 
         H->prev= index ? hsp_array[index-1] : NULL;
