@@ -3344,6 +3344,9 @@ else
     irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
       ;;
+     darwin*:GCC )
+      LIBS="-framework CoreServices $LIBS"
+      ;;
    esac
 fi
 

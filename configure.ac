@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.96 2002/06/19 15:42:20 ucko Exp $
+#  $Id: configure.ac,v 1.97 2002/06/21 14:09:36 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -698,6 +698,9 @@ changequote(, )dnl
 changequote([, ])dnl
     irix*:MIPSpro73 | irix*:KCC )
       ARCH_CFLAGS="-n32"
+      ;;
+     darwin*:GCC )
+      LIBS="-framework CoreServices $LIBS"
       ;;
    esac
 fi
