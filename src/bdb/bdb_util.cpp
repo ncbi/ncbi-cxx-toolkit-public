@@ -64,7 +64,8 @@ const char* BDB_GetStringFieldBuf(const CBDB_Field& fld)
 /// @internal
 static
 int BDB_find_field(const CBDB_BufferManager& buffer_man,
-                   const CBoyerMooreMatcher& matcher)
+                   const CBoyerMooreMatcher& matcher,
+                   string*                   tmp_str)
 {
     int fidx = -1;
     unsigned int fcount = buffer_man.FieldCount();
@@ -77,27 +78,42 @@ int BDB_find_field(const CBDB_BufferManager& buffer_man,
 
         unsigned str_buf_len;
         const char* str_buf = BDB_GetStringFieldBuf(fld);
-
-        if (str_buf && (str_buf_len = fld.GetDataLength(str_buf))) {
-            int pos = matcher.Search(str_buf, 0, str_buf_len);
-            if (pos >= 0) {
-                fidx = i;
-                break;
+        
+        // for string based fields it should be non-0
+        
+        if (str_buf) {
+            str_buf_len = fld.GetDataLength(str_buf);
+            match:
+            if (str_buf_len) {
+                int pos = matcher.Search(str_buf, 0, str_buf_len);
+                if (pos >= 0) {
+                    fidx = i;
+                    break;
+                }
+            }
+        } else {
+            if (tmp_str) {
+                fld.ToString(*tmp_str);
+                str_buf = tmp_str->c_str();
+                str_buf_len = tmp_str->length();
+                goto match;
             }
         }
+        
 
     } // for i
     return fidx;
 }
 
 CBDB_File::TUnifiedFieldIndex BDB_find_field(const CBDB_File& dbf, 
-                                             const CBoyerMooreMatcher& matcher)
+                                             const CBoyerMooreMatcher& matcher,
+                                             string* tmp_str)
 {
     CBDB_File::TUnifiedFieldIndex fidx = 0;
     const CBDB_BufferManager* buffer_man;
     buffer_man =  dbf.GetKeyBuffer();
     if (buffer_man) {
-        fidx = BDB_find_field(*buffer_man, matcher);
+        fidx = BDB_find_field(*buffer_man, matcher, tmp_str);
         if (fidx >= 0) {
             fidx = BDB_GetUFieldIdx(fidx, true /* key */);
             return fidx;
@@ -108,7 +124,7 @@ CBDB_File::TUnifiedFieldIndex BDB_find_field(const CBDB_File& dbf,
 
     buffer_man =  dbf.GetDataBuffer();
     if (buffer_man) {
-        fidx = BDB_find_field(*buffer_man, matcher);
+        fidx = BDB_find_field(*buffer_man, matcher, tmp_str);
         if (fidx >= 0) {
             fidx = BDB_GetUFieldIdx(fidx, false /* key */);
             return fidx;        
@@ -153,6 +169,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/28 12:13:31  kuznets
+ * BDB_find_field improved to search in non text fields too
+ *
  * Revision 1.4  2004/05/17 20:55:12  gorelenk
  * Added include of PCH ncbi_pch.hpp
  *

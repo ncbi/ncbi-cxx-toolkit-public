@@ -63,17 +63,23 @@ class CBoyerMooreMatcher;
 
 /// Find index of field containing the specified value
 /// Search condition is specified by CBoyerMooreMatcher
+/// By default search is performed in string fields, but if 
+/// tmp_str_buffer is specified function will try to convert 
+/// non-strings(int, float) and search in there.
 ///
 /// @param dbf
 ///    Database to search in. Should be positioned on some
 ///    record by Fetch or another method
 /// @param matcher
 ///    Search condition substring matcher
+/// @param tmp_str_buffer
+///    Temporary string used for search in non-text fields
 /// @return 
 ///    0 if value not found
 CBDB_File::TUnifiedFieldIndex NCBI_BDB_EXPORT 
-BDB_find_field(const CBDB_File& dbf, 
-               const CBoyerMooreMatcher& matcher);
+BDB_find_field(const CBDB_File&          dbf, 
+               const CBoyerMooreMatcher& matcher,
+               string*                   tmp_str_buffer = 0);
 
 /// Return record id (integer key)
 ///
@@ -88,6 +94,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/06/28 12:14:05  kuznets
+ * BDB_find_field improved to search in non text fields too
+ *
  * Revision 1.4  2004/03/10 14:02:55  kuznets
  * + BDB_get_rowid
  *
