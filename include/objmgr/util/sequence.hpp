@@ -341,10 +341,25 @@ CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
 
 
 // Merge a set of locations, returning the result.
+template<typename LocContainer>
 NCBI_XOBJUTIL_EXPORT
 CSeq_loc* SeqLocMerge(const CBioseq_Handle& target,
-                      vector< CConstRef<CSeq_loc> >& locs,
-                      TSeqLocFlags flags = 0);
+                      LocContainer& locs,
+                      TSeqLocFlags flags = 0)
+{
+    // create a single Seq-loc holding all the locations
+    CSeq_loc temp;
+    ITERATE( typename LocContainer, it, locs ) {
+        temp.Add(**it);
+    }
+    return SeqLocMergeOne(target, temp, flags);
+}
+
+// Merge a single Seq-loc
+NCBI_XOBJUTIL_EXPORT
+CSeq_loc* SeqLocMergeOne(const CBioseq_Handle& target,
+                        const CSeq_loc& loc,
+                        TSeqLocFlags flags = 0);
 
 
 NCBI_XOBJUTIL_EXPORT
@@ -661,6 +676,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.42  2004/05/06 17:38:37  shomrat
+* + Changed SeqLocMerge API
+*
 * Revision 1.41  2004/04/06 14:03:15  dicuccio
 * Added API to extract the single Org-ref from a bioseq handle.  Added API to
 * retrieve a single tax-id from a bioseq handle
