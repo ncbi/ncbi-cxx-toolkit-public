@@ -1,4 +1,4 @@
---$Revision: 1.4 $********************************************
+--$Revision: 1.5 $********************************************
 --
 --  entrez2.asn
 --   Version 1
@@ -98,9 +98,9 @@ E2Request ::= CHOICE {                   -- request types
   get-info NULL ,                        -- ask for info block
   eval-boolean Entrez2-eval-boolean ,    -- Boolean lookup
   get-docsum Entrez2-id-list ,           -- get the DocSums
-  get-term-pos Entrez2-term-query,       -- Get position in term list
-  get-term-list Entrez2-term-pos ,       -- Get Term list by position
-  get-term-hierarchy Entrez2-term-query, -- Get a hierarchy from a term
+  get-term-pos Entrez2-term-query,       -- get position in term list
+  get-term-list Entrez2-term-pos ,       -- get Term list by position
+  get-term-hierarchy Entrez2-hier-query, -- get a hierarchy from a term
   get-links Entrez2-get-links ,          -- get specific links from a UID list
   get-linked Entrez2-get-links ,         -- get subset of UID list which has links
   get-link-counts Entrez2-id }           -- get all links from one UID
@@ -115,7 +115,7 @@ E2Request ::= CHOICE {                   -- request types
   
 Entrez2-eval-boolean ::= SEQUENCE {       -- evaluate Boolean query
   return-UIDs BOOLEAN DEFAULT FALSE,      -- return UID list?
-  return-parse BOOLEAN DEFAULT FALSE,     -- return parsed query?`
+  return-parse BOOLEAN DEFAULT FALSE,     -- return parsed query?
   query Entrez2-boolean-exp }             -- the actual query
 
 Entrez2-dt-filter ::= SEQUENCE { 
@@ -137,6 +137,12 @@ Entrez2-term-query ::= SEQUENCE {
   db Entrez2-db-id ,
   field Entrez2-field-id ,
   term VisibleString }
+
+Entrez2-hier-query ::= SEQUENCE {
+  db Entrez2-db-id ,
+  field Entrez2-field-id ,
+  term VisibleString OPTIONAL ,          -- query with either term
+  txid INTEGER OPTIONAL }                -- or Taxonomy ID
 
 Entrez2-term-pos ::= SEQUENCE {          -- request portions of term list
   db Entrez2-db-id ,
@@ -171,7 +177,7 @@ E2Reply ::= CHOICE {
   get-docsum Entrez2-docsum-list,
   get-term-pos INTEGER,                 -- position of the term
   get-term-list Entrez2-term-list,
-  get-term-hierarchy Entrez2-term-node,
+  get-term-hierarchy Entrez2-hier-node,
   get-links Entrez2-link-set,
   get-linked Entrez2-id-list,
   get-link-counts Entrez2-link-count-list }
@@ -239,7 +245,7 @@ Entrez2-docsum ::= SEQUENCE {
   no-abstract BOOLEAN OPTIONAL,         -- no abstract in system
   translated-title BOOLEAN OPTIONAL,    -- real title not English
   no-authors BOOLEAN OPTIONAL,          -- no authors listed
-  taxid     INTEGER OPTIONAL  }         -- Taxonomy ID
+  taxid INTEGER OPTIONAL  }             -- Taxonomy ID
   
 Entrez2-term-list ::= SEQUENCE {
   pos INTEGER,                          -- position of first term in list
@@ -248,15 +254,17 @@ Entrez2-term-list ::= SEQUENCE {
 
 Entrez2-term ::= SEQUENCE {
   term VisibleString ,
+  txid  INTEGER OPTIONAL,
   count INTEGER ,                       -- count of records with this term
   is-leaf-node BOOLEAN OPTIONAL }       -- used for hierarchy only
 
-Entrez2-term-node ::= SEQUENCE {        -- for hierarchical index
+Entrez2-hier-node ::= SEQUENCE {        -- for hierarchical index
   cannonical-form VisibleString ,       -- the official name
   lineage-count INTEGER ,               -- number of strings in lineage
-  lineage SEQUENCE OF VisibleString ,   -- strings up the lineage
+  lineage SEQUENCE OF Entrez2-term OPTIONAL , -- strings up the lineage
   child-count INTEGER ,                 -- number of children of this node
-  children SEQUENCE OF Entrez2-term }   -- the children
+  children SEQUENCE OF Entrez2-term ,   -- the children
+  is-ambiguous BOOLEAN OPTIONAL }       -- used for hierarchy only
 
 
   
