@@ -130,9 +130,9 @@ CBlastInitialWordParameters::DebugDump(CDebugDumpContext ddc, unsigned int /*dep
 
 }
 void
-CBLAST_ExtendWord::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
+CBlast_ExtendWord::DebugDump(CDebugDumpContext ddc, unsigned int /*depth*/) const
 {
-	ddc.SetFrame("CBLAST_ExtendWord");
+	ddc.SetFrame("CBlast_ExtendWord");
     if (!m_Ptr)
         return;
 
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.38  2004/05/14 16:01:10  madden
+ * Rename BLAST_ExtendWord to Blast_ExtendWord in order to fix conflicts with C toolkit
+ *
  * Revision 1.37  2004/04/05 16:09:27  camacho
  * Rename DoubleInt -> SSeqRange
  *

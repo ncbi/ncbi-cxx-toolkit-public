@@ -79,11 +79,11 @@ typedef struct DiagStruct {
 } DiagStruct;
 
 /** Structure for keeping last hit information for a diagonal on a stack */
-typedef struct MbStack {
+typedef struct MB_Stack {
    Int4 diag; /**< This hit's actual diagonal */
    Int4 level; /**< This hit's offset in the subject sequence */
    Int4 length; /**< To what length has this hit been extended so far? */
-} MbStack;
+} MB_Stack;
 
 /** Structure containing parameters needed for initial word extension.
  * Only one copy of this structure is needed, regardless of how many
@@ -112,14 +112,14 @@ typedef struct MB_StackTable {
                        by MegaBLAST */
    Int4* stack_index; /**< Current number of elements in each stack */
    Int4* stack_size;  /**< Available memory for each stack */
-   MbStack** estack; /**< Array of stacks for most recent hits */
+   MB_Stack** estack; /**< Array of stacks for most recent hits */
 } MB_StackTable;
    
 /** Structure for keeping initial word extension information */
-typedef struct BLAST_ExtendWord {
+typedef struct Blast_ExtendWord {
    BLAST_DiagTable* diag_table; /**< Diagonal array and related parameters */
    MB_StackTable* stack_table; /**< Stacks and related parameters */ 
-} BLAST_ExtendWord;
+} Blast_ExtendWord;
 
 /** Initializes the word extension structure
  * @param query_length Length of the query sequence [in]
@@ -130,7 +130,7 @@ typedef struct BLAST_ExtendWord {
  */
 Int2 BlastExtendWordNew(Uint4 query_length,
    const BlastInitialWordOptions* word_options,
-   Uint4 subject_length, BLAST_ExtendWord** ewp_ptr);
+   Uint4 subject_length, Blast_ExtendWord** ewp_ptr);
 
 /** Allocate memory for the BlastInitHitList structure */
 BlastInitHitList* BLAST_InitHitListNew(void);
@@ -163,7 +163,7 @@ Int4 MB_WordFinder(BLAST_SequenceBlk* subject,
 		   LookupTableWrap* lookup,
 		   Int4** matrix, 
 		   const BlastInitialWordParameters* word_params,
-		   BLAST_ExtendWord* ewp,
+		   Blast_ExtendWord* ewp,
 		   Uint4* q_offsets,
 		   Uint4* s_offsets,
 		   Int4 max_hits,
@@ -208,7 +208,7 @@ Int4 BlastNaWordFinder(BLAST_SequenceBlk* subject,
 		       LookupTableWrap* lookup_wrap,
 		       Int4** matrix,
 		       const BlastInitialWordParameters* word_params, 
-		       BLAST_ExtendWord* ewp,
+		       Blast_ExtendWord* ewp,
 		       Uint4* q_offsets,
 		       Uint4* s_offsets,
 		       Int4 max_hits,
@@ -236,7 +236,7 @@ Int4 BlastNaWordFinder_AG(BLAST_SequenceBlk* subject,
 			  LookupTableWrap* lookup_wrap,
 			  Int4** matrix,
 			  const BlastInitialWordParameters* word_params, 
-			  BLAST_ExtendWord* ewp,
+			  Blast_ExtendWord* ewp,
 			  Uint4* q_offsets,
 			  Uint4* s_offsets,
 			  Int4 max_hits,
@@ -254,7 +254,7 @@ Boolean BLAST_SaveInitialHit(BlastInitHitList* init_hitlist,
            Int4 q_off, Int4 s_off, BlastUngappedData* ungapped_data); 
 
 /** Deallocate memory for the word extension structure */
-BLAST_ExtendWord* BlastExtendWordFree(BLAST_ExtendWord* ewp);
+Blast_ExtendWord* BlastExtendWordFree(Blast_ExtendWord* ewp);
 
 void 
 BlastSaveInitHsp(BlastInitHitList* ungapped_hsps, Int4 q_start, Int4 s_start, 

@@ -123,13 +123,13 @@ typedef Int2 (*BlastGetGappedScoreType)
 typedef Int4 (*BlastWordFinderType) 
      (BLAST_SequenceBlk*, BLAST_SequenceBlk*,
       LookupTableWrap*, Int4**, const BlastInitialWordParameters*,
-      BLAST_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*);
+      Blast_ExtendWord*, Uint4*, Uint4*, Int4, BlastInitHitList*);
 
 /** Structure to be passed to BLAST_SearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */
 typedef struct BlastCoreAuxStruct {
 
-   BLAST_ExtendWord* ewp; /**< Structure for keeping track of diagonal
+   Blast_ExtendWord* ewp; /**< Structure for keeping track of diagonal
                                information for initial word matches */
    BlastWordFinderType WordFinder; /**< Word finder function pointer */
    BlastGetGappedScoreType GetGappedScore; /**< Gapped extension function

@@ -148,7 +148,7 @@ private:
 
     CBlastInitialWordParameters         mi_clsInitWordParams;
     CBlastHitSavingParameters           mi_clsHitSavingParams;
-    CBLAST_ExtendWord                   mi_clsExtnWord;
+    CBlast_ExtendWord                   mi_clsExtnWord;
     CBlastExtensionParameters           mi_clsExtnParams;
     CBlastGapAlignStruct                mi_clsGapAlign;
     CBlastDatabaseOptions               mi_clsDbOptions;
@@ -262,6 +262,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/05/14 16:02:56  madden
+* Rename BLAST_ExtendWord to Blast_ExtendWord in order to fix conflicts with C toolkit
+*
 * Revision 1.31  2004/03/24 19:12:48  dondosha
 * Use auto class wrapper for lookup tabl wrap field
 *

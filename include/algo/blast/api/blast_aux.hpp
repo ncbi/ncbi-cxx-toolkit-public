@@ -125,10 +125,9 @@ DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordOptions,
 DECLARE_AUTO_CLASS_WRAPPER(BlastInitialWordParameters,
                            BlastInitialWordParametersFree);
 
-DECLARE_AUTO_CLASS_WRAPPER(BLAST_ExtendWord, BlastExtendWordFree);
+DECLARE_AUTO_CLASS_WRAPPER(Blast_ExtendWord, BlastExtendWordFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionOptions, BlastExtensionOptionsFree);
-DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionParameters,
-                           BlastExtensionParametersFree);
+DECLARE_AUTO_CLASS_WRAPPER(BlastExtensionParameters, BlastExtensionParametersFree);
 
 DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingOptions, BlastHitSavingOptionsFree);
 DECLARE_AUTO_CLASS_WRAPPER(BlastHitSavingParameters,
@@ -155,6 +154,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.35  2004/05/14 16:02:56  madden
+* Rename BLAST_ExtendWord to Blast_ExtendWord in order to fix conflicts with C toolkit
+*
 * Revision 1.34  2004/05/05 15:28:10  dondosha
 * Renamed functions in blast_hits.h accordance with new convention Blast_[StructName][Task]
 *
