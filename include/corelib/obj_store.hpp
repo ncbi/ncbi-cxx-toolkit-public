@@ -67,7 +67,7 @@ public:
     /// Method returns NULL if object cannot be found.
     TObject* GetObject(const TKey& key)
     {
-        TObjectMap::const_iterator it(m_ObjMap.find(key));
+        typename TObjectMap::const_iterator it(m_ObjMap.find(key));
         return (it != m_ObjMap.end()) ? it->second : 0;
     }
 
@@ -75,7 +75,7 @@ public:
     /// operation succeded, FALSE if the object already exists in the store.
     bool PutObject(const TKey& key, TObject* obj)
     {
-        TObjectMap::const_iterator it(m_ObjMap.find(key));
+        typename TObjectMap::const_iterator it(m_ObjMap.find(key));
         if (it == m_ObjMap.end()) {
             m_ObjList.push_front(CRef<TObject>(obj));
             m_ObjMap.insert(pair<string, TObjectPtr>(key, obj));
@@ -87,11 +87,11 @@ public:
     /// Release an object from the data store
     void ReleaseObject(const TKey& key)
     {
-        TObjectMap::iterator it(m_ObjMap.find(key));
+        typename TObjectMap::iterator it(m_ObjMap.find(key));
         if (it != m_ObjMap.end()) {
             TObject* obj = it->second;
             m_ObjMap.erase(it);
-            NON_CONST_ITERATE(TObjectList, lit, m_ObjList) {
+            NON_CONST_ITERATE(typename TObjectList, lit, m_ObjList) {
                 TObject* ptr = lit->GetPointer();
                 if (ptr == obj) {
                     m_ObjList.erase(lit);
@@ -110,7 +110,7 @@ public:
     /// check to see if a given object is in the store
     bool  HasObject(const CObject* obj)
     {
-        ITERATE(TObjectList, lit, m_ObjList) {
+        ITERATE(typename TObjectList, lit, m_ObjList) {
             const CObject* ptr = lit->GetPointer();
             if (ptr == obj) {
                 return true;
@@ -213,6 +213,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/08/02 14:11:02  kuznets
+ * GCC compilation fix (proper use of typename)
+ *
  * Revision 1.1  2004/08/02 13:43:46  kuznets
  * Initial revision
  *
