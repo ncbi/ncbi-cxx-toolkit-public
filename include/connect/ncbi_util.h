@@ -42,6 +42,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/07/30 14:39:47  lavr
+ * Do not include date/time in default logging (for ncbidiag.cpp compatibility)
+ *
  * Revision 6.8  2001/07/25 19:12:31  lavr
  * Added date/time stamp for message logging
  *
@@ -160,6 +163,21 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME
  );
 
 
+typedef enum {
+    fLOG_Default  = 0x0, /* "fLOG_Short" if NDEBUG, else "fLOG_Full"        */
+
+    fLOG_Level    = 0x1,
+    fLOG_Module   = 0x2,
+    fLOG_FileLine = 0x4, /* (must always be printed for "eLOG_Trace" level) */
+    fLOG_DateTime = 0x8
+} ELOG_Format;
+typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
+#define fLOG_Short  (fLOG_Level)
+#define fLOG_Full   (fLOG_Level | fLOG_Module | fLOG_FileLine)
+
+extern TLOG_FormatFlags CORE_SetLOGFormatFlags(TLOG_FormatFlags);
+
+
 /* Compose message using the "call_data" info.
  * Full format:
  *     mm/dd/yy HH:MM:SS "<file>", line <line>: [<module>] <level>: <message>
@@ -170,18 +188,6 @@ extern int/*bool*/ CORE_SetLOGFILE_NAME
  *
  * NOTE:  the returned string must be deallocated using "free()".
  */
-typedef enum {
-    fLOG_Default  = 0x0, /* "fLOG_Short" if NDEBUG, else "fLOG_Full"        */
-
-    fLOG_Level    = 0x1,
-    fLOG_Module   = 0x2,
-    fLOG_FileLine = 0x4, /* (must always be printed for "eLOG_Trace" level) */
-    fLOG_DateTime = 0x8
-} ELOG_Format;
-typedef unsigned int TLOG_FormatFlags;  /* binary OR of "ELOG_FormatFlags"  */
-#define fLOG_Short  (fLOG_Level | fLOG_DateTime)
-#define fLOG_Full   (fLOG_Level | fLOG_Module | fLOG_FileLine | fLOG_DateTime)
-
 extern char* LOG_ComposeMessage
 (const SLOG_Handler* call_data,
  TLOG_FormatFlags    format_flags  /* which fields of "call_data" to use */
