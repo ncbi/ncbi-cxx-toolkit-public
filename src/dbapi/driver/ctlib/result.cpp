@@ -880,6 +880,7 @@ CTL_CursorResult::~CTL_CursorResult()
             continue;
         }
     }
+    else m_EOR= true; // to prevent the ct_cancel call (close cursor will do a job)
 }
 
 
@@ -902,6 +903,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2001/10/03 14:21:01  soussov
+ * pevents the ct_cancel call in ~CTL_CursorResult()
+ *
  * Revision 1.7  2001/10/02 22:14:50  soussov
  * fixed bug in ~CTL_CursorResult()
  *
