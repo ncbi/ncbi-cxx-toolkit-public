@@ -63,7 +63,7 @@ public:
                        EReallocMode allow_realloc);
 
     // Get LOB size. Becomes available right after successfull Fetch.
-    size_t LobSize() const { return m_DBT_Data.size; }
+    size_t LobSize() const;
 
     // Copy LOB data into the 'buf'.
     // Throw an exception if buffer size 'size' is less than LOB size. 
@@ -140,12 +140,6 @@ inline EBDB_ErrCode CBDB_LobFile::Fetch(unsigned int lob_id)
 }
 
 
-inline size_t CBDB_LobFile::LobSize() const
-{
-    return m_DBT_Data.size;
-}
-
-
 END_NCBI_SCOPE
 
 
@@ -153,6 +147,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/07/02 17:53:59  kuznets
+ * Eliminated direct dependency from <db.h>
+ *
  * Revision 1.6  2003/06/27 18:57:16  dicuccio
  * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
  *

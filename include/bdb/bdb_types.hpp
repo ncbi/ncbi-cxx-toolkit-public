@@ -39,7 +39,15 @@
 #include <vector>
 #include <memory>
 
-#include <db.h>
+extern "C" {
+    //
+    // Forward structure declarations, so we can declare pointers and
+    // applications can get type checking.
+    // Taken from <db.h> 
+    struct __db_dbt; typedef struct __db_dbt DBT;
+    struct __db;     typedef struct __db     DB;
+    struct __dbc;    typedef struct __dbc    DBC;
+}
 
 BEGIN_NCBI_SCOPE
 
@@ -1094,22 +1102,6 @@ inline void CBDB_BufferManager::Clear()
 }
 
 
-inline void CBDB_BufferManager::PrepareDBT_ForWrite(DBT* dbt)
-{
-    Pack();
-    dbt->data = m_Buffer.get();
-    dbt->size = m_PackedSize;
-}
-
-
-inline void CBDB_BufferManager::PrepareDBT_ForRead(DBT* dbt)
-{
-    dbt->data = m_Buffer.get();
-    dbt->size = dbt->ulen = m_BufferSize;
-    dbt->flags = DB_DBT_USERMEM;
-}
-
-
 inline
 void CBDB_BufferManager::CopyFieldsFrom(const CBDB_BufferManager& buf_mgr)
 {
@@ -1166,6 +1158,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/02 17:53:59  kuznets
+ * Eliminated direct dependency from <db.h>
+ *
  * Revision 1.8  2003/06/27 18:57:16  dicuccio
  * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
  *

@@ -35,8 +35,6 @@
 
 #include <bdb/bdb_types.hpp>
 
-#include <db.h>
-
 
 BEGIN_NCBI_SCOPE
 
@@ -69,9 +67,9 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2);
 
 
 enum EBDB_ErrCode {
-    eBDB_Ok        = 0,
-    eBDB_NotFound  = DB_NOTFOUND,
-    eBDB_KeyDup    = DB_KEYEXIST
+    eBDB_Ok,
+    eBDB_NotFound,
+    eBDB_KeyDup
 };
 
 
@@ -88,9 +86,9 @@ public:
     static const char kDefaultDatabase[];  // = "_table"
 
     enum EOpenMode {
-        eReadWrite   = 0,
-        eReadOnly    = DB_RDONLY,
-        eCreate      = DB_CREATE  // implies 'eReadWrite' too
+        eReadWrite,
+        eReadOnly,
+        eCreate     // implies 'eReadWrite' too
     };
 
     enum EReallocMode {
@@ -134,25 +132,6 @@ public:
     // Return TRUE if the file is open
     bool IsOpen() const;
 
-protected:
-    // Embedded auto-pointer style guard class for DB structure
-	class CDB_guard
-	{
-	public:
-		CDB_guard(DB** db) : m_DB(db) {}
-		~CDB_guard()
-		{ 
-			if (m_DB  &&  *m_DB) {
-                (*m_DB)->close(*m_DB, 0);
-                *m_DB = 0;
-            }
-		}
-		void release() { m_DB = 0; }
-    private:
-		DB** m_DB;
-	};
-
-
 private:
     CBDB_RawFile(const CBDB_RawFile&);
     CBDB_RawFile& operator= (const CBDB_RawFile&);
@@ -172,9 +151,9 @@ protected:
     void x_CreateDB();
 
 protected:
-    DB*              m_DB;
-    DBT              m_DBT_Key;
-    DBT              m_DBT_Data;
+    DB*               m_DB;
+    DBT*              m_DBT_Key;
+    DBT*              m_DBT_Data;
 
 private:
     string           m_FileName;       // filename
@@ -300,17 +279,8 @@ public:
     CBDB_FieldInt4  IdKey;
 
 public:
-    CBDB_IdFile() : CBDB_File()
-    {
-        BindKey("id", &IdKey);
-    }
-
-    virtual void SetCmp(DB* db)
-    {
-        int ret = db->set_bt_compare(db, BDB_IntCompare);
-        BDB_CHECK(ret, 0);
-    }
-    
+    CBDB_IdFile();
+    virtual void SetCmp(DB* db);  
 };
 
 
@@ -380,6 +350,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/07/02 17:53:59  kuznets
+ * Eliminated direct dependency from <db.h>
+ *
  * Revision 1.8  2003/06/27 18:57:16  dicuccio
  * Uninlined strerror() adaptor.  Changed to use #include<> instead of #include ""
  *
