@@ -1,5 +1,5 @@
-#ifndef NCBI_CGI_APP__HPP
-#define NCBI_CGI_APP__HPP
+#ifndef NCBI_INET_APP__HPP
+#define NCBI_INET_APP__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/04 18:11:22  sandomir
+* CNcbuResource - initial draft
+*
 * Revision 1.1  1998/12/03 21:24:21  sandomir
 * NcbiApplication and CgiApplication updated
 *
@@ -55,7 +58,7 @@
 BEGIN_NCBI_SCOPE
 
 //
-// class CCgiApplication
+// class CInetApplication
 //
 
 class CCgiApplication: public CNcbiApplication
@@ -64,7 +67,8 @@ public:
 
   static CCgiApplication* Instance( void ); // Singleton method
 
-  CCgiApplication( int argc = 0, char* argv[] = 0 );
+  CCgiApplication( int argc = 0, char* argv[] = 0,
+                   CNcbiIstream* istr = 0, bool indexes_as_entries = true );
   virtual ~CCgiApplication( void );
 
   virtual void Init( void ); // initialization
@@ -76,11 +80,14 @@ public:
 protected:
   
   CCgiRequest* m_CgiRequest;
+
+  CNcbiIstream* m_istr;
+  bool m_iase; // indexes_as_entries
   
 };
 
 END_NCBI_SCOPE
 
-#endif // NCBI_CGI_APP__HPP
+#endif // NCBI_INET_APP__HPP
 
 
