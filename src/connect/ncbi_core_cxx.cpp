@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2002/01/15 21:28:49  lavr
+ * +MT_LOCK_cxx2c()
+ *
  * Revision 6.6  2001/03/02 20:08:17  lavr
  * Typos fixed
  *
@@ -117,45 +120,48 @@ extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership)
 
 static void s_LOG_Handler(void* /*user_data*/, SLOG_Handler* call_data)
 {
-    EDiagSev level;
-    switch (call_data->level) {
-    case eLOG_Trace:
-        level = eDiag_Trace;
-        break;
-    case eLOG_Note:
-        level = eDiag_Info;
-        break;
-    case eLOG_Warning:
-        level = eDiag_Warning;
-        break;
-    case eLOG_Error:
-        level = eDiag_Error;
-        break;
-    case eLOG_Critical:
-        level = eDiag_Critical;
-        break;
-    case eLOG_Fatal:
-        /*fallthru*/
-    default:
-        level = eDiag_Fatal;
-        break;
+    try {
+        EDiagSev level;
+        switch (call_data->level) {
+        case eLOG_Trace:
+            level = eDiag_Trace;
+            break;
+        case eLOG_Note:
+            level = eDiag_Info;
+            break;
+        case eLOG_Warning:
+            level = eDiag_Warning;
+            break;
+        case eLOG_Error:
+            level = eDiag_Error;
+            break;
+        case eLOG_Critical:
+            level = eDiag_Critical;
+            break;
+        case eLOG_Fatal:
+            /*fallthru*/
+        default:
+            level = eDiag_Fatal;
+            break;
+        }
+        CNcbiDiag diag(level, eDPF_Default);
+        if (call_data->file)
+            diag.SetFile(call_data->file);
+        if (call_data->line)
+            diag.SetLine(call_data->line);
+        diag << call_data->message;
+        if (call_data->raw_data && call_data->raw_size) {
+            diag <<
+                "\n#################### [BEGIN] Raw Data (" <<
+                call_data->raw_size <<
+                " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
+                NStr::PrintableString
+                (string(static_cast<const char*>(call_data->raw_data),
+                        call_data->raw_size)) <<
+                "\n#################### [END] Raw Data";
+        }
     }
-    CNcbiDiag diag(level, eDPF_Default);
-    if (call_data->file)
-        diag.SetFile(call_data->file);
-    if (call_data->line)
-        diag.SetLine(call_data->line);
-    diag << call_data->message;
-    if (call_data->raw_data && call_data->raw_size) {
-        diag <<
-            "\n#################### [BEGIN] Raw Data (" <<
-            call_data->raw_size <<
-            " byte" << (call_data->raw_size != 1 ? "s" : "") << ")\n" <<
-            NStr::PrintableString
-            (string(static_cast<const char*>(call_data->raw_data),
-                    call_data->raw_size)) <<
-            "\n#################### [END] Raw Data";
-    }
+    STD_CATCH_ALL("s_LOG_Handler() failed");
 }
 
 
@@ -165,6 +171,49 @@ extern LOG LOG_cxx2c(void)
                       reinterpret_cast<FLOG_Handler> (s_LOG_Handler),
                       0,
                       0);
+}
+
+
+static void s_LOCK_Handler(void* user_data, EMT_Lock how)
+{
+    try {
+        CRWLock* lock = static_cast<CRWLock*> (user_data);
+        switch (how) {
+        case eMT_Lock:
+            lock->WriteLock();
+            break;
+        case eMT_LockRead:
+            lock->ReadLock();
+            break;
+        case eMT_Unlock:
+            lock->Unlock();
+            break;
+        default:
+            THROW1_TRACE(runtime_error,
+                         "s_LOCK_Handler() used with op " + (unsigned int)how);
+            break;
+        }
+    }
+    STD_CATCH_ALL("s_LOCK_Handler() failed");
+}
+
+
+static void s_LOCK_Cleanup(void* user_data)
+{
+    try {
+        delete static_cast<CRWLock*> (user_data);
+    }
+    STD_CATCH_ALL("s_LOCK_Cleanup() failed");
+}
+
+
+extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock, bool pass_ownership)
+{
+    return MT_LOCK_Create(static_cast<void*> (lock ? lock : new CRWLock),
+                          reinterpret_cast<FMT_LOCK_Handler> (s_LOCK_Handler),
+                          !lock  ||  pass_ownership ?
+                          reinterpret_cast<FMT_LOCK_Cleanup> (s_LOCK_Cleanup) :
+                          0);
 }
 
 

@@ -36,6 +36,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.5  2002/01/15 21:28:34  lavr
+ * +MT_LOCK_cxx2c()
+ *
  * Revision 6.4  2001/03/02 20:06:41  lavr
  * Typo fixed
  *
@@ -54,13 +57,14 @@
 #include <connect/ncbi_core.h>
 #include <corelib/ncbidiag.hpp>
 #include <corelib/ncbireg.hpp>
+#include <corelib/ncbithr.hpp>
 
 BEGIN_NCBI_SCOPE
 
 
-extern REG REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
-extern LOG LOG_cxx2c(void);
-
+extern REG         REG_cxx2c(CNcbiRegistry* reg, bool pass_ownership = false);
+extern LOG         LOG_cxx2c(void);
+extern MT_LOCK MT_LOCK_cxx2c(CRWLock* lock = 0, bool pass_ownership = false);
 
 END_NCBI_SCOPE
 
