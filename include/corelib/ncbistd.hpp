@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  1999/04/14 19:46:01  vakatov
+* Fixed for the features:
+*    { NCBI_OBSOLETE_STR_COMPARE, HAVE_NO_AUTO_PTR, HAVE_NO_SNPRINTF }
+*
 * Revision 1.16  1999/04/09 19:51:36  sandomir
 * minor changes in NStr::StringToXXX - base added
 *
@@ -83,25 +87,45 @@ const string NcbiEmptyString;
 struct NStr {
 
     // conversion functions
-    static int StringToInt(const string& str, int base = 10 );
+    static int StringToInt(const string& str, int base = 10);
     static unsigned int StringToUInt(const string& str, int base = 10);
     static double StringToDouble(const string& str);
     static string IntToString(int value);
     static string IntToString(int value, bool sign);
     static string UIntToString(unsigned int value);
     static string DoubleToString(double value);
+
+    /*  str[pos:pos+n) == pattern  --> return 0
+     *  str[pos:pos+n) <  pattern  --> return negative mismatch position
+     *  str[pos:pos+n) >  pattern  --> return positive mismatch position
+     */
+    static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const char* pattern) {
+#if defined(NCBI_OBSOLETE_STR_COMPARE)
+        return str.compare(pattern, pos, n);
+#else
+        return str.compare(pos, n, pattern);
+#endif
+    }
+    static int Compare(const string& str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const string& pattern) {
+#if defined(NCBI_OBSOLETE_STR_COMPARE)
+        return str.compare(pattern, pos, n);
+#else
+        return str.compare(pos, n, pattern);
+#endif
+    }
     
-    static bool StartsWith(const string& str, const string& start)
-        {
-            return str.size() >= start.size() &&
-                str.compare(0, start.size(), start) == 0;
-        }
+    static bool StartsWith(const string& str, const string& start) {
+        return str.size() >= start.size()  &&
+            Compare(str, (SIZE_TYPE)0, start.size(), start) == 0;
+    }
     
-    static bool EndsWith(const string& str, const string& end)
-        {
-            int pos = str.size() - end.size();
-            return pos >= 0  && str.compare( pos, end.size(), end) == 0;
-        }
+    static bool EndsWith(const string& str, const string& end) {
+        SIZE_TYPE pos = str.size() - end.size();
+        return pos >= 0  &&
+            Compare(str, pos, end.size(), end) == 0;
+    }
 
 }; // struct NStr
        
@@ -120,6 +144,53 @@ bool AStrEquiv( const string& x, const string& y, Pred pr )
 {  
   return !( pr( x, y ) || pr( y, x ) );
 }
+
+
+// auto_ptr
+#if defined(HAVE_NO_AUTO_PTR)
+template <class X> class auto_ptr {
+public:
+    auto_ptr(X* p = 0) : m_Ptr(p) {}
+    ~auto_ptr(void) { delete m_Ptr; }
+
+    auto_ptr<X>& operator=(X* p) {
+        reset(p);
+        return *this;
+    }
+
+    X&  operator*(void)         const { return *m_Ptr; }
+    X*  operator->(void)        const { return m_Ptr; }
+    int operator==(const X* p)  const { return (m_Ptr == p); }
+    X*  get(void)               const { return m_Ptr; }
+
+    X* release(void) {
+        X* p = m_Ptr;
+        m_Ptr = 0;
+        return p;
+    }
+
+    void reset(X* p = 0) {
+        if (m_Ptr != p) {
+            delete m_Ptr;
+            m_Ptr = p;
+        }
+    }
+
+protected:
+    X* m_Ptr;
+
+private:
+    // prohibited!
+    auto_ptr(auto_ptr<X>&) {}
+    auto_ptr<X>& operator=(auto_ptr<X>&) {}
+};
+#endif /* HAVE_NO_AUTO_PTR */
+
+
+#if defined(HAVE_NO_SNPRINTF)
+#define snprintf _snprintf
+#endif /* HAVE_NO_SNPRINTF */
+
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)
 END_NCBI_SCOPE
