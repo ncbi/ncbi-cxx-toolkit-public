@@ -32,13 +32,16 @@
  */
 
 
-#warning "Please redirect your code to include @header@"
+#warning "Please redirect your code to include objtools/alnmgr/alnexception.hpp"
 #include <objtools/alnmgr/alnexception.hpp>
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/06/02 16:51:57  dicuccio
+ * Forgot to sed the warning message's header indicator
+ *
  * Revision 1.7  2003/06/02 16:01:32  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr

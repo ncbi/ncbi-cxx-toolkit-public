@@ -32,13 +32,16 @@
  */
 
 
-#warning "Please redirect your code to include @header@"
+#warning "Please redirect your code to include objtools/flat/flat_head.hpp"
 #include <objtools/flat/flat_head.hpp>
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/06/02 16:51:58  dicuccio
+ * Forgot to sed the warning message's header indicator
+ *
  * Revision 1.4  2003/06/02 16:01:33  dicuccio
  * Rearranged include/objects/ subtree.  This includes the following shifts:
  *     - include/objects/alnmgr --> include/objtools/alnmgr
