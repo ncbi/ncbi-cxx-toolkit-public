@@ -34,6 +34,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_tree.hpp>
+#include <algo/tree/tree_algo.hpp>
 #include <algorithm>
 
 #include <test/test_assert.h>  /* This header must go last */
@@ -193,6 +194,11 @@ static void s_TEST_Tree()
 
     const TTree* parent_node = TreeFindCommonParent(*tr4, *tr6);
 
+    assert(tr4->IsParent(*parent_node));
+    assert(tr6->IsParent(*parent_node));
+    assert(!tr4->IsParent(*tr6));
+
+
     assert(parent_node);
 
     cout << "parent: " << parent_node->GetValue() << endl;
@@ -210,6 +216,8 @@ static void s_TEST_Tree()
     TreeReRoot(*tr5);
     TreePrint(cout, *tr5, s_IntToStr);
 
+    tr5->MoveSubnodes(str);
+    TreePrint(cout, *tr5, s_IntToStr);
 
     delete tr5;
 }
@@ -331,6 +339,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * ==========================================================================
  * $Log$
+ * Revision 1.12  2004/04/19 16:01:30  kuznets
+ * + #include <algo/tree/tree_algo.hpp>
+ *
  * Revision 1.11  2004/04/09 14:40:33  kuznets
  * TreeReRoot tested
  *
