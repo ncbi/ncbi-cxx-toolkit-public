@@ -51,6 +51,12 @@ Detailed Contents:
 ****************************************************************************** 
  * $Revision$
  * $Log$
+ * Revision 1.65  2004/04/30 14:39:44  papadopo
+ * 1. Remove unneeded #defines
+ * 2. use BLAST_SCORE_RANGE_MAX during RPS PSSM creation instead of
+ * 	(possibly incompatible) RPS_SCORE_MAX
+ * 3. return NULL instead of FALSE on an error
+ *
  * Revision 1.64  2004/04/30 12:58:49  camacho
  * Replace RPSKarlinLambdaNR by Blast_KarlinLambdaNR
  *
@@ -3430,9 +3436,6 @@ BLAST_LargeGapSumE(
 
 /*------------------- RPS BLAST functions --------------------*/
 
-#define PRO_K_MULTIPLIER 1.2
-#define MAX_SCORE_RANGE 10000
-
 static double
 RPSfindUngappedLambda(Char *matrixName)
 {
@@ -3571,13 +3574,13 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     Int4 index, inner_index; 
 
     resProb = (double *)malloc(PSI_ALPHABET_SIZE * sizeof(double));
-    scoreArray = (double *)malloc(MAX_SCORE_RANGE * sizeof(double));
+    scoreArray = (double *)malloc(BLAST_SCORE_RANGE_MAX * sizeof(double));
     return_sfp = (BLAST_ScoreFreq *)malloc(sizeof(BLAST_ScoreFreq));
 
     RPSFillResidueProbability(rps_query_seq, rps_query_length, resProb);
 
     RPSFillScores(posMatrix, db_seq_length, resProb, scoreArray, 
-                 return_sfp, MAX_SCORE_RANGE);
+                 return_sfp, BLAST_SCORE_RANGE_MAX);
 
     initialUngappedLambda = RPSfindUngappedLambda("BLOSUM62");
     scaledInitialUngappedLambda = initialUngappedLambda / scalingFactor;
@@ -3587,7 +3590,7 @@ RPSCalculatePSSM(double scalingFactor, Int4 rps_query_length,
     sfree(scoreArray);
     sfree(return_sfp);
     if(correctUngappedLambda == -1.0)
-        return FALSE;
+        return NULL;
 
     finalLambda = correctUngappedLambda/scaledInitialUngappedLambda;
 
