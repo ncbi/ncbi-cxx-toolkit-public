@@ -86,7 +86,7 @@ public:
 private:
 
     void x_RunOnPair() const
-        throw(CAppNWAException, CAlgoAlignException);
+        THROWS((CAppNWAException, CAlgoAlignException));
 
     bool x_ReadFastaFile(const string& filename,
                          string*       seqname,
@@ -101,6 +101,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2004/04/30 12:49:47  kuznets
+ * throw -> THROWS (fixes warning in MSVC7)
+ *
  * Revision 1.7  2003/09/10 19:11:50  kapustin
  * Add eNotSupported exception for multithreading availability checking
  *
