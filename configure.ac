@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.205 2003/07/16 20:57:28 vakatov Exp $
+#  $Id: configure.ac,v 1.206 2003/07/22 15:55:11 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2923,6 +2923,19 @@ else
 fi
 # Sigh... without this, the linker pulls in the contents of the cache
 # and then gripes about missing JTC stuff.
+test -d SunWS_cache  &&  rm -r SunWS_cache
+
+
+### XML/XSL libraries
+: ${EXPAT_PATH=$NCBI/expat}
+NCBI_CHECK_THIRD_PARTY_LIB(expat,
+ AC_LANG_PROGRAM([#include <expat.h>],
+    [XML_Parser parser = XML_ParserCreate("utf-8");]))
+: ${SABLOT_PATH=$NCBI/Sablot}
+NCBI_CHECK_THIRD_PARTY_LIB(sablot,
+ AC_LANG_PROGRAM([#include <sablot.h>],
+    [SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);]),
+ $EXPAT_LIBS)
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 

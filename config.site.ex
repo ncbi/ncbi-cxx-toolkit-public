@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: config.site.ex,v 1.4 2003/05/23 14:36:02 ucko Exp $
+# $Id: config.site.ex,v 1.5 2003/07/22 15:55:10 ucko Exp $
 
 ### You can control where the C++ Toolkit's configure script looks for
 ### various packages by copying or renaming this file to "config.site"
@@ -101,6 +101,10 @@
 ### ORBacus (CORBA implementation)
 
 # ORBACUS_PATH="$NCBI/corba/OB-4.0.1"
+
+### XML/XSL support
+# EXPAT_PATH="$NCBI/expat"
+# SABLOT_PATH="$NCBI/Sablot"
 
 ### Image libraries
 

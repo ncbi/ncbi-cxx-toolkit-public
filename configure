@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX MT_SFX STATIC LN_S RANLIB ac_ct_RANLIB AR STRIP LORDER TSORT CXXCPP EGREP FTDS8_INCLUDE FTDS8_LIBS FTDS_INCLUDE FTDS_LIBS freetds mysql_config X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EXPAT_INCLUDE EXPAT_LIBS SABLOT_INCLUDE SABLOT_LIBS JPEG_INCLUDE JPEG_LIBS PNG_INCLUDE PNG_LIBS TIFF_INCLUDE TIFF_LIBS UNGIF_INCLUDE UNGIF_LIBS GIF_INCLUDE GIF_LIBS XPM_INCLUDE XPM_LIBS PROJECTS signature build_root top_srcdir srcdir status_dir builddir runpath ncbi_runpath CPP LINK C_LINK FAST_CFLAGS FAST_CXXFLAGS DEPFLAGS DEPFLAGS_POST FAST_LDFLAGS C_LIBS D_SFX DEBUG_SFX LIB_OR_DLL FORCE_STATIC_LIB LINK_DLL has_dll_loadable LINK_LOADABLE CFLAGS_DLL CXXFLAGS_DLL OPT_GROUPS local_lbsm daemons serial bdb dbapi objects ctools gui algo app internal check CHECK_ARG script_shell make_shell obj_ext lib_pre lib_l_pre lib_ext dll_ext loadable_ext lib_l_ext exe_ext f_compile f_outobj f_outlib f_libpath f_runpath f_outexe THREAD_LIBS NETWORK_LIBS NETWORK_PURE_LIBS RESOLVER_LIBS MATH_LIBS KSTAT_LIBS RPCSVC_LIBS CRYPT_LIBS DL_LIBS RT_LIBS ICONV_LIBS SYBASE_PATH SYBASE_INCLUDE SYBASE_LIBS SYBASE_DLLS SYBASE_DBLIBS MYSQL_INCLUDE MYSQL_LIBS BERKELEYDB_INCLUDE BERKELEYDB_STATIC_LIBS BERKELEYDB_LIBS ODBC_INCLUDE ODBC_LIBS NCBI_C_INCLUDE NCBI_C_LIBPATH OPENGL_INCLUDE OPENGL_LIBS OSMESA_LIBS FLTK_INCLUDE FLTK_LIBS FLTK_LIBS_GL FLTK_CONFIG WXWIN_INCLUDE WXWIN_LIBS WXWIN_GL_LIBS FASTCGI_INCLUDE FASTCGI_LIBS FASTCGI_OBJS NCBI_SSS_INCLUDE NCBI_SSS_LIBPATH LIBSSSUTILS LIBSSSDB NCBI_GEO_INCLUDE NCBI_GEO_LIBPATH LIBGEODB SP_INCLUDE SP_LIBS NCBI_PM_PATH ORBACUS_INCLUDE ORBACUS_LIBPATH LIBOB LIBIMR NCBI_C_ncbi BINCOPY APP_NOCOPY APP_OR_NULL IF_REBUILDING_LIBS IF_REBUILDING_CONDITIONALLY CC_FILTER CXX_FILTER KeepStateTarget Rules serial_ws50_rtti_kludge ncbicntr UNIX_SRC UNIX_USR_PROJ compiler compiler_root compiler_version COMPILER OSTYPE NCBI_PLATFORM_BITS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -12749,6 +12749,178 @@ fi
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
 
+### XML/XSL libraries
+: ${EXPAT_PATH=$NCBI/expat}
+if test "$with_expat" != "no"; then
+    case "$with_expat" in
+       yes | "" ) ;;
+       *        ) EXPAT_PATH=$with_expat ;;
+    esac
+    if test -d "$EXPAT_PATH"; then
+       in_path=" in $EXPAT_PATH"
+       test -d "$EXPAT_PATH/include" && EXPAT_INCLUDE="-I$EXPAT_PATH/include"
+       if test -d "$EXPAT_PATH/lib${bit64_sfx}"; then
+          EXPAT_LIBPATH="-L$EXPAT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$EXPAT_PATH/lib${bit64_sfx}"
+       fi
+       EXPAT_LIBS="$EXPAT_LIBPATH -lexpat "
+    else
+       EXPAT_INCLUDE=""
+       EXPAT_LIBS="-lexpat "
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libexpat$in_path" >&5
+echo $ECHO_N "checking for libexpat$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_expat+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$EXPAT_INCLUDE $orig_CPPFLAGS"
+       LIBS="$EXPAT_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <expat.h>
+int
+main ()
+{
+XML_Parser parser = XML_ParserCreate("utf-8");
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_expat=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_expat=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_expat" >&5
+echo "${ECHO_T}$ncbi_cv_lib_expat" >&6
+    if test "$ncbi_cv_lib_expat" = "no"; then
+       with_expat="no"
+    fi
+ fi
+ if test "$with_expat" = "no"; then
+    EXPAT_PATH="No_EXPAT"
+    EXPAT_INCLUDE=
+    EXPAT_LIBS=
+    WithoutPackages="$WithoutPackages EXPAT"
+ else
+    WithPackages="$WithPackages EXPAT"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBEXPAT 1
+_ACEOF
+
+ fi
+
+
+
+: ${SABLOT_PATH=$NCBI/Sablot}
+if test "$with_sablot" != "no"; then
+    case "$with_sablot" in
+       yes | "" ) ;;
+       *        ) SABLOT_PATH=$with_sablot ;;
+    esac
+    if test -d "$SABLOT_PATH"; then
+       in_path=" in $SABLOT_PATH"
+       test -d "$SABLOT_PATH/include" && SABLOT_INCLUDE="-I$SABLOT_PATH/include"
+       if test -d "$SABLOT_PATH/lib${bit64_sfx}"; then
+          SABLOT_LIBPATH="-L$SABLOT_PATH/lib${bit64_sfx} ${CONF_f_runpath}$SABLOT_PATH/lib${bit64_sfx}"
+       fi
+       SABLOT_LIBS="$SABLOT_LIBPATH -lsablot $EXPAT_LIBS"
+    else
+       SABLOT_INCLUDE=""
+       SABLOT_LIBS="-lsablot $EXPAT_LIBS"
+       in_path=
+    fi
+    echo "$as_me:$LINENO: checking for libsablot$in_path" >&5
+echo $ECHO_N "checking for libsablot$in_path... $ECHO_C" >&6
+if test "${ncbi_cv_lib_sablot+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS="$SABLOT_INCLUDE $orig_CPPFLAGS"
+       LIBS="$SABLOT_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sablot.h>
+int
+main ()
+{
+SDOM_Document* D; int x = SablotParse(NULL, "file:/dev/null", D);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_sablot=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ncbi_cv_lib_sablot=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_lib_sablot" >&5
+echo "${ECHO_T}$ncbi_cv_lib_sablot" >&6
+    if test "$ncbi_cv_lib_sablot" = "no"; then
+       with_sablot="no"
+    fi
+ fi
+ if test "$with_sablot" = "no"; then
+    SABLOT_PATH="No_SABLOT"
+    SABLOT_INCLUDE=
+    SABLOT_LIBS=
+    WithoutPackages="$WithoutPackages SABLOT"
+ else
+    WithPackages="$WithPackages SABLOT"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBSABLOT 1
+_ACEOF
+
+ fi
+
+
+
+test -d SunWS_cache  &&  rm -r SunWS_cache
+
+
 ### Image libraries
 : ${JPEG_PATH=$NCBI/gd}
 # Grr... jpeglib.h isn't especially well-behaved.
@@ -12761,7 +12933,7 @@ if test "$with_jpeg" != "no"; then
        in_path=" in $JPEG_PATH"
        test -d "$JPEG_PATH/include" && JPEG_INCLUDE="-I$JPEG_PATH/include"
        if test -d "$JPEG_PATH/lib${bit64_sfx}"; then
-          JPEG_LIBPATH="-L$JPEG_PATH/lib ${CONF_f_runpath}$JPEG_PATH/lib"
+          JPEG_LIBPATH="-L$JPEG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$JPEG_PATH/lib${bit64_sfx}"
        fi
        JPEG_LIBS="$JPEG_LIBPATH -ljpeg "
     else
@@ -12853,7 +13025,7 @@ if test "$with_png" != "no"; then
        in_path=" in $PNG_PATH"
        test -d "$PNG_PATH/include" && PNG_INCLUDE="-I$PNG_PATH/include"
        if test -d "$PNG_PATH/lib${bit64_sfx}"; then
-          PNG_LIBPATH="-L$PNG_PATH/lib ${CONF_f_runpath}$PNG_PATH/lib"
+          PNG_LIBPATH="-L$PNG_PATH/lib${bit64_sfx} ${CONF_f_runpath}$PNG_PATH/lib${bit64_sfx}"
        fi
        PNG_LIBS="$PNG_LIBPATH -lpng -lz"
     else
@@ -12940,7 +13112,7 @@ if test "$with_tiff" != "no"; then
        in_path=" in $TIFF_PATH"
        test -d "$TIFF_PATH/include" && TIFF_INCLUDE="-I$TIFF_PATH/include"
        if test -d "$TIFF_PATH/lib${bit64_sfx}"; then
-          TIFF_LIBPATH="-L$TIFF_PATH/lib ${CONF_f_runpath}$TIFF_PATH/lib"
+          TIFF_LIBPATH="-L$TIFF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$TIFF_PATH/lib${bit64_sfx}"
        fi
        TIFF_LIBS="$TIFF_LIBPATH -ltiff -lz"
     else
@@ -13027,7 +13199,7 @@ if test "$with_ungif" != "no"; then
        in_path=" in $UNGIF_PATH"
        test -d "$UNGIF_PATH/include" && UNGIF_INCLUDE="-I$UNGIF_PATH/include"
        if test -d "$UNGIF_PATH/lib${bit64_sfx}"; then
-          UNGIF_LIBPATH="-L$UNGIF_PATH/lib ${CONF_f_runpath}$UNGIF_PATH/lib"
+          UNGIF_LIBPATH="-L$UNGIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$UNGIF_PATH/lib${bit64_sfx}"
        fi
        UNGIF_LIBS="$UNGIF_LIBPATH -lungif $X_LIBS -lX11"
     else
@@ -13113,7 +13285,7 @@ if test "$with_ungif" = "no"; then
        in_path=" in $GIF_PATH"
        test -d "$GIF_PATH/include" && GIF_INCLUDE="-I$GIF_PATH/include"
        if test -d "$GIF_PATH/lib${bit64_sfx}"; then
-          GIF_LIBPATH="-L$GIF_PATH/lib ${CONF_f_runpath}$GIF_PATH/lib"
+          GIF_LIBPATH="-L$GIF_PATH/lib${bit64_sfx} ${CONF_f_runpath}$GIF_PATH/lib${bit64_sfx}"
        fi
        GIF_LIBS="$GIF_LIBPATH -lgif $X_LIBS -lX11"
     else
@@ -13209,7 +13381,7 @@ if test "$with_xpm" != "no"; then
        in_path=" in $XPM_PATH"
        test -d "$XPM_PATH/include" && XPM_INCLUDE="-I$XPM_PATH/include"
        if test -d "$XPM_PATH/lib${bit64_sfx}"; then
-          XPM_LIBPATH="-L$XPM_PATH/lib ${CONF_f_runpath}$XPM_PATH/lib"
+          XPM_LIBPATH="-L$XPM_PATH/lib${bit64_sfx} ${CONF_f_runpath}$XPM_PATH/lib${bit64_sfx}"
        fi
        XPM_LIBS="$XPM_LIBPATH -lXpm $X_LIBS -lX11"
     else
@@ -18828,6 +19000,10 @@ s,@X_CFLAGS@,$X_CFLAGS,;t t
 s,@X_PRE_LIBS@,$X_PRE_LIBS,;t t
 s,@X_LIBS@,$X_LIBS,;t t
 s,@X_EXTRA_LIBS@,$X_EXTRA_LIBS,;t t
+s,@EXPAT_INCLUDE@,$EXPAT_INCLUDE,;t t
+s,@EXPAT_LIBS@,$EXPAT_LIBS,;t t
+s,@SABLOT_INCLUDE@,$SABLOT_INCLUDE,;t t
+s,@SABLOT_LIBS@,$SABLOT_LIBS,;t t
 s,@JPEG_INCLUDE@,$JPEG_INCLUDE,;t t
 s,@JPEG_LIBS@,$JPEG_LIBS,;t t
 s,@PNG_INCLUDE@,$PNG_INCLUDE,;t t

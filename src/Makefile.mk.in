@@ -305,6 +305,12 @@ LIBOB           = @LIBOB@
 # LIBIMR should be empty for single-threaded builds
 LIBIMR          = @LIBIMR@
 
+# XML/XSL support (expat, Sablotron):
+EXPAT_INCLUDE  = @EXPAT_INCLUDE@
+EXPAT_LIBS     = @EXPAT_LIBS@
+SABLOT_INCLUDE = @SABLOT_INCLUDE@
+SABLOT_LIBS    = @SABLOT_LIBS@
+
 # Various image-format libraries
 JPEG_INCLUDE  = @JPEG_INCLUDE@
 JPEG_LIBS     = @JPEG_LIBS@
