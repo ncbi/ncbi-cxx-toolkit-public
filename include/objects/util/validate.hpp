@@ -52,6 +52,25 @@ class CCit_sub;
 
 BEGIN_SCOPE(validator)
 
+class CValidException : public CException
+{
+public:
+    enum EErrCode {
+        eSeqId
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eSeqId:  return "eSeqId";
+        default:      return CException::GetErrCodeString();
+        }
+    }
+    
+    NCBI_EXCEPTION_DEFAULT(CValidException,CException);
+};
+
+
 class CValidErrItem : public CObject {
 public:
     // constructor
@@ -159,6 +178,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.6  2002/10/29 19:16:28  clausen
+* Added CValidException
+*
 * Revision 1.5  2002/10/14 19:54:21  kans
 * added more flags, put internal strings as private members
 *
