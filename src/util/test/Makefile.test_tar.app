@@ -2,4 +2,5 @@
 
 APP = test_tar
 SRC = test_tar
-LIB = xcompress xncbi
+LIB = $(COMPRESS_LIBS) xutil xncbi
+LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
