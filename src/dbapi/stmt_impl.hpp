@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.4  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
 * Revision 1.3  2002/09/09 20:48:57  kholodov
 * Added: Additional trace output about object life cycle
 * Added: CStatement::Failed() method to check command status
@@ -59,7 +63,6 @@
 BEGIN_NCBI_SCOPE
 
 class CStatement : public CActiveObject, 
-                   public IEventListener,
                    public virtual IStatement
 {
 public:

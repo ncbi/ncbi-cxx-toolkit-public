@@ -31,6 +31,10 @@
 *
 *
 * $Log$
+* Revision 1.15  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
 * Revision 1.14  2002/09/16 19:34:41  kholodov
 * Added: bulk insert support
 *
@@ -275,7 +279,7 @@ void CResultSet::Action(const CDbapiEvent& e)
  
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 
-        RemoveListener(dynamic_cast<IEventListener*>(e.GetSource()));
+        RemoveListener(e.GetSource());
 
         if(dynamic_cast<CStatement*>(e.GetSource()) != 0
            || dynamic_cast<CCursor*>(e.GetSource()) != 0 ) {

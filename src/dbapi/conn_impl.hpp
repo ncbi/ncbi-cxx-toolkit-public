@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.7  2002/09/18 18:49:26  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
 * Revision 1.6  2002/09/16 19:34:41  kholodov
 * Added: bulk insert support
 *
@@ -64,7 +68,6 @@ BEGIN_NCBI_SCOPE
 class CDataSource;
 
 class CConnection : public CActiveObject, 
-                    public IEventListener,
                     public IConnection
 {
 public:

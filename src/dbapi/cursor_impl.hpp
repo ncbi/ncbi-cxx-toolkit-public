@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.5  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
 * Revision 1.4  2002/08/26 15:35:56  kholodov
 * Added possibility to disable transaction log
 * while updating BLOBs
@@ -61,7 +65,6 @@
 BEGIN_NCBI_SCOPE
 
 class CCursor : public CActiveObject, 
-                public IEventListener,
                 public ICursor
 {
 public:

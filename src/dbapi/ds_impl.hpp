@@ -34,6 +34,10 @@
 *
 *
 * $Log$
+* Revision 1.3  2002/09/18 18:49:27  kholodov
+* Modified: class declaration and Action method to reflect
+* direct inheritance of CActiveObject from IEventListener
+*
 * Revision 1.2  2002/04/15 19:11:42  kholodov
 * Changed GetContext() -> GetDriverContext
 *
@@ -53,7 +57,6 @@ BEGIN_NCBI_SCOPE
 
 //=================================================================
 class CDataSource : public CActiveObject, 
-                    public IEventListener, 
                     public IDataSource
 {
 public:
