@@ -695,7 +695,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
                 /// we scan for a match, starting from the corner formed
                 /// as we march forward a few letters.  We use a maximum
                 /// of 3 letters as our limit
-                int max_radius = min(pstr1->end() - iter1, 3);
+                int max_radius = min(pstr1->end() - iter1,
+                                     string::difference_type(3));
 
                 string::const_iterator best_iter1 = iter1 + 1;
                 string::const_iterator best_iter2 = iter2 + 1;
@@ -843,6 +844,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/08/17 17:14:56  ucko
+ * Fix CDictionaryUtil::GetEditDistance to compile on 64-bit platforms.
+ *
  * Revision 1.4  2004/08/17 13:26:39  dicuccio
  * Large update.  Added more constructors for CSimpleDictionary; support
  * pre-computed metaphone keys in CSimpleDictionary; fixed several bugs in edit
