@@ -163,6 +163,7 @@ typedef SOCKET TSOCK_Handle;
 #  define SOCK_EPIPE          WSAESHUTDOWN
 #  define SOCK_EAGAIN         WSAEINPROGRESS
 #  define SOCK_EINPROGRESS    WSAEINPROGRESS
+#  define SOCK_EALREADY       WSAEALREADY
 #  define SOCK_ENOTCONN       WSAENOTCONN
 #  define SOCK_ECONNABORTED   WSAECONNABORTED
 #  define SOCK_ECONNREFUSED   WSAECONNREFUSED
@@ -187,6 +188,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_EPIPE          EPIPE
 #  define SOCK_EAGAIN         EAGAIN
 #  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_EALREADY       EALREADY
 #  define SOCK_ENOTCONN       ENOTCONN
 #  define SOCK_ECONNABORTED   ECONNABORTED
 #  define SOCK_ECONNREFUSED   ECONNREFUSED
@@ -233,6 +235,7 @@ typedef int TSOCK_Handle;
 #  define SOCK_EPIPE          EPIPE
 #  define SOCK_EAGAIN         EAGAIN
 #  define SOCK_EINPROGRESS    EINPROGRESS
+#  define SOCK_EALREADY       EALREADY
 #  define SOCK_ENOTCONN       ENOTCONN
 #  define SOCK_ECONNABORTED   ECONNABORTED
 #  define SOCK_ECONNREFUSED   ECONNREFUSED
@@ -1468,10 +1471,12 @@ static EIO_Status s_Connect(SOCK            sock,
                             const STimeout* timeout)
 {
     char               _id[32];
+    int                x_errno;
     TSOCK_Handle       x_sock;
     unsigned int       x_host;
     unsigned short     x_port;
     struct sockaddr_in peer;
+    int                n;
 
     assert(sock->type == eSOCK_ClientSide);
 #ifdef NCBI_OS_UNIX
@@ -1531,22 +1536,35 @@ static EIO_Status s_Connect(SOCK            sock,
     sock->eof       = 0/*false*/;
     sock->w_status  = eIO_Success;
     assert(sock->w_len == 0);
-    if (connect(x_sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
-        if (SOCK_ERRNO != SOCK_EINTR  &&  SOCK_ERRNO != SOCK_EINPROGRESS  &&
-            SOCK_ERRNO != SOCK_EWOULDBLOCK) {
-            int x_errno = SOCK_ERRNO;
-            char addr[80];
-            HostPortToString(x_host, ntohs(x_port), addr, sizeof(addr));
-            CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
-                               ("%s[SOCK::s_Connect]  Failed connect() to %s",
-                                s_ID(sock, _id), addr));
+    for (n = 0; ; n = 1) {
+        if (connect(x_sock, (struct sockaddr*) &peer, sizeof(peer)) == 0) {
+            x_errno = 0;
+            break;
+        }
+
+        x_errno = SOCK_ERRNO;
+        if (x_errno != SOCK_EINTR  ||  sock->i_on_sig == eOn  ||
+            (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal))
+            break;
+    }
+    if (x_errno) {
+        if ((n != 0 || x_errno != SOCK_EINPROGRESS)  &&
+            (n == 0 || x_errno != SOCK_EALREADY)     &&
+            x_errno != SOCK_EWOULDBLOCK) {
+            if (x_errno != SOCK_EINTR) {
+                char addr[80];
+                HostPortToString(x_host, ntohs(x_port), addr, sizeof(addr));
+                CORE_LOGF_ERRNO_EX(eLOG_Error, x_errno, SOCK_STRERROR(x_errno),
+                                   ("%s[SOCK::s_Connect]  Failed connect()"
+                                    " to %s", s_ID(sock, _id), addr));
+            }
             sock->sock = SOCK_INVALID;
             SOCK_CLOSE(x_sock);
-            return eIO_Unknown; /* unrecoverable error */
+            /* unrecoverable error */
+            return x_errno == SOCK_EINTR ? eIO_Interrupt : eIO_Unknown;
         }
 
         if (!timeout  ||  timeout->sec  ||  timeout->usec) {
-            int            x_errno;
             EIO_Status     status;
             struct timeval tv;
 
@@ -3823,6 +3841,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.123  2003/08/18 20:01:13  lavr
+ * Retry 'connect()' syscall if interrupted and allowed to restart
+ *
  * Revision 6.122  2003/07/24 15:34:29  lavr
  * Fix socket name discovery procedure for UNIX On-Top SOCKs
  *
