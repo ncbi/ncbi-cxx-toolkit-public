@@ -557,6 +557,12 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
                         "scale can not be more than precision");
     }
 
+    bool is_negative= false;
+    if(*val == '-') {
+	is_negative= true;
+	++val;
+    }
+
     while (*val == '0') {
         ++val;
     }
@@ -611,9 +617,8 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
 
     // Setup everything now
     memset(m_Body, 0, sizeof(m_Body));
-    if (*val == '-') {
+    if (is_negative) {
         m_Body[0] = 1/*sign*/;
-        ++val;
     }
     unsigned char* num = m_Body + s_NumericBytesPerPrec[precision - 1] - 1;
     for (int i = 0;  *p[i];  i = 1 - i) {
@@ -634,6 +639,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2001/09/24 20:38:52  soussov
+ * fixed bug in sign processing
+ *
  * Revision 1.1  2001/09/21 23:40:00  vakatov
  * -----  Initial (draft) revision.  -----
  * This is a major revamp (by Denis Vakatov, with help from Vladimir Soussov)
