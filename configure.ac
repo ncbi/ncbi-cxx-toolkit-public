@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.304 2004/05/26 15:54:03 ucko Exp $
+#  $Id: configure.ac,v 1.305 2004/06/14 18:13:56 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -911,6 +911,10 @@ LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
 
 
 ### large file support (switch to AC_SYS_LARGEFILE?)
+case "$host_os:$compiler:$compiler_version" in
+    *:GCC:3[[4-9]]*) : ${with_lfs=yes} ;;
+esac
+
 if test "$with_lfs" = "yes" ; then
    LFSFLAGS="-D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
    CPPFLAGS="$LFSFLAGS $CPPFLAGS"
