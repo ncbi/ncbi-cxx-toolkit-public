@@ -28,7 +28,6 @@
 #define YY_FLEX_MAJOR_VERSION 2
 #define YY_FLEX_MINOR_VERSION 5
 
-
 #include <stdio.h>
 
 
@@ -317,7 +316,7 @@ static yyconst short int yy_accept[26] =
 static yyconst int yy_ec[256] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
+        1,    1,    2,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    2,    1,    1,    1,    1,    1,    1,    4,    5,
         5,    1,    6,    5,    6,    7,    1,    8,    8,    8,
@@ -433,6 +432,7 @@ char *yytext;
  * code for it to compile on some platforms.
  */
 #line 44 "newick.lpp"
+#include <ncbi_pch.hpp>
 #include <string.h>
 #include <util/stream_utils.hpp>
 #include <algo/phy_tree/phy_node.hpp>
@@ -456,7 +456,7 @@ extern CNcbiIstream *g_NewickIstr;
 #define YY_NEVER_INTERACTIVE 1
 #define EXPECT_NUM 1
 
-#line 458 "lex.newick.cpp"
+#line 459 "lex.newick.cpp"
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -607,10 +607,10 @@ YY_DECL
 	register char *yy_cp, *yy_bp;
 	register int yy_act;
 
-#line 72 "newick.lpp"
+#line 73 "newick.lpp"
 
 
-#line 612 "lex.newick.cpp"
+#line 613 "lex.newick.cpp"
 
 	if ( yy_init )
 		{
@@ -695,7 +695,7 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 74 "newick.lpp"
+#line 75 "newick.lpp"
 {
     newicklval.dblval = atof(yytext);
     BEGIN 0;
@@ -704,12 +704,12 @@ YY_RULE_SETUP
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 80 "newick.lpp"
+#line 81 "newick.lpp"
 ;
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 82 "newick.lpp"
+#line 83 "newick.lpp"
 {
     g_Buffer = yytext;
     for (unsigned int i = 0;  i < g_Buffer.size();  ++i) {
@@ -723,7 +723,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 93 "newick.lpp"
+#line 94 "newick.lpp"
 {
     g_Buffer.erase();
     g_Buffer.reserve(strlen(yytext));
@@ -739,7 +739,7 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 106 "newick.lpp"
+#line 107 "newick.lpp"
 {
     BEGIN EXPECT_NUM;
     return ':';
@@ -747,15 +747,15 @@ YY_RULE_SETUP
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 111 "newick.lpp"
+#line 112 "newick.lpp"
 return yytext[0];
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 113 "newick.lpp"
+#line 114 "newick.lpp"
 ECHO;
 	YY_BREAK
-#line 757 "lex.newick.cpp"
+#line 758 "lex.newick.cpp"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(EXPECT_NUM):
 	yyterminate();
@@ -1642,7 +1642,7 @@ int main()
 	return 0;
 	}
 #endif
-#line 113 "newick.lpp"
+#line 114 "newick.lpp"
 
 
 // Reset the lexer: discard input buffer and enter initial state
@@ -1656,8 +1656,14 @@ void newick_flex_reset(void)
 /*
  * ===========================================================================
  * $Log$
- * Revision 1.5  2004/05/24 18:13:37  gorelenk
- * PCH moved upmost
+ * Revision 1.6  2004/07/16 14:36:20  jcherry
+ * Treat '\r' as whitespace to minimize problems with DOSified files
+ *
+ * Revision 1.4  2004/05/25 14:42:45  jcherry
+ * #include <ncbi_pch.hpp>
+ *
+ * Revision 1.3  2004/02/12 02:30:35  ucko
+ * More portability fixes for newick parser.
  *
  * Revision 1.2  2004/02/11 22:18:16  ucko
  * erase() strings rather than clear()ing them for older compilers' sake.
