@@ -30,6 +30,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  1998/11/20 22:36:40  vakatov
+* Added destructor to CCgiCookies:: class
+* + Save the works on CCgiRequest:: class in a "compilable" state
+*
 * Revision 1.5  1998/11/19 23:53:30  vakatov
 * Bug/typo fixed
 *
@@ -83,7 +87,7 @@ CCgiCookie::CCgiCookie(const string& name, const string& value)
 {
     if ( name.empty() )
         throw invalid_argument("Empty cookie name");
-    CheckField(name, " ;,=");
+    x_CheckField(name, " ;,=");
     m_Name = name;
 
     SetValue(value);
@@ -161,7 +165,7 @@ CNcbiOstream& CCgiCookie::Write(CNcbiOstream& os) const
 }
 
 // Check if the cookie field is valid
-void CCgiCookie::CheckField(const string& str, const char* banned_symbols)
+void CCgiCookie::x_CheckField(const string& str, const char* banned_symbols)
 {
     if (banned_symbols  &&  str.find_first_of(banned_symbols) != NPOS)
         throw invalid_argument("CCgiCookie::CheckValidCookieField() [1]");
@@ -252,19 +256,71 @@ CCgiCookies::TCookies::iterator CCgiCookies::x_Find(const string& name) const
     return cookies->end();
 }
 
+CCgiCookies::~CCgiCookies(void)
+{
+    for (TCookies::iterator iter = m_Cookies.begin();
+         iter != m_Cookies.end();  iter++) {
+        delete *iter;
+    }
+}
+
+
 
 ///////////////////////////////////////////////////////
 //  CCgiRequest
 //
 
-CCgiRequest::CCgiRequest(EMedia media)
+// Standard property names
+static const string s_PropName[eCgi_NProperties + 1] = {
+    "SERVER_SOFTWARE",
+    "SERVER_NAME",
+    "GATEWAY_INTERFACE",
+    "SERVER_PROTOCOL",
+    "SERVER_PORT",
+
+    "REMOTE_HOST",
+    "REMOTE_ADDR",
+
+    "CONTENT_TYPE",
+    "CONTENT_LENGTH",
+
+    "PATH_INFO",
+    "PATH_TRANSLATED",
+    "SCRIPT_NAME",
+
+    "AUTH_TYPE",
+    "REMOTE_USER",
+    "REMOTE_IDENT",
+
+    "HTTP_ACCEPT",
+    "HTTP_COOKIE",
+    "HTTP_IF_MODIFIED_SINCE",
+    "HTTP_REFERER",
+    "HTTP_USER_AGENT",
+
+    ""  // eCgi_NProperties
+};
+
+
+CCgiRequest::CCgiRequest(void)
     : m_QueryStream(0)
 {
+    // cache "standard" properties
+    for (size_t prop = 0;  prop < (size_t)eCgi_NProperties;  prop++) {
+        x_GetPropertyByName(s_PropName[prop]);
+    }
+
+    // compose cookies
+    m_Cookies.Add(GetProperty(eCgi_HttpCookie));
+
+    // compose entries
+
+
     m_IsContentFetched = false;
 }
 
 
-const string& CCgiRequest::GetPropertyByName(const string& name)
+const string& CCgiRequest::x_GetPropertyByName(const string& name)
 {
     TCgiProperties::const_iterator find_iter = m_Properties.find(name);
 
@@ -279,35 +335,54 @@ const string& CCgiRequest::GetPropertyByName(const string& name)
 }
 
 
-const string& CCgiRequest::GetProperty(ECgiProp property)
+const string& CCgiRequest::GetProperty(ECgiProp property) const
 {
-    // Standard property names
-    static const string s_PropName[eCgi_NProperties + 1] = {
-        "SERVER_SOFTWARE",
-        "SERVER_NAME",
-        "GATEWAY_INTERFACE",
-        "SERVER_PROTOCOL",
-        "SERVER_PORT",
+    if (property = eCgi_NProperties) {
+        _TROUBLE;  static const string str;  return str;
+    }
 
-        "REMOTE_HOST",
-        "REMOTE_ADDR",
-
-        "CONTENT_TYPE",
-
-        "PATH_INFO",
-        "PATH_TRANSLATED",
-        "SCRIPT_NAME",
-
-        "AUTH_TYPE",
-        "REMOTE_USER",
-        "REMOTE_IDENT",
-
-        ""  // eCgi_NProperties
-    };
-
-    return GetPropertyByName(s_PropName[property]);
+    // This does not work on SunPro 5.0 by some reason:
+    //    return m_Properties.find(s_PropName[property]))->second;
+    // and this is the workaround:
+    return (*const_cast<TCgiProperties*>(&m_Properties)->
+            find(s_PropName[property])).second;
 }
 
+
+Uint2 CCgiRequest::GetServerPort(void) const
+{
+    long l = -1;
+    const string& str = GetProperty(eCgi_ServerPort);
+    if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0  ||  kMax_UI2 < l) {
+        throw runtime_error("CCgiRequest:: Invalid server port: " + str);
+    }
+    return (Uint2)l;
+}
+
+
+// Uint4 CCgiRequest::GetRemoteAddr(void) const
+// {
+//     /////  These definitions are to be removed as soon as we have
+//     /////  a portable network header!
+//     const Uint4 INADDR_NONE = (Uint4)(-1);
+//     extern unsigned long inet_addr(const char *);
+//     /////
+// 
+//     const string& str = GetProperty(eCgi_RemoteAddr);
+//     Uint4 addr = inet_addr(str.c_str());
+//     if (addr == INADDR_NONE)
+//         throw runtime_error("CCgiRequest:: Invalid client address: " + str);
+//     return addr;
+// }
+
+size_t CCgiRequest::GetContentLength(void) const
+{
+    long l = -1;
+    const string& str = GetProperty(eCgi_ContentLength);
+    if (sscanf(str.c_str(), "%ld", &l) != 1  ||  l < 0)
+        throw runtime_error("CCgiRequest:: Invalid content length: " + str);
+    return (size_t)l;
+}
 
 
 // (END_NCBI_SCOPE must be preceeded by BEGIN_NCBI_SCOPE)

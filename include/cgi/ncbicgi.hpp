@@ -33,6 +33,10 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1998/11/20 22:36:38  vakatov
+* Added destructor to CCgiCookies:: class
+* + Save the works on CCgiRequest:: class in a "compilable" state
+*
 * Revision 1.15  1998/11/19 23:41:09  vakatov
 * Tested version of "CCgiCookie::" and "CCgiCookies::"
 *
@@ -61,12 +65,6 @@
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
-
-
-// Typedefs
-typedef map<string, string>      TCgiProperties;
-typedef map<string, string>      TCgiCookies;
-typedef multimap<string, string> TCgiEntries;
 
 
 ///////////////////////////////////////////////////////
@@ -126,8 +124,8 @@ private:
     tm     m_Expires;
     bool   m_Secure;
 
-    static void CheckField(const string& str, const char* banned_symbols);
-    static bool GetString(string* str, const string& val);
+    static void x_CheckField(const string& str, const char* banned_symbols);
+    static bool x_GetString(string* str, const string& val);
 };  // CCgiCookie
 
 
@@ -147,6 +145,8 @@ public:
     CCgiCookies(void);
     // Format of the string:  "name1=value1; name2=value2; ..."
     CCgiCookies(const string& str);
+    // Destructor
+    ~CCgiCookies(void);
 
     // All Add() functions override the value and attributes of cookie
     // already existing in this set if the added cookie has the same name
@@ -185,14 +185,15 @@ enum ECgiProp {
     eCgi_ServerName,
     eCgi_GatewayInterface,
     eCgi_ServerProtocol,
-    eCgi_ServerPort,        // see also "m_GetServerPort()"
+    eCgi_ServerPort,        // see also "GetServerPort()"
 
     // client properties
     eCgi_RemoteHost,
-    eCgi_RemoteAddr,        // see also "m_GetServerAddr()"
+    eCgi_RemoteAddr,        // see also "GetRemoteAddr()"
 
     // client data properties
     eCgi_ContentType,
+    eCgi_ContentLength,     // see also "GetContentLength()"
 
     // request properties
     eCgi_PathInfo,
@@ -204,40 +205,44 @@ enum ECgiProp {
     eCgi_RemoteUser,
     eCgi_RemoteIdent,
 
+    // semi-standard properties(from HTTP header)
+    eCgi_HttpAccept,
+    eCgi_HttpCookie,
+    eCgi_HttpIfModifiedSince,
+    eCgi_HttpReferer,
+    eCgi_HttpUserAgent,
+
     // # of CCgiRequest-supported standard properties
     // for internal use only!
     eCgi_NProperties
 };  // ECgiProp
 
 
+// Typedefs
+typedef map<string, string>      TCgiProperties;
+typedef multimap<string, string> TCgiEntries;
+
+
 //
 class CCgiRequest {
 public:
     // the startup initialization
-    enum EMedia { // where to get the request content from
-        eMedia_CommandLine,
-        eMedia_QueryString,
-        eMedia_StandardInput,
-        eMedia_Default // automagic choice
-    };
-    CCgiRequest(EMedia media=eMedia_Default);
+    CCgiRequest(void);
 
     // Get "standard" properties(empty string if not found)
-    const string& GetProperty(ECgiProp prop);
+    const string& GetProperty(ECgiProp prop) const;
     // Get random client properties("HTTP_<key>")
     const string& GetRandomProperty(const string& key);
     // Auxiliaries(to convert from the "string" representation)
-    Uint2  GetServerPort(void);
-    Uint4  GetServerAddr(void);  // (in the network byte order)
-    size_t GetContentLength(void);
+    Uint2  GetServerPort(void) const;
+    // Uint4  GetRemoteAddr(void) const;  // (in the network byte order)
+    size_t GetContentLength(void) const;
 
-    // Get a set of raw cookies received from the client
-    const TCgiCookies& GetCookies(void) const;
-    // Add all request's cookies to the specified cookie set "cookies"
-    void GetCookies(CCgiCookies* cookies) const;
+    // Retrieve the request cookies
+    const CCgiCookies& GetCookies(void) const;
 
     // Get a set of entries(decoded) received from the client
-    const TCgiEntries& GetEntries(void);
+    const TCgiEntries& GetEntries(void) const;
 
     /* DANGER!!!  Direct access to the data received from client
      * NOTE 1: m_Entries() would not work(return an empty set) if
@@ -249,11 +254,6 @@ public:
      *         m_Entries() and m_Content() are mutially exclusive
      */
     CNcbiIstream& GetContent(void);
-
-    // Fetch cookies from "str", add them to "cookies"
-    // Format of the string:  "name1=value1; name2=value2; ..."
-    // Original cookie of the same name will be overriden by the new ones
-    static void ParseCookies(const string& str, TCgiCookies& cookies);
 
     // Decode the URL-encoded stream "istr" into a set of entries
     // (<name, value>) and add them to the "entries" set
@@ -272,10 +272,10 @@ private:
     // set of the request entries(already retrieved; cached)
     TCgiEntries m_Entries;
     // set of the request cookies(already retrieved; cached)
-    TCgiCookies m_Cookies;
+    CCgiCookies m_Cookies;
 
-    // retrieve the property
-    const string& GetPropertyByName(const string& name);
+    // retrieve(and cache) a property of given name
+    const string& x_GetPropertyByName(const string& name);
 };  // CCgiRequest
 
 
