@@ -37,6 +37,7 @@
 
 #include <objects/general/Date_std.hpp>
 #include <objects/seq/Pubdesc.hpp>
+#include <objects/biblio/Imprint.hpp>
 
 #include <objtools/format/items/item_base.hpp>
 
@@ -92,9 +93,6 @@ public:
 
     bool Matches(const CPub_set& ps) const;
        
-    //TSeqPos GetFrom(void) const { return m_From; }
-    //TSeqPos GetTo  (void) const { return m_To;   }
-
     // typically has to go through m_Pub(desc), since we don't want to store
     // format-dependent strings
     //void GetTitles(string& title, string& journal, const CBioseqContext& ctx)
@@ -102,9 +100,9 @@ public:
         
     const CPubdesc&     GetPubdesc   (void) const { return *m_Pubdesc;   }
     CPubdesc::TReftype  GetReftype   (void) const { return GetPubdesc().GetReftype(); }
-    TCategory           GetCategory  (void) const { return m_Category; }
-    const CDate*        GetDate      (void) const { return m_Date; }
-
+    TCategory           GetCategory  (void) const { return m_Category;   }
+    const CDate*        GetDate      (void) const { return m_Date;       }
+    CImprint::TPrepub   GetPrepub    (void) const { return m_Prepub;     }
     int                 GetSerial    (void) const { return m_Serial;     }
     const CSeq_loc*     GetLoc       (void) const { return m_Loc;        }
     const CAuth_list*   GetAuthors   (void) const { return m_Authors;    }
@@ -149,7 +147,6 @@ private:
 
     void x_CleanData(void);
 
-    // XXX - many of these should become pointers
     CConstRef<CPubdesc>   m_Pubdesc;
     CConstRef<CPub>       m_Pub;         // main entry
     CConstRef<CSeq_loc>   m_Loc;         // null if from a descriptor
@@ -168,9 +165,7 @@ private:
     string                m_Remark;      // genbank specific
     bool                  m_JustUids;
     CConstRef<CCit_book>  m_Book;
-
-    //TSeqPos m_From;
-    //TSeqPos m_To;
+    CImprint::TPrepub     m_Prepub;
 };
 
 
@@ -204,6 +199,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/04/27 15:08:46  shomrat
+* + GetPrepub
+*
 * Revision 1.6  2004/04/22 15:39:18  shomrat
 * Changes in context
 *
