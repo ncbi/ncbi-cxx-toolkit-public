@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2000/03/31 17:08:43  kans
+* cast ifstr.rdstate() to int
+*
 * Revision 1.23  1999/10/28 13:40:36  vasilche
 * Added reference counters to CNCBINode.
 *
@@ -200,7 +203,7 @@ CNCBINode* CHTMLPage::CreateTemplate(void)
 		ERR_POST( "CHTMLPage::CreateTemplate: errno: " << strerror( errno ) );
 	  }
 	  
-	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << ifstr.rdstate() );	  
+	  ERR_POST( "CHTMLPage::CreateTemplate: rdstate: " << int(ifstr.rdstate()) );	  
 	  
 	  // //
 
