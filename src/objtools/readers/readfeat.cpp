@@ -1239,12 +1239,18 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
             case eQual_db_xref:
                 {
                     string db, tag;
+                    int num;
                     if (NStr::SplitInTwo (val, ":", db, tag)) {
                         CSeq_feat::TDbxref& dblist = sfp->SetDbxref ();
                         CRef<CDbtag> dbt (new CDbtag);
                         dbt->SetDb (db);
                         CRef<CObject_id> oid (new CObject_id);
-                        oid->SetStr (tag);
+                        num = NStr::StringToNumeric (tag);
+                        if (num != -1) {
+                          oid->SetId (num);
+                        } else {
+                          oid->SetStr (tag);
+                        }
                         dbt->SetTag (*oid);
                         dblist.push_back (dbt);
                         return true;
