@@ -107,17 +107,17 @@ typedef enum {
  *             it, and then fix (hard-code) some fields, if really necessary.
  */
 typedef struct {
-    char           client_host[64];  /* effective client hostname            */
-    char           host[64];         /* host to connect to                   */
+    char           client_host[256]; /* effective client hostname            */
+    char           host[256];        /* host to connect to                   */
     unsigned short port;             /* port to connect to, host byte order  */
     char           path[1024];       /* service: path(e.g. to  a CGI script) */
     char           args[1024];       /* service: args(e.g. for a CGI script) */
     EReqMethod     req_method;       /* method to use in the request         */
     STimeout*      timeout;          /* ptr to i/o tmo (infinite if NULL)    */
     unsigned int   max_try;          /* max. # of attempts to connect (>= 1) */
-    char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
+    char           http_proxy_host[256]; /* hostname of HTTP proxy server    */
     unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
-    char           proxy_host[64];   /* host of CERN-like firewall proxy srv */
+    char           proxy_host[256];  /* CERN-like (non-transp) f/w proxy srv */
     EDebugPrintout debug_printout;   /* printout some debug info             */
     int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
     int/*bool*/    firewall;         /* to use firewall/relay in connects    */
@@ -579,6 +579,9 @@ extern size_t HostPortToString
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.25  2002/11/12 05:49:47  lavr
+ * Expand host names to hold 256 chars (instead of 64)
+ *
  * Revision 6.24  2002/10/21 18:30:27  lavr
  * +ConnNetInfo_AppendArg()
  * +ConnNetInfo_PrependArg()
