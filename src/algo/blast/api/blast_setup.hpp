@@ -69,7 +69,7 @@ SetupSubjects(const TSeqLocVector& subjects,
  * bytes (ignored for protein sequences, which always have sentinels) [in]
  * @return pair containing the buffer and its length. 
  */
-pair<AutoPtr<Uint1, CDeleter<Uint1> >, int>
+pair<AutoPtr<Uint1, CDeleter<Uint1> >, TSeqPos>
 GetSequence(const objects::CSeq_loc& sl, Uint1 encoding, 
             objects::CScope* scope, 
             objects::ENa_strand strand = objects::eNa_strand_plus, 
@@ -117,6 +117,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.12  2003/09/10 04:25:28  camacho
+* Minor change to return type of GetSequence
+*
 * Revision 1.11  2003/09/09 15:57:23  camacho
 * Fix indentation
 *
