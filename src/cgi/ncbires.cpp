@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/08/28 16:22:28  golikov
+* some _TRACEs removed
+*
 * Revision 1.27  1999/10/01 14:21:41  golikov
 * Now messages in context are html nodes
 *
@@ -239,7 +242,6 @@ CNcbiRelocateCommand::~CNcbiRelocateCommand( void )
 
 void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
 {
-    _TRACE("CNcbiRelocateCommand::Execute -> go");
     try {
         string url = GetLink(ctx);
         _TRACE("CNcbiRelocateCommand::Execute changing location to:" << url);
@@ -250,7 +252,6 @@ void CNcbiRelocateCommand::Execute( CCgiContext& ctx )
         ERR_POST("CNcbiRelocateCommand::Execute error getting url");
         throw;
     }
-    _TRACE("CNcbiRelocateCommand::Execute Finished");
 }
 
 END_NCBI_SCOPE
