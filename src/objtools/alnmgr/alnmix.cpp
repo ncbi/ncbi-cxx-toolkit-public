@@ -830,7 +830,8 @@ bool CAlnMix::x_SecondRowFits(const CAlnMixMatch * match) const
                 if (start_it_i != start_i->second->m_StartIts.end()) {
                     if (start_it_i->second->first != start1 + 
                         (match->m_StrandsDiffer ?
-                         start2 + len - start_i->first :
+                         start2 + len - 
+                         (start_i->first + start_i->second->m_Len) :
                          start_i->first - start2)) {
                         return false;
                     }
@@ -1394,6 +1395,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.53  2003/06/03 16:07:05  todorov
+* Fixed overlap consistency check in case strands differ
+*
 * Revision 1.52  2003/06/03 14:38:26  todorov
 * warning fixed
 *
