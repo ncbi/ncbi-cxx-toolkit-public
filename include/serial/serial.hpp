@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.10  1999/06/16 20:58:04  vasilche
+* Added GetPtrTypeRef to avoid conflict in MSVS.
+*
 * Revision 1.9  1999/06/15 16:20:06  vasilche
 * Added ASN.1 object output stream.
 *
@@ -185,7 +188,7 @@ CTypeRef GetStlTypeRef(const list<Data>* )
 // define type info getter for pointers
 template<typename T>
 inline
-CTypeRef GetTypeRef(const T* const* object)
+CTypeRef GetPtrTypeRef(const T* const* object)
 {
     typename T* p = 0;
     _TRACE("GetTypeRef(const T*) T: " << typeid(*p).name());
@@ -262,20 +265,22 @@ CMemberInfo MemberInfo(const string& name, const T* member)
 
 template<typename T>
 inline
-CMemberInfo StlMemberInfo(const string& name, const T* member, const CTypeRef typeRef)
+CMemberInfo PtrMemberInfo(const string& name, const T* member)
 {
-	return CMemberInfo(name, size_t(member), typeRef);
+	return MemberInfo(name, member, GetPtrTypeRef(member));
 }
 
 template<typename T>
 inline
 CMemberInfo StlMemberInfo(const string& name, const T* member)
 {
-	return StlMemberInfo(name, member, GetStlTypeRef(member));
+	return MemberInfo(name, member, GetStlTypeRef(member));
 }
 
 #define ADD_CLASS_MEMBER(Member) \
 	AddMember(MemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
+#define ADD_PTR_CLASS_MEMBER(Member) \
+	AddMember(PtrMemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
 #define ADD_STL_CLASS_MEMBER(Member) \
 	AddMember(StlMemberInfo(#Member, &static_cast<const CClass*>(0)->Member))
 

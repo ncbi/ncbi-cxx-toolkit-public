@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1999/06/16 20:58:04  vasilche
+* Added GetPtrTypeRef to avoid conflict in MSVS.
+*
 * Revision 1.1  1999/06/16 20:35:31  vasilche
 * Cleaned processing of blocks of data.
 * Added input from ASN.1 text format.
@@ -167,7 +170,7 @@ bool CObjectIStreamAsn::ReadEscapedChar(char& out, char terminator)
                 for ( int i = 1; i < 2; i++ ) {
                     char cc = GetChar();
                     if ( cc >= '0' && cc <= '7' ) {
-                        c = c << 3 + (cc - '0');
+                        c = (c << 3) + (cc - '0');
                     }
                     else {
                         UngetChar(cc);

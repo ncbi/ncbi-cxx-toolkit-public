@@ -9,7 +9,7 @@ const CTypeInfo* CSerialObject::GetTypeInfo(void)
     if ( info == 0 ) {
         info = new CClassInfo<CClass>();
         info->ADD_CLASS_MEMBER(m_Name);
-        info->ADD_CLASS_MEMBER(m_NamePtr);
+        info->ADD_PTR_CLASS_MEMBER(m_NamePtr);
         info->ADD_CLASS_MEMBER(m_Size);
         info->ADD_STL_CLASS_MEMBER(m_Attributes);
     }
