@@ -70,9 +70,13 @@ void CMappedGraph::MakeMappedLoc(void) const
 
 CSeq_graph_Handle CMappedGraph::GetSeq_graph_Handle(void) const
 {
-    return CSeq_graph_Handle(m_Collector->GetScope(),
-        m_GraphRef->GetSeq_annot_Info(),
-        m_GraphRef->GetAnnotObjectIndex());
+    return CSeq_graph_Handle(GetAnnot(), m_GraphRef->GetAnnotObjectIndex());
+}
+
+
+CSeq_annot_Handle CMappedGraph::GetAnnot(void) const
+{
+    return m_Collector->GetAnnot(*m_GraphRef);
 }
 
 
@@ -161,6 +165,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/12/22 15:56:07  vasilche
+* Added method CSeq_annot_Handle GetAnnot().
+*
 * Revision 1.29  2004/10/29 16:29:47  grichenk
 * Prepared to remove deprecated methods, added new constructors.
 *

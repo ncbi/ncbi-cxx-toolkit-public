@@ -64,6 +64,9 @@ public:
             return m_GraphRef->GetGraph();
         }
 
+    /// Get containing annot handle
+    CSeq_annot_Handle GetAnnot(void) const;
+
     /// Get original graph handle
     CSeq_graph_Handle GetSeq_graph_Handle(void) const;
 
@@ -414,6 +417,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2004/12/22 15:56:07  vasilche
+* Added method CSeq_annot_Handle GetAnnot().
+*
 * Revision 1.39  2004/12/13 15:19:20  grichenk
 * Doxygenized comments
 *
