@@ -12,6 +12,7 @@
   <li> <a href="#cref"> The <i>CRef</i> Class </a>
   <li> <a href="#cobject"> The <i>CObject</i> Class </a>
   <li> <a href="#exmpl"> The <i>CObjectFor</i> class: Using smart pointers for standard types</a>
+  <li> <a href="#usage"> When to use <i>CRef</i>s and <i>auto_ptr</i>s</a>
 </ul>
 
 <a name="autoptr"> <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/auto_ptr.html">
@@ -85,12 +86,27 @@ destructors, its interface to the <i>CObject</i> pointer includes access/mutate 
  <dt><i>CObject* GetPointer()</i>
  <dt><i>CObject& GetObject()</i>
  <dt><i>CObject* Release()</i>
- <dt><i>void     Reset (CObject* newPtr)</i>
+ <dt><i>void     Reset (CObject* newPtr)</i> and <i>void Reset (void)</i>
  <dt><i>operator bool ()</i>
  <dt><i>bool operator!()</i>
  <dt><i>CRefBase& operator=(const CRefBase& ref)</i>
 </dl>
+Both the <i>Release()</i> and <i>Reset()</i> functions set the <i>CRef</i> object's <i>m_ptr</i> to
+0, thus effectively removing the reference to its <i>CObject</i>. There are important distinctions 
+between these two functions however. The <i>Release()</i> method removes the reference without 
+destroying the object, while the <i>Reset()</i> method may lead to the destruction of the 
+object if there are no other references to it. 
+<p>
+If the <i>CObject</i>'s internal reference count is 1 at the time 
+<i>Release()</i> is invoked, that reference count will be decremented to 0, and a pointer to the
+<i>CObject</i> is returned. The <i>Release()</i> method can throw two types of exceptions: 
+(1) a <i>null pointer</i> exception if <i>m_ptr==0</i>, and (2) an <i>Illegal CObject::ReleaseReference()</i>
+exception if there are currently other references to that object. An object must be free of all
+references before it can be "released". In contrast, the <i>Reset(void)</i> function simply 
+resets the <i>CRef</i>'s <i>m_ptr</i> to 0, decrements the <i>CObject</i>'s reference count, and,
+if the <i>CObject</i> has no other references and was dynamically allocated, deletes the <i>CObject</i>.
 
+<p>
 Each member function of the <i>CRef</i> class also has a <i>const</i> implementation that is
 invoked when the pointer is to a <i>const</i> object. In addition, there is also a
 <a href="http://ray.nlm.nih.gov:6224/intranet/ieb/CPP/doc++/CConstRef.html">
@@ -167,7 +183,36 @@ is defined. Moreover, the reference itself, i.e. the object pointed to, continue
 until <i>all</i> references to it have been removed.
 
 	  <p>
+<a name="usage"> <h3>When to use <i>CRef</i>s and <i>auto_ptr</i>s</h3>
 
+There is some overhead in using <i>CRef</i>s and <i>auto_ptr</i>s, and they should only be used
+where needed.  Memory leaks are generally caused as a result of unexpected execution paths. For
+example:
+
+<pre>
+{
+    int *num = new int(5);
+    ComplexFunction (num);
+    delete num;   
+    ...
+}
+</pre>
+If <i>ComplexFunction()</i> executes normally, control returns to the block where it was
+invoked, and memory is freed by the <i>delete</i> statement. Unforeseen events however, may
+trigger exceptions, causing control to pass elsewhere. In these cases, the <i>delete</i>
+statement may never be reached. The use of a <i>CRef</i> or an <i>auto_ptr</i> is appropriate
+for these situations, as they both guarantee that the object will be destroyed when the
+reference goes out of scope. <p>
+
+In contrast, if the pointer is passed anonymously, as in <i>ComplexFunction(new int(5))</i>,
+and therefore cannot be referred to elsewhere in the program, then it is not necessary to
+explicitly delete it nor to use a smart pointer. <p>
+
+Another situation where they are not required is when a pointer is embedded inside another
+object. If that object's destructor also handles the deallocation of its embedded objects, then
+it is sufficient to use a <i>CRef</i> on the containing object only.
+
+<p>
   </body>
 <a href="applic.html"> <i> previous</i> </a>
 &nbsp;&nbsp;&nbsp;
