@@ -1,7 +1,7 @@
 #! /bin/sh
 #############################################################################
 # Setup the local working environment for the "configure" script
-#   Compiler:   Intel C++ Version 5.0.1 Beta
+#   Compiler:   Intel C++ Version 7.0
 #   OS:         Linux RH6.2
 #   Processor:  Intel X86
 #
@@ -21,12 +21,18 @@ ERROR:  cannot find Intel C++ compiler ($CXX)
 HINT:  if you are at NCBI, try to specify the following:
  Linux:
    sh, bash:
-      PATH="/opt/intel/compiler60/ia32/bin:\$PATH"
-      LD_LIBRARY_PATH="/opt/intel/compiler60/ia32/lib:\$LD_LIBRARY_PATH"
+      PATH="/opt/intel/compiler70/ia32/bin:\$PATH"
+      LD_LIBRARY_PATH="/opt/intel/compiler70/ia32/lib:\$LD_LIBRARY_PATH"
       export PATH LD_LIBRARY_PATH
+      IA32ROOT="/opt/intel/compiler70/ia32"
+      export IA32ROOT
+      INTEL_FLEXLM_LICENSE="/opt/intel/licenses"
+      export INTEL_FLEXLM_LICENSE
    tcsh:
-      setenv PATH /opt/intel/compiler60/ia32/bin:\$PATH
-      setenv LD_LIBRARY_PATH /opt/intel/compiler60/ia32/lib:\$LD_LIBRARY_PATH
+      setenv PATH            /opt/intel/compiler70/ia32/bin:\$PATH
+      setenv LD_LIBRARY_PATH /opt/intel/compiler70/ia32/lib:\$LD_LIBRARY_PATH
+      setenv IA32ROOT        /opt/intel/compiler70/ia32
+      setenv INTEL_FLEXLM_LICENSE /opt/intel/licenses
 
 EOF
     exit 1
