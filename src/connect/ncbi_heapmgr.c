@@ -105,11 +105,14 @@
  * 'HEAP_Destroy' will not destroy the heap data.
  *
  * Note also, that 'HEAP_Create' always does heap reset, that is the
- * memory area pointed by 'base' (if not 0) gets reformatted and loose
+ * memory area pointed by 'base' (if not 0) gets reformatted and lose
  * all previous contents.
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.10  2001/06/25 15:32:41  lavr
+ * Typo fixed
+ *
  * Revision 6.9  2001/06/19 22:22:56  juran
  * Heed warning:  Make s_HEAP_Take() static.
  *
