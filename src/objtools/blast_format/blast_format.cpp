@@ -50,8 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 USING_SCOPE(objects);
 
-CBlastFormatOptions::CBlastFormatOptions(EProgram program, 
-    CNcbiOstream &ostr) THROWS((CBlastException))
+CBlastFormatOptions::CBlastFormatOptions(EProgram program, CNcbiOstream &ostr)
         : m_ostr(&ostr)
 {
    m_believe_query = FALSE;
