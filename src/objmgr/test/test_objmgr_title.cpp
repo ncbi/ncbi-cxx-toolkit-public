@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2002/01/15 21:36:41  grichenk
+* Fixed to work with the new OM and scopes
+*
 * Revision 1.1  2002/01/11 19:06:28  gouriano
 * restructured objmgr
 *
@@ -54,8 +57,8 @@
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 
-#include <objects/objmgr/reader_id1.hpp>
-#include <objects/objmgr/objmgr.hpp>
+#include <objects/objmgr1/reader_id1.hpp>
+#include <objects/objmgr1/object_manager.hpp>
 
 // (BEGIN_NCBI_SCOPE must be followed by END_NCBI_SCOPE later in this file)
 BEGIN_NCBI_SCOPE
@@ -88,7 +91,7 @@ int CTitleTester::Run(void)
 {
     const CArgs&   args = GetArgs();
     CObjectManager objmgr;
-    CScope         scope = objmgr.CreateScope();
+    CScope&         scope = *(new CScope(objmgr));
     CSeq_id        id;
     CId1Reader     reader;
     
@@ -107,7 +110,7 @@ int CTitleTester::Run(void)
         for(CIStream bs(seqRef->BlobStreamBuf(0, 0, cl)); ! bs.Eof(); )
         {
           CId1Blob *blob = static_cast<CId1Blob *>(seqRef->RetrieveBlob(bs));
-          objmgr.AddEntry(*blob->Seq_entry(), &scope);
+          scope.AddTopLevelSeqEntry(*blob->Seq_entry());
           delete blob;
         }
       }
