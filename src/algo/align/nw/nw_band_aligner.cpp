@@ -69,7 +69,7 @@ const unsigned char kVoid    = 0xFF;
 
 CNWAligner::TScore CBandAligner::x_Align(SAlignInOut* data)
 {
-    if(abs(int(data->m_len1) - int(data->m_len2)) > m_band) {
+    if(size_t(abs(int(data->m_len1) - int(data->m_len2))) > m_band) {
 
         NCBI_THROW(CAlgoAlignException, eBadParameter,
                    "Difference in sequence lengths "
@@ -337,6 +337,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2005/03/02 14:26:16  kapustin
+ * A few tweaks to mute GCC and MSVC warnings
+ *
  * Revision 1.3  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *

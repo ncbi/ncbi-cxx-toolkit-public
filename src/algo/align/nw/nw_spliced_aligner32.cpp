@@ -67,31 +67,41 @@ const Uint4 kTypeIntron = 0x80000000;  // intron
 // acceptor types:   bits 1-3
 
 class CDonorAcceptorMatrix {
+
 public:
+
     CDonorAcceptorMatrix() {
-        memset(m_matrix, 0, sizeof m_matrix);
-        m_matrix['A']['A'] = 0x47; //       3 ; 1, 2, 3
-        m_matrix['A']['G'] = 0x47; //       3 ; 1, 2, 3
-        m_matrix['A']['T'] = 0x57; // 1,    3 ; 1, 2, 3
-        m_matrix['A']['C'] = 0x67; //    2, 3 ; 1, 2, 3
-        m_matrix['G']['A'] = 0x33; // 1, 2    ;
-        m_matrix['G']['G'] = 0x33; // 1, 2    ; 1, 2
-        m_matrix['G']['T'] = 0x70; // 1, 2, 3 ;
-        m_matrix['G']['C'] = 0x34; // 1, 2    ;       3
-        m_matrix['T']['A'] = 0x00; //         ;
-        m_matrix['T']['G'] = 0x03; //         ; 1, 2
-        m_matrix['T']['T'] = 0x50; // 1,    3 ;
-        m_matrix['T']['C'] = 0x24; //    2    ;       3
-        m_matrix['C']['A'] = 0x00; //         ;
-        m_matrix['C']['G'] = 0x03; //         ; 1, 2
-        m_matrix['C']['T'] = 0x50; // 1,    3 ;
-        m_matrix['C']['C'] = 0x24; //    2    ;       3
+        memset(m_Matrix, 0, sizeof m_Matrix);
+        x_Set('A', 'A', 0x47); //       3 ; 1, 2, 3
+        x_Set('A', 'G', 0x47); //       3 ; 1, 2, 3
+        x_Set('A', 'T', 0x57); // 1,    3 ; 1, 2, 3
+        x_Set('A', 'C', 0x67); //    2, 3 ; 1, 2, 3
+        x_Set('G', 'A', 0x33); // 1, 2    ;
+        x_Set('G', 'G', 0x33); // 1, 2    ; 1, 2
+        x_Set('G', 'T', 0x70); // 1, 2, 3 ;
+        x_Set('G', 'C', 0x34); // 1, 2    ;       3
+        x_Set('T', 'A', 0x00); //         ;
+        x_Set('T', 'G', 0x03); //         ; 1, 2
+        x_Set('T', 'T', 0x50); // 1,    3 ;
+        x_Set('T', 'C', 0x24); //    2    ;       3
+        x_Set('C', 'A', 0x00); //         ;
+        x_Set('C', 'G', 0x03); //         ; 1, 2
+        x_Set('C', 'T', 0x50); // 1,    3 ;
+        x_Set('C', 'C', 0x24); //    2    ;       3
     }
+
     const Uint1* GetMatrix() const {
-        return m_matrix[0];
+        return m_Matrix[0];
     }
+
 private:
-    Uint1 m_matrix [256][256];
+
+    void x_Set(char c1, char c2, Uint1 val) {
+        m_Matrix[(unsigned char)c1][(unsigned char)c2] = val;
+    }
+
+    Uint1 m_Matrix [256][256];
+
 };
 
 
@@ -630,6 +640,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2005/03/02 14:26:16  kapustin
+ * A few tweaks to mute GCC and MSVC warnings
+ *
  * Revision 1.19  2004/12/16 22:42:22  kapustin
  * Move to algo/align/nw
  *
