@@ -31,10 +31,9 @@
 
 
 #include <algo/sequence/prot_prop.hpp>
-#include <math.h>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+BEGIN_SCOPE(objects)
 
 // simply count the occurrences of the different aa (ncbistdaa) types
 // puts counts in aacount, returns total count
@@ -126,12 +125,16 @@ double CProtProp::GetProteinCharge(const vector<TSeqPos> aacount,
         (casp + cglu + ctyr + ccys + ccter);
 }
 
+END_SCOPE(objects)
 END_NCBI_SCOPE
 
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2003/07/01 19:01:13  ucko
+ * Fix scope use
+ *
  * Revision 1.1  2003/07/01 15:10:40  jcherry
  * Initial versions of nuc_prop and prot_prop
  *
