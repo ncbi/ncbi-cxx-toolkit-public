@@ -1,6 +1,6 @@
---$Id: blastxml.asn,v 6.5 2000/11/08 20:49:04 shavirin Exp $
+--$Id: blastxml.asn,v 6.6 2001/05/03 17:52:16 shavirin Exp $
 --
---$Revision: 6.5 $
+--$Revision: 6.6 $
 --**********************************************************************
 --
 --  ASN.1 for simplified BLAST output in XML
@@ -8,9 +8,8 @@
 --
 --
 -- $Log: blastxml.asn,v $
--- Revision 6.5  2000/11/08 20:49:04  shavirin
--- Added paramter "score" as in Traditional Blast Output. Previous score
--- changed to "bit_score".
+-- Revision 6.6  2001/05/03 17:52:16  shavirin
+-- Adopted for usage with mani-iterational XML definition.
 --
 -- Revision 6.4  2000/11/08 20:07:20  shavirin
 -- Added new parameter align_len analogos to the number reported in
@@ -34,20 +33,22 @@ BEGIN
 
 BlastOutput ::= SEQUENCE {
 	program VisibleString ,		-- BLAST program: blastp, tblastx etc.
-	version VisibleString ,		-- Program version: 2.0.13 [May-26-2000]
+	version VisibleString ,		-- Program version 
 	reference VisibleString ,	-- Steven, David, Tom and others
 	db VisibleString ,		-- BLAST Database name
 	query-ID VisibleString ,	-- SeqId of query
 	query-def VisibleString ,	-- Definition line of query
 	query-len INTEGER ,		-- length of query sequence
 	query-seq VisibleString OPTIONAL ,	-- query sequence itself
-	iter-num INTEGER OPTIONAL ,	-- iteration number
-	hits SEQUENCE OF Hit OPTIONAL,		-- Hits one for every db sequence
-	param Parameters ,		-- search parameters
+	param Parameters,		-- search parameters
+        iterations SEQUENCE OF Iteration
+}
+Iteration ::= SEQUENCE {
+	iter-num INTEGER ,	        -- iteration number
+	hits SEQUENCE OF Hit OPTIONAL,	-- Hits one for every db sequence
 	stat Statistics OPTIONAL,	-- search statistics            
         message VisibleString OPTIONAL  -- Some (error?) information
 }
-
 Parameters ::= SEQUENCE {
 	matrix VisibleString OPTIONAL ,	-- Matrix used (-M)
 	expect REAL ,			-- Expectation threshold (-e)
