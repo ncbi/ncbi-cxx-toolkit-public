@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.8  2004/04/30 11:27:14  kuznets
+* Use THROWS macro to specify exceptions
+*
 * Revision 1.7  2003/03/10 18:53:15  gouriano
 * use new structured exceptions (based on CException)
 *
@@ -163,7 +166,7 @@ public:
     void Add(CDataType* type);
     void Add(const CAmbiguiousTypes& types);
 
-    CDataType* GetType(void) const throw(CDatatoolException);
+    CDataType* GetType(void) const THROWS((CDatatoolException));
 
 private:
     string m_Module, m_Name;
