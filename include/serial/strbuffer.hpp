@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2000/04/10 21:01:40  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.6  2000/04/06 16:10:52  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -65,10 +69,8 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbistre.hpp>
-#include <corelib/ncbidbg.hpp>
+#include <corelib/ncbistd.hpp>
 #include <serial/exception.hpp>
-#include <stdexcept>
 #include <string.h>
 
 BEGIN_NCBI_SCOPE

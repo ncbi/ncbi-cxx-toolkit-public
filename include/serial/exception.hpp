@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/10 21:01:38  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.1  2000/02/17 20:02:28  vasilche
 * Added some standard serialization exceptions.
 * Optimized text/binary ASN.1 reading.
@@ -40,7 +44,7 @@
 * ===========================================================================
 */
 
-#include <corelib/ncbiexpt.hpp>
+#include <corelib/ncbistd.hpp>
 
 BEGIN_NCBI_SCOPE
 

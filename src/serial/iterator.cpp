@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2000/04/10 21:01:48  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.2  2000/03/29 18:02:40  vasilche
 * Workaroung of bug in MSVC: abstract member in template.
 *
@@ -44,6 +48,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiutil.hpp>
 #include <serial/iterator.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -181,5 +186,30 @@ bool CTypeIteratorBase<Iterator>::CanEnter(TTypeInfo info) const
 
 template class CTypeIteratorBase<CTreeIterator>;
 template class CTypeIteratorBase<CTreeConstIterator>;
+
+template<class Iterator>
+bool CTypesIterator<Iterator>::CanSelect(TTypeInfo info) const
+{
+    iterate ( TTypeList, i, GetTypeList() ) {
+        if ( info->IsType(*i) )
+            return true;
+    }
+    return false;
+}
+
+template<class Iterator>
+bool CTypesIterator<Iterator>::CanEnter(TTypeInfo info) const
+{
+    if ( !CParent::CanEnter(info) )
+        return false;
+    iterate ( TTypeList, i, GetTypeList() ) {
+        if ( info->MayContainType(*i) )
+            return true;
+    }
+    return false;
+}
+
+template class CTypesIterator<CTreeIterator>;
+template class CTypesIterator<CTreeConstIterator>;
 
 END_NCBI_SCOPE

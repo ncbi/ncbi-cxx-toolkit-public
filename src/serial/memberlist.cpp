@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/04/10 21:01:49  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.10  2000/04/10 18:01:57  vasilche
 * Added Erase() for STL types in type iterators.
 *
@@ -78,7 +82,7 @@
 #include <serial/memberlist.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
-#include <serial/iterator.hpp>
+#include <serial/iteratorbase.hpp>
 #include <corelib/ncbiutil.hpp>
 
 BEGIN_NCBI_SCOPE

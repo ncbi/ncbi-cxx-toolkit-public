@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.35  2000/04/10 21:01:39  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.34  2000/04/10 18:01:52  vasilche
 * Added Erase() for STL types in type iterators.
 *
@@ -172,7 +176,7 @@
 #include <serial/objostr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/choiceptr.hpp>
-#include <serial/iterator.hpp>
+#include <serial/iteratorbase.hpp>
 #include <set>
 #include <map>
 #include <list>
@@ -512,11 +516,6 @@ public:
                 ++Iterator(cc);
             }
         }
-    void Erase(CChildrenIterator& cc) const
-        {
-            Iterator(cc) = Get(cc).erase(Iterator(cc));
-            cc.GetIndex().m_Index = 1;
-        }
 
 protected:
     virtual void WriteData(CObjectOStream& out, TConstObjectPtr object) const
@@ -582,6 +581,12 @@ public:
             return new CStlClassInfo_list<Data>(info, true);
         }
 
+    void Erase(CChildrenIterator& cc) const
+        {
+            Iterator(cc) = Get(cc).erase(Iterator(cc));
+            cc.GetIndex().m_Index = 1;
+        }
+
 protected:
     virtual void Reserve(TObjectPtr object, size_t ) const
         {
@@ -615,6 +620,12 @@ public:
             return new CStlClassInfo_vector<Data>(info);
         }
 
+    void Erase(CChildrenIterator& cc) const
+        {
+            Iterator(cc) = Get(cc).erase(Iterator(cc));
+            cc.GetIndex().m_Index = 1;
+        }
+
 protected:
     virtual void Reserve(TObjectPtr object, size_t length) const
         {
@@ -644,6 +655,14 @@ public:
     CStlClassInfoSetBase(const char* templ, const CTypeRef& typeRef)
         : CParent(templ, typeRef, true)
         {
+        }
+
+    void Erase(CChildrenIterator& cc) const
+        {
+            CIterator erase = Iterator(cc);
+            ++Iterator(cc);
+            cc.GetIndex().m_Index = 1;
+            Get(cc).erase(erase);
         }
 
 protected:
@@ -905,11 +924,10 @@ public:
         {
             if ( Index(cc) == 0 ) {
                 // erase whole entry
-                Key key = Iterator(cc)->first;
-                Iterator(cc) = Get(cc).end();
-                Get(cc).erase(Iterator(cc));
-                Iterator(cc) = Get(cc).upper_bound(key);
+                CIterator erase = Iterator(cc);
+                ++Iterator(cc);
                 Index(cc) = -1;
+                Get(cc).erase(erase);
             }
             else {
                 // cannot erase value

@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2000/04/10 21:01:38  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.1  2000/03/29 15:55:20  vasilche
 * Added two versions of object info - CObjectInfo and CConstObjectInfo.
 * Added generic iterators by class -
@@ -42,92 +46,5 @@
 *
 * ===========================================================================
 */
-
-inline
-CChildrenTypesIterator::CChildrenTypesIterator(TTypeInfo parentType)
-    : m_Parent(parentType)
-{
-    if ( !parentType )
-        THROW0_TRACE(CNullPointerError());
-    parentType->BeginTypes(*this);
-}
-
-inline
-CChildrenTypesIterator::operator bool(void) const
-{
-    return GetTypeInfo()->ValidTypes(*this);
-}
-
-inline
-void CChildrenTypesIterator::Next(void)
-{
-    GetTypeInfo()->NextType(*this);
-}
-
-inline
-TTypeInfo CChildrenTypesIterator::GetChildType(void) const
-{
-    return GetTypeInfo()->GetChildType(*this);
-}
-
-inline
-CConstChildrenIterator::CConstChildrenIterator(const CConstObjectInfo& parent)
-    : m_Parent(parent)
-{
-    if ( !parent )
-        THROW0_TRACE(CNullPointerError());
-    GetTypeInfo()->Begin(*this);
-}
-
-inline
-CConstChildrenIterator::operator bool(void) const
-{
-    return GetTypeInfo()->Valid(*this);
-}
-
-inline
-void CConstChildrenIterator::Next(void)
-{
-    GetTypeInfo()->Next(*this);
-}
-
-inline
-void CConstChildrenIterator::GetChild(CConstObjectInfo& child) const
-{
-    GetTypeInfo()->GetChild(*this, child);
-}
-
-inline
-CChildrenIterator::CChildrenIterator(const CObjectInfo& parent)
-    : m_Parent(parent)
-{
-    if ( !parent )
-        THROW0_TRACE(CNullPointerError());
-    GetTypeInfo()->Begin(*this);
-}
-
-inline
-CChildrenIterator::operator bool(void) const
-{
-    return GetTypeInfo()->Valid(*this);
-}
-
-inline
-void CChildrenIterator::Next(void)
-{
-    GetTypeInfo()->Next(*this);
-}
-
-inline
-void CChildrenIterator::GetChild(CObjectInfo& child) const
-{
-    GetTypeInfo()->GetChild(*this, child);
-}
-
-inline
-void CChildrenIterator::Erase(void)
-{
-    GetTypeInfo()->Erase(*this);
-}
 
 #endif /* def ITERATOR__HPP  &&  ndef ITERATOR__INL */

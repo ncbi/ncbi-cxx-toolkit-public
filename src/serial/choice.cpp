@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.11  2000/04/10 21:01:48  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.10  2000/04/06 16:10:58  vasilche
 * Fixed bug with iterators in choices.
 * Removed unneeded calls to ReadExternalObject/WriteExternalObject.
@@ -88,7 +92,7 @@
 #include <serial/objistr.hpp>
 #include <serial/memberid.hpp>
 #include <serial/member.hpp>
-#include <serial/iterator.hpp>
+#include <serial/iteratorbase.hpp>
 
 BEGIN_NCBI_SCOPE
 

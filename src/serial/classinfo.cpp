@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.41  2000/04/10 21:01:48  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.40  2000/04/10 19:32:52  vakatov
 * Get rid of a minor compiler warning
 *
@@ -194,7 +198,7 @@
 #include <serial/member.hpp>
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
-#include <serial/iterator.hpp>
+#include <serial/iteratorbase.hpp>
 #include <set>
 
 BEGIN_NCBI_SCOPE

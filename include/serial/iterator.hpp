@@ -33,6 +33,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2000/04/10 21:01:38  vasilche
+* Fixed Erase for map/set.
+* Added iteratorbase.hpp header for basic internal classes.
+*
 * Revision 1.3  2000/03/29 18:02:39  vasilche
 * Workaroung of bug in MSVC: abstract member in template.
 *
@@ -50,7 +54,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
-#include <serial/object.hpp>
+#include <serial/iteratorbase.hpp>
 #include <serial/typeinfo.hpp>
 #include <serial/stdtypes.hpp>
 
@@ -58,121 +62,6 @@ BEGIN_NCBI_SCOPE
 
 class CTreeIterator;
 class CTreeConstIterator;
-
-class CChildIndex {
-public:
-    size_t m_Index;
-    CRef<CObject> m_AnyIterator;
-};
-
-class CChildrenTypesIterator {
-public:
-    CChildrenTypesIterator(TTypeInfo parentType);
-
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return m_Parent;
-        }
-    
-    const CChildIndex& GetIndex(void) const
-        {
-            return m_Index;
-        }
-    CChildIndex& GetIndex(void)
-        {
-            return m_Index;
-        }
-
-    operator bool(void) const;
-    void Next(void);
-    TTypeInfo GetChildType(void) const;
-
-private:
-    CChildIndex m_Index;
-    TTypeInfo m_Parent;
-};
-
-class CConstChildrenIterator {
-public:
-    typedef CConstObjectInfo TObjectInfo;
-
-    CConstChildrenIterator(const TObjectInfo& parent);
-
-    const TObjectInfo& GetParent(void) const
-        {
-            return m_Parent;
-        }
-    TConstObjectPtr GetParentPtr(void) const
-        {
-            return m_Parent.GetObjectPtr();
-        }
-
-    const CChildIndex& GetIndex(void) const
-        {
-            return m_Index;
-        }
-    CChildIndex& GetIndex(void)
-        {
-            return m_Index;
-        }
-
-    operator bool(void) const;
-    void Next(void);
-    void GetChild(TObjectInfo& child) const;
-
-
-private:
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return GetParent().GetTypeInfo();
-        }
-
-    // m_Index must be declared before m_Parent to ensure
-    // proper destruction order
-    CChildIndex m_Index;
-    TObjectInfo m_Parent;
-};
-
-class CChildrenIterator {
-public:
-    typedef CObjectInfo TObjectInfo;
-
-    CChildrenIterator(const TObjectInfo& parent);
-
-    const TObjectInfo& GetParent(void) const
-        {
-            return m_Parent;
-        }
-    TObjectPtr GetParentPtr(void) const
-        {
-            return const_cast<TObjectPtr>(m_Parent.GetObjectPtr());
-        }
-
-    const CChildIndex& GetIndex(void) const
-        {
-            return m_Index;
-        }
-    CChildIndex& GetIndex(void)
-        {
-            return m_Index;
-        }
-
-    operator bool(void) const;
-    void Next(void);
-    void GetChild(TObjectInfo& child) const;
-    void Erase(void);
-
-private:
-    TTypeInfo GetTypeInfo(void) const
-        {
-            return GetParent().GetTypeInfo();
-        }
-
-    // m_Index must be declared before m_Parent to ensure
-    // proper destruction order
-    CChildIndex m_Index;
-    TObjectInfo m_Parent;
-};
 
 template<class Iterator>
 class CTreeIteratorBase
@@ -509,6 +398,58 @@ public:
 typedef CTypeIterator<CObject> CObjectsIterator;
 typedef CTypeConstIterator<CObject> CObjectsConstIterator;
 
+template<class Iterator = CTreeIterator>
+class CTypesIterator : public Iterator
+{
+    typedef Iterator CParent;
+protected:
+    typedef typename CParent::TObjectInfo TObjectInfo;
+    typedef list<TTypeInfo> TTypeList;
+
+    CTypesIterator(void)
+        {
+        }
+    CTypesIterator(TTypeInfo type)
+        {
+            m_TypeList.push_back(type);
+        }
+    CTypesIterator(TTypeInfo type1, TTypeInfo type2)
+        {
+            m_TypeList.push_back(type1);
+            m_TypeList.push_back(type2);
+        }
+    CTypesIterator(const TTypeList& typeList)
+        : m_TypeList(typeList)
+        {
+        }
+
+    const TTypeList& GetTypeList(void) const
+        {
+            return m_TypeList;
+        }
+
+    CTypesIterator<Iterator>& AddType(TTypeInfo type)
+        {
+            m_TypeList.push_back(type);
+            return *this;
+        }
+
+    CTypesIterator<Iterator>& operator=(const TObjectInfo& root)
+        {
+            Begin(root);
+            return *this;
+        }
+
+protected:
+    virtual bool CanSelect(TTypeInfo type) const;
+    virtual bool CanEnter(TTypeInfo type) const;
+
+private:
+    TTypeList m_TypeList;
+};
+
+typedef CTypesIterator<CTreeConstIterator> CTypesConstIterator;
+
 template<class C>
 inline
 pair<TObjectPtr, TTypeInfo> Begin(C& obj)
@@ -530,7 +471,7 @@ pair<TConstObjectPtr, TTypeInfo> ConstBegin(const C& obj)
     return pair<TConstObjectPtr, TTypeInfo>(&obj, C::GetTypeInfo());
 }
 
-#include <serial/iterator.inl>
+//#include <serial/iterator.inl>
 
 END_NCBI_SCOPE
 
