@@ -256,7 +256,7 @@ CPssmEngine::x_InitializeScoreBlock(const unsigned char* query,
     if (status != 0) {
         NCBI_THROW(CBlastException, eOutOfMemory, "BlastScoringOptions");
     }
-    opts->matrix = strdup(matrix_name);
+    BlastScoringOptionsSetMatrix(opts, matrix_name);
     opts->matrix_path = strdup(FindMatrixPath(opts->matrix, true).c_str());
 
     // Setup the sequence block structure
@@ -415,6 +415,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.29  2005/02/08 18:33:45  dondosha
+ * Use BlastScoringOptionsSetMatrix to set matrix name
+ *
  * Revision 1.28  2004/12/28 16:47:43  camacho
  * 1. Use typedefs to AutoPtr consistently
  * 2. Remove exception specification from blast::SetupQueries
