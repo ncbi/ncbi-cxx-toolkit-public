@@ -666,7 +666,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "sncbieaa \"-------------------M---------------M----------------------------\" } ,\n",
     "{ name \"Ascidian Mitochondrial\" , id 13 ,\n",
     "ncbieaa  \"FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSGGVVVVAAAADDEEGGGG\",\n",
-    "sncbieaa \"-----------------------------------M----------------------------\" } ,\n",
+    "sncbieaa \"---M------------------------------MM---------------M------------\" } ,\n",
     "{ name \"Alternative Flatworm Mitochondrial\" , id 14 ,\n",
     "ncbieaa  \"FFLLSSSSYYY*CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG\",\n",
     "sncbieaa \"-----------------------------------M----------------------------\" } ,\n",
@@ -698,6 +698,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 6.18  2004/12/09 22:27:37  kans
+* added GTG, ATA, and TTG as alternative start codons to code 13 Ascidian Mitochondrial
+*
 * Revision 6.17  2004/05/19 17:26:04  gorelenk
 * Added include of PCH - ncbi_pch.hpp
 *
