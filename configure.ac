@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.162 2003/01/30 19:09:06 ucko Exp $
+#  $Id: configure.ac,v 1.163 2003/01/30 21:01:32 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -825,9 +825,9 @@ case "$compiler:$compiler_version" in
   GCC:3* )
     # Need to specify runpath for compiler-provided libraries
     case $compiler_version in
-        3.0.* ) major=3 ;;
-        3.1.* ) major=4 ;;
-        *     ) major=5 ;; # ABI theoretically stable from 3.2 on
+        30* ) major=3 ;;
+        31* ) major=4 ;;
+        *   ) major=5 ;; # ABI theoretically stable from 3.2 on
     esac
     found=false
     for f in libstdc++.so.$major libgcc_s.so.1 libstdc++.a; do
@@ -995,7 +995,10 @@ esac
 #### GNU compiler::  common flags and definitions
 if test "$compiler" = "GCC" ; then
    CFLAGS="-Wall $CFLAGS"
-   CXXFLAGS="-Wall -ftemplate-depth-32 $CXXFLAGS"
+   CXXFLAGS="-Wall $CXXFLAGS"
+   case "$compiler_version" in
+      2* ) CXXFLAGS="-ftemplate-depth-32 $CXXFLAGS" ;;
+   esac
    case "$host_os" in
       solaris* )  CPPFLAGS="-D__EXTENSIONS__ $CPPFLAGS" ;;
       irix*    )  CXXFLAGS="$CXXFLAGS -D_LANGUAGE_C_PLUS_PLUS" ;;
