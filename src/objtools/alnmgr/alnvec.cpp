@@ -105,17 +105,17 @@ const CBioseq_Handle& CAlnVec::GetBioseqHandle(TNumrow row) const
     if (i != m_BioseqHandlesCache.end()) {
         return i->second;
     } else {
-        const CBioseq_Handle& bioseq_handle = m_BioseqHandlesCache[row] =
+        CBioseq_Handle bioseq_handle = 
             GetScope().GetBioseqHandle(GetSeqId(row));
-
-        if ( !bioseq_handle ) {
+        if (bioseq_handle) {
+            return m_BioseqHandlesCache[row] = bioseq_handle;
+        } else {
             string errstr = string("CAlnVec::GetBioseqHandle(): ") 
                 + "Seq-id cannot be resolved: "
                 + GetSeqId(row).AsFastaString();
-                
+            
             NCBI_THROW(CAlnException, eInvalidSeqId, errstr);
         }
-        return bioseq_handle;
     }
 }
 
@@ -640,6 +640,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.31  2003/07/15 21:13:54  todorov
+* rm bioseq_handle ref
+*
 * Revision 1.30  2003/07/15 20:54:01  todorov
 * exception type fixed
 *
