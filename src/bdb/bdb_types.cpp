@@ -30,6 +30,7 @@
  */
 
 #include <bdb/bdb_types.hpp>
+#include <db.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -241,6 +242,19 @@ unsigned int CBDB_BufferManager::Unpack()
     return m_BufferSize;
 }
 
+void CBDB_BufferManager::PrepareDBT_ForWrite(DBT* dbt)
+{
+    Pack();
+    dbt->data = m_Buffer.get();
+    dbt->size = m_PackedSize;
+}
+
+void CBDB_BufferManager::PrepareDBT_ForRead(DBT* dbt)
+{
+    dbt->data = m_Buffer.get();
+    dbt->size = dbt->ulen = m_BufferSize;
+    dbt->flags = DB_DBT_USERMEM;
+}
 
 int CBDB_BufferManager::Compare(const CBDB_BufferManager& buf_mgr,
                                 unsigned int              field_count)
@@ -283,6 +297,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/07/02 17:55:35  kuznets
+ * Implementation modifications to eliminated direct dependency from <db.h>
+ *
  * Revision 1.7  2003/06/10 20:08:27  kuznets
  * Fixed function names.
  *

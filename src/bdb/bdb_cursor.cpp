@@ -30,6 +30,7 @@
  */
 
 #include <bdb/bdb_cursor.hpp>
+#include <db.h>
 
 BEGIN_NCBI_SCOPE
 
@@ -440,6 +441,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.6  2003/07/02 17:55:35  kuznets
+ * Implementation modifications to eliminated direct dependency from <db.h>
+ *
  * Revision 1.5  2003/05/01 13:42:12  kuznets
  * Bug fix
  *

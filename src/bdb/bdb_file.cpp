@@ -31,6 +31,9 @@
 
 #include <bdb/bdb_file.hpp>
 
+#include <db.h>
+
+
 BEGIN_NCBI_SCOPE
 
 const char CBDB_RawFile::kDefaultDatabase[] = "_table";
@@ -87,6 +90,23 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 } // extern "C"
 
 
+// Auto-pointer style guard class for DB structure
+class CDB_guard
+{
+public:
+	CDB_guard(DB** db) : m_DB(db) {}
+	~CDB_guard()
+	{ 
+		if (m_DB  &&  *m_DB) {
+            (*m_DB)->close(*m_DB, 0);
+            *m_DB = 0;
+        }
+	}
+	void release() { m_DB = 0; }
+private:
+	DB** m_DB;
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CBDB_RawFile::
@@ -96,17 +116,33 @@ int BDB_Compare(DB* db, const DBT* val1, const DBT* val2)
 
 CBDB_RawFile::CBDB_RawFile()
 : m_DB(0),
+  m_DBT_Key(0),
+  m_DBT_Data(0),
   m_PageSize(0),
   m_CacheSize(256 * 1024)
 {
-    ::memset(&m_DBT_Key,  0, sizeof(m_DBT_Key));
-    ::memset(&m_DBT_Data, 0, sizeof(m_DBT_Data));
+    try
+    {
+        m_DBT_Key = new DBT;
+        m_DBT_Data = new DBT;
+    }
+    catch (...)
+    {
+        delete m_DBT_Key;
+        delete m_DBT_Data;
+        throw;
+    }
+
+    ::memset(m_DBT_Key,  0, sizeof(DBT));
+    ::memset(m_DBT_Data, 0, sizeof(DBT));
 }
 
 
 CBDB_RawFile::~CBDB_RawFile()
 {
     x_Close(eIgnoreError);
+    delete m_DBT_Key;
+    delete m_DBT_Data;
 }
 
 
@@ -221,9 +257,9 @@ void CBDB_RawFile::x_CreateDB()
 
 
 void CBDB_RawFile::x_Open(const char* filename,
-                                 const char* database,
-                                 EOpenMode   open_mode)
-{
+                          const char* database,
+                          EOpenMode   open_mode)
+{       
     if (m_DB == 0) {
         x_CreateDB();
     }
@@ -233,12 +269,27 @@ void CBDB_RawFile::x_Open(const char* filename,
         x_Create(filename, database);
     }
     else {
+        u_int32_t om;
+
+        switch (open_mode)
+        {
+        case eReadOnly:
+            om = DB_RDONLY;
+            break;
+        case eCreate:
+            om = DB_CREATE;
+            break;
+        default:
+            om = 0;
+            break;
+        }
+
         int ret = m_DB->open(m_DB,
                              0,                    // DB_TXN*
                              filename,
                              database,             // database name
                              DB_BTREE,
-                             (u_int32_t) open_mode,
+                             om,
                              kOpenFileMask
                              );
         if ( ret ) {
@@ -375,14 +426,14 @@ EBDB_ErrCode CBDB_File::Fetch()
 
     int ret = m_DB->get(m_DB,
                         0,     // DB_TXN*
-                        &m_DBT_Key,
-                        &m_DBT_Data,
+                        m_DBT_Key,
+                        m_DBT_Data,
                         0
                         );
     if (ret == DB_NOTFOUND)
         return eBDB_NotFound;
     // Disable error reporting for custom m_DBT_data management
-    if (ret == ENOMEM && m_DataBufDisabled && m_DBT_Data.data == 0)
+    if (ret == ENOMEM && m_DataBufDisabled && m_DBT_Data->data == 0)
         ret = 0;
     BDB_CHECK(ret, FileName().c_str());
 
@@ -407,10 +458,10 @@ EBDB_ErrCode CBDB_File::UpdateInsert(EAfterWrite write_flag)
 
 EBDB_ErrCode CBDB_File::Delete()
 {
-    m_KeyBuf->PrepareDBT_ForWrite(&m_DBT_Key);
+    m_KeyBuf->PrepareDBT_ForWrite(m_DBT_Key);
     int ret = m_DB->del(m_DB,
                         0,           // DB_TXN*
-                        &m_DBT_Key,
+                        m_DBT_Key,
                         0);
     BDB_CHECK(ret, FileName().c_str());
     Discard();
@@ -452,14 +503,14 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
     x_StartRead();
 
     if (m_DataBufDisabled) {
-        m_DBT_Data.size  = 0;
-        m_DBT_Data.flags = 0;
-        m_DBT_Data.data  = 0;        
+        m_DBT_Data->size  = 0;
+        m_DBT_Data->flags = 0;
+        m_DBT_Data->data  = 0;        
     }
 
     int ret = dbc->c_get(dbc,
-                         &m_DBT_Key,
-                         &m_DBT_Data,
+                         m_DBT_Key,
+                         m_DBT_Data,
                          bdb_flag);
 
     if (ret == DB_NOTFOUND)
@@ -474,16 +525,16 @@ EBDB_ErrCode CBDB_File::ReadCursor(DBC* dbc, unsigned int bdb_flag)
 void CBDB_File::x_StartRead()
 {
     m_KeyBuf->Pack();
-    m_KeyBuf->PrepareDBT_ForRead(&m_DBT_Key);
+    m_KeyBuf->PrepareDBT_ForRead(m_DBT_Key);
 
     if (!m_DataBufDisabled) {
         if ( m_DataBuf.get() ) {
-            m_DataBuf->PrepareDBT_ForRead(&m_DBT_Data);
+            m_DataBuf->PrepareDBT_ForRead(m_DBT_Data);
         }
         else {
-            m_DBT_Data.size  = 0;
-            m_DBT_Data.flags = 0;
-            m_DBT_Data.data  = 0;
+            m_DBT_Data->size  = 0;
+            m_DBT_Data->flags = 0;
+            m_DBT_Data->data  = 0;
         }
     }
 }
@@ -499,17 +550,17 @@ void CBDB_File::x_EndRead()
 
 EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
 {
-    m_KeyBuf->PrepareDBT_ForWrite(&m_DBT_Key);
+    m_KeyBuf->PrepareDBT_ForWrite(m_DBT_Key);
 
     if (!m_DataBufDisabled) {
         if ( m_DataBuf.get() ) {
-            m_DataBuf->PrepareDBT_ForWrite(&m_DBT_Data);
+            m_DataBuf->PrepareDBT_ForWrite(m_DBT_Data);
         }
     }
     int ret = m_DB->put(m_DB,
                         0,     // DB_TXN*
-                        &m_DBT_Key,
-                        &m_DBT_Data,
+                        m_DBT_Key,
+                        m_DBT_Data,
                         flags
                         );
     if (ret == DB_KEYEXIST)
@@ -524,6 +575,22 @@ EBDB_ErrCode CBDB_File::x_Write(unsigned int flags, EAfterWrite write_flag)
     return eBDB_Ok;
 }
 
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CBDB_IdFile::
+//
+
+CBDB_IdFile::CBDB_IdFile() 
+: CBDB_File()
+{
+    BindKey("id", &IdKey);
+}
+
+void CBDB_IdFile::SetCmp(DB* db)
+{
+    int ret = db->set_bt_compare(db, BDB_IntCompare);
+    BDB_CHECK(ret, 0);
+}
 
 
 END_NCBI_SCOPE
@@ -532,6 +599,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2003/07/02 17:55:35  kuznets
+ * Implementation modifications to eliminated direct dependency from <db.h>
+ *
  * Revision 1.10  2003/06/25 16:35:56  kuznets
  * Bug fix: data file gets created even if eCreate flag was not specified.
  *
