@@ -342,7 +342,7 @@ streamsize CStreamUtils::Readsome(istream&      is,
 #  endif
 #elif defined(NCBI_COMPILER_MSVC)
     /* MSVC's readsome() is buggy [causes 1 byte reads] and is thus avoided */
-#  define NCBI_NO_READSOME 1
+#  //define NCBI_NO_READSOME 1
 #endif
 
 #ifdef NCBI_NO_READSOME
@@ -378,6 +378,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.19  2003/03/27 18:40:14  lavr
+ * Temporarily remove NCBI_NO_READSOME for MSVC
+ *
  * Revision 1.18  2003/03/27 16:50:14  lavr
  * #define NCBI_NO_READSOME for MSVC to prevent 1-byte at a time file input
  * caused by lame unbuffered implementation of basic_filebuf, that defines
