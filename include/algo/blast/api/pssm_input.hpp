@@ -56,7 +56,8 @@ class IPssmInputData
 {
 public:
     /// Algorithm to produce multiple sequence alignment structure should be
-    /// implemented in this method
+    /// implemented in this method. This will be invoked by the CPssmEngine
+    /// object before calling GetData()
     virtual void Process() = 0;
 
     /// Get the query sequence used as master for the multiple sequence
@@ -67,7 +68,7 @@ public:
     virtual unsigned int GetQueryLength() = 0;
 
     /// Obtain the multiple sequence alignment structure
-    virtual PsiAlignmentData* GetData() = 0;
+    virtual PSIMsa* GetData() = 0;
 
     /// Obtain the options for the PSSM engine
     virtual const PSIBlastOptions* GetOptions() = 0;
@@ -80,6 +81,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/08/04 20:21:07  camacho
+ * Renamed multiple sequence alignment data structure
+ *
  * Revision 1.2  2004/08/02 13:27:01  camacho
  * + query sequence methods
  *

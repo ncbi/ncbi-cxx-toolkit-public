@@ -79,7 +79,7 @@ public:
     void Process();
     unsigned char* GetQuery();
     unsigned int GetQueryLength();
-    PsiAlignmentData* GetData();
+    PSIMsa* GetData();
     const PSIBlastOptions* GetOptions();
 
 protected:
@@ -88,6 +88,9 @@ protected:
     // First implementation of use_best_align option from old toolkit. Should
     // be implemented as a subclass of this one?
     //void x_ExtractAlignmentDataUseBestAlign();
+
+    /// Copies query sequence data to multiple alignment data structure
+    void x_CopyQueryToMsa();
 
     unsigned int GetNumAlignedSequences() const;
 
@@ -107,9 +110,9 @@ private:
     /// Scope where to retrieve the sequences in the aligment from
     CRef<objects::CScope>           m_Scope;
     // Structure representing the multiple sequence alignment
-    PsiAlignmentData*               m_AlignmentData;
+    PSIMsa*                         m_Msa;
     /// Multiple sequence alignment dimensions
-    PsiMsaDimensions                   m_MSA_Dimensions;
+    PSIMsaDimensions                m_MsaDimensions;
     /// Pairwise alignment result of a BLAST search
     CRef<objects::CSeq_align_set>   m_SeqAlignSet;
     /// Algorithm options
@@ -147,6 +150,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.3  2004/08/04 20:21:37  camacho
+ * Renamed multiple sequence alignment data structure
+ *
  * Revision 1.2  2004/08/02 13:29:49  camacho
  * + implementation query sequence methods
  *
