@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2001/11/07 19:00:11  vakatov
+ * LSOCK_Accept() -- minor adjustments
+ *
  * Revision 6.36  2001/08/31 16:00:58  vakatov
  * [MSWIN] "setsockopt()" -- Start using SO_REUSEADDR on MS-Win.
  * [MAC]   "setsockopt()" -- Do not use it on MAC whatsoever (as it is not
@@ -406,7 +409,7 @@ static void s_DoLogData
             (unsigned int) sock->id,
             (event == eIO_Read) ? "read" : "written",
             (unsigned long) ((event == eIO_Read) ?
-            sock->n_read : sock->n_written));
+                             sock->n_read : sock->n_written));
     CORE_DATA(data, size, message);
 }
 
@@ -714,7 +717,7 @@ extern EIO_Status LSOCK_Accept(LSOCK           lsock,
         typedef int       SOCK_socklen_t;
 #endif
         struct sockaddr_in addr;
-	SOCK_socklen_t addrlen = sizeof(struct sockaddr);
+        SOCK_socklen_t addrlen = (SOCK_socklen_t) sizeof(addr);
         if ((x_sock = accept(lsock->sock, (struct sockaddr*) &addr, &addrlen))
             == SOCK_INVALID) {
             CORE_LOG_ERRNO(SOCK_ERRNO, eLOG_Error,
@@ -1378,8 +1381,8 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         }
         if (sock->r_status == eIO_Closed) {
             CORE_LOGF(eLOG_Warning,
-                     ("[SOCK_Wait(Read)]  Attempt to wait on %s socket",
-                      sock->is_eof ? "closed" : "shutdown"));
+                      ("[SOCK_Wait(Read)]  Attempt to wait on %s socket",
+                       sock->is_eof ? "closed" : "shutdown"));
             return eIO_Closed;
         }
         break;
@@ -1401,8 +1404,8 @@ extern EIO_Status SOCK_Wait(SOCK            sock,
         }
         if (sock->r_status == eIO_Closed) {
             CORE_LOGF(eLOG_Note,
-                     ("[SOCK_Wait(RW)]  Attempt to wait on %s socket",
-                      sock->is_eof ? "closed" : "R-shutdown"));
+                      ("[SOCK_Wait(RW)]  Attempt to wait on %s socket",
+                       sock->is_eof ? "closed" : "R-shutdown"));
             event = eIO_Write;
             break;
         }
