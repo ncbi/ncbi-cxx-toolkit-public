@@ -7,7 +7,110 @@
   <body>
 	 <h1>Standard NCBI C++ types</h1>
 
-	 Sorry, this page is under construction...
+	 <ul>
+		<li> <a href="#ref_Int">Basic integer types</a>
+		<li> <a href="#ref_Aux">Auxiliary types</a>
+		<li> <a href="#ref_Float">Floating point types</a>
+	 </ul>
+
+	 <br></br>
+	 <a name="ref_Int"></a>
+	 <h2>Basic integer types</h2>
+
+	 It was decided that everyone must use the standard C/C++ types
+	 as much as possible, having in mind the following assumptions of
+	 their sizes and limits:
+
+	 <br></br>
+    <table border=1 cellspacing=0>
+      <tr>
+		  <th>Name</th>
+		  <th>Size(bytes)</th>
+		  <th>Min</th>
+		  <th>Max</th>
+		  <th>Note</th>
+		</tr>
+      <tr>
+		  <td><i>char</i></td>
+		  <td>1</td>
+		  <td>?</td>
+		  <td>?</td>
+		  <td>It can be either signed or unsigned!</td>
+		</tr>
+      <tr>
+		  <td><i>signed char</i></td>
+		  <td>1</td>
+		  <td>-128</td>
+		  <td>127</td>
+		  <td></td>
+		</tr>
+      <tr>
+		  <td><i>unsigned char</i></td>
+		  <td>1</td>
+		  <td>0</td>
+		  <td>255</td>
+		  <td></td>
+		</tr>
+      <tr>
+		  <td><i>signed short, short</i></td>
+		  <td>2 or more</td>
+		  <td>-32768 or less</td>
+		  <td>32767 or greater</td>
+		  <td>Use <i>"int"</i> if size isn't critical</td>
+		</tr>
+      <tr>
+		  <td><i>usigned short</i></td>
+		  <td>2 or more</td>
+		  <td>0</td>
+		  <td>65535 or greater</td>
+		  <td>Use <i>"unsigned int"</i> if size isn't critical</td>
+		</tr>
+      <tr>
+		  <td><i>int, signed int</i></td>
+		  <td>4 or more</td>
+		  <td>-2147483648 or less</td>
+		  <td>2147483647 or greater</td>
+		  <td></td>
+		</tr>
+      <tr>
+		  <td><i>unsigned int</i></td>
+		  <td>4 or more</td>
+		  <td>0</td>
+		  <td>4294967295 or greater</td>
+		  <td></td>
+		</tr>
+	 </table>
+
+	 <p>
+	 It is not recommended to use <i>"long"</i> type unless it is
+	 absolutely necessary(e.g. in the lower-level code and when third-party
+	 code is used);  and even if you have to -- try to localize the
+	 <i>"long"</i> as much as possible.
+
+	 The use of "long long" type is now prohibited in the portable code.
+
+
+	 <br></br>
+	 <br></br>
+	 <a name="ref_Aux"></a>
+	 <h2>Auxiliary types</h2>
+	 
+	 <p>
+	 Use the <i>"bool"</i> type to represent boolean values. It accepts one
+	 of { <i>false</i>, <i>true</i> }.
+
+	 <p>
+	 Use the <i>"size_t"</i> type to represent a size of memory structure,
+	 e.g. obtained as a result of <i>sizeof</i> operation.
+
+	 <br></br>
+	 <br></br>
+	 <a name="ref_Float"></a>
+	 <h2>Floating point types</h2>
+	 
+	 <p>
+	 To do...
+
 
 	 <br></br>
 	 <hr>
