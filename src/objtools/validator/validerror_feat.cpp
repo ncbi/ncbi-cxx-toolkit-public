@@ -1025,6 +1025,11 @@ void CValidError_feat::ValidateProt(const CProt_ref& prot, const CSerialObject& 
     if ( prot.CanGetDb () ) {
         m_Imp.ValidateDbxref(prot.GetDb(), obj);
     }
+    if ( prot.CanGetDesc()  &&  !prot.GetDesc().empty()  &&
+         prot.GetName().empty() ) {
+        PostErr(eDiag_Warning, eErr_SEQ_FEAT_NoNameForProtein,
+            "Protein feature has description but no name", obj);
+    }
 }
 
 
@@ -2745,6 +2750,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/07/07 13:26:12  shomrat
+* added test for prot-ref with description but no name
+*
 * Revision 1.59  2004/07/07 13:22:47  shomrat
 * allow multi-interval anticodons
 *
