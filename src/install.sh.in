@@ -185,7 +185,7 @@ status/config.cache status/config.status"
 install_builddir="$install_dir/build"
 
 mkdir "$install_builddir"  ||  Usage "Failed to create dir:  $install_builddir"
-for f in Makefile.* install.sh relocate.sh ; do
+for f in Makefile.* install.sh relocate.sh run_sybase_app.sh ; do
    cp -p $script_dir/$f "$install_builddir/"  ||  \
      Usage "Failed to copy makefile to:  $install_builddir/$f"
 done
