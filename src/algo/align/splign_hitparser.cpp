@@ -32,15 +32,10 @@
 
 
 #include "splign_hitparser.hpp"
+#include <algo/align/align_exception.hpp>
 
 #include <corelib/ncbi_limits.hpp>
 #include <corelib/ncbistre.hpp>
-#include <objmgr/object_manager.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <objtools/data_loaders/genbank/readers/id1/reader_id1.hpp>
-#include <objmgr/scope.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objects/seq/Bioseq.hpp>
 
 #include <algorithm>
 #include <numeric>
@@ -349,26 +344,16 @@ int CHitParser::x_RunMaxScore()
 
     size_t nQuerySize = 0;
     if(m_MinQueryCoverage > 0.) {
-        // retrieve seq size from GenBank
-        nQuerySize = GetSeqLength(m_Query);
-        if(nQuerySize == 0) // use initial hit span
-            nQuerySize = m_ange[1] - m_ange[0] + 1;
-        // calculate query coverage
-        double dQCov = CalcCoverage(m_Out.begin(), m_Out.end(), 'q');
-        if(dQCov < m_MinQueryCoverage* nQuerySize)
-            m_Out.clear();
+        NCBI_THROW( CAlgoAlignException,
+                    eInternal,
+                    "Query coverage filtering not supported" );
     }
 
     size_t nSubjSize = 0;
     if(m_MinSubjCoverage > 0.) {
-        // retrieve seq size from GenBank
-        nSubjSize = GetSeqLength(m_Subj);
-        if(nSubjSize == 0) // use initial hit span
-            nSubjSize = m_ange[3] - m_ange[2] + 1;
-        // calculate subj coverage
-        double dSCov = CalcCoverage(m_Out.begin(), m_Out.end(), 's');
-        if(dSCov < m_MinSubjCoverage* nSubjSize)
-            m_Out.clear();
+        NCBI_THROW( CAlgoAlignException,
+                    eInternal,
+                    "Subj coverage filtering not supported" );
     }
 
     // main processing
@@ -1220,6 +1205,9 @@ void CHitParser::x_SyncGroupsByMaxDist(int& nGroupID)
 
 size_t CHitParser::GetSeqLength(const string& accession)
 {
+    return 0;
+
+    /*
   using namespace objects;
 
   map<string, size_t>::const_iterator i1 = m_seqsizes.find(accession),
@@ -1249,6 +1237,8 @@ size_t CHitParser::GetSeqLength(const string& accession)
     }
   }
   return 0;
+
+    */
 }
 
 
@@ -1345,6 +1335,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2004/05/03 21:53:57  kapustin
+* Eliminate OM-dependant code
+*
 * Revision 1.4  2004/04/26 16:52:44  ucko
 * Add an explicit "typename" annotation required by GCC 3.4, and adjust
 * the code to take advantage of the ITERATE macro.
