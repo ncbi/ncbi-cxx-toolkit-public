@@ -1359,6 +1359,13 @@ CPPFLAGS="$orig_CPPFLAGS"
 
 ## `serial' projects
 
+if test ! -f src/serial/Makefile.in  -o  ! -d include/serial ; then
+   if test "$with_serial" = "yes" ; then
+      AC_MSG_ERROR(["--with-serial:  SERIAL sources are missing"])
+   fi
+   with_serial="no"
+fi
+
 if test "$with_serial" = "no" ; then
    WithoutProjects="$WithoutProjects serial"
    serial=
@@ -1367,7 +1374,15 @@ else
    serial="serial"
 fi
 
+
 ## `objects' projects
+
+if test ! -f src/objects/Makefile.in  -o  ! -d include/objects ; then
+   if test "$with_objects" = "yes" ; then
+      AC_MSG_ERROR(["--with-objects:  OBJECTS sources are missing"])
+   fi
+   with_objects="no"
+fi
 
 if test "$with_objects" = "yes"  &&  test -n "$serial" ; then
    WithProjects="$WithProjects objects"
@@ -1378,13 +1393,16 @@ else
 fi
 
 
-## `ctools' project group
+## `ctools' project cluster
 
-if test -f src/ctools/Makefile.in  -a  -d include/ctools  -a  "$with_ncbi_c" != "no" ; then
+if test ! -f src/ctools/Makefile.in  -o  ! -d include/ctools  -o  "$with_ncbi_c" = "no" ; then
    if test "$with_ctools" = "yes" ; then
-      AC_MSG_ERROR(["--with-ctools:  Cannot build CTOOLS projects"])
+      if test "$with_ncbi_c" = "no" ; then
+         AC_MSG_ERROR(["--with-ctools:  NCBI C Toolkit is missing"])
+      else
+         AC_MSG_ERROR(["--with-ctools:  CTOOLS sources are missing"])
+      fi
    fi
-else
    with_ctools="no"
 fi
 
@@ -1395,13 +1413,16 @@ else
 fi
 
 
-## `gui' project group
+## `gui' project cluster
 
-if test -f src/gui/Makefile.in  -a  -d include/gui  -a  "$with_wxwin" != "no" ; then
+if test ! -f src/gui/Makefile.in  -o  ! -d include/gui  -o  "$with_wxwin" = "no" ; then
    if test "$with_gui" = "yes" ; then
-      AC_MSG_ERROR(["--with-gui:  Cannot build GUI projects"])
+      if test "$with_wxwin" = "no" ; then
+         AC_MSG_ERROR(["--with-gui:  wxWindows package is missing"])
+      else
+         AC_MSG_ERROR(["--with-gui:  GUI sources are missing"])
+      fi
    fi
-else
    with_gui="no"
 fi
 
@@ -1412,7 +1433,7 @@ else
 fi
 
 
-## `gui_ctools' project group
+## `gui_ctools' project cluster
 
 if test -f src/gui_ctools/Makefile.in  -a  -d include/gui_ctools  -a  "$with_tools" != "no"  -a  "$with_gui" != "no" ; then
    OPT_GROUPS="$OPT_GROUPS gui_ctools"
@@ -1421,7 +1442,7 @@ else
 fi
 
 
-## `internal' project group
+## `internal' project cluster
 
 if test "$with_internal" = "yes" ; then
    OPT_GROUPS="$OPT_GROUPS internal"
