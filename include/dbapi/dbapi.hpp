@@ -367,6 +367,10 @@ public:
 			 const string& server,
 			 const string& database = kEmptyStr) = 0;
 
+    // Clone existing connection. All settings are copied except
+    // message handlers
+    virtual IConnection* CloneConnection();
+
     // Set current database
     virtual void SetDatabase(const string& name) = 0;
 
@@ -456,6 +460,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/11/18 17:00:36  kholodov
+ * Added: CloneConnection() method to IConnection interface
+ *
  * Revision 1.23  2003/09/10 18:28:04  kholodov
  * Added: GetCDB_Connection() method
  *
