@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.28  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.27  2004/02/10 18:50:44  kholodov
 * Modified: made Move() method const
 *
@@ -200,9 +203,9 @@ CVariant CVariant::Char(size_t size, const char *p)
     return CVariant(p ? new CDB_Char(size, p) : new CDB_Char(size));
 }
 
-CVariant CVariant::LongBinary(const void *p, size_t len)
+CVariant CVariant::LongBinary(size_t maxSize, const void *p, size_t len)
 {
-    return CVariant(p ? new CDB_LongBinary(len, p, len) : new CDB_LongBinary());
+    return CVariant(p ? new CDB_LongBinary(maxSize, p, len) : new CDB_LongBinary(maxSize));
 }
 
 CVariant CVariant::VarBinary(const void *p, size_t len)
@@ -368,10 +371,6 @@ CVariant::~CVariant(void)
 }
 
 
-CDB_Object* CVariant::GetData() const { 
-    return m_data; 
-}
-
 CDB_Object* CVariant::GetNonNullData() const {
     if( m_data == 0 )
         throw CVariantException("CVariant::GetNonNullData(): null data");
@@ -385,18 +384,12 @@ void CVariant::SetData(CDB_Object* o) {
 }
 
 
-EDB_Type CVariant::GetType() const
-{
-    return GetNonNullData()->GetType();
-}
 
 string CVariant::GetString(void) const 
 {
 
     if( IsNull() )
         return "null";
-
-    CNcbiOstrstream s;
 
     switch( GetType() ) {
     case eDB_Char:

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.15  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.14  2004/03/08 22:15:19  kholodov
 * Added: 3 new Get...() methods internally
 *
@@ -181,6 +184,8 @@ protected:
     // void DeleteConn(CConnection* conn);
 
     class CToMultiExHandler* GetHandler();
+
+    void FreeResources();
 
 private:
     string m_database;

@@ -35,6 +35,9 @@
 *
 *
 * $Log$
+* Revision 1.8  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.7  2004/02/27 14:37:32  kholodov
 * Modified: set collection replaced by list for listeners
 *
@@ -62,7 +65,8 @@
 *
 */
 
-#include <corelib/ncbiobj.hpp>
+#include <corelib/ncbistd.hpp>
+//#include <corelib/ncbiobj.hpp>
 #include <list>
 
 BEGIN_NCBI_SCOPE
@@ -72,7 +76,7 @@ class CActiveObject;
 class CDbapiEvent
 {
 public:
-
+   
     CDbapiEvent(CActiveObject* src, const string& name)
         : m_source(src), m_name(name) {}
   
@@ -97,6 +101,24 @@ public:
     virtual ~CDbapiDeletedEvent() {}
 };
 
+class CDbapiAuxDeletedEvent : public CDbapiEvent
+{
+public:
+    CDbapiAuxDeletedEvent(CActiveObject* src)
+        : CDbapiEvent(src, "CDbapiAuxDeletedEvent") {}
+
+    virtual ~CDbapiAuxDeletedEvent() {}
+};
+
+class CDbapiNewResultEvent : public CDbapiEvent
+{
+public:
+    CDbapiNewResultEvent(CActiveObject* src)
+        : CDbapiEvent(src, "CDbapiNewResultEvent") {}
+
+    virtual ~CDbapiNewResultEvent() {}
+};
+
 class CDbapiClosedEvent : public CDbapiEvent
 {
 public:
@@ -118,7 +140,7 @@ protected:
 };
 
 //=================================================================
-class CActiveObject : public CObject,
+class CActiveObject : //public CObject,
                       public IEventListener
 {
 public:

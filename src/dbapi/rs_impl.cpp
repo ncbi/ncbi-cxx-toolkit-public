@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.29  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.28  2004/03/02 19:37:56  kholodov
 * Added: process close event from CStatement to CResultSet
 *
@@ -175,10 +178,17 @@ void CResultSet::Init()
     EDB_Type type;
     for(unsigned int i = 0; i < m_rs->NofItems(); ++i ) {
         type = m_rs->ItemDataType(i);
-        if( type == eDB_LongChar )
+        switch( type ) {
+        case eDB_LongChar:
             m_data.push_back(CVariant::LongChar(0, m_rs->ItemMaxSize(i)));
-        else
+            break;
+        case eDB_LongBinary:
+            m_data.push_back(CVariant::LongBinary(m_rs->ItemMaxSize(i), 0, 0));
+            break;
+        default:
             m_data.push_back(CVariant(type));
+            break;
+        }
     }
 
     _TRACE("CResultSet::Init(): Space reserved for " << m_data.size() 
@@ -188,7 +198,8 @@ void CResultSet::Init()
 
 CResultSet::~CResultSet()
 {
-    Close();
+    Notify(CDbapiClosedEvent(this));
+    FreeResources();
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
@@ -370,9 +381,14 @@ ostream& CResultSet::GetBlobOStream(size_t blob_size,
 
 void CResultSet::Close()
 {
-    _TRACE("CResultSet::Close(): deleting CDB_Result " << (void*)m_rs);
-    delete m_rs;
     Notify(CDbapiClosedEvent(this));
+    FreeResources();
+}
+
+void CResultSet::FreeResources()
+{
+    //_TRACE("CResultSet::Close(): deleting CDB_Result " << (void*)m_rs);
+    delete m_rs;
     m_rs = 0;
     delete m_istr;
     m_istr = 0;
@@ -385,16 +401,22 @@ void CResultSet::Action(const CDbapiEvent& e)
     _TRACE(GetIdent() << " " << (void*)this 
               << ": '" << e.GetName() 
               << "' received from " << e.GetSource()->GetIdent());
-    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-        CStatement *stmt;
+    
+    CStatement *stmt;
+        
+    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 
+    || dynamic_cast<const CDbapiNewResultEvent*>(&e) != 0 ) {
+           
         if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
-            if( stmt->GetCDB_Result() == m_rs ) {
-                _TRACE("CDB_Result " << (void*)m_rs << " has been already deleted"); 
+            if( m_rs != 0 ) {
+                Notify(CDbapiNewResultEvent(this));
+                _TRACE("Discarding old CDB_Result " << (void*)m_rs);
+                delete m_rs;
                 m_rs = 0;
             }
         }
     }
-    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+    else if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
 
         RemoveListener(e.GetSource());
 

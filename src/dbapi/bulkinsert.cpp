@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.5  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.4  2004/03/08 22:15:19  kholodov
 * Added: 3 new Get...() methods internally
 *
@@ -71,22 +74,27 @@ CBulkInsert::CBulkInsert(const string& name,
 
 CBulkInsert::~CBulkInsert()
 {
-    Close();
+    FreeResources();
+    Notify(CDbapiClosedEvent(this));
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
 
 void CBulkInsert::Close()
 {
+    FreeResources();
+    Notify(CDbapiClosedEvent(this));
+}
+
+void CBulkInsert::FreeResources()
+{
     delete m_cmd;
     m_cmd = 0;
-    if( m_conn != 0 ) {
-        if( m_conn->IsAux() ) {
-            delete m_conn;
-            m_conn = 0;
-        }
+    if( m_conn != 0 && m_conn->IsAux() ) {
+	delete m_conn;
+	m_conn = 0;
+	Notify(CDbapiAuxDeletedEvent(this));
     }
-    Notify(CDbapiClosedEvent(this));
 }
  
 void CBulkInsert::Bind(unsigned int col, CVariant* v)
@@ -121,7 +129,7 @@ void CBulkInsert::Action(const CDbapiEvent& e)
            << "' from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-        RemoveListener(e.GetSource());
+	RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.11  2004/03/08 22:15:19  kholodov
 * Added: 3 new Get...() methods internally
 *
@@ -103,7 +106,8 @@ CCursor::CCursor(const string& name,
 
 CCursor::~CCursor()
 {
-    Close();
+    FreeResources();
+    Notify(CDbapiClosedEvent(this));
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
@@ -172,6 +176,12 @@ ostream& CCursor::GetBlobOStream(unsigned int col,
 
 void CCursor::Close()
 {
+    FreeResources();
+    Notify(CDbapiClosedEvent(this));
+}
+
+void CCursor::FreeResources() 
+{
 
     Parameters::iterator i = m_params.begin();
     for( ; i != m_params.end(); ++i ) {
@@ -183,13 +193,11 @@ void CCursor::Close()
     m_cmd = 0;
     delete m_ostr;
     m_ostr = 0;
-    if( m_conn != 0 ) {
-        if( m_conn->IsAux() ) {
-            delete m_conn;
-            m_conn = 0;
-        }
-    }
-    Notify(CDbapiClosedEvent(this));
+    if( m_conn != 0 && m_conn->IsAux() ) {
+	delete m_conn;
+	m_conn = 0;
+	Notify(CDbapiAuxDeletedEvent(this));
+   }
   
 }
 
@@ -199,7 +207,7 @@ void CCursor::Action(const CDbapiEvent& e)
            << "' from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-        RemoveListener(e.GetSource());
+	RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.6  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.5  2002/10/03 18:50:00  kholodov
 * Added: additional TRACE diagnostics about object deletion
 * Fixed: setting parameters in IStatement object is fully supported
@@ -81,6 +84,7 @@ public:
 
     virtual void Execute();
     virtual void ExecuteUpdate();
+    virtual void Close();
 
 protected:
 

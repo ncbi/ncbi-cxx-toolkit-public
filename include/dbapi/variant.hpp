@@ -114,7 +114,7 @@ public:
     static CVariant LongChar     (const char *p, size_t len = 0);
     static CVariant VarChar      (const char *p, size_t len = 0);
     static CVariant Char         (size_t size, const char *p);
-    static CVariant LongBinary   (const void *p, size_t len);
+    static CVariant LongBinary   (size_t maxSize, const void *p, size_t len);
     static CVariant VarBinary    (const void *p, size_t len);
     static CVariant Binary       (size_t size, const void *p, size_t len);
     static CVariant SmallDateTime(CTime *p);
@@ -206,6 +206,16 @@ private:
 
 
 //================================================================
+inline
+CDB_Object* CVariant::GetData() const { 
+    return m_data; 
+}
+
+inline
+EDB_Type CVariant::GetType() const
+{
+    return m_data->GetType();
+}
 
 inline
 bool operator==(const CVariant& v1,
@@ -241,6 +251,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/04/08 15:57:21  kholodov
+ * Multiple bug fixes and optimizations
+ *
  * Revision 1.20  2004/02/10 18:52:35  kholodov
  * Modified: made Move() method const
  *

@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.7  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.6  2002/10/21 20:38:08  kholodov
 * Added: GetParentConn() method to get the parent connection from IStatement,
 * ICallableStatement and ICursor objects.
@@ -101,6 +104,8 @@ public:
 protected:
 
     CDB_CursorCmd* GetCursorCmd() { return m_cmd; }
+
+    void FreeResources();
 
 private:
     int m_nofArgs;

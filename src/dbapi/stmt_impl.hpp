@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.10  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.9  2004/02/10 18:50:44  kholodov
 * Modified: made Move() method const
 *
@@ -124,7 +127,7 @@ public:
     }
 
     CDB_LangCmd* GetLangCmd();
-
+    
 
     // Interface IEventListener implementation
     virtual void Action(const CDbapiEvent& e);
@@ -138,6 +141,8 @@ protected:
     void SetFailed(bool f) {
         m_failed = f;
     }
+
+    void FreeResources();
 
 private:
     class CConnection* m_conn;

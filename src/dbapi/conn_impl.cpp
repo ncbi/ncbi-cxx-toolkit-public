@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.26  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.25  2004/03/12 16:27:09  sponomar
 * correct nested querys
 *
@@ -139,7 +142,8 @@ CConnection::CConnection(CDataSource* ds)
 
 CConnection::CConnection(CDB_Connection *conn, CDataSource* ds)
     : m_ds(ds), m_connection(conn), m_connCounter(-1), m_connUsed(false),
-      m_modeMask(0), m_forceSingle(false), m_multiExH(0)
+      m_modeMask(0), m_forceSingle(false), m_multiExH(0),
+      m_stmt(0), m_cstmt(0), m_cursor(0), m_bulkInsert(0)
 {
     _TRACE("Auxiliary connection " << (void *)this << " created...");
     SetIdent("CConnection");
@@ -196,7 +200,7 @@ CConnection::~CConnection()
     } else {
         _TRACE("Default connection " << (void*)this << " is being deleted...");
     }
-    Close();
+    FreeResources();
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted.");
 }
@@ -255,6 +259,19 @@ CDB_Connection* CConnection::CloneCDB_Conn()
 
 void CConnection::Close()
 {
+    FreeResources();
+}
+
+void CConnection::FreeResources() 
+{
+    delete m_stmt;
+    //m_stmt = 0;
+    delete m_cstmt;
+    //m_cstmt = 0;
+    delete m_cursor;
+    // m_cursor = 0;
+    delete m_bulkInsert;
+    //m_bulkInsert = 0;
     delete m_connection;
     m_connection = 0;
 }
@@ -401,28 +418,21 @@ void CConnection::Action(const CDbapiEvent& e)
            << "' received from " << e.GetSource()->GetIdent());
 
     if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-        if( m_connCounter > 1 ) {
-            --m_connCounter;
-            _TRACE("Server: " << GetCDB_Connection()->ServerName()
-                   <<", connections left: " << m_connCounter);
-        }
-        else
-            m_connUsed = false;
 
         CStatement *stmt;
         CCallableStatement *cstmt;
         CCursor *cursor;
         CBulkInsert *bulkInsert;
-        if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
-            if( stmt == m_stmt ) {
-                _TRACE("CConnection: Clearing cached statement " << (void*)m_stmt); 
-                m_stmt = 0;
-            }
-        }
-        else if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
+        if( (cstmt = dynamic_cast<CCallableStatement*>(e.GetSource())) != 0 ) {
             if( cstmt == m_cstmt ) {
                 _TRACE("CConnection: Clearing cached callable statement " << (void*)m_cstmt); 
                 m_cstmt = 0;
+            }
+        }
+        else if( (stmt = dynamic_cast<CStatement*>(e.GetSource())) != 0 ) {
+            if( stmt == m_stmt ) {
+                _TRACE("CConnection: Clearing cached statement " << (void*)m_stmt); 
+                m_stmt = 0;
             }
         }
         else if( (cursor = dynamic_cast<CCursor*>(e.GetSource())) != 0 ) {
@@ -438,7 +448,16 @@ void CConnection::Action(const CDbapiEvent& e)
             }
         }
     }
-    if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
+    else if(dynamic_cast<const CDbapiAuxDeletedEvent*>(&e) != 0 ) {
+        if( m_connCounter > 1 ) {
+            --m_connCounter;
+            _TRACE("Server: " << GetCDB_Connection()->ServerName()
+                   <<", connections left: " << m_connCounter);
+        }
+        else
+            m_connUsed = false;
+    }
+    else if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
         RemoveListener(e.GetSource());
         if(dynamic_cast<CDataSource*>(e.GetSource()) != 0 ) {
             delete this;

@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.18  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.17  2004/03/02 19:37:56  kholodov
 * Added: process close event from CStatement to CResultSet
 *
@@ -113,7 +116,8 @@ CStatement::CStatement(CConnection* conn)
 
 CStatement::~CStatement()
 {
-    Close();
+    Notify(CDbapiClosedEvent(this));
+    FreeResources();
     Notify(CDbapiDeletedEvent(this));
     _TRACE(GetIdent() << " " << (void*)this << " deleted."); 
 }
@@ -125,21 +129,10 @@ IConnection* CStatement::GetParentConn()
 
 void CStatement::SetCDB_Result(CDB_Result *rs) 
 { 
-/*
-    RequestedRsList::iterator i = m_requestedRsList.find(m_rs);
-    if( i == m_requestedRsList.end() ) {
-        _TRACE(GetIdent() << ": deleting unrequested CDB_Result " 
-               << (void*)m_rs);
+    if( m_rs != 0 ) {
+        _TRACE("CStatement::SetCDB_Result(): Deleting unrequested CDB_Result " << (void*)m_rs);
         delete m_rs;
     }
-*/
-    if( m_rs != 0 && (m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() != m_rs)) ) {
-        _TRACE(GetIdent() << ": deleting unrequested CDB_Result " 
-               << (void*)m_rs);
-        
-        delete m_rs;
-    }
-
     m_rs = rs;
 }
 
@@ -147,8 +140,8 @@ IResultSet* CStatement::GetResultSet()
 {
     if( m_rs == 0 )
         return 0;
-
-    if( m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() != m_rs) ) {
+    
+    if( m_irs == 0 || (m_irs != 0 && m_irs->GetCDB_Result() == 0) ) {
         _TRACE("CStatement::GetResultSet(): CDB_Result " << (void*)m_rs << " requested");
         CResultSet *ri = new CResultSet(m_conn, m_rs);
         ri->AddListener(this);
@@ -170,6 +163,7 @@ bool CStatement::HasMoreResults()
             SetFailed(true);
             return false;
         }
+        Notify(CDbapiNewResultEvent(this));
         SetCDB_Result(GetBaseCmd()->Result()); 
         _TRACE("CStatement::HasMoreResults(): CDB_Result " 
                << (void*)m_rs << " obtained");
@@ -251,20 +245,26 @@ int CStatement::GetRowCount()
 
 void CStatement::Close()
 {
-    _TRACE("CStatement::Close(): deleting CDB_Result " << (void*)m_rs);
-    delete m_rs;
+    Notify(CDbapiClosedEvent(this));
+    FreeResources();
+}
+
+void CStatement::FreeResources() 
+{
+    if( m_rs != 0 ) {
+	_TRACE("CStatement::FreeResources(): deleting CDB_Result " << (void*)m_rs);
+	delete m_rs;
+    }
     delete m_cmd;
     m_cmd = 0;
     m_rowCount = -1;
-    if( m_conn != 0 ) {
-        if( m_conn->IsAux() ) {
-            delete m_conn;
-            m_conn = 0;
-        }
+    if( m_conn != 0 && m_conn->IsAux() ) {
+	delete m_conn;
+	m_conn = 0;
+	Notify(CDbapiAuxDeletedEvent(this));
     }
 
     ClearParamList();
-    Notify(CDbapiClosedEvent(this));
 }
   
 void CStatement::Cancel()
@@ -285,15 +285,23 @@ void CStatement::Action(const CDbapiEvent& e)
     _TRACE(GetIdent() << " " << (void*)this << ": '" << e.GetName() 
            << "' received from " << e.GetSource()->GetIdent());
 
+    CResultSet *rs;
+
     if(dynamic_cast<const CDbapiDeletedEvent*>(&e) != 0 ) {
-        RemoveListener(e.GetSource());
+	RemoveListener(e.GetSource());
         if(dynamic_cast<CConnection*>(e.GetSource()) != 0 ) {
             _TRACE("Deleting " << GetIdent() << " " << (void*)this); 
             delete this;
-        }
+        } 
+        else if( m_irs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
+            if( rs == m_irs ) {
+                _TRACE("Clearing cached CResultSet " << (void*)m_irs); 
+                m_irs = 0;
+            }
+        } 
     }
-    if(dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
-        CResultSet *rs;
+    else if( dynamic_cast<const CDbapiNewResultEvent*>(&e) != 0
+    || dynamic_cast<const CDbapiClosedEvent*>(&e) != 0 ) {
         if( m_rs != 0 && (rs = dynamic_cast<CResultSet*>(e.GetSource())) != 0 ) {
             if( rs->GetCDB_Result() == m_rs ) {
                 _TRACE("Clearing cached CDB_Result " << (void*)m_rs); 

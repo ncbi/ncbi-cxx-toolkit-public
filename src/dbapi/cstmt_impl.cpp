@@ -31,6 +31,9 @@
 *
 *
 * $Log$
+* Revision 1.12  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.11  2004/03/12 16:27:09  sponomar
 * correct nested querys
 *
@@ -91,7 +94,7 @@ CCallableStatement::CCallableStatement(const string& proc,
 
 CCallableStatement::~CCallableStatement()
 {
-    //Close();
+    Notify(CDbapiClosedEvent(this));
 }
 
 CDB_RPCCmd* CCallableStatement::GetRpcCmd() 
@@ -154,5 +157,11 @@ int CCallableStatement::GetReturnStatus()
 {
   return m_status;
 }
+
+void CCallableStatement::Close()
+{
+    FreeResources();
+    Notify(CDbapiClosedEvent(this));
+}    
 
 END_NCBI_SCOPE

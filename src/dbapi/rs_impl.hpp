@@ -34,6 +34,9 @@
 *
 *
 * $Log$
+* Revision 1.14  2004/04/08 15:56:58  kholodov
+* Multiple bug fixes and optimizations
+*
 * Revision 1.13  2003/02/12 15:52:32  kholodov
 * Added: WasNull() method
 *
@@ -149,6 +152,8 @@ protected:
     bool IsDisableBind() {
         return m_disableBind;
     }
+
+    void FreeResources();
 
 private:
     
