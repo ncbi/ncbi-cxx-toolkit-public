@@ -46,7 +46,8 @@ builddir = $builddir
 
 ###  DEFAULT COMPILATION FLAGS -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
 include $(builddir)/Makefile.mk
-BINCOPY = :
+srcdir = .
+BINCOPY = @:
 LOCAL_CPPFLAGS = -I.
 
 
@@ -92,7 +93,8 @@ builddir = $builddir
 
 ###  DEFAULT COMPILATION FLAGS  -- DON'T EDIT OR MOVE THESE 3 LINES !!!  ###
 include $(builddir)/Makefile.mk
-BINCOPY = :
+srcdir = .
+BINCOPY = @:
 LOCAL_CPPFLAGS = -I.
 
 
