@@ -32,6 +32,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.2  2000/04/07 20:00:51  vakatov
+ * + <errno.h>
+ *
  * Revision 6.1  2000/02/23 22:37:37  vakatov
  * Initial revision
  *
@@ -44,6 +47,7 @@
 
 #include <connect/ncbi_util.h>
 #include <stdlib.h>
+#include <errno.h>
 
 
 /* Aux. to printout a name of the next function to test
