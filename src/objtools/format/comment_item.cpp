@@ -86,6 +86,7 @@ CCommentItem::CCommentItem
     CFlatItem(&ctx), m_Comment(comment)
 {
     swap(m_First, sm_FirstComment);
+    TrimSpacesAndJunkFromEnds(m_Comment);
     if ( obj != 0 ) {
         x_SetObject(*obj);
     }
@@ -98,6 +99,7 @@ CCommentItem::CCommentItem(const CSeqdesc&  desc, CBioseqContext& ctx) :
     swap(m_First, sm_FirstComment);
     x_SetObject(desc);
     x_GatherInfo(ctx);
+    TrimSpacesAndJunkFromEnds(m_Comment);
     if ( m_Comment.empty() ) {
         x_SetSkip();
     }
@@ -109,7 +111,8 @@ CCommentItem::CCommentItem(const CSeq_feat& feat, CBioseqContext& ctx)
     swap(m_First, sm_FirstComment);
     x_SetObject(feat);
     x_GatherInfo(ctx);
-    if ( m_Comment.empty() ) {
+    TrimSpacesAndJunkFromEnds(m_Comment);
+    if (m_Comment.empty()) {
         x_SetSkip();
     }       
 }
@@ -624,15 +627,18 @@ string CCommentItem::GetStringForModelEvidance(const SModelEvidance& me)
 
 void CCommentItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(GetObject());
-    if ( desc != 0 ) {
-        x_GatherDescInfo(*desc);
+    const CObject* obj = GetObject();
+    if (obj == NULL) {
         return;
     }
-
-    const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(GetObject());
-    if ( feat != 0 ) {
-        x_GatherFeatInfo(*feat, ctx);
+    const CSeqdesc* desc = dynamic_cast<const CSeqdesc*>(obj);
+    if (desc != NULL) {
+        x_GatherDescInfo(*desc);
+    } else {
+        const CSeq_feat* feat = dynamic_cast<const CSeq_feat*>(obj);
+        if (feat != NULL) {
+            x_GatherFeatInfo(*feat, ctx);
+        }
     }
 }
 
@@ -707,16 +713,13 @@ void CCommentItem::x_SetCommentWithURLlinks
  const string& suffix)
 {
     // !!! test for html - find links within the comment string
-    string comment = ExpandTildes(prefix + str + suffix, eTilde_newline);
+    string comment = ExpandTildes(prefix + str + suffix, eTilde_comment);
     size_t pos = comment.find_last_not_of(" \n\t\r");
     if ( pos != NPOS ) {
         comment.erase(pos + 1);
     }
-    if ( NStr::EndsWith(str, "..")  &&  !NStr::EndsWith(str, "...") ) {
-        comment.erase(str.length() - 1);
-    }
-    if ( !NStr::EndsWith(str, ".") ) {
-        comment += ".";
+    if (!NStr::EndsWith(str, "...")) {
+        ncbi::objects::AddPeriod(comment);
     }
     
     m_Comment = comment;
@@ -885,6 +888,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2004/08/30 13:36:01  shomrat
+* fixed comment formatting
+*
 * Revision 1.10  2004/08/19 16:27:48  shomrat
 * Added constructor from Seq-feat
 *
