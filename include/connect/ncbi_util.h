@@ -36,10 +36,16 @@
  *                CORE_SetLOCK(), CORE_GetLOCK(),
  *                CORE_SetLOG(),  CORE_GetLOG(),   CORE_SetLOGFILE()
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
- *    macro:      LOG_WRITE_ERRNO()
+ *    macro:      LOG_Write(), LOG_Data(),
+ *                LOG_WRITE(), LOG_DATA(),  THIS_FILE, THIS_MODULE
+ *                LOG_WRITE_ERRNO()
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.7  2001/05/17 18:10:22  vakatov
+ * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
+ * Logging::  always call the logger if severity is eLOG_Fatal.
+ *
  * Revision 6.6  2001/01/12 23:50:37  lavr
  * "a+" -> "a" as a mode in fopen() for a logfile
  *
@@ -93,6 +99,38 @@ extern MT_LOCK CORE_GetLOCK(void);
 /******************************************************************************
  *  ERROR HANDLING and LOGGING
  */
+
+
+/* Slightly customized LOG_WriteInternal() -- to distinguish between
+ * logging only a message vs. logging message with some data.
+ */
+#define LOG_Write(lg,level,module,file,line,message) \
+  (void) ((lg  ||  level == eLOG_Fatal) ? \
+  (LOG_WriteInternal(lg,level,module,file,line,message,0,0), 0) : 1)
+#define LOG_Data(lg,level,module,file,line,data,size,message) \
+  (void) ((lg  ||  level == eLOG_Fatal) ? \
+  (LOG_WriteInternal(lg,level,module,file,line,message,data,size), 0) : 1)
+
+
+/* Auxiliary plain macro to write message (maybe, with raw data) to the log
+ */
+#define LOG_WRITE(lg, level, message) \
+  LOG_Write(lg, level, THIS_MODULE, THIS_FILE, __LINE__, message)
+
+#define LOG_DATA(lg, data, size, message) \
+  LOG_Data(lg, eLOG_Trace, 0, 0, 0, data, size, message)
+
+
+/* Defaults for the THIS_FILE and THIS_MODULE macros (used by LOG_WRITE)
+ */
+#if !defined(THIS_FILE)
+#  define THIS_FILE __FILE__
+#endif
+
+#if !defined(THIS_MODULE)
+#  define THIS_MODULE 0
+#endif
+
 
 /* Set the log handler (no logging if "lg" is passed zero) -- to be used by
  * the core internals.
@@ -168,7 +206,7 @@ extern char* MessagePlusErrno
  );
 
 #define LOG_WRITE_ERRNO(lg, level, message)  do { \
-  if ( lg ) { \
+  if (lg  ||  level == eLOG_Fatal) { \
     char buf[2048]; \
     LOG_WRITE(lg, level, \
               MessagePlusErrno(message, errno, 0, buf, sizeof(buf))); \

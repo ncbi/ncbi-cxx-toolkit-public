@@ -53,8 +53,7 @@
  *    flags:      TLOG_FormatFlags, ELOG_FormatFlags
  *    callbacks:  (*FLOG_Handler)(),  (*FLOG_Cleanup)()
  *    methods:    LOG_Create(),  LOG_Reset(),  LOG_AddRef(),  LOG_Delete(),
- *                LOG_Write(), LOG_Data(),
- *    macro:      LOG_WRITE(), LOG_DATA(),  THIS_FILE, THIS_MODULE
+ *                LOG_WriteInternal()
  *
  * Registry:
  *    handle:     REG
@@ -66,6 +65,10 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.9  2001/05/17 18:10:22  vakatov
+ * Moved the logging macros from <ncbi_core.h> to <ncbi_util.h>.
+ * Logging::  always call the logger if severity is eLOG_Fatal.
+ *
  * Revision 6.8  2001/03/02 20:06:54  lavr
  * Typos fixed
  *
@@ -276,7 +279,7 @@ extern const char* LOG_LevelStr(ELOG_Level level);
 
 
 /* Message and miscellaneous data to pass to the log post callback FLOG_Handler
- * For more details, see LOG_Write().
+ * For more details, see LOG_WriteInternal().
  */
 typedef struct {
     const char* message;   /* can be NULL */
@@ -293,7 +296,7 @@ typedef struct {
  */
 typedef void (*FLOG_Handler)
 (void*         user_data,  /* see "user_data" in LOG_Create() or LOG_Reset() */
- SLOG_Handler* call_data   /* composed from LOG_Write() args */
+ SLOG_Handler* call_data   /* composed from LOG_WriteInternal() args */
  );
 
 
@@ -343,7 +346,8 @@ extern LOG LOG_Delete(LOG lg);
 
 /* Write message (maybe, with raw data attached) to the log -- e.g. call:
  *   "lg->handler(lg->user_data, SLOG_Handler*)"
- * NOTE:  use LOG_WRITE() and LOG_DATA() macros if possible!
+ * NOTE:  Do not call this function directly, if possible. Instead, use
+ *        LOG_WRITE() and LOG_DATA() macros from <ncbi_util.h>!
  */
 extern void LOG_WriteInternal
 (LOG         lg,        /* created by LOG_Create() */
@@ -356,30 +360,6 @@ extern void LOG_WriteInternal
  size_t      raw_size   /* size of the raw data (can be zero)*/
  );
 
-#define LOG_Write(lg,level,module,file,line,message) (void) (lg ? \
-  (LOG_WriteInternal(lg,level,module,file,line,message,0,0), 0) : 1)
-#define LOG_Data(lg,level,module,file,line,data,size,message) (void) (lg ? \
-  (LOG_WriteInternal(lg,level,module,file,line,message,data,size), 0) : 1)
-
-
-/* Auxiliary plain macro to write message (maybe, with raw data) to the log
- */
-#define LOG_WRITE(lg, level, message) \
-  LOG_Write(lg, level, THIS_MODULE, THIS_FILE, __LINE__, message)
-
-#define LOG_DATA(lg, data, size, message) \
-  LOG_Data(lg, eLOG_Trace, 0, 0, 0, data, size, message)
-
-
-/* Defaults for the THIS_FILE and THIS_MODULE macros (used by LOG_WRITE)
- */
-#if !defined(THIS_FILE)
-#  define THIS_FILE __FILE__
-#endif
-
-#if !defined(THIS_MODULE)
-#  define THIS_MODULE 0
-#endif
 
 
 /******************************************************************************
