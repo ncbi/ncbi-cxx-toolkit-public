@@ -96,11 +96,11 @@ void CProjectsLstFileFilter::InitFromFile(const string& file_full_path)
             continue;
 
         TPath project_path;
-        NStr::Split(strline, " \r\n\t$", project_path);
+        NStr::Split(strline, " \r\n\t/$", project_path);
         if ( !project_path.empty() ) {
             if (project_path.front() == "#include") {
                 project_path.erase( project_path.begin() );
-                string name = project_path.front();
+                string name = NStr::Join(project_path,"/");
                 if (CDirEntry::IsAbsolutePath(name)) {
                     InitFromFile( name );
                 } else {
@@ -199,6 +199,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2005/03/30 14:11:30  gouriano
+ * Fixed LST file parsing
+ *
  * Revision 1.11  2005/03/29 20:41:18  gouriano
  * Allow inclusion of LST file into LST file
  *
