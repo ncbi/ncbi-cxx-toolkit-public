@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.3 2001/09/17 16:01:52 ucko Exp $
+#  $Id: configure.ac,v 1.4 2001/09/18 20:26:10 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -42,7 +42,7 @@ dnl Set up lock.  The diversion magic lets this occur before AC_INIT, which
 dnl already interferes with other configure processes.
 
 AC_DIVERT_PUSH(INIT_PREPARE)
-if scripts/get_lock.sh configure $$; then
+if $srcdir/scripts/get_lock.sh configure $$; then
     ac_clean_files=configure.lock
 else
     exit 1
@@ -193,7 +193,7 @@ for x_arg in "$@" ; do
 
       --with-extra-action=* | --exec-prefix=* | --with-projects=* \
       | --cache-file=* | --build=* | --host=* | [[A-Z]*=*] \
-      | --with-sybase-local=* \
+      | --with-sybase-local=* | --with-wxwin=* \
       | --target=* | --with-runpath=* | --no-create | --no-recursion)
       ;;
 
@@ -572,6 +572,40 @@ fi
 CFLAGS="$ARCH_CFLAGS $CFLAGS"
 CXXFLAGS="$ARCH_CFLAGS $CXXFLAGS"
 LDFLAGS="$ARCH_CFLAGS $LDFLAGS"
+
+#### Flags to enable (potentially unsafe) extra optimization.
+if test -z "${CFAST+set}"; then
+   case "$compiler" in
+       GCC)
+   	  CFAST="-O9 -fomit-frame-pointer -finline-functions"
+	  CFAST="$CFAST -ffast-math -fstrict-aliasing"
+   	  ;;
+       WorkShop*)
+   	  # Include ARCH_CFLAGS here because -fast implies -xtarget=native.
+   	  CFAST="-fast $ARCH_CFLAGS"
+	  ;;
+       KCC)
+          CFAST="+K3"
+	  case "$host_os" in
+	     solaris*)
+	        CFAST="$CFAST -fast $ARCH_CFLAGS"
+		;;
+	  esac
+          ;;
+       ICC)
+          CFAST="-O3 -axW -ip"
+	  ;;
+       MIPSpro*)
+          CFAST="-O3 -Ofast"
+	  ;;
+       *)
+   	  CFAST="-O"
+   	  ;;
+   esac
+fi
+: ${CXXFAST='$(CFAST)'}
+AC_SUBST(CFAST)
+AC_SUBST(CXXFAST)
 
 
 #### DLLs
@@ -1474,27 +1508,35 @@ AC_MSG_RESULT([$NCBI_C_PATH])
 ## wxWindows
 AC_MSG_CHECKING(if wxWindows is available)
 if test "$with_wxwin" != "no" ; then
-   if test -n "$WXWIN_PATH" ; then
-      WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_PATH/bin"}
-      WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_PATH/lib"}
-   else
-      WXWIN_PATH="$NCBI/wxwin"
-      if test -z "$WXWIN_LIBPATH" ; then
-         WXWIN_LIBPATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
-         if test "$with_debug" = "no" ; then
-            WXWIN_GTK=${WXWIN_GTK:="wx_gtk"}
-         else
-            WXWIN_GTK=${WXWIN_GTK:="wx_gtkd"}
-         fi
+   if test -z "$WXWIN_PATH"; then
+      if test -d "$with_wxwin"; then
+         WXWIN_PATH=$with_wxwin
+      else
+         WXWIN_PATH="$NCBI/wxwin"
       fi
-      WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_LIBPATH/bin"}
-      WXWIN_LIBPATH="$WXWIN_LIBPATH/lib"
    fi
-   WXWIN_GTK=${WXWIN_GTK:="wx_gtk"}
+   if test -d "$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}/lib" \
+        -a -z "$WXWIN_ARCH_PATH"; then
+      WXWIN_ARCH_PATH="$WXWIN_PATH/${compiler_pfx}${release_debug}${mt_sfx}"
+   else
+      WXWIN_ARCH_PATH="$WXWIN_PATH"
+   fi
+   WXWIN_BINPATH=${WXWIN_BINPATH:="$WXWIN_ARCH_PATH/bin"}
+   WXWIN_LIBPATH=${WXWIN_LIBPATH:="$WXWIN_ARCH_PATH/lib"}
+#    if test -n "$WXWIN_GTK"; then
+# 	WXWIN_GTK=wx_gtk
+# 	if test "$with_debug" != "no"; then
+# 	   if test -f "$WXWIN_LIBPATH/libwx_gtkd.a"
+# 		-o -f "$WXWIN_LIBPATH/libwx_gtkd.so"; then
+# 	      WXWIN_GTK=wx_gtkd
+# 	   fi
+# 	fi
+#    fi    
 
    if test -x "$WXWIN_BINPATH/wx-config" ; then
       WXWIN_INCLUDE=`$WXWIN_BINPATH/wx-config --cflags`
-      WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
+#       WXWIN_LIBS="-L$WXWIN_LIBPATH ${CONF_f_runpath}$WXWIN_LIBPATH -l${WXWIN_GTK} -lgtk -lgdk -lgmodule -lglib"
+      WXWIN_LIBS=`$WXWIN_BINPATH/wx-config --libs`
 
       CPPFLAGS="$WXWIN_INCLUDE $orig_CPPFLAGS"
       LIBS="$WXWIN_LIBS $orig_LIBS"
