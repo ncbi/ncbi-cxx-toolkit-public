@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  1999/01/27 16:46:22  sandomir
+* minor change: PFindByName added
+*
 * Revision 1.15  1999/01/21 16:18:03  sandomir
 * minor changes due to NStr namespace to contain string utility functions
 *
@@ -388,6 +391,25 @@ public:
     { return t->IsRequested( m_request ); }
 
 }; // class PRequested
+
+//
+// PFindByName
+//
+
+template<class T>
+class PFindByName : public unary_function<T,bool>
+{  
+    const string& m_name;
+  
+public:
+    
+    explicit PFindByName( const string& name ) 
+        : m_name( name ) {}
+    
+    bool operator() ( const T* t ) const 
+        { return AStrEquiv( m_name, t->GetName() ); }
+    
+}; // class PFindByName
 
 END_NCBI_SCOPE
 

@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.15  1999/01/27 16:46:23  sandomir
+* minor change: PFindByName added
+*
 * Revision 1.14  1999/01/14 20:03:49  sandomir
 * minor changes
 *
@@ -114,7 +117,7 @@ void CNcbiMsgRequest::ClearMsgList( void )
 }
 
 //
-// class CNcbiResource
+// class CNcbiResource 
 //
 
 CNcbiResource::CNcbiResource( void )
