@@ -133,28 +133,22 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
 {
    BlastInitHitList* init_hitlist = aux_struct->init_hitlist;
    BlastHSPList* hsp_list = aux_struct->hsp_list;
-   BLAST_ExtendWord* ewp = aux_struct->ewp;
-   Uint4* query_offsets = aux_struct->query_offsets;
-   Uint4* subject_offsets = aux_struct->subject_offsets;
    Uint1* translation_buffer = NULL;
    Int4* frame_offsets = NULL;
-   Int4 num_chunks, chunk, total_subject_length, offset;
    BlastHitSavingOptions* hit_options = hit_params->options;
    BlastScoringOptions* score_options = score_params->options;
    BlastHSPList* combined_hsp_list = NULL;
    Int2 status = 0;
-   Boolean translated_subject;
    Int4 context, first_context, last_context;
-   Int4 orig_length = subject->length, prot_length = 0;
+   Int4 orig_length = subject->length;
    Uint1* orig_sequence = subject->sequence;
    Int4 **matrix;
    Int4 hsp_num_max;
-
-   translated_subject = (program_number == blast_type_tblastn
+   const Boolean k_translated_subject = (program_number == blast_type_tblastn
                          || program_number == blast_type_tblastx
                          || program_number == blast_type_rpstblastn);
 
-   if (translated_subject) {
+   if (k_translated_subject) {
       first_context = 0;
       last_context = 5;
       if (score_options->is_ooframe) {
@@ -186,7 +180,12 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
 
    /* Loop over frames of the subject sequence */
    for (context=first_context; context<=last_context; context++) {
-      if (translated_subject) {
+      Int4 chunk; /* loop variable below. */
+      Int4 num_chunks; /* loop variable below. */
+      Int4 offset = 0; /* Used as offset into subject sequence (if chunked) */
+      Int4 total_subject_length; /* Length of subject sequence used when split. */
+
+      if (k_translated_subject) {
          subject->frame = BLAST_ContextToFrame(blast_type_blastx, context);
          subject->sequence = 
             translation_buffer + frame_offsets[context] + 1;
@@ -199,7 +198,6 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       /* Split subject sequence into chunks if it is too long */
       num_chunks = (subject->length - DBSEQ_CHUNK_OVERLAP) / 
          (MAX_DBSEQ_LEN - DBSEQ_CHUNK_OVERLAP) + 1;
-      offset = 0;
       total_subject_length = subject->length;
       
       for (chunk = 0; chunk < num_chunks; ++chunk) {
@@ -219,8 +217,8 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          
          return_stats->db_hits +=
             aux_struct->WordFinder(subject, query, lookup, 
-               matrix, word_params, ewp, query_offsets, 
-               subject_offsets, GetOffsetArraySize(lookup), init_hitlist);
+               matrix, word_params, aux_struct->ewp, aux_struct->query_offsets, 
+               aux_struct->subject_offsets, GetOffsetArraySize(lookup), init_hitlist);
             
          if (init_hitlist->total == 0)
             continue;
@@ -228,12 +226,13 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
          return_stats->init_extends += init_hitlist->total;
          
          if (score_options->gapped_calculation) {
+            Int4 prot_length = 0;
             if (score_options->is_ooframe) {
                /* Convert query offsets in all HSPs into the mixed-frame  
                   coordinates */
                TranslateHSPsToDNAPCoord(program_number, init_hitlist, 
                   query_info, subject->frame, orig_length, offset);
-               if (translated_subject) {
+               if (k_translated_subject) {
                   prot_length = subject->length;
                   subject->length = 2*orig_length + 1;
                }
@@ -247,7 +246,7 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
             aux_struct->GetGappedScore(program_number, query, query_info, 
                subject, gap_align, score_params, ext_params, hit_params, 
                init_hitlist, &hsp_list);
-            if (score_options->is_ooframe && translated_subject)
+            if (score_options->is_ooframe && k_translated_subject)
                subject->length = prot_length;
          } else {
             BLAST_GetUngappedHSPList(init_hitlist, query_info, subject,
@@ -277,7 +276,12 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
       combined_hsp_list = Blast_HSPListFree(combined_hsp_list);
    } /* End loop on frames */
 
+   /* Restore the original contents of the subject block */
+   subject->length = orig_length;
+   subject->sequence = orig_sequence;
+
    hsp_list = *hsp_list_out;
+
    if (hit_params->do_sum_stats == TRUE) {
       status = BLAST_LinkHsps(program_number, hsp_list, query_info,
                               subject, gap_align->sbp, hit_params, 
@@ -307,10 +311,6 @@ BLAST_SearchEngineCore(Uint1 program_number, BLAST_SequenceBlk* query,
    if (frame_offsets) {
        sfree(frame_offsets);
    }
-      
-   /* Restore the original contents of the subject block */
-   subject->length = orig_length;
-   subject->sequence = orig_sequence;
 
    return status;
 }
