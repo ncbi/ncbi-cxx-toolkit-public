@@ -4004,8 +4004,8 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
- * Revision 6.139  2003/11/14 13:04:23  lavr
- * Little changes in comments [no code changes]
+ * Revision 6.140  2003/11/14 13:05:23  lavr
+ * Eliminate race on socket file descriptors in s_Select() when socket aborted
  *
  * Revision 6.138  2003/11/12 17:49:42  lavr
  * Implement close w/o destruction (SOCK_CloseEx()) and make
