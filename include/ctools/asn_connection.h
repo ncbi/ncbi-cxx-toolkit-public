@@ -33,6 +33,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/06/28 23:01:53  vakatov
+ * Typo fixed (self-#include)
+ *
  * Revision 1.1  2001/06/28 21:59:24  lavr
  * Initial revision
  *
@@ -41,7 +44,7 @@
 
 #include <connect/ncbi_connection.h>
 #include <asn.h>
-#include <ctools/asn_connection.h>
+
 
 #ifdef __cplusplus
 extern "C" {
