@@ -213,7 +213,7 @@ CMsvcSite::SLibChoice::SLibChoice(const CMsvcSite& site,
         SLibInfo lib_info;
         site.GetLibInfo(m_3PartyLib, config, &lib_info);
 
-        if ( !IsLibOk(lib_info) ) {
+        if ( !CMsvcSite::IsLibOk(lib_info) ) {
 
             m_Choice = eLib;
             break;
@@ -233,23 +233,38 @@ CMsvcSite::ELibChoice CMsvcSite::GetChoiceForLib(const string& lib_id) const
     return eUnknown;
 }
 
-CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(const string& lib3party_id) const
+CMsvcSite::ELibChoice CMsvcSite::GetChoiceFor3PartyLib(
+    const string& lib3party_id, const SConfigInfo& cfg_info) const
 {
     ITERATE(list<SLibChoice>, p, m_LibChoices) {
-
         const SLibChoice& choice = *p;
-        if (choice.m_3PartyLib == lib3party_id) 
-            return choice.m_Choice;
+        if (choice.m_3PartyLib == lib3party_id) {
+            SLibInfo lib_info;
+            GetLibInfo(lib3party_id, cfg_info, &lib_info);
+            return IsLibOk(lib_info) ? e3PartyLib : eLib;
+        }
     }
     return eUnknown;
 }
 
 
-void CMsvcSite::GetLibChoiceIncludes (const string& cpp_flags_define, 
-                                      list<string>* abs_includes) const
+void CMsvcSite::GetLibChoiceIncludes(
+    const string& cpp_flags_define, list<string>* abs_includes) const
 {
     abs_includes->clear();
 
+    string include_str = m_Registry.GetString("LibChoicesIncludes", 
+                                              cpp_flags_define, "");
+    if (!include_str.empty()) {
+        abs_includes->push_back("$(" + cpp_flags_define + ")");
+    }
+}
+
+void CMsvcSite::GetLibChoiceIncludes(
+    const string& cpp_flags_define, const SConfigInfo& cfg_info,
+    list<string>* abs_includes) const
+{
+    abs_includes->clear();
     string include_str = m_Registry.GetString("LibChoicesIncludes", 
                                               cpp_flags_define, "");
     //split on parts
@@ -262,8 +277,12 @@ void CMsvcSite::GetLibChoiceIncludes (const string& cpp_flags_define,
             lib_id = *p;
         else  {
             
-            ELibChoice choice = GetChoiceForLib(lib_id);
-            if (choice == eLib) {
+            SLibChoice choice = GetLibChoiceForLib(lib_id);
+            SLibInfo lib_info;
+            GetLibInfo(choice.m_3PartyLib, cfg_info, &lib_info);
+            if ( IsLibOk(lib_info, true) ) {
+                abs_includes->push_back(lib_info.m_IncludeDir);
+            } else {
                 const string& rel_include_path = *p;
                 string abs_include_path = 
                     GetApp().GetProjectTreeInfo().m_Include;
@@ -272,24 +291,26 @@ void CMsvcSite::GetLibChoiceIncludes (const string& cpp_flags_define,
                 abs_include_path = CDirEntry::NormalizePath(abs_include_path);
                 abs_includes->push_back(abs_include_path);
             }
-            if (choice == e3PartyLib) {
-                ITERATE(list<SLibChoice>, n, m_LibChoices) {
-                    const SLibChoice& choice = *n;
-                    if (choice.m_LibId == lib_id) {
-                        SLibInfo lib_info;
-                        GetLibInfo(choice.m_3PartyLib, SConfigInfo(), &lib_info);
-                        if ( !lib_info.m_IncludeDir.empty() ) {
-                            abs_includes->push_back(lib_info.m_IncludeDir);
-                        }
-                    }
-                }
-            }
-            //
             lib_id.erase();
         }
     }
 }
 
+void CMsvcSite::GetLibInclude(const string& lib_id,
+    const SConfigInfo& cfg_info, list<string>* includes) const
+{
+    includes->clear();
+    if (CSymResolver::IsDefine(lib_id)) {
+        GetLibChoiceIncludes( CSymResolver::StripDefine(lib_id), cfg_info, includes);
+        return;
+    }
+    SLibInfo lib_info;
+    GetLibInfo(lib_id, cfg_info, &lib_info);
+    if ( IsLibOk(lib_info, true) ) {
+        includes->push_back(lib_info.m_IncludeDir);
+        return;
+    }
+}
 
 CMsvcSite::SLibChoice CMsvcSite::GetLibChoiceForLib(const string& lib_id) const
 {
@@ -301,6 +322,16 @@ CMsvcSite::SLibChoice CMsvcSite::GetLibChoiceForLib(const string& lib_id) const
     }
     return SLibChoice();
 
+}
+
+CMsvcSite::SLibChoice CMsvcSite::GetLibChoiceFor3PartyLib(const string& lib3party_id) const
+{
+    ITERATE(list<SLibChoice>, p, m_LibChoices) {
+        const SLibChoice& choice = *p;
+        if (choice.m_3PartyLib == lib3party_id)
+            return choice;
+    }
+    return SLibChoice();
 }
 
 
@@ -332,18 +363,22 @@ string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
                                 "ThirdPartyLibsBinSubDir", "");
 }
 //-----------------------------------------------------------------------------
-bool IsLibOk(const SLibInfo& lib_info)
+bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent)
 {
     if ( lib_info.IsEmpty() )
         return false;
     if ( !lib_info.m_IncludeDir.empty() &&
          !CDirEntry(lib_info.m_IncludeDir).Exists() ) {
-        LOG_POST(Warning << "No LIB INCLUDE dir : " + lib_info.m_IncludeDir);
+        if (!silent) {
+            LOG_POST(Warning << "No LIB INCLUDE dir : " + lib_info.m_IncludeDir);
+        }
         return false;
     }
     if ( !lib_info.m_LibPath.empty() &&
          !CDirEntry(lib_info.m_LibPath).Exists() ) {
-        LOG_POST(Warning << "No LIBPATH : " + lib_info.m_LibPath);
+        if (!silent) {
+            LOG_POST(Warning << "No LIBPATH : " + lib_info.m_LibPath);
+        }
         return false;
     }
     ITERATE(list<string>, p, lib_info.m_Libs) {
@@ -351,7 +386,9 @@ bool IsLibOk(const SLibInfo& lib_info)
         string lib_path_abs = CDirEntry::ConcatPath(lib_info.m_LibPath, lib);
         if ( !lib_path_abs.empty() &&
              !CDirEntry(lib_path_abs).Exists() ) {
-            LOG_POST(Warning << "No LIB : " + lib_path_abs);
+            if (!silent) {
+                LOG_POST(Warning << "No LIB : " + lib_path_abs);
+            }
             return false;
         }
     }
@@ -401,6 +438,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.21  2004/11/23 20:12:12  gouriano
+ * Tune libraries with the choice for each configuration independently
+ *
  * Revision 1.20  2004/11/17 19:55:51  gouriano
  * Expand macros in Defines section
  *

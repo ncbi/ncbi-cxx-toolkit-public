@@ -238,11 +238,9 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
             list<string> libchoices_abs_includes ;
             GetApp().GetSite().GetLibChoiceIncludes(sflag, 
                                                     &libchoices_abs_includes);
-
             ITERATE(list<string>, n, libchoices_abs_includes) {
                 const string& dir = *n;
-
-                if ( !dir.empty() && CDirEntry(dir).IsDir() ) {
+                if ( !dir.empty() ) {
                     include_dirs->push_back(dir);    
                 }
             }
@@ -1422,6 +1420,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.19  2004/11/23 20:12:12  gouriano
+ * Tune libraries with the choice for each configuration independently
+ *
  * Revision 1.18  2004/11/17 19:53:24  gouriano
  * Corrected to take into account DTD_PROJ
  *

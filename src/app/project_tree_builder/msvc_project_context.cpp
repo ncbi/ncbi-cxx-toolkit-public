@@ -203,7 +203,7 @@ CMsvcPrjProjectContext::CMsvcPrjProjectContext(const CProjItem& project)
                     lib_ok = false;
                     break;
                 }
-                if ( !IsLibOk(lib_info) ) {
+                if ( !CMsvcSite::IsLibOk(lib_info) ) {
                     lib_ok = false;
                     break;
                 }
@@ -245,6 +245,9 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
                                             (const SConfigInfo& cfg_info) const
 {
     list<string> add_include_dirs_list;
+    list<string> dirs;
+    string dir;
+    list<string>::const_iterator i;
 
     // project dir
     add_include_dirs_list.push_back 
@@ -254,9 +257,18 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     //take into account project include dirs
     ITERATE(list<string>, p, m_ProjectIncludeDirs) {
         const string& dir_abs = *p;
-        add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir_abs) ?
-                CDirEntry::CreateRelativePath(m_ProjectDir, dir_abs) :
-                dir_abs);
+        dirs.clear();
+        if (CSymResolver::IsDefine(dir_abs)) {
+            GetApp().GetSite().GetLibInclude( dir_abs, cfg_info, &dirs);
+        } else {
+            dirs.push_back(dir_abs);
+        }
+        for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
+            dir = *i;
+            add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir) ?
+                    CDirEntry::CreateRelativePath(m_ProjectDir, dir) :
+                    dir);
+        }
     }
 
     //MSVC Makefile additional include dirs
@@ -280,20 +292,22 @@ string CMsvcPrjProjectContext::AdditionalIncludeDirectories
     list<string> libs_list;
     CreateLibsList(&libs_list);
     ITERATE(list<string>, p, libs_list) {
-        const string& requires = *p;
-        if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
-            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires) == CMsvcSite::eLib) {
-                continue;
-            }
+        if ( *p == string(MSVC_DEFAULT_LIBS_TAG)) {
+            continue;
         }
-        SLibInfo lib_info;
-        GetApp().GetSite().GetLibInfo(requires, cfg_info, &lib_info);
-        if ( !lib_info.m_IncludeDir.empty() ) {
-            const string& dir_abs = lib_info.m_IncludeDir;
-            add_include_dirs_list.push_back(SameRootDirs(m_ProjectDir,dir_abs)?
-                                CDirEntry::CreateRelativePath(m_ProjectDir, 
-                                                              dir_abs) :
-                                dir_abs);
+        GetApp().GetSite().GetLibInclude(*p, cfg_info, &dirs);
+        for (list<string>::const_iterator i = dirs.begin(); i != dirs.end(); ++i) {
+            dir = *i;
+            if ( !dir.empty() ) {
+                if (SameRootDirs(m_ProjectDir,dir)) {
+                    dir = CDirEntry::CreateRelativePath(m_ProjectDir, dir);
+                }
+                if (find(add_include_dirs_list.begin(),
+                    add_include_dirs_list.end(), dir) !=add_include_dirs_list.end()) {
+                    continue;
+                }
+                add_include_dirs_list.push_back(dir);
+            }
         }
     }
 
@@ -315,7 +329,7 @@ string CMsvcPrjProjectContext::AdditionalLinkerOptions
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
-            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires) == CMsvcSite::eLib) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
@@ -358,7 +372,7 @@ string CMsvcPrjProjectContext::AdditionalLibraryDirectories
     ITERATE(list<string>, p, libs_list) {
         const string& requires = *p;
         if (GetApp().GetSite().Is3PartyLibWithChoice(requires)) {
-            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires) == CMsvcSite::eLib) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(requires, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
@@ -472,7 +486,7 @@ const list<string> CMsvcPrjProjectContext::Defines(const SConfigInfo& cfg_info) 
     ITERATE(list<string>, p, libs_list) {
         const string& lib_id = *p;
         if (GetApp().GetSite().Is3PartyLibWithChoice(lib_id)) {
-            if (GetApp().GetSite().GetChoiceFor3PartyLib(lib_id) == CMsvcSite::eLib) {
+            if (GetApp().GetSite().GetChoiceFor3PartyLib(lib_id, cfg_info) == CMsvcSite::eLib) {
                 continue;
             }
         }
@@ -918,6 +932,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/11/23 20:12:12  gouriano
+ * Tune libraries with the choice for each configuration independently
+ *
  * Revision 1.39  2004/11/09 17:38:32  gouriano
  * Do not sort INCLUDE directories
  *

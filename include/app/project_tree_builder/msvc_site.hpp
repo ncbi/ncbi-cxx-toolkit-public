@@ -69,7 +69,6 @@ struct SLibInfo
         m_Macro.clear();
     }
 };
-bool IsLibOk(const SLibInfo& lib_info);
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -133,12 +132,20 @@ public:
     bool Is3PartyLibWithChoice      (const string& lib3party_id) const;
 
     ELibChoice GetChoiceForLib      (const string& lib_id) const;
-    ELibChoice GetChoiceFor3PartyLib(const string& lib3party_id) const;
+    ELibChoice GetChoiceFor3PartyLib(const string& lib3party_id,
+                                     const SConfigInfo& cfg_info) const;
 
-    void GetLibChoiceIncludes       (const string& cpp_flags_define, 
-                                     list<string>* abs_includes) const;
+    void GetLibChoiceIncludes(const string& cpp_flags_define,
+                              list<string>* abs_includes) const;
+    void GetLibChoiceIncludes(const string& cpp_flags_define,
+                              const SConfigInfo& cfg_info,
+                              list<string>* abs_includes) const;
+    void GetLibInclude(const string& lib_id,
+                       const SConfigInfo& cfg_info,
+                       list<string>* includes) const;
 
     SLibChoice GetLibChoiceForLib   (const string& lib_id) const;
+    SLibChoice GetLibChoiceFor3PartyLib   (const string& lib3party_id) const;
 
 
     
@@ -155,6 +162,7 @@ public:
         return m_Macros;
     }
 
+    static bool IsLibOk(const SLibInfo& lib_info, bool silent = false);
 private:
     const CNcbiRegistry& m_Registry;
     
@@ -175,6 +183,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/11/23 20:12:48  gouriano
+ * Tune libraries with the choice for each configuration independently
+ *
  * Revision 1.19  2004/11/02 18:09:51  gouriano
  * Allow macros in the definition of 3rd party library paths
  *

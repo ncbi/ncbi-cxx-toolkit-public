@@ -193,7 +193,7 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
         const string& component = *p;
         SLibInfo lib_info;
         site.GetLibInfo(component, config, &lib_info);
-        if ( !IsLibOk(lib_info) )
+        if ( !site.IsLibOk(lib_info) )
             return false;
     }
     return true;
@@ -292,6 +292,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.18  2004/11/23 20:12:12  gouriano
+ * Tune libraries with the choice for each configuration independently
+ *
  * Revision 1.17  2004/11/09 19:48:46  gouriano
  * Do not write header's ifdef into ncbiconf_msvc_site.*.h
  *

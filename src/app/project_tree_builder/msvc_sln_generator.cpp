@@ -254,15 +254,6 @@ CMsvcSolutionGenerator::WriteProjectAndSection(CNcbiOfstream&     ofs,
             continue;
         }
 
-        // Do not generate dependencies if internal lib
-        // is present in form of 3-rd party lib
-        if (id.Type() == CProjKey::eLib                  &&
-            GetApp().GetSite().IsLibWithChoice(id.Id())  &&
-            GetApp().GetSite().GetChoiceForLib(id.Id()) == CMsvcSite::e3PartyLib) {
-            continue;
-        }
-
-
         TProjects::const_iterator n = m_Projects.find(id);
         if (n != m_Projects.end()) {
 
@@ -412,6 +403,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.20  2004/11/23 20:12:12  gouriano
+ * Tune libraries with the choice for each configuration independently
+ *
  * Revision 1.19  2004/11/17 19:55:14  gouriano
  * Corrected warning message
  *
