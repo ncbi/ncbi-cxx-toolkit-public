@@ -73,8 +73,6 @@ protected:
     virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry) const;
     virtual void x_GatherBioseq(const CBioseq_Handle& seq) const;
     virtual void x_DoMultipleSections(const CBioseq_Handle& seq) const;
-    virtual bool x_DisplayBioseq(const CSeq_entry_Handle& entry,
-        const CBioseq_Handle& seq) const;
     virtual void x_DoSingleSection(CBioseqContext& ctx) const = 0;
 
     // references
@@ -154,6 +152,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.16  2005/03/28 17:12:40  shomrat
+* Removed no longer used method
+*
 * Revision 1.15  2005/02/02 19:34:49  shomrat
 * Added barcode comment
 *
