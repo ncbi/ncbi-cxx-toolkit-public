@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  1999/12/17 17:24:52  vakatov
+* Get rid of some extra stuff
+*
 * Revision 1.20  1999/12/17 04:08:04  vakatov
 * cgiapp.cpp
 *
@@ -104,36 +107,7 @@
 #include <cgi/cgiapp.hpp>
 #include <cgi/cgictx.hpp>
 
-
-#if defined(USE_FASTCGI)  &&  !defined(HAVE_LIBFASTCGI)
-#  undef USE_LIBFASTCGI
-#endif
-
-
-#if defined(USE_FASTCGI)
-# include <fcgiapp.h>
-# include "fcgibuf.hpp"
-# include <sys/stat.h>
-# include <errno.h>
-#endif /* USE_FASTCGI */
-
-
 BEGIN_NCBI_SCOPE
-
-
-#if defined(USE_FASTCGI)
-static time_t s_GetModTime(const char* const* argv)
-{
-    _ASSERT(argv  &&  argv[0]);
-    struct stat st;
-    if (stat(argv[0], &st) != 0) {
-        ERR_POST("s_GetModTime(): " << strerror(errno));
-        THROW1_TRACE(CErrnoException, "Program status access error");
-    }
-    return st.st_mtime;
-}
-#endif /* USE_FASTCGI */
-
 
 
 ///////////////////////////////////////////////////////
