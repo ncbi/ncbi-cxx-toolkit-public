@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.59  2003/09/12 17:26:01  dondosha
+ * Added check that gap extension option cannot be 0 when gap open is not 0
+ *
  * Revision 1.58  2003/09/10 19:48:08  dondosha
  * Removed dependency on mb_lookup.h
  *
@@ -712,6 +715,14 @@ BlastScoringOptionsValidate(Uint1 program_number,
 			Blast_MessageWrite(blast_msg, 1, code, subcode, "BLASTN penalty must be negative");
 			return (Int2) code;
 		}
+                if (options->gap_open > 0 && options->gap_extend == 0) 
+                {
+                        Int4 code=2;
+                        Int4 subcode=1;
+                        Blast_MessageWrite(blast_msg, 1, code, subcode, 
+                           "BLASTN gap extension penalty cannot be 0");
+                        return (Int2) code;
+                }
 	}
 	else
 	{
