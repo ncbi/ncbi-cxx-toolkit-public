@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.55  2000/06/16 18:04:11  thiessen
+* avoid uncaught_exception() unimplemented on Mac/CodeWarrior
+*
 * Revision 1.54  2000/06/16 16:31:19  vasilche
 * Changed implementation of choices and classes info to allow use of the same classes in generated and user written classes.
 *
@@ -393,11 +396,13 @@ bool CObjectIStream::InGoodState(void)
         // fail flag already set
         return false;
     }
+#ifndef NCBI_OS_MAC    // uncaught_exception() unimplemented in CodeWarrior!
     else if ( uncaught_exception() ) {
         // exception thrown without setting fail flag
         SetFailFlags(eFail);
         return false;
     }
+#endif
     else {
         // ok
         _TRACE("CanClose: "<<GetStackTrace());
