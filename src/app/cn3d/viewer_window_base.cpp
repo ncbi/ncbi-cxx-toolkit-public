@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/07/27 13:52:47  thiessen
+* make sure domains are assigned in order of molecule id; tweak pattern dialog
+*
 * Revision 1.20  2001/07/26 13:41:53  thiessen
 * add pattern memory, make period optional
 *
@@ -375,7 +378,7 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
     static wxString previousPattern;
 
     // get pattern from user
-    wxString pattern = wxGetTextFromUser("Enter a valid ProSite pattern:",
+    wxString pattern = wxGetTextFromUser("Enter a pattern using ProSite syntax:",
         "Input pattern", previousPattern, this);
     if (pattern.size() == 0) return;
     // add trailing period if not present (convenience for the user)

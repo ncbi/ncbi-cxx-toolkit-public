@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2001/07/27 13:52:47  thiessen
+* make sure domains are assigned in order of molecule id; tweak pattern dialog
+*
 * Revision 1.27  2001/07/12 17:35:15  thiessen
 * change domain mapping ; add preliminary cdd annotation GUI
 *
@@ -135,6 +138,7 @@
 #include "cn3d/atom_set.hpp"
 #include "cn3d/object_3d.hpp"
 #include "cn3d/cn3d_tools.hpp"
+#include "cn3d/molecule_identifier.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -318,20 +322,26 @@ ChemicalGraph::ChemicalGraph(StructureBase *parent, const CBiostruc_graph& graph
     // Assign a (new) domain ID to all residues in a chain, if there are not any domains
     // already set; in other words, assume a chain with no given domain features is composed
     // of a single domain.
+    std::list < int > moleculeIDs;
     MoleculeMap::iterator m, me = molecules.end();
     for (m=molecules.begin(); m!=me; m++) {
-        if (m->second->IsProtein() || m->second->IsNucleotide()) {
-            int r;
-            for (r=0; r<m->second->residues.size(); r++)
-                if (m->second->residueDomains[r] != Molecule::NO_DOMAIN_SET) break;
-            if (r == m->second->residues.size()) {
-                int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
-                (const_cast<Molecule*>(m->second))->nDomains++;
-                (const_cast<StructureObject*>(object))->domainMap[domainID] = m->second;
-                (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] = -1;
-                for (r=0; r<m->second->residues.size(); r++)
-                    (const_cast<Molecule*>(m->second))->residueDomains[r] = domainID;
-            }
+        if (m->second->IsProtein() || m->second->IsNucleotide())
+            moleculeIDs.push_back(m->first);
+    }
+    moleculeIDs.sort();    // assign in order of ID
+    std::list < int >::const_iterator id, ide = moleculeIDs.end();
+    for (id=moleculeIDs.begin(); id!=ide; id++) {
+        int r;
+        Molecule *molecule = const_cast<Molecule*>(molecules[*id]);
+        for (r=0; r<molecule->residues.size(); r++)
+            if (molecule->residueDomains[r] != Molecule::NO_DOMAIN_SET) break;
+        if (r == molecule->residues.size()) {
+            int domainID = ++((const_cast<StructureSet*>(parentSet))->nDomains);
+            molecule->nDomains++;
+            (const_cast<StructureObject*>(object))->domainMap[domainID] = molecule;
+            (const_cast<StructureObject*>(object))->domainID2MMDB[domainID] = -1;
+            for (r=0; r<molecule->residues.size(); r++)
+                molecule->residueDomains[r] = domainID;
         }
     }
 }
