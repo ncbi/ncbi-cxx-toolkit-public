@@ -90,7 +90,7 @@ Reference</a>:</b>";
 ///@param use_this_gi: place to extract use_this_gi to
 ///@return true if found score, false otherwise
 ///
-template<class container> static bool 
+template<class container> bool
 s_GetBlastScore(const container&  scoreList, 
                                 int& score, 
                                 double& bits, 
