@@ -31,6 +31,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.5  2001/01/12 21:58:44  golikov
+ * cgicontext available from cgiapp
+ *
  * Revision 1.4  2000/11/01 20:36:31  vasilche
  * Added HTTP_EOL string macro.
  *
@@ -133,12 +136,11 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
             CNcbiIstream istr(&ibuf);
             CNcbiArguments args(0, 0);  // no cmd.-line ars
 
-            auto_ptr<CCgiContext>
-                ctx(CreateContext(&args, &env, &istr, &ostr));
+            m_ctx.reset(CreateContext(&args, &env, &istr, &ostr));
 
             // checking for exit request
-            if (ctx->GetRequest().GetEntries().find("exitfastcgi") !=
-                ctx->GetRequest().GetEntries().end()) {
+            if (m_ctx->GetRequest().GetEntries().find("exitfastcgi") !=
+                m_ctx->GetRequest().GetEntries().end()) {
                 ostr <<
                     "Content-Type: text/html" HTTP_EOL
                     HTTP_EOL
@@ -149,13 +151,13 @@ bool CCgiApplication::RunFastCGI(unsigned def_iter)
             }
 
             if ( !GetConfig().Get("FastCGI", "Debug").empty() ) {
-                ctx->PutMsg("FastCGI: " + NStr::IntToString(iteration + 1) +
-                            " iteration of " + NStr::IntToString(iterations));
+                m_ctx->PutMsg("FastCGI: " + NStr::IntToString(iteration + 1) +
+                              " iteration of " + NStr::IntToString(iterations));
             }
 
             // call ProcessRequest()
             _TRACE("CCgiApplication::Run: calling ProcessRequest()");
-            FCGX_SetExitStatus(ProcessRequest(*ctx), pfout);
+            FCGX_SetExitStatus(ProcessRequest(*m_ctx.get()), pfout);
         }
         catch (exception& e) {
             ERR_POST("CCgiApplication::ProcessRequest() failed: " << e.what());

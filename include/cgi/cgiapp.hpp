@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.21  2001/01/12 21:58:25  golikov
+* cgicontext available from cgiapp
+*
 * Revision 1.20  2000/01/20 17:54:55  vakatov
 * CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
 * SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
@@ -121,6 +124,10 @@ class CCgiApplication : public CNcbiApplication
 
 public:
     static CCgiApplication* Instance(void); // Singleton method    
+
+    // these methods will throw exception if no server context set
+    const CCgiContext& GetContext(void) const;
+    CCgiContext& GetContext(void);
     
     // these methods will throw exception if no server context set
     const CNcbiResource& GetResource(void) const;
@@ -161,8 +168,11 @@ protected:
                                        CNcbiOstream*     out  = 0);
 
 private:
+    CCgiContext& x_GetContext(void) const;
     CNcbiResource& x_GetResource(void) const;
+
     auto_ptr<CNcbiResource> m_resource;
+    auto_ptr<CCgiContext> m_ctx;
 };
 
 

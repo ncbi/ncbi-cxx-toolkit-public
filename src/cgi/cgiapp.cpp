@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2001/01/12 21:58:43  golikov
+* cgicontext available from cgiapp
+*
 * Revision 1.22  2000/01/20 17:54:58  vakatov
 * CCgiApplication:: constructor to get CNcbiArguments, and not raw argc/argv.
 * SetupDiag_AppSpecific() to override the one from CNcbiApplication:: -- lest
@@ -132,12 +135,21 @@ int CCgiApplication::Run(void)
 
     // run as a plain CGI application
     _TRACE("CCgiApplication::Run: calling ProcessRequest");
-    auto_ptr<CCgiContext> ctx( CreateContext() );
-    int result = ProcessRequest(*ctx);
+    m_ctx.reset( CreateContext() );
+    int result = ProcessRequest(*m_ctx.get());
     _TRACE("CCgiApplication::Run: flushing");
-    ctx->GetResponse().Flush();
+    m_ctx->GetResponse().Flush();
     _TRACE("CCgiApplication::Run: return " << result);
     return result;
+}
+
+CCgiContext& CCgiApplication::x_GetContext( void ) const
+{ 
+    if ( !m_ctx.get() ) {
+        ERR_POST("CCgiApplication::GetContext: no context set");
+        throw runtime_error("no context set");
+    }
+    return *m_ctx;
 }
 
 CNcbiResource& CCgiApplication::x_GetResource( void ) const
