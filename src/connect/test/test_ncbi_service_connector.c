@@ -100,7 +100,8 @@ int main(int argc, const char* argv[])
         }
         if (status != eIO_Success) {
             if (status != eIO_Closed)
-                CORE_LOG(n ? eLOG_Error : eLOG_Fatal, "Read error");
+                CORE_LOGF(n ? eLOG_Error : eLOG_Fatal,
+                          ("Read error: %s", IO_StatusStr(status)));
             break;
         }
     }
@@ -142,6 +143,9 @@ int main(int argc, const char* argv[])
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.26  2003/05/29 18:03:49  lavr
+ * Extend read error message with a reason (if any)
+ *
  * Revision 6.25  2003/05/14 03:58:43  lavr
  * Match changes in respective APIs of the tests
  *
