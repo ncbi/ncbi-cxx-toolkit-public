@@ -234,6 +234,13 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ShutdownAPI(void);
  * (socket() + bind() + listen())
  * NOTE: on some systems, "backlog" can be silently limited down to 128 (or 5).
  */
+extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_CreateEx
+(unsigned short port,    /* [in]  the port to listen at                  */
+ unsigned short backlog, /* [in]  maximal # of pending connections       */
+ LSOCK*         lsock,   /* [out] handle of the created listening socket */
+ ESwitch        log      /* [in]  whether to log activity (inherited)    */
+ );
+
 extern NCBI_XCONNECT_EXPORT EIO_Status LSOCK_Create
 (unsigned short port,    /* [in]  the port to listen at                  */
  unsigned short backlog, /* [in]  maximal # of pending connections       */
@@ -687,6 +694,9 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.31  2003/01/17 01:32:30  lavr
+ * +LSOCK_CreateEx()
+ *
  * Revision 6.30  2003/01/16 16:30:57  lavr
  * Add prototype for DSOCK_WipeMsg()
  *
