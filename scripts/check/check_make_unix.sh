@@ -322,6 +322,8 @@ RunTest() {
          # Run check
          CHECK_TIMEOUT="\$x_timeout"
          export CHECK_TIMEOUT
+         _RLD_ARGS="-log $x_tmp/\$\$.out"
+         export _RLD_ARGS
          check_exec="$x_root_dir/scripts/check/check_exec.sh"
          start_time="\`date\`"
          \$check_exec time -p \`eval echo \$x_run_fix\` >$x_tmp/\$\$.out 2>&1
