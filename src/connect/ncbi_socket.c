@@ -99,6 +99,7 @@
 #  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <netinet/in.h>
+#  include <netinet/tcp.h>
 #  if !defined(NCBI_OS_BEOS) && !defined(NCBI_COMPILER_MW_MSL)
 #    include <arpa/inet.h>
 #  endif /*NCBI_OS_BEOS*/
@@ -3259,16 +3260,19 @@ extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
 
 extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
 {
+#ifdef TCP_NODELAY
     if (sock->sock != SOCK_INVALID) {
         int n = (int) on_off;
         if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY, &n, sizeof(n))) {
             int x_errno = SOCK_ERRNO;
             char _id[32];
             CORE_LOGF_ERRNO_EX(eLOG_Warning, x_errno, SOCK_STRERROR(x_errno),
-                               "%s[SOCK::DisableOSSendDelay] "
-                               " Failed setsockopt(%sTCP_NODELAY)",
-                               s_ID(sock, _id), on_off ? "" : "!");
+                               ("%s[SOCK::DisableOSSendDelay] "
+                                " Failed setsockopt(%sTCP_NODELAY)",
+                               s_ID(sock, _id), on_off ? "" : "!"));
+        }
     }
+#endif /*TCP_NODELAY*/
 }
 
 
@@ -4100,6 +4104,9 @@ extern char* SOCK_gethostbyaddr(unsigned int host,
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.151  2004/10/19 18:12:15  lavr
+ * Fix compilation problems with previous commit
+ *
  * Revision 6.150  2004/10/19 18:05:44  lavr
  * +SOCK_DisableOSSendDelay; few other minor patches
  *
