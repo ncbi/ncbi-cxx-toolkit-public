@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.17  2002/09/10 19:55:54  grichenk
+* Catch exceptions when resolving seq-maps; new arguments for GetSeqVector()
+*
 * Revision 1.16  2002/07/25 15:01:53  grichenk
 * Replaced non-const GetXXX() with SetXXX()
 *
@@ -852,29 +855,35 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     sequence::GetTitle(handle);
     CBioseq_Handle::TBioseqCore seq_core = handle.GetBioseqCore();
     {{
-        const CSeqMap& seq_map = handle.GetSeqMap();
-        // Iterate seq-map except the last element
-        TSeqPos len = 0;
-        for (size_t i = 0; i < seq_map.size(); i++) {
-            switch (seq_map[i].GetType()) {
-            case CSeqMap::eSeqData:
-                len += seq_map[i].GetLength();
-                break;
-            case CSeqMap::eSeqRef:
-                len += seq_map[i].GetLength();
-                break;
-            case CSeqMap::eSeqGap:
-                len += seq_map[i].GetLength();
-                break;
-            case CSeqMap::eSeqEnd:
-                break;
-            default:
-                break;
+        try {
+            CConstRef<CSeqMap> seq_map = &handle.CreateResolvedSeqMap();
+            // Iterate seq-map except the last element
+            TSeqPos len = 0;
+            for (size_t i = 0; i < seq_map->size(); i++) {
+                switch ((*seq_map)[i].GetType()) {
+                case CSeqMap::eSeqData:
+                    len += (*seq_map)[i].GetLength();
+                    break;
+                case CSeqMap::eSeqRef:
+                    len += (*seq_map)[i].GetLength();
+                    break;
+                case CSeqMap::eSeqGap:
+                    len += (*seq_map)[i].GetLength();
+                    break;
+                case CSeqMap::eSeqEnd:
+                    break;
+                default:
+                    break;
+                }
             }
+            _ASSERT((*seq_map)[seq_map->size()-1].GetType() ==
+                    CSeqMap::eSeqEnd);
+            _ASSERT(len == seq_len);
         }
-        _ASSERT(seq_map[seq_map.size()-1].GetType() ==
-                CSeqMap::eSeqEnd);
-        _ASSERT(len == seq_len);
+        catch (runtime_error) {
+            // Error in resolving seq-map
+            LOG_POST("Can not get resolved sequence map");
+        }
     }}
 
     {{
@@ -887,7 +896,8 @@ void CTestHelper::ProcessBioseq(CScope& scope, CSeq_id& id,
     }}
     if (seq_core->GetInst().IsSetStrand() &&
         seq_core->GetInst().GetStrand() == CSeq_inst::eStrand_ds) {
-        CSeqVector seq_vect_rev = handle.GetSeqVector(false, false);
+        CSeqVector seq_vect_rev = handle.GetSeqVector(CBioseq_Handle::eCoding_NotSet,
+            CBioseq_Handle::eStrand_Minus);
         string sout_rev = "";
         for (TSeqPos i = seq_vect_rev.size(); i> 0; i--) {
             sout_rev += seq_vect_rev[i-1];
