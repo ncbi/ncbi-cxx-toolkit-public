@@ -76,10 +76,11 @@ public:
 
     CRef<objects::CScore_matrix_parameters> Run();
 
-protected:
+private:
     /// Handle to strategy to process raw PSSM input data
     IPssmInputData*         m_PssmInput;
-    BlastScoreBlk*          m_ScoreBlk;
+    /// Blast score block structure
+    CBlastScoreBlk          m_ScoreBlk;
 
     /// Copies query sequence and adds protein sentinel bytes at the beginning
     /// and at the end of the sequence.
@@ -109,13 +110,15 @@ protected:
     x_InitializeScoreBlock(const unsigned char* query,
                            unsigned int query_length);
 
-    /// Converts the PsiMatrix structure into a CScore_matrix_parameters object
-    /// @param pssm input PsiMatrix structure [in]
+    /// Converts the PSIMatrix structure into a CScore_matrix_parameters object
+    /// @param pssm input PSIMatrix structure [in]
+    /// @param matrix_name underlying scoring matrix name [in]
     /// @return CScore_matrix_parameters object with equivalent contents to
     /// those in pssm argument
     CRef<objects::CScore_matrix_parameters>
-    x_PsiMatrix2ScoreMatrix(const PsiMatrix* pssm,
-                            const PsiDiagnosticsResponse* diagnostics);
+    x_PSIMatrix2ScoreMatrix(const PSIMatrix* pssm,
+                            const string& matrix_name,
+                            const PSIDiagnosticsResponse* diagnostics = NULL);
 
     /// Default constructor available for derived test classes
     CPssmEngine() {}
@@ -136,6 +139,10 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.8  2004/08/04 20:20:34  camacho
+ * 1. Use CBlastScoreBlk instead of bare BlastScoreBlk pointer.
+ * 2. Pass matrix name to properly populate Score_matrix::freq-Ratios field.
+ *
  * Revision 1.7  2004/08/02 13:28:04  camacho
  * +Initialization of BlastScoreBlk and population of Score_matrix structure
  *
