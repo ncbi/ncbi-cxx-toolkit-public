@@ -69,7 +69,7 @@ $(XLIB): $(XLIBOBJ)
 	$(BINCOPY) $(XLIB) $(libdir)
 	@$(BINCOPY) $(XLIBDEP) $(libdir)
 	@$(BINTOUCH) -r $(libdir)/$(XLIB) $(libdir)/$(XLIBDEP)
-	-$(RM) $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK)
+	-$(RM) $(libdir)/$(XLIBLINK) $(libdir)/$(XLIBDEPLINK) >/dev/null 2>&1
 	@(cd $(libdir) && [ -f $(XLIBLINK) ] || $(LN_S) $(XLIB) $(XLIBLINK))
 	@(cd $(libdir) && [ -f $(XLIBDEPLINK) ] || \
 		 $(LN_S) $(XLIBDEP) $(XLIBDEPLINK))
