@@ -37,11 +37,11 @@
 
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
 
 class CFindPattern {
 public:
-    static void Find(CSeqVector& vec, const string& pattern,
+    static void Find(objects::CSeqVector& vec, const string& pattern,
                      vector<TSeqPos>& starts, vector<TSeqPos>& ends);
 };
 
@@ -52,6 +52,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/04 17:49:23  dicuccio
+ * Changed calling parameters for plugins - pass CPluginMessage instead of paired
+ * CPluginCommand/CPluginReply
+ *
  * Revision 1.4  2003/08/04 20:07:13  jcherry
  * Added standard #ifndef wrapper
  *
