@@ -771,7 +771,7 @@ string CNcbiApplication::FindProgramExecutablePath
     // This method don't work -- use standard method
 #  endif
 
-#  if defined(NCBI_OS_LINUX)
+#  if defined(NCBI_OS_LINUX) && 0
     // Linux OS: Try more accurate method of detection
     {{
         char   buf[FILENAME_MAX + 1];
@@ -876,6 +876,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2003/09/25 19:34:51  ucko
+ * FindProgramExecutablePath: disable Linux-specific logic, since it
+ * loses the ability to detect having been run through a symlink.
+ *
  * Revision 1.71  2003/09/25 13:33:58  rsmith
  * NCBI_OS_DARWIN and NCBI_OS_UNIX are not mutually exclusive.
  *
