@@ -52,6 +52,7 @@ class CSocket;
 ///
 /// After any Put, Get transactions connection socket
 /// is closed (part of NetCache protocol implemenation)
+///
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
@@ -73,6 +74,10 @@ public:
     ///
     /// @param time_to_live
     ///    Timeout value in seconds. 0 - server side default assumed.
+    /// 
+    /// Please note that time_to_live is controlled by the server-side
+    /// parameter so if you set time_to_live higher than server-side value,
+    /// server side TTL will be in effect.
     string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
@@ -84,7 +89,8 @@ public:
     /// @param key
     ///    BLOB key to read (returned by PutData)
     /// @return
-    ///    IReader* (caller must delete this)
+    ///    IReader* (caller must delete this). 
+    ///    When NULL BLOB was not found (expired).
     IReader* GetData(const string& key);
 
     enum EReadResult {
@@ -128,6 +134,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2004/10/22 13:51:01  kuznets
+ * Documentation chnages
+ *
  * Revision 1.4  2004/10/08 12:30:34  lavr
  * Cosmetics
  *
