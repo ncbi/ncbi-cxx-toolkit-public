@@ -3,13 +3,8 @@
 <!--#set var="HEADING" value="NCBI C++ Toolkit Library Reference" -->
 <!--#set var="DOCROOT" value="." -->
 <!--#include virtual="./ssi/header.shtml" -->
-<link rel="stylesheet" href="doc.css">
 
 <a name="ref_ListLibs"></a>
-
-<!--#include virtual="./ssi/navlinks.shtml" -->
-
-<hr>
 
 <i><font size=-1>Title links to project summary and detailed documentation below; follow the library link to browse the project's source</font></i>
 <ul>
@@ -147,11 +142,19 @@
 			</li>
 		</ul>
 
-		<li> <a href="programming_manual/diag.html">Diagnostics</a> and <a href="programming_manual/exceptions.html">Exceptions</a> </li>
+		<li> <a href="programming_manual/diag.html">Diagnostics</a>, <a href="programming_manual/exceptions.html">Exceptions</a> and the <a href="libs/debug_dump.html"><tt>DebugDump</tt> Classes</a></li>
 		<ul class=normal>
 			<li>
 				<a href="libs/err_msg.html">Debug Macros</a>
 				<font size=-1><span class=navait> ncbidbg[<a href="lxr/source/include/corelib/ncbidbg.hpp">.hpp</a> &nbsp;|&nbsp; <a href="lxr/source/src/corelib/ncbidbg_p.hpp">_p.hpp</a>&nbsp;|&nbsp;<a href="lxr/source/src/corelib/ncbidbg.cpp">.cpp</a>]</span></font>
+			</li>
+			<li>
+				<a href="libs/debug_dump.html#CDebugDumpable">Debug Dump:  Base Classes and Interface</a>
+				<font size=-1><span class=navait> ddumpable[<a href="lxr/source/include/corelib/ddumpable.hpp">.hpp</a>&nbsp;|&nbsp;<a href="lxr/source/src/corelib/ddumpable.cpp">.cpp</a>], ddump_context[<a href="lxr/source/include/corelib/ddump_context.hpp">.hpp</a>&nbsp;|&nbsp;<a href="lxr/source/src/corelib/ddump_context.cpp">.cpp</a>]</span></font>
+			</li>
+			<li>
+				<a href="libs/debug_dump.html#CDebugDumpFormatter">Debug Dump:  Output Formatting</a>
+				<font size=-1><span class=navait> ddump_formatter[<a href="lxr/source/include/corelib/ddump_formatter.hpp">.hpp</a>], ddump_formatter_text[<a href="lxr/source/include/corelib/ddump_formatter_text.hpp">.hpp</a>&nbsp;|&nbsp;<a href="lxr/source/src/corelib/ddump_formatter_text.cpp">.cpp</a>]</span></font>
 			</li>
 			<li>
 				<a href="programming_manual/diag.html">Diagnostics API</a>
@@ -200,7 +203,7 @@
         <p></p>
 
 	<ol type="i" class=bold>
-    <li> <a href="libs/conn.html#ref_Debugging">Debugging Tools and Troubleshooting Documentation<p></a> </li>
+    <li> <a href="libs/conn.html#ref_Debugging">Debugging Tools and Troubleshooting Documentation</a> </li>
     <li> <a name="ref_Conncpp"></a><a href="libs/conn.html#ref_Overview">C++ Interfaces to the Library</a> </li>
 		<ul class=normal>
             <li>
@@ -221,15 +224,17 @@
             </li>
 		</ul>
 
-		<li> Common Configuration, Code and Types </li>
+		<li> <a href="libs/c_cxx.html#ref_RunTimeResources">Basic Types and Functionality (for Registry, Logging and MT Locks)</a>
+            <font size=-1><span class=navait> ncbi_core[<a href="lxr/source/include/connect/ncbi_core.h">.h</a>&nbsp;|&nbsp;<a href="lxr/source/src/connect/ncbi_core.c">.c</a>], ncbi_types[<a href="lxr/source/include/connect/ncbi_types.h">.h</a>]</span></font></li>
+<!--
 		<ul class=normal>
             <li>
                 Types and Code Shared by <tt>ncbi_*.[ch]</tt>
-                <font size=-1><span class=navait> ncbi_core[<a href="lxr/source/include/connect/ncbi_core.h">.h</a>&nbsp;|&nbsp;<a href="lxr/source/src/connect/ncbi_core.c">.c</a>]</span></font>
+
             </li>
             <li>
                 Special Types for the Core Library
-                <font size=-1><span class=navait> ncbi_types[<a href="lxr/source/include/connect/ncbi_types.h">.h</a>]</span></font>
+
             </li>
             <li>
                 Private Auxiliary Code for <tt>ncbi_*.[ch]</tt>
@@ -244,6 +249,7 @@
                 <font size=-1><span class=navait> ncbi_config[<a href="lxr/source/src/connect/ncbi_config.h">.h</a>]</span></font>
             </li>
 		</ul>
+-->
 
         <li> <a href="libs/conn.html#ref_Overview">Portable TCP/IP Socket Interface</a>
             <font size=-1><span class=navait> ncbi_socket[<a href="lxr/source/include/connect/ncbi_socket.h">.h</a>&nbsp;|&nbsp;<a href="lxr/source/src/connect/ncbi_socket.c">.c</a>]</span></font>
@@ -1338,11 +1344,7 @@
 	</dd>
 </dl>
 
-<hr>
-
 <!--#include virtual="./ssi/navlinks.shtml" -->
-
-<hr>
 
 <!-- Begin footer content -->
 
@@ -1358,5 +1360,3 @@
 </table>
 
 <!--#include virtual="./ssi/footer.shtml" -->
-</body>
-</html>
