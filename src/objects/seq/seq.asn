@@ -1,4 +1,4 @@
---$Revision: 1.10 $
+--$Revision: 1.11 $
 --**********************************************************************
 --
 --  NCBI Sequence elements
@@ -205,7 +205,8 @@ Seq-inst ::= SEQUENCE {            -- the sequence data itself
         mixed (3) ,
         other (255) } OPTIONAL ,   -- default ds for DNA, ss for RNA, pept
     seq-data Seq-data OPTIONAL ,   -- the sequence
-    ext Seq-ext OPTIONAL }         -- extensions for special types
+    ext Seq-ext OPTIONAL ,         -- extensions for special types
+	hist Seq-hist OPTIONAL }       -- sequence history
 
 --*** Sequence Extensions **********************************
 --*  for representing more complex types
@@ -218,12 +219,29 @@ Seq-ext ::= CHOICE {
 
 Seg-ext ::= SEQUENCE OF Seq-loc
 
-Const-ext ::= SET OF Seq-align
+Const-ext ::= SET OF Seq-align   -- replaced by Seq-hist.assembly
 
 Ref-ext ::= Seq-loc
 
 Map-ext ::= SEQUENCE OF Seq-feat
 
+--*** Sequence History Record ***********************************
+--** assembly = records how seq was assembled from others
+--** replaces = records sequences made obsolete by this one
+--** replaced-by = this seq is made obsolete by another(s)
+
+Seq-hist ::= SEQUENCE {
+	assembly SET OF Seq-align OPTIONAL ,-- how was this assembled?
+	replaces Seq-hist-rec OPTIONAL ,    -- seq makes these seqs obsolete
+	replaced-by Seq-hist-rec OPTIONAL , -- these seqs make this one obsolete
+	deleted CHOICE {
+		bool BOOLEAN ,
+		date Date } OPTIONAL }
+
+Seq-hist-rec ::= SEQUENCE {
+	date Date OPTIONAL ,
+	ids SET OF Seq-id }
+	
 --*** Various internal sequence representations ************
 --*      all are controlled, fixed length forms
 
