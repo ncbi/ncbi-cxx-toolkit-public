@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.57  2002/01/23 21:58:31  grichenk
+* Fixed minor bug in log tags reader
+*
 * Revision 1.56  2002/01/17 20:52:35  grichenk
 * Fixed another bug in long binary tags processing
 *
@@ -386,7 +389,7 @@ string CObjectIStreamAsnBinary::PeekClassTag(void)
     size_t i = 1;
     Uint1 c;
     while ( ((c = PeekTagByte(i++)) & 0x80) != 0 ) {
-        name += char(c);
+        name += char(c & 0x7f);
         if ( i > 1024 ) {
             ThrowError(eOverflow, "tag number is too big");
         }
