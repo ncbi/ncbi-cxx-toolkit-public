@@ -102,6 +102,9 @@ public:
     bool IsPartialLeft  (void) const;
     bool IsPartialRight (void) const;
 
+    // set the 'id' field in all parts of this location
+    void SetId(CSeq_id& id);
+
     virtual void Assign(const CSerialObject& source);
     virtual bool Equals(const CSerialObject& object) const;
 
@@ -340,6 +343,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.28  2003/10/14 16:49:53  dicuccio
+ * Added SetId()
+ *
  * Revision 1.27  2003/09/22 18:38:13  grichenk
  * Fixed circular seq-locs processing by TestForOverlap()
  *
