@@ -120,9 +120,8 @@ static bool s_CheckQuals_cdregion(const CSeq_feat& feat, CBioseqContext& ctx)
     if ( !pseudo ) {
         const CGene_ref* grp = feat.GetGeneXref();
         if ( grp == 0 ) {
-            CConstRef<CSeq_feat> gene = 
-                GetOverlappingGene(feat.GetLocation(), scope);
-            if ( gene ) {
+            CConstRef<CSeq_feat> gene = GetBestGeneForCds(feat, scope);
+            if (gene) {
                 pseudo = gene->CanGetPseudo()  &&  gene->GetPseudo();
                 if ( !pseudo ) {
                     grp = &(gene->GetData().GetGene());
@@ -384,14 +383,17 @@ static bool s_IsLegalECNumber(const string& ec_number)
 }
 
 
-static const string s_BondList[] = {
-    "",
-    "disulfide",
-    "thiolester",
-    "xlink",
-    "thioether",
-    "unclassified"
+typedef pair<CSeqFeatData::TBond, string>   TBondPair;
+static const TBondPair sc_bond_list[] = {
+    TBondPair(CSeqFeatData::eBond_disulfide,  "disulfide"),
+    TBondPair(CSeqFeatData::eBond_thiolester, "thiolester"),
+    TBondPair(CSeqFeatData::eBond_xlink,      "xlink"),
+    TBondPair(CSeqFeatData::eBond_thioether,  "thioether"),
+    TBondPair(CSeqFeatData::eBond_other,      "unclassified")
+    
 };
+typedef CStaticArrayMap<CSeqFeatData::TBond, string> TBondList;
+static const TBondList sc_BondList(sc_bond_list, sizeof(sc_bond_list));
 
 
 static const string s_SiteList[] = {
@@ -603,13 +605,17 @@ CFeatureItem::CFeatureItem
 
 void CFeatureItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    if ( s_SkipFeature(GetFeat(), ctx) ) {
+    try {
+        if ( s_SkipFeature(GetFeat(), ctx) ) {
+            x_SetSkip();
+            return;
+        }
+        m_Type = m_Feat->GetData().GetSubtype();
+        //x_FixLocation(ctx);
+        x_AddQuals(ctx);
+    } catch (CException& e) {
         x_SetSkip();
-        return;
     }
-    m_Type = m_Feat->GetData().GetSubtype();
-    //x_FixLocation(ctx);
-    x_AddQuals(ctx);
 }
 
 
@@ -667,15 +673,21 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     if ( !data.IsGene()  &&  (subtype != CSeqFeatData::eSubtype_operon) ) {
         const CGene_ref* grp = m_Feat->GetGeneXref();
         CConstRef<CSeq_feat> overlap_gene;
-        if ( grp != 0  &&  grp->CanGetDb() ) {
+        if (grp != NULL  &&  grp->CanGetDb()) {
             x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(grp->GetDb()));
         }
-        if ( grp == 0 ) {
-            const CSeq_loc& gene_loc = (ctx.IsProt()  ||  !IsMapped()) ? 
-                m_Feat->GetLocation() : GetLoc();
-            overlap_gene = GetOverlappingGene(gene_loc, scope);
-            if ( overlap_gene ) {
-                if ( overlap_gene->CanGetComment() ) {
+        if (grp == NULL) {
+            if (ctx.IsProt()  ||  !IsMapped()) {
+                overlap_gene = GetBestOverlappingFeat(
+                    *m_Feat,
+                    CSeqFeatData::e_Gene,
+                    sequence::eOverlap_Contains,
+                    scope);
+            } else {
+                overlap_gene = GetOverlappingGene(GetLoc(), scope);
+            }
+            if (overlap_gene) {
+                if (overlap_gene->CanGetComment()) {
                     x_AddQual(eFQ_gene_note,
                         new CFlatStringQVal(overlap_gene->GetComment()));
                 }
@@ -690,7 +702,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 }
             }
         }
-        if ( grp != 0 ) {
+        if (grp != NULL) {
             if (grp->CanGetPseudo()  &&  grp->GetPseudo() ) {
                 pseudo = true;
             }
@@ -719,11 +731,9 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
                 m_Feat->GetLocation() : GetLoc();
             CConstRef<CSeq_feat> operon = GetOverlappingOperon(operon_loc, scope);
             if (operon) {
-                ITERATE(CSeq_feat::TQual, it, operon->GetQual()) {
-                    if ((*it)->CanGetQual()  &&  (*it)->GetQual() == "operon"  &&
-                        (*it)->CanGetVal()) {
-                        x_AddQual(eFQ_operon, new CFlatStringQVal((*it)->GetVal()));
-                    }
+                const string& operon_name = operon->GetNamedQual("operon");
+                if (!operon_name.empty()) {
+                    x_AddQual(eFQ_operon, new CFlatStringQVal(operon_name));
                 }
             }
         }
@@ -749,6 +759,9 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
     case CSeqFeatData::e_Site:
         x_AddSiteQuals(*m_Feat, ctx);
         break;
+    case CSeqFeatData::e_Bond:
+        x_AddBondQuals(*m_Feat, ctx);
+        break;
     // !!! case CSeqFeatData::e_XXX:
     default:
         break;
@@ -772,7 +785,7 @@ void CFeatureItem::x_AddQuals(CBioseqContext& ctx)
 
     // now go through gbqual list
     if (m_Feat->IsSetQual()) {
-        x_ImportQuals(m_Feat->GetQual(), ctx);
+        x_ImportQuals(ctx);
     }
 
     // cleanup (drop illegal quals, duplicate information etc.)
@@ -967,76 +980,77 @@ void CFeatureItem::x_AddCdregionQuals
     } else {
         const CProt_ref* pref = 0;
         // protein qualifiers
-        if ( m_Feat->CanGetProduct() ) {
+        if (m_Feat->IsSetProduct()) {
             const CSeq_id* prot_id = 0;
             // protein id
             try {
                 prot_id = &GetId(m_Feat->GetProduct(), &scope);
-                CBioseq_Handle h = scope.GetBioseqHandle(*prot_id);
-                if (h) {
-                    prot_id = &GetId(h, eGetId_Best);
-                }
             } catch (CException&) {
                 prot_id = 0;
             }
-            
-            if ( prot_id != 0 ) {
-                CBioseq_Handle prot;
-                if ( !cfg.AlwaysTranslateCDS() ) {
+
+            CBioseq_Handle prot;
+            if (prot_id != NULL) {
+                if (!cfg.AlwaysTranslateCDS()) {
                     // by default only show /translation if product bioseq is within
                     // entity, but flag can override and force far /translation
-                    prot = cfg.ShowFarTranslations() ? 
-                        scope.GetBioseqHandle(*prot_id) : 
-                        scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
-                }
-                
-                if ( prot ) {
-                    // Add protein quals (comment, note, names ...) 
-                    pref = x_AddProteinQuals(prot);
-                } else {
-                    x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(*prot_id));
-                    if ( prot_id->IsGi() ) {
-                        x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*prot_id, true));
-                    }
-                }
-
-                // translation
-                if ( !pseudo ) {
-                    string translation;
-                    if ((!prot  &&  cfg.TranslateIfNoProduct())  ||  cfg.AlwaysTranslateCDS()) {
-                        CCdregion_translate::TranslateCdregion(translation, *m_Feat, scope);
-                    } else if (prot) {
-                        TSeqPos len = GetLength(cds.GetProduct(), &scope);
-                        if (len > 0){
-                            CSeqVector seqv = prot.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
-                            if (cfg.IupacaaOnly()) {
-                                seqv.SetCoding(CSeq_data::e_Iupacaa);
-                            } else {
-                                seqv.SetCoding(CSeq_data::e_Ncbieaa);
-                            }
-                            seqv.GetSeqData(0, seqv.size(), translation);
-                        }
-                    }
-                    if (!translation.empty()) {
-                        x_AddQual(eFQ_translation, new CFlatStringQVal(translation));
+                    if (cfg.ShowFarTranslations()) {
+                        prot =  scope.GetBioseqHandle(*prot_id);
                     } else {
-                        // !!! release mode error
+                        prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
                     }
+                }
+            }
+
+            
+            if (prot) {
+                // get the "best" id for the protein
+                prot_id = &GetId(prot, eGetId_Best);
+                // Add protein quals (comment, note, names ...) 
+                pref = x_AddProteinQuals(prot);
+            } else {
+                x_AddQual(eFQ_protein_id, new CFlatSeqIdQVal(*prot_id));
+                if ( prot_id->IsGi() ) {
+                    x_AddQual(eFQ_db_xref, new CFlatSeqIdQVal(*prot_id, true));
+                }
+            }
+
+            // translation
+            if (!pseudo) {
+                string translation;
+                if ((!prot  &&  cfg.TranslateIfNoProduct())  ||  cfg.AlwaysTranslateCDS()) {
+                    CCdregion_translate::TranslateCdregion(translation, *m_Feat, scope);
+                } else if (prot) {
+                    TSeqPos len = GetLength(cds.GetProduct(), &scope);
+                    if (len > 0){
+                        CSeqVector seqv = prot.GetSeqVector(CBioseq_Handle::eCoding_Ncbi);
+                        if (cfg.IupacaaOnly()) {
+                            seqv.SetCoding(CSeq_data::e_Iupacaa);
+                        } else {
+                            seqv.SetCoding(CSeq_data::e_Ncbieaa);
+                        }
+                        seqv.GetSeqData(0, seqv.size(), translation);
+                    }
+                }
+                if (!translation.empty()) {
+                    x_AddQual(eFQ_translation, new CFlatStringQVal(translation));
+                } else {
+                    // !!! release mode error
                 }
             }
         }
 
         // protein xref overrides names, but should not prevent /protein_id, etc.
         const CProt_ref* p = m_Feat->GetProtXref();
-        if (p != 0) {
+        if (p != NULL) {
             pref = p;
         }
-        if (pref != 0) {
-            if ( !pref->GetName().empty() ) {
+        if (pref != NULL) {
+            if (!pref->GetName().empty()) {
                 CProt_ref::TName names = pref->GetName();
                 x_AddQual(eFQ_cds_product, new CFlatStringQVal(names.front()));
                 names.pop_front();
-                if ( !names.empty() ) {
+                if (!names.empty()) {
                     x_AddQual(eFQ_prot_names, new CFlatStringListQVal(names));
                 }
             }
@@ -1342,6 +1356,20 @@ void CFeatureItem::x_AddRegionQuals(const CSeq_feat& feat, CBioseqContext& ctx) 
 }
 
 
+void CFeatureItem::x_AddBondQuals(const CSeq_feat& feat, CBioseqContext& ctx) const
+{
+    CSeqFeatData::TBond bond = feat.GetData().GetBond();
+    TBondList::const_iterator it = sc_BondList.find(bond);
+    if (it != sc_BondList.end()) {
+        if (ctx.IsGenbankFormat()  &&  ctx.IsProt()) {
+            x_AddQual(eFQ_bond_type, new CFlatStringQVal(it->second));
+        } else {
+            x_AddQual(eFQ_bond, new CFlatBondQVal(it->second));
+        }
+    }
+}
+
+
 void CFeatureItem::x_AddSiteQuals(const CSeq_feat& feat, CBioseqContext& ctx) const
 {
     CSeqFeatData::TSite site = feat.GetData().GetSite();
@@ -1422,7 +1450,6 @@ void CFeatureItem::x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_fea
 {
     const string* locus = (gene.IsSetLocus()  &&  !gene.GetLocus().empty()) ?
         &gene.GetLocus() : 0;
-    
     const string* desc = (gene.IsSetDesc() &&  !gene.GetDesc().empty()) ?
         &gene.GetDesc() : 0;
     const CGene_ref::TSyn* syn = (gene.IsSetSyn()  &&  !gene.GetSyn().empty()) ?
@@ -1432,7 +1459,7 @@ void CFeatureItem::x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_fea
         &gene.GetLocus_tag() : 0;
 
     if (locus != NULL) {
-        x_AddQual(eFQ_gene, new CFlatStringQVal(*locus));
+        x_AddQual(eFQ_gene, new CFlatGeneQVal(*locus));
         if (locus_tag != NULL) {
             x_AddQual(eFQ_locus_tag, new CFlatStringQVal(*locus_tag));
         }
@@ -1451,14 +1478,14 @@ void CFeatureItem::x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_fea
             x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
         }
     } else if (desc != NULL) {
-        x_AddQual(eFQ_gene, new CFlatStringQVal(*desc));
-        if (syn != NULL) {
+        x_AddQual(eFQ_gene, new CFlatGeneQVal(*desc));
+        if (gene_feat  &&  syn != NULL) {
             x_AddQual(eFQ_gene_syn, new CFlatGeneSynonymsQVal(*syn));
         }
     } else if (syn != NULL) {
         // add the first as the gene name ...
         CGene_ref::TSyn syns = *syn;
-        x_AddQual(eFQ_gene, new CFlatStringQVal(syns.front()));
+        x_AddQual(eFQ_gene, new CFlatGeneQVal(syns.front()));
         syns.pop_front();
         // ... and the rest as synonyms
         if (gene_feat  &&  !syns.empty() ) {
@@ -1466,12 +1493,12 @@ void CFeatureItem::x_AddQuals(const CGene_ref& gene, bool& pseudo, bool gene_fea
         }
     }
 
-    if (gene_feat  &&  gene.IsSetAllele()  &&  !NStr::IsBlank(gene.GetAllele())) {
+    if (gene.IsSetAllele()  &&  !NStr::IsBlank(gene.GetAllele())) {
         x_AddQual(eFQ_gene_allele, new CFlatStringQVal(gene.GetAllele()));
     }
-    if (gene_feat  &&  gene.IsSetMaploc()  &&  !NStr::IsBlank(gene.GetMaploc())) {
+    /*if (gene_feat  &&  gene.IsSetMaploc()  &&  !NStr::IsBlank(gene.GetMaploc())) {
         x_AddQual(eFQ_gene_map, new CFlatStringQVal(gene.GetMaploc()));
-    }
+    }*/
     if (gene.IsSetDb()) {
         x_AddQual(eFQ_gene_xref, new CFlatXrefQVal(gene.GetDb()));
     }
@@ -1716,8 +1743,10 @@ static bool s_IsValidnConsSplice(const string& cons_splice) {
 }
 
 
-void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& ctx) const
+void CFeatureItem::x_ImportQuals(CBioseqContext& ctx) const
 {
+    _ASSERT(m_Feat->IsSetQual());
+
     typedef pair<const char*, EFeatureQualifier> TLegalImport;
     static const TLegalImport kLegalImports[] = {
         // Must be in case-insensitive alphabetical order!
@@ -1757,54 +1786,60 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& 
     static TLegalImportMap kLegalImportMap(kLegalImports, sizeof(kLegalImports));
 
     bool check_qual_syntax = ctx.Config().CheckQualSyntax();
+    bool is_operon = (m_Feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_operon);
 
-    ITERATE (CSeq_feat::TQual, it, quals) {
-        if (!(*it)->CanGetQual()) {
+    ITERATE (CSeq_feat::TQual, it, m_Feat->GetQual()) {
+        if (!(*it)->CanGetQual()  ||  !(*it)->CanGetVal()) {
             continue;
         }
+        const string& val = (*it)->GetVal();
+
         const char* name = (*it)->GetQual().c_str();
         const TLegalImportMap::const_iterator li = kLegalImportMap.find(name);
         EFeatureQualifier   slot = eFQ_illegal_qual;
         if ( li != kLegalImportMap.end() ) {
             slot = li->second;
         }
-        if (x_HasQual(slot)) {
+        // operon quals for non-operon feature is obtained from 
+        // overlapping operon feature.
+        if (!is_operon  &&  slot == eFQ_operon) {
             continue;
         }
+
         switch (slot) {
         case eFQ_codon:
-            if ((*it)->IsSetVal()  &&  !NStr::IsBlank((*it)->GetVal())) {
-                x_AddQual(slot, new CFlatStringQVal((*it)->GetVal()));
+            if ((*it)->IsSetVal()  &&  !NStr::IsBlank(val)) {
+                x_AddQual(slot, new CFlatStringQVal(val));
             }
             break;
         case eFQ_cons_splice:
             if ((*it)->IsSetVal()) {
-                if (!check_qual_syntax  ||  s_IsValidnConsSplice((*it)->GetVal())) {
-                    x_AddQual(slot, new CFlatStringQVal((*it)->GetVal()));
+                if (!check_qual_syntax  ||  s_IsValidnConsSplice(val)) {
+                    x_AddQual(slot, new CFlatStringQVal(val));
                 }
             }
             break;
         case eFQ_direction:
             if ((*it)->IsSetVal()) {
-                if (!check_qual_syntax  ||  s_IsValidDirection((*it)->GetVal())) {
-                    x_AddQual(slot, new CFlatNumberQVal((*it)->GetVal()));
+                if (!check_qual_syntax  ||  s_IsValidDirection(val)) {
+                    x_AddQual(slot, new CFlatNumberQVal(val));
                 }
             }
             break;
         case eFQ_evidence:
         case eFQ_mod_base:
         case eFQ_number:
-            if ((*it)->IsSetVal()  &&  !NStr::IsBlank((*it)->GetVal())) {
-                x_AddQual(slot, new CFlatNumberQVal((*it)->GetVal()));
+            if ((*it)->IsSetVal()  &&  !NStr::IsBlank(val)) {
+                x_AddQual(slot, new CFlatNumberQVal(val));
             }
             break;
         case eFQ_rpt_type:
-            x_AddQual(slot, new CFlatStringQVal((*it)->GetVal(),
+            x_AddQual(slot, new CFlatStringQVal(val,
                     CFormatQual::eUnquoted));
             break;
         case eFQ_rpt_unit:
             if ((*it)->IsSetVal()) {
-                x_AddRptUnitQual((*it)->GetVal());
+                x_AddRptUnitQual(val);
             }
             break;
         case eFQ_usedin:
@@ -1818,16 +1853,16 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& 
             break;
         }}
         case eFQ_rpt_family:
-            if ((*it)->IsSetVal()  &&  !NStr::IsBlank((*it)->GetVal())) {
-                x_AddQual(slot, new CFlatStringQVal((*it)->GetVal()));
+            if ((*it)->IsSetVal()  &&  !NStr::IsBlank(val)) {
+                x_AddQual(slot, new CFlatStringQVal(val));
             }
             break;
         case eFQ_label:
-            x_AddQual(slot, new CFlatLabelQVal((*it)->GetVal()));
+            x_AddQual(slot, new CFlatLabelQVal(val));
             break;
         case eFQ_EC_number:
-            if ((*it)->IsSetVal()  &&  s_IsLegalECNumber((*it)->GetVal())) {
-                x_AddQual(slot, new CFlatStringQVal((*it)->GetVal()));
+            if ((*it)->IsSetVal()  &&  s_IsLegalECNumber(val)) {
+                x_AddQual(slot, new CFlatStringQVal(val));
             }
             break;
         case eFQ_illegal_qual:
@@ -1835,9 +1870,8 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& 
             break;
         case eFQ_product:
             if (!x_HasQual(eFQ_product)) {
-                x_AddQual(slot, new CFlatStringQVal((*it)->GetVal()));
+                x_AddQual(slot, new CFlatStringQVal(val));
             } else if (!x_HasQual(eFQ_xtra_prod_quals)) {
-                const string& val = (*it)->GetVal();
                 const CFlatStringQVal* gene = x_GetStringQual(eFQ_gene);
                 const string& gene_val =
                     gene != NULL ? gene->GetValue() : kEmptyStr;
@@ -1853,7 +1887,7 @@ void CFeatureItem::x_ImportQuals(const CSeq_feat::TQual& quals, CBioseqContext& 
             }
             break;
         default:
-            x_AddQual(slot, new CFlatStringQVal((*it)->GetVal()));
+            x_AddQual(slot, new CFlatStringQVal(val));
             break;
         }
     }
@@ -1867,19 +1901,20 @@ void CFeatureItem::x_AddRptUnitQual(const string& rpt_unit) const
     }
 
     vector<string> units;
-    bool start = NStr::StartsWith(rpt_unit, '(');
-    size_t end = start  &&  NStr::EndsWith(rpt_unit, ')');
 
-    if (start  &&  end) {
-        string tmp = rpt_unit.substr(1, rpt_unit.length() - 1);
-        NStr::Tokenize(tmp, ",", units);
+    if (NStr::StartsWith(rpt_unit, '(')  &&  NStr::EndsWith(rpt_unit, ')')) {
+        if (rpt_unit.find('(', 1) == NPOS) {
+            string tmp = rpt_unit.substr(1, rpt_unit.length() - 2);
+            NStr::Tokenize(tmp, ",", units);
+        }
     } else {
-        NStr::Tokenize(rpt_unit, ",", units);
+        units.push_back(rpt_unit);
     }
 
-    ITERATE (vector<string>, it, units) {
+    NON_CONST_ITERATE (vector<string>, it, units) {
         if (!it->empty()) {
-            x_AddQual(eFQ_rpt_unit, new CFlatStringQVal(*it, CFormatQual::eUnquoted));
+            NStr::TruncateSpacesInPlace(*it);
+            x_AddQual(eFQ_rpt_unit, new CFlatStringQVal(*it));
         }
     }
 }
@@ -2038,13 +2073,13 @@ void CFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 
         note = (*it)->GetValue();
 
+        JoinNoRedund(notestr, prefix, note);
+
         add_period = false;
-        if (NStr::EndsWith(note, '.')  &&  !NStr::EndsWith(note, "...")) {
-            note.erase(note.length() - 1);
+        if (NStr::EndsWith(notestr, '.')  &&  !NStr::EndsWith(notestr, "...")) {
+            notestr.resize(notestr.length() - 1);
             add_period = true;
         }
-        
-        JoinNoRedund(notestr, prefix, note);
 
         suffix = &(*it)->GetSuffix();
     }
@@ -2628,12 +2663,9 @@ void CFeatureItem::x_AddFTableRegionQuals(const CSeqFeatData::TRegion& region) c
 
 void CFeatureItem::x_AddFTableBondQuals(const CSeqFeatData::TBond& bond) const
 {
-    size_t bondidx = static_cast<size_t>(bond);
-    if ( bondidx == static_cast<size_t>(CSeqFeatData::eBond_other) ) {
-        bondidx = 5;
-    }
-    if ( bondidx > 0  &&  bondidx < 6 ) {
-        x_AddFTableQual("bond_type", s_BondList[bondidx]);
+    TBondList::const_iterator it = sc_BondList.find(bond);
+    if (it != sc_BondList.end()) {
+        x_AddFTableQual("bond_type", it->second);
     }
 }
 
@@ -3256,6 +3288,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/10/18 18:59:13  shomrat
+* Added Bond and Gene qual classes; Fixes to note formatting
+*
 * Revision 1.31  2004/10/05 15:40:55  shomrat
 * Fixes to feature formatting
 *
