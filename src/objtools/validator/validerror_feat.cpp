@@ -1659,7 +1659,6 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
     }
 
     // biological exception
-    
     if ( feat.CanGetExcept()  &&  feat.GetExcept()  &&
          feat.CanGetExcept_text() ) {
         size_t except_num = sizeof(s_BypassMrnaTransCheck) / sizeof(string);
@@ -1671,12 +1670,31 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
         }
     }
 
-    CBioseq_Handle nuc = m_Scope->GetBioseqHandle(feat.GetLocation());
-    CBioseq_Handle rna = m_Scope->GetBioseqHandle(feat.GetProduct());
-    if ( !nuc  ||  !rna ) {
+    CConstRef<CSeq_id> product_id;
+    try {
+        product_id.Reset(&GetId(feat.GetProduct(), m_Scope));
+    } catch (CException&) {
+    }
+    if (!product_id) {
         return;
     }
-
+    
+    CBioseq_Handle nuc = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if (!nuc) {
+        return;
+    }
+    EDiagSev sev = eDiag_Error;
+    CBioseq_Handle rna = m_Scope->GetBioseqHandleFromTSE(*product_id, nuc);
+    if (!rna) {
+        // if not local bioseq product, lower severity (with the exception of Refseq)
+        sev = m_Imp.IsRefSeq() ? eDiag_Error : eDiag_Warning;
+        rna = m_Scope->GetBioseqHandle(feat.GetProduct());
+        if (!rna) {
+            return;
+        }
+    }
+    _ASSERT(nuc  &&  rna);
+    
     CSeqVector nuc_vec = nuc.GetSequenceView(feat.GetLocation(),
         CBioseq_Handle::eViewConstructed,
         CBioseq_Handle::eCoding_Iupac);
@@ -1699,7 +1717,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
                 }
             }
             if ( count_a < (19 * count_no_a) ) { // less then 5%
-                PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
+                PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
                     "Transcript length [" + NStr::IntToString(nuc_len) + 
                     "] less than product length [" + NStr::IntToString(rna_len) + 
                     "], and tail < 95% polyA", feat);
@@ -1712,7 +1730,7 @@ void CValidError_feat::ValidateMrnaTrans(const CSeq_feat& feat)
             // allow base-by-base comparison on common length
             rna_len = nuc_len; 
         } else {
-            PostErr(eDiag_Error, eErr_SEQ_FEAT_TranscriptLen,
+            PostErr(sev, eErr_SEQ_FEAT_TranscriptLen,
                 "Transcript length [" + NStr::IntToString(nuc_vec.size()) + "] " +
                 "does not match product length [" + 
                 NStr::IntToString(rna_vec.size()) + "]", feat);
@@ -2813,6 +2831,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.64  2004/08/03 13:29:53  shomrat
+* TranscriptLen is warning if far, except if Refseq
+*
 * Revision 1.63  2004/07/29 17:24:58  shomrat
 * ValidateBadGeneOverlap checks for overlapping operon before reporting mRNAgeneRange error
 *
