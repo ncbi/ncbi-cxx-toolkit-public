@@ -77,6 +77,14 @@ if [ -f "$top_srcdir/configure.lock" ]; then
     exit 1
 fi
 
+# NB: there is a deliberate quoted newline below.
+old_PATH=`sed -ne 's/^PATH: //p' ${status_dir}/config.log | tr '
+' : | sed -e 's/:$//'`
+if test -n "$old_PATH"; then
+    echo "Restoring PATH to $old_PATH"
+    PATH=$old_PATH
+fi
+
 ### Startup banner
 
 cat <<EOF
