@@ -110,6 +110,11 @@ void CId1Seqref::Restore(istream &is)
   is >> m_Gi >> m_Sat >> m_SatKey;
 }
 
+CSeqref* CId1Seqref::Dup()
+{
+  return new CId1Seqref(*this);
+}
+
 CSeqref *CId1Reader::RetrieveSeqref(istream &is)
 {
   CId1Seqref *id1Seqref = new CId1Seqref;
@@ -219,6 +224,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.3  2002/03/20 04:50:13  kimelman
+* GB loader added
+*
 * Revision 1.2  2002/01/16 18:56:28  grichenk
 * Removed CRef<> argument from choice variant setter, updated sources to
 * use references instead of CRef<>s

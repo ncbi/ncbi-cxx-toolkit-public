@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/03/20 04:50:13  kimelman
+* GB loader added
+*
 * Revision 1.15  2002/03/07 21:25:34  grichenk
 * +GetSeq_annot() in annotation iterators
 *
@@ -274,8 +277,8 @@ private:
     friend class CAnnot_CI;
     friend class CAnnotTypes_CI; // using mutex etc.
     friend class CBioseq_Handle; // using mutex
+    friend class CGBDataLoader;  //
 };
-
 
 
 inline

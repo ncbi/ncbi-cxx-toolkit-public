@@ -102,7 +102,6 @@ public:
 protected:
   CBlob(istream &is) : m_IStream(is) {}
   istream &m_IStream;
-
 private:
   CBlobClass m_Class;
   CBlobDescr m_Descr;
@@ -111,10 +110,11 @@ private:
 class CSeqref : public CStreamable
 {
 public:
-  virtual void Save(ostream &os) const { m_Flag.Save(os); }
-  virtual void Restore(istream &is) { m_Flag.Restore(is); }
+  virtual void       Save(ostream &os) const { m_Flag.Save(os); }
+  virtual void       Restore(istream &is) { m_Flag.Restore(is); }
   virtual streambuf *BlobStreamBuf(int start, int stop, const CBlobClass &cl) = 0;
-  virtual CBlob *RetrieveBlob(istream &is) = 0;
+  virtual CBlob     *RetrieveBlob(istream &is) = 0;
+  virtual CSeqref*   Dup() = 0 ;
 
   enum EMatchLevel {
     eContext,
@@ -133,10 +133,16 @@ public:
   virtual ~CReader() {}
   virtual streambuf *SeqrefStreamBuf(const CSeq_id &seqId) = 0;
   virtual CSeqref *RetrieveSeqref(istream &is) = 0;
+
   // return the level of reasonable parallelism
   // 1 - non MTsafe; 0 - no synchronization required,
   // n - at most n connection is advised/supported
-  virtual int  ParalellLevel(void) const ; 
+  virtual int  ParalellLevel(void) const;
+
+  // returns the time in secons when already retrived data
+  // could become obsolete by fresher version 
+  // -1 - never
+  virtual CIntStreamable::TInt GetConst(string &const_name) const;
 };
 
 END_SCOPE(objects)
@@ -146,6 +152,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2002/03/20 04:50:35  kimelman
+* GB loader added
+*
 * Revision 1.1  2002/01/11 19:04:03  gouriano
 * restructured objmgr
 *

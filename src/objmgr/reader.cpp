@@ -118,14 +118,23 @@ bool CIStream::Eof()
 
 int CReader::ParalellLevel() const 
 {
-  return 1;
+  return 0;
 };
+
+CIntStreamable::TInt
+CReader::GetConst(string &const_name) const
+{
+  return 0;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.2  2002/03/20 04:50:13  kimelman
+* GB loader added
+*
 * Revision 1.1  2002/01/11 19:06:21  gouriano
 * restructured objmgr
 *

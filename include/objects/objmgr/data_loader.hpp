@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/03/20 04:50:34  kimelman
+* GB loader added
+*
 * Revision 1.5  2002/03/18 23:05:18  kimelman
 * comments
 *
@@ -120,8 +123,8 @@ public:
     //  and mark the others one as dead.
     typedef set< CRef<CTSE_Info> > TTSESet;
     virtual CTSE_Info*
-      ResolveConflict(const CSeq_id_Handle& handle,
-                      const TTSESet& tse_set) { return 0; } //### = 0;
+      ResolveConflict(const CSeq_id_Handle&,
+                      const TTSESet&) { return 0; } //### = 0;
     
 protected:
     void SetName(const string& loader_name);
