@@ -530,7 +530,7 @@ fi
 # Provide runpath to the C++ Toolkit DLLs
 rundir="\$(libdir)"
 
-if test -z "$with_runpath"  &&  test "$with_dll" != "yes" ; then
+if test -z "$with_runpath"  &&  test "$with_dll" = "no" ; then
    with_runpath="no"
 fi
 
