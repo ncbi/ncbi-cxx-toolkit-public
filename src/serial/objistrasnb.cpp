@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2000/03/10 17:59:20  vasilche
+* Fixed error reporting.
+* Added EOF bug workaround on MIPSpro compiler (not finished).
+*
 * Revision 1.27  2000/03/07 14:41:34  vasilche
 * Removed default argument.
 *
@@ -196,6 +200,16 @@ CObjectIStreamAsnBinary::~CObjectIStreamAsnBinary(void)
 {
 }
 
+#define CATCH_READ_ERROR \
+    catch (CSerialEofException& ) { \
+        SetFailFlags(eEOF); \
+        throw; \
+    } \
+    catch (...) { \
+        SetFailFlags(eReadError); \
+        throw; \
+    }
+
 inline
 TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index)
 {
@@ -203,7 +217,10 @@ TByte CObjectIStreamAsnBinary::PeekTagByte(size_t index)
     if ( m_CurrentTagState != eTagStart )
         THROW1_TRACE(runtime_error, "bad PeekTagByte call");
 #endif
-    return m_Input.PeekChar(index);
+    try {
+        return m_Input.PeekChar(index);
+    }
+    CATCH_READ_ERROR;
 }
 
 inline
@@ -333,7 +350,10 @@ TByte CObjectIStreamAsnBinary::FlushTag(void)
 #if CHECK_STREAM_INTEGRITY
     m_CurrentTagState = eLengthValue;
 #endif
-    return m_Input.GetChar();
+    try {
+        return m_Input.GetChar();
+    }
+    CATCH_READ_ERROR;
 }
 
 inline
@@ -343,7 +363,10 @@ bool CObjectIStreamAsnBinary::PeekIndefiniteLength(void)
     if ( m_CurrentTagState != eTagParsed )
         THROW1_TRACE(runtime_error, "illegal PeekIndefiniteLength call");
 #endif
-    return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+    try {
+        return TByte(m_Input.PeekChar(m_CurrentTagLength)) == 0x80;
+    }
+    CATCH_READ_ERROR;
 }
 
 void CObjectIStreamAsnBinary::ExpectIndefiniteLength(void)
@@ -401,7 +424,10 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
     if ( lengthLength > sizeof(size_t) ) {
         ThrowError(eOverflow, "length overflow");
     }
-    byte = m_Input.GetChar();
+    try {
+        byte = m_Input.GetChar();
+    }
+    CATCH_READ_ERROR;
     if ( byte == 0 ) {
         ThrowError(eFormatError, "illegal length start");
     }
@@ -413,8 +439,11 @@ size_t CObjectIStreamAsnBinary::ReadLength(void)
     }
     lengthLength--;
     size_t length = byte;
-    while ( lengthLength-- > 0 )
-        length = (length << 8) | TByte(m_Input.GetChar());
+    try {
+        while ( lengthLength-- > 0 )
+            length = (length << 8) | TByte(m_Input.GetChar());
+    }
+    CATCH_READ_ERROR;
     return StartTagData(length);
 }
 
@@ -476,7 +505,10 @@ TByte CObjectIStreamAsnBinary::ReadByte(void)
     if ( m_Input.GetStreamOffset() >= m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
 #endif
-    return m_Input.GetChar();
+    try {
+        return m_Input.GetChar();
+    }
+    CATCH_READ_ERROR;
 }
 
 inline
@@ -506,7 +538,10 @@ void CObjectIStreamAsnBinary::ReadBytes(char* buffer, size_t count)
     if ( m_Input.GetStreamOffset() + count > m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
 #endif
-    m_Input.GetChars(buffer, count);
+    try {
+        m_Input.GetChars(buffer, count);
+    }
+    CATCH_READ_ERROR;
 }
 
 void CObjectIStreamAsnBinary::SkipBytes(size_t count)
@@ -522,7 +557,10 @@ void CObjectIStreamAsnBinary::SkipBytes(size_t count)
     if ( m_Input.GetStreamOffset() + count > m_CurrentTagLimit )
         ThrowError(eOverflow, "tag size overflow");
 #endif
-    m_Input.GetChars(count);
+    try {
+        m_Input.GetChars(count);
+    }
+    CATCH_READ_ERROR;
 }
 
 template<typename T>
@@ -922,7 +960,10 @@ void CObjectIStreamAsnBinary::AsnOpen(AsnIo& )
 
 size_t CObjectIStreamAsnBinary::AsnRead(AsnIo& , char* data, size_t )
 {
-    *data = m_Input.GetChar();
+    try {
+        *data = m_Input.GetChar();
+    }
+    CATCH_READ_ERROR;
     return 1;
 }
 #endif

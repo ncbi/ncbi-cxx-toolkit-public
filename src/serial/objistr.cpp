@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2000/03/10 17:59:20  vasilche
+* Fixed error reporting.
+* Added EOF bug workaround on MIPSpro compiler (not finished).
+*
 * Revision 1.41  2000/03/07 14:06:22  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -207,10 +211,12 @@ CObjectIStream::~CObjectIStream(void)
 {
 }
 
+#define DISPLAY_ERROR 0x10000000
+
 unsigned CObjectIStream::SetFailFlags(unsigned flags)
 {
     unsigned old = m_Fail;
-    m_Fail |= flags;
+    m_Fail |= flags | DISPLAY_ERROR;
     return old;
 }
 
@@ -571,6 +577,10 @@ void CObjectIStream::VEnd(const Block& )
 
 string CObjectIStream::MemberStack(void) const
 {
+    if ( (GetFailFlags() & DISPLAY_ERROR) == 0 ) {
+        // already shown
+        return NcbiEmptyString;
+    }
     string stack;
     bool wasMember = false;
     for ( const StackElement* m = m_CurrentElement; m; m = m->GetPrevous() ) {
@@ -593,7 +603,8 @@ string CObjectIStream::MemberStack(void) const
         else
             stack = s + '.' + stack;
     }
-    return stack;
+    const_cast<CObjectIStream*>(this)->m_Fail &= ~DISPLAY_ERROR;
+    return "Error in CObjectIStream: " + stack;
 }
 
 string CObjectIStream::StackElement::ToString(void) const
@@ -629,7 +640,9 @@ CObjectIStream::Member::Member(CObjectIStream& in, const CMemberId& member)
 CObjectIStream::Member::~Member(void)
 {
     if ( GetStream().fail() ) {
-        ERR_POST("Error in CObjectIStream: " << GetStream().MemberStack());
+        string ms = GetStream().MemberStack();
+        if ( !ms.empty() )
+            ERR_POST(ms);
         return;
     }
     
@@ -701,7 +714,9 @@ bool CObjectIStream::Block::Next(void)
 CObjectIStream::Block::~Block(void)
 {
     if ( GetStream().fail() ) {
-        ERR_POST("Error in CObjectIStream: " << GetStream().MemberStack());
+        string ms = GetStream().MemberStack();
+        if ( !ms.empty() )
+            ERR_POST(ms);
         return;
     }
 #if 0
@@ -734,7 +749,9 @@ CObjectIStream::ByteBlock::ByteBlock(CObjectIStream& in)
 CObjectIStream::ByteBlock::~ByteBlock(void)
 {
     if ( m_In.fail() ) {
-        ERR_POST("Error in CObjectIStream: " << m_In.MemberStack());
+        string ms = m_In.MemberStack();
+        if ( !ms.empty() )
+            ERR_POST(ms);
         return;
     }
 

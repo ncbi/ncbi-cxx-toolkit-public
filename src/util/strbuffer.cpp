@@ -30,6 +30,10 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2000/03/10 17:59:21  vasilche
+* Fixed error reporting.
+* Added EOF bug workaround on MIPSpro compiler (not finished).
+*
 * Revision 1.5  2000/03/07 14:06:24  vasilche
 * Added stream buffering to ASN.1 binary input.
 * Optimized class loading/storing.
@@ -161,8 +165,17 @@ char* CStreamBuffer::FillBuffer(char* pos)
     }
     size_t load = m_BufferSize - dataSize;
     while ( load > 0 ) {
+        size_t count;
+#ifdef mips
+        for ( count = 0; count < load; count++ ) {
+            m_DataEndPos[count] = m_Input.get();
+            if ( !m_Input )
+                break;
+        }
+#else
         m_Input.read(m_DataEndPos, load);
-        size_t count = m_Input.gcount();
+        count = m_Input.gcount();
+#endif
         if ( count == 0 ) {
             if ( pos < m_DataEndPos )
                 return pos;
