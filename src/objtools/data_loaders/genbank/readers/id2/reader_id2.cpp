@@ -564,6 +564,10 @@ bool CId2Reader::LoadChunk(CReaderRequestResult& result,
         x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
         req2.SetGet_data();
         x_ProcessRequest(result, req);
+        if ( !chunk_info.IsLoaded() ) {
+            ERR_POST("ExtAnnot chunk is not loaded: "<<blob_id.ToString());
+            chunk_info.SetLoaded();
+        }
     }
     else {
         CID2S_Request_Get_Chunks& req2 = req.SetRequest().SetGet_chunks();

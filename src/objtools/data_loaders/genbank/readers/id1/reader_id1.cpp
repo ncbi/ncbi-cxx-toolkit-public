@@ -689,12 +689,58 @@ void CId1Reader::GetBlobVersion(CReaderRequestResult& result,
     CID1server_request id1_request;
     x_SetParams(id1_request.SetGetblobinfo(), blob_id);
     
-    CID1server_back    id1_reply;
-    x_ResolveId(id1_reply, id1_request);
+    CID1server_back    reply;
+    x_ResolveId(reply, id1_request);
 
-    TBlobVersion version = x_GetVersion(id1_reply);
+    TBlobVersion version = -1;
+    TBlobState blob_state = 0;
+    switch ( reply.Which() ) {
+    case CID1server_back::e_Gotblobinfo:
+        version = abs(reply.GetGotblobinfo().GetBlob_state());
+        break;
+    case CID1server_back::e_Gotsewithinfo:
+        version = abs(reply.GetGotsewithinfo().GetBlob_info().GetBlob_state());
+        break;
+    case CID1server_back::e_Error:
+    {{
+        version = 0;
+        int error = reply.GetError();
+        switch ( error ) {
+        case 1:
+            blob_state |=
+                CBioseq_Handle::fState_withdrawn|
+                CBioseq_Handle::fState_no_data;
+            break;
+        case 2:
+            blob_state |=
+                CBioseq_Handle::fState_confidential|
+                CBioseq_Handle::fState_no_data;
+            break;
+        case 10:
+            blob_state |= CBioseq_Handle::fState_no_data;
+            break;
+        default:
+            ERR_POST("CId1Reader::GetBlobVersion: "
+                     "ID1server-back.error "<<error);
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "ID1server-back.error "+NStr::IntToString(error));
+        }
+        break;
+    }}
+    default:
+        ERR_POST("CId1Reader::GetBlobVersion: "
+                 "invalid ID1server-back.");
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "invalid ID1server-back");
+    }
+
+    CLoadLockBlob blob(result, blob_id);
     if ( version >= 0 ) {
-        SetAndSaveBlobVersion(result, blob_id, version);
+        SetAndSaveBlobVersion(result, blob_id, blob, version);
+    }
+    if ( blob_state ) {
+        blob.SetBlobState(blob_state);
+        SetAndSaveNoBlob(result, blob_id, CProcessor::kMain_ChunkId, blob);
     }
 }
 
@@ -777,19 +823,6 @@ void CId1Reader::GetBlob(CReaderRequestResult& result,
         LogStat("CId1Reader: read blob", blob_id, main_read, sw, 0);
     }
 #endif
-}
-
-
-CReader::TBlobVersion CId1Reader::x_GetVersion(const CID1server_back& reply)
-{
-    switch ( reply.Which() ) {
-    case CID1server_back::e_Gotblobinfo:
-        return abs(reply.GetGotblobinfo().GetBlob_state());
-    case CID1server_back::e_Gotsewithinfo:
-        return abs(reply.GetGotsewithinfo().GetBlob_info().GetBlob_state());
-    default:
-        return -1;
-    }
 }
 
 
