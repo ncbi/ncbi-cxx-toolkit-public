@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  2001/01/03 17:24:52  vasilche
+* Fixed typo.
+*
 * Revision 1.1  2001/01/03 16:39:18  vasilche
 * Added CAbstractObjectManager - stub for object manager.
 * CRange extracted to separate file.
@@ -55,7 +58,7 @@ public:
     static int max() { return INT_MAX; }
 };
 #else
-#inlcude <limits>
+#include <limits>
 #endif
 
 BEGIN_NCBI_SCOPE
