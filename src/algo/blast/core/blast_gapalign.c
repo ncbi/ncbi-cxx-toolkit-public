@@ -105,7 +105,7 @@ MB_HSP_CLOSE(qo1,qo2,so1,so2,c))
 #define CONTAINED_IN_HSP(a,b,c,d,e,f) (((a <= c && b >= c) && (d <= f && e >= f)) ? TRUE : FALSE)
 
 /** Callback for sorting HSPs by starting offset in query */ 
-static int LIBCALLBACK
+static int
 query_offset_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 {
@@ -129,7 +129,7 @@ query_offset_compare_hsps(VoidPtr v1, VoidPtr v2)
 }
 
 /** Callback for sorting HSPs by ending offset in query */
-static int LIBCALLBACK
+static int
 query_end_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 {
@@ -153,7 +153,7 @@ query_end_compare_hsps(VoidPtr v1, VoidPtr v2)
 }
 
 /** Callback for sorting HSPs by score */
-static int LIBCALLBACK
+static int
 score_compare_hsp(VoidPtr v1, VoidPtr v2)
 
 {
@@ -214,10 +214,11 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
 	  SIGN(hsp_array[index]->query.frame) == SIGN(hsp_array[index+increment]->query.frame))
       {
 	 if (hsp_array[index]->score > hsp_array[index+increment]->score) {
-	    hsp_array[index+increment] = MemFree(hsp_array[index+increment]);
+	    hsp_array[index+increment] = 
+          (BlastHSPPtr) MemFree(hsp_array[index+increment]);
 	    increment++;
 	 } else {
-	    hsp_array[index] = MemFree(hsp_array[index]);
+	    hsp_array[index] = (BlastHSPPtr) MemFree(hsp_array[index]);
 	    index++;
 	    increment = 1;
 	 }
@@ -248,10 +249,11 @@ CheckGappedAlignmentsForOverlap(BlastHSPPtr *hsp_array, Int4 hsp_count, Int2 fra
       {
 	 if (hsp_array[index]->score > hsp_array[index+increment]->score)
 	 {
-	    hsp_array[index+increment] = MemFree(hsp_array[index+increment]);
+	    hsp_array[index+increment] = 
+          (BlastHSPPtr) MemFree(hsp_array[index+increment]);
 	    increment++;
 	 } else	{
-	    hsp_array[index] = MemFree(hsp_array[index]);
+	    hsp_array[index] = (BlastHSPPtr) MemFree(hsp_array[index]);
 	    index++;
 	    increment = 1;
 	 }
@@ -292,8 +294,8 @@ GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
    retval = NULL;
    if (*head == NULL) {
       retval = (GapStateArrayStructPtr) 
-         Nlm_Malloc(sizeof(GapStateArrayStruct));
-      retval->state_array = Nlm_Malloc(chunksize*sizeof(Uint1));
+         Malloc(sizeof(GapStateArrayStruct));
+      retval->state_array = (Uint1Ptr) Malloc(chunksize*sizeof(Uint1));
       retval->length = chunksize;
       retval->used = 0;
       retval->next = NULL;
@@ -307,8 +309,8 @@ GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
             break;
          } else if (var->used == 0) { 
             /* If it's empty and too small, replace. */
-            var->state_array = MemFree(var->state_array);
-            var->state_array = Nlm_Malloc(chunksize*sizeof(Uint1));
+            var->state_array = (Uint1Ptr) MemFree(var->state_array);
+            var->state_array = (Uint1Ptr) Malloc(chunksize*sizeof(Uint1));
             var->length = chunksize;
             retval = var;
             break;
@@ -319,8 +321,8 @@ GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
       
       if (var == NULL)
       {
-         retval = (GapStateArrayStructPtr) Nlm_Malloc(sizeof(GapStateArrayStruct));
-         retval->state_array = Nlm_Malloc(chunksize*sizeof(Uint1));
+         retval = (GapStateArrayStructPtr) Malloc(sizeof(GapStateArrayStruct));
+         retval->state_array = (Uint1Ptr) Malloc(chunksize*sizeof(Uint1));
          retval->length = chunksize;
          retval->used = 0;
          retval->next = NULL;
@@ -328,8 +330,10 @@ GapGetState(GapStateArrayStructPtr PNTR head, Int4 length)
       }
    }
 
+#if ERR_POST_EX_DEFINED
    if (retval->state_array == NULL)
       ErrPostEx(SEV_ERROR, 0, 0, "state array is NULL");
+#endif
 		
    return retval;
 
@@ -383,23 +387,23 @@ static Int4 gdb3(Int4Ptr a, Int4Ptr b, Int4Ptr c)
 }
 
 /** Deallocate the memory for greedy gapped alignment */
-static GreedyAlignMemPtr BLAST_GreedyAlignMemFree(GreedyAlignMemPtr abmp)
+static GreedyAlignMemPtr BLAST_GreedyAlignMemFree(GreedyAlignMemPtr gamp)
 {
-   if (abmp->flast_d) {
-      MemFree(abmp->flast_d[0]);
-      MemFree(abmp->flast_d);
+   if (gamp->flast_d) {
+      MemFree(gamp->flast_d[0]);
+      MemFree(gamp->flast_d);
    } else {
-      if (abmp->flast_d_affine) {
-         MemFree(abmp->flast_d_affine[0]);
-         MemFree(abmp->flast_d_affine);
+      if (gamp->flast_d_affine) {
+         MemFree(gamp->flast_d_affine[0]);
+         MemFree(gamp->flast_d_affine);
       }
-      MemFree(abmp->uplow_free);
+      MemFree(gamp->uplow_free);
    }
-   MemFree(abmp->max_row_free);
-   if (abmp->space)
-      MBSpaceFree(abmp->space);
-   abmp = MemFree(abmp);
-   return abmp;
+   MemFree(gamp->max_row_free);
+   if (gamp->space)
+      MBSpaceFree(gamp->space);
+   gamp = (GreedyAlignMemPtr) MemFree(gamp);
+   return gamp;
 }
 
 /** Allocate memory for the greedy gapped alignment algorithm
@@ -452,12 +456,17 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
    
       gamp->flast_d = (Int4Ptr PNTR) Malloc((max_d + 2) * sizeof(Int4Ptr));
       if (gamp->flast_d == NULL) {
-         gamp = MemFree(gamp);
+         gamp = (GreedyAlignMemPtr) MemFree(gamp);
          return NULL;
       }
-      gamp->flast_d[0] = Malloc((max_d + max_d + 6) * sizeof(Int4) * 2);
+      gamp->flast_d[0] = 
+         (Int4Ptr) Malloc((max_d + max_d + 6) * sizeof(Int4) * 2);
       if (gamp->flast_d[0] == NULL) {
-	 ErrPostEx(SEV_WARNING, 0, 0, "Failed to allocate %ld bytes for greedy alignment", (max_d + max_d + 6) * sizeof(Int4) * 2);
+#if ERR_POST_EX_DEFINED
+	 ErrPostEx(SEV_WARNING, 0, 0, 
+              "Failed to allocate %ld bytes for greedy alignment", 
+              (max_d + max_d + 6) * sizeof(Int4) * 2);
+#endif
          gamp = BLAST_GreedyAlignMemFree(gamp);
          return NULL;
       }
@@ -474,14 +483,14 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       max_cost = MAX(Mis_cost, gap_open+GE_cost);
       gd = gdb3(&Mis_cost, &gap_open, &GE_cost);
       d_diff = ICEIL(Xdrop+reward/2, gd);
-      gamp->uplow_free = MemNew(sizeof(Int4)*2*(max_d+1+max_cost));
+      gamp->uplow_free = (Int4Ptr) MemNew(sizeof(Int4)*2*(max_d+1+max_cost));
       gamp->flast_d_affine = (ThreeValPtr PNTR) 
 	 Malloc((MAX(max_d, max_cost) + 2) * sizeof(ThreeValPtr));
       if (!gamp->uplow_free || !gamp->flast_d_affine) {
          gamp = BLAST_GreedyAlignMemFree(gamp);
          return NULL;
       }
-      gamp->flast_d_affine[0] = 
+      gamp->flast_d_affine[0] = (ThreeValPtr)
 	 MemNew((2*max_d_1 + 6) * sizeof(ThreeVal) * (max_cost+1));
       for (i = 1; i <= max_cost; i++)
 	 gamp->flast_d_affine[i] = 
@@ -489,7 +498,7 @@ BLAST_GreedyAlignMemAlloc(BlastScoringOptionsPtr score_options,
       if (!gamp->flast_d_affine || !gamp->flast_d_affine[0])
          gamp = BLAST_GreedyAlignMemFree(gamp);
    }
-   gamp->max_row_free = Malloc(sizeof(Int4) * (max_d + 1 + d_diff));
+   gamp->max_row_free = (Int4Ptr) Malloc(sizeof(Int4) * (max_d + 1 + d_diff));
 
    if (do_traceback)
       gamp->space = MBSpaceNew();
@@ -636,7 +645,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
   else
      dyn_prog = (BlastGapDPPtr)Nlm_Malloc(j);
 
-  state = Nlm_Malloc(sizeof(Uint1Ptr)*(M+1));
+  state = (Uint1Ptr PNTR) Nlm_Malloc(sizeof(Uint1Ptr)*(M+1));
   dyn_prog[0].CC = 0;
   dyn_prog[0].FF = -m - decline_penalty;
   c = dyn_prog[0].DD = -m;
@@ -760,7 +769,7 @@ ALIGN_EX(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N, Int4Ptr S, Int4Ptr pei,
     state_struct->used += (MAX(i, j) - tt_start + 1);
   }
   i = *pei; j = *pej;
-  tmp = Nlm_Malloc(i+j);
+  tmp = (Uint1Ptr) Nlm_Malloc(i+j);
   for (s=0, c = 0; i> 0 || j > 0; c++) {
       t = state[i][j];
       k  = t %5;
@@ -1034,7 +1043,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
   j = (N + 2) * sizeof(BlastGapDP);
   data.CD = (BlastGapDPPtr)MemNew(j);
 
-  state = MemNew(sizeof(Uint1Ptr)*(M+1));
+  state = (Uint1Ptr PNTR) MemNew(sizeof(Uint1Ptr)*(M+1));
   data.CD[0].CC = 0;
   c = data.CD[0].DD = -m;
   state_struct = GapGetState(&gap_align->state_struct, N+3);
@@ -1224,7 +1233,7 @@ static Int4 OOF_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 
   i = *pei; j = *pej;
   /* printf("best = %d i,j=%d %d\n", best_score, i, j); */
-  tmp = MemNew(i + j);        
+  tmp = (Uint1Ptr) MemNew(i + j);        
   for (s= 1, c= 0; i > 0 || j > 0; c++, i--) {
       k  = (t=state[i][j])%10;
       if (s == 6 && (t/10)%2 == 1) k = 6;
@@ -1463,7 +1472,7 @@ static Int4 OOF_SEMI_G_ALIGN(Uint1Ptr A, Uint1Ptr B, Int4 M, Int4 N,
 
 
 /** Callback function for a sorting of initial HSPs by diagonal */
-static int LIBCALLBACK
+static int
 diag_compare_match(VoidPtr v1, VoidPtr v2)
 {
    BlastInitHSPPtr h1, h2;
@@ -1838,8 +1847,10 @@ static Int4 BLAST_AlignPackedNucl(Uint1Ptr B, Uint1Ptr A, Int4 N, Int4 M,
   else
      dyn_prog = (BlastGapDPPtr)Nlm_Malloc(j);
   if (!dyn_prog) {
+#if ERR_POST_EX_DEFINED
      ErrPostEx(SEV_ERROR, 0, 0, 
                "Cannot allocate %ld bytes for dynamic programming", j);
+#endif
      return -1;
   }
   dyn_prog[0].CC = 0; c = dyn_prog[0].DD = -m;
@@ -1987,7 +1998,12 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
             Realloc(hsp_list->hsp_array, hsp_list->allocated*2*sizeof(BlastHSPPtr));
          if (hsp_array == NULL)
          {
-            ErrPostEx(SEV_WARNING, 0, 0, "UNABLE to reallocate in BLAST_SaveHsp, continuing with fixed array of %ld HSP's", (long) hspmax);
+#if ERR_POST_EX_DEFINED
+            ErrPostEx(SEV_WARNING, 0, 0, 
+               "UNABLE to reallocate in BLAST_SaveHsp,"
+               " continuing with fixed array of %ld HSP's", 
+                      (long) hspmax);
+#endif
             hsp_list->do_not_reallocate = TRUE; 
          } else {
             hsp_list->hsp_array = hsp_array;
@@ -2082,11 +2098,11 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
    if (hspcnt >= hspmax-1) {
       if (new_index >= hspcnt) { 
          /* this HSP is less significant than others on a full list.*/
-         new_hsp = MemFree(new_hsp);
+         new_hsp = (BlastHSPPtr) MemFree(new_hsp);
          return 0;
       } else { /* Delete the last HSP on the list. */
          hspcnt = hsp_list->hspcnt--;
-         hsp_array[hspcnt-1] = MemFree(hsp_array[hspcnt-1]);
+         hsp_array[hspcnt-1] = (BlastHSPPtr) MemFree(hsp_array[hspcnt-1]);
       }
    }
    hsp_list->hspcnt++;
@@ -2097,7 +2113,7 @@ static Int2 BLAST_SaveHsp(BlastGapAlignStructPtr gap_align,
 }
 
 /** Callback for sorting initial HSPs by score. */
-static int LIBCALLBACK
+static int
 score_compare_match(VoidPtr v1, VoidPtr v2)
 
 {
@@ -2262,7 +2278,7 @@ Int2 BLAST_GetGappedScore (Uint1 program_number,
    if (!further_process) {
       /* Free the ungapped data */
       for (index = 0; index < init_hitlist->total; ++index) {
-         init_hsp_array[index]->ungapped_data = 
+         init_hsp_array[index]->ungapped_data = (BlastUngappedDataPtr) 
             MemFree(init_hsp_array[index]->ungapped_data);
       }
       MemFree(init_hsp_array);
@@ -2751,7 +2767,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1Ptr query,
     found_start = FALSE;
     found_end = FALSE;
     
-    tback = tback1 = 
+    tback = tback1 = (Int4Ptr)
        Malloc((subject_length + query_length)*sizeof(Int4));
 
     score_left = 0; prev = 3;
@@ -2849,7 +2865,7 @@ Int2 BLAST_GappedAlignmentWithTraceback(Uint1 program, Uint1Ptr query,
     gap_align->edit_block->discontinuous = gap_align->discontinuous;
 #endif
 
-    tback = MemFree(tback);
+    tback = (Int4Ptr) MemFree(tback);
 
     gap_align->score = score_right+score_left;
     

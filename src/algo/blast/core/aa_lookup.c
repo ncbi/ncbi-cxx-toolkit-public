@@ -26,7 +26,6 @@
 
 */
 
-#include <ncbi.h>
 #include <blast_def.h>
 #include <blast_options.h>
 #include <aa_lookup.h>
@@ -62,7 +61,8 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
 		      LookupTablePtr * lut,
 		      Boolean is_protein)
 {
-   LookupTablePtr lookup = *lut = Malloc(sizeof(LookupTable));
+   LookupTablePtr lookup = *lut = 
+      (LookupTablePtr) Malloc(sizeof(LookupTable));
 
   if (is_protein) {
     lookup->charsize = ilog2(opt->alphabet_size) + 1;
@@ -90,7 +90,8 @@ Int4 LookupTableNew(const LookupTableOptionsPtr opt,
   lookup->exact_matches=0;
   lookup->neighbor_matches=0;
   lookup->threshold = opt->threshold;
-  lookup->thin_backbone = MemNew( lookup->backbone_size * sizeof(Int4Ptr));
+  lookup->thin_backbone = 
+     (Int4Ptr PNTR) MemNew( lookup->backbone_size * sizeof(Int4Ptr));
 
   return 0;
 }
@@ -114,7 +115,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
     {
       chain_size = 8;
       hits_in_chain = 0;
-      chain = Malloc( chain_size * sizeof(Int4) );
+      chain = (Int4Ptr) Malloc( chain_size * sizeof(Int4) );
       chain[0] = chain_size;
       chain[1] = hits_in_chain;
       lookup->thin_backbone[index] = chain;
@@ -131,7 +132,7 @@ Int4 BlastAaLookupAddWordHit(LookupTablePtr lookup, /* in/out: the lookup table 
   if ( (hits_in_chain + 2) == chain_size )
     {
       chain_size = chain_size * 2;
-      chain = Realloc(chain, chain_size * sizeof(Int4) );
+      chain = (Int4Ptr) Realloc(chain, chain_size * sizeof(Int4) );
       lookup->thin_backbone[index] = chain;
       chain[0] = chain_size;
     }
@@ -153,10 +154,12 @@ Int4 _BlastAaLookupFinalize(LookupTablePtr lookup)
   Int4 longest_chain=0;
   
 /* allocate the new lookup table */
- lookup->thick_backbone = MemNew( lookup->backbone_size * sizeof(LookupBackboneCell) );
+ lookup->thick_backbone = (LookupBackboneCell *)
+    MemNew( lookup->backbone_size * sizeof(LookupBackboneCell) );
 
  /* allocate the pv_array */
- lookup->pv = MemNew( (lookup->backbone_size >> PV_ARRAY_BTS) * sizeof(PV_ARRAY_TYPE) );
+ lookup->pv = (PV_ARRAY_TYPE *)
+    MemNew( (lookup->backbone_size >> PV_ARRAY_BTS) * sizeof(PV_ARRAY_TYPE) );
 
  /* find out how many cells have >3 hits */
  for(i=0;i<lookup->backbone_size;i++)
@@ -172,7 +175,7 @@ Int4 _BlastAaLookupFinalize(LookupTablePtr lookup)
  lookup->longest_chain = longest_chain;
 
  /* allocate the overflow array */
- lookup->overflow = Malloc( overflow_cells_needed * sizeof(Int4) );
+ lookup->overflow = (Int4Ptr) Malloc( overflow_cells_needed * sizeof(Int4) );
 
 /* for each position in the lookup table backbone, */
 for(i=0;i<lookup->backbone_size;i++)
@@ -427,7 +430,7 @@ Int4 MakeAllWordSequence(LookupTablePtr lookup)
   
   lookup->neighbors_length = len;
 
-  lookup->neighbors = Malloc( len );
+  lookup->neighbors = (Uint1Ptr) Malloc( len );
 
   /* generate the de Bruijn sequence */
 

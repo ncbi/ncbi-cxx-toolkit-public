@@ -476,8 +476,6 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
    if ((status = BLAST_GapAlignStructNew(scoring_options, *ext_params, 1, 
                     max_subject_length, query->length, program_number, sbp,
                     gap_align))) {
-      ErrPostEx(SEV_ERROR, 0, 0, 
-                "Cannot allocate memory for gapped extension");
       return status;
    }
 
@@ -505,8 +503,10 @@ BLAST_SetUpAuxStructures(Uint1 program_number,
          ((LookupTablePtr)lookup_wrap->lut)->longest_chain;
    }
 
-   aux_struct->query_offsets = Malloc(offset_array_size * sizeof(Uint4));
-   aux_struct->subject_offsets = Malloc(offset_array_size * sizeof(Uint4));
+   aux_struct->query_offsets = 
+      (Uint4Ptr) Malloc(offset_array_size * sizeof(Uint4));
+   aux_struct->subject_offsets = 
+      (Uint4Ptr) Malloc(offset_array_size * sizeof(Uint4));
 
    aux_struct->init_hitlist = BLAST_InitHitListNew();
    aux_struct->hsp_list = BlastHSPListNew();
@@ -633,7 +633,7 @@ static BlastThrInfoPtr BLAST_ThrInfoNew(Int4 last_oid2search)
 {
    BlastThrInfoPtr thr_info;
    
-   thr_info = MemNew(sizeof(BlastThrInfo));
+   thr_info = (BlastThrInfoPtr) MemNew(sizeof(BlastThrInfo));
    thr_info->db_chunk_size = BLAST_DB_CHUNK_SIZE;
    thr_info->final_db_seq = last_oid2search;
    
@@ -733,7 +733,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
 #endif
 
    BLAST_ThrInfoFree(thr_info); /* CC: Is this really needed? */
-   oid_list = MemFree(oid_list);
+   oid_list = (Int4Ptr) MemFree(oid_list);
    BlastSequenceBlkFree(seq_arg.seq);
 
    /* Now sort the hit lists for all queries */
@@ -751,9 +751,9 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BLAST_GapAlignStructFree(gap_align);
    BlastCoreAuxStructFree(aux_struct);
 
-   hit_params = MemFree(hit_params);
-   ext_params = MemFree(ext_params);
-   word_params = MemFree(word_params);
+   hit_params = (BlastHitSavingParametersPtr) MemFree(hit_params);
+   ext_params = (BlastExtensionParametersPtr) MemFree(ext_params);
+   word_params = (BlastInitialWordParametersPtr) MemFree(word_params);
 
    return status;
 }
@@ -833,7 +833,8 @@ Int2 LookupTableWrapInit(BLAST_SequenceBlkPtr query,
    LookupTableWrapPtr lookup_wrap;
 
    /* Construct the lookup table. */
-   *lookup_wrap_ptr = lookup_wrap = MemNew(sizeof(LookupTableWrap));
+   *lookup_wrap_ptr = lookup_wrap = 
+      (LookupTableWrapPtr) MemNew(sizeof(LookupTableWrap));
    lookup_wrap->lut_type = lookup_options->lut_type;
 
    switch ( lookup_options->lut_type ) {

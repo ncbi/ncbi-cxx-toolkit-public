@@ -86,7 +86,7 @@ BlastMaskPtr BlastMaskFree(BlastMaskPtr mask_loc)
 }
 
 /** Used for HeapSort, compares two SeqLoc's by starting position. */
-static int LIBCALLBACK DoubleIntSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
+static int DoubleIntSortByStartPosition(VoidPtr vp1, VoidPtr vp2)
 
 {
    ValNodePtr v1 = *((ValNodePtr PNTR) vp1);
@@ -209,7 +209,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
       if (!mask_loc || (mask_loc->index > index) ||
           !mask_loc->loc_list) {
          /* No masks for this context */
-         double_int = MemNew(sizeof(DoubleInt));
+         double_int = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
          double_int->i1 = start_offset;
          double_int->i2 = end_offset;
          if (!last_loc)
@@ -224,7 +224,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          /* Reverse the order of the locations */
          for (start_loc = mask_loc->loc_list; start_loc; 
               start_loc = start_loc->next) {
-            loc = MemDup(start_loc, sizeof(BlastSeqLoc));
+            loc = (BlastSeqLocPtr) MemDup(start_loc, sizeof(BlastSeqLoc));
             loc->next = prev_loc;
             prev_loc = loc;
          }
@@ -253,7 +253,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
          if (first) {
             last_interval_open = TRUE;
             first = FALSE;
-            double_int = MemNew(sizeof(DoubleInt));
+            double_int = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
             
             if (filter_start > start_offset) {
                /* beginning of sequence not filtered */
@@ -276,7 +276,7 @@ BLAST_ComplementMaskLocations(Uint1 program_number,
             last_interval_open = FALSE;
             break;
          } else {
-            double_int = MemNew(sizeof(DoubleInt));
+            double_int = (DoubleIntPtr) MemNew(sizeof(DoubleInt));
                double_int->i1 = filter_end + 1;
          }
       }
@@ -543,7 +543,7 @@ BlastSetUp_load_options_to_buffer(const Char *instructions, CharPtr buffer)
 
 Int2
 BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length, 
-   Int4 offset, CharPtr instructions, BoolPtr mask_at_hash, 
+   Int4 offset, CharPtr instructions, Boolean *mask_at_hash, 
    BlastSeqLocPtr *seqloc_retval)
 {
 	Boolean do_default=FALSE, do_seg=FALSE, do_coil_coil=FALSE, do_dust=FALSE; 
@@ -593,7 +593,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 	}
 	else
 	{
-		buffer = MemNew(StringLen(instructions)*sizeof(Char));
+		buffer = (CharPtr) MemNew(StringLen(instructions)*sizeof(Char));
 		ptr = instructions;
 		/* allow old-style filters when m cannot be followed by the ';' */
 		if (*ptr == 'm' && ptr[1] == ' ')
@@ -681,7 +681,7 @@ BlastSetUp_Filter(Uint1 program_number, Uint1Ptr sequence, Int4 length,
 				ptr++;
 			}
 		}
-		buffer = MemFree(buffer);
+		buffer = (CharPtr) MemFree(buffer);
 	}
 
 	seqloc_num = 0;
