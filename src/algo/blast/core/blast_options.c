@@ -1220,7 +1220,7 @@ Int2 PSIBlastOptionsNew(PSIBlastOptions** psi_options)
    PSIBlastOptions* options = NULL;
 
    if ( !psi_options )
-      return 1;
+      return 0;
 
    options = (PSIBlastOptions*)calloc(1, sizeof(PSIBlastOptions));
    if ( !options ) 
@@ -1418,6 +1418,9 @@ CalculateLinkHSPCutoffs(Uint1 program, BlastQueryInfo* query_info,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.120  2004/06/23 14:43:04  dondosha
+ * Return 0 from PSIBlastOptionsNew if NULL pointer argument is provided
+ *
  * Revision 1.119  2004/06/22 17:53:22  dondosha
  * Moved parameters specific to HSP linking into a independent structure
  *
