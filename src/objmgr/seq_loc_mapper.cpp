@@ -807,6 +807,9 @@ CRef<CSeq_loc> CSeq_loc_Mapper::x_GetMappedSeq_loc(void)
             continue;
         }
         for (int str = 0; str < id_it->second.size(); ++str) {
+            if (id_it->second[str].size() == 0) {
+                continue;
+            }
             TSeqPos from = kInvalidSeqPos;
             TSeqPos to = kInvalidSeqPos;
             id_it->second[str].sort();
@@ -856,6 +859,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/03/11 18:48:02  shomrat
+* skip if empty
+*
 * Revision 1.2  2004/03/11 04:54:48  grichenk
 * Removed inline
 *
