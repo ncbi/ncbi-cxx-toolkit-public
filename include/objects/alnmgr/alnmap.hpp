@@ -71,11 +71,18 @@ public:
     typedef CDense_seg::TNumseg   TNumseg;
 
     enum EGetChunkFlags {
-        fIgnoreUnaligned = 0x01,
-        fInsertSameAsSeq = 0x02,
-        fDeleteSameAsGap = 0x04,
-        fIgnoreAnchor    = fInsertSameAsSeq | fDeleteSameAsGap,
-        fIgnoreGaps      = 0x08
+        fIgnoreUnaligned     = 0x01,
+        fInsertSameAsSeq     = 0x02,
+        fDeletionSameAsGap   = 0x04,
+        fIgnoreAnchor        = fInsertSameAsSeq | fDeletionSameAsGap,
+        
+        fSkipUnalignedGaps   = 0x08,
+        fSkipDeletions       = 0x10,
+        fSkipAllGaps         = fSkipUnalignedGaps | fSkipDeletions,
+        fSkipInserts         = 0x12,
+        fSkipAlnSeq          = 0x14,
+        fSeqOnly             = fSkipAllGaps | fSkipInserts,
+        fInsertsOnly         = fSkipAllGaps | fSkipAlnSeq
     };
     typedef int TGetChunkFlags; // binary OR of EGetChunkFlags
 
@@ -176,10 +183,11 @@ public:
     {
     public:
         CAlnChunkVec(const CAlnMap& aln_map, TNumrow row)
-            : m_AlnMap(aln_map), m_Row(row), m_Size(0) { }
+            : m_AlnMap(aln_map), m_Row(row) { }
 
         CConstRef<CAlnChunk> operator[] (TNumchunk i) const;
-        TNumchunk            size       (void)        const { return m_Size; };
+
+        TNumchunk size(void) const { return m_StartSegs.size(); };
 
     private:
 #ifdef NCBI_COMPILER_MSVC // kludge
@@ -197,8 +205,8 @@ public:
     
         const CAlnMap&  m_AlnMap;
         TNumrow         m_Row;
-        vector<TNumseg> m_Idx;
-        TNumchunk       m_Size;
+        vector<TNumseg> m_StartSegs;
+        vector<TNumseg> m_StopSegs;
         TSeqPos         m_LeftDelta;
         TSeqPos         m_RightDelta;
     };
@@ -209,20 +217,24 @@ public:
         TSegTypeFlags GetType(void) const { return m_TypeFlags; }
         CAlnChunk&    SetType(TSegTypeFlags type_flags)
             { m_TypeFlags = type_flags; return *this; }
-        
-        const TSignedRange& GetRange(void) const { return m_SignedRange; }
-        bool                IsGap   (void) const
-            { return m_SignedRange.GetFrom() < 0; }
+
+        const TSignedRange& GetRange(void) const { return m_SeqRange; }
+
+        const TSignedRange& GetAlnRange(void) const { return m_AlnRange; }
+
+        bool IsGap(void) const { return m_SeqRange.GetFrom() < 0; }
         
     private:
         // can only be created or modified by
         friend CConstRef<CAlnChunk> CAlnChunkVec::operator[](TNumchunk i)
             const;
         CAlnChunk(void) {}
-        TSignedRange& SetRange(void) { return m_SignedRange; }
+        TSignedRange& SetRange(void)    { return m_SeqRange; }
+        TSignedRange& SetAlnRange(void) { return m_AlnRange; }
 
         TSegTypeFlags m_TypeFlags;
-        TSignedRange  m_SignedRange;
+        TSignedRange  m_SeqRange;
+        TSignedRange  m_AlnRange;
     };
 
 
@@ -257,9 +269,12 @@ protected:
     TSignedSeqPos     x_GetRawStop      (TNumrow row, TNumseg seg) const;
     TSeqPos           x_GetRawLen       (TNumseg seg)              const;
 
-    bool x_RawSegTypeDiffNextSegType(TNumrow row, TNumseg seg,
-                                     TGetChunkFlags flags) const;
-
+    bool x_SkipType               (TSegTypeFlags type,
+                                   TGetChunkFlags flags) const;
+    bool x_CompareAdjacentSegTypes(TSegTypeFlags left_type, 
+                                   TSegTypeFlags right_type,
+                                   TGetChunkFlags flags) const;
+    // returns true if types are the same (as specified by flags)
 
     CConstRef<CDense_seg>           m_DS;
     TNumrow                         m_Anchor;
@@ -529,8 +544,8 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
-* Revision 1.11  2002/10/10 17:21:28  todorov
-* switched back to one (but this time enhanced) GetSeqPosFromAlnPos method
+* Revision 1.12  2002/10/21 19:14:36  todorov
+* reworked aln chunks: now supporting more types; added chunk aln coords
 *
 * Revision 1.10  2002/10/04 17:05:31  todorov
 * Added GetTypeAtAlnPos method

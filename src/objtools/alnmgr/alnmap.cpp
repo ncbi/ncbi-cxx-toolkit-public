@@ -480,14 +480,30 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
     }
     
     // add the participating segments to the vector
-    vec->m_Idx.push_back(first_seg);
-    for (int seg = first_seg;  seg < last_seg;  seg++) {
-        if (x_RawSegTypeDiffNextSegType(row, seg, flags)) {
-            vec->m_Idx.push_back(seg+1);
+    for (TNumseg seg = first_seg;  seg <= last_seg;  seg++) {
+        TSegTypeFlags type = x_GetRawSegType(row, seg);
+
+        // see if the segment needs to be skipped
+        if (x_SkipType(type, flags)) {
+            if (seg == first_seg) {
+                vec->m_LeftDelta = 0;
+            } else if (seg == last_seg) {
+                vec->m_RightDelta = 0;
+            }
+            continue;
         }
+
+        vec->m_StartSegs.push_back(seg); // start seg
+
+        // find the stop seg
+        while (seg < last_seg  &&
+               x_CompareAdjacentSegTypes(type,
+                                         x_GetRawSegType(row, seg+1),
+                                         flags)) {
+            seg++;
+        }
+        vec->m_StopSegs.push_back(seg); 
     }
-    vec->m_Idx.push_back(last_seg+1);
-    vec->m_Size = vec->m_Idx.size()-1;
     return vec;
 }
 
@@ -495,25 +511,25 @@ CAlnMap::GetAlnChunks(TNumrow row, const TSignedRange& range,
 CConstRef<CAlnMap::CAlnChunk>
 CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
 {
-    CAlnMap::TNumseg seg_from = m_Idx[i];
-    CAlnMap::TNumseg seg_to   = m_Idx[i+1];
+    CAlnMap::TNumseg start_seg = m_StartSegs[i];
+    CAlnMap::TNumseg stop_seg  = m_StopSegs[i];
 
     CRef<CAlnChunk>  chunk    = new CAlnChunk();
 
     chunk->SetRange().SetFrom(m_AlnMap.m_DS->GetStarts()
-                              [seg_from * m_AlnMap.m_DS->GetDim()
+                              [start_seg * m_AlnMap.m_DS->GetDim()
                               + m_Row]);
     if ( !chunk->IsGap() ) {
         chunk->SetRange().SetTo(chunk->GetRange().GetFrom()
-                                + m_AlnMap.m_DS->GetLens()[seg_from] - 1);
+                                + m_AlnMap.m_DS->GetLens()[start_seg] - 1);
     } else {
         chunk->SetRange().SetFrom(-1);
         chunk->SetRange().SetTo(-1);
     }
 
-    chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, seg_from));
+    chunk->SetType(m_AlnMap.x_GetRawSegType(m_Row, start_seg));
 
-    for (CAlnMap::TNumseg seg = seg_from + 1;  seg < seg_to;  seg++) {
+    for (CAlnMap::TNumseg seg = start_seg + 1;  seg <= stop_seg;  seg++) {
         if ( !chunk->IsGap() ) {
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().SetTo(chunk->GetRange().GetTo()
@@ -527,6 +543,44 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                        | m_AlnMap.x_GetRawSegType(m_Row, seg));
     }
 
+    //determine the aln range
+    {{
+        // from position
+        CNumSegWithOffset seg = m_AlnMap.x_GetSegFromRawSeg(start_seg);
+        if (seg.GetAlnSeg() < 0) {
+            chunk->SetAlnRange().SetFrom(-1); // before the aln start
+        } else {
+            if (seg.GetOffset() > 0) {
+                // between aln segs
+                chunk->SetAlnRange().SetFrom
+                    (m_AlnMap.GetAlnStop(seg.GetAlnSeg()));
+            } else {
+                // at an aln seg
+                chunk->SetAlnRange().SetFrom
+                    (m_AlnMap.GetAlnStart(seg.GetAlnSeg()) +
+                     (i == 0  &&  m_LeftDelta ? m_LeftDelta : 0));
+            }
+        }
+
+        // to position
+        seg = m_AlnMap.x_GetSegFromRawSeg(stop_seg);
+        if (seg.GetAlnSeg() < 0) {
+            chunk->SetAlnRange().SetTo(0); // before the aln start
+        } else {
+            if (seg.GetOffset() > 0) {
+                // between aln segs
+                chunk->SetAlnRange().SetTo
+                    (m_AlnMap.GetAlnStop(seg.GetAlnSeg())+1);
+            } else {
+                // at an aln seg
+                chunk->SetAlnRange().SetTo
+                    (m_AlnMap.GetAlnStop(seg.GetAlnSeg()) -
+                     (i == size() - 1  &&  m_RightDelta ? m_RightDelta : 0));
+            }
+        }
+    }}
+
+
     // fix if extreme end
     if (i == 0 && m_LeftDelta) {
         if (!chunk->IsGap()) {
@@ -537,11 +591,11 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                 chunk->SetRange().SetTo(chunk->GetRange().GetTo()
                                         - m_LeftDelta);
             }
+            chunk->SetType(chunk->GetType() & ~fNoSeqOnLeft);
         }            
-        chunk->SetType(chunk->GetType() &
-                    ~(fNoSeqOnLeft | fUnalignedOnLeft | fEndOnLeft));
+        chunk->SetType(chunk->GetType() & ~(fUnalignedOnLeft | fEndOnLeft));
     }
-    if (i == m_Size - 1 && m_RightDelta) {
+    if (i == size() - 1 && m_RightDelta) {
         if (!chunk->IsGap()) {
             if (m_AlnMap.IsPositiveStrand(m_Row)) {
                 chunk->SetRange().SetTo(chunk->GetRange().GetTo()
@@ -550,42 +604,69 @@ CAlnMap::CAlnChunkVec::operator[](CAlnMap::TNumchunk i) const
                 chunk->SetRange().SetFrom(chunk->GetRange().GetFrom()
                                           + m_RightDelta);
             }
+            chunk->SetType(chunk->GetType() & ~fNoSeqOnRight);
         }
-        chunk->SetType(chunk->GetType() &
-                       ~(fNoSeqOnRight | fUnalignedOnRight | fEndOnRight));
+        chunk->SetType(chunk->GetType() & ~(fUnalignedOnRight | fEndOnRight));
     }
 
     return chunk;
 }
 
 
-bool
-CAlnMap::x_RawSegTypeDiffNextSegType(TNumrow row, TNumseg seg,
-                                     TGetChunkFlags flags) const
+bool CAlnMap::x_SkipType(TSegTypeFlags type, TGetChunkFlags flags) const
 {
-    TSegTypeFlags type      = x_GetRawSegType(row, seg);
-    TSegTypeFlags next_type = x_GetRawSegType(row, seg+1);
-    
-    if ((type & fSeq) != (next_type & fSeq)) {
-        return true;
-    }
-    if ((type & fUnalignedOnRight) && !(flags & fIgnoreUnaligned)) {
-        return true;
-    }
-    if ((type & fNotAlignedToSeqOnAnchor) ==
-        (next_type & fNotAlignedToSeqOnAnchor)) {
-        return false;
-    }
+    bool skip = false;
     if (type & fSeq) {
-        if (!(flags & fInsertSameAsSeq)) {
-            return true;
+        if (type & fNotAlignedToSeqOnAnchor) {
+            if (flags & fSkipInserts) {
+                skip = true;
+            }
+        } else {
+            if (flags & fSkipAlnSeq) {
+                skip = true;
+            }
         }
     } else {
-        if (!(flags & fDeleteSameAsGap)) {
-            return true;
+        if (type & fNotAlignedToSeqOnAnchor) {
+            if (flags & fSkipUnalignedGaps) {
+                skip = true;
+            }
+        } else {
+            if (flags & fSkipDeletions) {
+                skip = true;
+            }
+        }
+    }        
+    return skip;
+}
+
+
+bool
+CAlnMap::x_CompareAdjacentSegTypes(TSegTypeFlags left_type, 
+                                   TSegTypeFlags right_type,
+                                   TGetChunkFlags flags) const
+    // returns true if types are the same (as specified by flags)
+{
+    if ((left_type & fSeq) != (right_type & fSeq)) {
+        return false;
+    }
+    if ((left_type & fUnalignedOnRight) && !(flags & fIgnoreUnaligned)) {
+        return false;
+    }
+    if ((left_type & fNotAlignedToSeqOnAnchor) ==
+        (right_type & fNotAlignedToSeqOnAnchor)) {
+        return true;
+    }
+    if (left_type & fSeq) {
+        if (!(flags & fInsertSameAsSeq)) {
+            return false;
+        }
+    } else {
+        if (!(flags & fDeletionSameAsGap)) {
+            return false;
         }
     }
-    return false;
+    return true;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
@@ -595,6 +676,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.14  2002/10/21 19:14:27  todorov
+* reworked aln chunks: now supporting more types; added chunk aln coords
+*
 * Revision 1.13  2002/10/10 17:23:43  todorov
 * switched back to one (but this time enhanced) GetSeqPosFromAlnPos method
 *
