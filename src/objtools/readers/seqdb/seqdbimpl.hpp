@@ -215,12 +215,44 @@ public:
                       Uint4           nucl_code,
                       ESeqDBAllocType strategy) const;
     
+    /// Returns any resources associated with the sequence.
+    ///
+    /// Calls to GetSequence and GetAmbigSeq (but not GetBioseq())
+    /// either increment a counter corresponding to a section of the
+    /// database where the sequence data lives, or allocate a buffer
+    /// to return to the user.  This method decrements that counter or
+    /// frees the allocated buffer, so that the memory can be used by
+    /// other processes.  Each allocating call should be paired with a
+    /// returning call.  Note that this does not apply to GetBioseq(),
+    /// or GetHdr(), for example.
+    ///
+    /// @param buffer
+    ///   A pointer to the sequence data to release.
     void RetSequence(const char ** buffer) const;
     
+    /// Gets a list of sequence identifiers.
+    /// 
+    /// This returns the list of CSeq_id identifiers associated with
+    /// the sequence specified by the given OID.
+    ///
+    /// @param oid
+    ///   The oid of the sequence.
+    /// @return
+    ///   A list of Seq-id objects for this sequence.
     list< CRef<CSeq_id> > GetSeqIDs(Uint4 oid) const;
     
+    /// Returns the database title.
+    ///
+    /// This is usually read from database volumes or alias files.  If
+    /// multiple databases were passed to the constructor, this will
+    /// be a concatenation of those databases' titles.
     string GetTitle() const;
     
+    /// Returns the construction date of the database.
+    /// 
+    /// This is encoded in the database.  If multiple databases or
+    /// multiple volumes were accessed, the first available date will
+    /// be used.
     string GetDate() const;
     
     /// Returns the number of sequences available.
@@ -245,23 +277,84 @@ public:
     /// the alias files.
     Uint8 GetVolumeLength(void) const;
     
+    /// Returns the length of the largest sequence in the database.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  This might be used to chose buffer sizes.
     Uint4 GetMaxLength() const;
     
+    /// Find an included OID, incrementing next_oid if necessary.
+    ///
+    /// If the specified OID is not included in the set (i.e. the OID
+    /// mask), the input parameter is incremented until one is found
+    /// that is.  The user will probably want to increment between
+    /// calls, if iterating over the db.
+    ///
+    /// @return
+    ///   True if a valid OID was found, false otherwise.
     bool CheckOrFindOID(Uint4 & next_oid) const;
     
+    /// Return a chunk of OIDs, and update the OID bookmark.
+    /// 
+    /// This method allows the caller to iterate over the database by
+    /// fetching batches of OIDs.  It will either return a list of OIDs in
+    /// a vector, or set a pair of integers to indicate a range of OIDs.
+    /// The return value will indicate which technique was used.  The
+    /// caller sets the number of OIDs to get by setting the size of the
+    /// vector.  If eOidRange is returned, the first included oid is
+    /// oid_begin and oid_end is the oid after the last included oid.  If
+    /// eOidList is returned, the vector contain the included OIDs, and may
+    /// be resized to a smaller value if fewer entries are available (for
+    /// the last chunk).  In some cases it may be desireable to have
+    /// several concurrent, independent iterations over the same database
+    /// object.  If this is required, the caller should specify the address
+    /// of a Uint4 to the optional parameter oid_state.  This should be
+    /// initialized to zero (before the iteration begins) but should
+    /// otherwise not be modified by the calling code (except that it can
+    /// be reset to zero to restart the iteration).  For the normal case of
+    /// one iteration per program, this parameter can be omitted.
+    /// @param begin_chunk
+    ///   First included oid (if eOidRange is returned).
+    /// @param end_chunk
+    ///   OID after last included (if eOidRange is returned).
+    /// @param oid_list
+    ///   List of oids (if eOidList is returned).  Set size before call.
+    /// @param oid_state
+    ///   Optional address of a state variable (for concurrent iterations).
+    /// @return
+    ///   eOidList in enumeration case, or eOidRange in begin/end range case.
     CSeqDB::EOidListType
     GetNextOIDChunk(TOID         & begin_chunk,
                     TOID         & end_chunk,
                     vector<TOID> & oid_list,
                     Uint4        * oid_state);
     
+    /// Get list of database names.
+    ///
+    /// This returns the database name list used at construction.
+    /// @return
+    ///   List of database names.
     const string & GetDBNameList() const;
     
+    /// Set upper limit on memory and mapping slice size.
+    /// 
+    /// This sets an approximate upper limit on memory used by CSeqDB.
+    /// This will not be exactly enforced, and the library will prefer
+    /// to exceed the bound if necessary rather than return an error.
+    /// Setting this to a very low value will probably cause bad
+    /// performance.
     void SetMemoryBound(Uint8 membound, Uint8 slicesize)
     {
         m_Atlas.SetMemoryBound(membound, slicesize);
     }
-    
+
+    /// Flush unnecessarily held memory
+    ///
+    /// This is used by the atlas garbage collection callback - when
+    /// gc is running, it should not count references held by the
+    /// volset.  Thus, the no-longer-in-action volumes can be flushed
+    /// out (currently, idx files are still kept for all volumes).
+    /// The atlas should be locked when calling this method.
     void FlushSeqMemory(void);
     
     /// Translate a PIG to an OID.
@@ -287,14 +380,47 @@ public:
     Uint4 GetOidAtOffset(Uint4 first_seq, Uint8 residue) const;
     
 private:
-    string x_FixString(const string &) const;
+    /// Adjust string length to offset of first embedded NUL byte.
+    ///
+    /// This is a work-around for bad data in the database; probably
+    /// the fault of formatdb.  The problem is that the database date
+    /// field has an incorrect length - possibly a general problem
+    /// with string handling in formatdb?  In any case, this method
+    /// trims a string to the minimum of its length and the position
+    /// of the first NULL.  This technique will not work if the date
+    /// field is not null terminated, but apparently it usually or
+    /// always is, in spite of the length bug.
+    ///  
+    /// @param s
+    ///   A string which may contain a NUL byte.
+    /// @return
+    ///   The non-NUL-containing prefix of the input string.
+    string x_FixString(const string & s) const;
     
+    /// Returns the number of sequences available.
     Uint4 x_GetNumSeqs() const;
     
+    /// Returns the size of the (possibly sparse) OID range.
     Uint4 x_GetNumOIDs() const;
     
+    /// Returns the sum of the lengths of all available sequences.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// or alias files.  It provides an exact value, without iterating
+    /// over individual sequences.  This private version uses the
+    /// alias files, and is used to populate a field that caches the
+    /// value; the corresponding public method uses that cached value.
     Uint8 x_GetTotalLength() const;
     
+    /// Returns the sum of the lengths of all volumes.
+    ///
+    /// This uses summary information stored in the database volumes
+    /// (but not the alias files).  It provides an exact value,
+    /// without iterating over individual sequences.  It includes all
+    /// OIDs regardless of inclusion by the filtering mechanisms of
+    /// the alias files.  This private version uses the alias files,
+    /// and is used to populate a field that caches the value; the
+    /// corresponding public method uses that cached value.
     Uint8 x_GetVolumeLength() const;
     
     /// Build the OID list

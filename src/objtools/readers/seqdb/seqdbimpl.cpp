@@ -463,8 +463,8 @@ const string & CSeqDBImpl::GetDBNameList(void) const
 // an incorrect length - possibly a general problem with string
 // handling in formatdb?  In any case, this method trims a string to
 // the minimum of its length and the position of the first NULL.  This
-// technique will not work if the date field is null terminated, but
-// apparently it usually is, in spite of the length bug.
+// technique will not work if the date field is not null terminated,
+// but apparently it usually or always is, in spite of the length bug.
 
 string CSeqDBImpl::x_FixString(const string & s) const
 {
@@ -487,11 +487,6 @@ void CSeqDBImplFlush::operator()(void)
 
 void CSeqDBImpl::FlushSeqMemory()
 {
-    // This is used by the atlas gc callback - when garbage
-    // collecting, it should discount references held by the volset.
-    // Thus, the not-longer-in-action volumes can be flushed out
-    // (currently, idx files are still kept).
-    
     m_VolSet.UnLease();
 }
 
