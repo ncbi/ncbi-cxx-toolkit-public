@@ -544,9 +544,11 @@ void CBDB_Cache::OpenReadOnly(const char*  cache_path,
         m_CacheDB->SetCacheSize(cache_ram_size);
 
     string cache_db_name = 
-       string("lcs_") + string(cache_name) + string(".db");
+       m_Path + string("lcs_") + string(cache_name) + string(".db");
     string attr_db_name = 
-       string("lcs_") + string(cache_name) + string("_attr") + string(".db");
+       m_Path + string("lcs_") + string(cache_name) + string("_attr")
+	          + string(".db");
+
 
     m_CacheDB->Open(cache_db_name.c_str(),    CBDB_RawFile::eReadOnly);
     m_CacheAttrDB->Open(attr_db_name.c_str(), CBDB_RawFile::eReadOnly);
@@ -1312,6 +1314,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.57  2004/06/16 13:12:40  kuznets
+ * Fixed bug in opening of read-only cache
+ *
  * Revision 1.56  2004/06/14 16:10:43  kuznets
  * Added read-only mode
  *
