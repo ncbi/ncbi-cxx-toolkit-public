@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.2  1998/12/10 20:40:21  sandomir
+* #include <algorithm> added in ncbires.cpp
+*
 * Revision 1.1  1998/12/10 17:36:55  sandomir
 * ncbires.cpp added
 *
@@ -39,6 +42,8 @@
 
 #include <ncbistd.hpp>
 #include <ncbires.hpp>
+
+#include <algorithm>
 
 BEGIN_NCBI_SCOPE
 
