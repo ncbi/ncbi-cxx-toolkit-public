@@ -246,7 +246,7 @@ void CAlnMix::Add(const CSeq_align& aln)
     if (m_InputAlns.find((void *)&aln) == m_InputAlns.end()) {
         // add only if not already added
         CTypeConstIterator<CDense_seg> i;
-        for (i = Begin(aln); i; ++i) {
+        for (i = ConstBegin(aln); i; ++i) {
             Add(*i);
         }
     }
@@ -265,6 +265,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.11  2002/12/24 16:20:57  todorov
+* Fixed initializing of a CTypeConstIterator
+*
 * Revision 1.10  2002/12/23 18:03:41  todorov
 * Support for putting in and getting out Seq-aligns
 *
