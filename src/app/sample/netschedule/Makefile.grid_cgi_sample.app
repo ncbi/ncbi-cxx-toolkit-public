@@ -12,7 +12,7 @@ SRC = grid_cgi_sample
 
 ### BEGIN COPIED SETTINGS
 ## Use these two lines for normal CGI.
-LIB = xcgi xhtml xconnect xutil xncbi xconnserv xgridcgi
+LIB = xgridcgi xconnserv xcgi xhtml xconnect xutil xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 ## Use these two lines for FastCGI.  (No other changes needed!)
 # LIB = xfcgi xhtml xconnect xutil xncbi xgridcgi
