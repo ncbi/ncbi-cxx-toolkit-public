@@ -52,7 +52,7 @@ USING_NCBI_SCOPE;
     const char* kPipeName = "./.ncbi_test_con_pipename";
 #endif
 
-const size_t kBufferSize = 10*1024;
+const size_t kBufferSize = 25*1024;
 
 
 static void Client(STimeout timeout)
@@ -68,13 +68,13 @@ static void Client(STimeout timeout)
     // Tests for NAMEDPIPE CONNECTOR
     LOG_POST(string("Starting the NAMEDPIPE CONNECTOR test ...\n\n") +
              kPipeName + ", timeout = " +
-             NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
+             NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)+
              " sec.\n");
 
     connector = NAMEDPIPE_CreateConnector(kPipeName);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBouncePrint);
 
-    connector = NAMEDPIPE_CreateConnector(kPipeName, 0);
+    connector = NAMEDPIPE_CreateConnector(kPipeName, kBufferSize);
     CONN_TestConnector(connector, &timeout, log_file, fTC_SingleBounceCheck);
 
     connector = NAMEDPIPE_CreateConnector(kPipeName, kBufferSize);
@@ -97,7 +97,7 @@ static void Server(STimeout timeout, int n_cycle)
 
     LOG_POST(string("Starting the NAMEDPIPE CONNECTOR io bouncer ...\n\n") +
              kPipeName + ", timeout = " +
-             NStr::DoubleToString(timeout.sec + timeout.usec / 1000000, 6) +
+             NStr::DoubleToString(timeout.sec+(double)timeout.usec/1000000,6)+
              ", n_cycle = " + NStr::UIntToString(n_cycle) + "\n");
 
     // Create listening named pipe
@@ -260,6 +260,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2003/09/29 16:34:00  ivanov
+ * Increased the pipe buffer from 10kb to 25kb. Specify CreateConnector()'s buffer size parameter for the SingleBounceCheck test.
+ *
  * Revision 1.8  2003/09/03 14:29:59  ivanov
  * Set r/w status to eIO_Success in the CNamedPipeHandle::Open/Create
  *
