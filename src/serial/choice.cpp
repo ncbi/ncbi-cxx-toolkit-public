@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/12/26 19:32:32  gouriano
+* changed XML I/O streams to properly handle object copying
+*
 * Revision 1.32  2002/12/12 21:08:07  gouriano
 * implemented handling of complex XML containers
 *
@@ -384,7 +387,7 @@ void CChoiceTypeInfoFunctions::ReadChoiceDefault(CObjectIStream& in,
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     if (variantInfo->GetId().IsAttlist()) {
         const CMemberInfo* memberInfo =
-            static_cast<const CMemberInfo*>(
+            dynamic_cast<const CMemberInfo*>(
                 choiceType->GetVariants().GetItemInfo(index));
         memberInfo->ReadMember(in,objectPtr);
         index = in.BeginChoiceVariant(choiceType);
@@ -416,7 +419,7 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     if (variantInfo->GetId().IsAttlist()) {
         const CMemberInfo* memberInfo =
-            static_cast<const CMemberInfo*>(
+            dynamic_cast<const CMemberInfo*>(
                 choiceType->GetVariants().GetItemInfo(index));
         memberInfo->WriteMember(out,objectPtr);
     }
@@ -459,7 +462,7 @@ void CChoiceTypeInfoFunctions::SkipChoiceDefault(CObjectIStream& in,
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     if (variantInfo->GetId().IsAttlist()) {
         const CMemberInfo* memberInfo =
-            static_cast<const CMemberInfo*>(
+            dynamic_cast<const CMemberInfo*>(
                 choiceType->GetVariants().GetItemInfo(index));
         memberInfo->SkipMember(in);
         index = in.BeginChoiceVariant(choiceType);

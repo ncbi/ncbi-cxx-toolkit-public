@@ -79,6 +79,7 @@ public:
     const CItemsInfo& GetMembers(void) const;
     const CMemberInfo* GetMemberInfo(TMemberIndex index) const;
     const CMemberInfo* GetMemberInfo(const CIterator& i) const;
+    const CMemberInfo* GetMemberInfo(const string& name) const;
 
     virtual bool IsDefault(TConstObjectPtr object) const;
     virtual bool Equals(TConstObjectPtr object1,
@@ -173,6 +174,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.39  2002/12/26 19:33:06  gouriano
+* changed XML I/O streams to properly handle object copying
+*
 * Revision 1.38  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

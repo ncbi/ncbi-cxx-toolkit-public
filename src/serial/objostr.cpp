@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.71  2002/12/26 19:32:34  gouriano
+* changed XML I/O streams to properly handle object copying
+*
 * Revision 1.70  2002/12/13 21:50:42  gouriano
 * corrected reading of choices
 *
@@ -967,6 +970,17 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
     }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
+    if (variantInfo->GetId().IsAttlist()) {
+        const CMemberInfo* memberInfo =
+            dynamic_cast<const CMemberInfo*>(
+                choiceType->GetVariants().GetItemInfo(index));
+        memberInfo->CopyMember(copier);
+        index = copier.In().BeginChoiceVariant(choiceType);
+        if ( index == kInvalidMember )
+            copier.ThrowError(CObjectIStream::fFormatError,
+                          "choice variant id expected");
+        variantInfo = choiceType->GetVariantInfo(index);
+    }
     copier.In().TopFrame().SetMemberId(variantInfo->GetId());
     copier.Out().TopFrame().SetMemberId(variantInfo->GetId());
     BeginChoiceVariant(choiceType, variantInfo->GetId());

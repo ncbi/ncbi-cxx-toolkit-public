@@ -158,6 +158,11 @@ protected:
     virtual void EndContainer(void);
     virtual void BeginContainerElement(TTypeInfo elementType);
     virtual void EndContainerElement(void);
+    void BeginArrayElement(TTypeInfo elementType);
+    void EndArrayElement(void);
+
+    void CheckStdXml(const CClassTypeInfoBase* classType);
+    ETypeFamily GetRealTypeFamily(TTypeInfo typeInfo);
 
     virtual void BeginClass(const CClassTypeInfo* classInfo);
     virtual void EndClass(void);
@@ -223,6 +228,8 @@ private:
     bool   m_UsePublicId;
     string m_PublicId;
     static string sm_DefaultDTDFilePrefix;
+    bool m_Attlist;
+    bool m_StdXml;
 };
 
 #include <serial/objostrxml.inl>
@@ -235,6 +242,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.25  2002/12/26 19:33:06  gouriano
+* changed XML I/O streams to properly handle object copying
+*
 * Revision 1.24  2002/12/23 18:38:51  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.

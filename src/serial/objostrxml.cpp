@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2002/12/26 19:32:34  gouriano
+* changed XML I/O streams to properly handle object copying
+*
 * Revision 1.41  2002/12/17 19:04:32  gouriano
 * corrected reading/writing of character references
 *
@@ -229,7 +232,8 @@ CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(out, deleteOut),
       m_LastTagAction(eTagClose), m_EndTag(true),
       m_UseDefaultDTDFilePrefix(true),
-      m_UsePublicId(true)
+      m_UsePublicId(true),
+      m_Attlist(false), m_StdXml(false)
 {
     m_Output.SetBackLimit(1);
 }
@@ -549,8 +553,7 @@ void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
 
 void CObjectOStreamXml::OpenTagStart(void)
 {
-    if (FetchFrameFromTop(1).GetFrameType() ==
-        CObjectStackFrame::eFrameAttlist) {
+    if (m_Attlist) {
         if ( m_LastTagAction == eTagOpen ) {
             m_Output.PutChar(' ');
             m_LastTagAction = eAttlistTag;
@@ -567,8 +570,7 @@ void CObjectOStreamXml::OpenTagStart(void)
 
 void CObjectOStreamXml::OpenTagEnd(void)
 {
-    if (FetchFrameFromTop(1).GetFrameType() ==
-        CObjectStackFrame::eFrameAttlist) {
+    if (m_Attlist) {
         if ( m_LastTagAction == eAttlistTag ) {
             m_Output.PutString("=\"");
         }
@@ -663,7 +665,7 @@ void CObjectOStreamXml::PrintTagName(size_t level)
         {
             const TFrame& frame1 = FetchFrameFromTop(level+1);
             PrintTagName(level + 1);
-            if (!frame1.HasMemberId() || !frame1.GetMemberId().HaveNoPrefix()) {
+            if (!m_StdXml) {
                 m_Output.PutString("_E");
             }
             return;
@@ -694,12 +696,16 @@ void CObjectOStreamXml::WriteOther(TConstObjectPtr object,
 
 void CObjectOStreamXml::BeginContainer(const CContainerTypeInfo* containerType)
 {
-    OpenTagIfNamed(containerType);
+    if (!m_StdXml) {
+        OpenTagIfNamed(containerType);
+    }
 }
 
 void CObjectOStreamXml::EndContainer(void)
 {
-    CloseTagIfNamed(TopFrame().GetTypeInfo());
+    if (!m_StdXml) {
+        CloseTagIfNamed(TopFrame().GetTypeInfo());
+    }
 }
 
 bool CObjectOStreamXml::WillHaveName(TTypeInfo elementType)
@@ -715,14 +721,16 @@ bool CObjectOStreamXml::WillHaveName(TTypeInfo elementType)
 
 void CObjectOStreamXml::BeginContainerElement(TTypeInfo elementType)
 {
-    if ( !WillHaveName(elementType) )
-        OpenStackTag(0);
+    if ( !WillHaveName(elementType) ) {
+        BeginArrayElement(elementType);
+    }
 }
 
 void CObjectOStreamXml::EndContainerElement(void)
 {
-    if ( !WillHaveName(TopFrame().GetTypeInfo()) )
-        CloseStackTag(0);
+    if ( !WillHaveName(TopFrame().GetTypeInfo()) ) {
+        EndArrayElement();
+    }
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -741,6 +749,23 @@ void CObjectOStreamXml::WriteContainer(const CContainerTypeInfo* cType,
     }
     else {
         WriteContainerContents(cType, containerPtr);
+    }
+}
+void CObjectOStreamXml::BeginArrayElement(TTypeInfo /*elementType*/)
+{
+    if (m_StdXml) {
+        TopFrame().SetNotag();
+    } else {
+        OpenStackTag(0);
+    }
+}
+
+void CObjectOStreamXml::EndArrayElement(void)
+{
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+    } else {
+        CloseStackTag(0);
     }
 }
 
@@ -770,20 +795,11 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
     else {
         BEGIN_OBJECT_FRAME2(eFrameArrayElement, elementType);
 
-        TFrame& frame1 = FetchFrameFromTop(1);
         if ( cType->InitIterator(i, containerPtr) ) {
             do {
-                bool tagIsOpen = false;
-                if (!frame1.GetSkipTag() && !frame1.GetNotag()) {
-                    OpenStackTag(0);
-                    tagIsOpen = true;
-                }
-
+                BeginArrayElement(elementType);
                 WriteObject(cType->GetElementPtr(i), elementType);
-
-                if (tagIsOpen) {
-                    CloseStackTag(0);
-                }
+                EndArrayElement();
             } while ( cType->NextElement(i) );
         }
 
@@ -794,18 +810,12 @@ void CObjectOStreamXml::WriteContainerContents(const CContainerTypeInfo* cType,
 
 void CObjectOStreamXml::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    if (!FetchFrameFromTop(1).GetSkipTag()) {
-        OpenTag(namedTypeInfo, true);
-    } else {
-        TopFrame().SetSkipTag();
-    }
+    OpenTag(namedTypeInfo, true);
 }
 
 void CObjectOStreamXml::EndNamedType(void)
 {
-    if (!FetchFrameFromTop(1).GetSkipTag()) {
-        CloseTag(TopFrame().GetTypeInfo());
-    }
+    CloseTag(TopFrame().GetTypeInfo());
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -836,44 +846,63 @@ void CObjectOStreamXml::CopyNamedType(TTypeInfo namedTypeInfo,
 }
 #endif
 
+void CObjectOStreamXml::CheckStdXml(const CClassTypeInfoBase* classType)
+{
+    TMemberIndex first = classType->GetItems().FirstIndex();
+    m_StdXml = classType->GetItems().GetItemInfo(first)->GetId().HaveNoPrefix();
+}
+
+ETypeFamily CObjectOStreamXml::GetRealTypeFamily(TTypeInfo typeInfo)
+{
+    ETypeFamily type = typeInfo->GetTypeFamily();
+    if (type == eTypeFamilyPointer) {
+        const CPointerTypeInfo* ptr =
+            dynamic_cast<const CPointerTypeInfo*>(typeInfo);
+        if (ptr) {
+            type = ptr->GetPointedType()->GetTypeFamily();
+        }
+    }
+    return type;
+}
+
 void CObjectOStreamXml::BeginClass(const CClassTypeInfo* classInfo)
 {
-    if (!FetchFrameFromTop(1).GetSkipTag()) {
-        OpenTagIfNamed(classInfo);
-    }
+    CheckStdXml(classInfo);
+    OpenTagIfNamed(classInfo);
 }
 
 void CObjectOStreamXml::EndClass(void)
 {
-    if (!FetchFrameFromTop(1).GetSkipTag()) {
+    if (!m_Attlist && m_LastTagAction != eTagSelfClosed) {
         EolIfEmptyTag();
-        CloseTagIfNamed(TopFrame().GetTypeInfo());
     }
+    CloseTagIfNamed(TopFrame().GetTypeInfo());
 }
 
-void CObjectOStreamXml::BeginClassMember(const CMemberId& /*id*/)
+void CObjectOStreamXml::BeginClassMember(const CMemberId& id)
 {
-    OpenStackTag(0);
+    const CClassTypeInfo* classType = dynamic_cast<const CClassTypeInfo*>
+        (FetchFrameFromTop(1).GetTypeInfo());
+    _ASSERT(classType);
+    BeginClassMember(classType->GetMemberInfo(id.GetName())->GetTypeInfo(),id);
 }
 
 void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
                                          const CMemberId& id)
 {
-    if (id.HaveNoPrefix()) {
+    if (m_StdXml) {
         if(id.IsAttlist()) {
             if(m_LastTagAction == eTagClose) {
                 OpenTagEndBack();
             }
+            m_Attlist = true;
             TopFrame().SetNotag();
         } else {
-            ETypeFamily type = memberType->GetTypeFamily();
-            if (id.HasNotag() || type == eTypeFamilyContainer) {
-                TopFrame().SetNotag();
-            } else {
+            ETypeFamily type = GetRealTypeFamily(memberType);
+            if (type == eTypeFamilyPrimitive && !id.HasNotag()) {
                 OpenStackTag(0);
-                if (type != eTypeFamilyPrimitive) {
-                    TopFrame().SetSkipTag();
-                }
+            } else {
+                TopFrame().SetNotag();
             }
         }
     } else {
@@ -883,12 +912,14 @@ void CObjectOStreamXml::BeginClassMember(TTypeInfo memberType,
 
 void CObjectOStreamXml::EndClassMember(void)
 {
-    if (!TopFrame().GetNotag()) {
-        CloseStackTag(0);
-    } else {
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+        m_Attlist = false;
         if(m_LastTagAction == eTagOpen) {
             OpenTagEnd();
         }
+    } else {
+        CloseStackTag(0);
     }
 }
 
@@ -896,7 +927,6 @@ void CObjectOStreamXml::EndClassMember(void)
 void CObjectOStreamXml::WriteClass(const CClassTypeInfo* classType,
                                    TConstObjectPtr classPtr)
 {
-    bool tagIsOpen = false;
     if ( !classType->GetName().empty() ) {
         BEGIN_OBJECT_FRAME2(eFrameClass, classType);
 
@@ -919,9 +949,7 @@ void CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
                                          TTypeInfo memberType,
                                          TConstObjectPtr memberPtr)
 {
-    BEGIN_OBJECT_FRAME3(memberId.IsAttlist() ?
-        CObjectStackFrame::eFrameAttlist : CObjectStackFrame::eFrameClassMember,
-        memberId);
+    BEGIN_OBJECT_FRAME2(eFrameClassMember,memberId);
 
     BeginClassMember(memberType,memberId);
     WriteObject(memberPtr, memberType);
@@ -950,31 +978,25 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
 
 void CObjectOStreamXml::BeginChoice(const CChoiceTypeInfo* choiceType)
 {
-    if (!FetchFrameFromTop(1).GetSkipTag()) {
-        OpenTagIfNamed(choiceType);
-    }
+    CheckStdXml(choiceType);
+    OpenTagIfNamed(choiceType);
 }
 
 void CObjectOStreamXml::EndChoice(void)
 {
-    if (!FetchFrameFromTop(1).GetSkipTag()) {
-        CloseTagIfNamed(TopFrame().GetTypeInfo());
-    }
+    CloseTagIfNamed(TopFrame().GetTypeInfo());
 }
 
 void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
                                            const CMemberId& id)
 {
-    if (id.HaveNoPrefix()) {
+    if (m_StdXml) {
         const CVariantInfo* var_info = choiceType->GetVariantInfo(id.GetName());
-        ETypeFamily type = var_info->GetTypeInfo()->GetTypeFamily();
-        if (id.HasNotag() || type == eTypeFamilyContainer) {
-            TopFrame().SetNotag();
-        } else {
+        ETypeFamily type = GetRealTypeFamily(var_info->GetTypeInfo());
+        if (type == eTypeFamilyPrimitive && !id.HasNotag()) {
             OpenStackTag(0);
-            if (type != eTypeFamilyPrimitive) {
-                TopFrame().SetSkipTag();
-            }
+        } else {
+            TopFrame().SetNotag();
         }
     } else {
         OpenStackTag(0);
@@ -983,7 +1005,9 @@ void CObjectOStreamXml::BeginChoiceVariant(const CChoiceTypeInfo* choiceType,
 
 void CObjectOStreamXml::EndChoiceVariant(void)
 {
-    if (!TopFrame().GetNotag()) {
+    if (TopFrame().GetNotag()) {
+        TopFrame().SetNotag(false);
+    } else {
         CloseStackTag(0);
     }
 }

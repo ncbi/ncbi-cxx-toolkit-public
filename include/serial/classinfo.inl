@@ -51,6 +51,12 @@ const CMemberInfo* CClassTypeInfo::GetMemberInfo(const CIterator& i) const
 }
 
 inline
+const CMemberInfo* CClassTypeInfo::GetMemberInfo(const string& name) const
+{
+    return GetMemberInfo(GetMembers().Find(name));
+}
+
+inline
 bool CClassTypeInfo::RandomOrder(void) const
 {
     return m_ClassType == eRandom;
@@ -81,6 +87,9 @@ CClassTypeInfo::GetCPlusPlusTypeInfo(TConstObjectPtr object) const
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2002/12/26 19:33:06  gouriano
+* changed XML I/O streams to properly handle object copying
+*
 * Revision 1.3  2002/12/23 18:38:50  dicuccio
 * Added WIn32 export specifier: NCBI_XSERIAL_EXPORT.
 * Moved all CVS logs to the end.
