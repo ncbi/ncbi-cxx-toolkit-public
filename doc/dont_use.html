@@ -28,10 +28,13 @@
 	 <h2><u>STL and standard C++ library's bad guys</u></h2>
 
 	 <br>
-	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3> <p>
-	 <p> <i>#include &lt;ncbistre.hpp&gt;</i>
-
-	 <p>
+	 <a name="ref_STL_Stream"></a> <h3>Old vs. new stream classes</h3> 
+<p> 
+<p><i>#include &lt;ncbistre.hpp&gt;</i> 
+<p>Do not use the new iostream library included with Sunpro C++ 5.0 early access 
+  release refresh. It is extremely buggy. Instead we will use the older version 
+  of iostream.h by default.
+<p>
 	 It was a big question if we should use "old-fashioned" C++ stream
 	 classes(from <i>#include &lt;iostream.h&gt;, etc.</i>) or
 	 "templated" ones(from <i>#include &lt;iostream&gt;, etc.</i>).
