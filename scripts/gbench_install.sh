@@ -19,7 +19,7 @@ export DYLD_BIND_AT_LAUNCH
 PLUGINS='algo_align algo_basic ncbi_init net_blast algo_validator doc_basic doc_table view_align view_graphic view_sequence view_table view_text view_validator algo_external'
 BINS='gbench-bin gbench_plugin_scan'
 LIBS='gui_core xgbplugin'
-OPT_LIBS='bdb lds lds_admin xobjread'
+OPT_LIBS='bdb lds lds_admin xobjread ncbi_xloader_lds'
 
 
 Usage()
