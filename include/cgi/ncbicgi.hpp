@@ -36,6 +36,9 @@
 *
 * --------------------------------------------------------------------------
 * $Log$
+* Revision 1.52  2002/01/10 23:39:28  vakatov
+* Cosmetics
+*
 * Revision 1.51  2001/10/04 18:17:51  ucko
 * Accept additional query parameters for more flexible diagnostics.
 * Support checking the readiness of CGI input and output streams.
@@ -469,14 +472,14 @@ public:
                 const         CNcbiEnvironment* env  = 0,
                 CNcbiIstream* istr  = 0 /*NcbiCin*/,
                 TFlags        flags = 0,
-                int           ifd = -1);
+                int           ifd   = -1);
     // args := CNcbiArguments(argc,argv), env := CNcbiEnvironment(envp)
     CCgiRequest(int                argc,
                 const char* const* argv,
                 const char* const* envp  = 0,
                 CNcbiIstream*      istr  = 0,
                 TFlags             flags = 0,
-                int                ifd = -1);
+                int                ifd   = -1);
 
     // Destructor
     ~CCgiRequest(void);
@@ -565,7 +568,7 @@ private:
     CCgiCookies m_Cookies;
     // input stream
     CNcbiIstream* m_Input; 
-    // Input file descriptor, if available.
+    // input file descriptor, if available.
     int           m_InputFD;
     bool          m_OwnInput;
 
