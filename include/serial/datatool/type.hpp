@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.18  2003/02/12 21:41:26  gouriano
+* added check for "primitive" data type (int, bool, etc)
+*
 * Revision 1.17  2003/02/10 17:56:40  gouriano
 * make it possible to disable scope prefixes when reading and writing objects generated from ASN specification in XML format, or when converting an ASN spec into DTD.
 *
@@ -316,6 +319,8 @@ public:
     CClassTypeStrings* GetTypeStr(void) const {
         return m_TypeStr;
     }
+
+    bool IsPrimitive(void) const;
 
     static void SetEnforcedStdXml(bool set = true) {
         sm_EnforcedStdXml = set;
