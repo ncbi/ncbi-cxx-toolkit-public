@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.23  2001/08/16 19:21:02  thiessen
 * add face name info to fonts
 *
@@ -121,7 +124,11 @@ BEGIN_SCOPE(Cn3D)
 ViewerWindowBase::ViewerWindowBase(ViewerBase *parentViewer,
         const char* title, const wxPoint& pos, const wxSize& size) :
     wxFrame(GlobalTopWindow(), wxID_HIGHEST + 10, title, pos, size,
-        wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT),
+        wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT
+#if wxVERSION_NUMBER >= 2302
+            | wxFRAME_NO_TASKBAR
+#endif
+        ),
     viewerWidget(NULL), viewer(parentViewer)
 {
     if (!parentViewer) ERR_POST(Error << "ViewerWindowBase::ViewerWindowBase() - got NULL pointer");

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.96  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.95  2001/10/13 14:13:25  thiessen
 * fix wx version sting
 *
@@ -465,12 +468,17 @@ static std::list < std::string > backLog;
 class MsgFrame : public wxFrame
 {
 public:
+    wxTextCtrl *logText;
+    int totalChars;
     MsgFrame(const wxString& title,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize) :
-        wxFrame(topWindow, wxID_HIGHEST + 5, title, pos, size,
-            wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT) { }
+        wxFrame(GlobalTopWindow(), wxID_HIGHEST + 5, title, pos, size,
+            wxDEFAULT_FRAME_STYLE | wxFRAME_FLOAT_ON_PARENT
+#if wxVERSION_NUMBER >= 2302
+                | wxFRAME_NO_TASKBAR
+#endif
+            ) { totalChars = 0; }
     ~MsgFrame(void) { logFrame = NULL; logText = NULL; }
-    wxTextCtrl *logText;
 private:
     // need to define a custom close window handler, so that window isn't actually destroyed,
     // just hidden when user closes it with system close button
@@ -512,8 +520,12 @@ void DisplayDiagnostic(const SDiagMessage& diagMsg)
     else {
         if (logFrame) {
             // seems to be some upper limit on size, at least under MSW - so delete top of log if too big
-            if (logFrame->logText->GetLastPosition() > 30000) logFrame->logText->Clear();
+            if (logFrame->totalChars + errMsg.size() > 32000) {
+                logFrame->logText->Clear();
+                logFrame->totalChars = 0;
+            }
             *(logFrame->logText) << errMsg.c_str();
+            logFrame->totalChars += errMsg.size();
         } else {
             // if message window doesn't exist yet, store messages until later
             backLog.push_back(errMsg.c_str());
@@ -531,6 +543,7 @@ void RaiseLogWindow(void)
         // display any messages received before window created
         while (backLog.size() > 0) {
             *(logFrame->logText) << backLog.front().c_str();
+            logFrame->totalChars += backLog.front().size();
             backLog.erase(backLog.begin());
         }
     }
@@ -721,6 +734,7 @@ bool Cn3DApp::OnInit(void)
     // create the main frame window - must be first window created by the app
     structureWindow = new Cn3DMainFrame("Cn3D++", wxPoint(0,0), wxSize(500,500));
     SetTopWindow(structureWindow);
+    topWindow = structureWindow;
 
     // show log if set to do so
     bool showLog = false;
@@ -990,12 +1004,14 @@ Cn3DMainFrame::~Cn3DMainFrame(void)
 
 void Cn3DMainFrame::OnAnimate(wxCommandEvent& event)
 {
+    if (!glCanvas->structureSet) return;
+
     int currentDelay;
     if (!RegistryGetInteger(REG_CONFIG_SECTION, REG_ANIMATION_DELAY, &currentDelay))
         return;
 
     // play
-    if (event.GetId() == MID_PLAY) {
+    if (event.GetId() == MID_PLAY && glCanvas->structureSet->frameMap.size() > 1) {
         timer.Start(currentDelay, false);
         menuBar->Check(MID_PLAY, true);
         menuBar->Check(MID_STOP, false);
@@ -1207,9 +1223,7 @@ void Cn3DMainFrame::OnExit(wxCommandEvent& event)
     SaveDialog(false);                              // give structure window a chance to save data
     SaveFavorites();
 
-    if (cddAnnotateDialog) cddAnnotateDialog->Destroy();
-    if (cddDescriptionDialog) cddDescriptionDialog->Destroy();
-    if (cddNotesDialog) cddNotesDialog->Destroy();
+    DestroyNonModalDialogs();
     Destroy();
 }
 
@@ -1217,8 +1231,32 @@ void Cn3DMainFrame::DialogTextChanged(const MultiTextDialog *changed)
 {
     if (!changed || !glCanvas->structureSet) return;
 
-    if (changed == cddNotesDialog || changed == cddDescriptionDialog)
-        glCanvas->structureSet->CDDDataChanged();
+    if (changed == cddNotesDialog) {
+        StructureSet::TextLines lines;
+        cddNotesDialog->GetLines(&lines);
+        if (!glCanvas->structureSet->SetCDDNotes(lines))
+            ERR_POST(Error << "Error saving CDD notes");
+    }
+    if (changed == cddDescriptionDialog) {
+        string line;
+        cddDescriptionDialog->GetLine(&line);
+        if (!glCanvas->structureSet->SetCDDDescription(line))
+            ERR_POST(Error << "Error saving CDD description");
+    }
+}
+
+void Cn3DMainFrame::DialogDestroyed(const MultiTextDialog *destroyed)
+{
+    TESTMSG("destroying MultiTextDialog");
+    if (destroyed == cddNotesDialog) cddNotesDialog = NULL;
+    if (destroyed == cddDescriptionDialog) cddDescriptionDialog = NULL;
+}
+
+void Cn3DMainFrame::DestroyNonModalDialogs(void)
+{
+    if (cddAnnotateDialog) cddAnnotateDialog->Destroy();
+    if (cddNotesDialog) cddNotesDialog->Destroy();
+    if (cddDescriptionDialog) cddDescriptionDialog->Destroy();
 }
 
 void Cn3DMainFrame::OnPreferences(wxCommandEvent& event)
@@ -1284,10 +1322,9 @@ void Cn3DMainFrame::OnCDD(wxCommandEvent& event)
             break;
         }
         case MID_ANNOT_CDD: {
-            if (!cddAnnotateDialog) {
+            if (!cddAnnotateDialog)
                 cddAnnotateDialog = new CDDAnnotateDialog(this, &cddAnnotateDialog, glCanvas->structureSet);
-                cddAnnotateDialog->Show(true);
-            }
+            cddAnnotateDialog->Show(true);
             break;
         }
     }
@@ -1421,15 +1458,12 @@ void Cn3DMainFrame::LoadFile(const char *filename)
 
     // clear old data
     if (glCanvas->structureSet) {
+        DestroyNonModalDialogs();
         GlobalMessenger()->RemoveAllHighlights(false);
         delete glCanvas->structureSet;
         glCanvas->structureSet = NULL;
         glCanvas->renderer->AttachStructureSet(NULL);
         glCanvas->Refresh(false);
-        if (cddAnnotateDialog) {
-            cddAnnotateDialog->Destroy();
-            cddAnnotateDialog = NULL;
-        }
     }
 
     if (wxIsAbsolutePath(filename))
@@ -1526,20 +1560,6 @@ void Cn3DMainFrame::OnSave(wxCommandEvent& event)
 
     // force a save of any edits to alignment and updates first
     GlobalMessenger()->SequenceWindowsSave();
-
-    // save stuff from cdd annotation dialogs
-    if (cddNotesDialog) {
-        StructureSet::TextLines lines;
-        cddNotesDialog->GetLines(&lines);
-        if (!glCanvas->structureSet->SetCDDNotes(lines))
-            ERR_POST(Error << "Error saving CDD notes");
-    }
-    if (cddDescriptionDialog) {
-        string line;
-        cddDescriptionDialog->GetLine(&line);
-        if (!glCanvas->structureSet->SetCDDDescription(line))
-            ERR_POST(Error << "Error saving CDD description");
-    }
 
     wxString outputFilename = wxFileSelector(
         "Choose a filename for output", userDir.c_str(), "",

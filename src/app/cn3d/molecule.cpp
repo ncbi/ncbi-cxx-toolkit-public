@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.32  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.31  2001/08/24 00:41:35  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -199,18 +202,24 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
 
     // if no PDB id assigned to biopolymer, assign default PDB identifier from parent, assuming 'name'
     // is actually the chainID if this is a biopolymer
+    const StructureObject *object;
+    if (!GetParentOfType(&object)) return;
     if ((IsProtein() || IsNucleotide()) && pdbID.size() == 0) {
-        const StructureObject *object;
-        if (GetParentOfType(&object)) pdbID = object->pdbID;
+        pdbID = object->pdbID;
         if (name.size() == 1) pdbChain = name[0];
     }
 
     // load residues from SEQUENCE OF Residue, storing virtual bonds along the way
+    CMolecule_graph::TInter_residue_bonds::const_iterator j, je, jOrig;
+    if (graph.IsSetInter_residue_bonds()) {
+        j = graph.GetInter_residue_bonds().begin();
+        je = graph.GetInter_residue_bonds().end();
+    }
     const Residue *prevResidue = NULL;
     const Bond *prevBond = NULL;
-    CMolecule_graph::TInter_residue_bonds::const_iterator j, je;
     CMolecule_graph::TResidue_sequence::const_iterator i, ie=graph.GetResidue_sequence().end();
     int nResidues = 0;
+
     for (i=graph.GetResidue_sequence().begin(); i!=ie; i++) {
 
         const Residue *residue = new Residue(this, (*i).GetObject(), id,
@@ -223,34 +232,42 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
         if (residue->id != nResidues)
             ERR_POST(Fatal << "Residue ID's must be ordered consecutively starting with one");
 
-        // virtual bonds
+        // virtual bonds between successive alphas
         if (prevResidue && prevResidue->alphaID != Residue::NO_ALPHA_ID &&
             residue->alphaID != Residue::NO_ALPHA_ID) {
 
-            // make sure there's a "real" inter-residue bond between these
-            bool restarted = false, found = false;
+            bool foundReal = false;
+
+            // see if there's a "real" inter-residue bond between these in the chemical graph
             if (graph.IsSetInter_residue_bonds()) {
-				j = graph.GetInter_residue_bonds().begin();
-				je = graph.GetInter_residue_bonds().end();
+                jOrig = j;
                 do {
-                    if (j == je) {
-                        if (!restarted) {
-                            j = graph.GetInter_residue_bonds().begin();
-                            restarted = true;
-                        } else
-                        break;
-                    }
                     if ((j->GetObject().GetAtom_id_1().GetResidue_id().Get() == prevResidue->id &&
                          j->GetObject().GetAtom_id_2().GetResidue_id().Get() == residue->id) ||
                         (j->GetObject().GetAtom_id_2().GetResidue_id().Get() == prevResidue->id &&
-                         j->GetObject().GetAtom_id_1().GetResidue_id().Get() == residue->id)) {
-                        found = true;
-                    }
-                    j++;
-                } while (!found);
+                         j->GetObject().GetAtom_id_1().GetResidue_id().Get() == residue->id))
+                        foundReal = true;
+                    if (++j == je) j = graph.GetInter_residue_bonds().begin();
+                } while (!foundReal && j != jOrig);
             }
 
-            if (found) {
+            // for C-alpha only protein models, there are no inter-residue bonds in the
+            // chemical graph, so check inter-atomic distances for cases where either one
+            // of the two residues is C-alpha only.
+            if (!foundReal && IsProtein() && (residue->NAtoms() == 1 || prevResidue->NAtoms() == 1)) {
+
+                // get atom coordinates
+                AtomPntr ap1(id, residue->id, residue->alphaID);
+                const AtomCoord* atom1 = object->coordSets.front()->atomSet->GetAtom(ap1, true, true);
+                AtomPntr ap2(id, prevResidue->id, prevResidue->alphaID);
+                const AtomCoord* atom2 = object->coordSets.front()->atomSet->GetAtom(ap2, true, true);
+
+                // check distance - ok if <= 5.0 Angstroms
+                if (atom1 && atom2 && (atom1->site - atom2->site).length() <= 5.0)
+                    foundReal = true;
+            }
+
+            if (foundReal) {
                 const Bond *bond = MakeBond(this,
                     id, prevResidue->id, prevResidue->alphaID,
                     id, residue->id, residue->alphaID,
@@ -267,6 +284,7 @@ Molecule::Molecule(ChemicalGraph *parentGraph,
                 prevBond = NULL;
         } else
             prevBond = NULL;
+
         prevResidue = residue;
     }
 

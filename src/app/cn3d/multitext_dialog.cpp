@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.3  2001/10/11 14:18:57  thiessen
 * make MultiTextDialog non-modal
 *
@@ -58,10 +61,16 @@ BEGIN_EVENT_TABLE(MultiTextDialog, wxDialog)
     EVT_TEXT        (-1,    MultiTextDialog::OnTextChange)
 END_EVENT_TABLE()
 
-MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& initialText,
+MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner,
+        const TextLines& initialText,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos, const wxSize& size) :
-    wxDialog(parent, id, title, pos, size, wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER),
+    wxDialog(parent, id, title, pos, size,
+        wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER | wxDIALOG_MODELESS
+#if wxVERSION_NUMBER >= 2302
+            | wxFRAME_NO_TASKBAR
+#endif
+        ),
     myOwner(owner)
 {
     textCtrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxHSCROLL);
@@ -81,10 +90,6 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& i
     c->bottom.SameAs    (bDone, wxTop, 10);
     textCtrl->SetConstraints(c);
 
-    SetSizeHints(200, 150);
-    SetAutoLayout(true);
-    Layout();
-
     // set initial text - if single line, break up into smaller lines, otherwise leave as-is
     if (initialText.size() == 1) {
         int i, j;
@@ -99,21 +104,26 @@ MultiTextDialog::MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& i
         for (int i=0; i<initialText.size(); i++)
             *textCtrl << initialText[i].c_str() << '\n';
     }
+
+    SetClientSize(size);
+    SetSizeHints(200, 150); // min size
+    SetAutoLayout(true);
+    Layout();
+}
+
+MultiTextDialog::~MultiTextDialog(void)
+{
+    myOwner->DialogDestroyed(this);
 }
 
 void MultiTextDialog::OnCloseWindow(wxCloseEvent& event)
 {
-    if (event.CanVeto()) {
-        event.Veto();
-        Show(false);
-    } else {
-        Destroy();
-    }
+    Destroy();
 }
 
 void MultiTextDialog::OnButton(wxCommandEvent& event)
 {
-    if (event.GetEventObject() == bDone) Show(false);
+    if (event.GetEventObject() == bDone) Destroy();
 }
 
 void MultiTextDialog::OnTextChange(wxCommandEvent& event)

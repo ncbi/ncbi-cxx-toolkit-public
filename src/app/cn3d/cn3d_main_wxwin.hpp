@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.48  2001/10/16 21:48:28  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.47  2001/10/11 14:18:20  thiessen
 * make MultiTextDialog non-modal
 *
@@ -282,6 +285,7 @@ public:
     void LoadFile(const char *filename);
     bool SaveDialog(bool canCancel);
     void DialogTextChanged(const MultiTextDialog *changed);
+    void DialogDestroyed(const MultiTextDialog *destroyed);
 
     enum {
         // File menu
@@ -369,6 +373,7 @@ private:
     // non-modal dialogs owned by this object
     CDDAnnotateDialog *cddAnnotateDialog;
     MultiTextDialog *cddDescriptionDialog, *cddNotesDialog;
+    void DestroyNonModalDialogs(void);
 
     void OnExit(wxCommandEvent& event);
     void OnCloseWindow(wxCloseEvent& event);

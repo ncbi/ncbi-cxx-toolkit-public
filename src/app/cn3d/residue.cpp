@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.27  2001/10/16 21:49:07  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.26  2001/08/24 00:41:36  thiessen
 * tweak conservation colors and opengl font handling
 *
@@ -285,15 +288,18 @@ Residue::Residue(StructureBase *parent,
         AtomInfo *info = new AtomInfo;
         AtomPntr ap(moleculeID, id, atomID);
 
-        // first see if this atom is present each CoordSet; if not, don't
-        // bother storing info. This forces an intersection on CoordSets - e.g.,
-        // from a multi-model NMR structure, only those atoms present in *all*
+        // see if this atom is present each CoordSet; for display, this forces an intersection on
+        // CoordSets - e.g., from a multi-model NMR structure, only those atoms present in *all*
         // models will be displayed.
         StructureObject::CoordSetList::const_iterator c, ce=object->coordSets.end();
         for (c=object->coordSets.begin(); c!=ce; c++) {
             if (!((*c)->atomSet->GetAtom(ap, true, true))) break;
         }
-        info->isPresentInAllCoordSets = (c == ce);
+        if (c == ce) {
+            info->isPresentInAllCoordSets = true;
+            nAtomsPresentInAllCoordSets++;
+        } else
+            info->isPresentInAllCoordSets = false;
 
         info->residue = this;
         // get name if present
@@ -322,7 +328,6 @@ Residue::Residue(StructureBase *parent,
         if (atomInfos.find(atom.GetId().Get()) != atomInfos.end())
             ERR_POST(Error << "Residue #" << id << ": confused by multiple atom IDs " << atom.GetId().Get());
         atomInfos[atomID] = info;
-        nAtomsPresentInAllCoordSets++;
     }
 
     // get bonds

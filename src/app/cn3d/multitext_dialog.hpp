@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2001/10/16 21:48:28  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.3  2001/10/11 14:18:20  thiessen
 * make MultiTextDialog non-modal
 *
@@ -63,18 +66,18 @@ BEGIN_SCOPE(Cn3D)
 
 class MultiTextDialog;
 
-// so the owner can receive notification that dialog text has changed
+// so the owner can receive notification that dialog text has changed, or dialog destroyed
 
 class MultiTextDialogOwner
 {
 public:
     virtual void DialogTextChanged(const MultiTextDialog *changed) = 0;
+    virtual void DialogDestroyed(const MultiTextDialog *changed) = 0;
 };
 
 
-// this is intended to be used as a non-modal dialog; it hides itself when the window
-// is closed or "Done" button is pressed, but still resides in memory so information
-// can be retrieved from it later (until the dialog is actually destroyed, of course)
+// this is intended to be used as a non-modal dialog; it calls its owner's DialogTextChanged()
+// method every time the user types something
 
 class MultiTextDialog : public wxDialog
 {
@@ -84,6 +87,7 @@ public:
     MultiTextDialog(MultiTextDialogOwner *owner, const TextLines& initialText,
         wxWindow* parent, wxWindowID id, const wxString& title,
         const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
+    MultiTextDialog::~MultiTextDialog(void);
 
     bool GetLines(TextLines *lines) const;
     bool GetLine(std::string *singleString) const;  // collapse all lines to single string
@@ -96,9 +100,9 @@ private:
     wxButton *bDone;
 
     // event callbacks
-    void OnCloseWindow(wxCloseEvent& event);
     void OnButton(wxCommandEvent& event);
     void OnTextChange(wxCommandEvent& event);
+    void OnCloseWindow(wxCloseEvent& event);
 
     DECLARE_EVENT_TABLE()
 };

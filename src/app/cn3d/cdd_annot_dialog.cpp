@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2001/10/16 21:49:06  thiessen
+* restructure MultiTextDialog; allow virtual bonds for alpha-only PDB's
+*
 * Revision 1.11  2001/10/14 09:27:46  thiessen
 * add cdd evidence move up/down
 *
@@ -187,7 +190,11 @@ END_EVENT_TABLE()
 
 CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handle, StructureSet *set) :
     wxDialog(parent, -1, "CDD Annotations", wxPoint(400, 100), wxDefaultSize,
-        wxCAPTION | wxSYSTEM_MENU), // not resizable
+        wxCAPTION | wxSYSTEM_MENU | wxDIALOG_MODELESS   // not resizable
+#if wxVERSION_NUMBER >= 2302
+            | wxFRAME_NO_TASKBAR
+#endif
+        ),
     dialogHandle(handle), structureSet(set), annotSet(set->GetCDDAnnotSet())
 {
     if (annotSet.Empty()) {
@@ -200,9 +207,12 @@ CDDAnnotateDialog::CDDAnnotateDialog(wxWindow *parent, CDDAnnotateDialog **handl
     wxSizer *topSizer = SetupCDDAnnotDialog(panel, false);
 
     // call sizer stuff
-    topSizer->Fit(this);
     topSizer->Fit(panel);
-    topSizer->SetSizeHints(this);
+    SetClientSize(topSizer->GetMinSize());
+
+    TESTMSG("sizer->GetMinSize(): " << topSizer->GetMinSize().GetWidth() << 'x' << topSizer->GetMinSize().GetHeight());
+    TESTMSG("GetSize(): " << GetSize().GetWidth() << 'x' << GetSize().GetHeight());
+    TESTMSG("GetClientSize(): " << GetClientSize().GetWidth() << 'x' << GetClientSize().GetHeight());
 
     // set initial GUI state
     SetupGUIControls(0, 0);
