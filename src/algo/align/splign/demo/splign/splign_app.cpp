@@ -351,6 +351,23 @@ istream* CSplignApp::x_GetPairwiseHitStream(
 }
 
 
+CRef<CSeq_id> GetSeqId(const string& query)
+{
+    CRef<CSeq_id> seqid_query (new CSeq_id);
+    try {
+        seqid_query.Reset (new CSeq_id (query));
+        if (seqid_query->Which() == CSeq_id::e_not_set) {
+            seqid_query->SetLocal().SetStr(query);
+        }
+    }
+    catch(std::exception&) {
+        // some conventionally-looking non-conventional IDs may throw this
+        seqid_query->SetLocal().SetStr(query);
+    }
+    return seqid_query;
+}
+
+
 int CSplignApp::Run()
 { 
   const CArgs& args = GetArgs();    
@@ -497,15 +514,9 @@ int CSplignApp::Run()
     }
 
     const string query (hits[0].m_Query);
-    CRef<CSeq_id> seqid_query (new CSeq_id (query));
-    if (seqid_query->Which() == CSeq_id::e_not_set) {
-        seqid_query->SetLocal().SetStr(query);
-    }
+    CRef<CSeq_id> seqid_query = GetSeqId(query);
     const string subj (hits[0].m_Subj);
-    CRef<CSeq_id> seqid_subj (new CSeq_id (subj));
-    if (seqid_subj->Which() == CSeq_id::e_not_set) {
-        seqid_subj->SetLocal().SetStr(subj);
-    }
+    CRef<CSeq_id> seqid_subj = GetSeqId(subj);
     formatter.SetSeqIds(seqid_query, seqid_subj);
 
     const string strand = args["strand"].AsString();
@@ -652,6 +663,9 @@ int main(int argc, const char* argv[])
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.36  2005/03/23 20:31:17  kapustin
+ * Always set local type for not recognized SeqIds
+ *
  * Revision 1.35  2005/02/23 22:14:18  kapustin
  * Remove outdated code. Shae scope object
  *
