@@ -142,6 +142,10 @@ public:
     // and deserialized.
     virtual void OnObjectFoundPost(const CObjectInfo& object);
 
+    // Event indicates that sniffer objects needs to reset it's status and
+    // get ready for the next probing.
+    virtual void Reset() {}
+
     // Set the discard flag. If set TRUE current deserialized object is not
     // deserialized. 
     // The mechanizm is based on CObjectIStream::SetDiscardCurrObject
@@ -195,6 +199,11 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.15  2003/10/07 20:42:04  kuznets
+ * + virtual Reset() function.
+ * Called when object scan fails because of the format error and the
+ * whole state machine should be reset.
+ *
  * Revision 1.14  2003/09/09 20:22:40  kuznets
  * Fixed a bug in CObjectsSniffer::SetDiscardCurrObject()
  *
