@@ -68,7 +68,7 @@ CProjSRCResolver::CProjSRCResolver(const string&       applib_mfilepath,
                              const string&       source_base_dir,
                              const list<string>& sources_src)
  :m_MakefilePath    (applib_mfilepath),
-  m_m_SourcesBaseDir(source_base_dir),
+  m_SourcesBaseDir(source_base_dir),
   m_SourcesSrc      (sources_src)
 {
 }
@@ -78,15 +78,27 @@ CProjSRCResolver::~CProjSRCResolver(void)
 {
 }
 
+static bool s_SourceFileExists(const string& dir, const string& name)
+{
+    string path = CDirEntry::ConcatPath(dir, name);
+
+    if ( CDirEntry(path + ".cpp").Exists() )
+        return true;
+    if ( CDirEntry(path + ".c").Exists() )
+        return true;
+    
+    return false;
+}
 
 void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
 {
     sources_dst->clear();
-
+    
+    list<string> sources_names;
     ITERATE(list<string>, p, m_SourcesSrc) {
         const string& src = *p;
         if ( !CSymResolver::IsDefine(src) ) {
-            sources_dst->push_back(src);
+            sources_names.push_back(src);
         } else {
             PrepereResolver();
             string src_define = FilterDefine(src);
@@ -95,7 +107,24 @@ void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
 
             copy(resolved_src_defines.begin(),
                  resolved_src_defines.end(),
-                 back_inserter(*sources_dst));
+                 back_inserter(sources_names));
+        }
+    }
+
+    ITERATE(list<string>, p, sources_names) {
+        const string& src = *p;
+        if ( s_SourceFileExists(m_SourcesBaseDir, src) ) {
+            sources_dst->push_back(src);
+        } else {
+            ITERATE(list<string>, n, m_MakefileDirs) {
+                const string& dir = *n;
+                if ( s_SourceFileExists(dir, src) ) {
+                    string path = 
+                        CDirEntry::CreateRelativePath(m_SourcesBaseDir, dir);
+                    path = CDirEntry::ConcatPath(path, src);
+                    sources_dst->push_back(path);
+                }
+            }
         }
     }
 }
@@ -108,12 +137,16 @@ void CProjSRCResolver::PrepereResolver(void)
 
     list<string> include_makefiles;
     s_GetMakefileIncludes(m_MakefilePath, 
-                          m_m_SourcesBaseDir, &include_makefiles);
+                          m_SourcesBaseDir, &include_makefiles);
 
     CSymResolver::LoadFrom(m_MakefilePath, &m_Resolver);
     ITERATE(list<string>, p, include_makefiles) {
         const string& makefile_path = *p;
         m_Resolver += CSymResolver(makefile_path);
+
+        string dir;
+        CDirEntry::SplitPath(makefile_path, &dir);
+        m_MakefileDirs.push_back(dir);
     }
 }
 
@@ -122,6 +155,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.2  2004/02/10 18:05:48  gorelenk
+ * Implemented recursive resolving for makefiles from different dirs.
+ *
  * Revision 1.1  2004/02/04 23:36:45  gorelenk
  * Initial revision.
  *
