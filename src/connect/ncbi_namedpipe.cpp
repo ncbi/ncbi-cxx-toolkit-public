@@ -58,11 +58,7 @@ typedef int socklen_t;
 
 
 // Predefined timeouts
-const STimeout kZeroZimeoutValue = {0,0};
-const STimeout *const CNamedPipe::kNoWait            = &kZeroZimeoutValue;
-const STimeout *const CNamedPipe::kDefaultTimeout    = (const STimeout*)(-1);
-const STimeout *const CNamedPipe::kInfiniteTimeout   = (const STimeout*)( 0);
-const size_t          CNamedPipe::kDefaultBufferSize = 0;
+const size_t CNamedPipe::kDefaultBufferSize = 0;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -73,7 +69,7 @@ const size_t          CNamedPipe::kDefaultBufferSize = 0;
 STimeout* s_SetTimeout(const STimeout* from, STimeout* to)
 {
     if ( !from ) {
-        return const_cast<STimeout*>(CNamedPipe::kInfiniteTimeout);
+        return const_cast<STimeout*> (kInfiniteTimeout);
     }
     to->sec  = from->usec / 1000000 + from->sec;
     to->usec = from->usec % 1000000;
@@ -1137,6 +1133,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.8  2003/08/25 14:41:22  lavr
+ * Employ new k..Timeout constants
+ *
  * Revision 1.7  2003/08/20 14:22:20  ivanov
  * Get read of warning -- double variable declaration
  *

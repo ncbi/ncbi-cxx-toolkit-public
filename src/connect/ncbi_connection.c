@@ -88,7 +88,7 @@ typedef struct SConnectionTag {
 #endif
     ECONN_State            state;      /* connection state                   */
 
-    /* "[c|r|w|l]_timeout" is either 0 (means infinite), CONN_DEFAULT_TIMEOUT
+    /* "[c|r|w|l]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
        (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
     const STimeout*        o_timeout;  /* timeout on open                    */
     const STimeout*        r_timeout;  /* timeout on reading                 */
@@ -117,10 +117,10 @@ extern EIO_Status CONN_Create
 
     if ( conn ) {
         conn->state     = eCONN_Unusable;
-        conn->o_timeout = CONN_DEFAULT_TIMEOUT;
-        conn->r_timeout = CONN_DEFAULT_TIMEOUT;
-        conn->w_timeout = CONN_DEFAULT_TIMEOUT;
-        conn->c_timeout = CONN_DEFAULT_TIMEOUT;
+        conn->o_timeout = kDefaultTimeout;
+        conn->r_timeout = kDefaultTimeout;
+        conn->w_timeout = kDefaultTimeout;
+        conn->c_timeout = kDefaultTimeout;
         if ((status = CONN_ReInit(conn, connector)) != eIO_Success) {
             free(conn);
             conn = 0;
@@ -164,13 +164,12 @@ extern EIO_Status CONN_ReInit
         if (conn->state == eCONN_Open) {
             if ( conn->meta.flush ) {
                 conn->meta.flush(conn->meta.c_flush,
-                                 conn->c_timeout == CONN_DEFAULT_TIMEOUT ?
+                                 conn->c_timeout == kDefaultTimeout ?
                                  conn->meta.default_timeout : conn->c_timeout);
             }
             if ( conn->meta.close ) {
                 status = conn->meta.close(conn->meta.c_close,
-                                          conn->c_timeout ==
-                                          CONN_DEFAULT_TIMEOUT
+                                          conn->c_timeout == kDefaultTimeout
                                           ? conn->meta.default_timeout
                                           : conn->c_timeout);
                 if (status != eIO_Success) {
@@ -227,7 +226,7 @@ static EIO_Status s_Open
     /* call current connector's "OPEN" method */
     status = conn->meta.open
         ? conn->meta.open(conn->meta.c_open,
-                          conn->o_timeout == CONN_DEFAULT_TIMEOUT ?
+                          conn->o_timeout == kDefaultTimeout ?
                           conn->meta.default_timeout : conn->o_timeout)
         : eIO_NotSupported;
 
@@ -253,7 +252,7 @@ extern EIO_Status CONN_SetTimeout
 
     switch (event) {
     case eIO_Open:
-        if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
+        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
             conn->oo_timeout = *new_timeout;
             conn->o_timeout  = &conn->oo_timeout;
         } else {
@@ -261,7 +260,7 @@ extern EIO_Status CONN_SetTimeout
         }
         break;
     case eIO_Close:
-        if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
+        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
             conn->cc_timeout = *new_timeout;
             conn->c_timeout  = &conn->cc_timeout;
         } else {
@@ -270,7 +269,7 @@ extern EIO_Status CONN_SetTimeout
         break;
     case eIO_Read:
     case eIO_ReadWrite:
-        if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
+        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
             conn->rr_timeout = *new_timeout;
             conn->r_timeout  = &conn->rr_timeout;
         } else {
@@ -280,7 +279,7 @@ extern EIO_Status CONN_SetTimeout
             break;
         /*FALLTHRU*/
     case eIO_Write:
-        if (new_timeout  &&  new_timeout != CONN_DEFAULT_TIMEOUT) {
+        if (new_timeout  &&  new_timeout != kDefaultTimeout) {
             conn->ww_timeout = *new_timeout;
             conn->w_timeout  = &conn->ww_timeout;
         } else {
@@ -340,7 +339,7 @@ extern EIO_Status CONN_Wait
 
     if (conn->state == eCONN_Unusable               ||
         (event != eIO_Read  &&  event != eIO_Write) ||
-        timeout == CONN_DEFAULT_TIMEOUT)
+        timeout == kDefaultTimeout)
         return eIO_InvalidArg;
 
     /* perform open, if not opened yet */
@@ -393,7 +392,7 @@ extern EIO_Status CONN_Write
     /* call current connector's "WRITE" method */
     status = conn->meta.write
         ? conn->meta.write(conn->meta.c_write, buf, size, n_written,
-                           conn->w_timeout == CONN_DEFAULT_TIMEOUT ?
+                           conn->w_timeout == kDefaultTimeout ?
                            conn->meta.default_timeout : conn->w_timeout)
         : eIO_NotSupported;
 
@@ -441,7 +440,7 @@ extern EIO_Status CONN_Flush
     if ( !conn->meta.flush )
         return eIO_Success;
     status = conn->meta.flush(conn->meta.c_flush,
-                              conn->w_timeout == CONN_DEFAULT_TIMEOUT ?
+                              conn->w_timeout == kDefaultTimeout ?
                               conn->meta.default_timeout : conn->w_timeout);
     if (status != eIO_Success)
         CONN_LOG(eLOG_Warning, "[CONN_Flush]  Cannot flush data");
@@ -482,7 +481,7 @@ static EIO_Status s_CONN_Read
         size_t x_read = 0;
         /* call current connector's "READ" method */
         status = conn->meta.read(conn->meta.c_read, buf, size, &x_read,
-                                 conn->r_timeout == CONN_DEFAULT_TIMEOUT ?
+                                 conn->r_timeout == kDefaultTimeout ?
                                  conn->meta.default_timeout : conn->r_timeout);
         *n_read += x_read;
         if (peek  &&  x_read)  /* save the read data in the "peek-buffer" */
@@ -526,7 +525,7 @@ static EIO_Status s_CONN_ReadPersist
         /* flush the unwritten output data (if any) */
         if ( conn->meta.flush ) {
             conn->meta.flush(conn->meta.c_flush,
-                             conn->r_timeout == CONN_DEFAULT_TIMEOUT ?
+                             conn->r_timeout == kDefaultTimeout ?
                              conn->meta.default_timeout : conn->r_timeout);
         }
     }
@@ -560,7 +559,7 @@ extern EIO_Status CONN_Read
     /* flush the unwritten output data (if any) */
     if ( conn->meta.flush ) {
         conn->meta.flush(conn->meta.c_flush,
-                         conn->r_timeout == CONN_DEFAULT_TIMEOUT ?
+                         conn->r_timeout == kDefaultTimeout ?
                          conn->meta.default_timeout : conn->r_timeout);
     }
 
@@ -731,6 +730,9 @@ extern EIO_Status CONN_WaitAsync
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.37  2003/08/25 14:40:53  lavr
+ * Employ new k..Timeout constants
+ *
  * Revision 6.36  2003/05/31 05:18:26  lavr
  * Optimize on calling flush; do not require to have flush method
  *
@@ -769,7 +771,7 @@ extern EIO_Status CONN_WaitAsync
  * Changed EIO_ReadMethod enums accordingly; log moved to end
  *
  * Revision 6.24  2002/04/26 16:30:26  lavr
- * Checks for CONN_DEFAULT_TIMEOUT and use of default_timeout of meta-connector
+ * Checks for kDefaultTimeout and use of default_timeout of meta-connector
  *
  * Revision 6.23  2002/04/24 21:18:04  lavr
  * Beautifying: pup open check before buffer check in CONN_Wait()
@@ -812,7 +814,7 @@ extern EIO_Status CONN_WaitAsync
  * (by A.Lavrentiev)
  *
  * Revision 6.11  2001/04/24 21:29:04  lavr
- * CONN_DEFAULT_TIMEOUT is used everywhere when timeout is not set explicitly
+ * kDefaultTimeout is used everywhere when timeout is not set explicitly
  *
  * Revision 6.10  2001/02/26 22:52:44  kans
  * Initialize x_read in s_CONN_Read

@@ -941,8 +941,8 @@ extern CONNECTOR HTTP_CreateConnectorEx
     uuu->error_header    = getenv("HTTP_ERROR_HEADER_ONLY") ? 1 : 0;
 
     uuu->sock            = 0;
-    uuu->o_timeout       = CONN_DEFAULT_TIMEOUT;/* deliberately bad values --*/
-    uuu->w_timeout       = CONN_DEFAULT_TIMEOUT;/* will be reset prior to use*/
+    uuu->o_timeout       = kDefaultTimeout;  /* deliberately bad values --   */
+    uuu->w_timeout       = kDefaultTimeout;  /* will be reset prior to use   */
     uuu->http            = 0;
     uuu->r_buf           = 0;
     uuu->w_buf           = 0;
@@ -962,6 +962,9 @@ extern CONNECTOR HTTP_CreateConnectorEx
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.55  2003/08/25 14:40:29  lavr
+ * Employ new k..Timeout constants
+ *
  * Revision 6.54  2003/06/09 19:52:42  lavr
  * New env.var. HTTP_ERROR_HEADER_ONLY to control header output on SOME tracing
  *
@@ -1049,7 +1052,7 @@ extern CONNECTOR HTTP_CreateConnectorEx
  *
  * Revision 6.25  2002/04/26 16:36:56  lavr
  * Added setting of default timeout in meta-connector's setup routine
- * Remove all checks for CONN_DEFAULT_TIMEOUT: now supplied good from CONN
+ * Remove all checks for kDefaultTimeout: now supplied good from CONN
  *
  * Revision 6.24  2002/04/22 19:31:33  lavr
  * Reading/waiting redesigned to be more robust in case of network errors

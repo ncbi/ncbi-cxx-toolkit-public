@@ -124,7 +124,7 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info_in,
         strncpy0(net_info->path, path, sizeof(net_info->path) - 1);
     if (args)
         strncpy0(net_info->args, args, sizeof(net_info->args) - 1);
-    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+    if (timeout && timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
@@ -207,7 +207,7 @@ static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
         ConnNetInfo_Clone(net_info_in) : ConnNetInfo_Create(service);
     if (!net_info)
         return 0;
-    if (timeout && timeout != CONN_DEFAULT_TIMEOUT) {
+    if (timeout && timeout != kDefaultTimeout) {
         net_info->tmo     = *timeout;
         net_info->timeout = &net_info->tmo;
     } else if (!timeout)
@@ -252,6 +252,9 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 6.24  2003/08/25 14:40:43  lavr
+ * Employ new k..Timeout constants
+ *
  * Revision 6.23  2003/05/20 19:08:28  lavr
  * Do not use clear() in constructor ('cause it may throw an exception)
  *
