@@ -137,23 +137,6 @@ void CLDS_Database::Open()
                            CBDB_RawFile::eReadWrite);
 }
 
-void CLDS_Database::SyncWithDir(const string& dir_name)
-{
-    CLDS_Set files_deleted;
-    CLDS_Set files_updated;
-
-    CLDS_File fl(GetTables());
-    fl.SyncWithDir(dir_name, &files_deleted, &files_updated);
-
-
-    CLDS_Set objects_deleted;
-    CLDS_Set annotations_deleted;
-
-    CLDS_Object obj(m_db, m_ObjTypeMap);
-    obj.DeleteCascadeFiles(files_deleted, &objects_deleted, &annotations_deleted);
-    obj.UpdateCascadeFiles(files_updated);
-}
-
 void CLDS_Database::x_LoadTypeMap()
 {
     CBDB_FileCursor cur(m_db.object_type_db); 
@@ -171,6 +154,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2003/06/16 15:39:18  kuznets
+ * Removing dead code
+ *
  * Revision 1.2  2003/06/16 14:55:00  kuznets
  * lds splitted into "lds" and "lds_admin"
  *
