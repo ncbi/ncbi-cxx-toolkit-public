@@ -529,6 +529,8 @@ public:
 private:
     // Close socket persistently
     bool CloseSocket(int sock);
+    // Set socket i/o buffer size (dir: SO_SNDBUF, SO_RCVBUF)
+    bool SetSocketBufferSize(int sock, size_t bufsize, int dir);
 
 private:
     int     m_LSocket;    // Listening socket
@@ -575,14 +577,13 @@ EIO_Status CNamedPipeHandle::Open(const string&   pipename,
 
         // Set buffer size
         if ( m_Bufsize != CNamedPipe::kDefaultBufferSize) {
-            if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF,
-                           &m_Bufsize, sizeof(m_Bufsize)) < 0  ||
-                setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
-                           &m_Bufsize, sizeof(m_Bufsize)) < 0) {
-                throw "UNIX socket set socket buffer size failed";
+            if ( !SetSocketBufferSize(sock, m_Bufsize, SO_SNDBUF)  ||
+                 !SetSocketBufferSize(sock, m_Bufsize, SO_RCVBUF) ) {
+                throw "UNIX socket set buffer size failed";
             }
         }
 
+        // Set non-blocking mode
         if (fcntl(sock, F_SETFL,
                   fcntl(sock, F_GETFL, 0) | O_NONBLOCK) == -1) {
             throw "UNIX socket set to non-blocking failed";
@@ -799,17 +800,13 @@ EIO_Status CNamedPipeHandle::Listen(const STimeout* timeout)
             }
             break;
         }
-
         // Set buffer size
         if ( m_Bufsize != CNamedPipe::kDefaultBufferSize) {
-            if (setsockopt(sock, SOL_SOCKET, SO_SNDBUF,
-                           &m_Bufsize, sizeof(m_Bufsize)) < 0  ||
-                setsockopt(sock, SOL_SOCKET, SO_RCVBUF,
-                           &m_Bufsize, sizeof(m_Bufsize)) < 0) {
+            if ( !SetSocketBufferSize(sock, m_Bufsize, SO_SNDBUF)  ||
+                 !SetSocketBufferSize(sock, m_Bufsize, SO_RCVBUF) ) {
                 throw "UNIX socket set buffer size failed";
             }
         }
-
         // Create new I/O socket
         if (SOCK_CreateOnTop(&sock, sizeof(sock), &m_IoSocket) !=
             eIO_Success) {
@@ -928,6 +925,22 @@ bool CNamedPipeHandle::CloseSocket(int sock)
             if (errno != EINTR) {
                 return false;
             }
+        }
+    }
+    return true;
+}
+
+
+bool CNamedPipeHandle::SetSocketBufferSize(int sock, size_t bufsize, int dir)
+{
+    socklen_t bs_old = 0;
+    socklen_t bs_len = sizeof(bs_old);
+    socklen_t bs_new = (socklen_t)bufsize;
+
+    if (getsockopt(sock, SOL_SOCKET, dir, &bs_old, &bs_len) == 0  &&
+        bs_new > bs_old) {
+        if (setsockopt(sock, SOL_SOCKET, dir, &bs_new, bs_len) != 0) {
+            return false;
         }
     }
     return true;
@@ -1146,6 +1159,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/09/05 19:52:37  ivanov
+ * + UNIX CNamedPipeHandle::SetSocketBufferSize()
+ *
  * Revision 1.12  2003/09/03 14:48:32  ivanov
  * Fix for previous commit
  *
