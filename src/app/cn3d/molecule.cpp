@@ -271,15 +271,16 @@ Vector Molecule::GetResidueColor(int sequenceIndex) const
     return style.color;
 }
 
-bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const
+int Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const
 {
     const StructureObject *object;
     if (!GetParentOfType(&object)) return false;
     if (object->coordSets.size() != 1) {
         ERRORMSG("Can't align structures with multiple CoordSets");
-        return false;
+        return -1;
     }
 
+    int nCoords = 0;
     for (int i=0; i<nResidues; ++i) {
 
         int rID = seqIndexes[i] + 1;    // residueIDs start at 1
@@ -288,7 +289,7 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
             ERRORMSG("Can't find residueID " << rID
                 << " in " << identifier->pdbID << " chain '"
                 << (char) identifier->pdbChain << "'");
-            return false;
+            return -1;
         }
 
         int aID = (r->second->alphaID);
@@ -310,9 +311,10 @@ bool Molecule::GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector
         }
 
         coords[i] = &(atomCoord->site);
+        ++nCoords;
     }
 
-    return true;
+    return nCoords;
 }
 
 bool Molecule::DrawAllWithTerminiLabels(const AtomSet *atomSet) const
@@ -402,6 +404,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.42  2004/05/20 18:49:21  thiessen
+* don't do structure realignment if < 3 coords present
+*
 * Revision 1.41  2004/03/15 17:34:03  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

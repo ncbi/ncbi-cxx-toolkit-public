@@ -427,7 +427,10 @@ void AlignmentManager::RealignAllSlaveStructures(void) const
 
             b = blocks.begin();
             GetAlignedResidueIndexes(b, be, i, slaveSeqIndexes);
-            if (!slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords)) continue;
+            if (slaveMol->GetAlphaCoords(nResidues, slaveSeqIndexes, slaveCoords) < 3) {
+                ERRORMSG("can't realign slave " << slaveSeq->identifier->pdbID << ", not enough coordinates in aligned region");
+                continue;
+            }
 
             if (!slaveMol->GetParentOfType(&slaveObj)) continue;
 
@@ -952,6 +955,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.93  2004/05/20 18:49:21  thiessen
+* don't do structure realignment if < 3 coords present
+*
 * Revision 1.92  2004/03/15 17:17:56  thiessen
 * prefer prefix vs. postfix ++/-- operators
 *

@@ -131,8 +131,8 @@ public:
     Vector GetResidueColor(int sequenceIndex) const;
 
     // get coordinates for alpha atoms of residues with given sequence indexes;
-    // returns true if successful, false on failure
-    bool GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const;
+    // returns actual # coordinates retrieved if successful, -1 on failure
+    int GetAlphaCoords(int nResidues, const int *seqIndexes, const Vector * *coords) const;
 
     // secondary structure query methods
 
@@ -158,6 +158,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.30  2004/05/20 18:49:21  thiessen
+* don't do structure realignment if < 3 coords present
+*
 * Revision 1.29  2004/02/19 17:04:58  thiessen
 * remove cn3d/ from include paths; add pragma to disable annoying msvc warning
 *
