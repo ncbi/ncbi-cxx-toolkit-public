@@ -1,4 +1,4 @@
---$Revision: 3.2 $
+--$Revision: 3.3 $
 --********************************************************************
 --
 --  Direct Submission of Sequence Data
@@ -18,7 +18,7 @@ BEGIN
 
 EXPORTS Seq-submit;
 
-IMPORTS Cit-sub FROM NCBI-Biblio
+IMPORTS Cit-sub, Author FROM NCBI-Biblio
         Date, Object-id FROM NCBI-General
         Seq-annot FROM NCBI-Seq
         Seq-id FROM NCBI-Seqloc
@@ -56,7 +56,8 @@ Contact-info ::= SEQUENCE {      -- who to contact to discuss the submission
     password OCTET STRING OPTIONAL ,
     last-name VisibleString OPTIONAL ,  -- structured to replace name above
     first-name VisibleString OPTIONAL ,
-    middle-initial VisibleString OPTIONAL }
+    middle-initial VisibleString OPTIONAL ,
+    contact Author OPTIONAL }           -- WARNING: this will replace the above
 
 END
 
