@@ -2475,10 +2475,10 @@ void CSeqSearch::x_ExpandPattern
  TPatternInfo& pat_info,
  TSearchFlags flags)
 {
-    static EBaseCode expansion[] = { eBase_A, eBase_C, eBase_G, eBase_T };
+    static const EBaseCode expansion[] = { eBase_A, eBase_C, eBase_G, eBase_T };
 
     if (pos < sequence.length()) {
-        Uint4 code = static_cast<Uint4>(sc_CharToEnum[sequence[pos]]);
+        Uint4 code = static_cast<Uint4>(sc_CharToEnum[static_cast<Uint1>(sequence[pos])]);
 
         for (int i = 0; i < 4; ++i) {
             if ((code & expansion[i]) != 0) {
@@ -2526,6 +2526,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.110  2004/12/16 20:48:01  shomrat
+* cast char to Uint1 for array access
+*
 * Revision 1.109  2004/12/09 18:09:55  shomrat
 * Changes to CSeqSearch (use static tables, added search flags
 *
