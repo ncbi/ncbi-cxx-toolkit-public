@@ -33,6 +33,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2003/11/24 14:10:03  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.2  2003/10/21 21:08:45  grichenk
 * Fixed aliases-related bug in XML stream
 *
@@ -43,15 +46,15 @@
 * ===========================================================================
 */
 
-#include <serial/typeinfo.hpp>
+#include <serial/ptrinfo.hpp>
 #include <serial/typeref.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-class NCBI_XSERIAL_EXPORT CAliasTypeInfo : public CTypeInfo
+class NCBI_XSERIAL_EXPORT CAliasTypeInfo : public CPointerTypeInfo
 {
-    typedef CTypeInfo CParent;
+    typedef CPointerTypeInfo CParent;
 public:
     CAliasTypeInfo(const string& name, TTypeInfo type);
 
@@ -59,12 +62,9 @@ public:
 
     TTypeInfo GetReferencedType(void) const;
     
-    const string& GetModuleName(void) const;
-    bool MayContainType(TTypeInfo type) const;
-
     bool IsDefault(TConstObjectPtr object) const;
     bool Equals(TConstObjectPtr object1,
-                        TConstObjectPtr object2) const;
+                TConstObjectPtr object2) const;
     void SetDefault(TObjectPtr dst) const;
     void Assign(TObjectPtr dst, TConstObjectPtr src) const;
 
@@ -81,10 +81,13 @@ public:
     TObjectPtr GetDataPtr(TObjectPtr objectPtr) const;
     TConstObjectPtr GetDataPtr(TConstObjectPtr objectPtr) const;
 
-    TTypeInfo GetRefTypeInfo(void) const;
-
 protected:
-    CTypeRef m_DataTypeRef;
+    static TObjectPtr GetDataPointer(const CPointerTypeInfo* objectType,
+                                     TObjectPtr objectPtr);
+    static void SetDataPointer(const CPointerTypeInfo* objectType,
+                               TObjectPtr objectPtr,
+                               TObjectPtr dataPtr);
+
     TPointerOffsetType m_DataOffset;
 
     friend class CAliasTypeInfoFunctions;

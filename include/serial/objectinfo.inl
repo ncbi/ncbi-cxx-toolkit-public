@@ -45,8 +45,7 @@ CObjectTypeInfo::CObjectTypeInfo(TTypeInfo typeinfo)
 inline
 TTypeInfo CObjectTypeInfo::GetTypeInfo(void) const
 {
-    return m_TypeInfo->IsAlias() ? m_TypeInfo->GetReferencedType()
-        : m_TypeInfo;
+    return m_TypeInfo;
 }
 
 inline
@@ -282,6 +281,9 @@ CObjectInfo::operator=(pair<TObjectPtr, TTypeInfo> object)
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.5  2003/11/24 14:10:04  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.4  2003/11/18 18:11:47  grichenk
 * Resolve aliased type info before using it in CObjectTypeInfo
 *

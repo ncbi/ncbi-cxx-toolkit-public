@@ -852,14 +852,14 @@ void CObjectOStream::CopyChoice(const CChoiceTypeInfo* choiceType,
 void CObjectOStream::WriteAlias(const CAliasTypeInfo* aliasType,
                                 TConstObjectPtr aliasPtr)
 {
-    WriteNamedType(aliasType, aliasType->GetRefTypeInfo(),
+    WriteNamedType(aliasType, aliasType->GetPointedType(),
         aliasType->GetDataPtr(aliasPtr));
 }
 
 void CObjectOStream::CopyAlias(const CAliasTypeInfo* aliasType,
                                 CObjectStreamCopier& copier)
 {
-    CopyNamedType(aliasType, aliasType->GetRefTypeInfo(),
+    CopyNamedType(aliasType, aliasType->GetPointedType(),
         copier);
 }
 
@@ -936,6 +936,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.90  2003/11/24 14:10:05  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.89  2003/11/13 14:07:38  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *

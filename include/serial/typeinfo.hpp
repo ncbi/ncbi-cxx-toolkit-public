@@ -130,9 +130,6 @@ public:
     // return true CTypeInfo of object (redefined in polymorphic classes)
     virtual TTypeInfo GetRealTypeInfo(TConstObjectPtr object) const;
 
-    bool IsAlias(void) const;
-    virtual TTypeInfo GetReferencedType(void) const;
-
     // I/O interface:
     void ReadData(CObjectIStream& in, TObjectPtr object) const;
     void WriteData(CObjectOStream& out, TConstObjectPtr object) const;
@@ -191,7 +188,6 @@ protected:
     void SetSkipFunction(TTypeSkipFunction func);
 
     bool m_IsCObject;
-    bool m_IsAlias;
 
 private:
     // type specific function pointers
@@ -221,6 +217,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.44  2003/11/24 14:10:04  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.43  2003/11/18 18:11:47  grichenk
 * Resolve aliased type info before using it in CObjectTypeInfo
 *

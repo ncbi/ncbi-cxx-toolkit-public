@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.43  2003/11/24 14:10:05  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.42  2003/11/18 18:11:49  grichenk
 * Resolve aliased type info before using it in CObjectTypeInfo
 *
@@ -259,7 +262,6 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(),
       m_InfoItem(0),
       m_IsCObject(false),
-      m_IsAlias(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -274,7 +276,6 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_InfoItem(0),
       m_IsCObject(false),
-      m_IsAlias(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -289,7 +290,6 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
     : m_TypeFamily(typeFamily), m_Size(size), m_Name(name),
       m_InfoItem(0),
       m_IsCObject(false),
-      m_IsAlias(false),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -375,11 +375,6 @@ void CTypeInfo::DeleteExternalObjects(TObjectPtr /*object*/) const
 }
 
 TTypeInfo CTypeInfo::GetRealTypeInfo(TConstObjectPtr ) const
-{
-    return this;
-}
-
-TTypeInfo CTypeInfo::GetReferencedType(void) const
 {
     return this;
 }

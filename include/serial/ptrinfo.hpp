@@ -54,6 +54,7 @@ public:
     CPointerTypeInfo(size_t size, TTypeInfo type);
     CPointerTypeInfo(size_t size, const CTypeRef& typeRef);
     CPointerTypeInfo(const string& name, TTypeInfo type);
+    CPointerTypeInfo(const string& name, size_t size, TTypeInfo type);
 
     static TTypeInfo GetTypeInfo(TTypeInfo base);
 
@@ -124,6 +125,9 @@ END_NCBI_SCOPE
 
 /* ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2003/11/24 14:10:04  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.27  2003/04/15 16:18:38  siyan
 * Added doxygen support
 *

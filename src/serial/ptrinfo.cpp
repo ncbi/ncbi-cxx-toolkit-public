@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2003/11/24 14:10:05  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.32  2003/08/14 20:03:58  vasilche
 * Avoid memory reallocation when reading over preallocated object.
 * Simplified CContainerTypeInfo iterators interface.
@@ -202,6 +205,13 @@ CPointerTypeInfo::CPointerTypeInfo(size_t size, const CTypeRef& typeRef)
 
 CPointerTypeInfo::CPointerTypeInfo(const string& name, TTypeInfo type)
     : CParent(eTypeFamilyPointer, sizeof(TObjectPtr), name),
+      m_DataTypeRef(type)
+{
+    InitPointerTypeInfoFunctions();
+}
+
+CPointerTypeInfo::CPointerTypeInfo(const string& name, size_t size, TTypeInfo type)
+    : CParent(eTypeFamilyPointer, size, name),
       m_DataTypeRef(type)
 {
     InitPointerTypeInfoFunctions();

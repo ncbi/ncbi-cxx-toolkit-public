@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2003/11/24 14:10:05  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.3  2003/11/18 18:11:48  grichenk
 * Resolve aliased type info before using it in CObjectTypeInfo
 *
@@ -71,13 +74,27 @@ typedef CAliasTypeInfoFunctions TFunc;
 
 
 CAliasTypeInfo::CAliasTypeInfo(const string& name, TTypeInfo type)
-    : CParent(type->GetTypeFamily(), type->GetSize(), name),
-      m_DataTypeRef(type), m_DataOffset(0)
+    : CParent(name, type->GetSize(), type),
+      m_DataOffset(0)
 {
-    m_IsAlias = true;
     InitAliasTypeInfoFunctions();
 }
 
+
+TObjectPtr CAliasTypeInfo::GetDataPointer(const CPointerTypeInfo* objectType,
+                                          TObjectPtr objectPtr)
+{
+    const CAliasTypeInfo* alias = static_cast<const CAliasTypeInfo*>(objectType);
+    return alias->GetDataPtr(objectPtr);
+}
+
+void CAliasTypeInfo::SetDataPointer(const CPointerTypeInfo* objectType,
+                                    TObjectPtr objectPtr,
+                                    TObjectPtr dataPtr)
+{
+    const CAliasTypeInfo* alias = static_cast<const CAliasTypeInfo*>(objectType);
+    alias->Assign(objectPtr, dataPtr);
+}
 
 void CAliasTypeInfo::InitAliasTypeInfoFunctions(void)
 {
@@ -85,85 +102,68 @@ void CAliasTypeInfo::InitAliasTypeInfoFunctions(void)
     SetWriteFunction(&TFunc::WriteAliasDefault);
     SetCopyFunction(&TFunc::CopyAliasDefault);
     SetSkipFunction(&TFunc::SkipAliasDefault);
-}
-
-
-TTypeInfo CAliasTypeInfo::GetReferencedType(void) const
-{
-    return m_DataTypeRef.Get();
-}
-
-
-const string& CAliasTypeInfo::GetModuleName(void) const
-{
-    return m_DataTypeRef.Get()->GetModuleName();
-}
-
-
-bool CAliasTypeInfo::MayContainType(TTypeInfo type) const
-{
-    return m_DataTypeRef.Get()->MayContainType(type);
+    SetFunctions(&GetDataPointer, &SetDataPointer);
 }
 
 
 bool CAliasTypeInfo::IsDefault(TConstObjectPtr object) const
 {
-    return m_DataTypeRef.Get()->IsDefault(object);
+    return GetPointedType()->IsDefault(object);
 }
 
 
 bool CAliasTypeInfo::Equals(TConstObjectPtr object1,
                             TConstObjectPtr object2) const
 {
-    return m_DataTypeRef.Get()->Equals(object1, object2);
+    return GetPointedType()->Equals(object1, object2);
 }
 
 
 void CAliasTypeInfo::SetDefault(TObjectPtr dst) const
 {
-    m_DataTypeRef.Get()->SetDefault(dst);
+    GetPointedType()->SetDefault(dst);
 }
 
 
 void CAliasTypeInfo::Assign(TObjectPtr dst, TConstObjectPtr src) const
 {
-    m_DataTypeRef.Get()->Assign(dst, src);
+    GetPointedType()->Assign(dst, src);
 }
 
 
 void CAliasTypeInfo::Delete(TObjectPtr object) const
 {
-    m_DataTypeRef.Get()->Delete(object);
+    GetPointedType()->Delete(object);
 }
 
 
 void CAliasTypeInfo::DeleteExternalObjects(TObjectPtr object) const
 {
-    m_DataTypeRef.Get()->DeleteExternalObjects(object);
+    GetPointedType()->DeleteExternalObjects(object);
 }
 
 
 const CObject* CAliasTypeInfo::GetCObjectPtr(TConstObjectPtr objectPtr) const
 {
-    return m_DataTypeRef.Get()->GetCObjectPtr(objectPtr);
+    return GetPointedType()->GetCObjectPtr(objectPtr);
 }
 
 
 TTypeInfo CAliasTypeInfo::GetRealTypeInfo(TConstObjectPtr object) const
 {
-    return m_DataTypeRef.Get()->GetRealTypeInfo(object);
+    return GetPointedType()->GetRealTypeInfo(object);
 }
 
 
 bool CAliasTypeInfo::IsParentClassOf(const CClassTypeInfo* classInfo) const
 {
-    return m_DataTypeRef.Get()->IsParentClassOf(classInfo);
+    return GetPointedType()->IsParentClassOf(classInfo);
 }
 
 
 bool CAliasTypeInfo::IsType(TTypeInfo type) const
 {
-    return m_DataTypeRef.Get()->IsType(type);
+    return GetPointedType()->IsType(type);
 }
 
 
@@ -182,12 +182,6 @@ TObjectPtr CAliasTypeInfo::GetDataPtr(TObjectPtr objectPtr) const
 TConstObjectPtr CAliasTypeInfo::GetDataPtr(TConstObjectPtr objectPtr) const
 {
     return static_cast<const char*>(objectPtr) + m_DataOffset;
-}
-
-
-TTypeInfo CAliasTypeInfo::GetRefTypeInfo(void) const
-{
-    return m_DataTypeRef.Get();
 }
 
 
@@ -214,7 +208,7 @@ void CAliasTypeInfoFunctions::CopyAliasDefault(CObjectStreamCopier& copier,
 {
     const CAliasTypeInfo* aliasType =
         CTypeConverter<CAliasTypeInfo>::SafeCast(objectType);
-    aliasType->m_DataTypeRef.Get()->DefaultCopyData(copier);
+    aliasType->GetPointedType()->DefaultCopyData(copier);
 }
 
 void CAliasTypeInfoFunctions::SkipAliasDefault(CObjectIStream& in,

@@ -1000,13 +1000,13 @@ void CObjectIStream::SkipChoice(const CChoiceTypeInfo* choiceType)
 void CObjectIStream::ReadAlias(const CAliasTypeInfo* aliasType,
                                TObjectPtr aliasPtr)
 {
-    ReadNamedType(aliasType, aliasType->GetRefTypeInfo(),
+    ReadNamedType(aliasType, aliasType->GetPointedType(),
         aliasType->GetDataPtr(aliasPtr));
 }
 
 void CObjectIStream::SkipAlias(const CAliasTypeInfo* aliasType)
 {
-    SkipNamedType(aliasType, aliasType->GetRefTypeInfo());
+    SkipNamedType(aliasType, aliasType->GetPointedType());
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -1332,6 +1332,9 @@ END_NCBI_SCOPE
 
 /*
 * $Log$
+* Revision 1.119  2003/11/24 14:10:05  grichenk
+* Changed base class for CAliasTypeInfo to CPointerTypeInfo
+*
 * Revision 1.118  2003/11/13 14:07:38  gouriano
 * Elaborated data verification on read/write/get to enable skipping mandatory class data members
 *
