@@ -42,7 +42,7 @@ const string kJSMenuDefaultURL_Smith
 
 // Sergey Kurdin's popup menu
 const string kJSMenuDefaultURL_Kurdin
- = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_3.js";
+ = "http://www.ncbi.nlm.nih.gov/coreweb/javascript/popupmenu2/popupmenu2_4.js";
 
 // Sergey Kurdin's side menu
 const string kJSMenuDefaultURL_KurdinSide
@@ -405,6 +405,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2003/12/12 12:10:38  ivanov
+ * Updated Sergey Kurdin's popup menu to v2.4
+ *
  * Revision 1.23  2003/12/10 19:14:16  ivanov
  * Move adding a string "return false;" to menues JS code call from ShowMenu()
  * to AttachPopupMenu()
