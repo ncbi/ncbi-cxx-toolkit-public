@@ -9,7 +9,7 @@
 <font size=1><u><b>Note</b></u>: Due to security issues, not all links in the public version
 of this file could be accessible by outside NCBI users. Unrestricted version of this document is available to
 inside NCBI users at:
-<a href="http://intranet.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/dispatcher/DISPD.html">http://intranet.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/dispatcher/LBSMD.html</a>.
+<a href="http://intranet.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/dispatcher/DISPD.html">http://intranet.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/tools/dispatcher/DISPD.html</a>.
 </font>
 
 <h2>Contents</h2>
@@ -211,8 +211,8 @@ can narrow the server search; for example, by choosing
   <p>
   <tt><font color="#009900">Dispatcher-Failures: <i>&lt;failures></i></font></tt>
   <br>the tag value lists all transient failures, which dispatcher might have expirienced while
-  processing request. Fatal error may or may not appear at the last failure in the list,
-  but should be mentioned in <tt>Request-Failed:</tt> tag.
+  processing request. Fatal error may or may not appear as the last failure in the list,
+  but should be mentioned in <tt>Request-Failed:</tt> tag if caused by mapping failure.
 
 </ul>
 
@@ -356,7 +356,7 @@ and resulting from data relaying (if any) by <tt>DISPD.CGI</tt>.
 In <tt>STATEFUL</tt> mode <tt>NCBID.CGI</tt> starts the program in a more tricky way,
 which is closer to work in firewall mode for <tt>DISPD.CGI</tt>. Namely, <tt>NCBID.CGI</tt>
 loads the  program with its <tt>stdin</tt> and <tt>stdout</tt> bound to a port, which is
-made listening. That is the program becomes sort of an Internet daemon (only exception,
+made listening. That is the program becomes sort of an Internet daemon (only exception
 that exactly one incoming connection is allowed). Then the client is sent back an HTTP
 reply containing <a href="#ref_ConnectionInfo"><tt>Connection-Info:</tt></a> tag.
 The client has to use port, host and ticket from that tag in order to connect to
