@@ -118,7 +118,7 @@ on SetProjectData()
 			"ncbi_connector", "ncbi_service_connector", "ncbi_service_lbsmd_stub", ¬
 			"ncbi_server_info", "ncbi_sendmail"}
 		
-		AddProject(DataPlusSysPaths(SimpleProjectData("connect", {"C"}, "connect", myFiles), ¬
+		AddProject(DataPlusSysPaths(SimpleProjectData("connect", {"C++"}, "connect", myFiles), ¬
 			{CToolkitRoot() & "include:", CToolkitRoot() & "corelib:"}))
 		
 	end if
