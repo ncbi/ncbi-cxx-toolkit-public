@@ -69,7 +69,8 @@ void CMsvcDllsInfo::GetBuildConfigs(list<SConfigInfo>* config) const
 {
     config->clear();
 
-    string configs_str = m_Registry.GetString("DllBuild", "Configurations", "");
+    string configs_str = 
+        m_Registry.GetString("DllBuild", "Configurations", "");
     list<string> config_names;
     NStr::Split(configs_str, LIST_SEPARATOR, config_names);
     LoadConfigInfoByNames(m_Registry, config_names, config);
@@ -168,10 +169,20 @@ static bool s_IsInTree(CProjKey::TProjType      proj_type,
                                     tree.m_Projects.end();
 }
 
+
+static bool s_IsDllProject(const string& project_id)
+{
+    CMsvcDllsInfo::SDllInfo dll_info;
+    GetApp().GetDllsInfo().GetDllInfo(project_id, &dll_info);
+    return !dll_info.IsEmpty();
+}
+
+
 static void s_InitalizeDllProj(const string&                  dll_id, 
                                const CMsvcDllsInfo::SDllInfo& dll_info,
                                const CProjectItemsTree&       whole_tree,
-                               CProjItem*                     dll)
+                               CProjItem*                     dll,
+                               CProjectItemsTree*             tree_dst)
 {
     dll->m_Name           = dll_id;
     dll->m_ID             = dll_id;
@@ -182,19 +193,24 @@ static void s_InitalizeDllProj(const string&                  dll_id,
         const string& depend_id = *p;
 
         // Is this a dll?
-        CMsvcDllsInfo::SDllInfo dll_info;
-        GetApp().GetDllsInfo().GetDllInfo(depend_id, &dll_info);
-        if ( !dll_info.IsEmpty() ) {
+        if ( s_IsDllProject(depend_id) ) {
             dll->m_Depends.push_back(CProjKey(CProjKey::eDll, 
                                                depend_id));    
         } else  {
             if ( s_IsInTree(CProjKey::eApp, depend_id, whole_tree) ) {
-                dll->m_Depends.push_back(CProjKey(CProjKey::eApp, 
-                                               depend_id)); 
+
+                CProjKey depend_key(CProjKey::eApp, depend_id);
+                dll->m_Depends.push_back(depend_key);
+                tree_dst->m_Projects[depend_key] = 
+                    (whole_tree.m_Projects.find(depend_key))->second;
             }
             else if ( s_IsInTree(CProjKey::eLib, depend_id, whole_tree) ) {
-                dll->m_Depends.push_back(CProjKey(CProjKey::eLib, 
-                                               depend_id)); 
+
+                CProjKey depend_key(CProjKey::eLib, depend_id);
+                dll->m_Depends.push_back(depend_key); 
+                tree_dst->m_Projects[depend_key] = 
+                    (whole_tree.m_Projects.find(depend_key))->second;
+
             } else  {
                 LOG_POST(Error << "Can not find project : " + depend_id);
             }
@@ -222,7 +238,8 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
     // Sources - all pathes are relative to one dll->m_SourcesBaseDir
     ITERATE(list<string>, p, collector.SourceFiles()) {
         const string& rel_path = *p;
-        string abs_path = CDirEntry::ConcatPath(lib_context.ProjectDir(), rel_path);
+        string abs_path = 
+            CDirEntry::ConcatPath(lib_context.ProjectDir(), rel_path);
         abs_path = CDirEntry::NormalizePath(abs_path);
         string dir;
         string base;
@@ -248,8 +265,9 @@ static void s_AddProjItemToDll(const CProjItem& lib, CProjItem* dll)
         if ( !dll_hosted ) {
             dll->m_Depends.push_back(depend_id);
         } else {
-            dll->m_Depends.push_back(CProjKey(CProjKey::eDll, 
-                                           GetApp().GetDllsInfo().GetDllHost(depend_id.Id())));
+            dll->m_Depends.push_back
+                (CProjKey(CProjKey::eDll, 
+                 GetApp().GetDllsInfo().GetDllHost(depend_id.Id())));
         }
     }
     dll->m_Depends.sort();
@@ -323,13 +341,15 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         ITERATE(list<CProjKey>, n, project.m_Depends) {
             const CProjKey& depend_id = *n;
 
-            bool dll_hosted = (depend_id.Type() == CProjKey::eLib)  &&
-                               GetApp().GetDllsInfo().IsDllHosted(depend_id.Id());
+            bool dll_hosted = 
+                (depend_id.Type() == CProjKey::eLib)  &&
+                 GetApp().GetDllsInfo().IsDllHosted(depend_id.Id());
             if ( !dll_hosted ) {
                 new_depends.push_back(depend_id);
             } else {
-                new_depends.push_back(CProjKey(CProjKey::eDll, 
-                                               GetApp().GetDllsInfo().GetDllHost(depend_id.Id())));
+                new_depends.push_back
+                    (CProjKey(CProjKey::eDll, 
+                     GetApp().GetDllsInfo().GetDllHost(depend_id.Id())));
             }
         }
         new_depends.sort();
@@ -339,6 +359,14 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
 
     list<string> dll_ids;
     CreateDllsList(tree_src, &dll_ids);
+
+    list<string> dll_depends_ids;
+    CollectDllsDepends(dll_ids, &dll_depends_ids);
+    copy(dll_depends_ids.begin(), 
+        dll_depends_ids.end(), back_inserter(dll_ids));
+    dll_ids.sort();
+    dll_ids.unique();
+
     ITERATE(list<string>, p, dll_ids) {
 
         const string& dll_id = *p;
@@ -346,7 +374,7 @@ void CreateDllBuildTree(const CProjectItemsTree& tree_src,
         GetApp().GetDllsInfo().GetDllInfo(dll_id, &dll_info);
 
         CProjItem dll;
-        s_InitalizeDllProj(dll_id, dll_info, whole_tree, &dll);
+        s_InitalizeDllProj(dll_id, dll_info, whole_tree, &dll, tree_dst);
 
         ITERATE(list<string>, n, dll_info.m_Hosting) {
             const string& lib_id = *n;
@@ -391,11 +419,52 @@ void CreateDllsList(const CProjectItemsTree& tree_src,
 }
 
 
+void CollectDllsDepends(const list<string>& dll_ids,
+                        list<string>*       dll_depends_ids)
+{
+    size_t depends_cnt = dll_depends_ids->size();
+
+    ITERATE(list<string>, p, dll_ids) {
+
+        const string& dll_id = *p;
+        CMsvcDllsInfo::SDllInfo dll_info;
+        GetApp().GetDllsInfo().GetDllInfo(dll_id, &dll_info);
+
+        ITERATE(list<string>, n, dll_info.m_Depends) {
+
+            const string& depend_id = *n;
+            if ( s_IsDllProject(depend_id)  &&
+                 find(dll_ids.begin(), 
+                      dll_ids.end(), depend_id) == dll_ids.end() ) {
+                dll_depends_ids->push_back(depend_id);
+            }
+        }
+    }
+    
+    dll_depends_ids->sort();
+    dll_depends_ids->unique();
+    if ( !(dll_depends_ids->size() > depends_cnt) )
+        return;
+    
+    list<string> total_dll_ids(dll_ids);
+    copy(dll_depends_ids->begin(), 
+         dll_depends_ids->end(), back_inserter(total_dll_ids));
+    total_dll_ids.sort();
+    total_dll_ids.unique();
+
+    CollectDllsDepends(total_dll_ids, dll_depends_ids);
+}
+
+
 END_NCBI_SCOPE
 
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2004/03/15 21:21:47  gorelenk
+ * Added definition of function CollectDllsDepends. Changed implementation of
+ * function CreateDllBuildTree.
+ *
  * Revision 1.6  2004/03/12 20:20:00  gorelenk
  * Changed implementation of s_InitalizeDllProj - changed processing of
  * dll dependencies.
