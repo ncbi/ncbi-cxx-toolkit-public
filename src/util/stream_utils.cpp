@@ -47,7 +47,7 @@
 #ifdef HAVE_GOOD_IOS_CALLBACKS
 #  undef  HAVE_GOOD_IOS_CALLBACKS
 #endif
-#if defined(HAVE_IOS_CALLBACKS)  &&  defined(HAVE_XALLOC)  &&  \
+#if defined(HAVE_IOS_REGISTER_CALLBACK)  &&  defined(HAVE_XALLOC)  &&  \
   (!defined(NCBI_COMPILER_WORKSHOP)  ||  !defined(_MT))
 #  define HAVE_GOOD_IOS_CALLBACKS 1
 #endif
@@ -491,8 +491,11 @@ END_NCBI_SCOPE
 /*
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.40  2004/01/21 15:34:14  lavr
+ * Use proper macro HAVE_IOS_REGISTER_CALLBACK
+ *
  * Revision 1.39  2004/01/20 20:39:59  lavr
- * Replace use of HAVE_BUGGY_IOS_CALLBACKS with (better) HAVE_GOOD_IOS_CALLBACKS
+ * Replace HAVE_BUGGY_IOS_CALLBACKS with (better) HAVE_GOOD_IOS_CALLBACKS
  *
  * Revision 1.38  2003/12/31 16:24:54  lavr
  * Fix istream::readsome() return counter use for Rogue Wave implementations
