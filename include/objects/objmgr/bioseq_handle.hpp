@@ -119,7 +119,7 @@ public:
     CSeqVector GetSeqVector(EVectorCoding coding, EVectorStrand strand) const;
     CSeqVector GetSeqVector(EVectorStrand strand) const;
     // NOTE: the following function is deprecated, use enum arguments instead.
-    CSeqVector GetSeqVector(bool use_iupac_coding, bool plus_strand) const;
+    //CSeqVector GetSeqVector(bool use_iupac_coding, bool plus_strand) const;
 
     // Sequence filtering: get a seq-vector for a part of the sequence.
     // The part shown depends oon the mode selected. If the location
@@ -139,12 +139,11 @@ public:
                                ENa_strand strand = eNa_strand_plus) const;
 
 
-    CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
-                                             ENa_strand strand) const;
-    CConstRef<CSeqMap> GetSeqMapByStrand(ENa_strand strand) const;
+    //CConstRef<CSeqMap> CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
+    //                                         ENa_strand strand) const;
+    //CConstRef<CSeqMap> GetSeqMapByStrand(ENa_strand strand) const;
     CConstRef<CSeqMap> GetSeqMapByLocation(const CSeq_loc& location,
-                                           ESequenceViewMode mode,
-                                           ENa_strand strand) const;
+                                           ESequenceViewMode mode) const;
 
     CScope& GetScope(void) const;
 
@@ -236,7 +235,7 @@ bool CBioseq_Handle::operator== (const CBioseq_Handle& h) const
             "Unable to compare handles from different scopes");
     }
     if ( m_Entry  &&  h.m_Entry )
-        return m_DataSource == h.m_DataSource  &&  m_Entry == h.m_Entry;
+        return m_Entry == h.m_Entry;
     // Compare by id key
     return m_Value == h.m_Value;
 }
@@ -255,8 +254,8 @@ bool CBioseq_Handle::operator< (const CBioseq_Handle& h) const
             "CBioseq_Handle::operator<() -- "
             "Unable to compare CBioseq_Handles from different scopes");
     }
-    if ( m_Entry != h.m_Entry )
-        return m_Entry < h.m_Entry;
+    if ( m_Entry  &&  h.m_Entry )
+	return m_Entry < h.m_Entry;
     return m_Value < h.m_Value;
 }
 
@@ -284,6 +283,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/01/23 19:33:57  vasilche
+* Commented out obsolete methods.
+* Use strand argument of CSeqVector instead of creation reversed seqmap.
+* Fixed ordering operators of CBioseqHandle to be consistent.
+*
 * Revision 1.28  2003/01/22 20:11:53  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

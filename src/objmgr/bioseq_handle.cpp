@@ -88,39 +88,40 @@ const CSeqMap& CBioseq_Handle::GetSeqMap(void) const
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         ENa_strand strand) const
 {
-    return CSeqVector(GetSeqMapByStrand(strand), *m_Scope, coding);
+    return CSeqVector(GetSeqMap(), *m_Scope, coding, strand);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(ENa_strand strand) const
 {
-    return GetSeqVector(eCoding_Ncbi, strand);
+    return CSeqVector(GetSeqMap(), *m_Scope, eCoding_Ncbi, strand);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorCoding coding,
                                         EVectorStrand strand) const
 {
-    return GetSeqVector(coding,
-                        strand == eStrand_Minus?
-                        eNa_strand_minus: eNa_strand_plus);
+    return CSeqVector(GetSeqMap(), *m_Scope, coding,
+		      strand == eStrand_Minus?
+		      eNa_strand_minus: eNa_strand_plus);
 }
 
 
 CSeqVector CBioseq_Handle::GetSeqVector(EVectorStrand strand) const
 {
-    return GetSeqVector(strand == eStrand_Minus?
-                        eNa_strand_minus: eNa_strand_plus);
+    return CSeqVector(GetSeqMap(), *m_Scope, eCoding_Ncbi,
+		      strand == eStrand_Minus?
+		      eNa_strand_minus: eNa_strand_plus);
 }
 
-
+#if 0
 CSeqVector CBioseq_Handle::GetSeqVector(bool use_iupac_coding,
                                         bool plus_strand) const
 {
     return GetSeqVector(use_iupac_coding ? eCoding_Iupac : eCoding_Ncbi,
                         plus_strand ? eNa_strand_plus : eNa_strand_minus);
 }
-
+#endif
 
 bool CBioseq_Handle::x_IsSynonym(const CSeq_id& id) const
 {
@@ -139,11 +140,13 @@ CSeqVector CBioseq_Handle::GetSequenceView(const CSeq_loc& location,
                                            EVectorCoding coding,
                                            ENa_strand strand) const
 {
-    return CSeqVector(GetSeqMapByLocation(location, mode, strand),
-                      *m_Scope, coding);
+    if ( mode != eViewConstructed )
+	strand = eNa_strand_unknown;
+    return CSeqVector(GetSeqMapByLocation(location, mode), *m_Scope,
+		      coding, strand);
 }
 
-
+/*
 CConstRef<CSeqMap>
 CBioseq_Handle::CreateSeqMapForStrand(CConstRef<CSeqMap> seqMap,
                                       ENa_strand strand) const
@@ -157,11 +160,11 @@ CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByStrand(ENa_strand strand) const
 {
     return CreateSeqMapForStrand(CConstRef<CSeqMap>(&GetSeqMap()), strand);
 }
+*/
 
-
-CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
-                                                       ESequenceViewMode mode,
-                                                       ENa_strand strand) const
+CConstRef<CSeqMap>
+CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
+				    ESequenceViewMode mode) const
 {
     CConstRef<CSeqMap> ret;
     if ( mode == eViewConstructed ) {
@@ -205,7 +208,7 @@ CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
                     last_from = CHandleRange::TRange::GetWholeTo();
                 }
             }
-            TSeqPos total_length = GetSeqVector().size();
+            TSeqPos total_length = GetSeqMap().GetLength(m_Scope);
             if (last_from < total_length) {
                 mode_rlist.MergeRange(
                     CHandleRange::TRange(last_from, total_length-1),
@@ -227,9 +230,8 @@ CConstRef<CSeqMap> CBioseq_Handle::GetSeqMapByLocation(const CSeq_loc& loc,
             view_loc->SetMix().Set().push_back(seg_loc);
         }
         ret = CSeqMap::CreateSeqMapForSeq_loc(*view_loc, &x_GetDataSource());
-        strand = eNa_strand_unknown;
     }
-    return CreateSeqMapForStrand(ret, strand);
+    return ret;
 }
 
 
@@ -282,6 +284,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.29  2003/01/23 19:33:57  vasilche
+* Commented out obsolete methods.
+* Use strand argument of CSeqVector instead of creation reversed seqmap.
+* Fixed ordering operators of CBioseqHandle to be consistent.
+*
 * Revision 1.28  2003/01/22 20:11:54  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.

@@ -50,7 +50,6 @@
 #include <objects/objmgr/seq_map.hpp>
 #include <algorithm>
 #include <map>
-//#include <objects/objmgr/seq_map_rci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -69,10 +68,26 @@ CSeqVector::CSeqVector(const CSeqVector& vec)
 
 
 CSeqVector::CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
-                       EVectorCoding coding)
+                       EVectorCoding coding, ENa_strand strand)
     : m_SeqMap(seqMap),
       m_Scope(&scope),
       m_Coding(CSeq_data::e_not_set),
+      m_Strand(strand),
+      m_SequenceType(eType_not_set),
+      m_CachePos(kInvalidSeqPos),
+      m_CacheLen(0),
+      m_Cache(0)
+{
+    SetCoding(coding);
+}
+
+
+CSeqVector::CSeqVector(const CSeqMap& seqMap, CScope& scope,
+                       EVectorCoding coding, ENa_strand strand)
+    : m_SeqMap(&seqMap),
+      m_Scope(&scope),
+      m_Coding(CSeq_data::e_not_set),
+      m_Strand(strand),
       m_SequenceType(eType_not_set),
       m_CachePos(kInvalidSeqPos),
       m_CacheLen(0),
@@ -94,6 +109,7 @@ CSeqVector& CSeqVector::operator= (const CSeqVector& vec)
         m_Scope = vec.m_Scope;
         m_SequenceType = vec.m_SequenceType;
         m_Coding = vec.m_Coding;
+	m_Strand = vec.m_Strand;
         m_CacheData = vec.m_CacheData;
         m_Cache = &m_CacheData[0];
         m_CachePos = vec.m_CachePos;
@@ -593,6 +609,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.40  2003/01/23 19:33:57  vasilche
+* Commented out obsolete methods.
+* Use strand argument of CSeqVector instead of creation reversed seqmap.
+* Fixed ordering operators of CBioseqHandle to be consistent.
+*
 * Revision 1.39  2003/01/23 18:26:02  ucko
 * Explicitly #include <algorithm>
 *

@@ -61,8 +61,12 @@ public:
     typedef CSeq_data::E_Choice   TCoding;
     typedef CBioseq_Handle::EVectorCoding EVectorCoding;
 
+    CSeqVector(const CSeqMap& seqMap, CScope& scope,
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+	       ENa_strand strand = eNa_strand_unknown);
     CSeqVector(CConstRef<CSeqMap> seqMap, CScope& scope,
-               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi);
+               EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
+	       ENa_strand strand = eNa_strand_unknown);
     CSeqVector(const CSeqVector& vec);
 
     virtual ~CSeqVector(void);
@@ -170,6 +174,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.24  2003/01/23 19:33:57  vasilche
+* Commented out obsolete methods.
+* Use strand argument of CSeqVector instead of creation reversed seqmap.
+* Fixed ordering operators of CBioseqHandle to be consistent.
+*
 * Revision 1.23  2003/01/22 20:11:53  vasilche
 * Merged functionality of CSeqMapResolved_CI to CSeqMap_CI.
 * CSeqMap_CI now supports resolution and iteration over sequence range.
