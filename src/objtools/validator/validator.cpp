@@ -104,7 +104,7 @@ const string& CValidErrItem::GetErrCode(void) const
 }
 
 
-const string& CValidErrItem::GetMessage(void) const
+const string& CValidErrItem::GetMsg(void) const
 {
     return m_Message;
 }
@@ -995,6 +995,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/07 20:00:57  shomrat
+* Member function GetMessage() changed to GetMsg() due o conflict
+*
 * Revision 1.4  2002/12/26 16:34:43  shomrat
 * Typo
 *
