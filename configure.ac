@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.81 2002/05/31 00:34:11 vakatov Exp $
+#  $Id: configure.ac,v 1.82 2002/06/04 16:42:34 kimelman Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -622,7 +622,7 @@ esac
 
 
 #### 32/64-bit compilation, and extra LIBS
-with_64=${with_64:="no"}
+: ${with_64:="no"}
 if test "$with_64" = "yes" ; then
    bit64_sfx="64"
    case "$host:$compiler" in
@@ -970,7 +970,7 @@ fi
 if test -z "${build_root}" ; then
    build_root="${srcdir}/${compiler}"
 else
-   with_suffix=${with_suffix:="no"}
+   : ${with_suffix:="no"}
 fi
 
 
@@ -1568,16 +1568,19 @@ NCBI_CHECK_LIBS(DL, -ldl,
 ## SYBASE libraries
 
 AC_MSG_CHECKING(if SYBASE libraries are available)
-if test -z "$with_sybase_local" ; then
-   with_sybase_local="no"
-fi
+
+## parameters for check :
+##  - bit mode
+##  - local / network         : with fallback to normal case
+##  - new   / regular client  : 
+##  - reentrant               :
 
 test_new_syb() {
   if test -d $1 ; then
-    sybase_lib=lib
-    : ${SYBASE_PATH="$1"}
-    if test -d $2 ; then 
-      : ${SYBASE_LCL_PATH="$2"}
+    test "x$3" = x || sybase_lib=$3
+    SYBASE_PATH="$1"
+    if test -d $2 ; then
+      SYBASE_LCL_PATH="$2"
     fi
   else
     with_sybase_new=no
@@ -1586,11 +1589,16 @@ test_new_syb() {
 }
 
 if test "$with_sybase" != "no" ; then
-   sybase_lib=lib$bit64_sfx
    # deduce the path to Sybase package
+   : ${with_sybase_local:="no"}
+   : ${with_sybase_new:="no"}
+   sybase_r="no"
+   test $with_mt != "yes" || sybase_r="yes"
+   
+   sybase_lib=lib$bit64_sfx
    if test "$with_sybase_local" != "no" ; then
       if test "$with_sybase_local" = "yes" ; then
-         SYBASE_PATH=${SYBASE_PATH:="/export/home/sybase/clients/current"}
+         : ${SYBASE_PATH:="/export/home/sybase/clients/current"}
       else
          SYBASE_PATH=$with_sybase_local
       fi
@@ -1600,29 +1608,31 @@ if test "$with_sybase" != "no" ; then
          extra_sybase_warning="$extra_sybase_warning No local sybase client found - using global one" 
       fi
    fi
-   if test "$with_sybase_local" = "no" ; then  
-    if test "$with_sybase_new" = "yes" ; then
-      case "$host_os" in
-      linux* )
-         test_new_syb /netopt/Sybase/clients/12.5.0.1 /export/home/sybase/clients/12.5.0.1
+   if test "$with_sybase_local" = "no" ; then
+     if test "$with_sybase_new" = "yes" ; then
+       case "$host_os" in
+       linux* )
+         test_new_syb /netopt/Sybase/clients/12.5.0.1 /export/home/sybase/clients/12.5.0.1 lib
           ;;
-      solaris*)
+       solaris*)
          if test -n "$bit64_sfx" ; then
-            test_new_syb /netopt/Sybase/clients/12.5.64-EBF9728 /export/home/sybase/clients/12.5.64
+            test_new_syb /netopt/Sybase/clients/12.5.64-EBF9728 /export/home/sybase/clients/12.5.64 lib
          else
-            test_new_syb /netopt/Sybase/clients/12.5-EBF9723 /export/home/sybase/clients/12.5
+            test_new_syb /netopt/Sybase/clients/12.5-EBF9723 /export/home/sybase/clients/12.5 lib
          fi
          ;;
-      esac
-    fi
-    if test "$with_sybase_new" != "yes" ; then
-      SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
-      if test -d "/export/home/sybase/clients/current" ; then 
-        SYBASE_LCL_PATH=${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
-      fi
-    fi
-   else
-      SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
+       *)
+         with_sybase_new="no"
+         extra_sybase_warning="$extra_sybase_warning New Sybase client not found - using regular one"
+         ;;
+       esac
+     fi
+     if test "$with_sybase_new" != "yes" ; then
+       : ${SYBASE_PATH:="/netopt/Sybase/clients/current"}
+       : ${SYBASE_LCL_PATH:="/export/home/sybase/clients/current"}
+     fi
+#   else
+#     SYBASE_PATH=${SYBASE_PATH:="/netopt/Sybase/clients/current"}
    fi
 
    # compose a list of commonly used Sybase libraries
@@ -1641,10 +1651,15 @@ if test "$with_sybase" != "no" ; then
    SYBASE_DBLIBS="-lsybdb"
 
    # multi-threading and 64-bit specific adjustments
+   SYBASE_LIBPATH="$SYBASE_PATH/${sybase_lib}"
    changequote(<<, >>)dnl
-   if test "$with_mt" = "yes"  -a  "$sybase_r" != "no" ; then
-      SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
-      SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
+   if test "$sybase_r" = "yes"; then
+      if test -d ${SYBASE_LIBPATH} -a -f ${SYBASE_LIBPATH}/libct_r.a ; then
+        SYBASE_LIBLIST=`echo $SYBASE_LIBLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
+        SYBASE_DLLLIST=`echo $SYBASE_DLLLIST | sed 's/\(-l[a-z][a-z_]*\)/\1_r/g'`
+      else
+        sybase_r=no
+      fi
    fi
    if test -n "$bit64_sfx" ; then
       SYBASE_INCLUDE="-DSYB_LP64"
@@ -1667,7 +1682,7 @@ if test "$with_sybase" != "no" ; then
    SYBASE_LIBS="$SYBASE_LPATH $SYBASE_LIBLIST"
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
-
+   
    # test it
    CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
    LIBS="$SYBASE_LIBS $SYBASE_DLLS $NETWORK_LIBS $DL_LIBS $orig_LIBS"
@@ -1695,10 +1710,12 @@ else
    else
       AC_MSG_RESULT([$SYBASE_LCL_PATH:$SYBASE_PATH])
    fi
-   if test "$with_mt" = "yes"  -a  "$sybase_r" = "no" ; then
-       AC_MSG_WARN(["Using non-reentrant Sybase libraries"])
-   else
+   if test "$with_mt" = "yes" ; then
+     if test "$sybase_r" = "yes" ; then
        AC_DEFINE(HAVE_SYBASE_REENTRANT,1,[Define to 1 if SYBASE has reentrant libraries.])
+     else
+       AC_MSG_WARN(["Using non-reentrant Sybase libraries"])
+     fi
    fi
    if test -n "$extra_sybase_warning" ; then 
       AC_MSG_WARN([$extra_sybase_warning])
