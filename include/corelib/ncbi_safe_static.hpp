@@ -41,6 +41,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.2  2001/03/26 21:01:41  vakatov
+ * CSafeStaticPtr, CSafeStaticRef -- added "operator *"
+ *
  * Revision 1.1  2001/03/26 20:38:33  vakatov
  * Initial revision (by A.Grichenko)
  *
@@ -125,10 +128,8 @@ public:
         return *static_cast<T*> (m_Ptr);
     }
 
-    T* operator -> (void)
-    {
-        return &Get();
-    }
+    T* operator -> (void) { return &Get(); }
+    T& operator *  (void) { return  Get(); }
 
 private:
     // "virtual" cleanup function
@@ -172,10 +173,8 @@ public:
         return obj->GetObject();
     }
 
-    T* operator -> (void)
-    {
-        return &Get();
-    }
+    T* operator -> (void) { return &Get(); }
+    T& operator *  (void) { return  Get(); }
 
     // "virtual" cleanup function
     static void SelfCleanup(void** ptr)
