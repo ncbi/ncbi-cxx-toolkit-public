@@ -2,16 +2,18 @@
 # $Id$
 #
 # GBENCH installation script.
-# Author: Anatoliy Kuznetsov
+# Author: Anatoliy Kuznetsov, Denis Vakatov
 
 
 script_name=`basename $0`
 script_dir=`dirname $0`
 script_dir=`(cd "${script_dir}" ; pwd)`
 
+. ${script_dir}/common.sh
+
+
 PLUGINS='doc_basic doc_table algo_basic algo_stdio view_text view_graphic view_align view_sequence view_table'
 BINS='gbench gbench_plugin_scan'
-
 
 
 Usage()
@@ -22,19 +24,11 @@ SYNOPSIS:
    Create Genome Workbench installation from the standard Toolkit build.
 ARGUMENTS:
    --copy     -- use Unix 'cp' command instead of 'ln -s'.
-   sourcedir  -- path to the pre-built NCBI Toolkit.
+   sourcedir  -- path to pre-built NCBI Toolkit.
    targetdir  -- target installation directory.
+
 EOF
     test -z "$1"  ||  echo ERROR: $1 1>&2
-    exit 1
-}
-
-Error()
-{
-    cat <<EOF 1>&2
-
-ERROR: $1    
-EOF
     exit 1
 }
 
@@ -46,7 +40,7 @@ FindDirPath()
      path=`dirname $path`
      if [ -d "$path/$2" ]; then
         echo $path
-        break;
+        break
      fi
    done
 }
@@ -54,11 +48,11 @@ FindDirPath()
 
 MakeDirs()
 {
-    mkdir -p $1
-    mkdir -p $1/bin
-    mkdir -p $1/lib
-    mkdir -p $1/etc
-    mkdir -p $1/plugins
+    COMMON_Exec mkdir -p $1
+    COMMON_Exec mkdir -p $1/bin
+    COMMON_Exec mkdir -p $1/lib
+    COMMON_Exec mkdir -p $1/etc
+    COMMON_Exec mkdir -p $1/plugins
 }
 
 
@@ -70,18 +64,16 @@ CopyFiles()
         if [ -f $src_file ]; then
             mv -f $target_dir/bin/$x $target_dir/bin/$x.old  2>/dev/null
             rm -f $target_dir/bin/$x $target_dir/bin/$x.old
-            $BINCOPY $src_file $target_dir/bin/ \
-                || Error "Cannot copy file $x"
+            COMMON_Exec $BINCOPY $src_file $target_dir/bin/
         else
-            Error "File not found: $src_file"
+            COMMON_Error "File not found: $src_file"
         fi
     done
 
     for x in $PLUGINS; do
         echo copying plugin: $x
         rm -f $target_dir/plugins/libgui_$x.so
-        $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/plugins/ \
-          || echo "Cannot copy plugin $x"
+        COMMON_Exec $BINCOPY $src_dir/lib/libgui_$x.so $target_dir/plugins/
     done
 
     for x in $src_dir/lib/libdbapi*.so; do
@@ -89,15 +81,19 @@ CopyFiles()
             f=`basename $x`
             echo copying DB interface: $f
             rm -f $target_dir/lib/$f
-            $BINCOPY $x $target_dir/lib/ ||  Error "Cannot copy $x"
+            COMMON_Exec $BINCOPY $x $target_dir/lib/
         fi
     done
 }
 
 
 
+#
+#  MAIN
+#
+
 if [ $# -eq 0 ]; then
-    Usage "Wrong number of arguments passed"
+    Usage "Wrong number of arguments"
 fi 
 
 copy_all="no"
@@ -114,32 +110,32 @@ fi
 
 
 if [ -z "$src_dir" ]; then
-    Usage "Source directory not provided."
+    Usage "Source directory not provided"
 fi
 
 if [ -z "$target_dir" ]; then
-    Usage "Target directory not provided."
+    Usage "Target directory not provided"
 fi
 
 if [ ! -d $src_dir ]; then
-    Error "Source directory not found: $src_dir"
+    COMMON_Error "Source directory not found: $src_dir"
 else
     echo Source: $src_dir    
     echo Target: $target_dir    
 fi
 
 if [ ! -d $src_dir/bin ]; then
-    Error "bin directory not found: $src_dir/bin"
+    COMMON_Error "bin directory not found: $src_dir/bin"
 fi
 
 if [ ! -d $src_dir/lib ]; then
-    Error "lib directory not found: $src_dir/lib"
+    COMMON_Error "lib directory not found: $src_dir/lib"
 fi
 
 
 
 source_dir=`FindDirPath $src_dir /src/gui/gbench`
-source_dir=$source_dir/src/gui/gbench/
+source_dir="${source_dir}/src/gui/gbench"
 
 
 MakeDirs $target_dir
@@ -149,23 +145,14 @@ CopyFiles
 
 echo preparing scripts 
 
-if [ ! -f $source_dir/gbench_install/run-gbench.sh ]; then
-    Error "startup file not found: $source_dir/gbench_install/run-gbench.sh"
-fi
+COMMON_Exec cp ${source_dir}/gbench_install/run-gbench.sh ${target_dir}/bin/run-gbench.sh
 
-cat ${source_dir}/gbench_install/run-gbench.sh \
- | sed "s,@install_dir@,${target_dir},g" \
- > ${target_dir}/bin/run-gbench.sh
+COMMON_Exec cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
 
-chmod 755 ${target_dir}/bin/run-gbench.sh
+COMMON_Exec cp -p ${source_dir}/gbench.ini ${target_dir}/etc/
 
-if [ -f ${source_dir}/gbench_install/move-gbench.sh ]; then
-   cp -p ${source_dir}/gbench_install/move-gbench.sh ${target_dir}/bin/
-fi
-cp -p ${source_dir}/gbench.ini ${target_dir}/etc/  
+COMMON_Exec ${target_dir}/bin/move-gbench.sh
 
 echo "Configuring plugin cache"
-. ${script_dir}/common.sh
 COMMON_AddRunpath ${target_dir}/lib
-${target_dir}/bin/gbench_plugin_scan -dir ${target_dir}/plugins \
-  || Error "Plugin scan failed"
+COMMON_Exec ${target_dir}/bin/gbench_plugin_scan -dir ${target_dir}/plugins
