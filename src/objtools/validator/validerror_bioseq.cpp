@@ -1869,7 +1869,7 @@ void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& seq)
 
     // Iterate through multimap and compare labels
     bool first = true;
-    const string* plabel;
+    const string* plabel = 0;
     iterate (TStrFeatMap, it, label_map) {
         if (first) {
             first = false;
@@ -1912,6 +1912,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.5  2003/01/06 16:43:42  shomrat
+* variable intialization
+*
 * Revision 1.4  2003/01/02 22:14:52  shomrat
 * Add GetNucGivenProt; Implemented CdError, ValidateMultiIntervalGene; GetCDSGivenProduct moved to ValidError_imp
 *
