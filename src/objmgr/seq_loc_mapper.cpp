@@ -43,6 +43,7 @@
 #include <objects/seqloc/Seq_bond.hpp>
 #include <objects/general/Int_fuzz.hpp>
 #include <objects/seqalign/seqalign__.hpp>
+#include <algorithm>
 
 
 BEGIN_NCBI_SCOPE
@@ -93,7 +94,7 @@ bool CMappingRange::CanMap(TSeqPos from,
         return false;
     }
     return SameOrientation(is_set_strand ? strand : eNa_strand_unknown,
-        m_Src_strand);
+        m_Src_strand)  ||  (m_Src_strand == eNa_strand_unknown);
 }
 
 
@@ -160,6 +161,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_feat&  map_feat,
     else {
         x_Initialize(map_feat.GetProduct(), map_feat.GetLocation(), frame);
     }
+    x_CreateSelfMapping();
 }
 
 
@@ -171,6 +173,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_loc& source,
       m_Dst_width(0)
 {
     x_Initialize(source, target);
+    x_CreateSelfMapping();
 }
 
 
@@ -182,6 +185,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_id);
+    x_CreateSelfMapping();
 }
 
 
@@ -193,6 +197,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
       m_Dst_width(0)
 {
     x_Initialize(map_align, to_row);
+    x_CreateSelfMapping();
 }
 
 
@@ -201,8 +206,25 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq)
       m_MergeFlag(eMergeNone),
       m_Dst_width(0)
 {
+    CConstRef<CSeq_id> dst_id = target_seq.GetSeqId();
     x_Initialize(target_seq.GetSeqMap(),
-        target_seq.GetSeqId().GetPointerOrNull());
+        dst_id.GetPointerOrNull());
+    // Ignore seq-map destination ranges, map whole sequence to itself,
+    // use unknown strand only.
+    m_DstRanges.resize(1);
+    m_DstRanges[0].clear();
+    if (m_Scope) {
+        CConstRef<CSynonymsSet> dst_syns = m_Scope->GetSynonyms(*dst_id);
+        ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
+            m_DstRanges[0][target_seq.GetSeq_id_Handle()]
+                .push_back(TRange::GetWhole());
+        }
+    }
+    else {
+        m_DstRanges[0][target_seq.GetSeq_id_Handle()]
+            .push_back(TRange::GetWhole());
+    }
+    x_CreateSelfMapping();
 }
 
 
@@ -214,12 +236,66 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap& seq_map,
       m_Dst_width(0)
 {
     x_Initialize(seq_map, dst_id);
+    x_CreateSelfMapping();
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(size_t depth,
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t          depth,
                                  CBioseq_Handle& source_seq)
+    : m_Scope(&source_seq.GetScope()),
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
 {
+    if (depth > 0) {
+        depth--;
+        x_Initialize(source_seq.GetSeqMap(),
+            depth, source_seq.GetSeqId().GetPointer());
+    }
+    else /* if (depth == 0) */ {
+        // Synonyms conversion
+        CConstRef<CSeq_id> dst_id = source_seq.GetSeqId();
+        m_DstRanges.resize(1);
+        if (m_Scope) {
+            CConstRef<CSynonymsSet> dst_syns = m_Scope->GetSynonyms(*dst_id);
+            ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
+                m_DstRanges[0][source_seq.GetSeq_id_Handle()]
+                    .push_back(TRange::GetWhole());
+            }
+        }
+        else {
+            m_DstRanges[0][source_seq.GetSeq_id_Handle()]
+                .push_back(TRange::GetWhole());
+        }
+    }
+    x_CreateSelfMapping();
+}
+
+
+CSeq_loc_Mapper::CSeq_loc_Mapper(size_t         depth,
+                                 const CSeqMap& source_seqmap,
+                                 const CSeq_id* src_id,
+                                 CScope*        scope)
+    : m_Scope(scope),
+      m_MergeFlag(eMergeNone),
+      m_Dst_width(0)
+{
+    if (depth > 0) {
+        depth--;
+        x_Initialize(source_seqmap, depth, src_id);
+    }
+    else /* if (depth == 0) */ {
+        // Synonyms conversion
+        m_DstRanges.resize(1);
+        if (bool(m_Scope)  &&  src_id) {
+            CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(*src_id);
+            CConstRef<CSynonymsSet> dst_syns = m_Scope->GetSynonyms(*src_id);
+            ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
+                m_DstRanges[0][src_idh]
+                    .push_back(TRange::GetWhole());
+            }
+        }
+    }
+    x_CreateSelfMapping();
 }
 
 
@@ -366,6 +442,9 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
                                       ENa_strand     dst_strand,
                                       TSeqPos        length)
 {
+    if (m_DstRanges.size() <= size_t(dst_strand)) {
+        m_DstRanges.resize(size_t(dst_strand) + 1);
+    }
     if (m_Scope) {
         CConstRef<CSynonymsSet> syns = m_Scope->GetSynonyms(src_id);
         ITERATE(CSynonymsSet, syn_it, *syns) {
@@ -376,6 +455,12 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
             m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
                 TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
         }
+        CConstRef<CSynonymsSet> dst_syns = m_Scope->GetSynonyms(dst_id);
+        ITERATE(CSynonymsSet, dst_syn_it, *dst_syns) {
+            m_DstRanges[size_t(dst_strand)]
+                [CSynonymsSet::GetSeq_id_Handle(dst_syn_it)]
+                .push_back(TRange(dst_start, dst_start + length - 1));
+        }
     }
     else {
         CRef<CMappingRange> cvt(new CMappingRange(
@@ -384,6 +469,8 @@ void CSeq_loc_Mapper::x_AddConversion(const CSeq_id& src_id,
             dst_id, dst_start, dst_strand));
         m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
             TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+        m_DstRanges[size_t(dst_strand)][CSeq_id_Handle::GetHandle(dst_id)]
+            .push_back(TRange(dst_start, dst_start + length - 1));
     }
 }
 
@@ -434,6 +521,47 @@ void CSeq_loc_Mapper::x_NextMappingRange(const CSeq_id& src_id,
         src_id, cvt_src_start, src_strand,
         dst_id, cvt_dst_start, dst_strand,
         cvt_length);
+}
+
+
+void CSeq_loc_Mapper::x_CreateSelfMapping(void)
+{
+    for (int str_idx = 0; str_idx < m_DstRanges.size(); str_idx++) {
+        NON_CONST_ITERATE(TDstIdMap, id_it, m_DstRanges[str_idx]) {
+            id_it->second.sort();
+            TSeqPos dst_start = kInvalidSeqPos;
+            TSeqPos dst_stop = kInvalidSeqPos;
+            ITERATE(TDstRanges, rg_it, id_it->second) {
+                // Collect and merge ranges
+                if (dst_start == kInvalidSeqPos) {
+                    dst_start = rg_it->GetFrom();
+                    dst_stop = rg_it->GetTo();
+                    continue;
+                }
+                if (rg_it->GetFrom() <= dst_stop + 1) {
+                    // overlapping or abutting ranges, continue collecting
+                    dst_stop = max(dst_stop, rg_it->GetTo());
+                    continue;
+                }
+                // Separate ranges, add conversion and restart collecting
+                CRef<CMappingRange> cvt(new CMappingRange(
+                    id_it->first, dst_start, dst_stop - dst_start + 1,
+                    ENa_strand(str_idx),
+                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
+                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+            }
+            if (dst_start < dst_stop) {
+                CRef<CMappingRange> cvt(new CMappingRange(
+                    id_it->first, dst_start, dst_stop - dst_start + 1,
+                    ENa_strand(str_idx),
+                    *id_it->first.GetSeqId(), dst_start, ENa_strand(str_idx)));
+                m_IdMap[cvt->m_Src_id_Handle].insert(TRangeMap::value_type(
+                    TRange(cvt->m_Src_from, cvt->m_Src_to), cvt));
+            }
+        }
+    }
+    m_DstRanges.clear();
 }
 
 
@@ -892,7 +1020,6 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map, const CSeq_id* top_id
     TSeqPos top_start = kInvalidSeqPos;
     TSeqPos top_stop = kInvalidSeqPos;
     TSeqPos dst_seg_start = kInvalidSeqPos;
-    TSeqPos dst_seg_stop = kInvalidSeqPos;
     CConstRef<CSeq_id> dst_id;
 
     for ( ; seg_it; ++seg_it) {
@@ -905,31 +1032,89 @@ void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map, const CSeq_id* top_id
                 // Top level is a bioseq
                 dst_id.Reset(top_id);
                 dst_seg_start = top_start;
-                dst_seg_stop = top_stop;
             }
             else {
                 // Top level is a seq-loc, positions are
                 // on the first-level references
                 dst_id = seg_it.GetRefSeqid().GetSeqId();
                 dst_seg_start = seg_it.GetRefPosition();
-                dst_seg_stop = seg_it.GetRefEndPosition() - 1;
                 continue;
             }
         }
         // when top_id is set, destination position = GetPosition(),
         // else it needs to be calculated from top_start/stop and dst_start/stop.
         TSeqPos dst_from = dst_seg_start + seg_it.GetPosition() - top_start;
-        TSeqPos dst_to = dst_seg_stop + seg_it.GetEndPosition() - 1 - top_stop;
-        _ASSERT(dst_from >= dst_seg_start  &&  dst_to <= dst_seg_stop);
-        TSeqPos dst_len = dst_to - dst_from + 1;
+        _ASSERT(dst_from >= dst_seg_start);
+        TSeqPos dst_len = seg_it.GetLength();
         CConstRef<CSeq_id> src_id(seg_it.GetRefSeqid().GetSeqId());
         TSeqPos src_from = seg_it.GetRefPosition();
-        TSeqPos src_len = seg_it.GetRefEndPosition() - src_from;
+        TSeqPos src_len = dst_len;
         ENa_strand src_strand = seg_it.GetRefMinusStrand() ?
             eNa_strand_minus : eNa_strand_unknown;
         x_NextMappingRange(*src_id, src_from, src_len, src_strand,
             *dst_id, dst_from, dst_len, eNa_strand_unknown);
         _ASSERT(src_len == 0  &&  dst_len == 0);
+    }
+}
+
+
+void CSeq_loc_Mapper::x_Initialize(const CSeqMap& seq_map,
+                                   size_t         depth,
+                                   const CSeq_id* top_id)
+{
+    CSeqMap::const_iterator seg_it =
+        seq_map.begin_resolved(m_Scope.GetPointerOrNull(), depth,
+        CSeqMap::fFindRef);
+
+    TSeqPos top_start = kInvalidSeqPos;
+    TSeqPos top_stop = kInvalidSeqPos;
+    TSeqPos src_seg_start = kInvalidSeqPos;
+    TSeqPos last_stop = kInvalidSeqPos;
+    CConstRef<CSeq_id> src_id;
+
+    TSeqPos src_from = 0;
+    TSeqPos src_len = 0;
+    TSeqPos dst_from = 0;
+    TSeqPos dst_len = 0;
+    CConstRef<CSeq_id> dst_id;
+    ENa_strand dst_strand;
+
+    for ( ; seg_it; ++seg_it) {
+        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
+        if (seg_it.GetPosition() > top_stop  ||  !src_id) {
+            // New top-level segment
+            top_start = seg_it.GetPosition();
+            top_stop = seg_it.GetEndPosition() - 1;
+            if (top_id) {
+                // Top level is a bioseq
+                src_id.Reset(top_id);
+                src_seg_start = top_start;
+            }
+            else {
+                // Top level is a seq-loc, positions are
+                // on the first-level references
+                src_id = seg_it.GetRefSeqid().GetSeqId();
+                src_seg_start = seg_it.GetRefPosition();
+                continue;
+            }
+        }
+        if (seg_it.GetPosition() >= last_stop) {
+            x_NextMappingRange(*src_id, src_from, src_len, eNa_strand_unknown,
+                *dst_id, dst_from, dst_len, dst_strand);
+            _ASSERT(src_len == 0  &&  dst_len == 0);
+        }
+        src_from = src_seg_start + seg_it.GetPosition() - top_start;
+        src_len = seg_it.GetLength();
+        dst_from = seg_it.GetRefPosition();
+        dst_len = src_len;
+        dst_id.Reset(seg_it.GetRefSeqid().GetSeqId());
+        dst_strand = seg_it.GetRefMinusStrand() ?
+            eNa_strand_minus : eNa_strand_unknown;
+        last_stop = seg_it.GetEndPosition();
+    }
+    if (src_len > 0) {
+        x_NextMappingRange(*src_id, src_from, src_len, eNa_strand_unknown,
+            *dst_id, dst_from, dst_len, dst_strand);
     }
 }
 
@@ -957,9 +1142,9 @@ bool CSeq_loc_Mapper::x_MapInterval(const CSeq_id&   src_id,
         src_rg = TRange(src_rg.GetFrom()*3, src_rg.GetTo()*3 + 2);
     }
 
+    CSeq_id_Handle src_idh = CSeq_id_Handle::GetHandle(src_id);
     TRangeIterator mit = x_BeginMappingRanges(
-        CSeq_id_Handle::GetHandle(src_id),
-        src_rg.GetFrom(), src_rg.GetTo());
+        src_idh, src_rg.GetFrom(), src_rg.GetTo());
     for ( ; mit; ++mit) {
         CMappingRange& cvt = *mit->second;
         if ( !cvt.CanMap(src_rg.GetFrom(), src_rg.GetTo(),
@@ -1388,6 +1573,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.7  2004/03/29 15:13:56  grichenk
+* Added mapping down to segments of a bioseq or a seqmap.
+* Fixed: preserve ranges already on the target bioseq(s).
+*
 * Revision 1.6  2004/03/22 21:10:58  grichenk
 * Added mapping from segments to master sequence or through a seq-map.
 *

@@ -130,8 +130,12 @@ public:
 
     // Mapping from master sequence to its segments, restricted
     // by depth. Depth = 0 is for synonyms conversion.
-    CSeq_loc_Mapper(size_t depth,
+    CSeq_loc_Mapper(size_t          depth,
                     CBioseq_Handle& source_seq);
+    CSeq_loc_Mapper(size_t         depth,
+                    const CSeqMap& source_seqmap,
+                    const CSeq_id* src_id = 0,
+                    CScope*        scope = 0);
 
 /*
     // Mapping from master sequence to its segments, restricted
@@ -176,6 +180,10 @@ private:
     typedef CRangeMultimap<CRef<CMappingRange>, TSeqPos> TRangeMap;
     typedef TRangeMap::iterator                          TRangeIterator;
     typedef map<CSeq_id_Handle, TRangeMap>               TIdMap;
+    // List and map of target ranges to construct target-to-target mapping
+    typedef list<TRange>                    TDstRanges;
+    typedef map<CSeq_id_Handle, TDstRanges> TDstIdMap;
+    typedef vector<TDstIdMap>               TDstStrandMap;
 
     // Destination locations arranged by ID/range
     typedef list<TRange>                         TMappedRanges;
@@ -220,11 +228,18 @@ private:
                       int               to_row);
     void x_Initialize(const CSeqMap& seq_map,
                       const CSeq_id* top_id = 0);
+    void x_Initialize(const CSeqMap& seq_map,
+                      size_t         depth,
+                      const CSeq_id* top_id = 0);
 
     void x_InitAlign(const CDense_diag& diag, int to_row);
     void x_InitAlign(const CDense_seg& denseg, int to_row);
     void x_InitAlign(const CStd_seg& sseg, int to_row);
     void x_InitAlign(const CPacked_seg& pseg, int to_row);
+
+    // Create target-to-target mapping to avoid truncation of ranges
+    // already on the target sequence(s).
+    void x_CreateSelfMapping(void);
 
     TRangeIterator x_BeginMappingRanges(CSeq_id_Handle id,
                                         TSeqPos from,
@@ -269,6 +284,7 @@ private:
 
     mutable TRangesById m_MappedLocs;
     CRef<CSeq_loc>  m_Dst_loc;
+    TDstStrandMap   m_DstRanges;
 };
 
 
@@ -309,6 +325,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.4  2004/03/29 15:13:56  grichenk
+* Added mapping down to segments of a bioseq or a seqmap.
+* Fixed: preserve ranges already on the target bioseq(s).
+*
 * Revision 1.3  2004/03/22 21:10:58  grichenk
 * Added mapping from segments to master sequence or through a seq-map.
 *
