@@ -448,7 +448,7 @@ public:
         return true;
     }
 
-    void DebugDump(CDebugDumpContext ddc, unsigned int depth) const
+    void DebugDump(CDebugDumpContext /*ddc*/, unsigned int /*depth*/) const
     {
         // Not yet..
     }
@@ -2432,6 +2432,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.49  2004/02/24 13:16:35  dondosha
+* Commented out argument names in unimplemented function, to eliminate compiler warnings
+*
 * Revision 1.48  2004/02/20 19:54:26  camacho
 * Correct friendship declarations for unit test classes
 *
