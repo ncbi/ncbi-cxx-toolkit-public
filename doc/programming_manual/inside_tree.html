@@ -62,7 +62,11 @@ help you configure the build environment:
 The <i>configure</i> script concludes with a message describing how to build the C++ Toolkit
 libraries. If your application will be working with ASN.1 data, use the <i>--with-objects</i> flag
 in running the <i>configure</i> script, so as to populate the <i>include/objects</i> and
-<i>src/objects</i> subdirectories.
+<i>src/objects</i> subdirectories and build the <i>objects</i> libraries. The <i>objects</i>
+directories and libraries can also be updated separately from the rest of the compilation, by
+executing <i>make</i> inside the <i>build/objects</i> directory. Prior to doing so however, you should
+always verify that your <i>build/bin</i> directory contains the latest version of <i>datatool</i>.
+
 
 <a name="makefiles">
 <h3> The project's directories and makefiles </h3>
