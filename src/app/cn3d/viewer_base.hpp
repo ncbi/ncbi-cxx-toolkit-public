@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.14  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.13  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -91,6 +94,7 @@ class BlockMultipleAlignment;
 class Vector;
 class AlignmentManager;
 class Molecule;
+class MoleculeIdentifier;
 
 class ViewerBase
 {
@@ -122,6 +126,7 @@ public:
 
     // make residue visible, if present
     void MakeResidueVisible(const Molecule *molecule, int seqIndex);
+    void MakeSequenceVisible(const MoleculeIdentifier *identifier);
 
     typedef std::list < BlockMultipleAlignment * > AlignmentList;
 

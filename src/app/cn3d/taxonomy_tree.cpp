@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.6  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.5  2002/10/04 19:10:35  thiessen
 * fix root tax node name
 *
@@ -72,6 +75,7 @@
 #include "cn3d/block_multiple_alignment.hpp"
 #include "cn3d/sequence_set.hpp"
 #include "cn3d/molecule_identifier.hpp"
+#include "cn3d/messenger.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -87,8 +91,6 @@ public:
     TaxonomyWindow(wxFrame *parent, TaxonomyWindow **handle);
     ~TaxonomyWindow(void);
 
-    wxTreeCtrl * GetTreeCtrl(void) { return tree; }
-
 private:
     wxTreeCtrl *tree;
     TaxonomyWindow **handle;
@@ -96,6 +98,14 @@ private:
     void OnActivate(wxTreeEvent& event);
 
     DECLARE_EVENT_TABLE()
+};
+
+class NodeData : public wxTreeItemData
+{
+public:
+    NodeData(const Sequence *s) : sequence(s) { }
+
+    const Sequence *sequence;
 };
 
 BEGIN_EVENT_TABLE(TaxonomyWindow, wxFrame)
@@ -141,13 +151,21 @@ static void ExpandAll(wxTreeCtrl& tree, const wxTreeItemId& id, bool shouldExpan
 
 void TaxonomyWindow::OnActivate(wxTreeEvent& event)
 {
-    // only do this for activation by key (space or return)
     const wxTreeItemId& itemID = event.GetItem();
     bool keyActivated = (event.GetPoint().x == 0 && event.GetPoint().y == 0);
-    if (!keyActivated) return;
+    bool hasChildren = tree->ItemHasChildren(itemID);
 
-    // expand/collapse entire tree at this node
-    ExpandAll(*tree, itemID, !tree->IsExpanded(itemID));
+    if (keyActivated && hasChildren) {
+        // expand/collapse entire tree at internal node
+        ExpandAll(*tree, itemID, !tree->IsExpanded(itemID));
+    }
+
+    else if (!keyActivated && !hasChildren) {
+        // highlight sequence on double-click
+        NodeData *data = dynamic_cast<NodeData*>(tree->GetItemData(itemID));
+        if (data)
+            GlobalMessenger()->HighlightAndShowSequence(data->sequence);
+    }
 
     event.Skip();
 }
@@ -193,8 +211,9 @@ public:
     // use maps to ensure uniqueness
     typedef std::map < int , bool > ChildTaxIDMap;
     ChildTaxIDMap childTaxids;
-    typedef std::map < const MoleculeIdentifier * , int > IdentifierList;
-    IdentifierList identifiers;
+    // int here is to count occurrences
+    typedef std::map < const Sequence * , int > SequenceMap;
+    SequenceMap sequences;
 
     TaxonomyTreeNode(void) { taxid = parentTaxid = nDescendentLeaves = 0; }
 };
@@ -206,13 +225,14 @@ static void AppendChildrenToTree(wxTreeCtrl *tree,
     const TaxonomyTreeMap& treeMap, const TaxonomyTreeNode& node, const wxTreeItemId id)
 {
     // add sequence nodes
-    if (node.identifiers.size() > 0) {
-        TaxonomyTreeNode::IdentifierList::const_iterator i, ie = node.identifiers.end();
-        for (i=node.identifiers.begin(); i!=ie; i++) {
-            wxString name(i->first->ToString().c_str());
-            if (i->second > 1)
-                name.Printf("%s (x%i)", name.c_str(), i->second);
-            tree->AppendItem(id, name);
+    if (node.sequences.size() > 0) {
+        TaxonomyTreeNode::SequenceMap::const_iterator s, se = node.sequences.end();
+        for (s=node.sequences.begin(); s!=se; s++) {
+            wxString name(s->first->identifier->ToString().c_str());
+            if (s->second > 1)
+                name.Printf("%s (x%i)", name.c_str(), s->second);
+            wxTreeItemId& child = tree->AppendItem(id, name);
+            tree->SetItemData(child, new NodeData(s->first));
         }
     }
 
@@ -239,7 +259,7 @@ static void AddNode(TaxonomyTreeMap *taxTree, const Sequence *seq,
     node.name = (taxData->IsSetOrg() && taxData->GetOrg().IsSetTaxname()) ?
         taxData->GetOrg().GetTaxname() : std::string("(error getting node name!)");
     if (seq) {
-        node.identifiers[seq->identifier]++;
+        node.sequences[seq]++;
         node.nDescendentLeaves++;
     }
 
@@ -294,7 +314,7 @@ void TaxonomyTree::ShowTreeForAlignment(wxFrame *windowParent, const BlockMultip
     *handle = window = new TaxonomyWindow(windowParent, handle);
     wxString name;
     name.Printf("%s (%i)", node->name.c_str(), node->nDescendentLeaves);
-    AppendChildrenToTree(window->GetTreeCtrl(), taxTree, *node, window->GetTreeCtrl()->AddRoot(name));
+    AppendChildrenToTree(window->tree, taxTree, *node, window->tree->AddRoot(name));
     window->Show(true);
     taxonomyWindows.push_back(handle);
 

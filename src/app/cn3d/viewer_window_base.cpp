@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.35  2002/09/06 13:06:31  thiessen
 * fix menu accelerator conflicts
 *
@@ -453,6 +456,18 @@ void ViewerWindowBase::OnFindPattern(wxCommandEvent& event)
         usedSequences[sequence] = true;
 
         if (!sequence->HighlightPattern(pattern.c_str())) break;
+    }
+}
+
+void ViewerWindowBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
+{
+    const SequenceDisplay *display = viewer->GetCurrentDisplay();
+    for (int i=0; i<display->NRows(); i++) {
+        const Sequence *sequence = display->GetSequenceForRow(i);
+        if (sequence && sequence->identifier == identifier) {
+            viewerWidget->MakeCharacterVisible(-1, i);
+            break;
+        }
     }
 }
 

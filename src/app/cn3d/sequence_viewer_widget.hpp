@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.19  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.18  2002/08/15 22:13:16  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -182,7 +185,8 @@ public:
     // get current uppermost row & leftmost column
     void GetScroll(int *vsX, int *vsY) const;
 
-    // make character visible (in sequence area) if it's not already
+    // make character visible (in sequence area) if it's not already; if either coordinate
+    // is < 0, will not scroll in that direction
     void MakeCharacterVisible(int column, int row) const;
 
     // turn on/off the title area

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.16  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.15  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -258,6 +261,11 @@ void ViewerBase::MakeResidueVisible(const Molecule *molecule, int seqIndex)
     if (displayStack.back()->GetDisplayCoordinates(molecule, seqIndex,
             (*viewerWindow)->GetCurrentJustification(), &column, &row))
         (*viewerWindow)->MakeCellVisible(column, row);
+}
+
+void ViewerBase::MakeSequenceVisible(const MoleculeIdentifier *identifier)
+{
+    if (*viewerWindow) (*viewerWindow)->MakeSequenceVisible(identifier);
 }
 
 void ViewerBase::SaveDialog(bool prompt)

@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.36  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.35  2002/08/15 22:13:16  thiessen
 * update for wx2.3.2+ only; add structure pick dialog; fix MultitextDialog bug
 *
@@ -1140,21 +1143,25 @@ void SequenceViewerWidget::GetScroll(int *vsX, int *vsY) const
 
 void SequenceViewerWidget::MakeCharacterVisible(int column, int row) const
 {
-    int vsX, vsY, newX = -1, newY = -1, nCells;
+    int vsX, vsY, nCells;
     sequenceArea->GetViewStart(&vsX, &vsY);
 
     // scroll horizontally if necessary
-    nCells = sequenceArea->GetClientSize().GetWidth() / sequenceArea->cellWidth;
-    if (column < vsX || column >= vsX + nCells) {
-        vsX = column - nCells / 2;
-        if (vsX < 0) vsX = 0;
+    if (column >= 0) {
+        nCells = sequenceArea->GetClientSize().GetWidth() / sequenceArea->cellWidth;
+        if (column < vsX || column >= vsX + nCells) {
+            vsX = column - nCells / 2;
+            if (vsX < 0) vsX = 0;
+        }
     }
 
     // scroll vertically if necessary
-    nCells = sequenceArea->GetClientSize().GetHeight() / sequenceArea->cellHeight;
-    if (row < vsY || row >= vsY + nCells) {
-        vsY = row - nCells / 2;
-        if (vsY < 0) vsY = 0;
+    if (row >= 0) {
+        nCells = sequenceArea->GetClientSize().GetHeight() / sequenceArea->cellHeight;
+        if (row < vsY || row >= vsY + nCells) {
+            vsY = row - nCells / 2;
+            if (vsY < 0) vsY = 0;
+        }
     }
 
     sequenceArea->Scroll(vsX, vsY);

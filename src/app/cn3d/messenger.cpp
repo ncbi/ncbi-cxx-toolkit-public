@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.33  2002/10/07 13:29:31  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.32  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -351,6 +354,16 @@ void Messenger::AddHighlights(const Sequence *sequence, int seqIndexFrom, int se
 
     PostRedrawAllSequenceViewers();
     RedrawMoleculesWithIdentifier(sequence->identifier, sequence->parentSet);
+}
+
+void Messenger::HighlightAndShowSequence(const Sequence *sequence)
+{
+    RemoveAllHighlights(true);
+    AddHighlights(sequence, 0, sequence->Length() - 1);
+
+    SequenceViewerList::const_iterator q, qe = sequenceViewers.end();
+    for (q=sequenceViewers.begin(); q!=qe; q++)
+        (*q)->MakeSequenceVisible(sequence->identifier);
 }
 
 void Messenger::RemoveHighlights(const Sequence *sequence, int seqIndexFrom, int seqIndexTo)

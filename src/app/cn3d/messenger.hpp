@@ -31,6 +31,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/10/07 13:29:31  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.22  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -186,6 +189,9 @@ public:
 
     // set a bunch of highlights all at once - copies highlight list from given set
     void SetHighlights(const MoleculeHighlightMap& newHighlights);
+
+    // highlights a sequence and moves viewer to that row
+    void HighlightAndShowSequence(const Sequence *sequence);
 
     // temporarily turns off highlighting (suspend==true) - but doesn't erase highlight stores,
     // so when called with suspend==false, highlights will come back on

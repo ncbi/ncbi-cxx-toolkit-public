@@ -30,6 +30,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.23  2002/10/07 13:29:32  thiessen
+* add double-click -> show row to taxonomy tree
+*
 * Revision 1.22  2002/09/09 13:38:23  thiessen
 * separate save and save-as
 *
@@ -118,6 +121,7 @@ BEGIN_SCOPE(Cn3D)
 
 class ViewerBase;
 class SequenceDisplay;
+class MoleculeIdentifier;
 
 // this must be included in the event table for the derived class, so that the base class's
 // menu item callbacks are accessible
@@ -154,6 +158,7 @@ public:
 
     // scroll so that this cell is visible, if it's not already
     void MakeCellVisible(int column, int row) { viewerWidget->MakeCharacterVisible(column, row); }
+    void MakeSequenceVisible(const MoleculeIdentifier *identifier);
 
     // set the font for the characters from registry values; refreshes automatically.
     void SetupFontFromRegistry(void);
