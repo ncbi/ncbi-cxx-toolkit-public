@@ -49,9 +49,9 @@ BEGIN_SCOPE(blast)
 
 
 TSeqLocVector
-BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
-    ENa_strand strand, TSeqPos from, TSeqPos to, int *counter, 
-    bool get_lcase_mask)
+BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr, 
+                         ENa_strand strand, TSeqPos from, TSeqPos to, 
+                         int *counter, bool get_lcase_mask)
 {
     TSeqLocVector retval;
     CRef<CSeq_entry> seq_entry;
@@ -76,18 +76,22 @@ BLASTGetSeqLocFromStream(CNcbiIstream& in, CObjectManager& objmgr,
     for (CTypeConstIterator<CBioseq> itr(ConstBegin(*seq_entry)); itr; ++itr) {
 
         CRef<CSeq_loc> seqloc(new CSeq_loc());
-        if (strand == eNa_strand_plus || strand == eNa_strand_minus || 
-            from > 0 || 
-            (to > 0 && to < sequence::GetLength(*itr->GetId().front(), 
-                                                scope)-1))
-        {
-            seqloc->SetInt().SetFrom(from);
+        TSeqPos seq_length = sequence::GetLength(*itr->GetId().front(), 
+                                                scope)-1;
+
+        if (to > 0 && to < seq_length)
             seqloc->SetInt().SetTo(to);
-            seqloc->SetInt().SetStrand(strand);
-            seqloc->SetInt().SetId().Assign(*itr->GetId().front());
-        } else {
-            seqloc->SetWhole().Assign(*itr->GetId().front());
-        }
+        else
+            seqloc->SetInt().SetTo(seq_length);
+
+        if (from > 0 && from < seq_length && from < to)
+            seqloc->SetInt().SetFrom(from);
+        else
+            seqloc->SetInt().SetFrom(0);
+
+        seqloc->SetInt().SetStrand(strand);
+        seqloc->SetInt().SetId().Assign(*itr->GetId().front());
+
         //CRef<CScope> s(scope);
         SSeqLoc sl(seqloc, scope);
 
