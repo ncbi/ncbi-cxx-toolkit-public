@@ -202,12 +202,7 @@ FindSpliceJunction(Uint1Ptr subject_seq, BlastHSPPtr hsp1,
    Boolean found = FALSE;
    Int4 overlap, length, i;
    Uint1Ptr nt_seq;
-   SeqMapTablePtr smtp = SeqMapTableFind(Seq_code_ncbi4na, Seq_code_iupacna);
-   Uint1 g, t, a;
-
-   g = SeqMapTableConvert(smtp, 'G');
-   t = SeqMapTableConvert(smtp, 'T');
-   a = SeqMapTableConvert(smtp, 'A');
+   Uint1 g = 4, t = 8, a = 1; /* ncbi4na values for G, T, A respectively */
 
    overlap = hsp1->query.end - hsp2->query.offset;
 
