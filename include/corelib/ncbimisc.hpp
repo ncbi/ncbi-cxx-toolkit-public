@@ -68,6 +68,15 @@ enum ENullable
 };
 
 
+/// Whether a value is nullable.
+enum ESign
+{
+    eNegative = -1,     ///< Value is negative
+    eZero     =  0,     ///< Value is zero
+    ePositive =  1      ///< Value is positive
+};
+
+
 #if defined(HAVE_NO_AUTO_PTR)
 
 
@@ -439,6 +448,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.72  2004/09/07 16:21:11  ivanov
+ * Added ESign enum
+ *
  * Revision 1.71  2004/01/20 17:10:08  ivanov
  * Rollback previous commit
  *
