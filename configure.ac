@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.251 2004/01/09 15:54:17 ucko Exp $
+#  $Id: configure.ac,v 1.252 2004/01/13 16:03:02 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -735,8 +735,18 @@ case "$host_os:$compiler" in
       CFLAGS="-Wno-long-double $CFLAGS"
       CXXFLAGS="-Wno-long-double $CXXFLAGS"
    fi
-   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks -I/sw/include $CPPFLAGS"
-   LIBS="-Wl,-framework,ApplicationServices -L/sw/lib $LIBS"
+   if test -f /usr/include/dlfcn.h; then
+      # may be able to do without /sw, so ignore it by default
+      :
+   elif test -f /sw/include/dlfcn.h; then
+      CPPFLAGS="-I/sw/include $CPPFLAGS"
+      LIBS="-L/sw/lib $LIBS"
+      test -f /sw/lib/libdb-4.1.dylib  &&  BERKELEYDB_PATH="/sw"
+   else
+      AC_MSG_WARN([No dlfcn.h in /usr/include or /sw/include.])
+   fi
+   CPPFLAGS="-F/System/Library/Frameworks/CoreServices.framework/Frameworks $CPPFLAGS"
+   LIBS="-Wl,-framework,ApplicationServices $LIBS"
    ;;
 esac
 
