@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.179 2003/04/17 18:52:05 ucko Exp $
+#  $Id: configure.ac,v 1.180 2003/04/18 16:29:12 ucko Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -2455,6 +2455,7 @@ if test "$with_fastcgi" != "no" ; then
    if test "$ncbi_cv_lib_fcgi" = "no"; then
       with_fastcgi="no"
    fi
+   AC_CHECK_FUNCS(FCGX_Accept_r)
 fi
 if test "$with_fastcgi" = "no" ; then
    FASTCGI_PATH="No_FastCgi"
