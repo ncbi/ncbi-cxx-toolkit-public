@@ -169,6 +169,9 @@ OSTYPE   = @OSTYPE@
 ### Pointer size
 NCBI_PLATFORM_BITS = @NCBI_PLATFORM_BITS@
 
+### Post-link command (empty by default, needed for FLTK apps on MacOS X)
+POST_LINK = @:
+
 ### Configuration summary
 signature = @signature@
 
@@ -238,6 +241,8 @@ WXWIN_LIBS    = @WXWIN_LIBS@
 FLTK_INCLUDE = @FLTK_INCLUDE@
 FLTK_LIBS    = @FLTK_LIBS@
 FLTK_LIBS_GL = @FLTK_LIBS_GL@
+# Assign FLTK_POST_LINK to POST_LINK when building FLTK apps.
+FLTK_POST_LINK = @FLTK_POST_LINK@
 
 # Fast-CGI lib:  headers and libs
 FASTCGI_INCLUDE = @FASTCGI_INCLUDE@
