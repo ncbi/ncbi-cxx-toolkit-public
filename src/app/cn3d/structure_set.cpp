@@ -657,7 +657,8 @@ void StructureSet::InitStructureAlignments(int masterMMDBID)
     structureAlignments->SetId().front().GetObject().SetMmdb_id(*mid);
     // new Biostruc-feature-set
     CRef<CBiostruc_feature_set> featSet(new CBiostruc_feature_set());
-    featSet.GetObject().SetId().Set(NO_DOMAIN);
+    featSet->SetId().Set(NO_DOMAIN);
+    featSet->SetFeatures();    // just create an empty list
     structureAlignments->SetFeatures().resize(1, featSet);
 
     // flag a change in data
@@ -1460,6 +1461,9 @@ END_SCOPE(Cn3D)
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.131  2003/06/12 14:38:46  thiessen
+* fix empty feature list bug in blank structure alignment data
+*
 * Revision 1.130  2003/04/02 17:49:18  thiessen
 * allow pdb id's in structure import dialog
 *
