@@ -1,0 +1,6 @@
+# $Id$
+
+USR_PROJ = check
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
