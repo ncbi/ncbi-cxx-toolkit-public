@@ -1,5 +1,5 @@
-#ifndef UTIL___NWA_APP__HPP
-#define UTIL___NWA_APP__HPP
+#ifndef ALGO___NWA_APP__HPP
+#define ALGO___NWA_APP__HPP
 
 /* $Id$
 * ===========================================================================
@@ -50,12 +50,15 @@ class CAppNWAException : public CException
 public:
     enum EErrCode {
         eCannotReadFile,
+        eCannotWriteFile,
         eInconsistentParameters
     };
     virtual const char* GetErrCodeString(void) const {
         switch ( GetErrCode() ) {
         case eCannotReadFile:
             return "Cannot read from file";
+        case eCannotWriteFile:
+            return "Cannot write to file";
         case eInconsistentParameters:
             return "Two or more parameters are inconsistent";
         default:
@@ -95,6 +98,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/01/24 16:49:36  kapustin
+ * Add write file exception type
+ *
  * Revision 1.4  2003/01/08 15:58:33  kapustin
  * Read offset parameter from fasta reading routine
  *
