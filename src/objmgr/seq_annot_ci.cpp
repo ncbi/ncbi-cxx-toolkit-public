@@ -151,6 +151,7 @@ void CSeq_annot_CI::x_SetEntry(const CSeq_entry_Handle& entry)
 {
     m_CurrentEntry = entry;
     if ( !m_CurrentEntry ) {
+        m_CurrentAnnot.Reset();
         return;
     }
     m_AnnotIter = x_GetAnnots().begin();
@@ -168,6 +169,7 @@ void CSeq_annot_CI::x_Initialize(const CSeq_entry_Handle& entry, EFlags flags)
     }
 
     x_SetEntry(entry);
+    _ASSERT(m_CurrentEntry);
     if ( flags == eSearch_recursive ) {
         x_Push();
     }
@@ -179,6 +181,8 @@ void CSeq_annot_CI::x_Initialize(const CSeq_entry_Handle& entry, EFlags flags)
 CSeq_annot_CI& CSeq_annot_CI::operator++(void)
 {
     _ASSERT(*this);
+    _ASSERT(m_CurrentEntry);
+    _ASSERT(m_AnnotIter != x_GetAnnots().end());
     ++m_AnnotIter;
     x_Settle();
     return *this;
@@ -187,37 +191,43 @@ CSeq_annot_CI& CSeq_annot_CI::operator++(void)
 
 void CSeq_annot_CI::x_Settle(void)
 {
-    for ( ;; ) {
-        if ( m_AnnotIter != x_GetAnnots().end() ) {
-            m_CurrentAnnot = CSeq_annot_Handle(**m_AnnotIter,
-                                               m_CurrentEntry.GetTSE_Handle());
-            return;
-        }
-
+    _ASSERT(m_CurrentEntry);
+    if ( m_AnnotIter == x_GetAnnots().end() ) {
         if ( m_UpTree ) {
             // Iterating from a bioseq up to its TSE
-            x_SetEntry(m_CurrentEntry.GetParentEntry());
-            if ( !m_CurrentEntry ) {
-                m_CurrentAnnot = CSeq_annot_Handle();
-                return;
-            }
-            continue;
-        }
-
-        if ( m_EntryStack.empty() ) {
-            m_CurrentAnnot = CSeq_annot_Handle();
-            return;
-        }
-        
-        if ( m_EntryStack.top() ) {
-            CSeq_entry_CI& entry_iter = m_EntryStack.top();
-            CSeq_entry_Handle sub_entry = *entry_iter;
-            ++entry_iter;
-            x_SetEntry(sub_entry);
+            do {
+                x_SetEntry(m_CurrentEntry.GetParentEntry());
+            } while ( m_CurrentEntry && m_AnnotIter == x_GetAnnots().end() );
         }
         else {
-            m_EntryStack.pop();
+            for (;;) {
+                if ( m_EntryStack.empty() ) {
+                    m_CurrentEntry.Reset();
+                    break;
+                }
+                CSeq_entry_CI& entry_iter = m_EntryStack.top();
+                if ( entry_iter ) {
+                    CSeq_entry_Handle sub_entry = *entry_iter;
+                    ++entry_iter;
+                    x_SetEntry(sub_entry);
+                    _ASSERT(m_CurrentEntry);
+                    if ( m_AnnotIter != x_GetAnnots().end() ) {
+                        break;
+                    }
+                }
+                else {
+                    m_EntryStack.pop();
+                }
+            }
         }
+    }
+    if ( m_CurrentEntry ) {
+        _ASSERT(m_AnnotIter != x_GetAnnots().end());
+        m_CurrentAnnot = CSeq_annot_Handle(**m_AnnotIter,
+                                           m_CurrentEntry.GetTSE_Handle());
+    }
+    else {
+        m_CurrentAnnot.Reset();
     }
 }
 
@@ -228,6 +238,9 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.12  2005/02/11 16:25:03  vasilche
+* More fixed to CSeq_annot_CI.
+*
 * Revision 1.11  2005/02/11 15:43:07  grichenk
 * Check m_CurrentEntry
 *
