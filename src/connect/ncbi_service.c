@@ -30,6 +30,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.36  2002/04/15 20:07:09  lavr
+ * Use size_t for iterating over skip_info's
+ *
  * Revision 6.35  2002/04/13 06:35:11  lavr
  * Fast track routine SERV_GetInfoEx(), many syscalls optimizations
  *
@@ -212,7 +215,7 @@ static SERV_ITER s_Open(const char* service,
 
     if (n_skip) {
         TNCBI_Time t = (TNCBI_Time) time(0);
-        int i;
+        size_t i;
         for (i = 0; i < n_skip; i++) {
             size_t infolen = SERV_SizeOfInfo(skip[i]);
             SSERV_Info* info = (SSERV_Info*) malloc(infolen);
