@@ -36,6 +36,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.9  1999/09/02 21:53:23  vakatov
+* Allow '-' and '.' in the section/entry name
+*
 * Revision 1.8  1999/07/07 14:17:05  vakatov
 * CNcbiRegistry::  made the section and entry names be case-insensitive
 *
@@ -64,8 +67,8 @@ BEGIN_NCBI_SCOPE
 
 /***  EXAMPLE of a Registry File:
 [section1]
-name1 = value11 value12
-name2 = "  this value has two spaces at its very beginning and at the end  "
+n1.n2 = value11 value12
+n-2.3 = "  this value has two spaces at its very beginning and at the end  "
 name3 = this is a multi\
 line value
 name4 = this is a single line ended by back slash\\
@@ -73,14 +76,14 @@ name5 = all backslashes and \
 new lines must be \\escaped\\...
 name6 = invalid backslash \in the middle
 ..............
-[section2]
+[ section2.9-bis ]
 ; This is a comment...
 name1 = value1
 .............. 
 ***/
 
 
-///  "Section" and "name" must contain only [a-z], [A-Z], [0-9] and underscore;
+///  "Section" and "name" must contain only:  [a-z], [A-Z], [0-9], [_.-];
 ///  they are not case-sensitive;  their leading and trailing spaces get
 ///  truncated.
 ///  Comments and empty lines are skipped during the parsing.
