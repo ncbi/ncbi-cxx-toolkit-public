@@ -31,6 +31,9 @@
  *
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.13  2001/03/05 23:10:46  lavr
+ * SERV_ReadInfo takes only one argument now
+ *
  * Revision 6.12  2001/03/01 00:33:12  lavr
  * FIXES: Empty update does not generate parse error
  *        Dispathing error is only logged in debug mode; milder severity
@@ -280,7 +283,7 @@ static int/*bool*/ s_Update(SERV_ITER iter, const char *text)
                 *p = 0;
             if (sscanf(b, "%u: %n", &d1, &d2) < 1)
                 continue;
-            if (!(info = SERV_ReadInfo(b + d2, 0)))
+            if (!(info = SERV_ReadInfo(b + d2)))
                 continue;
             info->time += t;        /* Set 'expiration time' */
             if (!s_AddServerInfo(data, info))
