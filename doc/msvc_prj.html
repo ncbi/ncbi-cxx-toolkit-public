@@ -37,11 +37,11 @@ There are some limitations to the above scheme:
 
 <p>
 All the work of managing the project files is done by using of one or more of the
-following shell <a name="scripts">scripts</a>:
+following shell <a name="scripts"></a>scripts:
 
 <ul>
 <li>
-<a name="all2one_sh"><i><tt><font color="navy">all2one.sh</font></tt></i></a> - looks through the given project
+<a name="all2one_sh"></a><i><tt><font color="navy">all2one.sh</font></tt></i> - looks through the given project
 file, prints out available configurations, and allows to extract any of
 those. If there is only one configuration, the script does nothing. Special
 care is taken to first check the project file consistency to avoid corrupting
@@ -57,7 +57,7 @@ is used as a name of configuration to extract without interactive inquiry. If th
 is not found, the script aborts with an error message.
 
 <li>
-<a name="one2all_sh"><i><tt><font color="navy">one2all.sh</font></tt></i></a> - takes a single-configuration
+<a name="one2all_sh"></a><i><tt><font color="navy">one2all.sh</font></tt></i> - takes a single-configuration
 project file (perhaps the one created by <tt><font color="navy">all2one.sh</font></tt>)
 and derives multi-configuration project file containing 3 production configurations:
 <tt>Release</tt>, <tt>ReleaseMT</tt>, and <tt>ReleaseDLL</tt>; and 3 debug configurations: <tt>Debug</tt>,
@@ -73,7 +73,7 @@ are placed to the output file. When given as <tt>4</tt>, only the following four
 appear: <tt>Debug</tt>, <tt>DebugMT</tt>, <tt>Release</tt>, and <tt>ReleaseMT</tt>.
 
 <li>
-<a name="one2one_sh"><i><tt><font color="navy">one2one.sh</font></tt></i></a> - takes two arguments:
+<a name="one2one_sh"></a><i><tt><font color="navy">one2one.sh</font></tt></i> - takes two arguments:
 single-configuration project file name and one of standard configuration names
 (<tt>Debug</tt>, <tt>DebugMT</tt>, <tt>DebugDLL</tt>, <tt>Release</tt>, <tt>ReleaseMT</tt>, <tt>ReleaseDLL</tt>) and replaces
 the given project file with a new one, having the requested configuration. In case of non-standard configuration name,
@@ -83,7 +83,7 @@ an error results. Being an 'interface' script to both <tt><font color="navy">all
 Output file is created in UNIX text file format.</li>
 
 <li>
-<a name="include_sh"><i><tt><font color="navy">include.sh</font></tt></i></a> - takes an optional argument list, each
+<a name="include_sh"></a><i><tt><font color="navy">include.sh</font></tt></i> - takes an optional argument list, each
 entry of which is a relative path to include file directory (default is the standard NCBI C++ Toolkit include
 directory). The script then recursively looks through all project files, and tries to update compiler
 switches with the given directory list. Directories, already specified in project files, are either replaced
@@ -95,7 +95,7 @@ directory each time, when the project file subtree is a kind rearranged and must
 Therefore, the project files are always produced in UNIX text file format.</li>
 
 <li>
-<a name="commit_sh"><i><tt><font color="navy">commit.sh</font></tt></i></a> -
+<a name="commit_sh"></a><i><tt><font color="navy">commit.sh</font></tt></i> -
 control script for use from inside the CVS upon each commit to ensure
 that the project being checked in contains one fixed configuration only (namely, <tt>DebugMT</tt>).
 This script as well checks that the file being committed is in UNIX text file format, and rejects if not.
@@ -119,13 +119,13 @@ One can later remove absolute references to <tt><font color="navy">\\DIZZY\</fon
 <a href="#one2one_sh"><tt>one2one.sh</tt></a>.
 
 <br>
-<a name="notes"><br><b><u>Please note</u></b></a> that the above tools are <b><i>not</i></b> project file <i>generation</i>
+<a name="notes"></a><br><b><u>Please note</u></b> that the above tools are <b><i>not</i></b> project file <i>generation</i>
 tools, but rather the project file <i>conversion</i> tools. That is, the resulting project file is correct if and only if the
 source project file is. When a project file gets converted to a single-configuration template,
 all the compiler switches and definitions, as well as other vital environment, have to be defined in a right way.</ul>
 
 <p>
-DOS batch file <a name="all_bat"><i><tt><font color="navy">all.bat</font></tt></i></a> can
+DOS batch file <a name="all_bat"></a><i><tt><font color="navy">all.bat</font></tt></i> can
 generate all projects in a batch mode, provided that <tt><font color="navy">msdev.exe</font></tt>
 is in your <tt><font color="navy">PATH</font></tt>.
 As an argument to the batch file you can specify either <tt>ALL</tt> (or no arguments at all),

@@ -24,7 +24,7 @@ inside NCBI users at:
 
 <p><hr><p>
 
-<h2><a name="ref_Overview">Overview</a></h2>
+<a name="ref_Overview"></a><h2>Overview</h2>
 
 In general, <tt>LBSMD</tt> should be run at NCBI site on every host that carries either public
 or private servers implementing NCBI service(s) (see however discussion about
@@ -75,7 +75,7 @@ which is a part of <a href="../../libs/conn.html#ref_ServiceAPI">service mapping
 
 <p><hr><p>
 
-<h2><a name="ref_Details"><tt>LBSMD</tt> in Details</a></h2>
+<a name="ref_Details"></a><h2><tt>LBSMD</tt> in Details</h2>
 
 <tt>LBSMD</tt> is configured by means of a configuration file (default name <tt>servrc.cfg</tt>),
 which is also shared with <a href="DISPD.html#ref_NCBID">NCBI CGI engine</a>, <tt>NCBID.CGI</tt>.
@@ -87,7 +87,7 @@ inserting a backslash symbol (\) before the line breaks.
 A comment is introduced by a hash symbol (#).
 
 <p>
-<a name="ref_HostEnvironment">A configuration line of the form</a>
+<a name="ref_HostEnvironment"></a>A configuration line of the form
 <pre>
 <font color="#009900">name=value</font>
 </pre>
@@ -108,7 +108,7 @@ which is documented in <a href="../../libs/conn.html#ref_ServiceAPI">service map
 preserved in <tt>value</tt>, i.e. when appear after the assignment sign.
 
 <p>
-A <a name="ref_Service"><i>service</i></a> is defined by a line of the form
+<a name="ref_Service"></a>A <i>service</i> is defined by a line of the form
 <pre>
 <font color="#009900">service_name [check_time] server_descriptor [| launcher_info ]</font>
 </pre>
@@ -140,7 +140,7 @@ consists of the following fields
 <font color="#009900"><tt>server_type [host][:port] [arguments] [flags]</tt><br></font>
 where:
 <ul type=square>
-<li><a name="ref_ServerType"><font color="#009900"><tt>server_type</tt></font></a> is one of the following keywords (see also
+<li><a name="ref_ServerType"></a><font color="#009900"><tt>server_type</tt></font> is one of the following keywords (see also
   <a href="../../libs/conn.html#ref_ServerTypes">here</a>):<br>
   <ul compact type=bullet>
   <li><font color="#CC33CC"><tt>NCBID</tt></font> for servers launched by <a href="DISPD.html#ref_NCBID"><tt>ncbid.cgi</tt></a>;
@@ -152,7 +152,7 @@ where:
   </ul>
 <li>Both <font color="#009900"><tt>host</tt></font> and <font color="#009900"><tt>port</tt></font> parameters are optional. Defaults are local host and
 port 80 except for <tt>STANDALONE</tt> servers, which do <i>not</i> have a default port value.</br>
-<a name="ref_Static">If <tt>host</tt> <b><u>is specified</u></b></a> (either <tt>localhost</tt> or local host name/IP)
+<a name="ref_Static"></a>If <tt>host</tt> <b><u>is specified</u></b> (either <tt>localhost</tt> or local host name/IP)
 then the described server is not a subject for variable load-balancing, but is a so-called <i>static</i>
 server. Such a server always has a constant rate, independent on the host load.
 <li><font color="#009900"><tt>arguments</tt></font> are required for <tt>HTTP*</tt> servers, and must specify
@@ -186,7 +186,7 @@ recognized:
   default is 1000. Any negative value makes the server unreachable, and a value of&nbsp;0 uses the default.
   The maximal allowed base rate is 100000.
   </ul>
-  <li><a name="ref_Local">locality marker</a>:
+  <li><a name="ref_Local"></a>locality marker:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>L={yes|no}</tt></font> sets (if <tt>yes</tt>) the server to be <i>local only</i>.
      Default is <tt>no</tt>.
@@ -196,7 +196,7 @@ recognized:
      occurs using non-local network (certainly indirectly, via exchange with <a href="DISPD.html"><tt>dispd.cgi</tt></a>)
      then <i>local only</i> servers are not seen.
   </ul>
-  <li><a name="ref_Stateful">stateful server</a>:
+  <li><a name="ref_Stateful"></a>stateful server:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>S={yes|no}</tt></font> sets (if <tt>yes</tt>) that the server can only accept dedicated connections,
      and is not capable of doing <i>stateless</i> (HTTP-like) data exchange. Such a server can only be
@@ -204,12 +204,12 @@ recognized:
      while the connection is alive. Default is <tt>no</tt>. This flag <i>cannot</i> be specified for <tt>HTTP*</tt> servers.<br>
      <u>Note</u>: Due to mutual incompatibility, Web-browsers <i>cannot</i> directly connect to <i>stateful</i> servers.
   </ul>
-  <li><a name="ref_ContentType">content type specifier</a>:
+  <li><a name="ref_ContentType"></a>content type specifier:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>C=type/subtype</tt></font> specifies what is the data type that the server accepts/generates.
      There is no default value for this flag.
   </ul>
-  <li><a name="ref_Bonus">local bonus coefficient</a>:
+  <li><a name="ref_Bonus"></a>local bonus coefficient:
   <ul type=bullet>
      <li><font color="#CC33CC"><tt>B=value</tt></font>. The interpretation of this flag depends on the sign of <tt>value</tt>. When positive,
      <tt>value</tt> specifies a multiplier, which applies to the server rate when the server is locally run.
@@ -270,7 +270,7 @@ logging due to the file size restriction.
 <hr>
 <p>
 
-<h2><a name="ref_Example">Example of Configuration File</a></h2>
+<a name="ref_Example"></a><h2>Example of Configuration File</h2>
 
 Below is an excerpt from sample configuration file, which declares some of the host environment,
 advertizes one standalone stateful server, and one <tt>NCBID</tt> service, both implementing the same
@@ -313,7 +313,7 @@ by clicking <a href="http://pluto.nlm.nih.gov/Service/lbsmd.cgi?cfg">here</a>.
 
 <p><hr><p>
 
-<h2><a name="ref_Client">Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</a></h2>
+<a name="ref_Client"></a><h2>Load-Balancing Service Mapping Client (<tt>LBSMC</tt>)</h2>
 
 This is a special <a href="../../lxr/source/src/connect/daemons/lbsmc.c">program</a>, which repeatedly
 dumps onto the screen a table representing current contents of shared memory segment, where the daemon
@@ -345,7 +345,7 @@ For NCBI Intranet users <i>only</i> the following live lists are available for b
 
 <p><hr><p>
 
-<h2><a name="ref_Penalizer">Server Penalizer</a></h2>
+<a name="ref_Penalizer"></a><h2>Server Penalizer</h2>
 
 There is a means for application to report problems of accessing a certain server back to
 the load-balancing daemon, in the form of the penalty, a value in the range <tt>[0..100]</tt>,

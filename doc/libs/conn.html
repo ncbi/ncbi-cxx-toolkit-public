@@ -31,7 +31,7 @@ inside NCBI users at:
 <p>
 <hr>
 
-<h2><a name="ref_Overview">Overview</a></h2>
+<a name="ref_Overview"></a><h2>Overview</h2>
 
 NCBI C++ platform-independent
 connection library (<a href="../lxr/source/src/connect"><i><b>src/connect</b></i></a>
@@ -64,7 +64,7 @@ Well-commented API can be found in
 <hr>
 
 
-<h2><a name="ref_Connections">Connections</a></h2>
+<a name="ref_Connections"></a><h2>Connections</h2>
 
 There are 3 simple types of connections: <i>socket</i>, <i>file</i> and
 <i>http</i>; and one hybrid type, <i>service</i> connection.
@@ -96,7 +96,7 @@ return I/O completion status of type <a href="../lxr/ident?i=EIO_Status"><i><b>E
 Normal completion has code <i><b>eIO_Success</b></i>.
 <ul>
 
-<li> <a name="CONN_Read"><a href="../lxr/ident?i=CONN_Read"><i><b>CONN_Read</i></b></a>&nbsp;<tt>(CONN conn, void* buf, size_t bufsize, size_t* n_read, EIO_ReadMethod how);</tt></a><br>
+<li> <a name="CONN_Read"></a><a href="../lxr/ident?i=CONN_Read"><i><b>CONN_Read</i></b></a>&nbsp;<tt>(CONN conn, void* buf, size_t bufsize, size_t* n_read, EIO_ReadMethod how);</tt><br>
 Read or peek data, depending on read method <tt>how</tt>, up to <tt>bufsize</tt> bytes from connection to specified buffer
 <tt>buf</tt>, return (via pointer argument <tt>n_read</tt>) the number of actually read bytes. The last argument
 <tt>how</tt> can be one of the following:
@@ -117,7 +117,7 @@ the number of actually written data, and completion code as a return value.
 <li> <a href="../lxr/ident?i=CONN_Flush"><i><b>CONN_Flush</b></i></a>&nbsp;<tt>(CONN conn);</tt><br>
 Flush internal output queue, if this is supported by the current connection type.
 
-<li> <a name="CONN_SetTimeout"><a href="../lxr/ident?i=CONN_SetTimeout"><i><b>CONN_SetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action, const STimeout* timeout);</tt></a><br>
+<li> <a name="CONN_SetTimeout"></a><a href="../lxr/ident?i=CONN_SetTimeout"><i><b>CONN_SetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action, const STimeout* timeout);</tt><br>
 Set the timeout on the specified I/O action, <a href="../lxr/ident?i=EIO_Event"><i><b>eIO_Read</b></i></a>, <i><b>eIO_Write</b></i>,
 <i><b>eIO_ReadWrite</b></i>, <i><b>eIO_Open</b></i>, and <i><b>eIO_Close</b></i>. The latter 2 actions are
 used in a phase of opening and closing the link, respectively: if connection
@@ -128,7 +128,7 @@ the <tt>NULL</tt>-pointer. This special case denotes an infinite value for that 
 Also, a special value <tt>CONN_DEFAULT_TIMEOUT</tt> may be used for any timeout.
 This value specifies the timeout set by default for the current connection type.
 
-<li> <a name="CONN_GetTimeout"><a href="../lxr/ident?i=CONN_GetTimeout"><i><b>CONN_GetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action);</tt></a><br>
+<li> <a name="CONN_GetTimeout"></a><a href="../lxr/ident?i=CONN_GetTimeout"><i><b>CONN_GetTimeout</b></i></a>&nbsp;<tt>(CONN conn, EIO_Event action);</tt><br>
 Obtain (via return value of type <b><i>const <a href="../lxr/ident?i=STimeout">STimeout</a>*</i></b>)
 timeouts set by <a href="#CONN_SetTimeout"><i><b>CONN_SetTimeout()</b></i></a> routine, or active by default
 (i.e. special value <tt>CONN_DEFAULT_TIMEOUT</tt>).
@@ -136,7 +136,7 @@ timeouts set by <a href="#CONN_SetTimeout"><i><b>CONN_SetTimeout()</b></i></a> r
 <u>Caution</u>: Returned pointer valid only for the time the connection
 handle is valid, i.e. up to a call to <a href="#CONN_Close"><i><b>CONN_Close()</b></i></a>.
 
-<li> <a name="CONN_ReInit"><a href="../lxr/ident?i=CONN_ReInit"><i><b>CONN_ReInit</b></i></a>&nbsp;<tt>(CONN conn, CONNECTOR replacement);</tt></a><br>
+<li> <a name="CONN_ReInit"></a><a href="../lxr/ident?i=CONN_ReInit"><i><b>CONN_ReInit</b></i></a>&nbsp;<tt>(CONN conn, CONNECTOR replacement);</tt><br>
 This function allows to clear current contents of a
 connection, and "immerse" a new connector into it.
 Previous connector (if any) is closed first (if open),
@@ -165,12 +165,12 @@ handy. When inquired about read operation, return value <i><b>eIO_Closed</b></i>
 <tt>EOF</tt> was actually hit while making the peek, and those 10 bytes are in fact the only data
 left untaken, no more are expected to come.
 
-<li> <a name="CONN_Close"><a href="../lxr/ident?i=CONN_Close"><i><b>CONN_Close</b></i></a>&nbsp;<tt>(CONN conn);</tt></a><br>
+<li> <a name="CONN_Close"></a><a href="../lxr/ident?i=CONN_Close"><i><b>CONN_Close</b></i></a>&nbsp;<tt>(CONN conn);</tt><br>
 Close the connection by closing the link (if open), deleting underlying
 connector(s) (if any) and the connection itself. Regardless of the return status (which may indicate certain problems),
 the connection handle becomes invalid and cannot be used in the program again.
 
-<li> <a name="CONN_GetType"><a href="../lxr/ident?i=CONN_GetType"><i><b>CONN_GetType</b></i></a>&nbsp;<tt>(CONN conn);</tt></a><br>
+<li> <a name="CONN_GetType"></a><a href="../lxr/ident?i=CONN_GetType"><i><b>CONN_GetType</b></i></a>&nbsp;<tt>(CONN conn);</tt><br>
 Return character string (0-terminated), verbally representing the current
 connection type, like <tt>"HTTP"</tt>, <tt>"SOCKET"</tt>, <tt>"SERVICE/HTTP"</tt> etc. Unknown connection
 type gets returned as <tt>NULL</tt>.
@@ -220,7 +220,7 @@ or explicitly with a call to <i><b>CONN_ReInit()</b></i> provided that replacing
 <hr>
 
 
-<h3><a name="ref_SocketConnector">Socket connector</a></h3>
+<a name="ref_SocketConnector"></a><h3>Socket connector</h3>
 
 Constructors are defined in:
 <pre>
@@ -271,7 +271,7 @@ the link has been established.
 <hr>
 
 
-<h3><a name="ref_FileConnector">File connector</a></h3>
+<a name="ref_FileConnector"></a><h3>File connector</h3>
 
 Constructors defined in:
 <pre>
@@ -300,7 +300,7 @@ beginning of the input file, and entirely overwrites the output file (if any) im
 <hr>
 
 
-<h3><a name="ref_HTTPConnector">HTTP connector</a></h3>
+<a name="ref_HTTPConnector"></a><h3>HTTP connector</h3>
 
 Constructors defined in:
 <pre>
@@ -342,12 +342,12 @@ typedef struct {
   unsigned int   max_try;          /* max. # of attempts to establish conn */
   char           http_proxy_host[64];  /* hostname of HTTP proxy server    */
   unsigned short http_proxy_port;      /* port #   of HTTP proxy server    */
-  char           <a name="ref_ProxyHost">proxy_host[64];</a>   /* host of CERN-like firewall proxy srv */
+  char           <a name="ref_ProxyHost"></a>proxy_host[64];   /* host of CERN-like firewall proxy srv */
   <a href="../lxr/ident?i=EDebugPrintout">EDebugPrintout</a> debug_printout;   /* printout some debug info             */
   int/*bool*/    stateless;        /* to connect in HTTP-like fashion only */
   int/*bool*/    firewall;         /* to use firewall/relay in connects    */
-  int/*bool*/    <a name="ref_LbDisable">lb_disable</a>;       /* to disable local load-balancing      */
-  const char*    <a name="ref_HttpUserHeader">http_user_header</a>; /* user header to add to HTTP request   */
+  int/*bool*/    <a name="ref_LbDisable"></a>lb_disable;       /* to disable local load-balancing      */
+  const char*    <a name="ref_HttpUserHeader"></a>http_user_header; /* user header to add to HTTP request   */
   
   /* the following field(s) are for the internal use only! */
   int/*bool*/    http_proxy_adjusted;
@@ -361,13 +361,13 @@ is assumed to be dynamically allocated on the heap
 like <tt>strdup</tt>).
 
 <p>
-<a name="ref_SConnNetInfo">While</a> the user can create and fill out this structure via field-by-field assignments,
+<a name="ref_SConnNetInfo"></a>While the user can create and fill out this structure via field-by-field assignments,
 there is however a better, easier, much safer and configurable way (and interface
 defined in <a href="../lxr/source/include/connect/ncbi_connutil.h"><i><b>connect/ncbi_connutil.h</b></i></a>)
 to deal with this structure:
 
 <ul>
-<li> <a name="ref_ConnNetInfo_Create"><a href="../lxr/ident?i=ConnNetInfo_Create"><i><b>ConnNetInfo_Create</b></i></a></a>&nbsp;<tt>(const char* service)</tt><br>
+<li> <a name="ref_ConnNetInfo_Create"></a><a href="../lxr/ident?i=ConnNetInfo_Create"><i><b>ConnNetInfo_Create</b></i></a>&nbsp;<tt>(const char* service)</tt><br>
   Create and return a pointer to new <tt>SConnNetInfo</tt> structure, filled with
   parameters specific either for a named <tt>service</tt> or by default if <tt>service</tt> specified as <tt>NULL</tt> (most likely
   the case for ordinary HTTP connections). Parameters for the structure are taken from (in order of precedence):<ul>
@@ -403,7 +403,7 @@ to deal with this structure:
 </ul>
 
 <ol>
-<a name="ref_Registry"><b><u>Note about the registry</u></b></a>. The registry used by <tt>connect</tt> library is
+<a name="ref_Registry"></a><b><u>Note about the registry</u></b>. The registry used by <tt>connect</tt> library is
 separate from <a href="../programming_manual/registry.html"><b><i>CNcbiRegistry</i></b></a> class.
 Namely, in order to be included in <i>both</i> C <i>and</i> C++ NCBI Toolkits, <tt>connect</tt> library
 uses another <a href="../lxr/ident?i=REG">registry</a> (C structure), called C registry and defined in
@@ -456,7 +456,7 @@ Argument <tt>flags</tt> in the HTTP connector's constructor is a bitwise <tt>OR<
   Always flush a request (maybe solely consisting of HTTP header with
   no body at all) down to the HTTP server before preforming any read
   or close operations.
-<li> <a name="fHCC_KeepHeader"><i><b>fHCC_KeepHeader</b></i></a><br>
+<li> <a name="fHCC_KeepHeader"></a><i><b>fHCC_KeepHeader</b></i><br>
   By default, HTTP connection sorts out the HTTP header and parses
   HTTP errors (if any). Thus, normally reading from the connection returns
   data from the HTTP body only. The flag disables this feature, and the HTTP
@@ -563,7 +563,7 @@ is foreseen by the application, and default behavior occurs.
 <hr>
 
 
-<h3><a name="ref_ServiceConnector">Service connector</a></h3>
+<a name="ref_ServiceConnector"></a><h3>Service connector</h3>
 
 Constructors defined in:
 <pre>
@@ -608,7 +608,7 @@ error replies are actually sent from different hosts, so is the successful proce
 first link done by one of several hosts running the bouncing service).
 
 <p>
-<a name="ref_dispd_cgi"><a href="../tools/dispatcher/DISPD.html">Dispatching protocol</a></a>&nbsp;<i>per se</i> is implemented on top of the HTTP protocol, and is parsed by a
+<a name="ref_dispd_cgi"></a><a href="../tools/dispatcher/DISPD.html">Dispatching protocol</a>&nbsp;<i>per se</i> is implemented on top of the HTTP protocol, and is parsed by a
 CGI program <a href="../lxr/source/src/connect/daemons/dispd_cgi.c"><tt>dispd.cgi</tt></a> (or another dispatching CGI), which is
 available on the NCBI Web. On every server running the named services, another program, called
 <a href="../tools/dispatcher/LBSMD.html">load-balancing daemon</a>&nbsp; (<a href="../lxr/source/src/connect/daemons/lbsmd.c"><tt>lbsmd</tt></a>),
@@ -619,7 +619,7 @@ the client request can be passed, or a dedicated connection to the server can be
 can be also used directly from the Internet browsers.
 
 <p>
-The named service facility uses the following distinction of <a name="ref_ServerTypes">server types</a>:
+The named service facility uses the following distinction of <a name="ref_ServerTypes"></a>server types:
 <ul>
 <li>HTTP servers, which are usually CGI programs:
   <ul>
@@ -751,7 +751,7 @@ firewall mode regardless of the network parameters, loaded via <b><i>SConnNetInf
 <hr>
 
 
-<h2><a name="ref_CxxConnectionStreams">C++ Connection Streams</a></h2>
+<a name="ref_CxxConnectionStreams"></a><h2>C++ Connection Streams</h2>
 
 Using connections and connectors (in its most entirely procedural approach)
 in C++ programs overkills the power of the language.
@@ -788,7 +788,7 @@ description into the log file (<tt>cerr</tt>, by default).
 <hr>
 
 
-<h2><a name="ref_ServiceAPI">Service mapping API</a></h2>
+<a name="ref_ServiceAPI"></a><h2>Service mapping API</h2>
 
 The API defined in <a href="../lxr/source/include/connect/ncbi_service.h"><b><i>connect/ncbi_service.h</i></b></a>
 maps required sevice name into server address. Internally, the mapping is done <a href="#ref_DirectIndirect">either directly or indirectly</a> by means of
@@ -866,7 +866,7 @@ If the server descriptor was obtained using dispatching CGI (<a href="#ref_Direc
 then the host enrivonment is always returned as <tt>NULL</tt> (no host environment available).
 
 <p>
-<a name="ref_DirectIndirect">The</a> back end of the service mapping API is split into 2 independent parts: <i><u>direct</u></i> access to
+<a name="ref_DirectIndirect"></a>The back end of the service mapping API is split into 2 independent parts: <i><u>direct</u></i> access to
 <a href="../tools/dispatcher/LBSMD.html"><tt>LBSMD</tt></a>, if the one is both available on the current host and is not
 disabled by parameter <a href="#ref_LbDisable"><tt>lb_disable</tt></a> at the iterator opening. If <tt>LBSMD</tt> is either unavailable
 or disabled, the second (<u><i>indirect</i></u>) part of the back-end API is used, which involves connection to
@@ -880,7 +880,7 @@ from the environment.<br>
 not be resolved (due to service inexistence or other error) with the use of locally found <tt>LBSMD</tt>.
 
 <p>
-<a name="ref_Example">The following code example</a> uses both <a href="#ref_ServiceConnector">service connector</a> and the service
+<a name="ref_Example"></a>The following code example uses both <a href="#ref_ServiceConnector">service connector</a> and the service
 mapping API to access certain service using an alternate way (other than connector's default) of choosing appropriate servers.
 By default, service connector opens an internal service iterator and then tries to connect to the next server,
 which <b><i>SERV_GetNextInfo()</i></b> returns when given the iterator. That is, the server with higher rate is

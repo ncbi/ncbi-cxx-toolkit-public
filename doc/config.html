@@ -1232,9 +1232,9 @@ we have a manually maintained <i><b>compilers/ncbiconf.mac</b></i>
 
 <p>
 <br>
-<a name="ref_Reconf">
+<a name="ref_Reconf"></a>
 <h2>Quick reconfiguration</h2>
-</a>
+
 
 <p>
 Sometimes, you change or add <i>configurables</i> (<i><b>*.in</b></i>
@@ -1286,9 +1286,8 @@ arguments as were provided during the original configuration) is the slowest.
 
 <p>
 <br>
-<a name="ref_Example">
+<a name="ref_Example"></a>
 <h2>An example of configuration, installation and build</h2>
-</a>
 
 To retrieve, configure, install and build all available NCBI C++ projects:
 
@@ -1315,8 +1314,8 @@ make all_r
 
 
 <br>
-<a name="ref_Compilers"><h2>List of supported compilers</h2>
-</a>
+<a name="ref_Compilers"></a>
+<h2>List of supported compilers</h2>
 
 <p>
 As for now, at least the following compilers give enough support
@@ -1423,16 +1422,16 @@ directories.
 
 <p>
 <br>
-<a name="ref_AdHoc"><h2>Ad-hoc installations</h2>
-</a>
+<a name="ref_AdHoc"></a>
+<h2>Ad-hoc installations</h2>
 
 <p>
-<a name="ref_MsvcProj"><h3>MS Visual C++</h3>
-</a>
+<a name="ref_MsvcProj"></a>
+<h3>MS Visual C++</h3>
 
 <p>
-<a name="ref_MsvcProjDownload"><h4>Getting the Toolkit sources</h4>
-</a>
+<a name="ref_MsvcProjDownload"></a>
+<h4>Getting the Toolkit sources</h4>
 
 <p>
 
@@ -1457,8 +1456,9 @@ Suppose you are going to deploy the NCBI C++ tree to your local PC, in directory
 
 
 <p>
-<a name="ref_MsvcProjFiles"><h4>Working with NCBI C++ project files</h4>
-</a>
+<a name="ref_MsvcProjFiles"></a>
+<h4>Working with NCBI C++ project files</h4>
+
 Project files for NCBI C++ Toolkit are now generated automatically from the template project files,
 which are kept in the CVS repository. Click <a href="msvc_prj.html">here</a> to know how this is done, or
 if you wish to modify and/or add the NCBI C++ Toolkit project files.
@@ -1479,8 +1479,8 @@ There is a short summary:
 </ul>
 
 <p>
-<a name="ref_MsvcProjTree"><h4>Building the whole NCBI C++ tree locally</h4>
-</a>
+<a name="ref_MsvcProjTree"></a>
+<h4>Building the whole NCBI C++ tree locally</h4>
 
 <p>
 Now, if you want to use MS Visual C++ IDE to work with these sources, then you have to do exactly the following:
@@ -1533,8 +1533,8 @@ After the installation is complete you can build the Toolkit projects in two dif
 
 
 <p>
-<a name="ref_MsvcProjCXX"><h4>Using pre-built NCBI C++ Toolkit in your projects</h4>
-</a>
+<a name="ref_MsvcProjCXX"></a>
+<h4>Using pre-built NCBI C++ Toolkit in your projects</h4>
 
 <p>
 If you don't want to build the whole NCBI C++ tree, but just
@@ -1577,8 +1577,8 @@ to make sure that it is built compatible with the chosen NCBI C++ libraries.
 
 
 <p>
-<a name="ref_MsvcProjWxwin"><h4>Using wxWindows</h4>
-</a>
+<a name="ref_MsvcProjWxwin"></a>
+<h4>Using wxWindows</h4>
 
 <p>
 The pre-built versions of this library (<a href="wxwin_setup.html">modified</a> to suit certain requirements),
@@ -1665,7 +1665,7 @@ Instead,
 </ol>
 
 <p>
-<a name="refWxwinPaths">All <i>our</i> project files</a> (which are provided for the projects
+<a name="refWxwinPaths"></a>All <i>our</i> project files (which are provided for the projects
 using wxWindows) contain both relative and absolute paths to, correspondingly, both local
 (installed by you, as described above) and pre-built (<tt>\\DIZZY\public\wxwin</tt>) versions of libraries and
 include files, in this order, i.e. the local copy (if any) takes precedence.
@@ -1679,8 +1679,8 @@ to make sure that it is built compatible with the chosen libraries.
 
 
 <p>
-<a name="ref_MsvcProjC"><h4>Using NCBI C Toolkit</h4>
-</a>
+<a name="ref_MsvcProjC"></a>
+<h4>Using NCBI C Toolkit</h4>
 
 <p>
 There are projects (such as <b>tool</b>, <b>xasn</b> and <b>xhist</b>) that engage the
@@ -1723,8 +1723,8 @@ both paths (relative and absolute) for both include files and libraries.
 Please refer to the following section for mandatory project settings.
 
 <p>
-<a name="ref_MsvcProjSettings"><h4>Mandatory project settings (RTTI, MT-safety)</h4>
-</a>
+<a name="ref_MsvcProjSettings"></a>
+<h4>Mandatory project settings (RTTI, MT-safety)</h4>
 
 <p>
 When you compose your own, out-of-the-tree projects, which use pre-built C/C++ Toolkit or wxWindows
@@ -1744,12 +1744,12 @@ you have to make sure that your projects are built in MT-safe mode as well.
 
 
 <p>
-<a name="ref_Mac"><h3>Macintosh</h3>
-</a>
+<a name="ref_Mac"></a>
+<h3>Macintosh</h3>
 
 <p>
-<a name="ref_MacProjDownload"><h4>Getting the Toolkit sources</h4>
-</a>
+<a name="ref_MacProjDownload"></a>
+<h4>Getting the Toolkit sources</h4>
 
 
 <p>
@@ -1772,8 +1772,8 @@ Suppose you need to deploy the NCBI C++ tree to your local Mac, in directory
 
 
 <p>
-<a name="ref_MacProjTree"><h4>Building the whole NCBI C++ tree locally</h4>
-</a>
+<a name="ref_MacProjTree"></a>
+<h4>Building the whole NCBI C++ tree locally</h4>
 
 The directions are <a href="config_mac.html">here</a>.
 

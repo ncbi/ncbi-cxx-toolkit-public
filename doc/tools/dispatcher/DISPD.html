@@ -23,7 +23,7 @@ inside NCBI users at:
 
 <p><hr><p>
 
-<h2><a name="ref_Overview">Overview</a></h2>
+<a name="ref_Overview"></a><h2>Overview</h2>
 
 <tt>DISPD.CGI</tt> is a CGI/1.0-compliant program, the purpose of which
 is to map requested service name to an actual server location,
@@ -40,7 +40,7 @@ data flow between the client and the server occurs separately at a later stage.
 
 <p><hr><p>
 
-<h2><a name="ref_Protocol">Protocol Description</a></h2>
+<a name="ref_Protocol"></a><h2>Protocol Description</h2>
 
 Dispatching protocol is designed as an extension to HTTP/1.0 and is coded in the
 HTTP header parts of the packets. The request (both <i>dispatching</i>
@@ -110,7 +110,7 @@ can narrow the server search; for example, by choosing
   <i>&lt;client-mode></i></font></tt>
   <br>where <tt><i>&lt;client-mode></i></tt> can be one of the following:
   <ul type="square">
-    <li><a name="ref_Stateless"><tt><font color="#CC33CC">STATELESS_ONLY</font></tt></a></li> -
+    <li><a name="ref_Stateless"></a><tt><font color="#CC33CC">STATELESS_ONLY</font></tt></li> -
     specifies that the client is not capable of
     doing full-duplex data exchange with the server (e.g. in a dedicated
     connection).
@@ -216,7 +216,7 @@ can narrow the server search; for example, by choosing
 
 <p><hr><p>
 
-<h2><a name="ref_Communication">Communication Schemes</a></h2>
+<a name="ref_Communication"></a><h2>Communication Schemes</h2>
 
 After making <i>dispatching</i> request and using the dispatching information returned,
 often the client can connect to the server on its own. Sometimes however, the client has
@@ -304,7 +304,7 @@ doing both <i>relaying</i> and <i>firewalling</i>.
 
 <p><hr><p>
 
-<h2><a name="ref_NCBID">Service Launcher (<tt>NCBID.CGI</tt>)</a></h2>
+<a name="ref_NCBID"></a><h2>Service Launcher (<tt>NCBID.CGI</tt>)</h2>
 
 There are servers of type <a href="LBSMD.html#ref_ServerType"><tt>NCBID</tt></a>, which
 are really programs that read requests from <tt>stdin</tt> and write replies into
