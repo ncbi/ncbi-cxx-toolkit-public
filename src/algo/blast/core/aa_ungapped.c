@@ -36,7 +36,7 @@ static inline Int4 DiagGetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, In
 
 static inline Int4 DiagSetLastHit(BLAST_DiagTablePtr diag, Int4 query_offset, Int4 subject_offset);
 
-static void BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_off, Int4 s_off, Int4 len, Int4 score);
+static void BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start, Int4 q_off, Int4 s_off, Int4 len, Int4 score);
 
 /*
  * this is currently somewhat broken since the diagonal array is NULL
@@ -175,9 +175,11 @@ while(first_offset <= last_offset)
 
 	    /* if the hsp meets the score threshold, report it */
 	    
-	      if (score > cutoff)
-                BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, hsp_len, score);
-              /* end two-hit extension case */
+            if (score > cutoff) {
+                BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s,
+                   query_offsets[i], subject_offsets[i], hsp_len, score);
+            }
+            /* end two-hit extension case */
 	  } else if (diff >= window) {
              /* Update level, but only if it is a new hit */
              DiagUpdateLevel(diag, query_offsets[i], subject_offsets[i], 
@@ -257,13 +259,11 @@ while(first_offset <= last_offset)
 
 
 	/* if the hsp meets the score threshold, report it */
-	if (score > cutoff)
-            BlastAaSaveInitHsp(ungapped_hsps,
-                                hsp_q,
-                                hsp_s,
-                                hsp_len,
-                                score);
-	i++;
+          if (score > cutoff) {
+            BlastAaSaveInitHsp(ungapped_hsps, hsp_q, hsp_s, query_offsets[i],
+               subject_offsets[i], hsp_len, score);
+          }
+          i++;
 	}
 
     } /* end while */
@@ -344,14 +344,16 @@ static inline Int4 DiagCheckLevel(BLAST_DiagTablePtr diag, Int4 query_offset, In
     return subject_offset - level;
 }
 
-static void BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_off, Int4 s_off, Int4 len, Int4 score)
+static void 
+BlastAaSaveInitHsp(BlastInitHitListPtr ungapped_hsps, Int4 q_start, Int4 s_start, 
+   Int4 q_off, Int4 s_off, Int4 len, Int4 score)
 {
   BlastUngappedDataPtr ungapped_data = NULL;
 
   ungapped_data = (BlastUngappedDataPtr) Malloc(sizeof(BlastUngappedData));
 
-  ungapped_data->q_start = q_off;
-  ungapped_data->s_start = s_off;
+  ungapped_data->q_start = q_start;
+  ungapped_data->s_start = s_start;
   ungapped_data->length  = len;
   ungapped_data->score   = score;
   ungapped_data->frame   = 0;
@@ -385,9 +387,6 @@ Int4 BlastAaExtendRight(Int4 ** matrix,
 
       if (score > maxscore)
 	maxscore = score;
-
-      if (score < 0)
-	break;
 
       if ((maxscore - score) > dropoff)
 	break;
@@ -423,9 +422,6 @@ Int4 BlastAaExtendLeft(Int4 ** matrix,
 
       if (score > maxscore)
 	maxscore = score;
-
-      if (score < 0)
-	break;
 
       if ((maxscore - score) > dropoff)
 	break;
@@ -500,8 +496,8 @@ left_score=BlastAaExtendLeft(matrix,
 right_score=BlastAaExtendRight(matrix,
 			       subject,
 			       query,
-			       s_right_off,
-			       q_right_off,
+			       s_right_off + 1,
+			       q_right_off + 1,
 			       dropoff,
 			       &right_d);
 
