@@ -265,6 +265,7 @@ enum EErrType {
     eErr_SEQ_FEAT_ConflictFlagSet,
     eErr_SEQ_FEAT_LocusTagProblem,
     eErr_SEQ_FEAT_AltStartCodon,
+    eErr_SEQ_FEAT_GenesInconsistent,
 
     eErr_SEQ_ALIGN_SeqIdProblem,
     eErr_SEQ_ALIGN_StrandRev,
@@ -669,6 +670,7 @@ private:
     void ValidateGraphValues(const CSeq_graph& graph, const CBioseq& seq);
     void ValidateMinValues(const CByte_graph& bg);
     void ValidateMaxValues(const CByte_graph& bg);
+    void ValidatemRNABioseqContext(const CBioseq_Handle& seq);
     bool GetLitLength(const CDelta_seq& delta, TSeqPos& len);
     bool IsSuportedGraphType(const CSeq_graph& graph) const;
     SIZE_TYPE GetSeqLen(const CBioseq& seq);
@@ -927,6 +929,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.60  2004/03/25 18:32:26  shomrat
+* + ValidatemRNABioseqContext()
+*
 * Revision 1.59  2004/03/19 14:48:14  shomrat
 * + SEQ_FEAT_PartialsInconsistent
 *

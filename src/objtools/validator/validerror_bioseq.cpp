@@ -638,6 +638,60 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
     ValidateGraphsOnBioseq(seq);
 
     CheckTpaHistory(seq);
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( IsMrna(bsh) ) {
+        ValidatemRNABioseqContext(bsh);
+    }
+}
+
+
+static bool s_EqualGene_ref(const CGene_ref& genomic, const CGene_ref& mrna)
+{
+    bool locus = (!genomic.CanGetLocus()  &&  !mrna.CanGetLocus())  ||
+        (genomic.CanGetLocus()  &&  mrna.CanGetLocus()  &&
+        genomic.GetLocus() == mrna.GetLocus());
+    bool allele = (!genomic.CanGetAllele()  &&  !mrna.CanGetAllele())  ||
+        (genomic.CanGetAllele()  &&  mrna.CanGetAllele()  &&
+        genomic.GetAllele() == mrna.GetAllele());
+    bool desc = (!genomic.CanGetDesc()  &&  !mrna.CanGetDesc())  ||
+        (genomic.CanGetDesc()  &&  mrna.CanGetDesc()  &&
+        genomic.GetDesc() == mrna.GetDesc());
+    bool locus_tag = (!genomic.CanGetLocus_tag()  &&  !mrna.CanGetLocus_tag())  ||
+        (genomic.CanGetLocus_tag()  &&  mrna.CanGetLocus_tag()  &&
+        genomic.GetLocus_tag() == mrna.GetLocus_tag());
+
+    return locus  &&  allele  &&  desc  && locus_tag;
+}
+
+
+void CValidError_bioseq::ValidatemRNABioseqContext(const CBioseq_Handle& seq)
+{
+    // check that there is no conflict between the gene on the genomic 
+    // and the gene on the mrna.
+    const CSeq_feat* mrna = GetmRNAForProduct(seq);
+    const CGene_ref* genomicgrp = 0;
+    if ( mrna != 0 ) {
+        genomicgrp = mrna->GetGeneXref();
+        if ( genomicgrp == 0 ) {
+            const CSeq_feat* gene = 
+                GetOverlappingGene(mrna->GetLocation(), *m_Scope);
+            if ( gene != 0 ) {
+                genomicgrp = &gene->GetData().GetGene();
+            }
+        }
+        if ( genomicgrp != 0 ) {
+            CFeat_CI mrna_gene(seq, 0, 0, CSeqFeatData::e_Gene);
+            if ( mrna_gene ) {
+                const CGene_ref& mrnagrp = mrna_gene->GetData().GetGene();
+                if ( !s_EqualGene_ref(*genomicgrp, mrnagrp) ) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_GenesInconsistent,
+                        "Gene on mRNA bioseq does not match gene on genomic bioseq",
+                        mrna_gene->GetOriginalFeature());
+                }
+            }
+        }
+    }
 }
 
 
@@ -3502,6 +3556,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.66  2004/03/25 18:33:07  shomrat
+* + ValidatemRNABioseqContext()
+*
 * Revision 1.65  2004/03/24 18:58:14  vasilche
 * Fixed for new API.
 *
