@@ -93,6 +93,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(validator)
 using namespace sequence;
+using namespace feature;
 
 
 // =============================================================================
@@ -266,11 +267,10 @@ void CValidError_bioseq::ValidateSeqIds
                         if (!(**k).IsDdbj()  ||
                             seq.GetInst().GetRepr() != CSeq_inst::eRepr_seg) {
                             CNcbiOstrstream os;
-                            os << "Missing accession for "
-                               << (**k).DumpAsFasta();
+                            os << "Missing accession for " << (**k).DumpAsFasta();
                             PostErr(eDiag_Error,
-                                    eErr_SEQ_INST_BadSeqIdFormat,
-                                    CNcbiOstrstreamToString(os), seq);
+                                eErr_SEQ_INST_BadSeqIdFormat,
+                                string(os.str()), seq);
                         }
                     }
                 }
@@ -547,65 +547,6 @@ TSeqPos CValidError_bioseq::GetDataLen(const CSeq_inst& inst)
 }
 
 
-// !!! TO BE REPLACED
-const CSeq_feat* CValidError_bioseq::GetCDSForProduct(const CBioseq& seq)
-{
-    // !!!
-    return 0;
-    /*
-     // Get id for CBioseq
-     const CSeq_id* id = seq.GetFirstId();
- 
-     // Return null poiner if no id
-     if (!id) {
-         return 0;
-     }
- 
-     CSeq_loc loc;
-     loc.SetWhole().Assign(*id);
-     CFeat_CI fi(*scope, loc, CSeqFeatData::e_Cdregion);
-     return &(*fi);
-     */
-}
-
-
-// !!! TO BE REPLACED
-// Gets a label for the gene sequence that produces the sequence seq.
-void CValidError_bioseq::GetGeneLabel(const CBioseq& seq, string* lbl)
-{
-    // !!!
-    return;
-}
-
-
-// Gets the label for a sequence -- used to get the label for a protein
-void CValidError_bioseq::GetSeqLabel
-(const CBioseq& seq,
- string*        lbl,
- const char*  default_label)
-{
-    if (!lbl) {
-        return;
-    }
-    // Get id for CBioseq
-    const CSeq_id* id = (*seq.GetId().begin()).GetPointer();
-
-    // Return if no id
-    if (!id) {
-        (*lbl) = default_label;
-        return;
-    }
-
-    // Get the protein label.
-    CBioseq_Handle hnd = m_Scope->GetBioseqHandle(*id);
-    (*lbl) = GetTitle(hnd);
-    if (lbl->empty()) {
-        (*lbl) = default_label;
-    }
-    return;
-}
-
-
 // Returns true if seq derived from translation ending in "*" or
 // seq is 3' partial (i.e. the right of the sequence is incomplete)
 bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
@@ -615,14 +556,14 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
     // Use the Cdregion to translate the associated na sequence
     // and check if translation has a '*' at the end. If it does.
     // message about 'X' at the end of this aa product sequence is suppressed
-    const CSeq_feat* fi = GetCDSForProduct(seq);
-    if ( fi ) {
+    const CSeq_feat* sfp = m_Imp.GetCDSGivenProduct(seq);
+    if ( sfp ) {
     
         // Get CCdregion 
-        CTypeConstIterator<CCdregion> cdr(ConstBegin(*fi));
+        CTypeConstIterator<CCdregion> cdr(ConstBegin(*sfp));
         
         // Get location on source sequence
-        const CSeq_loc& loc = (*fi).GetLocation();
+        const CSeq_loc& loc = sfp->GetLocation();
 
         // Get CBioseq_Handle for source sequence
         CBioseq_Handle hnd = m_Scope->GetBioseqHandle(loc);
@@ -631,7 +572,7 @@ bool CValidError_bioseq::SuppressTrailingXMsg(const CBioseq& seq)
         string prot;        
         CCdregion_translate::TranslateCdregion(prot, hnd, loc, *cdr);
         
-        if (!NStr::CompareCase(prot.substr(prot.size()-1, 1), "*")) {
+        if ( prot[prot.size() - 1] == '*' ) {
             return true;
         }
         return false;
@@ -666,42 +607,28 @@ bool CValidError_bioseq::GetLocFromSeq(const CBioseq& seq, CSeq_loc* loc)
 }
 
 
-// TO BE REPLACED
 // Check if CdRegion required but not found
 bool CValidError_bioseq::CdError(const CBioseq& seq)
 {
-    // !!!
-    /*
-    const CSeq_id* sid = seq.GetFirstId();
-     if ( seq.IsAa()  &&  sid ) {
-         const CSeq_entry* parent = seq.GetParentEntry();
-         const CSeq_entry* grand_parent;
-         if ( parent ) {
-             grand_parent = parent->GetParentEntry();
-         }
-         if ( grand_parent  &&  grand_parent->IsSet() ) {
-             const CBioseq_set& set = grand_parent->GetSet();
-             if ( set.IsSetClass()  &&
-                  set.GetClass() == CBioseq_set::eClass_nuc_prot ) {
-                 CTypeConstIterator<CSeq_feat> ft(ConstBegin(set));
-                 bool isFoundCd = false;
-                 for ( ; ft; ++ft ) {
-                     if ( ft->IsSetProduct()  &&
-                          ft->GetData().Which() == CSeqFeatData::e_Cdregion) {
-                         const CSeq_loc& loc = ft->GetProduct();
-                         const CSeq_id& lid = GetId(loc, scope);
-                         if ( IsSameBioseq(*sid, lid, scope) ) {
-                             isFoundCd = true;
-                             break;
-                         }
-                     }
-                 }
-                 return !isFoundCd;
-             }
-         }
-     }
-     */
-     return false;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh  &&  seq.IsAa() ) {
+        const CSeq_entry* nps = 
+            m_Imp.GetAncestor(seq, CBioseq_set::eClass_nuc_prot);
+        if ( nps ) {
+            CFeat_CI cds(bsh, 
+                         0, 0,
+                         CSeqFeatData::e_Cdregion,
+                         CAnnot_CI::eOverlap_Intervals,
+                         CFeat_CI::eResolve_TSE,
+                         CFeat_CI::e_Product,
+                         nps);  // restrict search to the nuc-prot set.
+            if ( cds ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 
@@ -1111,8 +1038,7 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
             termination = '\0';
         }
 
-        const CSeq_id* id = (*seq.GetId().begin()).GetPointer();
-        CSeqVector sv = m_Scope->GetBioseqHandle(*id).GetSeqVector();
+        CSeqVector sv = m_Scope->GetBioseqHandle(seq).GetSeqVector();
 
         unsigned int bad_cnt = 0;
         for (TSeqPos pos = 0; pos < sv.size(); pos++) {
@@ -1151,19 +1077,24 @@ void CValidError_bioseq::ValidateRawConst(const CBioseq& seq)
 
         if ( trailingX > 0 && !SuppressTrailingXMsg(seq) ) {
             // Suppress if cds ends in "*" or 3' partial
-            PostErr(eDiag_Warning, eErr_SEQ_INST_TrailingX,
-                "Sequence ends in " +
-                NStr::IntToString(trailingX) + " trailing X(s)",
-                seq);
+            string msg = "Sequence ends in " +
+                NStr::IntToString(trailingX) + " trailing X";
+            if ( trailingX > 1 ) {
+                msg += "s";
+            }
+            PostErr(eDiag_Warning, eErr_SEQ_INST_TrailingX, msg, seq);
         }
 
         if (terminations  && seqtyp != CSeq_data::e_Iupacna) {
             // Post error indicating terminations found in protein sequence
             // First get gene label
             string glbl;
-            GetGeneLabel(seq, &glbl);
+            seq.GetLabel(&glbl, CBioseq::eContent);         
             string plbl;
-            GetSeqLabel(seq, &plbl);
+            const CBioseq* nuc = GetNucGivenProt(seq);
+            if ( nuc ) {
+                nuc->GetLabel(&plbl, CBioseq::eContent);
+            }
             PostErr(eDiag_Error, eErr_SEQ_INST_StopInProtein,
                 NStr::IntToString(terminations) +
                 " termination symbols in protein sequence (" +
@@ -1224,7 +1155,7 @@ void CValidError_bioseq::ValidateSegRef(const CBioseq& seq)
                 if (IsSameBioseq(id1, id2, m_Scope)) {
                     CNcbiOstrstream os;
                     os << id1.DumpAsFasta();
-                    string sid = CNcbiOstrstreamToString(os);
+                    string sid(os.str());
                     if ((**i1).IsWhole()  &&  (**i2).IsWhole()) {
                         PostErr(eDiag_Error,
                             eErr_SEQ_INST_DuplicateSegmentReferences,
@@ -1571,19 +1502,28 @@ void CValidError_bioseq::CheckForPubOnBioseq(const CBioseq& seq)
 
 void CValidError_bioseq::ValidateMultiIntervalGene(const CBioseq& seq)
 {
-    // Create a loc for iterator
-    CSeq_loc loc;
-    CSeq_id& lid = loc.SetWhole();
-    const CSeq_id* sid = seq.GetFirstId();
-    if (!sid) {
-        return;
-    }
-    SerialAssign(lid, *sid);
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    
+    for ( CFeat_CI fi(bsh, 0, 0, CSeqFeatData::e_Gene); fi; ++fi ) {
+        CSeq_loc_CI si(fi->GetLocation());
 
-    // Loop through features on gene
-    for (CFeat_CI fit(*m_Scope, loc, CSeqFeatData::e_Gene);
-        fit; ++fit) {
-            // !!!
+        if ( !(++CSeq_loc_CI(si)) ) {  // if only a single interval
+            continue;
+        }
+        
+        EDiagSev sev = eDiag_Error;
+        if ( m_Imp.IsNC() ) {
+            sev = eDiag_Warning;
+        }
+        if ( seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular ) {
+            sev = eDiag_Info;
+        }
+
+        if ( sev != eDiag_Info ) {
+            PostErr(sev, eErr_SEQ_FEAT_MultiIntervalGene,
+              "Gene feature on non-segmented sequence should not "
+              "have multiple intervals", *fi);
+        }
     }
 }
 
@@ -1749,7 +1689,8 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(const CBioseq& bioseq)
                  curr_strand == eNa_strand_unknown  ||
                  prev_strand == eNa_strand_unknown  ) {
 
-                if ( IsEqualSeqAnnot(curr, prev)  ||
+                if ( (Compare(*curr_location, *prev_location) == eSame)  &&
+                     IsEqualSeqAnnot(curr, prev)  ||
                      IsEqualSeqAnnotDesc(curr, prev) ) {
                     severity = eDiag_Error;
 
@@ -1908,41 +1849,57 @@ public:
 };
 
 
-void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& ) //seq)
+void CValidError_bioseq::ValidateCollidingGeneNames(const CBioseq& seq)
 {
-    // !!!
-    /*
-    // Loop through features and insert into multimap sorted by
-    // feature label--case insensitive
-    typedef multimap<string, const CSeq_feat*, CNoCaseCompare> TSmap;
-    TSmap label_map;
+    typedef multimap<string, const CSeq_feat*, CNoCaseCompare> TStrFeatMap;
+
+    // Loop through genes and insert into multimap sorted by
+    // gene label--case insensitive
+    CFeat_CI fi(m_Scope->GetBioseqHandle(seq),
+                0, 0,
+                CSeqFeatData::e_Gene);
+    
+    TStrFeatMap label_map;
     string label;
-    for (CTypeConstIterator<CSeq_feat> ft(ConstBegin(seq)); ft; ++ft) {
+    for (; fi; ++fi) {
         label.erase();
-        feature::GetLabel(*ft, &label, feature::eContent, m_Imp.GetScope.GetPointer());
-        label_map.insert(TSmap::value_type(label, &*ft));
+        GetLabel(*fi, &label, feature::eContent, m_Scope);
+        label_map.insert(TStrFeatMap::value_type(label, &(*fi)));
     }
 
     // Iterate through multimap and compare labels
     bool first = true;
     const string* plabel;
-    iterate (TSmap, it, label_map) {
+    iterate (TStrFeatMap, it, label_map) {
         if (first) {
             first = false;
             plabel = &(it->first);
             continue;
         }
-        if (NStr::CompareCase(*plabel, it->first)) {
+        if ( NStr::Compare(*plabel, it->first) == 0 ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_CollidingGeneNames,
                 "Colliding names in gene features", *it->second);
-        } else if (NStr::CompareNocase(*plabel, it->first)) {
+        } else if ( NStr::CompareNocase(*plabel, it->first) == 0 ) {
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_CollidingGeneNames,
                 "Colliding names (with different capitalization) in gene"
                 "features", *it->second);
         }
         plabel = &(it->first);
     }
-    */
+}
+
+
+const CBioseq* CValidError_bioseq::GetNucGivenProt(const CBioseq& prot)
+{
+    const CSeq_feat* cds = m_Imp.GetCDSGivenProduct(prot);
+    if ( cds ) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(cds->GetLocation());
+        if ( bsh ) {
+            return &(bsh.GetBioseq());
+        }
+    }
+
+    return 0;
 }
 
 
@@ -1955,6 +1912,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.4  2003/01/02 22:14:52  shomrat
+* Add GetNucGivenProt; Implemented CdError, ValidateMultiIntervalGene; GetCDSGivenProduct moved to ValidError_imp
+*
 * Revision 1.3  2002/12/30 23:46:22  vakatov
 * Use "CNcbiOstrstreamToString" for more correct strstream-to-string conversion
 *
