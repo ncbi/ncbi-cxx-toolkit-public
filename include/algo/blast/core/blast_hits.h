@@ -353,7 +353,7 @@ Blast_HSPListReevaluateWithAmbiguities(BlastHSPList* hsp_list,
  * @param hsp_list New list of HSPs [in]
  * @param combined_hsp_list_ptr Pointer to the combined list of HSPs, possibly
  *                              containing previously saved HSPs [in] [out]
- * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if 0) [in]
+ * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if INT4_MAX) [in]
  * @return Status: 0 on success, -1 on failure.
  */ 
 Int2 Blast_HSPListAppend(BlastHSPList* hsp_list, 
@@ -364,7 +364,7 @@ Int2 Blast_HSPListAppend(BlastHSPList* hsp_list,
  * computed HSP list.
  * @param hsp_list Contains HSPs from the new chunk [in]
  * @param combined_hsp_list_ptr Contains HSPs from previous chunks [in] [out]
- * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if 0) [in]
+ * @param hsp_num_max Maximal allowed number of HSPs to save (unlimited if INT4_MAX) [in]
  * @param start Offset where the current subject chunk starts [in]
  * @param merge_hsps Should the overlapping HSPs be merged into one? [in]
  * @return 0 if HSP lists have been merged successfully, -1 otherwise.
