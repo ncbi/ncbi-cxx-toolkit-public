@@ -73,8 +73,8 @@ CAlnMix::~CAlnMix(void)
 
 
 inline
-bool CAlnMix::x_CompareAlnSeqScores(const CAlnMixSeq* aln_seq1,
-                                    const CAlnMixSeq* aln_seq2) 
+bool CAlnMix::x_CompareAlnSeqScores(const CRef<CAlnMixSeq>& aln_seq1,
+                                    const CRef<CAlnMixSeq>& aln_seq2) 
 {
     return aln_seq1->m_Score > aln_seq2->m_Score;
 }
@@ -2130,6 +2130,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.109  2004/10/12 19:55:14  rsmith
+* make x_CompareAlnSeqScores arguments match the container it compares on.
+*
 * Revision 1.108  2004/09/27 16:18:16  todorov
 * + truncate segments of sequences on multiple frames
 *
