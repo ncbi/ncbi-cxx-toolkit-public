@@ -1,4 +1,4 @@
---$Revision: 1.13 $
+--$Revision: 1.14 $
 --**********************************************************************
 --
 --  NCBI Sequence Feature elements
@@ -213,9 +213,10 @@ RNA-ref ::= SEQUENCE {
 
 Trna-ext ::= SEQUENCE {                -- tRNA feature extensions
     aa CHOICE {                         -- aa this carries
-        iupac INTEGER ,
-        iupace INTEGER ,
-        ncbi8 INTEGER } OPTIONAL ,
+        iupacaa INTEGER ,
+        ncbieaa INTEGER ,
+        ncbi8aa INTEGER ,
+		ncbistdaa INTEGER } OPTIONAL ,
     codon SET OF INTEGER OPTIONAL }     -- codon(s) as in Genetic-code
                                         -- NOT anti-codons
 END
