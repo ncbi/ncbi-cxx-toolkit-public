@@ -378,13 +378,13 @@ public:
     /// The fProgramPath flag works only inside CNcbiApplication framework.
     /// @sa
     ///   AddExtraDllPath, FindCandidates
-    enum {
+    enum EExtraDllPath {
         fNoExtraDllPath = 0,        //< Do not add
         fProgramPath    = 1 << 0,   //< Path to executable file
         fToolkitDllPath = 1 << 1,   //< Toolkit paths
         fSystemDllPath  = 1 << 2,   //< System paths
         fDefaultDllPath = fProgramPath | fToolkitDllPath | fSystemDllPath
-    } EExtraDllPath;
+    };
 
     typedef int TExtraDllPath;      //<  bitwise OR of "EExtraDllPath"
 
@@ -483,6 +483,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.24  2004/08/08 15:36:39  jcherry
+ * Fixed CDllResolver::EExtraDllPath
+ *
  * Revision 1.23  2004/08/06 11:25:38  ivanov
  * Extend CDllResolver to make it also look in "standard" places.
  * Added TExtraDllPath enum and AddExtraDllPath() method.
