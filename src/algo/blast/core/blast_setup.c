@@ -815,7 +815,7 @@ BLAST_GapAlignSetUp(Uint1 program_number,
                                query_info, ext_params);
 
    BlastHitSavingParametersNew(program_number, hit_options, *ext_params, 
-                               NULL, sbp, query_info, hit_params);
+                               sbp, query_info, hit_params);
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */

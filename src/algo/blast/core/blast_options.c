@@ -26,6 +26,9 @@
 **************************************************************************
  *
  * $Log$
+ * Revision 1.89  2004/03/11 20:41:49  camacho
+ * Remove dead code
+ *
  * Revision 1.88  2004/03/10 17:33:10  papadopo
  * Make a separate lookup table type for RPS blast
  *
@@ -1299,7 +1302,6 @@ Int2
 BlastHitSavingParametersNew(Uint1 program_number, 
    const BlastHitSavingOptions* options, 
    const BlastExtensionParameters* ext_params, 
-   int (*handle_results)(void*, void*, void*, void*, void*, void*, void*), 
    BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
    BlastHitSavingParameters* *parameters)
 {
@@ -1327,8 +1329,6 @@ BlastHitSavingParametersNew(Uint1 program_number,
       return 1;
 
    params->options = (BlastHitSavingOptions *) options;
-
-   params->handle_results = handle_results;
 
    /* If sum statistics use is forced by the options, 
       set it in the paramters */

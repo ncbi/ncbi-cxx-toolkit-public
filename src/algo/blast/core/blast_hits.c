@@ -884,11 +884,9 @@ static void InsertBlastHSPListInHeap(BlastHitList* hit_list,
  * of deletion.
  * @param hit_list Contains all HSP lists saved so far [in] [out]
  * @param hsp_list A new HSP list to be inserted into the hit list [in]
- * @param thr_info Thread information, containing the relevant mutexes [in]
 */
 static Int2 BLAST_UpdateHitList(BlastHitList* hit_list, 
-                                BlastHSPList* hsp_list, 
-                                BlastThrInfo* thr_info)
+                                BlastHSPList* hsp_list)
 {
    if (hit_list->hsplist_count < hit_list->hsplist_max) {
       /* If the array of HSP lists for this query is not yet allocated, 
@@ -958,13 +956,11 @@ static BlastHSPList* BlastHSPListDup(BlastHSPList* hsp_list)
    return new_hsp_list;
 }
 
-/* Documentation in blast_hits.h */
 Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
         BLAST_SequenceBlk* subject, BlastHSPResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
         BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
-        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
-        BlastThrInfo* thr_info)
+        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp)
 {
    Int2 status;
    BlastHSPList** hsp_list_array;
@@ -992,18 +988,6 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
       qsort(hsp_list->hsp_array, hsp_list->hspcnt, sizeof(BlastHSP*), 
                score_compare_hsps);
    }
-
-   /* *******************************************************************
-    * IF THERE WILL BE A CALLBACK TO FORMAT RESULTS ON THE FLY, IT SHOULD
-    * BE CALLED HERE.
-    * *******************************************************************/
-#if 0
-   /* FIXME: this is not implemented yet! */
-   if (hit_options->handle_results_method != 0) {
-      hit_parameters->handle_results(query, subject, hsp_list, hit_options,
-                                     query_info, sbp, rdfp);
-   }
-#endif
 
    /* Rearrange HSPs into multiple hit lists if more than one query */
    if (results->num_queries > 1) {
@@ -1057,7 +1041,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
                   BLAST_HitListNew(hit_options->prelim_hitlist_size);
             }
             BLAST_UpdateHitList(results->hitlist_array[index], 
-                                hsp_list_array[index], thr_info);
+                                hsp_list_array[index]);
          }
       }
       sfree(hsp_list_array);
@@ -1073,7 +1057,7 @@ Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query,
             BLAST_HitListNew(hit_options->prelim_hitlist_size);
       }
       BLAST_UpdateHitList(results->hitlist_array[0], 
-                          hsp_list, thr_info);
+                          hsp_list);
    }
    
    return status; 
@@ -1631,7 +1615,7 @@ void RPSUpdateResults(BlastHSPResults *final_result,
 
            if (hsplist[j]->hspcnt)
                BLAST_UpdateHitList(final_result->hitlist_array[0], 
-                                   hsplist[j], NULL);
+                                   hsplist[j]);
            else
                hsplist[j] = BlastHSPListFree(hsplist[j]);
        }

@@ -141,21 +141,6 @@ typedef struct DoubleInt {
  */
 #define BlastSeqLoc ListNode
 
-typedef struct BlastThrInfo {
-    Int4 oid_current; /**< Current ordinal id being worked on */
-    Int4 db_chunk_size; /**< Used if the db is smaller than 
-                             BLAST_DB_CHUNK_SIZE */
-    Int4 db_chunk_last; /**< The last db sequence to be assigned. Used only in 
-                             after the acquisition of the "db_mutex". */ 
-    Int4 final_db_seq; /**< The last sequence in the database to be compared 
-                          against */
-    Int4 number_seqs_done;  /**< Number of sequences already tested*/
-    Int4 db_incr;  /**< Size of a database chunk to get*/
-    Int4 last_db_seq; /**< Last database sequence processed so far */
-    Int4 number_of_pos_hits;/**< How many positive hits were found */
-    Boolean realdb_done; /**< Is processing of real database(s) done? */
-} BlastThrInfo;
-
 /** Return statistics from the BLAST search */
 typedef struct BlastReturnStat {
    Int8 db_hits; /**< Number of successful lookup table hits */

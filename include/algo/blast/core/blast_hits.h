@@ -154,14 +154,12 @@ typedef struct BlastHSPResults {
  * @param score_options Options related to scoring [in]
  * @param bssp Needed to extract the whole subject sequence with
  *             ambiguities [in]
- * @param thr_info Information shared between multiple search threads [in]
  */
 Int2 BLAST_SaveHitlist(Uint1 program, BLAST_SequenceBlk* query, 
         BLAST_SequenceBlk* subject, BlastHSPResults* results, 
         BlastHSPList* hsp_list, BlastHitSavingParameters* hit_parameters, 
         BlastQueryInfo* query_info, BlastScoreBlk* sbp, 
-        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp,
-        BlastThrInfo* thr_info);
+        const BlastScoringOptions* score_options, const BlastSeqSrc* bssp);
 
 /** Initialize the results structure.
  * @param num_queries Number of query sequences to allocate results structure

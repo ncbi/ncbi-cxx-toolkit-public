@@ -588,7 +588,7 @@ BLAST_RPSSearchEngine(Uint1 program_number,
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, &concat_db, query, &prelim_results,
          hsp_list, hit_params, &concat_db_info, gap_align->sbp,
-         internal_score_options, NULL, NULL);
+         internal_score_options, NULL);
    }
 
    /* Change the results from a single hsplist with many 
@@ -641,7 +641,6 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
    BlastHSPResults* results, BlastReturnStat* return_stats)
 {
    BlastCoreAuxStruct* aux_struct = NULL;
-   BlastThrInfo* thr_info = NULL;
    BlastHSPList* hsp_list; 
    BlastInitialWordParameters* word_params;
    BlastExtensionParameters* ext_params;
@@ -713,7 +712,7 @@ BLAST_DatabaseSearchEngine(Uint1 program_number,
          /* Save the HSPs into a hit list */
          BLAST_SaveHitlist(program_number, query, seq_arg.seq, results, 
             hsp_list, hit_params, query_info, gap_align->sbp, 
-            score_options, seq_src, thr_info);
+            score_options, seq_src);
       }
          /*BlastSequenceBlkClean(subject);*/
    }
@@ -802,7 +801,7 @@ BLAST_TwoSequencesEngine(Uint1 program_number,
       /* Save the HSPs into a hit list */
       BLAST_SaveHitlist(program_number, query, subject, results, 
          hsp_list, hit_params, query_info, gap_align->sbp, 
-         score_options, NULL, NULL);
+         score_options, NULL);
    }
    BlastCoreAuxStructFree(aux_struct);
    sfree(word_params);

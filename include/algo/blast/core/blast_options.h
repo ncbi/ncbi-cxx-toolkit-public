@@ -291,10 +291,6 @@ typedef struct BlastHitSavingOptions {
  */
 typedef struct BlastHitSavingParameters {
    BlastHitSavingOptions* options; /**< The original (unparsed) options. */
-   int (*handle_results)(void* query, void* subject, 
-        void* hsp_list, void* hit_options, void* query_info, 
-        void* sbp, void* rdfp);
-   /**< Callback for formatting results on the fly for each subject sequence */
    Int4 cutoff_score; /**< Raw cutoff score corresponding to the e-value 
                          provided by the user */
    Boolean do_sum_stats; /**< Is sum statistics used to combine HSPs? */
@@ -384,17 +380,6 @@ typedef struct BlastDatabaseOptions {
                              tblast[nx] only */
    Uint1* gen_code_string;  /**< Genetic code string in ncbistdaa encoding,
                                  tblast[nx] only */
-#if 0
-   /* CC: Not needed, was copied from OldBlast */
-   char* database; /**< Name of the database */
-                             tblast[nx] only */
-   char* gifile;   /**< File to get a gi list from: REMOVE? */
-   ListNode* gilist; /**< A list of gis this database should be restricted to:
-                         REMOVE? */
-   char* entrez_query;/**< An Entrez query to get a OID list from: REMOVE? */
-   Int4 first_db_seq; /**< The first ordinal id number (OID) to search */
-   Int4 final_db_seq; /**< The last OID to search */
-#endif
 } BlastDatabaseOptions;
 
 /********************************************************************************
@@ -738,7 +723,6 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  * @param program_number Number of the BLAST program [in]
  * @param options The given hit saving options [in]
  * @param ext_params Extension parameters containing the gap trigger value [in]
- * @param handle_results Callback function for printing results on the fly [in]
  * @param sbp Scoring block, needed for calculating score cutoff from 
  *            e-value [in]
  * @param query_info Query information, needed for calculating score cutoff 
@@ -748,8 +732,6 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
 Int2 BlastHitSavingParametersNew(Uint1 program_number, 
         const BlastHitSavingOptions* options, 
         const BlastExtensionParameters* ext_params,
-        int (*handle_results)(void*, void*, void*, void*, void*, 
-                           void*, void*), 
         BlastScoreBlk* sbp, BlastQueryInfo* query_info, 
         BlastHitSavingParameters* *parameters);
 
