@@ -1001,24 +1001,6 @@ static void s_DemoStopWatch(void)
 
 int main()
 {
-
-//        CTimeSpan diff(59, 23, 59, 59, 17000000);
-//        CTimeSpan diff(59, 0, 1, 41, 17000000);
-        CTimeSpan diff(0, 0, 1, 41, 17000000);
-        string str;
-/*
-        int prec = CTimeSpan::eSSP_Year;
-        //int prec = CTimeSpan::eSSP_Precision3;
-
-        str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eTrunc, CTimeSpan::eSSZ_NoSkipZero);
-        cout << str.c_str() << endl;
-        str = diff.AsSmartString(CTimeSpan::ESmartStringPrecision(prec), eRound, CTimeSpan::eSSZ_NoSkipZero);
-        cout << str.c_str() << endl;
-*/
-
-//        return 0;
-
-
     // Set err.-posting and tracing to maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostFlag(eDPF_All);
@@ -1046,6 +1028,9 @@ int main()
 /*
  * ===========================================================================
  * $Log$
+ * Revision 6.27  2004/09/27 14:08:01  ivanov
+ * Removed some debug code
+ *
  * Revision 6.26  2004/09/27 13:54:22  ivanov
  * Added tests for CTimeSpan::AsSmartString
  *
