@@ -5461,6 +5461,7 @@ static EBool s_AreOrganismsUnique (SAlignRawFilePtr afrp)
 }
 
 
+#if 0 /* this step was removed by indexer request */
 /* This function reports whether the definition lines are identical for
  * each sequence or not.
  */
@@ -5489,6 +5490,7 @@ static EBool s_AreDeflinesIdentical (SAlignRawFilePtr afrp)
     s_StringCountFree (list);
     return rval;
 }
+#endif
 
 
 /* This function uses the contents of an SAlignRawFileData structure to
@@ -5732,6 +5734,9 @@ ReadAlignmentFile
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/08/11 15:23:07  vakatov
+ * Compilation warning fix (unused static func)
+ *
  * Revision 1.10  2004/05/20 19:40:24  bollin
  * Made chnages to allow reading of alignments of segmented sets.
  * Also added warnings for when organism lines may be present but improperly
