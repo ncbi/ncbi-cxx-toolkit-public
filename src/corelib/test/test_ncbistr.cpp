@@ -392,6 +392,46 @@ int CTestApplication::Run(void)
     
     NcbiCout << " completed successfully!" << NcbiEndl;
 
+    
+
+    // NStr::Tokenize()
+    NcbiCout << NcbiEndl << "NStr::Tokenize() tests...";
+
+    static const string s_TokStr[] = {
+        "ab+cd+ef",
+        "123;45,78",
+        "1;",
+        ";1",
+        "emptydelim"
+    };
+    static const string s_TokDelim[] = {
+        "+", ";,", ";", ";", ""
+    };
+
+    static const string tok_result[] = {
+        "ab", "cd", "ef",
+        "123", "45", "78",
+        "1", "", 
+        "", "1",
+        "emptydelim"
+    };
+
+    vector<string> tok;
+
+    for (size_t i = 0; i < sizeof(s_TokStr) / sizeof(s_TokStr[0]); ++i) {
+        NStr::Tokenize(s_TokStr[i], s_TokDelim[i], tok);               
+    }
+
+    {
+    int i = 0;
+    iterate(vector<string>, it, tok) {
+        assert(NStr::Compare(*it, tok_result[i++]) == 0);
+    }
+    }
+    
+    NcbiCout << " completed successfully!" << NcbiEndl;
+
+
 
     NcbiCout << NcbiEndl << "NStr::ToLower/ToUpper() tests...";
 
@@ -509,6 +549,9 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 /*
  * --------------------------------------------------------------------------
  * $Log$
+ * Revision 6.12  2003/01/14 21:17:58  kuznets
+ * + test for NStr::Tokenize
+ *
  * Revision 6.11  2003/01/13 14:48:08  kuznets
  * minor fix
  *
