@@ -145,7 +145,10 @@ public:
     /// Remove all immediate subnodes
     ///
     /// @param del
-    ///    Subnode delete policy
+    ///    Subnode delete policy. When delete policy is "eNoDelete"
+    ///    nodes are just excluded from the tree. It is responsibility
+    ///    of the caller to track them and guarantee proper destruction.
+    ///
     void RemoveAllSubNodes(EDeletePolicy del = eDelete);
 
     /// Remove the subtree from the tree without freeing it
@@ -391,8 +394,9 @@ enum ETreeTraverseCode
 ///   1  - we are going one level deep into the tree (from the root)
 ///  -1  - we are traveling back by one level (getting close to the root)
 ///
-/// Algorithm calls the visitor function on the way back so it revisits
-/// some tree nodes. It is possible to implement both variants of tree 
+/// The specificts of the algorithm is that it calls visitor both on the 
+/// way from the root to leafs and on the way back
+/// Using this template we can implement both variants of tree 
 /// traversal (pre-order and post-order)
 /// Visitor controls the traversal by returning ETreeTraverseCode
 ///
@@ -900,6 +904,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.40  2004/10/21 13:27:46  kuznets
+ * Improved documentation
+ *
  * Revision 1.39  2004/08/18 12:11:56  kuznets
  * Added type castings (compatibility fix for algorithms)
  *
