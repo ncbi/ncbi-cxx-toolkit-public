@@ -311,10 +311,13 @@ void CFlatGatherer::x_GatherReferences(void) const
     SAnnotSelector sel(CSeqFeatData::e_Pub);
     CFeat_CI it(m_Current->GetScope(), m_Current->GetLocation(), sel);
     for ( ; it; ++it) {
-        refs.push_back(CBioseqContext::TRef(new CReferenceItem(it->GetData().GetPub(),
-                                        *m_Current, &it->GetLocation())));
+        CBioseqContext::TRef ref(new CReferenceItem(it->GetOriginalFeature(),
+            *m_Current));
+        refs.push_back(ref);
     }
+    // re-sort references
     CReferenceItem::Rearrange(refs, *m_Current);
+
     ITERATE (CBioseqContext::TReferences, ref, refs) {
         *m_ItemOS << *ref;
     }
@@ -724,41 +727,41 @@ void CFlatGatherer::x_CollectSourceDescriptors
     TRange print_range(0, GetLength(loc, scope) - 1);
 
     // if SWISS-PROT, may have multiple source descriptors
-    bool loop = ctx.IsSP();
+    bool loop = ctx.IsSP(), okay = false;
 
+    // collect biosources on bioseq
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
         const CBioSource& bsrc = dit->GetSource();
         if (bsrc.IsSetOrg()) {
             sf.Reset(new CSourceFeatureItem(bsrc, print_range, ctx));
             srcs.push_back(sf);
+            okay = true;
         }
-        if(!loop) {
+        if(!loop  &&  okay) {
             break;
         }
     }
-    
+
     // if segmented collect descriptors from segments
     if ( ctx.IsSegmented() ) {
-        const CBioseq& seq = *ctx.GetHandle().GetBioseqCore();
-        CConstRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(seq);
-              
-        // iterate over segments
-        CSeqMap_CI smit(seq_map->BeginResolved(scope, 1, CSeqMap::fFindRef));
-        for ( ; smit; ++smit ) {
-            CBioseq_Handle segh = scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(), ctx.GetHandle());
-            if ( !segh  ||  !segh.IsSetDescr() ) {
+        const CSeqMap& seqmap = bh.GetSeqMap();
+
+        CSeqMap_CI smit = seqmap.BeginResolved(scope, 1, CSeqMap::fFindRef);
+        for (; smit; ++smit) {
+            // biosource descriptors only on parts within TSE
+            CBioseq_Handle segh = scope->GetBioseqHandleFromTSE(smit.GetRefSeqid(), bh);
+            if (!segh) {
                 continue;
             }
 
-            CRange<TSeqPos> seg_range(smit.GetPosition(), smit.GetEndPosition());
-            // collect descriptors only from the segment 
-            ITERATE(CBioseq_Handle::TDescr::Tdata, it, segh.GetDescr().Get()) {
-                if ( (*it)->IsSource() ) {
-                    const CBioSource& bsrc = (*it)->GetSource();
-                    if (bsrc.IsSetOrg()) {
-                        sf.Reset(new CSourceFeatureItem(bsrc, seg_range, ctx));
-                        srcs.push_back(sf);
-                    }
+            CSeqdesc_CI src_it(CSeq_descr_CI(segh, 1), CSeqdesc::e_Source);
+            for (; src_it; ++src_it) {
+                CRange<TSeqPos> seg_range(smit.GetPosition(), smit.GetEndPosition());
+                // collect descriptors only from the segment 
+                const CBioSource& bsrc = src_it->GetSource();
+                if (bsrc.IsSetOrg()) {
+                    sf.Reset(new CSourceFeatureItem(bsrc, seg_range, ctx));
+                    srcs.push_back(sf);
                 }
             }
         }
@@ -850,8 +853,16 @@ void CFlatGatherer::x_SubtractFromFocus(TSourceFeatSet& srcs) const
     if ( srcs.size() < 2 ) {
         return;
     }
-    // !!! To Do:
-    // !!! * implement SeqLocSubtract
+
+    CRef<CSourceFeatureItem> focus;
+    NON_CONST_ITERATE(TSourceFeatSet, it, srcs) {
+        if (it == srcs.begin()) {
+            focus = *it;
+        } else {
+            _ASSERT(focus);
+            focus->Subtract(**it, m_Current->GetScope());
+        }
+    }
 }
 
 
@@ -897,8 +908,9 @@ void CFlatGatherer::x_GatherSourceFeatures(void) const
     // sort by type (descriptor / feature) and location
     sort(srcs.begin(), srcs.end(), SSortSourceByLoc());
     
-    // if the descriptor has a focus, subtract out all other source locations.
-    if ( srcs.front()->GetSource().IsSetIs_focus() ) {
+    // if the descriptor has a focus (by now sorted to be first),
+    // subtract out all other source locations.
+    if (srcs.front()->IsFocus()  &&  !srcs.front()->IsSynthetic()) {
         x_SubtractFromFocus(srcs);
 
         // if features completely subtracted descriptor intervals,
@@ -1065,58 +1077,67 @@ void CFlatGatherer::x_GatherFeaturesOnLocation
     CRef<CSeq_loc_Mapper> mapper(s_CreateMapper(ctx));
 
     CSeq_feat_Handle prev_feat;
-    for ( CFeat_CI it(scope, loc, sel); it; ++it ) {
-        const CSeq_feat& feat = it->GetOriginalFeature();
+    for (CFeat_CI it(scope, loc, sel); it; ++it) {
+        CSeq_feat_Handle feat = it->GetSeq_feat_Handle();
+        if (!feat) {
+            continue;
+        }
+        const CSeq_feat& original_feat = it->GetOriginalFeature();
 
         // supress dupliacte features
-        CSeq_annot_Handle annot = it->GetSeq_feat_Handle().GetAnnot();
-        if (prev_feat.GetSeq_feat()) {            
-            if (prev_feat.GetFeatSubtype() == feat.GetData().GetSubtype()) {
+        CSeq_annot_Handle annot = feat.GetAnnot();
+        if (prev_feat) {
+            if (prev_feat.GetFeatSubtype() == feat.GetFeatSubtype()) {
                 if (annot == prev_feat.GetAnnot()) {
-                    if (prev_feat.GetSeq_feat()->Equals(feat)) {
+                    if (prev_feat.GetSeq_feat()->Equals(*feat.GetSeq_feat())) {
                         continue;
                     }
                 }
             }
         }
-        prev_feat = it->GetSeq_feat_Handle();
+        prev_feat = feat;
 
-        CConstRef<CSeq_loc> feat_loc(&feat.GetLocation());
-        if ( mapper ) {
+        // NB: map location (if necessary). mapping done by the
+        // feature iterator is inadequate for the flat-file needs.
+        CConstRef<CSeq_loc> feat_loc(&original_feat.GetLocation());
+        if (mapper) {
             feat_loc.Reset(mapper->Map(*feat_loc));
             s_FixLocation(feat_loc, ctx);
         }
         if (!feat_loc  ||  feat_loc->IsNull()) {
             continue;
         }
-
-        // make sure feature location ends on the current bioseq
-        if (!s_SeqLocEndsOnBioseq(*feat_loc, ctx.GetHandle())) {
-            // may need to map sig_peptide on a different segment
-            if (feat.GetData().IsCdregion()) {
-                if (!ctx.Config().IsFormatFTable()) {
-                    x_GetFeatsOnCdsProduct(feat, ctx, mapper);
+        
+        // make sure location ends on the current bioseq
+        if (ctx.IsPart()) {
+            if (!s_SeqLocEndsOnBioseq(*feat_loc, ctx.GetHandle())) {
+                // may need to map sig_peptide on a different segment
+                if (feat.GetData().IsCdregion()) {
+                    if (!ctx.Config().IsFormatFTable()) {
+                        x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
+                    }
                 }
+                continue;
             }
-            continue;
         }
                 
-        out << new CFeatureItem(feat, ctx, feat_loc);
+        out << new CFeatureItem(original_feat, ctx, feat_loc);
 
         // Add more features depending on user preferences
-        switch ( feat.GetData().GetSubtype() ) {
+        switch (feat.GetFeatSubtype()) {
         case CSeqFeatData::eSubtype_mRNA:
             {{
                 // optionally map CDS from cDNA onto genomic
-                if ( s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct() ) {
-                    x_CopyCDSFromCDNA(feat, ctx);
+                if (s_CopyCDSFromCDNA(ctx)   &&  feat.IsSetProduct()) {
+                    x_CopyCDSFromCDNA(original_feat, ctx);
                 }
                 break;
             }}
         case CSeqFeatData::eSubtype_cdregion:
             {{  
-                if ( !ctx.Config().IsFormatFTable() ) {
-                    x_GetFeatsOnCdsProduct(feat, ctx, mapper);
+                // map features from protein
+                if (!ctx.Config().IsFormatFTable()) {
+                    x_GetFeatsOnCdsProduct(original_feat, ctx, mapper);
                 }
                 break;
             }}
@@ -1269,9 +1290,19 @@ void CFlatGatherer::x_GetFeatsOnCdsProduct
     if (!feat.CanGetProduct()) {
         return;
     }
-
     CScope& scope = ctx.GetScope();
-    CBioseq_Handle  prot = scope.GetBioseqHandle(feat.GetProduct());
+    CConstRef<CSeq_id> prot_id;
+    if (IsOneBioseq(feat.GetProduct(), &scope)) {
+        prot_id.Reset(&GetId(feat.GetProduct(), &scope));
+    }
+    if (!prot_id) {
+        return;
+    }
+    
+    CBioseq_Handle  prot;
+
+    prot = scope.GetBioseqHandleFromTSE(*prot_id, ctx.GetHandle());
+    // !!! need a flag for fetching far proteins
     if (!prot) {
         return;
     }
@@ -1369,6 +1400,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.32  2004/11/15 20:08:46  shomrat
+* Subtract locations from source with focus
+*
 * Revision 1.31  2004/11/01 19:33:09  grichenk
 * Removed deprecated methods
 *
