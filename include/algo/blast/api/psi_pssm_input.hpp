@@ -35,8 +35,8 @@
  */
 
 #include <corelib/ncbiobj.hpp>
-#include <algo/blast/api/pssm_input.hpp>
 #include <algo/blast/api/blast_aux.hpp>
+#include <algo/blast/api/pssm_input.hpp>
 
 /// Forward declaration for unit test classes
 class CPssmEngineTest;
@@ -174,6 +174,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2005/03/07 17:00:07  camacho
+ * Fix includes
+ *
  * Revision 1.9  2004/12/28 16:45:57  camacho
  * Move typedefs to AutoPtr to public header so that they are used consistently
  *

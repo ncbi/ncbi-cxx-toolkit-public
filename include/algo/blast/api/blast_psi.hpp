@@ -35,6 +35,7 @@
  */
  
 #include <corelib/ncbiobj.hpp>
+#include <algo/blast/api/blast_aux.hpp>
 #include <algo/blast/api/pssm_input.hpp>
 
 // Forward declarations
@@ -53,9 +54,6 @@ BEGIN_SCOPE(objects)
 END_SCOPE(objects)
 
 BEGIN_SCOPE(blast)
-
-// Forward declaration for core BLAST scoring block structure
-class CBlastScoreBlk;       
 
 /// Computes a PSSM as specified in PSI-BLAST.
 ///
@@ -171,6 +169,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.20  2005/03/07 17:00:07  camacho
+ * Fix includes
+ *
  * Revision 1.19  2005/03/07 15:20:36  camacho
  * fix forward declaration
  *
