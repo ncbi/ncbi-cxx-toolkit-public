@@ -142,7 +142,7 @@ protected:
                 unsigned int                   default_value) const
     {
         CConfig conf(params);
-        return conf.GetDataSize(m_DriverName,
+        return (unsigned)conf.GetDataSize(m_DriverName,
                                 param_name,
                                 CConfig::eErr_NoThrow,
                                 default_value);
@@ -260,6 +260,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.11  2004/11/03 17:52:59  kuznets
+ * Fixed warning
+ *
  * Revision 1.10  2004/09/23 16:20:24  kuznets
  * All ParamTree_ functions assembled in CConfig class
  *
