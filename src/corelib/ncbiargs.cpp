@@ -33,6 +33,9 @@
  *
  * ---------------------------------------------------------------------------
  * $Log$
+ * Revision 1.8  2000/09/28 20:37:16  butanaev
+ * *** empty log message ***
+ *
  * Revision 1.7  2000/09/28 19:38:00  butanaev
  * stdin and stdout now referenced as '-' Example: ./test_ncbiargs -if - -of -
  *
@@ -89,9 +92,10 @@ CArgException::CArgException(const string& what, const string& arg_value)
 ///////////////////////////////////////////////////////
 //  CArgValue::
 
-CArgValue::CArgValue(const string& value)
+CArgValue::CArgValue(const string& value, bool isDefault)
 {
-    m_String = value;
+  m_String = value;
+  m_IsDefaultValue = isDefault;
 }
 
 CArgValue::~CArgValue(void)
@@ -124,17 +128,22 @@ CNcbiOstream &CArgValue::AsOutputFile(EFlags changeModeTo) const
     ARG_THROW("Not implemented", AsString());
 }
 
+bool CArgValue::IsDefaultValue(void) const
+{
+  return m_IsDefaultValue;
+}
+
 ///////////////////////////////////////////////////////
 //  CArg_String::
 
 class CArg_String : public CArgValue
 {
 public:
-    CArg_String(const string& value);
+    CArg_String(const string& value, bool isDefault);
 };
 
-inline CArg_String::CArg_String(const string& value)
-    : CArgValue(value)
+inline CArg_String::CArg_String(const string& value, bool isDefault)
+    : CArgValue(value, isDefault)
 {
     return;
 }
@@ -145,11 +154,11 @@ inline CArg_String::CArg_String(const string& value)
 class CArg_Alnum : public CArgValue
 {
 public:
-    CArg_Alnum(const string& value);
+    CArg_Alnum(const string& value, bool isDefault);
 };
 
-inline CArg_Alnum::CArg_Alnum(const string& value)
-    : CArgValue(value)
+inline CArg_Alnum::CArg_Alnum(const string& value, bool isDefault)
+    : CArgValue(value, isDefault)
 {
     for (string::const_iterator it = value.begin();  it != value.end(); ++it) {
         if ( !isalnum(*it) ) {
@@ -164,15 +173,15 @@ inline CArg_Alnum::CArg_Alnum(const string& value)
 class CArg_Integer : public CArgValue
 {
 public:
-    CArg_Integer(const string& value);
+    CArg_Integer(const string& value, bool isDefault);
     virtual long AsInteger(void) const;
 private:
     long m_Integer;
 };
 
 
-inline CArg_Integer::CArg_Integer(const string& value)
-    : CArgValue(value)
+inline CArg_Integer::CArg_Integer(const string& value, bool isDefault)
+    : CArgValue(value, isDefault)
 {
     try {
         m_Integer = NStr::StringToLong(value);
@@ -193,15 +202,15 @@ long CArg_Integer::AsInteger(void) const
 class CArg_Double : public CArgValue
 {
 public:
-    CArg_Double(const string& value);
+    CArg_Double(const string& value, bool isDefault);
     virtual double AsDouble(void) const;
 private:
     double m_Double;
 };
 
 
-inline CArg_Double::CArg_Double(const string& value)
-    : CArgValue(value)
+inline CArg_Double::CArg_Double(const string& value, bool isDefault)
+    : CArgValue(value, isDefault)
 {
     try {
         m_Double = NStr::StringToDouble(value);
@@ -222,21 +231,21 @@ double CArg_Double::AsDouble(void) const
 class CArg_Boolean : public CArgValue
 {
 public:
-    CArg_Boolean(bool value);
-    CArg_Boolean(const string& value);
+    CArg_Boolean(bool value, bool isDefault);
+    CArg_Boolean(const string& value, bool isDefault);
     virtual bool AsBoolean(void) const;
 private:
     bool m_Boolean;
 };
 
-inline CArg_Boolean::CArg_Boolean(bool value)
-    : CArgValue( NStr::BoolToString(value) )
+inline CArg_Boolean::CArg_Boolean(bool value, bool isDefault)
+    : CArgValue( NStr::BoolToString(value), isDefault )
 {
     m_Boolean = value;
 }
 
-inline CArg_Boolean::CArg_Boolean(const string& value)
-    : CArgValue(value)
+inline CArg_Boolean::CArg_Boolean(const string& value, bool isDefault)
+    : CArgValue(value, isDefault)
 {
     try {
         m_Boolean = NStr::StringToBool(value);
@@ -258,8 +267,8 @@ class CArg_InputFile : public CArgValue
 {
 public:
     CArg_InputFile(const string&       value,
-                   IOS_BASE::openmode  openmode  = 0,
-                   bool                delay_open = false);
+                   IOS_BASE::openmode  openmode,
+                   bool                delay_open, bool isDefault);
     ~CArg_InputFile();
     virtual CNcbiIstream& AsInputFile(EFlags changeModeTo = fUnchanged) const;
 
@@ -293,9 +302,9 @@ inline void CArg_InputFile::Open(void) const
 
 inline CArg_InputFile::CArg_InputFile(const string&      value,
                                       IOS_BASE::openmode openmode,
-                                      bool               delay_open)
+                                      bool               delay_open, bool isDefault)
 :
-CArgValue(value),
+CArgValue(value, isDefault),
 m_OpenMode(openmode),
 m_InputFile(0),
 m_DeleteFlag(true)
@@ -334,7 +343,7 @@ class CArg_OutputFile : public CArgValue
 public:
   CArg_OutputFile(const string&      value,
                   IOS_BASE::openmode openmode,
-                  bool               delay_open);
+                  bool               delay_open, bool isDefault);
   ~CArg_OutputFile();
 
   virtual CNcbiOstream& AsOutputFile(EFlags changeModeTo = fUnchanged) const;
@@ -369,9 +378,9 @@ inline void CArg_OutputFile::Open(void) const
 
 inline CArg_OutputFile::CArg_OutputFile(const string&      value,
                                         IOS_BASE::openmode openmode,
-                                        bool               delay_open)
+                                        bool               delay_open, bool isDefault)
 :
-CArgValue(value),
+CArgValue(value, isDefault),
 m_OpenMode(openmode),
 m_OutputFile(0),
 m_DeleteFlag(true)
@@ -436,7 +445,7 @@ public:
     virtual string GetUsageCommentAttr(bool optional=false) const;
     virtual string GetUsageCommentBody(void) const;
 
-    virtual CArgValue* ProcessArgument(const string& value) const;
+    virtual CArgValue* ProcessArgument(const string& value, bool isDefault = false) const;
 
     const string& GetComment(void) const { return m_Comment; }
 private:
@@ -471,9 +480,9 @@ string CArgDesc_Flag::GetUsageCommentBody(void) const
     return m_Comment;
 }
 
-CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/) const
+CArgValue* CArgDesc_Flag::ProcessArgument(const string& /*value*/, bool isDefault) const
 {
-    return new CArg_Boolean(true);
+    return new CArg_Boolean(true, isDefault);
 }
 
 
@@ -495,7 +504,7 @@ public:
     virtual string GetUsageSynopsis   (const string& name,
                                        bool optional=false) const;
     virtual string GetUsageCommentAttr(bool optional=false) const;
-    virtual CArgValue* ProcessArgument(const string& value) const;
+    virtual CArgValue* ProcessArgument(const string& value, bool isDefault = false) const;
 
     CArgDescriptions::EType  GetType   (void) const { return m_Type; }
     CArgDescriptions::TFlags GetFlags  (void) const { return m_Flags; }
@@ -561,25 +570,25 @@ string CArgDesc_Plain::GetUsageCommentAttr(bool optional) const
         return CArgDescriptions::GetTypeName(GetType()) + ", optional"; 
 }
 
-CArgValue* CArgDesc_Plain::ProcessArgument(const string& value) const
+CArgValue* CArgDesc_Plain::ProcessArgument(const string& value, bool isDefault) const
 {
     switch ( GetType() ) {
     case CArgDescriptions::eString:
-        return new CArg_String(value);
+        return new CArg_String(value, isDefault);
     case CArgDescriptions::eAlnum:
-        return new CArg_Alnum(value);
+        return new CArg_Alnum(value, isDefault);
     case CArgDescriptions::eBoolean:
-        return new CArg_Boolean(value);
+        return new CArg_Boolean(value, isDefault);
     case CArgDescriptions::eInteger:
-        return new CArg_Integer(value);
+        return new CArg_Integer(value, isDefault);
     case CArgDescriptions::eDouble:
-        return new CArg_Double(value);
+        return new CArg_Double(value, isDefault);
     case CArgDescriptions::eInputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fDelayOpen) != 0;
         IOS_BASE::openmode openmode = 0;
         if (GetFlags() & CArgDescriptions::fBinary)
             openmode |= IOS_BASE::binary;
-        return new CArg_InputFile(value, openmode, delay_open);
+        return new CArg_InputFile(value, openmode, delay_open, isDefault);
     }
     case CArgDescriptions::eOutputFile: {
         bool delay_open = (GetFlags() & CArgDescriptions::fDelayOpen) != 0;
@@ -588,7 +597,7 @@ CArgValue* CArgDesc_Plain::ProcessArgument(const string& value) const
             openmode |= IOS_BASE::binary;
         if (GetFlags() & CArgDescriptions::fAppend)
             openmode |= IOS_BASE::app;
-        return new CArg_OutputFile(value, openmode, delay_open);
+        return new CArg_OutputFile(value, openmode, delay_open, isDefault);
     }
     }
 
@@ -1121,7 +1130,7 @@ void CArgDescriptions::x_PostCheck(CArgs& args, unsigned n_plain) const
       {
         if(! args.Exist(it->first) )
         {
-          args.Add(it->first, optArg->ProcessArgument(optArg->GetDefault()));
+          args.Add(it->first, optArg->ProcessArgument(optArg->GetDefault(), true));
         }
       }
     }
