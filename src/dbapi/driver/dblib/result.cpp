@@ -328,7 +328,7 @@ static EDB_Type s_GetDataType(DBPROCESS* cmd, int n)
 
 CDBL_RowResult::CDBL_RowResult(DBPROCESS* cmd,
                                unsigned int* res_status, bool need_init) :
-    m_Cmd(cmd), m_CurrItem(0), m_EOR(false),
+    m_Cmd(cmd), m_CurrItem(-1), m_EOR(false),
     m_ResStatus(res_status), m_Offset(0)
 {
     if (!need_init)
@@ -587,7 +587,7 @@ CDBL_RowResult::~CDBL_RowResult()
 
 
 CDBL_BlobResult::CDBL_BlobResult(DBPROCESS* cmd) :
-    m_Cmd(cmd), m_CurrItem(1), m_EOR(false)
+    m_Cmd(cmd), m_CurrItem(-1), m_EOR(false)
 {
     m_CmdNum = DBCURCMD(cmd);
 
@@ -866,8 +866,10 @@ bool CDBL_ParamResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
+	m_CurrItem= 0;
         return true;
     }
+    m_CurrItem= -1;
     return false;
 }
 
@@ -1017,6 +1019,7 @@ bool CDBL_ComputeResult::Fetch()
 {
     if (m_1stFetch) { // we didn't get the items yet;
         m_1stFetch = false;
+	m_CurrItem= 0;
         return true;
     }
 
@@ -1036,6 +1039,7 @@ bool CDBL_ComputeResult::Fetch()
         break;
     }
     m_EOR = true;
+    m_CurrItem= -1;
     return false;
 }
 
@@ -1166,7 +1170,7 @@ bool CDBL_StatusResult::Fetch()
 
 int CDBL_StatusResult::CurrentItemNo() const
 {
-    return 0;
+    return m_1stFetch? -1 : 0;
 }
 
 
@@ -1482,6 +1486,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.17  2003/01/06 16:40:49  soussov
+ * sets m_CurrItem = -1 for all result types if no fetch was called
+ *
  * Revision 1.16  2003/01/03 21:48:08  soussov
  * set m_CurrItem = -1 if fetch failes
  *
