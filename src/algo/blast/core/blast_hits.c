@@ -47,10 +47,10 @@ static char const rcsid[] = "$Id$";
 #include <blast_hits.h>
 #include <blast_util.h>
 
-extern Int4 BinarySearchInt4 PROTO((Int4 n, Int4Ptr A, Int4 size));
-extern Int4 LIBCALL 
-HspArrayPurge PROTO((BlastHSPPtr PNTR hsp_array, Int4 hspcnt, 
-                     Boolean clear_num));
+extern Int4 BinarySearchInt4 (Int4 n, Int4Ptr A, Int4 size);
+extern Int4 
+HspArrayPurge (BlastHSPPtr PNTR hsp_array, Int4 hspcnt, 
+                     Boolean clear_num);
 
 void 
 BLAST_AdjustQueryOffsets(Uint1 program_number, BlastHSPListPtr hsp_list, 
@@ -271,7 +271,7 @@ BlastHSPGetNumIdentical(Uint1Ptr query, Uint1Ptr subject,
 }
 
 /** Comparison callback function for sorting HSPs by e-value */
-static int LIBCALLBACK
+static int
 evalue_compare_hsps(VoidPtr v1, VoidPtr v2)
 
 {
@@ -294,7 +294,7 @@ evalue_compare_hsps(VoidPtr v1, VoidPtr v2)
 /** Comparison callback function for sorting HSPs by diagonal and removing
  * the HSPs contained in or identical to other HSPs.
 */
-static int LIBCALLBACK
+static int
 diag_uniq_compare_hsps(VoidPtr v1, VoidPtr v2)
 {
    BlastHSPPtr h1, h2;
@@ -645,12 +645,11 @@ BLAST_ReevaluateWithAmbiguities(BlastHSPListPtr hsp_list,
  * Turns array into a heap with respect to a given comparison function.
  */
 static void
-heapify (Nlm_CharPtr base0, Nlm_CharPtr base, Nlm_CharPtr lim, Nlm_CharPtr last, size_t width, int (LIBCALLBACK *compar )PROTO ((Nlm_VoidPtr, Nlm_VoidPtr )))
-
+heapify (CharPtr base0, CharPtr base, CharPtr lim, CharPtr last, size_t width, int (*compar )(VoidPtr, VoidPtr ))
 {
    size_t i;
    char   ch;
-   Nlm_CharPtr left_son, large_son;
+   CharPtr left_son, large_son;
    
    left_son = base0 + 2*(base-base0) + width;
    while (base <= lim) {
@@ -677,12 +676,12 @@ heapify (Nlm_CharPtr base0, Nlm_CharPtr base, Nlm_CharPtr lim, Nlm_CharPtr last,
  * @param nel Number of elements in b [in]
  * @param width The size of each element [in]
  */
-static void CreateHeap (Nlm_VoidPtr b, size_t nel, size_t width, 
-   int (LIBCALLBACK *compar )PROTO ((Nlm_VoidPtr, Nlm_VoidPtr )))   
+static void CreateHeap (VoidPtr b, size_t nel, size_t width, 
+   int (*compar )(VoidPtr, VoidPtr ))   
 {
-   Nlm_CharPtr    base = (Nlm_CharPtr)b;
+   CharPtr    base = (CharPtr)b;
    size_t i;
-   Nlm_CharPtr    base0 = (Nlm_CharPtr)base, lim, basef;
+   CharPtr    base0 = (CharPtr)base, lim, basef;
    
    if (nel < 2)
       return;
@@ -700,7 +699,7 @@ static void CreateHeap (Nlm_VoidPtr b, size_t nel, size_t width,
  * It is assumed that the HSP arrays in each hit list are already sorted by 
  * e-value/score.
 */
-static int LIBCALLBACK
+static int
 evalue_compare_hsp_lists(VoidPtr v1, VoidPtr v2)
 {
    BlastHSPListPtr h1, h2;
@@ -1041,7 +1040,7 @@ void AdjustOffsetsInHSPList(BlastHSPListPtr hsp_list, Int4 offset)
 }
 
 /** Comparison callback for sorting HSPs by diagonal */
-static int LIBCALLBACK
+static int
 diag_compare_hsps(VoidPtr v1, VoidPtr v2)
 {
    BlastHSPPtr h1, h2;
