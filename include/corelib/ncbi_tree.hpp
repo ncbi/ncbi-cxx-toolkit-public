@@ -322,7 +322,7 @@ CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TTreeType* subnode)
 
 template<class TValue>
 typename CTreeNWay<TValue>::TTreeType* 
-CTreeNWay<TValue>::DetachNode(CTreeNWay<TValue>::TNodeList_I it)
+CTreeNWay<TValue>::DetachNode(typename CTreeNWay<TValue>::TNodeList_I it)
 {
     CTreeNWay* node = *it;
     m_Nodes.erase(it);
@@ -333,7 +333,7 @@ CTreeNWay<TValue>::DetachNode(CTreeNWay<TValue>::TNodeList_I it)
 
 
 template<class TValue>
-void CTreeNWay<TValue>::AddNode(CTreeNWay<TValue>::TTreeType* subnode)
+void CTreeNWay<TValue>::AddNode(typename CTreeNWay<TValue>::TTreeType* subnode)
 {
     m_Nodes.push_back(subnode);
     subnode->SetParent(this);
@@ -393,9 +393,9 @@ template<class TId, class TValue>
 void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>& node_path, 
                                            TPairTreeNodeList*       res)
 {
-    TTreeType* tr = this;
+    typename TParent::TTreeType* tr = this;
 
-    ITERATE(list<TId>, sit, node_path) {
+    ITERATE(typename list<TId>, sit, node_path) {
         const TId& search_id = *sit;
         bool sub_level_found = false;
 
@@ -428,9 +428,9 @@ template<class TId, class TValue>
 void CTreePairNWay<TId, TValue>::FindNodes(const list<TId>&         node_path, 
                                            TConstPairTreeNodeList*  res) const
 {
-    const TTreeType* tr = this;
+    const typename TParent::TTreeType* tr = this;
 
-    ITERATE(list<TId>, sit, node_path) {
+    ITERATE(typename list<TId>, sit, node_path) {
         const TId& search_id = *sit;
         bool sub_level_found = false;
 
@@ -465,6 +465,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.9  2004/01/12 15:26:22  kuznets
+ * Fixed various compilation warnings (GCC & WorkShop)
+ *
  * Revision 1.8  2004/01/12 15:01:58  kuznets
  * +CTreePairNWay::FindNodes
  *
