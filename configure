@@ -1312,8 +1312,8 @@ for x_arg in "$@" ; do
    case "$x_arg" in
       --with-extra-action= | --exec-prefix= \
       | --cache-file= | --build= | --host= | --target= | --with-runpath= )
-      { { echo "$as_me:1315: error: \"  $x_arg:  requires value\;  use --help to show usage\"" >&5
-echo "$as_me: error: \"  $x_arg:  requires value\;  use --help to show usage\"" >&2;}
+      { { echo "$as_me:1315: error: \"  $x_arg:  requires value;  use --help to show usage\"" >&5
+echo "$as_me: error: \"  $x_arg:  requires value;  use --help to show usage\"" >&2;}
    { (exit 1); exit 1; }; }
       ;;
 
@@ -1324,8 +1324,8 @@ echo "$as_me: error: \"  $x_arg:  requires value\;  use --help to show usage\"" 
       ;;
 
       * )
-      { { echo "$as_me:1327: error: \"  $x_arg:  unknown option\;  use --help to show usage\"" >&5
-echo "$as_me: error: \"  $x_arg:  unknown option\;  use --help to show usage\"" >&2;}
+      { { echo "$as_me:1327: error: \"  $x_arg:  unknown option;  use --help to show usage\"" >&5
+echo "$as_me: error: \"  $x_arg:  unknown option;  use --help to show usage\"" >&2;}
    { (exit 1); exit 1; }; }
       ;;
    esac
