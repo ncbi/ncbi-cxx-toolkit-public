@@ -210,7 +210,7 @@ s_Submit(CRef<CBlast4_request_body> body, bool echo = true)
         //throw some_kind_of_nothing();
         CBlast4Client().Ask(*request, *reply);
     }
-    catch(CEofException & e) {
+    catch(const CEofException&) {
         if (errors_ignored >= BLAST4_IGNORE_ERRS) {
             ERR_POST(Error << "Unexpected EOF when contacting netblast server"
                      " - unable to complete request.");
@@ -577,6 +577,9 @@ QueueAndPoll(string                program,
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.10  2004/06/07 14:17:01  camacho
+ * Use anonymous exception to avoid warning
+ *
  * Revision 1.9  2004/05/21 21:41:38  gorelenk
  * Added PCH ncbi_pch.hpp
  *
