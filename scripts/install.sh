@@ -15,7 +15,7 @@
 ###########################################################################
 
 
-cvs_location=`echo '$Source$' | sed 's%\$\Source: *\([^$]*\)\$%\1%'`
+cvs_location=`echo '$Source$' | sed "s%\$\Source: *\([^$][^$]*\)\$.*%\1%"`
 
 script_name=`basename $0`
 script_dir=`dirname $0`
@@ -35,7 +35,7 @@ Usage()
   cat <<EOF 1>&2
 Usage:
    $script_name <install_dir>
-                [--without-src] [--without-doc] [--with-purge] [--with-cvs]
+              [--without-src] [--without-doc] [--with-purge] [--with-cvs]
 
 Synopsis:
    Install NCBI C++ source tree (shared sources, headers, scripts, docs).
