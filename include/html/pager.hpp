@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 class CCgiRequest;
 
 // Make a set of pagination links
-class CPager : public CNCBINode
+class NCBI_XHTML_EXPORT CPager : public CNCBINode
 {
     // Parent class
     typedef CHTML_table CParent;
@@ -139,7 +139,7 @@ private:
 };
 
 
-class CPagerView : public CHTML_table
+class NCBI_XHTML_EXPORT CPagerView : public CHTML_table
 {
 public:
 
@@ -166,7 +166,7 @@ private:
 // Second view for CPager with buttons:
 // Previous (link) Current (input) Page (button) Next (link)
 
-class CPagerViewButtons : public CHTML_table
+class NCBI_XHTML_EXPORT CPagerViewButtons : public CHTML_table
 {
 public:
     CPagerViewButtons(const CPager& pager, const string& js_suffix);
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.13  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

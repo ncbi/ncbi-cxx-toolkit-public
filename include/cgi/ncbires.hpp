@@ -34,6 +34,9 @@
 *
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.31  2003/11/05 18:40:55  dicuccio
+* Added export specifiers
+*
 * Revision 1.30  2003/04/10 19:01:46  siyan
 * Added doxygen support
 *
@@ -77,7 +80,7 @@ class CNCBINode;
 
 typedef list<CNcbiCommand*> TCmdList;
 
-class CNcbiResource
+class NCBI_XCGI_EXPORT CNcbiResource
 {
 public:
 
@@ -112,7 +115,7 @@ private:
 // class CNcbiCommand
 //
 
-class CNcbiCommand
+class NCBI_XCGI_EXPORT CNcbiCommand
 {
 public:
 
@@ -145,7 +148,7 @@ private:
 // class CNcbiRelocateCommand
 //
 
-class CNcbiRelocateCommand :  public CNcbiCommand
+class NCBI_XCGI_EXPORT CNcbiRelocateCommand :  public CNcbiCommand
 {
 public:
 
@@ -160,7 +163,7 @@ public:
 // class CNcbiResPresentation
 //
 
-class CNcbiResPresentation
+class NCBI_XCGI_EXPORT CNcbiResPresentation
 {
 public:
 

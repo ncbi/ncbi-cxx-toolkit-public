@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CCgiResponse
+class NCBI_XCGI_EXPORT CCgiResponse
 {
 public:
     // 'ctors
@@ -187,6 +187,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.15  2003/11/05 18:40:55  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.14  2003/04/10 19:01:44  siyan
  * Added doxygen support
  *

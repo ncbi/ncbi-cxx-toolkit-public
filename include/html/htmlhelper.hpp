@@ -56,7 +56,7 @@ class CHTML_form;
 
 // Utility functions
 
-class CIDs : public list<int>
+class NCBI_XHTML_EXPORT CIDs : public list<int>
 {
 public:
     CIDs(void);
@@ -86,7 +86,7 @@ private:
 };
 
 
-class CHTMLHelper
+class NCBI_XHTML_EXPORT CHTMLHelper
 {
 public:
     // HTML encodes a string. E.g. &lt;.
@@ -145,6 +145,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.12  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.11  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

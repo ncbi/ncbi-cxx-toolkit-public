@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CSubmitDescription
+class NCBI_XHTML_EXPORT CSubmitDescription
 {
 public:
     CSubmitDescription(void);
@@ -62,7 +62,7 @@ public:
 };
 
 
-class COptionDescription
+class NCBI_XHTML_EXPORT COptionDescription
 {
 public:
     COptionDescription(void);
@@ -76,7 +76,7 @@ public:
 };
 
 
-class CSelectDescription
+class NCBI_XHTML_EXPORT CSelectDescription
 {
 public:
     CSelectDescription(void);
@@ -96,7 +96,7 @@ public:
 };
 
 
-class CTextInputDescription
+class NCBI_XHTML_EXPORT CTextInputDescription
 {
 public:
     CTextInputDescription(void);
@@ -110,7 +110,7 @@ public:
 };
 
 
-class CQueryBox: public CHTML_table
+class NCBI_XHTML_EXPORT CQueryBox: public CHTML_table
 {
     // Parent class
     typedef CHTML_form CParent;
@@ -139,7 +139,7 @@ public:
 
 
 // Make a button followed by a drop down.
-class CButtonList: public CNCBINode
+class NCBI_XHTML_EXPORT CButtonList: public CNCBINode
 {
     // Parent class
     typedef CHTML_form CParent;
@@ -154,7 +154,7 @@ public:
 
 
 // Make a set of pagination links
-class CPageList: public CHTML_table
+class NCBI_XHTML_EXPORT CPageList: public CHTML_table
 {
     // Parent class
     typedef CHTML_table CParent;
@@ -176,7 +176,7 @@ private:
 };
 
 
-class CPagerBox: public CNCBINode
+class NCBI_XHTML_EXPORT CPagerBox: public CNCBINode
 {
     // Parent class
     typedef CHTML_form CParent;
@@ -194,7 +194,7 @@ public:
 };
 
 
-class CSmallPagerBox: public CNCBINode
+class NCBI_XHTML_EXPORT CSmallPagerBox: public CNCBINode
 {
     // parent class
     typedef CHTML_form CParent;
@@ -222,6 +222,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.25  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.24  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

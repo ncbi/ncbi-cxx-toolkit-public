@@ -51,14 +51,14 @@ BEGIN_NCBI_SCOPE
 
 class CNCBINode;
 
-struct BaseTagMapper
+struct NCBI_XHTML_EXPORT BaseTagMapper
 {
     virtual ~BaseTagMapper(void);
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const = 0;
 };
 
 
-struct StaticTagMapper : public BaseTagMapper
+struct NCBI_XHTML_EXPORT StaticTagMapper : public BaseTagMapper
 {
     StaticTagMapper(CNCBINode* (*function)(void));
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
@@ -68,7 +68,7 @@ private:
 };
 
 
-struct StaticTagMapperByName : public BaseTagMapper
+struct NCBI_XHTML_EXPORT StaticTagMapperByName : public BaseTagMapper
 {
     StaticTagMapperByName(CNCBINode* (*function)(const string& name));
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
@@ -100,7 +100,7 @@ private:
 };
 
 
-struct ReadyTagMapper : public BaseTagMapper
+struct NCBI_XHTML_EXPORT ReadyTagMapper : public BaseTagMapper
 {
     ReadyTagMapper(CNCBINode* node);
     virtual CNCBINode* MapTag(CNCBINode* _this, const string& name) const;
@@ -198,6 +198,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.13  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.12  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

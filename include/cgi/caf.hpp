@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 //
 //
 
-class CCookieAffinity
+class NCBI_XCGI_EXPORT CCookieAffinity
 {
 public:
     virtual ~CCookieAffinity() {}
@@ -73,6 +73,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/05 18:40:55  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.6  2003/05/28 19:57:38  lavr
  * +<stddef.h> for size_t
  *

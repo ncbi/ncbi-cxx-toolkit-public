@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 class CCgiRequest;
 
 
-class CSelection : public CNCBINode, public CIDs
+class NCBI_XHTML_EXPORT CSelection : public CNCBINode, public CIDs
 {
 public:
     static string sm_DefaultCheckboxName;
@@ -77,6 +77,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.7  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.6  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

@@ -55,7 +55,7 @@ typedef CRef<CNCBINode> CNodeRef;
 
 
 // Base class for a graph node.
-class CNCBINode : public CObject
+class NCBI_XHTML_EXPORT CNCBINode : public CObject
 {
 public:
     friend class CRef<CNCBINode>;
@@ -254,6 +254,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.22  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.21  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

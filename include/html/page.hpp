@@ -71,7 +71,7 @@ class CCgiApplication;
 /// the page. The ability to hold children and print HTML is inherited from
 /// CHTMLNode.
 
-class CHTMLBasicPage: public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLBasicPage: public CNCBINode
 {
     /// Parent class.
     typedef CNCBINode CParent;
@@ -115,7 +115,7 @@ protected:
 ///
 /// This is the basic 3 section NCBI page.
 
-class CHTMLPage : public CHTMLBasicPage
+class NCBI_XHTML_EXPORT CHTMLPage : public CHTMLBasicPage
 {
     /// Parent class.
     typedef CHTMLBasicPage CParent;
@@ -326,6 +326,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.33  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.32  2003/10/02 18:16:46  ivanov
  * Get rid of compilation warnings; some formal code rearrangement
  *

@@ -64,7 +64,7 @@ class CTime;
 // The CGI send-cookie class
 //
 
-class CCgiCookie
+class NCBI_XCGI_EXPORT CCgiCookie
 {
 public:
     // Copy constructor
@@ -167,7 +167,7 @@ inline CNcbiOstream& operator<< (CNcbiOstream& os, const CCgiCookie& cookie)
 //  "name" and "domain" are not case-sensitive;  "path" is case-sensitive.
 //
 
-class CCgiCookies
+class NCBI_XCGI_EXPORT CCgiCookies
 {
 public:
     typedef set<CCgiCookie*, CCgiCookie::PLessCPtr>  TSet;
@@ -303,7 +303,7 @@ enum ECgiProp {
 };  // ECgiProp
 
 
-class CCgiEntry // copy-on-write semantics
+class NCBI_XCGI_EXPORT CCgiEntry // copy-on-write semantics
 {
 private:
     struct SData : public CObject
@@ -447,7 +447,7 @@ class CNcbiEnvironment;
 
 
 //
-class CCgiRequest
+class NCBI_XCGI_EXPORT CCgiRequest
 {
 public:
     // Startup initialization:
@@ -607,11 +607,13 @@ enum EUrlEncode {
 
 // Decode the URL-encoded string "str";  return the result of decoding
 // If "str" format is invalid then throw CParseException
+NCBI_XCGI_EXPORT
 extern string URL_DecodeString(const string& str);
 
 
 // URL-encode a string "str" to the "x-www-form-urlencoded" form;
 // return the result of encoding. If 
+NCBI_XCGI_EXPORT
 extern string URL_EncodeString
     (const      string& str,
      EUrlEncode encode_mark_chars = eUrlEncode_SkipMarkChars
@@ -750,6 +752,9 @@ END_NCBI_SCOPE
 /*
 * ===========================================================================
 * $Log$
+* Revision 1.63  2003/11/05 18:40:55  dicuccio
+* Added export specifiers
+*
 * Revision 1.62  2003/07/08 19:03:59  ivanov
 * Added optional parameter to the URL_Encode() to enable mark charactres encoding
 *

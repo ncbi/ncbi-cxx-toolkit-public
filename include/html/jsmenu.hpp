@@ -106,7 +106,7 @@ enum EHTML_PM_Attribute {
 /// NOTE: Menues of eKurdinSide type must be added (using AppendChild) only
 ///       to a HEAD node. And menu of this type must be only one on the page!
 
-class CHTMLPopupMenu : public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLPopupMenu : public CNCBINode
 {
     typedef CNCBINode CParent;
     friend class CHTMLPage;
@@ -233,6 +233,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.14  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.13  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

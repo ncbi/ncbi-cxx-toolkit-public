@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CCommentDiagHandler : public CDiagHandler
+class NCBI_XHTML_EXPORT CCommentDiagHandler : public CDiagHandler
 {
 public:
     CCommentDiagHandler() : m_Node(NULL) {}
@@ -66,7 +66,7 @@ public:
 };
 
 
-inline
+inline NCBI_XHTML_EXPORT
 CCommentDiagHandler* SetDiagNode(CNCBINode* node, CDiagHandler* handler = NULL)
 {
     if (handler == NULL) {
@@ -91,6 +91,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.5  2003/11/05 18:41:05  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.4  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

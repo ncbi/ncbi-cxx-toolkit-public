@@ -384,8 +384,8 @@ CHTML_font* CHTML_font::SetFontSize(int size, bool absolute)
         SetSize(size);
     } else {
         SetRelativeSize(size);
-    return this;
     }
+    return this;
 }
 
 inline
@@ -574,6 +574,9 @@ CHTML_hr::CHTML_hr(int size, const string& width, bool noShade)
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.32  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.31  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

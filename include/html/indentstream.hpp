@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 
-class CIndentingOstream : public CNcbiOstream
+class NCBI_XHTML_EXPORT CIndentingOstream : public CNcbiOstream
 {
 public:
     CIndentingOstream(CNcbiOstream& real_stream, SIZE_TYPE indent = 4);
@@ -65,6 +65,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.3  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *

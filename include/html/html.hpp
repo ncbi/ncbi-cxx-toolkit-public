@@ -157,7 +157,7 @@ enum EHTML_EH_Attribute {
 
 
 // Base class for html node.
-class CHTMLNode : public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLNode : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
@@ -241,7 +241,7 @@ public:
 
 
 // <@XXX@> mapping node.
-class CHTMLTagNode : public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLTagNode : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
@@ -254,7 +254,7 @@ public:
 
 
 // Dual print node.
-class CHTMLDualNode : public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLDualNode : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
@@ -270,7 +270,7 @@ protected:
 
 
 // A text node that contains plain text.
-class CHTMLPlainText : public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLPlainText : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
@@ -298,7 +298,7 @@ private:
 
 
 // A text node that contains html text with tags and possibly <@TAG@>.
-class CHTMLText : public CNCBINode
+class NCBI_XHTML_EXPORT CHTMLText : public CNCBINode
 {
     typedef CNCBINode CParent;
 public:
@@ -318,7 +318,7 @@ private:
 
 
 // HTML tag base class.
-class CHTMLOpenElement: public CHTMLNode
+class NCBI_XHTML_EXPORT CHTMLOpenElement: public CHTMLNode
 {
     typedef CHTMLNode CParent;
 public:
@@ -354,7 +354,7 @@ public:
 
 
 // HTML inline tag
-class CHTMLInlineElement: public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTMLInlineElement: public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
 public:
@@ -390,7 +390,7 @@ public:
 
 
 // HTML tag
-class CHTMLElement: public CHTMLInlineElement
+class NCBI_XHTML_EXPORT CHTMLElement: public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
 public:
@@ -426,7 +426,7 @@ public:
 
 
 // HTML block element.
-class CHTMLBlockElement: public CHTMLElement
+class NCBI_XHTML_EXPORT CHTMLBlockElement: public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -462,7 +462,7 @@ public:
 
 
 // HTML comment.
-class CHTMLComment : public CHTMLNode
+class NCBI_XHTML_EXPORT CHTMLComment : public CHTMLNode
 {
     typedef CHTMLNode CParent;
 public:
@@ -489,7 +489,7 @@ public:
 
 
 // <list> tag.
-class CHTMLListElement : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTMLListElement : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -533,7 +533,7 @@ public:
 
 
 // HTML special char.
-class CHTMLSpecialChar: public CHTMLDualNode
+class NCBI_XHTML_EXPORT CHTMLSpecialChar: public CHTMLDualNode
 {
     typedef CHTMLDualNode CParent;
 public:
@@ -550,7 +550,7 @@ private:
 
 
 // <html> tag
-class CHTML_html : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_html : public CHTMLElement
 {
     // CParent, constructors, destructor.
     DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(html, CHTMLElement);
@@ -605,7 +605,7 @@ class CHTML_tr_Cache;
 class CHTML_table_Cache;
 
 
-class CHTML_tc : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_tc : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -640,7 +640,7 @@ protected:
 };
 
 
-class CHTML_tr : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_tr : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -669,7 +669,7 @@ protected:
 
 // <table> tag.
 
-class CHTML_table : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_table : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -776,7 +776,7 @@ protected:
 
 
 // <form> tag
-class CHTML_form : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_form : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -799,7 +799,7 @@ public:
 
 
 // <legend> tag.
-class CHTML_legend : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_legend : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -810,7 +810,7 @@ public:
 
 
 // <fieldset> tag.
-class CHTML_fieldset : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_fieldset : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -822,7 +822,7 @@ public:
 
 
 // <label> tag.
-class CHTML_label : public CHTMLInlineElement
+class NCBI_XHTML_EXPORT CHTML_label : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
 public:
@@ -835,7 +835,7 @@ public:
 
 
 // <textarea> tag.
-class CHTML_textarea : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_textarea : public CHTMLElement
 {
     typedef CHTMLElement CParent;
 public:
@@ -847,7 +847,7 @@ public:
 
 
 // <input> tag.
-class CHTML_input : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_input : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
 public:
@@ -857,7 +857,7 @@ public:
 
 
 // <input type=checkbox> tag.
-class CHTML_checkbox : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_checkbox : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -873,7 +873,7 @@ public:
 
 
 // <input type=hidden> tag.
-class CHTML_hidden : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_hidden : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -885,7 +885,7 @@ public:
 
 
 // <input type=image> tag.
-class CHTML_image : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_image : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -899,7 +899,7 @@ public:
 
 
 // <input type=radio> tag.
-class CHTML_radio : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_radio : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -912,7 +912,7 @@ public:
 
 
 // <input type=text> tag.
-class CHTML_reset : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_reset : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -923,7 +923,7 @@ public:
 
 
 // <input type=submit> tag.
-class CHTML_submit : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_submit : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -962,7 +962,7 @@ public:
 
 
 // <input type=text> tag.
-class CHTML_text : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_text : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -978,7 +978,7 @@ public:
 
 
 // <input type=file> tag.
-class CHTML_file : public CHTML_input
+class NCBI_XHTML_EXPORT CHTML_file : public CHTML_input
 {
     typedef CHTML_input CParent;
     static const char sm_InputType[];
@@ -989,7 +989,7 @@ public:
 
 
 // <select> tag.
-class CHTML_select : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_select : public CHTMLElement
 {
     typedef CHTMLElement CParent;
     static const char sm_TagName[];
@@ -1009,7 +1009,7 @@ public:
 
 
 // <option> tag. Rarely used alone. See <select> tag.
-class CHTML_option : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_option : public CHTMLElement
 {
     typedef CHTMLElement CParent;
     static const char sm_TagName[];
@@ -1027,7 +1027,7 @@ public:
 
 
 // <a> tag.
-class CHTML_a : public CHTMLInlineElement
+class NCBI_XHTML_EXPORT CHTML_a : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
     static const char sm_TagName[];
@@ -1043,7 +1043,7 @@ public:
 
 
 // <br> tag (break).
-class CHTML_br : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_br : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
     static const char sm_TagName[];
@@ -1057,7 +1057,7 @@ public:
 };
 
 // <img> tag.
-class CHTML_img : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_img : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
 public:
@@ -1069,7 +1069,7 @@ public:
 
 
 // <dl> tag.
-class CHTML_dl : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_dl : public CHTMLElement
 {
     typedef CHTMLElement CParent;
     static const char sm_TagName[];
@@ -1088,7 +1088,7 @@ public:
 
 
 // <ol> tag.
-class CHTML_ol : public CHTMLListElement
+class NCBI_XHTML_EXPORT CHTML_ol : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
     static const char sm_TagName[];
@@ -1106,7 +1106,7 @@ public:
 
 
 // <ul> tag.
-class CHTML_ul : public CHTMLListElement
+class NCBI_XHTML_EXPORT CHTML_ul : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
     static const char sm_TagName[];
@@ -1119,7 +1119,7 @@ public:
 
 
 // <dir> tag.
-class CHTML_dir : public CHTMLListElement
+class NCBI_XHTML_EXPORT CHTML_dir : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
     static const char sm_TagName[];
@@ -1132,7 +1132,7 @@ public:
 
 
 // <menu> tag.
-class CHTML_menu : public CHTMLListElement
+class NCBI_XHTML_EXPORT CHTML_menu : public CHTMLListElement
 {
     typedef CHTMLListElement CParent;
     static const char sm_TagName[];
@@ -1145,7 +1145,7 @@ public:
 
 
 // <font> tag.
-class CHTML_font : public CHTMLInlineElement
+class NCBI_XHTML_EXPORT CHTML_font : public CHTMLInlineElement
 {
     typedef CHTMLInlineElement CParent;
     static const char sm_TagName[];
@@ -1189,7 +1189,7 @@ public:
 };
 
 
-class CHTML_basefont : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_basefont : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
     static const char sm_TagName[];
@@ -1203,7 +1203,7 @@ public:
 };
 
 
-class CHTML_color : public CHTML_font
+class NCBI_XHTML_EXPORT CHTML_color : public CHTML_font
 {
     typedef CHTML_font CParent;
 public:
@@ -1214,7 +1214,7 @@ public:
 
 
 // <hr> tag.
-class CHTML_hr : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_hr : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
     static const char sm_TagName[];
@@ -1233,7 +1233,7 @@ public:
 
 
 // <meta> tag.
-class CHTML_meta : public CHTMLOpenElement
+class NCBI_XHTML_EXPORT CHTML_meta : public CHTMLOpenElement
 {
     typedef CHTMLOpenElement CParent;
     static const char sm_TagName[];
@@ -1248,7 +1248,7 @@ public:
 
 
 // <scrpt> tag.
-class CHTML_script : public CHTMLElement
+class NCBI_XHTML_EXPORT CHTML_script : public CHTMLElement
 {
     typedef CHTMLElement CParent;
     static const char sm_TagName[];
@@ -1342,6 +1342,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.68  2003/11/05 18:41:06  dicuccio
+ * Added export specifiers
+ *
  * Revision 1.67  2003/11/03 17:02:53  ivanov
  * Some formal code rearrangement. Move log to end.
  *
