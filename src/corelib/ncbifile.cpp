@@ -893,7 +893,7 @@ string CFile::GetTmpName(void)
 }
 
 
-string CFile::GetTmpNameExt(const string& dir, const string& prefix)
+string CFile::GetTmpNameEx(const string& dir, const string& prefix)
 {
 #if defined(NCBI_COMPILER_MW_MSL)
     string filenamstr = AddTrailingPathSeparator(dir) + prefix + "XXXXXXXX";
@@ -952,7 +952,7 @@ fstream* CFile::CreateTmpFileEx(const string& dir, const string& prefix,
                                 ETextBinary text_binary, 
                                 EAllowRead allow_read)
 {
-    return CreateTmpFile(GetTmpNameExt(dir, prefix), text_binary, allow_read);
+    return CreateTmpFile(GetTmpNameEx(dir, prefix), text_binary, allow_read);
 }
 
 
@@ -1561,6 +1561,10 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.50  2003/08/08 13:37:17  siyan
+ * Changed GetTmpNameExt to GetTmpNameEx in CFile, as this is the more
+ * appropriate name.
+ *
  * Revision 1.49  2003/06/18 18:57:43  rsmith
  * alternate implementation of GetTmpNameExt replacing tempnam with mktemp for library missing tempnam
  *
