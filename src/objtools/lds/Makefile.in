@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile (lds)
+##################################
+
+LIB_PROJ = lds
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

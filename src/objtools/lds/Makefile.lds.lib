@@ -1,0 +1,8 @@
+# $Id$
+
+# Build library "lds"
+###############################
+
+LIB = lds
+SRC = lds.cpp lds_coreobjreader.cpp lds_files.cpp \
+      lds_object.cpp
