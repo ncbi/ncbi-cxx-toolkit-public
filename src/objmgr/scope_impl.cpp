@@ -688,8 +688,10 @@ CScope_Impl::x_InitBioseq_Info(TSeq_idMapValue& info,
             x_ResolveSeq_id(info, get_flag, match);
         }
     }
-    _ASSERT(info.second.m_Bioseq_Info);
-    _ASSERT(&info.second.m_Bioseq_Info->GetScopeImpl() == this);
+    if ( get_flag == CScope::eGetBioseq_All ) {
+        _ASSERT(info.second.m_Bioseq_Info);
+        _ASSERT(&info.second.m_Bioseq_Info->GetScopeImpl() == this);
+    }
     return info.second.m_Bioseq_Info;
 }
 
