@@ -347,8 +347,6 @@ void CDbBlast::SetupSearch()
         double scale_factor;
 
         x_ResetQueryDs();
-        bool translated_query = (x_eProgram == eBlastTypeBlastx || 
-                                 x_eProgram == eBlastTypeTblastx);
 
         SetupQueryInfo(m_tQueries, m_OptsHandle->GetOptions(), 
                        &m_iclsQueryInfo);
@@ -388,9 +386,11 @@ void CDbBlast::SetupSearch()
             m_ivErrors.push_back(blast_message);
         }
         
-        if (translated_query) {
-            /* Filter locations were returned in protein coordinates; 
-               convert them back to nucleotide here */
+	/* If query is translated, the filtering locations are returned in 
+	   protein scale; convert them back to nucleotide scale here. */
+        if (x_eProgram == eBlastTypeBlastx || 
+	    x_eProgram == eBlastTypeTblastx ||
+	    x_eProgram == eBlastTypeRpsTblastn) {
             BlastMaskLocProteinToDNA(&m_ipFilteredRegions, m_tQueries);
         }
 
@@ -655,6 +655,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.42  2004/09/21 13:50:59  dondosha
+ * Conversion of filtering locations from protein to nucleotide scale is now needed for RPS tblastn
+ *
  * Revision 1.41  2004/09/13 14:14:20  dondosha
  * Minor fix in conversion from Boolean to bool
  *
