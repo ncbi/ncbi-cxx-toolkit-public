@@ -56,19 +56,49 @@ class IFormatter;
 class CAccessionItem : public CFlatItem
 {
 public:
+    // typedef
+    typedef list<string>    TExtra_accessions;
+
     CAccessionItem(CFFContext& ctx);
     void Format(IFormatter& formatter, IFlatTextOStream& text_os) const;
     
     const string& GetAccession(void) const;
-    const list<string>& GetExtraAccessions(void) const;
+    const string& GetWGSAccession(void) const;
+    const TExtra_accessions& GetExtraAccessions(void) const;
 
 private:
     void x_GatherInfo(CFFContext& ctx);
 
     // data
-    string          m_Accession;
-    list<string>    m_ExtraAccessions;
+    string              m_Accession;
+    string              m_WGSAccession;
+    TExtra_accessions   m_ExtraAccessions;
 };
+
+
+
+/////////////////////////////////////////////////////////////////////////////
+//  inline methods
+
+inline
+const string& CAccessionItem::GetAccession(void) const
+{
+    return m_Accession;
+}
+
+
+inline
+const string& CAccessionItem::GetWGSAccession(void) const
+{
+    return m_WGSAccession;
+}
+
+
+inline
+const CAccessionItem::TExtra_accessions& CAccessionItem::GetExtraAccessions(void) const
+{
+    return m_ExtraAccessions;
+}
 
 
 END_SCOPE(objects)
@@ -79,6 +109,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.2  2004/04/13 16:41:54  shomrat
+* + GetWGSAccession(); inlined methods
+*
 * Revision 1.1  2003/12/17 19:44:34  shomrat
 * Initial revision (adapted from flat lib)
 *
