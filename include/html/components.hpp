@@ -125,7 +125,7 @@ public:
     };
 
     // Subpages
-    virtual void CreateSubNodes(void);
+    virtual void       CreateSubNodes(void);
     virtual CNCBINode* CreateComments(void);
 
 public:
@@ -134,8 +134,8 @@ public:
     CTextInputDescription m_Term;
     CSelectDescription    m_DispMax;
 
-    int     m_Width;    // in pixels
-    string  m_BgColor;
+    int                   m_Width;    // in pixels
+    string                m_BgColor;
 };
 
 
@@ -170,10 +170,12 @@ public:
     int             m_Current;   // current page number
     
 private:
-    void x_AddInactiveImageString(CNCBINode* node, const string& name, int number,
-                                  const string& imageStart, const string& imageEnd);
-    void x_AddImageString(CNCBINode* node, const string& name, int number,
-                          const string& imageStart, const string& imageEnd);
+    void x_AddInactiveImageString
+    (CNCBINode* node, const string& name, int number,
+     const string& imageStart, const string& imageEnd);
+    void x_AddImageString
+    (CNCBINode* node, const string& name, int number,
+     const string& imageStart, const string& imageEnd);
 };
 
 
@@ -223,6 +225,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.27  2004/01/30 14:01:32  lavr
+ * Few cosmetic rearrangements
+ *
  * Revision 1.26  2004/01/27 15:38:54  ivanov
  * Get rid of Sun Workshop compilation warning.
  *
