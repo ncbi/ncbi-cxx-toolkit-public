@@ -1,5 +1,5 @@
 #############################################################################
-#  $Id: configure.ac,v 1.16 2001/10/25 00:11:40 vakatov Exp $
+#  $Id: configure.ac,v 1.17 2001/10/25 05:41:15 vakatov Exp $
 #  Derived from configure.in version 1.173.
 # ==========================================================================
 #
@@ -129,6 +129,8 @@ AC_ARG_WITH(sybase,
    [ --without-sybase        do not use SYBASE libraries])
 AC_ARG_WITH(sybase-local,
    [ --with-sybase-local=DIR use local SYBASE install (DIR is optional)])
+AC_ARG_WITH(ftds,
+   [ --without-ftds          do not use FreeTDS libraries])
 AC_ARG_WITH(wxwin,
    [ --without-wxwin         do not use wxWindows])
 AC_ARG_WITH(wxwin2,
@@ -168,7 +170,7 @@ x_with_list="\
 debug optimization dll static runpath mt 64 \
 exe autodep suffix hostspec execopy bincopy lib-rebuilds lib-rebuilds=ask \
 ncbi-c wxwin fastcgi sss sssdb sssutils geo sp pubmed sybase sybase-local \
-orbacus local-lbsm serial objects app ctools gui internal"
+ftds orbacus local-lbsm serial objects app ctools gui internal"
 
 changequote(, )dnl
 x_with_list=`echo "$x_with_list" | sed 's/\([^ ][^ ]*\)/--with-\1 --without-\1/g'`
