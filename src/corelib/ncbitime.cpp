@@ -449,6 +449,8 @@ int CTime::DayOfWeek(void) const
 void CTime::SetFormat(const string& fmt)
 {
     x_VerifyFormat(fmt);
+    // Here we do not need to delete a previous value stored in the TLS.
+    // The TLS will destroy it using s_TlsFormatCleanup().
     string* format = new string(fmt);
     s_TlsFormat->SetValue(format, s_TlsFormatCleanup);
 }
@@ -728,14 +730,16 @@ CTime& CTime::AddYear(int years, EDaylight adl)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
         }
         aflag = true;
     }
     m_Year = Year() + years;
     x_AdjustDay();
-    if ( aflag )
+    if ( aflag ) {
         x_AdjustTime(*pt);
+        delete pt;
+    }
     return *this;
 }
 
@@ -750,7 +754,7 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
         }
         aflag = true;
     }
@@ -760,8 +764,10 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
     m_Year = newYear;
     m_Month = (int) newMonth + 1;
     x_AdjustDay();
-    if ( aflag )
+    if ( aflag ) {
         x_AdjustTime(*pt);
+        delete pt;
+    }
     return *this;
 }
 
@@ -775,7 +781,7 @@ CTime& CTime::AddDay(int days, EDaylight adl)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
         }
         aflag = true;
     }
@@ -784,8 +790,10 @@ CTime& CTime::AddDay(int days, EDaylight adl)
     *this = s_Number2Date(s_Date2Number(*this) + days, *this);
 
     // If need, make adjustment time specially
-    if (aflag) 
+    if (aflag) {
         x_AdjustTime(*pt);
+        delete pt;
+    }
     return *this;
 }
 
@@ -801,7 +809,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
     if ( (adl == eAdjustDaylight)  &&  x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
         }
         aflag = true;
     }
@@ -810,8 +818,10 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
     s_Offset(&newHour, hours, 24, &dayOffset);
     m_Hour = (int) newHour;
     AddDay(dayOffset, eIgnoreDaylight);
-    if (aflag) 
+    if (aflag) {
         x_AdjustTime(*pt, shift_time);
+        delete pt;
+    }
     return *this;
 }
 
@@ -825,7 +835,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
     if ( (adl == eAdjustDaylight) && x_NeedAdjustTime() ) {
         pt = new CTime(*this);
         if ( !pt ) {
-            NCBI_THROW(CCoreException,eNullPtr,kEmptyStr);
+            NCBI_THROW(CCoreException, eNullPtr, kEmptyStr);
         }
         aflag = true;
     }
@@ -834,8 +844,10 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
     s_Offset(&newMinute, minutes, 60, &hourOffset);
     m_Minute = (int) newMinute;
     AddHour(hourOffset, eIgnoreDaylight);
-    if (aflag) 
+    if (aflag) {
         x_AdjustTime(*pt);
+        delete pt;
+    }
     return *this;
 }
 
@@ -1288,6 +1300,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.38  2003/07/15 20:09:22  ivanov
+ * Fixed some memory leaks
+ *
  * Revision 1.37  2003/07/15 19:37:03  vakatov
  * CTime::x_Init() -- recognize (but then just skip, ignoring the value)
  * the weekday
