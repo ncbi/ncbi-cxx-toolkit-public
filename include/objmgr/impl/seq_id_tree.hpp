@@ -115,9 +115,9 @@ protected:
     typedef TRWLock::TReadLockGuard TReadLockGuard;
     typedef TRWLock::TWriteLockGuard TWriteLockGuard;
 */
-    typedef CFastMutex TRWLock;
-    typedef CFastMutexGuard TReadLockGuard;
-    typedef CFastMutexGuard TWriteLockGuard;
+    typedef CMutex TRWLock;
+    typedef CMutexGuard TReadLockGuard;
+    typedef CMutexGuard TWriteLockGuard;
 
     mutable TRWLock m_TreeLock;
 
@@ -559,6 +559,10 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.3  2004/01/08 02:49:11  ucko
+* Make m_TreeLock a recursive mutex, as CSeq_id_Textseq_Tree can no
+* longer safely use a fast mutex.
+*
 * Revision 1.2  2003/09/30 16:22:01  vasilche
 * Updated internal object manager classes to be able to load ID2 data.
 * SNP blobs are loaded as ID2 split blobs - readers convert them automatically.
