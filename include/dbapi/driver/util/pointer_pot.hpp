@@ -124,12 +124,12 @@ public:
     }
 	    
     void Free(void* ptr) {
-        delete []ptr;
+        delete [] static_cast<char*>(ptr);
         m_Pot.Remove(ptr);
     }
     
     ~CMemPot() {
-        for(int i= m_Pot.NofItems(); i--; delete[]m_Pot.Get(i));
+        for(int i= m_Pot.NofItems(); i--; delete[] static_cast<char*>(m_Pot.Get(i)));
     }
     
 private:
@@ -143,6 +143,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2002/08/28 17:07:24  vasilche
+ * Fixed delete[] of void pointer
+ *
  * Revision 1.3  2002/06/20 18:37:23  soussov
  * odbc related changes
  *
