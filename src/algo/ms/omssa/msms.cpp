@@ -122,40 +122,51 @@ bool CCleave::CalcAndCut(const char *SeqStart,
     // iterate through sequence
     // note that this loop doesn't check at the end of the sequence
     for(; *PepStart < SeqEnd; (*PepStart)++) {
-	SeqChar = **PepStart;
-
-	// check for mods that are type AA only
-	CheckAAMods(eModAA, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
-		    DeltaMass, *PepStart, ModEnum);
-
-
-	// n terminus
-	if(*PepStart == SeqStart) {
-	    // check non-specific mods
-	    CheckNonSpecificMods(eModN, VariableMods, NumMod, MaxNumMod, Site,
-				 DeltaMass, *PepStart, ModEnum);
-	    // todo: treat n-term fixed mods as true fixed mods
-	    CheckNonSpecificMods(eModN, FixedMods, NumMod, MaxNumMod, Site,
-				 DeltaMass, *PepStart, ModEnum);
-
-	    // check specific mods
-	    CheckAAMods(eModNAA, VariableMods, NumMod, SeqChar, MaxNumMod,
-			Site, DeltaMass, *PepStart, ModEnum);
-	}
-
-	CalcMass(SeqChar, Masses, IntCalcMass);
-
-	// check for cleavage point
-	if(CheckCleave(SeqChar, *PepStart)) { 
-	  EndMass(EndMasses);
-	  return false;
-	}
-
+    	SeqChar = **PepStart;
+    
+    	// check for mods that are type AA only
+    	CheckAAMods(eModAA, VariableMods, NumMod, SeqChar, MaxNumMod, Site,
+    		    DeltaMass, *PepStart, ModEnum);
+    
+    
+    	// n terminus
+    	if(*PepStart == SeqStart) {
+    	    // check non-specific mods
+    	    CheckNonSpecificMods(eModN, VariableMods, NumMod, MaxNumMod, Site,
+    				 DeltaMass, *PepStart, ModEnum);
+    	    // todo: treat n-term fixed mods as true fixed mods
+    	    CheckNonSpecificMods(eModN, FixedMods, NumMod, MaxNumMod, Site,
+    				 DeltaMass, *PepStart, ModEnum);
+    
+    	    // check specific mods
+    	    CheckAAMods(eModNAA, VariableMods, NumMod, SeqChar, MaxNumMod,
+    			Site, DeltaMass, *PepStart, ModEnum);
+    	}
+    
+    	CalcMass(SeqChar, Masses, IntCalcMass);
+    
+    	// check for cleavage point
+    	if(CheckCleave(SeqChar, *PepStart)) { 
+            // add c term mod
+    	    CheckNonSpecificMods(eModC, VariableMods, NumMod, MaxNumMod, Site,
+    				 DeltaMass, *PepStart, ModEnum);
+    	    // todo: treat n-term fixed mods as true fixed mods
+    	    CheckNonSpecificMods(eModC, FixedMods, NumMod, MaxNumMod, Site,
+    				 DeltaMass, *PepStart, ModEnum);
+    	    EndMass(EndMasses);
+    	    return false;
+    	}
     }
 
     // todo: deal with mods on the end
 
     CalcMass(**PepStart, Masses, IntCalcMass);
+    // add c term mods
+    CheckNonSpecificMods(eModC, VariableMods, NumMod, MaxNumMod, Site,
+             DeltaMass, *PepStart, ModEnum);
+    // todo: treat c-term fixed mods as true fixed mods
+    CheckNonSpecificMods(eModC, FixedMods, NumMod, MaxNumMod, Site,
+             DeltaMass, *PepStart, ModEnum);
     EndMass(EndMasses);
     return true;  // end of sequence
 }
@@ -499,6 +510,9 @@ void CMassArray::Init(const CMSMod &Mods,
 
 /*
   $Log$
+  Revision 1.12  2004/11/01 22:04:12  lewisg
+  c-term mods
+
   Revision 1.11  2004/09/29 19:43:09  lewisg
   allow setting of ions
 

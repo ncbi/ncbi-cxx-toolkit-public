@@ -83,7 +83,7 @@ private:
 
 COMSSA::COMSSA()
 {
-    SetVersion(CVersionInfo(0, 9, 3));
+    SetVersion(CVersionInfo(0, 9, 4));
 }
 
 
@@ -310,6 +310,7 @@ int COMSSA::Run()
 	_TRACE("ommsa: score initialized");
 	CRef <CSpectrumSet> Spectrumset(new CSpectrumSet);
 
+    int FileRetVal(1);
 	if(args["fx"].AsString().size() != 0) {
 	    ifstream PeakFile(args["fx"].AsString().c_str());
 	    if(!PeakFile) {
@@ -317,11 +318,7 @@ int COMSSA::Run()
 			 args["fx"].AsString());
 		return 1;
 	    }
-	    if(Spectrumset->LoadMultDTA(PeakFile) != 0) {
-		ERR_POST(Fatal <<" omssacl: error reading spectrum file " <<
-			 args["fx"].AsString());
-		return 1;
-	    }
+	    FileRetVal = Spectrumset->LoadMultDTA(PeakFile);
 	}
 	else if(args["f"].AsString().size() != 0) {
 	    ifstream PeakFile(args["f"].AsString().c_str());
@@ -330,11 +327,7 @@ int COMSSA::Run()
 			 args["f"].AsString());
 		return 1;
 	    }
-	    if(Spectrumset->LoadDTA(PeakFile) != 0) {
-		ERR_POST(Fatal << "omssacl: not able to read spectrum file " <<
-			 args["f"].AsString());
-		return 1;
-	    }
+	    FileRetVal = Spectrumset->LoadDTA(PeakFile);
 	}
 	else if(args["fb"].AsString().size() != 0) {
 	    ifstream PeakFile(args["fb"].AsString().c_str());
@@ -343,16 +336,22 @@ int COMSSA::Run()
 			 args["fb"].AsString());
 		return 1;
 	    }
-	    if(Spectrumset->LoadMultBlankLineDTA(PeakFile) != 0) {
-		ERR_POST(Fatal << "omssacl: not able to read spectrum file " <<
-			 args["fb"].AsString());
-		return 1;
-	    }
+	    FileRetVal = Spectrumset->LoadMultBlankLineDTA(PeakFile);
 	}
 	else {
 	    ERR_POST(Fatal << "omssatest: input file not given.");
 	    return 1;
 	}
+
+    if(FileRetVal == -1) {
+        ERR_POST(Fatal << "omssacl: too many spectra in input file");
+        return 1;
+    }
+    else if(FileRetVal == 1) {
+        ERR_POST(Fatal << "omssacl: unable to read spectrum file -- incorrect file type?");
+        return 1;
+    }
+
 
 	CMSResponse Response;
 	CMSRequest Request;
@@ -445,80 +444,40 @@ int COMSSA::Run()
     CNcbiOfstream os;
 
 	if(args["o"].AsString() != "") {
-//	    auto_ptr<CObjectOStream>
 		txt_out.reset(CObjectOStream::Open(args["o"].AsString().c_str(),
 					     eSerial_AsnText));
-//	    txt_out->Write(ObjectInfo(Response));
 	}
 	else if(args["ob"].AsString() != "") {
-//	    auto_ptr<CObjectOStream>
 		txt_out.reset(CObjectOStream::Open(args["ob"].AsString().c_str(),
 					     eSerial_AsnBinary));
-//	    txt_out->Write(ObjectInfo(Response));
 	}
 	else if(args["ox"].AsString() != "") {
-//	    CNcbiOfstream os(args["ox"].AsString().c_str());
-//	    auto_ptr<CObjectOStreamXml>
- //   	txt_out(new CObjectOStreamXml(os, false));
         txt_out.reset(CObjectOStream::Open(args["ox"].AsString().c_str(), eSerial_Xml));
         // turn on xml schema
         CObjectOStreamXml *xml_out = dynamic_cast <CObjectOStreamXml *> (txt_out.get());
         xml_out->SetReferenceSchema();
 	}
 
-    if(args["w"]) {
-        // make complex object
-        CMSSearch MySearch;
-        CRef<CMSRequest> requestref(&Request);
-        MySearch.SetRequest().push_back(requestref);
-        CRef<CMSResponse> responseref(&Response);
-        MySearch.SetResponse().push_back(responseref);
-        // write out
-        txt_out->Write(ObjectInfo(MySearch));
-        requestref.Release();
-        responseref.Release();
-        MySearch.SetRequest().begin()->Release();
-        MySearch.SetResponse().begin()->Release();
-    }
-    else {
-        txt_out->Write(ObjectInfo(Response));
+    if(txt_out.get() != 0) {
+        if(args["w"]) {
+            // make complex object
+            CMSSearch MySearch;
+            CRef<CMSRequest> requestref(&Request);
+            MySearch.SetRequest().push_back(requestref);
+            CRef<CMSResponse> responseref(&Response);
+            MySearch.SetResponse().push_back(responseref);
+            // write out
+            txt_out->Write(ObjectInfo(MySearch));
+            requestref.Release();
+            responseref.Release();
+            MySearch.SetRequest().begin()->Release();
+            MySearch.SetResponse().begin()->Release();
+        }
+        else {
+            txt_out->Write(ObjectInfo(Response));
+        }
     }
 
-#if 0
-	// write out input 
-	if(args["wi"].AsString() != "") {
-	    auto_ptr<CObjectOStream>
-		txt_out(CObjectOStream::Open(args["wi"].AsString().c_str(),
-					     eSerial_AsnText));
-	    txt_out->Write(ObjectInfo(Request));
-	}
-	else if(args["wib"].AsString() != "") {
-	    auto_ptr<CObjectOStream>
-		txt_out(CObjectOStream::Open(args["wib"].AsString().c_str(),
-					     eSerial_AsnBinary));
-	    txt_out->Write(ObjectInfo(Request));
-	}
-	else if(args["wix"].AsString() != "") {
-	    CNcbiOfstream os(args["wix"].AsString().c_str());
-	    auto_ptr<CObjectOStreamXml>
-		txt_out(new CObjectOStreamXml(os, false));
-		txt_out->SetReferenceSchema();
-	    txt_out->Write(ObjectInfo(Request));
-	}
-#endif
-#if MSGRAPH
-	if(args["g"].AsString() != "") {
-	    CMSDrawSpectra DrawIt(kMSWIDTH, kMSHEIGHT);
-	    DrawIt.Init(Request);
-	    DrawIt.DrawHit(Response, 0, Search, true, true);
-	    DrawIt.DrawSpectra();
-	
-	    FILE *os;
-	    os = fopen(args["g"].AsString().c_str(), "wb");
-	    DrawIt.Output(os);
-	    fclose(os);
-	}
-#endif
 
     } catch (NCBI_NS_STD::exception& e) {
 	ERR_POST(Fatal << "Exception in COMSSA::Run: " << e.what());
@@ -531,6 +490,9 @@ int COMSSA::Run()
 
 /*
   $Log$
+  Revision 1.20  2004/11/01 22:04:12  lewisg
+  c-term mods
+
   Revision 1.19  2004/10/20 22:24:48  lewisg
   neutral mass bugfix, concatenate result and response
 

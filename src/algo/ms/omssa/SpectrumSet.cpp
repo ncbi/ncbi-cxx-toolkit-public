@@ -66,104 +66,119 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 ///
 /// load multiple dta's in xml-like format
 ///
-int CSpectrumSet::LoadMultDTA(std::istream& DTA)
+int CSpectrumSet::LoadMultDTA(std::istream& DTA, int Max)
 {   
     CRef <CMSSpectrum> MySpectrum;
     int iIndex(-1); // the spectrum index
+    int Count(0);  // total number of spectra
     string Line;
     //    double dummy;
     bool GotOne(false);  // has a spectrum been read?
     try {
-	do {
-	    do {
-		getline(DTA, Line);
-	    } while(NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
-	    if(!DTA || DTA.eof()) {
-		if(GotOne) return 0;
-		else return 1;
-	    }
-	    GotOne = true;
-    
-	    MySpectrum = new CMSSpectrum;
-	    CRegexp RxpGetNum("\\sid\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
-	    string Match;
-	    if((Match = RxpGetNum.GetMatch(Line.c_str(), 0, 2)) != "" ||
-	       (Match = RxpGetNum.GetMatch(Line.c_str(), 0, 3)) != "") {
-		MySpectrum->SetNumber(NStr::StringToInt(Match));
-	    }
-	    else {
-		MySpectrum->SetNumber(iIndex);
-		iIndex--;
-	    }
+        //       DTA.exceptions(ios_base::failbit | ios_base::badbit);
+        do {
+            do {
+                getline(DTA, Line);
+            } while (NStr::Compare(Line, 0, 4, "<dta") != 0 && DTA && !DTA.eof());
+            if (!DTA || DTA.eof()) {
+                if (GotOne) return 0;
+                else return 1;
+            }
+//            GotOne = true;
+            Count++;
+            if (Max > 0 && Count > Max) return -1;  // too many
 
-	    CRegexp RxpGetName("\\sname\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
-	    if((Match = RxpGetName.GetMatch(Line.c_str(), 0, 2)) != "" ||
-	       (Match = RxpGetName.GetMatch(Line.c_str(), 0, 3)) != "") {
-		MySpectrum->SetIds().push_back(Match);
-	    }
-    
-	    GetDTAHeader(DTA, MySpectrum);
-	    getline(DTA, Line);
-	    getline(DTA, Line);
+            MySpectrum = new CMSSpectrum;
+            CRegexp RxpGetNum("\\sid\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
+            string Match;
+            if ((Match = RxpGetNum.GetMatch(Line.c_str(), 0, 2)) != "" ||
+                (Match = RxpGetNum.GetMatch(Line.c_str(), 0, 3)) != "") {
+                MySpectrum->SetNumber(NStr::StringToInt(Match));
+            } else {
+                MySpectrum->SetNumber(iIndex);
+                iIndex--;
+            }
 
-	    while(NStr::Compare(Line, 0, 5, "</dta") != 0) {
-		CNcbiIstrstream istr(Line.c_str());
-		if(!GetDTABody(istr, MySpectrum)) break;;
-		getline(DTA, Line);
-	    } 
+            CRegexp RxpGetName("\\sname\\s*=\\s*(\"(\\S+)\"|(\\S+)\b)");
+            if ((Match = RxpGetName.GetMatch(Line.c_str(), 0, 2)) != "" ||
+                (Match = RxpGetName.GetMatch(Line.c_str(), 0, 3)) != "") {
+                MySpectrum->SetIds().push_back(Match);
+            }
 
-	    Set().push_back(MySpectrum);
-	} while(DTA && !DTA.eof());
+            if(!GetDTAHeader(DTA, MySpectrum)) return 1;
+            getline(DTA, Line);
+            getline(DTA, Line);
 
+            while (NStr::Compare(Line, 0, 5, "</dta") != 0) {
+                CNcbiIstrstream istr(Line.c_str());
+                if (!GetDTABody(istr, MySpectrum)) break;
+                GotOne = true;
+                getline(DTA, Line);
+            } 
+
+            Set().push_back(MySpectrum);
+        } while (DTA && !DTA.eof());
+
+    if (!GotOne) return 1;
+        
     } catch (NCBI_NS_STD::exception& e) {
-	ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
-	throw;
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
+        throw;
+    } catch (...) {
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " );
+        throw;
     }
-
     return 0;
 }
 
 ///
 /// load multiple dta's separated by a blank line
 ///
-int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA)
+int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA, int Max)
 {   
     CRef <CMSSpectrum> MySpectrum;
     int iIndex(0); // the spectrum index
+    int Count(0);  // total number of spectra
     string Line;
-    //    double dummy;
     bool GotOne(false);  // has a spectrum been read?
     try {
-	while (DTA && !DTA.eof()){
-	    GotOne = true;
-    
-	    MySpectrum = new CMSSpectrum;
-	    MySpectrum->SetNumber(iIndex);
-	    iIndex++;
-    
-	    GetDTAHeader(DTA, MySpectrum);
-	    getline(DTA, Line);
-	    getline(DTA, Line);
+//        DTA.exceptions(ios_base::failbit | ios_base::badbit);
+        do {
+//            GotOne = true;
+            Count++;
+            if (Max > 0 && Count > Max) return -1;  // too many
 
-	    if(!DTA || DTA.eof()) {
-		if(GotOne) return 0;
-		else return 1;
-	    }
+            MySpectrum = new CMSSpectrum;
+            MySpectrum->SetNumber(iIndex);
+            iIndex++;
 
-	    while(Line != "") {
-		CNcbiIstrstream istr(Line.c_str());
-		if(!GetDTABody(istr, MySpectrum)) break;;
-		getline(DTA, Line);
-	    } 
+            if (!GetDTAHeader(DTA, MySpectrum)) return 1;
+            getline(DTA, Line);
+            getline(DTA, Line);
 
-	    Set().push_back(MySpectrum);
-	} while(DTA && !DTA.eof());
-	if(GotOne) return 0;
-	else return 1;
+            if (!DTA || DTA.eof()) {
+                if (GotOne) return 0;
+                else return 1;
+            }
+
+            while (Line != "") {
+                CNcbiIstrstream istr(Line.c_str());
+                if (!GetDTABody(istr, MySpectrum)) break;
+                GotOne = true;
+                getline(DTA, Line);
+            } 
+
+            Set().push_back(MySpectrum);
+        } while (DTA && !DTA.eof());
+
+        if (!GotOne) return 1;
 
     } catch (NCBI_NS_STD::exception& e) {
-	ERR_POST(Info << "Exception in CSpectrumSet::LoadMultDTA: " << e.what());
-	throw;
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadMultBlankLineDTA: " << e.what());
+        throw;
+    } catch (...) {
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadMultBlankLineDTA: " );
+        throw;
     }
 
     return 0;
@@ -173,13 +188,15 @@ int CSpectrumSet::LoadMultBlankLineDTA(std::istream& DTA)
 ///
 ///  Read in the header of a DTA file
 ///
-void CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
+bool CSpectrumSet::GetDTAHeader(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
 {
-    double dummy;
+    double dummy(0.0L);
 
     DTA >> dummy;
-    MySpectrum->SetPrecursormz(static_cast <int> ((dummy-1.008)*MSSCALE));
+    if (dummy <= 0) return false;
+    MySpectrum->SetPrecursormz(static_cast <int> ((dummy-1.00794)*MSSCALE));
     DTA >> dummy;
+    if (dummy <= 0) return false;
     MySpectrum->SetCharge().push_back(static_cast <int> (dummy)); 
 }
 
@@ -192,11 +209,12 @@ bool CSpectrumSet::GetDTABody(std::istream& DTA, CRef <CMSSpectrum>& MySpectrum)
     double dummy(0.0L);
 
     DTA >> dummy;
-    if(dummy == 0) return false;
+    if (dummy <= 0) return false;
     MySpectrum->SetMz().push_back(static_cast <int> (dummy*MSSCALE));
     // attenuate the really big peaks
     DTA >> dummy;
-    if(dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
+    if (dummy <= 0) return false;
+    if (dummy > kMax_UInt) dummy = kMax_UInt/MSSCALE;
     MySpectrum->SetAbundance().push_back(static_cast <int> (dummy*MSSCALE));
 
     return true;
@@ -212,23 +230,28 @@ int CSpectrumSet::LoadDTA(std::istream& DTA)
     bool GotOne(false);  // has a spectrum been read?
 
     try {
-	MySpectrum = new CMSSpectrum;
-	MySpectrum->SetNumber(1);
-	GetDTAHeader(DTA, MySpectrum);
-    
-	while(DTA) {
-	    if(!GetDTABody(DTA, MySpectrum)) break;
-	    GotOne = true;
-	} 
+//        DTA.exceptions(ios_base::failbit | ios_base::badbit);
 
-	Set().push_back(MySpectrum);
+        MySpectrum = new CMSSpectrum;
+        MySpectrum->SetNumber(1);
+        if(!GetDTAHeader(DTA, MySpectrum)) return 1;
+
+        while (DTA) {
+            if (!GetDTABody(DTA, MySpectrum)) break;
+            GotOne = true;
+        } 
+
+        Set().push_back(MySpectrum);
     } catch (NCBI_NS_STD::exception& e) {
-	ERR_POST(Info << "Exception in CSpectrumSet::LoadDTA: " << e.what());
-	throw;
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadDTA: " << e.what());
+        throw;
+    } catch (...) {
+        ERR_POST(Info << "Exception in CSpectrumSet::LoadDTA: " );
+        throw;
     }
 
-    if(GotOne) return 0;
-    else return 1;
+    if (!GotOne) return 1;
+    return 0;
 }
 
 
@@ -241,6 +264,9 @@ END_NCBI_SCOPE
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.11  2004/11/01 22:04:01  lewisg
+ * c-term mods
+ *
  * Revision 1.10  2004/10/20 22:24:48  lewisg
  * neutral mass bugfix, concatenate result and response
  *

@@ -69,15 +69,19 @@ public:
     ///
     /// load in multiple dta files with <dta> tag separators
     ///
+    /// returns -1 if more than Max spectra read
     int LoadMultDTA(
-		    std::istream& DTA  // stream containing tag delimited dtas
+		    std::istream& DTA,  // stream containing tag delimited dtas
+            int Max = 0   // maximum number of dtas to read in, 0= no limit
 		    );
 
     ///
     /// load multiple dta's separated by a blank line
     ///
+    /// returns -1 if more than Max spectra read
     int LoadMultBlankLineDTA(
-			     std::istream& DTA  // stream containing blank delimited dtas
+			     std::istream& DTA,  // stream containing blank delimited dtas
+                 int Max = 0   // maximum number of dtas to read in, 0= no limit
 			     );
 
 protected:
@@ -85,7 +89,7 @@ protected:
     ///
     ///  Read in the header of a DTA file
     ///
-    void GetDTAHeader(
+    bool GetDTAHeader(
 		      std::istream& DTA,  // input stream
 		      CRef <CMSSpectrum>& MySpectrum   // asn.1 container for spectra
 		      );
@@ -132,6 +136,9 @@ CSpectrumSet::~CSpectrumSet(void)
  * ===========================================================================
  *
  * $Log$
+ * Revision 1.5  2004/11/01 22:04:01  lewisg
+ * c-term mods
+ *
  * Revision 1.4  2004/05/27 20:52:15  lewisg
  * better exception checking, use of AutoPtr, command line parsing
  *

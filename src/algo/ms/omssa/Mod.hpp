@@ -95,7 +95,13 @@ const EMSModType ModTypes[eMSMod_max] = {
     eModN,
     eModAA,
     eModAA,
-    eModAA
+    eModAA,
+    eModAA,
+    eModAA,
+    eModC,
+    eModAA,
+    eModAA,
+    eModC
 };
 
 ///
@@ -117,7 +123,13 @@ char const * const kModNames[eMSMod_max] = {
     "N-term trimethylation",
     "beta methythiolation of D",
     "methylation of Q",
-    "trimethylation of K"
+    "trimethylation of K",
+    "methylation of D",
+    "methylation of E",
+    "C-term methylation",
+    "trideuteromethylation of D",
+    "trideuteromethylation of E",
+    "C-term trideuteromethylation"
 };	   
  
 ///
@@ -126,20 +138,20 @@ char const * const kModNames[eMSMod_max] = {
 /// column are the AA's modified (if any)
 ///
 const char ModChar [3][eMSMod_max] = {
-    {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16','\x0c','\x00','\x00','\x00','\x04','\x0f','\x0a' },
-    {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' },
-    {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
+    {'\x0a','\x0c','\x03','\x03','\x0d','\x03','\x11','\x12','\x16','\x0c','\x00','\x00','\x00','\x04','\x0f','\x0a','\x04','\x05','\x00','\x04','\x05','\x00' },
+    {'\x00','\x00','\x00','\x00','\x0f','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' },
+    {'\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00','\x00' }
 };
 
 ///
 /// the number of characters to compare
 ///
-const int NumModChars[eMSMod_max] = { 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1 };
+const int NumModChars[eMSMod_max] = { 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0 };
 
 ///
 /// the modification masses
 ///
-const int ModMass[eMSMod_max] = { 1402, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997, -13104, 4201, 1402, 4205, 4599, 1402, 4205};
+const int ModMass[eMSMod_max] = { 1402, 1600, 5801, 5702, 98, 7104, 7997, 7997, 7997, -13104, 4201, 1402, 4205, 4599, 1402, 4205, 1402, 1402, 1402, 1704, 1704, 1704};
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -177,6 +189,9 @@ END_NCBI_SCOPE
 * ===========================================================================
 *
 * $Log$
+* Revision 1.7  2004/11/01 22:04:01  lewisg
+* c-term mods
+*
 * Revision 1.6  2004/06/23 22:34:36  lewisg
 * add multiple enzymes
 *

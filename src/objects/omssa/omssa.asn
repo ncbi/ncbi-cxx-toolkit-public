@@ -1,4 +1,4 @@
--- $Id: omssa.asn,v 1.15 2004/10/20 22:24:51 lewisg Exp $
+-- $Id: omssa.asn,v 1.16 2004/11/01 22:04:27 lewisg Exp $
 --**********************************************************************
 --
 --  OMSSA (Open Mass Spectrometry Search Algorithm) data definitions
@@ -78,7 +78,13 @@ MSMod ::= INTEGER {
     dmethythiol (13),     -- beta methythiolation of D
     qmethyl (14),         -- methylation of Q
     ktrimethyl (15),      -- trimethylation of K
-    max(16),
+    dmethyl (16),         -- methylation of D
+    emethyl (17),         -- methylation of E
+    ctermmethyl (18),     -- C terminal methylation
+    dtrideuteromethyl (19), -- trideuteromethylation of D
+    etrideuteromethyl (20), -- trideuteromethylation of E
+    ctermtrideuteromethy (21),  -- C terminal trideuteromethylation
+    max(22),
     none(255)
     }
 
