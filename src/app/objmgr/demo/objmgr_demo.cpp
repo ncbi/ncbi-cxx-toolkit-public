@@ -941,7 +941,7 @@ int CDemoApp::Run(void)
                 range_to == 0? kInvalidSeqPos: range_to - range_from + 1;
             TSeqPos actual_end =
                 range_to == 0? handle.GetBioseqLength(): range_to + 1;
-            TSeqPos actual_length = actual_end - range_from;
+            TSeqPos actual_length = actual_end; actual_length -= range_from;
             const CSeqMap& seq_map = handle.GetSeqMap();
             NcbiCout << "Mol type: " << seq_map.GetMol() << NcbiEndl;
             for (size_t levels = 0;  levels < 4;  ++levels) {
@@ -1044,6 +1044,9 @@ int main(int argc, const char* argv[])
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.97  2005/01/27 20:06:17  grichenk
+* Fixed unused variable warning
+*
 * Revision 1.96  2005/01/05 18:58:41  vasilche
 * Added -noexternal option.
 *
