@@ -28,36 +28,6 @@
  * File Description:
  *   Simple random test of heap manager API. Not an interface example!
  *
- * --------------------------------------------------------------------------
- * $Log$
- * Revision 6.9  2002/04/15 19:21:44  lavr
- * +#include "../test/test_assert.h"
- *
- * Revision 6.8  2001/07/03 20:53:38  lavr
- * HEAP_Copy() test added
- *
- * Revision 6.7  2001/06/19 19:12:04  lavr
- * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
- *
- * Revision 6.6  2001/01/23 23:22:05  lavr
- * Patched logging (in a few places)
- *
- * Revision 6.5  2001/01/12 23:59:53  lavr
- * Message logging modified for use LOG facility only
- *
- * Revision 6.4  2000/12/29 18:23:42  lavr
- * getpagesize() replaced by a constant 4096, which is "more portable".
- *
- * Revision 6.3  2000/05/31 23:12:32  lavr
- * First try to assemble things together to get working service mapper
- *
- * Revision 6.2  2000/05/16 15:21:03  lavr
- * Cleaned up with format - argument correspondence; #include <time.h> added
- *
- * Revision 6.1  2000/05/12 19:35:13  lavr
- * First working revision
- *
- * ==========================================================================
  */
 
 #include "../ncbi_priv.h"
@@ -186,3 +156,40 @@ int main(void)
     CORE_LOG(eLOG_Note, "Test completed");
     return 0;
 }
+
+
+/*
+ * --------------------------------------------------------------------------
+ * $Log$
+ * Revision 6.10  2003/02/27 15:34:35  lavr
+ * Log moved to end
+ *
+ * Revision 6.9  2002/04/15 19:21:44  lavr
+ * +#include "../test/test_assert.h"
+ *
+ * Revision 6.8  2001/07/03 20:53:38  lavr
+ * HEAP_Copy() test added
+ *
+ * Revision 6.7  2001/06/19 19:12:04  lavr
+ * Type change: size_t -> TNCBI_Size; time_t -> TNCBI_Time
+ *
+ * Revision 6.6  2001/01/23 23:22:05  lavr
+ * Patched logging (in a few places)
+ *
+ * Revision 6.5  2001/01/12 23:59:53  lavr
+ * Message logging modified for use LOG facility only
+ *
+ * Revision 6.4  2000/12/29 18:23:42  lavr
+ * getpagesize() replaced by a constant 4096, which is "more portable".
+ *
+ * Revision 6.3  2000/05/31 23:12:32  lavr
+ * First try to assemble things together to get working service mapper
+ *
+ * Revision 6.2  2000/05/16 15:21:03  lavr
+ * Cleaned up with format - argument correspondence; #include <time.h> added
+ *
+ * Revision 6.1  2000/05/12 19:35:13  lavr
+ * First working revision
+ *
+ * ==========================================================================
+ */
