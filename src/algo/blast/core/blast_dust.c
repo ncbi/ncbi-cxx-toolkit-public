@@ -36,7 +36,7 @@
  */
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-static char const rcsid[] = 
+static char const rcsid[] =
     "$Id$";
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
@@ -47,7 +47,7 @@ static char const rcsid[] =
 
 
 /** Declared in blast_def.h as extern const. */
-const int kDustLevel = 20;   
+const int kDustLevel = 20;
 const int kDustWindow = 64;
 const int kDustLinker = 1;
 
