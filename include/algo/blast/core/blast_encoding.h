@@ -51,23 +51,29 @@ extern "C" {
 /** Translates between ncbi4na and blastna. The first four elements
  *	of this array match ncbi2na. */
 extern const Uint1 NCBI4NA_TO_BLASTNA[];
+
+/** Translates between blastna and ncbi4na. */
 extern const Uint1 BLASTNA_TO_NCBI4NA[];
+
+/** Translates between iupacna and blastna. */
 extern const Uint1 IUPACNA_TO_BLASTNA[];
+
+/** Translates between iupacna and ncbi4na. */
 extern const Uint1 IUPACNA_TO_NCBI4NA[];
 
-/* Protein encodings */
+/** Translates between ncbieaa and ncbistdaa. */
 extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 
-#define BLASTNA_SIZE 16
-#define BLASTAA_SIZE 26
+#define BLASTNA_SIZE 16     /**< Size of nucleic acid alphabet */
+#define BLASTAA_SIZE 26     /**< Size of aminoacid alphabet */
 
 /* Identifies the blastna alphabet, for use in blast only. */
 #define BLASTNA_SEQ_CODE 99
-#define BLASTAA_SEQ_CODE 11 /* == Seq_code_ncbistdaa */
-#define NCBI4NA_SEQ_CODE 4  /* == Seq_code_ncbi4na */	
+#define BLASTAA_SEQ_CODE 11 /**< == Seq_code_ncbistdaa */
+#define NCBI4NA_SEQ_CODE 4  /**< == Seq_code_ncbi4na */	
 
-/* FIXME: Should this be removed since it's the same as BLASTAA_SIZE ? */
-#define PSI_ALPHABET_SIZE  26 /* For PSI Blast this is the only 26 */
+/** @bug FIXME: Should this be removed since it's the same as BLASTAA_SIZE ? */
+#define PSI_ALPHABET_SIZE  26
 
 #ifdef __cplusplus
 }
@@ -79,6 +85,9 @@ extern const Uint1 AMINOACID_TO_NCBISTDAA[];
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/04/09 14:48:05  camacho
+ * Added doxygen comments
+ *
  * Revision 1.2  2004/04/07 19:05:44  camacho
  * Minor fix in #ifdef guards
  *
