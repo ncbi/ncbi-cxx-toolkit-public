@@ -25,20 +25,22 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: NetCache client test
+ * File Description:  NetCache client test
  *
  */
+
 #include <ncbi_pch.hpp>
-#include <stdio.h>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbiargs.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_system.hpp>
 
 #include <connect/netcache_client.hpp>
 #include <connect/ncbi_socket.hpp>
+/* This header must go last */
+#include "test_assert.h"
+
 
 USING_NCBI_SCOPE;
 
@@ -56,6 +58,7 @@ public:
     void Init(void);
     int Run(void);
 };
+
 
 void CTestNetCacheClient::Init(void)
 {
@@ -80,9 +83,7 @@ void CTestNetCacheClient::Init(void)
 }
 
 
-
-static 
-bool s_CheckExists(const string& host, unsigned port, const string& key)
+static bool s_CheckExists(const string& host, unsigned short port, const string& key)
 {
     CSocket sock(host, port);
     CNetCacheClient nc_client(&sock);
@@ -101,57 +102,57 @@ bool s_CheckExists(const string& host, unsigned port, const string& key)
 int CTestNetCacheClient::Run(void)
 {
     CArgs args = GetArgs();
-    const string& host = args["hostname"].AsString();
-    unsigned int port = args["port"].AsInteger();
+    const string& host  = args["hostname"].AsString();
+    unsigned short port = args["port"].AsInteger();
 
-    char test_data[] = "A quick brown fox, jumps over lazy dog.";
+    const char test_data[] = "A quick brown fox, jumps over lazy dog.";
     string key;
+
     {{
-    CSocket sock(host, port);
-    CNetCacheClient nc_client(&sock);
+        CSocket sock(host, port);
+        CNetCacheClient nc_client(&sock);
 
-    key = nc_client.PutData(test_data, strlen(test_data)+1);
+        key = nc_client.PutData(test_data, sizeof(test_data));
 
-    assert(!key.empty());
+        assert(!key.empty());
     }}
 
     {{
-    CSocket sock(host, port);
-    CNetCacheClient nc_client(&sock);
+        CSocket sock(host, port);
+        CNetCacheClient nc_client(&sock);
 
-    char dataBuf[1024];
-    IReader* rdr = nc_client.GetData(key);
-    assert(rdr);
-    rdr->Read(dataBuf, 1024);
-    delete rdr;
+        char dataBuf[1024];
+        IReader* reader = nc_client.GetData(key);
+        assert(reader);
+        reader->Read(dataBuf, 1024);
+        delete reader;
 
-    int res = strcmp(dataBuf, test_data);
-    assert(res == 0);
+        int res = strcmp(dataBuf, test_data);
+        assert(res == 0);
     }}
 
     {{
-    CSocket sock(host, port);
-    CNetCacheClient nc_client(&sock);
+        CSocket sock(host, port);
+        CNetCacheClient nc_client(&sock);
 
-    unsigned char dataBuf[1024] = {0,};
-    CNetCacheClient::EReadResult rres = 
-        nc_client.GetData(key, dataBuf, sizeof(dataBuf));
-    assert(rres == CNetCacheClient::eReadComplete);
-    int res = strcmp((char*)dataBuf, test_data);
-    assert(res == 0);
+        char dataBuf[1024] = {0};
+        CNetCacheClient::EReadResult rres = 
+            nc_client.GetData(key, dataBuf, sizeof(dataBuf));
+        assert(rres == CNetCacheClient::eReadComplete);
 
+        int res = strcmp(dataBuf, test_data);
+        assert(res == 0);
     }}
 
     // timeout test
-
     {{
-    CSocket sock(host, port);
-    CNetCacheClient nc_client(&sock);
+        CSocket sock(host, port);
+        CNetCacheClient nc_client(&sock);
 
-    key = nc_client.PutData(test_data, strlen(test_data)+1, 60);
-    assert(!key.empty());
-
+        key = nc_client.PutData(test_data, sizeof(test_data), 60);
+        assert(!key.empty());
     }}
+
     bool exists;
     exists = s_CheckExists(host, port, key);
     assert(exists);
@@ -159,18 +160,15 @@ int CTestNetCacheClient::Run(void)
     unsigned delay = 70;
     cout << "Sleeping for " << delay << " seconds. Please wait...." << flush;
     SleepSec(delay);
-    cout  << "ok." << endl;
-
+    cout << "ok." << endl;
 
     exists = s_CheckExists(host, port, key);
     assert(!exists);
 
-    
     // Shutdown server
-
     {{
-    CNetCacheClient nc_client(host, port);
-    nc_client.ShutdownServer();
+        CNetCacheClient nc_client(host, port);
+        nc_client.ShutdownServer();
     }}
     
     return 0;
@@ -182,16 +180,18 @@ int main(int argc, const char* argv[])
     return CTestNetCacheClient().AppMain(argc, argv, 0, eDS_Default, 0);
 }
 
+
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.3  2004/10/08 12:30:35  lavr
+ * Cosmetics
+ *
  * Revision 1.2  2004/10/07 19:02:23  kuznets
  * flush at the end of line
  *
  * Revision 1.1  2004/10/05 19:05:33  kuznets
  * Initial revision
- *
- *
  *
  * ===========================================================================
  */

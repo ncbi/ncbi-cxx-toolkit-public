@@ -28,7 +28,8 @@
  *
  * Authors:  Anatoliy Kuznetsov
  *
- * File Description: Net cache client API.
+ * File Description:
+ *   Net cache client API.
  *
  */
 
@@ -36,14 +37,16 @@
 /// NetCache client specs. 
 ///
 
+#include <connect/connect_export.h>
 #include <corelib/ncbistd.hpp>
-#include <connect/ncbi_core.h>
 #include <util/reader_writer.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+
 class CSocket;
+
 
 /// Client API for NetCache server
 ///
@@ -52,16 +55,16 @@ class CSocket;
 class NCBI_XCONNECT_EXPORT CNetCacheClient
 {
 public:
-    CNetCacheClient(const string& host,
-                    unsigned      port,
-                    const string& client_name = kEmptyStr);
+    CNetCacheClient(const string&  host,
+                    unsigned short port,
+                    const string&  client_name = kEmptyStr);
 
     /// Construction.
     /// @param sock
     ///    Connected socket to the server
     /// @param client_name
     ///    Identification name of connecting client
-    CNetCacheClient(CSocket*      sock, 
+    CNetCacheClient(CSocket*      sock,
                     const string& client_name = kEmptyStr);
 
     ~CNetCacheClient();
@@ -70,7 +73,7 @@ public:
     ///
     /// @param time_to_live
     ///    Timeout value in seconds. 0 - server side default assumed.
-    string PutData(void*         buf, 
+    string PutData(const void*   buf,
                    size_t        size,
                    unsigned int  time_to_live = 0);
 
@@ -84,11 +87,10 @@ public:
     ///    IReader* (caller must delete this)
     IReader* GetData(const string& key);
 
-
     enum EReadResult {
         eReadComplete, ///< The whole BLOB has been read
         eNotFound,     ///< BLOB not found or error
-        eReadPart,     ///< Read part of the BLOB (buffer capacity)
+        eReadPart      ///< Read part of the BLOB (buffer capacity)
     };
 
     /// Retrieve BLOB from server by key
@@ -104,20 +106,19 @@ public:
     void ShutdownServer();
 
 protected:
-
     bool ReadStr(CSocket& sock, string* str);
-    bool IsError(const char* str);
-
     void WriteStr(const char* str, size_t len);
+
+    bool IsError(const char* str);
 
     void SendClientName();
 
 private:
-    CSocket*    m_Sock;
-    string      m_ClientName;
-    bool        m_OwnSocket;
-    string      m_Host;
-    unsigned    m_Port;
+    CSocket*       m_Sock;
+    string         m_Host;
+    unsigned short m_Port;
+    EOwnership     m_OwnSocket;
+    string         m_ClientName;
 };
 
 
@@ -127,6 +128,9 @@ END_NCBI_SCOPE
 /*
  * ===========================================================================
  * $Log$
+ * Revision 1.4  2004/10/08 12:30:34  lavr
+ * Cosmetics
+ *
  * Revision 1.3  2004/10/05 19:01:59  kuznets
  * Implemented ShutdownServer()
  *
@@ -141,4 +145,4 @@ END_NCBI_SCOPE
  */
 
 
-#endif  /* UTIL___NETCACHE_CLIENT__HPP */
+#endif  /* CONN___NETCACHE_CLIENT__HPP */
