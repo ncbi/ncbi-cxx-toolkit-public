@@ -114,7 +114,7 @@ protected:
 
         typedef list<TSeqPos>::iterator TList0_I;
         
-        struct {
+        struct ListIterator {
             TList0_I m_I;
             //char                 m_I[sizeof(TList0_I)];
         } m_Iterator;
@@ -282,6 +282,11 @@ END_NCBI_SCOPE
 /*
 * ---------------------------------------------------------------------------
 * $Log$
+* Revision 1.28  2002/12/27 21:11:09  kuznets
+* Fixed Windows specific syntax problem in class CSeqMap::CSegment member
+* m_Iterator was an unnamed structure. For correct MSVC compilation must have
+* a type name.
+*
 * Revision 1.27  2002/12/27 19:32:46  ucko
 * Add forward declarations for nested classes so they can stay protected.
 *
